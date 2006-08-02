@@ -59,7 +59,7 @@ struct nvram_convert nvram_converts[] = {
   {WL ("afterburner"), WL0 ("afterburner"), ""},
   {WL ("hwaddr"), WL0 ("hwaddr"), ""},
   {WL ("ap_isolate"), WL0 ("ap_isolate"), ""},
-  {WL ("distance"), WL0 ("distance"), ""}, //ack timing
+  {WL ("distance"), WL0 ("distance"), ""},	//ack timing
   // Below change from 3.63.13.1
   {WL ("akm"), WL0 ("akm"), ""},
   {WL ("preauth"), WL0 ("preauth"), ""},
@@ -73,6 +73,21 @@ struct nvram_convert nvram_converts[] = {
   {WL ("wme_ap_vi"), WL0 ("wme_ap_vi"), ""},
   {WL ("wme_ap_vo"), WL0 ("wme_ap_vo"), ""},
   {WL ("wme_no_ack"), WL0 ("wme_no_ack"), ""},
+  {WL ("wme_apsd"), WL0 ("wme_apsd"), ""},
+
+  {WL ("mrate"), WL0 ("mrate"), ""},
+  {WL ("maxassoc"), WL0 ("maxassoc"), ""},
+  {WL ("ure"), WL0 ("ure"), ""},
+  {WL ("wds_timeout"), WL0 ("wds_timeout"), ""},
+  {WL ("nbw"), WL0 ("nbw"), ""},
+  {WL ("nctrlsb"), WL0 ("nctrlsb"), ""},
+  {WL ("nband"), WL0 ("nband"), ""},
+  {WL ("nmcsidx"), WL0 ("nmcsidx"), ""},
+  {WL ("nstf"), WL0 ("nstf"), ""},
+  {WL ("nmode_protection"), WL0 ("nmode_protection"), ""},
+  {WL ("amsdu"), WL0 ("amsdu"), ""},
+  {WL ("ampdu"), WL0 ("ampdu"), ""},
+  {WL ("nmode"), WL0 ("nmode"), ""},
 
   // for PPPoE
   {PPP ("username"), PPPOE ("username"), ""},
