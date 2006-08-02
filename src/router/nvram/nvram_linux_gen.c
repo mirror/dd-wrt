@@ -43,8 +43,8 @@ nvram_init (void *unused)
 //not needed for generic implementation
   return 0;
 }
-#define cprintf(fmt, args...)
 
+#define cprintf(fmt, args...)
 /*
 #define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
@@ -59,7 +59,7 @@ nvram_init (void *unused)
 void
 sort (void)
 {
-cprintf("sort()\n");
+  cprintf ("sort()\n");
   int i, a;
   for (i = 0; i < values.nov; i++)
     for (a = i; a < values.nov; a++)
@@ -68,13 +68,13 @@ cprintf("sort()\n");
 	  {
 	    if (values.values[a].name[0] < values.values[i].name[0])
 	      {
-		struct 	nvrams b = values.values[a];
+		struct nvrams b = values.values[a];
 		values.values[a] = values.values[i];
 		values.values[i] = b;
 	      }
 	  }
       }
-cprintf("sort done()\n");
+  cprintf ("sort done()\n");
 }
 
 
@@ -118,7 +118,7 @@ writedb (void)
       if (values.values[i].name)
 	c++;
     }
-  sort();
+  sort ();
   putc (c >> 8, in);
   putc (c & 255, in);
   for (i = 0; i < values.nov; i++)
@@ -135,7 +135,7 @@ writedb (void)
 	  putc (fulllen & 255, in);
 
 	  putc (len, in);
-	
+
 	  for (a = 0; a < len; a++)
 	    putc (values.values[i].name[a], in);
 
@@ -171,8 +171,8 @@ readdb (void)
   int i;
   for (i = 0; i < values.nov; i++)
     {
-      getc(in);
-      getc(in);
+      getc (in);
+      getc (in);
       //fseek (in, 2, SEEK_CUR);
       int len = getc (in);
       values.values[i].name = (char *) malloc (len + 1);
@@ -213,8 +213,8 @@ nvram_get (const char *name)
   int i;
   if (!name)
     return NULL;
- int len = strlen(name);
-  if (len==0)
+  int len = strlen (name);
+  if (len == 0)
     return NULL;
   lock ();
 
@@ -223,7 +223,7 @@ nvram_get (const char *name)
   if (in == NULL)
     {
       unlock ();
-    cprintf("nvram_get NULL (offsets)\n");
+      cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
   fread (values.offsets, 1024, 1, in);
@@ -233,7 +233,7 @@ nvram_get (const char *name)
   if (offset == -1)
     {
       unlock ();
-cprintf("nvram_get NULL (offset = -1)\n");
+      cprintf ("nvram_get NULL (offset = -1)\n");
       return NULL;
     }
   in = fopen ("/tmp/nvram/nvram.db", "rb");
@@ -243,54 +243,54 @@ begin:;
   while (!feof (in))
     {
       int fullen = getc (in);
-      if (fullen==EOF)
-        break;
-      fullen = fullen<<8;
+      if (fullen == EOF)
+	break;
+      fullen = fullen << 8;
       fullen += getc (in);
-    //  cprintf("size of array = %d\n",fullen);
+      //  cprintf("size of array = %d\n",fullen);
       int namelen = getc (in);
-      if (namelen==EOF)
-        break;
-    //  cprintf("size of name = %d\n",namelen);
-      if (namelen!=len)
-       {
-       offset+=fullen+2;
-       fseek(in, offset, SEEK_SET);
-       goto begin;
-       }
-      if (getc(in) != name[0])
-        {
-	fclose(in);
-	unlock();
-	return NULL; //readed over boundaries	
-	} 
+      if (namelen == EOF)
+	break;
+      //  cprintf("size of name = %d\n",namelen);
+      if (namelen != len)
+	{
+	  offset += fullen + 2;
+	  fseek (in, offset, SEEK_SET);
+	  goto begin;
+	}
+      if (getc (in) != name[0])
+	{
+	  fclose (in);
+	  unlock ();
+	  return NULL;		//readed over boundaries   
+	}
       for (i = 1; i < namelen; i++)
 	if (getc (in) != name[i])
 	  {
-//	    cprintf("not equal, continue\n");
-	    offset += fullen+2;
-	    fseek (in, offset, SEEK_SET); 
+//          cprintf("not equal, continue\n");
+	    offset += fullen + 2;
+	    fseek (in, offset, SEEK_SET);
 	    goto begin;
 	  }
       fullen = getc (in);
-      if (fullen==EOF)
-         break;
-      fullen = fullen<<8;
+      if (fullen == EOF)
+	break;
+      fullen = fullen << 8;
       fullen += getc (in);
-      cprintf("size of value = %d\n",fullen);
+      cprintf ("size of value = %d\n", fullen);
       char *value = malloc (fullen + 1);
       for (i = 0; i < fullen; i++)
 	value[i] = getc (in);
       value[i] = 0;
       fclose (in);
       unlock ();
-      cprintf("nvram_get done %s\n",value);
+      cprintf ("nvram_get done %s\n", value);
 
       return value;
     }
   fclose (in);
   unlock ();
-cprintf("nvram_get NULL (eof)\n");
+  cprintf ("nvram_get NULL (eof)\n");
 
   return NULL;
 /*
@@ -342,7 +342,7 @@ nvram_getall (char *b, int count)
 static int
 _nvram_set (const char *name, const char *value)
 {
-cprintf("nvram_set %s %s\n",name,value);
+  cprintf ("nvram_set %s %s\n", name, value);
 
   readdb ();
   int i;
@@ -376,7 +376,7 @@ cprintf("nvram_set %s %s\n",name,value);
     }
   writedb ();
   closedb ();
-cprintf("nvram_set done()\n");
+  cprintf ("nvram_set done()\n");
 
   return 0;
 }
@@ -522,4 +522,5 @@ nvram2file (char *varname, char *filename)
   free (buf);
   return j;
 }
+
 #include "nvram_generics.h"
