@@ -205,16 +205,6 @@ static void create_vertex_list_rec(struct list *vertex_list,
 
   // add the vertex to the list, if it's not us
 
-#ifdef SVEN_OLA
-  if (0 == comp) {
-    if (svenola_avl_comp_ipv4(&main_addr, node->key) != 0)
-    {
-      vert->node.data = vert;
-      list_add_tail(vertex_list, &vert->node);
-    }
-  }
-  else
-#endif
   if ((*comp)(&main_addr, node->key) != 0)
   {
     vert->node.data = vert;
@@ -381,11 +371,7 @@ void olsr_calculate_lq_routing_table(void)
   struct interface *inter;
 
   if (ipsize == 4)
-#ifdef SVEN_OLA
-    avl_comp = 0;
-#else
     avl_comp = avl_comp_ipv4;
-#endif
 
   else
     avl_comp = avl_comp_ipv6;

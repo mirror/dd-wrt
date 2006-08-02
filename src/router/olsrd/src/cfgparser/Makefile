@@ -41,11 +41,7 @@
 TOPDIR=../..
 include $(TOPDIR)/Makefile.inc
 
-ifdef SVEN_OLA
-SRCS =		olsrd_conf.c  oparse.c  oscan.c
-else
 SRCS =		olsrd_conf.c  oparse.c  oscan.c cfgfile_gen.c
-endif
 HDRS =		olsrd_conf.h  oparse.h
 
 ifeq ($(OS), win32)

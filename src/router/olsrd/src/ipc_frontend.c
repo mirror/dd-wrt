@@ -46,7 +46,6 @@
  *
  */
 
-#ifndef SVEN_OLA
 #include "ipc_frontend.h"
 #include "link_set.h"
 #include "olsr.h"
@@ -542,4 +541,3 @@ shutdown_ipc()
   
   return 1;
 }
-#endif
