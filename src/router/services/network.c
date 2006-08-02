@@ -438,6 +438,11 @@ wlconf_up (char *name)
       nvram_commit ();
     }
 #endif
+if (nvram_match("wl0_mode","infra"))
+{
+    nvram_set("wl_infra","0");
+    nvram_set("wl0_infra","0");    
+}
   ret = eval ("wlconf", name, "up");
 /*  eval("wl","radio","off");
   eval("wl","atten","0","0","60");
@@ -581,7 +586,7 @@ cprintf("is all?\n");
 #endif
     }
 		
-		if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
+/*		if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
 		{
 		val = 0;
 		WL_IOCTL(name, WLC_SET_WET, &val, sizeof(val));
@@ -594,7 +599,7 @@ cprintf("is all?\n");
 			WL_IOCTL(name, WLC_SET_INFRA, &val, sizeof(val));
 		}
 		}
-
+*/
   return ret;
 
 }
