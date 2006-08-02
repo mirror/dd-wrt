@@ -1,0 +1,105 @@
+#
+# WINDOWS32 SPECIFIC CONFIGURATION
+#
+
+INSTALL_PREFIX ?=
+EXENAME = olsrd.exe
+
+SRCS +=		$(wildcard src/win32/*.c)
+HDRS +=		$(wildcard src/win32/*.h)
+
+DEFINES +=	-DWIN32
+LIBS +=		-mno-cygwin -lws2_32 -liphlpapi
+INCLUDES += 	-I$(TOPDIR)/src/win32
+CFLAGS +=	-mno-cygwin
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).dll
+INSTALL_LIB =	cp $(PLUGIN_FULLNAME) ../..
+
+ifdef OLSRD_PLUGIN
+LDFLAGS +=	-L$(TOPDIR)
+#LIBS += 	$(TOPDIR)/src/win32/compat.o
+LIBS +=		-lolsrd
+endif
+
+OS_LIB_PTHREAD =
+OS_LIB_DYNLOAD =
+
+olsr-$(VERS).zip:	gui/win32/Main/Release/Switch.exe \
+		gui/win32/Shim/Release/Shim.exe \
+		olsrd.exe \
+		olsr_switch.exe \
+		src/cfgparser/olsrd_cfgparser.dll \
+		README \
+		README-Link-Quality.html \
+		README-Link-Quality-Fish-Eye.txt \
+		README-Olsr-Switch.html \
+		gui/win32/Inst/linux-manual.txt \
+		files/olsrd.conf.win32.rfc \
+		files/olsrd.conf.win32.lq \
+		gui/win32/Main/RFC-Default.olsr \
+		gui/win32/Main/LQ-Default.olsr \
+		lib/dot_draw/olsrd_dot_draw.dll \
+		lib/nameservice/olsrd_nameservice.dll \
+		lib/httpinfo/olsrd_httpinfo.dll
+		$(STRIP) olsrd.exe
+		$(STRIP) olsr_switch.exe
+		$(STRIP) src/cfgparser/olsrd_cfgparser.dll
+		$(STRIP) lib/dot_draw/olsrd_dot_draw.dll
+		$(STRIP) lib/nameservice/olsrd_nameservice.dll
+		$(STRIP) lib/httpinfo/olsrd_httpinfo.dll
+		rm -rf $(TEMP)/olsr-$(VERS)
+		rm -f $(TEMP)/olsr-$(VERS).zip
+		rm -f olsr-$(VERS).zip
+		mkdir $(TEMP)/olsr-$(VERS)
+		cp gui/win32/Main/Release/Switch.exe $(TEMP)/olsr-$(VERS)
+		cp gui/win32/Shim/Release/Shim.exe $(TEMP)/olsr-$(VERS)
+		cp olsrd.exe $(TEMP)/olsr-$(VERS)
+		cp olsr_switch.exe $(TEMP)/olsr-$(VERS)
+		cp src/cfgparser/olsrd_cfgparser.dll $(TEMP)/olsr-$(VERS)
+		cp README $(TEMP)/olsr-$(VERS)
+		cp README-Link-Quality.html $(TEMP)/olsr-$(VERS)
+		cp README-Link-Quality-Fish-Eye.txt $(TEMP)/olsr-$(VERS)
+		cp README-Olsr-Switch.html $(TEMP)/olsr-$(VERS)
+		cp gui/win32/Inst/linux-manual.txt $(TEMP)/olsr-$(VERS)
+		cp files/olsrd.conf.win32.rfc $(TEMP)/olsr-$(VERS)/olsrd.conf.rfc
+		cp files/olsrd.conf.win32.lq $(TEMP)/olsr-$(VERS)/olsrd.conf.lq
+		cp gui/win32/Main/RFC-Default.olsr $(TEMP)/olsr-$(VERS)
+		cp gui/win32/Main/LQ-Default.olsr $(TEMP)/olsr-$(VERS)/Default.olsr
+		cp lib/dot_draw/olsrd_dot_draw.dll $(TEMP)/olsr-$(VERS)
+		cp lib/nameservice/olsrd_nameservice.dll $(TEMP)/olsr-$(VERS)
+		cp lib/httpinfo/olsrd_httpinfo.dll $(TEMP)/olsr-$(VERS)
+		cd $(TEMP); echo y | cacls olsr-$(VERS) /T /G Everyone:F
+		cd $(TEMP); zip -q -r olsr-$(VERS).zip olsr-$(VERS)
+		cp $(TEMP)/olsr-$(VERS).zip .
+		rm -rf $(TEMP)/olsr-$(VERS)
+		rm -f $(TEMP)/olsr-$(VERS).zip
+
+olsr-$(VERS)-setup.exe:	gui/win32/Main/Release/Switch.exe \
+		gui/win32/Shim/Release/Shim.exe \
+		olsrd.exe \
+		olsr_switch.exe \
+		src/cfgparser/olsrd_cfgparser.dll \
+		README \
+		README-Link-Quality.html \
+		README-Link-Quality-Fish-Eye.txt \
+		README-Olsr-Switch.html \
+		gui/win32/Inst/linux-manual.txt \
+		files/olsrd.conf.win32.rfc \
+		files/olsrd.conf.win32.lq \
+		gui/win32/Main/RFC-Default.olsr \
+		gui/win32/Main/LQ-Default.olsr \
+		lib/dot_draw/olsrd_dot_draw.dll \
+		lib/nameservice/olsrd_nameservice.dll \
+		lib/httpinfo/olsrd_httpinfo.dll \
+		gui/win32/Inst/installer.nsi
+		$(STRIP) olsrd.exe
+		$(STRIP) olsr_switch.exe
+		$(STRIP) src/cfgparser/olsrd_cfgparser.dll
+		$(STRIP) lib/dot_draw/olsrd_dot_draw.dll
+		$(STRIP) lib/nameservice/olsrd_nameservice.dll
+		$(STRIP) lib/httpinfo/olsrd_httpinfo.dll
+		rm -f olsr-setup.exe
+		rm -f olsr-$(VERS)-setup.exe
+		C:/Program\ Files/NSIS/makensis gui\win32\Inst\installer.nsi
+		mv olsr-setup.exe olsr-$(VERS)-setup.exe
