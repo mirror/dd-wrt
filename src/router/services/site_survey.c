@@ -89,15 +89,21 @@ site_survey_main (int argc, char *argv[])
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
   if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
+    {
+    fprintf(stderr,"scan failed\n");
     return -1;
+    }
   sleep (1);
   bzero (buf, sizeof (buf));
   scan_res->buflen = sizeof (buf);
 
   if (wl_ioctl (dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
+  {
+    fprintf(stderr,"scan results failed\n");
     return -1;
+  }
 
-  printf ("buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen,
+  fprintf (stderr,"buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen,
 	  scan_res->version, scan_res->count);
 
   if (scan_res->count == 0)

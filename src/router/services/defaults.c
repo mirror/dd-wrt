@@ -423,8 +423,12 @@ struct nvram_tuple srouter_defaults[] = {
   /* Wireless parameters */
   
 #ifdef HAVE_MSSID
-  {"wl_nmode", "-1", 0},	/* PPPoE Server service name */
-  {"wl_leddc", "0x640000", 0},	/* PPPoE Server service name */
+{ "wl_nbw", "40", 0},			/* N-BW */
+{ "wl_nctrlsb", "lower", 0},		/* N-CTRL SB */
+{ "wl_nband", "2", 0},			/* N-BAND */
+{ "wl_nmcsidx", "-1", 0},		/* N-MCS Index - rate */
+{ "wl_nmode", "-1", 0},                 /* N-mode */
+{ "wl_leddc", "0x640000", 0},           /* 100% duty cycle for LED on router */
 #endif
 #ifdef HAVE_DDLAN
   {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
@@ -675,19 +679,19 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SAGAR
   {"wl_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
-  {"wl_gmode", 0, 0},		/* 54g mode */
+  {"wl_gmode", "0", 0},		/* 54g mode */
 #elif HAVE_NEWMEDIA
   {"wl_gmode", "-1", 0},	/* 54g mode */
 #else
   {"wl_gmode", XSTR (GMODE_AUTO), 0},	/* 54g mode */
 #endif
 #else
-  {"wl_nmode",0},
-  {"wl0_nmode",0},
+  {"wl_nmode","0",0},
+  {"wl0_nmode","0",0},
 #ifdef HAVE_SAGAR
   {"wl0_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
-  {"wl0_gmode", 0, 0},		/* 54g mode */
+  {"wl0_gmode", "0", 0},		/* 54g mode */
 #elif HAVE_NEWMEDIA
   {"wl0_gmode", "-1", 0},	/* 54g mode */
 #else
@@ -697,6 +701,10 @@ struct nvram_tuple srouter_defaults[] = {
 
 
   {"wl_gmode_protection", "off", 0},	/* 802.11g RTS/CTS protection (off|auto) */
+#ifdef HAVE_MSSID
+{ "wl_nmode_protection", "auto", 0 },	/* 802.11g RTS/CTS protection (off|auto) */
+#endif
+
 #ifdef HAVE_SKYTEL
   {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
 #elif HAVE_GGEW
