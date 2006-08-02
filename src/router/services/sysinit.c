@@ -415,6 +415,7 @@ start_restore_defaults (void)
     {
     case ROUTER_WRTSL54GS:
     case ROUTER_WZRG300N:
+    case ROUTER_WRT300N:
     case ROUTER_BUFFALO_WZRRSG54:
       linux_overrides = generic;
       break;
@@ -916,6 +917,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       
 
       case ROUTER_WZRG300N:
+      case ROUTER_WRT300N:
       case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
