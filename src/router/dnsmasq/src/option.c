@@ -1986,7 +1986,7 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
 	die(_("must have exactly one resolv.conf to read domain from."), NULL);
       
       if (!(f = fopen((daemon->resolv_files)->name, "r")))
-	die(_("failed to read %s: %m"), (daemon->resolv_files)->name);
+	die(_("failed to read %s: %s"), (daemon->resolv_files)->name);
       
       while ((line = fgets(buff, MAXDNAME, f)))
 	{
