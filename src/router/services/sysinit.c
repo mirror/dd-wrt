@@ -1271,7 +1271,7 @@ start_nvram (void)
   CONVERT_NV ("d11g_frag", "wl_frag");
   CONVERT_NV ("d11g_dtim", "wl_dtim");
 
-  nvram_set ("wl0_hwaddr", "");	// When disbale wireless, we must get null wireless mac */
+  nvram_unset ("wl0_hwaddr");	// When disbale wireless, we must get null wireless mac */
 
   nvram_set ("wan_get_dns", "");
   nvram_set ("filter_id", "1");
