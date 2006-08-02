@@ -90,14 +90,11 @@ static const char *http_ok_head[] =
   "<HEAD>\n",
   "<META http-equiv=\"Content-type\" content=\"text/html; charset=ISO-8859-1\">\n",
   "<TITLE>olsr.org httpinfo plugin</TITLE>\n",
-#ifndef SVEN_OLA
-  "<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\">\n",
-  "<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\">\n",
-#endif
+  "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
+  "<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
   "<link rel=\"stylesheet\" type=\"text/css\" href=\"httpinfo.css\">\n",
   "</HEAD>\n",
   "<body bgcolor=\"#ffffff\" text=\"#000000\">\n",
-#ifndef SVEN_OLA
   "<table align=\"center\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\" width=\"800\">"
   "<tbody><tr bgcolor=\"#ffffff\">",
   "<td align=\"left\" height=\"69\" valign=\"middle\" width=\"80%\">",
@@ -108,7 +105,6 @@ static const char *http_ok_head[] =
   "<p>",
   "</table>",
   "<!-- END HEAD -->\n\n",
-#endif
   NULL
 };
 
