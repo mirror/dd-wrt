@@ -48,7 +48,7 @@ install: all
 ifeq ($(ARCH),armeb)
 	install -d $(INSTALLDIR)/sbin
 	install jffs2root $(INSTALLDIR)/sbin	
-endif
+else
 
 ifneq ($(CONFIG_RB500),y)
 ifeq ($(CONFIG_MSSID),y)
@@ -58,3 +58,4 @@ else
 endif
 endif
 	@true
+endif

@@ -414,6 +414,7 @@ start_restore_defaults (void)
   switch (brand)
     {
     case ROUTER_WRTSL54GS:
+    case ROUTER_WZRG300N:
     case ROUTER_BUFFALO_WZRRSG54:
       linux_overrides = generic;
       break;
@@ -889,7 +890,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 
   switch (brand)
   {
-	case ROUTER_BUFFALO_WZRRSG54:
+      case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
 	  break;
@@ -913,7 +914,9 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       	nvram_set ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
       break;
       
-	case ROUTER_WRTSL54GS:
+
+      case ROUTER_WZRG300N:
+      case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
