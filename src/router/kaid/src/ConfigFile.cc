@@ -47,6 +47,7 @@ CConfigFile::CConfigFile (string configFile)
 	
 	// Set defaults
 	OrbPort = 34525;
+	OrbDeepPort = 34523;
 	
 	#ifdef PLATFORM_freebsd
 		User = "";
@@ -62,11 +63,20 @@ CConfigFile::CConfigFile (string configFile)
 	EngineDev = "";
 	EnginePort = 0;
 	EnginePAT = 0;
+	DeepBind="";
+	DeepIP="";
+	DeepDev="";
+	DeepPort=0;
+	UseDeep=false;
 	Verbosity=0;
 	LocalDevices=0;
+	CacheFile="/tmp/kaiEnginePersist.txt";
+	ConfigCache="/tmp/kaiSystemConfig.txt";
 	
 	#ifdef PLATFORM_macosx_jaguar
 	SniffDevice = "en0";
+	#elif defined(PLATFORM_openwrt)
+		SniffDevice = "br0";
 	#else
 	SniffDevice = "eth0";
 	#endif	
@@ -97,7 +107,20 @@ CConfigFile::Load ()
 			continue;
 		if (line[0] == ';')
 			continue;
-	
+
+		do
+		{
+			posEqual = line.find('\r');
+			if(posEqual!=string::npos)
+				line.erase(posEqual,1);
+		} while (posEqual!=string::npos);
+		do
+		{
+			posEqual = line.find('\n');
+			if(posEqual!=string::npos)
+				line.erase(posEqual,1);
+		} while (posEqual!=string::npos);
+			
 		posEqual = line.find ('=');
 		name = trim (line.substr (0, posEqual));
 		value = trim (line.substr (posEqual + 1));
@@ -117,9 +140,17 @@ CConfigFile::Load ()
 		{
 			OrbPort = atoi (m_vsValues[i].c_str ());
 		}
+		else if (fld == "orbdeepport")
+		{
+			OrbDeepPort = atoi(m_vsValues[i].c_str());
+		}
 		else if (fld == "enginebind")
 		{
 			EngineBind = m_vsValues[i];
+		}
+		else if (fld == "enginedeepbind")
+		{
+			DeepBind = m_vsValues[i];	
 		}
 		else if (fld == "sniffdevice")
 		{
@@ -164,6 +195,14 @@ CConfigFile::Load ()
 				User = m_vsValues[i];
 			#endif
  		}
+ 		else if (fld == "cachefile")
+ 		{
+ 			CacheFile = m_vsValues[i];
+ 		}
+ 		else if (fld == "configcache")
+ 		{
+ 			ConfigCache = m_vsValues[i];
+ 		}
 		else
 		{
 		}
@@ -191,6 +230,23 @@ CConfigFile::ParseBindings ()
     		EngineIP = sAux;
       	EnginePort = atoi (EngineBind.substr (EngineBind.find (":") + 1).c_str ());
     }
+	// Parse deep configuration - MF
+	if (DeepBind.find (":") < 0)
+	{
+	 	if (DeepBind.find (".") < 0)
+			DeepDev = DeepBind;
+	 	else
+			DeepIP = DeepBind;		
+	}
+	else
+	{
+		string sAux = DeepBind.substr (0, DeepBind.find (":"));
+		if( sAux.find(".") < 0)
+			DeepDev = sAux;
+		else
+			DeepIP = sAux;
+	 	DeepPort = atoi (DeepBind.substr (DeepBind.find (":") + 1).c_str ());
+	}
 
 	if (UIBind.find (":") < 0)
     {
@@ -249,32 +305,125 @@ CConfigFile::GetOrbList ()
   }
   catch (SocketException & excep)
   {
-	if (excep == SocketException::errNotConnected)
+	string sTemp;
+	int iFrom,iTo;
+	iFrom=sAux.find("HTTP");
+	if(iFrom>=0)
+		iTo=sAux.find("\n",iFrom);
+	if(iFrom>=0 && iTo>=0)
+		sTemp=sAux.substr(iFrom,iTo-iFrom);
+	
+	if ((sTemp.find("200") == (uint)-1) || (excep != SocketException::errNotConnected))
 	{
-		int iFromChar = sAux.find ("KaiOrbitalServer");
-		// iFromChar = 0;
-		if (iFromChar < 0)
+		string err = (const char *) excep;
+		debuglog("KAID","Failed to download orbital list...");
+		ifstream fReader(ConfigCache.c_str());
+		if(!fReader.is_open())
 		{
-	    	debuglog("KAID", "No orbitals servers are available...");
-	    	throw "No orbitals found!";
-	  	}
-		int iToChar = sAux.rfind ("KaiOrbitalServer=");
-		sAux2 = sAux.substr (iToChar);
-		iToChar += sAux2.find (";") + 1;
-		sAux = sAux.substr (iFromChar, (iToChar - iFromChar));
-		vector < string > vsServers;
-		Tokenize (sAux, vsServers, ";");
-		unsigned int i;
-		for (i = 0; i < vsServers.size (); i++)
-	  		sOrbList.append (vsServers[i].substr (vsServers[i].find ("=") + 1)
-			   + ";");
-		OrbList = sOrbList;
+			debuglog("KAID","Unable to open system configuration cache file (" + ConfigCache + ")");
+			throw "No orbitals found!";
+		}
+		debuglog("KAID","Using cached system configuration");
+		while(getline(fReader,sTemp))
+			sAux+=sTemp+"\n";
+		fReader.close();
+	}
+		OrbList = ParseServers(sAux,"KaiOrbitalServer",true);
+		DeepResolutionServerList = ParseServers(sAux,"KaiDeepResolutionServer",false);
+		ParseConsoles(sAux);
+	
+	ofstream fWriter(ConfigCache.c_str());
+	if(!fWriter.is_open())
+	{
+		debuglog("WARNING","Unable to open system configuration cache file for output - check permissions (" + ConfigCache + ")");
 	}
     else
     {
-		string err = (const char *) excep;
-		debuglog("KAID","Failed to download orbital list...");
-		throw "No orbitals found!";
+		int iFromChar,iToChar;
+		
+		iFromChar=sAux.find("KAI_XSERVER_CONFIG;");
+		if(iFromChar>=0)
+		{
+			iToChar=sAux.rfind(";");
+			if(iToChar>=0)
+				fWriter << sAux.substr(iFromChar,iToChar-iFromChar+1) + "\n\n";
+		}
+		fWriter.close();
 	}
   }
+}
+
+string CConfigFile::ParseServers(string sAux, string Token, bool ThrowError)
+{
+	int iFromChar, iToChar;
+	unsigned int i;
+	string sList,sAux2;
+	vector < string > vsServers;
+	
+	iFromChar=sAux.find(Token+"=");
+	if(iFromChar<0)
+	{
+		if(ThrowError)
+		{
+			debuglog("KAID","No " + Token + "s are available...");
+			throw "No " + Token + "s found!";
+		}
+		else
+			return "";
+	}
+	iToChar = sAux.rfind(Token+"=");
+	sAux2=sAux.substr(iToChar);
+	iToChar+=sAux2.find(";")+1;
+	sAux = sAux.substr (iFromChar, (iToChar - iFromChar));
+	Tokenize (sAux, vsServers, ";");
+	for (i = 0; i < vsServers.size (); i++)
+  		sList.append (vsServers[i].substr (vsServers[i].find ("=") + 1) + ";");
+	return(sList);
+}
+
+void CConfigFile::ParseConsoles(string sAux)
+{
+	int iFromChar, iToChar;
+	unsigned int i;
+	string sAux2;
+	vector <string> vsConsoles;
+	struct ConsoleID *thisConsole;
+	
+	iFromChar=sAux.find("KaiConsole=");
+	if(iFromChar<0)
+	{
+		debuglog("KAID","No console specifications found in client configuration...");
+		throw "No console specifications found!";
+	}
+	
+	do
+	{
+		iToChar=sAux.find("\n",iFromChar+11);
+		sAux2=sAux.substr(iFromChar+11,iToChar-iFromChar-12);
+		Tokenize(sAux.substr(iFromChar+11,iToChar-iFromChar-12),vsConsoles,";");
+
+		thisConsole=new struct ConsoleID;
+		thisConsole->Manufacturer=vsConsoles[0];
+		thisConsole->ConsoleName=vsConsoles[1];
+
+		for(i=2;i<vsConsoles.size();i++)
+			m_mConsoles.insert(ConsoleIDPair(vsConsoles[i],thisConsole));
+		iFromChar=sAux.find("KaiConsole=",iToChar);
+	} while(iFromChar>=0);
+	thisConsole=new struct ConsoleID;
+	thisConsole->Manufacturer="Broadcast";
+	thisConsole->ConsoleName="Broadcast";
+	m_mConsoles.insert(ConsoleIDPair("FFFFFF",thisConsole));
+}
+
+string CConfigFile::GetConsoleID(string sMACPrefix)
+{
+	map <string,struct ConsoleID *> :: iterator theConsole;
+		
+	theConsole=m_mConsoles.find(sMACPrefix);
+	
+	if(theConsole==m_mConsoles.end())
+		return "";
+	else
+		return theConsole->second->ConsoleName;
 }

@@ -1,7 +1,3 @@
-#ifdef PLATFORM_macosx_jaguar
-	#define VERSION "7.0.0.4"
-#endif
-
 #include <iostream>
 #include <stdio.h>
 #include <syslog.h>

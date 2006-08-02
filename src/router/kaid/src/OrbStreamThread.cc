@@ -15,6 +15,7 @@
 #include "OrbStreamThread.h"
 #include "KaiItem.h"
 #include "ConfigFile.h"
+#include "PersistFile.h"
 #include "StrUtils.h"
 
 using namespace std;
@@ -46,8 +47,10 @@ COrbStreamThread::SendOrbAuth ()
 {
 	try
 	{
+		string sHash=m_cParent->Persist->GetValue(m_cConf->Username,"HASH");
+		if(sHash.size()==0) sHash=";";
 		string sAuth ("KAI_AUTHENTICATION;" + m_cConf->Username +
-			      ";" + m_cConf->Password + ";;");
+			      ";" + m_cConf->Password + ";" + sHash);
 		sAuth += (char) 1;
 		m_cOrbClient->SendASCII (sAuth.c_str ());
         m_cParent->m_iUpOrbCount += sAuth.size();
@@ -94,16 +97,23 @@ COrbStreamThread::Execute ()
 	char pcBuffer[2048];
 	vector < string > vsMsgs;
 	SocketSet mySet;
+	struct timeval timeout;
 
-	mySet += (SocketBase *) m_cOrbClient;
 	while (!m_bTerminate)
 	{
 		try
 		{
-			retval = select ((int) mySet + 1, mySet, NULL, NULL,
-					 NULL);
-			if (retval == -1)
-				throw errClientError;
+			// Changed to 1-second timeout to allow clean shutdown - MF
+			do
+			{
+				timeout.tv_sec=1;
+				timeout.tv_usec=0;
+				mySet.Clear();
+				mySet += (SocketBase *) m_cOrbClient;
+				retval = select ((int) mySet + 1, mySet, NULL, NULL, &timeout);
+				if (retval == -1)
+					throw errClientError;
+			} while((retval==0) && (!m_bTerminate));
 
 			iBytesTransferred =
 				m_cOrbClient->RecvData (pcBuffer,
@@ -230,6 +240,10 @@ COrbStreamThread::HandleOrbMsg (string sRequest)
 		break;
 	case '~':
 	{
+		string sContacts="";
+		
+		if(vsSegments.size()<=1)
+			Tokenize("~;"+m_cParent->Persist->GetValue(m_cConf->Username,"CONTACTS"),vsSegments,";");
 		// empty contact list!!
 		if (vsSegments.size () > 1)
 		{
@@ -251,9 +265,15 @@ COrbStreamThread::HandleOrbMsg (string sRequest)
 					 m_cConf->Username,
 					 m_cParent->MyIP ().
 					 GetAddressString (),
-					 m_cParent->MyPort (), "", 0);
+					 m_cParent->MyPort (),
+					 (m_cConf->UseDeep?m_cParent->MyDeepIP().GetAddressString():""),
+				 	 (m_cConf->UseDeep?m_cParent->MyDeepPort():0));
+				 
+				 sContacts+=vsSegments[i]+";";
 			}
 		}
+		m_cParent->Persist->SetValue(m_cConf->Username,"CONTACTS",sContacts);
+
 		
 		SendClientResponse ("KAI_CLIENT_CONNECTED_MESSENGER;");
 		// Tell the client its now online (status)
@@ -275,6 +295,7 @@ COrbStreamThread::HandleOrbMsg (string sRequest)
 		// Set the case corrected username
 		m_bAuthenticated = true;
 		m_cParent->LoggedIn (vsSegments[1]);
+		m_cParent->Persist->SetValue(m_cConf->Username,"HASH",vsSegments[2]);
 		break;
 
 	case '?':
@@ -465,7 +486,9 @@ COrbStreamThread::HandleOrbMsg (string sRequest)
 		m_cParent->m_cMessengerContacts.push_back (newGuy);
 		Deliver (vsSegments[1], '6', m_cConf->Username,
 			 m_cParent->MyIP ().GetAddressString (),
-			 m_cParent->MyPort (), "", 0);
+			 m_cParent->MyPort (),
+			 (m_cConf->UseDeep?m_cParent->MyDeepIP().GetAddressString():""),
+			 (m_cConf->UseDeep?m_cParent->MyDeepPort():0));
 		break;
 	}
 	case '|':
@@ -494,7 +517,11 @@ COrbStreamThread::HandleOrbMsg (string sRequest)
 		output = "KAI_DELIVER;" + vsSegments[1] + ";7;" +
 			m_cConf->Username + ";" +
 			m_cParent->MyIP ().GetAddressString () + ";" +
-			myport + ";;;";
+			myport + ";";
+		if(m_cConf->UseDeep)
+			output=output+m_cParent->MyDeepIP().GetAddressString() + ";" + Str(m_cParent->MyDeepPort()) + ";";
+		else
+			output+=";;";
 		SendStream (output);
 
 		// We can also add him to our contacts - coz he's obviously online now

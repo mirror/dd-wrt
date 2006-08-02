@@ -48,11 +48,12 @@ DEPEND_FILE = $(OBJ_DIR)/.depend
 DEP_FILTER  = sed 's/[a-zA-Z_0-9]*\.o/$(OBJ_DIR)\/&/g'
 MAJ_VER     = 1
 MIN_VER     = 38
-LIB_DIR     = /usr/local/lib
-HEAD_DIR    = /usr/local/include
+LIB_DIR     = /usr/lib
+HEAD_DIR    = /usr/include
 LIB_HEADERS = socketcc.h
 PLATFORM    = linux
 PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
+OPENWRT     = /opt/3.3.4
 
 ################################################################################
 # Multiple Platform Support.                                                   #
@@ -72,13 +73,22 @@ PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
 # Linux.                                                                       #
 ################################################################################
 ifeq ($(PLATFORM), linux)
-CC         = mipsel-linux-g++
-CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -mtune=mips32 -mips32 -funit-at-a-time -pipe -I../pthreadcc/src -fPIC
+ifneq ($(strip $(OPENWRT)),)
+PRE_CFLAGS  += -DOPENWRT
+CFLAGS      += -I$(OPENWRT)/mipsel-linux-uclibc/include/c++ -I$(OPENWRT)/mipsel-linux-uclibc/include -I../pthreadcc/src -Os -pipe -funit-at-a-time -mtune=mips32 -mips32
+CXX         = $(OPENWRT)/bin/mipsel-linux-g++
+CC          = $(OPENWRT)/bin/mipsel-linux-g++
+LD	    = $(OPENWRT)/bin/mipsel-linux-g++
+LDFLAGS    = -L../pthreadcc/src -lpthreadcc -shared
+else
+CC         = g++
+CFLAGS     = -I$/usr/include -I../pthreadcc/src -Wall -O2 -fPIC
+LD		   = g++
+LDFLAGS    = -lpthreadcc -shared -Wl,-soname,$(LIB_SONAME)
+endif
 LIB_NAME   = libsocketcc.so
 LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
 LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
-LD         = mipsel-linux-g++
-LDFLAGS    = -L../pthreadcc -lpthreadcc -shared -Wl,-soname,$(LIB_SONAME) 
 CMD_DYLINK = /sbin/ldconfig $(LIB_DIR)
 CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
 endif
@@ -88,7 +98,7 @@ endif
 ################################################################################
 ifeq ($(PLATFORM), freebsd)
 CC         = g++
-CFLAGS     = -I/usr/include -I/usr/local/include -Wall -Wstrict-prototypes -O2 -fPIC
+CFLAGS     = $(SYSTEM_CFLAGS) -I../pthreadcc/src
 LIB_NAME   = libsocketcc.so
 LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
 LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
@@ -133,12 +143,12 @@ endif
 ################################################################################
 ifeq ($(PLATFORM), macosx_jaguar)
 CC         = g++
-CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -O2 -fPIC
+CFLAGS     = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc -I$/usr/include -I../pthreadcc/src -Wall -Wstrict-prototypes -O2 -fPIC
 LIB_NAME   = libsocketcc.dylib
 LIB_SONAME = libsocketcc.$(MAJ_VER).dylib
 LIB_TARGET = libsocketcc.$(MAJ_VER).$(MIN_VER).dylib
 LD         = g++
-LDFLAGS    = -lpthreadcc -dynamiclib -install_name $(LIB_DIR)/$(LIB_TARGET) -compatibility_version $(MAJ_VER).$(MIN_VER) -current_version $(MAJ_VER).$(MIN_VER)
+LDFLAGS    = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc -L../pthreadcc -lpthreadcc.1.11 -dynamiclib -install_name $(LIB_DIR)/$(LIB_TARGET) -compatibility_version $(MAJ_VER).$(MIN_VER) -current_version $(MAJ_VER).$(MIN_VER)
 CMD_DYLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_SONAME)
 CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
 endif

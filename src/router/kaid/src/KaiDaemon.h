@@ -5,6 +5,7 @@
 
 class CKaiEngine;
 class CConfigFile;
+class CPersistFile;
 
 class Daemon
 {
@@ -16,6 +17,7 @@ class Daemon
 		string				m_sConfig;
 		CKaiEngine			*Engine;
         CConfigFile     	*Conf;
+        CPersistFile	*Persist;
         void        		Start();
         void        		Stop();
 

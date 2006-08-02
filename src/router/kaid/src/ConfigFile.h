@@ -3,21 +3,33 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 using namespace std;
+
+typedef pair <string, struct ConsoleID *> ConsoleIDPair;
+struct ConsoleID {
+	string	Manufacturer;
+	string	ConsoleName;
+};
 
 class CConfigFile {
 private:
 	vector<string>  m_vsFields;
 	vector<string>  m_vsValues;
+	map<string,struct ConsoleID *> m_mConsoles;
     string          m_sFilename;
     void            GetOrbList();
     void            ParseBindings();
+    string		ParseServers(string,string,bool);
+    void			ParseConsoles(string);
 public:
                     CConfigFile(string configFile);
+    string		GetConsoleID(string);
     void            Load();
     
     int             OrbPort;
+	int			OrbDeepPort;
 	int				Verbosity;
 	
 	#ifdef PLATFORM_freebsd
@@ -33,6 +45,11 @@ public:
     string          EngineIP;
     string          EngineDev;
     int             EnginePort;
+	string		DeepBind;
+	string		DeepIP;
+	string		DeepDev;
+	int			DeepPort;
+	bool			UseDeep;
 	int				EnginePAT;
 	unsigned int	LocalDevices;
 	
@@ -40,8 +57,11 @@ public:
 	bool			XBoxHomebrew;
     string          ConfigURL;
     string          OrbList;
-    string          Username;
+    string		DeepResolutionServerList;
+	string          Username;
     string          Password;
+    string		CacheFile;
+    string		ConfigCache;
     int		    	AutoLogin;
 };
 

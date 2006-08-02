@@ -21,7 +21,7 @@
 ################################################################################
 ECHO_SRC = myecho.cpp
 ECHO_TARGET = myecho
-DEAMON_SRC = application.cpp deamon.cpp tcpserver.cpp
+DEAMON_SRC = application.cpp daemon.cpp tcpserver.cpp
 DEAMON_TARGET = mydeamon
 
 ################################################################################
@@ -30,14 +30,6 @@ DEAMON_TARGET = mydeamon
 GCC = gcc
 CFLAGS = -I$/usr/include -Wall -Wstrict-prototypes -O2
 LDFLAGS = -lpthreadcc -lsocketcc
-
-################################################################################
-# Makeup of introduction message.                                              #
-################################################################################
-INFO_LINE =  "===============================================================\n"
-INFO_TITLE = "  myecho : Sample Application that uses the SocketCC library.\nmydeamon : Multi-threaded TCP Server, uses SocketCC and PThreadCC.\n"
-INFO_VER = " Version      : 1.0\n"
-INFO_DEV = " Developed By : CTIE - Monash University\n"
 
 INFO_PROG = $(INFO_LINE)$(INFO_TITLE)$(INFO_LINE)$(INFO_VER)$(INFO_DEV)$(INFO_LINE)
 

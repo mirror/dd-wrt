@@ -1,45 +1,26 @@
-#
-#CC=/home/luis/devel/Kai/buildroot/build_mipsel/staging_dir/bin/mipsel-linux-gcc CXX=/home/luis/devel/Kai/buildroot/build_mipsel/staging_dir/bin/mipsel-linux-g++ CFLAGS=-I/home/luis/devel/Kai/buildroot/build_mipsel/staging_dir/mipsel-linux-uclibc/include CXXFLAGS=/home/luis/devel/Kai/buildroot/build_mipsel/staging_dir/mipsel-linux-uclibc/include/c++ ac_cv_linux_vers=foo ./configure --host=mips --with-pcap=linux
+#CC=/root/buildroot/build_mipsel/staging_dir/bin/mipsel-linux-gcc
 # To compile stuff for the WRT ^^^^^^^^
 #
 #
-VERSION		= 7.0.0.5
-ARCH		= x86
-PLATFORM    	= KaiStation
-OPENWRT		= /opt/openwrt401
-#OPENWRT			= /home/luis/devel/buildroot/build_mipsel/staging_dir
-CC=mipsel-linux-uclibc-gcc
-#CXX=i386-linux-g++-3.4
-#PREFIX=
+VERSION		= 7.0.0.7
+ARCH		= mips
+PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS  = -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\"
-#STATIC		= -static
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Os -pipe -mtune=mips32 -mips32 -funit-at-a-time -Wall -Ipthreadcc/src -Isocketcc/src -L../../libpcap -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\""
-ifneq ($(strip $(OPENWRT)),)
+STATIC		= -static
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../ -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" -Os -pipe -funit-at-a-time -mtune=mips32 -mips32
+
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT -static
-#CFLAGS		+= -I$(OPENWRT)/mipsel-linux-uclibc/include/c++
+CFLAGS		+= -I/opt/3.3.6/mipsel-linux-uclibc/include/c++
+
+CC		= mipsel-linux-gcc
 CXX		= mipsel-linux-g++
 STRIP		= mipsel-linux-strip
 DISTHOST	= root@adm.zbit.pt:/var/www/html/www.zbit.pt/xbox/
-else
-STRIP		= strip
-ifeq ($(PLATFORM),macosx_jaguar)
-CFLAGS		+= -I/sw/include
-endif
-endif
+
 CXXFLAGS	+= $(CFLAGS)
 PWD			= /home/luis/devel/Kai/kaid
-
-ifeq ($(strip $(PLATFORM)),macosx_jaguar)
-BSD		= true
-endif
-ifeq ($(strip $(PLATFORM)),freebsd)
-BSD		= true
-endif
-ifdef BSD
-PRE_CFLAGS  += -DPLATFORM_bsd
-endif
 
 PCAP		= ../../libpcap/pcap.o \
 ../../libpcap/inet.o \
@@ -58,13 +39,8 @@ else
 PCAP	+= ../../libpcap/pcap-linux.o
 endif
 
-ifneq ($(strip $(OPENWRT)),)
 PCAP		+= ../../libpcap/fad-gifc.o
 PRE_CFLAGS	+= -DOPENWRT
-else
-PCAP		+= ../../libpcap/fad-getad.o
-#PCAP        += libpcap/fad-gifc.o
-endif
 
 # Uneeded obj, cutting down size for OPENWRT static bin
 #libpcap/bpf_dump.o
@@ -88,6 +64,7 @@ KaiEngine.cc \
 KaiItem.cc \
 OrbDgramThread.cc \
 OrbStreamThread.cc \
+PersistFile.cc \
 PktSnifferThread.cc \
 StrUtils.cc \
 TimerThread.cc \
@@ -102,6 +79,7 @@ KaiEngine.o \
 KaiItem.o \
 OrbDgramThread.o \
 OrbStreamThread.o \
+PersistFile.o \
 PktSnifferThread.o \
 StrUtils.o \
 TimerThread.o \
@@ -142,7 +120,8 @@ else
 kaid: ${OBJS}
 endif
 	@echo -n "Linking... "
-	${CXX} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${PTCC} ${PCAP} ${SOCC} ${LIBS}
+	@echo -e "CFLAGS = $(CFLAGS)"
+	${CXX} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${PCAP} ${PTCC} ${SOCC} ${LIBS}
 	@echo "Done!"
 
 GENDEPS=${CXX} ${CXXFLAGS} -MM -o $@ $<

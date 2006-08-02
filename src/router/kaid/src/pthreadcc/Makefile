@@ -47,11 +47,12 @@ DEPEND_FILE = $(OBJ_DIR)/.depend
 DEP_FILTER  = sed 's/[a-zA-Z_0-9]*\.o/$(OBJ_DIR)\/&/g'
 MAJ_VER     = 1
 MIN_VER     = 11
-LIB_DIR     = /usr/local/lib
-HEAD_DIR    = /usr/local/include
+LIB_DIR     = /usr/lib
+HEAD_DIR    = /usr/include
 LIB_HEADERS = pthreadcc.h
 PLATFORM    = linux
 PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
+OPENWRT     = /opt/3.3.4
 
 ################################################################################
 # Multiple Platform Support.                                                   #
@@ -70,16 +71,86 @@ PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
 ################################################################################
 # Linux.                                                                       #
 ################################################################################
-CC         = mipsel-linux-g++
-CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -mips32 -mtune=mips32 -funit-at-a-time -pipe -fPIC 
+ifeq ($(PLATFORM), linux)
+ifneq ($(strip $(OPENWRT)),)
+PRE_CFLAGS  += -DOPENWRT
+CFLAGS      += -I$(OPENWRT)/mipsel-linux-uclibc/include/c++ -I$(OPENWRT)/mipsel-linux-uclibc/include-Os -pipe -funit-at-a-time -mtune=mips32 -mips32
+CXX         = $(OPENWRT)/bin/mipsel-linux-g++
+CC			= $(OPENWRT)/bin/mipsel-linux-gcc
+LDFLAGS		= -lpthread -shared
+LD			= $(OPENWRT)/bin/mipsel-linux-ld
+else
+CC         = gcc
+CFLAGS     = -I$/usr/include -Wall -O2 -fPIC
+LD         = gcc
+LDFLAGS    = -lpthread -shared -Wl,-soname,$(LIB_SONAME)
+endif
 LIB_NAME   = libpthreadcc.so
 LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
 LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
-LD         = mipsel-linux-g++
-LDFLAGS    = -lpthread -shared -Wl,-soname,$(LIB_SONAME)
 CMD_DYLINK = /sbin/ldconfig $(LIB_DIR)
 CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
+endif
 
+################################################################################
+# Solaris.                                                                     #
+################################################################################
+ifeq ($(PLATFORM), solaris)
+CC         = cc
+CFLAGS     = -I$/usr/include -XO2 -KPIC
+LIB_NAME   = libpthreadcc.so
+LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
+LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
+LD         = ld
+LDFLAGS    = -G -Bdynamic -z text
+CMD_DYLINK =
+CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
+endif
+
+################################################################################
+# FreeBSD.                                                                     #
+################################################################################
+ifeq ($(PLATFORM), freebsd)
+CC         = gcc
+CFLAGS     = $(SYSTEM_CFLAGS)
+LIB_NAME   = libpthreadcc.so
+LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
+LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
+LD         = gcc
+LDFLAGS    = -shared -Wl,-soname,$(LIB_SONAME)
+CMD_DYLINK =
+CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
+endif
+
+################################################################################
+# MacOS X.1.?.                                                                 #
+################################################################################
+ifeq ($(PLATFORM), macosx_1)
+CC         = g++
+CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -O2 -fPIC -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
+LIB_NAME   = libpthreadcc.dylib
+LIB_SONAME = libpthreadcc.$(MAJ_VER).dylib
+LIB_TARGET = libpthreadcc.$(MAJ_VER).$(MIN_VER).dylib
+LD         = g++ -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc
+LDFLAGS    = -lpthread -dynamiclib -install_name $(LIB_DIR)/$(LIB_TARGET) -compatibility_version $(MAJ_VER).$(MIN_VER) -current_version $(MAJ_VER).$(MIN_VER)
+CMD_DYLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_SONAME)
+CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
+endif
+
+################################################################################
+# MacOS X Jaguar.                                                              #
+################################################################################
+ifeq ($(PLATFORM), macosx_jaguar)
+CC         = g++
+CFLAGS     = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc -I$/usr/include -Wall -Wstrict-prototypes -O2 -fPIC
+LIB_NAME   = libpthreadcc.dylib
+LIB_SONAME = libpthreadcc.$(MAJ_VER).dylib
+LIB_TARGET = libpthreadcc.$(MAJ_VER).$(MIN_VER).dylib
+LD         = g++
+LDFLAGS    = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc -lpthread -dynamiclib -install_name $(LIB_DIR)/$(LIB_TARGET) -compatibility_version $(MAJ_VER).$(MIN_VER) -current_version $(MAJ_VER).$(MIN_VER)
+CMD_DYLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_SONAME)
+CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
+endif
 
 ################################################################################
 # Makeup of introduction message.											   #
