@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -36,43 +36,96 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_list.h,v 1.3 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: net_olsr.h,v 1.1 2005/05/25 20:59:46 kattemat Exp $
  */
 
-#ifndef _LQ_LIST_H
-#define _LQ_LIST_H
 
-struct list_node
+
+#ifndef _NET_OLSR
+#define _NET_OLSR
+
+#include "defs.h"
+#include "process_routes.h"
+#include <arpa/inet.h>
+#include <net/if.h>
+
+struct deny_address_entry
 {
-  struct list_node *next;
-  struct list_node *prev;
-
-  void *data;
+  union olsr_ip_addr        addr;
+  struct deny_address_entry *next;
 };
 
-struct list
+
+/* Output buffer structure */
+
+struct olsr_netbuf
 {
-  struct list_node *head;
-  struct list_node *tail;
+  char *buff;     /* Pointer to the allocated buffer */
+  int if_index;
+  int bufsize;    /* Size of the buffer */
+  int maxsize;    /* Max bytes of payload that can be added to the buffer */
+  int pending;    /* How much data is currently pending in the buffer */
+  int reserved;   /* Plugins can reserve space in buffers */
 };
 
-void list_init(struct list *list);
+void
+init_net(void);
 
-struct list_node *list_get_head(struct list *list);
-struct list_node *list_get_tail(struct list *list);
+int
+net_add_buffer(struct interface *);
 
-struct list_node *list_get_next(struct list_node *node);
-struct list_node *list_get_prev(struct list_node *node);
+int
+net_remove_buffer(struct interface *);
 
-void list_add_head(struct list *list, struct list_node *node);
-void list_add_tail(struct list *list, struct list_node *node);
+int
+net_outbuffer_bytes_left(struct interface *);
 
-void list_add_before(struct list *list, struct list_node *pos_node,
-                     struct list_node *node);
-void list_add_after(struct list *list, struct list_node *pos_node,
-                    struct list_node *node);
+olsr_u16_t
+net_output_pending(struct interface *);
 
-void list_remove(struct list *list, struct list_node *node);
+int
+net_reserve_bufspace(struct interface *, int);
+
+int
+net_outbuffer_push(struct interface *, olsr_u8_t *, olsr_u16_t);
+
+int
+net_outbuffer_push_reserved(struct interface *, olsr_u8_t *, olsr_u16_t);
+
+int
+net_output(struct interface*);
+
+int
+net_sendroute(struct rt_entry *, struct sockaddr *);
+
+int
+olsr_prefix_to_netmask(union olsr_ip_addr *, olsr_u16_t);
+
+olsr_u16_t
+olsr_netmask_to_prefix(union olsr_ip_addr *);
+
+char *
+sockaddr_to_string(struct sockaddr *);
+
+char *
+ip_to_string(olsr_u32_t *);
+
+char *
+ip6_to_string(struct in6_addr *);
+
+char *
+olsr_ip_to_string(union olsr_ip_addr *);
+
+int
+add_ptf(int (*)(char *, int *));
+
+int
+del_ptf(int (*f)(char *, int *));
+
+olsr_bool
+olsr_validate_address(union olsr_ip_addr *);
+
+void
+olsr_add_invalid_address(union olsr_ip_addr *);
 
 #endif
-

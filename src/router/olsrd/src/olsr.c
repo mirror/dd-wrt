@@ -209,7 +209,6 @@ olsr_process_changes()
         }
     }
   
-#ifndef SVEN_OLA
   if (olsr_cnf->debug_level > 0)
     {      
       if (olsr_cnf->debug_level > 2) 
@@ -227,7 +226,6 @@ olsr_process_changes()
       olsr_print_neighbor_table();
       olsr_print_tc_table();
     }
-#endif
 
   for(tmp_pc_list = pcf_list; 
       tmp_pc_list != NULL;

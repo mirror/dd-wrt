@@ -62,9 +62,4 @@ void avl_init(struct avl_tree *, int (*)(void *, void *));
 struct avl_node *avl_find(struct avl_tree *, void *);
 int avl_insert(struct avl_tree *, struct avl_node *);
 
-#ifdef SVEN_OLA
-#define svenola_avl_comp_ipv4(ip1, ip2) \
-  (*(unsigned int *)ip1 == *(unsigned int *)ip2 ? 0 : \
-  *(unsigned int *)ip1 < *(unsigned int *)ip2 ? -1 : +1)
-#endif
 #endif

@@ -71,7 +71,7 @@
 #define	HOPCNT_MAX		32	/* maximum hops number */
 #define	MAXMESSAGESIZE		1500	/* max broadcast size */
 #define UDP_IPV4_HDRSIZE        28
-#define UDP_IPV6_HDRSIZE        62
+#define UDP_IPV6_HDRSIZE        48
 #define MAX_IFS                 16
 
 /* Debug helper macro */
@@ -176,7 +176,6 @@ extern olsr_bool changes;                /* is set if changes occur in MPRS set 
 /* TC empty message sending */
 extern clock_t send_empty_tc;
 
-#ifndef SVEN_OLA
 /*
  *IPC functions
  *These are moved to a plugin soon
@@ -201,5 +200,4 @@ ipc_send_net_info(void);
 int
 ipc_route_send_rtentry(union olsr_ip_addr*, union olsr_ip_addr *, int, int, char *);
 
-#endif
 #endif

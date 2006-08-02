@@ -352,10 +352,8 @@ main(int argc, char *argv[])
 
   /* Initialize the IPC socket */
 
-#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
       ipc_init();
-#endif
 
   /* Initialisation of different tables to be used.*/
   olsr_init_tables();
@@ -467,11 +465,9 @@ olsr_shutdown(int signal)
 
   OLSR_PRINTF(1, "Closing sockets...\n")
 
-#ifndef SVEN_OLA
   /* front-end IPC socket */
   if(olsr_cnf->open_ipc)
     shutdown_ipc();
-#endif
 
   /* OLSR sockets */
   for (ifn = ifnet; ifn; ifn = ifn->int_next) 
@@ -532,11 +528,7 @@ print_usage()
   fprintf(stderr, "An error occured somwhere between your keyboard and your chair!\n"); 
   fprintf(stderr, "usage: olsrd [-f <configfile>] [ -i interface1 interface2 ... ]\n");
   fprintf(stderr, "  [-d <debug_level>] [-ipv6] [-multi <IPv6 multicast address>]\n"); 
-#ifdef SVEN_OLA
-  fprintf(stderr, "  [-bcast <broadcastaddr>] [-delgw] (Note: no -ipc,-dispin,-dispout)\n");
-#else
   fprintf(stderr, "  [-bcast <broadcastaddr>] [-ipc] [-dispin] [-dispout] [-delgw]\n");
-#endif
   fprintf(stderr, "  [-hint <hello interval (secs)>] [-tcint <tc interval (secs)>]\n");
   fprintf(stderr, "  [-midint <mid interval (secs)>] [-hnaint <hna interval (secs)>]\n");
   fprintf(stderr, "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>] \n"); 
@@ -743,7 +735,6 @@ olsr_process_arguments(int argc, char *argv[],
 	}
 
 
-#ifndef SVEN_OLA
       /*
        * Should we display the contents of packages beeing sent?
        */
@@ -772,7 +763,6 @@ olsr_process_arguments(int argc, char *argv[],
 	  cnf->open_ipc = OLSR_TRUE;
 	  continue;
 	}
-#endif
 
       /*
        * IPv6 multicast addr

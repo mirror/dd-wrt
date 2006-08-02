@@ -430,7 +430,6 @@ olsr_time_out_tc_set()
 /**
  *Print the topology table to stdout
  */
-#ifndef SVEN_OLA
 int
 olsr_print_tc_table()
 {
@@ -490,4 +489,3 @@ olsr_print_tc_table()
 
   return 1;
 }
-#endif
