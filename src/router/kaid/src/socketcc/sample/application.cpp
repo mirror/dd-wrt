@@ -1,32 +1,15 @@
-/******************************************************************************/
-/* File: application.cpp                                                      */
-/******************************************************************************/
-/* This source code file is the source file which implements the deamon       */
-/* sample application.  Code in this file parses the command line and creates */
-/* the Deamon class instance which runs the server.                           */
-/******************************************************************************/
-/* Written By: Jason But                                                      */
-/* Copyright:  CTIE - Monash University 2002-3                                */
-/*                                                                            */
-/* Notes:                                                                     */
-/*    Version 1.32 - First inclusion into sample code source base.            */
-/******************************************************************************/
-
-/******************************************************************************/
-/* Standard C Includes.                                                       */
-/******************************************************************************/
 #include <stdio.h>
 #include <syslog.h>
 
 /******************************************************************************/
 /* Include header files for TCPServer and StreamerThread classes.             */
 /******************************************************************************/
-#include "deamon.h"
+#include "daemon.h"
 
 /******************************************************************************/
 /* Default value for the filename containing the configuration information.   */
 /******************************************************************************/
-#define CONFIG_FILE             "deamon.config"
+#define CONFIG_FILE             "kaid.conf"
 
 /******************************************************************************/
 /* int main(int iArgC, char *ppcArgV[])                                       */
@@ -42,14 +25,10 @@
 int
 main(int iArgC, char *ppcArgV[])
 {
-    openlog("my_deamon", LOG_PID, LOG_DAEMON);
+    openlog("kaid", LOG_PID, LOG_DAEMON);
 
     printf("===================================\n");
-    printf("          My Echo Deamon.\n");
-    printf("===================================\n");
-    printf(" Version      : 1.32\n");
-    printf(" Developed By : Jason But\n");
-    printf(" Copyright    : 2001-2003\n");
+    printf("          Kai Daemon v0.1\n");
     printf("===================================\n");
 
     Deamon       cDeamon((iArgC == 1)?CONFIG_FILE:(ppcArgV[1]));
@@ -58,7 +37,7 @@ main(int iArgC, char *ppcArgV[])
     {
         if (iArgC > 2)
         {
-            printf("Error: Illegal number of arguments - Usage:\n\tdeamon [config_file]\n");
+            printf("Error: Illegal number of arguments - Usage:\n\t%s [config_file]\n", ppcArgV[0]);
             printf("===================================\n");
             throw 1;
         }
@@ -67,7 +46,7 @@ main(int iArgC, char *ppcArgV[])
     }
     catch (...)
     {
-        syslog(LOG_CRIT, "ERROR: Abnormal Daemon Termination");
+        syslog(LOG_CRIT, "ERROR: Abnormal Kai Daemon Termination");
     }
 	closelog();
 }

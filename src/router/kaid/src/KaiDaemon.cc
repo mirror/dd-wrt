@@ -11,6 +11,7 @@
 #include "KaiDaemon.h"
 #include "KaiEngine.h"
 #include "ConfigFile.h"
+#include "PersistFile.h"
 
 bool        Daemon::bKillFlag = false;
 bool        Daemon::bRestartFlag = false;
@@ -37,6 +38,7 @@ void Daemon::Start()
 		exit(1);		
 	}
 	Conf->Load();
+	Persist=new CPersistFile(Conf->CacheFile);
 	try
 	{
 		debuglog("KAID", "Kai Engine for "PLATFORM" is starting...");;
@@ -59,12 +61,14 @@ void Daemon::Start()
        	debuglog("KAID", err);
        	throw errAbnormalTermination;
    	}
+   	Engine->Persist=Persist;
 }
 
 void Daemon::Stop()
 {
 	debuglog("KAID", "Kai Engine for "PLATFORM" is stopping...");
 	delete Engine;
+	delete Persist;
 	debuglog("KAID", "Kai Engine for "PLATFORM" has stopped...");
 }
 

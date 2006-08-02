@@ -27,6 +27,7 @@ COrbDgramThread::COrbDgramThread(CKaiEngine *cParent, CConfigFile* cConf)
 	m_cParent->verbositylog(2,"THREAD","Datagram server thread started...");
     m_cConf = cConf;
 	m_cListeningSocket = NULL;
+	m_cDeepListeningSocket = NULL;
 	m_iMyPort = 0;
 	m_iSourcePort = 0;
 	m_bOrbFound = false;
@@ -38,6 +39,8 @@ COrbDgramThread::~COrbDgramThread()
 	m_bTerminate = true;
 	if(m_cListeningSocket)
 		delete m_cListeningSocket;
+	if(m_cDeepListeningSocket)
+		delete m_cDeepListeningSocket;
 }
 
 void COrbDgramThread::RemakeSocket()
@@ -45,8 +48,11 @@ void COrbDgramThread::RemakeSocket()
 	// Destroy if exists
 	if (m_cListeningSocket) delete m_cListeningSocket;
 	m_cListeningSocket=NULL;
+	if (m_cDeepListeningSocket) delete m_cDeepListeningSocket;
+	m_cDeepListeningSocket=NULL;
 	
 	int	iPort = m_cConf->EnginePort;
+	int	iDeepPort = m_cConf->DeepPort;
 
 	// Create Orb listener/worker
 	try
@@ -67,7 +73,27 @@ void COrbDgramThread::RemakeSocket()
 		debuglog("KAID","Failed to bind Engine socket...");
 		exit(1);
 	}
-
+	if(iDeepPort>0)
+	{
+		try
+		{
+			if(m_cConf->DeepIP.empty())
+			{
+				m_cDeepListeningSocket = new UDPServerSocket(iDeepPort);
+			}
+			else
+			{
+				IPAddress cBind;
+				cBind = m_cConf->DeepIP.c_str();
+				m_cDeepListeningSocket = new UDPServerSocket(cBind,iDeepPort);
+			}
+		}
+		catch(...)
+		{
+			debuglog("KAID","Failed to bind deep engine socket...");
+			exit(1);
+		}
+	}
 }
 void COrbDgramThread::Start()
 {
@@ -87,23 +113,54 @@ void *COrbDgramThread::Execute()
     char    	pcBuffer[2048];
 	bool		GamePacket = false;
 	SocketSet   mySet;
+	struct timeval timeout;
+	bool 	bDeep;
 	
-    mySet += (struct SocketBase *)m_cListeningSocket;
 	while( !m_bTerminate && !m_cParent->m_bShuttingDown)
     {
         try
         {
-		 	retval = select((int)mySet + 1, mySet, NULL, NULL, NULL);
+        	// Changed to 1-second timeout to allow clean shutdown - MF
+        	do
+        	{
+        		timeout.tv_sec=1;
+        		timeout.tv_usec=0;
+        		mySet.Clear();
+        		mySet += (struct SocketBase *)m_cListeningSocket;
+				if(m_cConf->UseDeep)
+					mySet += (struct SocketBase *)m_cDeepListeningSocket;
+        		retval = select((int)mySet + 1, mySet, NULL, NULL, &timeout);
+        	} while((retval==0) && (!m_bTerminate));
 			if(retval == -1)
 				continue;
-
+			retval=0;
+			if(m_cConf->UseDeep)
+			{
+				// Check if the deep socket triggered this event
+				timeout.tv_sec=0;
+				timeout.tv_usec=0;
+				mySet.Clear();
+				mySet += (struct SocketBase *)m_cDeepListeningSocket;
+				retval = select((int)mySet+1,mySet,NULL,NULL,&timeout);
+				if(retval>0) // Deep socket has data
+				{
+					iBytesTransferred = m_cDeepListeningSocket->ReceiveDatagram(
+						pcBuffer,sizeof(pcBuffer)-1,m_cIPSource,m_iSourcePort);
+					bDeep=true;
+				}
+			}
+			if(retval==0) // Regular socket has data
+			{
             iBytesTransferred = m_cListeningSocket->ReceiveDatagram(pcBuffer,
                 sizeof(pcBuffer) - 1, m_cIPSource, m_iSourcePort);
-            
+				bDeep=false;
+			}
+			if(retval==-1)
+				continue;
             if(m_bTerminate)
                 return NULL;
-            
-            if(iBytesTransferred > 0) {
+			if(iBytesTransferred > 0)
+			{
 				m_cParent->m_iDownEngineCount += iBytesTransferred;
                 pcBuffer[iBytesTransferred] = 0;
                 m_sRequest = pcBuffer;
@@ -111,17 +168,24 @@ void *COrbDgramThread::Execute()
                 if(Opcode == "!;")
                 {
                 	HandleSpeex(&pcBuffer, iBytesTransferred, m_cIPSource.GetAddressString(), m_iSourcePort);
-                } else {
+			 	} 
+			 	else
+			 	{
 					GamePacket = ( Opcode == "X;" || Opcode == "R;" || Opcode == "p;" || Opcode == "q;" || Opcode == "Y;" || Opcode == "S;");
-					if( GamePacket ) {
+					if( GamePacket )
+					{
 						m_cParent->HandleEthernetFrame((u_char *)pcBuffer + 2,
 							iBytesTransferred - 2, true, m_cIPSource.GetAddressString(), m_iSourcePort);
-					} else {
-						if(m_sRequest != "K;") {
-							HandleOrbDatagram(m_sRequest, m_cIPSource, m_iSourcePort);
+					} 
+					else
+					{
+						if(m_sRequest != "K;")
+						{
+							HandleOrbDatagram(m_sRequest, m_cIPSource, m_iSourcePort, bDeep);
 						}
 					}
-					if( m_sAnswer != "" ) {
+					if( m_sAnswer != "" )
+					{
 						// Empty ?
 					}
 				}
@@ -135,7 +199,53 @@ void *COrbDgramThread::Execute()
     }
 	return NULL;
 }
+void COrbDgramThread::ScanDeepResolutionServers()
+{
+	char sBuffer[2048];
+	vector <string> vsDeepServers;
+	vector <string> vsArgs;
+	int DeepServerPort,retval;
+	unsigned int i;
+	IPAddress DeepServerAddress;
+	struct timeval timeout;
+	SocketSet mySet;
+	
+	sprintf(sBuffer,"KAI_DEEP_RESOLVER_DISCOVER;");
+	
+	try
+	{
+		Tokenize(m_cConf->DeepResolutionServerList,vsDeepServers,";");
+		for(i=0;i<vsDeepServers.size(); i++)
+		{
+			DeepServerAddress=vsDeepServers[i].c_str();
+			m_cDeepListeningSocket->SendDatagram(sBuffer,strlen(sBuffer),DeepServerAddress,m_cConf->OrbDeepPort);
+		}
+   		timeout.tv_sec=5;
+   		timeout.tv_usec=0;
+   		mySet.Clear();
+   		mySet += (struct SocketBase *)m_cDeepListeningSocket;
+   		retval = select((int)mySet + 1, mySet, NULL, NULL, &timeout);
+   		
+   		if(retval>0)
+   		{
+			//TODO retry if we get garbage here or just let it go?
+			i=m_cDeepListeningSocket->ReceiveDatagram(sBuffer,sizeof(sBuffer)-1,DeepServerAddress,DeepServerPort);
+            	sBuffer[i]=0;
 
+            	Tokenize(sBuffer,vsArgs,";");
+            	if(vsArgs[0]=="KAI_DEEP_RESOLVER_DISCOVER")
+            	{
+            		m_cConf->UseDeep=true;
+				m_cMyDeepIP=vsArgs[1].c_str();
+				m_iMyDeepPort=atoi(vsArgs[2].c_str());
+				m_cParent->verbositylog(1,"KAID","Deep resolution enabled");
+            	}
+   		}
+	}
+	catch (...)
+	{
+	}	
+}
 IPAddress& COrbDgramThread::FindNearestOrb()
 {
 	const size_t BUFFER_SIZE = 65535;
@@ -161,11 +271,19 @@ IPAddress& COrbDgramThread::FindNearestOrb()
 			
 			if (m_cConf->EnginePAT==1)
 			{
-				sAux = "KAI_ORBITAL_REGISTER;" + m_cConf->Username + ";0;;0;";
+				sAux = "KAI_ORBITAL_REGISTER;" + m_cConf->Username + ";0;";
 			}
 			else
 			{
-				sAux = "KAI_ORBITAL_REGISTER;" + m_cConf->Username + ";" + Str(iPort) + ";;0;";
+				sAux = "KAI_ORBITAL_REGISTER;" + m_cConf->Username + ";" + Str(iPort) + ";";
+			}
+			if(m_cConf->UseDeep)
+			{
+				sAux+=(string)m_cMyDeepIP.GetAddressString() + ";" + Str(m_iMyDeepPort) + ";";
+			}
+			else
+			{
+				sAux+=";0;";
 			}
             
             string a = pcAddr.GetAddressString(); 
@@ -201,7 +319,7 @@ IPAddress& COrbDgramThread::FindNearestOrb()
 }
 
 void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
-    int srcport)
+    int srcport, bool bDeep)
 {
     // Too small?
     if (dgram.size()<2) return;
@@ -267,7 +385,7 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
 			
 			string Name = theGuy->m_sContactName;
 			RelayDatagram("2;" + m_cParent->m_sCurrentArena + ";" + m_cParent->m_sUICaps + ";",
-				srchost.GetAddressString(), srcport);
+				srchost.GetAddressString(), srcport, theGuy->m_bUseDeep);
 
 			if(vsSegments[1] == "1")
 			{
@@ -309,9 +427,15 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
 				if(!theGuy) {
 					return;
 				}
-				// OK - this guy has responsed - so we can maybe null one of the things
-				// TODO: Deep stuff, if is deep, clear normal ip and port
-				// If normal, clear deep fields
+				// OK - this guy has responsed - set deep flag if it needs to be set
+				if(theGuy->m_bDeepUnknown)
+				{
+					if(!strcmp(srchost.GetAddressString(),theGuy->m_sDeepIP.c_str()))
+						theGuy->m_bUseDeep=true;
+					else
+						theGuy->m_bUseDeep=false;
+					theGuy->m_bDeepUnknown=false;
+				}
 	
 				// OK - this dude is for real.. send the shit back to the client
 				theGuy->m_iLastPing = theGuy->Ping();
@@ -331,6 +455,17 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
 		case '3':
 			{
 				// A client is requesting arena mode ping - just respond
+				CArenaItem *theGuy=m_cParent->FindArenaUser(srchost.GetAddressString(),srcport);
+				bool deep=false;
+				if(theGuy)
+				{
+					if(theGuy->m_bDeepUnknown)
+					{
+						theGuy->m_bDeepUnknown=false;
+						theGuy->m_bUseDeep=bDeep;
+					}
+					deep=theGuy->m_bUseDeep;
+				}
 				m_cParent->m_sReachable = "Yes";
 				string temp; int output;
 				if (m_cParent->m_iArenaStatus == 1) {
@@ -340,7 +475,7 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
 				}
 				temp = "4;" + Str(output) + ";" + Str(m_cParent->m_iArenaMyPlayers) + ";" +
 						m_cParent->m_sUICaps + ";";
-				RelayDatagram(temp, srchost.GetAddressString(), srcport);
+				RelayDatagram(temp, srchost.GetAddressString(), srcport, deep);
 				break;
 			}
 		case '4':
@@ -352,9 +487,15 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
             if(!theGuy) {
                 return;
 			}
-            // OK - this guy has responsed - so we can maybe null one of the things
-            // TODO: Deep stuff, if is deep, clear normal ip and port
-            // If normal, clear deep fields
+			// OK - this guy has responsed - set deep flag if it needs to be set
+			if(theGuy->m_bDeepUnknown)
+			{
+				if(!strcmp(srchost.GetAddressString(),theGuy->m_sDeepIP.c_str()))
+					theGuy->m_bUseDeep=true;
+				else
+					theGuy->m_bUseDeep=false;
+				theGuy->m_bDeepUnknown=false;
+			}
 
             // OK - this dude is for real.. send the shit back to the client
 			theGuy->m_iLastStatus = atoi(vsSegments[1].c_str());
@@ -395,31 +536,38 @@ void COrbDgramThread::HandleOrbDatagram(string dgram, IPAddress& srchost,
 	}
 }
 
-void COrbDgramThread::RelayDatagram(string msg, string sAddr, int iPort)
+void COrbDgramThread::RelayDatagram(string msg, string sAddr, int iPort, bool bDeep)
 {
     if(!m_cListeningSocket) return;
    	m_cParent->m_iUpEngineCount += msg.size();
     IPAddress   cDest;
     cDest = sAddr.c_str();
+	if(bDeep && m_cConf->UseDeep)
+		m_cDeepListeningSocket->SendDatagram(msg.c_str(),msg.size(),cDest,iPort);
+	else
     m_cListeningSocket->SendDatagram(msg.c_str(), msg.size(), cDest, iPort);
 }
 
 void COrbDgramThread::RelayPacket(void *packet, int packet_size, string sAddr,
-	int iPort)
+	int iPort, bool bDeep)
 {
     if(!m_cListeningSocket) return; 
     IPAddress   cDest;
+
     cDest = sAddr.c_str();
     m_cParent->m_iUpEngineCount += packet_size; 
     string a = cDest.GetAddressString();
+	if(bDeep && m_cConf->UseDeep)
+		m_cDeepListeningSocket->SendDatagram(packet,packet_size,cDest,iPort);
+	else
 	m_cListeningSocket->SendDatagram(packet, packet_size, cDest, iPort);
 }
 
 void COrbDgramThread::RelayArenaPacket(void *packet, int packet_size,
-	string sAddr, int iPort)
+	string sAddr, int iPort, bool bDeep)
 {
 	m_cParent->m_iBusyCounter += packet_size;
-	RelayPacket(packet, packet_size, sAddr, iPort);
+	RelayPacket(packet, packet_size, sAddr, iPort, bDeep);
 }
 
 void COrbDgramThread::SendSpeex(void *data, int size, string sAddr, int iPort)
