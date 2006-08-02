@@ -354,7 +354,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype","0x0472")&&
       nvram_match ("cardbus","1"))
     {
-    setRouter ("Linksys WRT WZR-G300N");    
+    setRouter ("Linksys WRT-300N v1");    
     return ROUTER_WRT300N;
     }
   
