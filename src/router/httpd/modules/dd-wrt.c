@@ -1565,12 +1565,27 @@ show_netmode (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
+if (has_mimo())
+{
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
+}
+
+
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
+if (has_mimo())
+{
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
+}
+
 #ifdef HAVE_MADWIFI
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");</script>\n",

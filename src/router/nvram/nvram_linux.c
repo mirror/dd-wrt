@@ -59,6 +59,7 @@ err:
   perror (PATH_DEV_NVRAM);
   return errno;
 }
+
 void
 lock (void)
 {
@@ -92,15 +93,15 @@ nvram_get (const char *name)
   if (nvram_fd < 0)
     if (nvram_init (NULL))
       {
-      //unlock();
-      return NULL;
+	//unlock();
+	return NULL;
       }
   if (count > sizeof (tmp))
     {
       if (!(off = malloc (count)))
-        {
-	//unlock();
-	return NULL;
+	{
+	  //unlock();
+	  return NULL;
 	}
     }
 
@@ -120,7 +121,7 @@ nvram_get (const char *name)
   if (off != (unsigned long *) tmp)
     free (off);
   //unlock();
-  
+
 //fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
   return value;
 }
@@ -134,14 +135,14 @@ nvram_getall (char *buf, int count)
 
   if (nvram_fd < 0)
     if ((ret = nvram_init (NULL)))
-    {
-    //unlock();
-      return ret;
-    }
+      {
+	//unlock();
+	return ret;
+      }
   if (count == 0)
     {
-    //unlock();
-    return 0;
+      //unlock();
+      return 0;
     }
   /* Get all variables */
   *buf = '\0';
@@ -225,16 +226,16 @@ nvram_unset (const char *name)
 {
 //lock();
 //fprintf(stderr,"nvram_unset %s\n",name);
-int v = _nvram_set (name, NULL);
+  int v = _nvram_set (name, NULL);
 //unlock();
-return v;
+  return v;
 }
 
 int
 nvram_commit (void)
 {
 //fprintf(stderr,"nvram_commit \n");
-lock();
+  lock ();
   int ret;
   fprintf (stderr, "nvram_commit(): start\n");
   if (nvram_fd < 0)
@@ -242,7 +243,7 @@ lock();
       if ((ret = nvram_init (NULL)))
 	{
 	  fprintf (stderr, "nvram_commit(): failed\n");
-	  unlock();
+	  unlock ();
 	  return ret;
 	}
     }
@@ -256,7 +257,7 @@ lock();
     }
 
   fprintf (stderr, "nvram_commit(): end\n");
-unlock();
+  unlock ();
   return ret;
 }
 
@@ -354,4 +355,5 @@ nvram2file (char *varname, char *filename)
   free (buf);
   return j;
 }
+
 #include "nvram_generics.h"
