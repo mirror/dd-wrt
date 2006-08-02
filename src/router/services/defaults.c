@@ -682,6 +682,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_gmode", XSTR (GMODE_AUTO), 0},	/* 54g mode */
 #endif
 #else
+  {"wl_nmode",0},
+  {"wl0_nmode",0},
 #ifdef HAVE_SAGAR
   {"wl0_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
