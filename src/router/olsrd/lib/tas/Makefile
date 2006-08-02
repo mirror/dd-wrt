@@ -35,25 +35,30 @@
 # to the project. For more information see the website or contact
 # the copyright holders.
 #
-# $Id: Makefile,v 1.21 2005/05/25 13:50:22 br1 Exp $
+# $Id: Makefile,v 1.4 2005/12/29 19:48:43 tlopatic Exp $
 
 OLSRD_PLUGIN =	true
-PLUGIN_NAME =	olsrd_httpinfo
+PLUGIN_NAME =	olsrd_tas
 PLUGIN_VER =	0.1
 
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
-ifdef ADMIN_INTERFACE
-	CFLAGS += -DADMIN_INTERFACE
+SRCS =		$(wildcard src/*.c src/lua/*.c)
+HDRS =		$(wildcard src/*.h src/lua/*.h)
+
+ifneq ($(OS),win32)
+LIBS +=		-lm
 endif
 
-OBJS += $(TOPDIR)/src/cfgparser/cfgfile_gen.o
+ifneq ($(OS),linux)
+
+default_target install clean: 
+	@echo "*** TAS Plugin only supported on Linux, sorry!"
+
+else
 
 default_target: $(PLUGIN_FULLNAME)
-ifdef ADMIN_INTERFACE
-		@echo 'WARNING - BUILT WITH EXPERIMENTAL ADMIN INTERFACE!'
-endif
 
 $(PLUGIN_FULLNAME): $(OBJS)
 		$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
@@ -64,3 +69,5 @@ install:	$(PLUGIN_FULLNAME)
 
 clean:
 		rm -f $(OBJS) $(SRCS:%.c=%.d) $(PLUGIN_FULLNAME)
+
+endif
