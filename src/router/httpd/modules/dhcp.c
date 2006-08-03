@@ -35,7 +35,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   unsigned long expires;
-  int i = 0;
+  int i;
   int count = 0;
   int macmask;
 
@@ -72,8 +72,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 	      while ((*p = toupper (*p)) != 0)
 		++p;
 	      if ((p = strrchr (ip, '.')) == NULL)
-		continue;
-	      if (!strcmp (mac, "00:00:00:00:00:00"))
 		continue;
 	      if (nvram_match ("maskmac", "1") && macmask)
 		{
@@ -117,8 +115,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		++p;
 	      if ((p = strrchr (ip, '.')) == NULL)
 		continue;
-	      if (!strcmp (mac, "00:00:00:00:00:00"))
-		continue;
 	      if (nvram_match ("maskmac", "1") && macmask)
 		{
 		  mac[0] = 'x';
@@ -137,7 +133,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 			 ((expires == 0) ? "never" : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
-	      ++i;
               ++count;
 	  }
     }
