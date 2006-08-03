@@ -27,7 +27,6 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
-PATH: /home/dd-wrt/DEV/tools
 PATH: /opt/4.1.1/bin/
 PATH: /sbin
 PATH: /usr/sbin
@@ -90,60 +89,57 @@ configure:1850: result: o
 configure:1854: checking whether we are using the GNU C compiler
 configure:1878: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 configure:1884: $? = 0
-configure:1888: test -z 
-			 || test ! -s conftest.err
-configure:1891: $? = 0
-configure:1894: test -s conftest.o
-configure:1897: $? = 0
-configure:1910: result: yes
-configure:1916: checking whether mipsel-linux-uclibc-gcc accepts -g
-configure:1937: mipsel-linux-uclibc-gcc -c -g  conftest.c >&5
-configure:1943: $? = 0
-configure:1947: test -z 
-			 || test ! -s conftest.err
-configure:1950: $? = 0
-configure:1953: test -s conftest.o
-configure:1956: $? = 0
-configure:1967: result: yes
-configure:1984: checking for mipsel-linux-uclibc-gcc option to accept ANSI C
-configure:2054: mipsel-linux-uclibc-gcc  -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:2060: $? = 0
-configure:2064: test -z 
-			 || test ! -s conftest.err
-configure:2067: $? = 0
-configure:2070: test -s conftest.o
-configure:2073: $? = 0
-configure:2091: result: none needed
-configure:2109: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:1887: test -z 			 || test ! -s conftest.err
+configure:1890: $? = 0
+configure:1893: test -s conftest.o
+configure:1896: $? = 0
+configure:1909: result: yes
+configure:1915: checking whether mipsel-linux-uclibc-gcc accepts -g
+configure:1936: mipsel-linux-uclibc-gcc -c -g  conftest.c >&5
+configure:1942: $? = 0
+configure:1945: test -z 			 || test ! -s conftest.err
+configure:1948: $? = 0
+configure:1951: test -s conftest.o
+configure:1954: $? = 0
+configure:1965: result: yes
+configure:1982: checking for mipsel-linux-uclibc-gcc option to accept ANSI C
+configure:2052: mipsel-linux-uclibc-gcc  -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:2058: $? = 0
+configure:2061: test -z 			 || test ! -s conftest.err
+configure:2064: $? = 0
+configure:2067: test -s conftest.o
+configure:2070: $? = 0
+configure:2088: result: none needed
+configure:2106: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:2: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'me'
-configure:2115: $? = 1
+configure:2112: $? = 1
 configure: failed program was:
 | #ifndef __cplusplus
 |   choke me
 | #endif
-configure:2248: checking whether make sets $(MAKE)
-configure:2268: result: yes
-configure:2322: checking build system type
-configure:2340: result: x86_64-unknown-linux-gnu
-configure:2348: checking host system type
-configure:2362: result: mipsel-unknown-linux-gnu
-configure:2575: checking for mipsel-linux-ar
-configure:2601: result: mipsel-linux-uclibc-ar
-configure:2655: checking for mipsel-linux-ranlib
-configure:2681: result: mipsel-linux-uclibc-ranlib
-configure:2735: checking for mipsel-linux-strip
-configure:2761: result: @true
-configure:2815: checking for mipsel-linux-install
-configure:2844: result: no
-configure:2853: checking for install
-configure:2869: found /usr/bin/install
-configure:2880: result: install
-configure:2898: checking how to run the C preprocessor
-configure:2933: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:2939: $? = 0
-configure:2971: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:2242: checking whether make sets $(MAKE)
+configure:2262: result: yes
+configure:2316: checking build system type
+configure:2334: result: x86_64-unknown-linux-gnu
+configure:2342: checking host system type
+configure:2356: result: mipsel-unknown-linux-gnu
+configure:2567: checking for mipsel-linux-ar
+configure:2593: result: mipsel-linux-uclibc-ar
+configure:2647: checking for mipsel-linux-ranlib
+configure:2673: result: mipsel-linux-uclibc-ranlib
+configure:2727: checking for mipsel-linux-strip
+configure:2753: result: @true
+configure:2807: checking for mipsel-linux-install
+configure:2836: result: no
+configure:2845: checking for install
+configure:2861: found /usr/bin/install
+configure:2872: result: install
+configure:2890: checking how to run the C preprocessor
+configure:2925: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:2931: $? = 0
+configure:2963: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:9:28: error: ac_nonexistent.h: No such file or directory
-configure:2977: $? = 1
+configure:2969: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -154,12 +150,12 @@ configure: failed program was:
 | #define PACKAGE_BUGREPORT ""
 | /* end confdefs.h.  */
 | #include <ac_nonexistent.h>
-configure:3016: result: mipsel-linux-uclibc-gcc -E
-configure:3040: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:3046: $? = 0
-configure:3078: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:3008: result: mipsel-linux-uclibc-gcc -E
+configure:3032: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:3038: $? = 0
+configure:3070: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:9:28: error: ac_nonexistent.h: No such file or directory
-configure:3084: $? = 1
+configure:3076: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -170,135 +166,122 @@ configure: failed program was:
 | #define PACKAGE_BUGREPORT ""
 | /* end confdefs.h.  */
 | #include <ac_nonexistent.h>
-configure:3128: checking for egrep
-configure:3138: result: grep -E
-configure:3143: checking for ANSI C header files
-configure:3168: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3174: $? = 0
-configure:3178: test -z 
-			 || test ! -s conftest.err
-configure:3181: $? = 0
-configure:3184: test -s conftest.o
-configure:3187: $? = 0
-configure:3299: result: yes
-configure:3323: checking for sys/types.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for sys/stat.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for stdlib.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for string.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for memory.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for strings.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for inttypes.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for stdint.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3323: checking for unistd.h
-configure:3339: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3345: $? = 0
-configure:3349: test -z 
-			 || test ! -s conftest.err
-configure:3352: $? = 0
-configure:3355: test -s conftest.o
-configure:3358: $? = 0
-configure:3369: result: yes
-configure:3381: checking whether __UCLIBC__ is declared
-configure:3405: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:3411: $? = 0
-configure:3415: test -z 
-			 || test ! -s conftest.err
-configure:3418: $? = 0
-configure:3421: test -s conftest.o
-configure:3424: $? = 0
-configure:3435: result: yes
-configure:3440: result: Using uClibc - login() and logout() probably don't work
-configure:3447: checking for crypt in -lcrypt
-configure:3477: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lcrypt   >&5
-configure:3483: $? = 0
-configure:3487: test -z 
-			 || test ! -s conftest.err
-configure:3490: $? = 0
-configure:3493: test -s conftest
-configure:3496: $? = 0
-configure:3509: result: yes
-configure:3636: checking for deflate in -lz
-configure:3666: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lz   -lcrypt >&5
-configure:3672: $? = 0
-configure:3676: test -z 
-			 || test ! -s conftest.err
-configure:3679: $? = 0
-configure:3682: test -s conftest
-configure:3685: $? = 0
-configure:3698: result: yes
-configure:3713: result: Enabling zlib
-configure:3844: result: Disabling PAM
-configure:3994: result: Using openpty if available
-configure:3996: checking for library containing openpty
-configure:4026: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lz  -lcrypt >&5
-/tmp/ccdMJT8Q.o: In function `main':
+configure:3120: checking for egrep
+configure:3130: result: grep -E
+configure:3135: checking for ANSI C header files
+configure:3160: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3166: $? = 0
+configure:3169: test -z 			 || test ! -s conftest.err
+configure:3172: $? = 0
+configure:3175: test -s conftest.o
+configure:3178: $? = 0
+configure:3290: result: yes
+configure:3314: checking for sys/types.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for sys/stat.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for stdlib.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for string.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for memory.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for strings.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for inttypes.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for stdint.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3314: checking for unistd.h
+configure:3330: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3336: $? = 0
+configure:3339: test -z 			 || test ! -s conftest.err
+configure:3342: $? = 0
+configure:3345: test -s conftest.o
+configure:3348: $? = 0
+configure:3359: result: yes
+configure:3371: checking whether __UCLIBC__ is declared
+configure:3395: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:3401: $? = 0
+configure:3404: test -z 			 || test ! -s conftest.err
+configure:3407: $? = 0
+configure:3410: test -s conftest.o
+configure:3413: $? = 0
+configure:3424: result: yes
+configure:3429: result: Using uClibc - login() and logout() probably don't work
+configure:3436: checking for crypt in -lcrypt
+configure:3466: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lcrypt   >&5
+configure:3472: $? = 0
+configure:3475: test -z 			 || test ! -s conftest.err
+configure:3478: $? = 0
+configure:3481: test -s conftest
+configure:3484: $? = 0
+configure:3497: result: yes
+configure:3623: checking for deflate in -lz
+configure:3653: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lz   -lcrypt >&5
+configure:3659: $? = 0
+configure:3662: test -z 			 || test ! -s conftest.err
+configure:3665: $? = 0
+configure:3668: test -s conftest
+configure:3671: $? = 0
+configure:3684: result: yes
+configure:3699: result: Enabling zlib
+configure:3829: result: Disabling PAM
+configure:3977: result: Using openpty if available
+configure:3979: checking for library containing openpty
+configure:4009: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lz  -lcrypt >&5
+/tmp/ccUIYDhG.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `openpty'
 collect2: ld returned 1 exit status
-configure:4032: $? = 1
+configure:4015: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -335,187 +318,175 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:4081: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil  -lz  -lcrypt >&5
-configure:4087: $? = 0
-configure:4091: test -z 
-			 || test ! -s conftest.err
-configure:4094: $? = 0
-configure:4097: test -s conftest
-configure:4100: $? = 0
-configure:4115: result: -lutil
-configure:4149: result: Enabling syslog
-configure:4333: checking shadow.h usability
-configure:4345: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4351: $? = 0
-configure:4355: test -z 
-			 || test ! -s conftest.err
-configure:4358: $? = 0
-configure:4361: test -s conftest.o
-configure:4364: $? = 0
-configure:4374: result: yes
-configure:4378: checking shadow.h presence
-configure:4388: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4394: $? = 0
-configure:4414: result: yes
-configure:4449: checking for shadow.h
-configure:4456: result: yes
-configure:4469: result: Using shadow passwords if available
-configure:4477: checking for ANSI C header files
-configure:4633: result: yes
-configure:4643: checking for sys/wait.h that is POSIX.1 compatible
-configure:4674: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4680: $? = 0
-configure:4684: test -z 
-			 || test ! -s conftest.err
-configure:4687: $? = 0
-configure:4690: test -s conftest.o
-configure:4693: $? = 0
-configure:4704: result: yes
-configure:4753: checking fcntl.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking fcntl.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for fcntl.h
-configure:4876: result: yes
-configure:4753: checking limits.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking limits.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for limits.h
-configure:4876: result: yes
-configure:4753: checking netinet/in.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking netinet/in.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for netinet/in.h
-configure:4876: result: yes
-configure:4753: checking netinet/tcp.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking netinet/tcp.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for netinet/tcp.h
-configure:4876: result: yes
-configure:4744: checking for stdlib.h
-configure:4749: result: yes
-configure:4744: checking for string.h
-configure:4749: result: yes
-configure:4753: checking sys/socket.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking sys/socket.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for sys/socket.h
-configure:4876: result: yes
-configure:4753: checking sys/time.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking sys/time.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for sys/time.h
-configure:4876: result: yes
-configure:4753: checking termios.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking termios.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for termios.h
-configure:4876: result: yes
-configure:4744: checking for unistd.h
-configure:4749: result: yes
-configure:4753: checking crypt.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking crypt.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for crypt.h
-configure:4876: result: yes
-configure:4753: checking pty.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking pty.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for pty.h
-configure:4876: result: yes
-configure:4753: checking ioctl.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4063: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil  -lz  -lcrypt >&5
+configure:4069: $? = 0
+configure:4072: test -z 			 || test ! -s conftest.err
+configure:4075: $? = 0
+configure:4078: test -s conftest
+configure:4081: $? = 0
+configure:4096: result: -lutil
+configure:4130: result: Enabling syslog
+configure:4313: checking shadow.h usability
+configure:4325: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4331: $? = 0
+configure:4334: test -z 			 || test ! -s conftest.err
+configure:4337: $? = 0
+configure:4340: test -s conftest.o
+configure:4343: $? = 0
+configure:4353: result: yes
+configure:4357: checking shadow.h presence
+configure:4367: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4373: $? = 0
+configure:4393: result: yes
+configure:4428: checking for shadow.h
+configure:4435: result: yes
+configure:4448: result: Using shadow passwords if available
+configure:4456: checking for ANSI C header files
+configure:4611: result: yes
+configure:4621: checking for sys/wait.h that is POSIX.1 compatible
+configure:4652: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4658: $? = 0
+configure:4661: test -z 			 || test ! -s conftest.err
+configure:4664: $? = 0
+configure:4667: test -s conftest.o
+configure:4670: $? = 0
+configure:4681: result: yes
+configure:4730: checking fcntl.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking fcntl.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for fcntl.h
+configure:4852: result: yes
+configure:4730: checking limits.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking limits.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for limits.h
+configure:4852: result: yes
+configure:4730: checking netinet/in.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking netinet/in.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for netinet/in.h
+configure:4852: result: yes
+configure:4730: checking netinet/tcp.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking netinet/tcp.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for netinet/tcp.h
+configure:4852: result: yes
+configure:4721: checking for stdlib.h
+configure:4726: result: yes
+configure:4721: checking for string.h
+configure:4726: result: yes
+configure:4730: checking sys/socket.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking sys/socket.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for sys/socket.h
+configure:4852: result: yes
+configure:4730: checking sys/time.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking sys/time.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for sys/time.h
+configure:4852: result: yes
+configure:4730: checking termios.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking termios.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for termios.h
+configure:4852: result: yes
+configure:4721: checking for unistd.h
+configure:4726: result: yes
+configure:4730: checking crypt.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking crypt.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for crypt.h
+configure:4852: result: yes
+configure:4730: checking pty.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking pty.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for pty.h
+configure:4852: result: yes
+configure:4730: checking ioctl.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:71:19: error: ioctl.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -588,11 +559,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <ioctl.h>
-configure:4794: result: no
-configure:4798: checking ioctl.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking ioctl.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:37:19: error: ioctl.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -631,13 +602,13 @@ configure: failed program was:
 | #define HAVE_PTY_H 1
 | /* end confdefs.h.  */
 | #include <ioctl.h>
-configure:4834: result: no
-configure:4869: checking for ioctl.h
-configure:4876: result: no
-configure:4753: checking libutil.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for ioctl.h
+configure:4852: result: no
+configure:4730: checking libutil.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:71:21: error: libutil.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -710,11 +681,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <libutil.h>
-configure:4794: result: no
-configure:4798: checking libutil.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking libutil.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:37:21: error: libutil.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -753,30 +724,29 @@ configure: failed program was:
 | #define HAVE_PTY_H 1
 | /* end confdefs.h.  */
 | #include <libutil.h>
-configure:4834: result: no
-configure:4869: checking for libutil.h
-configure:4876: result: no
-configure:4753: checking libgen.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking libgen.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for libgen.h
-configure:4876: result: yes
-configure:4744: checking for inttypes.h
-configure:4749: result: yes
-configure:4753: checking stropts.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for libutil.h
+configure:4852: result: no
+configure:4730: checking libgen.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking libgen.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for libgen.h
+configure:4852: result: yes
+configure:4721: checking for inttypes.h
+configure:4726: result: yes
+configure:4730: checking stropts.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:73:21: error: stropts.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -851,11 +821,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <stropts.h>
-configure:4794: result: no
-configure:4798: checking stropts.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking stropts.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:39:21: error: stropts.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -896,28 +866,27 @@ configure: failed program was:
 | #define HAVE_INTTYPES_H 1
 | /* end confdefs.h.  */
 | #include <stropts.h>
-configure:4834: result: no
-configure:4869: checking for stropts.h
-configure:4876: result: no
-configure:4753: checking utmp.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking utmp.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for utmp.h
-configure:4876: result: yes
-configure:4753: checking utmpx.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for stropts.h
+configure:4852: result: no
+configure:4730: checking utmp.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking utmp.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for utmp.h
+configure:4852: result: yes
+configure:4730: checking utmpx.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:74:19: error: utmpx.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -993,11 +962,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <utmpx.h>
-configure:4794: result: no
-configure:4798: checking utmpx.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking utmpx.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:40:19: error: utmpx.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1039,43 +1008,41 @@ configure: failed program was:
 | #define HAVE_UTMP_H 1
 | /* end confdefs.h.  */
 | #include <utmpx.h>
-configure:4834: result: no
-configure:4869: checking for utmpx.h
-configure:4876: result: no
-configure:4753: checking lastlog.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking lastlog.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for lastlog.h
-configure:4876: result: yes
-configure:4753: checking paths.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking paths.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for paths.h
-configure:4876: result: yes
-configure:4753: checking util.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for utmpx.h
+configure:4852: result: no
+configure:4730: checking lastlog.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking lastlog.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for lastlog.h
+configure:4852: result: yes
+configure:4730: checking paths.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking paths.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for paths.h
+configure:4852: result: yes
+configure:4730: checking util.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:76:18: error: util.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1153,11 +1120,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <util.h>
-configure:4794: result: no
-configure:4798: checking util.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking util.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:42:18: error: util.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1201,28 +1168,27 @@ configure: failed program was:
 | #define HAVE_PATHS_H 1
 | /* end confdefs.h.  */
 | #include <util.h>
-configure:4834: result: no
-configure:4869: checking for util.h
-configure:4876: result: no
-configure:4753: checking netdb.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking netdb.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for netdb.h
-configure:4876: result: yes
-configure:4753: checking security/pam_appl.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for util.h
+configure:4852: result: no
+configure:4730: checking netdb.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking netdb.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for netdb.h
+configure:4852: result: yes
+configure:4730: checking security/pam_appl.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:77:31: error: security/pam_appl.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1301,11 +1267,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <security/pam_appl.h>
-configure:4794: result: no
-configure:4798: checking security/pam_appl.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking security/pam_appl.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:43:31: error: security/pam_appl.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1350,13 +1316,13 @@ configure: failed program was:
 | #define HAVE_NETDB_H 1
 | /* end confdefs.h.  */
 | #include <security/pam_appl.h>
-configure:4834: result: no
-configure:4869: checking for security/pam_appl.h
-configure:4876: result: no
-configure:4753: checking pam/pam_appl.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for security/pam_appl.h
+configure:4852: result: no
+configure:4730: checking pam/pam_appl.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:77:26: error: pam/pam_appl.h: No such file or directory
-configure:4771: $? = 1
+configure:4748: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1435,11 +1401,11 @@ configure: failed program was:
 | # include <unistd.h>
 | #endif
 | #include <pam/pam_appl.h>
-configure:4794: result: no
-configure:4798: checking pam/pam_appl.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4770: result: no
+configure:4774: checking pam/pam_appl.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:43:26: error: pam/pam_appl.h: No such file or directory
-configure:4814: $? = 1
+configure:4790: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1484,94 +1450,86 @@ configure: failed program was:
 | #define HAVE_NETDB_H 1
 | /* end confdefs.h.  */
 | #include <pam/pam_appl.h>
-configure:4834: result: no
-configure:4869: checking for pam/pam_appl.h
-configure:4876: result: no
-configure:4753: checking netinet/in_systm.h usability
-configure:4765: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4771: $? = 0
-configure:4775: test -z 
-			 || test ! -s conftest.err
-configure:4778: $? = 0
-configure:4781: test -s conftest.o
-configure:4784: $? = 0
-configure:4794: result: yes
-configure:4798: checking netinet/in_systm.h presence
-configure:4808: mipsel-linux-uclibc-gcc -E  conftest.c
-configure:4814: $? = 0
-configure:4834: result: yes
-configure:4869: checking for netinet/in_systm.h
-configure:4876: result: yes
-configure:4891: checking for an ANSI C-conforming const
-configure:4958: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:4964: $? = 0
-configure:4968: test -z 
-			 || test ! -s conftest.err
-configure:4971: $? = 0
-configure:4974: test -s conftest.o
-configure:4977: $? = 0
-configure:4988: result: yes
-configure:4998: checking for uid_t in sys/types.h
-configure:5021: result: yes
-configure:5036: checking for mode_t
-configure:5060: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5066: $? = 0
-configure:5070: test -z 
-			 || test ! -s conftest.err
-configure:5073: $? = 0
-configure:5076: test -s conftest.o
-configure:5079: $? = 0
-configure:5090: result: yes
-configure:5102: checking for pid_t
-configure:5126: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5132: $? = 0
-configure:5136: test -z 
-			 || test ! -s conftest.err
-configure:5139: $? = 0
-configure:5142: test -s conftest.o
-configure:5145: $? = 0
-configure:5156: result: yes
-configure:5168: checking for size_t
-configure:5192: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5198: $? = 0
-configure:5202: test -z 
-			 || test ! -s conftest.err
-configure:5205: $? = 0
-configure:5208: test -s conftest.o
-configure:5211: $? = 0
-configure:5222: result: yes
-configure:5234: checking whether time.h and sys/time.h may both be included
-configure:5259: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5265: $? = 0
-configure:5269: test -z 
-			 || test ! -s conftest.err
-configure:5272: $? = 0
-configure:5275: test -s conftest.o
-configure:5278: $? = 0
-configure:5289: result: yes
-configure:5300: checking for uint16_t
-configure:5324: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5330: $? = 0
-configure:5334: test -z 
-			 || test ! -s conftest.err
-configure:5337: $? = 0
-configure:5340: test -s conftest.o
-configure:5343: $? = 0
-configure:5354: result: yes
-configure:5364: checking for u_int16_t
-configure:5388: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5394: $? = 0
-configure:5398: test -z 
-			 || test ! -s conftest.err
-configure:5401: $? = 0
-configure:5404: test -s conftest.o
-configure:5407: $? = 0
-configure:5418: result: yes
-configure:5428: checking for struct sockaddr_storage
-configure:5452: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4810: result: no
+configure:4845: checking for pam/pam_appl.h
+configure:4852: result: no
+configure:4730: checking netinet/in_systm.h usability
+configure:4742: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4748: $? = 0
+configure:4751: test -z 			 || test ! -s conftest.err
+configure:4754: $? = 0
+configure:4757: test -s conftest.o
+configure:4760: $? = 0
+configure:4770: result: yes
+configure:4774: checking netinet/in_systm.h presence
+configure:4784: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:4790: $? = 0
+configure:4810: result: yes
+configure:4845: checking for netinet/in_systm.h
+configure:4852: result: yes
+configure:4867: checking for an ANSI C-conforming const
+configure:4934: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:4940: $? = 0
+configure:4943: test -z 			 || test ! -s conftest.err
+configure:4946: $? = 0
+configure:4949: test -s conftest.o
+configure:4952: $? = 0
+configure:4963: result: yes
+configure:4973: checking for uid_t in sys/types.h
+configure:4996: result: yes
+configure:5011: checking for mode_t
+configure:5035: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5041: $? = 0
+configure:5044: test -z 			 || test ! -s conftest.err
+configure:5047: $? = 0
+configure:5050: test -s conftest.o
+configure:5053: $? = 0
+configure:5064: result: yes
+configure:5076: checking for pid_t
+configure:5100: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5106: $? = 0
+configure:5109: test -z 			 || test ! -s conftest.err
+configure:5112: $? = 0
+configure:5115: test -s conftest.o
+configure:5118: $? = 0
+configure:5129: result: yes
+configure:5141: checking for size_t
+configure:5165: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5171: $? = 0
+configure:5174: test -z 			 || test ! -s conftest.err
+configure:5177: $? = 0
+configure:5180: test -s conftest.o
+configure:5183: $? = 0
+configure:5194: result: yes
+configure:5206: checking whether time.h and sys/time.h may both be included
+configure:5231: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5237: $? = 0
+configure:5240: test -z 			 || test ! -s conftest.err
+configure:5243: $? = 0
+configure:5246: test -s conftest.o
+configure:5249: $? = 0
+configure:5260: result: yes
+configure:5271: checking for uint16_t
+configure:5295: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5301: $? = 0
+configure:5304: test -z 			 || test ! -s conftest.err
+configure:5307: $? = 0
+configure:5310: test -s conftest.o
+configure:5313: $? = 0
+configure:5324: result: yes
+configure:5334: checking for u_int16_t
+configure:5358: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5364: $? = 0
+configure:5367: test -z 			 || test ! -s conftest.err
+configure:5370: $? = 0
+configure:5373: test -s conftest.o
+configure:5376: $? = 0
+configure:5387: result: yes
+configure:5397: checking for struct sockaddr_storage
+configure:5421: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:86: error: invalid application of 'sizeof' to incomplete type 'struct sockaddr_storage' 
-configure:5458: $? = 1
+configure:5427: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1663,102 +1621,92 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:5482: result: no
-configure:5493: checking for socklen_t
-configure:5519: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5525: $? = 0
-configure:5529: test -z 
-			 || test ! -s conftest.err
-configure:5532: $? = 0
-configure:5535: test -s conftest.o
-configure:5538: $? = 0
-configure:5549: result: yes
-configure:5644: checking for struct sockaddr_storage
-configure:5669: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5675: $? = 0
-configure:5679: test -z 
-			 || test ! -s conftest.err
-configure:5682: $? = 0
-configure:5685: test -s conftest.o
-configure:5688: $? = 0
-configure:5701: result: yes
-configure:5710: checking for struct sockaddr_in6
-configure:5735: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5741: $? = 0
-configure:5745: test -z 
-			 || test ! -s conftest.err
-configure:5748: $? = 0
-configure:5751: test -s conftest.o
-configure:5754: $? = 0
-configure:5767: result: yes
-configure:5777: checking for struct in6_addr
-configure:5802: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5808: $? = 0
-configure:5812: test -z 
-			 || test ! -s conftest.err
-configure:5815: $? = 0
-configure:5818: test -s conftest.o
-configure:5821: $? = 0
-configure:5834: result: yes
-configure:5844: checking for struct addrinfo
-configure:5870: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:5876: $? = 0
-configure:5880: test -z 
-			 || test ! -s conftest.err
-configure:5883: $? = 0
-configure:5886: test -s conftest.o
-configure:5889: $? = 0
-configure:5902: result: yes
-configure:5918: checking for gai_strerror
-configure:5975: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:5981: $? = 0
-configure:5985: test -z 
-			 || test ! -s conftest.err
-configure:5988: $? = 0
-configure:5991: test -s conftest
-configure:5994: $? = 0
-configure:6006: result: yes
-configure:6041: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5450: result: no
+configure:5461: checking for socklen_t
+configure:5487: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5493: $? = 0
+configure:5496: test -z 			 || test ! -s conftest.err
+configure:5499: $? = 0
+configure:5502: test -s conftest.o
+configure:5505: $? = 0
+configure:5516: result: yes
+configure:5610: checking for struct sockaddr_storage
+configure:5635: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5641: $? = 0
+configure:5644: test -z 			 || test ! -s conftest.err
+configure:5647: $? = 0
+configure:5650: test -s conftest.o
+configure:5653: $? = 0
+configure:5666: result: yes
+configure:5675: checking for struct sockaddr_in6
+configure:5700: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5706: $? = 0
+configure:5709: test -z 			 || test ! -s conftest.err
+configure:5712: $? = 0
+configure:5715: test -s conftest.o
+configure:5718: $? = 0
+configure:5731: result: yes
+configure:5741: checking for struct in6_addr
+configure:5766: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5772: $? = 0
+configure:5775: test -z 			 || test ! -s conftest.err
+configure:5778: $? = 0
+configure:5781: test -s conftest.o
+configure:5784: $? = 0
+configure:5797: result: yes
+configure:5807: checking for struct addrinfo
+configure:5833: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:5839: $? = 0
+configure:5842: test -z 			 || test ! -s conftest.err
+configure:5845: $? = 0
+configure:5848: test -s conftest.o
+configure:5851: $? = 0
+configure:5864: result: yes
+configure:5880: checking for gai_strerror
+configure:5937: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:5943: $? = 0
+configure:5946: test -z 			 || test ! -s conftest.err
+configure:5949: $? = 0
+configure:5952: test -s conftest
+configure:5955: $? = 0
+configure:5967: result: yes
+configure:6002: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:65: warning: assignment discards qualifiers from pointer target type
-configure:6047: $? = 0
-configure:6051: test -z 
-			 || test ! -s conftest.err
-configure:6054: $? = 0
-configure:6057: test -s conftest.o
-configure:6060: $? = 0
-configure:6080: checking for struct utmp.ut_host
-configure:6109: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6115: $? = 0
-configure:6119: test -z 
-			 || test ! -s conftest.err
-configure:6122: $? = 0
-configure:6125: test -s conftest.o
-configure:6128: $? = 0
-configure:6191: result: yes
-configure:6201: checking for struct utmp.ut_pid
-configure:6230: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6236: $? = 0
-configure:6240: test -z 
-			 || test ! -s conftest.err
-configure:6243: $? = 0
-configure:6246: test -s conftest.o
-configure:6249: $? = 0
-configure:6312: result: yes
-configure:6322: checking for struct utmp.ut_type
-configure:6351: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6357: $? = 0
-configure:6361: test -z 
-			 || test ! -s conftest.err
-configure:6364: $? = 0
-configure:6367: test -s conftest.o
-configure:6370: $? = 0
-configure:6433: result: yes
-configure:6443: checking for struct utmp.ut_tv
-configure:6472: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6008: $? = 0
+configure:6011: test -z 			 || test ! -s conftest.err
+configure:6014: $? = 0
+configure:6017: test -s conftest.o
+configure:6020: $? = 0
+configure:6040: checking for struct utmp.ut_host
+configure:6069: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6075: $? = 0
+configure:6078: test -z 			 || test ! -s conftest.err
+configure:6081: $? = 0
+configure:6084: test -s conftest.o
+configure:6087: $? = 0
+configure:6149: result: yes
+configure:6159: checking for struct utmp.ut_pid
+configure:6188: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6194: $? = 0
+configure:6197: test -z 			 || test ! -s conftest.err
+configure:6200: $? = 0
+configure:6203: test -s conftest.o
+configure:6206: $? = 0
+configure:6268: result: yes
+configure:6278: checking for struct utmp.ut_type
+configure:6307: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6313: $? = 0
+configure:6316: test -z 			 || test ! -s conftest.err
+configure:6319: $? = 0
+configure:6322: test -s conftest.o
+configure:6325: $? = 0
+configure:6387: result: yes
+configure:6397: checking for struct utmp.ut_tv
+configure:6426: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:68: error: used struct type value where scalar is required
-configure:6478: $? = 1
+configure:6432: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1832,46 +1780,42 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:6522: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6528: $? = 0
-configure:6532: test -z 
-			 || test ! -s conftest.err
-configure:6535: $? = 0
-configure:6538: test -s conftest.o
-configure:6541: $? = 0
-configure:6554: result: yes
-configure:6564: checking for struct utmp.ut_id
-configure:6593: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6599: $? = 0
-configure:6603: test -z 
-			 || test ! -s conftest.err
-configure:6606: $? = 0
-configure:6609: test -s conftest.o
-configure:6612: $? = 0
-configure:6675: result: yes
-configure:6685: checking for struct utmp.ut_addr
-configure:6714: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6720: $? = 0
-configure:6724: test -z 
-			 || test ! -s conftest.err
-configure:6727: $? = 0
-configure:6730: test -s conftest.o
-configure:6733: $? = 0
-configure:6796: result: yes
-configure:6806: checking for struct utmp.ut_addr_v6
-configure:6835: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:6841: $? = 0
-configure:6845: test -z 
-			 || test ! -s conftest.err
-configure:6848: $? = 0
-configure:6851: test -s conftest.o
-configure:6854: $? = 0
-configure:6917: result: yes
-configure:6927: checking for struct utmp.ut_exit
-configure:6956: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6475: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6481: $? = 0
+configure:6484: test -z 			 || test ! -s conftest.err
+configure:6487: $? = 0
+configure:6490: test -s conftest.o
+configure:6493: $? = 0
+configure:6506: result: yes
+configure:6516: checking for struct utmp.ut_id
+configure:6545: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6551: $? = 0
+configure:6554: test -z 			 || test ! -s conftest.err
+configure:6557: $? = 0
+configure:6560: test -s conftest.o
+configure:6563: $? = 0
+configure:6625: result: yes
+configure:6635: checking for struct utmp.ut_addr
+configure:6664: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6670: $? = 0
+configure:6673: test -z 			 || test ! -s conftest.err
+configure:6676: $? = 0
+configure:6679: test -s conftest.o
+configure:6682: $? = 0
+configure:6744: result: yes
+configure:6754: checking for struct utmp.ut_addr_v6
+configure:6783: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6789: $? = 0
+configure:6792: test -z 			 || test ! -s conftest.err
+configure:6795: $? = 0
+configure:6798: test -s conftest.o
+configure:6801: $? = 0
+configure:6863: result: yes
+configure:6873: checking for struct utmp.ut_exit
+configure:6902: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:72: error: used struct type value where scalar is required
-configure:6962: $? = 1
+configure:6908: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -1949,28 +1893,26 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7006: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:7012: $? = 0
-configure:7016: test -z 
-			 || test ! -s conftest.err
-configure:7019: $? = 0
-configure:7022: test -s conftest.o
-configure:7025: $? = 0
-configure:7038: result: yes
-configure:7048: checking for struct utmp.ut_time
-configure:7077: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:7083: $? = 0
-configure:7087: test -z 
-			 || test ! -s conftest.err
-configure:7090: $? = 0
-configure:7093: test -s conftest.o
-configure:7096: $? = 0
-configure:7159: result: yes
-configure:7171: checking for struct utmpx.ut_host
-configure:7201: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6951: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:6957: $? = 0
+configure:6960: test -z 			 || test ! -s conftest.err
+configure:6963: $? = 0
+configure:6966: test -s conftest.o
+configure:6969: $? = 0
+configure:6982: result: yes
+configure:6992: checking for struct utmp.ut_time
+configure:7021: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7027: $? = 0
+configure:7030: test -z 			 || test ! -s conftest.err
+configure:7033: $? = 0
+configure:7036: test -s conftest.o
+configure:7039: $? = 0
+configure:7101: result: yes
+configure:7113: checking for struct utmpx.ut_host
+configure:7143: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7207: $? = 1
+configure:7149: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2051,10 +1993,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7252: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7193: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7258: $? = 1
+configure:7199: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2135,12 +2077,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7284: result: no
-configure:7294: checking for struct utmpx.ut_syslen
-configure:7324: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7224: result: no
+configure:7234: checking for struct utmpx.ut_syslen
+configure:7264: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7330: $? = 1
+configure:7270: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2221,10 +2163,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7375: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7314: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7381: $? = 1
+configure:7320: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2305,12 +2247,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7407: result: no
-configure:7417: checking for struct utmpx.ut_type
-configure:7447: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7345: result: no
+configure:7355: checking for struct utmpx.ut_type
+configure:7385: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7453: $? = 1
+configure:7391: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2391,10 +2333,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7498: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7435: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7504: $? = 1
+configure:7441: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2475,12 +2417,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7530: result: no
-configure:7540: checking for struct utmpx.ut_id
-configure:7570: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7466: result: no
+configure:7476: checking for struct utmpx.ut_id
+configure:7506: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7576: $? = 1
+configure:7512: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2561,10 +2503,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7621: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7556: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7627: $? = 1
+configure:7562: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2645,12 +2587,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7653: result: no
-configure:7663: checking for struct utmpx.ut_addr
-configure:7693: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7587: result: no
+configure:7597: checking for struct utmpx.ut_addr
+configure:7627: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7699: $? = 1
+configure:7633: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2731,10 +2673,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7744: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7677: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7750: $? = 1
+configure:7683: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2815,12 +2757,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7776: result: no
-configure:7786: checking for struct utmpx.ut_addr_v6
-configure:7816: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7708: result: no
+configure:7718: checking for struct utmpx.ut_addr_v6
+configure:7748: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7822: $? = 1
+configure:7754: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2901,10 +2843,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7867: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7798: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7873: $? = 1
+configure:7804: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -2985,12 +2927,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7899: result: no
-configure:7909: checking for struct utmpx.ut_time
-configure:7939: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7829: result: no
+configure:7839: checking for struct utmpx.ut_time
+configure:7869: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7945: $? = 1
+configure:7875: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3071,10 +3013,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7990: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7919: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:7996: $? = 1
+configure:7925: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3155,12 +3097,12 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8022: result: no
-configure:8032: checking for struct utmpx.ut_tv
-configure:8062: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:7950: result: no
+configure:7960: checking for struct utmpx.ut_tv
+configure:7990: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:8068: $? = 1
+configure:7996: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3241,10 +3183,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8113: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:8040: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:74: error: storage size of 'ac_aggr' isn't known
-configure:8119: $? = 1
+configure:8046: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3325,21 +3267,20 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8145: result: no
-configure:8155: checking for struct sockaddr_storage.ss_family
-configure:8185: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:8191: $? = 0
-configure:8195: test -z 
-			 || test ! -s conftest.err
-configure:8198: $? = 0
-configure:8201: test -s conftest.o
-configure:8204: $? = 0
-configure:8268: result: yes
-configure:8278: checking for struct sockadd_storage.__family
-configure:8308: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:8071: result: no
+configure:8081: checking for struct sockaddr_storage.ss_family
+configure:8111: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:8117: $? = 0
+configure:8120: test -z 			 || test ! -s conftest.err
+configure:8123: $? = 0
+configure:8126: test -s conftest.o
+configure:8129: $? = 0
+configure:8192: result: yes
+configure:8202: checking for struct sockadd_storage.__family
+configure:8232: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
-configure:8314: $? = 1
+configure:8238: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3421,10 +3362,10 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8359: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:8282: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
-configure:8365: $? = 1
+configure:8288: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3506,77 +3447,70 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8391: result: no
-configure:8412: checking for endutent
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8412: checking for getutent
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8412: checking for getutid
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8412: checking for getutline
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8412: checking for pututline
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8412: checking for setutent
-configure:8469: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8475: $? = 0
-configure:8479: test -z 
-			 || test ! -s conftest.err
-configure:8482: $? = 0
-configure:8485: test -s conftest
-configure:8488: $? = 0
-configure:8500: result: yes
-configure:8514: checking for utmpname
-configure:8571: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8577: $? = 0
-configure:8581: test -z 
-			 || test ! -s conftest.err
-configure:8584: $? = 0
-configure:8587: test -s conftest
-configure:8590: $? = 0
-configure:8602: result: yes
-configure:8620: checking for endutxent
-configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccXSpEsi.o: In function `main':
+configure:8313: result: no
+configure:8334: checking for endutent
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8334: checking for getutent
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8334: checking for getutid
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8334: checking for getutline
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8334: checking for pututline
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8334: checking for setutent
+configure:8391: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8397: $? = 0
+configure:8400: test -z 			 || test ! -s conftest.err
+configure:8403: $? = 0
+configure:8406: test -s conftest
+configure:8409: $? = 0
+configure:8421: result: yes
+configure:8435: checking for utmpname
+configure:8492: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8498: $? = 0
+configure:8501: test -z 			 || test ! -s conftest.err
+configure:8504: $? = 0
+configure:8507: test -s conftest
+configure:8510: $? = 0
+configure:8522: result: yes
+configure:8540: checking for endutxent
+configure:8597: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccKBNtca.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `endutxent'
-/tmp/ccXSpEsi.o:(.data.rel+0x0): undefined reference to `endutxent'
+/tmp/ccKBNtca.o:(.data.rel+0x0): undefined reference to `endutxent'
 collect2: ld returned 1 exit status
-configure:8683: $? = 1
+configure:8603: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3692,14 +3626,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8708: result: no
-configure:8620: checking for getutxent
-configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cc6dIq6j.o: In function `main':
+configure:8627: result: no
+configure:8540: checking for getutxent
+configure:8597: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccLKYH8d.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxent'
-/tmp/cc6dIq6j.o:(.data.rel+0x0): undefined reference to `getutxent'
+/tmp/ccLKYH8d.o:(.data.rel+0x0): undefined reference to `getutxent'
 collect2: ld returned 1 exit status
-configure:8683: $? = 1
+configure:8603: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3815,14 +3749,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8708: result: no
-configure:8620: checking for getutxid
-configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccItUqcq.o: In function `main':
+configure:8627: result: no
+configure:8540: checking for getutxid
+configure:8597: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccpH60pk.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxid'
-/tmp/ccItUqcq.o:(.data.rel+0x0): undefined reference to `getutxid'
+/tmp/ccpH60pk.o:(.data.rel+0x0): undefined reference to `getutxid'
 collect2: ld returned 1 exit status
-configure:8683: $? = 1
+configure:8603: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -3938,14 +3872,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8708: result: no
-configure:8620: checking for getutxline
-configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cc2FZz7t.o: In function `main':
+configure:8627: result: no
+configure:8540: checking for getutxline
+configure:8597: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccWhJUBc.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxline'
-/tmp/cc2FZz7t.o:(.data.rel+0x0): undefined reference to `getutxline'
+/tmp/ccWhJUBc.o:(.data.rel+0x0): undefined reference to `getutxline'
 collect2: ld returned 1 exit status
-configure:8683: $? = 1
+configure:8603: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4061,14 +3995,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8708: result: no
-configure:8620: checking for pututxline
-configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cckxmRLv.o: In function `main':
+configure:8627: result: no
+configure:8540: checking for pututxline
+configure:8597: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccyJ9CTi.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `pututxline'
-/tmp/cckxmRLv.o:(.data.rel+0x0): undefined reference to `pututxline'
+/tmp/ccyJ9CTi.o:(.data.rel+0x0): undefined reference to `pututxline'
 collect2: ld returned 1 exit status
-configure:8683: $? = 1
+configure:8603: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4184,14 +4118,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8708: result: no
-configure:8723: checking for setutxent
-configure:8780: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccgLUD3B.o: In function `main':
+configure:8627: result: no
+configure:8642: checking for setutxent
+configure:8699: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/ccGroBuk.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `setutxent'
-/tmp/ccgLUD3B.o:(.data.rel+0x0): undefined reference to `setutxent'
+/tmp/ccGroBuk.o:(.data.rel+0x0): undefined reference to `setutxent'
 collect2: ld returned 1 exit status
-configure:8786: $? = 1
+configure:8705: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4307,14 +4241,14 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8811: result: no
-configure:8723: checking for utmpxname
-configure:8780: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccG0X1cG.o: In function `main':
+configure:8729: result: no
+configure:8642: checking for utmpxname
+configure:8699: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+/tmp/cceTDdso.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `utmpxname'
-/tmp/ccG0X1cG.o:(.data.rel+0x0): undefined reference to `utmpxname'
+/tmp/cceTDdso.o:(.data.rel+0x0): undefined reference to `utmpxname'
 collect2: ld returned 1 exit status
-configure:8786: $? = 1
+configure:8705: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4430,41 +4364,38 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8811: result: no
-configure:8827: checking for logout
-configure:8884: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8890: $? = 0
-configure:8894: test -z 
-			 || test ! -s conftest.err
-configure:8897: $? = 0
-configure:8900: test -s conftest
-configure:8903: $? = 0
-configure:8915: result: yes
-configure:8827: checking for updwtmp
-configure:8884: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8890: $? = 0
-configure:8894: test -z 
-			 || test ! -s conftest.err
-configure:8897: $? = 0
-configure:8900: test -s conftest
-configure:8903: $? = 0
-configure:8915: result: yes
-configure:8827: checking for logwtmp
-configure:8884: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-configure:8890: $? = 0
-configure:8894: test -z 
-			 || test ! -s conftest.err
-configure:8897: $? = 0
-configure:8900: test -s conftest
-configure:8903: $? = 0
-configure:8915: result: yes
-configure:9260: checking if your system defines LASTLOG_FILE
-configure:9290: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:8729: result: no
+configure:8745: checking for logout
+configure:8802: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8808: $? = 0
+configure:8811: test -z 			 || test ! -s conftest.err
+configure:8814: $? = 0
+configure:8817: test -s conftest
+configure:8820: $? = 0
+configure:8832: result: yes
+configure:8745: checking for updwtmp
+configure:8802: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8808: $? = 0
+configure:8811: test -z 			 || test ! -s conftest.err
+configure:8814: $? = 0
+configure:8817: test -s conftest
+configure:8820: $? = 0
+configure:8832: result: yes
+configure:8745: checking for logwtmp
+configure:8802: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:8808: $? = 0
+configure:8811: test -z 			 || test ! -s conftest.err
+configure:8814: $? = 0
+configure:8817: test -s conftest
+configure:8820: $? = 0
+configure:8832: result: yes
+configure:9174: checking if your system defines LASTLOG_FILE
+configure:9204: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:95: error: 'LASTLOG_FILE' undeclared (first use in this function)
 conftest.c:95: error: (Each undeclared identifier is reported only once
 conftest.c:95: error: for each function it appears in.)
-configure:9296: $? = 1
+configure:9210: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4564,41 +4495,38 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:9318: result: no
-configure:9320: checking if your system defines _PATH_LASTLOG
-configure:9347: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:9353: $? = 0
-configure:9357: test -z 
-			 || test ! -s conftest.err
-configure:9360: $? = 0
-configure:9363: test -s conftest.o
-configure:9366: $? = 0
-configure:9368: result: yes
-configure:9408: checking if your system defines UTMP_FILE
-configure:9432: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:9438: $? = 0
-configure:9442: test -z 
-			 || test ! -s conftest.err
-configure:9445: $? = 0
-configure:9448: test -s conftest.o
-configure:9451: $? = 0
-configure:9453: result: yes
-configure:9488: checking if your system defines WTMP_FILE
-configure:9512: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
-configure:9518: $? = 0
-configure:9522: test -z 
-			 || test ! -s conftest.err
-configure:9525: $? = 0
-configure:9528: test -s conftest.o
-configure:9531: $? = 0
-configure:9533: result: yes
-configure:9569: checking if your system defines UTMPX_FILE
-configure:9596: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9231: result: no
+configure:9233: checking if your system defines _PATH_LASTLOG
+configure:9260: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9266: $? = 0
+configure:9269: test -z 			 || test ! -s conftest.err
+configure:9272: $? = 0
+configure:9275: test -s conftest.o
+configure:9278: $? = 0
+configure:9280: result: yes
+configure:9320: checking if your system defines UTMP_FILE
+configure:9344: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9350: $? = 0
+configure:9353: test -z 			 || test ! -s conftest.err
+configure:9356: $? = 0
+configure:9359: test -s conftest.o
+configure:9362: $? = 0
+configure:9364: result: yes
+configure:9399: checking if your system defines WTMP_FILE
+configure:9423: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9429: $? = 0
+configure:9432: test -z 			 || test ! -s conftest.err
+configure:9435: $? = 0
+configure:9438: test -s conftest.o
+configure:9441: $? = 0
+configure:9443: result: yes
+configure:9479: checking if your system defines UTMPX_FILE
+configure:9506: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:92: error: 'UTMPX_FILE' undeclared (first use in this function)
 conftest.c:92: error: (Each undeclared identifier is reported only once
 conftest.c:92: error: for each function it appears in.)
-configure:9602: $? = 1
+configure:9512: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4695,16 +4623,16 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:9623: result: no
-configure:9644: checking if your system defines WTMPX_FILE
-configure:9671: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9532: result: no
+configure:9553: checking if your system defines WTMPX_FILE
+configure:9580: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c: In function 'main':
 conftest.c:93: error: 'WTMPX_FILE' undeclared (first use in this function)
 conftest.c:93: error: (Each undeclared identifier is reported only once
 conftest.c:93: error: for each function it appears in.)
-configure:9677: $? = 1
+configure:9586: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -4802,8 +4730,8 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:9698: result: no
-configure:9721: checking whether mipsel-linux-uclibc-gcc needs -traditional
+configure:9606: result: no
+configure:9629: checking whether mipsel-linux-uclibc-gcc needs -traditional
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
@@ -4812,242 +4740,226 @@ conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:9763: result: no
-configure:9770: checking for working memcmp
-configure:9840: result: no
-configure:9866: checking sys/select.h usability
-configure:9878: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9671: result: no
+configure:9678: checking for working memcmp
+configure:9748: result: no
+configure:9774: checking sys/select.h usability
+configure:9786: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:9884: $? = 0
-configure:9888: test -z 
-			 || test ! -s conftest.err
-configure:9891: $? = 0
-configure:9894: test -s conftest.o
-configure:9897: $? = 0
-configure:9907: result: yes
-configure:9911: checking sys/select.h presence
-configure:9921: mipsel-linux-uclibc-gcc -E  conftest.c
+configure:9792: $? = 0
+configure:9795: test -z 			 || test ! -s conftest.err
+configure:9798: $? = 0
+configure:9801: test -s conftest.o
+configure:9804: $? = 0
+configure:9814: result: yes
+configure:9818: checking sys/select.h presence
+configure:9828: mipsel-linux-uclibc-gcc -E  conftest.c
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:9927: $? = 0
-configure:9947: result: yes
-configure:9982: checking for sys/select.h
-configure:9989: result: yes
-configure:9857: checking for sys/socket.h
-configure:9862: result: yes
-configure:10002: checking types of arguments for select
-configure:10035: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:9834: $? = 0
+configure:9854: result: yes
+configure:9889: checking for sys/select.h
+configure:9896: result: yes
+configure:9765: checking for sys/socket.h
+configure:9770: result: yes
+configure:9909: checking types of arguments for select
+configure:9942: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10041: $? = 0
-configure:10045: test -z 
-			 || test ! -s conftest.err
+configure:9948: $? = 0
+configure:9951: test -z 			 || test ! -s conftest.err
+configure:9954: $? = 0
+configure:9957: test -s conftest.o
+configure:9960: $? = 0
+configure:9976: result: int,fd_set *,struct timeval *
+configure:9999: checking return type of signal handlers
+configure:10030: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
+conftest.c:75:1: warning: this is the location of the previous definition
+conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
+conftest.c:77:1: warning: this is the location of the previous definition
+configure:10036: $? = 0
+configure:10039: test -z 			 || test ! -s conftest.err
+configure:10042: $? = 0
+configure:10045: test -s conftest.o
 configure:10048: $? = 0
-configure:10051: test -s conftest.o
-configure:10054: $? = 0
-configure:10070: result: int,fd_set *,struct timeval *
-configure:10093: checking return type of signal handlers
-configure:10124: mipsel-linux-uclibc-gcc -c -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  conftest.c >&5
+configure:10059: result: void
+configure:10087: checking for dup2
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10130: $? = 0
-configure:10134: test -z 
-			 || test ! -s conftest.err
-configure:10137: $? = 0
-configure:10140: test -s conftest.o
-configure:10143: $? = 0
-configure:10154: result: void
-configure:10182: checking for dup2
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for getspnam
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for getspnam
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for getusershell
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for getusershell
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
-conftest.c:75:1: warning: this is the location of the previous definition
-conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
-conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for memset
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for memset
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
 conftest.c:114: warning: conflicting types for built-in function 'memset'
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for putenv
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for putenv
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for select
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for select
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for socket
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for socket
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for strdup
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for strdup
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
 conftest.c:118: warning: conflicting types for built-in function 'strdup'
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for clearenv
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for clearenv
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for strlcpy
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for strlcpy
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for strlcat
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for strlcat
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for daemon
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for daemon
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for basename
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for basename
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for _getpty
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for _getpty
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-/tmp/cc8aiAHk.o: In function `main':
+/tmp/cc8cYYj2.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `_getpty'
-/tmp/cc8aiAHk.o:(.data.rel+0x0): undefined reference to `_getpty'
+/tmp/cc8cYYj2.o:(.data.rel+0x0): undefined reference to `_getpty'
 collect2: ld returned 1 exit status
-configure:10245: $? = 1
+configure:10150: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
 | 
@@ -5192,60 +5104,56 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:10270: result: no
-configure:10182: checking for getaddrinfo
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10174: result: no
+configure:10087: checking for getaddrinfo
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for freeaddrinfo
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for freeaddrinfo
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10182: checking for getnameinfo
-configure:10239: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10087: checking for getnameinfo
+configure:10144: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10245: $? = 0
-configure:10249: test -z 
-			 || test ! -s conftest.err
-configure:10252: $? = 0
-configure:10255: test -s conftest
-configure:10258: $? = 0
-configure:10270: result: yes
-configure:10281: checking for library containing basename
-configure:10311: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
+configure:10150: $? = 0
+configure:10153: test -z 			 || test ! -s conftest.err
+configure:10156: $? = 0
+configure:10159: test -s conftest
+configure:10162: $? = 0
+configure:10174: result: yes
+configure:10185: checking for library containing basename
+configure:10215: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-configure:10317: $? = 0
-configure:10321: test -z 
-			 || test ! -s conftest.err
-configure:10324: $? = 0
-configure:10327: test -s conftest
-configure:10330: $? = 0
-configure:10400: result: none required
-configure:10577: creating ./config.status
+configure:10221: $? = 0
+configure:10224: test -z 			 || test ! -s conftest.err
+configure:10227: $? = 0
+configure:10230: test -s conftest
+configure:10233: $? = 0
+configure:10302: result: none required
+configure:10479: creating ./config.status
 
 ## ---------------------- ##
 ## Running config.status. ##
@@ -5262,31 +5170,10 @@ generated by GNU Autoconf 2.59.  Invocation command line was
 
 on linux
 
-config.status:659: creating Makefile
-config.status:762: creating config.h
-config.status:1068: config.h is unchanged
-configure:11703: creating ./config.status
-
-## ---------------------- ##
-## Running config.status. ##
-## ---------------------- ##
-
-This file was extended by config.status, which was
-generated by GNU Autoconf 2.59.  Invocation command line was
-
-  CONFIG_FILES    = 
-  CONFIG_HEADERS  = 
-  CONFIG_LINKS    = 
-  CONFIG_COMMANDS = 
-  $ ./config.status 
-
-on linux
-
-config.status:660: creating Makefile
-config.status:660: creating libtomcrypt/Makefile
+config.status:698: creating Makefile
 config.status:763: creating config.h
 config.status:1069: config.h is unchanged
-configure:12830: creating ./config.status
+configure:11606: creating ./config.status
 
 ## ---------------------- ##
 ## Running config.status. ##
@@ -5303,13 +5190,34 @@ generated by GNU Autoconf 2.59.  Invocation command line was
 
 on linux
 
-config.status:661: creating Makefile
-config.status:661: creating libtomcrypt/Makefile
-config.status:661: creating libtommath/Makefile
+config.status:699: creating Makefile
+config.status:699: creating libtomcrypt/Makefile
 config.status:764: creating config.h
 config.status:1070: config.h is unchanged
-configure:13862: result: 
-configure:13864: result: Now edit options.h to choose features.
+configure:12734: creating ./config.status
+
+## ---------------------- ##
+## Running config.status. ##
+## ---------------------- ##
+
+This file was extended by config.status, which was
+generated by GNU Autoconf 2.59.  Invocation command line was
+
+  CONFIG_FILES    = 
+  CONFIG_HEADERS  = 
+  CONFIG_LINKS    = 
+  CONFIG_COMMANDS = 
+  $ ./config.status 
+
+on linux
+
+config.status:700: creating Makefile
+config.status:700: creating libtomcrypt/Makefile
+config.status:700: creating libtommath/Makefile
+config.status:765: creating config.h
+config.status:1071: config.h is unchanged
+configure:13767: result: 
+configure:13769: result: Now edit options.h to choose features.
 
 ## ---------------- ##
 ## Cache variables. ##
