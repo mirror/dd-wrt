@@ -33,7 +33,7 @@
  * Both of these flags can be defined at once, don't compile without at least
  * one of them. */
 #define NON_INETD_MODE
-#define INETD_MODE
+//#define INETD_MODE
 
 /* Setting this disables the fast exptmod bignum code. It saves ~5kB, but is
  * perhaps 20% slower for pubkey operations (it is probably worth experimenting
@@ -107,7 +107,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 /* #define DSS_PROTOK */
 
 /* Whether to do reverse DNS lookups. */
-#define DO_HOST_LOOKUP
+//#define DO_HOST_LOOKUP
 
 /* Whether to print the message of the day (MOTD). This doesn't add much code
  * size */
@@ -154,7 +154,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
  * however significantly reduce the security of your ssh connections
  * if the PRNG state becomes guessable - make sure you know what you are
  * doing if you change this. */
-#define DROPBEAR_RANDOM_DEV "/dev/random"
+#define DROPBEAR_RANDOM_DEV "/dev/urandom"
 
 /* prngd must be manually set up to produce output */
 /*#define DROPBEAR_PRNGD_SOCKET "/var/run/dropbear-rng"*/
@@ -197,7 +197,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 
 /* This is used by the scp binary when used as a client binary. If you're
  * not using the Dropbear client, you'll need to change it */
-#define _PATH_SSH_PROGRAM "/usr/bin/dbclient"
+#define _PATH_SSH_PROGRAM "/usr/sbin/dbclient"
 
 /* Multi-purpose binary configuration has now moved. Look at the top
  * of the Makefile for instructions, or INSTALL */
