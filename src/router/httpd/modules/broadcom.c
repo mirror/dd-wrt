@@ -4163,6 +4163,7 @@ websWrite(wp,"<script type=\"text/javascript\">");
 if (nvram_match(akm,"disabled"))
     {
     websWrite(wp,"Capture(share.disabled)");
+    websWrite(wp,"</script>");
     return;
     }
 else
