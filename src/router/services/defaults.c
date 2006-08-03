@@ -731,7 +731,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_MSSID
   {"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"wl0_akm", "", 0},
+  {"wl0_akm", "disabled", 0},
   {"wl0_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"wl0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -739,7 +739,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_radius_key", "", 0},	/* RADIUS shared secret */
 
   {"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"wl0.1_akm", "", 0},
+  {"wl0.1_akm", "disabled", 0},
   {"wl0.1_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"wl0.1_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl0.1_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -747,7 +747,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.1_radius_key", "", 0},	/* RADIUS shared secret */
 
   {"wl0.2_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"wl0.2_akm", "", 0},
+  {"wl0.2_akm", "disabled", 0},
   {"wl0.2_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"wl0.2_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl0.2_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -755,7 +755,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.2_radius_key", "", 0},	/* RADIUS shared secret */
 
   {"wl0.3_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"wl0.3_akm", "", 0},
+  {"wl0.3_akm", "disabled", 0},
   {"wl0.3_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"wl0.3_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl0.3_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -763,7 +763,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.3_radius_key", "", 0},	/* RADIUS shared secret */
 #else
   {"wl_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"wl_akm", "", 0},
+  {"wl_akm", "disabled", 0},
   {"wl_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"wl_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -774,7 +774,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 #else
   {"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath0_akm", "", 0},
+  {"ath0_akm", "disabled", 0},
   {"ath0_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath0_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -784,7 +784,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath1_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath1_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath1_akm", "", 0},
+  {"ath1_akm", "disabled", 0},
   {"ath1_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath1_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath1_radius_key", "", 0},	/* RADIUS shared secret */
@@ -792,7 +792,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath2_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath2_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath2_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath2_akm", "", 0},
+  {"ath2_akm", "disabled", 0},
   {"ath2_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath2_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath2_radius_key", "", 0},	/* RADIUS shared secret */
@@ -800,7 +800,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath3_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath3_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath3_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath3_akm", "", 0},
+  {"ath3_akm", "disabled", 0},
   {"ath3_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath3_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath3_radius_key", "", 0},	/* RADIUS shared secret */
@@ -808,7 +808,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath4_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath4_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath4_akm", "", 0},
+  {"ath4_akm", "disabled", 0},
   {"ath4_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath4_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath4_radius_key", "", 0},	/* RADIUS shared secret */
@@ -816,7 +816,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath5_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath5_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath5_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
-  {"ath5_akm", "", 0},
+  {"ath5_akm", "disabled", 0},
   {"ath5_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath5_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath5_radius_key", "", 0},	/* RADIUS shared secret */
