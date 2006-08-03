@@ -1491,10 +1491,17 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
+  char wl_net_mode[16];
+  sprintf (wl_net_mode, "%s_net_mode", prefix);
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match(wl_mode,"wdsap") || nvram_match(wl_mode,"infra"))
     {
       char wl_channel[16];
       sprintf (wl_channel, "%s_channel", prefix);
+      char wl_wchannel[16];
+      sprintf (wl_wchannel, "%s_wchannel", prefix);
+      char wl_nbw[16];
+      sprintf (wl_wchannel, "%s_nbw", prefix);
+      
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
 		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div><select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
@@ -1528,22 +1535,20 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	  free (chan);
 	}
 #else
-if (type==1 && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"a-only") && nvram_invmatch(wl_mode,"bg-mixed"))
+if (type==1 && !nvram_match(wl_net_mode,"g-only") && !nvram_match(wl_net_mode,"a-only") && !nvram_match(wl_net_mode,"bg-mixed") && nvram_match(wl_nbw,"40"))
     {
       int ch = atoi(nvram_safe_get("wl0_wchannel"));
       websWrite (wp, "var max_channel = 2;\n");
-      websWrite (wp, "var wl0_channel = '%s';\n",nvram_safe_get (wl_channel));
+      websWrite (wp, "var wl0_channel = '%s';\n",nvram_safe_get (wl_wchannel));
       websWrite (wp,"var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
       char *sel ="";
-      if (nvram_match("wl_nctrlsb","lower"))
+      if (nvram_match("wl0_nctrlsb","lower"))
 		sel = "selected";
 
-      websWrite (wp," document.write(\"<option value=\"%d\" \"%s\">\"+i+\" - \"+freq[%d]+\"GHz</option>\");\n",ch-2,sel,ch-2);
-      if (nvram_match("wl_nctrlsb","upper"))
+      websWrite (wp," document.write(\"<option value=%d %s>%d - \"+freq[%d]+\"GHz</option>\");\n",ch-2,sel,ch-2,ch-2);
+      if (nvram_match("wl0_nctrlsb","upper"))
 		sel = "selected";
-      websWrite (wp," document.write(\"<option value=\"%d\" \"%s\">\"+i+\" - \"+freq[%d]+\"GHz</option>\");\n",ch+2,sel,ch+2);
-      
-      websWrite (wp, "}\n");
+      websWrite (wp," document.write(\"<option value=%d %s>%d - \"+freq[%d]+\"GHz</option>\");\n",ch+2,sel,ch+2,ch+2);
     
     }else
     {
@@ -1967,6 +1972,13 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   convert_wl_gmode(nvram_safe_get(n));
   }
+  sprintf (n, "%s_nbw", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_nctrlsb", prefix);
+  copytonv (wp, n);
+
+
+
   sprintf (n, "%s_channel", prefix);
   if (!strcmp (prefix, "wl0"))
     {
@@ -1974,6 +1986,16 @@ save_prefix (webs_t wp, char *prefix)
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
       if (wl)
 	nvram_set ("wl_channel", wl);
+    }
+  copytonv (wp, n);
+
+  sprintf (n, "%s_wchannel", prefix);
+  if (!strcmp (prefix, "wl0"))
+    {
+      char *wl = websGetVar (wp, n, NULL);
+      cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
+      if (wl)
+	nvram_set ("wl_wchannel", wl);
     }
 
   copytonv (wp, n);
@@ -2253,17 +2275,17 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Channel Width</div>\n");
-  websWrite (wp,"<select name=\"wl_nbw\">\n");
-  websWrite (wp,"<option value=\"0\" %s>Auto</option>",nvram_match ("wl_nbw", "0")?"selected":"");
-  websWrite (wp,"<option value=\"20\" %s>20 Mhz</option>",nvram_match ("wl_nbw", "20")?"selected":"");
-  websWrite (wp,"<option value=\"40\" %s>40 Mhz</option>",nvram_match ("wl_nbw", "40")?"selected":"");
+  websWrite (wp,"<select name=\"wl0_nbw\">\n");
+  websWrite (wp,"<option value=\"0\" %s>Auto</option>",nvram_match ("wl0_nbw", "0")?"selected":"");
+  websWrite (wp,"<option value=\"20\" %s>20 Mhz</option>",nvram_match ("wl0_nbw", "20")?"selected":"");
+  websWrite (wp,"<option value=\"40\" %s>40 Mhz</option>",nvram_match ("wl0_nbw", "40")?"selected":"");
   websWrite (wp,"</select>\n");
   
   websWrite (wp, "</div>\n");
     
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp, "<div class=\"label\">Wide Channel</div>\n");
-    websWrite (wp, "<select name=\"wl_wchannel\" ></select>\n");
+    websWrite (wp, "<select name=\"wl0_wchannel\" ></select>\n");
     websWrite (wp, "</div>\n");    
     show_channel (wp, prefix, prefix,1);
     }else
