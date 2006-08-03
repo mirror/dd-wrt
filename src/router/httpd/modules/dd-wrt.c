@@ -1484,12 +1484,14 @@ static struct regdomain regdomains[] = {
 
 #endif
 
+
+
 void
-show_channel (webs_t wp, char *dev, char *prefix)
+show_channel (webs_t wp, char *dev, char *prefix, int type)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match(wl_mode,"wdsap"))
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match(wl_mode,"wdsap") || nvram_match(wl_mode,"infra"))
     {
       char wl_channel[16];
       sprintf (wl_channel, "%s_channel", prefix);
@@ -1526,9 +1528,28 @@ show_channel (webs_t wp, char *dev, char *prefix)
 	  free (chan);
 	}
 #else
+if (type==1 && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"a-only") && nvram_invmatch(wl_mode,"bg-mixed")
+    {
+      int ch = atoi(nvram_safe_get("wl0_wchannel"));
+      websWrite (wp, "var max_channel = 2;\n");
+      websWrite (wp, "var wl0_channel = '%s';\n",nvram_safe_get (wl_channel));
+      websWrite (wp,"var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
+      char *sel ="";
+      if (nvram_match("wl_nctrlsb","lower"))
+		sel = "selected";
+
+      websWrite (wp," document.write(\"<option value=\"%d\" \"%s\">\"+i+\" - \"+freq[%d]+\"GHz</option>\");\n",ch-2,sel,ch-2);
+      if (nvram_match("wl_nctrlsb","upper"))
+		sel = "selected";
+      websWrite (wp," document.write(\"<option value=\"%d\" \"%s\">\"+i+\" - \"+freq[%d]+\"GHz</option>\");\n",ch+2,sel,ch+2);
+      
+      websWrite (wp, "}\n");
+    
+    }else
+    {
+
       websWrite (wp, "var max_channel = 14;\n");
-      websWrite (wp, "var wl0_channel = '%s';\n",
-		 nvram_safe_get (wl_channel));
+      websWrite (wp, "var wl0_channel = '%s';\n",nvram_safe_get (wl_channel));
       websWrite (wp, "var buf = \"\";");
       websWrite (wp,
 		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
@@ -1543,7 +1564,7 @@ show_channel (webs_t wp, char *dev, char *prefix)
       websWrite (wp,
 		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+i+\" - \"+freq[i]+\"GHz</option>\");\n");
       websWrite (wp, "}\n");
-
+    }
 #endif
       websWrite (wp, "</script></select></div>\n");
     }
@@ -2223,10 +2244,32 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "wdsap"))
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "wdsap") || nvram_match(wl_mode,"infra"))
     {
-      show_channel (wp, prefix, prefix);
+    
+    if (has_mimo())
+    {
+    
 
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">Channel Width</div>\n");
+  websWrite (wp,"<select name=\"wl_nbw\">\n");
+  websWrite (wp,"<option value=\"0\" %s>Auto</option>",nvram_match ("wl_nbw", "0")?"selected":"");
+  websWrite (wp,"<option value=\"20\" %s>20 Mhz</option>",nvram_match ("wl_nbw", "20")?"selected":"");
+  websWrite (wp,"<option value=\"40\" %s>40 Mhz</option>",nvram_match ("wl_nbw", "40")?"selected":"");
+  websWrite (wp,"</select>\n");
+  
+  websWrite (wp, "</div>\n");
+    
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">Wide Channel</div>\n");
+    websWrite (wp, "<select name=\"wl_wchannel\" ></select>\n");
+    websWrite (wp, "</div>\n");    
+    show_channel (wp, prefix, prefix,1);
+    }else
+    show_channel (wp, prefix, prefix,0);
+
+	
       char wl_closed[16];
       sprintf (wl_closed, "%s_closed", prefix);
       websWrite (wp, "<div class=\"setting\">\n");
