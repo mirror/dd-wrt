@@ -107,8 +107,9 @@ waitfor (int fd, int timeout)
  * @param	ppid	NULL to wait for child termination or pointer to pid
  * @return	return value of executed command or errno
  */
-int
-_eval (char *const argv[], char *path, int timeout, int *ppid)
+
+
+int _eval (char *const argv[], char *path, int timeout, int *ppid)
 {
   pid_t pid;
   int status;

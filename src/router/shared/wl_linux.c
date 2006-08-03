@@ -18,6 +18,14 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <linux/types.h>
+
+typedef u_int64_t u64;
+typedef u_int32_t u32;
+typedef u_int16_t u16;
+typedef u_int8_t u8;
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 
 #include <typedefs.h>
 #include <wlioctl.h>
@@ -75,4 +83,32 @@ wl_hwaddr (char *name, unsigned char *hwaddr)
   /* cleanup */
   close (s);
   return ret;
+}
+
+int
+wl_get_dev_type(char *name, void *buf, int len)
+{
+	int s;
+	int ret;
+	struct ifreq ifr;
+	struct ethtool_drvinfo info;
+
+	/* open socket to kernel */
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return -1;
+	}
+
+	/* get device type */
+	memset(&info, 0, sizeof(info));
+	info.cmd = ETHTOOL_GDRVINFO;
+	ifr.ifr_data = (caddr_t)&info;
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
+		*(char *)buf = '\0';
+	} else
+		strncpy(buf, info.driver, len);
+
+	close(s);
+	return ret;
 }

@@ -70,6 +70,16 @@ extern int wl_get_val (char *name, char *var, void *val, int len);
 extern int wl_set_int (char *name, char *var, int val);
 extern int wl_get_int (char *name, char *var, int *val);
 
+/*
+ * Get device type.
+ * @param	name	interface name
+ * @param	buf	buffer for passing in and/or receiving data
+ * @param	len	length of buf
+ * @return	>= 0 if successful or < 0 otherwise
+ */
+#define DEV_TYPE_LEN 3	/* Length for dev type 'et'/'wl' */
+extern int wl_get_dev_type(char *name, void *buf, int len);
+
 
 /*
  * Set/Get named variable.
