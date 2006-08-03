@@ -1549,6 +1549,7 @@ show_channel (webs_t wp, char *dev, char *prefix)
     }
 }
 
+
 void
 show_netmode (webs_t wp, char *prefix)
 {
