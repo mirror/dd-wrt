@@ -489,11 +489,35 @@ get_wdev (void)
 /* end Sveasoft addition */
 
 int
+wl_probe(char *name)
+{
+	int ret, val;
+
+#if defined(linux)
+	char buf[DEV_TYPE_LEN];
+	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0)
+		return ret;
+	/* Check interface */
+	if (strncmp(buf, "wl", 2))
+		return -1;
+#else
+	/* Check interface */
+	if ((ret = wl_ioctl(name, WLC_GET_MAGIC, &val, sizeof(val))))
+		return ret;
+#endif
+	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val))))
+		return ret;
+	if (val > WLC_IOCTL_VERSION)
+		return -1;
+
+	return ret;
+}
+
+/*int
 wl_probe (char *name)
 {
   int ret, val;
 
-  /* Check interface */
   if ((ret = wl_ioctl (name, WLC_GET_MAGIC, &val, sizeof (val))))
     return ret;
   if (val != WLC_IOCTL_MAGIC)
@@ -505,7 +529,7 @@ wl_probe (char *name)
 
   return ret;
 }
-
+*/
 //#ifndef HAVE_MSSID
 int
 wl_set_val (char *name, char *var, void *val, int len)

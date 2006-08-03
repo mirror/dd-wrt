@@ -144,7 +144,7 @@ strcat_r (const char *s1, const char *s2, char *buf)
 #define safe_getenv(s) (getenv(s) ? : "")
 
 
-#define HAVE_SILENCE 1
+//#define HAVE_SILENCE 1
 
 /* Print directly to the console */
 #ifndef HAVE_SILENCE
@@ -162,6 +162,8 @@ strcat_r (const char *s1, const char *s2, char *buf)
 
 /* Simple version of _eval() (no timeout and wait for child termination) */
 #define eval(cmd, args...) ({ \
+	char *argv2[] = { "wl", "infra", NULL }; \
+	_eval(argv2, ">/dev/console", 0, NULL); \
 	char *argv[] = { cmd, ## args, NULL }; \
 	_eval(argv, ">/dev/console", 0, NULL); \
 })
