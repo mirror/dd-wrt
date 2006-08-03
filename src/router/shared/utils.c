@@ -902,7 +902,7 @@ get_wan_face (void)
 	strncpy (localwanface, nvram_safe_get ("pppd_pppifname"), IFNAMSIZ);
     }
 #ifndef HAVE_MADWIFI
-  else if (nvram_invmatch ("wl_mode", "ap"))
+  else if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta") || nvram_match("wl0_mode","wet"))
     {
 
       if (check_hw_type () == BCM4702_CHIP
