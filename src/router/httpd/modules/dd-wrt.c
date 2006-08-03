@@ -1528,7 +1528,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	  free (chan);
 	}
 #else
-if (type==1 && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"a-only") && nvram_invmatch(wl_mode,"bg-mixed")
+if (type==1 && nvram_invmatch(wl_mode,"g-only") && nvram_invmatch(wl_mode,"a-only") && nvram_invmatch(wl_mode,"bg-mixed"))
     {
       int ch = atoi(nvram_safe_get("wl0_wchannel"));
       websWrite (wp, "var max_channel = 2;\n");

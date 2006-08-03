@@ -130,6 +130,8 @@ function to_submit(F) {
 			F.wl_ssid.focus();
 			return false;
 		}
+	if(F._wl_nbw)
+	{
 	if(F._wl_nbw.value == 0) { // Auto
 		F.wl_channel.value = 0;
 //		F.wl_nctrlsb.value = "lower";
@@ -148,6 +150,7 @@ function to_submit(F) {
 			F.wl_nctrlsb.value = "upper";
 		}
 		F.wl_nbw.value = 40;
+	}
 	}
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
