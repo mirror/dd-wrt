@@ -623,7 +623,12 @@ static int noptycommand(struct Channel *channel, struct ChanSess *chansess) {
 	if (pipe(errfds) != 0)
 		return DROPBEAR_FAILURE;
 
+#ifdef __uClinux__
+	pid = vfork();
+#else
 	pid = fork();
+#endif
+
 	if (pid < 0)
 		return DROPBEAR_FAILURE;
 
@@ -714,7 +719,11 @@ static int ptycommand(struct Channel *channel, struct ChanSess *chansess) {
 		return DROPBEAR_FAILURE;
 	}
 	
+#ifdef __uClinux__
+	pid = vfork();
+#else
 	pid = fork();
+#endif
 	if (pid < 0)
 		return DROPBEAR_FAILURE;
 
@@ -828,19 +837,21 @@ static void execchild(struct ChanSess *chansess) {
 	char * baseshell = NULL;
 	unsigned int i;
 
+    /* with uClinux we'll have vfork()ed, so don't want to overwrite the
+     * hostkey. can't think of a workaround to clear it */
+#ifndef __uClinux__
 	/* wipe the hostkey */
 	sign_key_free(svr_opts.hostkey);
 	svr_opts.hostkey = NULL;
 
 	/* overwrite the prng state */
-	seedrandom();
+	reseedrandom();
+#endif
 
 	/* close file descriptors except stdin/stdout/stderr
 	 * Need to be sure FDs are closed here to avoid reading files as root */
 	for (i = 3; i <= (unsigned int)ses.maxfd; i++) {
-		if (m_close(i) == DROPBEAR_FAILURE) {
-			dropbear_exit("Error closing file desc");
-		}
+		m_close(i);
 	}
 
 	/* clear environment */

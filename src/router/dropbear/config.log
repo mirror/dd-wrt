@@ -27,6 +27,7 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
+PATH: /home/dd-wrt/DEV/tools
 PATH: /opt/4.1.1/bin/
 PATH: /sbin
 PATH: /usr/sbin
@@ -294,7 +295,7 @@ configure:3844: result: Disabling PAM
 configure:3994: result: Using openpty if available
 configure:3996: checking for library containing openpty
 configure:4026: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lz  -lcrypt >&5
-/tmp/ccr2RCKS.o: In function `main':
+/tmp/ccdMJT8Q.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `openpty'
 collect2: ld returned 1 exit status
 configure:4032: $? = 1
@@ -3571,9 +3572,9 @@ configure:8590: $? = 0
 configure:8602: result: yes
 configure:8620: checking for endutxent
 configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccZX5V2n.o: In function `main':
+/tmp/ccXSpEsi.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `endutxent'
-/tmp/ccZX5V2n.o:(.data.rel+0x0): undefined reference to `endutxent'
+/tmp/ccXSpEsi.o:(.data.rel+0x0): undefined reference to `endutxent'
 collect2: ld returned 1 exit status
 configure:8683: $? = 1
 configure: failed program was:
@@ -3694,9 +3695,9 @@ configure: failed program was:
 configure:8708: result: no
 configure:8620: checking for getutxent
 configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccvMVAXr.o: In function `main':
+/tmp/cc6dIq6j.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxent'
-/tmp/ccvMVAXr.o:(.data.rel+0x0): undefined reference to `getutxent'
+/tmp/cc6dIq6j.o:(.data.rel+0x0): undefined reference to `getutxent'
 collect2: ld returned 1 exit status
 configure:8683: $? = 1
 configure: failed program was:
@@ -3817,9 +3818,9 @@ configure: failed program was:
 configure:8708: result: no
 configure:8620: checking for getutxid
 configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccr6SOEt.o: In function `main':
+/tmp/ccItUqcq.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxid'
-/tmp/ccr6SOEt.o:(.data.rel+0x0): undefined reference to `getutxid'
+/tmp/ccItUqcq.o:(.data.rel+0x0): undefined reference to `getutxid'
 collect2: ld returned 1 exit status
 configure:8683: $? = 1
 configure: failed program was:
@@ -3940,9 +3941,9 @@ configure: failed program was:
 configure:8708: result: no
 configure:8620: checking for getutxline
 configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccFxHkFx.o: In function `main':
+/tmp/cc2FZz7t.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `getutxline'
-/tmp/ccFxHkFx.o:(.data.rel+0x0): undefined reference to `getutxline'
+/tmp/cc2FZz7t.o:(.data.rel+0x0): undefined reference to `getutxline'
 collect2: ld returned 1 exit status
 configure:8683: $? = 1
 configure: failed program was:
@@ -4063,9 +4064,9 @@ configure: failed program was:
 configure:8708: result: no
 configure:8620: checking for pututxline
 configure:8677: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cctjPB3D.o: In function `main':
+/tmp/cckxmRLv.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `pututxline'
-/tmp/cctjPB3D.o:(.data.rel+0x0): undefined reference to `pututxline'
+/tmp/cckxmRLv.o:(.data.rel+0x0): undefined reference to `pututxline'
 collect2: ld returned 1 exit status
 configure:8683: $? = 1
 configure: failed program was:
@@ -4186,9 +4187,9 @@ configure: failed program was:
 configure:8708: result: no
 configure:8723: checking for setutxent
 configure:8780: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccFtX9hI.o: In function `main':
+/tmp/ccgLUD3B.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `setutxent'
-/tmp/ccFtX9hI.o:(.data.rel+0x0): undefined reference to `setutxent'
+/tmp/ccgLUD3B.o:(.data.rel+0x0): undefined reference to `setutxent'
 collect2: ld returned 1 exit status
 configure:8786: $? = 1
 configure: failed program was:
@@ -4309,9 +4310,9 @@ configure: failed program was:
 configure:8811: result: no
 configure:8723: checking for utmpxname
 configure:8780: mipsel-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccPmpyOJ.o: In function `main':
+/tmp/ccG0X1cG.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `utmpxname'
-/tmp/ccPmpyOJ.o:(.data.rel+0x0): undefined reference to `utmpxname'
+/tmp/ccG0X1cG.o:(.data.rel+0x0): undefined reference to `utmpxname'
 collect2: ld returned 1 exit status
 configure:8786: $? = 1
 configure: failed program was:
@@ -5042,9 +5043,9 @@ conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-/tmp/ccpzOvNi.o: In function `main':
+/tmp/cc8aiAHk.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `_getpty'
-/tmp/ccpzOvNi.o:(.data.rel+0x0): undefined reference to `_getpty'
+/tmp/cc8aiAHk.o:(.data.rel+0x0): undefined reference to `_getpty'
 collect2: ld returned 1 exit status
 configure:10245: $? = 1
 configure: failed program was:
