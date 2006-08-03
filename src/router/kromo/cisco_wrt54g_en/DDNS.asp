@@ -65,6 +65,7 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
+	update.stop();
 	apply(F);
 }
 
@@ -72,8 +73,22 @@ function SelDDNS(num,F) {
 	F.submit_button.value = "DDNS";
 	F.change_action.value = "gozila_cgi";
 	F.ddns_enable.value=F.ddns_enable.options[num].value;
+	update.stop();
 	F.submit();
 }
+
+var update;
+
+addEvent(window, "load", function() {
+	<% show_status("onload");%>
+	
+	update = new StatusUpdate("DDNS.live.asp", <% nvram_get("refresh_time"); %>);
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+});
 
 		</script>
 	</head>
@@ -319,7 +334,7 @@ function SelDDNS(num,F) {
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
-									<% show_ddns_status(); %>&nbsp;
+									<span id="ddns_status"><% show_ddns_status(); %></span>&nbsp;
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
 							</fieldset><br />
