@@ -403,33 +403,6 @@ wlconf_up (char *name)
     return -1;
   if (!strncmp (name, "br", 2))
     return -1;
-/*#ifndef HAVE_BRANDING
-  if (nvram_match ("wl_mode", "ap"))
-    {
-#ifndef HAVE_FON
-      if (nvram_match ("fon_enable", "1"))
-	{
-#endif
-	  char *ssid = nvram_get ("wl_ssid");
-	  if (ssid && strlen (ssid) > 0)
-	    {
-	      if (!startswith (nvram_safe_get ("wl_ssid"), "FON_"))
-		{
-		  sprintf (tmp, "FON_%s", nvram_safe_get ("wl_ssid"));
-		  nvram_set ("wl_ssid", tmp);
-		}
-	    }
-	  else
-	    {
-	      nvram_set ("wl_ssid", "FON_HotSpot");
-	    }
-
-#ifndef HAVE_FON
-	}
-#endif
-    }
-#endif
-*/
 #ifdef HAVE_ONLYCLIENT
   if (nvram_match ("wl_mode", "ap"))
     {
@@ -442,6 +415,10 @@ if (nvram_match("wl0_mode","infra"))
 {
     nvram_set("wl_infra","0");
     nvram_set("wl0_infra","0");    
+}else
+{
+    nvram_set("wl_infra","1");
+    nvram_set("wl0_infra","1");    
 }
   ret = eval ("wlconf", name, "up");
 /*  eval("wl","radio","off");
@@ -513,34 +490,6 @@ if (nvram_match("wl0_mode","infra"))
     eval ("wl", "afterburner_override", "-1");
 
 
-/*
-    wl_rateset_t rs;
-  	WL_IOCTL(name, WLC_GET_CURR_RATESET, &rs, sizeof (wl_rateset_t));
-cprintf("is all?\n");
-	if (nvram_match("wl0_rateset", "all"))  {
-		// For WiFi, we must do some modify. 20040625 by honor
-		for (i = 0; i < rs.count; i++) {
-			if(nvram_match("wl_net_mode", "g-only")) {
-				if((rs.rates[i] & 0x7f) == 0x24 ||	// 18.0
-				   (rs.rates[i] & 0x7f) == 0x48 ||	// 36.0
-				   (rs.rates[i] & 0x7f) == 0x6C ||	// 54.0
-				   (rs.rates[i] & 0x7f) == 0x12 ||	// 9.0
-				   (rs.rates[i] & 0x7f) == 0x60 )	// 48.0
-					rs.rates[i] &= ~0x80;
-				else 
-					rs.rates[i] |= 0x80;
-			}
-		}
-	} else if (nvram_match("wl0_rateset", "12")) {
-		for (i = 0; i < rs.count; i++) {
-			if ((rs.rates[i] & 0x7f) == 2 || (rs.rates[i] & 0x7f) == 4)
-				rs.rates[i] |= 0x80;
-			else
-				rs.rates[i] &= ~0x80;
-		}
-	}
-	WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof (wl_rateset_t));
-*/
 
 
   // Set ACK Timing. Thx to Nbd
@@ -600,6 +549,12 @@ cprintf("is all?\n");
 		}
 		}
 */
+
+if (nvram_match("wl0_mode","infra"))
+    {
+    eval("wl","infra","0");
+    eval("wl","ssid",nvram_safe_get("wl0_ssid"));
+    }
   return ret;
 
 }
@@ -937,11 +892,24 @@ start_lan (void)
 #endif
 
 	    /* if client/wet mode, turn off ap mode et al */
+	    if (nvram_match (wl_name, "infra"))
+	      {
+#ifndef HAVE_MADWIFI
+		eval ("wl", "ap", "0");
+		eval ("wl", "infra", "0");
+		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
+		wlconf_up (name);
+#endif
+		eval("wl","infra","0");
+		eval("wl","ssid",nvram_safe_get("wl0_ssid"));
+		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
+	      }
 
 	    if (nvram_match (wl_name, "sta"))
 	      {
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
+		eval ("wl", "infra", "1");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
@@ -1467,6 +1435,11 @@ start_wan (int status)
 #else
 
   ifconfig (wan_ifname, IFUP, NULL, NULL);
+if (nvram_match("wl0_mode","infra"))
+    {
+    eval("wl","infra","0");
+    eval("wl","ssid",nvram_safe_get("wl0_ssid"));
+    }
 
 #endif
   set_host_domain_name ();
