@@ -115,7 +115,8 @@ addEvent(window, "load", function() {
                     <div class="label"><% tran("wl_basic.label3"); %></div>
                     <input name="wl_ssid" size="20" maxlength="32" onBlur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
                   </div>
-                  <% nvram_invmatch("wl_mode", "ap", "<!--"); %>
+                  <% nvram_match("wl_mode", "sta", "<!--"); %>
+                  <% nvram_match("wl_mode", "wet", "<!--"); %>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label4"); %></div>
                     <select name="wl_channel" onFocus="check_action(this,0)">
@@ -145,7 +146,8 @@ addEvent(window, "load", function() {
                     <input class="spaceradio" type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><% tran("share.enable"); %></input>&nbsp;
                     <input class="spaceradio" type="radio" value="1" name="wl_closed" <% nvram_checked("wl_closed","1"); %>><% tran("share.disable"); %></input>
                   </div>
-                  <% nvram_invmatch("wl_mode", "ap", "-->"); %>
+                  <% nvram_match("wl_mode", "wet", "-->"); %>
+                  <% nvram_match("wl_mode", "sta", "-->"); %>
                   <br/>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label6"); %></div>

@@ -4,12 +4,90 @@
 		
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
+
+
 function SelWL(num,F) {
   if ( num == 0)
     I = "0";
   else
     I = "1";
   wl_enable_disable(F,I);
+}
+
+function create_wchannel_auto(F)
+{
+	F.wl_wchannel.length = 1;
+	
+	F.wl_wchannel[0] = new Option(share.auto);
+	F.wl_wchannel[0].value = "0";
+
+}
+
+function create_wchannel(F)
+{
+	var max_channel = '<% get_wl_max_channel(); %>';
+	var wch;
+
+	if(wl_nctrlsb == "lower") {
+		wch = parseInt(wl_channel)+2;
+	}
+	else {
+		wch = parseInt(wl_channel)-2;
+	}
+
+	F.wl_wchannel.length = parseInt(max_channel)-4;
+
+	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
+		F.wl_wchannel[ch-3] = new Option(ch);
+		F.wl_wchannel[ch-3].value = ch;
+	}
+	if(wch < 3 || wch > max_channel-2 || wch == "0")
+		F.wl_wchannel[0].selected = true;
+	else
+		F.wl_wchannel[wch-3].selected = true;	
+}
+
+function InitBW(num,F)
+{
+	if(wl_channel == "0") {
+		if(F.wl_wchannel) choose_enable(F.wl_wchannel);
+		choose_enable(F.wl_schannel);
+
+		if(F.wl_wchannel) create_wchannel_auto(F)
+	
+	}
+	else
+		SelBW(num,F);
+}
+
+function SelBW(num,F)
+{
+	if (num == 0) {	// Auto
+		if(F.wl_wchannel) choose_enable(F.wl_wchannel);
+		choose_enable(F.wl_schannel);
+
+		if(F.wl_wchannel) create_wchannel_auto(F)
+	
+		create_schannel_auto(F);
+	}
+	else if (num == 20){
+		if(F.wl_wchannel) choose_disable(F.wl_wchannel);
+		choose_enable(F.wl_schannel);
+		
+		if(F.wl_wchannel) create_wchannel(F)
+	
+		create_schannel(F);
+	}
+	else {
+		if(F.wl_wchannel) choose_enable(F.wl_wchannel);
+		choose_enable(F.wl_schannel);
+		
+		if(F.wl_wchannel) create_wchannel(F);
+		
+		var curvalue = document.forms[0].wl_wchannel[document.forms[0].wl_wchannel.selectedIndex].value;
+
+		create_schannel2(curvalue,F);
+	}
 }
 
 function wl_enable_disable(F,I) {
@@ -52,6 +130,25 @@ function to_submit(F) {
 			F.wl_ssid.focus();
 			return false;
 		}
+	if(F._wl_nbw.value == 0) { // Auto
+		F.wl_channel.value = 0;
+//		F.wl_nctrlsb.value = "lower";
+	}
+	else if(F._wl_nbw.value == 20) { // 20MHz
+		F.wl_channel.value = F.wl_schannel.value;		
+		F.wl_nctrlsb.value = "none";
+		F.wl_nbw.value = 20;
+	}
+	else { // 40MHz
+		F.wl_channel.value = F.wl_schannel.value;
+		if(F.wl_schannel.selectedIndex == 0) {
+			F.wl_nctrlsb.value = "lower";
+		}
+		else {
+			F.wl_nctrlsb.value = "upper";
+		}
+		F.wl_nbw.value = 40;
+	}
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
@@ -63,6 +160,10 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
+
+	InitBW('<% nvram_get("wl_nbw"); %>' ,document.wireless);
+
+	SelWL(wl_net_mode,document.wireless);
 });
 
 		</script>
