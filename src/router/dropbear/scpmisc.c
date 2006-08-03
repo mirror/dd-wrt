@@ -42,7 +42,7 @@
 
 #include "includes.h"
 #include "scpmisc.h"
-
+/*
 void *
 xmalloc(size_t size)
 {
@@ -79,7 +79,7 @@ xrealloc(void *ptr, size_t new_size)
 	}
 	return new_ptr;
 }
-
+*/
 void
 xfree(void *ptr)
 {
