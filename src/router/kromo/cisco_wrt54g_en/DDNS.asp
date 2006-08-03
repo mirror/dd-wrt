@@ -335,6 +335,10 @@ addEvent(window, "unload", function() {
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
 									<span id="ddns_status"><% show_ddns_status(); %></span>&nbsp;
+									<div class="center">
+										<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+										</script>&nbsp;
+									</div>
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
 							</fieldset><br />
