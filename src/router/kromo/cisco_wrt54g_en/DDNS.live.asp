@@ -1,0 +1,1 @@
+{ddns_status::<% show_ddns_status(); %>}
