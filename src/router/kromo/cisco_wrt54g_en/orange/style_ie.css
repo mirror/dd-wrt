@@ -1,0 +1,11 @@
+.submitFooter input {
+padding:.362em .453em;
+}
+fieldset {
+padding-top:0;
+}
+fieldset legend {
+margin-left:-9px;
+margin-bottom:8px;
+padding:0 .09em;
+}
