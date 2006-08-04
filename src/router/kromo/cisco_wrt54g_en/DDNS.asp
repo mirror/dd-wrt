@@ -80,7 +80,7 @@ function SelDDNS(num,F) {
 var update;
 
 addEvent(window, "load", function() {
-	<% show_status("onload");%>
+//	<% show_status("onload");%>  /* not compatible */
 	
 	update = new StatusUpdate("DDNS.live.asp", <% nvram_get("refresh_time"); %>);
 	update.start();
