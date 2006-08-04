@@ -166,8 +166,9 @@ function to_submit(F) {
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
 
-	InitBW('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
-
+	if (wl_phytype == 'n')
+	    InitBW('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
+	var wl_net_mode = "<% nvram_get("wl0_net_mode"); %>";
 	SelWL(wl_net_mode,document.wireless);
 });
 
