@@ -685,7 +685,7 @@ diag_led (int type, int act)
 		{
 		if (check_hw_type () == BCM4702_CHIP)
     		return diag_led_4702 (type, act);
-		else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
+		else if (check_hw_type () == BCM4704_BCM5325F_CHIP || check_hw_type() == BCM4704_BCM5325F_EWC_CHIP)
 			return diag_led_4704 (type, act);
 		else
 			return diag_led_4712 (type, act);
@@ -905,8 +905,7 @@ get_wan_face (void)
   else if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta") || nvram_match("wl0_mode","wet"))
     {
 
-      if (check_hw_type () == BCM4702_CHIP
-	  || check_hw_type () == BCM4704_BCM5325F_CHIP)
+      if (check_hw_type () == BCM4702_CHIP || check_hw_type () == BCM4704_BCM5325F_CHIP || check_hw_type () == BCM4704_BCM5325F_EWC_CHIP)
 	strcpy (localwanface, "eth2");
       else
 	strcpy (localwanface, "eth1");
