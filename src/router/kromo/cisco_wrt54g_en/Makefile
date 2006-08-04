@@ -119,6 +119,14 @@ ifeq ($(CONFIG_GREEN),y)
 	cp green/logo.png $(INSTALLDIR)/www/style
 endif
 
+ifeq ($(CONFIG_ORANGE),y)
+	mkdir $(INSTALLDIR)/www/style/orange
+	cp orange/style.css $(INSTALLDIR)/www/style/orange
+	cp orange/style_ie.css $(INSTALLDIR)/www/style/orange
+	cp orange/common.css $(INSTALLDIR)/www/style
+	cp orange/logo.png $(INSTALLDIR)/www/style
+endif
+
 ifeq ($(CONFIG_SKYTEL),y)
 	cp -a skytel $(INSTALLDIR)/www/style
 endif
