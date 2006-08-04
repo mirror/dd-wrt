@@ -2269,7 +2269,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "wdsap") || nvram_match(wl_mode,"infra"))
     {
     
-    if (has_mimo())
+    if (has_mimo() && (nvram_match("wl0_net_mode","n-only") || nvram_match("wl0_net_mode","mixed")))
     {
     
 
