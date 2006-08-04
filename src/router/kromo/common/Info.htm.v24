@@ -275,7 +275,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">WRT-radauth</div>
-									<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
+								<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
 								<% nvram_match("dist_type", "micro", "<!--"); %>
