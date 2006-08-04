@@ -27,7 +27,8 @@ function lease_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Services";
 	F.submit_type.value = "add_lease";
- 	F.action.value = "Apply";
+	checked(F);
+	F.action.value = "Apply";
 	F.submit();
 }
 
@@ -35,7 +36,8 @@ function lease_remove_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Services";
 	F.submit_type.value = "remove_lease";
- 	F.action.value = "Apply";
+	checked(F);
+	F.action.value = "Apply";
 	F.submit();
 }
 
@@ -45,11 +47,18 @@ function to_reboot(F) {
 }
 
 function to_submit(F) {
-	
 	if(!verify_unique_static_ip(F)) {
 		return false;
 	}
 	
+	F.submit_button.value = "Services";
+	F.save_button.value = sbutton.saving;
+	checked(F);
+	F.action.value = "Apply";
+	apply(F);
+}
+
+function checked(F) {
 	if (F._openvpn_certtype) {
 		if (F._openvpn_certtype.checked == true) {
 			F.openvpn_certtype.value = 1;
@@ -73,12 +82,6 @@ function to_submit(F) {
 			F.dhcpd_usenvram.value = 0;
 		}
 	}
-	
-	F.submit_button.value = "Services";
-	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
-	apply(F);
 }
 
 addEvent(window, "load", function() {
