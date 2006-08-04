@@ -1412,6 +1412,8 @@ show_hw_type (int type)
     cprintf ("The chipset is BCM5352E\n");
   else if (type == BCM4712_CHIP)
     cprintf ("The chipset is BCM4712 + ADMtek\n");
+  else if(type == BCM4704_BCM5325F_EWC_CHIP)
+    cprintf("The chipset is BCM4704 + BCM5325F for EWC\n");
   else
     cprintf ("The chipset is not defined\n");
 
@@ -1434,6 +1436,8 @@ check_hw_type (void)
     return BCM5352E_CHIP;
   else if (nvram_match ("boardtype", "0x0101") || nvram_match ("boardtype", "0x0446"))  //0x446 is wap54g v2
     return BCM4712_CHIP;
+  else if (nvram_match("boardtype", "0x0472") && !(boardflags & BFL_ENETADM))
+    return BCM4704_BCM5325F_EWC_CHIP;
   else
     return NO_DEFINE_CHIP;
 }
