@@ -1,1 +1,0 @@
-#define ENABLE_FEATURE_MKSWAP_V0 0

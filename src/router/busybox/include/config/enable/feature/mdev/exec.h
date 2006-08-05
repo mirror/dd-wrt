@@ -1,1 +1,0 @@
-#define ENABLE_FEATURE_MDEV_EXEC 0
