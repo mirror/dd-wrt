@@ -28,6 +28,7 @@ hostinfo               = unknown
 /bin/universe          = unknown
 
 PATH: /home/dd-wrt/DEV/tools
+PATH: /opt/4.1.1/bin
 PATH: /opt/4.1.1/bin/
 PATH: /opt/4.1.1/bin/
 PATH: /sbin
@@ -165,8 +166,8 @@ configure:3237: result: yes
 configure:3249: checking for splint
 configure:3282: result: no
 configure:3295: checking for sed
-configure:3313: found /opt/4.1.1/bin//sed
-configure:3325: result: /opt/4.1.1/bin//sed
+configure:3313: found /opt/4.1.1/bin/sed
+configure:3325: result: /opt/4.1.1/bin/sed
 configure:3339: checking for cat
 configure:3357: found /bin/cat
 configure:3369: result: /bin/cat
@@ -891,7 +892,7 @@ ac_cv_path_MKDIR=/bin/mkdir
 ac_cv_path_MV=/bin/mv
 ac_cv_path_RM=/bin/rm
 ac_cv_path_RMDIR=/bin/rmdir
-ac_cv_path_SED=/opt/4.1.1/bin//sed
+ac_cv_path_SED=/opt/4.1.1/bin/sed
 ac_cv_path_SH=/bin/sh
 ac_cv_path_TOUCH=/usr/bin/touch
 ac_cv_path_install='/usr/bin/install -c'
@@ -994,7 +995,7 @@ RCS2LOG='rcs2log'
 RM='/bin/rm'
 RMDIR='/bin/rmdir'
 RM_F='${RM} -f'
-SED='/opt/4.1.1/bin//sed'
+SED='/opt/4.1.1/bin/sed'
 SET_MAKE=''
 SH='/bin/sh'
 SHELL='/bin/sh'

@@ -535,7 +535,7 @@ s,@am__fastdepCC_TRUE@,,;t t
 s,@am__fastdepCC_FALSE@,#,;t t
 s,@LN_S@,${LN} -s,;t t
 s,@SPLINT@,,;t t
-s,@SED@,/opt/4.1.1/bin//sed,;t t
+s,@SED@,/opt/4.1.1/bin/sed,;t t
 s,@CAT@,/bin/cat,;t t
 s,@CP@,/bin/cp,;t t
 s,@GREP@,/usr/bin/grep,;t t
