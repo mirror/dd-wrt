@@ -1,1 +1,0 @@
-#define ENABLE_LOCALE_SUPPORT 0

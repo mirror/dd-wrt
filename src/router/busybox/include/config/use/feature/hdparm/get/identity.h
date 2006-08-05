@@ -1,1 +1,0 @@
-#define USE_FEATURE_HDPARM_GET_IDENTITY(...)
