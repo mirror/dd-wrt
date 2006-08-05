@@ -1,1 +1,0 @@
-#define ENABLE_ASH_BUILTIN_TEST 1

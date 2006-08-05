@@ -1,1 +1,0 @@
-#define ENABLE_GETOPT_LONG 1
