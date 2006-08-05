@@ -38,7 +38,7 @@ LN          =   ln
 CC          =   gcc
 ENSUREDIR   =   $(srcdir)/ensure-dir.sh
 INSTALL     =   $(srcdir)/install-sh
-CFLAGS      =   -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -fomit-frame-pointer -Wall
+CFLAGS      =   $(COPTS) -fomit-frame-pointer -Wall
 CPPFLAGS    =   
 OBJECTS     =   src/libnet_resolve.o\
 		src/libnet_socket.o\

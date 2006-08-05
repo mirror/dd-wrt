@@ -1,1 +1,1 @@
-#define USE_GZIP(...)  __VA_ARGS__
+#define USE_GZIP(...)

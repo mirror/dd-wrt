@@ -1,1 +1,1 @@
-#define USE_FEATURE_FIND_NEWER(...)  __VA_ARGS__
+#define USE_FEATURE_FIND_NEWER(...)

@@ -1,1 +1,1 @@
-#define USE_MD5SUM(...)  __VA_ARGS__
+#define USE_MD5SUM(...)

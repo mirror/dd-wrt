@@ -1,1 +1,1 @@
-#define USE_FEATURE_LS_SORTFILES(...)  __VA_ARGS__
+#define USE_FEATURE_LS_SORTFILES(...)

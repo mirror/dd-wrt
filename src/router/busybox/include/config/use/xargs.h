@@ -1,1 +1,1 @@
-#define USE_XARGS(...)  __VA_ARGS__
+#define USE_XARGS(...)

@@ -1,1 +1,1 @@
-#define USE_FTPPUT(...)  __VA_ARGS__
+#define USE_FTPPUT(...)

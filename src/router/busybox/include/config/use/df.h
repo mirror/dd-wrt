@@ -1,1 +1,1 @@
-#define USE_DF(...)  __VA_ARGS__
+#define USE_DF(...)

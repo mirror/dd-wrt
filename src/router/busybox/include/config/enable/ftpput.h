@@ -1,1 +1,1 @@
-#define ENABLE_FTPPUT 1
+#define ENABLE_FTPPUT 0

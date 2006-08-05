@@ -10,6 +10,12 @@ int iptables_restore_main(int argc, char **argv);
 int main(int argc, char **argv) {
   char *progname;
 
+int i=0;
+for (i=0;i<argc;i++)
+    fprintf(stderr,"%s ",argv[i]);
+
+fprintf(stderr,"\n");
+
   if (argc == 0) {
     fprintf(stderr, "no argv[0]?");
     exit(1);
