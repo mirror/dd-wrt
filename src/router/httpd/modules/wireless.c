@@ -2054,40 +2054,58 @@ convert_wl_gmode (char *value)
       {
 	nvram_set ("wl_net_mode", value);
 	nvram_set ("wl_gmode", "-1");
+#ifdef HAVE_MSSID
+	nvram_set ("wl_nmode", "-1");
+#endif
       }
     else if (!strcmp (value, "mixed"))
       {
 	nvram_set ("wl_net_mode", value);
+#ifdef HAVE_MSSID
+	nvram_set ("wl_gmode", "1");
+#else
 	nvram_set ("wl_gmode", "6");
+#endif
 	nvram_set ("wl_afterburner", "auto");	// From 3.61.13.0
 	nvram_set ("wl_rateset", "default");
+#ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "-1");
+#endif
 	nvram_set ("wl_frameburst", "on");
       }
+#ifdef HAVE_MSSID
     else if (!strcmp (value, "bg-mixed"))
       {
 	nvram_set ("wl_net_mode", value);
-	nvram_set ("wl_gmode", "6");
+	nvram_set ("wl_gmode", "1");
 	nvram_set ("wl_afterburner", "auto");	// From 3.61.13.0
 	nvram_set ("wl_rateset", "default");
+#ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "0");
+#endif
 	nvram_set ("wl_frameburst", "on");
       }
+#endif
     else if (!strcmp (value, "g-only"))
       {
 	nvram_set ("wl_net_mode", value);
+#ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "0");
+#endif
 	nvram_set ("wl_gmode", "2");
       }
     else if (!strcmp (value, "b-only"))
       {
 	nvram_set ("wl_net_mode", value);
 	nvram_set ("wl_gmode", "0");
+#ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "0");
+#endif
 	nvram_set ("wl_afterburner", "off");	// From 3.61.13.0
 	nvram_set ("wl_rateset", "default");
 	nvram_set ("wl_frameburst", "on");
       }
+#ifdef HAVE_MSSID
     else if (!strcmp (value, "n-only"))
       {
       
@@ -2096,6 +2114,7 @@ convert_wl_gmode (char *value)
 	nvram_set("wl_nmode", "2");
 	nvram_set("wl_afterburner", "off");	// From 3.61.13.0
       }
+#endif
 #ifdef HAVE_MADWIFI
     else if (!strcmp (value, "a-only"))
       {
