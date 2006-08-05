@@ -1,1 +1,1 @@
-#define USE_USLEEP(...)  __VA_ARGS__
+#define USE_USLEEP(...)

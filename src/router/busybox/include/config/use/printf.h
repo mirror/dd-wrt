@@ -1,1 +1,1 @@
-#define USE_PRINTF(...)  __VA_ARGS__
+#define USE_PRINTF(...)

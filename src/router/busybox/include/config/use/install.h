@@ -1,1 +1,1 @@
-#define USE_INSTALL(...)  __VA_ARGS__
+#define USE_INSTALL(...)

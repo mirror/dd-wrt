@@ -27,6 +27,8 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
+PATH: /home/dd-wrt/DEV/tools
+PATH: /opt/4.1.1/bin/
 PATH: /opt/4.1.1/bin/
 PATH: /sbin
 PATH: /usr/sbin

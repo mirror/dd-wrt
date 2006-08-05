@@ -1,1 +1,1 @@
-#define USE_LN(...)  __VA_ARGS__
+#define USE_LN(...)

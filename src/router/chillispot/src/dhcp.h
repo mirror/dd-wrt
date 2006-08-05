@@ -87,6 +87,8 @@ struct dhcp_ethhdr_t
   uint16_t prot;
 };
 
+#include <endian.h>
+
 /* Constants for IP packet */
 #define DHCP_IP_ALEN   4
 #define DHCP_IP_HLEN  20
@@ -94,8 +96,15 @@ struct dhcp_ethhdr_t
 #define DHCP_IP_TCP    6 /* TCP Protocol number */
 
 struct dhcp_iphdr_t {
+#if __BYTE_ORDER == __LITTLE_ENDIAN  /* nbd fix for swapped version and length field */
   uint8_t  ihl:4;
   uint8_t  version:4;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+  uint8_t  version:4;
+  uint8_t  ihl:4;
+#else
+#error "Could not determine the system's endianness"
+#endif
   uint8_t  tos;
   uint16_t tot_len;
   uint16_t id;

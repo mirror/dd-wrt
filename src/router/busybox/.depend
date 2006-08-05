@@ -3,6 +3,8 @@
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/rdate.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
+/home/dd-wrt/DEV/src/router/busybox/util-linux/dmesg.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
 /home/dd-wrt/DEV/src/router/busybox/util-linux/fdisk.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fdisk/advanced.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/osf/label.h \
@@ -12,20 +14,6 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fdisk/writable.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/util-linux/fdformat.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/util-linux/getopt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/util-linux/swaponoff.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/util-linux/mkswap.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mkswap/v0.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/util-linux/more.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/use/termios.h
-
 /home/dd-wrt/DEV/src/router/busybox/util-linux/mount.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/mtab/support.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mtab/support.h \
@@ -33,21 +21,30 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mount/nfs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/util-linux/mkfs_minix.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/minix2.h
+/home/dd-wrt/DEV/src/router/busybox/util-linux/more.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/use/termios.h
+
+/home/dd-wrt/DEV/src/router/busybox/util-linux/fdformat.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/util-linux/getopt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/util-linux/mkswap.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mkswap/v0.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/util-linux/swaponoff.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/fbset.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fbset/readmode.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fbset/fancy.h
 
+/home/dd-wrt/DEV/src/router/busybox/util-linux/mkfs_minix.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/minix2.h
+
 /home/dd-wrt/DEV/src/router/busybox/util-linux/switch_root.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/pivot_root.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/util-linux/freeramdisk.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/freeramdisk.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/fdflush.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/nfsmount.o: /home/dd-wrt/DEV/src/router/busybox/util-linux/nfsmount.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
@@ -66,13 +63,16 @@
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/setarch.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
+/home/dd-wrt/DEV/src/router/busybox/util-linux/fsck_minix.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/minix2.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
 /home/dd-wrt/DEV/src/router/busybox/util-linux/hwclock.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hwclock/adjtime/fhs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/hwclock/long/options.h
 
-/home/dd-wrt/DEV/src/router/busybox/util-linux/fsck_minix.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/minix2.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+/home/dd-wrt/DEV/src/router/busybox/util-linux/losetup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/mdev.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
@@ -80,109 +80,66 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mdev/conf.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/util-linux/losetup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+/home/dd-wrt/DEV/src/router/busybox/util-linux/freeramdisk.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/freeramdisk.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/fdflush.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
 /home/dd-wrt/DEV/src/router/busybox/util-linux/readprofile.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/util-linux/dmesg.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/editors/vi.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/optimize/cursor.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/vi/win/resize.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/win/resize.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/set.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/setopts.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/readonly.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/dot/cmd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/use/signals.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/search.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/yankmark.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/colon.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/bt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
 
-/home/dd-wrt/DEV/src/router/busybox/sysklogd/logger.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/syslogd.h
+/home/dd-wrt/DEV/src/router/busybox/editors/patch.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/sysklogd/klogd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+/home/dd-wrt/DEV/src/router/busybox/editors/awk.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/awk/math.h
+
+/home/dd-wrt/DEV/src/router/busybox/editors/ed.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/editors/sed.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/sysklogd/syslogd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipc/syslog/buffer/size.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipc/syslog.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/remote/log.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/rotate/logfile.h \
+/home/dd-wrt/DEV/src/router/busybox/applets/version.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/bt.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
 
-/home/dd-wrt/DEV/src/router/busybox/sysklogd/logread.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/logread/reduced/locking.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/hush.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/msh.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
-   /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/username/completion.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/tab/completion.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/history.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/lash.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/sh/standalone/shell.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/shell/ash.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
-   /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/tab/completion.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/expand/prmt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/random/support.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/optimize/for/size.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/mail.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/cmdcmd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/cmdcmd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/builtin/test.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/builtin/test.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/builtin/echo.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/builtin/echo.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/getopts.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/math/support_64.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/math/support.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/alias.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/alias.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/read/timeout.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/read/nchars.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/job/control.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/job/control.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/usage.o: /home/dd-wrt/DEV/src/router/busybox/include/applets.h \
+/home/dd-wrt/DEV/src/router/busybox/applets/applets.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/applets.h \
    /home/dd-wrt/DEV/src/router/busybox/include/usage.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid/config/quiet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/suid/config.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid/config.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/suid.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/compress/usage.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/show/usage.h
+
+/home/dd-wrt/DEV/src/router/busybox/applets/busybox.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/autowidth.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/locale/support.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/installer.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/installer.h
+
+/home/dd-wrt/DEV/src/router/busybox/procps/sysctl.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/procps/free.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -190,8 +147,6 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/pidof/omit.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/pidof/single.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/procps/sysctl.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/procps/ps.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ps/wide.h \
@@ -213,545 +168,6 @@
 
 /home/dd-wrt/DEV/src/router/busybox/procps/kill.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/killall.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/iptunnel.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/fakeidentd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/nameif.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/interface.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ipaddr.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/wget.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/ip6/literal.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/authentication.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/statusbar.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ip.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/tunnel.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/route.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/link.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/address.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/nslookup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/tftp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/debug/tftp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/tftp/blocksize.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/blocksize.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/tftp/put.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/put.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/tftp/get.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/get.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/dnsd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ifupdown.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/mapping.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ifupdown/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ifupdown/ipv4.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ipv4.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ip.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ether-wake.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/route.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/telnetd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnetd/inetd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/login.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/devpts.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/nc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/nc/gaping/security/hole.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/inetd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/rpc.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/chargen.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/daytime.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/time.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/discard.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/echo.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/zcip.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/traceroute.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/use/icmp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/source/route.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/verbose.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/hostname.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/arping.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/netstat.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/route.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ftpgetput.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ftpgetput/long/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ftpput.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ftpget.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ping6.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/httpd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/encode/url/str.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/encode/url/str.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/encode/url/str.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/set/remote/port/to/env.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/config/with/script/interpr.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/cgi.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/cgi.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/config/with/mime/types.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/auth/md5.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/auth/md5.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/auth/md5.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/basic/auth.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/basic/auth.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/basic/auth.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/setuid.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/setuid.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/setuid.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/reload/config/sighup.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/without/inetd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/without/inetd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/without/inetd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ifconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/broadcast/plus.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/hw.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/memstart/ioaddr/irq.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/slip.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/status.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/iplink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/iproute.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/telnet.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnet/autologin.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnet/ttype.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/autowidth.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ipcalc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ipcalc/long/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/ipcalc/fancy.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ipcalc/fancy.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipcalc/fancy.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/vconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/ping.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping6.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/modutils/lsmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/query/module/interface.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/check/tainted/module.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/lsmod/pretty_2_6/output.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/modutils/rmmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/query/module/interface.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_6/modules.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_4/modules.h
-
-/home/dd-wrt/DEV/src/router/busybox/modutils/modprobe.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_6/modules.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_4/modules.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/modprobe/multiple/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/modutils/insmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_6/modules.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_4/modules.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/check/tainted/module.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/check/tainted/module.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/load/map/full.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/load/map.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/loadinkmem.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/ksymoops/symbols.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/version/checking.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/makedevs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/makedevs/table.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/makedevs/leaf.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/time.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/watchdog.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/last.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/crond.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/crond/call/sendmail.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/adjtimex.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/less.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/regexp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/marks.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/flagcs.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/flags.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/brackets.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/bbconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/hdparm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/getset/dma.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/getset/dma.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/tristate/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/tristate/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/drive/reset.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/drive/reset.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/unregister/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/unregister/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/scan/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/hdparm/hdio/scan/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/scan/hwif.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/get/identity.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/hdparm/get/identity.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/get/identity.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/devfsd.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/verbose.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/devfsd/verbose.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/fg/np.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/modload.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/debug.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/debug.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/mountpoint.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/mt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/dc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/crontab.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/rx.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/strings.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/eject.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mtab/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/setsid.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/miscutils/runlevel.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/sulogin.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/selinux.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/vlock.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/passwd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/deluser.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/deluser.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/addgroup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/adduser.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/su.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/selinux.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/login.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/securetty.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wtmp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
-
-/home/dd-wrt/DEV/src/router/busybox/loginutils/getty.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/syslogd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wtmp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h
-
-/home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp_internal.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h
-
-/home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp.o: /home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp_internal.c \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/make_directory.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xdaemon.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/error_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/safe_read.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/printf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/get_last_path_component.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/find_root_device.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/chomp.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/procps.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/top/cpu/usage/percentage.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/get_line_from_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/inet_common.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xgetlarg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/crc32.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/create_icmp6_socket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/mode_string.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/compare_string_array.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/pwd2spwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/correct_password.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/shadowpasswds.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_do_delay.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/perror_nomsg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/create_icmp_socket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xgethostbyname2.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/setup_environment.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xregcomp.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/xregex.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/md5.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/md5/size/vs/speed.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/llist.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xlisten.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/process_escape_sequence.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_asprintf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/run_shell.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/vdprintf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/opendir.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/fgets_str.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/safe_strncpy.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/vfork_daemon_rexec.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xgethostbyname.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/login.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/get_terminal_width_height.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/obscure.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/recursive_action.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/qmodule.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/speed_table.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/loop.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/herror_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/trim.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/perror_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/device_open.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xconnect.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xreadlink.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/mtab_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/mtab/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/skip_whitespace.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xsocket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/u_signal_names.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/verror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/sha1.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/wfopen.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/restricted_shell.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/error_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xgetularg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xstat.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/getopt_ulflags.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ps.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/tar.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ar.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/getopt/long.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xgetcwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_askpass.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/copy_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/preserve/hardlinks.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/run_parts.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/dump.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/dump.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/default_error_retval.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/find_mount_point.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/concat_subpath_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/concat_path_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xchdir.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/human_readable.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/read_package_field.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/last_char_is.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/print_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/change_identity.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/vherror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/find_pid_by_name.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/isdirectory.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/inode_hash.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/get_console.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/vperror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/messages.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/bt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/xfuncs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/debug.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/simplify_path.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/herror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xbind.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/full_write.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/parse_number.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/parse_mode.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/perror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/safe_write.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/mtab.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/mtab/support.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/copyfd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/ask_confirmation.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/kernel_version.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/safe_strtol.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/remove_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/pw_encrypt.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/full_read.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/libbb/bb_pwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h
 
 /home/dd-wrt/DEV/src/router/busybox/init/init.o: /home/dd-wrt/DEV/src/router/busybox/init/init_shared.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
@@ -776,8 +192,73 @@
 
 /home/dd-wrt/DEV/src/router/busybox/init/mesg.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/include/busybox.h: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/applets.h
+/home/dd-wrt/DEV/src/router/busybox/findutils/find.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/exec.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/inum.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/newer.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/xdev.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/type.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/perm.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/mmin.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/mtime.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/print0.h
+
+/home/dd-wrt/DEV/src/router/busybox/findutils/xargs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/zero/term.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/termopt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/quotes.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/confirmation.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/findutils/grep.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/context.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/fgrep/alias.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/egrep/alias.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp_internal.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h
+
+/home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp.o: /home/dd-wrt/DEV/src/router/busybox/libpwdgrp/pwd_grp_internal.c \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/vlock.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/sulogin.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/selinux.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/passwd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/deluser.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/deluser.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/addgroup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/su.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/selinux.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/adduser.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/shadowpasswds.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/login.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/securetty.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wtmp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
+
+/home/dd-wrt/DEV/src/router/busybox/loginutils/getty.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/syslogd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wtmp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/utmp.h
 
 /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/use/bb/pwd/grp.h
 
@@ -792,11 +273,12 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/buffers/go/in/bss.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/buffers/go/on/stack.h
 
-/home/dd-wrt/DEV/src/router/busybox/include/inet_common.h: /home/dd-wrt/DEV/src/router/busybox/include/platform.h
-
-/home/dd-wrt/DEV/src/router/busybox/include/shadow_.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/use/bb/shadow.h
+/home/dd-wrt/DEV/src/router/busybox/include/busybox.h: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/applets.h
 
 /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/include/shadow_.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/use/bb/shadow.h
 
 /home/dd-wrt/DEV/src/router/busybox/include/usage.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipc/syslog.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/remote/log.h \
@@ -878,6 +360,8 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
 
 /home/dd-wrt/DEV/src/router/busybox/include/grp_.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/use/bb/pwd/grp.h
+
+/home/dd-wrt/DEV/src/router/busybox/include/inet_common.h: /home/dd-wrt/DEV/src/router/busybox/include/platform.h
 
 /home/dd-wrt/DEV/src/router/busybox/include/applets.h: /home/dd-wrt/DEV/src/router/busybox/include/config/use/logger.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/use/klogd.h \
@@ -1121,58 +605,305 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/install/no/usr.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/verbose/usage.h
 
-/home/dd-wrt/DEV/src/router/busybox/findutils/find.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/exec.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/inum.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/newer.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/xdev.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/type.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/perm.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/mmin.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/mtime.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/find/print0.h
+/home/dd-wrt/DEV/src/router/busybox/miscutils/time.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/findutils/xargs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/zero/term.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/termopt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/quotes.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/xargs/support/confirmation.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+/home/dd-wrt/DEV/src/router/busybox/miscutils/makedevs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/makedevs/table.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/makedevs/leaf.h
 
-/home/dd-wrt/DEV/src/router/busybox/findutils/grep.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
+/home/dd-wrt/DEV/src/router/busybox/miscutils/watchdog.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/last.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/crond.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/crond/call/sendmail.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/adjtimex.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/less.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/context.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/fgrep/alias.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/grep/egrep/alias.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/regexp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/marks.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/flagcs.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/flags.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/less/brackets.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/bbconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/hdparm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/getset/dma.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/getset/dma.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/tristate/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/tristate/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/drive/reset.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/drive/reset.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/unregister/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/unregister/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/hdio/scan/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/hdparm/hdio/scan/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/hdio/scan/hwif.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/hdparm/get/identity.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/hdparm/get/identity.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/hdparm/get/identity.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/devfsd.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/verbose.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/devfsd/verbose.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/fg/np.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/devfsd/modload.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/debug.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/debug.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/mountpoint.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/mt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/dc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/crontab.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/rx.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/strings.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/editors/patch.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/miscutils/eject.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mtab/support.h
 
-/home/dd-wrt/DEV/src/router/busybox/editors/vi.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/optimize/cursor.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/vi/win/resize.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/win/resize.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/set.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/setopts.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/readonly.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/dot/cmd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/use/signals.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/search.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/yankmark.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/vi/colon.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h \
+/home/dd-wrt/DEV/src/router/busybox/miscutils/setsid.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/miscutils/runlevel.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xfuncs.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/debug.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xdaemon.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/vperror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/error_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/restricted_shell.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/get_last_path_component.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xbind.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/find_pid_by_name.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/make_directory.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/error_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/find_root_device.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/printf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/chomp.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/procps.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/top/cpu/usage/percentage.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/messages.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/bb/bt.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
 
-/home/dd-wrt/DEV/src/router/busybox/editors/awk.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/awk/math.h
+/home/dd-wrt/DEV/src/router/busybox/libbb/inet_common.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
 
-/home/dd-wrt/DEV/src/router/busybox/editors/ed.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/libbb/xgetularg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
-/home/dd-wrt/DEV/src/router/busybox/editors/sed.o: /home/dd-wrt/DEV/src/router/busybox/include/xregex.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+/home/dd-wrt/DEV/src/router/busybox/libbb/get_line_from_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xstat.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/create_icmp6_socket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/herror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/safe_read.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/compare_string_array.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/simplify_path.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/pwd2spwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/shadow_.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/mode_string.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/crc32.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/full_write.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xgetlarg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xgetcwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/create_icmp_socket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xchdir.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/correct_password.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/shadowpasswds.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/parse_mode.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_do_delay.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/perror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xgethostbyname2.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/setup_environment.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/parse_number.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xregcomp.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/xregex.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/md5.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/md5/size/vs/speed.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/human_readable.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/process_escape_sequence.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/llist.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/mtab.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/mtab/support.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xlisten.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/copyfd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_asprintf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/kernel_version.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/run_shell.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/safe_strtol.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/vdprintf.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/opendir.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/read_package_field.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/vfork_daemon_rexec.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/safe_strncpy.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/ask_confirmation.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/fgets_str.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/wfopen.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/get_terminal_width_height.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/safe_write.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xgethostbyname.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/obscure.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/print_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/recursive_action.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/qmodule.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/pw_encrypt.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/speed_table.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/login.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/loop.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/last_char_is.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/herror_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/trim.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/concat_subpath_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/perror_nomsg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/remove_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/device_open.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_pwd.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xreadlink.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/full_read.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/xconnect.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/skip_whitespace.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/vherror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/perror_msg_and_die.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/mtab_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/mtab/support.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_xsocket.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/u_signal_names.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/verror_msg.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/sha1.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/bb_askpass.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/copy_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/preserve/hardlinks.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/change_identity.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/default_error_retval.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/isdirectory.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/find_mount_point.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/run_parts.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/getopt_ulflags.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ps.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/tar.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ar.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/getopt/long.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/get_console.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/inode_hash.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/concat_path_file.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/libbb/dump.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/dump.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsbb.h: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
@@ -1181,8 +912,6 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/util.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/util.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkid.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
@@ -1190,6 +919,8 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsbb.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.h: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_ext_attr.h \
@@ -1204,6 +935,12 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsbb.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/fsck.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/fsck.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkid.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/devfs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/tune2fs.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/kernel-jbd.h \
@@ -1222,12 +959,6 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/e2label.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/fsck.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/fsck.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkid.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/devfs.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/mke2fs.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/util.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
@@ -1236,33 +967,7 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/debianutils/pipe_progress.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/debianutils/which.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/debianutils/start_stop_daemon.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/start/stop/daemon/long/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/start/stop/daemon/fancy.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/start/stop/daemon/fancy.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/start/stop/daemon/fancy.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/debianutils/readlink.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/readlink/follow.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/debianutils/mktemp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/debianutils/run_parts.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/coreutils/md5_sha1_sum.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/md5/sha1/sum/check.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/sha1sum.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/sha1sum.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/md5sum.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/md5sum.h
+/home/dd-wrt/DEV/src/router/busybox/coreutils/comm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/printf.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1282,6 +987,17 @@
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mv/long/options.h
 
+/home/dd-wrt/DEV/src/router/busybox/coreutils/id.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
+
+/home/dd-wrt/DEV/src/router/busybox/coreutils/md5_sha1_sum.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/md5/sha1/sum/check.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/sha1sum.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/sha1sum.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/md5sum.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/md5sum.h
+
 /home/dd-wrt/DEV/src/router/busybox/coreutils/dd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/dd/ibs/obs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/dd/signal/handling.h
@@ -1291,13 +1007,13 @@
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/uudecode.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/mknod.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
 /home/dd-wrt/DEV/src/router/busybox/coreutils/diff.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/diff/minimal.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/diff/dir.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/diff/binary.h
+
+/home/dd-wrt/DEV/src/router/busybox/coreutils/mknod.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/ln.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1313,10 +1029,10 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/date/isofmt.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/date/isofmt.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/rm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
 /home/dd-wrt/DEV/src/router/busybox/coreutils/expr.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/expr/math/support_64.h
+
+/home/dd-wrt/DEV/src/router/busybox/coreutils/rm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/true.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1340,23 +1056,23 @@
 /home/dd-wrt/DEV/src/router/busybox/coreutils/nohup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
+/home/dd-wrt/DEV/src/router/busybox/coreutils/chmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
 /home/dd-wrt/DEV/src/router/busybox/coreutils/pwd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/chmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/coreutils/yes.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/realpath.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/coreutils/yes.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/head.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/fancy/head.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/debug/yank/susv2.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/od.o: /home/dd-wrt/DEV/src/router/busybox/include/dump.h \
+/home/dd-wrt/DEV/src/router/busybox/coreutils/cp.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/cp.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
+/home/dd-wrt/DEV/src/router/busybox/coreutils/od.o: /home/dd-wrt/DEV/src/router/busybox/include/dump.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/stty.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
@@ -1376,10 +1092,10 @@
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/uniq.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/chown.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
 /home/dd-wrt/DEV/src/router/busybox/coreutils/echo.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/echo.h
+
+/home/dd-wrt/DEV/src/router/busybox/coreutils/chown.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/length.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1394,10 +1110,10 @@
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/hostid.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
+/home/dd-wrt/DEV/src/router/busybox/coreutils/usleep.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
 /home/dd-wrt/DEV/src/router/busybox/coreutils/catv.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
-
-/home/dd-wrt/DEV/src/router/busybox/coreutils/usleep.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/who.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
@@ -1411,10 +1127,10 @@
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/printenv.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
+/home/dd-wrt/DEV/src/router/busybox/coreutils/watch.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
 /home/dd-wrt/DEV/src/router/busybox/coreutils/mkdir.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/mkdir/long/options.h
-
-/home/dd-wrt/DEV/src/router/busybox/coreutils/watch.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/cat.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1446,9 +1162,9 @@
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/locale/support.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/cmp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
 /home/dd-wrt/DEV/src/router/busybox/coreutils/dirname.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/coreutils/cmp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/tty.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1460,26 +1176,147 @@
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/cut.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/comm.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash.h
 
-/home/dd-wrt/DEV/src/router/busybox/coreutils/id.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+/home/dd-wrt/DEV/src/router/busybox/shell/msh.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/selinux.h
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h
 
-/home/dd-wrt/DEV/src/router/busybox/console-tools/setkeycodes.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/shell/lash.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/sh/standalone/shell.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
 
-/home/dd-wrt/DEV/src/router/busybox/console-tools/dumpkmap.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/shell/hush.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
+
+/home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/username/completion.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/tab/completion.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/history.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
+
+/home/dd-wrt/DEV/src/router/busybox/shell/ash.o: /home/dd-wrt/DEV/src/router/busybox/shell/cmdedit.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/fancy/prompt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/tab/completion.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/savehistory.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing/vi.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/command/editing.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/standalone/shell.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/sh/extra/quiet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/expand/prmt.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/random/support.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/optimize/for/size.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/mail.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/cmdcmd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/cmdcmd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/builtin/test.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/builtin/test.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/builtin/echo.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/builtin/echo.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/getopts.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/math/support_64.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/math/support.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/alias.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/alias.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/read/timeout.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/read/nchars.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ash/job/control.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/ash/job/control.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/busybox/exec/path.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/locale/support.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/pipe_progress.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/which.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/start_stop_daemon.o: /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/start/stop/daemon/long/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/start/stop/daemon/fancy.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/start/stop/daemon/fancy.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/start/stop/daemon/fancy.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/readlink.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/readlink/follow.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/run_parts.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/debianutils/mktemp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/modutils/rmmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/query/module/interface.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_6/modules.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_4/modules.h
+
+/home/dd-wrt/DEV/src/router/busybox/modutils/lsmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/query/module/interface.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/check/tainted/module.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/lsmod/pretty_2_6/output.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/modutils/modprobe.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_6/modules.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature_2_4/modules.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/modprobe/multiple/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/modutils/insmod.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_6/modules.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature_2_4/modules.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/check/tainted/module.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/check/tainted/module.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/load/map/full.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/load/map.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/loadinkmem.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/ksymoops/symbols.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/insmod/version/checking.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/setconsole.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/setconsole/long/options.h
+
+/home/dd-wrt/DEV/src/router/busybox/console-tools/dumpkmap.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/setlogcons.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/reset.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/console-tools/loadfont.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/console-tools/setkeycodes.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/chvt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/console-tools/loadfont.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/clear.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
@@ -1489,10 +1326,26 @@
 
 /home/dd-wrt/DEV/src/router/busybox/console-tools/deallocvt.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/uncompress.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+/home/dd-wrt/DEV/src/router/busybox/sysklogd/logger.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/syslogd.h
+
+/home/dd-wrt/DEV/src/router/busybox/sysklogd/klogd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/sysklogd/syslogd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipc/syslog/buffer/size.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipc/syslog.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/remote/log.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/rotate/logfile.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
+
+/home/dd-wrt/DEV/src/router/busybox/sysklogd/logread.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/logread/reduced/locking.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/rpm.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/uncompress.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/dpkg_deb.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
@@ -1548,131 +1401,463 @@
 /home/dd-wrt/DEV/src/router/busybox/archival/rpm2cpio.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/applets/version.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/bt.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
+/home/dd-wrt/DEV/src/router/busybox/networking/iptunnel.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/applets/applets.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/grp_.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/applets.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/usage.h \
+/home/dd-wrt/DEV/src/router/busybox/networking/fakeidentd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/nameif.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/interface.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ipaddr.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/wget.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/ip6/literal.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/authentication.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/wget/statusbar.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ip.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/tunnel.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/route.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/link.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ip/address.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/nslookup.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/tftp.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/debug/tftp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/tftp/blocksize.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/blocksize.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/tftp/put.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/put.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/tftp/get.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tftp/get.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/dnsd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ifupdown.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/mapping.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ifupdown/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ifupdown/ipv4.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ipv4.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifupdown/ip.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ether-wake.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/route.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/telnetd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnetd/inetd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/login.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/devpts.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/nc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/nc/gaping/security/hole.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/inetd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/rpc.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/chargen.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/daytime.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/time.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/discard.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/inetd/support/builtin/echo.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/zcip.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/traceroute.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/use/icmp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/source/route.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/traceroute/verbose.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/hostname.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/arping.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/netstat.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
    /home/dd-wrt/DEV/src/router/busybox/include/pwd_.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid/config/quiet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/suid/config.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid/config.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/suid.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/suid.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/compress/usage.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/show/usage.h
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/route.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h
 
-/home/dd-wrt/DEV/src/router/busybox/applets/busybox.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/autowidth.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/locale/support.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/installer.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/installer.h
+/home/dd-wrt/DEV/src/router/busybox/networking/ftpgetput.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ftpgetput/long/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ftpput.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/ftpget.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_extract_to_buffer.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+/home/dd-wrt/DEV/src/router/busybox/networking/ping6.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/httpd.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/encode/url/str.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/encode/url/str.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/encode/url/str.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/set/remote/port/to/env.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/config/with/script/interpr.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/cgi.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/cgi.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/config/with/mime/types.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/auth/md5.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/auth/md5.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/auth/md5.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/basic/auth.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/basic/auth.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/basic/auth.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/setuid.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/setuid.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/setuid.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/reload/config/sighup.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/skip/feature/httpd/without/inetd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/httpd/without/inetd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/httpd/without/inetd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ifconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/broadcast/plus.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/hw.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/memstart/ioaddr/irq.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/slip.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ifconfig/status.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipv6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/iplink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/iproute.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/vconfig.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ipcalc.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ipcalc/long/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/use/feature/ipcalc/fancy.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/ipcalc/fancy.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ipcalc/fancy.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/telnet.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnet/autologin.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/telnet/ttype.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/autowidth.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/ping.o: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping6.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/fancy/ping.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/usage.o: /home/dd-wrt/DEV/src/router/busybox/include/applets.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/usage.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/mconf.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h \
+   /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/menu.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/symbol.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/util.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/expr.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc_proto.h \
+   /home/dd-wrt/DEV/src/router/busybox/scripts/config/expr.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/confdata.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/conf.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/script.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/udhcp/debug.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dumpleases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/install/no/usr.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/syslog.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/udhcp/syslog.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iptunnel.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_skip.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rtm_map.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_cpio.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_addr.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/unpack_ar_archive.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rtm_map.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ipaddress.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iplink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_parse_common_args.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iproute.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_proto.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
+   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_types.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h
+
+/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_extract_to_buffer.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_skip.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_cpio.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/unpack_ar_archive.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_extract_to_stdout.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_ar.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_ar.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/ar/long/filenames.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_bunzip2.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_bunzip2.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/init_handle.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/check_header_gzip.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/check_header_gzip.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/init_handle.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar_lzma.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/open_transformer.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/open_transformer.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/header_list.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_align.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_align.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/header_verbose_list.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/archive_xread_all.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/archive_xread_all.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tar/gnu/extensions.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/tar/oldgnu/compatibility.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_list.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_uncompress.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/header_verbose_list.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar_bz2.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar_bz2.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/seek_by_jump.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/seek_by_jump.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/unarchive/tape.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/seek_by_char.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/seek_by_char.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/header_skip.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_reject_list.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_uncompress.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/archive_xread_all_eof.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/archive_xread_all_eof.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_unzip.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_unzip.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_unlzma.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/decompress_unlzma.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/lzma/fast.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/clean/up.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_list_reassign.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_list_reassign.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/deb/tar/lzma.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/deb/tar/bz2.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/deb/tar/gz.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_extract_all.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/data_extract_all.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/find_list_entry.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_reject_list.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/filter_accept_all.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
-/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar_gz.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/find_list_entry.o: /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
+
+/home/dd-wrt/DEV/src/router/busybox/archival/libunarchive/get_header_tar_gz.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/unarchive.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/cp_mv_stat.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
 
 /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/getopt_mk_fifo_nod.o: /home/dd-wrt/DEV/src/router/busybox/coreutils/libcoreutils/coreutils.h \
    /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/read_bb_file.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/bitmaps.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
@@ -1687,7 +1872,11 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/alloc_tables.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/unix_io.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/read_bb_file.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/expanddir.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
@@ -1705,14 +1894,24 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/dupfs.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fsP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_io.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/kernel-jbd.h: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/read_bb.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/badblocks.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fsP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/getsectsize.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/alloc_sb.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/alloc_tables.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/finddev.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/inode_io.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
@@ -1771,11 +1970,12 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/res_gdt.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/get_pathname.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/dirblock.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/getsectsize.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext_attr.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_ext_attr.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
@@ -1787,19 +1987,22 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/write_bb_file.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/unlink.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/get_pathname.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/io_manager.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/unlink.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/brel_ma.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/brel.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/io_manager.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/mkjournal.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/kernel-jbd.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2fsck.h \
+   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
@@ -1816,10 +2019,10 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/check_desc.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_types.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/dblist_dir.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fsP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_types.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/rs_bitmap.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
@@ -1857,21 +2060,6 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/lookup.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/unix_io.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/alloc_sb.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_io.h: /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/read_bb.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/finddev.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fs.h \
-   /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/dblist.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fsP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
@@ -1887,13 +2075,13 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/sparse.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2fsP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/gen_uuid.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/pack.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid_time.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/gen_uuid.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/unpack.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid_time.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/compare.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
 
@@ -1903,15 +2091,13 @@
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/unparse.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuidP.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/ostype.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/fgetsetflags.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/ls.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/fgetsetflags.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/ps.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/fgetsetversion.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/ostype.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/mntopts.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
@@ -1922,24 +2108,26 @@
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/uuid.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_types.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/fgetsetversion.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/parse_num.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/iod.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/feature.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/ext2fs/ext2_fs.h \
    /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/feature.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/iod.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/hashstr.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/e2p/e2p.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/devname.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
-
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/dev.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/save.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/dev.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkid_getsize.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
+
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/devname.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
 
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/resolve.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/probe.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
@@ -1956,212 +2144,24 @@
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkid.h \
    /home/dd-wrt/DEV/src/router/busybox/include/config/config/lfs.h
 
-/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/devno.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
-
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/read.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h \
    /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/uuid/uuid.h
 
+/home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/devno.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
+
 /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/tag.o: /home/dd-wrt/DEV/src/router/busybox/e2fsprogs/blkid/blkidP.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/script.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientpacket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/arpping.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/udhcp/debug.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpc.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/signalpipe.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/busybox.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/install/no/usr.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/static_leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dumpleases.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/leases.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/serverpacket.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/packet.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/clientsocket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/pidfile.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/syslog.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/config/feature/udhcp/syslog.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/bb/ver.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/socket.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.o: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/files.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/options.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/dhcpd.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/udhcp/common.h: /home/dd-wrt/DEV/src/router/busybox/networking/udhcp/libbb_udhcp.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/config/enable/feature/udhcp/debug.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iptunnel.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rtm_map.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/inet_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_addr.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rtm_map.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_map.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ipaddress.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h: /home/dd-wrt/DEV/src/router/busybox/include/busybox.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iplink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/iproute.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_parse_common_args.o: /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ip_common.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_proto.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h \
-   /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/utils.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/ll_types.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/rt_names.h
-
-/home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.o: /home/dd-wrt/DEV/src/router/busybox/networking/libiproute/libnetlink.h \
-   /home/dd-wrt/DEV/src/router/busybox/include/libbb.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/mconf.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h \
-   /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/menu.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/symbol.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/util.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc_proto.h \
-   /home/dd-wrt/DEV/src/router/busybox/scripts/config/expr.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/expr.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/confdata.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/conf.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lkc.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/inputbox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
 
 /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/msgbox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
 
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/inputbox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
+
 /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/checklist.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
 
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/menubox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/yesno.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
 
 /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/textbox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
 
+/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/menubox.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
+
 /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/util.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/colors.h \
    /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h
-
-/home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/yesno.o: /home/dd-wrt/DEV/src/router/busybox/scripts/config/lxdialog/dialog.h

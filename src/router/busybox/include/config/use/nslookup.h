@@ -1,1 +1,1 @@
-#define USE_NSLOOKUP(...)  __VA_ARGS__
+#define USE_NSLOOKUP(...)

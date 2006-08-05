@@ -1,1 +1,1 @@
-#define USE_DMESG(...)  __VA_ARGS__
+#define USE_DMESG(...)

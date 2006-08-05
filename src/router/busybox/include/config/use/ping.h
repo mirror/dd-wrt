@@ -1,1 +1,1 @@
-#define USE_PING(...)  __VA_ARGS__
+#define USE_PING(...)

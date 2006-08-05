@@ -1,1 +1,1 @@
-#define USE_ID(...)  __VA_ARGS__
+#define USE_ID(...)

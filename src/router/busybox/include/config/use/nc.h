@@ -1,1 +1,1 @@
-#define USE_NC(...)  __VA_ARGS__
+#define USE_NC(...)

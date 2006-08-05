@@ -1,1 +1,1 @@
-#define USE_MODPROBE(...)  __VA_ARGS__
+#define USE_MODPROBE(...)

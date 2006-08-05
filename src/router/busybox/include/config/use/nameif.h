@@ -1,1 +1,1 @@
-#define USE_NAMEIF(...)  __VA_ARGS__
+#define USE_NAMEIF(...)

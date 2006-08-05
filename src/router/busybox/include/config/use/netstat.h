@@ -1,1 +1,1 @@
-#define USE_NETSTAT(...)  __VA_ARGS__
+#define USE_NETSTAT(...)

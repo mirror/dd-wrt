@@ -1,1 +1,1 @@
-#define USE_DIRNAME(...)  __VA_ARGS__
+#define USE_DIRNAME(...)

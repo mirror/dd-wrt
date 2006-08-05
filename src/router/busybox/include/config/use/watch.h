@@ -1,1 +1,1 @@
-#define USE_WATCH(...)  __VA_ARGS__
+#define USE_WATCH(...)
