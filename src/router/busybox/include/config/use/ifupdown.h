@@ -1,1 +1,1 @@
-#define USE_IFUPDOWN(...)  __VA_ARGS__
+#define USE_IFUPDOWN(...)

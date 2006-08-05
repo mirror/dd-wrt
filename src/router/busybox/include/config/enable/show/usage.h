@@ -1,1 +1,1 @@
-#define ENABLE_SHOW_USAGE 0
+#define ENABLE_SHOW_USAGE 1

@@ -1,1 +1,1 @@
-#define USE_FEATURE_FIND_MTIME(...)  __VA_ARGS__
+#define USE_FEATURE_FIND_MTIME(...)

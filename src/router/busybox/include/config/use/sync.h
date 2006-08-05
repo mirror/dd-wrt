@@ -1,1 +1,1 @@
-#define USE_SYNC(...)  __VA_ARGS__
+#define USE_SYNC(...)

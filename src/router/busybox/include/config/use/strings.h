@@ -1,1 +1,1 @@
-#define USE_STRINGS(...)  __VA_ARGS__
+#define USE_STRINGS(...)

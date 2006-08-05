@@ -56,8 +56,8 @@ struct wpa_driver_broadcom_data {
 #if !defined(PSK_ENABLED) /* NEW driver interface */
 #define WL_VERSION 360130
 /* wireless authentication bit vector */
-#define WPA_ENABLED 1
-#define PSK_ENABLED 2
+#define WPA_ENABLED 2
+#define PSK_ENABLED 4
                                                                                 
 #define WAUTH_WPA_ENABLED(wauth)  ((wauth) & WPA_ENABLED)
 #define WAUTH_PSK_ENABLED(wauth)  ((wauth) & PSK_ENABLED)
@@ -177,11 +177,11 @@ static int wpa_driver_broadcom_set_key(void *priv, wpa_alg alg,
 		wkt.algo = CRYPTO_ALGO_WEP128; /* CRYPTO_ALGO_WEP1? */
 		break;
 	case WPA_ALG_TKIP:
-		wkt.algo = 0; /* CRYPTO_ALGO_TKIP? */
+		wkt.algo = CRYPTO_ALGO_TKIP;
 		break;
 	case WPA_ALG_CCMP:
-		wkt.algo = 0; /* CRYPTO_ALGO_AES_CCM;
-			       * AES_OCB_MSDU, AES_OCB_MPDU? */
+		wkt.algo = CRYPTO_ALGO_AES_CCM;
+			       /* AES_OCB_MSDU, AES_OCB_MPDU? */
 		break;
 	default:
 		wkt.algo = CRYPTO_ALGO_NALG;
@@ -285,7 +285,7 @@ static void wpa_driver_broadcom_event_receive(int sock, void *ctx,
 	}
 	free(data.assoc_info.resp_ies);
 }	
-
+u
 static void * wpa_driver_broadcom_init(void *ctx, const char *ifname)
 {
 	int s;
@@ -544,11 +544,11 @@ wpa_driver_broadcom_associate(void *priv,
 
 	switch (params->key_mgmt_suite) {
 	case KEY_MGMT_802_1X:
-		wpa_auth = 1;
+		wpa_auth = 2;
 		break;
 
 	case KEY_MGMT_PSK:
-		wpa_auth = 2;
+		wpa_auth = 4;
 		break;
 
 	default:
@@ -560,6 +560,7 @@ wpa_driver_broadcom_associate(void *priv,
 	 * group_suite, key_mgmt_suite);
 	 * broadcom_ioctl(ifname, WLC_GET_WSEC, &wsec, sizeof(wsec));
 	 * wl join uses wlc_sec_wep here, not wlc_set_wsec */
+	wl_iovar_setint(name, "sup_wpa", 1);
 
 	if (broadcom_ioctl(drv, WLC_SET_WSEC, &wsec, sizeof(wsec)) < 0 ||
 	    broadcom_ioctl(drv, WLC_SET_WPA_AUTH, &wpa_auth,

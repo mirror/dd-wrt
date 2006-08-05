@@ -1,1 +1,1 @@
-#define USE_CHROOT(...)  __VA_ARGS__
+#define USE_CHROOT(...)

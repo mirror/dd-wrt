@@ -1,1 +1,1 @@
-#define USE_TTY(...)  __VA_ARGS__
+#define USE_TTY(...)

@@ -1,1 +1,1 @@
-#define USE_UNIQ(...)  __VA_ARGS__
+#define USE_UNIQ(...)

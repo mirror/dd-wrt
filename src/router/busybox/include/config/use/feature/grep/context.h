@@ -1,1 +1,1 @@
-#define USE_FEATURE_GREP_CONTEXT(...)  __VA_ARGS__
+#define USE_FEATURE_GREP_CONTEXT(...)

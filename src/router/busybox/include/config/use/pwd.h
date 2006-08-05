@@ -1,1 +1,1 @@
-#define USE_PWD(...)  __VA_ARGS__
+#define USE_PWD(...)

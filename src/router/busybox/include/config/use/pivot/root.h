@@ -1,1 +1,1 @@
-#define USE_PIVOT_ROOT(...)  __VA_ARGS__
+#define USE_PIVOT_ROOT(...)

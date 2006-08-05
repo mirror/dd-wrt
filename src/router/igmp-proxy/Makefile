@@ -7,7 +7,7 @@
 
 # Compiler. 
 #CC = mipsel-linux-uclibc-gcc
-CFLAGS = -Os -mips32 -mtune=mips32 -pipe
+CFLAGS = $(COPTS)
 
 # Linker. 
 #LD = mipsel-linux-uclibc-ld

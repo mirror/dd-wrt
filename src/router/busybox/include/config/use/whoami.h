@@ -1,1 +1,1 @@
-#define USE_WHOAMI(...)  __VA_ARGS__
+#define USE_WHOAMI(...)
