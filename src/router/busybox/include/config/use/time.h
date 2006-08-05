@@ -1,1 +1,1 @@
-#define USE_TIME(...)  __VA_ARGS__
+#define USE_TIME(...)

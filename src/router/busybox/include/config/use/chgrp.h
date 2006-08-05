@@ -1,1 +1,1 @@
-#define USE_CHGRP(...)  __VA_ARGS__
+#define USE_CHGRP(...)

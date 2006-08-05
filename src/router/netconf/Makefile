@@ -17,7 +17,7 @@ else
 CFLAGS	+= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -mips32 -mtune=mips32 -pipe
+CFLAGS	+= $(COPTS)
 LDFLAGS = -L. -L$(TOP)/iptables.linksys/libiptc/
 
 all: libnetconf.so libnetconf.a netconf 

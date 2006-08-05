@@ -1,1 +1,1 @@
-#define USE_RUN_PARTS(...)  __VA_ARGS__
+#define USE_RUN_PARTS(...)

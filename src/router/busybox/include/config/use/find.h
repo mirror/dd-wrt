@@ -1,1 +1,1 @@
-#define USE_FIND(...)  __VA_ARGS__
+#define USE_FIND(...)

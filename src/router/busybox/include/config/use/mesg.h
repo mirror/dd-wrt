@@ -1,1 +1,1 @@
-#define USE_MESG(...)  __VA_ARGS__
+#define USE_MESG(...)

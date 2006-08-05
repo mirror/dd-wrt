@@ -1,1 +1,1 @@
-#define USE_GUNZIP(...)  __VA_ARGS__
+#define USE_GUNZIP(...)

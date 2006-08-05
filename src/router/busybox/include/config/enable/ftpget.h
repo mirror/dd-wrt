@@ -1,1 +1,1 @@
-#define ENABLE_FTPGET 1
+#define ENABLE_FTPGET 0

@@ -1,1 +1,1 @@
-#define USE_CLEAR(...)  __VA_ARGS__
+#define USE_CLEAR(...)

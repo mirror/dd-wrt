@@ -1,1 +1,1 @@
-#define USE_ADJTIMEX(...)  __VA_ARGS__
+#define USE_ADJTIMEX(...)

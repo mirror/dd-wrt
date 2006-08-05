@@ -9,7 +9,7 @@ datadir= ${prefix}/share
 #CC= gcc -pipe
 LDFLAGS+=-s
 LIBS+= -lpthread
-CFLAGS+= -Os -pipe -mips32 -mtune=mips32   -DHAVE_CONFIG_H -W -Wall
+CFLAGS+= $(COPTS)   -DHAVE_CONFIG_H -W -Wall
 CPPFLAGS+=-DIPCAD_VERSION=\"3.6.2\"
 CPPFLAGS+=-DCONFIG_FILE=\"${sysconfdir}/ipcad.conf\"
 CPPFLAGS+=-DHAVE_CONFIG_H -D_REENTRANT -D_THREAD_SAFE

@@ -1,1 +1,1 @@
-#define USE_MORE(...)  __VA_ARGS__
+#define USE_MORE(...)

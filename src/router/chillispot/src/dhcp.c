@@ -84,6 +84,24 @@ const static int paranoid = 1; /* Check for errors which cannot happen */
 #endif
 
 
+/*
+ *    BrainSlayer: 
+ *    wrapper for fixing the big endian bugs within dhcp server code.its surelly not the best.
+ *    all dhcp packet fields must be handled in little endian
+ */
+
+static uint16_t swap16(uint16_t word) {
+#if __BYTE_ORDER == __BIG_ENDIAN
+  unsigned char low = word>>8;
+  unsigned char high = word&0xff;
+  return ((uint16_t)(high<<8))|low;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+  return word;
+#else
+#error "Could not determine the system's endianness"
+#endif
+}
+
 /**
  * dhcp_ip_check()
  * Generates an IPv4 header checksum.
@@ -93,11 +111,11 @@ int dhcp_ip_check(struct dhcp_ippacket_t *pack) {
   uint32_t sum = 0;
   pack->iph.check = 0;
   for (i=0; i<(pack->iph.ihl * 2); i++) {
-    sum += ((uint16_t*) &pack->iph)[i];
+    sum += swap16(((uint16_t*) &pack->iph)[i]); /* brainslayer */
   }
   while (sum>>16)
     sum = (sum & 0xFFFF)+(sum >> 16);
-  pack->iph.check = ~sum;
+  pack->iph.check = swap16(~sum); /* brainslayer */
   return 0;
 }
 
@@ -120,27 +138,28 @@ int dhcp_udp_check(struct dhcp_fullpacket_t *pack) {
   }
 
   /* Sum UDP header and payload */
+		
   for (i=0; i<(udp_len/2); i++) {
-    sum += ((uint16_t*) &pack->udph)[i];
+    sum += swap16(((uint16_t*) &pack->udph)[i]); /* brainslayer */
   }
 
-  /* Sum any uneven payload octet */
+
   if (udp_len & 0x01) {
     sum += ((uint8_t*) &pack->udph)[udp_len-1];
   }
 
   /* Sum both source and destination address */
   for (i=0; i<4; i++) {
-    sum += ((uint16_t*) &pack->iph.saddr)[i];
+    sum += swap16(((uint16_t*) &pack->iph.saddr)[i]); /* brainslayer */
   }
 
   /* Sum both protocol and udp_len (again) */
-  sum = sum + pack->udph.len + ((pack->iph.protocol<<8)&0xFF00);
+  sum = sum + swap16(pack->udph.len) + ((pack->iph.protocol<<8)&0xFF00); /* brainslayer */
 
   while (sum>>16)
     sum = (sum & 0xFFFF)+(sum >> 16);
 
-  pack->udph.check = ~sum;
+  pack->udph.check = swap16(~sum); /* brainslayer */
 
   return 0;
 }
@@ -169,7 +188,7 @@ int dhcp_tcp_check(struct dhcp_ippacket_t *pack, int length) {
 
   /* Sum TCP header and payload */
   for (i=0; i<(tcp_len/2); i++) {
-    sum += ((uint16_t*) pack->payload)[i];
+    sum += swap16(((uint16_t*) pack->payload)[i]); /* brainslayer */
   }
 
   /* Sum any uneven payload octet */
@@ -179,16 +198,16 @@ int dhcp_tcp_check(struct dhcp_ippacket_t *pack, int length) {
 
   /* Sum both source and destination address */
   for (i=0; i<4; i++) {
-    sum += ((uint16_t*) &pack->iph.saddr)[i];
+    sum += swap16(((uint16_t*) &pack->iph.saddr)[i]); /* brainslayer */
   }
 
   /* Sum both protocol and tcp_len */
-  sum = sum + htons(tcp_len) + ((pack->iph.protocol<<8)&0xFF00);
+  sum = sum + swap16(htons(tcp_len)) + ((pack->iph.protocol<<8)&0xFF00); /* brainslayer */
 
   while (sum>>16)
     sum = (sum & 0xFFFF)+(sum >> 16);
 
-  tcph->check = ~sum;
+  tcph->check = swap16(~sum); /* brainslayer */
 
   return 0;
 }

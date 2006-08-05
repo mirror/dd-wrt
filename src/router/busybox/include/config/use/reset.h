@@ -1,1 +1,1 @@
-#define USE_RESET(...)  __VA_ARGS__
+#define USE_RESET(...)

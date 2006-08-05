@@ -1,1 +1,1 @@
-#define USE_TEE(...)  __VA_ARGS__
+#define USE_TEE(...)

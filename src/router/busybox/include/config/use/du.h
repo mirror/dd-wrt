@@ -1,1 +1,1 @@
-#define USE_DU(...)  __VA_ARGS__
+#define USE_DU(...)

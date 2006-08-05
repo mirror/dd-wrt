@@ -1,1 +1,1 @@
-#define USE_GETOPT(...)  __VA_ARGS__
+#define USE_GETOPT(...)

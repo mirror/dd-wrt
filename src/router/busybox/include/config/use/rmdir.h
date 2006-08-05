@@ -1,1 +1,1 @@
-#define USE_RMDIR(...)  __VA_ARGS__
+#define USE_RMDIR(...)
