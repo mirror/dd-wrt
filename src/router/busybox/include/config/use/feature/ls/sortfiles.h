@@ -1,1 +1,0 @@
-#define USE_FEATURE_LS_SORTFILES(...)
