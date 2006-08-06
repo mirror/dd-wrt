@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dnsmasq 2.24\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-06-09 20:59+0100\n"
+"POT-Creation-Date: 2006-08-04 11:57+0100\n"
 "PO-Revision-Date: 2005-10-02 19:05+0100\n"
 "Last-Translator:  Lionel Tricon <lionel.tricon@free.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -20,17 +20,17 @@ msgstr ""
 msgid "failed to load names from %s: %m"
 msgstr "Impossible de charger les noms a partir de %s: %m"
 
-#: cache.c:606 dhcp.c:679
+#: cache.c:606 dhcp.c:683
 #, fuzzy, c-format
 msgid "bad address at %s line %d"
 msgstr "mauvais nom dans %s ligne %d"
 
-#: cache.c:633 dhcp.c:693
+#: cache.c:633 dhcp.c:697
 #, c-format
 msgid "bad name at %s line %d"
 msgstr "mauvais nom dans %s ligne %d"
 
-#: cache.c:639 dhcp.c:747
+#: cache.c:639 dhcp.c:751
 #, c-format
 msgid "read %s - %d addresses"
 msgstr "lecture %s - %d adresses"
@@ -57,7 +57,7 @@ msgstr ""
 "taille de cache %d, %d/%d insertions dans le cache ont reutilisees des "
 "entrees qui n'ont pas expirees"
 
-#: util.c:153 option.c:1202
+#: util.c:153 option.c:1214
 msgid "could not get memory"
 msgstr "impossible d'allouer de la memoire"
 
@@ -75,285 +75,295 @@ msgstr "IMPOSSIBLE de demarrer"
 msgid "infinite"
 msgstr "illimite"
 
-#: option.c:138
+#: option.c:141
 msgid "Specify local address(es) to listen on."
 msgstr ""
 "Specifie la ou les adresse(s) locales ou le demon doit se mettre a l'ecoute."
 
-#: option.c:139
+#: option.c:142
 msgid "Return ipaddr for all hosts in specified domains."
 msgstr ""
 "Retourne les adresses IP pour toutes les machines presentent dans les "
 "domaines specifies"
 
-#: option.c:140
+#: option.c:143
 msgid "Fake reverse lookups for RFC1918 private address ranges."
 msgstr "Traduction inverse truquee pour la plage d'adresse privee RFC1918"
 
-#: option.c:141
+#: option.c:144
 msgid "Treat ipaddr as NXDOMAIN (defeats Verisign wildcard)."
 msgstr ""
 "Traite l'adresse IP comme un domaine inexistant NXDOMAIN (contourne le "
 "systemede redirection de Verisign)"
 
-#: option.c:142
+#: option.c:145
 #, c-format
 msgid "Specify the size of the cache in entries (defaults to %s)."
 msgstr "Specifie la taille du cache en entree (par defaut a %s)."
 
-#: option.c:143
+#: option.c:146
 #, c-format
 msgid "Specify configuration file (defaults to %s)."
 msgstr "Specifie le nom du fichier de configuration (par defaut %s)"
 
-#: option.c:144
+#: option.c:147
 msgid "Do NOT fork into the background: run in debug mode."
 msgstr "Ne passe pas en tache de fond: demarre en mode debug"
 
-#: option.c:145
+#: option.c:148
 msgid "Do NOT forward queries with no domain part."
 msgstr "Ne retransmet pas les requetes qui n'ont pas de domaine."
 
-#: option.c:146
+#: option.c:149
 msgid "Return self-pointing MX records for local hosts."
 msgstr "Retourne les champs MX pour les machines locales."
 
-#: option.c:147
+#: option.c:150
 msgid "Expand simple names in /etc/hosts with domain-suffix."
 msgstr ""
 "Etend les noms uniques des machines dans /etc/hosts avec le suffixe du "
 "domaine."
 
-#: option.c:148
+#: option.c:151
 msgid "Don't forward spurious DNS requests from Windows hosts."
 msgstr ""
 "Ne retransmet pas les fausses requetes DNS en provenance des machines "
 "Windows."
 
-#: option.c:149
+#: option.c:152
 msgid "Enable DHCP in the range given with lease duration."
 msgstr ""
 "Autorise DHCP dans la plage d'adresses donnee sur la duree de validite du "
 "bail."
 
-#: option.c:150
+#: option.c:153
 #, c-format
 msgid "Change to this group after startup (defaults to %s)."
 msgstr "On change pour ce groupe apres le demarrage (par defaut a %s)."
 
-#: option.c:151
+#: option.c:154
 msgid "Set address or hostname for a specified machine."
 msgstr "On assigne une adresse ou un nom pour une machine specifiee."
 
-#: option.c:152
+#: option.c:155
 #, c-format
 msgid "Do NOT load %s file."
 msgstr "Ne charge PAS le fichier %s."
 
-#: option.c:153
+#: option.c:156
 #, c-format
 msgid "Specify a hosts file to be read in addition to %s."
 msgstr "Specifie un nom de fichier hosts a lire en complement de %s"
 
-#: option.c:154
+#: option.c:157
 msgid "Specify interface(s) to listen on."
 msgstr "Specifie la ou les interface(s) ou le demon doit se mettre a l'ecoute."
 
-#: option.c:155
+#: option.c:158
 msgid "Specify interface(s) NOT to listen on."
 msgstr "Specifie la ou les interface(s) que le demon ne doit PAS traiter."
 
-#: option.c:156
+#: option.c:159
 msgid "Map DHCP user class to option set."
 msgstr "Associe les 'user class' DHCP aux options."
 
-#: option.c:157
+#: option.c:160
 msgid "Don't do DHCP for hosts in option set."
 msgstr "Ne pas autoriser DHCP pour les machines enumerees dans les options."
 
-#: option.c:158
+#: option.c:161
 msgid "Do NOT fork into the background, do NOT run in debug mode."
 msgstr "Ne passe pas en tache de fond, ne s'execute pas en mode debug."
 
-#: option.c:159
+#: option.c:162
 msgid "Assume we are the only DHCP server on the local network."
 msgstr "On considere que l'on est le seul serveur DHCP sur le reseau local."
 
-#: option.c:160
+#: option.c:163
 #, c-format
 msgid "Specify where to store DHCP leases (defaults to %s)."
 msgstr "Specifie ou il faut sauvegarder les baux DHCP (par defaut a %s)."
 
-#: option.c:161
+#: option.c:164
 msgid "Return MX records for local hosts."
 msgstr "Retourne les champs MX pour les machines locales."
 
-#: option.c:162
+#: option.c:165
 msgid "Specify an MX record."
 msgstr "Specifie un champ MX."
 
-#: option.c:163
+#: option.c:166
 msgid "Specify BOOTP options to DHCP server."
 msgstr "Specifie les options BOOTP pour le serveur DHCP."
 
-#: option.c:164
+#: option.c:167
 #, c-format
 msgid "Do NOT poll %s file, reload only on SIGHUP."
 msgstr ""
 "Ne pas scruter le fichier %s, recharger les modifications seulement sur "
 "reception du signal SIGHUP."
 
-#: option.c:165
+#: option.c:168
 msgid "Do NOT cache failed search results."
 msgstr "Ne place pas en cache le resultat des requetes qui ont echouees."
 
-#: option.c:166
+#: option.c:169
 #, c-format
 msgid "Use nameservers strictly in the order given in %s."
 msgstr "Utilise les serveurs de noms dans l'ordre donne dans %s."
 
-#: option.c:167
+#: option.c:170
 msgid "Set extra options to be set to DHCP clients."
 msgstr "Options supplementaires a associer aux clients DHCP."
 
-#: option.c:168
+#: option.c:171
 msgid "Specify port to listen for DNS requests on (defaults to 53)."
 msgstr ""
 "Specifie le port ou il faut ecouter les requetes DNS (par defaut a 53)."
 
-#: option.c:169
+#: option.c:172
 #, c-format
 msgid "Maximum supported UDP packet size for EDNS.0 (defaults to %s)."
 msgstr ""
 "Taille maximale des paquets UDP supportee pour EDNS.0 (par defaut a %s)."
 
-#: option.c:170
+#: option.c:173
 msgid "Log queries."
 msgstr "Logue les requetes."
 
-#: option.c:171
+#: option.c:174
 msgid "Force the originating port for upstream queries."
 msgstr "Force le port d'origine des requetes vers les serveurs amonts."
 
-#: option.c:172
+#: option.c:175
 msgid "Do NOT read resolv.conf."
 msgstr "Ne pas lire le fichier resolv.conf."
 
-#: option.c:173
+#: option.c:176
 #, c-format
 msgid "Specify path to resolv.conf (defaults to %s)."
 msgstr "Specifie le chemin pour le fichier resolv.conf (par defaut a %s)."
 
-#: option.c:174
+#: option.c:177
 msgid "Specify address(es) of upstream servers with optional domains."
 msgstr ""
 "Specifie la ou les adresses des serveurs amonts avec des domaines optionels."
 
-#: option.c:175
+#: option.c:178
 msgid "Never forward queries to specified domains."
 msgstr "Ne jamais retransmettre les requetes pour les domaines specifies."
 
-#: option.c:176
+#: option.c:179
 msgid "Specify the domain to be assigned in DHCP leases."
 msgstr "Specifie le domaine qui doit etre assigne aux baux DHCP."
 
-#: option.c:177
+#: option.c:180
 msgid "Specify default target in an MX record."
 msgstr "Speficie la cible par defaut dans un champ MX."
 
-#: option.c:178
+#: option.c:181
 msgid "Specify time-to-live in seconds for replies from /etc/hosts."
 msgstr ""
 "Specifie le TTL en secondes pour les reponses qui utilisent /etc/hosts."
 
-#: option.c:179
+#: option.c:182
 #, c-format
 msgid "Change to this user after startup. (defaults to %s)."
 msgstr "Change pour cet utilisateur apres le demarrage (par defaut a %s)."
 
-#: option.c:180
+#: option.c:183
 msgid "Map DHCP vendor class to option set."
 msgstr "Associe les 'vendor class' DHCP aux options."
 
-#: option.c:181
+#: option.c:184
 msgid "Display dnsmasq version and copyright information."
 msgstr "Affiche la version de Dnsmasq et les informations liees au copyright."
 
-#: option.c:182
+#: option.c:185
 msgid "Translate IPv4 addresses from upstream servers."
 msgstr "Traduit les adresses IPV4 des serveurs amonts."
 
-#: option.c:183
+#: option.c:186
 msgid "Specify a SRV record."
 msgstr " Specifie un champ SRV."
 
-#: option.c:184
+#: option.c:187
 msgid "Display this message."
 msgstr "Affiche ce message."
 
-#: option.c:185
+#: option.c:188
 #, c-format
 msgid "Specify path of PID file. (defaults to %s)."
 msgstr "Specifie un chemin pour le fichier PID (par defaut a %s)."
 
-#: option.c:186
+#: option.c:189
 #, c-format
 msgid "Specify maximum number of DHCP leases (defaults to %s)."
 msgstr "Specifie le nombre maximum de baux DHCP (par defaut a %s)."
 
-#: option.c:187
+#: option.c:190
 msgid "Answer DNS queries based on the interface a query was sent to."
 msgstr ""
 "Repond aux requetes DNS en se basant sur l'interface ou a ete envoyee la "
 "requete."
 
-#: option.c:188
+#: option.c:191
 msgid "Specify TXT DNS record."
 msgstr "Specifie un champ DNS TXT"
 
-#: option.c:189
+#: option.c:192
 msgid "Bind only to interfaces in use."
 msgstr "Associe seulement aux interfaces en utilisation."
 
-#: option.c:190
+#: option.c:193
 #, c-format
 msgid "Read DHCP static host information from %s."
 msgstr "Lecture des informations de DHCP statique a partir de %s."
 
-#: option.c:191
+#: option.c:194
 msgid "Enable the DBus interface for setting upstream servers, etc."
 msgstr "Autorise l'interface DBus a configurer les serveurs amonts, etc."
 
-#: option.c:192
+#: option.c:195
 msgid "Do not provide DHCP on this interface, only provide DNS."
 msgstr "Ne fourni pas DHCP pour cette interface, mais seulement DNS."
 
-#: option.c:193
+#: option.c:196
 msgid "Enable dynamic address allocation for bootp."
 msgstr "Autorise l'allocation dynamique d'adresse pour bootp."
 
-#: option.c:194
+#: option.c:197
 #, fuzzy
 msgid "Map MAC address (with wildcards) to option set."
 msgstr "Associe les 'vendor class' DHCP aux options."
 
-#: option.c:195
+#: option.c:198
 msgid "Disable ICMP echo address checking in the DHCP server."
 msgstr ""
 
-#: option.c:196
+#: option.c:199
 msgid "Script to run on DHCP lease creation and destruction."
 msgstr ""
 
-#: option.c:197
+#: option.c:200
 msgid "Read configuration from all the files in this directory."
 msgstr ""
 
-#: option.c:198
-msgid "Log to this syslog facility."
+#: option.c:201
+#, fuzzy
+msgid "Log to this syslog facility. (defaults to DAEMON)"
+msgstr "Change pour cet utilisateur apres le demarrage (par defaut a %s)."
+
+#: option.c:202
+msgid "Read leases at startup, but never write the lease file."
 msgstr ""
 
-#: option.c:311
+#: option.c:203
+#, fuzzy, c-format
+msgid "Maximum number of concurrent DNS queries. (defaults to %s)"
+msgstr "Specifie le nombre maximum de baux DHCP (par defaut a %s)."
+
+#: option.c:316
 #, c-format
 msgid ""
 "Usage: dnsmasq [options]\n"
@@ -362,138 +372,138 @@ msgstr ""
 "Usage: dnsmasq [options]\n"
 "\n"
 
-#: option.c:313
+#: option.c:318
 #, c-format
 msgid "Use short options only on the command line.\n"
 msgstr "Utilisez les options courtes uniquement sur la ligne de commande.\n"
 
-#: option.c:315
+#: option.c:320
 #, c-format
 msgid "Valid options are :\n"
 msgstr "Les options valides sont :\n"
 
-#: option.c:348
+#: option.c:355
 msgid "extraneous parameter"
 msgstr "parametre supplementaire"
 
-#: option.c:352
+#: option.c:359
 msgid "missing parameter"
 msgstr "parametre manquant"
 
-#: option.c:374
+#: option.c:381
 #, fuzzy, c-format
 msgid "cannot access directory %s: %s"
 msgstr "Ne peut pas lire %s: %s"
 
-#: option.c:393
+#: option.c:400
 #, fuzzy, c-format
 msgid "cannot access %s: %s"
 msgstr "Ne peut pas lire %s: %s"
 
-#: option.c:470
+#: option.c:477
 msgid "bad MX preference"
 msgstr "Mauvaise preference MX"
 
-#: option.c:479
+#: option.c:486
 msgid "bad MX name"
 msgstr "mauvais nom MX"
 
-#: option.c:497
+#: option.c:504
 msgid "bad MX target"
 msgstr "mauvaise cible MX"
 
-#: option.c:509
+#: option.c:516
 msgid "cannot run scripts under uClinux"
 msgstr ""
 
-#: option.c:708 option.c:719
+#: option.c:715 option.c:726
 msgid "bad port"
 msgstr "mauvais port"
 
-#: option.c:859
+#: option.c:871
 msgid "bad dhcp-range"
 msgstr "mauvaise plage d'adresses DHCP (dhcp-range)"
 
-#: option.c:888
+#: option.c:900
 msgid "only one netid tag allowed"
 msgstr ""
 
-#: option.c:933
+#: option.c:945
 msgid "inconsistent DHCP range"
 msgstr "plage d'adresses DHCP incoherente"
 
-#: option.c:1118
+#: option.c:1130
 msgid "bad dhcp-host"
 msgstr "mauvais dhcp-host"
 
-#: option.c:1179
+#: option.c:1191
 msgid "bad dhcp-option"
 msgstr "mauvais dhcp-option"
 
-#: option.c:1197
+#: option.c:1209
 msgid "bad domain in dhcp-option"
 msgstr "mauvais domaine dans dhcp-option"
 
-#: option.c:1367
+#: option.c:1379
 msgid "dhcp-option too long"
 msgstr "dhcp-option trop long"
 
-#: option.c:1564
+#: option.c:1576
 msgid "bad TXT record"
 msgstr "mauvais champ TXT"
 
-#: option.c:1596
+#: option.c:1608
 msgid "TXT record string too long"
 msgstr "chaîne du champ TXT trop longue"
 
-#: option.c:1635
+#: option.c:1647
 msgid "bad SRV record"
 msgstr "mauvais champ SRV"
 
-#: option.c:1648
+#: option.c:1660
 msgid "bad SRV target"
 msgstr "mauvaise cible SRV"
 
-#: option.c:1660
+#: option.c:1672
 msgid "invalid port number"
 msgstr "numero de port invalide"
 
-#: option.c:1671
+#: option.c:1683
 msgid "invalid priority"
 msgstr "priorite invalide"
 
-#: option.c:1682
+#: option.c:1694
 msgid "invalid weight"
 msgstr "poids invalide"
 
-#: option.c:1713
+#: option.c:1725
 #, c-format
 msgid "files nested too deep in %s"
 msgstr ""
 
-#: option.c:1720
+#: option.c:1732
 #, c-format
 msgid "cannot read %s: %s"
 msgstr "Ne peut pas lire %s: %s"
 
-#: option.c:1762
+#: option.c:1774
 msgid "missing \""
 msgstr "il manque \""
 
-#: option.c:1797
+#: option.c:1809
 msgid "error"
 msgstr "erreur"
 
-#: option.c:1801
+#: option.c:1813
 msgid "bad option"
 msgstr "mauvaise option"
 
-#: option.c:1864
+#: option.c:1877
 #, c-format
 msgid "Dnsmasq version %s  %s\n"
 msgstr "Version de Dnsmasq %s  %s\n"
 
-#: option.c:1865
+#: option.c:1878
 #, c-format
 msgid ""
 "Compile time options %s\n"
@@ -502,56 +512,56 @@ msgstr ""
 "Options a la compilation %s\n"
 "\n"
 
-#: option.c:1866
+#: option.c:1879
 #, c-format
 msgid "This software comes with ABSOLUTELY NO WARRANTY.\n"
 msgstr "Ce logiciel est fourni sans GARANTIE aucune.\n"
 
-#: option.c:1867
+#: option.c:1880
 #, c-format
 msgid "Dnsmasq is free software, and you are welcome to redistribute it\n"
 msgstr "Dnsmasq est un logiciel libre, et vous etes invite a le redistribuer\n"
 
-#: option.c:1868
+#: option.c:1881
 #, c-format
 msgid "under the terms of the GNU General Public License, version 2.\n"
 msgstr ""
 "sous les termes de la licence GPL (GNU General Public License), version 2.\n"
 
-#: option.c:1879
+#: option.c:1892
 msgid "try --help"
 msgstr ""
 
-#: option.c:1881
+#: option.c:1894
 msgid "try -w"
 msgstr ""
 
-#: option.c:1884
+#: option.c:1897
 #, fuzzy, c-format
 msgid "bad command line options: %s"
 msgstr "mauvaises options en ligne de commande: %s."
 
-#: option.c:1935
+#: option.c:1948
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "ne peut pas obtenir le nom de la machine: %s"
 
-#: option.c:1964
+#: option.c:1976
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "seul un fichier resolv.conf est autorise dans le mode no-poll"
 
-#: option.c:1972
+#: option.c:1986
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr ""
 "on doit avoir exactement un seul fichier resolv.conf pour y recuperer le nom "
 "de domaine."
 
-#: option.c:1975 network.c:464
-#, c-format
-msgid "failed to read %s: %m"
+#: option.c:1989
+#, fuzzy, c-format
+msgid "failed to read %s: %s"
 msgstr "impossible de lire %s: %m"
 
-#: option.c:1993
+#: option.c:2007
 #, c-format
 msgid "no search directive found in %s"
 msgstr "pas de directive de recherche trouvee dans %s"
@@ -567,7 +577,7 @@ msgstr ""
 "Table de stockage des requetes DNS pleine : verifiez la configuration du "
 "serveur (risque de boucle recursive)."
 
-#: isc.c:73 dnsmasq.c:474
+#: isc.c:73 dnsmasq.c:480
 #, c-format
 msgid "failed to access %s: %m"
 msgstr "impossible d'acceder a %s: %m"
@@ -577,7 +587,7 @@ msgstr "impossible d'acceder a %s: %m"
 msgid "failed to load %s: %m"
 msgstr "impossible de charger %s: %m"
 
-#: isc.c:93 dnsmasq.c:495
+#: isc.c:93 dnsmasq.c:502
 #, c-format
 msgid "reading %s"
 msgstr "Lecture %s"
@@ -650,6 +660,11 @@ msgstr "on utilise le serveur de nom %s#%d pour %s %s"
 msgid "using nameserver %s#%d"
 msgstr "on utilise le serveur de nom %s#%d"
 
+#: network.c:464
+#, c-format
+msgid "failed to read %s: %m"
+msgstr "impossible de lire %s: %m"
+
 #: dnsmasq.c:94
 msgid ""
 "ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"
@@ -677,7 +692,7 @@ msgid "must set exactly one interface on broken systems without IP_RECVIF"
 msgstr ""
 "on doit declarer exactement une interface sur les systemes sans IP_RECVIF"
 
-#: dnsmasq.c:157 dnsmasq.c:593
+#: dnsmasq.c:157 dnsmasq.c:603
 #, c-format
 msgid "DBus error: %s"
 msgstr "Erreur DBus: %s"
@@ -723,36 +738,40 @@ msgstr "Active l'option --bind-interfaces a cause des limitations de l'OS"
 msgid "warning: interface %s does not currently exist"
 msgstr "Attention: l'interface %s n'existe pas actuellement"
 
-#: dnsmasq.c:375
+#: dnsmasq.c:368
+msgid "warning: ignoring resolv-file flag because no-resolv is set"
+msgstr ""
+
+#: dnsmasq.c:382
 #, c-format
 msgid "DHCP, static leases only on %.0s%s, lease time %s"
 msgstr ""
 "DHCP, baux statiques seulement sur %.0s%s, duree de validite de bail %s"
 
-#: dnsmasq.c:376
+#: dnsmasq.c:383
 #, c-format
 msgid "DHCP, IP range %s -- %s, lease time %s"
 msgstr "DHCP, plage d'adresse %s -- %s, duree de bail %s"
 
-#: dnsmasq.c:386
+#: dnsmasq.c:393
 #, c-format
 msgid "warning: setting capabilities failed: %m"
 msgstr ""
 
-#: dnsmasq.c:388
+#: dnsmasq.c:395
 msgid "running as root"
 msgstr "execute sous root"
 
-#: dnsmasq.c:502
+#: dnsmasq.c:511
 #, fuzzy, c-format
 msgid "no servers found in %s, will retry"
 msgstr "pas de directive de recherche trouvee dans %s"
 
-#: dnsmasq.c:541
+#: dnsmasq.c:551
 msgid "exiting on receipt of SIGTERM"
 msgstr "sortie sur reception du signal SIGTERM"
 
-#: dnsmasq.c:595
+#: dnsmasq.c:605
 msgid "connected to system DBus"
 msgstr "connecte au systeme DBus"
 
@@ -786,50 +805,60 @@ msgstr "ne peut creer de socket en mode raw pour ICMP: %s."
 msgid "duplicate IP address %s in dhcp-config directive."
 msgstr "adresse IP %s dupliquee dans la directive dhcp-config."
 
-#: dhcp.c:314
+#: dhcp.c:318
 #, c-format
 msgid "DHCP range %s -- %s is not consistent with netmask %s"
 msgstr ""
 "La plage d'adresses DHCP %s -- %s n'est pas coherente avec le masque de "
 "reseau %s"
 
-#: dhcp.c:631
+#: dhcp.c:635
 #, c-format
 msgid "failed to read %s:%m"
 msgstr "impossible de lire %s:%m"
 
-#: dhcp.c:666
+#: dhcp.c:670
 #, fuzzy, c-format
 msgid "bad line at %s line %d"
 msgstr "mauvais nom dans %s ligne %d"
 
-#: dhcp.c:775
+#: dhcp.c:779
 #, c-format
 msgid "duplicate IP address %s (%s) in dhcp-config directive"
 msgstr "adresse IP %s (%s) dupliquee dans la directive dhcp-config."
 
-#: dhcp.c:811
+#: dhcp.c:815
 #, c-format
 msgid "Ignoring DHCP host name %s because it has an illegal domain part"
 msgstr ""
 "On ignore le nom de machine DHCP %s parce-qu'il possede un nom de domaine "
 "illegal"
 
-#: lease.c:30
-#, c-format
-msgid "cannot open or create leases file: %s"
+#: lease.c:50
+#, fuzzy, c-format
+msgid "cannot open or create lease file %s: %s"
 msgstr "ne peut ouvrir ou creer des fichiers de baux: %s"
 
-#: lease.c:58
+#: lease.c:80
 msgid "too many stored leases"
 msgstr "beaucoup trop de baux enregistres"
 
-#: lease.c:174
+#: lease.c:113
+#, fuzzy, c-format
+msgid "cannot run lease-init script %s: %s"
+msgstr "Ne peut pas lire %s: %s"
+
+#: lease.c:119
+#, c-format
+msgid "lease-init script returned exit code %s"
+msgstr ""
+
+#: lease.c:217
 #, fuzzy, c-format
 msgid "failed to write %s: %s (retry in %us)"
 msgstr "impossible de lire %s: %m"
 
-#: lease.c:435
+#: lease.c:522
 #, fuzzy, c-format
 msgid "failed to execute %s: %m"
 msgstr "impossible d'acceder a %s: %m"

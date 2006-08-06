@@ -11,10 +11,6 @@ OBJS = cache.o rfc1035.o util.o option.o forward.o isc.o network.o \
 dnsmasq : $(OBJS)
 	$(CC) $(LDFLAGS) -o $@  $(OBJS) `echo $(COPTS) | ../bld/pkg-wrapper $(PKG_CONFIG) --libs dbus-1` $(LIBS) 
  
-# busybox integration....
-dnsmasq.a : $(OBJS)
-	$(AR) arc -o $@  $(OBJS)
- 
 dnsmasq.pot : $(OBJS:.o=.c) dnsmasq.h config.h
 	xgettext -d dnsmasq --foreign-user --keyword=_ -o dnsmasq.pot -i $(OBJS:.o=.c)
 
