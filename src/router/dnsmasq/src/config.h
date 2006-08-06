@@ -10,9 +10,9 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.33test11"
+#define VERSION "2.33"
 
-#define FTABSIZ 150 /* max number of outstanding requests */
+#define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define EDNS_PKTSZ 1280 /* default max EDNS.0 UDP packet from RFC2671 */
