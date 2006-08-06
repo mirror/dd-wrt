@@ -168,7 +168,9 @@ addEvent(window, "load", function() {
 	initWlTimer('<% nvram_get("radio0_on_time"); %>');
 	if(document.wireless.wl_nmcsidx)
 		create_nrate('<% nvram_get("wl_nbw"); %>',document.wireless);
+	if(document.wireless.wl_nmcsidx)
 	if(wl_phytype == 'g')	choose_disable(document.wireless.wl_nmcsidx);
+	if(document.wireless.wl_rate)
 	if(wl_net_mode == 'n-only')	choose_disable(document.wireless.wl_rate);
 
 });
