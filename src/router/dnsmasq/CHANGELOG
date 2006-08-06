@@ -1910,8 +1910,9 @@ version 2.33
 	    --no-resolv. Thanks to Martin F Krafft for spotting this
 	    one.
 
-            Add --leasefile-ro option. This is useful in conjunction
-	    with an external lease database.
+            Add --leasefile-ro option which allows the use of an 
+            external lease database. Many thanks to Steve Horbachuk 
+	    for assistance developing this feature.
 
 	    Provide extra information to lease-change script via its
 	    environment. If the host has a client-id, then
@@ -1922,7 +1923,7 @@ version 2.33
 	    information should make it possible to maintain the lease
 	    database in external storage such as LDAP or a relational
 	    database. Note that while leasefile-ro is set, the script
-            will be called with "old"  events more often now, since 
+            will be called with "old"  events more often, since 
 	    changes to the client-id and lease length
 	    (HAVE_BROKEN_RTC) or lease expiry time (otherwise) 
 	    are now flagged. 
@@ -1934,19 +1935,3 @@ version 2.33
 	    Add contrib/wrt/dhcp_release.c which is a small utility 
 	    which removes DHCP leases using DHCPRELEASE operation in
 	    the DHCP protocol.
-
-	    Add "dnsmasq.a" target to the makefile, which produces an
-	    archive of the dnsmasq object files. This is for adding the
-	    dnsmasq binary to busybox, also added a couple of
-	    busybox-specific bits of code. Thanks to Steve Horbachuk
-	    for co-operation on this.
-
-
-
-	    
-
-
-
-	    
-  
-
