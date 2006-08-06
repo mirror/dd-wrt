@@ -200,7 +200,7 @@ static const struct {
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
   { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility. (defaults to DAEMON)"), NULL },
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
-  { "-0, --dns-forward-max", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
+  { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { NULL, NULL, NULL }
 }; 
 
