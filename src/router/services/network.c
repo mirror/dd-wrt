@@ -503,7 +503,7 @@ if (nvram_match("wl0_mode","infra"))
       if (v == 0)
 	{
 #ifdef HAVE_MSSID
-	  wlc_noack (0);
+	//  wlc_noack (0);
 #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
 #endif
@@ -512,7 +512,7 @@ if (nvram_match("wl0_mode","infra"))
       else
 	{
 #ifdef HAVE_MSSID
-	  wlc_noack (1);
+	//  wlc_noack (1);
 #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
 #endif
@@ -521,7 +521,7 @@ if (nvram_match("wl0_mode","infra"))
 
       val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
 #ifdef HAVE_MSSID
-      set_wlc_slottime (val);
+     // set_wlc_slottime (val);
 #else
 
       shm = 0x10;
