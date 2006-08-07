@@ -1081,6 +1081,9 @@ service.ssh_srv="SSHd";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 
+//radiooff.webservices
+service.radiooff_legend="Fonction du Bouton SES";
+service.radiooff_srv="Gérer l\'émission radio";
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//

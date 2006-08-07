@@ -1115,6 +1115,9 @@ service.ssh_srv="SSHd";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 
+//radiooff.webservices
+service.radiooff_legend="SES Button";
+service.radiooff_srv="Use SES for turning off radio";
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
