@@ -2497,7 +2497,8 @@ start_firewall (void)
   /* Remote Web GUI management : Botho 03-05-2006 */
   if (nvram_match ("remote_mgt_ssh", "1") &&
       nvram_invmatch ("sshd_wanport", "") &&
-      nvram_invmatch ("sshd_wanport", "0"))
+      nvram_invmatch ("sshd_wanport", "0") &&
+      nvram_match ("sshd_enable", "1"))
     remotessh = 1;
   else
     remotessh = 0;
