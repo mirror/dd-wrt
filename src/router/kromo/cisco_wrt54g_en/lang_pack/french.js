@@ -1423,8 +1423,11 @@ wl_basic.mixed="Mixte";
 wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
+wl_basic.bg="BG-Mixte";
+wl_basic.n="N-uniquement";
 wl_basic.legend2="Plages Horaire de Fonctionnement";
 wl_basic.radio="Radio";
+wl_basic.radiotimer="Programmation Emission Radio";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
 
