@@ -896,7 +896,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_DDLAN
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #else
-  {"remote_management", "0", 0},	/* Remote Management [1|0] */
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #endif
 #endif
 #ifdef HAVE_SAGAR
@@ -962,6 +962,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_hostname_6", "", 0},
   {"ddns_dyndnstype_6", "", 0},
   {"ddns_wildcard_6", "", 0},
+  /* for easyDNS.com */
+  {"ddns_username_7", "", 0},
+  {"ddns_passwd_7", "", 0},
+  {"ddns_hostname_7", "", 0},
+  {"ddns_dyndnstype_7", "", 0},
+  {"ddns_wildcard_7", "", 0},
 
   /* for last value */
   {"ddns_enable_buf", "", 0}, 
