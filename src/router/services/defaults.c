@@ -931,43 +931,43 @@ struct nvram_tuple srouter_defaults[] = {
   {"def_hwaddr", "00:00:00:00:00:00", 0},	/* User define WAN interface MAC address */
 
   /* for DDNS */
-  /* for dyndns */
+  // for dyndns
   {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom 6:3322.org */
-  {"ddns_username", "", 0},	/* DynDNS Username */
-  {"ddns_passwd", "", 0},	/* DynDNS Password */
-  {"ddns_hostname", "", 0},	/* DynDNS Hostname */
-  {"ddns_dyndnstype", "", 0},	/* DynDNS Type */
-  {"ddns_wildcard", "", 0},	/* DynDNS Wildcard */
-  /* for afraid.org */
+  /*{"ddns_username", "", 0}, 
+  {"ddns_passwd", "", 0}, 
+  {"ddns_hostname", "", 0}, 
+  {"ddns_dyndnstype", "", 0}, 
+  {"ddns_wildcard", "", 0}, 
+  // for afraid.org 
   {"ddns_username_2", "", 0}, 
   {"ddns_passwd_2", "", 0}, 
   {"ddns_hostname_2", "", 0}, 
-  /* for zoneedit */
+  // for zoneedit 
   {"ddns_username_3", "", 0}, 
   {"ddns_passwd_3", "", 0}, 
   {"ddns_hostname_3", "", 0}, 
-  /* for no-ip */
+  // for no-ip 
   {"ddns_username_4", "", 0}, 
   {"ddns_passwd_4", "", 0}, 
   {"ddns_hostname_4", "", 0}, 
-  /* for custom */
+  // for custom 
   {"ddns_username_5", "", 0}, 
   {"ddns_passwd_5", "", 0}, 
   {"ddns_hostname_5", "", 0}, 
   {"ddns_custom_5", "", 0}, 
   {"ddns_conf", "", 0}, 
-  /* for 3322.org */
+  // for 3322.org 
   {"ddns_username_6", "", 0},
   {"ddns_passwd_6", "", 0},
   {"ddns_hostname_6", "", 0},
   {"ddns_dyndnstype_6", "", 0},
   {"ddns_wildcard_6", "", 0},
-  /* for easyDNS.com */
+  // for easyDNS.com 
   {"ddns_username_7", "", 0},
   {"ddns_passwd_7", "", 0},
   {"ddns_hostname_7", "", 0},
   {"ddns_dyndnstype_7", "", 0},
-  {"ddns_wildcard_7", "", 0},
+  {"ddns_wildcard_7", "", 0},*/
 
   /* for last value */
   {"ddns_enable_buf", "", 0}, 
