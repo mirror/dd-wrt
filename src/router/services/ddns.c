@@ -140,7 +140,6 @@ start_ddns (void)
 
   mkdir ("/tmp/ddns", 0744);
 
-  /* We want to re-update if user change some value from UI */
   if (strcmp (nvram_safe_get ("ddns_enable_buf"), nvram_safe_get ("ddns_enable")) ||	// ddns mode change
       strcmp (nvram_safe_get ("ddns_username_buf"), nvram_safe_get (_username)) ||	// ddns username chane
       strcmp (nvram_safe_get ("ddns_passwd_buf"), nvram_safe_get (_passwd)) ||	// ddns password change
@@ -172,7 +171,7 @@ start_ddns (void)
 	fprintf (fp, ",wildcard=ON");
       if (nvram_match ("ddns_wildcard_6", "1") && nvram_match ("ddns_enable", "6"))
 	fprintf (fp, ",wildcard=ON");
-      fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
+      fprintf (fp, " --update_period_sec %s", "360");	// check ip every 6 mins
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns/ddns.log");	//log to file
       fprintf (fp, " --exec %s", "ddns_success");	//run after update
