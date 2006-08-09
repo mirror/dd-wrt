@@ -379,21 +379,22 @@ addEvent(window, "load", function() {
 							</fieldset><br />
 							
 							<fieldset>
-			                	<legend><% tran("wl_basic.legend2"); %></legend>
-			                	<div class="setting">
-			                		<div class="label"><% tran("wl_basic.radiotimer"); %></div>
-			                		<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
-			                		<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>			                	
-			                	</div>
-			                	<div id="radio">
-			                		<table id="radio_table"></table>
-			                		<br />
-			                		<div class="center">
-			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
-			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />")</script>
-			                	</div>
-			             	</fieldset><br/>
+								<legend><% tran("wl_basic.legend2"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("wl_basic.radiotimer"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+								</div>
+								<div id="radio">
+									<table id="radio_table"></table>
+									<br />
+									<div class="center">
+										<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
+										<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />")</script>
+									</div>
+								</div>
+							</fieldset><br/>
 
 							<fieldset>
 								<legend><% tran("wl_adv.legend2"); %></legend>
