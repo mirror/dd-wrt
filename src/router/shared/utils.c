@@ -196,18 +196,25 @@ internal_getRouterBrand ()
       nvram_match ("boardrev", "0x13") &&
       nvram_match ("boardtype", "0x467"))
       {
-		if (nvram_match ("boardflags", "0x2758"))
+		if (nvram_match ("boardflags", "0x2758") && !nvram_match("buffalo_hp","1"))
       		{
 			cprintf ("router is buffalo WHR-G54S\n");
 			setRouter ("Buffalo WHR-G54S");
 			return ROUTER_BUFFALO_WHRG54S;
 			}
-		if (nvram_match ("boardflags", "0x1758"))
+		if (nvram_match ("boardflags", "0x1758") && !nvram_match("buffalo_hp","1"))
 			{
 			cprintf ("router is buffalo WHR-HP-G54\n");
+			nvram_set("boardflags","0x2758");
+			nvram_set("buffalo_hp","1");
 			setRouter ("Buffalo WHR-HP-G54");
 			return ROUTER_BUFFALO_HP_WHRG54S;
 			}
+		if (nvram_match ("buffalo_hp","1"))
+		    {
+			cprintf ("router is buffalo WHR-HP-G54\n");
+			setRouter ("Buffalo WHR-HP-G54");		    
+		    }
 	  }
 
   if (nvram_match ("boardnum", "42") &&
