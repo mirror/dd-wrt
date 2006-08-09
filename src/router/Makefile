@@ -1,4 +1,3 @@
-#
 # Broadcom Linux Router Makefile
 #
 # Copyright 2001-2003, Broadcom Corporation
@@ -140,6 +139,7 @@ obj-$(CONFIG_PIPSEC) += pipsec
 obj-$(CONFIG_FROTTLE) += frottle
 obj-$(CONFIG_WOL) += wol
 obj-$(CONFIG_SNMP) += snmp
+obj-$(CONFIG_BRIDGE) += bridge
 obj-$(CONFIG_RADVD) += radvd
 obj-$(CONFIG_RFLOW) += rflow
 #obj-$(CONFIG_ADM6996) += adm6996
@@ -499,6 +499,22 @@ else
 	$(MAKE) -C www/$(WEB_PAGE) clean
 endif
 
+
+bridge:
+	$(MAKE) -C bridge brctl/brctl
+bridge:
+	$(MAKE) -C bridge brctl/brctl
+
+bridge-clean:
+	@echo "Cleaning bridge"
+	@if [ -e bridge/libbridge/libbridge.a ]; then\
+		rm bridge/brctl/*.o bridge/libbridge/*.a bridge/libbridge/*.o;\
+	else echo "Nothing to clean";\
+	fi;
+
+bridge-install:
+	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
+	$(STRIP) $(INSTALLDIR)/bridge/usr/sbin/brctl
 
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
