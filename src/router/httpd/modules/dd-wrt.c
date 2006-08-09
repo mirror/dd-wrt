@@ -2163,13 +2163,13 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	websWrite (wp,
 		"<script type=\"text/javascript\">document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");</script>\n",
 		nvram_match (wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		"<script type=\"text/javascript\">document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");</script>\n",
+		nvram_match (wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
 	websWrite (wp,
 		"<script type=\"text/javascript\">document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");</script>\n",
 		nvram_match (wl_mode, "wet") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		"<script type=\"text/javascript\">document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");</script>\n",
-		nvram_match (wl_mode, "infra") ? "selected=\\\"selected\\\"" : "");
 	websWrite (wp,
 		"<script type=\"text/javascript\">document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");</script>\n",
 		nvram_match (wl_mode, "apsta") ? "selected=\\\"selected\\\"" : "");
