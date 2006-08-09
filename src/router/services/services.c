@@ -3522,7 +3522,7 @@ cprintf("device %s\n",device!=NULL?device:"");
   return 0;
 }
 #endif
-#ifndef HAVE_MICRO
+#ifdef HAVE_MICRO
 extern int br_add_bridge (const char *brname);
 extern int br_del_bridge (const char *brname);
 extern int br_add_interface (const char *br, const char *dev);
@@ -3560,19 +3560,19 @@ int br_add_bridge (const char *brname)
     {
     return eval("brctl","addbr",brname);
     }
-int br_del_bridge (const char *brname);
+int br_del_bridge (const char *brname)
     {
     return eval("brctl","delbr",brname);
     }
-int br_add_interface (const char *br, const char *dev);
+int br_add_interface (const char *br, const char *dev)
     {
     return eval("brctl","addif",br,dev);
     }
-int br_del_interface (const char *br, const char *dev);
+int br_del_interface (const char *br, const char *dev)
     {
     return eval("brctl","delif",br,dev);
     }
-int br_set_stp_state (const char *br, int stp_state);
+int br_set_stp_state (const char *br, int stp_state)
     {
     if (stp_state)
     return eval("brctl",br,"stp","on");
