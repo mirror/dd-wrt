@@ -901,6 +901,8 @@ start_dnsmasq (void)
     {
       if (nvram_match ("chilli_enable", "1"))
 	fprintf (fp, "interface=%s\n", nvram_safe_get ("wl0_ifname"));
+      else if (nvram_match ("pptpd_enable", "1"))
+	fprintf (fp, "interface=%s,%s\n", nvram_safe_get ("lan_ifname"), "ppp1");
       else
 	fprintf (fp, "interface=%s\n", nvram_safe_get ("lan_ifname"));
     }
