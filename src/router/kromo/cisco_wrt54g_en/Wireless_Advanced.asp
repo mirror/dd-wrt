@@ -112,6 +112,29 @@ function computeWlTimer()
 	return radio_on_time;
 }
 
+function setRadioTable(){
+	var table = document.getElementById("radio_table");
+	cleanTable(table);
+	
+	var row1 = table.insertRow(-1);
+	var row2 = table.insertRow(-1);
+	row2.style.cursor = "pointer";
+	
+	for(var i = 0; i < 24; i++){
+		
+		var cell_label = row1.insertCell(-1);
+		cell_label.innerHTML = i;
+				
+		var cell_timer = row2.insertCell(-1);
+		cell_timer.style.width = "4%";
+		cell_timer.id = "td_" + i;
+		cell_timer.title = i + "h - " + eval(i+1) + "h";
+		cell_timer.innerHTML = "&nbsp;";
+		eval("addEvent(cell_timer, 'click', function() { setWlTimer(this.id) })");
+
+	}
+}
+
 function create_nrate(num,F)
 {
 	var bw20 = new Array("6.5", "13", "19.5", "26", "39", "52", "58.5", "65", "13", "26", "39", "52", "78", "104", "117", "130");		
@@ -158,6 +181,7 @@ function setWMM(val) {
 }
 
 addEvent(window, "load", function() {
+	setRadioTable();
 	setWMM("<% nvram_get("wl_wme"); %>");
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
@@ -363,40 +387,7 @@ addEvent(window, "load", function() {
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>			                	
 			                	</div>
 			                	<div id="radio">
-			                		<table>
-			                			<tr>
-			                				<td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
-			                				<td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td>
-			                				<td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
-			                				<td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
-			                			</tr>
-			                			<tr style="cursor:pointer">
-			                				<td width="4%" id="td_0" onClick="setWlTimer(this.id)" a title="24h - 1h">&nbsp;</td>
-			                				<td width="4%" id="td_1" onClick="setWlTimer(this.id)" a title="1h - 2h">&nbsp;</td>
-			                				<td width="4%" id="td_2" onClick="setWlTimer(this.id)" a title="2h - 3h">&nbsp;</td>
-			                				<td width="4%" id="td_3" onClick="setWlTimer(this.id)" a title="3h - 4h">&nbsp;</td>
-			                				<td width="4%" id="td_4" onClick="setWlTimer(this.id)" a title="4h - 5h">&nbsp;</td>
-			                				<td width="4%" id="td_5" onClick="setWlTimer(this.id)" a title="5h - 6h">&nbsp;</td>
-			                				<td width="4%" id="td_6" onClick="setWlTimer(this.id)" a title="6h - 7h">&nbsp;</td>
-			                				<td width="4%" id="td_7" onClick="setWlTimer(this.id)" a title="7h - 8h">&nbsp;</td>
-			                				<td width="4%" id="td_8" onClick="setWlTimer(this.id)" a title="8h - 9h">&nbsp;</td>
-			                				<td width="4%" id="td_9" onClick="setWlTimer(this.id)" a title="9h - 10h">&nbsp;</td>
-			                				<td width="4%" id="td_10" onClick="setWlTimer(this.id)" a title="10h - 11h">&nbsp;</td>
-			                				<td width="4%" id="td_11" onClick="setWlTimer(this.id)" a title="11h - 12h">&nbsp;</td>
-			                				<td width="4%" id="td_12" onClick="setWlTimer(this.id)" a title="12h - 13h">&nbsp;</td>
-			                				<td width="4%" id="td_13" onClick="setWlTimer(this.id)" a title="13h - 14h">&nbsp;</td>
-			                				<td width="4%" id="td_14" onClick="setWlTimer(this.id)" a title="14h - 15h">&nbsp;</td>
-			                				<td width="4%" id="td_15" onClick="setWlTimer(this.id)" a title="15h - 16h">&nbsp;</td>
-			                				<td width="4%" id="td_16" onClick="setWlTimer(this.id)" a title="16h - 17h">&nbsp;</td>
-			                				<td width="4%" id="td_17" onClick="setWlTimer(this.id)" a title="17h - 18h">&nbsp;</td>
-			                				<td width="4%" id="td_18" onClick="setWlTimer(this.id)" a title="18h - 19h">&nbsp;</td>
-			                				<td width="4%" id="td_19" onClick="setWlTimer(this.id)" a title="19h - 20h">&nbsp;</td>
-			                				<td width="4%" id="td_20" onClick="setWlTimer(this.id)" a title="20h - 21h">&nbsp;</td>
-			                				<td width="4%" id="td_21" onClick="setWlTimer(this.id)" a title="21h - 22h">&nbsp;</td>
-			                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)" a title="22h - 23h">&nbsp;</td>
-			                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)" a title="23h - 24h">&nbsp;</td>
-			                			</tr>
-			                		</table>
+			                		<table id="radio_table"></table>
 			                		<br />
 			                		<div class="center">
 			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
