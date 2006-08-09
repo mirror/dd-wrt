@@ -4,8 +4,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_adv.titl;
 
-
-var wl_phytype = '<% nvram_get("wl0_phytype"); %>';
 var wl_net_mode = '<% nvram_get("wl_net_mode"); %>';
 
 function initWlTimer(radio_on_time)
@@ -117,31 +115,31 @@ function create_nrate(num,F)
 {
 	var bw20 = new Array("6.5", "13", "19.5", "26", "39", "52", "58.5", "65", "13", "26", "39", "52", "78", "104", "117", "130");		
 	var bw40 = new Array("13.5", "27", "40.5", "54", "81", "108", "121.5", "135", "27", "54", "81", "108", "162", "216", "243", "270");
-	var index = '<% nvram_get("wl_nmcsidx"); %>';
+	var index = '<% nvram_get("wl0_nmcsidx"); %>';
 	
 
-	F.wl_nmcsidx[0] = new Option(share.auto);
-	F.wl_nmcsidx[0].value = "-1";
+	F.wl0_nmcsidx[0] = new Option(share.auto);
+	F.wl0_nmcsidx[0].value = "-1";
 
 	if(num == 0 || num == 20) {
 	    for(i=0;i<bw20.length;i++) {
-		F.wl_nmcsidx[i+1] = new Option(i+" - "+bw20[i]+" Mbps ");
-		F.wl_nmcsidx[i+1].value = i;
+		F.wl0_nmcsidx[i+1] = new Option(i+" - "+bw20[i]+" Mbps ");
+		F.wl0_nmcsidx[i+1].value = i;
 	    }
 	}
 	else {
 	    for(i=0;i<bw40.length;i++) {
-		F.wl_nmcsidx[i+1] = new Option(i+" - "+bw40[i]+" Mbps");
-		F.wl_nmcsidx[i+1].value = i;
+		F.wl0_nmcsidx[i+1] = new Option(i+" - "+bw40[i]+" Mbps");
+		F.wl0_nmcsidx[i+1].value = i;
 	    }
 	}
 
 	if(index == "-2" && (wl_net_mode == "g-only" || wl_net_mode == "b-only")) {
-		F.wl_nmcsidx[0].selected = true;
-		choose_disable(F.wl_nmcsidx);
+		F.wl0_nmcsidx[0].selected = true;
+		choose_disable(F.wl0_nmcsidx);
 	}
 	else
-		F.wl_nmcsidx[parseInt(index)+1].selected = true;
+		F.wl0_nmcsidx[parseInt(index)+1].selected = true;
 }
 
 function to_submit(F) {
@@ -163,15 +161,11 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio0_on_time"); %>');
-	if(document.wireless.wl_nmcsidx){
-		create_nrate('<% nvram_get("wl_nbw"); %>',document.wireless);
-		if(wl_phytype == 'g')
-			choose_disable(document.wireless.wl_nmcsidx);
-	}
-	if(document.wireless.wl_rate){
-		if(wl_net_mode == 'n-only')
-			choose_disable(document.wireless.wl_rate);
-	}
+	show_layer_ext(document.wireless.wl0_nmcsidx, 'idwl0_nmcsidx', <% nvram_else_match("wl0_phytype", "n", "1", "0"); %> == 1);
+	setElementActive( "document.wireless.wl_rate", !(wl_net_mode=="n-only") );
+
+	if("<% nvram_get("wl0_phytype"); %>"=="n") create_nrate('<% nvram_get("wl0_nbw"); %>',document.wireless);
+
 });
 		</script>
 	</head>
@@ -237,9 +231,9 @@ addEvent(window, "load", function() {
 									</select>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.deflt + ")")</script></span>
 								</div>
-								<div class="setting">
+								<div id="idwl0_nmcsidx" class="setting">
 									<div class="label">MIMO - <% tran("wl_adv.label3"); %></div>
-									<select name="wl_nmcsidx">
+									<select name="wl0_nmcsidx">
 									</select>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
