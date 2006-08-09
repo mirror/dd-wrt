@@ -1402,7 +1402,7 @@ wl_basic.legend2="WLAN-Zeiteinschränkung";
 wl_basic.radio="WLAN Schaltuhr";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
-wl_basic.radio_unkn="Unbekannte";
+wl_basic.radio_unkn="Unbekannt";
 
 wl_basic.h2_v24="Drahtloses Physisikalisches Interface";
 wl_basic.regdom="Regulatory Domain";

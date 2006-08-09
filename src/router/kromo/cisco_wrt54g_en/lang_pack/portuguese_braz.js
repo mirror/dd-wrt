@@ -1289,6 +1289,12 @@ wl_basic.mixed="Misto";
 wl_basic.b="Somente-B";
 wl_basic.a="Somente-A";
 wl_basic.g="Somente-G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+wl_basic.radio_unkn="Unknown";
 
 hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja excluir clientes Wireless-B, escolha o modo <em>Somente-G</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
 hwl_basic.right3="Escala de Sensibilidade: ";
