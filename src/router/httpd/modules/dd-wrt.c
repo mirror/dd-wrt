@@ -1598,8 +1598,6 @@ if (has_mimo())
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 }
-
-
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
@@ -2271,28 +2269,28 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     
     if (has_mimo() && (nvram_match("wl0_net_mode","n-only") || nvram_match("wl0_net_mode","mixed")))
     {
-    
-
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Channel Width</div>\n");
-  websWrite (wp,"<select name=\"wl0_nbw\">\n");
-  websWrite (wp,"<option value=\"0\" %s>Auto</option>",nvram_match ("wl0_nbw", "0")?"selected":"");
-  websWrite (wp,"<option value=\"20\" %s>20 Mhz</option>",nvram_match ("wl0_nbw", "20")?"selected":"");
-  websWrite (wp,"<option value=\"40\" %s>40 Mhz</option>",nvram_match ("wl0_nbw", "40")?"selected":"");
-  websWrite (wp,"</select>\n");
-  
-  websWrite (wp, "</div>\n");
-    
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp, "<div class=\"label\">Wide Channel</div>\n");
-    websWrite (wp, "<select name=\"wl0_wchannel\" ></select>\n");
-    websWrite (wp, "</div>\n");    
-    show_channel (wp, prefix, prefix,1);
+    	
+    	websWrite (wp, "<div class=\"setting\">\n");
+    	websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n");
+    	websWrite (wp, "<select name=\"wl0_nbw\">\n");
+    	websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");</script>\n",
+    		nvram_match (wl0_nbw, "0") ? "selected=\\\"selected\\\"" : "");
+    	websWrite (wp, "<option value=\"20\" %s>20 Mhz</option>",nvram_match (wl0_nbw, "20") ? "selected=\\\"selected\\\"" : "");
+    	websWrite (wp, "<option value=\"40\" %s>40 Mhz</option>",nvram_match (wl0_nbw, "40") ? "selected=\\\"selected\\\"" : "");
+    	websWrite (wp, "</select>\n");
+    	websWrite (wp, "</div>\n");
+    	
+    	websWrite (wp, "<div class=\"setting\">\n");
+    	websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
+    	websWrite (wp, "<select name=\"wl0_wchannel\" ></select>\n");
+    	websWrite (wp, "</div>\n");
+    	
+    	show_channel (wp, prefix, prefix,1);
     }else
-    show_channel (wp, prefix, prefix,0);
-
-	
-      char wl_closed[16];
+    	
+    	show_channel (wp, prefix, prefix,0);
+    	
+    	char wl_closed[16];
       sprintf (wl_closed, "%s_closed", prefix);
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>\n");
