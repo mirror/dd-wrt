@@ -681,10 +681,14 @@ start_lan (void)
   if (strncmp (lan_ifname, "br0", 3) == 0)
     {
       br_add_bridge (lan_ifname);
+#ifdef HAVE_MICRO
       struct timeval tv;
       tv.tv_sec = 0;
       tv.tv_usec = 0;
       br_set_bridge_forward_delay (lan_ifname, &tv);
+#else
+      eval ("brctl", "setfd", lan_ifname, "0");
+#endif
       //eval ("brctl", "addbr", lan_ifname);
       //eval ("brctl", "setfd", lan_ifname, "0");
       if (check_hw_type () != BCM4702_CHIP)
@@ -1027,10 +1031,16 @@ start_lan (void)
       //  eval ("ifconfig", "br1", "down");
       br_del_bridge ("br1");
       br_add_bridge ("br1");
+
+#ifdef HAVE_MICRO
       struct timeval tv;
       tv.tv_sec = 0;
       tv.tv_usec = 0;
-      br_set_bridge_forward_delay ("br1", &tv);
+      br_set_bridge_forward_delay (lan_ifname, &tv);
+#else
+      eval ("brctl", "setfd", lan_ifname, "0");
+#endif
+
       //eval ("brctl", "delbr", "br1");
       //eval ("brctl", "addbr", "br1");
       //eval ("brctl", "setfd", "br1", "0");
