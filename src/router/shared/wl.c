@@ -30,6 +30,27 @@ struct nvram_tuple router_defaults[] = {
 
 #ifndef HAVE_MADWIFI
 int
+getchannels (unsigned int *list)
+{
+ // int ret, num;
+//  num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
+//  memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
+
+//  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
+FILE *in=popen("wl channels","r");
+#ifndef HAVE_MSSID
+while(fgetc(in)!=':');
+#endif
+int chan;
+int count=0;
+while (fscanf(in,"%d",&chan)!=EOF)
+    {
+    list[count++]=chan;
+    }
+return count;
+}
+
+int
 getassoclist (char *name, unsigned char *list)
 {
 //int ap;
@@ -825,3 +846,4 @@ wl_printlasterror(char *name)
 */
 
 //#endif
+

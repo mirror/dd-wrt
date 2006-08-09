@@ -1553,11 +1553,29 @@ if (type==1 && !nvram_match(wl_net_mode,"g-only") && !nvram_match(wl_net_mode,"a
     }else
     {
 
-      websWrite (wp, "var max_channel = 14;\n");
+unsigned int chanlist[128];
+int chancount=getchannels(chanlist);
+
+      websWrite (wp, "var max_channel = %d;\n",chancount);
       websWrite (wp, "var wl0_channel = '%s';\n",nvram_safe_get (wl_channel));
+      websWrite (wp, "var offset = %d;\n",chanlist[0]);
       websWrite (wp, "var buf = \"\";");
       websWrite (wp,
-		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
+		 "var freq = new Array(\"Auto\",");
+int i;
+for (i=0;i<chancount;i++)
+    {
+    float ofs;
+    if (chanlist[i]<25)
+    ofs = 2.407f;
+    else
+    ofs = 5.000f;
+    ofs += (float)(chanlist[i]*0.005f);
+    websWrite(wp,"\"%0.3f\"",ofs);
+    if (i!=chancount-1)
+    websWrite(wp,",");
+    }		 
+      websWrite (wp, ");\n");
       websWrite (wp, "	for(i=0; i<=max_channel ; i++){\n");
       websWrite (wp,
 		 "		if(i == wl0_channel)	buf = \"selected\";\n");
@@ -1567,7 +1585,7 @@ if (type==1 && !nvram_match(wl_net_mode,"g-only") && !nvram_match(wl_net_mode,"a
 		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
       websWrite (wp, "		else\n");
       websWrite (wp,
-		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+i+\" - \"+freq[i]+\"GHz</option>\");\n");
+		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset)+\" - \"+freq[i]+\"GHz</option>\");\n");
       websWrite (wp, "}\n");
     }
 #endif
@@ -1610,12 +1628,12 @@ if (has_mimo())
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "n-only") ? "selected=\\\"selected\\\"" : "");
 }
-
-#ifdef HAVE_MADWIFI
+#ifndef HAVE_MADWIFI
+if (nvram_match("wl0_phytypes","ga") || nvram_match("wl0_phytypes","a"))
+#endif
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");</script>\n",
 	     nvram_match (wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
-#endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 }
