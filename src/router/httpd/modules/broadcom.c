@@ -4361,13 +4361,13 @@ switch (radiooff)
 	{	
 	case 0:
 		//websWrite (wp, "On&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
-		websWrite (wp, "On"> ");
+		websWrite (wp, "On\"> ");
 		break;
 	case 1: // software disabled
 	case 2: // hardware disabled
 	case 3: // both are disabled
 		//websWrite (wp, "Off&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
-		websWrite (wp, "Off"> ");
+		websWrite (wp, "Off\"> ");
 		break;
 	case -1:
 		websWrite (wp, "unknown");
