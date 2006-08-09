@@ -11,6 +11,8 @@ install:
 	install -d $(INSTALLDIR)/usr/local
 	install -d $(INSTALLDIR)/sbin
 	install -d $(INSTALLDIR)/usr/sbin
+	install -d $(INSTALLDIR)/usr/lib
+	install -d $(INSTALLDIR)/usr/lib/firmware	
 	install -d $(INSTALLDIR)/lib
 	install services $(INSTALLDIR)/etc
 ifdef CONFIG_SER
@@ -26,6 +28,7 @@ endif
 ifdef CONFIG_XSCALE
 	install convert $(INSTALLDIR)/etc
 	install kendin $(INSTALLDIR)/etc
+	cp firmware/* $(INSTALLDIR)/usr/lib/firmware
 endif
 
 	install fstab $(INSTALLDIR)/etc
