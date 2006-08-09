@@ -32,6 +32,9 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 ifneq ($(CONFIG_RB500),y)
 OBJS += mtd.o
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DHAVE_MICRO
+endif
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)

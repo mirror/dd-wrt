@@ -1006,10 +1006,13 @@ configure_single (int count)
 
   char *m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
-  if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
+  if      (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
-  else
+  else if (!strcmp (m, "ap"))
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
+  else
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
+  
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -1030,8 +1033,11 @@ configure_single (int count)
 	      || !strcmp (m, "wdssta"))
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
-	  else
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", m);
+	 else if (!strcmp (m, "ap"))
+         eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
+         else
+          eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc");
+ 
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
 	  char vathmac[16];
@@ -1101,7 +1107,7 @@ configure_single (int count)
 
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
-  if (strcmp (m, "sta"))
+  if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
       br_add_interface (nvram_safe_get("lan_ifname"), dev);
 
@@ -1151,7 +1157,7 @@ configure_single (int count)
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
-      if (strcmp (m, "sta"))
+      if (strcmp (m, "sta") && strcmp (m, "infra"))
 	{
 	char bridged[32];
       sprintf (bridged, "%s_bridged", var);
