@@ -247,6 +247,7 @@ addEvent(window, "load", function() {
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %>><% tran("share.disable"); %></input>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 								</div><br />
+								
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label6"); %></div>
 									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,1,65535,wl_adv.label6)" value="<% nvram_selget("wl_bcn"); %>" />&nbsp;
@@ -272,6 +273,7 @@ addEvent(window, "load", function() {
 									<input class="num" name="wl_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value="<% nvram_selget("wl_maxassoc"); %>" />&nbsp;
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 128, " + share.range + ": 1 - 256)")</script></span>
 							 	</div><br />
+							 	
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label11"); %></div>
 									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %>><% tran("share.enable"); %></input>&nbsp;
@@ -333,21 +335,22 @@ addEvent(window, "load", function() {
 							</fieldset><br />
 							
 							<fieldset>
-			                	<legend><% tran("wl_basic.legend2"); %></legend>
-			                	<div class="setting">
-			                		<div class="label"><% tran("wl_basic.radiotimer"); %></div>
-			                		<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
-			                		<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>			                	
-			                	</div>
-			                	<div id="radio">
-			                		<table id="radio_table"></table>
-			                		<br />
-			                		<div class="center">
-			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
-			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />")</script>
-			                	</div>
-			             	</fieldset><br/>
+								<legend><% tran("wl_basic.legend2"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("wl_basic.radiotimer"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+								</div>
+								<div id="radio">
+									<table id="radio_table"></table>
+									<br />
+									<div class="center">
+										<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
+										<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />")</script>
+									</div>
+								</div>
+							</fieldset><br/>
 
 							<fieldset>
 								<legend><% tran("wl_adv.legend2"); %></legend>
