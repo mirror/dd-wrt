@@ -1417,6 +1417,12 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mezcla";
 wl_basic.b="Sólo-B";
 wl_basic.g="Sólo-G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+wl_basic.radio_unkn="Unknown";
 
 //help container
 

@@ -1421,6 +1421,12 @@ wl_basic.mixed="Mixed";
 wl_basic.b="B-Only";
 wl_basic.g="G-Only";
 wl_basic.sensitivity="Standaard: 20000 meter";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+wl_basic.radio_unkn="Unknown";
 
 //help container
 
