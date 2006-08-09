@@ -1414,6 +1414,7 @@ wl_basic.legend2="Omejitve radijskega èasa";
 wl_basic.radio="Radijska tabela";
 wl_basic.radio_on="Radio je vkljuèen";
 wl_basic.radio_off="Radio je izkljuèen";
+wl_basic.radio_unkn="Neznano";
 
 wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.regdom="Regulatorska domena";
