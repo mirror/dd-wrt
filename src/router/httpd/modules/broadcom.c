@@ -4372,7 +4372,7 @@ switch (radiooff)
 		websWrite (wp, "Capture(wl_basic.radio_unkn)");
 		break;
 	}
-websWrite(wp,"</script>&nbsp;\n");
+websWrite(wp,"</script>\n");
 }
 
 
