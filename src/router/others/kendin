@@ -1,0 +1,45 @@
+#KENDIN KS8995M switch config
+#----------------------------
+# switch enable
+#echo "R01=01" >/proc/driver/KS8995M
+# 1, Enable 8021Q (80) and IGMP snooping (40)
+echo "R05=A0" >/proc/driver/KS8995M
+# 2, define VLANS
+# ------- vlan table setting proc,
+# write value to r76,77,78
+# vlan1: valid,5,2,1 port fid=1 vid=1 
+echo "R76=331001" >/proc/driver/KS8995M
+# write (04) and trigger address 0
+echo "R6E=0400" >/proc/driver/KS8995M
+# vlan2: valid,5,4,3 port fid=2 vid=2 
+echo "R76=3C2002" >/proc/driver/KS8995M
+# write (04) and trigger address 0
+echo "R6E=0401" >/proc/driver/KS8995M
+# 3, config port 1,2 to VLAN id 1
+echo "R14=01" >/proc/driver/KS8995M
+echo "R24=01" >/proc/driver/KS8995M
+# 4, config port 1,2 to filter vid 1
+echo "R12=46" >/proc/driver/KS8995M
+echo "R22=46" >/proc/driver/KS8995M
+# 5, config port 3,4 to VLAN id 2
+echo "R34=02" >/proc/driver/KS8995M
+echo "R44=02" >/proc/driver/KS8995M
+# 6, config port 3,4 to filter vid 2
+echo "R32=46" >/proc/driver/KS8995M
+echo "R42=46" >/proc/driver/KS8995M
+# for IGMP, disenable special tagging
+echo "R0B=01" >/proc/driver/KS8995M
+# 7, enable vlan tag insertion por 5
+echo "R50=04" >/proc/driver/KS8995M
+echo "R52=06" >/proc/driver/KS8995M
+# 8, remove it from all others
+echo "R10=02" >/proc/driver/KS8995M
+echo "R20=02" >/proc/driver/KS8995M
+echo "R30=02" >/proc/driver/KS8995M
+echo "R40=02" >/proc/driver/KS8995M
+#-------------------------------
+# switch enable
+echo "R01=01" >/proc/driver/KS8995M
+#---------------------------------
+echo 0xee >/proc/sys/diag
+ 
