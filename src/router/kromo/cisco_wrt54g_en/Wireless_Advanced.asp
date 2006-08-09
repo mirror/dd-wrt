@@ -19,7 +19,7 @@ function initWlTimer(radio_on_time)
 			bgcolor=color_red;
 			val=0;
 		}
-		if(ie4){
+		if(ie4 || op){
 			eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
 			eval("document.all.td_" + i + ".value = '" + val + "'");
 		}
@@ -27,7 +27,7 @@ function initWlTimer(radio_on_time)
 			eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
 			eval("document.td_" + i + ".value = '" + val + "'");
 		}
-		if(ns6 || op) {
+		if(ns6) {
 			eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
 			eval("document.getElementById('td_" + i + "').value = '" + val + "'");
 		}
@@ -49,7 +49,7 @@ function setWlTimer(id, state)
 		}
 			
 		for(var i = 0; i < 24; i++) {
-			if(ie4){
+			if(ie4 || op){
 				eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
 				eval("document.all.td_" + i + ".value = '" + val + "'");
 			}
@@ -57,14 +57,14 @@ function setWlTimer(id, state)
 				eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
 				eval("document.td_" + i + ".value = '" + val + "'");
 			}
-			if(ns6 || op){
+			if(ns6){
 				eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
 				eval("document.getElementById('td_" + i + "').value = '" + val + "'");
 			}
 		}
 	} else {
-		if(ie4){
-			if(eval("document.all." + id + ".value")==1){
+		if(ie4 || op){
+			if(eval("document.all." + id + ".value")=='1'){
 				eval("document.all." + id + ".style.backgroundColor = '" + color_red + "'");
 				eval("document.all." + id + ".value = '0'");
 			}else{
@@ -73,7 +73,7 @@ function setWlTimer(id, state)
 			}
 		}
 		if(ns4){
-			if(eval("document." + id + ".value")==1){
+			if(eval("document." + id + ".value")=='1'){
 				eval("document." + id + ".backgroundColor = '" + color_red + "'");
 				eval("document." + id + ".value = '0'");
 			}else{
@@ -81,8 +81,8 @@ function setWlTimer(id, state)
 				eval("document." + id + ".value = '1'");
 			}
 		}
-		if(ns6 || op){
-			if(eval("document.getElementById('" + id + "').value")==1){
+		if(ns6){
+			if(eval("document.getElementById('" + id + "').value")=='1'){
 				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_red + "'");
 				eval("document.getElementById('" + id + "').value = '0'");
 			}else{
@@ -98,19 +98,20 @@ function computeWlTimer()
 	var radio_on_time='';
 	
 	for(var i = 0; i < 24; i++){
-		if(ie4){
-			radio_on_time=radio_on_time + eval("document.all.td_" + i + ".value");
+		if(ie4 || op){
+			radio_on_time+=eval("document.all.td_" + i + ".value");
 		}
 		if(ns4) {
-			radio_on_time=radio_on_time + eval("document.td_" + i + ".value");
+			radio_on_time+=eval("document.td_" + i + ".value");
 		}
-		if(ns6 || op) {
-			radio_on_time=radio_on_time + eval("document.getElementById('td_" + i + "').value");
+		if(ns6) {
+			radio_on_time+=eval("document.getElementById('td_" + i + "').value");
 		}
 	}
-	
+
 	return radio_on_time;
 }
+
 function create_nrate(num,F)
 {
 	var bw20 = new Array("6.5", "13", "19.5", "26", "39", "52", "58.5", "65", "13", "26", "39", "52", "78", "104", "117", "130");		
