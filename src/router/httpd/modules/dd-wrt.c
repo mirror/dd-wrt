@@ -2292,7 +2292,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     	websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n");
     	websWrite (wp, "<select name=\"wl0_nbw\">\n");
     	websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");</script>\n",
-    		nvram_match (wl0_nbw, "0") ? "selected=\\\"selected\\\"" : "");
+    		nvram_match ("wl0_nbw", "0") ? "selected=\\\"selected\\\"" : "");
     	websWrite (wp, "<option value=\"20\" %s>20 Mhz</option>",nvram_match (wl0_nbw, "20") ? "selected=\\\"selected\\\"" : "");
     	websWrite (wp, "<option value=\"40\" %s>40 Mhz</option>",nvram_match (wl0_nbw, "40") ? "selected=\\\"selected\\\"" : "");
     	websWrite (wp, "</select>\n");
