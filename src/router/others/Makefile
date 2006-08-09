@@ -23,6 +23,10 @@ ifdef CONFIG_MSSID
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
 endif
+ifdef CONFIG_XSCALE
+	install convert $(INSTALLDIR)/etc
+	install kendin $(INSTALLDIR)/etc
+endif
 
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
