@@ -16,8 +16,6 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libip
 CFLAGS  += $(COPTS) 
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o
-OBJS += libbridge_if.o
-OBJS += libbridge_init.o
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
@@ -31,12 +29,17 @@ ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
 endif
 ifeq ($(CONFIG_SAMBA),y)
-  CFLAGS += -DHAVE_SAMBA
+CFLAGS += -DHAVE_SAMBA
 endif
 ifeq ($(CONFIG_KODATA),y)
-  CFLAGS += -DHAVE_KODATA
+CFLAGS += -DHAVE_KODATA
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DHAVE_MICRO
+OBJS += libbridge_if.o
+OBJS += libbridge_init.o
 
+endif
 ifeq ($(CONFIG_RADIOOFF),y)
   CFLAGS += -DHAVE_RADIOOFF
 endif

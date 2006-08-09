@@ -772,9 +772,10 @@ main (int argc, char **argv)
     return sendudp_main (argc, argv);
   else if (strstr (base, "check_ses_led"))
     return check_ses_led_main (argc, argv);
+#ifdef HAVE_MICRO
   else if (strstr (base, "brctl"))
     return start_main ("brctl", argc, argv);
-
+#endif
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
 
