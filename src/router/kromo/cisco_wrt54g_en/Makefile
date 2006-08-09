@@ -150,6 +150,7 @@ ifneq ($(CONFIG_MSSID),y)
 	cp WPA_Preshared.v23 $(INSTALLDIR)/www/WPA_Preshared.asp
 	cp WPA_Radius.v23 $(INSTALLDIR)/www/WPA_Radius.asp	
 	cp Wireless_Basic.v23 $(INSTALLDIR)/www/Wireless_Basic.asp
+	cp Wireless_Advanced.v23 $(INSTALLDIR)/www/Wireless_Advanced.asp
 endif
 
 
