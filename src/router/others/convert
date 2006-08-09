@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ $(/bin/cat /proc/mtd | /bin/grep OpenIXP | /usr/bin/wc -l) = 1 ]; then
+  echo 5 > /proc/sys/diag
+  /sbin/jffs2root
+  /sbin/reboot
+fi
