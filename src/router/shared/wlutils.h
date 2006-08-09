@@ -54,6 +54,7 @@ extern int wl_probe (char *name);
 
 
 /* Returns the list of associated stations in the pre-existing buffer list */
+int getchannels (unsigned int *list);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
 int getNoise(char *name);
