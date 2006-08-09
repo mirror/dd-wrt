@@ -227,6 +227,8 @@ extern void bb_xdaemon(int nochdir, int noclose);
 extern void bb_xbind(int sockfd, struct sockaddr *my_addr, socklen_t addrlen);
 extern void bb_xlisten(int s, int backlog);
 extern void bb_xchdir(const char *path);
+extern void xsetgid(gid_t gid);
+extern void xsetuid(uid_t uid);
 
 #define BB_GETOPT_ERROR 0x80000000UL
 extern const char *bb_opt_complementally;
