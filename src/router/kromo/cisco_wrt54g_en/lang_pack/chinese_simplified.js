@@ -1420,6 +1420,12 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="»ìºÏ";
 wl_basic.b="½öB";
 wl_basic.g="½öG";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+wl_basic.radio_unkn="Unknown";
 
 //help container
 

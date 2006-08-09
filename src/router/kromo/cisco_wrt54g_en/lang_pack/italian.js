@@ -1039,6 +1039,12 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mista";
 wl_basic.b="Solo-B";
 wl_basic.g="Solo-G";
+wl_basic.legend2="Radio Time Restrictions";
+wl_basic.radio="Radio";
+wl_basic.radiotimer="Radio Scheduling";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
+wl_basic.radio_unkn="Unknown";
 
 hwl_basic.right2="Se vuoi escludere i client modalità G, scegli la modalità <em>Solo-B</em>. Se vuoi disabilitare l'accesso wireless, Scegli <em>Disabilita</em>.";
 hwl_basic.right3="Intervallo Di Sensibilità: ";
