@@ -60,7 +60,7 @@
 #ifndef IXHSSACCCOMMON_P_H
 #define IXHSSACCCOMMON_P_H
 
-#include <stdio.h>
+//#include <stdio.h>
 #include "IxHssAcc.h"
 #include "IxNpeMh.h"
 
