@@ -1,6 +1,6 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -41,7 +41,6 @@
 
 core_os_OBJ := \
 			   IxOsalOsThread.o \
-			   IxOsalOsCacheMMU.o \
 			   IxOsalOsServices.o \
 			   IxOsalOsSemaphore.o  \
                            IxOsalOsSymbols.o \

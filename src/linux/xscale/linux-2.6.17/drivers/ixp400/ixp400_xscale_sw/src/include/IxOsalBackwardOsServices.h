@@ -7,7 +7,7 @@
  * are strongly recommended to use IX_OSAL API.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -69,7 +69,9 @@ typedef IxOsalVoidFnPtr IxVoidFnPtr;
 #define LOG_USER 	IX_OSAL_LOG_LVL_USER
 #define LOG_FATAL 	IX_OSAL_LOG_LVL_FATAL
 #define LOG_ERROR  	IX_OSAL_LOG_LVL_ERROR
+#ifndef __vxworks
 #define LOG_WARNING	IX_OSAL_LOG_LVL_WARNING
+#endif
 #define LOG_MESSAGE	IX_OSAL_LOG_LVL_MESSAGE
 #define LOG_DEBUG1  IX_OSAL_LOG_LVL_DEBUG1
 #define LOG_DEBUG2	IX_OSAL_LOG_LVL_DEBUG2

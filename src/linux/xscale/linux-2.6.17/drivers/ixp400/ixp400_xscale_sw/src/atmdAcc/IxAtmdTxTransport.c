@@ -17,7 +17,7 @@
 *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -899,17 +899,17 @@ ixAtmdAccTxDoneDispatch (unsigned int numberOfPdusToProcess,
     /* update stats */
     IX_ATMDACC_FULL_STATS( ixAtmdAccTxDoneDispatchStats.invokeCount++; );
 
+
     /* check inputs */
     /* number of pdus to process must be > 0 */
     /* pointer for return param must not be null */
-    IX_ATMDACC_PARAMS_CHECK(
     if (numberOfPdusToProcess == 0 ||
         numberOfPdusProcessedPtr == NULL)
     {
         /* update stats */
         IX_ATMDACC_FULL_STATS( ixAtmdAccTxDoneDispatchStats.failedCount++; );
         return IX_FAIL;
-    });
+    }
 
     /* initialise the number of pdu processed */
     *numberOfPdusProcessedPtr = 0;
@@ -1085,14 +1085,11 @@ ixAtmdAccTxVcPduSubmit (IxAtmConnId connId,
     * that a disconnecting or obsolete connId are rejected
     */
 
-    IX_ATMDACC_PARAMS_CHECK(
-    if ((vcDescriptor->connId != connId)                                       ||
-        (mbufPtr == NULL)                                                      ||
-        (numberOfCells == 0)                                                   ||
-        ((unsigned int)IX_OSAL_MBUF_MLEN(mbufPtr) == 0)                            ||
-        ((unsigned int)IX_OSAL_MBUF_PKT_LEN(mbufPtr) > IX_ATMDACC_MAX_PDU_LEN)       ||
-        ((unsigned int)IX_OSAL_MBUF_PKT_LEN(mbufPtr) != numberOfCells * vcDescriptor->cellSize) ||
-        ((clp != IX_ATMDACC_CLP_SET) && (clp != IX_ATMDACC_CLP_NOT_SET)))
+    if ( (vcDescriptor->connId != connId)                                    ||
+         (mbufPtr == NULL)                                                   ||
+         (numberOfCells == 0)                                                ||
+         ((clp != IX_ATMDACC_CLP_SET) && (clp != IX_ATMDACC_CLP_NOT_SET))
+       )
     {
         /* param check failed */
         IX_ATMDACC_FULL_STATS(
@@ -1102,7 +1099,18 @@ ixAtmdAccTxVcPduSubmit (IxAtmConnId connId,
         });
         vcDescriptor->pduTransmitInProgress = FALSE;
         return IX_FAIL;
+    }
+
+    IX_ATMDACC_PARAMS_CHECK(
+    if ( ((unsigned int)IX_OSAL_MBUF_MLEN(mbufPtr) == 0)                            ||
+         ((unsigned int)IX_OSAL_MBUF_PKT_LEN(mbufPtr) > IX_ATMDACC_MAX_PDU_LEN)     ||
+         ((unsigned int)IX_OSAL_MBUF_PKT_LEN(mbufPtr) != numberOfCells * vcDescriptor->cellSize) 
+       )
+    {
+        vcDescriptor->pduTransmitInProgress = FALSE;
+        return IX_FAIL;
     });
+
 
     /* extract the VC descriptor pool index from the connId
     * and get the descriptor

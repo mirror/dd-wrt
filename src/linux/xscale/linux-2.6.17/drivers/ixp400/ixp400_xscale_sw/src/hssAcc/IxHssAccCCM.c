@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -63,7 +63,7 @@
 #include "IxNpeA.h"
 
 #include "IxHssAccCCM_p.h"
-#include "IxHssAccPDM_p.h"
+
 #include "IxHssAccCommon_p.h"
 #include "IxHssAccNpeA_p.h"
 

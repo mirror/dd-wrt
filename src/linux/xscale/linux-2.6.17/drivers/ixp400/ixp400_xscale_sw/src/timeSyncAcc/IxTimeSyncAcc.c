@@ -8,7 +8,7 @@
  * Clock Synchronisation Protocol Hardware Assist.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -52,7 +52,7 @@
 /* 
  * System defined include files
  */
-#ifdef __ixp46X
+#if defined (__ixp46X)
 
 
 #include "IxOsal.h"
@@ -177,6 +177,19 @@ ixTimeSyncAccInitCheck (void)
                     ixFeatureCtrlDeviceRead()) */
 
     /*
+     * Check TimeSync/ECC Fuse-Out Status
+     * 
+     * NOTE: Feature Control uses #define - IX_FEATURECTRL_ECC_TIMESYNC for
+     * both the TimeSync and ECC feature of SDRAM Controller
+     */
+    if (IX_FEATURE_CTRL_COMPONENT_ENABLED != 
+        ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC))
+    {
+        return IXP400_TIMESYNCACC_INIT_TS_DISABLED_FAIL;
+    } /* end of if (IX_FEATURE_CTRL_COMPONENT_ENABLED != 
+                    ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC)) */
+
+    /*
      * Secure mutex to protect the initialisation sequence so as to 
      * avoid the possibility of two public APIs invoking this function
      * which can result in corruption of the memory mapping of virtual
@@ -219,28 +232,6 @@ ixTimeSyncAccInitCheck (void)
 
         return IXP400_TIMESYNCACC_INIT_SUCCESS;
     } /* end of (TRUE == ixTs1588HardwareAssistEnabled) */
-
-    /*
-     * Check TimeSync/ECC Fuse-Out Status
-     * 
-     * NOTE: Feature Control uses #define - IX_FEATURECTRL_ECC_TIMESYNC for
-     * both the TimeSync and ECC feature of SDRAM Controller
-     */
-    if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
-        ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC))
-    {
-        /* Set Initialisation Check Status */
-        ixTs1588HardwareAssistEnabled = TRUE;
-    } /* else of if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
-                    ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC)) */
-    else
-    {
-        /* Release the init mutex  */
-        IXP400_TIMESYNCACC_MUTEX_RELEASE(ixTsInitChkMutex);
-
-        return IXP400_TIMESYNCACC_INIT_TS_DISABLED_FAIL;
-    } /* end of if (IX_FEATURE_CTRL_COMPONENT_ENABLED == 
-                    ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ECC_TIMESYNC)) */
 
     /*
      * Initialise other mutexes
@@ -286,8 +277,6 @@ ixTimeSyncAccInitCheck (void)
         /* Release the init mutex */
         IXP400_TIMESYNCACC_MUTEX_RELEASE(ixTsInitChkMutex);
 
-        /* Reset Initialisation Check Status */
-        ixTs1588HardwareAssistEnabled = FALSE;
         return IXP400_TIMESYNCACC_INIT_ISR_BIND_FAIL;
     } /* end of if (IX_SUCCESS != ixOsalIrqBind((UINT32) IRQ_IXP400_INTC_TSYNC, 
                                       (IxOsalVoidFnVoidPtr) ixTimeSyncAccIsr,
@@ -301,9 +290,6 @@ ixTimeSyncAccInitCheck (void)
         /* Release the init mutex */
         IXP400_TIMESYNCACC_MUTEX_RELEASE(ixTsInitChkMutex);
 
-        /* Reset Initialisation Check Status */
-        ixTs1588HardwareAssistEnabled = FALSE;
-
         /* Deregister TimeSync Interrupt Service Routine */
         ixOsalIrqUnbind((UINT32) IRQ_IXP400_INTC_TSYNC);
 
@@ -314,6 +300,9 @@ ixTimeSyncAccInitCheck (void)
         aux */
     ixTimeSyncAccEventAmmsFlagClear();
     ixTimeSyncAccEventAsmsFlagClear();
+    
+    /* Set Initialisation Check Status */
+    ixTs1588HardwareAssistEnabled = TRUE;
 
     /* Release the init mutex */
     IXP400_TIMESYNCACC_MUTEX_RELEASE(ixTsInitChkMutex);
@@ -925,16 +914,16 @@ ixTimeSyncAccTargetTimePoll(
     /* Initialised before? */
     IXP400_TIMESYNCACC_INIT_CHECK();
 
-    /* Is the System Time reached or exceeded Target Time? */
+    /* Has the System Time reached or exceeded Target Time? */
     *ttmPollFlag = ixTimeSyncAccEventTtmFlagGet();
-    if (FALSE == ttmPollFlag)
+    if (FALSE == *ttmPollFlag)
     {
         /* Target Time not to be returned yet */
         targetTime->timeValueLowWord = 0;
         targetTime->timeValueHighWord = 0;
 
         return IX_TIMESYNCACC_SUCCESS;
-    } /* if (FALSE == ttmPollFlag) */
+    } /* if (FALSE == *ttmPollFlag) */
 
     /* Fetch Target Time */
     ixTimeSyncAccTargetTimeSnapshotGet(&targetTime->timeValueLowWord,
@@ -1232,14 +1221,14 @@ ixTimeSyncAccShow(void)
     regHighValue = 0;
     ixTimeSyncAccSystemTimeSnapshotGet(&regLowValue, &regHighValue);
     ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "System Test (Low:High): %x : %x\n",
+        "System Test (Low:High): 0x%08x : 0x%08x\n",
         regLowValue, regHighValue,0,0,0,0);
 
     /* Frequency Scaling Value */
     regValue = 0;
     ixTimeSyncAccAddendFsvGet(&regValue);
     ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "Frequency Scaling Value: %x\n",
+        "Frequency Scaling Value: 0x%08x\n",
         regValue,0,0,0,0,0);
 
     /* Target time reached/exceeded interrupt mask value */
@@ -1259,7 +1248,7 @@ ixTimeSyncAccShow(void)
     regHighValue = 0;
     ixTimeSyncAccTargetTimeSnapshotGet(&regLowValue, &regHighValue);
     ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "Target Time (Low:High): %x : %x\n",
+        "Target Time (Low:High): 0x%08x : 0x%08x\n",
         regLowValue, regHighValue,0,0,0,0);
 
     /* Auxiliary Master Mode Snapshot interrupt mask value */
@@ -1279,7 +1268,7 @@ ixTimeSyncAccShow(void)
     regHighValue = 0;
     ixTimeSyncAccAuxMasterModeSnapshotGet(&regLowValue, &regHighValue);
     ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-       "Auxiliary Master Mode Snapshot (Low:High): %x : %x\n",
+       "Auxiliary Master Mode Snapshot (Low:High): 0x%08x : 0x%08x\n",
         regLowValue, regHighValue,0,0,0,0);
 
     /* Auxiliary Slave Mode Snapshot interrupt mask value */
@@ -1299,7 +1288,7 @@ ixTimeSyncAccShow(void)
     regHighValue = 0;
     ixTimeSyncAccAuxSlaveModeSnapshotGet(&regLowValue, &regHighValue);
     ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-        "Auxiliary Slave Mode Snapshot (Low:High) : %x : %x\n",
+        "Auxiliary Slave Mode Snapshot (Low:High) : 0x%08x : 0x%08x\n",
         regLowValue, regHighValue,0,0,0,0);
 
     /* Dump Port Level Status */
@@ -1337,14 +1326,14 @@ ixTimeSyncAccShow(void)
         ixTimeSyncAccPTPPortReceiveSnapshotGet(ptpPortNum,
             &regLowValue, &regHighValue);
         ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-            "\tReceive Timestamp (Low:High): %x : %x\n",
+            "\tReceive Timestamp (Low:High): 0x%08x : 0x%08x\n",
             regLowValue,regHighValue,0,0,0,0);
 
         /* UUID and Seq# */
         ixTimeSyncAccPTPMsgUuidSeqIdGet(ptpPortNum, &uuIdLow, &uuIdHigh, &seqId);
         ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-            "\tUUID (Low: High (16-Bits)): %x : %x \n"
-            "Seq# (16Bits Only): %x\n",
+            "\tUUID (Low: High (16-Bits)): 0x%08x : 0x%08x \n"
+            "Seq# (16Bits Only): 0x%08x\n",
             uuIdLow, uuIdHigh, seqId,0,0,0);
 
         /* Transmit Timestamp Event Flag */
@@ -1359,7 +1348,7 @@ ixTimeSyncAccShow(void)
         ixTimeSyncAccPTPPortTransmitSnapshotGet(ptpPortNum,
             &regLowValue,&regHighValue);
         ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT,
-            "\tTransmit Timestamp (Low:High): %x : %x\n",
+            "\tTransmit Timestamp (Low:High): 0x%08x : 0x%08x\n",
             regLowValue,regHighValue,0,0,0,0);
     } /* end of for (ptpPortNum = 0;
                      ptpPortNum < IXP400_TIMESYNCACC_MAX_1588PTP_PORT;

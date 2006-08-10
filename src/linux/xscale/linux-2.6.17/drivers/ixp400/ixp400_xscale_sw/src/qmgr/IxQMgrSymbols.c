@@ -2,13 +2,13 @@
  * @file IxQMgrSymbols.c
  *
  * @author Intel Corporation
- * @date 04-Oct-2002
+ * @date 26-Jan-2006
  *
  * @brief This file declares exported symbols for linux kernel module builds.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,16 +51,13 @@
 #ifdef __linux
 
 #include <linux/module.h>
-#include <IxQMgr.h>
-#include <IxQMgrAqmIf_p.h>
-#include <IxQMgrQAccess_p.h>
-
+#include "IxQMgr_sp.h"
+#include "IxQMgrQAccess_p.h"
 #include "IxQMgrQCfg_p.h"
-#include "IxQMgrAqmIf_p.h"
-
-
-extern IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[];
-
+#if defined(__ixp42X) || defined(__ixp46X)
+#include "IxQMgrHwQIfIxp400_p.h"
+#endif /* __ixp42X */
+			    
 EXPORT_SYMBOL(ixQMgrInit);
 EXPORT_SYMBOL(ixQMgrUnload);
 EXPORT_SYMBOL(ixQMgrShow);
@@ -69,6 +66,7 @@ EXPORT_SYMBOL(ixQMgrQConfig);
 EXPORT_SYMBOL(ixQMgrQSizeInEntriesGet);
 EXPORT_SYMBOL(ixQMgrWatermarkSet);
 EXPORT_SYMBOL(ixQMgrAvailableSramAddressGet);
+EXPORT_SYMBOL(ixQMgrAvailableSramAddressInBlockGet);
 EXPORT_SYMBOL(ixQMgrQRead);
 EXPORT_SYMBOL(ixQMgrQPeek);
 EXPORT_SYMBOL(ixQMgrQWrite);
@@ -77,54 +75,58 @@ EXPORT_SYMBOL(ixQMgrQWriteWithChecks);
 EXPORT_SYMBOL(ixQMgrQPoke);
 EXPORT_SYMBOL(ixQMgrQNumEntriesGet);
 EXPORT_SYMBOL(ixQMgrQStatusGet);
+EXPORT_SYMBOL(ixQMgrQStatusGetWithChecks);
 EXPORT_SYMBOL(ixQMgrDispatcherPrioritySet);
 EXPORT_SYMBOL(ixQMgrNotificationEnable);
 EXPORT_SYMBOL(ixQMgrNotificationDisable);
-EXPORT_SYMBOL(ixQMgrDispatcherLoopRunA0);
+EXPORT_SYMBOL(ixQMgrDispatcherLoopGet);
+EXPORT_SYMBOL(ixQMgrNotificationCallbackSet);
+EXPORT_SYMBOL(ixQMgrHwQIfBaseAddressSet);
+EXPORT_SYMBOL(ixQMgrQReadMWordsMinus1);
+EXPORT_SYMBOL(ixQMgrHwQIfQInterruptRegRead);
+EXPORT_SYMBOL(ixQMgrHwQIfQInterruptRegWrite);
+
+#if defined(__ixp42X) || defined(__ixp46X)
 EXPORT_SYMBOL(ixQMgrDispatcherLoopRunB0);
 EXPORT_SYMBOL(ixQMgrDispatcherLoopRunB0LLP);
-EXPORT_SYMBOL(ixQMgrDispatcherLoopGet);
 EXPORT_SYMBOL(ixQMgrStickyInterruptRegEnable);
-EXPORT_SYMBOL(ixQMgrNotificationCallbackSet);
 EXPORT_SYMBOL(ixQMgrCallbackTypeSet);
 EXPORT_SYMBOL(ixQMgrCallbackTypeGet);
 EXPORT_SYMBOL(ixQMgrPeriodicDone);
 EXPORT_SYMBOL(ixQMgrLLPShow);
-EXPORT_SYMBOL(ixQMgrAqmIfBaseAddressSet);
-EXPORT_SYMBOL(ixQMgrQReadMWordsMinus1);
-EXPORT_SYMBOL(ixQMgrAqmIfQInterruptRegRead);
-EXPORT_SYMBOL(ixQMgrAqmIfQInterruptRegWrite);
+#endif /* __ixp42X */
 
-extern volatile UINT32 * ixQMgrAqmIfQueAccRegAddr[];
-extern UINT32 ixQMgrAqmIfQueLowStatRegAddr[];
-extern UINT32 ixQMgrAqmIfQueLowStatBitsOffset[];
-extern UINT32 ixQMgrAqmIfQueLowStatBitsMask;
-extern UINT32 ixQMgrAqmIfQueUppStat0RegAddr;
-extern UINT32 ixQMgrAqmIfQueUppStat1RegAddr;
-extern UINT32 ixQMgrAqmIfQueUppStat0BitMask[];
-extern UINT32 ixQMgrAqmIfQueUppStat1BitMask[];
-extern UINT32 aqmBaseAddress;
+extern volatile UINT32 * ixQMgrHwQIfQueAccRegAddr[];
+EXPORT_SYMBOL(ixQMgrHwQIfQueAccRegAddr);
+
+#if defined(__ixp42X) || defined(__ixp46X)
+extern UINT32 ixQMgrHwQIfQueLowStatRegAddr[];
+extern UINT32 ixQMgrHwQIfQueLowStatBitsOffset[];
+extern UINT32 ixQMgrHwQIfQueLowStatBitsMask;
+extern UINT32 ixQMgrHwQIfQueUppStat0RegAddr;
+extern UINT32 ixQMgrHwQIfQueUppStat1RegAddr;
+extern UINT32 ixQMgrHwQIfQueUppStat0BitMask[];
+extern UINT32 ixQMgrHwQIfQueUppStat1BitMask[];
+EXPORT_SYMBOL(ixQMgrHwQIfQueLowStatRegAddr);
+EXPORT_SYMBOL(ixQMgrHwQIfQueLowStatBitsOffset);
+EXPORT_SYMBOL(ixQMgrHwQIfQueLowStatBitsMask);
+EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat0RegAddr);
+EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat1RegAddr);
+EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat0BitMask);
+EXPORT_SYMBOL(ixQMgrHwQIfQueUppStat1BitMask);
+#endif /* __ixp42X */
+
+extern UINT32 hwQBaseAddress;
+EXPORT_SYMBOL(hwQBaseAddress);
+
 extern BOOL qMgrIsInitialized;
-
-EXPORT_SYMBOL(ixQMgrAqmIfQueAccRegAddr);
-EXPORT_SYMBOL(ixQMgrAqmIfQueLowStatRegAddr);
-EXPORT_SYMBOL(ixQMgrAqmIfQueLowStatBitsOffset);
-EXPORT_SYMBOL(ixQMgrAqmIfQueLowStatBitsMask);
-EXPORT_SYMBOL(ixQMgrAqmIfQueUppStat0RegAddr);
-EXPORT_SYMBOL(ixQMgrAqmIfQueUppStat1RegAddr);
-EXPORT_SYMBOL(ixQMgrAqmIfQueUppStat0BitMask);
-EXPORT_SYMBOL(ixQMgrAqmIfQueUppStat1BitMask);
-EXPORT_SYMBOL(ixQMgrQInlinedReadWriteInfo);
-EXPORT_SYMBOL(aqmBaseAddress);
 EXPORT_SYMBOL(qMgrIsInitialized);
-EXPORT_SYMBOL(ixQMgrQEntrySizeInWordsGet);
-EXPORT_SYMBOL(ixQMgrAqmIfBaseAddressGet);
-EXPORT_SYMBOL(ixQMgrQSizeInWordsGet);
-extern IX_STATUS
-ixQMgrQStatusGetWithChecks (IxQMgrQId qId,
-                            IxQMgrQStatus *qStatus);
 
-EXPORT_SYMBOL(ixQMgrQStatusGetWithChecks);
-
+extern IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[];
+EXPORT_SYMBOL(ixQMgrQInlinedReadWriteInfo);
+EXPORT_SYMBOL(ixQMgrDispatcherLoopEnable);
+EXPORT_SYMBOL(ixQMgrDispatcherLoopDisable);
+EXPORT_SYMBOL(ixQMgrDispatcherLoopStatusGet);
+EXPORT_SYMBOL(ixQMgrDispatcherInterruptModeSet);
 
 #endif /* __linux */

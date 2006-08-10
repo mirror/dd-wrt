@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -65,7 +65,7 @@
 EXPORT_SYMBOL(ixEthAccCodeletMain);
 
 int operationType = 0;
-module_param(operationType, int , 0);
+MODULE_PARM(operationType, "i");
 MODULE_PARM_DESC(operationType, "EthAcc Codelet operation options (1-9)\n"
 		 "\t1 - Rx Sink\n"
 		 "\t2 - Sw Loopback\n"
@@ -77,10 +77,10 @@ MODULE_PARM_DESC(operationType, "EthAcc Codelet operation options (1-9)\n"
                  "\t8 - EthDB Learning\n"
                  "\t9 - Birdge + WiFi header conversion\n");
 int inPort = 0;
-module_param(inPort, int,0);
+MODULE_PARM(inPort, "i");
 MODULE_PARM_DESC(inPort, "EthAcc Codelet input port selection for tests\n");
 int outPort = 1;
-module_param(outPort, int, 0);
+MODULE_PARM(outPort, "i");
 MODULE_PARM_DESC(outPort, "EthAcc Codelet output port selection for tests\n");
 
 DECLARE_MUTEX_LOCKED(__codlet_getchar);

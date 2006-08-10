@@ -8,7 +8,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -286,6 +286,12 @@ ixOsalTimerCancel (IxOsalTimer * timer)
         return IX_FAIL;
     }
 
+    if (i >= ixOsalHigestTimeSlotUsed)
+    {
+        ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDOUT,
+            "ixOsalTimerCancel: Timer not found\n", 0, 0, 0, 0, 0, 0);
+	return IX_FAIL;
+    }
     return IX_SUCCESS;
 }
 
@@ -614,12 +620,12 @@ findNextTimeout (IxOsalTimeval now)
 PRIVATE void
 timerSleep (IxOsalTimerRec * nextTimer, IxOsalTimeval now)
 {
-    UINT32 ticks;
+    UINT32 milliseconds;
     IxOsalTimeval temp;
 
     if (nextTimer == NULL)
     {
-        ticks = IX_OSAL_WAIT_FOREVER;
+        milliseconds = IX_OSAL_WAIT_FOREVER;
     }
     else
     {
@@ -628,22 +634,22 @@ timerSleep (IxOsalTimerRec * nextTimer, IxOsalTimeval now)
 
         IX_OSAL_TIME_SUB (temp, now);
 
-        ticks = IX_OSAL_TIMEVAL_TO_TICKS (temp);
+        milliseconds = IX_OSAL_TIMEVAL_TO_MS (temp);
 
         /*
          * We should sleep but the period is less than a tick
          * * away, rounding up. 
          */
-        if (ticks == 0)
+        if (milliseconds == 0)
         {
-            ticks = 1;
+            milliseconds = 1;
         }
     }
 
     /*
      * Note: Status is ignored here, wait intentionally 
      */
-    ixOsalSemaphoreWait (&ixOsalTimerRecalcSem, ticks);
+    ixOsalSemaphoreWait (&ixOsalTimerRecalcSem, milliseconds);
 
 }
 

@@ -7,7 +7,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -205,7 +205,7 @@ PUBLIC IX_STATUS ixUARTPollInput(ixUARTDev* pUART, char *inChar)
         IX_UART_REG_READ(pUART, IX_IER, ier);
         IX_UART_REG_WRITE(pUART, IX_IER, (ier & (~IX_IER_RTOIE)));
        
-        #if CPU!=SIMSPARCSOLARIS 
+        #if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX)) 
         /* wait for RTO to be disabled - read back IER and stall */
 #ifdef _DIAB_TOOL
         pRTO = ((UINT32)(pUART)->addr + (IX_IER * IX_UART_REG_DELTA));

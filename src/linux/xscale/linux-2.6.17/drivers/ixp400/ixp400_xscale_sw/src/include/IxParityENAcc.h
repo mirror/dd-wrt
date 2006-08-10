@@ -8,7 +8,7 @@
  * Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -59,7 +59,7 @@
 #ifndef IXPARITYENACC_H
 #define IXPARITYENACC_H
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 #include "IxOsal.h"
 
@@ -356,14 +356,14 @@ typedef enum  /**< IxParityENAccParityErrorRequester  */
  * @enum IxParityENAccAHBErrorMaster
  *
  * @brief The Master on the AHB bus interface whose transaction might have 
- * resulted in the parity error notification to Intel XScale(R) Core .
+ * resulted in the parity error notification to Intel XScale(R) Processor.
  */
 typedef enum  /**< IxParityENAccAHBErrorMaster */
 {
   IX_PARITYENACC_AHBN_MST_NPE_A,       /**< NPE - A */
   IX_PARITYENACC_AHBN_MST_NPE_B,       /**< NPE - B */
   IX_PARITYENACC_AHBN_MST_NPE_C,       /**< NPE - C */
-  IX_PARITYENACC_AHBS_MST_XSCALE,      /**< Intel XScale(R) Core  Bus Interface Unit */
+  IX_PARITYENACC_AHBS_MST_XSCALE,      /**< Intel XScale(R) Processor Bus Interface Unit */
   IX_PARITYENACC_AHBS_MST_PBC,         /**< PCI Bus Controller */
   IX_PARITYENACC_AHBS_MST_EBC,         /**< Expansion Bus Controller */
   IX_PARITYENACC_AHBS_MST_AHB_BRIDGE,  /**< AHB Bridge */
@@ -376,13 +376,13 @@ typedef enum  /**< IxParityENAccAHBErrorMaster */
  * @enum IxParityENAccAHBErrorSlave
  *
  * @brief The Slave on the AHB bus interface whose transaction might have 
- * resulted in the parity error notification to Intel XScale(R) Core .
+ * resulted in the parity error notification to Intel XScale(R) Processor.
  */
 typedef enum  /**< IxParityENAccAHBErrorSlave */
 {
   IX_PARITYENACC_AHBN_SLV_MCU,         /**< Memory Control Unit */
   IX_PARITYENACC_AHBN_SLV_AHB_BRIDGE,  /**< AHB Bridge */
-  IX_PARITYENACC_AHBS_SLV_MCU,         /**< Intel XScale(R) Core  Bus Interface Unit */
+  IX_PARITYENACC_AHBS_SLV_MCU,         /**< Intel XScale(R) Processor Bus Interface Unit */
   IX_PARITYENACC_AHBS_SLV_APB_BRIDGE,  /**< APB Bridge */
   IX_PARITYENACC_AHBS_SLV_AQM,         /**< AQM */
   IX_PARITYENACC_AHBS_SLV_RSA,         /**< RSA (Crypto Bus) */
@@ -397,10 +397,10 @@ typedef enum  /**< IxParityENAccAHBErrorSlave */
  * @struct IxParityENAccAHBErrorTransaction
  *
  * @brief The Master and Slave on the AHB bus interface whose transaction might
- * have resulted in the parity error notification to Intel XScale(R) Core .
+ * have resulted in the parity error notification to Intel XScale(R) Processor.
  *
  * NOTE: This information may be used in the data abort exception handler
- * to differentiate between the Intel XScale(R) Core  and non-Intel XScale(R) Core  access to the SDRAM
+ * to differentiate between the Intel XScale(R) Processor and non-Intel XScale(R) Processor access to the SDRAM
  * memory.
  */
 typedef struct  /**< IxParityENAccAHBErrorTransaction  */
@@ -817,6 +817,50 @@ PUBLIC IxParityENAccStatus ixParityENAccStatsShow (void);
 
 PUBLIC IxParityENAccStatus ixParityENAccStatsReset (void);
 
+/**
+ * @ingroup IxParityENAcc
+ *
+ * @fn IxParityENAccStatus ixParityENAccParityNPEConfigReUpdate(UINT32 npeID)
+ *
+ * @brief This interface allows the client to restore and update the NPE Error
+ * enabling configuration.
+ *
+ * @li   Re-entrant   : No
+ * @li   ISR Callable : No
+ * @param npeID - [in] NPE ID, NPE-A (0) , NPE-B (1) and NPE-C (2)
+ * @return @li IX_PARITYENACC_SUCCESS - The request to Restore/Re-update the parity 
+ *             error control enable bits in the NPE is a success.
+ *         @li IX_PARITYENACC_OPERATION_FAILED - The request failed because 
+ *             the operation didn't succeed on the hardware.
+ *         @li IX_PARITYENACC_NOT_INITIALISED - The operation requested 
+ *             prior to the initialisation of the access layer.
+ */
+PUBLIC IxParityENAccStatus ixParityENAccParityNPEConfigReUpdate(UINT32 npeID);
+
+/**
+ * @ingroup IxParityENAcc
+ *
+ * @fn IxParityENAccStatus ixParityENAccNPEParityErrorCheck(UINT32 npeID,IxParityENAccParityErrorContextMessage * const pecMessage)
+ *
+ * @brief This interface allows the client to check for any NPE Error status.
+ *
+ * @li   Re-entrant   : No
+ * @li   ISR Callable : Yes
+ * @param npeID UINT32 [in] NPE ID, NPE-A (0) , NPE-B (1) and NPE-C (2)
+ * @param pecMessage IxParityENAccParityErrorContextMessage [out] 
+ *
+* @return @li IX_PARITYENACC_SUCCESS- Existance of an NPE Parity Error
+ *         @li IX_PARITYENACC_INVALID_PARAMETERS-The request failed due to  
+ *             NULL parameter is passed
+ *         @li IX_PARITYENACC_OPERATION_FAILED - The request failed because 
+ *             the operation didn't succeed on the hardware.
+ *         @li IX_PARITYENACC_NOT_INITIALISED - The operation requested prior
+ *             to the initialisation of the access layer.
+ *         @li IX_PARITYENACC_NO_PARITY - No parity condition exits or has 
+ *             already been cleared
+ */
+PUBLIC IxParityENAccStatus
+ixParityENAccNPEParityErrorCheck(UINT32 npeID,IxParityENAccParityErrorContextMessage * const pecMessage);
 #endif /* IXPARITYENACC_H */
 #endif /* __ixp46X */
 

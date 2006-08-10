@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -63,6 +63,8 @@
 
 #include "IxHssAccCommon_p.h"
 #include "IxHssAccNpeA_p.h"
+#include "IxAccCommon.h"
+#include "IxFeatureCtrl.h"
 
 /*
  * Global variables
@@ -92,6 +94,8 @@ IxHssAccHssPort hssPortMax = IX_HSSACC_SINGLE_HSS_PORT; /**< Max no. of HSS port
 /* macros for mutex control for IxNpeMh responses */
 #define IX_HSSACC_COM_MUT_UNLOCK() ixOsalMutexUnlock (&ixHssAccComMutex)
 #define IX_HSSACC_COM_MUT_LOCK() ixOsalMutexLock (&ixHssAccComMutex, IX_OSAL_WAIT_FOREVER)
+
+
 
 /**
  * @def IX_HSSACC_TSLOTUSAGE_GET (HSSPORTID, TSLOTID, TSLOTUSAGE)
@@ -198,13 +202,30 @@ static IxHssAccComStats ixHssAccComStats;
 static IxHssAccComConfiguration ixHssAccComConfiguration[IX_HSSACC_HSS_PORT_MAX];
 
 /* HSS Co-p clock divider for a 133MHz system clk */
-static IxHssAccComSysClk ixHssAccComSysClk133M[IX_HSSACC_CLK_SPEED_MAX] = {
+
+/* 
+ * We are defining two sets of clock divider values here 
+ * - one for 425 Silicon and one for 465 silicon
+ */
+
+static IxHssAccComSysClk ixHssAcc42XComSysClk133M[IX_HSSACC_CLK_SPEED_MAX] = {
     { 130,   2,  15  }, /* 512KHz */
     {  43,  18,  47  }, /* 1.536MHz */
     {  43,  33, 192  }, /* 1.544MHz */
     {  32,  34,  63  }, /* 2.048MHz */
     {  16,  34, 127  }, /* 4.096MHz */
     {   8,  34, 255  }  /* 8.192MHz */
+};
+
+
+
+static IxHssAccComSysClk ixHssAcc46XComSysClk133M[IX_HSSACC_CLK_SPEED_MAX] = {
+    { 130,   24,  127 }, /* 512KHz */
+    {  43,  152,  383 }, /* 1.536MHz */
+    {  43,   66,  385 }, /* 1.544MHz */
+    {  32,  280,  511 }, /* 2.048MHz */
+    {  16,  280, 1023 }, /* 4.096MHz */
+    {   8,  280, 2047 }  /* 8.192MHz */
 };
 
 /* HSSCCR HFIFO values in relation to number of packetised clients */
@@ -307,6 +328,8 @@ ixHssAccComNpeCmdRespCallback (IxNpeMhNpeId npeId, IxNpeMhMessage msg);
 void 
 ixHssAccComNpeReadRespCallback (IxNpeMhNpeId npeId, IxNpeMhMessage msg);
 
+UINT32 PortConfigFlag = 0;
+
 /**
  * Function definition: ixHssAccComPortInit
  */
@@ -376,6 +399,9 @@ ixHssAccComPortInit (IxHssAccHssPort hssPortId,
 					   IX_NPE_A_MSSG_HSS_CHAN_NUM_CHANS_WRITE);
     }
 
+    if( ixEthHssAccCoexistEnable != TRUE )
+    {
+
     if (status == IX_SUCCESS)
     {
 	/* Send the num packetised clients to the NPE via the message handler */
@@ -400,6 +426,9 @@ ixHssAccComPortInit (IxHssAccHssPort hssPortId,
 	status = ixHssAccComPipeInfoWrite (hssPortId, hfifoValue,
 					   configParams->packetizedIdlePattern);
     }
+
+    } /* if ( ixEthHssAccCoexistEnable != TRUE ) */
+
 
     if (status == IX_SUCCESS)
     {
@@ -793,6 +822,7 @@ ixHssAccComClkCRCreate (IxHssAccClkSpeed clkRate, unsigned *clkCR)
 {
     IX_STATUS status = IX_SUCCESS;
     IxHssAccComSysClk clk;
+    IxFeatureCtrlDeviceId deviceId;
 
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccComClkCRCreate\n");
@@ -807,7 +837,19 @@ ixHssAccComClkCRCreate (IxHssAccClkSpeed clkRate, unsigned *clkCR)
     }
     else
     {
-	clk = ixHssAccComSysClk133M[clkRate];
+	/* Check whether to use the clock divider values for 425 or 465 */
+        deviceId =  ixFeatureCtrlDeviceRead();
+        if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X == deviceId)
+	    clk = ixHssAcc42XComSysClk133M[clkRate];
+        else if(IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X == deviceId)
+	    clk = ixHssAcc46XComSysClk133M[clkRate];
+        else
+	{
+            /* report the error */
+            IX_HSSACC_REPORT_ERROR ("ixHssAccComClkCRCreate - invalid device type\n");
+            /* return error */
+            return IX_HSSACC_PARAM_ERR;
+        }
 	*clkCR = 
 	    clk.main  << IX_HSSACC_COM_HSSCLKCR_MAIN_OFFSET |
 	    clk.num   << IX_HSSACC_COM_HSSCLKCR_NUM_OFFSET  |
@@ -1170,16 +1212,26 @@ ixHssAccComNpeCmdRespCallback (IxNpeMhNpeId npeId, IxNpeMhMessage msg)
         case IX_NPE_A_MSSG_HSS_CHAN_TSLOTSWITCH_DISABLE_RESP:
         case IX_NPE_A_MSSG_HSS_CHAN_TSLOTSWITCH_GCT_DOWNLOAD_RESP:
 	    IX_HSSACC_DEBUG_OFF (IX_HSSACC_TRACE0 (IX_HSSACC_DEBUG, "SEM POST\n"));
-	    /* post the semphore to release the pending code */
-	    IX_HSSACC_COM_MUT_UNLOCK ();
+	    /* post the semphore to release the pending code */ 
+            IX_HSSACC_COM_MUT_UNLOCK ();
+            
+            /* 
+             * If ETH - HSS services co-exist then we need to release 
+             * the common mutex here 
+             */   
+             if ( ixEthHssAccCoexistEnable )
+             {
+                IX_ETH_HSS_COM_MUT_UNLOCK();
+             }
 	    break;
-
-        default:
+       
+          default:
 		ixHssAccComStats.npeCmdInvResps++;
 	    break;
 
     }
-    IX_HSSACC_DEBUG_OFF (IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
+
+IX_HSSACC_DEBUG_OFF (IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 					   "Exiting ixHssAccComNpeCmdRespCallback\n"));
 }
 
@@ -1276,11 +1328,27 @@ ixHssAccComNpeCmdMsgSend (IxNpeMhMessage message,
     
     ixHssAccComStats.npeCmdSends++;
 
+    /* If ETH-HSS co-exist exists we need to acquire this common mutex
+       before sending a message to NPE 
+     */
+    if ( ixEthHssAccCoexistEnable )
+    {
+        IX_ETH_HSS_COM_MUT_LOCK(status);
+        if ( IX_SUCCESS != status )
+        {
+	   /* report the error */
+	   IX_HSSACC_REPORT_ERROR ("IX_ETH_HSS_COM_MUT_LOCK failed to acquire \n");
+	   /* return error */
+	   return IX_FAIL;	
+        }	    
+    }
+
     /* check if a response is required */
     if (reqResp)
     {
 	IX_HSSACC_TRACE0 (IX_HSSACC_DEBUG, 
 			  "Calling ixNpeMhMessageWithResponseSend\n");
+    
 	/* send the message to the NpeMh */
 	status = ixNpeMhMessageWithResponseSend (IX_NPEMH_NPEID_NPEA,
 						 message, npeMsgId,
@@ -1309,9 +1377,16 @@ ixHssAccComNpeCmdMsgSend (IxNpeMhMessage message,
 	if (reqResp)
 	{
 	    IX_HSSACC_TRACE0 (IX_HSSACC_DEBUG, "SEM PEND\n");
-	    /* pend on a semaphore - the callback will set this */
+       	    /* pend on a semaphore - the callback will set this */
 	    IX_HSSACC_COM_MUT_LOCK ();
-	}
+        }
+        else
+        {
+            if ( ixEthHssAccCoexistEnable )
+            {
+                IX_ETH_HSS_COM_MUT_UNLOCK(); 
+            }
+        }
     }
 
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
@@ -1376,6 +1451,7 @@ ixHssAccComPortConfigLoad (IxHssAccHssPort hssPortId)
 {
     IX_STATUS status = IX_SUCCESS;
     IxNpeMhMessage message;
+    IxFeatureCtrlReg ixResetCop;
 
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccComPortConfigLoad\n");
@@ -1383,6 +1459,16 @@ ixHssAccComPortConfigLoad (IxHssAccHssPort hssPortId)
     /* create the NpeMh message - NPE_A message format */
     ixHssAccComNpeCmdMsgCreate (IX_NPE_A_MSSG_HSS_PORT_CONFIG_LOAD, 0, 
 				   hssPortId, 0, 0, &message);
+    if (0 == PortConfigFlag)    
+    {    			
+        /* Reset HSS Coprocessor Only */	
+        ixResetCop = ixFeatureCtrlRead ();	
+        ixResetCop |= 0x80;	
+        ixFeatureCtrlWrite (ixResetCop);	
+        ixResetCop &= (~(0x80));	
+        ixFeatureCtrlWrite (ixResetCop);    	    	
+        PortConfigFlag = 1;   
+    }
     /* send the message */
     status = ixHssAccComNpeCmdMsgSend (message, 
 				       TRUE, /* block for response */
@@ -1503,7 +1589,7 @@ ixHssAccComShow (void)
 		ixHssAccComConfiguration[hssPortIndex].numChannelised);
     	printf ("\t                       -  #pktd: 0x%X\n", 
 		ixHssAccComConfiguration[hssPortIndex].numPacketised);
-    #if (CPU!=SIMSPARCSOLARIS)
+    #if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
     	printf ("\t                       - lastErr: %p\n", 
 		ixHssAccComConfiguration[hssPortIndex].lastErrorCallback);
     #endif
@@ -1634,3 +1720,107 @@ ixHssAccComUninit (void)
     return status;
 }
 
+IX_STATUS 
+ixHssAccComMbufToNpeFormatConvert (IX_OSAL_MBUF *bufPtr, UINT32 *chainCount, UINT32 *npeAddr ) 
+{
+    IX_OSAL_MBUF *bufChainPtr;
+    IX_OSAL_MBUF *bufTemp;
+    UINT32 npeAddrTemp;
+    int iterationCount;
+
+    bufChainPtr = bufPtr;
+
+    /* Iterate through the IX_OSAL_BUF buffer chain */
+    iterationCount = 0;
+    while (bufChainPtr)
+    {
+        iterationCount++;
+
+        /* Save the next pointer */
+        bufTemp = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (bufChainPtr);
+
+        /* Copy the relevant fields from OS dependant region to the NPE shared region of the IX_OSAL_BUF buffer */
+        IX_HSSACC_MBUF_TO_IX_NE_SWAP (bufChainPtr);
+
+        /* Set the status field in the NPE shared region of the IX_OSAL_BUF buffer */
+        IX_HSSACC_IX_NE_SHARED_STATUS (bufChainPtr) = (UINT8)IX_HSSACC_PKT_OK;
+
+        /* Set the error_count field in the NPE shared region of the IX_OSAL_BUF buffer */
+        IX_HSSACC_IX_NE_SHARED_ERR_CNT (bufChainPtr) = (UINT8)0;
+
+        /* Perform Endian conversion for the NPE shared region of the IX_OSAL_BUF buffer */
+        IX_HSSACC_IX_NE_ENDIAN_SWAP (bufChainPtr);
+
+        /* Force the NPE shared region of the IX_OSAL_BUF buffer to be stored in physical memory */
+        IX_HSSACC_IX_NE_SHARED_CACHE_FLUSH (bufChainPtr);
+
+        /* Go to the next IX_OSAL_BUF buffer in the chain */
+        bufChainPtr = bufTemp;
+    } /* end of while(bufChainPtr) */
+    
+    *chainCount = iterationCount;
+
+    /* Convert the pointer to the physical address of the NPE shared region of the first IX_OSAL_BUF buffer */
+    npeAddrTemp = (UINT32) IX_HSSACC_PKT_MMU_VIRT_TO_PHY (IX_HSSACC_IX_NE_SHARED(bufPtr));
+
+    /* Ensure the bits which are reserved to exchange information with
+     * the NPE are cleared.
+     * If the IX_OSAL_BUF buffer address is not correctly aligned, or from an
+     * incompatible memory range, then Log a message ...
+     */
+    IX_OSAL_ENSURE (((npeAddrTemp & ~IX_HSSACC_QM_Q_ADDR_MASK) == 0),
+                    "Invalid address range");
+    *npeAddr = npeAddrTemp;
+    return IX_SUCCESS;
+
+}
+
+IX_OSAL_MBUF *
+ixHssAccComMbufFromNpeFormatConvert (UINT32 qEntry,
+                                  BOOL invalidateCache, 
+                                  UINT32 *chainCount)
+{
+    IX_OSAL_MBUF *bufChainPtr;
+    IX_OSAL_MBUF *bufPtr;
+    UINT32 iterationCount;
+
+   /* Extract the address from the Queue entry */
+    qEntry = qEntry & IX_HSSACC_QM_Q_ADDR_MASK ;
+
+    /* Assign the bufPtr pointer to the first IX_OSAL_BUF buffer */
+    bufPtr = IX_HSSACC_IX_OSAL_MBUF_FROM_IX_NE (IX_HSSACC_PKT_MMU_PHY_TO_VIRT (qEntry));
+
+    bufChainPtr = bufPtr;
+    iterationCount = 0;
+    
+    /* Iterate through the IX_OSAL_BUF buffer chain */
+    while (bufChainPtr)
+    {
+        iterationCount++;
+
+        if (invalidateCache)
+        {
+            /* Force data to be read from physical memory */
+            IX_HSSACC_IX_NE_SHARED_CACHE_INVALIDATE(bufChainPtr);
+        }
+
+        /* Perform Endian conversion for the NPE shared region of the IX_OSAL_BUF buffer */
+        IX_HSSACC_IX_NE_ENDIAN_SWAP (bufChainPtr);
+
+        /* Copy the required fields from NPE shared region of the IX_OSAL_BUF buffer 
+         *  to the OS dependant region of the IX_OSAL_BUF buffer 
+         */
+        IX_HSSACC_MBUF_FROM_IX_NE_SWAP (bufChainPtr);
+
+        /* Go to the next IX_OSAL_BUF buffer in the chain */
+        bufChainPtr = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (bufChainPtr);
+    
+    } /* end of while(bufChainPtr) */
+
+    /* Set the chainCount to the number of IX_OSAL_BUF buffers in the chain */
+    *chainCount = iterationCount;
+    
+    /* Return the address of the first IX_OSAL_BUF buffer in the chain */
+    return (bufPtr);
+
+}

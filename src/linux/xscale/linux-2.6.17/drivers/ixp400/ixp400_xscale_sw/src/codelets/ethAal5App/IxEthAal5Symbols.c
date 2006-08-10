@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -58,8 +58,7 @@
 
 int modeType = 0;
 
-
-module_param(modeType, int, 0);
+MODULE_PARM(modeType, "i");
 
 static int __init ethAal5_init_module(void)
 {

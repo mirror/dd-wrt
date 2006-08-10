@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,24 +54,7 @@
 /*
  * User defined header files
  */
-#include "IxQMgr.h"
-
-/*
- * inline definition
- */
-#ifdef _DIAB_TOOL
-    /* DIAB does not allow both the funtion prototype and
-     * defintion to use extern
-     */
-#   define IX_QMGR_QACCESS_INLINE IX_OSAL_INLINE
-#else
-#   define IX_QMGR_QACCESS_INLINE IX_OSAL_INLINE_EXTERN
-#endif
-
-/* 
- * Global variables declarations.
- */
-extern volatile UINT32 * ixQMgrAqmIfQueAccRegAddr[]; 
+#include "IxQMgr_sp.h"
 
 /* 
  * Initialise the Queue Access component
@@ -87,24 +70,5 @@ IX_STATUS
 ixQMgrQReadMWordsMinus1 (IxQMgrQId qId,
                          UINT32 *entry);
 
-/*
- * Fast access : pop a q entry from a single word queue
- */
-IX_QMGR_QACCESS_INLINE UINT32 ixQMgrQAccessPop(IxQMgrQId qId);
-
-IX_QMGR_QACCESS_INLINE UINT32 ixQMgrQAccessPop(IxQMgrQId qId)
-{
-  return *(ixQMgrAqmIfQueAccRegAddr[qId]);
-}
-
-/*
- * Fast access : push a q entry in a single word queue
- */
-IX_QMGR_QACCESS_INLINE void ixQMgrQAccessPush(IxQMgrQId qId, UINT32 entry);
-
-IX_QMGR_QACCESS_INLINE void ixQMgrQAccessPush(IxQMgrQId qId, UINT32 entry)
-{
-  *(ixQMgrAqmIfQueAccRegAddr[qId]) = entry;
-}
 
 #endif/*IXQMGRQACCESS_P_H*/

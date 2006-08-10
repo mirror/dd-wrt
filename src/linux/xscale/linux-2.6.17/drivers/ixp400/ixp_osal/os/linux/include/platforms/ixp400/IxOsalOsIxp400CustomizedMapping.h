@@ -13,7 +13,7 @@
  * @par
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -402,6 +402,13 @@
 #define IX_OSAL_LE_AC_MAPPING
 
 #endif /* sspAcc */
+
+
+
+
+
+
+
 
 
 

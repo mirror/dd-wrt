@@ -24,7 +24,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -78,9 +78,9 @@
 
 typedef struct 
 {
-    UINT32 timePerCell;         /* Time per cell in us */
-    UINT32 minCellsToSchedule;  /* minimum number of cells to schedule */
-    UINT32 currentSchTime;
+    UINT64 timePerCell;         /* Time per cell in us */
+    UINT64 minCellsToSchedule;  /* minimum number of cells to schedule */
+    UINT64 currentSchTime;
     IxAtmScheduleTable schTable;/* A pointer to the schedule table for this port */
     IxAtmScheduleTableEntry schTableEntries[IX_ATMSCH_MAX_TABLE_ENTRIES]; /* The Sched table */
 
@@ -101,9 +101,9 @@ IxAtmSchedulerVcId ixAtmSchNextUbrToBeScheduled[IX_UTOPIA_MAX_PORTS];
 IxAtmSchedulerVcId ixAtmSchRtQueueHead[IX_UTOPIA_MAX_PORTS];
 IxAtmSchVcInfo     ixAtmSchVcTable[IX_ATM_MAX_NUM_AAL_OAM_TX_VCS]; 
 IxAtmSchStats      ixAtmSchStats[IX_UTOPIA_MAX_PORTS]; 
-UINT32             ixAtmSchBaseTime[IX_UTOPIA_MAX_PORTS];
-UINT32             ixAtmSchTime[IX_UTOPIA_MAX_PORTS];
-UINT32             ixAtmSchCacPortAllocated[IX_UTOPIA_MAX_PORTS];
+UINT64             ixAtmSchBaseTime[IX_UTOPIA_MAX_PORTS];
+UINT64             ixAtmSchTime[IX_UTOPIA_MAX_PORTS];
+UINT64             ixAtmSchCacPortAllocated[IX_UTOPIA_MAX_PORTS];
 
 
 PRIVATE IX_STATUS
@@ -140,7 +140,7 @@ ixAtmSchedulingInit(void)
 /************************************************************************/
 
 void
-ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT32 cellTime)
+ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT64 cellTime)
 {
     portSchedulingInfo[port].timePerCell = cellTime;
 }
@@ -156,7 +156,7 @@ ixAtmSchCellTimeGet(IxAtmLogicalPort port)
 /************************************************************************/
 
 void
-ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT32 minCellsToSchedule)
+ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT64 minCellsToSchedule)
 {
     portSchedulingInfo[port].minCellsToSchedule = minCellsToSchedule;
 }
@@ -174,7 +174,7 @@ ixAtmSchMinCellsGet(IxAtmLogicalPort port)
 PUBLIC IX_STATUS 
 ixAtmSchVcQueueUpdate( IxAtmLogicalPort port, 
                        IxAtmSchedulerVcId vcId, 
-                       unsigned int numberOfCells)
+                       UINT64 numberOfCells)
 {
     IxAtmSchedulerVcId thisRtVc = IX_ATMSCH_NULL_INDEX;
 
@@ -397,14 +397,14 @@ ixAtmSchValidRtVcSearch(IxAtmLogicalPort port,
 
 IX_STATUS
 ixAtmSchTableUpdate(IxAtmLogicalPort port, 
-                    unsigned int maxCells,
+                    UINT64 maxCells,
                     IxAtmScheduleTable **retTable)
 {
     int entryCnt; /* a counter to create the sch table */
-    UINT32 numUbrToSend; /* number of cells (UBR or idle) that can be sched */
-    UINT32 cellCount = 0; /* counter for the number of cell sched */
+    UINT64 numUbrToSend; /* number of cells (UBR or idle) that can be sched */
+    UINT64 cellCount = 0; /* counter for the number of cell sched */
     IxAtmSchPortSchedulingInfo *portSchInfo; /* contains info for that port */
-    UINT32 timePerCell; /* the time for each cell */
+    UINT64 timePerCell; /* the time for each cell */
     IxAtmScheduleTable *schTable; /* contains scheduling table info */
     
     /* These variables are used for UBR list */

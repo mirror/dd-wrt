@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -565,7 +565,7 @@ ixCryptoAccCodeletPkeEauPerform (IxCryptoAccPkeEauOperation operation);
  *              configured correctly.
  */
 PRIVATE IX_STATUS ixCryptoAccCodeletPkeRngPerform (void);
-#endif /* __ixp46X */
+#endif 
 
 #endif /* IxCryptoAccCodelet_p_H */
 

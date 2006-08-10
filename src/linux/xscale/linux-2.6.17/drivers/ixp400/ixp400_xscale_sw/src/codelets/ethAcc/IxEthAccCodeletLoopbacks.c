@@ -12,7 +12,7 @@
  * @li Phy Loopback
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -561,6 +561,14 @@ ixEthAccCodeletPhyLoopbackStart(IxEthAccPortId portId)
 IX_STATUS 
 ixEthAccCodeletPhyLoopbackStop(IxEthAccPortId portId)
 {
+    if (ixEthAccCodeletPortLoopbackStop(portId)
+	!= IX_SUCCESS)
+    {
+	printf("Loopbacks: Failed to disable port %u\n",
+	       (UINT32)portId);
+	return IX_FAIL;
+    }
+
     if (ixEthAccCodeletLinkLoopbackDisable(portId)
 	!= IX_SUCCESS)
     {
@@ -569,5 +577,5 @@ ixEthAccCodeletPhyLoopbackStop(IxEthAccPortId portId)
 	return IX_FAIL;
     }
 
-    return ixEthAccCodeletPortLoopbackStop(portId);
+    return IX_SUCCESS;
 }

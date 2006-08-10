@@ -367,6 +367,8 @@ static int stram_read_proc(char *page, char **start, off_t off,
 }
 #endif
 
+
+
 extern struct seq_operations partitions_op;
 static int partitions_open(struct inode *inode, struct file *file)
 {

@@ -1,11 +1,11 @@
 /**
  * @file IxOsal.h
  *
- * @brief Top include file for OSAL 
- * 
- * 
+ * @brief Top include file for OSAL
+ *
+ *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,9 +54,9 @@
 /* Include assert */
 #include "IxOsalAssert.h"
 
-/* 
- * Config header gives users option to choose IO MEM 
- * and buffer management modules 
+/*
+ * Config header gives users option to choose IO MEM
+ * and buffer management modules
  */
 
 #include "IxOsalConfig.h"
@@ -73,10 +73,10 @@
 /**
  * @defgroup IxOsal Operating System Abstraction Layer (IxOsal) API
  *
- * @brief This service provides a thin layer of OS dependency services. 
+ * @brief This service provides a thin layer of OS dependency services.
  *
  * This file contains the API to the functions which are some what OS dependant and would
- * require porting to a particular OS. 
+ * require porting to a particular OS.
  * A primary focus of the component development is to make them as OS independent as possible.
  * All other components should abstract their OS dependency to this module.
  * Services overview
@@ -84,77 +84,87 @@
  *	-# Interrupts
  *              - bind interrupts to handlers
  *              - unbind interrupts from handlers
- *             	- disables all interrupts 
- *              - enables all interrupts 
- *              - selectively disables interrupts 
- *              - enables an interrupt level 
- *              - disables an interrupt level 
+ *             	- disables all interrupts
+ *              - enables all interrupts
+ *              - selectively disables interrupts
+ *              - enables an interrupt level
+ *              - disables an interrupt level
  *      -# Memory
  *              - allocates memory
- *              - frees memory 
- *              - copies memory zones 
- *              - fills a memory zone 
- *              - allocates cache-safe memory 
- *              - frees cache-safe memory 
- *              - physical to virtual address translation 
- *              - virtual to physical address translation 
- *              - cache to memory flush 
- *              - cache line invalidate 
+ *              - frees memory
+ *              - copies memory zones
+ *              - fills a memory zone
+ *              - allocates cache-safe memory
+ *              - frees cache-safe memory
+ *              - physical to virtual address translation
+ *              - virtual to physical address translation
+ *              - cache to memory flush
+ *              - cache line invalidate
  *      -# Threads
- *              - creates a new thread 
- *              - starts a newly created thread 
- *              - kills an existing thread 
- *              - exits a running thread 
- *              - sets the priority of an existing thread 
- *              - suspends thread execution 
- *              - resumes thread execution 
+ *              - creates a new thread
+ *              - starts a newly created thread
+ *              - kills an existing thread
+ *              - exits a running thread
+ *              - sets the priority of an existing thread
+ *              - suspends thread execution
+ *              - resumes thread execution
  *      -# IPC
- *              - creates a message queue 
- *              - deletes a message queue 
- *              - sends a message to a message queue 
+ *              - creates a message queue
+ *              - deletes a message queue
+ *              - sends a message to a message queue
  *              - receives a message from a message queue
  *      -# Thread Synchronisation
- *              - initializes a mutex 
- *              - locks a mutex 
- *              - unlocks a mutex 
- *              - non-blocking attempt to lock a mutex 
- *              - destroys a mutex object 
- *              - initializes a fast mutex 
- *              - non-blocking attempt to lock a fast mutex 
- *              - unlocks a fast mutex 
- *              - destroys a fast mutex object 
- *              - initializes a semaphore 
- *              - posts to (increments) a semaphore 
- *              - waits on (decrements) a semaphore 
- *              - non-blocking wait on semaphore 
- *              - gets semaphore value 
- *              - destroys a semaphore object 
- *              - yields execution of current thread 
+ *              - initializes a mutex
+ *              - locks a mutex
+ *              - unlocks a mutex
+ *              - non-blocking attempt to lock a mutex
+ *              - destroys a mutex object
+ *              - initializes a fast mutex
+ *              - non-blocking attempt to lock a fast mutex
+ *              - unlocks a fast mutex
+ *              - destroys a fast mutex object
+ *              - initializes a semaphore
+ *              - posts to (increments) a semaphore
+ *              - waits on (decrements) a semaphore
+ *              - non-blocking wait on semaphore
+ *              - gets semaphore value
+ *              - destroys a semaphore object
+ *              - yields execution of current thread
  *      -# Time functions
- *              - yielding sleep for a number of milliseconds 
- *              - busy sleep for a number of microseconds 
- *              - value of the timestamp counter 
- *              - resolution of the timestamp counter 
- *              - system clock rate, in ticks 
- *              - current system time 
- *              - converts ixOsalTimeVal into ticks 
- *              - converts ticks into ixOsalTimeVal 
- *              - converts ixOsalTimeVal to milliseconds 
- *              - converts milliseconds to IxOsalTimeval 
- *              - "equal" comparison for IxOsalTimeval 
- *              - "less than" comparison for IxOsalTimeval 
- *              - "greater than" comparison for IxOsalTimeval 
- *              - "add" operator for IxOsalTimeval 
- *              - "subtract" operator for IxOsalTimeval 
+ *              - yielding sleep for a number of milliseconds
+ *              - busy sleep for a number of microseconds
+ *              - value of the timestamp counter
+ *              - resolution of the timestamp counter
+ *              - system clock rate, in ticks
+ *              - current system time
+ *              - converts ixOsalTimeVal into ticks
+ *              - converts ticks into ixOsalTimeVal
+ *              - converts ixOsalTimeVal to milliseconds
+ *              - converts milliseconds to IxOsalTimeval
+ *              - "equal" comparison for IxOsalTimeval
+ *              - "less than" comparison for IxOsalTimeval
+ *              - "greater than" comparison for IxOsalTimeval
+ *              - "add" operator for IxOsalTimeval
+ *              - "subtract" operator for IxOsalTimeval
  *      -# Logging
- *              - sets the current logging verbosity level 
- *              - interrupt-safe logging function 
+ *              - sets the current logging verbosity level
+ *              - interrupt-safe logging function
  *      -# Timer services
- *              - schedules a repeating timer 
- *              - schedules a single-shot timer 
- *              - cancels a running timer 
- *              - displays all the running timers 
+ *              - schedules a repeating timer
+ *              - schedules a single-shot timer
+ *              - cancels a running timer
+ *              - displays all the running timers
+ *	-# PCI Support
+ *		- Find PCI device.
+ *		- Read 8 bits from the configuration space
+ *		- Read 16 bits from the configuration space
+ *		- Read 32 bits from the configuration space
+ * 		- Write 8 bits to the configuration space
+ *		- Write 16 bits to the configuration space
+ *		- Write 32 bits to the configuration space
+ *		- Free PCI device
  *      -# Optional Modules
+ *              - Device drivers kernel
  *              - Buffer management module
  *              - I/O memory and endianess support module
  *
@@ -166,11 +176,12 @@
  * Prototypes
  */
 
+#ifndef __linux_user
 /* ==========================  Interrupts  ================================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Binds an interrupt handler to an interrupt level
@@ -195,7 +206,7 @@ PUBLIC IX_STATUS ixOsalIrqBind (UINT32 irqLevel,
 				IxOsalVoidFnVoidPtr irqHandler,
 				void *parameter);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Unbinds an interrupt handler from an interrupt level
@@ -203,7 +214,7 @@ PUBLIC IX_STATUS ixOsalIrqBind (UINT32 irqLevel,
  * @param irqLevel (in)   - interrupt level
  *
  * Unbinds the selected interrupt level from any previously registered
- * handler 
+ * handler
  *
  * @li Reentrant: no
  * @li IRQ safe:  no
@@ -213,14 +224,14 @@ PUBLIC IX_STATUS ixOsalIrqBind (UINT32 irqLevel,
 PUBLIC IX_STATUS ixOsalIrqUnbind (UINT32 irqLevel);
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Disables all interrupts
  *
  * @param - none
  *
- * Disables all the interrupts and prevents tasks scheduling 
+ * Disables all the interrupts and prevents tasks scheduling
  *
  * @li Reentrant: no
  * @li IRQ safe:  yes
@@ -229,16 +240,16 @@ PUBLIC IX_STATUS ixOsalIrqUnbind (UINT32 irqLevel);
  */
 PUBLIC UINT32 ixOsalIrqLock (void);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Enables all interrupts
  *
  * @param irqEnable (in) - interrupt enable status, prior to interrupt
- *                         locking 
+ *                         locking
  *
  * Enables the interrupts and task scheduling, cancelling the effect
- * of ixOsalIrqLock() 
+ * of ixOsalIrqLock()
  *
  * @li Reentrant: no
  * @li IRQ safe:  yes
@@ -247,26 +258,26 @@ PUBLIC UINT32 ixOsalIrqLock (void);
  */
 PUBLIC void ixOsalIrqUnlock (UINT32 irqEnable);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Selectively disables interrupts
  *
  * @param irqLevel ­ new interrupt level
  *
- * Disables the interrupts below the specified interrupt level 
- * 
+ * Disables the interrupts below the specified interrupt level
+ *
  * @li Reentrant: no
  * @li IRQ safe:  yes
  *
  * @note Depending on the implementation this function can disable all
- *       the interrupts 
+ *       the interrupts
  *
  * @return previous interrupt level
  */
 PUBLIC UINT32 ixOsalIrqLevelSet (UINT32 irqLevel);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Enables an interrupt level
@@ -282,7 +293,7 @@ PUBLIC UINT32 ixOsalIrqLevelSet (UINT32 irqLevel);
  */
 PUBLIC void ixOsalIrqEnable (UINT32 irqLevel);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Disables an interrupt level
@@ -298,12 +309,12 @@ PUBLIC void ixOsalIrqEnable (UINT32 irqLevel);
  */
 PUBLIC void ixOsalIrqDisable (UINT32 irqLevel);
 
-
+#endif /* __linux_user */
 /* =============================  Memory  =================================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Allocates memory
@@ -319,7 +330,7 @@ PUBLIC void ixOsalIrqDisable (UINT32 irqLevel);
  */
 PUBLIC void *ixOsalMemAlloc (UINT32 size);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Frees memory
@@ -335,7 +346,7 @@ PUBLIC void *ixOsalMemAlloc (UINT32 size);
  */
 PUBLIC void ixOsalMemFree (void *ptr);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Copies memory zones
@@ -354,7 +365,7 @@ PUBLIC void ixOsalMemFree (void *ptr);
  */
 PUBLIC void *ixOsalMemCopy (void *dest, void *src, UINT32 count);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Fills a memory zone
@@ -372,7 +383,44 @@ PUBLIC void *ixOsalMemCopy (void *dest, void *src, UINT32 count);
  */
 PUBLIC void *ixOsalMemSet (void *ptr, UINT8 filler, UINT32 count);
 
-/** 
+/**
+ * @ingroup IxOsal
+ *
+ * @brief physical to virtual address translation
+ *
+ * @param physAddr - physical address
+ *
+ * Converts a physical address into its equivalent MMU-mapped virtual address
+ *
+ * @li Reentrant: no
+ * @li IRQ safe:  yes
+ *
+ * @return Corresponding virtual address, as UINT32
+ */
+#define IX_OSAL_MMU_PHYS_TO_VIRT(physAddr) \
+    IX_OSAL_OS_MMU_PHYS_TO_VIRT(physAddr)
+
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief virtual to physical address translation
+ *
+ * @param virtAddr - virtual address
+ *
+ * Converts a virtual address into its equivalent MMU-mapped physical address
+ *
+ * @li Reentrant: no
+ * @li IRQ safe:  yes
+ *
+ * @return Corresponding physical address, as UINT32
+ */
+#define IX_OSAL_MMU_VIRT_TO_PHYS(virtAddr)  \
+    IX_OSAL_OS_MMU_VIRT_TO_PHYS(virtAddr)
+
+#ifndef __linux_user
+
+/**
  * @ingroup IxOsal
  *
  * @brief Allocates cache-safe memory
@@ -400,7 +448,7 @@ PUBLIC void *ixOsalCacheDmaMalloc (UINT32 size);
 /* Macros for ixOsalCacheDmaMalloc*/
 #define IX_OSAL_CACHE_DMA_MALLOC(size) ixOsalCacheDmaMalloc(size)
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Frees cache-safe memory
@@ -418,44 +466,9 @@ PUBLIC void ixOsalCacheDmaFree (void *ptr);
 
 #define IX_OSAL_CACHE_DMA_FREE(ptr)		ixOsalCacheDmaFree(ptr)
 
-/** 
- * @ingroup IxOsal
- *
- * @brief physical to virtual address translation
- *
- * @param physAddr - physical address
- *
- * Converts a physical address into its equivalent MMU-mapped virtual address
- *
- * @li Reentrant: no
- * @li IRQ safe:  yes
- *
- * @return Corresponding virtual address, as UINT32
- */
-#define IX_OSAL_MMU_PHYS_TO_VIRT(physAddr) \
-    IX_OSAL_OS_MMU_PHYS_TO_VIRT(physAddr)
 
 
-/** 
- * @ingroup IxOsal
- *
- * @brief virtual to physical address translation
- *
- * @param virtAddr - virtual address
- *
- * Converts a virtual address into its equivalent MMU-mapped physical address
- *
- * @li Reentrant: no
- * @li IRQ safe:  yes
- *
- * @return Corresponding physical address, as UINT32
- */
-#define IX_OSAL_MMU_VIRT_TO_PHYS(virtAddr)  \
-    IX_OSAL_OS_MMU_VIRT_TO_PHYS(virtAddr)
-
-
-
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief cache to memory flush
@@ -476,7 +489,7 @@ PUBLIC void ixOsalCacheDmaFree (void *ptr);
 
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief cache line invalidate
@@ -496,13 +509,31 @@ PUBLIC void ixOsalCacheDmaFree (void *ptr);
  */
 #define IX_OSAL_CACHE_INVALIDATE(addr, size)  IX_OSAL_OS_CACHE_INVALIDATE(addr, size)
 
-
+/**
+ * @ingroup IxOsal
+ *
+ * @brief cache line preload
+ *
+ * @param addr - memory address to cache
+ * @param size - number of bytes to cache (rounded up to a cache line)
+ *
+ *
+ * Preloads a section of memory to the cache memory in multiples of cache line size.
+ *
+ * @li Reentrant: no
+ * @li IRQ safe:  yes
+ *
+ * @return - none
+ */
 #define IX_OSAL_CACHE_PRELOAD(addr, size)  IX_OSAL_OS_CACHE_PRELOAD(addr, size)
+
+#endif /* __linux_user */
+
 /* =============================  Threads  =================================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Creates a new thread
@@ -527,7 +558,7 @@ PUBLIC IX_STATUS ixOsalThreadCreate (IxOsalThread * thread,
 				     IxOsalVoidFnVoidPtr startRoutine,
 				     void *arg);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Starts a newly created thread
@@ -544,7 +575,7 @@ PUBLIC IX_STATUS ixOsalThreadCreate (IxOsalThread * thread,
  */
 PUBLIC IX_STATUS ixOsalThreadStart (IxOsalThread * thread);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Kills an existing thread
@@ -556,15 +587,15 @@ PUBLIC IX_STATUS ixOsalThreadStart (IxOsalThread * thread);
  * @li Reentrant: no
  * @li IRQ safe:  no
  *
- * @note This function does not guarentee the thread get kill in Linux. The
- * thread must use ixOsalThreadStopCheck to check if it should perform cleanup
- * and suicide whenever this API is being used to kill a thread.
+ * @note This function does not guarentee to kill the thread immediately. The
+ * thread must use ixOsalThreadStopCheck() to check if it should perform
+ * cleanup and suicide.
  *
  * @return -  IX_SUCCESS/IX_FAIL
  */
 PUBLIC IX_STATUS ixOsalThreadKill (IxOsalThread * thread);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Exits a running thread
@@ -578,7 +609,7 @@ PUBLIC IX_STATUS ixOsalThreadKill (IxOsalThread * thread);
  */
 PUBLIC void ixOsalThreadExit (void);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Sets the priority of an existing thread
@@ -596,7 +627,7 @@ PUBLIC void ixOsalThreadExit (void);
 PUBLIC IX_STATUS ixOsalThreadPrioritySet (IxOsalThread * thread,
 					  UINT32 priority);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Suspends thread execution
@@ -612,7 +643,7 @@ PUBLIC IX_STATUS ixOsalThreadPrioritySet (IxOsalThread * thread,
  */
 PUBLIC IX_STATUS ixOsalThreadSuspend (IxOsalThread * thread);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Resumes thread execution
@@ -629,7 +660,7 @@ PUBLIC IX_STATUS ixOsalThreadSuspend (IxOsalThread * thread);
 PUBLIC IX_STATUS ixOsalThreadResume (IxOsalThread * thread);
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Check if thread should stop execution
@@ -642,13 +673,17 @@ PUBLIC IX_STATUS ixOsalThreadResume (IxOsalThread * thread);
  *
  * @return - TRUE/FALSE
  */
+#ifndef __ixpTolapai
+
 PUBLIC BOOL ixOsalThreadStopCheck(void);
 
+#endif /* __ixpTolapai */
+
 /* =======================  Message Queues (IPC) ==========================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Creates a message queue
@@ -667,7 +702,7 @@ PUBLIC BOOL ixOsalThreadStopCheck(void);
 PUBLIC IX_STATUS ixOsalMessageQueueCreate (IxOsalMessageQueue * queue,
 					   UINT32 msgCount, UINT32 msgLen);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Deletes a message queue
@@ -681,9 +716,10 @@ PUBLIC IX_STATUS ixOsalMessageQueueCreate (IxOsalMessageQueue * queue,
  *
  * @return - IX_SUCCESS/IX_FAIL
  */
+
 PUBLIC IX_STATUS ixOsalMessageQueueDelete (IxOsalMessageQueue * queue);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Sends a message to a message queue
@@ -702,7 +738,7 @@ PUBLIC IX_STATUS ixOsalMessageQueueDelete (IxOsalMessageQueue * queue);
 PUBLIC IX_STATUS ixOsalMessageQueueSend (IxOsalMessageQueue * queue,
 					 UINT8 * message);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Receives a message from a message queue
@@ -722,10 +758,10 @@ PUBLIC IX_STATUS ixOsalMessageQueueReceive (IxOsalMessageQueue * queue,
 
 
 /* =======================  Thread Synchronisation ========================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief initializes a mutex
@@ -741,7 +777,7 @@ PUBLIC IX_STATUS ixOsalMessageQueueReceive (IxOsalMessageQueue * queue,
  */
 PUBLIC IX_STATUS ixOsalMutexInit (IxOsalMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief locks a mutex
@@ -759,7 +795,7 @@ PUBLIC IX_STATUS ixOsalMutexInit (IxOsalMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalMutexLock (IxOsalMutex * mutex, INT32 timeout);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Unlocks a mutex
@@ -775,7 +811,7 @@ PUBLIC IX_STATUS ixOsalMutexLock (IxOsalMutex * mutex, INT32 timeout);
  */
 PUBLIC IX_STATUS ixOsalMutexUnlock (IxOsalMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Non-blocking attempt to lock a mutex
@@ -792,7 +828,7 @@ PUBLIC IX_STATUS ixOsalMutexUnlock (IxOsalMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalMutexTryLock (IxOsalMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Destroys a mutex object
@@ -810,7 +846,7 @@ PUBLIC IX_STATUS ixOsalMutexTryLock (IxOsalMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalMutexDestroy (IxOsalMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Initializes a fast mutex
@@ -826,7 +862,7 @@ PUBLIC IX_STATUS ixOsalMutexDestroy (IxOsalMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalFastMutexInit (IxOsalFastMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Non-blocking attempt to lock a fast mutex
@@ -843,7 +879,7 @@ PUBLIC IX_STATUS ixOsalFastMutexInit (IxOsalFastMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalFastMutexTryLock (IxOsalFastMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Unlocks a fast mutex
@@ -859,7 +895,7 @@ PUBLIC IX_STATUS ixOsalFastMutexTryLock (IxOsalFastMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalFastMutexUnlock (IxOsalFastMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Destroys a fast mutex object
@@ -875,7 +911,7 @@ PUBLIC IX_STATUS ixOsalFastMutexUnlock (IxOsalFastMutex * mutex);
  */
 PUBLIC IX_STATUS ixOsalFastMutexDestroy (IxOsalFastMutex * mutex);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Initializes a semaphore
@@ -893,7 +929,7 @@ PUBLIC IX_STATUS ixOsalFastMutexDestroy (IxOsalFastMutex * mutex);
 PUBLIC IX_STATUS ixOsalSemaphoreInit (IxOsalSemaphore * semaphore,
 				      UINT32 value);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Posts to (increments) a semaphore
@@ -909,7 +945,7 @@ PUBLIC IX_STATUS ixOsalSemaphoreInit (IxOsalSemaphore * semaphore,
  */
 PUBLIC IX_STATUS ixOsalSemaphorePost (IxOsalSemaphore * semaphore);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Waits on (decrements) a semaphore
@@ -930,7 +966,7 @@ PUBLIC IX_STATUS ixOsalSemaphorePost (IxOsalSemaphore * semaphore);
 PUBLIC IX_STATUS ixOsalSemaphoreWait (IxOsalSemaphore * semaphore,
 				      INT32 timeout);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Non-blocking wait on semaphore
@@ -947,7 +983,7 @@ PUBLIC IX_STATUS ixOsalSemaphoreWait (IxOsalSemaphore * semaphore,
  */
 PUBLIC IX_STATUS ixOsalSemaphoreTryWait (IxOsalSemaphore * semaphore);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Gets semaphore value
@@ -965,7 +1001,7 @@ PUBLIC IX_STATUS ixOsalSemaphoreTryWait (IxOsalSemaphore * semaphore);
 PUBLIC IX_STATUS ixOsalSemaphoreGetValue (IxOsalSemaphore * semaphore,
 					  UINT32 * value);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Destroys a semaphore object
@@ -982,7 +1018,7 @@ PUBLIC IX_STATUS ixOsalSemaphoreGetValue (IxOsalSemaphore * semaphore,
  */
 PUBLIC IX_STATUS ixOsalSemaphoreDestroy (IxOsalSemaphore * semaphore);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Yields execution of current thread
@@ -998,10 +1034,10 @@ PUBLIC void ixOsalYield (void);
 
 
 /* ========================== Time functions  ===========================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Yielding sleep for a number of milliseconds
@@ -1021,7 +1057,7 @@ PUBLIC void ixOsalYield (void);
  */
 PUBLIC void ixOsalSleep (UINT32 milliseconds);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Busy sleep for a number of microseconds
@@ -1038,12 +1074,10 @@ PUBLIC void ixOsalSleep (UINT32 milliseconds);
  */
 PUBLIC void ixOsalBusySleep (UINT32 microseconds);
 
-/** 
+/**
  * @ingroup IxOsal
  *
- * @brief XXX
- *
- * Retrieves the current timestamp
+ * @brief Retrieves the current timestamp
  *
  * @li Reentrant: yes
  * @li IRQ safe:  yes
@@ -1055,7 +1089,7 @@ PUBLIC void ixOsalBusySleep (UINT32 microseconds);
  */
 PUBLIC UINT32 ixOsalTimestampGet (void);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Resolution of the timestamp counter
@@ -1072,7 +1106,7 @@ PUBLIC UINT32 ixOsalTimestampGet (void);
  */
 PUBLIC UINT32 ixOsalTimestampResolutionGet (void);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief System clock rate, in ticks
@@ -1090,7 +1124,7 @@ PUBLIC UINT32 ixOsalTimestampResolutionGet (void);
  */
 PUBLIC UINT32 ixOsalSysClockRateGet (void);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Current system time
@@ -1114,13 +1148,13 @@ PUBLIC void ixOsalTimeGet (IxOsalTimeval * tv);
 
 /* Internal function to convert timer val to ticks.
  * NOTE - This should not be called by the user.
- * Use the macro IX_OSAL_TIMEVAL_TO_TICKS 
+ * Use the macro IX_OSAL_TIMEVAL_TO_TICKS
  * OS-independent, implemented in framework.
  */
 PUBLIC UINT32 ixOsalTimevalToTicks (IxOsalTimeval tv);
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Converts ixOsalTimeVal into ticks
@@ -1133,7 +1167,7 @@ PUBLIC UINT32 ixOsalTimevalToTicks (IxOsalTimeval tv);
  * @li IRQ safe:  yes
  *
  * @return - Corresponding number of ticks
- * 
+ *
  * Note: This function is OS-independent. Implemented by core.
  */
 #define IX_OSAL_TIMEVAL_TO_TICKS(tv)  ixOsalTimevalToTicks(tv)
@@ -1142,16 +1176,16 @@ PUBLIC UINT32 ixOsalTimevalToTicks (IxOsalTimeval tv);
 
 /* Internal function to convert ticks to timer val
  * NOTE - This should not be called by the user.
- * Use the macro IX_OSAL_TICKS_TO_TIMEVAL 
+ * Use the macro IX_OSAL_TICKS_TO_TIMEVAL
  */
 
 PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
- * @brief Converts ticks into ixOsalTimeVal 
+ * @brief Converts ticks into ixOsalTimeVal
  *
  * @param ticks - number of ticks
  * @param pTv - pointer to the destination structure
@@ -1170,7 +1204,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
 
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Converts ixOsalTimeVal to milliseconds
@@ -1188,7 +1222,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
 #define IX_OSAL_TIMEVAL_TO_MS(tv)     ((tv.secs * 1000) + (tv.nsecs / 1000000))
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Converts milliseconds to IxOsalTimeval
@@ -1209,7 +1243,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
         ((IxOsalTimeval *) pTv)->nsecs = (milliseconds % 1000) * 1000000
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief "equal" comparison for IxOsalTimeval
@@ -1229,7 +1263,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
         ((tvA).secs == (tvB).secs && (tvA).nsecs == (tvB).nsecs)
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief "less than" comparison for IxOsalTimeval
@@ -1251,7 +1285,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
         ((tvA).secs == (tvB).secs && (tvA).nsecs < (tvB).nsecs))
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief "greater than" comparison for IxOsalTimeval
@@ -1273,7 +1307,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
         ((tvA).secs == (tvB).secs && (tvA).nsecs > (tvB).nsecs))
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief "add" operator for IxOsalTimeval
@@ -1298,7 +1332,7 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
         (tvA).nsecs -= IX_OSAL_BILLION; }
 
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief "subtract" operator for IxOsalTimeval
@@ -1328,10 +1362,10 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
 
 
 /* ============================= Logging  ==============================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Interrupt-safe logging function
@@ -1355,11 +1389,11 @@ PUBLIC void ixOsalTicksToTimeval (UINT32 ticks, IxOsalTimeval * pTv);
  * incorrect (NULL format, unknown output device)
  *
  * @note The exceptions to the return value are:
- * VxWorks: The return value is 32 if the specified level is 1 and 64
+ * VxWorks*: The return value is 32 if the specified level is 1 and 64
  * if the specified level is greater than 1 and less or equal than 9.
- * WinCE: If compiled for EBOOT then the return value is always 0.
+ * WinCE*: If compiled for EBOOT then the return value is always 0.
  *
- * @note The given print format should take into account the specified 
+ * @note The given print format should take into account the specified
  * output device. IX_OSAL_STDOUT supports all the usual print formats,
  * however a custom hex display specified by IX_OSAL_HEX would support
  * only a fixed number of hexadecimal digits.
@@ -1370,7 +1404,7 @@ PUBLIC INT32 ixOsalLog (IxOsalLogLevel level,
 			int arg1,
 			int arg2, int arg3, int arg4, int arg5, int arg6);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief sets the current logging verbosity level
@@ -1388,10 +1422,10 @@ PUBLIC UINT32 ixOsalLogLevelSet (UINT32 level);
 
 
 /* ============================= Logging  ==============================
- * 
+ *
  */
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Schedules a repeating timer
@@ -1419,7 +1453,7 @@ PUBLIC IX_STATUS ixOsalRepeatingTimerSchedule (IxOsalTimer * timer,
 					       IxOsalVoidFnVoidPtr callback,
 					       void *param);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Schedules a single-shot timer
@@ -1447,7 +1481,7 @@ ixOsalSingleShotTimerSchedule (IxOsalTimer * timer,
 			       UINT32 priority,
 			       IxOsalVoidFnVoidPtr callback, void *param);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief Cancels a running timer
@@ -1463,7 +1497,7 @@ ixOsalSingleShotTimerSchedule (IxOsalTimer * timer,
  */
 PUBLIC IX_STATUS ixOsalTimerCancel (IxOsalTimer * timer);
 
-/** 
+/**
  * @ingroup IxOsal
  *
  * @brief displays all the running timers
@@ -1480,7 +1514,7 @@ PUBLIC void ixOsalTimersShow (void);
 
 
 /* ============================= Version  ==============================
- * 
+ *
  */
 
 /**
@@ -1527,8 +1561,237 @@ PUBLIC IX_STATUS ixOsalOsVersionGet(INT8* osVersion, INT32 maxSize);
 
 
 
+#ifdef __ixpTolapai
+
+/* ============================= PCI  ==============================
+ *
+ */
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Find the PCI device for the particular vendor and device.
+ *
+ * @param vendor_id - The vendor ID of the device to be found.
+ * @param device_id - The device ID of the device to be found.
+ * @param pci_device -  The last found IxOsalPciDev or NULL.
+ *
+ *  This function will find the PCI device for the particular vendor and device.
+ *  The pci_device parameter should be NULL when calling for the first time
+ *  and the last returned value when searching for multiple devices of
+ *  the same ID.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IxOsalPciDev handle if found/NULL.
+ */
+PUBLIC IxOsalPciDev ixOsalPciDeviceFind(UINT32 vendor_id,UINT32 device_id,IxOsalPciDev pci_dev);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Obtain the bus, slot and function of the PCI device.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param bus	-	The returned bus or NULL if the bus is not needed.
+ * @param slot	-	The returned slot or NULL if the bus is not needed
+ * @param func 	-	The returned func or NULL if the bus is not needed.
+ *
+ *  This function will return the bus slot and function for an IxOsalPciDev
+ *  previously obtained from ixOsalPciDeviceFind(). Any of the bus/slot/func
+ *  parameters may be null if the information is not needed.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/IX_FAIL.
+ */
+PUBLIC INT32 ixOsalPciSlotAddress(IxOsalPciDev pci_dev,UINT32 *bus,UINT32 *slot,UINT32 *func);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Retrieve byte of information from the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Byte value fetched from the mentioned location
+ *
+ *  This function retrieves a byte of information, starting at the specified
+ *  offset, from the PCI configuration space on a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigReadByte(IxOsalPciDev pci_dev,UINT32 offset,UINT8* val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Retrieve word of information from the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Word value fetched from the mentioned location
+ *
+ *  This function retrieves a word of information, starting at the specified
+ *  offset, from the PCI configuration space on a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigReadShort(IxOsalPciDev pci_dev,UINT32 offset,UINT16* val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Retrieve double word of information from the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Double word value fetched from the mentioned location
+ *
+ *  This function retrieves a double word of information, starting at the specified
+ *  offset, from the PCI configuration space on a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigReadLong(IxOsalPciDev pci_dev,UINT32 offset,UINT32* val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Set byte information in the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Byte value to be set at the mentioned location
+ *
+ *  This function sets a byte of data, starting at the specified offset, to
+ *  the PCI configuration space for a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigWriteByte(IxOsalPciDev pci_dev,UINT32 offset,UINT8 val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Set word information in the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Word value to be set at the mentioned location
+ *
+ *  This function sets a word of data, starting at the specified offset, to
+ *  the PCI configuration space for a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigWriteShort(IxOsalPciDev pci_dev,UINT32 offset,UINT16 val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Set double word information in the PCI configuration space.
+ *
+ * @param pci_device -  The IxOsalPciDev to query.
+ * @param offset     - 	Offset from the base of the configuration space.
+ * @param val	     -  Double word value to be set at the mentioned location
+ *
+ *  This function sets a double word of data, starting at the specified offset, to
+ *  the PCI configuration space for a particular PCI device.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - IX_SUCCESS/Error code on failure.
+ */
+PUBLIC INT32 ixOsalPciConfigWriteLong(IxOsalPciDev pci_dev,UINT32 offset,UINT32 val);
+
+/**
+ * @ingroup IxOsal
+ *
+ * @brief Free a PCI device handle.
+ *
+ * @param pci_device -  The IxOsalPciDev to free.
+ *
+ *  This function free the IxOsalPciDev * that previously allocated with the
+ *  ixOsalPciDeviceFind.
+ *
+ * @li Reentrant: XXX
+ * @li IRQ safe:  YYY
+ *
+ * @return - None.
+ */
+PUBLIC void ixOsalPciDeviceFree(IxOsalPciDev pci_dev);
+
+/*
+ *  Glue code for memory map
+ */
+PUBLIC void ixOsalGlueCodeMemoryMapInit(UINT32 index,UINT32 phyAddr,UINT32 mapSize,UINT32 virtAddr);
+
+
+PUBLIC void ixOsalGlueCodeMemoryMapUnInit(UINT32 index,UINT32 *virtAddr);
+
+
 /**
  * @} IxOsal
  */
+
+
+
+/* New OSAL Functions for supporting OSSL-SHIM */
+
+PUBLIC
+IX_STATUS ixOsalThreadGetId(IxOsalThread *ptrTid);
+
+PUBLIC
+IX_STATUS ixOsalThreadSetPolicyAndPriority(
+         	IxOsalThread *tid,
+            UINT32 		  policy,
+            UINT32 		  priority);
+
+PUBLIC
+IX_STATUS _ixOsalSemaphoreDownTimeout(
+          	  IxOsalSemaphore *sid,
+              UINT32           timeout);
+
+PUBLIC
+IX_STATUS ixOsalSemaphoreWaitInterruptible(
+              IxOsalSemaphore *sid,
+              UINT32           timeout);
+
+PUBLIC
+IX_STATUS ixOsalSemaphorePostWakeup(IxOsalSemaphore *sid);
+
+PUBLIC
+IX_STATUS ixOsalSemaphoreFlush(IxOsalSemaphore *sid);
+
+
+PUBLIC
+IX_STATUS ixOsalSleepTick(UINT32 sleeptime_ticks);
+
+PUBLIC
+IX_STATUS ixOsalSleepUninterruptible(
+             UINT32 sleeptime_ms);
+#endif /* __ixpTolapai */
+
+
+
 
 #endif /* IxOsal_H */

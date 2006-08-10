@@ -2,11 +2,11 @@
  * @file IxNpeDlNpeMgrEcRegisters_p.h
  *
  * @author Intel Corporation
- * @date 14 December 2001
+ * @date 09 February 2006
 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -60,7 +60,9 @@
 
 #define IX_NPEDL_NPEA_OFFSET (0x6000) /**< NPE-A register base offset */
 #define IX_NPEDL_NPEB_OFFSET (0x7000) /**< NPE-B register base offset */
+#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_NPEDL_NPEC_OFFSET (0x8000) /**< NPE-C register base offset */
+#endif /* __ixp42X */
 
 /**
  * @def IX_NPEDL_NPEBASEADDRESS_NPEA
@@ -74,17 +76,18 @@
  */
 #define IX_NPEDL_NPEBASEADDRESS_NPEB (IX_NPEDL_NPE_BASE + IX_NPEDL_NPEB_OFFSET)
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @def IX_NPEDL_NPEBASEADDRESS_NPEC
  * @brief Base Memory Address of NPE-C Configuration Bus registers
  */
 #define IX_NPEDL_NPEBASEADDRESS_NPEC (IX_NPEDL_NPE_BASE + IX_NPEDL_NPEC_OFFSET)
-
+#endif /* __ixp42X */
 
 /*
  * Instruction Memory Size (in words) for each NPE 
  */
-#ifndef __ixp46X
+#if defined(__ixp42X)
 /**
  * @def IX_NPEDL_INS_MEMSIZE_WORDS_NPEA
  * @brief Size (in words) of NPE-A Instruction Memory
@@ -102,8 +105,9 @@
  * @brief Size (in words) of NPE-B Instruction Memory
  */
 #define IX_NPEDL_INS_MEMSIZE_WORDS_NPEC     2048
+#endif /* __ixp42X */
 
-#else
+#if defined(__ixp46X)
 /**
  * @def IX_NPEDL_INS_MEMSIZE_WORDS_NPEA
  * @brief Size (in words) of NPE-A Instruction Memory
@@ -121,12 +125,12 @@
  * @brief Size (in words) of NPE-B Instruction Memory
  */
 #define IX_NPEDL_INS_MEMSIZE_WORDS_NPEC     4096
-#endif
+#endif /* __ixp46X */
 
 /*
  * Data Memory Size (in words) for each NPE 
  */
-#ifndef __ixp46X
+#if defined(__ixp42X)
 /**
  * @def IX_NPEDL_DATA_MEMSIZE_WORDS_NPEA
  * @brief Size (in words) of NPE-A Data Memory
@@ -144,9 +148,8 @@
  * @brief Size (in words) of NPE-C Data Memory
  */
 #define IX_NPEDL_DATA_MEMSIZE_WORDS_NPEC    2048
-
-#else
-
+#endif /* __ixp42X */
+#if defined(__ixp46X)
 /**
  * @def IX_NPEDL_DATA_MEMSIZE_WORDS_NPEA
  * @brief Size (in words) of NPE-A Data Memory
@@ -158,14 +161,15 @@
  * @brief Size (in words) of NPE-B Data Memory
  */
 #define IX_NPEDL_DATA_MEMSIZE_WORDS_NPEB    4096
+#endif /* __ixp46X */
 
+#if defined(__ixp46X)
 /**
  * @def IX_NPEDL_DATA_MEMSIZE_WORDS_NPEC
  * @brief Size (in words) of NPE-C Data Memory
  */
 #define IX_NPEDL_DATA_MEMSIZE_WORDS_NPEC    4096
-#endif
-
+#endif /* __ixp46X */
 
 /*
  * Configuration Bus Register offsets (in bytes) from NPE Base Address
@@ -905,7 +909,7 @@ typedef enum
  */
 #define IX_NPEDL_CTXT_NUM_MAX             15
 
-
+#if defined(__ixp42X) || defined(__ixp46X)
 /*
  * Physical NPE internal registers
  */
@@ -931,5 +935,6 @@ typedef enum
  *        register address, used for Physical To Logical address mapping
  */
 #define IX_NPEDL_MASK_PHYS_REG_ADDR_LOGICAL_ADDR   0x1
+#endif /* __ixp42X */
 
 #endif /* IXNPEDLNPEMGRECREGISTERS_P_H */

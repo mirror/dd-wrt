@@ -4,7 +4,7 @@
  * @brief Implementation of dependency and port update handling
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -46,7 +46,6 @@
 
 #include "IxEthDB_p.h"
 
-/* forward prototype declarations */
 IX_ETH_DB_PRIVATE MacTreeNode* ixEthDBTreeInsert(MacTreeNode *searchTree, MacDescriptor *descriptor);
 IX_ETH_DB_PRIVATE void ixEthDBCreateTrees(IxEthDBPortMap updatePorts);
 IX_ETH_DB_PRIVATE MacTreeNode* ixEthDBTreeRebalance(MacTreeNode *searchTree);
@@ -394,20 +393,14 @@ IxEthDBStatus ixEthDBNPEUpdateHandler(IxEthDBPortId portID, IxEthDBRecordType ty
         IX_ETHDB_SEND_NPE_MSG(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portID), message, result);
 
         if (result == IX_SUCCESS)
-	{
-            IX_ETH_DB_UPDATE_TRACE("DB: (PortUpdate) Finished downloading NPE tree on port %d\n", portID);
+      	{
+           IX_ETH_DB_UPDATE_TRACE("DB: (PortUpdate) Finished downloading NPE tree on port %d\n", portID);
         }
         else
         {
-            ixEthDBPortInfo[portID].agingEnabled                = FALSE;
-            ixEthDBPortInfo[portID].updateMethod.updateEnabled  = FALSE;
-            ixEthDBPortInfo[portID].updateMethod.userControlled = TRUE;
-
-            ERROR_LOG("EthDB: (PortUpdate) disabling aging and updates on port %d (assumed dead)\n", portID);
-
-            ixEthDBDatabaseClear(portID, IX_ETH_DB_ALL_RECORD_TYPES);
-
-            return IX_ETH_DB_FAIL;
+           IX_ETH_DB_UPDATE_TRACE("\nEthDB: (PortUpdate) warning, Clearing Database records for all types for port %d\n", portID);
+           ixEthDBDatabaseClear(portID, IX_ETH_DB_ALL_RECORD_TYPES);
+           return IX_ETH_DB_FAIL;        
         }
 
 	return IX_ETH_DB_SUCCESS;

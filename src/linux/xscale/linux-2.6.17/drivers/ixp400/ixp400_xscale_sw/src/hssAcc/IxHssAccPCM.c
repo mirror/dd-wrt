@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -119,6 +119,7 @@ typedef struct
     IxHssAccPktUserId rxFreeLowUserId;
     BOOL thisIsConnected;
     BOOL thisIsEnabled;
+    UINT32 numBuffersInUse;
 } IxHssAccPCMInfo;
 
 
@@ -507,8 +508,9 @@ ixHssAccPCMConnect (IxHssAccHssPort hssPortId,
 	/* Set the IsConnected flag for this Hss/Hdlc Port combination*/
 	ixHssAccPCMClientInfo[hssPortId][hdlcPortId].thisIsConnected = TRUE;
 	ixHssAccPCMStats.connections++;
-	/* Initialise the PDM Stats for this client*/
-	ixHssAccPDMStatsInit (hssPortId, hdlcPortId); 
+
+    /* Set the number of IX_OSAL_BUF buffers in use counter to zero for this client*/
+    ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse = 0;
 	
 	if (hdlcFraming)
 	{
@@ -892,14 +894,14 @@ ixHssAccPCMDisconnect (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId)
                                 ixHssAccPCMTxDoneQId[hssPortId]);
     if (status != IX_SUCCESS)
     {
-	IX_HSSACC_REPORT_ERROR("ixHssAccPCMDisconnect:"
-			       "flushing the Tx Q failed for this "
-			       "client - packetised service in an unknown state.\n");
-	return IX_FAIL;
+    IX_HSSACC_REPORT_ERROR("ixHssAccPCMDisconnect:"
+                   "flushing the Tx Q failed for this "
+                   "client - packetised service in an unknown state.\n");
+    return IX_FAIL;
     }
-    /* Check if all descs have been returned, if so no more data is*/
-    /* outstanding for Tx or Rx for the client*/
-    if (ixHssAccPDMNumDescInUse (hssPortId, hdlcPortId) == 0)
+
+    /* Check whether there are any outstanding buffers in use for this client */
+    if (ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse == 0)
     {
 	ixHssAccPCMClientInfo[hssPortId][hdlcPortId].thisIsConnected = FALSE;
 	ixHssAccPCMClientInfoReset (hssPortId, hdlcPortId);
@@ -1240,16 +1242,15 @@ ixHssAccPktRxDisconnectCallback (IX_OSAL_MBUF *buffer,
 					   "ixHssAccPktRxDisconnectCallback\n"));
     /* execute client registered callback */
     ixHssAccPCMClientInfo[hssPortId][hdlcPortId].
-	rxDisconnectingCallback (
-	    buffer, 
-	    numHssErrs, 
-	    pktStatus,
-	    ixHssAccPCMClientInfo[hssPortId][hdlcPortId].
-	    disconnectingRxUserId);
+    rxDisconnectingCallback (
+        buffer, 
+        numHssErrs, 
+        pktStatus,
+        ixHssAccPCMClientInfo[hssPortId][hdlcPortId].
+        disconnectingRxUserId);
 
-    /* Check if this is the last desc to be returned, if so no more data is */
-    /* outstanding for Tx or Rx for the client */
-    if (ixHssAccPDMNumDescInUse (hssPortId, hdlcPortId) == 1)
+    /* Check whether there are any outstanding buffers in use for this client */
+    if (ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse == 0)
     {
 	ixHssAccPCMClientInfo[hssPortId][hdlcPortId].thisIsConnected = FALSE;
 	ixHssAccPCMClientInfoReset (hssPortId, hdlcPortId);
@@ -1276,16 +1277,17 @@ ixHssAccPktTxDoneDisconnectCallback (IX_OSAL_MBUF *buffer,
 
     /* execute client registered callback */
     ixHssAccPCMClientInfo[hssPortId][hdlcPortId].
-	txDoneDisconnectingCallback (buffer, 
-				     numHssErrs, 
-				     pktStatus, 
-				     ixHssAccPCMClientInfo
-				     [hssPortId][hdlcPortId].
-				     disconnectingTxDoneUserId);
-    
-    /* Check if this desc is the last to be returned, if so no more data is*/
-    /* outstanding for Tx or Rx for the client*/
-    if (ixHssAccPDMNumDescInUse (hssPortId, hdlcPortId) == 1)
+    txDoneDisconnectingCallback (buffer, 
+                     numHssErrs, 
+                     pktStatus, 
+                     ixHssAccPCMClientInfo
+                     [hssPortId][hdlcPortId].
+                     disconnectingTxDoneUserId);
+
+    /* Check whether the number of IX_OSAL_BUF buffers in use count is equal to zero, if so no more
+     * data is outstanding for Tx or Rx for this client
+     */ 
+    if (ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse == 0)
     {
 	ixHssAccPCMClientInfo[hssPortId][hdlcPortId].thisIsConnected = FALSE;
 	ixHssAccPCMClientInfoReset (hssPortId, hdlcPortId);
@@ -1331,8 +1333,11 @@ ixHssAccPCMQFlush (IxQMgrQId readQId, IxQMgrQId writeQId)
 {
     IX_STATUS status;
     IX_STATUS writeStatus = IX_SUCCESS;
-    IxHssAccPDMDescriptor *desc, *physDesc;
-    UINT32 pDesc = 0;
+    IxHssAccNpeBuffer *pNpeShared = NULL;
+    IxHssAccNpeBuffer *pPhyNpeShared = NULL;
+    UINT32 pNpeShrQEntry = 0; 
+    IX_OSAL_MBUF *pBuffer = NULL;
+    IxHssAccHdlcPort hdlcPortId = 0;
     BOOL flushQIdIsReadQ;
 
     if ((writeQId == IX_NPE_A_QMQ_HSS0_PKT_RX) || (writeQId == IX_NPE_A_QMQ_HSS1_PKT_RX))
@@ -1345,45 +1350,118 @@ ixHssAccPCMQFlush (IxQMgrQId readQId, IxQMgrQId writeQId)
     }
     
     IX_HSSACC_TRACE1 (IX_HSSACC_FN_ENTRY_EXIT, 
-		      "Entering ixHssAccPCMQFlush for %s\n",
-		      flushQIdIsReadQ ? (int) "RxFreeQ flush" : (int) "TxQ flush");
+                      "Entering ixHssAccPCMQFlush for %s\n",
+                      flushQIdIsReadQ ? (int) "RxFreeQ flush" : (int) "TxQ flush");
+    
     do
     {
-	status = ixQMgrQRead (readQId, &pDesc);
-	desc = (IxHssAccPDMDescriptor *) pDesc;
-	if ((status == IX_SUCCESS) && (desc != NULL))
-	{
-	    physDesc = (IxHssAccPDMDescriptor *) IX_HSSACC_PKT_MMU_PHY_TO_VIRT(desc);
-	    IX_HSSACC_PKT_DATA_CACHE_INVALIDATE(physDesc, sizeof(*physDesc));
-	    physDesc->npeDesc.status = IX_HSSACC_DISCONNECT_IN_PROGRESS;
-	    IX_HSSACC_PKT_DATA_CACHE_FLUSH(physDesc, sizeof(*physDesc));
-            pDesc = (UINT32) desc;
-	    writeStatus = ixQMgrQWrite (writeQId, &pDesc);
-	    if (writeStatus != IX_SUCCESS)
-	    {
-		IX_HSSACC_REPORT_ERROR ("ixHssAccPCMQFlush:"
-					"Writing descriptors to the write "
-					"Q failed - descriptor pool in a "
-					"depleted state; client mbufs lost also\n");
-		/* don't return here - still want to completely flush the readQ */
-		/* queue if possible */
-		writeStatus = IX_FAIL;
-	    }
-	}
-	else if (status == IX_FAIL)
-	{
-	    IX_HSSACC_REPORT_ERROR ("ixHssAccPCMQFlush:"
-				    "Reading a descriptor from the read "
-				    "Q failed while trying to flush it\n");
-	    
-	    return status;
-	}
+        /* Read the queue entry */
+        status = ixQMgrQRead (readQId, &pNpeShrQEntry);
+
+        if ((status == IX_SUCCESS) && (pNpeShrQEntry != 0))
+        {
+            /* 
+             * Extract the HDLC port id and the physical address of the NPE shared region of the
+             * IX_OSAL_BUF buffer from the queue entry.
+             */
+            hdlcPortId = (IxHssAccHdlcPort)(pNpeShrQEntry & IX_HSSACC_QM_Q_CHAN_NUM_MASK);
+            pPhyNpeShared = (IxHssAccNpeBuffer *)(pNpeShrQEntry & IX_HSSACC_QM_Q_ADDR_MASK);
+        
+            /*
+             * Convert the physical address to virtual address. Get the address of the
+             * OS dependant region of the IX_OSAL_BUF buffer from this address.
+             */
+            pNpeShared = (IxHssAccNpeBuffer *) IX_HSSACC_PKT_MMU_PHY_TO_VIRT(pPhyNpeShared);
+            pBuffer = IX_HSSACC_IX_OSAL_MBUF_FROM_IX_NE(pNpeShared);
+
+            /* Invalidate the cache for the IX_OSAL_BUF buffer */
+            IX_HSSACC_IX_NE_SHARED_CACHE_INVALIDATE(pBuffer);
+
+            /* Set the status field of the NPE shared region to IX_HSSACC_DISCONNECT_IN_PROGRESS */
+            IX_HSSACC_IX_NE_SHARED_STATUS(pBuffer) = (UINT8) IX_HSSACC_DISCONNECT_IN_PROGRESS;
+
+            /* Flush the cache for the IX_OSAL_BUF buffer */
+            IX_HSSACC_IX_NE_SHARED_CACHE_FLUSH(pBuffer);
+
+            /* Write the queue entry to the write queue */
+            writeStatus = ixQMgrQWrite (writeQId, &pNpeShrQEntry);
+
+            if (writeStatus != IX_SUCCESS)
+            {
+                    IX_HSSACC_REPORT_ERROR ("ixHssAccPCMQFlush:"
+                                "Writing Buffer Pointers to the write "
+                                "Q failed - Pool in a "
+                                "depleted state; client mbufs lost also\n");
+                    /* 
+                    * Lets not return here - We still need to completely flush
+                    * the readQ queue if possible 
+                    */
+                    writeStatus = IX_FAIL;
+            }
+
+        }
+        else if (status == IX_FAIL)
+        {
+                    IX_HSSACC_REPORT_ERROR ("ixHssAccPCMQFlush:"
+                                "Reading an entry from the read "
+                                "Q failed while trying to flush it\n");
+                    return status;
+        } /* end of else if (status == IX_FAIL)*/
+    
     } while (status != IX_QMGR_Q_UNDERFLOW);
     IX_HSSACC_TRACE1 (IX_HSSACC_FN_ENTRY_EXIT, 
-		      "Exiting ixHssAccPCMQFlush for %s\n",
-		      (flushQIdIsReadQ == TRUE ? 
-		       (int) "RxFreeQ flush" : (int) "TxQ flush"));
+              "Exiting ixHssAccPCMQFlush for %s\n",
+              (flushQIdIsReadQ == TRUE ? 
+               (int) "RxFreeQ flush" : (int) "TxQ flush"));
 
 
     return writeStatus;
+}
+
+IX_STATUS 
+ixHssAccPCMnoBuffersInUseCountInc(
+    IxHssAccHssPort hssPortId, 
+    IxHssAccHdlcPort hdlcPortId, 
+    UINT32 count)
+{
+    UINT32 lockKey;
+    lockKey = ixOsalIrqLock();
+    
+    /* Increase the number of buffers in use count for the specified client. */
+    ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse += count;
+    
+    /* Release the lock and return success */
+    ixOsalIrqUnlock(lockKey);
+    return IX_SUCCESS;      
+
+}
+
+IX_STATUS 
+ixHssAccPCMnoBuffersInUseCountDec(
+    IxHssAccHssPort hssPortId,
+    IxHssAccHdlcPort hdlcPortId,
+    UINT32 count)
+{
+    UINT32 lockKey;
+    lockKey = ixOsalIrqLock();
+    
+    if((INT32)(ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse - count) < 0)
+    {
+        /*
+         * If the count is greater than the number of buffers in use 
+         * for this client, Release the lock and return IX_FAIL 
+         */
+        ixOsalIrqUnlock(lockKey);
+        return IX_FAIL;
+    }
+    else
+    {
+        /* Decrement the number of buffers count */
+        ixHssAccPCMClientInfo[hssPortId][hdlcPortId].numBuffersInUse -= count;
+    }/* end of if-else */
+
+    /* Release the lock and return success */
+    ixOsalIrqUnlock(lockKey);
+    return IX_SUCCESS;      
+    
 }

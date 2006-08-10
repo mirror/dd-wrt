@@ -5,11 +5,11 @@
  * @date 18 February 2002
  *
  * @brief This file contains the implementation of the private API for the 
- *        IXP400 NPE Downloader NpeMgr Utils module
+ *        IXP NPE Downloader NpeMgr Utils module
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -234,7 +234,7 @@ ixNpeDlNpeMgrInsMemWrite (
 	IX_NPEDL_REG_WRITE (npeBaseAddress, IX_NPEDL_REG_OFFSET_EXDATA,
 			    ~insMemData);
 
-        /*Disabled since top 3 MSB are not used for Azusa hardware Refer WR:IXA00053900*/
+        /*Disabled since top 3 MSB are not used */
         insMemData&=IX_NPEDL_MASK_UNUSED_IMEM_BITS;
 
         insMemDataRtn=ixNpeDlNpeMgrReadCommandIssue (npeBaseAddress,
@@ -288,6 +288,13 @@ ixNpeDlNpeMgrDataMemWrite (
     return IX_SUCCESS;
 }
 
+UINT32 ixNpeDlNpeMgrDataMemRead(UINT32 npeBaseAddress, UINT32 dataMemAddress)
+{
+	return ixNpeDlNpeMgrReadCommandIssue (npeBaseAddress,
+					   IX_NPEDL_EXCTL_CMD_RD_DATA_MEM,
+					   dataMemAddress);
+}
+
 
 /*
  * Function definition: ixNpeDlNpeMgrExecAccRegWrite
@@ -336,7 +343,6 @@ ixNpeDlNpeMgrCommandIssue (
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
 		     "Exiting ixNpeDlNpeMgrCommandIssue\n");
 }
-
 
 /*
  * Function definition: ixNpeDlNpeMgrDebugInstructionPreExec
@@ -473,7 +479,6 @@ ixNpeDlNpeMgrDebugInstructionPostExec(
     ixNpeDlNpeMgrExecAccRegWrite (npeBaseAddress, IX_NPEDL_ECS_DBG_CTXT_REG_2,
 				  ixNpeDlSavedEcsDbgCtxtReg2);
 }
-
 
 /*
  * Function definition: ixNpeDlNpeMgrLogicalRegRead
@@ -634,7 +639,7 @@ ixNpeDlNpeMgrLogicalRegWrite (
     return status;
 }
 
-
+#if defined(__ixp42X) || defined(__ixp46X)
 /*
  * Function definition: ixNpeDlNpeMgrPhysicalRegWrite
  */
@@ -690,7 +695,7 @@ ixNpeDlNpeMgrPhysicalRegWrite (
 		     status);
     return status;
 }
-
+#endif
 
 /*
  * Function definition: ixNpeDlNpeMgrCtxtRegWrite

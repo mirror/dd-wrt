@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,7 +50,8 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X     /* PKE codes only applicable for IXP46X platform */
+#if defined(__ixp46X)
+/* PKE is not supported in IXP42X platform */
 
 /*
 * Put the user defined include files required.
@@ -345,7 +346,7 @@ void ixCryptoPkeHashDataPad (UINT32 hashDataLen)
     pkeHashStateInfo.hashBlockCount++;
     
     /* length of hash data in bits */
-    lengthInBit = hashDataLen * BYTE_IN_BITS;
+    lengthInBit = hashDataLen * BITS_IN_BYTE;
 
     /* pad hash data with value 0x80 */
     ixOsalMemSet (
@@ -435,7 +436,7 @@ void ixCryptoPkeHashDataPad (UINT32 hashDataLen)
             + padLength 
             + IX_CRYPTO_ACC_HASH_TOTAL_BIT_HIGH_LEN 
             + i] 
-            = (lengthInBit >> ((MSB_BYTE - i) * BYTE_IN_BITS) 
+            = (lengthInBit >> ((MSB_BYTE - i) * BITS_IN_BYTE) 
                   & MASK_8_BIT);
     } /* end of for loop (i) */
     
@@ -724,4 +725,4 @@ void ixCryptoPkeHashShow (void)
              pkeHashStats.pkeHashReqDoneCount); 
 } /* end of function ixCryptoPkeHashShow() */
 
-#endif /* __ixp46x */
+#endif /* __ixp46X */

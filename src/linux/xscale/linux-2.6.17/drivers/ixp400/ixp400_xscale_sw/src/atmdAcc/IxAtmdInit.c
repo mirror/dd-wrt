@@ -11,7 +11,7 @@
 *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -138,6 +138,7 @@ ixAtmdAccInit (void)
 	    ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
 		       "Warning: the UTOPIA component you specified does"
 		       " not exist\n", 0,0,0,0,0,0);
+            return IX_FAIL; 
 	}
 	
 	if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_AAL)== 
@@ -146,6 +147,7 @@ ixAtmdAccInit (void)
 	    ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR,
 		     "Warning: the AAL component you specified does"
 		     " not exist\n", 0,0,0,0,0,0);
+            return IX_FAIL;
         }
       }
     } 

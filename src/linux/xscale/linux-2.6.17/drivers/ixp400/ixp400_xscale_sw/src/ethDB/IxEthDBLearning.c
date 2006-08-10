@@ -2,7 +2,7 @@
  * @file IxEthDBLearning.c
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -130,7 +130,7 @@ BOOL ixEthDBAddressMatch(void *reference, void *entry)
  * @retval 0 if ma1 == mac2
  * @retval 1 if mac1 > mac2
  */
-UINT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2)
+INT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2)
 {
     UINT32 local_index;
 

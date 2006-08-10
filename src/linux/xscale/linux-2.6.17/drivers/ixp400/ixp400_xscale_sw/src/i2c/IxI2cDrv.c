@@ -4,7 +4,7 @@
  * @version File Version: $Revision: 0.1 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -44,7 +44,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined (__ixp46X)
 #include "IxI2cDrv.h"
 #include "IxOsal.h"
 #include "IxFeatureCtrl.h"
@@ -469,7 +469,7 @@ ixI2cDrvInit (IxI2cInitVars *initVarsSelected)
             "ixI2cDrvInit: There's no dedicated I2C hardware"
             " support!\n", 0,0,0,0,0,0);
         return IX_I2C_NOT_SUPPORTED;
-    } /* end of device detected is not IXP46x */
+    } /* end of device detected is not IXP46X */
 
     /* Valid parameter check section */
     /* Check if the initVarsSelected is NULL */

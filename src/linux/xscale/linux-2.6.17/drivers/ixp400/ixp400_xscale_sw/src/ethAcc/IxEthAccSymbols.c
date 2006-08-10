@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -89,6 +89,9 @@ EXPORT_SYMBOL(ixEthAccPortTxEnable);
 EXPORT_SYMBOL(ixEthAccPortTxDisable);
 EXPORT_SYMBOL(ixEthAccPortLoopbackEnable);
 EXPORT_SYMBOL(ixEthAccPortLoopbackDisable);
+EXPORT_SYMBOL(ixEthAccStopRequest);
+EXPORT_SYMBOL(ixEthAccStartRequest);
+EXPORT_SYMBOL(ixEthAccStopDoneCheck);
 EXPORT_SYMBOL(ixEthAccTxSchedulingDisciplineSet);
 EXPORT_SYMBOL(ixEthAccRxSchedulingDisciplineSet);
 EXPORT_SYMBOL(ixEthAccMibIIStatsGet);
@@ -106,6 +109,8 @@ EXPORT_SYMBOL(ixEthAccUninit);
 EXPORT_SYMBOL(ixEthAccPortNpeLoopbackEnable);
 EXPORT_SYMBOL(ixEthAccPortNpeLoopbackDisable);
 EXPORT_SYMBOL(ixEthAccPortMacReset);
+EXPORT_SYMBOL(ixEthAccMacStateRestore);
+EXPORT_SYMBOL(ixEthAccQMStatusUpdate);
 EXPORT_SYMBOL(ixEthAccQMgrRxNotificationEnable);
 EXPORT_SYMBOL(ixEthAccQMgrRxNotificationDisable);
 EXPORT_SYMBOL(ixEthAccQMgrRxQEntryGet);
@@ -114,8 +119,8 @@ extern UINT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2);
 EXPORT_SYMBOL(ixEthDBAddressCompare);              
 EXPORT_SYMBOL(ixEthRxMultiBufferQMCallback);
 EXPORT_SYMBOL(ixEthRxFrameQMCallback);
-EXPORT_SYMBOL(ixEthRxMultiBufferPriorityPoll);
-EXPORT_SYMBOL(ixEthRxPriorityPoll);
+EXPORT_SYMBOL(ixEthAccRxMultiBufferPriorityPoll);
+EXPORT_SYMBOL(ixEthAccRxPriorityPoll);
 EXPORT_SYMBOL(ixEthTxFrameDoneQMCallback);
 
 #endif /* __linux */

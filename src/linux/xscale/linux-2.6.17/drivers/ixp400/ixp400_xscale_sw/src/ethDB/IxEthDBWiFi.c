@@ -4,7 +4,7 @@
  * @brief Implementation of the public API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -52,7 +52,6 @@ IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBWiFiEntryAdd(IxEthDBPortId portID, IxEthD
 IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBDownloadGatewayTable (IxEthDBPortId portID, MacTreeNode *gateways);
 IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBDownloadBssidTable (IxEthDBPortId portID, MacTreeNode *bssids);
 IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBDuplicateAddressCheck(MacTreeNode *rootNode, MacTreeNode *currentNode, UINT32 *dgwIndexAddr);
-IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBWiFiFrameControlDurationIDUpdate(IxEthDBPortId portID);
 
 /* forward prototypes */
 IX_ETH_DB_PUBLIC MacTreeNode *ixEthDBGatewaySelect(MacTreeNode *stations, UINT32 *gwCount);
@@ -80,7 +79,7 @@ IxEthDBStatus ixEthDBWiFiBSSIDSet(IxEthDBPortId portID, IxEthDBMacAddr *bssid)
  
     IX_ETH_DB_CHECK_REFERENCE(bssid);
     
-    if (memcpy(ixEthDBPortInfo[portID].bssid, bssid, IX_IEEE803_MAC_ADDRESS_SIZE) == NULL)
+    if (ixOsalMemCopy(ixEthDBPortInfo[portID].bssid, bssid, IX_IEEE803_MAC_ADDRESS_SIZE) == NULL)
     {
        return IX_ETH_DB_FAIL;
     }
@@ -102,7 +101,7 @@ IxEthDBStatus ixEthDBWiFiBSSIDSet(IxEthDBPortId portID, IxEthDBMacAddr *bssid)
  *
  * @internal
  */
-IX_ETH_DB_PRIVATE
+IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBWiFiFrameControlDurationIDUpdate(IxEthDBPortId portID)
 {
     IxNpeMhMessage message;
@@ -192,7 +191,7 @@ IxEthDBStatus ixEthDBWiFiEntryRemove(IxEthDBPortId portID, IxEthDBMacAddr *macAd
     
     IX_ETH_DB_CHECK_FEATURE(portID, IX_ETH_DB_WIFI_HEADER_CONVERSION);
     
-    memcpy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
     
     recordTemplate.type   = IX_ETH_DB_WIFI_RECORD;
     recordTemplate.portID = portID;
@@ -279,24 +278,24 @@ IxEthDBStatus ixEthDBWiFiEntryAdd(IxEthDBPortId portID, IxEthDBMacAddr *macAddr,
 
     	if (wifiRecData->recType == IX_ETH_DB_WIFI_AP_TO_AP)
     	{
-           memcpy(recordTemplate.recordData.wifiData.gwMacAddress, wifiRecData->gatewayMacAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+           ixOsalMemCopy(recordTemplate.recordData.wifiData.gwMacAddress, wifiRecData->gatewayMacAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
     	}
     	else
     	{
-           memset(recordTemplate.recordData.wifiData.gwMacAddress, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
+           ixOsalMemSet(recordTemplate.recordData.wifiData.gwMacAddress, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
     	}
 
-        memcpy(recordTemplate.recordData.wifiData.bssid, wifiRecData->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemCopy(recordTemplate.recordData.wifiData.bssid, wifiRecData->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
         recordTemplate.recordData.wifiData.recType = (wifiRecData->recType | (wifiRecData->vlanTagFlag <<2));
     }
     else
     {
-        memset(recordTemplate.recordData.wifiData.gwMacAddress, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
-        memset(recordTemplate.recordData.wifiData.bssid, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemSet(recordTemplate.recordData.wifiData.gwMacAddress, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemSet(recordTemplate.recordData.wifiData.bssid, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
         recordTemplate.recordData.wifiData.recType = (wifiRecData->recType | (0 <<2));
     }
 
-    memcpy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     recordTemplate.type   = IX_ETH_DB_WIFI_RECORD;
     recordTemplate.portID = portID;
@@ -376,8 +375,8 @@ IxEthDBStatus ixEthDBWiFiAccessPointEntryAdd(IxEthDBPortId portID, IxEthDBMacAdd
 
     IX_ETH_DB_CHECK_ADDR(portInfo->bssid);
 
-    memcpy(wifiRecData.bssid, portInfo->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
-    memcpy(wifiRecData.gatewayMacAddr, gatewayMacAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(wifiRecData.bssid, portInfo->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(wifiRecData.gatewayMacAddr, gatewayMacAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     wifiRecData.recType = IX_ETH_DB_WIFI_AP_TO_AP;
     wifiRecData.vlanTagFlag = IX_ETH_DB_WIFI_VLAN_NOTAG;
@@ -422,8 +421,8 @@ IxEthDBStatus ixEthDBWiFiStationEntryAdd(IxEthDBPortId portID, IxEthDBMacAddr *m
 
     IX_ETH_DB_CHECK_ADDR(portInfo->bssid);
 
-    memcpy(wifiRecData.bssid, portInfo->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
-    memset(wifiRecData.gatewayMacAddr, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(wifiRecData.bssid, portInfo->bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemSet(wifiRecData.gatewayMacAddr, 0, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     wifiRecData.recType = IX_ETH_DB_WIFI_AP_TO_STA;
     wifiRecData.vlanTagFlag = IX_ETH_DB_WIFI_VLAN_NOTAG;
@@ -640,7 +639,7 @@ IxEthDBStatus ixEthDBDownloadGatewayTable (IxEthDBPortId portID, MacTreeNode *ga
 
     portInfo = &ixEthDBPortInfo[portID];
 
-    memset((void *) portInfo->updateMethod.npeGwUpdateZone, 0, FULL_GW_BYTE_SIZE);
+    ixOsalMemSet((void *) portInfo->updateMethod.npeGwUpdateZone, 0, FULL_GW_BYTE_SIZE);
 
     /* write all gateways */
     gateway = gateways;
@@ -691,7 +690,7 @@ IxEthDBStatus ixEthDBDownloadBssidTable (IxEthDBPortId portID, MacTreeNode *bssi
 
     portInfo = &ixEthDBPortInfo[portID];
 
-    memset((void *) portInfo->updateMethod.npeBssidUpdateZone, 0, FULL_BSSID_BYTE_SIZE);
+    ixOsalMemSet((void *) portInfo->updateMethod.npeBssidUpdateZone, 0, FULL_BSSID_BYTE_SIZE);
 
     /* write all gateways */
     bssid = bssids;

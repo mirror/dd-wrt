@@ -2,14 +2,14 @@
  * @file    IxQMgrQAccess.c
  *
  * @author Intel Corporation
- * @date    30-Oct-2001
+ * @date    26-Jan-2006
  *
  * @brief   This file contains functions for putting entries on a queue and
  * removing entries from a queue.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,7 +51,7 @@
 
 /*
  * Inlines are compiled as function when this is defined.
- * N.B. Must be placed before #include of "IxQMgr.h"
+ * N.B. Must be placed before #include of "IxQMgr_sp.h"
  */
 #ifndef IXQMGR_H
 #    define IXQMGRQACCESS_C
@@ -66,11 +66,14 @@
 /*
  * User defined include files.
  */
-#include "IxQMgr.h"
-#include "IxQMgrAqmIf_p.h"
+#include "IxQMgr_sp.h"
 #include "IxQMgrQAccess_p.h"
 #include "IxQMgrQCfg_p.h"
 #include "IxQMgrDefines_p.h"
+
+#if defined(__ixp42X) || defined(__ixp46X)
+#include "IxQMgrHwQIfIxp400_p.h"
+#endif /* __ixp42X */
 
 /*
  * Global variables and extern definitions
@@ -106,7 +109,7 @@ ixQMgrQReadWithChecks (IxQMgrQId qId,
     /* Get the q entry size in words */
     entrySizeInWords = ixQMgrQEntrySizeInWordsGet (qId);
 
-    ixQMgrAqmIfQPop (qId, entrySizeInWords, entry);	    
+    ixQMgrHwQIfQPop (qId, entrySizeInWords, entry);	    
 
     /* reset the current read count if the counter wrapped around 
     * (unsigned arithmetic)
@@ -118,7 +121,7 @@ ixQMgrQReadWithChecks (IxQMgrQId qId,
     }
 
     /* Check if underflow occurred on the read */
-    if (ixQMgrAqmIfUnderflowCheck (qId))
+    if (ixQMgrHwQIfUnderflowCheck (qId))
     {
 	return IX_QMGR_Q_UNDERFLOW;
     }
@@ -139,17 +142,21 @@ ixQMgrQReadMWordsMinus1 (IxQMgrQId qId,
     IxQMgrQInlinedReadWriteInfo *infoPtr = &ixQMgrQInlinedReadWriteInfo[qId];
     UINT32 entrySize = infoPtr->qEntrySizeInWords;
     volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
+    UINT32 status; 
     
     while (--entrySize)
     {
 	/* read the entry and accumulate the result */
 	*(++entry) = IX_OSAL_READ_LONG(++qAccRegAddr);
     }
+    
+#if defined(__ixp42X) || defined(__ixp46X)
     /* underflow is available for lower queues only */
-    if (qId < IX_QMGR_MIN_QUEUPP_QID)
+    if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
     {
 	/* get the queue status */
-	UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
+	status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
 	
 	/* check the underflow status */
 	if (status & infoPtr->qUflowStatBitMask)
@@ -162,6 +169,7 @@ ixQMgrQReadMWordsMinus1 (IxQMgrQId qId,
 	    return IX_QMGR_Q_UNDERFLOW;
 	}
     }
+    
     return IX_SUCCESS;
 }
 
@@ -186,7 +194,7 @@ ixQMgrQWriteWithChecks (IxQMgrQId qId,
     /* Get the q entry size in words */
     entrySizeInWords = ixQMgrQEntrySizeInWordsGet (qId);
     
-    ixQMgrAqmIfQPush (qId, entrySizeInWords, entry);
+    ixQMgrHwQIfQPush (qId, entrySizeInWords, entry);
 
     /* reset the current read count if the counter wrapped around 
     * (unsigned arithmetic)
@@ -198,7 +206,7 @@ ixQMgrQWriteWithChecks (IxQMgrQId qId,
     }
 
     /* Check if overflow occurred on the write*/
-    if (ixQMgrAqmIfOverflowCheck (qId))
+    if (ixQMgrHwQIfOverflowCheck (qId))
     {
 	return IX_QMGR_Q_OVERFLOW;
     }
@@ -235,7 +243,7 @@ ixQMgrQPeek (IxQMgrQId qId,
 	return IX_QMGR_ENTRY_INDEX_OUT_OF_BOUNDS;
     }
 
-    return ixQMgrAqmIfQPeek (qId, entryIndex, entry);
+    return ixQMgrHwQIfQPeek (qId, entryIndex, entry);
 }
 
 IX_STATUS
@@ -267,7 +275,7 @@ ixQMgrQPoke (IxQMgrQId qId,
 	return IX_QMGR_ENTRY_INDEX_OUT_OF_BOUNDS;
     }
 
-    return ixQMgrAqmIfQPoke (qId, entryIndex, entry);
+    return ixQMgrHwQIfQPoke (qId, entryIndex, entry);
 }
 
 IX_STATUS
@@ -284,7 +292,7 @@ ixQMgrQStatusGetWithChecks (IxQMgrQId qId,
         return IX_QMGR_Q_NOT_CONFIGURED;
     }
 
-    ixQMgrAqmIfQueStatRead (qId, qStatus);
+    ixQMgrHwQIfQueStatRead (qId, qStatus);
 
     return IX_SUCCESS;
 }
@@ -327,9 +335,11 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 	 * Could mean either full or empty queue
 	 * so look at status
 	 */
-	ixQMgrAqmIfQueStatRead (qId, &qStatus);
+	ixQMgrHwQIfQueStatRead (qId, &qStatus);
 
-	if (qId < IX_QMGR_MIN_QUEUPP_QID)
+#if defined(__ixp42X) || defined(__ixp46X)
+	if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
 	{
 	    if (qStatus & IX_QMGR_Q_STATUS_E_BIT_MASK)
 	    {
@@ -353,6 +363,7 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 		return IX_QMGR_WARNING;
 	    }
 	}
+#if defined(__ixp42X) || defined(__ixp46X)
 	else /* It is an upper queue which does not have an empty status bit maintained */
 	{
 	    if (qStatus & IX_QMGR_Q_STATUS_F_BIT_MASK)
@@ -369,6 +380,7 @@ ixQMgrQNumEntriesGet (IxQMgrQId qId,
 	        return IX_QMGR_WARNING;
 	    }
 	}
+#endif /* __ixp42X */
     }
     else
     {
@@ -394,78 +406,81 @@ ixQMgrQRead (IxQMgrQId qId,
 
     if (entrySize != IX_QMGR_Q_ENTRY_SIZE1)
     { 
-    *entryPtr = entry;
-  /* process the remaining part of the entry */
-   return ixQMgrQReadMWordsMinus1(qId, entryPtr);
+        *entryPtr = entry;
+        /* process the remaining part of the entry */
+        return ixQMgrQReadMWordsMinus1(qId, entryPtr);
     }
 
+#if defined(__ixp42X) || defined(__ixp46X)
     /* underflow is available for lower queues only */
-    if (qId < IX_QMGR_MIN_QUEUPP_QID)
+    if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
     {
- /* the counter of queue entries is decremented. In happy 
-    * day scenario there are many entries in the queue
-  * and the counter does not reach zero.
-  */
-     if (infoPtr->qReadCount-- == 0)
- {
-       /* There is maybe no entry in the queue
-      * qReadCount is now negative, but will be corrected before
-      * the function returns.
+        /* the counter of queue entries is decremented. In happy 
+         * day scenario there are many entries in the queue
+         * and the counter does not reach zero.
          */
-     UINT32 qPtrs; /* queue internal pointers */
+        if (infoPtr->qReadCount-- == 0)
+        {
+            /* There is maybe no entry in the queue
+             * qReadCount is now negative, but will be corrected before
+             * the function returns.
+             */
+            UINT32 qPtrs; /* queue internal pointers */
 
-     /* when a queue is empty, the hw guarantees to return 
-       * a null value. If the value is not null, the queue is
-      * not empty.
-        */
-     if (entry == 0)
-     {
-       /* get the queue status */
-      UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
+            /* when a queue is empty, the hw guarantees to return 
+             * a null value. If the value is not null, the queue is
+             * not empty.
+             */
+            if (entry == 0)
+            {
+                /* get the queue status */
+                UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
    
-        /* check the underflow status */
-        if (status & infoPtr->qUflowStatBitMask)
-        {
-           /* the queue is empty 
-          *  clear the underflow status bit if it was set 
-            */
-          IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
-                    status & ~infoPtr->qUflowStatBitMask);
-         *entryPtr = 0;
-          infoPtr->qReadCount = 0;
-            return IX_QMGR_Q_UNDERFLOW;
-     }
-       }
-       /* store the result */
-      *entryPtr = entry;
+                /* check the underflow status */
+                if (status & infoPtr->qUflowStatBitMask)
+                {
+                    /* the queue is empty 
+                     *  clear the underflow status bit if it was set 
+                     */
+                    IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
+                        status & ~infoPtr->qUflowStatBitMask);
+                    *entryPtr = 0;
+                    infoPtr->qReadCount = 0;
+                    return IX_QMGR_Q_UNDERFLOW;
+                } 	
+            }
+            /* store the result */
+            *entryPtr = entry;
 
-      /* No underflow occured : someone is filling the queue
-       * or the queue contains null entries.
-       * The current counter needs to be
-       * updated from the current number of entries in the queue
-       */
-
-     /* get snapshot of queue pointers */
-        qPtrs = IX_OSAL_READ_LONG(infoPtr->qConfigRegAddr);
-
-       /* Mod subtraction of pointers to get number of words in Q. */
-      qPtrs = (qPtrs - (qPtrs >> 7)) & 0x7f; 
-  
-       if (qPtrs == 0)
-     {
-       /* no entry in the queue */
-     infoPtr->qReadCount = 0;
+            /* No underflow occured : someone is filling the queue
+             * or the queue contains null entries.
+             * The current counter needs to be
+             * updated from the current number of entries in the queue
+             */
+ 
+            /* get snapshot of queue pointers */
+            qPtrs = IX_OSAL_READ_LONG(infoPtr->qConfigRegAddr);
+ 
+            /* Mod subtraction of pointers to get number of words in Q. */
+            qPtrs = (qPtrs - (qPtrs >> 7)) & 0x7f; 
+   
+            if (qPtrs == 0)
+            {
+                /* no entry in the queue */
+                infoPtr->qReadCount = 0;
+            }
+            else
+            {
+                /* convert the number of words inside the queue
+                 * to a number of entries 
+                 */
+                infoPtr->qReadCount = qPtrs & (infoPtr->qSizeInEntries - 1);
+            } 
+            return IX_SUCCESS;
         }
-       else
-        {
-       /* convert the number of words inside the queue
-      * to a number of entries 
-       */
-     infoPtr->qReadCount = qPtrs & (infoPtr->qSizeInEntries - 1);
-        }
-       return IX_SUCCESS;
-  }
     }
+    
     *entryPtr = entry;
     return IX_SUCCESS;
 }
@@ -481,62 +496,62 @@ ixQMgrQBurstRead (IxQMgrQId qId,
 
     if (infoPtr->qEntrySizeInWords == IX_QMGR_Q_ENTRY_SIZE1)
     {
-    volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
+        volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
 
-    /* the code is optimized to take care of data dependencies:
-  * Durig a read, there are a few cycles needed to get the 
-   * read complete. During these cycles, it is poossible to
-    * do some CPU, e.g. increment pointers and decrement 
-   * counters.
-     */
+        /* the code is optimized to take care of data dependencies:
+         * Durig a read, there are a few cycles needed to get the 
+         * read complete. During these cycles, it is poossible to
+         * do some CPU, e.g. increment pointers and decrement 
+         * counters.
+         */
 
- /* fetch a queue entry */
-   nullCheckEntry = IX_OSAL_READ_LONG(infoPtr->qAccRegAddr);
+        /* fetch a queue entry */
+        nullCheckEntry = IX_OSAL_READ_LONG(infoPtr->qAccRegAddr);
 
- /* iterate the specified number of queue entries */ 
-    while (--numEntries)
-    {
-       /* check the result of the previous read */
-     if (nullCheckEntry == 0)
+        /* iterate the specified number of queue entries */ 
+        while (--numEntries)
         {
-       /* if we read a NULL entry, stop. We have underflowed */
-        break;
-      }
-       else
-        {
-       /* write the entry */
-       *entries = nullCheckEntry;
-      /* fetch next entry */
-      nullCheckEntry = IX_OSAL_READ_LONG(qAccRegAddr);
-      /* increment the write address */
-       entries++;
-      }
-   }
-   /* write the pre-fetched entry */
-   *entries = nullCheckEntry;
+            /* check the result of the previous read */
+            if (nullCheckEntry == 0)
+            {
+                /* if we read a NULL entry, stop. We have underflowed */
+                break;
+            }
+            else
+            {
+                /* write the entry */
+                *entries = nullCheckEntry;
+                /* fetch next entry */
+                nullCheckEntry = IX_OSAL_READ_LONG(qAccRegAddr);
+                /* increment the write address */
+                entries++;
+            }
+        }
+        /* write the pre-fetched entry */
+        *entries = nullCheckEntry;
     }
     else
     {
-    IxQMgrQEntrySizeInWords entrySizeInWords = infoPtr->qEntrySizeInWords;
-  /* read the specified number of queue entries */
-    nullCheckEntry = 0;
- while (numEntries--)
-    {
-       int i;
-
-      for (i = 0; i < entrySizeInWords; i++)
-      {
-       *entries = IX_OSAL_READ_LONG(infoPtr->qAccRegAddr + i);
-       nullCheckEntry |= *entries++;
-       }
-
-       /* if we read a NULL entry, stop. We have underflowed */
-        if (nullCheckEntry == 0)
+        IxQMgrQEntrySizeInWords entrySizeInWords = infoPtr->qEntrySizeInWords;
+        /* read the specified number of queue entries */
+        nullCheckEntry = 0;
+        while (numEntries--)
         {
-       break;
-      }
-       nullCheckEntry = 0;
- }
+            int i;
+
+            for (i = 0; i < entrySizeInWords; i++)
+            {
+                *entries = IX_OSAL_READ_LONG(infoPtr->qAccRegAddr + i);
+                nullCheckEntry |= *entries++;
+            }
+
+            /* if we read a NULL entry, stop. We have underflowed */
+            if (nullCheckEntry == 0)
+            {
+                break;
+            }
+            nullCheckEntry = 0;
+        }
     }
 
     /* reset the current read count : next access to the read function 
@@ -545,18 +560,20 @@ ixQMgrQBurstRead (IxQMgrQId qId,
     infoPtr->qWriteCount = 0;
 
     /* Check if underflow occurred on the read */
-    if (nullCheckEntry == 0 && qId < IX_QMGR_MIN_QUEUPP_QID)
+#if defined(__ixp42X) || defined(__ixp46X)
+    if (nullCheckEntry == 0 && qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
     {
-  /* get the queue status */
-  UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
+        /* get the queue status */
+        UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
 
-   if (status & infoPtr->qUflowStatBitMask)
-    {
-       /* clear the underflow status bit if it was set */
-      IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
+        if (status & infoPtr->qUflowStatBitMask)
+        {
+            /* clear the underflow status bit if it was set */
+            IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
                 status & ~infoPtr->qUflowStatBitMask);
-     return IX_QMGR_Q_UNDERFLOW;
- }
+            return IX_QMGR_Q_UNDERFLOW;
+        }
     }
 
     return IX_SUCCESS;
@@ -569,6 +586,7 @@ ixQMgrQWrite (IxQMgrQId qId,
     extern IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[];
     IxQMgrQInlinedReadWriteInfo *infoPtr = &ixQMgrQInlinedReadWriteInfo[qId];
     UINT32 entrySize;
+    UINT32 qSize;
 
     /* write the entry */
     IX_OSAL_WRITE_LONG(infoPtr->qAccRegAddr, *entry);
@@ -576,78 +594,80 @@ ixQMgrQWrite (IxQMgrQId qId,
 
     if (entrySize != IX_QMGR_Q_ENTRY_SIZE1)
     {   
-    /* process the remaining part of the entry */
-   volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
-    while (--entrySize)
- {
-       ++entry;
-        IX_OSAL_WRITE_LONG(++qAccRegAddr, *entry);
-    }
-   entrySize = infoPtr->qEntrySizeInWords;
-    }
-
-    /* overflow is available for lower queues only */
-    if (qId < IX_QMGR_MIN_QUEUPP_QID)
-    {   
-  UINT32 qSize = infoPtr->qSizeInEntries;
- /* increment the current number of entries in the queue
-  * and check for overflow 
-   */
- if (infoPtr->qWriteCount++ == qSize)
-    {
-       /* the queue may have overflow */
-       UINT32 qPtrs; /* queue internal pointers */
-  
-       /* get the queue status */
-      UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
-
-       /* read the status twice because the status may 
-         * not be immediately ready after the write operation
-        */
-     if ((status & infoPtr->qOflowStatBitMask) ||
-        ((status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr))
-         & infoPtr->qOflowStatBitMask))
-     {
-       /* the queue is full, clear the overflow status
-      *  bit if it was set 
-       */
-     IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
-                    status & ~infoPtr->qOflowStatBitMask);
-     infoPtr->qWriteCount = infoPtr->qSizeInEntries;
-     return IX_QMGR_Q_OVERFLOW;
-      }
-       /* No overflow occured : someone is draining the queue
-       * and the current counter needs to be
-       * updated from the current number of entries in the queue
-       */
-
-     /* get q pointer snapshot */
-        qPtrs = IX_OSAL_READ_LONG(infoPtr->qConfigRegAddr);
-
-       /* Mod subtraction of pointers to get number of words in Q. */
-      qPtrs = (qPtrs - (qPtrs >> 7)) & 0x7f; 
-
-     if (qPtrs == 0)
-     {
-       /* the queue may be full at the time of the 
-         * snapshot. Next access will check 
-         * the overflow status again.
-        */
-     infoPtr->qWriteCount = qSize;
-       }
-       else 
-       {
-       /* convert the number of words to a number of entries */
-        if (entrySize == IX_QMGR_Q_ENTRY_SIZE1)
-     {
-           infoPtr->qWriteCount = qPtrs & (qSize - 1);
-     }
-       else
+        /* process the remaining part of the entry */
+        volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
+        while (--entrySize)
         {
-           infoPtr->qWriteCount = (qPtrs / entrySize) & (qSize - 1);
-       }
-       }
-   }
+            ++entry;
+            IX_OSAL_WRITE_LONG(++qAccRegAddr, *entry);
+        }
+        entrySize = infoPtr->qEntrySizeInWords;
+    }
+
+#if defined(__ixp42X) || defined(__ixp46X)
+    /* overflow is available for lower queues only */
+    if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
+    {
+        qSize = infoPtr->qSizeInEntries;
+        /* increment the current number of entries in the queue
+         * and check for overflow 
+         */
+        if (infoPtr->qWriteCount++ == qSize)
+        {
+            /* the queue may have overflow */
+            UINT32 qPtrs; /* queue internal pointers */
+  
+            /* get the queue status */
+            UINT32 status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
+
+            /* read the status twice because the status may 
+             * not be immediately ready after the write operation
+             */
+            if ((status & infoPtr->qOflowStatBitMask) ||
+                ((status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr))
+                 & infoPtr->qOflowStatBitMask))
+            {
+                /* the queue is full, clear the overflow status
+                 *  bit if it was set 
+                 */
+                IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
+                     status & ~infoPtr->qOflowStatBitMask);
+                infoPtr->qWriteCount = infoPtr->qSizeInEntries;
+                return IX_QMGR_Q_OVERFLOW;
+            }
+            /* No overflow occured : someone is draining the queue
+             * and the current counter needs to be
+             * updated from the current number of entries in the queue
+             */
+
+            /* get q pointer snapshot */
+            qPtrs = IX_OSAL_READ_LONG(infoPtr->qConfigRegAddr);
+
+            /* Mod subtraction of pointers to get number of words in Q. */
+            qPtrs = (qPtrs - (qPtrs >> 7)) & 0x7f; 
+ 
+            if (qPtrs == 0)
+            {
+                /* the queue may be full at the time of the 
+                 * snapshot. Next access will check 
+                 * the overflow status again.
+                 */
+                infoPtr->qWriteCount = qSize;
+            }
+            else 
+            {
+                /* convert the number of words to a number of entries */
+                if (entrySize == IX_QMGR_Q_ENTRY_SIZE1)
+                {
+                    infoPtr->qWriteCount = qPtrs & (qSize - 1);
+                } 
+                else
+                {
+                    infoPtr->qWriteCount = (qPtrs / entrySize) & (qSize - 1);
+                }
+            }
+        }
     }
     return IX_SUCCESS;
 }
@@ -666,55 +686,57 @@ ixQMgrQBurstWrite (IxQMgrQId qId,
 
     if (infoPtr->qEntrySizeInWords == IX_QMGR_Q_ENTRY_SIZE1)
     {
-    volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
-    while (numEntries--)
-    {
-       IX_OSAL_WRITE_LONG(qAccRegAddr, *entries);
-        entries++;
-  }
+        volatile UINT32 *qAccRegAddr = infoPtr->qAccRegAddr;
+        while (numEntries--)
+        {
+           IX_OSAL_WRITE_LONG(qAccRegAddr, *entries);
+           entries++;
+        }
     }
     else
     {
- IxQMgrQEntrySizeInWords entrySizeInWords = infoPtr->qEntrySizeInWords;
-  int i;
+        IxQMgrQEntrySizeInWords entrySizeInWords = infoPtr->qEntrySizeInWords;
+        int i;
 
-  /* write each queue entry */
-    while (numEntries--)
-    {
-       /* write the queueEntrySize number of words for each entry */
-       for (i = 0; i < entrySizeInWords; i++)
-      {
-       IX_OSAL_WRITE_LONG((infoPtr->qAccRegAddr + i), *entries);
-     entries++;
-      }
-   }
+        /* write each queue entry */
+        while (numEntries--)
+        {
+            /* write the queueEntrySize number of words for each entry */
+            for (i = 0; i < entrySizeInWords; i++)
+            {
+                IX_OSAL_WRITE_LONG((infoPtr->qAccRegAddr + i), *entries);
+                entries++;
+            }
+        }
     }
 
     /* check if the write count overflows */
     if (infoPtr->qWriteCount > infoPtr->qSizeInEntries)
     {
-  /* reset the current write count */
- infoPtr->qWriteCount = infoPtr->qSizeInEntries;
+        /* reset the current write count */
+        infoPtr->qWriteCount = infoPtr->qSizeInEntries;
     }
 
     /* Check if overflow occurred on the write operation */
-    if (qId < IX_QMGR_MIN_QUEUPP_QID)
+#if defined(__ixp42X) || defined(__ixp46X)
+    if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
+#endif /* __ixp42X */
     {
-   /* get the queue status */
-  status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
+        /* get the queue status */
+        status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr);
 
-  /* read the status twice because the status may 
-     * not be ready at the time of the write
-     */
- if ((status & infoPtr->qOflowStatBitMask) ||
-        ((status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr))
-         & infoPtr->qOflowStatBitMask))
- {
-       /* clear the underflow status bit if it was set */
-      IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
-                status & ~infoPtr->qOflowStatBitMask);
-     return IX_QMGR_Q_OVERFLOW;
-  }
+        /* read the status twice because the status may 
+         * not be ready at the time of the write
+         */
+        if ((status & infoPtr->qOflowStatBitMask) ||
+            ((status = IX_OSAL_READ_LONG(infoPtr->qUOStatRegAddr))
+             & infoPtr->qOflowStatBitMask))
+        {
+            /* clear the underflow status bit if it was set */
+            IX_OSAL_WRITE_LONG(infoPtr->qUOStatRegAddr,
+                  status & ~infoPtr->qOflowStatBitMask);
+            return IX_QMGR_Q_OVERFLOW;
+        }
     }
 
     return IX_SUCCESS;
@@ -724,75 +746,79 @@ PUBLIC IX_STATUS
 ixQMgrQStatusGet (IxQMgrQId qId,
           IxQMgrQStatus *qStatus)
 {
+#if defined(__ixp42X) || defined(__ixp46X)
     /* read the status of a queue in the range 0-31 */
-    if (qId < IX_QMGR_MIN_QUEUPP_QID)
+    if (qId < IX_QMGR_MIN_QUE_2ND_GROUP_QID)
     {
-  extern UINT32 ixQMgrAqmIfQueLowStatRegAddr[];
-   extern UINT32 ixQMgrAqmIfQueLowStatBitsOffset[];
-    extern UINT32 ixQMgrAqmIfQueLowStatBitsMask;
-    extern IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[];
-    IxQMgrQInlinedReadWriteInfo *infoPtr = &ixQMgrQInlinedReadWriteInfo[qId];
-   volatile UINT32 *lowStatRegAddr = (UINT32*)ixQMgrAqmIfQueLowStatRegAddr[qId];
-   volatile UINT32 *qUOStatRegAddr = infoPtr->qUOStatRegAddr;
+        extern UINT32 ixQMgrHwQIfQueLowStatRegAddr[];
+        extern UINT32 ixQMgrHwQIfQueLowStatBitsOffset[];
+        extern UINT32 ixQMgrHwQIfQueLowStatBitsMask;
+        extern IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[];
+        IxQMgrQInlinedReadWriteInfo *infoPtr = &ixQMgrQInlinedReadWriteInfo[qId];
+        volatile UINT32 *lowStatRegAddr = (UINT32*)ixQMgrHwQIfQueLowStatRegAddr[qId];
+        volatile UINT32 *qUOStatRegAddr = infoPtr->qUOStatRegAddr;
 
-  UINT32 lowStatBitsOffset = ixQMgrAqmIfQueLowStatBitsOffset[qId];
-    UINT32 lowStatBitsMask   = ixQMgrAqmIfQueLowStatBitsMask;
-   UINT32 underflowBitMask  = infoPtr->qUflowStatBitMask;
-  UINT32 overflowBitMask   = infoPtr->qOflowStatBitMask;
+        UINT32 lowStatBitsOffset = ixQMgrHwQIfQueLowStatBitsOffset[qId];
+        UINT32 lowStatBitsMask   = ixQMgrHwQIfQueLowStatBitsMask;
+        UINT32 underflowBitMask  = infoPtr->qUflowStatBitMask;
+        UINT32 overflowBitMask   = infoPtr->qOflowStatBitMask;
 
-  /* read the status register for this queue */
-   *qStatus = IX_OSAL_READ_LONG(lowStatRegAddr);
- /* mask out the status bits relevant only to this queue */
-  *qStatus = (*qStatus >> lowStatBitsOffset) & lowStatBitsMask;
+        /* read the status register for this queue */
+        *qStatus = IX_OSAL_READ_LONG(lowStatRegAddr);
+        /* mask out the status bits relevant only to this queue */
+        *qStatus = (*qStatus >> lowStatBitsOffset) & lowStatBitsMask;
 
-   /* Check if the queue has overflowed */
- if (IX_OSAL_READ_LONG(qUOStatRegAddr) & overflowBitMask)
-  {
-       /* clear the overflow status bit if it was set */
-       IX_OSAL_WRITE_LONG(qUOStatRegAddr,
-                 (IX_OSAL_READ_LONG(qUOStatRegAddr) &
-               ~overflowBitMask));
-       *qStatus |= IX_QMGR_Q_STATUS_OF_BIT_MASK;
-   }
+        /* Check if the queue has overflowed */
+        if (IX_OSAL_READ_LONG(qUOStatRegAddr) & overflowBitMask)
+        {
+            /* clear the overflow status bit if it was set */
+            IX_OSAL_WRITE_LONG(qUOStatRegAddr,
+                     (IX_OSAL_READ_LONG(qUOStatRegAddr) &
+                      ~overflowBitMask));
+            *qStatus |= IX_QMGR_Q_STATUS_OF_BIT_MASK;
+        }
 
-   /* Check if the queue has underflowed */
+        /* Check if the queue has underflowed */
         if (IX_OSAL_READ_LONG(qUOStatRegAddr) & underflowBitMask)
- {
-       /* clear the underflow status bit if it was set */
-      IX_OSAL_WRITE_LONG(qUOStatRegAddr,
-                 (IX_OSAL_READ_LONG(qUOStatRegAddr) &
-               ~underflowBitMask));
-      *qStatus |= IX_QMGR_Q_STATUS_UF_BIT_MASK;
-   }
+        {
+            /* clear the underflow status bit if it was set */
+            IX_OSAL_WRITE_LONG(qUOStatRegAddr,
+                     (IX_OSAL_READ_LONG(qUOStatRegAddr) &
+                      ~underflowBitMask));
+            *qStatus |= IX_QMGR_Q_STATUS_UF_BIT_MASK;
+        }
     }
     else /* read status of a queue in the range 32-63 */
     {
- extern UINT32 ixQMgrAqmIfQueUppStat0RegAddr;
-    extern UINT32 ixQMgrAqmIfQueUppStat1RegAddr;
-    extern UINT32 ixQMgrAqmIfQueUppStat0BitMask[];
-  extern UINT32 ixQMgrAqmIfQueUppStat1BitMask[];
+        extern UINT32 ixQMgrHwQIfQueUppStat0RegAddr;
+        extern UINT32 ixQMgrHwQIfQueUppStat1RegAddr;
+        extern UINT32 ixQMgrHwQIfQueUppStat0BitMask[];
+        extern UINT32 ixQMgrHwQIfQueUppStat1BitMask[];
 
-  volatile UINT32 *qNearEmptyStatRegAddr = (UINT32*)ixQMgrAqmIfQueUppStat0RegAddr;
-    volatile UINT32 *qFullStatRegAddr      = (UINT32*)ixQMgrAqmIfQueUppStat1RegAddr;
-    int maskIndex = qId - IX_QMGR_MIN_QUEUPP_QID;
-   UINT32 qNearEmptyStatBitMask = ixQMgrAqmIfQueUppStat0BitMask[maskIndex];
-    UINT32 qFullStatBitMask      = ixQMgrAqmIfQueUppStat1BitMask[maskIndex];
+        volatile UINT32 *qNearEmptyStatRegAddr = (UINT32*)ixQMgrHwQIfQueUppStat0RegAddr;
+        volatile UINT32 *qFullStatRegAddr      = (UINT32*)ixQMgrHwQIfQueUppStat1RegAddr;
+        int maskIndex = qId - IX_QMGR_MIN_QUE_2ND_GROUP_QID;
+        UINT32 qNearEmptyStatBitMask = ixQMgrHwQIfQueUppStat0BitMask[maskIndex];
+        UINT32 qFullStatBitMask      = ixQMgrHwQIfQueUppStat1BitMask[maskIndex];
 
-    /* Reset the status bits */
- *qStatus = 0;
+        /* Reset the status bits */
+        *qStatus = 0;
 
-   /* Check if the queue is nearly empty */
-    if (IX_OSAL_READ_LONG(qNearEmptyStatRegAddr) & qNearEmptyStatBitMask)
- {
-       *qStatus |= IX_QMGR_Q_STATUS_NE_BIT_MASK;
-   }
+        /* Check if the queue is nearly empty */
+        if (IX_OSAL_READ_LONG(qNearEmptyStatRegAddr) & qNearEmptyStatBitMask)
+        {
+            *qStatus |= IX_QMGR_Q_STATUS_NE_BIT_MASK;
+        }
 
-   /* Check if the queue is full */
-    if (IX_OSAL_READ_LONG(qFullStatRegAddr) & qFullStatBitMask)
-   {
-       *qStatus |= IX_QMGR_Q_STATUS_F_BIT_MASK;
+        /* Check if the queue is full */
+        if (IX_OSAL_READ_LONG(qFullStatRegAddr) & qFullStatBitMask)
+        {
+            *qStatus |= IX_QMGR_Q_STATUS_F_BIT_MASK;
+        }
     }
-    }
+#endif /* __ixp42X */
+    
     return IX_SUCCESS;
 }
+     
 #endif /* def NO_INLINE_APIS */

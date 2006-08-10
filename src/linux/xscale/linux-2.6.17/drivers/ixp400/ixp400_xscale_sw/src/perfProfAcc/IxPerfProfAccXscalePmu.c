@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -55,6 +55,7 @@
  */
 
 #ifdef __vxworks
+#include <vxWorks.h>
 #include <symLib.h>
 #include <sysSymTbl.h>
 #include <stdio.h>
@@ -326,7 +327,7 @@ _ixPerfProfAccXscalePmuOverFlowRead(void)
      */
     mrc\tp14, 0, r0, c5, c1, 0;
     and	r0, r0, #31; /*only set first 5 bits in the status register*/
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile void
@@ -344,7 +345,7 @@ _ixPerfProfAccXscalePmuCcntRead(void)
     /*move to ccnt (clk counter) register from coprocessor 14 and store in value
      */
     mrc\tp14, 0, r0, c1, c1, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile void
@@ -365,7 +366,7 @@ _ixPerfProfAccXscalePmuIntenRead(void)
     and	r0, r0, #31; /*mask return value to ensure only first 5 bits in
                             *the register are set
                             */
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile void
@@ -387,7 +388,7 @@ _ixPerfProfAccXscalePmuPmncRead(void)
     and	r0, r0, #15;    /*mask return value to ensure only first 4 bits in
                               *the register are set
                               */
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile void
@@ -417,7 +418,7 @@ _ixPerfProfAccXscalePmuEvtSelectRead(void)
      */
     mov	r0, #0;
     mrc\tp14, 0, r0, c8, c1, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile UINT32
@@ -425,7 +426,7 @@ _ixPerfProfAccXscalePmuPmnCnt1Read_(void)
 {
 ! "r0"
     mrc\tp14, 0, r0, c0, c2, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile UINT32
@@ -433,7 +434,7 @@ _ixPerfProfAccXscalePmuPmnCnt2Read_(void)
 {
 ! "r0"
     mrc\tp14, 0, r0, c1, c2, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile UINT32
@@ -441,7 +442,7 @@ _ixPerfProfAccXscalePmuPmnCnt3Read_(void)
 {
 ! "r0"
     mrc\tp14, 0, r0, c2, c2, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 __asm volatile UINT32
@@ -449,7 +450,7 @@ _ixPerfProfAccXscalePmuPmnCnt4Read_(void)
 {
 ! "r0"
     mrc\tp14, 0, r0, c3, c2, 0;
-    ;/* return value is returned through register R0 */
+    /* return value is returned through register R0 */
 }
 
 INLINE UINT32

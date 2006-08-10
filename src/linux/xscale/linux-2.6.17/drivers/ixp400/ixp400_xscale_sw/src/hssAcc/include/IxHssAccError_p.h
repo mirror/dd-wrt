@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -86,7 +86,7 @@ typedef enum
  *
  * @brief HssAccess debug trace level
  */
-#if (CPU==SIMSPARCSOLARIS)
+#if ((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX))
 #define IX_HSSACC_TRACE_LEVEL IX_HSSACC_FN_ENTRY_EXIT
 #else
 #define IX_HSSACC_TRACE_LEVEL IX_HSSACC_TRACE_OFF

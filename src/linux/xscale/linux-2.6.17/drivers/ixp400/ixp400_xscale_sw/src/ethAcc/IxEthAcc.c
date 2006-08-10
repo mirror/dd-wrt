@@ -9,7 +9,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,6 +54,7 @@
 #include "IxEthAcc.h"
 #include "IxEthDB.h"
 #include "IxFeatureCtrl.h"
+#include "IxAccCommon.h"
 
 #include "IxEthAcc_p.h"
 #include "IxEthAccMac_p.h"
@@ -107,6 +108,16 @@ PUBLIC IxEthAccStatus ixEthAccInit()
       IX_ETH_ACC_WARNING_LOG("ixEthAccInit: EthAcc was already initialized\n", 0, 0, 0, 0, 0, 0);
       
       return IX_ETH_ACC_SUCCESS;
+  }
+
+  /*
+   * Init co-existence services
+   */
+  if (ixEthHssAccCoExistInit() != IX_ETH_ACC_SUCCESS)
+  {
+      IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Co-exist features init failed\n", 0, 0, 0, 0, 0, 0);
+      
+      return IX_ETH_ACC_FAIL;
   }
 
   /*
@@ -168,6 +179,16 @@ PUBLIC IxEthAccStatus ixEthAccInit()
        return IX_ETH_ACC_FAIL;
    }
 
+   /*
+    * Spawning mac recovery thread
+    */
+   if (ixEthAccMacRecoveryLoopStart() !=  IX_ETH_ACC_SUCCESS)
+   {
+       IX_ETH_ACC_WARNING_LOG("ixEthAccInit: Mac recovery thread failed to be spawned\n", 0, 0, 0, 0, 0, 0);
+
+       return IX_ETH_ACC_FAIL;
+   }
+
    /* map the qmgr interrupt registers used for rx queue interrupt disable/enable */
    ixEthAccQMIntEnableBaseAddress = 
        (UINT32)IX_OSAL_MEM_MAP(IX_OSAL_IXP400_QMGR_PHYS_BASE + IX_ETH_ACC_QMGR_LOWQ_INT_ENABLE_REG_OFFSET,sizeof(UINT32));
@@ -218,6 +239,15 @@ ixEthAccUninit (void)
 
        ixOsalMutexDestroy(&ixEthAccControlInterfaceMutex);
 
+       /*
+	* Stopping mac recovery thread
+	*/
+       if (ixEthAccMacRecoveryLoopStop() !=  IX_ETH_ACC_SUCCESS)
+       {
+	   IX_ETH_ACC_WARNING_LOG("ixEthAccUnload: Mac recovery thread failed to be stoped\n", 0, 0, 0, 0, 0, 0);
+	   return IX_ETH_ACC_FAIL;
+       }
+
        /* unmap the memory areas */
        ixEthAccMiiUnload();
        ixEthAccMacUnload();
@@ -238,9 +268,17 @@ ixEthAccUninit (void)
            return IX_ETH_ACC_FAIL;
        }
    
+       /* Check co-existence services can be uninitialized */
+       if (IX_ETH_ACC_SUCCESS != ixEthHssAccCoExistUninit())
+       {
+           IX_ETH_ACC_FATAL_LOG ("Can't Unload co-exists features", 0, 0, 0, 0, 0, 0);
+           return IX_ETH_ACC_FAIL;
+       }
+
        /* uninitialize the service */
        ixEthAccServiceInit = FALSE;
     }
+
     return Status;
 }
 

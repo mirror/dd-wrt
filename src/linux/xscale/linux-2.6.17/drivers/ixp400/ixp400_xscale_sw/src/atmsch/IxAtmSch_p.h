@@ -6,7 +6,7 @@
  * @brief Private header file for AtmSch component.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -56,10 +56,9 @@
  * Defines
  */
 #define IX_ATMSCH_nS_PER_SECOND      1000000000
-#define IX_ATMSCH_US_PER_SECOND      1000000
 #define IX_ATMSCH_MAX_TABLE_ENTRIES  10
 #define IX_ATMSCH_NULL_INDEX         -1
-#define IX_ATMSCH_UINT_MASK          0x80000000
+#define IX_ATMSCH_UINT_MASK          0x8000000000000000ULL
 #define IX_ATMSCH_SCR_PERIOD_IN_SEC  60 /* seconds */
 
 /*
@@ -77,27 +76,27 @@
  */
 typedef struct
 {
-    UINT32 cet;               /* cell emission time = MAX(cet_scr, cet_pcr) */
-    UINT32 cetScr;            /* CET calculated with SCR */
-    UINT32 cetPcr;            /* CET calculated with PCR */
-    UINT32 bt;                /* Burst Tolerance = ((MBS - 1) * (scr_us - pcr_us)) */
-    UINT32 usScr;             /* SCR expressed in microsecond/cell, (represents 1/SCR) */
-    UINT32 usPcr;             /* PCR expressed in microsecond/cell, (represents 1/PCR) */
-    UINT32 mbs;               /* Maximum Burst Size in cells */
-    UINT32 baseBt;            /* Burst Tolerance base value */
-    UINT32 scr;
-    UINT32 pcr;
+    UINT64 cet;               /* cell emission time = MAX(cet_scr, cet_pcr) */
+    UINT64 cetScr;            /* CET calculated with SCR */
+    UINT64 cetPcr;            /* CET calculated with PCR */
+    UINT64 bt;                /* Burst Tolerance = ((MBS - 1) * (scr_us - pcr_us)) */
+    UINT64 usScr;             /* SCR expressed in microsecond/cell, (represents 1/SCR) */
+    UINT64 usPcr;             /* PCR expressed in microsecond/cell, (represents 1/PCR) */
+    UINT64 mbs;               /* Maximum Burst Size in cells */
+    UINT64 baseBt;            /* Burst Tolerance base value */
+    UINT64 scr;
+    UINT64 pcr;
 } IxAtmSchVcSchedInfo;
 
 typedef struct
 {
     IxAtmServiceCategory atmService; /* The ATM service category */
-    UINT32 vbrPcrCellsCnt;     /* The remaining of VBR burst cells */
-    UINT32 vbrScrCellsCnt;     /* The remaining of VBR burst cells */
+    UINT64 vbrPcrCellsCnt;     /* The remaining of VBR burst cells */
+    UINT64 vbrScrCellsCnt;     /* The remaining of VBR burst cells */
     BOOL inUse;			 /* indicates whether the table
 				  * element is currently in use */
     IxAtmLogicalPort port;       /* The port on which the VC is enabled */
-    UINT32 count;		 /* a count of the queued cells for the VC */
+    UINT64 count;		 /* a count of the queued cells for the VC */
     INT32 nextVc;	         /* the next VC in the chain */
     IxAtmConnId connId;          /* connId which the scheduling client knows
                                     the VC. */
@@ -106,12 +105,12 @@ typedef struct
 
 typedef struct
 {
-    UINT32 idleCellsScheduled;
-    UINT32 cellsQueued;
-    UINT32 updateCalls;
-    UINT32 queueFull;
-    UINT32 cellsScheduled;
-    UINT32 scheduleTableCalls;
+    UINT64 idleCellsScheduled;
+    UINT64 cellsQueued;
+    UINT64 updateCalls;
+    UINT64 queueFull;
+    UINT64 cellsScheduled;
+    UINT64 scheduleTableCalls;
 } IxAtmSchStats;
 
 /*
@@ -121,13 +120,13 @@ void
 ixAtmSchedulingInit(void);
 
 void
-ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT32 cellTime );
+ixAtmSchCellTimeSet(IxAtmLogicalPort port, UINT64 cellTime );
 
 UINT32
 ixAtmSchCellTimeGet(IxAtmLogicalPort port);
 
 void
-ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT32 minCellsToSchedule);
+ixAtmSchMinCellsSet(IxAtmLogicalPort port, UINT64 minCellsToSchedule);
 
 UINT32
 ixAtmSchMinCellsGet(IxAtmLogicalPort port);
@@ -139,6 +138,6 @@ void
 ixAtmSchTimerOverrun (IxAtmLogicalPort port);
 
 IX_STATUS
-ixAtmSchBaseTimeSet (IxAtmLogicalPort port, UINT32 baseTime);
+ixAtmSchBaseTimeSet (IxAtmLogicalPort port, UINT64 baseTime);
 
 #endif /* IXATMSCH_P_H */

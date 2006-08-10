@@ -6,7 +6,7 @@ All release notes are now provided on line at
     http://www.intel.com/design/network/products/npfamily/ixp425swr1.htm
 
 #
-IXP400 SW Release Crypto version 2.1
+IXP400 SW Release Crypto version 2.3
 
 -- Copyright Notice --
 

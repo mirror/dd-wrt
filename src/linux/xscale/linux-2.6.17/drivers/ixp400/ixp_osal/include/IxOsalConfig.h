@@ -5,7 +5,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,22 +51,30 @@
 #ifndef IxOsalConfig_H
 #define IxOsalConfig_H
 
-
-/*
- * Note: in the future these config options may
- * become build time decision. 
- */
-
 /* Choose cache */
 #define IX_OSAL_CACHED
 /* #define IX_OSAL_UNCACHED */
 
+#ifndef __ixpTolapai
 
+#ifndef ENABLE_BUFFERMGT
+    #define ENABLE_BUFFERMGT
+#endif
+
+#ifndef ENABLE_IOMEM
+    #define ENABLE_IOMEM
+#endif
+
+#endif /* __ixpTolapai */
 /*
  * Select the module headers to include
  */
+#ifdef ENABLE_IOMEM
 #include "IxOsalIoMem.h"	/* I/O Memory Management module API */
+#endif /* ENABLE_IOMEM */
+#ifdef ENABLE_BUFFERMGT
 #include "IxOsalBufferMgt.h"	/* Buffer Management module API */
+#endif /* ENABLE_BUFFERMGT */
 
 /*
  * Select main platform header file to use

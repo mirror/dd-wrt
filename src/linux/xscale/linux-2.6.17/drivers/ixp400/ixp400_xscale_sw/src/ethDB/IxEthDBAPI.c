@@ -4,7 +4,7 @@
  * @brief Implementation of the public API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -154,13 +154,9 @@ void ixEthDBDatabaseMaintenance()
                 }
                 else
                 {
-                    ixEthDBPortInfo[portIndex].agingEnabled                = FALSE;
-                    ixEthDBPortInfo[portIndex].updateMethod.updateEnabled  = FALSE;
-                    ixEthDBPortInfo[portIndex].updateMethod.userControlled = TRUE;
-
-                    ixOsalLog(IX_OSAL_LOG_LVL_FATAL,
+                     ixOsalLog(IX_OSAL_LOG_LVL_WARNING,
                         IX_OSAL_LOG_DEV_STDOUT, 
-                        "EthDB: (Maintenance) warning, disabling aging and updates for port %d (assumed dead)\n",
+                        "EthDB: (Maintenance) warning, Clearing Database records for all types for port %d\n",
                         portIndex, 0, 0, 0, 0, 0);
 
                     ixEthDBDatabaseClear(portIndex, IX_ETH_DB_ALL_RECORD_TYPES);

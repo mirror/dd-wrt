@@ -1,6 +1,6 @@
 /*
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release version  2.3
  * 
  * -- Intel Copyright Notice --
  * 

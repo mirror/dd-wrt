@@ -16,7 +16,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -68,7 +68,7 @@
 /*
  * Variable declarations global to this file only. Externs are followed by
  * static variables.  */
-static UINT32                 schPortRate[IX_UTOPIA_MAX_PORTS];
+static UINT64                 schPortRate[IX_UTOPIA_MAX_PORTS];
 static BOOL                   schInitDone = FALSE;
 static IxAtmTrafficDescriptor schTd[IX_ATM_MAX_NUM_AAL_OAM_TX_VCS];
 
@@ -78,9 +78,9 @@ extern IxAtmSchVcInfo     ixAtmSchVcTable[IX_ATM_MAX_NUM_AAL_OAM_TX_VCS];
 extern IxAtmSchedulerVcId ixAtmSchNextUbrToBeScheduled[IX_UTOPIA_MAX_PORTS];
 extern IxAtmSchedulerVcId ixAtmSchRtQueueHead[IX_UTOPIA_MAX_PORTS];
 extern IxAtmSchStats      ixAtmSchStats[IX_UTOPIA_MAX_PORTS];
-extern UINT32             ixAtmSchBaseTime[IX_UTOPIA_MAX_PORTS];
-extern UINT32             ixAtmSchTime[IX_UTOPIA_MAX_PORTS];
-extern UINT32             ixAtmSchCacPortAllocated[IX_UTOPIA_MAX_PORTS];
+extern UINT64             ixAtmSchBaseTime[IX_UTOPIA_MAX_PORTS];
+extern UINT64             ixAtmSchTime[IX_UTOPIA_MAX_PORTS];
+extern UINT64             ixAtmSchCacPortAllocated[IX_UTOPIA_MAX_PORTS];
 
 /* Function definition */
 PRIVATE int
@@ -154,20 +154,20 @@ ixAtmSchShow(void)
 	    if (ixAtmSchedulingEnabled[port])
 	    {
 		printf("\n--- UTOPIA_PORT_%d Info ---",port);
-		printf("\nRate = %u, UBR VC VcId = %d, Real-Time VcId = %d", 
+		printf("\nRate = %llu, UBR VC VcId = %d, Real-Time VcId = %d", 
 		       schPortRate[port],
 		       ixAtmSchNextUbrToBeScheduled[port],
 		       ixAtmSchRtQueueHead[port]);
 		
 		/* */
 		printf("\n--- Shaping Statistics:"); 
-		printf("\nDemand Update Calls \t= %u", ixAtmSchStats[port].updateCalls);
-		printf("\nCells Queued \t\t= %u", ixAtmSchStats[port].cellsQueued);
-		printf("\nTable Update Calls \t= %u", ixAtmSchStats[port].scheduleTableCalls);
-		printf("\nCells Scheduled \t= %u", ixAtmSchStats[port].cellsScheduled);
-		printf("\nIdle Cells Scheduled \t= %u", ixAtmSchStats[port].idleCellsScheduled);
-		printf("\nQueue Full Occurences\t= %u", ixAtmSchStats[port].queueFull);
-		printf ("\nAllocated Bandwidth \t= %d\n",ixAtmSchCacPortAllocated[port]);
+		printf("\nDemand Update Calls \t= %llu", ixAtmSchStats[port].updateCalls);
+		printf("\nCells Queued \t\t= %llu", ixAtmSchStats[port].cellsQueued);
+		printf("\nTable Update Calls \t= %llu", ixAtmSchStats[port].scheduleTableCalls);
+		printf("\nCells Scheduled \t= %llu", ixAtmSchStats[port].cellsScheduled);
+		printf("\nIdle Cells Scheduled \t= %llu", ixAtmSchStats[port].idleCellsScheduled);
+		printf("\nQueue Full Occurences\t= %llu", ixAtmSchStats[port].queueFull);
+		printf ("\nAllocated Bandwidth \t= %llu\n",ixAtmSchCacPortAllocated[port]);
 
 		/* */
 		printf("\n--- VC information:");
@@ -189,7 +189,7 @@ ixAtmSchShow(void)
 			(ixAtmSchVcTable[i].port == port))
 		    {
 			vcCnt++;
-			printf("\n%-4d %-4d %-8u %-8u %-8u %-4u %-4d %-8u %-7d %-8u", 
+			printf("\n%-4d %-4d %-8llu %-8llu %-8llu %-4llu %-4llu %-8llu %-7d %-8u", 
 			       i,
 			       schTd[i].atmService,
 			       schTd[i].pcr,
@@ -240,7 +240,7 @@ ixAtmSchStatsClear(void)
  * port is set to TRUE to indicate that the port is enabled */
 PUBLIC IX_STATUS
 ixAtmSchPortModelInitialize( IxAtmLogicalPort port, 
-                             unsigned int portRate,
+                             UINT64 portRate,
                              unsigned int minCellsToSchedule)
 {
     if (!schInitDone||
@@ -257,7 +257,7 @@ ixAtmSchPortModelInitialize( IxAtmLogicalPort port,
 	schPortRate[port] = portRate;
 
 	/* set the time between cell */
-	ixAtmSchCellTimeSet(port, (IX_ATMSCH_US_PER_SECOND / portRate));
+	ixAtmSchCellTimeSet(port, (IX_ATMSCH_nS_PER_SECOND/ portRate));
 
 	/* Set the min cell that can be scheduled */
         ixAtmSchMinCellsSet(port, minCellsToSchedule);
@@ -291,7 +291,7 @@ ixAtmSchPortModelUninitialize( IxAtmLogicalPort port)
  * i.e. allows oversubscription */
 PUBLIC IX_STATUS
 ixAtmSchPortRateModify( IxAtmLogicalPort port, 
-                        unsigned int portRate)
+                        UINT64 portRate)
 {
     IxAtmSchedulerVcId thisRtVc;
 
@@ -306,7 +306,7 @@ ixAtmSchPortRateModify( IxAtmLogicalPort port,
     thisRtVc = ixAtmSchRtQueueHead[port];
 
     schPortRate[port] = portRate;
-    ixAtmSchCellTimeSet(port, IX_ATMSCH_US_PER_SECOND / portRate);
+    ixAtmSchCellTimeSet(port, IX_ATMSCH_nS_PER_SECOND/portRate);
 
     return IX_SUCCESS;
 }
@@ -396,7 +396,7 @@ ixAtmSchRtVcInsert (IxAtmLogicalPort port, IxAtmSchedulerVcId vcId)
      * additional check */
 
     /* Calculate #microseconds between each VBR cell for PCR and SCR */
-    ixAtmSchVcTable[vcId].schInfo.usPcr = IX_ATMSCH_US_PER_SECOND / schTd[vcId].pcr;
+    ixAtmSchVcTable[vcId].schInfo.usPcr = IX_ATMSCH_nS_PER_SECOND/ schTd[vcId].pcr;
     ixAtmSchVcTable[vcId].schInfo.pcr = schTd[vcId].pcr;
 
     /* insert the ATM service category for that VC */
@@ -405,7 +405,7 @@ ixAtmSchRtVcInsert (IxAtmLogicalPort port, IxAtmSchedulerVcId vcId)
     if (schTd[vcId].atmService != IX_ATM_CBR)
     {
 	/* This is for VBR */
-	ixAtmSchVcTable[vcId].schInfo.usScr = IX_ATMSCH_US_PER_SECOND / schTd[vcId].scr;
+	ixAtmSchVcTable[vcId].schInfo.usScr = IX_ATMSCH_nS_PER_SECOND/ schTd[vcId].scr;
 	ixAtmSchVcTable[vcId].schInfo.scr = schTd[vcId].scr;
 
 	if (schTd[vcId].mbs > 0)
@@ -766,11 +766,11 @@ ixAtmSchVcModelRemove(IxAtmLogicalPort port, IxAtmSchedulerVcId vcId)
 /* Setting the base time for a real-time VC. 
  */
 IX_STATUS
-ixAtmSchBaseTimeSet (IxAtmLogicalPort port, UINT32 baseTime)
+ixAtmSchBaseTimeSet (IxAtmLogicalPort port, UINT64 baseTime)
 {
-    UINT32 increment;
+    UINT64 increment;
     IxAtmSchedulerVcId rtQPtr;
-    UINT32 newMask = 0x0;
+    UINT64 newMask = 0x0;
 
     /* Verify whether the basetime is equal or greater than the MASK (right
      * shift by 1). This is to ensure that the overrun would occur 
@@ -880,7 +880,7 @@ void
 ixAtmSchTimerOverrun (IxAtmLogicalPort port)
 {
     IxAtmSchedulerVcId thisRtVc;
-    UINT32 newCet;
+    UINT64 newCet;
 
     /* Time counter overrun.  Need to reset schTime back to base value
      * for all VCs.  This should happen once every ~35 minutes

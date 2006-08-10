@@ -8,7 +8,7 @@
  * IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 /* 
  * System defined include files
@@ -229,9 +229,10 @@ ixParityENAccIcInterruptEnable (
         {
             IXP400_PARITYENACC_REG_BIT_SET(
                 ixParityENAccIcERegisters.intrEn, IXP400_PARITYENACC_INTC_NPEA);
-
+            
+            ixParityENAccIcEMaskedOffParityIntr.npeAIntrSt = FALSE;  
             ixOsalIrqEnable(IX_OSAL_IXP400_NPEA_IRQ_LVL);
-            ixParityENAccIcEMaskedOffParityIntr.npeAIntrSt = FALSE;
+            
             break;
         } /* end of IXP400_PARITYENACC_INTC_NPEA_PARITY_INTERRUPT */
 
@@ -240,8 +241,9 @@ ixParityENAccIcInterruptEnable (
             IXP400_PARITYENACC_REG_BIT_SET(
                 ixParityENAccIcERegisters.intrEn, IXP400_PARITYENACC_INTC_NPEB);
 
-            ixOsalIrqEnable(IX_OSAL_IXP400_NPEB_IRQ_LVL);
             ixParityENAccIcEMaskedOffParityIntr.npeBIntrSt = FALSE;
+            ixOsalIrqEnable(IX_OSAL_IXP400_NPEB_IRQ_LVL);
+            
             break;
         } /* end of IXP400_PARITYENACC_INTC_NPEB_PARITY_INTERRUPT */
 
@@ -250,8 +252,9 @@ ixParityENAccIcInterruptEnable (
             IXP400_PARITYENACC_REG_BIT_SET(
                 ixParityENAccIcERegisters.intrEn, IXP400_PARITYENACC_INTC_NPEC);
 
-            ixOsalIrqEnable(IX_OSAL_IXP400_NPEC_IRQ_LVL);
             ixParityENAccIcEMaskedOffParityIntr.npeCIntrSt = FALSE;
+            ixOsalIrqEnable(IX_OSAL_IXP400_NPEC_IRQ_LVL);
+            
             break;
         } /* end of IXP400_PARITYENACC_INTC_NPEC_PARITY_INTERRUPT */
 
@@ -270,9 +273,10 @@ ixParityENAccIcInterruptEnable (
                 ixParityENAccIcERegisters.intrEn2, IXP400_PARITYENACC_INTC_SWCP);
             IXP400_PARITYENACC_REG_BIT_SET(
                 ixParityENAccIcERegisters.errorEn2, IXP400_PARITYENACC_INTC_SWCP);
-
-            ixOsalIrqEnable(IX_OSAL_IXP400_SWCP_IRQ_LVL);
+            
             ixParityENAccIcEMaskedOffParityIntr.swcpIntrSt = FALSE;
+            ixOsalIrqEnable(IX_OSAL_IXP400_SWCP_IRQ_LVL);
+            
             break;
         } /* end of IXP400_PARITYENACC_INTC_SWCP_PARITY_INTERRUPT */
 
@@ -283,8 +287,9 @@ ixParityENAccIcInterruptEnable (
             IXP400_PARITYENACC_REG_BIT_SET(
                 ixParityENAccIcERegisters.errorEn2, IXP400_PARITYENACC_INTC_AQM);
 
-            ixOsalIrqEnable(IX_OSAL_IXP400_AQM_IRQ_LVL);
             ixParityENAccIcEMaskedOffParityIntr.aqmIntrSt = FALSE;
+            ixOsalIrqEnable(IX_OSAL_IXP400_AQM_IRQ_LVL);
+            
             break;
         } /* end of IXP400_PARITYENACC_INTC_AQM_PARITY_INTERRUPT */
 

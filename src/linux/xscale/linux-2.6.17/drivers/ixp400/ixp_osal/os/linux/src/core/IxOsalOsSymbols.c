@@ -1,12 +1,12 @@
 /*
- * @file        IxOsalOsSymbols.c 
+ * @file        IxOsalOsSymbols.c
  * @author 	Intel Corporation
  * @date        25-08-2004
  *
  * @brief       description goes here
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,21 +49,12 @@
 #include <linux/module.h>
 #include "IxOsal.h"
 
-EXPORT_SYMBOL (ixOsalIrqBind);
-EXPORT_SYMBOL (ixOsalIrqUnbind);
-EXPORT_SYMBOL (ixOsalIrqLock);
-EXPORT_SYMBOL (ixOsalIrqUnlock);
-EXPORT_SYMBOL (ixOsalIrqLevelSet);
-EXPORT_SYMBOL (ixOsalIrqEnable);
-EXPORT_SYMBOL (ixOsalIrqDisable);
 
 EXPORT_SYMBOL (ixOsalMemAlloc);
 EXPORT_SYMBOL (ixOsalMemFree);
 EXPORT_SYMBOL (ixOsalMemCopy);
 EXPORT_SYMBOL (ixOsalMemSet);
 
-EXPORT_SYMBOL (ixOsalCacheDmaMalloc);
-EXPORT_SYMBOL (ixOsalCacheDmaFree);
 
 EXPORT_SYMBOL (ixOsalThreadCreate);
 EXPORT_SYMBOL (ixOsalThreadStart);
@@ -72,8 +63,9 @@ EXPORT_SYMBOL (ixOsalThreadExit);
 EXPORT_SYMBOL (ixOsalThreadPrioritySet);
 EXPORT_SYMBOL (ixOsalThreadSuspend);
 EXPORT_SYMBOL (ixOsalThreadResume);
+#ifndef __ixpTolapai
 EXPORT_SYMBOL (ixOsalThreadStopCheck);
-
+#endif /* __ixpTolapai */
 EXPORT_SYMBOL (ixOsalMessageQueueCreate);
 EXPORT_SYMBOL (ixOsalMessageQueueDelete);
 EXPORT_SYMBOL (ixOsalMessageQueueSend);
@@ -99,9 +91,6 @@ EXPORT_SYMBOL (ixOsalSemaphoreDestroy);
 EXPORT_SYMBOL (ixOsalYield);
 EXPORT_SYMBOL (ixOsalSleep);
 EXPORT_SYMBOL (ixOsalBusySleep);
-EXPORT_SYMBOL (ixOsalTimestampGet);
-EXPORT_SYMBOL (ixOsalTimestampResolutionGet);
-EXPORT_SYMBOL (ixOsalSysClockRateGet);
 EXPORT_SYMBOL (ixOsalTimeGet);
 EXPORT_SYMBOL (ixOsalTimevalToTicks);
 EXPORT_SYMBOL (ixOsalTicksToTimeval);
@@ -115,3 +104,14 @@ EXPORT_SYMBOL (ixOsalTimersShow);
 
 EXPORT_SYMBOL (ixOsalOsNameGet);
 EXPORT_SYMBOL (ixOsalOsVersionGet);
+
+#ifdef __ixpTolapai
+/* New Functions */
+EXPORT_SYMBOL (ixOsalThreadGetId);
+EXPORT_SYMBOL (ixOsalThreadSetPolicyAndPriority);
+EXPORT_SYMBOL (ixOsalSemaphoreWaitInterruptible);
+EXPORT_SYMBOL (ixOsalSemaphorePostWakeup);
+EXPORT_SYMBOL (ixOsalSemaphoreFlush);
+EXPORT_SYMBOL (ixOsalSleepTick);
+EXPORT_SYMBOL (ixOsalSleepUninterruptible);
+#endif /* __ixpTolapai */

@@ -4,7 +4,7 @@
  * @brief Hashtable implementation
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -87,7 +87,7 @@ void ixEthDBInitHash(HashTable *hashTable,
     hashTable->numBuckets = numBuckets;
 
     /* set to 0 all buckets */
-    memset(hashTable->hashBuckets, 0, hashSize);
+    ixOsalMemSet(hashTable->hashBuckets, 0, hashSize);
 
     /* init bucket locks - note that initially all mutexes are unlocked after MutexInit()*/
     for (bucketIndex = 0 ; bucketIndex < numBuckets ; bucketIndex++)
@@ -506,7 +506,7 @@ IxEthDBStatus ixEthDBIncrementHashIterator(HashTable *hashTable, HashIterator *i
     {
         HashNode **nodePtr = &(hashTable->hashBuckets[iterator->bucketIndex]);
         HashNode *node = *nodePtr;
-#if (CPU!=SIMSPARCSOLARIS) && !defined (__wince)
+#if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX) && !defined (__wince))
         if (((iterator->bucketIndex & IX_ETHDB_BUCKET_INDEX_MASK) == 0) &&
             (iterator->bucketIndex < (hashTable->numBuckets - IX_ETHDB_BUCKETPTR_AHEAD)))
         {

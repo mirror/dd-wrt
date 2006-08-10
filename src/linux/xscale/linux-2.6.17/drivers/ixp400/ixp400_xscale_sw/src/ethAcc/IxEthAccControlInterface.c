@@ -9,7 +9,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,10 +50,12 @@
  */
 
 #include "IxOsal.h"
+#include "IxQMgr.h"
 #include "IxEthAcc.h"
 #include "IxEthAcc_p.h"
 
 PUBLIC IxOsalMutex ixEthAccControlInterfaceMutex;
+PUBLIC UINT32 ixEthAccTrafficStopRequestCount = IX_ETH_ACC_NO_STOP_REQUEST;
 
 IX_ETH_ACC_PUBLIC IxEthAccStatus
 ixEthAccPortEnable(IxEthAccPortId portId)
@@ -62,7 +64,8 @@ ixEthAccPortEnable(IxEthAccPortId portId)
 
     if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
     {
-        printf("EthAcc: (Mac) cannot enable port %d, service not initialized\n", portId);
+        IX_ETH_ACC_WARNING_LOG("ixEthAccPortEnable: In port %d, service not initialized\n",
+			       (INT32) portId,0,0,0,0,0);
 	return (IX_ETH_ACC_FAIL);
     }
 
@@ -80,6 +83,8 @@ ixEthAccPortDisable(IxEthAccPortId portId)
     /* check the context is iinitialized */
     if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
     {
+        IX_ETH_ACC_WARNING_LOG("ixEthAccPortDisable: In port %d, service not initialized\n",
+			       (INT32) portId,0,0,0,0,0);
 	return (IX_ETH_ACC_FAIL);
     }
 
@@ -533,3 +538,107 @@ ixEthAccPortMacReset(IxEthAccPortId portId)
     ixOsalMutexUnlock(&ixEthAccControlInterfaceMutex);
     return result;
 }
+
+IX_ETH_ACC_PUBLIC IxEthAccStatus 
+ixEthAccStopRequest(void)
+{
+   UINT32 intLockKey;   
+
+    if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
+    {
+	return (IX_ETH_ACC_FAIL);
+    }
+
+   /* lock interrupts */
+   intLockKey = ixOsalIrqLock();   
+
+   /* Increment internal counter */
+   ixEthAccTrafficStopRequestCount++;
+   
+   if (ixEthAccTrafficStopRequestCount == IX_ETH_ACC_FIRST_STOP_REQUEST)
+   {
+      /* Notify QDispatcher to disable its service only on the first request.
+       * Subsequent request might be called by due to soft-error at other NPE.
+       * ixEthAccTrafficStopRequestCount is used to keep synchronize multiple 
+       * service stop requests and only re-enable QDispatcher when the counter
+       * becomes zero. 
+       */
+      ixQMgrDispatcherLoopDisable();
+   }
+
+   /* Unlock interrupts */
+   ixOsalIrqUnlock(intLockKey);
+
+   return IX_ETH_ACC_SUCCESS;
+}
+
+IX_ETH_ACC_PUBLIC IxEthAccStatus 
+ixEthAccStartRequest(void)
+{
+    UINT32 intLockKey; 
+
+    if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
+    {
+	return (IX_ETH_ACC_FAIL);
+    }
+
+   /* lock interrupts */
+   intLockKey = ixOsalIrqLock();   
+
+   /* The check is to protect the counter when going negative
+    * if this function is called multiple time 
+    */
+   if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST)
+   {
+      /* Decrement internal counter */
+      ixEthAccTrafficStopRequestCount--;
+   }
+   else
+   {
+     return (IX_ETH_ACC_FAIL);
+   }
+
+   /* After this point, return status is IX_ETH_ACC_SUCCESS
+    * to notify that the start request has been accepted.
+    */
+
+   /* Eth services are only started if there is no more stop request */
+   if (ixEthAccTrafficStopRequestCount == IX_ETH_ACC_NO_STOP_REQUEST)
+   {
+      /* Notify QDispatcher to enable its service.
+       * This starts data-plane related traffic services.
+       */
+      ixQMgrDispatcherLoopEnable();
+   } 
+
+   /* Unlock interrupts */
+   ixOsalIrqUnlock(intLockKey);
+
+   return (IX_ETH_ACC_SUCCESS);
+}
+
+IX_ETH_ACC_PUBLIC BOOL 
+ixEthAccStopDoneCheck(void)
+{
+  UINT32 intLockKey; 
+  BOOL ethTrafficIsStopped;
+
+   /* lock interrupts */
+   intLockKey = ixOsalIrqLock();
+
+   if ((ixEthAccTxSubmitBusyCount == IX_ETH_ACC_TX_FRAME_SUBMIT_NOT_BUSY) && 
+      (ixQMgrDispatcherLoopStatusGet() == IX_QMGR_DISPATCHER_LOOP_FREE))
+   {
+       ethTrafficIsStopped = TRUE;
+   } 
+   else
+   {
+      ethTrafficIsStopped = FALSE;
+   } 
+
+   /* Unlock interrupts */
+   ixOsalIrqUnlock(intLockKey);
+
+   return ethTrafficIsStopped;
+}
+

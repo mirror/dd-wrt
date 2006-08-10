@@ -8,7 +8,7 @@
  * @brief This is the header file for Intel (R) IXP400 Software Time Sync Access Codelet
  *
  * @par 
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,7 +51,7 @@
 #ifndef IXTIMESYNCACCCODELET_H
 #define IXTIMESYNCACCCODELET_H
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 /**
  * @ingroup Codelets
@@ -147,11 +147,12 @@
  *
  * </I> 
  *
- * (2) <B> ixTimeSyncAccCodeletQuit </B><BR>
- * This function gracefully terminates timeSyncAcc codelet execution.
+ * (2) <B> ixTimeSyncAccCodeletUninit </B><BR>
+ * This function will unload all initialized modules, free all resources, 
+ * and nicely terminates timeSyncAcc codelet execution.
  *
  *  <I> Usage :
- * 	-> ixTimeSyncAccCodeletQuit
+ * 	-> ixTimeSyncAccCodeletUninit
  *
  *  </I>
  *
@@ -191,8 +192,9 @@
  *
  *  </I>
  *
- * (2) <B> ixTimeSyncAccCodeletQuit </B><BR>
- * This function terminates timeSyncAcc codelet execution.
+ * (2) <B> ixTimeSyncAccCodeletUninit </B><BR>
+ * This function will unload all initialized modules, free all resources, 
+ * and nicely terminates timeSyncAcc codelet execution.
  * It will be invoked when 'rmmod' command is executed.
  * 
  *  <I> Usage :
@@ -482,17 +484,16 @@ typedef enum
  */
 PUBLIC IX_STATUS ixTimeSyncAccCodeletMain (UINT32 configIndex);
 
-/**
- * @fn ixTimeSyncAccCodeletQuit ()
- *
- * @brief  ixTimeSyncAccCodeletQuit function unloads all initialized
- *	   modules, free all resources, and nicely terminates
- * 	   timeSyncAcc codelet execution.
- *
- * @return void 
- */
-PUBLIC void ixTimeSyncAccCodeletQuit (void);
 
+/**
+ * @fn ixTimeSyncAccCodeletUninit ()
+ *
+ * @brief  This function will unload all initialized modules, free all 
+ *	   resources, and nicely terminates timeSyncAcc codelet execution.
+ *
+ * @return void
+ */
+PUBLIC void ixTimeSyncAccCodeletUninit (void);
 
 /** @} */
 

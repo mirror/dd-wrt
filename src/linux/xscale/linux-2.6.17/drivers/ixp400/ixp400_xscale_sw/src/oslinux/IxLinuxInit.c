@@ -1,6 +1,6 @@
 /*
  * @par 
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -103,8 +103,7 @@ static int livelock_dispatcher = 0;/* default: don't use livelock dispatcher*/
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 MODULE_VERSION("2.1.1");
 #endif
-#include <linux/moduleparam.h>
-module_param(livelock_dispatcher, int, 0);
+MODULE_PARM(livelock_dispatcher, "i");
 MODULE_PARM_DESC(livelock_dispatcher, "If non-zero, use the livelock prevention qmgr dispatcher");
 
 /* Init and cleanup functions for module */

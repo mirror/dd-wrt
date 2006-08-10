@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -567,7 +567,7 @@ void CRC_Compute (
     {
         j = (pWepState->crcValue ^ *pData++) & MASK_8_BIT;
         pWepState->crcValue 
-            = pWepState->pCrcTable[j] ^ (pWepState->crcValue >> BYTE_IN_BITS);
+            = pWepState->pCrcTable[j] ^ (pWepState->crcValue >> BITS_IN_BYTE);
     }
 } /* end of function CRC_Compute */
 

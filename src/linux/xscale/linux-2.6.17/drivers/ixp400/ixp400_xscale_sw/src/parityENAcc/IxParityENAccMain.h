@@ -8,7 +8,7 @@
  * Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -133,6 +133,15 @@ do {                                                            \
                 arg4, arg5, arg6);                              \
 } while (0)
 
+/*
+* This macro checks the validity of the NPE ID
+*/
+#define IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeId)         \
+do {                                                          \
+    if (npeId < 0 || npeId > 2)                               \
+    {                                                         \
+       return IX_PARITYENACC_INVALID_PARAMETERS;  }  \
+} while (0)
 /*
  * Typedefs used in this file
  */

@@ -5,7 +5,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,6 +48,7 @@
 /* Access to the global mem map is only allowed in this file */
 #define IxOsalIoMem_C
 
+/*#include "IxOsalDdk.h"*/
 #include "IxOsal.h"
 
 #define SEARCH_PHYSICAL_ADDRESS (1)
@@ -127,12 +128,15 @@ ixOsalIoMemMap (UINT32 requestedAddress,
 {
     IxOsalMemoryMap *map;
 
-#ifndef BOOTLOADER_BLD	
+#ifndef BOOTLOADER_BLD
     ixOsalLog (IX_OSAL_LOG_LVL_DEBUG3,
         IX_OSAL_LOG_DEV_STDOUT,
         "OSAL: Mapping [addr 0x%x:size 0x%x:endianType %d]\n",
         requestedAddress, size, requestedEndianType, 0, 0, 0);
 #endif
+
+#ifndef __ixpTolapai
+
     if (requestedEndianType == IX_OSAL_LE)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
@@ -141,12 +145,16 @@ ixOsalIoMemMap (UINT32 requestedAddress,
             0, 0, 0, 0, 0, 0);
         return (NULL);
     }
+
+#endif /* __ixpTolapai */
     map = ixOsalMemMapFind (requestedAddress,
         size, SEARCH_PHYSICAL_ADDRESS, requestedEndianType);
     if (map != NULL)
     {
         UINT32 offset = requestedAddress - map->physicalAddress;
+
 #ifndef BOOTLOADER_BLD
+
         ixOsalLog (IX_OSAL_LOG_LVL_DEBUG3,
             IX_OSAL_LOG_DEV_STDOUT, "OSAL: Found map [", 0, 0, 0, 0, 0, 0);
         ixOsalLog (IX_OSAL_LOG_LVL_DEBUG3,
@@ -157,6 +165,7 @@ ixOsalIoMemMap (UINT32 requestedAddress,
             map->physicalAddress, map->virtualAddress,
             map->size, map->refCount, map->mapEndianType, 0);
 #endif
+
         if (map->type == IX_OSAL_DYNAMIC_MAP && map->virtualAddress == 0)
         {
             if (map->mapFunction != NULL)
@@ -225,6 +234,7 @@ ixOsalIoMemUnmap (UINT32 requestedAddress, UINT32 endianType)
 {
     IxOsalMemoryMap *map;
 
+#ifndef __ixpTolapai
     if (endianType == IX_OSAL_LE)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
@@ -233,7 +243,7 @@ ixOsalIoMemUnmap (UINT32 requestedAddress, UINT32 endianType)
             0, 0, 0, 0, 0, 0);
         return;
     }
-
+#endif /* __ixpTolapai */
     if (requestedAddress == 0)
     {
         /*
@@ -335,3 +345,25 @@ ixOsalIoMemPhysToVirt (UINT32 physicalAddress, UINT32 requestedCoherency)
         return (UINT32) IX_OSAL_MMU_PHYS_TO_VIRT (physicalAddress);
     }
 }
+#ifdef __ixpTolapai
+/*
+ *	Gluecode for tolapai
+ */
+PUBLIC void
+ixOsalGlueCodeMemoryMapInit(UINT32 index,UINT32 phyAddr,UINT32 mapSize,UINT32 virtAddr)
+{
+	ixOsalGlobalMemoryMap[index].physicalAddress = phyAddr;
+        ixOsalGlobalMemoryMap[index].size = mapSize;
+        ixOsalGlobalMemoryMap[index].virtualAddress = virtAddr;
+        strcpy(ixOsalGlobalMemoryMap[index].name,"GLUE_CODE_MEMORY_MAP");
+}
+
+PUBLIC void 
+ixOsalGlueCodeMemoryMapUnInit(UINT32 index,UINT32 *virtAddr)
+{
+	*virtAddr = ixOsalGlobalMemoryMap[index].virtualAddress;
+	
+	ixOsalGlobalMemoryMap[index].virtualAddress = 0;
+}
+
+#endif /* __ixpTolapai */
