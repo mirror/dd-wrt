@@ -148,7 +148,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
-									<span id="wl_radio"><script type="text/javascript">Capture(<% get_radio_state(); %>)</script></span>&nbsp;
+									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
