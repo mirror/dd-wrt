@@ -9,7 +9,7 @@
  *	  Access Codelet
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -52,7 +52,7 @@
 #ifndef IXPARITYENACCCODELET_H
 #define IXPARITYENACCCODELET_H
 
-#ifdef __ixp46X
+#if defined (__ixp46X)
 
 /**
  * @ingroup Codelets
@@ -424,5 +424,5 @@ PUBLIC void ixParityENAccCodeletQuit (void);
 	extern char *sysMemTop (void);
 #endif
 	
-#endif  /* __ixp46X */
+#endif /* __ixp46X */
 #endif  /* end of IXPARITYENACCCODELET_H */

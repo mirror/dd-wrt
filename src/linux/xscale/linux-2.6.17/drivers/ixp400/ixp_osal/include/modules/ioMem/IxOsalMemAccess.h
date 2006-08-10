@@ -7,7 +7,7 @@
  * @version $Revision: 1.0 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -84,7 +84,15 @@
 
 #elif defined (IX_OSAL_LINUX_LE)
 
+#ifndef __ixpTolapai
+
 #define IX_SDRAM_LE_DATA_COHERENT
+
+#else /* __ixpTolapai */
+
+#define IX_SDRAM_LE
+
+#endif /* __ixpTolapai */
 
 #elif defined (IX_OSAL_WINCE_LE)
 
@@ -109,7 +117,15 @@
  */
 #if defined (IX_OSAL_VXWORKS_LE) || defined (IX_OSAL_LINUX_LE) || defined (IX_OSAL_WINCE_LE) || defined (IX_OSAL_EBOOT_LE)
 
+#ifndef __ixpTolapai
+
 #include "IxOsalOsIxp400CustomizedMapping.h"
+
+#else /* __ixpTolapai */
+
+#include "IxOsalOsIxpTolapaiCustomizedMapping.h"
+
+#endif /* __ixpTolapai */
 
 #endif
 
@@ -127,8 +143,8 @@
 /************************************************************
  * Turn off BE access for components using LE or no mapping *
  ************************************************************/
-
-#if ( defined (IX_OSAL_LE_AC_MAPPING) || defined (IX_OSAL_LE_DC_MAPPING) || defined (IX_OSAL_NO_MAPPING) )
+#if  defined (IX_OSAL_LE_AC_MAPPING) || defined (IX_OSAL_LE_DC_MAPPING) || \
+      defined (IX_OSAL_LE_MAPPING)    || defined (IX_OSAL_NO_MAPPING) 
 
 #undef IX_OSAL_BE_MAPPING
 
@@ -140,20 +156,23 @@
  *****************/
 
 /* Default to no_mapping */
-#if !defined (IX_OSAL_BE_MAPPING) && !defined (IX_OSAL_LE_AC_MAPPING) && !defined (IX_OSAL_LE_DC_MAPPING) && !defined (IX_OSAL_NO_MAPPING)
+#if !defined (IX_OSAL_BE_MAPPING) && !defined (IX_OSAL_LE_AC_MAPPING) && !defined (IX_OSAL_LE_DC_MAPPING) && !defined (IX_OSAL_LE_MAPPING) && !defined (IX_OSAL_NO_MAPPING)
 
 #define IX_OSAL_NO_MAPPING
 
 #endif /* check at least one mapping */
 
 /* No more than one mapping can be defined for a component */
-#if   (defined (IX_OSAL_BE_MAPPING)    && defined (IX_OSAL_LE_AC_MAPPING))  \
+#if ( (defined (IX_OSAL_BE_MAPPING)    && defined (IX_OSAL_LE_AC_MAPPING))  \
     ||(defined (IX_OSAL_BE_MAPPING)    && defined (IX_OSAL_LE_DC_MAPPING))  \
+    ||(defined (IX_OSAL_BE_MAPPING)    && defined (IX_OSAL_LE_MAPPING))     \
     ||(defined (IX_OSAL_BE_MAPPING)    && defined (IX_OSAL_NO_MAPPING))     \
+    ||(defined (IX_OSAL_LE_DC_MAPPING) && defined (IX_OSAL_LE_AC_MAPPING))  \
+    ||(defined (IX_OSAL_LE_DC_MAPPING) && defined (IX_OSAL_LE_MAPPING))	    \
     ||(defined (IX_OSAL_LE_DC_MAPPING) && defined (IX_OSAL_NO_MAPPING))     \
-    ||(defined (IX_OSAL_LE_DC_MAPPING) && defined (IX_OSAL_LE_AC_MAPPING))	\
-    ||(defined (IX_OSAL_LE_AC_MAPPING) && defined (IX_OSAL_NO_MAPPING))
-
+    ||(defined (IX_OSAL_LE_AC_MAPPING) && defined (IX_OSAL_LE_MAPPING))	    \
+    ||(defined (IX_OSAL_LE_AC_MAPPING) && defined (IX_OSAL_NO_MAPPING))	   \
+    ||(defined (IX_OSAL_LE_MAPPING)    && defined (IX_OSAL_NO_MAPPING)))
 
 #ifdef IX_OSAL_BE_MAPPING
 #warning IX_OSAL_BE_MAPPING is defined
@@ -165,6 +184,10 @@
 
 #ifdef IX_OSAL_LE_DC_MAPPING
 #warning IX_OSAL_LE_DC_MAPPING is defined
+#endif
+
+#ifdef IX_OSAL_LE_MAPPING
+#warning IX_OSAL_LE_MAPPING is defined
 #endif
 
 #ifdef IX_OSAL_NO_MAPPING
@@ -190,22 +213,31 @@
 #define IX_OSAL_COMPONENT_MAPPING IX_OSAL_LE_DC
 #endif
 
+#ifdef IX_OSAL_LE_MAPPING
+#define IX_OSAL_COMPONENT_MAPPING IX_OSAL_LE
+#endif
 #ifdef IX_OSAL_NO_MAPPING
 #define IX_OSAL_COMPONENT_MAPPING IX_OSAL_LE
 #endif
 
 
 /* SDRAM coherency should be defined */
-#if !defined (IX_SDRAM_BE) && !defined (IX_SDRAM_LE_DATA_COHERENT) && !defined (IX_SDRAM_LE_ADDRESS_COHERENT)
+#if !defined (IX_SDRAM_BE) && !defined (IX_SDRAM_LE_DATA_COHERENT) && !defined (IX_SDRAM_LE_ADDRESS_COHERENT) && !defined(IX_SDRAM_LE)
 
 #error SDRAM coherency must be defined
 
 #endif /* SDRAM coherency must be defined */
 
 /* SDRAM coherency cannot be defined in several ways */
-#if (defined (IX_SDRAM_BE) && (defined (IX_SDRAM_LE_DATA_COHERENT) || defined (IX_SDRAM_LE_ADDRESS_COHERENT))) \
-    || (defined (IX_SDRAM_LE_DATA_COHERENT) && (defined (IX_SDRAM_BE) || defined (IX_SDRAM_LE_ADDRESS_COHERENT))) \
-    || (defined (IX_SDRAM_LE_ADDRESS_COHERENT) && (defined (IX_SDRAM_BE) || defined (IX_SDRAM_LE_DATA_COHERENT)))
+#if (defined (IX_SDRAM_BE) && (defined (IX_SDRAM_LE_DATA_COHERENT) || 				\
+			       defined (IX_SDRAM_LE_ADDRESS_COHERENT) || 			\
+			       defined (IX_SDRAM_LE)))	 					\
+    || (defined (IX_SDRAM_LE_DATA_COHERENT) && (defined (IX_SDRAM_BE) || 			\
+			    			defined (IX_SDRAM_LE_ADDRESS_COHERENT) || 	\
+						defined (IX_SDRAM_LE))) 			\
+    || (defined (IX_SDRAM_LE_ADDRESS_COHERENT) && (defined (IX_SDRAM_BE) || 			\
+			    			   defined (IX_SDRAM_LE_DATA_COHERENT) ||	\
+			    			   defined (IX_SDRAM_LE)))		       
 
 #error SDRAM coherency cannot be defined in more than one way
 
@@ -353,6 +385,7 @@ ixOsalWinCEWriteBCookie (volatile UINT8 * bCookie, UINT8 bVal)
 #endif
 
 /* Define BE macros */
+#ifndef __ixpTolapai 
 #define IX_OSAL_READ_LONG_BE(wAddr)          IX_OSAL_BE_BUSTOXSL(IX_OSAL_READ_LONG_IO((volatile UINT32 *) (wAddr) ))
 #define IX_OSAL_READ_SHORT_BE(sAddr)         IX_OSAL_BE_BUSTOXSS(IX_OSAL_READ_SHORT_IO((volatile UINT16 *) (sAddr) ))
 #define IX_OSAL_READ_BYTE_BE(bAddr)          IX_OSAL_BE_BUSTOXSB(IX_OSAL_READ_BYTE_IO((volatile UINT8 *) (bAddr) ))
@@ -368,50 +401,42 @@ ixOsalWinCEWriteBCookie (volatile UINT8 * bCookie, UINT8 bVal)
 #define IX_OSAL_WRITE_SHORT_LE_AC(sAddr, sData) IX_OSAL_WRITE_SHORT_IO((volatile UINT16 *) IX_OSAL_LE_AC_XSTOBUSS((UINT32) (sAddr) ), (UINT16) (sData))
 #define IX_OSAL_WRITE_BYTE_LE_AC(bAddr, bData)  IX_OSAL_WRITE_BYTE_IO((volatile UINT8 *) IX_OSAL_LE_AC_XSTOBUSB((UINT32) (bAddr) ), (UINT8) (bData))
 
+#else /* __ixpTolapai */
 
+#define IX_OSAL_READ_LONG_LE(wAddr)          IX_OSAL_LE_BUSTOIAL(IX_OSAL_READ_LONG_IO((volatile UINT32 *) (wAddr) ))
+#define IX_OSAL_READ_SHORT_LE(sAddr)         IX_OSAL_LE_BUSTOIAS(IX_OSAL_READ_SHORT_IO((volatile UINT16 *) (sAddr) ))
+#define IX_OSAL_READ_BYTE_LE(bAddr)          IX_OSAL_LE_BUSTOIAB(IX_OSAL_READ_BYTE_IO((volatile UINT8 *) (bAddr) ))
+#define IX_OSAL_WRITE_LONG_LE(wAddr, wData)  IX_OSAL_WRITE_LONG_IO((volatile UINT32 *) (wAddr), IX_OSAL_LE_IATOBUSL((UINT32) (wData) ))
+#define IX_OSAL_WRITE_SHORT_LE(sAddr, sData) IX_OSAL_WRITE_SHORT_IO((volatile UINT16 *) (sAddr), IX_OSAL_LE_IATOBUSS((UINT16) (sData) ))
+#define IX_OSAL_WRITE_BYTE_LE(bAddr, bData)  IX_OSAL_WRITE_BYTE_IO((volatile UINT8 *) (bAddr), IX_OSAL_LE_IATOBUSB((UINT8) (bData) ))
+
+#endif /* __ixpTolapai */
+
+
+#ifndef __ixpTolapai
 /* Inline functions are required here to avoid reading the same I/O location 2 or 4 times for the byte swap */
-#ifdef _DIAB_TOOL
-#pragma inline ixOsalDataCoherentLongReadSwap
-static UINT32
-#else
 static __inline__ UINT32
-#endif
 ixOsalDataCoherentLongReadSwap (volatile UINT32 * wAddr)
 {
     UINT32 wData = IX_OSAL_READ_LONG_IO (wAddr);
     return IX_OSAL_LE_DC_BUSTOXSL (wData);
 }
 
-#ifdef _DIAB_TOOL
-#pragma inline ixOsalDataCoherentShortReadSwap
-static UINT32
-#else
 static __inline__ UINT16
-#endif
 ixOsalDataCoherentShortReadSwap (volatile UINT16 * sAddr)
 {
     UINT16 sData = IX_OSAL_READ_SHORT_IO (sAddr);
     return IX_OSAL_LE_DC_BUSTOXSS (sData);
 }
 
-#ifdef _DIAB_TOOL
-#pragma inline ixOsalDataCoherentLongWriteSwap
-static UINT32
-#else
 static __inline__ void
-#endif
 ixOsalDataCoherentLongWriteSwap (volatile UINT32 * wAddr, UINT32 wData)
 {
     wData = IX_OSAL_LE_DC_XSTOBUSL (wData);
     IX_OSAL_WRITE_LONG_IO (wAddr, wData);
 }
 
-#ifdef _DIAB_TOOL
-#pragma inline ixOsalDataCoherentShortWriteSwap
-static UINT32
-#else
 static __inline__ void
-#endif
 ixOsalDataCoherentShortWriteSwap (volatile UINT16 * sAddr, UINT16 sData)
 {
     sData = IX_OSAL_LE_DC_XSTOBUSS (sData);
@@ -426,6 +451,7 @@ ixOsalDataCoherentShortWriteSwap (volatile UINT16 * sAddr, UINT16 sData)
 #define IX_OSAL_WRITE_LONG_LE_DC(wAddr, wData)  ixOsalDataCoherentLongWriteSwap((volatile UINT32 *) (wAddr), (UINT32) (wData))
 #define IX_OSAL_WRITE_SHORT_LE_DC(sAddr, sData) ixOsalDataCoherentShortWriteSwap((volatile UINT16 *) (sAddr), (UINT16) (sData))
 #define IX_OSAL_WRITE_BYTE_LE_DC(bAddr, bData)  IX_OSAL_WRITE_BYTE_IO((volatile UINT8 *) (bAddr), IX_OSAL_LE_DC_XSTOBUSB((UINT8) (bData)))
+#endif /* __ixpTolapai */
 
 #if defined (IX_OSAL_BE_MAPPING)
 
@@ -454,8 +480,16 @@ ixOsalDataCoherentShortWriteSwap (volatile UINT16 * sAddr, UINT16 sData)
 #define IX_OSAL_WRITE_SHORT(sAddr, sData)	IX_OSAL_WRITE_SHORT_LE_DC(sAddr, sData)
 #define IX_OSAL_WRITE_BYTE(bAddr, bData)	IX_OSAL_WRITE_BYTE_LE_DC(bAddr, bData)
 
-#endif   /* End of BE and LE coherency mode switch */
+#elif defined (IX_OSAL_LE_MAPPING)
 
+#define IX_OSAL_READ_LONG(wAddr)        	IX_OSAL_READ_LONG_LE(wAddr) 
+#define IX_OSAL_READ_SHORT(sAddr)	        IX_OSAL_READ_SHORT_LE(sAddr) 
+#define IX_OSAL_READ_BYTE(bAddr)	        IX_OSAL_READ_BYTE_LE(bAddr) 
+#define IX_OSAL_WRITE_LONG(wAddr, wData) 	IX_OSAL_WRITE_LONG_LE(wAddr, wData)
+#define IX_OSAL_WRITE_SHORT(sAddr, sData)	IX_OSAL_WRITE_SHORT_LE(sAddr, sData)
+#define IX_OSAL_WRITE_BYTE(bAddr, bData)	IX_OSAL_WRITE_BYTE_LE(bAddr, bData)
+
+#endif   /* End of BE and LE coherency mode switch */
 
 /* Reads/writes to and from memory shared with NPEs - depends on the SDRAM coherency */
 
@@ -499,6 +533,25 @@ ixOsalDataCoherentShortWriteSwap (volatile UINT16 * sAddr, UINT16 sData)
 
 #define IX_OSAL_SWAP_BE_SHARED_LONG(wData)            IX_OSAL_SWAP_LONG(wData)
 #define IX_OSAL_SWAP_BE_SHARED_SHORT(sData)           IX_OSAL_SWAP_SHORT(sData)
+#define IX_OSAL_SWAP_BE_SHARED_BYTE(bData)            (bData)
+
+#elif defined (IX_SDRAM_LE)
+
+#define IX_OSAL_READ_BE_SHARED_LONG(wAddr)            IX_OSAL_SWAP_LONG(IX_OSAL_READ_LONG_RAW(wAddr))
+
+#define IX_OSAL_READ_BE_SHARED_SHORT(sAddr)           IX_OSAL_SWAP_SHORT(IX_OSAL_READ_SHORT_RAW(sAddr))
+
+#define IX_OSAL_READ_BE_SHARED_BYTE(bAddr)            IX_OSAL_READ_BYTE_RAW(bAddr)
+
+#define IX_OSAL_WRITE_BE_SHARED_LONG(wAddr, wData)    IX_OSAL_WRITE_LONG_RAW(wAddr, IX_OSAL_SWAP_LONG(wData))
+
+#define IX_OSAL_WRITE_BE_SHARED_SHORT(sAddr, sData)   IX_OSAL_WRITE_SHORT_RAW(sAddr,IX_OSAL_SWAP_SHORT(sData))
+
+#define IX_OSAL_WRITE_BE_SHARED_BYTE(bAddr, bData)    IX_OSAL_WRITE_BYTE_RAW(bAddr, bData)
+
+#define IX_OSAL_SWAP_BE_SHARED_LONG(wData)            IX_OSAL_SWAP_LONG(wData)
+#define IX_OSAL_SWAP_BE_SHARED_SHORT(sData)           IX_OSAL_SWAP_SHORT(sData)
+#define IX_OSAL_SWAP_BE_SHARED_BYTE(bData)            (bData)
 
 #endif
 
@@ -513,4 +566,23 @@ ixOsalDataCoherentShortWriteSwap (volatile UINT16 * sAddr, UINT16 sData)
     }; \
   };
 
+#define IX_OSAL_READ_BE_SHARED_ARRAY(wSrcAddr, wCount, wDestAddr)	\
+  { \
+    UINT32 i; \
+    \
+    for ( i = 0 ; i < wCount ; i++ ) \
+    { \
+      * (((UINT32 *) wDestAddr) + i) = IX_OSAL_READ_BE_SHARED_LONG(((UINT32 *) wSrcAddr) + i); \
+    }; \
+  };
+
+#define IX_OSAL_WRITE_BE_SHARED_ARRAY(wSrcAddr, wCount, wDestAddr)	\
+  { \
+    UINT32 i; \
+    \
+    for ( i = 0 ; i < wCount ; i++ ) \
+    { \
+	    IX_OSAL_WRITE_BE_SHARED_LONG((((UINT32 *) wDestAddr) + i), * (((UINT32 *) wSrcAddr) + i));	\
+    }; \
+  };
 #endif /* IxOsalMemAccess_H */

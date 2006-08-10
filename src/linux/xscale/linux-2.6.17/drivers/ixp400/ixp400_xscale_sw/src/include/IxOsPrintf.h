@@ -4,7 +4,7 @@
  * @brief this file contains the API of the @ref IxOsServices component
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 

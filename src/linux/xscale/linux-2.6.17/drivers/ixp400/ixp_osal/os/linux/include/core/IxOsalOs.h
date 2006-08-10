@@ -6,7 +6,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -53,14 +53,27 @@
 #error "Uncached memory not supported in linux environment"
 #endif
 
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
+#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
+
+#ifndef __ixpTolapai
+
 #include <linux/dma-mapping.h>
+
+#endif /* __ixpTolapai */
+
 #include <asm/io.h>
+
+#ifdef __ixpTolapai
+
+#include <linux/pci.h>
+
+#endif /* __ixpTolapai */
 #else
 #include <linux/cache.h>
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
+#endif
 #include <linux/mm.h>
 #include <linux/config.h>
+
 #include <asm/pgalloc.h>
 
 /**
@@ -71,9 +84,11 @@
 
 #define IX_OSAL_OS_MMU_PHYS_TO_VIRT(addr)  ((addr) ? phys_to_virt((unsigned int)(addr)) : 0)
 
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-#define IX_OSAL_OS_CACHE_INVALIDATE(addr, size)  (consistent_sync((void*)addr, (size_t) size, DMA_FROM_DEVICE))
+#ifndef IX_HW_COHERENT_MEMORY 
 
+#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
+#define IX_OSAL_OS_CACHE_INVALIDATE(addr, size)  \
+    (consistent_sync((void*)addr, (size_t) size, DMA_FROM_DEVICE))
 
 #define IX_OSAL_OS_CACHE_FLUSH(addr, size) \
     (consistent_sync((void*)addr, (size_t) size, DMA_TO_DEVICE))
@@ -84,15 +99,23 @@
 
 #define IX_OSAL_OS_CACHE_FLUSH(addr, size) \
     (clean_dcache_range((__u32)addr, (__u32)addr + size))
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
+#endif
 
-/* Cache preload not available*/
-#define IX_OSAL_OS_CACHE_PRELOAD(addr,size) {}
+#else /* IX_HW_COHERENT_MEMORY */
 
+/* 
+ * The non-coherent memory region is exposed as uncacheable memory. 
+ * So there is no need for cache invalidation or cache flushing
+ */
+#define IX_OSAL_OS_CACHE_INVALIDATE(addr, size)  do {  } while(0);
+
+#define IX_OSAL_OS_CACHE_FLUSH(addr, size) 	 do {  } while(0);
+
+#endif /* IX_HW_COHERENT_MEMORY  */											  
 #define printf	printk /* For backword compatibility, needs to move to better location */
 
-#ifndef BIT
-#define BIT(x)      (1u<<(x))
-#endif
+#define ixOsalStdLog(arg_pFmtString, args...) printk(arg_pFmtString, ##args) 
+
+#define IX_OSAL_OS_CACHE_PRELOAD(addr,size)	 do {  } while(0);
 
 #endif /* IxOsalOs_H */

@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -414,7 +414,7 @@ ixCryptoAccInit (void)
            * ixFeatureCtrlComponentCheck ()
            */
 
-#endif /* __ixp46X */        
+#endif /* ixp46X */        
 
         /* Initializing Descriptor Management Module */
         if (IX_CRYPTO_ACC_STATUS_SUCCESS != ixCryptoDescMgmtInit ())
@@ -533,7 +533,7 @@ ixCryptoAccUninit (void)
         return IX_CRYPTO_ACC_STATUS_FAIL;  /* Unable to uninitialise the PKE */
     }
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
     while (IX_CRYPTO_ACC_STATUS_SUCCESS !=
            ixCryptoDescMgmtAllQDescriptorInPoolCheck())
@@ -2361,7 +2361,7 @@ ixCryptoAccCryptoServiceStop (void)
         return IX_CRYPTO_ACC_STATUS_FAIL;  /* Unable to uninitialise the PKE */
     }
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
     
     while (IX_CRYPTO_ACC_STATUS_SUCCESS 
         != ixCryptoDescMgmtAllQDescriptorInPoolCheck())
@@ -2430,7 +2430,7 @@ ixCryptoAccShow (void)
     ixCryptoPkeEauShow (); 
     ixCryptoPkeHashShow (); 
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
 } /* end of ixCryptoAccShow () function */
 
@@ -2632,7 +2632,7 @@ ixCryptoAccHashKeyGenerate (
                     (hashKeyLen % IX_CRYPTO_AUTHENTICATION_DATA_BLOCK_LENGTH))
                 {
                     /* length of original hash key in bits */
-                    lengthInBit = hashKeyLen * BYTE_IN_BITS;
+                    lengthInBit = hashKeyLen * BITS_IN_BYTE;
                     
                     /* pad hash key with value 0x80 */
                     ixOsalMemSet (&pHashKey[hashKeyStartOffset + hashKeyLen], 
@@ -2654,7 +2654,7 @@ ixCryptoAccHashKeyGenerate (
                         pHashKey[hashKeyStartOffset + hashKeyLen 
                             + IX_CRYPTO_ACC_HASH_FIRST_PAD_BYTE_LEN
                             + IX_CRYPTO_ACC_HASH_TOTAL_BIT_HIGH_LEN + i] 
-                            = (lengthInBit >> ((MSB_BYTE - i) * BYTE_IN_BITS) 
+                            = (lengthInBit >> ((MSB_BYTE - i) * BITS_IN_BYTE) 
                    & MASK_8_BIT);
                     }
                     
@@ -2666,7 +2666,7 @@ ixCryptoAccHashKeyGenerate (
                 else
                 {
                     /* length of original hash key in bits */
-                    lengthInBit = hashKeyLen * BYTE_IN_BITS;
+                    lengthInBit = hashKeyLen * BITS_IN_BYTE;
                     
                     /* calculate zero padding length (bytes) for original 
                      * hash key to make it multiple of 512-bit
@@ -2704,7 +2704,7 @@ ixCryptoAccHashKeyGenerate (
                             + padLength 
                             + IX_CRYPTO_ACC_HASH_TOTAL_BIT_HIGH_LEN
                             + i] 
-                            = (lengthInBit >> ((MSB_BYTE - i) * BYTE_IN_BITS) 
+                            = (lengthInBit >> ((MSB_BYTE - i) * BITS_IN_BYTE) 
                                   & MASK_8_BIT);
                     }
                     
@@ -2753,7 +2753,7 @@ ixCryptoAccHashKeyGenerate (
                     (hashKeyLen % IX_CRYPTO_AUTHENTICATION_DATA_BLOCK_LENGTH))
                 {
                     /* length of original hash key in bits */
-                    lengthInBit = hashKeyLen * BYTE_IN_BITS;
+                    lengthInBit = hashKeyLen * BITS_IN_BYTE;
                     
                     /* pad hash key with value 0x80 */
                     ixOsalMemSet (&pHashKey[hashKeyStartOffset + hashKeyLen], 
@@ -2768,7 +2768,7 @@ ixCryptoAccHashKeyGenerate (
                     {
                         pHashKey[hashKeyStartOffset + hashKeyLen + 
                             IX_CRYPTO_ACC_HASH_FIRST_PAD_BYTE_LEN +i] 
-                                = (lengthInBit >> (i * BYTE_IN_BITS) 
+                                = (lengthInBit >> (i * BITS_IN_BYTE) 
                                       & MASK_8_BIT);
                     }
                     
@@ -2790,7 +2790,7 @@ ixCryptoAccHashKeyGenerate (
                 else
                 {
                     /* length of original hash key in bits */
-                    lengthInBit = hashKeyLen * BYTE_IN_BITS;
+                    lengthInBit = hashKeyLen * BITS_IN_BYTE;
                     
                     /* calculate zero padding length (bytes) for original 
                      * hash key to make it multiple of 512-bit
@@ -2821,7 +2821,7 @@ ixCryptoAccHashKeyGenerate (
                         pHashKey[hashKeyStartOffset + hashKeyLen + 
                             IX_CRYPTO_ACC_HASH_FIRST_PAD_BYTE_LEN 
                             + padLength +i] 
-                                = (lengthInBit >> (i * BYTE_IN_BITS) 
+                                = (lengthInBit >> (i * BITS_IN_BYTE) 
                                       & MASK_8_BIT);
                     }
                     
@@ -2886,7 +2886,7 @@ ixCryptoAccHashKeyGenerate (
              *  array[n+1] = b1
              */
             ixKeyCryptoParam[*pHashKeyId].pNpeCryptoParam->npeCryptoInfo[i]
-                = ((npeHashConfigWord >> ((MSB_BYTE - i) * BYTE_IN_BITS))
+                = ((npeHashConfigWord >> ((MSB_BYTE - i) * BITS_IN_BYTE))
                   & MASK_8_BIT);
         } /* end of for (i) */
 
@@ -3556,4 +3556,4 @@ ixCryptoAccPkeHashPerform (
 
 } /* end of ixCryptoAccPkeHashPerform () function */
 
-#endif /* __ixp46X */
+#endif /* ixp46X */

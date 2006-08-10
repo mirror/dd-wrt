@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -62,7 +62,10 @@ EXPORT_SYMBOL(ixNpeDlUnload);
 EXPORT_SYMBOL(ixNpeDlNpeInitAndStart);
 EXPORT_SYMBOL(ixNpeDlCustomImageNpeInitAndStart);
 EXPORT_SYMBOL(ixNpeDlLoadedImageFunctionalityGet);
-
+EXPORT_SYMBOL(ixNpeDlDataMemRead);
+EXPORT_SYMBOL(ixNpeDlLoadedImageGet);
+extern IX_STATUS ixNpeDlNpeMgrNpeStop (IxNpeDlNpeId npeId);
+EXPORT_SYMBOL(ixNpeDlNpeMgrNpeStop);
 #endif /* __linux */
 
 

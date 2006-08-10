@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -64,11 +64,10 @@ EXPORT_SYMBOL(ixHssAccCodeletMain);
 int operationType = 0;
 int portMode = 0 ;
 int verifyMode = 0 ;
-#include <linux/moduleparam.h>
 
-module_param(operationType, int ,0);
-module_param(portMode, int,0);
-module_param(verifyMode, int,0);
+MODULE_PARM(operationType, "i");
+MODULE_PARM(portMode, "i");
+MODULE_PARM(verifyMode, "i");
 
 MODULE_PARM_DESC(operationType, "HssAcc Codelet operation options (1-3)\n"
 		 "\t1 - Packetised Service Only.\n"

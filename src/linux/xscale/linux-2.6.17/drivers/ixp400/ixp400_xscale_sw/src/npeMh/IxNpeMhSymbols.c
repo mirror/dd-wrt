@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -62,5 +62,6 @@ EXPORT_SYMBOL(ixNpeMhMessageWithResponseSend);
 EXPORT_SYMBOL(ixNpeMhMessagesReceive);
 EXPORT_SYMBOL(ixNpeMhShow);
 EXPORT_SYMBOL(ixNpeMhShowReset);
+EXPORT_SYMBOL(ixNpeMhConfigStateRestore);
 
 #endif /* __linux */

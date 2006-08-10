@@ -7,7 +7,7 @@
  * are strongly recommended to use IX_OSAL API.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 

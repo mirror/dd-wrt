@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -63,10 +63,8 @@
 int modeType = 0;
 int aalType = 0;
 
-#include <linux/moduleparam.h>
-
-module_param(modeType, int, 0);
-module_param(aalType, int, 0);
+MODULE_PARM(modeType, "i");
+MODULE_PARM(aalType, "i");
 
 static int __init atmdAcc_init_module(void)
 {

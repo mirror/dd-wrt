@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -68,6 +68,7 @@
 #include "IxHssAccPCM_p.h" 
 #include "IxHssAccCCM_p.h"
 #include "IxHssAccChanRx_p.h"
+#include "IxAccCommon.h"
 
 /**
  * #defines and macros used in this file.
@@ -82,8 +83,8 @@
 #define IX_HSSACC_NUM_QMQS_PER_HSS             11
 #define IX_HSSACC_MAX_NUM_QMQS                 (IX_HSSACC_NUM_QMQS_PER_HSS *\
                                                 IX_HSSACC_HSS_PORT_MAX)
-#define IX_HSSACC_IMAGE_FUNC_ID_SHIFT          16
-#define IX_HSSACC_IMAGE_FUNC_ID_MASK           0xFF
+#define IX_HSSACC_CHANNELIZED                  1 
+
 
 /**
  * Typedefs whose scope is limited to this file.
@@ -103,6 +104,7 @@ typedef struct
  */
 
 /* this value will be set after successfully configuring a HSS port */
+UINT32 ixHssAccServiceType = 0;
 static BOOL ixHssAccHssInitialised[IX_HSSACC_HSS_PORT_MAX] = { FALSE, FALSE };
 static UINT32 hssQmqsMax = IX_HSSACC_NUM_QMQS_PER_HSS; /* assume only HSS port 0 is required */
 static IxHssAccQConfigInfo ixHssAccQConfigInfo[IX_HSSACC_MAX_NUM_QMQS] = {
@@ -135,6 +137,24 @@ static IxHssAccQConfigInfo ixHssAccQConfigInfo[IX_HSSACC_MAX_NUM_QMQS] = {
 /* This variable is made global to re-configure the Queues */
 static BOOL ixHssAccQmqsConfigured = FALSE;
 
+/*
+ * This variable is the common mutex that is shared between
+ * Ethernet & HssAcc services when the co-exist
+ */
+IxOsalMutex ixEthHssCoexistLock;
+
+/*
+ * This variable is used to indicate that Mutex initialization
+ * is done or not
+ */
+BOOL ixEthHssComMutexInitDone=FALSE;
+
+/*
+ * This variable is used to indicate presence of Ethernet & HssAcc
+ * services co existence
+ */
+BOOL ixEthHssAccCoexistEnable = FALSE;
+
 
 /**
  * Extern function prototypes.
@@ -143,6 +163,44 @@ static BOOL ixHssAccQmqsConfigured = FALSE;
 /**
  * Static function prototypes.
  */
+
+/* Used to check if image downloaded contains Ethernet HssAcc co-exist images */
+IX_STATUS ixEthHssAccCoExistCheck(void);
+
+
+IX_STATUS
+ixEthHssAccCoExistCheck(void)
+{
+
+    UINT8 functionalityId;
+
+    if (IX_SUCCESS != ixNpeDlLoadedImageFunctionalityGet(IX_NPEDL_NPEID_NPEA, &functionalityId))
+    {
+        return IX_FAIL;
+    }
+
+
+    /*
+     * To enable Ethernet & HSS co-existence feature in NPE A, 
+     * check the functionality of downloaded
+     * NPE image when the functionality id is either 0x00900000
+     * (HSS channelized + learning/filtering support) or
+     * 0x00910000(HSS channelized + header conversion support)
+     */
+
+    if ((functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
+         IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST) ||
+         functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
+         IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST)) &&
+         ixEthHssAccCoexistEnable != TRUE)
+    {
+        ixEthHssAccCoexistEnable = TRUE;
+    }
+
+    return IX_SUCCESS;
+
+}
+
 
 /**
  * Function definition: ixHssAccPortInit
@@ -158,7 +216,7 @@ ixHssAccPortInit (IxHssAccHssPort hssPortId,
     int i;
 
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, "Entering ixHssAccPortInit\n");
-
+ 
     /* Error check the parameters */
     for (i = 0; i < IX_HSSACC_TSLOTS_PER_HSS_PORT; i++)
     {
@@ -243,7 +301,6 @@ ixHssAccInit (void)
     IX_STATUS status = IX_SUCCESS;
     UINT8 imageId;
 
-
     qmqsConfigured = ixHssAccQmqsConfigured;
 
 
@@ -262,6 +319,7 @@ ixHssAccInit (void)
         {
 	    IX_HSSACC_REPORT_ERROR("Warning: the HSS Port component you"
 	        " specified does not exist\n");
+            return IX_FAIL;
         }
     
         if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_HDLC)== 
@@ -269,6 +327,7 @@ ixHssAccInit (void)
         {
 	    IX_HSSACC_REPORT_ERROR("Warning: the HDLC Port component you"
 	        " specified does not exist\n");
+            return IX_FAIL; 
         }
     }
  
@@ -282,21 +341,24 @@ ixHssAccInit (void)
     }
     else
     {
-	if ((imageId == ((IX_NPEDL_NPEIMAGE_NPEA_HSS0 >> 
-			  IX_HSSACC_IMAGE_FUNC_ID_SHIFT) & IX_HSSACC_IMAGE_FUNC_ID_MASK))
-	    || (imageId == ((IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT >> 
-			     IX_HSSACC_IMAGE_FUNC_ID_SHIFT) & IX_HSSACC_IMAGE_FUNC_ID_MASK))
-	    || (imageId == ((IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT >>
-			     IX_HSSACC_IMAGE_FUNC_ID_SHIFT) & IX_HSSACC_IMAGE_FUNC_ID_MASK))
-            || (imageId == ((IX_NPEDL_NPEIMAGE_NPEA_HSS_TSLOT_SWITCH >>
-                             IX_HSSACC_IMAGE_FUNC_ID_SHIFT) & IX_HSSACC_IMAGE_FUNC_ID_MASK)))
+	if (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0)
+           || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_SPHY_1_PORT ))
+	   || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_1_PORT))
+           || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS_TSLOT_SWITCH )))
 	{
 	    /* Enabling HSS port 0 only */
 	    hssPortMax = IX_HSSACC_SINGLE_HSS_PORT;
 	    hssQmqsMax = IX_HSSACC_NUM_QMQS_PER_HSS;
 	}
-	else if (imageId == ((IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT >> 
-			      IX_HSSACC_IMAGE_FUNC_ID_SHIFT) & IX_HSSACC_IMAGE_FUNC_ID_MASK))
+	else if ((imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_4_PORT))
+	   || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST))
+           || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST)))
+	{
+	    /* Enabling HSS port 0 only */
+	    hssPortMax = IX_HSSACC_SINGLE_HSS_PORT;
+	    hssQmqsMax = 1;	/*Configure only to set Chann Rx Trig queue only */	
+	}
+	else if (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS_2_PORT )) 
 	{
 	    /* Enabling dual HSS ports */
 	    hssPortMax = IX_HSSACC_DUAL_HSS_PORTS;
@@ -338,6 +400,57 @@ ixHssAccInit (void)
 	}
     }
 
+
+    /* 
+     * Check if the image downloaded is Ethernet HssAcc coexist channelized images 
+     */
+    if ( (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST)) 
+      || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST))
+      || (imageId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(IX_NPEDL_NPEIMAGE_NPEA_HSS0_ATM_MPHY_4_PORT))) 
+    {
+       ixHssAccServiceType = IX_HSSACC_CHANNELIZED;
+    }
+
+
+/* If ETH-HSS co-exist feature exists we are initializing the common mutex.
+ * Care should be taken as to whether this mutex is not already initialized by 
+ * ixEthAccInit(). 
+ */
+
+if ( IX_SUCCESS == ixEthHssAccCoExistCheck())
+{
+    
+    if ( TRUE == ixEthHssAccCoexistEnable )
+    {
+
+    if (FALSE == ixEthHssComMutexInitDone )    
+    {
+        printf("Initializing common mutex for ETH-HSS coexist \n"); 
+        if (IX_SUCCESS != ixOsalMutexInit (&ixEthHssCoexistLock))
+        {
+            /* Log error message in debugging mode */
+            ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+            		   IX_OSAL_LOG_DEV_STDERR,
+                       "ETH-HSS common mutex initialization failed.\n",
+                       0, 0, 0, 0, 0, 0);
+
+            /* Mutex initialization failed */
+            return IX_FAIL;
+        } /* end of if (ixOsalMutexInit) */
+        ixEthHssComMutexInitDone = TRUE; 
+    }
+
+    }
+
+
+}
+
+/* Allocate the buffers based on if image is channelized image  or
+   packetized image only for ETH-HSS co-exist images.
+*/
+if (ixHssAccServiceType != IX_HSSACC_CHANNELIZED) 
+{
+
     if (status == IX_SUCCESS)
     {
 	/* intialise the PCM - this should be called before the RxInit and TxInit */
@@ -356,11 +469,9 @@ ixHssAccInit (void)
 	status = ixHssAccPktRxInit ();
     }
 
-    if (status == IX_SUCCESS)
-    { 
-	/* initialise the PDM module */
-	status = ixHssAccPDMInit ();
-    }
+
+
+}
 
     if (status == IX_SUCCESS)
     { 
@@ -413,32 +524,56 @@ ixHssAccUninit (void)
     /* uninitialise the Common module */
         status = ixHssAccComUninit ();
     }
-    if (IX_SUCCESS == status)
-    {
-    /* uninitialise the PDM module */
-        status = ixHssAccPDMUninit ();
-    }
-    if (IX_SUCCESS == status)
-    {
-    /* uninitialise the PktRx module */
-        status = ixHssAccPktRxUninit ();
-    }
-    if (IX_SUCCESS == status)
-    {
-    /* uninitialise the PktTx module */
-        status = ixHssAccPktTxUninit ();
-    }
 
+/*    
+ * Here a check is made to see if ETH HSS services co-exist if so then
+ * un initialization is not done for packetized images
+ */    
+    if (ixHssAccServiceType != IX_HSSACC_CHANNELIZED) 
+    {
+
+    
+       if (IX_SUCCESS == status)
+       {
+          /* uninitialise the PktRx module */
+          status = ixHssAccPktRxUninit ();
+       }
+    
+       if (IX_SUCCESS == status)
+       {
+          /* uninitialise the PktTx module */
+          status = ixHssAccPktTxUninit ();
+       }
+
+    }
+   
     if (ixHssAccQmqsConfigured)
     {
         ixHssAccQmqsConfigured = FALSE;
     }
 
+
+/*
+ * Here we are destroying the common mutex that is used
+ * Ethernet HssAcc services co existence
+ */ 
+   if (TRUE == ixEthHssAccCoexistEnable )
+   {
+        if ( TRUE == ixEthHssComMutexInitDone )
+        {
+            status = ixOsalMutexDestroy (&ixEthHssCoexistLock);
+            if (IX_SUCCESS == status )
+            {   /*uninitialisation complete */
+                ixEthHssComMutexInitDone = FALSE;
+            }
+        }
+   }
+    
     if (IX_SUCCESS != status)
     {
         IX_HSSACC_REPORT_ERROR ("ixHssAccUninit: failed to uninit\n");
     }
-
+    
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT,
               "Exiting ixHssAccUninit\n");
     return status;
@@ -470,7 +605,16 @@ ixHssAccPktPortConnect (IxHssAccHssPort hssPortId,
     IX_STATUS status = IX_SUCCESS;
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering IxHssAccPktPortConnect\n");
-    
+   
+
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
+ 
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)) ||
 	(blockSizeInWords > IX_HSSACC_PKT_MAX_TX_RX_BLOCK_SIZEW) ||
@@ -515,7 +659,15 @@ ixHssAccPktPortEnable (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId)
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccPktPortEnable\n");
     
-    
+   
+    /* check for Ethernet HssAcc co-exist images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+       /* report the error */
+       IX_HSSACC_REPORT_ERROR ("This image does'nt support packetized services\nn");
+        return IX_FAIL; 
+    }
+ 
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
     {
@@ -546,6 +698,14 @@ ixHssAccPktPortDisable (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId)
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccPktPortDisable \n");
 
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
+    
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
     {
@@ -574,6 +734,13 @@ ixHssAccPktPortDisconnect (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortI
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering IxHssAccPktPortDisconnect \n");
     
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
     
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
@@ -602,6 +769,13 @@ ixHssAccPktPortIsDisconnectComplete (IxHssAccHssPort hssPortId,
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering ixHssAccPktPortIsDisconnectComplete\n");
     
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
     
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
@@ -631,6 +805,14 @@ ixHssAccPktPortRxFreeReplenish (IxHssAccHssPort hssPortId,
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering IxHssAccPktPortRxFreeReplenish \n");
     
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
+   
     if (IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax) ||
 	IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX) ||
 	(buffer == NULL) ||
@@ -665,6 +847,13 @@ ixHssAccPktPortTx (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId,
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, 
 		      "Entering IxHssAccPktPortTx \n");
     
+    /* check for Ethernet HssAcc co-exist channelized images */
+    if ( ixHssAccServiceType == IX_HSSACC_CHANNELIZED )
+    {
+        /* report the error */
+        IX_HSSACC_REPORT_ERROR ("This image does not support packetized servicer\n");
+        return IX_FAIL; 
+    }
     
     if ((IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) ||
 	(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)) ||
@@ -1007,7 +1196,6 @@ void ixHssAccShow (void)
     ixHssAccComShow ();
     ixHssAccChanRxShow ();
     ixHssAccCCMShow ();
-    ixHssAccPDMShow ();
     ixHssAccPCMShow ();
     ixHssAccPktTxShow ();
     ixHssAccPktRxShow ();
@@ -1020,8 +1208,6 @@ void ixHssAccShow (void)
  */
 void ixHssAccStatsInit (void)
 {
-    IxHssAccHdlcPort hdlcPortIndex;
-    IxHssAccHssPort hssPortIndex;
 
     ixHssAccComStatsInit ();
     ixHssAccChanRxStatsInit ();
@@ -1029,15 +1215,5 @@ void ixHssAccStatsInit (void)
     ixHssAccPCMStatsInit ();
     ixHssAccPktTxStatsInit ();
     ixHssAccPktRxStatsInit ();
-    
-    for (hssPortIndex = IX_HSSACC_HSS_PORT_0; 
-	 hssPortIndex < hssPortMax; 
-	 hssPortIndex++)
-    {  
-	for (hdlcPortIndex = 0; hdlcPortIndex < IX_HSSACC_HDLC_PORT_MAX;
-	     hdlcPortIndex++)
-	{
-	    ixHssAccPDMStatsInit (hssPortIndex, hdlcPortIndex);
-	}
-    }
+
 }

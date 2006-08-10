@@ -9,7 +9,7 @@
  *	  builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,7 +50,7 @@
  */
 
 #ifdef __linux
-#ifdef __ixp46X
+#if defined (__ixp46X)
 
 /* include files */
 
@@ -63,14 +63,13 @@ BOOL multiBit = FALSE;
 BOOL injectNow = FALSE;
 
 EXPORT_SYMBOL (ixParityENAccCodeletMain);
-#include <linux/moduleparam.h>
 
-module_param(multiBit, int, 0);
+MODULE_PARM(multiBit, "i");
 MODULE_PARM_DESC(multiBit, "ECC error type\n"
 		"\tFALSE - single bit ECC\n"
 		"\tTRUE - multi bit ECC\n");
 
-module_param(injectNow, int, 0);
+MODULE_PARM(injectNow, "i");
 MODULE_PARM_DESC(injectNow, "When to inject ECC error\n"
 		"\tFALSE - inject ECC error later\n"
 		"\tTRUE - inject ECC error now\n");
@@ -90,7 +89,7 @@ static void __exit parityENAccCodeletExitModule (void)
 module_init (parityENAccCodeletInitModule);
 module_exit (parityENAccCodeletExitModule);
 
-#endif  /* __ixp46X */
+#endif /* __ixp46X */
 #endif	/* end of #ifdef __linux */
 
 

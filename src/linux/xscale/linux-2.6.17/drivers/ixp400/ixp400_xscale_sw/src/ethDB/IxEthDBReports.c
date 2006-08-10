@@ -4,7 +4,7 @@
  * @brief Implementation of the public API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,6 +49,7 @@
 extern HashTable dbHashtable;
 IX_ETH_DB_PRIVATE void ixEthDBPortInfoShow(IxEthDBPortId portID, IxEthDBRecordType recordFilter);
 IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBHeaderShow(IxEthDBRecordType recordFilter);
+IX_ETH_DB_PRIVATE void ixEthDBRecordShow(MacDescriptor *descriptor, IxEthDBRecordType recordFilter);
 IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBDependencyPortMapShow(IxEthDBPortId portID, IxEthDBPortMap map);
 
 /**

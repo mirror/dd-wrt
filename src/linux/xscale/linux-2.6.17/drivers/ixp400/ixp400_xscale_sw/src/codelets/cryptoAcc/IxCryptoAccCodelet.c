@@ -11,7 +11,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -243,7 +243,7 @@ UINT8 ixCryptoAccCodeletPkeService[][IX_CRYPTOACC_CODELET_MAX_STR_SIZE]={
     "PKE EAU big number multiplication"
 };
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
 
 /** Random IV value and IV should remain constant on both
@@ -560,7 +560,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_DES_KEY_64,
         IX_CRYPTO_ACC_DES_BLOCK_64,
         0,                              /* IV is ignored in ECB mode */
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -576,7 +576,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_DES_KEY_64,
         IX_CRYPTO_ACC_DES_BLOCK_64,
         IX_CRYPTO_ACC_DES_IV_64,
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -625,7 +625,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_3DES_KEY_192,
         IX_CRYPTO_ACC_DES_BLOCK_64,
         0,                              /* IV is ignored in ECB mode */
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -641,7 +641,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_3DES_KEY_192,
         IX_CRYPTO_ACC_DES_BLOCK_64,
         IX_CRYPTO_ACC_DES_IV_64,
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -706,7 +706,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_AES_KEY_128,
         IX_CRYPTO_ACC_AES_BLOCK_128,
         0,                              /* IV is ignored in ECB mode */
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -722,7 +722,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_AES_KEY_128,
         IX_CRYPTO_ACC_AES_BLOCK_128,
         IX_CRYPTO_ACC_AES_CBC_IV_128,
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -738,7 +738,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
         IX_CRYPTO_ACC_AES_KEY_128,
         IX_CRYPTO_ACC_AES_BLOCK_128,
         IX_CRYPTO_ACC_AES_CTR_IV_128,
-        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is MD5 */
+        IX_CRYPTO_ACC_AUTH_SHA1,        /* Authentication algorithm is SHA1 */
         IX_CRYPTO_ACC_SHA1_KEY_160,     /* Authentication Key size */
         IX_CRYPTO_ACC_SHA1_DIGEST_160,  /* Digest length size */
         0,                              /* aad length is ignored */
@@ -810,7 +810,7 @@ IxCryptoCodeletServiceParam ixCryptoAccCodeletService[]={
 #define IX_CRYPTOACC_CODELET_PKE_START_INDEX \
             (IX_CRYPTOACC_CODELET_MAX_SRV_INDEX + 1)
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
 /**
  * @fn ixCryptoAccCodeletBufIsQEmpty (void)
@@ -1039,7 +1039,7 @@ PRIVATE IX_STATUS ixCryptoAccCodeletDispatcherStart (BOOL useInterrupt)
 {
     IxOsalThread dispatchtid;
     IxOsalThreadAttr threadAttr;
-    INT8 *pThreadName = "QMgr Dispatcher";
+    UINT8 *pThreadName = "QMgr Dispatcher";
 
     /* Get QMgr dispatcher function pointer */
     ixQMgrDispatcherLoopGet (&ixCryptoAccCodeletDispatcherFunc);
@@ -1642,19 +1642,7 @@ PRIVATE IX_STATUS ixCryptoAccCodeletInit (IxCryptoAccCfg ixCryptoAccCodeletCfg)
         printf ("Error starting queue manager dispatcher!\n");
         return IX_FAIL;
     }
-    
-    /* Alloc Mbufs pool (extra buffer is allocated for digest by default) */
-    if (IX_SUCCESS != 
-        ixCryptoAccCodeletCryptoMemPoolInit (
-            packetLength + IX_CRYPTOACC_CODELET_DIGEST_LEN))
-    {
-        ixCryptoAccCodeletDispatcherStop(IX_CRYPTOACC_CODELET_QMGR_DISPATCHER_MODE);
-        ixCryptoAccUninit();
-        ixQMgrUnload();
-        printf ("Mbuf pool init failed\n");
-        return IX_FAIL;
-    }
-    
+
     /* set flag to TRUE to indicate codelet has been initialised successfully */
     ixCryptoAccCodeletInitialised = TRUE;
     printf ("\nIxCryptoAcc Codelet Initialization complete!\n\n");
@@ -1676,9 +1664,13 @@ PRIVATE IX_STATUS ixCryptoAccCodeletUninit (void)
         return IX_FAIL;
     }
 
-    /* Free resources */
-    ixCryptoAccCodeletCryptoMemPoolFree(
-        packetLength + IX_CRYPTOACC_CODELET_DIGEST_LEN);
+    /* PKE does not need to free this resource */
+    if (IX_CRYPTOACC_CODELET_PKE_START_INDEX > (UINT32)(codeletSrvIndex+1))
+    {
+        /* Free resources */
+        ixCryptoAccCodeletCryptoMemPoolFree(
+            packetLength + IX_CRYPTOACC_CODELET_DIGEST_LEN);
+    }
     
     /* Stop qmgr dispatcher */
     if ( IX_SUCCESS != ixCryptoAccCodeletDispatcherStop 
@@ -2037,6 +2029,7 @@ IX_STATUS ixCryptoAccCodeletMain (
     /* Initialize codeletPerformError flag */
     codeletPerformError = FALSE;
     
+    codeletSrvIndex = srvIndex - 1;
     /* Cryptographic operations */
     if (IX_CRYPTOACC_CODELET_PKE_START_INDEX > (UINT32)srvIndex)
     {
@@ -2052,7 +2045,6 @@ IX_STATUS ixCryptoAccCodeletMain (
         }  
         else
         {
-            codeletSrvIndex = srvIndex - 1;
             if (IX_SUCCESS != ixCryptoAccCodeletPerformMain (dataBLenOrOprWLen))
             {
                 printf ("ixCryptoAccCodeletPerformMain failed!\n");
@@ -2072,7 +2064,7 @@ IX_STATUS ixCryptoAccCodeletMain (
         }
 
     } /* end of if (IX_CRYPTOACC_CODELET_PKE_START_INDEX > srvIndex) */
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
     /* Uninitialize the codelet */
     if (IX_SUCCESS != ixCryptoAccCodeletUninit())
@@ -2701,7 +2693,7 @@ ixCryptoAccCodeletPkeEauPerformCB (
     } /* end of if (IX_CRYPTO_ACC_STATUS_SUCCESS == status) */
 } /* end of ixCryptoAccCodeletPkeEauPerformCB() function */
 
-#endif /* __ixp46X */
+#endif /* ixp46X */
 
 /**
  * @fn ixCryptoAccCodeletPerformMain (UINT32 packetLen)
@@ -2732,7 +2724,19 @@ PRIVATE IX_STATUS ixCryptoAccCodeletPerformMain (UINT32 packetLen)
     
     /* Precompute the rate ratio used performance calculation */
     rateRatio = (bufferSize * BITS_IN_BYTE * IX_CRYPTOACC_CODELET_BATCH_LEN);
-   
+
+    /* Alloc Mbufs pool (extra buffer is allocated for digest by default) */
+    if (IX_SUCCESS != 
+        ixCryptoAccCodeletCryptoMemPoolInit (
+            packetLength + IX_CRYPTOACC_CODELET_DIGEST_LEN))
+    {
+        ixCryptoAccCodeletDispatcherStop(IX_CRYPTOACC_CODELET_QMGR_DISPATCHER_MODE);
+        ixCryptoAccUninit();
+        ixQMgrUnload();
+        printf ("Mbuf pool init failed\n");
+        return IX_FAIL;
+    }
+       
     /* Registration */
     if (IX_SUCCESS != ixCryptoAccCodeletRegisterCtx(
         codeletSrvIndex,
@@ -2931,7 +2935,7 @@ PRIVATE void ixCryptoAccCodeletUsageShow (void)
             printf ("%4d : %s\n", i+1,
                 ixCryptoAccCodeletPkeService[i-IX_CRYPTOACC_CODELET_PKE_START_INDEX+1]);
         }
-#endif  /* __ixp46X */
+#endif  /* ixp46X */
     }
     
     printf ("\n\n");

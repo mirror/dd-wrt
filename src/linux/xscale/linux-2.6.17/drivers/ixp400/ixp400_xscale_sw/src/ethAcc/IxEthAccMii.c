@@ -8,7 +8,7 @@
  *
  * Design Notes:
  *
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -168,10 +168,9 @@ ixEthAccMiiInit()
 	return IX_ETH_ACC_FAIL;
     }
 
-    /* Use one MAC coprocessor for MII since any MAC can access all PHYs.
-     * Check which NPE MAC coprocessor is available starting with NPEB. 
-     * If NPEB is unavailable, check NPEC, then NPEA. 
-     * If none of the three work, return failure.
+    /* Use NPE-B MAC coprocessor for MII since all IXP4XX product line
+     * only has this MAC coprocessor to communicate with PHY through
+     * MDIO interface.
      */
     miiBaseAddressVirt = (UINT32) IX_OSAL_MEM_MAP(IX_ETH_ACC_MAC_0_BASE, IX_OSAL_IXP400_ETH_MAC_B0_MAP_SIZE);
     

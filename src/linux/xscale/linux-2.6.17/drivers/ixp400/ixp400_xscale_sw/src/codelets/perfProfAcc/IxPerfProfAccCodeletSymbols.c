@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -74,19 +74,17 @@ UINT32 param6;
 UINT32 param7;
 UINT32 param8;
 UINT32 param9;
-#include <linux/moduleparam.h>
-module_param(mode, int, 0);
-module_param(param1, int, 0);
-module_param(param2, int, 0);
-module_param(param3, int, 0);
-module_param(param4, int, 0);
-module_param(param5, int, 0);
-module_param(param6, int, 0);
-module_param(param7, int, 0);
-module_param(param8, int, 0);
-module_param(param9, int, 0);
 
-
+MODULE_PARM(mode, "i");
+MODULE_PARM(param1, "i");
+MODULE_PARM(param2, "i");
+MODULE_PARM(param3, "i");
+MODULE_PARM(param4, "i");
+MODULE_PARM(param5, "i");
+MODULE_PARM(param6, "i");
+MODULE_PARM(param7, "i");
+MODULE_PARM(param8, "i");
+MODULE_PARM(param9, "i");
 
 static int __init PerfProfAccInitModule(void)
 {

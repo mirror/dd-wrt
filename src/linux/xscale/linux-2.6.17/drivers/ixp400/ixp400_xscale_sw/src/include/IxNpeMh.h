@@ -3,12 +3,12 @@
  *
  * @date 14 Dec 2001
  *
- * @brief This file contains the public API for the IXP400 NPE Message
+ * @brief This file contains the public API for the IXP NPE Message
  * Handler component.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,9 +49,9 @@
 */
 
 /**
- * @defgroup IxNpeMh Intel (R) IXP400 Software NPE Message Handler (IxNpeMh) API
+ * @defgroup IxNpeMh Intel (R) IXP Software NPE Message Handler (IxNpeMh) API
  *
- * @brief The public API for the IXP400 NPE Message Handler component.
+ * @brief The public API for the IXP NPE Message Handler component.
  * 
  * @{
  */
@@ -84,21 +84,28 @@
  * @enum IxNpeMhNpeId
  *
  * @brief The ID of a particular NPE.
- * @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line :<br> 
+ */
+#if defined(__ixp42X) || defined(__ixp46X)
+/* @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line :<br> 
  *      - NPE-A has HDLC, HSS, AAL and UTOPIA Coprocessors.<br> 
  *      - NPE-B has Ethernet Coprocessor.<br>
  *      - NPE-C has Ethernet, AES, DES and HASH Coprocessors.<br>
  *      - Intel (R) IXP4XX Product Line of Network Processors 
- *        have different combinations of coprocessors. 
+ *        have different combinations of coprocessors.
  */
+#endif /* __ixp42X */
+ 
 
 typedef enum
 {
-    IX_NPEMH_NPEID_NPEA = 0, /**< ID for NPE-A */
-    IX_NPEMH_NPEID_NPEB,     /**< ID for NPE-B */
-    IX_NPEMH_NPEID_NPEC,     /**< ID for NPE-C */
-    IX_NPEMH_NUM_NPES        /**< Number of NPEs */
+  IX_NPEMH_NPEID_NPEA = 0,    /**< Identifies NPE A */
+  IX_NPEMH_NPEID_NPEB,        /**< Identifies NPE B */
+#if defined(__ixp42X) || defined(__ixp46X)
+  IX_NPEMH_NPEID_NPEC,        /**< Identifies NPE C */
+#endif /* defined(__ixp42X) || defined(__ixp46X) && !defined(__ixp5XX) */
+  IX_NPEMH_NUM_NPES           /**< Number of NPEs */
 } IxNpeMhNpeId;
+
 
 /**
  * @enum IxNpeMhNpeInterrupts
@@ -492,6 +499,24 @@ PUBLIC IX_STATUS ixNpeMhShow (
 
 PUBLIC IX_STATUS ixNpeMhShowReset (
     IxNpeMhNpeId npeId);
+    
+/**
+ * @ingroup IxNpeMh
+ *
+ * @fn IX_STATUS ixNpeMhConfigStateRestore(IxNpeMhNpeId npeId)
+ *
+ * @brief This function will restore the Interrupt Configuration setting.
+ * @note This API restores the Interrupt Enabling configuration for the
+ * OUTFIFO of the NPE used if the ixNPEMH is set to an interrupt mode during
+ * intialization. This API must be called once the NPE is reset which may
+ * occur during an NPE error.
+ * @li   Re-entrant   : No
+ * @li   ISR Callable : Yes
+ * @param npeId @ref IxNpeMhNpeId [in] - The ID of the NPE to restore
+ *  the configuration
+ * @return The fucntion returns a status indicating success or failure.
+ */
+IX_STATUS ixNpeMhConfigStateRestore(IxNpeMhNpeId npeId);
 
 #endif /* IXNPEMH_H */
 

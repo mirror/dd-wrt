@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -120,6 +120,27 @@ typedef enum
 #define IX_NPEDL_ERROR_REPORT(STR) printf ("IxNpeDl ERROR: %s\n", (STR));
 
 /**
+ * @def IX_NPEDL_ERROR_REPORT1
+ *
+ * @brief Mechanism for reporting IxNpeDl software errors
+ *
+ * @param char* [in] STR1 - Error string 1 to report
+ * @param char* [in] STR2 - Error string 2 to report
+ *
+ * This macro simply prints the error strings passed.
+ * Intended for use with IxNpeDl unit test code.
+ *
+ * @return none
+ */
+#define IX_NPEDL_ERROR_REPORT1(STR1, STR2) \
+{ \
+    printf ("IxNpeDl ERROR: "); \
+    printf (STR1); \
+    printf (STR2); \
+    printf ("\n"); \
+}
+
+/**
  * @def IX_NPEDL_WARNING_REPORT
  *
  * @brief Mechanism for reporting IxNpeDl software errors
@@ -132,6 +153,27 @@ typedef enum
  * @return none
  */
 #define IX_NPEDL_WARNING_REPORT(STR) printf ("IxNpeDl WARNING: %s\n", (STR));
+
+/**
+ * @def IX_NPEDL_WARNING_REPORT1
+ *
+ * @brief Mechanism for reporting IxNpeDl software warnings
+ *
+ * @param char* [in] STR1 - Warning string 1 to report
+ * @param char* [in] STR2 - Warning string 2 to report 
+ *
+ * This macro simply prints the warning strings passed.
+ * Intended for use with IxNpeDl unit test code.
+ *
+ * @return none
+ */
+#define IX_NPEDL_WARNING_REPORT1(STR1, STR2) \
+{ \
+    printf ("IxNpeDl WARNING: "); \
+    printf (STR1); \
+    printf (STR2); \
+    printf ("\n"); \
+}
 
 /**
  * @def IX_NPEDL_TRACE0
@@ -271,6 +313,24 @@ typedef enum
  */
 #define IX_NPEDL_ERROR_REPORT(STR) \
     ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, STR, 0, 0, 0, 0, 0, 0);
+    
+/**
+ * @def IX_NPEDL_ERROR_REPORT1
+ *
+ * @brief Mechanism for reporting IxNpeDl software errors
+ *
+ * @param char* [in] STR1 - Error string 1 to report
+ * @param char* [in] STR1 - Error string 2 to report
+ *
+ * This macro is used to report IxNpeDl software errors.
+ *
+ * @return none
+ */
+#define IX_NPEDL_ERROR_REPORT1(STR1, STR2) \
+{ \
+    ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, STR1, 0, 0, 0, 0, 0, 0); \
+    ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDERR, STR2, 0, 0, 0, 0, 0, 0); \
+}
 
 /**
  * @def IX_NPEDL_WARNING_REPORT
@@ -285,7 +345,24 @@ typedef enum
  */
 #define IX_NPEDL_WARNING_REPORT(STR) \
     ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT, STR, 0, 0, 0, 0, 0, 0);
-
+    
+/**
+ * @def IX_NPEDL_WARNING_REPORT1
+ *
+ * @brief Mechanism for reporting IxNpeDl software warnings
+ *
+ * @param char* [in] STR1 - Warning string 1 to report
+ * @param char* [in] STR2 - Warning string 2 to report
+ *
+ * This macro is used to report IxNpeDl software warnings.
+ *
+ * @return none
+ */
+#define IX_NPEDL_WARNING_REPORT1(STR1, STR2) \
+{ \
+    ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT, STR1, 0, 0, 0, 0, 0, 0); \
+    ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT, STR2, 0, 0, 0, 0, 0, 0); \
+}
 
 /**
  * @def IX_NPEDL_TRACE0

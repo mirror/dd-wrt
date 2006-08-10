@@ -6,7 +6,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -103,7 +103,7 @@
  *        a multiple of 32 as required by implementation logic.
  * @note  This can safely be increased if more pools are required.
  */
-#define IX_OSAL_MBUF_MAX_POOLS      32
+#define IX_OSAL_MBUF_MAX_POOLS      32 
 
 /**
  * @ingroup IxOsalBufferMgt
@@ -139,12 +139,12 @@ struct __IX_MBUF
     struct __IXP_BUF *ix_nextPacket;
     UINT8 *ix_data;
     UINT32 ix_len;  
-    unsigned char ix_type;
-    unsigned char ix_flags;
-    unsigned short ix_reserved;
+    UINT8  ix_type;
+    UINT8  ix_flags;
+    UINT16 ix_reserved;
     UINT32 ix_rsvd;
     UINT32 ix_PktLen; 
-    void *ix_priv;     
+    VOID *ix_priv;     
 };
 
 struct __IX_CTRL
@@ -153,20 +153,20 @@ struct __IX_CTRL
     UINT32 ix_signature;          /**< Field to indicate if buffers are allocated by the system */    
     UINT32 ix_allocated_len;      /**< Allocated buffer length */  
     UINT32 ix_allocated_data;     /**< Allocated buffer data pointer */  
-    void *ix_pool;                /**< pointer to the buffer pool */
+    VOID *ix_pool;                /**< pointer to the buffer pool */
     struct __IXP_BUF *ix_chain;   /**< chaining */ 
-    void *ix_osbuf_ptr;           /**< Storage for OS-specific buffer pointer */
+    VOID *ix_osbuf_ptr;           /**< Storage for OS-specific buffer pointer */
 };
 
 #ifdef _DIAB_TOOL
 IX_OSAL_ATTRIBUTE_ALIGN32 struct __IX_NE_SHARED
 {
-    UINT32 reserved[8];   /**< Reserved area for NPE Service-specific usage */
+            UINT32 reserved[8];   /**< Reserved area for NPE Service-specific usage */
 };
 #else
 struct __IX_NE_SHARED
 {
-    UINT32 reserved[8] IX_OSAL_ATTRIBUTE_ALIGN32;   /**< Reserved area for NPE Service-specific usage */
+            UINT32 reserved[8] IX_OSAL_ATTRIBUTE_ALIGN32;   /**< Reserved area for NPE Service-specific usage */
 };
 #endif
 
@@ -370,10 +370,18 @@ typedef IXP_BUF IX_OSAL_MBUF;
  * @return int - the size, rounded up to a multiple of
  *               the cache-line size
  */
+#ifndef __linux_user
+
 #define IX_OSAL_MBUF_POOL_SIZE_ALIGN(size)                 \
     ((((size) + (IX_OSAL_CACHE_LINE_SIZE - 1)) /      \
         IX_OSAL_CACHE_LINE_SIZE) *                  \
             IX_OSAL_CACHE_LINE_SIZE)
+
+#else /* __linux_user */
+
+#define IX_OSAL_MBUF_POOL_SIZE_ALIGN(size)	(size)
+	
+#endif /* __linux_user */
 
 /* Don't use this directly, use macro */
 PUBLIC UINT32 ixOsalBuffPoolMbufAreaSizeGet (UINT32 count);
@@ -441,9 +449,18 @@ PUBLIC UINT32 ixOsalBuffPoolDataAreaSizeGet (UINT32 count, UINT32 size);
  *
  * @return void * - a pointer to the allocated memory area
  */
+#ifndef __linux_user
+
 #define IX_OSAL_MBUF_POOL_MBUF_AREA_ALLOC(count, memAreaSize) \
     IX_OSAL_CACHE_DMA_MALLOC((memAreaSize =                 \
         IX_OSAL_MBUF_POOL_MBUF_AREA_SIZE_ALIGNED(count)))
+
+#else /* __linux_user */
+
+#define IX_OSAL_MBUF_POOL_MBUF_AREA_ALLOC(count, memAreaSize) \
+	IX_OSAL_BUFF_MEM_ALLOC(count * memAreaSize)
+
+#endif /* __linux_user */
 
 /**
  * @ingroup IxOsalBufferMgt
@@ -465,10 +482,18 @@ PUBLIC UINT32 ixOsalBuffPoolDataAreaSizeGet (UINT32 count, UINT32 size);
  *
  * @return void * - a pointer to the allocated memory area
  */
+#ifndef __linux_user
+
 #define IX_OSAL_MBUF_POOL_DATA_AREA_ALLOC(count, size, memAreaSize) \
     IX_OSAL_CACHE_DMA_MALLOC((memAreaSize =                     \
         IX_OSAL_MBUF_POOL_DATA_AREA_SIZE_ALIGNED(count,size)))
 
+#else /* __linux_user */
+
+#define IX_OSAL_MBUF_POOL_DATA_AREA_ALLOC(count, size, memAreaSize) \
+	IX_OSAL_BUFF_MEM_ALLOC(count * size * memAreaSize)
+
+#endif /* __linux_user */
 
 
 /**
@@ -562,6 +587,44 @@ PUBLIC UINT32 ixOsalBuffPoolDataAreaSizeGet (UINT32 count, UINT32 size);
 #define IX_OSAL_MBUF_POOL_UNINIT(m_pool_ptr)  \
         ixOsalBuffPoolUninit(m_pool_ptr)
 
+/*
+ * Added in Phase 2
+ */
+
+/* BUFFER INFO FLUSHING */
+#ifndef __linux_user 
+
+#define IX_OSAL_BUFF_FLUSH_INFO IX_OSAL_CACHE_FLUSH
+
+#else
+
+#define IX_OSAL_BUFF_FLUSH_INFO(ptr,size) 
+
+#endif
+
+/* MEMORY ALLOCATION IN BUFFER MANAGEMENT MODULE */
+#ifndef __linux_user
+
+#define IX_OSAL_BUFF_MEM_ALLOC IX_OSAL_CACHE_DMA_MALLOC
+
+#else
+
+#define IX_OSAL_BUFF_MEM_ALLOC ixOsalMemAlloc
+
+#endif
+
+/* MEMORY FREE IN BUFFER MANAGEMENT MODULE */
+#ifndef __linux_user
+
+#define IX_OSAL_BUFF_MEM_FREE IX_OSAL_CACHE_DMA_FREE
+
+#else 
+
+#define IX_OSAL_BUFF_MEM_FREE ixOsalMemFree
+
+#endif
+
+
 /* 
  * Include OS-specific bufferMgt definitions 
  */
@@ -602,7 +665,7 @@ PUBLIC IX_OSAL_MBUF_POOL *ixOsalPoolInit (UINT32 count,
                       UINT32 size, const char *name);
 
 PUBLIC IX_OSAL_MBUF_POOL *ixOsalNoAllocPoolInit (void *poolBufPtr,
-                         void *poolDataPtr,
+                                                 void *poolDataPtr,
 						 UINT32 count,
 						 UINT32 size,
 						 const char *name);

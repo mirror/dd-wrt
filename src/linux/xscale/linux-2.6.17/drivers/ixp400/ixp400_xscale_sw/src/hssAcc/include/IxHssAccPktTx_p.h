@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -58,9 +58,10 @@
 #include "IxQMgr.h"
 #include "IxHssAcc.h"
 #include "IxOsal.h"
-#include "IxHssAccPDM_p.h"
 #include "IxHssAccPCM_p.h"
 #include "IxHssAccError_p.h"
+
+#include "IxHssAccCommon_p.h"
 
 #ifndef IXHSSACCPKTTX_P_H
 #define IXHSSACCPKTTX_P_H 
@@ -106,7 +107,7 @@ typedef struct
     unsigned qWriteOverflows;
     unsigned txDoneQReadFails;
     unsigned maxEntriesInTxDoneQ;
-    unsigned invalidDescs;
+    unsigned txInvalidBuffers;
 } IxHssAccPktTxStats;
 
 /**
@@ -124,16 +125,25 @@ extern IxHssAccPktTxStats ixHssAccPktTxStats;
 					IX_OSAL_MBUF *buffer)
  *
  * @brief This inline function is the transmit function which is called by the 
- * client. The buffer is attached to a descriptor and placed on the Tx QMQ
+ * client.
  *
  * @param IxHssAccHssPort hssPortId (in) -  The HSS port number on which the
  *  calling client is operating on i.e.(0-1)
  * @param IxHssAccHdlcPort hdlcPortId (in) - The HDLC port number on which 
  * the calling client is operating on i.e. 1, 2, 3 or 4.
  * @param IX_OSAL_MBUF *buffer (in) - This is the client supplied buffer which holds 
- * the data the client wants to transmit, it is attached to the Packetised 
- * Descriptor and placed on the Tx QMQ
+ * the data the client wants to transmit.
  *
+ * The IX_OSAL_BUF buffer is passed to this function. The function first checks if the 
+ * client is connected. Then the relevant fields are copied from the OS dependant 
+ * region to the NPE shared region of IX_OSAL_BUF buffer. Also do endian conversion 
+ * of the NPE shared region. All this is done for all the buffers in the chain.
+ * As the addresses are 32 byte aligned the least significant five bits of the 
+ * IX_OSAL_BUF buffer address will be free. The least significant two bits are set to 
+ * the HDLC port number and the resultant value is posted in the appropriate QMgr Tx
+ * queue. The number of buffers in use count for the client is incremented by the 
+ * chain count.
+ * 
  * @return 
  *         - IX_SUCCESS The function executed successfully
  *         - IX_FAIL The function did not execute successfully
@@ -201,8 +211,7 @@ ixHssAccPktTxInit (void);
 /**
  * @fn IX_STATUS ixHssAccPktTxUninit (void)
  *
- * @brief  This function Uninitialises all resources for all descriptor pools 
- * and descriptors contained in these pools.
+ * @brief  This function Uninitialises all resources for Packetised Tx module.
  *
  * @return 
  *         - IX_SUCCESS The function executed successfully
@@ -223,13 +232,13 @@ IX_STATUS ixHssAccPktTxUninit (void);
  */
 IXHSSACCPKTTX_INLINE
 IX_STATUS 
-ixHssAccPktTxInternal (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId,
-			IX_OSAL_MBUF *buffer)
+ixHssAccPktTxInternal (
+    IxHssAccHssPort hssPortId, 
+    IxHssAccHdlcPort hdlcPortId,
+    IX_OSAL_MBUF *buffer)
 {
-    IxHssAccPDMDescriptor *desc;   /* A desc ptr that we will write the 
-				      clients mbuf to*/
-    IxHssAccPDMDescriptor *physDesc;
-    UINT32 pPhysDesc = 0;
+    UINT32 qEntry = 0;
+    UINT32 chainCount = 0;
     IX_STATUS status = IX_SUCCESS;
 #ifndef NDEBUG
     unsigned packetLength;
@@ -256,95 +265,36 @@ ixHssAccPktTxInternal (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId,
 	    return IX_FAIL;
 	}
 #endif
-	
-	status = ixHssAccPDMDescGet (hssPortId, hdlcPortId, IX_HSSACC_PDM_TX_POOL,
-				     &desc);
-	if (status != IX_SUCCESS)
-	{
-	    return status;
-	}
-	
-	/* Set desc up as required by the NPE */
-	desc->npeDesc.pRootMbuf    = ixHssAccPDMMbufToNpeFormatConvert(buffer);
-	desc->npeDesc.status       = IX_HSSACC_PKT_OK;
-	desc->npeDesc.chainCount   = 0;
-	desc->npeDesc.pMbufData    = (UINT8 *) IX_OSAL_MBUF_MDATA(buffer);
-	desc->npeDesc.mbufLength   = IX_OSAL_MBUF_MLEN(buffer);
-	desc->npeDesc.pNextMbuf    = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(buffer); 
-	desc->npeDesc.errorCount   = 0;
-	/* Before assigning IX_OSAL_MBUF_PKT_LEN to npeDesc.packetLength, 
-	 *  IX_OSAL_MBUF_PKT_LEN needs to be swapped back because it's swapped in 
-	 *  ixHssAccPDMMbufToNpeFormatConvert before. The main reason for
-	 *  this back & forth swapping is because npeDesc.packetLength is
-	 *  UINT16 in size while IX_OSAL_MBUF_PKT_LEN is INT32. Assigning an
-	 *  INT32 data to UINT16 variable will cause the 2 most significant
-	 *  bytes to be chopped off. Hence, if no reverse conversion is
-	 *  performed before assigning the packet length value, the value
-	 *  will be chopped off wrongly. For e.g.:
-	 *    IX_OSAL_MBUF_PKT_LEN (before conversion) 
-	 *        = 0x0000AABB
-	 *    IX_OSAL_MBUF_PKT_LEN (after conversion in 
-	 *                     ixHssAccPDMMbufToNpeFormatConvert) 
-	 *        = 0xBBAA0000
-	 *    npeDesc.packetLength (if no proper conversion before assigning 
-	 *                          IX_OSAL_MBUF_PKT_LEN to npeDesc.packetLength)
-	 *        = 0x0000 (NOT 0xAABB)
-	 *  Note: The above discussion only applies to Little Endian mode
-	 */
-	desc->npeDesc.packetLength = (UINT16)IX_OSAL_SWAP_BE_SHARED_LONG( 
-	    (UINT32) IX_OSAL_MBUF_PKT_LEN(buffer));
+        /* Copy relevant fields from OS dependant region to the NPE shared region */
+        ixHssAccComMbufToNpeFormatConvert (buffer, &chainCount, &qEntry); 
 
-        /* endian conversion for the NpePacket Descriptor */
-	desc->npeDesc.pRootMbuf = (IX_OSAL_MBUF *)IX_OSAL_SWAP_BE_SHARED_LONG(
-	    (UINT32) desc->npeDesc.pRootMbuf);	
-        desc->npeDesc.packetLength = (UINT16)IX_OSAL_READ_BE_SHARED_SHORT(
-	    (UINT16 *) &(desc->npeDesc.packetLength));
-	
-	IX_HSSACC_PKT_DATA_CACHE_FLUSH (desc, sizeof(IxHssAccPDMDescriptor));
-	physDesc = (IxHssAccPDMDescriptor *) IX_HSSACC_PKT_MMU_VIRT_TO_PHY (desc);
-	/* Write the desc to the Tx Q for this client */
-        pPhysDesc = (UINT32) physDesc;
-	status = ixQMgrQWrite (ixHssAccPCMTxQIdGet (hssPortId, hdlcPortId), 
-			       &pPhysDesc);
-	if (status != IX_SUCCESS)
-	{
-	    if (status == IX_FAIL)
-	    {
-		IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxInternal:Writing "
-					"a Tx descriptor "
-					"to the Tx Queue failed\n");
-		ixHssAccPktTxStats.qWriteFails++;
-	    }
-	    else if (status == IX_QMGR_Q_OVERFLOW)
-	    {
-		ixHssAccPktTxStats.qWriteOverflows++;
-		status = IX_HSSACC_Q_WRITE_OVERFLOW;
-	    }
+        /* Set the least significant 2 bits of the queue entry to the HDLC port number. */
+        qEntry |= (hdlcPortId & IX_HSSACC_QM_Q_CHAN_NUM_MASK);
 
-            /* endian conversion for the NpePacket Descriptor */
-	    desc->npeDesc.pRootMbuf = (IX_OSAL_MBUF *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-	        (UINT32)desc->npeDesc.pRootMbuf));
-	    desc->npeDesc.packetLength = (UINT16)(IX_OSAL_READ_BE_SHARED_SHORT (
-          	(UINT16 *) &(desc->npeDesc.packetLength)));
-	    desc->npeDesc.rsvdShort0 = (UINT16)(IX_OSAL_READ_BE_SHARED_SHORT (
-	       	(UINT16 *) &(desc->npeDesc.rsvdShort0)));	
-	    desc->npeDesc.pNextMbuf = (IX_OSAL_MBUF *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-		(UINT32) desc->npeDesc.pNextMbuf)); 
-	    desc->npeDesc.pMbufData = (UINT8 *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-		(UINT32) desc->npeDesc.pMbufData)); 
-	    desc->npeDesc.mbufLength = IX_OSAL_SWAP_BE_SHARED_LONG (
-	        desc->npeDesc.mbufLength); 
+        /* Write the queue entry to the Tx Q for this client */
+        status = ixQMgrQWrite (ixHssAccPCMTxQIdGet (hssPortId, hdlcPortId),
+                               &qEntry);
+        if (status != IX_SUCCESS)
+        {
+            if (status == IX_FAIL)
+            {
+                IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxInternal:Writing "
+                                        "a queue entry "
+                                        "to the Tx Queue failed\n");
+                ixHssAccPktTxStats.qWriteFails++;
+            }
+            else if (status == IX_QMGR_Q_OVERFLOW)
+            {
+                ixHssAccPktTxStats.qWriteOverflows++;
+                status = IX_HSSACC_Q_WRITE_OVERFLOW;
+            }
+            
+            /* Return the status */
+            return status;
+        } /* end of if (status != IX_SUCCESS) */
 
-	    /* we need to restore the buffer to the original (virtual) address
-	     * before we return
-	     */
-	    ixHssAccPDMMbufFromNpeFormatConvert(desc->npeDesc.pRootMbuf, FALSE);
-	    
-	    /* Now we can free the descriptor back to the pool. */
-	    ixHssAccPDMDescFree (desc, IX_HSSACC_PDM_TX_POOL);
-
-	    return status;
-	}
+        /* Increment the number of buffers in use count for the specified hss and hdlc port combination */
+        ixHssAccPCMnoBuffersInUseCountInc (hssPortId, hdlcPortId, chainCount);
     }
     else 
     {
@@ -353,6 +303,7 @@ ixHssAccPktTxInternal (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId,
 	return IX_FAIL;
     }
 
+    /* Update the statistics and return the status */
     ixHssAccPktTxStats.txs++;
     IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, "Exiting "
 		      "ixHssAccPktTxInternal\n");

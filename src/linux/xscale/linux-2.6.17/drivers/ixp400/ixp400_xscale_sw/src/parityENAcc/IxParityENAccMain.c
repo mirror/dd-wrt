@@ -8,7 +8,7 @@
  * Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 /*
  * System include files
@@ -68,7 +68,6 @@
 #include "IxParityENAccIcE.h"
 #include "IxParityENAccPmuE.h"
 #include "IxFeatureCtrl.h"
-
 
 /*
  * Variable declarations global to the Main sub-module
@@ -472,6 +471,54 @@ ixParityENAccCallbackRegister (IxParityENAccCallback parityErrNfyCallback)
     return IX_PARITYENACC_SUCCESS;
 } /* end of ixParityENAccCallbackRegister() function */
 
+
+PUBLIC IxParityENAccStatus ixParityENAccParityNPEConfigReUpdate(UINT32 npeID)
+{
+	  UINT32 npeFuseBit;
+	  IxParityENAccNpePEConfigOption ixNpePDCfg;
+	  static UINT32 npeIDToFuseBitMapTable[]=
+	  {
+	  	IXP400_PARITYENACC_FUSED_MODULE_NPEA,
+	  	IXP400_PARITYENACC_FUSED_MODULE_NPEB,
+	  	IXP400_PARITYENACC_FUSED_MODULE_NPEC
+	  };  
+    IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeID);
+	  /* Not initialised before? */
+    if (FALSE == ixParityENAccInitStatus)
+    {
+        return IX_PARITYENACC_NOT_INITIALISED;
+    } /* end of if */
+    npeFuseBit = npeIDToFuseBitMapTable[npeID];
+    
+    switch(npeID)
+    {
+    	case IXP400_PARITYENACC_PE_NPE_A:
+    	    ixNpePDCfg.ideEnabled    = ixParityENAccParityConfigStatus.npeAConfig.ideEnabled;
+          ixNpePDCfg.parityOddEven = ixParityENAccParityConfigStatus.npeAConfig.parityOddEven;
+          break;
+          
+    case IXP400_PARITYENACC_PE_NPE_B:
+    	    ixNpePDCfg.ideEnabled    = ixParityENAccParityConfigStatus.npeBConfig.ideEnabled;
+          ixNpePDCfg.parityOddEven = ixParityENAccParityConfigStatus.npeBConfig.parityOddEven;
+          break;
+    
+    case IXP400_PARITYENACC_PE_NPE_C:
+    	    ixNpePDCfg.ideEnabled    = ixParityENAccParityConfigStatus.npeCConfig.ideEnabled;
+          ixNpePDCfg.parityOddEven = ixParityENAccParityConfigStatus.npeCConfig.parityOddEven;
+          break;
+     
+     default:
+       break;
+    }
+                    
+    if (FALSE == IXP400_PARITYENACC_VAL_BIT_CHECK(ixParityENAccFusedModules,
+                     npeFuseBit) )
+    {
+       return ixParityENAccNpePEDetectionConfigure(
+                              npeID,ixNpePDCfg);
+    }
+    return IX_PARITYENACC_OPERATION_FAILED;
+}
 
 PUBLIC IxParityENAccStatus
 ixParityENAccParityDetectionConfigure (
@@ -1655,5 +1702,176 @@ ixParityENAccStatsReset (void)
 
     return IX_PARITYENACC_SUCCESS;
 } /* end of ixParityENAccStatsReset() function */
+
+PUBLIC IxParityENAccStatus
+ixParityENAccNPEParityErrorCheck(UINT32 npeID,
+    IxParityENAccParityErrorContextMessage * const pecMessage)
+{
+    /* Local Variables */
+    IxParityENAccIcParityInterruptStatus ixIcParityInterruptStatus =
+    { FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE };
+    IxParityENAccNpePEParityErrorContext  ixNpePECMsg;
+    
+    /* Not initialised before? */
+    if (FALSE == ixParityENAccInitStatus)
+    {
+        return IX_PARITYENACC_NOT_INITIALISED;
+    } /* end of if */
+
+    if ((IxParityENAccParityErrorContextMessage *) NULL == pecMessage)
+    {
+        return IX_PARITYENACC_INVALID_PARAMETERS;
+    } /* end of if */
+
+    IX400_PARITYENACC_CHECK_NPEID_VALIDITY(npeID);
+
+    /* Get the pending parity interrupts status */
+    if (IX_SUCCESS != ixParityENAccIcInterruptStatusGet(
+                          &ixIcParityInterruptStatus))
+    {
+        return IX_PARITYENACC_OPERATION_FAILED;
+    } /* end of if */
+
+     
+    if (npeID==0&& TRUE == ixIcParityInterruptStatus.npeAParityInterrupt)
+    {
+        if (IX_SUCCESS != ixParityENAccNpePEParityErrorContextFetch (
+                              IXP400_PARITYENACC_PE_NPE_A, &ixNpePECMsg))
+        {
+            return IX_PARITYENACC_OPERATION_FAILED;
+        } /* end of if */
+        
+        pecMessage->pecParitySource = 
+            (IXP400_PARITYENACC_PE_NPE_IMEM == ixNpePECMsg.npeParitySource) ?
+                IX_PARITYENACC_NPE_A_IMEM :
+                (IXP400_PARITYENACC_PE_NPE_DMEM  == ixNpePECMsg.npeParitySource) ?
+                     IX_PARITYENACC_NPE_A_DMEM : IX_PARITYENACC_NPE_A_EXT;
+
+        pecMessage->pecAccessType = ixNpePECMsg.npeAccessType;
+
+        /* Increment statistics */
+        switch (pecMessage->pecParitySource)
+        {
+            case IX_PARITYENACC_NPE_A_IMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsIMem++;
+                break;
+            } /* end of case NPE - A IMEM */
+            case IX_PARITYENACC_NPE_A_DMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsDMem++;
+                break;
+            } /* end of case NPE - A DMEM */
+            case IX_PARITYENACC_NPE_A_EXT:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsExternal++;
+                break;
+            } /* end of case NPE - A EXT */
+            default:
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, 
+                    "ixParityENAccParityErrorContextGet(): "
+                    "Invalid Parity Source: %0x\n", pecMessage->pecParitySource, 0,0,0,0,0);
+                return IX_PARITYENACC_OPERATION_FAILED;
+          } /* end of case default */
+        } /* end of switch */
+
+        return IX_PARITYENACC_SUCCESS;
+    } /* end of if (TRUE == ixIcParityInterruptStatus.npeAParityInterrupt) */
+
+    if (npeID==1 && TRUE == ixIcParityInterruptStatus.npeBParityInterrupt)
+    {
+        if (IX_SUCCESS != ixParityENAccNpePEParityErrorContextFetch (
+                              IXP400_PARITYENACC_PE_NPE_B, &ixNpePECMsg))
+        {
+            return IX_PARITYENACC_OPERATION_FAILED;
+        } /* end of if */
+
+        pecMessage->pecParitySource = 
+            (IXP400_PARITYENACC_PE_NPE_IMEM == ixNpePECMsg.npeParitySource) ?
+                IX_PARITYENACC_NPE_B_IMEM :
+                (IXP400_PARITYENACC_PE_NPE_DMEM  == ixNpePECMsg.npeParitySource) ?
+                     IX_PARITYENACC_NPE_B_DMEM : IX_PARITYENACC_NPE_B_EXT;
+
+        pecMessage->pecAccessType = ixNpePECMsg.npeAccessType;
+
+        /* Increment statistics */
+        switch (pecMessage->pecParitySource)
+        {
+            case IX_PARITYENACC_NPE_B_IMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsIMem++;
+                break;
+            } /* end of case NPE - B IMEM */
+            case IX_PARITYENACC_NPE_B_DMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsDMem++;
+                break;
+            } /* end of case NPE - B DMEM */
+            case IX_PARITYENACC_NPE_B_EXT:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsExternal++;
+                break;
+            } /* end of case NPE - B EXT */
+            default:
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, 
+                    "ixParityENAccParityErrorContextGet(): "
+                    "Invalid Parity Source: %0x\n", pecMessage->pecParitySource, 0,0,0,0,0);
+                return IX_PARITYENACC_OPERATION_FAILED;
+          } /* end of case default */
+        } /* end of switch */
+
+        return IX_PARITYENACC_SUCCESS;
+    } /* end of if (TRUE == ixIcParityInterruptStatus.npeBParityInterrupt) */
+
+    if (npeID==2 && TRUE == ixIcParityInterruptStatus.npeCParityInterrupt)
+    {
+        if (IX_SUCCESS != ixParityENAccNpePEParityErrorContextFetch (
+                              IXP400_PARITYENACC_PE_NPE_C, &ixNpePECMsg))
+        {
+            return IX_PARITYENACC_OPERATION_FAILED;
+        } /* end of if */
+
+        pecMessage->pecParitySource = 
+            (IXP400_PARITYENACC_PE_NPE_IMEM == ixNpePECMsg.npeParitySource) ?
+                IX_PARITYENACC_NPE_C_IMEM :
+                (IXP400_PARITYENACC_PE_NPE_DMEM  == ixNpePECMsg.npeParitySource) ?
+                     IX_PARITYENACC_NPE_C_DMEM : IX_PARITYENACC_NPE_C_EXT;
+
+        pecMessage->pecAccessType = ixNpePECMsg.npeAccessType;
+
+        /* Increment statistics */
+        switch (pecMessage->pecParitySource)
+        {
+            case IX_PARITYENACC_NPE_C_IMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsIMem++;
+                break;
+            } /* end of case NPE - C IMEM */
+            case IX_PARITYENACC_NPE_C_DMEM:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsDMem++;
+                break;
+            } /* end of case NPE - C DMEM */
+            case IX_PARITYENACC_NPE_C_EXT:
+            {
+                ixParityENAccPEParityErrorStats.npeStats.parityErrorsExternal++;
+                break;
+            } /* end of case NPE - C EXT */
+            default:
+            {
+                IXP400_PARITYENACC_MSGLOG(IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, 
+                    "ixParityENAccParityErrorContextGet(): "
+                    "Invalid Parity Source: %0x\n", pecMessage->pecParitySource, 0,0,0,0,0);
+                return IX_PARITYENACC_OPERATION_FAILED;
+          } /* end of case default */
+        } /* end of switch */
+
+        return IX_PARITYENACC_SUCCESS;
+    } /* end of if (TRUE == ixIcParityInterruptStatus.npeCParityInterrupt) */
+     return IX_PARITYENACC_NO_PARITY;
+} /* end of ixParityENAccNPEParityErrorCheck() function */ 
+
 
 #endif /* __ixp46X */

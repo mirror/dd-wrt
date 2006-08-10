@@ -3,7 +3,7 @@
 #
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -60,18 +60,25 @@ ifeq ($(WIND_HOST_TYPE), x86-win32)
 else
   ifeq ($(WIND_HOST_TYPE), sun4-solaris2)
     IX_OSAL_MK_HOST_OS := solaris
+  else
+    ifeq ($(WIND_HOST_TYPE), x86-linux2)
+      IX_OSAL_MK_HOST_OS := linux
+    else
+      # Otherwise, try OSTYPE
+      IX_OSAL_MK_HOST_OS := $(OSTYPE)
+    endif
   endif
 endif
 
 # If we don't have a valid OS name, try to use the Unix uname command
 # to find it.
-ifeq (,$(filter $(IX_OSAL_MK_HOST_OS), solaris windows))
+ifeq (,$(filter $(IX_OSAL_MK_HOST_OS), solaris windows linux))
   IX_OSAL_MK_HOST_OS := $(shell uname)
   IX_OSAL_MK_HOST_OS := $(subst SunOS,solaris,$(IX_OSAL_MK_HOST_OS))
 endif
 
 # If we still don't know, assume it's Windows
-ifeq (,$(filter $(IX_OSAL_MK_HOST_OS), solaris windows))
+ifeq (,$(filter $(IX_OSAL_MK_HOST_OS), solaris windows linux))
   IX_OSAL_MK_HOST_OS := windows
 endif
 
@@ -79,20 +86,20 @@ endif
 ################################################################
 # vxWorks BSP selection
 #
-ifeq ($(IX_DEVICE),ixp46X)
-
-ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), vxle)
-BSP := ixdp465_le
-else
-BSP := ixdp465
-endif
-
-else
+ifeq ($(IX_DEVICE),ixp42X)
 
 ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), vxle)
 BSP := ixdp425_le
 else
 BSP := ixdp425
+endif
+
+else
+
+ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), vxle)
+BSP := ixdp465_le
+else
+BSP := ixdp465
 endif
 
 endif
@@ -101,7 +108,12 @@ BSP_DIR := $(WIND_BASE)/target/config/$(BSP)
 
 # Windows paths must use '\' as seperator for the MSDOS 'cd' command
 ifeq ($(IX_OSAL_MK_HOST_OS),windows)
-  BSP_DIR := $(subst /,\,$(BSP_DIR))
+ifeq ($(VXSHELL),ZSH)
+ BSP_DIR := $(subst \,/,$(BSP_DIR))
+ WIND_BASE := $(subst \,/,$(WIND_BASE))
+else
+ BSP_DIR := $(subst /,\,$(BSP_DIR))
+endif
 endif
 
 
@@ -109,9 +121,18 @@ endif
 # Tornado Compiler & linker commands
 
 ifeq ($(IX_TARGET),vxsim)
-VX_TOOL_SUFFIX = simso
+ifeq ($(IX_OSAL_MK_HOST_OS),solaris)
+VX_TOOL_SUFFIX = sparc
 CFLAGS := -DCPU=SIMSPARCSOLARIS
-
+else # Windows or Linux
+VX_TOOL_SUFFIX = pentium
+ifeq ($(IX_OSAL_MK_HOST_OS),linux)
+CFLAGS := -DCPU=SIMLINUX
+else # Windows
+$(MAKEFILE_TRACE) vxsim_unsupported_in_Windows
+#CFLAGS := -DCPU=SIMNT
+endif # .. Windows or Linux
+endif # .. solaris
 else
 VX_TOOL_SUFFIX = arm
 endif
@@ -130,7 +151,7 @@ ifeq ($(TOOL_FAMILY),diab)
 CC := dcc
 LD := dld
 AR := dar
-VXWORKS_VER := vxworks55
+VXWORKS_VER := vxworks62
 else
 CC := cc$(VX_TOOL_SUFFIX)
 LD := $(CC)
@@ -166,7 +187,6 @@ OBJDUMP := objdump$(VX_TOOL_SUFFIX)
 
 ifeq ($(IX_TARGET),vxsim)
 
-CFLAGS := -DCPU=SIMSPARCSOLARIS 
 LDFLAGS := -nostdlib -r -Wl,-X 
 MAKE_DEP_FLAG := -M
 
@@ -176,13 +196,13 @@ CFLAGS := -DRW_MULTI_THREAD -D_REENTRANT \
 
 ifeq ($(TOOL_FAMILY),diab)
 # compiler and linker flags using Diab compiler
-  CFLAGS += -w -Xdialect-ansi -Xno-common -D__vxworks -D_DIAB_TOOL
+  CFLAGS += -w -Xdialect-ansi -Xno-common -D__vxworks -D_DIAB_TOOL -D__XSCALE__
   LDFLAGS := -r -W:as:,-x,-X -Ws
   MAKE_DEP_FLAG := -Xmake-dependency
 
 else
 # compiler and linker flags using GNU compiler
-  CFLAGS += -Wall -ansi -pedantic -fno-common -mcpu=xscale -mapcs-32 -mno-sched-prolog
+  CFLAGS += -Wall -ansi -pedantic -fno-common -mno-sched-prolog -mcpu=xscale
   LDFLAGS := -nostdlib -r -Wl,-X
   MAKE_DEP_FLAG := -M
 endif
@@ -193,8 +213,8 @@ ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), vxle)
     LDFLAGS += -tARMXLS:$(VXWORKS_VER)
     CFLAGS += -tARMXLS:$(VXWORKS_VER)
   else
-    LDFLAGS += -mlittle-endian
-    CFLAGS += -mlittle-endian
+    LDFLAGS += -txscale -Wa,-EL
+    CFLAGS += -txscale  -Wa,-EL
   endif
 else
   CFLAGS += -DARMEB -D__ARMEB__ -DBIG_ENDIAN_MODE
@@ -202,19 +222,25 @@ else
     LDFLAGS += -tARMXES:$(VXWORKS_VER)
     CFLAGS += -tARMXES:$(VXWORKS_VER)
   else
-    LDFLAGS += -mbig-endian
-    CFLAGS += -mbig-endian
+    LDFLAGS += -txscalebe -Wa,-EB
+    CFLAGS += -txscalebe -Wa,-EB
   endif
 endif
 endif
 
 #Set additions to the compiler flag based on device chosen
 
-ifneq (,$(filter $(IX_DEVICE), ixp46X))
-CFLAGS += -D__ixp46X
-else
+ifneq (,$(filter $(IX_DEVICE), ixp42X))
 CFLAGS += -D__ixp42X
+else
+CFLAGS += -D__ixp46X
 endif
 
 CFLAGS +=  -Isrc/include -I$(WIND_BASE)/target/h -I$(BSP_DIR) -I$(BSP_DIR)/../all 
-
+CFLAGS += \
+        -I$(WIND_BASE)/target/h/wrn/coreip \
+	-I$(WIND_BASE)/target/h/drv \
+	-I$(WIND_BASE)/target/h/drv/intrCtl \
+	-I$(WIND_BASE)/target/h/drv/i2c \
+	-I$(WIND_BASE)/target/h/drv/timer \
+	-I$(WIND_BASE)/target/h/drv/sio

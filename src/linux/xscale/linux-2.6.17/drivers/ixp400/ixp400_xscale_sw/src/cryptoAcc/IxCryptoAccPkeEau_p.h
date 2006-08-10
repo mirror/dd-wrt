@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,7 +49,8 @@
  * @par
  * -- End of Copyright Notice --
  */
-#ifdef __ixp46X          /* PKE codes only applicable to ixp46x platform */
+
+#if defined(__ixp46X)
 
 #ifndef IXCRYPTOACCPKEEAU_P_H
 #define IXCRYPTOACCPKEEAU_P_H

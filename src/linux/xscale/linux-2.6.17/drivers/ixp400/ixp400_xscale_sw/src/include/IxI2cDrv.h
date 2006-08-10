@@ -6,7 +6,7 @@
  * @version $Revision: 0.1 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -56,7 +56,7 @@
 #ifndef IXI2CDRV_H
 #define IXI2CDRV_H
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 #include "IxOsal.h"
 
 /*

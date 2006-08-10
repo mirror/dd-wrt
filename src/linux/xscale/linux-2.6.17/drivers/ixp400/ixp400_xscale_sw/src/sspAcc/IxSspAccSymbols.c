@@ -9,7 +9,7 @@
  * @version $Revision: 1.6 $
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,7 +50,7 @@
  */
 
 #if __linux
-#ifdef __ixp46X
+#if defined(__ixp46X)
 #include <linux/module.h>
 #include "IxSspAcc.h"
 

@@ -6,7 +6,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -53,12 +53,22 @@
 #include "IxOsal.h"
 
 /*
- * Two defines only used in this file.
+ * Defines only used in this file.
  */
+
+/* Enable the thread graceful exit implemenation */
+
+#define THREAD_GRACEFUL_EXIT
 
 /* Default thread attribute */
 IxOsalThreadAttr ixOsalDefaultThreadAttr;
+#ifdef THREAD_GRACEFUL_EXIT
 
+static IxOsalThread kill_task = -1;
+static IxOsalMutex gOsalThreadKillMutex;
+static BOOL mutexInitialized = FALSE;
+
+#endif /* THREAD_GRACEFUL_EXIT */
 /**********************************************
  *  Public Functions
  *********************************************/
@@ -194,6 +204,8 @@ ixOsalThreadIdGet (IxOsalThread * ptrTid)
 IX_STATUS
 ixOsalThreadKill (IxOsalThread * tid)
 {
+
+#ifndef THREAD_GRACEFUL_EXIT	
     int retVxWorksVal;
     retVxWorksVal = taskDelete (*tid);
 
@@ -206,6 +218,52 @@ ixOsalThreadKill (IxOsalThread * tid)
         return IX_FAIL;
     }
     return IX_SUCCESS;
+    
+#else /* THREAD_GRACEFUL_EXIT */    
+    
+    int retVal = 0;
+
+    if(mutexInitialized == FALSE)
+    {
+	    mutexInitialized = TRUE;
+
+	    ixOsalMutexInit(&gOsalThreadKillMutex);
+        
+	    ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT,
+            "Thread Kill Mutex Initialized", 0, 0, 0, 0, 0, 0);
+    }    
+    
+
+    /* Acquire lock on the ThreadKill Mutex*/
+    ixOsalMutexLock(&gOsalThreadKillMutex, IX_OSAL_WAIT_FOREVER);
+	    
+    ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT,
+            "Thread Kill task has exclusive access to the Mutex", 0, 0, 0, 0, 0, 0);
+
+    kill_task = *tid;
+
+    ixOsalThreadPrioritySet(tid,0);
+        
+    ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT,
+            "Thread to be killed set highest priority to enable re-scheduling next time", 0, 0, 0, 0, 0, 0);
+	
+    /* Activate the thread to be killed, so the control of this function is lost */
+    retVal = taskActivate (*tid);
+      
+    if (retVal != OK)
+    {
+	   ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+            IX_OSAL_LOG_DEV_STDOUT,
+            "ixOsalThreadKill(): ERROR vxworks return code = %d \n",
+            retVal, 0, 0, 0, 0, 0);
+        return IX_FAIL;
+    }
+  
+      ixOsalLog (IX_OSAL_LOG_LVL_WARNING, IX_OSAL_LOG_DEV_STDOUT,
+            "Thread Kill Success", 0, 0, 0, 0, 0, 0);  
+    return IX_SUCCESS; 
+
+#endif /* THREAD_GRACEFUL_EXIT */
 }
 
 /* This function never returns */
@@ -300,6 +358,33 @@ ixOsalThreadResume (IxOsalThread * tId)
 BOOL
 ixOsalThreadStopCheck()
 {
-    /* Yet to be implemented in vxWorks */
+#ifndef THREAD_GRACEFUL_EXIT
+	
+    /* Just return FALSE */
     return FALSE;
+
+#else /* THREAD_GRACEFUL_EXIT */
+
+    IxOsalThread current_task;
+
+    current_task = taskIdSelf();
+
+
+    if(current_task == kill_task)
+    {
+	/* Control is back, the thread must have been killed */
+   	kill_task = -1;
+
+		
+       /*Free the Mutex lock*/
+  	ixOsalMutexUnlock(&gOsalThreadKillMutex); 
+
+	return TRUE;
+    }
+    else
+    {
+	    return FALSE;
+    }
+  
+#endif /* THREAD_GRACEFUL_EXIT */	 
 }

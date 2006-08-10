@@ -4,7 +4,7 @@
  * @brief Memory handling routines for the MAC address database
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -148,7 +148,7 @@ HashNode* ixEthDBAllocHashNode(void)
 
         UNLOCK_NODE_POOL;
 
-        memset(allocatedNode, 0, sizeof(HashNode));
+        ixOsalMemSet(allocatedNode, 0, sizeof(HashNode));
     }
 
     return allocatedNode;
@@ -205,7 +205,7 @@ MacDescriptor* ixEthDBPoolAllocMacDescriptor(void)
 
         UNLOCK_MAC_POOL;
 
-        memset(allocatedDescriptor, 0, sizeof(MacDescriptor));
+        ixOsalMemSet(allocatedDescriptor, 0, sizeof(MacDescriptor));
     }
 
     return allocatedDescriptor;
@@ -355,7 +355,7 @@ MacTreeNode* ixEthDBAllocMacTreeNode(void)
 
         UNLOCK_TREE_POOL;
 
-        memset(allocatedNode, 0, sizeof(MacTreeNode));
+        ixOsalMemSet(allocatedNode, 0, sizeof(MacTreeNode));
     }
 
     return allocatedNode;

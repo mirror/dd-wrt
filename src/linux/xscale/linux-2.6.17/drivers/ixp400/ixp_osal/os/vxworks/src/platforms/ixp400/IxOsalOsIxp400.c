@@ -6,7 +6,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -123,7 +123,7 @@ ixOsalOemUnload (void)
 }
 
 PUBLIC IX_STATUS
-ixOsalOsIxp400NameGet(INT8* osName, INT32 maxSize)
+ixOsalOsIxp400NameGet(char* osName, INT32 maxSize)
 {
     /* Copy the run time name of the OS name into the client's buffer */
     strncpy(osName, runtimeName, maxSize);
@@ -131,7 +131,7 @@ ixOsalOsIxp400NameGet(INT8* osName, INT32 maxSize)
 }
 
 PUBLIC IX_STATUS
-ixOsalOsIxp400VersionGet(INT8* osVersion, INT32 maxSize)
+ixOsalOsIxp400VersionGet(char* osVersion, INT32 maxSize)
 {
     /* Copy the run time name of the OS version into the client's buffer */
     strncpy(osVersion, runtimeVersion, maxSize);

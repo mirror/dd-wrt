@@ -10,7 +10,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -104,6 +104,10 @@ ixEthAccQmgrTxWrite(IxEthAccPortId portId,
 		    UINT32 qBuffer, 
 		    UINT32 priority);
 
+IX_ETH_ACC_PRIVATE BOOL 
+ixEthAccRxFrameProcess(IxEthAccPortId portId, 
+		       IX_OSAL_MBUF *mbufPtr);
+
 /**
  * @addtogroup IxEthAccPri
  *@{
@@ -132,6 +136,7 @@ PRIVATE IxOsalFastMutex rxWriteMutex[IX_ETH_ACC_NUMBER_OF_PORTS];
 /* Lock used when writing to the TX queue for a port */
 PRIVATE IxOsalFastMutex txWriteMutex[IX_ETH_ACC_NUMBER_OF_PORTS];
 
+UINT32 ixEthAccTxSubmitBusyCount=IX_ETH_ACC_TX_FRAME_SUBMIT_NOT_BUSY;
 
 /**
  *
@@ -228,7 +233,7 @@ __asm volatile void _mbufPtrPrefetch (volatile void *mbufPtr)
  * preload function
  */
 #ifdef IX_OSAL_CACHED
-	#if (CPU!=SIMSPARCSOLARIS) && !defined (__wince)
+	#if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX) && !defined (__wince))
     	#ifdef _DIAB_TOOL
     		#define IX_ACC_DATA_CACHE_PRELOAD(ptr) \
     		do { /* preload a cache line (Xscale Processor) */ \
@@ -426,6 +431,12 @@ ixEthAccMbufRxQPrepare(IX_OSAL_MBUF *mbuf)
 	/* unchained mbufs : next pointer is null */
 	IX_ETHACC_NE_NEXT(mbuf) = 0;
 
+        /*
+         * Store the allocated buffer size. This is useful for restoring
+         * the buffer size internally in ixEthAccRxFrameProcess()
+         */
+        IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(mbuf) = IX_OSAL_MBUF_MLEN(mbuf);
+
 	/* flush shared header after all address conversions */
 	IX_ETHACC_NE_CACHE_FLUSH(mbuf);
 	
@@ -463,6 +474,12 @@ ixEthAccMbufRxQPrepare(IX_OSAL_MBUF *mbuf)
 	    /* buffer length */
 	    len = (IX_OSAL_MBUF_MLEN(ptr) << IX_ETHNPE_ACC_LENGTH_OFFSET);
 	    IX_ETHACC_NE_LEN(ptr) = IX_OSAL_SWAP_BE_SHARED_LONG(len);
+
+            /*
+             * Store the allocated buffer size. This is useful for restoring
+             * the buffer size internally in ixEthAccRxFrameProcess()
+             */
+            IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(ptr) = IX_OSAL_MBUF_MLEN(ptr);
 
 	    /* flush shared header after all address conversions */
 	    IX_ETHACC_NE_CACHE_FLUSH(ptr);
@@ -774,8 +791,8 @@ ixEthAccTxFromSwQ(IxEthAccPortId portId,
             {
 		TX_INC(portId,txUnexpectedError);
 		IX_ETH_ACC_FATAL_LOG(
-	            "ixEthAccTxFromSwQ:Unexpected Error: %u\n", 
-	            qStatus, 0, 0, 0, 0, 0);
+	            "ixEthAccTxFromSwQ:In port=%u, unexpected Error: %u\n", 
+	             (UINT32) portId, qStatus, 0, 0, 0, 0);
             }
 	}
 	else 
@@ -788,8 +805,8 @@ ixEthAccTxFromSwQ(IxEthAccPortId portId,
 		mbuf);
 	    
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthAccTxFromSwQ:Error: unexpected QM status 0x%08X\n", 
-		qStatus, 0, 0, 0, 0, 0);	
+		"ixEthAccTxFromSwQ:Error:In port=%u, unexpected QM status 0x%08X\n", 
+		(UINT32) portId, qStatus, 0, 0, 0, 0);	
 	}
     }
     else
@@ -854,8 +871,8 @@ ixEthAccRxFreeFromSwQ(IxEthAccPortId portId)
 		    ixEthAccPortData[portId].ixEthAccRxData.freeBufferList, 
 		    mbuf);
 
-	    IX_ETH_ACC_FATAL_LOG("IxEthAccRxFreeFromSwQ:Error: unexpected QM status 0x%08X\n", 
-				 qStatus, 0, 0, 0, 0, 0);
+	    IX_ETH_ACC_FATAL_LOG("IxEthAccRxFreeFromSwQ:Error: In port=%u, unexpected QM status 0x%08X\n", 
+				 (UINT32)portId, qStatus, 0, 0, 0, 0);
 	}
     }
     else
@@ -990,7 +1007,7 @@ IxEthAccStatus ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
         if(ixEthAccDataInfo.schDiscipline == FIFO_PRIORITY)
         {
             status = ixEthAccQMgrRxCallbacksRegister(
-                         (IxQMgrCallback) ixEthRxPriorityPoll, 
+                         (IxQMgrCallback) ixEthAccRxPriorityPoll, 
                          IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK); 
         } else {
             status = ixEthAccQMgrRxCallbacksRegister(ixEthRxFrameQMCallback, 0); 
@@ -998,8 +1015,8 @@ IxEthAccStatus ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
         if(status != IX_ETH_ACC_SUCCESS)
         {
 	    /* unexpected qmgr error */
-            IX_ETH_ACC_FATAL_LOG("ixEthAccPortRxCallbackRegister: unexpected QMgr error, " \
-                "could not register Rx single-buffer callback\n", 0, 0, 0, 0, 0, 0);
+            IX_ETH_ACC_FATAL_LOG("ixEthAccPortRxCallbackRegister: In port=%u, unexpected QMgr error, " \
+                "could not register Rx single-buffer callback\n", (UINT32)portId, 0, 0, 0, 0, 0);
  
             RX_INC(portId,rxUnexpectedError);
             return (status);
@@ -1073,7 +1090,7 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
         if(ixEthAccDataInfo.schDiscipline == FIFO_PRIORITY)
         {
             status = ixEthAccQMgrRxCallbacksRegister(
-                         (IxQMgrCallback)ixEthRxMultiBufferPriorityPoll,
+                         (IxQMgrCallback)ixEthAccRxMultiBufferPriorityPoll,
                          IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK);
         } else {
             status = ixEthAccQMgrRxCallbacksRegister(ixEthRxMultiBufferQMCallback, 0);
@@ -1083,8 +1100,8 @@ IxEthAccStatus ixEthAccPortMultiBufferRxCallbackRegister(
 	    /* unexpected qmgr error */
 	    RX_INC(portId,rxUnexpectedError);
 
-            IX_ETH_ACC_FATAL_LOG("ixEthAccPortMultiBufferRxCallbackRegister: unexpected QMgr error, " \
-                "could not register Rx multi-buffer callback\n", 0, 0, 0, 0, 0, 0);
+            IX_ETH_ACC_FATAL_LOG("ixEthAccPortMultiBufferRxCallbackRegister: In port=%u, unexpected QMgr error, " \
+                "could not register Rx multi-buffer callback\n", (UINT32)portId, 0, 0, 0, 0, 0);
 
 	    return (IX_ETH_ACC_INVALID_ARG);
         }
@@ -1129,6 +1146,14 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
     }
 #endif 
 
+    if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
+    {
+       return (IX_ETH_ACC_FAIL);
+    }
+
+    /* To indicate frame submission in progress */
+    ixEthAccTxSubmitBusyCount++;
+
     /*
      * Need to Flush the MBUF and its contents (data) as it may be
      * read from the NPE. Convert virtual addresses to physical addresses also.
@@ -1155,6 +1180,9 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
 	{
 	    TX_STATS_INC(portId,txQOK);
 
+            /* To indicate frame submission is done */
+            ixEthAccTxSubmitBusyCount--;
+
 	    /*  
 	     * "best case" scenario : Buffer added to h/w Q.
 	     */
@@ -1175,8 +1203,12 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
 	    /* unexpected qmgr error */
 	    TX_INC(portId,txUnexpectedError);
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthAccPortTxFrameSubmit:Error: qStatus = %u\n", 
-		(UINT32)qStatus, 0, 0, 0, 0, 0);
+		"ixEthAccPortTxFrameSubmit:Error: In port=%u, qStatus = %u\n", 
+		(UINT32)portId, (UINT32)qStatus, 0, 0, 0, 0);
+
+            /* To indicate frame submission is done */
+            ixEthAccTxSubmitBusyCount--;
+
 	    return (IX_ETH_ACC_FAIL);
 	}
     }
@@ -1234,14 +1266,22 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
     {
 	TX_INC(portId,txUnexpectedError);
 	IX_ETH_ACC_FATAL_LOG(
-	    "ixEthAccPortTxFrameSubmit:Error: wrong schedule discipline setup\n", 
-	    0, 0, 0, 0, 0, 0);
+	    "ixEthAccPortTxFrameSubmit:Error: In port=%u, wrong schedule discipline setup\n", 
+	    (UINT32)portId, 0, 0, 0, 0, 0);
+
+        /* To indicate frame submission is done */
+        ixEthAccTxSubmitBusyCount--;
+
 	return (IX_ETH_ACC_FAIL);
     }
     
     if(qStatus == IX_SUCCESS ) 
     {
 	TX_STATS_INC(portId,txQOK);
+
+        /* To indicate frame submission is done */
+        ixEthAccTxSubmitBusyCount--;
+
 	return IX_ETH_ACC_SUCCESS;
     }
     else if(qStatus == IX_QMGR_Q_OVERFLOW)
@@ -1282,8 +1322,8 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
 	    {
 		TX_INC(portId,txUnexpectedError);
 		IX_ETH_ACC_FATAL_LOG(
-		     "ixEthAccPortTxFrameSubmit: unexpected Error: %u\n", 
-		     qStatus, 0, 0, 0, 0, 0);
+		     "ixEthAccPortTxFrameSubmit:In port=%u, unexpected Error: %u\n", 
+		     (UINT32)portId, qStatus, 0, 0, 0, 0);
 	    }
         }
     }
@@ -1291,10 +1331,17 @@ IxEthAccStatus ixEthAccPortTxFrameSubmit(IxEthAccPortId portId,
     {
 	TX_INC(portId,txUnexpectedError);
 	IX_ETH_ACC_FATAL_LOG(
-	     "ixEthAccPortTxFrameSubmit: unexpected Error: %u\n", 
-	     qStatus, 0, 0, 0, 0, 0);
+	     "ixEthAccPortTxFrameSubmit:In port=%u, unexpected Error: %u\n", 
+	     (UINT32)portId, qStatus, 0, 0, 0, 0);
+
+        /* To indicate frame submission is done */
+        ixEthAccTxSubmitBusyCount--;
+
 	return (IX_ETH_ACC_FAIL);
     }
+
+    /* To indicate frame submission is done */
+    ixEthAccTxSubmitBusyCount--;
 
     return (IX_ETH_ACC_SUCCESS);
 }
@@ -1390,8 +1437,8 @@ IxEthAccStatus ixEthAccPortRxFreeReplenish(IxEthAccPortId portId,
 	    {
 		RX_INC(portId,rxUnexpectedError);
 		IX_ETH_ACC_FATAL_LOG(
-		     "ixEthAccRxPortFreeReplenish:Error: %u\n", 
-		     qStatus, 0, 0, 0, 0, 0);
+		     "ixEthAccRxPortFreeReplenish:Error: In port=%u, qStatus=%u\n", 
+		     (UINT32)portId, qStatus, 0, 0, 0, 0);
 	    }
         }
     }
@@ -1399,8 +1446,8 @@ IxEthAccStatus ixEthAccPortRxFreeReplenish(IxEthAccPortId portId,
     {
 	RX_INC(portId,rxUnexpectedError);
 	IX_ETH_ACC_FATAL_LOG(
-	    "ixEthAccRxPortFreeReplenish:Error: qStatus = %u\n", 
-	    (UINT32)qStatus, 0, 0, 0, 0, 0);
+	    "ixEthAccRxPortFreeReplenish:Error: In port=%u, qStatus = %u\n", 
+	    (UINT32)portId, (UINT32)qStatus, 0, 0, 0, 0);
         return(IX_ETH_ACC_FAIL);
     }
     return (IX_ETH_ACC_SUCCESS);
@@ -1459,13 +1506,13 @@ IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline
             if(ixEthAccDataInfo.rxQMCbTypeSet == NORMAL)
             {
                 ixEthAccQMgrRxCallbacksRegister(
-                             (IxQMgrCallback)ixEthRxPriorityPoll,
+                             (IxQMgrCallback)ixEthAccRxPriorityPoll,
                              IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK);
             }
             else if(ixEthAccDataInfo.rxQMCbTypeSet == MULTIBUFFER)
             {
                 ixEthAccQMgrRxCallbacksRegister(
-                             (IxQMgrCallback)ixEthRxMultiBufferPriorityPoll,
+                             (IxQMgrCallback)ixEthAccRxMultiBufferPriorityPoll,
                              IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK);
             }
             /* enable sticky interrupts */
@@ -1491,7 +1538,7 @@ IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline
 
 
 /**
- * @fn ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
+ * @fn ixEthAccRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
  *
  * @brief process incoming frame : 
  *
@@ -1503,7 +1550,7 @@ IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline
  *
  */
 IX_ETH_ACC_PRIVATE BOOL 
-ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
+ixEthAccRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
 {	
     UINT32 flags;
     IxEthDBStatus result;
@@ -1514,7 +1561,7 @@ ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
     {
 	ixEthAccDataStats.unexpectedError++;
 	IX_ETH_ACC_FATAL_LOG(
-	     "ixEthRxFrameProcess: Illegal port: %u\n", 
+	     "ixEthAccRxFrameProcess: Illegal port: %u\n", 
 	     (UINT32)portId, 0, 0, 0, 0, 0);
 	return FALSE;
     }
@@ -1544,7 +1591,7 @@ ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
             if ((ixEthAccMacState[portId].portDisableState == ACTIVE) && (result != IX_ETH_DB_BUSY))
             {
 	        RX_STATS_INC(portId, rxUnexpectedError);
-                IX_ETH_ACC_FATAL_LOG("ixEthRxFrameProcess: Failed to add source MAC to the Learning/Filtering database\n", 0, 0, 0, 0, 0, 0); 
+                IX_ETH_ACC_FATAL_LOG("ixEthAccRxFrameProcess:In port=%u Failed to add source MAC to the Learning/Filtering database\n", (UINT32)portId, 0, 0, 0, 0, 0); 
             }
             else
             {
@@ -1565,32 +1612,45 @@ ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
     if (((flags & IX_ETHACC_NE_FILTERMASK) != 0)
         && (ixEthAccMacState[portId].portDisableState == ACTIVE))
     {
-        /* If the mbuf was allocated with a small data size, or the current data pointer is not
-         * within the allocated data area, then the buffer is non-standard and has to be 
-         * replenished with the minimum size only
+
+        /*
+         * Frame that enters here is internally replenished to RxQ.
+         * For buffer received from RxQ, IX_OSAL_MBUF_MLEN(mbufPtr) is the
+         * number of valid frame byte in the data cluster. So, before we
+         * we replenish this buffer to RxFreeQ, we need to config the field
+         * to indicate the number of byte in data cluster that is available
+         * for buffering.
+         * The update of IX_OSAL_MBUF_MLEN(mbufPtr) field should be catered
+         * for chained buffers case. 
          */
-        if( (IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(mbufPtr) < IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN)
-           || ((UINT8 *)IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(mbufPtr) > IX_OSAL_MBUF_MDATA(mbufPtr))
-           || ((UINT8 *)(IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(mbufPtr) +
-              IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(mbufPtr))
-               < IX_OSAL_MBUF_MDATA(mbufPtr)) )
-        {
-            /* set to minimum length */
-            IX_OSAL_MBUF_MLEN(mbufPtr) = IX_OSAL_MBUF_PKT_LEN(mbufPtr) =
-                IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN;
-        }
-        else
-        {
-            /* restore original length */
-            IX_OSAL_MBUF_MLEN(mbufPtr) = IX_OSAL_MBUF_PKT_LEN(mbufPtr) =
-                ( IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(mbufPtr) -
-                 (IX_OSAL_MBUF_MDATA(mbufPtr) - (UINT8 *)IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(mbufPtr)) );
+        IX_OSAL_MBUF *restoreMbufPtr = mbufPtr;
+
+        while(restoreMbufPtr != NULL)
+	{
+#ifndef NDEBUG
+	  IX_ETH_ACC_WARNING_LOG("ixEthAccRxFrameProcess: Replenish buffer size=%d on port %d\n", IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(restoreMbufPtr), portId, 0, 0, 0, 0);
+
+          if (IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(restoreMbufPtr) < 
+              IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN)
+	  {
+                IX_ETH_ACC_FATAL_LOG("ixEthAccRxFrameProcess: Allocated buffer is smaller than %d on port %d\n", IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN, portId, 0, 0, 0, 0);
+          }
+
+#endif
+          /* restore IX_OSAL_MBUF_MLEN() with 
+           * IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR() 
+           */
+	  IX_OSAL_MBUF_MLEN(restoreMbufPtr) = IX_OSAL_MBUF_PKT_LEN(restoreMbufPtr) =
+	    IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(restoreMbufPtr);
+
+	  /* traverse down the chained buffer */
+	  restoreMbufPtr = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(restoreMbufPtr);
         }
 
         /* replenish from here */
         if (ixEthAccPortRxFreeReplenish(portId, mbufPtr) != IX_ETH_ACC_SUCCESS)
         {
-                IX_ETH_ACC_FATAL_LOG("ixEthRxFrameProcess: Failed to replenish with filtered frame\
+                IX_ETH_ACC_FATAL_LOG("ixEthAccRxFrameProcess: Failed to replenish with filtered frame\
                                       on port %d\n", portId, 0, 0, 0, 0, 0);
         }
 
@@ -1604,7 +1664,7 @@ ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
 }
 
 /**
- * @fn ixEthRxPriorityPoll 
+ * @fn ixEthAccRxPriorityPoll 
  *
  * @brief RX routine to get limited entries from priority queues
  *
@@ -1623,7 +1683,8 @@ ixEthRxFrameProcess(IxEthAccPortId portId, IX_OSAL_MBUF *mbufPtr)
  * into memory to reduce the number of stall cycles
  *
  */
-UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
+IX_ETH_ACC_PUBLIC
+UINT32 ixEthAccRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 {	
     IX_OSAL_MBUF    *mbufPtr;
     IX_OSAL_MBUF    *nextMbufPtr;
@@ -1643,8 +1704,24 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
      * always terminate on a null entry, whatever the result of Burst read is.
      */
     UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
-
     
+    /* NPE Soft-Reset :Traffic Force to Halt*/
+    if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
+    {
+       return qEntriesProcessed;
+    }
+
+#ifndef NDEBUG
+    /* Check parameter, to prevent out-of-bounds array access */
+    if (maxQEntries > IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK)
+    {
+        IX_ETH_ACC_FATAL_LOG(
+            "ixEthAccRxPriorityPoll: maxQEntries parameter cannot exceed %d\n",
+            IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK, 0, 0, 0, 0, 0);
+        return qEntriesProcessed;
+    }
+#endif
+
     /* 
      * Indication of the number of times the callback is used.
      */
@@ -1674,7 +1751,7 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    ixEthAccDataStats.unexpectedError++;
 	    /*major error*/
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthRxPriorityPoll:Error: %u\n", 
+		"ixEthAccRxPriorityPoll:Error: %u\n", 
 		(UINT32)rxQReadStatus, 0, 0, 0, 0, 0);
 	    return qEntriesProcessed;
 	}
@@ -1699,7 +1776,7 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthRxPriorityPoll: Null Mbuf Ptr\n",
+		    "ixEthAccRxPriorityPoll: Null Mbuf Ptr\n",
 		    0, 0, 0, 0, 0, 0);
 		return qEntriesProcessed;
 	    }
@@ -1721,7 +1798,7 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    /* process frame, check the return code and skip the remaining of
 	     * the loop if the frame is to be filtered out 
 	     */
-            if (ixEthRxFrameProcess(portId, mbufPtr))
+            if (ixEthAccRxFrameProcess(portId, mbufPtr))
             {
 	        /* destination portId for this packet */
 	        destPortId = IX_ETHACC_NE_DESTPORTID(mbufPtr);
@@ -1757,7 +1834,7 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 }
 
 /**
- * @fn ixEthRxMultiBufferPriorityPoll 
+ * @fn ixEthAccRxMultiBufferPriorityPoll 
  *
  * @brief RX routine to get limited entries from priority queues
  *
@@ -1777,7 +1854,8 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
  * into memory to reduce the number of stall cycles
  *
  */
-UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
+IX_ETH_ACC_PUBLIC
+UINT32 ixEthAccRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 {	
     IX_OSAL_MBUF    *mbufPtr;
     IX_OSAL_MBUF    *nextMbufPtr;
@@ -1798,6 +1876,10 @@ UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
     UINT32 rxQEntry[IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
     static IX_OSAL_MBUF *rxMbufPortArray[IX_ETH_ACC_NUMBER_OF_PORTS][IX_ETH_ACC_MAX_RX_MBUF_CONSUME_PER_CALLBACK + 1];
     IX_OSAL_MBUF **rxMbufPtr[IX_ETH_ACC_NUMBER_OF_PORTS];
+    if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
+    {
+       return qEntriesProcessed;
+    }
 
     for (portId = 0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
     {
@@ -1835,7 +1917,7 @@ UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    ixEthAccDataStats.unexpectedError++;
 	    /*major error*/
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthRxMultiBufferPriorityPoll:Error: %u\n", 
+		"ixEthAccRxMultiBufferPriorityPoll:Error: %u\n", 
 		(UINT32)rxQReadStatus, 0, 0, 0, 0, 0);
 	    return qEntriesProcessed;
 	}
@@ -1860,7 +1942,7 @@ UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthRxMultiBufferPriorityPoll: Null Mbuf Ptr\n",
+		    "ixEthAccRxMultiBufferPriorityPoll: Null Mbuf Ptr\n",
 		    0, 0, 0, 0, 0, 0);
 		return qEntriesProcessed;
 	    }
@@ -1882,7 +1964,7 @@ UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries)
 	    /* process frame, check the return code and skip the remaining of
 	     * the loop if the frame is to be filtered out 
 	     */
-            if (ixEthRxFrameProcess(portId, mbufPtr))
+            if (ixEthAccRxFrameProcess(portId, mbufPtr))
             {
                 /* store a mbuf pointer in an array */
                 *rxMbufPtr[portId]++ = mbufPtr;
@@ -1992,8 +2074,8 @@ void ixEthRxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    ixEthAccDataStats.unexpectedError++;
 	    /*major error*/
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthRxFrameQMCallback:Error: %u\n", 
-		(UINT32)rxQReadStatus, 0, 0, 0, 0, 0);
+		"ixEthRxFrameQMCallback:For QId=%u, Error: %u\n", 
+		(UINT32)qId,(UINT32)rxQReadStatus, 0, 0, 0, 0);
 	    return;
 	}
 #endif
@@ -2017,8 +2099,8 @@ void ixEthRxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthRxFrameQMCallback: Null Mbuf Ptr\n",
-		    0, 0, 0, 0, 0, 0);
+		    "ixEthRxFrameQMCallback:For QId=%u, Null Mbuf Ptr\n",
+		    (UINT32)qId, 0, 0, 0, 0, 0);
 		return;
 	    }
 #endif
@@ -2038,7 +2120,7 @@ void ixEthRxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    /* process frame, check the return code and skip the remaining of
 	     * the loop if the frame is to be filtered out 
 	     */
-            if (ixEthRxFrameProcess(portId, mbufPtr))
+            if (ixEthAccRxFrameProcess(portId, mbufPtr))
             {
 	        /* destination portId for this packet */
 	        destPortId = IX_ETHACC_NE_DESTPORTID(mbufPtr);
@@ -2132,8 +2214,8 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    ixEthAccDataStats.unexpectedError++;
 	    /*major error*/
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthRxFrameMultiBufferQMCallback:Error: %u\n", 
-		(UINT32)rxQReadStatus, 0, 0, 0, 0, 0);
+		"ixEthRxFrameMultiBufferQMCallback:For QId=%u, Error: %u\n", 
+		(UINT32)qId, (UINT32)rxQReadStatus, 0, 0, 0, 0);
 	    return;
 	}
 #endif
@@ -2157,8 +2239,8 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthRxFrameMultiBufferQMCallback:Error: Null Mbuf Ptr\n", 
-		    0, 0, 0, 0, 0, 0);
+		    "ixEthRxFrameMultiBufferQMCallback:Error:For QId=%u, Null Mbuf Ptr\n", 
+		    qId, 0, 0, 0, 0, 0);
 		return;
 	    }
 #endif
@@ -2179,7 +2261,7 @@ void ixEthRxMultiBufferQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    /* skip the remaining of the loop if the frame is 
 	     * to be filtered out 
 	     */
-	    if (ixEthRxFrameProcess(portId, mbufPtr))
+	    if (ixEthAccRxFrameProcess(portId, mbufPtr))
 	    {
 		/* store a mbuf pointer in an array */
 		*rxMbufPtr[portId]++ = mbufPtr;
@@ -2280,8 +2362,8 @@ void ixEthRxFreeQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	{
 	    RX_INC(portId,rxUnexpectedError);
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthRxFreeQMCallback:Error: unexpected QM status 0x%08X\n", 
-		qStatus, 0, 0, 0, 0, 0);
+		"ixEthRxFreeQMCallback:Error: In port=%u, unexpected QM status 0x%08X\n", 
+		(UINT32)portId, qStatus, 0, 0, 0, 0);
 	    return;
 	}
     }
@@ -2381,8 +2463,8 @@ ixEthTxFrameQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthTxFrameQMCallback:Error: unexpected QM status 0x%08X\n", 
-		    qStatus, 0, 0, 0, 0, 0);
+		    "ixEthTxFrameQMCallback:Error: In port=%u, unexpected QM status 0x%08X\n", 
+		    (UINT32)portId, qStatus, 0, 0, 0, 0);
 	    }
 	    
 	    return;	    
@@ -2432,7 +2514,13 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
      */
     
     IX_ETH_ACC_STATS_INC(ixEthAccDataStats.txDoneCallbackCounter);
-    
+
+    /* NPE Soft-Reset :Traffic Force to Halt*/
+    if (ixEthAccTrafficStopRequestCount > IX_ETH_ACC_NO_STOP_REQUEST) 
+    {
+       return;
+    }
+
     do{
 	qEntryPtr = txDoneQEntry;
 	txDoneQReadStatus = ixQMgrQBurstRead(IX_ETH_ACC_TX_DONE_Q, 
@@ -2446,8 +2534,8 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    /*major error*/
 	    ixEthAccDataStats.unexpectedError++;
 	    IX_ETH_ACC_FATAL_LOG(
-		"ixEthTxFrameDoneQMCallback:Error: %u\n", 
-		(UINT32)txDoneQReadStatus, 0, 0, 0, 0, 0);
+		"ixEthTxFrameDoneQMCallback:For QId=%u, error= %u\n", 
+		(UINT32)IX_ETH_ACC_TX_DONE_Q, (UINT32)txDoneQReadStatus, 0, 0, 0, 0);
 	    return;
 	}
 #endif
@@ -2464,8 +2552,8 @@ ixEthTxFrameDoneQMCallback(IxQMgrQId qId, IxQMgrCallbackId callbackId)
 	    {
 		ixEthAccDataStats.unexpectedError++;
 		IX_ETH_ACC_FATAL_LOG(
-		    "ixEthTxFrameDoneQMCallback:Error: Null Mbuf Ptr\n", 
-		    0, 0, 0, 0, 0, 0);
+		    "ixEthTxFrameDoneQMCallback:For QId=%u, Error: Null Mbuf Ptr\n", 
+		    (UINT32)IX_ETH_ACC_TX_DONE_Q, 0, 0, 0, 0, 0);
 		return;
 	    }
 #endif
@@ -2559,7 +2647,7 @@ void ixEthAccDataPlaneShow(void)
     /* print snapshot */
     for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
     {
-	if(IX_ETH_ACC_FAIL == ixEthAccSingleEthNpeCheck(portId))
+	if(!IX_ETH_IS_PORT_INITIALIZED(portId))
 	{
 	    continue ;
 	}
@@ -2782,6 +2870,19 @@ void ixEthAccDataPlaneShow(void)
 		FIFO_PRIORITY ) ? "Enabled" : "Disabled"); 
     }
     printf("\n");
+
+    printf("MIBII Statistics: \n");
+    for(portId=0; portId < IX_ETH_ACC_NUMBER_OF_PORTS; portId++)
+    {
+      /* Only show MIBII stats for initialized Ethernet port */
+      if (IX_ETH_IS_PORT_INITIALIZED(portId))
+      {	
+	printf("PORT %u --------------------------------\n",
+		 portId);
+	  
+	ixEthAccMibIIShow (portId);	  
+      }
+    }
 }
 
 

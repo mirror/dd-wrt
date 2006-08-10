@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -65,12 +65,11 @@ EXPORT_SYMBOL(ixCryptoQAccessReqDoneQMgrCallback);
 EXPORT_SYMBOL(ixCryptoQAccessWepReqDoneQMgrCallback);
 EXPORT_SYMBOL(ixCryptoAccNpeWepPerform);
 EXPORT_SYMBOL(ixCryptoAccXScaleWepPerform);
-EXPORT_SYMBOL(ixCryptoAccCryptoServiceStop);
 EXPORT_SYMBOL(ixCryptoAccHashKeyGenerate);
 EXPORT_SYMBOL(ixCryptoAccCtxCipherKeyUpdate);
 EXPORT_SYMBOL(ixCryptoAccUninit);
 
-#ifdef __ixp46X     /* PKE codes symbol only applicable for IXP46X platform */
+#if defined(__ixp46X)
 
 EXPORT_SYMBOL(ixCryptoAccPkePseudoRandomNumberGet);
 EXPORT_SYMBOL(ixCryptoAccPkeHashPerform);

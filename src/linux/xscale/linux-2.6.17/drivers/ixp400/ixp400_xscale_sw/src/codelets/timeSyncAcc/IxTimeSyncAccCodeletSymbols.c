@@ -9,7 +9,7 @@
  *	  builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,7 +50,7 @@
  */
 
 #ifdef __linux
-#ifdef __ixp46X
+#if defined (__ixp46X)
 
 /* include files */
 
@@ -62,10 +62,9 @@
 UINT32 config;
 
 EXPORT_SYMBOL (ixTimeSyncAccCodeletMain);
-EXPORT_SYMBOL (ixTimeSyncAccCodeletQuit);
+EXPORT_SYMBOL (ixTimeSyncAccCodeletUninit);
 
-#include <linux/moduleparam.h>
-module_param(config, int, 0);
+MODULE_PARM(config, "i");
 MODULE_PARM_DESC(config, "Choice of configuration\n"
 		"\tconfiguration 0: NPE A - Slave,  NPE B - Slave,  NPE C - Master (default)\n"
 		"\tconfiguration 1: NPE A - Slave,  NPE B - Master, NPE C - Slave\n"
@@ -81,15 +80,16 @@ PRIVATE int __init ixTimeSyncAccCodeletInitModule (void)
 		printk("\t  0 -> NPE A - Slave,  NPE B - Slave,  NPE C - Master (default)\n");  
 		printk("\t  1 -> NPE A - Slave,  NPE B - Master, NPE C - Slave\n");  
 		printk("\t  2 -> NPE A - Master, NPE B - Slave,  NPE C - Slave\n");  
-		return (-1);
+		return -EINVAL;
 	}
+
 	printk ("Loading timeSyncAcc Codelet\n");
 	return (ixTimeSyncAccCodeletMain(config));
 }
 
 PRIVATE void __exit ixTimeSyncAccCodeletExitModule (void)
 {
-	ixTimeSyncAccCodeletQuit ();
+	ixTimeSyncAccCodeletUninit ();
 	printk ("TimeSyncAcc Codelet was unloaded\n");
 }
 

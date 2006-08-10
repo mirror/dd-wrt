@@ -5,10 +5,10 @@
  *
  * @date 21 December 2004
  *
- * @brief  Codelet for IXP46x Time Sync Access Component.
+ * @brief  Codelet for IXP46X Time Sync Access Component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 /********************************************************************* 
  *	user include file 
@@ -59,6 +59,7 @@
 /*********************************************************************
  *	PRIVATE function prototype
  *********************************************************************/
+PRIVATE void ixTimeSyncAccCodeletQuit (void);
 PRIVATE IX_STATUS ixTimeSyncAccCodeletEthInit (void);
 PRIVATE void ixTimeSyncAccCodeletPortDisable (void);
 PRIVATE IX_OSAL_MBUF *ixTimeSyncAccCodeletMbufAllocate (void); 
@@ -202,7 +203,7 @@ PRIVATE IxEthAccMacAddr ixTimeSyncAccCodeletNpeMacAddr[] =
 PRIVATE UINT8 ixTimeSyncAccCodeletPTPMulticastAddress[] = {224, 0, 1, 129};
 
 /* codelet termination flag */
-PRIVATE BOOL ixTimeSyncAccCodeletTerminate;
+PRIVATE BOOL ixTimeSyncAccCodeletTerminate = TRUE;
 
 /* PTP message transmission halt flag */
 PRIVATE BOOL ixTimeSyncAccCodeletTxHalt;
@@ -238,16 +239,16 @@ ixTimeSyncAccCodeletMain (UINT32 configIndex)
 
 		return IX_FAIL;
 	}
-	
-    /* Disable UTOPIA to enable Ethernet on Npe-A */
-    ixFeatureCtrlWrite (ixFeatureCtrlRead() | ((UINT32)1<<IX_FEATURECTRL_UTOPIA));
+
+    	/* Disable UTOPIA to enable Ethernet on Npe-A */
+    	ixFeatureCtrlWrite (ixFeatureCtrlRead() | ((UINT32)1<<IX_FEATURECTRL_UTOPIA));
 
 	/* set termination flag to false */
 	ixTimeSyncAccCodeletTerminate = FALSE;
 
 	/* save global configuration pointer */
 	ixTimeSyncAccCodeletConfigPtr = &ixTimeSyncAccCodeletConfigList[configIndex];
-	
+
 	/* write default frequency scale value to Addend Register */
 	tsStatus = ixTimeSyncAccTickRateSet (IX_TIMESYNCACC_CODELET_FSV_DEFAULT);
 	if (IX_TIMESYNCACC_SUCCESS != tsStatus)
@@ -293,23 +294,25 @@ ixTimeSyncAccCodeletMain (UINT32 configIndex)
 		return IX_FAIL;
 	}
 
+		
 	/* initialize ethernet components to transmit PTP messages */
 	if (IX_SUCCESS != ixTimeSyncAccCodeletEthInit ())
 	{
 		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletMain: failed to initialize ethernet components\n",
 			0, 0, 0, 0, 0, 0);
 
-		ixTimeSyncAccCodeletQuit ();
+		/* unload all initialized modules and free all resources */
+		ixTimeSyncAccCodeletUninit ();
 		return IX_FAIL;
 	}
-	
+
 	return IX_SUCCESS;
 
 } /* end of ixTimeSyncAccCodeletMain function */
 
 
-PUBLIC void 
-ixTimeSyncAccCodeletQuit (void)
+PUBLIC void
+ixTimeSyncAccCodeletUninit ()
 {
 	int moduleId;
 	IxOsalVoidFnPtr func;
@@ -317,11 +320,14 @@ ixTimeSyncAccCodeletQuit (void)
 
 	if (TRUE == ixTimeSyncAccCodeletTerminate)
 	{
-		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletQuit: timeSyncAcc codelet was not loaded\n",
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletUninit: timeSyncAcc codelet is either not loaded or in the process of being terminated\n",
 		0, 0, 0, 0, 0, 0);
 	
 		return;
 	}
+
+	/* set termination flag  */
+	ixTimeSyncAccCodeletTerminate = TRUE;
 
 	/* unload every supporting modules and free all resources */
 	for (moduleId = IX_TIMESYNCACC_CODELET_TX_PTP; 
@@ -348,25 +354,37 @@ ixTimeSyncAccCodeletQuit (void)
 	/* unload ethDB */
 	if (IX_ETH_DB_SUCCESS != ixEthDBUnload ()) 
 	{
-		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletQuit: failed to unload ethDB\n",
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletUninit: failed to unload ethDB\n",
 			0, 0, 0, 0, 0, 0);
 	} 
 
-	/* set termination flag  */
-	ixTimeSyncAccCodeletTerminate = TRUE;
-
 	/* wait for a while for the codelet to disable target time */
 	ixOsalSleep (IX_TIMESYNCACC_CODELET_TARGET_TIME_HIT_INTERVAL);
-
-	ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletQuit: timeSyncAcc codelet execution was terminated\n",
+	
+	ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletUninit: timeSyncAcc codelet execution was terminated\n",
 		0, 0, 0, 0, 0, 0);
 
-} /* end of ixTimeSyncAccCodeletQuit function */
+	return;
+} /* end of ixTimeSyncAccCodeletUninit function */
+
 
 
 /*********************************************************************
  *	PRIVATE functions
  *********************************************************************/
+
+PRIVATE void 
+ixTimeSyncAccCodeletQuit (void)
+{
+	/* spawn thread to terminate timeSyncAcc codelet */
+	if (IX_SUCCESS != ixTimeSyncAccCodeletNewThreadCreate ((IxOsalVoidFnPtr)ixTimeSyncAccCodeletUninit, "TimeSyncCodelet Thread"))
+	{
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletQuit: failed to spawn thread to terminate timeSyncAcc codelet\n",
+			0, 0, 0, 0, 0, 0);
+	}
+	
+} /* end of ixTimeSyncAccCodeletQuit function */
+
 
 /**
  * @ingroup IxTimeSyncAccCodelet
@@ -390,7 +408,7 @@ ixTimeSyncAccCodeletEthInit ()
 	/* check if the device is IXP46X */
 	if (IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X != ixFeatureCtrlDeviceRead ())
 	{
-		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletEthInit: this device is not IXP46x\n",
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDERR, "ixTimeSyncAccCodeletEthInit: this device is not IXP46X\n",
 			0, 0, 0, 0, 0, 0);
 		return IX_FAIL;
 	}
@@ -1079,7 +1097,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 				portId, 0, 0, 0, 0, 0);
 
 			/* terminate time sync codelet execution */
-			ixTimeSyncAccCodeletQuit ();
+			ixTimeSyncAccCodeletUninit ();
 
 			return;
 		}
@@ -1090,7 +1108,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 				portId, 0, 0, 0, 0, 0);
 			
 			/* terminate time sync codelet execution */
-			ixTimeSyncAccCodeletQuit ();
+			ixTimeSyncAccCodeletUninit ();
 
 			return;
 		} 
@@ -1103,7 +1121,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 				portId, 0, 0, 0, 0, 0);
 
 			/* terminate time sync codelet execution */
-			ixTimeSyncAccCodeletQuit ();
+			ixTimeSyncAccCodeletUninit ();
 
 			return;
 		}
@@ -1121,7 +1139,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 			0, 0, 0, 0, 0, 0);
 		
 		/* terminate time sync codelet execution */
-		ixTimeSyncAccCodeletQuit ();
+		ixTimeSyncAccCodeletUninit ();
 
 		return;
 	}
@@ -1148,7 +1166,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 					portId, 0, 0, 0, 0, 0);
 				
 				/* terminate time sync codelet execution */
-				ixTimeSyncAccCodeletQuit ();
+				ixTimeSyncAccCodeletUninit ();
 
 				return;
 	
@@ -1163,7 +1181,7 @@ ixTimeSyncAccCodeletPTPMsgTransmit ()
 
 				
 				/* terminate time sync codelet execution */
-				ixTimeSyncAccCodeletQuit ();
+				ixTimeSyncAccCodeletUninit ();
 
 				return;
 			}
@@ -1295,7 +1313,7 @@ ixTimeSyncAccCodeletPTPMsgCheck (void)
 		}
 		else if  (IX_TIMESYNCACC_NOTIMESTAMP == tsStatus)
 		{
-			ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletPTPMsgCheck: no new PTP message is received at %s channel\n",
+			ixOsalLog (IX_OSAL_LOG_LVL_DEBUG1, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletPTPMsgCheck: no new PTP message is received at %s channel\n",
 				(UINT32) (ixTimeSyncAccCodeletTSChannelLabel[channel]), 
 				0, 0, 0, 0, 0);
 		}
@@ -1320,7 +1338,7 @@ ixTimeSyncAccCodeletPTPMsgCheck (void)
 		}
 		else if  (IX_TIMESYNCACC_NOTIMESTAMP == tsStatus)
 		{
-			ixOsalLog (IX_OSAL_LOG_LVL_USER, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletPTPMsgCheck: no new PTP message is transmitted at %s channel\n",
+			ixOsalLog (IX_OSAL_LOG_LVL_DEBUG1, IX_OSAL_LOG_DEV_STDOUT, "ixTimeSyncAccCodeletPTPMsgCheck: no new PTP message is transmitted at %s channel\n",
 				(UINT32) (ixTimeSyncAccCodeletTSChannelLabel[channel]), 
 				0, 0, 0, 0, 0);
 		}
@@ -1555,6 +1573,6 @@ ixTimeSyncAccCodeletTargetTimeClear (void)
 	}
 } /* end of ixTimeSyncAccCodeletTargetTimeClear () function */
 
-#endif /* end of #ifdef __ixp46X */
+#endif /* __ixp46X */
 
 

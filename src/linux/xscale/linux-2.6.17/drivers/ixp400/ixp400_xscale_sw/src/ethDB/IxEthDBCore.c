@@ -4,7 +4,7 @@
  * @brief Database support functions
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -273,8 +273,8 @@ IxEthDBStatus ixEthDBAdd(MacDescriptor *newRecordTemplate, IxEthDBPortMap update
     }
     
     /* copy/update fields into new record */
-    memcpy(newDescriptor->macAddress, newRecordTemplate->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
-    memcpy(&newDescriptor->recordData, &newRecordTemplate->recordData, sizeof (IxEthDBRecordData));
+    ixOsalMemCopy(newDescriptor->macAddress, newRecordTemplate->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(&newDescriptor->recordData, &newRecordTemplate->recordData, sizeof (IxEthDBRecordData));
     
     newDescriptor->type   = newRecordTemplate->type;
     newDescriptor->portID = newRecordTemplate->portID;
@@ -396,7 +396,7 @@ IX_ETH_DB_PUBLIC
 UINT32 ixEthDBKeyTypeRegister(UINT32 *keyType)
 {
     /* safety */
-    memset(keyType, 0, sizeof (keyType));
+    ixOsalMemSet(keyType, 0, sizeof (keyType));
 
     /* register all known record types */
     keyType[IX_ETH_DB_FILTERING_RECORD]      = IX_ETH_DB_MAC_KEY;

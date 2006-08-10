@@ -8,7 +8,7 @@
  * module builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 #ifdef __linux
 
 #include <linux/module.h>

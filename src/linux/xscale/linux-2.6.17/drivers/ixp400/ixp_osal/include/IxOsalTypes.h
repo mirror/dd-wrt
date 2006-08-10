@@ -6,7 +6,7 @@
  * This file contains fundamental data types used by OSAL.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -168,14 +168,15 @@ typedef volatile INT32 VINT32;
 #define IX_OSAL_INLINE __inline
 #endif /* IX_OSAL_INLINE */
 
-#ifndef __inline__  
-#define __inline__ 	IX_OSAL_INLINE
+#ifndef __inline__
+#define __inline__   IX_OSAL_INLINE
 #endif
 
 #else
 
 #ifndef IX_OSAL_INLINE
-#define IX_OSAL_INLINE __inline__  /* Diab Compiler uses __inline__ (compiler directive) */
+#define IX_OSAL_INLINE __inline__  /* Diab Compiler uses __inline__ (compiler di
+                                      rective) */
 #endif /* IX_OSAL_INLINE */
 
 #endif /*_DIAB_TOOL*/
@@ -199,18 +200,18 @@ typedef volatile INT32 VINT32;
 #define IX_OSAL_INLINE_EXTERN IX_OSAL_INLINE extern
 #endif
 
-
 /**
- @ingroup IxOsalTypes
+ * @ingroup IxOsalTypes
  *
  * @def IX_OSAL_ATTRIBUTE_PACKED
  *
- * @brief Defining packed attribute type for compiler that supports it.
+ * @brief Defining packed attribute type in compiler/OS that supports it.
  *
  */
 #ifndef IX_OSAL_ATTRIBUTE_PACKED
-#define IX_OSAL_ATTRIBUTE_PACKED IX_OSAL_OS_ATTRIBUTE_PACKED
+#define IX_OSAL_ATTRIBUTE_PACKED
 #endif
+
 
 /**
  * @ingroup IxOsalTypes
@@ -371,6 +372,17 @@ typedef struct
 /**
  * @ingroup IxOsalTypes
  *
+ * @def IX_OSAL_THREAD_DEFAULT_SCHED_POLICY
+ *
+ * @brief Default Thread Scheduling Policy, OS-specific.
+ *
+ */
+#define IX_OSAL_THREAD_DEFAULT_SCHED_POLICY (IX_OSAL_OS_THREAD_DEFAULT_SCHED_POLICY)
+
+
+/**
+ * @ingroup IxOsalTypes
+ *
  * @def IX_OSAL_THREAD_DEFAULT_STACK_SIZE
  *
  * @brief Default thread stack size, OS-specific.
@@ -387,6 +399,30 @@ typedef struct
  *
  */
 #define IX_OSAL_THREAD_MAX_STACK_SIZE (IX_OSAL_OS_THREAD_MAX_STACK_SIZE)
+
+/**
+ * @ingroup IxOsalTypes
+ *
+ * @def IX_OSAL_MAX_THREAD_NAME_LEN
+ *
+ * @brief Max size of thread name
+ *
+ */
+#define IX_OSAL_MAX_THREAD_NAME_LEN  16
+
+/**
+ * @ingroup IxOsalTypes
+ *
+ * @def IX_OSAL_MIN_THREAD_PRIORITY
+ *
+ * @brief Min thread priority, OS-specific.
+ *
+ */
+#ifdef IX_OSAL_OS_MIN_THREAD_PRIORITY 
+#define IX_OSAL_MIN_THREAD_PRIORITY 	(IX_OSAL_OS_MIN_THREAD_PRIORITY)
+#else
+#define IX_OSAL_MIN_THREAD_PRIORITY 	0
+#endif
 
 /**
  * @ingroup IxOsalTypes
@@ -409,8 +445,13 @@ typedef struct
 #define IX_OSAL_MAX_THREAD_PRIORITY (IX_OSAL_OS_MAX_THREAD_PRIORITY)
 
 /**
- * @} IxOsalTypes
+ * @ingroup IxOsalTypes
+ *
+ * @def IxOsalPciDev
+ *
+ * @brief This is a data type that serves as a handle for allocated PCI device.
+ * 
  */
-
+typedef UINT8 *IxOsalPciDev;
 
 #endif /* IxOsalTypes_H */

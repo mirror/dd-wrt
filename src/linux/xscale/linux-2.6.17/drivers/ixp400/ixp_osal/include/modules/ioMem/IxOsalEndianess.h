@@ -1,5 +1,5 @@
 /** 
- * @file IxOsalEndianess.h  
+ * @file IxOsalEndianess.h (Obsolete file) 
  * 
  * @brief Header file for determining system endianess and OS
  * 
@@ -7,7 +7,7 @@
  * @version $Revision: 1.1
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,6 +51,14 @@
 #ifndef IxOsalEndianess_H
 #define IxOsalEndianess_H
 
+#if defined (__TOLAPAI__) 
+
+/* Tolapai is a pure little endian processor */
+
+#undef __BIG_ENDIAN
+
+#endif /* __TOLAPAI__ */
+
 #if defined (__vxworks) || defined (__linux)
 
 /* get ntohl/ntohs/htohl/htons macros and CPU definitions for VxWorks */
@@ -79,7 +87,15 @@
 
 #endif /* _LITTLE_ENDIAN */
 
-#elif defined (__ARMEB__) || CPU == SIMSPARCSOLARIS
+#elif defined(__TOLAPAI__)
+
+#ifndef __LITTLE_ENDIAN
+
+#define __LITTLE_ENDIAN
+
+#endif /* __TOLAPAI__ */
+
+#elif defined (__ARMEB__)   ||  (CPU == SIMSPARCSOLARIS) || (CPU == SIMLINUX)
 
 #ifndef __BIG_ENDIAN
 
@@ -98,6 +114,18 @@
 #define __LITTLE_ENDIAN
 
 #endif /* def __wince */
+
+#if defined (__TOLAPAI__) && 	\
+    defined (__BIG_ENDIAN)  
+
+/* 
+ * Tolapai is IA based processor and hence can
+ * operate only in little endian. Report error otherwise
+ */
+
+#error "Tolapai is IA based processor and cannot operate in big endian"
+
+#endif /* __TOLAPAI__ */
 
 
 /* OS mode selector */
@@ -127,7 +155,7 @@
 
 #else
 
-#error Unknown OS/Endianess combination - only vxWorks BE LE, Linux BE LE, WinCE BE LE are supported
+#error Unknown OS/Endianess combination - only VxWorks BE LE, Linux BE LE, WinCE BE LE are supported
 
 #endif /* mode selector */
 

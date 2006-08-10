@@ -1,11 +1,11 @@
 /**
  * @file IxOsalOsServices.c (vxWorks)
  *
- * @brief Implementation for Irq, Mem, sleep. 
+ * @brief Implementation for Mem, sleep. 
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -70,131 +70,6 @@ static char *traceHeaders[] = {
 /* by default log level is log_message */
 PRIVATE int IxOsalOsServicesLogLevel = IX_OSAL_LOG_LVL_MESSAGE;
 
-/* dummy ISR to register during unBind */
-PRIVATE void ixOsalDummyIsr (void *parameter);
-PRIVATE void
-ixOsalDummyIsr (void *parameter)
-{
-}
-
-/**************************************
- * Irq services 
- *************************************/
-
-PUBLIC IX_STATUS
-ixOsalIrqBind (UINT32 irqLevel, IxOsalVoidFnVoidPtr routine, void *parameter)
-{
-
-#if CPU==SIMSPARCSOLARIS
-    /*
-     * No Irq support in simulation env 
-     */
-    return IX_FAIL;
-#else
-    if (intConnect
-        ((IxOsalVoidFnVoidPtr *)
-            irqLevel, (IxOsalVoidFnVoidPtr) routine, (int) parameter) != OK)
-    {
-        return IX_FAIL;
-    }
-    intEnable (irqLevel);
-    return IX_SUCCESS;
-
-#endif
-
-}
-
-PUBLIC IX_STATUS
-ixOsalIrqUnbind (UINT32 irqLevel)
-{
-    /*
-     * disable interrupts for this vector 
-     */
-    if (intDisable (IVEC_TO_INUM (irqLevel)) != OK)
-    {
-        return IX_FAIL;
-    }
-
-    /*
-     * register a dummy ISR 
-     */
-    if (intConnect ((IxOsalVoidFnVoidPtr
-                *) irqLevel, (IxOsalVoidFnVoidPtr) ixOsalDummyIsr, 0) != OK)
-    {
-        return IX_FAIL;
-    }
-    return IX_SUCCESS;
-}
-
-PUBLIC UINT32
-ixOsalIrqLock ()
-{
-#if CPU==SIMSPARCSOLARIS
-
-    ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-        IX_OSAL_LOG_DEV_STDOUT,
-        "ixOsalIrqLock: not supported in simulation  \n", 0, 0, 0, 0, 0, 0);
-
-    return 0;
-
-#else
-    return intLock ();
-#endif
-
-}
-
-/* Enable interrupts and task scheduling,
- * input parameter: irqEnable status returned
- * by ixOsalIrqLock().
- */
-PUBLIC void
-ixOsalIrqUnlock (UINT32 irqEnable)
-{
-
-#if CPU==SIMSPARCSOLARIS
-    ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-        IX_OSAL_LOG_DEV_STDOUT,
-        "ixOsalIrqUnlock: not supported in simulation  \n", 0, 0, 0, 0, 0, 0);
-#else
-    intUnlock (irqEnable);
-#endif
-
-}
-
-PUBLIC void
-ixOsalIrqEnable (UINT32 irqLevel)
-{
-    intEnable (irqLevel);
-}
-
-PUBLIC void
-ixOsalIrqDisable (UINT32 irqLevel)
-{
-    intDisable (irqLevel);
-}
-
-/** 
- * Return previous int level, return IX_FAIL if fail.
- * Interrupt are locked out at or below that level.
- */
-PUBLIC UINT32
-ixOsalIrqLevelSet (UINT32 irqLevel)
-{
-
-#if CPU==SIMSPARCSOLARIS
-    /*
-     * No irq support in simulation, log error and return any 
-     * * number, in this case we return zero.
-     */
-    ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-        IX_OSAL_LOG_DEV_STDOUT,
-        "ixOsalIrqLevelSet: not supported in simulation  \n",
-        0, 0, 0, 0, 0, 0);
-    return 0;
-#else
-    return intLevelSet (irqLevel);
-#endif
-}
 
 /**************************************
  * Log services 
@@ -337,7 +212,7 @@ ixOsalSleep (UINT32 milliseconds)
 PUBLIC UINT32
 ixOsalTimestampGet (void)
 {
-#if CPU==SIMSPARCSOLARIS
+#if((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX)) 
 
     /*
      * no timestamp under VxSim 

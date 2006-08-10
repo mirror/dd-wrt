@@ -5,11 +5,11 @@
  * @date 18 Jan 2002
  *
  * @brief This file contains the implementation of the public API for the
- * IXP425 NPE Message Handler component.
+ * IXP NPE Message Handler component.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -157,7 +157,9 @@ PUBLIC IX_STATUS ixNpeMhUnload (void)
     /* Reset the NpeMhShow */
     ixNpeMhShowReset (IX_NPEMH_NPEID_NPEA);
     ixNpeMhShowReset (IX_NPEMH_NPEID_NPEB);
+#if defined(__ixp42X) || defined(__ixp46X)
     ixNpeMhShowReset (IX_NPEMH_NPEID_NPEC);
+#endif
 
     ixNpeMhUnsolicitedCbMgrUninitialize ();
     ixNpeMhSolicitedCbMgrUninitialize ();
@@ -445,7 +447,7 @@ PUBLIC IX_STATUS ixNpeMhMessagesReceive (
     /* check that we are initialized */
     if (!ixNpeMhInitialized)
     {
-        IX_NPEMH_ERROR_REPORT ("IxNpeMh component is not initialized\n");
+        IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT,"IxNpeMh component is not initialized\n");
         return IX_FAIL;
     }
 

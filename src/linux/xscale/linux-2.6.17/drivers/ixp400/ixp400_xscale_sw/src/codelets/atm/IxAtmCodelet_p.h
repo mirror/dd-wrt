@@ -6,7 +6,7 @@
  * @brief   Private header file for the IXP400 Atm codelet
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 

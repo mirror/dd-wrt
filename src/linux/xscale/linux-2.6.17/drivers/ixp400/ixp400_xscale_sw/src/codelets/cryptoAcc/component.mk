@@ -1,6 +1,6 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -43,7 +43,8 @@
 codelets_cryptoAcc_OBJ := IxCryptoAccCodelet.o 
 
 codelets_cryptoAcc_CFLAGS := -Isrc/include \
-			     -Isrc/codelets/cryptoAcc
+			     -Isrc/codelets/cryptoAcc \
+				 -I./src/qmgr
 
 codelets_cryptoAcc_test_DEPS :=  npeDl qmgr featureCtrl cryptoAcc
 

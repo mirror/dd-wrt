@@ -2,7 +2,7 @@
 # Top level xscale_sw Makefile, will call OSAL & BSP Makefile
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -46,104 +46,19 @@
 # "controlled countries", as defined by US export laws.
 #
 
-################################################################
-# Component lists
-#
-# Only check in the makefile with your component listed here if
-# you know it will build.
-#
-# Components listed in BI_ENDIAN_COMPONENTS must work for all target
-# platforms and both ixp42X and ixp46X devices. 
-# Components that work only for a subset of platforms
-# should be added to the relevant *_COMPONENTS lists.
-#
-BI_ENDIAN_COMPONENTS := atmdAcc atmm atmsch qmgr npeMh npeDl ethAcc ethDB ethMii hssAcc uartAcc usb featureCtrl ossl osServices 
+include Makefile_ixp46X
 
-ifndef IX_CONTROLLED_COUNTRY_BUILD
-BI_ENDIAN_COMPONENTS += cryptoAcc
-endif # !IX_CONTROLLED_COUNTRY_BUILD
+linuxbe_COMPONENTS += linux
+# Target OS selection
 
-#Components only applicable to ixp46x
-ixp46X_BI_ENDIAN_COMPONENTS := timeSyncAcc parityENAcc i2c sspAcc
-ifndef IX_CONTROLLED_COUNTRY_BUILD
-ixp46X_BI_ENDIAN_COMPONENTS +=
-endif # !IX_CONTROLLED_COUNTRY_BUILD
-
-# The lists below contain the set of components available for each target platform
-vxbe_COMPONENTS := $(BI_ENDIAN_COMPONENTS) perfProfAcc dmaAcc
-vxle_COMPONENTS := $(BI_ENDIAN_COMPONENTS) perfProfAcc
-vxsim_COMPONENTS := $(BI_ENDIAN_COMPONENTS) dmaAcc
-ifeq ($(IX_LINUXVER),2.6)
-linuxbe_COMPONENTS := $(BI_ENDIAN_COMPONENTS) dmaAcc oslinux
+ifneq (,$(filter $(IX_TARGET), linuxbe linuxle))
+IX_TARGET_OS := linux
 else
-linuxbe_COMPONENTS := $(BI_ENDIAN_COMPONENTS) dmaAcc oslinux perfProfAcc
+IX_TARGET_OS := vxworks
 endif
 
-#The lists below contain the set of components available for each target platform
-# specific to the ixp46X device
-ixp46X_vxbe_COMPONENTS := $(ixp46X_BI_ENDIAN_COMPONENTS) \
- $(vxbe_COMPONENTS)
-ixp46X_vxle_COMPONENTS := $(ixp46X_BI_ENDIAN_COMPONENTS) \
- $(vxle_COMPONENTS)
-ixp46X_vxsim_COMPONENTS := $(ixp46X_BI_ENDIAN_COMPONENTS) \
-$(vxsim_COMPONENTS)
-ixp46X_linuxbe_COMPONENTS := $(ixp46X_BI_ENDIAN_COMPONENTS) \
-                                      $(linuxbe_COMPONENTS)
-ixp46X_linuxle_COMPONENTS := $(ixp46X_BI_ENDIAN_COMPONENTS) \
-                                      $(linuxle_COMPONENTS)
+include Makefile_ixp46X
 
-# To facilitate automated builds, do not modify the value of COMPONENTS directly - 
-# just change the per-platform component lists above.
-ifeq ($(IX_DEVICE),ixp46X)
-COMPONENTS:=$($(IX_DEVICE)_$(IX_TARGET)_COMPONENTS)
-else
-COMPONENTS := $($(IX_TARGET)_COMPONENTS)
-endif
-
-################################################################
-# Codelet components
-# Codeletes listed in BI_ENDIAN_CODELETS_COMPONENTS must work for both
-# big and little endian OSs.
-BI_ENDIAN_CODELETS_COMPONENTS := hssAcc ethAcc atm
-ifndef IX_CONTROLLED_COUNTRY_BUILD
-BI_ENDIAN_CODELETS_COMPONENTS += cryptoAcc
-endif # !IX_CONTROLLED_COUNTRY_BUILD
-
-#Codelet components only applicable to ixp46x
-ixp46X_BI_ENDIAN_CODELETS_COMPONENTS := timeSyncAcc parityENAcc
-ifndef IX_CONTROLLED_COUNTRY_BUILD
-ixp46X_BI_ENDIAN_CODELETS_COMPONENTS += 
-endif # !IX_CONTROLLED_COUNTRY_BUILD
-
-vxbe_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) dmaAcc perfProfAcc
-vxle_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) perfProfAcc
-vxsim_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) dmaAcc perfProfAcc
-ifeq ($(IX_LINUXVER),2.6)
-linuxbe_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) dmaAcc
-linuxle_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS)
-else
-linuxbe_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) dmaAcc perfProfAcc
-linuxle_CODELETS_COMPONENTS := $(BI_ENDIAN_CODELETS_COMPONENTS) perfProfAcc
-endif
-
-#The lists below contain the set of components available for each target platform
-# specific to the ixp46X device
-ixp46X_vxbe_CODELETS_COMPONENTS := $(ixp46X_BI_ENDIAN_CODELETS_COMPONENTS) \
-                                   $(vxbe_CODELETS_COMPONENTS)
-ixp46X_vxle_CODELETS_COMPONENTS := $(ixp46X_BI_ENDIAN_CODELETS_COMPONENTS) \
-                                   $(vxle_CODELETS_COMPONENTS)
-ixp46X_vxsim_CODELETS_COMPONENTS := $(ixp46X_BI_ENDIAN_CODELETS_COMPONENTS) \
-                                    $(vxsim_CODELETS_COMPONENTS)
-ixp46X_linuxbe_CODELETS_COMPONENTS := $(ixp46X_BI_ENDIAN_CODELETS_COMPONENTS) \
-                                      $(linuxbe_CODELETS_COMPONENTS)
-ixp46X_linuxle_CODELETS_COMPONENTS := $(ixp46X_BI_ENDIAN_CODELETS_COMPONENTS) \
-                                      $(linuxle_CODELETS_COMPONENTS)
-
-ifeq ($(IX_DEVICE),ixp46X)
-CODELETS_COMPONENTS:=$($(IX_DEVICE)_$(IX_TARGET)_CODELETS_COMPONENTS)
-else
-CODELETS_COMPONENTS :=$($(IX_TARGET)_CODELETS_COMPONENTS)
-endif
 
 
 ################################################################
@@ -154,25 +69,17 @@ ALL_COMPONENTS += $(CODELETS_COMPONENTS:%=codelets_%)
 ################################################################
 # vxWorks BSP selection
 #
-ifeq ($(IX_PLATFORM),ixdp46x)
-ifeq ($(IX_TARGET),vxle)
-BSP := ixdp465_le
-else
-BSP := ixdp465
-endif
-else
-ifeq ($(IX_TARGET),vxle)
-BSP := ixdp425_le
-else
-BSP := ixdp425
-endif
-endif
 
 BSP_DIR := $(WIND_BASE)/target/config/$(BSP)
 
 # Windows paths must use '\' as seperator for the MSDOS 'cd' command
 ifeq ($(IX_HOST_OS),windows)
+ifeq ($(VXSHELL),ZSH)
+ BSP_DIR := $(subst \,/,$(BSP_DIR))
+ WIND_BASE := $(subst \,/,$(WIND_BASE))
+else
  BSP_DIR := $(subst /,\,$(BSP_DIR))
+endif
 endif
 
 
@@ -188,16 +95,11 @@ include Makefile.common
 
 ################################################################
 # OSAL selection
-ifneq (,$(filter $(IX_DEVICE), ixp46X))
-IX_TGT_DEVICE := ixp465
-else
-IX_TGT_DEVICE := ixp425
-endif
 
 OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
 ifeq ($(IX_TARGET_OS),linux)
-OSAL_IMAGE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)-$(IX_LINUXVER)/libosal.a
-OSAL_MODULE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)-$(IX_LINUXVER)/ixp_osal.o
+OSAL_IMAGE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/libosal.a
+OSAL_MODULE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/ixp_osal.o
 else
 OSAL_IMAGE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/libosal.a
 OSAL_MODULE := ../ixp_osal/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)/ixp_osal.o
@@ -225,7 +127,11 @@ ifeq ($(IX_TARGET_OS),vxworks)
 
 # Suffix for Tornado tool names
 ifeq ($(IX_TARGET),vxsim)
-VX_TOOL_SUFFIX = simso
+ifeq ($(IX_HOST_OS),solaris)
+VX_TOOL_SUFFIX = sparc
+else # Linux or Windows
+VX_TOOL_SUFFIX = pentium
+endif
 else
 VX_TOOL_SUFFIX = arm
 endif
@@ -253,7 +159,7 @@ endif
 ifeq ($(TOOL_FAMILY),diab)
 LD := dld
 AR := dar
-VXWORKS_VER := vxworks55
+VXWORKS_VER := vxworks62
 NM := ddump -M
 else
 LD := $(CC)
@@ -261,10 +167,14 @@ AR := ar$(VX_TOOL_SUFFIX)
 NM := nm$(VX_TOOL_SUFFIX)
 endif
 
-ifeq ($(TOOL_FAMILY),diab)
-MUNCH := wtxtcl $(WIND_HOST_BASE)/host/src/hutils/munch.tcl -c $(VX_TOOL_SUFFIX)
+ifeq ($(VXSHELL),ZSH)
+# use default munch command
 else
-MUNCH := wtxtcl $(WIND_HOST_BASE)/host/src/hutils/munch.tcl -asm $(VX_TOOL_SUFFIX)
+ifeq ($(TOOL_FAMILY),diab)
+MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -c $(VX_TOOL_SUFFIX)
+else
+MUNCH := wtxtcl $(WIND_HOST_BASE)/host/resource/hutils/tcl/munch.tcl -asm $(VX_TOOL_SUFFIX)
+endif
 endif
 
 ifeq ($(TOOL_FAMILY),diab)
@@ -301,7 +211,14 @@ endif # IX_TARGET_OS == vxworks
 ifeq ($(IX_TARGET_OS),vxworks)
 
 CFLAGS := -DRW_MULTI_THREAD -D_REENTRANT -D_WRS_KERNEL \
-	-Isrc/include -I$(WIND_BASE)/target/h -I$(BSP_DIR) -I$(WIND_BASE)/target/h/wrn/coreip \
+	-Isrc/include -I$(WIND_BASE)/target/h \
+	-I$(WIND_BASE)/target/h/wrn/coreip \
+	-I$(WIND_BASE)/target/h/drv \
+	-I$(WIND_BASE)/target/h/drv/intrCtl \
+	-I$(WIND_BASE)/target/h/drv/i2c \
+	-I$(WIND_BASE)/target/h/drv/timer \
+	-I$(WIND_BASE)/target/h/drv/sio \
+	-I$(BSP_DIR) \
 	-I$(BSP_DIR)/../all
 
 ifeq ($(TOOL_FAMILY),diab)
@@ -310,7 +227,7 @@ ifeq ($(TOOL_FAMILY),diab)
   MAKE_DEP_FLAG := -Xmake-dependency
 else
 # compiler flags using GNU compiler
-  GNU_CFLAGS := -Wall -ansi -pedantic -fno-common
+  GNU_CFLAGS := -Wall -ansi -fno-common -fno-builtin -finline-limit=750
   MAKE_DEP_FLAG := -M
 endif
 
@@ -372,13 +289,22 @@ GNU_CFLAGS += -Wsign-compare -Wformat -Wstrict-prototypes -Wshadow -Wmissing-pro
 endif
 
 ifndef IX_MPHY
+ifndef IX_NPE_HSS_MPHY4PORT
 CFLAGS += -DIX_UTOPIAMODE=1
+endif
 endif
 
 ifdef IX_MPHYSINGLEPORT
 CFLAGS += -DIX_MPHYSINGLEPORT=1
 endif
 
+#ifdef IX_HSSETH_COEXIST
+CFLAGS += -DIX_HSSETH_COEXIST=1
+#endif
+
+ifdef IX_NPE_HSS_MPHY4PORT
+CFLAGS += -DIX_NPE_HSS_MPHY4PORT
+endif
 
 ifeq ($(IX_TARGET_OS),linux)
 # Default to build without debug symbols for Linux
@@ -388,7 +314,7 @@ endif
 ifndef IX_NOSYM
 #CFLAGS += -ggdb3
 DIAB_CFLAGS += -g
-  GNU_CFLAGS += -ggdb3
+GNU_CFLAGS += -ggdb3
 endif
 
 ifndef IX_NOOPT
@@ -414,30 +340,39 @@ endif
 
 # Target platform dependent options
 ifeq ($(IX_TARGET),vxsim)
-  CFLAGS += -DCPU=SIMSPARCSOLARIS
+  ifeq ($(IX_HOST_OS),solaris)
+    CFLAGS += -DCPU=SIMSPARCSOLARIS
+  else
+    ifeq ($(IX_HOST_OS),linux)
+      CFLAGS += -DCPU=SIMLINUX
+    else # Windows
+      $(MAKEFILE_TRACE) vxsim_unsupported_in_Windows
+      # CFLAGS += -DCPU=SIMNT
+    endif # .. Windows or Linux
+  endif # .. solaris
 else
   ifeq ($(IX_TARGET_OS),vxworks)
     LDFLAGS += -Wl
     CFLAGS += -DCPU=XSCALE -DCPU_XSCALE -DARMMMU=ARMMMU_XSCALE \
       	-DARMCACHE=ARMCACHE_XSCALE
-    GNU_CFLAGS += -mcpu=xscale -mapcs-32 -mno-sched-prolog
+    GNU_CFLAGS += -mno-sched-prolog -mcpu=xscale
     ifeq ($(IX_TARGET),vxle)
       CFLAGS += -DARMEL -D__ARMEL__ -DLITTLE_ENDIAN_MODE
       DIAB_CFLAGS += -tARMXLS:$(VXWORKS_VER)
-      GNU_CFLAGS += -mlittle-endian
+      GNU_CFLAGS += -txscale -Wa,-EL
       ifeq ($(TOOL_FAMILY),diab)
         LDFLAGS += -tARMXLS:$(VXWORKS_VER)
       else
-        LDFLAGS += -mlittle-endian
+        LDFLAGS += -txscale -Wa,-EL
       endif
     else # $(IX_TARGET) == vxle
       CFLAGS += -DARMEB -D__ARMEB__ -DBIG_ENDIAN_MODE
       DIAB_CFLAGS += -tARMXES:$(VXWORKS_VER)
-      GNU_CFLAGS += -mbig-endian
+      GNU_CFLAGS += -txscalebe -Wa,-EB
       ifeq ($(TOOL_FAMILY),diab)
         LDFLAGS += -tARMXES:$(VXWORKS_VER)
       else
-        LDFLAGS += -mbig-endian
+        LDFLAGS += -txscalebe -Wa,-EB
       endif
     endif # $(IX_TARGET) == vxle
   endif # $(IX_TARGET_OS) == vxworks
@@ -462,19 +397,9 @@ CFLAGS += -I$(OSAL_DIR)/ \
           -I$(OSAL_DIR)/include/platforms/ixp400/ \
           -I$(OSAL_DIR)/include/platforms/ixp400/$(IX_TGT_DEVICE)/ \
           -I$(OSAL_DIR)/os/$(IX_TARGET_OS)/include/platforms/ixp400/$(IX_TGT_DEVICE)/
-        
+
 CFLAGS += $(IX_CFLAGS) 
 LDFLAGS += $(IX_LDFLAGS)
-
-#Set additions to the compiler flag based on device chosen
-ifeq ($(IX_DEVICE),ixp46X)
-CFLAGS += -D__ixp46X
-ifeq ($(IX_TARGET_OS),vxworks)
-CFLAGS += -DIX_FLASH_SIZE_32M
-endif
-else
-CFLAGS += -D__ixp42X
-endif
 
 ################################################################
 # Other commands
@@ -522,16 +447,29 @@ MAKEFILE_TRACE := @echo $(ECHO_QUOTE)--- Makefile: $(ECHO_QUOTE) # Use this sett
 #             RM : unconditionally delete file(s)
 
 ifeq ($(IX_HOST_OS),windows)
+ifeq ($(VXSHELL),ZSH)
+# windows zsh settings
+CMD_SEP := &&
+ECHO_QUOTE := "# " this comment is here to fix emacs syntax highlighting 
+ECHO_BACKSLASH := \# comment needed to keep \ away from end of line
+SAFE_QUOTE := "# " this comment is here to fix emacs syntax highlighting 
+ECHO_BLANKLINE := echo " "
+RM := vxrm 
+RMDIR := rm -f -r
+TOUCH_EMPTY_FILE := touch
+else
 # Windows settings
 CMD_SEP := &&
 ECHO_QUOTE := # cmd.exe's echo command doesn't need quotes
 ECHO_BACKSLASH := \# comment needed to keep \ away from end of line
 SAFE_QUOTE := "# " this comment is here to fix emacs syntax highlighting 
 ECHO_BLANKLINE := @cmd.exe /c echo.
+RMDIR := rmdir /q /s 
 RM := vxrm 
 # Windows doesn't have a 'touch' command. Warning! Unlike Unix touch,
 # this will overwrite the existing file!
 TOUCH_EMPTY_FILE := echo. >
+endif
 else
 # Unix settings
 CMD_SEP := ;
@@ -540,6 +478,7 @@ ECHO_BACKSLASH := \\
 SAFE_QUOTE := '# ' this comment is here to fix emacs syntax highlighting 
 ECHO_BLANKLINE := @echo
 RM := rm -f
+RMDIR := rm -f -r
 TOUCH_EMPTY_FILE := touch
 endif
 
@@ -617,16 +556,16 @@ usage:
 	@echo $(ECHO_QUOTE)make modules$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds all of the linux kernel modules$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make check COMP=(component) VXTARGET=(vxworks target)$(ECHO_QUOTE)
+	@echo $(ECHO_QUOTE)make check COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds and runs a component unit test, diffs the output$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  against src/(component)/test/expected.out.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make coverage COMP=(component) VXTARGET=(vxworks target)$(ECHO_QUOTE)
+	@echo $(ECHO_QUOTE)make coverage COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  builds and runs a component unit test, writes code coverage$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  data to $(METRICS_DIR)/. This target will include only $(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  production code for a single component.$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
-	@echo $(ECHO_QUOTE)make run-coverage COMP=(component) VXTARGET=(vxworks target)$(ECHO_QUOTE)
+	@echo $(ECHO_QUOTE)make run-coverage COMP=(component) VXTARGET=(vxworks target) VXPROC=(vxworks processor number)$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  similar to 'make coverage', but can include unit test code$(ECHO_QUOTE)
 	@echo $(ECHO_QUOTE)  and other components if they are built with USE_REAL_TEST=1$(ECHO_QUOTE)
 	$(ECHO_BLANKLINE)
@@ -732,12 +671,12 @@ usage:
 # OUTPUT_DIR_FLAGS, no other rules need to depend on them, as the
 # dependencies are always built first.
 
-ifeq ($(IX_DEVICE),ixp46X)
-OBJ_DIR := $(IX_DEVICE)/lib/$(IX_TARGET)
-OBJ_DIR_EXIT := ../../..
-else
+ifeq ($(IX_DEVICE),ixp42X)
 OBJ_DIR := lib/$(IX_TARGET)
 OBJ_DIR_EXIT := ../..
+else
+OBJ_DIR := $(IX_DEVICE)/lib/$(IX_TARGET)
+OBJ_DIR_EXIT := ../../..
 endif
 
 OUTPUT_DIR_FLAGS := $(OUTPUT_DIRS:%=%/.dirCreationFlag)
@@ -778,6 +717,7 @@ ASM_C_RULES_COMP_DIR = $(patsubst %/test/,%/,$(dir $*))
 # become a problem.
 ASM_C_RULES_COMP_FOR_FILE_TEMP = $(subst /,_,$(ASM_C_RULES_COMP_DIR))
 ASM_C_RULES_COMP_FOR_FILE = $(patsubst %_,%,$(ASM_C_RULES_COMP_FOR_FILE_TEMP))
+
 ASM_C_RULES_CFLAGS_FOR_FILE = -Isrc/$(dir $*) -Isrc/$(ASM_C_RULES_COMP_DIR) \
          $($(subst /,_,$(dir $*))CFLAGS) \
          $($(subst /,_,$(ASM_C_RULES_COMP_DIR))CFLAGS) \
@@ -903,7 +843,7 @@ NPE_CONVERTER_SRC := $(IX_XSCALE_SW)/src/npeDl/ixNpeDlImageConverter.c
 
 $(NPE_CONVERTER) : $(NPE_CONVERTER_SRC)
 	cd $(IX_XSCALE_SW)/src/npeDl && \
-  gcc -I$(IX_XSCALE_SW)/src/include ixNpeDlImageConverter.c -o $@
+  gcc -fno-builtin -I$(IX_XSCALE_SW)/src/include ixNpeDlImageConverter.c -o $@
 
 $(NPE_DAT) : $(NPE_CONVERTER)
 	cd $(IX_XSCALE_SW)/$(OBJ_DIR) && $(NPE_CONVERTER)
@@ -1106,7 +1046,7 @@ $(OBJ_DIR)/ixp400_%.ko : force
 
 # The 'modules' target builds every module
 ifneq (,$(COMPONENTS))
-ALL_MODULES := ixp400 
+ALL_MODULES := $(IX_DEVICE_FAMILY) 
 endif
 
 TEMP_CODELETS_COMPONENTS := $(CODELETS_COMPONENTS:%=codelets_%)
@@ -1140,16 +1080,12 @@ MEMUSAGE_REPORT := $(METRICS_DIR)/$(IX_TARGET)MemUsage.txt
 
 ifeq ($(IX_TARGET_OS),vxworks)
 MEMUSAGE_ACCESS_FILES := $(COMPONENTS:%=$(OBJ_DIR)/lib%.a)
-ifeq ($(IX_DEVICE),ixp46X)
-MEMUSAGE_ACCESS_SINGLE_FILE :=  $(OBJ_DIR)/libIxp400.a
-else
-MEMUSAGE_ACCESS_SINGLE_FILE :=  $(OBJ_DIR)/libIxp425.a
-endif
+MEMUSAGE_ACCESS_SINGLE_FILE :=  $(OBJ_DIR)/lib$(IX_DEVICE_TYPE).a
 MEMUSAGE_CODELET_FILES := $(CODELETS_COMPONENTS:%=$(OBJ_DIR)/libcodelets_%.a)
 else
-MEMUSAGE_ACCESS_FILES := $(COMPONENTS:%=$(OBJ_DIR)/ixp400_%.o)
-MEMUSAGE_ACCESS_SINGLE_FILE :=  $(OBJ_DIR)/ixp400.o
-MEMUSAGE_CODELET_FILES := $(CODELETS_COMPONENTS:%=$(OBJ_DIR)/ixp400_codelets_%.o)
+MEMUSAGE_ACCESS_FILES := $(COMPONENTS:%=$(OBJ_DIR)/$(IX_DEVICE_FAMILY)_%.o)
+MEMUSAGE_ACCESS_SINGLE_FILE :=  $(OBJ_DIR)/$(IX_DEVICE_FAMILY).o
+MEMUSAGE_CODELET_FILES := $(CODELETS_COMPONENTS:%=$(OBJ_DIR)/$(IX_DEVICE_FAMILY)_codelets_%.o)
 endif
 
 # Note: MEMUSAGE_*_FILES macros must _not_ contain a mix of libraries
@@ -1199,10 +1135,10 @@ else # IX_INCLUDE_ALL_OBJS
 # that only objects whose code is referenced in $(COMP) will appear in 
 # the final image.
 
-ifeq ($(IX_DEVICE),ixp46X)
-VXWORKS_LIB_EXTRA = $(VXWORKS_COMP_OBJ) $(patsubst %, $(OBJ_DIR)/lib%.a, $(VXWORKS_NON_ACCESS_DRIVER_DEPS)) $(OBJ_DIR)/libIxp400.a
-else
+ifeq ($(IX_DEVICE),ixp42X)
 VXWORKS_LIB_EXTRA = $(VXWORKS_COMP_OBJ) $(patsubst %, $(OBJ_DIR)/lib%.a, $(VXWORKS_NON_ACCESS_DRIVER_DEPS)) $(OBJ_DIR)/libIxp425.a
+else
+VXWORKS_LIB_EXTRA = $(VXWORKS_COMP_OBJ) $(patsubst %, $(OBJ_DIR)/lib%.a, $(VXWORKS_NON_ACCESS_DRIVER_DEPS)) $(OBJ_DIR)/libIxp400.a
 endif
 endif # IX_INCLUDE_ALL_OBJS
 
@@ -1218,23 +1154,31 @@ define VXWORKS_RM_IMAGE
 	$(RM) $(BSP_DIR)/$(VXWORKS_IMAGE_NAME)
 endef
 
-ifeq ($(IX_HOST_OS),windows)
 # The version of make shipped with Tornado for Windows won't reliably
 # accept macro values from the command line, so we need this workaround.
-define VXWORKS_CALL_BSP_MAKE
+define VXWORKS_CALL_BSP_MK_WIN  
 	cd $(BSP_DIR) $(CMD_SEP) \
 	set LIB_EXTRA=$(VXWORKS_LIB_EXTRA:%=$(IX_XSCALE_SW)/%) $(CMD_SEP) \
 	$(MAKE) $(VXWORKS_IMAGE_NAME) IX_TARGET=$(IX_TARGET) IX_PLATFORM=$(IX_PLATFORM) IX_DEVICE=$(IX_DEVICE) $(CMD_SEP) \
 	copy /y $(subst /,\,$(BSP_DIR)/$(VXWORKS_IMAGE_NAME) $(IX_XSCALE_SW)/$@)
 endef
-else
-define VXWORKS_CALL_BSP_MAKE
+
+define VXWORKS_CALL_BSP_MK_UNIX
 	cd $(BSP_DIR) $(CMD_SEP) \
 	$(MAKE) $(VXWORKS_IMAGE_NAME) \
       	   LIB_EXTRA="$(VXWORKS_LIB_EXTRA:%=$(IX_XSCALE_SW)/%)" \
 	   IX_TARGET=$(IX_TARGET) IX_PLATFORM=$(IX_PLATFORM) IX_DEVICE=$(IX_DEVICE)
 	cp $(BSP_DIR)/$(VXWORKS_IMAGE_NAME) $@
 endef
+
+ifeq ($(IX_HOST_OS),windows)
+ifeq ($(VXSHELL),ZSH)
+VXWORKS_CALL_BSP_MAKE =	$(VXWORKS_CALL_BSP_MK_UNIX)
+else
+VXWORKS_CALL_BSP_MAKE = $(VXWORKS_CALL_BSP_MK_WIN)
+endif
+else
+VXWORKS_CALL_BSP_MAKE = $(VXWORKS_CALL_BSP_MK_UNIX)
 endif
 
 # The vxWorks and vxWorks.st rules are shorthand for the full image names
@@ -1296,7 +1240,7 @@ $(OBJ_DIR)/%-component-dependencies.d: $(OUTPUT_DIR_FLAGS)
 # Objects and libs for the 'loadable' rule
 	echo $(OBJ_DIR)/$*.out : $(LOADABLE_RULE_OBJ) $(LOADABLE_RULE_LIB_FILES) >>$@
 # Objects the 'module' rule
-	echo $(OBJ_DIR)/ixp400_$*.o : $(MOD_OBJ) >>$@
+	echo $(OBJ_DIR)/$(IX_DEVICE_FAMILY)_$*.o : $(MOD_OBJ) >>$@
 # Objects and libs for 'vxWorks' rules
 	echo $(OBJ_DIR)/$*-vxWorks $(OBJ_DIR)/$*-vxWorks.st : $(VXWORKS_LIB_EXTRA) >>$@
 # Make sure the .d gets rebuilt for makefile changes
@@ -1381,30 +1325,23 @@ bootrom: libIxp400
 ################################################################
 # Library containing all component code
 
-ifeq ($(IX_DEVICE),ixp46X)
-libIxp400 : $(OBJ_DIR)/libIxp400.a $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE)
+libIxp400 : $(OBJ_DIR)/lib$(IX_DEVICE_TYPE).a $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE)
 
-$(OBJ_DIR)/libIxp400.a : $(COMPONENT_OBJ) $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE) 
+$(OBJ_DIR)/lib$(IX_DEVICE_TYPE).a : $(COMPONENT_OBJ) $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE) 
 	$(MAKEFILE_TRACE) Building Ixp400 library containing components $(COMPONENTS:%=\"%\")
-	$(AR) rvs $(OBJ_DIR)/libIxp400.a $^
-else
-libIxp400 : $(OBJ_DIR)/libIxp425.a $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE)
+	$(AR) rvs $(OBJ_DIR)/lib$(IX_DEVICE_TYPE).a $^
 
-$(OBJ_DIR)/libIxp425.a : $(COMPONENT_OBJ) $(NPE_PRODUCTION_HEADER_OBJ) $(OSAL_MODULE)
-	$(MAKEFILE_TRACE) Building Ixp400 library containing components $(COMPONENTS:%=\"%\")
-	$(AR) rvs $(OBJ_DIR)/libIxp425.a $^
-endif
 
 ################################################################
 # Loadable module containing all component code
 
 ifeq ($(IX_LINUXVER),2.6)
-ixp400 : $(OBJ_DIR)/ixp400.o
+$(IX_DEVICE_FAMILY) : $(OBJ_DIR)/$(IX_DEVICE_FAMILY).o
 	@echo 'EXTRA_LDFLAGS := --whole-archive' > $(OBJ_DIR)/Makefile
 	@echo ' ' >> $(OBJ_DIR)/Makefile
-	@echo 'lib-m := $(COMPONENTS:%=ixp400_%.o) $(OBJ_DIR_EXIT)/$(OSAL_MODULE)'>> $(OBJ_DIR)/Makefile
+	@echo 'lib-m := $(COMPONENTS:%=$(IX_DEVICE_FAMILY)_%.o) $(OBJ_DIR_EXIT)/$(OSAL_MODULE)'>> $(OBJ_DIR)/Makefile
 	@echo ' ' >> $(OBJ_DIR)/Makefile
-	@echo 'obj-m := ixp400.o' >> $(OBJ_DIR)/Makefile
+	@echo 'obj-m := $(IX_DEVICE_FAMILY).o' >> $(OBJ_DIR)/Makefile
 	@echo ' ' >> $(OBJ_DIR)/Makefile
 	@echo 'ixp400-objs := lib.a' >> $(OBJ_DIR)/Makefile
 	@echo ' ' >> $(OBJ_DIR)/Makefile
@@ -1413,7 +1350,7 @@ ixp400 : $(OBJ_DIR)/ixp400.o
 	@echo 'make -C $(LINUX_SRC) M=$(shell pwd)/$(OBJ_DIR) V=1 modules' >> $(OBJ_DIR)/Makefile
 	make -C $(OBJ_DIR)
 else
-ixp400 : $(OBJ_DIR)/ixp400.o
+$(IX_DEVICE_FAMILY) : $(OBJ_DIR)/$(IX_DEVICE_FAMILY).o
 endif
 
 $(OBJ_DIR)/ixp400.o: $(COMPONENTS:%=$(OBJ_DIR)/ixp400_%.o) $(OSAL_MODULE)
@@ -1425,46 +1362,18 @@ endif
 
 ################################################################
 # clean - deletes everything that can be rebuilt
-.PHONY: clean bsp_clean xscale_sw_clean
+.PHONY: clean bsp_clean xscale_sw_clean osal_clean
 
-clean: xscale_sw_clean
+clean: xscale_sw_clean osal_clean
 
 ifeq ($(IX_TARGET_OS),vxworks)
 clean: bsp_clean
 endif
 
 
-xscale_sw_clean:
-	$(MAKEFILE_TRACE) Deleting all build products
-ifeq ($(IX_HOST_OS),windows)
-ifeq ($(IX_DEVICE),ixp42X)
-	rmdir /q /s lib
-else
-	rmdir /q /s ixp46X 
-endif
-else
-ifeq ($(IX_DEVICE),ixp42X)
-	$(RM) -r lib
-else
-	$(RM) -r ixp46X 
-endif
-endif
-
-################################################################
-# bsp_clean - make clean in the vxWorks BSP directory
-bsp_clean:
-ifeq ($(IX_DEVICE),ixp42X)
-	$(MAKEFILE_TRACE) Doing make clean in BSP directory
-	cd $(WIND_BASE)/target/config/ixdp425 $(CMD_SEP) \
-	$(MAKE) clean
-	cd $(WIND_BASE)/target/config/ixdp425_le $(CMD_SEP) \
-	$(MAKE) clean
-else
-	cd $(WIND_BASE)/target/config/ixdp465 $(CMD_SEP) \
-	$(MAKE) clean
-	cd $(WIND_BASE)/target/config/ixdp465_le $(CMD_SEP) \
-	$(MAKE) clean
-endif
+osal_clean:
+	$(MAKEFILE_TRACE) Deleting all build products in osal
+	$(RMDIR) $(OSAL_DIR)/lib/$(IX_TGT_DEVICE)/$(IX_TARGET_OS)/$(IX_TARGET)
 
 
 

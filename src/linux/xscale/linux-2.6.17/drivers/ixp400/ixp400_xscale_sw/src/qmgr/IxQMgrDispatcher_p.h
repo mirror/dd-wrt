@@ -2,13 +2,13 @@
  * @file    IxQMgrDispatcher_p.h
  *
  * @author Intel Corporation
- * @date    07-Feb-2002
+ *
+ * @date    26-Jan-2006
  *
  * @brief   This file contains the internal functions for dispatcher
- *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,21 +54,33 @@
 /*
  * User defined include files
  */
-#include "IxQMgr.h"
+#include "IxQMgr_sp.h"
+
+/* Dispatcher Config enum*/
+typedef enum {
+	IX_QMGR_DISPATCHER_RUN,
+	IX_QMGR_DISPATCHER_STOP
+}IxQMgrDispatcherConfig;
+
+/* Dispatcher interrupt mode enum*/
+typedef enum{
+ IX_QMGR_DISPATCHER_INTERRUPT_MODE = 1,
+ IX_QMGR_DISPATCHER_POLLING_MODE  
+}IxQMgrDispatcherInterruptMode;
 
 /*
  * This structure defines the statistic data for a queue
  */
 typedef struct
 {
-    unsigned callbackCnt;       /* Call count of callback                    */
-    unsigned priorityChangeCnt; /* Priority change count                     */
-    unsigned intNoCallbackCnt;  /* Interrupt fired but no callback set count */
-    unsigned intLostCallbackCnt;  /* Interrupt lost and detected ;  SCR541   */
-    BOOL notificationEnabled;    /* Interrupt enabled for this queue         */
-    IxQMgrSourceId srcSel;       /* interrupt source                         */
-    unsigned enableCount;        /* num times notif enabled by LLP           */
-    unsigned disableCount;       /* num of times notif disabled by LLP       */
+    UINT32 callbackCnt;       /* Call count of callback                    */
+    UINT32 priorityChangeCnt; /* Priority change count                     */
+    UINT32 intNoCallbackCnt;  /* Interrupt fired but no callback set count */
+    UINT32 intLostCallbackCnt;  /* Interrupt lost and detected ;  SCR541   */
+    BOOL notificationEnabled;    /* Interrupt enabled for this queue       */
+    IxQMgrSourceId srcSel;       /* interrupt source                       */
+    UINT32 enableCount;        /* num times notif enabled by LLP           */
+    UINT32 disableCount;       /* num of times notif disabled by LLP       */
 } IxQMgrDispatcherQStats;
 
 /*
@@ -76,16 +88,17 @@ typedef struct
  */
 typedef struct
  {
-    unsigned loopRunCnt;       /* ixQMgrDispatcherLoopRun count */
+    UINT32 loopRunCnt;       /* ixQMgrDispatcherLoopRun count */
 
     IxQMgrDispatcherQStats queueStats[IX_QMGR_MAX_NUM_QUEUES];
 
 } IxQMgrDispatcherStats;
 
+
 /*
  * Initialise the dispatcher component
  */
-void
+IX_STATUS
 ixQMgrDispatcherInit (void);
 
 /*
@@ -100,8 +113,9 @@ ixQMgrDispatcherStatsGet (void);
  * for XSCALE processor (see clz instruction) and as a (slower) C 
  * function for other systems.
  */
-unsigned int
-ixQMgrCountLeadingZeros(unsigned int value);
+UINT32
+ixQMgrCountLeadingZeros(UINT32 value);
+
 
 #endif/*IXQMGRDISPATCHER_P_H*/
 

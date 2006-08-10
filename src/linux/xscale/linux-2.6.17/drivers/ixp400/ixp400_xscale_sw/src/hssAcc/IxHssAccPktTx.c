@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -68,7 +68,6 @@
 #include "IxNpeA.h"
 #include "IxHssAccPktTx_p.h"
 #include "IxHssAccError_p.h"
-#include "IxHssAccPDM_p.h"
 #include "IxHssAccPCM_p.h"
 #include "IxHssAccCommon_p.h"
 
@@ -113,94 +112,93 @@ ixHssAccPktTxDoneCallback (IxQMgrQId ixHssAccPktTxDoneQueueId,
 {
     /* This function is called from within an ISR */
     IX_STATUS status;
-    IxHssAccPDMDescriptor *desc;
-    UINT32 pDesc = 0;
+    UINT32 qEntry = 0;
+    UINT32 chainCount = 0;
+    IX_OSAL_MBUF *pRootBuf = NULL;
+    IxHssAccHdlcPort hdlcPortId = 0;
     IxHssAccHssPort hssPortId =  cbId;
     unsigned numOfTxDoneQReads = 0;
     IX_HSSACC_DEBUG_OFF (IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, "Entering "
-					   "ixHssAccPktTxDoneCallback\n"));
+                       "ixHssAccPktTxDoneCallback\n"));
 
-    /* Do a Q read to remove the desc ptr from the Q */
     do 
     {
-	status = ixQMgrQRead (ixHssAccPktTxDoneQueueId, &pDesc); 
-	desc = (IxHssAccPDMDescriptor *) pDesc; 
-	numOfTxDoneQReads++;
-	if (status == IX_SUCCESS)
-	{
+    
+        /* Read the queue entry from the TxDone queue */
+        status = ixQMgrQRead (ixHssAccPktTxDoneQueueId, &qEntry); 
+        numOfTxDoneQReads++;
+        if (status == IX_SUCCESS)
+        {
 
 #ifndef NDEBUG
-	    if (desc != NULL)
-	    {
+            if ((UINT32 *)qEntry != NULL)
+            {
 #endif
-		desc = (IxHssAccPDMDescriptor *) IX_HSSACC_PKT_MMU_PHY_TO_VIRT (desc);
+                /* Get the HDLC port number from the queue entry. */
+                hdlcPortId = (IxHssAccHdlcPort) (qEntry & IX_HSSACC_QM_Q_CHAN_NUM_MASK);
+                
+                /* Copy relevant fields from the NPE shared region to the OS dependant region */
+                pRootBuf = ixHssAccComMbufFromNpeFormatConvert ( qEntry, FALSE , &chainCount);
 
-                /* endian conversion for the NpePacket Descriptor */
-		desc->npeDesc.pRootMbuf = (IX_OSAL_MBUF *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-		    (UINT32)desc->npeDesc.pRootMbuf));
-		desc->npeDesc.packetLength = (UINT16)(IX_OSAL_READ_BE_SHARED_SHORT (
-	       	    (UINT16 *) &(desc->npeDesc.packetLength)));
-	        desc->npeDesc.rsvdShort0 = (UINT16)(IX_OSAL_READ_BE_SHARED_SHORT (
-	       	    (UINT16 *) &(desc->npeDesc.rsvdShort0)));	
-		desc->npeDesc.pNextMbuf = (IX_OSAL_MBUF *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-		    (UINT32) desc->npeDesc.pNextMbuf)); 
-		desc->npeDesc.pMbufData = (UINT8 *)(IX_OSAL_SWAP_BE_SHARED_LONG (
-		    (UINT32) desc->npeDesc.pMbufData)); 
-		desc->npeDesc.mbufLength = IX_OSAL_SWAP_BE_SHARED_LONG (
-		    desc->npeDesc.mbufLength); 
-
-		desc->npeDesc.pRootMbuf = ixHssAccPDMMbufFromNpeFormatConvert (
-		    desc->npeDesc.pRootMbuf, FALSE);
 
 #ifndef NDEBUG
-		/* Is the hss Port Id lower than the max hssPortId */
-		/* AND is the hdlc Port Id lower than the max hdlcPortId */
-		if (!(IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) && 
-		    !(IX_HSSACC_ENUM_INVALID (desc->hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
-		{
+
+                /* 
+                 * Ensure that the HSS Port Id is lower than the max hssPortId.
+                 * Also ensure that the HDLC Port Id is lower than the max hdlcPortId. 
+                 */
+                if (!(IX_HSSACC_ENUM_INVALID (hssPortId, hssPortMax)) && 
+                    !(IX_HSSACC_ENUM_INVALID (hdlcPortId, IX_HSSACC_HDLC_PORT_MAX)))
+                {
 #endif
-		    ixHssAccPCMTxDoneCallbackRun (hssPortId,
-						  desc->hdlcPortId,
-						  desc->npeDesc.pRootMbuf, 
-						  desc->npeDesc.errorCount,
-						  desc->npeDesc.status);
-		    
-		    ixHssAccPDMDescFree (desc, IX_HSSACC_PDM_TX_POOL);
-		    ixHssAccPktTxStats.txDones++;
-#ifndef NDEBUG		
-		}
-		else
-		{
-		    IX_HSSACC_DEBUG_OFF 
-			(IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback: Invalid "
-						 "descriptor was received.\n"));
-		    ixHssAccPktTxStats.invalidDescs++;
-		}
-	    }
-	    else
-	    {
-		IX_HSSACC_DEBUG_OFF 
-		    (IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback: Invalid "
-					     "descriptor was received.\n"));
-		    ixHssAccPktTxStats.invalidDescs++;
-	    }
+                    ixHssAccPCMTxDoneCallbackRun (hssPortId,
+                                                  hdlcPortId,
+                                                  pRootBuf, 
+                                                  IX_HSSACC_IX_NE_SHARED_ERR_CNT(pRootBuf),
+                                                  IX_HSSACC_IX_NE_SHARED_STATUS(pRootBuf));
+                    ixHssAccPktTxStats.txDones++;
+#ifndef NDEBUG      
+                }
+                else
+                {
+                    IX_HSSACC_DEBUG_OFF (IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback: Invalid "
+                                         "buffer was received.\n"));
+                    ixHssAccPktTxStats.txInvalidBuffers++;
+                }
 #endif
-	}
-	else if (status == IX_FAIL)
-	{
-	    IX_HSSACC_DEBUG_OFF 
-		(IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback:"
-					 "TxDone QRead failed\n"));
-	    ixHssAccPktTxStats.txDoneQReadFails++;
-	}
+                /* Decrement the number of buffers in use count for the specified client */
+                if(ixHssAccPCMnoBuffersInUseCountDec(hssPortId, hdlcPortId, chainCount) != IX_SUCCESS)
+                {
+                    IX_HSSACC_DEBUG_OFF (IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback: "
+                                        "ixHssAccPCMinUseCountDec "
+                                        "failed while decrementing usage count.\n"));
+                }
+#ifndef NDEBUG
+            }
+            else
+            {
+                    IX_HSSACC_DEBUG_OFF (IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback: Invalid "
+                                        "buffer was received.\n"));
+                    ixHssAccPktTxStats.txInvalidBuffers++;
+            } /* end of if-else ((UINT32 *)qEntry != NULL)*/
+#endif
+        }
+
+    else if (status == IX_FAIL)
+    {
+        IX_HSSACC_DEBUG_OFF 
+        (IX_HSSACC_REPORT_ERROR ("ixHssAccPktTxDoneCallback:"
+                     "TxDone QRead failed\n"));
+        ixHssAccPktTxStats.txDoneQReadFails++;
+    }
     } while (status == IX_SUCCESS);
     
     if (numOfTxDoneQReads > ixHssAccPktTxStats.maxEntriesInTxDoneQ)
     {
-	ixHssAccPktTxStats.maxEntriesInTxDoneQ = numOfTxDoneQReads;
+    ixHssAccPktTxStats.maxEntriesInTxDoneQ = numOfTxDoneQReads;
     }
     IX_HSSACC_DEBUG_OFF (IX_HSSACC_TRACE0 (IX_HSSACC_FN_ENTRY_EXIT, "Exiting "
-					   "ixHssAccPktTxDoneCallback\n"));
+                       "ixHssAccPktTxDoneCallback\n"));
 }
 
 
@@ -212,15 +210,15 @@ ixHssAccPktTxShow (void)
 {
     printf ("\nixHssAccPktTxShow:\n");
     printf ("           txs: %d \t     txDones: %d\n",
-	    ixHssAccPktTxStats.txs,
-	    ixHssAccPktTxStats.txDones);
-    printf ("    writeFails: %d \t   readFails: %d \t  invalidDescs: %d\n",
-	    ixHssAccPktTxStats.qWriteFails,
-	    ixHssAccPktTxStats.txDoneQReadFails,
-	    ixHssAccPktTxStats.invalidDescs);
+        ixHssAccPktTxStats.txs,
+        ixHssAccPktTxStats.txDones);
+    printf ("    writeFails: %d \t   readFails: %d \t  invalidBuffers: %d\n",
+        ixHssAccPktTxStats.qWriteFails,
+        ixHssAccPktTxStats.txDoneQReadFails,
+        ixHssAccPktTxStats.txInvalidBuffers);
     printf ("writeOverflows: %d \tmaxInTxDoneQ: %d\n",
-	    ixHssAccPktTxStats.qWriteOverflows,
-	    ixHssAccPktTxStats.maxEntriesInTxDoneQ);
+        ixHssAccPktTxStats.qWriteOverflows,
+        ixHssAccPktTxStats.maxEntriesInTxDoneQ);
 }
 
 
@@ -236,7 +234,8 @@ ixHssAccPktTxStatsInit (void)
     ixHssAccPktTxStats.qWriteOverflows  = 0;
     ixHssAccPktTxStats.txDoneQReadFails = 0;
     ixHssAccPktTxStats.maxEntriesInTxDoneQ = 0;
-    ixHssAccPktTxStats.invalidDescs = 0;
+    ixHssAccPktTxStats.txInvalidBuffers = 0;
+    
 }
 
 /**
@@ -336,11 +335,11 @@ ixHssAccPktTxUninit (void)
         status = ixQMgrNotificationDisable (ixHssAccPktTxDoneQId[hssPortIndex]);
         if (IX_SUCCESS != status)
         {
-            sprintf (errorString, "ixHssAccPktTxUninit:"
+            sprintf ((char *)errorString, "ixHssAccPktTxUninit:"
                      "Notification disable failed for HSS%d TxDone Q\n",
                      hssPortIndex);
             /* report the error */
-            IX_HSSACC_REPORT_ERROR (errorString);
+            IX_HSSACC_REPORT_ERROR ((char *)errorString);
             /* return error */
             return IX_FAIL;
         }
@@ -351,11 +350,11 @@ ixHssAccPktTxUninit (void)
             hssPortIndex);
         if (IX_SUCCESS != status)
         {
-            sprintf (errorString, "ixHssAccPktTxUninit:"
+            sprintf ((char *)errorString, "ixHssAccPktTxUninit:"
                      "Notification CallbackSet to dummy failed for HSS%d TxDone Q\n",
                      hssPortIndex);
             /* report the error */
-            IX_HSSACC_REPORT_ERROR (errorString);
+            IX_HSSACC_REPORT_ERROR ((char *)errorString);
             /* return error */
             return IX_FAIL;
         }

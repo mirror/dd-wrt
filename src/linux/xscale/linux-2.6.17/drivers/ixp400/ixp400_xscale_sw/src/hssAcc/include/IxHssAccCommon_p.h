@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -64,10 +64,38 @@
 #include "IxHssAcc.h"
 #include "IxNpeMh.h"
 
+#include "IxNpeA.h"
+#include "IxOsal.h"
 /*
  * Global variables
  */
 extern IxHssAccHssPort hssPortMax; /**< Number of HSS ports available */
+
+/*
+ * Typedefs
+ */
+ /**
+*
+* @typedef  IxHssAccNpeBuffer
+*
+* @brief NPE Shared region structure for hssAcc of IX_OSAL_BUF buffer
+*
+*/
+typedef struct 
+{
+    UINT32  *ixp_next;      /* Ptr to next buffer */
+    UINT16  ixp_len;        /* Buffer length */
+    UINT16  ixp_pkt_len;    /* Packet length */
+    UINT8   *ixp_data;      /* Ptr to data buffer in SDRAM */
+    UINT8   status;
+    UINT8   error_count;
+    UINT16  reserved0;      /* reserved field */
+    UINT32  reserved1;      /* reserved field */
+    UINT32  reserved2;      /* reserved field */
+    UINT32  reserved3;      /* reserved field */
+    UINT32  reserved4;      /* reserved field */
+
+} IxHssAccNpeBuffer;
 
 /**
  * #defines for function return types, etc.
@@ -79,7 +107,15 @@ extern IxHssAccHssPort hssPortMax; /**< Number of HSS ports available */
  * @brief The number of timeslots supported for the channelised
  * service
  */
-#define IX_HSSACC_MAX_CHAN_TIMESLOTS 32
+
+
+#ifdef IX_NPE_HSS_MPHY4PORT 
+#define IX_HSSACC_MAX_CHAN_TIMESLOTS 16
+#else
+#define IX_HSSACC_MAX_CHAN_TIMESLOTS 32 
+#endif
+
+
 
 /**
  * @def IX_HSSACC_BYTES_PER_WORD
@@ -337,6 +373,15 @@ extern IxHssAccHssPort hssPortMax; /**< Number of HSS ports available */
 #define IX_HSSACC_COM_HSSFCR_SIZE_MAX     1023
 
 /**
+ * @def IX_HSSACC_IX_NE_SHARED_SHORT_MASK
+ *
+ * @brief Mask used for sixteen bit (short) values.
+ */
+ #define IX_HSSACC_IX_NE_SHARED_SHORT_MASK      ((UINT16)0xFFFF)
+
+
+
+/**
  * @def IX_HSSACC_ENUM_INVALID
  *
  * @brief Mechanism to validate the upper (MAX) and lower (0) bounds 
@@ -351,6 +396,298 @@ extern IxHssAccHssPort hssPortMax; /**< Number of HSS ports available */
  * @return none
  */
 #define IX_HSSACC_ENUM_INVALID(VALUE, MAX) ((((VALUE) < 0) || ((VALUE) >= (MAX))) ? TRUE : FALSE)
+
+
+
+/**
+ * @def IX_HSSACC_PKT_MMU_PHY_TO_VIRT
+ *
+ * @brief HssAccess abstraction to the real macro in IxOsal.h
+ *
+ * @param UINT32 * [in] addr - address to operate on
+ *
+ * This macro converts a physical address to a virtual one 
+ *
+ * @return UINT32 *
+ */
+#define IX_HSSACC_PKT_MMU_PHY_TO_VIRT(addr) IX_OSAL_MMU_PHYS_TO_VIRT(addr)
+
+/**
+ * @def IX_HSSACC_PKT_MMU_VIRT_TO_PHY
+ *
+ * @brief HssAccess abstraction to the real macro in IxOsal.h
+ *
+ * @param UINT32 * [in] addr - address to operate on
+ *
+ * This macro converts a virtual address to a physical one 
+ *
+ * @return UINT32 *
+ */
+#define IX_HSSACC_PKT_MMU_VIRT_TO_PHY(addr) IX_OSAL_MMU_VIRT_TO_PHYS(addr)
+
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED(bufPtr)
+ *
+ * @brief Macro to extract the NPE shared region address 
+ * from address of the OS dependant region of IX_OSAL_BUF buffer
+ *
+ * @param int [in] bufPtr - The address of the OS dependant region 
+ * of IX_OSAL_BUF buffer
+ *
+ * @return (IxHssAccNpeBuffer *) - Pointer to the NPE shared region 
+ * of IX_OSAL_BUF buffer.
+ */
+#define IX_HSSACC_IX_NE_SHARED(bufPtr) \
+    ((IxHssAccNpeBuffer *)&((bufPtr)->ix_ne))
+
+/**
+ * @def IX_HSSACC_IX_OSAL_MBUF_FROM_IX_NE(ix_ne_ptr)
+ *
+ * @brief Macro to extract the OS dependant region address 
+ * from the address of the NPE shared region of IX_OSAL_BUF buffer
+ *
+ * @param int [in] ix_ne_ptr - the address of the NPE shared region 
+ * of IX_OSAL_BUF buffer
+ *
+ * @return (IX_OSAL_MBUF *) - Pointer to the OS dependant region
+ * of IX_OSAL_BUF buffer.
+ */
+#define IX_HSSACC_IX_OSAL_MBUF_FROM_IX_NE(ix_ne_ptr) \
+    ((IX_OSAL_MBUF *)((UINT8 *)(ix_ne_ptr) - offsetof(IX_OSAL_MBUF, ix_ne)))
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr)
+ *
+ * @brief Macro to extract the pointer to the NPE shared region of  
+ * the next IX_OSAL_BUF buffer in the chain from the address of the
+ * IX_OSAL_BUF buffer
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return (UINT32 *) - Pointer to the NPE shared region of the next
+ * IX_OSAL_BUF buffer in the chain.
+ */
+#define IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->ixp_next
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_LEN(bufPtr)
+ *
+ * @brief Macro to extract the length of the buffer from the address
+ * of the IX_OSAL_BUF buffer. 
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return UINT16  - Length of the IX_OSAL_BUF buffer
+ */
+#define IX_HSSACC_IX_NE_SHARED_LEN(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->ixp_len
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr)
+ *
+ * @brief Macro to extract the length of the packet from the address
+ * of the IX_OSAL_BUF buffer.
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return UINT16 - Length of the packet (composed of chained IX_OSAL_BUF 
+ * buffers) stored in the NPE shared region of the IX_OSAL_BUF buffer.
+ */
+#define IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->ixp_pkt_len
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_DATA(bufPtr)
+ *
+ * @brief Macro to extract the data area pointer in the NPE shared region 
+ * from the address of the IX_OSAL_BUF buffer
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return (UINT8 *) - Pointer to the data.
+ */
+#define IX_HSSACC_IX_NE_SHARED_DATA(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->ixp_data
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_STATUS(bufPtr)
+ *
+ * @brief Macro to extract the status in the NPE shared region from 
+ * the address of the IX_OSAL_BUF buffer.
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return UINT8 - The status is returned.
+ */
+#define IX_HSSACC_IX_NE_SHARED_STATUS(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->status
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_ERR_CNT(bufPtr)
+ *
+ * @brief Macro to extract the error count in the NPE shared region 
+ * from the address of the IX_OSAL_BUF buffer.
+ *
+ * @param int [in] bufPtr - the address of the IX_OSAL_BUF buffer
+ *
+ * @return UINT8 - The error count is returned.
+ */
+#define IX_HSSACC_IX_NE_SHARED_ERR_CNT(bufPtr) \
+    IX_HSSACC_IX_NE_SHARED(bufPtr)->error_count
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_CACHE_FLUSH(bufPtr)
+ *
+ * @brief HssAccess abstraction to the real macro in IxOsal.h
+ *
+ * @param UINT32 * [in] bufPtr - address to operate on
+ *
+ * This macro flushes the NPE shared region of the IX_OSAL_BUF buffer
+ * pointed to by bufPtr
+ *
+ * @return none
+ */
+#define IX_HSSACC_IX_NE_SHARED_CACHE_FLUSH(bufPtr) \
+  do { \
+      IX_OSAL_CACHE_FLUSH(IX_HSSACC_IX_NE_SHARED(bufPtr), \
+                              sizeof(IxHssAccNpeBuffer)); \
+    } \
+  while(0)
+
+/**
+ * @def IX_HSSACC_IX_NE_SHARED_CACHE_INVALIDATE(bufPtr)
+ *
+ * @brief HssAccess abstraction to the real macro in IxOsal.h
+ *
+ * @param UINT32 * [in] bufPtr - address of the IX_OSAL_BUF buffer
+ *
+ * This macro invalidates the NPE shared region of the IX_OSAL_BUF buffer  
+ *
+ * @return none
+ */
+#define IX_HSSACC_IX_NE_SHARED_CACHE_INVALIDATE(bufPtr) \
+  do { \
+      IX_OSAL_CACHE_INVALIDATE(IX_HSSACC_IX_NE_SHARED(bufPtr), \
+                                   sizeof(IxHssAccNpeBuffer)); \
+    } \
+  while(0)
+
+/**
+ * @def IX_HSSACC_IX_NE_ENDIAN_SWAP(bufPtr)
+ *
+ * @brief Generic endianess conversion macro for NPE shared region of IX_OSAL_BUF buffer
+ *
+ * @param IX_OSAL_MBUF * [in] bufPtr - Pointer to the IX_OSAL_BUF buffer.
+ *
+ * @return none
+ */
+#define IX_HSSACC_IX_NE_ENDIAN_SWAP(bufPtr) \
+{\
+      IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr) = (UINT32 *) (IX_OSAL_SWAP_BE_SHARED_LONG( \
+          (UINT32) IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr))); \
+      IX_HSSACC_IX_NE_SHARED_DATA(bufPtr) = (UINT8 *) (IX_OSAL_SWAP_BE_SHARED_LONG( \
+          (UINT32) IX_HSSACC_IX_NE_SHARED_DATA(bufPtr))); \
+      IX_HSSACC_IX_NE_SHARED_LEN(bufPtr) = (UINT16) (IX_OSAL_SWAP_BE_SHARED_SHORT( \
+          (UINT16) IX_HSSACC_IX_NE_SHARED_LEN(bufPtr))); \
+     IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr) = (UINT16) (IX_OSAL_SWAP_BE_SHARED_SHORT( \
+          (UINT16) IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr))); \
+      IX_HSSACC_IX_NE_SHARED_STATUS(bufPtr) = (UINT8) IX_HSSACC_IX_NE_SHARED_STATUS(bufPtr); \
+      IX_HSSACC_IX_NE_SHARED_ERR_CNT(bufPtr) = (UINT8) IX_HSSACC_IX_NE_SHARED_ERR_CNT(bufPtr); \
+}
+
+/**
+ * @def IX_HSSACC_MBUF_TO_IX_NE_SWAP(bufPtr)
+ *
+ * @brief Generic macro for copying relevant fields from the OS dependant region
+ * to the NPE shared region of IX_OSAL_BUF buffer.
+ *
+ * @param IX_OSAL_MBUF * [in] bufPtr - Pointer to the IX_OSAL_BUF buffer
+ *
+ * This macro does the following
+ * - Virtual to Physical address conversion is performed on the m_Next and m_Data 
+ *   values and then copied to the corresponding fields in the NPE shared region 
+ *   of the IX_OSAL_BUF buffer
+ * - Copies the m_Len and m_PktHdr.len fields of the OS dependant region to the 
+ *  ixp_len and ixp_pkt_len fields of the NPE shared region of the IX_OSAL_BUF buffer 
+ *
+ * @return none
+ */
+#define IX_HSSACC_MBUF_TO_IX_NE_SWAP(bufPtr) \
+{\
+    IX_OSAL_MBUF *nextBufPtr = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(bufPtr); \
+    if (nextBufPtr) {\
+        IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr) = (UINT32 *) \
+             IX_HSSACC_PKT_MMU_VIRT_TO_PHY( IX_HSSACC_IX_NE_SHARED(nextBufPtr)); \
+    } \
+    else \
+        IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr) = NULL; \
+\
+    IX_HSSACC_IX_NE_SHARED_DATA(bufPtr) = (UINT8 *) \
+         IX_HSSACC_PKT_MMU_VIRT_TO_PHY( IX_OSAL_MBUF_MDATA(bufPtr)); \
+\
+    IX_HSSACC_IX_NE_SHARED_LEN(bufPtr) = (UINT16) (IX_OSAL_MBUF_MLEN(bufPtr) & IX_HSSACC_IX_NE_SHARED_SHORT_MASK) ; \
+\
+    IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr) = (UINT16) (IX_OSAL_MBUF_PKT_LEN(bufPtr) & IX_HSSACC_IX_NE_SHARED_SHORT_MASK) ; \
+}
+
+/**
+ * @def IX_HSSACC_MBUF_FROM_IX_NE_SWAP(bufPtr)
+ *
+ * @brief Generic macro for copying relevant fields from the NPE shared region
+ * to the OS dependant region of IX_OSAL_BUF buffer.
+ *
+ * @param IX_OSAL_MBUF * [in] bufPtr - Pointer to the IX_OSAL_BUF buffer
+ *
+ * This macro does the following
+ *  - Takes the ixp_next value from the NPE shared region, converts the physical 
+ *  address to virtual address, calculates the address of the IX_OSAL_BUF from 
+ *  this address and then copies it to the m_Next field of the OS dependant region.
+ *  If the ixp_next field was NULL, the m_Next field is also set to NULL.
+ *  - Takes the ixp_data value from the NPE shared region, converts the physical 
+ *  address to virtual address and copies it to the m_Data field of the OS dependant
+ *  region.
+ *  - Copies the ixp_len and ixp_pkt_len fields of the NPE shared region to the m_Len
+ *  and m_PktHdr.len fields of the OS dependant region of the IX_OSAL_BUF buffer 
+ *
+ * @return none
+ */
+#define IX_HSSACC_MBUF_FROM_IX_NE_SWAP(bufPtr) \
+{\
+    UINT32 *nextIxNePtr; \
+    nextIxNePtr = (UINT32 *) IX_HSSACC_IX_NE_SHARED_NEXT(bufPtr) ; \
+    if (nextIxNePtr) {\
+        nextIxNePtr = (UINT32 *) IX_HSSACC_PKT_MMU_PHY_TO_VIRT(nextIxNePtr) ;\
+        IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(bufPtr) = IX_HSSACC_IX_OSAL_MBUF_FROM_IX_NE(nextIxNePtr); \
+    } \
+    else \
+        IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(bufPtr) = (IX_OSAL_MBUF *) 0; \
+    IX_OSAL_MBUF_MDATA(bufPtr) = (UINT8 *) IX_HSSACC_PKT_MMU_PHY_TO_VIRT (\
+        IX_HSSACC_IX_NE_SHARED_DATA(bufPtr)); \
+    IX_OSAL_MBUF_MLEN(bufPtr) = (UINT32) IX_HSSACC_IX_NE_SHARED_LEN(bufPtr); \
+    IX_OSAL_MBUF_PKT_LEN(bufPtr) = (UINT32) IX_HSSACC_IX_NE_SHARED_PKT_LEN(bufPtr); \
+}
+
+
+/*--------------------------------------------------------------------------
+ * Queue Manager Queue entry bit field masks
+ *------------------------------------------------------------------------*/
+
+/**
+ * @def IX_HSSACC_QM_Q_ADDR_MASK
+ *
+ * @brief Macro to mask the Address field of the Queue Manager Entry
+ */
+#define IX_HSSACC_QM_Q_ADDR_MASK       0xFFFFFFE0
+
+
+/**
+ * @def IX_HSSACC_QM_Q_CHAN_NUM_MASK
+ *
+ * @brief Macro to mask the Hdlc Channel number of the Queue Manager Entry
+ */
+#define IX_HSSACC_QM_Q_CHAN_NUM_MASK   0x0000001F   
     
 
 /**
@@ -557,8 +894,7 @@ ixHssAccComInit (void);
 /**
  * @fn IX_STATUS ixHssAccComPortUninit (IxHssAccHssPort hssPortId)
  *
- * @brief  This function Uninitialises all resources for all descriptor pools 
- * and descriptors contained in these pools.
+ * @brief  This function Uninitialises all resources for the specified port.
  *
  * @return 
  *         - IX_SUCCESS The function executed successfully
@@ -573,8 +909,7 @@ IX_STATUS ixHssAccComPortUninit (IxHssAccHssPort hssPortId);
 /**
  * @fn IX_STATUS ixHssAccComUninit ()
  *
- * @brief  This function Uninitialises all resources for all descriptor pools 
- * and descriptors contained in these pools.
+ * @brief  This function Uninitialises all resources for HssAcc module.
  *
  * @return 
  *         - IX_SUCCESS The function executed successfully
@@ -585,7 +920,51 @@ IX_STATUS ixHssAccComPortUninit (IxHssAccHssPort hssPortId);
 
 IX_STATUS ixHssAccComUninit (void);
 
+/**
+ * @fn IX_OSAL_MBUF *
+    ixHssAccComMbufFromNpeFormatConvert (UINT32 qEntry, BOOL invalidateCache, UINT32 *chainCount)
+ *
+ * @brief Copies relevant fields from NPE shared region to OS dependant region of IX_OSAL_BUF buffer
+ * so that the client can process the data.
+ * 
+ * This function copies the relevant fields from the NPE shared region to the OS dependant
+ * region of the IX_OSAL_BUF buffer. If needed the cache is invalidated to force data to be read 
+ * from physical memory. If the IX_OSAL_BUF buffers are chained the process is repeated for each
+ * of the buffers in the chain. The function returns the address of the root IX_OSAL_BUF buffer 
+ * and updates the chain count in chainCount.
+ *                           
+ * @param UINT32 qEntry (in) - The queue entry taken from the queue is passed to this function.
+ * @param BOOL invalidateCache (in) - BOOL value specifies whether to invalidate the cache or not.
+ * @param UINT32 *chainCount (out) - Returns the number of chained buffers
+ *
+ * @return (IX_OSAL_MBUF *) - Pointer to the IX_OSAL_BUF buffer
+ */
+IX_OSAL_MBUF *
+ixHssAccComMbufFromNpeFormatConvert (UINT32 qEntry, BOOL invalidateCache, UINT32 *chainCount);
 
+/**
+ * @fn IX_STATUS ixHssAccComMbufToNpeFormatConvert (IX_OSAL_MBUF *bufPtr, UINT32 * chainCount, UINT32 *npeAddr)
+ *
+ * @brief This function copies the relevant fields from OS dependant region to the NPE shared region of the
+ * IX_OSAL_BUF buffer so that the NPE can process the buffers.
+ *
+ * The function copies the relevant fields from the OS dependant region to th NPE shared region of the 
+ * IX_OSAL_BUF buffer. Also endian conversion of the NPE shared region is performed. The above process is
+ * repeat for each of the buffers in the chain. 
+ * The function returns the number of buffers in the chain in chainCount and the address of the NPE 
+ * shared region of the root IX_OSAL_BUF buffer in npeAddr.
+ *
+ * @param IX_OSAL_MBUF *bufPtr (in) - The address of the root IX_OSAL_BUF buffer is passed to the function.
+ * @param UINT32 *chainCount (out) - Returns the number of chained buffers
+ * @param UINT32 *npeAddr (out) - Returns the address of the NPE shared region of the root IX_OSAL_BUF 
+ * buffer.
+ *
+ * @return 
+ *         - IX_SUCCESS The function executed successfully
+ *         - IX_FAIL The function did not execute successfully
+ */
+IX_STATUS 
+ixHssAccComMbufToNpeFormatConvert (IX_OSAL_MBUF *bufPtr, UINT32 * chainCount, UINT32 *npeAddr); 
 
 #endif /* IXHSSACCCOMMON_P_H */
 

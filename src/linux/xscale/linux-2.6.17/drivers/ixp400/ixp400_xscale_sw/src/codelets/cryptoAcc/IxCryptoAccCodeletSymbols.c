@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -66,7 +66,7 @@ UINT32 serviceIndex;
 UINT32 dataBLenOrOprWLen;
 
 
-module_param(serviceIndex, int , 0);
+MODULE_PARM(serviceIndex, "i");
 MODULE_PARM_DESC(serviceIndex,
                  "0 : Lists all set of services demonstrated."
                  "1 : Encryption and Decryption using DES(ECB)"
@@ -107,7 +107,7 @@ MODULE_PARM_DESC(serviceIndex,
                  "36 : PKE EAU large number subtraction operation"
                  "37 : PKE EAU large number multiplication operation");
 
-module_param(dataBLenOrOprWLen, int, 0);
+MODULE_PARM(dataBLenOrOprWLen, "i");
 MODULE_PARM_DESC(dataBLenOrOprWLen,         
         "Data length ranges from 64 bytes to 65456 bytes, if cipher algorithm\n"
         "is DES/3DES, data length must be multiple of 8-byte (cipher block\n"

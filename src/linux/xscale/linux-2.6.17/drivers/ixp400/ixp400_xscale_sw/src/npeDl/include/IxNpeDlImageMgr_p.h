@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -120,7 +120,6 @@
  */
 #define IX_NPEDL_IMAGEID_MINOR_OFFSET      0
 
-
 /**
  * @def IX_NPEDL_NPEID_FROM_IMAGEID_GET
  *
@@ -165,6 +164,7 @@
 #define IX_NPEDL_MINOR_FROM_IMAGEID_GET(imageId) \
     (((imageId) >> IX_NPEDL_IMAGEID_MINOR_OFFSET) & \
      IX_NPEDL_NPEIMAGE_FIELD_MASK)
+
 
 
 /*

@@ -12,7 +12,7 @@
  *    ixAtmRxTxSdusSend
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -78,7 +78,7 @@
  *
  * Increase this value when MBUF under run occurs intermittently.
  */
-#define IX_ATMCODELET_FREE_MBUF_PERCENTAGE (17)	 
+#define IX_ATMCODELET_FREE_MBUF_PERCENTAGE (40)	 
 
 /*
   Aal5 PDU                      <------- trailer -------->

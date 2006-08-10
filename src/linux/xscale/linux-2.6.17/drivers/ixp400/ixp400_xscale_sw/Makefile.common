@@ -1,7 +1,7 @@
 # This file is for common macros used in all Makefiles.
 #
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -49,13 +49,17 @@ force:
 
 # In a Tornado environment, WIND_HOST_TYPE should be set
 ifeq ($(WIND_HOST_TYPE), x86-win32)
-    IX_HOST_OS := windows
+  IX_HOST_OS := windows
 else
   ifeq ($(WIND_HOST_TYPE), sun4-solaris2)
     IX_HOST_OS := solaris
   else
-    # Otherwise, try OSTYPE
-    IX_HOST_OS := $(OSTYPE)
+    ifeq ($(WIND_HOST_TYPE), x86-linux2)
+      IX_HOST_OS := linux
+    else
+      # Otherwise, try OSTYPE
+      IX_HOST_OS := $(OSTYPE)
+    endif
   endif
 endif
 
@@ -76,15 +80,6 @@ ifeq (,$(filter $(IX_HOST_OS), linux solaris windows))
 endif
 
 ################################################################
-# Target OS selection
-
-ifneq (,$(filter $(IX_TARGET), linuxbe linuxle))
-IX_TARGET_OS := linux
-else
-IX_TARGET_OS := vxworks
-endif
-
-
 # A command for printing trace messages in the makefile.
 MAKEFILE_TRACE := @echo $(ECHO_QUOTE)--- Makefile: $(ECHO_QUOTE) # Use this setting to enable messages 
 #MAKEFILE_TRACE = @\#  # Use this setting to disable messages
@@ -136,10 +131,12 @@ endif
 # Output directories
 #
 
-ifeq ($(IX_DEVICE),ixp46X)
-OBJ_DIR := $(IX_DEVICE)/lib/$(IX_TARGET)
-else
+ifeq ($(IX_DEVICE),ixp42X)
 OBJ_DIR := lib/$(IX_TARGET)
+OBJ_DIR_EXIT := ../..
+else
+OBJ_DIR := $(IX_DEVICE)/lib/$(IX_TARGET)
+OBJ_DIR_EXIT := ../../..
 endif
 
 METRICS_DIR := metrics

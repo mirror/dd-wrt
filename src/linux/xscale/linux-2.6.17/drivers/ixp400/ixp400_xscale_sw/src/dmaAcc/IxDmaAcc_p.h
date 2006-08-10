@@ -6,7 +6,7 @@
  * @brief Descriptor pool access, initialise and allocation for DMA access layer
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -403,6 +403,11 @@ typedef struct {
     IxDmaAccDmaCompleteCallback pDmaCallback;
                                /**< Pointer to client callback for dma transfer
                                  */
+    UINT32             pad0;   /**pad bytes added to make it align to size of*/ 
+    UINT32             pad1;   /** cache line */ 
+    UINT32             pad2;
+    UINT32             pad3;
+      
 } IxDmaNpeQDescriptor;
 
 /**

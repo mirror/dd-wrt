@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,28 +50,14 @@
 
 #include "IxOsal.h"
 #include "IxVersionId.h"
-#include "IxFeatureCtrl.h"
-
-/* Macro to read from the Feature Control Register */
-#define IX_FEATURE_CTRL_READ(result) \
-do { \
-ixFeatureCtrlExpMap(); \
-(result) = IX_OSAL_READ_LONG(ixFeatureCtrlRegister); \
-} while (0)
-
-/* Macro to write to the Feature Control Register */
-#define IX_FEATURE_CTRL_WRITE(value) \
-do { \
-ixFeatureCtrlExpMap(); \
-IX_OSAL_WRITE_LONG(ixFeatureCtrlRegister, (value)); \
-} while (0)
+#include "IxFeatureCtrlMacros_p.h"
+#include "IxFeatureCtrl_sp.h"
 
 /*
  * This is the offset of the feature register relative to the base of the
  * Expansion Bus Controller MMR.
  */
 #define IX_FEATURE_CTRL_REG_OFFSET (0x00000028)
-
 
 /* Boolean to mark the fact that the EXP_CONFIG address space was mapped */
 PRIVATE BOOL ixFeatureCtrlExpCfgRegionMapped = FALSE;
@@ -86,7 +72,7 @@ PRIVATE BOOL swConfiguration[IX_FEATURECTRL_SWCONFIG_MAX];
 PRIVATE BOOL swConfigurationFlag = FALSE ;
 
 /* Array containing component mask values */
-#ifdef __ixp42X
+#if defined(__ixp42X)
 UINT32 componentMask[IX_FEATURECTRL_MAX_COMPONENTS] = {
     (0x1<<IX_FEATURECTRL_RCOMP),
     (0x1<<IX_FEATURECTRL_USB),
@@ -112,7 +98,9 @@ UINT32 componentMask[IX_FEATURECTRL_MAX_COMPONENTS] = {
     IX_FEATURECTRL_COMPONENT_NOT_AVAILABLE,
     IX_FEATURECTRL_COMPONENT_NOT_AVAILABLE
 };
-#elif defined (__ixp46X)
+#endif /* __ixp42X */
+
+#if defined (__ixp46X)
 UINT32 componentMask[IX_FEATURECTRL_MAX_COMPONENTS] = {
     (0x1<<IX_FEATURECTRL_RCOMP),
     (0x1<<IX_FEATURECTRL_USB),
@@ -139,7 +127,7 @@ UINT32 componentMask[IX_FEATURECTRL_MAX_COMPONENTS] = {
     (0x3<<IX_FEATURECTRL_XSCALE_MAX_FREQ),
     (0x1<<IX_FEATURECTRL_XSCALE_MAX_FREQ_BIT2)
 };
-#endif /* __ixp42X */
+#endif /* __ixp46X */
 
 /**
  * Forward declaration
@@ -150,13 +138,14 @@ void ixFeatureCtrlExpMap(void);
 PRIVATE 
 void ixFeatureCtrlSwConfigurationInit(void);
 
+UINT32 expCfgBaseAddress = 0;
+
 /**
  * Function to map EXP_CONFIG space
  */
 PRIVATE
 void ixFeatureCtrlExpMap(void)
 {
-    UINT32 expCfgBaseAddress = 0;
 
     /* If the EXP Configuration space has already been mapped then
      * return */
@@ -207,16 +196,10 @@ IxFeatureCtrlReg
 ixFeatureCtrlRead (void)
 {
     IxFeatureCtrlReg result;
-
-#if CPU!=SIMSPARCSOLARIS
-    /* Read the feature control register */
-    IX_FEATURE_CTRL_READ(result);
+    ixFeatureCtrlExpMap();
+    /*  Read the feature control register */
+    IX_FEATURE_CTRL_READ((UINT32)ixFeatureCtrlRegister, result);
     return result;
-#else
-    /* Return an invalid value for VxWorks simulation */
-    result = 0xFFFFFFFF;
-    return result;
-#endif
 }
 
 /**
@@ -225,10 +208,9 @@ ixFeatureCtrlRead (void)
 void
 ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg)
 {
-#if CPU!=SIMSPARCSOLARIS
+  ixFeatureCtrlExpMap();
     /* Write value to feature control register */
-    IX_FEATURE_CTRL_WRITE(expUnitReg);
-#endif
+    IX_FEATURE_CTRL_WRITE((UINT32)ixFeatureCtrlRegister, expUnitReg);
 }
 
 
@@ -322,7 +304,7 @@ __asm  volatile IxFeatureCtrlProductId _ixFeatureCtrlAsmProductIdRead()
 IxFeatureCtrlProductId
 ixFeatureCtrlProductIdRead ()
 {
-#if CPU!=SIMSPARCSOLARIS
+#if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
   IxFeatureCtrlProductId  pdId = 0 ;
    
   /* Use ARM instruction to move register0 from coprocessor to ARM register */ 
@@ -377,7 +359,7 @@ ixFeatureCtrlSwConfigurationCheck (IxFeatureCtrlSwConfig swConfigType)
   {
      ixOsalLog(IX_OSAL_LOG_LVL_WARNING, 
                IX_OSAL_LOG_DEV_STDOUT,
-               "FeatureCtrl: Invalid software configuraiton input.\n",
+               "FeatureCtrl: Invalid software configuration input.\n",
                0, 0, 0, 0, 0, 0);  
 
      return IX_FEATURE_CTRL_SWCONFIG_DISABLED;
@@ -400,7 +382,7 @@ ixFeatureCtrlSwConfigurationWrite (IxFeatureCtrlSwConfig swConfigType, BOOL enab
   {
      ixOsalLog(IX_OSAL_LOG_LVL_WARNING, 
                IX_OSAL_LOG_DEV_STDOUT,
-               "FeatureCtrl: Invalid software configuraiton input.\n",
+               "FeatureCtrl: Invalid software configuration input.\n",
                0, 0, 0, 0, 0, 0);  
 
      return;
@@ -417,7 +399,7 @@ ixFeatureCtrlSwConfigurationWrite (IxFeatureCtrlSwConfig swConfigType, BOOL enab
  * Function definition: ixFeatureCtrlIxp400SwVersionShow
  */
 void
-ixFeatureCtrlIxp400SwVersionShow (void)
+ixFeatureCtrlSwVersionShow (void)
 {
     printf ("\nIXP400 Software Release %s %s\n\n", IX_VERSION_ID, IX_VERSION_INTERNAL_ID);
 
@@ -429,9 +411,11 @@ ixFeatureCtrlIxp400SwVersionShow (void)
 IxFeatureCtrlBuildDevice
 ixFeatureCtrlSoftwareBuildGet (void)
 {
-    #ifdef __ixp42X
+#if defined(__ixp42X)
     return IX_FEATURE_CTRL_SW_BUILD_IXP42X;
-    #else
+#endif /* __ixp42X */
+
+#if defined (__ixp46X)
     return IX_FEATURE_CTRL_SW_BUILD_IXP46X;
-    #endif
+#endif /* __ixp46X */
 }

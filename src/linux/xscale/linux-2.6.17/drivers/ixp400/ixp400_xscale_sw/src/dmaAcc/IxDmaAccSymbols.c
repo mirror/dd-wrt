@@ -7,7 +7,7 @@
  * @brief This file declares exported symbols for linux kernel module builds.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 

@@ -5,7 +5,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,38 +54,33 @@
 #include <linux/kthread.h>
 #endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
 
+
 struct IxOsalOsThreadData
 {
-    IxOsalVoidFnVoidPtr entryPoint;
-    void *arg;
+   IxOsalVoidFnVoidPtr entryPoint;
+   void                *arg;
 };
 
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-struct IxOsalOsThreadInfo
-{
-    struct IxOsalOsThreadData data;
-    IxOsalThread ptid;
-    struct list_head list;
-};
-
-PRIVATE LIST_HEAD(threadList);
-#else 
-struct IxOsalOsThreadData thread_data;
-struct task_struct *kill_task = NULL;
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-
-/* declaring mutex */
+/* declaring mutexes */
 DECLARE_MUTEX (IxOsalThreadMutex);
 DECLARE_MUTEX (IxOsalThreadStopMutex);
 
-/* Thread attribute is ignored */
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
+#ifndef IX_OSAL_OS_LINUX_VERSION_2_6   /* ! Linux-Kernel Version 2.6 */
+struct IxOsalOsThreadData thread_data;
+struct task_struct        *kill_task = NULL;
+#endif
 
-PUBLIC IX_OSAL_INLINE BOOL
-ixOsalThreadStopCheck()
+
+#ifdef IX_OSAL_OS_LINUX_VERSION_2_6   /* Linux Kernel Version 2.6 */
+
+struct IxOsalOsThreadInfo
 {
-    return (kthread_should_stop());
-}
+    struct IxOsalOsThreadData data;
+    IxOsalThread              ptid;
+    struct list_head          list;
+};
+
+PRIVATE LIST_HEAD(threadList);
 
 static int thread_internal(void *data)
 {
@@ -99,33 +94,35 @@ static int thread_internal(void *data)
 
     list_for_each_entry(threadInfo, &threadList, list)
     {
-    	/*
-	 * Check if the thread handler in the node matches this thread handler
-	 */
-    	if (current == (struct task_struct*)(threadInfo->ptid))
-	{
-	    entryPoint = threadInfo->data.entryPoint;
+        /*
+         * Check if the thread handler in the node matches this thread handler
+         */
+        if (current == (struct task_struct*)(threadInfo->ptid))
+        {
+            entryPoint = threadInfo->data.entryPoint;
 
-	    /*
-	     * Record found. Delete and free the threadInfo node, then break the
-	     * loop.
-	     */
-	    list_del(&threadInfo->list);
+            /*
+             * Record found. Delete and free the threadInfo node, then break the
+             * loop.
+             */
+            list_del(&threadInfo->list);
 
-	    ixOsalMemFree(threadInfo);
-	    break;
-	}
+            ixOsalMemFree(threadInfo);
+            break;
+        }
     }
 
     up (&IxOsalThreadMutex);
 
     if (entryPoint)
     {
-	entryPoint(data);
+        entryPoint(data);
     }
 
     return 0;
 }
+
+/* Thread attribute is ignored in Create */
 
 PUBLIC IX_STATUS
 ixOsalThreadCreate (IxOsalThread * ptrTid,
@@ -133,8 +130,8 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
 {
     struct IxOsalOsThreadInfo *threadInfo;
 
-    threadInfo = (struct IxOsalOsThreadInfo*) ixOsalMemAlloc (
-    			sizeof(struct IxOsalOsThreadInfo));
+    threadInfo = (struct IxOsalOsThreadInfo*) ixOsalMemAlloc(
+                        sizeof(struct IxOsalOsThreadInfo));
 
     if (unlikely(NULL == threadInfo))
     {
@@ -143,17 +140,17 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
             "ixOsalThreadCreate(): Failed to allocate memory for threadInfo\n",
             0, 0, 0, 0, 0, 0);
 
-	return IX_FAIL;
+        return IX_FAIL;
     }
-    	
+
     threadInfo->data.entryPoint = entryPoint;
 
-    /* 
+    /*
      * Create the thread with the given thread name, but do not start it
      */
-    *ptrTid = kthread_create(thread_internal, arg, "%s", 
-    		(NULL != threadAttr && NULL != threadAttr->name)
-		? threadAttr->name: "OSAL");
+    *ptrTid = kthread_create(thread_internal, arg, "%s",
+                (NULL != threadAttr && NULL != threadAttr->name)
+                ? threadAttr->name: "OSAL");
 
     if (unlikely(NULL == *ptrTid))
     {
@@ -162,13 +159,12 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
             "ixOsalThreadCreate(): fail to create kthread \n",
             0, 0, 0, 0, 0, 0);
 
-	/*
-	 * Thread create failed, so free the threadInfo node allocated earlier
-	 */
-	ixOsalMemFree(threadInfo);
-    	return IX_FAIL;
+        /*
+         * Thread create failed, so free the threadInfo node allocated earlier
+         */
+        ixOsalMemFree(threadInfo);
+        return IX_FAIL;
     }
-	
     /*
      * Save thread handler of the created thread in the threadInfo node
      */
@@ -176,7 +172,7 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
 
     down (&IxOsalThreadMutex);
 
-    /* 
+    /*
      * We assumes that threads will be started according to the creation
      * order, hence we add latest thread on the tail.
      */
@@ -187,22 +183,33 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
     return IX_SUCCESS;
 }
 
+
+PUBLIC IX_OSAL_INLINE BOOL
+ixOsalThreadStopCheck()
+{
+    return (kthread_should_stop());
+}
+
+
+
+#ifndef __ixpTolapai 
+
 /* 
  * Start the thread
  */
 PUBLIC IX_STATUS
 ixOsalThreadStart (IxOsalThread * tId)
 {
-    if (unlikely(NULL == *tId))
+    if (NULL == *tId)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
             IX_OSAL_LOG_DEV_STDOUT,
             "ixOsalThreadStart(): Invalid Thread ID!\n",
             0, 0, 0, 0, 0, 0);
 
-	return IX_FAIL;
+	     return IX_FAIL;
     }
-
+    	
     wake_up_process(*tId);
 
     return IX_SUCCESS;
@@ -217,7 +224,7 @@ ixOsalThreadKill (IxOsalThread * tid)
 {
     struct task_struct *task = (struct task_struct*)*tid;
 
-    /* Can't kill defunc thread */
+    /* Can't kill already defunc thread */
     if (EXIT_DEAD == task->exit_state || EXIT_ZOMBIE == task->exit_state)
     	return IX_FAIL;
 
@@ -228,15 +235,44 @@ ixOsalThreadKill (IxOsalThread * tid)
             "ixOsalThreadKill(): Failed to kill thread\n",
             0, 0, 0, 0, 0, 0);
 
-	return IX_FAIL;
+	     return IX_FAIL;
     }
 
     return IX_SUCCESS;
 }
 
-#else
+#else /* __ixpTolapai */
 
-inline BOOL
+PUBLIC IX_STATUS
+ixOsalThreadKill (IxOsalThread * tid)
+{
+  kill_proc (*tid, SIGKILL, 1);
+  return IX_SUCCESS;
+}
+
+PUBLIC IX_STATUS
+ixOsalThreadStart (IxOsalThread * tId)
+{
+    if (NULL == *tId)
+    {
+        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+            IX_OSAL_LOG_DEV_STDOUT,
+            "ixOsalThreadStart(): Invalid Thread ID!\n",
+            0, 0, 0, 0, 0, 0);
+ 
+             return IX_FAIL;
+    }
+ 
+    wake_up_process(*tId);
+    return IX_SUCCESS;
+}
+
+#endif /* __ixpTolapai */
+
+
+#else  /* ! LINUX_VERSION_2_6 */
+
+PUBLIC IX_OSAL_INLINE BOOL
 ixOsalThreadStopCheck()
 {
     if (current == kill_task)
@@ -257,12 +293,9 @@ thread_internal (void *unused)
     void *arg = thread_data.arg;
     static int seq = 0;
 
-//    daemonize();
-//    reparent_to_init ();
-//    exit_files (current);
-    lock_kernel();
-    daemonize ("IxOsal %d", seq+1);
-    unlock_kernel();
+    daemonize();
+    reparent_to_init ();
+    exit_files (current);
 
     snprintf(current->comm, sizeof(current->comm), "IxOsal %d", ++seq);
 
@@ -278,8 +311,8 @@ ixOsalThreadCreate (IxOsalThread * ptrTid,
     IxOsalThreadAttr * threadAttr, IxOsalVoidFnVoidPtr entryPoint, void *arg)
 {
     down (&IxOsalThreadMutex);
-    thread_data.entryPoint = entryPoint;
-    thread_data.arg = arg;
+    IxOsalOsThreadData.entryPoint = entryPoint;
+    IxOsalOsThreadData.arg = arg;
 
     /*
      * kernel_thread takes: int (*fn)(void *)  as the first input.
@@ -307,6 +340,10 @@ PUBLIC IX_STATUS
 ixOsalThreadStart (IxOsalThread * tId)
 {
     /* Thread already started upon creation */
+    ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
+        IX_OSAL_LOG_DEV_STDOUT,
+        "ixOsalThreadStart(): not implemented in linux\n",
+        0, 0, 0, 0, 0, 0);
     return IX_SUCCESS;
 }
 
@@ -319,9 +356,9 @@ ixOsalThreadKill (IxOsalThread * tid)
 
     if (kill_task)
     {
-	wake_up_process(kill_task);
+	    wake_up_process(kill_task);
 
-	return IX_SUCCESS;
+	    return IX_SUCCESS;
     }
 
     ixOsalLog (IX_OSAL_LOG_LVL_ERROR, IX_OSAL_LOG_DEV_STDOUT,
@@ -339,14 +376,73 @@ ixOsalThreadExit (void)
 {
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
         IX_OSAL_LOG_DEV_STDOUT,
-        "ixOsalThreadExit(): not implemented \n", 0, 0, 0, 0, 0, 0);
+        "ixOsalThreadExit(): not implemented in linux\n",
+        0, 0, 0, 0, 0, 0);
 }
+
+
+#ifdef IX_OSAL_OS_LINUX_VERSION_2_6   /* Linux Kernel Version 2.6 */
+#ifndef __ixpTolapai
+
+/********************************************************************
+ * UINT32 priority - the value of priority can range from 0 to 39   *
+ *                   with 0 being the highest priority.				*
+ * 																	*
+ * Any value for priority more than 39 will be silently rounded off *
+ * to 39 in this implementation. Internally, the range is converted *
+ * to the corresponding nice value that can range from -20 to 19.	*
+ ********************************************************************/
+ 
+PUBLIC IX_STATUS
+ixOsalThreadPrioritySet (IxOsalOsThread * tid, UINT32 priority)
+{
+    struct task_struct *pTask 	= 	(struct task_struct*)*tid;
+
+	if ( pTask == NULL )
+	{
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+			IX_OSAL_LOG_DEV_STDERR,
+			"ixOsalThreadPrioritySet(): Task not found \n",
+			0, 0, 0, 0, 0, 0);
+		return IX_FAIL;
+	}
+	
+	if (priority > 255)
+	{
+		ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+			IX_OSAL_LOG_DEV_STDERR,
+			"ixOsalThreadPrioritySet(): FAIL \n",
+			0, 0, 0, 0, 0, 0);
+		return IX_FAIL;
+	}
+	
+	if (priority > 39) priority = 39;
+	if (priority < 0) priority = 0;
+	
+	set_user_nice ( pTask, priority-20 ); // sending the nice equivalent of priority as the parameter
+	
+    ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
+        IX_OSAL_LOG_DEV_STDOUT,
+        "ixOsalThreadPrioritySet(): Priority changed successfully \n",
+        0, 0, 0, 0, 0, 0);
+    return IX_SUCCESS;
+}
+
+#else /* __ixpTolapai */
 
 PUBLIC IX_STATUS
 ixOsalThreadPrioritySet (IxOsalOsThread * tid, UINT32 priority)
 {
+    ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+        IX_OSAL_LOG_DEV_STDOUT,
+        "ixOsalThreadPrioritySet(): not implemented in linux \n",
+        0, 0, 0, 0, 0, 0);
     return IX_SUCCESS;
 }
+
+#endif /* __ixpTolapai */
+#endif /* Linux Kernel Version 2.6 */ 
+
 
 PUBLIC IX_STATUS
 ixOsalThreadSuspend (IxOsalThread * tId)
@@ -356,7 +452,6 @@ ixOsalThreadSuspend (IxOsalThread * tId)
         "ixOsalThreadSuspend(): not implemented in linux \n",
         0, 0, 0, 0, 0, 0);
     return IX_SUCCESS;
-
 }
 
 PUBLIC IX_STATUS
@@ -369,3 +464,51 @@ ixOsalThreadResume (IxOsalThread * tId)
     return IX_SUCCESS;
 
 }
+
+#ifdef __ixpTolapai
+
+/* Newly Added OSAL Thread Functions -- for OSSL shim layer */
+ 
+PUBLIC
+IX_STATUS ixOsalThreadGetId(IxOsalThread *ptrTid)
+{
+    *ptrTid = current->pid;
+ 
+    return IX_SUCCESS;
+ 
+} /* ixOsalThreadGetId */
+ 
+ 
+ 
+PUBLIC
+IX_STATUS ixOsalThreadSetPolicyAndPriority(
+            IxOsalThread          *tid,
+            UINT32                policy,
+            UINT32                priority)
+{
+    IX_STATUS err = IX_SUCCESS;
+    struct task_struct *pTask;
+ 
+ 
+    lock_kernel();
+ 
+    pTask = find_task_by_pid(*tid);
+    if(pTask == 0)
+    {
+        err = IX_FAIL;
+        goto label_1;
+    }
+ 
+    pTask->policy = policy;
+    pTask->rt_priority = priority;
+ 
+label_1:
+    unlock_kernel();
+ 
+    return err;
+ 
+} /* ixOsalThreadSetPolicyAndPriority */
+
+#endif /* __ixpTolapai */ 
+ 
+

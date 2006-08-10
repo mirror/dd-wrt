@@ -6,7 +6,7 @@
  * Description: C file for Synchronous Serial Port (SSP) Access component (IxSspAcc)
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -46,7 +46,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined (__ixp46X)
 
 #include "IxOsal.h"
 #include "IxSspAcc.h"
@@ -228,7 +228,7 @@ ixSspAccInit (
             "ixSspAccInit: This hardware does not support SSP!\n",
             0,0,0,0,0,0);
         return IX_SSP_NOT_SUPORTED;
-    } /* end of device detected is not IXP46x */
+    } /* end of device detected is not IXP46X */
 
     /* Check if the initVarsSelected is NULL */
     if(NULL == initVarsSelected)

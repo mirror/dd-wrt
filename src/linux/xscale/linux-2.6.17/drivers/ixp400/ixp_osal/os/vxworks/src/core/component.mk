@@ -1,6 +1,6 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -42,7 +42,6 @@
 core_os_CFLAGS := 
 
 core_os_OBJ := IxOsalOsServices.o \
-               IxOsalOsCacheMMU.o \
 			   IxOsalOsServicesAsmRoutines.o \
 			   IxOsalOsThread.o	  \
 			   IxOsalOsSemaphore.o	\

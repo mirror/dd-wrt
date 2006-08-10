@@ -3,7 +3,7 @@
 #
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -71,23 +71,35 @@ endif
 ################################################################
 # Linux Compiler & linker commands
 
+ifneq ($(IX_OSAL_MK_PLATFORM),ixpTolapai)
 ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), linuxbe)
 LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_be/bin/xscale_be-
 else
 LINUX_CROSS_COMPILE := $(HARDHAT_BASE)/devkit/arm/xscale_le/bin/xscale_le-
 endif
 
+COMPILE_PREFIX := $(LINUX_CROSS_COMPILE)
 LINUX_SRC := $($(IX_TARGET)_KERNEL_DIR)
 
-LD := $(LINUX_CROSS_COMPILE)ld
-CC := $(LINUX_CROSS_COMPILE)gcc
-AR := $(LINUX_CROSS_COMPILE)ar
+else #ixpTolapai
 
+LINUX_CROSS_COMPILE := /usr/bin/
+LINUX_UTILS := /bin/
+COPY := $(LINUX_UTILS)cp -f
+
+endif #ixpTolapai
+
+LD := $(COMPILE_PREFIX)ld
+CC := $(COMPILE_PREFIX)gcc
+AR := $(COMPILE_PREFIX)ar
 
 ################################################################
 # Compiler & linker options
 
 # Compiler flags
+
+ifneq ($(IX_OSAL_MK_PLATFORM),ixpTolapai)
+
 ifeq ($(IX_LINUXVER), 2.6)
     LINUX_MACH_CFLAGS := -D__LINUX_ARM_ARCH__=5 -march=armv5te -Wa,-mcpu=xscale -mtune=xscale
     CFLAGS_ETC = -mabi=apcs-gnu
@@ -100,10 +112,17 @@ CFLAGS := -D__KERNEL__ -I$(LINUX_SRC)/include -Wall -Wno-trigraphs -fno-common \
           -pipe $(CFLAGS_ETC) -msoft-float -DMODULE \
           -D__linux -DCPU=33 -DXSCALE=33 $(LINUX_MACH_CFLAGS) -DEXPORT_SYMTAB
 
+else #ixpTolapai
+
+CFLAGS := -nostdinc -iwithprefix include -D__KERNEL__ -DEXPORT_SYMTAB -DMODULE -I$(LINUX_SRC)/include  -Wall -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Os -fomit-frame-pointer -g -Wdeclaration-after-statement -pipe -msoft-float -m32 -fno-builtin-sprintf -fno-builtin-log2 -fno-builtin-puts  -mpreferred-stack-boundary=2 -fno-unit-at-a-time -march=i686 -mregparm=3 -Iinclude/asm-i386/mach-default -D__TOLAPAI__ -D__ixpTolapai -D__linux 
+
+endif #ixpTolapai
+
 # Linux linker flags
 LDFLAGS := -r
 MAKE_DEP_FLAG := -M
 
+ifneq ($(IX_OSAL_MK_PLATFORM),ixpTolapai)
 # Endian-specific flags
 ifeq ($(IX_OSAL_MK_TARGET_ENDIAN), linuxbe)
 CFLAGS += -mbig-endian
@@ -114,10 +133,10 @@ LDFLAGS += -EL
 endif
 
 #set additions to the compiler flag based on device chosen
-ifneq (,$(filter $(IX_DEVICE), ixp46X))
-CFLAGS += -D__ixp46X
-else
+ifneq (,$(filter $(IX_DEVICE), ixp42X))
 CFLAGS += -D__ixp42X
+else
+CFLAGS += -D__ixp46X
 endif
 
-
+endif #ixpTolapai

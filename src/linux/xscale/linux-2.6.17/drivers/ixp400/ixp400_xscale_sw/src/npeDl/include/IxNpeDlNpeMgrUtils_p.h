@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -293,7 +293,7 @@ ixNpeDlNpeMgrDebugInstructionExec (UINT32 npeBaseAddress,
 void
 ixNpeDlNpeMgrDebugInstructionPostExec (UINT32 npeBaseAddress);
 
-
+#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @fn IX_STATUS ixNpeDlNpeMgrPhysicalRegWrite (UINT32 npeBaseAddress,
                                                 UINT32 regAddr,
@@ -335,7 +335,7 @@ ixNpeDlNpeMgrDebugInstructionPostExec (UINT32 npeBaseAddress);
 IX_STATUS
 ixNpeDlNpeMgrPhysicalRegWrite (UINT32 npeBaseAddress, UINT32 regAddr,
 			       UINT32 regValue, BOOL verify);
-
+#endif
 
 /**
  * @fn IX_STATUS ixNpeDlNpeMgrCtxtRegWrite (UINT32 npeBaseAddress,
@@ -403,5 +403,14 @@ ixNpeDlNpeMgrUtilsStatsShow (void);
 void
 ixNpeDlNpeMgrUtilsStatsReset (void);
 
+/**
+ * @fn UINT32 ixNpeDlNpeMgrDataMemRead(UINT32 npeBaseAddress, UINT32 dataMemAddress)
+ *
+ * @brief This function will read the DMEM of the NPE
+ *
+ * @return DMEM value
+ */
+UINT32 
+ixNpeDlNpeMgrDataMemRead(UINT32 npeBaseAddress, UINT32 dataMemAddress);
 
 #endif  /* IXNPEDLNPEMGRUTILS_P_H */

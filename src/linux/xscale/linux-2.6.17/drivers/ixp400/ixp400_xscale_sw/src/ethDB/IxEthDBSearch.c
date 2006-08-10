@@ -2,7 +2,7 @@
  * @file IxEthDBSearch.c
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -143,6 +143,32 @@ BOOL ixEthDBFirewallMaskedRecordMatch(void *untypedReference, void *untypedEntry
 }
 
 /**
+ * @brief matches two database records based on their MAC addresses
+ * , aging type and port IDs
+ *
+ * @param untypedReference record to match against
+ * @param untypedEntry record to match
+ *
+ * @return TRUE if the match is successful or FALSE otherwise
+ *
+ * @internal
+ */
+IX_ETH_DB_PUBLIC
+BOOL ixEthDBPortAgeTypeRecordMatch(void *untypedReference, void *untypedEntry)
+{
+    MacDescriptor *entry     = (MacDescriptor *) untypedEntry;
+    MacDescriptor *reference = (MacDescriptor *) untypedReference;
+    
+    /* check accepted record types */
+    if ((entry->type & reference->type) == 0) return FALSE;
+    
+    return ((entry->portID == reference->portID) &&
+        (ixEthDBAddressCompare(entry->macAddress, reference->macAddress) == 0) && 
+	    (entry->recordData.filteringData.staticEntry == 
+	    reference->recordData.filteringData.staticEntry));
+}
+
+/**
  * @brief dummy matching function, registered for safety
  *
  * @param reference record to match against (unused)
@@ -204,8 +230,11 @@ UINT32 ixEthDBMatchMethodsRegister(MatchFunction *matchFunctions)
    
     /* register MAC/VLAN ID search method */
     matchFunctions[IX_ETH_DB_MAC_MASK_PORT_KEY] = ixEthDBFirewallMaskedRecordMatch;
+
+    /* register MAC/PortID/Aging Type search method */
+    matchFunctions[IX_ETH_DB_MAC_PORT_AGETYPE_KEY] = ixEthDBPortAgeTypeRecordMatch;
  
-    return 3; /* three methods */
+    return IX_ETH_DB_MAX_KEY_INDEX;
 }
 
 /**
@@ -239,7 +268,7 @@ HashNode* ixEthDBSearch(IxEthDBMacAddr *macAddress, IxEthDBRecordType typeFilter
     }
 
     /* fill search fields */
-    memcpy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     
     /* set acceptable record types */
     reference.type = typeFilter;
@@ -263,7 +292,7 @@ IxEthDBStatus ixEthDBPeek(IxEthDBMacAddr *macAddress, IxEthDBRecordType typeFilt
     }
 
     /* fill search fields */
-    memcpy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     
     /* set acceptable record types */
     reference.type = typeFilter;
@@ -303,7 +332,7 @@ HashNode* ixEthDBPortSearch(IxEthDBMacAddr *macAddress, IxEthDBPortId portID, Ix
     }
     
     /* fill search fields */
-    memcpy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     reference.portID = portID;
     
     /* set acceptable record types */
@@ -344,7 +373,7 @@ HashNode* ixEthDBVlanSearch(IxEthDBMacAddr *macAddress, IxEthDBVlanId vlanID, Ix
     }
     
     /* fill search fields */
-    memcpy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(reference.macAddress, macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     reference.recordData.filteringVlanData.ieee802_1qTag = 
             IX_ETH_DB_SET_VLAN_ID(reference.recordData.filteringVlanData.ieee802_1qTag, vlanID);
     

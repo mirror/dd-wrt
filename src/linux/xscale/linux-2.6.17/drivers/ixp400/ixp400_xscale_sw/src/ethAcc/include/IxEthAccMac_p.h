@@ -1,7 +1,7 @@
 /*
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -174,9 +174,9 @@
 #define IX_ETH_ACC_MAC_THRESH_P_EMPTY_DEFAULT  0x12
 #define IX_ETH_ACC_MAC_THRESH_P_FULL_DEFAULT   0x30
 
-/* Number of bytes that must be in the tx fifo before
+/* Number of words that must be in the tx fifo before
    transmission commences*/
-#define IX_ETH_ACC_MAC_BUF_SIZE_TX_DEFAULT     0x8
+#define IX_ETH_ACC_MAC_BUF_SIZE_TX_DEFAULT     0x18
 
 /* One-part deferral values */
 #define IX_ETH_ACC_MAC_TX_DEFER_DEFAULT        0x15
@@ -215,9 +215,12 @@
 #define IX_ETH_ACC_PORT_DISABLE_DELAY_COUNT 200  /* 4 seconds timeout */
 #define IX_ETH_ACC_PORT_DISABLE_RETRY_COUNT 3
 #define IX_ETH_ACC_MIB_STATS_DELAY_MSECS 2000 /* 2 seconds delay for ethernet stats */ 
+#define IX_ETH_ACC_MAC_RECOVERY_DONE_ACK_DELAY_MSECS 20
+#define IX_ETH_ACC_FCS_CONFIG_DELAY_MSECS 300
+#define IX_ETH_ACC_ADDRESS_FILTER_CONFIG_DELAY_MSECS 300
 
 /*Register access macros*/
-#if  (CPU == SIMSPARCSOLARIS)
+#if  ((CPU == SIMSPARCSOLARIS) || (CPU == SIMLINUX))
 extern void registerWriteStub (UINT32 base, UINT32 offset, UINT32 val);
 extern UINT32 registerReadStub (UINT32 base, UINT32 offset);
 
@@ -246,6 +249,13 @@ IxEthAccStatus ixEthAccPortMacResetPriv(IxEthAccPortId portId);
 /* NPE software loopback */
 IxEthAccStatus ixEthAccNpeLoopbackDisablePriv(IxEthAccPortId portId);
 IxEthAccStatus ixEthAccNpeLoopbackEnablePriv(IxEthAccPortId portId);
+
+/* MAC recovery */
+IxEthAccStatus ixEthAccMacRecoveryLoopStart(void);
+IxEthAccStatus ixEthAccMacRecoveryLoopStop(void);
+
+/* MAC MIBII Stats Show */
+IxEthAccStatus ixEthAccMibIIShow (IxEthAccPortId portId);
 
 #endif /*IxEthAccMac_p_H*/
 

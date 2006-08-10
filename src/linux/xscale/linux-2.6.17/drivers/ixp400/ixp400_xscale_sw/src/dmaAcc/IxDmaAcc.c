@@ -6,7 +6,7 @@
  * @brief   API of the IXP400 DMA Access Driver Component (IxDma)
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -78,7 +78,7 @@ static IxDmaAccStats dmaStats;     /* Instantiate statistics data structure */
 PUBLIC IX_STATUS
 ixDmaAccInit(IxNpeDlNpeId npeId)
 {
-  #if CPU!=SIMSPARCSOLARIS 
+  #if((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
     /* If not IXP42X A0 stepping, proceed to check for existence of coprocessors */ 
     if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
         (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
@@ -98,6 +98,7 @@ ixDmaAccInit(IxNpeDlNpeId npeId)
 	        		   IX_OSAL_LOG_DEV_STDOUT, 
                        "Warning:NPEA does not present.\n",
 	                   0,0,0,0,0,0);
+                return IX_FAIL;
             }
         } 
        else if (IX_NPEDL_NPEID_NPEB == npeId)
@@ -111,6 +112,7 @@ ixDmaAccInit(IxNpeDlNpeId npeId)
 	        		   IX_OSAL_LOG_DEV_STDOUT,
                        "Warning:NPEB does not present.\n",
 	                   0,0,0,0,0,0);
+                return IX_FAIL; 
             }
          } 
       else if (IX_NPEDL_NPEID_NPEC == npeId)
@@ -124,6 +126,7 @@ ixDmaAccInit(IxNpeDlNpeId npeId)
 	        		   IX_OSAL_LOG_DEV_STDOUT, 
                        "Warning:NPEC does not present.\n",
 	                   0,0,0,0,0,0);	        
+                return IX_FAIL;
             } 
 	}
         else
@@ -271,7 +274,7 @@ ixDmaAccUninit (IxNpeDlNpeId npeId)
 {
 	IX_STATUS status;
     /*Check wheather the NPE is present*/
-    #if CPU!=SIMSPARCSOLARIS
+    #if((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
         if (IX_FEATURE_CTRL_SILICON_TYPE_B0 ==
             (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
         {
@@ -286,6 +289,7 @@ ixDmaAccUninit (IxNpeDlNpeId npeId)
                             IX_OSAL_LOG_DEV_STDOUT,
                             "Warning:NPEA does not present.\n",
                             0,0,0,0,0,0);
+                    return IX_FAIL; 
                 }
             }
 
@@ -300,6 +304,7 @@ ixDmaAccUninit (IxNpeDlNpeId npeId)
                            IX_OSAL_LOG_DEV_STDOUT,
                            "Warning:NPEB does not present.\n",
                            0,0,0,0,0,0);
+                    return IX_FAIL;
                 }
             }
 
@@ -314,6 +319,7 @@ ixDmaAccUninit (IxNpeDlNpeId npeId)
                                IX_OSAL_LOG_DEV_STDOUT,
                                 "Warning:NPEC does not present.\n",
                                 0,0,0,0,0,0);
+                        return IX_FAIL;
                 }
             }
             else

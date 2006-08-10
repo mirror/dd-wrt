@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,8 +50,8 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X     /* PKE codes only applicable for IXP46X platform */
-
+#if defined(__ixp46X)
+/* PKE is not supported in IXP42X platform */
 #ifndef IXCRYPTOPKECRYPTOENGINECOMMON_P_H
 #define IXCRYPTOPKECRYPTOENGINECOMMON_P_H
 
@@ -165,4 +165,4 @@ UINT32
 ixCryptoPkeAddressGet (IxCryptoPkeEngineType type);
 
 #endif  /* IXCRYPTOPKECRYPTOENGINECOMMON_P_H */
-#endif  /* __ixp46X */
+#endif /* __ixp46X */

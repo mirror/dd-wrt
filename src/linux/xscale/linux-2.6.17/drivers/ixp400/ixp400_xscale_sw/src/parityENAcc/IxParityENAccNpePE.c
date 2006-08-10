@@ -8,7 +8,7 @@
  * of the IXP400 Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,8 +48,8 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
-
+#if defined(__ixp46X)
+#define IXPARITYENACCNPEPE_C
 /* 
  * System defined include files
  */

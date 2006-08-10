@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -67,8 +67,8 @@
 #include "IxQueueAssignments.h"
 
 /* Check range of Q's assigned to this component. */
-
-#if IX_ETH_ACC_RX_FREE_NPEA_Q  >=  (IX_QMGR_MIN_QUEUPP_QID) | 	\
+#if IX_ETH_ACC_RX_FRAME_ETH_Q >= (IX_QMGR_MIN_QUEUPP_QID ) |    	\
+ IX_ETH_ACC_RX_FREE_NPEA_Q  >=  (IX_QMGR_MIN_QUEUPP_QID) | 	\
  IX_ETH_ACC_RX_FREE_NPEB_Q  >=  (IX_QMGR_MIN_QUEUPP_QID) | 	\
  IX_ETH_ACC_RX_FREE_NPEC_Q  >=  (IX_QMGR_MIN_QUEUPP_QID) | 	\
  IX_ETH_ACC_TX_NPEA_Q >=   (IX_QMGR_MIN_QUEUPP_QID) |  		\

@@ -4,7 +4,7 @@
  * @brief Implementation of the EthDB feature control API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -125,9 +125,10 @@ void ixEthDBFeatureCapabilityScan(void)
     }
 
     /* To decide port definition for NPE A - IX_ETH_NPE or IX_ETH_GENERIC 
-       IX_ETH_NPE will be set for NPE A when the functionality id is ranged from 0x80 to 0x8F.
-       For the rest of functionality Ids, the port type will be set to IX_ETH_GENERIC. */
-    if ((npeAFunctionalityId & 0xF0) != 0x80)
+       IX_ETH_NPE will be set for NPE A when the functionality id is ranged from 0x80 to 0x8F
+       and ethernet + hss co-exists images range from 0x90 to 0x9F. For the rest of functionality 
+       Ids, the port type will be set to IX_ETH_GENERIC. */
+    if ((npeAFunctionalityId & 0xF0) != 0x80 && (npeAFunctionalityId & 0xF0) != 0x90)
     {
         /* NPEA is not Ethernet capable. Override default port definition */
 	ixEthDBPortDefinitions[IX_NPEA_PORT].type = IX_ETH_GENERIC;
@@ -160,7 +161,6 @@ void ixEthDBFeatureCapabilityScan(void)
             {
                 /* initialize and empty NPE response mutex */
                 ixOsalMutexInit(&portInfo->npeAckLock);
-                ixOsalMutexLock(&portInfo->npeAckLock, IX_OSAL_WAIT_FOREVER);
 
                 /* check NPE response to GetStatus */
                 msg.data[0] = IX_ETHNPE_NPE_GETSTATUS << 24;
@@ -184,7 +184,8 @@ void ixEthDBFeatureCapabilityScan(void)
                 else if (functionalityId == 0x01
                          || functionalityId == 0x81
                          || functionalityId == 0x0B
-                         || functionalityId == 0x8B)
+                         || functionalityId == 0x8B
+                         || functionalityId == 0x90)
                 {
                     portInfo->featureCapability |= IX_ETH_DB_FILTERING;
                     portInfo->featureCapability |= IX_ETH_DB_FIREWALL;
@@ -194,7 +195,8 @@ void ixEthDBFeatureCapabilityScan(void)
                 else if (functionalityId == 0x02
                          || functionalityId == 0x82
                          || functionalityId == 0x0D
-                         || functionalityId == 0x8D)
+                         || functionalityId == 0x8D
+                         || functionalityId == 0x91)
                 {
                     portInfo->featureCapability |= IX_ETH_DB_WIFI_HEADER_CONVERSION;
                     portInfo->featureCapability |= IX_ETH_DB_FIREWALL;
@@ -213,7 +215,9 @@ void ixEthDBFeatureCapabilityScan(void)
                 if (functionalityId == 0x0B
                     || functionalityId == 0x8B
                     || functionalityId == 0x0D
-                    || functionalityId == 0x8D)
+                    || functionalityId == 0x8D
+                    || functionalityId == 0x90
+                    || functionalityId == 0x91)
                 {
                     /* this feature is always on and is based on the NPE */
                     portInfo->featureStatus |= IX_ETH_DB_ADDRESS_MASKING;
@@ -221,7 +225,7 @@ void ixEthDBFeatureCapabilityScan(void)
                 }
 
                 /* reset AQM queues */
-                memset(portInfo->ixEthDBTrafficClassAQMAssignments, 0, sizeof (portInfo->ixEthDBTrafficClassAQMAssignments));
+                ixOsalMemSet(portInfo->ixEthDBTrafficClassAQMAssignments, 0, sizeof (portInfo->ixEthDBTrafficClassAQMAssignments));
 
                 /* only traffic class 0 is active at initialization time */
                 portInfo->ixEthDBTrafficClassCount = 1;
@@ -272,7 +276,7 @@ void ixEthDBFeatureCapabilityScan(void)
                 }
 
                 /* download priority mapping table and Rx queue configuration */
-                memset (defaultPriorityTable, 0, sizeof (defaultPriorityTable));
+                ixOsalMemSet (defaultPriorityTable, 0, sizeof (defaultPriorityTable));
                 ixEthDBPriorityMappingTableSet(portIndex, defaultPriorityTable);
 
                 /* by default we turn off invalid source MAC address filtering */
@@ -420,8 +424,8 @@ IxEthDBStatus ixEthDBFeatureEnable(IxEthDBPortId portID, IxEthDBFeature feature,
             portInfo->ixEthDBTrafficClassCount = portInfo->ixEthDBTrafficClassAvailable;
 
             /* set default 802.1Q priority mapping table - note that C indexing starts from 0, so we substract 1 here */
-            memcpy (defaultPriorityTable, 
-                (const void *) ixEthIEEE802_1QUserPriorityToTrafficClassMapping[portInfo->ixEthDBTrafficClassCount - 1], 
+            ixOsalMemCopy (defaultPriorityTable, 
+                (void *) ixEthIEEE802_1QUserPriorityToTrafficClassMapping[portInfo->ixEthDBTrafficClassCount - 1], 
                 sizeof (defaultPriorityTable));
 
             /* update priority mapping and AQM queue assignments */
@@ -438,7 +442,7 @@ IxEthDBStatus ixEthDBFeatureEnable(IxEthDBPortId portID, IxEthDBFeature feature,
             }
 
             /* set membership and TTI tables */
-            memset (vlanSet, 0xFF, sizeof (vlanSet));
+            ixOsalMemSet (vlanSet, 0xFF, sizeof (vlanSet));
 
             if (status == IX_ETH_DB_SUCCESS)
             {
@@ -537,7 +541,7 @@ IxEthDBStatus ixEthDBFeatureEnable(IxEthDBPortId portID, IxEthDBFeature feature,
             */
 
             /* initialize all => traffic class 0 priority mapping table */
-            memset (defaultPriorityTable, 0, sizeof (defaultPriorityTable));
+            ixOsalMemSet (defaultPriorityTable, 0, sizeof (defaultPriorityTable));
             portInfo->ixEthDBTrafficClassCount = 1;
             status = ixEthDBPriorityMappingTableSet(portID, defaultPriorityTable);
 
@@ -552,7 +556,7 @@ IxEthDBStatus ixEthDBFeatureEnable(IxEthDBPortId portID, IxEthDBFeature feature,
             }
 
             /* clear membership and TTI tables */
-            memset (vlanSet, 0, sizeof (vlanSet));
+            ixOsalMemSet (vlanSet, 0, sizeof (vlanSet));
 
             if (status == IX_ETH_DB_SUCCESS)
             {
@@ -718,4 +722,123 @@ IxEthDBStatus ixEthDBFeaturePropertySet(IxEthDBPortId portID, IxEthDBFeature fea
     }
     
     return IX_ETH_DB_INVALID_ARG;
+}
+
+
+/**
+ * @brief Restore the states of EthDB Features
+ *
+ * @param portID ID of the port
+ *
+ * See IxEthDB.h for more details.
+ */
+IX_ETH_DB_PUBLIC 
+IxEthDBStatus ixEthDBFeatureStatesRestore(IxEthDBPortId portID)
+{
+    PortInfo *portInfo = &ixEthDBPortInfo[portID];
+
+    /* Check whether port if enabled */
+    IX_ETH_DB_CHECK_PORT_INITIALIZED(portID);
+    IX_ETH_DB_CHECK_PORT(portID);
+
+   /* ========================  Basic ==========================
+    *  Set up Port MAC Address
+    */
+    if (ixEthDBPortAddressSet(portID, &(portInfo->macAddr)) != IX_SUCCESS)
+    {
+        return IX_ETH_DB_FAIL;
+    }
+   
+    /*
+     * Set up Port Max Rx/Tx frame lengths
+     */ 
+    if(ixEthDBPortFrameLengthsUpdate(portID) != IX_SUCCESS)
+    {
+        return IX_ETH_DB_FAIL;
+    }
+
+    /* ========================  VLAN/QoS ==========================         
+     * Only performs VLAN feature update if it is enabled before
+     */ 
+    if ((portInfo->featureStatus & IX_ETH_DB_VLAN_QOS) != 0)
+    {
+      /* Set VLAN Rx tag mode */
+      if (ixEthDBIngressVlanModeUpdate(portID) != IX_SUCCESS)
+      {
+         return IX_ETH_DB_FAIL;
+      }
+
+      /* Set Default Rx VID */
+      if (ixEthDBPortVlanTagSet(portID, portInfo->vlanTag) != IX_SUCCESS)
+      {
+         return IX_ETH_DB_FAIL;
+      }
+ 
+      /* Set PortID extraction mode */
+      if (ixEthDBVlanPortExtractionEnable(portID, portInfo->portIdExtractionEnable) != IX_SUCCESS)
+      {
+         return IX_ETH_DB_FAIL;   
+      }
+
+      /* Set VLAN Table */
+      if (ixEthDBVlanTableRangeUpdate(portID) != IX_SUCCESS)
+      {
+         return IX_ETH_DB_FAIL; 
+      }
+    } /* VLAN/QoS */
+
+   /* ========================  Firewall ==========================         
+    * Only performs Firewall feature update if it is enabled before
+    */    
+    if ((portInfo->featureStatus & IX_ETH_DB_FIREWALL) != 0)
+    {
+      if(ixEthDBFirewallTableDownload(portID) != IX_SUCCESS)
+      {
+	return IX_ETH_DB_FAIL;
+      }  
+    } /* Firewall */
+  
+   /* ===================== Header Conversion ==========================         
+    * Only performs Header Conversion feature update if it is enabled before
+    */   
+    if ((portInfo->featureStatus & IX_ETH_DB_WIFI_HEADER_CONVERSION) != 0)
+    {
+      /* Update WiFi FC & DID */
+      if (ixEthDBWiFiFrameControlDurationIDUpdate(portID) != IX_SUCCESS)
+      {      
+	return IX_ETH_DB_FAIL; 
+      }
+
+      /* Update BSSID */
+      if (ixEthDBWiFiBSSIDSet(portID, (IxEthDBMacAddr *) portInfo->bssid) != IX_SUCCESS)
+      {
+	return IX_ETH_DB_FAIL;
+      }
+
+      /* Update Header Conversion Table & AP MAC Table */
+      if (ixEthDBWiFiConversionTableDownload(portID) != IX_ETH_DB_SUCCESS)
+      {
+	return IX_ETH_DB_FAIL;
+      }
+    } /* Header Conversion */
+  
+   /* ====================== Learning & Filtering ==========================         
+    * Learning & Filtering feature update is not neccessary as we can rely 
+    * on EthNPE to learn the src address again. As for the entry added by client
+    * earlier, it will be lost. This is the constraint as the mechanism to retrieve
+    * the entry that has been added by client from NPE is not trivial.
+    */
+
+   /* ============================== STP ===================================         
+    * Only performs STP feature update if it is enabled before
+    */
+    if ((portInfo->featureStatus & IX_ETH_DB_SPANNING_TREE_PROTOCOL) != 0)
+    {    
+      if (ixEthDBSpanningTreeBlockingStateSet(portID, portInfo->stpBlocked) != IX_SUCCESS)
+      {
+	return IX_ETH_DB_FAIL;
+      }
+    }
+
+    return IX_ETH_DB_SUCCESS;
 }

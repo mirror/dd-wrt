@@ -4,7 +4,7 @@
  * @brief Public API support functions
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -146,7 +146,7 @@ void ixEthDBPortInit(IxEthDBPortId portID)
     portInfo->updateMethod.userControlled          = FALSE;
 
     /* default WiFi parameters */
-    memset(portInfo->bssid, 0, sizeof (portInfo->bssid));
+    ixOsalMemSet(portInfo->bssid, 0, sizeof (portInfo->bssid));
     portInfo->frameControlDurationID = 0;
 
     /* Ethernet NPE-specific initializations */
@@ -319,9 +319,9 @@ IxEthDBStatus ixEthDBPortDisable(IxEthDBPortId portID)
         ixEthDBPortState[portID].maxRxFrameSize          = portInfo->maxRxFrameSize;
         ixEthDBPortState[portID].maxTxFrameSize          = portInfo->maxTxFrameSize;
 
-        memcpy(ixEthDBPortState[portID].vlanMembership, portInfo->vlanMembership, sizeof (IxEthDBVlanSet));
-        memcpy(ixEthDBPortState[portID].transmitTaggingInfo, portInfo->transmitTaggingInfo, sizeof (IxEthDBVlanSet));
-        memcpy(ixEthDBPortState[portID].priorityTable, portInfo->priorityTable, sizeof (IxEthDBPriorityTable));
+        ixOsalMemCopy(ixEthDBPortState[portID].vlanMembership, portInfo->vlanMembership, sizeof (IxEthDBVlanSet));
+        ixOsalMemCopy(ixEthDBPortState[portID].transmitTaggingInfo, portInfo->transmitTaggingInfo, sizeof (IxEthDBVlanSet));
+        ixOsalMemCopy(ixEthDBPortState[portID].priorityTable, portInfo->priorityTable, sizeof (IxEthDBPriorityTable));
 
         ixEthDBPortState[portID].saved = TRUE;
 
@@ -335,7 +335,7 @@ IxEthDBStatus ixEthDBPortDisable(IxEthDBPortId portID)
             ixEthDBAcceptableFrameTypeSet((IxEthDBPortId) portID, IX_ETH_DB_ACCEPT_ALL_FRAMES);
             ixEthDBIngressVlanTaggingEnabledSet((IxEthDBPortId) portID, IX_ETH_DB_PASS_THROUGH);
 
-            memset(classZeroTable, 0, sizeof (classZeroTable));
+            ixOsalMemSet(classZeroTable, 0, sizeof (classZeroTable));
             ixEthDBPriorityMappingTableSet((IxEthDBPortId) portID, classZeroTable);
         }
 
@@ -453,7 +453,7 @@ IxEthDBStatus ixEthDBPortDisable(IxEthDBPortId portID)
  * 
  * @internal
  */
-IX_ETH_DB_PRIVATE
+IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBPortFrameLengthsUpdate(IxEthDBPortId portID)
 {
     IxNpeMhMessage message;
