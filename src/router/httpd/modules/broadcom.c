@@ -3252,7 +3252,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, argv[0]))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej (buf, wp);
+		  do_ej_two (buf, wp);
 		}
 	    }
 	  else
@@ -3260,7 +3260,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, ".webconfig"))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej (buf, wp);
+		  do_ej_two (buf, wp);
 		}
 	    }
 	}
@@ -3277,7 +3277,7 @@ do_shell_script (char *url, webs_t stream)
   char buf[256];
   sprintf (buf, "%s >/tmp/shellout.asp", url);
   system (buf);
-  do_ej ("/tmp/shellout.asp", stream);
+  do_ej_two ("/tmp/shellout.asp", stream);
 }
 
 
