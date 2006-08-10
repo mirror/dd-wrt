@@ -1,5 +1,5 @@
 # @par 
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -37,7 +37,7 @@
 # 
 # @par
 # -- End of Copyright Notice --
-npeDl_CFLAGS := -Isrc/npeDl/include
+npeDl_CFLAGS := -Isrc/npeDl/include -Isrc/featureCtrl/include
 
 npeDl_OBJ := IxNpeDl.o \
 	IxNpeDlImageMgr.o \

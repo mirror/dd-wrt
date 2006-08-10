@@ -2,14 +2,14 @@
  * @file IxNpeDl.c
  *
  * @author Intel Corporation
- * @date 08 January 2002
+ * @date 09 February 2006
  *
  * @brief This file contains the implementation of the public API for the
- *        IXP400 NPE Downloader component
+ *        IXP NPE Downloader component
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -60,13 +60,13 @@
 #include "IxNpeDlImageMgr_p.h"
 #include "IxNpeDlNpeMgr_p.h"
 #include "IxNpeDlMacros_p.h"
-#include "IxFeatureCtrl.h"
+#include "IxFeatureCtrl_sp.h"
 #include "IxOsal.h"
 /*
  * #defines used in this file
  */
- #define IMAGEID_MAJOR_NUMBER_DEFAULT 0
- #define IMAGEID_MINOR_NUMBER_DEFAULT 0
+#define IMAGEID_MAJOR_NUMBER_DEFAULT 0
+#define IMAGEID_MINOR_NUMBER_DEFAULT 0
 
 /*
  * Typedefs whose scope is limited to this file.
@@ -74,7 +74,7 @@
 typedef struct
 {
     BOOL validImage;
-    UINT8 functionalityId;
+    IxNpeDlImageId imageId;
 } IxNpeDlNpeState;
 
 /* module statistics counters */
@@ -91,9 +91,12 @@ typedef struct
  */
 static IxNpeDlNpeState ixNpeDlNpeState[IX_NPEDL_NPEID_MAX] =
 {
-    {FALSE, 0},
-    {FALSE, 0},
-    {FALSE, 0}
+    {FALSE, {IX_NPEDL_NPEID_MAX, 0, 0, 0, 0}},
+    {FALSE, {IX_NPEDL_NPEID_MAX, 0, 0, 0, 0}}
+    #if defined(__ixp42X) || defined(__ixp46X) && !defined(__ixp5XX)
+    ,
+    {FALSE, {IX_NPEDL_NPEID_MAX, 0, 0, 0, 0}}
+    #endif /* __ixp42X */
 };
 
 static IxNpeDlStats ixNpeDlStats;
@@ -101,14 +104,100 @@ static IxNpeDlStats ixNpeDlStats;
 /*
  * Software guard to prevent NPE from being started multiple times.
  */
-static BOOL ixNpeDlNpeStarted[IX_NPEDL_NPEID_MAX] ={FALSE, FALSE, FALSE} ;
-
+static BOOL ixNpeDlNpeStarted[IX_NPEDL_NPEID_MAX] = {FALSE, 
+                                                     FALSE
+#if defined(__ixp42X) || defined(__ixp46X)
+						     , 
+						     FALSE
+#endif /* __ixp42X */
+	 					     };
+			
 
 /*
  * static function prototypes.
  */
 PRIVATE IX_STATUS
 ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary, UINT32 imageId);
+/*
+ * Function definition: ixNpeDlLoadedImageGet
+ */
+PUBLIC IX_STATUS
+ixNpeDlLoadedImageGet (IxNpeDlNpeId npeId,
+                       IxNpeDlImageId *imageIdPtr)
+{
+    IX_STATUS status = IX_SUCCESS;
+
+    IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
+                     "Entering ixNpeDlLoadedImageGet\n");
+
+    /* Check input parameters */
+    if ((npeId >= IX_NPEDL_NPEID_MAX) || (npeId < 0) || (imageIdPtr == NULL))
+    {
+        status = IX_NPEDL_PARAM_ERR;
+        IX_NPEDL_ERROR_REPORT ("ixNpeDlLoadedImageGet - invalid parameter\n");
+    }
+    else
+    {
+	#if defined(__ixp42X) || defined(__ixp46X) && !defined(__ixp5XX) 
+
+         /* If not IXP42X A0 stepping, proceed to check for existence of npe's */ 
+         if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
+	      (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
+	     || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
+	#endif /* __ixp42X */
+        {
+            if (npeId == IX_NPEDL_NPEID_NPEA &&
+                (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
+                 IX_FEATURE_CTRL_COMPONENT_DISABLED))
+            {
+                IX_NPEDL_WARNING_REPORT("Warning: the NPE A component you specified does"
+                                        " not exist\n");
+                return IX_SUCCESS;
+            } /* end of if(npeId) */
+
+            if (npeId == IX_NPEDL_NPEID_NPEB &&
+                (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB) ==
+                 IX_FEATURE_CTRL_COMPONENT_DISABLED))
+            {
+                IX_NPEDL_WARNING_REPORT("Warning: the NPE B component you specified does"
+                                        " not exist\n");
+                return IX_SUCCESS;
+            } /* end of if(npeId) */
+
+	#if defined(__ixp42X) || defined(__ixp46X) && !defined(__ixp5XX)
+            if (npeId == IX_NPEDL_NPEID_NPEC &&
+                (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC) ==
+                 IX_FEATURE_CTRL_COMPONENT_DISABLED))
+            {
+                IX_NPEDL_WARNING_REPORT("Warning: the NPE C component you specified does"
+                                        " not exist\n");
+                return IX_SUCCESS;
+            } /* end of if(npeId) */
+	#endif /* __ixp42X */
+
+        } /* end of if */
+
+        if (ixNpeDlNpeState[npeId].validImage)
+        {
+            /* use npeId to get imageId from list of currently loaded
+               images */
+            *imageIdPtr = ixNpeDlNpeState[npeId].imageId;
+        }
+        else
+        {
+            status = IX_FAIL;
+        } /* end of if-else(ixNpeDlNpeState) */
+    } /* end of if-else(npeId) */
+
+    IX_NPEDL_TRACE1 (IX_NPEDL_FN_ENTRY_EXIT,
+                     "Exiting ixNpeDlLoadedImageGet : status = %d\n",
+                     status);
+    return status;
+}
+
+PRIVATE IX_STATUS
+ixNpeDlNpePresentCheck(IxNpeDlNpeId npeId, char *apiCallingFunctionName);
+
 
 /*
  * Function definition: ixNpeDlNpeStopAndReset
@@ -124,54 +213,24 @@ ixNpeDlNpeStopAndReset (IxNpeDlNpeId npeId)
     /* Ensure initialisation has been completed */
     ixNpeDlNpeMgrInit();
 
+#if defined(__ixp42X) || defined(__ixp46X)
     /* If not IXP42X A0 stepping, proceed to check for existence of npe's */ 
     if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
 	 (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
 	|| (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
     {
+#endif /* __ixp42X */
         /*
-         * Check whether NPE is present
+         * Check whether the NPE is present
          */
-        if (IX_NPEDL_NPEID_NPEA == npeId)
-        {
-            /* Check whether NPE A is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE A does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeStopAndReset - Warning:NPEA does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of if(IX_NPEDL_NPEID_NPEA) */
-        else if (IX_NPEDL_NPEID_NPEB == npeId)
-        {
-            /* Check whether NPE B is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE B does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeStopAndReset - Warning:NPEB does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEB) */
-        else if (IX_NPEDL_NPEID_NPEC == npeId)
-        {
-            /* Check whether NPE C is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE C does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeStopAndReset - Warning:NPEC does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEC) */
-        else
-        {
-            /* Invalid NPE ID */
-            IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeStopAndReset - invalid Npe ID\n");
-            status = IX_NPEDL_PARAM_ERR;
-        } /* end of if-else(IX_NPEDL_NPEID_NPEC) */
-    } /* end of if not IXP42x-A0 Silicon */
+	if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId, "ixNpeDlNpeStopAndReset")))
+	{
+	    return status;
+	}
+        
+#if defined(__ixp42X) || defined(__ixp46X)
+    }  /* end of if */
+#endif /* __ixp42X */
 
     if (status == IX_SUCCESS)
     {
@@ -207,54 +266,23 @@ ixNpeDlNpeExecutionStart (IxNpeDlNpeId npeId)
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
                      "Entering ixNpeDlNpeExecutionStart\n");
 
+#if defined(__ixp42X) || defined(__ixp46X)
     /* If not IXP42X A0 stepping, proceed to check for existence of npe's */ 
     if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
 	 (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
 	|| (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
     {
+#endif /* __ixp42X */
         /*
-         * Check whether NPE is present
+         * Check whether the NPE is present
          */
-        if (IX_NPEDL_NPEID_NPEA == npeId)
-        {
-            /* Check whether NPE A is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE A does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStart - Warning:NPEA does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of if(IX_NPEDL_NPEID_NPEA) */
-        else if (IX_NPEDL_NPEID_NPEB == npeId)
-        {
-            /* Check whether NPE B is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE B does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStart - Warning:NPEB does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEB) */
-        else if (IX_NPEDL_NPEID_NPEC ==  npeId)
-        {
-            /* Check whether NPE C is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE C does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStart - Warning:NPEC does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEC) */
-        else
-        {
-            /* Invalid NPE ID */
-            IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeExecutionStart - invalid Npe ID\n");
-            return IX_NPEDL_PARAM_ERR;
-        } /* end of if-else(IX_NPEDL_NPEID_NPEC) */
-    } /* end of if not IXP42x-A0 Silicon */
+	if (IX_SUCCESS != (status = ixNpeDlNpePresentCheck(npeId, "ixNpeDlNpeExecutionStart")))
+	{
+	    return status;
+	}
+#if defined(__ixp42X) || defined(__ixp46X)
+    } /* end of if */
+#endif /* __ixp42X */
 
     if (TRUE == ixNpeDlNpeStarted[npeId])
     {
@@ -295,54 +323,23 @@ ixNpeDlNpeExecutionStop (IxNpeDlNpeId npeId)
     /* Ensure initialisation has been completed */
     ixNpeDlNpeMgrInit();
 
+#if defined(__ixp42X) || defined(__ixp46X)
     /* If not IXP42X A0 stepping, proceed to check for existence of npe's */ 
     if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
 	 (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
 	|| (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
     {
+#endif /* __ixp42X */
         /*
-         * Check whether NPE is present
+         * Check whether the NPE is present
          */
-        if (IX_NPEDL_NPEID_NPEA == npeId)
-        {
-            /* Check whether NPE A is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE A does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStop - Warning:NPEA does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of if(IX_NPEDL_NPEID_NPEA) */
-        else if (IX_NPEDL_NPEID_NPEB == npeId)
-        {
-            /* Check whether NPE B is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE B does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStop - Warning:NPEB does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEB) */
-        else if (IX_NPEDL_NPEID_NPEC == npeId)
-        {
-            /* Check whether NPE C is present */
-            if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
-                IX_FEATURE_CTRL_COMPONENT_DISABLED)
-            {
-                /* NPE C does not present */
-                IX_NPEDL_WARNING_REPORT ("ixNpeDlNpeExecutionStop - Warning:NPEC does not present.\n");
-                return IX_SUCCESS;
-            }
-        } /* end of elseif(IX_NPEDL_NPEID_NPEC) */
-        else
-        {
-            /* Invalid NPE ID */
-            IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeExecutionStop - invalid Npe ID\n");
-            status = IX_NPEDL_PARAM_ERR;
-        } /* end of if-else(IX_NPEDL_NPEID_NPEC) */
+	if (IX_FAIL == (status = ixNpeDlNpePresentCheck(npeId, "ixNpeDlNpeExecutionStop")))
+	{
+	    return status;
+	}
+#if defined(__ixp42X) || defined(__ixp46X)
     } /* end of if not IXP42X-AO Silicon */
+#endif /* __ixp42X */
 
     if (status == IX_SUCCESS)
     {
@@ -429,15 +426,18 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
     IX_STATUS     status;
     IxNpeDlNpeId  npeId = IX_NPEDL_NPEID_FROM_IMAGEID_GET(imageId);
     IxFeatureCtrlDeviceId deviceId = IX_NPEDL_DEVICEID_FROM_IMAGEID_GET(imageId);
-
+    
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
                      "Entering ixNpeDlNpeInitAndStartInternal\n");
 
     ixNpeDlStats.attemptedDownloads++;
-
+  
+     
     /* Check input parameter device correctness */
-    if ((deviceId >= IX_FEATURE_CTRL_DEVICE_TYPE_MAX) || 
+    if ((deviceId >= IX_FEATURE_CTRL_DEVICE_TYPE_MAX) ||
+#if defined(__ixp42X) || defined(__ixp46X)
         (deviceId < IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X))
+#endif /* __ixp42X */
     {
         status = IX_NPEDL_PARAM_ERR;
         IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeInitAndStartInternal - "
@@ -451,15 +451,17 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
         IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeInitAndStartInternal - "
                                "invalid parameter\n");
     }
-
     else
     {
         /* Ensure initialisation has been completed */
         ixNpeDlNpeMgrInit();
 
         /* Checking if image being loaded is meant for device that is running.
-         * Image is forward compatible. i.e Image built for IXP42X should run
-         * on IXP46X but not vice versa.*/
+         * Image is forward compatible.
+         */
+#if defined(__ixp42X) || defined(__ixp46X)
+	/* i.e Image built for IXP42X should run on IXP46X but not vice versa.*/
+#endif /* __ixp42X */
         if (deviceId > (ixFeatureCtrlDeviceRead() & IX_FEATURE_CTRL_DEVICE_TYPE_MASK))
         {
             IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeInitAndStartInternal - "
@@ -467,43 +469,24 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
                                    "meant for device in use \n");
             return IX_NPEDL_DEVICE_ERR;
         }/* if statement - matching image device and current device */
-            
+
+#if defined(__ixp42X) || defined(__ixp46X)
 	/* If not IXP42X A0 stepping, proceed to check for existence of npe's */ 
 	if ((IX_FEATURE_CTRL_SILICON_TYPE_A0 != 
 	     (ixFeatureCtrlProductIdRead() & IX_FEATURE_CTRL_SILICON_STEPPING_MASK))
 	    || (IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X != ixFeatureCtrlDeviceRead ()))
         {
-            if (npeId == IX_NPEDL_NPEID_NPEA)
-            {
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA) ==
-                    IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                    IX_NPEDL_WARNING_REPORT("Warning: the NPE A component you specified does"
-                                            " not exist\n");
-                    return IX_SUCCESS;
-                }
-            } /* end of if(npeId) */
-            else if (npeId == IX_NPEDL_NPEID_NPEB)
-            {
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
-                    IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                    IX_NPEDL_WARNING_REPORT("Warning: the NPE B component you specified"
-                                            " does not exist\n");
-                    return IX_SUCCESS;
-                }
-            } /* end of elseif(npeId) */
-            else if (npeId == IX_NPEDL_NPEID_NPEC)
-            {
-                if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
-                    IX_FEATURE_CTRL_COMPONENT_DISABLED)
-                {
-                    IX_NPEDL_WARNING_REPORT("Warning: the NPE C component you specified"
-                                            " does not exist\n");
-                    return IX_SUCCESS;
-                }
-            } /* end of elseif(npeId) */
+#endif /* __ixp42X */
+            /*
+             * Check whether the NPE is present
+             */
+	    if (IX_SUCCESS != (status = ixNpeDlNpePresentCheck(npeId, "ixNpeDlNpeInitAndStartInternal")))
+	    {
+	        return status;
+	    }
+#if defined(__ixp42X) || defined(__ixp46X)
         } /* end of if not IXP42X-A0 Silicon */
+#endif /* __ixp42X */
 
         /* stop and reset the NPE */
         status = ixNpeDlNpeStopAndReset (npeId);
@@ -516,10 +499,12 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
         /* Locate image */
         status = ixNpeDlImageMgrImageFind (imageLibrary, imageId,
                                            &imageCodePtr, &imageSize);
-        if (IX_SUCCESS == status)
-        {
+
+
+        if(IX_SUCCESS == status)
+	{
             /*
-             * If download was successful, store image Id in list of
+             * If download is successful, store image Id in list of
              * currently loaded images. If a critical error occured
              * during download, record that the NPE has an invalid image
              */
@@ -530,6 +515,7 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
                 ixNpeDlStats.successfulDownloads++;
 
                 status = ixNpeDlNpeExecutionStart (npeId);
+
             }
             else if ((status == IX_NPEDL_CRITICAL_NPE_ERR) ||
                      (status == IX_NPEDL_CRITICAL_MICROCODE_ERR))
@@ -538,8 +524,15 @@ ixNpeDlNpeInitAndStartInternal (UINT32 *imageLibrary,
                 ixNpeDlStats.criticalFailDownloads++;
             }
 
-            ixNpeDlNpeState[npeId].functionalityId =
+            ixNpeDlNpeState[npeId].imageId.npeId = npeId;
+            ixNpeDlNpeState[npeId].imageId.functionalityId =
                 IX_NPEDL_FUNCTIONID_FROM_IMAGEID_GET(imageId);
+            ixNpeDlNpeState[npeId].imageId.major =
+                IX_NPEDL_MAJOR_FROM_IMAGEID_GET(imageId);
+            ixNpeDlNpeState[npeId].imageId.minor =
+                IX_NPEDL_MINOR_FROM_IMAGEID_GET(imageId);
+            ixNpeDlNpeState[npeId].imageId.deviceId =
+            IX_NPEDL_DEVICEID_FROM_IMAGEID_GET(imageId);
         } /* end of if(IX_SUCCESS) *//* condition: image located successfully in microcode image */
     } /* end of if-else(npeId-deviceId) *//* condition: parameter checks ok */
 
@@ -604,7 +597,7 @@ ixNpeDlLoadedImageFunctionalityGet (IxNpeDlNpeId npeId,
 
     if (ixNpeDlNpeState[npeId].validImage)
     {
-        *functionalityId = ixNpeDlNpeState[npeId].functionalityId;
+        *functionalityId = ixNpeDlNpeState[npeId].imageId.functionalityId;
         return IX_SUCCESS;
     }
     else
@@ -612,3 +605,56 @@ ixNpeDlLoadedImageFunctionalityGet (IxNpeDlNpeId npeId,
         return IX_FAIL;
     }
 }
+
+/*
+ * Function definition: ixNpeDlNpePresentCheck
+ */
+PUBLIC
+PRIVATE IX_STATUS
+ixNpeDlNpePresentCheck (IxNpeDlNpeId npeId, 
+                        char *apiCallingFunctionName)
+{
+    if (IX_NPEDL_NPEID_NPEA == npeId)
+    {
+        /* Check whether NPE A is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)==
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {
+            /* NPE A is not present */
+            IX_NPEDL_WARNING_REPORT1 (apiCallingFunctionName, " - Warning:NPEA is not present.\n");
+            return IX_FAIL;
+        }
+    } /* end of if(IX_NPEDL_NPEID_NPEA) */
+    else if (IX_NPEDL_NPEID_NPEB == npeId)
+    {
+        /* Check whether NPE B is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)==
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {
+            /* NPE B is not present */
+            IX_NPEDL_WARNING_REPORT1 (apiCallingFunctionName, " - Warning:NPEB is not present.\n");
+            return IX_FAIL;
+        }
+    } /* end of elseif(IX_NPEDL_NPEID_NPEB) */
+#if defined(__ixp42X) || defined(__ixp46X)
+    else if (IX_NPEDL_NPEID_NPEC == npeId)
+    {
+        /* Check whether NPE C is present */
+        if (ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEC)==
+            IX_FEATURE_CTRL_COMPONENT_DISABLED)
+        {
+            /* NPE C is not present */
+            IX_NPEDL_WARNING_REPORT1 (apiCallingFunctionName, " - Warning:NPEC is not present.\n");
+            return IX_FAIL;
+        }
+    } /* end of elseif(IX_NPEDL_NPEID_NPEC) */
+#endif /* __ixp42X */
+    else
+    {
+        /* Invalid NPE ID */
+        IX_NPEDL_ERROR_REPORT1 (apiCallingFunctionName, " - invalid Npe ID\n");
+        return IX_NPEDL_PARAM_ERR;
+    }
+    return IX_SUCCESS;
+}
+

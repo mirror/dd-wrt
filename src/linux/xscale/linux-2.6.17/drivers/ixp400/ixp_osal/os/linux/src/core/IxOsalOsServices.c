@@ -1,11 +1,11 @@
 /**
  * @file IxOsalOsServices.c (linux)
  *
- * @brief Implementation for Irq, Mem, sleep. 
- * 
- * 
+ * @brief Implementation for Mem and Sleep.
+ *
+ *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -45,34 +45,18 @@
  * -- End of Copyright Notice --
  */
 
-#include "IxOsal.h"
+#include <linux/version.h>
 
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-#include <linux/hardirq.h>
-#include <linux/interrupt.h>
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
 
 #include <linux/delay.h>
-#include <asm/hardirq.h>
-#include <asm/system.h>
-#include <asm/arch/irqs.h>
-#include <asm/irq.h>
 #include <linux/kernel.h>
 #include <linux/time.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 
-#ifndef __ixp46X
-#include "IxOsalOsIxp425Irq.h"
-#else
-#include "IxOsalOsIxp465Irq.h"
-#endif
+#include "IxOsal.h"
 
-/* 
- * Note: being referenced by some release 1.4 linux 
- * components as global .
- */
-PUBLIC UINT32 ixOsalLinuxInterruptedPc;
+/* Trace Message Logging Levels */
 
 static char *traceHeaders[] = {
     "",
@@ -88,231 +72,9 @@ static char *traceHeaders[] = {
 
 
 /* by default trace all but debug message */
-PRIVATE IxOsalLogLevel ixOsalCurrLogLevel = IX_OSAL_LOG_LVL_MESSAGE;
+PRIVATE int ixOsalCurrLogLevel = IX_OSAL_LOG_LVL_MESSAGE;
 
-typedef struct IxOsalInfoType
-{
-    void (*routine) (void *);
-    void *parameter;
-} IxOsalInfoType;
 
-static IxOsalInfoType IxOsalInfo[NR_IRQS];
-
-/*
- * General interrupt handler
- */
-
-/* 
- * Private utility function for ixOsalIrqBind to translate IRQ vector number to
- * IRQ name.
- */
-PRIVATE char*
-ixOsalGetIrqNameByVector(UINT32 vector)
-{
-    if (unlikely (ARRAY_SIZE(irq_name) < vector))
-	return ((char*)invalid_irq_name);
-
-    return ((char*)irq_name[vector]);
-}
-
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-static irqreturn_t
-#else
-static void
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-ixOsalOsIsrProxy (int irq, void *dev_id, struct pt_regs *regs)
-{
-    IxOsalInfoType *isr_proxy_info = (IxOsalInfoType *) dev_id;
-
-    IX_OSAL_ENSURE(isr_proxy_info && isr_proxy_info->routine,
-		   "ixOsalOsIsrProxy: Interrupt used before ixOsalIrqBind was invoked");
-
-    isr_proxy_info->routine (isr_proxy_info->parameter);
-
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-    return IRQ_HANDLED;
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-}
-
-/*
- * Interrupt handler for XScale PMU interrupts
- * This handler saves the interrupted Program Counter (PC)
- * into a global variable
- */
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-static irqreturn_t
-#else
-static void
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-ixOsalOsIsrProxyWithPC (int irq, void *dev_id, struct pt_regs *regs)
-{
-    ixOsalLinuxInterruptedPc = regs->ARM_pc;
-    ixOsalOsIsrProxy(irq, dev_id, regs);
-
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-    return IRQ_HANDLED;
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-}
-
-/**************************************
- * Irq services 
- *************************************/
-
-PUBLIC IX_STATUS
-ixOsalIrqBind (UINT32 vector, IxOsalVoidFnVoidPtr routine, void *parameter)
-{
-    if (IxOsalInfo[vector].routine)
-    {
-        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalIrqBind: NULL function routine. \n", 0, 0, 0, 0, 0, 0);
-        return IX_FAIL;
-    }
-
-    IxOsalInfo[vector].routine = routine;
-    IxOsalInfo[vector].parameter = parameter;
-
-    /*
-     * The PMU interrupt handler is a special case in the sense
-     * that it needs to save the address of the interrupted PC
-     * In the case of the XScale PMU interrupt, the ixOsalOsIsrProxyWithPC
-     * function is registered
-     */
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-    if (vector == IRQ_IXP4XX_XSCALE_PMU)
-#else
-    if (vector == IRQ_IXP425_XSCALE_PMU)
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-    {
-	/*
-	 * request_irq will enable interrupt automatically 
-	 * A non-zero return value suggest a failure.
-	 */
-	if (request_irq (vector, ixOsalOsIsrProxyWithPC, SA_SHIRQ, 
-			ixOsalGetIrqNameByVector(vector),
-			 &IxOsalInfo[vector]))
-	{
-	    ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-		       IX_OSAL_LOG_DEV_STDOUT,
-		       "ixOsalIrqBind: Fail to request irq. \n",
-		       0, 0, 0, 0, 0, 0);
-	    return IX_FAIL;
-	}
-    }
-    else
-    {
-	/*
-	 * request_irq will enable interrupt automatically 
-	 * A non-zero return value suggest a failure.
-	 */
-	if (request_irq (vector, ixOsalOsIsrProxy, SA_SHIRQ,
-			ixOsalGetIrqNameByVector(vector),
-			 &IxOsalInfo[vector]))
-	{
-	    ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-		       IX_OSAL_LOG_DEV_STDOUT,
-		       "ixOsalIrqBind: Fail to request irq. \n",
-		       0, 0, 0, 0, 0, 0);
-	    return IX_FAIL;
-	}
-    }
-    return IX_SUCCESS;
-}
-
-PUBLIC IX_STATUS
-ixOsalIrqUnbind (UINT32 vector)
-{
-    if (!IxOsalInfo[vector].routine)
-    {
-        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalIrqUnbind: NULL function routine. \n", 0, 0, 0, 0, 0, 0);
-        return IX_FAIL;
-    }
-
-    free_irq (vector, &IxOsalInfo[vector]);
-    IxOsalInfo[vector].routine = NULL;
-
-    return IX_SUCCESS;
-}
-
-PUBLIC UINT32
-ixOsalIrqLock ()
-{
-    UINT32 flags;
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-    /* local_irq_save() is not used here due to compilation warning against s32
-     * data type. */
-    local_save_flags(flags);
-    local_irq_disable();
-#else
-    save_flags (flags);
-    cli ();
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-    return flags;
-}
-
-/* Enable interrupts and task scheduling,
- * input parameter: irqEnable status returned
- * by ixOsalIrqLock().
- */
-PUBLIC void
-ixOsalIrqUnlock (UINT32 lockKey)
-{
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
-    local_irq_restore(lockKey);
-#else
-    restore_flags (lockKey);
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
-}
-
-PUBLIC UINT32
-ixOsalIrqLevelSet (UINT32 level)
-{
-    /*
-     * Not supported 
-     */
-    ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
-        IX_OSAL_LOG_DEV_STDOUT,
-        "ixOsalIrqLevelSet: not supported \n", 0, 0, 0, 0, 0, 0);
-    return 0;
-}
-
-PUBLIC void
-ixOsalIrqEnable (UINT32 irqLevel)
-{
-    if (irqLevel < NR_IRQS)
-    {
-        enable_irq(irqLevel);
-    }
-    else
-    {
-        /*
-         * Not supported 
-         */
-        ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalIrqEnable: IRQ %d not supported \n", irqLevel, 0, 0, 0, 0, 0);
-    }
-}
-
-PUBLIC void
-ixOsalIrqDisable (UINT32 irqLevel)
-{
-    if (irqLevel < NR_IRQS)
-    {
-        disable_irq(irqLevel);
-    }
-    else
-    {
-        /*
-         * Not supported 
-         */
-        ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalIrqDisable: IRQ %d not supported \n", irqLevel, 0, 0, 0, 0, 0);
-    }
-}
 
 /*********************
  * Log function
@@ -324,7 +86,7 @@ ixOsalLog (IxOsalLogLevel level,
     char *format, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6)
 {
     /*
-     * Return -1 for custom display devices 
+     * Return -1 for custom display devices
      */
     if ((device != IX_OSAL_LOG_DEV_STDOUT)
         && (device != IX_OSAL_LOG_DEV_STDERR))
@@ -346,7 +108,7 @@ ixOsalLog (IxOsalLogLevel level,
     else
     {
         /*
-         * Return error 
+         * Return error
          */
         return (IX_OSAL_LOG_ERROR);
     }
@@ -358,7 +120,7 @@ ixOsalLogLevelSet (UINT32 level)
     UINT32 oldLevel;
 
     /*
-     * Check value first 
+     * Check value first
      */
     if ((level < IX_OSAL_LOG_LVL_NONE) || (level > IX_OSAL_LOG_LVL_ALL))
     {
@@ -376,7 +138,7 @@ ixOsalLogLevelSet (UINT32 level)
 }
 
 /**************************************
- * Task services 
+ * Task services
  *************************************/
 
 PUBLIC void
@@ -390,7 +152,7 @@ ixOsalSleep (UINT32 milliseconds)
 {
     if (milliseconds != 0)
     {
-        set_current_state(TASK_INTERRUPTIBLE); 
+        set_current_state(TASK_INTERRUPTIBLE);
         schedule_timeout ((milliseconds * HZ) / 1000);
     }
     else
@@ -400,7 +162,7 @@ ixOsalSleep (UINT32 milliseconds)
 }
 
 /**************************************
- * Memory functions 
+ * Memory functions
  *************************************/
 
 void *
@@ -416,7 +178,7 @@ ixOsalMemFree (void *ptr)
     kfree (ptr);
 }
 
-/* 
+/*
  * Copy count bytes from src to dest ,
  * returns pointer to the dest mem zone.
  */
@@ -428,7 +190,7 @@ ixOsalMemCopy (void *dest, void *src, UINT32 count)
     return (memcpy (dest, src, count));
 }
 
-/* 
+/*
  * Fills a memory zone with a given constant byte,
  * returns pointer to the memory zone.
  */
@@ -465,25 +227,6 @@ ixOsalTimeGet (IxOsalTimeval * ptime)
 
 }
 
-/* Timestamp is implemented in OEM */
-PUBLIC UINT32
-ixOsalTimestampGet (void)
-{
-    return IX_OSAL_OEM_TIMESTAMP_GET ();
-}
-
-/* OEM-specific implementation */
-PUBLIC UINT32
-ixOsalTimestampResolutionGet (void)
-{
-    return IX_OSAL_OEM_TIMESTAMP_RESOLUTION_GET ();
-}
-
-PUBLIC UINT32
-ixOsalSysClockRateGet (void)
-{
-    return IX_OSAL_OEM_SYS_CLOCK_RATE_GET ();
-}
 
 PUBLIC void
 ixOsalYield (void)
@@ -530,3 +273,54 @@ ixOsalOsVersionGet(INT8* osVersion, INT32 maxSize)
 
     return status;
 }
+
+
+/* Newly added OSAL Functions */
+
+PUBLIC
+IX_STATUS ixOsalSleepTick(UINT32 sleeptime_ticks)
+{
+    if(sleeptime_ticks < 1)
+    {
+        schedule();
+        return IX_SUCCESS;
+    }
+        else
+    {
+        set_current_state(TASK_UNINTERRUPTIBLE);
+        schedule_timeout(sleeptime_ticks);
+    }
+
+    return IX_SUCCESS;
+
+} /* ixOsalSleepTick */
+
+
+PUBLIC
+IX_STATUS ixOsalSleepUninterruptible(
+             UINT32 sleeptime_ms)
+{
+    struct timespec value;
+
+
+    if(sleeptime_ms < 1)
+    {
+        schedule();
+        return IX_SUCCESS;
+    }
+
+    value.tv_sec  = sleeptime_ms/1000;
+    value.tv_nsec = (sleeptime_ms%1000) * 1000000;
+
+    sleeptime_ms = timespec_to_jiffies(&value);
+
+    {
+        struct task_struct* aTask = current;
+        aTask->state = TASK_UNINTERRUPTIBLE;
+        sleeptime_ms = schedule_timeout(sleeptime_ms);
+    }
+
+    return IX_SUCCESS;
+
+} /* ixOsalSleepUninterruptible */
+

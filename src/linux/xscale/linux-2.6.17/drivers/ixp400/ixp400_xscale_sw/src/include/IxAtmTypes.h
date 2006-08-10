@@ -6,7 +6,7 @@
  * @brief This file contains Atm types common to a number of Atm components.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -67,13 +67,19 @@
  * @brief Logical Port Definitions  :
  *
  * Only 1 port is available in SPHY configuration
+ * 4 ports are enabled in ATMMPORT configuration
  * 12 ports are enabled in MPHY configuration
  *
  */
 typedef enum
 {
     IX_UTOPIA_PORT_0 = 0,  /**< Port 0 */
-#ifdef IX_NPE_MPHYMULTIPORT
+#ifdef IX_NPE_MPHYMULTIPORT    
+#ifdef IX_NPE_HSS_MPHY4PORT
+    IX_UTOPIA_PORT_1,      /**< Port 1 */
+    IX_UTOPIA_PORT_2,      /**< Port 2 */
+    IX_UTOPIA_PORT_3,      /**< Port 3 */
+#else 
     IX_UTOPIA_PORT_1,      /**< Port 1 */
     IX_UTOPIA_PORT_2,      /**< Port 2 */
     IX_UTOPIA_PORT_3,      /**< Port 3 */
@@ -85,6 +91,7 @@ typedef enum
     IX_UTOPIA_PORT_9,      /**< Port 9 */
     IX_UTOPIA_PORT_10,     /**< Port 10 */
     IX_UTOPIA_PORT_11,     /**< Port 11 */
+#endif     
 #endif /* IX_NPE_MPHY */
     IX_UTOPIA_MAX_PORTS    /**< Not a port - just a definition for the
                            * maximum possible ports
@@ -292,12 +299,12 @@ typedef enum
 typedef struct
 {
     IxAtmServiceCategory atmService; /**< ATM service category */
-    unsigned pcr;   /**< Peak Cell Rate - cells per second */
-    unsigned cdvt;  /**< Cell Delay Variation Tolerance - in nanoseconds */
-    unsigned scr;   /**< Sustained Cell Rate - cells per second */
-    unsigned mbs;   /**< Max Burst Size - cells */
-    unsigned mcr;   /**< Minimum Cell Rate - cells per second */
-    unsigned mfs;   /**< Max Frame Size - cells */
+    UINT64 pcr;   /**< Peak Cell Rate - cells per second */
+    UINT64 cdvt;  /**< Cell Delay Variation Tolerance - in nanoseconds */
+    UINT64 scr;   /**< Sustained Cell Rate - cells per second */
+    UINT64 mbs;   /**< Max Burst Size - cells */
+    UINT64 mcr;   /**< Minimum Cell Rate - cells per second */
+    UINT64 mfs;   /**< Max Frame Size - cells */
 } IxAtmTrafficDescriptor;
 
 /**

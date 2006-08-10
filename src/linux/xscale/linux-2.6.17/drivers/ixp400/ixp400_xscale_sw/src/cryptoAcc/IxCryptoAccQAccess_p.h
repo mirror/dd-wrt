@@ -11,7 +11,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -80,7 +80,7 @@ extern IxCryptoAccStats ixCryptoStats;
 typedef struct 
 {
    IxQMgrQId qId;
-   INT8 *qName;
+   char *qName;
    IxQMgrCallback qCallback;
    IxQMgrCallbackId callbackTag;
    IxQMgrQSizeInWords qSize;

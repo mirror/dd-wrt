@@ -4,7 +4,7 @@
  * @brief Routines that read and write learning/search trees in NPE-specific format
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -50,6 +50,16 @@
 /* forward prototype declarations */
 IX_ETH_DB_PUBLIC void ixEthDBELTShow(IxEthDBPortId portID);
 IX_ETH_DB_PUBLIC void ixEthDBShowNpeMsgHistory(void);
+IX_ETH_DB_PRIVATE UINT32 ixEthDBNullSerialize(MacTreeNode *node, 
+					      void *address, UINT32 offset, UINT32 maxSize);
+IX_ETH_DB_PRIVATE UINT32 ixEthDBNPELearningNodeWrite(MacTreeNode *node, void *baseAddress, 
+						     UINT32 entryOffset, UINT32 maxByteSize);
+IX_ETH_DB_PRIVATE UINT32 ixEthDBNPEWiFiNodeWrite(MacTreeNode *node, void *baseAddress, 
+						 UINT32 entryOffset, UINT32 maxByteSize);
+IX_ETH_DB_PRIVATE UINT32 ixEthDBNPEFirewallMaskedNodeWrite(MacTreeNode *node, void *baseAddress, 
+							   UINT32 entryOffset, UINT32 maxByteSize);
+IX_ETH_DB_PRIVATE UINT32 ixEthDBNPEFirewallNodeWrite(MacTreeNode *node, void *baseAddress, 
+						     UINT32 entryOffset, UINT32 maxByteSize);
 
 /* data */
 UINT8* ixEthDBNPEUpdateArea[IX_ETH_DB_NUMBER_OF_PORTS];
@@ -90,44 +100,44 @@ void ixEthDBNPEUpdateAreasInit(void)
 
             if (update->npeUpdateZone == NULL)
             {
-                ERROR_LOG("Fatal error: IX_ACC_DRV_DMA_MALLOC() returned NULL, no NPE update zones available\n");
+                ERROR_LOG("Fatal error: IX_OSAL_CACHE_DMA_MALLOC() returned NULL, no NPE update zones available\n");
             }
             else
             {
-                memset(update->npeUpdateZone, 0, FULL_ELT_BYTE_SIZE);
+                ixOsalMemSet(update->npeUpdateZone, 0, FULL_ELT_BYTE_SIZE);
             }
 
             update->npeGwUpdateZone = IX_OSAL_CACHE_DMA_MALLOC(FULL_GW_BYTE_SIZE);
 
             if (update->npeGwUpdateZone == NULL)
             {
-                ERROR_LOG("Fatal error: IX_ACC_DRV_DMA_MALLOC() returned NULL, no gateway update zones available\n");
+                ERROR_LOG("Fatal error: IX_OSAL_CACHE_DMA_MALLOC() returned NULL, no gateway update zones available\n");
             }
             else
             {
-                memset(update->npeGwUpdateZone, 0, FULL_GW_BYTE_SIZE);
+                ixOsalMemSet(update->npeGwUpdateZone, 0, FULL_GW_BYTE_SIZE);
 	    }
 
 	    update->npeBssidUpdateZone = IX_OSAL_CACHE_DMA_MALLOC(FULL_BSSID_BYTE_SIZE);
 
 	    if (update->npeBssidUpdateZone == NULL)
             {
-                ERROR_LOG("Fatal error: IX_ACC_DRV_DMA_MALLOC() returned NULL, no bssid update zones available\n");
+                ERROR_LOG("Fatal error: IX_OSAL_CACHE_DMA_MALLOC() returned NULL, no bssid update zones available\n");
             }
             else
             {
-	  	memset(update->npeBssidUpdateZone, 0, FULL_BSSID_BYTE_SIZE);
+	  	ixOsalMemSet(update->npeBssidUpdateZone, 0, FULL_BSSID_BYTE_SIZE);
 	    }
 
             update->vlanUpdateZone  = IX_OSAL_CACHE_DMA_MALLOC(FULL_VLAN_BYTE_SIZE);
 
             if (update->vlanUpdateZone == NULL)
             {
-                ERROR_LOG("Fatal error: IX_ACC_DRV_DMA_MALLOC() returned NULL, no vlan update zones available\n");
+                ERROR_LOG("Fatal error: IX_OSAL_CACHE_DMA_MALLOC() returned NULL, no vlan update zones available\n");
             }
             else
             {
-                memset(update->vlanUpdateZone, 0, FULL_VLAN_BYTE_SIZE);
+                ixOsalMemSet(update->vlanUpdateZone, 0, FULL_VLAN_BYTE_SIZE);
             }
         }
         else
@@ -215,6 +225,12 @@ void ixEthDBNpeMsgAck(IxNpeMhNpeId npeID, IxNpeMhMessage msg)
     portInfo = &ixEthDBPortInfo[portID];
     
     ixOsalMutexUnlock(&portInfo->npeAckLock);
+
+    if (ixEthHssAccCoexistEnable)
+    {
+        /* Clear the common mutex locked during sending NPE messages */
+        IX_ETH_HSS_COM_MUT_UNLOCK();
+    }
 }
 
 /**
@@ -378,7 +394,7 @@ void ixEthDBNPETreeWrite(IxEthDBRecordType type, UINT32 totalSize, void *baseAdd
         /* zero out rest of the tree */
         IX_ETH_DB_NPE_TRACE("DB: (NPEAdaptor) Clearing rest of tree\n");
         /* zero out the rest of the table */
-        memset((void *) (((UINT32) baseAddress) + currentSize), 0, (totalSize - currentSize));
+        ixOsalMemSet((void *) (((UINT32) baseAddress) + currentSize), 0, (totalSize - currentSize));
     } 
     else
       {
@@ -472,12 +488,12 @@ UINT32 ixEthDBNPELearningNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, ELT_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, ELT_ENTRY_SIZE);
         return byteSize;
     }
 
     /* copy mac address */
-    memcpy(address, node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(address, node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     /* copy port ID */
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_ELT_PORT_ID_OFFSET) = IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(node->descriptor->portID);
@@ -519,12 +535,12 @@ UINT32 ixEthDBNPEWiFiNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, ELT_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, ELT_ENTRY_SIZE);
         return byteSize;
     }
 
     /* copy mac address */
-    memcpy(address, node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(address, node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     /* copy index */
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_WIFI_INDEX_OFFSET) = node->descriptor->recordData.wifiData.recIndex;
@@ -566,12 +582,12 @@ UINT32 ixEthDBNPEGatewayNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, ELT_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, ELT_ENTRY_SIZE);
         return byteSize;
     }
 
     /* copy mac address */
-    memcpy(address, node->descriptor->recordData.wifiData.gwMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(address, node->descriptor->recordData.wifiData.gwMacAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     /* set reserved field, two bytes */
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_GW_RESERVED_OFFSET)     = 0;
@@ -609,12 +625,12 @@ UINT32 ixEthDBNPEBssidNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, ELT_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, ELT_ENTRY_SIZE);
         return byteSize;
     }
 
     /* copy mac address */
-    memcpy(address, node->descriptor->recordData.wifiData.bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(address, node->descriptor->recordData.wifiData.bssid, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     /* set destination port and reserved fields */
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_BSSID_DEST_PORT_OFFSET) = node->descriptor->recordData.wifiData.logicalPortID;
@@ -652,7 +668,7 @@ UINT32 ixEthDBNPEFirewallMaskedNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, FW_M_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, FW_M_ENTRY_SIZE);
         return byteSize;
     }
 
@@ -665,9 +681,9 @@ UINT32 ixEthDBNPEFirewallMaskedNodeWrite(MacTreeNode *node, void *baseAddress,
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_FW_FLAGS_OFFSET) = IX_EDB_FLAGS_VALID;
 
     /* copy mac address */
-    memcpy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_ADDR_OFFSET), node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_ADDR_OFFSET), node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     /* copy address mask */
-    memcpy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_MASK_OFFSET), node->descriptor->recordData.firewallData.addressMask, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_MASK_OFFSET), node->descriptor->recordData.firewallData.addressMask, IX_IEEE803_MAC_ADDRESS_SIZE);
     return byteSize;
 }
 
@@ -701,7 +717,7 @@ UINT32 ixEthDBNPEFirewallNodeWrite(MacTreeNode *node, void *baseAddress,
     /* If node is NULL, zero out this record in memory */
     if(NULL == node)
     {
-        memset(address, 0, FW_ENTRY_SIZE);
+        ixOsalMemSet(address, 0, FW_ENTRY_SIZE);
         return byteSize;
     }
 
@@ -712,7 +728,7 @@ UINT32 ixEthDBNPEFirewallNodeWrite(MacTreeNode *node, void *baseAddress,
     NPE_NODE_BYTE(address, IX_EDB_NPE_NODE_FW_FLAGS_OFFSET) = IX_EDB_FLAGS_VALID;
 
     /* copy mac address */
-    memcpy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_ADDR_OFFSET), node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy((void *) ((UINT32) address + IX_EDB_NPE_NODE_FW_ADDR_OFFSET), node->descriptor->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
     return byteSize;
 }
 
@@ -754,8 +770,8 @@ UINT32 ixEthDBRecordSerializeMethodsRegister()
     ixEthDBNPENodeWrite[IX_ETH_DB_GATEWAY_RECORD]        = ixEthDBNPEGatewayNodeWrite;
     
     /* EP Delta arrays */
-    memset(ixEthDBEPDeltaOffset, 0, sizeof (ixEthDBEPDeltaOffset));
-    memset(ixEthDBEPDelta, 0, sizeof (ixEthDBEPDelta));
+    ixOsalMemSet(ixEthDBEPDeltaOffset, 0, sizeof (ixEthDBEPDeltaOffset));
+    ixOsalMemSet(ixEthDBEPDelta, 0, sizeof (ixEthDBEPDelta));
     
     /* filtering records */
     ixEthDBEPDeltaOffset[IX_ETH_DB_FILTERING_RECORD][0] = 1;

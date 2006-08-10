@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -523,7 +523,7 @@
  *
  * @brief ATM Descriptor structure offset for Transmit Descriptor Current MBuf Length
  *
- * TX - Initialized by the Intel XScale(R) Core
+ * TX - Initialized by the Intel XScale(R) Processor 
  * to the number of bytes in the current MBuf data buffer.
  * The NPE decrements this field for every transmitted cell.  
  * Thus, when the NPE writes a descriptor the TxDone queue, this field will equal zero.

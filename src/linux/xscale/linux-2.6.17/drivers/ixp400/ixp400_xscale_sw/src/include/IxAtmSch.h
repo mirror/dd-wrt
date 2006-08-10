@@ -16,7 +16,7 @@
  * for execution on the data path.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -153,7 +153,7 @@ PUBLIC IX_STATUS ixAtmSchUninit(void);
  * @ingroup IxAtmSch
  *
  * @fn ixAtmSchPortModelInitialize( IxAtmLogicalPort port,
-                                       unsigned int portRate,
+                                       UINT64 portRate,
                                        unsigned int minCellsToSchedule)
  *
  * @brief This function shall be called first to initialize an ATM port before
@@ -163,7 +163,7 @@ PUBLIC IX_STATUS ixAtmSchUninit(void);
  *          values range from 0 to IX_UTOPIA_MAX_PORTS - 1, representing a 
  *          maximum of IX_UTOPIA_MAX_PORTS possible ports.
  *
- * @param portRate unsigned int [in] - Value indicating the upstream capacity
+ * @param portRate UINT64 [in] - Value indicating the upstream capacity
  *          of the indicated port.  The value should be supplied in
  *          units of ATM (53 bytes) cells per second.
  *          A port rate of 800Kbits/s is the equivalent 
@@ -183,7 +183,7 @@ PUBLIC IX_STATUS ixAtmSchUninit(void);
  * initialized.  */
 PUBLIC IX_STATUS
 ixAtmSchPortModelInitialize( IxAtmLogicalPort port,
-                                       unsigned int portRate,
+                                       UINT64 portRate,
                                        unsigned int minCellsToSchedule);
 
 
@@ -210,7 +210,7 @@ PUBLIC IX_STATUS ixAtmSchPortModelUninitialize( IxAtmLogicalPort port);
  * @ingroup IxAtmSch
  *
  * @fn ixAtmSchPortRateModify( IxAtmLogicalPort port,
-                        unsigned int portRate)
+                        UINT64 portRate)
  *
  *  @brief This function is called to modify the portRate on a
  *         previously initialized port, typically in the event that
@@ -219,7 +219,7 @@ PUBLIC IX_STATUS ixAtmSchPortModelUninitialize( IxAtmLogicalPort port);
  * @param port @ref IxAtmLogicalPort [in] - Specifies the ATM port which is to be
  *          modified.
  *
- * @param portRate unsigned int [in] - Value indicating the new upstream
+ * @param portRate UINT64 [in] - Value indicating the new upstream
  *          capacity for this port in cells/second.
  *          A port rate of 800Kbits/s is the equivalent 
  *          of 1886 cells per second
@@ -243,7 +243,7 @@ PUBLIC IX_STATUS ixAtmSchPortModelUninitialize( IxAtmLogicalPort port);
  * @sa ixAtmSchVcModelRemove() */
 PUBLIC IX_STATUS
 ixAtmSchPortRateModify( IxAtmLogicalPort port,
-                        unsigned int portRate);
+                        UINT64 portRate);
 
 
 /**  
@@ -353,7 +353,7 @@ ixAtmSchVcModelRemove( IxAtmLogicalPort port,
  *
  * @fn ixAtmSchVcQueueUpdate( IxAtmLogicalPort port,
                        IxAtmSchedulerVcId vcId,
-                       unsigned int numberOfCells)
+                       UINT64 numberOfCells)
  *
  *  @brief The client calls this function to notify IxAtmSch that the
  *         user of a VC has submitted cells for transmission.
@@ -384,7 +384,7 @@ ixAtmSchVcModelRemove( IxAtmLogicalPort port,
  *          value returned by the @ref ixAtmSchVcModelSetup call which
  *          established the relevant VC.
  *
- * @param numberOfCells unsigned int [in] - Indicates how many ATM cells should
+ * @param numberOfCells UINT64 [in] - Indicates how many ATM cells should
  *          be added to the queue for this VC.
  *
  * @return
@@ -405,7 +405,7 @@ ixAtmSchVcModelRemove( IxAtmLogicalPort port,
 PUBLIC IX_STATUS
 ixAtmSchVcQueueUpdate( IxAtmLogicalPort port,
                        IxAtmSchedulerVcId vcId,
-                       unsigned int numberOfCells);
+                       UINT64 numberOfCells);
 
 /**  
  * @ingroup IxAtmSch
@@ -446,7 +446,7 @@ ixAtmSchVcQueueClear( IxAtmLogicalPort port,
  * @ingroup IxAtmSch
  *
  * @fn ixAtmSchTableUpdate( IxAtmLogicalPort port,
-                     unsigned int maxCells,
+                     UINT64 maxCells,
                      IxAtmScheduleTable **rettable)
  *
  *  @brief The client calls this function to request an update of the
@@ -473,7 +473,7 @@ ixAtmSchVcQueueClear( IxAtmLogicalPort port,
  * @param port @ref IxAtmLogicalPort [in] - Specifies the ATM port for which requested
  *          schedule table is to be generated.
  *
- * @param maxCells unsigned [in] - Specifies the maximum number of cells
+ * @param maxCells UINT64 [in] - Specifies the maximum number of cells
  *          that must be scheduled in the supplied table during any
  *          call to the interface.
  *
@@ -506,7 +506,7 @@ ixAtmSchVcQueueClear( IxAtmLogicalPort port,
  * @sa ixAtmSchVcQueueUpdate(), ixAtmSchVcQueueClear(), ixAtmSchTableUpdate().  */
 PUBLIC IX_STATUS
 ixAtmSchTableUpdate( IxAtmLogicalPort port,
-                     unsigned int maxCells,
+                     UINT64 maxCells,
                      IxAtmScheduleTable **rettable);
 
 /**  

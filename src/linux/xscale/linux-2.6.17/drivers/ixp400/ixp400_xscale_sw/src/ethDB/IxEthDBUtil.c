@@ -4,7 +4,7 @@
  * @brief Utility functions
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -140,7 +140,7 @@ __asm volatile void countLeadingZeros (UINT32 shift, UINT32 value)
 IX_ETH_DB_PUBLIC
 BOOL ixEthDBCheckSingleBitValue(UINT32 value)
 {
-#if (CPU != SIMSPARCSOLARIS) && !defined (__wince)
+#if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX) && !defined (__wince))
     UINT32 shift;
     
     /* use the count-leading-zeros XScale instruction */

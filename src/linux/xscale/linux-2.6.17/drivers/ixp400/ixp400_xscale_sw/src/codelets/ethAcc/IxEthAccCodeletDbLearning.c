@@ -8,7 +8,7 @@
  * configuration
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -128,13 +128,19 @@ ixEthAccCodeletDBLearningRun(BOOL validPorts[])
 {
     IxEthAccPortId portId;
     IxEthDBPortId portPtr;
+#ifdef __ixp46X
+    IxEthDBMacAddr staticMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
+	{{{0,1,2,3,4,5}}, {{6,7,8,9,0,1}}, {{2,3,4,5,6,7}}};
 
+    IxEthDBMacAddr dynamMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
+	{{{0xa,0xb,0xc,0xd,0xe,0xf}}, {{0x0,0xb,0x3,0xc,0x4,0xd}}, {{0x0,0xc,0x4,0xd,0x5,0xe}}};
+#else
     IxEthDBMacAddr staticMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
 	{{{0,1,2,3,4,5}}, {{6,7,8,9,0,1}}};
 
     IxEthDBMacAddr dynamMacAddress[IX_ETHACC_CODELET_MAX_PORT] = 
 	{{{0xa,0xb,0xc,0xd,0xe,0xf}}, {{0x0,0xb,0x3,0xc,0x4,0xd}}};
-
+#endif
     if (ixEthAccCodeletDBMaintenanceStart()
 	!= IX_SUCCESS)
     {

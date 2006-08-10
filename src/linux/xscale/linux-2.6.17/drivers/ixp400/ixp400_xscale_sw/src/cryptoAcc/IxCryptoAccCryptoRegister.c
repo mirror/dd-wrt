@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -270,7 +270,7 @@ ixCryptoRegisterCipherAlgoRegister (
                     (ixCryptoCtx[cryptoCtxId].pNpeCryptoParam)->
                         npeCryptoInfo[*npeCryptoParamIndex + i]
                             = ((npeCryptoConfigWord >> ((MSB_BYTE - i) 
-                                  * BYTE_IN_BITS)) & MASK_8_BIT);
+                                  * BITS_IN_BYTE)) & MASK_8_BIT);
                 } /* end of for (i) */
 
                 /* Log NPE Crypt Config word in debugging mode */
@@ -535,7 +535,7 @@ ixCryptoRegisterCipherAlgoRegister (
                 ixCryptoCtx[cryptoCtxId].pNpeCryptoParam->
                     npeCryptoInfo[*npeCryptoParamIndex + i]
                         = ((npeCryptoConfigWord >> ((MSB_BYTE - i)
-                              * BYTE_IN_BITS)) & MASK_8_BIT);
+                              * BITS_IN_BYTE)) & MASK_8_BIT);
             } /* end of for (i) */
 
             /* Log NPE Crypt Config word in debugging mode */
@@ -987,7 +987,7 @@ ixCryptoRegisterAuthAlgoRegister (
          */
         ixCryptoCtx[cryptoCtxId].pNpeCryptoParam->
             npeCryptoInfo[*npeCryptoParamIndex + i]
-                = ((npeHashConfigWord >> ((MSB_BYTE - i) * BYTE_IN_BITS)) 
+                = ((npeHashConfigWord >> ((MSB_BYTE - i) * BITS_IN_BYTE)) 
                        & MASK_8_BIT);
     } /* end of for (i) */
 
@@ -1208,7 +1208,7 @@ ixCryptoRegisterRevAesKeyGenerate (
     {
         ixKeyCryptoParam[keyId].pNpeCryptoParam->npeCryptoInfo[i]
             = ((revAesKeyCryptCfg >> ((MSB_BYTE - i)
-                * BYTE_IN_BITS)) & MASK_8_BIT);
+                * BITS_IN_BYTE)) & MASK_8_BIT);
     } /* end of for (i) */
 
     /* Log NPE Crypt Config word in debugging mode */

@@ -2,13 +2,13 @@
  * @file    IxQMgrQCfg_p.h
  *
  * @author Intel Corporation
- * @date    07-Feb-2002
+ * @date    26-Jan-2006
  *
  * @brief   This file contains the internal functions for config
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -54,7 +54,7 @@
 /*
  * User defined header files
  */
-#include "IxQMgr.h"
+#include "IxQMgr_sp.h"
 
 /*
  * Typedefs

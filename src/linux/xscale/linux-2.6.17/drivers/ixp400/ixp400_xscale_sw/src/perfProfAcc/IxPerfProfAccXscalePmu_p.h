@@ -11,7 +11,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -89,8 +89,8 @@
 #define IX_PERFPROF_ACC_XSCALE_PMU_XSCALE_INTERRUPT_ENABLE_BIT 0x40000
 
 /*Interrupt Controller Register Address */
-#define IX_PERFPROF_ACC_XSCALE_PMU_INTR_ENABLE_REG_ADD	IXP425_ICMR
-#define IX_PERFPROF_ACC_XSCALE_PMU_INTR_SELECT_REG_ADD	IXP425_ICLR
+#define IX_PERFPROF_ACC_XSCALE_PMU_INTR_ENABLE_REG_ADD	IX_OSAL_IXP400_ICMR
+#define IX_PERFPROF_ACC_XSCALE_PMU_INTR_SELECT_REG_ADD	IX_OSAL_IXP400_ICLR
 
 /*PMU Overflow Flag and Interrupt Enable Flag */
 #define IX_PERFPROF_ACC_XSCALE_PMU_OFLOW_FLAG_CCNT   0x0001 /*clock counter*/

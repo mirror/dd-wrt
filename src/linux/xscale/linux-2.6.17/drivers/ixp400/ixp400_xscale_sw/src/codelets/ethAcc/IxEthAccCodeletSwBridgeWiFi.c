@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -366,11 +366,11 @@ void ixEthAccCodeletWiFiBridgeRxCB(UINT32 cbTag,
     IX_OSAL_CACHE_INVALIDATE(IX_OSAL_MBUF_MDATA(mBufPtr), IX_OSAL_MBUF_MLEN(mBufPtr));
 
     frameControl  = IX_OSAL_SWAP_BE_SHARED_SHORT(* ((UINT16 *) IX_OSAL_MBUF_MDATA(mBufPtr)));
-    durationID    = IX_OSAL_SWAP_BE_SHARED_SHORT(*(((UINT16 *) IX_OSAL_MBUF_MDATA(mBufPtr)) + 2));
+    durationID    = IX_OSAL_SWAP_BE_SHARED_SHORT(*(((UINT16 *) IX_OSAL_MBUF_MDATA(mBufPtr)) + 1));
     firstAddr     = ((UINT8 *) IX_OSAL_MBUF_MDATA(mBufPtr)) + 4;
     logicalPortID = (UINT16) IX_ETHACC_NE_DESTPORTID(mBufPtr);
 
-    if ((frameControl == ixEthAccCodeletWiFiFrameControl) && (durationID == ixEthAccCodeletWiFiDurationID) && (logicalPortID == 0x0E))
+    if ((frameControl == ixEthAccCodeletWiFiFrameControl) && (durationID == ixEthAccCodeletWiFiDurationID))
     {
         if (ixEthAccCodeletWiFiAddressCompare(firstAddr, ixEthAccCodeletWiFiGwMacAddress.macAddress) == 0)
         {

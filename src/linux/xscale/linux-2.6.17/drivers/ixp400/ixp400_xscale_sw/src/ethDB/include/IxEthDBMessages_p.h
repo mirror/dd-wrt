@@ -1,10 +1,10 @@
 /**
- * @file IxEthDBMessages_p.h
+ * @file IxEthDBMessages_p.h  
  *
  * @brief Definitions of NPE messages
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -47,6 +47,7 @@
 #ifndef IxEthDBMessages_p_H
 #define IxEthDBMessages_p_H
 
+#include <IxAccCommon.h>
 #include <IxEthNpe.h>
 #include <IxOsCacheMMU.h>
 #include "IxEthDB_p.h"
@@ -56,7 +57,7 @@
 #define IX_ETH_DB_MAX_EVENT_ID        (IX_ETHNPE_PC_SETBSSIDTABLE)
 
 /* macros to fill and extract data from NPE messages - place any endian conversions here */  
-#define RESET_ELT_MESSAGE(message) { memset((void *) &(message), 0, sizeof((message))); }
+#define RESET_ELT_MESSAGE(message) { ixOsalMemSet((void *) &(message), 0, sizeof((message))); }
 #define NPE_MSG_ID(msg) ((msg).data[0] >> 24)
 
 #define FILL_SETPORTVLANTABLEENTRY_MSG(message, portID, setOffset, vlanMembershipSet, ttiSet) \
@@ -255,6 +256,14 @@ extern IX_ETH_DB_PUBLIC UINT32 npeMsgHistory[IX_ETH_DB_NPE_MSG_HISTORY_DEPTH][2]
 extern IX_ETH_DB_PUBLIC UINT32 npeMsgHistoryLen;
 #endif
 
-#define IX_ETHDB_SEND_NPE_MSG(npeId, msg, result) { LOG_NPE_MSG(msg); IX_ETHDB_SYNC_SEND_NPE_MSG(npeId, msg, result); }
+#define IX_ETHDB_SEND_NPE_MSG(npeId, msg, result) \
+    do { \
+        LOG_NPE_MSG(msg); \
+        if (ixEthHssAccCoexistEnable) \
+        { \
+                IX_ETH_HSS_COM_MUT_LOCK(result); \
+        } \
+        IX_ETHDB_SYNC_SEND_NPE_MSG(npeId, msg, result); \
+    } while (0);
 
 #endif /* IxEthDBMessages_p_H */

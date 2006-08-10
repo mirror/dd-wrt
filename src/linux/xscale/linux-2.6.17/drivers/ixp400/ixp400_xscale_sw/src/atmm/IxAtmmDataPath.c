@@ -15,7 +15,7 @@
  *           
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -654,7 +654,8 @@ ixAtmmVcDemandUpdate (IxAtmLogicalPort port, IxAtmSchedulerVcId vcId, unsigned n
                  */
                 retval = ixAtmdAccPortTxProcess (port, retTable);
                 
-                if (retval != IX_SUCCESS)
+
+                if ( (retval != IX_SUCCESS) && (retval != IX_ATMDACC_WARNING))
                 {
             	    retval = IX_FAIL;
     	        }

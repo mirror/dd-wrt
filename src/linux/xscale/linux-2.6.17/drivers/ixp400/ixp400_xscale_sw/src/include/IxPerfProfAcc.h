@@ -5,7 +5,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -105,7 +105,7 @@
  * @def IX_PERFPROF_ACC_XSCALE_PMU_SYMBOL_ACCURACY
  *
  * @brief Level of accuracy required for matching the PC Address to
- *        symbol address. This is used when the Intel XScale(R) Core  PMU time/event
+ *        symbol address. This is used when the Intel XScale(R) Processor PMU time/event
  *        sampling functions get the PC address and search for the 
  *        corresponding symbol address.
  */
@@ -462,9 +462,9 @@ typedef enum
  * 
  * @enum IxPerfProfAccXscalePmuEvent 
  * 
- * @brief Type of Intel XScale (R) Core PMU events supported 
+ * @brief Type of Intel XScale (R) Processor PMU events supported 
  * 
- * Lists all Intel XScale (R) Core PMU events.  The maximum is a default value that the user 
+ * Lists all Intel XScale (R) Processor PMU events.  The maximum is a default value that the user 
  * should not exceed. 
  */ 
 typedef enum 
@@ -612,7 +612,7 @@ typedef enum
  * @param 	pmuEvent4 @ref IxPerfProfAccXscalePmuEvent [in] - the specific PMU 
  *    		event to be monitored by counter 4
  *
- * This API will start the clock and Intel XScale (R) Core PMU event counting.  Up to 
+ * This API will start the clock and Intel XScale (R) Processor PMU event counting.  Up to 
  * 4 events can be monitored simultaneously. This API has to be called before
  * ixPerfProfAccXscalePmuEventCountStop can be called.
  *
@@ -652,7 +652,7 @@ ixPerfProfAccXscalePmuEventCountStart(
  *		  to struct containing results of counters and their overflow. It is the 
  * 		  users's responsibility to allocate the memory for this pointer. 
  *
- * This API will stop the clock and Intel XScale (R) Core PMU events that are being counted.
+ * This API will stop the clock and Intel XScale (R) Processor PMU events that are being counted.
  * The results of the clock and events count will be stored in the pointer 
  * allocated by the user. It can only be called once 
  * IxPerfProfAccEventCountStart has been called. 

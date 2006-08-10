@@ -4,7 +4,7 @@
  * @brief Private MAC learning API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -47,6 +47,7 @@
 #ifndef IxEthDB_p_H
 #define IxEthDB_p_H
 
+#include <IxAccCommon.h>
 #include <IxTypes.h>
 #include <IxOsal.h>
 #include <IxEthDB.h>
@@ -56,7 +57,7 @@
 #include "IxEthDBMessages_p.h"
 #include "IxEthDBLog_p.h"
 
-#if (CPU==SIMSPARCSOLARIS)
+#if ((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX))
 
 /* when running unit tests intLock() won't protect the event queue so we lock it manually */
 #define TEST_FIXTURE_LOCK_EVENT_QUEUE   { ixOsalMutexLock(&eventQueueLock, IX_OSAL_WAIT_FOREVER); }
@@ -67,7 +68,7 @@
 #define TEST_FIXTURE_LOCK_EVENT_QUEUE   /* nothing */
 #define TEST_FIXTURE_UNLOCK_EVENT_QUEUE /* nothing */
 
-#endif /* #if(CPU==SIMSPARCSOLARIS) */
+#endif /* #if ((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX)) */
 
 #ifndef IX_UNIT_TEST
 
@@ -91,7 +92,7 @@ extern int overflowEvent;
 #define __alignment__    /* marker for data used only as alignment zones */
 
 /* constants */
-#define IX_ETH_DB_NPE_TIMEOUT (100) /* NPE response timeout, in ms */
+#define IX_ETH_DB_NPE_TIMEOUT (300) /* NPE response timeout, in ms */
 
 /** 
  * number of hash table buckets
@@ -370,7 +371,7 @@ extern int overflowEvent;
 #define GET_MAP_SIZE(map, size)            { int i = 0, b = 0; size = 0; for (; i < 32 ; i++) { char y = map[i]; for (; b < 8 && (y >>= 1); b++) size += (y & 1); }}
 
 /* copy map2 into map1 */
-#define COPY_DEPENDENCY_MAP(map1, map2)    { memcpy (map1, map2, sizeof (map1)); }
+#define COPY_DEPENDENCY_MAP(map1, map2)    { ixOsalMemCopy (map1, map2, sizeof (map1)); }
 
 /* definition of a port map size/port number which cannot be reached (we support at most 32 ports) */
 #define MAX_PORT_SIZE   (0xFF)
@@ -529,7 +530,8 @@ typedef enum
     IX_ETH_DB_MAC_PORT_KEY      = 2,
     IX_ETH_DB_MAC_VLAN_KEY      = 3,
     IX_ETH_DB_MAC_MASK_PORT_KEY = 4,
-    IX_ETH_DB_MAX_KEY_INDEX     = 4
+    IX_ETH_DB_MAC_PORT_AGETYPE_KEY = 5,
+    IX_ETH_DB_MAX_KEY_INDEX     = 5
 } IxEthDBSearchKeyType;
 
 typedef struct MacTreeNode_t
@@ -567,6 +569,8 @@ typedef struct
     IxEthDBPortMap dependencyPortMap;       /**< dependency port map for this port */
     PortUpdateMethod updateMethod;          /**< update method structure */
     BOOL macAddressUploaded;                /**< TRUE if the MAC address was uploaded into the port */
+    IxEthDBMacAddr macAddr;                 /**< MAC address of this port */      
+    __alignment__ UINT8 reserved1[2]; 
     UINT32 maxRxFrameSize;                  /**< maximum Rx frame size for this port */
     UINT32 maxTxFrameSize;                  /**< maximum Rx frame size for this port */
     
@@ -580,6 +584,7 @@ typedef struct
     IxEthDBVlanSet transmitTaggingInfo;
     IxEthDBFrameFilter frameFilter;
     IxEthDBTaggingAction taggingAction;
+    BOOL portIdExtractionEnable;
     
     UINT32 npeFrameFilter;
     UINT32 npeTaggingAction;
@@ -678,6 +683,7 @@ IX_ETH_DB_PUBLIC void ixEthDBReleaseHashIterator(HashIterator *iterator);
 /* API Support */
 IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBPortAddressSet(IxEthDBPortId portID, IxEthDBMacAddr *macAddr);
 IX_ETH_DB_PUBLIC void ixEthDBMaximumFrameSizeAckCallback(IxNpeMhNpeId npeID, IxNpeMhMessage msg);
+IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBPortFrameLengthsUpdate(IxEthDBPortId portID);
 
 /* DB Core functions */
 IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBInit(void);
@@ -687,7 +693,7 @@ IX_ETH_DB_PUBLIC HashNode* ixEthDBSearch(IxEthDBMacAddr *macAddress, IxEthDBReco
 IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBPeek(IxEthDBMacAddr *macAddress, IxEthDBRecordType typeFilter);
 
 /* Learning support */
-IX_ETH_DB_PUBLIC UINT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2);
+IX_ETH_DB_PUBLIC INT32 ixEthDBAddressCompare(UINT8 *mac1, UINT8 *mac2);
 IX_ETH_DB_PUBLIC BOOL ixEthDBAddressMatch(void *reference, void *entry);
 IX_ETH_DB_PUBLIC UINT32 ixEthDBEntryXORHash(void *macDescriptor);
 IX_ETH_DB_PUBLIC UINT32 ixEthDBKeyXORHash(void *macAddress);
@@ -741,15 +747,19 @@ IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBFilteringPortMaximumTxFrameSizeSet(IxEthDB
 
 /* VLAN-related */
 IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBPortVlanTableSet(IxEthDBPortId portID, IxEthDBVlanSet portVlanTable, IxEthDBVlanSet vlanSet);
+IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBIngressVlanModeUpdate(IxEthDBPortId portID);
+IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBVlanTableRangeUpdate(IxEthDBPortId portID);
 
 /* Record search */
 IX_ETH_DB_PUBLIC BOOL ixEthDBAddressRecordMatch(void *untypedReference, void *untypedEntry);
 IX_ETH_DB_PUBLIC BOOL ixEthDBVlanRecordMatch(void *untypedReference, void *untypedEntry);
 IX_ETH_DB_PUBLIC BOOL ixEthDBPortRecordMatch(void *untypedReference, void *untypedEntry);
+IX_ETH_DB_PUBLIC BOOL ixEthDBPortAgeTypeRecordMatch(void *untypedReference, void *untypedEntry);
 IX_ETH_DB_PUBLIC BOOL ixEthDBFirewallMaskedRecordMatch(void *untypedReference, void *untypedEntry);
 IX_ETH_DB_PUBLIC BOOL ixEthDBNullMatch(void *reference, void *entry);
 IX_ETH_DB_PUBLIC HashNode* ixEthDBPortSearch(IxEthDBMacAddr *macAddress, IxEthDBPortId portID, IxEthDBRecordType typeFilter);
 IX_ETH_DB_PUBLIC HashNode* ixEthDBVlanSearch(IxEthDBMacAddr *macAddress, IxEthDBVlanId vlanID, IxEthDBRecordType typeFilter);
+IX_ETH_DB_PUBLIC IxEthDBStatus ixEthDBWiFiFrameControlDurationIDUpdate(IxEthDBPortId portID);
 
 /* Utilities */
 IX_ETH_DB_PUBLIC const char* mac2string(const unsigned char *mac);

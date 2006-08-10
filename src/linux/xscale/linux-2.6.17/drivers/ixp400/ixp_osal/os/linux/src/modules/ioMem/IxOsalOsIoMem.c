@@ -5,7 +5,7 @@
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -44,13 +44,15 @@
  * @par
  * -- End of Copyright Notice --
  */
-#include "IxOsal.h"
+#include <linux/version.h>
 
-#ifdef IX_OSAL_OS_LINUX_VERSION_2_6
+#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 #include <asm/page.h>
-#endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
+#endif
 #include <asm/io.h>
 #include <linux/ioport.h>
+
+#include "IxOsal.h"
 
 /* Linux-specific map/unmap functions to be used with dynamic maps */
 PUBLIC void

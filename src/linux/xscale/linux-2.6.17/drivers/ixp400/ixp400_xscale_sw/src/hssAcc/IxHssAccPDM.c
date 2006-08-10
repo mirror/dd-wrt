@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -563,7 +563,7 @@ void ixHssAccPDMShow (void)
 
 	printf (" %7d    %p %8d %8d %8d %8d\n",
 		(int) sizeof (IxHssAccPDMDescriptor),
-#if (CPU!=SIMSPARCSOLARIS)
+#if ((CPU!=SIMSPARCSOLARIS) && (CPU!=SIMLINUX))
 		poolInfo->descPool[poolInfo->freeIndex],
 #else
 		(UINT32 *) 0x0, /* don't want to see the addr on UT */

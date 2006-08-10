@@ -14,7 +14,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -2862,12 +2862,13 @@ PUBLIC
 IX_USB_MBLK* 
 ixUSBBufferAlloc(size_t size)
 {
+    UINT32 irqStatus;
+
 #ifdef IX_USB_HAS_DUMMY_MBLK
 
     return alloc_IX_USB_MBLK(size);
 
 #else
-
     IX_USB_MBLK *mbuf;
 
     mbuf = IX_OSAL_MBUF_POOL_GET(pNetPool);
@@ -2876,7 +2877,15 @@ ixUSBBufferAlloc(size_t size)
     {
         /* adjust amount of available room */
         IX_USB_MBLK_LEN(mbuf) = size;
+
+        /* lock section */ 
+        irqStatus = IX_USB_LOCK; 
+
         ixUSBPoolCounter--;
+
+		/* unlock section */
+		IX_USB_UNLOCK(irqStatus);
+
     }
     else
     {
@@ -2891,8 +2900,13 @@ ixUSBBufferAlloc(size_t size)
 
 void ixUSBMblkFree(IX_USB_MBLK *buf)
 {
+    UINT32 irqStatus;
+
     if (buf != NULL)
     {
+        /* lock section */ 
+        irqStatus = IX_USB_LOCK; 
+
         IX_OSAL_MBUF_POOL_PUT(buf);
         ixUSBPoolCounter++;
 
@@ -2901,7 +2915,11 @@ void ixUSBMblkFree(IX_USB_MBLK *buf)
             REG_SET(&ixUSBGlobalContext->registers->UICR0, 0);
             REG_SET(&ixUSBGlobalContext->registers->UICR1, 0);
         }
+
+		/* unlock section */
+		IX_USB_UNLOCK(irqStatus);
     }
+
 }
 
 #ifdef IX_USB_HAS_TIMESTAMP_CHECKS

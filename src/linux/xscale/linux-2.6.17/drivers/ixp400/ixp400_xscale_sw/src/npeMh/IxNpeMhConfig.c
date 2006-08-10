@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -65,6 +65,8 @@
 #include "IxNpeMhConfig_p.h"
 
 PRIVATE IxNpeMhNpeInterrupts ixNpeMhConfigInterrupts;
+PRIVATE BOOL ixNpeMhIsIRQBind = FALSE;
+PRIVATE UINT32 ixNpeMhirqlockKey	=	0;
 
 /*
  * #defines and macros used in this file.
@@ -121,7 +123,9 @@ IxNpeMhConfigNpeInfo ixNpeMhConfigNpeInfo[IX_NPEMH_NUM_NPES] =
         0,
         NULL,
         FALSE
-    },
+    }
+#if defined(__ixp42X) || defined(__ixp46X)
+	,
     {
         0,
         IX_NPEMH_NPEC_INT,
@@ -133,6 +137,7 @@ IxNpeMhConfigNpeInfo ixNpeMhConfigNpeInfo[IX_NPEMH_NUM_NPES] =
         NULL,
         FALSE
     }
+#endif /* __ixp42X */
 };
 
 PRIVATE IxNpeMhConfigStats ixNpeMhConfigStats[IX_NPEMH_NUM_NPES];
@@ -211,13 +216,16 @@ void ixNpeMhConfigInitialize (
         (UINT32) IX_OSAL_MEM_MAP (IX_NPEMH_NPEB_BASE,
                      IX_OSAL_IXP400_NPEB_MAP_SIZE);
     IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEB]);
-    
+
+#if defined(__ixp42X) || defined(__ixp46X)
+
     /* Request a mapping for the NPE-C config register address space */
     virtualAddr[IX_NPEMH_NPEID_NPEC] =
         (UINT32) IX_OSAL_MEM_MAP (IX_NPEMH_NPEC_BASE,
                      IX_OSAL_IXP400_NPEC_MAP_SIZE);
     IX_OSAL_ASSERT (virtualAddr[IX_NPEMH_NPEID_NPEC]);
 
+#endif /* __ixp42X */
     /* for each NPE ... */
     for (npeId = 0; npeId < IX_NPEMH_NUM_NPES; npeId++)
     {
@@ -247,7 +255,10 @@ void ixNpeMhConfigInitialize (
         /* if we should service the NPE's "outFIFO not empty" interrupt */
         if (npeInterrupts == IX_NPEMH_NPEINTERRUPTS_YES)
         {
-              /* connect our ISR to the NPE interrupt */
+            /* NPE MH is in interrupt mode*/
+            ixNpeMhIsIRQBind = TRUE;
+
+            /* connect our ISR to the NPE interrupt */
             (void) ixOsalIrqBind (
                        npeInfo->interruptId, ixNpeMhConfigIsr, (void *)npeId);
             
@@ -256,6 +267,8 @@ void ixNpeMhConfigInitialize (
         }
         else
         {
+            /* NPE MH is in polling mode*/
+            ixNpeMhIsIRQBind = FALSE;
             /* disable the NPE's "outFIFO not empty" interrupt */
             ixNpeMhConfigNpeInterruptDisable (npeId);
         }
@@ -267,6 +280,30 @@ void ixNpeMhConfigInitialize (
 
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
                      "ixNpeMhConfigInitialize\n");
+}
+
+
+/*
+ * Function definition: ixNpeMhConfigNpeInterruptUpdate
+ */
+
+IX_STATUS ixNpeMhConfigStateRestore(IxNpeMhNpeId npeId)
+{
+ if( ixNpeMhConfigNpeIdIsValid(npeId) == TRUE)
+ {
+	  if(ixNpeMhIsIRQBind == TRUE)
+	  {
+	    /* enable the NPE's "outFIFO not empty" interrupt */ 
+     ixNpeMhConfigNpeInterruptEnable (npeId); 
+   }
+   else
+   { 
+    	/* disable the NPE's "outFIFO not empty" interrupt */
+     ixNpeMhConfigNpeInterruptDisable (npeId);  	
+   }
+   return IX_SUCCESS;
+ }
+	return IX_FAIL;
 }
 
 /*
@@ -357,7 +394,8 @@ BOOL ixNpeMhConfigNpeInterruptEnable (
     UINT32 ofe;
     volatile UINT32 *controlReg =
         (UINT32 *)ixNpeMhConfigNpeInfo[npeId].controlRegister;
-
+    
+	
     /* get the OFE (OutFifoEnable) bit of the control register */
     IX_NPEMH_REGISTER_READ_BITS (controlReg, &ofe, IX_NPEMH_NPE_CTL_OFE);
 
@@ -388,7 +426,8 @@ BOOL ixNpeMhConfigNpeInterruptDisable (
     UINT32 ofe;
     volatile UINT32 *controlReg =
         (UINT32 *)ixNpeMhConfigNpeInfo[npeId].controlRegister;
-
+    
+	
     /* get the OFE (OutFifoEnable) bit of the control register */
     IX_NPEMH_REGISTER_READ_BITS (controlReg, &ofe, IX_NPEMH_NPE_CTL_OFE);
 
@@ -442,13 +481,15 @@ void ixNpeMhConfigLockGet (
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Entering "
                      "ixNpeMhConfigLockGet\n");
 
-    /* lock the mutex for this NPE */
-    (void) ixOsalMutexLock (&ixNpeMhConfigNpeInfo[npeId].mutex, 
-                IX_OSAL_WAIT_FOREVER);
+	/* ensure no interrupt is running */
+       ixNpeMhirqlockKey = ixOsalIrqLock();
 
     /* disable the NPE's "outFIFO not empty" interrupt */
-    ixNpeMhConfigNpeInfo[npeId].oldInterruptState =
+    if(ixNpeMhIsIRQBind == TRUE) 
+    {
+      ixNpeMhConfigNpeInfo[npeId].oldInterruptState =
         ixNpeMhConfigNpeInterruptDisable (npeId);
+    }
 
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
                      "ixNpeMhConfigLockGet\n");
@@ -465,15 +506,15 @@ void ixNpeMhConfigLockRelease (
                      "ixNpeMhConfigLockRelease\n");
 
     /* if the interrupt was previously enabled */
-    if (ixNpeMhConfigNpeInfo[npeId].oldInterruptState)
+    if ( (ixNpeMhIsIRQBind == TRUE) && (ixNpeMhConfigNpeInfo[npeId].oldInterruptState))
     {
         /* enable the NPE's "outFIFO not empty" interrupt */
         ixNpeMhConfigNpeInfo[npeId].oldInterruptState =
             ixNpeMhConfigNpeInterruptEnable (npeId);
     }
-
-    /* unlock the mutex for this NPE */
-    (void) ixOsalMutexUnlock (&ixNpeMhConfigNpeInfo[npeId].mutex);
+	
+	/* disabling the interrupt lock earlier enabled*/
+    ixOsalIrqUnlock(ixNpeMhirqlockKey);
 
     IX_NPEMH_TRACE0 (IX_NPEMH_FN_ENTRY_EXIT, "Exiting "
                      "ixNpeMhConfigLockRelease\n");

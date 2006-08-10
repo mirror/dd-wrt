@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -60,7 +60,7 @@ EXPORT_SYMBOL(ixFeatureCtrlComponentCheck);
 EXPORT_SYMBOL(ixFeatureCtrlProductIdRead);
 EXPORT_SYMBOL(ixFeatureCtrlSwConfigurationWrite);
 EXPORT_SYMBOL(ixFeatureCtrlSwConfigurationCheck);
-EXPORT_SYMBOL(ixFeatureCtrlIxp400SwVersionShow);
+EXPORT_SYMBOL(ixFeatureCtrlSwVersionShow);
 EXPORT_SYMBOL(ixFeatureCtrlDeviceRead);
 EXPORT_SYMBOL(ixFeatureCtrlSoftwareBuildGet);
 #endif /* __linux */

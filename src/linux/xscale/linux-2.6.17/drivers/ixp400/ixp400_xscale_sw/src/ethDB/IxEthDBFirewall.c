@@ -4,7 +4,7 @@
  * @brief Implementation of the firewall API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -192,12 +192,12 @@ IxEthDBStatus ixEthDBFirewallEntryAdd(IxEthDBPortId portID, IxEthDBMacAddr *macA
         return IX_ETH_DB_FAIL;
     }
    
-    memcpy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     if (ixEthDBPortInfo[portID].featureStatus & IX_ETH_DB_ADDRESS_MASKING)
     {
         /* mask all bits */
-        memset(recordTemplate.recordData.firewallData.addressMask, 0xFF, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemSet(recordTemplate.recordData.firewallData.addressMask, 0xFF, IX_IEEE803_MAC_ADDRESS_SIZE);
         recordTemplate.type   = IX_ETH_DB_MASKED_FIREWALL_RECORD;
     } 
     else 
@@ -238,12 +238,12 @@ IxEthDBStatus ixEthDBFirewallEntryRemove(IxEthDBPortId portID, IxEthDBMacAddr *m
 
     IX_ETH_DB_CHECK_FEATURE(portID, IX_ETH_DB_FIREWALL);
    
-    memcpy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
 
     if (ixEthDBPortInfo[portID].featureStatus & IX_ETH_DB_ADDRESS_MASKING)
     {
         /* mask all bits */
-        memset(recordTemplate.recordData.firewallData.addressMask, 0xFF, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemSet(recordTemplate.recordData.firewallData.addressMask, 0xFF, IX_IEEE803_MAC_ADDRESS_SIZE);
         recordTemplate.type   = IX_ETH_DB_MASKED_FIREWALL_RECORD;
     } else {
         recordTemplate.type   = IX_ETH_DB_FIREWALL_RECORD;
@@ -308,7 +308,7 @@ IxEthDBStatus ixEthDBFirewallMaskedEntryAdd(IxEthDBPortId portID,
         recordTemplate.macAddress[byteIdx] = macAddr->macAddress[byteIdx] & addrMask->macAddress[byteIdx];
     }
     /* store the mask */
-    memcpy(recordTemplate.recordData.firewallData.addressMask, addrMask, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.recordData.firewallData.addressMask, addrMask, IX_IEEE803_MAC_ADDRESS_SIZE);
     
     recordTemplate.type   = IX_ETH_DB_MASKED_FIREWALL_RECORD;
     recordTemplate.portID = portID;
@@ -357,7 +357,7 @@ IxEthDBStatus ixEthDBFirewallMaskedEntryRemove(IxEthDBPortId portID,
         recordTemplate.macAddress[byteIdx] = macAddr->macAddress[byteIdx] & addrMask->macAddress[byteIdx];
     }
     /* store the mask */
-    memcpy(recordTemplate.recordData.firewallData.addressMask, addrMask, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(recordTemplate.recordData.firewallData.addressMask, addrMask, IX_IEEE803_MAC_ADDRESS_SIZE);
     
     recordTemplate.type   = IX_ETH_DB_MASKED_FIREWALL_RECORD;
     recordTemplate.portID = portID;

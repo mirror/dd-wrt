@@ -1,5 +1,5 @@
 # @par 
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -37,14 +37,21 @@
 # 
 # @par
 # -- End of Copyright Notice --
-qmgr_CFLAGS := -Isrc/qmgr 
+
+qmgr_CFLAGS := -Isrc/qmgr -Isrc/featureCtrl/include 
 
 qmgr_OBJ := IxQMgrQCfg.o \
 	 IxQMgrDispatcher.o \
 	 IxQMgrInit.o \
-	 IxQMgrAqmIf.o \
 	 IxQMgrQAccess.o \
 	 IxQMgrAsmRoutines.o
+
+ifeq ($(IX_DEVICE),$(findstring $(IX_DEVICE), ixp42X ixp46X ))
+qmgr_OBJ += IxQMgrHwQIfIxp400.o
+endif
+ifeq ($(IX_DEVICE),$(findstring $(IX_DEVICE), ixp5XX ))
+qmgr_OBJ += IxQMgrHwQIfIxp500.o
+endif
 
 ifeq ($(IX_TARGET_OS),linux)
 qmgr_OBJ += IxQMgrSymbols.o

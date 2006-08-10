@@ -950,6 +950,7 @@ static inline void remove_sect_attrs(struct module *mod)
 }
 #endif /* CONFIG_KALLSYMS */
 
+
 static int module_add_modinfo_attrs(struct module *mod)
 {
 	struct module_attribute *attr;

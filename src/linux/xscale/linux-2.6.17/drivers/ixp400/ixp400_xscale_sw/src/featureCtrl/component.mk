@@ -1,6 +1,6 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -40,7 +40,7 @@
 # -- End of Copyright Notice --
 
 featureCtrl_OBJ :=  IxFeatureCtrl.o 
-featureCtrl_CFLAGS := -I./src/featureCtrl
+featureCtrl_CFLAGS := -I./src/featureCtrl/include
 
 ifeq ($(IX_TARGET_OS),linux)
 featureCtrl_OBJ += IxFeatureCtrlSymbols.o

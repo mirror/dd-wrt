@@ -4,7 +4,7 @@
  * @brief Implementation of the event processor component
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -65,6 +65,7 @@ IX_ETH_DB_PRIVATE IxOsalMutex portUpdateLock;
 
 IX_ETH_DB_PRIVATE BOOL ixEthDBLearningShutdown      = FALSE;
 IX_ETH_DB_PRIVATE BOOL ixEthDBEventProcessorRunning = FALSE;
+IX_ETH_DB_PRIVATE BOOL ixEthDBEventProcessorPausing;
 
 /* imported data */
 extern HashTable dbHashtable;
@@ -105,6 +106,9 @@ IxEthDBStatus ixEthDBEventProcessorInit(void)
             return IX_ETH_DB_FAIL;
         }
     }
+
+    /* Initialize the event processor pausing state */
+    ixEthDBEventProcessorPausing = FALSE;
 
     return IX_ETH_DB_SUCCESS;
 }
@@ -246,6 +250,23 @@ void ixEthDBNPEEventCallback(IxNpeMhNpeId npeID, IxNpeMhMessage msg)
 }
 
 /**
+ * @brief Pausing Ethernet event processor loop
+ *
+ * To pause/resume Ethernet event processor loop
+ *
+ */
+IxEthDBStatus ixEthDBEventProcessorPauseModeSet (BOOL pauseMode)
+{
+  if (ixEthDBEventProcessorRunning != TRUE)
+  {
+    return IX_ETH_DB_FAIL;
+  }
+
+  ixEthDBEventProcessorPausing = pauseMode; 
+  return IX_ETH_DB_SUCCESS; 
+}
+
+/**
  * @brief Ethernet event processor loop
  *
  * Extracts at most EVENT_PROCESSING_LIMIT batches of events and
@@ -270,6 +291,13 @@ void ixEthDBEventProcessorLoop(void *unused1)
     {
         BOOL keepProcessing    = TRUE;
         UINT32 processedEvents = 0;
+
+        if (ixEthDBEventProcessorPausing == TRUE)
+	{
+          /* 100 ms*/
+          ixOsalSleep(100);
+          continue;
+        } 
 
         IX_ETH_DB_EVENTS_VERBOSE_TRACE("DB: (Events) Waiting for new learning event...\n");
 
@@ -315,6 +343,15 @@ void ixEthDBEventProcessorLoop(void *unused1)
                 }
             }
 
+            /* Added a pause check here to prevent NPE message
+             * from being sent from ixEthDBUpdatePortLearningTrees() 
+             */ 
+	    while (ixEthDBEventProcessorPausing == TRUE)
+	      {
+		/* 100 ms*/
+		ixOsalSleep(100);		
+	      } 
+	    
             ixEthDBUpdatePortLearningTrees(triggerPorts);
         }
     }
@@ -350,8 +387,8 @@ void ixEthDBProcessEvent(PortEvent *local_event, IxEthDBPortMap triggerPorts)
     {
         case IX_ETH_DB_ADD_FILTERING_RECORD:
             /* add record */
-            memset(&recordTemplate, 0, sizeof (recordTemplate));
-            memcpy(recordTemplate.macAddress, local_event->macAddr.macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+            ixOsalMemSet(&recordTemplate, 0, sizeof (recordTemplate));
+            ixOsalMemCopy(recordTemplate.macAddress, local_event->macAddr.macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
             
             recordTemplate.type   = IX_ETH_DB_FILTERING_RECORD;
             recordTemplate.portID = local_event->portID;
@@ -365,8 +402,8 @@ void ixEthDBProcessEvent(PortEvent *local_event, IxEthDBPortMap triggerPorts)
 
         case IX_ETH_DB_REMOVE_FILTERING_RECORD:
             /* remove record */
-            memset(&recordTemplate, 0, sizeof (recordTemplate));
-            memcpy(recordTemplate.macAddress, local_event->macAddr.macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+            ixOsalMemSet(&recordTemplate, 0, sizeof (recordTemplate));
+            ixOsalMemCopy(recordTemplate.macAddress, local_event->macAddr.macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
             
             recordTemplate.type = IX_ETH_DB_FILTERING_RECORD | IX_ETH_DB_FILTERING_VLAN_RECORD;
             
@@ -405,13 +442,13 @@ IxEthDBStatus ixEthDBTriggerAddPortUpdate(IxEthDBMacAddr *macAddr, IxEthDBPortId
     TEST_FIXTURE_INCREMENT_DB_CORE_ACCESS_COUNTER;
 
     /* fill search fields */
-    memcpy(reference.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
+    ixOsalMemCopy(reference.macAddress, macAddr, IX_IEEE803_MAC_ADDRESS_SIZE);
     reference.portID = portID;
     
     /* set acceptable record types */
     reference.type = IX_ETH_DB_ALL_FILTERING_RECORDS;
 
-    if (ixEthDBPeekHashEntry(&dbHashtable, IX_ETH_DB_MAC_PORT_KEY, &reference) == IX_ETH_DB_SUCCESS)
+    if (ixEthDBPeekHashEntry(&dbHashtable, IX_ETH_DB_MAC_PORT_AGETYPE_KEY, &reference) == IX_ETH_DB_SUCCESS)
     {
         /* already have an identical record */
         return IX_ETH_DB_SUCCESS;
@@ -472,7 +509,7 @@ IxEthDBStatus ixEthDBTriggerPortUpdate(UINT32 eventType, IxEthDBMacAddr *macAddr
         PortEvent *queueEvent = QUEUE_HEAD(&eventQueue);
 
         /* update fields on the queue */
-        memcpy(queueEvent->macAddr.macAddress, macAddr->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
+        ixOsalMemCopy(queueEvent->macAddr.macAddress, macAddr->macAddress, IX_IEEE803_MAC_ADDRESS_SIZE);
         
         queueEvent->eventType     = eventType;
         queueEvent->portID        = portID;

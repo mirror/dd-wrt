@@ -5,10 +5,10 @@
  *
  * @date 01 June 2005
  *
- * @brief  Codelet for IXP46x Parity Error Notifier access component.
+ * @brief  Codelet for IXP46X Parity Error Notifier access component.
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -48,7 +48,7 @@
  * -- End of Copyright Notice --
  */
 
-#ifdef __ixp46X
+#if defined(__ixp46X)
 
 /********************************************************************* 
  *	user include file 
@@ -1036,14 +1036,14 @@ __asm volatile UINT32 _ixParityENAccCodeletStatusRegGet(void)
 {
 ! "r0"
     mrc\tp15, 0, r0, c5, c0, 0;
-    ; 
+    /* return value is returned through register R0 */
 }
 
 __asm volatile UINT32 _ixParityENAccCodeletAddrRegGet(void)
 {
 ! "r0"
     mrc\tp15, 0, r0, c6, c0, 0;
-    ;
+    /* return value is returned through register R0 */
 }
 #endif /* #ifdef _DIAB_TOOL */
 /**

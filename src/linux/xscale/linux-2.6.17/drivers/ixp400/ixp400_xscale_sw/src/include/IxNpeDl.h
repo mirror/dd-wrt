@@ -1,14 +1,14 @@
 /**
  * @file IxNpeDl.h
  *
- * @date 14 December 2001
+ * @date 17 August 2005
 
- * @brief This file contains the public API of the IXP400 NPE Downloader
+ * @brief This file contains the public API of the IXP NPE Downloader
  *        component.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,9 +49,9 @@
 */
 
 /**
- * @defgroup IxNpeDl Intel (R) IXP400 Software NPE-Downloader (IxNpeDl) API
+ * @defgroup IxNpeDl Intel (R) IXP NPE-Downloader (IxNpeDl) API
  *
- * @brief The Public API for the IXP400 NPE Downloader
+ * @brief The Public API for the IXP NPE Downloader
  *
  * @{
  */
@@ -109,22 +109,43 @@
  */
 #define IX_NPEDL_DEVICE_ERR 6 
 
+
 /**
- * @defgroup NPEImageID Intel (R) IXP400 Software NPE Image ID Definition
+ * @defgroup ImageID Intel (R) IXP Image ID Definition
  *
  * @ingroup IxNpeDl
  *
- * @brief Definition of NPE Image ID to be passed to ixNpeDlNpeInitAndStart()
- *        as input of type UINT32 which has the following fields format:
+ * @brief Definition of Image ID to be passed to ixNpeDlNpeInitAndStart()
+ *        or ixNpeDlCustomImageNpeInitAndStart() as input of type UINT32 which 
+ *        has the following fields format:
  *
- *               Field [Bit Location] <BR>
- *               -------------------- <BR>
- *               Device ID [31 - 28] <BR>
- *               NPE ID [27 - 24] <BR>
- *               NPE Functionality ID [23 - 16] <BR>
- *               Major Release Number [15 -  8] <BR>
- *               Minor Release Number [7 - 0] <BR>
+ * The following is the structure of the Image ID. The first row shows the
+ * fields; the second shows the bit locations.
+ *	<TABLE>
+ *		<TR>
+ *			<TD>Device ID</td>
+ * 			<TD>NPE ID</td>
+ *			<TD>Functionality ID</td>
+ *			<TD>Major Release Number</td>
+ *			<TD>Minor Release Number</td>
+ *		</tr>
+ *		<TR>
+ *			<TD>31</td>
+ *			<TD>27</td>
+ *			<TD>23</td>
+ *			<TD>15</td>
+ *			<TD>7</td>
+ *		</tr>
+ *	</table>
  *
+ * Field [Bit Location] - Purpose<BR>
+ * --------------------------------------------------------------- <BR>
+ * - Device ID [31 - 28] - Specifies the type of device the image is to be downloaded to
+ * - NPE ID [27 - 24] - Specifies the NPE the image is to be downloaded to
+ * - Functionality ID [23 - 16] - Specifies the functionality of the image
+ * - Major Release Number [15 -  8] - Specifies the major version number of the image
+ * - Minor Release Number [7 - 0] - Specifies the minor version number of the image
+ * .
  *
  * @{
  */
@@ -134,9 +155,6 @@
  *
  * @brief Mask for NPE Image ID's Field
  *
- * @warning <b>THIS #define HAS BEEN DEPRECATED AND SHOULD NOT BE USED.</b>
- *       It will be removed in a future release.
- *       See @ref ixNpeDlNpeInitAndStart for more information.
  */
 #define IX_NPEDL_NPEIMAGE_FIELD_MASK  0xff
 
@@ -156,33 +174,87 @@
  */
 #define IX_NPEDL_NPEIMAGE_DEVICEID_MASK  0xf
 
+/**
+ * @def IX_NPEIMAGEID_FUNCTIONID_OFFSET 
+ *
+ * @brief NPE Image function ID's offset (16bits)
+ *
+ */
+#define IX_NPEIMAGEID_FUNCTIONID_OFFSET 0x10
+
+/**
+ * @def IX_FUNCTIONID_FROM_NPEIMAGEID_GET
+ *
+ * @brief Macro to extract Functionality ID field from Image ID
+ */
+#define IX_FUNCTIONID_FROM_NPEIMAGEID_GET(imageId) \
+    (((imageId) >> IX_NPEIMAGEID_FUNCTIONID_OFFSET) & \
+     IX_NPEDL_NPEIMAGE_FIELD_MASK)
+
 /*
  * Typedefs
  */
+/**
+ * @typedef IxNpeDlFunctionalityId
+ * @brief Used to make up Functionality ID field of Image Id
+ *
+ *       See @ref ixNpeDlNpeInitAndStart for more information.
+ */
+typedef UINT8 IxNpeDlFunctionalityId;
 
+/**
+ * @typedef IxNpeDlMajor
+ * @brief Used to make up Major Release field of Image Id
+ *
+ *       See @ref ixNpeDlNpeInitAndStart for more information.
+ */
+typedef UINT8 IxNpeDlMajor;
+
+/**
+ * @typedef IxNpeDlMinor
+ * @brief Used to make up Minor Revision field of Image Id
+ *
+ *       See @ref ixNpeDlNpeInitAndStart for more information.
+ */
+typedef UINT8 IxNpeDlMinor;
+
+/**
+ * @typedef IxNpeDlDeviceId
+ * @brief Used to make up Device Id field of Image Id
+ *
+ *       See @ref ixNpeDlNpeInitAndStart for more information.
+ */
+typedef UINT8 IxNpeDlDeviceId;
 /*
  * Enums
  */
 
 /**
- * @brief NpeId numbers to identify NPE A, B or C
- * @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line:<br>
+ * @brief NpeId numbers to identify the system's NPEs
+ */
+#if defined(__ixp42X) || defined(__ixp46X)
+/* @note In this context, for B0 Silicon of the Intel (R) IXP42X Product Line:<br>
  *      - NPE-A has HDLC, HSS, AAL and UTOPIA Coprocessors.<br>
  *      - NPE-B has Ethernet Coprocessor.<br>
  *      - NPE-C has Ethernet, AES, DES and HASH Coprocessors.<br>
  *      - Intel (R) IXP4XX Product Line of Network Processors
  *        have different combinations of coprocessors.
  */
+#endif /* __ixp42X */
+
 typedef enum
 {
   IX_NPEDL_NPEID_NPEA = 0,    /**< Identifies NPE A */
   IX_NPEDL_NPEID_NPEB,        /**< Identifies NPE B */
+#if defined(__ixp42X) || defined(__ixp46X)
   IX_NPEDL_NPEID_NPEC,        /**< Identifies NPE C */
+#endif /* __ixp42X */
   IX_NPEDL_NPEID_MAX          /**< Total Number of NPEs */
 } IxNpeDlNpeId;
 
 /**
  * @brief NPE Port ID numbers to identify NPE A, B or C
+ * This will be removed once updates have been made to ethDB
  */
 typedef enum
 {
@@ -194,6 +266,19 @@ typedef enum
 /*
  * Structs
  */
+/**
+ * @brief Image Id to identify each image contained in an image library
+ *
+ * See @ref ixNpeDlNpeInitAndStart for more information.
+ */
+typedef struct
+{
+    IxNpeDlNpeId   npeId;   /**< NPE ID */
+	IxNpeDlDeviceId deviceId; /**< Device Id */
+    IxNpeDlFunctionalityId functionalityId; /**< Build ID indicates functionality of image */
+    IxNpeDlMajor   major;   /**< Major Release Number */
+    IxNpeDlMinor   minor;   /**< Minor Revision Number */
+} IxNpeDlImageId;
 
 /*
  * Prototypes for interface functions
@@ -217,14 +302,6 @@ typedef enum
  * @note A list of valid image IDs is included in this header file.
  *       See #defines with prefix IX_NPEDL_NPEIMAGE_...
  *
- * @note This function, along with @ref ixNpeDlCustomImageNpeInitAndStart
- *       and @ref ixNpeDlLoadedImageFunctionalityGet, supercedes the following
- *       functions which are deprecated and will be removed completely in a
- *       future release:
- *       - @ref ixNpeDlNpeExecutionStop
- *       - @ref ixNpeDlNpeStopAndReset
- *       - @ref ixNpeDlNpeExecutionStart
- *
  * @pre
  *         - The Client is responsible for ensuring mutual access to the NPE.
  * @post
@@ -241,11 +318,12 @@ typedef enum
  *           occured during download
  *         - IX_NPEDL_DEVICE_ERR if the image being loaded is not meant for 
  *           the device currently running.
- *         - IX_FAIL if NPE is not available or image is failed to be located.
+ */
+/*         - IX_FAIL if NPE is not available or image is failed to be located.
  *           A warning is issued if the NPE is not present.
  */
 PUBLIC IX_STATUS
-ixNpeDlNpeInitAndStart (UINT32 npeImageId);
+ixNpeDlNpeInitAndStart (UINT32 imageId);
 
 /**
  * @ingroup IxNpeDl
@@ -270,14 +348,6 @@ ixNpeDlNpeInitAndStart (UINT32 npeImageId);
  * @note A list of valid image IDs is included in this header file.
  *       See #defines with prefix IX_NPEDL_NPEIMAGE_...
  *
- * @note This function, along with @ref ixNpeDlNpeInitAndStart
- *       and @ref ixNpeDlLoadedImageFunctionalityGet, supercedes the following
- *       functions which are deprecated and will be removed completely in a
- *       future release:
- *       - @ref ixNpeDlNpeExecutionStop
- *       - @ref ixNpeDlNpeStopAndReset
- *       - @ref ixNpeDlNpeExecutionStart
- *
  * @pre
  *         - The Client is responsible for ensuring mutual access to the NPE.
  *         - The image library supplied must be in the correct format for use
@@ -298,12 +368,13 @@ ixNpeDlNpeInitAndStart (UINT32 npeImageId);
  *           occured during download
  *         - IX_NPEDL_DEVICE_ERR if the image being loaded is not meant for 
  *           the device currently running.
- *         - IX_FAIL if NPE is not available or image is failed to be located.
+ */
+/*         - IX_FAIL if NPE is not available or image is failed to be located.
  *           A warning is issued if the NPE is not present.
  */
 PUBLIC IX_STATUS
 ixNpeDlCustomImageNpeInitAndStart (UINT32 *imageLibrary,
-                    UINT32 npeImageId);
+                    UINT32 imageId);
 
 
 /**
@@ -324,7 +395,7 @@ ixNpeDlCustomImageNpeInitAndStart (UINT32 *imageLibrary,
  *
  * @warning This function is not intended for general use, as a knowledge of
  * how to interpret the functionality ID is required.  As such, this function
- * should only be used by other Access Layer components of the IXP400 Software
+ * should only be used by other Access Layer components of the IXP Software
  * Release.
  *
  * @pre
@@ -357,10 +428,6 @@ ixNpeDlLoadedImageFunctionalityGet (IxNpeDlNpeId npeId,
  * a new image to the NPE.  It is left on the API only to allow greater control
  * of NPE execution if required.  Where appropriate, use @ref ixNpeDlNpeInitAndStart
  * or @ref ixNpeDlCustomImageNpeInitAndStart instead.
- *
- * @warning <b>THIS FUNCTION HAS BEEN DEPRECATED AND SHOULD NOT BE USED.</b>
- *       It will be removed in a future release.
- *       See @ref ixNpeDlNpeInitAndStart and @ref ixNpeDlCustomImageNpeInitAndStart.
  *
  * @pre
  *     - The Client is responsible for ensuring mutual access to the NPE.
@@ -395,15 +462,11 @@ ixNpeDlNpeStopAndReset (IxNpeDlNpeId npeId);
  * of NPE execution if required.  Where appropriate, use @ref ixNpeDlNpeInitAndStart
  * or @ref ixNpeDlCustomImageNpeInitAndStart instead.
  *
- * @warning <b>THIS FUNCTION HAS BEEN DEPRECATED AND SHOULD NOT BE USED.</b>
- *       It will be removed in a future release.
- *       See @ref ixNpeDlNpeInitAndStart and @ref ixNpeDlCustomImageNpeInitAndStart.
- *
  * @pre
  *     - The Client is responsible for ensuring mutual access to the NPE.
- *     - Note that this function does not set the NPE Next Program Counter
+ *     - Note that this function does not set the NPE's Next Program Counter
  *       (NextPC), so it should be set beforehand if required by downloading
- *       appropriate State Information (using ixNpeDlVersionDownload()).
+ *       appropriate State Information (using ixNpeDlNpeInitAndStart()).
  *
  * @post
  *
@@ -431,10 +494,6 @@ ixNpeDlNpeExecutionStart (IxNpeDlNpeId npeId);
  * all registers and settings intact. This is useful, for example, between
  * stages of a multi-stage download, to stop the NPE prior to downloading the
  * next image while leaving the current state of the NPE intact..
- *
- * @warning <b>THIS FUNCTION HAS BEEN DEPRECATED AND SHOULD NOT BE USED.</b>
- *       It will be removed in a future release.
- *       See @ref ixNpeDlNpeInitAndStart and @ref ixNpeDlCustomImageNpeInitAndStart.
  *
  * @pre
  *     - The Client is responsible for ensuring mutual access to the NPE.
@@ -499,6 +558,49 @@ ixNpeDlStatsShow (void);
  */
 PUBLIC void
 ixNpeDlStatsReset (void);
+
+
+/**
+ * @ingroup IxNpeDl
+ *
+ * @fn UINT32 ixNpeDlDataMemRead(UINT32 npeId, UINT32 dataMemAddress)
+ *
+ * @brief This function will read 1 WORD from the DMEM of the NPE.
+ * @param npeId @ref IxNpeDlNpeId [in] - Id of the target NPE
+ * @param dataMemAddress UINT32 [in] - DMEM Address
+ * @return DMEM Memory contents value in WORD size
+ */
+PUBLIC UINT32 ixNpeDlDataMemRead(UINT32 npeId, UINT32 dataMemAddress);
+
+/**
+ * @ingroup IxNpeDl
+ *
+ * @fn PUBLIC IX_STATUS ixNpeDlLoadedImageGet (IxNpeDlNpeId npeId,
+                                                IxNpeDlImageId *imageIdPtr)
+ *
+ * @brief Gets the Id of the image currently loaded on a particular NPE
+ *
+ * @param npeId @ref IxNpeDlNpeId [in]              - Id of the target NPE.
+ * @param imageIdPtr @ref IxNpeDlImageId* [out]     - Pointer to the where the
+ *                                               image id should be stored.
+ *
+ * If an image of microcode was previously downloaded successfully to the NPE
+ * by NPE Downloader, this function returns in <i>imageIdPtr</i> the image
+ * Id of that image loaded on the NPE.
+ *
+ * @pre
+ *     - The Client has allocated memory to the <i>imageIdPtr</i> pointer.
+ *
+ * @post
+ *
+ * @return
+ *     -  IX_SUCCESS if the operation was successful
+ *     -  IX_NPEDL_PARAM_ERR if a parameter error occured
+ *     -  IX_FAIL if the NPE doesn't currently have a image loaded
+ */
+PUBLIC IX_STATUS
+ixNpeDlLoadedImageGet (IxNpeDlNpeId npeId,
+             IxNpeDlImageId *imageIdPtr);
 
 #endif /* IXNPEDL_H */
 

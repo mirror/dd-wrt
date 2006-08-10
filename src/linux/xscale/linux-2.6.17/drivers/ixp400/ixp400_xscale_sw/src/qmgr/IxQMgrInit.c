@@ -2,13 +2,13 @@
  * @file    IxQMgrInit.c
  *
  * @author Intel Corporation
- * @date    30-Oct-2001
+ * @date    26-Jan-2006
  *
  * @brief:  Provided initialization of the QMgr component and its subcomponents.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -56,13 +56,16 @@
  * User defined include files.
  */
 #include "IxOsal.h"
-#include "IxQMgr.h"
+#include "IxQMgr_sp.h"
 #include "IxQMgrQCfg_p.h"
 #include "IxQMgrDispatcher_p.h"
 #include "IxQMgrLog_p.h"
 #include "IxQMgrQAccess_p.h"
 #include "IxQMgrDefines_p.h"
-#include "IxQMgrAqmIf_p.h"
+
+#if defined(__ixp42X) || defined(__ixp46X)
+#include "IxQMgrHwQIfIxp400_p.h"
+#endif /* __ixp42X */
 
 /*
  * Set to true if initialized
@@ -118,13 +121,14 @@ ixQMgrShow (void)
 {
     IxQMgrQCfgStats *qCfgStats = NULL;
     IxQMgrDispatcherStats *dispatcherStats = NULL;
-    int i;
-    UINT32 lowIntRegRead, upIntRegRead;
+    UINT32 qIndex;
+    UINT32 group0IntRegRead, group1IntRegRead;
 
     qCfgStats = ixQMgrQCfgStatsGet ();
     dispatcherStats = ixQMgrDispatcherStatsGet ();
-    ixQMgrAqmIfQInterruptRegRead (IX_QMGR_QUELOW_GROUP, &lowIntRegRead);
-    ixQMgrAqmIfQInterruptRegRead (IX_QMGR_QUEUPP_GROUP, &upIntRegRead);
+    ixQMgrHwQIfQInterruptRegRead (IX_QMGR_GROUP_Q0_TO_Q31, &group0IntRegRead);
+    ixQMgrHwQIfQInterruptRegRead (IX_QMGR_GROUP_Q32_TO_Q63, &group1IntRegRead);
+    
     printf("Generic Stats........\n");
     printf("=====================\n");
     printf("Loop Run Count..........%u\n",dispatcherStats->loopRunCnt);
@@ -132,17 +136,18 @@ ixQMgrShow (void)
     printf("===========================================\n");
     printf("On the fly Interrupt Register Stats........\n");
     printf("===========================================\n");
-    printf("Lower Interrupt Register............0x%08x\n",lowIntRegRead);
-    printf("Upper Interrupt Register............0x%08x\n",upIntRegRead);
+    printf("Queues 0-31 Interrupt Register............0x%08x\n",group0IntRegRead);
+    printf("Queues 32-63 Interrupt Register............0x%08x\n",group1IntRegRead);
+
     printf("==============================================\n");
     printf("Queue Specific Stats........\n");
     printf("============================\n");
 
-    for (i=0; i<IX_QMGR_MAX_NUM_QUEUES; i++)
+    for (qIndex=0; qIndex<IX_QMGR_MAX_NUM_QUEUES; qIndex++)
     {
-	if (ixQMgrQIsConfigured(i))
+	if (ixQMgrQIsConfigured(qIndex))
 	{
-	    ixQMgrQShow(i);
+	    ixQMgrQShow(qIndex);
 	}
     }
 

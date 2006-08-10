@@ -7,7 +7,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -69,16 +69,16 @@ typedef enum
 typedef struct
 {
     IX_OSAL_MBUF *nextFreeBuf;	/**< Pointer to the next free mbuf              */
-    void *mbufMemPtr;	   /**< Pointer to the mbuf memory area            */
-    void *dataMemPtr;	   /**< Pointer to the data memory area            */
-    int bufDataSize;	   /**< The size of the data portion of each mbuf  */
-    int totalBufsInPool;   /**< Total number of mbufs in the pool          */
-    int freeBufsInPool;	   /**< Number of free mbufs currently in the pool */
-    int mbufMemSize;	   /**< The size of the pool mbuf memory area      */
-    int dataMemSize;	   /**< The size of the pool data memory area      */
+    VOID *mbufMemPtr;	   /**< Pointer to the mbuf memory area            */
+    VOID *dataMemPtr;	   /**< Pointer to the data memory area            */
+    INT32 bufDataSize;	   /**< The size of the data portion of each mbuf  */
+    INT32 totalBufsInPool;   /**< Total number of mbufs in the pool          */
+    INT32 freeBufsInPool;	   /**< Number of free mbufs currently in the pool */
+    INT32 mbufMemSize;	   /**< The size of the pool mbuf memory area      */
+    INT32 dataMemSize;	   /**< The size of the pool data memory area      */
     char name[IX_OSAL_MBUF_POOL_NAME_LEN + 1];	 /**< Descriptive name for pool */
     IxOsalMbufPoolAllocationType poolAllocType;
-    unsigned int poolIdx;  /**< Pool Index */ 
+    UINT32 poolIdx;  /**< Pool Index */ 
 } IxOsalMbufPool;
 
 typedef IxOsalMbufPool IX_OSAL_MBUF_POOL;

@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -94,7 +94,7 @@
 #ifndef NDEBUG
 #define IX_ATMDACC_PARAMS_CHECK( statements ) statements
 #else
-#if(CPU==SIMSPARCSOLARIS)
+#if((CPU==SIMSPARCSOLARIS) || (CPU==SIMLINUX))
 /* This is to make sure unit test will pass */
 #define IX_ATMDACC_PARAMS_CHECK( statements ) statements
 #else

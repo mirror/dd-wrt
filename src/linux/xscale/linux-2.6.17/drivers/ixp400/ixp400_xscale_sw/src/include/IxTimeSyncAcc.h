@@ -10,7 +10,7 @@
  * @version 1
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -60,7 +60,7 @@
 #ifndef IXTIMESYNCACC_H
 #define IXTIMESYNCACC_H
 
-#ifdef  __ixp46X
+#if defined(__ixp46X)
 
 #include "IxOsal.h"
 
@@ -442,7 +442,7 @@ ixTimeSyncAccTickRateGet(UINT32 *tickRate);
  *
  * @brief Enables the interrupt to verify the condition where the System Time 
  * greater or equal to the Target Time in the IEEE 1588 hardware assist block. 
- * If the condition is true an interrupt will be sent to Intel XScale(R) Core .
+ * If the condition is true an interrupt will be sent to Intel XScale(R) Processor.
  *
  * @param targetTimeCallback [in] - Callback to be invoked when interrupt fires
  *

@@ -9,7 +9,7 @@
  * Design Notes:
  *
  * @par 
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -65,6 +65,7 @@
 #include "IxEthAccDataPlane_p.h"
 #include "IxEthAccMii_p.h"
 #include "IxNpeDl.h"	
+#include "IxAccCommon.h"
 
 /**
  * @addtogroup IxEthAccPri
@@ -209,6 +210,17 @@ UINT8 ixEthAccNpeStaticQueueConfigs[][2] =
     { IX_ETH_ACC_TX_NPEC_Q, IX_ETH_ACC_RX_FREE_NPEC_Q}
 };
 
+/*
+ * Forward declaration of private functions
+ */
+IX_ETH_ACC_PRIVATE 
+IxEthAccStatus ixEthAccQMgrQueueSetup(IxEthAccQregInfo *qInfoDes);
+PRIVATE IxEthAccStatus
+ixEthAccQMgrQueueUnsetup (IxEthAccQregInfo *qInfoDes);
+IX_ETH_ACC_PRIVATE
+IxEthAccStatus ixEthAccGetRxQueueList(IxEthAccPortId portId,
+				      IxEthAccRxQueue *rxQueues);
+
 
 /**
  * @fn ixEthAccQMgrQueueSetup(IxEthAccQregInfo*)
@@ -289,7 +301,8 @@ ixEthAccQMgrQueueUnsetup (IxEthAccQregInfo *qInfoDes)
 {
     if (IX_ETH_ACC_SUCCESS != ixQMgrNotificationDisable(qInfoDes->qId))
     {
-        IX_ETH_ACC_WARNING_LOG ("Failed to disable the notification\n", 0, 0, 0, 0, 0, 0);
+        IX_ETH_ACC_WARNING_LOG ("Failed to disable the notification for QId=%u\n", 
+				(UINT32) qInfoDes->qId, 0, 0, 0, 0, 0);
         return IX_ETH_ACC_FAIL;
     }
     return IX_ETH_ACC_SUCCESS;
@@ -390,7 +403,7 @@ IxEthAccStatus ixEthAccGetRxQueueList(IxEthAccPortId portId, IxEthAccRxQueue *rx
 	    else
 	    {
 		/* unexpected property type (not Integer) */
-                IX_ETH_ACC_WARNING_LOG("ixEthAccGetRxQueueList: unexpected property type returned by EthDB\n", 0, 0, 0, 0, 0, 0);
+                IX_ETH_ACC_WARNING_LOG("ixEthAccGetRxQueueList: In Port=%u, unexpected property type returned by EthDB\n", (UINT32) portId, 0, 0, 0, 0, 0);
 		/* no point to continue to iterate */
 		return (IX_ETH_ACC_FAIL);
 	    }
@@ -408,7 +421,8 @@ IxEthAccStatus ixEthAccGetRxQueueList(IxEthAccPortId portId, IxEthAccRxQueue *rx
      */
     if (rxQueues[0].npeCount == 0)
     {
-        IX_ETH_ACC_WARNING_LOG("ixEthAccGetRxQueueList: no queues configured, bailing out\n", 0, 0, 0, 0, 0, 0);
+        IX_ETH_ACC_WARNING_LOG("ixEthAccGetRxQueueList: In Port=%u, no queues configured, bailing out\n", 
+			       (UINT32) portId, 0, 0, 0, 0, 0);
 	/* queue configuration error so return queue count 0 */
 	return (IX_ETH_ACC_FAIL);
     }
@@ -884,5 +898,201 @@ void ixEthAccStatsShow(IxEthAccPortId portId)
     printf("\n");
 
     ixEthAccDataPlaneShow();
+}
+
+/**
+ * This function is responsible to activate Flag Bus status from AQM to
+ * NPE. Only Rx Queue, RxFree and TxDone Queue are involved.
+ * Note: user is required to disable IRQ before calling this function.
+ */
+IX_ETH_ACC_PUBLIC IxEthAccStatus 
+ixEthAccQMStatusUpdate(IxEthAccPortId portId)
+{  
+   UINT32 rxFreeId = 0; 
+   UINT32 qEntry = 0;
+   UINT32 rxQueue = 0;
+   IxEthAccRxQueue *rxQueues = ixEthAccRxQueues;
+   IxEthAccStatus ret = IX_ETH_ACC_SUCCESS;
+
+   if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
+   {
+       return (IX_ETH_ACC_FAIL);
+   }
+
+    IX_ETH_ACC_VALIDATE_PORT_ID(portId);
+
+    if (IX_ETH_ACC_SUCCESS != ixEthAccSingleEthNpeCheck(portId))
+    {
+        IX_ETH_ACC_WARNING_LOG("EthAcc: Eth %d: Cannot reupdate QM Status.\n",(INT32) portId,0,0,0,0,0);
+        return IX_ETH_ACC_FAIL ;
+    } 
+
+    if (!IX_ETH_IS_PORT_INITIALIZED(portId))
+    {
+	return (IX_ETH_ACC_PORT_UNINITIALIZED);
+    }
+ 
+   /* 
+    * (1) Read an entry from TxDone Queue.
+    * (2) If there is any entry, write the entry back to TxDone Queue. 
+    */
+    if (ixQMgrQRead(IX_ETH_ACC_TX_DONE_Q, &qEntry) == IX_SUCCESS)
+    { 
+      /* Avoid qEntry=0 (NULL) to be written to HwQ. */
+      if(qEntry > 0)
+      {
+       if (ixQMgrQWrite(IX_ETH_ACC_TX_DONE_Q, &qEntry) != IX_SUCCESS)
+       {
+         return (IX_ETH_ACC_FAIL);        
+       } 
+      }
+    }
+
+    /* 
+    * (1) Read an entry from RxFree Queue, then
+    * (2) If thre is any entry, write the entry back to RxFree Queue. 
+    */ 
+    rxFreeId = IX_ETH_ACC_PORT_TO_RX_FREE_Q_ID(portId);
+    
+    if (ixQMgrQRead(rxFreeId, &qEntry) == IX_SUCCESS)
+    {
+       /* Avoid qEntry=0 (NULL) to be written to HwQ. */
+       if(qEntry > 0)
+       {
+        if (ixQMgrQWrite(rxFreeId, &qEntry) != IX_SUCCESS)
+        {
+          return (IX_ETH_ACC_FAIL);        
+        } 
+       }
+    }
+   
+   /* 
+    * (1) Read an entry from Rx Queue.
+    * (2) If there is any entry, write the entry back to Rx Queue. 
+    *  Note: For QoS enabled image, there are more than 1 RxQ.
+    */
+    /* Get RX queue list */
+    ret = ixEthAccGetRxQueueList(portId, rxQueues);    
+
+    if(ret) return (ret);
+
+    for (rxQueue = 0;
+	 (rxQueues[rxQueue].npeCount != 0);
+	 rxQueue++)
+    {
+      if (ixQMgrQRead(rxQueues[rxQueue].qId, &qEntry) == IX_SUCCESS)
+      {
+        /* Avoid qEntry=0 (NULL) to be written to HwQ. */
+        if(qEntry > 0)
+        {
+	 if (ixQMgrQWrite(rxQueues[rxQueue].qId, &qEntry) != IX_SUCCESS)
+         {
+           return (IX_ETH_ACC_FAIL);        
+         }
+        }
+      }	       
+    }
+
+   return (IX_ETH_ACC_SUCCESS);
+}
+
+/**
+ * @fn ixEthHssAccCoExistInit(void)
+ *
+ * @brief Check ethernet&hss co-existence services initialized and init mutex
+ *
+ * @return IxEthAccStatus
+ *
+ * @internal
+ */
+IX_ETH_ACC_PUBLIC IxEthAccStatus
+ixEthHssAccCoExistInit(void)
+{
+    UINT8 functionalityId;
+    IX_STATUS retStatus;
+
+    retStatus = ixNpeDlLoadedImageFunctionalityGet(IX_NPEDL_NPEID_NPEA, &functionalityId);
+
+    /* Check for parameter error */
+    if (IX_NPEDL_PARAM_ERR ==  retStatus)
+    {
+        return IX_ETH_ACC_FAIL;
+    }    
+
+    /* Check if NPE image is downloaded to NPE A. If NPE image is not downloaded
+     * in NPE A, ixNpeDlLoadedImageFunctionalityGet returns IX_FAIL.If this is the case,
+     * we can return IX_ETH_ACC_SUCCESS to not interrupt the following
+     * steps in ixEthAccInit()  
+     */
+    if (IX_FAIL == retStatus)
+    {
+        return IX_ETH_ACC_SUCCESS;
+    }
+
+    /*
+     * To enable Ethernet & HSS co-existence feature in NPE A, check the functionality 
+     * of downloaded NPE image when the functionality id is either 0x00900000
+     * (HSS channelized + learning/filtering support) or 0x00910000
+     * (HSS channelized + header conversion support)
+     */
+    if ((functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
+         IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST) ||
+         functionalityId == IX_FUNCTIONID_FROM_NPEIMAGEID_GET(
+         IX_NPEDL_NPEIMAGE_NPEA_ETH_HDRCONV_HSSCHAN_COEXIST)) &&
+         ixEthHssAccCoexistEnable != TRUE)
+    {
+    	/* If service is initialized and the common mutex is not initialized, initialize it */
+    	if (TRUE != ixEthHssComMutexInitDone)
+    	{
+           if (ixOsalMutexInit(&ixEthHssCoexistLock) != IX_SUCCESS)
+           {
+              IX_ETH_ACC_WARNING_LOG("ixEthHssAccCoExistInit: Common co-exist mutex init failed\n", 0, 0, 0, 0, 0, 0);
+              return IX_ETH_ACC_FAIL;
+           }
+
+           ixEthHssComMutexInitDone = TRUE;
+    	}
+
+        ixEthHssAccCoexistEnable = TRUE;
+    }
+
+    return IX_ETH_ACC_SUCCESS;
+}
+
+/**
+ * @fn ixEthHssAccCoExistUninit(void)
+ *
+ * @brief Check ethernet&hss co-existence services uninitialized
+ *
+ * @return IxEthAccStatus
+ *
+ * @internal
+ */
+IX_ETH_ACC_PUBLIC IxEthAccStatus
+ixEthHssAccCoExistUninit(void)
+{
+    /*
+     * Destroy common mutex initialized for Eth+HSS co-existence services.
+     * Check whether already destroyed in the HSS component
+     */
+
+    if (FALSE != ixEthHssAccCoexistEnable)
+    {
+       if (FALSE != ixEthHssComMutexInitDone)
+       {
+          if (ixOsalMutexDestroy (&ixEthHssCoexistLock) != IX_SUCCESS)
+          {
+              IX_ETH_ACC_WARNING_LOG("ixEthHssAccCoExistUninit: Common co-exist mutex destroy failed\n", 0, 0, 0, 0, 0, 0);
+
+              return IX_ETH_ACC_FAIL;
+          }
+
+          ixEthHssComMutexInitDone = FALSE;
+       }
+
+       ixEthHssAccCoexistEnable = FALSE;
+    }
+
+    return IX_ETH_ACC_SUCCESS;
 }
 

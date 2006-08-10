@@ -7,7 +7,7 @@
  * Codelet that implements a simple bridge between two Ethernet ports
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 

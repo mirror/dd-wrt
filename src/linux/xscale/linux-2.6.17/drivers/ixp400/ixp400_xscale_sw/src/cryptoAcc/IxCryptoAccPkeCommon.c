@@ -1,7 +1,7 @@
 /**
  * @file IxCryptoPkeCommon.c
  *
- * @date March-18-2005
+ * @date March-18-2006
  *
  * @brief  Source file for PKE component 
  *
@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -49,9 +49,9 @@
  * @par
  * -- End of Copyright Notice --
  */
- 
-#ifdef __ixp46X     /* PKE codes only applicable for IXP46X platform */
 
+#if defined(__ixp46X)
+/* PKE is not supported in IXP42X platform */
 #define IX_OSAL_ENFORCED_LE_AC_MAPPING  /**< Force to AC mode when in LE  */
 #include "IxOsal.h"
 #include "IxCryptoAcc_p.h"
@@ -406,3 +406,4 @@ ixCryptoPkeAddressGet (IxCryptoPkeEngineType type)
 } /* end of ixCryptoPkeAddressGet() function */
 
 #endif /* __ixp46X */
+

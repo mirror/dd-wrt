@@ -14,7 +14,7 @@
  * by EthDB in IxEthDBQoS.h.
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -53,17 +53,32 @@
  * @par
  * -- End of Copyright Notice --
  */
+/* ------------------------------------------------------
+   Doxygen group definitions
+   ------------------------------------------------------ */
+/**
+ * @defgroup IxQueueAssignments Intel (R) IXP400 Software Queue Assignments
+ *
+ * @brief Queue Assignments used by Ethernet, HSS, ATM and DMA access libraries. Ethernet QoS traffic class definitions are mapped by EthDB in IxEthDBQoS.h
+ *
+ */ 
 
 #ifndef IxQueueAssignments_H
 #define IxQueueAssignments_H
 
+#if defined(__ixp42X) || defined(__ixp46X)
 #include "IxQMgr.h"
+#endif /* __ixp42X */
 
 /***************************************************************************
  *  Queue assignments for ATM
  ***************************************************************************/
 
 /** 
+ * @ingroup IxQueueAssignments
+ *
+ * @def IX_NPE_MPHYMULTIPORT
+ *
  * @brief Global compiler switch to select between 3 possible NPE Modes
  * Define this macro to enable MPHY mode
  *
@@ -80,6 +95,9 @@
 #endif
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_TXDONE_QUEUE_HIGHWATERMARK
  *
  * @brief The NPE reserves the High Watermark for its operation. But it must be set by the Xscale
@@ -87,6 +105,9 @@
 #define IX_NPE_A_TXDONE_QUEUE_HIGHWATERMARK  2
 
 /**
+ * 
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_TX_DONE
  *
  * @brief Queue ID for ATM Transmit Done queue
@@ -94,6 +115,9 @@
 #define IX_NPE_A_QMQ_ATM_TX_DONE       IX_QMGR_QUEUE_1
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_TX0
  *
  * @brief Queue ID for ATM transmit Queue in a single phy configuration
@@ -102,6 +126,9 @@
 
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_TXID_MIN
  *
  * @brief Queue Manager Queue ID for ATM transmit Queue with minimum number of queue
@@ -109,6 +136,9 @@
  */
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_TXID_MAX
  *
  * @brief Queue Manager Queue ID for ATM transmit Queue with maximum number of queue
@@ -116,6 +146,9 @@
  */
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_RX_HI
  *
  * @brief Queue Manager Queue ID for ATM Receive high Queue
@@ -123,6 +156,9 @@
  */
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_RX_LO
  *
  * @brief Queue Manager Queue ID for ATM Receive low Queue
@@ -130,6 +166,9 @@
 
 #ifdef IX_NPE_MPHYMULTIPORT
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_TX1
  *
  * @brief Queue ID for ATM transmit Queue Multiphy from 1 to 11
@@ -157,6 +196,9 @@
 #endif /* MPHY */
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_FREE_VC0
  *
  * @brief Hardware QMgr Queue ID for ATM Free VC Queue.
@@ -198,6 +240,9 @@
 #define IX_NPE_A_QMQ_ATM_FREE_VC31     IX_NPE_A_QMQ_ATM_FREE_VC30+1
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_ATM_RXFREE_MIN
  *
  * @brief The minimum queue ID for FreeVC queue
@@ -212,6 +257,9 @@
 #define IX_NPE_A_QMQ_ATM_RXFREE_MAX  IX_NPE_A_QMQ_ATM_FREE_VC31
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_OAM_FREE_VC
  * @brief OAM Rx Free queue ID
  */
@@ -225,16 +273,38 @@
  * Queue assignments for HSS
  ****************************************************************************/
 
+#ifndef IX_NPE_HSS_MPHY4PORT
 /****  HSS Port 0 ****/
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_CHL_RX_TRIG
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Channelized Receive trigger
  */
 #define IX_NPE_A_QMQ_HSS0_CHL_RX_TRIG   IX_QMGR_QUEUE_12
 
+#else
+/****  HSS Port 0 ****/
+
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
+ * @def IX_NPE_A_QMQ_HSS0_CHL_RX_TRIG
+ *
+ * @brief Hardware QMgr Queue ID for HSS Port 0 Channelized Receive trigger
+ */
+#define IX_NPE_A_QMQ_HSS0_CHL_RX_TRIG   IX_QMGR_QUEUE_20
+
+#endif
+
+/**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_RX
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Receive
@@ -242,6 +312,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_RX        IX_QMGR_QUEUE_13
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_TX0
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Transmit queue 0
@@ -249,6 +322,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_TX0       IX_QMGR_QUEUE_14
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_TX1
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Transmit queue 1
@@ -256,6 +332,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_TX1       IX_QMGR_QUEUE_15
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_TX2
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Transmit queue 2
@@ -263,6 +342,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_TX2       IX_QMGR_QUEUE_16
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_TX3
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Transmit queue 3
@@ -270,6 +352,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_TX3       IX_QMGR_QUEUE_17
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_RX_FREE0
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Receive Free queue 0
@@ -277,6 +362,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_RX_FREE0  IX_QMGR_QUEUE_18
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_RX_FREE1
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Receive Free queue 1
@@ -284,6 +372,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_RX_FREE1  IX_QMGR_QUEUE_19
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_RX_FREE2
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Receive Free queue 2
@@ -291,6 +382,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_RX_FREE2  IX_QMGR_QUEUE_20
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_RX_FREE3
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Receive Free queue 3
@@ -298,6 +392,9 @@
 #define IX_NPE_A_QMQ_HSS0_PKT_RX_FREE3  IX_QMGR_QUEUE_21
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS0_PKT_TX_DONE
  *
  * @brief Hardware QMgr Queue ID for HSS Port 0 Packetized Transmit Done queue
@@ -307,6 +404,9 @@
 /****  HSS Port 1 ****/
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_CHL_RX_TRIG
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Channelized Receive trigger
@@ -314,6 +414,9 @@
 #define IX_NPE_A_QMQ_HSS1_CHL_RX_TRIG   IX_QMGR_QUEUE_10
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_RX
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Receive
@@ -321,6 +424,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_RX        IX_QMGR_QUEUE_0
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_TX0
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Transmit queue 0
@@ -328,6 +434,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_TX0       IX_QMGR_QUEUE_5
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_TX1
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Transmit queue 1
@@ -335,6 +444,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_TX1       IX_QMGR_QUEUE_6
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_TX2
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Transmit queue 2
@@ -342,6 +454,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_TX2       IX_QMGR_QUEUE_7
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_TX3
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Transmit queue 3
@@ -349,6 +464,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_TX3       IX_QMGR_QUEUE_8
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_RX_FREE0
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Receive Free queue 0
@@ -356,6 +474,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_RX_FREE0  IX_QMGR_QUEUE_1
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_RX_FREE1
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Receive Free queue 1
@@ -363,6 +484,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_RX_FREE1  IX_QMGR_QUEUE_2
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_RX_FREE2
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Receive Free queue 2
@@ -370,6 +494,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_RX_FREE2  IX_QMGR_QUEUE_3
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_RX_FREE3
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Receive Free queue 3
@@ -377,6 +504,9 @@
 #define IX_NPE_A_QMQ_HSS1_PKT_RX_FREE3  IX_QMGR_QUEUE_4
 
 /**
+ *
+ * @ingroup IxQueueAssignments
+ *
  * @def IX_NPE_A_QMQ_HSS1_PKT_TX_DONE
  *
  * @brief Hardware QMgr Queue ID for HSS Port 1 Packetized Transmit Done queue
@@ -395,6 +525,7 @@
 #define IX_DMA_NPE_C_DONE_QID    IX_QMGR_QUEUE_27   /**< Queue Id for NPE C DMA Done    */
 
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /*****************************************************************************************
  * Queue assignments for Ethernet
  *
@@ -409,6 +540,8 @@
 
 /**
 *
+* @ingroup IxQueueAssignments
+*
 * @def IX_ETH_ACC_RX_FREE_NPEA_Q
 *
 * @brief Supply Rx Buffers Ethernet Q for NPEA
@@ -417,6 +550,8 @@
 #define IX_ETH_ACC_RX_FREE_NPEA_Q    (IX_QMGR_QUEUE_26)
 
 /**
+*
+* @ingroup IxQueueAssignments
 *
 * @def IX_ETH_ACC_RX_FREE_NPEB_Q
 *
@@ -427,6 +562,8 @@
 
 /**
 *
+* @ingroup IxQueueAssignments
+*
 * @def IX_ETH_ACC_RX_FREE_NPEC_Q
 *
 * @brief Supply Rx Buffers Ethernet Q for NPEC
@@ -435,6 +572,8 @@
 #define IX_ETH_ACC_RX_FREE_NPEC_Q    (IX_QMGR_QUEUE_28)
 
 /**
+*
+* @ingroup IxQueueAssignments
 *
 * @def IX_ETH_ACC_TX_NPEA_Q
 *
@@ -446,6 +585,8 @@
 
 /**
 *
+* @ingroup IxQueueAssignments
+*
 * @def IX_ETH_ACC_TX_NPEB_Q
 *
 * @brief Submit frame Q for NPEB
@@ -454,6 +595,8 @@
 #define IX_ETH_ACC_TX_NPEB_Q    (IX_QMGR_QUEUE_24)
 
 /**
+*
+* @ingroup IxQueueAssignments
 *
 * @def IX_ETH_ACC_TX_NPEC_Q
 *
@@ -464,12 +607,16 @@
 
 /**
 *
+* @ingroup IxQueueAssignments
+*
 * @def IX_ETH_ACC_TX_DONE_Q
 *
 * @brief Transmit complete Q for all NPEs
 *
 */
 #define IX_ETH_ACC_TX_DONE_Q    (IX_QMGR_QUEUE_31)
+
+#endif /* __ixp42X */
 
 /*****************************************************************************************
  * Queue assignments for Crypto

@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -52,7 +52,7 @@
 
 #include <linux/module.h>
 #include <IxEthDB.h>
-#include "include/IxEthDB_p.h"
+#include <include/IxEthDB_p.h>
 
 EXPORT_SYMBOL(ixEthDBFilteringStaticEntryProvision);
 EXPORT_SYMBOL(ixEthDBFilteringDynamicEntryProvision);
@@ -63,6 +63,7 @@ EXPORT_SYMBOL(ixEthDBFilteringPortUpdatingSearch);
 EXPORT_SYMBOL(ixEthDBPortAgingDisable);
 EXPORT_SYMBOL(ixEthDBPortAgingEnable);
 EXPORT_SYMBOL(ixEthDBDatabaseMaintenance);
+EXPORT_SYMBOL(ixEthDBEventProcessorPauseModeSet);
 
 EXPORT_SYMBOL(ixEthDBFilteringPortMaximumFrameSizeSet);
 EXPORT_SYMBOL(ixEthDBFilteringPortMaximumTxFrameSizeSet);
@@ -98,6 +99,7 @@ EXPORT_SYMBOL(ixEthDBPriorityMappingTableSet);
 EXPORT_SYMBOL(ixEthDBPriorityMappingTableGet);
 EXPORT_SYMBOL(ixEthDBPriorityMappingClassSet);
 EXPORT_SYMBOL(ixEthDBPriorityMappingClassGet);
+EXPORT_SYMBOL(ixEthDBPriorityMappingTableUpdate);
 EXPORT_SYMBOL(ixEthDBEgressVlanEntryTaggingEnabledSet);
 EXPORT_SYMBOL(ixEthDBEgressVlanEntryTaggingEnabledGet);
 EXPORT_SYMBOL(ixEthDBEgressVlanRangeTaggingEnabledSet);
@@ -112,6 +114,7 @@ EXPORT_SYMBOL(ixEthDBFeatureEnable);
 EXPORT_SYMBOL(ixEthDBFeatureStatusGet);
 EXPORT_SYMBOL(ixEthDBFeaturePropertyGet);
 EXPORT_SYMBOL(ixEthDBFeaturePropertySet);
+EXPORT_SYMBOL(ixEthDBFeatureStatesRestore);
 
 EXPORT_SYMBOL(ixEthDBDatabaseClear);
 

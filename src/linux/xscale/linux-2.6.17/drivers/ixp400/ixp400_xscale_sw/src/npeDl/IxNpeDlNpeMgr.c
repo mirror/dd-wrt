@@ -2,14 +2,14 @@
  * @file IxNpeDlNpeMgr.c
  *
  * @author Intel Corporation
- * @date 09 January 2002
+ * @date 09 February 2006
  *
  * @brief This file contains the implementation of the private API for the
- *        IXP400 NPE Downloader NpeMgr module
+ *        IXP NPE Downloader NpeMgr module
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -64,7 +64,7 @@
 #include "IxNpeDlNpeMgrUtils_p.h"
 #include "IxNpeDlNpeMgrEcRegisters_p.h"
 #include "IxNpeDlMacros_p.h"
-#include "IxFeatureCtrl.h"
+#include "IxFeatureCtrl_sp.h"
 
 /*
  * #defines and macros used in this file.
@@ -90,11 +90,18 @@
 /* size (in words) of single State Information entry (ctxt reg address|data) */
 #define IX_NPEDL_STATE_INFO_ENTRY_SIZE            2
 
+#if defined(__ixp42X) || defined(__ixp46X)
+#define IX_NPEDL_RESET_NPE_PARITY  0x0800
+#endif /* __ixp42X */
 
- #define IX_NPEDL_RESET_NPE_PARITY  0x0800
- #define IX_NPEDL_PARITY_BIT_MASK   0x3F00FFFF
- #define IX_NPEDL_CONFIG_CTRL_REG_MASK  0x3F3FFFFF
+#define IX_NPEDL_PARITY_BIT_MASK   0x3F00FFFF
+#define IX_NPEDL_CONFIG_CTRL_REG_MASK  0x3F3FFFFF
 
+/* Pad word value added at the end of IMEM during downloading */
+#define IX_NPEDL_INS_MEM_PAD 0x00000000
+
+/* A maximum of 2 IMEM words are padded at the end of IMEM */
+#define IX_NPEDL_INS_MEM_PAD_MAX_COUNT 2
 
 /*
  * Typedefs whose scope is limited to this file.
@@ -156,12 +163,14 @@ typedef enum
   IX_NPEDL_MEM_TYPE_DATA
 } IxNpeDlNpeMemType;
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /* used to hold a reset value for a particular ECS register */
 typedef struct
 {
     UINT32 regAddr;
     UINT32 regResetVal;
 } IxNpeDlEcsRegResetValue;
+#endif /* __ixp42X */
 
 /* prototype of function to write either Instruction or Data memory */
 typedef IX_STATUS (*IxNpeDlNpeMgrMemWrite) (UINT32 npeBaseAddress,
@@ -198,14 +207,17 @@ static IxNpeDlNpeInfo ixNpeDlNpeInfo[] =
 	0,
 	IX_NPEDL_INS_MEMSIZE_WORDS_NPEB,
 	IX_NPEDL_DATA_MEMSIZE_WORDS_NPEB
-    },
-    {
+    }
+#if defined(__ixp42X) || defined(__ixp46X)
+    ,{
 	0,
 	IX_NPEDL_INS_MEMSIZE_WORDS_NPEC,
 	IX_NPEDL_DATA_MEMSIZE_WORDS_NPEC
     }
+#endif /* __ixp42X */
 };
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /* contains Reset values for Context Store Registers  */
 static UINT32 ixNpeDlCtxtRegResetValues[] =
 {
@@ -232,6 +244,7 @@ static IxNpeDlEcsRegResetValue ixNpeDlEcsRegResetValues[] =
     {IX_NPEDL_ECS_DBG_CTXT_REG_2,   IX_NPEDL_ECS_DBG_CTXT_REG_2_RESET},
     {IX_NPEDL_ECS_INSTRUCT_REG,     IX_NPEDL_ECS_INSTRUCT_REG_RESET}
 };
+#endif /* __ixp42X */
 
 static IxNpeDlNpeMgrStats ixNpeDlNpeMgrStats;
 
@@ -291,11 +304,13 @@ ixNpeDlNpeMgrInit (void)
 	IX_OSAL_ASSERT(virtAddr);
 	ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = virtAddr;
 
+#if defined(__ixp42X) || defined(__ixp46X)
 	/* map the register memory for NPE-C */
 	virtAddr = (UINT32) IX_OSAL_MEM_MAP (IX_NPEDL_NPEBASEADDRESS_NPEC,
 					    IX_OSAL_IXP400_NPEC_MAP_SIZE); 
 	IX_OSAL_ASSERT(virtAddr);
 	ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress = virtAddr;
+#endif /* __ixp42X */
 
 	ixNpeDlMemInitialised = TRUE;
     }
@@ -315,11 +330,15 @@ ixNpeDlNpeMgrUninit (void)
 
     IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress);
     IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress);
+#if defined(__ixp42X) || defined(__ixp46X)
     IX_OSAL_MEM_UNMAP (ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress);
+#endif /* __ixp42X */
 
     ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEA].baseAddress = 0;
     ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEB].baseAddress = 0;
+#if defined(__ixp42X) || defined(__ixp46X)
     ixNpeDlNpeInfo[IX_NPEDL_NPEID_NPEC].baseAddress = 0;
+#endif /* __ixp42X */
 
     ixNpeDlMemInitialised = FALSE;
 
@@ -422,6 +441,7 @@ ixNpeDlNpeMgrMemLoad (
     UINT32 memSize = 0;
     IxNpeDlNpeMgrMemWrite memWriteFunc = NULL;
     UINT32 localIndex = 0;
+    UINT32 padIndex = 0;
     IX_STATUS status = IX_SUCCESS;
 
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT,
@@ -474,6 +494,39 @@ ixNpeDlNpeMgrMemLoad (
 	    /* increment target (word)address in NPE memory */
 	    npeMemAddress++;   
 	}
+
+        /*
+         * To avoid parity error in IMEM, it is best to 
+         * initialize the end of the area that is not downloaded
+         * in above with at most two words of zero padding provided
+         * the end of IMEM is not crossed. 2 words as NPE will
+         * prefetch 2 IMEM words for certain branch instructions. 
+         */
+        if (npeMemType == IX_NPEDL_MEM_TYPE_INSTRUCTION)
+	{	  
+            for (padIndex=0; 
+                 (padIndex < IX_NPEDL_INS_MEM_PAD_MAX_COUNT) 
+		   && (localIndex < memSize); 
+                 padIndex++)
+	    {
+	      status = memWriteFunc (npeBaseAddress, npeMemAddress,
+				     IX_NPEDL_INS_MEM_PAD, verify);
+	      
+	      if (status != IX_SUCCESS)
+		{
+		  IX_NPEDL_ERROR_REPORT ("ixNpeDlNpeMgrMemLoad: "
+					 "write to NPE memory failed\n");
+		  status = IX_NPEDL_CRITICAL_NPE_ERR;
+		  ixNpeDlNpeMgrStats.criticalNpeErrors++;
+		  break;   /* abort download */
+		}
+	      /* increment target (word)address in NPE memory */
+	      npeMemAddress++;
+ 
+              /* increment the mem fill index */                	   
+              localIndex++;               
+	    }
+        }
     }/* condition: block size will fit in NPE memory */
 
     if (status == IX_SUCCESS)
@@ -578,15 +631,18 @@ ixNpeDlNpeMgrNpeReset (
     IxNpeDlNpeId npeId)
 {
     UINT32 npeBaseAddress;
+    IX_STATUS status = IX_SUCCESS;
+    UINT32 ixNpeConfigCtrlRegVal;
+    
+#if defined(__ixp42X) || defined(__ixp46X)
     IxNpeDlCtxtRegNum ctxtReg; /* identifies Context Store reg (0-3) */
     UINT32 ctxtNum;            /* identifies Context number (0-16)   */
     UINT32 regAddr;
     UINT32 regVal;
     UINT32 localIndex;
     UINT32 indexMax;
-    IX_STATUS status = IX_SUCCESS;
     IxFeatureCtrlReg unitFuseReg;
-    UINT32 ixNpeConfigCtrlRegVal;
+#endif /* __ixp42X */
     
     IX_NPEDL_TRACE0 (IX_NPEDL_FN_ENTRY_EXIT, 
 		     "Entering ixNpeDlNpeMgrNpeReset\n");
@@ -602,6 +658,7 @@ ixNpeDlNpeMgrNpeReset (
     /* disable the parity interrupt */
     IX_NPEDL_REG_WRITE (npeBaseAddress, IX_NPEDL_REG_OFFSET_CTL, (ixNpeConfigCtrlRegVal & IX_NPEDL_PARITY_BIT_MASK));
     
+#if defined(__ixp42X) || defined(__ixp46X)
     ixNpeDlNpeMgrDebugInstructionPreExec (npeBaseAddress);
 
     /*
@@ -742,6 +799,9 @@ ixNpeDlNpeMgrNpeReset (
     /* call the feature control API to un-fused and un-reset the NPE & COP */
     unitFuseReg &= (~(IX_NPEDL_RESET_NPE_PARITY << npeId));
     ixFeatureCtrlWrite (unitFuseReg);
+    
+#endif /* __ixp42X */
+
 
     /*
      * Call NpeMgr function to stop the NPE again after the Feature Control
@@ -935,4 +995,12 @@ ixNpeDlNpeMgrStatsReset (void)
     ixNpeDlNpeMgrStats.npeResets = 0;
 
     ixNpeDlNpeMgrUtilsStatsReset ();
+}
+
+PUBLIC UINT32 ixNpeDlDataMemRead(UINT32 npeId, UINT32 dataMemAddress)
+{
+	UINT32 npeBaseAddress;
+		/* get base memory address of NPE from npeId */
+  npeBaseAddress = ixNpeDlNpeMgrBaseAddressGet (npeId);
+  return ixNpeDlNpeMgrDataMemRead (npeBaseAddress, dataMemAddress);
 }

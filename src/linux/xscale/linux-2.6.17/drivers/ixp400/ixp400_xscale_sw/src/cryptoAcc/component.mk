@@ -1,5 +1,5 @@
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -46,7 +46,7 @@ cryptoAcc_OBJ := IxCryptoAccUtilities.o		\
 		 IxCryptoAccCryptoRegister.o	\
 		 IxCryptoAccCryptoPerform.o
 		 
-ifeq ($(IX_DEVICE),ixp46X)
+ifneq ($(IX_DEVICE),ixp42X)
 cryptoAcc_OBJ += IxCryptoAccPkeCommon.o     \
 		 IxCryptoAccPkeEau.o                \
 		 IxCryptoAccPkeHash.o
@@ -58,7 +58,7 @@ ifneq ($(IX_TARGET),vxsim)
 cryptoAcc_OBJ += IxCryptoAccXScaleWep.o
 endif
 
-cryptoAcc_CFLAGS := -I./src/cryptoAcc/include -I./$LINUX_SRC/include/asm-arm
+cryptoAcc_CFLAGS := -I./src/cryptoAcc/include -I./$(LINUX_SRC)/include/asm-arm
 
 # Force NDEBUG unless debug info has been specifically requested.
 # This way the unit test will be built with NDEBUG.

@@ -1,14 +1,14 @@
 /**
  * @file IxFeatureCtrl.h
  *
- * @date 30-Jan-2003
+ * @date 26-Oct-2005
 
- * @brief This file contains the public API of the IXP400 Feature Control
+ * @brief This file contains the public API of the IXP Feature Control
  *        component.
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -51,11 +51,26 @@
    Doxygen group definitions
    ------------------------------------------------------ */
 /**
- * @defgroup IxFeatureCtrlAPI Intel (R) IXP400 Software Feature Control (IxFeatureCtrl) API
+ * @defgroup IxFeatureCtrlAPI Intel(R) IXP Software Feature Control (featureCtrl) Public API
  *
- * @brief The Public API for the IXP400 Feature Control.
+ * @brief The Public API for the IXP Feature Control.
  * 
- * @{
+ */
+
+
+/**
+ * @defgroup IxFeatureCtrlSwConfig Software Configuration for featureCtrl Component
+ *
+ * @ingroup IxFeatureCtrlAPI 
+ *
+ * @brief This section describes software configuration in access component. 
+ *
+ * The configuration can be changed at run-time. ixFeatureCtrlSwConfigurationCheck() will be used across 
+ * applicable access layer components to check the configuration. ixFeatureCtrlSwConfigurationWrite() is used 
+ * to write the software configuration.
+ *
+ * @note <b>All software configurations are default to be enabled.</b> 
+ *
  */
 
 #ifndef IXFEATURECTRL_H
@@ -69,6 +84,8 @@
 /*
  * #defines and macros
  */
+
+
 
 /*************************************************************
  * The following are IxFeatureCtrlComponentCheck return values.
@@ -94,12 +111,13 @@
  */
 #define  IX_FEATURE_CTRL_COMPONENT_ENABLED  1
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /***********************************************************************************
- * Product ID in Intel XScale(R) Core CP15 - Register 0
- *  - It contains information on the maximum Intel XScale(R) Core Frequency and
+ * Product ID in Intel XScale(R) Processor CP15 - Register 0
+ *  - It contains information on the maximum Intel XScale(R) Processor Frequency and
  *    Silicon Stepping.  
- *  - Intel XScale(R) Core Frequency Id indicates only the maximum Intel XScale(R) Core frequency
- *    achievable and not the running Intel XScale(R) Core frequency (maybe stepped down).    
+ *  - Intel XScale(R) Processor Frequency Id indicates only the maximum Intel XScale(R) Processor frequency
+ *    achievable and not the running Intel XScale(R) Processor frequency (maybe stepped down).    
  *  - The register is read by using ixFeatureCtrlProductIdRead.
  *  - Usage example: 
  *          productId = ixFeatureCtrlProductIdRead();
@@ -110,10 +128,10 @@
  * 
  *  31 28 27 24 23 20 19 16 15 12 11        9 8                            4 3              0  
  *  ----------------------------------------------------------------------------------------- 
- * | 0x6 | 0x9 | 0x0 | 0x5 | 0x4 | Device ID | Intel XScale(R) Core Freq Id | Si Stepping Id |    
+ * | 0x6 | 0x9 | 0x0 | 0x5 | 0x4 | Device ID | Intel XScale(R) Processor Freq Id | Si Stepping Id |    
  *  -----------------------------------------------------------------------------------------
  *
- *   Maximum Achievable Intel XScale(R) Core Frequency Id :  533MHz  - 0x1C 
+ *   Maximum Achievable Intel XScale(R) Processor Frequency Id :  533MHz  - 0x1C 
  *                                                  400MHz  - 0x1D 
  *                                                  266MHz  - 0x1F
  *
@@ -124,9 +142,10 @@
  *  Si Stepping Id            :  A       - 0x0    
  *                               B       - 0x1 
  *  
- *  Intel XScale(R) Core freq Id - Device ID [11:9] : IXP42X processor - 0x0
+ *  Intel XScale(R) Processor freq Id - Device ID [11:9] : IXP42X processor - 0x0
  *                                           IXP46X processor - 0x1
  *************************************************************************************/
+#endif /* __ixp42X */
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -137,6 +156,7 @@
  */
 #define IX_FEATURE_CTRL_SILICON_TYPE_A0   0
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxFeatureCtrlAPI 
  *
@@ -145,6 +165,7 @@
  * @brief This is the value of B0 Silicon in product ID.
  */
 #define IX_FEATURE_CTRL_SILICON_TYPE_B0   1
+#endif /* __ixp42X */
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -162,7 +183,9 @@
  *
  * @brief This is the mask of silicon stepping in product ID.
  */
-#define IX_FEATURE_CTRL_DEVICE_TYPE_MASK  (0x7) 
+#if defined(__ixp42X) || defined(__ixp46X)
+#define IX_FEATURE_CTRL_DEVICE_TYPE_MASK  (0x7)
+#endif /* __ixp42X */
 
 /**
  * @ingroup IxFeatureCtrlAPI
@@ -171,15 +194,17 @@
  *
  * @brief This is the mask of silicon stepping in product ID.
  */
+#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_FEATURE_CTRL_DEVICE_TYPE_OFFSET  9
+#endif /* __ixp42X */
 
-
+#if defined(__ixp42X) || defined(__ixp46X)
 /**
  * @ingroup IxFeatureCtrlAPI 
  *
  * @def IX_FEATURE_CTRL_XSCALE_FREQ_533
  *
- * @brief This is the value of 533MHz Intel XScale(R) Core in product ID.
+ * @brief This is the value of 533MHz Intel XScale(R) Processor in product ID.
  */
 #define IX_FEATURE_CTRL_XSCALE_FREQ_533  ((0x1C)<<4)
 
@@ -188,7 +213,7 @@
  *
  * @def IX_FEATURE_CTRL_XSCALE_FREQ_400
  *
- * @brief This is the value of 400MHz Intel XScale(R) Core in product ID.
+ * @brief This is the value of 400MHz Intel XScale(R) Processor in product ID.
  */
 #define IX_FEATURE_CTRL_XSCALE_FREQ_400  ((0x1D)<<4)
 
@@ -197,7 +222,7 @@
  *
  * @def IX_FEATURE_CTRL_XSCALE_FREQ_266
  *
- * @brief This is the value of 266MHz Intel XScale(R) Core in product ID.
+ * @brief This is the value of 266MHz Intel XScale(R) Processor in product ID.
  */
 #define IX_FEATURE_CTRL_XSCALE_FREQ_266 ((0x1F)<<4)   
 
@@ -206,7 +231,7 @@
  *
  * @def IX_FEATURE_CTRL_XSCALE_FREQ_MASK
  *
- * @brief This is the mask of Intel XScale(R) Core in product ID.
+ * @brief This is the mask of Intel XScale(R) Processor in product ID.
  */
 #define IX_FEATURE_CTRL_XSCALE_FREQ_MASK ((0xFF)<<4)  
 
@@ -250,8 +275,8 @@
  */
 #define IX_FEATURECTRL_REG_UTOPIA_4PHY   0x3
 
-#ifdef __ixp46X
-
+#endif /* __ixp42X */
+#if defined(__ixp46X)
 /**
  * @ingroup IxFeatureCtrlAPI
  *
@@ -297,6 +322,7 @@
 #define IX_FEATURECTRL_REG_XSCALE_266FREQ   0x3
 
 #endif /* __ixp46X */
+
 
 /**
  * @ingroup IxFeatureCtrlAPI
@@ -363,13 +389,14 @@
  *
  * @brief Indicates software build type.
  *
- * Default build type is IXP42X
- *
  */
 typedef enum
 {
+#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURE_CTRL_SW_BUILD_IXP42X = 0, /**<Build type is IXP42X */
-    IX_FEATURE_CTRL_SW_BUILD_IXP46X      /**<Build type is IXP46X */
+    IX_FEATURE_CTRL_SW_BUILD_IXP46X,     /**<Build type is IXP46X */
+#endif /* __ixp42X */
+    IX_FEATURE_CTRL_SW_BUILD_MAX      /**<Max build types */
 } IxFeatureCtrlBuildDevice;
 
 /**
@@ -384,12 +411,14 @@ typedef enum
 typedef enum
 {
     IX_FEATURECTRL_ETH_LEARNING = 0,       /**< EthDB Learning Feature */
+#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURECTRL_ORIGB0_DISPATCHER,  /**< IXP42X B0 Silicon and IXP46X processor dispatcher without 
                                             livelock prevention functionality Feature */
-    IX_FEATURECTRL_SWCONFIG_MAX        /**< Maximum boudary for IxFeatureCtrlSwConfig  */
+#endif /* __ixp42X */
+    IX_FEATURECTRL_SWCONFIG_MAX    /**< Maximum boudary for IxFeatureCtrlSwConfig  */
 } IxFeatureCtrlSwConfig;
 
-
+#if defined(__ixp42X) || defined(__ixp46X)
 /************************************************************************
  * IXP400 Feature Control Register
  * - It contains the information (available/unavailable) of IXP425&IXP46X
@@ -474,10 +503,12 @@ typedef enum
     IX_FEATURECTRL_NPEA_ETH,  /**<bit location for NPE-A Ethernet Disable*/
     IX_FEATURECTRL_NPEB_ETH,  /**<bit location for NPE-B Ethernet 1-3 Coprocessors Disable*/
     IX_FEATURECTRL_RSA,       /**<bit location for RSA Crypto block Coprocessors Disable*/
-    IX_FEATURECTRL_XSCALE_MAX_FREQ, /**<bit location for Intel XScale(R) Core max frequency*/
+    IX_FEATURECTRL_XSCALE_MAX_FREQ, /**<bit location for Intel XScale(R) Processor max frequency*/
     IX_FEATURECTRL_XSCALE_MAX_FREQ_BIT2, /**<2nd xscale max freq bit NOT TO BE USED */
     IX_FEATURECTRL_MAX_COMPONENTS
 } IxFeatureCtrlComponentType;
+#endif /* __ixp42X */
+
 
 /**
  * @ingroup IxFeatureCtrlDeviceId
@@ -490,14 +521,21 @@ typedef enum
  *          with formats used in the npe image ImageID. This is indicated by the  
  *          first nibble of the image ID. This should also be in sync with the
  *          with what is defined in CP15.  Current available formats are
- *          - IXP42X - 0000
+ */
+#if defined(__ixp42X) || defined(__ixp46X)
+/*          - IXP42X - 0000
  *          - IXP46X - 0001
+ */
+#endif /* __ixp42X */
+/*
  *
  */
 typedef enum
 {
+#if defined(__ixp42X) || defined(__ixp46X)
     IX_FEATURE_CTRL_DEVICE_TYPE_IXP42X = 0, /**<Device type is IXP42X */
     IX_FEATURE_CTRL_DEVICE_TYPE_IXP46X, /**<Device type is IXP46X */
+#endif /* __ixp42X */
     IX_FEATURE_CTRL_DEVICE_TYPE_MAX /**<Max devices */
 } IxFeatureCtrlDeviceId;
 
@@ -526,7 +564,7 @@ typedef UINT32 IxFeatureCtrlReg;
  * @typedef IxFeatureCtrlProductId
  *
  * @brief Product ID of Silicon that contains Silicon Stepping and 
- *        Maximum Intel XScale(R) Core Frequency information.  
+ *        Maximum Intel XScale(R) Processor Frequency information.  
  */
 typedef UINT32 IxFeatureCtrlProductId;
 
@@ -534,24 +572,6 @@ typedef UINT32 IxFeatureCtrlProductId;
  * Prototypes for interface functions
  */
 
-/**
- * @ingroup IxFeatureCtrlAPI 
- *
- * @fn IxFeatureCtrlReg ixFeatureCtrlRead (void)
- * 
- * @brief This function reads out the CURRENT value of Feature Control Register.
- *        The current value may not be the same as that of the hardware component 
- *        availability.    
- * 
- * The bit location of each hardware component is defined above. 
- * A value of '1' in bit means the hardware component is not available.  A value of '0'   
- * means the hardware component is available.
- *
- * @return 
- *      - IxFeatureCtrlReg - the current value of IXP400 Feature Control Register
- */ 
-PUBLIC IxFeatureCtrlReg
-ixFeatureCtrlRead (void);
 
 /**
  * @ingroup IxFeatureCtrlAPI
@@ -577,12 +597,15 @@ ixFeatureCtrlDeviceRead (void);
  *
  * @brief This function refers to  the value set by the compiler flag to determine
  *        the type of device the software is built for.
- *
- * The function reads the compiler flag to determine the device the software is
+ */
+#if defined(__ixp42X) || defined(__ixp46X)
+/* The function reads the compiler flag to determine the device the software is
  * built for. When the user executes build in the command line, 
- * a compile time flag (__ixp42X/__ixp46X is set. This API reads this 
+ * a compile time flag (__ixp42X/__ixp46X) is set. This API reads this 
  * flag and returns the software build type to the calling client.
- *
+ */
+#endif /* __ixp42X */
+/*
  * @return
  *      - IxFeatureCtrlBuildDevice - the type of device software is built for.
  */
@@ -604,36 +627,14 @@ ixFeatureCtrlSoftwareBuildGet (void);
  * means the hardware component is available.
  *
  * @return 
- *      - IxFeatureCtrlReg - the hardware capability of IXP400. 
+ *      - IxFeatureCtrlReg - the hardware capability of the device. 
  *
  * @warning
- *      - This function must not be called when IXP400 is running as the result
+ *      - This function must not be called when the device is running as the result
  *        is undefined.    
  */ 
 PUBLIC IxFeatureCtrlReg
 ixFeatureCtrlHwCapabilityRead (void);
-
-/**
- * @ingroup IxFeatureCtrlAPI 
- *
- * @fn void ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg)
- * 
- * @brief This function write the value stored in IxFeatureCtrlReg expUnitReg  
- *        to the Feature Control Register. 
- * 
- * The bit location of each hardware component is defined above.
- * The write is only effective on available hardware components. Writing '1' in a  
- * bit will software disable the respective hardware component. A '0' will mean that  
- * the hardware component will remain to be operable. 
- *
- * @param expUnitReg @ref IxFeatureCtrlReg [in] - The value to be written to feature control 
- *                                          register.
- *
- * @return none
- *
- */ 
-PUBLIC void
-ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg);
 
 /**
  * @ingroup IxFeatureCtrlAPI 
@@ -645,14 +646,14 @@ ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg);
  *
  *        Usage Example:<br> 
  *         -  if(IX_FEATURE_CTRL_COMPONENT_DISABLED != 
- *              ixFeatureCtrlComponentCheck(IX_FEATURECTRL_ETH0)) <br>
+ *              ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEA)) <br>
  *         -  if(IX_FEATURE_CTRL_COMPONENT_ENABLED == 
- *              ixFeatureCtrlComponentCheck(IX_FEATURECTRL_PCI)) <br>
+ *              ixFeatureCtrlComponentCheck(IX_FEATURECTRL_NPEB)) <br>
  *
  * This function is typically called during component initialization time. 
  *
  * @param componentType @ref IxFeatureCtrlComponentType [in] - the type of a component as
- *        defined above as IX_FEATURECTRL_XXX (Exp: IX_FEATURECTRL_PCI, IX_FEATURECTRL_ETH0)           
+ *        defined above as IX_FEATURECTRL_XXX           
 
  *        
  * @return 
@@ -662,13 +663,13 @@ ixFeatureCtrlWrite (IxFeatureCtrlReg expUnitReg);
 PUBLIC IX_STATUS
 ixFeatureCtrlComponentCheck (IxFeatureCtrlComponentType componentType);
 
+
 /**
  * @ingroup IxFeatureCtrlAPI 
  * 
  * @fn IxFeatureCtrlProductId ixFeatureCtrlProductIdRead (void)
  * 
- * @brief This function will return IXP400 product ID i.e. CP15,
- *        Register 0.
+ * @brief This function will return the device product ID.
  *                                                
  * @return 
  *      - IxFeatureCtrlProductId - the value of product ID.
@@ -730,15 +731,20 @@ ixFeatureCtrlSwConfigurationWrite (IxFeatureCtrlSwConfig swConfigType, BOOL enab
 /**
  * @ingroup IxFeatureCtrlAPI 
  *
- * @fn void ixFeatureCtrlIxp400SwVersionShow (void)
+ * @fn void ixFeatureCtrlSwVersionShow (void)
  * 
- * @brief This function shows the current software release information for IXP400 
+ * @brief This function shows the current software release information for the device 
  *          
  * @return none
  *          
  */ 
 PUBLIC void
-ixFeatureCtrlIxp400SwVersionShow (void);
+ixFeatureCtrlSwVersionShow (void);
+
+
+#if defined(__ixp42X) || defined(__ixp46X)
+#include "../featureCtrl/include/IxFeatureCtrl_sp.h"
+#endif /* __ixp42X */
 
 #endif /* IXFEATURECTRL_H */
 

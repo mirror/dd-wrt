@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -68,12 +68,12 @@
  */
 #include "IxQMgr.h"
 #include "IxNpeDl.h"
+#include "IxNpeMh.h"
 #include "IxEthNpe.h"
 
 /* 
  * Intra module dependancies
  */
-
 #include "IxEthAccDataPlane_p.h"
 #include "IxEthAccMac_p.h"
 
@@ -139,6 +139,9 @@ IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthAccPortRxFrameAppendFCSEnablePriv(IxEthAcc
 IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthAccPortRxFrameAppendFCSDisablePriv(IxEthAccPortId portId);
 IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthAccTxSchedulingDisciplineSetPriv(IxEthAccPortId portId, IxEthAccSchedulerDiscipline sched);
 IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthAccRxSchedulingDisciplineSetPriv(IxEthAccSchedulerDiscipline sched);
+
+IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthHssAccCoExistInit(void);
+IX_ETH_ACC_PUBLIC IxEthAccStatus ixEthHssAccCoExistUninit(void);
 
 /*
  * Prototypes for all QM callbacks.
@@ -242,6 +245,9 @@ typedef struct
     IxOsalMutex MIBStatsGetResetAccessLock;
     IxOsalMutex npeLoopbackMessageLock;
     IxOsalMutex appendFCSConfigLock;
+    IxOsalMutex addrFilterConfigLock;
+    IxOsalMutex macRecoveryLock;
+    IxOsalMutex ackNotifyMacRecoveryDoneLock;
     IxEthAccMacAddr mcastAddrsTable[IX_ETH_ACC_MAX_MULTICAST_ADDRESSES];
     UINT32 mcastAddrIndex;
     IX_OSAL_MBUF *portDisableTxMbufPtr;
@@ -318,17 +324,39 @@ typedef struct
  */
 typedef struct
 {
-    BOOL               portInitialized;
+    BOOL portInitialized;
     UINT32 npeId; /**< NpeId for this port */
     IxEthAccTxDataInfo ixEthAccTxData; /**< Transmit data control structures */
     IxEthAccRxDataInfo ixEthAccRxData; /**< Recieve data control structures */
 } IxEthAccPortDataInfo; 
+
+
+/* event queue macros */
+#define EVENT_QUEUE_SIZE   10
+
+
+typedef struct
+{
+    UINT32 eventType;
+    IxNpeMhNpeId npeId;
+    IxEthAccPortId portID;
+} IxEthAccMacRecoveryEvent;
+
+typedef struct
+{
+    IxEthAccMacRecoveryEvent queue[EVENT_QUEUE_SIZE];
+    UINT32 base;
+    UINT32 length;
+} IxEthAccMacRecoveryEventQueue;
 
 extern IxEthAccPortDataInfo  ixEthAccPortData[];
 #define IX_ETH_IS_PORT_INITIALIZED(port) (ixEthAccPortData[port].portInitialized)
 
 extern BOOL ixEthAccServiceInit;
 #define IX_ETH_ACC_IS_SERVICE_INITIALIZED() (ixEthAccServiceInit == TRUE )
+
+extern  UINT32 ixEthAccTxSubmitBusyCount;
+extern UINT32 ixEthAccTrafficStopRequestCount;
 
 /*
  * NPE image ID (major revision) corresponding to ethernet images 
@@ -367,6 +395,50 @@ extern BOOL ixEthAccServiceInit;
  */
 #define IX_ETH_ACC_QMGR_LOWQ_INT_ENABLE_REG_OFFSET (0x430)
 #define IX_ETH_ACC_QMGR_LOWQ_INT_STATUS_REG_OFFSET (0x438)
+
+/* The initial value of stop request = no stop request */
+#define IX_ETH_ACC_NO_STOP_REQUEST  0
+
+
+
+/* The first stop request */
+#define IX_ETH_ACC_FIRST_STOP_REQUEST 1 
+
+/* Tx Frame Submit is not in progress */
+#define IX_ETH_ACC_TX_FRAME_SUBMIT_NOT_BUSY 0
+
+
+/* event management */
+#define EVENT_QUEUE_WRAP(offset)            ((offset) >= EVENT_QUEUE_SIZE ? (offset) - EVENT_QUEUE_SIZE : (offset))
+
+#define CAN_ENQUEUE(eventQueuePtr)          ((eventQueuePtr)->length < EVENT_QUEUE_SIZE)        
+
+#define QUEUE_HEAD(eventQueuePtr)           (&(eventQueuePtr)->queue[EVENT_QUEUE_WRAP((eventQueuePtr)->base + (eventQueuePtr)->length)])
+
+#define QUEUE_TAIL(eventQueuePtr)           (&(eventQueuePtr)->queue[(eventQueuePtr)->base])
+
+#define PUSH_UPDATE_QUEUE(eventQueuePtr)    { (eventQueuePtr)->length++; }
+
+#define SHIFT_UPDATE_QUEUE(eventQueuePtr) \
+        { \
+            (eventQueuePtr)->base = EVENT_QUEUE_WRAP((eventQueuePtr)->base + 1); \
+            (eventQueuePtr)->length--; \
+        }
+
+#define RESET_QUEUE(eventQueuePtr) \
+    { \
+        (eventQueuePtr)->base   = 0; \
+        (eventQueuePtr)->length = 0; \
+    }
+
+#define IX_ETH_ACC_VALIDATE_PORT_ID(portId) \
+    do                                                           \
+    {                                                            \
+        if(!IX_ETH_ACC_IS_PORT_VALID(portId))   \
+        {                                                        \
+	    return IX_ETH_ACC_INVALID_PORT;                      \
+        }                                                        \
+    } while(0)
 
 
 #endif /* ndef IxEthAcc_p_H */

@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -731,11 +731,12 @@ PUBLIC IxEthAccStatus ixEthAccPortInit(IxEthAccPortId portId);
  * @ingroup IxEthAcc
  *
  * @fn ixEthAccPortTxFrameSubmit( 
-    IxEthAccPortId portId,
-    IX_OSAL_MBUF *buffer, 
-    IxEthAccTxPriority priority)
+ *  IxEthAccPortId portId,
+ *  IX_OSAL_MBUF *buffer, 
+ *  IxEthAccTxPriority priority)
  * 
- * @brief This function shall be used to submit MBUFs buffers for transmission on a particular MAC device. 
+ * @brief This function shall be used to submit MBUFs buffers for transmission 
+ *        on a particular MAC device. 
  *
  * When the frame is transmitted, the buffer shall be returned thru the 
  * callback @a IxEthAccPortTxDoneCallback.
@@ -746,14 +747,16 @@ PUBLIC IxEthAccStatus ixEthAccPortInit(IxEthAccPortId portId);
  * Buffers shall be not queued for transmission if the port is disabled.
  * The port can be enabled using @a ixEthAccPortEnable
  *
+ * In case that Ethernet traffic service is stopped (@a ixEthAccStopRequest), 
+ * the function returns IX_ETH_ACC_FAIL without enqueuing the frame for transmission.
  * 
  * @li Reentrant    - yes
  * @li ISR Callable - yes
  *
  *
  * @pre 
- *  @a ixEthAccPortTxDoneCallbackRegister must be called to register a function to allow this service to
- *   return the buffer to the calling service. 
+ *  @a ixEthAccPortTxDoneCallbackRegister must be called to register a function 
+ *     to allow this service to return the buffer to the calling service. 
  * 
  * @note 
  *  If the buffer submit fails for any reason the user has retained ownership of the buffer.
@@ -965,12 +968,21 @@ typedef void (*IxEthAccPortRxCallback) (UINT32 callbackTag, IX_OSAL_MBUF *buffer
 
 typedef void (*IxEthAccPortMultiBufferRxCallback) (UINT32 callbackTag, IX_OSAL_MBUF **buffer);
 
-
+/**
+ * @ingroup IxEthAcc
+ *
+ * @def ixEthRxPriorityPoll
+ *
+ * @brief Following definition providing backward compatibility to ixEthRxPriorityPoll() function 
+ * that will be deprecated in future release 
+ *
+ */
+#define ixEthRxPriorityPoll ixEthAccRxPriorityPoll
 
 /**
  * @ingroup IxEthAcc
  *
- * @fn ixEthRxPriorityPoll
+ * @fn ixEthAccRxPriorityPoll
  *
  * @brief RX routine to get limited entries from priority queues
  *
@@ -987,8 +999,18 @@ typedef void (*IxEthAccPortMultiBufferRxCallback) (UINT32 callbackTag, IX_OSAL_M
  * into memory to reduce the number of stall cycles
  *
  */
-UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries);
+UINT32 ixEthAccRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries);
 
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @def ixEthRxMultiBufferPriorityPoll
+ *
+ * @brief Following definition providing backward compatibility to ixEthRxMultiBufferPriorityPoll() function
+ * that will be deprecated in future release
+ */
+#define ixEthRxMultiBufferPriorityPoll ixEthAccRxMultiBufferPriorityPoll
 
 /**
  * @fn ixEthRxMultiBufferPriorityPoll
@@ -1009,7 +1031,7 @@ UINT32 ixEthRxPriorityPoll(UINT32 reserved, UINT32 maxQEntries);
  * into memory to reduce the number of stall cycles
  *
  */
-UINT32 ixEthRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries);
+UINT32 ixEthAccRxMultiBufferPriorityPoll(UINT32 reserved, UINT32 maxQEntries);
 
 
 
@@ -1066,7 +1088,7 @@ ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
  * @li ISR Callable - yes
  *
  *
- * @param portId - Register callback for a particular MAC device.
+ * @param portId @ref IxEthAccPortId [in] - Register callback for a particular MAC device.
  * @param rxCallbackFn - @a IxEthAccMultiBufferRxCallbackFn - Function to be called when Ethernet frames are availble.
  * @param callbackTag -  This tag shall be provided to the callback function.
  *
@@ -1084,8 +1106,8 @@ ixEthAccPortRxCallbackRegister(IxEthAccPortId portId,
  */
 PUBLIC IxEthAccStatus
 ixEthAccPortMultiBufferRxCallbackRegister(IxEthAccPortId portId,
-										  IxEthAccPortMultiBufferRxCallback rxCallbackFn,
-										  UINT32 callbackTag);
+					  IxEthAccPortMultiBufferRxCallback rxCallbackFn,
+					  UINT32 callbackTag);
 
 /**
  * @ingroup IxEthAcc
@@ -1102,15 +1124,17 @@ ixEthAccPortMultiBufferRxCallbackRegister(IxEthAccPortId portId,
  *
  * @param portId @ref IxEthAccPortId [in] - Provide buffers only to specific Rx MAC. 
  * @param buffer @ref IX_OSAL_MBUF [in] - Provide an MBUF to the Ethernet receive mechanism. 
- *                 Buffers size smaller than IX_ETHACC_RX_MBUF_MIN_SIZE may result in poor
- *                 performances and excessive buffer chaining. Buffers
- *                 larger than this size may be suitable for jumbo frames.
- *                 Chained packets are not supported and the field IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR must be NULL. 
+ *                 Buffers smaller than IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN is
+ *                 not allowed. Buffers smaller than IX_ETHACC_RX_MBUF_MIN_SIZE 
+ *                 may result in poor performances and excessive buffer chaining. 
+ *                 Buffers larger than this size may be suitable for jumbo frames.
+ *                 Chained packets are not supported and the field 
+ *                 IX_OSAL_MBUF_NEXT_PKT_IN_CHAIN_PTR must be NULL. 
  *
  * @return IxEthAccStatus
  * @li @a IX_ETH_ACC_SUCCESS
  * @li @a IX_ETH_ACC_FAIL : Not able to queue the buffer in the receive service.
- * @li @a IX_ETH_ACC_FAIL : Buffer size is less than IX_ETHACC_RX_MBUF_MIN_SIZE
+ * @li @a IX_ETH_ACC_FAIL : Buffer size is less than IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN
  * @li @a IX_ETH_ACC_INVALID_PORT : portId is invalid.
  * @li @a IX_ETH_ACC_PORT_UNINITIALIZED : portId is un-initialized
  *
@@ -1373,8 +1397,8 @@ PUBLIC IxEthAccStatus ixEthAccPortUnicastMacAddressSet(IxEthAccPortId portId,
 /**
  * @ingroup IxEthAcc
  *
- * @fn ixEthAccPortUnicastMacAddressGet(	IxEthAccPortId portId, 
-					IxEthAccMacAddr *macAddr)
+ * @fn ixEthAccPortUnicastMacAddressGet(IxEthAccPortId portId, 
+ *					IxEthAccMacAddr *macAddr)
  *
  * @brief Get unicast MAC address for a particular MAC port 
  *
@@ -1399,16 +1423,13 @@ PUBLIC IxEthAccStatus ixEthAccPortUnicastMacAddressSet(IxEthAccPortId portId,
  */
 PUBLIC IxEthAccStatus
 ixEthAccPortUnicastMacAddressGet(IxEthAccPortId portId,
-								 IxEthAccMacAddr *macAddr);
-
-
-
+				 IxEthAccMacAddr *macAddr);
 
 /**
  * @ingroup IxEthAcc
  *
- * @fn ixEthAccPortMulticastAddressJoin(      IxEthAccPortId portId,
-                                             IxEthAccMacAddr *macAddr)
+ * @fn ixEthAccPortMulticastAddressJoin(IxEthAccPortId portId,
+ *                                      IxEthAccMacAddr *macAddr)
  *
  * @brief Add a multicast address to the MAC address table.
  *
@@ -1455,7 +1476,7 @@ ixEthAccPortUnicastMacAddressGet(IxEthAccPortId portId,
  */
 PUBLIC IxEthAccStatus
 ixEthAccPortMulticastAddressJoin(IxEthAccPortId portId,
-								 IxEthAccMacAddr *macAddr);
+				 IxEthAccMacAddr *macAddr);
 
 /**
  * @ingroup IxEthAcc
@@ -1508,8 +1529,8 @@ ixEthAccPortMulticastAddressJoinAll(IxEthAccPortId portId);
 /**
  * @ingroup IxEthAcc
  *
- * @fn ixEthAccPortMulticastAddressLeave( IxEthAccPortId portId,
-                                         IxEthAccMacAddr *macAddr)
+ * @fn ixEthAccPortMulticastAddressLeave(IxEthAccPortId portId,
+ *                                       IxEthAccMacAddr *macAddr)
  *
  * @brief Remove a multicast address from the MAC address table.
  *
@@ -1548,7 +1569,7 @@ ixEthAccPortMulticastAddressJoinAll(IxEthAccPortId portId);
  */
 PUBLIC IxEthAccStatus
 ixEthAccPortMulticastAddressLeave(IxEthAccPortId portId,
-								  IxEthAccMacAddr *macAddr);
+				  IxEthAccMacAddr *macAddr);
 
 /**
  * @ingroup IxEthAcc
@@ -2011,10 +2032,10 @@ ixEthAccRxSchedulingDisciplineSet(IxEthAccSchedulerDiscipline sched);
  *
  * @pre
  *
+ * @param portId @ref IxEthAccPortId [in] : ID of the port 
+ *
  * @note Calling ixEthAccPortDisable followed by ixEthAccPortEnable is
  * guaranteed to restore correct Ethernet Tx/Rx operation.
- *
- * @param portId : ID of the port 
  *
  * @return IxEthAccStatus
  * @li @a IX_ETH_ACC_SUCCESS : NPE loopback mode enabled
@@ -2048,7 +2069,7 @@ ixEthAccPortNpeLoopbackEnable(IxEthAccPortId portId);
  * @note Calling ixEthAccPortDisable followed by ixEthAccPortEnable is
  * guaranteed to restore correct Ethernet Tx/Rx operation.
  *
- * @param portId : ID of the port 
+ * @param portId @ref IxEthAccPortId [in] : ID of the port 
  *
  * @return IxEthAccStatus
  * @li @a IX_ETH_ACC_SUCCESS : NPE loopback successfully disabled
@@ -2158,7 +2179,7 @@ ixEthAccPortTxDisable(IxEthAccPortId portId);
  *
  * @pre
  *
- * @param portId : ID of the port 
+ * @param portId @ref IxEthAccPortId [in] : ID of the port 
  *
  * @return IxEthAccStatus
  * @li @a IX_ETH_ACC_SUCCESS : Rx successfully enabled
@@ -2233,7 +2254,7 @@ ixEthAccPortRxDisable(IxEthAccPortId portId);
  * @note Calling ixEthAccPortDisable followed by ixEthAccPortEnable is
  * guaranteed to restore correct Ethernet Tx/Rx operation.
  *
- * @param portId : ID of the port 
+ * @param portId @ref IxEthAccPortId [in] : ID of the port 
  *
  * @return IxEthAccStatus
  * @li @a IX_ETH_ACC_SUCCESS : MAC core reset
@@ -2311,6 +2332,146 @@ ixEthAccQMgrRxNotificationEnable(void);
 PUBLIC void
 ixEthAccQMgrRxQEntryGet(UINT32 *numEntries);
 
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn IxEthAccStatus ixEthAccStopRequest(void)
+ *
+ * @brief Request Ethernet access layer to stop Tx and Rx Services
+ *        for all the Ethernet ports. 
+ *
+ * This function maybe called multiple times e.g. NPE soft-errors in
+ * different NPEs. Whenever this function is called, an internal 
+ * counter is incremented by one. The internal counter keep tracks on
+ * the number of "stop Ethernet-service" requested by user. 
+ *
+ * If it is the first request, a disable signal is sent to QMgr 
+ * dispatcher function. On subsequent request, this function only 
+ * increments the value of the counter without disabling QMgr dispatcher.
+ *
+ * The internal counter is for synchronizing the posibility of multiple 
+ * requests to stop and resume Ethernet services.
+ *
+ * 
+ * @li Reentrant    - yes
+ * @li ISR Callable - yes
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE. User may use the APIs as follow:   <br>
+ *    1) Call @ref ixEthAccStopRequest to stop Ethernet service.     <br>
+ *    2) Check that Ethernet service has been stoppoed with        
+ *       @ref ixEthAccStopDoneCheck.                                 <br> 
+ *    3) Proceed with soft-error recovery routine.                   <br> 
+ *    4) Call @ref ixEthAccStartRequest to restart Ethernet service. <br> 
+ *
+ * @return IxEthAccStatus 
+ * @li @a IX_ETH_ACC_SUCCESS : "Stop Ethernet-service" request is posted successfully.
+ * @li @a IX_ETH_ACC_FAIL :    EthAcc service is not initialized.
+ *
+ * <hr>
+ */
+PUBLIC IxEthAccStatus
+ixEthAccStopRequest(void);
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn IxEthAccStatus ixEthAccStartRequest(void)
+ *
+ * @brief Request Ethernet access layer to restart its currently stopped 
+ *        Tx and Rx Services for all the Ethernet ports. 
+ *
+ * Whenever this function is called, the internal counter is decremented by one
+ * (@ref ixEthAccStopRequest increments this counter). If the counter becomes
+ * zero, this function sends an enable signal to QMgr dispatcher for it
+ * to procced in serving the queues.
+ *
+ * The internal counter is for synchronizing multiple requests to stop 
+ * and resume Ethernet services.
+ * 
+ *
+ * @li Reentrant    - yes
+ * @li ISR Callable - no
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE. User may use the APIs as follow:   <br>
+ *    1) Call @ref ixEthAccStopRequest to stop Ethernet service.     <br>
+ *    2) Check that Ethernet service has been stoppoed with        
+ *       @ref ixEthAccStopDoneCheck.                                 <br> 
+ *    3) Proceed with soft-error recovery routine.                   <br> 
+ *    4) Call @ref ixEthAccStartRequest to restart Ethernet service. <br> 
+ *
+ * @return IxEthAccStatus 
+ * @li @a IX_ETH_ACC_SUCCESS : Service start request is posted successfully.
+ * @li @a IX_ETH_ACC_FAIL :    EthAcc service is not initialized.
+ *
+ * <hr>
+ */
+PUBLIC IxEthAccStatus 
+ixEthAccStartRequest(void);
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn BOOL ixEthAccStopDoneCheck(void)
+ *
+ * @brief Checks whether the Ethernet traffic service is stopped completely. 
+ *
+ * @li Reentrant    - yes
+ * @li ISR Callable - no
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE. User may use the APIs as follow:   <br>
+ *    1) Call @ref ixEthAccStopRequest to stop Ethernet service.     <br>
+ *    2) Check that Ethernet service has been stoppoed with        
+ *       @ref ixEthAccStopDoneCheck.                                 <br> 
+ *    3) Proceed with soft-error recovery routine.                   <br> 
+ *    4) Call @ref ixEthAccStartRequest to restart Ethernet service. <br> 
+ *
+ * @return BOOL 
+ * @li @a TRUE  : Ethernet Tx & Rx services for all ports are stopped
+ * @li @a FALSE : Ethernet Tx & Rx services for all ports are not stopped
+ *
+ * <hr>
+ */
+PUBLIC BOOL 
+ixEthAccStopDoneCheck(void);
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn IxEthAccStatus ixEthAccQMStatusUpdate(IxEthAccPortId portId)
+ *
+ * @brief To retrigger the update of queue condition (interrupt and status flag)
+ *        in order to restore these states that are lost during soft-error handling. 
+ *        This ensures Eth-NPE to continue its services.
+ *
+ * @li Reentrant    - no
+ * @li ISR Callable - no
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE.
+ * 
+ * @note
+ *    It is expected that IRQ is disabled when this function is called.
+ *
+ * @param portId @ref IxEthAccPortId [in] : ID of the port
+ *
+ * @return IxEthAccStatus
+ * @li @a IX_ETH_ACC_SUCCESS : Queue conditions are retriggered
+ * @li @a IX_ETH_ACC_FAIL : Queue conditions are not retriggered
+ * @li @a IX_ETH_ACC_INVALID_PORT : portId is invalid.
+ * @li @a IX_ETH_ACC_PORT_UNINITIALIZED : PORT is not initialized
+ *
+ * <hr>
+ */
+PUBLIC IxEthAccStatus 
+ixEthAccQMStatusUpdate(IxEthAccPortId portId);
+
 
 /*********************************************************************************
   ####    #####    ##     #####     #     ####    #####     #     ####    ####
@@ -2358,6 +2519,8 @@ typedef struct
     UINT32 dot3StatsCarrierSenseErrors;         /**< link error count (tx) */
     UINT32 TxLargeFrameDiscards;                /**< NPE: discarded frames count (tx) */
     UINT32 TxVLANIdFilterDiscards;              /**< NPE: discarded frames count (tx) */
+    UINT32 TxUnderrunDiscards;                  /**< NPE: discarded frames count (tx) */
+    UINT32 MacRecoveryTriggered;                /**< MAC recovery count  */
 
     /* The following stats are only returned by images
      * supporting extended MIBII stats */
@@ -2499,6 +2662,38 @@ PUBLIC IxEthAccStatus ixEthAccMacInit(IxEthAccPortId portId);
  */
 PUBLIC IxEthAccStatus
 ixEthAccMacUninit (IxEthAccPortId portId);
+
+/**
+ * @ingroup IxEthAcc
+ *
+ * @fn  IxEthAccStatus ixEthAccMacStateRestore (IxEthAccPortId portId)
+ *
+ * @brief This function reconfigures the MAC Registers according to the 
+ *        settings in use prior to the occurrence of a soft-error in the NPE.
+ *
+ * @li Reentrant    - no
+ * @li ISR Callable - no
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE.
+ *
+ * @pre  
+ *
+ * @param portId @ref IxEthAccPortId [in] 
+ *
+ * @return IxEthAccStatus
+ * @li @a IX_ETH_ACC_SUCCESS : MAC settings are reupdated
+ * @li @a IX_ETH_ACC_FAIL : MAC settings are not reupdated
+ * @li @a IX_ETH_ACC_INVALID_PORT : portId is invalid.
+ * @li @a IX_ETH_ACC_PORT_UNINITIALIZED : PORT is not initialized
+ * @li @a IX_ETH_ACC_MAC_UNINITIALIZED : port MAC address is not initialized
+ *
+ * <hr>
+ */
+PUBLIC IxEthAccStatus 
+ixEthAccMacStateRestore(IxEthAccPortId portId);
+
 /**
  * @ingroup IxEthAcc
  *

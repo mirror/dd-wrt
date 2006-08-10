@@ -9,7 +9,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -98,7 +98,9 @@
 #include "IxHssAcc.h"
 #include "IxOsal.h"
 #include "IxQMgr.h"
-#include "IxHssAccPDM_p.h"
+
+#include "IxHssAccCommon_p.h"
+
 #include "IxNpeMh.h"
 
 /**
@@ -369,7 +371,7 @@ ixHssAccPCMTxDoneCallbackRun (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPo
                                              IxHssAccHdlcPort hdlcPortId);
  *
  * @brief This function is used by the PCM to run the clients Rx Free Callback 
- * function. This function is called when there is a low number of descriptors
+ * function. This function is called when there is a low number of entries
  * in the RXFreeQMQ.
  *
  * @param IxHssAccHssPort hssPortId - This is the HSS port number on which the 
@@ -479,6 +481,49 @@ ixHssAccPCMRxFreeQIdGet (IxHssAccHssPort hssPortId,
 
 IXHSSACCPCM_INLINE IxQMgrQId
 ixHssAccPCMTxQIdGet (IxHssAccHssPort hssPortId, IxHssAccHdlcPort hdlcPortId);
+
+/**
+ * @fn IX_STATUS ixHssAccPCMnoBuffersInUseCountInc(IxHssAccHssPort hssPortId,
+                                IxHssAccHdlcPort hdlcPortId,
+                                UINT32 count)
+ *
+ * @brief This function is called to increment the number of buffers in use
+ * count for the client (HSS port and HDLC channel combination).
+ *
+ * @param IxHssAccHssPort hssPortId (in) - This is the HSS port number of the client 
+ * @param IxHssAccHdlcPort hdlcPortId (in) - This is the HDLC port number of the client
+ * @param UINT32 count (in) - This is the count by which the number of buffers count
+ * will be incremented for the client.
+ *
+ * @return 
+ *         - IX_SUCCESS The function executed successfully
+ *         - IX_FAIL The function did not execute successfully
+ */
+IX_STATUS 
+ixHssAccPCMnoBuffersInUseCountInc(IxHssAccHssPort hssPortId,
+            IxHssAccHdlcPort hdlcPortId,
+            UINT32 count);
+
+/**
+ * @fn IX_STATUS ixHssAccPCMnoBuffersInUseCountDec(IxHssAccHssPort hssPortId, 
+                                IxHssAccHdlcPort hdlcPortId, 
+                                UINT32 count)
+ *
+ * @brief This function is called to decrement the number of buffers in use
+ * count for the client (HSS port and HDLC channel combination).
+ * @param IxHssAccHssPort hssPortId (in) - This is the HSS port number of the client 
+ * @param IxHssAccHdlcPort hdlcPortId (in) - This is the HDLC port number of the client
+ * @param UINT32 count (in) - This is the count by which the number of buffers count
+ * will be decremented for the client.
+ * 
+ * @return 
+ *         - IX_SUCCESS The function executed successfully
+ *         - IX_FAIL The function did not execute successfully
+ */
+IX_STATUS 
+ixHssAccPCMnoBuffersInUseCountDec(IxHssAccHssPort hssPortId, 
+                IxHssAccHdlcPort hdlcPortId, 
+                UINT32 count);
 
 /**
  * @fn IX_STATUS ixHssAccPCMInit (void);

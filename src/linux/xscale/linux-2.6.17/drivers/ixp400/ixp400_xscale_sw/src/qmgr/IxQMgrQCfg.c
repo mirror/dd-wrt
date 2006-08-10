@@ -2,16 +2,16 @@
  * @file    QMgrQCfg.c
  *
  * @author Intel Corporation
- * @date    30-Oct-2001
+ * @date    26-Jan-2006
  * 
  * @brief   This modules provides an interface for setting up the static
- * configuration of AQM queues.This file contains the following
+ * configuration of HwQ queues. This file contains the following
  * functions:
  *
  * 
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -58,11 +58,15 @@
 /*
  * User defined include files.
  */
+ 
 #include "IxOsal.h"
-#include "IxQMgr.h"
-#include "IxQMgrAqmIf_p.h"
+#include "IxQMgr_sp.h"
 #include "IxQMgrQCfg_p.h"
 #include "IxQMgrDefines_p.h"
+
+#if defined(__ixp42X) || defined(__ixp46X)
+#include "IxQMgrHwQIfIxp400_p.h"
+#endif /* __ixp42X */
 
 /*
  * #defines and macros used in this file.
@@ -70,8 +74,10 @@
 
 #define IX_QMGR_MIN_ENTRY_SIZE_IN_WORDS 16
 
-/* Total size of SRAM */
-#define IX_QMGR_AQM_SRAM_SIZE_IN_BYTES 0x4000
+/* Size of SRAM in a qmgr memory map block in bytes
+ */
+
+#define IX_QMGR_HWQ_SRAM_SIZE_IN_BYTES 0x4000
 
 /*
  * Check that qId is a valid queue identifier. This is provided to
@@ -85,7 +91,7 @@
  */
 
 /*
- * This struct describes an AQM queue.
+ * This struct describes an HwQ queue.
  * N.b. bufferSizeInWords and qEntrySizeInWords are stored in the queue
  * as these are requested by Access in the data path. sizeInEntries is
  * not required by the data path so it can be calculated dynamically.
@@ -106,7 +112,7 @@ typedef struct
  * statics.
  */
 
-extern UINT32 * ixQMgrAqmIfQueAccRegAddr[]; 
+extern UINT32 * ixQMgrHwQIfQueAccRegAddr[]; 
 
 /* Store data required to inline read and write access
  */
@@ -114,10 +120,13 @@ IxQMgrQInlinedReadWriteInfo ixQMgrQInlinedReadWriteInfo[IX_QMGR_MAX_NUM_QUEUES];
 
 static IxQMgrCfgQ cfgQueueInfo[IX_QMGR_MAX_NUM_QUEUES];
 
-/* This pointer holds the starting address of AQM SRAM not used by
- * the AQM queues.
+/* This pointer holds the starting address of HwQ SRAM not used by
+ * the HwQ queues.
  */
-static UINT32 freeSramAddress=0;
+
+#if defined(__ixp42X) || defined(__ixp46X)
+static UINT32 freeSramAddress[IX_QMGR_MEM_MAP_BLOCK_MAX] = {0};
+#endif /* __ixp42X */
 
 /* 4 words of zeroed memory for inline access */
 static UINT32 zeroedPlaceHolder[4] = { 0, 0, 0, 0 };
@@ -149,47 +158,51 @@ qEntrySizeInWordsIsOk (IxQMgrQEntrySizeInWords entrySize);
 void
 ixQMgrQCfgInit (void)
 {
-    int loopIndex;
+    UINT32 qIndex, blockIndex;
     
-    for (loopIndex=0; loopIndex < IX_QMGR_MAX_NUM_QUEUES;loopIndex++)
+    for (qIndex=0; qIndex < IX_QMGR_MAX_NUM_QUEUES;qIndex++)
     {
 	/* info for code inlining */
-	ixQMgrAqmIfQueAccRegAddr[loopIndex] = zeroedPlaceHolder;
+	ixQMgrHwQIfQueAccRegAddr[qIndex] = zeroedPlaceHolder;
 
 	/* info for code inlining */
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qReadCount = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qWriteCount = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qAccRegAddr = zeroedPlaceHolder;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qUOStatRegAddr = zeroedPlaceHolder;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qUflowStatBitMask = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qOflowStatBitMask = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qEntrySizeInWords = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qSizeInEntries = 0;
-	ixQMgrQInlinedReadWriteInfo[loopIndex].qConfigRegAddr = zeroedPlaceHolder;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qReadCount = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qWriteCount = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qAccRegAddr = zeroedPlaceHolder;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qUOStatRegAddr = zeroedPlaceHolder;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qUflowStatBitMask = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qOflowStatBitMask = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qEntrySizeInWords = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qSizeInEntries = 0;
+	ixQMgrQInlinedReadWriteInfo[qIndex].qConfigRegAddr = zeroedPlaceHolder;
    }
 
-    /* Initialise the AqmIf component */
-    ixQMgrAqmIfInit ();
+    /* Initialise the HwQIf component */
+    ixQMgrHwQIfInit ();
    
     /* Reset all queues to have queue name = NULL, entry size = 0 and
      * isConfigured = false
      */
-    for (loopIndex=0; loopIndex < IX_QMGR_MAX_NUM_QUEUES;loopIndex++)
+    for (qIndex=0; qIndex < IX_QMGR_MAX_NUM_QUEUES;qIndex++)
     {
-	strcpy (cfgQueueInfo[loopIndex].qName, "");
-	cfgQueueInfo[loopIndex].qSizeInWords = 0;
-	cfgQueueInfo[loopIndex].qEntrySizeInWords = 0;
-	cfgQueueInfo[loopIndex].isConfigured = FALSE;
+	strcpy (cfgQueueInfo[qIndex].qName, "");
+	cfgQueueInfo[qIndex].qSizeInWords = 0;
+	cfgQueueInfo[qIndex].qEntrySizeInWords = 0;
+	cfgQueueInfo[qIndex].isConfigured = FALSE;
 
 	/* Statistics */
-	stats.qStats[loopIndex].isConfigured = FALSE;
-	stats.qStats[loopIndex].qName = cfgQueueInfo[loopIndex].qName;
+	stats.qStats[qIndex].isConfigured = FALSE;
+	stats.qStats[qIndex].qName = cfgQueueInfo[qIndex].qName;
     }
 
     /* Statistics */
     stats.wmSetCnt = 0;
 
-    ixQMgrAqmIfSramBaseAddressGet (&freeSramAddress);
+    for (blockIndex = 0; blockIndex < IX_QMGR_MEM_MAP_BLOCK_MAX; blockIndex++)
+    {
+        ixQMgrHwQIfInternalSramBaseAddressGet (blockIndex, &freeSramAddress[blockIndex]);
+	freeSramAddress[blockIndex] -= (blockIndex * IX_QMGR_MEM_MAP_BLOCK_SIZE);
+    }
     
     ixOsalMutexInit(&ixQMgrQCfgMutex);
 
@@ -200,28 +213,34 @@ void
 ixQMgrQCfgUninit (void)
 {
 
-    UINT32 loopIndex;
+    UINT32 qIndex, blockIndex;
+    UINT8 retVal = IX_SUCCESS;
     cfgInitialized = FALSE;
 
     ixOsalMutexDestroy (&ixQMgrQCfgMutex);
 
-    for (loopIndex = 0; loopIndex < IX_QMGR_MAX_NUM_QUEUES; loopIndex++)
+    for (qIndex = 0; qIndex < IX_QMGR_MAX_NUM_QUEUES; qIndex++)
     {
-		ixOsalSleep(1);	
+        ixOsalSleep(1);
 
+        retVal = ixQMgrNotificationDisable (qIndex);
         /* Reset the qMgr Notification Callback to NULL */
-        if(IX_SUCCESS != ixQMgrNotificationDisable (loopIndex) )
+        if(IX_SUCCESS != retVal && IX_QMGR_Q_NOT_CONFIGURED != retVal)
         {
             IX_QMGR_LOG_WARNING1("Failed to Disable Notification the queue."
-                                 ".qid - %d\n", loopIndex);
-	    }
+                                 ".qid - %d\n", qIndex);
+	}
 
-        cfgQueueInfo[loopIndex].isConfigured = FALSE;
+        cfgQueueInfo[qIndex].isConfigured = FALSE;
     }
-    freeSramAddress = 0;
+    
+    for (blockIndex = 0; blockIndex < IX_QMGR_MEM_MAP_BLOCK_MAX; blockIndex++)
+    {
+        freeSramAddress[blockIndex] = 0;
+    }
 
-    /* Uninitialise the AqmIf component */
-    ixQMgrAqmIfUninit ();
+    /* Uninitialise the HwQIf component */
+    ixQMgrHwQIfUninit ();
 }
 
 IX_STATUS
@@ -230,13 +249,15 @@ ixQMgrQConfig (char *qName,
 	      IxQMgrQSizeInWords qSizeInWords,
 	      IxQMgrQEntrySizeInWords qEntrySizeInWords)
 {
-    UINT32 aqmLocalBaseAddress;
+    UINT32 hwQLocalBaseAddress;
+    UINT32 block;
 
     if (!cfgInitialized)
     {
         return IX_FAIL;
     }
     
+    /* Validate parameters */
     if (!IX_QMGR_QID_IS_VALID(qId))
     {
 	return IX_QMGR_INVALID_Q_ID;
@@ -270,7 +291,7 @@ ixQMgrQConfig (char *qName,
     ixOsalMutexLock(&ixQMgrQCfgMutex, IX_OSAL_WAIT_FOREVER);
 
     /* Write the config register */
-    ixQMgrAqmIfQueCfgWrite (qId,
+    ixQMgrHwQIfQueCfgWrite (qId,
 			   qSizeInWords,
 			   qEntrySizeInWords,
 			   freeSramAddress);
@@ -290,16 +311,24 @@ ixQMgrQConfig (char *qName,
     ixQMgrQInlinedReadWriteInfo[qId].qSizeInEntries = 
 		(UINT32)qSizeInWords / (UINT32)qEntrySizeInWords;
 
+    /* Determine which memory map block the queue is in
+     */
+    block = qId / IX_QMGR_NUM_QUEUES_PER_MEM_MAP_BLOCK;
+ 
     /* Calculate the new freeSramAddress from the size of the queue
      * currently being configured.
      */
-    freeSramAddress += (qSizeInWords * IX_QMGR_NUM_BYTES_PER_WORD);
+    freeSramAddress[block] += (qSizeInWords * IX_QMGR_NUM_BYTES_PER_WORD);
 
     /* Get the virtual SRAM address */
-    ixQMgrAqmIfBaseAddressGet (&aqmLocalBaseAddress);
+    ixQMgrHwQIfBaseAddressGet (&hwQLocalBaseAddress);
 
-    IX_OSAL_ASSERT((freeSramAddress - (aqmLocalBaseAddress + (IX_QMGR_QUEBUFFER_SPACE_OFFSET))) <=
-	      IX_QMGR_QUE_BUFFER_SPACE_SIZE);
+    /* Determine if configuring and allocating sram space to this queue means that 
+     * the amount of sram space used has not exceeded the total amount of sram available
+     */ 
+    IX_OSAL_ASSERT((freeSramAddress[block] - 
+                   (hwQLocalBaseAddress + (IX_QMGR_QUEBUFFER0_SPACE_OFFSET))) <=
+	           IX_QMGR_QUE_BUFFER_SPACE_SIZE);
 
     /* The queue is now configured */
     cfgQueueInfo[qId].isConfigured = TRUE;
@@ -372,19 +401,19 @@ ixQMgrWatermarkSet (IxQMgrQId qId,
     }
 
     /* Get the current queue status */
-    ixQMgrAqmIfQueStatRead (qId, &qStatusOnEntry);
+    ixQMgrHwQIfQueStatRead (qId, &qStatusOnEntry);
 
 #ifndef NDEBUG
     /* Update statistics */
     stats.wmSetCnt++;
 #endif
 
-    ixQMgrAqmIfWatermarkSet (qId,
+    ixQMgrHwQIfWatermarkSet (qId,
 			    ne,
 			    nf);
 
     /* Get the current queue status */
-    ixQMgrAqmIfQueStatRead (qId, &qStatusOnExit);
+    ixQMgrHwQIfQueStatRead (qId, &qStatusOnExit);
   
     /* If the status has changed return a warning */
     if (qStatusOnEntry != qStatusOnExit)
@@ -397,23 +426,37 @@ ixQMgrWatermarkSet (IxQMgrQId qId,
 
 IX_STATUS
 ixQMgrAvailableSramAddressGet (UINT32 *address,
-			      unsigned *sizeOfFreeRam)
+			       unsigned *sizeOfFreeRam)
+{ 
+    return ixQMgrAvailableSramAddressInBlockGet(IX_QMGR_MEM_MAP_BLOCK_0,
+                                                address,
+						sizeOfFreeRam);
+}
+
+IX_STATUS
+ixQMgrAvailableSramAddressInBlockGet (IxQMgrMemMapBlock block,
+                                      UINT32 *address,
+			              UINT32 *sizeOfFreeRam)
 {
-    UINT32 aqmLocalBaseAddress;
+    UINT32 hwQLocalBaseAddress;
 
     if ((NULL == address)||(NULL == sizeOfFreeRam)) 
     {
 	return IX_QMGR_PARAMETER_ERROR;
+    }
+    if (block >= IX_QMGR_MEM_MAP_BLOCK_MAX)
+    {
+        return IX_QMGR_PARAMETER_ERROR;
     }
     if (!cfgInitialized)
     {
 	return IX_FAIL;
     }
 
-    *address = freeSramAddress;
-
     /* Get the virtual SRAM address */
-    ixQMgrAqmIfBaseAddressGet (&aqmLocalBaseAddress);
+    ixQMgrHwQIfBaseAddressGet (&hwQLocalBaseAddress);
+    
+    *address = freeSramAddress[block];
 
     /* 
      * Calculate the size in bytes of free sram 
@@ -421,15 +464,14 @@ ixQMgrAvailableSramAddressGet (UINT32 *address,
      *      (base + total size)
      */
     *sizeOfFreeRam = 
-	(aqmLocalBaseAddress +
-	IX_QMGR_AQM_SRAM_SIZE_IN_BYTES) -
-	freeSramAddress;
-
+	(hwQLocalBaseAddress +
+	IX_QMGR_HWQ_SRAM_SIZE_IN_BYTES) -
+	freeSramAddress[block];
+    
     if (0 == *sizeOfFreeRam)
     {
 	return IX_QMGR_NO_AVAILABLE_SRAM;
     }
-
     return IX_SUCCESS;
 }
 
@@ -453,8 +495,8 @@ ixQMgrQCfgStatsGet (void)
 IxQMgrQCfgStats*
 ixQMgrQCfgQStatsGet (IxQMgrQId qId)
 {
-    unsigned int ne;
-    unsigned int nf;
+    UINT32 ne;
+    UINT32 nf;
     UINT32 baseAddress;
     UINT32 readPtr;
     UINT32 writePtr;
@@ -470,7 +512,7 @@ ixQMgrQCfgQStatsGet (IxQMgrQId qId)
         }
     }
 
-    ixQMgrAqmIfQueCfgRead (qId,
+    ixQMgrHwQIfQueCfgRead (qId,
 			   stats.qStats[qId].numEntries,
 			   &baseAddress,
 			   &ne,
@@ -494,7 +536,7 @@ ixQMgrQCfgQStatsGet (IxQMgrQId qId)
 PRIVATE BOOL
 watermarkLevelIsOk (IxQMgrQId qId, IxQMgrWMLevel level)
 {
-    unsigned qSizeInEntries;
+    UINT32 qSizeInEntries;
 
     switch (level)
     {
@@ -514,7 +556,7 @@ watermarkLevelIsOk (IxQMgrQId qId, IxQMgrWMLevel level)
     /* Check watermark is not bigger than the qSizeInEntries */
     ixQMgrQSizeInEntriesGet(qId, &qSizeInEntries);
 
-    if ((unsigned)level > qSizeInEntries)
+    if ((UINT32)level > qSizeInEntries)
     {
 	return FALSE;
     }
@@ -562,3 +604,4 @@ qEntrySizeInWordsIsOk (IxQMgrQEntrySizeInWords entrySize)
 
     return status;
 }
+    

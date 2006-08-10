@@ -4,7 +4,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -747,6 +747,28 @@ void ixEthDBDatabaseMaintenance(void);
 /**
  * @ingroup IxEthDB
  *
+ * @fn IxEthDBStatus ixEthDBEventProcessorPauseModeSet (BOOL pauseEnable)
+ *
+ * @brief Pauses/resumes Ethernet DB event processor
+ * 
+ * This API is provided to pause/resume Ethernet DB event processor
+ * without the need to kill and recreate event processor thread.
+ *
+ * - Reentrant    - no
+ * - ISR Callable - no
+ * 
+ * @param  pauseEnable BOOL [in] - pause mode: TRUE/FALSE 
+ *
+ * @retval IX_ETH_DB_SUCCESS Changing the pause mode is successful.
+ * @retval IX_ETH_DB_FAIL    Ethernet event processor is not started. 
+ *                           So, changing the pause mode is unsuccessful.
+ */
+IX_ETH_DB_PUBLIC
+IxEthDBStatus ixEthDBEventProcessorPauseModeSet (BOOL pauseEnable);
+
+/**
+ * @ingroup IxEthDB
+ *
  * @fn IxEthDBStatus ixEthDBFilteringDatabaseShow(IxEthDBPortId  portID)
  *
  * @brief This function displays the Mac Ethernet MAC address filtering tables.
@@ -1338,20 +1360,20 @@ IxEthDBStatus ixEthDBAcceptableFrameTypeGet(IxEthDBPortId portID, IxEthDBFrameFi
  *
  * The priority mapping table is an 8x2 table mapping a QoS (user) priority into an internal
  * traffic class. There are 8 valid QoS priorities (0..7, 0 being the lowest) which can be
- * mapped into one of the 4 available traffic classes (0..3, 0 being the lowest).
+ * mapped into one of the 8 available traffic classes (0..7, 0 being the lowest).
  * If a custom priority mapping table is not specified using this function the following
  * default priority table will be used (as per IEEE 802.1Q and IEEE 802.1D):
  * 
  * <table border="1"> <caption> QoS traffic classes  </caption>
  *    <tr> <td> <b> QoS priority <td> <b> Default traffic class <td> <b> Traffic type </b>
- *    <tr> <td>      0       <td>           1           <td> Best effort, default class for unexpedited traffic
+ *    <tr> <td>      0       <td>           2           <td> Best effort, default class for unexpedited traffic
  *    <tr> <td>      1       <td>           0           <td> Background traffic
- *    <tr> <td>      2       <td>           0           <td> Spare bandwidth
- *    <tr> <td>      3       <td>           1           <td> Excellent effort
- *    <tr> <td>      4       <td>           2           <td> Controlled load
- *    <tr> <td>      5       <td>           2           <td> Video traffic
- *    <tr> <td>      6       <td>           3           <td> Voice traffic
- *    <tr> <td>      7       <td>           3           <td> Network control
+ *    <tr> <td>      2       <td>           1           <td> Spare bandwidth
+ *    <tr> <td>      3       <td>           3           <td> Excellent effort
+ *    <tr> <td>      4       <td>           4           <td> Controlled load
+ *    <tr> <td>      5       <td>           5           <td> Video traffic
+ *    <tr> <td>      6       <td>           6           <td> Voice traffic
+ *    <tr> <td>      7       <td>           7           <td> Network control
  * </table>
  *
  * - Reentrant    - no
@@ -1406,6 +1428,31 @@ IxEthDBStatus ixEthDBPriorityMappingTableSet(IxEthDBPortId portID, IxEthDBPriori
  */
 IX_ETH_DB_PUBLIC 
 IxEthDBStatus ixEthDBPriorityMappingTableGet(IxEthDBPortId portID, IxEthDBPriorityTable priorityTable);
+
+/**
+ * @ingroup IxEthDB
+ *
+ * @fn IxEthDBStatus ixEthDBPriorityMappingTableUpdate(IxEthDBPortId portID)
+ *
+ * @brief Reloads the last port priority mapping table set by the user.
+ *        (see also @ref ixEthDBPriorityMappingTableSet).
+ *
+ * @param portID @ref IxEthDBPortId [in] - ID of the port
+ * 
+ * @retval IX_ETH_DB_SUCCESS operation completed successfully
+ * @retval IX_ETH_DB_INVALID_PORT portID is not a valid port identifier
+ * @retval IX_ETH_DB_PORT_UNINITIALIZED port is not initialized
+ * @retval IX_ETH_DB_FAIL    operatoin fails
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE. <br>
+ *    As this function is needed in non VLAN/QoS case to reconfigure
+ *    Ethernet Rx queue, it does not checks for VLAN/QoS feature
+ *    is enabled. 
+ */
+IX_ETH_DB_PUBLIC
+IxEthDBStatus ixEthDBPriorityMappingTableUpdate(IxEthDBPortId portID);
 
 /**
  * @ingroup IxEthDB
@@ -1686,7 +1733,7 @@ IxEthDBStatus ixEthDBIngressVlanTaggingEnabledGet(IxEthDBPortId portID, IxEthDBT
  * @brief Enables or disables port ID extraction
  *
  * This feature can be used in the situation when a multi-port device (e.g. a switch) 
- * is connected to an IXP4xx port and the device can provide incoming frame port 
+ * is connected to an IXP4XX port and the device can provide incoming frame port 
  * identification by tagging the TPID field in the Ethernet frame. Enabling
  * port extraction will instruct the NPE to copy the TPID field from the frame and 
  * place it in the <i>ixp_ne_src_port</i> of the <i>ixp_buf</i> header. In addition,
@@ -1793,14 +1840,14 @@ IxEthDBStatus ixEthDBFeatureCapabilityGet(IxEthDBPortId portID, IxEthDBFeature *
  * 
  * <table border="1"> <caption> QoS traffic classes  </caption>
  *    <tr> <td> <b> QoS priority <td> <b> Default traffic class <td> <b> Traffic type </b>
- *    <tr> <td>      0       <td>           1           <td> Best effort, default class for unexpedited traffic
+ *    <tr> <td>      0       <td>           2           <td> Best effort, default class for unexpedited traffic
  *    <tr> <td>      1       <td>           0           <td> Background traffic
- *    <tr> <td>      2       <td>           0           <td> Spare bandwidth
- *    <tr> <td>      3       <td>           1           <td> Excellent effort
- *    <tr> <td>      4       <td>           2           <td> Controlled load
- *    <tr> <td>      5       <td>           2           <td> Video traffic
- *    <tr> <td>      6       <td>           3           <td> Voice traffic
- *    <tr> <td>      7       <td>           3           <td> Network control
+ *    <tr> <td>      2       <td>           1           <td> Spare bandwidth
+ *    <tr> <td>      3       <td>           3           <td> Excellent effort
+ *    <tr> <td>      4       <td>           4           <td> Controlled load
+ *    <tr> <td>      5       <td>           5           <td> Video traffic
+ *    <tr> <td>      6       <td>           6           <td> Voice traffic
+ *    <tr> <td>      7       <td>           7           <td> Network control
  * </table>
  *
  * <i> Firewall </i>
@@ -1952,6 +1999,37 @@ IxEthDBStatus ixEthDBFeaturePropertyGet(IxEthDBPortId portID, IxEthDBFeature fea
  */
 IX_ETH_DB_PUBLIC 
 IxEthDBStatus ixEthDBFeaturePropertySet(IxEthDBPortId portID, IxEthDBFeature feature, IxEthDBProperty property, void *value);
+
+/**
+ * @ingroup IxEthDB
+ *
+ * @fn IxEthDBStatus ixEthDBFeatureStatesRestore(IxEthDBPortId portId)
+ *
+ * @brief Restores the state of EthDB based on latest settings, 
+ *        following the occurrence of an NPE soft-error.  State is 
+ *        restored by re-downloading tables for the enabled 
+ *        features (e.g. Header Conversion and Firewall)
+ *        or sending configuration messages to NPE.
+ *
+ * @param portID @ref IxEthDBPortId [in] - ID of the port
+ * 
+ * @retval IX_ETH_DB_SUCCESS operation completed successfully
+ * @retval IX_ETH_DB_FAIL    operatoin fails
+ * @retval IX_ETH_DB_INVALID_PORT portId is not a valid port identifier
+ * @retval IX_ETH_DB_PORT_UNINITIALIZED port is not initialized
+ *
+ * @note 
+ *    The function is useful for error-handling module to handle
+ *    soft-error in Ethernet NPE.
+ *
+ * @note  
+ *    This API will not restore learning table in Ethernet NPE. As the mechanis,
+ *    to restore the original learning table is not trivial, after soft-error
+ *    is handled it is expected that Ethernet NPE to learn the new source address
+ *    again.  
+ */
+IX_ETH_DB_PUBLIC 
+IxEthDBStatus ixEthDBFeatureStatesRestore(IxEthDBPortId portId);
 
 /**
  * @ingroup IxEthDB

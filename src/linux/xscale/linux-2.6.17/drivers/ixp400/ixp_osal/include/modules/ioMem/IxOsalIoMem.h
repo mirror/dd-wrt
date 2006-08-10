@@ -8,7 +8,7 @@
 
 /**
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -75,7 +75,7 @@
  */
 #ifdef __XSCALE__
 #ifdef _DIAB_TOOL
-__asm volatile UINT32 ixOsalCoreWordSwap (UINT32 wordIn)
+ __asm volatile UINT32 ixOsalCoreWordSwap (UINT32 wordIn)
 {
 % reg wordIn;
 ! "r0", "r1"
@@ -85,7 +85,9 @@ __asm volatile UINT32 ixOsalCoreWordSwap (UINT32 wordIn)
    mov r0, wordIn, ror #8;          /* wordOut(R0) = D,   A,   B,   C   */
    eor r0, r0, r1, lsr #8;          /* wordOut(R0) = D,   C,   B,   A   */
 }  /* return value is returned through register R0 */
+
 #else /* _DIAB_TOOL not defined */
+
 static __inline__ UINT32
 ixOsalCoreWordSwap (UINT32 wordIn)
 {
@@ -105,9 +107,11 @@ ixOsalCoreWordSwap (UINT32 wordIn)
 
     return wordOut;
 }
-#endif /* #ifdef _DIAB_TOOL */
-#define IX_OSAL_SWAP_LONG(wData)    (ixOsalCoreWordSwap(wData))
 
+#endif /* #ifdef _DIAB_TOOL */
+
+
+#define IX_OSAL_SWAP_LONG(wData)          (ixOsalCoreWordSwap(wData))
 #else /* __XSCALE__ */
 #define IX_OSAL_SWAP_LONG(wData)          ((wData >> 24) | (((wData >> 16) & 0xFF) << 8) | (((wData >> 8) & 0xFF) << 16) | ((wData & 0xFF) << 24))
 #endif  /* __XSCALE__ */
@@ -119,6 +123,7 @@ ixOsalCoreWordSwap (UINT32 wordIn)
 #define IX_OSAL_SWAP_SHORT(sData)         ((sData >> 8) | ((sData & 0xFF) << 8))
 #define IX_OSAL_SWAP_SHORT_ADDRESS(sAddr) ((sAddr) ^ 0x2)
 #define IX_OSAL_SWAP_BYTE_ADDRESS(bAddr)  ((bAddr) ^ 0x3)
+#ifndef __ixpTolapai
 
 #define IX_OSAL_BE_XSTOBUSL(wData)  (wData)
 #define IX_OSAL_BE_XSTOBUSS(sData)  (sData)
@@ -141,6 +146,16 @@ ixOsalCoreWordSwap (UINT32 wordIn)
 #define IX_OSAL_LE_DC_BUSTOXSS(sData) IX_OSAL_SWAP_SHORT(sData)
 #define IX_OSAL_LE_DC_BUSTOXSB(bData) (bData)
 
+#else /* __ixpTolapai */
+
+#define IX_OSAL_LE_IATOBUSL(wData)  (wData)
+#define IX_OSAL_LE_IATOBUSS(sData)  (sData)
+#define IX_OSAL_LE_IATOBUSB(bData)  (bData)
+#define IX_OSAL_LE_BUSTOIAL(wData)  (wData)
+#define IX_OSAL_LE_BUSTOIAS(sData)  (sData)
+#define IX_OSAL_LE_BUSTOIAB(bData)  (bData)
+
+#endif /* __ixpTolapai */
 
 /*
  * Decide SDRAM mapping, then implement read/write
@@ -215,8 +230,9 @@ typedef struct _IxOsalMemoryMap
      * Endian) and IX_OSAL_LE or IX_OSAL_LE_AC or IX_OSAL_LE_DC
      * (Little Endian, Address Coherent or Data Coherent). Any combination is
      * allowed provided it contains at most one LE flag - e.g.
-     * (IX_OSAL_BE), (IX_OSAL_LE_AC), (IX_OSAL_BE | IX_OSAL_LE_DC) are valid
-     * combinations while (IX_OSAL_BE | IX_OSAL_LE_DC | IX_OSAL_LE_AC) is not. 
+     * (IX_OSAL_BE), (IX_OSAL_LE_AC), (IX_OSAL_BE | IX_OSAL_LE_DC), (IX_OSAL_LE) 
+     * are valid combinations while (IX_OSAL_BE | IX_OSAL_LE_DC | IX_OSAL_LE_AC) 
+     * is not. 
      */
     IxOsalMapEndianessType mapEndianType; /**< memory endian type for the map */
 

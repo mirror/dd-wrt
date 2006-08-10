@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -260,23 +260,23 @@
 typedef enum
 {
     IX_CRYPTO_ACC_CFG_WEP_XSCALE_ACC_EN,  /**< Enable access to WEP Intel XScale(R)
-                                           * Core processing only. Access to WEP-NPE
+                                           * Processor processing only. Access to WEP-NPE
                                            * and hardware accelerators are disabled
                                            */
     IX_CRYPTO_ACC_CFG_CRYPTO_NPE_ACC_EN,  /**< 
                                            * Enable access to Hardware 
-                                           * accelerators (WEP Intel XScale(R) Core 
-                                           * is also enabled). This is the 
+                                           * accelerators (WEP Intel XScale(R)  
+                                           * Processor is also enabled). This is the 
                                            * default configuration for
                                            * the cryptoAcc component.
                                            */
     IX_CRYPTO_ACC_CFG_WEP_NPE_ACC_EN,     /**< Enable access to WEP NPE 
-                                           * and Intel XScale(R) Core.
+                                           * and Intel XScale(R) Processor.
                                            */
     IX_CRYPTO_ACC_CFG_CRYPTO_WEP_NPE_ACC_EN,
                                          /**< Enable access to the Hardware 
                                           * accelerators, WEP - NPE and Intel
-                                          * XScale(R) Core.
+                                          * XScale(R) Processor.
                                           */
     IX_CRYPTO_ACC_CFG_TYPE               /**< 
                                           * Maximum value for types of 
@@ -867,30 +867,30 @@ typedef void (*IxCryptoAccPkeEauPerformCompleteCallback)(
  * This function should be called prior to call ixCyptoAccInit function.
  *
  * <PRE>
- * Consideration on using WEP encryption engine on Intel XScale(R) Core & WAN-NPE
- * ------------------------------------------------------------------------------
- * 1. Enabling WEP encryption engine on Intel XScale(R) Core
+ * Consideration on using WEP encryption engine on Intel XScale(R) Processor & WAN-NPE
+ * -----------------------------------------------------------------------------------
+ * 1. Enabling WEP encryption engine on Intel XScale(R) Processor 
  *     Pros: 
  *       i.  Higher throughput compared to WEP running on WAN-NPE.
- *       ii. Still can process WEP request on Intel XScale(R) Core if WEP engine  
+ *       ii. Still can process WEP request on Intel XScale(R) Processor if WEP engine  
  *           on WAN-NPE is not available due to hardware is not present or some 
  *           interfaces(e.g. ATM/HSS/DMA) on the NPE that is being used.
  *     Cons: 
- *       i.  Lesser memory headroom and CPU bandwidth on Intel XScale(R) Core  
+ *       i.  Lesser memory headroom and CPU bandwidth on Intel XScale(R) Processor  
  *           for application stack.
- *     Note: By default WEP encryption engine on Intel XScale(R) Core is always 
+ *     Note: By default WEP encryption engine on Intel XScale(R) Processor is always 
  *           enabled for all options. 
  *
  * 2. Enabling WEP encryption engine on WAN-NPE
  *     Pros: 
  *       i.  Can process WEP request via WEP engines on both Intel XScale(R) 
- *           Core and WAN-NPE.
+ *           Processor and WAN-NPE.
  *     Cons: 
  *       i.  Whole WAN-NPE is dedicated for WEP processing, no other interfaces
  *           (such as ATM, HSS, DMA) can be enabled for this case.
- *       ii. Lower throughput rate compared to WEP on Intel XScale(R) Core  
+ *       ii. Lower throughput rate compared to WEP on Intel XScale(R) Processor  
  *           due to NPE core running at lower frequency compared to 
- *           Intel XScale(R) Core.
+ *           Intel XScale(R) Processor.
  *     Note: By default WEP encryption on WAN NPE is disabled.
  * </PRE>
  *
@@ -1070,7 +1070,7 @@ ixCryptoAccUninit (void);
  *          callback function pointer to return the processed buffer to the
  *          client with respect to the unique CryptoCtxId. This cannot be NULL,
  *          however this function will not be called if its the requested
- *          to be executed by the engine running on Intel XScale(R) Core.
+ *          to be executed by the engine running on Intel XScale(R) Processor.
  * @param   *pCryptoCtxId UINT32 [inout] - Crypto Context ID returned by access 
  *          component for the crypto context registered. 
  *
@@ -1402,11 +1402,11 @@ ixCryptoAccNpeWepPerform (UINT32   cryptoCtxId,
     UINT8  *pKey)
  *
  * @brief Function to support ARC4 and WEP ICV computations on Intel XScale(R) 
- *        Core.
+ *        Processor.
  *
- * This function executes ARC4 and WEP ICV algorithms on Intel XScale(R) Core. 
+ * This function executes ARC4 and WEP ICV algorithms on Intel XScale(R) Processor. 
  * The request is not forwarded to the NPE. The operation is executed on Intel 
- * XScale(R) Core synchronously and therefore the perform done call back 
+ * XScale(R) Processor synchronously and therefore the perform done call back 
  * function would not be called on its return.
  * The caller can assume the ownership of the buffers when the function returns.
  * Restrictions: This function does not support non-in-place mode of operation.
@@ -1465,7 +1465,7 @@ ixCryptoAccNpeWepPerform (UINT32   cryptoCtxId,
  * @return @li  IX_CRYPTO_ACC_STATUS_CRYPTO_CTX_NOT_VALID - Crypto context is
  *              invalid.
  * 
- * @note Statistics collection for Intel XScale(R) Core WEP perform will only be
+ * @note Statistics collection for Intel XScale(R) Processor WEP perform will only be
  *       enabled in DEBUG mode. Interrupt locking mechanism is used in protecting
  *       the critical section for statistic collection. 
  *
@@ -1756,10 +1756,10 @@ ixCryptoAccHashKeyGenerate (
  *    not NPE. 
  * 2. The hash algorithm supported is SHA-1 ONLY.
  * 3. This API is designed to offload the hashing operation needed for PKE.
- * 4. This API will use more Intel XScale(R) Core bandwidth compared to NPE hashing
- *    API @ref ixCryptoAccHashPerform as Intel XScale(R) Core will act as the master
+ * 4. This API uses more Intel XScale(R) Processor bandwidth compared to NPE hashing
+ *    API @ref ixCryptoAccHashPerform as Intel XScale(R) Processor will act as the master
  *    to the SHA engine on PKE Crypto Engine to kick off hashing operation. This 
- *    involves memory accessing (read/write) from Intel XScale(R) Core to SHA engine. 
+ *    involves memory accessing (read/write) from Intel XScale(R) Processor to SHA engine. 
  * 5. Client can decide to either hashing data by using SHA engine on PKE 
  *    Crypto Engine or NPE hashing co-processor depend on their needs and 
  *    interface. The input data is a flat buffer for this API and is 
@@ -1782,8 +1782,8 @@ ixCryptoAccHashKeyGenerate (
  *          the data to be hashed. This buffer is allocated by the client and 
  *          the buffer pointer must not be NULL. 
  *          This buffer should hold the data to be hashed until Intel XScale(R) 
- *          Core complete the hashing operation and the client's callback is called
- *          The digest is returned separately through the client's callback. 
+ *          Processor completed the hashing operation and the client's callback is 
+ *          called. The digest is returned separately through the client's callback. 
  * @param   hashDataLen UINT32 [in] - hash data size in bytes
  * @param   hashPerformCallbackFn @ref IxCryptoAccPkeHashPerformCompleteCallback
  *          [in] - callback function pointer to be called when the hashing 
@@ -2017,9 +2017,9 @@ ixCryptoAccPkeEauPerform (
     IxCryptoAccPkeEauPerformCompleteCallback eauPerformCallbackFn,
     IxCryptoAccPkeEauOpResult *pResult);
     
-            
+#endif             
 #endif /* ndef IXCRYPTOACC_H */
-#endif /* __ixp46X */
+
 /**
  *@}
  */

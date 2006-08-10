@@ -1,6 +1,6 @@
 # 
 # @par
-# IXP400 SW Release Crypto version 2.1
+# IXP400 SW Release Crypto version 2.3
 # 
 # -- Copyright Notice --
 # 
@@ -44,9 +44,8 @@ hssAcc_OBJ :=	IxHssAccCommon.o \
 		IxHssAccService.o \
 		IxHssAccPktRx.o \
 		IxHssAccPktTx.o \
-		IxHssAccPCM.o \
-		IxHssAccPDM.o
-hssAcc_CFLAGS := -I./src/hssAcc/include
+		IxHssAccPCM.o 
+hssAcc_CFLAGS := -I./src/hssAcc/include 
 
 ifeq ($(IX_TARGET_OS),linux)
 hssAcc_OBJ += IxHssAccSymbols.o

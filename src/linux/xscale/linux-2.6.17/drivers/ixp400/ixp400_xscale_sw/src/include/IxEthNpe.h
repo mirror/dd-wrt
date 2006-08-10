@@ -6,7 +6,7 @@
  * @file IxEthNpe.h
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -183,41 +183,41 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 
 
 /*--------------------------------------------------------------------------
- * APB Message IDs - Intel XScale(R) Core ->NPE
+ * APB Message IDs - Intel XScale(R) Processor ->NPE
  *------------------------------------------------------------------------*/
 
 /**
  * @def IX_ETHNPE_NPE_GETSTATUS
  *
- * @brief Request from the Intel XScale(R) Core  client for the NPE to return the firmware
- * version of the currently executing image.
+ * @brief Request from the Intel XScale(R) Processor client for the NPE to return the 
+ * firmware version of the currently executing image.
  *
  * Acknowledgment message id is same as the request message id. 
- * NPE returns the firmware version ID to Intel XScale(R) Core .
+ * NPE returns the firmware version ID to Intel XScale(R) Processor .
  */
 #define IX_ETHNPE_NPE_GETSTATUS                 0x00
 
 /**
  * @def IX_ETHNPE_EDB_SETPORTADDRESS
  *
- * @brief Request from the Intel XScale(R) Core  client for the NPE to set the Ethernet 
- * port's port ID and MAC address. 
+ * @brief Request from the Intel XScale(R) Processor client for the NPE to set the 
+ * Ethernet port's port ID and MAC address. 
  */
 #define IX_ETHNPE_EDB_SETPORTADDRESS            0x01
 
 /**
  * @def IX_ETHNPE_EDB_GETMACADDRESSDATABASE
  *
- * @brief Request from Intel XScale(R) Core  client to the NPE requesting upload of 
+ * @brief Request from Intel XScale(R) Processor client to the NPE requesting upload of 
  * Ethernet Filtering Database or Header Conversion Database from NPE's 
- * data memory to Intel XScale(R) Core  accessible SDRAM.
+ * data memory to Intel XScale(R) Processor accessible SDRAM.
  */
 #define IX_ETHNPE_EDB_GETMACADDRESSDATABASE     0x02
 
 /**
  * @def IX_ETHNPE_EDB_SETMACADDRESSSDATABASE
  *
- * @brief Request from Intel XScale(R) Core  client to the NPE requesting download of 
+ * @brief Request from Intel XScale(R) Processor client to the NPE requesting download of 
  * Ethernet Filtering Database or Header Conversion Database from SDRAM
  * to the NPE's datamemory.
  */
@@ -226,8 +226,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_GETSTATS
  *
- * @brief Request from the Intel XScale(R) Core  client for the current MAC port statistics 
- * data to be written to the (empty) statistics structure and the specified
+ * @brief Request from the Intel XScale(R) Processor client for the current MAC port 
+ * statistics data to be written to the (empty) statistics structure and the specified 
  * location in externa memory.
  */
 #define IX_ETHNPE_GETSTATS                      0x04
@@ -235,8 +235,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_RESETSTATS
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to reset all of its internal 
- * MAC port statistics state variables. 
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to reset all of 
+ * its internal MAC port statistics state variables. 
  *
  * As a side effect, this message entails an implicit request that the NPE
  *  write the current MAC port statistics into the MAC statistics structure 
@@ -247,47 +247,47 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_SETMAXFRAMELENGTHS
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to configure maximum framelengths
- * and block sizes in receive and transmit direction.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to configure 
+ * maximum framelengths and block sizes in receive and transmit direction.
  */
 #define IX_ETHNPE_SETMAXFRAMELENGTHS            0x06
 
 /**
  * @def IX_ETHNPE_VLAN_SETRXTAGMODE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN frame type
- * filtering and VLAN the tagging mode for the receiver.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
+ * frame type filtering and VLAN the tagging mode for the receiver.
  */
 #define IX_ETHNPE_VLAN_SETRXTAGMODE             0x07
 
 /**
  * @def IX_ETHNPE_VLAN_SETDEFAULTRXVID
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to set receiver's default 
- * VLAN tag (PVID)and internal traffic class.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to set receiver's 
+ * default VLAN tag (PVID)and internal traffic class.
  */
 #define IX_ETHNPE_VLAN_SETDEFAULTRXVID          0x08
 
 /**
  * @def IX_ETHNPE_VLAN_SETPORTVLANTABLEENTRY
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN Port 
- * membership and Tx tagging for 8 consecutive VLANID's.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
+ * Port membership and Tx tagging for 8 consecutive VLANID's.
  */
 #define IX_ETHNPE_VLAN_SETPORTVLANTABLEENTRY    0x09
 
 /**
  * @def IX_ETHNPE_VLAN_SETPORTVLANTABLERANGE
- *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to configure VLAN Port
- * membership and Tx tagging for a range of VLANID's.
+ * 
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to configure VLAN 
+ * Port membership and Tx tagging for a range of VLANID's.
  */
 #define IX_ETHNPE_VLAN_SETPORTVLANTABLERANGE    0x0A
 
 /**
  * @def IX_ETHNPE_VLAN_SETRXQOSENTRY
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to map a user priority
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to map a user priority
  * to QoS class and an AQM queue number.
  */
 #define IX_ETHNPE_VLAN_SETRXQOSENTRY            0x0B
@@ -295,7 +295,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_VLAN_SETPORTIDEXTRACTIONMODE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to enable or disable
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to enable or disable
  * portID extraction from VLAN-tagged frames for the specified port.
  */
 #define IX_ETHNPE_VLAN_SETPORTIDEXTRACTIONMODE  0x0C
@@ -303,7 +303,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_STP_SETBLOCKINGSTATE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to block or unblock
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to block or unblock
  * forwarding for spanning tree BPDUs.
  */
 #define IX_ETHNPE_STP_SETBLOCKINGSTATE          0x0D
@@ -311,7 +311,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_FW_SETFIREWALLMODE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to configure firewall
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to configure firewall
  * services modes of operation and/or download Ethernet Firewall Database from
  * SDRAM to NPE.
  */
@@ -320,8 +320,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETFRAMECONTROLDURATIONID 
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to set global frame control
- * and duration/ID field for the 802.3 to 802.11 protocol header conversion
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to set global frame 
+ * control and duration/ID field for the 802.3 to 802.11 protocol header conversion
  * service.
  */
 #define IX_ETHNPE_PC_SETFRAMECONTROLDURATIONID  0x0F
@@ -329,8 +329,8 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETAPMACTABLE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to update a block/section/
- * range of the AP MAC Address Table.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to update a 
+ * block/section range of the AP MAC Address Table.
  */
 #define IX_ETHNPE_PC_SETAPMACTABLE              0x11
 
@@ -344,22 +344,38 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 /**
  * @def IX_ETHNPE_PC_SETBSSIDTABLE
  *
- * @brief Request from the Intel XScale(R) Core  client to the NPE to update a block/section/
- * range of the BSSID MAC Address Table.
+ * @brief Request from the Intel XScale(R) Processor client to the NPE to update a 
+ *  block/section range of the BSSID MAC Address Table.
  */
 #define IX_ETHNPE_PC_SETBSSIDTABLE              0x13
+
+
+/**
+ * @def IX_ETHNPE_ADDRESS_FILTER_CONFIG
+ *
+ * @brief Notification from the Intel XScale(R) Processor client to the NPE telling the
+ * NPE the address (multicast+unicast) filtering configuration.
+ */
+#define IX_ETHNPE_ADDRESS_FILTER_CONFIG          0x14 
 
 /**
  * @def IX_ETHNPE_APPENDFCSCONFIG
  *
- * @brief Notification from the Intel XScale(R) Core  client to the NPE telling the NPE the 
- * MAC FCS append configuration
+ * @brief Notification from the Intel XScale(R) Processor client to the NPE telling the 
+ * NPE the MAC FCS append configuration
  */
 #define IX_ETHNPE_APPENDFCSCONFIG              0x15
 
+/**
+ * @def IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE
+ *
+ * @brief Notify NPE that MAC has been recovered.
+
+ */
+#define IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE     0x16
 
 /*--------------------------------------------------------------------------
- * APB Message IDs - NPE->Intel XScale(R) Core 
+ * APB Message IDs - NPE->Intel XScale(R) Processor 
  *------------------------------------------------------------------------*/
 
 /**
@@ -497,12 +513,32 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
 #define IX_ETHNPE_PC_SETBSSIDTABLE_ACK              0x13
 
 /**
+ * @def IX_ETHNPE_ADDRESS_FILTER_CONFIG_ACK
+ *
+ * @brief Acknowledgment to IX_ETHNPE_ADDRESS_FILTER_CONFIG message.
+ */
+#define IX_ETHNPE_ADDRESS_FILTER_CONFIG_ACK      0x14 
+
+/**
  * @def IX_ETHNPE_APPENDFCSCONFIG_ACK
  *
  * @brief Acknowledgment to IX_ETHNPE_APPENDFCSCONFIG message.
  */
 #define IX_ETHNPE_APPENDFCSCONFIG_ACK              0x15
 
+/**
+ * @def IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE_ACK
+ *
+ * @brief Acknowledgment to IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE message.
+ */
+#define IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE_ACK      0x16
+
+/**
+ * @def IX_ETHNPE_MAC_RECOVERY_START
+ *
+ * @brief NPE message used to trigger EthAcc to recovery MAC.
+ */
+#define IX_ETHNPE_MAC_RECOVERY_START                0x17
 
 /*--------------------------------------------------------------------------
  * Queue Manager Queue entry bit field boundary definitions
@@ -786,7 +822,7 @@ IxEthNpeLogicalId IxEthNpePorts[IX_ETHNPE_NUM_PHYSICAL_PORTS] =
  * 
  * @brief Macro to check the minimum length of a rx free buffer
  */
-#define IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN (64)
+#define IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MIN (128)
 
 /**
  * @def IX_ETHNPE_ACC_RXFREE_BUFFER_LENGTH_MASK

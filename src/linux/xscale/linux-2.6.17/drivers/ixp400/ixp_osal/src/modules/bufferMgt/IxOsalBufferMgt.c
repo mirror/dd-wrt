@@ -7,44 +7,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
- * 
- * -- Copyright Notice --
- * 
- * @par
- * Copyright (c) 2001-2005, Intel Corporation.
- * All rights reserved.
- * 
- * @par
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Intel Corporation nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- * 
- * 
- * @par
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * 
- * 
- * @par
- * -- End of Copyright Notice --
+ * <COPYRIGHT_TAG>
  */
 
 /*
@@ -81,9 +44,9 @@
 
 #define IX_OSAL_MBUF_GET_SYS_SIGNATURE(bufPtr)		(IX_OSAL_MBUF_SIGNATURE (bufPtr)&(IX_OSAL_MBUF_SYS_SIGNATURE_MASK) )
 #define IX_OSAL_MBUF_SET_SYS_SIGNATURE(bufPtr)    do {																											\
-														IX_OSAL_MBUF_SIGNATURE (bufPtr)&(~IX_OSAL_MBUF_SYS_SIGNATURE_MASK);\
-														IX_OSAL_MBUF_SIGNATURE (bufPtr)|=IX_OSAL_MBUF_SYS_SIGNATURE;			\
-													}while(0)
+																									IX_OSAL_MBUF_SIGNATURE (bufPtr)&(~IX_OSAL_MBUF_SYS_SIGNATURE_MASK);\
+														    									IX_OSAL_MBUF_SIGNATURE (bufPtr)|=IX_OSAL_MBUF_SYS_SIGNATURE;			\
+																									}while(0)
 
 #define IX_OSAL_MBUF_SET_USED_FLAG(bufPtr)   IX_OSAL_MBUF_SIGNATURE (bufPtr)|=IX_OSAL_MBUF_USED_FLAG
 #define IX_OSAL_MBUF_CLEAR_USED_FLAG(bufPtr) IX_OSAL_MBUF_SIGNATURE (bufPtr)&=~IX_OSAL_MBUF_USED_FLAG
@@ -111,17 +74,26 @@ PRIVATE UINT32 ixOsalBuffFreePools[IX_OSAL_MBUF_MAX_POOLS /
 
 PUBLIC IX_OSAL_MBUF_POOL ixOsalBuffPools[IX_OSAL_MBUF_MAX_POOLS];
 
+PRIVATE INT32 ixOsalBuffPoolsInUse = 0;
 
-PRIVATE int ixOsalBuffPoolsInUse = 0;
+PRIVATE BOOL ixOsalBuffMgmtInited=FALSE;
+
+PRIVATE IxOsalMutex ixOsalBufferFreePoolsAccess;
+
+#ifdef __linux_user
+
+PRIVATE IxOsalMutex ixOsalBufferPoolAccess[IX_OSAL_MBUF_MAX_POOLS];
+
+#endif /* __linux_user */
 
 #ifdef IX_OSAL_BUFFER_ALLOC_SEPARATELY
 PRIVATE IX_OSAL_MBUF *
 ixOsalBuffPoolMbufInit (UINT32 mbufSizeAligned,
-                      UINT32 dataSizeAligned,
-                      IX_OSAL_MBUF_POOL *poolPtr);
+                        UINT32 dataSizeAligned,
+                        IX_OSAL_MBUF_POOL *poolPtr);
 #endif
 
-PRIVATE IX_OSAL_MBUF_POOL * ixOsalPoolAlloc (void);                      
+PRIVATE IX_OSAL_MBUF_POOL * ixOsalPoolAlloc (VOID);
 
 /*
  * Function definition: ixOsalPoolAlloc
@@ -130,10 +102,16 @@ PRIVATE IX_OSAL_MBUF_POOL * ixOsalPoolAlloc (void);
 /****************************/
 
 PRIVATE IX_OSAL_MBUF_POOL *
-ixOsalPoolAlloc (void)
+ixOsalPoolAlloc (VOID)
 {
-    register unsigned int i = 0;
+    register UINT32 i = 0;
 
+    if (ixOsalBuffMgmtInited == FALSE)
+    {
+	ixOsalBuffMgmtInited = TRUE;
+	ixOsalMutexInit(&ixOsalBufferFreePoolsAccess);
+    }
+				
     /*
      * Scan for the first free buffer. Free buffers are indicated by 0
      * on the corrsponding bit in ixOsalBuffFreePools. 
@@ -146,16 +124,27 @@ ixOsalPoolAlloc (void)
         return NULL;
     }
 
+		/*
+		 * Lock the shared resource before accessing it
+		 */
+		ixOsalMutexLock(&ixOsalBufferFreePoolsAccess, IX_OSAL_WAIT_FOREVER);
+		 
     while (ixOsalBuffFreePools[i / IX_OSAL_BUFF_FREE_BITS] &
         (1 << (i % IX_OSAL_BUFF_FREE_BITS)))
         i++;
+		
     /*
      * Free buffer found. Mark it as busy and initialize. 
      */
     ixOsalBuffFreePools[i / IX_OSAL_BUFF_FREE_BITS] |=
         (1 << (i % IX_OSAL_BUFF_FREE_BITS));
 
-    memset (&ixOsalBuffPools[i], 0, sizeof (IX_OSAL_MBUF_POOL));
+		/*
+		 * Unlock the shared resource after accessing it
+		 */
+		ixOsalMutexUnlock(&ixOsalBufferFreePoolsAccess);
+		
+    ixOsalMemSet (&ixOsalBuffPools[i], 0, sizeof (IX_OSAL_MBUF_POOL));
 
     ixOsalBuffPools[i].poolIdx = i;
     ixOsalBuffPoolsInUse++;
@@ -165,37 +154,44 @@ ixOsalPoolAlloc (void)
 
 
 #ifdef IX_OSAL_BUFFER_ALLOC_SEPARATELY
+
+/*
+ * mbufSize, would be made to align to cache boundary in kernel space,
+ * similarly for dataSize.
+ */
 PRIVATE IX_OSAL_MBUF *
-ixOsalBuffPoolMbufInit (UINT32 mbufSizeAligned,
-                      UINT32 dataSizeAligned,
-                      IX_OSAL_MBUF_POOL *poolPtr)
+ixOsalBuffPoolMbufInit (UINT32 mbufSize,
+                        UINT32 dataSize,
+                        IX_OSAL_MBUF_POOL *poolPtr)
 {
     UINT8 *dataPtr;
     IX_OSAL_MBUF *realMbufPtr;
     /* Allocate cache-aligned memory for mbuf header */
-    realMbufPtr = (IX_OSAL_MBUF *) IX_OSAL_CACHE_DMA_MALLOC (mbufSizeAligned);
+    
+		realMbufPtr = (IX_OSAL_MBUF *) IX_OSAL_BUFF_MEM_ALLOC (mbufSize);
     IX_OSAL_ASSERT (realMbufPtr != NULL);
-    memset (realMbufPtr, 0, mbufSizeAligned);
+    ixOsalMemSet (realMbufPtr, 0, mbufSize);
 
     /* Allocate cache-aligned memory for mbuf data */
-    dataPtr = (UINT8 *) IX_OSAL_CACHE_DMA_MALLOC (dataSizeAligned);
+    
+		dataPtr = (UINT8 *) IX_OSAL_BUFF_MEM_ALLOC (dataSize);
     IX_OSAL_ASSERT (dataPtr != NULL);
-    memset (dataPtr, 0, dataSizeAligned);
+    ixOsalMemSet (dataPtr, 0, dataSize);
 
     /* Fill in mbuf header fields */
     IX_OSAL_MBUF_MDATA (realMbufPtr) = dataPtr;
     IX_OSAL_MBUF_ALLOCATED_BUFF_DATA (realMbufPtr) = (UINT32)dataPtr;
 
-    IX_OSAL_MBUF_MLEN (realMbufPtr) = dataSizeAligned;
-    IX_OSAL_MBUF_ALLOCATED_BUFF_LEN (realMbufPtr) = dataSizeAligned;
+    IX_OSAL_MBUF_MLEN (realMbufPtr) = dataSize;
+    IX_OSAL_MBUF_ALLOCATED_BUFF_LEN (realMbufPtr) = dataSize;
 
     IX_OSAL_MBUF_NET_POOL (realMbufPtr) = (IX_OSAL_MBUF_POOL *) poolPtr;
 
     IX_OSAL_MBUF_SYS_SIGNATURE_INIT(realMbufPtr);
 
     /* update some statistical information */
-    poolPtr->mbufMemSize += mbufSizeAligned;
-    poolPtr->dataMemSize += dataSizeAligned;
+    poolPtr->mbufMemSize += mbufSize;
+    poolPtr->dataMemSize += dataSize;
 
     return realMbufPtr;
 }
@@ -204,50 +200,58 @@ ixOsalBuffPoolMbufInit (UINT32 mbufSizeAligned,
 /*
  * Function definition: ixOsalBuffPoolInit
  */
-
 PUBLIC IX_OSAL_MBUF_POOL *
 ixOsalPoolInit (UINT32 count, UINT32 size, const char *name)
 {
 
-    /* These variables are only used if UX_OSAL_BUFFER_ALLOC_SEPERATELY
+    /* These variables are only used if IX_OSAL_BUFFER_ALLOC_SEPARATELY
      * is defined .
      */
 #ifdef IX_OSAL_BUFFER_ALLOC_SEPARATELY
-    UINT32 i, mbufSizeAligned, dataSizeAligned;
+				
+    UINT32 i, mbufSize, dataSize;
     IX_OSAL_MBUF *currentMbufPtr = NULL;
-#else
-    void *poolBufPtr;
-    void *poolDataPtr;
-    int mbufMemSize;
-    int dataMemSize;
-#endif
+
+#else /* IX_OSAL_BUFFER_ALLOC_SEPARATELY */
+
+		VOID *poolBufPtr;
+    VOID *poolDataPtr;
+    INT32 mbufMemSize;
+    INT32 dataMemSize;
+
+#endif /* IX_OSAL_BUFFER_ALLOC_SEPARATELY */
 
     IX_OSAL_MBUF_POOL *poolPtr = NULL;
+
+		if ((UINT8 *)name == NULL)
+		{
+		
+				ixOsalLog (IX_OSAL_LOG_LVL_WARNING,
+                   IX_OSAL_LOG_DEV_STDOUT,
+                   "ixOsalPoolInit(): Failed due to NULL name\n", 0, 0, 0, 0, 0, 0);
+
+				return NULL;
+		}
     
     if (count <= 0)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalPoolInit(): " "count = 0 \n", 0, 0, 0, 0, 0, 0);
+                   IX_OSAL_LOG_DEV_STDOUT,
+                   "ixOsalPoolInit(): count = 0 \n", 0, 0, 0, 0, 0, 0);
+
         return NULL;        
     }
 
-    if (name == NULL)
-    {
-        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalPoolInit(): " "NULL name \n", 0, 0, 0, 0, 0, 0);
-        return NULL;        
-    }
     
     if (strlen (name) > IX_OSAL_MBUF_POOL_NAME_LEN)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalPoolInit(): "
-            "ERROR - name length should be no greater than %d  \n",
-            IX_OSAL_MBUF_POOL_NAME_LEN, 0, 0, 0, 0, 0);
-        return NULL;
+            			 IX_OSAL_LOG_DEV_STDOUT,
+            			 "ixOsalPoolInit(): "
+            			 "ERROR - name length should be no greater than %d  \n",
+            			 IX_OSAL_MBUF_POOL_NAME_LEN, 0, 0, 0, 0, 0);
+
+				return NULL;
     }
 
 /* OS can choose whether to allocate all buffers all together (if it 
@@ -258,34 +262,45 @@ ixOsalPoolInit (UINT32 count, UINT32 size, const char *name)
     /* Get a pool Ptr */
     poolPtr = ixOsalPoolAlloc ();
 
-    if (poolPtr == NULL)
+#ifdef __linux_user
+
+    ixOsalMutexInit(&ixOsalBufferPoolAccess[poolPtr->poolIdx]);
+
+#endif /* __linux_user */
+
+	if (poolPtr == NULL)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
             IX_OSAL_LOG_DEV_STDOUT,
             "ixOsalPoolInit(): " "Fail to Get PoolPtr \n", 0, 0, 0, 0, 0, 0);    
         return NULL;
     }
-
-    mbufSizeAligned = IX_OSAL_MBUF_POOL_SIZE_ALIGN (sizeof (IX_OSAL_MBUF));
-    dataSizeAligned = IX_OSAL_MBUF_POOL_SIZE_ALIGN(size);
-
+		
+		/*
+		 * In Kernel space allocate cache aligned boundary. But in user
+		 * space these macros would return the value of the input without
+		 * any modification
+		 */
+		mbufSize = IX_OSAL_MBUF_POOL_SIZE_ALIGN (sizeof (IX_OSAL_MBUF));
+    dataSize = IX_OSAL_MBUF_POOL_SIZE_ALIGN(size);
+		
     poolPtr->nextFreeBuf = NULL;    
     poolPtr->mbufMemPtr = NULL;    
     poolPtr->dataMemPtr = NULL;
-    poolPtr->bufDataSize = dataSizeAligned;
+    poolPtr->bufDataSize = dataSize;
     poolPtr->totalBufsInPool = count;
     poolPtr->poolAllocType = IX_OSAL_MBUF_POOL_TYPE_SYS_ALLOC;
     strcpy (poolPtr->name, name);
 
-
     for (i = 0; i < count; i++)
     {
 	    /* create an mbuf */
-	    currentMbufPtr = ixOsalBuffPoolMbufInit (mbufSizeAligned,
-					         dataSizeAligned,
-					         poolPtr);
+	    currentMbufPtr = ixOsalBuffPoolMbufInit (mbufSize,
+					         														 dataSize,
+					         														 poolPtr);
 
-#ifdef IX_OSAL_BUFFER_FREE_PROTECTION 		
+#ifdef IX_OSAL_BUFFER_FREE_PROTECTION
+			
 /* Set the Buffer USED Flag. If not, ixOsalMBufFree will fail.
    ixOsalMbufFree used here is in a special case whereby, it's 
    used to add MBUF to the Pool. By specification, ixOsalMbufFree 
@@ -295,9 +310,12 @@ ixOsalPoolInit (UINT32 count, UINT32 size, const char *name)
 #endif                             
 	    /* Add it to the pool */
 	    ixOsalMbufFree (currentMbufPtr);
-
-	    /* flush the pool information to RAM */
-	    IX_OSAL_CACHE_FLUSH (currentMbufPtr, mbufSizeAligned);
+	    
+			/* 
+			 * Flush the pool information to RAM. If caching is done then 
+			 * flush information explicitly
+			 */
+			IX_OSAL_BUFF_FLUSH_INFO(currentMbufPtr, mbufSize);
     }
     
     /*
@@ -306,34 +324,35 @@ ixOsalPoolInit (UINT32 count, UINT32 size, const char *name)
     poolPtr->freeBufsInPool = count;
 
 #else 
-/* Otherwise allocate buffers in a continuous block fashion */    
+
+		/* Otherwise allocate buffers in a continuous block fashion */    
     poolBufPtr = IX_OSAL_MBUF_POOL_MBUF_AREA_ALLOC (count, mbufMemSize);
     IX_OSAL_ASSERT (poolBufPtr != NULL);
-    poolDataPtr =
-        IX_OSAL_MBUF_POOL_DATA_AREA_ALLOC (count, size, dataMemSize);
+    poolDataPtr = IX_OSAL_MBUF_POOL_DATA_AREA_ALLOC (count, size, dataMemSize);
     IX_OSAL_ASSERT (poolDataPtr != NULL);
 
-    poolPtr = ixOsalNoAllocPoolInit (poolBufPtr, poolDataPtr,
-        count, size, name);
-    if (poolPtr == NULL)
+    poolPtr = ixOsalNoAllocPoolInit (poolBufPtr, poolDataPtr, count, size, name);
+
+		if (poolPtr == NULL)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalPoolInit(): " "Fail to get pool ptr \n", 0, 0, 0, 0, 0, 0);
-        return NULL;
+            			 IX_OSAL_LOG_DEV_STDOUT,
+            			 "ixOsalPoolInit(): " "Fail to get pool ptr \n", 0, 0, 0, 0, 0, 0);
+
+				return NULL;
     }
 
     poolPtr->poolAllocType = IX_OSAL_MBUF_POOL_TYPE_SYS_ALLOC;
 
 #endif /* IX_OSAL_BUFFER_ALLOC_SEPARATELY */
+    
     return poolPtr;
 }
 
 PUBLIC IX_OSAL_MBUF_POOL *
-ixOsalNoAllocPoolInit (void *poolBufPtr,
-    void *poolDataPtr, UINT32 count, UINT32 size, const char *name)
+ixOsalNoAllocPoolInit (VOID *poolBufPtr, VOID *poolDataPtr, UINT32 count, UINT32 size, const char *name)
 {
-    UINT32 i,  mbufSizeAligned, sizeAligned;
+    UINT32 i, mbufSize, dataSize;
     IX_OSAL_MBUF *currentMbufPtr = NULL;
     IX_OSAL_MBUF *nextMbufPtr = NULL;
     IX_OSAL_MBUF_POOL *poolPtr = NULL;
@@ -344,27 +363,30 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
     if (poolBufPtr == NULL)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalNoAllocPoolInit(): "
-            "ERROR - NULL poolBufPtr \n", 0, 0, 0, 0, 0, 0);
+			             IX_OSAL_LOG_DEV_STDOUT,
+       			       "ixOsalNoAllocPoolInit(): "
+            			 "ERROR - NULL poolBufPtr \n", 0, 0, 0, 0, 0, 0);
+				
         return NULL;
     }
-
+		
+    if ((UINT8 *)name == NULL)
+    {
+        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
+            		   IX_OSAL_LOG_DEV_STDOUT,
+            			 "ixOsalNoAllocPoolInit(): "
+            			 "ERROR - NULL name ptr  \n", 0, 0, 0, 0, 0, 0);
+        
+				return NULL;
+    }
+		
     if (count <= 0)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalNoAllocPoolInit(): "
-            "ERROR - count must > 0   \n", 0, 0, 0, 0, 0, 0);
-        return NULL;
-    }
-
-    if (name == NULL)
-    {
-        ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalNoAllocPoolInit(): "
-            "ERROR - NULL name ptr  \n", 0, 0, 0, 0, 0, 0);
+            			 IX_OSAL_LOG_DEV_STDOUT,
+             			 "ixOsalNoAllocPoolInit(): "
+            			 "ERROR - count must > 0   \n", 0, 0, 0, 0, 0, 0);
+				
         return NULL;
     }
 
@@ -384,44 +406,45 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
     {
         return NULL;
     }
+    
+#ifdef __linux_user
+
+    ixOsalMutexInit(&ixOsalBufferPoolAccess[poolPtr->poolIdx]);
+
+#endif /* __linux_user */
+        
+    mbufSize = IX_OSAL_MBUF_POOL_SIZE_ALIGN (sizeof (IX_OSAL_MBUF));
 
     /*
-     * Adjust sizes to ensure alignment on cache line boundaries 
+     * Clear the mbuf memory area 
      */
-    mbufSizeAligned =
-        IX_OSAL_MBUF_POOL_SIZE_ALIGN (sizeof (IX_OSAL_MBUF));
-    /*
-     * clear the mbuf memory area 
-     */
-    memset (poolBufPtr, 0, mbufSizeAligned * count);
+    ixOsalMemSet (poolBufPtr, 0, mbufSize * count);
 
     if (poolDataPtr != NULL)
     {
-        /*
-         * Adjust sizes to ensure alignment on cache line boundaries 
+        dataSize = IX_OSAL_MBUF_POOL_SIZE_ALIGN(size);
+     
+	/*
+         * Clear the data memory area 
          */
-        sizeAligned = IX_OSAL_MBUF_POOL_SIZE_ALIGN (size);
-        /*
-         * clear the data memory area 
-         */
-        memset (poolDataPtr, 0, sizeAligned * count);
+        ixOsalMemSet (poolDataPtr, 0, dataSize * count);
     }
     else
     {
-        sizeAligned = 0;
+        dataSize = 0;
     }
 
     /*
-     * initialise pool fields 
+     * Initialise pool fields 
      */
     strcpy ((poolPtr)->name, name);
 
     poolPtr->dataMemPtr = poolDataPtr;
     poolPtr->mbufMemPtr = poolBufPtr;
-    poolPtr->bufDataSize = sizeAligned;
+    poolPtr->bufDataSize = dataSize;
     poolPtr->totalBufsInPool = count;
-    poolPtr->mbufMemSize = mbufSizeAligned * count;
-    poolPtr->dataMemSize = sizeAligned * count;
+    poolPtr->mbufMemSize = mbufSize * count;
+    poolPtr->dataMemSize = dataSize * count;
 
     currentMbufPtr = (IX_OSAL_MBUF *) poolBufPtr;
 
@@ -432,11 +455,11 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
         if (i < (count - 1))
         {
             nextMbufPtr =
-                (IX_OSAL_MBUF *) ((unsigned) currentMbufPtr +
-                mbufSizeAligned);
+                (IX_OSAL_MBUF *) ((UINT32) currentMbufPtr + mbufSize);
         }
         else
-        {                       /* last mbuf in chain */
+        {                      
+						/* last mbuf in chain */
             nextMbufPtr = NULL;
         }
         IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (currentMbufPtr) = nextMbufPtr;
@@ -449,10 +472,10 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
             IX_OSAL_MBUF_MDATA (currentMbufPtr) = poolDataPtr;
             IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(currentMbufPtr) = (UINT32) poolDataPtr;
 
-            IX_OSAL_MBUF_MLEN (currentMbufPtr) = sizeAligned;
-            IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(currentMbufPtr) = sizeAligned;
+            IX_OSAL_MBUF_MLEN (currentMbufPtr) = dataSize;
+            IX_OSAL_MBUF_ALLOCATED_BUFF_LEN(currentMbufPtr) = dataSize;
 
-            poolDataPtr = (void *) ((unsigned) poolDataPtr + sizeAligned);
+            poolDataPtr = (VOID *) ((UINT32) poolDataPtr + dataSize);
         }
 
         currentMbufPtr = nextMbufPtr;
@@ -466,6 +489,7 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
     poolPtr->poolAllocType = IX_OSAL_MBUF_POOL_TYPE_USER_ALLOC;
 
     return poolPtr;
+
 }
 
 /* 
@@ -474,7 +498,11 @@ ixOsalNoAllocPoolInit (void *poolBufPtr,
 PUBLIC IX_OSAL_MBUF *
 ixOsalMbufAlloc (IX_OSAL_MBUF_POOL * poolPtr)
 {
-    int lock;
+
+#ifndef __linux_user
+    INT32 lock;
+#endif
+		
     IX_OSAL_MBUF *newBufPtr = NULL;
 
     /*
@@ -489,13 +517,17 @@ ixOsalMbufAlloc (IX_OSAL_MBUF_POOL * poolPtr)
         return NULL;
     }
 
+#ifndef __linux_user
     lock = ixOsalIrqLock ();
-
+#else
+		ixOsalMutexLock(&ixOsalBufferPoolAccess[poolPtr->poolIdx],IX_OSAL_WAIT_FOREVER);
+#endif
+		
     newBufPtr = poolPtr->nextFreeBuf;
+		
     if (newBufPtr)
     {
-        poolPtr->nextFreeBuf =
-            IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (newBufPtr);
+        poolPtr->nextFreeBuf = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (newBufPtr);
         IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (newBufPtr) = NULL;
 
         /*
@@ -506,7 +538,11 @@ ixOsalMbufAlloc (IX_OSAL_MBUF_POOL * poolPtr)
     else
     {
         /* Return NULL to indicate to caller that request is denied. */
-        ixOsalIrqUnlock (lock);
+			#ifndef __linux_user
+    		ixOsalIrqUnlock (lock);
+			#else
+				ixOsalMutexUnlock(&ixOsalBufferPoolAccess[poolPtr->poolIdx]);
+			#endif      
 
         return NULL;
     }
@@ -516,15 +552,25 @@ ixOsalMbufAlloc (IX_OSAL_MBUF_POOL * poolPtr)
     IX_OSAL_MBUF_SET_USED_FLAG(newBufPtr);
 #endif
 
+#ifndef __linux_user
     ixOsalIrqUnlock (lock);
-
+#else
+		ixOsalMutexUnlock(&ixOsalBufferPoolAccess[poolPtr->poolIdx]);
+#endif
+		
     return newBufPtr;
 }
 
 PUBLIC IX_OSAL_MBUF *
 ixOsalMbufFree (IX_OSAL_MBUF * bufPtr)
 {
-    int lock;
+
+#ifndef __linux_user
+    INT32 lock;
+#else
+    INT32 index;
+#endif
+		
     IX_OSAL_MBUF_POOL *poolPtr;
 
     IX_OSAL_MBUF *nextBufPtr = NULL;
@@ -535,22 +581,26 @@ ixOsalMbufFree (IX_OSAL_MBUF * bufPtr)
     if (bufPtr == NULL)
     {
         ixOsalLog (IX_OSAL_LOG_LVL_ERROR,
-            IX_OSAL_LOG_DEV_STDOUT,
-            "ixOsalMbufFree(): "
-            "ERROR - Invalid Parameter\n", 0, 0, 0, 0, 0, 0);
+            			 IX_OSAL_LOG_DEV_STDOUT,
+            			 "ixOsalMbufFree(): "
+            			 "ERROR - Invalid Parameter\n", 0, 0, 0, 0, 0, 0);
+
         return NULL;
     }
 
-
-
+#ifndef __linux_user
     lock = ixOsalIrqLock ();
+#else
+    index = (((IX_OSAL_MBUF_POOL *)(bufPtr->ix_ctrl.ix_pool))->poolIdx);
+		ixOsalMutexLock(&ixOsalBufferPoolAccess[index],IX_OSAL_WAIT_FOREVER);
+#endif
 
 #ifdef IX_OSAL_BUFFER_FREE_PROTECTION
 	
 	/* Prevention for Buffer freed more than once*/
     if(!IX_OSAL_MBUF_ISSET_USED_FLAG(bufPtr))
     {
-   	return NULL;
+	   	return NULL;
     }
     IX_OSAL_MBUF_CLEAR_USED_FLAG(bufPtr);
 #endif
@@ -569,6 +619,7 @@ ixOsalMbufFree (IX_OSAL_MBUF * bufPtr)
     nextBufPtr = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (bufPtr);
 
     IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR (bufPtr) = poolPtr->nextFreeBuf;
+		
     poolPtr->nextFreeBuf = bufPtr;
 
     /*
@@ -576,12 +627,16 @@ ixOsalMbufFree (IX_OSAL_MBUF * bufPtr)
      */
     poolPtr->freeBufsInPool++;
 
+#ifndef __linux_user
     ixOsalIrqUnlock (lock);
+#else
+		ixOsalMutexUnlock(&ixOsalBufferPoolAccess[index]);
+#endif
 
     return nextBufPtr;
 }
 
-PUBLIC void
+PUBLIC VOID
 ixOsalMbufChainFree (IX_OSAL_MBUF * bufPtr)
 {
     while ((bufPtr = ixOsalMbufFree (bufPtr)));
@@ -590,13 +645,16 @@ ixOsalMbufChainFree (IX_OSAL_MBUF * bufPtr)
 /*
  * Function definition: ixOsalBuffPoolShow
  */
-PUBLIC void
+PUBLIC VOID
 ixOsalMbufPoolShow (IX_OSAL_MBUF_POOL * poolPtr)
 {
     IX_OSAL_MBUF *nextBufPtr;
-    int count = 0;
-    int lock;
+    INT32 count = 0;
 
+#ifndef __linux_user
+    INT32 lock;
+#endif
+		
     /*
      * check parameters 
      */
@@ -612,37 +670,47 @@ ixOsalMbufPoolShow (IX_OSAL_MBUF_POOL * poolPtr)
         return;
     }
 
+#ifndef __linux_user
     lock = ixOsalIrqLock ();
-    count = poolPtr->freeBufsInPool;
-    nextBufPtr = poolPtr->nextFreeBuf;
-    ixOsalIrqUnlock (lock);
+#else
+		ixOsalMutexLock(&ixOsalBufferPoolAccess[poolPtr->poolIdx],IX_OSAL_WAIT_FOREVER);
+#endif
 
+		count = poolPtr->freeBufsInPool;
+    nextBufPtr = poolPtr->nextFreeBuf;
+    
+#ifndef __linux_user
+    ixOsalIrqUnlock (lock);
+#else
+		ixOsalMutexUnlock(&ixOsalBufferPoolAccess[poolPtr->poolIdx]);
+#endif
+		
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
         IX_OSAL_LOG_DEV_STDOUT, "=== POOL INFORMATION ===\n", 0, 0, 0,
         0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Pool Name:                   %s\n",
-        (unsigned int) poolPtr->name, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->name, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Pool Allocation Type:        %d\n",
-        (unsigned int) poolPtr->poolAllocType, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->poolAllocType, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Pool Mbuf Mem Usage (bytes): %d\n",
-        (unsigned int) poolPtr->mbufMemSize, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->mbufMemSize, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Pool Data Mem Usage (bytes): %d\n",
-        (unsigned int) poolPtr->dataMemSize, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->dataMemSize, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Mbuf Data Capacity  (bytes): %d\n",
-        (unsigned int) poolPtr->bufDataSize, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->bufDataSize, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
         "Total Mbufs in Pool:         %d\n",
-        (unsigned int) poolPtr->totalBufsInPool, 0, 0, 0, 0, 0);
+        (UINT32) poolPtr->totalBufsInPool, 0, 0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
-        "Available Mbufs:             %d\n", (unsigned int) count, 0,
+        "Available Mbufs:             %d\n", (UINT32) count, 0,
         0, 0, 0, 0);
     ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
-        "Next Available Mbuf:         %p\n", (unsigned int) nextBufPtr,
+        "Next Available Mbuf:         %p\n", (UINT32) nextBufPtr,
         0, 0, 0, 0, 0);
 
     if (poolPtr->poolAllocType == IX_OSAL_MBUF_POOL_TYPE_USER_ALLOC)
@@ -650,14 +718,14 @@ ixOsalMbufPoolShow (IX_OSAL_MBUF_POOL * poolPtr)
         ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE,
             IX_OSAL_LOG_DEV_STDOUT,
             "Mbuf Mem Area Start address: %p\n",
-            (unsigned int) poolPtr->mbufMemPtr, 0, 0, 0, 0, 0);
+            (UINT32) poolPtr->mbufMemPtr, 0, 0, 0, 0, 0);
         ixOsalLog (IX_OSAL_LOG_LVL_MESSAGE, IX_OSAL_LOG_DEV_STDOUT,
             "Data Mem Area Start address: %p\n",
-            (unsigned int) poolPtr->dataMemPtr, 0, 0, 0, 0, 0);
+            (UINT32) poolPtr->dataMemPtr, 0, 0, 0, 0, 0);
     }
 }
 
-PUBLIC void
+PUBLIC VOID
 ixOsalMbufDataPtrReset (IX_OSAL_MBUF * bufPtr)
 {
     IX_OSAL_MBUF_POOL *poolPtr;
@@ -672,7 +740,8 @@ ixOsalMbufDataPtrReset (IX_OSAL_MBUF * bufPtr)
     }
 
     poolPtr = (IX_OSAL_MBUF_POOL *) IX_OSAL_MBUF_NET_POOL (bufPtr);
-    poolDataPtr = poolPtr->dataMemPtr;
+
+		poolDataPtr = poolPtr->dataMemPtr;
 
     if (poolPtr->poolAllocType == IX_OSAL_MBUF_POOL_TYPE_SYS_ALLOC)
     {
@@ -690,10 +759,10 @@ ixOsalMbufDataPtrReset (IX_OSAL_MBUF * bufPtr)
     {
         if (poolDataPtr)
         {
-            unsigned int bufSize = poolPtr->bufDataSize;
-            unsigned int bufDataAddr =
-                (unsigned int) IX_OSAL_MBUF_MDATA (bufPtr);
-            unsigned int poolDataAddr = (unsigned int) poolDataPtr;
+            UINT32 bufSize = poolPtr->bufDataSize;
+            UINT32 bufDataAddr =
+                (UINT32) IX_OSAL_MBUF_MDATA (bufPtr);
+            UINT32 poolDataAddr = (UINT32) poolDataPtr;
 
             /*
              * the pointer is still pointing somewhere in the mbuf payload.
@@ -736,6 +805,12 @@ ixOsalBuffPoolUninit (IX_OSAL_MBUF_POOL * pool)
         return IX_FAIL;
     }
 
+#ifdef __linux_user
+
+		ixOsalMutexDestroy(&ixOsalBufferPoolAccess[pool->poolIdx]);		
+
+#endif
+		
     if (pool->poolAllocType == IX_OSAL_MBUF_POOL_TYPE_SYS_ALLOC)
     {
 #ifdef IX_OSAL_BUFFER_ALLOC_SEPARATELY
@@ -747,16 +822,21 @@ ixOsalBuffPoolUninit (IX_OSAL_MBUF_POOL * pool)
 				for (i= pool->freeBufsInPool; i >0 && pBuf!=NULL ;i--){
 						IX_OSAL_MBUF* pBufTemp;
 						pBufTemp = IX_OSAL_MBUF_NEXT_BUFFER_IN_PKT_PTR(pBuf);
+					
 						/* Freed MBUF Data Memory area*/
-						IX_OSAL_CACHE_DMA_FREE( (void *) (IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(pBuf)) );
+
+						IX_OSAL_BUFF_MEM_FREE((VOID *) (IX_OSAL_MBUF_ALLOCATED_BUFF_DATA(pBuf)) );
+
 						/* Freed MBUF Struct Memory area*/
-						IX_OSAL_CACHE_DMA_FREE(pBuf);
+
+						IX_OSAL_BUFF_MEM_FREE(pBuf);
 						pBuf = pBufTemp;
 				}
 				
 #else    	
-        IX_OSAL_CACHE_DMA_FREE (pool->mbufMemPtr);
-        IX_OSAL_CACHE_DMA_FREE (pool->dataMemPtr);
+
+				IX_OSAL_BUFF_MEM_FREE (pool->mbufMemPtr);
+        IX_OSAL_BUFF_MEM_FREE(pool->dataMemPtr);
 #endif        
     }
 
@@ -793,7 +873,6 @@ ixOsalBuffPoolMbufAreaSizeGet (UINT32 count)
  * Function definition: ixOsalBuffPoolFreeCountGet
  */
 PUBLIC UINT32 ixOsalBuffPoolFreeCountGet(IX_OSAL_MBUF_POOL * poolPtr)
-
 {
 
    return poolPtr->freeBufsInPool;

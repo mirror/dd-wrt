@@ -10,7 +10,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -400,7 +400,7 @@
  * Common definition used in shifting and masking
  */
 #define WORD_IN_BYTES               4           /**< word == 4 bytes */
-#define BYTE_IN_BITS                8           /**< 1 byte == 8 bits */
+#define BITS_IN_BYTE                8           /**< 8 bits == 1 byte */
 #define MSB_BYTE                    3           /**< Most signficant byte 
                                                  * position in number
                                                  */

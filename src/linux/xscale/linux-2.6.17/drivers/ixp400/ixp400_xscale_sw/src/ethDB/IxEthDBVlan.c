@@ -4,7 +4,7 @@
  * @brief Implementation of the VLAN API
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -52,6 +52,11 @@ IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBUpdateTrafficClass(IxEthDBPortId portID, UINT32 classIndex);
 IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBVlanTableGet(IxEthDBPortId portID, IxEthDBVlanSet portVlanTable, IxEthDBVlanSet vlanSet);
+IX_ETH_DB_PRIVATE void ixEthDBLocalVlanMembershipChange(UINT32 vlanID, IxEthDBVlanSet table, UINT32 action);
+IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBVlanTableEntryUpdate(IxEthDBPortId portID, UINT32 setOffset);
+IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBPortVlanMembershipChange(IxEthDBPortId portID, IxEthDBVlanId vlanID, IxEthDBVlanSet table, UINT32 action);
+IX_ETH_DB_PRIVATE IxEthDBStatus ixEthDBPortVlanMembershipRangeChange(IxEthDBPortId portID, IxEthDBVlanId vlanIDMin, IxEthDBVlanId vlanIDMax, IxEthDBVlanSet table, UINT32 action);
+
 
 /* contants used by various functions as "action" parameter */
 #define ADD_VLAN    (0x1)
@@ -110,7 +115,7 @@ IxEthDBStatus ixEthDBVlanTableEntryUpdate(IxEthDBPortId portID, UINT32 setOffset
     IX_STATUS result;
         
     FILL_SETPORTVLANTABLEENTRY_MSG(message, IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portID), 
-        2 * setOffset, 
+        setOffset, 
         portInfo->vlanMembership[setOffset], 
         portInfo->transmitTaggingInfo[setOffset]);
     
@@ -138,7 +143,7 @@ IxEthDBStatus ixEthDBVlanTableEntryUpdate(IxEthDBPortId portID, UINT32 setOffset
  *
  * @internal
  */
-IX_ETH_DB_PRIVATE
+IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBVlanTableRangeUpdate(IxEthDBPortId portID)
 {
     PortInfo *portInfo    = &ixEthDBPortInfo[portID];
@@ -554,7 +559,7 @@ IxEthDBStatus ixEthDBPortVlanTableSet(IxEthDBPortId portID, IxEthDBVlanSet portV
     
     IX_ETH_DB_CHECK_REFERENCE(vlanSet);
 
-    memcpy(portVlanTable, vlanSet, sizeof (IxEthDBVlanSet));
+    ixOsalMemCopy(portVlanTable, vlanSet, sizeof (IxEthDBVlanSet));
     
     return ixEthDBVlanTableRangeUpdate(portID);
 }
@@ -582,7 +587,7 @@ IxEthDBStatus ixEthDBVlanTableGet(IxEthDBPortId portID, IxEthDBVlanSet portVlanT
     
     IX_ETH_DB_CHECK_REFERENCE(vlanSet);
     
-    memcpy(vlanSet, portVlanTable, sizeof (IxEthDBVlanSet));
+    ixOsalMemCopy(vlanSet, portVlanTable, sizeof (IxEthDBVlanSet));
     
     return IX_ETH_DB_SUCCESS;
 }
@@ -787,7 +792,7 @@ IxEthDBStatus ixEthDBEgressVlanTaggingEnabledGet(IxEthDBPortId portID, IxEthDBVl
  *
  * @internal
  */
-IX_ETH_DB_PRIVATE
+IX_ETH_DB_PUBLIC
 IxEthDBStatus ixEthDBIngressVlanModeUpdate(IxEthDBPortId portID)
 {
     PortInfo *portInfo = &ixEthDBPortInfo[portID];
@@ -1079,8 +1084,32 @@ IxEthDBStatus ixEthDBPriorityMappingTableGet(IxEthDBPortId portID, IxEthDBPriori
     
     IX_ETH_DB_CHECK_REFERENCE(priorityTable);
     
-    memcpy(priorityTable, ixEthDBPortInfo[portID].priorityTable, sizeof (IxEthDBPriorityTable));
+    ixOsalMemCopy(priorityTable, ixEthDBPortInfo[portID].priorityTable, sizeof (IxEthDBPriorityTable));
     
+    return IX_ETH_DB_SUCCESS;
+}
+
+IX_ETH_DB_PUBLIC
+IxEthDBStatus ixEthDBPriorityMappingTableUpdate(IxEthDBPortId portID)
+{
+    UINT32 classIndex;
+
+    IX_ETH_DB_CHECK_PORT(portID);
+    
+    IX_ETH_DB_CHECK_SINGLE_NPE(portID);
+    
+    /**  
+     * Update every priority level. Its corresponding traffic class info
+     * is stored internally at ixEthDBPortInfo[portID].priorityTable
+     */
+    for (classIndex = 0 ; classIndex < IX_IEEE802_1Q_QOS_PRIORITY_COUNT ; classIndex++)
+    {        
+        if (ixEthDBUpdateTrafficClass(portID, classIndex) != IX_ETH_DB_SUCCESS)
+        {
+            return IX_ETH_DB_FAIL;
+        }
+    }
+
     return IX_ETH_DB_SUCCESS;
 }
 
@@ -1181,5 +1210,7 @@ IxEthDBStatus ixEthDBVlanPortExtractionEnable(IxEthDBPortId portID, BOOL enable)
 
     IX_ETHDB_SEND_NPE_MSG(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portID), message, result);
     
+    ixEthDBPortInfo[portID].portIdExtractionEnable = enable;
+
     return result;
 }

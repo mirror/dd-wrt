@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -132,7 +132,9 @@ typedef struct
 
 #define IX_NPEMH_NPEA_OFFSET (0x6000) /**< NPE-A register base offset */
 #define IX_NPEMH_NPEB_OFFSET (0x7000) /**< NPE-B register base offset */
+#if defined(__ixp42X) || defined(__ixp46X)
 #define IX_NPEMH_NPEC_OFFSET (0x8000) /**< NPE-C register base offset */
+#endif /* __ixp42X */
 
 #define IX_NPEMH_NPESTAT_OFFSET (0x002C) /**< NPE status register offset */
 #define IX_NPEMH_NPECTL_OFFSET  (0x0030) /**< NPE control register offset */
@@ -142,8 +144,10 @@ typedef struct
 #define IX_NPEMH_NPEA_BASE (IX_NPEMH_NPE_BASE + IX_NPEMH_NPEA_OFFSET)
 /** NPE-B register base address */
 #define IX_NPEMH_NPEB_BASE (IX_NPEMH_NPE_BASE + IX_NPEMH_NPEB_OFFSET)
+#if defined(__ixp42X) || defined(__ixp46X)
 /** NPE-C register base address */
 #define IX_NPEMH_NPEC_BASE (IX_NPEMH_NPE_BASE + IX_NPEMH_NPEC_OFFSET)
+#endif /* __ixp42X */
 
 /* NPE-A configuration */
 
@@ -167,6 +171,7 @@ typedef struct
 /** NPE-B status register */
 #define IX_NPEMH_NPEB_STAT (IX_NPEMH_NPEB_BASE + IX_NPEMH_NPESTAT_OFFSET)
 
+#if defined(__ixp42X) || defined(__ixp46X)
 /* NPE-C configuration */
 
 /** NPE-C interrupt */
@@ -177,6 +182,7 @@ typedef struct
 #define IX_NPEMH_NPEC_CTL  (IX_NPEMH_NPEC_BASE + IX_NPEMH_NPECTL_OFFSET)
 /** NPE-C status register */
 #define IX_NPEMH_NPEC_STAT (IX_NPEMH_NPEC_BASE + IX_NPEMH_NPESTAT_OFFSET)
+#endif /* __ixp42X */
 
 /* NPE control register bit definitions */
 #define IX_NPEMH_NPE_CTL_OFE   (1 << 16) /**< OutFifoEnable */

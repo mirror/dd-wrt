@@ -12,7 +12,7 @@
 *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -847,11 +847,16 @@ ixAtmdAccRxVcFreeReplenish (IxAtmConnId connId,
     IxAtmdAccRxVcDescriptor *vcDescriptor = &ixAtmdAccRxVcDescriptor[rxId];
     IX_ATMDACC_RX_QUEUE *rxSwQueue = &vcDescriptor->queue;
     IxQMgrQStatus qStatus;
-   
+
+    if ( (vcDescriptor->connId != connId)  ||
+         (mbufPtr == NULL) 
+       )
+    {
+        return IX_FAIL;
+    }
+
     IX_ATMDACC_PARAMS_CHECK(
-    if ((vcDescriptor->connId != connId)  ||
-        (mbufPtr == NULL)                 ||
-        (IX_OSAL_MBUF_MLEN(mbufPtr) < (int) vcDescriptor->cellSize)) 
+    if ( (IX_OSAL_MBUF_MLEN(mbufPtr) < (int) vcDescriptor->cellSize) )
     {
         return IX_FAIL;
     });

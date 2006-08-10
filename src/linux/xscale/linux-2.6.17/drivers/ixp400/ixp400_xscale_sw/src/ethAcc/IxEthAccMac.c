@@ -9,7 +9,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -78,9 +78,24 @@
         }                                                        \
     } while(0)
 
+
+#define  IX_ETH_NPE_MCAST_FIL_PROMISCUOUS_MODE_SHL    (24)
+#define  IX_ETH_NPE_UCAST_ADDR1_SHL                   (16)    
+#define  IX_ETH_NPE_MCAST_ADDR1_SHL                    (8)
+#define  IX_ETH_NPE_MCAST_MASK1_SHL                    (0)
+
 PUBLIC IxEthAccMacState ixEthAccMacState[IX_ETH_ACC_NUMBER_OF_PORTS];
 
 PRIVATE UINT32 ixEthAccMacBase[IX_ETH_ACC_NUMBER_OF_PORTS];
+
+PRIVATE IxEthAccMacAddr ixEthAccUcastMacAddr[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE IxEthAccMacAddr ixEthAccMcastMacAddr[IX_ETH_ACC_NUMBER_OF_PORTS];
+PRIVATE IxEthAccMacAddr ixEthAccMcastMacMask[IX_ETH_ACC_NUMBER_OF_PORTS];
+
+PRIVATE BOOL ixEthAccMacRecoveryLoopShutdown = FALSE;
+PRIVATE IxOsalMutex                   macRecoveryEventQueueLock;
+PRIVATE IxOsalSemaphore               macRecoveryEventSemaphore;
+PRIVATE IxEthAccMacRecoveryEventQueue macRecoveryEventQueue;
 
 /*Forward function declarations*/
 PRIVATE void
@@ -137,6 +152,17 @@ ixEthAccNpeLoopbackMessageCallback (IxNpeMhNpeId npeId,
 				    IxNpeMhMessage msg);
 
 PRIVATE void
+ixEthAccMacRecoveryMessageCallback (IxNpeMhNpeId npeId,
+				    IxNpeMhMessage msg);
+
+PRIVATE void
+ixEthAccNotifyMacRecoveryDoneMessageCallback (IxNpeMhNpeId npeId,
+					      IxNpeMhMessage msg);
+
+PRIVATE void 
+ixEthAccMacRecoveryLoop(void *unused1);
+
+PRIVATE void
 ixEthAccMulticastAddressSet(IxEthAccPortId portId);
 
 PRIVATE BOOL
@@ -147,7 +173,24 @@ PRIVATE void
 ixEthAccMacPrint(IxEthAccMacAddr *m);
 
 PRIVATE void
+ixEthAccPortMacDefaultConfigSet(IxEthAccPortId portId);
+
+PRIVATE void
 ixEthAccMacStateUpdate(IxEthAccPortId portId);
+
+PRIVATE void
+ixEthAccMacNPEAddressFilteringNotify(IxEthAccPortId portId);
+
+PRIVATE void
+ixEthAccPortRxFrameAppendFCSConfigCallback (IxNpeMhNpeId npeId,
+                                            IxNpeMhMessage msg);
+
+PRIVATE void
+ixEthAccMibIIStatsEndianConvert (IxEthEthObjStats *retStats);
+
+PRIVATE void
+ixEthAccPortAddressFilterConfigCallback (IxNpeMhNpeId npeId,
+					 IxNpeMhMessage msg);
 
 IX_OSAL_MBUF_POOL *ixEthAccMacPortDisablePool[ IX_ETH_ACC_NUMBER_OF_PORTS];
 
@@ -185,6 +228,9 @@ ixEthAccMacMemInit(void)
 	
 	return IX_ETH_ACC_FAIL;
     }
+
+    /* init mac recovery event queue lock */
+    ixOsalMutexInit(&macRecoveryEventQueueLock);
 
     return IX_ETH_ACC_SUCCESS;
 }
@@ -248,53 +294,7 @@ ixEthAccPortEnablePriv(IxEthAccPortId portId)
     }
 
     /* set the MAC core registers */
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_TX_CNTRL2,
-	      IX_ETH_ACC_TX_CNTRL2_RETRIES_MASK);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_RANDOM_SEED,
-	      IX_ETH_ACC_RANDOM_SEED_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_THRESH_P_EMPTY,
-	      IX_ETH_ACC_MAC_THRESH_P_EMPTY_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_THRESH_P_FULL,
-	      IX_ETH_ACC_MAC_THRESH_P_FULL_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_TX_DEFER,
-	      IX_ETH_ACC_MAC_TX_DEFER_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_TX_TWO_DEFER_1,
-	      IX_ETH_ACC_MAC_TX_TWO_DEFER_1_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_TX_TWO_DEFER_2,
-	      IX_ETH_ACC_MAC_TX_TWO_DEFER_2_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_SLOT_TIME,
-	      IX_ETH_ACC_MAC_SLOT_TIME_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_INT_CLK_THRESH,
-	      IX_ETH_ACC_MAC_INT_CLK_THRESH_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_BUF_SIZE_TX,
-	      IX_ETH_ACC_MAC_BUF_SIZE_TX_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_TX_CNTRL1,
-	      IX_ETH_ACC_TX_CNTRL1_DEFAULT);
-
-    REG_WRITE(ixEthAccMacBase[portId],
-	      IX_ETH_ACC_MAC_RX_CNTRL1,
-	      IX_ETH_ACC_RX_CNTRL1_DEFAULT);
+    ixEthAccPortMacDefaultConfigSet(portId);
 
     /* set the global state */
     ixEthAccMacState[portId].portDisableState = ACTIVE;
@@ -559,7 +559,7 @@ ixEthAccPortDisablePriv(IxEthAccPortId portId)
     if (ixEthDBPortDisable(portId) != IX_ETH_DB_SUCCESS)
     {
 	status = IX_ETH_ACC_FAIL;
-        IX_ETH_ACC_FATAL_LOG("ixEthAccPortDisable: failed to disable EthDB for this port\n", 0, 0, 0, 0, 0, 0);
+        IX_ETH_ACC_FATAL_LOG("ixEthAccPortDisable: failed to disable EthDB for this port=%u\n", (UINT32) portId, 0, 0, 0, 0, 0);
     }
 
     /* enter the critical section */
@@ -862,27 +862,23 @@ ixEthAccPortEnabledQueryPriv(IxEthAccPortId portId, BOOL *enabled)
     return IX_ETH_ACC_SUCCESS;
 }
 
-IxEthAccStatus 
-ixEthAccPortMacResetPriv(IxEthAccPortId portId)
+PRIVATE void
+ixEthAccPortMacDefaultConfigSet(IxEthAccPortId portId)
 {
-    IX_ETH_ACC_VALIDATE_PORT_ID(portId);
+    UINT32 i;
+    INT32 key;
 
-    if (!IX_ETH_IS_PORT_INITIALIZED(portId))
-    {
-	return (IX_ETH_ACC_PORT_UNINITIALIZED);
-    }
+    /* Enter critical section */
+    key = ixOsalIrqLock();
     
-    /* Reset MAC core */    
-    REG_WRITE(ixEthAccMacBase[portId], 
-	      IX_ETH_ACC_MAC_CORE_CNTRL,
-	      IX_ETH_ACC_CORE_RESET);
-
-    ixOsalSleep(IX_ETH_ACC_MAC_RESET_DELAY);
-
-    REG_WRITE(ixEthAccMacBase[portId], 
-	      IX_ETH_ACC_MAC_CORE_CNTRL,
-	      IX_ETH_ACC_CORE_MDC_EN);
-
+    /*Set the Unicast MAC to the specified value*/
+    for(i=0; i<IX_IEEE803_MAC_ADDRESS_SIZE; i++)
+    {	
+	REG_WRITE(ixEthAccMacBase[portId],
+		  IX_ETH_ACC_MAC_UNI_ADDR_1 + i*sizeof(UINT32),
+		  ixEthAccUcastMacAddr[portId].macAddress[i]);	
+    }
+ 
     /* Reconfigure the MAC core registers */
     REG_WRITE(ixEthAccMacBase[portId],
 	      IX_ETH_ACC_MAC_TX_CNTRL2,
@@ -932,14 +928,92 @@ ixEthAccPortMacResetPriv(IxEthAccPortId portId)
 	      IX_ETH_ACC_MAC_RX_CNTRL1,
 	      IX_ETH_ACC_RX_CNTRL1_DEFAULT);
 
+    /* Exit critical section */
+    ixOsalIrqUnlock(key);
+
+    /* Notify NPE about the unicast address filtering configuration */
+    ixEthAccMacNPEAddressFilteringNotify(portId);
+
+}
+
+IxEthAccStatus 
+ixEthAccPortMacResetPriv(IxEthAccPortId portId)
+{
+    IX_ETH_ACC_VALIDATE_PORT_ID(portId);
+
+    if (!IX_ETH_IS_PORT_INITIALIZED(portId))
+    {
+	return (IX_ETH_ACC_PORT_UNINITIALIZED);
+    }
+    
+    /* Reset MAC core */    
+    REG_WRITE(ixEthAccMacBase[portId], 
+	      IX_ETH_ACC_MAC_CORE_CNTRL,
+	      IX_ETH_ACC_CORE_RESET);
+
+    ixOsalBusySleep(IX_ETH_ACC_MAC_RESET_DELAY * 1000);
+
+    REG_WRITE(ixEthAccMacBase[portId], 
+	      IX_ETH_ACC_MAC_CORE_CNTRL,
+	      IX_ETH_ACC_CORE_MDC_EN);
+
+    /* Reconfigure MAC Register set to default settings */
+    ixEthAccPortMacDefaultConfigSet(portId);
 
     /* set the global state */
     ixEthAccMacState[portId].portDisableState = ACTIVE;
     ixEthAccMacState[portId].enabled = TRUE;
 
-    /* Update MAC State */
+    /* Update MAC Registers based on the existing states
+     *  1) FCS:    Rx pending / Tx generation 
+     *  2) PAD:    Rx pad removal / Tx insertion
+     *  3) DUPLEX: Full or Half
+     */
     ixEthAccMacStateUpdate(portId);
     
+    return IX_ETH_ACC_SUCCESS;
+}
+
+PUBLIC IxEthAccStatus 
+ixEthAccMacStateRestore(IxEthAccPortId portId)
+{
+    if (!IX_ETH_ACC_IS_SERVICE_INITIALIZED())
+    {
+	return (IX_ETH_ACC_FAIL);
+    }
+
+    IX_ETH_ACC_VALIDATE_PORT_ID(portId);
+
+    if (!IX_ETH_IS_PORT_INITIALIZED(portId))
+    {
+	return (IX_ETH_ACC_PORT_UNINITIALIZED);
+    }
+
+    if(!ixEthAccMacState[portId].initDone)
+    {
+        IX_ETH_ACC_WARNING_LOG("EthAcc: Eth %d: Cannot restore Ethernet MAC: MAC Address is not initialized \n",(INT32)portId,0,0,0,0,0);
+	return (IX_ETH_ACC_MAC_UNINITIALIZED);
+    }
+	
+    REG_WRITE(ixEthAccMacBase[portId], 
+	      IX_ETH_ACC_MAC_CORE_CNTRL,
+	      IX_ETH_ACC_CORE_MDC_EN);
+
+    /* Reconfigure MAC Register set to default settings */
+    ixEthAccPortMacDefaultConfigSet(portId);
+
+    /* set the global state */
+    ixEthAccMacState[portId].portDisableState = ACTIVE;
+    ixEthAccMacState[portId].enabled = TRUE;
+
+    /* Update MAC Registers based on the existing states
+     *  1) FCS:    Rx pending / Tx generation 
+     *  2) PAD:    Rx pad removal / Tx insertion
+     *  3) DUPLEX: Full or Half
+     */
+	
+    ixEthAccMacStateUpdate(portId);
+
     return IX_ETH_ACC_SUCCESS;
 }
 
@@ -988,6 +1062,27 @@ ixEthAccNpeLoopbackMessageCallback (IxNpeMhNpeId npeId,
 
     /* unlock message reception mutex */
     ixOsalMutexUnlock(&ixEthAccMacState[portId].npeLoopbackMessageLock);
+}
+
+PRIVATE void
+ixEthAccNotifyMacRecoveryDoneMessageCallback (IxNpeMhNpeId npeId,
+		  		              IxNpeMhMessage msg)
+{
+    IxEthAccPortId portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeId,0);
+
+#ifndef NDEBUG
+    /* Prudent to at least check the port is within range */
+    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    {
+	IX_ETH_ACC_FATAL_LOG("IXETHACC:ixEthAccNotifyMacRecoveryDoneMessageCallback: Illegal port: %u\n", 
+            (UINT32) portId, 0, 0, 0, 0, 0);
+
+	return;
+    }
+#endif
+
+    /* unlock message reception mutex */
+    ixOsalMutexUnlock(&ixEthAccMacState[portId].ackNotifyMacRecoveryDoneLock);
 }
 
 IxEthAccStatus 
@@ -1273,6 +1368,7 @@ ixEthAccPortUnicastMacAddressSetPriv (IxEthAccPortId portId,
 				  IxEthAccMacAddr *macAddr)
 {
     UINT32 i;
+    INT32 key;
 
     IX_ETH_ACC_VALIDATE_PORT_ID(portId);
 
@@ -1280,7 +1376,6 @@ ixEthAccPortUnicastMacAddressSetPriv (IxEthAccPortId portId,
     {
 	return (IX_ETH_ACC_PORT_UNINITIALIZED);
     }
-
 
     if (macAddr == NULL)
     {
@@ -1310,13 +1405,26 @@ ixEthAccPortUnicastMacAddressSetPriv (IxEthAccPortId portId,
         return IX_ETH_ACC_FAIL;
     }
     
+    /* Enter critical section */
+    key = ixOsalIrqLock();    
+
     /*Set the Unicast MAC to the specified value*/
     for(i=0;i<IX_IEEE803_MAC_ADDRESS_SIZE;i++)
     {	
 	REG_WRITE(ixEthAccMacBase[portId],
 		  IX_ETH_ACC_MAC_UNI_ADDR_1 + i*sizeof(UINT32),
 		  macAddr->macAddress[i]);	
+
+        /* Keep a copy ucast address set */
+        ixEthAccUcastMacAddr[portId].macAddress[i] = macAddr->macAddress[i];
     }
+
+    /* Exit critical section */
+    ixOsalIrqUnlock(key);
+
+    /* Notify NPE about the unicast address filtering configuration */
+    ixEthAccMacNPEAddressFilteringNotify(portId);
+
     ixEthAccMacState[portId].initDone = TRUE;
 
     return IX_ETH_ACC_SUCCESS;
@@ -1873,7 +1981,6 @@ ixEthAccPortRxFrameAppendFCSConfigCallback (IxNpeMhNpeId npeId,
     ixOsalMutexUnlock(&ixEthAccMacState[portId].appendFCSConfigLock);
 }
 
-
 IxEthAccStatus 
 ixEthAccPortRxFrameAppendFCSEnablePriv (IxEthAccPortId portId)
 {
@@ -1921,7 +2028,7 @@ ixEthAccPortRxFrameAppendFCSEnablePriv (IxEthAccPortId portId)
     {
         /* wait for NPE response */
         if (ixOsalMutexLock(&ixEthAccMacState[portId].appendFCSConfigLock,
-                            IX_ETH_ACC_PORT_DISABLE_DELAY_MSECS)
+                            IX_ETH_ACC_FCS_CONFIG_DELAY_MSECS)
             != IX_SUCCESS)
         {
             status = IX_ETH_ACC_FAIL;
@@ -1978,7 +2085,7 @@ ixEthAccPortRxFrameAppendFCSDisablePriv (IxEthAccPortId portId)
     {
         /* wait for NPE response */
         if (ixOsalMutexLock(&ixEthAccMacState[portId].appendFCSConfigLock,
-                            IX_ETH_ACC_PORT_DISABLE_DELAY_MSECS)
+                            IX_ETH_ACC_FCS_CONFIG_DELAY_MSECS)
             != IX_SUCCESS)
         {
             status = IX_ETH_ACC_FAIL;
@@ -2061,6 +2168,12 @@ ixEthAccMibIIStatsEndianConvert (IxEthEthObjStats *retStats)
 	IX_OSAL_SWAP_BE_SHARED_LONG(retStats->TxLargeFrameDiscards);
     retStats->TxVLANIdFilterDiscards = 
 	IX_OSAL_SWAP_BE_SHARED_LONG(retStats->TxVLANIdFilterDiscards);
+
+    /* Ethernet Mac Recovery and TxUnderrunDiscards */
+    retStats->TxUnderrunDiscards = 
+	IX_OSAL_SWAP_BE_SHARED_LONG(retStats->TxUnderrunDiscards);
+    retStats->MacRecoveryTriggered = 
+	IX_OSAL_SWAP_BE_SHARED_LONG(retStats->MacRecoveryTriggered);
 
     /* Extended MIB-II stats */
     retStats->RxValidFramesTotalOctets = 
@@ -2265,6 +2378,125 @@ ixEthAccMibIIStatsClear (IxEthAccPortId portId)
     return status;
 }
 
+IxEthAccStatus 
+ixEthAccMibIIShow (IxEthAccPortId portId)
+{
+  IxEthEthObjStats *portStats = NULL;
+
+  IX_ETH_ACC_VALIDATE_PORT_ID(portId);
+
+  if (!IX_ETH_IS_PORT_INITIALIZED(portId))
+  {
+    return (IX_ETH_ACC_PORT_UNINITIALIZED);
+  }
+
+  /*
+   * The statistics are gathered by the NPE therefore we use DMA_MALLOC
+   * to make it cache safe for us to read.
+   */
+  if((portStats = IX_OSAL_CACHE_DMA_MALLOC(sizeof(IxEthEthObjStats))) == NULL)
+  {
+    IX_ETH_ACC_FATAL_LOG("ixEthAccMibIIShow: failed to create portStats on port %d! \n", \
+			 portId, 0, 0, 0, 0, 0);
+    return IX_ETH_ACC_FAIL;
+  }
+ 
+  memset(portStats, 0, sizeof(IxEthEthObjStats));
+	    
+  printf("\nStatistics for port %d:\n", portId);
+  if(ixEthAccMibIIStatsGetClear(portId, portStats) != IX_ETH_ACC_SUCCESS)
+  {
+    IX_ETH_ACC_FATAL_LOG("ixEthAccMibIIShow: Unable to retrieve statistics for port %d!\n", \
+			 portId, 0, 0, 0, 0, 0);
+    return IX_ETH_ACC_FAIL;
+  }
+  else
+  {
+    /* Rx MibII statistics */
+    printf (" dot3portStatsAlignmentErrors:           %u\n",
+	    (unsigned) portStats->dot3StatsAlignmentErrors);
+    printf (" dot3portStatsFCSErrors:                 %u\n",
+	    (unsigned) portStats->dot3StatsFCSErrors);
+    printf (" dot3portStatsInternalMacReceiveErrors:  %u\n",
+	    (unsigned) portStats->dot3StatsInternalMacReceiveErrors);        
+    printf (" RxOverrunDiscards:                      %u\n",
+	    (unsigned) portStats->RxOverrunDiscards);
+    printf (" RxLearnedEntryDiscards:                 %u\n",
+	    (unsigned) portStats->RxLearnedEntryDiscards);
+    printf (" RxLargeFramesDiscards:                  %u\n",
+	    (unsigned) portStats->RxLargeFramesDiscards);
+    printf (" RxSTPBlockedDiscards:                   %u\n",
+	    (unsigned) portStats->RxSTPBlockedDiscards);    
+    printf (" RxVLANTypeFilterDiscards:               %u\n",
+	    (unsigned) portStats->RxVLANTypeFilterDiscards);
+    printf (" RxVLANIdFilterDiscards:                 %u\n",
+	    (unsigned) portStats->RxVLANIdFilterDiscards);
+    printf (" RxInvalidSourceDiscards:                %u\n",
+	    (unsigned) portStats->RxInvalidSourceDiscards);
+    printf (" RxWhiteListDiscards:                    %u\n",
+	    (unsigned) portStats->RxWhiteListDiscards);
+    printf (" RxBlackListDiscards:                    %u\n",
+	    (unsigned) portStats->RxBlackListDiscards);
+    printf (" RxUnderflowEntryDiscards:               %u\n",
+	    (unsigned) portStats->RxUnderflowEntryDiscards);
+
+    /* Tx MibII Statistics */
+    printf (" dot3portStatsSingleCollisionFrames:     %u\n",
+	    (unsigned) portStats->dot3StatsSingleCollisionFrames);
+    printf (" dot3portStatsMultipleCollisionFrames:   %u\n",
+	    (unsigned) portStats->dot3StatsMultipleCollisionFrames);
+    printf (" dot3portStatsDeferredTransmissions:     %u\n",
+	    (unsigned) portStats->dot3StatsDeferredTransmissions);
+    printf (" dot3portStatsLateCollisions:            %u\n",
+	    (unsigned) portStats->dot3StatsLateCollisions);
+    printf (" dot3portStatsExcessiveCollsions:        %u\n",
+	    (unsigned) portStats->dot3StatsExcessiveCollsions);
+    printf (" dot3portStatsInternalMacTransmitErrors: %u\n",
+	    (unsigned) portStats->dot3StatsInternalMacTransmitErrors);
+    printf (" dot3portStatsCarrierSenseErrors:        %u\n",
+	    (unsigned) portStats->dot3StatsCarrierSenseErrors);
+    printf (" TxLargeFrameDiscards:                   %u\n",
+	    (unsigned) portStats->TxLargeFrameDiscards);
+    printf (" TxVLANIdFilterDiscards:                 %u\n",
+	    (unsigned) portStats->TxVLANIdFilterDiscards);
+    printf (" TxUnderrunDiscards:                     %u\n",
+	    (unsigned) portStats->TxUnderrunDiscards);
+    printf (" MacRecoveryTriggered:                   %u\n",
+	    (unsigned) portStats->MacRecoveryTriggered);
+
+    /* Rx extended MibII Statistics */
+    printf (" RxValidFramesTotalOctets:               %u\n",
+	    (unsigned) portStats->RxValidFramesTotalOctets);
+    printf (" RxUcastPkts:                            %u\n",
+	    (unsigned) portStats->RxUcastPkts);
+    printf (" RxBcastPkts:                            %u\n",
+	    (unsigned) portStats->RxBcastPkts);
+    printf (" RxMcastPkts:                            %u\n",
+	    (unsigned) portStats->RxMcastPkts);
+    printf (" RxPkts64Octets:                         %u\n",
+	    (unsigned) portStats->RxPkts64Octets);
+    printf (" RxPkts65to127Octets:                    %u\n",
+	    (unsigned) portStats->RxPkts65to127Octets);
+    printf (" RxPkts128to255Octets:                   %u\n",
+	    (unsigned) portStats->RxPkts128to255Octets);
+    printf (" RxPkts256to511Octets:                   %u\n",
+	    (unsigned) portStats->RxPkts256to511Octets);
+    printf (" RxPkts512to1023Octets:                  %u\n",
+	    (unsigned) portStats->RxPkts512to1023Octets);
+    printf (" RxPkts1024to1518Octets:                 %u\n",
+	    (unsigned) portStats->RxPkts1024to1518Octets);
+
+     /* Rx and Tx internal debugging counters in extended MibII Statistics */
+    printf (" RxInternalNPEReceiveErrors:             %u\n",
+	    (unsigned) portStats->RxInternalNPEReceiveErrors);
+    printf (" TxInternalNPETransmitErrors:            %u\n",
+	    (unsigned) portStats->TxInternalNPETransmitErrors);
+    printf("\n");
+  }
+  
+  return IX_ETH_ACC_SUCCESS;
+}
+
 /* Initialize the ethernet MAC settings */
 IxEthAccStatus
 ixEthAccMacInit(IxEthAccPortId portId)
@@ -2300,6 +2532,12 @@ ixEthAccMacInit(IxEthAccPortId portId)
         ixOsalMutexInit(&ixEthAccMacState[portId].npeLoopbackMessageLock);
 
         ixOsalMutexInit(&ixEthAccMacState[portId].appendFCSConfigLock);
+
+	ixOsalMutexInit(&ixEthAccMacState[portId].addrFilterConfigLock);
+
+        ixOsalMutexInit(&ixEthAccMacState[portId].ackNotifyMacRecoveryDoneLock);
+
+        ixOsalMutexInit(&ixEthAccMacState[portId].macRecoveryLock);
 
 	ixEthAccMacState[portId].portDisableRxMbufPtr = NULL;
         ixEthAccMacState[portId].portDisableTxMbufPtr = NULL;
@@ -2341,6 +2579,13 @@ ixEthAccMacInit(IxEthAccPortId portId)
     }
     
     IX_OSAL_ASSERT (ixEthAccMacBase[portId] != 0);
+
+   if(IX_SUCCESS != ixNpeMhUnsolicitedCallbackRegister
+       (IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId), IX_ETHNPE_MAC_RECOVERY_START, ixEthAccMacRecoveryMessageCallback))
+    {	
+        IX_ETH_ACC_FATAL_LOG("ixEthAccMacInit: failed to register MAC recovery routine for this port=%u\n", (UINT32)portId, 0, 0, 0, 0, 0);
+        return IX_ETH_ACC_FAIL;  
+    }
   
     REG_WRITE(ixEthAccMacBase[portId], 
 	      IX_ETH_ACC_MAC_CORE_CNTRL,
@@ -2375,7 +2620,7 @@ IxEthAccStatus  ixEthAccMacUninit (IxEthAccPortId portId)
     if (!IX_ETH_ACC_IS_PORT_VALID(portId))
     {
 
-        IX_ETH_ACC_FATAL_LOG("Invalid portId", 0, 0, 0, 0, 0, 0);
+        IX_ETH_ACC_FATAL_LOG("Invalid portId=%u", (UINT32) portId, 0, 0, 0, 0, 0);
         Status = IX_ETH_ACC_INVALID_PORT;
     }
     if (TRUE == ixEthAccMacState[portId].macInitialised)
@@ -2409,13 +2654,13 @@ IxEthAccStatus  ixEthAccMacUninit (IxEthAccPortId portId)
 PRIVATE void
 ixEthAccMacStateUpdate(IxEthAccPortId portId)
 {
-    UINT32 regval;
+    UINT32 regval, irqlock;
 
     if (!IX_ETH_IS_PORT_INITIALIZED(portId))
     {
 	return;
     }
-
+    irqlock = ixOsalIrqLock();
     if ( ixEthAccMacState[portId].enabled == FALSE )
     {
 	/*  Just disable both the transmitter and reciver in the MAC.  */
@@ -2433,6 +2678,7 @@ ixEthAccMacStateUpdate(IxEthAccPortId portId)
 		  IX_ETH_ACC_MAC_TX_CNTRL1,
 		  regval & ~IX_ETH_ACC_TX_CNTRL1_TX_EN);
     }
+	ixOsalIrqUnlock(irqlock);
     
     if(ixEthAccMacState[portId].fullDuplex)
     {
@@ -2478,6 +2724,7 @@ ixEthAccMacStateUpdate(IxEthAccPortId portId)
     {
 	ixEthAccPortPromiscuousModeClearPriv(portId);
     }
+	 irqlock = ixOsalIrqLock();
 
     if ( ixEthAccMacState[portId].enabled == TRUE )
     {
@@ -2496,6 +2743,7 @@ ixEthAccMacStateUpdate(IxEthAccPortId portId)
 		  IX_ETH_ACC_MAC_TX_CNTRL1,
 		  regval | IX_ETH_ACC_TX_CNTRL1_TX_EN);
     }
+	ixOsalIrqUnlock(irqlock);
 }
 
 
@@ -2523,6 +2771,72 @@ ixEthAccMacPrint(IxEthAccMacAddr *m)
 	   m->macAddress[4], m->macAddress[5]);    
 }
 
+
+PRIVATE void
+ixEthAccPortAddressFilterConfigCallback (IxNpeMhNpeId npeId,
+				       IxNpeMhMessage msg)
+{
+    IxEthAccPortId portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeId,0);
+
+#ifndef NDEBUG
+    /* Prudent to at least check the port is within range */
+    if (portId >= IX_ETH_ACC_NUMBER_OF_PORTS)
+    {
+        IX_ETH_ACC_FATAL_LOG("IXETHACC: ixEthAccPortAddressFilterConfigCallback: Illegal port: %u\n",
+            (UINT32) portId, 0, 0, 0, 0, 0);
+
+        return;
+    }
+#endif
+
+    /* unlock message reception mutex */
+    ixOsalMutexUnlock(&ixEthAccMacState[portId].addrFilterConfigLock);
+}
+
+PRIVATE void
+ixEthAccMacNPEAddressFilteringNotify(IxEthAccPortId portId)
+{
+    IxNpeMhMessage message;
+    IX_STATUS npeMhStatus;
+
+    /* Send NPE message to notify of new address filtering configuration:
+     * a) promiscuous mode
+     * b) lsb of unicast mac address 
+     * c) lsb of multicast mac address
+     * d) lsb of multicast mac mask   
+     */
+    message.data[0] = 
+        (IX_ETHNPE_ADDRESS_FILTER_CONFIG << IX_ETH_ACC_MAC_MSGID_SHL) |
+        (IX_ETHNPE_PHYSICAL_ID_TO_LOGICAL_ID(portId) << IX_ETH_ACC_MAC_PORTID_SHL) | 0x00;
+    message.data[1] = 
+      ((ixEthAccMacState[portId].promiscuous == TRUE ? 0x01 : 0x00)
+       << IX_ETH_NPE_MCAST_FIL_PROMISCUOUS_MODE_SHL) |
+      (ixEthAccUcastMacAddr[portId].macAddress[5] << IX_ETH_NPE_UCAST_ADDR1_SHL) |
+      (ixEthAccMcastMacAddr[portId].macAddress[5] << IX_ETH_NPE_MCAST_ADDR1_SHL) |
+      (ixEthAccMcastMacMask[portId].macAddress[5] << IX_ETH_NPE_MCAST_MASK1_SHL);
+    
+    npeMhStatus = ixNpeMhMessageWithResponseSend(IX_ETHNPE_PHYSICAL_ID_TO_NODE(portId),
+						 message,
+						 IX_ETHNPE_ADDRESS_FILTER_CONFIG_ACK,
+						 ixEthAccPortAddressFilterConfigCallback,
+						 IX_NPEMH_SEND_RETRIES_DEFAULT);
+    
+    if (npeMhStatus != IX_SUCCESS)
+      {
+	IX_ETH_ACC_WARNING_LOG("ixEthAccMacNPEAddressFilteringNotify: Eth %d: Fail to pass address filtering configuration to NPE \n",(INT32)portId,0,0,0,0,0);       
+      }
+    else
+    {
+        /* wait for NPE response */
+        if (ixOsalMutexLock(&ixEthAccMacState[portId].addrFilterConfigLock,
+                            IX_ETH_ACC_ADDRESS_FILTER_CONFIG_DELAY_MSECS)
+            != IX_SUCCESS)
+	  {
+	    IX_ETH_ACC_WARNING_LOG("ixEthAccMacNPEAddressFilteringNotify: Eth %d: Fail to lock addrFilterConfigLock \n",(INT32)portId,0,0,0,0,0);             
+	  }
+    }
+}
+
 /* Set the multicast address and address mask registers
  * 
  * A bit in the address mask register must be set if
@@ -2538,6 +2852,7 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 {
     UINT32 i;
     UINT32 j;
+    INT32 key;
     IxEthAccMacAddr addressMask;
     IxEthAccMacAddr address;
     IxEthAccMacAddr alwaysClearBits;
@@ -2626,7 +2941,10 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 	    }
 	}
     }
-    
+
+    /* Enter critical section */
+    key = ixOsalIrqLock();    
+
     /*write the new addr filtering to h/w*/    
     for(i=0;i<IX_IEEE803_MAC_ADDRESS_SIZE;i++)
     {	
@@ -2635,7 +2953,194 @@ ixEthAccMulticastAddressSet(IxEthAccPortId portId)
 		  addressMask.macAddress[i]);
 	REG_WRITE(ixEthAccMacBase[portId],
 		  IX_ETH_ACC_MAC_ADDR_1+i*sizeof(UINT32),
-		  address.macAddress[i]);	    
+		  address.macAddress[i]);
+
+        /* Store a copy of multicast address and its mask */
+	ixEthAccMcastMacAddr[portId].macAddress[i] = address.macAddress[i];
+        ixEthAccMcastMacMask[portId].macAddress[i] = addressMask.macAddress[i];
     }
+ 
+    /* Exit critical section */
+    ixOsalIrqUnlock(key);
+
+    /* Notify NPE about the multicast filtering configuration */
+    ixEthAccMacNPEAddressFilteringNotify(portId);
 }
 
+IxEthAccStatus
+ixEthAccMacRecoveryLoopStart(void)
+{
+    IxOsalThread macRecoveryThread;
+    IxOsalThreadAttr threadAttr;
+
+    threadAttr.name      = "EthMac Recovery Thread";
+    threadAttr.stackSize = 32 * 1024; /* 32kbytes */
+    threadAttr.priority  = 90;
+
+    /* reset event queue */
+    ixOsalMutexLock(&macRecoveryEventQueueLock, IX_OSAL_WAIT_FOREVER);
+
+    RESET_QUEUE(&macRecoveryEventQueue);
+
+    ixOsalMutexUnlock(&macRecoveryEventQueueLock);
+
+    /* init mac recovery event queue semaphore */
+    if (ixOsalSemaphoreInit(&macRecoveryEventSemaphore, 0) != IX_SUCCESS)
+    {
+	return IX_ETH_ACC_FAIL;
+    }
+    
+    /* Enable MAC Recovery Loop */
+    ixEthAccMacRecoveryLoopShutdown = FALSE;
+
+    /* Create thread for MAC recovery processing */
+    if (ixOsalThreadCreate(&macRecoveryThread, &threadAttr, ixEthAccMacRecoveryLoop, NULL) 
+	!= IX_SUCCESS)
+    {
+        return IX_ETH_ACC_FAIL;
+    }
+
+    /* Start MAC recovery processing thread */    
+    ixOsalThreadStart(&macRecoveryThread);
+   
+    return IX_ETH_ACC_SUCCESS;
+}
+
+IxEthAccStatus
+ixEthAccMacRecoveryLoopStop(void)
+{
+    /* Disable MAC Recovery Loop */
+    ixEthAccMacRecoveryLoopShutdown = TRUE;
+
+    /* wake up mac recovery loop to actually process the shutdown event */
+    ixOsalSemaphorePost(&macRecoveryEventSemaphore);
+
+    if (ixOsalSemaphoreDestroy(&macRecoveryEventSemaphore) != IX_SUCCESS)
+    {
+        return IX_ETH_ACC_FAIL;
+    }
+
+    return IX_ETH_ACC_SUCCESS;
+}
+
+PRIVATE
+void  ixEthAccMacRecoveryLoop(void *unused1)
+{
+  while (!ixEthAccMacRecoveryLoopShutdown)
+  {
+      ixOsalSemaphoreWait(&macRecoveryEventSemaphore, IX_OSAL_WAIT_FOREVER);
+     
+      if (!ixEthAccMacRecoveryLoopShutdown)
+      {
+          UINT32 intLockKey;
+	  IxNpeMhMessage message;
+	  IxEthAccMacRecoveryEvent local_event;
+	  IxEthAccPortId portId;
+	  IxNpeMhNpeId npeId;
+	  
+	  /* lock queue */
+	  ixOsalMutexLock(&macRecoveryEventQueueLock, IX_OSAL_WAIT_FOREVER);
+	  	  
+	  /* lock NPE interrupts */
+	  intLockKey = ixOsalIrqLock();
+	  
+	  /* extract event */
+	  local_event = *(QUEUE_TAIL(&macRecoveryEventQueue));
+	  
+	  SHIFT_UPDATE_QUEUE(&macRecoveryEventQueue);
+	  
+	  ixOsalIrqUnlock(intLockKey);
+	
+	  ixOsalMutexUnlock(&macRecoveryEventQueueLock);
+
+	  portId = local_event.portID;
+	  npeId  = local_event.npeId;
+ 	  
+	  /* Permit only one task to recover MAC at a time */
+	  ixOsalMutexLock(&ixEthAccMacState[portId].macRecoveryLock, IX_OSAL_WAIT_FOREVER);
+	  
+	  /* Perform MAC Reset */
+	  ixEthAccPortMacReset(portId);
+	  
+	  /* Contruct message to notify NPE that MAC reset has been done */
+	  message.data[0] = ((IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE<<IX_ETH_ACC_MAC_MSGID_SHL) | (portId<<16));
+	  message.data[1] = 0;          
+	  
+	  if(ixNpeMhMessageWithResponseSend(npeId,
+					    message,
+					    IX_ETHNPE_NOTIFY_MAC_RECOVERY_DONE,
+					    ixEthAccNotifyMacRecoveryDoneMessageCallback,
+					    IX_NPEMH_SEND_RETRIES_DEFAULT)
+	     != IX_SUCCESS)
+	    {
+	      ixOsalMutexUnlock(&ixEthAccMacState[portId].macRecoveryLock);        
+	      printf("EthAcc: (Mac) NotifyMACRecovery failed to send NPE message\n");        
+	      return;
+	    }
+	  	  
+	  ixOsalMutexLock(&ixEthAccMacState[portId].ackNotifyMacRecoveryDoneLock, 
+			  IX_ETH_ACC_MAC_RECOVERY_DONE_ACK_DELAY_MSECS);
+	  
+	  /* Permit other tasks to perform MIB statistics Get operation */
+	  ixOsalMutexUnlock(&ixEthAccMacState[portId].macRecoveryLock);	  
+      }
+
+  } /*  while (!ixEthAccMacRecoveryLoopShutdown) */
+}
+
+PRIVATE void
+ixEthAccMacRecoveryMessageCallback (IxNpeMhNpeId npeId,
+				    IxNpeMhMessage msg)
+{ 
+  UINT32 intLockKey;
+  IxEthAccMacRecoveryEvent *local_event;
+  IxEthAccPortId portId = IX_ETHNPE_NODE_AND_PORT_TO_PHYSICAL_ID(npeId,0);
+
+#ifndef NDEBUG
+  ixOsalLog(
+	IX_OSAL_LOG_LVL_ERROR,
+        IX_OSAL_LOG_DEV_STDERR,
+	"IxEthAccMACRecoveryMessageCallback triggered for port ID = %d. \n", 
+        portId, 0,0,0,0,0);
+
+  /* Check mesg id is IX_ETHNPE_MAC_RECOVERY_START */ 
+  if (((msg.data[0]>>IX_ETH_ACC_MAC_MSGID_SHL) & 0xFF) != IX_ETHNPE_MAC_RECOVERY_START) 
+  {
+    IX_ETH_ACC_FATAL_LOG(
+     "IXETHACC:ixEthAccMacRecoveryMessageCallback: Illegal message: %u\n", 
+     (UINT32)portId, 0, 0, 0, 0, 0);
+    return;
+  }
+#endif
+
+  /* lock interrupts to protect queue */
+  intLockKey = ixOsalIrqLock();
+
+  if (CAN_ENQUEUE(&macRecoveryEventQueue))
+  {
+    local_event = QUEUE_HEAD(&macRecoveryEventQueue);
+    
+    /* create event structure on queue */
+    local_event->eventType = IX_ETHNPE_MAC_RECOVERY_START;
+    local_event->portID    = portId;
+    local_event-> npeId    = npeId;
+    
+    /* update queue */
+    PUSH_UPDATE_QUEUE(&macRecoveryEventQueue);
+        
+    /* increment event queue semaphore */
+    ixOsalSemaphorePost(&macRecoveryEventSemaphore);
+  }
+  else
+  {
+    ixOsalLog(
+	      IX_OSAL_LOG_LVL_ERROR,
+	      IX_OSAL_LOG_DEV_STDERR,
+	      "IxEthAccMACRecoveryMessageCallback: fail to queue event. \n", 
+	      0, 0,0,0,0,0);
+  }
+
+  /* unlock interrupts */
+  ixOsalIrqUnlock(intLockKey);
+
+}

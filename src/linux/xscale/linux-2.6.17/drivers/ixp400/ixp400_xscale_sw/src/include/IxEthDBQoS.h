@@ -4,7 +4,7 @@
  * @brief Public definitions for QoS traffic classes
  * 
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -119,7 +119,9 @@ UINT8 ixEthDBTrafficClassDefinitions[][3] =
     {            0x82,                      8,                    3 }, /* NPE A image ID 10.82.02.0 */
     {            0x8B,                      8,                    3 }, /* NPE A image ID 10.8B.02.0 */
     {            0x8C,                      8,                    3 }, /* NPE A image ID 10.8C.02.0 */
-    {            0x8D,                      8,                    3 }  /* NPE A image ID 10.8D.02.0 */
+    {            0x8D,                      8,                    3 }, /* NPE A image ID 10.8D.02.0 */
+    {            0x90,                      8,                    3 }, /* NPE A image ID 10.90.00.0 */
+    {            0x91,                      8,                    3 }  /* NPE A image ID 10.91.00.0 */ 
 };
 
 /**

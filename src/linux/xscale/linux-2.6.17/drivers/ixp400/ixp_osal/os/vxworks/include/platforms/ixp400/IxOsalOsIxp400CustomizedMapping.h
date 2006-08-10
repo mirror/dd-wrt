@@ -16,7 +16,7 @@
  * @par
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -113,10 +113,7 @@
 #define ix_codelets_timeSyncAcc        55
 
 
-
-#endif /* IxOsalOsIxp400CustomizedMapping_H */
-
-
+ #endif  /* IxOsalOsIxp400CustomizedMapping_H */
 
 /***************************
  * osal
@@ -415,6 +412,9 @@
 
 
 
+
+
+
 /******************************
 * To Enforce LE AC mappings
 ******************************/
@@ -425,3 +425,9 @@
 #endif
 #define IX_OSAL_LE_AC_MAPPING
 #endif
+
+
+
+
+
+

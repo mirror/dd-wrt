@@ -6,7 +6,7 @@
  * Design Notes:
  *
  * @par
- * IXP400 SW Release Crypto version 2.1
+ * IXP400 SW Release Crypto version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -77,8 +77,8 @@
 #define IX_OSAL_IXP400_GPIO_PHYS_BASE          IXP425_GPIO_BASE_PHYS
 #define IX_OSAL_IXP400_UART1_PHYS_BASE         IXP425_UART1_BASE_PHYS
 #define IX_OSAL_IXP400_UART2_PHYS_BASE         IXP425_UART2_BASE_PHYS
-#define IX_OSAL_IXP400_ETH_MAC_B_VIRT_BASE     IXP4XX_EthB_BASE_VIRT	// no EthA!
-#define IX_OSAL_IXP400_ETH_MAC_C_VIRT_BASE     IXP4XX_EthC_BASE_VIRT	// same
+#define IX_OSAL_IXP400_ETH_MAC_B0_PHYS_BASE    IXP425_EthA_BASE_PHYS   /* MAC on NPE-B */
+#define IX_OSAL_IXP400_ETH_MAC_C0_PHYS_BASE    IXP425_EthB_BASE_PHYS   /* MAC on NPE-C */
 #define IX_OSAL_IXP400_NPEA_PHYS_BASE          IXP425_NPEA_BASE_PHYS
 #define IX_OSAL_IXP400_NPEB_PHYS_BASE          IXP425_NPEB_BASE_PHYS
 #define IX_OSAL_IXP400_NPEC_PHYS_BASE          IXP425_NPEC_BASE_PHYS
@@ -192,6 +192,10 @@
 #define IX_OSAL_IXP400_USB_IRQ                 IRQ_IXP425_USB
 #endif /* IX_OSAL_OS_LINUX_VERSION_2_6 */
 
+/* */
+#define IX_OSAL_IXP400_ICMR    				IXP4XX_ICMR
+#define IX_OSAL_IXP400_ICLR     			IXP4XX_ICLR
+
 /*
  * OS name retrieval
  */
@@ -256,7 +260,7 @@ PUBLIC void ixOsalLinuxMemUnmap (IxOsalMemoryMap * map);
 NOTE: Include the apppropriate (IXP400 specific) Platform system Header file here 
 			Platform - ixp425, ixp465 and etc
 */
-#ifndef __ixp46X
+#if !defined (__ixp46X)
 #include  "IxOsalOsIxp425Sys.h"
 #else
 #include "IxOsalOsIxp465Sys.h"
