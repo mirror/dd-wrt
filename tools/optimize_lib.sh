@@ -16,6 +16,7 @@ INSTALLLIB=$6
 MAP=${DIR}/.map
 SYM=${DIR}/.sybmols
 UNR=${DIR}/.unresolved
+find $SEARCHDIR -name .svn -exec rm -rf {} +
 BINARIES=`find $SEARCHDIR -path $SEARCHDIR/lib -prune -o -type f -print | file -f - | grep ELF | cut -d':' -f1`
 
 if [ ! -f ${DIR}/${LIB_SO} ] ; then
@@ -34,6 +35,7 @@ rm -f $UNR
 
 $NM -o --defined-only --no-sort ${DIR}/${LIB_SO} | cut -d' ' -f3 > $MAP
 $NM --dynamic -u --no-sort $BINARIES | sort -u > $UNR
+
 for symbol in `cat $UNR` ; do 
 	if grep -q "^$symbol" $MAP ; then echo "-u $symbol" >> $SYM ;
 fi ; done 
