@@ -926,7 +926,7 @@ qos.legend2="Priorité des Services";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standart";
+qos.prio_s="Standard";
 qos.prio_b="Bulk";
 qos.legend3="Priorité Sous-réseau";
 qos.ipmask="IP/Masque";
@@ -945,8 +945,8 @@ hqos.right3="Débit descendant:";
 hqos.right4="Doit être entre 80% et 100% du débit descendant maximum de la connexion.";
 hqos.right6="Vous pouvez contrôler la priorité de plusieurs types d'applications pour optimiser la bande passante.";
 hqos.right8="Vous pouvez contrôler la priorité du trafic pour les adresses IP spécifiées ou une plage d'adresses.";
-hqos.right10="Vous pouvez contrôler la priorité du trafic en fonction de l\'adresse MAC des clients.";
-hqos.right12="Vous pouvez contrôler la priorité du trafic en fonction du port ethernet auquel sont connectés les clients.";
+hqos.right10="Vous pouvez contrôler la priorité du traffic en fonction de l\'adresse MAC des clients.";
+hqos.right12="Vous pouvez contrôler la priorité du traffic en fonction du port ethernet auquel sont connectés les clients.";
 
 
 
