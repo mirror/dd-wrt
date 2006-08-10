@@ -3558,25 +3558,25 @@ br_shutdown();
 #else
 int br_add_bridge (const char *brname)
     {
-    return eval("brctl","addbr",brname);
+    return eval("/usr/sbin/brctl","addbr",brname);
     }
 int br_del_bridge (const char *brname)
     {
-    return eval("brctl","delbr",brname);
+    return eval("/usr/sbin/brctl","delbr",brname);
     }
 int br_add_interface (const char *br, const char *dev)
     {
-    return eval("brctl","addif",br,dev);
+    return eval("/usr/sbin/brctl","addif",br,dev);
     }
 int br_del_interface (const char *br, const char *dev)
     {
-    return eval("brctl","delif",br,dev);
+    return eval("/usr/sbin/brctl","delif",br,dev);
     }
 int br_set_stp_state (const char *br, int stp_state)
     {
     if (stp_state)
-    return eval("brctl",br,"stp","on");
+    return eval("/usr/sbin/brctl","stp",br,"on");
     else
-    return eval("brctl",br,"stp","off");
+    return eval("/usr/sbin/brctl","stp",br,"off");
     }
 #endif
