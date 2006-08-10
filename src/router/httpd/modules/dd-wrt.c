@@ -1585,7 +1585,7 @@ for (i=0;i<chancount;i++)
 		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
       websWrite (wp, "		else\n");
       websWrite (wp,
-		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset)+\" - \"+freq[i]+\"GHz</option>\");\n");
+		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\"GHz</option>\");\n");
       websWrite (wp, "}\n");
     }
 #endif
