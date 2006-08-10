@@ -48,6 +48,7 @@ EXTRA_CFLAGS += \
 	-I$(OSAL_DIR)/os/linux/include/modules/ \
 	-I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
 	-I$(OSAL_DIR)/os/linux/include/modules/core/ \
+	-I$(OSAL_DIR)/os/linux/include/modules/ddk/ \
 	-I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
 	-I$(OSAL_DIR)/os/linux/include/platforms/ \
 	-I$(OSAL_DIR)/os/linux/include/platforms/ixp400/
@@ -76,7 +77,9 @@ endif
 EXTRA_CFLAGS += \
 	-I$(IX_XSCALE_SW)/src/include \
 	-I$(IX_XSCALE_SW)/src/ethAcc/include \
+	-I$(IX_XSCALE_SW)/src/hssAcc/include \
 	-I$(IX_XSCALE_SW)/src/ethDB/include \
+	-I$(IX_XSCALE_SW)/src/featureCtrl/include \
 	-I$(IX_XSCALE_SW)/src/npeMh/include \
 	-I$(IX_XSCALE_SW)/src/npeDl/include \
 	-I$(IX_XSCALE_SW)/src/qmgr \
@@ -93,10 +96,15 @@ ixp400-objs += \
 	ixp_osal/os/linux/src/core/IxOsalOsMsgQ.o \
 	ixp_osal/os/linux/src/core/IxOsalOsSymbols.o \
 	ixp_osal/os/linux/src/modules/bufferMgt/IxOsalOsBufferMgtSymbols.o \
+	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkClk.o  \
+	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkIrq.o \
+	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkPci.o  \
+	ixp_osal/os/linux/src/modules/ddk/IxOsalOsDdkSymbols.o	\
 	ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMem.o  \
 	ixp_osal/os/linux/src/modules/ioMem/IxOsalOsIoMemSymbols.o \
 	ixp_osal/os/linux/src/platforms/ixp400/IxOsalOsIxp400.o \
 	ixp_osal/os/linux/src/platforms/ixp400/IxOsalOsIxp400Symbols.o
+	
 ixp400-objs += \
 	ixp_osal/src/core/IxOsalTime.o \
 	ixp_osal/src/modules/ioMem/IxOsalIoMem.o \
@@ -111,6 +119,7 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/qmgr/IxQMgrDispatcher.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrInit.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrAqmIf.o \
+	ixp400_xscale_sw/src/qmgr/IxQMgrHwQIfIxp400.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrQAccess.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrSymbols.o
 ixp400-objs += \
@@ -121,6 +130,18 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/ethAcc/IxEthAccMac.o \
 	ixp400_xscale_sw/src/ethAcc/IxEthAccMii.o \
 	ixp400_xscale_sw/src/ethAcc/IxEthAccSymbols.o
+
+ixp400-objs += \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccCCM.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccChanRx.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccCommon.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccPCM.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccPDM.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccPktRx.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccPktTx.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccService.o \
+	ixp400_xscale_sw/src/hssAcc/IxHssAccSymbols.o 	
+
 ixp400-objs += \
 	ixp400_xscale_sw/src/ethDB/IxEthDBAPI.o \
 	ixp400_xscale_sw/src/ethDB/IxEthDBAPISupport.o \
