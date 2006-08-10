@@ -128,8 +128,7 @@ function setRadioTable(){
 		cell_timer.id = "td_" + i;
 		cell_timer.title = i + "h - " + eval(i+1) + "h";
 		cell_timer.innerHTML = "&nbsp;";
-		eval("addEvent(cell_timer, 'click', function() { setWlTimer(this.id) })");
-
+		cell_timer.onclick=function(){setWlTimer(this.id, true);};
 	}
 }
 
