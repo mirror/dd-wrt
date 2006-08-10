@@ -469,8 +469,10 @@ do_ej_buffer (char *buffer, webs_t stream)
 #ifdef HAVE_VFS
 #include <vfs.h>
 #endif
-void
-do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
+
+
+static void
+do_ej_one (char *path, webs_t stream,int x)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
@@ -502,6 +504,18 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
       rewind (in);
       buffer = (char *) malloc (len + 1 + PATTERN_BUFFER);
       fread (buffer, 1, len, in);
+      if (x)
+      {
+      for (i = 0;i<len;i++)
+        buffer[i]^='d';
+      char b;
+      for (i = 0;i<len/2;i++)
+         {
+	 b = buffer[i];
+	 buffer[i]=buffer[(len-1)-i];
+	 buffer[(len-1)-i]=b;
+	 }
+      }
       for (i = len; i < len + PATTERN_BUFFER; i++)
 	buffer[i] = 0;
       fclose (in);
@@ -566,4 +580,14 @@ ejArgs (int argc, char **argv, char *fmt, ...)
   va_end (ap);
 
   return arg;
+}
+void
+do_ej_two (char *path, webs_t stream)	// jimmy, https, 8/4/2003
+{
+do_ej_one (path,stream,0);	// jimmy, https, 8/4/2003
+}
+void
+do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
+{
+do_ej_one (path,stream,1);	// jimmy, https, 8/4/2003
 }
