@@ -37,7 +37,7 @@
 #if defined(__FreeBSD__) || defined (__OpenBSD__)
 #   define LEASEFILE "/var/db/dnsmasq.leases"
 #else
-#   define LEASEFILE "/var/lib/misc/dnsmasq.leases"
+#   define LEASEFILE "/tmp/dnsmasq.leases"
 #endif
 #if defined(__FreeBSD__)
 #   define CONFFILE "/usr/local/etc/dnsmasq.conf"
