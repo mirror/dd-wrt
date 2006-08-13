@@ -502,8 +502,8 @@ endif
 
 bridge:
 	$(MAKE) -C bridge brctl/brctl
-bridge:
-	$(MAKE) -C bridge brctl/brctl
+# bridge:
+#	$(MAKE) -C bridge brctl/brctl
 
 bridge-clean:
 	@echo "Cleaning bridge"
