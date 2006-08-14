@@ -202,7 +202,7 @@ int mk_nocat_conf(void)
         else {
 	        /* Irving - Rework getting DNS */
 	        struct dns_lists *dns_list = NULL;
-	        dns_list = get_dns_list(0);
+	        dns_list = get_dns_list();
 	        if(!dns_list || dns_list->num_servers == 0){
 		        fprintf(fp, "DNSAddr \t%s\n", nvram_safe_get("lan_ipaddr") );
 	        } else {
