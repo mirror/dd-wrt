@@ -20,6 +20,9 @@
 #ifndef __BCM_INTR_H
 #define __BCM_INTR_H
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
 
 #if defined(CONFIG_BCM96338)
 #include <6338_intr.h>
@@ -49,5 +52,8 @@ extern void dump_intr_regs(void);
 #define BcmHalInterruptEnable(irq)      enable_brcm_irq( irq )
 #define BcmHalInterruptDisable(irq)     disable_brcm_irq( irq )
 
+#ifdef __cplusplus
+    }
+#endif
 
 #endif

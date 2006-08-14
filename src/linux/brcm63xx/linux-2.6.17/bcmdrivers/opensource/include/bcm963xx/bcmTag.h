@@ -66,8 +66,7 @@ typedef struct _FILE_TAG
     unsigned char rootfsLen[IMAGE_LEN];          // if non zero, filesystem size in clear ASCII text.
     unsigned char kernelAddress[ADDRESS_LEN];    // if non zero, kernel starting address
     unsigned char kernelLen[IMAGE_LEN];          // if non zero, kernel size in clear ASCII text.
-    unsigned char dualImage[FLAG_LEN];           // if 1, dual image
-    unsigned char inactiveLen[FLAG_LEN];         // if 1, the image is INACTIVE; if 0, active 
+    unsigned char imageSequence[FLAG_LEN * 2];   // incrments everytime an image is flashed
     unsigned char reserved[RESERVED_LEN];        // reserved for later use
     unsigned char imageValidationToken[TOKEN_LEN];// image validation token - can be crc, md5, sha;  for
                                                  // now will be 4 unsigned char crc

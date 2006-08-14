@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2004 Broadcom Corporation
 #
-obj-y           := irq.o prom.o setup.o time.o ser_init.o bcm63xx_flash.o  bcm63xx_led.o  board.o  boardparms.o  cfiflash.o
+obj-y           := irq.o prom.o setup.o time.o ser_init.o bcm63xx_flash.o  bcm63xx_led.o  board.o  boardparms.o  cfiflash.o flash_api.o
 
 SRCBASE         := $(TOPDIR)
 EXTRA_CFLAGS    += -I$(SRCBASE)/include

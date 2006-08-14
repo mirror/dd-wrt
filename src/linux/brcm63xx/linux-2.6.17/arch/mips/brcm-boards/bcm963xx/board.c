@@ -49,21 +49,14 @@
 #include <board.h>
 #include <bcmTag.h>
 #include "boardparms.h"
-#include "cfiflash.h"
+#include "flash_api.h"
 #include "bcm_intr.h"
 #include "board.h"
 #include "bcm_map_part.h"
 
+#define MAX_MAC_STR_LEN     19         //VICTOR mac address string 18+1 in regular format   
+
 /* Typedefs. */
-#if defined (NON_CONSECUTIVE_MAC)
-// used to be the last octet. Now changed to the first 5 bits of the the forth octet
-// to reduced the duplicated MAC addresses.
-#define CHANGED_OCTET   3
-#define SHIFT_BITS      3
-#else
-#define CHANGED_OCTET   1
-#define SHIFT_BITS      0
-#endif
 
 #if defined (WIRELESS)
 #define SES_BTN_PRESSED 0x00000001
@@ -72,6 +65,10 @@
 #define SES_LED_ON      1
 #define SES_LED_BLINK   2
 #endif
+
+//VICTOR FOR USR
+int parsexdigit(char str);
+int parsehwaddr(unsigned char *str,uint8_t *hwaddr);
 
 typedef struct
 {
@@ -85,7 +82,7 @@ typedef struct
     unsigned long ulSdramSize;
     unsigned long ulPsiSize;
     unsigned long ulNumMacAddrs;
-    unsigned long ucaBaseMacAddr[NVRAM_MAC_ADDRESS_LEN];
+    unsigned char ucaBaseMacAddr[NVRAM_MAC_ADDRESS_LEN];
     MAC_ADDR_INFO MacAddrs[1];
 } NVRAM_INFO, *PNVRAM_INFO;
 
@@ -131,6 +128,7 @@ extern void __init boardLedInit(PLED_MAP_PAIR);
 extern void boardLedCtrl(BOARD_LED_NAME, BOARD_LED_STATE);
 extern void kerSysLedRegisterHandler( BOARD_LED_NAME ledName,
     HANDLE_LED_FUNC ledHwFunc, int ledFailType );
+extern UINT32 getCrc32(byte *pdata, UINT32 size, UINT32 crc);
 
 /* Prototypes. */
 void __init InitNvramInfo( void );
@@ -195,6 +193,182 @@ static unsigned short sesBtn_gpio = BP_NOT_DEFINED;
 static unsigned short sesLed_gpio = BP_NOT_DEFINED;
 #endif
 
+//roy Alert LED===============================================
+#define GPIODIR 0xFFFE0404  //roy GPIO31~GPIO0
+#define GPIODATA 0xFFFE040C //roy GPIO31~GPIO0
+#define GPIOMODE 0xFFFE0418 //roy
+
+struct timer_list AlertLedTimer; //roy
+void AlertLed_On(void); //roy
+void AlertLed_Off(void); //roy
+void AlertLed_On2Secs(void); //roy
+void AlertLed_FastFlash(void); //roy
+void AlertLed_SlowFlash(void); //roy
+
+static int AlertLed_OnState        = 0; //roy
+static int AlertLed_OffState       = 0; //roy
+static int AlertLed_On2SecsState   = 0; //roy
+static int AlertLed_FastFlashState = 0; //roy
+static int AlertLed_SlowFlashState = 0; //roy
+static int AlertLed_FlashStateUse  = 0; //roy
+
+static int AlertLed_On2SecsState_Off   = 0; 	//roy
+static int AlertLed_FastFlashState_Off = 0; 	//roy
+static int AlertLed_SlowFlashState_Off = 0; 	//roy
+//roy Alert LED===============================================
+
+void AlertLed_Off(void)
+{ 
+//printk("roy LED off\n"); 				    
+    unsigned int GPIOVal1Mask1= 0xffffffdf; //GPIODIR use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask1= 0xffffffdf; //GPIODATA use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask2= 0x00000000; //GPIO5=0=>On, low activate
+    unsigned int GPIOVal2Mask3= 0x00000020; //GPIO5=1=>Off, low activate
+				
+		AlertLed_OffState = 1;
+		
+		if (AlertLed_FastFlashState == 1)
+		{
+				AlertLed_FlashStateUse = 1;
+				return;
+		}
+		
+		//Set GPIODIR====================================================================
+		*((volatile unsigned int *)GPIODIR)=((*((volatile unsigned int *)GPIODIR)& GPIOVal1Mask1) | ~(GPIOVal1Mask1));
+		//Alert LED OFF (Set GPIODATA)====================================================
+    *((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask3));  	
+} 
+
+
+void AlertLed_On(void)
+{ 
+//printk("roy LED on\n");     
+    unsigned int GPIOVal1Mask1= 0xffffffdf; //GPIODIR use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask1= 0xffffffdf; //GPIODATA use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask2= 0x00000000; //GPIO5=0=>On, low activate
+    unsigned int GPIOVal2Mask3= 0x00000020; //GPIO5=1=>Off, low activate
+		
+		AlertLed_OnState = 1;		
+		//Set GPIODIR====================================================================
+		*((volatile unsigned int *)GPIODIR)=((*((volatile unsigned int *)GPIODIR)& GPIOVal1Mask1) | ~(GPIOVal1Mask1));
+		//Alert LED ON (Set GPIODATA)====================================================
+	  *((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask2));  	
+} 
+
+
+void AlertLed_On2Secs(void)
+{ 
+//printk("roy LED on 2 secs\n"); 	   
+    unsigned int GPIOVal1Mask1= 0xffffffdf; //GPIODIR use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask1= 0xffffffdf; //GPIODATA use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask2= 0x00000000; //GPIO5=0=>On, low activate
+    unsigned int GPIOVal2Mask3= 0x00000020; //GPIO5=1=>Off, low activate
+		
+		AlertLed_On2SecsState = 1;		
+		//Set GPIODIR====================================================================
+		*((volatile unsigned int *)GPIODIR)=((*((volatile unsigned int *)GPIODIR)& GPIOVal1Mask1) | ~(GPIOVal1Mask1));
+		if (AlertLed_On2SecsState_Off)
+		{
+			//Alert LED OFF (Set GPIODATA)====================================================
+    	*((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask3)); 
+ 			AlertLed_On2SecsState_Off = 0;
+ 		}
+ 		else
+ 		{
+ 			//Alert LED ON (Set GPIODATA)====================================================
+	    *((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask2));  	
+ 			AlertLed_On2SecsState_Off = 1;
+
+ 			init_timer(&AlertLedTimer);
+    	AlertLedTimer.function = AlertLed_On2Secs;
+    	AlertLedTimer.expires = jiffies + HZ*2;        
+    	add_timer (&AlertLedTimer);
+ 		}
+} 
+
+
+void AlertLed_FastFlash(void)
+{ 
+//printk("roy LED fast flash\n"); 	 
+//		if(AlertLed_OnState || AlertLed_OffState || AlertLed_SlowFlashState)
+//		{
+//			AlertLed_OnState =  0;
+//			AlertLed_OffState = 0;
+//			AlertLed_SlowFlashState = 0;
+//			return;
+//  	}
+
+		if ((AlertLed_FastFlashState == 1) && (AlertLed_FlashStateUse == 1))
+		{
+//			printk("ggggg\n");
+			AlertLed_FastFlashState = 0;
+			AlertLed_FlashStateUse = 0;
+			AlertLed_Off();
+						
+			return;
+		}
+
+    unsigned int GPIOVal1Mask1= 0xffffffdf; //GPIODIR use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask1= 0xffffffdf; //GPIODATA use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask2= 0x00000000; //GPIO5=0=>On, low activate
+    unsigned int GPIOVal2Mask3= 0x00000020; //GPIO5=1=>Off, low activate
+		
+		AlertLed_FastFlashState = 1;		
+		//Set GPIODIR====================================================================
+		*((volatile unsigned int *)GPIODIR)=((*((volatile unsigned int *)GPIODIR)& GPIOVal1Mask1) | ~(GPIOVal1Mask1));
+		if (AlertLed_FastFlashState_Off)
+		{
+			//Alert LED OFF (Set GPIODATA)====================================================
+    	*((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask3)); 
+ 			AlertLed_FastFlashState_Off = 0;
+ 		}
+ 		else
+ 		{
+ 			//Alert LED ON (Set GPIODATA)====================================================
+	    *((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask2));  	
+    	AlertLed_FastFlashState_Off = 1;
+ 		}
+		init_timer(&AlertLedTimer);
+    AlertLedTimer.function = AlertLed_FastFlash;
+    AlertLedTimer.expires = jiffies + HZ/2;        
+    add_timer (&AlertLedTimer);
+} 
+
+
+void AlertLed_SlowFlash(void)
+{ 
+//printk("roy LED slow flash\n"); 
+		if(AlertLed_OnState || AlertLed_OffState)
+		{
+			return;
+		}
+    unsigned int GPIOVal1Mask1= 0xffffffdf; //GPIODIR use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask1= 0xffffffdf; //GPIODATA use, bit31(GPIO31)~bit0(GPIO0), control GPIO5
+    unsigned int GPIOVal2Mask2= 0x00000000; //GPIO5=0=>On, low activate
+    unsigned int GPIOVal2Mask3= 0x00000020; //GPIO5=1=>Off, low activate
+				
+		AlertLed_SlowFlashState = 1;
+		//Set GPIODIR====================================================================
+		*((volatile unsigned int *)GPIODIR)=((*((volatile unsigned int *)GPIODIR)& GPIOVal1Mask1) | ~(GPIOVal1Mask1));
+		if (AlertLed_SlowFlashState_Off)
+		{
+			//Alert LED OFF (Set GPIODATA)====================================================
+    	*((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask3)); 
+ 			AlertLed_SlowFlashState_Off = 0;
+ 		}
+ 		else
+ 		{
+ 			//Alert LED ON (Set GPIODATA)====================================================
+	    *((volatile unsigned int *)GPIODATA) = ((*((volatile unsigned int *)GPIODATA)& GPIOVal2Mask1) | (GPIOVal2Mask2));  	
+    	AlertLed_SlowFlashState_Off = 1;
+ 		}
+		init_timer(&AlertLedTimer);
+    AlertLedTimer.function = AlertLed_SlowFlash;
+    AlertLedTimer.expires = jiffies + HZ;        
+    add_timer (&AlertLedTimer);
+} 
+
+
 #if defined(MODULE)
 int init_module(void)
 {
@@ -232,7 +406,7 @@ static int __init brcm_board_init( void )
      {kLedEnd, NULL, NULL}
     };
 
-    int ret;
+		int ret;
         
     ret = register_chrdev(BOARD_DRV_MAJOR, "bcrmboard", &board_fops );
     if (ret < 0)
@@ -458,7 +632,7 @@ void kerSysMipsSoftReset(void)
         int i;
 
         /* Disable interrupts. */
-	local_irq_disable();
+        cli();
 
         /* Reset all blocks. */
         PERF->BlockSoftReset &= ~BSR_ALL_BLOCKS;
@@ -475,14 +649,103 @@ void kerSysMipsSoftReset(void)
 #endif
 }
 
+//VICTOR FOR USR
+int parsexdigit(char str)
+{
+    int digit;
+
+    if ((str >= '0') && (str <= '9')) 
+        digit = str - '0';
+    else if ((str >= 'a') && (str <= 'f')) 
+        digit = str - 'a' + 10;
+    else if ((str >= 'A') && (str <= 'F')) 
+        digit = str - 'A' + 10;
+    else 
+        return -1;
+
+    return digit;
+} //End of VICTOR FOR USR
+
+
+//VICTOR FOR USR
+int parsehwaddr(unsigned char *str,uint8_t *hwaddr)
+{
+    int digit1,digit2;
+    int idx = 6;
+
+    if (strlen(str) != MAX_MAC_STR_LEN-2)
+        return -1;
+    if (*(str+2) != ':' || *(str+5) != ':' || *(str+8) != ':' || *(str+11) != ':' || *(str+14) != ':')
+        return -1;
+    
+    while (*str && (idx > 0)) {
+	    digit1 = parsexdigit(*str);
+	    if (digit1 < 0)
+            return -1;
+	    str++;
+	    if (!*str)
+            return -1;
+
+	    if (*str == ':') {
+	        digit2 = digit1;
+	        digit1 = 0;
+	    }
+	    else {
+	        digit2 = parsexdigit(*str);
+	        if (digit2 < 0)
+                return -1;
+            str++;
+	    }
+
+	    *hwaddr++ = (digit1 << 4) | digit2;
+	    idx--;
+
+	    if (*str == ':') 
+            str++;
+	}
+    return 0;
+} //End of VICTOR FOR USR
+
+//VICTOR FOR USR
+void kerSysSetMacAddress(char* pucaMacAddr) 
+{
+	UINT32 crc = CRC32_INIT_VALUE;
+   	NVRAM_DATA NvramData;
+	volatile unsigned char *mac, *tmphwaddr;
+
+    memcpy((char *)&NvramData, (char *)get_nvram_start_addr(), sizeof(NVRAM_DATA));
+	printk("kerSysSetMacAddress: %s\n",pucaMacAddr);
+
+	mac = (unsigned char *)NvramData.ucaBaseMacAddr;
+	printk("Original ucaBaseMacAddr: %02X %02X %02X %02X %02X %02X\r\n", mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+
+	parsehwaddr(pucaMacAddr,tmphwaddr);
+	memcpy(NvramData.ucaBaseMacAddr,tmphwaddr,NVRAM_MAC_ADDRESS_LEN);
+	printk("New Mac: %02X %02X %02X %02X %02X %02X\r\n",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+    
+    NvramData.ulCheckSum = 0;
+    crc = getCrc32((char *)&NvramData, (UINT32) sizeof(NVRAM_DATA), crc);      
+    NvramData.ulCheckSum = crc;
+    kerSysNvRamSet((char *)&NvramData, sizeof(NVRAM_DATA), NVRAM_VERSION_NUMBER_ADDRESS);
+
+} /* kerSysSetMacAddr */ 
+//End of VICTOR FOR USR
+
 
 int kerSysGetMacAddress( unsigned char *pucaMacAddr, unsigned long ulId )
 {
+    const unsigned long constMacAddrIncIndex = 3;
     int nRet = 0;
     PMAC_ADDR_INFO pMai = NULL;
     PMAC_ADDR_INFO pMaiFreeNoId = NULL;
     PMAC_ADDR_INFO pMaiFreeId = NULL;
-    unsigned long i = 0, ulIdxNoId = 0, ulIdxId = 0, shiftedIdx = 0;
+    unsigned long i = 0, ulIdxNoId = 0, ulIdxId = 0, baseMacAddr = 0;
+
+    /* baseMacAddr = last 3 bytes of the base MAC address treated as a 24 bit integer */
+    memcpy((unsigned char *) &baseMacAddr,
+        &g_pNvramInfo->ucaBaseMacAddr[constMacAddrIncIndex],
+        NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex);
+    baseMacAddr >>= 8;
 
     for( i = 0, pMai = g_pNvramInfo->MacAddrs; i < g_pNvramInfo->ulNumMacAddrs;
         i++, pMai++ )
@@ -490,10 +753,11 @@ int kerSysGetMacAddress( unsigned char *pucaMacAddr, unsigned long ulId )
         if( ulId == pMai->ulId || ulId == MAC_ADDRESS_ANY )
         {
             /* This MAC address has been used by the caller in the past. */
+            baseMacAddr = (baseMacAddr + i) << 8;
             memcpy( pucaMacAddr, g_pNvramInfo->ucaBaseMacAddr,
-                NVRAM_MAC_ADDRESS_LEN );
-            shiftedIdx = i;
-            pucaMacAddr[NVRAM_MAC_ADDRESS_LEN - CHANGED_OCTET] += (shiftedIdx << SHIFT_BITS);
+                constMacAddrIncIndex);
+            memcpy( pucaMacAddr + constMacAddrIncIndex, (unsigned char *)
+                &baseMacAddr, NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex );
             pMai->chInUse = 1;
             pMaiFreeNoId = pMaiFreeId = NULL;
             break;
@@ -528,15 +792,21 @@ int kerSysGetMacAddress( unsigned char *pucaMacAddr, unsigned long ulId )
         memcpy(pucaMacAddr, g_pNvramInfo->ucaBaseMacAddr,NVRAM_MAC_ADDRESS_LEN);
         if( pMaiFreeNoId )
         {
-            shiftedIdx = ulIdxNoId;
-            pucaMacAddr[NVRAM_MAC_ADDRESS_LEN - CHANGED_OCTET] += (shiftedIdx << SHIFT_BITS);
+            baseMacAddr = (baseMacAddr + ulIdxNoId) << 8;
+            memcpy( pucaMacAddr, g_pNvramInfo->ucaBaseMacAddr,
+                constMacAddrIncIndex);
+            memcpy( pucaMacAddr + constMacAddrIncIndex, (unsigned char *)
+                &baseMacAddr, NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex );
             pMaiFreeNoId->ulId = ulId;
             pMaiFreeNoId->chInUse = 1;
         }
         else
         {
-            shiftedIdx = ulIdxId;
-            pucaMacAddr[NVRAM_MAC_ADDRESS_LEN - CHANGED_OCTET] += (shiftedIdx << SHIFT_BITS);
+            baseMacAddr = (baseMacAddr + ulIdxId) << 8;
+            memcpy( pucaMacAddr, g_pNvramInfo->ucaBaseMacAddr,
+                constMacAddrIncIndex);
+            memcpy( pucaMacAddr + constMacAddrIncIndex, (unsigned char *)
+                &baseMacAddr, NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex );
             pMaiFreeId->ulId = ulId;
             pMaiFreeId->chInUse = 1;
         }
@@ -550,15 +820,24 @@ int kerSysGetMacAddress( unsigned char *pucaMacAddr, unsigned long ulId )
 
 int kerSysReleaseMacAddress( unsigned char *pucaMacAddr )
 {
+    const unsigned long constMacAddrIncIndex = 3;
     int nRet = -EINVAL;
     unsigned long ulIdx = 0;
-    int idx = (pucaMacAddr[NVRAM_MAC_ADDRESS_LEN - CHANGED_OCTET] -
-        g_pNvramInfo->ucaBaseMacAddr[NVRAM_MAC_ADDRESS_LEN - CHANGED_OCTET]);
+    unsigned long baseMacAddr = 0;
+    unsigned long relMacAddr = 0;
 
-    // if overflow 255 (negitive), add 256 to have the correct index
-    if (idx < 0)
-        idx += 256;
-    ulIdx = (unsigned long) (idx >> SHIFT_BITS);
+    /* baseMacAddr = last 3 bytes of the base MAC address treated as a 24 bit integer */
+    memcpy((unsigned char *) &baseMacAddr,
+        &g_pNvramInfo->ucaBaseMacAddr[constMacAddrIncIndex],
+        NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex);
+    baseMacAddr >>= 8;
+
+    /* Get last 3 bytes of MAC address to release. */
+    memcpy((unsigned char *) &relMacAddr, &pucaMacAddr[constMacAddrIncIndex],
+        NVRAM_MAC_ADDRESS_LEN - constMacAddrIncIndex);
+    relMacAddr >>= 8;
+
+    ulIdx = relMacAddr - baseMacAddr;
 
     if( ulIdx < g_pNvramInfo->ulNumMacAddrs )
     {
@@ -610,6 +889,224 @@ void kerSysWakeupMonitorTask( void )
         wake_up_process( g_monitor_task );
 }
 
+static PFILE_TAG getTagFromPartition(int imageNumber)
+{
+    static unsigned char sectAddr1[sizeof(FILE_TAG)];
+    static unsigned char sectAddr2[sizeof(FILE_TAG)];
+    int blk = 0;
+    UINT32 crc;
+    PFILE_TAG pTag = NULL;
+    unsigned char *pBase = flash_get_memptr(0);
+    unsigned char *pSectAddr = NULL;
+
+    /* The image tag for the first image is always after the boot loader.
+     * The image tag for the second image, if it exists, is at one half
+     * of the flash size.
+     */
+    if( imageNumber == 1 )
+    {
+        blk = flash_get_blk((int) (pBase + FLASH_LENGTH_BOOT_ROM));
+        pSectAddr = sectAddr1;
+    }
+    else
+        if( imageNumber == 2 )
+        {
+            blk = flash_get_blk((int) (pBase + (flash_get_total_size() / 2)));
+            pSectAddr = sectAddr2;
+        }
+
+    if( blk )
+    {
+        memset(pSectAddr, 0x00, sizeof(FILE_TAG));
+        flash_read_buf((unsigned short) blk, 0, pSectAddr, sizeof(FILE_TAG));
+        crc = CRC32_INIT_VALUE;
+        crc = getCrc32(pSectAddr, (UINT32)TAG_LEN-TOKEN_LEN, crc);      
+        pTag = (PFILE_TAG) pSectAddr;
+        if (crc != (UINT32)(*(UINT32*)(pTag->tagValidationToken)))
+            pTag = NULL;
+    }
+
+    return( pTag );
+}
+
+static int getPartitionFromTag( PFILE_TAG pTag )
+{
+    int ret = 0;
+
+    if( pTag )
+    {
+        PFILE_TAG pTag1 = getTagFromPartition(1);
+        PFILE_TAG pTag2 = getTagFromPartition(2);
+        int sequence = simple_strtoul(pTag->imageSequence,  NULL, 10);
+        int sequence1 = (pTag1) ? simple_strtoul(pTag1->imageSequence, NULL, 10)
+            : -1;
+        int sequence2 = (pTag2) ? simple_strtoul(pTag2->imageSequence, NULL, 10)
+            : -1;
+
+        if( pTag1 && sequence == sequence1 )
+            ret = 1;
+        else
+            if( pTag2 && sequence == sequence2 )
+                ret = 2;
+    }
+
+    return( ret );
+}
+
+static PFILE_TAG getBootImageTag(void)
+{
+    PFILE_TAG pTag = NULL;
+    PFILE_TAG pTag1 = getTagFromPartition(1);
+    PFILE_TAG pTag2 = getTagFromPartition(2);
+
+    if( pTag1 && pTag2 )
+    {
+        /* Two images are flashed. */
+        int sequence1 = simple_strtoul(pTag1->imageSequence, NULL, 10);
+        int sequence2 = simple_strtoul(pTag2->imageSequence, NULL, 10);
+        char *p;
+        char bootPartition = BOOT_LATEST_IMAGE;
+        NVRAM_DATA nvramData;
+
+        memcpy((char *) &nvramData, (char *) get_nvram_start_addr(),
+            sizeof(nvramData));
+        for( p = nvramData.szBootline; p[2] != '\0'; p++ )
+            if( p[0] == 'p' && p[1] == '=' )
+            {
+                bootPartition = p[2];
+                break;
+            }
+
+        if( bootPartition == BOOT_LATEST_IMAGE )
+            pTag = (sequence2 > sequence1) ? pTag2 : pTag1;
+        else /* Boot from the image configured. */
+            pTag = (sequence2 < sequence1) ? pTag2 : pTag1;
+    }
+    else
+        /* One image is flashed. */
+        pTag = (pTag2) ? pTag2 : pTag1;
+
+    return( pTag );
+}
+
+static void UpdateImageSequenceNumber( unsigned char *imageSequence )
+{
+    int newImageSequence = 0;
+    PFILE_TAG pTag = getTagFromPartition(1);
+
+    if( pTag )
+        newImageSequence = simple_strtoul(pTag->imageSequence, NULL, 10);
+
+    pTag = getTagFromPartition(2);
+    if(pTag && simple_strtoul(pTag->imageSequence, NULL, 10) > newImageSequence)
+        newImageSequence = simple_strtoul(pTag->imageSequence, NULL, 10);
+
+    newImageSequence++;
+    sprintf(imageSequence, "%d", newImageSequence);
+}
+
+static int flashFsKernelImage( int destAddr, unsigned char *imagePtr,
+    int imageLen )
+{
+    int status = 0;
+    PFILE_TAG pTag = (PFILE_TAG) imagePtr;
+    int rootfsAddr = simple_strtoul(pTag->rootfsAddress, NULL, 10) + BOOT_OFFSET;
+    int kernelAddr = simple_strtoul(pTag->kernelAddress, NULL, 10) + BOOT_OFFSET;
+    char *p;
+    char *tagFs = imagePtr;
+    unsigned int baseAddr = (unsigned int) flash_get_memptr(0);
+    unsigned int totalSize = (unsigned int) flash_get_total_size();
+    unsigned int availableSizeOneImg = totalSize -
+        ((unsigned int) rootfsAddr - baseAddr) - FLASH_RESERVED_AT_END;
+    unsigned int reserveForTwoImages =
+        (FLASH_LENGTH_BOOT_ROM > FLASH_RESERVED_AT_END)
+        ? FLASH_LENGTH_BOOT_ROM : FLASH_RESERVED_AT_END;
+    unsigned int availableSizeTwoImgs =
+        (totalSize / 2) - reserveForTwoImages;
+    unsigned int newImgSize = simple_strtoul(pTag->rootfsLen, NULL, 10) +
+        simple_strtoul(pTag->kernelLen, NULL, 10);
+    PFILE_TAG pCurTag = getBootImageTag();
+    UINT32 crc = CRC32_INIT_VALUE;
+    unsigned int curImgSize = 0;
+    NVRAM_DATA nvramData;
+
+    memcpy((char *)&nvramData, (char *)get_nvram_start_addr(),sizeof(nvramData));
+
+    if( pCurTag )
+    {
+        curImgSize = simple_strtoul(pCurTag->rootfsLen, NULL, 10) +
+            simple_strtoul(pCurTag->kernelLen, NULL, 10);
+    }
+
+    if( newImgSize > availableSizeOneImg)
+    {
+        printk("Illegal image size %d.  Image size must not be greater "
+            "than %d.\n", newImgSize, availableSizeOneImg);
+        return -1;
+    }
+
+    if( getTagFromPartition(1) != NULL && getTagFromPartition(2) != NULL &&
+        newImgSize > availableSizeTwoImgs )
+    {
+        printk("Illegal image size %d.  Image size must not be greater "
+            "than %d.\n", newImgSize, availableSizeTwoImgs);
+        return -1;
+    }
+
+    // If the current image fits in half the flash space and the new
+    // image to flash also fits in half the flash space, then flash it
+    // in the partition that is not currently being used to boot from.
+    if( curImgSize <= availableSizeTwoImgs &&
+        newImgSize <= availableSizeTwoImgs &&
+        getPartitionFromTag( pCurTag ) == 1 )
+    {
+        // Update rootfsAddr to point to the second boot partition.
+        int offset = (totalSize / 2) + TAG_LEN;
+
+        sprintf(((PFILE_TAG) tagFs)->kernelAddress, "%lu",
+            (unsigned long) IMAGE_BASE + offset + (kernelAddr - rootfsAddr));
+        kernelAddr = baseAddr + offset + (kernelAddr - rootfsAddr);
+
+        sprintf(((PFILE_TAG) tagFs)->rootfsAddress, "%lu",
+            (unsigned long) IMAGE_BASE + offset);
+        rootfsAddr = baseAddr + offset;
+    }
+
+    UpdateImageSequenceNumber( ((PFILE_TAG) tagFs)->imageSequence );
+    crc = getCrc32((unsigned char *)tagFs, (UINT32)TAG_LEN-TOKEN_LEN, crc);      
+    *(unsigned long *) &((PFILE_TAG) tagFs)->tagValidationToken[0] = crc;
+
+    if( (status = kerSysBcmImageSet((rootfsAddr-TAG_LEN), tagFs,
+        TAG_LEN + newImgSize)) != 0 )
+    {
+        printk("Failed to flash root file system. Error: %d\n", status);
+        return status;
+    }
+
+    for( p = nvramData.szBootline; p[2] != '\0'; p++ )
+        if( p[0] == 'p' && p[1] == '=' && p[2] != BOOT_LATEST_IMAGE )
+        {
+            UINT32 crc = CRC32_INIT_VALUE;
+    
+            // Change boot partition to boot from new image.
+            p[2] = BOOT_LATEST_IMAGE;
+
+            nvramData.ulCheckSum = 0;
+            crc = getCrc32((char *)&nvramData, (UINT32) sizeof(NVRAM_DATA), crc);      
+            nvramData.ulCheckSum = crc;
+            kerSysNvRamSet( (char *) &nvramData, sizeof(nvramData), 0);
+            break;
+        }
+
+    return(status);
+}
+
+PFILE_TAG kerSysImageTagGet(void)
+{
+    return( getBootImageTag() );
+}
+
+
 //********************************************************************************************
 // misc. ioctl calls come to here. (flash, led, reset, kernel memory access, etc.)
 //********************************************************************************************
@@ -619,7 +1116,6 @@ static int board_ioctl( struct inode *inode, struct file *flip,
     int ret = 0;
     BOARD_IOCTL_PARMS ctrlParms;
     unsigned char ucaMacAddr[NVRAM_MAC_ADDRESS_LEN];
-    int allowedSize;
 
     switch (command) 
     {
@@ -627,7 +1123,24 @@ static int board_ioctl( struct inode *inode, struct file *flip,
             // not used for now.  kerSysBcmImageInit();
             break;
 
-
+//Alert LED use, roy======================================
+				case BOARD_IOCTL_ALERT_LED_ON:
+            AlertLed_On();
+            break;
+				case BOARD_IOCTL_ALERT_LED_OFF:
+            AlertLed_Off();
+            break;
+				case BOARD_IOCTL_ALERT_LED_ON2SECS:
+            AlertLed_On2Secs();
+            break;
+				case BOARD_IOCTL_ALERT_LED_FASTFLASH:
+            AlertLed_FastFlash();
+            break;
+        case BOARD_IOCTL_ALERT_LED_SLOWFLASH:
+            AlertLed_SlowFlash();
+            break;
+//Alert LED use, roy======================================
+        
         case BOARD_IOCTL_FLASH_WRITE:
             if (copy_from_user((void*)&ctrlParms, (void*)arg, sizeof(ctrlParms)) == 0)
             {
@@ -649,10 +1162,10 @@ static int board_ioctl( struct inode *inode, struct file *flip,
                         break;
 
                     case BCM_IMAGE_CFE:
-                        if( ctrlParms.strLen <= 0 || ctrlParms.strLen > FLASH45_LENGTH_BOOT_ROM )
+                        if( ctrlParms.strLen <= 0 || ctrlParms.strLen > FLASH_LENGTH_BOOT_ROM )
                         {
                             printk("Illegal CFE size [%d]. Size allowed: [%d]\n",
-                                ctrlParms.strLen, FLASH45_LENGTH_BOOT_ROM);
+                                ctrlParms.strLen, FLASH_LENGTH_BOOT_ROM);
                             ret = -1;
                             break;
                         }
@@ -663,7 +1176,7 @@ static int board_ioctl( struct inode *inode, struct file *flip,
                         // set memory type field
                         BpGetSdramSize( (unsigned long *) &ctrlParms.string[SDRAM_TYPE_ADDRESS_OFFSET] );
 
-                        ret = kerSysBcmImageSet(ctrlParms.offset, ctrlParms.string, ctrlParms.strLen);
+                        ret = kerSysBcmImageSet(ctrlParms.offset + BOOT_OFFSET, ctrlParms.string, ctrlParms.strLen);
 
                         // if nvram is not valid, restore the current nvram settings
                         if( BpSetBoardId( pNvramData->szBoardId ) != BP_SUCCESS &&
@@ -674,17 +1187,11 @@ static int board_ioctl( struct inode *inode, struct file *flip,
                         break;
                         
                     case BCM_IMAGE_FS:
-                        allowedSize = (int) flash_get_total_size() - \
-                            FLASH_RESERVED_AT_END - TAG_LEN - FLASH45_LENGTH_BOOT_ROM;
-                        if( ctrlParms.strLen <= 0 || ctrlParms.strLen > allowedSize)
+                        if( (ret = flashFsKernelImage( ctrlParms.offset,
+                            ctrlParms.string, ctrlParms.strLen)) == 0 )
                         {
-                            printk("Illegal root file system size [%d]. Size allowed: [%d]\n",
-                                ctrlParms.strLen,  allowedSize);
-                            ret = -1;
-                            break;
+                            kerSysMipsSoftReset();
                         }
-                        ret = kerSysBcmImageSet(ctrlParms.offset, ctrlParms.string, ctrlParms.strLen);
-                        kerSysMipsSoftReset();
                         break;
 
                     case BCM_IMAGE_KERNEL:  // not used for now.
@@ -1390,7 +1897,7 @@ static void kerSysDyingGaspShutdown( void )
 {
     kerSysSetWdTimer(1000000);
 #if defined(CONFIG_BCM96345)
-    PERF->blkEnables &= ~(EMAC_CLK_EN | USB_CLK_EN | CPU_CLK_EN);
+    PERF->blkEnables &= ~(EMAC_CLK_EN | USB_CLK_EN | CPU_CLK_EN);   
 #elif defined(CONFIG_BCM96348)
     PERF->blkEnables &= ~(EMAC_CLK_EN | USBS_CLK_EN | USBH_CLK_EN | SAR_CLK_EN);
 #endif
@@ -1527,6 +2034,10 @@ void kerSysDeregisterDyingGaspHandler(char *devname)
 module_init( brcm_board_init );
 module_exit( brcm_board_cleanup );
 
+EXPORT_SYMBOL(kerSysSetMacAddress);//VICTOR FOR USR
+EXPORT_SYMBOL(parsehwaddr); //VICTOR FOR USR
+EXPORT_SYMBOL(get_nvram_start_addr);//VICTOR FOR USR
+EXPORT_SYMBOL(kerSysFlashInit);//VICTOR FOR USR
 EXPORT_SYMBOL(kerSysNvRamGet);
 EXPORT_SYMBOL(dumpaddr);
 EXPORT_SYMBOL(kerSysGetMacAddress);
