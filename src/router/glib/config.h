@@ -31,7 +31,7 @@
 #define GLIB_SIZEOF_GMUTEX 24
 #define GLIB_BYTE_CONTENTS_GMUTEX 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-#define HAVE_BROKEN_WCTYPE 1
+/* #undef HAVE_BROKEN_WCTYPE */
 /* #undef HAVE_DOPRNT */
 #define HAVE_FLOAT_H 1
 #define HAVE_GETPWUID_R 1
@@ -52,13 +52,13 @@
 #define HAVE_STRSIGNAL 1
 #define HAVE_UNISTD_H 1
 #define HAVE_VALUES_H 1
-/* #undef HAVE_WCHAR_H */
-/* #undef HAVE_WCTYPE_H */
+#define HAVE_WCHAR_H 1
+#define HAVE_WCTYPE_H 1
 
 /* #undef NO_FD_SET */
-/* #undef NO_SYS_ERRLIST */
-/* #undef NO_SYS_SIGLIST */
-/* #undef NO_SYS_SIGLIST_DECL */
+#define NO_SYS_ERRLIST 1
+#define NO_SYS_SIGLIST 1
+#define NO_SYS_SIGLIST_DECL 1
 
 #define G_VA_COPY __va_copy
 /* #undef G_VA_COPY_AS_ARRAY */
