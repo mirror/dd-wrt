@@ -20,6 +20,9 @@
 #ifndef __6348_INTR_H
 #define __6348_INTR_H
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
 
 /*=====================================================================*/
 /* BCM6348 External Interrupt Level Assignments                       */
@@ -69,6 +72,9 @@
 #define INTERRUPT_ID_MPI                 (INTERNAL_ISR_TABLE_OFFSET + 24)
 #define INTERRUPT_ID_DG                  (INTERNAL_ISR_TABLE_OFFSET + 25)
 
+#ifdef __cplusplus
+    }
+#endif                    
 
 #endif  /* __BCM6348_H */
 
