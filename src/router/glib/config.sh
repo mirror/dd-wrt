@@ -1,13 +1,16 @@
 #!/bin/sh
 
-if ${1} = "-a" ; then
+if [[ ${1} = "-a" ]]; then
 	aclocal
 	libtoolize --automake --copy --force
 	automake --add-missing --copy --force
 	autoconf
 fi
 
+
+if [[ ${1} = "-r" ]]; then
 	rm -f config.cache config.log
+fi
 
 
 CC="mipsel-linux-uclibc-gcc" CFLAGS="-pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time" \
