@@ -1473,7 +1473,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"NC_HomePage", "http://www.dd-wrt.com", 0},
 #endif
   {"NC_ExcludePorts", "25", 0},
-  {"NC_Verbosity", "5", 0},
+  {"NC_IncludePorts", "", 0},
+  {"NC_Verbosity", "2", 0},
   {"NC_LoginTimeout", "86400", 0},
 #ifdef CONFIG_BRANDING
   {"NC_AllowedWebHosts", "google.com", 0},
@@ -1489,6 +1490,12 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"NC_SplashURL", "", 0},
   {"NC_MacWhiteList", "", 0},
+  {"NC_GatewayPort", "5280", 0},
+  {"NC_GatewayMode", "Open", 0},
+  {"NC_ForcedRedirect", "0", 0},
+  {"NC_IdleTimeout", "0", 0},
+  {"NC_MaxMissedARP", "5", 0},
+  {"NC_RenewTimeout", "0", 0},
 
 #ifdef HAVE_MSSID
   {"wl_wme", "on", 0},		/* WME mode (off|on) */
