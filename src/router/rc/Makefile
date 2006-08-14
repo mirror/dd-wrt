@@ -246,7 +246,9 @@ install: all
 	install rc $(INSTALLDIR)/sbin	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 	cd $(INSTALLDIR)/sbin && ln -sf rc init
+ifeq ($(CONFIG_DIST),"micro")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
