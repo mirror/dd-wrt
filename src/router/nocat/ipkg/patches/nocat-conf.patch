@@ -1,0 +1,28 @@
+--- nocatsplash/nocat.conf.in	2005-05-23 09:25:18.000000000 +0100
++++ nocatsplash/nocat.conf.in.openwrt	2005-05-23 09:25:28.000000000 +0100
+@@ -142,14 +142,14 @@
+ #   under Linux, or maybe even 'ppp0' if you're running
+ #   PPP or PPPoE.
+ #
+-# ExternalDevice	eth0
++ExternalDevice	eth0
+ 
+ ##
+ # InternalDevice - Required if and only if your machine has more than two
+ #   network interfaces. Must be set to the interface connected to your local
+ #   network, normally your wireless card.
+ #
+-# InternalDevice	eth1
++InternalDevice	vlan1
+ 
+ ##
+ # LocalNetwork - Required if and only if NoCatSplash can't figure it out
+@@ -222,7 +222,7 @@
+ # Log Facility - syslog or internal.  "internal" sends log messages
+ #    using STDERR. "syslog" sends all messages to the system log.
+ #
+-# LogFacility	syslog
++LogFacility	internal
+ 
+ ##
+ # SyslogIdent - The ident of the program that is calling syslog.  This will

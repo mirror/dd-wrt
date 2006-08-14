@@ -315,7 +315,7 @@ int main (int argc, char **argv) {
     
     
     read_conf_file( NC_CONF_PATH "/nocat.conf" );
-    conf_password = CONF("GatewayPassword");
+    conf_password = g_strdup(CONF("GatewayPassword"));
     
     if (argc > 2 ) {
         password = argv[1];
