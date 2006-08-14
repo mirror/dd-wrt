@@ -121,6 +121,7 @@ extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
 extern void do_ej(char *path, webs_t stream);
+extern void do_ej_two(char *path, webs_t stream);
 extern void do_ej_buffer(char *buffer, webs_t stream);
 int do_auth (char *userid, char *passwd, char *realm);
 void Initnvramtab (void);
