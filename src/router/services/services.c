@@ -1738,7 +1738,6 @@ start_cron (void)
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   cprintf ("starting cron\n");
-  sleep (2);
   ret = eval ("/usr/sbin/cron");
 
 
