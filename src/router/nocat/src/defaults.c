@@ -1,16 +1,22 @@
 # include <stdio.h>
-# include "conf.h"# include "config.h"
+# include "conf.h"
+# include "config.h"
 # include "mime.h"
 
 struct conf_t default_conf[] = {
+    { "Version",	 PACKAGE_VERSION },
+
+    /***  Default log level. ***/
+    { "LogFacility",	 "syslog" },
+    { "SyslogIdent",	 "NoCat" },
+    { "Verbosity",	 "5" },
+
     /***  Gateway server networking values. ***/
+    { "GatewayName",	"the NoCat Network" },
     { "GatewayAddr",	"192.168.1.1" },
     { "GatewayPort",	"5280" },
     { "ListenQueue",	"10" },
     { "HandleTimeout",	"3"  },
-    { "IdleTimeout",	"300" },
-    { "MaxMissedARP",	"2" },
-    { "SplashTimeout",	"21600" },
 
     /*** This is now all auto-detected in set_conf_defaults()
     { "ExternalDevice",	NULL },
@@ -24,25 +30,32 @@ struct conf_t default_conf[] = {
     { "DenyCmd",	"$FirewallPath/access.fw deny $MAC $IP $Class" },
     { "InitCmd",	"$FirewallPath/reset.fw" },
 
-    { "GatewayName",	"DD-WRT" },
-    { "HomePage",	"http://www.dd-wrt.com/" },
-    { "SplashForm",	"splash.html" },
-    { "StatusForm",	"status.html" },
-
-    /***  No. of seconds before logins/renewals expire. ***/
-    { "LoginTimeout",	 "300" },
-    { "MinLoginTimeout", "60" },
-
-    /***  Fraction of LoginTimeout to loiter before renewing. ***/
-    { "RenewTimeout",	 ".75" },
-
+    { "CheckARPCmd", "$FirewallPath/test_arp.sh $IP" },
+    { "TrafficInputCountCmd", "$FirewallPath/traffic_input_count.sh $IP" },
+    { "TrafficOutputCountCmd", "$FirewallPath/traffic_output_count.sh $IP" },
+	  
     /***  Where to look for form templates? ***/
     { "DocumentRoot",	 NC_DOCUMENT_ROOT },
+    { "StatusForm",	"status.html" },
+    { "SplashForm",	"splash.html" },
+    { "SplashURL",       ""},
+    { "SplashURLTimeout",	"21600" },
 
-    /***  Default log level. ***/
-    { "Verbosity",	 "5" },
-    { "LogFacility",	 "syslog" },
-    { "SyslogIdent",	 "NoCat" },
+    /*** How often to check for Peers which have timed out ***/
+    { "PeerCheckTimeout",  "30" },
+    /***  No. of seconds before logins/renewals expire. ***/
+    /* Add for Open mode?: { "SplashTimeout",	 "86400" }, */
+    { "LoginTimeout",	 "86400" },
+    { "MinLoginTimeout", "60" },
+    /***  Fraction of LoginTimeout to loiter before renewing. ***/
+    { "RenewTimeout",	 ".75" },
+    /***  Idle logout after MaxMissedARP*IdleTimeout seconds expire ***/
+    { "IdleTimeout",	"0" },
+    { "MaxMissedARP",	"5" },
+
+    /*** ForcedRedirect 0=original-location, 1=Redirect to HomePage, 2=form-POST selected ***/
+    { "ForcedRedirect",	"0" },
+    { "HomePage",	"http://www.portless.net/" },
 
     /*** PGP stuff. ***/
     { "GpgPath",	 "/usr/bin/gpg" },
@@ -51,7 +64,6 @@ struct conf_t default_conf[] = {
 			 "--keyring trustedkeys.gpg --no-tty -o-" },
 
     /*** Trailing NULL ***/
-    { "Version",	 PACKAGE_VERSION },
     { NULL, NULL }
 };
 

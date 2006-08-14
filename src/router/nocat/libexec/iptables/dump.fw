@@ -3,23 +3,21 @@
 # dump.fw: show the status of all iptables.
 ##
 
-# Note: your PATH is inherited from the gateway process
-#
+export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
 
+echo ">>>>> Filter table: <<<<<"
+echo
+iptables -t filter -nL -v --line-numbers
+echo
+echo
 echo ">>>>> NAT table: <<<<<"
 echo
-iptables -t nat -L -n
+iptables -t nat -nL -v --line-numbers
 echo
 echo
 echo ">>>>> Mangle table: <<<<<"
 echo
-iptables -t mangle -L -n
-echo
-echo
-echo ">>>>> Filter table: <<<<<"
-echo
-iptables -t filter -L -n
-
+iptables -t mangle -nL -v --line-numbers
 #
 # Ende
 #

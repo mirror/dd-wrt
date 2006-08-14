@@ -1,0 +1,71 @@
+= Some notes on building NoCatSplash statically
+
+NoCatSplash relies on GLib for certain basic functions and data types
+absent from ANSI C. Chances are good that, in an embedded environment,
+you may not need the GLib libraries hanging around and taking up space,
+since nothing else is likely to use them. In that event, you will want
+to build splashd *statically* against libglib. This document discusses
+how to do that.
+
+You will need to first build a threaded GLib 1.2 with uClibc, and then
+build NoCatSplash against that. You can get GLib 1.2 here:
+
+ ftp://ftp.gtk.org/pub/gtk/v1.2/glib-1.2.10.tar.gz
+
+First, if you're building with uClibc, set your $PATH to the uClibc tools:
+
+ $ export PATH=/usr/i386-linux-uclibc/usr/bin:$PATH [or wherever you put them]
+
+If you're not building with uClibc, and you just want a NoCatSplash
+statically linked against glib, you can skip that step. Next, build glib
+1.2, and install to a temporary directory:
+
+ $ tar xvfz glib-1.2.10.tar.gz
+ $ cd glib-1.2.10
+ $ ./configure --prefix=/tmp/glib-uClibc
+ $ make
+ $ make install
+
+Next, build NoCatSplash against your new uClibc'd GLib:
+
+ $ cd ../NoCatSplash-nightly [or wherever it is]
+ $ ./configure --with-glib-prefix=/tmp/glib-uClibc \
+     --prefix=/tmp/splash-uClibc --disable-glibtest
+ $ make
+
+This will build all the components of NoCatSplash. (If someone can tell
+me why it won't build without --disable-glibtest, I'd love to hear about
+it.) Now you want to statically link it against your uClibc'd GLib by
+hand, and rebuild splashd:
+
+ $ cd src
+ $ ld -r -o splashd-s.o -static splashd.o open.o libsplash.a \
+     /tmp/glib-uClibc/lib/libglib.a /tmp/glib-uClibc/lib/libgthread.a
+ $ gcc -o splashd splashd-s.o
+
+Now, strip and install your new statically linked splashd to
+/tmp/splash-uClibc, where it can be packaged for further use:
+ 
+ $ cd ..
+ $ make install-strip
+
+Doing this on my system yields:
+
+ $ cd /tmp/splash-uClibc/sbin
+ $ ls -l
+ total 132
+ -rwxr-xr-x    1 sderle   sderle     128940 Jan 17 12:29 splashd
+ $ ldd splashd 
+    libc.so.0 => /usr/i386-linux-uclibc/lib/libc.so.0
+    /usr/i386-linux-uclibc/lib/ld-uClibc.so.0 =>
+	    /usr/i386-linux-uclibc/lib/ld-uClibc.so.0
+
+There must be some obvious and easy way to do all of this automatically
+in the NoCatSplash build process, without having to resort to statically
+linking in GLib by hand, but damned if I could figure it out. If you
+know the trick to getting ld to see a .a file in the library path,
+when there's a .so of the same name, I'd love to hear all about it.
+
+Send comments to Schuyler Erle <schuyler@nocat.net>.
+
+= Good luck!

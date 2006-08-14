@@ -13,6 +13,8 @@
 # include <arpa/inet.h>
 # include "util.h"
 # include "config.h"
+# include <syslog.h>
+# include <stdarg.h>
 
 /********** Hash stuff **********/
 
@@ -140,15 +142,21 @@ gchar *url_encode( const gchar *src ) {
     dest = dest0 = g_new0(gchar, n * 3);
 
     for (; *src != '\0' && n >= 0; src++, dest++, n--) {
-	// g_message( "src: %s dest: %s n: %d", src, dest0, n );
-	if ( isalnum(*src) || strchr("./-_", *src) )
-	    *dest = *src;
-	else if ( *src == ' ' )
-	    *dest = '+';
-	else {
-	    sprintf( dest, "%%%02X", (int) *src & 0xFF );
-	    dest += 2;
-	}
+        // g_message( "src: %s dest: %s n: %d", src, dest0, n );
+        
+        // added some chars in parameters to convert to allow urls in parameters
+        if ( strchr(":/?&=%+", *src) ) {
+            sprintf( dest, "%%%02X", (int) *src & 0xFF );
+            dest += 2;
+        }
+        else if ( isalnum(*src) || strchr("./-_", *src) )
+            *dest = *src;
+        else if ( *src == ' ' )
+            *dest = '+';
+        else {
+            sprintf( dest, "%%%02X", (int) *src & 0xFF );
+            dest += 2;
+        }
     }
 
     *dest = '\0'; 
@@ -247,6 +255,45 @@ gchar *parse_template( gchar *src, GHashTable *data ) {
     val = g_renew( gchar, dest->str, strlen(dest->str) + 1 );
     g_string_free( dest, 0 );
     return val;
+}
+/******  logging *******/
+
+
+/* log handler for sending messages to syslog */
+void 
+log_handler (const gchar *log_domain,
+             GLogLevelFlags log_level,
+             const gchar *message,
+             gpointer user_data)
+{
+	int syslog_priority;
+    
+	// prevent debug
+        // if (log_level & G_LOG_LEVEL_DEBUG)
+	//	 return;
+    
+	/* syslog uses reversed meaning of LEVEL_ERROR and LEVEL_CRITICAL */
+	if (log_level & G_LOG_LEVEL_ERROR)
+		syslog_priority = LOG_CRIT;
+	else if (log_level & G_LOG_LEVEL_CRITICAL)
+		syslog_priority = LOG_ERR;
+	else if (log_level & G_LOG_LEVEL_WARNING)
+		syslog_priority = LOG_WARNING;
+	else if (log_level & G_LOG_LEVEL_MESSAGE)
+		syslog_priority = LOG_NOTICE;
+	else if (log_level & G_LOG_LEVEL_INFO)
+		syslog_priority = LOG_INFO;
+	else if (log_level & G_LOG_LEVEL_DEBUG)
+		syslog_priority = LOG_DEBUG;
+	else
+		syslog_priority = LOG_NOTICE;
+        
+	syslog (syslog_priority, "%s:%s", log_domain, message);
+    
+	if (log_level & G_LOG_FLAG_FATAL) {
+		fprintf (stderr, "%s:%s", log_domain, message);
+		_exit (1);
+	}
 }
 
 /**** crypt-type functions *********/
