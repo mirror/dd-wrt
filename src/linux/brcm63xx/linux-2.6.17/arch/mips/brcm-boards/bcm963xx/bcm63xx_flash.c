@@ -39,10 +39,12 @@
 #include <board.h>
 #define  BCMTAG_EXE_USE
 #include <bcmTag.h>
-#include "cfiflash.h"
+#include "flash_api.h"
 #include "boardparms.h"
 
 //#define DEBUG_FLASH
+
+extern PFILE_TAG kerSysImageTagGet(void);
 
 static FLASH_ADDR_INFO fInfo;
 static int flashInitialized = 0;
@@ -103,48 +105,6 @@ unsigned long get_scratch_pad_start_addr(void)
         (flash_get_memptr(fInfo.flash_scratch_pad_start_blk) + fInfo.flash_scratch_pad_blk_offset));
 }
 
-
-
-/*  *********************************************************************
-    *  kerSysImageTagGet()
-    *   Get the image tag
-    *  Input parameters:
-    *      none
-    *  Return value:
-    *      point to tag -- Found
-    *      NULL -- failed
-    ********************************************************************* */
-PFILE_TAG kerSysImageTagGet(void)
-{
-    int i;
-    int totalBlks = flash_get_numsectors();
-    UINT32 crc;
-    unsigned char *sectAddr;
-    PFILE_TAG pTag;
-
-#if defined(DEBUG_FLASH)
-    printk("totalblks in tagGet=%d\n", totalBlks);
-#endif
-
-    // start from 2nd blk, assume 1st one is always CFE
-    for (i = 1; i < totalBlks; i++)
-    {
-        sectAddr =  flash_get_memptr((byte) i);
-        crc = CRC32_INIT_VALUE;
-        crc = getCrc32(sectAddr, (UINT32)TAG_LEN-TOKEN_LEN, crc);      
-        pTag = (PFILE_TAG) sectAddr;
-
-#if defined(DEBUG_FLASH)
-        printk("Check Tag crc on blk [%d]\n", i);
-#endif
-
-        if (crc == (UINT32)(*(UINT32*)(pTag->tagValidationToken)))
-            return pTag;
-    }
-
-    return (PFILE_TAG) NULL;
-}
-
 // Initialize the flash and fill out the fInfo structure
 void kerSysFlashInit( void )
 {
@@ -171,7 +131,7 @@ void kerSysFlashInit( void )
     printk("Total Flash size: %dK with %d sectors\n", totalSize/1024, totalBlks);
 
     /* nvram is always at the end of flash */
-    fInfo.flash_nvram_length = FLASH45_LENGTH_NVRAM;
+    fInfo.flash_nvram_length = NVRAM_LENGTH;
     fInfo.flash_nvram_start_blk = 0;  /* always the first block */
     fInfo.flash_nvram_number_blk = 1; /*always fits in the first block */
     fInfo.flash_nvram_blk_offset = NVRAM_DATA_OFFSET;
@@ -204,7 +164,7 @@ void kerSysFlashInit( void )
 
     fInfo.flash_persistent_length *= ONEK;
     startAddr = totalSize - fInfo.flash_persistent_length;
-    fInfo.flash_persistent_start_blk = flash_get_blk(startAddr+FLASH_BASE_ADDR_REG);
+    fInfo.flash_persistent_start_blk = flash_get_blk(startAddr+FLASH_BASE);
     fInfo.flash_persistent_number_blk = totalBlks - fInfo.flash_persistent_start_blk;
     // save abs SP address (Scratch Pad). it is before PSI 
     spAddr = startAddr - SP_MAX_LEN ;
@@ -213,7 +173,7 @@ void kerSysFlashInit( void )
     for (i = fInfo.flash_persistent_start_blk; 
         i < (fInfo.flash_persistent_start_blk + fInfo.flash_persistent_number_blk); i++)
     {
-        usedBlkSize += flash_get_sector_size((byte) i);
+        usedBlkSize += flash_get_sector_size((unsigned short) i);
     }
     fInfo.flash_persistent_blk_offset =  usedBlkSize - fInfo.flash_persistent_length;
 
@@ -223,17 +183,17 @@ void kerSysFlashInit( void )
         printk("Failed to read image tag from flash\n");
         return;
     }
-    kernelEndAddr = (unsigned long) simple_strtoul(pTag->kernelAddress, NULL, 10) + \
-        (unsigned long) simple_strtoul(pTag->kernelLen, NULL, 10);
+    kernelEndAddr = (unsigned long)simple_strtoul(pTag->kernelAddress,NULL,10)+ \
+        (unsigned long) simple_strtoul(pTag->kernelLen, NULL, 10) + BOOT_OFFSET;
 
     // make suer sp does not share kernel block
-    fInfo.flash_scratch_pad_start_blk = flash_get_blk(spAddr+FLASH_BASE_ADDR_REG);
+    fInfo.flash_scratch_pad_start_blk = flash_get_blk(spAddr+FLASH_BASE);
     if (fInfo.flash_scratch_pad_start_blk != flash_get_blk(kernelEndAddr))
     {
         fInfo.flash_scratch_pad_length = SP_MAX_LEN;
         if (fInfo.flash_persistent_start_blk == fInfo.flash_scratch_pad_start_blk)  // share blk
         {
-#if 1 /* do not used scratch pad unless it's in its own sector */
+#if 0 /* do not used scratch pad unless it's in its own sector */
             printk("Scratch pad is not used for this flash part.\n");  
             fInfo.flash_scratch_pad_length = 0;     // no sp
 #else /* allow scratch pad to share a sector with another section such as PSI */
@@ -249,7 +209,7 @@ void kerSysFlashInit( void )
             usedBlkSize = 0;
             for (i = fInfo.flash_scratch_pad_start_blk; 
                 i < (fInfo.flash_scratch_pad_start_blk + fInfo.flash_scratch_pad_number_blk); i++)
-                usedBlkSize += flash_get_sector_size((byte) i);
+                usedBlkSize += flash_get_sector_size((unsigned short) i);
                 fInfo.flash_scratch_pad_blk_offset =  usedBlkSize - fInfo.flash_scratch_pad_length;
         }
     }
@@ -269,7 +229,7 @@ void kerSysFlashInit( void )
     printk("fInfo.flash_nvram_blk_offset = 0x%x\n", (unsigned int)fInfo.flash_nvram_blk_offset);
     printk("fInfo.flash_nvram_number_blk = %d\n", fInfo.flash_nvram_number_blk);
 
-    printk("psi startAddr = %x\n", startAddr+FLASH_BASE_ADDR_REG);
+    printk("psi startAddr = %x\n", startAddr+FLASH_BASE);
     printk("fInfo.flash_persistent_start_blk = %d\n", fInfo.flash_persistent_start_blk);
     printk("fInfo.flash_persistent_blk_offset = 0x%x\n", (unsigned int)fInfo.flash_persistent_blk_offset);
     printk("fInfo.flash_persistent_number_blk = %d\n", fInfo.flash_persistent_number_blk);
@@ -312,7 +272,7 @@ static char *getSharedBlks(int start_blk, int end_blk)
     char *pBuf = NULL;
 
     for (i = start_blk; i < end_blk; i++)
-        usedBlkSize += flash_get_sector_size((byte) i);
+        usedBlkSize += flash_get_sector_size((unsigned short) i);
 
 #if defined(DEBUG_FLASH)
     printk("usedBlkSize = %d\n", usedBlkSize);
@@ -327,12 +287,12 @@ static char *getSharedBlks(int start_blk, int end_blk)
     pBuf = pTempBuf;
     for (i = start_blk; i < end_blk; i++)
     {
-        sect_size = flash_get_sector_size((byte) i);
+        sect_size = flash_get_sector_size((unsigned short) i);
 
 #if defined(DEBUG_FLASH)
         printk("i = %d, sect_size = %d, end_blk = %d\n", i, sect_size, end_blk);
 #endif
-        flash_read_buf((byte)i, 0, pBuf, sect_size);
+        flash_read_buf((unsigned short)i, 0, pBuf, sect_size);
         pBuf += sect_size;
     }
     
@@ -354,7 +314,7 @@ static int setSharedBlks(int start_blk, int end_blk, char *pTempBuf)
 
     for (i = start_blk; i < end_blk; i++)
     {
-        sect_size = flash_get_sector_size((byte) i);
+        sect_size = flash_get_sector_size((unsigned short) i);
         flash_sector_erase_int(i);
         if (flash_write_buf(i, 0, pBuf, sect_size) != sect_size)
         {
@@ -385,7 +345,7 @@ int kerSysNvRamGet(char *string, int strLen, int offset)
     if (!flashInitialized)
         kerSysFlashInit();
 
-    if (strLen > FLASH45_LENGTH_NVRAM)
+    if (strLen > NVRAM_LENGTH)
         return -1;
 
     if ((pBuf = getSharedBlks(fInfo.flash_nvram_start_blk,
@@ -410,7 +370,7 @@ int kerSysNvRamSet(char *string, int strLen, int offset)
     int sts = 0;
     char *pBuf = NULL;
 
-    if (strLen > FLASH45_LENGTH_NVRAM)
+    if (strLen > NVRAM_LENGTH)
         return -1;
 
     if ((pBuf = getSharedBlks(fInfo.flash_nvram_start_blk,
@@ -438,15 +398,15 @@ int kerSysNvRamSet(char *string, int strLen, int offset)
 int kerSysEraseNvRam(void)
 {
     int sts = 1;
-    char *tempStorage = retriedKmalloc(FLASH45_LENGTH_NVRAM);
+    char *tempStorage = retriedKmalloc(NVRAM_LENGTH);
     
     // just write the whole buf with '0xff' to the flash
     if (!tempStorage)
         sts = 0;
     else
     {
-        memset(tempStorage, 0xff, FLASH45_LENGTH_NVRAM);
-        if (kerSysNvRamSet(tempStorage, FLASH45_LENGTH_NVRAM, 0) != 0)
+        memset(tempStorage, 0xff, NVRAM_LENGTH);
+        if (kerSysNvRamSet(tempStorage, NVRAM_LENGTH, 0) != 0)
             sts = 0;
         retriedKfree(tempStorage);
     }
@@ -528,7 +488,7 @@ int kerSysBcmImageSet( int flash_start_addr, char *string, int size)
     if( blk_start < 0 )
         return( -1 );
 
-    if (flash_start_addr == FLASH_BASE && size > FLASH45_LENGTH_BOOT_ROM)
+    if (flash_start_addr == FLASH_BASE && size > FLASH_LENGTH_BOOT_ROM)
         whole_image = 1;
 
    /* write image to flash memory */
@@ -554,7 +514,7 @@ int kerSysBcmImageSet( int flash_start_addr, char *string, int size)
                printk("Failed to allocate memory with size: %d.  Reset the router...\n", sect_size);
                kerSysMipsSoftReset();     // reset the board right away.
             }
-            flash_read_buf((byte)blk_start, 0, pTempBuf, sect_size);
+            flash_read_buf((unsigned short)blk_start, 0, pTempBuf, sect_size);
             if (copy_from_user((void *)pTempBuf,(void *)string, size) != 0)
                 break;  // failed ?
             flash_sector_erase_int(blk_start);     // erase blk before flash
@@ -607,58 +567,64 @@ int kerSysBcmImageSet( int flash_start_addr, char *string, int size)
  *******************************************************************************/
 // get sp data.  NOTE: memcpy work here -- not using copy_from/to_user
 // return:
-//  0 - ok
+//  >0 - number of bytes copied to tokBuf
 //  -1 - fail
 int kerSysScratchPadGet(char *tokenId, char *tokBuf, int bufLen)
 {
-    PSP_HEADER pHead = NULL;
     PSP_TOKEN pToken = NULL;
     char *pBuf = NULL;
     char *pShareBuf = NULL;
     char *startPtr = NULL;
-    char *endPtr = NULL;
-    char *spEndPtr = NULL;
+    int usedLen;
     int sts = -1;
 
     if (fInfo.flash_scratch_pad_length == 0)
         return sts;
 
-    if (bufLen >= (fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) - sizeof(SP_TOKEN))) 
+    if( bufLen >= (fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) -
+        sizeof(SP_TOKEN)) ) 
     {
-        printk("Exceed scratch pad space by %d\n", bufLen  - fInfo.flash_scratch_pad_length \
-            - sizeof(SP_HEADER) - sizeof(SP_TOKEN));
+        printk("Exceed scratch pad space by %d\n", bufLen -
+            fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) -
+            sizeof(SP_TOKEN));
         return sts;
     }
 
-    if ((pShareBuf = getSharedBlks(fInfo.flash_scratch_pad_start_blk,
-        (fInfo.flash_scratch_pad_start_blk + fInfo.flash_scratch_pad_number_blk))) == NULL)
+    if( (pShareBuf = getSharedBlks(fInfo.flash_scratch_pad_start_blk,
+        (fInfo.flash_scratch_pad_start_blk +
+        fInfo.flash_scratch_pad_number_blk))) == NULL )
+    {
         return sts;
+    }
 
     // pBuf points to SP buf
     pBuf = pShareBuf + fInfo.flash_scratch_pad_blk_offset;  
 
-    pHead = (PSP_HEADER) pBuf;
-    if (memcmp(pHead->SPMagicNum, MAGIC_NUMBER, MAGIC_NUM_LEN) != 0) 
+    if(memcmp(((PSP_HEADER)pBuf)->SPMagicNum, MAGIC_NUMBER, MAGIC_NUM_LEN) != 0) 
     {
-        printk("Scrap pad is not initialized.\n");
+        printk("Scratch pad is not initialized.\n");
         return sts;
     }
 
-    // search up to SPUsedLen for the token
+    // search for the token
+    usedLen = sizeof(SP_HEADER);
     startPtr = pBuf + sizeof(SP_HEADER);
-    endPtr = pBuf + pHead->SPUsedLen;
-    spEndPtr = pBuf + SP_MAX_LEN;
-    while (startPtr < endPtr && startPtr < spEndPtr)
+    pToken = (PSP_TOKEN) startPtr;
+    while( pToken->tokenName[0] != '\0' && pToken->tokenLen > 0 &&
+        pToken->tokenLen < fInfo.flash_scratch_pad_length &&
+        usedLen < fInfo.flash_scratch_pad_length )
     {
-        pToken = (PSP_TOKEN) startPtr;
+
         if (strncmp(pToken->tokenName, tokenId, TOKEN_NAME_LEN) == 0)
         {
-            memcpy(tokBuf, startPtr + sizeof(SP_TOKEN), bufLen);
-            sts = 0;
+            sts = pToken->tokenLen;
+            memcpy(tokBuf, startPtr + sizeof(SP_TOKEN), sts);
             break;
         }
-        // get next token
-        startPtr += sizeof(SP_TOKEN) + pToken->tokenLen;
+
+        usedLen += ((pToken->tokenLen + 0x03) & ~0x03);
+        startPtr += sizeof(SP_TOKEN) + ((pToken->tokenLen + 0x03) & ~0x03);
+        pToken = (PSP_TOKEN) startPtr;
     }
 
     retriedKfree(pShareBuf);
@@ -674,7 +640,6 @@ int kerSysScratchPadGet(char *tokenId, char *tokBuf, int bufLen)
 int kerSysScratchPadSet(char *tokenId, char *tokBuf, int bufLen)
 {
     PSP_TOKEN pToken = NULL;
-    PSP_HEADER pHead = NULL;
     char *pShareBuf = NULL;
     char *pBuf = NULL;
     SP_HEADER SPHead;
@@ -685,22 +650,26 @@ int kerSysScratchPadSet(char *tokenId, char *tokBuf, int bufLen)
     if (fInfo.flash_scratch_pad_length == 0)
         return sts;
 
-    if (bufLen >= (fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) - sizeof(SP_TOKEN))) 
+    if( bufLen >= fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) -
+        sizeof(SP_TOKEN) )
     {
-        printk("Exceed scratch pad space by %d\n", bufLen  - fInfo.flash_scratch_pad_length \
-            - sizeof(SP_HEADER) - sizeof(SP_TOKEN));
+        printk("Scratch pad overflow by %d bytes.  Information not saved.\n",
+            bufLen  - fInfo.flash_scratch_pad_length - sizeof(SP_HEADER) -
+            sizeof(SP_TOKEN));
         return sts;
     }
 
-    if ((pShareBuf = getSharedBlks(fInfo.flash_scratch_pad_start_blk,
-        (fInfo.flash_scratch_pad_start_blk + fInfo.flash_scratch_pad_number_blk))) == NULL)
+    if( (pShareBuf = getSharedBlks( fInfo.flash_scratch_pad_start_blk,
+        (fInfo.flash_scratch_pad_start_blk +
+        fInfo.flash_scratch_pad_number_blk) )) == NULL )
+    {
         return sts;
+    }
 
     // pBuf points to SP buf
     pBuf = pShareBuf + fInfo.flash_scratch_pad_blk_offset;  
-    pHead = (PSP_HEADER) pBuf;
 
-    // form header info.  SPUsedLen later on...
+    // form header info.
     memset((char *)&SPHead, 0, sizeof(SP_HEADER));
     memcpy(SPHead.SPMagicNum, MAGIC_NUMBER, MAGIC_NUM_LEN);
     SPHead.SPVersion = SP_VERSION;
@@ -709,57 +678,102 @@ int kerSysScratchPadSet(char *tokenId, char *tokBuf, int bufLen)
     memset((char*)&SPToken, 0, sizeof(SP_TOKEN));
     strncpy(SPToken.tokenName, tokenId, TOKEN_NAME_LEN - 1);
     SPToken.tokenLen = bufLen;
-    if (memcmp(pHead->SPMagicNum, MAGIC_NUMBER, MAGIC_NUM_LEN) != 0) 
+
+    if(memcmp(((PSP_HEADER)pBuf)->SPMagicNum, MAGIC_NUMBER, MAGIC_NUM_LEN) != 0)
     {
         // new sp, so just flash the token
-        printk("No Scrap pad found.  Initialize scratch pad...\n");
-        SPHead.SPUsedLen = sizeof(SP_HEADER) + sizeof(SP_TOKEN) + bufLen;
+        printk("No scratch pad found.  Initialize scratch pad...\n");
         memcpy(pBuf, (char *)&SPHead, sizeof(SP_HEADER));
         curPtr = pBuf + sizeof(SP_HEADER);
         memcpy(curPtr, (char *)&SPToken, sizeof(SP_TOKEN));
         curPtr += sizeof(SP_TOKEN);
-        memcpy(curPtr, tokBuf, bufLen);
+        if( tokBuf )
+            memcpy(curPtr, tokBuf, bufLen);
     }
     else  
     {
-        // need search for the token, if exist with same size overwrite it. if sizes differ, 
-        // move over the later token data over and put the new one at the end
-        char *endPtr = pBuf + pHead->SPUsedLen;
-        char *spEndPtr = pBuf + SP_MAX_LEN;
+        int putAtEnd = 1;
+        int curLen;
+        int usedLen;
+        int skipLen;
+
+        /* Calculate the used length. */
+        usedLen = sizeof(SP_HEADER);
         curPtr = pBuf + sizeof(SP_HEADER);
-        while (curPtr < endPtr && curPtr < spEndPtr)
+        pToken = (PSP_TOKEN) curPtr;
+        skipLen = (pToken->tokenLen + 0x03) & ~0x03;
+        while( pToken->tokenName[0] >= 'A' && pToken->tokenName[0] <= 'z' &&
+            strlen(pToken->tokenName) < TOKEN_NAME_LEN &&
+            pToken->tokenLen > 0 &&
+            pToken->tokenLen < fInfo.flash_scratch_pad_length &&
+            usedLen < fInfo.flash_scratch_pad_length )
+        {
+            usedLen += sizeof(SP_TOKEN) + skipLen;
+            curPtr += sizeof(SP_TOKEN) + skipLen;
+            pToken = (PSP_TOKEN) curPtr;
+            skipLen = (pToken->tokenLen + 0x03) & ~0x03;
+        }
+
+        if( usedLen + SPToken.tokenLen + sizeof(SP_TOKEN) >
+            fInfo.flash_scratch_pad_length )
+        {
+            printk("Scratch pad overflow by %d bytes.  Information not saved.\n",
+                (usedLen + SPToken.tokenLen + sizeof(SP_TOKEN)) -
+                fInfo.flash_scratch_pad_length);
+            return sts;
+        }
+
+        curPtr = pBuf + sizeof(SP_HEADER);
+        curLen = sizeof(SP_HEADER);
+        while( curLen < usedLen )
         {
             pToken = (PSP_TOKEN) curPtr;
+            skipLen = (pToken->tokenLen + 0x03) & ~0x03;
             if (strncmp(pToken->tokenName, tokenId, TOKEN_NAME_LEN) == 0)
             {
-                if (pToken->tokenLen == bufLen) // overwirte it
+                // The token id already exists.
+                if( tokBuf && pToken->tokenLen == bufLen )
                 {
+                    // The length of the new data and the existing data is the
+                    // same.  Overwrite the existing data.
                     memcpy((curPtr+sizeof(SP_TOKEN)), tokBuf, bufLen);
-                    break;
+                    putAtEnd = 0;
                 }
-                else // move later data over and put the new token at the end
+                else
                 {
-                    memcpy((curPtr+sizeof(SP_TOKEN)), tokBuf, bufLen);  // ~~~
-                    break;
+                    // The length of the new data and the existing data is
+                    // different.  Shift the rest of the scratch pad to this
+                    // token's location and put this token's data at the end.
+                    char *nextPtr = curPtr + sizeof(SP_TOKEN) + skipLen;
+                    int copyLen = usedLen - (curLen+sizeof(SP_TOKEN) + skipLen);
+                    memcpy( curPtr, nextPtr, copyLen );
+                    memset( curPtr + copyLen, 0x00, 
+                        fInfo.flash_scratch_pad_length - (curLen + copyLen) );
+                    usedLen -= sizeof(SP_TOKEN) + skipLen;
                 }
+                break;
             }
-            else // not same token ~~~
-            {
-            }
+
             // get next token
-            curPtr += sizeof(SP_TOKEN) + pToken->tokenLen;
+            curPtr += sizeof(SP_TOKEN) + skipLen;
+            curLen += sizeof(SP_TOKEN) + skipLen;
         } // end while
-        SPHead.SPUsedLen = sizeof(SP_HEADER) + sizeof(SP_TOKEN) + bufLen; // ~~~
-        if (SPHead.SPUsedLen > SP_MAX_LEN)
+
+        if( putAtEnd )
         {
-            printk("No more Scratch pad space left! Over limit by %d bytes\n", SPHead.SPUsedLen - SP_MAX_LEN);
-            return sts;
+            if( tokBuf )
+            {
+                memcpy( pBuf + usedLen, &SPToken, sizeof(SP_TOKEN) );
+                memcpy( pBuf + usedLen + sizeof(SP_TOKEN), tokBuf, bufLen );
+            }
+            memcpy( pBuf, &SPHead, sizeof(SP_HEADER) );
         }
 
     } // else if not new sp
 
     sts = setSharedBlks(fInfo.flash_scratch_pad_start_blk, 
-        (fInfo.flash_scratch_pad_number_blk + fInfo.flash_scratch_pad_start_blk), pShareBuf);
+        (fInfo.flash_scratch_pad_number_blk + fInfo.flash_scratch_pad_start_blk),
+        pShareBuf);
     
     retriedKfree(pShareBuf);
 
@@ -771,5 +785,20 @@ int kerSysScratchPadSet(char *tokenId, char *tokBuf, int bufLen)
 int kerSysFlashSizeGet(void)
 {
    return flash_get_total_size();
+}
+
+int kerSysMemoryMappedFlashSizeGet(void)
+{
+    return( flash_get_total_memory_mapped_size() );
+}
+
+unsigned long kerSysReadFromFlash( void *toaddr, unsigned long fromaddr,
+    unsigned long len )
+{
+    int sect = flash_get_blk((int) fromaddr);
+    unsigned char *start = flash_get_memptr(sect);
+    flash_read_buf( sect, (int) fromaddr - (int) start, toaddr, len );
+
+    return( len );
 }
 

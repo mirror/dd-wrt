@@ -19,7 +19,6 @@
 /***********************************************************************/
 /*                                                                     */
 /*   MODULE:  board.h                                                  */
-/*   DATE:    97/02/18                                                 */
 /*   PURPOSE: Board specific information.  This module should include  */
 /*            all base device addresses and board specific macros.     */
 /*                                                                     */
@@ -27,9 +26,9 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-/*****************************************************************************/
-/*                    Misc board definitions                                 */
-/*****************************************************************************/
+#if __cplusplus
+extern "C" {
+#endif
 
 #define	DYING_GASP_API
 
@@ -38,7 +37,7 @@
 /*****************************************************************************/
 
 #define PHYS_DRAM_BASE           0x00000000     /* Dynamic RAM Base */
-#define PHYS_FLASH_BASE          0x1FC00000     /* Flash Memory         */
+#define PHYS_FLASH_BASE          0x1FC00000     /* Flash Memory     */
 
 /*****************************************************************************/
 /* Note that the addresses above are physical addresses and that programs    */
@@ -46,53 +45,42 @@
 /*****************************************************************************/
 #define DRAM_BASE           (0x80000000 | PHYS_DRAM_BASE)   /* cached DRAM */
 #define DRAM_BASE_NOCACHE   (0xA0000000 | PHYS_DRAM_BASE)   /* uncached DRAM */
+
+/* Binary images are always built for a standard MIPS boot address */
+#define IMAGE_BASE          (0xA0000000 | 0x1FC00000)
+
+/* Some chips support alternative boot vector */
+#if defined(_BCM96348_) || defined(CONFIG_BCM96348)
+#define FLASH_BASE          (0xA0000000 | (MPI->cs[0].base & 0xFFFFFF00))
+#define BOOT_OFFSET         (FLASH_BASE - IMAGE_BASE)
+#else
 #define FLASH_BASE          (0xA0000000 | PHYS_FLASH_BASE)  /* uncached Flash  */
+#define BOOT_OFFSET         0
+#endif
 
 /*****************************************************************************/
 /*  Select the PLL value to get the desired CPU clock frequency.             */
-/*                                                                           */
-/*                                                                           */
 /*****************************************************************************/
 #define FPERIPH            50000000
 
-#define ONEK                            1024
-#define BLK64K                          (64*ONEK)
-#define FLASH45_BLKS_BOOT_ROM           1
-#define FLASH45_LENGTH_BOOT_ROM         (FLASH45_BLKS_BOOT_ROM * BLK64K)
-#define FLASH_RESERVED_AT_END           (64*ONEK) /*reserved for PSI, scratch pad*/
-    
 /*****************************************************************************/
-/* Note that the addresses above are physical addresses and that programs    */
-/* have to use converted addresses defined below:                            */
+/* Board memory type offset                                                  */
 /*****************************************************************************/
-#define DRAM_BASE           (0x80000000 | PHYS_DRAM_BASE)   /* cached DRAM */
-#define DRAM_BASE_NOCACHE   (0xA0000000 | PHYS_DRAM_BASE)   /* uncached DRAM */
-#define FLASH_BASE          (0xA0000000 | PHYS_FLASH_BASE)  /* uncached Flash  */
-
-/*****************************************************************************/
-/*  Select the PLL value to get the desired CPU clock frequency.             */
-/*                                                                           */
-/*                                                                           */
-/*****************************************************************************/
-#define FPERIPH            50000000
-    
-#define SDRAM_TYPE_ADDRESS_OFFSET   16
-#define NVRAM_DATA_OFFSET           0x0580
-#define NVRAM_DATA_ID               0x0f1e2d3c
-#define BOARD_SDRAM_TYPE            *(unsigned long *) \
-                                    (FLASH_BASE + SDRAM_TYPE_ADDRESS_OFFSET)
-
-#define ONEK                1024
-#define BLK64K              (64*ONEK)
-
-// nvram and psi flash definitions for 45
-#define FLASH45_LENGTH_NVRAM            ONEK            // 1k nvram 
-#define NVRAM_PSI_DEFAULT               24              // default psi in K byes
+#define SDRAM_TYPE_ADDRESS_OFFSET       16
+#define NVRAM_DATA_OFFSET               0x0580
+#define NVRAM_DATA_ID                   0x0f1e2d3c
+#define BOARD_SDRAM_TYPE                *(unsigned long *)(FLASH_BASE + SDRAM_TYPE_ADDRESS_OFFSET)
+#define BOARD_SDRAM_TYPE_ADDRESS        (0xA0000000 + PHYS_FLASH_BASE + SDRAM_TYPE_ADDRESS_OFFSET)
 
 /*****************************************************************************/
 /*       NVRAM Offset and definition                                         */
 /*****************************************************************************/
+#define NVRAM_PSI_DEFAULT               24              // default psi in K byes
+#define ONEK                            1024
+#define FLASH_LENGTH_BOOT_ROM           (64*ONEK)
+#define FLASH_RESERVED_AT_END           (64*ONEK) /*reserved for PSI, scratch pad*/
 
+#define NVRAM_LENGTH                    ONEK            // 1k nvram 
 #define NVRAM_VERSION_NUMBER            2
 #define NVRAM_VERSION_NUMBER_ADDRESS    0
 
@@ -100,14 +88,17 @@
 #define NVRAM_BOARD_ID_STRING_LEN       16
 #define NVRAM_MAC_ADDRESS_LEN           6
 #define NVRAM_MAC_COUNT_MAX             32
+#define NVRAM_MAC_COUNT_DEFAULT         0 
 
 /*****************************************************************************/
 /*       Misc Offsets                                                        */
 /*****************************************************************************/
-
 #define CFE_VERSION_OFFSET           0x0570
 #define CFE_VERSION_MARK_SIZE        5
 #define CFE_VERSION_SIZE             5
+
+#define BOOT_LATEST_IMAGE   '0'
+#define BOOT_PREVIOUS_IMAGE '1'
 
 typedef struct
 {
@@ -213,13 +204,25 @@ typedef struct
 
 #define BOARD_IOCTL_SET_SES_LED \
     _IOWR(BOARD_IOCTL_MAGIC, 26, BOARD_IOCTL_PARMS)
-
-//<<JUNHON, 2004/09/15, get reset button status , tim hou , 05/04/12
-#define RESET_BUTTON_UP           1
-#define RESET_BUTTON_PRESSDOWN    0
-#define BOARD_IOCTL_GET_RESETHOLD \
+ 
+//roy Alert LED===============================================
+#define BOARD_IOCTL_ALERT_LED_ON \
     _IOWR(BOARD_IOCTL_MAGIC, 27, BOARD_IOCTL_PARMS)
-//>>JUNHON, 2004/09/15    
+
+#define BOARD_IOCTL_ALERT_LED_OFF \
+    _IOWR(BOARD_IOCTL_MAGIC, 28, BOARD_IOCTL_PARMS)
+
+#define BOARD_IOCTL_ALERT_LED_ON2SECS \
+    _IOWR(BOARD_IOCTL_MAGIC, 29, BOARD_IOCTL_PARMS)
+
+#define BOARD_IOCTL_ALERT_LED_FASTFLASH \
+    _IOWR(BOARD_IOCTL_MAGIC, 30, BOARD_IOCTL_PARMS)
+
+#define BOARD_IOCTL_ALERT_LED_SLOWFLASH \
+    _IOWR(BOARD_IOCTL_MAGIC, 31, BOARD_IOCTL_PARMS)
+//roy Alert LED===============================================
+
+  
     
 // for the action in BOARD_IOCTL_PARMS for flash operation
 typedef enum 
@@ -257,6 +260,7 @@ typedef enum
     kLedPPP,
     kLedVoip,
     kLedSes,
+    kLedAlert,
     kLedEnd,                // NOTE: Insert the new led name before this one.  Alway stay at the end.
 } BOARD_LED_NAME;
 
@@ -318,13 +322,12 @@ typedef struct flashaddrinfo
 #define TOKEN_NAME_LEN      16
 #define SP_VERSION          1
 #define SP_MAX_LEN          8 * 1024            // 8k buf before psi
-#define SP_RESERVERD        16
+#define SP_RESERVERD        20
 
 typedef struct _SP_HEADER
 {
     char SPMagicNum[MAGIC_NUM_LEN];             // 8 bytes of magic number
     int SPVersion;                              // version number
-    int SPUsedLen;                              // used sp len   
     char SPReserved[SP_RESERVERD];              // reservied, total 32 bytes
 } SP_HEADER, *PSP_HEADER;
 
@@ -342,6 +345,7 @@ typedef struct _TOKEN_DEF
 void dumpaddr( unsigned char *pAddr, int nLen );
 
 void kerSysFlashAddrInfoGet(PFLASH_ADDR_INFO pflash_addr_info);
+void kerSysSetMacAddress(char *pucaMacAddr); //VICTOR FOR MAC Writer
 int kerSysNvRamGet(char *string, int strLen, int offset);
 int kerSysNvRamSet(char *string, int strLen, int offset);
 int kerSysPersistentGet(char *string, int strLen, int offset);
@@ -358,11 +362,17 @@ void kerSysMipsSoftReset(void);
 void kerSysLedCtrl(BOARD_LED_NAME, BOARD_LED_STATE);
 void kerSysLedRegisterHwHandler( BOARD_LED_NAME, HANDLE_LED_FUNC, int );
 int kerSysFlashSizeGet(void);
+int kerSysMemoryMappedFlashSizeGet(void);
+unsigned long kerSysReadFromFlash( void *toaddr, unsigned long fromaddr,
+    unsigned long len );
 void kerSysRegisterDyingGaspHandler(char *devname, void *cbfn, void *context);
 void kerSysDeregisterDyingGaspHandler(char *devname);    
 void kerSysWakeupMonitorTask( void );
 #endif
 
+#if __cplusplus
+}
+#endif
 
 #endif /* _BOARD_H */
 

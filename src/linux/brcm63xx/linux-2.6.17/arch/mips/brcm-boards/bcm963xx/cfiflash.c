@@ -29,25 +29,202 @@
 /*  properly design-in this source code.                                */
 /*                                                                      */ 
 /************************************************************************/                        
+
+/** Includes. */
 #ifdef _CFE_                                                
 #include "lib_types.h"
 #include "lib_printf.h"
 #include "lib_string.h"
 #include "cfe_timer.h"
+#include "bcm_map.h"
+#define CFI_USLEEP(x) cfe_usleep(x)
 #define printk  printf
 #else       // linux
 #include <linux/param.h>
 #include <linux/sched.h>
 #include <linux/timer.h>
+#include <asm/delay.h>
+#include <bcm_map_part.h>       
+#define CFI_USLEEP(x) udelay(x)
 #endif
 
-#include "cfiflash.h"
+#include "bcmtypes.h"
+#include "board.h"
+#include "flash_api.h"
 
-static int flash_wait(WORD sector, int offset, UINT16 data);
-static UINT16 flash_get_device_id(void);
-static int flash_get_cfi(struct cfi_query *query, UINT16 *cfi_struct, int flashFamily);
-static int flash_write(WORD sector, int offset, byte *buf, int nbytes);
-static void flash_command(int command, WORD sector, int offset, UINT16 data);
+/** Defines. **/
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define MAXSECTORS  1024      /* maximum number of sectors supported */
+
+/* Standard Boolean declarations */
+#define TRUE            1
+#define FALSE           0
+
+/* Define different type of flash */
+#define FLASH_UNDEFINED 0
+#define FLASH_AMD       1
+#define FLASH_INTEL     2
+#define FLASH_SST       3
+
+/* Command codes for the flash_command routine */
+#define FLASH_RESET     0       /* reset to read mode */
+#define FLASH_READ_ID   1       /* read device ID */
+#define FLASH_CFIQUERY  2       /* CFI query */
+#define FLASH_UB        3       /* go into unlock bypass mode */
+#define FLASH_PROG      4       /* program a unsigned short */
+#define FLASH_UBRESET   5       /* reset to read mode from unlock bypass mode */
+#define FLASH_SERASE    6       /* sector erase */
+
+/* Return codes from flash_status */
+#define STATUS_READY    0       /* ready for action */
+#define STATUS_TIMEOUT  1       /* operation timed out */
+
+/* A list of AMD compatible device ID's - add others as needed */
+#define ID_AM29DL800T   0x224A
+#define ID_AM29DL800B   0x22CB
+#define ID_AM29LV800T   0x22DA
+#define ID_AM29LV800B   0x225B
+#define ID_AM29LV400B   0x22BA
+#define ID_AM29LV200BT  0x223B
+
+#define ID_AM29LV160B   0x2249
+#define ID_AM29LV160T   0x22C4
+
+#define ID_AM29LV320T   0x22F6
+#define ID_MX29LV320AT  0x22A7
+#define ID_AM29LV320B   0x22F9
+#define ID_MX29LV320AB  0x22A8
+#define ID_MX29LV640BT  0x22C9
+
+#define ID_AM29LV320M   0x227E
+#define ID_AM29LV320MB  0x2200
+#define ID_AM29LV320MT  0x2201
+
+#define ID_SST39VF200A  0x2789
+#define ID_SST39VF400A  0x2780
+#define ID_SST39VF800A  0x2781
+#define ID_SST39VF1601  0x234B
+#define ID_SST39VF3201  0x235B
+
+/* A list of Intel compatible device ID's - add others as needed */
+#define ID_I28F160C3T   0x88C2
+#define ID_I28F160C3B   0x88C3
+#define ID_I28F320C3T   0x88C4
+#define ID_I28F320C3B   0x88C5
+#define ID_I28F640J3	0x8916
+
+#define CFI_FLASH_DEVICES                   \
+         {{ID_AM29DL800T, "AM29DL800T"},    \
+          {ID_AM29DL800B, "AM29DL800B"},    \
+          {ID_AM29LV800T, "AM29LV800T"},    \
+          {ID_AM29LV800B, "AM29LV800B"},    \
+          {ID_AM29LV400B, "AM29LV400B"},    \
+          {ID_AM29LV200BT, "AM29LV200BT"},  \
+          {ID_AM29LV160B, "AM29LV160B"},    \
+          {ID_AM29LV160T, "AM29LV160T"},    \
+          {ID_AM29LV320T, "AM29LV320T"},    \
+          {ID_MX29LV320AT, "MX29LV320AT"},  \
+          {ID_AM29LV320B, "AM29LV320B"},    \
+          {ID_MX29LV320AB, "MX29LV320AB"},  \
+          {ID_AM29LV320M, "AM29LV320M"},    \
+          {ID_AM29LV320MB, "AM29LV320MB"},  \
+          {ID_AM29LV320MT, "AM29LV320MT"},  \
+          {ID_MX29LV640BT, "MX29LV640BT"},  \
+          {ID_SST39VF200A, "SST39VF200A"},  \
+          {ID_SST39VF400A, "SST39VF400A"},  \
+          {ID_SST39VF800A, "SST39VF800A"},  \
+          {ID_SST39VF1601, "SST39VF1601"},  \
+          {ID_SST39VF3201, "SST39VF3201"},  \
+          {ID_I28F160C3T, "I28F160C3T"},    \
+          {ID_I28F160C3B, "I28F160C3B"},    \
+          {ID_I28F320C3T, "I28F320C3T"},    \
+          {ID_I28F320C3B, "I28F320C3B"},    \
+          {ID_I28F640J3,  "I28F640J3"},     \
+          {0, ""}                           \
+        }
+
+/** Structs. **/
+/* A structure for identifying a flash part.  There is one for each
+ * of the flash part definitions.  We need to keep track of the
+ * sector organization, the address register used, and the size
+ * of the sectors.
+ */
+struct flashinfo {
+     char *name;         /* "Am29DL800T", etc. */
+     unsigned long addr; /* physical address, once translated */
+     int areg;           /* Can be set to zero for all parts */
+     int nsect;          /* # of sectors -- 19 in LV, 22 in DL */
+     int bank1start;     /* first sector # in bank 1 */
+     int bank2start;     /* first sector # in bank 2, if DL part */
+ struct {
+    long size;           /* # of bytes in this sector */
+    long base;           /* offset from beginning of device */
+    int bank;            /* 1 or 2 for DL; 1 for LV */
+     } sec[MAXSECTORS];  /* per-sector info */
+};
+
+/*
+ * This structure holds all CFI query information as defined
+ * in the JEDEC standard. All information up to 
+ * primary_extended_query is standard among all manufactures
+ * with CFI enabled devices.
+ */
+
+struct cfi_query {
+    int num_erase_blocks;       /* Number of sector defs. */
+	long device_size;		/* Device size in bytes */
+    struct {
+      unsigned long sector_size;    /* byte size of sector */
+      int num_sectors;      /* Num sectors of this size */
+    } erase_block[8];       /* Max of 256, but 8 is good */
+};
+
+struct flash_name_from_id {
+    unsigned short fnfi_id;
+    char fnfi_name[30];
+};
+
+
+/** Prototypes. **/
+int cfi_flash_init(flash_device_info_t **flash_info);
+static int cfi_flash_sector_erase_int(unsigned short sector);
+static int cfi_flash_read_buf(unsigned short sector, int offset,
+    unsigned char *buffer, int numbytes);
+static int cfi_flash_write_buf(unsigned short sector, int offset,
+    unsigned char *buffer, int numbytes);
+static int cfi_flash_get_numsectors(void);
+static int cfi_flash_get_sector_size(unsigned short sector);
+static unsigned char *cfi_flash_get_memptr(unsigned short sector);
+static int cfi_flash_get_blk(int addr);
+static int cfi_flash_get_total_size(void);
+static void cfi_flash_command(int command, unsigned short sector, int offset,
+    unsigned short data);
+static int cfi_flash_write(unsigned short sector, int offset, unsigned char *buf,
+    int nbytes);
+static int cfi_flash_wait(unsigned short sector, int offset,unsigned short data);
+static unsigned short cfi_flash_get_device_id(void);
+static int cfi_flash_get_cfi(struct cfi_query *query, unsigned short *cfi_struct,
+    int flashFamily);
+
+
+/** Variables. **/
+static flash_device_info_t flash_cfi_dev =
+    {
+        0xffff,
+        "",
+        cfi_flash_sector_erase_int,
+        cfi_flash_read_buf,
+        cfi_flash_write_buf,
+        cfi_flash_get_numsectors,
+        cfi_flash_get_sector_size,
+        cfi_flash_get_memptr,
+        cfi_flash_get_blk,
+        cfi_flash_get_total_size,
+        cfi_flash_get_total_size
+    };
 
 /*********************************************************************/
 /* 'meminfo' should be a pointer, but most C compilers will not      */
@@ -56,12 +233,12 @@ static void flash_command(int command, WORD sector, int offset, UINT16 data);
 /* the overhead of passing this pointer for every driver call.       */
 /* Systems with limited heap space will need to do this.             */
 /*********************************************************************/
-struct flashinfo meminfo; /* Flash information structure */
+static struct flashinfo meminfo; /* Flash information structure */
 static int flashFamily = FLASH_UNDEFINED;
 static int totalSize = 0;
 static struct cfi_query query;
 
-static UINT16 cfi_data_struct_29W160[] = {
+static unsigned short cfi_data_struct_29W160[] = {
     0x0020, 0x0049, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
     0x0051, 0x0052, 0x0059, 0x0002, 0x0000, 0x0040, 0x0000, 0x0000,
@@ -70,6 +247,44 @@ static UINT16 cfi_data_struct_29W160[] = {
     0x0002, 0x0000, 0x0000, 0x0000, 0x0004, 0x0000, 0x0000, 0x0040,
     0x0000, 0x0001, 0x0000, 0x0020, 0x0000, 0x0000, 0x0000, 0x0080,
     0x0000, 0x001e, 0x0000, 0x0000, 0x0001, 0xffff, 0xffff, 0xffff,
+    0x0050, 0x0052, 0x0049, 0x0031, 0x0030, 0x0000, 0x0002, 0x0001,
+    0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0x0002,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0x0888, 0x252b, 0x8c84, 0x7dbc, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
+};
+
+static UINT16 cfi_data_struct_29W200[] = {
+    0x0020, 0x0049, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0x0051, 0x0052, 0x0059, 0x0002, 0x0000, 0x0040, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0027, 0x0036, 0x0000, 0x0000, 0x0004,
+    0x0000, 0x000a, 0x0000, 0x0004, 0x0000, 0x0003, 0x0000, 0x0015,
+    0x0002, 0x0000, 0x0000, 0x0000, 0x0004, 0x0000, 0x0000, 0x0040,
+    0x0000, 0x0001, 0x0000, 0x0020, 0x0000, 0x0000, 0x0000, 0x0080,
+    0x0000, 0x0002, 0x0000, 0x0000, 0x0001, 0xffff, 0xffff, 0xffff,
+    0x0050, 0x0052, 0x0049, 0x0031, 0x0030, 0x0000, 0x0002, 0x0001,
+    0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0x0002,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0x0888, 0x252b, 0x8c84, 0x7dbc, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff
+};
+
+static UINT16 cfi_data_struct_26LV800B[] = {
+    0x0020, 0x0049, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+    0x0051, 0x0052, 0x0059, 0x0002, 0x0000, 0x0040, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0027, 0x0036, 0x0000, 0x0000, 0x0004,
+    0x0000, 0x000a, 0x0000, 0x0004, 0x0000, 0x0003, 0x0000, 0x0015,
+    0x0002, 0x0000, 0x0000, 0x0000, 0x0004, 0x0000, 0x0000, 0x0040,
+    0x0000, 0x0001, 0x0000, 0x0020, 0x0000, 0x0000, 0x0000, 0x0080,
+    0x0000, 0x000e, 0x0000, 0x0000, 0x0001, 0xffff, 0xffff, 0xffff,
     0x0050, 0x0052, 0x0049, 0x0031, 0x0030, 0x0000, 0x0002, 0x0001,
     0x0001, 0x0004, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0x0002,
     0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -100,20 +315,24 @@ static UINT16 cfi_data_struct_29W160[] = {
 /* on the value of the define MAXSECTORS.  Adjust to suit            */
 /* application                                                       */ 
 /*********************************************************************/
-byte flash_init(void)
+int cfi_flash_init(flash_device_info_t **flash_info)
 {
+    struct flash_name_from_id fnfi[] = CFI_FLASH_DEVICES;
+    struct flash_name_from_id *fnfi_ptr;
     int i=0, j=0, count=0;
     int basecount=0L;
-    UINT16 device_id;
+    unsigned short device_id;
     int flipCFIGeometry = FALSE;
 
+    *flash_info = &flash_cfi_dev;
+
     /* First, assume
-    * a single 8k sector for sector 0.  This is to allow
-    * the system to perform memory mapping to the device,
-    * even though the actual physical layout is unknown.
-    * Once mapped in, the CFI query will produce all
-    * relevant information.
-    */
+     * a single 8k sector for sector 0.  This is to allow
+     * the system to perform memory mapping to the device,
+     * even though the actual physical layout is unknown.
+     * Once mapped in, the CFI query will produce all
+     * relevant information.
+     */
     meminfo.addr = 0L;
     meminfo.areg = 0;
     meminfo.nsect = 1;
@@ -124,15 +343,16 @@ byte flash_init(void)
     meminfo.sec[0].base = 0x00000;
     meminfo.sec[0].bank = 1;
         
-    flash_command(FLASH_RESET, 0, 0, 0);
+    cfi_flash_command(FLASH_RESET, 0, 0, 0);
 
-    device_id = flash_get_device_id();
-
+    flash_cfi_dev.flash_device_id = device_id = cfi_flash_get_device_id();
+    flash_cfi_dev.flash_device_name[0] = '\0';
     switch (device_id) {
         case ID_I28F160C3B:
         case ID_I28F320C3B:
         case ID_I28F160C3T:
         case ID_I28F320C3T:
+	case ID_I28F640J3:
             flashFamily = FLASH_INTEL;
             break;
         case ID_AM29DL800B:
@@ -148,26 +368,36 @@ byte flash_init(void)
         case ID_AM29LV320T:
         case ID_MX29LV320AT:
         case ID_AM29LV320MT:
+        case ID_AM29LV200BT:
+        case ID_MX29LV640BT:
             flashFamily = FLASH_AMD;
             break;
+        case ID_SST39VF200A:
+        case ID_SST39VF400A:
+        case ID_SST39VF800A:
         case ID_SST39VF1601:
-		case ID_SST39VF3201:
+        case ID_SST39VF3201:
             flashFamily = FLASH_SST;
             break;
         default:
-            printk("Flash memory not supported!  Device id = %x\n", device_id);
-            return -1;           
+            return FLASH_API_ERROR;           
     }
 
-    if (flash_get_cfi(&query, 0, flashFamily) == -1) {
+    if (cfi_flash_get_cfi(&query, 0, flashFamily) == -1) {
         switch(device_id) {
         case ID_AM29LV160T:
         case ID_AM29LV160B:
-            flash_get_cfi(&query, cfi_data_struct_29W160, flashFamily);
+            cfi_flash_get_cfi(&query, cfi_data_struct_29W160, flashFamily);
+            break;
+        case ID_AM29LV200BT:
+            cfi_flash_get_cfi(&query, cfi_data_struct_29W200, flashFamily);
+            break;
+        case ID_AM29LV800B:
+            cfi_flash_get_cfi(&query, cfi_data_struct_26LV800B, flashFamily);
+            strcpy( flash_cfi_dev.flash_device_name, "MX26LV800B" ); 
             break;
         default:
-            printk("CFI data structure not found. Device id = %x\n", device_id);
-            return -1;           
+            return FLASH_API_ERROR;           
         }
     }
 
@@ -183,10 +413,13 @@ byte flash_init(void)
         case ID_AM29LV320MB:
         case ID_I28F160C3B:
         case ID_I28F320C3B:
+        case ID_I28F640J3:
         case ID_I28F160C3T:
         case ID_I28F320C3T:
-		case ID_SST39VF1601:
-		case ID_SST39VF3201:
+        case ID_SST39VF3201:
+        case ID_SST39VF200A:
+        case ID_SST39VF400A:
+        case ID_SST39VF800A:
             flipCFIGeometry = FALSE;
             break;
         case ID_AM29DL800T:
@@ -195,18 +428,21 @@ byte flash_init(void)
         case ID_AM29LV320T:
         case ID_MX29LV320AT:
         case ID_AM29LV320MT:
+        case ID_AM29LV200BT:
+        case ID_SST39VF1601:
+        case ID_MX29LV640BT:
             flipCFIGeometry = TRUE;
             break;
         default:
-            printk("Flash memory not supported!  Device id = %x\n", device_id);
-            return -1;           
+            return FLASH_API_ERROR;           
     }
 
     count=0;basecount=0L;
 
     if (!flipCFIGeometry)
     {
-       for (i=0; i<query.num_erase_blocks; i++) {
+
+       for (i=0; i<query.num_erase_blocks && basecount < query.device_size; i++) {
             for(j=0; j<query.erase_block[i].num_sectors; j++) {
                 meminfo.sec[count].size = (int) query.erase_block[i].sector_size;
                 meminfo.sec[count].base = (int) basecount;
@@ -217,19 +453,29 @@ byte flash_init(void)
     }
     else
     {
-        for (i = (query.num_erase_blocks - 1); i >= 0; i--) {
+        for (i = (query.num_erase_blocks - 1); i >= 0 && basecount < query.device_size; i--) {
             for(j=0; j<query.erase_block[i].num_sectors; j++) {
                 meminfo.sec[count].size = (int) query.erase_block[i].sector_size;
                 meminfo.sec[count].base = (int) basecount;
                 basecount += (int) query.erase_block[i].sector_size;
-				count++;
+                count++;
             }
         }
     }
 
     meminfo.nsect = count;
     totalSize = meminfo.sec[count-1].base + meminfo.sec[count-1].size;
-    return (0);
+
+    if( flash_cfi_dev.flash_device_name[0] == '\0' ) {
+        for( fnfi_ptr = fnfi; fnfi_ptr->fnfi_id != 0; fnfi_ptr++ ) {
+            if( fnfi_ptr->fnfi_id == device_id ) {
+                strcpy( flash_cfi_dev.flash_device_name, fnfi_ptr->fnfi_name ); 
+                break;
+            }
+        }
+    }
+
+    return (FLASH_API_OK);
 }
 
 /*********************************************************************/
@@ -239,37 +485,37 @@ byte flash_init(void)
 /* require the program to hold until a sector is erased, without     */
 /* adding the wait check external to this function.                  */
 /*********************************************************************/
-byte flash_sector_erase_int(WORD sector)
+static int cfi_flash_sector_erase_int(unsigned short sector)
 {
     int i;
 
     for( i = 0; i < 3; i++ ) {
-        flash_command(FLASH_SERASE, sector, 0, 0);
-        if (flash_wait(sector, 0, 0xffff) == STATUS_READY)
+        cfi_flash_command(FLASH_SERASE, sector, 0, 0);
+        if (cfi_flash_wait(sector, 0, 0xffff) == STATUS_READY)
             break;
     }
 
-    return(1);
+    return(FLASH_API_OK);
 }
 
 /*********************************************************************/
 /* flash_read_buf() reads buffer of data from the specified          */
 /* offset from the sector parameter.                                 */
 /*********************************************************************/
-int flash_read_buf(WORD sector, int offset,
-                        byte *buffer, int numbytes)
+static int cfi_flash_read_buf(unsigned short sector, int offset,
+    unsigned char *buffer, int numbytes)
 {
-    byte *fwp;
+    unsigned char *fwp;
 
-    fwp = (byte *)flash_get_memptr(sector);
+    fwp = (unsigned char *) cfi_flash_get_memptr(sector);
 
-	while (numbytes) {
-		*buffer++ = *(fwp + offset);
-		numbytes--;
-		fwp++;
+    while (numbytes) {
+        *buffer++ = *(fwp + offset);
+        numbytes--;
+        fwp++;
     }
 
-    return (1);
+    return (FLASH_API_OK);
 }
 
 /*********************************************************************/
@@ -279,25 +525,26 @@ int flash_read_buf(WORD sector, int offset,
 /* when programming bulk data a sizeable performance increase can be */
 /* observed.                                                         */
 /*********************************************************************/
-int flash_write_buf(WORD sector, int offset, byte *buffer, int numbytes)
+static int cfi_flash_write_buf(unsigned short sector, int offset,
+    unsigned char *buffer, int numbytes)
 {
-    int ret = -1;
+    int ret = FLASH_API_ERROR;
     int i;
-    unsigned char *p = flash_get_memptr(sector) + offset;
+    unsigned char *p = cfi_flash_get_memptr(sector) + offset;
 
     /* After writing the flash block, compare the contents to the source
      * buffer.  Try to write the sector successfully up to three times.
      */
     for( i = 0; i < 3; i++ ) {
-        ret = flash_write(sector, offset, buffer, numbytes);
+        ret = cfi_flash_write(sector, offset, buffer, numbytes);
         if( !memcmp( p, buffer, numbytes ) )
             break;
         /* Erase and try again */
         flash_sector_erase_int(sector);
-        ret = -1;
+        ret = FLASH_API_ERROR;
     }
 
-    if( ret == -1 )
+    if( ret == FLASH_API_ERROR )
         printk( "Flash write error.  Verify failed\n" );
 
     return( ret );
@@ -308,7 +555,7 @@ int flash_write_buf(WORD sector, int offset, byte *buffer, int numbytes)
 /* Can be used for functions which need to loop among all the        */
 /* sectors, or wish to know the number of the last sector.           */
 /*********************************************************************/
-int flash_get_numsectors(void)
+static int cfi_flash_get_numsectors(void)
 {
     return meminfo.nsect;
 }
@@ -319,7 +566,7 @@ int flash_get_numsectors(void)
 /* (in bytes) is returned in the data location pointed to by the     */
 /* 'size' parameter.                                                 */
 /*********************************************************************/
-int flash_get_sector_size(WORD sector)
+static int cfi_flash_get_sector_size(unsigned short sector)
 {
     return meminfo.sec[sector].size;
 }
@@ -328,7 +575,7 @@ int flash_get_sector_size(WORD sector)
 /* The purpose of flash_get_memptr() is to return a memory pointer   */
 /* which points to the beginning of memory space allocated for the   */
 /* flash.  All function pointers are then referenced from this       */
-/* pointer. 							     */
+/* pointer.                                  */
 /*                                                                   */
 /* Different systems will implement this in different ways:          */
 /* possibilities include:                                            */
@@ -349,25 +596,26 @@ int flash_get_sector_size(WORD sector)
 /* which do not need these bits will ignore them, so it is safe to   */
 /* assume that every part will require these bits to be set.         */
 /*********************************************************************/
-unsigned char *flash_get_memptr(WORD sector)
+static unsigned char *cfi_flash_get_memptr(unsigned short sector)
 {
-	unsigned char *memptr = (unsigned char*)(FLASH_BASE_ADDR_REG + meminfo.sec[sector].base);
+    unsigned char *memptr = (unsigned char*)
+        (FLASH_BASE + meminfo.sec[sector].base);
 
-	return (memptr);
+    return (memptr);
 }
 
 /*********************************************************************/
 /* The purpose of flash_get_blk() is to return a the block number    */
 /* for a given memory address.                                       */
 /*********************************************************************/
-int flash_get_blk(int addr)
+static int cfi_flash_get_blk(int addr)
 {
     int blk_start, i;
-    int last_blk = flash_get_numsectors();
-    int relative_addr = addr - (int) FLASH_BASE_ADDR_REG;
+    int last_blk = cfi_flash_get_numsectors();
+    int relative_addr = addr - (int) FLASH_BASE;
 
     for(blk_start=0, i=0; i < relative_addr && blk_start < last_blk; blk_start++)
-        i += flash_get_sector_size(blk_start);
+        i += cfi_flash_get_sector_size(blk_start);
 
     if( i > relative_addr )
     {
@@ -387,7 +635,7 @@ int flash_get_blk(int addr)
 /* The purpose of flash_get_total_size() is to return the total size of */
 /* the flash                                                            */
 /************************************************************************/
-int flash_get_total_size()
+static int cfi_flash_get_total_size(void)
 {
     return totalSize;
 }
@@ -398,13 +646,14 @@ int flash_get_total_size()
 /* flash parts. Note that this command is not used directly, but     */
 /* rather called through the API wrapper functions provided below.   */
 /*********************************************************************/
-static void flash_command(int command, WORD sector, int offset, UINT16 data)
+static void cfi_flash_command(int command, unsigned short sector, int offset,
+    unsigned short data)
 {
-    volatile UINT16 *flashptr;
-    volatile UINT16 *flashbase;
+    volatile unsigned short *flashptr;
+    volatile unsigned short *flashbase;
 
-    flashptr = (UINT16 *) flash_get_memptr(sector);
-    flashbase = (UINT16 *) flash_get_memptr(0);
+    flashptr = (unsigned short *) cfi_flash_get_memptr(sector);
+    flashbase = (unsigned short *) cfi_flash_get_memptr(0);
     
     switch (flashFamily) {
     case FLASH_UNDEFINED:
@@ -415,9 +664,14 @@ static void flash_command(int command, WORD sector, int offset, UINT16 data)
             flashptr[0] = 0xFF;
             break;
         case FLASH_READ_ID:
-			flashptr[0x5555] = 0xAA;       /* unlock 1 */
+            flashptr[0x5555] = 0xAA;       /* unlock 1 */
             flashptr[0x2AAA] = 0x55;       /* unlock 2 */
             flashptr[0x5555] = 0x90;
+            break;
+        case FLASH_CFIQUERY:
+            flashbase[0x5555] = 0xAA;       /* unlock 1 */
+            flashbase[0x2AAA] = 0x55;       /* unlock 2 */
+            flashbase[0x5555] = 0x90;
             break;
         default:
             break;
@@ -537,27 +791,28 @@ static void flash_command(int command, WORD sector, int offset, UINT16 data)
 /* program word by word.  This function utilizes fast pointers       */
 /* to quickly loop through bulk data.                                */
 /*********************************************************************/
-static int flash_write(WORD sector, int offset, byte *buf, int nbytes)
+static int cfi_flash_write(unsigned short sector, int offset, unsigned char *buf,
+    int nbytes)
 {
-    UINT16 *src;
-    src = (UINT16 *)buf;
+    unsigned short *src;
+    src = (unsigned short *)buf;
 
     if ((nbytes | offset) & 1) {
-        return -1;
+        return FLASH_API_ERROR;
     }
 
-    flash_command(FLASH_UB, 0, 0, 0);
+    cfi_flash_command(FLASH_UB, 0, 0, 0);
     while (nbytes > 0) {
-        flash_command(FLASH_PROG, sector, offset, *src);
-        if (flash_wait(sector, offset, *src) != STATUS_READY)
+        cfi_flash_command(FLASH_PROG, sector, offset, *src);
+        if (cfi_flash_wait(sector, offset, *src) != STATUS_READY)
             break;
         offset +=2;
         nbytes -=2;
         src++;
     }
-    flash_command(FLASH_UBRESET, 0, 0, 0);
+    cfi_flash_command(FLASH_UBRESET, 0, 0, 0);
     
-    return (byte*)src - buf;
+    return (unsigned char*)src - buf;
 }
 
 /*********************************************************************/
@@ -566,15 +821,16 @@ static int flash_write(WORD sector, int offset, byte *buf, int nbytes)
 /* operational status of the flash device, and return an             */
 /* appropriate status code (defined in flash.h)                      */
 /*********************************************************************/
-static int flash_wait(WORD sector, int offset, UINT16 data)
+static int cfi_flash_wait(unsigned short sector, int offset, unsigned short data)
 {
-    volatile UINT16 *flashptr; /* flash window */
-    UINT16 d1;
+    volatile unsigned short *flashptr; /* flash window */
+    unsigned short d1;
 
-    flashptr = (UINT16 *) flash_get_memptr(sector);
+    flashptr = (unsigned short *) cfi_flash_get_memptr(sector);
 
     if (flashFamily == FLASH_AMD || flashFamily == FLASH_SST) {
-#if defined(_BCM96338_) || defined(CONFIG_BCM96338)
+/* 6338 and 6358 for different reasons do a 'double read' when reading 16 bit from EBI */
+#if defined(_BCM96338_) || defined(CONFIG_BCM96338) || defined(_BCM96358_) || defined(CONFIG_BCM96358)
         do {
             d1 = flashptr[offset/2];
             if (d1 == data)
@@ -584,8 +840,24 @@ static int flash_wait(WORD sector, int offset, UINT16 data)
         d1 = flashptr[offset/2];
 
         if (d1 != data) {
-            flash_command(FLASH_RESET, 0, 0, 0);
-            return STATUS_TIMEOUT;
+
+            /* If the word written does not yet compare, try for another 100ms.
+             * This check is done for SST39VF800A.
+             */
+            int i;
+            for( i = 0; i < 10000; i++ ) {
+                d1 = flashptr[offset/2];
+                if (d1 == data)
+                    return STATUS_READY;
+                CFI_USLEEP(10);
+            }
+
+            d1 = flashptr[offset/2];
+
+            if (d1 != data) {
+                cfi_flash_command(FLASH_RESET, 0, 0, 0);
+                return STATUS_TIMEOUT;
+            }
         }
 #else
         do {
@@ -599,7 +871,7 @@ static int flash_wait(WORD sector, int offset, UINT16 data)
         d1 ^= *flashptr;   /* read it again and see what toggled */
 
         if (d1 != 0) {
-            flash_command(FLASH_RESET, 0, 0, 0);
+            cfi_flash_command(FLASH_RESET, 0, 0, 0);
             return STATUS_TIMEOUT;
         }
 #endif
@@ -609,11 +881,11 @@ static int flash_wait(WORD sector, int offset, UINT16 data)
         while(!(*flashptr & 0x80));
         if (*flashptr & 0x30) {
             flashptr[0] = 0x50;
-            flash_command(FLASH_RESET, 0, 0, 0);
+            cfi_flash_command(FLASH_RESET, 0, 0, 0);
             return STATUS_TIMEOUT;
         }
         flashptr[0] = 0x50;
-        flash_command(FLASH_RESET, 0, 0, 0);
+        cfi_flash_command(FLASH_RESET, 0, 0, 0);
     }
     
     return STATUS_READY;
@@ -624,22 +896,22 @@ static int flash_wait(WORD sector, int offset, UINT16 data)
 /* flash device, and return the device id of the component.          */
 /* This function automatically resets to read mode.                  */
 /*********************************************************************/
-static UINT16 flash_get_device_id()
+static unsigned short cfi_flash_get_device_id(void)
 {
-    volatile UINT16 *fwp; /* flash window */
-    UINT16 answer;
+    volatile unsigned short *fwp; /* flash window */
+    unsigned short answer;
     
-    fwp = (UINT16 *)flash_get_memptr(0);
+    fwp = (unsigned short *) cfi_flash_get_memptr(0);
     
-    flash_command(FLASH_READ_ID, 0, 0, 0);
+    cfi_flash_command(FLASH_READ_ID, 0, 0, 0);
     answer = *(fwp + 1);
     if (answer == ID_AM29LV320M) {
         answer = *(fwp + 0xe);
         answer = *(fwp + 0xf);
     }
     
-    flash_command(FLASH_RESET, 0, 0, 0);
-    return( (UINT16) answer );
+    cfi_flash_command(FLASH_RESET, 0, 0, 0);
+    return( (unsigned short) answer );
 }
 
 /*********************************************************************/
@@ -651,15 +923,16 @@ static UINT16 flash_get_device_id()
 /* possible.  90% of all operations are memory reads, and all        */
 /* calculations are done using bit-shifts when possible              */
 /*********************************************************************/
-static int flash_get_cfi(struct cfi_query *query, UINT16 *cfi_struct, int flashFamily)
+static int cfi_flash_get_cfi(struct cfi_query *query, unsigned short *cfi_struct,
+    int flashFamily)
 {
-    volatile UINT16 *fwp; /* flash window */
-    int i=0;
+    volatile unsigned short *fwp; /* flash window */
+    int i=0, temp=0;
 
-    flash_command(FLASH_CFIQUERY, 0, 0, 0);
+    cfi_flash_command(FLASH_CFIQUERY, 0, 0, 0);
     
     if (cfi_struct == 0)
-        fwp = (UINT16 *)flash_get_memptr(0);
+        fwp = (unsigned short *) cfi_flash_get_memptr(0);
     else
         fwp = cfi_struct;
     
@@ -673,20 +946,26 @@ static int flash_get_cfi(struct cfi_query *query, UINT16 *cfi_struct, int flashF
     if( fwp[0x10] != 'Q' &&
         fwp[0x11] != 'R' &&
         fwp[0x12] != 'Y') {
-        flash_command(FLASH_RESET, 0, 0, 0);
-        return(-1);
+        cfi_flash_command(FLASH_RESET, 0, 0, 0);
+        return(FLASH_API_ERROR);
     }
     
-	query->num_erase_blocks = fwp[0x2C];
-	if(flashFamily == FLASH_SST)
-		query->num_erase_blocks = 1;
-	
+    temp = fwp[0x27];
+    query->device_size = (int) (((int)1) << temp);
+    
+    query->num_erase_blocks = fwp[0x2C];
+    if(flashFamily == FLASH_SST)
+        query->num_erase_blocks = 1;
+    
     for(i=0; i < query->num_erase_blocks; i++) {
-			query->erase_block[i].num_sectors = fwp[(0x2D+(4*i))] + (fwp[0x2E + (4*i)] << 8);
-			query->erase_block[i].num_sectors++;
-			query->erase_block[i].sector_size = 256 * (256 * fwp[(0x30+(4*i))] + fwp[(0x2F+(4*i))]);
+        query->erase_block[i].num_sectors =
+            fwp[(0x2D+(4*i))] + (fwp[0x2E + (4*i)] << 8);
+        query->erase_block[i].num_sectors++;
+        query->erase_block[i].sector_size =
+            256 * (256 * fwp[(0x30+(4*i))] + fwp[(0x2F+(4*i))]);
     }
     
-    flash_command(FLASH_RESET, 0, 0, 0);
-    return(1);
+    cfi_flash_command(FLASH_RESET, 0, 0, 0);
+    return(FLASH_API_OK);
 }
+

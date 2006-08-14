@@ -30,6 +30,9 @@
 #if !defined(_BOARDPARMS_H)
 #define _BOARDPARMS_H
 
+#if __cplusplus
+extern "C" {
+#endif
 
 /* Return codes. */
 #define BP_SUCCESS                              0
@@ -755,6 +758,9 @@ int BpGetVoipChipSelect( unsigned char dspNum, unsigned long *pulValue );
 
 #endif /* __ASSEMBLER__ */
 
+#if __cplusplus
+}
+#endif
 
 #endif /* _BOARDPARMS_H */
 
