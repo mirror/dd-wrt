@@ -1650,7 +1650,7 @@ check_cfe_nv (void)
 	case ROUTER_RT210W:     
       if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
       	{
-      	nvram_set ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
+      	ret += check_nv ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
   		}
       break;
       
