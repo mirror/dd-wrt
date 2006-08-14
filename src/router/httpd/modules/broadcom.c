@@ -3991,11 +3991,11 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_SKYTRON
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2},
-  {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"**.html", "text/html", no_cache, NULL, do_ej_two, do_auth2},
 #else
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth},
   {"**.htm", "text/html", no_cache, NULL, do_ej, NULL},
-  {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
+  {"**.html", "text/html", no_cache, NULL, do_ej_two, NULL},
 
 #endif
   {"**.css", "text/css", NULL, NULL, do_file, NULL},

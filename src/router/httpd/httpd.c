@@ -596,6 +596,22 @@ check_connect_type (void)
     putenv(s);
   }
 }*/
+int contains(char *source,char *cmp)
+{
+if (cmp==NULL || source==NULL)return 0;
+if (strlen(source)>strlen(cmp))return 0;
+int i;
+for (i=0;i<strlen(source)-strlen(cmp);i++)
+    {
+    int a;
+    int r=0;
+    for (a=0;a<strlen(cmp);a++)
+	if (source[i+a]!=cmp[a])r++;
+    if (!r)return 1;
+    }
+return 0;
+}
+
 
 #define LINE_LEN 10000
 static void
@@ -762,7 +778,7 @@ handle_request (void)
     }
 
 #endif
-  if (strncmp (file, "cgi-bin", 7) == 0)
+  if (contains(file,"cgi-bin"))
     {
 
       do_auth (auth_userid, auth_passwd, auth_realm);
