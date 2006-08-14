@@ -4,7 +4,38 @@
 # include <sys/types.h>
 # include <sys/wait.h>
 # include <unistd.h>
+# include <time.h>
 # include "gateway.h"
+
+extern unsigned long int total_connections = 0;
+extern time_t last_connection = 0;
+
+void accept_peer ( http_request *h ) {
+    peer *p;
+   
+    p  = find_peer( h->peer_ip );
+    g_message( "Accepting peer %s", p->ip );
+
+    increment_total_connections();
+
+    peer_permit( nocat_conf, p );
+}
+
+void remove_peer ( peer *p ) {
+    g_message( "Removing peer %s", p->ip );
+    peer_deny( nocat_conf, p );
+}
+
+gboolean check_peer_expire ( gchar *ip, peer *p, time_t *now ) {
+    g_message( "Checking peer %s for expire: %ld sec. remain",
+	ip, p->expire - *now );
+    if (p->expire <= *now) {
+	remove_peer( p );
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
 
 void capture_peer ( http_request *h, peer *p ) {
     gchar *redir = target_redirect( h );
@@ -154,25 +185,24 @@ void handle_request( http_request *h ) {
     gchar *sockname = local_host(h);
     peer *p = find_peer( h->peer_ip );
     int r;
-
-    g_assert( sockname != NULL );
-    g_assert( hostname != NULL );
-
-    if (hostname == NULL || strcmp( hostname, sockname ) != 0) {
-	capture_peer(h, p);
-    } else if (strcmp( h->uri, "/logout" ) == 0) {
-	// logout
-	logout_peer(h, p);
-    // } else if (strcmp( h->uri, "/status" ) == 0) {
-	// status
-	// display_status(h, p);
-    } else {
-	// user with a ticket
-	r = verify_peer(h, p);
-	if (!r)
-	    capture_peer(h, p);
+    if ( NULL != p ) {
+        g_assert( sockname != NULL );
+        g_assert( hostname != NULL );
+        
+        if (hostname == NULL || strcmp( hostname, sockname ) != 0) {
+            capture_peer(h, p);
+        } else if (strcmp( h->uri, "/logout" ) == 0) {
+            // logout
+            logout_peer(h, p);
+        } else if (strcmp( h->uri, "/status" ) == 0 ) { // && h->password_checked ) {
+            status_page( h );
+        } else {
+            // user with a ticket
+            r = verify_peer(h, p);
+            if (!r)
+                capture_peer(h, p);
+        }
     }
-
     g_free( sockname );
 }
 

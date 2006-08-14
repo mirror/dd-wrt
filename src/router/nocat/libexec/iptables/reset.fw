@@ -5,8 +5,7 @@
 #
 ##
 
-# Note: your PATH is inherited from the gateway process
-#
+export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
 
 # Flush all user-defined chains
 #
@@ -14,11 +13,12 @@ iptables -t filter -D FORWARD -j NoCat 2>/dev/null
 
 iptables -t nat -D PREROUTING -j NoCat_Capture 2>/dev/null
 
-# Only nat if we're not routing
-#
-if [ -z "$RouteOnly" ]; then
+#Disabled the RouteOnly check, as it doesn't matter if the -D cmd fails.
+#Now this can be run from outside NoCat, and end up with the right result
+#-TJ
+#if [ -z "$RouteOnly" ]; then
   iptables -t nat -D POSTROUTING -j NoCat_NAT 2>/dev/null
-fi
+#fi
 
 iptables -t mangle -D PREROUTING -j NoCat 2>/dev/null
 

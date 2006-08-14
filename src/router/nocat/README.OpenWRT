@@ -1,0 +1,69 @@
+Installing and Configuring NoCatSplash on the OpenWRT
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+Written by Schuyler Erle <schuyler@nocat.net>
+Last updated 2005-05-23
+
+-----------
+Quick Start
+-----------
+
+If you already have a working OpenWRT setup, you can install NoCatSplash with
+the remote splash option as follows:
+
+$ ssh root@<ip-of-OpenWRT>
+# ipkg update
+# ipkg install glib1 iptables kmod-iptables-extra
+# wget http://nocat.net/~sderle/nocatsplash_0.93pre2-2_mipsel.ipk
+# ipkg install nocatsplash_0.93pre2-2_mipsel.ipk
+
+NoCatSplash should install without problems, and set up an init script in
+/etc/init.d, to load splashd on boot. The final step is to configure
+/etc/nocat.conf. The following nocat.conf entries need to be customized for
+your community network:
+
+SplashURL
+SplashTimeout
+AllowedWebHosts
+
+The following nocat.conf entries need to be set for the OpenWRT hardware, *if*
+you are not running OpenWRT on a Linksys WRT54G-type device. Otherwise the
+defaults *should* suffice -- but if not, try fixing these first.
+
+ExternalDevice
+InternalDevice
+
+Reboot the device and you're done.
+
+------------------------------
+Rebuilding the OpenWRT Package
+------------------------------
+
+If you need to rebuild the OpenWRT package for NoCatSplash - say, for example,
+to make custom alterations to nocat.conf.in for your community network - you
+will need to have an OpenWRT SDK or BuildRoot set up somewhere on your system.
+
+When you are ready to rebuild NoCatSplash, increment the PKG_RELEASE variable
+in ipkg/rules, and then run the following commands:
+
+$ export TOPDIR=<path-to-buildroot>
+$ cd NoCatSplash-vX.XX
+$ ipkg/rules clean
+$ ipkg/rules compile
+
+The result should be a nocatsplash-*.ipkg in your $TOPDIR/bin/packages/
+directory or whatever your local equivalent is. You can then simply upload the
+ipkg file to the router device, configure it as above (if necessary), and
+reboot.
+
+----------
+Desiderata
+----------
+
+Many thanks are due to Jo Walsh and Saul Albert for kicking my ass into making
+this work. Thanks are also in order to Felix Fietkau for writing the original
+OpenWRT build configuration for NoCatSplash, and to the OpenWRT developers in
+general for making such a bad ass piece of software.
+
+SDE
+
+=30=

@@ -13,6 +13,7 @@
 # include "http.h"
 # include "firewall.h"
 # include "util.h"
+# include "conf.h"
 
 ssize_t http_sendfile ( http_request *h, int in_fd ) {
     int out_fd = g_io_channel_unix_get_fd( h->sock );
@@ -38,26 +39,37 @@ ssize_t http_sendfile ( http_request *h, int in_fd ) {
     return r;
 }
 
-gchar *peer_arp( peer *p ) {
-    gchar ip[16], hw[18];
+gchar *find_peer_arp( char *pip ) {
+    gchar *hw = g_new0( gchar, 18);
+    gchar ip[16];
     FILE *arp;
 
-    g_assert( p != NULL );
+    g_assert( ip != NULL );
 
     arp = fopen( "/proc/net/arp", "r" );
-    if ( arp == NULL )
-	g_error( "Can't open /proc/net/arp: %m" );
+    if ( arp == NULL ) {
+	    g_warning( "Can't open /proc/net/arp: %m" ); 
+        return NULL; 
+    }
    
     fscanf(arp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s"); // Skip first line 
     while (fscanf( arp, "%15s %*s %*s %17s %*s %*s\n", ip, hw ) != EOF)  {
-	if ( strncmp( p->ip, ip, sizeof(p->ip) ) == 0 ) {
-	    g_strncpy( p->hw, hw, sizeof(p->hw) );
-	    break;
-	}
+        if ( strncmp( pip, ip, 16 ) == 0 ) {
+	    if (CONFd("Verbosity") >= 9) g_message("find_peer_arp: Reading %s in /proc/net/arp: %s MATCHES %s\n", ip, hw, pip);
+            break;
+        }
+	else 
+	    if (CONFd("Verbosity") >= 9) g_message("find_peer_arp: Reading %s in /proc/net/arp: %s does not MATCH %s\n", ip, hw, pip);
+    }
+
+    if ( strncmp(hw,"\0",1) == NULL ) {
+        g_free(hw);
+	hw = NULL;
+	if (CONFd("Verbosity") >= 5) g_message("find_peer_arp: Peer %s not found in /proc/net/arp!\n", pip);
     }
 
     fclose( arp );
-    return ( p->hw[0] != '\0' ? p->hw : NULL );
+    return ( hw );
 }
 
 gchar *get_mac_address (const gchar *dev) {
@@ -146,7 +158,7 @@ gchar *get_network_address (const gchar *dev) {
 }
 
 gchar *detect_network_device ( const gchar *exclude ) {
-    gchar dev[7], dest[9];
+    gchar dev[16], dest[9];
     gchar *out = NULL;
     FILE *route;
 
@@ -158,9 +170,9 @@ gchar *detect_network_device ( const gchar *exclude ) {
     fscanf(route, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s"); 
 
     while (fscanf( route, 
-	"%6s %8s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", dev, dest ) != EOF) {
+	"%15s %8s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", dev, dest ) != EOF) {
 	if ( exclude ? 
-		(strncmp( dev, exclude, 6 ) != 0) :   // not the whatever it is
+		(strncmp( dev, exclude, 15 ) != 0) :   // not the whatever it is
 		(strcmp( dest, "00000000" ) == 0) ) { // default route
 	    out = g_strdup(dev);
 	    break;

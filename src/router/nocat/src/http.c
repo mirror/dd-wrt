@@ -13,6 +13,7 @@
 # include "util.h"
 # include "http.h"
 # include "mime.h"
+# include "conf.h"
 
 GIOChannel *http_bind_socket( const char *ip, int port, int queue ) { 
     struct sockaddr_in addr;
@@ -55,52 +56,65 @@ GIOChannel *http_bind_socket( const char *ip, int port, int queue ) {
     return g_io_channel_unix_new( fd );
 }
 
-http_request *http_request_new ( GIOChannel *sock ) {
+http_request *http_request_new ( GIOChannel *GIO_sock ) {
     http_request *h = g_new0(http_request, 1);
-    int fd = g_io_channel_unix_get_fd( sock );
+    int fd = g_io_channel_unix_get_fd( GIO_sock );
     struct sockaddr_in addr;
     int n = sizeof(struct sockaddr_in);
     int r;
     const gchar *r2;
 
-    g_assert( sock != NULL );
+    g_assert( GIO_sock != NULL );
     g_assert( h    != NULL );
     g_assert( fd   != -1 );
+    h->password_checked = FALSE;
+    
 
-    h->sock   = sock;
+    h->sock   = GIO_sock;
+//    h->sockfd = fd;
     h->buffer = g_string_new("");
 
     r = getsockname( fd, (struct sockaddr *)&addr, &n );
     if (r == -1)
-	g_error( "getsockname failed: %m" );
+	{
+		g_warning( "getpeername failed: %m" );
+		g_error( "getsockname failed: %m" );
+		return NULL;
+	}
     r2 = inet_ntop( AF_INET, &addr.sin_addr, h->sock_ip, INET_ADDRSTRLEN );
     g_assert( r2 != NULL );
 
-    r = getpeername( fd, (struct sockaddr *)&addr, &n );
-    if (r == -1)
-	g_error( "getpeername failed: %m" );
-    r2 = inet_ntop( AF_INET, &addr.sin_addr, h->peer_ip, INET_ADDRSTRLEN );
-    g_assert( r2 != NULL );
-
-    g_io_channel_ref( sock );
     return h;
 }
 
 void http_request_free ( http_request *h ) {
-    g_free( h->uri );
-    g_free( h->method );
-    g_hash_free( h->header );
-    g_hash_free( h->query );
-    g_hash_free( h->response );
-    g_string_free( h->buffer, 1 );
-    g_io_channel_unref( h->sock );
+    if (h->uri)
+	g_free( h->uri );
+    if (h->method)
+	g_free( h->method );
+    if (h->header)
+	g_hash_free( h->header );
+    if (h->query)
+	g_hash_free( h->query );
+    if (h->response)
+	g_hash_free( h->response );
+    if (h->buffer)
+	g_string_free( h->buffer, 1 );
+//   if (h->sock) {
+//	g_io_channel_shutdown( h->sock );
+//	g_io_channel_close( h->sock ); 
+//	g_io_channel_unref( h->sock ); 
+//   }
     g_free( h );
 }
 
 GHashTable *parse_query_string( gchar *query ) {
     GHashTable *data = g_hash_new();
-    gchar **items, *key, *val;
+    gchar **items, *key, *val, prefix[50];
     guint i;
+
+    if (!query)
+	return data;
 
     items = g_strsplit( query, "&", 0 );
     for ( i = 0; items[i] != NULL; i++ ) {
@@ -116,7 +130,18 @@ GHashTable *parse_query_string( gchar *query ) {
 
 	key = url_decode( key );	
 	val = url_decode( val );	
-	g_hash_set( data, key, val );
+	/* Irving - fix from Yurgi - check to see if the key is already in the
+	   hash table.  This deals with keys that are set twice by web sites */
+	if(g_hash_table_lookup_extended( data, key, NULL, NULL ) == FALSE ) {
+		g_hash_set( data, key, val );
+		if(CONFd("Verbosity") >= 8) {
+                     g_snprintf(prefix, 50, "parse_query_string: %s=", key);
+                     syslog_message(prefix, val, strlen(val));
+                }
+	}
+	else
+		if(CONFd("Verbosity") >= 8) g_message("parse_query_string: DUPLICATE key %s=%s, discarded.", key, val);
+
 	g_free( key );
 	g_free( val );
     }
@@ -127,16 +152,28 @@ GHashTable *parse_query_string( gchar *query ) {
 
 GHashTable *http_parse_header (http_request *h, gchar *req) {
     GHashTable *head = g_hash_new();
-    gchar **lines, **items, *key, *val, *p;
+    gchar **lines, **items, *key, *val, *p, prefix[50];
     guint i;
 
+    h->method = NULL;
+    h->uri    = NULL;
+    h->header = head;
+    
+    if (req == NULL)
+	return head;
+    
     lines = g_strsplit( req, "\r\n", 0 );
+
+    if (lines == NULL || lines[0] == NULL)
+	return head;
+
     items = g_strsplit( lines[0], " ", 3 );
 
     h->method = g_strdup( items[0] );
     h->uri    = g_strdup( items[1] );
-    // g_message( "method: %s", h->method );
-    // g_message( "uri: %s", h->uri );
+    // if (CONFd("Verbosity") >= 8) g_message( "http_parse_header: method_len: %d, uri_len: %d", strlen(h->method), strlen(h->uri));
+    if (CONFd("Verbosity") >= 8) g_message( "http_parse_header: Method: %s", h->method );
+    if (CONFd("Verbosity") >= 8) g_message( "http_parse_header: URI: %s", url_decode(h->uri) );
     g_strfreev( items );
 
     for (i = 1; lines[i] != NULL && lines[i][0] != '\0'; i++ ) {
@@ -152,9 +189,17 @@ GHashTable *http_parse_header (http_request *h, gchar *req) {
 
 	    /* Strip ": " plus leading and trailing space from val */
 	    g_strchomp( val += 2 ); // ": "
-	    
-	    g_debug("Header in: %s=%s", key, val );
-	    g_hash_set( head, key, val );
+
+	    //if ( strcmp(key, "Referer" )== 0) {
+	    //    if (CONFd("Verbosity") >= 8) g_message("http_parse_header: Referer: %s", url_decode(val) );
+	    //} 
+            //else {
+	        if (CONFd("Verbosity") >= 8) {
+                    g_snprintf(prefix, 50, "http_parse_header: %s: ", key);
+                    syslog_message(prefix, url_decode(val), strlen(url_decode(val)) );
+                }
+	        g_hash_set( head, key, val );
+	    //}
 	}
     }
 
@@ -163,13 +208,39 @@ GHashTable *http_parse_header (http_request *h, gchar *req) {
     return head;
 }
 
+void syslog_message(const char *prefix, const char *buf, size_t n) {
+    int i,j,k;
+    gchar *dbuf = g_new( gchar, RAW_LINE_SIZE+4);
+
+    dbuf[0] = '\0';
+    dbuf[RAW_LINE_SIZE+3] =  '\0';
+    // Copy string, preserving % for printf and translating non-printable data to hex
+    for (i=0; i < n; i += j) {
+        for(j=0,k=0; (k < RAW_LINE_SIZE) && (i+j < n); j++) {
+           if(buf[i+j] == '%') {
+               dbuf[k++] = '%';
+               dbuf[k++] = '%';
+           }
+           else if(!isprint(buf[i+j])) {
+               sprintf(&(dbuf[k]), "0x%2.2X", buf[i+j]);
+               k += 4;
+           }
+           else dbuf[k++] = buf[i+j];
+        }
+        dbuf[k] = '\0';
+        if (i==0) g_message("%s%s", prefix, dbuf);
+        else g_message("%s",dbuf);
+    }
+    g_free(dbuf);
+}
+
 GHashTable *http_parse_query (http_request *h, gchar *post) {
     gchar *q = NULL;
 
     g_assert( h != NULL );
 
     if (h->uri != NULL) {
-	// g_message( "Parsing query from %s", h->uri );
+	if(CONFd("Verbosity") >= 9) g_message( "http_parse_query: URI: %s", url_decode(h->uri) );
 	q = strchr( h->uri, '?' );
     }
 
@@ -187,83 +258,277 @@ GHashTable *http_parse_query (http_request *h, gchar *post) {
     return h->query;
 }
 
+guint http_get_hdr_len( const gchar *str ) {
+    int i;
+    gchar *hdr_end = NULL;
+    
+    // The following seems to fail when the data is not 7-bit clean ASCII
+    //if ((hdr_end = strstr( str, "\r\n\r\n"))) return hdr_end - str + 4;
+
+    // And, so does this version...??
+    hdr_end = str;
+    if(hdr_end[0] == '\0' || hdr_end[1] == '\0' || hdr_end[2] == '\0') return 0;
+    //while(hdr_end[3] != '\0') {
+    for(i=0; i < (strlen(str)-3); i++) {
+        if(hdr_end[i] == '\r' && hdr_end[i+1] == '\n' && hdr_end[i+2] == '\r' && hdr_end[i+3] == '\n')
+            return i+4;
+    //        return hdr_end+4-str;
+    //        hdr_end++;
+    }
+    return 0;
+}
+
 guint http_request_read (http_request *h) {
     gchar *buf = g_new( gchar, BUFSIZ + 1 );
+/*
+    GIOStatus r;
+    GError *err = NULL;
+*/
     GIOError r;
-    guint n, t;
-    gchar *c_len_hdr;
-    guint c_len;
-    guint tot_req_size;
-    gchar *hdr_end = NULL;
+    guint s, times, n = 0, t = 0;
+    gchar *c_len_hdr = NULL;
+    guint hdr_len = 0, c_len = 0, tot_req_size = 0;
+    struct timeval tv;
+    fd_set fdset;
 
-    // g_message("entering http_request_read");
-    for (t = 0, n = BUFSIZ; h->buffer->len < MAX_REQUEST_SIZE &&
-	    (hdr_end = strstr(h->buffer->str, "\r\n\r\n")) == NULL; t += n ) {
-	// g_message("entering read loop");
-	r = g_io_channel_read( h->sock, buf, BUFSIZ, &n );
-	// g_message("read loop: read %d bytes of %d (%d)", n, BUFSIZ, r);
+    FD_ZERO(&fdset);
+    FD_SET(g_io_channel_unix_get_fd(h->sock), &fdset);
+    tv.tv_sec = 0;
+    buf[0] = '\0';
+    buf[BUFSIZ] = '\0';
+
+    //    for (t = 0, n = BUF_SIZ; n == BUF_SIZ &&
+    //      h->buffer->len < MAX_REQUEST_SIZE; t += n ) {
+    // BPsmythe: The above (original) loop will never execute
+    // more than once unless the size of the buffer read in (n)
+    // is equal to the constant BUF_SIZE.  What is desired is
+    // to keep looping until there is nothing left to read.
+    // The for was changed to look for the end of the headers.
+    // FIXME: We should use the newer g_io_channel_read_char
+    //
+    // TJaqua: Added buffer overflow checking, content read loop from 0.93pre2, and fixed up the timeouts, logging and error exits
+
+    if (CONFd("Verbosity") >= 7) g_message("http_request_read: READING request from peer %s (on %s, fd: %d)", h->peer_ip, h->sock_ip, g_io_channel_unix_get_fd(h->sock));
+    if (CONFd("Verbosity") >= 9) g_message("http_request_read: entering HEADER read loop (BUFSIZE=%u)", BUFSIZ);
+    for (times=MAX_REQ_TIMEOUTS; !hdr_len && (times > 0); t += n ) {
+	n=0;
+/*
+	r = g_io_channel_read_chars( h->sock, buf, BUFSIZ, &n, &err );
+	if (r == G_IO_STATUS_ERROR || err != NULL) {
+	    g_message( "http_request_read: Socket IO ERROR: %s, exiting!", err->message );
+	    g_error_free(err);
+*/
+	r = g_io_channel_read( h->sock, buf, BUFSIZ, &n);
 	if (r != G_IO_ERROR_NONE) {
-	    g_warning( "read_http_request failure: %m" );
+	    g_warning( "http_request_read: Socket IO ERROR: %m, exiting!" );
 	    g_free(buf);
 	    return 0;
 	}
+
+	if (CONFd("Verbosity") >= 9) g_message("http_request_read: HEADER loop read %u bytes", n);
 	buf[n] = '\0';
-	g_string_append(h->buffer, buf);
+	if (n && CONFd("Verbosity") >= 11) syslog_message("RAW_HDR_BUF: ", buf, n);
+
+	if(strlen(buf) < n-1) g_warning("http_request_read: Trailing data past string in buffer was DICARDED!");
+	if (h->buffer->len == MAX_REQUEST_SIZE)
+	    g_warning("http_request_read: header buffer full (%u bytes, %u bytes discarded!)", MAX_REQUEST_SIZE, n);
+	else if (n <= (MAX_REQUEST_SIZE - h->buffer->len)) {
+	    if(CONFd("Verbosity") >= 11) g_message("http_request_read: APPENDING buffer to HEADER.");
+	    if(n) g_string_append(h->buffer, buf);
+	    else if (CONFd("Verbosity") >= 6) g_message("http_request_read: No data in buffer.");
+	    //if(CONFd("Verbosity") >= 11) g_message("http_request_read: Partial HEADER (%u bytes) is: %s", h->buffer->len, h->buffer->str);
+	}
+	else {
+	    if(CONFd("Verbosity") >= 6) g_warning("http_request_read: header buffer full (%u bytes, %u bytes discarded!)", 
+                                                  MAX_REQUEST_SIZE, n - (MAX_REQUEST_SIZE - h->buffer->len));
+	    buf[MAX_REQUEST_SIZE - h->buffer->len] = '\0';
+	    g_string_append(h->buffer, buf);
+	}
+        times--;
+
+        // BPsmythe: Check for the end of the headers.
+	if (hdr_len = http_get_hdr_len(h->buffer->str)) {
+	        if (CONFd("Verbosity") >= 6) g_message("http_request_read: HEADER END found, length: %u", hdr_len );
+        }
+	else {
+	    if(!times) { 
+                if(CONFd("Verbosity") >= 6) {
+                    g_message("http_request_read: ERROR: HEADER END not found after %d tries, exiting!", MAX_REQ_TIMEOUTS);
+	            if (!t) g_message("http_request_read: Empty HTTP-request header.");
+	            else g_message("http_request_read: Invalid HTTP-request header, %u bytes read.", t+n);
+	        }
+		//Should I send a FIN packet to shutdown the socket?
+                g_free(buf);
+	        return 0;
+            }
+	    if(CONFd("Verbosity") >= 11) g_message("http_request_read: Waiting for next I/O on socket, (%d more tries).", times);
+            tv.tv_usec = REQ_TIMEOUT;
+	    while(times && !(s = select (g_io_channel_unix_get_fd(h->sock)+1, &fdset, NULL, NULL, &tv))) {
+                times--;
+	        if (CONFd("Verbosity") >= 7)  g_message("http_request_read: HEADER select timeout, %d more tries", times);
+                tv.tv_usec = REQ_TIMEOUT;
+            }
+	    if(s<0) {
+	        g_warning("http_request_read: ERROR in select, exiting!");
+		g_free(buf);
+		return 0;
+	    }
+	    else if(!times) { 
+                if(CONFd("Verbosity") >= 6) {
+                    g_message("http_request_read: ERROR: Too many TIMEOUTS waiting for HEADER end!");
+	            if (!t) g_message("http_request_read: Empty HTTP-request header.");
+	            else g_message("http_request_read: Invalid HTTP-request header, %u bytes read.", t+n);
+	        }
+		//Should I send a FIN packet to shutdown the socket?
+                g_free(buf);
+	        return 0;
+            }
+            else if(CONFd("Verbosity") >= 11) g_message("http_request_read: Recieved I/O on socket.");
+	}
     }
+
+    if (CONFd("Verbosity") >= 10) syslog_message("RAW_HEADER: ", h->buffer->str, h->buffer->len);
+    
+    // Read the content length from the header
     http_parse_header( h, h->buffer->str );
-    c_len_hdr = HEADER("Content-length");
-    if (c_len_hdr == NULL) {
-    	c_len = 0;
-    } else {
-    	c_len = atoi( c_len_hdr );
+
+    if( (HEADER("Content-length")) && (c_len = atoi(HEADER("Content-length"))) ) {
+        if (CONFd("Verbosity") >= 9) g_message("http_request_read: entering CONTENT read loop to read %u bytes.", c_len);
+        tot_req_size = hdr_len + c_len;
+        for (times=MAX_REQ_TIMEOUTS; (t < tot_req_size) && (times > 0); t += n ) {
+	    if (CONFd("Verbosity") >= 9) g_message("http_request_read: %u bytes of %u total.", t, tot_req_size );
+	    n=0;
+/*
+	    r = g_io_channel_read_chars( h->sock, buf, BUFSIZ, &n, &err );
+	    if (r == G_IO_STATUS_ERROR || err != NULL) {
+	        g_message( "http_request_read: Socket-IO ERROR: %s, exiting!", err->message );
+	        g_error_free(err);
+*/
+	    r = g_io_channel_read( h->sock, buf, BUFSIZ, &n);
+	    if (r != G_IO_ERROR_NONE) {
+	        g_warning( "http_request_read: Socket-IO ERROR: %m, exiting!" );
+	        g_free(buf);
+	        return 0;
+	    }
+
+	    if (CONFd("Verbosity") >= 9) g_message("http_request_read: CONTENT loop read %d bytes", n );
+	    buf[n] = '\0';
+	    if (n && CONFd("Verbosity") >= 11) syslog_message("RAW_CON_BUF: ", buf, n); 
+
+	    if (h->buffer->len == MAX_REQUEST_SIZE) {
+	        if(CONFd("Verbosity") >= 6) g_warning("http_request_read: Maximum request length EXCEEDED (%u bytes discarded! Continuing to read out content.)", n);
+            }
+	    else if (h->buffer->len == tot_req_size) {
+	        if(CONFd("Verbosity") >= 6) g_warning("http_request_read: Content length EXCEEDED (%u bytes discarded! Shouldn't happen!)", n);
+            }
+            else if (h->buffer->len + n >= MAX_REQUEST_SIZE) {
+	        if(CONFd("Verbosity") >= 6) g_warning("http_request_read: Max buffer length EXCEEDED (%u bytes discarded! Continuing to read out content.)", 
+                                                       n - (MAX_REQUEST_SIZE - h->buffer->len));
+                buf[MAX_REQUEST_SIZE - h->buffer->len] = '\0';
+	        g_string_append(h->buffer, buf);
+            }
+	    else if (n <= (tot_req_size - h->buffer->len)) {
+	        if(CONFd("Verbosity") >= 11) g_message("http_request_read: APPENDING buffer to CONTENT.");
+	        if(n) g_string_append(h->buffer, buf);
+	        else if (CONFd("Verbosity") >= 6) g_message("http_request_read: No data in buffer.");
+	    }
+	    else {
+	        if(CONFd("Verbosity") >= 6) g_warning("http_request_read: Content length EXCEEDED (%u bytes added, %u bytes discarded!)", 
+                                                       tot_req_size - h->buffer->len, n - (tot_req_size - h->buffer->len));
+	        buf[tot_req_size - h->buffer->len] = '\0';
+	        g_string_append(h->buffer, buf);
+	    }
+            times--;
+
+            // TJaqua: Check for the end of the content.
+	    if ((t+n) >= tot_req_size) {
+                if (CONFd("Verbosity") >= 6) g_message("http_request_read: CONTENT end reached, length: %u", tot_req_size);
+            }
+	    else {
+                if (!times) {
+                    if(CONFd("Verbosity") >= 6) {
+                        g_message("http_request_read: ERROR: CONTENT END not found after %d tries, exiting!", MAX_REQ_TIMEOUTS);
+	                if (t == hdr_len) g_message("http_request_read: Empty CONTENT, socket may have stalled.");
+	                else g_message("http_request_read: CONTENT unfinished, %u bytes read.", t+n);
+	            }
+                    //Should I send a FIN packet to shutdown the socket?
+                    g_free(buf);
+                    //We still got the header, though, so return it.
+                    g_string_truncate(h->buffer, hdr_len);
+	            return hdr_len;
+                }
+	        if(CONFd("Verbosity") >= 11) g_message("http_request_read: Waiting for next I/O on socket.");
+                tv.tv_usec = REQ_TIMEOUT;
+	        while (times && !(s = select (g_io_channel_unix_get_fd(h->sock)+1, &fdset, NULL, NULL, &tv))) {
+                    times--;
+	            if (CONFd("Verbosity") >= 7)  g_message("http_request_read: CONTENT select timeout, %d more tries", times);
+                    tv.tv_usec = REQ_TIMEOUT;
+                }
+	        if(s<0) {
+	            g_warning("http_request_read: ERROR in select, exiting!");
+		    g_free(buf);
+                    //We still got the header, though, so return it.
+                    g_string_truncate(h->buffer, hdr_len);
+	            return hdr_len;
+	        }
+                else if (!times) {
+                    if(CONFd("Verbosity") >= 6) {
+                        g_message("http_request_read: ERROR: Too many TIMEOUTS waiting for CONTENT end!");
+	                if (t == hdr_len) g_message("http_request_read: Empty CONTENT, socket may have stalled.");
+	                else g_message("http_request_read: Invalid HTTP-request header, %u bytes read.", t+n);
+	            }
+                    //Should I send a FIN packet to shutdown the socket?
+                    g_free(buf);
+                    //We still got the header, though, so return it.
+                    g_string_truncate(h->buffer, hdr_len);
+	            return hdr_len;
+                }
+                else if (CONFd("Verbosity") >= 11) g_message("http_request_read: Received I/O on socket.");
+	    }
+        }
+        if (CONFd("Verbosity") >= 10) syslog_message("RAW_CONTENT: ", &(h->buffer->str[hdr_len]), h->buffer->len - hdr_len); 
+        if (t<tot_req_size) 
+	    g_message("http_request_read: CONTENT unfinished - should not happen!");
     }
-    tot_req_size = hdr_end - h->buffer->str + 4 + c_len;
-    for (; t < tot_req_size; t += n ) {
-	// g_message("entering read loop");
-	r = g_io_channel_read( h->sock, buf, BUFSIZ, &n );
-	// g_message("read loop: read %d bytes of %d (%d)", n, BUFSIZ, r);
-	if (r != G_IO_ERROR_NONE) {
-	    g_warning( "read_http_request failure: %m" );
-	    g_free(buf);
-	    return 0;
-	}
-	buf[n] = '\0';
-	g_string_append(h->buffer, buf);
-    }
+
+    if (CONFd("Verbosity") >= 6) g_message("http_request_read: FINISHED read (%u bytes total), exiting.", t);
     g_free(buf);
     return t;
 }
 
 gboolean http_request_ok (http_request *h) {
-    gchar *header_end = strstr( h->buffer->str, "\r\n\r\n" );
-    gchar *c_len_hdr;
+    guint hdr_len = http_get_hdr_len( h->buffer->str );
     guint c_len;
 
-    if (header_end != NULL) {
-	// g_warning( "inside http_request_ok: header_end found" );
+    if (hdr_len != 0) {
+	if(CONFd("Verbosity") >= 8) g_warning( "http_request_ok: hdr_len %d", hdr_len );
 
-	c_len_hdr = HEADER("Content-length");
-	if (c_len_hdr == NULL) {
+	if ( HEADER("Content-length") && (c_len=atoi(HEADER("Content-length")) <= (h->buffer->len - hdr_len)) ) {
+	    if(CONFd("Verbosity") >= 8) g_warning( "http_request_ok: Parsing query from HTTP-Content." );
+	    http_parse_query( h, &(h->buffer->str[hdr_len]) );
+	    h->complete++;
+	    if(CONFd("Verbosity") >= 8) g_warning( "http_request_ok: Query parsing finished, exiting." );
+	    return TRUE;
+	}
+	else if (HEADER("Content-length") && (CONFd("Verbosity") >= 8)) 
+            g_warning( "http_request_ok: HEADER was OK, but CONTENT reading failed." );
+	else if(CONFd("Verbosity") >= 8) 
+            g_warning( "http_request_ok: No Content-length header, parsing query from URI." );
+	http_parse_query( h, NULL );
+	if (!h->query) {
+          if (CONFd("Verbosity") >= 8) g_message("http_request_ok: No QUERY found.");
+        }
+	else if (CONFd("Verbosity") >= 8) {
 	    GString *z;
-	    http_parse_query( h, NULL );
-	    if (h->query) {
-		z = g_hash_as_string( h->query );
-		g_debug( "Query: %s", z->str );
-		g_string_free(z, 1);
-	    }
-	    h->complete++;
-	    return TRUE;
-	}
-
-	header_end += sizeof("\r\n\r\n") - 1; // *header_end == '\r'
-	c_len = atoi( c_len_hdr );
-	if (strlen( header_end ) >= c_len) {
-	    http_parse_query( h, header_end );
-	    h->complete++;
-	    return TRUE;
-	}
+            z = g_hash_as_string( h->query );
+            g_debug( "http_request_ok: Query: %s", z->str );
+            g_string_free(z, 1);
+        }
+	h->complete++;
+	if(CONFd("Verbosity") >= 8) g_warning( "http_request_ok: Query parsing finished, exiting." );
+	return TRUE;
     }
-    // g_warning( "inside http_request_ok: header_end not found" );
+    if(CONFd("Verbosity") >= 6) g_warning( "http_request_ok: Request not HTTP: <CR><LF><CR><LF> (header_end) NOT found" );
     return FALSE;
 }
 
