@@ -77,7 +77,7 @@ am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) -static $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libsplash_a_SOURCES) $(ghttpd_SOURCES) $(splashd_SOURCES) \
 	$(EXTRA_splashd_SOURCES) $(splashtest_SOURCES) $(EXTRA_splashtest_SOURCES)
 DIST_SOURCES = $(libsplash_a_SOURCES) $(ghttpd_SOURCES) \

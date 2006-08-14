@@ -1,4 +1,7 @@
+# define RAW_LINE_SIZE 40
 # define MAX_REQUEST_SIZE 100000L
+# define REQ_TIMEOUT 250000
+# define MAX_REQ_TIMEOUTS 5
 # define HEADER(x) (h->header == NULL ? NULL : \
 	(gchar *)g_hash_table_lookup(h->header, (x)))
 # define QUERY(x)  (h->query == NULL  ? NULL : \
@@ -15,6 +18,7 @@ typedef struct {
     GIOChannel *sock;
     gchar peer_ip[16];
     gchar sock_ip[16];
+    gboolean password_checked;
 } http_request;
 
 /*** Function prototypes start here ***/
@@ -30,6 +34,7 @@ void http_add_header ( http_request *h, const gchar *key, gchar *val );
 void http_printf_header ( http_request *h, gchar *key, gchar *fmt, ... );
 GIOError http_send_header ( http_request *h, int status, const gchar *msg );
 void http_send_redirect( http_request *h, gchar *dest );
+void syslog_message(const char *prefix, const char *buf, size_t n);
 
 gchar *http_fix_path (const gchar *uri, const gchar *docroot);
 gchar *http_mime_type (const gchar *path);
