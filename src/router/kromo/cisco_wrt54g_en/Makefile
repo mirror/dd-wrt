@@ -271,14 +271,13 @@ ifeq ($(CONFIG_DDLAN),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/ddlan/ install
 endif
 
-	../../../../tools/write3 $(INSTALLDIR)/www/*.asp
-	../../../../tools/write3 $(INSTALLDIR)/www/*.htm
-	../../../../tools/write3 $(INSTALLDIR)/www/*.html
-	../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
 
 ifeq ($(CONFIG_SER),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install
 endif
+	../../../../tools/write3 $(INSTALLDIR)/www/*.asp
+	../../../../tools/write3 $(INSTALLDIR)/www/*.htm
+	../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
 #	../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
 
 
