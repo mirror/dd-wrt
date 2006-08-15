@@ -3949,7 +3949,7 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	}
 	fclose (in);
 }
-
+/*
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
@@ -3981,7 +3981,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "</div>\n");	
 		
 }
-
+*/
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
@@ -4634,7 +4634,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
-  {"do_statusinfo", ej_do_statusinfo},	//Eko
+//  {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
