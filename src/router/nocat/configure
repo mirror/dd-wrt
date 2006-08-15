@@ -5737,7 +5737,9 @@ if test "${with_remote_splash+set}" = set; then
    splashd_mode="$splashd_mode ../libghttp/libghttp.a";
       splashd_subdirs="libghttp";
       HAVE_LIBGHTTP=1;
-
+cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBGHTTP 1
+_ACEOF
 
 fi;
 
