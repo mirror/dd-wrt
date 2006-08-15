@@ -47,6 +47,9 @@ typedef enum
 /*test values*/
 #define DYNDNS_DEFAULT_DEBUG_LEVEL	1
 #define DYNDNS_DEFAULT_CONFIG_FILE	"/etc/inadyn.conf"
+#define DYNDNS_DEFAULT_CACHE_PREFIX	"/tmp/ddns"
+#define DYNDNS_DEFAULT_IP_FILE		"inadyn_ip.cache"
+#define DYNDNS_DEFAULT_TIME_FILE	"inadyn_time.cache"
 
 #define DYNDNS_MY_USERNAME		"test"
 #define DYNDNS_MY_PASSWD		"test"
@@ -264,6 +267,8 @@ typedef struct DYN_DNS_CLIENT
 	int work_buffer_size;
 	char *p_req_buffer; /* for HTTP requests*/
 	char external_command[1024];
+	char time_cache[1024];
+	char ip_cache[1024];
 	int req_buffer_size;
 
 
