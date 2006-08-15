@@ -927,6 +927,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       break;
       
     case ROUTER_ASUS_WL500G_PRE:
+          nvram_set ("sdram_init","0x0009");
 	  nvram_set ("lan_ifnames", "vlan0 eth2");
 	  nvram_set ("wl0_ifname", "eth2");
 	  strcpy (wlifname, "eth2");
