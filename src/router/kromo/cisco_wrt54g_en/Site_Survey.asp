@@ -6,7 +6,7 @@ document.title = "<% nvram_get("router_name"); %>" + survey.titl;
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;
-	<% nvram_invmatch("wl_mode", "ap", "//"); %>F.wl_mode.value="<% nvram_match("wl_mode", "ap", "sta"); %>"
+	<% nvram_invmatch("wl_mode", "ap", "/"); %><% nvram_invmatch("wl_mode", "ap", "/"); %>F.wl_mode.value="<% nvram_match("wl_mode", "ap", "sta"); %>"
 
 	if (F.wl_ssid.value == "") {
 //		alert("invalid SSID.");
