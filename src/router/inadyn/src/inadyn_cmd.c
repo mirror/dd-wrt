@@ -64,6 +64,7 @@ static RC_TYPE set_syslog_handler(CMD_DATA *p_cmd, int current_nr, void *p_conte
 static RC_TYPE set_change_persona_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE get_cache_dir(CMD_DATA *p_cmd, int current_nr, void *p_context);
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] = 
 {
@@ -125,6 +126,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
 	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
 	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update."},
+	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name eg. /tmp/ddns"},
 	{NULL,		0,	{0, NULL},	NULL }
 };
 
@@ -491,27 +493,14 @@ static RC_TYPE get_update_period_sec_handler(CMD_DATA *p_cmd, int current_nr, vo
 static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
-	FILE *fp;
-	char cache_time[80];
-	int dif;
-
 	if (p_self == NULL)
 	{
 		return RC_INVALID_POINTER;
 	}
 
-	if (sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec) != 1
-	    || sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec_orig) != 1)
+	if (sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec) != 1)
 	{
 		return RC_DYNDNS_INVALID_OPTION;
-	}
-
-	if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "r")))
-	{
-		fgets (cache_time, sizeof (cache_time), fp);
-		fclose(fp);
-		dif = time(NULL) - atoi(cache_time);
-		p_self->forced_update_period_sec -= dif;
 	}
 	
 	return RC_OK;
@@ -591,6 +580,23 @@ static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context
 		return  RC_DYNDNS_BUFFER_TOO_SMALL;
 	}
 	strcpy(p_self->external_command, p_cmd->argv[current_nr]);
+	return RC_OK;
+}
+
+static RC_TYPE get_cache_dir(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+
+	if (sizeof(p_self->time_cache) < strlen(p_cmd->argv[current_nr]))
+	{
+		return  RC_DYNDNS_BUFFER_TOO_SMALL;
+	}
+	sprintf(p_self->ip_cache, "%s/%s", p_cmd->argv[current_nr], DYNDNS_DEFAULT_IP_FILE);
+	sprintf(p_self->time_cache, "%s/%s", p_cmd->argv[current_nr], DYNDNS_DEFAULT_TIME_FILE);
 	return RC_OK;
 }
 
@@ -921,6 +927,9 @@ static RC_TYPE get_options_from_file_handler(CMD_DATA *p_cmd, int current_nr, vo
 RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 {
 	RC_TYPE rc = RC_OK;
+	FILE *fp;
+	char cached_time[80];
+	int dif;
 	
 	do
 	{
@@ -1012,6 +1021,14 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			break;
 		}
 		/*forced update*/
+		if ((fp=fopen(p_self->time_cache, "r")))
+		{
+			fgets (cached_time, sizeof (cached_time), fp);
+			fclose(fp);
+			dif = time(NULL) - atoi(cached_time);
+			p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
+			p_self->forced_update_period_sec -= dif;
+		}
 		p_self->times_since_last_update = 0;
 		p_self->forced_update_times = p_self->forced_update_period_sec / p_self->sleep_sec;
 
