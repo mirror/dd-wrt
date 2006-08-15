@@ -204,8 +204,8 @@ function valid_value(F)
 			return false;
 		}
 	}
-	<% nvram_selmatch("dhcpfwd_enable", "1", "//"); %>if(!valid_dhcp_server(F))
-	<% nvram_selmatch("dhcpfwd_enable", "1", "//"); %>return false;
+	<% nvram_selmatch("dhcpfwd_enable", "1", "/"); %><% nvram_selmatch("dhcpfwd_enable", "1", "/"); %>if(!valid_dhcp_server(F))
+	<% nvram_selmatch("dhcpfwd_enable", "1", "/"); %><% nvram_selmatch("dhcpfwd_enable", "1", "/"); %>return false;
 
 	if(F.router_name)
 	if(F.router_name.value == "")
