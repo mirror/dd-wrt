@@ -34,6 +34,10 @@
 #pragma pack(push, 8)
 #endif
 
+/* Definition for WL IOV_NMODE */
+/* possible settings - AUTO(-1), OFF(0), and WL_NMODE_NONLY */
+#define WL_NMODE_NONLY 2
+
 /* A chanspec holds the channel number, band, bandwidth and control sideband */
 typedef uint16 chanspec_t;
 #define WL_CHANSPEC_CHAN_MASK		0x00ff
