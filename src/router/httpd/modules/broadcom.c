@@ -3949,17 +3949,18 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	}
 	fclose (in);
 }
-
+/*
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
-/*				<div id="statusInfo">
-					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
-					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
-				</div>
-*/	
+//				<div id="statusInfo">
+//					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+//					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
+//					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
+//				</div>
+
+	
 		websWrite (wp, "<div id=\"statusInfo\">\n");
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
 		websWrite (wp, "<script type=\"text/javascript\">document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">%s</a>\");</script></div>\n", ej_get_firmware_version(0,0) );
@@ -3972,7 +3973,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "</div>\n");	
 		
 }
-
+*/
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
@@ -4625,7 +4626,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
-  {"do_statusinfo", ej_do_statusinfo},	//Eko
+//  {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
