@@ -184,8 +184,11 @@ int mk_nocat_conf(void)
 	fprintf(fp, "GatewayPassword\t%s\n", nvram_safe_get("NC_Password") );
 	fprintf(fp, "GatewayMode\t%s\n", nvram_safe_get("NC_GatewayMode") );
 	fprintf(fp, "DocumentRoot\t%s\n", nvram_safe_get("NC_DocumentRoot") );
-	fprintf(fp, "SplashURL\t%s\n", nvram_safe_get("NC_SplashURL") );
-	fprintf(fp, "SplashURLTimeout\t%s\n", nvram_safe_get("NC_SplashURLTimeout") );
+	if (nvram_invmatch ("NC_SplashURL", ""))
+	{
+		fprintf(fp, "SplashURL\t%s\n", nvram_safe_get("NC_SplashURL") );
+		fprintf(fp, "SplashURLTimeout\t%s\n", nvram_safe_get("NC_SplashURLTimeout") );
+	}
 	fprintf(fp, "LeaseFile\t%s\n", nvram_safe_get("NC_LeaseFile") );
 
 	/* Open-mode and common options */
