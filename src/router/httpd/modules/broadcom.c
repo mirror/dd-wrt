@@ -3949,7 +3949,7 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	}
 	fclose (in);
 }
-/*
+
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
@@ -3963,17 +3963,25 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	
 		websWrite (wp, "<div id=\"statusInfo\">\n");
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
-		websWrite (wp, "<script type=\"text/javascript\">document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">%s</a>\");</script></div>\n", ej_get_firmware_version(0,0) );
-		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: %s</div>\n", ej_get_uptime(0,0) );
+		websWrite (wp, "<script type=\"text/javascript\">document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
+		get_firmware_version();
+		websWrite (wp, "</a>\");</script></div>\n"); ej_get_firmware_version(0,0) );
+		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
+		get_uptime();
+		websWrite (wp, "</div>\n");
 		websWrite (wp, "<div class=\"info\">WAN ");
 			if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
-				websWrite (wp, "IP: %s</div>\n", ej_nvram_status_get("wan_ipaddr",0) );
+				{
+				websWrite (wp, "IP: ");
+				nvram_status_get("wan_ipaddr");
+				websWrite (wp, "</div>\n")
+				}
 			else 
 				websWrite (wp, "<script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
 		websWrite (wp, "</div>\n");	
 		
 }
-*/
+
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
@@ -4626,7 +4634,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
-//  {"do_statusinfo", ej_do_statusinfo},	//Eko
+  {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
