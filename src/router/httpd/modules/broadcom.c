@@ -3974,7 +3974,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 				{
 				websWrite (wp, "IP: ");
 				nvram_status_get("wan_ipaddr");
-				websWrite (wp, "</div>\n")
+				websWrite (wp, "</div>\n");
 				}
 			else 
 				websWrite (wp, "<script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
