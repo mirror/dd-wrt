@@ -1494,6 +1494,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"NC_DocumentRoot", "/www", 0},
 #endif
   {"NC_SplashURL", "", 0},
+  {"NC_SplashURLTimeout", "21600", 0},
   {"NC_MacWhiteList", "", 0},
   {"NC_GatewayPort", "5280", 0},
   {"NC_GatewayMode", "Open", 0},
