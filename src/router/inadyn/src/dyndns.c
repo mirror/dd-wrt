@@ -101,7 +101,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             "ip1.dynupdate.no-ip.com", "/", 
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
 		
-		{DYNDNS_3322_DYNAMIC, 
+    {DYNDNS_3322_DYNAMIC, 
         {"dyndns@3322.org", &dyndns_org_dynamic,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
@@ -320,7 +320,7 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self)
 		strcpy(p_self->info.my_ip_address.name, new_ip_str);
 	if (p_self->info.my_ip_has_changed == 1)
 	{
-		if ((fp=fopen("/tmp/ddns/inadyn_ip.cache", "w")))
+		if ((fp=fopen(p_self->ip_cache, "w")))
 		{
 			fprintf(fp,"%s", new_ip_str);
 			fclose(fp);
@@ -472,7 +472,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 						p_self->times_since_last_update = 0;
 						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
 
-						if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "w")))
+						if ((fp=fopen(p_self->time_cache, "w")))
 						{
 							fprintf(fp,"%ld", time (NULL));
 							fclose(fp);
@@ -530,6 +530,8 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self)
 						
 		/*forced update period*/
 		p_self->forced_update_period_sec = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
+		sprintf(p_self->ip_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_IP_FILE);
+		sprintf(p_self->time_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_TIME_FILE);
 		/*update period*/
 		p_self->sleep_sec = DYNDNS_DEFAULT_SLEEP;
 	}
@@ -977,7 +979,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 
     dyn_dns_print_hello(NULL);
 
-    if ((fp=fopen("/tmp/ddns/inadyn_ip.cache", "r")))
+    if ((fp=fopen(p_dyndns->ip_cache, "r")))
     {
 	fgets (p_dyndns->info.my_ip_address.name, sizeof (p_dyndns->info.my_ip_address.name),fp);
 	fclose(fp);
