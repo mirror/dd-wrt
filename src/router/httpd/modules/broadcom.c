@@ -3965,7 +3965,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
 		websWrite (wp, "<script type=\"text/javascript\">document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
 		get_firmware_version();
-		websWrite (wp, "</a>\");</script></div>\n"); ej_get_firmware_version(0,0) );
+		websWrite (wp, "</a>\");</script></div>\n"); 
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
 		get_uptime();
 		websWrite (wp, "</div>\n");
