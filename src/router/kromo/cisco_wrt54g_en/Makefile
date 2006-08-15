@@ -275,6 +275,10 @@ endif
 ifeq ($(CONFIG_SER),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install
 endif
+
+	../../../../tools/strip $(INSTALLDIR)/www/*.asp
+	../../../../tools/strip $(INSTALLDIR)/www/*.htm
+	
 	../../../../tools/write3 $(INSTALLDIR)/www/*.asp
 	../../../../tools/write3 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
