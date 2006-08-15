@@ -164,7 +164,7 @@ void handle_request( http_request *h ) {
 
 /*** Dynamic splash page fetch ***/
 # ifdef HAVE_LIBGHTTP
-# include "ghttp.h"
+# include <ghttp.h>
 
 static struct ghttp_process {
     ghttp_request *req;
