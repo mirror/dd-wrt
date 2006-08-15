@@ -429,6 +429,7 @@ struct nvram_tuple srouter_defaults[] = {
 { "wl0_nmcsidx", "-1", 0},		/* N-MCS Index - rate */
 { "wl0_nmode", "-1", 0},                 /* N-mode */
 { "wl0_leddc", "0x640000", 0},           /* 100% duty cycle for LED on router */
+{ "wl0_sta_retry_time", "5", 0},           /* 100% duty cycle for LED on router */
 #endif
 #ifdef HAVE_DDLAN
   {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
@@ -1421,7 +1422,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"clean_jffs2", "0", 0},
   {"kaid_enable", "0", 0},
   {"kaid_macs", "", 0},
+#ifdef HAVE_WTS
+  {"language", "spanish", 0},
+#else
   {"language", "english", 0},
+#endif
   {"macupd_ip", "0.0.0.0", 0},
   {"macupd_port", "2056", 0},
   {"macupd_interval", "10", 0},
@@ -1520,6 +1525,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
 #endif
+  {"wl_wme_apsd", "off", 0},		/* WME APSD mode */
+
   {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
 #ifdef HAVE_ZEROIP
   {"shat_enable", "0", 0},
