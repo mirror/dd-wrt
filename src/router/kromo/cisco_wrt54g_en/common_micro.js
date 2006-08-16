@@ -347,7 +347,10 @@ function valid_mask(F,N,flag){
 }
 
 function isdigit(I,M) {
-	for(i=0 ; i<I.value.length; i++){
+	if (I.value.charAt(0) == "-") {i = 1}
+	else {i = 0};
+	for(i ; i<I.value.length; i++){
+
 		ch = I.value.charAt(i);
 		if(ch < '0' || ch > '9') {
 
