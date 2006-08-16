@@ -313,8 +313,8 @@ addEvent(window, "load", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.reference"); %></div>
-									<input class="num" name="noise_reference" size="6" maxlength="4" onblur="valid_range(this.substring(1),0,100,wl_adv.reference)" value='<% nvram_selget("noise_reference"); %>' />
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": -98, " + share.range + ": 0 - -100db)")</script></span>
+									<input class="num" name="noise_reference" size="6" maxlength="3" value='<% nvram_selget("noise_reference"); %>' />
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": -98, " + share.range + ": 0 - -99db)")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label16"); %></div>
