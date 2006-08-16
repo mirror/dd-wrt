@@ -263,6 +263,9 @@ config NET_IPGRE
 	  tunneling" above). In addition, GRE allows multicast redistribution
 	  through the tunnel.
 
+config NET_IPWCCP
+	tristate "IP: WCCP v1/v2 support"
+
 config NET_IPGRE_BROADCAST
 	bool "IP: broadcast GRE over IP"
 	depends on IP_MULTICAST && NET_IPGRE

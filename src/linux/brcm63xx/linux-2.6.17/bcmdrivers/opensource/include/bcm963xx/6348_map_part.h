@@ -20,9 +20,6 @@
 #ifndef __BCM6348_MAP_H
 #define __BCM6348_MAP_H
 
-#if __cplusplus
-extern "C" {
-#endif
 
 #include "bcmtypes.h"
 
@@ -500,9 +497,6 @@ typedef struct MpiRegisters {
 
 #define USBH_NON_OHCI ((volatile unsigned long * const) USB_HOST_NON_OHCI)
 
-#if __cplusplus
-}
-#endif
 
 #endif
 

@@ -632,7 +632,7 @@ void kerSysMipsSoftReset(void)
         int i;
 
         /* Disable interrupts. */
-        cli();
+	local_irq_disable();
 
         /* Reset all blocks. */
         PERF->BlockSoftReset &= ~BSR_ALL_BLOCKS;

@@ -20,9 +20,6 @@
 #ifndef __6345_INTR_H
 #define __6345_INTR_H
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
 
 /*=====================================================================*/
 /* BCM6345 External Interrupt Level Assignments                       */
@@ -71,9 +68,6 @@
 #define INTERRUPT_ID_USB_ISO_RX_CHAN    (DMA_ISR_TABLE_OFFSET + USB_ISO_RX_CHAN)
 #define INTERRUPT_ID_USB_ISO_TX_CHAN    (DMA_ISR_TABLE_OFFSET + USB_ISO_TX_CHAN)
 
-#ifdef __cplusplus
-    }
-#endif                    
 
 #endif  /* __BCM6345_H */
 

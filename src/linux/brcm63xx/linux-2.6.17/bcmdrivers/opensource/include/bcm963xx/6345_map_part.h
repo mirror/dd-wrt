@@ -20,9 +20,6 @@
 #ifndef __BCM6345_MAP_H
 #define __BCM6345_MAP_H
 
-#if __cplusplus
-extern "C" {
-#endif
 
 #include "bcmtypes.h"
 #include "6345_intr.h"
@@ -161,9 +158,6 @@ typedef struct GpioControl {
 #define GPIO_NUM_MAX_BITS_MASK          0x0f
 #define GPIO_NUM_TO_MASK(X)             (1 << ((X) & GPIO_NUM_MAX_BITS_MASK))
 
-#if __cplusplus
-}
-#endif
 
 #endif
 
