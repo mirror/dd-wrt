@@ -20,7 +20,7 @@
 /* Description: Serial port driver for the BCM963XX. */
 
 #define CARDNAME    "bcm963xx_serial driver"
-#define VERSION     "2.1 DD-WRT "
+#define VERSION     "2.0"
 #define VER_STR     CARDNAME " v" VERSION "\n"
 
 
@@ -30,18 +30,22 @@
 #include <linux/init.h> 
 #include <linux/slab.h>
 #include <linux/interrupt.h>
+#include <linux/spinlock.h>
 
 /* for definition of struct console */
 #include <linux/console.h>
 #include <linux/tty.h>
 #include <linux/tty_flip.h>
 #include <linux/serial.h>
+#include <linux/serialP.h>
 #include <asm/uaccess.h>
 
 #include <bcmtypes.h>
 #include <board.h>
 #include <bcm_map_part.h>
 #include <bcm_intr.h>
+
+static DEFINE_SPINLOCK(bcm963xx_serial_lock);
 
 extern void _putc(char);
 extern void _puts(const char *);
@@ -101,10 +105,10 @@ typedef struct bcm_serial {
 static struct bcm_serial multi[BCM_NUM_UARTS];
 static struct bcm_serial *lines[BCM_NUM_UARTS];
 static struct tty_driver *serial_driver;
-static struct tty_struct *serial_table[BCM_NUM_UARTS];
+//static struct tty_struct *serial_table[BCM_NUM_UARTS];
 static struct termios *serial_termios[BCM_NUM_UARTS];
 static struct termios *serial_termios_locked[BCM_NUM_UARTS];
-static int serial_refcount;
+//static int serial_refcount;
 
 
 static void bcm_stop (struct tty_struct *tty);
@@ -114,7 +118,8 @@ static int startup (struct bcm_serial *info);
 static void shutdown (struct bcm_serial * info);
 static void change_speed( volatile Uart *pUart, tcflag_t cFlag );
 static void bcm63xx_cons_flush_chars (struct tty_struct *tty);
-static int bcm63xx_cons_write (struct tty_struct *tty,const unsigned char *buf, int count);
+static int bcm63xx_cons_write (struct tty_struct *tty, 
+    const unsigned char *buf, int count);
 static int bcm63xx_cons_write_room (struct tty_struct *tty);
 static int bcm_chars_in_buffer (struct tty_struct *tty);
 static void bcm_flush_buffer (struct tty_struct *tty);
@@ -169,16 +174,22 @@ static inline void receive_chars (struct bcm_serial * info)
     UCHAR ch = 0;
     while ((status = info->port->intStatus) & RXINT)
     {
-	char flag_char = 0;
+	char flag_char = TTY_NORMAL;
 
         if (status & RXFIFONE)
             ch = info->port->Data;  // Read the character
         tty = info->tty;                  /* now tty points to the proper dev */
+//	printk("character %d\n",ch);
         icount = &info->icount;
         if (! tty)
+	    {
+//	    printk("no tty\n");
             break;
+	    }
         if (!tty_buffer_request_room(tty, 1))
+	    {
             break;
+	    }
         icount->rx++;
         if (status & RXBRK)
         {
@@ -188,6 +199,7 @@ static inline void receive_chars (struct bcm_serial * info)
         // keep track of the statistics
         if (status & (RXFRAMERR | RXPARERR | RXOVFERR))
         {
+//	printk("status error\n");
             if (status & RXPARERR)                /* parity error */
                 icount->parity++;
             else
@@ -229,9 +241,13 @@ static inline void receive_chars (struct bcm_serial * info)
         }
 	tty_insert_flip_char(tty, ch, flag_char);
     }
-ignore_char:
-    if (tty)
-        tty_flip_buffer_push(tty);
+
+ignore_char:;
+//    if (tty)
+//printk("push()\n");
+tty_flip_buffer_push(tty);
+tty_schedule_flip(tty);
+
 }
 
 
@@ -303,15 +319,18 @@ static void shutdown (struct bcm_serial * info)
     if (!info->is_initialized)
         return;
 
-	local_save_flags(flags);
-	local_irq_disable();
+	
+    /*save_flags (flags);
+    cli ();*/
+    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
     info->port->control &= ~(BRGEN|TXEN|RXEN);
     if (info->tty)
         set_bit (TTY_IO_ERROR, &info->tty->flags);
     info->is_initialized = 0;
-    local_irq_restore(flags);
 
+    //restore_flags (flags);
+    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 }
 /* 
  * -------------------------------------------------------------------
@@ -323,8 +342,10 @@ static void shutdown (struct bcm_serial * info)
 static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
 {
     unsigned long ulFlags, ulBaud, ulClockFreqHz, ulTmp;
-	local_save_flags(ulFlags);
-	local_irq_disable();
+    /*save_flags(ulFlags);
+    cli();*/
+    spin_lock_irqsave(&bcm963xx_serial_lock, ulFlags);
+
     switch( cFlag & (CBAUD | CBAUDEX) )
     {
     case B115200:
@@ -432,7 +453,8 @@ static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
 
     /* Reset and flush uart */
     pUart->fifoctl = RSTTXFIFOS | RSTRXFIFOS;
-    local_irq_restore(ulFlags);
+    //restore_flags( ulFlags );
+    spin_unlock_irqrestore(&bcm963xx_serial_lock, ulFlags);
 }
 
 
@@ -455,7 +477,7 @@ static void bcm63xx_cons_flush_chars (struct tty_struct *tty)
  * Main output routine using polled I/O.
  * ------------------------------------------------------------------- 
  */
-static int bcm63xx_cons_write (struct tty_struct *tty,
+static int bcm63xx_cons_write (struct tty_struct *tty, 
     const unsigned char *buf, int count)
 {
     int c;
@@ -499,6 +521,8 @@ static int bcm_chars_in_buffer (struct tty_struct *tty)
  */
 static void bcm_flush_buffer (struct tty_struct *tty)
 {
+	tty_wakeup(tty);
+
 }
 
 /*
@@ -618,14 +642,16 @@ static void send_break (struct bcm_serial *info, int duration)
 
     current->state = TASK_INTERRUPTIBLE;
 
-	local_save_flags(flags);
-	local_irq_disable();
+    /*save_flags (flags);
+    cli();*/
+    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
     info->port->control |= XMITBREAK;
     schedule_timeout(duration);
     info->port->control &= ~XMITBREAK;
 
-    local_irq_restore(flags);
+    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+    //restore_flags (flags);
 }
 
 static int bcm_ioctl (struct tty_struct * tty, struct file * file,
@@ -737,12 +763,14 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
     if (!info)
         return;
 
-	local_save_flags(flags);
-	local_irq_disable();
+    /*save_flags (flags); 
+    cli();*/
+    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
 
     if (tty_hung_up_p (filp))
     {
-	local_irq_restore(flags);
+        spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
+        //restore_flags (flags);
         return;
     }
 
@@ -769,7 +797,8 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
 
     if (info->count)
     {
-	local_irq_restore(flags);
+        //restore_flags (flags);
+	spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
         return;
     }
 
@@ -815,7 +844,8 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
     }
     wake_up_interruptible (&info->close_wait);
 
-    local_irq_restore(flags);
+    //restore_flags (flags);
+    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
 }
 
 /*
@@ -866,6 +896,7 @@ static int bcm63xx_cons_open (struct tty_struct * tty, struct file * filp)
 
     info = lines[line];
 
+    tty->low_latency=1;
     info->port->intMask  = 0;     /* Clear any pending interrupts */
     info->port->intMask  = RXINT; /* Enable RX */
 
@@ -895,6 +926,25 @@ static int bcm63xx_cons_open (struct tty_struct * tty, struct file * filp)
     return 0;
 }
 
+
+static struct tty_operations rs_ops = {
+	.open = bcm63xx_cons_open,
+	.close = bcm63xx_cons_close,
+	.write = bcm63xx_cons_write,
+	.flush_chars = bcm63xx_cons_flush_chars,
+	.write_room = bcm63xx_cons_write_room,
+	.chars_in_buffer = bcm_chars_in_buffer,
+	.flush_buffer = bcm_flush_buffer,
+	.ioctl = bcm_ioctl,
+	.throttle = bcm_throttle,
+	.unthrottle = bcm_unthrottle,
+	.send_xchar = bcm_send_xchar,
+	.set_termios = bcm_set_termios,
+	.stop = bcm_stop,
+	.start = bcm_start,
+	.hangup = bcm_hangup,
+};
+
 /* --------------------------------------------------------------------------
     Name: bcm63xx_serialinit
  Purpose: Initialize our BCM63xx serial driver
@@ -908,61 +958,66 @@ static int __init bcm63xx_serialinit(void)
     printk(VER_STR);
     serial_driver = alloc_tty_driver(BCM_NUM_UARTS);
     if (!serial_driver)
-		return -ENOMEM;
+	return -ENOMEM;
 
-    //memset(&serial_driver, 0, sizeof(struct tty_driver));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)     
-    serial_driver->owner 	    = THIS_MODULE;
-    serial_driver->devfs_name 	    = "tts/";
-#endif    
-    serial_driver->magic             = TTY_DRIVER_MAGIC;
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)     
+//    serial_driver->owner 	    = THIS_MODULE;
+//    serial_driver->devfs_name 	    = "tts/";
+//#endif    
+//    serial_driver.magic             = TTY_DRIVER_MAGIC;
     serial_driver->name              = "ttyS";
     serial_driver->major             = TTY_MAJOR;
     serial_driver->minor_start       = 64;
-    serial_driver->num               = BCM_NUM_UARTS;
+//    serial_driver.num               = BCM_NUM_UARTS;
     serial_driver->type              = TTY_DRIVER_TYPE_SERIAL;
     serial_driver->subtype           = SERIAL_TYPE_NORMAL;
     serial_driver->init_termios      = tty_std_termios;
-    serial_driver->init_termios.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
+    serial_driver->init_termios.c_cflag = B115200 | CS8 | CREAD | HUPCL | CLOCAL;
     serial_driver->flags             = TTY_DRIVER_REAL_RAW;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)    
-    serial_driver->refcount          = serial_refcount;
-    serial_driver->ttys	            = serial_table;    
-#else
-    serial_driver->refcount          = &serial_refcount;
-    serial_driver->table             = serial_table;    
-#endif    
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)    
+//    serial_driver.refcount          = serial_refcount;
+//    serial_driver.ttys	            = serial_table;    
+//#else
+//    serial_driver.refcount          = &serial_refcount;
+//    serial_driver.table             = serial_table;    
+//#endif    
 
     serial_driver->termios           = serial_termios;
     serial_driver->termios_locked    = serial_termios_locked;
-    serial_driver->open              = bcm63xx_cons_open;
-    serial_driver->close             = bcm63xx_cons_close;
-    serial_driver->write             = bcm63xx_cons_write;
-    serial_driver->flush_chars       = bcm63xx_cons_flush_chars;
-    serial_driver->write_room        = bcm63xx_cons_write_room;
-    serial_driver->chars_in_buffer   = bcm_chars_in_buffer;
-    serial_driver->flush_buffer      = bcm_flush_buffer;
-    serial_driver->ioctl             = bcm_ioctl;
-    serial_driver->throttle          = bcm_throttle;
-    serial_driver->unthrottle        = bcm_unthrottle;
-    serial_driver->send_xchar        = bcm_send_xchar;
-    serial_driver->set_termios       = bcm_set_termios;
-    serial_driver->stop              = bcm_stop;
-    serial_driver->start             = bcm_start;
-    serial_driver->hangup            = bcm_hangup;
+    
+    /*serial_driver.open              = bcm63xx_cons_open;
+    serial_driver.close             = bcm63xx_cons_close;
+    serial_driver.write             = bcm63xx_cons_write;
+    serial_driver.flush_chars       = bcm63xx_cons_flush_chars;
+    serial_driver.write_room        = bcm63xx_cons_write_room;
+    serial_driver.chars_in_buffer   = bcm_chars_in_buffer;
+    serial_driver.flush_buffer      = bcm_flush_buffer;
+    serial_driver.ioctl             = bcm_ioctl;
+    serial_driver.throttle          = bcm_throttle;
+    serial_driver.unthrottle        = bcm_unthrottle;
+    serial_driver.send_xchar        = bcm_send_xchar;
+    serial_driver.set_termios       = bcm_set_termios;
+    serial_driver.stop              = bcm_stop;
+    serial_driver.start             = bcm_start;
+    serial_driver.hangup            = bcm_hangup;
+    */
+    tty_set_operations(serial_driver, &rs_ops);
 
     if (tty_register_driver (serial_driver))
         panic("Couldn't register serial driver\n");
-    local_save_flags(flags);
-    local_irq_disable();
+
+    //save_flags(flags); cli();
+    spin_lock_irqsave(&bcm963xx_serial_lock, flags);
+    
     for (i = 0; i < BCM_NUM_UARTS; i++)
     {
         info = &multi[i]; 
         lines[i] = info;
+        info->magic = SERIAL_MAGIC;
         info->port                  = (Uart *) ((char *)UART_BASE + (i * 0x20));
+        info->tty                   = 0;
         info->irq                   = (2 - i) + 8;
         info->line                  = i;
-        info->tty                   = 0;
         info->close_delay           = 50;
         info->closing_wait          = 3000;
         info->x_char                = 0;
@@ -985,7 +1040,8 @@ static int __init bcm63xx_serialinit(void)
      * is updated... in request_irq - to immediatedly obliterate
      * it is unwise. 
      */
-    local_irq_restore(flags);
+    //restore_flags(flags);
+    spin_unlock_irqrestore(&bcm963xx_serial_lock, flags);
     return 0;
 }
 
