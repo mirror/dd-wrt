@@ -1,6 +1,7 @@
 CFLAGS += -O2 -Wall
+ARCH = mips
 #CC = /opt/staging_dir_armeb/bin/armeb-linux-uclibc-gcc
-CC = mipsel-linux-uclibc-gcc
+CC = $(ARCH)-linux-uclibc-gcc
 
 CFLAGS += -I iksemel
 CFLAGS += -I zlib
@@ -71,12 +72,12 @@ install: all
 	$(STRIP) $(INSTALLDIR)/sbin/apd
 
 libiksemel.so: $(IOBJS)
-	$(CC) -shared -o $@ $^ $(LDFLAGS)
+	$(CC) -shared -o $(ARCH)/$@ $^ $(LDFLAGS)
 	
-sputnik: $(OBJS) libiksemel.so
-	$(CC) -o $@ $^ $(LDFLAGS) -L. -liksemel
+sputnik: $(OBJS) 
+	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) -liksemel
 
 sputnik.static: $(OBJS) $(IOBJS)
-	$(CC) -o $@ $^ $(LDFLAGS) -L. 
+	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) 
 
 $(OBJS): $(CY_DEPS)
