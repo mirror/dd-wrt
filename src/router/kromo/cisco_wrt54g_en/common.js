@@ -94,7 +94,7 @@ function valid_range(I,start,end,M) {
 	//		I.value = "0";
 	//}
 	M1 = unescape(M);
-//	isdigit(I,M1);
+	isdigit(I,M1);
 
 	d = parseInt(I.value, 10);	
 	if ( !(d<=end && d>=start) ) {		
