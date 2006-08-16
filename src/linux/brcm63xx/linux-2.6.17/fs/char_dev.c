@@ -83,7 +83,10 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 
 	cd = kzalloc(sizeof(struct char_device_struct), GFP_KERNEL);
 	if (cd == NULL)
+		{
+	       printk(KERN_INFO "chrdev_region nomem\n");
 		return ERR_PTR(-ENOMEM);
+		}
 
 	mutex_lock(&chrdevs_lock);
 
@@ -96,6 +99,7 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 
 		if (i == 0) {
 			ret = -EBUSY;
+	                printk(KERN_INFO "chrdev_region busy1\n");
 			goto out;
 		}
 		major = i;
@@ -116,6 +120,7 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 	if (*cp && (*cp)->major == major &&
 	    (*cp)->baseminor < baseminor + minorct) {
 		ret = -EBUSY;
+	        printk(KERN_INFO "chrdev_region busy2\n");
 		goto out;
 	}
 	cd->next = *cp;

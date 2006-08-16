@@ -26,9 +26,6 @@
 #ifndef _BOARD_H
 #define _BOARD_H
 
-#if __cplusplus
-extern "C" {
-#endif
 
 #define	DYING_GASP_API
 
@@ -370,9 +367,6 @@ void kerSysDeregisterDyingGaspHandler(char *devname);
 void kerSysWakeupMonitorTask( void );
 #endif
 
-#if __cplusplus
-}
-#endif
 
 #endif /* _BOARD_H */
 

@@ -292,6 +292,10 @@
 #define SSB_PCI_MASK1		0xfc000000
 #define SSB_PCI_MASK2		0xc0000000
 
+#define br32(bp, REG)	readl((void *)bp->regs + (REG))
+#define bw32(bp, REG,VAL)	writel((VAL), (void *)bp->regs + (REG))
+#define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
+
 /* 4400 PHY registers */
 #define B44_MII_AUXCTRL		24	/* Auxiliary Control */
 #define  MII_AUXCTRL_DUPLEX	0x0001  /* Full Duplex */
@@ -345,6 +349,8 @@ struct ring_info {
 };
 
 #define B44_MCAST_TABLE_SIZE	32
+#define B44_PHY_ADDR_NO_PHY	30
+#define B44_MDC_RATIO		5000000
 
 #define	B44_STAT_REG_DECLARE		\
 	_B44(tx_good_octets)		\
@@ -420,6 +426,7 @@ struct b44 {
 
 	u32			dma_offset;
 	u32			flags;
+#define B44_FLAG_INIT_COMPLETE	0x00000001
 #define B44_FLAG_BUGGY_TXPTR	0x00000002
 #define B44_FLAG_REORDER_BUG	0x00000004
 #define B44_FLAG_PAUSE_AUTO	0x00008000
