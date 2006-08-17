@@ -3949,6 +3949,43 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	}
 	fclose (in);
 }
+
+void
+ej_show_timeoptions (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
+{
+
+char timediffs[37][8] = {"-12","-11","-10","-09.5","-09","-08","-07","-06","-05","-04","-03.5","-03","-02","-01","+00",
+								"+01","+02","+03","+03.5","+04","+05","+05.5","+05.75","+06","+06.5","+07","+08","+09","+09.5","+10","+10.5","+11","+11.5","+12","+12.75","+13","+14"};
+
+char timezones[37][8] = {"-12:00","-11:00","-10:00","-09:30","-09:00","-08:00","-07:00","-06:00","-05:00","-04:00","-03:30","-03:00","-02:00","-01:00","",
+								"+01:00","+02:00","+03:00","+03:30","+04:00","+05:00","+05:30","+05:45","+06:00","+06:30","+07:00","+08:00","+09:00","+09:30","+10:00","+10:30","+11:00","+11:30","+12:00","+12:45","+13:00","+14:00"};
+
+char diffeffect[4][29] = {"none","first Sun Apr - last Sun Oct","last Sun Mar - last Sun Oct","last Sun Oct - last Sun Mar"};
+
+int i,j;
+char str[11], buf[2];
+
+	for (i=0; i<37; i++)
+	{
+		for (j=0; j<4; j++)
+	  	{
+			strcpy (str, timediffs[i]);
+			strcat (str, " 1 ");
+  			itoa(j+1, buf, 10);
+			strcat (str, buf);
+
+			websWrite (wp, "<option value=\"%s\" ", str);
+				if nvram_match ("time_zone", str)
+				{
+				websWrite ("selected=\"selected\"");
+				}
+			websWrite (wp, ">UTC%s / %s</option>\n", timezones[i], diffeffect[j]);
+
+		}
+	}
+		
+}
+
 /*
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
@@ -4634,6 +4671,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
+  {"show_timeoptions", "ej_show_timeoptions"}, //Eko
 //  {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
