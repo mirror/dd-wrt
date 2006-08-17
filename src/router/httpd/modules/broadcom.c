@@ -3977,7 +3977,7 @@ char str[11], buf[2];
 			websWrite (wp, "<option value=\"%s\" ", str);
 				if (nvram_match ("time_zone", str))
 				{
-				websWrite ("selected=\"selected\"");
+				websWrite (wp, "selected=\"selected\"");
 				}
 			websWrite (wp, ">UTC%s / %s</option>\n", timezones[i], diffeffect[j]);
 
