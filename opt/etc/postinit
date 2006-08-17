@@ -8,13 +8,13 @@ if [ "$(nvram get jffs_mounted)" = "1" ]; then
 fi
 
 if [ "$(nvram get need_commit)" = "1" ] && [ "$(nvram get need_reboot)" != "1"]; then
-    echo "nvram was changed, needs commit, waiting 10 sec."
+    echo "need_commit=1: committing changes"
     nvram set need_commit=0
     nvram commit
 fi
 
 if [ "$(nvram get need_reboot)" = "1" ]; then
-    echo "critical nvram was changed, needs commit, waiting 10 sec."
+    echo "need_reboot=1: committing changes"
     nvram set need_reboot=0
     nvram set need_commit=0
     nvram commit
