@@ -5,7 +5,7 @@ if [ -z "$(nvram get http_redirect_enable)" ]; then
     nvram set http_redirect_destination=0.0.0.0
     nvram set http_redirect_port=3128
     nvram set http_source_network=0.0.0.0
-    nvram set need_commit=1
+    #nvram set need_commit=1
 fi
 
 if [ "$(nvram get http_redirect_enable)" = "1" ]; then
