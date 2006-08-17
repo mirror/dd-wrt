@@ -1,7 +1,7 @@
 #!/bin/sh
 if [ -z "$(nvram get sys_enable_jffs2)" ]; then
     nvram set sys_enable_jffs2=0
-    nvram set need_commit=1
+    #nvram set need_commit=1
 fi
 
 if [ "$(nvram get clean_jffs2)" = "1" ]; then
