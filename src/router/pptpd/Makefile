@@ -102,10 +102,9 @@ AUTOCONF = autoconf
 AUTOHEADER = autoheader
 AUTOMAKE = automake-1.9
 AWK = gawk
-CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=none
-CFLAGS = -O2 -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
-CPP = mipsel-linux-uclibc-gcc -E
+CFLAGS = $(COPTS) -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
+CPP = $(CC) -E
 CPPFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
@@ -159,7 +158,7 @@ exec_prefix = ${prefix}
 host_alias = mips
 includedir = /opt/openwrt/mipsel-linux-uclibc/include
 infodir = ${prefix}/info
-install_sh = /home/dd-wrt/DEV/src/router/pptpd/install-sh
+install_sh = /home/dd-wrt/3com/src/router/pptpd/install-sh
 libdir = /opt/openwrt/mipsel-linux-uclibc/lib/
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var

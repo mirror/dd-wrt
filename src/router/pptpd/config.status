@@ -493,7 +493,7 @@ s,@AUTOCONF@,autoconf,;t t
 s,@AUTOMAKE@,automake-1.9,;t t
 s,@AUTOHEADER@,autoheader,;t t
 s,@MAKEINFO@,makeinfo,;t t
-s,@install_sh@,/home/dd-wrt/DEV/src/router/pptpd/install-sh,;t t
+s,@install_sh@,/home/dd-wrt/3com/src/router/pptpd/install-sh,;t t
 s,@STRIP@,strip,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
