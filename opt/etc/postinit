@@ -7,7 +7,7 @@ if [ "$(nvram get jffs_mounted)" = "1" ]; then
     mkdir /jffs/tmp/ipkg
 fi
 
-if [ "$(nvram get need_commit)" = "1" && "$(nvram get need_reboot)" != "1"]; then
+if [ "$(nvram get need_commit)" = "1" ] && [ "$(nvram get need_reboot)" != "1"]; then
     echo "nvram was changed, needs commit, waiting 10 sec."
     nvram set need_commit=0
     nvram commit
