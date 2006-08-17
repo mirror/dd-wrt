@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -z "$(nvram get pppoe_ver)" ]; then     
     nvram set pppoe_ver=0
-    nvram commit
+    #nvram commit
 fi
 

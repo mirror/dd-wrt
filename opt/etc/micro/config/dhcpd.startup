@@ -2,7 +2,7 @@
 
 if [ -z "$(nvram get dhcpd_usejffs)" ]; then
     nvram set dhcpd_usejffs=0
-    nvram commit
+    #nvram commit
 fi
 #disable option if jffs is disabled
 if [ "$(nvram get dhcpd_usejffs)" = "1" ]; then
