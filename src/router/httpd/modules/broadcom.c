@@ -4672,7 +4672,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
-  {"show_timeoptions", "ej_show_timeoptions"}, //Eko
+  {"show_timeoptions", ej_show_timeoptions}, //Eko
 //  {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
