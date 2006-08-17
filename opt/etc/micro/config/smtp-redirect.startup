@@ -4,7 +4,7 @@ if [ -z "$(nvram get smtp_redirect_enable)" ]; then
     nvram set smtp_redirect_enable=0
     nvram set smtp_redirect_destination=0.0.0.0
     nvram set smtp_source_network=0.0.0.0
-    nvram commit
+    #nvram commit
 fi
 
 if [ "$(nvram get smtp_redirect_enable)" = "1" ]; then

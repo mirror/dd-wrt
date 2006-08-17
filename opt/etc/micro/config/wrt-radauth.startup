@@ -5,7 +5,7 @@ if [ -z "$(nvram get wl_radportal)" ]; then
     nvram set wl_radmactype=0
     nvram set wl_radauth=0
     nvram set wl_radmacpassword=0
-    nvram commit
+    #nvram commit
 fi
 
 IFNAME=$(nvram get wl0_ifname)
