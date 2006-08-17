@@ -3975,7 +3975,7 @@ char str[11], buf[2];
 			strcat (str, buf);
 
 			websWrite (wp, "<option value=\"%s\" ", str);
-				if nvram_match ("time_zone", str)
+				if (nvram_match ("time_zone", str))
 				{
 				websWrite ("selected=\"selected\"");
 				}
