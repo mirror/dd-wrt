@@ -728,7 +728,11 @@ idx.dhcp_maxusers="Najveèje ¹t. DHCP uporabnikov";
 idx.dhcp_lease="Odjemalèev èas zakupa";
 idx.dhcp_dnsmasq="Uporabi DNSMasq za DHCP";
 idx.dns_dnsmasq="Uporabi DNSMasq za DNS";
-idx.auth_dnsmasq="DHCP-Authoritative";
+idx.auth_dnsmasq="DHCP-Oblastno";
+idx.summt_opt1="brez";
+idx.summt_opt2="prva ned. apr. - zadnja ned. okt.";
+idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
+idx.summt_opt4="zadnja ned. okt. - zadnja ned. mar.";
 
 
 

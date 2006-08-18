@@ -562,6 +562,10 @@ idx.dhcp_lease="Tempo Di Scadenza Per Il Client";
 idx.dhcp_dnsmasq="Usa DNSMasq per il DHCP";
 idx.dns_dnsmasq="Usa DNSMasq per il DNS";
 idx.auth_dnsmasq="DHCP-Autoritario";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 hidx.right2="Queste impostazioni sono comunemente usate dagli operatori via Cavo.";
 hidx.right4="Inserisci il nome host fornito dall' ISP.";
