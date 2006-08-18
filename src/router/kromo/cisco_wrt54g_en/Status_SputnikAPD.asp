@@ -83,9 +83,7 @@ addEvent(window, "unload", function() {
             </div>
             <div id="helpContainer">
                <div id="help">
-                  <div id="logo">
-                  	<h2><% tran("share.help"); %></h2>
-                  </div>
+                  <div><h2><% tran("share.help"); %></h2></div>
                   <dl>
                      <dt class="term"><% tran("hstatus_sputnik.right1"); %>:</dt>
                      <dd class="definition"><% tran("hstatus_sputnik.right2"); %></dd>

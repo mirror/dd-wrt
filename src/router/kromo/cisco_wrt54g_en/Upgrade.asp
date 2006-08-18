@@ -116,9 +116,7 @@ function upgrade(F,id) {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("upgrad.legend"); %>: </dt>
 							<dd class="definition"><% tran("hupgrad.right2"); %></dd>

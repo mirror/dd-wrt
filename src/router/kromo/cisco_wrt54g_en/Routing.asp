@@ -189,9 +189,7 @@ function SelMode(num,F) {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("route.mod"); %>:</dt>
 							<dd class="definition"><% tran("hroute.right2"); %></dd>

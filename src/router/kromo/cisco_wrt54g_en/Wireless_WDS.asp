@@ -303,7 +303,7 @@ addEvent(window, "load", function() {
             </div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2><% tran("share.help"); %></h2></div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWDS.asp')"><% tran("share.more"); %></a>
 					</div>
