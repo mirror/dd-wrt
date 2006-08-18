@@ -88,7 +88,7 @@ function to_submit(F) {
 					</div>
 				</div>
 				<div id="helpContainer">
-					<div>
+					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("config.legend"); %>:</dt>
