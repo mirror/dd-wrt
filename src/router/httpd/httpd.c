@@ -502,25 +502,26 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
       vfsclose (e);
     }
 #else
-
+char *buf=getWebsFile(path);
+if (buf==NULL)
+{
   FILE *fp;
   int c;
 
   if (!(fp = fopen (path, "rb")))
     return;
-/*  char buf[256];
-  int t=256; 
-  while(t==256)
-  {
-  t = fread(buf,1,t,fp);
-  wfwrite(buf,t,1,stream);
-  }
-  if (t)
-  wfwrite(buf,t,1,stream);
-  */
   while ((c = getc (fp)) != EOF)
     wfputc (c, stream);		// jimmy, https, 8/4/2003
   fclose (fp);
+}else
+{
+int i;
+int len=getWebsFileLen(path);
+for (i=0;i<len;i++)
+    {
+    wfputc(buf[i],stream);
+    }
+}
 #endif
 }
 

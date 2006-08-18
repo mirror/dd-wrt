@@ -40,8 +40,8 @@ ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
 
-
 ifeq ($(CONFIG_3COM),y)
+	
 	mkdir $(INSTALLDIR)/www/style/3com
 	cp 3com/style.css $(INSTALLDIR)/www/style/3com
 	cp 3com/images/* $(INSTALLDIR)/www/images
@@ -279,11 +279,16 @@ endif
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	
-	../../../../tools/write3 $(INSTALLDIR)/www/*.asp
-	../../../../tools/write3 $(INSTALLDIR)/www/*.htm
-	../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
-#	../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
+	#../../../../tools/write3 $(INSTALLDIR)/www/*.asp
+	#../../../../tools/write3 $(INSTALLDIR)/www/*.htm
+	#../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
+	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* > $(SRCBASE)/router/httpd/html.c 
+	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
+#../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
+	@true
 
 webcomp:
 
