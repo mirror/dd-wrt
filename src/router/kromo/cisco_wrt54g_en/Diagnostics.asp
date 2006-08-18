@@ -22,7 +22,6 @@ function to_submit(F, I) {
 
 function valid(F,I) {
 	if(I == "start" && F.ping_ip.value == ""){
-//		alert("You must input a command to run.");
 		alert(errmsg.err12);
 		F.ping_ip.focus();
 		return false;
@@ -98,12 +97,12 @@ function valid(F,I) {
 									<div class="label"><% tran("diag.cmd"); %></div>
 									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New"><% nvram_get("ping_ip"); %></textarea>
 								</div>
-						<script type="text/javascript">
-						var table = new Array(<% dump_ping_log(""); %>);
-						if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-							document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>");
-						}
-						</script>
+									<script type="text/javascript">
+									var table = new Array(<% dump_ping_log(""); %>);
+									if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
+										document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>");
+									}
+									</script>
 							</fieldset><br />
 							
 							<% nvram_match("rc_startup", "", "<!--"); %>
@@ -114,8 +113,8 @@ function valid(F,I) {
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"button_start\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('startup').firstChild.data\" />")</script>
 								</div>
 							</fieldset><br />
-							
 							<% nvram_match("rc_startup", "", "-->"); %>
+							
 							<% nvram_match("rc_firewall", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.firewall"); %></legend>
@@ -125,6 +124,7 @@ function valid(F,I) {
 								</div>
 							</fieldset><br />
 							<% nvram_match("rc_firewall", "", "-->"); %>
+							
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup')\" />")</script>
@@ -135,9 +135,7 @@ function valid(F,I) {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("diag.cmd"); %>:</dt>
 							<dd class="definition"><% tran("hdiag.right2"); %></dd>

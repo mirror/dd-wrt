@@ -82,9 +82,7 @@ function to_submit(F) {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dd class="definition"><% tran("hvpn.right1"); %></dd>
 						</dl>

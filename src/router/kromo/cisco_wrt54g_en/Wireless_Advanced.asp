@@ -523,9 +523,7 @@ addEvent(window, "load", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("wl_adv.label"); %>:</dt>
 							<dd class="definition"><% tran("hwl_adv.right2"); %></dd>
