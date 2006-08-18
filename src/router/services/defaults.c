@@ -968,7 +968,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_passwd_7", "", 0},
   {"ddns_hostname_7", "", 0},
   {"ddns_dyndnstype_7", "", 0},
-  {"ddns_wildcard_7", "", 0},*/
+  {"ddns_wildcard_7", "", 0},
 
   /* for last value */
   {"ddns_enable_buf", "", 0}, 
@@ -1656,37 +1656,3 @@ struct nvram_tuple srouter_defaults[] = {
 #undef HAVE_POWERNOC_WORT54G
 #undef HAVE_POWERNOC
 #endif
-/*
-void main(int argc,char *argv[])
-{
-FILE *out;
-struct nvram_tuple *v;
-int backupcount = 0;
-char sign[7] = { "DD-WRT" };
-char *val;
-out=fopen("defaults.bin","wb");
-  for (v = router_defaults; v->name; v++)
-    {
-      backupcount++;
-    }
-  fwrite (sign, 6, 1, out);
-  putc (backupcount & 255, out);	//high byte
-  putc (backupcount >> 8, out);	//low byte
-  for (v = router_defaults; v->name; v++)
-    {
-      putc (strlen (v->name), out);
-      int i;
-      for (i = 0; i < strlen (v->name); i++)
-	putc (v->name[i], out);
-      char *val = v->value;
-      putc (strlen (val) & 255, out);
-      putc (strlen (val) >> 8, out);
-      for (i = 0; i < strlen (val); i++)
-	putc (val[i], out);
-    }
-fclose(out);
-
-
-}
-
-*/
