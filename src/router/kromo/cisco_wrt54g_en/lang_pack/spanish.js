@@ -735,6 +735,10 @@ idx.dhcp_lease="Lease Time del Cliente";
 idx.dhcp_dnsmasq="Usar DNSMasq para DHCP";
 idx.dns_dnsmasq="Usar DNSMasq para DNS";
 idx.auth_dnsmasq="DHCP-Autorizativo";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 
 
