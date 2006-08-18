@@ -78,6 +78,15 @@ struct mime_handler {
 	void (*output)(char *path, FILE *stream);
 	int (*auth)(char *userid, char *passwd, char *realm);
 };
+typedef struct
+{
+  char *path;			/* Web page URL path */
+  unsigned char *page;		/* Web page data */
+  int size;			/* Size of web page in bytes */
+  int pos;			/* Current read position */
+} websRomPageIndexType;
+
+
 extern struct mime_handler mime_handlers[];
 
 /* CGI helper functions */
