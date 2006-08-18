@@ -934,7 +934,7 @@ struct nvram_tuple srouter_defaults[] = {
   /* for DDNS */
   // for dyndns
   {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom 6:3322.org */
-  /*{"ddns_username", "", 0}, 
+  {"ddns_username", "", 0}, 
   {"ddns_passwd", "", 0}, 
   {"ddns_hostname", "", 0}, 
   {"ddns_dyndnstype", "", 0}, 
