@@ -302,11 +302,6 @@ function dhcp_enable_disable(F,T)
 	}
 }
 
-function SelTime(num,f)
-{
-	aaa = f.time_zone.options[num].value.charAt(4);
-	daylight_enable_disable(f,aaa);
-}
 
 function ppp_enable_disable(F,I)
 {
@@ -320,18 +315,6 @@ function ppp_enable_disable(F,I)
 	}
 }
 
-function daylight_enable_disable(F,aaa)
-{
-	if(aaa == 0) {
-		F._daylight_time.checked = false;
-		choose_disable(F._daylight_time);
-		F.daylight_time.value = 0;
-	} else {
-		choose_enable(F._daylight_time);
-		F._daylight_time.checked = true;
-		F.daylight_time.value = 1;
-	}
-}
 
 function setDNSMasq(F)
 {
@@ -350,13 +333,6 @@ function setDNSMasq(F)
 function init()
 {
 	mtu_enable_disable(document.setup,'<% nvram_get("mtu_enable"); %>');
-	aaa = document.setup.time_zone.options[document.setup.time_zone.selectedIndex].value.charAt(4);
-	if (aaa == 0)
-	{
-		document.setup._daylight_time.checked = false;
-		choose_disable(document.setup._daylight_time);
-		document.setup.daylight_time.value = 0;
-	}
 
 	if (document.setup.now_proto.value == "pppoe" ||
 		document.setup.now_proto.value == "pptp" ||
@@ -494,7 +470,7 @@ function init()
 								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.timeset"); %></div>
-									<select name="time_zone" onchange="SelTime(this.form.time_zone.selectedIndex,this.form)">
+									<select name="time_zone">
 										<% show_timeoptions(); %>
 									</select>
 								</div>
