@@ -104,7 +104,7 @@ addEvent(window, "load", function() {
                   </div>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label2"); %></div>
-                    <select name="wl_net_mode" onChange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
+                    <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
                       <script type="text/javascript">document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");</script>

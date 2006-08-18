@@ -56,10 +56,10 @@ function setValue() {
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].start;
 	document.PortServices.Add_Service_Port_E.value =
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].end;
-	onChange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
+	onchange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
 }
 
-function onChange_ServiceTable(index, name, protocol, start, end){
+function onchange_ServiceTable(index, name, protocol, start, end){
 	name.value = services[index].name;
 	switch(services[index].protocol){
 	 case "icmp":
@@ -94,13 +94,13 @@ function onChange_ServiceTable(index, name, protocol, start, end){
 		break;
 	}
 	
-	onChange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
+	onchange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
 	
 	start.value = services[index].start;
 	end.value = services[index].end;
 }
 
-function onClick_Delete() {
+function onclick_Delete() {
 	if(!confirm(errmsg.err53))
 		return false;
 	var index = document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value;
@@ -110,7 +110,7 @@ function onClick_Delete() {
 	setValue();
 }
 
-function onClick_Modify(){
+function onclick_Modify(){
 	if(!confirm(errmsg.err53))
 		return false;
 	var index1 = document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value;
@@ -127,7 +127,7 @@ function onClick_Modify(){
 
 }
 
-function onClick_Add(){
+function onclick_Add(){
 	if(document.PortServices.Add_Service_Name.value == ""){
 		alert(errmsg.err54);
 		document.PortServices.Add_Service_Name.focus();
@@ -172,7 +172,7 @@ function onClick_Add(){
 	services_length++;
 }
 
-function onClick_Apply(F) {
+function onclick_Apply(F) {
  	var i=0;
 	var index=0;
 	var svclen=0;
@@ -211,7 +211,7 @@ function onClick_Apply(F) {
 	
 }
 
-function onChange_Prot(I) {
+function onchange_Prot(I) {
 	if(I == "1" || I == "99" || I == "100") {
 		setElementsActive("Add_Service_Port_S", "Add_Service_Port_E", false);
 	} else {
@@ -268,7 +268,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.proto"); %></div>
-				<select name="Add_Service_Protocol" onchange="onChange_Prot(Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)" >
+				<select name="Add_Service_Protocol" onchange="onchange_Prot(Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)" >
 					<option value="1">ICMP</option>
 					<option value="6">TCP</option>
 					<option value="17">UDP</option>
@@ -282,12 +282,12 @@ addEvent(window, "unload", function() {
 				<input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" /> ~ <input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" />
 			</div>
 				<div class="setting">
-					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"onClick_Add()\" />")</script>
-					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.modify + "\" onclick=\"onClick_Modify()\" />")</script>
-					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"onClick_Delete()\" />")</script>
+					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"onclick_Add()\" />")</script>
+					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.modify + "\" onclick=\"onclick_Modify()\" />")</script>
+					<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"onclick_Delete()\" />")</script>
 				</div>
 				<div class="setting">
-					<select name="ServiceTable" size="12" onchange="onChange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)" >
+					<select name="ServiceTable" size="12" onchange="onchange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)" >
 						<script type="text/javascript">
 							var i=0;
 							for(i=0;i<services_length;i++)
@@ -299,7 +299,7 @@ addEvent(window, "unload", function() {
 				</div>
 			</div><br />
 			<div class="submitFooter">
-				<script type="text/javascript">document.write("<input type=\"button\" name=\"Submit\" value=\"" + sbutton.apply + "\" onclick=\"onClick_Apply(this.form)\" />")</script>
+				<script type="text/javascript">document.write("<input type=\"button\" name=\"Submit\" value=\"" + sbutton.apply + "\" onclick=\"onclick_Apply(this.form)\" />")</script>
 				<script type="text/javascript">document.write("<input type=\"button\" name=\"cancel\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload()\" />")</script>
 				<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
 			</div>
