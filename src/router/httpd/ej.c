@@ -202,13 +202,6 @@ char *data
 int len;
 } websRomPageIndex;
 */
-typedef struct
-{
-  char *path;			/* Web page URL path */
-  unsigned char *page;		/* Web page data */
-  int size;			/* Size of web page in bytes */
-  int pos;			/* Current read position */
-} websRomPageIndexType;
 
 #include "html.c"
 char *
