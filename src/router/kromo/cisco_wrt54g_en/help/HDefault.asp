@@ -7,10 +7,10 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Factory Defaults</h2>
+			<h2><% tran("factdef.h2"); %></h2>
 			<dl>
 				<dd>If you have problems with your router, which might be a result from changing some settings, but you are unsure what settings exactly, you can restore the factory defaults.</dd>
-				<dt>Restore Factory Defaults</dt>
+				<dt><% tran("factdef.legend"); %></dt>
 				<dd>Click the <i>Yes</i> button to reset all configuration settings to their default values. Then click the <i>Save Settings</i> button.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
