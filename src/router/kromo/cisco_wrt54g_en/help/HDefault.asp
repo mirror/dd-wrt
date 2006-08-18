@@ -22,7 +22,7 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HBackup.asp">Backup</a></li>
+				<li><a href="HBackup.asp"><% tran("bmenu.adminBackup"); %></a></li>
 			</ul>
 		</div>
 	</body>

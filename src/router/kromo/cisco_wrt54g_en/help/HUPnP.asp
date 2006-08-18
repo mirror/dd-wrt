@@ -31,9 +31,9 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HManagement.asp">Management</a></li>
-				<li><a href="HForwardRange.asp">Port Range Forwarding</a></li>
-				<li><a href="HForward.asp">Port Forwarding</a></li>
+				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
+				<li><a href="HForward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+				<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
 			</ul>
 		</div>
 	</body>
