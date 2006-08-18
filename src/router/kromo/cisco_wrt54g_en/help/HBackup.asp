@@ -7,13 +7,13 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Backup</h2>
+			<h2><% tran("config.h2"); %> / <% tran("config.h22"); %></h2>
 			<dl>
 				<dd>You may backup your current configuration in case you need to reset the router back to its factory default settings.</dd>
-				<dt>Backup</dt>
-                <dd>Click the <i>Backup</i> button to download your current router configuration to your PC.</dd>
-                <dt>Restore Configuration</dt>
-                <dd>Click the <i>Browse</i> button to browse for the configuration file that is currently saved on your PC. Click <i>Restore</i> to overwrite all current configurations with the ones in the configuration file<br /><br />
+				<dt><% tran("config.legend"); %></dt>
+				<dd>Click the <i>Backup</i> button to download your current router configuration to your PC.</dd>
+        <dt><% tran("config.legend2"); %></dt>
+        <dd>Click the <i>Browse</i> button to browse for the configuration file that is currently saved on your PC. Click <i>Restore</i> to overwrite all current configurations with the ones in the configuration file<br /><br />
 					<div class="note">
 						<h4>Note</h4>
 						<div>Only restore configurations with files backed up using the same firmware and the same model of router.</dd>
