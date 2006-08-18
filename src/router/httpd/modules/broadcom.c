@@ -3960,8 +3960,8 @@ char timediffs[37][8] = {"-12","-11","-10","-09.5","-09","-08","-07","-06","-05"
 char timezones[37][8] = {"-12:00","-11:00","-10:00","-09:30","-09:00","-08:00","-07:00","-06:00","-05:00","-04:00","-03:30","-03:00","-02:00","-01:00","",
 								"+01:00","+02:00","+03:00","+03:30","+04:00","+05:00","+05:30","+05:45","+06:00","+06:30","+07:00","+08:00","+09:00","+09:30","+10:00","+10:30","+11:00","+11:30","+12:00","+12:45","+13:00","+14:00"};
 
-char summertime[4][29] = {"none","first Sun Apr - last Sun Oct","last Sun Mar - last Sun Oct","last Sun Oct - last Sun Mar"};
-
+// char summertime[4][29] = {"none","first Sun Apr - last Sun Oct","last Sun Mar - last Sun Oct","last Sun Oct - last Sun Mar"};
+char summertime[4][12] = {"summt.opt1","summt.opt1","summt.opt2","summt.opt3"};
 char timeoption[4][2] = {"1","2","3","4"};
 
 int i,j;
@@ -3975,9 +3975,13 @@ char str[11];
 			strcat (str, " 1 ");
 			strcat (str, timeoption[j]);
 
-			websWrite (wp,
-			"<option value=\"%s\" %s>UTC%s / %s</option>\n", str, nvram_match ("time_zone", str) ? "selected=\"selected\"" : "", timezones[i], summertime[j]);
+//			websWrite (wp,
+//			"<option value=\"%s\" %s>UTC%s / %s</option>\n", str, nvram_match ("time_zone", str) ? "selected=\"selected\"" : "", timezones[i], summertime[j]);
 
+			websWrite (wp,
+			"<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + %s + \"</option>\");</script>\n",
+			str, nvram_match ("time_zone", str) ? "selected=\\\"selected\\\"" : "", timezones[i], summertime[j]);
+			
 		 }
 	}
 		
