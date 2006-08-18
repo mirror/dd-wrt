@@ -709,6 +709,10 @@ idx.dhcp_lease="Tempo de Concessão ao Cliente";
 idx.dhcp_dnsmasq="Usar DNSMasq para o DHCP";
 idx.dns_dnsmasq="Usar DNSMasq para o DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 hidx.right2="Estas configurações são comumente usadas por provedores à Cabo.";
 hidx.right4="Insira o Host Name fornecido pelo seu ISP.";

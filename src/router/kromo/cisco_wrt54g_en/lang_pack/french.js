@@ -739,6 +739,10 @@ idx.dhcp_lease="Durée de connexion du client";
 idx.dhcp_dnsmasq="Utiliser DNSMasq pour DHCP";
 idx.dns_dnsmasq="Utiliser DNSMasq pour DNS";
 idx.auth_dnsmasq="Autorité DHCP";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 
 
