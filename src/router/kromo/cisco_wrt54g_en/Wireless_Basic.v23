@@ -113,7 +113,7 @@ addEvent(window, "load", function() {
                   </div>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label3"); %></div>
-                    <input name="wl_ssid" size="20" maxlength="32" onBlur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
+                    <input name="wl_ssid" size="20" maxlength="32" onblur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
                   </div>
                   <% nvram_match("wl_mode", "sta", "<!--"); %>
                   <% nvram_match("wl_mode", "wet", "<!--"); %>
@@ -151,7 +151,7 @@ addEvent(window, "load", function() {
                   <br/>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label6"); %></div>
-                    <input class="num" name="wl_distance" size="8" maxlength="8" onBlur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
+                    <input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
                     <span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 2000 " + share.meters + ")")</script></span>
                   </div>
                 </fieldset><br />
