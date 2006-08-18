@@ -123,9 +123,7 @@ function init() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
 							<dt class="term"><% tran("alive.hour"); %>:</dt>
 							<dd class="definition"><% tran("halive.right2"); %></dd>

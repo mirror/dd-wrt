@@ -63,7 +63,7 @@ if (table.length == 0) {
 		document.write("<td align=\"center\">"+table[i+7]+"</td>");
 		document.write("<td align=\"center\">"+table[i+8]+"</td>");
 		document.write("<td align=\"center\"><input type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
-		document.write("</tr>");
+		document.write("<\/tr>");
 	}
 }
 	</script>

@@ -245,7 +245,7 @@ function callDump() {
 		document.write("<fieldset>");
 		document.write("<legend>" + wol.legend3 + "</legend>");
 		document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
-		document.write("</fieldset><br />");
+		document.write("<\/fieldset><br />");
 	}
 }
 
@@ -381,9 +381,7 @@ addEvent(window, "load", function() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo">
-							<h2><% tran("share.help"); %></h2>
-						</div>
+						<div><h2><% tran("share.help"); %></h2></div>
 						<dl> 
 							<dt class="term"><% tran("wol.h2"); %>:</dt>
 							<dd class="definition"><% tran("hwol.right2"); %></dd>
