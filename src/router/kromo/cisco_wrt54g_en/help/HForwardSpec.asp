@@ -10,7 +10,7 @@
 			<h2><% tran("pforward.h2"); %></h2>
 			<dl>
 				<dd>Port Forwarding allows you to set up public services on your network, such as web servers, ftp servers, e-mail servers, or other specialized Internet applications. Specialized Internet applications are any applications that use Internet access to perform functions such as videoconferencing or online gaming. When users send this type of request to your network via the Internet, the router will forward those requests to the appropriate PC.<br /><br />
-					If you want to forward a whole range of ports, see <a href="HForwardRange.asp">Port Range Forwarding</a>.<br /><br />
+					If you want to forward a whole range of ports, see <a href="HForward.asp"><% tran("bmenu.applicationsprforwarding"); %></a>.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
 						<div>Any PC whose port is being forwarded must have a static IP address assigned to it because its IP address may change when using the DHCP function.</div>
@@ -47,10 +47,10 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HForwardRange.asp">Port Range Forwarding</a></li>
-				<li><a href="HTrigger.asp">Port Triggering</a></li>
-				<li><a href="HUPnP.asp">UPnP</a></li>
-				<li><a href="HDMZ.asp">DMZ</a></li>
+				<li><a href="HForward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+				<li><a href="HTrigger.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
+				<li><a href="HUPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
+				<li><a href="HDMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
 			</ul>
 		</div>
 	</body>
