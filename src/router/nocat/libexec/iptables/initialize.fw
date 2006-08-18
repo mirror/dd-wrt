@@ -208,8 +208,7 @@ for iface in $InternalDevice; do
 	# AUTH mechanism, and internal peers-database. Excellent for infrastructure
         # routing or serving over an otherwise captive portal.
 	# NOTE: we may want to watch out for mac/arp-spoofing attempts
-        if [ $Verbosity -gt 5 ]; then logger "nat::NoCat_Capture: Whitelisted MACs: $MACWhiteList"; fi
-        if [ $MACWhiteList ]; then
+        if [ "$MACWhiteList" ]; then
             for mac in $MACWhiteList; do
                 if [ $Verbosity -gt 5 ]; then logger "nat::NoCat_Capture: Bypassing all traffic to/from whitelisted MAC: $mac"; fi
     	        $redirect -s $net -m mac --mac-source $mac -j RETURN
