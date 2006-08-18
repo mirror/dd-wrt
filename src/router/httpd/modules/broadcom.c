@@ -3967,22 +3967,18 @@ char timeoption[4][2] = {"1","2","3","4"};
 int i,j;
 char str[11];
 
-	  for (i=0; i<37; i++)
-		  {
+	for (i=0; i<37; i++)
+	{
 	  	for (j=0; j<4; j++)
 	  	{
 			strcpy (str, timediffs[i]);
 			strcat (str, " 1 ");
 			strcat (str, timeoption[j]);
 
-			websWrite (wp, "<option value=\"%s\" ", str);
-				if (nvram_match ("time_zone", str))
-				{
-				websWrite (wp, "selected=\"selected\"");
-				}
-			websWrite (wp, ">UTC%s / %s</option>\n", timezones[i], summertime[j]);
+			websWrite (wp,
+			"<option value=\"%s\" %s>UTC%s / %s</option>\n", str, nvram_match ("time_zone", str) ? "selected=\"selected\"" : "", timezones[i], summertime[j]);
 
-		}
+		 }
 	}
 		
 }
