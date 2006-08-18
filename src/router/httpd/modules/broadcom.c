@@ -3256,7 +3256,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, argv[0]))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej_two (buf, wp);
+		  do_ej(buf, wp);
 		}
 	    }
 	  else
@@ -3264,7 +3264,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, ".webconfig"))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej_two (buf, wp);
+		  do_ej(buf, wp);
 		}
 	    }
 	}
@@ -3281,7 +3281,7 @@ do_shell_script (char *url, webs_t stream)
   char buf[256];
   sprintf (buf, "%s >/tmp/shellout.asp", url);
   system (buf);
-  do_ej_two ("/tmp/shellout.asp", stream);
+  do_ej("/tmp/shellout.asp", stream);
 }
 
 
@@ -4059,11 +4059,11 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_SKYTRON
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2},
-  {"**.html", "text/html", no_cache, NULL, do_ej_two, do_auth2},
+  {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2},
 #else
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth},
   {"**.htm", "text/html", no_cache, NULL, do_ej, NULL},
-  {"**.html", "text/html", no_cache, NULL, do_ej_two, NULL},
+  {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
 
 #endif
   {"**.css", "text/css", NULL, NULL, do_file, NULL},
