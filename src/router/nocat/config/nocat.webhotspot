@@ -33,7 +33,7 @@
 		</div>
 		<div class="setting">
 			<div class="label">MAC White List</div>
-			<input name="NC_MacWhiteList" size="39" value="<% nvram_get("NC_MacWhiteList"); %>" />
+			<input name="NC_MACWhiteList" size="39" value="<% nvram_get("NC_MACWhiteList"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_timeout"); %></div>

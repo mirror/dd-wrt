@@ -197,7 +197,7 @@ int mk_nocat_conf(void)
 	fprintf(fp, "IncludePorts\t%s\n", nvram_safe_get("NC_IncludePorts") ); 
 	fprintf(fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("NC_AllowedWebHosts") );  
         /* TJaqua: Added MACWhiteList to ignore given machines or routers on the local net (e.g. routers with an alternate Auth). */
-        fprintf(fp, "MACWhiteList\t%s\n", nvram_safe_get("NC_MacWhiteList") );
+        fprintf(fp, "MACWhiteList\t%s\n", nvram_safe_get("NC_MACWhiteList") );
         /* TJaqua: Added AnyDNS to pass through any client-defined servers. */
         if (!strcmp(nvram_safe_get("NC_AnyDNS"),"1")) {
                 fprintf(fp, "AnyDNS\t%s\n", nvram_safe_get("NC_AnyDNS") );
