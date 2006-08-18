@@ -3193,9 +3193,9 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 	sprintf (buf, "/www/style/%s/style.css", entry->d_name);
         FILE *test = fopen (buf, "rb");
         if (test == NULL)
-	continue;
+	    continue;
+        fclose (test);
 	}
-      fclose (test);
       websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
 		 nvram_match ("router_style",
 			      entry->d_name) ? "selected" : "",
