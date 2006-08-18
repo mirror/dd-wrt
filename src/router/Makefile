@@ -321,7 +321,7 @@ endif
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
-	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
+#	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
 ifeq ($(CONFIG_KAID),y)
@@ -474,7 +474,7 @@ libnet:
 	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 
-httpd: nvram shared hsiab matrixssl
+httpd: nvram shared hsiab matrixssl www-install
 	$(MAKE) -C httpd
 
 httpd-clean:
