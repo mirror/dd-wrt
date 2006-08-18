@@ -1,0 +1,219 @@
+
+;; Function main
+
+(note 2 0 7 NOTE_INSN_DELETED)
+
+;; Start of basic block 0, registers live: 4 [si] 5 [di] 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+(note 7 2 69 0 [bb 0] NOTE_INSN_BASIC_BLOCK)
+
+(insn/f 69 7 70 0 (set (mem:DI (pre_dec:DI (reg/f:DI 7 sp)) [0 S8 A8])
+        (reg/f:DI 6 bp)) -1 (nil)
+    (nil))
+
+(insn/f 70 69 71 0 (set (reg/f:DI 6 bp)
+        (reg/f:DI 7 sp)) -1 (nil)
+    (nil))
+
+(insn/f 71 70 72 0 (parallel [
+            (set (reg/f:DI 7 sp)
+                (plus:DI (reg/f:DI 7 sp)
+                    (const_int -48 [0xffffffffffffffd0])))
+            (clobber (reg:CC 17 flags))
+            (clobber (mem:BLK (scratch) [0 A8]))
+        ]) -1 (nil)
+    (nil))
+
+(note 72 71 3 0 NOTE_INSN_PROLOGUE_END)
+
+(insn 3 72 4 0 (set (mem/i:SI (plus:DI (reg/f:DI 6 bp)
+                (const_int -20 [0xffffffffffffffec])) [0 argc+0 S4 A32])
+        (reg:SI 5 di [ argc ])) 41 {*movsi_1} (nil)
+    (nil))
+
+(insn 4 3 5 0 (set (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -32 [0xffffffffffffffe0])) [0 argv+0 S8 A64])
+        (reg:DI 4 si [ argv ])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(note 5 4 10 0 NOTE_INSN_FUNCTION_BEG)
+
+(insn 10 5 12 0 (set (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -16 [0xfffffffffffffff0])) [0 fileList+0 S8 A64])
+        (const_int 0 [0x0])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 12 10 13 0 (set (reg:CCZ 17 flags)
+        (compare:CCZ (mem/i:SI (plus:DI (reg/f:DI 6 bp)
+                    (const_int -20 [0xffffffffffffffec])) [0 argc+0 S4 A32])
+            (const_int 3 [0x3]))) 5 {*cmpsi_1_insn} (nil)
+    (nil))
+
+(jump_insn 13 12 15 0 (set (pc)
+        (if_then_else (eq (reg:CCZ 17 flags)
+                (const_int 0 [0x0]))
+            (label_ref 19)
+            (pc))) 489 {*jcc_1} (nil)
+    (nil))
+;; End of basic block 0, registers live:
+ 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+
+;; Start of basic block 2, registers live: 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+(note 15 13 17 2 [bb 2] NOTE_INSN_BASIC_BLOCK)
+
+(insn 17 15 18 2 (set (reg:QI 0 ax)
+        (const_int 0 [0x0])) 56 {*movqi_1} (nil)
+    (nil))
+
+(call_insn 18 17 19 2 (call (mem:QI (symbol_ref:DI ("usage") [flags 0x3] <function_decl 0x2aaaab097b60 usage>) [0 S1 A8])
+        (const_int 0 [0x0])) 511 {*call_0} (nil)
+    (nil)
+    (expr_list:REG_DEP_TRUE (use (reg:QI 0 ax))
+        (nil)))
+;; End of basic block 2, registers live:
+ 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+
+;; Start of basic block 3, registers live: 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+(code_label 19 18 20 3 2 "" [1 uses])
+
+(note 20 19 67 3 [bb 3] NOTE_INSN_BASIC_BLOCK)
+
+(insn 67 20 22 3 (set (reg:DI 0 ax [orig:61 D.3223 ] [61])
+        (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -32 [0xffffffffffffffe0])) [0 argv+0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 22 67 23 3 (parallel [
+            (set (reg:DI 0 ax [orig:61 D.3223 ] [61])
+                (plus:DI (reg:DI 0 ax [orig:61 D.3223 ] [61])
+                    (const_int 8 [0x8])))
+            (clobber (reg:CC 17 flags))
+        ]) 193 {*adddi_1_rex64} (nil)
+    (nil))
+
+(insn 23 22 24 3 (set (reg:DI 0 ax [63])
+        (mem/f:DI (reg:DI 0 ax [orig:61 D.3223 ] [61]) [0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 24 23 68 3 (set (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -8 [0xfffffffffffffff8])) [0 prefix+0 S8 A64])
+        (reg:DI 0 ax [63])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 68 24 26 3 (set (reg:DI 0 ax [orig:60 D.3224 ] [60])
+        (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -32 [0xffffffffffffffe0])) [0 argv+0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 26 68 27 3 (parallel [
+            (set (reg:DI 0 ax [orig:60 D.3224 ] [60])
+                (plus:DI (reg:DI 0 ax [orig:60 D.3224 ] [60])
+                    (const_int 16 [0x10])))
+            (clobber (reg:CC 17 flags))
+        ]) 193 {*adddi_1_rex64} (nil)
+    (nil))
+
+(insn 27 26 28 3 (set (reg:DI 0 ax [64])
+        (mem/f:DI (reg:DI 0 ax [orig:60 D.3224 ] [60]) [0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 28 27 30 3 (set (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -16 [0xfffffffffffffff0])) [0 fileList+0 S8 A64])
+        (reg:DI 0 ax [64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 30 28 31 3 (set (reg:DI 4 si [orig:65 prefix ] [65])
+        (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -8 [0xfffffffffffffff8])) [0 prefix+0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(insn 31 30 34 3 (set (reg:DI 5 di [orig:66 fileList ] [66])
+        (mem/i:DI (plus:DI (reg/f:DI 6 bp)
+                (const_int -16 [0xfffffffffffffff0])) [0 fileList+0 S8 A64])) 81 {*movdi_1_rex64} (nil)
+    (nil))
+
+(call_insn 34 31 36 3 (set (reg:SI 0 ax)
+        (call (mem:QI (symbol_ref:DI ("compile") [flags 0x3] <function_decl 0x2aaaab0979c0 compile>) [0 S1 A8])
+            (const_int 0 [0x0]))) 678 {*call_value_0_rex64} (nil)
+    (nil)
+    (expr_list:REG_DEP_TRUE (use (reg:DI 5 di [ fileList ]))
+        (expr_list:REG_DEP_TRUE (use (reg:DI 4 si [ prefix ]))
+            (nil))))
+
+(insn 36 34 37 3 (set (reg:CCGOC 17 flags)
+        (compare:CCGOC (reg:SI 0 ax [orig:59 D.3225 ] [59])
+            (const_int 0 [0x0]))) 3 {*cmpsi_ccno_1} (nil)
+    (nil))
+
+(jump_insn 37 36 39 3 (set (pc)
+        (if_then_else (ge (reg:CCGOC 17 flags)
+                (const_int 0 [0x0]))
+            (label_ref 44)
+            (pc))) 489 {*jcc_1} (nil)
+    (nil))
+;; End of basic block 3, registers live:
+ 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+
+;; Start of basic block 4, registers live: 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+(note 39 37 41 4 [bb 4] NOTE_INSN_BASIC_BLOCK)
+
+(insn 41 39 42 4 (set (mem:SI (plus:DI (reg/f:DI 6 bp)
+                (const_int -36 [0xffffffffffffffdc])) [0 D.3226+0 S4 A8])
+        (const_int -1 [0xffffffffffffffff])) 41 {*movsi_1} (nil)
+    (nil))
+
+(jump_insn 42 41 43 4 (set (pc)
+        (label_ref 48)) 503 {jump} (nil)
+    (nil))
+;; End of basic block 4, registers live:
+ 6 [bp] 7 [sp] 16 [argp] 20 [frame] 58
+
+(barrier 43 42 44)
+
+;; Start of basic block 5, registers live: 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+(code_label 44 43 45 5 4 "" [1 uses])
+
+(note 45 44 47 5 [bb 5] NOTE_INSN_BASIC_BLOCK)
+
+(insn 47 45 48 5 (set (mem:SI (plus:DI (reg/f:DI 6 bp)
+                (const_int -36 [0xffffffffffffffdc])) [0 D.3226+0 S4 A8])
+        (const_int 0 [0x0])) 41 {*movsi_1} (nil)
+    (nil))
+;; End of basic block 5, registers live:
+ 6 [bp] 7 [sp] 16 [argp] 20 [frame] 58
+
+;; Start of basic block 6, registers live: 6 [bp] 7 [sp] 16 [argp] 20 [frame] 58
+(code_label 48 47 49 6 6 "" [1 uses])
+
+(note 49 48 50 6 [bb 6] NOTE_INSN_BASIC_BLOCK)
+
+(insn 50 49 53 6 (set (reg:SI 0 ax [orig:62 <result> ] [62])
+        (mem:SI (plus:DI (reg/f:DI 6 bp)
+                (const_int -36 [0xffffffffffffffdc])) [0 D.3226+0 S4 A8])) 41 {*movsi_1} (nil)
+    (nil))
+
+(note 53 50 62 6 NOTE_INSN_FUNCTION_END)
+
+(insn 62 53 73 6 (use (reg/i:SI 0 ax [ <result> ])) -1 (nil)
+    (nil))
+
+(note 73 62 74 6 NOTE_INSN_EPILOGUE_BEG)
+
+(insn 74 73 75 6 (parallel [
+            (set (reg/f:DI 7 sp)
+                (plus:DI (reg/f:DI 6 bp)
+                    (const_int 8 [0x8])))
+            (set (reg/f:DI 6 bp)
+                (mem:DI (reg/f:DI 6 bp) [0 S8 A8]))
+            (clobber (mem:BLK (scratch) [0 A8]))
+        ]) -1 (nil)
+    (nil))
+
+(jump_insn 75 74 76 6 (return) -1 (nil)
+    (nil))
+;; End of basic block 6, registers live:
+ 0 [ax] 6 [bp] 7 [sp] 16 [argp] 20 [frame]
+
+(barrier 76 75 66)
+
+(note 66 76 0 NOTE_INSN_DELETED)
+
