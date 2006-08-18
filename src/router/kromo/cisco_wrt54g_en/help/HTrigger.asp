@@ -10,7 +10,7 @@
 			<h2>Port Triggering</h2>
 			<dl>
 				<dd>Port Triggering allows you to do port forwarding without setting a fixed PC. By setting Port Triggering rules, you can allow inbound traffic to arrive at a specific LAN host, using ports different than those used for the outbound traffic. This is called port triggering since the outbound traffic triggers to which ports inbound traffic is directed.<br /><br />
-					If you want to forward ports to a PC with a static IP address, see <a href="HForward.asp">Port Forwarding</a> or <a href="Forward_range.asp">Port Range Forwarding</a>.</dd>
+					If you want to forward ports to a PC with a static IP address, see <a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a> or <a href="Forward_range.asp">Port Range Forwarding</a>.</dd>
 				<dd>To add a new Port Triggering rule, click <i>Add</i> and fill in the fields below. To remove the last rule, click <i>Delete</i>.</dd>
 				<dt>Application</dt>
 				<dd>Enter the name of the application in the field provided.</dd>
@@ -31,9 +31,9 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HForward.asp">Port Forwarding</a></li>
-				<li><a href="HForwardRange.asp">Port Range Forwarding</a></li>
-				<li><a href="HDMZ.asp">DMZ</a></li>
+				<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
+				<li><a href="HForward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+				<li><a href="HDMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
 			</ul>
 		</div>
 	</body>

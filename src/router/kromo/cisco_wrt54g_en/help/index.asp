@@ -45,7 +45,7 @@
 				<dt><% tran("bmenu.applications"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HForwardRange.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+						<li><a href="HForward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
 						<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
 						<li><a href="HTrigger.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
 						<li><a href="HUPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>

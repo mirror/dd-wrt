@@ -36,8 +36,8 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HManagement.asp">Management</a></li>
-				<li><a href="HStatus.asp">Router Status</a></li>
+				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
+				<li><a href="HStatus.asp"><% tran("bmenu.statuRouter"); %></a></li>
 			</ul>
 		</div>
 	</body>
