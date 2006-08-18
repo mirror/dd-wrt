@@ -7,10 +7,10 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Access Restrictions</h2>
+			<h2><% tran("filter.h2"); %></h2>
 			<dl>
 				<dd>This screen allows you to block or allow specific kinds of Internet usage. You can set up Internet access policies for specific PCs and set up filters by using network port numbers.</dd>
-				<dt>Internet Access Policy</dt>
+				<dt><% tran("filter.legend"); %></dt>
 				<dd>This feature allows you to customize up to ten different Internet Access Policies for particular PCs, which are identified by their IP or MAC addresses. For each policy designated PCs, during the days and time periods specified.<br /><br />
 					To create or edit a policy, follow these instructions:
 					<ol class="wide">
@@ -27,7 +27,7 @@
 					</ol><br />
 					To delete an Internet Access Policy, select the policy number, and click the <i>Delete</i> button.
 				</dd>
-				<dt>Summary</dt>
+				<dt><% tran("sbutton.summary"); %></dt>
 				<dd>To see a summary of all the policies, click the <i>Summary</i> button. The Internet Policy Summary screen will show each policy's number, Policy Name, Days, and Time of Day. To delete a policy, click its box, and then click the <i>Delete</i> button. Click the <i>Close</i> button to return to the Filters screen.</dd>
 			</dl>
 		</div>
