@@ -7,14 +7,14 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Command Shell</h2>
+			<h2><% tran("diag.h2"); %></h2>
 			<dl>
 				<dd>You are able to run command lines directly via the Webinterface.</dd>
-				<dt>Commands</dt>
+				<dt><% tran("diag.legend"); %></dt>
 				<dd>Fill the text area with your command click <em>Run Commands</em> to submit.</dd>				
-				<dt>Save Startup</dt>
+				<dt><% tran("diag.startup"); %></dt>
 				<dd>You can save some command lines to be executed at startup's router. Fill the text area with commands (only one command by row) and click <em>Save Startup</em>.</dd>
-				<dt>Save Firewall</dt>
+				<dt><% tran("diag.firewall"); %></dt>
 				<dd>Each time the firewall is started, it can run some custom iptables instructions. Fill the text area with firewall's instructions (only one command by row) and click <em>Save Firewall</em>.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
