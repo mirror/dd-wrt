@@ -733,6 +733,10 @@ idx.dhcp_lease="Client Lease Tijd";
 idx.dhcp_dnsmasq="Gebruik DNSMasq voor DHCP";
 idx.dns_dnsmasq="Gebruik DNSMasq voor DNS";
 idx.auth_dnsmasq="DHCP-Authoritatie";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 
 

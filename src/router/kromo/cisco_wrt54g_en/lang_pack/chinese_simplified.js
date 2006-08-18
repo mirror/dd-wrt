@@ -735,6 +735,10 @@ idx.dhcp_lease="客户端租用时间";
 idx.dhcp_dnsmasq="为DHCP使用DNSMasq";
 idx.dns_dnsmasq="为DNS使用DNSMasq";
 idx.auth_dnsmasq="以DHCP为准";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 
 
