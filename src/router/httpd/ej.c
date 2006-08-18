@@ -1,4 +1,3 @@
-#define HAVE_NOTRANS 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,9 +7,11 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include "httpd.h"
+
 #ifdef CDEBUG
 #include <utils.h>
 #endif
+
 #ifndef CDEBUG
 #define cdebug(a)
 #endif
@@ -19,227 +20,7 @@ static char *get_arg (char *args, char **next);
 static void call (char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
-#ifndef HAVE_NOTRANS
-static char *lastlanguage = NULL;
-typedef struct
-{
-  char *original;
-  char *translation;
-} LANGUAGE;
-
-//#define DEBUGLOG 1
-
-#ifdef DEBUGLOG
-FILE *log;
-#define LOG(a) if (log!=NULL)fprintf(log,"%s\n",a); fflush(log);
-#else
-#define LOG(a)
-#endif
-
-
-static LANGUAGE **language = NULL;
-static unsigned int langcount = 0;
-static void
-StringStart (FILE * in)
-{
-  int b = 0;
-  while (b != '"')
-    {
-      b = getc (in);
-      if (b == '\\')
-	b = getc (in);
-      if (feof (in))
-	return;
-    }
-}
-
-static char *
-getFileString (FILE * in)
-{
-  char *buf;
-  int i, b;
-  buf = malloc (1024);
-  StringStart (in);
-  for (i = 0; i < 1024; i++)
-    {
-      b = getc (in);
-      if (b == EOF)
-	return NULL;
-      if (b == '\\')
-	{
-	  buf[i] = getc (in);
-	  continue;
-	}
-      if (b == '"')
-	{
-	  buf[i] = 0;
-	  buf = realloc (buf, strlen (buf) + 1);
-	  return buf;
-	}
-      buf[i] = b;
-    }
-  return buf;
-}
-
-#define LANG_PREFIX "/etc/langpack/"
-#define LANG_POSTFIX ".lang"
-
-
-void
-initLanguage ()
-{
-  int i;
-  char *fd;
-  char *original;
-  char *translate;
-  char *langstr;
-  LANGUAGE *desc;
-  FILE *in;
-  if (language != NULL)
-    return;
-  langcount = 0;
-  langstr = nvram_safe_get ("language");
-  LOG ("malloc");
-  fd =
-    (char *) malloc (strlen (LANG_PREFIX) + strlen (langstr) +
-		     strlen (LANG_POSTFIX) + 1);
-  sprintf (fd, "%s%s%s", LANG_PREFIX, langstr, LANG_POSTFIX);
-  LOG ("open");
-  LOG (fd);
-  in = fopen (fd, "rb");
-  if (in == NULL)
-    {
-      sprintf (fd, "/tmp/langpack/%s%s", langstr, LANG_POSTFIX);
-      in = fopen (fd, "rb");
-      if (in == NULL)
-	{
-	  free (fd);
-	  return;
-	}
-    }
-  free (fd);
-  LOG ("read desc");
-  while (1)
-    {
-      original = getFileString (in);
-      if (original == NULL)
-	break;
-      translate = getFileString (in);
-      desc = (LANGUAGE *) malloc (sizeof (LANGUAGE));
-      LOG ("entry");
-      LOG (original);
-      LOG (translate);
-      desc->original = original;
-      desc->translation = translate;
-//realloc space
-      language =
-	(LANGUAGE **) realloc (language,
-			       sizeof (struct LANGUAGE **) * (langcount + 2));
-      language[langcount++] = desc;
-      language[langcount] = NULL;
-    }
-  fclose (in);
-
-}
-
-
-static char *
-searchS (char *str, char *s)
-{
-
-
-  int s_len = strlen (str);
-  int f_len = strlen (s);
-  int i;
-  int len = s_len - f_len;
-  int a = 0;
-  for (i = 0; i < len; i++)
-    {
-      if (str[i] == s[a])
-	{
-	  a++;
-	  if (a == f_len)
-	    {
-	      a--;
-	      return (char *) &str[i - a];
-	    }
-	}
-      else
-	a = 0;
-    }
-  return NULL;
-}
-
-char *
-translatePage (char *buffer)
-{
-  char *dest;
-  long len;
-  char *search;
-  char *replace;
-  int i, a, z, sl, rl;
-  LOG ("translate");
-  len = strlen (buffer) + 1;
-  for (a = 0; a < langcount; a++)
-    {
-      search = language[a]->original;
-      replace = language[a]->translation;
-      char *cp = searchS (buffer, search);
-      if (cp == NULL)
-	continue;
-      int pnt = cp - buffer;
-      sl = strlen (search);
-      rl = strlen (replace);
-      int diff = rl - sl;
-      if (diff > 0)
-	{
-	  buffer = realloc (buffer, len + diff);	// remalloc space
-	  memmove (&buffer[pnt + rl], &buffer[pnt + sl], (len - pnt) - sl);
-	  memcpy (cp, replace, rl);
-	  len = strlen (buffer) + 1;
-	}
-      if (diff < 0)
-	{
-	  memcpy (cp, replace, rl);	// replace string
-	  memmove (&buffer[pnt + rl], &buffer[pnt + sl], (len - pnt) - sl);
-	  buffer = realloc (buffer, len + diff);	// remalloc space
-	  len = strlen (buffer) + 1;
-	}
-      if (diff == 0)
-	{
-	  memcpy (cp, replace, rl);
-	}
-      /*
-         for (i=0;i<len-sl;i++)
-         {
-         for (z=0;z<sl;z++)
-         {
-         if (search[z]!=buffer[i+z])break;
-         }
-         if (z==sl)
-         {
-         //LOG("replace");
-         //LOG(search);
-         //LOG(replace);
-         dest = (char*)malloc(len-sl+rl+1+PATTERN_BUFFER);
-         for (z=0;z<i;z++)dest[z] = buffer[z];
-         for (z=i;z<i+rl;z++) dest[z] = replace[z-i];
-         for (z=i+sl;z<len;z++) dest[z-sl+rl] = buffer[z];
-         dest[z-sl+rl]=0;
-         free(buffer);
-         buffer = dest;
-         len=strlen(buffer);
-         i-=sl; //fix for translation crashes
-         i+=rl;
-         }
-         } */
-    }
-  LOG ("write");
-  return buffer;
-}
-#else
-#define LOG(a)
-#endif
+#define LOG(a)			//fprintf(stderr,"%s\n",a);
 
 
 char *
@@ -331,8 +112,8 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
 
 
 
-static void
-do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
+void
+do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 {
 
   int c;
@@ -342,28 +123,9 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
   int filecount = 0;
 
   cdebug ("do_ej_buffer2 entry");
-#ifndef HAVE_NOTRANS
-  initLanguage ();
-  if (language == NULL)
-    {
-      LOG ("no lang defined");
-      if (buffer == NULL)
-	return;
-      filebuffer = buffer;
-    }
-  else
-    {
-      LOG ("translate");
-      filebuffer = translatePage (buffer);
-      if (filebuffer == NULL)
-	filebuffer = "file not found!";
-      LOG ("ready");
-    }
-#else
   if (buffer == NULL)
     return;
   filebuffer = buffer;
-#endif
   LOG ("alloc");
   pattern = (char *) malloc (PATTERN_BUFFER + 1);
   LOG ("parse");
@@ -379,7 +141,7 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
 
       /* Look for <% ... */
-      //LOG("look start");
+//      LOG("look start");
       if (!asp && !strncmp (pattern, "<%", len))
 	{
 	  if (len == 2)
@@ -388,7 +150,7 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 	}
 
       /* Look for ... %> */
-      //LOG("look end");
+//      LOG("look end");
       if (asp)
 	{
 	  if (unqstrstr (asp, "%>"))
@@ -402,14 +164,14 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
-//                                      LOG("exec");
-//                                      LOG(func);
+		  LOG ("exec");
+		  LOG (func);
 		  //      cdebug(func);
-		        cprintf("Call %s\n",func);
+		  //("Call %s\n",func);
 		  call (func, stream);
-		        cprintf("Return %s okay\n",func);
+		  //cprintf("Return %s okay\n",func);
 		  //      cdebug(func);
-//                                      LOG("return");
+		  LOG ("return");
 		}
 	      asp = NULL;
 	      len = 0;
@@ -424,64 +186,80 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       len = 0;
     }
   free (pattern);
-#ifndef HAVE_NOTRANS
-  if (language != NULL)
-    free (filebuffer);
-#endif
   cdebug ("do_ej_buffer2 leave");
 }
 
-void
-do_ej_buffer (char *buffer, webs_t stream)
-{
-  char *b;
-  int i, len;
-  cdebug ("do_ej_buffer entry");
-  if (buffer == NULL)
-    return;
-#ifdef DEBUGLOG
-  if (log == NULL)
-    log = fopen ("/tmp/log.tmp", "wb");
-#endif
-  LOG ("copy stuff");
-  len = strlen (buffer);
-  b = malloc (len + 1);
-  for (i = 0; i < len; i++)
-    b[i] = buffer[i];
-  b[len] = 0;
-  LOG ("send to do_ej");
-  do_ej_buffer2 (b, stream);
-  LOG ("free buffer space");
-#ifndef HAVE_NOTRANS
-  if (language == NULL)
-    free (b);
-#else
-  free (b);
-#endif
-#ifdef DEBUGLOG
-  fclose (log);
-  log = NULL;
-#endif
-  cdebug ("do_ej_buffer leave");
-
-}
 
 #ifdef HAVE_VFS
 #include <vfs.h>
 #endif
 
+#define WEBS_PAGE_ROM
+
+/*typedef struct {
+char *name;
+char *data
+int len;
+} websRomPageIndex;
+*/
+typedef struct
+{
+  char *path;			/* Web page URL path */
+  unsigned char *page;		/* Web page data */
+  int size;			/* Size of web page in bytes */
+  int pos;			/* Current read position */
+} websRomPageIndexType;
+
+#include "html.c"
+char *
+getWebsFile (char *path)
+{
+  char *buf = NULL;
+  int i = 0;
+//fprintf(stderr,"getWebsFile1 %s\n",path);
+  while (websRomPageIndex[i].path != NULL)
+    {
+      if (!strcmp (websRomPageIndex[i].path, path))
+	{
+	  buf = websRomPageIndex[i].page;
+	  break;
+	}
+      i++;
+    }
+//fprintf(stderr,"getWebsFile %s\n",path);
+
+  return buf;
+}
+
+int
+getWebsFileLen (char *path)
+{
+  int len = 0;
+  int i = 0;
+//fprintf(stderr,"getWebsFileLen1 %s\n",path);
+  while (websRomPageIndex[i].path != NULL)
+    {
+      if (!strcmp (websRomPageIndex[i].path, path))
+	{
+	  len = websRomPageIndex[i].size;
+	  break;
+	}
+      i++;
+    }
+//fprintf(stderr,"getWebsFileLen %s %d\n",path,len);
+  return len;
+}
 
 static void
-do_ej_one (char *path, webs_t stream,int x)	// jimmy, https, 8/4/2003
+do_ej_one (char *path, webs_t stream, int x)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
 
-  char *buffer;
+  char *buffer = NULL;
 #ifdef HAVE_VFS
   entry *e;
 #endif
-  FILE *in;
   int len;
   int i;
   cdebug ("do_ej entry");
@@ -495,30 +273,48 @@ do_ej_one (char *path, webs_t stream,int x)	// jimmy, https, 8/4/2003
   if (e == NULL)
     {
 #endif
-
-      in = fopen (path, "rb");
-      if (in == NULL)
-	return;
-      fseek (in, 0, SEEK_END);
-      len = ftell (in);
-      rewind (in);
-      buffer = (char *) malloc (len + 1 + PATTERN_BUFFER);
-      fread (buffer, 1, len, in);
-      if (x)
-      {
-      for (i = 0;i<len;i++)
-        buffer[i]^='d';
-      char b;
-      for (i = 0;i<len/2;i++)
+      i = 0;
+      len = 0;
+      while (websRomPageIndex[i].path != NULL)
+	{
+//fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
+	  if (!strcmp (websRomPageIndex[i].path, path))
+	    {
+	      buffer = websRomPageIndex[i].page;
+	      len = websRomPageIndex[i].size;
+	      break;
+	    }
+	  i++;
+	}
+      int le = 0;
+      if (buffer == NULL)
+	{
+	  le = 1;
+	  FILE *in = fopen (path, "rb");
+	  if (in == NULL)
+	    return;
+	  fseek (in, 0, SEEK_END);
+	  len = ftell (in);
+	  rewind (in);
+	  buffer = (char *) malloc (len + 1);
+	  fread (buffer, 1, len, in);
+	  buffer[len] = 0;
+	  fclose (in);
+	}
+      /*if (x)
          {
-	 b = buffer[i];
-	 buffer[i]=buffer[(len-1)-i];
-	 buffer[(len-1)-i]=b;
-	 }
-      }
-      for (i = len; i < len + PATTERN_BUFFER; i++)
-	buffer[i] = 0;
-      fclose (in);
+         for (i = 0;i<len;i++)
+         buffer[i]^='d';
+         char b;
+         for (i = 0;i<len/2;i++)
+         {
+         b = buffer[i];
+         buffer[i]=buffer[(len-1)-i];
+         buffer[(len-1)-i]=b;
+         }
+         } */
+
+
 #ifdef HAVE_VFS
     }
   else
@@ -538,16 +334,12 @@ do_ej_one (char *path, webs_t stream,int x)	// jimmy, https, 8/4/2003
 
 
 //do_ej
-  do_ej_buffer2 (buffer, stream);
+//fprintf(stderr,"do_ej_buffer\n");
 
-
-
-#ifndef HAVE_NOTRANS
-  if (language == NULL)
+  do_ej_buffer (buffer, stream);
+//fprintf(stderr,"do_ej_buffer done\n");
+  if (le)
     free (buffer);
-#else
-  free (buffer);
-#endif
   cdebug ("do_ej leave");
 }
 
@@ -581,13 +373,15 @@ ejArgs (int argc, char **argv, char *fmt, ...)
 
   return arg;
 }
+
 void
 do_ej_two (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
-do_ej_one (path,stream,0);	// jimmy, https, 8/4/2003
+  do_ej_one (path, stream, 0);	// jimmy, https, 8/4/2003
 }
+
 void
 do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
-do_ej_one (path,stream,1);	// jimmy, https, 8/4/2003
+  do_ej_one (path, stream, 1);	// jimmy, https, 8/4/2003
 }

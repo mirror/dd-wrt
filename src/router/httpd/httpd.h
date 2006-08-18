@@ -120,6 +120,9 @@ extern char *websGetVar(webs_t wp, char *var, char *d);
 extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
+extern char *getWebsFile(char *path);
+extern int getWebsFileLen(char *path);
+
 extern void do_ej(char *path, webs_t stream);
 extern void do_ej_two(char *path, webs_t stream);
 extern void do_ej_buffer(char *buffer, webs_t stream);
