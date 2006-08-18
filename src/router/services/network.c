@@ -555,6 +555,9 @@ if (nvram_match("wl0_mode","infra"))
     eval("wl","infra","0");
     eval("wl","ssid",nvram_safe_get("wl0_ssid"));
     }
+#ifdef HAVE_MSSID
+eval("wl", "vlan_mode", "0");
+#endif
   return ret;
 
 }
@@ -1182,6 +1185,9 @@ start_lan (void)
     eval ("/usr/sbin/ip", "ro", "add", "default", "via",
 	  nvram_safe_get ("lan_gateway"), "dev", "br0");
 
+#ifdef HAVE_MSSID
+eval("wl", "vlan_mode", "0");
+#endif
   /* Bring up local host interface */
   config_loopback ();
 
