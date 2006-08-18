@@ -12,7 +12,7 @@
 		<div id="content">
 			<h2>Keep Alive</h2>
 			<dl>
-				<dt>Schedule Reboot</dt>
+				<dt><% tran("alive.legend"); %></dt>
 				<dd>You can schedule regular reboots for the router : 
 					<ul>
 						<li>Regularly after xxx seconds.</li>
@@ -22,9 +22,9 @@
 						<h4>Note</h4>
 						<div>For date based reboots Cron must be activated. See <a href="HManagement.asp">Management</a> for Cron activation.</div>
 					</div>
-					</dd>
-					<dt>WDS/Connection Watchdog</dt>
-					<dd></dd>
+				</dd>
+				<dt><% tran("alive.legend2"); %></dt>
+				<dd></dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
