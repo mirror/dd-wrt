@@ -24,7 +24,7 @@
 		<div class="also">
 			<h4>See also</h4>
 			<ul>
-				<li><a href="HDefault.asp">Factory Defaults</a></li>
+				<li><a href="HDefault.asp"><% tran("bmenu.adminFactory"); %></a></li>
 			</ul>
 		</div>
 	</body>
