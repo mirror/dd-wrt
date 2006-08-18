@@ -247,7 +247,7 @@ addEvent(window, "load", function() {
                         </div>
 
                         <div class="setting">
-                          <select name="wl_wds10_enable" size="1" onChange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
+                          <select name="wl_wds10_enable" size="1" onchange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
                             <script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>>" + share.disable + "</option>");</script>
                             <script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>>" + share.point2point + "</option>");</script>
                             <% show_wds_subnet(10); %>

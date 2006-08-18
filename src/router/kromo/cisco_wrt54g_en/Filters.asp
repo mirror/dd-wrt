@@ -247,7 +247,7 @@ function setBlockedServicesValue() {
 	}
 }
 
-function onChange_blockedServices(index, start, end) {
+function onchange_blockedServices(index, start, end) {
 	index--
 	if(index == -1) {
 		start.value = '';
@@ -387,7 +387,7 @@ function Status(F,I) {
 											<td align="center"><% tran("share.sat_s"); %></td>
 										</tr>
 										<tr>
-											<td align="center"><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="day_all" onclick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
 											<td align="center"><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
 											<td align="center"><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
 											<td align="center"><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
@@ -429,28 +429,28 @@ function Status(F,I) {
   									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
-									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
+									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">write_service_options(servport_name0);</script>
 									</select>
 									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<select size="1" name="blocked_service1" onchange="onChange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
+									<select size="1" name="blocked_service1" onchange="onchange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">write_service_options(servport_name1);</script>
 									</select>
 									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<select size="1" name="blocked_service2" onchange="onChange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
+									<select size="1" name="blocked_service2" onchange="onchange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">write_service_options(servport_name2);</script>
 									</select>
 										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<select size="1" name="blocked_service3" onchange="onChange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
+									<select size="1" name="blocked_service3" onchange="onchange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">write_service_options(servport_name3);</script>
 									</select>
