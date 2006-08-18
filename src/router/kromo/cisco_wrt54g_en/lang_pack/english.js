@@ -763,10 +763,10 @@ idx.dhcp_lease="Client Lease Time";
 idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
 idx.dns_dnsmasq="Use DNSMasq for DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
-summt.opt1="none";
-summt.opt2="first Sun Apr - last Sun Oct";
-summt.opt3="last Sun Mar - last Sun Oct";
-summt.opt4="last Sun Oct - last Sun Mar";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
 
 
 
