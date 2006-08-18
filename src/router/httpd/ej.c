@@ -250,8 +250,8 @@ getWebsFileLen (char *path)
   return len;
 }
 
-static void
-do_ej_one (char *path, webs_t stream, int x)	// jimmy, https, 8/4/2003
+void
+do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 {
 
 //open file and read into memory
@@ -372,16 +372,4 @@ ejArgs (int argc, char **argv, char *fmt, ...)
   va_end (ap);
 
   return arg;
-}
-
-void
-do_ej_two (char *path, webs_t stream)	// jimmy, https, 8/4/2003
-{
-  do_ej_one (path, stream, 0);	// jimmy, https, 8/4/2003
-}
-
-void
-do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
-{
-  do_ej_one (path, stream, 1);	// jimmy, https, 8/4/2003
 }

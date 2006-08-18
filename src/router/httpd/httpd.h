@@ -124,7 +124,6 @@ extern char *getWebsFile(char *path);
 extern int getWebsFileLen(char *path);
 
 extern void do_ej(char *path, webs_t stream);
-extern void do_ej_two(char *path, webs_t stream);
 extern void do_ej_buffer(char *buffer, webs_t stream);
 int do_auth (char *userid, char *passwd, char *realm);
 void Initnvramtab (void);

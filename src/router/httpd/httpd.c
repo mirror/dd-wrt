@@ -858,7 +858,7 @@ handle_request (void)
 	  return;
 	}
 
-      do_ej_two ("/tmp/shellout.asp", conn_fp);
+      do_ej("/tmp/shellout.asp", conn_fp);
       unlink ("/tmp/shellout.asp");
       unlink ("/tmp/exec.tmp");
       unlink ("/tmp/exec.query");
