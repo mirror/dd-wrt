@@ -9,71 +9,71 @@
 		<div id="content">
 			<h2>Index</h2>
 			<dl>
-				<dt>Setup</dt>
+				<dt><% tran("pforward.app"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HSetup.asp">Basic Setup</a></li>
-						<li><a href="HDDNS.asp">Dynamic DNS (DDNS)</a></li>
-						<li><a href="HMAC.asp">MAC Address Cloning</a></li>
-						<li><a href="HRouting.asp">Advanced Routing</a></li>
+						<li><a href="HSetup.asp"><% tran("bmenu.setupbasic"); %></a></li>
+						<li><a href="HDDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
+						<li><a href="HMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+						<li><a href="HRouting.asp"><% tran("bmenu.setuprouting"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Wireless</dt>
+				<dt><% tran("bmenu.wireless"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HWireless.asp">Wireless Settings</a></li>
-						<li><a href="Hradauth.asp">Radius Authentification</a></li>
-						<li><a href="HWPA.asp">Wireless Security</a></li>
-						<li><a href="HWirelessMAC.asp">Wireless MAC Filter</a></li>
-						<li><a href="HWirelessAdvanced.asp">Advanced Settings</a></li>
-						<li><a href="HWDS.asp">WDS</a></li>
+						<li><a href="HWireless.asp"><% tran("bmenu.wirelessBasic"); %></a></li>
+						<li><a href="Hradauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
+						<li><a href="HWPA.asp"><% tran("bmenu.wirelessSecurity"); %></a></li>
+						<li><a href="HWirelessMAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
+						<li><a href="HWirelessAdvanced.asp"><% tran("bmenu.wirelessAdvanced"); %></a></li>
+						<li><a href="HWDS.asp"><% tran("bmenu.wirelessWds"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Security</dt>
+				<dt><% tran("bmenu.security"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HFirewall.asp">Firewall</a></li>
-						<li><a href="HVPN.asp">VPN Passthrough</a></li>
+						<li><a href="HFirewall.asp"><% tran("bmenu.firwall"); %></a></li>
+						<li><a href="HVPN.asp"><% tran("bmenu.vpn"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Access Restrictions</dt>
+				<dt><% tran("bmenu.accrestriction"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HFilters.asp">Internet Access</a></li>
+						<li><a href="HFilters.asp"><% tran("bmenu.webaccess"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Applications & Gaming</dt>
+				<dt><% tran("bmenu.applications"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HForwardRange.asp">Port Range Forwarding</a></li>
-						<li><a href="HForward.asp">Port Forwarding</a></li>
-						<li><a href="HTrigger.asp">Port Triggering</a></li>
-						<li><a href="HDMZ.asp">DMZ</a></li>
-						<li><a href="HUPnP.asp">UPnP</a></li>
-						<li><a href="HQos.asp">Quality of Service (QoS)</a></li>
+						<li><a href="HForwardRange.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+						<li><a href="HForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
+						<li><a href="HTrigger.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
+						<li><a href="HUPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
+						<li><a href="HDMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
+						<li><a href="HQos.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Administration</dt>
+				<dt><% tran("bmenu.admin"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HManagement.asp">Management</a></li>
-						<li><a href="HHotspot.asp">Hotspot</a></li>
-						<li><a href="HServices.asp">Services</a></li>
-						<li><a href="HAlive.asp">Keep Alive</a></li>
-						<li><a href="HLog.asp">Log</a></li>
-						<li><a href="HDiagnostics.asp">Diagnostics</a></li>
-						<li><a href="HWol.asp">Wake On LAN</a></li>
-						<li><a href="HDefault.asp">Factory Defaults</a></li>
-						<li><a href="HUpgrade.asp">Firmware Upgrade</a></li>
-						<li><a href="HBackup.asp">Backup</a></li>
+						<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
+						<li><a href="HHotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+						<li><a href="HServices.asp"><% tran("bmenu.adminServices"); %></a></li>
+						<li><a href="HAlive.asp"><% tran("bmenu.adminAlive"); %></a></li>
+						<li><a href="HLog.asp"><% tran("bmenu.adminLog"); %></a></li>
+						<li><a href="HDiagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
+						<li><a href="HWol.asp"><% tran("bmenu.adminWol"); %></a></li>
+						<li><a href="HDefault.asp"><% tran("bmenu.adminFactory"); %></a></li>
+						<li><a href="HUpgrade.asp"><% tran("bmenu.adminUpgrade"); %></a></li>
+						<li><a href="HBackup.asp"><% tran("bmenu.adminBackup"); %></a></li>
 					</ul>
 				</dd>
-				<dt>Status</dt>
+				<dt><% tran("bmenu.statu"); %></dt>
 				<dd>
 					<ul>
-						<li><a href="HStatus.asp">Router</a></li>
-						<li><a href="HStatusLan.asp">LAN</a></li>
-						<li><a href="HStatusWireless.asp">Wireless</a></li>
+						<li><a href="HStatus.asp"><% tran("bmenu.statuRouter"); %></a></li>
+						<li><a href="HStatusLan.asp"><% tran("bmenu.statuLAN"); %></a></li>
+						<li><a href="HStatusWireless.asp"><% tran("bmenu.statuWLAN"); %></a></li>
 					</ul>
 				</dd>
 				<dt>Online / DD-WRT Community</dt>
