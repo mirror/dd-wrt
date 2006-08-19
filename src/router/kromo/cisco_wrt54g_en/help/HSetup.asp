@@ -30,7 +30,7 @@
 					These types can be selected from the drop-down menu next to <i>Internet Connection</i>. The information required and available features will differ depending on what kind of connection type you select.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
-						<div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help button, and read about the <a href="HMAC.asp">MAC Address Cloning</a> feature.</div>
+						<div>Some cable providers require a specific MAC address for connection to the Internet. To learn more about this, click the System tab. Then click the Help button, and read about the <a href="HWanMAC.asp">MAC Address Cloning</a> feature.</div>
 					</div>
 				</dd>
 				<dt>Internet IP Address and Subnet Mask</dt>
@@ -67,9 +67,9 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HMAC.asp">MAC Address Cloning</a></li>
+				<li><a href="HWanMAC.asp">MAC Address Cloning</a></li>
 				<li><a href="HManagement.asp">Management</a></li>
 				<li><a href="HStatus.asp">Router Status</a></li>
 			</ul>

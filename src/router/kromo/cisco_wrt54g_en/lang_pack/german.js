@@ -640,6 +640,7 @@ hotspot.nocat_port="Ports ausschlieﬂen";
 hotspot.nocat_timeout="Login-Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Nur Routen";
+hotspot.nocat_MAClist="MAC White List";
 hotspot.smtp_legend="SMTP-Umleitung";
 hotspot.smtp_srv="SMTP-Umleitung";
 hotspot.smtp_ip="SMTP-Ziel-IP";
