@@ -9,7 +9,19 @@
 		<div id="content">
 			<h2>Services</h2>
 			<dl>
-				<dt>DNS Masq</dt>
+				
+				<dt><% tran("service.dhcp_legend2"); %></dt>
+				<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.
+					<ul class="wide">
+						<li>DHCPd &ndash; Disabling here will disable DHCPd on this router irrespective of the settings on the Setup screen.</li>
+						<li>Used domain &ndash; You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li>
+						<li>LAN Domain &ndash; You can define here your local LAN domain which is used as local domain for DNSmasq and DHCP service if chosen above.</li>
+						<li>Static allocations &ndash; If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (DNSmasq).</li>
+					</ul><br/>
+					There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.
+				</dd>
+				
+				<dt><% tran("service.dnsmasq_legend"); %></dt>
 				<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <em>Local DNS</em> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.<br/>
 				There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example : <br/>
 					<ul>
@@ -24,24 +36,15 @@
 					</div>
 				</dd>
 				
-				<dt>DHCP Server</dt>
-				<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.
-					<ul class="wide">
-						<li>DHCPd &ndash; Disabling here will disable DHCPd on this router irrespective of the settings on the Setup screen.</li>
-						<li>Used domain &ndash; You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li>
-						<li>LAN Domain &ndash; You can define here your local LAN domain which is used as local domain for DNSmasq and DHCP service if chosen above.</li>
-						<li>Static allocations &ndash; If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (DNSmasq).</li>
-					</ul><br/>
-					There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.
-				</dd>
-				<dt>XBOX Kaid</dt>
+				<dt><% tran("service.kaid_legend"); %></dt>
 				<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with ";".<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
 						<div>Xbox must be connected directly via one of the Ethernet ports of the router.</div>
 					</div>
 				</dd>
-				<dt>PPTP</dt>
+				
+				<dt><% tran("service.pptp_legend"); %></dt>
 				<dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access you LAN at home remotely.
 					<ul class="wide">
 						<li>Server IP &ndash; The IP address of your router</li>
@@ -49,7 +52,8 @@
 						<li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd man page.</li>
 					</ul>
 				</dd>
-				<dt>PPTP Client</dt>
+				
+				<dt><% tran("service.pptpd_legend"); %></dt>
 				<dd>A VPN Client that enable you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.
 					<ul class="wide">
 						<li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li>
@@ -63,7 +67,7 @@
 					</ul>
 				</dd>
 
-				<dt>RFlow / MACupd</dt>
+				<dt><% tran("service.rflow_legend"); %></dt>
 				<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br/>
 					<ul class="wide">
 						<li>RFlow Default port is 2055</li>
@@ -76,7 +80,8 @@
 						<div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div>
 					</div>
 				 </dd>
-				<dt>Secure Shell</dt>
+				
+				<dt><% tran("service.ssh_legend"); %></dt>
 				<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).
 					<ul class="wide">
 						<li>Password login &ndash; allow login with the router password (username is <tt>root</tt>)</li>
@@ -84,9 +89,11 @@
 						<li>Authorized Keys &ndash; here you paste your public keys to enable key-based login (more secure than a simple password)</li>
 					</ul>
 				</dd>
-				<dt>System Log</dt>
+				
+				<dt><% tran("service.syslog_legend"); %></dt>
 				<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file /var/log/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>
-				<dt>Telnet</dt>
+				
+				<dt><% tran("service.telnet_legend"); %></dt>
 				<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
@@ -99,8 +106,8 @@
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HSetup.asp">Setup</a></li>
-				<li><a href="HManagement.asp">Management</a></li>
+				<li><a href="HSetup.asp"><% tran("bmenu.setupbasic"); %></a></li>
+				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
 			</ul>
 		</div>
 	</body>
