@@ -897,6 +897,7 @@ management.lang_czech="czech";
 management.lang_dutch="dutch";
 management.lang_portuguese_braz="portuguese (brazilian)";
 management.lang_english="english";
+management.lang_polish="polish";
 management.lang_french="french";
 management.lang_german="german";
 management.lang_italian="italian";
