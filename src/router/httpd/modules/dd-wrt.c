@@ -101,7 +101,7 @@ ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
   websWrite (wp,
-	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disable + \"</option>\");</script>\n",
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");</script>\n",
 	     nvram_selmatch (wp, "wan_proto",
 			     "disabled") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
