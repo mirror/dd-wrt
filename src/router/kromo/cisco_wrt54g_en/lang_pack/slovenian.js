@@ -1133,7 +1133,7 @@ status_router.h22="Medmre¾je";
 status_router.legend5="Naèin povezave";
 status_router.www_login="Naèin prijave";
 status_router.www_loginstatus="Status prijave";
-status_router.leasetime="Remaining Lease Time";
+status_router.leasetime="Preostali èas zakupa";
 
 //help container
 
