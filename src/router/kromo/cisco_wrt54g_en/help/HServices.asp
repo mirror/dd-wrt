@@ -9,6 +9,21 @@
 		<div id="content">
 			<h2>Services</h2>
 			<dl>
+				<dt>DNS Masq</dt>
+				<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <em>Local DNS</em> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.<br/>
+				There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example : <br/>
+					<ul>
+						<li>static allocation : dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li>
+						<li>max lease number : dhcp-lease-max=2</li>
+						<li>DHCP server IP range : dhcp-range=192.168.0.110,192.168.0.111,12h</li>
+					</ul>
+				<br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br/>The complete list of available options : <a href="http://thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html" target="_new">DNSMasq man</a>.</div>
+					</div>
+				</dd>
+				
 				<dt>DHCP Server</dt>
 				<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.
 					<ul class="wide">
@@ -82,7 +97,7 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HSetup.asp">Setup</a></li>
 				<li><a href="HManagement.asp">Management</a></li>

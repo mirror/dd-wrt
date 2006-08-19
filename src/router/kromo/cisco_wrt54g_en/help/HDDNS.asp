@@ -34,7 +34,7 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
 				<li><a href="HStatus.asp"><% tran("bmenu.statuRouter"); %></a></li>

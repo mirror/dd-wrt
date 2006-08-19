@@ -639,6 +639,7 @@ hotspot.nocat_port="Verbied Poort";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Enkel Route";
+hotspot.nocat_MAClist="MAC White List";
 hotspot.smtp_legend="SMTP Redirect";
 hotspot.smtp_srv="SMTP Redirect";
 hotspot.smtp_ip="SMTP Destinatie IP";

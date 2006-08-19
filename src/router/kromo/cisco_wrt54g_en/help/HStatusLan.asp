@@ -23,7 +23,7 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HLog.asp">Log</a></li>
 				<li><a href="HStatus.asp">Router Status</a></li>

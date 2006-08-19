@@ -7,22 +7,26 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Quality of Service (QoS)</h2>
+			<h2><% tran("qos.h2"); %></h2>
 			<dl>
 				<dd>Bandwidth management prioritizes the traffic on your router. Interactive traffic (telephony, browsing, telnet, etc.) gets priority and bulk traffic (file transfer, P2P) gets low priority. The main goal is to allow both types to live side-by side without unimportant trafic disturbing more critical things. All of this is more or less automatic.<br /><br />
 					QoS allows control of the bandwidth allocation to different services, netmasks, MAC addresses and the four LAN ports. QoS is divided into four bandwidth classes called Premium, Express, Standard, and Bulk. Unclassified services will use the Standard bandwidth class.</dd>
-				<dt>Port</dt>
+				
+				<dt><% tran("share.port"); %></dt>
 				<dd>You must choose whether to apply bandwidth limits to the WAN device or the LAN &amp; wireless LAN device. (The LAN and wireless LAN ports are bonded internally into a single virtual device).</dd>
-				<dt>Packet Scheduler</dt>
+				
+				<dt><% tran("qos.type"); %></dt>
 				<dd>
 					<ul class="wide">
 						<li>HFSC - Hierarchical Fair Service Curve. Queues attached to an interface build a tree, thus each queue can have further child queues. Each queue can have a priority and a bandwidth assigned. Priority mainly controls the time packets take to get sent out, while bandwidth has primarily effects on throughput. </li>
 						<li>HTB - Hierarchical Token Bucket, it is a faster replacement for the CBQ qdisc in Linux. HTB helps in controlling the use of the outbound bandwidth on a given link. HTB allows you to use one physical link to simulate several slower links and to send different kinds of traffic on different simulated links. In both cases, you have to specify how to divide the physical link into simulated links and how to decide which simulated link to use for a given packet to be sent. In other words, HTB is useful for limiting a client's download/upload rates, thereby preventing his monopolization of the available bandwidth.</li>
 					</ul>
 				</dd>
-				<dt>Uplink / Downlink</dt>
+				
+				<dt><% tran("qos.uplink"); %> / <% tran("qos.dnlink"); %></dt>
 				<dd>In order to use bandwidth management (QoS) you must enter bandwidth values for your uplink and downlink. These are generally 80% to 90% of your maximum bandwidth. </dd>
-				<dt>Classification</td>
+				
+				<dt><% tran("share.priority"); %></td>
 				<dd>Bandwidth classification based on the four categories will be enabled first on the hardware ports, then on MAC addresses, then netmasks and finally services. For example, if you enable classification based on a MAC address, this will override netmask and service classifications. However, the LAN port based classification will work together with MAC, netmask and service classifications, and will not override them.
 					<ul class="wide">
 						<li>Exempt - This class tries to keep the bandwith and packet flow untouched.</li>
