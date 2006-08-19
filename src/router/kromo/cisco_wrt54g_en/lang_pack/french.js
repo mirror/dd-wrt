@@ -739,10 +739,10 @@ idx.dhcp_lease="Durée de connexion du client";
 idx.dhcp_dnsmasq="Utiliser DNSMasq pour DHCP";
 idx.dns_dnsmasq="Utiliser DNSMasq pour DNS";
 idx.auth_dnsmasq="Autorité DHCP";
-idx.summt_opt1="none";
-idx.summt_opt2="first Sun Apr - last Sun Oct";
-idx.summt_opt3="last Sun Mar - last Sun Oct";
-idx.summt_opt4="last Sun Oct - last Sun Mar";
+idx.summt_opt1="Aucun";
+idx.summt_opt2="Premier Dim. Avril - Dernier Dim. Octobre";
+idx.summt_opt3="Dernier Dim. Mars - Dernier Dim. Octobre";
+idx.summt_opt4="Dernier Dim. Octobre - Dernier Dim. Mars";
 
 
 
@@ -877,7 +877,7 @@ management.lang_brazilian="brésilien";
 management.lang_slovenian="slovène";
 management.lang_spanish="espagnol";
 management.lang_swedish="suédois";
-management.lang_polish="polish";
+management.lang_polish="polonais";
 
 management.net_legend="Filtrage IP (modifier pour une utilisation P2P)";
 management.net_port="Nombre de connexions maximum";
