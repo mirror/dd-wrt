@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Italian translation DD-WRT V23 SP1 by CoffeEbuyer 06/2006													//
+//				Italian translation DD-WRT V23 SP1 by CoffeEbuyer 06/2006					//													//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 lang_charset.set="iso-8859-1";
@@ -658,6 +658,8 @@ management.lang_brazilian="brazilian";
 management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
+management.lang_polish="polish";
+
 management.net_legend="Impostazioni Filtro IP (modificale per il P2P)";
 management.net_port="Max Porte";
 management.net_tcptimeout="TCP Timeout (in secondi)";
