@@ -300,7 +300,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div id="wan_dhcp">
 										<div class="setting">
-											<div class="label">Remaining Lease Time</div>
+											<div class="label"><% tran("status_router.leasetime"); %></div>
 											<span id="dhcp_remaining"><% dhcp_remaining_time(); %></span>&nbsp;
 										</div>
 										<div class="center">
