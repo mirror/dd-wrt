@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//		Traducción Española del archivo de referencia - DD-WRT V23 SP1 por SuperWebon 25/05/2006			//
+//		Traducción Española del archivo de referencia - DD-WRT V23 SP1 por SuperWebon 25/05/2006	//
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -870,6 +870,7 @@ management.lang_brazilian="Brasileño";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Español";
 management.lang_swedish="Sueco";
+management.lang_polish="polish";
 
 management.net_legend="Config Filtro IP (Ajustar para P2P)";
 management.net_port="Max Puertos";

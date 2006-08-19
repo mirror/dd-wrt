@@ -1,7 +1,9 @@
-
+//////////////////////////////////////////////////////////////////////////////////////////////
+//				Polish translation DD-WRT 													//
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 var lang_charset = new Object();
-lang_charset.set="iso-8859-1";
+lang_charset.set="iso-8859-2";
 var share = new Object();
 share.firmware="Firmware";
 share.time="Czas";
@@ -584,11 +586,17 @@ idx.dhcp_type="DHCP (typ)";
 idx.dhcp_srv="DHCP Serwer";
 idx.dhcp_fwd="DHCP Forwarder";
 idx.dhcp_start="Start Adresu IP";
-idx.dhcp_end="Koniec Adresu IP";		idx.dhcp_maxusers="Maksymalna Ilosc Klientow  DHCP";
+idx.dhcp_end="Koniec Adresu IP";
+idx.dhcp_maxusers="Maksymalna Ilosc Klientow  DHCP";
 idx.dhcp_lease="Czas dzierzawy DHCP";
 idx.dhcp_dnsmasq="DNSMasq dla DHCP";
 idx.dns_dnsmasq="DNSMasq dla DNS";
 idx.auth_dnsmasq="DHCP-Autorytatywny";
+idx.summt_opt1="none";
+idx.summt_opt2="first Sun Apr - last Sun Oct";
+idx.summt_opt3="last Sun Mar - last Sun Oct";
+idx.summt_opt4="last Sun Oct - last Sun Mar";
+
 var hidx = new Object();
 hidx.right2="To ustawienie jest nabardziej popularne podczas laczenia z ISP.";
 hidx.right4="Wpisz nazwe Uzytkownika podana przez twojego ISP.";
@@ -678,7 +686,7 @@ management.lang_croatian="croatian";
 management.lang_czech="czech";
 management.lang_dutch="dutch";
 management.lang_portuguese_braz="portuguese (brazilian)";
-management.lang_english="polski";
+management.lang_english="english";
 management.lang_polish="polski";
 management.lang_german="german";
 management.lang_italian="italian";

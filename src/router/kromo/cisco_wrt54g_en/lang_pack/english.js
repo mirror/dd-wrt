@@ -1,11 +1,3 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 //		English reference translation file - DD-WRT V23 SP1 by Botho 17/05/2006				//
 //////////////////////////////////////////////////////////////////////////////////////////////

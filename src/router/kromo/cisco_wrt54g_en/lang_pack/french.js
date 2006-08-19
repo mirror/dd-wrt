@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 17/05/2006															//
+//				French translation DD-WRT V23 SP1 by Botho 17/05/2006						//													//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -877,6 +877,7 @@ management.lang_brazilian="brésilien";
 management.lang_slovenian="slovène";
 management.lang_spanish="espagnol";
 management.lang_swedish="suédois";
+management.lang_polish="polish";
 
 management.net_legend="Filtrage IP (modifier pour une utilisation P2P)";
 management.net_port="Nombre de connexions maximum";
