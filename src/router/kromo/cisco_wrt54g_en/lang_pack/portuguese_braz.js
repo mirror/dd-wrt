@@ -1043,6 +1043,7 @@ status_router.h22="Internet";
 status_router.legend5="Tipo de Configuração";
 status_router.www_login="Tipo de Login";
 status_router.www_loginstatus="Status do Login";
+status_router.leasetime="Remaining Lease Time";
 
 hstatus_router.right2="Este é o nome específico do roteador, que pode ser configurado na aba <i>Configurações</i>.";
 hstatus_router.right4="Este é o Endereço MAC do roteador, visível para o seu ISP.";
