@@ -1200,6 +1200,10 @@ success.alert1="Sprawdz wszystko raz jeszcze zanim podłączysz sie ponownie:";
 success.alert2="Jezeli zmieniles adres&#39;s IP swojego routera, musisz pamietac, ze powinienee odwnowic adresy twoich klientow  w sieci.";
 success.alert3="Jezeli laczysz sie przez WLAN, prosze dolacz do sieci i nacisnij <em>Kontynucja</em>.";
 
+
+var donate = new Object();
+donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";
+
 var dhcp = new Object();
 dhcp.titl=" - Tablica Aktywnych IP (DHCP)";
 dhcp.h2="Tablica Aktywnych IP (DHCP)";
