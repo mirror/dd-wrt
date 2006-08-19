@@ -40,6 +40,10 @@ ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
 
+ifeq ($(CONFIG_SPUTNIK_APD),y)
+	cp sputnik/*.gif $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_3COM),y)
 	
 	mkdir $(INSTALLDIR)/www/style/3com
