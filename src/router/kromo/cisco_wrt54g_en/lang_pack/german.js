@@ -852,6 +852,7 @@ management.lang_english="Englisch";
 management.lang_portuguese_braz="Portugiesisch (Brasil.)";
 management.lang_french="Französisch";
 management.lang_german="Deutsch";
+management.lang_polish="Polnisch";
 management.lang_italian="Italienisch";
 management.lang_brazilian="Portugiesisch (Brasil.)";
 management.lang_slovenian="Slowenisch";
