@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//		Chinese (Traditional) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006			//
+//		Chinese (Traditional) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006	//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -865,6 +865,7 @@ management.lang_brazilian="brazilian（巴西語）";
 management.lang_slovenian="slovenian（斯洛文尼亞語）";
 management.lang_spanish="spanish（西班牙語）";
 management.lang_swedish="swedish（瑞典語）";
+management.lang_polish="polish";
 
 management.net_legend="IP過濾設置（為P2P調整這些設置）";
 management.net_port="最大埠數";

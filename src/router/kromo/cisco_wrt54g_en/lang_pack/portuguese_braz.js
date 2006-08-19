@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 16/06/2006								//
+//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 16/06/2006				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -821,6 +821,8 @@ management.lang_brazilian="Português (Brasil)";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
 management.lang_swedish="Sueco";
+management.lang_polish="polish";
+
 management.net_legend="Configurações do Filtro de IP (ajustes para P2P)";
 management.net_port="Número Máximo de Portas";
 management.net_tcptimeout="Timeout TCP (em segundos)";
