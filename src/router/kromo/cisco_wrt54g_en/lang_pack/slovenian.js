@@ -1,3 +1,6 @@
+//////////////////////////////////////////////////////////////////////////////////////////////
+//				Slovenian translation DD-WRT by Eko, last revision: 19.avg.2006				//
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
@@ -301,7 +304,7 @@ bmenu.accrestriction="Omejitve dostopa";
 bmenu.webaccess="Dostop do medmre¾ja";
 
 
-bmenu.applications="Programi &amp; Igre";
+bmenu.applications="Programi in igre";
 bmenu.applicationsprforwarding="Posredovanje obsega vrat";
 bmenu.applicationspforwarding="Posredovanje vrat";
 bmenu.applicationsptriggering="Pro¾enje vrat";
@@ -728,7 +731,7 @@ idx.dhcp_maxusers="Najveèje ¹t. DHCP uporabnikov";
 idx.dhcp_lease="Odjemalèev èas zakupa";
 idx.dhcp_dnsmasq="Uporabi DNSMasq za DHCP";
 idx.dns_dnsmasq="Uporabi DNSMasq za DNS";
-idx.auth_dnsmasq="DHCP-Oblastno";
+idx.auth_dnsmasq="DHCP-Avtoritativno";
 idx.summt_opt1="brez";
 idx.summt_opt2="prva ned. apr. - zadnja ned. okt.";
 idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
@@ -864,6 +867,7 @@ management.lang_brazilian="braziljska portugal¹èina";
 management.lang_slovenian="sloven¹èina";
 management.lang_spanish="¹pan¹èina";
 management.lang_swedish="¹ved¹èina";
+management.lang_polish="polj¹èina";
 
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_port="Najveèje ¹t. vrat";

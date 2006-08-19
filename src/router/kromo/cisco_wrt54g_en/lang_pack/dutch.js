@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006									//
+//		Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -868,6 +868,7 @@ management.lang_brazilian="brazilian";
 management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
+management.lang_polish="polish";
 
 management.net_legend="IP Filter Instellingen (Pas deze aan voor P2P)";
 management.net_port="Maximum Poorten";
