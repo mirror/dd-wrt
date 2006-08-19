@@ -20,7 +20,7 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HBackup.asp"><% tran("bmenu.adminBackup"); %></a></li>
 			</ul>

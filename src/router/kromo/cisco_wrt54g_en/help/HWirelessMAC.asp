@@ -9,7 +9,7 @@
 		<div id="content">
 			<h2>Wireless MAC Filter</h2>
 			<dl>
-				<dd>The Wireless MAC Filter allows you to control which wireless-equipped PCs may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from Windows-PCs, see <a href="HMAC.asp">MAC Address Cloning</a> for detailed instructions.</dd>
+				<dd>The Wireless MAC Filter allows you to control which wireless-equipped PCs may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from Windows-PCs, see <a href="HWanMAC.asp">MAC Address Cloning</a> for detailed instructions.</dd>
 				<dd>To set up a filter, click <i>Enable</i>, and follow these instructions:
 					<ol class="wide">
 						<li>If you want to block specific wireless-equipped PCs from communicating with the router, then keep the default setting, <i>Prevent PCs listed from accessing the wireless network</i>. If you want to allow specific wireless-equipped PCs to communicate with the router, then click the radio button next to <i>Permit only PCs listed to access the wireless network</i>.</li>
@@ -26,7 +26,7 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
 				<li><a href="HWireless.asp">Wireless Settings</a></li>
 				<li><a href="HWPA.asp">Wireless Security</a></li>

@@ -497,6 +497,7 @@ hotspot.nocat_port="Porte Escluse";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Dettagliato";
 hotspot.nocat_route="Unica Route";
+hotspot.nocat_MAClist="MAC White List";
 hotspot.smtp_legend="Redirezione SMTP";
 hotspot.smtp_srv="Redirezione SMTP";
 hotspot.smtp_ip="IP Destinazione SMTP";

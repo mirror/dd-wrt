@@ -7,10 +7,11 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>MAC Address Cloning</h2>
+			<h2><% tran("wanmac.h2"); %></h2>
 			<dl>
 				<dd>The router's MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd>
-				<dt>WAN MAC Address</dt>
+				
+				<dt><% tran("wanmac.legend"); %></dt>
 					<dd>To clone your network adapter's MAC address onto the router, select <i>Enable</i> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click <i>Get Current PC MAC Address</i> to fill in the MAC address of your PC you are using. Then save your changes by clicking on the <i>Save Settings</i> button.
 					<br/><br/>
 					To disable MAC address cloning, keep the default setting, <i>Disable</i>.
@@ -37,10 +38,10 @@
 			</dl>
 		</div>
 		<div class="also">
-			<h4>See also</h4>
+			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HSetup.asp">Basic Setup</a></li>
-				<li><a href="HStatus.asp">Router Status</a></li>
+				<li><a href="HSetup.asp"><% tran("bmenu.setupbasic"); %></a></li>
+				<li><a href="HStatus.asp"><% tran("bmenu.statuRouter"); %></a></li>
 			</ul>
 		</div>
 	</body>

@@ -130,7 +130,7 @@ share.meters="mètres";
 share.full="Full";
 share.half="Half";
 share.quarter="Quarter";
-
+share.seealso="Voir aussi";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -644,6 +644,7 @@ hotspot.nocat_port="Ports exclus";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosité";
 hotspot.nocat_route="Route uniquement";
+hotspot.nocat_MAClist="Liste blanche MAC";
 hotspot.smtp_legend="Redirection SMTP";
 hotspot.smtp_srv="Redirection SMTP";
 hotspot.smtp_ip="IP SMTP de Destination";
