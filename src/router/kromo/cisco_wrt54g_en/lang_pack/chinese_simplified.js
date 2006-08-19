@@ -640,6 +640,7 @@ hotspot.nocat_port="排除的端口";
 hotspot.nocat_timeout="登录超时";
 hotspot.nocat_verbose="细致程度";
 hotspot.nocat_route="仅路由";
+hotspot.nocat_MAClist="MAC White List";
 hotspot.smtp_legend="SMTP重定向";
 hotspot.smtp_srv="SMTP重定向";
 hotspot.smtp_ip="SMTP目标IP";

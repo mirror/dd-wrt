@@ -129,7 +129,7 @@ share.meters="meters";
 share.full="Full";
 share.half="Half";
 share.quarter="Quarter";
-
+share.seealso="See also";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -653,6 +653,7 @@ hotspot.nocat_port="Exclude Ports";
 hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Route Only";
+hotspot.nocat_MAClist="MAC White List";
 hotspot.smtp_legend="SMTP Redirect";
 hotspot.smtp_srv="SMTP Redirect";
 hotspot.smtp_ip="SMTP Destination IP";

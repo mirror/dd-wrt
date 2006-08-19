@@ -14,7 +14,7 @@
 					<ul>
 						<li><a href="HSetup.asp"><% tran("bmenu.setupbasic"); %></a></li>
 						<li><a href="HDDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
-						<li><a href="HMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+						<li><a href="HWanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
 						<li><a href="HRouting.asp"><% tran("bmenu.setuprouting"); %></a></li>
 					</ul>
 				</dd>
