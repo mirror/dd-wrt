@@ -127,7 +127,7 @@ share.meters="metrov";
 share.full="Polni";
 share.half="Polovièni";
 share.quarter="Èetrtinski";
-share.seealso="See also";
+share.seealso="Glej tudi";
 
 
 sbutton.save="Shrani nastavitve";
@@ -638,7 +638,7 @@ hotspot.nocat_port="Izloèi vrata";
 hotspot.nocat_timeout="Èasovna omejitev prijave";
 hotspot.nocat_verbose="Ob¹irnost";
 hotspot.nocat_route="Samo usmerjanje";
-hotspot.nocat_MAClist="MAC White List";
+hotspot.nocat_MAClist="Seznam dovoljenih MAC naslovov";
 hotspot.smtp_legend="Preusmeritev SMTP";
 hotspot.smtp_srv="Preusmeritev SMTP";
 hotspot.smtp_ip="SMTP ciljni IP";
