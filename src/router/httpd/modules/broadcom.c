@@ -450,7 +450,7 @@ ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
   websWrite (wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
-//      ret += websWrite(wp,"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\">", HTTP_CHARSET);
+
   return;
 }
 
@@ -3198,7 +3198,7 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 	}
       websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
 		 nvram_match ("router_style",
-			      entry->d_name) ? "selected" : "",
+			      entry->d_name) ? "selected=\"selected\"" : "",
 		 entry->d_name);
     }
   closedir (directory);
@@ -3272,7 +3272,6 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
-
 
 
 static void
@@ -3750,7 +3749,6 @@ void
 ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", "post");
-
 }
 
 static char *
@@ -4363,7 +4361,7 @@ websWrite(wp,"</script>&nbsp;\n");
 static void
 ej_show_openvpn_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<fieldset>\n<legend>State</legend>\n");
+websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 
 system("/etc/openvpnstate.sh > /tmp/.temp");
 FILE *in = fopen("/tmp/.temp","r");
@@ -4375,7 +4373,7 @@ while(!feof(in))
     }
 fclose(in);
 websWrite(wp,"</fieldset>");
-websWrite(wp,"<fieldset>\n<legend>Status</legend>\n");
+websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
 system("/etc/openvpnstatus.sh > /tmp/.temp");
 in = fopen("/tmp/.temp","r");
 while(!feof(in))
@@ -4386,7 +4384,7 @@ while(!feof(in))
     }
 fclose(in);
 websWrite(wp,"</fieldset>");
-websWrite(wp,"<fieldset>\n<legend>Log</legend>\n");
+websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
 system("/etc/openvpnlog.sh > /tmp/.temp");
 in = fopen("/tmp/.temp","r");
 while(!feof(in))
