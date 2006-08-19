@@ -1121,6 +1121,7 @@ status_router.h22="Internet";
 status_router.legend5="Konfigurationstyp";
 status_router.www_login="Login-Typ";
 status_router.www_loginstatus="Login-Status";
+status_router.leasetime="Remaining Lease Time";
 
 //help container
 
