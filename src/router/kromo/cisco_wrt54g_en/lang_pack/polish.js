@@ -897,6 +897,7 @@ status_router.h22="Internet";
 status_router.legend5="Typ Konfiguracji";
 status_router.www_login="Login Type";
 status_router.www_loginstatus="Login Status";
+status_router.leasetime="Remaining Lease Time";
 var hstatus_router = new Object();
 hstatus_router.right2="Tutaj podana jest nazwa routera, ktora mozna zdefiniowac w zakladce 'Ustawienia'.";
 hstatus_router.right4="To jest Adres MAC widziany przez twojego ISP.";

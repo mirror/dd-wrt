@@ -851,6 +851,7 @@ status_router.h22="Internet";
 status_router.legend5="Tipo Di Configurazione";
 status_router.www_login="Tipo Di Login";
 status_router.www_loginstatus="Stato Login";
+status_router.leasetime="Remaining Lease Time";
 
 hstatus_router.right2="E' il nome del router inserito nella finestra <i>Setup</i>.";
 hstatus_router.right4="E' l'indirizzo MAC del router, come è visto dal tuo ISP.";
