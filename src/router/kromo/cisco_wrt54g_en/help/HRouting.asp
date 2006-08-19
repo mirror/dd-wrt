@@ -7,12 +7,14 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Advanced Routing</h2>
+			<h2><% tran("route.h2"); %></h2>
 			<dl>
 				<dd>On the Routing screen, you can set the routing mode and settings of the router. <i>Gateway</i> mode is recommended for most users.</dd>
-				<dt>Operating Mode</dt>
+				
+				<dt><% tran("route.mod"); %></dt>
 				<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network's connection to the Internet. Select router if the router exists on a network with other routers.</dd>
-				<dt>Dynamic Routing (RIP)</dt>
+				
+				<dt><% tran("route.gateway_legend"); %></dt>
 				<dd>Dynamic Routing enables the router to automatically adjust to physical changes in the network's layout and exchange routing tables with other routers. The router determines the network packets&#8217; route based on the fewest number of hops between the source and destination.<br /><br />
 					To enable the Dynamic Routing feature for the WAN side, select <i>WAN</i>. To enable this feature for the LAN and wireless side, select <i>LAN &amp; WLAN</i>. To enable the feature for both the WAN and LAN, select <i>Both</i>. To disable the Dynamic Routing feature for all data transmissions, keep the default setting, <i>Disable</i>.<br /><br />
 					<div class="note">
@@ -20,7 +22,8 @@
 						Dynamic Routing is not available in Gateway mode.
 					</div>
 				</dd>
-				<dt>Static Routing</dt>
+				
+				<dt><% tran("route.static_legend"); %></dt>
 				<dd>A static route is a pre-determined pathway that network information must travel to reach a specific host or network.<br /><br />
 					To set up a static route between the router and another network:
 					<ol class="wide">
@@ -42,7 +45,8 @@
 						<li>To save a deletion, click the <i>Apply</i> button. To cancel a deletion, click the <i>Cancel</i> button.</li>
 					</ol>
 				</dd>
-				<dt>Show Routing Table</dt>
+				
+				<dt><% tran("sbutton.routingtab"); %></dt>
 				<dd>Click the <i>Show Routing Table</i> button to view all of the valid route entries in use. The following data will be displayed for each entry.
 					<ul class="wide">
 						<li>Destination IP Address &ndash; The Destination IP Address is the address of the network or host to which the static route is assigned.</li>
@@ -57,8 +61,8 @@
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HManagement.asp">Management</a></li>
-				<li><a href="HStatusLan.asp">LAN Status</a></li>
+				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
+				<li><a href="HStatusLan.asp"><% tran("bmenu.statuLAN"); %></a></li>
 			</ul>
 		</div>
 	</body>
