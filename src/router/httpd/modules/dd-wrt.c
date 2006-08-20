@@ -3521,13 +3521,15 @@ get_filter_services (void)
 {
   static char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
-
+char temop[2048]="start ";
   while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
     {
       strcat (services, nvram_safe_get (svcs_var));
+temop = strcpy (temop, nvram_safe_get (svcs_var))
+syslog (LOG_DEBUG, "serv=%s\n", temop);
       snprintf (svcs_var, 31, "filter_services%d", index);
       index++;
-syslog (LOG_DEBUG, "serv(%s)=%s\n", index, nvram_safe_get (svcs_var));
+
 
     }
 
