@@ -3520,7 +3520,7 @@ get_filter_services (void)
 {
   char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
-char temop[2048]="start ";
+
   while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
     {
       strcat (services, nvram_safe_get (svcs_var));
