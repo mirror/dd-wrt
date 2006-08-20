@@ -3522,9 +3522,9 @@ get_filter_services (void)
   static char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
 
-  while (strlen (nvram_get (svcs_var)) > 0 && index < 8)
+  while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
     {
-      strcat (services, nvram_get (svcs_var));
+      strcat (services, nvram_safe_get (svcs_var));
       snprintf (svcs_var, 31, "filter_services%d", index);
       index++;
 
@@ -3598,6 +3598,7 @@ get_svc (char *svc, char *protocol, char *ports)
 
 //      services = nvram_safe_get("filter_services");
   services = get_filter_services ();
+syslog (LOG_DEBUG, "services=%s\n", services);
   split (word, services, next, delim)
   {
     int len = 0;
@@ -3615,7 +3616,7 @@ get_svc (char *svc, char *protocol, char *ports)
 
     strncpy (name, name + sizeof ("$NAME:nnn:") - 1, len);
     name[len] = '\0';
-
+syslog (LOG_DEBUG, "name=%s\n", name);
     if (strcasecmp (svc, name))
       continue;
 
@@ -3625,14 +3626,14 @@ get_svc (char *svc, char *protocol, char *ports)
 
     strncpy (protocol, prot + sizeof ("$PROT:nnn:") - 1, len);
     protocol[len] = '\0';
-
+syslog (LOG_DEBUG, "protocol=%s\n", protocol);
     /* $PORT */
     if (sscanf (port, "$PORT:%3d:", &len) != 1)
       return -1;
 
     strncpy (ports, port + sizeof ("$PORT:nnn:") - 1, len);
     ports[len] = '\0';
-
+syslog (LOG_DEBUG, "ports=%s\n", ports);
     if (sscanf (ports, "%d:%d", &from, &to) != 2)
       return -1;
 
