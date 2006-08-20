@@ -37,6 +37,8 @@
 #include <bcmparams.h>
 #include <dirent.h>
 
+#include <syslog.h>  //for debugging
+
 
 static unsigned int oldclocks[9] =
   { 192, 200, 216, 228, 240, 252, 264, 280, 300 };
@@ -3652,22 +3654,22 @@ qos_add_svc (webs_t wp)
   char *svqos_svcs = nvram_safe_get ("svqos_svcs");
   char new_svcs[4096] = { 0 };
   int i = 0;
-
+syslog (LOG_DEBUG, "add_svc1=%s\n", add_svc);
   memset (new_svcs, 0, sizeof (new_svcs));
 
   if (get_svc (add_svc, protocol, ports))
     return -1;
-
+syslog (LOG_DEBUG, "passed check 1\n");
   if (strcmp (protocol, "l7") == 0)
     {
       for (i = 0; i < strlen (add_svc); i++)
 	add_svc[i] = tolower (add_svc[i]);
     }
-
+syslog (LOG_DEBUG, "add_svc2=%s\n", add_svc);
   /* if this service exists, return an error */
   if (strstr (svqos_svcs, add_svc))
     return -1;
-
+syslog (LOG_DEBUG, "passed check 2\n");
   if (strlen (svqos_svcs) > 0)
     snprintf (new_svcs, 4095, "%s %s %s %s 30 |", svqos_svcs, add_svc,
 	      protocol, ports);
@@ -3676,7 +3678,7 @@ qos_add_svc (webs_t wp)
 
   if (strlen (new_svcs) >= sizeof (new_svcs))
     return -1;
-
+syslog (LOG_DEBUG, "passed check 3\n");
   nvram_set ("svqos_svcs", new_svcs);
   nvram_commit ();
 
