@@ -3525,7 +3525,7 @@ char temop[2048]="start ";
   while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
     {
       strcat (services, nvram_safe_get (svcs_var));
-temop = strcpy (temop, nvram_safe_get (svcs_var));
+strcpy (temop, nvram_safe_get (svcs_var));
 syslog (LOG_DEBUG, "serv=%s\n", temop);
       snprintf (svcs_var, 31, "filter_services%d", index);
       index++;
