@@ -363,8 +363,11 @@ start_single_service (void)
       char *ip = nvram_safe_get ("ping_ip");
       // use Ping.asp as a debugging console
       char cmd[256] = { 0 };
-      snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
+      //snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
+      system (cmd);
+      snprintf (cmd, sizeof (cmd), "echo \"%s\" > %s 2>&1 &", ip, PING_TMP);
       system (cmd);
 /*
 		if(!check_wan_link(0))
