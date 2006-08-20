@@ -3527,7 +3527,7 @@ get_filter_services (void)
       strcat (services, nvram_safe_get (svcs_var));
       snprintf (svcs_var, 31, "filter_services%d", index);
       index++;
-
+syslog (LOG_DEBUG, "serv(%s)=%s\n", index, nvram_safe_get (svcs_var));
 
     }
 
