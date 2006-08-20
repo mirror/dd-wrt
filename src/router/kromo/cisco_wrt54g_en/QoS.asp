@@ -231,7 +231,7 @@ function init() {
 												<script type="text/javascript">
 													var i=0;
 													for(i=0;i<services_length;i++)
-													document.write("<option value="+services[i].name+">"+services[i].name+ " [ "+
+													document.write("<option value=\""+services[i].name+"\">"+services[i].name+ " [ "+
 													services[i].start+" ~ "+
 													services[i].end + " ]" + "</option>");
 												</script>
