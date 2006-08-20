@@ -37,7 +37,6 @@
 #include <bcmparams.h>
 #include <dirent.h>
 
-#include <syslog.h>  //for debugging
 
 
 static unsigned int oldclocks[9] =
@@ -3519,14 +3518,12 @@ save_wds (webs_t wp)
 char *
 get_filter_services (void)
 {
-  static char services[8192] = "", svcs_var[32] = "filter_services0";
+  char services[8192] = "", svcs_var[32] = "filter_services0";
   int index = 1;
 char temop[2048]="start ";
   while (strlen (nvram_safe_get (svcs_var)) > 0 && index < 8)
     {
       strcat (services, nvram_safe_get (svcs_var));
-strcpy (temop, nvram_safe_get (svcs_var));
-syslog (LOG_DEBUG, "serv=%s\n", temop);
       snprintf (svcs_var, 31, "filter_services%d", index);
       index++;
 
@@ -3600,7 +3597,7 @@ get_svc (char *svc, char *protocol, char *ports)
 
 //      services = nvram_safe_get("filter_services");
   services = get_filter_services ();
-syslog (LOG_DEBUG, "services=%s\n", services);
+
   split (word, services, next, delim)
   {
     int len = 0;
@@ -3618,7 +3615,7 @@ syslog (LOG_DEBUG, "services=%s\n", services);
 
     strncpy (name, name + sizeof ("$NAME:nnn:") - 1, len);
     name[len] = '\0';
-syslog (LOG_DEBUG, "name=%s\n", name);
+
     if (strcasecmp (svc, name))
       continue;
 
@@ -3628,14 +3625,14 @@ syslog (LOG_DEBUG, "name=%s\n", name);
 
     strncpy (protocol, prot + sizeof ("$PROT:nnn:") - 1, len);
     protocol[len] = '\0';
-syslog (LOG_DEBUG, "protocol=%s\n", protocol);
+
     /* $PORT */
     if (sscanf (port, "$PORT:%3d:", &len) != 1)
       return -1;
 
     strncpy (ports, port + sizeof ("$PORT:nnn:") - 1, len);
     ports[len] = '\0';
-syslog (LOG_DEBUG, "ports=%s\n", ports);
+
     if (sscanf (ports, "%d:%d", &from, &to) != 2)
       return -1;
 
@@ -3657,22 +3654,22 @@ qos_add_svc (webs_t wp)
   char *svqos_svcs = nvram_safe_get ("svqos_svcs");
   char new_svcs[4096] = { 0 };
   int i = 0;
-syslog (LOG_DEBUG, "add_svc1=%s\n", add_svc);
+
   memset (new_svcs, 0, sizeof (new_svcs));
 
   if (get_svc (add_svc, protocol, ports))
     return -1;
-syslog (LOG_DEBUG, "passed check 1\n");
+
   if (strcmp (protocol, "l7") == 0)
     {
       for (i = 0; i < strlen (add_svc); i++)
 	add_svc[i] = tolower (add_svc[i]);
     }
-syslog (LOG_DEBUG, "add_svc2=%s\n", add_svc);
+
   /* if this service exists, return an error */
   if (strstr (svqos_svcs, add_svc))
     return -1;
-syslog (LOG_DEBUG, "passed check 2\n");
+
   if (strlen (svqos_svcs) > 0)
     snprintf (new_svcs, 4095, "%s %s %s %s 30 |", svqos_svcs, add_svc,
 	      protocol, ports);
@@ -3681,7 +3678,7 @@ syslog (LOG_DEBUG, "passed check 2\n");
 
   if (strlen (new_svcs) >= sizeof (new_svcs))
     return -1;
-syslog (LOG_DEBUG, "passed check 3\n");
+
   nvram_set ("svqos_svcs", new_svcs);
   nvram_commit ();
 
