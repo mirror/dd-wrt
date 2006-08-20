@@ -283,7 +283,7 @@ endif
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
 	
-$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
+	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
 	
 	#../../../../tools/write3 $(INSTALLDIR)/www/*.asp
 	#../../../../tools/write3 $(INSTALLDIR)/www/*.htm
