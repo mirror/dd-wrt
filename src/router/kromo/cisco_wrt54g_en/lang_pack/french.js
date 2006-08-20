@@ -459,15 +459,15 @@ hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à 
 // ******************************************* Diagnostics.asp *******************************************//
 
 diag.titl=" - Shell";
-diag.h2="Commandes Shell";
+diag.h2="Commande Shell";
 diag.legend="Invite de commandes";
-diag.cmd="Commande(s)";
+diag.cmd="Commande";
 diag.startup="Démarrage";
 diag.firewall="Pare-feu";
 
 //help container
 
-hdiag.right2="Vous pouvez lancer des lignes de commandes grâce à la console d\'administration. Saisissez dans la zone de texte les commandes à exécuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour les soumettre.";
+hdiag.right2="Vous pouvez lancer des lignes de commandes grâce à la console d\'administration. Saisissez dans la zone de texte la commande à exécuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour la soumettre.";
 
 
 
