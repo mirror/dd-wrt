@@ -373,7 +373,6 @@ start_single_service (void)
       
       if (!strncmp (ip, "ping", 4))
       	{
-	      	sleep (1);
 	      	eval ("killall", "ping");
 	      	eval ("killall", "sh");
       	}
