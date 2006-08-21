@@ -399,6 +399,27 @@ static int ehci_start (struct usb_hcd *hcd)
 		ehci_mem_cleanup (ehci);
 		return retval;
 	}
+
+{
+	int misc_reg;
+	u32 vendor_id;
+	
+	pci_read_config_dword (ehci->hcd.pdev, PCI_VENDOR_ID, &vendor_id);
+	if (vendor_id == 0x31041106) {
+		/* VIA 6212 */
+		printk(KERN_INFO "EHCI: Enabling VIA 6212 workarounds\n", misc_reg);
+		pci_read_config_byte(ehci->hcd.pdev, 0x49, &misc_reg);
+		misc_reg &= ~0x20;
+		pci_write_config_byte(ehci->hcd.pdev, 0x49, misc_reg);
+		pci_read_config_byte(ehci->hcd.pdev, 0x49, &misc_reg);
+
+		pci_read_config_byte(ehci->hcd.pdev, 0x4b, &misc_reg);
+		misc_reg |= 0x20;
+		pci_write_config_byte(ehci->hcd.pdev, 0x4b, misc_reg);
+		pci_read_config_byte(ehci->hcd.pdev, 0x4b, &misc_reg);
+	}
+}
+
 	writel (INTR_MASK, &ehci->regs->intr_enable);
 	writel (ehci->periodic_dma, &ehci->regs->frame_list);
 

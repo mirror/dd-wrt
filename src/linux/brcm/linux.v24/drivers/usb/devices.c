@@ -392,7 +392,7 @@ static char *usb_dump_desc(char *start, char *end, struct usb_device *dev)
 	 * Grab device's exclusive_access mutex to prevent its driver or
 	 * devio from using this device while we are accessing it.
 	 */
-	down (&dev->exclusive_access);
+	usb_excl_lock(dev, 3, 0);
 
 	start = usb_dump_device_descriptor(start, end, &dev->descriptor);
 
@@ -411,7 +411,7 @@ static char *usb_dump_desc(char *start, char *end, struct usb_device *dev)
 	}
 
 out:
-	up (&dev->exclusive_access);
+	usb_excl_unlock(dev, 3);
 	return start;
 }
 

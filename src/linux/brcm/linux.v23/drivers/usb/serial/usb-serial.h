@@ -308,20 +308,9 @@ static inline int port_paranoia_check (struct usb_serial_port *port, const char 
 	return 0;
 }
 
-
-static inline struct usb_serial* get_usb_serial (struct usb_serial_port *port, const char *function) 
-{ 
-	/* if no port was specified, or it fails a paranoia check */
-	if (!port || 
-		port_paranoia_check (port, function) ||
-		serial_paranoia_check (port->serial, function)) {
-		/* then say that we don't have a valid usb_serial thing, which will
-		 * end up genrating -ENODEV return values */ 
-		return NULL;
-	}
-
-	return port->serial;
-}
+#define get_usb_serial(p, f)	usb_serial_get_serial(p, f)
+extern struct usb_serial *usb_serial_get_serial(struct usb_serial_port *port,
+    const char *function_name);
 
 
 static inline void usb_serial_debug_data (const char *file, const char *function, int size, const unsigned char *data)

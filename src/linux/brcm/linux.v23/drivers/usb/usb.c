@@ -989,7 +989,8 @@ struct usb_device *usb_alloc_dev(struct usb_device *parent, struct usb_bus *bus)
 	INIT_LIST_HEAD(&dev->filelist);
 
 	init_MUTEX(&dev->serialize);
-	init_MUTEX(&dev->exclusive_access);
+	spin_lock_init(&dev->excl_lock);
+	init_waitqueue_head(&dev->excl_wait);
 
 	dev->bus->op->allocate(dev);
 
@@ -2380,6 +2381,61 @@ struct list_head *usb_bus_get_list(void)
 }
 #endif
 
+int usb_excl_lock(struct usb_device *dev, unsigned int type, int interruptible)
+{
+	DECLARE_WAITQUEUE(waita, current);
+
+	add_wait_queue(&dev->excl_wait, &waita);
+	if (interruptible)
+		set_current_state(TASK_INTERRUPTIBLE);
+	else
+		set_current_state(TASK_UNINTERRUPTIBLE);
+
+	for (;;) {
+		spin_lock_irq(&dev->excl_lock);
+		switch (type) {
+		case 1:		/* 1 - read */
+		case 2:		/* 2 - write */
+		case 3:		/* 3 - control: excludes both read and write */
+			if ((dev->excl_type & type) == 0) {
+				dev->excl_type |= type;
+				spin_unlock_irq(&dev->excl_lock);
+				set_current_state(TASK_RUNNING);
+				remove_wait_queue(&dev->excl_wait, &waita);
+				return 0;
+			}
+			break;
+		default:
+			spin_unlock_irq(&dev->excl_lock);
+			set_current_state(TASK_RUNNING);
+			remove_wait_queue(&dev->excl_wait, &waita);
+			return -EINVAL;
+		}
+		spin_unlock_irq(&dev->excl_lock);
+
+		if (interruptible) {
+			schedule();
+			if (signal_pending(current)) {
+				remove_wait_queue(&dev->excl_wait, &waita);
+				return 1;
+			}
+			set_current_state(TASK_INTERRUPTIBLE);
+		} else {
+			schedule();
+			set_current_state(TASK_UNINTERRUPTIBLE);
+		}
+	}
+}
+
+void usb_excl_unlock(struct usb_device *dev, unsigned int type)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&dev->excl_lock, flags);
+	dev->excl_type &= ~type;
+	wake_up(&dev->excl_wait);
+	spin_unlock_irqrestore(&dev->excl_lock, flags);
+}
 
 /*
  * Init
@@ -2472,6 +2528,9 @@ EXPORT_SYMBOL(usb_unlink_urb);
 
 EXPORT_SYMBOL(usb_control_msg);
 EXPORT_SYMBOL(usb_bulk_msg);
+
+EXPORT_SYMBOL(usb_excl_lock);
+EXPORT_SYMBOL(usb_excl_unlock);
 
 EXPORT_SYMBOL(usb_devfs_handle);
 MODULE_LICENSE("GPL");

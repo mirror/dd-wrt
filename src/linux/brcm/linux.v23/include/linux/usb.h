@@ -483,6 +483,8 @@ struct usb_driver {
 #define URB_NO_INTERRUPT	0x0080	/* HINT: no non-error interrupt needed */
 					/* ... less overhead for QUEUE_BULK */
 #define USB_TIMEOUT_KILLED	0x1000	// only set by HCD!
+#define URB_NO_TRANSFER_DMA_MAP	0x0400	/* urb->transfer_dma valid on submit */
+#define URB_NO_SETUP_DMA_MAP	0x0800	/* urb->setup_dma valid on submit */
 
 struct iso_packet_descriptor
 {
@@ -828,8 +830,19 @@ struct usb_device {
 
 	atomic_t refcnt;		/* Reference count */
 	struct semaphore serialize;
-	struct semaphore exclusive_access; /* prevent driver & proc accesses  */
-					   /* from overlapping cmds at device */
+
+	/*
+	 * This is our custom open-coded lock, similar to r/w locks in concept.
+	 * It prevents drivers and /proc access from simultaneous access.
+	 * Type:
+	 *   0 - unlocked
+	 *   1 - locked for reads
+	 *   2 - locked for writes
+	 *   3 - locked for everything
+	 */
+	wait_queue_head_t excl_wait;
+	spinlock_t excl_lock;
+	unsigned excl_type;
 
 	unsigned int toggle[2];		/* one bit for each endpoint ([0] = IN, [1] = OUT) */
 	unsigned int halted[2];		/* endpoint halts; one bit per endpoint # & direction; */
@@ -904,6 +917,8 @@ extern void usb_destroy_configuration(struct usb_device *dev);
 
 int usb_get_current_frame_number (struct usb_device *usb_dev);
 
+int usb_excl_lock(struct usb_device *dev, unsigned int type, int interruptible);
+void usb_excl_unlock(struct usb_device *dev, unsigned int type);
 
 /**
  * usb_make_path - returns stable device path in the usb tree
