@@ -3850,13 +3850,17 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			if (t2 == NULL)
 			{
 				cprintf (" length was null\n");
+				//free(lang);
 				return;		//error (typo?)
 			}
 			
 			int len = t2 - cmp;
 			cprintf ("length = %d\n", len);
 			if (len < 0)
+				{
+				//free(lang);
 				return;		//error (unknown)
+				}
 			char dest[128];
 			char *style = nvram_get ("router_style");
 			strncpy (dest, cmp, len);
@@ -3889,6 +3893,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			websWrite (wp,
 				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
 				style);
+			//free(lang);
 			return;
 		}
 	}
