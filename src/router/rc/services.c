@@ -368,17 +368,11 @@ start_single_service (void)
 //      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
 //      system (cmd);
 
-      if (!strncmp (ip, "ping", 4))
-      	{
+
 	      	snprintf (cmd, sizeof (cmd), "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
       		system (cmd);
-      		sleep (3);
-      	} 
-      	else
-      	{
-      snprintf (cmd, sizeof (cmd), "eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
-      system (cmd);
- 		 }
+
+
 //      if (!strncmp (ip, "ping", 4))
 //      	{
 //	      	snprintf (cmd, sizeof (cmd), "unalias ping");
