@@ -3679,7 +3679,6 @@ qos_add_svc (webs_t wp)
 
   nvram_set ("svqos_svcs", new_svcs);
   nvram_commit ();
-  sleep (1);
   return 0;
 }
 
