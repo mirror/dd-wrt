@@ -367,7 +367,7 @@ start_single_service (void)
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
       snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
       system (cmd);
-      snprintf (cmd, sizeof (cmd), "echo \"%s\" > %s 2>&1 &", ip, PING_TMP);
+      snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
       system (cmd);
 /*
 		if(!check_wan_link(0))
