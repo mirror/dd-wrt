@@ -367,8 +367,15 @@ start_single_service (void)
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 //      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
 //      system (cmd);
+
       snprintf (cmd, sizeof (cmd), "eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
       system (cmd);
+      
+      if (!strncmp (ip, "ping", 4)
+      	{
+	      	system ("killall ping");
+	      	system ("killall sh");
+      	}
 /*
 		if(!check_wan_link(0))
 			buf_to_file(PING_TMP, "Network is unreachable\n");
