@@ -370,7 +370,7 @@ start_single_service (void)
 
       if (!strncmp (ip, "ping", 4))
       	{
-	      	snprintf (cmd, sizeof (cmd), "alias ping=\"ping -c 3\";\"%s\" > %s 2>&1 &", ip, PING_TMP););
+	      	snprintf (cmd, sizeof (cmd), "alias ping=\"ping -c 3\";\"%s\" > %s 2>&1 &", ip, PING_TMP);
       		system (cmd);
       		sleep (3);
       	} 
