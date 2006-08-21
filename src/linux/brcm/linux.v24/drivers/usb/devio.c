@@ -623,7 +623,12 @@ static int proc_bulk(struct dev_state *ps, void *arg)
 			free_page((unsigned long)tbuf);
 			return -EINVAL;
 		}
+		if (usb_excl_lock(dev, 1, 1) != 0) {
+			free_page((unsigned long)tbuf);
+			return -ERESTARTSYS;
+		}
 		i = usb_bulk_msg(dev, pipe, tbuf, len1, &len2, tmo);
+		usb_excl_unlock(dev, 1);
 		if (!i && len2) {
 			if (copy_to_user(bulk.data, tbuf, len2)) {
 				free_page((unsigned long)tbuf);
@@ -637,7 +642,12 @@ static int proc_bulk(struct dev_state *ps, void *arg)
 				return -EFAULT;
 			}
 		}
+		if (usb_excl_lock(dev, 2, 1) != 0) {
+			free_page((unsigned long)tbuf);
+			return -ERESTARTSYS;
+		}
 		i = usb_bulk_msg(dev, pipe, tbuf, len1, &len2, tmo);
+		usb_excl_unlock(dev, 2);
 	}
 	free_page((unsigned long)tbuf);
 	if (i < 0) {
@@ -1160,12 +1170,6 @@ static int usbdev_ioctl_exclusive(struct dev_state *ps, struct inode *inode,
 			inode->i_mtime = CURRENT_TIME;
 		break;
 
-	case USBDEVFS_BULK:
-		ret = proc_bulk(ps, (void *)arg);
-		if (ret >= 0)
-			inode->i_mtime = CURRENT_TIME;
-		break;
-
 	case USBDEVFS_RESETEP:
 		ret = proc_resetep(ps, (void *)arg);
 		if (ret >= 0)
@@ -1259,8 +1263,13 @@ static int usbdev_ioctl(struct inode *inode, struct file *file,
 		ret = proc_disconnectsignal(ps, (void *)arg);
 		break;
 
-	case USBDEVFS_CONTROL:
 	case USBDEVFS_BULK:
+		ret = proc_bulk(ps, (void *)arg);
+		if (ret >= 0)
+			inode->i_mtime = CURRENT_TIME;
+		break;
+
+	case USBDEVFS_CONTROL:
 	case USBDEVFS_RESETEP:
 	case USBDEVFS_RESET:
 	case USBDEVFS_CLEAR_HALT:
@@ -1272,9 +1281,9 @@ static int usbdev_ioctl(struct inode *inode, struct file *file,
 	case USBDEVFS_RELEASEINTERFACE:
 	case USBDEVFS_IOCTL:
 		ret = -ERESTARTSYS;
-		if (down_interruptible(&ps->dev->exclusive_access) == 0) {
+		if (usb_excl_lock(ps->dev, 3, 1) == 0) {
 			ret = usbdev_ioctl_exclusive(ps, inode, cmd, arg);
-			up(&ps->dev->exclusive_access);
+			usb_excl_unlock(ps->dev, 3);
 		}
 		break;
 

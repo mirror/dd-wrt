@@ -860,7 +860,10 @@ static int nfs_safe_remove(struct dentry *dentry)
 	if (inode)
 		NFS_CACHEINV(inode);
 	error = NFS_PROTO(dir)->remove(dir, &dentry->d_name);
-	if (error < 0)
+
+	/* if server returned ENOENT, assume that the dentry is already gone
+	 * and update the cache accordingly */
+	if (error < 0 && (error != -ENOENT))
 		goto out;
 	if (inode)
 		inode->i_nlink--;

@@ -127,6 +127,16 @@ struct bulk_cs_wrap {
 #define US_BULK_TRANSFER_ABORTED	3  /* transfer canceled             */
 
 /*
+ * usb_stor_bulk_transfer_xxx() return codes, in order of severity
+ */
+
+#define USB_STOR_XFER_GOOD		0	/* good transfer                 */
+#define USB_STOR_XFER_SHORT		1	/* transferred less than expected */
+#define USB_STOR_XFER_STALLED	2	/* endpoint stalled              */
+#define USB_STOR_XFER_LONG		3	/* device tried to send too much */
+#define USB_STOR_XFER_ERROR		4	/* transfer died in the middle   */
+
+/*
  * Transport return codes
  */
 

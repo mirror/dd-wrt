@@ -510,6 +510,8 @@ static struct sk_buff *fill_packet(struct net_device *odev, struct pktgen_info* 
 	skb->mac.raw = ((u8 *)iph) - 14;
 	skb->dev = odev;
 	skb->pkt_type = PACKET_HOST;
+	skb->nh.iph = iph;
+	skb->h.uh = udph;
 
 	if (info->nfrags <= 0) {
                 pgh = (struct pktgen_hdr *)skb_put(skb, datalen);

@@ -23,6 +23,7 @@
 #include <linux/kernelcapi.h>
 #include <linux/init.h>
 #include <asm/io.h>
+#include <asm/processor.h>
 #include <asm/uaccess.h>
 #include <linux/netdevice.h>
 #include "capicmd.h"
@@ -154,6 +155,7 @@ static inline int wait_for_doorbell(avmcard *card, unsigned long t)
 	while (c4inmeml(card->mbase+DOORBELL) != 0xffffffff) {
 		if (!time_before(jiffies, stop))
 			return -1;
+		cpu_relax();
 	}
 	return 0;
 }
@@ -308,6 +310,7 @@ static void c4_reset(avmcard *card)
 		if (!time_before(jiffies, stop))
 			return;
 		c4outmeml(card->mbase+DOORBELL, DBELL_ADDR);
+		cpu_relax();
 	}
 
 	c4_poke(card, DC21285_ARMCSR_BASE + CHAN_1_CONTROL, 0);
@@ -331,6 +334,7 @@ static int c4_detect(avmcard *card)
 		if (!time_before(jiffies, stop))
 			return 2;
 		c4outmeml(card->mbase+DOORBELL, DBELL_ADDR);
+		cpu_relax();
 	}
 
 	c4_poke(card, DC21285_ARMCSR_BASE + CHAN_1_CONTROL, 0);
