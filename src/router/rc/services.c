@@ -370,18 +370,20 @@ start_single_service (void)
 
       if (!strncmp (ip, "ping", 4))
       	{
-	      	snprintf (cmd, sizeof (cmd), "alias ping=\"ping -c 3\"");
+	      	snprintf (cmd, sizeof (cmd), "alias ping=\"ping -c 3\";\"%s\" > %s 2>&1 &", ip, PING_TMP););
       		system (cmd);
+      		sleep (3);
       	} 
-      	
+      	else
+      	{
       snprintf (cmd, sizeof (cmd), "eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
       system (cmd);
-      
-      if (!strncmp (ip, "ping", 4))
-      	{
-	      	snprintf (cmd, sizeof (cmd), "unalias ping");
-      		system (cmd);
-      	}
+ 		 }
+//      if (!strncmp (ip, "ping", 4))
+//      	{
+//	      	snprintf (cmd, sizeof (cmd), "unalias ping");
+//      		system (cmd);
+//      	}
 /*
 		if(!check_wan_link(0))
 			buf_to_file(PING_TMP, "Network is unreachable\n");
