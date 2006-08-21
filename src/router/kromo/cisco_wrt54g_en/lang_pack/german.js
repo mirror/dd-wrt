@@ -1123,6 +1123,7 @@ status_router.legend5="Konfigurationstyp";
 status_router.www_login="Login-Typ";
 status_router.www_loginstatus="Login-Status";
 status_router.leasetime="Remaining Lease Time";
+status_router.notavail="Not available";
 
 //help container
 
