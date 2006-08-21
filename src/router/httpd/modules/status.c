@@ -42,7 +42,7 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
   if (time (0) > (unsigned long) 31536000)	//60 * 60 * 24 * 365
     websWrite (wp, rfctime (&tm));
   else
-    websWrite (wp, "Not Available");
+    websWrite (wp, "<script type=\"text/javascript\">Capture(status_router.notavail)</script>\n");
 }
 
 void
