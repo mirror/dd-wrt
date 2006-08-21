@@ -7,16 +7,17 @@ document.title = "<% nvram_get("router_name"); %>" + vlan.titl;
 //function to_submit(F) {
 //	F.submit_button.value = "Vlan";
 //	F.save_button.value = sbutton.saving;
-//
+//  F.save_button.value = sbutton.saving;
 //	F.action.value = "Apply";
 //	apply(F);
 //}
 
 function to_submit(F) {
-	F.change_action.value = "gozila_cgi";
+//	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Vlan";
 	F.submit_type.value = "port_vlan_table_save";
  	F.action.value = "Apply";
+ 	F.save_button.value = sbutton.saving;
 	F.submit();
 }
 
