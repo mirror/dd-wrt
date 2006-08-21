@@ -725,10 +725,10 @@ idx.dhcp_lease="Client-Lease-Zeit";
 idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 idx.dns_dnsmasq="Nutze DNSMasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
-idx.summt_opt1="none";
-idx.summt_opt2="first Sun Apr - last Sun Oct";
-idx.summt_opt3="last Sun Mar - last Sun Oct";
-idx.summt_opt4="last Sun Oct - last Sun Mar";
+idx.summt_opt1="keine";
+idx.summt_opt2="erster Son Apr - letzter Son Okt";
+idx.summt_opt3="letzter Son Mär - letzter Son Okt";
+idx.summt_opt4="letzter Son Okt - letzter Son Mär";
 
 //help container
 
@@ -1122,8 +1122,8 @@ status_router.h22="Internet";
 status_router.legend5="Konfigurationstyp";
 status_router.www_login="Login-Typ";
 status_router.www_loginstatus="Login-Status";
-status_router.leasetime="Remaining Lease Time";
-status_router.notavail="Not available";
+status_router.leasetime="Verbleibende Lease Zeit";
+status_router.notavail="Nicht verfügbar";
 
 //help container
 
