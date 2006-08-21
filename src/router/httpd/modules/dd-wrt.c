@@ -739,6 +739,8 @@ ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
       o = NULL;
     }
   cprintf ("display = chain\n");
+  struct timeval now;
+  gettimeofday (&now, NULL);
   for (i = 0; i < leasenum; i++)
     {
       snprintf (username, 31, "iradius%d_name", i);
@@ -765,6 +767,22 @@ ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
 						    "1") ==
 		 0 ? "checked=\"checked\"" : "" : "");
       websWrite (wp, "</td>\n");
+      websWrite (wp, "<td>\n");
+      if (userlist)
+	sep = strsep (&userlist, " ");
+      long t = atol (sep);
+      if (t != -1)
+	{
+	  t -= now.tv_sec;
+	  t /= 60;
+	}
+      snprintf (active, 31, "iradius%d_lease", i);
+      char st[32];
+      sprintf (st, "%d", t);
+      websWrite (wp, "<input type=\"num\" name=\"%s\" value='%s' />\n",
+		 active, st);
+      websWrite (wp, "</td>\n");
+
       websWrite (wp, "<td>\n");
       snprintf (active, 31, "iradius%d_delete", i);
       websWrite (wp, "<input name=\"%s\" type=\"hidden\" />", active);
@@ -796,6 +814,10 @@ validate_iradius (webs_t wp, char *value, struct variable *v)
   memset (leases, 0, (128 * leasenum) + 1);
   int leasen = 0;
   cprintf ("build mac list\n");
+
+  struct timeval now;
+  gettimeofday (&now, NULL);
+
   for (i = 0; i < leasenum; i++)
     {
       snprintf (del, 31, "iradius%d_delete", i);
@@ -805,12 +827,28 @@ validate_iradius (webs_t wp, char *value, struct variable *v)
 	continue;
 
       snprintf (username, 31, "iradius%d_name", i);
-      strcat (leases, websGetVar (wp, username, ""));
+      strcat (leases, websGetVar (wp, username, "00:00:00:00:00:00"));
       strcat (leases, " ");
 
       snprintf (active, 31, "iradius%d_active", i);
-      strcat (leases, websGetVar (wp, active, ""));
+      strcat (leases, websGetVar (wp, active, "0"));
       strcat (leases, " ");
+
+      snprintf (active, 31, "iradius%d_lease", i);
+      char *time = websGetVar (wp, active, "-1");
+      int t = atoi (time);
+      if (t == -1)
+	{
+	  strcat (leases, "-1");
+	}
+      else
+	{
+	  char st[32];
+	  sprintf (st, "%d", (now.tv_sec + t * 60));
+	  strcat (leases, st);
+	}
+      strcat (leases, " ");
+
       leasen++;
     }
 
@@ -3048,7 +3086,9 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char uptime[200] = { 0 }, cmd[200] = { 0 };
+  char uptime[200] = { 0 }, cmd[200] =
+  {
+  0};
   FILE *fp;
   unlink (UPTIME_TMP);
 
