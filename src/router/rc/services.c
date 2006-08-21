@@ -374,8 +374,8 @@ start_single_service (void)
       if (!strncmp (ip, "ping", 4))
       	{
 	      	sleep (1);
-	      	system ("killall ping");
-	      	system ("killall sh");
+	      	eval ("killall", "ping");
+	      	eval ("killall", "sh");
       	}
 /*
 		if(!check_wan_link(0))
