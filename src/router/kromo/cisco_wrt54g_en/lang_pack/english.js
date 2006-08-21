@@ -1177,6 +1177,7 @@ status_router.legend5="Configuration Type";
 status_router.www_login="Login Type";
 status_router.www_loginstatus="Login Status";
 status_router.leasetime="Remaining Lease Time";
+status_router.notavail="Not available";
 
 //help container
 var hstatus_router = new Object();

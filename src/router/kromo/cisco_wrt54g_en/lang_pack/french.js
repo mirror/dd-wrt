@@ -1148,6 +1148,7 @@ status_router.legend5="Type de configuration";
 status_router.www_login="Type de Login";
 status_router.www_loginstatus="Statut du Login";
 status_router.leasetime="Renouvellement du bail dans";
+status_router.notavail="Not available";
 
 //help container
 

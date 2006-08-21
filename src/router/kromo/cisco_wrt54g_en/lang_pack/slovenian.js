@@ -1136,6 +1136,7 @@ status_router.legend5="Naèin povezave";
 status_router.www_login="Naèin prijave";
 status_router.www_loginstatus="Status prijave";
 status_router.leasetime="Preostali èas zakupa";
+status_router.notavail="Ni na voljo";
 
 //help container
 
