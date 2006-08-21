@@ -371,8 +371,9 @@ start_single_service (void)
       snprintf (cmd, sizeof (cmd), "eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
       system (cmd);
       
-      if (!strncmp (ip, "ping", 4)
+      if (!strncmp (ip, "ping", 4))
       	{
+	      	sleep (1);
 	      	system ("killall ping");
 	      	system ("killall sh");
       	}
