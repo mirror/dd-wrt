@@ -1134,6 +1134,7 @@ status_router.legend5="ÅäÖÃîĞÍ";
 status_router.www_login="µÇä›îĞÍ";
 status_router.www_loginstatus="µÇä› î‘B";
 status_router.leasetime="Remaining Lease Time";
+status_router.notavail="Not available";
 
 //help container
 
