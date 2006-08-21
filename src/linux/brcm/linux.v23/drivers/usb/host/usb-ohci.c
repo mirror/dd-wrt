@@ -2159,7 +2159,7 @@ static int rh_submit_urb (struct urb * urb)
 static int rh_unlink_urb (struct urb * urb)
 {
 	ohci_t * ohci = urb->dev->bus->hcpriv;
-	unsigned int flags;
+	unsigned long flags;
  
 	spin_lock_irqsave(&ohci->ohci_lock, flags);
 	if (ohci->rh.urb == urb) {

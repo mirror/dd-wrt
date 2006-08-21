@@ -24,6 +24,7 @@ if [ "$CONFIG_IP_PNP" = "y" ]; then
 #   bool '    IP: ARP support' CONFIG_IP_PNP_ARP		
 fi
 tristate '  IP: tunneling' CONFIG_NET_IPIP
+tristate '  IP: WCCP v1/v2 support ' CONFIG_NET_IPWCCP
 tristate '  IP: GRE tunnels over IP' CONFIG_NET_IPGRE
 if [ "$CONFIG_IP_MULTICAST" = "y" ]; then
    if [ "$CONFIG_NET_IPGRE" != "n" ]; then

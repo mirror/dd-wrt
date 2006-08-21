@@ -111,6 +111,60 @@ typedef int (*trans_reset)(struct us_data*);
 typedef void (*proto_cmnd)(Scsi_Cmnd*, struct us_data*);
 typedef void (*extra_data_destructor)(void *);	 /* extra data destructor   */
 
+/* Dynamic flag definitions: used in set_bit() etc. */
+#define US_FLIDX_URB_ACTIVE	18  /* 0x00040000  current_urb is in use  */
+#define US_FLIDX_SG_ACTIVE	19  /* 0x00080000  current_sg is in use   */
+#define US_FLIDX_ABORTING	20  /* 0x00100000  abort is in progress   */
+#define US_FLIDX_DISCONNECTING	21  /* 0x00200000  disconnect in progress */
+#define ABORTING_OR_DISCONNECTING	((1UL << US_FLIDX_ABORTING) | \
+					 (1UL << US_FLIDX_DISCONNECTING))
+#define US_FLIDX_RESETTING	22  /* 0x00400000  device reset in progress */
+
+/* processing state machine states */
+#define US_STATE_IDLE		1
+#define US_STATE_RUNNING	2
+#define US_STATE_RESETTING	3
+#define US_STATE_ABORTING	4
+
+/**
+ * struct usb_sg_request - support for scatter/gather I/O
+ * @status: zero indicates success, else negative errno
+ * @bytes: counts bytes transferred.
+ *
+ * These requests are initialized using usb_sg_init(), and then are used
+ * as request handles passed to usb_sg_wait() or usb_sg_cancel().  Most
+ * members of the request object aren't for driver access.
+ *
+ * The status and bytecount values are valid only after usb_sg_wait()
+ * returns.  If the status is zero, then the bytecount matches the total
+ * from the request.
+ *
+ * After an error completion, drivers may need to clear a halt condition
+ * on the endpoint.
+ */
+struct usb_sg_request {
+	int			status;
+	size_t			bytes;
+
+	/* 
+	 * members below are private to usbcore,
+	 * and are not provided for driver access!
+	 */
+	spinlock_t		lock;
+
+	struct usb_device	*dev;
+	int			pipe;
+	struct scatterlist	*sg;
+	int			nents;
+
+	int			entries;
+	struct urb		**urbs;
+
+	int			count;
+	struct completion	complete;
+};
+
+
 /* we allocate one of these for every device that we remember */
 struct us_data {
 	struct us_data		*next;		 /* next device */
@@ -171,6 +225,7 @@ struct us_data {
 	struct urb		*current_urb;	 /* non-int USB requests */
 	struct completion	current_done;	 /* the done flag        */
 	unsigned int		tag;		 /* tag for bulk CBW/CSW */
+	struct usb_sg_request	current_sg;  /* scatter-gather req.  */
 
 	/* the semaphore for sleeping the control thread */
 	struct semaphore	sema;		 /* to sleep thread on   */

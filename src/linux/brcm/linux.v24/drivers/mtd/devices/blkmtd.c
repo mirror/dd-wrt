@@ -195,6 +195,7 @@ static int commit_pages(struct blkmtd_dev *dev)
 	int err = 0;
 
 	iobuf->length = iobuf->nr_pages << PAGE_SHIFT;
+	iobuf->offset = 0;	/* all pages are aligned */
 	iobuf->locked = 1;
 	if(iobuf->length) {
 		int i;

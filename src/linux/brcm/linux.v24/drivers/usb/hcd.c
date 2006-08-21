@@ -1105,7 +1105,8 @@ static int hcd_submit_urb (struct urb *urb)
 		break;
 	case PIPE_BULK:
 		allowed |= USB_DISABLE_SPD | USB_QUEUE_BULK
-				| USB_ZERO_PACKET | URB_NO_INTERRUPT;
+				| USB_ZERO_PACKET | URB_NO_INTERRUPT
+		        | URB_NO_TRANSFER_DMA_MAP;
 		break;
 	case PIPE_INTERRUPT:
 		allowed |= USB_DISABLE_SPD;
@@ -1212,7 +1213,8 @@ static int hcd_submit_urb (struct urb *urb)
 					urb->setup_packet,
 					sizeof (struct usb_ctrlrequest),
 					PCI_DMA_TODEVICE);
-		if (urb->transfer_buffer_length != 0)
+		if (urb->transfer_buffer_length != 0
+			&& !(urb->transfer_flags & URB_NO_TRANSFER_DMA_MAP))
 			urb->transfer_dma = pci_map_single (
 					hcd->pdev,
 					urb->transfer_buffer,

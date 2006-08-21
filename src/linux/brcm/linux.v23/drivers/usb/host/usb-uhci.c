@@ -3034,6 +3034,21 @@ uhci_pci_probe (struct pci_dev *dev, const struct pci_device_id *id)
 	
 	pci_set_master(dev);
 
+ 	{
+ 		u8 misc_reg;
+ 		u32 vendor_id;
+ 		
+ 		pci_read_config_dword (dev, PCI_VENDOR_ID, &vendor_id);
+ 		if (vendor_id == 0x30381106) {
+ 			/* VIA 6212 */
+ 			printk(KERN_INFO "UHCI: Enabling VIA 6212 workarounds\n");
+ 			pci_read_config_byte(dev, 0x41, &misc_reg);
+ 			misc_reg &= ~0x10;
+ 			pci_write_config_byte(dev, 0x41, misc_reg);
+ 			pci_read_config_byte(dev, 0x41, &misc_reg);
+ 		}
+ 	}
+
 	/* Search for the IO base address.. */
 	for (i = 0; i < 6; i++) {
 

@@ -789,6 +789,8 @@ static void qh_link_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
 			writel (cmd, &ehci->regs->command);
 			ehci->hcd.state = USB_STATE_RUNNING;
 			/* posted write need not be known to HC yet ... */
+			
+			timer_action (ehci, TIMER_IO_WATCHDOG);
 		}
 	}
 
