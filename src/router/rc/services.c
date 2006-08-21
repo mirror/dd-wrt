@@ -370,7 +370,8 @@ start_single_service (void)
 
       if (!strncmp (ip, "ping", 4))
       	{
-	      	eval ("alias", "ping=\"ping", "-c","3\"");
+	      	snprintf (cmd, sizeof (cmd), "alias ping=\"ping -c 3\"");
+      		system (cmd);
       	} 
       	
       snprintf (cmd, sizeof (cmd), "eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
@@ -378,7 +379,8 @@ start_single_service (void)
       
       if (!strncmp (ip, "ping", 4))
       	{
-	      	eval ("unalias", "ping");
+	      	snprintf (cmd, sizeof (cmd), "unalias ping");
+      		system (cmd);
       	}
 /*
 		if(!check_wan_link(0))
