@@ -3048,9 +3048,7 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char uptime[200] = { 0 }, cmd[200] =
-  {
-  0};
+  char uptime[200] = { 0 }, cmd[200] = { 0 };
   FILE *fp;
   unlink (UPTIME_TMP);
 
@@ -3095,7 +3093,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%d", ci.target_channel);
     }
   else
-    websWrite (wp, "0");
+    websWrite (wp, "unknown");
 
   return;
 
@@ -3681,7 +3679,7 @@ qos_add_svc (webs_t wp)
 
   nvram_set ("svqos_svcs", new_svcs);
   nvram_commit ();
-
+  sleep (1);
   return 0;
 }
 
