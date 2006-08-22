@@ -397,7 +397,8 @@ static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 	{
 		return FALSE;
 	}
-    return (strstr(p_rsp, p_ok_string) != NULL);
+    return (strstr(p_rsp, p_ok_string) != NULL) ||
+	    (strstr(p_rsp, "NOERROR") != NULL);
 }
 
 /**
