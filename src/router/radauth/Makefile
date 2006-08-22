@@ -15,6 +15,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
   CFLAGS += -DHAVE_MADWIFI -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
 endif
+#CFLAGS +=
 
 all: wrt-radauth radius-client macupd
 
