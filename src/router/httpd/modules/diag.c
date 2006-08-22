@@ -207,11 +207,15 @@ traceroute_onload (webs_t wp, char *arg)
 void
 ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int count = 0;
+  int count = 0, countold = -1, timeout = 0;
   FILE *fp;
   char line[254];
   char newline[300];
   int i;
+
+while ((count > counold) && (timeout < 5)
+{
+countold = count;
   if ((fp = fopen (PING_TMP, "r")) != NULL)
     {				// show result
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -238,9 +242,15 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
 	  count++;
 	}
-      fclose (fp);
     }
-
+  else 
+  {
+	  websWrite (wp, "Done");
+  }
+fclose (fp);
+sleep (2);
+timeout++;
+}
   return;
 }
 
