@@ -212,8 +212,28 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
   char line[254];
   char newline[300];
   int i;
+  
+/* wait as long file size increases, but max. 10 s)*/
+  int c, count1 = 0, count2 = -1, timeout = 0;
 
- sleep(2); //wait for result
+	while ((count1 > count2) && (timeout < 5))
+	{
+		count2 = count1;
+		count1 = 0;
+
+		fp = fopen (PING_TMP, "r");
+		c = fgetc(fp);
+			while (c != EOF)
+			{
+				count1++;
+				c = fgetc(fp);
+			}
+		fclose (fp);
+		timeout++; 
+ 		sleep (2); 
+	}
+/* end waiting */
+	 
    if ((fp = fopen (PING_TMP, "r")) != NULL)
     {				// show result
       while (fgets (line, sizeof (line), fp) != NULL)
