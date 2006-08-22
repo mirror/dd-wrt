@@ -776,9 +776,13 @@ ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
 	  t -= now.tv_sec;
 	  t /= 60;
 	}
+      
       snprintf (active, 31, "iradius%d_lease", i);
       char st[32];
+      if (t>=0)
       sprintf (st, "%d", t);
+      else
+      sprintf (st, "over");
       websWrite (wp, "<input type=\"num\" name=\"%s\" value='%s' />\n",
 		 active, st);
       websWrite (wp, "</td>\n");
@@ -836,7 +840,9 @@ validate_iradius (webs_t wp, char *value, struct variable *v)
 
       snprintf (active, 31, "iradius%d_lease", i);
       char *time = websGetVar (wp, active, "-1");
-      int t = atoi (time);
+      int t=-1;
+      if (strcmp(time,"over"))
+	t = atoi (time);
       if (t == -1)
 	{
 	  strcat (leases, "-1");

@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
+
 #include <unistd.h>
 #include <ctype.h>
 #include "radius.h"
@@ -304,28 +306,61 @@ authmac (unsigned char *mac)
 	  char entry[32];
 	  char *next;
 	  int c = 0;
+	  char smac[32];
+	  memset(smac,0,32);
+	  char enabled[32];
+	  memset (enabled,0,32);
+	  char time[32];
+	  memset (time,0,32);
 	  foreach (entry, collection, next)
 	  {
-	    if (!(c % 2))
-	      if (!stricmp (entry, macstr))
-		{
-		  if (next != NULL)
-		    {
+
+	    switch (c % 3)
+	      {
+	      case 0:
+		strcpy(smac,entry);
+		break;
+	      case 1:
+	        strcpy(enabled,entry);
+		break;
+	      case 2:
+	        strcpy(time,entry);
+		if (strlen(smac)>0)
+		  {
 #ifdef DEBUG
-		      printf ("next %s\n", next);
+      printf ("mac %s %s %s\n", smac,enabled,time);
 #endif
-		      if (strncmp (next, " 1", 2) == 0)
-			{
-			  free (collection);
-			  return 1;
-			}
-		      else
-			{
-			  free (collection);
-			  return 0;
-			}
-		    }
-		}
+		    if (!stricmp (smac, macstr))
+		      {
+			if (strcmp (enabled, "1") == 0)
+			  {
+			  
+			    struct timeval now;
+			    gettimeofday (&now, NULL);
+			    long t = atol(time);
+			    if (t==-1)
+				{
+				free(collection);
+				return 0;
+				}
+			    t-=now.tv_sec;
+			    if (t<=0)
+				{
+				free(collection);
+				return 0;
+				}			    
+			    free (collection);
+			    return 1;
+			  }
+			else
+			  {
+			    free (collection);
+			    return 0;
+			  }
+		      }
+		  }
+		break;
+	      }
 	    c++;
 	  }
 	}
@@ -340,7 +375,8 @@ authmac (unsigned char *mac)
       printf ("mac2 %s\n", macstr);
 #endif
       strcat (collection, macstr);
-      strcat (collection, " 0 ");
+      strcat (collection, " 0");
+      strcat (collection, " -1 "); //time set to not configured
 #ifdef DEBUG
       printf ("collection %s\n", collection);
 #endif
@@ -462,7 +498,12 @@ main (int argc, char **argv)
       offset = 1;
     }
   iface = argv[offset++];
-  if (argc - offset != 6)
+  
+  if (argc - offset != 6 && internal==0)
+    {
+      goto argerror;
+    }
+  if (argc != 3 && internal==1)
     {
       goto argerror;
     }
