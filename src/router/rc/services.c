@@ -410,7 +410,9 @@ start_single_service (void)
 	  unlink (TRACEROUTE_TMP);
 	  system (cmd);
 	}
-    }
+    } 
+END OBSOLETE */
+#ifdef HAVE_TFTP
   else if (!strcmp (service, "tftp_upgrade"))
     {
       stop_service ("wan");
@@ -423,7 +425,8 @@ start_single_service (void)
 #endif
       stop_service ("cron");
     } 
-END OBSOLETE */
+#endif
+
   else if (!strcmp (service, "http_upgrade"))
     {
       stop_service ("wan");
