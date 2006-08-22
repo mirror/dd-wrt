@@ -174,7 +174,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
+									<input name="ddns_hostname" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
@@ -212,7 +212,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_2" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_2"); %>" />
+									<input name="ddns_hostname_2" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_2"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
@@ -238,7 +238,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_3" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_3"); %>" />
+									<input name="ddns_hostname_3" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_3"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -264,7 +264,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_4" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_4"); %>" />
+									<input name="ddns_hostname_4" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_4"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -290,7 +290,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_6" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_6"); %>" />
+									<input name="ddns_hostname_6" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_6"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.typ"); %></div>
@@ -331,7 +331,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input name="ddns_hostname_5" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_5"); %>" />
+									<input name="ddns_hostname_5" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_5"); %>" />
 								</div>
 								<% nvram_invmatch("expert_mode","1","<!--"); %>
 								<div class="setting">
