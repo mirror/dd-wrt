@@ -213,7 +213,7 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
   char newline[300];
   int i;
 
-while ((count > counold) && (timeout < 5)
+while ((count > countold) && (timeout < 5))
 {
 countold = count;
   if ((fp = fopen (PING_TMP, "r")) != NULL)
