@@ -159,7 +159,7 @@ ping_onload (webs_t wp, char *arg)
 
   return ret;
 }
-
+/* OBSOLETE
 int
 diag_traceroute_start (webs_t wp)
 {
@@ -203,6 +203,7 @@ traceroute_onload (webs_t wp, char *arg)
 
   return ret;
 }
+END OBSOLETE */
 
 void
 ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
@@ -268,7 +269,7 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
+/* OBSOLETE
 void
 ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -291,3 +292,4 @@ ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+END OBSOLETE */

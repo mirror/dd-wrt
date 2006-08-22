@@ -411,7 +411,7 @@ struct onload onloads[] = {
   {"MACClone", macclone_onload},
   {"FilterSummary", filtersummary_onload},
   {"Ping", ping_onload},
-  {"Traceroute", traceroute_onload},
+//  {"Traceroute", traceroute_onload},
 };
 
 void
@@ -2763,10 +2763,9 @@ struct gozila_action gozila_actions[] = {
   {"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
   {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
   {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
-  {"Traceroute", "start", "start_traceroute", 1, SYS_RESTART,
-   diag_traceroute_start},
-  {"Traceroute", "stop", "", 0, REFRESH, diag_traceroute_stop},
-  {"Traceroute", "clear", "", 0, REFRESH, diag_traceroute_clear},
+//  {"Traceroute", "start", "start_traceroute", 1, SYS_RESTART, diag_traceroute_start},
+//  {"Traceroute", "stop", "", 0, REFRESH, diag_traceroute_stop},
+//  {"Traceroute", "clear", "", 0, REFRESH, diag_traceroute_clear},
 };
 
 struct gozila_action *
@@ -4585,7 +4584,7 @@ struct ej_handler ej_handlers[] = {
   {"wl_packet_get", ej_wl_packet_get},
   {"wl_ioctl", ej_wl_ioctl},
   {"dump_ping_log", ej_dump_ping_log},
-  {"dump_traceroute_log", ej_dump_traceroute_log},
+//  {"dump_traceroute_log", ej_dump_traceroute_log},
   {"show_sysinfo", ej_show_sysinfo},
   {"show_miscinfo", ej_show_miscinfo},
   {"get_http_method", ej_get_http_method},
