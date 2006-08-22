@@ -221,7 +221,8 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 		count2 = count1;
 		count1 = 0;
 
-		fp = fopen (PING_TMP, "r");
+		if ((fp = fopen (PING_TMP, "r")) != NULL)
+    	{
 		c = fgetc(fp);
 			while (c != EOF)
 			{
@@ -230,7 +231,8 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 			}
 		fclose (fp);
 		timeout++; 
- 		sleep (2); 
+ 		sleep (2);
+		} 
 	}
 /* end waiting */
 	 
