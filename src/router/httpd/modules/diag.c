@@ -243,10 +243,7 @@ countold = count;
 	  count++;
 	}
     }
-  else 
-  {
-	  websWrite (wp, "Done");
-  }
+
 fclose (fp);
 sleep (2);
 timeout++;
