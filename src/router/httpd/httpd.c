@@ -255,16 +255,16 @@ auth_check (char *dirname, char *authorization)
 //#ifdef DDM_SUPPORT
   char *crypt (const char *, const char *);
 
-char *enc1 = crypt(authinfo,auth_userid);
-if (strcmp (enc1, auth_userid))
+  char *enc1 = crypt (authinfo, auth_userid);
+  if (strcmp (enc1, auth_userid))
     {
-    return 0;
+      return 0;
     }
-    
-char *enc2 = crypt(authpass,auth_passwd);
-if (strcmp (enc2, auth_passwd))
+
+  char *enc2 = crypt (authpass, auth_passwd);
+  if (strcmp (enc2, auth_passwd))
     {
-    return 0;
+      return 0;
     }
 
 /*fprintf(stderr,"1Enc %s\n",auth_userid);
@@ -278,7 +278,7 @@ fprintf(stderr,"3Enc2 %s\n",enc2);
 
 
 */
-  
+
   if (strcmp (enc1, auth_userid) == 0 && strcmp (enc2, auth_passwd) == 0)
     {
       return 1;
@@ -299,7 +299,8 @@ send_authenticate (char *realm)
 
   (void) snprintf (header, sizeof (header),
 		   "WWW-Authenticate: Basic realm=\"%s\"", realm);
-  send_error (401, "Unauthorized", header, "Authorization required. please note that the default username is \"root\" in all newer releases");
+  send_error (401, "Unauthorized", header,
+	      "Authorization required. please note that the default username is \"root\" in all newer releases");
 }
 
 
@@ -502,26 +503,27 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
       vfsclose (e);
     }
 #else
-char *buf=getWebsFile(path);
-if (buf==NULL)
-{
-  FILE *fp;
-  int c;
-
-  if (!(fp = fopen (path, "rb")))
-    return;
-  while ((c = getc (fp)) != EOF)
-    wfputc (c, stream);		// jimmy, https, 8/4/2003
-  fclose (fp);
-}else
-{
-int i;
-int len=getWebsFileLen(path);
-for (i=0;i<len;i++)
+  char *buf = getWebsFile (path);
+  if (buf == NULL)
     {
-    wfputc(buf[i],stream);
+      FILE *fp;
+      int c;
+
+      if (!(fp = fopen (path, "rb")))
+	return;
+      while ((c = getc (fp)) != EOF)
+	wfputc (c, stream);	// jimmy, https, 8/4/2003
+      fclose (fp);
     }
-}
+  else
+    {
+      int i;
+      int len = getWebsFileLen (path);
+      for (i = 0; i < len; i++)
+	{
+	  wfputc (buf[i], stream);
+	}
+    }
 #endif
 }
 
@@ -597,20 +599,28 @@ check_connect_type (void)
     putenv(s);
   }
 }*/
-int contains(char *source,char *cmp)
+int
+contains (char *source, char *cmp)
 {
-if (cmp==NULL || source==NULL)return 0;
-if (strlen(source)>strlen(cmp))return 0;
-int i;
-for (i=0;i<strlen(source)-strlen(cmp);i++)
+  if (cmp == NULL || source == NULL)
+    return 0;
+  if (strlen (source) < strlen (cmp))
+    return 0;
+  int i;
+ // fprintf(stderr,"contains %s %s\n",source,cmp);
+  for (i = 0; i < strlen (source) - strlen (cmp); i++)
     {
-    int a;
-    int r=0;
-    for (a=0;a<strlen(cmp);a++)
-	if (source[i+a]!=cmp[a])r++;
-    if (!r)return 1;
+      int a;
+      int r = 0;
+      for (a = 0; a < strlen (cmp); a++)
+	if (source[i + a] != cmp[a])
+	  r++;
+//      fprintf(stderr,"result %d\n",r);
+      if (!r)
+	return 1;
     }
-return 0;
+  //fprintf(stderr,"no match\n");
+  return 0;
 }
 
 
@@ -779,7 +789,7 @@ handle_request (void)
     }
 
 #endif
-  if (contains(file,"cgi-bin"))
+  if (contains (file, "cgi-bin"))
     {
 
       do_auth (auth_userid, auth_passwd, auth_realm);
@@ -858,7 +868,7 @@ handle_request (void)
 	  return;
 	}
 
-      do_ej("/tmp/shellout.asp", conn_fp);
+      do_ej ("/tmp/shellout.asp", conn_fp);
       unlink ("/tmp/shellout.asp");
       unlink ("/tmp/exec.tmp");
       unlink ("/tmp/exec.query");
@@ -866,11 +876,12 @@ handle_request (void)
     }
   else
     {
-  /* extract url args if present */
-  query = strchr(file, '?');
-  if (query) {
-    *query++ = 0;
-  }
+      /* extract url args if present */
+      query = strchr (file, '?');
+      if (query)
+	{
+	  *query++ = 0;
+	}
       for (handler = &mime_handlers[0]; handler->pattern; handler++)
 	{
 	  if (match (handler->pattern, file))
@@ -1078,12 +1089,12 @@ encodeString (const char *string)
   while ((ch = *string++))
     {
       // very simple check for what to encode
-      
-      if (ch>'0'-1 && ch<'9'+1)
+
+      if (ch > '0' - 1 && ch < '9' + 1)
 	*p++ = ch;
-      else if (ch>'a'-1 && ch<'z'+1)
+      else if (ch > 'a' - 1 && ch < 'z' + 1)
 	*p++ = ch;
-      else if (ch>'A'-1 && ch<'Z'+1)
+      else if (ch > 'A' - 1 && ch < 'Z' + 1)
 	*p++ = ch;
       else
 	p += sprintf (p, "&#%d;", (unsigned char) ch);
@@ -1422,13 +1433,15 @@ wfprintf (FILE * fp, char *fmt, ...)
   return ret;
 }
 
-int websWrite (webs_t wp, char *fmt, ...)
+int
+websWrite (webs_t wp, char *fmt, ...)
 {
   va_list args;
   char buf[1024];
   int ret;
   FILE *fp = wp;
-  if (!wp || !fmt)return -1;
+  if (!wp || !fmt)
+    return -1;
   //buf = (char*)malloc(1024);
   va_start (args, fmt);
   vsnprintf (buf, sizeof (buf), fmt, args);
@@ -1445,7 +1458,7 @@ int websWrite (webs_t wp, char *fmt, ...)
 #endif
     ret = fprintf (fp, "%s", buf);
   va_end (args);
-  wfflush(wp);
+  wfflush (wp);
   return ret;
 }
 
@@ -1595,7 +1608,8 @@ check_cipher (void)
 
 
 
-char *websGetVar(webs_t wp, char *var, char *d)
+char *
+websGetVar (webs_t wp, char *var, char *d)
 {
-return get_cgi(var) ? : d;
+  return get_cgi (var) ? : d;
 }
