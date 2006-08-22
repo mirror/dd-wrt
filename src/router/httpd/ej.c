@@ -8,6 +8,8 @@
 #include <shutils.h>
 #include "httpd.h"
 
+
+//#define CDEBUG 1
 #ifdef CDEBUG
 #include <utils.h>
 #endif
@@ -166,11 +168,11 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  /* Call function */
 		  LOG ("exec");
 		  LOG (func);
-		  //      cdebug(func);
+		        cdebug(func);
 		  //("Call %s\n",func);
 		  call (func, stream);
 		  //cprintf("Return %s okay\n",func);
-		  //      cdebug(func);
+		        cdebug(func);
 		  LOG ("return");
 		}
 	      asp = NULL;
