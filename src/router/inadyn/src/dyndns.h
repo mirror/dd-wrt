@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "http_client.h"
 #include "debug_if.h"
 
-#define DYNDNS_VERSION_STRING  "1.96"
+#define DYNDNS_VERSION_STRING  "1.96-custom"
 #define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
 #define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
 
