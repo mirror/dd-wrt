@@ -242,7 +242,7 @@ struct detect_wans
 #define PPP_PSEUDO_GW	"10.112.112.112"
 
 #define PING_TMP	"/tmp/ping.log"
-#define TRACEROUTE_TMP	"/tmp/traceroute.log"
+//#define TRACEROUTE_TMP	"/tmp/traceroute.log"
 #define MAX_BUF_LEN	254
 
 #define RESOLV_FILE	"/tmp/resolv.conf"
