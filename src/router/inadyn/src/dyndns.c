@@ -466,11 +466,12 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					{
 			                        p_self->alias_info.update_required[i] = FALSE;
 
-						DBG_PRINTF((LOG_WARNING,"I:" MODULE_TAG "Alias '%s' to IP '%s' updated successful.\n", 
+						DBG_PRINTF((LOG_WARNING,"I:" MODULE_TAG "Alias '%s' to IP '%s' updated successfully.\n", 
 							p_self->alias_info.names[i].name,
 							p_self->info.my_ip_address.name));                        
 						p_self->times_since_last_update = 0;
 						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
+						p_self->forced_update_times = p_self->forced_update_period_sec / p_self->sleep_sec;
 
 						if ((fp=fopen(p_self->time_cache, "w")))
 						{
@@ -530,6 +531,7 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self)
 						
 		/*forced update period*/
 		p_self->forced_update_period_sec = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
+		p_self->forced_update_period_sec_orig = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
 		sprintf(p_self->ip_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_IP_FILE);
 		sprintf(p_self->time_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_TIME_FILE);
 		/*update period*/
