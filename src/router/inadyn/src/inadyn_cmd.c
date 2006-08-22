@@ -1027,7 +1027,6 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			fgets (cached_time, sizeof (cached_time), fp);
 			fclose(fp);
 			dif = time(NULL) - atoi(cached_time);
-			p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
 			p_self->forced_update_period_sec -= dif;
 		}
 		p_self->times_since_last_update = 0;
