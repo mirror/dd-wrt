@@ -301,15 +301,15 @@ extern void ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv);
 
 /* Ping and Traceroute */
 extern void ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv);
+//extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv);
 extern int diag_ping_start (webs_t wp);
 extern int diag_ping_stop (webs_t wp);
 extern int diag_ping_clear (webs_t wp);
-extern int diag_traceroute_start (webs_t wp);
-extern int diag_traceroute_stop (webs_t wp);
-extern int diag_traceroute_clear (webs_t wp);
+//extern int diag_traceroute_start (webs_t wp);
+//extern int diag_traceroute_stop (webs_t wp);
+//extern int diag_traceroute_clear (webs_t wp);
 extern int ping_onload (webs_t wp, char *arg);
-extern int traceroute_onload (webs_t wp, char *arg);
+//extern int traceroute_onload (webs_t wp, char *arg);
 
 /* Added by Botho 03.April.06 */
 extern void ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv);
