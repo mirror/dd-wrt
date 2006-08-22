@@ -387,7 +387,8 @@ start_single_service (void)
 	        	system(cmd);
 		}
 */
-    }
+    } 
+/* OBSOLETE
   else if (!strcmp (service, "start_traceroute"))
     {
       char *ip = nvram_safe_get ("traceroute_ip");
@@ -399,7 +400,7 @@ start_single_service (void)
 
       else if (nvram_invmatch ("traceroute_ip", ""))
 	{
-	  /* Some site block UDP packets, so we want to use ICMP packets */
+	  // Some site block UDP packets, so we want to use ICMP packets
 	  char cmd[80];
 	  snprintf (cmd, sizeof (cmd), "/usr/bin/traceroute -f %s %s &",
 		    TRACEROUTE_TMP, ip);
@@ -421,7 +422,8 @@ start_single_service (void)
       stop_service ("upnp");
 #endif
       stop_service ("cron");
-    }
+    } 
+END OBSOLETE */
   else if (!strcmp (service, "http_upgrade"))
     {
       stop_service ("wan");
