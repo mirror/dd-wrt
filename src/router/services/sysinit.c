@@ -1305,7 +1305,7 @@ start_nvram (void)
 #endif
   nvram_set ("ping_ip", "");
   nvram_set ("ping_times", "");
-  nvram_set ("traceroute_ip", "");
+//  nvram_set ("traceroute_ip", "");
 
   nvram_set ("filter_port", "");	// The name have been disbaled from 1.41.3
 
