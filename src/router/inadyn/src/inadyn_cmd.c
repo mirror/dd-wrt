@@ -103,6 +103,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
             "[NAME] - optional DYNDNS service type. SHOULD be one of the following: \n"
             "\t\t-For dyndns.org DNS system: dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
             "\t\t-For freedns.afraid.org DNS system: default@freedns.afraid.org\n"
+            "\t\t-For easydns DNS system: default@easydns.com\n"
             "\t\t-For www.zoneedit.com DNS system: default@zoneedit.com\n"
             "\t\t-For www.no-ip.com DNS system: default@no-ip.com\n"
             "\t\t-For www.3322.org DNS system: dyndns@3322.org\n"
