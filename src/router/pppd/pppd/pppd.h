@@ -533,6 +533,7 @@ ssize_t complete_read __P((int, void *, size_t));
 
 /* Procedures exported from auth.c */
 void link_required __P((int));	  /* we are starting to use the link */
+void start_link __P((int));	  /* bring the link up now */
 void link_terminated __P((int));  /* we are finished with the link */
 void link_down __P((int));	  /* the LCP layer has left the Opened state */
 void upper_layers_down __P((int));/* take all NCPs down */
