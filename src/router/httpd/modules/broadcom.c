@@ -3804,12 +3804,12 @@ live_translate (char *tran)
 	  if (t2 == NULL)
 	    {
 	      cprintf (" length was null\n");
-	      return "share.err";		//error (typo?)
+	      return "Error";		//error (typo?)
 	    }
 	  int len = t2 - cmp;
 	  cprintf ("length = %d\n", len);
 	  if (len < 0)
-	    return "share.err";		//error (unknown)
+	    return "Error";		//error (unknown)
 	  char dest[128];
 	  strncpy (dest, cmp, len);
 	  dest[len] = 0;
@@ -3819,7 +3819,7 @@ live_translate (char *tran)
 	}
     }
 	fclose (in);
-  return "share.err";
+  return "Error";
 }
 
 /* obsolete, use do_pagehead
