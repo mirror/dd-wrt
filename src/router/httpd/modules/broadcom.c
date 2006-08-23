@@ -3814,11 +3814,12 @@ live_translate (char *tran)
 	  strncpy (dest, cmp, len);
 	  dest[len] = 0;
 	  cprintf ("destination %s\n", dest);
-
+	  fclose (in);
+	  return dest;
 	}
     }
 	fclose (in);
-  return dest;
+  return "share.err";
 }
 
 /* obsolete, use do_pagehead
