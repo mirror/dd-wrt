@@ -46,11 +46,13 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *this, int nr, DYNDNS_SYSTEM
 static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 
 static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
 /* botho 30/07/06 : add www.3322.org */
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
@@ -100,7 +102,14 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_noip_http_dns_server,
             "ip1.dynupdate.no-ip.com", "/", 
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
-		
+
+    {EASYDNS_DEFAULT, 
+        {"default@easydns.com", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_easydns_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_easydns_http_dns_server,
+            DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
+			"members.easydns.com", "/dyn/dyndns.php?hostname=", ""}},
+
     {DYNDNS_3322_DYNAMIC, 
         {"dyndns@3322.org", &dyndns_org_dynamic,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
@@ -201,6 +210,18 @@ static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DY
 {
 	(void)p_sys_info;
 	return sprintf(p_self->p_req_buffer, GENERIC_NOIP_AUTH_MY_IP_REQUEST_FORMAT,
+        p_self->info.dyndns_server_name.name,
+		p_self->info.dyndns_server_url,		
+		p_self->alias_info.names[cnt].name,
+		p_self->info.my_ip_address.name,
+        p_self->info.credentials.p_enc_usr_passwd_buffer,
+		p_self->info.dyndns_server_name.name		
+		);
+}
+static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, GENERIC_EASYDNS_AUTH_MY_IP_REQUEST_FORMAT,
         p_self->info.dyndns_server_name.name,
 		p_self->info.dyndns_server_url,		
 		p_self->alias_info.names[cnt].name,
@@ -413,6 +434,14 @@ BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_s
 		(strstr(p_rsp, "CODE=\"200\"") != NULL) ||
 		(strstr(p_rsp, "CODE=\"707\"") != NULL)
 	);	
+}
+
+/**
+	NOERROR is the OK code here
+*/
+BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+{
+	return (strstr(p_rsp, "NOERROR") != NULL);	
 }
 
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
