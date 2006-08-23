@@ -40,7 +40,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: ipcp.c,v 1.69 2004/11/13 12:03:26 paulus Exp $"
+#define RCSID	"$Id: ipcp.c,v 1.70 2005/08/25 23:59:34 paulus Exp $"
 
 /*
  * TODO:
@@ -171,12 +171,6 @@ static option_t ipcp_option_list[] = {
     { "ipparam", o_string, &ipparam,
       "Set ip script parameter", OPT_PRIO },
 
-    { "ip-up-script", o_string, &ipupcustom,
-      "Specify custom ip-up script", OPT_PRIO },
-
-    { "ip-down-script", o_string, &ipdowncustom,
-      "Specify custom ip-down script", OPT_PRIO },
-
     { "noipdefault", o_bool, &disable_defaultip,
       "Don't use name for default IP adrs", 1 },
 
@@ -270,7 +264,7 @@ struct protent ipcp_protent = {
 };
 
 static void ipcp_clear_addrs __P((int, u_int32_t, u_int32_t));
-static void ipcp_script __P((char *));		/* Run an up/down script */
+static void ipcp_script __P((char *, int));	/* Run an up/down script */
 static void ipcp_script_done __P((void *));
 
 /*
@@ -1660,6 +1654,7 @@ ip_demand_conf(u)
     }
     if (!sifaddr(u, wo->ouraddr, wo->hisaddr, GetMask(wo->ouraddr)))
 	return 0;
+    ipcp_script(_PATH_IPPREUP, 1);
     if (!sifup(u))
 	return 0;
     if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
@@ -1799,6 +1794,9 @@ ipcp_up(f)
 	}
 #endif
 
+	/* run the pre-up script, if any, and wait for it to finish */
+	ipcp_script(_PATH_IPPREUP, 1);
+
 	/* bring the interface up for IP */
 	if (!sifup(f->unit)) {
 	    if (debug)
@@ -1852,7 +1850,7 @@ ipcp_up(f)
      */
     if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
 	ipcp_script_state = s_up;
-	ipcp_script(ipupcustom ? ipupcustom : _PATH_IPUP);
+	ipcp_script(_PATH_IPUP, 0);
     }
 }
 
@@ -1902,7 +1900,7 @@ ipcp_down(f)
     /* Execute the ip-down script */
     if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
 	ipcp_script_state = s_down;
-	ipcp_script(ipdowncustom ? ipdowncustom : _PATH_IPDOWN);
+	ipcp_script(_PATH_IPDOWN, 0);
     }
 }
 
@@ -1956,13 +1954,13 @@ ipcp_script_done(arg)
     case s_up:
 	if (ipcp_fsm[0].state != OPENED) {
 	    ipcp_script_state = s_down;
-	    ipcp_script(ipdowncustom ? ipdowncustom : _PATH_IPDOWN);
+	    ipcp_script(_PATH_IPDOWN, 0);
 	}
 	break;
     case s_down:
 	if (ipcp_fsm[0].state == OPENED) {
 	    ipcp_script_state = s_up;
-	    ipcp_script(ipupcustom ? ipupcustom : _PATH_IPUP);
+	    ipcp_script(_PATH_IPUP, 0);
 	}
 	break;
     }
@@ -1974,8 +1972,9 @@ ipcp_script_done(arg)
  * interface-name tty-name speed local-IP remote-IP.
  */
 static void
-ipcp_script(script)
+ipcp_script(script, wait)
     char *script;
+    int wait;
 {
     char strspeed[32], strlocal[32], strremote[32];
     char *argv[8];
@@ -1992,7 +1991,11 @@ ipcp_script(script)
     argv[5] = strremote;
     argv[6] = ipparam;
     argv[7] = NULL;
-    ipcp_script_pid = run_program(script, argv, 0, ipcp_script_done, NULL);
+    if (wait)
+	run_program(script, argv, 0, NULL, NULL, 1);
+    else
+	ipcp_script_pid = run_program(script, argv, 0, ipcp_script_done,
+				      NULL, 0);
 }
 
 /*

@@ -68,7 +68,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: auth.c,v 1.101 2004/11/12 10:30:51 paulus Exp $"
+#define RCSID	"$Id: auth.c,v 1.112 2006/06/18 11:26:00 paulus Exp $"
 
 #include <stdio.h>
 #include <stddef.h>
@@ -228,7 +228,6 @@ bool refuse_eap = 0;		/* Don't wanna auth. ourselves with EAP */
 #ifdef CHAPMS
 bool refuse_mschap = 0;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 0;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
-bool ms_ignore_domain = 0;
 #else
 bool refuse_mschap = 1;		/* Don't wanna auth. ourselves with MS-CHAP */
 bool refuse_mschap_v2 = 1;	/* Don't wanna auth. ourselves with MS-CHAPv2 */
@@ -299,13 +298,6 @@ option_t auth_options[] = {
       "Require CHAP authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MD5,
       &lcp_wantoptions[0].chap_mdtype },
-    { "chap-secrets", o_string, &chapseccustom,
-      "Specify custom chap-secrets file", OPT_PRIO },
-    { "pap-secrets", o_string, &papseccustom,
-      "Specify custom pap-secrets file", OPT_PRIO },
-    { "srp-secrets", o_string, &srpseccustom,
-      "Specify custom srp-secrets file", OPT_PRIO },
-
 #ifdef CHAPMS
     { "require-mschap", o_bool, &auth_required,
       "Require MS-CHAP authentication from peer",
@@ -323,9 +315,6 @@ option_t auth_options[] = {
       "Require MS-CHAPv2 authentication from peer",
       OPT_ALIAS | OPT_PRIOSUB | OPT_A2OR | MDTYPE_MICROSOFT_V2,
       &lcp_wantoptions[0].chap_mdtype },
-    { "ms-ignore-domain", o_bool, &ms_ignore_domain,
-      "Ignore any MS domain prefix in the username", 1 },
-
 #endif
 
     { "refuse-pap", o_bool, &refuse_pap,
@@ -420,6 +409,7 @@ setupapfile(argv)
 {
     FILE *ufile;
     int l;
+    uid_t euid;
     char u[MAXNAMELEN], p[MAXSECRETLEN];
     char *fname;
 
@@ -429,9 +419,14 @@ setupapfile(argv)
     fname = strdup(*argv);
     if (fname == NULL)
 	novm("+ua file name");
-    seteuid(getuid());
+    euid = geteuid();
+    if (seteuid(getuid()) == -1) {
+	option_error("unable to reset uid before opening %s: %m", fname);
+	return 0;
+    }
     ufile = fopen(fname, "r");
-    seteuid(0);
+    if (seteuid(euid) == -1)
+	fatal("unable to regain privileges: %m");
     if (ufile == NULL) {
 	option_error("unable to open user login data file %s", fname);
 	return 0;
@@ -537,15 +532,25 @@ set_permitted_number(argv)
 
 /*
  * An Open on LCP has requested a change from Dead to Establish phase.
- * Do what's necessary to bring the physical layer up.
  */
 void
 link_required(unit)
     int unit;
 {
+}
+
+/*
+ * Bring the link up to the point of being able to do ppp.
+ */
+void start_link(unit)
+    int unit;
+{
+    char *msg;
+
     new_phase(PHASE_SERIALCONN);
 
     devfd = the_channel->connect();
+    msg = "Connect script failed";
     if (devfd < 0)
 	goto fail;
 
@@ -558,6 +563,7 @@ link_required(unit)
      * gives us.  Thus we don't need the tdb_writelock/tdb_writeunlock.
      */
     fd_ppp = the_channel->establish_ppp(devfd);
+    msg = "ppp establishment failed";
     if (fd_ppp < 0) {
 	status = EXIT_FATAL_ERROR;
 	goto disconnect;
@@ -591,7 +597,6 @@ link_required(unit)
     new_phase(PHASE_DEAD);
     if (the_channel->cleanup)
 	(*the_channel->cleanup)();
-
 }
 
 /*
@@ -653,6 +658,8 @@ link_terminated(unit)
 	the_channel->disconnect();
 	devfd = -1;
     }
+    if (the_channel->cleanup)
+	(*the_channel->cleanup)();
 
     if (doing_multilink && multilink_master) {
 	if (!bundle_terminating)
@@ -745,8 +752,8 @@ link_established(unit)
 	    set_allowed_addrs(unit, NULL, NULL);
 	} else if (!wo->neg_upap || uselogin || !null_login(unit)) {
 	    warn("peer refused to authenticate: terminating link");
-	    lcp_close(unit, "peer refused to authenticate");
 	    status = EXIT_PEER_AUTH_FAILED;
+	    lcp_close(unit, "peer refused to authenticate");
 	    return;
 	}
     }
@@ -905,8 +912,8 @@ auth_peer_fail(unit, protocol)
     /*
      * Authentication failure: take the link down
      */
-    lcp_close(unit, "Authentication failed");
     status = EXIT_PEER_AUTH_FAILED;
+    lcp_close(unit, "Authentication failed");
 }
 
 /*
@@ -983,8 +990,8 @@ auth_withpeer_fail(unit, protocol)
      * is no point in persisting without any way to get updated
      * authentication secrets.
      */
-    lcp_close(unit, "Failed to authenticate ourselves to peer");
     status = EXIT_AUTH_TOPEER_FAILED;
+    lcp_close(unit, "Failed to authenticate ourselves to peer");
 }
 
 /*
@@ -995,10 +1002,12 @@ auth_withpeer_success(unit, protocol, prot_flavor)
     int unit, protocol, prot_flavor;
 {
     int bit;
+    const char *prot = "";
 
     switch (protocol) {
     case PPP_CHAP:
 	bit = CHAP_WITHPEER;
+	prot = "CHAP";
 	switch (prot_flavor) {
 	case CHAP_MD5:
 	    bit |= CHAP_MD5_WITHPEER;
@@ -1017,14 +1026,18 @@ auth_withpeer_success(unit, protocol, prot_flavor)
 	if (passwd_from_file)
 	    BZERO(passwd, MAXSECRETLEN);
 	bit = PAP_WITHPEER;
+	prot = "PAP";
 	break;
     case PPP_EAP:
 	bit = EAP_WITHPEER;
+	prot = "EAP";
 	break;
     default:
 	warn("auth_withpeer_success: unknown protocol %x", protocol);
 	bit = 0;
     }
+
+    notice("%s authentication succeeded", prot);
 
     /* Save the authentication method for later. */
     auth_done[unit] |= bit;
@@ -1142,9 +1155,9 @@ check_maxoctets(arg)
     diff = maxoctets - used;
     if(diff < 0) {
 	notice("Traffic limit reached. Limit: %u Used: %u", maxoctets, used);
+	status = EXIT_TRAFFIC_LIMIT;
 	lcp_close(0, "Traffic limit");
 	need_holdoff = 0;
-	status = EXIT_TRAFFIC_LIMIT;
     } else {
         TIMEOUT(check_maxoctets, NULL, maxoctets_timeout);
     }
@@ -1174,9 +1187,9 @@ check_idle(arg)
     if (tlim <= 0) {
 	/* link is idle: shut it down. */
 	notice("Terminating connection due to lack of activity.");
+	status = EXIT_IDLE_TIMEOUT;
 	lcp_close(0, "Link inactive");
 	need_holdoff = 0;
-	status = EXIT_IDLE_TIMEOUT;
     } else {
 	TIMEOUT(check_idle, NULL, tlim);
     }
@@ -1388,7 +1401,7 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
      * Open the file of pap secrets and scan for a suitable secret
      * for authenticating this user.
      */
-    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+    filename = _PATH_UPAPFILE;
     addrs = opts = NULL;
     ret = UPAP_AUTHNAK;
     f = fopen(filename, "r");
@@ -1659,6 +1672,7 @@ plogin(user, passwd, msg)
 static void
 plogout()
 {
+    char *tty;
 #ifdef USE_PAM
     int pam_error;
 
@@ -1669,14 +1683,12 @@ plogout()
     }
     /* Apparently the pam stuff does closelog(). */
     reopen_log();
-#else /* ! USE_PAM */   
-    char *tty;
+#endif /* USE_PAM */
 
     tty = devnam;
     if (strncmp(tty, "/dev/", 5) == 0)
 	tty += 5;
     logwtmp(tty, "", "");		/* Wipe out utmp logout entry */
-#endif /* ! USE_PAM */
     logged_in = 0;
 }
 
@@ -1707,7 +1719,7 @@ null_login(unit)
      * Open the file of pap secrets and scan for a suitable secret.
      */
     if (ret <= 0) {
-	filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+	filename = _PATH_UPAPFILE;
 	addrs = NULL;
 	f = fopen(filename, "r");
 	if (f == NULL)
@@ -1755,7 +1767,7 @@ get_pap_passwd(passwd)
 	    return ret;
     }
 
-    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+    filename = _PATH_UPAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1793,7 +1805,7 @@ have_pap_secret(lacks_ipp)
 	    return ret;
     }
 
-    filename = papseccustom ? papseccustom : _PATH_UPAPFILE;
+    filename = _PATH_UPAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1838,7 +1850,7 @@ have_chap_secret(client, server, need_ip, lacks_ipp)
 	}
     }
 
-    filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
+    filename = _PATH_CHAPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1880,7 +1892,7 @@ have_srp_secret(client, server, need_ip, lacks_ipp)
     char *filename;
     struct wordlist *addrs;
 
-    filename = srpseccustom ? srpseccustom : _PATH_SRPFILE;
+    filename = _PATH_SRPFILE;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1933,7 +1945,7 @@ get_secret(unit, client, server, secret, secret_len, am_server)
 	    return 0;
 	}
     } else {
-	filename = chapseccustom ? chapseccustom : _PATH_CHAPFILE;
+	filename = _PATH_CHAPFILE;
 	addrs = NULL;
 	secbuf[0] = 0;
 
@@ -1991,7 +2003,7 @@ get_srp_secret(unit, client, server, secret, am_server)
     if (!am_server && passwd[0] != '\0') {
 	strlcpy(secret, passwd, MAXWORDLEN);
     } else {
-	filename = srpseccustom ? srpseccustom : _PATH_SRPFILE;
+	filename = _PATH_SRPFILE;
 	addrs = NULL;
 
 	fp = fopen(filename, "r");
@@ -2554,5 +2566,5 @@ auth_script(script)
     argv[5] = strspeed;
     argv[6] = NULL;
 
-    auth_script_pid = run_program(script, argv, 0, auth_script_done, NULL);
+    auth_script_pid = run_program(script, argv, 0, auth_script_done, NULL, 0);
 }

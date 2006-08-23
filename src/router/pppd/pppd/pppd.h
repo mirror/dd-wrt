@@ -39,7 +39,7 @@
  * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: pppd.h,v 1.88 2004/11/13 12:02:22 paulus Exp $
+ * $Id: pppd.h,v 1.91 2005/08/25 23:59:34 paulus Exp $
  */
 
 /*
@@ -298,11 +298,6 @@ extern char	remote_name[MAXNAMELEN]; /* Peer's name for authentication */
 extern bool	explicit_remote;/* remote_name specified with remotename opt */
 extern bool	demand;		/* Do dial-on-demand */
 extern char	*ipparam;	/* Extra parameter for ip up/down scripts */
-extern char	*ipupcustom;	/* Custom ip up script */
-extern char	*ipdowncustom;	/* Custom ip down script */
-extern char	*chapseccustom;	/* Custom chap-secrets file */
-extern char	*papseccustom;	/* Custom pap-secrets file */
-extern char	*srpseccustom;	/* Custom srp-secrets file */
 extern bool	cryptpap;	/* Others' PAP passwords are encrypted */
 extern int	idle_time_limit;/* Shut down link if idle for this long */
 extern int	holdoff;	/* Dead time before restarting */
@@ -323,10 +318,6 @@ extern char	*bundle_name;	/* bundle name for multilink */
 extern bool	dump_options;	/* print out option values */
 extern bool	dryrun;		/* check everything, print options, exit */
 extern int	child_wait;	/* # seconds to wait for children at end */
-
-#ifdef CHAPMS
-extern bool	ms_ignore_domain; /* Ignore any MS domain prefix */
-#endif
 
 #ifdef MAXOCTETS
 extern unsigned int maxoctets;	     /* Maximum octetes per session (in bytes) */
@@ -475,7 +466,7 @@ extern struct channel *the_channel;
 /* Procedures exported from main.c. */
 void set_ifunit __P((int));	/* set stuff that depends on ifunit */
 void detach __P((void));	/* Detach from controlling tty */
-void pppd_die __P((int));		/* Cleanup and exit */
+void die __P((int));		/* Cleanup and exit */
 void quit __P((void));		/* like die(1) */
 void novm __P((char *));	/* Say we ran out of memory, and die */
 void timeout __P((void (*func)(void *), void *arg, int s, int us));
@@ -487,7 +478,7 @@ pid_t safe_fork __P((int, int, int));	/* Fork & close stuff in child */
 int  device_script __P((char *cmd, int in, int out, int dont_wait));
 				/* Run `cmd' with given stdin and stdout */
 pid_t run_program __P((char *prog, char **args, int must_exist,
-		       void (*done)(void *), void *arg));
+		       void (*done)(void *), void *arg, int wait));
 				/* Run program prog with args in child */
 void reopen_log __P((void));	/* (re)open the connection to syslog */
 void print_link_stats __P((void)); /* Print stats, if available */
@@ -501,6 +492,7 @@ void remove_notifier __P((struct notifier **, notify_func, void *));
 void notify __P((struct notifier *, int));
 int  ppp_send_config __P((int, int, u_int32_t, int, int));
 int  ppp_recv_config __P((int, int, u_int32_t, int, int));
+const char *protocol_name __P((int));
 void remove_pidfiles __P((void));
 void lock_db __P((void));
 void unlock_db __P((void));
@@ -533,6 +525,7 @@ ssize_t complete_read __P((int, void *, size_t));
 
 /* Procedures exported from auth.c */
 void link_required __P((int));	  /* we are starting to use the link */
+void start_link __P((int));	  /* bring the link up now */
 void link_terminated __P((int));  /* we are finished with the link */
 void link_down __P((int));	  /* the LCP layer has left the Opened state */
 void upper_layers_down __P((int));/* take all NCPs down */
@@ -614,7 +607,7 @@ void wait_input __P((struct timeval *));
 				/* Wait for input, with timeout */
 void add_fd __P((int));		/* Add fd to set to wait for */
 void remove_fd __P((int));	/* Remove fd from set to wait for */
-int  pppd_read_packet __P((u_char *)); /* Read PPP packet */
+int  read_packet __P((u_char *)); /* Read PPP packet */
 int  get_loop_output __P((void)); /* Read pkts from loopback */
 void tty_send_config __P((int, u_int32_t, int, int));
 				/* Configure i/f transmit parameters */
@@ -689,9 +682,7 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-#define option_error(fmt, args...)
-
-//void option_error __P((char *fmt, ...));
+void option_error __P((char *fmt, ...));
 				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */

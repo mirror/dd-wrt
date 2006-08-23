@@ -1,8 +1,8 @@
 #
 # pppstats makefile
-# $Id: Makefile.linux,v 1.8 2004/10/31 22:09:03 paulus Exp $
+# $Id: Makefile.linux,v 1.9 2006/06/04 05:07:46 paulus Exp $
 #
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 
@@ -22,7 +22,7 @@ all: pppstats
 
 install: pppstats
 	-mkdir -p $(MANDIR)
-	$(INSTALL) -c pppstats $(BINDIR)
+	$(INSTALL) -s -c pppstats $(BINDIR)
 	$(INSTALL) -c -m 444 pppstats.8 $(MANDIR)
 
 pppstats: $(PPPSTATSRCS)

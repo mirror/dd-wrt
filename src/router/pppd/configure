@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: configure,v 1.35 2004/11/06 11:36:54 paulus Exp $
+# $Id: configure,v 1.37 2005/06/26 23:53:17 carlsonj Exp $
 
 # Where to install stuff by default
 DESTDIR=/usr/local
@@ -20,27 +20,47 @@ case $system in
     ksrc="linux";
     state="known";;
   SunOS)
+    karch=`/usr/bin/isainfo -k`
     case $release in
 #      [0-3]*)	state="ancient";;
 #      4*)	state="known"; ksrc="sunos4"; makext="sunos4";;
-      5.[7-9]*|5.[1-9][0-9])	state="known"; ksrc="solaris"; makext="sol2";
-              case "`/usr/bin/isainfo -k`" in
+      5.[7-9]*|5.[1-9][0-9]*)	state="known"; ksrc="solaris"; makext="sol2";
+              case "$karch" in
+		amd64)		archvariant='-64x';;
 		sparcv9)	archvariant='-64';;
 		*)	;;
 	      esac;;
       5.[1-6]*)	state="known"; ksrc="solaris"; makext="sol2";;
     esac
-    if [ -x /opt/SUNWspro/bin/cc -a "$1" != "gcc" ] &&
+    if [ "$1" = gcc ]; then
+	shift
+	usegcc=gcc
+    fi
+    if [ "$1" = 32 ]; then
+	shift
+	archvariant=
+    fi
+    if [ -x /opt/SUNWspro/bin/cc -a "$usegcc" != gcc ] &&
        /opt/SUNWspro/bin/cc -flags >/dev/null 2>&1; then
-      : # use Sun WorkShop compiler
+      if [ "$archvariant" = "-64x" ]; then
+        ( cd /tmp; echo "int x;" > ppp$$.c
+	  /opt/SUNWspro/bin/cc -c -errwarn -xchip=opteron -xarch=amd64 ppp$$.c >/dev/null 2>&1 || (
+	    echo "WorkShop C is unable to make 64 bit modules, and your $karch system needs"
+	    echo "them.  Consider upgrading cc on this machine."
+	    rm -f ppp$$.c
+	    exit 1
+	  ) || exit 1
+	  rm -f ppp$$.c ppp$$.o
+        ) || exit 1
+      fi
     elif gcc --version >/dev/null 2>&1; then
       archvariant=gcc$archvariant
       compiletype=.gcc
-      if [ "$archvariant" = "gcc-64" ]; then
+      if [ "$archvariant" = "gcc-64" -o"$archvariant" = "gcc-64x" ]; then
         ( cd /tmp; touch ppp$$.c
 	  gcc -c -m64 ppp$$.c >/dev/null 2>&1 || (
-	    echo "gcc is unable to make 64 bit modules, and your $arch system needs them."
-	    echo "consider upgrading gcc on this machine, or switching to Sun WorkShop."
+	    echo "gcc is unable to make 64 bit modules, and your $karch system needs them."
+	    echo "Consider upgrading gcc on this machine, or switching to Sun WorkShop."
 	    rm -f ppp$$.c
 	    exit 1
 	  ) || exit 1
@@ -177,7 +197,7 @@ if [ -d "$ksrc" ]; then
 	       pppd/plugins/radius pppd/plugins/pppoatm; do
 	mkmkf $dir/Makefile.$makext $dir/Makefile
     done
-    if [ "$archvariant" ]; then
+    if [ -f $ksrc/Makefile.$makext$archvariant ]; then
 	mkmkf $ksrc/Makefile.$makext$archvariant $ksrc/Makefile
     fi
 else
