@@ -121,17 +121,18 @@ SHA1_Update(SHA1_CTX *context, const unsigned char *data, unsigned int len)
     j = (context->count[0] >> 3) & 63;
     if ((context->count[0] += len << 3) < (len << 3)) context->count[1]++;
     context->count[1] += (len >> 29);
-    i = 64 - j;
-    while (len >= i) {
-	memcpy(&context->buffer[j], data, i);
+    if ((j + len) > 63) {
+	memcpy(&context->buffer[j], data, (i = 64-j));
 	SHA1_Transform(context->state, context->buffer);
-	data += i;
-	len -= i;
-	i = 64;
+	for ( ; i + 63 < len; i += 64) {
+	    SHA1_Transform(context->state, &data[i]);
+	}
 	j = 0;
     }
+    else
+	i = 0;
 
-    memcpy(&context->buffer[j], data, len);
+    memcpy(&context->buffer[j], &data[i], len - i);
 }
 
 

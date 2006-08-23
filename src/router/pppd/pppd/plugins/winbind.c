@@ -209,33 +209,42 @@ static const char *b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01
  **/
 char * base64_encode(const char *data)
 {
+	int bits = 0;
+	int char_count = 0;
 	size_t out_cnt = 0;
 	size_t len = strlen(data);
-	size_t output_len = 4 * ((len + 2) / 3) + 2;
-	const unsigned char *ptr = (const unsigned char *) data;
+	size_t output_len = strlen(data) * 2;
 	char *result = malloc(output_len); /* get us plenty of space */
-	unsigned int bits;
 
-	for (; len >= 3; len -= 3) {
-		bits = (ptr[0] << 16) + (ptr[1] << 8) + ptr[2];
-		ptr += 3;
-		result[out_cnt++] = b64[bits >> 18];
-		result[out_cnt++] = b64[(bits >> 12) & 0x3f];
-		result[out_cnt++] = b64[(bits >> 6) & 0x3f];
-		result[out_cnt++] = b64[bits & 0x3f];
+	while (len-- && out_cnt < (output_len) - 5) {
+		int c = (unsigned char) *(data++);
+		bits += c;
+		char_count++;
+		if (char_count == 3) {
+			result[out_cnt++] = b64[bits >> 18];
+			result[out_cnt++] = b64[(bits >> 12) & 0x3f];
+			result[out_cnt++] = b64[(bits >> 6) & 0x3f];
+	    result[out_cnt++] = b64[bits & 0x3f];
+	    bits = 0;
+	    char_count = 0;
+	} else {
+	    bits <<= 8;
 	}
-	if (len != 0) {
-		bits = ptr[0] << 16;
-		if (len > 1)
-			bits |= ptr[1] << 8;
-		result[out_cnt++] = b64[bits >> 18];
-		result[out_cnt++] = b64[(bits >> 12) & 0x3f];
-		result[out_cnt++] = (len > 1)? b64[(bits >> 6) & 0x3f]: '=';
-		result[out_cnt++] = '=';
+    }
+    if (char_count != 0) {
+	bits <<= 16 - (8 * char_count);
+	result[out_cnt++] = b64[bits >> 18];
+	result[out_cnt++] = b64[(bits >> 12) & 0x3f];
+	if (char_count == 1) {
+	    result[out_cnt++] = '=';
+	    result[out_cnt++] = '=';
+	} else {
+	    result[out_cnt++] = b64[(bits >> 6) & 0x3f];
+	    result[out_cnt++] = '=';
 	}
-
-	result[out_cnt] = '\0';	/* terminate */
-	return result;
+    }
+    result[out_cnt] = '\0';	/* terminate */
+    return result;
 }
 
 unsigned int run_ntlm_auth(const char *username, 
@@ -296,18 +305,15 @@ unsigned int run_ntlm_auth(const char *username,
 
 	if (forkret == 0) {
 		/* child process */
-		uid_t uid;
-
 		close(child_out[0]);
 		close(child_in[1]);
 
 		/* run winbind as the user that invoked pppd */
 		setgid(getgid());
-		uid = getuid();
-		if (setuid(uid) == -1 || getuid() != uid)
-			fatal("pppd/winbind: could not setuid to %d: %m", uid);
+		setuid(getuid());
 		execl("/bin/sh", "sh", "-c", ntlm_auth, NULL);  
-		fatal("pppd/winbind: could not exec /bin/sh: %m");
+		perror("pppd/winbind: could not exec /bin/sh");
+		exit(1);
 	}
 
         /* parent */
@@ -551,19 +557,20 @@ winbind_chap_verify(char *user, char *ourname, int id,
 		u_char *lm_response = NULL;
 		int nt_response_size = 0;
 		int lm_response_size = 0;
+		MS_ChapResponse *rmd = (MS_ChapResponse *) response;
 		u_char session_key[16];
 		
 		if (response_len != MS_CHAP_RESPONSE_LEN)
 			break;			/* not even the right length */
 		
 		/* Determine which part of response to verify against */
-		if (response[MS_CHAP_USENT]) {
-			nt_response = &response[MS_CHAP_NTRESP];
-			nt_response_size = MS_CHAP_NTRESP_LEN;
+		if (rmd->UseNT[0]) {
+			nt_response = rmd->NTResp;
+			nt_response_size = sizeof(rmd->NTResp);
 		} else {
 #ifdef MSLANMAN
-			lm_response = &response[MS_CHAP_LANMANRESP];
-			lm_response_size = MS_CHAP_LANMANRESP_LEN;
+			lm_response = rmd->LANManResp;
+			lm_response_size = sizeof(rmd->LANManResp);
 #else
 			/* Should really propagate this into the error packet. */
 			notice("Peer request for LANMAN auth not supported");
@@ -577,9 +584,12 @@ winbind_chap_verify(char *user, char *ourname, int id,
 				  domain,
 				  NULL,
 				  NULL,
-				  challenge, challenge_len,
-				  lm_response, lm_response_size,
-				  nt_response, nt_response_size,
+				  challenge,
+				  challenge_len,
+				  lm_response,
+				  lm_response ? lm_response_size: 0,
+				  nt_response,
+				  nt_response ? nt_response_size: 0,
 				  session_key,
 				  &error_string) == AUTHENTICATED) {
 			mppe_set_keys(challenge, session_key);
@@ -600,6 +610,7 @@ winbind_chap_verify(char *user, char *ourname, int id,
 	
 	case CHAP_MICROSOFT_V2:
 	{
+		MS_Chap2Response *rmd = (MS_Chap2Response *) response;
 		u_char Challenge[8];
 		u_char session_key[MD4_SIGNATURE_SIZE];
 		char *error_string = NULL;
@@ -607,8 +618,7 @@ winbind_chap_verify(char *user, char *ourname, int id,
 		if (response_len != MS_CHAP2_RESPONSE_LEN)
 			break;			/* not even the right length */
 		
-		ChallengeHash(&response[MS_CHAP2_PEER_CHALLENGE], challenge,
-			      user, Challenge);
+		ChallengeHash(rmd->PeerChallenge, challenge, user, Challenge);
 		
 		/* ship off to winbind, and check */
 		
@@ -616,20 +626,22 @@ winbind_chap_verify(char *user, char *ourname, int id,
 				  domain, 
 				  NULL,
 				  NULL,
-				  Challenge, 8,
-				  NULL, 0,
-				  &response[MS_CHAP2_NTRESP],
-				  MS_CHAP2_NTRESP_LEN,
+				  Challenge,
+				  8,
+				  NULL, 
+				  0,
+				  rmd->NTResp,
+				  sizeof(rmd->NTResp),
+				  
 				  session_key,
 				  &error_string) == AUTHENTICATED) {
 			
 			GenerateAuthenticatorResponse(session_key,
-				&response[MS_CHAP2_NTRESP],
-				&response[MS_CHAP2_PEER_CHALLENGE],
-				challenge, user, saresponse);
-			mppe_set_keys2(session_key, &response[MS_CHAP2_NTRESP],
-				       MS_CHAP2_AUTHENTICATOR);
-			if (response[MS_CHAP2_FLAGS]) {
+						      rmd->NTResp, rmd->PeerChallenge,
+						      challenge, user,
+						      saresponse);
+			mppe_set_keys2(session_key, rmd->NTResp, MS_CHAP2_AUTHENTICATOR);
+			if (rmd->Flags[0]) {
 				slprintf(message, message_space, "S=%s", saresponse);
 			} else {
 				slprintf(message, message_space, "S=%s M=%s",
