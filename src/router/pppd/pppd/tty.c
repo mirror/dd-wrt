@@ -755,14 +755,6 @@ int connect_tty()
 		close(pty_master);
 		pty_master = -1;
 	}
-	if (pty_slave >= 0) {
-		close(pty_slave);
-		pty_slave = -1;
-	}
-	if (real_ttyfd >= 0) {
-		close(real_ttyfd);
-		real_ttyfd = -1;
-	}
 	ttyfd = -1;
 	if (got_sigterm)
 		asked_to_quit = 1;
@@ -781,6 +773,7 @@ void disconnect_tty()
 	} else {
 		info("Serial link disconnected.");
 	}
+	stop_charshunt(NULL, 0);
 }
 
 void tty_close_fds()
@@ -944,7 +937,6 @@ start_charshunt(ifd, ofd)
 	exit(0);
     }
     charshunt_pid = cpid;
-    add_notifier(&sigreceived, stop_charshunt, 0);
     record_child(cpid, "pppd (charshunt)", charshunt_done, NULL);
     return 1;
 }
