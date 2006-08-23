@@ -3,7 +3,7 @@
 # Copyright 2002 Roaring Penguin Software Inc.
 #
 
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 MANDIR = $(DESTDIR)/share/man/man8
 LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
 

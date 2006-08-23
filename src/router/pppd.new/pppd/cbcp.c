@@ -33,7 +33,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: cbcp.c,v 1.16 2004/10/28 00:15:36 paulus Exp $"
+#define RCSID	"$Id: cbcp.c,v 1.17 2006/05/22 00:04:07 paulus Exp $"
 
 #include <stdio.h>
 #include <string.h>
@@ -483,6 +483,6 @@ cbcp_up(us)
     cbcp_state *us;
 {
     persist = 0;
-    lcp_close(0, "Call me back, please");
     status = EXIT_CALLBACK;
+    lcp_close(0, "Call me back, please");
 }

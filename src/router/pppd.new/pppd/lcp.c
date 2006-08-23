@@ -40,7 +40,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: lcp.c,v 1.75 2004/11/14 22:53:42 carlsonj Exp $"
+#define RCSID	"$Id: lcp.c,v 1.76 2006/05/22 00:04:07 paulus Exp $"
 
 /*
  * TODO:
@@ -1305,8 +1305,8 @@ lcp_nakci(f, p, len, treat_as_reject)
 	if (looped_back) {
 	    if (++try.numloops >= lcp_loopbackfail) {
 		notice("Serial line is looped back.");
-		lcp_close(f->unit, "Loopback detected");
 		status = EXIT_LOOPBACK;
+		lcp_close(f->unit, "Loopback detected");
 	    }
 	} else
 	    try.numloops = 0;
@@ -2233,8 +2233,8 @@ void LcpLinkFailure (f)
     if (f->state == OPENED) {
 	info("No response to %d echo-requests", lcp_echos_pending);
         notice("Serial link appears to be disconnected.");
-        lcp_close(f->unit, "Peer not responding");
 	status = EXIT_PEER_DEAD;
+	lcp_close(f->unit, "Peer not responding");
     }
 }
 

@@ -133,7 +133,7 @@ static int connect_pppoatm(void)
 	int fd;
 	struct atm_qos qos;
 
-	system ("/sbin/modprobe pppoatm");
+	system ("/sbin/modprobe -q pppoatm");
 
 	if (!device_got_set)
 		no_device_given_pppoatm();
