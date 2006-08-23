@@ -696,7 +696,7 @@ fatal __V((char *fmt, ...))
     logit(LOG_ERR, fmt, pvar);
     va_end(pvar);
 
-    die(1);			/* as promised */
+    pppd_die(1);			/* as promised */
 }
 
 /*

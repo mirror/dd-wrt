@@ -68,7 +68,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: tty.c,v 1.25 2006/06/04 07:04:57 paulus Exp $"
+#define RCSID	"$Id: tty.c,v 1.22 2004/11/13 12:07:29 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -563,16 +563,12 @@ int connect_tty()
 			int err, prio;
 
 			prio = privopen? OPRIO_ROOT: tty_options[0].priority;
-			if (prio < OPRIO_ROOT && seteuid(uid) == -1) {
-				error("Unable to drop privileges before opening %s: %m\n",
-				      devnam);
-				status = EXIT_OPEN_FAILED;
-				goto errret;
-			}
+			if (prio < OPRIO_ROOT)
+				seteuid(uid);
 			real_ttyfd = open(devnam, O_NONBLOCK | O_RDWR, 0);
 			err = errno;
-			if (prio < OPRIO_ROOT && seteuid(0) == -1)
-				fatal("Unable to regain privileges");
+			if (prio < OPRIO_ROOT)
+				seteuid(0);
 			if (real_ttyfd >= 0)
 				break;
 			errno = err;
@@ -759,6 +755,14 @@ int connect_tty()
 		close(pty_master);
 		pty_master = -1;
 	}
+	if (pty_slave >= 0) {
+		close(pty_slave);
+		pty_slave = -1;
+	}
+	if (real_ttyfd >= 0) {
+		close(real_ttyfd);
+		real_ttyfd = -1;
+	}
 	ttyfd = -1;
 	if (got_sigterm)
 		asked_to_quit = 1;
@@ -777,7 +781,6 @@ void disconnect_tty()
 	} else {
 		info("Serial link disconnected.");
 	}
-	stop_charshunt(NULL, 0);
 }
 
 void tty_close_fds()
@@ -941,6 +944,7 @@ start_charshunt(ifd, ofd)
 	exit(0);
     }
     charshunt_pid = cpid;
+    add_notifier(&sigreceived, stop_charshunt, 0);
     record_child(cpid, "pppd (charshunt)", charshunt_done, NULL);
     return 1;
 }

@@ -31,24 +31,21 @@ typedef struct _option {
 static SERVER acctserver = {0};
 static SERVER authserver = {0};
 
-int default_tries = 4;
-int default_timeout = 60;
-
 static OPTION config_options[] = {
 /* internally used options */
 {"config_file",		OT_STR, ST_UNDEF, NULL},
 /* General options */
 {"auth_order",	 	OT_AUO, ST_UNDEF, NULL},
-{"login_tries",	 	OT_INT, ST_UNDEF, &default_tries},
-{"login_timeout",	OT_INT, ST_UNDEF, &default_timeout},
-{"nologin",		OT_STR, ST_UNDEF, "/etc/nologin"},
-{"issue",		OT_STR, ST_UNDEF, "/etc/radiusclient/issue"},
+{"login_tries",	 	OT_INT, ST_UNDEF, NULL},
+{"login_timeout",	OT_INT, ST_UNDEF, NULL},
+{"nologin",		OT_STR, ST_UNDEF, NULL},
+{"issue",		OT_STR, ST_UNDEF, NULL},
 /* RADIUS specific options */
 {"authserver",		OT_SRV, ST_UNDEF, &authserver},
 {"acctserver",		OT_SRV, ST_UNDEF, &acctserver},
 {"servers",		OT_STR, ST_UNDEF, NULL},
 {"dictionary",		OT_STR, ST_UNDEF, NULL},
-{"login_radius",	OT_STR, ST_UNDEF, "/usr/sbin/login.radius"},
+{"login_radius",	OT_STR, ST_UNDEF, NULL},
 {"seqfile",		OT_STR, ST_UNDEF, NULL},
 {"mapfile",		OT_STR, ST_UNDEF, NULL},
 {"default_realm",	OT_STR, ST_UNDEF, NULL},

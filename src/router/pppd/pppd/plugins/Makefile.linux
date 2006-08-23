@@ -4,14 +4,14 @@ CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
 
-DESTDIR = $(INSTROOT)@DESTDIR@
+DESTDIR = @DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
 
-SUBDIRS := rp-pppoe pppoatm
+SUBDIRS := rp-pppoe pppoatm radius
 # Uncomment the next line to include the radius authentication plugin
-SUBDIRS += radius
+# SUBDIRS += radius
 PLUGINS := minconn.so passprompt.so passwordfd.so winbind.so
 
 # include dependencies if present

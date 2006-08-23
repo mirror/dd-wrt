@@ -28,7 +28,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: chap-new.c,v 1.8 2005/07/13 10:41:58 paulus Exp $"
+#define RCSID	"$Id: chap-new.c,v 1.6 2004/11/04 10:02:26 paulus Exp $"
 
 #include <stdlib.h>
 #include <string.h>
@@ -96,7 +96,6 @@ static struct chap_server_state {
 	int challenge_xmits;
 	int challenge_pktlen;
 	unsigned char challenge[CHAL_MAX_PKTLEN];
-	char message[256];
 } server;
 
 /* Values for flags in chap_client_state and chap_server_state */
@@ -311,12 +310,15 @@ chap_handle_response(struct chap_server_state *ss, int id,
 	int (*verifier)(char *, char *, int, struct chap_digest_type *,
 		unsigned char *, unsigned char *, char *, int);
 	char rname[MAXNAMELEN+1];
+	char message[256];
 
 	if ((ss->flags & LOWERUP) == 0)
 		return;
 	if (id != ss->challenge[PPP_HDRLEN+1] || len < 2)
 		return;
-	if (ss->flags & CHALLENGE_VALID) {
+	if ((ss->flags & AUTH_DONE) == 0) {
+		if ((ss->flags & CHALLENGE_VALID) == 0)
+			return;
 		response = pkt;
 		GETCHAR(response_len, pkt);
 		len -= response_len + 1;	/* length of name */
@@ -324,6 +326,7 @@ chap_handle_response(struct chap_server_state *ss, int id,
 		if (len < 0)
 			return;
 
+		ss->flags &= ~CHALLENGE_VALID;
 		if (ss->flags & TIMEOUT_PENDING) {
 			ss->flags &= ~TIMEOUT_PENDING;
 			UNTIMEOUT(chap_timeout, ss);
@@ -343,43 +346,39 @@ chap_handle_response(struct chap_server_state *ss, int id,
 			verifier = chap_verify_response;
 		ok = (*verifier)(name, ss->name, id, ss->digest,
 				 ss->challenge + PPP_HDRLEN + CHAP_HDRLEN,
-				 response, ss->message, sizeof(ss->message));
+				 response, message, sizeof(message));
 		if (!ok || !auth_number()) {
 			ss->flags |= AUTH_FAILED;
 			warn("Peer %q failed CHAP authentication", name);
 		}
-	} else if ((ss->flags & AUTH_DONE) == 0)
-		return;
+	}
 
 	/* send the response */
 	p = outpacket_buf;
 	MAKEHEADER(p, PPP_CHAP);
-	mlen = strlen(ss->message);
+	mlen = strlen(message);
 	len = CHAP_HDRLEN + mlen;
 	p[0] = (ss->flags & AUTH_FAILED)? CHAP_FAILURE: CHAP_SUCCESS;
 	p[1] = id;
 	p[2] = len >> 8;
 	p[3] = len;
 	if (mlen > 0)
-		memcpy(p + CHAP_HDRLEN, ss->message, mlen);
+		memcpy(p + CHAP_HDRLEN, message, mlen);
 	output(0, outpacket_buf, PPP_HDRLEN + len);
 
-	if (ss->flags & CHALLENGE_VALID) {
-		ss->flags &= ~CHALLENGE_VALID;
+	if ((ss->flags & AUTH_DONE) == 0) {
+		ss->flags |= AUTH_DONE;
 		if (ss->flags & AUTH_FAILED) {
 			auth_peer_fail(0, PPP_CHAP);
 		} else {
-			if ((ss->flags & AUTH_DONE) == 0)
-				auth_peer_success(0, PPP_CHAP,
-						  ss->digest->code,
-						  name, strlen(name));
+			auth_peer_success(0, PPP_CHAP, ss->digest->code,
+					  name, strlen(name));
 			if (chap_rechallenge_time) {
 				ss->flags |= TIMEOUT_PENDING;
 				TIMEOUT(chap_timeout, ss,
 					chap_rechallenge_time);
 			}
 		}
-		ss->flags |= AUTH_DONE;
 	}
 }
 
@@ -397,7 +396,13 @@ chap_verify_response(char *name, char *ourname, int id,
 	int ok;
 	unsigned char secret[MAXSECRETLEN];
 	int secret_len;
-
+#ifdef CHAPMS
+    char nametmp[MAXNAMELEN];
+    	if (ms_ignore_domain && strrchr(name, '\\')) {
+		strcpy(nametmp, strrchr(name, '\\') + 1);
+		strcpy(name, nametmp);
+	}
+#endif
 	/* Get the secret that the peer is supposed to know */
 	if (!get_secret(0, name, ourname, (char *)secret, &secret_len, 1)) {
 		error("No CHAP secret found for authenticating %q", name);
@@ -501,7 +506,6 @@ chap_handle_status(struct chap_client_state *cs, int code, int id,
 		auth_withpeer_success(0, PPP_CHAP, cs->digest->code);
 	else {
 		cs->flags |= AUTH_FAILED;
-		error("CHAP authentication failed");
 		auth_withpeer_fail(0, PPP_CHAP);
 	}
 }
@@ -553,7 +557,6 @@ chap_protrej(int unit)
 	}
 	if ((cs->flags & (AUTH_STARTED|AUTH_DONE)) == AUTH_STARTED) {
 		cs->flags &= ~AUTH_STARTED;
-		error("CHAP authentication failed due to protocol-reject");
 		auth_withpeer_fail(0, PPP_CHAP);
 	}
 }
