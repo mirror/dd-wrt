@@ -40,6 +40,7 @@ typedef enum
     ZONE_EDIT_DEFAULT,
     CUSTOM_HTTP_BASIC_AUTH,
     NOIP_DEFAULT,
+    EASYDNS_DEFAULT,
     DYNDNS_3322_DYNAMIC,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
@@ -124,6 +125,13 @@ typedef enum
 	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
 
 #define GENERIC_NOIP_AUTH_MY_IP_REQUEST_FORMAT \
+    "GET http://%s%s%s&myip=%s " \
+	 "HTTP/1.0\r\n" \
+	"Authorization: Basic %s\r\n" \
+	"Host: %s\r\n" \
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+
+#define GENERIC_EASYDNS_AUTH_MY_IP_REQUEST_FORMAT \
     "GET http://%s%s%s&myip=%s " \
 	 "HTTP/1.0\r\n" \
 	"Authorization: Basic %s\r\n" \
