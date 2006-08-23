@@ -4050,7 +4050,6 @@ struct mime_handler mime_handlers[] = {
   {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-  {"Info.live.htm", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
@@ -4060,10 +4059,12 @@ struct mime_handler mime_handlers[] = {
   {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth},
 #ifdef HAVE_SKYTRON
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2},
 #else
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth},
+  {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth},
   {"**.htm", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
 
