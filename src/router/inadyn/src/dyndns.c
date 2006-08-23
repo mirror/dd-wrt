@@ -293,7 +293,6 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self)
 {
 	int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 	int count;
-	FILE *fp;
 	char *p_ip;
 	char *p_current_str = p_self->http_tr.p_rsp;
 	BOOL found;
@@ -339,14 +338,6 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self)
         sprintf(new_ip_str, DYNDNS_IP_ADDR_FORMAT, ip1, ip2, ip3, ip4);
         p_self->info.my_ip_has_changed = (strcmp(new_ip_str, p_self->info.my_ip_address.name) != 0);
 		strcpy(p_self->info.my_ip_address.name, new_ip_str);
-	if (p_self->info.my_ip_has_changed == 1)
-	{
-		if ((fp=fopen(p_self->ip_cache, "w")))
-		{
-			fprintf(fp,"%s", new_ip_str);
-			fclose(fp);
-		}
-	}
 		return RC_OK;
 	}
 	else
@@ -441,7 +432,7 @@ BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_s
 */
 BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
-	return (strstr(p_rsp, "NOERROR") != NULL);	
+	return (strstr(p_rsp, "NOERROR") != NULL);
 }
 
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
@@ -503,6 +494,11 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
 						p_self->forced_update_times = p_self->forced_update_period_sec / p_self->sleep_sec;
 
+						if ((fp=fopen(p_self->ip_cache, "w")))
+						{
+							fprintf(fp,"%s", p_self->info.my_ip_address.name);
+							fclose(fp);
+						}
 						if ((fp=fopen(p_self->time_cache, "w")))
 						{
 							fprintf(fp,"%ld", time (NULL));
