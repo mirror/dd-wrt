@@ -369,37 +369,31 @@ static int test_config(char *filename)
 	}
 #endif
 
-#if 0
 	if (rc_conf_int("login_tries") <= 0)
 	{
 		error("%s: login_tries <= 0 is illegal", filename);
 		return (-1);
 	}
-#endif
 	if (rc_conf_str("seqfile") == NULL)
 	{
 		error("%s: seqfile not specified", filename);
 		return (-1);
 	}
-#if 0
 	if (rc_conf_int("login_timeout") <= 0)
 	{
 		error("%s: login_timeout <= 0 is illegal", filename);
 		return (-1);
 	}
-#endif
 	if (rc_conf_str("mapfile") == NULL)
 	{
 		error("%s: mapfile not specified", filename);
 		return (-1);
 	}
-#if 0
 	if (rc_conf_str("nologin") == NULL)
 	{
 		error("%s: nologin not specified", filename);
 		return (-1);
 	}
-#endif
 
 	return 0;
 }
