@@ -13,6 +13,7 @@
 #include <cy_conf.h>
 #include <rc.h>
 #include <shutils.h>
+#include <syslog.h>
 
 
 int
@@ -76,6 +77,7 @@ radio_timer_main (void)
 	      switch (radiotime)
 		{
 		case 1:	//01 - turn radio on
+		  syslog (LOG_DEBUG, "Turning radio on\n");
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
@@ -86,6 +88,8 @@ radio_timer_main (void)
 		  break;
 
 		case 2:	//10 - turn radio off
+		
+		  syslog (LOG_DEBUG, "Turning radio off\n");
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
