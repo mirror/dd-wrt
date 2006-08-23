@@ -66,6 +66,10 @@ What's new in ppp-2.4.4.
 * Lots of bugs fixed, particularly in the area of demand-dialled and
   persistent connections.
 
+* The rp-pppoe plugin now accepts any interface name (that isn't an
+  existing pppd option name) without putting "nic-" on the front of
+  it, not just eth*, nas*, tap* and br*.
+
 
 What was new in ppp-2.4.3.
 **************************
@@ -272,4 +276,4 @@ The primary site for releases of this software is:
 	ftp://ftp.samba.org/pub/ppp/
 
 
-($Id: README,v 1.36 2005/08/26 12:56:53 paulus Exp $)
+($Id: README,v 1.37 2006/05/29 23:51:29 paulus Exp $)

@@ -24,7 +24,7 @@
 *
 ***********************************************************************/
 static char const RCSID[] =
-"$Id: radius.c,v 1.30 2005/07/10 10:28:55 paulus Exp $";
+"$Id: radius.c,v 1.31 2006/05/22 00:01:40 paulus Exp $";
 
 #include "pppd.h"
 #include "chap-new.h"
@@ -1019,6 +1019,10 @@ radius_acct_stop(void)
 	    av_type = PW_ACCT_IDLE_TIMEOUT;
 	    break;
 
+	case EXIT_CALLBACK:
+	    av_type = PW_CALLBACK;
+	    break;
+	    
 	case EXIT_CONNECT_TIME:
 	    av_type = PW_ACCT_SESSION_TIMEOUT;
 	    break;

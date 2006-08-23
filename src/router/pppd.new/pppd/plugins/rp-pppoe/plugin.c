@@ -22,7 +22,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: plugin.c,v 1.14 2005/08/25 10:51:27 paulus Exp $";
+"$Id: plugin.c,v 1.15 2006/05/29 23:29:16 paulus Exp $";
 
 #define _GNU_SOURCE 1
 #include "pppoe.h"
@@ -253,16 +253,14 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
     int fd;
     struct ifreq ifr;
 
-    /* Only do it if name is "ethXXX", "nasXXX", "tapXXX" or "nic-XXXX.
-       In latter case strip off the "nic-" */
-    /* Thanks to Russ Couturier for this fix */
+    /*
+     * Take any otherwise-unrecognized option as a possible device name,
+     * and test if it is the name of a network interface with a
+     * hardware address whose sa_family is ARPHRD_ETHER.
+     */
     if (strlen(cmd) > 4 && !strncmp(cmd, "nic-", 4)) {
 	/* Strip off "nic-" */
 	cmd += 4;
-    } else if (strlen(cmd) < 4
-	       || (strncmp(cmd, "eth", 3) && strncmp(cmd, "nas", 3)
-		   && strncmp(cmd, "tap", 3) && strncmp(cmd, "br", 2))) {
-	return 0;
     }
 
     /* Open a socket */
@@ -280,8 +278,9 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 		r = 0;
 	    } else {
 		if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
-		    error("Interface %s not Ethernet", cmd);
-		    r=0;
+		    if (doit)
+			error("Interface %s not Ethernet", cmd);
+		    r = 0;
 		}
 	    }
 	}
@@ -289,7 +288,7 @@ PPPoEDevnameHook(char *cmd, char **argv, int doit)
 
     /* Close socket */
     close(fd);
-    if (r) {
+    if (r && doit) {
 	strncpy(devnam, cmd, sizeof(devnam));
 	if (the_channel != &pppoe_channel) {
 

@@ -296,15 +296,18 @@ unsigned int run_ntlm_auth(const char *username,
 
 	if (forkret == 0) {
 		/* child process */
+		uid_t uid;
+
 		close(child_out[0]);
 		close(child_in[1]);
 
 		/* run winbind as the user that invoked pppd */
 		setgid(getgid());
-		setuid(getuid());
+		uid = getuid();
+		if (setuid(uid) == -1 || getuid() != uid)
+			fatal("pppd/winbind: could not setuid to %d: %m", uid);
 		execl("/bin/sh", "sh", "-c", ntlm_auth, NULL);  
-		perror("pppd/winbind: could not exec /bin/sh");
-		exit(1);
+		fatal("pppd/winbind: could not exec /bin/sh: %m");
 	}
 
         /* parent */
