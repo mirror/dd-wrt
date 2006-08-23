@@ -3785,7 +3785,7 @@ live_translate (char *tran)
   sprintf (buf, "/www/%s", lang);
   free (lang);
 // lang_charset.set
-  char *sstring = strcpy ("", tran);
+  char *sstring = "wl_basic.radio_off";
   strcat (sstring, "=\"");
   char s[128];
   FILE *in = fopen (buf, "rb");
@@ -3815,10 +3815,10 @@ live_translate (char *tran)
 	  dest[len] = 0;
 	  cprintf ("destination %s\n", dest);
 
-	  return dest;
 	}
     }
-  fclose (in);
+	fclose (in);
+  return dest;
 }
 
 /* obsolete, use do_pagehead
