@@ -135,10 +135,10 @@
  * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: ipv6cp.c,v 1.21 2005/08/25 23:59:34 paulus Exp $ 
+ * $Id: ipv6cp.c,v 1.20 2004/11/13 02:28:15 paulus Exp $ 
  */
 
-#define RCSID	"$Id: ipv6cp.c,v 1.21 2005/08/25 23:59:34 paulus Exp $"
+#define RCSID	"$Id: ipv6cp.c,v 1.20 2004/11/13 02:28:15 paulus Exp $"
 
 /*
  * TODO: 
@@ -1419,8 +1419,7 @@ ipv6cp_script(script)
     argv[6] = ipparam;
     argv[7] = NULL;
 
-    ipv6cp_script_pid = run_program(script, argv, 0, ipv6cp_script_done,
-				    NULL, 0);
+    ipv6cp_script_pid = run_program(script, argv, 0, ipv6cp_script_done, NULL);
 }
 
 /*

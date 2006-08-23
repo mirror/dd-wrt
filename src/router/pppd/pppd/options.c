@@ -40,7 +40,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: options.c,v 1.100 2006/06/18 11:26:00 paulus Exp $"
+#define RCSID	"$Id: options.c,v 1.95 2004/11/09 22:33:35 paulus Exp $"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -56,21 +56,24 @@
 #endif
 
 #ifdef PPP_FILTER
+
+#ifndef USE_RING
 #include <pcap.h>
-/*
- * There have been 3 or 4 different names for this in libpcap CVS, but
- * this seems to be what they have settled on...
- * For older versions of libpcap, use DLT_PPP - but that means
+#include <pcap-int.h>	/* XXX: To get struct pcap */
+#else
+#include "ring.h"
+#include "ringpcap.h"
+#include "ringpcap-int.h"
+#endif
+
+/ * DLT_PPP_WITH_DIRECTION is in current libpcap cvs, and should be in
+ * libpcap-0.8.4.  Until that is released, use DLT_PPP - but that means
  * we lose the inbound and outbound qualifiers.
  */
-#ifndef DLT_PPP_PPPD
-#ifdef DLT_PPP_WITHDIRECTION
-#define DLT_PPP_PPPD	DLT_PPP_WITHDIRECTION
-#else
-#define DLT_PPP_PPPD	DLT_PPP
+#ifndef DLT_PPP_WITH_DIRECTION
+#define DLT_PPP_WITH_DIRECTION	DLT_PPP
 #endif
 #endif
-#endif /* PPP_FILTER */
 
 #include "pppd.h"
 #include "pathnames.h"
@@ -103,6 +106,12 @@ bool	persist = 0;		/* Reopen link after it goes down */
 char	our_name[MAXNAMELEN];	/* Our name for authentication purposes */
 bool	demand = 0;		/* do dial-on-demand */
 char	*ipparam = NULL;	/* Extra parameter for ip up/down scripts */
+char	*ipupcustom = NULL;	/* Custom ip up scripts */
+char	*ipdowncustom = NULL;	/* Custom ip down scripts */
+char	*chapseccustom = NULL;	/* Custom chap-secrets file */
+char	*papseccustom = NULL;	/* Custom pap-secrets file */
+char	*srpseccustom = NULL;	/* Custom pap-secrets file */
+
 int	idle_time_limit = 0;	/* Disconnect if idle for this many seconds */
 int	holdoff = 30;		/* # seconds to pause before reconnecting */
 bool	holdoff_specified;	/* true if a holdoff value has been given */
@@ -301,10 +310,10 @@ option_t general_options[] = {
 #endif
 
 #ifdef PPP_FILTER
-    { "pass-filter", o_special, setpassfilter,
+    { "pass-filter", 1, setpassfilter,
       "set filter for packets to pass", OPT_PRIO },
 
-    { "active-filter", o_special, setactivefilter,
+    { "active-filter", 1, setactivefilter,
       "set filter for active pkts", OPT_PRIO },
 #endif
 
@@ -399,20 +408,16 @@ options_from_file(filename, must_exist, check_prot, priv)
     option_t *opt;
     int oldpriv, n;
     char *oldsource;
-    uid_t euid;
     char *argv[MAXARGS];
     char args[MAXARGS][MAXWORDLEN];
     char cmd[MAXWORDLEN];
 
-    euid = geteuid();
-    if (check_prot && seteuid(getuid()) == -1) {
-	option_error("unable to drop privileges to open %s: %m", filename);
-	return 0;
-    }
+    if (check_prot)
+	seteuid(getuid());
     f = fopen(filename, "r");
     err = errno;
-    if (check_prot && seteuid(euid) == -1)
-	fatal("unable to regain privileges");
+    if (check_prot)
+	seteuid(0);
     if (f == NULL) {
 	errno = err;
 	if (!must_exist) {
@@ -1324,7 +1329,7 @@ getword(f, word, newlinep, filename)
 	    if (errno == 0)
 		errno = EIO;
 	    option_error("Error reading %s: %m", filename);
-	    die(1);
+	    pppd_die(1);
 	}
 	/*
 	 * If len is zero, then we didn't find a word before the
@@ -1456,13 +1461,13 @@ setpassfilter(argv)
     char **argv;
 {
     pcap_t *pc;
-    int ret = 1;
+    int ret = 0;
 
-    pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
+    pc = pcap_open_dead(DLT_PPP_WITH_DIRECTION, 65535);
     if (pcap_compile(pc, &pass_filter, *argv, 1, netmask) == -1) {
 	option_error("error in pass-filter expression: %s\n",
 		     pcap_geterr(pc));
-	ret = 0;
+	ret = 1;
     }
     pcap_close(pc);
 
@@ -1477,13 +1482,13 @@ setactivefilter(argv)
     char **argv;
 {
     pcap_t *pc;
-    int ret = 1;
+    int ret = 0;
 
-    pc = pcap_open_dead(DLT_PPP_PPPD, 65535);
+    pc = pcap_open_dead(DLT_PPP_WITH_DIRECTION, 65535);
     if (pcap_compile(pc, &active_filter, *argv, 1, netmask) == -1) {
 	option_error("error in active-filter expression: %s\n",
 		     pcap_geterr(pc));
-	ret = 0;
+	ret = 1;
     }
     pcap_close(pc);
 
@@ -1514,19 +1519,15 @@ setlogfile(argv)
     char **argv;
 {
     int fd, err;
-    uid_t euid;
 
-    euid = geteuid();
-    if (!privileged_option && seteuid(getuid()) == -1) {
-	option_error("unable to drop permissions to open %s: %m", *argv);
-	return 0;
-    }
+    if (!privileged_option)
+	seteuid(getuid());
     fd = open(*argv, O_WRONLY | O_APPEND | O_CREAT | O_EXCL, 0644);
     if (fd < 0 && errno == EEXIST)
 	fd = open(*argv, O_WRONLY | O_APPEND);
     err = errno;
-    if (!privileged_option && seteuid(euid) == -1)
-	fatal("unable to regain privileges: %m");
+    if (!privileged_option)
+	seteuid(0);
     if (fd < 0) {
 	errno = err;
 	option_error("Can't open log file %s: %m", *argv);

@@ -37,9 +37,17 @@ typedef struct ccp_options {
     bool predictor_2;		/* do Predictor-2? */
     bool deflate_correct;	/* use correct code for deflate? */
     bool deflate_draft;		/* use draft RFC code for deflate? */
+    bool lzs;			/* do Stac LZS? */
+    bool mppc;			/* do MPPC? */
     bool mppe;			/* do MPPE? */
+    bool mppe_40;		/* allow 40 bit encryption? */
+    bool mppe_56;		/* allow 56 bit encryption? */
+    bool mppe_128;		/* allow 128 bit encryption? */
+    bool mppe_stateless;	/* allow stateless encryption */
     u_short bsd_bits;		/* # bits/code for BSD Compress */
     u_short deflate_size;	/* lg(window size) for Deflate */
+    u_short lzs_mode;		/* LZS check mode */
+    u_short lzs_hists;		/* number of LZS histories */
     short method;		/* code for chosen compression method */
 } ccp_options;
 
