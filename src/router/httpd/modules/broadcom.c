@@ -3785,8 +3785,9 @@ live_translate (char *tran)
   sprintf (buf, "/www/%s", lang);
   free (lang);
 // lang_charset.set
-  char *sstring = strcpy ("", tran);
-  strcat (sstring, "=\"");
+  char sstring[32];
+  strcpy (sstring, tran);   // will crash, first parameter is destination for copy and too small for source. strcpy will return the same pointer as parameter1
+  strcat (sstring, "=\"");  // will crash too. memory size of *string is not defined. sstring is not allocated
   char s[128];
   FILE *in = fopen (buf, "rb");
   while (!feof (in))
