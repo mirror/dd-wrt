@@ -24,7 +24,7 @@
 *
 ***********************************************************************/
 static char const RCSID[] =
-"$Id: radius.c,v 1.31 2006/05/22 00:01:40 paulus Exp $";
+"$Id: radius.c,v 1.28 2004/11/14 10:27:57 paulus Exp $";
 
 #include "pppd.h"
 #include "chap-new.h"
@@ -410,14 +410,18 @@ radius_chap_verify(char *user, char *ourname, int id,
     case CHAP_MICROSOFT:
     {
 	/* MS-CHAP-Challenge and MS-CHAP-Response */
+	MS_ChapResponse *rmd = (MS_ChapResponse *) response;
 	u_char *p = cpassword;
 
 	if (response_len != MS_CHAP_RESPONSE_LEN)
 	    return 0;
 	*p++ = id;
 	/* The idiots use a different field order in RADIUS than PPP */
-	*p++ = response[MS_CHAP_USENT];
-	memcpy(p, response, MS_CHAP_LANMANRESP_LEN + MS_CHAP_NTRESP_LEN);
+	memcpy(p, rmd->UseNT, sizeof(rmd->UseNT));
+	p += sizeof(rmd->UseNT);
+	memcpy(p, rmd->LANManResp, sizeof(rmd->LANManResp));
+	p += sizeof(rmd->LANManResp);
+	memcpy(p, rmd->NTResp, sizeof(rmd->NTResp));
 
 	rc_avpair_add(&send, PW_MS_CHAP_CHALLENGE,
 		      challenge, challenge_len, VENDOR_MICROSOFT);
@@ -429,15 +433,20 @@ radius_chap_verify(char *user, char *ourname, int id,
     case CHAP_MICROSOFT_V2:
     {
 	/* MS-CHAP-Challenge and MS-CHAP2-Response */
+	MS_Chap2Response *rmd = (MS_Chap2Response *) response;
 	u_char *p = cpassword;
 
 	if (response_len != MS_CHAP2_RESPONSE_LEN)
 	    return 0;
 	*p++ = id;
 	/* The idiots use a different field order in RADIUS than PPP */
-	*p++ = response[MS_CHAP2_FLAGS];
-	memcpy(p, response, (MS_CHAP2_PEER_CHAL_LEN + MS_CHAP2_RESERVED_LEN
-			     + MS_CHAP2_NTRESP_LEN));
+	memcpy(p, rmd->Flags, sizeof(rmd->Flags));
+	p += sizeof(rmd->Flags);
+	memcpy(p, rmd->PeerChallenge, sizeof(rmd->PeerChallenge));
+	p += sizeof(rmd->PeerChallenge);
+	memcpy(p, rmd->Reserved, sizeof(rmd->Reserved));
+	p += sizeof(rmd->Reserved);
+	memcpy(p, rmd->NTResp, sizeof(rmd->NTResp));
 
 	rc_avpair_add(&send, PW_MS_CHAP_CHALLENGE,
 		      challenge, challenge_len, VENDOR_MICROSOFT);
@@ -470,8 +479,6 @@ radius_chap_verify(char *user, char *ourname, int id,
 	result = rc_auth(rstate.client_port, send, &received, radius_msg,
 			 req_info);
     }
-
-    strlcpy(message, radius_msg, message_space);
 
     if (result == OK_RC) {
 	if (!rstate.done_chap_once) {
@@ -1019,10 +1026,6 @@ radius_acct_stop(void)
 	    av_type = PW_ACCT_IDLE_TIMEOUT;
 	    break;
 
-	case EXIT_CALLBACK:
-	    av_type = PW_CALLBACK;
-	    break;
-	    
 	case EXIT_CONNECT_TIME:
 	    av_type = PW_ACCT_SESSION_TIMEOUT;
 	    break;

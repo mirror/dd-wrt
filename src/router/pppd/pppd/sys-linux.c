@@ -205,7 +205,7 @@ static char loop_name[20];
 static unsigned char inbuf[512]; /* buffer for chars read from loopback */
 
 static int	if_is_up;	/* Interface has been marked up */
-static int	have_default_route;	/* Gateway for default route added */
+static u_int32_t default_route_gateway;	/* Gateway for default route added */
 static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
 static char proxy_arp_dev[16];		/* Device for proxy arp entry */
 static u_int32_t our_old_addr;		/* for detecting address changes */
@@ -341,8 +341,8 @@ void sys_cleanup(void)
 /*
  * Delete any routes through the device.
  */
-    if (have_default_route)
-	cifdefaultroute(0, 0, 0);
+    if (default_route_gateway != 0)
+	cifdefaultroute(0, 0, default_route_gateway);
 
     if (has_proxy_arp)
 	cifproxyarp(0, proxy_arp_addr);
@@ -676,7 +676,7 @@ void make_new_bundle(int mrru, int mtru, int rssn, int tssn)
 
 	/* make us a ppp unit */
 	if (make_ppp_unit() < 0)
-		die(1);
+		pppd_die(1);
 
 	/* set the mrru and flags */
 	cfg_bundle(mrru, mtru, rssn, tssn);
@@ -1079,7 +1079,7 @@ void remove_fd(int fd)
  * read_packet - get a PPP packet from the serial device.
  */
 
-int read_packet (unsigned char *buf)
+int pppd_read_packet (unsigned char *buf)
 {
     int len, nr;
 
@@ -1129,7 +1129,7 @@ get_loop_output(void)
     int n;
 
     if (new_style_driver) {
-	while ((n = read_packet(inpacket_buf)) > 0)
+	while ((n = pppd_read_packet(inpacket_buf)) > 0)
 	    if (loop_frame(inpacket_buf, n))
 		rv = 1;
 	return rv;
@@ -1589,17 +1589,17 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
     struct rtentry rt;
 
     if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
-	if (rt.rt_flags & RTF_GATEWAY)
-	    error("not replacing existing default route via %I",
-		  SIN_ADDR(rt.rt_gateway));
-	else
-	    error("not replacing existing default route through %s",
-		  rt.rt_dev);
+	u_int32_t old_gateway = SIN_ADDR(rt.rt_gateway);
+
+	if (old_gateway != gateway)
+	    error("not replacing existing default route to %s [%I]",
+		  rt.rt_dev, old_gateway);
 	return 0;
     }
 
-    memset (&rt, 0, sizeof (rt));
-    SET_SA_FAMILY (rt.rt_dst, AF_INET);
+    memset (&rt, '\0', sizeof (rt));
+    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
+    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
 
     rt.rt_dev = ifname;
 
@@ -1608,14 +1608,16 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 	SIN_ADDR(rt.rt_genmask) = 0L;
     }
 
-    rt.rt_flags = RTF_UP;
+    SIN_ADDR(rt.rt_gateway) = gateway;
+
+    rt.rt_flags = RTF_UP | RTF_GATEWAY;
     if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
 	if ( ! ok_error ( errno ))
 	    error("default route ioctl(SIOCADDRT): %m");
 	return 0;
     }
 
-    have_default_route = 1;
+    default_route_gateway = gateway;
     return 1;
 }
 
@@ -1628,7 +1630,7 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 {
     struct rtentry rt;
 
-    have_default_route = 0;
+    default_route_gateway = 0;
 
     memset (&rt, '\0', sizeof (rt));
     SET_SA_FAMILY (rt.rt_dst,     AF_INET);
@@ -1639,7 +1641,9 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 	SIN_ADDR(rt.rt_genmask) = 0L;
     }
 
-    rt.rt_flags = RTF_UP;
+    SIN_ADDR(rt.rt_gateway) = gateway;
+
+    rt.rt_flags = RTF_UP | RTF_GATEWAY;
     if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
 	if (still_ppp()) {
 	    if ( ! ok_error ( errno ))
@@ -2620,7 +2624,7 @@ open_ppp_loopback(void)
     if (new_style_driver) {
 	/* allocate ourselves a ppp unit */
 	if (make_ppp_unit() < 0)
-	    die(1);
+	    pppd_die(1);
 	modify_flags(ppp_dev_fd, 0, SC_LOOP_TRAFFIC);
 	set_kdebugflag(kdebugflag);
 	ppp_fd = -1;
@@ -2804,8 +2808,8 @@ sys_check_options(void)
 
     if (ipxcp_protent.enabled_flag) {
 	struct stat stat_buf;
-	if (  ((path = path_to_procfs("/net/ipx/interface")) == NULL
-	    && (path = path_to_procfs("/net/ipx_interface")) == NULL)
+	if ((path = path_to_procfs("/net/ipx/interface")) == 0
+	    || (path = path_to_procfs("/net/ipx_interface")) == 0
 	    || lstat(path, &stat_buf) < 0) {
 	    error("IPX support is not present in the kernel\n");
 	    ipxcp_protent.enabled_flag = 0;

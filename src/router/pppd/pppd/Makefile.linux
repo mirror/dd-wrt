@@ -1,10 +1,10 @@
 #
 # pppd makefile for Linux
-# $Id: Makefile.linux,v 1.69 2006/06/04 05:07:46 paulus Exp $
+# $Id: Makefile.linux,v 1.66 2004/11/13 12:02:22 paulus Exp $
 #
 
 # Default installation locations
-DESTDIR = $(INSTROOT)@DESTDIR@
+DESTDIR = @DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 INCDIR = $(DESTDIR)/include
@@ -48,19 +48,19 @@ MPPE=y
 # Uncomment the next line to include support for PPP packet filtering.
 # This requires that the libpcap library and headers be installed
 # and that the kernel driver support PPP packet filtering.
-FILTER=y
+#FILTER=y
 
 # Uncomment the next line to enable multilink PPP (enabled by default)
 # Linux distributions: Please leave multilink ENABLED in your builds
 # of pppd!
-HAVE_MULTILINK=y
+#HAVE_MULTILINK=y
 
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
 # Linux distributions: Please leave TDB ENABLED in your builds.
-USE_TDB=y
+#USE_TDB=y
 
-HAS_SHADOW=y
+#HAS_SHADOW=y
 #USE_PAM=y
 #HAVE_INET6=y
 
@@ -77,9 +77,9 @@ MAXOCTETS=y
 
 INCLUDE_DIRS= -I../include
 
-COMPILE_FLAGS= -DHAVE_PATHS_H -DIPX_CHANGE -DHAVE_MMAP
+COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
 
-CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
+CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS)
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
@@ -99,7 +99,7 @@ ifdef USE_SRP
 CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
 LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
 TARGETS	+= srp-entry
-EXTRAINSTALL = $(INSTALL) -s -c -m 555 srp-entry $(BINDIR)/srp-entry
+EXTRAINSTALL = $(INSTALL) -c -m 555 srp-entry $(BINDIR)/srp-entry
 MANPAGES += srp-entry.8
 EXTRACLEAN += srp-entry.o
 NEEDDES=y
@@ -117,10 +117,12 @@ CFLAGS   += -DHAS_SHADOW
 #LIBS     += -lshadow $(LIBS)
 endif
 
-ifneq ($(wildcard /usr/include/crypt.h),)
-CFLAGS  += -DHAVE_CRYPT_H=1
+#ifneq ($(wildcard /usr/include/crypt.h),)
+CFLAGS   += -DHAVE_CRYPT_H=1
+#endif
+#ifneq ($(wildcard /usr/lib/libcrypt.*),)
 LIBS	+= -lcrypt
-endif
+#endif
 
 ifdef NEEDDES
 ifndef USE_CRYPT
@@ -200,7 +202,7 @@ all: $(TARGETS)
 install: pppd
 	mkdir -p $(BINDIR) $(MANDIR)
 	$(EXTRAINSTALL)
-	$(INSTALL) -s -c -m 555 pppd $(BINDIR)/pppd
+	$(INSTALL) -c -m 555 pppd $(BINDIR)/pppd
 	if chgrp pppusers $(BINDIR)/pppd 2>/dev/null; then \
 	  chmod o-rx,u+s $(BINDIR)/pppd; fi
 	$(INSTALL) -c -m 444 pppd.8 $(MANDIR)
