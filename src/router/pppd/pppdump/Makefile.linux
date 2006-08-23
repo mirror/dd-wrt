@@ -1,9 +1,8 @@
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 MANDIR = $(DESTDIR)/share/man/man8
 
-COPTS = -O
-CFLAGS= $(COPTS) -I../include/net
+CFLAGS= -O -I../include/net
 OBJS = pppdump.o bsd-comp.o deflate.o zlib.o
 
 INSTALL= install
@@ -18,5 +17,5 @@ clean:
 
 install:
 	mkdir -p $(BINDIR) $(MANDIR)
-	$(INSTALL) -c pppdump $(BINDIR)
+	$(INSTALL) -s -c pppdump $(BINDIR)
 	$(INSTALL) -c -m 444 pppdump.8 $(MANDIR)

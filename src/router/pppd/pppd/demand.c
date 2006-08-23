@@ -28,7 +28,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: demand.c,v 1.19 2004/11/04 10:02:26 paulus Exp $"
+#define RCSID	"$Id: demand.c,v 1.20 2005/08/25 12:14:18 paulus Exp $"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,7 +109,7 @@ demand_conf()
     for (i = 0; (protp = protocols[i]) != NULL; ++i)
 	if (protp->enabled_flag && protp->demand_conf != NULL)
 	    if (!((*protp->demand_conf)(0)))
-		pppd_die(1);
+		die(1);
 }
 
 
@@ -341,12 +341,15 @@ active_packet(p, len)
 	return 0;
     proto = PPP_PROTOCOL(p);
 #ifdef PPP_FILTER
-    if (pass_filter.bf_len != 0
-	&& bpf_filter(pass_filter.bf_insns, p, len, len) == 0)
+    p[0] = 1;		/* outbound packet indicator */
+    if ((pass_filter.bf_len != 0
+	 && bpf_filter(pass_filter.bf_insns, p, len, len) == 0)
+	|| (active_filter.bf_len != 0
+	    && bpf_filter(active_filter.bf_insns, p, len, len) == 0)) {
+	p[0] = 0xff;
 	return 0;
-    if (active_filter.bf_len != 0
-	&& bpf_filter(active_filter.bf_insns, p, len, len) == 0)
-	return 0;
+    }
+    p[0] = 0xff;
 #endif
     for (i = 0; (protp = protocols[i]) != NULL; ++i) {
 	if (protp->protocol < 0xC000 && (protp->protocol & ~0x8000) == proto) {

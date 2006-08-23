@@ -20,7 +20,7 @@
 char *xstrdup(const char *s);
 void usage(void);
 
-void pppd_die(int status)
+void die(int status)
 {
 	exit(status);
 }

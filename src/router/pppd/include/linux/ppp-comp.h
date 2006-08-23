@@ -36,7 +36,7 @@
  */
 
 /*
- *  ==FILEVERSION 20020715==
+ *  ==FILEVERSION 20020319==
  *
  *  NOTE TO MAINTAINERS:
  *     If you modify this file at all, please set the above date.
@@ -56,10 +56,10 @@
  */
 
 #ifndef DO_BSD_COMPRESS
-#define DO_BSD_COMPRESS	0	/* by default, don't include BSD-Compress */
+#define DO_BSD_COMPRESS	1	/* by default, include BSD-Compress */
 #endif
 #ifndef DO_DEFLATE
-#define DO_DEFLATE	0	/* by default, don't include Deflate */
+#define DO_DEFLATE	1	/* by default, include Deflate */
 #endif
 #define DO_PREDICTOR_1	0
 #define DO_PREDICTOR_2	0
@@ -86,7 +86,7 @@ struct compressor {
 
 	/* Compress a packet */
 	int     (*compress) (void *state, unsigned char *rptr,
-			     unsigned char *obuf, int isize, int osize);
+			      unsigned char *obuf, int isize, int osize);
 
 	/* Return compression statistics */
 	void	(*comp_stat) (void *state, struct compstat *stats);
@@ -107,7 +107,7 @@ struct compressor {
 
 	/* Decompress a packet. */
 	int	(*decompress) (void *state, unsigned char *ibuf, int isize,
-			       unsigned char *obuf, int osize);
+				unsigned char *obuf, int osize);
 
 	/* Update state for an incompressible packet received */
 	void	(*incomp) (void *state, unsigned char *ibuf, int icnt);
@@ -287,33 +287,6 @@ struct compressor {
 	if (ptr[3] & ~MPPE_ALL_BITS)		\
 	    opts |= MPPE_OPT_UNKNOWN;		\
     } while (/* CONSTCOND */ 0)
-
-/* MPPE/MPPC definitions by J.D.*/
-#define MPPE_STATELESS          MPPE_H_BIT	/* configuration bit H */
-#define MPPE_40BIT              MPPE_L_BIT	/* configuration bit L */
-#define MPPE_56BIT              MPPE_M_BIT	/* configuration bit M */
-#define MPPE_128BIT             MPPE_S_BIT	/* configuration bit S */
-#define MPPE_MPPC               MPPE_C_BIT	/* configuration bit C */
-
-/*
- * Definitions for Stac LZS.
- */
-
-#define CI_LZS			17	/* config option for Stac LZS */
-#define CILEN_LZS		5	/* length of config option */
-
-#define LZS_OVHD		4	/* max. LZS overhead */
-#define LZS_HIST_LEN		2048	/* LZS history size */
-#define LZS_MAX_CCOUNT		0x0FFF	/* max. coherency counter value */
-
-#define LZS_MODE_NONE		0
-#define LZS_MODE_LCB		1
-#define LZS_MODE_CRC		2
-#define LZS_MODE_SEQ		3
-#define LZS_MODE_EXT		4
-
-#define LZS_EXT_BIT_FLUSHED	0x80	/* bit A */
-#define LZS_EXT_BIT_COMP	0x20	/* bit C */
 
 /*
  * Definitions for other, as yet unsupported, compression methods.
