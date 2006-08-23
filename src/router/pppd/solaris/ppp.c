@@ -32,7 +32,7 @@
  * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: ppp.c,v 1.2 2002/12/06 09:49:16 paulus Exp $
+ * $Id: ppp.c,v 1.4 2005/06/27 00:59:57 carlsonj Exp $
  */
 
 /*
@@ -276,7 +276,9 @@ static void dlpi_ok __P((queue_t *, int));
 static int send_data __P((mblk_t *, upperstr_t *));
 static void new_ppa __P((queue_t *, mblk_t *));
 static void attach_ppa __P((queue_t *, mblk_t *));
+#ifndef NO_DLPI
 static void detach_ppa __P((queue_t *, mblk_t *));
+#endif
 static void detach_lower __P((queue_t *, mblk_t *));
 static void debug_dump __P((queue_t *, mblk_t *));
 static upperstr_t *find_dest __P((upperstr_t *, int));
@@ -645,11 +647,12 @@ pppuwput(q, mp)
 	    break;
 	}
 #ifdef NO_DLPI
+	/* pass_packet frees the packet on returning 0 */
 	if ((us->flags & US_CONTROL) == 0 && !pass_packet(us, mp, 1))
 	    break;
 #endif
-	if (!send_data(mp, us))
-	    putq(q, mp);
+	if (!send_data(mp, us) && !putq(q, mp))
+	    freemsg(mp);
 	break;
 
     case M_IOCTL:
@@ -722,6 +725,7 @@ pppuwput(q, mp)
 #endif
 	    iop->ioc_count = 0;
 	    qwriter(q, mp, detach_lower, PERIM_OUTER);
+	    /* mp is now gone */
 	    error = -1;
 	    break;
 
@@ -748,6 +752,7 @@ pppuwput(q, mp)
 	    iop->ioc_count = sizeof(int);
 	    mq->b_wptr = mq->b_rptr + sizeof(int);
 	    qwriter(q, mp, new_ppa, PERIM_OUTER);
+	    /* mp is now gone */
 	    error = -1;
 	    break;
 
@@ -769,6 +774,7 @@ pppuwput(q, mp)
 	    us->ppa = ppa;
 	    iop->ioc_count = 0;
 	    qwriter(q, mp, attach_ppa, PERIM_OUTER);
+	    /* mp is now gone */
 	    error = -1;
 	    break;
 
@@ -851,8 +857,8 @@ pppuwput(q, mp)
 	    }
 	    n = *(int *)mp->b_cont->b_rptr;
 	    if (n == PPPDBG_DUMP + PPPDBG_DRIVER) {
-		qwriter(q, NULL, debug_dump, PERIM_OUTER);
-		iop->ioc_count = 0;
+		qwriter(q, mp, debug_dump, PERIM_OUTER);
+		/* mp is now gone */
 		error = -1;
 	    } else if (n == PPPDBG_LOG + PPPDBG_DRIVER) {
 		DPRINT1("ppp/%d: debug log enabled\n", us->mn);
@@ -863,6 +869,7 @@ pppuwput(q, mp)
 		if (us->ppa == 0 || us->ppa->lowerq == 0)
 		    break;
 		putnext(us->ppa->lowerq, mp);
+		/* mp is now gone */
 		error = -1;
 	    }
 	    break;
@@ -1010,7 +1017,8 @@ pppuwput(q, mp)
 	    ((union DL_primitives *)mq->b_rptr)->dl_primitive = DL_INFO_REQ;
 	    mq->b_wptr = mq->b_rptr + sizeof(dl_info_req_t);
 	    dlpi_request(q, mq, us);
-	    error = 0;
+	    /* mp is now gone */
+	    error = -1;
 	    break;
 
 	case SIOCGIFNETMASK:
@@ -1345,9 +1353,10 @@ dlpi_request(q, mp, us)
 	mp->b_rptr[1] = PPP_UI;
 	mp->b_rptr[2] = us->sap >> 8;
 	mp->b_rptr[3] = us->sap;
+	/* pass_packet frees the packet on returning 0 */
 	if (pass_packet(us, mp, 1)) {
-	    if (!send_data(mp, us))
-		putq(q, mp);
+	    if (!send_data(mp, us) && !putq(q, mp))
+		freemsg(mp);
 	}
 	return;
 
@@ -1430,7 +1439,8 @@ dlpi_request(q, mp, us)
 #endif
 
     default:
-	cmn_err(CE_CONT, "ppp: unknown dlpi prim 0x%x\n", d->dl_primitive);
+	if (us->flags & US_DBGLOG)
+	    DPRINT1("ppp: unknown dlpi prim 0x%x\n", d->dl_primitive);
 	/* fall through */
     badprim:
 	dlpi_error(q, us, d->dl_primitive, DL_BADPRIM, 0);
@@ -1483,6 +1493,9 @@ dlpi_ok(q, prim)
 }
 #endif /* NO_DLPI */
 
+/*
+ * If return value is 0, then the packet has already been freed.
+ */
 static int
 pass_packet(us, mp, outbound)
     upperstr_t *us;
@@ -1675,9 +1688,11 @@ attach_ppa(q, mp)
 #ifndef NO_DLPI
 	dlpi_ok(q, DL_ATTACH_REQ);
 #endif
+	freemsg(mp);
     }
 }
 
+#ifndef NO_DLPI
 static void
 detach_ppa(q, mp)
     queue_t *q;
@@ -1698,11 +1713,11 @@ detach_ppa(q, mp)
 	}
     us->next = 0;
     us->ppa = 0;
-#ifndef NO_DLPI
     us->state = DL_UNATTACHED;
     dlpi_ok(q, DL_DETACH_REQ);
-#endif
+    freemsg(mp);
 }
+#endif
 
 /*
  * We call this with qwriter in order to give the upper queue procedures
@@ -1872,53 +1887,54 @@ pppurput(q, mp)
 	putnext(ppa->q, mp);
 	break;
 
-    default:
-	if (mp->b_datap->db_type == M_DATA) {
-	    len = msgdsize(mp);
-	    if (mp->b_wptr - mp->b_rptr < PPP_HDRLEN) {
-		PULLUP(mp, PPP_HDRLEN);
-		if (mp == 0) {
-		    DPRINT1("ppp_urput: msgpullup failed (len=%d)\n", len);
-		    break;
-		}
-	    }
-	    MT_ENTER(&ppa->stats_lock);
-	    ppa->stats.ppp_ipackets++;
-	    ppa->stats.ppp_ibytes += len;
-#ifdef INCR_IPACKETS
-	    INCR_IPACKETS(ppa);
-#endif
-	    MT_EXIT(&ppa->stats_lock);
-
-	    proto = PPP_PROTOCOL(mp->b_rptr);
-
-#if defined(SOL2)
-	    /*
-	     * Should there be any promiscuous stream(s), send the data
-	     * up for each promiscuous stream that we recognize.
-	     */
-	    promisc_sendup(ppa, mp, proto, 1);
-#endif /* defined(SOL2) */
-
-	    if (proto < 0x8000 && (us = find_dest(ppa, proto)) != 0) {
-		/*
-		 * A data packet for some network protocol.
-		 * Queue it on the upper stream for that protocol.
-		 * XXX could we just putnext it?  (would require thought)
-		 * The rblocked flag is there to ensure that we keep
-		 * messages in order for each network protocol.
-		 */
-		if (!pass_packet(us, mp, 0))
-		    break;
-		if (!us->rblocked && !canput(us->q))
-		    us->rblocked = 1;
-		if (!us->rblocked)
-		    putq(us->q, mp);
-		else
-		    putq(q, mp);
+    case M_DATA:
+	len = msgdsize(mp);
+	if (mp->b_wptr - mp->b_rptr < PPP_HDRLEN) {
+	    PULLUP(mp, PPP_HDRLEN);
+	    if (mp == 0) {
+		DPRINT1("ppp_urput: msgpullup failed (len=%d)\n", len);
 		break;
 	    }
 	}
+	MT_ENTER(&ppa->stats_lock);
+	ppa->stats.ppp_ipackets++;
+	ppa->stats.ppp_ibytes += len;
+#ifdef INCR_IPACKETS
+	INCR_IPACKETS(ppa);
+#endif
+	MT_EXIT(&ppa->stats_lock);
+
+	proto = PPP_PROTOCOL(mp->b_rptr);
+
+#if defined(SOL2)
+	/*
+	 * Should there be any promiscuous stream(s), send the data
+	 * up for each promiscuous stream that we recognize.
+	 */
+	promisc_sendup(ppa, mp, proto, 1);
+#endif /* defined(SOL2) */
+
+	if (proto < 0x8000 && (us = find_dest(ppa, proto)) != 0) {
+	    /*
+	     * A data packet for some network protocol.
+	     * Queue it on the upper stream for that protocol.
+	     * XXX could we just putnext it?  (would require thought)
+	     * The rblocked flag is there to ensure that we keep
+	     * messages in order for each network protocol.
+	     */
+	    /* pass_packet frees the packet on returning 0 */
+	    if (!pass_packet(us, mp, 0))
+		break;
+	    if (!us->rblocked && !canput(us->q))
+		us->rblocked = 1;
+	    if (!putq(us->rblocked ? q : us->q, mp))
+		freemsg(mp);
+	    break;
+	}
+
+	/* FALLTHROUGH */
+
+   default:
 	/*
 	 * A control frame, a frame for an unknown protocol,
 	 * or some other message type.
@@ -1926,8 +1942,8 @@ pppurput(q, mp)
 	 */
 	if (queclass(mp) == QPCTL || canputnext(ppa->q))
 	    putnext(ppa->q, mp);
-	else
-	    putq(q, mp);
+	else if (!putq(q, mp))
+	    freemsg(mp);
 	break;
     }
 
@@ -1979,7 +1995,8 @@ pppursrv(q)
 	    if (proto < 0x8000 && (as = find_dest(us, proto)) != 0) {
 		if (!canput(as->q))
 		    break;
-		putq(as->q, mp);
+		if (!putq(as->q, mp))
+		    freemsg(mp);
 	    } else {
 		if (!canputnext(q))
 		    break;
@@ -2186,11 +2203,12 @@ promisc_sendup(ppa, mp, proto, skip)
 		    if (canputnext(prus->q)) {
 			if (prus->flags & US_RAWDATA) {
 			    dup_dup_mp = prepend_ether(prus, dup_dup_mp, proto);
-			    putnext(prus->q, dup_dup_mp);
 			} else {
 			    dup_dup_mp = prepend_udind(prus, dup_dup_mp, proto);
-			    putnext(prus->q, dup_dup_mp);
 			}
+			if (dup_dup_mp == 0)
+			    continue;
+			putnext(prus->q, dup_dup_mp);
 		    } else {
 			DPRINT("ppp_urput: data to promisc q dropped\n");
 			freemsg(dup_dup_mp);
@@ -2201,11 +2219,11 @@ promisc_sendup(ppa, mp, proto, skip)
 	    if (canputnext(prus->q)) {
 		if (prus->flags & US_RAWDATA) {
 		    dup_mp = prepend_ether(prus, dup_mp, proto);
-		    putnext(prus->q, dup_mp);
 		} else {
 		    dup_mp = prepend_udind(prus, dup_mp, proto);
-		    putnext(prus->q, dup_mp);
 		}
+		if (dup_mp != 0)
+		    putnext(prus->q, dup_mp);
 	    } else {
 		DPRINT("ppp_urput: data to promisc q dropped\n");
 		freemsg(dup_mp);
@@ -2252,7 +2270,8 @@ ppplrput(q, mp)
      * rather than blocking, to avoid the possibility of deadlock.
      */
     if (!TRYLOCK_LOWER_R) {
-	putq(q, mp);
+	if (!putq(q, mp))
+	    freemsg(mp);
 	return 0;
     }
 
@@ -2275,8 +2294,8 @@ ppplrput(q, mp)
      */
     if (queclass(mp) == QPCTL || (qsize(q) == 0 && canput(uq)))
 	put(uq, mp);
-    else
-	putq(q, mp);
+    else if (!putq(q, mp))
+	freemsg(mp);
 
     UNLOCK_LOWER;
     return 0;
@@ -2410,6 +2429,9 @@ static struct pktfilt_tab {
 };
 
 
+/*
+ * Packet has already been freed if return value is 0.
+ */
 static int
 ip_hard_filter(us, mp, outbound)
     upperstr_t *us;
@@ -2483,7 +2505,10 @@ ip_hard_filter(us, mp, outbound)
 				us->mn, pft->proto, pft->port);
 	    /* Discard if not connected, or if not pass_with_link_up */
 	    /* else, if link is up let go by, but don't update time */
-	    return pft->ok_if_link_up? -1: 0;
+	    if (pft->ok_if_link_up)
+		return -1;
+	    freemsg(mp);
+	    return 0;
 	}
         break;
     } /* end switch (proto) */
