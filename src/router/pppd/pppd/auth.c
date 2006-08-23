@@ -543,6 +543,12 @@ void
 link_required(unit)
     int unit;
 {
+}
+
+void
+start_link(unit)
+    int unit;
+{
     new_phase(PHASE_SERIALCONN);
 
     devfd = the_channel->connect();
@@ -995,10 +1001,12 @@ auth_withpeer_success(unit, protocol, prot_flavor)
     int unit, protocol, prot_flavor;
 {
     int bit;
+    const char *prot = "";
 
     switch (protocol) {
     case PPP_CHAP:
 	bit = CHAP_WITHPEER;
+	prot = "CHAP";
 	switch (prot_flavor) {
 	case CHAP_MD5:
 	    bit |= CHAP_MD5_WITHPEER;
@@ -1017,14 +1025,18 @@ auth_withpeer_success(unit, protocol, prot_flavor)
 	if (passwd_from_file)
 	    BZERO(passwd, MAXSECRETLEN);
 	bit = PAP_WITHPEER;
+	prot = "PAP";
 	break;
     case PPP_EAP:
 	bit = EAP_WITHPEER;
+	prot = "EAP";
 	break;
     default:
 	warn("auth_withpeer_success: unknown protocol %x", protocol);
 	bit = 0;
     }
+
+    notice("%s authentication succeeded", prot);
 
     /* Save the authentication method for later. */
     auth_done[unit] |= bit;
@@ -1659,6 +1671,7 @@ plogin(user, passwd, msg)
 static void
 plogout()
 {
+    char *tty;
 #ifdef USE_PAM
     int pam_error;
 
@@ -1669,14 +1682,12 @@ plogout()
     }
     /* Apparently the pam stuff does closelog(). */
     reopen_log();
-#else /* ! USE_PAM */   
-    char *tty;
+#endif /* USE_PAM */
 
     tty = devnam;
     if (strncmp(tty, "/dev/", 5) == 0)
 	tty += 5;
     logwtmp(tty, "", "");		/* Wipe out utmp logout entry */
-#endif /* ! USE_PAM */
     logged_in = 0;
 }
 
