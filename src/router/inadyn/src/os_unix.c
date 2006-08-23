@@ -48,6 +48,23 @@ RC_TYPE os_ip_support_cleanup(void)
     return RC_OK;
 }
 
+void exec_cmd(DYN_DNS_CLIENT *p_self)
+{
+	int kid;
+	switch((kid=vfork()))
+	{
+		case 0:
+		/* child */
+			execl("/bin/sh", "sh", "-c", p_self->external_command, (char *) 0);
+			exit(1);
+			
+		break;
+		default:
+		/* parent */
+		break;
+	}	
+}
+
 /* storage fot the parameter needed by the handler */
 static void *global_p_signal_handler_param = NULL;
 
