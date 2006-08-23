@@ -3776,6 +3776,51 @@ do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
   return;
 }
 
+char *
+live_translate (char *tran)
+{
+
+  char *lang = getLanguageName ();
+  char buf[64];
+  sprintf (buf, "/www/%s", lang);
+  free (lang);
+// lang_charset.set
+  char *sstring = strcpy ("", tran);
+  strcat (sstring, "=\"");
+  char s[128];
+  FILE *in = fopen (buf, "rb");
+  while (!feof (in))
+    {
+      fscanf (in, "%s", s);
+      cprintf ("lang scan %s\n", s);
+      char *cmp = strstr (s, sstring);
+      cprintf ("strstr %s\n", cmp);
+      if (cmp)
+	{
+	  fclose (in);
+	  cmp += strlen (sstring);
+	  cprintf ("source %s\n", cmp);
+	  char *t2 = strstr (cmp, "\"");
+	  if (t2 == NULL)
+	    {
+	      cprintf (" length was null\n");
+	      return "share.err";		//error (typo?)
+	    }
+	  int len = t2 - cmp;
+	  cprintf ("length = %d\n", len);
+	  if (len < 0)
+	    return "share.err";		//error (unknown)
+	  char dest[128];
+	  strncpy (dest, cmp, len);
+	  dest[len] = 0;
+	  cprintf ("destination %s\n", dest);
+
+	  return dest;
+	}
+    }
+  fclose (in);
+}
+
 /* obsolete, use do_pagehead
 void
 ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
