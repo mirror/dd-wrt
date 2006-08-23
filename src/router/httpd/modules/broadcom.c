@@ -3785,7 +3785,7 @@ live_translate (char *tran)
   sprintf (buf, "/www/%s", lang);
   free (lang);
 // lang_charset.set
-  char *sstring = "wl_basic.radio_off";
+  char *sstring = strcpy ("", tran);
   strcat (sstring, "=\"");
   char s[128];
   FILE *in = fopen (buf, "rb");
@@ -4476,19 +4476,19 @@ switch (radiooff)
 	{	
 	case 0:
 		//websWrite (wp, "On&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
-		//websWrite (wp, "On");
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
+		websWrite (wp, "On");
+		//websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
 		break;
 	case 1: // software disabled
 	case 2: // hardware disabled
 	case 3: // both are disabled
 		//websWrite (wp, "Off&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
-		//websWrite (wp, "Off");
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
+		websWrite (wp, "Off");
+		//websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
 		break;
 	case -1:
-		//websWrite (wp, "Unknown");
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+		websWrite (wp, "Unknown");
+		//websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
 		break;
 	}
 }
