@@ -1,10 +1,10 @@
 # PPP top-level Makefile for Linux.
 
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 INCDIR = $(DESTDIR)/include
 MANDIR = $(DESTDIR)/share/man
-ETCDIR = @SYSCONF@/ppp
+ETCDIR = $(INSTROOT)@SYSCONF@/ppp
 
 # uid 0 = root
 INSTALL= install

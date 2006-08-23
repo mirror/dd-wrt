@@ -66,7 +66,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: main.c,v 1.152 2005/08/25 23:59:34 paulus Exp $"
+#define RCSID	"$Id: main.c,v 1.153 2006/06/04 03:52:50 paulus Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -242,6 +242,7 @@ static void toggle_debug __P((int));
 static void open_ccp __P((int));
 static void bad_signal __P((int));
 static void holdoff_end __P((void *));
+static void forget_child __P((int pid, int status));
 static int reap_kids __P((void));
 static void childwait_end __P((void *));
 
@@ -1711,7 +1712,7 @@ run_program(prog, args, must_exist, done, arg, wait)
 		    continue;
 		fatal("error waiting for script %s: %m", prog);
 	    }
-	    reap_kids();
+	    forget_child(pid, status);
 	}
 	return pid;
     }
@@ -1789,6 +1790,35 @@ childwait_end(arg)
 }
 
 /*
+ * forget_child - clean up after a dead child
+ */
+static void
+forget_child(pid, status)
+    int pid, status;
+{
+    struct subprocess *chp, **prevp;
+
+    for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
+        if (chp->pid == pid) {
+	    --n_children;
+	    *prevp = chp->next;
+	    break;
+	}
+    }
+    if (WIFSIGNALED(status)) {
+        warn("Child process %s (pid %d) terminated with signal %d",
+	     (chp? chp->prog: "??"), pid, WTERMSIG(status));
+    } else if (debug)
+        dbglog("Script %s finished (pid %d), status = 0x%x",
+	       (chp? chp->prog: "??"), pid,
+	       WIFEXITED(status) ? WEXITSTATUS(status) : status);
+    if (chp && chp->done)
+        (*chp->done)(chp->arg);
+    if (chp)
+        free(chp);
+}
+
+/*
  * reap_kids - get status from any dead child processes,
  * and log a message for abnormal terminations.
  */
@@ -1796,29 +1826,11 @@ static int
 reap_kids()
 {
     int pid, status;
-    struct subprocess *chp, **prevp;
 
     if (n_children == 0)
 	return 0;
     while ((pid = waitpid(-1, &status, WNOHANG)) != -1 && pid != 0) {
-	for (prevp = &children; (chp = *prevp) != NULL; prevp = &chp->next) {
-	    if (chp->pid == pid) {
-		--n_children;
-		*prevp = chp->next;
-		break;
-	    }
-	}
-	if (WIFSIGNALED(status)) {
-	    warn("Child process %s (pid %d) terminated with signal %d",
-		 (chp? chp->prog: "??"), pid, WTERMSIG(status));
-	} else if (debug)
-	    dbglog("Script %s finished (pid %d), status = 0x%x",
-		   (chp? chp->prog: "??"), pid,
-		   WIFEXITED(status) ? WEXITSTATUS(status) : status);
-	if (chp && chp->done)
-	    (*chp->done)(chp->arg);
-	if (chp)
-	    free(chp);
+        forget_child(pid, status);
     }
     if (pid == -1) {
 	if (errno == ECHILD)

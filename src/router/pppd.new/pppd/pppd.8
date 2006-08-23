@@ -1,5 +1,5 @@
 .\" manual page [] for pppd 2.4
-.\" $Id: pppd.8,v 1.87 2005/08/28 05:21:24 paulus Exp $
+.\" $Id: pppd.8,v 1.88 2006/06/16 00:01:23 paulus Exp $
 .\" SH section heading
 .\" SS subsection heading
 .\" LP paragraph
@@ -1791,7 +1791,10 @@ process by sending it a signal from the list below.
 .TP
 .B SIGINT, SIGTERM
 These signals cause pppd to terminate the link (by closing LCP),
-restore the serial device settings, and exit.
+restore the serial device settings, and exit.  If a connector or
+disconnector process is currently running, pppd will send the same
+signal to its process group, so as to terminate the connector or
+disconnector process.
 .TP
 .B SIGHUP
 This signal causes pppd to terminate the link, restore the serial
@@ -1800,6 +1803,8 @@ device settings, and close the serial device.  If the \fIpersist\fR or
 serial device and start another connection (after the holdoff period).
 Otherwise pppd will exit.  If this signal is received during the
 holdoff period, it causes pppd to end the holdoff period immediately.
+If a connector or disconnector process is running, pppd will send the
+same signal to its process group.
 .TP
 .B SIGUSR1
 This signal toggles the state of the \fIdebug\fR option.

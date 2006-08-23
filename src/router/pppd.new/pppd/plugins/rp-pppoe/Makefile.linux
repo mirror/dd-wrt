@@ -10,10 +10,10 @@
 # This program may be distributed according to the terms of the GNU
 # General Public License, version 2 or (at your option) any later version.
 #
-# $Id: Makefile.linux,v 1.6 2004/11/14 07:58:37 paulus Exp $
+# $Id: Makefile.linux,v 1.7 2006/06/04 05:07:46 paulus Exp $
 #***********************************************************************
 
-DESTDIR = @DESTDIR@
+DESTDIR = $(INSTROOT)@DESTDIR@
 BINDIR = $(DESTDIR)/sbin
 LIBDIR = $(DESTDIR)/lib/pppd/$(PPPDVERSION)
 
