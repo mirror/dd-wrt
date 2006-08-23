@@ -48,7 +48,7 @@ typedef enum
 /*test values*/
 #define DYNDNS_DEFAULT_DEBUG_LEVEL	1
 #define DYNDNS_DEFAULT_CONFIG_FILE	"/etc/inadyn.conf"
-#define DYNDNS_DEFAULT_CACHE_PREFIX	"/tmp/ddns"
+#define DYNDNS_DEFAULT_CACHE_PREFIX	"/tmp/ddns/"
 #define DYNDNS_DEFAULT_IP_FILE		"inadyn_ip.cache"
 #define DYNDNS_DEFAULT_TIME_FILE	"inadyn_time.cache"
 

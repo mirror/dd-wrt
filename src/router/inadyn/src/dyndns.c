@@ -504,8 +504,10 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 							fprintf(fp,"%ld", time (NULL));
 							fclose(fp);
 						}
+#ifdef UNIX_OS
 						if (strlen(p_self->external_command) > 0)
 							exec_cmd(p_self);
+#endif
 					}
 					else
 					{
@@ -558,8 +560,8 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self)
 		/*forced update period*/
 		p_self->forced_update_period_sec = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
 		p_self->forced_update_period_sec_orig = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
-		sprintf(p_self->ip_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_IP_FILE);
-		sprintf(p_self->time_cache, "%s/%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_TIME_FILE);
+		sprintf(p_self->ip_cache, "%s%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_IP_FILE);
+		sprintf(p_self->time_cache, "%s%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_TIME_FILE);
 		/*update period*/
 		p_self->sleep_sec = DYNDNS_DEFAULT_SLEEP;
 	}
@@ -624,22 +626,6 @@ void dyn_dns_print_hello(void*p)
     DBG_PRINTF((LOG_INFO, MODULE_TAG "Started 'INADYN version %s' - dynamic DNS updater.\n", DYNDNS_VERSION_STRING));
 }
 
-void exec_cmd(DYN_DNS_CLIENT *p_self)
-{
-	int kid;
-	switch((kid=vfork()))
-	{
-		case 0:
-		/* child */
-			execl("/bin/sh", "sh", "-c", p_self->external_command, (char *) 0);
-			exit(1);
-			
-		break;
-		default:
-		/* parent */
-		break;
-	}	
-}
 /*
 	 basic resource allocations for the dyn_dns object
 */
