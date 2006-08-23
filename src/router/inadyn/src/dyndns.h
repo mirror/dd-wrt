@@ -131,12 +131,15 @@ typedef enum
 	"Host: %s\r\n" \
 	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
 
+/** easydns needs "User-Agent" first and "Host" last
+	don't ask how long this took to figure out
+*/
 #define GENERIC_EASYDNS_AUTH_MY_IP_REQUEST_FORMAT \
     "GET http://%s%s%s&myip=%s " \
 	 "HTTP/1.0\r\n" \
 	"Authorization: Basic %s\r\n" \
-	"Host: %s\r\n" \
-	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n" \
+	"Host: %s\r\n"
 
 
 #define DYNDNS_OK_RESPONSE	"good"
