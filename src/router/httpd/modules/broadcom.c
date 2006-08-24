@@ -3780,47 +3780,37 @@ char *
 live_translate (char *tran)
 {
 
+  FILE *fp;
+  int find = 0;
+  char temp[256], temp1[256], *temp2;
   char *lang = getLanguageName ();
   char buf[64];
   sprintf (buf, "/www/%s", lang);
   free (lang);
-// lang_charset.set
-  char sstring[32];
-  strcpy (sstring, tran);   // will crash, first parameter is destination for copy and too small for source. strcpy will return the same pointer as parameter1
-  strcat (sstring, "=\"");  // will crash too. memory size of *string is not defined. sstring is not allocated
-  char s[128];
-  FILE *in = fopen (buf, "rb");
-  while (!feof (in))
-    {
-      fscanf (in, "%s", s);
-      cprintf ("lang scan %s\n", s);
-      char *cmp = strstr (s, sstring);
-      cprintf ("strstr %s\n", cmp);
-      if (cmp)
+
+  	strcpy (temp1, tran);
+	strcat (temp1, "=\"");
+  
+	fp = fopen (buf, "r");
+	
+
+	while ((fgets(temp, 256, fp) != NULL) && (!find))
 	{
-	  fclose (in);
-	  cmp += strlen (sstring);
-	  cprintf ("source %s\n", cmp);
-	  char *t2 = strstr (cmp, "\"");
-	  if (t2 == NULL)
-	    {
-	      cprintf (" length was null\n");
-	      return "Error";		//error (typo?)
-	    }
-	  int len = t2 - cmp;
-	  cprintf ("length = %d\n", len);
-	  if (len < 0)
-	    return "Error";		//error (unknown)
-	  char dest[128];
-	  strncpy (dest, cmp, len);
-	  dest[len] = 0;
-	  cprintf ("destination %s\n", dest);
-	  fclose (in);
-	  return dest;
+		if ((strstr(temp, temp1)) != NULL)
+		{
+			find = 1;
+
+			temp2 = strtok(temp,"\"");
+			temp2 = strtok(NULL,"\"");
+
+			fclose (fp);
+			return temp2;
+		}
 	}
-    }
-	fclose (in);
-  return "Error";
+
+fclose (fp);
+return "Error";
+  
 }
 
 /* obsolete, use do_pagehead
@@ -4477,19 +4467,19 @@ switch (radiooff)
 	{	
 	case 0:
 		//websWrite (wp, "On&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
-		websWrite (wp, "On");
-		//websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
+		//websWrite (wp, "On");
+		websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
 		break;
 	case 1: // software disabled
 	case 2: // hardware disabled
 	case 3: // both are disabled
 		//websWrite (wp, "Off&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
-		websWrite (wp, "Off");
-		//websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
+		//websWrite (wp, "Off");
+		websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
 		break;
 	case -1:
-		websWrite (wp, "Unknown");
-		//websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+		//websWrite (wp, "Unknown");
+		websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
 		break;
 	}
 }
