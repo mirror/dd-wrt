@@ -130,6 +130,7 @@ share.full="Full";
 share.half="Half";
 share.quarter="Quarter";
 share.seealso="See also";
+share.never="never";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";

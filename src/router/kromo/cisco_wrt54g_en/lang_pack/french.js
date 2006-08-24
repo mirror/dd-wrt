@@ -131,6 +131,7 @@ share.full="Full";
 share.half="Half";
 share.quarter="Quarter";
 share.seealso="Voir aussi";
+share.never="jamais";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
