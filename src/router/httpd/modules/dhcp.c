@@ -88,7 +88,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 			 (count ? ',' : ' '),
 			 (hostname[0] ? hostname : "unknown"),
 			 ip, mac,
-			 ((expires == 0) ? "<script type=\"text/javascript\">Capture(share.never)</script>" : dhcp_reltime (buf,
+			 ((expires == 0) ? "never" : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
 	      ++count;
@@ -130,7 +130,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 			 (count ? ',' : ' '),
 			 (hostname[0] ? hostname : "unknown"),
 			 ip, mac,
-			 ((expires == 0) ? "<script type=\"text/javascript\">Capture(share.never)</script>" : dhcp_reltime (buf,
+			 ((expires == 0) ? "never" : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
               ++count;
@@ -193,7 +193,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      else if (expires == (long) EXPIRES_NEVER)
 		{
-		  strcpy (expires_time, "<script type=\"text/javascript\">Capture(share.never)</script>");
+		  strcpy (expires_time, "never");
 		}
 	      else
 		{
