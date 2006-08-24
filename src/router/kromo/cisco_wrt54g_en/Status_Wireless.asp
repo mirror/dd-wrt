@@ -172,7 +172,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
-									<span id="wl_rate"><% get_currate(); %> Mbps</span>&nbsp;
+									<span id="wl_rate"><% get_currate(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.encrypt"); %></div>
