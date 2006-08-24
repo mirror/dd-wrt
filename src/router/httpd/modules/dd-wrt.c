@@ -3077,13 +3077,14 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
   if (rate > 0)
     {
       if (rate == 11)
-	websWrite (wp, "5.5");
+	websWrite (wp, "5.5 Mbps");
       else
-	websWrite (wp, "%d", rate / 2);
+	websWrite (wp, "%d Mbps", rate / 2);
     }
   else
-    websWrite (wp, "unknown");
-
+    //websWrite (wp, "unknown");
+	websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+	
   return;
 
 }
@@ -3139,8 +3140,8 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%d", ci.target_channel);
     }
   else
-    websWrite (wp, "unknown");
-
+    //websWrite (wp, "unknown");
+	websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
   return;
 
 }
