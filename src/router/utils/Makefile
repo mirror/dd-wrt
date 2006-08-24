@@ -19,6 +19,10 @@ include $(TOP)/.config
 
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
 UTILS := mtd
+ifneq ($(CONFIG_DIST),"micro")
+UTILS += epi_ttcp
+endif
+
 CFLAGS += -s $(COPTS) -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe 
 
 vpath %.c $(SRCBASE)/tools/misc
@@ -31,6 +35,7 @@ all: $(UTILS)
 else
 all:
 	$(CC) -o mtd -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
+	$(CC) -o epi_ttcp -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 endif
 
