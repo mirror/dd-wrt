@@ -3872,7 +3872,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			websWrite (wp, "\t<head>\n");
 			websWrite (wp,
 				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-				live_translate("lang_charset.set");
+				live_translate("lang_charset.set"));
 			if (nvram_invmatch ("dist_type", "micro"))
 			{
 				websWrite (wp,
@@ -3907,7 +3907,7 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			websWrite (wp, "\t<head>\n");
 			websWrite (wp,
 				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-				live_translate("lang_charset.set");
+				live_translate("lang_charset.set"));
 			websWrite (wp,
 				"\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
 			websWrite (wp,
