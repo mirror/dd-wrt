@@ -5,7 +5,7 @@
 {wl_channel::<% get_curchannel(); %>}
 {wl_radio::<% get_radio_state(); %>}
 {wl_xmit::<% nvram_get("txpwr"); %> mW}
-{wl_rate::<% get_currate(); %> Mbps}
+{wl_rate::<% get_currate(); %>}
 {packet_info::<% wl_packet_get(); %>}
 {wl_mode_short::<% nvram_get("wl0_mode"); %>}
 {lan_proto::<% nvram_get("lan_proto"); %>}
