@@ -54,7 +54,7 @@ do_mssid (char *lan_ifname)
 	  char ip[32];
 	  char mask[32];
 	  sprintf (ip, "%s_ipaddr", var);
-	  sprintf (mask, "%s_ipaddr", var);
+	  sprintf (mask, "%s_netmask", var);
 	  ifconfig (var, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
       //  eval ("brctl", "addif", lan_ifname, var);
