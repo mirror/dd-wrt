@@ -103,12 +103,13 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 
 	{"--dyndns_system",	1,	{get_dyndns_system_handler, NULL},	
             "[NAME] - optional DYNDNS service type. SHOULD be one of the following: \n"
-            "\t\t-For dyndns.org DNS system: dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
-            "\t\t-For freedns.afraid.org DNS system: default@freedns.afraid.org\n"
-            "\t\t-For www.zoneedit.com DNS system: default@zoneedit.com\n"
-            "\t\t-For www.no-ip.com DNS system: default@no-ip.com\n"
-            "\t\t-For www.3322.org DNS system: dyndns@3322.org\n"
-			"\t\t-For generic DNS system: custom@http_svr_basic_auth\n"
+            "\t\t-For dyndns.org: dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
+            "\t\t-For freedns.afraid.org: default@freedns.afraid.org\n"
+            "\t\t-For zoneedit.com: default@zoneedit.com\n"
+            "\t\t-For no-ip.com: default@no-ip.com\n"
+            "\t\t-For easydns.com: default@easydns.com\n"
+            "\t\t-For 3322.org: dyndns@3322.org\n"
+            "\t\t-For generic: custom@http_svr_basic_auth\n"
             "\t\tDEFAULT value is intended for default service at dyndns.org (most users): dyndns@dyndns.org"},
 
   {"--proxy_server", 1, {get_proxy_server_handler, NULL},
