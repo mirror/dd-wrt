@@ -31,6 +31,8 @@ option "dns2"        - "Secondary DNS server IP address" string no
 option "domain"      - "Domain to use for DNS lookups" string default="key.chillispot.org" no
 option "ipup"        - "Script to run after link-up"   string no
 option "ipdown"      - "Script to run after link-down" string no
+option "conup"       - "Script to run after user logon"  string no
+option "condown"     - "Script to run after user logoff" string no
 
 
 # Radius parameters
