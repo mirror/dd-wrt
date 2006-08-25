@@ -1196,8 +1196,11 @@ eval("wl", "vlan_mode", "0");
   /* Set additional lan static routes if need */
   set_routes ();
 #ifndef HAVE_MADWIFI
-  eval ("/usr/sbin/wl", "radio",
-	nvram_invmatch ("wl_net_mode", "disabled") ? "on" : "off");
+#ifndef HAVE_MSSID
+  eval ("/usr/sbin/wl", "radio",nvram_invmatch ("wl_net_mode", "disabled") ? "on" : "off");
+#else
+  eval ("/usr/sbin/wl", "radio",nvram_invmatch ("wl0_net_mode", "disabled") ? "on" : "off");
+#endif
 #endif
   /* Disable wireless will cause diag led blink, so we want to stop it. */
   if (check_hw_type () == BCM4712_CHIP)
