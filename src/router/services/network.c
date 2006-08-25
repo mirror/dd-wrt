@@ -645,15 +645,15 @@ start_lan (void)
     }
   else
     {
-      strcpy (mac, nvram_safe_get ("et0macaddr"));
-      MAC_ADD (mac);
-      MAC_ADD (mac);		// The wireless mac equal lan mac add 2
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+//      strcpy (mac, nvram_safe_get ("et0macaddr"));
+//      MAC_ADD (mac);
+//      MAC_ADD (mac);		// The wireless mac equal lan mac add 2
+//      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
 //      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_macaddr"))
-	{
-	  nvram_set ("wl0_hwaddr", mac);
+//	{
+//	  nvram_set ("wl0_hwaddr", mac);
 //	  nvram_commit ();
-	}
+//	}
     }
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
@@ -774,10 +774,10 @@ start_lan (void)
       MAC_ADD (mac);
       MAC_ADD (mac);		// The wireless mac equal lan mac add 2
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-//      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_macaddr"))
+      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_hwaddr"))
 	{
 	  nvram_set ("wl0_hwaddr", mac);
-//	  nvram_commit ();
+	  nvram_commit ();
 	}
     }
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
