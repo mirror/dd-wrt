@@ -6,7 +6,7 @@
 /* #undef DEBUG */
 #define HAVE_GETPASS 1
 #define HAVE_SYS_ERRLIST 1
-#define OS "i686-pc-linux-gnu"
+#define OS ""
 #define USE_MD5 1
 #define DEF_SERVICE "NULL"
 
