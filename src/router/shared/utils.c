@@ -1,3 +1,4 @@
+//#define CDEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -400,7 +401,7 @@ internal_getRouterBrand ()
 }
 int has_mimo()
 {
-if (nvram_match("wl0_phytype","n"))
+if (nvram_match("wl0_phytypes","n"))
     return 1;
 return 0;
 }

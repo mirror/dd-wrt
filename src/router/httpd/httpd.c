@@ -523,6 +523,7 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 	{
 	  wfputc (buf[i], stream);
 	}
+//     free(buf);
     }
 #endif
 }
