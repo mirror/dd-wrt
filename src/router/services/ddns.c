@@ -75,11 +75,11 @@ init_ddns (void)
       strcpy (service, "dyndns@3322.org");
       flag = 6;
     }
-  else if (nvram_match ("ddns_enable", "7"))
+  /*else if (nvram_match ("ddns_enable", "7"))
     {
       strcpy (service, "default@easydns.com");
       flag = 7;
-    }
+    }*/
 
 /* botho 30/07/06 : add www.3322.org */
   if (flag == 1)
@@ -123,12 +123,13 @@ init_ddns (void)
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype_6");
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_6");
     }
-  else if (flag == 7)
+  /*else if (flag == 7)
     {
       snprintf (_username, sizeof (_username), "%s", "ddns_username_7");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_7");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_7");
     }
+    }*/
 
   return 0;
 }

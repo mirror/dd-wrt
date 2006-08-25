@@ -150,7 +150,7 @@ addEvent(window, "unload", function() {
 										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
 										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >No-IP.com</option>
 										<option value="6" <% nvram_selmatch("ddns_enable", "6", "selected"); %> >3322.org</option>
-										<option value="7" <% nvram_selmatch("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
+										<!--<option value="7" <% nvram_selmatch("ddns_enable", "7", "selected"); %> >easyDNS.com</option>-->
 										<script type="text/javascript">document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");</script>
 									</select>
 								</div>

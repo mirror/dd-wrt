@@ -14,122 +14,62 @@ configure:927: checking whether the C compiler (gcc  ) works
 configure:943: gcc -o conftest    conftest.c  1>&5
 configure:969: checking whether the C compiler (gcc  ) is a cross-compiler
 configure:974: checking whether we are using GNU C
-configure:983: gcc -E conftest.c
 configure:1002: checking whether gcc accepts -g
 configure:1034: checking how to run the C preprocessor
-configure:1055: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1125: checking for a BSD compatible install
 configure:1179: checking return type of signal handlers
-configure:1201: gcc -c -g -O2  conftest.c 1>&5
 configure:1222: checking for gethostbyname
-configure:1250: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1319: checking for connect
-configure:1347: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for socket
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for strdup
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getopt_long
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for gethostbyaddr
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getservbyname
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for inet_addr
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for inet_ntoa
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for snprintf
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for vfprintf
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for stat
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for vsprintf
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for vsnprintf
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for strerror
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for strftime
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for wait
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for waitpid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getpid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for fork
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for vfork
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getuid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for geteuid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for setuid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for seteuid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getgid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for getegid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for setgid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for setegid
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for inet_aton
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1447: checking for herror
-configure:1475: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1517: checking for arpa/inet.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for sys/types.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for sys/time.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for sys/stat.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for fcntl.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for signal.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for syslog.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for pwd.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for stdarg.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for grp.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for errno.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for sys/sockio.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
-configure:1523:24: sys/sockio.h: No such file or directory
-configure: failed program was:
-#line 1522 "configure"
-#include "confdefs.h"
-#include <sys/sockio.h>
 configure:1517: checking for sys/wait.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1517: checking for getopt.h
-configure:1527: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1561: checking for unistd.h
-configure:1571: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1561: checking for netinet/in.h
-configure:1571: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1561: checking for netdb.h
-configure:1571: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1561: checking for sys/socket.h
-configure:1571: gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1600: checking for sys_errlist in -lc
-configure:1619: gcc -o conftest -g -O2   conftest.c -lc   1>&5
 configure:1646: checking for getopt
-configure:1674: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1703: checking for getpass
-configure:1731: gcc -o conftest -g -O2   conftest.c  1>&5
 configure:1763: checking host system type
 configure:1789: checking for user supplied default service
 configure:1883: checking whether user wants debugging support
