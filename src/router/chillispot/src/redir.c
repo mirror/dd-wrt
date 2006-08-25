@@ -248,8 +248,10 @@ redir_stradd (char *dst, int dstsize, char *fmt, ...)
 
 /* Make an XML Reply */
 static int
-redir_xmlreply (struct redir_t *redir, int res, char *hexchal,
-		char *reply, char *redirurl, char *dst, int dstsize)
+redir_xmlreply(struct redir_t *redir, struct redir_conn_t *conn, 
+			  int res, long int timeleft, char* hexchal, 
+			  char* reply, char* redirurl,
+			  char *dst, int dstsize)
 {
   char mid[REDIR_MAXBUFFER];
 
@@ -371,6 +373,56 @@ redir_xmlreply (struct redir_t *redir, int res, char *hexchal,
 		    inet_ntoa (redir->addr), redir->port);
       redir_stradd (dst, dstsize, "</AbortLoginReply>\r\n");
       break;
+    case REDIR_STATUS:
+    redir_stradd(dst, dstsize, "<AuthenticationPollReply>\r\n");
+    redir_stradd(dst, dstsize, "<MessageType>140</MessageType>\r\n");
+    if (conn->authenticated != 1) {
+      redir_stradd(dst, dstsize, "<ResponseCode>150</ResponseCode>\r\n");
+      redir_stradd(dst, dstsize, 
+		   "<ReplyMessage>Not logged on</ReplyMessage>\r\n");
+    }
+    else {
+      redir_stradd(dst, dstsize, "<ResponseCode>50</ResponseCode>\r\n");
+      redir_stradd(dst, dstsize,
+		   "<ReplyMessage>Already logged on</ReplyMessage>\r\n");
+    }
+    redir_stradd(dst, dstsize, "</AuthenticationPollReply>\r\n");
+
+    if (conn->authenticated == 1) {
+      struct timeval timenow;
+      uint32_t sessiontime;
+      gettimeofday(&timenow, NULL);
+      sessiontime = timenow.tv_sec - conn->start_time.tv_sec;
+      sessiontime += (timenow.tv_usec - conn->start_time.tv_usec) / 1000000;
+      redir_stradd(dst, dstsize, "<SessionStatus>\r\n");
+      if (timeleft) {
+	redir_stradd(dst, dstsize, "<SessionTimeLeft>%d</SessionTimeLeft>\r\n",
+		     timeleft);
+      }
+      redir_stradd(dst, dstsize, "<Acct-Session-Time>%d</Acct-Session-Time>\r\n", sessiontime);
+      redir_stradd(dst, dstsize, "<Start-Time>%d</Start-Time>\r\n" , conn->start_time);
+      redir_stradd(dst, dstsize, "<Acct-Input-Octets>%d</Acct-Input-Octets>\r\n",
+		   conn->input_octets);
+      redir_stradd(dst, dstsize, "<Acct-Output-Octets>%d</Acct-Output-Octets>\r\n",
+		   conn->output_octets);
+      redir_stradd(dst, dstsize, "<Session-Timeout>%d</Session-Timeout>\r\n",
+		   conn->sessiontimeout);
+      redir_stradd(dst, dstsize, "<ChilliSpot-Max-Input-Octets>%d</ChilliSpot-Max-Input-Octets>\r\n",
+		   conn->maxinputoctets);
+
+      redir_stradd(dst, dstsize, "<ChilliSpot-Max-Output-Octets>%d</ChilliSpot-Max-Output-Octets>\r\n",
+		   conn->maxoutputoctets);
+      redir_stradd(dst, dstsize, "<ChilliSpot-Max-Total-Octets>%d</ChilliSpot-Max-Total-Octets>\r\n",
+		   conn->maxtotaloctets);
+      redir_stradd(dst, dstsize,
+		   "<LogoffURL>http://%s:%d/logoff</LogoffURL>\r\n",
+		   inet_ntoa(redir->addr), redir->port);
+      redir_stradd(dst, dstsize,
+		   "<StatusURL>http://%s:%d/status</StatusURL>\r\n",
+		   inet_ntoa(redir->addr), redir->port);
+      redir_stradd(dst, dstsize, "</SessionStatus>\r\n");
+    }
+    break;
     default:
       sys_err (LOG_ERR, __FILE__, __LINE__, 0, "Unknown res in switch");
       return -1;
@@ -383,9 +435,11 @@ redir_xmlreply (struct redir_t *redir, int res, char *hexchal,
 
 /* Make an HTTP redirection reply and send it to the client */
 static int
-redir_reply (struct redir_t *redir, int fd, int res,
-	     long int timeleft, char *hexchal, char *uid,
-	     char *userurl, char *reply, char *redirurl, uint8_t * hismac)
+redir_reply(struct redir_t *redir, int fd, 
+		       struct redir_conn_t *conn, int res, 
+		       long int timeleft,
+		       char* hexchal, char* uid, char* userurl, char* reply, 
+		       char* redirurl, uint8_t *hismac)
 {
   char buffer[REDIR_MAXBUFFER];
   char xmlreply[REDIR_MAXBUFFER];
@@ -394,7 +448,7 @@ redir_reply (struct redir_t *redir, int fd, int res,
   buffer[0] = 0;
   xmlreply[0] = 0;
 
-  (void) redir_xmlreply (redir, res, hexchal, reply, redirurl,
+  (void) redir_xmlreply(redir, conn, res, timeleft, hexchal, reply, redirurl,
 			 xmlreply, sizeof (xmlreply));
 
   switch (res)
@@ -423,6 +477,12 @@ redir_reply (struct redir_t *redir, int fd, int res,
       break;
     case REDIR_ABOUT:
       break;
+    case REDIR_STATUS:
+	    if (conn->authenticated == 1)
+	      resp = "already";
+	    else
+	      resp = "notyet";
+	    break;
     default:
       sys_err (LOG_ERR, __FILE__, __LINE__, 0, "Unknown res in switch");
       return -1;
@@ -820,6 +880,8 @@ redir_geturl (struct redir_t *redir, char *src, char *dst, int dstsize)
   strncpy (dst + 7, host, hostlen);
   strncpy (dst + 7 + hostlen, path, pathlen);
   dst[7 + hostlen + pathlen] = 0;
+  
+  if (optionsdebug) printf("Userurl: %s\n", dst);
 
   return 0;
 
@@ -911,6 +973,7 @@ redir_getreq (struct redir_t *redir, int fd, struct redir_conn_t *conn)
   char path[REDIR_MAXBUFFER];
   char resp[REDIR_MAXBUFFER];
   char mid[REDIR_MAXBUFFER];
+  int i;
 
   maxfd = fd;
 
@@ -954,6 +1017,8 @@ redir_getreq (struct redir_t *redir, int fd, struct redir_conn_t *conn)
 	    break;		/* Only interested in first line */
 	}
     }
+	
+	for (i = 0; i<buflen; i++) if (buffer[i] == 0) buffer[i] = 0x0a; /* TODO: Hack to make Flash work */
 
   if (buflen <= 0)
     {
@@ -968,6 +1033,11 @@ redir_getreq (struct redir_t *redir, int fd, struct redir_conn_t *conn)
 	printf ("Could not parse path!\n");
       return -1;
     }
+    
+  if (!redir_getparam(redir, buffer, "userurl",
+		     conn->userurl, sizeof(conn->userurl))) {
+    if (optionsdebug) printf("User URL: %s!\n", conn->userurl);
+  }
 
   if ((!strcmp (path, "logon")) || (!strcmp (path, "login")))
     {
@@ -1028,6 +1098,10 @@ redir_getreq (struct redir_t *redir, int fd, struct redir_conn_t *conn)
       conn->type = REDIR_ABOUT;
       return 0;
     }
+  else if (!strcmp(path, "status")) {
+    conn->type = REDIR_STATUS;
+    return 0;
+  }
   else
     {
       if (redir_geturl (redir, buffer, conn->userurl, sizeof (conn->userurl)))
@@ -1148,6 +1222,20 @@ redir_cb_radius_auth_conf (struct radius_t *radius,
     {
       conn->idletimeout = 0;
     }
+    
+  /* Filter ID */
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_FILTER_ID,
+		      0, 0, 0)) {
+    conn->filteridlen = attr->l-2;
+    memcpy(conn->filteridbuf, attr->v.t, attr->l-2);
+    conn->filteridbuf[attr->l-2] = 0;
+    conn->filterid = conn->filteridbuf;
+  }
+  else {
+    conn->filteridlen = 0;
+    conn->filteridbuf[0] = 0;
+    conn->filterid = NULL;
+  }
 
   /* Interim interval */
   if (!radius_getattr (pack, &interimattr, RADIUS_ATTR_ACCT_INTERIM_INTERVAL,
@@ -1687,8 +1775,10 @@ redir_accept (struct redir_t *redir)
 	{
 	  if (optionsdebug)
 	    printf ("redir_accept: Already logged on\n");
-	  redir_reply (redir, new_socket, REDIR_ALREADY, 0, NULL, NULL, NULL,
-		       NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_ALREADY, 0, 
+		  NULL, NULL, conn.userurl, NULL,
+		  NULL, conn.hismac);
+      redir_close();
 	  redir_close ();
 	  exit (0);
 	}
@@ -1708,8 +1798,9 @@ redir_accept (struct redir_t *redir)
 	      exit (0);
 	    }
 
-	  redir_reply (redir, new_socket, REDIR_FAILED_OTHER, 0, hexchal,
-		       NULL, NULL, NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_FAILED_OTHER, 0,
+		  hexchal, NULL, conn.userurl, NULL,
+		  NULL, conn.hismac);
 	  redir_close ();
 	  exit (0);
 	}
@@ -1862,9 +1953,9 @@ redir_accept (struct redir_t *redir)
 
       if (conn.response == REDIR_SUCCESS)
 	{			/* Radius-Accept */
-	  redir_reply (redir, new_socket, conn.response, conn.sessiontimeout,
-		       NULL, conn.username, conn.userurl, conn.reply,
-		       conn.redirurl, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, conn.response, conn.sessiontimeout,
+                  NULL, conn.username, conn.userurl, conn.reply,
+                  conn.redirurl, conn.hismac);
 
 	  msg.type = REDIR_LOGIN;
 	  strncpy (msg.username, conn.username, sizeof (msg.username));
@@ -1883,6 +1974,8 @@ redir_accept (struct redir_t *redir)
 	  msg.maxoutputoctets = conn.maxoutputoctets;
 	  msg.maxtotaloctets = conn.maxtotaloctets;
 	  msg.sessionterminatetime = conn.sessionterminatetime;
+	  msg.filteridlen = conn.filteridlen;
+    strncpy(msg.filteridbuf, conn.filteridbuf, sizeof(msg.filteridbuf));
 
 	  if (msgsnd (redir->msgid, (struct msgbuf *) &msg,
 		      sizeof (struct redir_msg_t), 0) < 0)
@@ -1903,8 +1996,9 @@ redir_accept (struct redir_t *redir)
 	      exit (0);
 	    }
 
-	  redir_reply (redir, new_socket, conn.response, 0, hexchal, NULL,
-		       NULL, conn.reply, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, conn.response, 0,
+		  hexchal, NULL, conn.userurl, conn.reply, 
+		  NULL, conn.hismac);
 	  redir_close ();
 	  exit (0);
 	}
@@ -1922,8 +2016,9 @@ redir_accept (struct redir_t *redir)
 	  exit (0);
 	}
 
-      redir_reply (redir, new_socket, REDIR_LOGOFF, 0, hexchal, NULL, NULL,
-		   NULL, NULL, conn.hismac);
+      redir_reply(redir, new_socket, &conn, REDIR_LOGOFF, 0, 
+				hexchal, NULL, conn.userurl, NULL, 
+				NULL, conn.hismac);
       redir_close ();
       exit (0);			/* Terminate the client */
     }
@@ -1939,13 +2034,15 @@ redir_accept (struct redir_t *redir)
 
       if (state == 1)
 	{
-	  redir_reply (redir, new_socket, REDIR_ALREADY, 0, NULL, NULL, NULL,
-		       NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_ALREADY, 0, 
+		  NULL, NULL, conn.userurl, NULL,
+		  NULL, conn.hismac);
 	}
       else
 	{
-	  redir_reply (redir, new_socket, REDIR_NOTYET, 0, hexchal, NULL,
-		       NULL, NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_NOTYET, 0, 
+		  hexchal, NULL, conn.userurl, NULL,
+		  NULL, conn.hismac);
 	}
       redir_close ();
       exit (0);
@@ -1954,8 +2051,9 @@ redir_accept (struct redir_t *redir)
     {
       if (state == 1)
 	{
-	  redir_reply (redir, new_socket, REDIR_ABORT_NAK, 0, NULL, NULL,
-		       NULL, NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_ABORT_NAK, 0,
+		  NULL, NULL, conn.userurl, NULL, 
+		  NULL, conn.hismac);
 	}
       else
 	{
@@ -1967,19 +2065,37 @@ redir_accept (struct redir_t *redir)
 		       "msgsnd() failed!");
 	      exit (0);
 	    }
-	  redir_reply (redir, new_socket, REDIR_ABORT_ACK, 0, hexchal, NULL,
-		       NULL, NULL, NULL, conn.hismac);
+	  redir_reply(redir, new_socket, &conn, REDIR_ABORT_ACK, 0, 
+		  hexchal, NULL, conn.userurl, NULL,
+		  NULL, conn.hismac);
 	}
       redir_close ();
       exit (0);
     }
   else if (conn.type == REDIR_ABOUT)
     {
-      redir_reply (redir, new_socket, REDIR_ABOUT, 0, NULL, NULL, NULL,
-		   NULL, NULL, NULL);
-      redir_close ();
+      redir_reply(redir, new_socket, &conn, REDIR_ABOUT, 0, 
+		NULL, NULL, NULL, NULL,
+		NULL, NULL);
       exit (0);
     }
+  else if (conn.type == REDIR_STATUS) {
+    struct timeval timenow;
+    uint32_t sessiontime;
+    uint32_t timeleft;
+    gettimeofday(&timenow, NULL);
+    sessiontime = timenow.tv_sec - conn.start_time.tv_sec;
+    sessiontime += (timenow.tv_usec - conn.start_time.tv_usec) / 1000000;
+    if (conn.sessiontimeout)
+      timeleft = conn.sessiontimeout - sessiontime;
+    else
+      timeleft = 0;
+    redir_reply(redir, new_socket, &conn, REDIR_STATUS, timeleft,
+		NULL, NULL, NULL, NULL,
+		NULL, NULL);
+    redir_close();
+    exit(0);
+  }
   else if (conn.type == REDIR_MSDOWNLOAD)
     {
       buflen = snprintf (buffer, bufsize, "HTTP/1.0 403 Forbidden\r\n\r\n");
@@ -2038,13 +2154,15 @@ redir_accept (struct redir_t *redir)
     }
   else if (state == 1)
     {
-      redir_reply (redir, new_socket, REDIR_ALREADY, 0, NULL, NULL, NULL,
-		   NULL, NULL, conn.hismac);
+      redir_reply(redir, new_socket, &conn, REDIR_ALREADY, 0,
+		NULL, NULL, conn.userurl, NULL,
+		NULL, conn.hismac);
     }
   else
     {
-      redir_reply (redir, new_socket, REDIR_NOTYET, 0, hexchal, NULL,
-		   conn.userurl, NULL, NULL, conn.hismac);
+      redir_reply(redir, new_socket, &conn, REDIR_NOTYET, 0, 
+		hexchal, NULL, conn.userurl, NULL, 
+		NULL, conn.hismac);
     }
 
   redir_close ();
@@ -2065,3 +2183,4 @@ redir_set_cb_getstate (struct redir_t *redir,
   redir->cb_getstate = cb_getstate;
   return 0;
 }
+

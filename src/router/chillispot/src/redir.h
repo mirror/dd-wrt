@@ -58,6 +58,7 @@
 #define REDIR_CHALLENGE  4
 #define REDIR_ABORT      5
 #define REDIR_ABOUT      6
+#define REDIR_STATUS     7
 #define REDIR_MSDOWNLOAD 25
 
 #define REDIR_ALREADY        50 /* Reply to /logon while allready logged on */
@@ -112,6 +113,12 @@ struct redir_conn_t {
   int maxoutputoctets;
   int maxtotaloctets;
   time_t sessionterminatetime;
+  char filteridbuf[RADIUS_ATTR_VLEN+1];
+  int filteridlen;
+  char *filterid;
+  uint64_t input_octets;     /* Transferred in callback */
+  uint64_t output_octets;    /* Transferred in callback */
+  struct timeval start_time; /* Transferred in callback */
 };
 
 struct redir_t {
@@ -148,9 +155,9 @@ struct redir_msg_t {
   char username[REDIR_USERNAMESIZE];
   char userurl[REDIR_USERURLSIZE];
   uint8_t uamchal[REDIR_MD5LEN];
-  uint8_t statebuf[RADIUS_ATTR_VLEN];
+  uint8_t statebuf[RADIUS_ATTR_VLEN+1];
   int statelen;
-  uint8_t classbuf[RADIUS_ATTR_VLEN];
+  uint8_t classbuf[RADIUS_ATTR_VLEN+1];
   int classlen;
   int bandwidthmaxup;
   int bandwidthmaxdown;
@@ -158,6 +165,8 @@ struct redir_msg_t {
   int maxoutputoctets;
   int maxtotaloctets;
   int sessionterminatetime;
+  char filteridbuf[RADIUS_ATTR_VLEN+1];
+  int filteridlen;
 };
 
 

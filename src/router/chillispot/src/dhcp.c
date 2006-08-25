@@ -629,9 +629,12 @@ int dhcp_open_eth(char const *ifname, uint16_t protocol, int promisc,
 
 #endif
 
-int dhcp_send(int fd, uint16_t protocol, unsigned char *hismac, int ifindex,
+int dhcp_send(struct dhcp_t *this, 
+				int fd, uint16_t protocol, unsigned char *hismac, int ifindex,
 	      void *packet, int length)
 {
+if (this->debug) printf("Sending IP packet\n");
+
 #if defined(__linux__)
   struct sockaddr_ll dest;
 
@@ -1284,6 +1287,11 @@ int dhcp_doDNAT(struct dhcp_conn_t *conn,
       (pack->iph.protocol == DHCP_IP_UDP) &&
       (udph->dst == htons(DHCP_DNS)))
     return 0; 
+  
+  /* Was it an ICMP request for us? */
+  if ((pack->iph.daddr == conn->ourip.s_addr) &&
+      (pack->iph.protocol == DHCP_IP_ICMP))
+    return 0;
 
   /* Was it a http or https request for authentication server? */
   /* Was it a request for authentication server? */
@@ -1362,6 +1370,11 @@ int dhcp_undoDNAT(struct dhcp_conn_t *conn,
       (pack->iph.protocol == DHCP_IP_UDP) &&
       (udph->src == htons(DHCP_DNS)))
     return 0; 
+  
+  /* Was it an ICMP reply from us? */ /* Added by Freddy */
+  if ((pack->iph.saddr == conn->ourip.s_addr) &&
+      (pack->iph.protocol == DHCP_IP_ICMP))
+    return 0;
 
   /* Was it a reply from redir server? */
   if ((pack->iph.saddr == this->uamlisten.s_addr) &&
@@ -1515,7 +1528,7 @@ int dhcp_checkDNS(struct dhcp_conn_t *conn,
       /* Calculate total length */
       length = udp_len + DHCP_IP_HLEN + DHCP_ETH_HLEN;
       
-      return dhcp_send(this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
+      return dhcp_send(this, this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
 		       &answer, length);
 
 
@@ -1704,7 +1717,7 @@ int dhcp_sendOFFER(struct dhcp_conn_t *conn,
   /* Calculate total length */
   length = udp_len + DHCP_IP_HLEN + DHCP_ETH_HLEN;
 
-  return dhcp_send(this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
 		   &packet, length);
 }
 
@@ -1824,7 +1837,7 @@ int dhcp_sendACK(struct dhcp_conn_t *conn,
   /* Calculate total length */
   length = udp_len + DHCP_IP_HLEN + DHCP_ETH_HLEN;
 
-  return dhcp_send(this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
 		   &packet, length);
 }
 
@@ -1891,7 +1904,7 @@ int dhcp_sendNAK(struct dhcp_conn_t *conn,
   /* Calculate total length */
   length = udp_len + DHCP_IP_HLEN + DHCP_ETH_HLEN;
 
-  return dhcp_send(this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
 		   &packet, length);
 
 }
@@ -2046,21 +2059,7 @@ int dhcp_receive_ip(struct dhcp_t *this, struct dhcp_ippacket_t *pack,
     ourip.s_addr = conn->ourip.s_addr;
   }
   else {
-    /* ALPAPAD */
-    struct in_addr reqaddr;
-    /* Get local copy */
-    memcpy(&reqaddr.s_addr, &pack->iph.saddr, DHCP_IP_ALEN);
-    if (this->debug) printf("Address not found (%s)\n",inet_ntoa(reqaddr));
-    /* Allocate new connection */
-    if (dhcp_newconn(this, &conn, pack->ethh.src))
-      return 0; /* Out of connections */
-
-    /* Request an IP address */
-    if (conn->authstate == DHCP_AUTH_NONE) {
-       this->cb_request(conn,&reqaddr);
-    }
-  
-  
+    if (this->debug) printf("Address not found\n");
     ourip.s_addr = this->ourip.s_addr;
     
     /* Do we allow dynamic allocation of IP addresses? */
@@ -2211,7 +2210,7 @@ int dhcp_data_req(struct dhcp_conn_t *conn, void *pack, unsigned len)
     return 0;
   }
 
-  return dhcp_send(this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_IP, conn->hismac, this->ifindex,
 		   &packet, length);
 }
 
@@ -2269,7 +2268,7 @@ int dhcp_sendARP(struct dhcp_conn_t *conn,
   memcpy(packet.ethh.src, this->hwaddr, DHCP_ETH_ALEN);
   packet.ethh.prot = htons(DHCP_ETH_ARP);
 
-  return dhcp_send(this->arp_fd, DHCP_ETH_ARP, conn->hismac, this->arp_ifindex,
+  return dhcp_send(this, this->arp_fd, DHCP_ETH_ARP, conn->hismac, this->arp_ifindex,
 		   &packet, length);
 }
 
@@ -2296,24 +2295,15 @@ int dhcp_receive_arp(struct dhcp_t *this,
 
   /* Check to see if we know MAC address. */
   if (dhcp_hashget(this, &conn, pack->ethh.src)) {
-    /* ALPAPAD */
-    struct in_addr reqaddr;
-    /* Get local copy */
-    memcpy(&reqaddr.s_addr, &pack->arp.spa, DHCP_IP_ALEN);
-    if (this->debug) printf("Address not found (%s)\n",inet_ntoa(reqaddr));
-    /* Allocate new connection */
-    if (dhcp_newconn(this, &conn, pack->ethh.src))
-      return 0; /* Out of connections */
-
-    /* Request an IP address */
-    if (conn->authstate == DHCP_AUTH_NONE) {
-       this->cb_request(conn,&reqaddr);
-    }
-  
+    if (this->debug) printf("Address not found\n");
     
     /* Do we allow dynamic allocation of IP addresses? */
     if (!this->allowdyn)  /* TODO: Experimental */
       return 0; 
+    
+    /* Allocate new connection */
+    if (dhcp_newconn(this, &conn, pack->ethh.src)) /* TODO: Experimental */
+      return 0; /* Out of connections */
   }
   
   
@@ -2380,7 +2370,7 @@ int dhcp_senddot1x(struct dhcp_conn_t *conn,
 
   struct dhcp_t *this = conn->parent;
   
-  return dhcp_send(this->fd, DHCP_ETH_EAPOL, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_EAPOL, conn->hismac, this->ifindex,
 		   pack, len);
 }
 
@@ -2407,7 +2397,7 @@ int dhcp_sendEAP(struct dhcp_conn_t *conn, void *pack, int len) {
 
   memcpy(&packet.eap, pack, len);
   
-  return dhcp_send(this->fd, DHCP_ETH_EAPOL, conn->hismac, this->ifindex,
+  return dhcp_send(this, this->fd, DHCP_ETH_EAPOL, conn->hismac, this->ifindex,
 		   &packet, (DHCP_ETH_HLEN + 4 + len));
 }
 

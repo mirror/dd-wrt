@@ -112,6 +112,8 @@ struct app_conn_t {
   int maxoutputoctets;
   int maxtotaloctets;
   time_t sessionterminatetime;
+  char filteridbuf[RADIUS_ATTR_VLEN+1];
+  int filteridlen;
   
   /* Radius proxy stuff */
   /* Parameters are initialised whenever a radius proxy request is received */
@@ -189,7 +191,7 @@ struct options_t {
   int debug;
   /* conf */
   int interval;
-  /* pidfile */
+  char* pidfile;                 /* Process ID file */
   /* statedir */
 
   /* TUN parameters */
@@ -206,6 +208,8 @@ struct options_t {
   char *domain;                  /* Domain to use for DNS lookups */
   char* ipup;                    /* Script to run after link-up */
   char* ipdown;                  /* Script to run after link-down */
+  char* conup;                    /* Script to run after user logon */
+  char* condown;                  /* Script to run after user logoff */
 
   /* Radius parameters */
   struct in_addr radiuslisten;   /* IP address to listen to */
