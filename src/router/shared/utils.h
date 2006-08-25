@@ -135,10 +135,9 @@ extern int coreleft (void);
 static void
 cdebug (char *function)
 {
-  FILE *in = fopen ("/tmp/console.log", "a");
-  fprintf (in, "free ram in %s = %d (malloc %d)\n", function, coreleft (),
-	   mcoreleft ());
-  fclose (in);
+ // FILE *in = fopen ("/tmp/console.log", "a");
+  fprintf (stderr, "free ram in %s = %d (malloc %d)\n", function, coreleft (),mcoreleft ());
+ // fclose (in);
 }
 
 #else

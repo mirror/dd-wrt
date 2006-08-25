@@ -30,11 +30,13 @@ CFLAGS += -I$(TOP)/vfs -DHAVE_VFS
 LDFLAGS += -L$(TOP)/vfs
 endif
 
+#CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -ldl
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
+
 
 
 ifeq ($(CONFIG_ANTIFLASH),y)
