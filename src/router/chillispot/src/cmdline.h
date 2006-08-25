@@ -52,6 +52,10 @@ struct gengetopt_args_info
   char * ipup_orig;	/* Script to run after link-up original value given at command line.  */
   char * ipdown_arg;	/* Script to run after link-down.  */
   char * ipdown_orig;	/* Script to run after link-down original value given at command line.  */
+  char * conup_arg;	/* Script to run after user logon.  */
+  char * conup_orig;	/* Script to run after user logon original value given at command line.  */
+  char * condown_arg;	/* Script to run after user logoff.  */
+  char * condown_orig;	/* Script to run after user logoff original value given at command line.  */
   char * radiuslisten_arg;	/* IP address to send from.  */
   char * radiuslisten_orig;	/* IP address to send from original value given at command line.  */
   char * radiusserver1_arg;	/* IP address of radius server 1 (default='rad01.hotradius.com').  */
@@ -128,6 +132,8 @@ struct gengetopt_args_info
   int domain_given ;	/* Whether domain was given.  */
   int ipup_given ;	/* Whether ipup was given.  */
   int ipdown_given ;	/* Whether ipdown was given.  */
+  int conup_given ;	/* Whether conup was given.  */
+  int condown_given ;	/* Whether condown was given.  */
   int radiuslisten_given ;	/* Whether radiuslisten was given.  */
   int radiusserver1_given ;	/* Whether radiusserver1 was given.  */
   int radiusserver2_given ;	/* Whether radiusserver2 was given.  */

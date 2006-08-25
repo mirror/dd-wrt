@@ -92,8 +92,9 @@ struct dhcp_ethhdr_t
 /* Constants for IP packet */
 #define DHCP_IP_ALEN   4
 #define DHCP_IP_HLEN  20
-#define DHCP_IP_UDP   17 /* UDP Protocol number */
+#define DHCP_IP_ICMP   1 /* ICMP Protocol number */  /* Freddy */
 #define DHCP_IP_TCP    6 /* TCP Protocol number */
+#define DHCP_IP_UDP   17 /* UDP Protocol number */
 
 struct dhcp_iphdr_t {
 #if __BYTE_ORDER == __LITTLE_ENDIAN  /* nbd fix for swapped version and length field */

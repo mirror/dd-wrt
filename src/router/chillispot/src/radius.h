@@ -20,7 +20,7 @@
 #define RADIUS_AUTHLEN 16        /* RFC 2865: Length of authenticator */
 #define RADIUS_PWSIZE  128       /* RFC 2865: Max 128 octets in password */
 #define RADIUS_QUEUESIZE 256     /* Same size as id address space */
-#define RADIUS_TIMEOUT 1500000   /* Time between requests in micro seconds */
+#define RADIUS_TIMEOUT 2500000   /* Time between requests in micro seconds */
 #define RADIUS_RETRY1 10          /* Number of times to retry primary */
 #define RADIUS_RETRY2 20          /* Total number of retries */
 

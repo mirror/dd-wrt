@@ -76,6 +76,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->domain_given = 0 ;
   args_info->ipup_given = 0 ;
   args_info->ipdown_given = 0 ;
+  args_info->conup_given = 0 ;
+  args_info->condown_given = 0 ;
   args_info->radiuslisten_given = 0 ;
   args_info->radiusserver1_given = 0 ;
   args_info->radiusserver2_given = 0 ;
@@ -140,6 +142,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ipup_orig = NULL;
   args_info->ipdown_arg = NULL;
   args_info->ipdown_orig = NULL;
+  args_info->conup_arg = NULL;
+  args_info->conup_orig = NULL;
+  args_info->condown_arg = NULL;
+  args_info->condown_orig = NULL;
   args_info->radiuslisten_arg = NULL;
   args_info->radiuslisten_orig = NULL;
   args_info->radiusserver1_arg = gengetopt_strdup ("rad01.hotradius.com");
@@ -230,6 +236,8 @@ cmdline_parser_print_help (void)
   printf("%s\n","      --domain=STRING           Domain to use for DNS lookups  \n                                  (default=`key.chillispot.org')");
   printf("%s\n","      --ipup=STRING             Script to run after link-up");
   printf("%s\n","      --ipdown=STRING           Script to run after link-down");
+  printf("%s\n","      --conup=STRING            Script to run after user logon");
+  printf("%s\n","      --condown=STRING          Script to run after user logoff");
   printf("%s\n","      --radiuslisten=STRING     IP address to send from");
   printf("%s\n","      --radiusserver1=STRING    IP address of radius server 1  \n                                  (default=`rad01.hotradius.com')");
   printf("%s\n","      --radiusserver2=STRING    IP address of radius server 2  \n                                  (default=`rad02.hotradius.com')");
@@ -395,6 +403,26 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
     {
       free (args_info->ipdown_orig); /* free previous argument */
       args_info->ipdown_orig = 0;
+    }
+  if (args_info->conup_arg)
+    {
+      free (args_info->conup_arg); /* free previous argument */
+      args_info->conup_arg = 0;
+    }
+  if (args_info->conup_orig)
+    {
+      free (args_info->conup_orig); /* free previous argument */
+      args_info->conup_orig = 0;
+    }
+  if (args_info->condown_arg)
+    {
+      free (args_info->condown_arg); /* free previous argument */
+      args_info->condown_arg = 0;
+    }
+  if (args_info->condown_orig)
+    {
+      free (args_info->condown_orig); /* free previous argument */
+      args_info->condown_orig = 0;
     }
   if (args_info->radiuslisten_arg)
     {
@@ -776,6 +804,20 @@ cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_
       fprintf(outfile, "%s\n", "ipdown");
     }
   }
+  if (args_info->conup_given) {
+    if (args_info->conup_orig) {
+      fprintf(outfile, "%s=\"%s\"\n", "conup", args_info->conup_orig);
+    } else {
+      fprintf(outfile, "%s\n", "conup");
+    }
+  }
+  if (args_info->condown_given) {
+    if (args_info->condown_orig) {
+      fprintf(outfile, "%s=\"%s\"\n", "condown", args_info->condown_orig);
+    } else {
+      fprintf(outfile, "%s\n", "condown");
+    }
+  }
   if (args_info->radiuslisten_given) {
     if (args_info->radiuslisten_orig) {
       fprintf(outfile, "%s=\"%s\"\n", "radiuslisten", args_info->radiuslisten_orig);
@@ -1136,6 +1178,8 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
         { "domain",	1, NULL, 0 },
         { "ipup",	1, NULL, 0 },
         { "ipdown",	1, NULL, 0 },
+        { "conup",	1, NULL, 0 },
+        { "condown",	1, NULL, 0 },
         { "radiuslisten",	1, NULL, 0 },
         { "radiusserver1",	1, NULL, 0 },
         { "radiusserver2",	1, NULL, 0 },
@@ -1455,6 +1499,44 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
             if (args_info->ipdown_orig)
               free (args_info->ipdown_orig); /* free previous string */
             args_info->ipdown_orig = gengetopt_strdup (optarg);
+          }
+          /* Script to run after user logon.  */
+          else if (strcmp (long_options[option_index].name, "conup") == 0)
+          {
+            if (local_args_info.conup_given)
+              {
+                fprintf (stderr, "%s: `--conup' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+                goto failure;
+              }
+            if (args_info->conup_given && ! override)
+              continue;
+            local_args_info.conup_given = 1;
+            args_info->conup_given = 1;
+            if (args_info->conup_arg)
+              free (args_info->conup_arg); /* free previous string */
+            args_info->conup_arg = gengetopt_strdup (optarg);
+            if (args_info->conup_orig)
+              free (args_info->conup_orig); /* free previous string */
+            args_info->conup_orig = gengetopt_strdup (optarg);
+          }
+          /* Script to run after user logoff.  */
+          else if (strcmp (long_options[option_index].name, "condown") == 0)
+          {
+            if (local_args_info.condown_given)
+              {
+                fprintf (stderr, "%s: `--condown' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
+                goto failure;
+              }
+            if (args_info->condown_given && ! override)
+              continue;
+            local_args_info.condown_given = 1;
+            args_info->condown_given = 1;
+            if (args_info->condown_arg)
+              free (args_info->condown_arg); /* free previous string */
+            args_info->condown_arg = gengetopt_strdup (optarg);
+            if (args_info->condown_orig)
+              free (args_info->condown_orig); /* free previous string */
+            args_info->condown_orig = gengetopt_strdup (optarg);
           }
           /* IP address to send from.  */
           else if (strcmp (long_options[option_index].name, "radiuslisten") == 0)

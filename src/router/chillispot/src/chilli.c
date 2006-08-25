@@ -184,6 +184,107 @@ int static leaky_bucket(struct app_conn_t *conn, int octetsup, int octetsdown) {
   return result;
 }
 
+/* Run external script */
+
+int set_env(char *name, char *value, int len, struct in_addr *addr,
+	    uint8_t *mac, long int *integer) {
+  char s[1024];
+  if (addr!=NULL) {
+    strncpy(s, inet_ntoa(*addr), sizeof(s)); s[sizeof(s)-1] = 0;
+    value = s;
+  }
+  else if (mac != NULL) {
+    (void) snprintf(s, sizeof(s)-1, "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
+		    mac[0], mac[1],
+		    mac[2], mac[3],
+		    mac[4], mac[5]);
+    value = s;
+  }
+  else if (integer != NULL) {
+    (void) snprintf(s, sizeof(s)-1, "%d", *integer);
+    value = s;
+  }
+  else if (len != 0) {
+    if (len >= sizeof(s)) {
+      return 0;
+    }
+    memcpy(s, value, len);
+    s[len] = 0;
+    value = s;
+  }
+  if (name != NULL && value!= NULL) {
+    if (setenv(name, value, 1) != 0) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	      "setenv(%s, %s, 1) did not return 0!", name, value);
+      exit(0);
+    }
+  }
+}
+
+int runscript(struct app_conn_t *appconn, char* script) {  
+  long int l;
+  int status;
+
+  if ((status = fork()) < 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "fork() returned -1!");
+    return 0;
+  }
+
+  if (status > 0) { /* Parent */
+    return 0; 
+  }
+
+  if (clearenv() != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "clearenv() did not return 0!");
+    exit(0);
+  }
+
+  set_env("DEV", tun->devname, 0, NULL, NULL, NULL);
+  set_env("NET", NULL, 0, &appconn->net, NULL, NULL);
+  set_env("MASK", NULL, 0, &appconn->mask, NULL, NULL);
+  set_env("ADDR", NULL, 0, &appconn->ourip,NULL, NULL);
+  set_env("USER_NAME", appconn->proxyuser, 0, NULL, NULL, NULL);
+  set_env("NAS_IP_ADDRESS", NULL, 0, &options.radiuslisten, NULL, NULL);
+  set_env("SERVICE_TYPE", "1", 0, NULL, NULL, NULL);
+  set_env("FRAMED_IP_ADDRESS", NULL, 0, &appconn->hisip, NULL, NULL);
+  set_env("FILTER_ID", appconn->filteridbuf, 0, NULL, NULL, NULL);
+  set_env("STATE", (char*) appconn->statebuf, appconn->statelen, NULL, NULL, NULL);
+  set_env("CLASS", (char*) appconn->classbuf, appconn->classlen, NULL, NULL, NULL);
+  set_env("SESSION_TIMEOUT", NULL, 0, NULL, NULL, &appconn->sessiontimeout);
+  set_env("IDLE_TIMEOUT", NULL, 0, NULL, NULL, &appconn->idletimeout);
+  set_env("CALLING_STATION_ID", NULL, 0, NULL, appconn->hismac, NULL);
+  set_env("CALLED_STATION_ID", NULL, 0, NULL, appconn->ourmac, NULL);
+  set_env("NAS_ID", options.radiusnasid, 0, NULL, NULL, NULL);
+  set_env("NAS_PORT_TYPE", "19", 0, NULL, NULL, NULL);
+  set_env("ACCT_SESSION_ID", appconn->sessionid, 0, NULL, NULL, NULL);
+  l = appconn->interim_interval;
+  set_env("ACCT_INTERIM_INTERVAL", NULL, 0, NULL, NULL, &l);
+  set_env("WISPR_LOCATION_ID", options.radiuslocationid, 0, NULL, NULL, NULL);
+  set_env("WISPR_LOCATION_NAME", options.radiuslocationname, 0, NULL, NULL, NULL);
+  l = appconn->bandwidthmaxup;
+  set_env("WISPR_BANDWIDTH_MAX_UP", NULL, 0, NULL, NULL, &l);
+  l = appconn->bandwidthmaxdown;
+  set_env("WISPR_BANDWIDTH_MAX_DOWN", NULL, 0, NULL, NULL, &l);
+  /*set_env("WISPR-SESSION_TERMINATE_TIME", appconn->sessionterminatetime, 0,
+    NULL, NULL, NULL);*/
+  l = appconn->maxinputoctets;
+  set_env("CHILLISPOT_MAX_INPUT_OCTETS", NULL, 0, NULL, NULL, &l);
+  l = appconn->maxoutputoctets;
+  set_env("CHILLISPOT_MAX_OUTPUT_OCTETS", NULL, 0, NULL, NULL, &l);
+  l = appconn->maxtotaloctets;
+  set_env("CHILLISPOT_MAX_TOTAL_OCTETS", NULL, 0, NULL, NULL, &l);
+
+  if (execl(script, script, (char *) 0) != 0) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	      "execl() did not return 0!");
+      exit(0);
+  }
+
+  exit(0);
+}
+
 
 /* Extract domain name and port from URL */
 int static get_namepart(char *src, char *host, int hostsize, int *port) {
@@ -619,6 +720,12 @@ int static process_options(int argc, char **argv, int firsttime) {
 
   /* ipdown */
   options.ipdown = args_info.ipdown_arg;
+  
+  /* conup */
+  options.conup = args_info.conup_arg;
+
+  /* condown */
+  options.condown = args_info.condown_arg;
 
 
 
@@ -850,12 +957,8 @@ int static process_options(int argc, char **argv, int firsttime) {
       openlog(PACKAGE, LOG_PID, LOG_DAEMON);
     }
 
-
-  /* pidfile */
-  /* This has to be done after we have our final pid */
-  if ((args_info.pidfile_arg) && (firsttime)) {
-    log_pid(args_info.pidfile_arg);
-  }
+	/* pidfile */
+  options.pidfile = args_info.pidfile_arg;
 
   return 0;
 }
@@ -874,7 +977,7 @@ void static reprocess_options(int argc, char **argv) {
   }
 
   /* Options which we do not allow to be affected */
-  /* fg, conf, pidfile and statedir are not stored in options */
+  /* fg, conf and statedir are not stored in options */
   options.net = options2.net; /* net */
   options.mask = options2.mask; /* net */
   options.dhcplisten = options2.dhcplisten; /* net */
@@ -898,6 +1001,7 @@ void static reprocess_options(int argc, char **argv) {
   options.dhcpusemac = options2.dhcpusemac; /* dhcpmac */
   options.lease = options2.lease; /* lease */
   options.eapolenable = options2.eapolenable; /* eapolenable */
+  options.pidfile = options2.pidfile; /* pidfile */
 
   /* Reinit DHCP parameters */
   (void) dhcp_set(dhcp, (options.debug & DEBUG_DHCP),
@@ -1589,6 +1693,13 @@ int static acct_req(struct app_conn_t *conn, int status_type)
   if (status_type == RADIUS_STATUS_TYPE_STOP) {
     (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_ACCT_TERMINATE_CAUSE, 
 		   0, 0, conn->terminate_cause, NULL, 0);
+		
+		/* TODO: This probably belongs somewhere else */
+    if (options.condown) {
+      if (options.debug)
+	printf("Calling connection down script: %s\n",options.condown);
+      (void) runscript(conn, options.condown);
+    }   
   }
 
 
@@ -1791,10 +1902,20 @@ int static dnprot_accept(struct app_conn_t *appconn) {
     sys_err(LOG_ERR, __FILE__, __LINE__, 0, "Unknown downlink protocol");
     return 0;
   }
+  
+  /* Run connection up script */
+  if ((options.conup) && (!appconn->authenticated)) {
+    if (options.debug) 
+      printf("Calling connection up script: %s\n", options.conup);
+
+    (void) runscript(appconn, options.conup);
+  }
 
   /* This is the one and only place state is switched to authenticated */
-  appconn->authenticated = 1;
-  (void) acct_req(appconn, RADIUS_STATUS_TYPE_START);
+  if (!appconn->authenticated) {
+    appconn->authenticated = 1;
+    (void) acct_req(appconn, RADIUS_STATUS_TYPE_START);
+  }
 
   return 0;
 }
@@ -1814,8 +1935,8 @@ int cb_tun_ind(struct tun_t *tun, void *pack, unsigned len) {
   struct tun_packet_t *iph = (struct tun_packet_t*) pack;
   struct app_conn_t *appconn;
 
-  if (options.debug) 
-    printf("cb_tun_ind. Packet received: Forwarding to link layer\n");
+  /*if (options.debug) 
+    printf("cb_tun_ind. Packet received: Forwarding to link layer\n");*/
   
   dst.s_addr = iph->dst;
 
@@ -1897,6 +2018,15 @@ int cb_redir_getstate(struct redir_t *redir, struct in_addr *addr,
   memcpy(conn->sessionid, appconn->sessionid, REDIR_SESSIONID_LEN);
   strncpy(conn->userurl, appconn->userurl, REDIR_MAXCHAR);
   conn->userurl[REDIR_MAXCHAR-1] = 0;
+  
+  /* Stuff needed for status */
+  conn->input_octets    = appconn->input_octets;
+  conn->output_octets   = appconn->output_octets;
+  conn->sessiontimeout  = appconn->sessiontimeout;
+  conn->maxinputoctets  = appconn->maxinputoctets;
+  conn->maxoutputoctets = appconn->maxoutputoctets;
+  conn->maxtotaloctets  = appconn->maxtotaloctets;
+  conn->start_time      = appconn->start_time;
   
   if (appconn->authenticated == 1)
     return 1;
@@ -2638,6 +2768,19 @@ int cb_radius_auth_conf(struct radius_t *radius,
     hisip = (struct in_addr*) &appconn->reqip.s_addr;
   }
 
+	/* Filter ID */
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_FILTER_ID,
+		      0, 0, 0)) {
+    appconn->filteridlen = attr->l-2;
+    memcpy(appconn->filteridbuf, attr->v.t, attr->l-2);
+    appconn->filteridbuf[attr->l-2] = 0;
+    /*conn->filterid = conn->filteridbuf;*/
+  }
+  else {
+    appconn->filteridlen = 0;
+    appconn->filteridbuf[0] = 0;
+    /*conn->filterid = NULL;*/
+  }
 
   /* Interim interval */
   if (!radius_getattr(pack, &interimattr, RADIUS_ATTR_ACCT_INTERIM_INTERVAL, 
@@ -3073,16 +3216,7 @@ int cb_dhcp_request(struct dhcp_conn_t *conn, struct in_addr *addr) {
   /* If IP was requested before authentication it was UAM */
   if (appconn->dnprot == DNPROT_DHCP_NONE)
     appconn->dnprot = DNPROT_UAM;
-  /* ALPAPAD */
-  /* Add routing entry ;-) */
-  if(ipm->inuse == 2)
-  {
-      struct in_addr mask;
-      mask.s_addr = 0xffffffff;
-      printf("Adding route: %d\n", tun_addroute(tun,addr,&appconn->ourip,&mask));
-  }
-
-
+  
   return 0;
 }
 
@@ -3147,7 +3281,9 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 
   if ((appconn->dnprot != DNPROT_DHCP_NONE) &&
       (appconn->dnprot != DNPROT_UAM) &&
-      (appconn->dnprot != DNPROT_MAC))  { 
+      (appconn->dnprot != DNPROT_MAC) &&
+      (appconn->dnprot != DNPROT_WPA) &&
+      (appconn->dnprot != DNPROT_EAPOL))  {
     return 0; /* DNPROT_WPA and DNPROT_EAPOL are unaffected by dhcp release? */
   }
 
@@ -3161,20 +3297,10 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 
   conn->authstate = DHCP_AUTH_NONE; /* TODO: Redundant */
 
-  /* ALPAPAD */
-  if (appconn->uplink) {
-    struct ippoolm_t *member;
-    member = (struct ippoolm_t *) appconn->uplink;
-    if(member->inuse  == 2) {
-         struct in_addr mask;
-         mask.s_addr = 0xffffffff;
-         printf("Removing route: %d\n", tun_delroute(tun,&member->addr,&appconn->ourip,&mask,1));
-    }
-    if (ippool_freeip(ippool, (struct ippoolm_t *) appconn->uplink)) {
-      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-	      "ippool_freeip() failed!");
-    }
-    }
+	if (ippool_freeip(ippool, (struct ippoolm_t *) appconn->uplink)) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+		 "ippool_freeip() failed!");
+  }
   
   (void) freeconn(appconn);
 
@@ -3187,9 +3313,9 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, void *pack, unsigned len) {
   struct tun_packet_t *iph = (struct tun_packet_t*) pack;
   struct app_conn_t *appconn = conn->peer;
 
-  if (options.debug)
+  /*if (options.debug)
     printf("cb_dhcp_data_ind. Packet received. DHCP authstate: %d\n", 
-	   conn->authstate);
+	   conn->authstate);*/
 
   if (iph->src != conn->hisip.s_addr) {
     if (options.debug) printf("Received packet with spoofed source!!!\n");
@@ -3384,6 +3510,8 @@ int static uam_msg(struct redir_msg_t *msg) {
     appconn->maxoutputoctets = msg->maxoutputoctets;
     appconn->maxtotaloctets = msg->maxtotaloctets;
     appconn->sessionterminatetime = msg->sessionterminatetime;
+    strncpy(appconn->filteridbuf, msg->filteridbuf, RADIUS_ATTR_VLEN+1);
+    appconn->filteridlen = msg->filteridlen;
 
 #ifdef BUCKET_SIZE
     appconn->bucketupsize = BUCKET_SIZE;
@@ -3620,6 +3748,11 @@ int main(int argc, char **argv)
   if (setitimer(ITIMER_REAL, &itval, NULL)) {
     sys_err(LOG_ERR, __FILE__, __LINE__, errno,
 	    "setitimer() failed!");
+  }
+  
+   /* Store the process ID in pidfile */
+  if (options.pidfile) {
+    log_pid(options.pidfile);
   }
 
   if (options.debug) 

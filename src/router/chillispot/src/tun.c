@@ -879,19 +879,63 @@ int tun_encaps(struct tun_t *tun, void *pack, unsigned len)
 
 int tun_runscript(struct tun_t *tun, char* script) {
   
-  char buf[TUN_SCRIPTSIZE];
+  char saddr[TUN_ADDRSIZE];
   char snet[TUN_ADDRSIZE];
   char smask[TUN_ADDRSIZE];
+  int status;
+  struct in_addr net;
 
-  strncpy(snet, inet_ntoa(tun->addr), sizeof(snet));
+  net.s_addr = tun->addr.s_addr & tun->netmask.s_addr;
+  
+  strncpy(saddr, inet_ntoa(tun->addr), sizeof(saddr));
+  saddr[sizeof(saddr)-1] = 0;
+  strncpy(snet, inet_ntoa(net), sizeof(snet));
   snet[sizeof(snet)-1] = 0;
   strncpy(smask, inet_ntoa(tun->netmask), sizeof(smask));
   smask[sizeof(smask)-1] = 0;
   
-  /* system("ipup /dev/tun0 192.168.0.10 255.255.255.0"); */
-  snprintf(buf, sizeof(buf), "%s %s %s %s",
-	   script, tun->devname, snet, smask);
-  buf[sizeof(buf)-1] = 0;
-  system(buf);
-  return 0;
+  if ((status = fork()) < 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "fork() returned -1!");
+    return 0;
+  }
+
+  if (status > 0) { /* Parent */
+    return 0; 
+  }
+
+  if (clearenv() != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "clearenv() did not return 0!");
+    exit(0);
+  }
+
+  if (setenv("DEV", tun->devname, 1) != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "setenv() did not return 0!");
+    exit(0);
+  }
+  if (setenv("ADDR", saddr, 1 ) != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "setenv() did not return 0!");
+    exit(0);
+  }
+  if (setenv("NET", snet, 1 ) != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "setenv() did not return 0!");
+    exit(0);
+  }
+  if (setenv("MASK", smask, 1) != 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "setenv() did not return 0!");
+    exit(0);
+  }
+
+  if (execl(script, script, tun->devname, saddr, smask, (char *) 0) != 0) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	      "execl() did not return 0!");
+      exit(0);
+  }
+
+  exit(0);
 }

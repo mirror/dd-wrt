@@ -393,7 +393,7 @@ int ippool_newip(struct ippool_t *this, struct ippoolm_t **member,
   }
 
   /* If not found yet and dynamic IP then allocate dynamic IP */
-if ((!p2) && (!statip) && (!addr->s_addr)) {
+	if ((!p2) && (!statip)) {
     if (!this ->firstdyn) {
       sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
 	      "No more IP addresses available");
@@ -431,7 +431,7 @@ if ((!p2) && (!statip) && (!addr->s_addr)) {
   /* It was not possible to allocate from dynamic address pool */
   /* Try to allocate from static address space */
 
-  if ((addr) && (addr->s_addr)) { /* IP address given */
+  if ((addr) && (addr->s_addr) && (statip)) { /* IP address given */
     if (!this->firststat) {
       sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
 	      "No more IP addresses available");
