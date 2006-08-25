@@ -806,7 +806,11 @@ wlconf(char *name)
 
 	/* Set up the country code */
 	(void) strcat_r(prefix, "country_code", tmp);
-	country = nvram_get(tmp);
+	if (nvram_match("wl0_phytype","a"))
+	    country="US";
+	else
+	    country="JP";
+	//country = nvram_get(tmp);
 	if (country) {
 		strncpy(country_code, country, sizeof(country_code));
 		WL_IOCTL(name, WLC_SET_COUNTRY, country_code, strlen(country_code)+1);
