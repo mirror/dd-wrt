@@ -393,6 +393,7 @@ static int
 wlconf_up (char *name)
 {
 
+
   char tmp[100];
   int phytype, gmode, val, ret;
   char *afterburner;
@@ -559,7 +560,6 @@ if (nvram_match("wl0_mode","infra"))
 eval("wl", "vlan_mode", "0");
 #endif
   return ret;
-
 }
 
 int

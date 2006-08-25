@@ -198,30 +198,46 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
 #define WEBS_PAGE_ROM
 
-/*typedef struct {
-char *name;
-char *data
-int len;
-} websRomPageIndex;
+#include "html.c"
+
+/*
+#include <LzmaDecode.h>
+
+
+#define LZMA_LC 2
+#define LZMA_LP 0
+#define LZMA_PB 0
+
+#define LZMA_WORKSPACE_SIZE ((LZMA_BASE_SIZE + \
+      (LZMA_LIT_SIZE << (LZMA_LC + LZMA_LP))) * sizeof(CProb))
 */
 
-#include "html.c"
+/*
+char *decodeWebs(websRomPageIndexType *web)
+{
+unsigned char lzma_workspace[LZMA_WORKSPACE_SIZE];
+int bytes;
+char *buf;
+int len = web->size;
+buf = malloc(len);
+LzmaDecode(lzma_workspace, LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, web->page, web->csize, buf, len, &bytes);
+return buf;
+}
+*/
 char *
 getWebsFile (char *path)
 {
   char *buf = NULL;
   int i = 0;
-//fprintf(stderr,"getWebsFile1 %s\n",path);
   while (websRomPageIndex[i].path != NULL)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
 	{
-	  buf = websRomPageIndex[i].page;
+          buf=websRomPageIndex[i].page;
 	  break;
 	}
       i++;
     }
-//fprintf(stderr,"getWebsFile %s\n",path);
 
   return buf;
 }
@@ -231,7 +247,6 @@ getWebsFileLen (char *path)
 {
   int len = 0;
   int i = 0;
-//fprintf(stderr,"getWebsFileLen1 %s\n",path);
   while (websRomPageIndex[i].path != NULL)
     {
       if (!strcmp (websRomPageIndex[i].path, path))
@@ -241,7 +256,6 @@ getWebsFileLen (char *path)
 	}
       i++;
     }
-//fprintf(stderr,"getWebsFileLen %s %d\n",path,len);
   return len;
 }
 

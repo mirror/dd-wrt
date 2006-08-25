@@ -645,7 +645,11 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 
 #endif
+  { "wl_reg_mode", "off", 0 },            /* Regulatory: 802.11H(h)/802.11D(d)/off(off) */
+  { "wl_dfs_preism", "60", 0 },           /* 802.11H pre network CAC time */ 
+  { "wl_dfs_postism", "60", 0 },          /* 802.11H In Service Monitoring CAC time */
   {"wl_rate", "0", 0},		/* Rate (bps, 0 for auto) */
+{ "wl_mrate", "0", 0 },			/* Mcast Rate (bps, 0 for auto) */
   {"wl_rateset", "default", 0},	/* "default" or "all" or "12" */
   {"wl_frag", "2346", 0},	/* Fragmentation threshold */
 #ifdef HAVE_POWERNOC_WORT54G
@@ -1517,13 +1521,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wme_ap_be", "15 63 3 0 0 off off", 0},	/* WME AP AC_BE paramters */
   {"wl_wme_ap_vi", "7 15 1 6016 3008 off off", 0},	/* WME AP AC_VI paramters */
   {"wl_wme_ap_vo", "3 7 1 3264 1504 off off", 0},	/* WME AP AC_VO paramters */
-#ifdef HAVE_MSSID
-
-  {"wl_wme_no_ack", "on", 0},	/* WME No-Acknowledgmen mode */
-#else
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
-#endif
-  {"wl_wme_apsd", "off", 0},		/* WME APSD mode */
+  {"wl_wme_apsd", "on", 0},		/* WME APSD mode */
 
   {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
 #ifdef HAVE_ZEROIP
