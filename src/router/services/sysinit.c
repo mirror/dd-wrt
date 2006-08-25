@@ -1640,8 +1640,9 @@ static int
 check_cfe_nv (void)
 {
   int ret = 0;
- //  ret += check_nv ("pa0maxpwr", "0xff");
-  
+#ifdef HAVE_MSSID
+  ret+=check_nv ("pa0maxpwr", "251");
+#endif
 //      ret += check_nv("boardtype", "0x0101");
 //      ret += check_nv("boardflags", "0x0188");
 //      ret += check_nv("boardflags", "0x0388");
@@ -1694,8 +1695,9 @@ check_cfe_nv (void)
       ret += check_nv ("pa0b0", "0x1136");
       ret += check_nv ("pa0b1", "0xfb93");
       ret += check_nv ("pa0b2", "0xfea5");
+#ifndef HAVE_MSSID
       ret += check_nv ("pa0maxpwr", "60");
-
+#endif
       ret += check_nv ("wl0gpio2", "0");
       ret += check_nv ("wl0gpio3", "0");
       ret += check_nv ("cctl", "0");
@@ -1736,7 +1738,9 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0b0", "0x15eb");
 	  ret += check_nv ("pa0b1", "0xfa82");
 	  ret += check_nv ("pa0b2", "0xfe66");
+#ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "0x4e");
+#endif
 	}
       else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
 	{
@@ -1748,7 +1752,9 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0b0", "0x170c");
 	  ret += check_nv ("pa0b1", "0xfa24");
 	  ret += check_nv ("pa0b2", "0xfe70");
+#ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "0x48");
+#endif
 	}
 
       //ret += check_nv("gpio2", "adm_eecs");
@@ -1784,7 +1790,9 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0b0", "0x15eb");
 	  ret += check_nv ("pa0b1", "0xfa82");
 	  ret += check_nv ("pa0b2", "0xfe66");
+#ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "0x4e");
+#endif
 	}
       else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
 	{
@@ -1796,7 +1804,9 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0b0", "0x1136");
 	  ret += check_nv ("pa0b1", "0xfb93");
 	  ret += check_nv ("pa0b2", "0xfea5");
+#ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "60");
+#endif
 	}
       ret += check_nv ("wl0gpio2", "0");
       ret += check_nv ("wl0gpio3", "0");
