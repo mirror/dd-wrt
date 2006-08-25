@@ -884,6 +884,7 @@ start_lan (void)
 	      {
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
+		eval ("wl", "infra", "1");
 		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
 		wlconf_up (name);
 #endif
