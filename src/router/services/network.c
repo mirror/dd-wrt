@@ -594,10 +594,11 @@ start_lan (void)
   strcpy (wan_ifname, nvram_safe_get ("wan_ifname"));
   strcpy (lan_ifnames, nvram_safe_get ("lan_ifnames"));
 
-	if(nvram_match("wl0_gmode", "-1"))
-		eval("rmmod", "wl");
-	else
-		eval("insmod", "wl");
+// Motorola doesnt like this
+//	if(nvram_match("wl0_gmode", "-1"))
+//		eval("rmmod", "wl");
+//	else
+//		eval("insmod", "wl");
 
   cprintf ("%s\n", lan_ifname);
 
