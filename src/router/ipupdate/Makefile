@@ -40,10 +40,10 @@ pkgincludedir = $(includedir)/ez-ipupdate
 
 top_builddir = .
 
-ACLOCAL = aclocal
-AUTOCONF = autoconf
-AUTOMAKE = automake
-AUTOHEADER = autoheader
+ACLOCAL = /home/dd-wrt/DEV/src/router/ipupdate/missing aclocal
+AUTOCONF = /home/dd-wrt/DEV/src/router/ipupdate/missing autoconf
+AUTOMAKE = /home/dd-wrt/DEV/src/router/ipupdate/missing automake
+AUTOHEADER = /home/dd-wrt/DEV/src/router/ipupdate/missing autoheader
 
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
@@ -57,19 +57,18 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = i686-pc-linux-gnu
-host_triplet = i686-pc-linux-gnu
-#CC = gcc
-#CPP = gcc -E
+host_alias = x86_64-unknown-linux-gnu
+host_triplet = 
+CC = gcc
+CPP = gcc -E
 EXTRAOBJ = 
 EXTRASRC = 
-MAKEINFO = makeinfo
+MAKEINFO = /home/dd-wrt/DEV/src/router/ipupdate/missing makeinfo
 PACKAGE = ez-ipupdate
 VERSION = 3.0.11b7
 
-
 bin_PROGRAMS = ez-ipupdate
-ez_ipupdate_SOURCES = ez-ipupdate.c conf_file.c conf_file.h md5.c md5.h cache_file.c cache_file.h error.h pid_file.c pid_file.h dprintf.h
+ez_ipupdate_SOURCES = ez-ipupdate.c conf_file.c conf_file.h md5.c md5.h cache_file.c cache_file.h error.h pid_file.c pid_file.h dprintf.h 
 ez_ipupdate_LDADD = 
 
 EXTRA_DIST = getpass.c ez-ipupdate.lsm example.conf example-pgpow.conf example-dhs.conf example-dyndns.conf example-ods.conf example-tzo.conf example-gnudip.conf example-easydns.conf example-justlinux.conf example-dyns.conf CHANGELOG mkbinary example-heipv6tb.conf
@@ -90,12 +89,10 @@ ez_ipupdate_OBJECTS =  ez-ipupdate.o conf_file.o md5.o cache_file.o \
 pid_file.o
 ez_ipupdate_DEPENDENCIES = 
 ez_ipupdate_LDFLAGS = 
-CFLAGS = $(COPTS)
-COMPILE = $(CC)  $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CFLAGS = -g -O2
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
-
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
-#LINK = $(AR) arc -o $@.a
 DIST_COMMON =  README ./stamp-h.in COPYING INSTALL Makefile.am \
 Makefile.in acconfig.h aclocal.m4 config.guess config.h.in config.sub \
 configure configure.in install-sh missing mkinstalldirs
@@ -201,7 +198,6 @@ maintainer-clean-compile:
 ez-ipupdate: $(ez_ipupdate_OBJECTS) $(ez_ipupdate_DEPENDENCIES)
 	@rm -f ez-ipupdate
 	$(LINK) $(ez_ipupdate_LDFLAGS) $(ez_ipupdate_OBJECTS) $(ez_ipupdate_LDADD) $(LIBS)
-#	$(LINK) $(ez_ipupdate_OBJECTS) 
 
 tags: TAGS
 
@@ -336,7 +332,6 @@ clean-am:  clean-hdr clean-binPROGRAMS clean-compile clean-tags \
 		clean-generic mostlyclean-am
 
 clean: clean-am
-#	rm -f *.a
 
 distclean-am:  distclean-hdr distclean-binPROGRAMS distclean-compile \
 		distclean-tags distclean-generic clean-am
@@ -365,7 +360,6 @@ uninstall-am uninstall all-redirect all-am all installdirs \
 mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-ez-ipupdate.o: ../../include.v23/cyutils.h
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
