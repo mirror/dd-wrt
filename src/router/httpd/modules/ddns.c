@@ -139,6 +139,7 @@ ddns_save_value (webs_t wp)
       snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
       snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+      snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", enable);
     }
 
   username = websGetVar (wp, _username, NULL);

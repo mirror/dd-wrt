@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DYNDNS_INPUT_FILE_OPT_STRING "--input_file"
 
 static RC_TYPE help_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE wildcard_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_alias_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
@@ -132,6 +133,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update. Works on **NIX systems only."},
 #endif
 	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name eg. /tmp/ddns"},
+	{"--wildcard", 0, {wildcard_handler, NULL}, "enable wildcarding"},
 	{NULL,		0,	{0, NULL},	NULL }
 };
 
@@ -175,6 +177,17 @@ static RC_TYPE help_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 	}
 	p_self->abort = TRUE;
 	print_help_page();
+	return RC_OK;
+}
+
+static RC_TYPE wildcard_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+	p_self->wildcard = TRUE;
 	return RC_OK;
 }
 

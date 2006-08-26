@@ -179,6 +179,7 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt,DYNDNS_SYST
 		p_dyndns_specific->p_system,
 		p_self->alias_info.names[cnt].name,
 		p_self->info.my_ip_address.name,
+                p_self->wildcard ? "ON" : "OFF",
 		p_self->alias_info.names[cnt].name,
         p_self->info.dyndns_server_name.name,
 		p_self->info.credentials.p_enc_usr_passwd_buffer
@@ -225,6 +226,7 @@ static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt, 
 		p_self->info.dyndns_server_url,		
 		p_self->alias_info.names[cnt].name,
 		p_self->info.my_ip_address.name,
+                p_self->wildcard ? "ON" : "OFF",
         p_self->info.credentials.p_enc_usr_passwd_buffer,
 		p_self->info.dyndns_server_name.name		
 		);

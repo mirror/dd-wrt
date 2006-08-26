@@ -93,7 +93,7 @@ typedef enum
 		"system=%s&" \
 		"hostname=%s&" \
 		"myip=%s&" \
-		"wildcard=ON&" \
+		"wildcard=%s&" \
 		"mx=%s&" \
 	  "backmx=NO&" \
 	  "offline=NO " \
@@ -134,7 +134,9 @@ typedef enum
 /** dont ask me why easydns is so picky
 */
 #define GENERIC_EASYDNS_AUTH_MY_IP_REQUEST_FORMAT \
-    "GET %s%s&myip=%s " \
+    "GET %s%s&" \
+		"myip=%s&" \
+		"wildcard=%s "\
 	 "HTTP/1.0\r\n" \
 	"Authorization: Basic %s\r\n" \
 	"Host: %s\r\n" \
@@ -289,6 +291,7 @@ typedef struct DYN_DNS_CLIENT
 	BOOL force_addr_update;
     BOOL use_proxy;
 	BOOL abort;
+	BOOL wildcard;
 
 	/*dbg*/
 	DBG_TYPE dbg;
