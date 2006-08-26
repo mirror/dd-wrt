@@ -128,6 +128,7 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_7");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_7");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_7");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_7");
     }
 
   return 0;
@@ -178,10 +179,12 @@ start_ddns (void)
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
-      if (nvram_match ("ddns_wildcard", "1") && nvram_match ("ddns_enable", "1"))
-	fprintf (fp, ",wildcard=ON");
-      if (nvram_match ("ddns_wildcard_6", "1") && nvram_match ("ddns_enable", "6"))
-	fprintf (fp, ",wildcard=ON");
+      if ((nvram_match ("ddns_wildcard", "1") && nvram_match ("ddns_enable", "1")) ||
+	  (nvram_match ("ddns_wildcard_6", "1") && nvram_match ("ddns_enable", "6")) ||
+	  (nvram_match ("ddns_wildcard_7", "1") && nvram_match ("ddns_enable", "7")));
+	{
+	  fprintf (fp, " --wildcard");
+	}
       if (nvram_match ("ddns_enable", "7"))
 	fprintf (fp, " --update_period_sec %s", "900");	// check ip every 15 mins
       else
