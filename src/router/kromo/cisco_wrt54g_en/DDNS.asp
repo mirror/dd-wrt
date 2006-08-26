@@ -35,6 +35,7 @@ function ddns_check(F,T) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+		wildcard = eval("F.ddns_wildcard_"+F.ddns_enable.value);
 	} else if(F.ddns_enable.value == 5) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
@@ -331,6 +332,10 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_7" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_7"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wildcard"); %></div>
+									<input type="checkbox" value="1" name="ddns_wildcard_7" <% nvram_checked("ddns_wildcard_7", "1"); %> />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
