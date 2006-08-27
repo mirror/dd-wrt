@@ -147,67 +147,67 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
       if (!asp)
 	{
-	  if (!strncmp (pattern, "<i>", 2))
+	  if (!strncmp (pattern, "<i>", 3))
 	    {
 	      websWrite (stream, "<input type=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<c>", 2))
+	  if (!strncmp (pattern, "<c>", 3))
 	    {
 	      websWrite (stream, "<input class=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<d>", 2))
+	  if (!strncmp (pattern, "<d>", 3))
 	    {
 	      websWrite (stream, "<input id=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<e>", 2))
+	  if (!strncmp (pattern, "<e>", 3))
 	    {
 	      websWrite (stream, "<div class=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<n>", 2))
+	  if (!strncmp (pattern, "<n>", 3))
 	    {
 	      websWrite (stream, "<div id=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<j>", 2))
+	  if (!strncmp (pattern, "<j>", 3))
 	    {
 	      websWrite (stream, "<a href=\"");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<o>", 2))
+	  if (!strncmp (pattern, "<o>", 3))
 	    {
 	      websWrite (stream, "<option value=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<s>", 2))
+	  if (!strncmp (pattern, "<s>", 3))
 	    {
 	      websWrite (stream, "<select name=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<u>", 2))
+	  if (!strncmp (pattern, "<u>", 3))
 	    {
 	      websWrite (stream, "<span class=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<p>", 2))
+	  if (!strncmp (pattern, "<p>", 3))
 	    {
 	      websWrite (stream, "<input name=");
 	      len=0;
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<m>", 2))
+	  if (!strncmp (pattern, "<m>", 3))
 	    {
 	      websWrite (stream, "<script type=\"text/javascript\">");
 	      len=0;
