@@ -68,7 +68,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_XSCALE 0x0e01
 
 // ??? 
-#define ROUTER_BELKIN 0x0f0f
+//#define ROUTER_BELKIN 0x0f0f
+
+// Generic BRCM 4702 boards: Asus WL300g, WL500g
+#define ROUTER_BRCM4702_GENERIC 0x0f0f
 
 // Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
 #define ROUTER_BELKIN_F5D7230 0x100f
