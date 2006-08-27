@@ -424,6 +424,7 @@ start_restore_defaults (void)
       break;
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
+    case ROUTER_BRCM4702_GENERIC:
     case ROUTER_BELKIN_F5D7230:
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
@@ -915,8 +916,18 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       	{
       	nvram_set ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
   		}
-      break;
+  	  eval ("gpio", "disable", "5");	// power led on
+  	  break;
+  	  
+	case ROUTER_BRCM4702_GENERIC:     
+      setup_4712 ();
+      nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
+      nvram_set ("wan_ifnames", "eth1");
       
+      if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
+      	{
+      	nvram_set ("et0macaddr", "00:0C:6E:00:00:10"); //fix for missing cfe default = dead LAN ports.
+  		}      
 
       case ROUTER_WZRG300N:
       case ROUTER_WRT300N:
@@ -1006,6 +1017,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
 	    case ROUTER_RT210W:
+	    case ROUTER_BRCM4702_GENERIC:
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
@@ -1768,6 +1780,7 @@ check_cfe_nv (void)
       ret += check_nv ("cctl", "0");
       ret += check_nv ("ccode", "0");
       break;
+/* Router_Belkin not used
     case ROUTER_BELKIN:
       ret += check_nv ("aa0", "3");
       if (check_hw_type () == BCM5352E_CHIP)
@@ -1815,6 +1828,7 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
 
       break;
+*/
 
     }
   if (ret)

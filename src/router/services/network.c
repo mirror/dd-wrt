@@ -1341,6 +1341,7 @@ start_wan (int status)
     case ROUTER_WZRG300N:    
     case ROUTER_MOTOROLA_V1:
     case ROUTER_RT210W:
+    case ROUTER_BRCM4702_GENERIC:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth1";
       break;
@@ -2053,6 +2054,9 @@ start_wan_done (char *wan_ifname)
       break;
     case ROUTER_WRTSL54GS:
       eval ("gpio", "disable", "7");
+      break;
+    case ROUTER_RT210W:
+      eval ("gpio", "disable", "0");
       break;
     default:
       break;
