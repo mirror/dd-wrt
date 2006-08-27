@@ -150,67 +150,67 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 	  if (!strncmp (pattern, "<i>", 2))
 	    {
 	      websWrite (stream, "<input type=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<c>", 2))
 	    {
 	      websWrite (stream, "<input class=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<d>", 2))
 	    {
 	      websWrite (stream, "<input id=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<e>", 2))
 	    {
 	      websWrite (stream, "<div class=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<n>", 2))
 	    {
 	      websWrite (stream, "<div id=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<j>", 2))
 	    {
 	      websWrite (stream, "<a href=\"");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<o>", 2))
 	    {
 	      websWrite (stream, "<option value=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<s>", 2))
 	    {
 	      websWrite (stream, "<select name=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<u>", 2))
 	    {
 	      websWrite (stream, "<span class=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<p>", 2))
 	    {
 	      websWrite (stream, "<input name=");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	  if (!strncmp (pattern, "<m>", 2))
 	    {
 	      websWrite (stream, "<script type=\"text/javascript\">");
-	      pattern += 2;
+	      len=0;
 	      continue;
 	    }
 	}
