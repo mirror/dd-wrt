@@ -195,7 +195,7 @@ start_ddns (void)
       fprintf (fp, " --exec %s", "ddns_success");	//run after update
       if (nvram_match ("ddns_enable", "5"))
 	{
-          fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5");
+          fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
 	  if (nvram_invmatch (_url, ""))
 	    fprintf (fp, " --dyndns_server_url %s", nvram_safe_get (_url));
 	  if (nvram_invmatch (_conf, ""))
