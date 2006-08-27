@@ -17,12 +17,20 @@ ifeq ($(CONFIG_DIST),"micro")
 	cp common_micro.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
 endif
+ifeq ($(CONFIG_DIST),"micro-special")
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	rm -f $(INSTALLDIR)/www/images/logo.png
+	cp common_micro.js $(INSTALLDIR)/www/common.js
+	rm -f $(INSTALLDIR)/www/common_micro.js
+endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 	cp -a help $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/common_micro.js
+endif
 endif
 	cp -a lang_pack $(INSTALLDIR)/www
 
@@ -282,19 +290,21 @@ endif
 
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
+	../../../../tools/strip $(INSTALLDIR)/www/help/*.htm
 	
 ifeq ($(CONFIG_SER),y)	
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
 endif
 	
-	#../../../../tools/write3 $(INSTALLDIR)/www/*.asp
-	#../../../../tools/write3 $(INSTALLDIR)/www/*.htm
-	#../../../../tools/write3 $(INSTALLDIR)/www/help/*.asp
+	../../../../tools/write4 $(INSTALLDIR)/www/*.asp
+	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
+	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* > $(SRCBASE)/router/httpd/html.c 
 	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
+#	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
 #../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
 	@true
 
