@@ -3781,7 +3781,6 @@ live_translate (char *tran)
 {
 
   FILE *fp;
-  int find = 0;
   char temp[256], temp1[256], *temp2;
   char *lang = getLanguageName ();
   char buf[64];
@@ -3794,12 +3793,10 @@ live_translate (char *tran)
 	fp = fopen (buf, "r");
 	
 
-	while ((fgets(temp, 256, fp) != NULL) && (!find))
+	while (fgets(temp, 256, fp) != NULL)
 	{
 		if ((strstr(temp, temp1)) != NULL)
 		{
-			find = 1;
-
 			temp2 = strtok(temp,"\"");
 			temp2 = strtok(NULL,"\"");
 
