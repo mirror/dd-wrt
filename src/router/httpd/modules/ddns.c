@@ -63,7 +63,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 int
 ddns_save_value (webs_t wp)
 {
-  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf;
+  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url;
   struct variable ddns_variables[] = {
   {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5", "6", "7")},
   {longname: "DDNS password", argv:ARGV ("30")},
@@ -76,6 +76,7 @@ ddns_save_value (webs_t wp)
   char _wildcard[] = "ddns_wildcard_X";
   char _custom[] = "ddns_custom_X";
   char _conf[] = "ddns_conf";
+  char _url[] = "ddns_url";
 
   which = &ddns_variables[0];
 
@@ -124,6 +125,7 @@ ddns_save_value (webs_t wp)
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
       snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
       snprintf (_conf, sizeof (_conf), "ddns_conf", enable);
+      snprintf (_url, sizeof (_url), "ddns_url", enable);
     }
    /* botho 30/07/06 : add www.3322.org */
   else if (atoi (enable) == 6)
@@ -149,6 +151,7 @@ ddns_save_value (webs_t wp)
   wildcard = websGetVar (wp, _wildcard, NULL);
   custom = websGetVar (wp, _custom, NULL);
   conf = websGetVar (wp, _conf, NULL);
+  url = websGetVar (wp, _url, NULL);
 
   if (!username || !passwd || !hostname)
     {
@@ -165,6 +168,7 @@ ddns_save_value (webs_t wp)
   nvram_set (_wildcard, wildcard);
   nvram_set (_custom, custom);
   nvram_set (_conf, conf);
+  nvram_set (_url, url);
 
   return ret;
 }

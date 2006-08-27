@@ -29,6 +29,7 @@ char _passwd[] = "ddns_passwd_X";
 char _hostname[] = "ddns_hostname_X";
 char _dyndnstype[] = "ddns_dyndnstype_X";
 char _wildcard[] = "ddns_wildcard_X";
+char _url[] = "ddns_url_X";
 char _conf[] = "ddns_conf_X";
 
 int
@@ -113,6 +114,7 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_5");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
+      snprintf (_url, sizeof (_url), "%s", "ddns_url");
       snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
     }
   else if (flag == 6)
@@ -158,6 +160,7 @@ start_ddns (void)
       strcmp (nvram_safe_get ("ddns_hostname_buf"), nvram_safe_get (_hostname)) ||	// ddns hostname change
       strcmp (nvram_safe_get ("ddns_dyndnstype_buf"), nvram_safe_get (_dyndnstype)) ||	// ddns dyndnstype change
       strcmp (nvram_safe_get ("ddns_wildcard_buf"), nvram_safe_get (_wildcard)) || // ddns wildcard change
+      strcmp (nvram_safe_get ("ddns_url_buf"), nvram_safe_get (_url)) || //ddns url change
       strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get (_conf)) || // ddns conf change
       strcmp (nvram_safe_get ("ddns_custom_5_buf"), nvram_safe_get ("ddns_custom_5")))
     {
@@ -174,8 +177,6 @@ start_ddns (void)
     {
       fprintf (fp, "--background");
       fprintf (fp, " --dyndns_system %s", service);	//service
-      if (nvram_match ("ddns_enable", "5"))
-	fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
@@ -192,10 +193,13 @@ start_ddns (void)
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns/ddns.log");	//log to file
       fprintf (fp, " --exec %s", "ddns_success");	//run after update
-      if (nvram_invmatch ("ddns_conf", "")
-	  && nvram_match ("ddns_enable", "5"))
+      if (nvram_match ("ddns_enable", "5"))
 	{
-	  fprintf (fp, " %s", nvram_safe_get (_conf));
+          fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5");
+	  if (nvram_invmatch (_url, ""))
+	    fprintf (fp, " --dyndns_server_url %s", nvram_safe_get (_url));
+	  if (nvram_invmatch (_conf, ""))
+	    fprintf (fp, " %s", nvram_safe_get (_conf));
 	}
       fprintf (fp, "\n"); 
       fclose (fp);
@@ -266,6 +270,7 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
   nvram_set ("ddns_conf_buf", nvram_safe_get (_conf));
+  nvram_set ("ddns_url_buf", nvram_safe_get (_url));
   nvram_set ("ddns_custom_5_buf", nvram_safe_get ("ddns_custom_5"));
 
   nvram_commit ();
