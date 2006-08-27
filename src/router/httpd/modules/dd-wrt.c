@@ -3083,7 +3083,7 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
     }
   else
     //websWrite (wp, "unknown");
-	websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+	websWrite (wp, "%s", live_translate ("share.unknown"));
 	
   return;
 
@@ -3141,7 +3141,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
     }
   else
     //websWrite (wp, "unknown");
-	websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+	websWrite (wp, "%s", live_translate ("share.unknown"));
   return;
 
 }
