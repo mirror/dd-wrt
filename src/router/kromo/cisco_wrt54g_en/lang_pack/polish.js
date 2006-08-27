@@ -127,6 +127,11 @@ share.meters="m";
 share.full="Pelny";
 share.half="Pol";
 share.quarter="Quarter";
+share.seealso="See also";
+share.never="never";
+share.unknown="unknown";
+share.expired="expired";
+
 var sbutton = new Object();
 sbutton.save="Zapisz Ustawienia";
 sbutton.saving="Zapis";
@@ -1124,7 +1129,7 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Harmonogram";
 wl_basic.radio_on="Radio jest Wlaczone";
 wl_basic.radio_off="Radio jest Wylaczone";
-wl_basic.radio_unkn="Nieznany";
+
 wl_basic.h2_v24="Fizyczne Polaczenie Wireless";
 wl_basic.h2_vi="Wirtualne Polaczenie";
 wl_basic.regdom="Ustawowa Domena";
