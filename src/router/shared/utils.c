@@ -148,7 +148,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Asus WL300g / WL500g\n");
       setRouter ("Asus WL-300g / WL-500g");
-      return ROUTER_RT210W;
+      return ROUTER_BRCM4702_GENERIC;
     }  
     
   if (nvram_match ("boardnum", "100") &&
