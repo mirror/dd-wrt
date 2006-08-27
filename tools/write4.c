@@ -84,6 +84,6 @@ filter (char *m, char *source, char *dest, int len)
 	    i += strlen (dest);
 	  }
     }
-  m[i] = 0;
+//  m[len] = 0;
   return len;
 }
