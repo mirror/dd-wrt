@@ -124,6 +124,13 @@ share.styl="Estilo";
 share.err="error";
 share.errs="errores";
 share.meters="meters";
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
+share.seealso="See also";
+share.never="never";
+share.unknown="unknown";
+share.expired="expired";
 
 
 
@@ -1430,7 +1437,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
-wl_basic.radio_unkn="Unknown";
 
 //help container
 

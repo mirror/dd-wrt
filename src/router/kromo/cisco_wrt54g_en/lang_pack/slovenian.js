@@ -128,7 +128,9 @@ share.full="Polni";
 share.half="Polovièni";
 share.quarter="Èetrtinski";
 share.seealso="Glej tudi";
-
+share.never="nikoli";
+share.unknown="Neznano";
+share.expired="poteklo";
 
 sbutton.save="Shrani nastavitve";
 sbutton.saving="Shranjeno";
@@ -1427,7 +1429,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Radijska èasovnica";
 wl_basic.radio_on="Radio je vkljuèen";
 wl_basic.radio_off="Radio je izkljuèen";
-wl_basic.radio_unkn="Neznano";
 
 wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.regdom="Regulatorska domena";
