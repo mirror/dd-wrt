@@ -228,7 +228,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<p>", len))
+	  if (!strncmp (pattern, "<z>", len))
 	    {
 	      if (len == 3)
 		{
