@@ -4405,7 +4405,7 @@ switch (radiooff)
 		break;
 	case -1:
 		//websWrite (wp, "Unknown");
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_unkn"));
+		websWrite (wp, "%s", live_translate ("share.unknown"));
 		break;
 	}
 }
