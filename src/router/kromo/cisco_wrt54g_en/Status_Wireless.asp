@@ -12,7 +12,7 @@ function setWirelessTable() {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 5;
 		cell.align = "center";
-		cell.innerHTML = "- None - ";
+		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
