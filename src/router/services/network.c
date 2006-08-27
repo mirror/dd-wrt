@@ -2161,6 +2161,9 @@ stop_wan (void)
     case ROUTER_WRTSL54GS:
       eval ("gpio", "enable", "7");
       break;
+    case ROUTER_RT210W:
+      eval ("gpio", "enable", "0");
+      break;
     default:
       break;
     }
