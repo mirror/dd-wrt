@@ -32,7 +32,7 @@ fclose(in);
 len=filter(m,"<input type=","<i>",len);
 len=filter(m,"<input class=","<c>",len);
 len=filter(m,"<input id=","<d>",len);
-len=filter(m,"<input name=","<e>",len);
+len=filter(m,"<input name=","<z>",len);
 len=filter(m,"<script type=\"text/javascript\">","<m>",len);
 len=filter(m,"<div class=","<e>",len);
 len=filter(m,"<div id=","<n>",len);
