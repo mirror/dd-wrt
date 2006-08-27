@@ -86,9 +86,9 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
 			 (count ? ',' : ' '),
-			 (hostname[0] ? hostname : "unknown"),
+			 (hostname[0] ? hostname : live_translate ("share.unknown")),
 			 ip, mac,
-			 ((expires == 0) ? "never" : dhcp_reltime (buf,
+			 ((expires == 0) ? live_translate ("share.never") : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
 	      ++count;
@@ -128,9 +128,9 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
 			 (count ? ',' : ' '),
-			 (hostname[0] ? hostname : "unknown"),
+			 (hostname[0] ? hostname : live_translate ("share.unknown")),
 			 ip, mac,
-			 ((expires == 0) ? "never" : dhcp_reltime (buf,
+			 ((expires == 0) ? live_translate ("share.never") : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
               ++count;
@@ -189,11 +189,11 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (!expires)
 		{
 		  continue;
-		  strcpy (expires_time, "expired");
+		  strcpy (expires_time, live_translate ("share.expired"));
 		}
 	      else if (expires == (long) EXPIRES_NEVER)
 		{
-		  strcpy (expires_time, "never");
+		  strcpy (expires_time, live_translate ("share.never"));
 		}
 	      else
 		{
