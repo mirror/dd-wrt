@@ -120,8 +120,16 @@ share.key="秘鑰";
 share.wireless="無線";
 share.dhcp="DHCP";
 share.styl="風格";
+share.err="error";
+share.errs="errors";
 share.meters="meters";
-
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
+share.seealso="See also";
+share.never="never";
+share.unknown="unknown";
+share.expired="expired";
 
 sbutton.save="保存設置";
 sbutton.saving="已保存"; // is this saving or saved? if saving, use "正在保存"
@@ -1425,7 +1433,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
-wl_basic.radio_unkn="Unknown";
 
 //help container
 

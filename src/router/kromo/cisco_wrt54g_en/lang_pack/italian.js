@@ -120,6 +120,13 @@ share.styl="Stile";
 share.err="errore";
 share.errs="errori";
 share.meters="metri";
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
+share.seealso="See also";
+share.never="never";
+share.unknown="Unknown";
+share.expired="expired";
 
 sbutton.save="Salva Impostazioni";
 sbutton.saving="Salvato";
@@ -1053,7 +1060,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
-wl_basic.radio_unkn="Unknown";
 
 hwl_basic.right2="Se vuoi escludere i client modalità G, scegli la modalità <em>Solo-B</em>. Se vuoi disabilitare l'accesso wireless, Scegli <em>Disabilita</em>.";
 hwl_basic.right3="Intervallo Di Sensibilità: ";
