@@ -1736,10 +1736,10 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 	  || nvram_match ("sv_restore_defaults", "1"))
 	{
 
-	  if ((getRouterBrand () != ROUTER_BELKIN) && (getRouterBrand () != ROUTER_BUFFALO_WBR2G54S))	//belkin doesnt like that
+	  if (getRouterBrand () != ROUTER_BUFFALO_WBR2G54S)	
 	    strcpy (ipaddr, "192.168.1.1");	// Default IP
 	  else
-	    strcpy (ipaddr, "192.168.11.1");	// Default IP Belkin
+	    strcpy (ipaddr, "192.168.11.1");	// Default IP 
 
 	  strcpy (http, "http");
 	}
