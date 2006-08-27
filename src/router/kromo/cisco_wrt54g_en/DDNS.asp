@@ -368,6 +368,14 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_5" size="42" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_5"); %>" />
 								</div>
+								<div class="setting">
+									<div class="label">URL</div>
+									<textarea cols="60" rows="2" id="ddns_url" name="ddns_url"></textarea>
+									<script type="text/javascript">
+									var ddns_url = fix_cr( '<% nvram_get("ddns_url"); %>' );
+									document.getElementById("ddns_url").value = ddns_url;
+									</script>
+								</div>
 								<% nvram_invmatch("expert_mode","1","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.options"); %></div>
