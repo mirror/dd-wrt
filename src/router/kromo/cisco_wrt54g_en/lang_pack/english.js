@@ -131,6 +131,8 @@ share.half="Half";
 share.quarter="Quarter";
 share.seealso="See also";
 share.never="never";
+share.unknown="Unknown";
+share.expired="expired";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -1488,7 +1490,6 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Radio Scheduling";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
-wl_basic.radio_unkn="Unknown";
 
 wl_basic.h2_v24="Wireless Physical Interface";
 wl_basic.h2_vi="Virtual Interfaces";
