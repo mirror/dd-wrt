@@ -3398,7 +3398,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   memset (buf, 0, WLC_IOCTL_MAXLEN);	//get_wdev
   int r = getassoclist (iface, buf);
   if (r < 0)
-    return;
+    return cnt;
   struct maclist *maclist = (struct maclist *) buf;
   int i;
   for (i = 0; i < maclist->count; i++)
@@ -3474,14 +3474,14 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
   unlink (RSSI_TMP);
 
-  return;
+  return cnt;
 }
 
 void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
 int cnt=0;
-  ej_active_wireless_if (eid, wp, argc, argv, get_wdev (), "wl0",cnt);
+  cnt = ej_active_wireless_if (eid, wp, argc, argv, get_wdev (), "wl0",cnt);
   char *next;
   char var[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
