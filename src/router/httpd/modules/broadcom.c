@@ -3947,7 +3947,7 @@ char str[11];
 		
 }
 
-/*
+
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
@@ -3979,7 +3979,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "</div>\n");	
 		
 }
-*/
+
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
