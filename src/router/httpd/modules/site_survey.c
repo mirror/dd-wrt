@@ -131,7 +131,8 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 #define DOT11_CAP_CCK_OFDM			0x2000
 */
       char *open =
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
+//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
 
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
