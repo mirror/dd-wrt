@@ -31,17 +31,17 @@ main (int argc, char *argv[])
       fclose (in);
 
 
-      len = filter (m, "<input type=", "<i>", len);
-      len = filter (m, "<input class=", "<c>", len);
-      len = filter (m, "<input id=", "<d>", len);
-      len = filter (m, "<input name=", "<z>", len);
-      len = filter (m, "<script type=\"text/javascript\">", "<m>", len);
-      len = filter (m, "<div class=", "<e>", len);
-      len = filter (m, "<div id=", "<n>", len);
-      len = filter (m, "<a href=\"", "<j>", len);
-      len = filter (m, "<option value=", "<o>", len);
-      len = filter (m, "<select name=", "<s>", len);
-      len = filter (m, "<span class=", "<u>", len);
+      len = filter (m, "<input type=", "{i}", len);
+      len = filter (m, "<input class=", "{c}", len);
+      len = filter (m, "<input id=", "{d}", len);
+      len = filter (m, "<input name=", "{z}", len);
+      len = filter (m, "<script type=\"text/javascript\">", "{m}", len);
+      len = filter (m, "<div class=", "{e}", len);
+      len = filter (m, "<div id=", "{n}", len);
+      len = filter (m, "<a href=\"", "{j}", len);
+      len = filter (m, "<option value=", "{o}", len);
+      len = filter (m, "<select name=", "{s}", len);
+      len = filter (m, "<span class=", "{u}", len);
       printf ("writing \n");
 
       in = fopen (argv[a], "wb");
