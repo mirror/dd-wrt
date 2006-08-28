@@ -148,7 +148,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       if (!asp && pattern[0]=='<')
 	{
 	
-	  if (!strncmp (pattern, "<i>", len))
+	  if (!strncmp (pattern, "{i}", len))
 	    {
 	      if (len == 3)
 		{
@@ -157,7 +157,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<c>", len))
+	  if (!strncmp (pattern, "{c}", len))
 	    {
 	      if (len == 3)
 		{
@@ -166,7 +166,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<d>", len))
+	  if (!strncmp (pattern, "{d}", len))
 	    {
 	      if (len == 3)
 		{
@@ -175,7 +175,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<e>", len))
+	  if (!strncmp (pattern, "{e}", len))
 	    {
 	      if (len == 3)
 		{
@@ -184,7 +184,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<n>", len))
+	  if (!strncmp (pattern, "{n}", len))
 	    {
 	      if (len == 3)
 		{
@@ -193,7 +193,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<j>", len))
+	  if (!strncmp (pattern, "{j}", len))
 	    {
 	      if (len == 3)
 		{
@@ -202,7 +202,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<o>", len))
+	  if (!strncmp (pattern, "{o}", len))
 	    {
 	      if (len == 3)
 		{
@@ -211,7 +211,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<s>", len))
+	  if (!strncmp (pattern, "{s}", len))
 	    {
 	      if (len == 3)
 		{
@@ -220,7 +220,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<u>", len))
+	  if (!strncmp (pattern, "{u}", len))
 	    {
 	      if (len == 3)
 		{
@@ -229,7 +229,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<z>", len))
+	  if (!strncmp (pattern, "{z}", len))
 	    {
 	      if (len == 3)
 		{
@@ -238,7 +238,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
-	  if (!strncmp (pattern, "<m>", len))
+	  if (!strncmp (pattern, "{m}", len))
 	    {
 	      if (len == 3)
 		{
