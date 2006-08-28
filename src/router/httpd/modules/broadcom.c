@@ -3967,15 +3967,17 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
 		ej_get_uptime(0,wp,argc,argv);
 		websWrite (wp, "</div>\n");
-		websWrite (wp, "<div class=\"info\">WAN ");
+		websWrite (wp, "<div class=\"info\">WAN");
 			if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
 				{
-				websWrite (wp, "IP: ");
+				websWrite (wp, ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
+				}
+			else 
+				{
+				websWrite (wp, " IP: ");
 				ej_nvram_status_get("wan_ipaddr",wp,argc,argv);
 				websWrite (wp, "</div>\n");
 				}
-			else 
-				websWrite (wp, "<script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
 		websWrite (wp, "</div>\n");	
 		
 }
