@@ -32,7 +32,7 @@ endif
 
 # CC = gcc
 #
-COPTS += -Wall -fomit-frame-pointer -fpic -fPIC 
+COPTS = -O2 -Wall -fomit-frame-pointer -fpic -fPIC 
 LIBS =
 
 # Uncomment the next 2 lines to include support for Microsoft's
