@@ -3391,9 +3391,9 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
 
   unlink (RSSI_TMP);
+  int cnt = 0;
   if (strcmp (iface, visible))
     cnt = 1;
-  int cnt = 0;
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
   mode = nvram_safe_get (wlmode);
