@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 4) {
+	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -28,6 +28,7 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
+		row.insertCell(-1).innerHTML = val[i + 4];
 		setMeterBar(row.insertCell(-1), (val[i + 1] == "0" ? 0 : parseInt(val[i + 1]) * 1.24 + 116), "");
 	}
 }
@@ -195,6 +196,7 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
 										<th width="54%"><% tran("share.mac"); %></th>
+										<th width="8%"><% tran("share.intrface"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>
