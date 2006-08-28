@@ -35,6 +35,12 @@ endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 endif
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DHAVE_MICRO
+endif
+ifeq ($(CONFIG_PPPOE),y)
+CFLAGS += -DHAVE_PPPOE
+endif
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
@@ -247,6 +253,9 @@ install: all
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 	cd $(INSTALLDIR)/sbin && ln -sf rc init
 ifeq ($(CONFIG_DIST),"micro")
+	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
