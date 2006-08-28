@@ -3288,8 +3288,6 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
   unlink (RSSI_TMP);
   int cnt = 0;
-  if (strcmp (iface, visible))
-    cnt = 1;
   mode = nvram_safe_get ("wl_mode");
   unsigned char buf[WLC_IOCTL_MAXLEN];
   memset (buf, 0, WLC_IOCTL_MAXLEN);
@@ -3393,6 +3391,8 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
 
   unlink (RSSI_TMP);
+  if (strcmp (iface, visible))
+    cnt = 1;
   int cnt = 0;
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
