@@ -145,7 +145,7 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       /* Look for <% ... */
 //      LOG("look start");
 
-      if (!asp && pattern[0]=='<')
+      if (!asp && pattern[0]=='{')
 	{
 	
 	  if (!strncmp (pattern, "{i}", len))
