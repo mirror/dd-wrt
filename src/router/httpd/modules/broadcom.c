@@ -3958,6 +3958,26 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 //					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 //				</div>
 
+  char *wan_ipaddr;
+  int wan_link = check_wan_link (0);
+  
+    if (nvram_match ("wan_proto", "pptp"))
+		{
+		wan_ipaddr = wan_link ? nvram_safe_get ("pptp_get_ip") : nvram_safe_get ("wan_ipaddr");
+    	}
+	else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
+    	{
+		wan_ipaddr = wan_link ? nvram_safe_get ("wan_ipaddr") : "0.0.0.0";
+      	}
+	else if (nvram_match ("wan_proto", "l2tp"))
+		{
+		wan_ipaddr = wan_link ? nvram_safe_get ("l2tp_get_ip") : nvram_safe_get ("wan_ipaddr");
+		}
+	else
+		{
+		wan_ipaddr = nvram_safe_get ("wan_ipaddr");
+		}
+
 	
 		websWrite (wp, "<div id=\"statusInfo\">\n");
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
@@ -3974,9 +3994,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 				}
 			else 
 				{
-				websWrite (wp, " IP: ");
-				ej_nvram_status_get("wan_ipaddr",wp,argc,argv);
-				websWrite (wp, "</div>\n");
+				websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
 				}
 		websWrite (wp, "</div>\n");	
 		
