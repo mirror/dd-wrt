@@ -1,449 +1,456 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006		//
+//              Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006             //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
-lang_charset.set="gb2312";
+lang_charset.set = "gb2312";
 
-share.firmware="¹Ì¼ş";
-share.time="Ê±¼ä";
-share.interipaddr="Internet IPµØÖ·";
-share.more="¸ü¶à...";
-share.help="°ïÖú";
-share.enable="ÆôÓÃ";
-share.enabled="ÒÑÆôÓÃ";
-share.disable="½ûÓÃ";
-share.disabled="ÒÑ½ûÓÃ";
-share.usrname="ÓÃ»§Ãû";
-share.passwd="ÃÜÂë";
-share.hostname="Ö÷»úÃû";
-share.domainname="ÓòÃû";
-share.wandomainname="WAN Domain Name";
-share.landomainname="LAN Domain Name";
-share.statu="×´Ì¬";
-share.start="¿ªÊ¼";
-share.end="½áÊø";
-share.proto="Ğ­Òé";
-share.ip="IPµØÖ·";
-share.mac="MACµØÖ·";
-share.none="ÎŞ";
-share.both="Á½Õß¶¼ÓĞ";
-share.del="É¾³ı";
-share.remove="ÒÆ³ı";
-share.descr="ÃèÊö";
-share.from="ÆğÊ¼ÓÚ";
-share.to="ÖÕÖ¹ÓÚ";
-share.about="¹ØÓÚ";
-share.everyday="Ã¿Ìì";
-share.sun="ĞÇÆÚÌì";
-share.sun_s="ÖÜÈÕ";
-share.sun_s1="ÈÕ";
-share.mon="ĞÇÆÚÒ»";
-share.mon_s="ÖÜÒ»";
-share.mon_s1="Ò»";
-share.tue="ĞÇÆÚ¶ş";
-share.tue_s="ÖÜ¶ş";
-share.tue_s1="¶ş";
-share.wed="ĞÇÆÚÈı";
-share.wed_s="ÖÜÈı";
-share.wed_s1="Èı";
-share.thu="ĞÇÆÚËÄ";
-share.thu_s="ÖÜËÄ";
-share.thu_s1="ËÄ";
-share.fri="ĞÇÆÚÎå";
-share.fri_s="ÖÜÎå";
-share.fri_s1="Îå";
-share.sat="ĞÇÆÚÁù";
-share.sat_s="ÖÜÁù";
-share.sat_s1="Áù";
-share.expires="¹ıÆÚ";
-share.yes="ÊÇ";
-share.no="·ñ";
-share.allow="ÔÊĞí";
-share.deny="¾Ü¾ø";
-share.range="·¶Î§";
-share.use="Ê¹ÓÃ";
-share.mins="·Ö";
-share.secs="Ãë";
-share.routername="Â·ÓÉÆ÷Ãû³Æ";
-share.manual="ÊÖ¶¯";
-share.port="¶Ë¿Ú";
-share.ssid="SSID";
-share.channel="ÆµµÀ";
-share.rssi="Rssi";
-share.signal="ĞÅºÅ";
-share.noise="ÔëÉù";
-share.beacon="ĞÅ±ê";
-share.openn="´ò¿ª";
-share.dtim="dtim";
-share.rates="ËÙÂÊ";
-share.low="µÍ";
-share.medium="ÖĞ";
-share.high="¸ß";
-share.option="Ñ¡Ïî";
-share.rule="¹æÔò";
-share.lan="LAN£¨¾ÖÓòÍøÂç£©";
-share.point2point="µã¶Ôµã";
-share.nat="NAT£¨ÍøÂçµØÖ·×ª»»£©";
-share.subnet="×ÓÍøÑÚÂë";
-share.unmask="·ÇÑÚÄ£";
-share.deflt="Ä¬ÈÏ";  //don't use share.default !!!
-share.all="È«²¿";
-share.auto="×Ô¶¯";
-share.right="ÓÒ";
-share.left="×ó";
-share.share_key="Shared Key£¨¹²ÏíÃØÔ¿£©";
-share.inter="¼äĞª£¨ÒÔÃëÎªµ¥Î»£©";
-share.srv="·şÎñÃû³Æ";
-share.port_range="¶Ë¿Ú·¶Î§";
-share.priority="ÓÅÏÈ¼¶";
-share.gateway="Íø¹Ø";
-share.intrface="½Ó¿Ú";  //don't use share.interface, Mozilla problem!!!
-share.router="Â·ÓÉÆ÷";
-share.static_lease="¾²Ì¬×âÓÃ";
-share.srvip="·şÎñÆ÷IPµØÖ·";
-share.localdns="±¾µØDNS£¨ÓòÃû·şÎñÆ÷£©";
-share.minutes="·ÖÖÓ";
-share.oui="OUIËÑË÷";
-share.sttic="¾²Ì¬";
-share.connecting="ÕıÔÚÁ¬½Ó";
-share.connect="Á¬½Ó";
-share.connected="ÒÑÁ¬½Ó";
-share.disconnect="¶Ï¿ªÁ¬½Ó";
-share.disconnected="ÒÑ¶Ï¿ªÁ¬½Ó";
-share.info="ĞÅÏ¢";
-share.state="×´Ì¬";
-share.mode="Ä£Ê½";
-share.encrypt="¼ÓÃÜ";
-share.key="ÃØÔ¿";
-share.wireless="ÎŞÏß";
-share.dhcp="DHCP";
-share.styl="·ç¸ñ";
-share.meters="meters";
-share.full="Full";
-share.half="Half";
-share.quarter="Quarter";
-share.seealso="See also";
-share.never="never";
-share.unknown="unknown";
-share.expired="expired";
+share.firmware = "¹Ì¼ş";
+share.time = "Ê±¼ä";
+share.interipaddr = "Internet IPµØÖ·";
+share.more = "¸ü¶à...";
+share.help = "°ïÖú";
+share.enable = "ÆôÓÃ";
+share.enabled = "ÒÑÆôÓÃ";
+share.disable = "½ûÓÃ";
+share.disabled = "ÒÑ½ûÓÃ";
+share.usrname = "ÓÃ»§Ãû";
+share.passwd = "ÃÜÂë";
+share.hostname = "Ö÷»úÃû";
+share.domainname = "ÓòÃû";
+share.wandomainname = "WAN Domain Name";
+share.landomainname = "LAN Domain Name";
+share.statu = "×´Ì¬";
+share.start = "¿ªÊ¼";
+share.end = "½áÊø";
+share.proto = "Ğ­Òé";
+share.ip = "IPµØÖ·";
+share.mac = "MACµØÖ·";
+share.none = "ÎŞ";
+share.both = "Á½Õß¶¼ÓĞ";
+share.del = "É¾³ı";
+share.remove = "ÒÆ³ı";
+share.descr = "ÃèÊö";
+share.from = "ÆğÊ¼ÓÚ";
+share.to = "ÖÕÖ¹ÓÚ";
+share.about = "¹ØÓÚ";
+share.everyday = "Ã¿Ìì";
+share.sun = "ĞÇÆÚÌì";
+share.sun_s = "ÖÜÈÕ";
+share.sun_s1 = "ÈÕ";
+share.mon = "ĞÇÆÚÒ»";
+share.mon_s = "ÖÜÒ»";
+share.mon_s1 = "Ò»";
+share.tue = "ĞÇÆÚ¶ş";
+share.tue_s = "ÖÜ¶ş";
+share.tue_s1 = "¶ş";
+share.wed = "ĞÇÆÚÈı";
+share.wed_s = "ÖÜÈı";
+share.wed_s1 = "Èı";
+share.thu = "ĞÇÆÚËÄ";
+share.thu_s = "ÖÜËÄ";
+share.thu_s1 = "ËÄ";
+share.fri = "ĞÇÆÚÎå";
+share.fri_s = "ÖÜÎå";
+share.fri_s1 = "Îå";
+share.sat = "ĞÇÆÚÁù";
+share.sat_s = "ÖÜÁù";
+share.sat_s1 = "Áù";
+share.expires = "¹ıÆÚ";
+share.yes = "ÊÇ";
+share.no = "·ñ";
+share.allow = "ÔÊĞí";
+share.deny = "¾Ü¾ø";
+share.range = "·¶Î§";
+share.use = "Ê¹ÓÃ";
+share.mins = "·Ö";
+share.secs = "Ãë";
+share.routername = "Â·ÓÉÆ÷Ãû³Æ";
+share.manual = "ÊÖ¶¯";
+share.port = "¶Ë¿Ú";
+share.ssid = "SSID";
+share.channel = "ÆµµÀ";
+share.rssi = "Rssi";
+share.signal = "ĞÅºÅ";
+share.noise = "ÔëÉù";
+share.beacon = "ĞÅ±ê";
+share.openn = "´ò¿ª";
+share.dtim = "dtim";
+share.rates = "ËÙÂÊ";
+share.low = "µÍ";
+share.medium = "ÖĞ";
+share.high = "¸ß";
+share.option = "Ñ¡Ïî";
+share.rule = "¹æÔò";
+share.lan = "LAN£¨¾ÖÓòÍøÂç£©";
+share.point2point = "µã¶Ôµã";
+share.nat = "NAT£¨ÍøÂçµØÖ·×ª»»£©";
+share.subnet = "×ÓÍøÑÚÂë";
+share.unmask = "·ÇÑÚÄ£";
+share.deflt = "Ä¬ÈÏ";		//don't use share.default !!!
+share.all = "È«²¿";
+share.auto = "×Ô¶¯";
+share.right = "ÓÒ";
+share.left = "×ó";
+share.share_key = "Shared Key£¨¹²ÏíÃØÔ¿£©";
+share.inter = "¼äĞª£¨ÒÔÃëÎªµ¥Î»£©";
+share.srv = "·şÎñÃû³Æ";
+share.port_range = "¶Ë¿Ú·¶Î§";
+share.priority = "ÓÅÏÈ¼¶";
+share.gateway = "Íø¹Ø";
+share.intrface = "½Ó¿Ú";	//don't use share.interface, Mozilla problem!!!
+share.router = "Â·ÓÉÆ÷";
+share.static_lease = "¾²Ì¬×âÓÃ";
+share.srvip = "·şÎñÆ÷IPµØÖ·";
+share.localdns = "±¾µØDNS£¨ÓòÃû·şÎñÆ÷£©";
+share.minutes = "·ÖÖÓ";
+share.oui = "OUIËÑË÷";
+share.sttic = "¾²Ì¬";
+share.connecting = "ÕıÔÚÁ¬½Ó";
+share.connect = "Á¬½Ó";
+share.connected = "ÒÑÁ¬½Ó";
+share.disconnect = "¶Ï¿ªÁ¬½Ó";
+share.disconnected = "ÒÑ¶Ï¿ªÁ¬½Ó";
+share.info = "ĞÅÏ¢";
+share.state = "×´Ì¬";
+share.mode = "Ä£Ê½";
+share.encrypt = "¼ÓÃÜ";
+share.key = "ÃØÔ¿";
+share.wireless = "ÎŞÏß";
+share.dhcp = "DHCP";
+share.styl = "·ç¸ñ";
+share.meters = "meters";
+share.full = "Full";
+share.half = "Half";
+share.quarter = "Quarter";
+share.seealso = "See also";
+share.never = "never";
+share.unknown = "unknown";
+share.expired = "expired";
 
 
-sbutton.save="±£´æÉèÖÃ";
-sbutton.saving="ÒÑ±£´æ"; // is this saving or saved? if saving, use "ÕıÔÚ±£´æ"
-sbutton.cmd="ÕıÔÚÖ´ĞĞ";
-sbutton.cancel="È¡Ïû¸Ä¶¯";
-sbutton.refres="Ë¢ĞÂ";
-sbutton.clos="¹Ø±Õ";
-sbutton.del="É¾³ı";
-sbutton.continu="¼ÌĞø";
-sbutton.add="Ìí¼Ó";
-sbutton.remove="ÒÆ³ı";
-sbutton.modify="ĞŞ¸Ä";
-sbutton.deleted="ÒÑÉ¾³ı";
-sbutton.delall="É¾³ıÈ«²¿";
-sbutton.autorefresh="×Ô¶¯Ë¢ĞÂ×´Ì¬[´ò¿ª]";
-sbutton.backup="±¸·İ";
-sbutton.restore="»Ö¸´";
-sbutton.cptotext="¸´ÖÆµ½ÎÄ×ÖÇø";
-sbutton.runcmd="ÔËĞĞÃüÁî";
-sbutton.startup="±£´æÆô¶¯ÃüÁî";
-sbutton.firewall="±£´æ·À»ğÇ½ÃüÁî";
-sbutton.wol="»½ĞÑ";
-sbutton.add_wol="Ìí¼ÓÖ÷»ú";
-sbutton.manual_wol="ÊÖ¶¯»½ĞÑ";
-sbutton.summary="×ÛÊö";
-sbutton.filterIP="±à¼­PCÁĞ±í";
-sbutton.filterMac="±à¼­MAC¹ıÂËÆ÷ÁĞ±í";
-sbutton.filterSer="Ìí¼Ó/±à¼­·şÎñ";
-sbutton.reboot="ÖØĞÂÆô¶¯Â·ÓÉÆ÷";
-sbutton.help="   °ïÖú  ";
-sbutton.wl_client_mac="ÎŞÏß¿Í»§¶ËMACÁĞ±í";
-sbutton.update_filter="¸üĞÂ¹ıÂËÆ÷ÁĞ±í";
-sbutton.join="¼ÓÈë";
-sbutton.log_in="Á¬ÈëÈÕÖ¾";
-sbutton.log_out="Á¬³öÈÕÖ¾";
-sbutton.apply="Ó¦ÓÃ";
-sbutton.edit_srv="Ìí¼Ó/±à¼­·şÎñ";
-sbutton.routingtab="ÏÔÊ¾Â·ÓÉ±í";
-sbutton.wanmac="»ñÈ¡µ±Ç°PCµÄMACµØÖ·";
-sbutton.dhcprel="DHCP·¢·Å";
-sbutton.dhcpren="DHCP¸üĞÂ";
-sbutton.survey="Site Survey£¨Ñ¡Ö·£©";
-sbutton.upgrading="ÕıÔÚÉı¼¶";
-sbutton.upgrade="Éı¼¶";
-sbutton.preview="Ô¤ÀÀ";
+sbutton.save = "±£´æÉèÖÃ";
+sbutton.saving = "ÒÑ±£´æ";	// is this saving or saved? if saving, use "ÕıÔÚ±£´æ"
+sbutton.cmd = "ÕıÔÚÖ´ĞĞ";
+sbutton.cancel = "È¡Ïû¸Ä¶¯";
+sbutton.refres = "Ë¢ĞÂ";
+sbutton.clos = "¹Ø±Õ";
+sbutton.del = "É¾³ı";
+sbutton.continu = "¼ÌĞø";
+sbutton.add = "Ìí¼Ó";
+sbutton.remove = "ÒÆ³ı";
+sbutton.modify = "ĞŞ¸Ä";
+sbutton.deleted = "ÒÑÉ¾³ı";
+sbutton.delall = "É¾³ıÈ«²¿";
+sbutton.autorefresh = "×Ô¶¯Ë¢ĞÂ×´Ì¬[´ò¿ª]";
+sbutton.backup = "±¸·İ";
+sbutton.restore = "»Ö¸´";
+sbutton.cptotext = "¸´ÖÆµ½ÎÄ×ÖÇø";
+sbutton.runcmd = "ÔËĞĞÃüÁî";
+sbutton.startup = "±£´æÆô¶¯ÃüÁî";
+sbutton.firewall = "±£´æ·À»ğÇ½ÃüÁî";
+sbutton.wol = "»½ĞÑ";
+sbutton.add_wol = "Ìí¼ÓÖ÷»ú";
+sbutton.manual_wol = "ÊÖ¶¯»½ĞÑ";
+sbutton.summary = "×ÛÊö";
+sbutton.filterIP = "±à¼­PCÁĞ±í";
+sbutton.filterMac = "±à¼­MAC¹ıÂËÆ÷ÁĞ±í";
+sbutton.filterSer = "Ìí¼Ó/±à¼­·şÎñ";
+sbutton.reboot = "ÖØĞÂÆô¶¯Â·ÓÉÆ÷";
+sbutton.help = "   °ïÖú  ";
+sbutton.wl_client_mac = "ÎŞÏß¿Í»§¶ËMACÁĞ±í";
+sbutton.update_filter = "¸üĞÂ¹ıÂËÆ÷ÁĞ±í";
+sbutton.join = "¼ÓÈë";
+sbutton.log_in = "Á¬ÈëÈÕÖ¾";
+sbutton.log_out = "Á¬³öÈÕÖ¾";
+sbutton.apply = "Ó¦ÓÃ";
+sbutton.edit_srv = "Ìí¼Ó/±à¼­·şÎñ";
+sbutton.routingtab = "ÏÔÊ¾Â·ÓÉ±í";
+sbutton.wanmac = "»ñÈ¡µ±Ç°PCµÄMACµØÖ·";
+sbutton.dhcprel = "DHCP·¢·Å";
+sbutton.dhcpren = "DHCP¸üĞÂ";
+sbutton.survey = "Site Survey£¨Ñ¡Ö·£©";
+sbutton.upgrading = "ÕıÔÚÉı¼¶";
+sbutton.upgrade = "Éı¼¶";
+sbutton.preview = "Ô¤ÀÀ";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
 
-errmsg.err0="Äú±ØĞëÊäÈëÒ»¸öÓÃ»§Ãû¡£";
-errmsg.err1="Äú±ØĞëÊäÈëÒ»¸öÂ·ÓÉÆ÷Ãû³Æ¡£";
-errmsg.err2="³¬³ö·¶Î§£¬Çëµ÷ÕûÆğÊ¼IPµØÖ·»òÓÃ»§µÄ¸öÊı¡£";
-errmsg.err3="Äú±ØĞëÖÁÉÙÑ¡ÔñÒ»¸öÈÕÆÚ¡£"
-errmsg.err4="½áÊøÊ±¼ä±ØĞë±È¿ªÊ¼Ê±¼ä´ó¡£";
-errmsg.err5="MACµØÖ·³¤¶È²»ÕıÈ·¡£";
-errmsg.err6="Äú±ØĞëÊäÈëÒ»¸öÃÜÂë¡£";
-errmsg.err7="Äú±ØĞëÊäÈëÒ»¸öÖ÷»úÃû¡£";
-errmsg.err8="Äú±ØĞëÊäÈëÒ»¸öIPµØÖ·»òÕßÓòÃû¡£";
-errmsg.err9="·Ç·¨DMZ IPµØÖ·¡£";
-errmsg.err10="È·ÈÏÃÜÂëÓëËùÊäÈëÃÜÂë²»Ïà·û¡£ÇëÖØĞÂÊäÈëÃÜÂë¡£";
-errmsg.err11="ÔÚÃÜÂëÖĞ²»ÔÊĞíÊ¹ÓÃ¿Õ¸ñ";
-errmsg.err12="Äã±ØĞëÊäÈëÒ»¸öÒªÔËĞĞµÄÃüÁî¡£";
-errmsg.err13="Éı¼¶Ê§°Ü¡£";
-errmsg.err45="HTTPSÄ£Ê½ÏÂ²»¿ÉÓÃ£¡ÇëÊ¹ÓÃHTTPÄ£Ê½Á¬½Ó¡£";
-errmsg.err46="HTTPSÄ£Ê½ÏÂ²»¿ÉÓÃ";
+errmsg.err0 = "Äú±ØĞëÊäÈëÒ»¸öÓÃ»§Ãû¡£";
+errmsg.err1 = "Äú±ØĞëÊäÈëÒ»¸öÂ·ÓÉÆ÷Ãû³Æ¡£";
+errmsg.err2 = "³¬³ö·¶Î§£¬Çëµ÷ÕûÆğÊ¼IPµØÖ·»òÓÃ»§µÄ¸öÊı¡£";
+errmsg.err3 = "Äú±ØĞëÖÁÉÙÑ¡ÔñÒ»¸öÈÕÆÚ¡£"
+  errmsg.err4 = "½áÊøÊ±¼ä±ØĞë±È¿ªÊ¼Ê±¼ä´ó¡£";
+errmsg.err5 = "MACµØÖ·³¤¶È²»ÕıÈ·¡£";
+errmsg.err6 = "Äú±ØĞëÊäÈëÒ»¸öÃÜÂë¡£";
+errmsg.err7 = "Äú±ØĞëÊäÈëÒ»¸öÖ÷»úÃû¡£";
+errmsg.err8 = "Äú±ØĞëÊäÈëÒ»¸öIPµØÖ·»òÕßÓòÃû¡£";
+errmsg.err9 = "·Ç·¨DMZ IPµØÖ·¡£";
+errmsg.err10 = "È·ÈÏÃÜÂëÓëËùÊäÈëÃÜÂë²»Ïà·û¡£ÇëÖØĞÂÊäÈëÃÜÂë¡£";
+errmsg.err11 = "ÔÚÃÜÂëÖĞ²»ÔÊĞíÊ¹ÓÃ¿Õ¸ñ";
+errmsg.err12 = "Äã±ØĞëÊäÈëÒ»¸öÒªÔËĞĞµÄÃüÁî¡£";
+errmsg.err13 = "Éı¼¶Ê§°Ü¡£";
+errmsg.err45 = "HTTPSÄ£Ê½ÏÂ²»¿ÉÓÃ£¡ÇëÊ¹ÓÃHTTPÄ£Ê½Á¬½Ó¡£";
+errmsg.err46 = "HTTPSÄ£Ê½ÏÂ²»¿ÉÓÃ";
 
 
 //common.js error messages
-errmsg.err14=" Öµ³¬³ö·¶Î§ [";
-errmsg.err15="WAM¿ÚMACµØÖ·³¬³ö·¶Î§ [00 - ff].";
-errmsg.err16="MACµØÖ·µÄµÚ¶ş¸ö×Ö·û±ØĞëÊÇÅ¼Êı : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="MACµØÖ·²»ÕıÈ·¡£";
-errmsg.err18="MACµØÖ·³¤¶È²»ÕıÈ·¡£";
-errmsg.err19="MACµØÖ·²»ÄÜÊÇ¹ã²¥MACµØÖ·¡£"
-errmsg.err20="Ê¹ÓÃĞÎÈç(xx:xx:xx:xx:xx:xx)µÄ¸ñÊ½ÊäÈëMACµØÖ·¡£";
-errmsg.err21="ÎŞĞ§MACµØÖ·¸ñÊ½¡£";
-errmsg.err22="WAN¿ÚMACµØÖ·²»ÕıÈ·¡£";
-errmsg.err23="ÎŞĞ§16½øÖÆÊıÖµ ";
-errmsg.err24=" ÔÚÈçÏÂMACµØÖ·ÖĞ³öÏÖ ";
-errmsg.err25="ÃØÔ¿Öµ²»ÕıÈ·¡£";
-errmsg.err26="ÃØÔ¿³¤¶È²»ÕıÈ·¡£";
-errmsg.err27="·Ç·¨×ÓÍøÑÚÂë¡£";
-errmsg.err28=" º¬ÓĞ·Ç·¨×Ö·û, ×Ö·û±ØĞëÊÇ [ 0 - 9 ]¡£";
-errmsg.err29=" º¬ÓĞ·Ç·¨ASCIIÂë¡£";
-errmsg.err30=" º¬ÓĞ·Ç·¨16½øÖÆÊı×Ö¡£";
-errmsg.err31=" ÊıÖµ·Ç·¨¡£";
-errmsg.err32="IPµØÖ·ºÍÍø¹Ø²»ÔÚÍ¬Ò»×ÓÍøÖĞ¡£";
-errmsg.err33="IPµØÖ·ÓëÍø¹Ø²»ÄÜÏàÍ¬¡£";
-errmsg.err34=" ÖĞ²»ÔÊĞíº¬ÓĞ¿Õ¸ñ¡£";
+errmsg.err14 = " Öµ³¬³ö·¶Î§ [";
+errmsg.err15 = "WAM¿ÚMACµØÖ·³¬³ö·¶Î§ [00 - ff].";
+errmsg.err16 = "MACµØÖ·µÄµÚ¶ş¸ö×Ö·û±ØĞëÊÇÅ¼Êı : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17 = "MACµØÖ·²»ÕıÈ·¡£";
+errmsg.err18 = "MACµØÖ·³¤¶È²»ÕıÈ·¡£";
+errmsg.err19 = "MACµØÖ·²»ÄÜÊÇ¹ã²¥MACµØÖ·¡£"
+  errmsg.err20 = "Ê¹ÓÃĞÎÈç(xx:xx:xx:xx:xx:xx)µÄ¸ñÊ½ÊäÈëMACµØÖ·¡£";
+errmsg.err21 = "ÎŞĞ§MACµØÖ·¸ñÊ½¡£";
+errmsg.err22 = "WAN¿ÚMACµØÖ·²»ÕıÈ·¡£";
+errmsg.err23 = "ÎŞĞ§16½øÖÆÊıÖµ ";
+errmsg.err24 = " ÔÚÈçÏÂMACµØÖ·ÖĞ³öÏÖ ";
+errmsg.err25 = "ÃØÔ¿Öµ²»ÕıÈ·¡£";
+errmsg.err26 = "ÃØÔ¿³¤¶È²»ÕıÈ·¡£";
+errmsg.err27 = "·Ç·¨×ÓÍøÑÚÂë¡£";
+errmsg.err28 = " º¬ÓĞ·Ç·¨×Ö·û, ×Ö·û±ØĞëÊÇ [ 0 - 9 ]¡£";
+errmsg.err29 = " º¬ÓĞ·Ç·¨ASCIIÂë¡£";
+errmsg.err30 = " º¬ÓĞ·Ç·¨16½øÖÆÊı×Ö¡£";
+errmsg.err31 = " ÊıÖµ·Ç·¨¡£";
+errmsg.err32 = "IPµØÖ·ºÍÍø¹Ø²»ÔÚÍ¬Ò»×ÓÍøÖĞ¡£";
+errmsg.err33 = "IPµØÖ·ÓëÍø¹Ø²»ÄÜÏàÍ¬¡£";
+errmsg.err34 = " ÖĞ²»ÔÊĞíº¬ÓĞ¿Õ¸ñ¡£";
 
 //Wol.asp error messages
-errmsg.err35="Äã±ØĞëÊäÈëÒ»¸öMACµØÖ·À´Ö´ĞĞ²Ù×÷¡£";
-errmsg.err36="Äã±ØĞëÊäÈëÒ»¸öÍøÂç¹ã²¥µØÖ·À´Ö´ĞĞ²Ù×÷¡£";
-errmsg.err37="Äã±ØĞëÊäÈëÒ»¸öUDP¶Ë¿ÚÀ´Ö´ĞĞ²Ù×÷¡£";
+errmsg.err35 = "Äã±ØĞëÊäÈëÒ»¸öMACµØÖ·À´Ö´ĞĞ²Ù×÷¡£";
+errmsg.err36 = "Äã±ØĞëÊäÈëÒ»¸öÍøÂç¹ã²¥µØÖ·À´Ö´ĞĞ²Ù×÷¡£";
+errmsg.err37 = "Äã±ØĞëÊäÈëÒ»¸öUDP¶Ë¿ÚÀ´Ö´ĞĞ²Ù×÷¡£";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="ÇëÊäÈëÒ»¸öShared Key£¨¹²ÏíÃØÔ¿£©£¡";
-errmsg.err39="ÎŞĞ§ÃØÔ¿£¬±ØĞëÊÇ³¤¶ÈÎª8µ½63¸öASCII×Ö·û»òÕß64¸öÊ®Áù½øÖÆÊı×Ö";
-errmsg.err40="Äã±ØĞëÎªÈçÏÂÃØÔ¿ÊäÈëÒ»¸ö¹Ø¼ü×Ö ";
-errmsg.err41="¹Ø¼ü×Ö³¤¶ÈÎŞĞ§ ";
-errmsg.err43="ÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
+errmsg.err38 = "ÇëÊäÈëÒ»¸öShared Key£¨¹²ÏíÃØÔ¿£©£¡";
+errmsg.err39 = "ÎŞĞ§ÃØÔ¿£¬±ØĞëÊÇ³¤¶ÈÎª8µ½63¸öASCII×Ö·û»òÕß64¸öÊ®Áù½øÖÆÊı×Ö";
+errmsg.err40 = "Äã±ØĞëÎªÈçÏÂÃØÔ¿ÊäÈëÒ»¸ö¹Ø¼ü×Ö ";
+errmsg.err41 = "¹Ø¼ü×Ö³¤¶ÈÎŞĞ§ ";
+errmsg.err43 = "ÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
 
 //config.asp error messages
-errmsg.err42="ÇëÑ¡ÔñÒ»¸öÓÃÀ´»Ö¸´µÄÅäÖÃÎÄ¼ş¡£";
+errmsg.err42 = "ÇëÑ¡ÔñÒ»¸öÓÃÀ´»Ö¸´µÄÅäÖÃÎÄ¼ş¡£";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="×Ü¼ì²é´ÎÊı³¬¹ı128´Î¡£";
+errmsg.err44 = "×Ü¼ì²é´ÎÊı³¬¹ı128´Î¡£";
 
 //Site_Survey.asp error messages
-errmsg.err47="ÎŞĞ§SSID¡£";   //changed 20060525
+errmsg.err47 = "ÎŞĞ§SSID¡£";	//changed 20060525
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDSÓëµ±Ç°Â·ÓÉÆ÷µÄÅäÖÃ²»¼æÈİ¡£Çë¼ì²éÒÔÏÂ¼¸µã :\n * ÎŞÏßÄ£Ê½±ØĞë±»ÉèÖÃÎªAP£¨½ÓÈëµã£© \n * WDSÏÂ²»Ö§³ÖWPA2 \n * WDSÏÂ²»Ö§³ÖÎŞÏßÍøÂçÊ¹ÓÃ ½öB Ä£Ê½";
+errmsg.err48 =
+  "WDSÓëµ±Ç°Â·ÓÉÆ÷µÄÅäÖÃ²»¼æÈİ¡£Çë¼ì²éÒÔÏÂ¼¸µã :\n * ÎŞÏßÄ£Ê½±ØĞë±»ÉèÖÃÎªAP£¨½ÓÈëµã£© \n * WDSÏÂ²»Ö§³ÖWPA2 \n * WDSÏÂ²»Ö§³ÖÎŞÏßÍøÂçÊ¹ÓÃ ½öB Ä£Ê½";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius½öÔÚAP£¨½ÓÈëµã£©Ä£Ê½ÏÂ¿ÉÓÃ¡£";
+errmsg.err49 = "Radius½öÔÚAP£¨½ÓÈëµã£©Ä£Ê½ÏÂ¿ÉÓÃ¡£";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="Äã±ØĞëÊäÈëÒ»¸öSSID¡£";
+errmsg.err50 = "Äã±ØĞëÊäÈëÒ»¸öSSID¡£";
 
 // Management.asp error messages
-errmsg.err51="±¾Â·ÓÉÆ÷µ±Ç°ÅäÖÃµÄÃÜÂëÎªÄ¬ÈÏÃÜÂë¡£ \
+errmsg.err51 = "±¾Â·ÓÉÆ÷µ±Ç°ÅäÖÃµÄÃÜÂëÎªÄ¬ÈÏÃÜÂë¡£ \
 			³öÓÚ°²È«µÄ¿¼ÂÇ£¬Äú±ØĞëÔ¶³Ì¹ÜÀíÌØĞÔ±»¿ªÆôÇ°¸ü¸ÄÃÜÂë¡£ \
 			µã»÷È·¶¨°´Å¥¸ü¸ÄÄúµÄÃÜÂë¡£µã»÷È¡Ïû°´Å¥±£³ÖÔ¶³Ì¹ÜÀíÌØĞÔ¹Ø±Õ¡£";
-errmsg.err52="ÃÜÂë¸´ºË²»Ïà·û¡£";
+errmsg.err52 = "ÃÜÂë¸´ºË²»Ïà·û¡£";
 
 // Port_Services.asp error messages
-errmsg.err53="µ±ËùÓĞ²Ù×÷Íê³ÉÖ®ºó£¬µã»÷[Ó¦ÓÃ]°´Å¥±£´æÉèÖÃ¡£";
-errmsg.err54="Äã±ØĞëÊäÈëÒ»¸ö·şÎñÃû³Æ¡£";
-errmsg.err55="´Ë·şÎñÃû³ÆÒÑ´æÔÚ¡£";
+errmsg.err53 = "µ±ËùÓĞ²Ù×÷Íê³ÉÖ®ºó£¬µã»÷[Ó¦ÓÃ]°´Å¥±£´æÉèÖÃ¡£";
+errmsg.err54 = "Äã±ØĞëÊäÈëÒ»¸ö·şÎñÃû³Æ¡£";
+errmsg.err55 = "´Ë·şÎñÃû³ÆÒÑ´æÔÚ¡£";
 
 // QoS.asp error messages
-errmsg.err56="¶Ë¿ÚÖµ³¬³ö·¶Î§ [0 - 65535]";
+errmsg.err56 = "¶Ë¿ÚÖµ³¬³ö·¶Î§ [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="É¾³ı´ËÌõÄ¿£¿";
+errmsg.err57 = "É¾³ı´ËÌõÄ¿£¿";
 
 // Status_Lan.asp error messages
-errmsg.err58="µã»÷É¾³ı";
+errmsg.err58 = "µã»÷É¾³ı";
 
 //Status_Wireless.asp error messages
-errmsg.err59="²»¿ÉÓÃ£¡ÇëÆôÓÃÎŞÏßÍøÂç¡£";
+errmsg.err59 = "²»¿ÉÓÃ£¡ÇëÆôÓÃÎŞÏßÍøÂç¡£";
 
 //Upgrade.asp error messages
-errmsg.err60="ÇëÑ¡ÔñÉı¼¶ÎÄ¼ş¡£";
-errmsg.err61="²»ÕıÈ·µÄ¾µÏñÎÄ¼ş¡£";
+errmsg.err60 = "ÇëÑ¡ÔñÉı¼¶ÎÄ¼ş¡£";
+errmsg.err61 = "²»ÕıÈ·µÄ¾µÏñÎÄ¼ş¡£";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
-bmenu.setup="ÉèÖÃ";
-bmenu.setupbasic="»ù±¾ÉèÖÃ";
-bmenu.setupddns="DDNS£¨¶¯Ì¬DNS£©";
-bmenu.setupmacclone="MACµØÖ·¿ËÂ¡";
-bmenu.setuprouting="¸ß¼¶Â·ÓÉ";
-bmenu.setupvlan="VLANs";
+bmenu.setup = "ÉèÖÃ";
+bmenu.setupbasic = "»ù±¾ÉèÖÃ";
+bmenu.setupddns = "DDNS£¨¶¯Ì¬DNS£©";
+bmenu.setupmacclone = "MACµØÖ·¿ËÂ¡";
+bmenu.setuprouting = "¸ß¼¶Â·ÓÉ";
+bmenu.setupvlan = "VLANs";
 
-bmenu.wireless="ÎŞÏß";
-bmenu.wirelessBasic="»ù±¾ÉèÖÃ";
-bmenu.wirelessRadius="Radius";
-bmenu.wirelessSecurity="ÎŞÏß°²È«";
-bmenu.wirelessMac="MAC¹ıÂË";
-bmenu.wirelessAdvanced="¸ß¼¶ÉèÖÃ";
-bmenu.wirelessWds="WDS";
+bmenu.wireless = "ÎŞÏß";
+bmenu.wirelessBasic = "»ù±¾ÉèÖÃ";
+bmenu.wirelessRadius = "Radius";
+bmenu.wirelessSecurity = "ÎŞÏß°²È«";
+bmenu.wirelessMac = "MAC¹ıÂË";
+bmenu.wirelessAdvanced = "¸ß¼¶ÉèÖÃ";
+bmenu.wirelessWds = "WDS";
 
-bmenu.security="°²È«";
-bmenu.firwall="·À»ğÇ½";
-bmenu.vpn="VPN";
+bmenu.security = "°²È«";
+bmenu.firwall = "·À»ğÇ½";
+bmenu.vpn = "VPN";
 
-bmenu.accrestriction="·ÃÎÊÏŞÖÆ";
-bmenu.webaccess="Internet·ÃÎÊ";
-
-
-bmenu.applications="Ó¦ÓÃ³ÌĞò &amp; ÓÎÏ·";
-bmenu.applicationsprforwarding="¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
-bmenu.applicationspforwarding="¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
-bmenu.applicationsptriggering="¶Ë¿Ú¼¤·¢";
-bmenu.applicationsUpnp="UPnP";
-bmenu.applicationsDMZ="DMZ";
-bmenu.applicationsQoS="QoS";
-
-bmenu.sipath="SIPatH";
-bmenu.sipathoverview="×ÜÀÀ";
-bmenu.sipathphone="µç»°±¾";
-bmenu.sipathstatus="×´Ì¬";
-
-bmenu.admin="¹ÜÀí";
-bmenu.adminManagement="ÆÕÍ¨¹ÜÀí";
-bmenu.adminHotspot="ÈÈµã";
-bmenu.adminServices="·şÎñ";
-bmenu.adminAlive="±£³Ö»î¶¯";
-bmenu.adminLog="ÈÕÖ¾";
-bmenu.adminDiag="Õï¶Ï";
-bmenu.adminWol="WOL£¨ÍøÂç»½ĞÑ£©";
-bmenu.adminFactory="³ö³§Ä¬ÈÏÉèÖÃ";
-bmenu.adminUpgrade="¹Ì¼şÉı¼¶";
-bmenu.adminBackup="±¸·İ";
+bmenu.accrestriction = "·ÃÎÊÏŞÖÆ";
+bmenu.webaccess = "Internet·ÃÎÊ";
 
 
-bmenu.statu="×´Ì¬";
-bmenu.statuRouter="Â·ÓÉÆ÷";
-bmenu.statuLAN="LAN";
-bmenu.statuSputnik="Sputnik´úÀí";
-bmenu.statuWLAN="ÎŞÏß";
-bmenu.statuSysInfo="ÏµÍ³ĞÅÏ¢";
+bmenu.applications = "Ó¦ÓÃ³ÌĞò &amp; ÓÎÏ·";
+bmenu.applicationsprforwarding = "¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
+bmenu.applicationspforwarding = "¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
+bmenu.applicationsptriggering = "¶Ë¿Ú¼¤·¢";
+bmenu.applicationsUpnp = "UPnP";
+bmenu.applicationsDMZ = "DMZ";
+bmenu.applicationsQoS = "QoS";
+
+bmenu.sipath = "SIPatH";
+bmenu.sipathoverview = "×ÜÀÀ";
+bmenu.sipathphone = "µç»°±¾";
+bmenu.sipathstatus = "×´Ì¬";
+
+bmenu.admin = "¹ÜÀí";
+bmenu.adminManagement = "ÆÕÍ¨¹ÜÀí";
+bmenu.adminHotspot = "ÈÈµã";
+bmenu.adminServices = "·şÎñ";
+bmenu.adminAlive = "±£³Ö»î¶¯";
+bmenu.adminLog = "ÈÕÖ¾";
+bmenu.adminDiag = "Õï¶Ï";
+bmenu.adminWol = "WOL£¨ÍøÂç»½ĞÑ£©";
+bmenu.adminFactory = "³ö³§Ä¬ÈÏÉèÖÃ";
+bmenu.adminUpgrade = "¹Ì¼şÉı¼¶";
+bmenu.adminBackup = "±¸·İ";
+
+
+bmenu.statu = "×´Ì¬";
+bmenu.statuRouter = "Â·ÓÉÆ÷";
+bmenu.statuLAN = "LAN";
+bmenu.statuSputnik = "Sputnik´úÀí";
+bmenu.statuWLAN = "ÎŞÏß";
+bmenu.statuSysInfo = "ÏµÍ³ĞÅÏ¢";
 
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl=" - ±£³Ö»î¶¯";
-alive.h2="±£³Ö»î¶¯";
-alive.legend="¼Æ»®ÖØĞÂÆô¶¯";
-alive.sevr1="¼Æ»®ÖØĞÂÆô¶¯";
-alive.hour="ÔÚÉèÖÃµÄÊ±¼ä";
-alive.legend2="WDS/Á¬½Ó¿´ÃÅ¹·";
-alive.sevr2="¿ªÆô¿´ÃÅ¹·";
-alive.IP="IPµØÖ·";
-alive.legend3="´úÀí·şÎñÆ÷/Á¬½Ó¿´ÃÅ¿Ú";
-alive.sevr3="¿ªÆô´úÀí·şÎñÆ÷¿´ÊØ³ÌĞò";
-alive.IP2="´úÀí·şÎñÆ÷IPµØÖ·";
-alive.port="´úÀí·şÎñÆ÷¶Ë¿Ú";
+alive.titl = " - ±£³Ö»î¶¯";
+alive.h2 = "±£³Ö»î¶¯";
+alive.legend = "¼Æ»®ÖØĞÂÆô¶¯";
+alive.sevr1 = "¼Æ»®ÖØĞÂÆô¶¯";
+alive.hour = "ÔÚÉèÖÃµÄÊ±¼ä";
+alive.legend2 = "WDS/Á¬½Ó¿´ÃÅ¹·";
+alive.sevr2 = "¿ªÆô¿´ÃÅ¹·";
+alive.IP = "IPµØÖ·";
+alive.legend3 = "´úÀí·şÎñÆ÷/Á¬½Ó¿´ÃÅ¿Ú";
+alive.sevr3 = "¿ªÆô´úÀí·şÎñÆ÷¿´ÊØ³ÌĞò";
+alive.IP2 = "´úÀí·şÎñÆ÷IPµØÖ·";
+alive.port = "´úÀí·şÎñÆ÷¶Ë¿Ú";
 
 //help container
 
-halive.right2="Ñ¡ÔñºÎÊ±ÖØĞÂÆô¶¯Â·ÓÉÆ÷¡£ÔÚÆÕÍ¨¹ÜÀí±êÇ©ÖĞµÄCronÑ¡Ïî±ØĞë±»¿ªÆô¡£";
-halive.right4="×î¶àÔÊĞí3¸öIPµØÖ·£¬Ö®¼äÊ¹ÓÃ<em>¿Õ¸ñ</em> ·Ö¸î¡£<BR/>IPµØÖ·¸ñÊ½Îª£ºxxx.xxx.xxx.xxx¡£";
+halive.right2 =
+  "Ñ¡ÔñºÎÊ±ÖØĞÂÆô¶¯Â·ÓÉÆ÷¡£ÔÚÆÕÍ¨¹ÜÀí±êÇ©ÖĞµÄCronÑ¡Ïî±ØĞë±»¿ªÆô¡£";
+halive.right4 =
+  "×î¶àÔÊĞí3¸öIPµØÖ·£¬Ö®¼äÊ¹ÓÃ<em>¿Õ¸ñ</em> ·Ö¸î¡£<BR/>IPµØÖ·¸ñÊ½Îª£ºxxx.xxx.xxx.xxx¡£";
 
 
 
 // ******************************************* config.asp *******************************************//
 
-config.titl=" - ±¸·İÓë»Ö¸´";
-config.h2="±¸·İÅäÖÃ";
-config.legend="±¸·İÉèÖÃ";
-config.mess1="µã»÷ \"" + sbutton.backup + "\" °´Å¥½«ÅäÖÃ±¸·İÎÄ¼şÏÂÔØµ½ÄúµÄ¸öÈËµçÄÔ¡£";
-config.h22="»Ö¸´ÅäÖÃ";
-config.legend2="»Ö¸´ÉèÖÃ";
-config.mess2="ÇëÑ¡ÔñÒ»¸öÓÃÀ´»Ö¸´µÄÎÄ¼ş";
-config.mess3=" [ ¾¯ ] [ ¸æ ] ";
-config.mess4="Çë½öÉÏ´«Ê¹ÓÃ´Ë£¨°æ±¾£©¹Ì¼ş²¢ÇÒ´ÓÏàÍ¬ĞÍºÅÂ·ÓÉÆ÷ÉÏ±¸·İµÄÎÄ¼ş¡£<br />ÇëÎğÉÏ´«ÈÎºÎ²»ÊÇÊ¹ÓÃ±¾½çÃæ´´½¨µÄÎÄ¼ş£¡";
+config.titl = " - ±¸·İÓë»Ö¸´";
+config.h2 = "±¸·İÅäÖÃ";
+config.legend = "±¸·İÉèÖÃ";
+config.mess1 =
+  "µã»÷ \"" + sbutton.backup + "\" °´Å¥½«ÅäÖÃ±¸·İÎÄ¼şÏÂÔØµ½ÄúµÄ¸öÈËµçÄÔ¡£";
+config.h22 = "»Ö¸´ÅäÖÃ";
+config.legend2 = "»Ö¸´ÉèÖÃ";
+config.mess2 = "ÇëÑ¡ÔñÒ»¸öÓÃÀ´»Ö¸´µÄÎÄ¼ş";
+config.mess3 = " [ ¾¯ ] [ ¸æ ] ";
+config.mess4 =
+  "Çë½öÉÏ´«Ê¹ÓÃ´Ë£¨°æ±¾£©¹Ì¼ş²¢ÇÒ´ÓÏàÍ¬ĞÍºÅÂ·ÓÉÆ÷ÉÏ±¸·İµÄÎÄ¼ş¡£<br />ÇëÎğÉÏ´«ÈÎºÎ²»ÊÇÊ¹ÓÃ±¾½çÃæ´´½¨µÄÎÄ¼ş£¡";
 
 //help container
 
-hconfig.right2="Äú¿ÉÒÔ±¸·İÄúµ±Ç°ÅäÖÃÒÔ±¸Äú½«À´ĞèÒª½«Â·ÓÉÆ÷¸´Î»µ½³ö³§ÉèÖÃºóÊ¹ÓÃ¡£<br /><br />µã»÷ <em>±¸·İ</em> °´Å¥±¸·İÄúµÄµ±Ç°ÉèÖÃ¡£";
-hconfig.right4="µã»÷ <em>ä¯ÀÀ...</em> °´Å¥ä¯ÀÀµ½Ò»¸öµ±Ç°´æ´¢ÔÚÄú¸öÈËµçÄÔÉÏµÄÅäÖÃÎÄ¼ş¡£<br /><br />µã»÷ <em>" + sbutton.restore + "</em> °´Å¥Ê¹ÓÃÅäÖÃÎÄ¼ş¸²¸Çµ±Ç°ÅäÖÃ¡£";
+hconfig.right2 =
+  "Äú¿ÉÒÔ±¸·İÄúµ±Ç°ÅäÖÃÒÔ±¸Äú½«À´ĞèÒª½«Â·ÓÉÆ÷¸´Î»µ½³ö³§ÉèÖÃºóÊ¹ÓÃ¡£<br /><br />µã»÷ <em>±¸·İ</em> °´Å¥±¸·İÄúµÄµ±Ç°ÉèÖÃ¡£";
+hconfig.right4 =
+  "µã»÷ <em>ä¯ÀÀ...</em> °´Å¥ä¯ÀÀµ½Ò»¸öµ±Ç°´æ´¢ÔÚÄú¸öÈËµçÄÔÉÏµÄÅäÖÃÎÄ¼ş¡£<br /><br />µã»÷ <em>"
+  + sbutton.restore + "</em> °´Å¥Ê¹ÓÃÅäÖÃÎÄ¼ş¸²¸Çµ±Ç°ÅäÖÃ¡£";
 
 
 
 // ******************************************* DDNS.asp *******************************************//
 
-ddns.titl=" - ¶¯Ì¬DNS"
-ddns.h2="¶¯Ì¬ÓòÃûÏµÍ³(DDNS)";
-ddns.legend="DDNS";
-ddns.srv="DDNS·şÎñ";
-ddns.emailaddr="E-mailµØÖ·";
-ddns.typ="ÀàĞÍ";
-ddns.dynamic="¶¯Ì¬";
+ddns.titl = " - ¶¯Ì¬DNS" ddns.h2 = "¶¯Ì¬ÓòÃûÏµÍ³(DDNS)";
+ddns.legend = "DDNS";
+ddns.srv = "DDNS·şÎñ";
+ddns.emailaddr = "E-mailµØÖ·";
+ddns.typ = "ÀàĞÍ";
+ddns.dynamic = "¶¯Ì¬";
 // ddns.static="¾²Ì¬"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
-ddns.custom="×Ô¶¨Òå";
-ddns.wildcard="Í³Åä·û";
-ddns.statu="DDNS×´Ì¬";
+ddns.custom = "×Ô¶¨Òå";
+ddns.wildcard = "Í³Åä·û";
+ddns.statu = "DDNS×´Ì¬";
 
 
-ddnsm.dyn_strange="Ææ¹ÖµÄ·şÎñÆ÷ÏìÓ¦£¬ÄúÊÇ·ñÈ·¶¨ËùÁ¬½ÓµÄ·şÎñÆ÷ÊÇÕıÈ·µÄ£¿";
-ddnsm.dyn_good="DDNS¸üĞÂ³É¹¦";
-ddnsm.dyn_noupdate="µ±Ç°Ã»ÓĞ¸üĞÂµÄĞèÒª";
-ddnsm.dyn_nohost="Ö÷»úÃû²»´æÔÚ";
-ddnsm.dyn_notfqdn="Ö÷»úÃû²»ÕıÈ·";
-ddnsm.dyn_yours="Ö÷»ú²»ÔÚÄúµÄ¿ØÖÆÏÂ";
-ddnsm.dyn_abuse="Ö÷»ú±»ÒòÎªÊÜÅ°±»ÔİÊ±·â½û";
-ddnsm.dyn_nochg="IPµØÖ·×Ô´ÓÉÏ´Î¸üĞÂÒÔÀ´Î´¸Ä±ä";
-ddnsm.dyn_badauth="ÈÏÖ¤Ê§°Ü£¨ÓÃ»§Ãû»òÃÜÂë£©";
-ddnsm.dyn_badsys="ÎŞĞ§µÄÏµÍ³²ÎÊı";
-ddnsm.dyn_badagent="Õâ¸öÓÃ»§´úÀí±»·â½û";
-ddnsm.dyn_numhost="ÕÒµ½¹ı¶à»ò¹ıÉÙÖ÷»ú";
-ddnsm.dyn_dnserr="DNSÄÚ²¿´íÎó";
-ddnsm.dyn_911="Î´Öª´íÎó911";
-ddnsm.dyn_999="Î´Öª´íÎó999";
-ddnsm.dyn_donator="ËùÇëÇóµÄÌØĞÔÖĞÓĞÒ»¸öÊÇ½ö¶Ô¾èÔùÕß¿ÉÓÃµÄÌØĞÔ£¬Çë¾èÔù";
-ddnsm.dyn_uncode="Î´Öª·µ»Ø´úÂë";
+ddnsm.dyn_strange = "Ææ¹ÖµÄ·şÎñÆ÷ÏìÓ¦£¬ÄúÊÇ·ñÈ·¶¨ËùÁ¬½ÓµÄ·şÎñÆ÷ÊÇÕıÈ·µÄ£¿";
+ddnsm.dyn_good = "DDNS¸üĞÂ³É¹¦";
+ddnsm.dyn_noupdate = "µ±Ç°Ã»ÓĞ¸üĞÂµÄĞèÒª";
+ddnsm.dyn_nohost = "Ö÷»úÃû²»´æÔÚ";
+ddnsm.dyn_notfqdn = "Ö÷»úÃû²»ÕıÈ·";
+ddnsm.dyn_yours = "Ö÷»ú²»ÔÚÄúµÄ¿ØÖÆÏÂ";
+ddnsm.dyn_abuse = "Ö÷»ú±»ÒòÎªÊÜÅ°±»ÔİÊ±·â½û";
+ddnsm.dyn_nochg = "IPµØÖ·×Ô´ÓÉÏ´Î¸üĞÂÒÔÀ´Î´¸Ä±ä";
+ddnsm.dyn_badauth = "ÈÏÖ¤Ê§°Ü£¨ÓÃ»§Ãû»òÃÜÂë£©";
+ddnsm.dyn_badsys = "ÎŞĞ§µÄÏµÍ³²ÎÊı";
+ddnsm.dyn_badagent = "Õâ¸öÓÃ»§´úÀí±»·â½û";
+ddnsm.dyn_numhost = "ÕÒµ½¹ı¶à»ò¹ıÉÙÖ÷»ú";
+ddnsm.dyn_dnserr = "DNSÄÚ²¿´íÎó";
+ddnsm.dyn_911 = "Î´Öª´íÎó911";
+ddnsm.dyn_999 = "Î´Öª´íÎó999";
+ddnsm.dyn_donator = "ËùÇëÇóµÄÌØĞÔÖĞÓĞÒ»¸öÊÇ½ö¶Ô¾èÔùÕß¿ÉÓÃµÄÌØĞÔ£¬Çë¾èÔù";
+ddnsm.dyn_uncode = "Î´Öª·µ»Ø´úÂë";
 
-ddnsm.tzo_good="²Ù×÷Íê³É";
-ddnsm.tzo_noupdate="µ±Ç°²»ĞèÒª¸üĞÂ";
-ddnsm.tzo_notfqdn="ÎŞĞ§ÓòÃû";
-ddnsm.tzo_notmail="ÎŞĞ§Email";
-ddnsm.tzo_notact="ÎŞĞ§²Ù×÷";
-ddnsm.tzo_notkey="ÎŞĞ§ÃØÔ¿";
-ddnsm.tzo_notip="ÎŞĞ§IPµØÖ·";
-ddnsm.tzo_dupfqdn="ÖØ¸´µÄÓòÃû";
-ddnsm.tzo_fqdncre="Õâ¸öÓòÃû³ÆµÄÓòÃûÒÑ¾­±»½¨Á¢";
-ddnsm.tzo_expired="ÕÊºÅÒÑ¹ıÆÚ";
-ddnsm.tzo_error="Î´Öª·şÎñÆ÷´íÎó";
+ddnsm.tzo_good = "²Ù×÷Íê³É";
+ddnsm.tzo_noupdate = "µ±Ç°²»ĞèÒª¸üĞÂ";
+ddnsm.tzo_notfqdn = "ÎŞĞ§ÓòÃû";
+ddnsm.tzo_notmail = "ÎŞĞ§Email";
+ddnsm.tzo_notact = "ÎŞĞ§²Ù×÷";
+ddnsm.tzo_notkey = "ÎŞĞ§ÃØÔ¿";
+ddnsm.tzo_notip = "ÎŞĞ§IPµØÖ·";
+ddnsm.tzo_dupfqdn = "ÖØ¸´µÄÓòÃû";
+ddnsm.tzo_fqdncre = "Õâ¸öÓòÃû³ÆµÄÓòÃûÒÑ¾­±»½¨Á¢";
+ddnsm.tzo_expired = "ÕÊºÅÒÑ¹ıÆÚ";
+ddnsm.tzo_error = "Î´Öª·şÎñÆ÷´íÎó";
 
-ddnsm.zone_701="±¾ÕÊºÅµÄZoneÎ´ÉèÖÃ";
-ddnsm.zone_702="¸üĞÂÊ§°Ü";
-ddnsm.zone_703="±ØĞëÌá¹©<em>zones</em> »òÕß <em>host</em> Á½¸ö²ÎÊıÖĞµÄÒ»¸ö";
-ddnsm.zone_704="Zone±ØĞëÊÇÓĞĞ§µÄ <em>ÓÃµã·Ö¸îµÄ</em> internetÃû³Æ";
-ddnsm.zone_705="Zone²»ÄÜÎª¿Õ";
-ddnsm.zone_707="¶ÔÍ¬Ò»¸öÖ÷»ú/ip½øĞĞÁËÖØ¸´µÄ¸üĞÂ£¬Çëµ÷Õû¿Í»§¶ËÉèÖÃ";
-ddnsm.zone_201="Ã»ÓĞ¼ÇÂ¼ĞèÒª¸üĞÂ";
-ddnsm.zone_badauth="ÊÚÈ¨Ê§°Ü£¨ÓÃ»§Ãû»òÃÜÂë£©";
-ddnsm.zone_good="ZoneEdit¸üĞÂ³É¹¦";
-ddnsm.zone_strange="Ææ¹ÖµÄ·şÎñÆ÷ÏìÓ¦£¬ÄúÊÇ·ñÈ·¶¨ËùÁ¬½ÓµÄ·şÎñÆ÷ÊÇÕıÈ·µÄ£¿";
+ddnsm.zone_701 = "±¾ÕÊºÅµÄZoneÎ´ÉèÖÃ";
+ddnsm.zone_702 = "¸üĞÂÊ§°Ü";
+ddnsm.zone_703 = "±ØĞëÌá¹©<em>zones</em> »òÕß <em>host</em> Á½¸ö²ÎÊıÖĞµÄÒ»¸ö";
+ddnsm.zone_704 = "Zone±ØĞëÊÇÓĞĞ§µÄ <em>ÓÃµã·Ö¸îµÄ</em> internetÃû³Æ";
+ddnsm.zone_705 = "Zone²»ÄÜÎª¿Õ";
+ddnsm.zone_707 = "¶ÔÍ¬Ò»¸öÖ÷»ú/ip½øĞĞÁËÖØ¸´µÄ¸üĞÂ£¬Çëµ÷Õû¿Í»§¶ËÉèÖÃ";
+ddnsm.zone_201 = "Ã»ÓĞ¼ÇÂ¼ĞèÒª¸üĞÂ";
+ddnsm.zone_badauth = "ÊÚÈ¨Ê§°Ü£¨ÓÃ»§Ãû»òÃÜÂë£©";
+ddnsm.zone_good = "ZoneEdit¸üĞÂ³É¹¦";
+ddnsm.zone_strange = "Ææ¹ÖµÄ·şÎñÆ÷ÏìÓ¦£¬ÄúÊÇ·ñÈ·¶¨ËùÁ¬½ÓµÄ·şÎñÆ÷ÊÇÕıÈ·µÄ£¿";
 
-ddnsm.all_closed="DDNS·şÎñÆ÷µ±Ç°´¦ÓÚ¹Ø±Õ×´Ì¬";
-ddnsm.all_resolving="ÕıÔÚ½âÎöÓòÃû";
-ddnsm.all_errresolv="ÓòÃû½âÎöÊ§°Ü";
-ddnsm.all_connecting="ÕıÔÚÁ¬½Óµ½·şÎñÆ÷";
-ddnsm.all_connectfail="Á¬½Óµ½·şÎñÆ÷Ê§°Ü";
-ddnsm.all_disabled="DDNS¹¦ÄÜ±»½ûÓÃ";
-ddnsm.all_noip="Ã»ÓĞInternetÁ¬½Ó";
+ddnsm.all_closed = "DDNS·şÎñÆ÷µ±Ç°´¦ÓÚ¹Ø±Õ×´Ì¬";
+ddnsm.all_resolving = "ÕıÔÚ½âÎöÓòÃû";
+ddnsm.all_errresolv = "ÓòÃû½âÎöÊ§°Ü";
+ddnsm.all_connecting = "ÕıÔÚÁ¬½Óµ½·şÎñÆ÷";
+ddnsm.all_connectfail = "Á¬½Óµ½·şÎñÆ÷Ê§°Ü";
+ddnsm.all_disabled = "DDNS¹¦ÄÜ±»½ûÓÃ";
+ddnsm.all_noip = "Ã»ÓĞInternetÁ¬½Ó";
 
 //help container
 
-hddns.right2="DDNSÔÊĞíÄúÊ¹ÓÃÓòÃû´úÌæIPµØÖ·À´·ÃÎÊÄúµÄÍøÂç¡£ \
+hddns.right2 = "DDNSÔÊĞíÄúÊ¹ÓÃÓòÃû´úÌæIPµØÖ·À´·ÃÎÊÄúµÄÍøÂç¡£ \
 	Õâ¸ö·şÎñ¶¯Ì¬µÄ¹ÜÀíIPµØÖ·µÄ±ä¶¯£¬¸üĞÂÄúµÄÓòÃûĞÅÏ¢¡£ \
 	Äú±ØĞëÍ¨¹ıDynDNS.org£¬TZO.com»òZoneEdit.com½øĞĞ×¢²á¡£";
 
@@ -451,159 +458,170 @@ hddns.right2="DDNSÔÊĞíÄúÊ¹ÓÃÓòÃû´úÌæIPµØÖ·À´·ÃÎÊÄúµÄÍøÂç¡£ \
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-diag.titl=" - Õï¶Ï";
-diag.h2="Õï¶Ï";
-diag.legend="ÃüÁîÍâ¿Ç";
-diag.cmd="ÃüÁî";
-diag.startup="Æô¶¯";
-diag.firewall="·À»ğÇ½";
+diag.titl = " - Õï¶Ï";
+diag.h2 = "Õï¶Ï";
+diag.legend = "ÃüÁîÍâ¿Ç";
+diag.cmd = "ÃüÁî";
+diag.startup = "Æô¶¯";
+diag.firewall = "·À»ğÇ½";
 
 //help container
 
-hdiag.right2="Äú¿ÉÒÔÍ¨¹ıWeb½çÃæÔËĞĞÃüÁîĞĞ¡£½«ÄúµÄÃüÁîÌîÈëÎÄ±¾ÇøÓò²¢ÇÒµã»÷ <em>" + sbutton.runcmd + "</em> °´Å¥½øĞĞÌá½»¡£";
+hdiag.right2 =
+  "Äú¿ÉÒÔÍ¨¹ıWeb½çÃæÔËĞĞÃüÁîĞĞ¡£½«ÄúµÄÃüÁîÌîÈëÎÄ±¾ÇøÓò²¢ÇÒµã»÷ <em>" +
+  sbutton.runcmd + "</em> °´Å¥½øĞĞÌá½»¡£";
 
 
 
 // ******************************************* DMZ.asp *******************************************//
 
 
-dmz.titl=" - DMZ";
-dmz.h2="·Ç¾üÊÂÇø (DMZ)";
-dmz.legend="DMZ";
-dmz.serv="Ê¹ÓÃDMZ";
-dmz.host="DMZÖ÷»úIPµØÖ·";
+dmz.titl = " - DMZ";
+dmz.h2 = "·Ç¾üÊÂÇø (DMZ)";
+dmz.legend = "DMZ";
+dmz.serv = "Ê¹ÓÃDMZ";
+dmz.host = "DMZÖ÷»úIPµØÖ·";
 
 
 //help container
 
-hdmz.right2="ÆôÓÃÕâ¸öÑ¡Ïî½«Ê¹ÌØ¶¨µÄÖ÷»ú±»±©Â¶¸øInternet¡£ËùÓĞµÄ¶Ë¿Ú¶¼¿ÉÒÔ±»´ÓInternet·ÃÎÊ¡£";
+hdmz.right2 =
+  "ÆôÓÃÕâ¸öÑ¡Ïî½«Ê¹ÌØ¶¨µÄÖ÷»ú±»±©Â¶¸øInternet¡£ËùÓĞµÄ¶Ë¿Ú¶¼¿ÉÒÔ±»´ÓInternet·ÃÎÊ¡£";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-factdef.titl=" - ³ö³§Ä¬ÈÏÉèÖÃ";
-factdef.h2="³ö³§Ä¬ÈÏÉèÖÃ";
-factdef.legend="¸´Î»Â·ÓÉÆ÷ÉèÖÃ";
-factdef.restore="»Ö¸´³ö³§Ä¬ÈÏÉèÖÃ";
+factdef.titl = " - ³ö³§Ä¬ÈÏÉèÖÃ";
+factdef.h2 = "³ö³§Ä¬ÈÏÉèÖÃ";
+factdef.legend = "¸´Î»Â·ÓÉÆ÷ÉèÖÃ";
+factdef.restore = "»Ö¸´³ö³§Ä¬ÈÏÉèÖÃ";
 
-factdef.mess1="¾¯¸æ£¡Èç¹ûÄúµã»÷È·¶¨£¬´ËÉè±¸½«»á±»¸´Î»µ½³ö³§Ä¬ÈÏÉèÖÃ£¬ËùÓĞÒÔÍùµÄÉèÖÃ¶¼»á±»Çå³ı¡£";
+factdef.mess1 =
+  "¾¯¸æ£¡Èç¹ûÄúµã»÷È·¶¨£¬´ËÉè±¸½«»á±»¸´Î»µ½³ö³§Ä¬ÈÏÉèÖÃ£¬ËùÓĞÒÔÍùµÄÉèÖÃ¶¼»á±»Çå³ı¡£";
 
 //help container
 
-hfactdef.right1="´Ë²Ù×÷½«»á½«ËùÓĞÉèÖÃ¸´Î»»Ø³ö³§Ä¬ÈÏÉèÖÃ¡£ÄúËù×öµÄËùÓĞÉèÖÃ¶¼½«±»Çå³ı¡£";
+hfactdef.right1 =
+  "´Ë²Ù×÷½«»á½«ËùÓĞÉèÖÃ¸´Î»»Ø³ö³§Ä¬ÈÏÉèÖÃ¡£ÄúËù×öµÄËùÓĞÉèÖÃ¶¼½«±»Çå³ı¡£";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
 
-filterIP.titl=" - PCÁĞ±í";
-filterIP.h2="PCÁĞ±í";
-filterIP.h3="ÒÔÈçÏÂ¸ñÊ½ÊäÈëPCµÄMACµØÖ·£ºxx:xx:xx:xx:xx:xx";
-filterIP.h32="ÊäÈëPCµÄIPµØÖ·";
-filterIP.h33="ÊäÈëPCµÄIP·¶Î§";
-filterIP.ip_range="IP·¶Î§";
+filterIP.titl = " - PCÁĞ±í";
+filterIP.h2 = "PCÁĞ±í";
+filterIP.h3 = "ÒÔÈçÏÂ¸ñÊ½ÊäÈëPCµÄMACµØÖ·£ºxx:xx:xx:xx:xx:xx";
+filterIP.h32 = "ÊäÈëPCµÄIPµØÖ·";
+filterIP.h33 = "ÊäÈëPCµÄIP·¶Î§";
+filterIP.ip_range = "IP·¶Î§";
 
 
 
 // ******************************************* Filter.asp *******************************************//
 
-filter.titl=" - ·ÃÎÊÏŞÖÆ";
-filter.h2="Internet·ÃÎÊ";
-filter.legend="·ÃÎÊ²ßÂÔ";
-filter.restore="»Ö¸´³ö³§Ä¬ÈÏÉèÖÃ";
-filter.pol="²ßÂÔ";
-filter.polname="²ßÂÔÃû³Æ";
-filter.pcs="PC";
-filter.polallow="ÔÚÑ¡¶¨µÄÈÕÆÚºÍÊ±¼äÔÊĞíInternet·ÃÎÊ¡£";
-filter.legend2="ÈÕÆÚ";
-filter.time="Ê±¼ä";
-filter.h24="24Ğ¡Ê±";
-filter.legend3="±»·â½ûµÄ·şÎñ";
-filter.catchall="²¶»ñËùÓĞP2PĞ­Òé";
-filter.legend4="Í¨¹ıURLµØÖ··âËøWebÕ¾µã";
-filter.legend5="Í¨¹ı¹Ø¼ü×Ö·âËøWebÕ¾µã";
+filter.titl = " - ·ÃÎÊÏŞÖÆ";
+filter.h2 = "Internet·ÃÎÊ";
+filter.legend = "·ÃÎÊ²ßÂÔ";
+filter.restore = "»Ö¸´³ö³§Ä¬ÈÏÉèÖÃ";
+filter.pol = "²ßÂÔ";
+filter.polname = "²ßÂÔÃû³Æ";
+filter.pcs = "PC";
+filter.polallow = "ÔÚÑ¡¶¨µÄÈÕÆÚºÍÊ±¼äÔÊĞíInternet·ÃÎÊ¡£";
+filter.legend2 = "ÈÕÆÚ";
+filter.time = "Ê±¼ä";
+filter.h24 = "24Ğ¡Ê±";
+filter.legend3 = "±»·â½ûµÄ·şÎñ";
+filter.catchall = "²¶»ñËùÓĞP2PĞ­Òé";
+filter.legend4 = "Í¨¹ıURLµØÖ··âËøWebÕ¾µã";
+filter.legend5 = "Í¨¹ı¹Ø¼ü×Ö·âËøWebÕ¾µã";
 
-filter.mess1="É¾³ı´Ë²ßÂÔ£¿";
-filter.mess2="Äú±ØĞëÖÁÉÙÑ¡ÔñÒ»¸öÈÕÆÚ¡£";
-filter.mess3="½áÊøÊ±¼ä±ØĞë´óÓÚÆğÊ¼Ê±¼ä¡£";
+filter.mess1 = "É¾³ı´Ë²ßÂÔ£¿";
+filter.mess2 = "Äú±ØĞëÖÁÉÙÑ¡ÔñÒ»¸öÈÕÆÚ¡£";
+filter.mess3 = "½áÊøÊ±¼ä±ØĞë´óÓÚÆğÊ¼Ê±¼ä¡£";
 
 //help container
 
-hfilter.right2="Äú¿ÉÒÔ×î¶à¶¨Òå10Ìõ·ÃÎÊ²ßÂÔ¡£µã»÷ <em>" + sbutton.del + "</em> °´Å¥É¾³ıÒ»Ìõ²ßÂÔ£¬»òÕßµã»÷ <em>" + sbutton.summary + "</em> °´Å¥²ì¿´²ßÂÔ×ÛÊö¡£";
-hfilter.right4="ÆôÓÃ»ò½ûÓÃÒ»Ìõ²ßÂÔ¡£";
-hfilter.right6="Äú¿ÉÒÔÎªÄúµÄ²ßÂÔÖ¸¶¨Ò»¸öÃû³Æ¡£";
-hfilter.right8="ÇëÑ¡ÔñÄúÏ£ÍûÄúµÄ²ßÂÔ±»Ó¦ÓÃµÄÈÕÆÚ¡£";
-hfilter.right10="ÇëÊäÈëÄúÏ£ÍûÄúµÄ²ßÂÔ±»Ó¦ÓÃµÄÊ±¼ä¡£";
-hfilter.right12="Äú¿ÉÒÔÑ¡Ôñ·â½ûÌØ¶¨µÄ·şÎñ¡£µã»÷ <em>" + sbutton.filterSer + "</em> °´Å¥¸ü¸ÄÕâĞ©ÉèÖÃ¡£";
-hfilter.right14="Äú¿ÉÒÔÍ¨¹ıÊäÈëÌØ¶¨WebÕ¾µãµÄURLÀ´·â½û¶ÔÆä·ÃÎÊ¡£";
-hfilter.right16="Äú¿ÉÒÔÍ¨¹ıÊäÈë°üº¬ÔÚÌØ¶¨WebÕ¾µãÒ³ÃæÖĞµÄ¹Ø¼ü×ÖÀ´·â½û¶ÔÆä·ÃÎÊ¡£";;
+hfilter.right2 =
+  "Äú¿ÉÒÔ×î¶à¶¨Òå10Ìõ·ÃÎÊ²ßÂÔ¡£µã»÷ <em>" + sbutton.del +
+  "</em> °´Å¥É¾³ıÒ»Ìõ²ßÂÔ£¬»òÕßµã»÷ <em>" + sbutton.summary +
+  "</em> °´Å¥²ì¿´²ßÂÔ×ÛÊö¡£";
+hfilter.right4 = "ÆôÓÃ»ò½ûÓÃÒ»Ìõ²ßÂÔ¡£";
+hfilter.right6 = "Äú¿ÉÒÔÎªÄúµÄ²ßÂÔÖ¸¶¨Ò»¸öÃû³Æ¡£";
+hfilter.right8 = "ÇëÑ¡ÔñÄúÏ£ÍûÄúµÄ²ßÂÔ±»Ó¦ÓÃµÄÈÕÆÚ¡£";
+hfilter.right10 = "ÇëÊäÈëÄúÏ£ÍûÄúµÄ²ßÂÔ±»Ó¦ÓÃµÄÊ±¼ä¡£";
+hfilter.right12 =
+  "Äú¿ÉÒÔÑ¡Ôñ·â½ûÌØ¶¨µÄ·şÎñ¡£µã»÷ <em>" + sbutton.filterSer +
+  "</em> °´Å¥¸ü¸ÄÕâĞ©ÉèÖÃ¡£";
+hfilter.right14 = "Äú¿ÉÒÔÍ¨¹ıÊäÈëÌØ¶¨WebÕ¾µãµÄURLÀ´·â½û¶ÔÆä·ÃÎÊ¡£";
+hfilter.right16 =
+  "Äú¿ÉÒÔÍ¨¹ıÊäÈë°üº¬ÔÚÌØ¶¨WebÕ¾µãÒ³ÃæÖĞµÄ¹Ø¼ü×ÖÀ´·â½û¶ÔÆä·ÃÎÊ¡£";;
 
 
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-filterSum.titl=" - ·ÃÎÊÏŞÖÆ×ÛÀÀ";
-filterSum.h2="Internet²ßÂÔ×ÛÀÀ";
-filterSum.polnum="ĞòºÅ";
-filterSum.polday="£¨Ã¿ÌìµÄ£©Ê±¼ä";
+filterSum.titl = " - ·ÃÎÊÏŞÖÆ×ÛÀÀ";
+filterSum.h2 = "Internet²ßÂÔ×ÛÀÀ";
+filterSum.polnum = "ĞòºÅ";
+filterSum.polday = "£¨Ã¿ÌìµÄ£©Ê±¼ä";
 
 
 
 // ******************************************* Firewall.asp *******************************************//
 
 
-firewall.titl=" - ·À»ğÇ½";
-firewall.h2="°²È«";
-firewall.legend="·À»ğÇ½±£»¤";
-firewall.firewall="SPI·À»ğÇ½";
-firewall.legend2="¸½¼ÓµÄ¹ıÂËÆ÷";
-firewall.proxy="¹ıÂË´úÀí";
-firewall.cookies="¹ıÂËCookies";
-firewall.applet="¹ıÂËJava Applets£¨JavaĞ¡Ó¦ÓÃ³ÌĞò£©";
-firewall.activex="¹ıÂËActiveX";
-firewall.legend3="·â½ûÀ´×ÔWAN¿ÚµÄÇëÇó";
-firewall.ping="·â½ûÀ´×ÔInternetµÄÄäÃûÇëÇó";
-firewall.muticast="¹ıÂË¶à²¥";
-filter.nat="¹ıÂËInternet NATÖØ¶¨Ïò";
-filter.port113="¹ıÂËIDENT£¨113ºÅ¶Ë¿Ú£©";
+firewall.titl = " - ·À»ğÇ½";
+firewall.h2 = "°²È«";
+firewall.legend = "·À»ğÇ½±£»¤";
+firewall.firewall = "SPI·À»ğÇ½";
+firewall.legend2 = "¸½¼ÓµÄ¹ıÂËÆ÷";
+firewall.proxy = "¹ıÂË´úÀí";
+firewall.cookies = "¹ıÂËCookies";
+firewall.applet = "¹ıÂËJava Applets£¨JavaĞ¡Ó¦ÓÃ³ÌĞò£©";
+firewall.activex = "¹ıÂËActiveX";
+firewall.legend3 = "·â½ûÀ´×ÔWAN¿ÚµÄÇëÇó";
+firewall.ping = "·â½ûÀ´×ÔInternetµÄÄäÃûÇëÇó";
+firewall.muticast = "¹ıÂË¶à²¥";
+filter.nat = "¹ıÂËInternet NATÖØ¶¨Ïò";
+filter.port113 = "¹ıÂËIDENT£¨113ºÅ¶Ë¿Ú£©";
 
 //help container
 
-hfirewall.right2="ÆôÓÃ»ò½ûÓÃSPI·À»ğÇ½¡£";
+hfirewall.right2 = "ÆôÓÃ»ò½ûÓÃSPI·À»ğÇ½¡£";
 
 
 
 // ******************************************* Forward.asp *******************************************//
 
-prforward.titl=" - ¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
-prforward.h2="¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
-prforward.legend="×ª·¢£¨Ó³Éä£©";
-prforward.app="Ó¦ÓÃ³ÌĞò";
+prforward.titl = " - ¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
+prforward.h2 = "¶Ë¿Ú¶Î×ª·¢£¨Ó³Éä£©";
+prforward.legend = "×ª·¢£¨Ó³Éä£©";
+prforward.app = "Ó¦ÓÃ³ÌĞò";
 
 //help container
 
-hprforward.right2="Ä³Ğ©Ó¦ÓÃ³ÌĞò¿ÉÄÜĞèÒª´ò¿ªÌØ¶¨¶Ë¿Ú²ÅÄÜÕı³£¹¤×÷¡£ \
+hprforward.right2 = "Ä³Ğ©Ó¦ÓÃ³ÌĞò¿ÉÄÜĞèÒª´ò¿ªÌØ¶¨¶Ë¿Ú²ÅÄÜÕı³£¹¤×÷¡£ \
 	¾ÙÀıÀ´Ëµ£¬ÕâĞ©Ó¦ÓÃ³ÌĞò°üÀ¨·şÎñÆ÷Èí¼şºÍÒ»Ğ©ÔÚÏßÓÎÏ·¡£ \
 	µ±´ÓInternet½ÓÊÕµ½Ò»¸öÕë¶ÔÌØ¶¨¶Ë¿ÚµÄÇëÇóÊ±£¬Â·ÓÉÆ÷½«»á°ÑÕâĞ©Êı¾İÂ·ÓÉµ½ÄúÖ¸¶¨µÄ¼ÆËã»ú¡£ \
 	´¦ÓÚ°²È«µÄ¿¼ÂÇ£¬Äú¿ÉÄÜÏëÖ»¶ÔÄúĞèÒªÊ¹ÓÃµÄ¶Ë¿ÚÉèÖÃ¶Ë¿Ú×ª·¢£¨Ó³Éä£©£¬ \
-	Í¬Ê±£¬ÔÚÄúÍê³ÉÖ®ºó£¬È¡Ïû¶Ô <em>" + share.enable +"</em> ¸´Ñ¡¿òµÄÑ¡¶¨¡£";
+	Í¬Ê±£¬ÔÚÄúÍê³ÉÖ®ºó£¬È¡Ïû¶Ô <em>" + share.enable + "</em> ¸´Ñ¡¿òµÄÑ¡¶¨¡£";
 
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-pforward.titl=" - ¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
-pforward.h2="¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
-pforward.legend="×ª·¢£¨Ó³Éä£©";
-pforward.app="Ó¦ÓÃ³ÌĞò";
-pforward.from="Ô´¶Ë¿Ú";
-pforward.to="Ä¿µÄ¶Ë¿Ú";
+pforward.titl = " - ¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
+pforward.h2 = "¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
+pforward.legend = "×ª·¢£¨Ó³Éä£©";
+pforward.app = "Ó¦ÓÃ³ÌĞò";
+pforward.from = "Ô´¶Ë¿Ú";
+pforward.to = "Ä¿µÄ¶Ë¿Ú";
 
 //help container
 
-hpforward.right2="Ä³Ğ©Ó¦ÓÃ³ÌĞò¿ÉÄÜĞèÒª´ò¿ªÌØ¶¨¶Ë¿Ú²ÅÄÜÕı³£¹¤×÷¡£ \
+hpforward.right2 = "Ä³Ğ©Ó¦ÓÃ³ÌĞò¿ÉÄÜĞèÒª´ò¿ªÌØ¶¨¶Ë¿Ú²ÅÄÜÕı³£¹¤×÷¡£ \
 	¾ÙÀıÀ´Ëµ£¬ÕâĞ©Ó¦ÓÃ³ÌĞò°üÀ¨·şÎñÆ÷Èí¼şºÍÒ»Ğ©ÔÚÏßÓÎÏ·¡£ \
 	µ±´ÓInternet½ÓÊÕµ½Ò»¸öÕë¶ÔÌØ¶¨¶Ë¿ÚµÄÇëÇóÊ±£¬Â·ÓÉÆ÷½«»á°ÑÕâĞ©Êı¾İÂ·ÓÉµ½ÄúÖ¸¶¨µÄ¼ÆËã»ú¡£ \
 	´¦ÓÚ°²È«µÄ¿¼ÂÇ£¬Äú¿ÉÄÜÏëÖ»¶ÔÄúĞèÒªÊ¹ÓÃµÄ¶Ë¿ÚÉèÖÃ¶Ë¿Ú×ª·¢£¨Ó³Éä£©£¬ \
@@ -613,154 +631,155 @@ hpforward.right2="Ä³Ğ©Ó¦ÓÃ³ÌĞò¿ÉÄÜĞèÒª´ò¿ªÌØ¶¨¶Ë¿Ú²ÅÄÜÕı³£¹¤×÷¡£ \
 
 // ******************************************* Hotspot.asp *******************************************//
 
-hotspot.titl=" - Hotspot";
-hotspot.h2="HotspotÃÅ»§";
-hotspot.legend="Chillispot";
-hotspot.hotspot="Chillispot";
-hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
-hotspot.pserver="Ö÷Radius·şÎñÆ÷IP/DNS";
-hotspot.bserver="±¸·İRadiusIP/DNS";
-hotspot.dns="DNS IP";
-hotspot.url="ÖØ¶¨ÏòURL";
-hotspot.dhcp="DHCP½Ó¿Ú";
-hotspot.radnas="Radius NAS ID";
-hotspot.uam="UAMÃØÃÜ";
-hotspot.uamdns="UAMÈÎÒâDNS";
-hotspot.allowuam="UAM±»ÔÊĞí";
-hotspot.macauth="MACauth";
-hotspot.option="¸½¼ÓµÄChillispotÑ¡Ïî";
-hotspot.fon_chilli="Chillispot±¾µØÓÃ»§¹ÜÀí";
-hotspot.fon_user="ÓÃ»§ÁĞ±í";
-hotspot.http_legend="HTTPÖØ¶¨Ïò";
-hotspot.http_srv="HTTPÖØ¶¨Ïò";
-hotspot.http_ip="HTTPÄ¿±êIP";
-hotspot.http_port="HTTPÄ¿±ê¶Ë¿Ú";
-hotspot.http_net="HTTPÔ´ÍøÂç";
-hotspot.nocat_legend="NoCatSplash";
-hotspot.nocat_srv="NoCatSplash";
-hotspot.nocat_gateway="Íø¹ØÃû³Æ";
-hotspot.nocat_home="Ö÷Ò³";
-hotspot.nocat_allowweb="±»Ğí¿ÉµÄWebÖ÷»úÁĞ±í";
-hotspot.nocat_docroot="ÎÄµµ¸ù£¨Ä¿Â¼£©";
-hotspot.nocat_splash="Splash URL";
-hotspot.nocat_port="ÅÅ³ıµÄ¶Ë¿Ú";
-hotspot.nocat_timeout="µÇÂ¼³¬Ê±";
-hotspot.nocat_verbose="Ï¸ÖÂ³Ì¶È";
-hotspot.nocat_route="½öÂ·ÓÉ";
-hotspot.nocat_MAClist="MAC White List";
-hotspot.smtp_legend="SMTPÖØ¶¨Ïò";
-hotspot.smtp_srv="SMTPÖØ¶¨Ïò";
-hotspot.smtp_ip="SMTPÄ¿±êIP";
-hotspot.smtp_net="SMTPÔ´ÍøÂç";
-hotspot.shat_legend="ÁãIPÅäÖÃ";
-hotspot.shat_srv="ÁãIPÅäÖÃ";
-hotspot.shat_srv2="ÁãIPÅäÖÃÒÑ¿ªÆô";
-hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik´úÀí";
-hotspot.sputnik_id="Sputnik·şÎñÆ÷ID";
-hotspot.sputnik_instant="Ê¹ÓÃSputnik¼´Ê±ÉèÖÃ";
-hotspot.sputnik_express="Ê¹ÓÃSputnikNet Express";
-hotspot.sputnik_about="¹ØÓÚSputnik";
+hotspot.titl = " - Hotspot";
+hotspot.h2 = "HotspotÃÅ»§";
+hotspot.legend = "Chillispot";
+hotspot.hotspot = "Chillispot";
+hotspot.nowifibridge = "Separate Wifi from the LAN Bridge";
+hotspot.pserver = "Ö÷Radius·şÎñÆ÷IP/DNS";
+hotspot.bserver = "±¸·İRadiusIP/DNS";
+hotspot.dns = "DNS IP";
+hotspot.url = "ÖØ¶¨ÏòURL";
+hotspot.dhcp = "DHCP½Ó¿Ú";
+hotspot.radnas = "Radius NAS ID";
+hotspot.uam = "UAMÃØÃÜ";
+hotspot.uamdns = "UAMÈÎÒâDNS";
+hotspot.allowuam = "UAM±»ÔÊĞí";
+hotspot.macauth = "MACauth";
+hotspot.option = "¸½¼ÓµÄChillispotÑ¡Ïî";
+hotspot.fon_chilli = "Chillispot±¾µØÓÃ»§¹ÜÀí";
+hotspot.fon_user = "ÓÃ»§ÁĞ±í";
+hotspot.http_legend = "HTTPÖØ¶¨Ïò";
+hotspot.http_srv = "HTTPÖØ¶¨Ïò";
+hotspot.http_ip = "HTTPÄ¿±êIP";
+hotspot.http_port = "HTTPÄ¿±ê¶Ë¿Ú";
+hotspot.http_net = "HTTPÔ´ÍøÂç";
+hotspot.nocat_legend = "NoCatSplash";
+hotspot.nocat_srv = "NoCatSplash";
+hotspot.nocat_gateway = "Íø¹ØÃû³Æ";
+hotspot.nocat_home = "Ö÷Ò³";
+hotspot.nocat_allowweb = "±»Ğí¿ÉµÄWebÖ÷»úÁĞ±í";
+hotspot.nocat_docroot = "ÎÄµµ¸ù£¨Ä¿Â¼£©";
+hotspot.nocat_splash = "Splash URL";
+hotspot.nocat_port = "ÅÅ³ıµÄ¶Ë¿Ú";
+hotspot.nocat_timeout = "µÇÂ¼³¬Ê±";
+hotspot.nocat_verbose = "Ï¸ÖÂ³Ì¶È";
+hotspot.nocat_route = "½öÂ·ÓÉ";
+hotspot.nocat_MAClist = "MAC White List";
+hotspot.smtp_legend = "SMTPÖØ¶¨Ïò";
+hotspot.smtp_srv = "SMTPÖØ¶¨Ïò";
+hotspot.smtp_ip = "SMTPÄ¿±êIP";
+hotspot.smtp_net = "SMTPÔ´ÍøÂç";
+hotspot.shat_legend = "ÁãIPÅäÖÃ";
+hotspot.shat_srv = "ÁãIPÅäÖÃ";
+hotspot.shat_srv2 = "ÁãIPÅäÖÃÒÑ¿ªÆô";
+hotspot.sputnik_legend = "Sputnik";
+hotspot.sputnik_srv = "Sputnik´úÀí";
+hotspot.sputnik_id = "Sputnik·şÎñÆ÷ID";
+hotspot.sputnik_instant = "Ê¹ÓÃSputnik¼´Ê±ÉèÖÃ";
+hotspot.sputnik_express = "Ê¹ÓÃSputnikNet Express";
+hotspot.sputnik_about = "¹ØÓÚSputnik";
 
 
 
 // ******************************************* Info.htm *******************************************//
 
-info.titl=" - ĞÅÏ¢";
-info.h2="ÏµÍ³ĞÅÏ¢";
-info.wlanmac="ÎŞÏßMAC";
-info.srv="·şÎñ";
+info.titl = " - ĞÅÏ¢";
+info.h2 = "ÏµÍ³ĞÅÏ¢";
+info.wlanmac = "ÎŞÏßMAC";
+info.srv = "·şÎñ";
 
 
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
-idx_h.srv="ĞÄÌø·şÎñÆ÷";
-idx_h.con_strgy="Á¬½Ó²ßÂÔ";
-idx_h.max_idle="°´ĞèÁ¬½Ó£º×î´ó¿ÕÏĞÊ±¼ä";
-idx_h.alive="±£³Ö»î¶¯£ºÖØ²¦¼äÆÚ";
+idx_h.srv = "ĞÄÌø·şÎñÆ÷";
+idx_h.con_strgy = "Á¬½Ó²ßÂÔ";
+idx_h.max_idle = "°´ĞèÁ¬½Ó£º×î´ó¿ÕÏĞÊ±¼ä";
+idx_h.alive = "±£³Ö»î¶¯£ºÖØ²¦¼äÆÚ";
 
 
 
 // ******************************************* index_l2tp.asp *******************************************//
 
 
-idx_l.srv="L2TP·şÎñÆ÷";
+idx_l.srv = "L2TP·şÎñÆ÷";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
 
 
-idx_pppoe.use_rp="Ê¹ÓÃRP PPPoE";
+idx_pppoe.use_rp = "Ê¹ÓÃRP PPPoE";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
 
-idx_pptp.srv="Ê¹ÓÃDHCP";
-idx_pptp.wan_ip="Internet IPµØÖ·";
-idx_pptp.gateway="Íø¹Ø£¨PPTP·şÎñ£©";
-idx_pptp.encrypt="PPTP¼ÓÃÜ";
+idx_pptp.srv = "Ê¹ÓÃDHCP";
+idx_pptp.wan_ip = "Internet IPµØÖ·";
+idx_pptp.gateway = "Íø¹Ø£¨PPTP·şÎñ£©";
+idx_pptp.encrypt = "PPTP¼ÓÃÜ";
 
 
 
 // ******************************************* index_static.asp *******************************************//
 
-idx_static.dns="¾²Ì¬DNS";
+idx_static.dns = "¾²Ì¬DNS";
 
 
 
 // ******************************************* index.asp *******************************************//
 
-idx.titl=" - ÉèÖÃ";
-idx.h2="InternetÉèÖÃ";
-idx.h22="ÎŞÏßÉèÖÃ";
-idx.legend="InternetÁ¬½ÓÀàĞÍ";
-idx.conn_type="Á¬½ÓÀàĞÍ";
-idx.stp="STP";
-idx.stp_mess="(¶ÔCOMCAST ISP½ûÓÃ)";
-idx.optional="¿ÉÑ¡ÉèÖÃ£¨Ä³Ğ©ISPĞèÒªÕâĞ©ÉèÖÃ£©";
-idx.mtu="MTU";
-idx.h23="ÍøÂçÉèÖÃ";
-idx.routerip="Â·ÓÉÆ÷IP";
-idx.lanip="±¾µØIPµØÖ·";
-idx.legend2="WAN¶Ë¿Ú";
-idx.wantoswitch="½«WAN¿ÚÖ¸¶¨¸ø½»»»»ú";
-idx.legend3="Ê±¼äÉèÖÃ";
-idx.timeset="Ê±Çø / ÏÄÁîÊ± (DST)";
-idx.localtime="Ê¹ÓÃµ±µØÊ±¼ä";
-idx.static_ip="¾²Ì¬IP";
-idx.dhcp="×Ô¶¯ÅäÖÃ - DHCP";
-idx.dhcp_legend="ÍøÂçµØÖ··şÎñÆ÷ÉèÖÃ (DHCP)";
-idx.dhcp_type="DHCPÀàĞÍ";
-idx.dhcp_srv="DHCP·şÎñÆ÷";
-idx.dhcp_fwd="DHCP×ª·¢Æ÷";
-idx.dhcp_start="ÆğÊ¼IPµØÖ·";
-idx.dhcp_end="ÖÕÖ¹IPµØÖ·";		//used in Status_Lan.asp
-idx.dhcp_maxusers="×î´óDHCPÓÃ»§Êı";
-idx.dhcp_lease="¿Í»§¶Ë×âÓÃÊ±¼ä";
-idx.dhcp_dnsmasq="ÎªDHCPÊ¹ÓÃDNSMasq";
-idx.dns_dnsmasq="ÎªDNSÊ¹ÓÃDNSMasq";
-idx.auth_dnsmasq="ÒÔDHCPÎª×¼";
-idx.summt_opt1="none";
-idx.summt_opt2="first Sun Apr - last Sun Oct";
-idx.summt_opt3="last Sun Mar - last Sun Oct";
-idx.summt_opt4="last Sun Oct - last Sun Mar";
+idx.titl = " - ÉèÖÃ";
+idx.h2 = "InternetÉèÖÃ";
+idx.h22 = "ÎŞÏßÉèÖÃ";
+idx.legend = "InternetÁ¬½ÓÀàĞÍ";
+idx.conn_type = "Á¬½ÓÀàĞÍ";
+idx.stp = "STP";
+idx.stp_mess = "(¶ÔCOMCAST ISP½ûÓÃ)";
+idx.optional = "¿ÉÑ¡ÉèÖÃ£¨Ä³Ğ©ISPĞèÒªÕâĞ©ÉèÖÃ£©";
+idx.mtu = "MTU";
+idx.h23 = "ÍøÂçÉèÖÃ";
+idx.routerip = "Â·ÓÉÆ÷IP";
+idx.lanip = "±¾µØIPµØÖ·";
+idx.legend2 = "WAN¶Ë¿Ú";
+idx.wantoswitch = "½«WAN¿ÚÖ¸¶¨¸ø½»»»»ú";
+idx.legend3 = "Ê±¼äÉèÖÃ";
+idx.timeset = "Ê±Çø / ÏÄÁîÊ± (DST)";
+idx.localtime = "Ê¹ÓÃµ±µØÊ±¼ä";
+idx.static_ip = "¾²Ì¬IP";
+idx.dhcp = "×Ô¶¯ÅäÖÃ - DHCP";
+idx.dhcp_legend = "ÍøÂçµØÖ··şÎñÆ÷ÉèÖÃ (DHCP)";
+idx.dhcp_type = "DHCPÀàĞÍ";
+idx.dhcp_srv = "DHCP·şÎñÆ÷";
+idx.dhcp_fwd = "DHCP×ª·¢Æ÷";
+idx.dhcp_start = "ÆğÊ¼IPµØÖ·";
+idx.dhcp_end = "ÖÕÖ¹IPµØÖ·";	//used in Status_Lan.asp
+idx.dhcp_maxusers = "×î´óDHCPÓÃ»§Êı";
+idx.dhcp_lease = "¿Í»§¶Ë×âÓÃÊ±¼ä";
+idx.dhcp_dnsmasq = "ÎªDHCPÊ¹ÓÃDNSMasq";
+idx.dns_dnsmasq = "ÎªDNSÊ¹ÓÃDNSMasq";
+idx.auth_dnsmasq = "ÒÔDHCPÎª×¼";
+idx.summt_opt1 = "none";
+idx.summt_opt2 = "first Sun Apr - last Sun Oct";
+idx.summt_opt3 = "last Sun Mar - last Sun Oct";
+idx.summt_opt4 = "last Sun Oct - last Sun Mar";
 
 
 
 //help container
 
-hidx.right2="ÕâĞ©ÉèÖÃ×î¾­³£±»ÓĞÏßµçÊÓ²Ù×÷ÈËÔ±Ê¹ÓÃ¡£";
-hidx.right4="ÇëÊäÈëÄúµÄISPÌá¹©µÄÖ÷»úÃû¡£";
-hidx.right6="ÇëÊäÈëÄúµÄISPÌá¹©µÄÓòÃû¡£";
-hidx.right8="ÕâÊÇÂ·ÓÉÆ÷µÄµØÖ·¡£";
-hidx.right10="ÕâÊÇÂ·ÓÉÆ÷µÄ×ÓÍøÑÚÂë¡£";
-hidx.right12="ÔÊĞíÂ·ÓÉÆ÷¹ÜÀíÄúµÄIPµØÖ·¡£";
-hidx.right14="ÄúÏ£ÍûÆğÊ¼µÄµØÖ·¡£";
-hidx.right16="Äú¿ÉÒÔÏŞÖÆÄúµÄÂ·ÓÉÆ÷Ìá½»µÄµØÖ·¸öÊı¡£";
-hidx.right18="ÇëÑ¡ÔñÄúËùÔÚµÄÊ±ÇøºÍÏÄÁîÊ±£¨DST£©ÆÚ¼ä¡£±¾Â·ÓÉÆ÷¿ÉÒÔÊ¹ÓÃ±¾µØÊ±¼ä»òÕßUTCÊ±¼ä¡£";
+hidx.right2 = "ÕâĞ©ÉèÖÃ×î¾­³£±»ÓĞÏßµçÊÓ²Ù×÷ÈËÔ±Ê¹ÓÃ¡£";
+hidx.right4 = "ÇëÊäÈëÄúµÄISPÌá¹©µÄÖ÷»úÃû¡£";
+hidx.right6 = "ÇëÊäÈëÄúµÄISPÌá¹©µÄÓòÃû¡£";
+hidx.right8 = "ÕâÊÇÂ·ÓÉÆ÷µÄµØÖ·¡£";
+hidx.right10 = "ÕâÊÇÂ·ÓÉÆ÷µÄ×ÓÍøÑÚÂë¡£";
+hidx.right12 = "ÔÊĞíÂ·ÓÉÆ÷¹ÜÀíÄúµÄIPµØÖ·¡£";
+hidx.right14 = "ÄúÏ£ÍûÆğÊ¼µÄµØÖ·¡£";
+hidx.right16 = "Äú¿ÉÒÔÏŞÖÆÄúµÄÂ·ÓÉÆ÷Ìá½»µÄµØÖ·¸öÊı¡£";
+hidx.right18 =
+  "ÇëÑ¡ÔñÄúËùÔÚµÄÊ±ÇøºÍÏÄÁîÊ±£¨DST£©ÆÚ¼ä¡£±¾Â·ÓÉÆ÷¿ÉÒÔÊ¹ÓÃ±¾µØÊ±¼ä»òÕßUTCÊ±¼ä¡£";
 
 
 
@@ -768,761 +787,779 @@ hidx.right18="ÇëÑ¡ÔñÄúËùÔÚµÄÊ±ÇøºÍÏÄÁîÊ±£¨DST£©ÆÚ¼ä¡£±¾Â·ÓÉÆ÷¿ÉÒÔÊ¹ÓÃ±¾µØÊ±¼ä»òÕ
 
 
 //sshd.webservices
-join.titl=" - ¼ÓÈë";
-join.mess1="ÒÑ¾­ÒÔ¿Í»§¶ËÉí·İ³É¹¦µØ¼ÓÈëÁËÏÂÁĞÍøÂç£º";
+join.titl = " - ¼ÓÈë";
+join.mess1 = "ÒÑ¾­ÒÔ¿Í»§¶ËÉí·İ³É¹¦µØ¼ÓÈëÁËÏÂÁĞÍøÂç£º";
 
 
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-log_in.titl=" - Á¬ÈëÈÕÖ¾±í";
-log_in.h2="Á¬ÈëÈÕÖ¾±í";
-log_in.th_ip="Ô´IP";
-log_in.th_port="Ä¿µÄ¶Ë¿ÚºÅ";
+log_in.titl = " - Á¬ÈëÈÕÖ¾±í";
+log_in.h2 = "Á¬ÈëÈÕÖ¾±í";
+log_in.th_ip = "Ô´IP";
+log_in.th_port = "Ä¿µÄ¶Ë¿ÚºÅ";
 
 
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-log_out.titl=" - Á¬³öÈÕÖ¾±í";
-log_out.h2="Á¬³öÈÕÖ¾±í";
-log_out.th_lanip="LAN IP";
-log_out.th_wanip="Ä¿µÄURL/IP";
-log_out.th_port="·şÎñ/¶Ë¿ÚºÅ";
+log_out.titl = " - Á¬³öÈÕÖ¾±í";
+log_out.h2 = "Á¬³öÈÕÖ¾±í";
+log_out.th_lanip = "LAN IP";
+log_out.th_wanip = "Ä¿µÄURL/IP";
+log_out.th_port = "·şÎñ/¶Ë¿ÚºÅ";
 
 
 
 // ******************************************* Log.asp *******************************************//
 
-log.titl=" - ÈÕÖ¾";
-log.h2="ÈÕÖ¾¹ÜÀí";
-log.legend="ÈÕÖ¾";
-log.lvl="ÈÕÖ¾µÈ¼¶";
-log.drop="¶ªÆúµÄ";
-log.reject="¾Ü¾øµÄ";
-log.accept="½ÓÊÜµÄ";
+log.titl = " - ÈÕÖ¾";
+log.h2 = "ÈÕÖ¾¹ÜÀí";
+log.legend = "ÈÕÖ¾";
+log.lvl = "ÈÕÖ¾µÈ¼¶";
+log.drop = "¶ªÆúµÄ";
+log.reject = "¾Ü¾øµÄ";
+log.accept = "½ÓÊÜµÄ";
 
 
 
 // ******************************************* Management.asp *******************************************//
 
-management.titl=" - ¹ÜÀí";
-management.h2="Â·ÓÉÆ÷¹ÜÀí";
+management.titl = " - ¹ÜÀí";
+management.h2 = "Â·ÓÉÆ÷¹ÜÀí";
 
-management.psswd_legend="Â·ÓÉÆ÷ÃÜÂë";
-management.psswd_user="Â·ÓÉÆ÷ÓÃ»§Ãû";
-management.psswd_pass="Â·ÓÉÆ÷ÃÜÂë";
-management.pass_conf="ÖØĞÂÊäÈë´Ó¶øÈ·ÈÏ";
+management.psswd_legend = "Â·ÓÉÆ÷ÃÜÂë";
+management.psswd_user = "Â·ÓÉÆ÷ÓÃ»§Ãû";
+management.psswd_pass = "Â·ÓÉÆ÷ÃÜÂë";
+management.pass_conf = "ÖØĞÂÊäÈë´Ó¶øÈ·ÈÏ";
 
-management.remote_legend="Ô¶³Ì¹ÜÀí";
-management.remote_gui="WebÍ¼ĞÎÓÃ»§½çÃæ¹ÜÀí";
-management.remote_https="Ê¹ÓÃHTTPS";
-management.remote_guiport="WebÍ¼ĞÎÓÃ»§½çÃæ¶Ë¿Ú";
-management.remote_ssh="SSH¹ÜÀí";
-management.remote_sshport="SSH¶Ë¿Ú";
+management.remote_legend = "Ô¶³Ì¹ÜÀí";
+management.remote_gui = "WebÍ¼ĞÎÓÃ»§½çÃæ¹ÜÀí";
+management.remote_https = "Ê¹ÓÃHTTPS";
+management.remote_guiport = "WebÍ¼ĞÎÓÃ»§½çÃæ¶Ë¿Ú";
+management.remote_ssh = "SSH¹ÜÀí";
+management.remote_sshport = "SSH¶Ë¿Ú";
 
-management.web_legend="Web·ÃÎÊ";
-management.web_refresh="×Ô¶¯Ë¢ĞÂ£¨ÒÔÃëÎªµ¥Î»£©";
-management.web_sysinfo="ÆôÓÃĞÅÏ¢Õ¾µã";
-management.web_sysinfopass="ĞÅÏ¢Õ¾µãÃÜÂë±£»¤";
-management.web_sysinfomasq="ĞÅÏ¢Õ¾µãMACÎ±×°";
+management.web_legend = "Web·ÃÎÊ";
+management.web_refresh = "×Ô¶¯Ë¢ĞÂ£¨ÒÔÃëÎªµ¥Î»£©";
+management.web_sysinfo = "ÆôÓÃĞÅÏ¢Õ¾µã";
+management.web_sysinfopass = "ĞÅÏ¢Õ¾µãÃÜÂë±£»¤";
+management.web_sysinfomasq = "ĞÅÏ¢Õ¾µãMACÎ±×°";
 
-management.boot_legend="Boot Wait";
-management.boot_srv="Boot Wait";
+management.boot_legend = "Boot Wait";
+management.boot_srv = "Boot Wait";
 
-management.cron_legend="Cron";
-management.cron_srvd="Cron";
+management.cron_legend = "Cron";
+management.cron_srvd = "Cron";
 
-management.loop_legend="Loopback";
-management.loop_srv="Loopback";
+management.loop_legend = "Loopback";
+management.loop_srv = "Loopback";
 
-management.wifi_legend="802.1x";
-management.wifi_srv="802.1x";
+management.wifi_legend = "802.1x";
+management.wifi_srv = "802.1x";
 
-management.ntp_legend="NTP¿Í»§¶Ë";
-management.ntp_srv="NTP";
+management.ntp_legend = "NTP¿Í»§¶Ë";
+management.ntp_srv = "NTP";
 
-management.rst_legend="¸´Î»°´Å¥";
-management.rst_srv="¸´Î»°´Å¥";
+management.rst_legend = "¸´Î»°´Å¥";
+management.rst_srv = "¸´Î»°´Å¥";
 
-management.routing_legend="Â·ÓÉ";
-management.routing_srv="Â·ÓÉ";
+management.routing_legend = "Â·ÓÉ";
+management.routing_srv = "Â·ÓÉ";
 
-management.wol_legend="ÍøÂç»½ĞÑ";
-management.wol_srv="WOL";
-management.wol_pass="SecureOnÃÜÂë";
-management.wol_mac="MACµØÖ·<br/>( ¸ñÊ½: xx:xx:xx:xx:xx:xx )";
+management.wol_legend = "ÍøÂç»½ĞÑ";
+management.wol_srv = "WOL";
+management.wol_pass = "SecureOnÃÜÂë";
+management.wol_mac = "MACµØÖ·<br/>( ¸ñÊ½: xx:xx:xx:xx:xx:xx )";
 
-management.ipv6_legend="IPv6Ö§³Ö";
-management.ipv6_srv="IPv6";
-management.ipv6_rad="RadvdÒÑ¿ªÆô";
-management.ipv6_radconf="RadvdÅäÖÃ";
+management.ipv6_legend = "IPv6Ö§³Ö";
+management.ipv6_srv = "IPv6";
+management.ipv6_rad = "RadvdÒÑ¿ªÆô";
+management.ipv6_radconf = "RadvdÅäÖÃ";
 
-management.jffs_legend="JFFS2Ö§³Ö";
-management.jffs_srv="JFFS2";
-management.jffs_clean="Çå³ıJFFS2";
+management.jffs_legend = "JFFS2Ö§³Ö";
+management.jffs_srv = "JFFS2";
+management.jffs_clean = "Çå³ıJFFS2";
 
-management.lang_legend="ÓïÑÔÑ¡Ôñ";
-management.lang_srv="ÓïÑÔ";
-management.lang_bulgarian="bulgarian£¨±£¼ÓÀûÑÇÓï£©";
-management.lang_chinese_traditional="tradchinese£¨·±ÌåÖĞÎÄ£©"; 
-management.lang_chinese_simplified="simpchinese£¨¼òÌåÖĞÎÄ£¬Simplified Chinese£©";
-management.lang_croatian="croatian£¨¿ËÂŞµØÑÇ£©";
-management.lang_czech="czech£¨½İ¿Ë£©";
-management.lang_dutch="dutch£¨ºÉÀ¼Óï£©";
-management.lang_portuguese_braz="brazilian£¨°ÍÎ÷Óï£©";
-management.lang_english="english£¨Ó¢Óï£©";
-management.lang_french="french£¨·¨Óï£©";
-management.lang_german="german£¨µÂÓï£©";
-management.lang_italian="italian£¨Òâ´óÀûÓï£©";
-management.lang_brazilian="brazilian£¨°ÍÎ÷Óï£©";
-management.lang_slovenian="slovenian£¨Ë¹ÂåÎÄÄáÑÇÓï£©";
-management.lang_spanish="spanish£¨Î÷°àÑÀÓï£©";
-management.lang_swedish="swedish£¨ÈğµäÓï£©";
-management.lang_polish="polish";
+management.lang_legend = "ÓïÑÔÑ¡Ôñ";
+management.lang_srv = "ÓïÑÔ";
+management.lang_bulgarian = "bulgarian£¨±£¼ÓÀûÑÇÓï£©";
+management.lang_chinese_traditional = "tradchinese£¨·±ÌåÖĞÎÄ£©";
+management.lang_chinese_simplified =
+  "simpchinese£¨¼òÌåÖĞÎÄ£¬Simplified Chinese£©";
+management.lang_croatian = "croatian£¨¿ËÂŞµØÑÇ£©";
+management.lang_czech = "czech£¨½İ¿Ë£©";
+management.lang_dutch = "dutch£¨ºÉÀ¼Óï£©";
+management.lang_portuguese_braz = "brazilian£¨°ÍÎ÷Óï£©";
+management.lang_english = "english£¨Ó¢Óï£©";
+management.lang_french = "french£¨·¨Óï£©";
+management.lang_german = "german£¨µÂÓï£©";
+management.lang_italian = "italian£¨Òâ´óÀûÓï£©";
+management.lang_brazilian = "brazilian£¨°ÍÎ÷Óï£©";
+management.lang_slovenian = "slovenian£¨Ë¹ÂåÎÄÄáÑÇÓï£©";
+management.lang_spanish = "spanish£¨Î÷°àÑÀÓï£©";
+management.lang_swedish = "swedish£¨ÈğµäÓï£©";
+management.lang_polish = "polish";
 
-management.net_legend="IP¹ıÂËÉèÖÃ£¨ÎªP2Pµ÷ÕûÕâĞ©ÉèÖÃ£©";
-management.net_port="×î´ó¶Ë¿ÚÊı";
-management.net_tcptimeout="TCP³¬Ê±£¨ÒÔÃëÎªµ¥Î»£©";
-management.net_udptimeout="UDP³¬Ê±£¨ÒÔÃëÎªµ¥Î»£©";
+management.net_legend = "IP¹ıÂËÉèÖÃ£¨ÎªP2Pµ÷ÕûÕâĞ©ÉèÖÃ£©";
+management.net_port = "×î´ó¶Ë¿ÚÊı";
+management.net_tcptimeout = "TCP³¬Ê±£¨ÒÔÃëÎªµ¥Î»£©";
+management.net_udptimeout = "UDP³¬Ê±£¨ÒÔÃëÎªµ¥Î»£©";
 
-management.clock_legend="³¬Æµ";
-management.clock_frq="ÆµÂÊ";
-management.clock_support="²»Ö§³Ö";
+management.clock_legend = "³¬Æµ";
+management.clock_frq = "ÆµÂÊ";
+management.clock_support = "²»Ö§³Ö";
 
-management.mmc_legend="MMC/SD¿¨Ö§³Ö";
-management.mmc_srv="MMCÉè±¸";
+management.mmc_legend = "MMC/SD¿¨Ö§³Ö";
+management.mmc_srv = "MMCÉè±¸";
 
-management.samba_legend="Samba FS×Ô¶¯×°ÔØ";
-management.samba_srv="SMBÎÄ¼şÏµÍ³";
-management.samba_share="¹²Ïí";
-management.samba_stscript="Æô¶¯½Å±¾";
+management.samba_legend = "Samba FS×Ô¶¯×°ÔØ";
+management.samba_srv = "SMBÎÄ¼şÏµÍ³";
+management.samba_share = "¹²Ïí";
+management.samba_stscript = "Æô¶¯½Å±¾";
 
-management.SIPatH_srv="SIPatH";
-management.SIPatH_port="SIP¶Ë¿Ú";
-management.SIPatH_domain="SIPÓò";
+management.SIPatH_srv = "SIPatH";
+management.SIPatH_port = "SIP¶Ë¿Ú";
+management.SIPatH_domain = "SIPÓò";
 
-management.gui_style="Â·ÓÉÆ÷Í¼ĞÎÓÃ»§½çÃæ·ç¸ñ";
+management.gui_style = "Â·ÓÉÆ÷Í¼ĞÎÓÃ»§½çÃæ·ç¸ñ";
 
 
 
 //help container
 
-hmanagement.right1="×Ô¶¯Ë¢ĞÂ£º";
-hmanagement.right2="µ÷ÕûWebÍ¼ĞÎÓÃ»§½çÃæ×Ô¶¯Ë¢ĞÂ¼äÏ¶¡£ÊäÈë0ÍêÈ«¹Ø±ÕÕâ¸öÌØĞÔ¡£";
+hmanagement.right1 = "×Ô¶¯Ë¢ĞÂ£º";
+hmanagement.right2 =
+  "µ÷ÕûWebÍ¼ĞÎÓÃ»§½çÃæ×Ô¶¯Ë¢ĞÂ¼äÏ¶¡£ÊäÈë0ÍêÈ«¹Ø±ÕÕâ¸öÌØĞÔ¡£";
 
 
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-portserv.titl=" - ¶Ë¿Ú·şÎñ";
-portserv.h2="¶Ë¿Ú·şÎñ";
+portserv.titl = " - ¶Ë¿Ú·şÎñ";
+portserv.h2 = "¶Ë¿Ú·şÎñ";
 
 
 
 // ******************************************* QoS.asp *******************************************//
 
-qos.titl=" - ·şÎñÖÊÁ¿£¨QoS£©";
-qos.h2="·şÎñÖÊÁ¿£¨QoS£©";
-qos.legend="QoSÉèÖÃ";
-qos.srv="¿ªÆôQoS";
-qos.type="Êı¾İ°ü¼Æ»®Æ÷";
-qos.uplink="ÉÏĞĞ (kbps)";
-qos.dnlink="ÏÂĞĞ (kbps)";
-qos.gaming="ÎªÓÎÏ·ÓÅ»¯";
-qos.legend2="·şÎñÓÅÏÈ¼¶";
-qos.prio_x="Exempt£¨»íÃâ£©";
-qos.prio_p="Premium£¨´Ù½ø£©";
-qos.prio_e="Express£¨¿ìËÙ£©";
-qos.prio_s="Standard£¨±ê×¼£©";
-qos.prio_b="Bulk£¨Ñ¹µ×£©";
-qos.legend3="NetmaskÓÅÏÈ¼¶";
-qos.ipmask="IP/ÑÚÄ£";
-qos.maxrate_b="×î´óKbits";
-qos.maxrate_o="×î´óÊı¾İÂÊ";
-qos.legend4="MACÓÅÏÈ¼¶";
-qos.legend5="ÒÔÌ«Íø¶Ë¿ÚÓÅÏÈ¼¶";
-qos.legend6="Ä¬ÈÏ´ø¿íµÈ¼¶";
-qos.bandwith="ÒÔKbits±íÊ¾µÄ´ø¿í";
+qos.titl = " - ·şÎñÖÊÁ¿£¨QoS£©";
+qos.h2 = "·şÎñÖÊÁ¿£¨QoS£©";
+qos.legend = "QoSÉèÖÃ";
+qos.srv = "¿ªÆôQoS";
+qos.type = "Êı¾İ°ü¼Æ»®Æ÷";
+qos.uplink = "ÉÏĞĞ (kbps)";
+qos.dnlink = "ÏÂĞĞ (kbps)";
+qos.gaming = "ÎªÓÎÏ·ÓÅ»¯";
+qos.legend2 = "·şÎñÓÅÏÈ¼¶";
+qos.prio_x = "Exempt£¨»íÃâ£©";
+qos.prio_p = "Premium£¨´Ù½ø£©";
+qos.prio_e = "Express£¨¿ìËÙ£©";
+qos.prio_s = "Standard£¨±ê×¼£©";
+qos.prio_b = "Bulk£¨Ñ¹µ×£©";
+qos.legend3 = "NetmaskÓÅÏÈ¼¶";
+qos.ipmask = "IP/ÑÚÄ£";
+qos.maxrate_b = "×î´óKbits";
+qos.maxrate_o = "×î´óÊı¾İÂÊ";
+qos.legend4 = "MACÓÅÏÈ¼¶";
+qos.legend5 = "ÒÔÌ«Íø¶Ë¿ÚÓÅÏÈ¼¶";
+qos.legend6 = "Ä¬ÈÏ´ø¿íµÈ¼¶";
+qos.bandwith = "ÒÔKbits±íÊ¾µÄ´ø¿í";
 
 //help container
 
-hqos.right1="ÉÏĞĞ£º";
-hqos.right2="½«´ËÉèÖÃÎªÄúµÄ×ÜÉÏĞĞÏŞÖÆµÄ80%-95%£¨×î´ó£©¡£";
-hqos.right3="ÏÂĞĞ£º";
-hqos.right4="½«´ËÉèÖÃÎªÄúµÄ×ÜÏÂĞĞÏŞÖÆµÄ80%-100%£¨×î´ó£©¡£";
-hqos.right6="Äú¿ÉÒÔ×¢ÒâÏûºÄ´ø¿íµÄÓ¦ÓÃ³ÌĞò£¬´Ó¶ø¿ØÖÆÄúµÄÊı¾İ´«ÊäËÙÂÊ¡£";
-hqos.right8="Äú¿ÉÒÔÎªÒ»¸ö¸ø¶¨µÄIPµØÖ·»òÕßIP¶ÎÖ¸¶¨ÓÅÏÈ¼¶¡£";
-hqos.right10="Äú¿ÉÒÔÍ¨¹ıÎªÒ»¸öÉè±¸Ö¸¶¨Éè±¸Ãû£¬ÖÆ¶¨ÓÅÏÈ¼¶²¢ÊäÈëMACµØÖ·£¬ \
+hqos.right1 = "ÉÏĞĞ£º";
+hqos.right2 = "½«´ËÉèÖÃÎªÄúµÄ×ÜÉÏĞĞÏŞÖÆµÄ80%-95%£¨×î´ó£©¡£";
+hqos.right3 = "ÏÂĞĞ£º";
+hqos.right4 = "½«´ËÉèÖÃÎªÄúµÄ×ÜÏÂĞĞÏŞÖÆµÄ80%-100%£¨×î´ó£©¡£";
+hqos.right6 = "Äú¿ÉÒÔ×¢ÒâÏûºÄ´ø¿íµÄÓ¦ÓÃ³ÌĞò£¬´Ó¶ø¿ØÖÆÄúµÄÊı¾İ´«ÊäËÙÂÊ¡£";
+hqos.right8 = "Äú¿ÉÒÔÎªÒ»¸ö¸ø¶¨µÄIPµØÖ·»òÕßIP¶ÎÖ¸¶¨ÓÅÏÈ¼¶¡£";
+hqos.right10 = "Äú¿ÉÒÔÍ¨¹ıÎªÒ»¸öÉè±¸Ö¸¶¨Éè±¸Ãû£¬ÖÆ¶¨ÓÅÏÈ¼¶²¢ÊäÈëMACµØÖ·£¬ \
 			´Ó¶øÎª¸ÃÉè±¸µÄËùÓĞÁ÷Á¿Ö¸¶¨ÓÅÏÈ¼¶¡£";
-hqos.right12="Äú¿ÉÒÔ¸ù¾İÄúµÄÉè±¸Á¬½Óµ½ÄÄÒ»¸öÎŞÁ¦µÄLAN¿ÚÀ´¿ØÖÆËüµÄÊı¾İ´«ÊäËÙÂÊ¡£ \
+hqos.right12 =
+  "Äú¿ÉÒÔ¸ù¾İÄúµÄÉè±¸Á¬½Óµ½ÄÄÒ»¸öÎŞÁ¦µÄLAN¿ÚÀ´¿ØÖÆËüµÄÊı¾İ´«ÊäËÙÂÊ¡£ \
 			Äú¿ÉÒÔ¸ù¾İÉè±¸Á¬½Óµ½´Ó1µ½4ºÅLAN¶Ë¿Ú´Ó¶øÖÆ¶¨ÓÅÏÈ¼¶¡£";
 
 
 
 // ******************************************* RouteTable.asp *******************************************//
 
-routetbl.titl=" - Â·ÓÉ±í";
-routetbl.h2="Â·ÓÉ±íÏîÄ¿ÁĞ±í";
-routetbl.th1="Ä¿µÄLAN IP";
+routetbl.titl = " - Â·ÓÉ±í";
+routetbl.h2 = "Â·ÓÉ±íÏîÄ¿ÁĞ±í";
+routetbl.th1 = "Ä¿µÄLAN IP";
 
 
 
 // ******************************************* Routing.asp *******************************************//
 
-route.titl=" - Â·ÓÉ²Ù×÷";
-route.h2="¸ß¼¶Â·ÓÉ²Ù×÷";
-route.mod="¹¤×÷Ä£Ê½";
-route.bgp_legend="BGPÉèÖÃ";
-route.bgp_ip="ÁÚ½üIP";
-route.bgp_as="ÁÚ½üAS#";
-route.rip2_mod="RIP2Â·ÓÉÆ÷";
-route.ospf_mod="OSPFÂ·ÓÉÆ÷";
-route.gateway_legend="¶¯Ì¬Â·ÓÉ²Ù×÷";
-route.static_legend="¶¯Ì¬Â·ÓÉ²Ù×÷";
-route.static_setno="Ñ¡ÔñÉèÖÃºÅ";
-route.static_name="Â·ÓÉÃû³Æ";
-route.static_ip="Ä¿µÄLAN IP";
+route.titl = " - Â·ÓÉ²Ù×÷";
+route.h2 = "¸ß¼¶Â·ÓÉ²Ù×÷";
+route.mod = "¹¤×÷Ä£Ê½";
+route.bgp_legend = "BGPÉèÖÃ";
+route.bgp_ip = "ÁÚ½üIP";
+route.bgp_as = "ÁÚ½üAS#";
+route.rip2_mod = "RIP2Â·ÓÉÆ÷";
+route.ospf_mod = "OSPFÂ·ÓÉÆ÷";
+route.gateway_legend = "¶¯Ì¬Â·ÓÉ²Ù×÷";
+route.static_legend = "¶¯Ì¬Â·ÓÉ²Ù×÷";
+route.static_setno = "Ñ¡ÔñÉèÖÃºÅ";
+route.static_name = "Â·ÓÉÃû³Æ";
+route.static_ip = "Ä¿µÄLAN IP";
 
 //help container
 
-hroute.right2="Èç¹û±¾Â·ÓÉÆ÷ÕıÖ÷¿ØÄúµÄInternetÁ¬½Ó£¬Ñ¡Ôñ <em>Íø¹Ø</em> Ä£Ê½¡£Èç¹ûÄúµÄÍøÂçÖĞ´æÔÚÁíÍâÒ»¸öÂ·ÓÉÆ÷£¬Ñ¡Ôñ <em>Â·ÓÉ</em> Ä£Ê½¡£";
-hroute.right4="ÕâÊÇÎ¨Ò»µÄÂ·ÓÉºÅ£¬Äú¿ÉÒÔÉèÖÃ×î¶à20ÌõÂ·ÓÉ¡£";
-hroute.right6="ÉèÖÃÄúÏ£ÍûÖ¸¶¨¸øÕâÌõÂ·ÓÉµÄÃû³Æ¡£";
-hroute.right8="ÕâÊÇÄúÏ£ÍûÉè¶¨¾²Ì¬Â·ÓÉµÄÔ¶³ÌÖ÷»ú¡£";
-hroute.right10="¾ö¶¨Ö÷»úºÍÍøÂç·ÖÅä¡£";
+hroute.right2 =
+  "Èç¹û±¾Â·ÓÉÆ÷ÕıÖ÷¿ØÄúµÄInternetÁ¬½Ó£¬Ñ¡Ôñ <em>Íø¹Ø</em> Ä£Ê½¡£Èç¹ûÄúµÄÍøÂçÖĞ´æÔÚÁíÍâÒ»¸öÂ·ÓÉÆ÷£¬Ñ¡Ôñ <em>Â·ÓÉ</em> Ä£Ê½¡£";
+hroute.right4 = "ÕâÊÇÎ¨Ò»µÄÂ·ÓÉºÅ£¬Äú¿ÉÒÔÉèÖÃ×î¶à20ÌõÂ·ÓÉ¡£";
+hroute.right6 = "ÉèÖÃÄúÏ£ÍûÖ¸¶¨¸øÕâÌõÂ·ÓÉµÄÃû³Æ¡£";
+hroute.right8 = "ÕâÊÇÄúÏ£ÍûÉè¶¨¾²Ì¬Â·ÓÉµÄÔ¶³ÌÖ÷»ú¡£";
+hroute.right10 = "¾ö¶¨Ö÷»úºÍÍøÂç·ÖÅä¡£";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
 
 
-survey.titl=" - Site Survey£¨Ñ¡Ö·£©";
-survey.h2="ÁÚ½üµÄÎŞÏßÍøÂç";
-survey.thjoin="¼ÓÈëÕ¾µã";
+survey.titl = " - Site Survey£¨Ñ¡Ö·£©";
+survey.h2 = "ÁÚ½üµÄÎŞÏßÍøÂç";
+survey.thjoin = "¼ÓÈëÕ¾µã";
 
 
 
 // ******************************************* Services.asp *******************************************//
 
-service.titl=" - ·şÎñ";
-service.h2="·şÎñ¹ÜÀí";
+service.titl = " - ·şÎñ";
+service.h2 = "·şÎñ¹ÜÀí";
 
 //kaid
-service.kaid_legend="XBOX Kaid";
-service.kaid_srv="¿ªÆôKaid";
-service.kaid_mac="¿ØÖÆÌ¨Macs: (±ØĞëÒÔ ; ½áÊø)";
+service.kaid_legend = "XBOX Kaid";
+service.kaid_srv = "¿ªÆôKaid";
+service.kaid_mac = "¿ØÖÆÌ¨Macs: (±ØĞëÒÔ ; ½áÊø)";
 
 //DHCPd
-service.dhcp_legend="DHCP¿Í»§¶Ë";
-service.dhcp_vendor="ÉèÖÃVendorclass";
-service.dhcp_legend2="DHCP·şÎñÆ÷";
-service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="Ê¹ÓÃJFFS2×÷Îª¿Í»§¶Ë×âÔ¼Êı¾İ¿â";
-service.dhcp_domain="ÒÑÊ¹ÓÃµÄÓò";
-service.dhcp_landomain="LANÓò";
-service.dhcp_option="¸½¼ÓµÄDHCPdÑ¡Ïî";
-service.dnsmasq_legend="DNSMasq";
-service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="±¾µØDNS";
-service.dnsmasq_opt="¸½¼ÓµÄDNSÑ¡Ïî";
+service.dhcp_legend = "DHCP¿Í»§¶Ë";
+service.dhcp_vendor = "ÉèÖÃVendorclass";
+service.dhcp_legend2 = "DHCP·şÎñÆ÷";
+service.dhcp_srv = "DHCP Daemon";
+service.dhcp_jffs2 = "Ê¹ÓÃJFFS2×÷Îª¿Í»§¶Ë×âÔ¼Êı¾İ¿â";
+service.dhcp_domain = "ÒÑÊ¹ÓÃµÄÓò";
+service.dhcp_landomain = "LANÓò";
+service.dhcp_option = "¸½¼ÓµÄDHCPdÑ¡Ïî";
+service.dnsmasq_legend = "DNSMasq";
+service.dnsmasq_srv = "DNSMasq";
+service.dnsmasq_loc = "±¾µØDNS";
+service.dnsmasq_opt = "¸½¼ÓµÄDNSÑ¡Ïî";
 
 //pptp.webservices
-service.pptp_legend="PPTP";
-service.pptp_srv="PPTP·şÎñÆ÷";
-service.pptp_client="¿Í»§¶ËIP";
-service.pptp_chap="CHAP-Secrets";
+service.pptp_legend = "PPTP";
+service.pptp_srv = "PPTP·şÎñÆ÷";
+service.pptp_client = "¿Í»§¶ËIP";
+service.pptp_chap = "CHAP-Secrets";
 
 //syslog.webservices
-service.syslog_legend="ÏµÍ³ÈÕÖ¾";
-service.syslog_srv="ÏµÍ³ÈÕÖ¾";
-service.syslog_ip="Ô¶³Ì·şÎñÆ÷";
+service.syslog_legend = "ÏµÍ³ÈÕÖ¾";
+service.syslog_srv = "ÏµÍ³ÈÕÖ¾";
+service.syslog_ip = "Ô¶³Ì·şÎñÆ÷";
 
 //telnet.webservices
-service.telnet_legend="Telnet";
-service.telnet_srv="Telnet";
+service.telnet_legend = "Telnet";
+service.telnet_srv = "Telnet";
 
 //pptpd_client.webservices
-service.pptpd_legend="PPTP¿Í»§¶Ë";
-service.pptpd_option="PPTP¿Í»§¶ËÑ¡Ïî";
-service.pptpd_ipdns="·şÎñÆ÷IP»òDNSÃû³Æ";
-service.pptpd_subnet="Ô¶³Ì×ÓÍø";
-service.pptpd_subnetmask="Ô¶³Ì×ÓÍøÑÚÂë";
-service.pptpd_encry="MPPE¼ÓÃÜ";
-service.pptpd_mtu="MTU";
-service.pptpd_mru="MRU";
-service.pptpd_nat="NAT";
+service.pptpd_legend = "PPTP¿Í»§¶Ë";
+service.pptpd_option = "PPTP¿Í»§¶ËÑ¡Ïî";
+service.pptpd_ipdns = "·şÎñÆ÷IP»òDNSÃû³Æ";
+service.pptpd_subnet = "Ô¶³Ì×ÓÍø";
+service.pptpd_subnetmask = "Ô¶³Ì×ÓÍøÑÚÂë";
+service.pptpd_encry = "MPPE¼ÓÃÜ";
+service.pptpd_mtu = "MTU";
+service.pptpd_mru = "MRU";
+service.pptpd_nat = "NAT";
 
 //rflow.webservices
-service.rflow_legend="RFlow / MACupd";
-service.rflow_srv1="RFlow";
-service.rflow_srv2="MACupd";
+service.rflow_legend = "RFlow / MACupd";
+service.rflow_srv1 = "RFlow";
+service.rflow_srv2 = "MACupd";
 
 //pppoe-relay.webservices
-service.pppoe_legend="PPPOEÖĞ¼Ì";
-service.pppoe_srv="ÖĞ¼Ì";
+service.pppoe_legend = "PPPOEÖĞ¼Ì";
+service.pppoe_srv = "ÖĞ¼Ì";
 
 //snmp.webservices
-service.snmp_legend="SNMP";
-service.snmp_srv="SNMP";
-service.snmp_loc="Î»ÖÃ";
-service.snmp_contact="ÁªÏµ";
-service.snmp_name="Ãû³Æ";
-service.snmp_read="ROÈºÉç";
-service.snmp_write="RWÈºÉç";
+service.snmp_legend = "SNMP";
+service.snmp_srv = "SNMP";
+service.snmp_loc = "Î»ÖÃ";
+service.snmp_contact = "ÁªÏµ";
+service.snmp_name = "Ãû³Æ";
+service.snmp_read = "ROÈºÉç";
+service.snmp_write = "RWÈºÉç";
 
 //openvpn.webservices
-service.vpn_legend="OpenVPN¿Í»§¶Ë";
-service.vpn_srv="¿ªÆôOpenVPN";
-service.vpn_ipname="·şÎñÆ÷IP/Ãû³Æ";
-service.vpn_mtu="TUN MTUÉèÖÃ";
-service.vpn_mru="TUN MTU¶îÍâ¸½¼Ó";
-service.vpn_mss="TCP MSS";
-service.vpn_compress="Ê¹ÓÃLZOÑ¹Ëõ";
-service.vpn_tunnel="ËíµÀĞ­Òé";
-service.vpn_srvcert="¹«¹²·şÎñÆ÷¶ËÖ¤Êé";
-service.vpn_clicert="¹«¹²¿Í»§¶ËÖ¤Êé";
-service.vpn_certtype="nsCertType£¨nsÖ¤ÊéÀàĞÍ£©";
-service.vpn_clikey="¿Í»§¶ËË½Ô¿";
+service.vpn_legend = "OpenVPN¿Í»§¶Ë";
+service.vpn_srv = "¿ªÆôOpenVPN";
+service.vpn_ipname = "·şÎñÆ÷IP/Ãû³Æ";
+service.vpn_mtu = "TUN MTUÉèÖÃ";
+service.vpn_mru = "TUN MTU¶îÍâ¸½¼Ó";
+service.vpn_mss = "TCP MSS";
+service.vpn_compress = "Ê¹ÓÃLZOÑ¹Ëõ";
+service.vpn_tunnel = "ËíµÀĞ­Òé";
+service.vpn_srvcert = "¹«¹²·şÎñÆ÷¶ËÖ¤Êé";
+service.vpn_clicert = "¹«¹²¿Í»§¶ËÖ¤Êé";
+service.vpn_certtype = "nsCertType£¨nsÖ¤ÊéÀàĞÍ£©";
+service.vpn_clikey = "¿Í»§¶ËË½Ô¿";
 
 //sshd.webservices
-service.ssh_legend="Secure Shell£¨°²È«Íâ¿Ç£©";
-service.ssh_srv="SSHd";
-service.ssh_password="ÃÜÂëµÇÂ¼";
-service.ssh_key="ÊÚÈ¨ÃØÔ¿";
+service.ssh_legend = "Secure Shell£¨°²È«Íâ¿Ç£©";
+service.ssh_srv = "SSHd";
+service.ssh_password = "ÃÜÂëµÇÂ¼";
+service.ssh_key = "ÊÚÈ¨ÃØÔ¿";
 
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-sipath.titl=" - SiPath×ÜÀÀ";
-sipath.phone_titl=" - µç»°±¾";
-sipath.status_titl=" - ×´Ì¬";
+sipath.titl = " - SiPath×ÜÀÀ";
+sipath.phone_titl = " - µç»°±¾";
+sipath.status_titl = " - ×´Ì¬";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl=" - LAN×´Ì¬";
-status_lan.h2="±¾µØÍøÂç";
-status_lan.legend="LAN×´Ì¬";
-status_lan.h22="¶¯Ì¬Ö÷»úÅäÖÃĞ­Òé";
-status_lan.legend2="DHCP×´Ì¬";
-status_lan.legend3="DHCP¿Í»§¶Ë";
+status_lan.titl = " - LAN×´Ì¬";
+status_lan.h2 = "±¾µØÍøÂç";
+status_lan.legend = "LAN×´Ì¬";
+status_lan.h22 = "¶¯Ì¬Ö÷»úÅäÖÃĞ­Òé";
+status_lan.legend2 = "DHCP×´Ì¬";
+status_lan.legend3 = "DHCP¿Í»§¶Ë";
 
 //help container
 
-hstatus_lan.right2="ÕâÊÇÄúµÄ±¾µØÒÔÌ«ÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
-hstatus_lan.right4="ÕâÊÇÄúµÄ±¾µØÒÔÌ«ÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄIPµØÖ·¡£";
-hstatus_lan.right6="µ±Â·ÓÉÆ÷Ê¹ÓÃÒ»¸ö×ÓÍøÑÚÂëµÄÊ±ºò£¬Ëü±»ÏÔÊ¾ÔÚÕâÀï¡£";
-hstatus_lan.right8="Èç¹ûÄú½«ÄúµÄÂ·ÓÉÆ÷µ±×÷DHCP·şÎñÆ÷Ê¹ÓÃ£¬ÄÇ½«±»ÏÔÊ¾ÔÚÕâÀï¡£";
-hstatus_lan.right10="µã»÷ÈÎÒâMACµØÖ·£¬Äú½«ÄÜ»ñÈ¡¸ÃÍøÂç½Ó¿ÚµÄ¡°Î¨Ò»×éÖ¯Ê¶±ğÂë¡±£¨IEEE±ê×¼OUIÊı¾İ¿âËÑË÷£©¡£";
+hstatus_lan.right2 = "ÕâÊÇÄúµÄ±¾µØÒÔÌ«ÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
+hstatus_lan.right4 = "ÕâÊÇÄúµÄ±¾µØÒÔÌ«ÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄIPµØÖ·¡£";
+hstatus_lan.right6 = "µ±Â·ÓÉÆ÷Ê¹ÓÃÒ»¸ö×ÓÍøÑÚÂëµÄÊ±ºò£¬Ëü±»ÏÔÊ¾ÔÚÕâÀï¡£";
+hstatus_lan.right8 =
+  "Èç¹ûÄú½«ÄúµÄÂ·ÓÉÆ÷µ±×÷DHCP·şÎñÆ÷Ê¹ÓÃ£¬ÄÇ½«±»ÏÔÊ¾ÔÚÕâÀï¡£";
+hstatus_lan.right10 =
+  "µã»÷ÈÎÒâMACµØÖ·£¬Äú½«ÄÜ»ñÈ¡¸ÃÍøÂç½Ó¿ÚµÄ¡°Î¨Ò»×éÖ¯Ê¶±ğÂë¡±£¨IEEE±ê×¼OUIÊı¾İ¿âËÑË÷£©¡£";
 
 
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl=" - Â·ÓÉÆ÷×´Ì¬";
-status_router.h2="Â·ÓÉÆ÷ĞÅÏ¢";
-status_router.legend="ÏµÍ³";
-status_router.sys_model="Â·ÓÉÆ÷ĞÍºÅ";
-status_router.sys_firmver="¹Ì¼ş°æ±¾";
-status_router.sys_time="µ±Ç°Ê±¼ä";
-status_router.sys_up="ÔËĞĞÊ±¼ä";
-status_router.sys_load="Æ½¾ù¸ºÔØ";
-status_router.legend2="CPU";
-status_router.cpu="CPUĞÍºÅ";
-status_router.clock="CPUÊ±ÖÓ";
-status_router.legend3="ÄÚ´æ";
-status_router.mem_tot="ËùÓĞ¿ÉÓÃ";
-status_router.mem_free="¿ÕÏĞ";
-status_router.mem_used="ÒÑÊ¹ÓÃ";
-status_router.mem_buf="»º³å";
-status_router.mem_cached="±»»º´æµÄ";
-status_router.mem_active="»î¶¯";
-status_router.mem_inactive="²»»î¶¯";
-status_router.legend4="ÍøÂç";
-status_router.net_maxports="IP¹ıÂËÆ÷×î´ó¶Ë¿ÚÊı";
-status_router.net_conntrack="»î¶¯µÄIPÁ¬½ÓÊı";
-status_router.h22="Internet";
-status_router.legend5="ÅäÖÃÀàĞÍ";
-status_router.www_login="µÇÂ¼ÀàĞÍ";
-status_router.www_loginstatus="µÇÂ¼×´Ì¬";
-status_router.leasetime="Remaining Lease Time";
-status_router.notavail="Not available";
+status_router.titl = " - Â·ÓÉÆ÷×´Ì¬";
+status_router.h2 = "Â·ÓÉÆ÷ĞÅÏ¢";
+status_router.legend = "ÏµÍ³";
+status_router.sys_model = "Â·ÓÉÆ÷ĞÍºÅ";
+status_router.sys_firmver = "¹Ì¼ş°æ±¾";
+status_router.sys_time = "µ±Ç°Ê±¼ä";
+status_router.sys_up = "ÔËĞĞÊ±¼ä";
+status_router.sys_load = "Æ½¾ù¸ºÔØ";
+status_router.legend2 = "CPU";
+status_router.cpu = "CPUĞÍºÅ";
+status_router.clock = "CPUÊ±ÖÓ";
+status_router.legend3 = "ÄÚ´æ";
+status_router.mem_tot = "ËùÓĞ¿ÉÓÃ";
+status_router.mem_free = "¿ÕÏĞ";
+status_router.mem_used = "ÒÑÊ¹ÓÃ";
+status_router.mem_buf = "»º³å";
+status_router.mem_cached = "±»»º´æµÄ";
+status_router.mem_active = "»î¶¯";
+status_router.mem_inactive = "²»»î¶¯";
+status_router.legend4 = "ÍøÂç";
+status_router.net_maxports = "IP¹ıÂËÆ÷×î´ó¶Ë¿ÚÊı";
+status_router.net_conntrack = "»î¶¯µÄIPÁ¬½ÓÊı";
+status_router.h22 = "Internet";
+status_router.legend5 = "ÅäÖÃÀàĞÍ";
+status_router.www_login = "µÇÂ¼ÀàĞÍ";
+status_router.www_loginstatus = "µÇÂ¼×´Ì¬";
+status_router.leasetime = "Remaining Lease Time";
+status_router.notavail = "Not available";
 
 //help container
 
-hstatus_router.right2="ÕâÊÇÄúÔÚ <i>ÉèÖÃ</i> ±êÇ©ÖĞËùÖ¸¶¨µÄÂ·ÓÉÆ÷µÄÃû³Æ¡£";
-hstatus_router.right4="ÕâÊÇÄúµÄISPËù¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
-hstatus_router.right6="ÕâÊÇÂ·ÓÉÆ÷µ±Ç°µÄ¹Ì¼ş¡£";
-hstatus_router.right8="ÕâÊÇÄúÔÚÉèÖÃ±êÇ©ÖĞÉèÖÃµÃµ½Ê±¼ä¡£";
-hstatus_router.right10="Õâ¸öÊıÖµ±íÊ¾Â·ÓÉÆ÷\"Æô¶¯\"²¢ÇÒÔËĞĞµÄÊ±¼ä¡£";
-hstatus_router.right12="ÕâÀï¸ø³öµÄÈı¸öÊı×Ö±íÊ¾ÏµÍ³ÔÚ¹ıÈ¥1¡¢5¡¢15·ÖÖÓÊ±¼äÄÚµÄÏµÍ³¸ºÔØ¡£";
-hstatus_router.right14="ÕâÀïÏÔÊ¾ÄúµÄISPËùĞèÒª½«ÄúÁ¬½Óµ½InternetµÄĞÅÏ¢¡£ \
+hstatus_router.right2 = "ÕâÊÇÄúÔÚ <i>ÉèÖÃ</i> ±êÇ©ÖĞËùÖ¸¶¨µÄÂ·ÓÉÆ÷µÄÃû³Æ¡£";
+hstatus_router.right4 = "ÕâÊÇÄúµÄISPËù¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
+hstatus_router.right6 = "ÕâÊÇÂ·ÓÉÆ÷µ±Ç°µÄ¹Ì¼ş¡£";
+hstatus_router.right8 = "ÕâÊÇÄúÔÚÉèÖÃ±êÇ©ÖĞÉèÖÃµÃµ½Ê±¼ä¡£";
+hstatus_router.right10 = "Õâ¸öÊıÖµ±íÊ¾Â·ÓÉÆ÷\"Æô¶¯\"²¢ÇÒÔËĞĞµÄÊ±¼ä¡£";
+hstatus_router.right12 =
+  "ÕâÀï¸ø³öµÄÈı¸öÊı×Ö±íÊ¾ÏµÍ³ÔÚ¹ıÈ¥1¡¢5¡¢15·ÖÖÓÊ±¼äÄÚµÄÏµÍ³¸ºÔØ¡£";
+hstatus_router.right14 = "ÕâÀïÏÔÊ¾ÄúµÄISPËùĞèÒª½«ÄúÁ¬½Óµ½InternetµÄĞÅÏ¢¡£ \
 				ÕâĞ©ĞÅÏ¢±»ÊäÈëÔÚÉèÖÃ±êÇ©ÖĞ¡£Í¨¹ı°´ÕâÀïµÄ°´Å¥£¬Äú¿ÉÒÔ <em>Á¬½Ó</em> »òÕß <em>¶Ï¿ª</em> ÄúµÄÁ¬½Ó¡£";
 
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-status_sputnik.titl=" - Sputnik´úÀí×´Ì¬";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
-status_sputnik.manage="¹ÜÀíÆ÷";
-status_sputnik.license="SCCÊÚÈ¨±àºÅ";
+status_sputnik.titl = " - Sputnik´úÀí×´Ì¬";
+status_sputnik.h2 = "Sputnik&reg; Agent&trade;";
+status_sputnik.manage = "¹ÜÀíÆ÷";
+status_sputnik.license = "SCCÊÚÈ¨±àºÅ";
 
 //help container
 
-hstatus_sputnik.right1="Sputnik´úÀí×´Ì¬";
-hstatus_sputnik.right2="´ËÆÁÄ»ÏÔÊ¾Sputnik´úÀí²Ù×÷µÄ×´Ì¬¡£";
-hstatus_sputnik.right4="±¾·ÃÎÊµãËùÁ¬½Óµ½µÄSputnik¿ØÖÆÖĞĞÄ¡£";
-hstatus_sputnik.right6="µ±Ç°´úÀí×´Ì¬¡£";
-hstatus_sputnik.right8="ÄúµÄSputnik¿ØÖÆÖĞĞÄµÄÊÚÈ¨Êı¡£";
+hstatus_sputnik.right1 = "Sputnik´úÀí×´Ì¬";
+hstatus_sputnik.right2 = "´ËÆÁÄ»ÏÔÊ¾Sputnik´úÀí²Ù×÷µÄ×´Ì¬¡£";
+hstatus_sputnik.right4 = "±¾·ÃÎÊµãËùÁ¬½Óµ½µÄSputnik¿ØÖÆÖĞĞÄ¡£";
+hstatus_sputnik.right6 = "µ±Ç°´úÀí×´Ì¬¡£";
+hstatus_sputnik.right8 = "ÄúµÄSputnik¿ØÖÆÖĞĞÄµÄÊÚÈ¨Êı¡£";
 
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl=" - ÎŞÏß×´Ì¬";
-status_wireless.h2="ÎŞÏß";
-status_wireless.legend="ÎŞÏß×´Ì¬";
-status_wireless.net="ÍøÂç";
-status_wireless.pptp="PPTP×´Ì¬";
-status_wireless.legend2="Êı¾İ°üĞÅÏ¢";
-status_wireless.rx="ÒÑ½ÓÊÕµÄ (RX)";
-status_wireless.tx="ÒÑ´«ËÍµÄ (TX)";
-status_wireless.h22="ÎŞÏß½Úµã";
-status_wireless.legend3="ÎŞÏß¿Í»§¶Ë";
-status_wireless.signal_qual="ĞÅºÅÆ·ÖÊ";
-status_wireless.wds="WDS½Úµã";
+status_wireless.titl = " - ÎŞÏß×´Ì¬";
+status_wireless.h2 = "ÎŞÏß";
+status_wireless.legend = "ÎŞÏß×´Ì¬";
+status_wireless.net = "ÍøÂç";
+status_wireless.pptp = "PPTP×´Ì¬";
+status_wireless.legend2 = "Êı¾İ°üĞÅÏ¢";
+status_wireless.rx = "ÒÑ½ÓÊÕµÄ (RX)";
+status_wireless.tx = "ÒÑ´«ËÍµÄ (TX)";
+status_wireless.h22 = "ÎŞÏß½Úµã";
+status_wireless.legend3 = "ÎŞÏß¿Í»§¶Ë";
+status_wireless.signal_qual = "ĞÅºÅÆ·ÖÊ";
+status_wireless.wds = "WDS½Úµã";
 
 //help container
 
-hstatus_wireless.right2="ÕâÊÇÄúÔÚÄúµÄ±¾µØÎŞÏßÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
-hstatus_wireless.right4="ÕıÈçÄúÔÚÔÚÎŞÏß±êÇ©ÀïËùÉèÖÃµÄ£¬ÕâÀï½«ÏÔÊ¾ÍøÂçËùÊ¹ÓÃµÄÎŞÏßÄ£Ê½£¨»ìºÏ£¬½öG£¬½öB»òÕß½ûÓÃ£©¡£";
+hstatus_wireless.right2 = "ÕâÊÇÄúÔÚÄúµÄ±¾µØÎŞÏßÍøÂçÖĞ¿´µ½µÄÂ·ÓÉÆ÷µÄMACµØÖ·¡£";
+hstatus_wireless.right4 =
+  "ÕıÈçÄúÔÚÔÚÎŞÏß±êÇ©ÀïËùÉèÖÃµÄ£¬ÕâÀï½«ÏÔÊ¾ÍøÂçËùÊ¹ÓÃµÄÎŞÏßÄ£Ê½£¨»ìºÏ£¬½öG£¬½öB»òÕß½ûÓÃ£©¡£";
 
 
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl=" - ¶Ë¿Ú¼¤·¢Æ÷";
-trforward.h2="¶Ë¿Ú¼¤·¢Æ÷";
-trforward.legend="×ª·¢£¨Ó³Éä£©";
-trforward.trrange="±»¼¤·¢µÄ¶Ë¿Ú·¶Î§";
-trforward.fwdrange="±»×ª·¢£¨Ó³Éä£©µÄ¶Ë¿Ú·¶Î§";
-trforward.app="Ó¦ÓÃ³ÌĞò¡£";
+trforward.titl = " - ¶Ë¿Ú¼¤·¢Æ÷";
+trforward.h2 = "¶Ë¿Ú¼¤·¢Æ÷";
+trforward.legend = "×ª·¢£¨Ó³Éä£©";
+trforward.trrange = "±»¼¤·¢µÄ¶Ë¿Ú·¶Î§";
+trforward.fwdrange = "±»×ª·¢£¨Ó³Éä£©µÄ¶Ë¿Ú·¶Î§";
+trforward.app = "Ó¦ÓÃ³ÌĞò¡£";
 
 //help container
 
-htrforward.right2="ÊäÈë¼¤·¢Æ÷µÄÓ¦ÓÃÃû³Æ¡£";
-htrforward.right4="ÎªÃ¿Ò»¸öÓ¦ÓÃ³ÌĞòÁĞ³ö±»¼¤·¢µÄ¶Ë¿Ú·¶Î§¡£Çë²Î¿¼InternetÓ¦ÓÃ³ÌĞòÎÄµµÀ´²éÕÒËùĞèÒªµÄ¶Ë¿ÚºÅ¡£";
-htrforward.right6="ÎªÃ¿Ò»¸öÓ¦ÓÃ³ÌĞòÁĞ³ö±»×ª·¢£¨Ó³Éä£©µÄ¶Ë¿Ú·¶Î§¡£Çë²Î¿¼InternetÓ¦ÓÃ³ÌĞòÎÄµµÀ´²éÕÒËùĞèÒªµÄ¶Ë¿ÚºÅ¡£";
-htrforward.right8="ÊäÈë±»¼¤·¢ºÍ±»×ª·¢£¨Ó³Éä£©¶Ë¿Ú·¶Î§µÄÆğÊ¼¶Ë¿ÚºÅ¡£";
-htrforward.right10="ÊäÈë±»¼¤·¢ºÍ±»×ª·¢£¨Ó³Éä£©¶Ë¿Ú·¶Î§µÄÖÕÖ¹¶Ë¿ÚºÅ¡£";
+htrforward.right2 = "ÊäÈë¼¤·¢Æ÷µÄÓ¦ÓÃÃû³Æ¡£";
+htrforward.right4 =
+  "ÎªÃ¿Ò»¸öÓ¦ÓÃ³ÌĞòÁĞ³ö±»¼¤·¢µÄ¶Ë¿Ú·¶Î§¡£Çë²Î¿¼InternetÓ¦ÓÃ³ÌĞòÎÄµµÀ´²éÕÒËùĞèÒªµÄ¶Ë¿ÚºÅ¡£";
+htrforward.right6 =
+  "ÎªÃ¿Ò»¸öÓ¦ÓÃ³ÌĞòÁĞ³ö±»×ª·¢£¨Ó³Éä£©µÄ¶Ë¿Ú·¶Î§¡£Çë²Î¿¼InternetÓ¦ÓÃ³ÌĞòÎÄµµÀ´²éÕÒËùĞèÒªµÄ¶Ë¿ÚºÅ¡£";
+htrforward.right8 = "ÊäÈë±»¼¤·¢ºÍ±»×ª·¢£¨Ó³Éä£©¶Ë¿Ú·¶Î§µÄÆğÊ¼¶Ë¿ÚºÅ¡£";
+htrforward.right10 = "ÊäÈë±»¼¤·¢ºÍ±»×ª·¢£¨Ó³Éä£©¶Ë¿Ú·¶Î§µÄÖÕÖ¹¶Ë¿ÚºÅ¡£";
 
 
 
 // ******************************************* Upgrade.asp *******************************************//
 
-upgrad.titl=" - ¹Ì¼şÉı¼¶";
-upgrad.h2="¹Ì¼ş¹ÜÀí";
-upgrad.legend="¹Ì¼şÉı¼¶";
-upgrad.info1="ÔÚË¢ĞÂÖ®ºó£¬¸´Î»µ½";
-upgrad.resetOff="²»¸´Î»";
-upgrad.resetOn="Ä¬ÈÏÉèÖÃ";
-upgrad.file="ÇëÑ¡ÔñÒ»¸öÓÃÀ´Éı¼¶µÄÎÄ¼ş";
-upgrad.warning=" [¾¯] [¸æ] ";
-upgrad.mess1="Éı¼¶¹Ì¼ş¿ÉÄÜĞèÒª»¨·ÑÊı·ÖÖÓ¡£<br />Çë²»Òª¹Ø±ÕµçÔ´»òÕß°´¸´Î»°´Å¥£¡";
+upgrad.titl = " - ¹Ì¼şÉı¼¶";
+upgrad.h2 = "¹Ì¼ş¹ÜÀí";
+upgrad.legend = "¹Ì¼şÉı¼¶";
+upgrad.info1 = "ÔÚË¢ĞÂÖ®ºó£¬¸´Î»µ½";
+upgrad.resetOff = "²»¸´Î»";
+upgrad.resetOn = "Ä¬ÈÏÉèÖÃ";
+upgrad.file = "ÇëÑ¡ÔñÒ»¸öÓÃÀ´Éı¼¶µÄÎÄ¼ş";
+upgrad.warning = " [¾¯] [¸æ] ";
+upgrad.mess1 =
+  "Éı¼¶¹Ì¼ş¿ÉÄÜĞèÒª»¨·ÑÊı·ÖÖÓ¡£<br />Çë²»Òª¹Ø±ÕµçÔ´»òÕß°´¸´Î»°´Å¥£¡";
 
 //help container
 
-hupgrad.right2="µã»÷ <em>ä¯ÀÀ...</em> °´Å¥Ñ¡Ôñ½«ÒªÉÏÔØµ½Â·ÓÉÆ÷µÄ¹Ì¼şÎÄ¼ş¡£<br /><br /> \
+hupgrad.right2 =
+  "µã»÷ <em>ä¯ÀÀ...</em> °´Å¥Ñ¡Ôñ½«ÒªÉÏÔØµ½Â·ÓÉÆ÷µÄ¹Ì¼şÎÄ¼ş¡£<br /><br /> \
 			µã»÷ <em>Éı¼¶</em> °´Å¥¿ªÊ¼Éı¼¶¹ı³Ì¡£Éı¼¶¾ø¶Ô²»¿ÉÒÔ±»´ò¶Ï¡£";
 
 
 
 // ******************************************* UPnP.asp *******************************************//
 
-upnp.titl=" - UPnP";
-upnp.h2="Í¨ÓÃ¼´²å¼´ÓÃ£¨UPnP£©";
-upnp.legend="×ª·¢£¨Ó³Éä£©";
-upnp.legend2="UPnPÅäÖÃ";
-upnp.serv="UPnP·şÎñ";
-upnp.clear="ÔÚÆô¶¯Ê±Çå³ı¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
-upnp.url="·¢ËÍ³ÂÊöURL";
-upnp.msg1="µã»÷É¾³ı×âÓÃ";
-upnp.msg2="É¾³ıËùÓĞÏîÄ¿£¿";
+upnp.titl = " - UPnP";
+upnp.h2 = "Í¨ÓÃ¼´²å¼´ÓÃ£¨UPnP£©";
+upnp.legend = "×ª·¢£¨Ó³Éä£©";
+upnp.legend2 = "UPnPÅäÖÃ";
+upnp.serv = "UPnP·şÎñ";
+upnp.clear = "ÔÚÆô¶¯Ê±Çå³ı¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
+upnp.url = "·¢ËÍ³ÂÊöURL";
+upnp.msg1 = "µã»÷É¾³ı×âÓÃ";
+upnp.msg2 = "É¾³ıËùÓĞÏîÄ¿£¿";
 
 
 //help container
 
-hupnp.right2="µã»÷À¬»øÍ°É¾³ıµ¥Ò»ÌõÄ¿¡£";
-hupnp.right4="ÔÊĞíÓ¦ÓÃ³ÌĞò×Ô¶¯µØÉèÖÃ¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
+hupnp.right2 = "µã»÷À¬»øÍ°É¾³ıµ¥Ò»ÌõÄ¿¡£";
+hupnp.right4 = "ÔÊĞíÓ¦ÓÃ³ÌĞò×Ô¶¯µØÉèÖÃ¶Ë¿Ú×ª·¢£¨Ó³Éä£©";
 
 
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl=" - VPN";
-vpn.h2="ĞéÄâ×¨ÓÃÍøÂç£¨VPN£©";
-vpn.legend="VPN´©Í¸";
-vpn.ipsec="IPSec´©Í¸";
-vpn.pptp="PPTP´©Í¸";
-vpn.l2tp="L2TP´©Í¸";
+vpn.titl = " - VPN";
+vpn.h2 = "ĞéÄâ×¨ÓÃÍøÂç£¨VPN£©";
+vpn.legend = "VPN´©Í¸";
+vpn.ipsec = "IPSec´©Í¸";
+vpn.pptp = "PPTP´©Í¸";
+vpn.l2tp = "L2TP´©Í¸";
 
 //help container
 
-hvpn.right1="Äú¿ÉÒÔÑ¡ÔñÆôÓÃIPSec£¬PPTP ºÍ/»ò L2TP ´©Í¸£¬´Ó¶øÔÊĞíÄúµÄÍøÂçÉè±¸Í¨¹ıVPN½øĞĞÍ¨Ñ¶¡£";
+hvpn.right1 =
+  "Äú¿ÉÒÔÑ¡ÔñÆôÓÃIPSec£¬PPTP ºÍ/»ò L2TP ´©Í¸£¬´Ó¶øÔÊĞíÄúµÄÍøÂçÉè±¸Í¨¹ıVPN½øĞĞÍ¨Ñ¶¡£";
 
 
 // ******************************************* Vlan.asp *******************************************//
 
-vlan.titl=" - ĞéÄâLAN";
-vlan.h2="ĞéÄâ±¾µØÍøÂç£¨VLAN£©";
-vlan.legend="VLAN";
-vlan.bridge="±»Ö¸¶¨µ½<br />ÍøÇÅ";
-vlan.tagged="ÒÑ±ê¼ÇµÄ";
-vlan.negociate="×Ô¶¯Ğ­ÉÌ";
-vlan.aggregation="<br>3ºÅÓë4ºÅ¶Ë¿ÚÁ´Â·¾ÛºÏ";
-vlan.trunk="Ö÷¸É";
+vlan.titl = " - ĞéÄâLAN";
+vlan.h2 = "ĞéÄâ±¾µØÍøÂç£¨VLAN£©";
+vlan.legend = "VLAN";
+vlan.bridge = "±»Ö¸¶¨µ½<br />ÍøÇÅ";
+vlan.tagged = "ÒÑ±ê¼ÇµÄ";
+vlan.negociate = "×Ô¶¯Ğ­ÉÌ";
+vlan.aggregation = "<br>3ºÅÓë4ºÅ¶Ë¿ÚÁ´Â·¾ÛºÏ";
+vlan.trunk = "Ö÷¸É";
 
 
 // ******************************************* WEP.asp *******************************************//
 
-wep.defkey="Ä¬ÈÏ´«ÊäÃØÔ¿";
-wep.passphrase="¿ÚÁî";
+wep.defkey = "Ä¬ÈÏ´«ÊäÃØÔ¿";
+wep.passphrase = "¿ÚÁî";
 
 
 
 // ******************************************* WOL.asp *******************************************//
 
 
-wol.titl=" - WOL";
-wol.h2="ÍøÂç»½ĞÑ";
-wol.legend="¿ÉÓÃÖ÷»ú";
-wol.legend2="WOLµØÖ·";
-wol.legend3="Êä³ö";
-wol.legend4="ÊÖ¹¤WOL";
-wol.enable="ÆôÓÃWOL£¿";
-wol.mac="MACµØÖ·";
-wol.broadcast="ÍøÂç¹ã²¥";
-wol.udp="UDP¶Ë¿Ú";
-wol.msg1="µã»÷ÒÆ³ıWOLÖ÷»ú";
+wol.titl = " - WOL";
+wol.h2 = "ÍøÂç»½ĞÑ";
+wol.legend = "¿ÉÓÃÖ÷»ú";
+wol.legend2 = "WOLµØÖ·";
+wol.legend3 = "Êä³ö";
+wol.legend4 = "ÊÖ¹¤WOL";
+wol.enable = "ÆôÓÃWOL£¿";
+wol.mac = "MACµØÖ·";
+wol.broadcast = "ÍøÂç¹ã²¥";
+wol.udp = "UDP¶Ë¿Ú";
+wol.msg1 = "µã»÷ÒÆ³ıWOLÖ÷»ú";
 
 //help container
 
-hwol.right2="±¾Ò³ÃæÔÊĞíÄú <em>»½ĞÑ</em> ÔÚÄú±¾µØÍøÂçÉÏµÄÖ÷»ú£¨ÀıÈç£¬±¾µØµÄÁ¬½Óµ½ÄúµÄÂ·ÓÉÆ÷ÉÏµÄ£©¡£";
-hwol.right4="MACµØÖ·Ê¹ÓÃÈçÏÂ¸ñÊ½ÊäÈë xx:xx:xx:xx:xx:xx £¨ÀıÈç 01:23:45:67:89:AB£©";
-hwol.right6="IPµØÖ·Í¨³£ÊÇ±¾µØÍøÂçµÄ¹ã²¥µØÖ·£¬µ«ÊÇÈç¹ûÄ¿±êÖ÷»ú²¢ÎªÁ¬½Óµ½Â·ÓÉÆ÷µÄ±¾µØÍøÂç£¬ÔòÓ¦¸ÃÉèÖÃÎªÔ¶³ÌµØÖ·¡£"
-
-
-
+hwol.right2 =
+  "±¾Ò³ÃæÔÊĞíÄú <em>»½ĞÑ</em> ÔÚÄú±¾µØÍøÂçÉÏµÄÖ÷»ú£¨ÀıÈç£¬±¾µØµÄÁ¬½Óµ½ÄúµÄÂ·ÓÉÆ÷ÉÏµÄ£©¡£";
+hwol.right4 =
+  "MACµØÖ·Ê¹ÓÃÈçÏÂ¸ñÊ½ÊäÈë xx:xx:xx:xx:xx:xx £¨ÀıÈç 01:23:45:67:89:AB£©";
+hwol.right6 =
+  "IPµØÖ·Í¨³£ÊÇ±¾µØÍøÂçµÄ¹ã²¥µØÖ·£¬µ«ÊÇÈç¹ûÄ¿±êÖ÷»ú²¢ÎªÁ¬½Óµ½Â·ÓÉÆ÷µÄ±¾µØÍøÂç£¬ÔòÓ¦¸ÃÉèÖÃÎªÔ¶³ÌµØÖ·¡£"
 // ******************************************* WanMAC.asp *******************************************//
-
-wanmac.titl=" - MACµØÖ·¿ËÂ¡";
-wanmac.h2="MACµØÖ·¿ËÂ¡";
-wanmac.legend="MAC¿ËÂ¡";
-wanmac.wan="¿ËÂ¡WAN¿ÚMAC";
-wanmac.wlan="¿ËÂ¡ÎŞÏßMAC";
+  wanmac.titl = " - MACµØÖ·¿ËÂ¡";
+wanmac.h2 = "MACµØÖ·¿ËÂ¡";
+wanmac.legend = "MAC¿ËÂ¡";
+wanmac.wan = "¿ËÂ¡WAN¿ÚMAC";
+wanmac.wlan = "¿ËÂ¡ÎŞÏßMAC";
 
 //help container
 
-hwanmac.right2="Ä³Ğ©ISP¿ÉÄÜÒªÇóÄú×¢²áÄúµÄMACµØÖ·¡£ \
+hwanmac.right2 = "Ä³Ğ©ISP¿ÉÄÜÒªÇóÄú×¢²áÄúµÄMACµØÖ·¡£ \
 			Èç¹ûÄú²»ÏëÖØĞÂ×¢²áÄúµÄMACµØÖ·£¬Äú¿ÉÒÔ½«Â·ÓÉÆ÷µÄMACµØÖ·¿ËÂ¡ÎªÄú×¢²áÔÚÄúµÄISP´¦µÄMACµØÖ·¡£";
 
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-wpa.titl=" - ÎŞÏß°²È«";
-wpa.h2="ÎŞÏß°²È«";
-wpa.legend="ÎŞÏß¼ÓÃÜ";
-wpa.auth_mode="ÍøÂç¼øÈ¨";
-wpa.psk="WPAÔ¤¹²ÏíÃØÔ¿";
-wpa.wpa="WPA";
-wpa.radius="Radius";
-wpa.gtk_rekey="WPA×éÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
-wpa.rekey="ÃØÔ¿¸üĞÂ¼äĞª£¨ÒÔÃëÎªµ¥Î»£©";
-wpa.radius_ipaddr="RADIUS·şÎñÆ÷µØÖ·";
-wpa.radius_port="RADIUS·şÎñÆ÷¶Ë¿Ú";
-wpa.radius_key="RADIUSÃØÔ¿";
-wpa.algorithms="WPAËã·¨";
-wpa.shared_key="WPA¹²ÏíÃØÔ¿";
-wpa.rekeyInt="ÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
+wpa.titl = " - ÎŞÏß°²È«";
+wpa.h2 = "ÎŞÏß°²È«";
+wpa.legend = "ÎŞÏß¼ÓÃÜ";
+wpa.auth_mode = "ÍøÂç¼øÈ¨";
+wpa.psk = "WPAÔ¤¹²ÏíÃØÔ¿";
+wpa.wpa = "WPA";
+wpa.radius = "Radius";
+wpa.gtk_rekey = "WPA×éÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
+wpa.rekey = "ÃØÔ¿¸üĞÂ¼äĞª£¨ÒÔÃëÎªµ¥Î»£©";
+wpa.radius_ipaddr = "RADIUS·şÎñÆ÷µØÖ·";
+wpa.radius_port = "RADIUS·şÎñÆ÷¶Ë¿Ú";
+wpa.radius_key = "RADIUSÃØÔ¿";
+wpa.algorithms = "WPAËã·¨";
+wpa.shared_key = "WPA¹²ÏíÃØÔ¿";
+wpa.rekeyInt = "ÖØĞÂ»ñÈ¡ÃØÔ¿¼ä¸ô";
 
 //help container
 
-hwpa.right1="°²È«Ä£Ê½£º";
-hwpa.right2="Äú¿ÉÒÔ´Ó½ûÓÃ¡¢WEP¡¢WPAÔ¤¹²ÏíÃØÔ¿¡¢WPA RADIUS»òÕßRADIUSÖĞÑ¡È¡Ò»ÖÖ¡£ÔÚÄúµÄÍøÂçÉÏµÄËùÓĞÉè±¸±ØĞëÊ¹ÓÃÏàÍ¬µÄ°²È«Ä£Ê½¡£";
+hwpa.right1 = "°²È«Ä£Ê½£º";
+hwpa.right2 =
+  "Äú¿ÉÒÔ´Ó½ûÓÃ¡¢WEP¡¢WPAÔ¤¹²ÏíÃØÔ¿¡¢WPA RADIUS»òÕßRADIUSÖĞÑ¡È¡Ò»ÖÖ¡£ÔÚÄúµÄÍøÂçÉÏµÄËùÓĞÉè±¸±ØĞëÊ¹ÓÃÏàÍ¬µÄ°²È«Ä£Ê½¡£";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-wl_filter.titl=" - MACµØÖ·¹ıÂËÆ÷ÁĞ±í";
-wl_filter.h2="MACµØÖ·¹ıÂËÆ÷ÁĞ±í";
-wl_filter.h3="Ê¹ÓÃÈçÏÂ¸ñÊ½ÊäÈëMACµØÖ·&nbsp;£º&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl = " - MACµØÖ·¹ıÂËÆ÷ÁĞ±í";
+wl_filter.h2 = "MACµØÖ·¹ıÂËÆ÷ÁĞ±í";
+wl_filter.h3 =
+  "Ê¹ÓÃÈçÏÂ¸ñÊ½ÊäÈëMACµØÖ·&nbsp;£º&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl=" - »î¶¯µÄÎŞÏß¿Í»§¶ËMACÁĞ±í";
-wl_active.h2="ÎŞÏß¿Í»§¶ËMACÁĞ±í";
-wl_active.h3="ÆôÓÃMAC¹ıÂËÆ÷";
-wl_active.active="»î¶¯µÄPC";
-wl_active.inactive="²»»î¶¯µÄPC";
+wl_active.titl = " - »î¶¯µÄÎŞÏß¿Í»§¶ËMACÁĞ±í";
+wl_active.h2 = "ÎŞÏß¿Í»§¶ËMACÁĞ±í";
+wl_active.h3 = "ÆôÓÃMAC¹ıÂËÆ÷";
+wl_active.active = "»î¶¯µÄPC";
+wl_active.inactive = "²»»î¶¯µÄPC";
 
 
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-wds.titl=" - WDS";
-wds.h2="ÎŞÏß·Ö²¼ÏµÍ³";
-wds.legend="WDSÉèÖÃ";
-wds.label="Lazy WDS";
-wds.label2="WDS×ÓÍø";
-wds.wl_mac="ÎŞÏßMAC";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
-wds.subnet="×ÓÍø";
-wds.legend2="¶îÍâµÄÑ¡Ïî";
+wds.titl = " - WDS";
+wds.h2 = "ÎŞÏß·Ö²¼ÏµÍ³";
+wds.legend = "WDSÉèÖÃ";
+wds.label = "Lazy WDS";
+wds.label2 = "WDS×ÓÍø";
+wds.wl_mac = "ÎŞÏßMAC";
+wds.nat1 = "wLAN->WDS";
+wds.nat2 = "WDS->wLAN";
+wds.subnet = "×ÓÍø";
+wds.legend2 = "¶îÍâµÄÑ¡Ïî";
 
 
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-radius.titl=" - Radius";
-radius.h2="Ô¶³ÌÊÚÈ¨²¦ÈëÓÃ»§·şÎñ£¨Radius£©";
-radius.legend="Radius";
-radius.label="MAC Radius¿Í»§¶Ë";
-radius.label2="MAC¸ñÊ½";
-radius.label3="Radius·şÎñÆ÷IP";
-radius.label4="Radius·şÎñÆ÷¶Ë¿Ú";
-radius.label5="×î´ó·ÇÊÚÈ¨ÓÃ»§Êı";
-radius.label6="ÃÜÂë¸ñÊ½";
-radius.label7="RADIUS Shared Secret";
-radius.label8="Èç¹û·şÎñÆ÷²»¿ÉÓÃÔòÔ½¹ıRadius";
+radius.titl = " - Radius";
+radius.h2 = "Ô¶³ÌÊÚÈ¨²¦ÈëÓÃ»§·şÎñ£¨Radius£©";
+radius.legend = "Radius";
+radius.label = "MAC Radius¿Í»§¶Ë";
+radius.label2 = "MAC¸ñÊ½";
+radius.label3 = "Radius·şÎñÆ÷IP";
+radius.label4 = "Radius·şÎñÆ÷¶Ë¿Ú";
+radius.label5 = "×î´ó·ÇÊÚÈ¨ÓÃ»§Êı";
+radius.label6 = "ÃÜÂë¸ñÊ½";
+radius.label7 = "RADIUS Shared Secret";
+radius.label8 = "Èç¹û·şÎñÆ÷²»¿ÉÓÃÔòÔ½¹ıRadius";
 
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl=" - MAC¹ıÂËÆ÷";
-wl_mac.h2="ÎŞÏßMAC¹ıÂËÆ÷";
-wl_mac.legend="MAC¹ıÂËÆ÷";
-wl_mac.label="Ê¹ÓÃ¹ıÂËÆ÷";
-wl_mac.label2="¹ıÂËÆ÷Ä£Ê½";
-wl_mac.deny="×éÖ¯ËùÁĞPC»ú·ÃÎÊÎŞÏßÍøÂç";
-wl_mac.allow="Ö»ÔÊĞíËùÁĞPC»ú·ÃÎÊÎŞÏßÍøÂç";
+wl_mac.titl = " - MAC¹ıÂËÆ÷";
+wl_mac.h2 = "ÎŞÏßMAC¹ıÂËÆ÷";
+wl_mac.legend = "MAC¹ıÂËÆ÷";
+wl_mac.label = "Ê¹ÓÃ¹ıÂËÆ÷";
+wl_mac.label2 = "¹ıÂËÆ÷Ä£Ê½";
+wl_mac.deny = "×éÖ¯ËùÁĞPC»ú·ÃÎÊÎŞÏßÍøÂç";
+wl_mac.allow = "Ö»ÔÊĞíËùÁĞPC»ú·ÃÎÊÎŞÏßÍøÂç";
 
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-wl_basic.titl=" - ÎŞÏß";
-wl_basic.h2="ÎŞÏß";
-wl_basic.legend="»ù±¾ÉèÖÃ";
-wl_basic.label="ÎŞÏßÄ£Ê½";
-wl_basic.label2="ÎŞÏßÍøÂçÄ£Ê½";
-wl_basic.label3="ÎŞÏßÍøÂçÃû£¨SSID£©";
-wl_basic.label4="ÎŞÏßÆµµÀ";
-wl_basic.label5="ÎŞÏßSSID¹ã²¥";
-wl_basic.label6="¸ĞÊÜ·¶Î§£¨ACKÊ±Ğò£©";
-wl_basic.ap="·ÃÎÊµã£¨AP£©";
-wl_basic.client="¿Í»§¶Ë";
-wl_basic.clientBridge="¿Í»§¶ËÍøÇÅ";
-wl_basic.adhoc="Adhoc";
-wl_basic.mixed="»ìºÏ";
-wl_basic.b="½öB";
-wl_basic.g="½öG";
-wl_basic.legend2="Radio Time Restrictions";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
+wl_basic.titl = " - ÎŞÏß";
+wl_basic.h2 = "ÎŞÏß";
+wl_basic.legend = "»ù±¾ÉèÖÃ";
+wl_basic.label = "ÎŞÏßÄ£Ê½";
+wl_basic.label2 = "ÎŞÏßÍøÂçÄ£Ê½";
+wl_basic.label3 = "ÎŞÏßÍøÂçÃû£¨SSID£©";
+wl_basic.label4 = "ÎŞÏßÆµµÀ";
+wl_basic.label5 = "ÎŞÏßSSID¹ã²¥";
+wl_basic.label6 = "¸ĞÊÜ·¶Î§£¨ACKÊ±Ğò£©";
+wl_basic.ap = "·ÃÎÊµã£¨AP£©";
+wl_basic.client = "¿Í»§¶Ë";
+wl_basic.clientBridge = "¿Í»§¶ËÍøÇÅ";
+wl_basic.adhoc = "Adhoc";
+wl_basic.mixed = "»ìºÏ";
+wl_basic.b = "½öB";
+wl_basic.g = "½öG";
+wl_basic.legend2 = "Radio Time Restrictions";
+wl_basic.radio = "Radio";
+wl_basic.radiotimer = "Radio Scheduling";
+wl_basic.radio_on = "Radio is On";
+wl_basic.radio_off = "Radio is Off";
 
 //help container
 
-hwl_basic.right2="Èç¹ûÄúÏëÌŞ³ıÎŞÏß-G¿Í»§¶Ë£¬Ñ¡Ôñ <em>½öB</em> Ä£Ê½¡£Èç¹ûÄúÏë½ûÓÃÎŞÏß·ÃÎÊ£¬Ñ¡Ôñ <em>½ûÓÃ</em>¡£";
-hwl_basic.right3="¸ĞÊÜ·¶Î§£º";
-hwl_basic.right4="µ÷ÕûackÊ±Ğò¡£ÊäÈë0½«ÍêÈ«½ûÓÃackÊ±Ğò¡£";
+hwl_basic.right2 =
+  "Èç¹ûÄúÏëÌŞ³ıÎŞÏß-G¿Í»§¶Ë£¬Ñ¡Ôñ <em>½öB</em> Ä£Ê½¡£Èç¹ûÄúÏë½ûÓÃÎŞÏß·ÃÎÊ£¬Ñ¡Ôñ <em>½ûÓÃ</em>¡£";
+hwl_basic.right3 = "¸ĞÊÜ·¶Î§£º";
+hwl_basic.right4 = "µ÷ÕûackÊ±Ğò¡£ÊäÈë0½«ÍêÈ«½ûÓÃackÊ±Ğò¡£";
 
 
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-wl_adv.titl=" - ¸ß¼¶ÎŞÏßÉèÖÃ";
-wl_adv.h2="¸ß¼¶ÎŞÏßÉèÖÃ";
-wl_adv.legend="¸ß¼¶ÉèÖÃ";
-wl_adv.legend2="ÎŞÏß¶àÃ½ÌåÖ§³ÖÉèÖÃ";
-wl_adv.label="¼øÈ¨ÀàĞÍ";
-wl_adv.label2="»ù±¾ËÙÂÊ";
-wl_adv.label3="´«ÊäËÙÂÊ";
-wl_adv.label4="CTS±£»¤Ä£Ê½";
-wl_adv.label5="èåÍ»·¢";
-wl_adv.label6="ĞÅ±ê¼äÏ¶";
-wl_adv.label7="DTIM¼äÏ¶";
-wl_adv.label8="ËéÆ¬ãĞÖµ";
-wl_adv.label9="RTSãĞÖµ";
-wl_adv.label10="×î´ó¹ØÁªµÄ¿Í»§¶ËÊı";
-wl_adv.label11="AP¶ÀÁ¢";
-wl_adv.label12="´«ËÍÌìÏß";
-wl_adv.label13="½ÓÊÜÌìÏß";
-wl_adv.label14="Preamble";
-wl_adv.reference="ÔëÉù²ÎÕÕ";
-wl_adv.label15="Xmit¹¦ÂÊ";
-wl_adv.label16="Afterburner";
-wl_adv.label17="ÎŞÏßÍ¼ĞÎÓÃ»§½çÃæ·ÃÎÊ";
-wl_adv.label18="WMMÖ§³Ö";
-wl_adv.label19="ÎŞÖªÏş";
-wl_adv.table1="EDCA AP²ÎÊı£¨APµ½¿Í»§¶Ë£©";
-wl_adv.col1="CWmin";
-wl_adv.col2="CWmax";
-wl_adv.col3="AIFSN";
-wl_adv.col4="TXOP(b)";
-wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="¹ÜÀíÔ±Ç¿ÖÆ";
-wl_adv.row1="±³¾°";
-wl_adv.row2="×î´óÅ¬Á¦";
-wl_adv.row3="ÊÓÆµ";
-wl_adv.row4="ÓïÒô";
-wl_adv.table2="EDCA STA²ÎÊı£¨¿Í»§¶Ëµ½AP£©";
-wl_adv.lng="³§"; 					//************* don't use .long ! *************
-wl_adv.shrt="¶Ì"; 				//************* don't use .short ! **************
+wl_adv.titl = " - ¸ß¼¶ÎŞÏßÉèÖÃ";
+wl_adv.h2 = "¸ß¼¶ÎŞÏßÉèÖÃ";
+wl_adv.legend = "¸ß¼¶ÉèÖÃ";
+wl_adv.legend2 = "ÎŞÏß¶àÃ½ÌåÖ§³ÖÉèÖÃ";
+wl_adv.label = "¼øÈ¨ÀàĞÍ";
+wl_adv.label2 = "»ù±¾ËÙÂÊ";
+wl_adv.label3 = "´«ÊäËÙÂÊ";
+wl_adv.label4 = "CTS±£»¤Ä£Ê½";
+wl_adv.label5 = "èåÍ»·¢";
+wl_adv.label6 = "ĞÅ±ê¼äÏ¶";
+wl_adv.label7 = "DTIM¼äÏ¶";
+wl_adv.label8 = "ËéÆ¬ãĞÖµ";
+wl_adv.label9 = "RTSãĞÖµ";
+wl_adv.label10 = "×î´ó¹ØÁªµÄ¿Í»§¶ËÊı";
+wl_adv.label11 = "AP¶ÀÁ¢";
+wl_adv.label12 = "´«ËÍÌìÏß";
+wl_adv.label13 = "½ÓÊÜÌìÏß";
+wl_adv.label14 = "Preamble";
+wl_adv.reference = "ÔëÉù²ÎÕÕ";
+wl_adv.label15 = "Xmit¹¦ÂÊ";
+wl_adv.label16 = "Afterburner";
+wl_adv.label17 = "ÎŞÏßÍ¼ĞÎÓÃ»§½çÃæ·ÃÎÊ";
+wl_adv.label18 = "WMMÖ§³Ö";
+wl_adv.label19 = "ÎŞÖªÏş";
+wl_adv.table1 = "EDCA AP²ÎÊı£¨APµ½¿Í»§¶Ë£©";
+wl_adv.col1 = "CWmin";
+wl_adv.col2 = "CWmax";
+wl_adv.col3 = "AIFSN";
+wl_adv.col4 = "TXOP(b)";
+wl_adv.col5 = "TXOP(a/g)";
+wl_adv.col6 = "¹ÜÀíÔ±Ç¿ÖÆ";
+wl_adv.row1 = "±³¾°";
+wl_adv.row2 = "×î´óÅ¬Á¦";
+wl_adv.row3 = "ÊÓÆµ";
+wl_adv.row4 = "ÓïÒô";
+wl_adv.table2 = "EDCA STA²ÎÊı£¨¿Í»§¶Ëµ½AP£©";
+wl_adv.lng = "³§";		//************* don't use .long ! *************
+wl_adv.shrt = "¶Ì";		//************* don't use .short ! **************
 
 //help container
 
-hwl_adv.right2="Äú¿ÉÒÔ´Ó×Ô¶¯»òÕß¹²ÏíÃØÔ¿ÖĞÑ¡ÔñÒ»¸ö¡£¹²ÏíÃØÔ¿ÊÚÈ¨¸ü¼Ó°²È«£¬µ«ÊÇËùÓĞÔÚÄúÍøÂçÖĞµÄÉè±¸±ØĞëÖ§³Ö¹²ÏíÃØÔ¿ÊÚÈ¨¡£";
+hwl_adv.right2 =
+  "Äú¿ÉÒÔ´Ó×Ô¶¯»òÕß¹²ÏíÃØÔ¿ÖĞÑ¡ÔñÒ»¸ö¡£¹²ÏíÃØÔ¿ÊÚÈ¨¸ü¼Ó°²È«£¬µ«ÊÇËùÓĞÔÚÄúÍøÂçÖĞµÄÉè±¸±ØĞëÖ§³Ö¹²ÏíÃØÔ¿ÊÚÈ¨¡£";
 
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-fail.mess1="ÄúËùÊäÈëµÄÊıÖµÊÇÎŞĞ§µÄ¡£ÇëÔÙÊÔÒ»´Î¡£";
-fail.mess2="Éı¼¶Ê§°Ü¡£";
+fail.mess1 = "ÄúËùÊäÈëµÄÊıÖµÊÇÎŞĞ§µÄ¡£ÇëÔÙÊÔÒ»´Î¡£";
+fail.mess2 = "Éı¼¶Ê§°Ü¡£";
 
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-success.saved="ÉèÖÃÒÑ±£´æ¡£";
-success.restore="ÉèÖÃÒÑ»Ö¸´¡£<br/>Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
-success.upgrade="Éı¼¶³É¹¦¡£<br/>Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
-success.success_noreboot="ÉèÖÃ³É¹¦¡£";
-success.success_reboot=success.success_noreboot + "<br />Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
+success.saved = "ÉèÖÃÒÑ±£´æ¡£";
+success.restore = "ÉèÖÃÒÑ»Ö¸´¡£<br/>Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
+success.upgrade = "Éı¼¶³É¹¦¡£<br/>Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
+success.success_noreboot = "ÉèÖÃ³É¹¦¡£";
+success.success_reboot =
+  success.success_noreboot + "<br />Éè±¸ÕıÔÚÖØĞÂÆô¶¯¡£ÇëÉÔºò¡­¡­";
 
-success.alert_reset="ËùÓĞÅäÖÃÒÑ¾­±»»Ö¸´µ½ËüÃÇµÄÄ¬ÈÏÖµ¡£<br /><br />";
-success.alert1="ÇëÔÚÔÙ´ÎÁ¬½ÓÇ°¼ì²éÒÔÏÂÄÚÈİ£º";
-success.alert2="Èç¹ûÄú¸ü¸ÄÁËÄúµÄÂ·ÓÉÆ÷µÄIPµØÖ·£¬Çë×¢ÒâÄú±ØĞërelease²¢ÇÒrenewÄúÍøÂçÉÏ¿Í»§¶ËµÄµØÖ·¡£";
-success.alert3="Èç¹ûÄúÊÇÍ¨¹ıWLANÁ¬½ÓµÄ£¬Çë¼ÓÈëÍøÂç²¢ÇÒµã»÷ <em>¼ÌĞø</em>.";
+success.alert_reset = "ËùÓĞÅäÖÃÒÑ¾­±»»Ö¸´µ½ËüÃÇµÄÄ¬ÈÏÖµ¡£<br /><br />";
+success.alert1 = "ÇëÔÚÔÙ´ÎÁ¬½ÓÇ°¼ì²éÒÔÏÂÄÚÈİ£º";
+success.alert2 =
+  "Èç¹ûÄú¸ü¸ÄÁËÄúµÄÂ·ÓÉÆ÷µÄIPµØÖ·£¬Çë×¢ÒâÄú±ØĞërelease²¢ÇÒrenewÄúÍøÂçÉÏ¿Í»§¶ËµÄµØÖ·¡£";
+success.alert3 = "Èç¹ûÄúÊÇÍ¨¹ıWLANÁ¬½ÓµÄ£¬Çë¼ÓÈëÍøÂç²¢ÇÒµã»÷ <em>¼ÌĞø</em>.";
 
-// *****************************************************		OLD PAGES 		************************************************************************//
+// *****************************************************                OLD PAGES               ************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl=" - DHCP»î¶¯IPÁĞ±í";
-dhcp.h2="DHCP»î¶¯IPÁĞ±í";
-dhcp.server="DHCP·şÎñÆ÷IPµØÖ·£º";
-dhcp.tclient="¿Í»§¶ËÖ÷»úÃû";
+dhcp.titl = " - DHCP»î¶¯IPÁĞ±í";
+dhcp.h2 = "DHCP»î¶¯IPÁĞ±í";
+dhcp.server = "DHCP·şÎñÆ÷IPµØÖ·£º";
+dhcp.tclient = "¿Í»§¶ËÖ÷»úÃû";
 
 
-donate.mb="ÄúÒ²¿ÉÒÔÍ¨¹ıMoneybookersÕÊºÅmb@dd-wrt.com½øĞĞ¾èÔù";
+donate.mb = "ÄúÒ²¿ÉÒÔÍ¨¹ıMoneybookersÕÊºÅmb@dd-wrt.com½øĞĞ¾èÔù";
