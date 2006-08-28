@@ -3490,6 +3490,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
   foreach (var, vifs, next)
   {
+    websWrite (wp,","); 
     ej_active_wireless_if (eid, wp, argc, argv, var,var);
   }
 }
