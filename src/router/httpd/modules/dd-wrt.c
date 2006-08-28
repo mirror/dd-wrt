@@ -3372,9 +3372,9 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 #else
-void
+int 
 ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
-		       char *iface, char *visible)
+		       char *iface, char *visible,int cnt)
 {
   int rssi = 0, noise = 0;
   FILE *fp2;
@@ -3391,9 +3391,6 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
 
   unlink (RSSI_TMP);
-  int cnt = 0;
-  if (strcmp (iface, visible))
-    cnt = 1;
   char wlmode[32];
   sprintf (wlmode, "%s_mode", visible);
   mode = nvram_safe_get (wlmode);
@@ -3483,7 +3480,8 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  ej_active_wireless_if (eid, wp, argc, argv, get_wdev (), "wl0");
+int cnt=0;
+  ej_active_wireless_if (eid, wp, argc, argv, get_wdev (), "wl0",cnt);
   char *next;
   char var[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
@@ -3492,7 +3490,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
   foreach (var, vifs, next)
   {
-    ej_active_wireless_if (eid, wp, argc, argv, var, var);
+    cnt=ej_active_wireless_if (eid, wp, argc, argv, var, var,cnt);
   }
 }
 
