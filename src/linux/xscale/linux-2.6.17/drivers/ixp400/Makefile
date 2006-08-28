@@ -118,7 +118,6 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/qmgr/IxQMgrQCfg.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrDispatcher.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrInit.o \
-	ixp400_xscale_sw/src/qmgr/IxQMgrAqmIf.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrHwQIfIxp400.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrQAccess.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrSymbols.o

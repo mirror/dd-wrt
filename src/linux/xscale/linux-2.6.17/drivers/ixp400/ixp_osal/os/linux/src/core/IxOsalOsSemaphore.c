@@ -123,7 +123,9 @@ ixOsalSemaphoreWait (IxOsalOsSemaphore * sid, INT32 timeout)
 
     if (timeout == IX_OSAL_WAIT_FOREVER)
     {
-        down (*sid);
+        //down (*sid);
+	if (down_interruptible(*sid))
+	    return -ERESTARTSYS;
     }
     else if (timeout == IX_OSAL_WAIT_NONE)
     {
