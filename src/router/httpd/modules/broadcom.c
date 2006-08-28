@@ -3971,7 +3971,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
 				{
 				websWrite (wp, "IP: ");
-				nvram_status_get("wan_ipaddr");
+				ej_nvram_status_get("wan_ipaddr",wp,argc,argv);
 				websWrite (wp, "</div>\n");
 				}
 			else 
