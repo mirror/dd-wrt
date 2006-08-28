@@ -776,13 +776,13 @@ ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
 	  t -= now.tv_sec;
 	  t /= 60;
 	}
-      
+
       snprintf (active, 31, "iradius%d_lease", i);
       char st[32];
-      if (t>=0)
-      sprintf (st, "%d", t);
+      if (t >= 0)
+	sprintf (st, "%d", t);
       else
-      sprintf (st, "over");
+	sprintf (st, "over");
       websWrite (wp, "<input type=\"num\" name=\"%s\" value='%s' />\n",
 		 active, st);
       websWrite (wp, "</td>\n");
@@ -840,8 +840,8 @@ validate_iradius (webs_t wp, char *value, struct variable *v)
 
       snprintf (active, 31, "iradius%d_lease", i);
       char *time = websGetVar (wp, active, "-1");
-      int t=-1;
-      if (strcmp(time,"over"))
+      int t = -1;
+      if (strcmp (time, "over"))
 	t = atoi (time);
       if (t == -1)
 	{
@@ -3083,8 +3083,8 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
     }
   else
     //websWrite (wp, "unknown");
-	websWrite (wp, "%s", live_translate ("share.unknown"));
-	
+    websWrite (wp, "%s", live_translate ("share.unknown"));
+
   return;
 
 }
@@ -3141,7 +3141,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
     }
   else
     //websWrite (wp, "unknown");
-	websWrite (wp, "%s", live_translate ("share.unknown"));
+    websWrite (wp, "%s", live_translate ("share.unknown"));
   return;
 
 }
@@ -3267,6 +3267,8 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
+
+#ifndef HAVE_MSSID
 void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -3369,6 +3371,133 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+#else
+void
+ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
+		       char *iface,char *visible)
+{
+  int rssi = 0, noise = 0;
+  FILE *fp2;
+  char *mode;
+  char mac[30];
+  char list[2][30];
+  char line[80];
+  char cmd[80];
+  int macmask;
+  if (ejArgs (argc, argv, "%d", &macmask) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+
+  unlink (RSSI_TMP);
+  int cnt = 0;
+  char wlmode[32];
+  sprintf (wlmode, "%s_mode", visible);
+  mode = nvram_safe_get (wlmode);
+  unsigned char buf[WLC_IOCTL_MAXLEN];
+  memset (buf, 0, WLC_IOCTL_MAXLEN);	//get_wdev
+  int r = getassoclist (iface, buf);
+  if (r < 0)
+    return;
+  struct maclist *maclist = (struct maclist *) buf;
+  int i;
+  for (i = 0; i < maclist->count; i++)
+    {
+      ether_etoa ((uint8 *) & maclist->ea[i], mac);
+
+      rssi = 0;
+      noise = 0;
+      // get rssi value
+      if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+	snprintf (cmd, sizeof (cmd), "wl -i %s rssi > %s", iface, RSSI_TMP);
+      else
+	snprintf (cmd, sizeof (cmd), "wl -i %s rssi \"%s\" > %s", iface, mac,
+		  RSSI_TMP);
+      system (cmd);
+
+      // get noise value if not ap mode
+      if (strcmp (mode, "ap"))
+	snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface, RSSI_TMP);
+      system (cmd);		// get RSSI value for mac
+
+      fp2 = fopen (RSSI_TMP, "r");
+      if (fgets (line, sizeof (line), fp2) != NULL)
+	{
+
+	  // get rssi
+#ifdef HAVE_MSSID
+	  if (sscanf (line, "%d", &rssi) != 1)
+	    continue;
+
+//           noise=getNoise(iface);
+
+	  if (strcmp (mode, "ap") &&
+	      fgets (line, sizeof (line), fp2) != NULL &&
+	      sscanf (line, "%d", &noise) != 1)
+	    continue;
+#else
+	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
+	    continue;
+//          noise=getNoise(iface);
+	  if (strcmp (mode, "ap") &&
+	      fgets (line, sizeof (line), fp2) != NULL &&
+	      sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
+	    continue;
+#endif
+	  // get noise for client/wet mode
+
+	  fclose (fp2);
+	}
+      if (nvram_match ("maskmac", "1") && macmask)
+	{
+	  mac[0] = 'x';
+	  mac[1] = 'x';
+	  mac[3] = 'x';
+	  mac[4] = 'x';
+	  mac[6] = 'x';
+	  mac[7] = 'x';
+	  mac[9] = 'x';
+	  mac[10] = 'x';
+	}
+      if (cnt)
+	websWrite (wp, ",");
+      cnt++;
+      if (!strcmp (mode, "ap"))
+	{
+	  char *ref = nvram_get ("noise_reference");
+	  noise = -98;
+	  if (ref)
+	    noise = atoi (ref);
+	}
+      websWrite (wp, "'%s','%s','%d','%d','%d'", mac, iface, rssi, noise,
+		 rssi - noise);
+    }
+  unlink (RSSI_TMP);
+
+  return;
+}
+
+void
+ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  ej_active_wireless_if (eid, wp, argc, argv, get_wdev (),"wl0");
+  char *next;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs == NULL)
+    return;
+
+  foreach (var, vifs, next)
+  {
+    ej_active_wireless_if (eid, wp, argc, argv, var,var);
+  }
+}
+
+
+#endif
+
+
 #endif
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
@@ -3523,14 +3652,14 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	<div class=\"setting\">\n\
 	          <input type=\"hidden\" name=\"wl_wds%d_ipaddr\" value=\"4\">\n\
 	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n\
-	          <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
+	          <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
        </div>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
 
       websWrite (wp, "\
        	  <div class=\"setting\">\n\
        	  <div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n\
 	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n\
+	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
     }
