@@ -3962,10 +3962,10 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		websWrite (wp, "<div id=\"statusInfo\">\n");
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
 		websWrite (wp, "<script type=\"text/javascript\">document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
-		get_firmware_version();
+		ej_get_firmware_version(0,wp,argc,argv);
 		websWrite (wp, "</a>\");</script></div>\n"); 
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
-		get_uptime();
+		ej_get_uptime(0,wp,argc,argv);
 		websWrite (wp, "</div>\n");
 		websWrite (wp, "<div class=\"info\">WAN ");
 			if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
