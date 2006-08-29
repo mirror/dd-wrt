@@ -94,6 +94,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Linksys WRT300N v1 (4704 cpu + BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
 
+//Buffalo WHR-AM54G54
+#define ROUTER_BUFFALO_WHRAM54G54 0x170f
+
 #define NVROUTER "DD_BOARD"
 
 
