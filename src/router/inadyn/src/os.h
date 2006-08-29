@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -25,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #define OS_DEF_OK 0
     
-#ifdef _WIN32 
+/* #ifdef _WIN32 
 	#include <Windows.h>
     #undef OS_DEF_OK
     #define OS_DEF_OK  1
@@ -33,7 +35,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
         #define BOOL WINBOOL 
         #define HAVE_OS_BOOL 1
     #endif
-#endif
+#endif */
+
+#ifdef _WIN32 
+    #include <Windows.h> 
+    #undef OS_DEF_OK 
+    #define OS_DEF_OK 1 
+    #ifndef BOOL 
+    #ifndef _WINDEF_ 
+        #define BOOL WINBOOL 
+        #else 
+        #define vsnprintf _vsnprintf 
+    #endif 
+    #define HAVE_OS_BOOL 1 
+    #endif 
+#endif 
 
 #ifdef RMC_DEBUG_VERSION
     #undef OS_DEF_OK
