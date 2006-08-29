@@ -55,9 +55,9 @@ CFLAGS += -DHAVE_MULTICAST
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
-OBJS += upgrade_rb500.o
+OBJS += upgrade_rb500.c
 else
-OBJS += upgrade.o
+OBJS += upgrade.c
 endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
@@ -114,7 +114,7 @@ endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
-OBJS += sputnik.o
+OBJS += sputnik.c
 endif
 
 #ifeq ($(HSIAB_SUPPORT),1)
@@ -137,7 +137,7 @@ endif
 
 
 ifeq ($(DDM_SUPPORT),1)
-OBJS  += ddm.o
+OBJS  += ddm.c
 endif
 
 ifeq ($(CONFIG_ZEROIP),y)
@@ -211,28 +211,28 @@ CFLAGS += -DCONFIG_BRANDING
 endif
 
 ifeq ($(ARP_TABLE_SUPPORT),1)
-OBJS  += arp.o
+OBJS  += arp.c
 endif
 ifeq ($(EMI_TEST),1)
-OBJS  += emi_test.o
+OBJS  += emi_test.c
 endif
 ifeq ($(DEBUG_WEB),1)
 CFLAGS += -DMY_DEBUG
 endif
 ifeq ($(WAKE_ON_LAN_SUPPORT),1)
-OBJS  += wol.o
+OBJS  += wol.c
 endif
 ifeq ($(SAMBA_SUPPORT),1)
-OBJS  += samba.o
+OBJS  += samba.c
 endif
 #ifeq ($(HW_QOS_SUPPORT),1)
 #OBJS  += qos.o
 #endif
 ifeq ($(PERFORMANCE_SUPPORT),1)
-OBJS  += performance.o
+OBJS  += performance.c
 endif
 #ifeq ($(WL_STA_SUPPORT),1)
-OBJS  += site_survey.o
+OBJS  += site_survey.c
 #endif
 
 #OBJS += http.o
@@ -253,7 +253,7 @@ CFLAGS += -I$(TOP)/matrixssl
 LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
 CFLAGS += -DHAVE_MATRIXSSL
 CFLAGS += -DHAVE_HTTPS
-OBJS += matrixssl_xface.o
+OBJS += matrixssl_xface.c
 endif
 
 endif
@@ -285,10 +285,10 @@ endif
 cert:
 	./gencert.sh
 
-httpd: cgi.o ej.o httpd.o broadcom.o \
-       index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+httpd: cgi.c ej.c httpd.c broadcom.c \
+       index.c status.c dhcp.c log.c filters.c forward.c dynamic_route.c static_route.c wireless.c ddns.c \
+       find_pattern.c lib.c diag.c sysinfo.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 	

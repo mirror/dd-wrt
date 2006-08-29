@@ -5582,4 +5582,89 @@ ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+#define PROC_DEV "/proc/net/dev"
+
+void
+ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char line[256];
+  FILE *fp;
+  struct dev_info
+  {
+    char ifname[10];
+    unsigned long rx_bytes;
+    unsigned long rx_pks;
+    unsigned long rx_errs;
+    unsigned long rx_drops;
+    unsigned long rx_fifo;
+    unsigned long rx_frame;
+    unsigned long rx_com;
+    unsigned long rx_mcast;
+    unsigned long tx_bytes;
+    unsigned long tx_pks;
+    unsigned long tx_errs;
+    unsigned long tx_drops;
+    unsigned long tx_fifo;
+    unsigned long tx_colls;
+    unsigned long tx_carr;
+    unsigned long tx_com;
+  } info;
+
+  info.rx_pks = info.rx_errs = info.rx_drops = 0;
+  info.tx_pks = info.tx_errs = info.tx_drops = info.tx_colls = 0;
+
+  if ((fp = fopen (PROC_DEV, "r")) == NULL)
+    {
+      websError (wp, 400, "Cann't open %s\n", PROC_DEV);
+      return;
+    }
+  else
+    {
+/*
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  eth0:  674829    5501    0    0    0     0          0         0  1249130    1831    0    0    0     0       0          0
+  eth1:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  eth2:       0       0    0    0    0   719          0         0     1974      16  295    0    0     0       0          0
+   br0:  107114    1078    0    0    0     0          0         0   910094    1304    0    0    0     0       0          0
+
+*/
+      while (fgets (line, sizeof (line), fp) != NULL)
+	{
+	  int ifl = 0;
+	  if (!strchr (line, ':'))
+	    continue;
+	  while (line[ifl] != ':')
+	    ifl++;
+	  line[ifl] = 0;	/* interface */
+	  if (strstr (line, nvram_safe_get ("wl0_ifname")))
+	    {
+	      sscanf (line + ifl + 1,
+		      "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
+		      &info.rx_bytes, &info.rx_pks, &info.rx_errs,
+		      &info.rx_drops, &info.rx_fifo, &info.rx_frame,
+		      &info.rx_com, &info.rx_mcast, &info.tx_bytes,
+		      &info.tx_pks, &info.tx_errs, &info.tx_drops,
+		      &info.tx_fifo, &info.tx_colls, &info.tx_carr,
+		      &info.tx_com);
+	    }
+
+	}
+      fclose (fp);
+    }
+
+  websWrite (wp, "SWRXgoodPacket=%ld;", info.rx_pks);
+  websWrite (wp, "SWRXerrorPacket=%ld;", info.rx_errs + info.rx_drops);
+
+  websWrite (wp, "SWTXgoodPacket=%ld;", info.tx_pks);
+  websWrite (wp, "SWTXerrorPacket=%ld;",
+	     info.tx_errs + info.tx_drops + info.tx_colls);
+
+
+  return;
+}
+
+
 /* END  Added by Botho 10.May.06 */
+
