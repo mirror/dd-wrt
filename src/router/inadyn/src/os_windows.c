@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -191,6 +193,26 @@ RC_TYPE os_syslog_open(const char *p_prg_name)
 RC_TYPE os_syslog_close(void)
 {
     return RC_OK;
+}
+
+/*
+    thanks pagedude
+*/
+RC_TYPE os_shell_execute(char * p_cmd) 
+{
+	RC_TYPE rc = RC_OK; 
+	HANDLE hProcess = NULL; 
+	SHELLEXECUTEINFO shellInfo; 
+	ZeroMemory(&shellInfo, sizeof(shellInfo)); 
+	shellInfo.cbSize = sizeof(shellInfo); 
+	shellInfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_NOCLOSEPROCESS; 
+	shellInfo.lpFile = p_cmd; 
+	/*shellInfo.lpParameters = args;*/ 
+	if(!ShellExecuteEx(&shellInfo)) 
+	{
+		rc = RC_OS_FORK_FAILURE; 
+	}
+	return rc; 
 }
 
 static unsigned long os_get_inet_addr(char* addr)

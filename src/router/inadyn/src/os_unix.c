@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -48,21 +50,26 @@ RC_TYPE os_ip_support_cleanup(void)
     return RC_OK;
 }
 
-void exec_cmd(DYN_DNS_CLIENT *p_self)
+RC_TYPE os_shell_execute(char * p_cmd)
 {
+	RC_TYPE rc = RC_OK; 
 	int kid;
 	switch((kid=vfork()))
 	{
 		case 0:
 		/* child */
-			execl("/bin/sh", "sh", "-c", p_self->external_command, (char *) 0);
+			execl("/bin/sh", "sh", "-c", p_cmd, (char *) 0);
 			exit(1);
 			
+		break;
+		case -1:
+			rc = RC_OS_FORK_FAILURE;
 		break;
 		default:
 		/* parent */
 		break;
-	}	
+	}
+	return rc;
 }
 
 /* storage fot the parameter needed by the handler */

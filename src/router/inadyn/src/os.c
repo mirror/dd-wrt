@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
