@@ -50,7 +50,7 @@
 #include <code_pattern.h>
 #include <utils.h>
 #include <shutils.h>
-
+#include <sys/time.h>
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
