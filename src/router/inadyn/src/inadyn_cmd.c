@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -64,9 +66,7 @@ static RC_TYPE set_iterations_handler(CMD_DATA *p_cmd, int current_nr, void *p_c
 static RC_TYPE set_syslog_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE set_change_persona_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
-#ifdef UNIX_OS
 static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
-#endif
 static RC_TYPE get_cache_dir(CMD_DATA *p_cmd, int current_nr, void *p_context);
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] = 
@@ -129,11 +129,9 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--syslog",	0,	{set_syslog_handler, NULL},	"force logging to syslog . (e.g. /var/log/messages). Works on **NIX systems only."},
 	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
 	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
-#ifdef UNIX_OS
-	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update. Works on **NIX systems only."},
-#endif
-	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name eg. /tmp/ddns"},
-	{"--wildcard", 0, {wildcard_handler, NULL}, "enable wildcarding"},
+	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update. Include the full path."},
+	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name. (e.g. /tmp/ddns). Defaults to /tmp/ddns on **NIX systems."},
+	{"--wildcard", 0, {wildcard_handler, NULL}, "enable domain wildcarding for dyndns.org, 3322.org, or easydns.com."},
 	{NULL,		0,	{0, NULL},	NULL }
 };
 
@@ -586,7 +584,6 @@ RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 	return RC_OK;
 }
 
-#ifdef UNIX_OS
 static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
@@ -602,7 +599,6 @@ static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context
 	strcpy(p_self->external_command, p_cmd->argv[current_nr]);
 	return RC_OK;
 }
-#endif
 
 static RC_TYPE get_cache_dir(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {

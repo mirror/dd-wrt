@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -54,7 +56,6 @@ static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
-/* botho 30/07/06 : add www.3322.org */
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
     {DYNDNS_DEFAULT, 
@@ -410,8 +411,7 @@ static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 	{
 		return FALSE;
 	}
-    return (strstr(p_rsp, p_ok_string) != NULL) ||
-	    (strstr(p_rsp, "NOERROR") != NULL);
+    return (strstr(p_rsp, p_ok_string) != NULL);
 }
 
 /**
@@ -492,6 +492,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 							p_self->alias_info.names[i].name,
 							p_self->info.my_ip_address.name));                        
 						p_self->times_since_last_update = 0;
+						/*recalc forced update period*/
 						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
 						p_self->forced_update_times = p_self->forced_update_period_sec / p_self->sleep_sec;
 
@@ -505,10 +506,8 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 							fprintf(fp,"%ld", time (NULL));
 							fclose(fp);
 						}
-#ifdef UNIX_OS
 						if (strlen(p_self->external_command) > 0)
-							exec_cmd(p_self);
-#endif
+							os_shell_execute(p_self->external_command);
 					}
 					else
 					{
@@ -561,8 +560,14 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self)
 		/*forced update period*/
 		p_self->forced_update_period_sec = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
 		p_self->forced_update_period_sec_orig = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
+#ifdef UNIX_OS
 		sprintf(p_self->ip_cache, "%s%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_IP_FILE);
 		sprintf(p_self->time_cache, "%s%s", DYNDNS_DEFAULT_CACHE_PREFIX, DYNDNS_DEFAULT_TIME_FILE);
+#endif
+#ifdef _WIN32
+		sprintf(p_self->ip_cache, "%s", DYNDNS_DEFAULT_IP_FILE);
+		sprintf(p_self->time_cache, "%s", DYNDNS_DEFAULT_TIME_FILE);
+#endif
 		/*update period*/
 		p_self->sleep_sec = DYNDNS_DEFAULT_SLEEP;
 	}
@@ -624,7 +629,7 @@ void dyn_dns_print_hello(void*p)
 {
 	(void) p;
 
-    DBG_PRINTF((LOG_INFO, MODULE_TAG "Started 'INADYN version %s' - dynamic DNS updater.\n", DYNDNS_VERSION_STRING));
+    DBG_PRINTF((LOG_INFO, MODULE_TAG "Started 'INADYN Advanced version %s' - dynamic DNS updater.\n", DYNDNS_VERSION_STRING));
 }
 
 /*
