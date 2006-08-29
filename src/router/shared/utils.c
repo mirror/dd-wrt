@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
+#include <arpa/inet.h>
 
 #ifndef TESTUTIL
 
