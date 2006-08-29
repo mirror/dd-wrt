@@ -3326,56 +3326,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   else
     browser_method = USE_WAN;
 
-  value = websGetVar (wp, "StartContinueTx", NULL);
-  // printf("\nBarry StartContinueTx,value=%s\n",value);
-  if (value)
-    {
-      StartContinueTx (wp, value);
-      goto footer;
-    }
-
-  value = websGetVar (wp, "StopContinueTx", NULL);
-  // printf("\nBarry StopContinueTx,value=%s\n",value);
-  if (value)
-    {
-      StopContinueTx (wp, value);
-      goto footer;
-    }
-  /* 1030 */
-  value = websGetVar (wp, "WL_atten_bb", NULL);
-  // printf("\nBarry WL_atten_bb,value=%s\n",value);
-  if (value)
-    {
-      Check_TSSI (wp, value);
-      goto footer;
-    }
-  /* 1030 */
-  value = websGetVar (wp, "WL_tssi_enable", NULL);
-  // printf("\nBarry WL_tssi_enable,value=%s\n",value);
-  if (value)
-    {
-      Enable_TSSI (value);
-      goto footer;
-    }
-  /* 1216 */
-  value = websGetVar (wp, "ChangeANT", NULL);
-  // printf("\nBarry ChangeANT,value=%s\n",value);
-  if (value)
-    {
-      Change_Ant (value);
-      goto footer;
-    }
-  value = websGetVar (wp, "skip_amd_check", NULL);
-  if (value)
-    {
-      if (atoi (value) == 0 || atoi (value) == 1)
-	{
-	  nvram_set ("skip_amd_check", value);
-	  sys_commit ();
-	}
-      goto footer;
-    }
-
   need_commit = atoi (websGetVar (wp, "commit", "1"));
   cprintf ("get action\n");
   value = websGetVar (wp, "action", "");
