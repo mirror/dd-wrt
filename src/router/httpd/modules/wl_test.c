@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/klog.h>
 #include <netdb.h>
-
+#include <unistd.h>
 #include <broadcom.h>
 
 /* barry add 20031027 */
