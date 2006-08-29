@@ -6,6 +6,7 @@
 #include <broadcom.h>
 #include <cyutils.h>
 #include <sys/sysinfo.h>
+#include <sys/stat.h>
 
 // for test
 void
