@@ -1,5 +1,7 @@
 /*
 Copyright (C) 2003-2004 Narcis Ilisei
+Modifications by Steve Horbachuk
+Copyright (C) 2006 Steve Horbachuk
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -25,11 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "http_client.h"
 #include "debug_if.h"
 
-#define DYNDNS_VERSION_STRING  "1.96-custom"
-#define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
-#define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
+#define DYNDNS_VERSION_STRING  "0.1"
+#define DYNDNS_AGENT_NAME  "inadyn advanced/" DYNDNS_VERSION_STRING
+#define DYNDNS_EMAIL_ADDR	"software@stevehorbachuk.com"
 
-/* botho 30/07/06 : add www.3322.org */
 typedef enum
 {
     DYNDNS_DYNAMIC,
@@ -261,7 +262,7 @@ typedef struct DYN_DNS_CLIENT
 	DYN_DNS_CMD cmd;
 	int sleep_sec; /* time between 2 updates*/
 	int forced_update_period_sec; 
-	int forced_update_period_sec_orig; 
+	int forced_update_period_sec_orig; /* original read from cmd line */
 	int times_since_last_update;
 	int forced_update_times; /* the same forced update period counted in sleep periods*/
 	int cmd_check_period; /*time to wait for a command*/
@@ -277,10 +278,10 @@ typedef struct DYN_DNS_CLIENT
 	char *p_work_buffer; /* for HTTP responses*/
 	int work_buffer_size;
 	char *p_req_buffer; /* for HTTP requests*/
+	int req_buffer_size;
 	char external_command[1024];
 	char time_cache[1024];
 	char ip_cache[1024];
-	int req_buffer_size;
 
 
 	USER_INFO sys_usr_info; /*info about the current account running inadyn*/
@@ -322,14 +323,15 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self);
 */
 RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv);
 
+RC_TYPE os_shell_execute(char *p_cmd);
+
 /*
 	printout of version
 */
 void dyn_dns_print_hello(void*p);
 
-void exec_cmd(DYN_DNS_CLIENT *p_self);
-
 char *print_time(void);
+
 /*
 	 basic resource allocations for the dyn_dns object
 */
