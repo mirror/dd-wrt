@@ -12,7 +12,7 @@
 				<dd>On the Routing screen, you can set the routing mode and settings of the router. <i>Gateway</i> mode is recommended for most users.</dd>
 				
 				<dt><% tran("route.mod"); %></dt>
-				<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network's connection to the Internet. Select router if the router exists on a network with other routers.</dd>
+				<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network's connection to the Internet. Select router if the router exists on a network with other routers. In Gateway mode the router performs NAT, while in RIP2 or OSPF mode it doesn't.</dd>
 				
 				<dt><% tran("route.gateway_legend"); %></dt>
 				<dd>Dynamic Routing enables the router to automatically adjust to physical changes in the network's layout and exchange routing tables with other routers. The router determines the network packets&#8217; route based on the fewest number of hops between the source and destination.<br /><br />
