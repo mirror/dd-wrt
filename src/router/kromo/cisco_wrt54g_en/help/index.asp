@@ -80,8 +80,8 @@
 				<dd>
 					<ul>
 						<li><a href="http://www.dd-wrt.com" target="_new">DD-WRT Homepage</a></li>
-						<li><a href="http://forum.bsr-clan.de/viewforum.php?f=15" target="_new">Forum</a></li>
-						<li><a href="http://wrt-wiki.bsr-clan.de" target="_new">Wiki</a></li>
+						<li><a href="http://www.dd-wrt.com/forum" target="_new">Forum</a></li>
+						<li><a href="http://www.dd-wrt.com/wiki" target="_new">Wiki</a></li>
 						<li><a href="http://www.dd-wrt.com/bugtracker" target="_new">Bugtracker</a></li>
 					</ul>
 				</dd>
