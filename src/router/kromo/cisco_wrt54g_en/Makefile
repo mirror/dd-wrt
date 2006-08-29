@@ -296,7 +296,7 @@ endif
 
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
-	../../../../tools/strip $(INSTALLDIR)/www/help/*.htm
+	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
 	
 ifeq ($(CONFIG_SER),y)	
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install	
