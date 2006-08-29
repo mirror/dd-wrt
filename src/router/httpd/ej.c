@@ -238,6 +238,24 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		}
 	      continue;
 	    }
+	  if (!strncmp (pattern, "{x}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "document.write(\"");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{y}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<document.");
+		  len = 0;
+		}
+	      continue;
+	    }
 	  if (!strncmp (pattern, "{m}", len))
 	    {
 	      if (len == 3)
