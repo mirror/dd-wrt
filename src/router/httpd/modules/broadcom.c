@@ -3809,6 +3809,79 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 */
 
 void
+ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *mainmenu, *submenu;
+
+  if (ejArgs (argc, argv, "%s %s", &mainmenu, &submenu) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+    
+int sipgate = nvram_match ("sipgate", "1");
+
+char menu[8][11][32] = {"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","VLAN.asp","","","","","","",
+						"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","","",
+						"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","","",
+						"Firewall.asp","VPN.asp","","","","","","","","","",
+						"Filters.asp","","","","","","","","","","",
+						"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","","","","","",
+						"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp","",
+						"Status_Router.asp","Status_Lan.asp","Status_SputnikAPD.live.asp","Status_Wireless.asp","Info.htm","","","","","",""};
+
+/* real name is bmenu.menuname[i][j] */
+char menuname[8][11][32] = {"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","","",
+							"wireless","wirelessBasic","wirelessRadius","wirelessSecurity","wirelessMac","wirelessAdvanced","wirelessWds","","","","",
+							"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","","",
+							"security","firwall","vpn","","","","","","","","",
+							"accrestriction","webaccess","","","","","","","","","",
+							"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","","","","",
+							"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup",
+							"statu","statuRouter","statuLAN","statuSputnik","statuWLAN","statuSysInfo","","","","",""};
+
+int i,j;
+
+	printf ("<div id=\"menu\">\n");
+	printf (" <div id=\"menuMain\">\n");
+	printf ("  <ul id=\"menuMainList\">\n");
+
+	  for (i=0; i<8; i++)
+		{
+		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))
+			i++;
+		if (!strcmp (menu[i][0], mainmenu))
+			{
+			printf ("   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][0]);
+			printf ("    <div id=\"menuSub\">\n");
+			printf ("     <ul id=\"menuSubList\">\n");
+			for (j=0; ((strlen(menu[i][j]) != 0) && (j<11)); j++)
+				{
+				if (!strcmp(menu[i][j], submenu))
+					{
+					printf ("      <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][j+1]);
+					}
+				else
+					{
+					printf ("      <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+					}
+				}
+			printf ("     </ul>\n");
+			printf ("    </div>\n");
+			}
+		else
+			{
+			printf ("   <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
+			}
+		}
+		printf ("  </ul>\n");
+		printf (" </div>\n");
+		printf ("</div>\n");
+
+  return;
+}
+
+void
 ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 		char *style = nvram_get ("router_style");
@@ -4604,6 +4677,7 @@ struct ej_handler ej_handlers[] = {
   {"tf_upnp", ej_tf_upnp},
 #endif
 //  {"charset", ej_charset},
+  {"do_menu", ej_do_menu},  //Eko
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_timeoptions", ej_show_timeoptions}, //Eko
