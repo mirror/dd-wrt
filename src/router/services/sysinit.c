@@ -335,6 +335,16 @@ start_restore_defaults (void)
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
   };
+#elif HAVE_GEMTEK
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames",
+     "eth0 ath0",
+     0},
+    {"wan_ifname", "atm0", 0},
+    {"wan_ifnames", "atm0", 0},
+    {0, 0, 0}
+  };
 #elif HAVE_XSCALE
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
@@ -379,6 +389,9 @@ start_restore_defaults (void)
   linux_overrides = generic;
   int brand = getRouterBrand ();
 #elif HAVE_XSCALE
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+#elif HAVE_GEMTEK
   linux_overrides = generic;
   int brand = getRouterBrand ();
 #else
@@ -834,6 +847,12 @@ start_sysinit (void)
   eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
   eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
   eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
+#elif HAVE_GEMTEK
+  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+// later
+//  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
+//  eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
+//  eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
 #endif
   eval ("mkdir", "/tmp/www");
   
@@ -866,6 +885,12 @@ eval ("mount","-o","remount,rw","/");
 //if (eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram"))
 //    eval("mtd","erase","DDWRT");
 //eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram");    
+mkdir ("/usr/local/nvram", 0777);
+unlink ("/tmp/nvram/.lock");
+eval ("mkdir", "/tmp/nvram");
+eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+#elif HAVE_GEMTEK
 mkdir ("/usr/local/nvram", 0777);
 unlink ("/tmp/nvram/.lock");
 eval ("mkdir", "/tmp/nvram");
@@ -992,6 +1017,8 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 #define MODULES
 #elif HAVE_XSCALE
 #define MODULES
+#elif HAVE_GEMTEK
+#define MODULES
 #endif
 
 #ifndef MODULES
@@ -1114,6 +1141,7 @@ if (check_vlan_support())
       }
     }
 #else
+#ifdef HAVE_XSCALE
 eval("insmod","md5");
 eval("insmod","aes");
 eval("insmod","blowfish");
@@ -1134,7 +1162,18 @@ eval("insmod","ixp4xx","init_crypto=0");
 eval("ifconfig","ixp0","0.0.0.0","up");
 eval("vconfig","add","ixp0","1");
 eval("vconfig","add","ixp0","2");
+#elif HAVE_GEMTEK
+eval("insmod","profdrvdd");
+eval("insmod","atmapi");
+eval("insmod","blaa_dd");
+eval("insmod","adsldd");
+eval("insmod","bcmprocfs");
+eval("insmod","bcm_enet");
+eval("insmod","bcm_usb");
+eval("insmod","endpointdd");
+#endif
 
+/*
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
@@ -1155,7 +1194,7 @@ eval("vconfig","add","ixp0","2");
   eval ("ifconfig", "wifi3", "up");
   eval ("ifconfig", "wifi4", "up");
   eval ("ifconfig", "wifi5", "up");
-
+*/
 
 //  eval ("insmod", "mii");
 //  eval ("insmod", "korina");
