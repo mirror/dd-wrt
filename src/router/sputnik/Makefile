@@ -1,5 +1,5 @@
-CFLAGS += -O2 -Wall
-ARCH = mips
+CFLAGS += -Os -Wall
+ARCH = powerpc
 #CC = /opt/staging_dir_armeb/bin/armeb-linux-uclibc-gcc
 CC = $(ARCH)-linux-uclibc-gcc
 
@@ -60,7 +60,7 @@ OBJS += src/pppoe.o
 OBJS += src/status.o
 OBJS += src/usage.o
 
-all: sputnik sputnik.static
+all: libiksemel.so sputnik sputnik.static
 
 clean:
 	rm -f $(OBJS) apd
