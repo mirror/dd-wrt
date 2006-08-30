@@ -3852,14 +3852,14 @@ int i,j;
 			i++;
 		if (!strcmp (menu[i][0], mainmenu))
 			{
-			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][0]);
+			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n", menuname[i][0]);
 			websWrite (wp, "    <div id=\"menuSub\">\n");
 			websWrite (wp, "     <ul id=\"menuSubList\">\n");
 			for (j=0; ((strlen(menu[i][j]) != 0) && (j<11)); j++)
 				{
 				if (!strcmp(menu[i][j], submenu))
 					{
-					websWrite (wp, "      <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][j+1]);
+					websWrite (wp, "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n", menuname[i][j+1]);
 					}
 				else
 					{
@@ -3868,6 +3868,7 @@ int i,j;
 				}
 			websWrite (wp, "     </ul>\n");
 			websWrite (wp, "    </div>\n");
+			websWrite (wp, "    </li>\n");
 			}
 		else
 			{
