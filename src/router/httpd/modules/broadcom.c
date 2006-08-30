@@ -3842,9 +3842,9 @@ char menuname[8][11][32] = {"setup","setupbasic","setupddns","setupmacclone","se
 
 int i,j;
 
-	printf ("<div id=\"menu\">\n");
-	printf (" <div id=\"menuMain\">\n");
-	printf ("  <ul id=\"menuMainList\">\n");
+	websWrite (wp, "<div id=\"menu\">\n");
+	websWrite (wp, " <div id=\"menuMain\">\n");
+	websWrite (wp, "  <ul id=\"menuMainList\">\n");
 
 	  for (i=0; i<8; i++)
 		{
@@ -3852,31 +3852,31 @@ int i,j;
 			i++;
 		if (!strcmp (menu[i][0], mainmenu))
 			{
-			printf ("   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][0]);
-			printf ("    <div id=\"menuSub\">\n");
-			printf ("     <ul id=\"menuSubList\">\n");
+			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][0]);
+			websWrite (wp, "    <div id=\"menuSub\">\n");
+			websWrite (wp, "     <ul id=\"menuSubList\">\n");
 			for (j=0; ((strlen(menu[i][j]) != 0) && (j<11)); j++)
 				{
 				if (!strcmp(menu[i][j], submenu))
 					{
-					printf ("      <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][j+1]);
+					websWrite (wp, "      <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menuname[i][j+1]);
 					}
 				else
 					{
-					printf ("      <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+					websWrite (wp, "      <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
 					}
 				}
-			printf ("     </ul>\n");
-			printf ("    </div>\n");
+			websWrite (wp, "     </ul>\n");
+			websWrite (wp, "    </div>\n");
 			}
 		else
 			{
-			printf ("   <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
+			websWrite (wp, "   <li><a href=\"%s<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
 			}
 		}
-		printf ("  </ul>\n");
-		printf (" </div>\n");
-		printf ("</div>\n");
+		websWrite (wp, "  </ul>\n");
+		websWrite (wp, " </div>\n");
+		websWrite (wp, "</div>\n");
 
   return;
 }
