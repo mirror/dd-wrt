@@ -31,6 +31,9 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
 CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_GEMTEK),y)
+CFLAGS += -DHAVE_GEMTEK
+endif
 ifeq ($(CONFIG_KODATA),y)
 CFLAGS += -DHAVE_KODATA
 endif
