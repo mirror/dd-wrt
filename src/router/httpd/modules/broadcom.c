@@ -3821,6 +3821,12 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
     
 int sipgate = nvram_match ("sipgate", "1");
 
+#ifdef HAVE_HTTPS
+int havessl = do_ssl;
+#else
+int havessl = 0;
+#endif
+
 char menu[8][11][32] = {"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","","",
 						"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","","",
 						"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","","",
@@ -3863,7 +3869,7 @@ int i,j;
 					}
 				else
 					{
-					if ((do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
+					if ((havessl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
 						{
 						websWrite (wp, "      <script type=\"text/javascript\">\n");
 						websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n", menuname[i][j+1]);
