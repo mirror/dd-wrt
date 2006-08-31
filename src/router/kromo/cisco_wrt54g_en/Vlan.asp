@@ -69,7 +69,8 @@ function init() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
+					<% do_menu("index.asp","Vlan.asp"); %>
+			<!--		<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
 								<li class="current"><span><% tran("bmenu.setup"); %></span>
@@ -94,7 +95,7 @@ function init() {
 								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
-					</div>
+					</div>  -->
 				</div>
 				<div id="main">
 					<div id="contents">
