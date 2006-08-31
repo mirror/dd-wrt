@@ -3827,24 +3827,24 @@ int havessl = do_ssl;
 int havessl = 0;
 #endif
 
-char menu[8][11][32] = {"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","","",
-						"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","","",
-						"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","","",
-						"Firewall.asp","VPN.asp","","","","","","","","","",
-						"Filters.asp","","","","","","","","","","",
-						"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","","","","","",
-						"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp","",
-						"Status_Router.asp","Status_Lan.asp","Status_SputnikAPD.live.asp","Status_Wireless.asp","Info.htm","","","","","",""};
+char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
+						{"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","",""},
+						{"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","",""},
+						{"Firewall.asp","VPN.asp","","","","","","","","",""},
+						{"Filters.asp","","","","","","","","","",""},
+						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","","","","",""},
+						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp",""},
+						{"Status_Router.asp","Status_Lan.asp","Status_SputnikAPD.live.asp","Status_Wireless.asp","Info.htm","","","","","",""}};
 
 /* real name is bmenu.menuname[i][j] */
-char menuname[8][11][32] = {"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","","",
-							"wireless","wirelessBasic","wirelessRadius","wirelessSecurity","wirelessMac","wirelessAdvanced","wirelessWds","","","","",
-							"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","","",
-							"security","firwall","vpn","","","","","","","","",
-							"accrestriction","webaccess","","","","","","","","","",
-							"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","","","","",
-							"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup",
-							"statu","statuRouter","statuLAN","statuSputnik","statuWLAN","statuSysInfo","","","","",""};
+char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","",""},
+							{"wireless","wirelessBasic","wirelessRadius","wirelessSecurity","wirelessMac","wirelessAdvanced","wirelessWds","","","",""},
+							{"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","",""},
+							{"security","firwall","vpn","","","","","","","",""},
+							{"accrestriction","webaccess","","","","","","","","",""},
+							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","","","",""},
+							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup"},
+							{"statu","statuRouter","statuLAN","statuSputnik","statuWLAN","statuSysInfo","","","","",""}};
 
 int i,j;
 
