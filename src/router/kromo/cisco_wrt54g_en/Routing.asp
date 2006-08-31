@@ -60,7 +60,8 @@ function SelMode(num,F) {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
+					<% do_menu("index.asp","Routing.asp"); %>
+			<!--		<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
 								<li class="current"><span><% tran("bmenu.setup"); %></span>
@@ -85,7 +86,7 @@ function SelMode(num,F) {
 								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
-					</div>
+					</div>  -->
 				</div>
 				<div id="main">
 					<div id="contents">
