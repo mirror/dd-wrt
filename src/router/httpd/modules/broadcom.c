@@ -3871,7 +3871,7 @@ int i,j;
 						}
 					else
 						{
-					websWrite (wp, "      <li><a href=\"%s\"<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+					websWrite (wp, "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
 						}
 					}
 				}
