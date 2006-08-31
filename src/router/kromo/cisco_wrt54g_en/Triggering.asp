@@ -40,33 +40,7 @@ function to_submit(F)
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li class="current"><span><% tran("bmenu.applications"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
-											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
-											<li><span><% tran("bmenu.applicationsptriggering"); %></span></li>
-											<li><a href="UPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
-											<li><a href="DMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
-											<li><a href="QoS.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
-										</ul>
-									</div>
-								</li>
-								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-							</ul>
-						</div>
-					</div>
+				<% do_menu("Forward.asp","Triggering.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
