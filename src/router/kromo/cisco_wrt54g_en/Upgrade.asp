@@ -47,7 +47,6 @@ function upgrade(F,id) {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
 				<% do_menu("Management.asp","Upgrade.asp"); %>
 				</div>
 				<div id="main">
