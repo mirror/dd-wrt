@@ -166,48 +166,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-								<li class="current"><span><% tran("bmenu.admin"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-											<li><span><% tran("bmenu.adminManagement"); %></span></li>
-											<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
-											<li><a href="Services.asp"><% tran("bmenu.adminServices"); %></a></li>
-											<li><a href="Alive.asp"><% tran("bmenu.adminAlive"); %></a></li>
-											<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
-											<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
-											<li><a href="Wol.asp"><% tran("bmenu.adminWol"); %></a></li>
-											<li><a href="Factory_Defaults.asp"><% tran("bmenu.adminFactory"); %></a></li>
-								<script type="text/javascript">
-										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
-										if (https_visit =="1") {
-											document.write("<li><a style=\"cursor:pointer\" title=\"" + errmsg.err46 + "\" onclick=\"alert(errmsg.err45)\" ><em>" + bmenu.adminUpgrade + "</em></a></li>");
-											document.write("<li><a style=\"cursor:pointer\" title=\"" + errmsg.err46 + "\" onclick=\"alert(errmsg.err45)\" ><em>" + bmenu.adminBackup + "</em></a></li>");
-										} else {
-											document.write("<li><a href=\"Upgrade.asp\">" + bmenu.adminUpgrade + "</a></li>");
-											document.write("<li><a href=\"config.asp\">" + bmenu.adminBackup + "</a></li>");
-										}											
-								</script>
-<!--										<li><a href="Upgrade.asp">Firmware Upgrade</a></li>
-											<li><a href="config.asp">Backup</a></li>
- -->
-										</ul>
-									</div>
-								</li>
-								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-							</ul>
-						</div>
-					</div>
+				<% do_menu("Management.asp","Management.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
