@@ -56,28 +56,7 @@ function ini() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<li class="current"><span><% tran("bmenu.sipath"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-										<li><a href="Sipath.asp"><% tran("bmenu.sipathoverview"); %></a></li>
-										<li><a href="cgi-bin-mf-phonebook.html"><% tran("bmenu.sipathphone"); %></a></li>
-											<li><a href="cgi-bin-mf-status.html"><% tran("bmenu.sipathstatus"); %></a></li>
-										</ul>
-									</div>
-								</li>
-								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-							</ul>
-						</div>
-					</div>
+				<% do_menu("Sipath.asp","cgi-bin-mf-phonebook.html"); %>
 				</div>
 
 
