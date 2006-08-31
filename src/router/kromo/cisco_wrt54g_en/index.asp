@@ -353,32 +353,6 @@ function init()
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
 					<% do_menu("index.asp","index.asp"); %>
-			<!--		<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li class="current"><span><% tran("bmenu.setup"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-											<li><span><% tran("bmenu.setupbasic"); %></span></li>
-											<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
-											<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
-	  										<li><a href="Routing.asp"><% tran("bmenu.setuprouting"); %></a></li>
-	  										<li><a href="Vlan.asp"><% tran("bmenu.setupvlan"); %></a></li>
-  										</ul>
-  									</div>
-  								</li>
-  								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-							</ul>
-						</div>
-					</div> -->
 				</div>
 				<div id="main">
 					<div id="contents">
