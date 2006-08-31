@@ -3863,7 +3863,16 @@ int i,j;
 					}
 				else
 					{
-					websWrite (wp, "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+					if ((do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
+						{
+						websWrite (wp, "      <script type=\"text/javascript\">\n");
+						websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + %s + \"</em></a></li>\");\n", menuname[i][j+1]);
+						websWrite (wp, "      </script>\n");
+						}
+					else
+						{
+					websWrite (wp, "      <li><a href=\"%s\"<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+						}
 					}
 				}
 			websWrite (wp, "     </ul>\n");
