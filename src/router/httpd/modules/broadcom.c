@@ -3866,7 +3866,7 @@ int i,j;
 					if ((do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
 						{
 						websWrite (wp, "      <script type=\"text/javascript\">\n");
-						websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + %s + \"</em></a></li>\");\n", menuname[i][j+1]);
+						websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n", menuname[i][j+1]);
 						websWrite (wp, "      </script>\n");
 						}
 					else
