@@ -3863,7 +3863,7 @@ int i,j;
 					}
 				else
 					{
-					websWrite (wp, "      <li><a href=\"%s\"<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
+					websWrite (wp, "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
 					}
 				}
 			websWrite (wp, "     </ul>\n");
@@ -3872,7 +3872,7 @@ int i,j;
 			}
 		else
 			{
-			websWrite (wp, "   <li><a href=\"%s\"<script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
+			websWrite (wp, "   <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
 			}
 		}
 		websWrite (wp, "  </ul>\n");
