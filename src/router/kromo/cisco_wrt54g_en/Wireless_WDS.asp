@@ -85,33 +85,7 @@ addEvent(window, "load", function() {
                <div id="logo">
                   <h1><% show_control(); %></h1>
                </div>
-               <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-                        <li class="current"><span><% tran("bmenu.wireless"); %></span>
-                          <div id="menuSub">
-                              <ul id="menuSubList">
-                                 <li><a href="Wireless_Basic.asp"><% tran("bmenu.wirelessBasic"); %></a></li>
-                                 <li><a href="Wireless_radauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
-                                 <li><a href="WL_WPATable.asp"><% tran("bmenu.wirelessSecurity"); %></a></li>
-                                 <li><a href="Wireless_MAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
-                                 <li><a href="Wireless_Advanced.asp"><% tran("bmenu.wirelessAdvanced"); %></a></li>
-                                 <li><span><% tran("bmenu.wirelessWds"); %></span></li>
-                              </ul>
-                           </div>
-                        </li>
-                        <% nvram_invmatch("sipgate","1","<!--"); %>
-                        <li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-                        <% nvram_invmatch("sipgate","1","-->"); %>
-                        <li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-                        <li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-                        <li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-                        <li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-                        <li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-                     </ul>
-                  </div>
-               </div>
+			<% do_menu("Wireless_Basic.asp","Wireless_WDS.asp"); %>
             </div>
             <div id="main">
                <div id="contents">

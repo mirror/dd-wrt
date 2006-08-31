@@ -23,29 +23,7 @@ function to_submit(F) {
 					<div id="logo">
 						<h1><% show_control(); %></h1>
 					</div>
-					<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li class="current"><span><% tran("bmenu.security"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-											<li><a href="Firewall.asp"><% tran("bmenu.firwall"); %></a></li>
-											<li><span><% tran("bmenu.vpn"); %></span></li>
-										</ul>
-									</div>
-								</li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
-							</ul>
-						</div>
-					</div>
+				<% do_menu("Firewall.asp","VPN.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
