@@ -64,6 +64,7 @@ export CFLAGS += -DBCMWPA2
 endif
 
 export ARCH:= mipsel
+export ARCHITECTURE:= broadcom
 export BASEOPT:=-Os
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
 export CC := $(CROSS_COMPILE)gcc
@@ -331,7 +332,6 @@ endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
 	../../opt/loader-0.02/lzma e mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
-	
 #endif
 #
 # Configuration rules
@@ -1399,7 +1399,7 @@ ifeq ($(CONFIG_NEWMEDIA),y)
 	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 else
-	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 endif
 	make -C openvpn
