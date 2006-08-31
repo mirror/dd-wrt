@@ -3821,7 +3821,7 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
     
 int sipgate = nvram_match ("sipgate", "1");
 
-char menu[8][11][32] = {"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","VLAN.asp","","","","","","",
+char menu[8][11][32] = {"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","","",
 						"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","","",
 						"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","","",
 						"Firewall.asp","VPN.asp","","","","","","","","","",
