@@ -175,7 +175,6 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt,DYNDNS_SYST
     DYNDNS_ORG_SPECIFIC_DATA *p_dyndns_specific = 
 		(DYNDNS_ORG_SPECIFIC_DATA*) p_sys_info->p_specific_data;
 	return sprintf(p_self->p_req_buffer, DYNDNS_GET_MY_IP_HTTP_REQUEST_FORMAT,
-        p_self->info.dyndns_server_name.name,
 		p_self->info.dyndns_server_url,
 		p_dyndns_specific->p_system,
 		p_self->alias_info.names[cnt].name,
@@ -191,7 +190,6 @@ static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt, DYNDNS_SY
 {
 	(void)p_sys_info;
 	return sprintf(p_self->p_req_buffer, FREEDNS_UPDATE_MY_IP_REQUEST_FORMAT,
-        p_self->info.dyndns_server_name.name,
 		p_self->info.dyndns_server_url,
 		p_self->alias_info.hashes[cnt].str,
         p_self->info.dyndns_server_name.name);
@@ -202,7 +200,6 @@ static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt, 
 {
 	(void)p_sys_info;
 	return sprintf(p_self->p_req_buffer, GENERIC_DNS_BASIC_AUTH_MY_IP_REQUEST_FORMAT,
-        p_self->info.dyndns_server_name.name,
 		p_self->info.dyndns_server_url,		
 		p_self->alias_info.names[cnt].name,
         p_self->info.credentials.p_enc_usr_passwd_buffer,
@@ -212,7 +209,6 @@ static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DY
 {
 	(void)p_sys_info;
 	return sprintf(p_self->p_req_buffer, GENERIC_NOIP_AUTH_MY_IP_REQUEST_FORMAT,
-        p_self->info.dyndns_server_name.name,
 		p_self->info.dyndns_server_url,		
 		p_self->alias_info.names[cnt].name,
 		p_self->info.my_ip_address.name,
