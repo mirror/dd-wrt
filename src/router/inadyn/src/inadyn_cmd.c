@@ -130,7 +130,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
 	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
 	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update. Include the full path."},
-	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name. (e.g. /tmp/ddns). Defaults to /tmp/ddns on **NIX systems."},
+	{"--cache_dir", 1, {get_cache_dir, NULL}, "cache directory name. (e.g. /tmp/ddns). Defaults to /tmp on **NIX systems."},
 	{"--wildcard", 0, {wildcard_handler, NULL}, "enable domain wildcarding for dyndns.org, 3322.org, or easydns.com."},
 	{NULL,		0,	{0, NULL},	NULL }
 };
