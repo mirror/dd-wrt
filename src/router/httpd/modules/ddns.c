@@ -124,8 +124,8 @@ ddns_save_value (webs_t wp)
       snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
       snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
-      snprintf (_conf, sizeof (_conf), "ddns_conf", enable);
-      snprintf (_url, sizeof (_url), "ddns_url", enable);
+      snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
+      snprintf (_url, sizeof (_url), "%s", "ddns_url");
     }
    /* botho 30/07/06 : add www.3322.org */
   else if (atoi (enable) == 6)
