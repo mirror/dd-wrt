@@ -183,7 +183,7 @@ start_ddns (void)
       if (nvram_match ("ddns_enable", "1") || nvram_match ("ddns_enable", "6") ||
 	  nvram_match ("ddns_enable", "7"))
 	{
-	  if (nvram_match (_wildcard, "1")
+	  if (nvram_match (_wildcard, "1"))
 	    fprintf (fp, " --wildcard");
 	}
       if (nvram_match ("ddns_enable", "7"))
