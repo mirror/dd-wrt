@@ -35,7 +35,7 @@ enum
 
 struct mon mons[] = {
 //  {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
-//  {"upnp", 1, M_LAN},
+  {"upnp", 1, M_LAN},
   {"process_monitor", 1, M_LAN},
   {"httpd", 2, M_LAN},
   {"udhcpd", 1, M_LAN},
