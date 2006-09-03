@@ -180,11 +180,11 @@ start_ddns (void)
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
-      if ((nvram_match ("ddns_wildcard", "1") && nvram_match ("ddns_enable", "1")) ||
-	  (nvram_match ("ddns_wildcard_6", "1") && nvram_match ("ddns_enable", "6")) ||
-	  (nvram_match ("ddns_wildcard_7", "1") && nvram_match ("ddns_enable", "7")));
+      if (nvram_match ("ddns_enable", "1") || nvram_match ("ddns_enable", "6") ||
+	  nvram_match ("ddns_enable", "7"))
 	{
-	  fprintf (fp, " --wildcard");
+	  if (nvram_match (_wildcard, "1")
+	    fprintf (fp, " --wildcard");
 	}
       if (nvram_match ("ddns_enable", "7"))
 	fprintf (fp, " --update_period_sec %s", "900");	// check ip every 15 mins
