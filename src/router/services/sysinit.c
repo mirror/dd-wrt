@@ -328,8 +328,7 @@ start_restore_defaults (void)
 #elif HAVE_MAGICBOX
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames",
-     "ath0",
+    {"lan_ifnames","ath0",
      0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
