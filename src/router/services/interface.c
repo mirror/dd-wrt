@@ -242,6 +242,8 @@ start_setup_vlans (void)
 return 0;
 #elif HAVE_XSCALE
 return 0;
+#elif HAVE_MAGICBOX
+return 0;
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
 

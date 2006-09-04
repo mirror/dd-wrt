@@ -325,6 +325,16 @@ start_restore_defaults (void)
     {"wan_ifnames", "ixp1", 0},
     {0, 0, 0}
   };
+#elif HAVE_MAGICBOX
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames",
+     "ath0",
+     0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
+  };
 #else
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
@@ -359,6 +369,9 @@ start_restore_defaults (void)
   linux_overrides = generic;
   int brand = getRouterBrand ();
 #elif HAVE_XSCALE
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+#elif HAVE_MAGICBOX
   linux_overrides = generic;
   int brand = getRouterBrand ();
 #elif HAVE_GEMTEK
