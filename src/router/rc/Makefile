@@ -83,6 +83,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_MAGICBOX),y)
+CFLAGS += -DHAVE_MAGICBOX
+endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += wland.o

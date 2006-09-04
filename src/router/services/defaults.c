@@ -1439,6 +1439,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"ip_conntrack_max", "32768", 0},
 #elif HAVE_XSCALE
   {"ip_conntrack_max", "32768", 0},
+#elif HAVE_MAGICBOX
+  {"ip_conntrack_max", "32768", 0},
 #else
   {"ip_conntrack_max", "512", 0},
 #endif

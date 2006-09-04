@@ -59,6 +59,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
   CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_MAGICBOX),y)
+  CFLAGS += -DHAVE_MAGICBOX
+endif
 
 ifeq ($(CONFIG_CHILLILOCAL),y)
   CFLAGS += -DHAVE_CHILLILOCAL
