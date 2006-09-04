@@ -100,6 +100,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_MAGICBOX),y)
+CFLAGS += -DHAVE_XSCALE
+endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
 endif
