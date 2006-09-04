@@ -390,15 +390,16 @@ void __init
 machine_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	     unsigned long r6, unsigned long r7)
 {
-#ifdef CONFIG_CMDLINE
-	strlcpy(cmd_line, CONFIG_CMDLINE, sizeof(cmd_line));
-#endif /* CONFIG_CMDLINE */
 
 #ifdef CONFIG_6xx
 	ppc_md.power_save = ppc6xx_idle;
 #endif
 
 	platform_init(r3, r4, r5, r6, r7);
+
+#ifdef CONFIG_CMDLINE
+	strlcpy(cmd_line, CONFIG_CMDLINE, sizeof(cmd_line));
+#endif /* CONFIG_CMDLINE */
 
 	if (ppc_md.progress)
 		ppc_md.progress("id mach(): done", 0x200);

@@ -34,22 +34,22 @@ static struct map_info magic_map = {
 
 static struct mtd_partition magic_partitions[] = {
 	{
-		.name =   "kernel",
+		.name =   "linux",
 		.offset = 0x0,
-		.size =   0x0e0000,
+		.size =   0x3c0000,
 	},
 	{
-		.name =   "ramdisk",
-		.offset = 0x0e0000,
+		.name =   "rootfs",
+		.offset = 0x100000,
 		.size =   0x2c0000,
 	},
 	{
-		.name =   "persistent",
+		.name =   "nvram",
 		.offset = 0x3a0000,
 		.size =   0x020000,
 	},
 	{
-		.name =   "bootloader",
+		.name =   "cfe",
 		.offset = 0x3c0000,
 		.size =   0x040000,
 		.mask_flags = MTD_WRITEABLE,
@@ -58,6 +58,8 @@ static struct mtd_partition magic_partitions[] = {
 
 int __init init_magic(void)
 {
+	u32 size, len;
+	
 	magic_map.virt =
 		(void __iomem *)ioremap(magic_map.phys, magic_map.size);
 
@@ -71,6 +73,21 @@ int __init init_magic(void)
 	flash = do_map_probe("cfi_probe", &magic_map);
 	if (flash) {
 		flash->owner = THIS_MODULE;
+		if (MTD_READ(flash, 12, sizeof(u32), &len, (char *) &size) ||
+			len != 4)
+			return -ENXIO;
+		size += 0x40; /* header size of the uImage */
+		if ((size > 0) && (size < 0x400000)) {
+			/* skip to next erase block */
+			//if (size & (flash->erasesize - 1)) {
+			//	size |= (flash->erasesize - 1);
+			//	size += 1;
+			//}
+			magic_partitions[0].size = size;
+			magic_partitions[1].offset = size;
+			magic_partitions[1].size = magic_partitions[2].offset - size;
+		}
+		
 		add_mtd_partitions(flash, magic_partitions,
 					ARRAY_SIZE(magic_partitions));
 	} else {
