@@ -720,6 +720,12 @@ start_lan (void)
 	    strcpy (realname, "ath0");
 	  }
 	else
+#elif HAVE_MAGICBOX
+	if (!strcmp (name, "eth2"))
+	  {
+	    strcpy (realname, "ath0");
+	  }
+	else
 #endif
 #endif
 	  strcpy (realname, name);
@@ -1011,6 +1017,9 @@ start_lan (void)
 #ifdef HAVE_XSCALE
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
+#ifdef HAVE_MAGICBOX
+      nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
+#endif
     }
 #ifdef HAVE_RB500
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
@@ -1021,6 +1030,14 @@ start_lan (void)
     }
 #endif
 #ifdef HAVE_XSCALE
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
+#ifdef HAVE_MAGICBOX
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -1134,6 +1151,9 @@ start_lan (void)
 	}
     }
 #ifdef HAVE_XSCALE
+#define HAVE_RB500
+#endif
+#ifdef HAVE_MAGICBOX
 #define HAVE_RB500
 #endif
 #ifndef HAVE_RB500
@@ -1326,6 +1346,8 @@ start_wan (int status)
 
 #ifdef HAVE_XSCALE
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
+#elif HAVE_MAGICBOX
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #endif

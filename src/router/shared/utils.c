@@ -126,6 +126,9 @@ internal_getRouterBrand ()
 #elif HAVE_XSCALE
   setRouter ("NewMedia Dual A/B/G");
   return ROUTER_BOARD_XSCALE;
+#elif HAVE_MAGICBOX
+  setRouter ("MagicBox");
+  return ROUTER_BOARD_MAGICBOX;
 #else
   char *et0;
   if (nvram_match ("boardnum", "42") &&
@@ -434,6 +437,8 @@ diag_led_4702 (int type, int act)
   return 0;
 #elif HAVE_XSCALE
   return 0;
+#elif HAVE_MAGICBOX
+  return 0;
 #else
   if (act == START_LED)
     {
@@ -463,6 +468,8 @@ C_led_4702 (int i)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+  return 0;
+#elif HAVE_MAGICBOX
   return 0;
 #else
   FILE *fp;
@@ -544,6 +551,8 @@ diag_led_4704 (int type, int act)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+ return 0;
+#elif HAVE_MAGICBOX
  return 0;
 #else
   unsigned int control, in, outen, out;
@@ -639,6 +648,8 @@ diag_led_4712 (int type, int act)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+  return 0;
+#elif HAVE_MAGICBOX
   return 0;
 #else
 
@@ -1749,6 +1760,8 @@ check_vlan_support (void)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE // dues support vlans, but not yet implemented
+  return 0;
+#elif HAVE_MAGICBOX // dues support vlans, but not yet implemented
   return 0;
 #else
 

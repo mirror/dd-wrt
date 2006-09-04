@@ -621,6 +621,9 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "ixp1");
   ret = eval (script_name, "stop", "XX", "ath0");
   ret = eval (script_name, "stop", "XX", "ath1");
+#elif HAVE_MAGICBOX
+  ret = eval (script_name, "stop", "XX", "eth0");
+  ret = eval (script_name, "stop", "XX", "ath0");
 #else
   ret = eval (script_name, "stop", "XX", "vlan1");
   ret = eval (script_name, "stop", "XX", "eth1");
