@@ -104,7 +104,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_Wireless.asp"); %></div>
+				<% do_menu("Status_Router.asp","Status_Wireless.asp"); %>
 				</div>
 
 				<div id="main">
