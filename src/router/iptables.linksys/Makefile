@@ -31,7 +31,13 @@ RELEASE_DIR:=/tmp
 #LD=mipsel-linux-uclibc-ld
 #CC=mipsel-linux-uclibc-gcc
 COPT_FLAGS:=$(COPTS)
-CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
+include $(TOP)/.config
+
+CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -fpic -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG 
+ifeq ($(CONFIG_MAGICBOX),y)
+CFLAGS += -fpic
+endif
+
 
 ifdef NO_SHARED_LIBS
 CFLAGS += -DNO_SHARED_LIBS=1
