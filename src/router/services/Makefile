@@ -13,9 +13,13 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ 
 endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-CFLAGS  += $(COPTS) 
+CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o
+
+ifeq ($(CONFIG_MAGICBOX),y)
+CFLAGS += -fpic
+endif
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT
@@ -68,7 +72,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += madwifi.o
 CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-OBJS += ../wireless-tools/libiw.so.29 
+OBJS += ../wireless-tools/libiw.so.29
 
 
 endif

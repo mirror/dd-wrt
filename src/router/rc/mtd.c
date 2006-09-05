@@ -38,6 +38,17 @@
 #include <cy_conf.h>
 #include <utils.h>
 
+#include <endian.h>
+#include <byteswap.h>
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define STORE32_LE(X)		bswap_32(X)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define STORE32_LE(X)		(X)
+#else
+#error unkown endianness!
+#endif
+
 /*
  * Open an MTD device
  * @param	mtd	path to or partition name of MTD device
@@ -163,12 +174,27 @@ mtd_write (const char *path, const char *mtd)
       fprintf (stderr, "%s: File is too small (%ld bytes)\n", path, count);
       goto fail;
     }
+#ifdef HAVE_MAGICBOX
+trx.magic=STORE32_LE(trx.magic);
+trx.len=STORE32_LE(trx.len);
+trx.crc32=STORE32_LE(trx.crc32);
+
+
+//	uint32 magic;		/* "HDR0" */
+//	uint32 len;		/* Length of file including header */
+//	uint32 crc32;		/* 32-bit CRC from flag_version to end of file */
+//	uint32 flag_version;	/* 0:15 flags, 16:31 version */
+//	uint32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
+
+
+#endif
+
+
   if (trx.magic != TRX_MAGIC || trx.len < sizeof (struct trx_header))
     {
       fprintf (stderr, "%s: Bad trx header\n", path);
       goto fail;
     }
-
   /* Open MTD device and get sector size */
   if ((mtd_fd = mtd_open (mtd, O_RDWR)) < 0 ||
       ioctl (mtd_fd, MEMGETINFO, &mtd_info) != 0 ||
@@ -222,7 +248,7 @@ mtd_write (const char *path, const char *mtd)
 						      flag_version),
 	       CRC32_INIT_VALUE);
 
-  if (trx.flag_version & TRX_NO_HEADER)
+  if (STORE32_LE(trx.flag_version) & TRX_NO_HEADER)
     trx.len -= sizeof (struct trx_header);
 
   /* Write file or URL to MTD device */
@@ -230,7 +256,7 @@ mtd_write (const char *path, const char *mtd)
        erase_info.start += count)
     {
       len = MIN (erase_info.length, trx.len - erase_info.start);
-      if ((trx.flag_version & TRX_NO_HEADER) || erase_info.start)
+      if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
 	count = off = 0;
       else
 	{

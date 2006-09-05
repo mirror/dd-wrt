@@ -24,10 +24,13 @@ CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s
+CFLAGS	+= -s -fpic
 LDFLAGS += -L.
 OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o utils.o nvports.o 
 #defaults.o
+ifeq ($(CONFIG_MAGICBOX),y)
+CFLAGS += -fpic
+endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
