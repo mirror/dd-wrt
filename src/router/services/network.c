@@ -700,11 +700,11 @@ start_lan (void)
 #endif
       //eval ("brctl", "addbr", lan_ifname);
       //eval ("brctl", "setfd", lan_ifname, "0");
-      if (check_hw_type () != BCM4702_CHIP)
+/*      if (check_hw_type () != BCM4702_CHIP) 
 	{
 	  br_set_stp_state (lan_ifname, 0);
 	  //eval ("brctl", "stp", lan_ifname, "off");
-	}else
+	}else */
 	  br_set_stp_state (lan_ifname, 1);
 	
       foreach (name, lan_ifnames, next)
