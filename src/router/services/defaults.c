@@ -899,6 +899,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifdef HAVE_DDLAN
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_MAGICBOX
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #else
   {"remote_management", "0", 0},	/* Remote Management [1|0] */
 #endif
@@ -1163,6 +1165,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_enable", "1", 0},
 #elif HAVE_SKYTRON
   {"sshd_enable", "1", 0},
+#elif HAVE_MAGICBOX
+  {"sshd_enable", "1", 0},
 #else
   {"sshd_enable", "0", 0},
 #endif
@@ -1171,7 +1175,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_rsa_host_key", "", 0},
   {"sshd_dss_host_key", "", 0},
   {"sshd_authorized_keys", "", 0},
+#ifdef HAVE_MAGICBOX
+  {"remote_mgt_ssh", "1", 0},
+#else
   {"remote_mgt_ssh", "0", 0},
+#endif
   {"sshd_wanport", "22", 0},	/* Botho 03-05-2006 : WAN port to listen on */
 #endif
   {"syslogd_enable", "0", 0},

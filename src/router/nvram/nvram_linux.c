@@ -237,7 +237,7 @@ nvram_commit (void)
 //fprintf(stderr,"nvram_commit \n");
   lock ();
   int ret;
-  fprintf (stderr, "nvram_commit(): start\n");
+  //fprintf (stderr, "nvram_commit(): start\n");
   if (nvram_fd < 0)
     {
       if ((ret = nvram_init (NULL)))
