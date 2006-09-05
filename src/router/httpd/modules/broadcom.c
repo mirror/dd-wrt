@@ -3870,6 +3870,14 @@ int i,j;
 			
 			for (j=0; j<11; j++)
 				{
+#ifdef HAVE_MADWIFI
+				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
+					j++;
+				if (!strcmp(menu[i][j], "Wireless_Advanced.asp"))
+					j++;
+				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))
+					j++;
+#endif
 				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))  //jump over Sputnik
 					j++;
 				if ((!openvpn) && !strcmp(menu[i][j], "Status_OpenVPN.asp"))  //jump over OpenVPN
