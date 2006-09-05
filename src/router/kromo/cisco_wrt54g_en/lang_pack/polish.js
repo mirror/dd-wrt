@@ -3,9 +3,9 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-var lang_charset = new Object();
+
 lang_charset.set="iso-8859-2";
-var share = new Object();
+
 share.firmware="Firmware";
 share.time="Czas";
 share.interipaddr="Internet Adres IP";
@@ -132,7 +132,7 @@ share.never="never";
 share.unknown="unknown";
 share.expired="expired";
 
-var sbutton = new Object();
+
 sbutton.save="Zapisz Ustawienia";
 sbutton.saving="Zapis";
 sbutton.cmd="Wykonanie";
@@ -179,7 +179,7 @@ sbutton.upgrade="Aktualizacja";
 sbutton.preview="Podglad";
 sbutton.allways_on="Zawsze On";
 sbutton.allways_off="Zawsze Off";
-var errmsg = new Object();
+
 errmsg.err0="Musisz wpisac nazwe Uzytkownika.";
 errmsg.err1="Musisz wpisac nazwe Routera.";
 errmsg.err2="Podj adres startowy IP i ilosc Uzytkownikow.";
@@ -243,7 +243,7 @@ errmsg.err59="Nie dostepny! Prosze sprawdz Siec Wireless.";
 errmsg.err60="Wybierz plik do aktualizacji.";
 errmsg.err61="To chyba nie ten plik ?!.";
 errmsg.err62=" juz jest okreslony jako statyczna dzierzawa.";
-var bmenu= new Object();
+
 bmenu.setup="Ustawienia";
 bmenu.setupbasic="Zasadnicze Ustawienie";
 bmenu.setupddns="DDNS";
@@ -289,9 +289,10 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Informacje o Systemie";
 
-var alive = new Object();
+
 alive.titl=" - Ustawienia Watchdog";
 alive.h2="Ustawienia Watchdog";
 alive.legend="Czasowy Reboot";
@@ -304,11 +305,11 @@ alive.legend3="Proxy/Polaczenie Watchdog";
 alive.sevr3="Wlaczone Proxy Watchdog";
 alive.IP2="Proxy Adres IP";
 alive.port="Proxy Port";
-var halive = new Object();
+
 halive.right2="Wybierz kiedy rebootowac ponownie. Cron musi byc Wlaczony w zakladce zarzadzania.";
 halive.right4="Maksimum do trzech IPs odzielaj przez <em>SPACJE</em> jest dopuszczany.<BR/>IPs Format xxx.xxx.xxx.xxx.";
 
-var config = new Object();
+
 config.titl=" - Kopia i Przywracanie ustawien";
 config.h2="Zapisz kopie konfiguracji";
 config.legend="Zapisz Konfiguracje";
@@ -318,11 +319,11 @@ config.legend2="Wczytaj ustawienia";
 config.mess2="Prosze wybierz plik z ustawieniami...";
 config.mess3=">> U W A G A <<";
 config.mess4="Wybieraj tylko konfiguracje, ktora byla zapisywane z tego samego firmware'u.<br />Nie wybieraj plikow, ktore nie byly zapisane z tej samej konfiguracji !";
-var hconfig = new Object();
+
 hconfig.right2="Mozesz zabezpieczyc dane uzywajc aktualna konfiguracje w przypadku, kiedy potrzebujesz zrestartowac router do ustawien fabrycznych.<br /><br />Klikini<em>Kopia</em> Przycisk do zachowania twoich obecnych ustawien.";
 hconfig.right4="Kliknij <em>Przegladaj...</em> nacisnij przycisk w celu przegladania twojego PC.<br /><br />Kliknij <em>" + sbutton.restore + "</em> twoje ustawienia zostana zapisane do pliku konfuiguracji.";
 
-var ddns = new Object();
+
 ddns.titl=" - Dynamiczny DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
@@ -335,7 +336,7 @@ ddns.wildcard="Dziki";
 ddns.statu="Status DDNS";
 ddns.system="Serwer DYNDNS";
 ddns.options="Dodadkowa Opcja DDNS";
-var ddnsm = new Object();
+
 ddnsm.dyn_strange="Nieznana odpowiedz serwera, laczysz sie z prawidlowym serwerem?";
 ddnsm.dyn_good="DDNS uaktualniony pomyslnie";
 ddnsm.dyn_noupdate="Nie aktualizuj nigdy w tym czasie";
@@ -381,38 +382,38 @@ ddnsm.all_connecting="Laczenie z serwerem";
 ddnsm.all_connectfail="Polaczenie z serwerem nie udane";
 ddnsm.all_disabled="Funkcja DDNS jest wylaczona";
 ddnsm.all_noip="Brak Polaczenia z Internetem";
-var hddns = new Object();
+
 hddns.right2="DDNS umozliwia dostep do twojej sieci uzywajac nazwy domeny zamiast adresu IP. Usluga zarzadza zmieniajacymi sie adresemi IP i uaktualnia domene na bierzaco. Powinienes zarejestrowac usluge poprzez DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com lub wlasna.";
 
-var diag = new Object();
+
 diag.titl=" - Diagnostyka";
 diag.h2="Diagnostyka";
 diag.legend="Wiersz Polecen";
 diag.cmd="Polecenia";
 diag.startup="Startup";
 diag.firewall="Firewall";
-var hdiag = new Object();
+
 hdiag.right2="Mozesz uruchamiac komendy z interfejsu www. Wpisz komendy i nacisnij uruchom <em>" + sbutton.runcmd + "</em> to submit.";
 
-var dmz = new Object();
+
 dmz.titl=" - DMZ";
 dmz.h2="Strefa Zdemilitaryzowana (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Uzycie DMZ";
 dmz.host="Adres IP Hosta DMZ";
-var hdmz = new Object();
+
 hdmz.right2="Wlaczenie tej funkcji sprawi ze wybrany Host, bedzie wystawiony bezposrednio na Internet.";
 
-var factdef = new Object();
+
 factdef.titl=" - Ustawienia Fabryczne";
 factdef.h2="Ustawienia Fabryczne";
 factdef.legend="Resetuj ustawienia routera";
 factdef.restore="Resetuj Do Ustawien Fabrycznych";
 factdef.mess1="Uwaga! Jezeli klikniesz ok, twoje ustawienia zostana przywrocone do oryginalnych ustawien fabrycznych.";
-var hfactdef = new Object();
+
 hfactdef.right1="Wszystkie wasze parametry beda wymazywane do ustawien fabrycznych.";
 
-var filterIP = new Object();
+
 filterIP.titl=" - Lista PCs";
 filterIP.h2="Lista PCs";
 filterIP.h3="Wpisuj MAC Adresy PC w tym formacie: xx:xx:xx:xx:xx:xx";
@@ -420,7 +421,7 @@ filterIP.h32="Wpisz Adres IP PC";
 filterIP.h33="Wpisz Zakres IP PC";
 filterIP.ip_range="Zakres IP";
 
-var filter = new Object();
+
 filter.titl=" - Kontrola Dostepu";
 filter.h2="Dostep do internetu";
 filter.legend="Reguly Dostepu";
@@ -439,7 +440,7 @@ filter.legend5="Blokowanie Stron na Podstawie Slow Kluczowych";
 filter.mess1="Usunac Regule?";
 filter.mess2="Musisz wybrac co najmniej dzien.";
 filter.mess3="Czas koncowy musi byc wiekszy niz czas poczatkowy.";
-var hfilter = new Object();
+
 hfilter.right2="Mozesz dodac 10 regul dostepu.";
 hfilter.right4="Wlaczenie i Wylaczenie Reguly.";
 hfilter.right6="Mozesz okreslic nazwe dla swojej reguly.";
@@ -449,13 +450,13 @@ hfilter.right12="Tu mozecie blokowac (ograniczac) dostep do uslug. Kliknij <em>"
 hfilter.right14="Tutaj zablokujesz strony na podstawie adresu URL/IP.";
 hfilter.right16="Tutaj zablkujesz dostep do stron Internetowych na podstawie okreslonych wyrazow.";
 
-var filterSum = new Object();
+
 filterSum.titl=" - Podsumowanie Kontroli Dostepu";
 filterSum.h2="Podsumowanie Regul Dostepu do Internetu";
 filterSum.polnum="Nie.";
 filterSum.polday="Czas Dnia";
 
-var firewall = new Object();
+
 firewall.titl=" - Firewall";
 firewall.h2="Zabezpieczenia";
 firewall.legend="Ochrona Firewalla";
@@ -470,28 +471,28 @@ firewall.ping="Blokuj Anonimowe Zapytania z Internetu";
 firewall.muticast="Filtrowanie Multicast";
 filter.nat="Filtrowanie Internet NAT Redirection";
 filter.port113="Filtrowanie IDENT (Port 113)";
-var hfirewall = new Object();
+
 hfirewall.right2="Wlaczenie i Wylaczenie Zapory Ogniowej.";
 
-var prforward = new Object();
+
 prforward.titl=" - Port Range Forwarding";
 prforward.h2="Port Range Forward";
 prforward.legend="Przekierowanie";
 prforward.app="Aplikacja";
-var hprforward = new Object();
+
 hprforward.right2="Niektore aplikacje wymagaja otwarcia portow do poprawnej pracy, moga to byc gry, komunikatory, serwery itp. W celu prawidlowego ich dzialania, nalezalo by przekierowac wlasciwe porty na konkretne maszyny w twojej sieci.";
 
-var pforward = new Object();
+
 pforward.titl=" - Port Forwarding";
 pforward.h2="Port Forward";
 pforward.legend="Przekieruj";
 pforward.app="Aplikacja";
 pforward.from="Port od";
 pforward.to="Port do";
-var hpforward = new Object();
+
 hpforward.right2="Niektore aplikacje wymagaja otwarcia portow do poprawnej pracy, moga to byc gry, komunikatory, serwery itp. W celu prawidlowego ich dzialania, nalezalo by przekierowac wlasciwe porty na konkretne maszyny w twojej sieci.";
 
-var hotspot = new Object();
+
 hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="Chillispot";
@@ -541,35 +542,35 @@ hotspot.sputnik_express="Uzywaj kreatora SputnikNet Express";
 hotspot.sputnik_about="o Sputniku";
 hotspot.sputnik_learn="Wiecej Info";
 
-var info = new Object();
+
 info.titl=" - Info";
 info.h2="Informacje o Systemie";
 info.wlanmac="Wireless MAC";
 info.srv="Uslugi";
 info.ap="Access Point";
 
-var idx_h = new Object();
+
 idx_h.srv="IP Serwera";
 idx_h.con_strgy="Strategia Polaczenia";
 idx_h.max_idle="Max Czas Bezczynnosci";
 idx_h.alive="Auto Polaczenie";
 
-var idx_l = new Object();
+
 idx_l.srv="Serwer L2TP";
 
-var idx_pppoe = new Object();
+
 idx_pppoe.use_rp="Uzycie RP PPPoE";
 
-var idx_pptp = new Object();
+
 idx_pptp.srv="Uzycie DHCP";
 idx_pptp.wan_ip="Internet Adres IP";
 idx_pptp.gateway="Brama (Serwer PPTP)";
 idx_pptp.encrypt="Szyfrowanie PPTP";
 
-var idx_static = new Object();
+
 idx_static.dns="Statyczny DNS";
 
-var idx = new Object();
+
 idx.titl=" - Ustawienia";
 idx.h2="Ustawienia Internetu";
 idx.h22="Ustawienia Wireless";
@@ -604,7 +605,7 @@ idx.summt_opt1="none";
 idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
-var hidx = new Object();
+
 hidx.right2="To ustawienie jest nabardziej popularne podczas laczenia z ISP.";
 hidx.right4="Wpisz nazwe Uzytkownika podana przez twojego ISP.";
 hidx.right6="Wpisz nazwe Domeny podana przez twojego ISP.";
@@ -615,24 +616,24 @@ hidx.right14="To jest Adres startowy jaki bedzie przydzielal serwer DHCP";
 hidx.right16="Mozesz ustawic maksymslna ilosc klientow serwera DHCP.";
 hidx.right18="Tutaj wybierasz strefe czasu w ktorej aktualnie sie znajdujesz.";
 
-var join = new Object();
+
 join.titl=" - Polacz";
 join.mess1="Pomyslnie polaczyles sie z siecia jako klient: ";
 
-var log_in = new Object();
+
 log_in.titl=" - Tabela Logow Przychodzacych";
 log_in.h2="Tabela Logow Przychodzacych";
 log_in.th_ip="Zrodlo IP";
 log_in.th_port="Przeznaczenie Numer portu";
 
-var log_out = new Object();
+
 log_out.titl=" - Tabela Logow Wychodzacych";
 log_out.h2="Tabela Logow Wychodzacych";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Przeznaczenie URL/IP";
 log_out.th_port="Usluga/Numer Portu";
 
-var log = new Object();
+
 log.titl=" - Logi";
 log.h2="Zarzadzanie Logami";
 log.legend="Logi";
@@ -641,7 +642,7 @@ log.drop="Obnizany";
 log.reject="Odrzucany";
 log.accept="Akceptowany";
 
-var management = new Object();
+
 management.titl=" - Administracja";
 management.h2="Zarzadzanie Routerem";
 management.psswd_legend="Haslo Routera";
@@ -719,15 +720,15 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domena";
 management.gui_style="Wyglad GUI";
-var hmanagement = new Object();
+
 hmanagement.right1="Auto-Odswiezanie:";
 hmanagement.right2="Zmien czas automatycznego odswiezania GUI, 0 wylacza te opcje.";
 
-var portserv = new Object();
+
 portserv.titl=" - Porty uslug";
 portserv.h2="Porty uslug";
 
-var qos = new Object();
+
 qos.titl=" - Zarzadzanie Pasmem";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="Ustawienia QoS";
@@ -750,7 +751,7 @@ qos.legend4="Priorytety MAC";
 qos.legend5="Priorytety Dla Portow Ethernet";
 qos.legend6="Domyslny Poziom";
 qos.bandwith="Bandwith w Kbits";
-var hqos = new Object();
+
 hqos.right1="Wysylanie:";
 hqos.right2="Ustaw na 80%-95% (max) calkowitej mozliwosci wysylania twojego pasma.";
 hqos.right3="Ponieranie:";
@@ -760,12 +761,12 @@ hqos.right8="Tu mozesz nadac prioryten okreslonej Masce Podsieci.";
 hqos.right10="Tu mozesz okreslic jaki priorytet dostanie, dany Adres MAC karty sieciowej .";
 hqos.right12="Tutaj mozesz narzucac odpowiednia przepustowosc na wybrany jeden z czterech portow LAN.";
 
-var routetbl = new Object();
+
 routetbl.titl=" - Tabela Routingu";
 routetbl.h2="Lista Wejsc Tabeli Routingu";
 routetbl.th1="Przeznaczenie LAN IP";
 
-var route = new Object();
+
 route.titl=" - Routing";
 route.h2="Zaawansowany Routing";
 route.mod="Tryb Dzialania";
@@ -779,19 +780,19 @@ route.static_legend="Statyczny Routing";
 route.static_setno="Wybor liczby";
 route.static_name="Nazwa Route";
 route.static_ip="Przeznaczenie LAN IP";
-var hroute = new Object();
+
 hroute.right2=" Jezeli router obsluguje polaczenie inetowe, wybierz <em>Brame</em> metode. Jesli w twojej sieci jest inny router, zaznacz <em>Router</em> tryb.";
 hroute.right4="Kolejny numer tablicy statycznego routing'u. Mozna ustawic do 20 statycznych tablic routing'u.";
 hroute.right6="Wprowadz nazwe dla danej tablicy routing'u.";
 hroute.right8="To jest adres komputera zdalnego ktory chcesz dodac do statycznej tablicy routing'u.";
 hroute.right10="Zalezy od komputera zdalnego i przeznaczenia sieci.";
 
-var survey = new Object();
+
 survey.titl=" - Przeszukiwanie Sieci";
 survey.h2="Neighbor&#39;s Siec Wireless";
 survey.thjoin="Polacz";
 
-var service = new Object();
+
 service.titl=" - Uslugi";
 service.h2="Zarzadzanie Uslugami";
 service.kaid_legend="XBOX Kaid";
@@ -859,26 +860,26 @@ service.ssh_key="Autoryzacja Kluczy";
 service.radiooff_legend="SES Przycisk";
 service.radiooff_srv="Uzyj przycisku SES do wylaczenia WIFI";
 
-var sipath = new Object();
+
 sipath.titl=" - SiPath Overview";
 sipath.phone_titl=" - Ksiazka Tel";
 sipath.status_titl=" - Status";
 
-var status_lan = new Object();
+
 status_lan.titl=" - LAN Status";
 status_lan.h2="Siec Lokalna";
 status_lan.legend="LAN Status";
 status_lan.h22="Dynamiczny Host, Konfiguracja Protokolu";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Klientci";
-var hstatus_lan = new Object();
+
 hstatus_lan.right2="To jest adres mac routera jaki widzisz w sieci lokalnej.";
 hstatus_lan.right4="To jest adres mac routera jaki widzisz w sieci lokalnej.";
 hstatus_lan.right6="Jesli router uzywa maski podsieci widoczna jest tutaj..";
 hstatus_lan.right8="Ilosc klientow korzystajacych aktualnie z serwera DHCP";
 hstatus_lan.right10="Kliknij na Adres MAC, aby dowiedziec sie, kto jest producetem danej karty sieciowej.";
 
-var status_router = new Object();
+
 status_router.titl=" - Status Routera";
 status_router.h2="Router Informacje";
 status_router.legend="System";
@@ -908,7 +909,7 @@ status_router.www_loginstatus="Login Status";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 
-var hstatus_router = new Object();
+
 hstatus_router.right2="Tutaj podana jest nazwa routera, ktora mozna zdefiniowac w zakladce 'Ustawienia'.";
 hstatus_router.right4="To jest Adres MAC widziany przez twojego ISP.";
 hstatus_router.right6="Tutaj widzisz jaka masz wersje firmware.";
@@ -917,19 +918,19 @@ hstatus_router.right10="Tutaj widac od jakiego czasu pracuje router.";
 hstatus_router.right12="Tutaj pokazane jest procentowe obciazenie routera.";
 hstatus_router.right14="Tutaj sa pokazane informacje o typie twojego polaczenia z Internetem. Te parametry ustawiasz w zakladce 'Ustawien'.";
 
-var status_sputnik = new Object();
+
 status_sputnik.titl=" - Sputnik Agent Status";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Zarzadzany Przez";
 status_sputnik.license="SCC License No.";
-var hstatus_sputnik = new Object();
+
 hstatus_sputnik.right1="Sputnik Agent Status";
 hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
 hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
 hstatus_sputnik.right6="The current Agent status.";
 hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
 
-var status_wireless = new Object();
+
 status_wireless.titl=" - Wireless Status";
 status_wireless.h2="Wireless";
 status_wireless.legend="Wireless Status";
@@ -942,25 +943,28 @@ status_wireless.h22="Wireless Nodes";
 status_wireless.legend3="Klienci";
 status_wireless.signal_qual="Jakos Sygnalu";
 status_wireless.wds="WDS Nodes";
-var hstatus_wireless = new Object();
+
 hstatus_wireless.right2="To jest MAC Adres karty siecioewj twojego polaczenia Bezprzewodowego (MAC-karty radiowej routera).";
 hstatus_wireless.right4="Tutaj pokazane za ustawienia, ktore zostaly wybrane w zakladce Wireless (Mieszane, G-Tylko, B-Tylko Wylaczone) twojej sieci.";
 
-var trforward = new Object();
+
+status_openvpn.titl=" - OpenVPN Status";
+
+
 trforward.titl=" - Port Triggering";
 trforward.h2="Port Triggering";
 trforward.legend="Przekierowanie";
 trforward.trrange="Przekierowanie Zakresu Portow";
 trforward.fwdrange="Zakres Przekierowanych Portow";
 trforward.app="Aplikacje";
-var htrforward = new Object();
+
 htrforward.right2="Wpisz po prostu jakas nazwe np: hwdp.";
 htrforward.right4="Niektore aplikacje wymagaja otwarcia portow do poprawnej pracy, moga to byc gry, komunikatory, serwery itp. W celu prawidlowego ich dzialania, nalezalo by przekierowac wlasciwe porty, sprawdz dokumentacje danego programu lub uslugi w celu przekierowywania wlasciwych portow.";
 htrforward.right6="Tak jak wyzej...";
 htrforward.right8="Wpisz poczatkowe porty do przekierowania.";
 htrforward.right10="Wpisz koncowe porty do przekierowania";
 
-var upgrad = new Object();
+
 upgrad.titl=" - Aktualizacja Firmware";
 upgrad.h2="Zarzadzanie Aktualizacja";
 upgrad.legend="Aktualizacja Firmware";
@@ -970,10 +974,10 @@ upgrad.resetOn="Do ustawien fabrycznych";
 upgrad.file="Prosze wybierz plik do aktualizacji";
 upgrad.warning="> > U W A G A < <";
 upgrad.mess1="Aktualizowanie firmware czekaj spokojnie <br />Nie wylaczaj zaslilania i nie restartuj routera !";
-var hupgrad = new Object();
+
 hupgrad.right2="Kliknij w <em>Przegladaj...</em> i wybierz firmware, ktore ma zostac wgrane do routera.<br /><br /> Kliknij w <em>Aktualizacja</em> a nastapi wowczas proces aktualizacji. Aktualizacja nie moze byc przerwana.";
 
-var upnp = new Object();
+
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Przekierowanie";
@@ -983,21 +987,21 @@ upnp.clear="Czysc porty podczas startu";
 upnp.url="Wyslij prezentacje URL";
 upnp.msg1="Cliknij aby usunac";
 upnp.msg2="Usuwaj wszystkie pozycje?";
-var hupnp = new Object();
+
 hupnp.right2="Kliknij na smietnik aby usunac indywidualna pozycje.";
 hupnp.right4="Zezwalaj aplikacja na automatyczny 'startup' przekierowania portow.";
 
-var vpn = new Object();
+
 vpn.titl=" - VPN";
 vpn.h2="Wirtualne Sieci Prywatne (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
 vpn.pptp="PPTP Passthrough";
 vpn.l2tp="L2TP Passthrough";
-var hvpn = new Object();
+
 hvpn.right1="Tu mozecie wlaczyc/wylaczyc IPSec, PPTP albo L2TP passthrough, w celu umozliwienia komunikacji przez VPN.";
 
-var vlan = new Object();
+
 vlan.titl=" - Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -1007,11 +1011,11 @@ vlan.negociate="Auto-Negocjacja";
 vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
 vlan.trunk="Trunk";
 
-var wep = new Object();
+
 wep.defkey="Ilosc Kluczy";
 wep.passphrase="Wygeneruj Haslo";
 
-var wol = new Object();
+
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Dostepny Hosts";
@@ -1023,21 +1027,21 @@ wol.mac="MAC Adres(sy)";
 wol.broadcast="Net Broadcast";
 wol.udp="Port UDP";
 wol.msg1="Kliknij w usun WOL host";
-var hwol = new Object();
+
 hwol.right2="Ta strona pozwala wam uzyc <em>Wake Up</em> w sieci lokalnej (lokalne polaczenie z waszym routerm).";
 hwol.right4="MAC Adres musi miec taki charakter xx:xx:xx:xx:xx:xx (01:23:45:67:89:AB)";
 hwol.right6="Adres IP jest zazwyczaj rozgloszeniowym adresem dla sieci lokalnej, ale moze byc rowniez adresem zdalnym jezeli docelowa stacja robocza nie jest podlaczona do sieci lokalnej routera."
 
-var wanmac = new Object();
+
 wanmac.titl=" - Klonowanie Adresu MAC";
 wanmac.h2="Klonowanie Adresu MAC";
 wanmac.legend="Klonowanie Adresu MAC";
 wanmac.wan="Klonuj WAN MAC";
 wanmac.wlan="Klonuj Wireless MAC";
-var hwanmac = new Object();
+
 hwanmac.right2="W przypadku kiedy ISP uwierzytelnia twoj kompute w sieci za pomoca Adresu MAC, a Ty chcialbys podzielic lacze na wieksza ilosc komputerow w twojej domowej sieci, klonowanie Adresu MAC to bardzo ulatwia.";
 
-var wpa = new Object();
+
 wpa.titl=" - Zabezpieczenia Wireless";
 wpa.h2="Zabezpieczenia Wireless";
 wpa.secmode="Rodzaj Zabezpieczenia";
@@ -1052,22 +1056,22 @@ wpa.radius_port="RADIUS Port Serwera";
 wpa.radius_key="RADIUS Klucz";
 wpa.algorithms="WPA Algorytm";
 wpa.shared_key="WPA Shared Key";
-var hwpa = new Object();
+
 hwpa.right2="Macie sporo do wyboru: WEP, WPA Pre-Shared Key, WPA RADIUS, i RADIUS. Do zabezpieczenia swojej sieci bezprzewodowej.";
 
-var wl_filter = new Object();
+
 wl_filter.titl=" - Lista Filtrowanych Adresow MAC";
 wl_filter.h2="Lista Filtrowanych Adresow MAC";
 wl_filter.h3="Wpisz MAC Adres w tym formacie&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
-var wl_active = new Object();
+
 wl_active.titl=" - MAC Lista Aktywnych Klientow Wireless";
 wl_active.h2="MAC Lista Aktywnych Klientow Wireless";
 wl_active.h3="Wlaczone MAC filtrowanie";
 wl_active.active="Aktywne PC";
 wl_active.inactive="Nie aktywne PC";
 
-var wds = new Object();
+
 wds.titl=" - WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="Ustawienia WDS";
@@ -1080,7 +1084,7 @@ wds.nat2="WDS->wLAN";
 wds.subnet="Subnet";
 wds.legend2="Extra Opcje";
 
-var radius = new Object();
+
 radius.titl=" - Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
@@ -1093,7 +1097,7 @@ radius.label6="Format Hasla";
 radius.label7="RADIUS Shared Secret";
 radius.label8="Odrzucac uwierzytelnianie jesli serwer jest nie aktywny";
 
-var wl_mac = new Object();
+
 wl_mac.titl=" - MAC Filtrowanie";
 wl_mac.h2="Wireless MAC Filtrowanie";
 wl_mac.legend="MAC Filtrowanie";
@@ -1102,7 +1106,7 @@ wl_mac.label2="Metoda Filtrowania";
 wl_mac.deny="Blokuj klientow WIFI, ktorz znajda sie na liscie";
 wl_mac.allow="Zezwalaj na polacznie tylko klientom z listy";
 
-var wl_basic = new Object();
+
 wl_basic.titl=" - Wireless";
 wl_basic.h2="Wireless";
 wl_basic.legend="Zasadnicze Ustawienia";
@@ -1147,12 +1151,12 @@ wl_basic.extchannel="Rozprzestrzeniany Tryb Kanalu";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Wytycz Szerokosc";
 wl_basic.channel_wide="Szeroki Kanal";
-var hwl_basic = new Object();
+
 hwl_basic.right2="Jezeli chcesz wylaczyc klientow trybu Wireless-G , wybierz tryb <em>B-Tylko</em>. A jezeli chcesz wylaczyc siec bezprzewodowa, wybierz <em>Wylaczone</em>.";
 hwl_basic.right3="Zakres czulosci: ";
 hwl_basic.right4="Ustawia koordynacje pakietow potwierdzen (ack timing). 0 wylacza calkowicie w/w koordynacje.";
 
-var wl_adv = new Object();
+
 wl_adv.titl=" - Zaawansowane Ustawienia Wireless";
 wl_adv.h2="Zaawansowane Ustawienia Wireless";
 wl_adv.legend="Zaawansowane Ustawienia";
@@ -1191,15 +1195,15 @@ wl_adv.row4="Glos";
 wl_adv.table2="EDCA STA Paramert (Klient do AP)";
 wl_adv.lng="Dlugi";
 wl_adv.shrt="Krotki";
-var hwl_adv = new Object();
+
 hwl_adv.right2="Mozesz wybrac pomiedzy Auto lub Shared Key. Uwierzytelnianie Shared key (SKA) jest bezpieczniejsze, ale wszystkie urzadzenia w twojej sieci musza obslugiwac Shared Key Autoryzacje (SKA).";
 hwl_basic.right6="Wybierz godzine aby wlaczyc lub wylaczyc sygnal WLAN (<em>zielony</em> oznacza dostep dozwolony, a <em>czerwony</em> oznacza dostep zabroniony)";
 
-var fail = new Object();
+
 fail.mess1="Wartosci wychodzace sa nie poprawne. Prosze sprawdz jeszcze raz.";
 fail.mess2="Aktualizacja nie udana.";
 
-var success = new Object();
+
 success.saved="Zapisano Ustawienia.";
 success.restore="Przywrucono Ustawienia.<br/>Wlasnie trwa restartowanie. Prosze chwile poczekac...";
 success.upgrade="Pomyslnie zaktualizowano.<br/>Wlasnie trwa restartowanie. Prosze chwile poczekac...";
@@ -1210,10 +1214,10 @@ success.alert1="Sprawdz wszystko jeszcze raz zanim podlaczysz sie ponownie:";
 success.alert2="Jezeli zmieniles adres&#39;s IP swojego routera, musisz pamietac, ze powinienee odwnowic adresy twoich klientow  w sieci.";
 success.alert3="Jezeli laczysz sie przez WLAN, prosze dolacz do sieci i nacisnij <em>Kontynucja</em>.";
 
-var dhcp = new Object();
+
 dhcp.titl=" - Tablica Aktywnych IP (DHCP)";
 dhcp.h2="Tablica Aktywnych IP (DHCP)";
 dhcp.server="Adres IP Serwera DHCP :";
 dhcp.tclient="Nazwa Klienta";
-var donate = new Object();
+
 donate.mb="Mozecie ofiarowac dotacje przez Moneybookers mb@dd-wrt.com";
