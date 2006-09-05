@@ -15,6 +15,7 @@
 #include <broadcom.h>
 #include <support.h>
 /* DD-WRT common web support by BrainSlayer */
+/* done in do_menu
 void
 ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -24,7 +25,7 @@ ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv)
 		 "<li><a href=\"Status_SputnikAPD.asp\"><script type=\"text/javascript\">Capture(bmenu.statuSputnik)</script></a></li>\n");
     }
   return;
-}
+} */
 
 /* end */
 void
