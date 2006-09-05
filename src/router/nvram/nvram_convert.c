@@ -74,7 +74,10 @@ struct nvram_convert nvram_converts[] = {
   {WL ("wme_ap_vo"), WL0 ("wme_ap_vo"), ""},
   {WL ("wme_no_ack"), WL0 ("wme_no_ack"), ""},
   {WL ("wme_apsd"), WL0 ("wme_apsd"), ""},
-
+  {WL ("sta_retry_time"), WL0 ("sta_retry_time"), ""},
+  {WL ("reg_mode"), WL0 ("reg_mode"), ""},
+  {WL ("dfs_preism"), WL0 ("dfs_preism"), ""},
+  {WL ("dfs_postism"), WL0 ("dfs_postism"), ""},
   {WL ("mrate"), WL0 ("mrate"), ""},
   {WL ("maxassoc"), WL0 ("maxassoc"), ""},
   {WL ("ure"), WL0 ("ure"), ""},
