@@ -267,7 +267,7 @@ static int br_cmd_setportprio(int argc, char *const* argv)
 		return 1;
 	}
 
-	err = br_set_path_cost(argv[1], argv[2], cost);
+	err = br_set_port_priority(argv[1], argv[2], cost);
 	if (err)
 		fprintf(stderr, "set port priority failed: %s\n",
 			strerror(errno));
