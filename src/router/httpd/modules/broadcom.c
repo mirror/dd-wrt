@@ -3820,17 +3820,17 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
     }
     
 int sipgate = nvram_match ("sipgate", "1");
-ifdef HAVE_SPUTNIK_APD
+#ifdef HAVE_SPUTNIK_APD
 int sputnik = nvram_match ("apd_enable", "1");
-else
+#else
 int sputnik = 0;
 #endif
 #ifdef HAVE_NEWMEDIA
-int openvpn = nvram_match ("openvpn_enable", "1")
+int openvpn = nvram_match ("openvpn_enable", "1");
 #else
 int openvpn = 0;
 #endif
-int auth = nvram_match ("status_auth", "1")
+int auth = nvram_match ("status_auth", "1");
 
 
 char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
