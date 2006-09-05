@@ -3225,9 +3225,9 @@ rssi2dbm (u_int rssi)
   return rssi - 95;
 }
 
-void
+int
 ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
-		       char *ifname)
+		       char *ifname,int cnt)
 {
   unsigned char buf[24 * 1024];
   unsigned char *cp;
@@ -3237,7 +3237,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      return;
+      return cnt;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
@@ -3246,15 +3246,14 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
-      return;
+      return cnt;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
       close (s);
-      return;
+      return cnt;
     }
-  int cnt = 0;
   cp = buf;
   do
     {
@@ -3267,7 +3266,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
-      websWrite (wp, "'%s','%d','%d','%d'", ieee80211_ntoa (si->isi_macaddr),
+      websWrite (wp, "'%s','%s','%d','%d','%d'", ieee80211_ntoa (si->isi_macaddr),ifname,
 		 rssi2dbm (si->isi_rssi), si->isi_noise,
 		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
 
@@ -3276,7 +3275,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
 
-
+return cnt;
 }
 extern char *getiflist (void);
 
@@ -3287,11 +3286,12 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   int c = getdevicecount ();
   char devs[32];
   int i;
+  int cnt=0;
   for (i = 0; i < c; i++)
     {
       sprintf (devs, "ath%d", i);
 //fprintf(stderr,"show ifname %s\n",devs);
-      ej_active_wireless_if (eid, wp, argc, argv, devs);
+      cnt=ej_active_wireless_if (eid, wp, argc, argv, devs,cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
@@ -3300,7 +3300,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	foreach (var, vifs, next)
 	{
 //    fprintf(stderr,"show ifname %s\n",var);
-	  ej_active_wireless_if (eid, wp, argc, argv, var);
+	  cnt = ej_active_wireless_if (eid, wp, argc, argv, var, cnt);
 	}
     }
 }
@@ -3409,7 +3409,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (ref)
 	    noise = atoi (ref);
 	}
-      websWrite (wp, "'%s','%d','%d','%d'", mac, rssi, noise, rssi - noise);
+      websWrite (wp, "'%s','%d','%d','%d'", mac,rssi, noise, rssi - noise);
     }
   unlink (RSSI_TMP);
 
