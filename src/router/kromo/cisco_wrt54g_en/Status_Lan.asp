@@ -78,7 +78,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_Lan.asp"); %></div>
+				<% do_menu("Status_Router.asp","Status_Lan.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
