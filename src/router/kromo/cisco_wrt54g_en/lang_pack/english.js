@@ -341,6 +341,7 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
 
 
@@ -1232,6 +1233,13 @@ status_wireless.wds="WDS Nodes";
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
 hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
+
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+var status_openvpn = new Object();
+status_openvpn.titl=" - OpenVPN Status";
 
 
 

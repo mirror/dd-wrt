@@ -343,6 +343,7 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik-Agent";
 bmenu.statuWLAN="WLAN";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
 
 // **************************************************************** Alive.asp **********************************************************************//
@@ -1181,6 +1182,11 @@ status_wireless.wds="WDS-Knotenpunkte";
 hstatus_wireless.right2="Dies ist die Router-MAC-Adresse, wie sie in Ihrem lokalen WLAN Netzwerk sichbar ist.";
 hstatus_wireless.right4="Wie auf dem WLAN-Tab angegeben, zeigt Ihnen dies den Modus Ihres WLAN-Interface an (Mixed, Nur-G, or ausgeschaltet).";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // **************************************************************** Triggering.asp **********************************************************************//
