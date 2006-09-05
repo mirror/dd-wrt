@@ -78,35 +78,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-					<div id="menu">
-						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
-								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
-								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
-								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
-								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-								<li class="current"><span><% tran("bmenu.statu"); %></span>
-									<div id="menuSub">
-										<ul id="menuSubList">
-											<li><a href="Status_Router.asp"><% tran("bmenu.statuRouter"); %></a></li>
-											<li><span><% tran("bmenu.statuLAN"); %></span></li>
-											<li><a href="Status_Wireless.asp"><% tran("bmenu.statuWLAN"); %></a></li>
-											<% show_sputnik(); %>
-											<% show_openvpn(); %>
-											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm"><% tran("bmenu.statuSysInfo"); %></a></li>
-											<% nvram_invmatch("status_auth","1","-->"); %>
-										</ul>
-									</div>
-								</li>
-							</ul>
-						</div>
-					</div>
+				<% do_menu("Status_Router.asp","Status_Lan.asp"); %></div>
 				</div>
 				<div id="main">
 					<div id="contents">

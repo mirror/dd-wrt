@@ -338,6 +338,7 @@ bmenu.statuRouter="Usmerjalnik";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Brez¾ièno";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Info stran";
 
 
@@ -1189,6 +1190,11 @@ status_wireless.wds="WDS vozli¹èa";
 hstatus_wireless.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni brez¾ièni mre¾i..";
 hstatus_wireless.right4="Tu je prikazan brez¾ièni naèin, kot je izbran v zavihku Brez¾ièno (Me¹ano, Samo-G, Samo-B ali Onemogoèeno) used by the network.";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN status";
 
 
 // ******************************************* Triggering.asp *******************************************//

@@ -343,6 +343,7 @@ bmenu.statuRouter="Routeur";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Sans fil";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Système";
 
 
@@ -1202,6 +1203,11 @@ status_wireless.wds="Noueds WDS";
 hstatus_wireless.right2="Ceci est l\'adresse mac de votre routeur vue depuis votre réseau local (filaire et sans-fil)";
 hstatus_wireless.right4="Comme configuré dans l\'onglet Wireless, ce sont les normes de connexions acceptées pour votre réseau sans-fil (Mixed, G-Only, or Disabled).";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//

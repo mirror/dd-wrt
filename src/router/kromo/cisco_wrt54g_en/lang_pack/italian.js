@@ -282,6 +282,7 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
 
 alive.titl=" - Keep Alive";
@@ -896,6 +897,8 @@ status_wireless.wds="Nodi WDS";
 
 hstatus_wireless.right2="E' l'indirizzo MAC del router, com'è visto sulla tua rete locale wireless.";
 hstatus_wireless.right4="Come selezionato dalla finestra del Wireless, mostrerà la modalità wireless usata dalla rete (Mista, Solo-G, Solo-B o Disabilitato).";
+
+status_openvpn.titl=" - OpenVPN Status";
 
 trforward.titl=" - Triggering Delle Porte";
 trforward.h2="Triggering Delle Porte";
