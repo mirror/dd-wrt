@@ -3820,6 +3820,17 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
     }
     
 int sipgate = nvram_match ("sipgate", "1");
+ifdef HAVE_SPUTNIK_APD
+int sputnik = nvram_match ("apd_enable", "1");
+else
+int sputnik = 0;
+#endif
+#ifdef HAVE_NEWMEDIA
+int openvpn = nvram_match ("openvpn_enable", "1")
+#else
+int openvpn = 0;
+#endif
+int auth = nvram_match ("status_auth", "1")
 
 
 char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
@@ -3829,7 +3840,7 @@ char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan
 						{"Filters.asp","","","","","","","","","",""},
 						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","","","","",""},
 						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp",""},
-						{"Status_Router.asp","Status_Lan.asp","Status_SputnikAPD.live.asp","Status_Wireless.asp","Info.htm","","","","","",""}};
+						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Info.htm","","","","",""}};
 
 /* real name is bmenu.menuname[i][j] */
 char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","",""},
@@ -3839,7 +3850,7 @@ char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","s
 							{"accrestriction","webaccess","","","","","","","","",""},
 							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","","","",""},
 							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup"},
-							{"statu","statuRouter","statuLAN","statuSputnik","statuWLAN","statuSysInfo","","","","",""}};
+							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuSysInfo","","","",""}};
 
 int i,j;
 
@@ -3849,28 +3860,36 @@ int i,j;
 
 	  for (i=0; i<8; i++)
 		{
-		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))
+		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))  //jump over Sipath
 			i++;
 		if (!strcmp (menu[i][0], mainmenu))
 			{
 			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n", menuname[i][0]);
 			websWrite (wp, "    <div id=\"menuSub\">\n");
 			websWrite (wp, "     <ul id=\"menuSubList\">\n");
-			for (j=0; ((strlen(menu[i][j]) != 0) && (j<11)); j++)
+			
+			for (j=0; j<11; j++)
 				{
-				if (!strcmp(menu[i][j], submenu))
+				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))  //jump over Sputnik
+					j++;
+				if ((!openvpn) && !strcmp(menu[i][j], "Status_OpenVPN.asp"))  //jump over OpenVPN
+					j++;
+				if ((!auth) && !strcmp(menu[i][j], "Info.htm"))  //jump over Sys-Info
+					j++;
+					
+				if (!strcmp(menu[i][j], submenu) && (strlen(menu[i][j]) != 0))
 					{
 					websWrite (wp, "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n", menuname[i][j+1]);
 					}
 #ifdef HAVE_HTTPS  //until https will allow upgrade and backup
-				else if ((do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
+				else if ((strlen(menu[i][j]) != 0) && (do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
 					{
 					websWrite (wp, "      <script type=\"text/javascript\">\n");
 					websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n", menuname[i][j+1]);
 					websWrite (wp, "      </script>\n");
 					}
 #endif
-				else
+				else if (strlen(menu[i][j]) != 0)
 					{
 				websWrite (wp, "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
 					}
@@ -4415,7 +4434,7 @@ fclose(in);
 websWrite(wp,"</fieldset>");
 
 }
-
+/* done in do_menu
 static void
 ej_show_openvpn (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -4425,7 +4444,7 @@ ej_show_openvpn (int eid, webs_t wp, int argc, char_t ** argv)
 		 "<li><a href=\"Status_OpenVPN.asp\">VPN</a></li>\n");
     }
   return;
-}
+} */
 #endif
 static void
 ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
@@ -4556,10 +4575,10 @@ struct ej_handler ej_handlers[] = {
   {"dumplog", ej_dumplog},
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik_apd_status", ej_sputnik_apd_status},
-  {"show_sputnik", ej_show_sputnik},
+//  {"show_sputnik", ej_show_sputnik},
 #endif
 #ifdef HAVE_NEWMEDIA
-  {"show_openvpn", ej_show_openvpn},
+//  {"show_openvpn", ej_show_openvpn},
   {"show_openvpn_status", ej_show_openvpn_status},
 #endif
   /* for filter */
