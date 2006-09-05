@@ -23,7 +23,9 @@ endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS)
 LDFLAGS += -L.
-
+ifeq ($(ARCH),powerpc)
+CFLAGS  += -DHAVE_MAGICBOX
+endif
 
 
 vpath %.c $(SRCBASE)/shared/nvram
@@ -44,6 +46,10 @@ libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
 ifeq ($(ARCH),armeb)
+libnvram.so: nvram_linux_gen.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+endif
+ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
