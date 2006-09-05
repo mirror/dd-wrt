@@ -704,7 +704,9 @@ start_lan (void)
 	{
 	  br_set_stp_state (lan_ifname, 0);
 	  //eval ("brctl", "stp", lan_ifname, "off");
-	}
+	}else
+	  br_set_stp_state (lan_ifname, 1);
+	
       foreach (name, lan_ifnames, next)
       {
 #ifdef HAVE_MADWIFI
@@ -1074,7 +1076,9 @@ start_lan (void)
 
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
 	br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
-
+      else
+	br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
+      
       /* Bring up and configure br1 interface */
       if (nvram_invmatch ("wl_br1_ipaddr", "0.0.0.0"))
 	{
@@ -1086,6 +1090,9 @@ start_lan (void)
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
 	    br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
+	    else
+	    br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
+	    
 
 //                      system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o br0 -j MASQUERADE");
 //                      if(nvram_invmatch("wan_proto", "disable") && check_vlan_support())
@@ -1246,6 +1253,9 @@ eval("wl", "vlan_mode", "0");
 #endif
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
     br_set_stp_state ("br0", 0);
+  else
+    br_set_stp_state ("br0", 1);
+  
   //system ("/usr/sbin/brctl stp br0 off");
 
   free (lan_ifnames);
@@ -1847,6 +1857,19 @@ if (nvram_match("wl0_mode","infra"))
 #endif
 
     }
+    else
+    {
+#ifdef HAVE_MICRO
+  br_init ();
+#endif
+
+      br_set_stp_state ("br0", 1);	//system ("/usr/sbin/brctl stp br0 off");
+#ifdef HAVE_MICRO
+  br_shutdown ();
+#endif
+
+    }
+    
   cprintf ("done()()()\n");
 }
 
@@ -2046,6 +2069,15 @@ start_wan_done (char *wan_ifname)
 
       br_set_stp_state (nvram_safe_get ("lan_ifname"), 0);
       //eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
+    }else
+    {
+#ifdef HAVE_MICRO
+  br_init ();
+#endif
+
+      br_set_stp_state (nvram_safe_get ("lan_ifname"), 1);
+    
+    
     }
   cprintf ("check wan link\n");
   if (check_wan_link (0))
@@ -2467,6 +2499,8 @@ start_hotplug_net (void)
 #endif
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
 	br_set_stp_state ("br0", 0);	//system ("/usr/sbin/brctl stp br0 off");
+      else
+	br_set_stp_state ("br0", 1);	//system ("/usr/sbin/brctl stp br0 off");
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
@@ -2643,6 +2677,17 @@ start_wds_check (void)
 #endif
 
       br_set_stp_state ("br0", 0);
+#ifdef HAVE_MICRO
+  br_shutdown ();
+#endif
+
+    }else
+        {
+#ifdef HAVE_MICRO
+  br_init ();
+#endif
+
+      br_set_stp_state ("br0", 1);
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
