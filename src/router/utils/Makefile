@@ -56,10 +56,12 @@ ifeq ($(ARCH),armeb)
 else
 
 ifneq ($(CONFIG_RB500),y)
+ifneq ($(CONFIG_MAGICBOX),y)
 ifeq ($(CONFIG_MSSID),y)
 	install wl $(INSTALLDIR)/usr/sbin
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
+endif
 endif
 endif
 	@true
