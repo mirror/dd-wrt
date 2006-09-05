@@ -1207,7 +1207,7 @@ hstatus_wireless.right4="Comme configuré dans l\'onglet Wireless, ce sont les no
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl=" - OpenVPN Status";
+status_openvpn.titl=" - Etat OpenVPN";
 
 
 // ******************************************* Triggering.asp *******************************************//
