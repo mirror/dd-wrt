@@ -1,9 +1,8 @@
 /*
- * mtd.c
+ * mtd - simple memory technology device manipulation tool
  *
- * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>
- *
- * $Id: mtd.c,v 1.3 2005/03/11 16:52:04 wbx Exp $
+ * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>,
+ *	                  Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,12 +16,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * mtd utility for the openwrt project
- * it is mainly code from the linux-mtd project, which accepts the same
- * command line arguments as the broadcom utility
- * 
+ * $Id: mtd.c 3991 2006-06-18 18:03:31Z nico $
+ *
+ * The code is based on the linux-mtd examples.
  */
 
 #include <limits.h>
@@ -39,28 +37,145 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/reboot.h>
 #include <string.h>
-#include <linux/mtd/mtd.h>
+#include <linux/version.h>
+/*
+#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
+#define IS_KERNEL26 1
+#else
+#define IS_KERNEL26 0
+#endif
 
-/* trx header */
+#if IS_KERNEL26
+#include <mtd/mtd-user.h>
+#else*/
+#include <linux/mtd/mtd.h>
+//#endif
+
+
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
-#define TRX_VERSION     1
-#define TRX_MAX_LEN     0x3A0000
-#define TRX_NO_HEADER   1               /* Do not write TRX header */
+#define BUFSIZE (16 * 1024)
+#define MAX_ARGS 8
+
+#define DEBUG
+
+#define SYSTYPE_UNKNOWN     0
+#define SYSTYPE_BROADCOM    1
+/* to be continued */
 
 struct trx_header {
-	uint32_t magic;                 /* "HDR0" */
-	uint32_t len;                   /* Length of file including header */
-	uint32_t crc32;                 /* 32-bit CRC from flag_version to end of file */
-	uint32_t flag_version;  /* 0:15 flags, 16:31 version */
+	uint32_t magic;		/* "HDR0" */
+	uint32_t len;		/* Length of file including header */
+	uint32_t crc32;		/* 32-bit CRC from flag_version to end of file */
+	uint32_t flag_version;	/* 0:15 flags, 16:31 version */
 	uint32_t offsets[3];    /* Offsets of partitions from start of header */
 };
 
-#define BUFSIZE (10 * 1024)
+char buf[BUFSIZE];
+int buflen;
 
-extern int mtd_open(const char *mtd, int flags);
-extern int mtd_erase(const char *mtd);
-extern int mtd_write(const char *trxfile, const char *mtd);
+int
+image_check_bcom(int imagefd, const char *mtd)
+{
+	struct trx_header *trx = (struct trx_header *) buf;
+	struct mtd_info_user mtdInfo;
+	int fd;
+
+	buflen = read(imagefd, buf, 32);
+	if (buflen < 32) {
+		fprintf(stdout, "Could not get image header, file too small (%ld bytes)\n", buflen);
+		return 0;
+	}
+
+	switch(trx->magic) {
+		case 0x47343557: /* W54G */
+		case 0x53343557: /* W54S */
+		case 0x73343557: /* W54s */
+		case 0x46343557: /* W54F */
+		case 0x55343557: /* W54U */
+			/* ignore the first 32 bytes */
+			buflen = read(imagefd, buf, sizeof(struct trx_header));
+			break;
+	}
+	
+	if (trx->magic != TRX_MAGIC || trx->len < sizeof(struct trx_header)) {
+		fprintf(stderr, "Bad trx header\n");
+		fprintf(stderr, "If this is a firmware in bin format, like some of the\n"
+				"original firmware files are, use following command to convert to trx:\n"
+				"dd if=firmware.bin of=firmware.trx bs=32 skip=1\n");
+		return 0;
+	}
+
+	/* check if image fits to mtd device */
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		exit(1);
+	}
+
+	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
+		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
+		exit(1);
+	}
+		
+	if(mtdInfo.size < trx->len) {
+		fprintf(stderr, "Image too big for partition: %s\n", mtd);
+		close(fd);
+		return 0;
+	}	
+	
+	close(fd);
+	return 1;
+}
+
+int
+image_check(int imagefd, const char *mtd)
+{
+	int fd, systype;
+	size_t count;
+	char *c;
+	FILE *f;
+
+	systype = SYSTYPE_UNKNOWN;
+	f = fopen("/proc/cpuinfo", "r");
+	while (!feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
+		if ((strncmp(buf, "system type", 11) == 0) && (c = strchr(buf, ':'))) {
+			c += 2;
+			if (strncmp(c, "Broadcom BCM947XX", 17) == 0)
+				systype = SYSTYPE_BROADCOM;
+		}
+	}
+	fclose(f);
+	
+	switch(systype) {
+		case SYSTYPE_BROADCOM:
+			return image_check_bcom(imagefd, mtd);
+		default:
+			return 1;
+	}
+}
+
+int mtd_check(char *mtd)
+{
+	struct mtd_info_user mtdInfo;
+	int fd;
+
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
+	if(fd < 0) {
+		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
+		return 0;
+	}
+
+	if(ioctl(fd, MEMGETINFO, &mtdInfo)) {
+		fprintf(stderr, "Could not get MTD device info from %s\n", mtd);
+		close(fd);
+		return 0;
+	}
+
+	close(fd);
+	return 1;
+}
 
 int
 mtd_unlock(const char *mtd)
@@ -69,7 +184,7 @@ mtd_unlock(const char *mtd)
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdLockInfo;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -84,9 +199,8 @@ mtd_unlock(const char *mtd)
 	mtdLockInfo.start = 0;
 	mtdLockInfo.length = mtdInfo.size;
 	if(ioctl(fd, MEMUNLOCK, &mtdLockInfo)) {
-		fprintf(stderr, "Could not unlock MTD device: %s\n", mtd);
 		close(fd);
-		exit(1);
+		return 0;
 	}
 		
 	close(fd);
@@ -105,7 +219,10 @@ mtd_open(const char *mtd, int flags)
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
 				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
 				fclose(fp);
-				return open(dev, flags);
+//				fprintf(stderr,"opening %s\n",dev);
+				int r=open(dev, flags);
+//				fprintf(stderr,"return %d\n",r);
+				return r;
 			}
 		}
 		fclose(fp);
@@ -120,14 +237,8 @@ mtd_erase(const char *mtd)
 	int fd;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
-	/*char *et0;
-	char *et1;
-	et0=nvram_safe_get("et0macaddr");
-	et1=nvram_safe_get("et1macaddr");
-	et0=strdup(et0);
-	et1=strdup(et1);
-*/
-	fd = mtd_open(mtd, O_RDWR);
+
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -154,29 +265,20 @@ mtd_erase(const char *mtd)
 	}		
 
 	close(fd);
-	//nvram_set("et0macaddr",et0);
-	//nvram_set("et1macaddr",et1);
-	//nvram_commit();
-	//free(et0);
-	//free(et1);
-
 	return 0;
 
 }
 
 int
-mtd_write(const char *trxfile, const char *mtd)
+mtd_write(int imagefd, const char *mtd, int quiet)
 {
-	int fd;
-	int trxfd;
-	int i;
-	size_t result,size,written;
+	int fd, i, result;
+	size_t r, w, e;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
-	struct stat trxstat;
-	unsigned char src[BUFSIZE],dest[BUFSIZE];
+	int ret = 0;
 
-	fd = mtd_open(mtd, O_RDWR);
+	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
 		fprintf(stderr, "Could not open mtd device: %s\n", mtd);
 		exit(1);
@@ -187,85 +289,202 @@ mtd_write(const char *trxfile, const char *mtd)
 		close(fd);
 		exit(1);
 	}
-
-	trxfd = open(trxfile,O_RDONLY);	
-	if(trxfd < 0) {
-		fprintf(stderr, "Could not open trx image: %s\n", trxfile);
-		exit(1);
-	}
-
-	if (fstat (trxfd,&trxstat) < 0) {
-		fprintf(stderr, "Could not get trx image file status: %s\n", trxfile);
-		close(trxfd);
-		exit(1);
-	}
 		
-	if(mtdInfo.size < trxstat.st_size) {
-		fprintf(stderr, "Image too big for partition: %s\n", mtd);
-		close(trxfd);
-		exit(1);
-	}	
-	
-	mtdEraseInfo.start = 0;
-	mtdEraseInfo.length = trxstat.st_size & ~(mtdInfo.erasesize -1);
-	if(trxstat.st_size % mtdInfo.erasesize) mtdEraseInfo.length += mtdInfo.erasesize;
+	r = w = e = 0;
+	if (!quiet)
+		fprintf(stderr, " [ ]");
 
-	/* erase the chunk */
-	if (ioctl (fd,MEMERASE,&mtdEraseInfo) < 0) {
-		fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
-		exit(1);
-	}
-	
-	size = trxstat.st_size;
-	i = BUFSIZE;
-	written = 0;
+	for (;;) {
+		/* buffer may contain data already (from trx check) */
+		r = buflen;
+		r += read(imagefd, buf + buflen, BUFSIZE - buflen);
+		w += r;
 
-	while (size) {
-		if (size < BUFSIZE) i = size;
-		read(trxfd,src,i);
-		result = write(fd,src,i);
-		if (i != result) {
-			if (result < 0) {
-				fprintf(stderr,"Error while writing image");
+		/* EOF */
+		if (r <= 0) break;
+
+		/* need to erase the next block before writing data to it */
+		while (w > e) {
+			mtdEraseInfo.start = e;
+			mtdEraseInfo.length = mtdInfo.erasesize;
+
+			if (!quiet)
+				fprintf(stderr, "\b\b\b[e]");
+			/* erase the chunk */
+			if (ioctl (fd,MEMERASE,&mtdEraseInfo) < 0) {
+				fprintf(stderr, "Erasing mtd failed: %s\n", mtd);
 				exit(1);
 			}
-			fprintf(stderr,"Error writing image");
-			exit(1);
+			e += mtdInfo.erasesize;
 		}
-		written += i;
-		size -= i;
+		
+		if (!quiet)
+			fprintf(stderr, "\b\b\b[w]");
+		
+		if ((result = write(fd, buf, r)) < r) {
+			if (result < 0) {
+				fprintf(stderr, "Error writing image.\n");
+				exit(1);
+			} else {
+				fprintf(stderr, "Insufficient space.\n");
+				exit(1);
+			}
+		}
+		
+		buflen = 0;
 	}
-	
+	if (!quiet)
+		fprintf(stderr, "\b\b\b\b");
+
+	close(fd);
 	return 0;
 }
 
-int main(int argc, char **argv) {
-	if(argc == 3 && strcasecmp(argv[1],"unlock")==0) {
-		printf("Unlocking %s ...\n",argv[2]);
-		return mtd_unlock(argv[2]);
-	}
-	if(argc == 3 && strcasecmp(argv[1],"erase")==0) {
-		printf("Erasing %s ...\n",argv[2]);
-		return mtd_erase(argv[2]);
-	}
-	if(argc == 4 && strcasecmp(argv[1],"write")==0) {
-		printf("Writing %s to %s ...\n",argv[2],argv[3]);
-		return mtd_write(argv[2],argv[3]);
-	}
-
-	printf("no valid command given\n");
-	printf("\nmtd: modify data within a Memory Technology Device.\n");
-	printf("Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>\n");
-	printf("Documented by Mike Strates [dumpedcore] <mike@dilaudid.net>\n");
-	printf("mtd has ABSOLUTELY NO WARRANTY and is licensed under the GNU GPL.\n");
-	printf("\nUsage: mtd [unlock|erase] device\n");
-	printf("       mtd write imagefile device\n");
-	printf("\n .. where device is in the format of mtdX (eg: mtd4) or its label.\n");
-	printf("\nunlock                enable modification to device\n");
-	printf("erase           erase all data on device\n");
-	printf("write           write imagefile to device\n");
-	printf("\nExample: To write linux.trx to mtd4 labeled as linux\n");
-	printf("\n                mtd unlock linux && mtd write linux.trx linux\n\n");
-	return -1;
+void usage(void)
+{
+	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>\n\n"
+	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
+	"mtd recognizes these commands:\n"
+	"        unlock                  unlock the device\n"
+	"        erase                   erase all data on device\n"
+	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
+	"Following options are available:\n"
+	"        -q                      quiet mode (once: no [w] on writing,\n"
+	"                                           twice: no status messages)\n"
+	"        -r                      reboot after successful command\n"
+	"        -f                      force write without trx checks\n"
+	"        -e <device>             erase <device> before executing the command\n\n"
+	"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n"
+	"         mtd -r write linux.trx linux\n\n");
+	exit(1);
 }
 
+int main (int argc, char **argv)
+{
+	int ch, i, boot, unlock, imagefd, force, quiet, unlocked;
+	char *erase[MAX_ARGS], *device, *imagefile;
+	enum {
+		CMD_ERASE,
+		CMD_WRITE,
+		CMD_UNLOCK
+	} cmd;
+	
+	erase[0] = NULL;
+	boot = 0;
+	force = 0;
+	buflen = 0;
+	quiet = 0;
+
+	while ((ch = getopt(argc, argv, "frqe:")) != -1)
+		switch (ch) {
+			case 'f':
+				force = 1;
+				break;
+			case 'r':
+				boot = 1;
+				break;
+			case 'q':
+				quiet++;
+				break;
+			case 'e':
+				i = 0;
+				while ((erase[i] != NULL) && ((i + 1) < MAX_ARGS))
+					i++;
+					
+				erase[i++] = optarg;
+				erase[i] = NULL;
+				break;
+			
+			case '?':
+			default:
+				usage();
+		}
+	argc -= optind;
+	argv += optind;
+	
+	if (argc < 2)
+		usage();
+
+	if ((strcmp(argv[0], "unlock") == 0) && (argc == 2)) {
+		cmd = CMD_UNLOCK;
+		device = argv[1];
+	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
+		cmd = CMD_ERASE;
+		device = argv[1];
+	} else if ((strcmp(argv[0], "write") == 0) && (argc == 3)) {
+		cmd = CMD_WRITE;
+		device = argv[2];
+	
+		if (strcmp(argv[1], "-") == 0) {
+			imagefile = "<stdin>";
+			imagefd = 0;
+		} else {
+			imagefile = argv[1];
+			if ((imagefd = open(argv[1], O_RDONLY)) < 0) {
+				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
+				exit(1);
+			}
+		}
+	
+		/* check trx file before erasing or writing anything */
+		if (!image_check(imagefd, device)) {
+			if ((quiet < 2) || !force)
+				fprintf(stderr, "TRX check failed!\n");
+			if (!force)
+				exit(1);
+		} else {
+			if (!mtd_check(device)) {
+				fprintf(stderr, "Can't open device for writing!\n");
+				exit(1);
+			}
+		}
+	} else {
+		usage();
+	}
+
+	sync();
+	
+	i = 0;
+	unlocked = 0;
+	while (erase[i] != NULL) {
+		if (quiet < 2)
+			fprintf(stderr, "Unlocking %s ...\n", erase[i]);
+		mtd_unlock(erase[i]);
+		if (quiet < 2)
+			fprintf(stderr, "Erasing %s ...\n", erase[i]);
+		mtd_erase(erase[i]);
+		if (strcmp(erase[i], device) == 0)
+			unlocked = 1;
+		i++;
+	}
+	
+	if (!unlocked) {
+		if (quiet < 2) 
+			fprintf(stderr, "Unlocking %s ...\n", device);
+		mtd_unlock(device);
+	}
+		
+	switch (cmd) {
+		case CMD_UNLOCK:
+			break;
+		case CMD_ERASE:
+			if (quiet < 2)
+				fprintf(stderr, "Erasing %s ...\n", device);
+			mtd_erase(device);
+			break;
+		case CMD_WRITE:
+			if (quiet < 2)
+				fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
+			mtd_write(imagefd, device, quiet);
+			if (quiet < 2)
+				fprintf(stderr, "\n");
+			break;
+	}
+
+	sync();
+	
+	if (boot)
+		kill(1, 15); // send SIGTERM to init for reboot
+
+	return 0;
+}
