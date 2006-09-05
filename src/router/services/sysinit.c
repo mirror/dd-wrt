@@ -645,9 +645,9 @@ if (restore_defaults)
       if (nvram_match ("http_username", ""))
 	{
 #ifdef HAVE_POWERNOC
-	  nvram_set ("http_username", "admin");
+	  nvram_set ("http_username", "bJz7PcC1rCRJQ"); //admin
 #else
-	  nvram_set ("http_username", "root");
+	  nvram_set ("http_username", "bJ/GddyoJuiU2"); //root
 #endif
 	}
     }
