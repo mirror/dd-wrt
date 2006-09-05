@@ -812,7 +812,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "auth_server_shared_secret=%s\n",
 		   nvram_safe_get (psk));
 	}
-/*      if (nvram_invmatch (akm, "radius"))
+     if (nvram_invmatch (akm, "radius"))
 	{
 	  sprintf (psk, "%s_crypto", prefix);
 	  if (nvram_match (psk, "aes"))
@@ -823,7 +823,7 @@ setupHostAP (char *prefix)
 	    fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
 	  sprintf (psk, "%s_wpa_gtk_rekey", prefix);
 	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
-	}*/
+	}
 //      fprintf (fp, "jumpstart_p1=1\n");
       fclose (fp);
       eval ("hostapd", "-B", fstr);
