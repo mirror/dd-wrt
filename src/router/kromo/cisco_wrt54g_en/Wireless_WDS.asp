@@ -100,7 +100,7 @@ addEvent(window, "load", function() {
                       <fieldset>
                         <legend><% tran("wds.legend"); %></legend>
                         <div class="setting">
-                           <div class="label"><% tran("wds.wl_mac"); %></div><% nvram_get("wl0_hwaddr"); %>
+                           <div class="label"><% tran("wds.wl_mac"); %></div><% nvram_get("wl0_hwaddr"); %>&nbsp;
                         </div>
 
                         <div class="setting">
