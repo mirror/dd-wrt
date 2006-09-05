@@ -420,8 +420,14 @@ int
 nvram_commit (void)
 {
   lock ();
+#ifdef HAVE_MAGICBOX
+  system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+  system ("mtd write /tmp/nvram/nvram.tar.gz nvram");
+#else
   system ("cp /tmp/nvram/nvram.db /etc/nvram");
   system ("cp /tmp/nvram/offsets.db /etc/nvram");
+#endif
+
 //writedb ();
 //closedb ();
   unlock ();
