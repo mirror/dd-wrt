@@ -337,6 +337,7 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Inalámbrico";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Info-Stma";
 
 
@@ -1198,6 +1199,11 @@ status_wireless.wds="NodosWDS";
 hstatus_wireless.right2="Esta es la dirección MAC del Router, tal y como puede ser vista en tu red local inalámbrica.";
 hstatus_wireless.right4="Como hemos seleccionado en la pestaña Wi-Fi, esto mostrará el modo de operación del Wi-Fi (Mezcla, Sólo-G, Sólo-B ó Desactivado) usado por la red.";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//

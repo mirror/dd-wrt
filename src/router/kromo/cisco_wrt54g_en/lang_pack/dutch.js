@@ -336,6 +336,7 @@ bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Draadloos";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Systeem-Info";
 
 
@@ -1197,6 +1198,11 @@ status_wireless.wds="WDS Nodes";
 hstatus_wireless.right2="Dit is het MAC Adres van de router, zoals het wordt weergegeven op uw, draadloos netwerk.";
 hstatus_wireless.right4="U hebt de draadloze modus ingesteld op de Draadloos tab, dit zal de huidige draadloze modus weergeven (Mixed, G-Enkel, B-Enkel of Niet Geactiveerd).";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//

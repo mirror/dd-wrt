@@ -334,6 +334,7 @@ bmenu.statuRouter="路由器";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik代理";
 bmenu.statuWLAN="無線";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="系統資訊";
 
 
@@ -1194,6 +1195,11 @@ status_wireless.wds="WDS節點";
 hstatus_wireless.right2="這是您在您的本地無線網路中看到的路由器的MAC位址。";
 hstatus_wireless.right4="正如您在在無線標籤裏所設置的，這裏將顯示網路所使用的無線模式（混合，僅G，僅B或者禁用）。";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//

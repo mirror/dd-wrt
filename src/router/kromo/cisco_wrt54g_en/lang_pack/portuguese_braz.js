@@ -339,6 +339,7 @@ bmenu.statuRouter="Roteador";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Wireless";
+bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
 
 
@@ -1095,6 +1096,11 @@ status_wireless.wds="Nós WDS";
 hstatus_wireless.right2="Este é o Endereço MAC do Roteador, visto pela sua rede wireless.";
 hstatus_wireless.right4="Como selecionado na aba Wireless, ela irá mostrar o modo de operação da rede wireless (Misto, Somente-G, Somente-B ou Desabilitado) utilizado pela rede.";
 
+
+
+// ******************************************* Status_OpenVPN.asp *******************************************//
+
+status_openvpn.titl=" - OpenVPN Status";
 
 // ******************************************* Triggering.asp *******************************************//
 
