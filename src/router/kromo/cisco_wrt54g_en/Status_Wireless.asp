@@ -148,8 +148,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.encrypt"); %></div>
-									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disable)</script>"); %>
-									<% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enable)</script>,&nbsp;"); %>
+									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>
+									<% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enabled)</script>,&nbsp;"); %>
 									<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
 									<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
 									<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
