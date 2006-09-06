@@ -494,8 +494,8 @@ deconfigure_single (int count)
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
   br_del_interface ("br0", dev);
-//  eval ("brctl", "delif", "br0", dev);
-  eval ("ifconfig", dev, "down");
+  fprintf(stderr,"deconfigure %s\n",dev);
+//  eval ("ifconfig", dev, "down");
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -511,6 +511,8 @@ deconfigure_single (int count)
 void
 deconfigure_wifi (void)
 {
+
+
   memset (iflist, 0, 1024);
   eval ("killall", "wrt-radauth");
   eval ("killall", "hostapd");
@@ -525,15 +527,6 @@ deconfigure_wifi (void)
   int i;
   for (i = 0; i < c; i++)
     deconfigure_single (i);
-/*  eval ("rmmod", "wlan_scan_sta");
-  eval ("rmmod", "wlan_scan_ap");
-  eval ("rmmod", "wlan_xauth");
-  eval ("rmmod", "wlan_wep");
-  eval ("rmmod", "wlan_tkip");
-  eval ("rmmod", "wlan_ccmp");
-  eval ("rmmod", "wlan_acl");
-  eval ("modprobe", "-r", "ath_pci");
-*/
 }
 
 
@@ -1213,6 +1206,7 @@ configure_single (int count)
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
+  deconfigure_wifi ();
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
 /*

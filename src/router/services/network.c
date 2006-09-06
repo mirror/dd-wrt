@@ -581,6 +581,21 @@ start_wlconf (void)
 void
 start_lan (void)
 {
+#ifdef HAVE_MAGICBOX
+if (nvram_match("ath0_mode","sta"))
+    {
+    nvram_set("lan_ifname","br0");
+    nvram_set("lan_ifnames","eth0 ath0");
+    nvram_set("wan_ifname","");
+    nvram_set("wan_ifnames","");    
+    }else
+    {
+    nvram_set("lan_ifname","br0");
+    nvram_set("lan_ifnames","ath0");
+    nvram_set("wan_ifname","eth0");
+    nvram_set("wan_ifnames","eth0");        
+    }
+#endif
   char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
   char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
