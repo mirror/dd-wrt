@@ -4279,7 +4279,7 @@ if (nvram_match(akm,"disabled"))
     }
 else
     {	
-    websWrite(wp,"Capture(share.enable)");
+    websWrite(wp,"Capture(share.enabled)");
     websWrite(wp,"</script>,&nbsp;");
     }
 if (nvram_match(akm,"psk"))
