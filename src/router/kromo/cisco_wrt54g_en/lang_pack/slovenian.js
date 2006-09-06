@@ -445,7 +445,7 @@ ddnsm.all_resolving="Rezre¹evanje domenskega imena";
 ddnsm.all_errresolv="Rezre¹evanje domenskega imena ni uspelo";
 ddnsm.all_connecting="Prikljuèevanje na stre¾nik";
 ddnsm.all_connectfail="Prikljuèevanje na stre¾nik ni uspelo";
-ddnsm.all_disabled="DDNS funkcija je onemogoèena";
+ddnsm.all_disabled="DDNS funkcija je onemogo&#269;ena";
 ddnsm.all_noip="Ni medmre¾ne povezave";
 
 //help container
@@ -1433,8 +1433,8 @@ wl_basic.g="Samo-G";
 wl_basic.legend2="Omejitev radijskega signala";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radijska èasovnica";
-wl_basic.radio_on="Radio je vkljuèen";
-wl_basic.radio_off="Radio je izkljuèen";
+wl_basic.radio_on="Radio je vklju&#269;en";
+wl_basic.radio_off="Radio je izklju&#269;en";
 
 wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.regdom="Regulatorska domena";
