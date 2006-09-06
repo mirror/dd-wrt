@@ -1616,12 +1616,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"newhttp_passwd", "hdslklas9a", 0},
 #endif
 #ifdef HAVE_MADWIFI
-  {"ath0_turbo", "1", 0},
-  {"ath1_turbo", "1", 0},
-  {"ath2_turbo", "1", 0},
-  {"ath3_turbo", "1", 0},
-  {"ath4_turbo", "1", 0},
-  {"ath5_turbo", "1", 0},
+  {"ath0_turbo", "0", 0},
+  {"ath1_turbo", "0", 0},
+  {"ath2_turbo", "0", 0},
+  {"ath3_turbo", "0", 0},
+  {"ath4_turbo", "0", 0},
+  {"ath5_turbo", "0", 0},
 
   {"ath0_regdomain", "96", 0},
   {"ath1_regdomain", "96", 0},
