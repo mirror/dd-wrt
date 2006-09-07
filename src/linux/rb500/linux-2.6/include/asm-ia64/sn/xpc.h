@@ -15,6 +15,7 @@
 #define _ASM_IA64_SN_XPC_H
 
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/sysctl.h>
 #include <linux/device.h>

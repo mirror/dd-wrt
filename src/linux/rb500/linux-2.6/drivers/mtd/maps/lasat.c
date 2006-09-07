@@ -19,6 +19,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
+#include <linux/config.h>
 #include <asm/lasat/lasat.h>
 
 static struct mtd_info *lasat_mtd;

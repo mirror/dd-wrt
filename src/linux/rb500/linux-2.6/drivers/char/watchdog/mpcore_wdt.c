@@ -21,6 +21,7 @@
  */
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/miscdevice.h>
 #include <linux/watchdog.h>
@@ -297,7 +298,7 @@ static void mpcore_wdt_shutdown(struct platform_device *dev)
 /*
  *	Kernel Interfaces
  */
-static const struct file_operations mpcore_wdt_fops = {
+static struct file_operations mpcore_wdt_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= mpcore_wdt_write,
@@ -355,7 +356,7 @@ static int __devinit mpcore_wdt_probe(struct platform_device *dev)
 		goto err_misc;
 	}
 
-	ret = request_irq(wdt->irq, mpcore_wdt_fire, IRQF_DISABLED, "mpcore_wdt", wdt);
+	ret = request_irq(wdt->irq, mpcore_wdt_fire, SA_INTERRUPT, "mpcore_wdt", wdt);
 	if (ret) {
 		dev_printk(KERN_ERR, _dev, "cannot register IRQ%d for watchdog\n", wdt->irq);
 		goto err_irq;

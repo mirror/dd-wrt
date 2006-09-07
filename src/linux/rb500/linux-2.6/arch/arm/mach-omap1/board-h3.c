@@ -14,6 +14,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/init.h>
 #include <linux/major.h>

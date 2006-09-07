@@ -10,6 +10,7 @@
  *  1997-11-28  Modified for POSIX.1b signals by Richard Henderson
  */
 
+#include <linux/config.h>
 #include <linux/compat.h>
 #include <linux/sched.h>
 #include <linux/mm.h>

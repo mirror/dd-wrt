@@ -10,6 +10,7 @@
 
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/major.h>
 #include <linux/blkdev.h>
 #include <linux/module.h>
@@ -30,7 +31,7 @@ struct raw_device_data {
 static struct class *raw_class;
 static struct raw_device_data raw_devices[MAX_RAW_MINORS];
 static DEFINE_MUTEX(raw_mutex);
-static const struct file_operations raw_ctl_fops; /* forward declaration */
+static struct file_operations raw_ctl_fops;	     /* forward declaration */
 
 /*
  * Open/close code for raw IO.
@@ -261,7 +262,7 @@ static ssize_t raw_file_aio_write(struct kiocb *iocb, const char __user *buf,
 }
 
 
-static const struct file_operations raw_fops = {
+static struct file_operations raw_fops = {
 	.read	=	generic_file_read,
 	.aio_read = 	generic_file_aio_read,
 	.write	=	raw_file_write,
@@ -274,7 +275,7 @@ static const struct file_operations raw_fops = {
 	.owner	=	THIS_MODULE,
 };
 
-static const struct file_operations raw_ctl_fops = {
+static struct file_operations raw_ctl_fops = {
 	.ioctl	=	raw_ctl_ioctl,
 	.open	=	raw_open,
 	.owner	=	THIS_MODULE,
@@ -287,6 +288,7 @@ static struct cdev raw_cdev = {
 
 static int __init raw_init(void)
 {
+	int i;
 	dev_t dev = MKDEV(RAW_MAJOR, 0);
 
 	if (register_chrdev_region(dev, MAX_RAW_MINORS, "raw"))
@@ -308,6 +310,13 @@ static int __init raw_init(void)
 	}
 	class_device_create(raw_class, NULL, MKDEV(RAW_MAJOR, 0), NULL, "rawctl");
 
+	devfs_mk_cdev(MKDEV(RAW_MAJOR, 0),
+		      S_IFCHR | S_IRUGO | S_IWUGO,
+		      "raw/rawctl");
+	for (i = 1; i < MAX_RAW_MINORS; i++)
+		devfs_mk_cdev(MKDEV(RAW_MAJOR, i),
+			      S_IFCHR | S_IRUGO | S_IWUGO,
+			      "raw/raw%d", i);
 	return 0;
 
 error:
@@ -317,6 +326,12 @@ error:
 
 static void __exit raw_exit(void)
 {
+	int i;
+
+	for (i = 1; i < MAX_RAW_MINORS; i++)
+		devfs_remove("raw/raw%d", i);
+	devfs_remove("raw/rawctl");
+	devfs_remove("raw");
 	class_device_destroy(raw_class, MKDEV(RAW_MAJOR, 0));
 	class_destroy(raw_class);
 	cdev_del(&raw_cdev);

@@ -11,6 +11,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/device.h>
@@ -147,7 +148,7 @@ cio_tpi(void)
 		sch->driver->irq(&sch->dev);
 	spin_unlock(&sch->lock);
 	irq_exit ();
-	_local_bh_enable();
+	__local_bh_enable();
 	return 1;
 }
 

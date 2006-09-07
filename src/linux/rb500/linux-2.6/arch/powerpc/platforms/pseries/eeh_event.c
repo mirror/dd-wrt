@@ -18,7 +18,6 @@
  * Copyright (c) 2005 Linas Vepstas <linas@linas.org>
  */
 
-#include <linux/delay.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/pci.h>
@@ -35,7 +34,7 @@
  */
 
 /* EEH event workqueue setup. */
-static DEFINE_SPINLOCK(eeh_eventlist_lock);
+static spinlock_t eeh_eventlist_lock = SPIN_LOCK_UNLOCKED;
 LIST_HEAD(eeh_eventlist);
 static void eeh_thread_launcher(void *);
 DECLARE_WORK(eeh_event_wq, eeh_thread_launcher, NULL);
@@ -57,43 +56,38 @@ static int eeh_event_handler(void * dummy)
 {
 	unsigned long flags;
 	struct eeh_event	*event;
-	struct pci_dn *pdn;
 
 	daemonize ("eehd");
-	set_current_state(TASK_INTERRUPTIBLE);
 
-	spin_lock_irqsave(&eeh_eventlist_lock, flags);
-	event = NULL;
+	while (1) {
+		set_current_state(TASK_INTERRUPTIBLE);
 
-	/* Unqueue the event, get ready to process. */
-	if (!list_empty(&eeh_eventlist)) {
-		event = list_entry(eeh_eventlist.next, struct eeh_event, list);
-		list_del(&event->list);
-	}
-	spin_unlock_irqrestore(&eeh_eventlist_lock, flags);
+		spin_lock_irqsave(&eeh_eventlist_lock, flags);
+		event = NULL;
 
-	if (event == NULL)
-		return 0;
+		/* Unqueue the event, get ready to process. */
+		if (!list_empty(&eeh_eventlist)) {
+			event = list_entry(eeh_eventlist.next, struct eeh_event, list);
+			list_del(&event->list);
+		}
+		spin_unlock_irqrestore(&eeh_eventlist_lock, flags);
 
-	/* Serialize processing of EEH events */
-	mutex_lock(&eeh_event_mutex);
-	eeh_mark_slot(event->dn, EEH_MODE_RECOVERING);
+		if (event == NULL)
+			break;
 
-	printk(KERN_INFO "EEH: Detected PCI bus error on device %s\n",
-	       pci_name(event->dev));
+		/* Serialize processing of EEH events */
+		mutex_lock(&eeh_event_mutex);
+		eeh_mark_slot(event->dn, EEH_MODE_RECOVERING);
 
-	pdn = handle_eeh_events(event);
+		printk(KERN_INFO "EEH: Detected PCI bus error on device %s\n",
+		       pci_name(event->dev));
 
-	eeh_clear_slot(event->dn, EEH_MODE_RECOVERING);
-	pci_dev_put(event->dev);
-	kfree(event);
-	mutex_unlock(&eeh_event_mutex);
+		handle_eeh_events(event);
 
-	/* If there are no new errors after an hour, clear the counter. */
-	if (pdn && pdn->eeh_freeze_count>0) {
-		msleep_interruptible (3600*1000);
-		if (pdn->eeh_freeze_count>0)
-			pdn->eeh_freeze_count--;
+		eeh_clear_slot(event->dn, EEH_MODE_RECOVERING);
+		pci_dev_put(event->dev);
+		kfree(event);
+		mutex_unlock(&eeh_event_mutex);
 	}
 
 	return 0;

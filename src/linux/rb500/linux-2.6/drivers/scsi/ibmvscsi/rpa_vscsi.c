@@ -208,7 +208,6 @@ int ibmvscsi_init_crq_queue(struct crq_queue *queue,
 			    int max_requests)
 {
 	int rc;
-	int retrc;
 	struct vio_dev *vdev = to_vio_dev(hostdata->dev);
 
 	queue->msgs = (struct viosrp_crq *)get_zeroed_page(GFP_KERNEL);
@@ -227,7 +226,7 @@ int ibmvscsi_init_crq_queue(struct crq_queue *queue,
 	gather_partition_info();
 	set_adapter_info(hostdata);
 
-	retrc = rc = plpar_hcall_norets(H_REG_CRQ,
+	rc = plpar_hcall_norets(H_REG_CRQ,
 				vdev->unit_address,
 				queue->msg_token, PAGE_SIZE);
 	if (rc == H_RESOURCE)
@@ -264,7 +263,7 @@ int ibmvscsi_init_crq_queue(struct crq_queue *queue,
 	tasklet_init(&hostdata->srp_task, (void *)ibmvscsi_task,
 		     (unsigned long)hostdata);
 
-	return retrc;
+	return 0;
 
       req_irq_failed:
 	do {

@@ -1,6 +1,7 @@
 #ifndef _ALPHA_TLBFLUSH_H
 #define _ALPHA_TLBFLUSH_H
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <asm/compiler.h>
 

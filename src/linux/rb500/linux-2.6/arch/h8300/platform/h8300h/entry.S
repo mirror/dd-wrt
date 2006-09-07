@@ -14,6 +14,7 @@
  */
 
 #include <linux/sys.h>
+#include <linux/config.h>
 #include <asm/unistd.h>
 #include <asm/setup.h>
 #include <asm/segment.h>

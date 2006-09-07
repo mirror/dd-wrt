@@ -90,11 +90,10 @@ static void ibmasmfs_create_files (struct super_block *sb, struct dentry *root);
 static int ibmasmfs_fill_super (struct super_block *sb, void *data, int silent);
 
 
-static int ibmasmfs_get_super(struct file_system_type *fst,
-			int flags, const char *name, void *data,
-			struct vfsmount *mnt)
+static struct super_block *ibmasmfs_get_super(struct file_system_type *fst,
+			int flags, const char *name, void *data)
 {
-	return get_sb_single(fst, flags, data, ibmasmfs_fill_super, mnt);
+	return get_sb_single(fst, flags, data, ibmasmfs_fill_super);
 }
 
 static struct super_operations ibmasmfs_s_ops = {

@@ -9,6 +9,7 @@
 #ifndef __SPARC64_OPLIB_H
 #define __SPARC64_OPLIB_H
 
+#include <linux/config.h>
 #include <asm/openprom.h>
 
 /* OBP version string. */
@@ -323,9 +324,8 @@ extern int prom_pathtoinode(const char *path);
 extern int prom_inst2pkg(int);
 
 /* CPU probing helpers.  */
-struct device_node;
-int cpu_find_by_instance(int instance, struct device_node **dev_node, int *mid);
-int cpu_find_by_mid(int mid, struct device_node **prom_node);
+int cpu_find_by_instance(int instance, int *prom_node, int *mid);
+int cpu_find_by_mid(int mid, int *prom_node);
 
 /* Client interface level routines. */
 extern void prom_set_trap_table(unsigned long tba);

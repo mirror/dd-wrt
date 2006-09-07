@@ -38,9 +38,9 @@ struct afs_mount_params {
 static void afs_i_init_once(void *foo, kmem_cache_t *cachep,
 			    unsigned long flags);
 
-static int afs_get_sb(struct file_system_type *fs_type,
-		      int flags, const char *dev_name,
-		      void *data, struct vfsmount *mnt);
+static struct super_block *afs_get_sb(struct file_system_type *fs_type,
+				      int flags, const char *dev_name,
+				      void *data);
 
 static struct inode *afs_alloc_inode(struct super_block *sb);
 
@@ -48,7 +48,7 @@ static void afs_put_super(struct super_block *sb);
 
 static void afs_destroy_inode(struct inode *inode);
 
-struct file_system_type afs_fs_type = {
+static struct file_system_type afs_fs_type = {
 	.owner		= THIS_MODULE,
 	.name		= "afs",
 	.get_sb		= afs_get_sb,
@@ -294,11 +294,10 @@ static int afs_fill_super(struct super_block *sb, void *data, int silent)
  * get an AFS superblock
  * - TODO: don't use get_sb_nodev(), but rather call sget() directly
  */
-static int afs_get_sb(struct file_system_type *fs_type,
-		      int flags,
-		      const char *dev_name,
-		      void *options,
-		      struct vfsmount *mnt)
+static struct super_block *afs_get_sb(struct file_system_type *fs_type,
+				      int flags,
+				      const char *dev_name,
+				      void *options)
 {
 	struct afs_mount_params params;
 	struct super_block *sb;
@@ -312,7 +311,7 @@ static int afs_get_sb(struct file_system_type *fs_type,
 	ret = afscm_start();
 	if (ret < 0) {
 		_leave(" = %d", ret);
-		return ret;
+		return ERR_PTR(ret);
 	}
 
 	/* parse the options */
@@ -349,19 +348,18 @@ static int afs_get_sb(struct file_system_type *fs_type,
 		goto error;
 	}
 	sb->s_flags |= MS_ACTIVE;
-	simple_set_mnt(mnt, sb);
 
 	afs_put_volume(params.volume);
 	afs_put_cell(params.default_cell);
-	_leave(" = 0 [%p]", 0, sb);
-	return 0;
+	_leave(" = %p", sb);
+	return sb;
 
  error:
 	afs_put_volume(params.volume);
 	afs_put_cell(params.default_cell);
 	afscm_stop();
 	_leave(" = %d", ret);
-	return ret;
+	return ERR_PTR(ret);
 } /* end afs_get_sb() */
 
 /*****************************************************************************/

@@ -20,6 +20,7 @@
 #ifndef __LINUX_JFFS_FM_H__
 #define __LINUX_JFFS_FM_H__
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/jffs.h>
 #include <linux/mtd/mtd.h>

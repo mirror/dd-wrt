@@ -18,6 +18,7 @@
  *    2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <asm/ppc_asm.h>
 
 	.text

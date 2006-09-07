@@ -14,6 +14,8 @@
 #ifndef __V850_UNISTD_H__
 #define __V850_UNISTD_H__
 
+#include <asm/clinkage.h>
+
 #define __NR_restart_syscall	  0
 #define __NR_exit		  1
 #define __NR_fork		  2
@@ -235,9 +237,10 @@
    except the syscall number (r12).  */
 #define SYSCALL_SHORT_CLOBBERS	SYSCALL_CLOBBERS, "r13", "r14"
 
-#ifdef __KERNEL__
 
-#include <asm/clinkage.h>
+/* User programs sometimes end up including this header file
+   (indirectly, via uClibc header files), so I'm a bit nervous just
+   including <linux/compiler.h>.  */
 
 #define __syscall_return(type, res)					      \
   do {									      \
@@ -365,6 +368,7 @@ type name (atype a, btype b, ctype c, dtype d, etype e, ftype f)	      \
 }
 		
 
+#ifdef __KERNEL__
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR
 #define __ARCH_WANT_STAT64
@@ -385,6 +389,7 @@ type name (atype a, btype b, ctype c, dtype d, etype e, ftype f)	      \
 #define __ARCH_WANT_SYS_SIGPENDING
 #define __ARCH_WANT_SYS_SIGPROCMASK
 #define __ARCH_WANT_SYS_RT_SIGACTION
+#endif
 
 #ifdef __KERNEL_SYSCALLS__
 
@@ -435,7 +440,7 @@ asmlinkage long sys_rt_sigaction(int sig,
 				struct sigaction __user *oact,
 				size_t sigsetsize);
 
-#endif /* __KERNEL_SYSCALLS__ */
+#endif
 
 /*
  * "Conditional" syscalls
@@ -450,5 +455,4 @@ asmlinkage long sys_rt_sigaction(int sig,
   void name (void) __attribute__ ((weak, alias ("sys_ni_syscall")));
 #endif
 
-#endif /* __KERNEL__ */
 #endif /* __V850_UNISTD_H__ */

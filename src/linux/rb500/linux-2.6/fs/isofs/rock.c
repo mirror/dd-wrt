@@ -754,6 +754,6 @@ error:
 	return -EIO;
 }
 
-const struct address_space_operations isofs_symlink_aops = {
+struct address_space_operations isofs_symlink_aops = {
 	.readpage = rock_ridge_symlink_readpage
 };

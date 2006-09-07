@@ -26,6 +26,7 @@
 
 /*****************************************************************************/
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/interrupt.h>
@@ -39,6 +40,7 @@
 #include <linux/ioport.h>
 #include <linux/init.h>
 #include <linux/smp_lock.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/device.h>
 #include <linux/delay.h>
 
@@ -137,6 +139,15 @@ static char	*stl_drvname = "stallion";
 static char	*stl_drvversion = "5.6.0";
 
 static struct tty_driver	*stl_serial;
+
+/*
+ *	We will need to allocate a temporary write buffer for chars that
+ *	come direct from user space. The problem is that a copy from user
+ *	space might cause a page fault (typically on a system that is
+ *	swapping!). All ports will share one buffer - since if the system
+ *	is already swapping a shared buffer won't make things any worse.
+ */
+static char			*stl_tmpwritebuf;
 
 /*
  *	Define a local default termios struct. All ports will be created
@@ -350,14 +361,6 @@ static unsigned char	stl_vecmap[] = {
 	0xff, 0xff, 0xff, 0x04, 0x06, 0x05, 0xff, 0x07,
 	0xff, 0xff, 0x00, 0x02, 0x01, 0xff, 0xff, 0x03
 };
-
-/*
- *	Lock ordering is that you may not take stallion_lock holding
- *	brd_lock.
- */
-
-static spinlock_t brd_lock; 		/* Guard the board mapping */
-static spinlock_t stallion_lock;	/* Guard the tty driver */
 
 /*
  *	Set up enable and disable macros for the ECH boards. They require
@@ -707,7 +710,7 @@ static unsigned int	sc26198_baudtable[] = {
  *	Define the driver info for a user level control device. Used mainly
  *	to get at port stats - only not using the port device itself.
  */
-static const struct file_operations	stl_fsiomem = {
+static struct file_operations	stl_fsiomem = {
 	.owner		= THIS_MODULE,
 	.ioctl		= stl_memioctl,
 };
@@ -722,7 +725,17 @@ static struct class *stallion_class;
 
 static int __init stallion_module_init(void)
 {
+	unsigned long	flags;
+
+#ifdef DEBUG
+	printk("init_module()\n");
+#endif
+
+	save_flags(flags);
+	cli();
 	stl_init();
+	restore_flags(flags);
+
 	return 0;
 }
 
@@ -733,6 +746,7 @@ static void __exit stallion_module_exit(void)
 	stlbrd_t	*brdp;
 	stlpanel_t	*panelp;
 	stlport_t	*portp;
+	unsigned long	flags;
 	int		i, j, k;
 
 #ifdef DEBUG
@@ -741,6 +755,9 @@ static void __exit stallion_module_exit(void)
 
 	printk(KERN_INFO "Unloading %s: version %s\n", stl_drvtitle,
 		stl_drvversion);
+
+	save_flags(flags);
+	cli();
 
 /*
  *	Free up all allocated resources used by the ports. This includes
@@ -753,14 +770,20 @@ static void __exit stallion_module_exit(void)
 	if (i) {
 		printk("STALLION: failed to un-register tty driver, "
 			"errno=%d\n", -i);
+		restore_flags(flags);
 		return;
 	}
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
+		devfs_remove("staliomem/%d", i);
 		class_device_destroy(stallion_class, MKDEV(STL_SIOMEMMAJOR, i));
+	}
+	devfs_remove("staliomem");
 	if ((i = unregister_chrdev(STL_SIOMEMMAJOR, "staliomem")))
 		printk("STALLION: failed to un-register serial memory device, "
 			"errno=%d\n", -i);
 	class_destroy(stallion_class);
+
+	kfree(stl_tmpwritebuf);
 
 	for (i = 0; (i < stl_nrbrds); i++) {
 		if ((brdp = stl_brds[i]) == (stlbrd_t *) NULL)
@@ -791,6 +814,8 @@ static void __exit stallion_module_exit(void)
 		kfree(brdp);
 		stl_brds[i] = (stlbrd_t *) NULL;
 	}
+
+	restore_flags(flags);
 }
 
 module_init(stallion_module_init);
@@ -923,7 +948,7 @@ static stlbrd_t *stl_allocbrd(void)
 
 	brdp = kzalloc(sizeof(stlbrd_t), GFP_KERNEL);
 	if (!brdp) {
-		printk("STALLION: failed to allocate memory (size=%Zd)\n",
+		printk("STALLION: failed to allocate memory (size=%d)\n",
 			sizeof(stlbrd_t));
 		return NULL;
 	}
@@ -1041,17 +1066,16 @@ static int stl_waitcarrier(stlport_t *portp, struct file *filp)
 	rc = 0;
 	doclocal = 0;
 
-	spin_lock_irqsave(&stallion_lock, flags);
-
 	if (portp->tty->termios->c_cflag & CLOCAL)
 		doclocal++;
 
+	save_flags(flags);
+	cli();
 	portp->openwaitcnt++;
 	if (! tty_hung_up_p(filp))
 		portp->refcount--;
 
 	for (;;) {
-		/* Takes brd_lock internally */
 		stl_setsignals(portp, 1, 1);
 		if (tty_hung_up_p(filp) ||
 		    ((portp->flags & ASYNC_INITIALIZED) == 0)) {
@@ -1069,14 +1093,13 @@ static int stl_waitcarrier(stlport_t *portp, struct file *filp)
 			rc = -ERESTARTSYS;
 			break;
 		}
-		/* FIXME */
 		interruptible_sleep_on(&portp->open_wait);
 	}
 
 	if (! tty_hung_up_p(filp))
 		portp->refcount++;
 	portp->openwaitcnt--;
-	spin_unlock_irqrestore(&stallion_lock, flags);
+	restore_flags(flags);
 
 	return rc;
 }
@@ -1096,15 +1119,16 @@ static void stl_close(struct tty_struct *tty, struct file *filp)
 	if (portp == (stlport_t *) NULL)
 		return;
 
-	spin_lock_irqsave(&stallion_lock, flags);
+	save_flags(flags);
+	cli();
 	if (tty_hung_up_p(filp)) {
-		spin_unlock_irqrestore(&stallion_lock, flags);
+		restore_flags(flags);
 		return;
 	}
 	if ((tty->count == 1) && (portp->refcount != 1))
 		portp->refcount = 1;
 	if (portp->refcount-- > 1) {
-		spin_unlock_irqrestore(&stallion_lock, flags);
+		restore_flags(flags);
 		return;
 	}
 
@@ -1118,18 +1142,11 @@ static void stl_close(struct tty_struct *tty, struct file *filp)
  *	(The sc26198 has no "end-of-data" interrupt only empty FIFO)
  */
 	tty->closing = 1;
-
-	spin_unlock_irqrestore(&stallion_lock, flags);
-
 	if (portp->closing_wait != ASYNC_CLOSING_WAIT_NONE)
 		tty_wait_until_sent(tty, portp->closing_wait);
 	stl_waituntilsent(tty, (HZ / 2));
 
-
-	spin_lock_irqsave(&stallion_lock, flags);
 	portp->flags &= ~ASYNC_INITIALIZED;
-	spin_unlock_irqrestore(&stallion_lock, flags);
-
 	stl_disableintrs(portp);
 	if (tty->termios->c_cflag & HUPCL)
 		stl_setsignals(portp, 0, 0);
@@ -1156,6 +1173,7 @@ static void stl_close(struct tty_struct *tty, struct file *filp)
 
 	portp->flags &= ~(ASYNC_NORMAL_ACTIVE|ASYNC_CLOSING);
 	wake_up_interruptible(&portp->close_wait);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -1177,6 +1195,9 @@ static int stl_write(struct tty_struct *tty, const unsigned char *buf, int count
 		(int) tty, (int) buf, count);
 #endif
 
+	if ((tty == (struct tty_struct *) NULL) ||
+	    (stl_tmpwritebuf == (char *) NULL))
+		return 0;
 	portp = tty->driver_data;
 	if (portp == (stlport_t *) NULL)
 		return 0;
@@ -1281,6 +1302,11 @@ static void stl_flushchars(struct tty_struct *tty)
 	if (portp->tx.buf == (char *) NULL)
 		return;
 
+#if 0
+	if (tty->stopped || tty->hw_stopped ||
+	    (portp->tx.head == portp->tx.tail))
+		return;
+#endif
 	stl_startrxtx(portp, -1, 1);
 }
 
@@ -1951,14 +1977,12 @@ static int stl_eiointr(stlbrd_t *brdp)
 	unsigned int	iobase;
 	int		handled = 0;
 
-	spin_lock(&brd_lock);
 	panelp = brdp->panels[0];
 	iobase = panelp->iobase;
 	while (inb(brdp->iostatus) & EIO_INTRPEND) {
 		handled = 1;
 		(* panelp->isr)(panelp, iobase);
 	}
-	spin_unlock(&brd_lock);
 	return handled;
 }
 
@@ -2144,7 +2168,7 @@ static int __init stl_initports(stlbrd_t *brdp, stlpanel_t *panelp)
 		portp = kzalloc(sizeof(stlport_t), GFP_KERNEL);
 		if (!portp) {
 			printk("STALLION: failed to allocate memory "
-				"(size=%Zd)\n", sizeof(stlport_t));
+				"(size=%d)\n", sizeof(stlport_t));
 			break;
 		}
 
@@ -2280,7 +2304,7 @@ static inline int stl_initeio(stlbrd_t *brdp)
 	panelp = kzalloc(sizeof(stlpanel_t), GFP_KERNEL);
 	if (!panelp) {
 		printk(KERN_WARNING "STALLION: failed to allocate memory "
-			"(size=%Zd)\n", sizeof(stlpanel_t));
+			"(size=%d)\n", sizeof(stlpanel_t));
 		return -ENOMEM;
 	}
 
@@ -2302,7 +2326,7 @@ static inline int stl_initeio(stlbrd_t *brdp)
 	brdp->nrpanels = 1;
 	brdp->state |= BRD_FOUND;
 	brdp->hwid = status;
-	if (request_irq(brdp->irq, stl_intr, IRQF_SHARED, name, brdp) != 0) {
+	if (request_irq(brdp->irq, stl_intr, SA_SHIRQ, name, brdp) != 0) {
 		printk("STALLION: failed to register interrupt "
 		    "routine for %s irq=%d\n", name, brdp->irq);
 		rc = -ENODEV;
@@ -2454,7 +2478,7 @@ static inline int stl_initech(stlbrd_t *brdp)
 		panelp = kzalloc(sizeof(stlpanel_t), GFP_KERNEL);
 		if (!panelp) {
 			printk("STALLION: failed to allocate memory "
-				"(size=%Zd)\n", sizeof(stlpanel_t));
+				"(size=%d)\n", sizeof(stlpanel_t));
 			break;
 		}
 		panelp->magic = STL_PANELMAGIC;
@@ -2512,7 +2536,7 @@ static inline int stl_initech(stlbrd_t *brdp)
 		outb((brdp->ioctrlval | ECH_BRDDISABLE), brdp->ioctrl);
 
 	brdp->state |= BRD_FOUND;
-	if (request_irq(brdp->irq, stl_intr, IRQF_SHARED, name, brdp) != 0) {
+	if (request_irq(brdp->irq, stl_intr, SA_SHIRQ, name, brdp) != 0) {
 		printk("STALLION: failed to register interrupt "
 		    "routine for %s irq=%d\n", name, brdp->irq);
 		i = -ENODEV;
@@ -2855,7 +2879,8 @@ static int stl_getportstats(stlport_t *portp, comstats_t __user *cp)
 	portp->stats.lflags = 0;
 	portp->stats.rxbuffered = 0;
 
-	spin_lock_irqsave(&stallion_lock, flags);
+	save_flags(flags);
+	cli();
 	if (portp->tty != (struct tty_struct *) NULL) {
 		if (portp->tty->driver_data == portp) {
 			portp->stats.ttystate = portp->tty->flags;
@@ -2869,7 +2894,7 @@ static int stl_getportstats(stlport_t *portp, comstats_t __user *cp)
 			}
 		}
 	}
-	spin_unlock_irqrestore(&stallion_lock, flags);
+	restore_flags(flags);
 
 	head = portp->tx.head;
 	tail = portp->tx.tail;
@@ -3024,9 +3049,6 @@ static int __init stl_init(void)
 	int i;
 	printk(KERN_INFO "%s: version %s\n", stl_drvtitle, stl_drvversion);
 
-	spin_lock_init(&stallion_lock);
-	spin_lock_init(&brd_lock);
-
 	stl_initbrds();
 
 	stl_serial = alloc_tty_driver(STL_MAXBRDS * STL_MAXPORTS);
@@ -3034,21 +3056,35 @@ static int __init stl_init(void)
 		return -1;
 
 /*
+ *	Allocate a temporary write buffer.
+ */
+	stl_tmpwritebuf = kmalloc(STL_TXBUFSIZE, GFP_KERNEL);
+	if (!stl_tmpwritebuf)
+		printk("STALLION: failed to allocate memory (size=%d)\n",
+			STL_TXBUFSIZE);
+
+/*
  *	Set up a character driver for per board stuff. This is mainly used
  *	to do stats ioctls on the ports.
  */
 	if (register_chrdev(STL_SIOMEMMAJOR, "staliomem", &stl_fsiomem))
 		printk("STALLION: failed to register serial board device\n");
+	devfs_mk_dir("staliomem");
 
 	stallion_class = class_create(THIS_MODULE, "staliomem");
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++) {
+		devfs_mk_cdev(MKDEV(STL_SIOMEMMAJOR, i),
+				S_IFCHR|S_IRUSR|S_IWUSR,
+				"staliomem/%d", i);
 		class_device_create(stallion_class, NULL,
 				    MKDEV(STL_SIOMEMMAJOR, i), NULL,
 				    "staliomem%d", i);
+	}
 
 	stl_serial->owner = THIS_MODULE;
 	stl_serial->driver_name = stl_drvname;
 	stl_serial->name = "ttyE";
+	stl_serial->devfs_name = "tts/E";
 	stl_serial->major = STL_SERIALMAJOR;
 	stl_serial->minor_start = 0;
 	stl_serial->type = TTY_DRIVER_TYPE_SERIAL;
@@ -3111,13 +3147,11 @@ static int stl_cd1400panelinit(stlbrd_t *brdp, stlpanel_t *panelp)
 	unsigned int	gfrcr;
 	int		chipmask, i, j;
 	int		nrchips, uartaddr, ioaddr;
-	unsigned long   flags;
 
 #ifdef DEBUG
 	printk("stl_panelinit(brdp=%x,panelp=%x)\n", (int) brdp, (int) panelp);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
 	BRDENABLE(panelp->brdnr, panelp->pagenr);
 
 /*
@@ -3155,7 +3189,6 @@ static int stl_cd1400panelinit(stlbrd_t *brdp, stlpanel_t *panelp)
 	}
 
 	BRDDISABLE(panelp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
 	return chipmask;
 }
 
@@ -3167,7 +3200,6 @@ static int stl_cd1400panelinit(stlbrd_t *brdp, stlpanel_t *panelp)
 
 static void stl_cd1400portinit(stlbrd_t *brdp, stlpanel_t *panelp, stlport_t *portp)
 {
-	unsigned long flags;
 #ifdef DEBUG
 	printk("stl_cd1400portinit(brdp=%x,panelp=%x,portp=%x)\n",
 		(int) brdp, (int) panelp, (int) portp);
@@ -3177,7 +3209,6 @@ static void stl_cd1400portinit(stlbrd_t *brdp, stlpanel_t *panelp, stlport_t *po
 	    (portp == (stlport_t *) NULL))
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
 	portp->ioaddr = panelp->iobase + (((brdp->brdtype == BRD_ECHPCI) ||
 		(portp->portnr < 8)) ? 0 : EREG_BANKSIZE);
 	portp->uartaddr = (portp->portnr & 0x04) << 5;
@@ -3188,7 +3219,6 @@ static void stl_cd1400portinit(stlbrd_t *brdp, stlpanel_t *panelp, stlport_t *po
 	stl_cd1400setreg(portp, LIVR, (portp->portnr << 3));
 	portp->hwid = stl_cd1400getreg(portp, GFRCR);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
 }
 
 /*****************************************************************************/
@@ -3398,7 +3428,8 @@ static void stl_cd1400setport(stlport_t *portp, struct termios *tiosp)
 		tiosp->c_cc[VSTART], tiosp->c_cc[VSTOP]);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x3));
 	srer = stl_cd1400getreg(portp, SRER);
@@ -3435,7 +3466,7 @@ static void stl_cd1400setport(stlport_t *portp, struct termios *tiosp)
 		portp->sigs &= ~TIOCM_CD;
 	stl_cd1400setreg(portp, SRER, ((srer & ~sreroff) | sreron));
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3461,7 +3492,8 @@ static void stl_cd1400setsignals(stlport_t *portp, int dtr, int rts)
 	if (rts > 0)
 		msvr2 = MSVR2_RTS;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	if (rts >= 0)
@@ -3469,7 +3501,7 @@ static void stl_cd1400setsignals(stlport_t *portp, int dtr, int rts)
 	if (dtr >= 0)
 		stl_cd1400setreg(portp, MSVR1, msvr1);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3488,13 +3520,14 @@ static int stl_cd1400getsignals(stlport_t *portp)
 	printk("stl_cd1400getsignals(portp=%x)\n", (int) portp);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	msvr1 = stl_cd1400getreg(portp, MSVR1);
 	msvr2 = stl_cd1400getreg(portp, MSVR2);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 
 	sigs = 0;
 	sigs |= (msvr1 & MSVR1_DCD) ? TIOCM_CD : 0;
@@ -3536,14 +3569,15 @@ static void stl_cd1400enablerxtx(stlport_t *portp, int rx, int tx)
 	else if (rx > 0)
 		ccr |= CCR_RXENABLE;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	stl_cd1400ccrwait(portp);
 	stl_cd1400setreg(portp, CCR, ccr);
 	stl_cd1400ccrwait(portp);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3575,7 +3609,8 @@ static void stl_cd1400startrxtx(stlport_t *portp, int rx, int tx)
 	else if (rx > 0)
 		sreron |= SRER_RXDATA;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	stl_cd1400setreg(portp, SRER,
@@ -3583,7 +3618,7 @@ static void stl_cd1400startrxtx(stlport_t *portp, int rx, int tx)
 	BRDDISABLE(portp->brdnr);
 	if (tx > 0)
 		set_bit(ASYI_TXBUSY, &portp->istate);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3599,12 +3634,13 @@ static void stl_cd1400disableintrs(stlport_t *portp)
 #ifdef DEBUG
 	printk("stl_cd1400disableintrs(portp=%x)\n", (int) portp);
 #endif
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	stl_cd1400setreg(portp, SRER, 0);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3617,7 +3653,8 @@ static void stl_cd1400sendbreak(stlport_t *portp, int len)
 	printk("stl_cd1400sendbreak(portp=%x,len=%d)\n", (int) portp, len);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	stl_cd1400setreg(portp, SRER,
@@ -3627,7 +3664,7 @@ static void stl_cd1400sendbreak(stlport_t *portp, int len)
 	portp->brklen = len;
 	if (len == 1)
 		portp->stats.txbreaks++;
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3651,7 +3688,8 @@ static void stl_cd1400flowctrl(stlport_t *portp, int state)
 	if (tty == (struct tty_struct *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 
@@ -3691,7 +3729,7 @@ static void stl_cd1400flowctrl(stlport_t *portp, int state)
 	}
 
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3715,7 +3753,8 @@ static void stl_cd1400sendflow(stlport_t *portp, int state)
 	if (tty == (struct tty_struct *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	if (state) {
@@ -3730,7 +3769,7 @@ static void stl_cd1400sendflow(stlport_t *portp, int state)
 		stl_cd1400ccrwait(portp);
 	}
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3746,7 +3785,8 @@ static void stl_cd1400flush(stlport_t *portp)
 	if (portp == (stlport_t *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_cd1400setreg(portp, CAR, (portp->portnr & 0x03));
 	stl_cd1400ccrwait(portp);
@@ -3754,7 +3794,7 @@ static void stl_cd1400flush(stlport_t *portp)
 	stl_cd1400ccrwait(portp);
 	portp->tx.tail = portp->tx.head;
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -3793,7 +3833,6 @@ static void stl_cd1400eiointr(stlpanel_t *panelp, unsigned int iobase)
 		(int) panelp, iobase);
 #endif
 
-	spin_lock(&brd_lock);
 	outb(SVRR, iobase);
 	svrtype = inb(iobase + EREG_DATA);
 	if (panelp->nrports > 4) {
@@ -3807,8 +3846,6 @@ static void stl_cd1400eiointr(stlpanel_t *panelp, unsigned int iobase)
 		stl_cd1400txisr(panelp, iobase);
 	else if (svrtype & SVRR_MDM)
 		stl_cd1400mdmisr(panelp, iobase);
-
-	spin_unlock(&brd_lock);
 }
 
 /*****************************************************************************/
@@ -4396,7 +4433,8 @@ static void stl_sc26198setport(stlport_t *portp, struct termios *tiosp)
 		tiosp->c_cc[VSTART], tiosp->c_cc[VSTOP]);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_sc26198setreg(portp, IMR, 0);
 	stl_sc26198updatereg(portp, MR0, mr0);
@@ -4423,7 +4461,7 @@ static void stl_sc26198setport(stlport_t *portp, struct termios *tiosp)
 	portp->imr = (portp->imr & ~imroff) | imron;
 	stl_sc26198setreg(portp, IMR, portp->imr);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4453,12 +4491,13 @@ static void stl_sc26198setsignals(stlport_t *portp, int dtr, int rts)
 	else if (rts > 0)
 		iopioron |= IPR_RTS;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_sc26198setreg(portp, IOPIOR,
 		((stl_sc26198getreg(portp, IOPIOR) & ~iopioroff) | iopioron));
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4477,11 +4516,12 @@ static int stl_sc26198getsignals(stlport_t *portp)
 	printk("stl_sc26198getsignals(portp=%x)\n", (int) portp);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	ipr = stl_sc26198getreg(portp, IPR);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 
 	sigs = 0;
 	sigs |= (ipr & IPR_DCD) ? 0 : TIOCM_CD;
@@ -4518,12 +4558,13 @@ static void stl_sc26198enablerxtx(stlport_t *portp, int rx, int tx)
 	else if (rx > 0)
 		ccr |= CR_RXENABLE;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_sc26198setreg(portp, SCCR, ccr);
 	BRDDISABLE(portp->brdnr);
 	portp->crenable = ccr;
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4552,14 +4593,15 @@ static void stl_sc26198startrxtx(stlport_t *portp, int rx, int tx)
 	else if (rx > 0)
 		imr |= IR_RXRDY | IR_RXBREAK | IR_RXWATCHDOG;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_sc26198setreg(portp, IMR, imr);
 	BRDDISABLE(portp->brdnr);
 	portp->imr = imr;
 	if (tx > 0)
 		set_bit(ASYI_TXBUSY, &portp->istate);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4576,12 +4618,13 @@ static void stl_sc26198disableintrs(stlport_t *portp)
 	printk("stl_sc26198disableintrs(portp=%x)\n", (int) portp);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	portp->imr = 0;
 	stl_sc26198setreg(portp, IMR, 0);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4594,7 +4637,8 @@ static void stl_sc26198sendbreak(stlport_t *portp, int len)
 	printk("stl_sc26198sendbreak(portp=%x,len=%d)\n", (int) portp, len);
 #endif
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	if (len == 1) {
 		stl_sc26198setreg(portp, SCCR, CR_TXSTARTBREAK);
@@ -4603,7 +4647,7 @@ static void stl_sc26198sendbreak(stlport_t *portp, int len)
 		stl_sc26198setreg(portp, SCCR, CR_TXSTOPBREAK);
 	}
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4628,7 +4672,8 @@ static void stl_sc26198flowctrl(stlport_t *portp, int state)
 	if (tty == (struct tty_struct *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 
 	if (state) {
@@ -4674,7 +4719,7 @@ static void stl_sc26198flowctrl(stlport_t *portp, int state)
 	}
 
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4699,7 +4744,8 @@ static void stl_sc26198sendflow(stlport_t *portp, int state)
 	if (tty == (struct tty_struct *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	if (state) {
 		mr0 = stl_sc26198getreg(portp, MR0);
@@ -4719,7 +4765,7 @@ static void stl_sc26198sendflow(stlport_t *portp, int state)
 		stl_sc26198setreg(portp, MR0, mr0);
 	}
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4735,13 +4781,14 @@ static void stl_sc26198flush(stlport_t *portp)
 	if (portp == (stlport_t *) NULL)
 		return;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	stl_sc26198setreg(portp, SCCR, CR_TXRESET);
 	stl_sc26198setreg(portp, SCCR, portp->crenable);
 	BRDDISABLE(portp->brdnr);
 	portp->tx.tail = portp->tx.head;
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 }
 
 /*****************************************************************************/
@@ -4768,11 +4815,12 @@ static int stl_sc26198datastate(stlport_t *portp)
 	if (test_bit(ASYI_TXBUSY, &portp->istate))
 		return 1;
 
-	spin_lock_irqsave(&brd_lock, flags);
+	save_flags(flags);
+	cli();
 	BRDENABLE(portp->brdnr, portp->pagenr);
 	sr = stl_sc26198getreg(portp, SR);
 	BRDDISABLE(portp->brdnr);
-	spin_unlock_irqrestore(&brd_lock, flags);
+	restore_flags(flags);
 
 	return (sr & SR_TXEMPTY) ? 0 : 1;
 }
@@ -4830,8 +4878,6 @@ static void stl_sc26198intr(stlpanel_t *panelp, unsigned int iobase)
 	stlport_t	*portp;
 	unsigned int	iack;
 
-	spin_lock(&brd_lock);
-
 /* 
  *	Work around bug in sc26198 chip... Cannot have A6 address
  *	line of UART high, else iack will be returned as 0.
@@ -4847,8 +4893,6 @@ static void stl_sc26198intr(stlpanel_t *panelp, unsigned int iobase)
 		stl_sc26198txisr(portp);
 	else
 		stl_sc26198otherisr(portp, iack);
-
-	spin_unlock(&brd_lock);
 }
 
 /*****************************************************************************/

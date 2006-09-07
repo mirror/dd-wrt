@@ -8,6 +8,7 @@
 #ifndef _ASM_WAR_H
 #define _ASM_WAR_H
 
+#include <linux/config.h>
 
 /*
  * Another R4600 erratum.  Due to the lack of errata information the exact
@@ -171,8 +172,7 @@
  * On the RM9000 there is a problem which makes the CreateDirtyExclusive
  * cache operation unusable on SMP systems.
  */
-#if defined(CONFIG_MOMENCO_JAGUAR_ATX) || defined(CONFIG_PMC_YOSEMITE) || \
-    defined(CONFIG_BASLER_EXCITE)
+#if defined(CONFIG_MOMENCO_JAGUAR_ATX) || defined(CONFIG_PMC_YOSEMITE)
 #define  RM9000_CDEX_SMP_WAR		1
 #endif
 
@@ -182,7 +182,7 @@
  * being fetched may case spurious exceptions.
  */
 #if defined(CONFIG_MOMENCO_JAGUAR_ATX) || defined(CONFIG_MOMENCO_OCELOT_3) || \
-    defined(CONFIG_PMC_YOSEMITE) || defined(CONFIG_BASLER_EXCITE)
+    defined(CONFIG_PMC_YOSEMITE)
 #define ICACHE_REFILLS_WORKAROUND_WAR	1
 #endif
 

@@ -12,6 +12,7 @@
  *
  */
 #include <linux/linkage.h>
+#include <linux/config.h>
 
 	.align 2
 	.data

@@ -21,6 +21,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/device.h>
 #include <linux/usb.h>
 #include "hcd.h"

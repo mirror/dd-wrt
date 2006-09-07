@@ -157,12 +157,20 @@ static void spufs_prune_dir(struct dentry *dir)
 	mutex_unlock(&dir->d_inode->i_mutex);
 }
 
-/* Caller must hold root->i_mutex */
 static int spufs_rmdir(struct inode *root, struct dentry *dir_dentry)
 {
-	/* remove all entries */
-	spufs_prune_dir(dir_dentry);
+	struct spu_context *ctx;
 
+	/* remove all entries */
+	mutex_lock(&root->i_mutex);
+	spufs_prune_dir(dir_dentry);
+	mutex_unlock(&root->i_mutex);
+
+	/* We have to give up the mm_struct */
+	ctx = SPUFS_I(dir_dentry->d_inode)->i_ctx;
+	spu_forget(ctx);
+
+	/* XXX Do we need to hold i_mutex here ? */
 	return simple_rmdir(root, dir_dentry);
 }
 
@@ -191,22 +199,15 @@ out:
 
 static int spufs_dir_close(struct inode *inode, struct file *file)
 {
-	struct spu_context *ctx;
 	struct inode *dir;
 	struct dentry *dentry;
 	int ret;
 
 	dentry = file->f_dentry;
 	dir = dentry->d_parent->d_inode;
-	ctx = SPUFS_I(dentry->d_inode)->i_ctx;
 
-	mutex_lock(&dir->i_mutex);
 	ret = spufs_rmdir(dir, dentry);
-	mutex_unlock(&dir->i_mutex);
 	WARN_ON(ret);
-
-	/* We have to give up the mm_struct */
-	spu_forget(ctx);
 
 	return dcache_dir_close(inode, file);
 }
@@ -304,10 +305,6 @@ long spufs_create_thread(struct nameidata *nd,
 	    nd->dentry != nd->dentry->d_sb->s_root)
 		goto out;
 
-	/* all flags are reserved */
-	if (flags)
-		goto out;
-
 	dentry = lookup_create(nd, 1);
 	ret = PTR_ERR(dentry);
 	if (IS_ERR(dentry))
@@ -327,13 +324,8 @@ long spufs_create_thread(struct nameidata *nd,
 	 * in error path of *_open().
 	 */
 	ret = spufs_context_open(dget(dentry), mntget(nd->mnt));
-	if (ret < 0) {
-		WARN_ON(spufs_rmdir(nd->dentry->d_inode, dentry));
-		mutex_unlock(&nd->dentry->d_inode->i_mutex);
-		spu_forget(SPUFS_I(dentry->d_inode)->i_ctx);
-		dput(dentry);
-		goto out;
-	}
+	if (ret < 0)
+		spufs_rmdir(nd->dentry->d_inode, dentry);
 
 out_dput:
 	dput(dentry);
@@ -436,11 +428,11 @@ spufs_fill_super(struct super_block *sb, void *data, int silent)
 	return spufs_create_root(sb, data);
 }
 
-static int
+static struct super_block *
 spufs_get_sb(struct file_system_type *fstype, int flags,
-		const char *name, void *data, struct vfsmount *mnt)
+		const char *name, void *data)
 {
-	return get_sb_single(fstype, flags, data, spufs_fill_super, mnt);
+	return get_sb_single(fstype, flags, data, spufs_fill_super);
 }
 
 static struct file_system_type spufs_type = {

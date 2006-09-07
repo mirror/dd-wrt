@@ -29,34 +29,28 @@ static void central_probe_failure(int line)
 	prom_halt();
 }
 
-static void central_ranges_init(struct linux_central *central)
+static void central_ranges_init(int cnode, struct linux_central *central)
 {
-	struct device_node *dp = central->prom_node;
-	void *pval;
-	int len;
+	int success;
 	
 	central->num_central_ranges = 0;
-	pval = of_get_property(dp, "ranges", &len);
-	if (pval) {
-		memcpy(central->central_ranges, pval, len);
-		central->num_central_ranges =
-			(len / sizeof(struct linux_prom_ranges));
-	}
+	success = prom_getproperty(central->prom_node, "ranges",
+				   (char *) central->central_ranges,
+				   sizeof (central->central_ranges));
+	if (success != -1)
+		central->num_central_ranges = (success/sizeof(struct linux_prom_ranges));
 }
 
-static void fhc_ranges_init(struct linux_fhc *fhc)
+static void fhc_ranges_init(int fnode, struct linux_fhc *fhc)
 {
-	struct device_node *dp = fhc->prom_node;
-	void *pval;
-	int len;
+	int success;
 	
 	fhc->num_fhc_ranges = 0;
-	pval = of_get_property(dp, "ranges", &len);
-	if (pval) {
-		memcpy(fhc->fhc_ranges, pval, len);
-		fhc->num_fhc_ranges =
-			(len / sizeof(struct linux_prom_ranges));
-	}
+	success = prom_getproperty(fhc->prom_node, "ranges",
+				   (char *) fhc->fhc_ranges,
+				   sizeof (fhc->fhc_ranges));
+	if (success != -1)
+		fhc->num_fhc_ranges = (success/sizeof(struct linux_prom_ranges));
 }
 
 /* Range application routines are exported to various drivers,
@@ -118,10 +112,15 @@ static unsigned long prom_reg_to_paddr(struct linux_prom_registers *r)
 
 static void probe_other_fhcs(void)
 {
-	struct device_node *dp;
-	struct linux_prom64_registers *fpregs;
+	struct linux_prom64_registers fpregs[6];
+	char namebuf[128];
+	int node;
 
-	for_each_node_by_name(dp, "fhc") {
+	node = prom_getchild(prom_root_node);
+	node = prom_searchsiblings(node, "fhc");
+	if (node == 0)
+		central_probe_failure(__LINE__);
+	while (node) {
 		struct linux_fhc *fhc;
 		int board;
 		u32 tmp;
@@ -138,12 +137,14 @@ static void probe_other_fhcs(void)
 		/* Toplevel FHCs have no parent. */
 		fhc->parent = NULL;
 		
-		fhc->prom_node = dp;
-		fhc_ranges_init(fhc);
+		fhc->prom_node = node;
+		prom_getstring(node, "name", namebuf, sizeof(namebuf));
+		strcpy(fhc->prom_name, namebuf);
+		fhc_ranges_init(node, fhc);
 
 		/* Non-central FHC's have 64-bit OBP format registers. */
-		fpregs = of_get_property(dp, "reg", NULL);
-		if (!fpregs)
+		if (prom_getproperty(node, "reg",
+				    (char *)&fpregs[0], sizeof(fpregs)) == -1)
 			central_probe_failure(__LINE__);
 
 		/* Only central FHC needs special ranges applied. */
@@ -154,7 +155,7 @@ static void probe_other_fhcs(void)
 		fhc->fhc_regs.uregs = fpregs[4].phys_addr;
 		fhc->fhc_regs.tregs = fpregs[5].phys_addr;
 
-		board = of_getintprop_default(dp, "board#", -1);
+		board = prom_getintdefault(node, "board#", -1);
 		fhc->board = board;
 
 		tmp = upa_readl(fhc->fhc_regs.pregs + FHC_PREGS_JCTRL);
@@ -178,33 +179,33 @@ static void probe_other_fhcs(void)
 		tmp = upa_readl(fhc->fhc_regs.pregs + FHC_PREGS_CTRL);
 		tmp |= FHC_CONTROL_IXIST;
 		upa_writel(tmp, fhc->fhc_regs.pregs + FHC_PREGS_CTRL);
+
+		/* Look for the next FHC. */
+		node = prom_getsibling(node);
+		if (node == 0)
+			break;
+		node = prom_searchsiblings(node, "fhc");
+		if (node == 0)
+			break;
 	}
 }
 
 static void probe_clock_board(struct linux_central *central,
 			      struct linux_fhc *fhc,
-			      struct device_node *fp)
+			      int cnode, int fnode)
 {
-	struct device_node *dp;
-	struct linux_prom_registers cregs[3], *pr;
-	int nslots, tmp, nregs;
+	struct linux_prom_registers cregs[3];
+	int clknode, nslots, tmp, nregs;
 
-	dp = fp->child;
-	while (dp) {
-		if (!strcmp(dp->name, "clock-board"))
-			break;
-		dp = dp->sibling;
-	}
-	if (!dp)
+	clknode = prom_searchsiblings(prom_getchild(fnode), "clock-board");
+	if (clknode == 0 || clknode == -1)
 		central_probe_failure(__LINE__);
 
-	pr = of_get_property(dp, "reg", &nregs);
-	if (!pr)
+	nregs = prom_getproperty(clknode, "reg", (char *)&cregs[0], sizeof(cregs));
+	if (nregs == -1)
 		central_probe_failure(__LINE__);
 
-	memcpy(cregs, pr, nregs);
 	nregs /= sizeof(struct linux_prom_registers);
-
 	apply_fhc_ranges(fhc, &cregs[0], nregs);
 	apply_central_ranges(central, &cregs[0], nregs);
 	central->cfreg = prom_reg_to_paddr(&cregs[0]);
@@ -295,13 +296,13 @@ static void init_all_fhc_hw(void)
 
 void central_probe(void)
 {
-	struct linux_prom_registers fpregs[6], *pr;
+	struct linux_prom_registers fpregs[6];
 	struct linux_fhc *fhc;
-	struct device_node *dp, *fp;
-	int err;
+	char namebuf[128];
+	int cnode, fnode, err;
 
-	dp = of_find_node_by_name(NULL, "central");
-	if (!dp) {
+	cnode = prom_finddevice("/central");
+	if (cnode == 0 || cnode == -1) {
 		if (this_is_starfire)
 			starfire_cpu_setup();
 		return;
@@ -320,31 +321,31 @@ void central_probe(void)
 
 	/* First init central. */
 	central_bus->child = fhc;
-	central_bus->prom_node = dp;
-	central_ranges_init(central_bus);
+	central_bus->prom_node = cnode;
+
+	prom_getstring(cnode, "name", namebuf, sizeof(namebuf));
+	strcpy(central_bus->prom_name, namebuf);
+
+	central_ranges_init(cnode, central_bus);
 
 	/* And then central's FHC. */
 	fhc->next = fhc_list;
 	fhc_list = fhc;
 
 	fhc->parent = central_bus;
-	fp = dp->child;
-	while (fp) {
-		if (!strcmp(fp->name, "fhc"))
-			break;
-		fp = fp->sibling;
-	}
-	if (!fp)
+	fnode = prom_searchsiblings(prom_getchild(cnode), "fhc");
+	if (fnode == 0 || fnode == -1)
 		central_probe_failure(__LINE__);
 
-	fhc->prom_node = fp;
-	fhc_ranges_init(fhc);
+	fhc->prom_node = fnode;
+	prom_getstring(fnode, "name", namebuf, sizeof(namebuf));
+	strcpy(fhc->prom_name, namebuf);
+
+	fhc_ranges_init(fnode, fhc);
 
 	/* Now, map in FHC register set. */
-	pr = of_get_property(fp, "reg", NULL);
-	if (!pr)
+	if (prom_getproperty(fnode, "reg", (char *)&fpregs[0], sizeof(fpregs)) == -1)
 		central_probe_failure(__LINE__);
-	memcpy(fpregs, pr, sizeof(fpregs));
 
 	apply_central_ranges(central_bus, &fpregs[0], 6);
 	
@@ -365,7 +366,7 @@ void central_probe(void)
 	fhc->jtag_master = 0;
 
 	/* Attach the clock board registers for CENTRAL. */
-	probe_clock_board(central_bus, fhc, fp);
+	probe_clock_board(central_bus, fhc, cnode, fnode);
 
 	err = upa_readl(fhc->fhc_regs.pregs + FHC_PREGS_ID);
 	printk("FHC(board %d): Version[%x] PartID[%x] Manuf[%x] (CENTRAL)\n",

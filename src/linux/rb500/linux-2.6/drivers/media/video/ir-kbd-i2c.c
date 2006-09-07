@@ -150,11 +150,12 @@ static int get_key_knc1(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
 	return 1;
 }
 
-/* Common (grey or coloured) pinnacle PCTV remote handling
+/* The new pinnacle PCTV remote (with the colored buttons)
  *
+ * Ricardo Cerqueira <v4l@cerqueira.org>
  */
-static int get_key_pinnacle(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw,
-			    int parity_offset, int marker, int code_modulo)
+
+int get_key_pinnacle(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
 {
 	unsigned char b[4];
 	unsigned int start = 0,parity = 0,code = 0;
@@ -166,9 +167,9 @@ static int get_key_pinnacle(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw,
 	}
 
 	for (start = 0; start<4; start++) {
-		if (b[start] == marker) {
-			code=b[(start+parity_offset+1)%4];
-			parity=b[(start+parity_offset)%4];
+		if (b[start] == 0x80) {
+			code=b[(start+3)%4];
+			parity=b[(start+2)%4];
 		}
 	}
 
@@ -180,14 +181,16 @@ static int get_key_pinnacle(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw,
 	if (ir->old == parity)
 		return 0;
 
+
 	ir->old = parity;
 
-	/* drop special codes when a key is held down a long time for the grey controller
-	   In this case, the second bit of the code is asserted */
-	if (marker == 0xfe && (code & 0x40))
-		return 0;
+	/* Reduce code value to fit inside IR_KEYTAB_SIZE
+	 *
+	 * this is the only value that results in 42 unique
+	 * codes < 128
+	 */
 
-	code %= code_modulo;
+	code %= 0x88;
 
 	*ir_raw = code;
 	*ir_key = code;
@@ -197,40 +200,7 @@ static int get_key_pinnacle(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw,
 	return 1;
 }
 
-/* The grey pinnacle PCTV remote
- *
- *  There are one issue with this remote:
- *   - I2c packet does not change when the same key is pressed quickly. The workaround
- *     is to hold down each key for about half a second, so that another code is generated
- *     in the i2c packet, and the function can distinguish key presses.
- *
- * Sylvain Pasche <sylvain.pasche@gmail.com>
- */
-int get_key_pinnacle_grey(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
-{
-
-	return get_key_pinnacle(ir, ir_key, ir_raw, 1, 0xfe, 0xff);
-}
-
-EXPORT_SYMBOL_GPL(get_key_pinnacle_grey);
-
-
-/* The new pinnacle PCTV remote (with the colored buttons)
- *
- * Ricardo Cerqueira <v4l@cerqueira.org>
- */
-int get_key_pinnacle_color(struct IR_i2c *ir, u32 *ir_key, u32 *ir_raw)
-{
-	/* code_modulo parameter (0x88) is used to reduce code value to fit inside IR_KEYTAB_SIZE
-	 *
-	 * this is the only value that results in 42 unique
-	 * codes < 128
-	 */
-
-	return get_key_pinnacle(ir, ir_key, ir_raw, 2, 0x80, 0x88);
-}
-
-EXPORT_SYMBOL_GPL(get_key_pinnacle_color);
+EXPORT_SYMBOL_GPL(get_key_pinnacle);
 
 /* ----------------------------------------------------------------------- */
 

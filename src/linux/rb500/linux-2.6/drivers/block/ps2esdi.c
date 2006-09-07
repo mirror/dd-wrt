@@ -29,6 +29,7 @@
 
 #define DEVICE_NAME "PS/2 ESDI"
 
+#include <linux/config.h>
 #include <linux/major.h>
 #include <linux/errno.h>
 #include <linux/wait.h>
@@ -340,9 +341,9 @@ static int __init ps2esdi_geninit(void)
 	/* try to grab IRQ, and try to grab a slow IRQ if it fails, so we can
 	   share with the SCSI driver */
 	if (request_irq(PS2ESDI_IRQ, ps2esdi_interrupt_handler,
-		  IRQF_DISABLED | IRQF_SHARED, "PS/2 ESDI", &ps2esdi_gendisk)
+		  SA_INTERRUPT | SA_SHIRQ, "PS/2 ESDI", &ps2esdi_gendisk)
 	    && request_irq(PS2ESDI_IRQ, ps2esdi_interrupt_handler,
-			   IRQF_SHARED, "PS/2 ESDI", &ps2esdi_gendisk)
+			   SA_SHIRQ, "PS/2 ESDI", &ps2esdi_gendisk)
 	    ) {
 		printk("%s: Unable to get IRQ %d\n", DEVICE_NAME, PS2ESDI_IRQ);
 		error = -EBUSY;
@@ -420,6 +421,7 @@ static int __init ps2esdi_geninit(void)
 		disk->major = PS2ESDI_MAJOR;
 		disk->first_minor = i<<6;
 		sprintf(disk->disk_name, "ed%c", 'a'+i);
+		sprintf(disk->devfs_name, "ed/target%d", i);
 		disk->fops = &ps2esdi_fops;
 		ps2esdi_gendisk[i] = disk;
 	}

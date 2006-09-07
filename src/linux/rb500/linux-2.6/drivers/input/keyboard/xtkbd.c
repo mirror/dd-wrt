@@ -100,7 +100,7 @@ static int xtkbd_connect(struct serio *serio, struct serio_driver *drv)
 
 	xtkbd->serio = serio;
 	xtkbd->dev = input_dev;
-	snprintf(xtkbd->phys, sizeof(xtkbd->phys), "%s/input0", serio->phys);
+	sprintf(xtkbd->phys, "%s/input0", serio->phys);
 	memcpy(xtkbd->keycode, xtkbd_keycode, sizeof(xtkbd->keycode));
 
 	input_dev->name = "XT Keyboard";

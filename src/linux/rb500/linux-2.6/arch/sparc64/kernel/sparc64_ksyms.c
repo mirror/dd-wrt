@@ -10,6 +10,7 @@
 #define EXPORT_SYMTAB_STROPS
 #define PROMLIB_INTERNAL
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/string.h>
@@ -124,17 +125,20 @@ EXPORT_SYMBOL(__write_lock);
 EXPORT_SYMBOL(__write_unlock);
 EXPORT_SYMBOL(__write_trylock);
 
+/* Hard IRQ locking */
+EXPORT_SYMBOL(synchronize_irq);
+
+#if defined(CONFIG_MCOUNT)
+extern void _mcount(void);
+EXPORT_SYMBOL(_mcount);
+#endif
+
 /* CPU online map and active count.  */
 EXPORT_SYMBOL(cpu_online_map);
 EXPORT_SYMBOL(phys_cpu_present_map);
 
 EXPORT_SYMBOL(smp_call_function);
 #endif /* CONFIG_SMP */
-
-#if defined(CONFIG_MCOUNT)
-extern void _mcount(void);
-EXPORT_SYMBOL(_mcount);
-#endif
 
 EXPORT_SYMBOL(sparc64_get_clock_tick);
 
@@ -170,6 +174,10 @@ EXPORT_SYMBOL(test_and_change_bit);
 EXPORT_SYMBOL(set_bit);
 EXPORT_SYMBOL(clear_bit);
 EXPORT_SYMBOL(change_bit);
+
+EXPORT_SYMBOL(ivector_table);
+EXPORT_SYMBOL(enable_irq);
+EXPORT_SYMBOL(disable_irq);
 
 EXPORT_SYMBOL(__flushw_user);
 

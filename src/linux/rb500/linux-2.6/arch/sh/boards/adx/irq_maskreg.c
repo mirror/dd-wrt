@@ -13,6 +13,7 @@
  * Each bit of the register is for masking each interrupt.  
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/irq.h>
@@ -101,6 +102,6 @@ static void end_maskreg_irq(unsigned int irq)
 void make_maskreg_irq(unsigned int irq)
 {
 	disable_irq_nosync(irq);
-	irq_desc[irq].chip = &maskreg_irq_type;
+	irq_desc[irq].handler = &maskreg_irq_type;
 	disable_maskreg_irq(irq);
 }

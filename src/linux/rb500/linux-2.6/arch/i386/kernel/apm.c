@@ -201,6 +201,7 @@
  *    http://www.microsoft.com/hwdev/busbios/amp_12.htm]
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/poll.h>
@@ -373,14 +374,14 @@ static struct {
 	unsigned short	segment;
 }				apm_bios_entry;
 static int			clock_slowed;
-static int			idle_threshold __read_mostly = DEFAULT_IDLE_THRESHOLD;
-static int			idle_period __read_mostly = DEFAULT_IDLE_PERIOD;
+static int			idle_threshold = DEFAULT_IDLE_THRESHOLD;
+static int			idle_period = DEFAULT_IDLE_PERIOD;
 static int			set_pm_idle;
 static int			suspends_pending;
 static int			standbys_pending;
 static int			ignore_sys_suspend;
 static int			ignore_normal_resume;
-static int			bounce_interval __read_mostly = DEFAULT_BOUNCE_INTERVAL;
+static int			bounce_interval = DEFAULT_BOUNCE_INTERVAL;
 
 #ifdef CONFIG_APM_RTC_IS_GMT
 #	define	clock_cmos_diff	0
@@ -389,8 +390,8 @@ static int			bounce_interval __read_mostly = DEFAULT_BOUNCE_INTERVAL;
 static long			clock_cmos_diff;
 static int			got_clock_diff;
 #endif
-static int			debug __read_mostly;
-static int			smp __read_mostly;
+static int			debug;
+static int			smp;
 static int			apm_disabled = -1;
 #ifdef CONFIG_SMP
 static int			power_off;
@@ -402,8 +403,8 @@ static int			realmode_power_off = 1;
 #else
 static int			realmode_power_off;
 #endif
-static int			exit_kapmd __read_mostly;
-static int			kapmd_running __read_mostly;
+static int			exit_kapmd;
+static int			kapmd_running;
 #ifdef CONFIG_APM_ALLOW_INTS
 static int			allow_ints = 1;
 #else
@@ -415,15 +416,15 @@ static DECLARE_WAIT_QUEUE_HEAD(apm_waitqueue);
 static DECLARE_WAIT_QUEUE_HEAD(apm_suspend_waitqueue);
 static struct apm_user *	user_list;
 static DEFINE_SPINLOCK(user_list_lock);
-static const struct desc_struct	bad_bios_desc = { 0, 0x00409200 };
+static struct desc_struct	bad_bios_desc = { 0, 0x00409200 };
 
-static const char		driver_version[] = "1.16ac";	/* no spaces */
+static char			driver_version[] = "1.16ac";	/* no spaces */
 
 /*
  *	APM event names taken from the APM 1.2 specification. These are
  *	the message codes that the BIOS uses to tell us about events
  */
-static const char *	const apm_event_name[] = {
+static char *	apm_event_name[] = {
 	"system standby",
 	"system suspend",
 	"normal resume",
@@ -615,7 +616,7 @@ static u8 apm_bios_call(u32 func, u32 ebx_in, u32 ecx_in,
  *	@ecx_in: ECX register value for BIOS call
  *	@eax: EAX register on return from the BIOS call
  *
- *	Make a BIOS call that returns one value only, or just status.
+ *	Make a BIOS call that does only returns one value, or just status.
  *	If there is an error, then the error code is returned in AH
  *	(bits 8-15 of eax) and this function returns non-zero. This is
  *	used for simpler BIOS operations. This call may hold interrupts
@@ -763,9 +764,9 @@ static int apm_do_idle(void)
 	int	idled = 0;
 	int	polling;
 
-	polling = !!(current_thread_info()->status & TS_POLLING);
+	polling = test_thread_flag(TIF_POLLING_NRFLAG);
 	if (polling) {
-		current_thread_info()->status &= ~TS_POLLING;
+		clear_thread_flag(TIF_POLLING_NRFLAG);
 		smp_mb__after_clear_bit();
 	}
 	if (!need_resched()) {
@@ -773,7 +774,7 @@ static int apm_do_idle(void)
 		ret = apm_bios_call_simple(APM_FUNC_IDLE, 0, 0, &eax);
 	}
 	if (polling)
-		current_thread_info()->status |= TS_POLLING;
+		set_thread_flag(TIF_POLLING_NRFLAG);
 
 	if (!idled)
 		return 0;
@@ -821,7 +822,7 @@ static void apm_do_busy(void)
 #define IDLE_CALC_LIMIT   (HZ * 100)
 #define IDLE_LEAKY_MAX    16
 
-static void (*original_pm_idle)(void) __read_mostly;
+static void (*original_pm_idle)(void);
 
 /**
  * apm_cpu_idle		-	cpu idling for APM capable Linux
@@ -1062,8 +1063,7 @@ static int apm_engage_power_management(u_short device, int enable)
  
 static int apm_console_blank(int blank)
 {
-	int error = APM_NOT_ENGAGED; /* silence gcc */
-	int i;
+	int error, i;
 	u_short state;
 	static const u_short dev[3] = { 0x100, 0x1FF, 0x101 };
 
@@ -1104,8 +1104,7 @@ static int queue_empty(struct apm_user *as)
 
 static apm_event_t get_queued_event(struct apm_user *as)
 {
-	if (++as->event_tail >= APM_MAX_EVENTS)
-		as->event_tail = 0;
+	as->event_tail = (as->event_tail + 1) % APM_MAX_EVENTS;
 	return as->events[as->event_tail];
 }
 
@@ -1119,16 +1118,13 @@ static void queue_event(apm_event_t event, struct apm_user *sender)
 	for (as = user_list; as != NULL; as = as->next) {
 		if ((as == sender) || (!as->reader))
 			continue;
-		if (++as->event_head >= APM_MAX_EVENTS)
-			as->event_head = 0;
-
+		as->event_head = (as->event_head + 1) % APM_MAX_EVENTS;
 		if (as->event_head == as->event_tail) {
 			static int notified;
 
 			if (notified++ == 0)
 			    printk(KERN_ERR "apm: an event queue overflowed\n");
-			if (++as->event_tail >= APM_MAX_EVENTS)
-				as->event_tail = 0;
+			as->event_tail = (as->event_tail + 1) % APM_MAX_EVENTS;
 		}
 		as->events[as->event_head] = event;
 		if ((!as->suser) || (!as->writer))
@@ -1286,7 +1282,7 @@ static void standby(void)
 static apm_event_t get_event(void)
 {
 	int		error;
-	apm_event_t	event = APM_NO_EVENTS; /* silence gcc */
+	apm_event_t	event;
 	apm_eventinfo_t	info;
 
 	static int notified;

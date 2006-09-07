@@ -38,8 +38,7 @@
  * The event context is private and can only be used from
  * within this module. Its meaning varies with the event
  * type:
- *  SCAN_FINISHED,
- *  DISASSOCIATED:	NULL
+ *  SCAN_FINISHED:	no special meaning
  *  ASSOCIATED,
  *  ASSOCIATE_FAILED,
  *  ASSOCIATE_TIMEOUT,
@@ -60,15 +59,15 @@
  */
 
 static char *event_descriptions[IEEE80211SOFTMAC_EVENT_LAST+1] = {
-	NULL, /* scan finished */
-	NULL, /* associated */
+	"scan finished",
+	"associated",
 	"associating failed",
 	"associating timed out",
 	"authenticated",
 	"authenticating failed",
 	"authenticating timed out",
 	"associating failed because no suitable network was found",
-	NULL, /* disassociated */
+	"disassociated",
 };
 
 
@@ -78,7 +77,7 @@ ieee80211softmac_notify_callback(void *d)
 	struct ieee80211softmac_event event = *(struct ieee80211softmac_event*) d;
 	kfree(d);
 	
-	event.fun(event.mac->dev, event.event_type, event.context);
+	event.fun(event.mac->dev, event.context);
 }
 
 int
@@ -137,24 +136,30 @@ ieee80211softmac_call_events_locked(struct ieee80211softmac_device *mac, int eve
 		int we_event;
 		char *msg = NULL;
 
-		memset(&wrqu, '\0', sizeof (union iwreq_data));
-
 		switch(event) {
 		case IEEE80211SOFTMAC_EVENT_ASSOCIATED:
 			network = (struct ieee80211softmac_network *)event_ctx;
+			wrqu.data.length = 0;
+			wrqu.data.flags = 0;
 			memcpy(wrqu.ap_addr.sa_data, &network->bssid[0], ETH_ALEN);
-			/* fall through */
+			wrqu.ap_addr.sa_family = ARPHRD_ETHER;
+			we_event = SIOCGIWAP;
+			break;
 		case IEEE80211SOFTMAC_EVENT_DISASSOCIATED:
+			wrqu.data.length = 0;
+			wrqu.data.flags = 0;
+			memset(&wrqu, '\0', sizeof (union iwreq_data));
 			wrqu.ap_addr.sa_family = ARPHRD_ETHER;
 			we_event = SIOCGIWAP;
 			break;
 		case IEEE80211SOFTMAC_EVENT_SCAN_FINISHED:
+			wrqu.data.length = 0;
+			wrqu.data.flags = 0;
+			memset(&wrqu, '\0', sizeof (union iwreq_data));
 			we_event = SIOCGIWSCAN;
 			break;
 		default:
 			msg = event_descriptions[event];
-			if (!msg)
-				msg = "SOFTMAC EVENT BUG";
 			wrqu.data.length = strlen(msg);
 			we_event = IWEVCUSTOM;
 			break;
@@ -167,9 +172,6 @@ ieee80211softmac_call_events_locked(struct ieee80211softmac_device *mac, int eve
 			if ((eventptr->event_type == event || eventptr->event_type == -1)
 				&& (eventptr->event_context == NULL || eventptr->event_context == event_ctx)) {
 				list_del(&eventptr->list);
-				/* User may have subscribed to ANY event, so
-				 * we tell them which event triggered it. */
-				eventptr->event_type = event;
 				schedule_work(&eventptr->work);
 			}
 		}

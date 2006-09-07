@@ -47,13 +47,13 @@ static int pcimt_read(struct pci_bus *bus, unsigned int devfn, int reg,
 
 	switch (size) {
 	case 1:
-		*val = inb(PCIMT_CONFIG_DATA + (reg & 3));
+		*val = *(volatile  u8 *) (PCIMT_CONFIG_DATA + (reg & 3));
 		break;
 	case 2:
-		*val = inw(PCIMT_CONFIG_DATA + (reg & 2));
+		*val = *(volatile u16 *) (PCIMT_CONFIG_DATA + (reg & 2));
 		break;
 	case 4:
-		*val = inl(PCIMT_CONFIG_DATA);
+		*val = *(volatile u32 *) PCIMT_CONFIG_DATA;
 		break;
 	}
 
@@ -70,13 +70,13 @@ static int pcimt_write(struct pci_bus *bus, unsigned int devfn, int reg,
 
 	switch (size) {
 	case 1:
-		outb (val, PCIMT_CONFIG_DATA + (reg & 3));
+		*(volatile  u8 *) (PCIMT_CONFIG_DATA + (reg & 3)) = val;
 		break;
 	case 2:
-		outw (val, PCIMT_CONFIG_DATA + (reg & 2));
+		*(volatile u16 *) (PCIMT_CONFIG_DATA + (reg & 2)) = val;
 		break;
 	case 4:
-		outl (val, PCIMT_CONFIG_DATA);
+		*(volatile u32 *) PCIMT_CONFIG_DATA = val;
 		break;
 	}
 

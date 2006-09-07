@@ -11,6 +11,7 @@
  * kind, whether express or implied.
  */
 
+#include <linux/config.h>
 
 #include <asm/pci.h>
 

@@ -7,6 +7,7 @@
 #ifndef __SPARC_DELAY_H
 #define __SPARC_DELAY_H
 
+#include <linux/config.h>
 #include <asm/cpudata.h>
 
 static inline void __delay(unsigned long loops)

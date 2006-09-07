@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/device.h>
 #include <linux/kdev_t.h>
 #include <linux/err.h>

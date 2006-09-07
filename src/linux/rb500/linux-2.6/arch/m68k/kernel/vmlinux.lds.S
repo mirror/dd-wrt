@@ -1,3 +1,4 @@
+#include <linux/config.h>
 PHDRS
 {
   text PT_LOAD FILEHDR PHDRS FLAGS (7);

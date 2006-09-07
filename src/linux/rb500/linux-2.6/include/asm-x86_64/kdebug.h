@@ -15,8 +15,6 @@ struct die_args {
 
 extern int register_die_notifier(struct notifier_block *);
 extern int unregister_die_notifier(struct notifier_block *);
-extern int register_page_fault_notifier(struct notifier_block *);
-extern int unregister_page_fault_notifier(struct notifier_block *);
 extern struct atomic_notifier_head die_chain;
 
 /* Grossly misnamed. */
@@ -49,7 +47,7 @@ static inline int notify_die(enum die_val val, const char *str,
 	return atomic_notifier_call_chain(&die_chain, val, &args);
 } 
 
-extern void printk_address(unsigned long address);
+extern int printk_address(unsigned long address);
 extern void die(const char *,struct pt_regs *,long);
 extern void __die(const char *,struct pt_regs *,long);
 extern void show_registers(struct pt_regs *regs);

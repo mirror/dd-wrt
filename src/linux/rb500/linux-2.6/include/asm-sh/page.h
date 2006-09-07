@@ -13,6 +13,7 @@
    [ P4 control   ]		0xE0000000
  */
 
+#include <linux/config.h>
 
 /* PAGE_SHIFT determines the page size */
 #define PAGE_SHIFT	12

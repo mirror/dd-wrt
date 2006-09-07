@@ -21,6 +21,7 @@
  */
 
 #include <linux/fs.h>
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/ptrace.h>
 #include <linux/unistd.h>

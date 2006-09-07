@@ -10,6 +10,7 @@
 #ifndef __ASM_SMP_H
 #define __ASM_SMP_H
 
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/bitops.h>

@@ -15,6 +15,7 @@
  * this archive for more details.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
@@ -403,6 +404,7 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
 		ret = ptrace_detach(child, data);
 		break;
 
+#ifdef CONFIG_PPC64
 	case PPC_PTRACE_GETREGS: { /* Get GPRs 0 - 31. */
 		int i;
 		unsigned long *reg = &((unsigned long *)child->thread.regs)[0];
@@ -466,6 +468,7 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
 		}
 		break;
 	}
+#endif /* CONFIG_PPC64 */
 
 #ifdef CONFIG_ALTIVEC
 	case PTRACE_GETVRREGS:

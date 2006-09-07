@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2006 QLogic, Inc. All rights reserved.
  * Copyright (c) 2003, 2004, 2005, 2006 PathScale, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -41,8 +40,8 @@
 #include <asm/byteorder.h>
 
 #include "ipath_kernel.h"
+#include "ips_common.h"
 #include "ipath_layer.h"
-#include "ipath_common.h"
 
 /* Acquire before ipath_devs_lock. */
 static DEFINE_MUTEX(ipath_layer_mutex);
@@ -300,8 +299,9 @@ bail:
 
 EXPORT_SYMBOL_GPL(ipath_layer_set_mtu);
 
-int ipath_set_lid(struct ipath_devdata *dd, u32 arg, u8 lmc)
+int ipath_set_sps_lid(struct ipath_devdata *dd, u32 arg, u8 lmc)
 {
+	ipath_stats.sps_lid[dd->ipath_unit] = arg;
 	dd->ipath_lid = arg;
 	dd->ipath_lmc = lmc;
 
@@ -315,7 +315,7 @@ int ipath_set_lid(struct ipath_devdata *dd, u32 arg, u8 lmc)
 	return 0;
 }
 
-EXPORT_SYMBOL_GPL(ipath_set_lid);
+EXPORT_SYMBOL_GPL(ipath_set_sps_lid);
 
 int ipath_layer_set_guid(struct ipath_devdata *dd, __be64 guid)
 {
@@ -340,26 +340,18 @@ u32 ipath_layer_get_nguid(struct ipath_devdata *dd)
 
 EXPORT_SYMBOL_GPL(ipath_layer_get_nguid);
 
-u32 ipath_layer_get_majrev(struct ipath_devdata *dd)
+int ipath_layer_query_device(struct ipath_devdata *dd, u32 * vendor,
+			     u32 * boardrev, u32 * majrev, u32 * minrev)
 {
-	return dd->ipath_majrev;
+	*vendor = dd->ipath_vendorid;
+	*boardrev = dd->ipath_boardrev;
+	*majrev = dd->ipath_majrev;
+	*minrev = dd->ipath_minrev;
+
+	return 0;
 }
 
-EXPORT_SYMBOL_GPL(ipath_layer_get_majrev);
-
-u32 ipath_layer_get_minrev(struct ipath_devdata *dd)
-{
-	return dd->ipath_minrev;
-}
-
-EXPORT_SYMBOL_GPL(ipath_layer_get_minrev);
-
-u32 ipath_layer_get_pcirev(struct ipath_devdata *dd)
-{
-	return dd->ipath_pcirev;
-}
-
-EXPORT_SYMBOL_GPL(ipath_layer_get_pcirev);
+EXPORT_SYMBOL_GPL(ipath_layer_query_device);
 
 u32 ipath_layer_get_flags(struct ipath_devdata *dd)
 {
@@ -381,13 +373,6 @@ u16 ipath_layer_get_deviceid(struct ipath_devdata *dd)
 }
 
 EXPORT_SYMBOL_GPL(ipath_layer_get_deviceid);
-
-u32 ipath_layer_get_vendorid(struct ipath_devdata *dd)
-{
-	return dd->ipath_vendorid;
-}
-
-EXPORT_SYMBOL_GPL(ipath_layer_get_vendorid);
 
 u64 ipath_layer_get_lastibcstat(struct ipath_devdata *dd)
 {
@@ -418,7 +403,7 @@ void ipath_layer_add(struct ipath_devdata *dd)
 	mutex_unlock(&ipath_layer_mutex);
 }
 
-void ipath_layer_remove(struct ipath_devdata *dd)
+void ipath_layer_del(struct ipath_devdata *dd)
 {
 	mutex_lock(&ipath_layer_mutex);
 
@@ -622,7 +607,7 @@ int ipath_layer_open(struct ipath_devdata *dd, u32 * pktmax)
 		goto bail;
 	}
 
-	ret = ipath_setrcvhdrsize(dd, IPATH_HEADER_QUEUE_WORDS);
+	ret = ipath_setrcvhdrsize(dd, NUM_OF_EXTRA_WORDS_IN_HEADER_QUEUE);
 
 	if (ret < 0)
 		goto bail;
@@ -631,9 +616,9 @@ int ipath_layer_open(struct ipath_devdata *dd, u32 * pktmax)
 
 	if (*dd->ipath_statusp & IPATH_STATUS_IB_READY)
 		intval |= IPATH_LAYER_INT_IF_UP;
-	if (dd->ipath_lid)
+	if (ipath_stats.sps_lid[dd->ipath_unit])
 		intval |= IPATH_LAYER_INT_LID;
-	if (dd->ipath_mlid)
+	if (ipath_stats.sps_mlid[dd->ipath_unit])
 		intval |= IPATH_LAYER_INT_BCAST;
 	/*
 	 * do this on open, in case low level is already up and
@@ -899,7 +884,7 @@ static void copy_io(u32 __iomem *piobuf, struct ipath_sge_state *ss,
 /**
  * ipath_verbs_send - send a packet from the verbs layer
  * @dd: the infinipath device
- * @hdrwords: the number of words in the header
+ * @hdrwords: the number of works in the header
  * @hdr: the packet header
  * @len: the length of the packet in bytes
  * @ss: the SGE to send
@@ -1031,22 +1016,19 @@ int ipath_layer_get_counters(struct ipath_devdata *dd,
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_ibsymbolerrcnt);
 	cntrs->link_error_recovery_counter =
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_iblinkerrrecovcnt);
-	/*
-	 * The link downed counter counts when the other side downs the
-	 * connection.  We add in the number of times we downed the link
-	 * due to local link integrity errors to compensate.
-	 */
 	cntrs->link_downed_counter =
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_iblinkdowncnt);
 	cntrs->port_rcv_errors =
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_rxdroppktcnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_rcvovflcnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_portovflcnt) +
+		ipath_snap_cntr(dd, dd->ipath_cregs->cr_errrcvflowctrlcnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_err_rlencnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_invalidrlencnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_erricrccnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_errvcrccnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_errlpcrccnt) +
+		ipath_snap_cntr(dd, dd->ipath_cregs->cr_errlinkcnt) +
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_badformatcnt);
 	cntrs->port_rcv_remphys_errors =
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_rcvebpcnt);
@@ -1060,8 +1042,6 @@ int ipath_layer_get_counters(struct ipath_devdata *dd,
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_pktsendcnt);
 	cntrs->port_rcv_packets =
 		ipath_snap_cntr(dd, dd->ipath_cregs->cr_pktrcvcnt);
-	cntrs->local_link_integrity_errors = dd->ipath_lli_errors;
-	cntrs->excessive_buffer_overrun_errors = 0; /* XXX */
 
 	ret = 0;
 
@@ -1106,10 +1086,10 @@ int ipath_layer_send_hdr(struct ipath_devdata *dd, struct ether_header *hdr)
 		}
 
 	vlsllnh = *((__be16 *) hdr);
-	if (vlsllnh != htons(IPATH_LRH_BTH)) {
+	if (vlsllnh != htons(IPS_LRH_BTH)) {
 		ipath_dbg("Warning: lrh[0] wrong (%x, not %x); "
 			  "not sending\n", be16_to_cpu(vlsllnh),
-			  IPATH_LRH_BTH);
+			  IPS_LRH_BTH);
 		ret = -EINVAL;
 	}
 	if (ret)

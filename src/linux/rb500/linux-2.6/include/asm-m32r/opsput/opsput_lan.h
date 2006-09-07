@@ -15,6 +15,7 @@
 #ifndef _OPSPUT_OPSPUT_LAN_H
 #define _OPSPUT_OPSPUT_LAN_H
 
+#include <linux/config.h>
 
 #ifndef __ASSEMBLY__
 /*

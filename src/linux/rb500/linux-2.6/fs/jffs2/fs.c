@@ -12,6 +12,7 @@
  */
 
 #include <linux/capability.h>
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/fs.h>
@@ -32,11 +33,11 @@ static int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
 	struct jffs2_inode_info *f = JFFS2_INODE_INFO(inode);
 	struct jffs2_sb_info *c = JFFS2_SB_INFO(inode->i_sb);
 	struct jffs2_raw_inode *ri;
-	union jffs2_device_node dev;
+	unsigned short dev;
 	unsigned char *mdata = NULL;
 	int mdatalen = 0;
 	unsigned int ivalid;
-	uint32_t alloclen;
+	uint32_t phys_ofs, alloclen;
 	int ret;
 	D1(printk(KERN_DEBUG "jffs2_setattr(): ino #%lu\n", inode->i_ino));
 	ret = inode_change_ok(inode, iattr);
@@ -50,24 +51,20 @@ static int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
 	   it out again with the appropriate data attached */
 	if (S_ISBLK(inode->i_mode) || S_ISCHR(inode->i_mode)) {
 		/* For these, we don't actually need to read the old node */
-		mdatalen = jffs2_encode_dev(&dev, inode->i_rdev);
+		dev = old_encode_dev(inode->i_rdev);
 		mdata = (char *)&dev;
+		mdatalen = sizeof(dev);
 		D1(printk(KERN_DEBUG "jffs2_setattr(): Writing %d bytes of kdev_t\n", mdatalen));
 	} else if (S_ISLNK(inode->i_mode)) {
-		down(&f->sem);
 		mdatalen = f->metadata->size;
 		mdata = kmalloc(f->metadata->size, GFP_USER);
-		if (!mdata) {
-			up(&f->sem);
+		if (!mdata)
 			return -ENOMEM;
-		}
 		ret = jffs2_read_dnode(c, f, f->metadata, mdata, 0, mdatalen);
 		if (ret) {
-			up(&f->sem);
 			kfree(mdata);
 			return ret;
 		}
-		up(&f->sem);
 		D1(printk(KERN_DEBUG "jffs2_setattr(): Writing %d bytes of symlink target\n", mdatalen));
 	}
 
@@ -78,8 +75,8 @@ static int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
 		return -ENOMEM;
 	}
 
-	ret = jffs2_reserve_space(c, sizeof(*ri) + mdatalen, &alloclen,
-				  ALLOC_NORMAL, JFFS2_SUMMARY_INODE_SIZE);
+	ret = jffs2_reserve_space(c, sizeof(*ri) + mdatalen, &phys_ofs, &alloclen,
+				ALLOC_NORMAL, JFFS2_SUMMARY_INODE_SIZE);
 	if (ret) {
 		jffs2_free_raw_inode(ri);
 		if (S_ISLNK(inode->i_mode & S_IFMT))
@@ -130,7 +127,7 @@ static int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
 	else
 		ri->data_crc = cpu_to_je32(0);
 
-	new_metadata = jffs2_write_dnode(c, f, ri, mdata, mdatalen, ALLOC_NORMAL);
+	new_metadata = jffs2_write_dnode(c, f, ri, mdata, mdatalen, phys_ofs, ALLOC_NORMAL);
 	if (S_ISLNK(inode->i_mode))
 		kfree(mdata);
 
@@ -183,17 +180,12 @@ static int jffs2_do_setattr (struct inode *inode, struct iattr *iattr)
 
 int jffs2_setattr(struct dentry *dentry, struct iattr *iattr)
 {
-	int rc;
-
-	rc = jffs2_do_setattr(dentry->d_inode, iattr);
-	if (!rc && (iattr->ia_valid & ATTR_MODE))
-		rc = jffs2_acl_chmod(dentry->d_inode);
-	return rc;
+	return jffs2_do_setattr(dentry->d_inode, iattr);
 }
 
-int jffs2_statfs(struct dentry *dentry, struct kstatfs *buf)
+int jffs2_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct jffs2_sb_info *c = JFFS2_SB_INFO(dentry->d_sb);
+	struct jffs2_sb_info *c = JFFS2_SB_INFO(sb);
 	unsigned long avail;
 
 	buf->f_type = JFFS2_SUPER_MAGIC;
@@ -226,6 +218,7 @@ void jffs2_clear_inode (struct inode *inode)
 	struct jffs2_inode_info *f = JFFS2_INODE_INFO(inode);
 
 	D1(printk(KERN_DEBUG "jffs2_clear_inode(): ino #%lu mode %o\n", inode->i_ino, inode->i_mode));
+
 	jffs2_do_clear_inode(c, f);
 }
 
@@ -234,8 +227,6 @@ void jffs2_read_inode (struct inode *inode)
 	struct jffs2_inode_info *f;
 	struct jffs2_sb_info *c;
 	struct jffs2_raw_inode latest_node;
-	union jffs2_device_node jdev;
-	dev_t rdev = 0;
 	int ret;
 
 	D1(printk(KERN_DEBUG "jffs2_read_inode(): inode->i_ino == %lu\n", inode->i_ino));
@@ -267,6 +258,7 @@ void jffs2_read_inode (struct inode *inode)
 	inode->i_blocks = (inode->i_size + 511) >> 9;
 
 	switch (inode->i_mode & S_IFMT) {
+		jint16_t rdev;
 
 	case S_IFLNK:
 		inode->i_op = &jffs2_symlink_inode_operations;
@@ -300,16 +292,8 @@ void jffs2_read_inode (struct inode *inode)
 	case S_IFBLK:
 	case S_IFCHR:
 		/* Read the device numbers from the media */
-		if (f->metadata->size != sizeof(jdev.old) &&
-		    f->metadata->size != sizeof(jdev.new)) {
-			printk(KERN_NOTICE "Device node has strange size %d\n", f->metadata->size);
-			up(&f->sem);
-			jffs2_do_clear_inode(c, f);
-			make_bad_inode(inode);
-			return;
-		}
 		D1(printk(KERN_DEBUG "Reading device numbers from flash\n"));
-		if (jffs2_read_dnode(c, f, f->metadata, (char *)&jdev, 0, f->metadata->size) < 0) {
+		if (jffs2_read_dnode(c, f, f->metadata, (char *)&rdev, 0, sizeof(rdev)) < 0) {
 			/* Eep */
 			printk(KERN_NOTICE "Read device numbers for inode %lu failed\n", (unsigned long)inode->i_ino);
 			up(&f->sem);
@@ -317,15 +301,12 @@ void jffs2_read_inode (struct inode *inode)
 			make_bad_inode(inode);
 			return;
 		}
-		if (f->metadata->size == sizeof(jdev.old))
-			rdev = old_decode_dev(je16_to_cpu(jdev.old));
-		else
-			rdev = new_decode_dev(je32_to_cpu(jdev.new));
 
 	case S_IFSOCK:
 	case S_IFIFO:
 		inode->i_op = &jffs2_file_inode_operations;
-		init_special_inode(inode, inode->i_mode, rdev);
+		init_special_inode(inode, inode->i_mode,
+				   old_decode_dev((je16_to_cpu(rdev))));
 		break;
 
 	default:
@@ -511,8 +492,6 @@ int jffs2_do_fill_super(struct super_block *sb, void *data, int silent)
 	}
 	memset(c->inocache_list, 0, INOCACHE_HASHSIZE * sizeof(struct jffs2_inode_cache *));
 
-	jffs2_init_xattr_subsystem(c);
-
 	if ((ret = jffs2_do_mount_fs(c)))
 		goto out_inohash;
 
@@ -547,7 +526,6 @@ int jffs2_do_fill_super(struct super_block *sb, void *data, int silent)
 	else
 		kfree(c->blocks);
  out_inohash:
-	jffs2_clear_xattr_subsystem(c);
 	kfree(c->inocache_list);
  out_wbuf:
 	jffs2_flash_cleanup(c);
@@ -661,6 +639,13 @@ static int jffs2_flash_setup(struct jffs2_sb_info *c) {
 			return ret;
 	}
 
+	/* add setups for other bizarre flashes here... */
+	if (jffs2_nor_ecc(c)) {
+		ret = jffs2_nor_ecc_flash_setup(c);
+		if (ret)
+			return ret;
+	}
+
 	/* and Dataflash */
 	if (jffs2_dataflash(c)) {
 		ret = jffs2_dataflash_setup(c);
@@ -682,6 +667,11 @@ void jffs2_flash_cleanup(struct jffs2_sb_info *c) {
 
 	if (jffs2_cleanmarker_oob(c)) {
 		jffs2_nand_flash_cleanup(c);
+	}
+
+	/* add cleanups for other bizarre flashes here... */
+	if (jffs2_nor_ecc(c)) {
+		jffs2_nor_ecc_flash_cleanup(c);
 	}
 
 	/* and DataFlash */

@@ -10,6 +10,7 @@
  * Lineo uSolutions, Inc. 2003.
  */
 
+#include <linux/config.h>
 #include <asm/io.h>
 #include <asm/hs7751rvoip/hs7751rvoip.h>
 

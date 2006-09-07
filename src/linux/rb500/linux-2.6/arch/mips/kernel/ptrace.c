@@ -14,6 +14,7 @@
  * At this time Linux/MIPS64 only supports syscall tracing, even for 32-bit
  * binaries.
  */
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -119,10 +120,10 @@ int ptrace_getfpregs (struct task_struct *child, __u32 __user *data)
 			__put_user ((__u64) -1, i + (__u64 __user *) data);
 	}
 
-	__put_user (child->thread.fpu.fcr31, data + 64);
-
 	if (cpu_has_fpu) {
 		unsigned int flags, tmp;
+
+		__put_user (child->thread.fpu.hard.fcr31, data + 64);
 
 		preempt_disable();
 		if (cpu_has_mipsmt) {
@@ -141,6 +142,7 @@ int ptrace_getfpregs (struct task_struct *child, __u32 __user *data)
 		preempt_enable();
 		__put_user (tmp, data + 65);
 	} else {
+		__put_user (child->thread.fpu.soft.fcr31, data + 64);
 		__put_user ((__u32) 0, data + 65);
 	}
 
@@ -160,7 +162,10 @@ int ptrace_setfpregs (struct task_struct *child, __u32 __user *data)
 	for (i = 0; i < 32; i++)
 		__get_user (fregs[i], i + (__u64 __user *) data);
 
-	__get_user (child->thread.fpu.fcr31, data + 64);
+	if (cpu_has_fpu)
+		__get_user (child->thread.fpu.hard.fcr31, data + 64);
+	else
+		__get_user (child->thread.fpu.soft.fcr31, data + 64);
 
 	/* FIR may not be written.  */
 
@@ -236,7 +241,10 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
 			tmp = regs->lo;
 			break;
 		case FPC_CSR:
-			tmp = child->thread.fpu.fcr31;
+			if (cpu_has_fpu)
+				tmp = child->thread.fpu.hard.fcr31;
+			else
+				tmp = child->thread.fpu.soft.fcr31;
 			break;
 		case FPC_EIR: {	/* implementation / version register */
 			unsigned int flags;
@@ -328,9 +336,9 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
 
 			if (!tsk_used_math(child)) {
 				/* FP not yet used  */
-				memset(&child->thread.fpu, ~0,
-				       sizeof(child->thread.fpu));
-				child->thread.fpu.fcr31 = 0;
+				memset(&child->thread.fpu.hard, ~0,
+				       sizeof(child->thread.fpu.hard));
+				child->thread.fpu.hard.fcr31 = 0;
 			}
 #ifdef CONFIG_32BIT
 			/*
@@ -361,7 +369,10 @@ long arch_ptrace(struct task_struct *child, long request, long addr, long data)
 			regs->lo = data;
 			break;
 		case FPC_CSR:
-			child->thread.fpu.fcr31 = data;
+			if (cpu_has_fpu)
+				child->thread.fpu.hard.fcr31 = data;
+			else
+				child->thread.fpu.soft.fcr31 = data;
 			break;
 		case DSP_BASE ... DSP_BASE + 5: {
 			dspreg_t *dregs;

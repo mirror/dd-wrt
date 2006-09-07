@@ -80,6 +80,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/capability.h>
+#include <linux/config.h>
 #include <linux/socket.h>
 #include <linux/sockios.h>
 #include <linux/errno.h>

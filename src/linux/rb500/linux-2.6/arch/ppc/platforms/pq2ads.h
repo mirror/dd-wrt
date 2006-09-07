@@ -9,6 +9,7 @@
 #ifndef __MACH_ADS8260_DEFS
 #define __MACH_ADS8260_DEFS
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

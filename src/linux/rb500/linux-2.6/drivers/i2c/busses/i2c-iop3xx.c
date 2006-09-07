@@ -26,6 +26,7 @@
  * the Free Software Foundation, version 2.
  */
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>

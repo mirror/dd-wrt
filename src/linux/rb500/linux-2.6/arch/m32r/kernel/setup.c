@@ -7,6 +7,7 @@
  *                            Hitoshi Yamamoto
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/stddef.h>
@@ -274,7 +275,7 @@ static int __init topology_init(void)
 	int i;
 
 	for_each_present_cpu(i)
-		register_cpu(&cpu_devices[i], i);
+		register_cpu(&cpu_devices[i], i, NULL);
 
 	return 0;
 }

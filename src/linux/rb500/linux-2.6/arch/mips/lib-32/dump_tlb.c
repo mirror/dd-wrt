@@ -4,6 +4,7 @@
  * Copyright (C) 1994, 1995 by Waldorf Electronics, written by Ralf Baechle.
  * Copyright (C) 1999 by Silicon Graphics, Inc.
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/sched.h>

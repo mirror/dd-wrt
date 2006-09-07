@@ -40,6 +40,7 @@
 
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -1069,7 +1070,8 @@ static int i596_start_xmit(struct sk_buff *skb, struct net_device *dev)
 				skb->len, (unsigned int)skb->data));
 
 	if (skb->len < ETH_ZLEN) {
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 		length = ETH_ZLEN;
 	}

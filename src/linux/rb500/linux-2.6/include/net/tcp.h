@@ -21,13 +21,13 @@
 #define TCP_DEBUG 1
 #define FASTRETRANS_DEBUG 1
 
+#include <linux/config.h>
 #include <linux/list.h>
 #include <linux/tcp.h>
 #include <linux/slab.h>
 #include <linux/cache.h>
 #include <linux/percpu.h>
 #include <linux/skbuff.h>
-#include <linux/dmaengine.h>
 
 #include <net/inet_connection_sock.h>
 #include <net/inet_timewait_sock.h>
@@ -218,7 +218,6 @@ extern int sysctl_tcp_adv_win_scale;
 extern int sysctl_tcp_tw_reuse;
 extern int sysctl_tcp_frto;
 extern int sysctl_tcp_low_latency;
-extern int sysctl_tcp_dma_copybreak;
 extern int sysctl_tcp_nometrics_save;
 extern int sysctl_tcp_moderate_rcvbuf;
 extern int sysctl_tcp_tso_win_divisor;
@@ -226,7 +225,6 @@ extern int sysctl_tcp_abc;
 extern int sysctl_tcp_mtu_probing;
 extern int sysctl_tcp_base_mss;
 extern int sysctl_tcp_workaround_signed_windows;
-extern int sysctl_tcp_slow_start_after_idle;
 
 extern atomic_t tcp_memory_allocated;
 extern atomic_t tcp_sockets_allocated;
@@ -294,8 +292,6 @@ extern int			tcp_rcv_established(struct sock *sk,
 						    unsigned len);
 
 extern void			tcp_rcv_space_adjust(struct sock *sk);
-
-extern void			tcp_cleanup_rbuf(struct sock *sk, int copied);
 
 extern int			tcp_twsk_unique(struct sock *sk,
 						struct sock *sktw, void *twp);
@@ -569,13 +565,13 @@ struct tcp_skb_cb {
  */
 static inline int tcp_skb_pcount(const struct sk_buff *skb)
 {
-	return skb_shinfo(skb)->gso_segs;
+	return skb_shinfo(skb)->tso_segs;
 }
 
 /* This is valid iff tcp_skb_pcount() > 1. */
 static inline int tcp_skb_mss(const struct sk_buff *skb)
 {
-	return skb_shinfo(skb)->gso_size;
+	return skb_shinfo(skb)->tso_size;
 }
 
 static inline void tcp_dec_pcount_approx(__u32 *count,
@@ -632,7 +628,7 @@ struct tcp_congestion_ops {
 	/* return slow start threshold (required) */
 	u32 (*ssthresh)(struct sock *sk);
 	/* lower bound for congestion window (optional) */
-	u32 (*min_cwnd)(const struct sock *sk);
+	u32 (*min_cwnd)(struct sock *sk);
 	/* do new cwnd calculation (required) */
 	void (*cong_avoid)(struct sock *sk, u32 ack,
 			   u32 rtt, u32 in_flight, int good_ack);
@@ -667,7 +663,7 @@ extern struct tcp_congestion_ops tcp_init_congestion_ops;
 extern u32 tcp_reno_ssthresh(struct sock *sk);
 extern void tcp_reno_cong_avoid(struct sock *sk, u32 ack,
 				u32 rtt, u32 in_flight, int flag);
-extern u32 tcp_reno_min_cwnd(const struct sock *sk);
+extern u32 tcp_reno_min_cwnd(struct sock *sk);
 extern struct tcp_congestion_ops tcp_reno;
 
 static inline void tcp_set_ca_state(struct sock *sk, const u8 ca_state)
@@ -751,7 +747,7 @@ static inline int tcp_is_cwnd_limited(const struct sock *sk, u32 in_flight)
 	if (in_flight >= tp->snd_cwnd)
 		return 1;
 
-	if (!sk_can_gso(sk))
+	if (!(sk->sk_route_caps & NETIF_F_TSO))
 		return 0;
 
 	left = tp->snd_cwnd - in_flight;
@@ -821,12 +817,6 @@ static inline void tcp_prequeue_init(struct tcp_sock *tp)
 	tp->ucopy.len = 0;
 	tp->ucopy.memory = 0;
 	skb_queue_head_init(&tp->ucopy.prequeue);
-#ifdef CONFIG_NET_DMA
-	tp->ucopy.dma_chan = NULL;
-	tp->ucopy.wakeup = 0;
-	tp->ucopy.pinned_list = NULL;
-	tp->ucopy.dma_cookie = 0;
-#endif
 }
 
 /* Packet is added to VJ-style prequeue for processing in process
@@ -1085,8 +1075,6 @@ extern void tcp_proc_unregister(struct tcp_seq_afinfo *afinfo);
 extern struct request_sock_ops tcp_request_sock_ops;
 
 extern int tcp_v4_destroy_sock(struct sock *sk);
-
-extern struct sk_buff *tcp_tso_segment(struct sk_buff *skb, int features);
 
 #ifdef CONFIG_PROC_FS
 extern int  tcp4_proc_init(void);

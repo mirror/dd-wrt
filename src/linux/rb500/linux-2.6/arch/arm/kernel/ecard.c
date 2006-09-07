@@ -27,6 +27,7 @@
  */
 #define ECARD_C
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -619,7 +620,7 @@ ecard_irqexp_handler(unsigned int irq, struct irqdesc *desc, struct pt_regs *reg
 		ecard_t *ec = slot_to_ecard(slot);
 
 		if (ec->claimed) {
-			struct irq_desc *d = irq_desc + ec->irq;
+			struct irqdesc *d = irqdesc + ec->irq;
 			/*
 			 * this ugly code is so that we can operate a
 			 * prioritorising system:
@@ -883,7 +884,7 @@ static ssize_t ecard_show_resources(struct device *dev, struct device_attribute 
 	int i;
 
 	for (i = 0; i < ECARD_NUM_RESOURCES; i++)
-		str += sprintf(str, "%08x %08x %08lx\n",
+		str += sprintf(str, "%08lx %08lx %08lx\n",
 				ec->resource[i].start,
 				ec->resource[i].end,
 				ec->resource[i].flags);

@@ -24,7 +24,7 @@
  * 	    Phil Blundell <Philip.Blundell@pobox.com>
  *          Tim Waugh <tim@cyberelk.demon.co.uk>
  *	    Jose Renau <renau@acm.org>
- *          David Campbell
+ *          David Campbell <campbell@torque.net>
  *          Andrea Arcangeli
  */
 

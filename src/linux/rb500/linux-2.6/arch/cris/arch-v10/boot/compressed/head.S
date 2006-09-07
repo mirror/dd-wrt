@@ -8,6 +8,7 @@
  *
  */
 
+#include <linux/config.h>
 #define ASSEMBLER_MACROS_ONLY
 #include <asm/arch/sv_addr_ag.h>
 

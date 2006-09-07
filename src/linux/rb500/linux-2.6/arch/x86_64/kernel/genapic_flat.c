@@ -8,6 +8,7 @@
  * Martin Bligh, Andi Kleen, James Bottomley, John Stultz, and
  * James Cleverdon.
  */
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/string.h>
@@ -77,29 +78,22 @@ static void flat_send_IPI_mask(cpumask_t cpumask, int vector)
 
 static void flat_send_IPI_allbutself(int vector)
 {
-#ifdef	CONFIG_HOTPLUG_CPU
-	int hotplug = 1;
-#else
-	int hotplug = 0;
-#endif
-	if (hotplug || vector == NMI_VECTOR) {
-		cpumask_t allbutme = cpu_online_map;
-
-		cpu_clear(smp_processor_id(), allbutme);
-
-		if (!cpus_empty(allbutme))
-			flat_send_IPI_mask(allbutme, vector);
-	} else if (num_online_cpus() > 1) {
+#ifndef CONFIG_HOTPLUG_CPU
+	if (((num_online_cpus()) - 1) >= 1)
 		__send_IPI_shortcut(APIC_DEST_ALLBUT, vector,APIC_DEST_LOGICAL);
-	}
+#else
+	cpumask_t allbutme = cpu_online_map;
+
+	cpu_clear(smp_processor_id(), allbutme);
+
+	if (!cpus_empty(allbutme))
+		flat_send_IPI_mask(allbutme, vector);
+#endif
 }
 
 static void flat_send_IPI_all(int vector)
 {
-	if (vector == NMI_VECTOR)
-		flat_send_IPI_mask(cpu_online_map, vector);
-	else
-		__send_IPI_shortcut(APIC_DEST_ALLINC, vector, APIC_DEST_LOGICAL);
+	__send_IPI_shortcut(APIC_DEST_ALLINC, vector, APIC_DEST_LOGICAL);
 }
 
 static int flat_apic_id_registered(void)
@@ -114,7 +108,10 @@ static unsigned int flat_cpu_mask_to_apicid(cpumask_t cpumask)
 
 static unsigned int phys_pkg_id(int index_msb)
 {
-	return hard_smp_processor_id() >> index_msb;
+	u32 ebx;
+
+	ebx = cpuid_ebx(1);
+	return ((ebx >> 24) & 0xFF) >> index_msb;
 }
 
 struct genapic apic_flat =  {

@@ -377,11 +377,12 @@ enum rhine_quirks {
 /* Beware of PCI posted writes */
 #define IOSYNC	do { ioread8(ioaddr + StationAddr); } while (0)
 
-static const struct pci_device_id rhine_pci_tbl[] = {
-	{ 0x1106, 0x3043, PCI_ANY_ID, PCI_ANY_ID, },	/* VT86C100A */
-	{ 0x1106, 0x3065, PCI_ANY_ID, PCI_ANY_ID, },	/* VT6102 */
-	{ 0x1106, 0x3106, PCI_ANY_ID, PCI_ANY_ID, },	/* 6105{,L,LOM} */
-	{ 0x1106, 0x3053, PCI_ANY_ID, PCI_ANY_ID, },	/* VT6105M */
+static struct pci_device_id rhine_pci_tbl[] =
+{
+	{0x1106, 0x3043, PCI_ANY_ID, PCI_ANY_ID, 0, 0, }, /* VT86C100A */
+	{0x1106, 0x3065, PCI_ANY_ID, PCI_ANY_ID, 0, 0, }, /* VT6102 */
+	{0x1106, 0x3106, PCI_ANY_ID, PCI_ANY_ID, 0, 0, }, /* 6105{,L,LOM} */
+	{0x1106, 0x3053, PCI_ANY_ID, PCI_ANY_ID, 0, 0, }, /* VT6105M */
 	{ }	/* terminate list */
 };
 MODULE_DEVICE_TABLE(pci, rhine_pci_tbl);
@@ -1271,7 +1272,7 @@ static int rhine_open(struct net_device *dev)
 
 	pci_enable_device(rp->pdev);
 
-	rc = request_irq(rp->pdev->irq, &rhine_interrupt, IRQF_SHARED, dev->name,
+	rc = request_irq(rp->pdev->irq, &rhine_interrupt, SA_SHIRQ, dev->name,
 			dev);
 	if (rc)
 		return rc;
@@ -1358,8 +1359,11 @@ static int rhine_start_tx(struct sk_buff *skb, struct net_device *dev)
 	/* Calculate the next Tx descriptor entry. */
 	entry = rp->cur_tx % TX_RING_SIZE;
 
-	if (skb_padto(skb, ETH_ZLEN))
-		return 0;
+	if (skb->len < ETH_ZLEN) {
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
+			return 0;
+	}
 
 	rp->tx_skbuff[entry] = skb;
 
@@ -2145,7 +2149,7 @@ static int rhine_resume(struct pci_dev *pdev)
 	if (!netif_running(dev))
 		return 0;
 
-        if (request_irq(dev->irq, rhine_interrupt, IRQF_SHARED, dev->name, dev))
+        if (request_irq(dev->irq, rhine_interrupt, SA_SHIRQ, dev->name, dev))
 		printk(KERN_ERR "via-rhine %s: request_irq failed\n", dev->name);
 
 	ret = pci_set_power_state(pdev, PCI_D0);

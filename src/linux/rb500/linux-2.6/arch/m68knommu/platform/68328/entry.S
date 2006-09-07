@@ -10,6 +10,7 @@
  * Linux/m68k support by Hamish Macdonald
  */
 
+#include <linux/config.h>
 #include <linux/sys.h>
 #include <linux/linkage.h>
 #include <asm/thread_info.h>

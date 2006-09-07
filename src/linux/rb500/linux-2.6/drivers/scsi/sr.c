@@ -217,7 +217,7 @@ int sr_media_change(struct cdrom_device_info *cdi, int slot)
 static void rw_intr(struct scsi_cmnd * SCpnt)
 {
 	int result = SCpnt->result;
-	int this_count = SCpnt->request_bufflen;
+	int this_count = SCpnt->bufflen;
 	int good_bytes = (result == 0 ? this_count : 0);
 	int block_sectors = 0;
 	long error_sector;
@@ -292,7 +292,7 @@ static void rw_intr(struct scsi_cmnd * SCpnt)
 	 * how many actual sectors finished, and how many sectors we need
 	 * to say have failed.
 	 */
-	scsi_io_completion(SCpnt, good_bytes);
+	scsi_io_completion(SCpnt, good_bytes, block_sectors << 9);
 }
 
 static int sr_init_command(struct scsi_cmnd * SCpnt)

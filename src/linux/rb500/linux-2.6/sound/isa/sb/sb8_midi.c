@@ -32,22 +32,20 @@
 #include <sound/core.h>
 #include <sound/sb.h>
 
+/*
 
-irqreturn_t snd_sb8dsp_midi_interrupt(struct snd_sb *chip)
+ */
+
+irqreturn_t snd_sb8dsp_midi_interrupt(struct snd_sb * chip)
 {
 	struct snd_rawmidi *rmidi;
 	int max = 64;
 	char byte;
 
-	if (!chip)
-		return IRQ_NONE;
-	
-	rmidi = chip->rmidi;
-	if (!rmidi) {
+	if (chip == NULL || (rmidi = chip->rmidi) == NULL) {
 		inb(SBP(chip, DATA_AVAIL));	/* ack interrupt */
 		return IRQ_NONE;
 	}
-
 	spin_lock(&chip->midi_input_lock);
 	while (max-- > 0) {
 		if (inb(SBP(chip, DATA_AVAIL)) & 0x80) {
@@ -60,6 +58,10 @@ irqreturn_t snd_sb8dsp_midi_interrupt(struct snd_sb *chip)
 	spin_unlock(&chip->midi_input_lock);
 	return IRQ_HANDLED;
 }
+
+/*
+
+ */
 
 static int snd_sb8dsp_midi_input_open(struct snd_rawmidi_substream *substream)
 {
@@ -249,6 +251,10 @@ static void snd_sb8dsp_midi_output_trigger(struct snd_rawmidi_substream *substre
 	if (up)
 		snd_sb8dsp_midi_output_write(substream);
 }
+
+/*
+
+ */
 
 static struct snd_rawmidi_ops snd_sb8dsp_midi_output =
 {

@@ -10,6 +10,7 @@
  *  Check put/get_user, cleanups - acme@conectiva.com.br - Jun 2001
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/sched.h>

@@ -14,10 +14,7 @@
 extern struct pci_ops titan_pci_ops;
 
 static struct resource py_mem_resource = {
-	.start	= 0xe0000000UL,
-	.end	= 0xe3ffffffUL,
-	.name	= "Titan PCI MEM",
-	.flags	= IORESOURCE_MEM
+	"Titan PCI MEM", 0xe0000000UL, 0xe3ffffffUL, IORESOURCE_MEM
 };
 
 /*
@@ -29,10 +26,7 @@ static struct resource py_mem_resource = {
 #define TITAN_IO_BASE	0xe8000000UL
 
 static struct resource py_io_resource = {
-	.start	= 0x00001000UL,
-	.end	= TITAN_IO_SIZE - 1,
-	.name	= "Titan IO MEM",
-	.flags	= IORESOURCE_IO,
+	"Titan IO MEM", 0x00001000UL, TITAN_IO_SIZE - 1, IORESOURCE_IO,
 };
 
 static struct pci_controller py_controller = {

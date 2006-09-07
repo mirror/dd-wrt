@@ -40,6 +40,7 @@
 	.level	2.0
 #endif
 
+#include <linux/config.h>
 
 #include <asm/psw.h>
 #include <asm/assembly.h>

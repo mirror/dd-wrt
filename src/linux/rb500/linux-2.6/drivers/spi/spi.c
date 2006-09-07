@@ -210,7 +210,6 @@ spi_new_device(struct spi_master *master, struct spi_board_info *chip)
 	proxy->master = master;
 	proxy->chip_select = chip->chip_select;
 	proxy->max_speed_hz = chip->max_speed_hz;
-	proxy->mode = chip->mode;
 	proxy->irq = chip->irq;
 	proxy->modalias = chip->modalias;
 
@@ -510,7 +509,7 @@ static void spi_complete(void *arg)
  */
 int spi_sync(struct spi_device *spi, struct spi_message *message)
 {
-	DECLARE_COMPLETION_ONSTACK(done);
+	DECLARE_COMPLETION(done);
 	int status;
 
 	message->complete = spi_complete;

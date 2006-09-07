@@ -3,6 +3,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <asm/virtconvert.h>
 
 #if defined(CONFIG_H83007) || defined(CONFIG_H83068)

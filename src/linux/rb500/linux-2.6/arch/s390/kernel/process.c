@@ -15,6 +15,7 @@
  * This file handles the architecture-dependent parts of process handling..
  */
 
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/cpu.h>
 #include <linux/errno.h>
@@ -142,7 +143,6 @@ static void default_idle(void)
 		return;
 	}
 
-	trace_hardirqs_on();
 	/* Wait for external, I/O or machine check interrupt. */
 	__load_psw_mask(PSW_KERNEL_BITS | PSW_MASK_WAIT |
 			PSW_MASK_IO | PSW_MASK_EXT);

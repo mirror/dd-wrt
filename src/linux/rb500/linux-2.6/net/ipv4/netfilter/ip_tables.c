@@ -14,6 +14,7 @@
  * 08 Oct 2005 Harald Welte <lafore@netfilter.org>
  * 	- Generalize into "x_tables" layer and "{ip,ip6,arp}_tables"
  */
+#include <linux/config.h>
 #include <linux/cache.h>
 #include <linux/capability.h>
 #include <linux/skbuff.h>
@@ -230,7 +231,7 @@ ipt_do_table(struct sk_buff **pskb,
 	const char *indev, *outdev;
 	void *table_base;
 	struct ipt_entry *e, *back;
-	struct xt_table_info *private = table->private;
+	struct xt_table_info *private;
 
 	/* Initialization */
 	ip = (*pskb)->nh.iph;
@@ -247,6 +248,7 @@ ipt_do_table(struct sk_buff **pskb,
 
 	read_lock_bh(&table->lock);
 	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
+	private = table->private;
 	table_base = (void *)private->entries[smp_processor_id()];
 	e = get_entry(table_base, private->hook_entry[hook]);
 
@@ -1760,7 +1762,7 @@ translate_compat_table(const char *name,
 		goto free_newinfo;
 
 	/* And one copy for every other CPU */
-	for_each_possible_cpu(i)
+	for_each_cpu(i)
 		if (newinfo->entries[i] && newinfo->entries[i] != entry1)
 			memcpy(newinfo->entries[i], entry1, newinfo->size);
 
@@ -2112,8 +2114,7 @@ int ipt_register_table(struct xt_table *table, const struct ipt_replace *repl)
 		return ret;
 	}
 
-	ret = xt_register_table(table, &bootstrap, newinfo);
-	if (ret != 0) {
+	if (xt_register_table(table, &bootstrap, newinfo) != 0) {
 		xt_free_table_info(newinfo);
 		return ret;
 	}

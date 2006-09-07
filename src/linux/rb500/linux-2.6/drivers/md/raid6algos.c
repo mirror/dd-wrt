@@ -139,13 +139,14 @@ int __init raid6_select_algo(void)
 		}
 	}
 
-	if (best) {
+	if ( best )
 		printk("raid6: using algorithm %s (%ld MB/s)\n",
 		       best->name,
 		       (bestperf*HZ) >> (20-16+RAID6_TIME_JIFFIES_LG2));
-		raid6_call = *best;
-	} else
+	else
 		printk("raid6: Yikes!  No algorithm found!\n");
+
+	raid6_call = *best;
 
 	free_pages((unsigned long)syndromes, 1);
 

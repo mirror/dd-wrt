@@ -59,7 +59,7 @@ char *ahd_chip_names[] =
 	"aic7902",
 	"aic7901A"
 };
-static const u_int num_chip_names = ARRAY_SIZE(ahd_chip_names);
+static const u_int num_chip_names = NUM_ELEMENTS(ahd_chip_names);
 
 /*
  * Hardware error codes.
@@ -77,7 +77,7 @@ static struct ahd_hard_error_entry ahd_hard_errors[] = {
 	{ MPARERR,	"Scratch or SCB Memory Parity Error" },
 	{ CIOPARERR,	"CIOBUS Parity Error" },
 };
-static const u_int num_errors = ARRAY_SIZE(ahd_hard_errors);
+static const u_int num_errors = NUM_ELEMENTS(ahd_hard_errors);
 
 static struct ahd_phase_table_entry ahd_phase_table[] =
 {
@@ -97,7 +97,7 @@ static struct ahd_phase_table_entry ahd_phase_table[] =
  * In most cases we only wish to itterate over real phases, so
  * exclude the last element from the count.
  */
-static const u_int num_phases = ARRAY_SIZE(ahd_phase_table) - 1;
+static const u_int num_phases = NUM_ELEMENTS(ahd_phase_table) - 1;
 
 /* Our Sequencer Program */
 #include "aic79xx_seq.h"
@@ -1090,7 +1090,7 @@ ahd_handle_seqint(struct ahd_softc *ahd, u_int intstat)
 
 			/* Notify XPT */
 			ahd_send_async(ahd, devinfo.channel, devinfo.target,
-				       CAM_LUN_WILDCARD, AC_SENT_BDR);
+				       CAM_LUN_WILDCARD, AC_SENT_BDR, NULL);
 
 			/*
 			 * Allow the sequencer to continue with
@@ -3062,7 +3062,7 @@ ahd_set_syncrate(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
 		tinfo->curr.ppr_options = ppr_options;
 
 		ahd_send_async(ahd, devinfo->channel, devinfo->target,
-			       CAM_LUN_WILDCARD, AC_TRANSFER_NEG);
+			       CAM_LUN_WILDCARD, AC_TRANSFER_NEG, NULL);
 		if (bootverbose) {
 			if (offset != 0) {
 				int options;
@@ -3184,7 +3184,7 @@ ahd_set_width(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
 
 		tinfo->curr.width = width;
 		ahd_send_async(ahd, devinfo->channel, devinfo->target,
-			       CAM_LUN_WILDCARD, AC_TRANSFER_NEG);
+			       CAM_LUN_WILDCARD, AC_TRANSFER_NEG, NULL);
 		if (bootverbose) {
 			printf("%s: target %d using %dbit transfers\n",
 			       ahd_name(ahd), devinfo->target,
@@ -3211,14 +3211,12 @@ ahd_set_width(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
  * Update the current state of tagged queuing for a given target.
  */
 void
-ahd_set_tags(struct ahd_softc *ahd, struct scsi_cmnd *cmd,
-	     struct ahd_devinfo *devinfo, ahd_queue_alg alg)
+ahd_set_tags(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
+	     ahd_queue_alg alg)
 {
-	struct scsi_device *sdev = cmd->device;
-
-	ahd_platform_set_tags(ahd, sdev, devinfo, alg);
+	ahd_platform_set_tags(ahd, devinfo, alg);
 	ahd_send_async(ahd, devinfo->channel, devinfo->target,
-		       devinfo->lun, AC_TRANSFER_NEG);
+		       devinfo->lun, AC_TRANSFER_NEG, &alg);
 }
 
 static void
@@ -4748,7 +4746,7 @@ ahd_handle_msg_reject(struct ahd_softc *ahd, struct ahd_devinfo *devinfo)
 			printf("(%s:%c:%d:%d): refuses tagged commands.  "
 			       "Performing non-tagged I/O\n", ahd_name(ahd),
 			       devinfo->channel, devinfo->target, devinfo->lun);
-			ahd_set_tags(ahd, scb->io_ctx, devinfo, AHD_QUEUE_NONE);
+			ahd_set_tags(ahd, devinfo, AHD_QUEUE_NONE);
 			mask = ~0x23;
 		} else {
 			printf("(%s:%c:%d:%d): refuses %s tagged commands.  "
@@ -4756,7 +4754,7 @@ ahd_handle_msg_reject(struct ahd_softc *ahd, struct ahd_devinfo *devinfo)
 			       ahd_name(ahd), devinfo->channel, devinfo->target,
 			       devinfo->lun, tag_type == MSG_ORDERED_TASK
 			       ? "ordered" : "head of queue");
-			ahd_set_tags(ahd, scb->io_ctx, devinfo, AHD_QUEUE_BASIC);
+			ahd_set_tags(ahd, devinfo, AHD_QUEUE_BASIC);
 			mask = ~0x03;
 		}
 
@@ -5100,7 +5098,7 @@ ahd_handle_devreset(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
 	
 	if (status != CAM_SEL_TIMEOUT)
 		ahd_send_async(ahd, devinfo->channel, devinfo->target,
-			       CAM_LUN_WILDCARD, AC_SENT_BDR);
+			       CAM_LUN_WILDCARD, AC_SENT_BDR, NULL);
 
 	if (message != NULL && bootverbose)
 		printf("%s: %s on %c:%d. %d SCBs aborted\n", ahd_name(ahd),
@@ -7261,7 +7259,7 @@ ahd_qinfifo_count(struct ahd_softc *ahd)
 		return (wrap_qinfifonext - wrap_qinpos);
 	else
 		return (wrap_qinfifonext
-		      + ARRAY_SIZE(ahd->qinfifo) - wrap_qinpos);
+		      + NUM_ELEMENTS(ahd->qinfifo) - wrap_qinpos);
 }
 
 void
@@ -7954,7 +7952,7 @@ ahd_reset_channel(struct ahd_softc *ahd, char channel, int initiate_reset)
 #endif
 	/* Notify the XPT that a bus reset occurred */
 	ahd_send_async(ahd, devinfo.channel, CAM_TARGET_WILDCARD,
-		       CAM_LUN_WILDCARD, AC_BUS_RESET);
+		       CAM_LUN_WILDCARD, AC_BUS_RESET, NULL);
 
 	/*
 	 * Revert to async/narrow transfers until we renegotiate.
@@ -8621,7 +8619,7 @@ ahd_check_patch(struct ahd_softc *ahd, struct patch **start_patch,
 	struct	patch *last_patch;
 	u_int	num_patches;
 
-	num_patches = ARRAY_SIZE(patches);
+	num_patches = sizeof(patches)/sizeof(struct patch);
 	last_patch = &patches[num_patches];
 	cur_patch = *start_patch;
 
@@ -9398,8 +9396,8 @@ ahd_find_tmode_devs(struct ahd_softc *ahd, struct cam_sim *sim, union ccb *ccb,
 	} else {
 		u_int max_id;
 
-		max_id = (ahd->features & AHD_WIDE) ? 16 : 8;
-		if (ccb->ccb_h.target_id >= max_id)
+		max_id = (ahd->features & AHD_WIDE) ? 15 : 7;
+		if (ccb->ccb_h.target_id > max_id)
 			return (CAM_TID_INVALID);
 
 		if (ccb->ccb_h.target_lun >= AHD_NUM_LUNS)

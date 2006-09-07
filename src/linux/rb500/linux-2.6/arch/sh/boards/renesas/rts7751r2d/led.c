@@ -9,6 +9,7 @@
  * This file contains Renesas Technology Sales RTS7751R2D specific LED code.
  */
 
+#include <linux/config.h>
 #include <asm/io.h>
 #include <asm/rts7751r2d/rts7751r2d.h>
 

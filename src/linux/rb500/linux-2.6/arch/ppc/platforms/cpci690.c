@@ -8,6 +8,7 @@
  * is licensed "as is" without any warranty of any kind, whether express
  * or implied.
  */
+#include <linux/config.h>
 #include <linux/delay.h>
 #include <linux/pci.h>
 #include <linux/ide.h>

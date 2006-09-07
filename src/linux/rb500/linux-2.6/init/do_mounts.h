@@ -1,5 +1,6 @@
 #include <linux/config.h>
 #include <linux/kernel.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/init.h>
 #include <linux/syscalls.h>
 #include <linux/unistd.h>
@@ -14,11 +15,24 @@ void  mount_root(void);
 extern int root_mountflags;
 extern char *root_device_name;
 
-static inline int create_dev(char *name, dev_t dev)
+#ifdef CONFIG_DEVFS_FS
+
+void mount_devfs(void);
+void umount_devfs(char *path);
+int  create_dev(char *name, dev_t dev, char *devfs_name);
+
+#else
+
+static inline void mount_devfs(void) {}
+static inline void umount_devfs(const char *path) {}
+
+static inline int create_dev(char *name, dev_t dev, char *devfs_name)
 {
 	sys_unlink(name);
 	return sys_mknod(name, S_IFBLK|0600, new_encode_dev(dev));
 }
+
+#endif
 
 #if BITS_PER_LONG == 32
 static inline u32 bstat(char *name)

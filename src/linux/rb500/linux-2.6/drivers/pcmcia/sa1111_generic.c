@@ -5,6 +5,7 @@
  * basically means we handle everything except controlling the
  * power.  Power is machine specific...
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/ioport.h>

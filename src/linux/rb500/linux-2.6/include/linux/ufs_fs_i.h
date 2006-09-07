@@ -27,7 +27,6 @@ struct ufs_inode_info {
 	__u32	i_oeftflag;
 	__u16	i_osync;
 	__u32	i_lastfrag;
-	__u32   i_dir_start_lookup;
 	struct inode vfs_inode;
 };
 

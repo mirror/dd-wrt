@@ -1,6 +1,7 @@
 #ifndef __ASM_IO_APIC_H
 #define __ASM_IO_APIC_H
 
+#include <linux/config.h>
 #include <asm/types.h>
 #include <asm/mpspec.h>
 

@@ -15,6 +15,7 @@
 #ifndef _ASM_DEBUG_H
 #define _ASM_DEBUG_H
 
+#include <linux/config.h>
 
 /*
  * run-time macros for catching spurious errors.  Eable CONFIG_RUNTIME_DEBUG in

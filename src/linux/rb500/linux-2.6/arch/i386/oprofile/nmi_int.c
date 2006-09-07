@@ -281,9 +281,9 @@ static int nmi_create_files(struct super_block * sb, struct dentry * root)
 
 	for (i = 0; i < model->num_counters; ++i) {
 		struct dentry * dir;
-		char buf[4];
+		char buf[2];
  
-		snprintf(buf,  sizeof(buf), "%d", i);
+		snprintf(buf, 2, "%d", i);
 		dir = oprofilefs_mkdir(sb, root, buf);
 		oprofilefs_create_ulong(sb, dir, "enabled", &counter_config[i].enabled); 
 		oprofilefs_create_ulong(sb, dir, "event", &counter_config[i].event); 

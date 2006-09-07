@@ -2,6 +2,7 @@
  * Alpha specific irq code.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/irq.h>
@@ -214,7 +215,7 @@ static unsigned int rtc_startup(unsigned int irq) { return 0; }
 
 struct irqaction timer_irqaction = {
 	.handler	= timer_interrupt,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.name		= "timer",
 };
 
@@ -232,7 +233,7 @@ void __init
 init_rtc_irq(void)
 {
 	irq_desc[RTC_IRQ].status = IRQ_DISABLED;
-	irq_desc[RTC_IRQ].chip = &rtc_irq_type;
+	irq_desc[RTC_IRQ].handler = &rtc_irq_type;
 	setup_irq(RTC_IRQ, &timer_irqaction);
 }
 

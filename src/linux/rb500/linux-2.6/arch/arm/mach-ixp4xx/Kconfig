@@ -35,6 +35,7 @@ config ARCH_ADI_COYOTE
 
 config ARCH_IXDP425
 	bool "IXDP425"
+	select PCI
 	help
 	  Say 'Y' here if you want your kernel to support Intel's 
 	  IXDP425 Development Platform (Also known as Richfield).  
@@ -42,6 +43,7 @@ config ARCH_IXDP425
 
 config MACH_IXDPG425
 	bool "IXDPG425"
+	select PCI
 	help
 	  Say 'Y' here if you want your kernel to support Intel's
 	  IXDPG425 Development Platform (Also known as Montajade).
@@ -49,6 +51,7 @@ config MACH_IXDPG425
 
 config MACH_IXDP465
 	bool "IXDP465"
+	select PCI
 	help
 	  Say 'Y' here if you want your kernel to support Intel's
 	  IXDP465 Development Platform (Also known as BMP).

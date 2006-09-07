@@ -21,6 +21,7 @@
 #ifndef _IBM_EMAC_RGMII_H_
 #define _IBM_EMAC_RGMII_H_
 
+#include <linux/config.h>
 
 /* RGMII bridge */
 struct rgmii_regs {

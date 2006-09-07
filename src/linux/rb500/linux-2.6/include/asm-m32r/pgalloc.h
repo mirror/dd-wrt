@@ -3,6 +3,7 @@
 
 /* $Id$ */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 
 #include <asm/io.h>

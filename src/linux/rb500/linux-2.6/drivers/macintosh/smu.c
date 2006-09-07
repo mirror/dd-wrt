@@ -19,6 +19,7 @@
  *    the userland interface
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
@@ -497,7 +498,8 @@ int __init smu_init (void)
 	smu->doorbell = *data;
 	if (smu->doorbell < 0x50)
 		smu->doorbell += 0x50;
-	smu->db_irq = irq_of_parse_and_map(np, 0);
+	if (np->n_intrs > 0)
+		smu->db_irq = np->intrs[0].line;
 
 	of_node_put(np);
 
@@ -514,7 +516,8 @@ int __init smu_init (void)
 		smu->msg = *data;
 		if (smu->msg < 0x50)
 			smu->msg += 0x50;
-		smu->msg_irq = irq_of_parse_and_map(np, 0);
+		if (np->n_intrs > 0)
+			smu->msg_irq = np->intrs[0].line;
 		of_node_put(np);
 	} while(0);
 
@@ -553,7 +556,7 @@ static int smu_late_init(void)
 
 	if (smu->db_irq != NO_IRQ) {
 		if (request_irq(smu->db_irq, smu_db_intr,
-				IRQF_SHARED, "SMU doorbell", smu) < 0) {
+				SA_SHIRQ, "SMU doorbell", smu) < 0) {
 			printk(KERN_WARNING "SMU: can't "
 			       "request interrupt %d\n",
 			       smu->db_irq);
@@ -563,7 +566,7 @@ static int smu_late_init(void)
 
 	if (smu->msg_irq != NO_IRQ) {
 		if (request_irq(smu->msg_irq, smu_msg_intr,
-				IRQF_SHARED, "SMU message", smu) < 0) {
+				SA_SHIRQ, "SMU message", smu) < 0) {
 			printk(KERN_WARNING "SMU: can't "
 			       "request interrupt %d\n",
 			       smu->msg_irq);

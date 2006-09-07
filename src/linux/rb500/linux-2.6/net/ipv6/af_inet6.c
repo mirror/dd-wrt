@@ -23,6 +23,7 @@
 
 #include <linux/module.h>
 #include <linux/capability.h>
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/socket.h>
@@ -659,6 +660,8 @@ int inet6_sk_rebuild_header(struct sock *sk)
 		}
 
 		ip6_dst_store(sk, dst, NULL);
+		sk->sk_route_caps = dst->dev->features &
+			~(NETIF_F_IP_CSUM | NETIF_F_TSO);
 	}
 
 	return 0;

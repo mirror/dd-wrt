@@ -9,6 +9,7 @@
  * Martin Bligh, Andi Kleen, James Bottomley, John Stultz, and
  * James Cleverdon.
  */
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/string.h>

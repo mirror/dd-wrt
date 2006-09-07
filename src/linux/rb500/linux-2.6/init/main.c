@@ -11,9 +11,11 @@
 
 #define __KERNEL_SYSCALLS__
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/kernel.h>
 #include <linux/syscalls.h>
 #include <linux/string.h>
@@ -45,10 +47,6 @@
 #include <linux/rmap.h>
 #include <linux/mempolicy.h>
 #include <linux/key.h>
-#include <linux/unwind.h>
-#include <linux/buffer_head.h>
-#include <linux/debug_locks.h>
-#include <linux/lockdep.h>
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -81,6 +79,7 @@ extern void mca_init(void);
 extern void sbus_init(void);
 extern void sysctl_init(void);
 extern void signals_init(void);
+extern void buffer_init(void);
 extern void pidhash_init(void);
 extern void pidmap_init(void);
 extern void prio_tree_init(void);
@@ -447,27 +446,10 @@ static void __init boot_cpu_init(void)
 	cpu_set(cpu, cpu_possible_map);
 }
 
-void __init __attribute__((weak)) smp_setup_processor_id(void)
-{
-}
-
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
 	extern struct kernel_param __start___param[], __stop___param[];
-
-	smp_setup_processor_id();
-
-	/*
-	 * Need to run as early as possible, to initialize the
-	 * lockdep hash:
-	 */
-	lockdep_init();
-
-	local_irq_disable();
-	early_boot_irqs_off();
-	early_init_irq_lock_class();
-
 /*
  * Interrupts are still disabled. Do necessary setups, then
  * enable them
@@ -500,7 +482,6 @@ asmlinkage void __init start_kernel(void)
 		   __stop___param - __start___param,
 		   &unknown_bootoption);
 	sort_main_extable();
-	unwind_init();
 	trap_init();
 	rcu_init();
 	init_IRQ();
@@ -508,13 +489,7 @@ asmlinkage void __init start_kernel(void)
 	init_timers();
 	hrtimers_init();
 	softirq_init();
-	timekeeping_init();
 	time_init();
-	profile_init();
-	if (!irqs_disabled())
-		printk("start_kernel(): bug: interrupts were enabled early\n");
-	early_boot_irqs_on();
-	local_irq_enable();
 
 	/*
 	 * HACK ALERT! This is early. We're enabling the console before
@@ -524,16 +499,8 @@ asmlinkage void __init start_kernel(void)
 	console_init();
 	if (panic_later)
 		panic(panic_later, panic_param);
-
-	lockdep_info();
-
-	/*
-	 * Need to run this when irqs are enabled, because it wants
-	 * to self-test [hard/soft]-irqs on/off lock inversion bugs
-	 * too:
-	 */
-	locking_selftest();
-
+	profile_init();
+	local_irq_enable();
 #ifdef CONFIG_BLK_DEV_INITRD
 	if (initrd_start && !initrd_below_start_ok &&
 			initrd_start < min_low_pfn << PAGE_SHIFT) {

@@ -30,6 +30,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -295,7 +296,7 @@ struct pcmcia_low_level db1x00_pcmcia_ops = {
 	.socket_suspend		= db1x00_socket_suspend
 };
 
-int au1x_board_init(struct device *dev)
+int __init au1x_board_init(struct device *dev)
 {
 	int ret = -ENODEV;
 	bcsr->pcmcia = 0; /* turn off power, if it's not already off */

@@ -26,13 +26,6 @@ lsapic_noop (unsigned int irq)
 	/* nuthing to do... */
 }
 
-static int lsapic_retrigger(unsigned int irq)
-{
-	ia64_resend_irq(irq);
-
-	return 1;
-}
-
 struct hw_interrupt_type irq_type_ia64_lsapic = {
 	.typename =	"LSAPIC",
 	.startup =	lsapic_noop_startup,
@@ -40,6 +33,5 @@ struct hw_interrupt_type irq_type_ia64_lsapic = {
 	.enable =	lsapic_noop,
 	.disable =	lsapic_noop,
 	.ack =		lsapic_noop,
-	.end =		lsapic_noop,
-	.retrigger =	lsapic_retrigger,
+	.end =		lsapic_noop
 };

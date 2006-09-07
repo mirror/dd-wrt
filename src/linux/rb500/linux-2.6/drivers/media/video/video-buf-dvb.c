@@ -135,15 +135,14 @@ static int videobuf_dvb_stop_feed(struct dvb_demux_feed *feed)
 
 int videobuf_dvb_register(struct videobuf_dvb *dvb,
 			  struct module *module,
-			  void *adapter_priv,
-			  struct device *device)
+			  void *adapter_priv)
 {
 	int result;
 
 	mutex_init(&dvb->lock);
 
 	/* register adapter */
-	result = dvb_register_adapter(&dvb->adapter, dvb->name, module, device);
+	result = dvb_register_adapter(&dvb->adapter, dvb->name, module);
 	if (result < 0) {
 		printk(KERN_WARNING "%s: dvb_register_adapter failed (errno = %d)\n",
 		       dvb->name, result);

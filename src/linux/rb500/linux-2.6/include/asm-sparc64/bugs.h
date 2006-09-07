@@ -4,6 +4,7 @@
  *  Copyright (C) 1996 David S. Miller (davem@caip.rutgers.edu)
  */
 
+#include <linux/config.h>
 
 extern unsigned long loops_per_jiffy;
 

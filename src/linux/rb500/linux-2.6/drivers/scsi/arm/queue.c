@@ -118,7 +118,8 @@ int __queue_add(Queue_t *queue, Scsi_Cmnd *SCpnt, int head)
 	list_del(l);
 
 	q = list_entry(l, QE_t, list);
-	BUG_ON(BAD_MAGIC(q, QUEUE_MAGIC_FREE));
+	if (BAD_MAGIC(q, QUEUE_MAGIC_FREE))
+		BUG();
 
 	SET_MAGIC(q, QUEUE_MAGIC_USED);
 	q->SCpnt = SCpnt;
@@ -143,7 +144,8 @@ static Scsi_Cmnd *__queue_remove(Queue_t *queue, struct list_head *ent)
 	 */
 	list_del(ent);
 	q = list_entry(ent, QE_t, list);
-	BUG_ON(BAD_MAGIC(q, QUEUE_MAGIC_USED));
+	if (BAD_MAGIC(q, QUEUE_MAGIC_USED))
+		BUG();
 
 	SET_MAGIC(q, QUEUE_MAGIC_FREE);
 	list_add(ent, &queue->free);

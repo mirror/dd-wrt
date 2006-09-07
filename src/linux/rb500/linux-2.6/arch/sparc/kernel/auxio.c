@@ -5,6 +5,7 @@
 
 #include <linux/stddef.h>
 #include <linux/init.h>
+#include <linux/config.h>
 #include <linux/spinlock.h>
 #include <asm/oplib.h>
 #include <asm/io.h>

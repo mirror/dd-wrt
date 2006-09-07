@@ -7,6 +7,7 @@
 #ifndef __MACH_IP860_H
 #define __MACH_IP860_H
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

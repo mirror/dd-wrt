@@ -1,6 +1,7 @@
 #ifndef _LINUX_THREADS_H
 #define _LINUX_THREADS_H
 
+#include <linux/config.h>
 
 /*
  * The default limit for the nr of threads is now in

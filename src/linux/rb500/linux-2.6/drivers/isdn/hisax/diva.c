@@ -16,6 +16,7 @@
  */
 
 #include <linux/init.h>
+#include <linux/config.h>
 #include "hisax.h"
 #include "isac.h"
 #include "hscx.h"
@@ -1076,7 +1077,7 @@ setup_diva(struct IsdnCard *card)
 			printk(KERN_WARNING "Diva: No IO-Adr for PCI card found\n");
 			return(0);
 		}
-		cs->irq_flags |= IRQF_SHARED;
+		cs->irq_flags |= SA_SHIRQ;
 #else
 		printk(KERN_WARNING "Diva: cfgreg 0 and NO_PCI_BIOS\n");
 		printk(KERN_WARNING "Diva: unable to config DIVA PCI\n");

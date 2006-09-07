@@ -1,6 +1,7 @@
 #ifndef _ASM_X86_64_IA32_H
 #define _ASM_X86_64_IA32_H
 
+#include <linux/config.h>
 
 #ifdef CONFIG_IA32_EMULATION
 

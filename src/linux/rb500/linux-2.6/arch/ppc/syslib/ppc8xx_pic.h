@@ -1,6 +1,7 @@
 #ifndef _PPC_KERNEL_PPC8xx_H
 #define _PPC_KERNEL_PPC8xx_H
 
+#include <linux/config.h>
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 

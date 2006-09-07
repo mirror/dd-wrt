@@ -72,6 +72,7 @@
  *       A store crossing a page boundary might be executed only partially.
  *       Undo the partial store in this case.
  */
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/signal.h>
@@ -515,6 +516,14 @@ asmlinkage void do_ade(struct pt_regs *regs)
 		goto sigbus;
 
 	pc = (unsigned int __user *) exception_epc(regs);
+/*#ifdef CONFIG_MIKROTIK_RB500
+	if (!user_mode(regs)) {
+			if (printk_ratelimit()) {
+			printk(KERN_WARNING "unaligned data access at 0x%lx\n",(unsigned long) pc);
+		}
+		
+       } else 
+#endif*/
 	if ((current->thread.mflags & MF_FIXADE) == 0)
 		goto sigbus;
 

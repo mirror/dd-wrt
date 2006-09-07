@@ -3,6 +3,7 @@
 
 /* include/asm-m32r/serial.h */
 
+#include <linux/config.h>
 
 #define BASE_BAUD	115200
 

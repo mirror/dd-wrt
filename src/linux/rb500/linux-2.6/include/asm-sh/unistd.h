@@ -304,8 +304,6 @@
 
 #define NR_syscalls 293
 
-#ifdef __KERNEL__
-
 /* user-visible error numbers are in the range -1 - -124: see <asm-sh/errno.h> */
 
 #define __syscall_return(type, res) \
@@ -422,6 +420,7 @@ __asm__ __volatile__ ("trapa	#0x16" \
 __syscall_return(type,__sc0); \
 }
 
+#ifdef __KERNEL__
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR
 #define __ARCH_WANT_OLD_STAT
@@ -444,6 +443,7 @@ __syscall_return(type,__sc0); \
 #define __ARCH_WANT_SYS_SIGPENDING
 #define __ARCH_WANT_SYS_SIGPROCMASK
 #define __ARCH_WANT_SYS_RT_SIGACTION
+#endif
 
 #ifdef __KERNEL_SYSCALLS__
 
@@ -513,7 +513,7 @@ asmlinkage long sys_rt_sigaction(int sig,
 				struct sigaction __user *oact,
 				size_t sigsetsize);
 
-#endif /* __KERNEL_SYSCALLS__ */
+#endif
 
 /*
  * "Conditional" syscalls
@@ -525,5 +525,4 @@ asmlinkage long sys_rt_sigaction(int sig,
 #define cond_syscall(x) asm(".weak\t" #x "\n\t.set\t" #x ",sys_ni_syscall")
 #endif
 
-#endif /* __KERNEL__ */
 #endif /* __ASM_SH_UNISTD_H */

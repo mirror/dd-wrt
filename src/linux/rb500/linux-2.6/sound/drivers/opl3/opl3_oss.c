@@ -100,8 +100,7 @@ static int snd_opl3_oss_create_port(struct snd_opl3 * opl3)
 							  SNDRV_SEQ_PORT_CAP_WRITE,
 							  SNDRV_SEQ_PORT_TYPE_MIDI_GENERIC |
 							  SNDRV_SEQ_PORT_TYPE_MIDI_GM |
-							  SNDRV_SEQ_PORT_TYPE_HARDWARE |
-							  SNDRV_SEQ_PORT_TYPE_SYNTHESIZER,
+							  SNDRV_SEQ_PORT_TYPE_SYNTH,
 							  voices, voices,
 							  name);
 	if (opl3->oss_chset->port < 0) {

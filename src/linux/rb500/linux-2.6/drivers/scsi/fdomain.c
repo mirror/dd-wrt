@@ -266,6 +266,7 @@
 
  **************************************************************************/
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -419,10 +420,10 @@ static unsigned long addresses[] = {
    0xd0000,
    0xe0000,
 };
-#define ADDRESS_COUNT ARRAY_SIZE(addresses)
-
+#define ADDRESS_COUNT (sizeof( addresses ) / sizeof( unsigned ))
+		       
 static unsigned short ports[] = { 0x140, 0x150, 0x160, 0x170 };
-#define PORT_COUNT ARRAY_SIZE(ports)
+#define PORT_COUNT (sizeof( ports ) / sizeof( unsigned short ))
 
 static unsigned short ints[] = { 3, 5, 10, 11, 12, 14, 15, 0 };
 
@@ -501,7 +502,7 @@ static struct signature {
     geometry location are verified). */
 };
 
-#define SIGNATURE_COUNT ARRAY_SIZE(signatures)
+#define SIGNATURE_COUNT (sizeof( signatures ) / sizeof( struct signature ))
 
 static void print_banner( struct Scsi_Host *shpnt )
 {
@@ -518,7 +519,7 @@ static void print_banner( struct Scsi_Host *shpnt )
 
       if (bios_minor >= 0) printk("%d", bios_minor);
       else                 printk("?.");
-
+   
       printk( " at 0x%lx using scsi id %d\n",
 	      bios_base, shpnt->this_id );
    }
@@ -949,7 +950,7 @@ struct Scsi_Host *__fdomain_16x0_detect(struct scsi_host_template *tpnt )
       /* Register the IRQ with the kernel */
 
       retcode = request_irq( interrupt_level,
-			     do_fdomain_16x0_intr, pdev?IRQF_SHARED:0, "fdomain", shpnt);
+			     do_fdomain_16x0_intr, pdev?SA_SHIRQ:0, "fdomain", shpnt);
 
       if (retcode < 0) {
 	 if (retcode == -EINVAL) {

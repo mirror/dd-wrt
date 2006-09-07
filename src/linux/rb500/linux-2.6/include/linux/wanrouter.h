@@ -44,6 +44,8 @@
 * Jan 02, 1997	Gene Kozin	Initial version (based on wanpipe.h).
 *****************************************************************************/
 
+#include <linux/spinlock.h>       /* Support for SMP Locking */
+
 #ifndef	_ROUTER_H
 #define	_ROUTER_H
 
@@ -455,8 +457,6 @@ typedef struct wanif_conf
 #include <linux/fs.h>		/* support for device drivers */
 #include <linux/proc_fs.h>	/* proc filesystem pragmatics */
 #include <linux/netdevice.h>	/* support for network drivers */
-#include <linux/spinlock.h>     /* Support for SMP Locking */
-
 /*----------------------------------------------------------------------------
  * WAN device data space.
  */

@@ -14,6 +14,8 @@
 #ifndef __ASM_ARM_UNISTD_H
 #define __ASM_ARM_UNISTD_H
 
+#include <linux/linkage.h>
+
 #define __NR_SYSCALL_BASE	0x900000
 
 /*
@@ -310,9 +312,6 @@
 #define __ARM_NR_cacheflush		(__ARM_NR_BASE+2)
 #define __ARM_NR_usr26			(__ARM_NR_BASE+3)
 
-#ifdef __KERNEL__
-#include <linux/linkage.h>
-
 #define __sys2(x) #x
 #define __sys1(x) __sys2(x)
 
@@ -444,6 +443,7 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6
   __syscall_return(type,__res);						\
 }
 
+#ifdef __KERNEL__
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR
 #define __ARCH_WANT_STAT64
@@ -462,6 +462,7 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6
 #define __ARCH_WANT_SYS_SIGPENDING
 #define __ARCH_WANT_SYS_SIGPROCMASK
 #define __ARCH_WANT_SYS_RT_SIGACTION
+#endif
 
 #ifdef __KERNEL_SYSCALLS__
 
@@ -485,7 +486,7 @@ asmlinkage long sys_rt_sigaction(int sig,
 				struct sigaction __user *oact,
 				size_t sigsetsize);
 
-#endif /* __KERNEL_SYSCALLS__ */
+#endif
 
 /*
  * "Conditional" syscalls
@@ -495,5 +496,4 @@ asmlinkage long sys_rt_sigaction(int sig,
  */
 #define cond_syscall(x) asm(".weak\t" #x "\n\t.set\t" #x ",sys_ni_syscall")
 
-#endif /* __KERNEL__ */
 #endif /* __ASM_ARM_UNISTD_H */

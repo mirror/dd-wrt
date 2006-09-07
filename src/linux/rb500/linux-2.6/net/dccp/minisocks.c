@@ -10,6 +10,7 @@
  *	2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/dccp.h>
 #include <linux/skbuff.h>
 #include <linux/timer.h>

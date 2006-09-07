@@ -25,6 +25,7 @@
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/irq.h>
@@ -79,7 +80,7 @@ char irq_tab_alchemy[][5] __initdata = {
 #endif
 
 
-au1xxx_irq_map_t __initdata au1xxx_irq_map[] = {
+au1xxx_irq_map_t au1xxx_irq_map[] = {
 
 #ifndef CONFIG_MIPS_MIRAGE
 #ifdef CONFIG_MIPS_DB1550
@@ -100,4 +101,4 @@ au1xxx_irq_map_t __initdata au1xxx_irq_map[] = {
 
 };
 
-int __initdata au1xxx_nr_irqs = ARRAY_SIZE(au1xxx_irq_map);
+int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);

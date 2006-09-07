@@ -14,6 +14,7 @@
 #include <asm/uaccess.h>
 #include <asm/system.h>
 #include <linux/bitops.h>
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -74,9 +75,9 @@ void qdisc_unlock_tree(struct net_device *dev)
    dev->queue_lock serializes queue accesses for this device
    AND dev->qdisc pointer itself.
 
-   netif_tx_lock serializes accesses to device driver.
+   dev->xmit_lock serializes accesses to device driver.
 
-   dev->queue_lock and netif_tx_lock are mutually exclusive,
+   dev->queue_lock and dev->xmit_lock are mutually exclusive,
    if one is grabbed, another must be free.
  */
 
@@ -92,17 +93,14 @@ void qdisc_unlock_tree(struct net_device *dev)
    NOTE: Called under dev->queue_lock with locally disabled BH.
 */
 
-static inline int qdisc_restart(struct net_device *dev)
+int qdisc_restart(struct net_device *dev)
 {
 	struct Qdisc *q = dev->qdisc;
 	struct sk_buff *skb;
 
 	/* Dequeue packet */
-	if (((skb = dev->gso_skb)) || ((skb = q->dequeue(q)))) {
+	if ((skb = q->dequeue(q)) != NULL) {
 		unsigned nolock = (dev->features & NETIF_F_LLTX);
-
-		dev->gso_skb = NULL;
-
 		/*
 		 * When the driver has LLTX set it does its own locking
 		 * in start_xmit. No need to add additional overhead by
@@ -113,7 +111,7 @@ static inline int qdisc_restart(struct net_device *dev)
 		 * will be requeued.
 		 */
 		if (!nolock) {
-			if (!netif_tx_trylock(dev)) {
+			if (!spin_trylock(&dev->xmit_lock)) {
 			collision:
 				/* So, someone grabbed the driver. */
 				
@@ -131,6 +129,8 @@ static inline int qdisc_restart(struct net_device *dev)
 				__get_cpu_var(netdev_rx_stat).cpu_collision++;
 				goto requeue;
 			}
+			/* Remember that the driver is grabbed by us. */
+			dev->xmit_lock_owner = smp_processor_id();
 		}
 		
 		{
@@ -166,7 +166,8 @@ static inline int qdisc_restart(struct net_device *dev)
 			/* NETDEV_TX_BUSY - we need to requeue */
 			/* Release the driver */
 			if (!nolock) { 
-				netif_tx_unlock(dev);
+				dev->xmit_lock_owner = -1;
+				spin_unlock(&dev->xmit_lock);
 			} 
 			spin_lock(&dev->queue_lock);
 			q = dev->qdisc;
@@ -183,10 +184,7 @@ static inline int qdisc_restart(struct net_device *dev)
 		 */
 
 requeue:
-		if (skb->next)
-			dev->gso_skb = skb;
-		else
-			q->ops->requeue(skb, q);
+		q->ops->requeue(skb, q);
 		netif_schedule(dev);
 		return 1;
 	}
@@ -194,23 +192,11 @@ requeue:
 	return q->q.qlen;
 }
 
-void __qdisc_run(struct net_device *dev)
-{
-	if (unlikely(dev->qdisc == &noop_qdisc))
-		goto out;
-
-	while (qdisc_restart(dev) < 0 && !netif_queue_stopped(dev))
-		/* NOTHING */;
-
-out:
-	clear_bit(__LINK_STATE_QDISC_RUNNING, &dev->state);
-}
-
 static void dev_watchdog(unsigned long arg)
 {
 	struct net_device *dev = (struct net_device *)arg;
 
-	netif_tx_lock(dev);
+	spin_lock(&dev->xmit_lock);
 	if (dev->qdisc != &noop_qdisc) {
 		if (netif_device_present(dev) &&
 		    netif_running(dev) &&
@@ -226,7 +212,7 @@ static void dev_watchdog(unsigned long arg)
 				dev_hold(dev);
 		}
 	}
-	netif_tx_unlock(dev);
+	spin_unlock(&dev->xmit_lock);
 
 	dev_put(dev);
 }
@@ -250,17 +236,17 @@ void __netdev_watchdog_up(struct net_device *dev)
 
 static void dev_watchdog_up(struct net_device *dev)
 {
-	netif_tx_lock_bh(dev);
+	spin_lock_bh(&dev->xmit_lock);
 	__netdev_watchdog_up(dev);
-	netif_tx_unlock_bh(dev);
+	spin_unlock_bh(&dev->xmit_lock);
 }
 
 static void dev_watchdog_down(struct net_device *dev)
 {
-	netif_tx_lock_bh(dev);
+	spin_lock_bh(&dev->xmit_lock);
 	if (del_timer(&dev->watchdog_timer))
 		dev_put(dev);
-	netif_tx_unlock_bh(dev);
+	spin_unlock_bh(&dev->xmit_lock);
 }
 
 void netif_carrier_on(struct net_device *dev)
@@ -602,17 +588,10 @@ void dev_deactivate(struct net_device *dev)
 
 	dev_watchdog_down(dev);
 
-	/* Wait for outstanding dev_queue_xmit calls. */
-	synchronize_rcu();
-
-	/* Wait for outstanding qdisc_run calls. */
-	while (test_bit(__LINK_STATE_QDISC_RUNNING, &dev->state))
+	while (test_bit(__LINK_STATE_SCHED, &dev->state))
 		yield();
 
-	if (dev->gso_skb) {
-		kfree_skb(dev->gso_skb);
-		dev->gso_skb = NULL;
-	}
+	spin_unlock_wait(&dev->xmit_lock);
 }
 
 void dev_init_scheduler(struct net_device *dev)
@@ -654,5 +633,6 @@ EXPORT_SYMBOL(qdisc_create_dflt);
 EXPORT_SYMBOL(qdisc_alloc);
 EXPORT_SYMBOL(qdisc_destroy);
 EXPORT_SYMBOL(qdisc_reset);
+EXPORT_SYMBOL(qdisc_restart);
 EXPORT_SYMBOL(qdisc_lock_tree);
 EXPORT_SYMBOL(qdisc_unlock_tree);

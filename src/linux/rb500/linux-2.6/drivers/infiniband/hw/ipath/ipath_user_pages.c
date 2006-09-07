@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2006 QLogic, Inc. All rights reserved.
  * Copyright (c) 2003, 2004, 2005, 2006 PathScale, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -57,6 +56,17 @@ static int __get_user_pages(unsigned long start_page, size_t num_pages,
 	unsigned long lock_limit;
 	size_t got;
 	int ret;
+
+#if 0
+	/*
+	 * XXX - causes MPI programs to fail, haven't had time to check
+	 * yet
+	 */
+	if (!capable(CAP_IPC_LOCK)) {
+		ret = -EPERM;
+		goto bail;
+	}
+#endif
 
 	lock_limit = current->signal->rlim[RLIMIT_MEMLOCK].rlim_cur >>
 		PAGE_SHIFT;

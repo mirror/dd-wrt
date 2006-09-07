@@ -26,6 +26,7 @@
 
 #undef DEBUG_DZ
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/init.h>
@@ -767,7 +768,11 @@ void __init dz_serial_console_init(void)
 static struct uart_driver dz_reg = {
 	.owner			= THIS_MODULE,
 	.driver_name		= "serial",
+#ifdef CONFIG_DEVFS
+	.dev_name		= "tts/%d",
+#else
 	.dev_name		= "ttyS%d",
+#endif
 	.major			= TTY_MAJOR,
 	.minor			= 64,
 	.nr			= DZ_NB_PORT,
@@ -797,7 +802,7 @@ int __init dz_init(void)
 	restore_flags(flags);
 
 	if (request_irq(dz_ports[0].port.irq, dz_interrupt,
-			IRQF_DISABLED, "DZ", &dz_ports[0]))
+			SA_INTERRUPT, "DZ", &dz_ports[0]))
 		panic("Unable to register DZ interrupt");
 
 	ret = uart_register_driver(&dz_reg);

@@ -96,11 +96,13 @@ static int vdma_get_dma_residue(unsigned int dummy)
 static int fd_request_irq(void)
 {
 	if (can_use_virtual_dma)
-		return request_irq(FLOPPY_IRQ, floppy_hardint,
-				   IRQF_DISABLED, "floppy", NULL);
+		return request_irq(FLOPPY_IRQ, floppy_hardint,SA_INTERRUPT,
+						   "floppy", NULL);
 	else
 		return request_irq(FLOPPY_IRQ, floppy_interrupt,
-				   IRQF_DISABLED, "floppy", NULL);
+						   SA_INTERRUPT|SA_SAMPLE_RANDOM,
+						   "floppy", NULL);
+
 }
 
 static int vdma_dma_setup(char *addr, unsigned long size, int mode, int io)

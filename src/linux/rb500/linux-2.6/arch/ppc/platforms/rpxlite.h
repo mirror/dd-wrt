@@ -8,6 +8,7 @@
 #ifndef __MACH_RPX_DEFS
 #define __MACH_RPX_DEFS
 
+#include <linux/config.h>
 
 #ifndef __ASSEMBLY__
 /* A Board Information structure that is given to a program when

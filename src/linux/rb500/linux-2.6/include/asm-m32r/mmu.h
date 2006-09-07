@@ -1,6 +1,7 @@
 #ifndef _ASM_M32R_MMU_H
 #define _ASM_M32R_MMU_H
 
+#include <linux/config.h>
 
 #if !defined(CONFIG_MMU)
 typedef struct {

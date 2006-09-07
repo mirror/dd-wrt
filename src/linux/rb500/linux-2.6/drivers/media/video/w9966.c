@@ -58,7 +58,6 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/videodev.h>
-#include <media/v4l2-common.h>
 #include <linux/parport.h>
 
 //#define DEBUG				// Undef me for production

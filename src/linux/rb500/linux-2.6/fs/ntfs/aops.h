@@ -86,7 +86,8 @@ static inline void ntfs_unmap_page(struct page *page)
 static inline struct page *ntfs_map_page(struct address_space *mapping,
 		unsigned long index)
 {
-	struct page *page = read_mapping_page(mapping, index, NULL);
+	struct page *page = read_cache_page(mapping, index,
+			(filler_t*)mapping->a_ops->readpage, NULL);
 
 	if (!IS_ERR(page)) {
 		wait_on_page_locked(page);

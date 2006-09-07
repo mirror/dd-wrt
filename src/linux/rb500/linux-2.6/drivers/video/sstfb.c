@@ -82,6 +82,7 @@
  * Includes
  */
 
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/module.h>

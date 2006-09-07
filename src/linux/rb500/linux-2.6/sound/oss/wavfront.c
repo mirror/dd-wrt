@@ -2268,7 +2268,7 @@ static int __init wavefront_hw_reset (void)
 	}
 
 	if (request_irq (dev.irq, wavefrontintr,
-			 IRQF_DISABLED|IRQF_SHARED,
+			 SA_INTERRUPT|SA_SHIRQ,
 			 "wavefront synth", &dev) < 0) {
 		printk (KERN_WARNING LOGNAME "IRQ %d not available!\n",
 			dev.irq);

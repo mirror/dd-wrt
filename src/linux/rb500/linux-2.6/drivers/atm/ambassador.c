@@ -31,7 +31,6 @@
 #include <linux/atmdev.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/poison.h>
 
 #include <asm/atomic.h>
 #include <asm/io.h>
@@ -1996,7 +1995,7 @@ static int __devinit ucode_init (loader_block * lb, amb_dev * dev) {
     }
     i += 1;
   }
-  if (*pointer == ATM_POISON) {
+  if (*pointer == 0xdeadbeef) {
     return loader_start (lb, dev, ucode_start);
   } else {
     // cast needed as there is no %? for pointer differnces
@@ -2258,8 +2257,7 @@ static int __devinit amb_probe(struct pci_dev *pci_dev, const struct pci_device_
 	}
 
 	PRINTD (DBG_INFO, "found Madge ATM adapter (amb) at"
-		" IO %llx, IRQ %u, MEM %p",
-		(unsigned long long)pci_resource_start(pci_dev, 1),
+		" IO %lx, IRQ %u, MEM %p", pci_resource_start(pci_dev, 1),
 		irq, bus_to_virt(pci_resource_start(pci_dev, 0)));
 
 	// check IO region
@@ -2287,7 +2285,7 @@ static int __devinit amb_probe(struct pci_dev *pci_dev, const struct pci_device_
 	setup_pci_dev(pci_dev);
 
 	// grab (but share) IRQ and install handler
-	err = request_irq(irq, interrupt_handler, IRQF_SHARED, DEV_LABEL, dev);
+	err = request_irq(irq, interrupt_handler, SA_SHIRQ, DEV_LABEL, dev);
 	if (err < 0) {
 		PRINTK (KERN_ERR, "request IRQ failed!");
 		goto out_reset;

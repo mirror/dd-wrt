@@ -13,6 +13,7 @@
 #include <asm/io.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
+#include <linux/config.h>
 
 #define PIIXE_IOBASE_RESOURCE	11
 

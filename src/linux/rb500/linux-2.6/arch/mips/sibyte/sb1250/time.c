@@ -25,6 +25,7 @@
  * code to do general bookkeeping (e.g. update jiffies, run
  * bottom halves, etc.)
  */
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>

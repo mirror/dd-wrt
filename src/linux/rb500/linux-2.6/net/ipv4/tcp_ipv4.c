@@ -52,6 +52,7 @@
  *					a single port at the same time.
  */
 
+#include <linux/config.h>
 
 #include <linux/types.h>
 #include <linux/fcntl.h>
@@ -70,7 +71,6 @@
 #include <net/inet_common.h>
 #include <net/timewait_sock.h>
 #include <net/xfrm.h>
-#include <net/netdma.h>
 
 #include <linux/inet.h>
 #include <linux/ipv6.h>
@@ -90,7 +90,7 @@ static struct socket *tcp_socket;
 void tcp_v4_send_check(struct sock *sk, int len, struct sk_buff *skb);
 
 struct inet_hashinfo __cacheline_aligned tcp_hashinfo = {
-	.lhash_lock	= __RW_LOCK_UNLOCKED(tcp_hashinfo.lhash_lock),
+	.lhash_lock	= RW_LOCK_UNLOCKED,
 	.lhash_users	= ATOMIC_INIT(0),
 	.lhash_wait	= __WAIT_QUEUE_HEAD_INITIALIZER(tcp_hashinfo.lhash_wait),
 };
@@ -241,7 +241,6 @@ int tcp_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 		goto failure;
 
 	/* OK, now commit destination to socket.  */
-	sk->sk_gso_type = SKB_GSO_TCPV4;
 	sk_setup_caps(sk, &rt->u.dst);
 
 	if (!tp->write_seq)
@@ -884,7 +883,6 @@ struct sock *tcp_v4_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
 	if (!newsk)
 		goto exit;
 
-	newsk->sk_gso_type = SKB_GSO_TCPV4;
 	sk_setup_caps(newsk, dst);
 
 	newtp		      = tcp_sk(newsk);
@@ -1090,21 +1088,11 @@ process:
 
 	skb->dev = NULL;
 
-	bh_lock_sock_nested(sk);
+	bh_lock_sock(sk);
 	ret = 0;
 	if (!sock_owned_by_user(sk)) {
-#ifdef CONFIG_NET_DMA
-		struct tcp_sock *tp = tcp_sk(sk);
-		if (!tp->ucopy.dma_chan && tp->ucopy.pinned_list)
-			tp->ucopy.dma_chan = get_softnet_dma();
-		if (tp->ucopy.dma_chan)
+		if (!tcp_prequeue(sk, skb))
 			ret = tcp_v4_do_rcv(sk, skb);
-		else
-#endif
-		{
-			if (!tcp_prequeue(sk, skb))
-			ret = tcp_v4_do_rcv(sk, skb);
-		}
 	} else
 		sk_add_backlog(sk, skb);
 	bh_unlock_sock(sk);
@@ -1307,11 +1295,6 @@ int tcp_v4_destroy_sock(struct sock *sk)
 
 	/* Cleans up our, hopefully empty, out_of_order_queue. */
   	__skb_queue_purge(&tp->out_of_order_queue);
-
-#ifdef CONFIG_NET_DMA
-	/* Cleans up our sk_async_wait_queue */
-  	__skb_queue_purge(&sk->sk_async_wait_queue);
-#endif
 
 	/* Clean prequeue, it must be empty really */
 	__skb_queue_purge(&tp->ucopy.prequeue);
@@ -1727,8 +1710,7 @@ static void get_tcp4_sock(struct sock *sp, char *tmpbuf, int i)
 	sprintf(tmpbuf, "%4d: %08X:%04X %08X:%04X %02X %08X:%08X %02X:%08lX "
 			"%08X %5d %8d %lu %d %p %u %u %u %u %d",
 		i, src, srcp, dest, destp, sp->sk_state,
-		tp->write_seq - tp->snd_una,
-		(sp->sk_state == TCP_LISTEN) ? sp->sk_ack_backlog : (tp->rcv_nxt - tp->copied_seq),
+		tp->write_seq - tp->snd_una, tp->rcv_nxt - tp->copied_seq,
 		timer_active,
 		jiffies_to_clock_t(timer_expires - jiffies),
 		icsk->icsk_retransmits,

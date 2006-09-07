@@ -16,6 +16,7 @@
 #ifndef _INET_SOCK_H
 #define _INET_SOCK_H
 
+#include <linux/config.h>
 
 #include <linux/string.h>
 #include <linux/types.h>

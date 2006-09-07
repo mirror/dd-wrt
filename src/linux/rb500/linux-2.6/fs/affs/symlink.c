@@ -66,7 +66,7 @@ fail:
 	return err;
 }
 
-const struct address_space_operations affs_symlink_aops = {
+struct address_space_operations affs_symlink_aops = {
 	.readpage	= affs_symlink_readpage,
 };
 

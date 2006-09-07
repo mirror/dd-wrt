@@ -1,6 +1,7 @@
 #ifndef _ASM_MODULE_H
 #define _ASM_MODULE_H
 
+#include <linux/config.h>
 #include <linux/list.h>
 #include <asm/uaccess.h>
 

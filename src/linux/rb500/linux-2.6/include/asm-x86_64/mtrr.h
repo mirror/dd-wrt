@@ -23,7 +23,9 @@
 #ifndef _LINUX_MTRR_H
 #define _LINUX_MTRR_H
 
+#include <linux/config.h>
 #include <linux/ioctl.h>
+#include <linux/compat.h>
 
 #define	MTRR_IOCTL_BASE	'M'
 
@@ -100,10 +102,11 @@ static __inline__ int mtrr_del_page (int reg, unsigned long base,
     return -ENODEV;
 }
 
-#endif /* CONFIG_MTRR */
+#  endif
+
+#endif
 
 #ifdef CONFIG_COMPAT
-#include <linux/compat.h>
 
 struct mtrr_sentry32
 {
@@ -134,7 +137,5 @@ struct mtrr_gentry32
 #define MTRRIOC32_KILL_PAGE_ENTRY  _IOW(MTRR_IOCTL_BASE,  9, struct mtrr_sentry32)
 
 #endif /* CONFIG_COMPAT */
-
-#endif /* __KERNEL__ */
 
 #endif  /*  _LINUX_MTRR_H  */

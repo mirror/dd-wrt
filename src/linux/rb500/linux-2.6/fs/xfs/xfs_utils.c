@@ -24,10 +24,12 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_bmap_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -49,10 +51,10 @@
  */
 int
 xfs_get_dir_entry(
-	bhv_vname_t	*dentry,
+	vname_t		*dentry,
 	xfs_inode_t	**ipp)
 {
-	bhv_vnode_t	*vp;
+	vnode_t		*vp;
 
 	vp = VNAME_TO_VNODE(dentry);
 
@@ -67,11 +69,11 @@ int
 xfs_dir_lookup_int(
 	bhv_desc_t	*dir_bdp,
 	uint		lock_mode,
-	bhv_vname_t	*dentry,
+	vname_t		*dentry,
 	xfs_ino_t	*inum,
 	xfs_inode_t	**ipp)
 {
-	bhv_vnode_t	*dir_vp;
+	vnode_t		*dir_vp;
 	xfs_inode_t	*dp;
 	int		error;
 
@@ -80,7 +82,8 @@ xfs_dir_lookup_int(
 
 	dp = XFS_BHVTOI(dir_bdp);
 
-	error = xfs_dir_lookup(NULL, dp, VNAME(dentry), VNAMELEN(dentry), inum);
+	error = XFS_DIR_LOOKUP(dp->i_mount, NULL, dp,
+				VNAME(dentry), VNAMELEN(dentry), inum);
 	if (!error) {
 		/*
 		 * Unlock the directory. We do this because we can't

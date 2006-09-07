@@ -63,7 +63,6 @@ struct thread_info {
 	.exec_domain	= &default_exec_domain,	\
 	.flags		= 0,			\
 	.cpu		= 0,			\
-	.preempt_count	= 1,			\
 	.restart_block	= {			\
 		.fn = do_no_restart_syscall,	\
 	},					\

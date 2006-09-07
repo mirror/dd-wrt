@@ -8,6 +8,7 @@
 #ifndef __FLEXCOP_COMMON_H__
 #define __FLEXCOP_COMMON_H__
 
+#include <linux/config.h>
 #include <linux/pci.h>
 #include <linux/mutex.h>
 

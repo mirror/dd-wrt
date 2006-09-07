@@ -73,6 +73,7 @@
 #ifdef SIS_CP
 #undef SIS_CP
 #endif
+#include <linux/config.h>
 #include <linux/version.h>
 #include <linux/types.h>
 #include <asm/io.h>

@@ -26,6 +26,7 @@
  *		Maciej W. Rozycki	:	IPv6 support
  */
  
+#include <linux/config.h>
 #include <linux/module.h>
 #include <asm/system.h>
 #include <linux/types.h>

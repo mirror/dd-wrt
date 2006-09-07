@@ -25,6 +25,7 @@
 /* define _CPIA_DEBUG_ for verbose debug output (see cpia.h) */
 /* #define _CPIA_DEBUG_  1 */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/init.h>
@@ -802,7 +803,7 @@ static struct parport_driver cpia_pp_driver = {
 	.detach = cpia_pp_detach,
 };
 
-static int cpia_pp_init(void)
+int cpia_pp_init(void)
 {
 	printk(KERN_INFO "%s v%d.%d.%d\n",ABOUT,
 	       CPIA_PP_MAJ_VER,CPIA_PP_MIN_VER,CPIA_PP_PATCH_VER);
@@ -859,8 +860,6 @@ void cleanup_module(void)
 
 static int __init cpia_pp_setup(char *str)
 {
-	int err;
-
 	if (!strncmp(str, "parport", 7)) {
 		int n = simple_strtoul(str + 7, NULL, 10);
 		if (parport_ptr < PARPORT_MAX) {
@@ -873,10 +872,6 @@ static int __init cpia_pp_setup(char *str)
 	} else if (!strcmp(str, "none")) {
 		parport_nr[parport_ptr++] = PPCPIA_PARPORT_NONE;
 	}
-
-	err=cpia_pp_init();
-	if (err)
-		return err;
 
 	return 1;
 }

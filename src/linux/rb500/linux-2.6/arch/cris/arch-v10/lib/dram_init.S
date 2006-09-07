@@ -70,6 +70,7 @@
  * uses this code.
  */
 
+#include <linux/config.h>
 
 	;; WARNING! The registers r8 and r9 are used as parameters carrying
 	;; information from the decompressor (if the kernel was compressed). 

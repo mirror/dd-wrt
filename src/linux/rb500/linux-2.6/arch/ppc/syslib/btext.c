@@ -3,10 +3,11 @@
  *
  * Benjamin Herrenschmidt <benh@kernel.crashing.org>
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/init.h>
-#include <linux/utsrelease.h>
+#include <linux/version.h>
 
 #include <asm/sections.h>
 #include <asm/bootx.h>

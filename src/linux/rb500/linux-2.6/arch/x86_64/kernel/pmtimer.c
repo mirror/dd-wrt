@@ -27,7 +27,7 @@
 /* The I/O port the PMTMR resides at.
  * The location is detected during setup_arch(),
  * in arch/i386/kernel/acpi/boot.c */
-u32 pmtmr_ioport __read_mostly;
+u32 pmtmr_ioport;
 
 /* value of the Power timer at last timer interrupt */
 static u32 offset_delay;

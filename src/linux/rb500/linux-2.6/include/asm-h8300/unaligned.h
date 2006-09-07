@@ -1,6 +1,7 @@
 #ifndef __H8300_UNALIGNED_H
 #define __H8300_UNALIGNED_H
 
+#include <linux/config.h>
 
 /* Use memmove here, so gcc does not insert a __builtin_memcpy. */
 

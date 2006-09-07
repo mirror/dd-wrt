@@ -1,6 +1,7 @@
 #ifndef _PPC_PAGE_H
 #define _PPC_PAGE_H
 
+#include <linux/config.h>
 #include <asm/asm-compat.h>
 
 /* PAGE_SHIFT determines the page size */
@@ -14,6 +15,7 @@
 #define PAGE_MASK	(~((1 << PAGE_SHIFT) - 1))
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 
 /* This must match what is in arch/ppc/Makefile */
 #define PAGE_OFFSET	CONFIG_KERNEL_START
@@ -170,7 +172,7 @@ extern __inline__ int get_order(unsigned long size)
 #define VM_DATA_DEFAULT_FLAGS	(VM_READ | VM_WRITE | VM_EXEC | \
 				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
 
-/* We do define AT_SYSINFO_EHDR but don't use the gate mechanism */
+/* We do define AT_SYSINFO_EHDR but don't use the gate mecanism */
 #define __HAVE_ARCH_GATE_AREA		1
 
 #include <asm-generic/memory_model.h>

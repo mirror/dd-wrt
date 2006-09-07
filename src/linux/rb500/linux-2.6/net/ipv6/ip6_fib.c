@@ -19,6 +19,7 @@
  * 				remove ip6_null_entry from the top of
  * 				routing table.
  */
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/net.h>

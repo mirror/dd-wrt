@@ -7,6 +7,7 @@
  * or implied.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/pagemap.h>
 #include <linux/platform_device.h>

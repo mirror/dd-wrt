@@ -42,6 +42,8 @@
  * POSSIBILITY OF SUCH DAMAGES.
  */
 
+#include <linux/module.h>
+
 #include <acpi/acpi.h>
 #include <acpi/acnamesp.h>
 
@@ -99,7 +101,7 @@ acpi_status acpi_get_type(acpi_handle handle, acpi_object_type * ret_type)
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_type)
+EXPORT_SYMBOL(acpi_get_type);
 
 /*******************************************************************************
  *
@@ -114,6 +116,7 @@ ACPI_EXPORT_SYMBOL(acpi_get_type)
  *              Handle.
  *
  ******************************************************************************/
+
 acpi_status acpi_get_parent(acpi_handle handle, acpi_handle * ret_handle)
 {
 	struct acpi_namespace_node *node;
@@ -159,7 +162,7 @@ acpi_status acpi_get_parent(acpi_handle handle, acpi_handle * ret_handle)
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_parent)
+EXPORT_SYMBOL(acpi_get_parent);
 
 /*******************************************************************************
  *
@@ -178,6 +181,7 @@ ACPI_EXPORT_SYMBOL(acpi_get_parent)
  *              Scope is returned.
  *
  ******************************************************************************/
+
 acpi_status
 acpi_get_next_object(acpi_object_type type,
 		     acpi_handle parent,
@@ -202,7 +206,6 @@ acpi_get_next_object(acpi_object_type type,
 	/* If null handle, use the parent */
 
 	if (!child) {
-
 		/* Start search at the beginning of the specified scope */
 
 		parent_node = acpi_ns_map_handle_to_node(parent);
@@ -239,4 +242,4 @@ acpi_get_next_object(acpi_object_type type,
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_next_object)
+EXPORT_SYMBOL(acpi_get_next_object);

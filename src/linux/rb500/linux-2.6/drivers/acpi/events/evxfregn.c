@@ -42,6 +42,8 @@
  * POSSIBILITY OF SUCH DAMAGES.
  */
 
+#include <linux/module.h>
+
 #include <acpi/acpi.h>
 #include <acpi/acnamesp.h>
 #include <acpi/acevents.h>
@@ -73,7 +75,7 @@ acpi_install_address_space_handler(acpi_handle device,
 	struct acpi_namespace_node *node;
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(acpi_install_address_space_handler);
+	ACPI_FUNCTION_TRACE("acpi_install_address_space_handler");
 
 	/* Parameter validation */
 
@@ -112,7 +114,7 @@ acpi_install_address_space_handler(acpi_handle device,
 	return_ACPI_STATUS(status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_install_address_space_handler)
+EXPORT_SYMBOL(acpi_install_address_space_handler);
 
 /*******************************************************************************
  *
@@ -127,6 +129,7 @@ ACPI_EXPORT_SYMBOL(acpi_install_address_space_handler)
  * DESCRIPTION: Remove a previously installed handler.
  *
  ******************************************************************************/
+
 acpi_status
 acpi_remove_address_space_handler(acpi_handle device,
 				  acpi_adr_space_type space_id,
@@ -139,7 +142,7 @@ acpi_remove_address_space_handler(acpi_handle device,
 	struct acpi_namespace_node *node;
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(acpi_remove_address_space_handler);
+	ACPI_FUNCTION_TRACE("acpi_remove_address_space_handler");
 
 	/* Parameter validation */
 
@@ -173,11 +176,9 @@ acpi_remove_address_space_handler(acpi_handle device,
 	handler_obj = obj_desc->device.handler;
 	last_obj_ptr = &obj_desc->device.handler;
 	while (handler_obj) {
-
 		/* We have a handler, see if user requested this one */
 
 		if (handler_obj->address_space.space_id == space_id) {
-
 			/* Matched space_id, first dereference this in the Regions */
 
 			ACPI_DEBUG_PRINT((ACPI_DB_OPREGION,
@@ -228,7 +229,7 @@ acpi_remove_address_space_handler(acpi_handle device,
 	/* The handler does not exist */
 
 	ACPI_DEBUG_PRINT((ACPI_DB_OPREGION,
-			  "Unable to remove address handler %p for %s(%X), DevNode %p, obj %p\n",
+			  "Unable to remove address handler %p for %s(%X), dev_node %p, obj %p\n",
 			  handler, acpi_ut_get_region_name(space_id), space_id,
 			  node, obj_desc));
 
@@ -239,4 +240,4 @@ acpi_remove_address_space_handler(acpi_handle device,
 	return_ACPI_STATUS(status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_remove_address_space_handler)
+EXPORT_SYMBOL(acpi_remove_address_space_handler);

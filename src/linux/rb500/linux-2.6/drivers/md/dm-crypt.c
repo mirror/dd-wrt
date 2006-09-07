@@ -20,7 +20,7 @@
 
 #include "dm.h"
 
-#define DM_MSG_PREFIX "crypt"
+#define PFX	"crypt: "
 
 /*
  * per bio private data
@@ -125,19 +125,19 @@ static int crypt_iv_essiv_ctr(struct crypt_config *cc, struct dm_target *ti,
 	u8 *salt;
 
 	if (opts == NULL) {
-		ti->error = "Digest algorithm missing for ESSIV mode";
+		ti->error = PFX "Digest algorithm missing for ESSIV mode";
 		return -EINVAL;
 	}
 
 	/* Hash the cipher key with the given hash algorithm */
 	hash_tfm = crypto_alloc_tfm(opts, CRYPTO_TFM_REQ_MAY_SLEEP);
 	if (hash_tfm == NULL) {
-		ti->error = "Error initializing ESSIV hash";
+		ti->error = PFX "Error initializing ESSIV hash";
 		return -EINVAL;
 	}
 
 	if (crypto_tfm_alg_type(hash_tfm) != CRYPTO_ALG_TYPE_DIGEST) {
-		ti->error = "Expected digest algorithm for ESSIV hash";
+		ti->error = PFX "Expected digest algorithm for ESSIV hash";
 		crypto_free_tfm(hash_tfm);
 		return -EINVAL;
 	}
@@ -145,7 +145,7 @@ static int crypt_iv_essiv_ctr(struct crypt_config *cc, struct dm_target *ti,
 	saltsize = crypto_tfm_alg_digestsize(hash_tfm);
 	salt = kmalloc(saltsize, GFP_KERNEL);
 	if (salt == NULL) {
-		ti->error = "Error kmallocing salt storage in ESSIV";
+		ti->error = PFX "Error kmallocing salt storage in ESSIV";
 		crypto_free_tfm(hash_tfm);
 		return -ENOMEM;
 	}
@@ -159,20 +159,20 @@ static int crypt_iv_essiv_ctr(struct crypt_config *cc, struct dm_target *ti,
 	                             CRYPTO_TFM_MODE_ECB |
 	                             CRYPTO_TFM_REQ_MAY_SLEEP);
 	if (essiv_tfm == NULL) {
-		ti->error = "Error allocating crypto tfm for ESSIV";
+		ti->error = PFX "Error allocating crypto tfm for ESSIV";
 		kfree(salt);
 		return -EINVAL;
 	}
 	if (crypto_tfm_alg_blocksize(essiv_tfm)
 	    != crypto_tfm_alg_ivsize(cc->tfm)) {
-		ti->error = "Block size of ESSIV cipher does "
+		ti->error = PFX "Block size of ESSIV cipher does "
 			        "not match IV size of block cipher";
 		crypto_free_tfm(essiv_tfm);
 		kfree(salt);
 		return -EINVAL;
 	}
 	if (crypto_cipher_setkey(essiv_tfm, salt, saltsize) < 0) {
-		ti->error = "Failed to set key for ESSIV cipher";
+		ti->error = PFX "Failed to set key for ESSIV cipher";
 		crypto_free_tfm(essiv_tfm);
 		kfree(salt);
 		return -EINVAL;
@@ -521,7 +521,7 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	unsigned long long tmpll;
 
 	if (argc != 5) {
-		ti->error = "Not enough arguments";
+		ti->error = PFX "Not enough arguments";
 		return -EINVAL;
 	}
 
@@ -532,21 +532,21 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	ivmode = strsep(&ivopts, ":");
 
 	if (tmp)
-		DMWARN("Unexpected additional cipher options");
+		DMWARN(PFX "Unexpected additional cipher options");
 
 	key_size = strlen(argv[1]) >> 1;
 
 	cc = kmalloc(sizeof(*cc) + key_size * sizeof(u8), GFP_KERNEL);
 	if (cc == NULL) {
 		ti->error =
-			"Cannot allocate transparent encryption context";
+			PFX "Cannot allocate transparent encryption context";
 		return -ENOMEM;
 	}
 
 	cc->key_size = key_size;
 	if ((!key_size && strcmp(argv[1], "-") != 0) ||
 	    (key_size && crypt_decode_key(cc->key, argv[1], key_size) < 0)) {
-		ti->error = "Error decoding key";
+		ti->error = PFX "Error decoding key";
 		goto bad1;
 	}
 
@@ -562,22 +562,22 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	else if (strcmp(chainmode, "ecb") == 0)
 		crypto_flags = CRYPTO_TFM_MODE_ECB;
 	else {
-		ti->error = "Unknown chaining mode";
+		ti->error = PFX "Unknown chaining mode";
 		goto bad1;
 	}
 
 	if (crypto_flags != CRYPTO_TFM_MODE_ECB && !ivmode) {
-		ti->error = "This chaining mode requires an IV mechanism";
+		ti->error = PFX "This chaining mode requires an IV mechanism";
 		goto bad1;
 	}
 
 	tfm = crypto_alloc_tfm(cipher, crypto_flags | CRYPTO_TFM_REQ_MAY_SLEEP);
 	if (!tfm) {
-		ti->error = "Error allocating crypto tfm";
+		ti->error = PFX "Error allocating crypto tfm";
 		goto bad1;
 	}
 	if (crypto_tfm_alg_type(tfm) != CRYPTO_ALG_TYPE_CIPHER) {
-		ti->error = "Expected cipher algorithm";
+		ti->error = PFX "Expected cipher algorithm";
 		goto bad2;
 	}
 
@@ -595,7 +595,7 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	else if (strcmp(ivmode, "essiv") == 0)
 		cc->iv_gen_ops = &crypt_iv_essiv_ops;
 	else {
-		ti->error = "Invalid IV mode";
+		ti->error = PFX "Invalid IV mode";
 		goto bad2;
 	}
 
@@ -610,7 +610,7 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	else {
 		cc->iv_size = 0;
 		if (cc->iv_gen_ops) {
-			DMWARN("Selected cipher does not support IVs");
+			DMWARN(PFX "Selected cipher does not support IVs");
 			if (cc->iv_gen_ops->dtr)
 				cc->iv_gen_ops->dtr(cc);
 			cc->iv_gen_ops = NULL;
@@ -619,36 +619,36 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 
 	cc->io_pool = mempool_create_slab_pool(MIN_IOS, _crypt_io_pool);
 	if (!cc->io_pool) {
-		ti->error = "Cannot allocate crypt io mempool";
+		ti->error = PFX "Cannot allocate crypt io mempool";
 		goto bad3;
 	}
 
 	cc->page_pool = mempool_create_page_pool(MIN_POOL_PAGES, 0);
 	if (!cc->page_pool) {
-		ti->error = "Cannot allocate page mempool";
+		ti->error = PFX "Cannot allocate page mempool";
 		goto bad4;
 	}
 
 	if (tfm->crt_cipher.cit_setkey(tfm, cc->key, key_size) < 0) {
-		ti->error = "Error setting key";
+		ti->error = PFX "Error setting key";
 		goto bad5;
 	}
 
 	if (sscanf(argv[2], "%llu", &tmpll) != 1) {
-		ti->error = "Invalid iv_offset sector";
+		ti->error = PFX "Invalid iv_offset sector";
 		goto bad5;
 	}
 	cc->iv_offset = tmpll;
 
 	if (sscanf(argv[4], "%llu", &tmpll) != 1) {
-		ti->error = "Invalid device sector";
+		ti->error = PFX "Invalid device sector";
 		goto bad5;
 	}
 	cc->start = tmpll;
 
 	if (dm_get_device(ti, argv[3], cc->start, ti->len,
 	                  dm_table_get_mode(ti->table), &cc->dev)) {
-		ti->error = "Device lookup failed";
+		ti->error = PFX "Device lookup failed";
 		goto bad5;
 	}
 
@@ -657,7 +657,7 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 			*(ivopts - 1) = ':';
 		cc->iv_mode = kmalloc(strlen(ivmode) + 1, GFP_KERNEL);
 		if (!cc->iv_mode) {
-			ti->error = "Error kmallocing iv_mode string";
+			ti->error = PFX "Error kmallocing iv_mode string";
 			goto bad5;
 		}
 		strcpy(cc->iv_mode, ivmode);
@@ -918,13 +918,13 @@ static int __init dm_crypt_init(void)
 	_kcryptd_workqueue = create_workqueue("kcryptd");
 	if (!_kcryptd_workqueue) {
 		r = -ENOMEM;
-		DMERR("couldn't create kcryptd");
+		DMERR(PFX "couldn't create kcryptd");
 		goto bad1;
 	}
 
 	r = dm_register_target(&crypt_target);
 	if (r < 0) {
-		DMERR("register failed %d", r);
+		DMERR(PFX "register failed %d", r);
 		goto bad2;
 	}
 
@@ -942,7 +942,7 @@ static void __exit dm_crypt_exit(void)
 	int r = dm_unregister_target(&crypt_target);
 
 	if (r < 0)
-		DMERR("unregister failed %d", r);
+		DMERR(PFX "unregister failed %d", r);
 
 	destroy_workqueue(_kcryptd_workqueue);
 	kmem_cache_destroy(_crypt_io_pool);

@@ -12,6 +12,7 @@
  * method to start debugging a new board during bring-up until proper board
  * setup code is written.
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <asm/machvec.h>
 #include <asm/irq.h>

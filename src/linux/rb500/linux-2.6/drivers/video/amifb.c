@@ -48,6 +48,7 @@
 #include <linux/tty.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/fb.h>
 #include <linux/init.h>

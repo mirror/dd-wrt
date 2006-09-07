@@ -5,6 +5,7 @@
  *	Copyright (C) 2000 YAEGASHI Takeshi
  *	Hitachi HD64461 companion chip support
  */
+#include <linux/config.h>
 
 /* Constants for PCMCIA mappings */
 #define HD64461_PCC_WINDOW	0x01000000

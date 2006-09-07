@@ -2,6 +2,7 @@
  *  linux/arch/cris/arch-v10/mm/init.c
  *
  */
+#include <linux/config.h>
 #include <linux/mmzone.h>
 #include <linux/init.h>
 #include <linux/bootmem.h>

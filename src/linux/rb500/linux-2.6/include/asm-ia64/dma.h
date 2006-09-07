@@ -6,6 +6,7 @@
  *	David Mosberger-Tang <davidm@hpl.hp.com>
  */
 
+#include <linux/config.h>
 
 #include <asm/io.h>		/* need byte IO */
 

@@ -31,6 +31,7 @@
  * possible DMA function
  */
 
+#include <linux/config.h>
 
 #ifdef CONFIG_S3C2410_DMA_DEBUG
 #define DEBUG
@@ -718,7 +719,7 @@ int s3c2410_dma_request(unsigned int channel, s3c2410_dma_client_t *client,
 		pr_debug("dma%d: %s : requesting irq %d\n",
 			 channel, __FUNCTION__, chan->irq);
 
-		err = request_irq(chan->irq, s3c2410_dma_irq, IRQF_DISABLED,
+		err = request_irq(chan->irq, s3c2410_dma_irq, SA_INTERRUPT,
 				  client->name, (void *)chan);
 
 		if (err) {

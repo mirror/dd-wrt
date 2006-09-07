@@ -96,6 +96,7 @@
 //#define dprintk		printk
 #define dprintk(x...)		do { } while (0)
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/types.h>
@@ -803,7 +804,7 @@ static int ns83820_setup_rx(struct net_device *ndev)
 
 		writel(dev->IMR_cache, dev->base + IMR);
 		writel(1, dev->base + IER);
-		spin_unlock(&dev->misc_lock);
+		spin_unlock_irq(&dev->misc_lock);
 
 		kick_rx(ndev);
 
@@ -1012,6 +1013,8 @@ static void do_tx_done(struct net_device *ndev)
 	struct ns83820 *dev = PRIV(ndev);
 	u32 cmdsts, tx_done_idx, *desc;
 
+	spin_lock_irq(&dev->tx_lock);
+
 	dprintk("do_tx_done(%p)\n", ndev);
 	tx_done_idx = dev->tx_done_idx;
 	desc = dev->tx_descs + (tx_done_idx * DESC_SIZE);
@@ -1067,6 +1070,7 @@ static void do_tx_done(struct net_device *ndev)
 		netif_start_queue(ndev);
 		netif_wake_queue(ndev);
 	}
+	spin_unlock_irq(&dev->tx_lock);
 }
 
 static void ns83820_cleanup_tx(struct ns83820 *dev)
@@ -1278,13 +1282,11 @@ static struct ethtool_ops ops = {
 	.get_link = ns83820_get_link
 };
 
-/* this function is called in irq context from the ISR */
 static void ns83820_mib_isr(struct ns83820 *dev)
 {
-	unsigned long flags;
-	spin_lock_irqsave(&dev->misc_lock, flags);
+	spin_lock(&dev->misc_lock);
 	ns83820_update_stats(dev);
-	spin_unlock_irqrestore(&dev->misc_lock, flags);
+	spin_unlock(&dev->misc_lock);
 }
 
 static void ns83820_do_isr(struct net_device *ndev, u32 isr);
@@ -1306,8 +1308,6 @@ static irqreturn_t ns83820_irq(int foo, void *data, struct pt_regs *regs)
 static void ns83820_do_isr(struct net_device *ndev, u32 isr)
 {
 	struct ns83820 *dev = PRIV(ndev);
-	unsigned long flags;
-
 #ifdef DEBUG
 	if (isr & ~(ISR_PHY | ISR_RXDESC | ISR_RXEARLY | ISR_RXOK | ISR_RXERR | ISR_TXIDLE | ISR_TXOK | ISR_TXDESC))
 		Dprintk("odd isr? 0x%08x\n", isr);
@@ -1322,10 +1322,10 @@ static void ns83820_do_isr(struct net_device *ndev, u32 isr)
 	if ((ISR_RXDESC | ISR_RXOK) & isr) {
 		prefetch(dev->rx_info.next_rx_desc);
 
-		spin_lock_irqsave(&dev->misc_lock, flags);
+		spin_lock_irq(&dev->misc_lock);
 		dev->IMR_cache &= ~(ISR_RXDESC | ISR_RXOK);
 		writel(dev->IMR_cache, dev->base + IMR);
-		spin_unlock_irqrestore(&dev->misc_lock, flags);
+		spin_unlock_irq(&dev->misc_lock);
 
 		tasklet_schedule(&dev->rx_tasklet);
 		//rx_irq(ndev);
@@ -1371,18 +1371,16 @@ static void ns83820_do_isr(struct net_device *ndev, u32 isr)
 	 * work has accumulated
 	 */
 	if ((ISR_TXDESC | ISR_TXIDLE | ISR_TXOK | ISR_TXERR) & isr) {
-		spin_lock_irqsave(&dev->tx_lock, flags);
 		do_tx_done(ndev);
-		spin_unlock_irqrestore(&dev->tx_lock, flags);
 
 		/* Disable TxOk if there are no outstanding tx packets.
 		 */
 		if ((dev->tx_done_idx == dev->tx_free_idx) &&
 		    (dev->IMR_cache & ISR_TXOK)) {
-			spin_lock_irqsave(&dev->misc_lock, flags);
+			spin_lock_irq(&dev->misc_lock);
 			dev->IMR_cache &= ~ISR_TXOK;
 			writel(dev->IMR_cache, dev->base + IMR);
-			spin_unlock_irqrestore(&dev->misc_lock, flags);
+			spin_unlock_irq(&dev->misc_lock);
 		}
 	}
 
@@ -1393,10 +1391,10 @@ static void ns83820_do_isr(struct net_device *ndev, u32 isr)
 	 * nature are expected, we must enable TxOk.
 	 */
 	if ((ISR_TXIDLE & isr) && (dev->tx_done_idx != dev->tx_free_idx)) {
-		spin_lock_irqsave(&dev->misc_lock, flags);
+		spin_lock_irq(&dev->misc_lock);
 		dev->IMR_cache |= ISR_TXOK;
 		writel(dev->IMR_cache, dev->base + IMR);
-		spin_unlock_irqrestore(&dev->misc_lock, flags);
+		spin_unlock_irq(&dev->misc_lock);
 	}
 
 	/* MIB interrupt: one of the statistics counters is about to overflow */
@@ -1458,7 +1456,7 @@ static void ns83820_tx_timeout(struct net_device *ndev)
         u32 tx_done_idx, *desc;
 	unsigned long flags;
 
-	spin_lock_irqsave(&dev->tx_lock, flags);
+	local_irq_save(flags);
 
 	tx_done_idx = dev->tx_done_idx;
 	desc = dev->tx_descs + (tx_done_idx * DESC_SIZE);
@@ -1485,7 +1483,7 @@ static void ns83820_tx_timeout(struct net_device *ndev)
 		ndev->name,
 		tx_done_idx, dev->tx_free_idx, le32_to_cpu(desc[DESC_CMDSTS]));
 
-	spin_unlock_irqrestore(&dev->tx_lock, flags);
+	local_irq_restore(flags);
 }
 
 static void ns83820_tx_watch(unsigned long data)
@@ -1835,7 +1833,7 @@ static int __devinit ns83820_init_one(struct pci_dev *pci_dev, const struct pci_
 	} else if (!pci_set_dma_mask(pci_dev, DMA_32BIT_MASK)) {
 		using_dac = 0;
 	} else {
-		dev_warn(&pci_dev->dev, "pci_set_dma_mask failed!\n");
+		printk(KERN_WARNING "ns83820.c: pci_set_dma_mask failed!\n");
 		return -ENODEV;
 	}
 
@@ -1858,7 +1856,7 @@ static int __devinit ns83820_init_one(struct pci_dev *pci_dev, const struct pci_
 
 	err = pci_enable_device(pci_dev);
 	if (err) {
-		dev_info(&pci_dev->dev, "pci_enable_dev failed: %d\n", err);
+		printk(KERN_INFO "ns83820: pci_enable_dev failed: %d\n", err);
 		goto out_free;
 	}
 
@@ -1884,11 +1882,11 @@ static int __devinit ns83820_init_one(struct pci_dev *pci_dev, const struct pci_
 
 	dev->IMR_cache = 0;
 
-	err = request_irq(pci_dev->irq, ns83820_irq, IRQF_SHARED,
+	err = request_irq(pci_dev->irq, ns83820_irq, SA_SHIRQ,
 			  DRV_NAME, ndev);
 	if (err) {
-		dev_info(&pci_dev->dev, "unable to register irq %d, err %d\n",
-			pci_dev->irq, err);
+		printk(KERN_INFO "ns83820: unable to register irq %d\n",
+			pci_dev->irq);
 		goto out_disable;
 	}
 
@@ -1902,7 +1900,7 @@ static int __devinit ns83820_init_one(struct pci_dev *pci_dev, const struct pci_
 	rtnl_lock();
 	err = dev_alloc_name(ndev, ndev->name);
 	if (err < 0) {
-		dev_info(&pci_dev->dev, "unable to get netdev name: %d\n", err);
+		printk(KERN_INFO "ns83820: unable to get netdev name: %d\n", err);
 		goto out_free_irq;
 	}
 

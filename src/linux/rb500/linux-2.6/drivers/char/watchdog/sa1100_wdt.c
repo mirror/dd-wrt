@@ -17,6 +17,7 @@
  *
  *      27/11/2000 Initial release
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/types.h>
@@ -135,7 +136,7 @@ static int sa1100dog_ioctl(struct inode *inode, struct file *file,
 	return ret;
 }
 
-static const struct file_operations sa1100dog_fops =
+static struct file_operations sa1100dog_fops =
 {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,

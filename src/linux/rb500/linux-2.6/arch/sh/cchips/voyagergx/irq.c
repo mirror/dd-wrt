@@ -21,6 +21,7 @@
 
 #undef DEBUG
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -165,7 +166,7 @@ int voyagergx_irq_demux(int irq)
 static struct irqaction irq0  = {
 	.name		= "voyagergx",
 	.handler	= voyagergx_interrupt,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.mask		= CPU_MASK_NONE,
 };
 
@@ -190,7 +191,7 @@ void __init setup_voyagergx_irq(void)
 			flag = 1;
 		}
 		if (flag == 1)
-			irq_desc[VOYAGER_IRQ_BASE + i].chip = &voyagergx_irq_type;
+			irq_desc[VOYAGER_IRQ_BASE + i].handler = &voyagergx_irq_type;
 	}
 
 	setup_irq(IRQ_VOYAGER, &irq0);

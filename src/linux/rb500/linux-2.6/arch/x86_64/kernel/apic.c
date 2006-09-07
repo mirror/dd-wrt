@@ -14,6 +14,7 @@
  *	Mikael Pettersson	:	PM converted to driver model.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <linux/mm.h>
@@ -50,7 +51,7 @@ int disable_apic_timer __initdata;
 static cpumask_t timer_interrupt_broadcast_ipi_mask;
 
 /* Using APIC to generate smp_local_timer_interrupt? */
-int using_apic_timer __read_mostly = 0;
+int using_apic_timer = 0;
 
 static void apic_pm_activate(void);
 
@@ -99,7 +100,7 @@ void clear_local_APIC(void)
 	maxlvt = get_maxlvt();
 
 	/*
-	 * Masking an LVT entry can trigger a local APIC error
+	 * Masking an LVT entry on a P6 can trigger a local APIC error
 	 * if the vector is zero. Mask LVTERR first to prevent this.
 	 */
 	if (maxlvt >= 3) {
@@ -850,18 +851,7 @@ void disable_APIC_timer(void)
 		unsigned long v;
 
 		v = apic_read(APIC_LVTT);
-		/*
-		 * When an illegal vector value (0-15) is written to an LVT
-		 * entry and delivery mode is Fixed, the APIC may signal an
-		 * illegal vector error, with out regard to whether the mask
-		 * bit is set or whether an interrupt is actually seen on input.
-		 *
-		 * Boot sequence might call this function when the LVTT has
-		 * '0' vector value. So make sure vector field is set to
-		 * valid value.
-		 */
-		v |= (APIC_LVT_MASKED | LOCAL_TIMER_VECTOR);
-		apic_write(APIC_LVTT, v);
+		apic_write(APIC_LVTT, v | APIC_LVT_MASKED);
 	}
 }
 
@@ -919,13 +909,15 @@ int setup_profiling_timer(unsigned int multiplier)
 	return -EINVAL;
 }
 
-void setup_APIC_extened_lvt(unsigned char lvt_off, unsigned char vector,
-			    unsigned char msg_type, unsigned char mask)
+#ifdef CONFIG_X86_MCE_AMD
+void setup_threshold_lvt(unsigned long lvt_off)
 {
-	unsigned long reg = (lvt_off << 4) + K8_APIC_EXT_LVT_BASE;
-	unsigned int  v   = (mask << 16) | (msg_type << 8) | vector;
+	unsigned int v = 0;
+	unsigned long reg = (lvt_off << 4) + 0x500;
+	v |= THRESHOLD_APIC_VECTOR;
 	apic_write(reg, v);
 }
+#endif /* CONFIG_X86_MCE_AMD */
 
 #undef APIC_DIVISOR
 
@@ -991,7 +983,7 @@ void smp_apic_timer_interrupt(struct pt_regs *regs)
 }
 
 /*
- * apic_is_clustered_box() -- Check if we can expect good TSC
+ * oem_force_hpet_timer -- force HPET mode for some boxes.
  *
  * Thus far, the major user of this is IBM's Summit2 series:
  *
@@ -999,7 +991,7 @@ void smp_apic_timer_interrupt(struct pt_regs *regs)
  * multi-chassis. Use available data to take a good guess.
  * If in doubt, go HPET.
  */
-__cpuinit int apic_is_clustered_box(void)
+__cpuinit int oem_force_hpet_timer(void)
 {
 	int i, clusters, zeros;
 	unsigned id;
@@ -1030,7 +1022,8 @@ __cpuinit int apic_is_clustered_box(void)
 	}
 
 	/*
-	 * If clusters > 2, then should be multi-chassis.
+	 * If clusters > 2, then should be multi-chassis.  Return 1 for HPET.
+	 * Else return 0 to use TSC.
 	 * May have to revisit this when multi-core + hyperthreaded CPUs come
 	 * out, but AFAIK this will work even for them.
 	 */

@@ -5,6 +5,7 @@
  * Definitions for talking to the SMU chip in newer G5 PowerMacs
  */
 #ifdef __KERNEL__
+#include <linux/config.h>
 #include <linux/list.h>
 #endif
 #include <linux/types.h>

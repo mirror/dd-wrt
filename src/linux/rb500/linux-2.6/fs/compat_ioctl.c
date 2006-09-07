@@ -10,6 +10,7 @@
  * ioctls.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/compat.h>
 #include <linux/kernel.h>
@@ -43,6 +44,7 @@
 #include <linux/loop.h>
 #include <linux/auto_fs.h>
 #include <linux/auto_fs4.h>
+#include <linux/devfs_fs.h>
 #include <linux/tty.h>
 #include <linux/vt_kern.h>
 #include <linux/fb.h>
@@ -78,7 +80,6 @@
 #include <net/bluetooth/rfcomm.h>
 
 #include <linux/capi.h>
-#include <linux/gigaset_dev.h>
 
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
@@ -202,6 +203,38 @@ static int do_ext3_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 #endif
 	}
 	return sys_ioctl(fd, cmd, (unsigned long)compat_ptr(arg));
+}
+
+struct compat_dmx_event {
+	dmx_event_t	event;
+	compat_time_t	timeStamp;
+	union
+	{
+		dmx_scrambling_status_t scrambling;
+	} u;
+};
+
+static int do_dmx_get_event(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	struct dmx_event kevent;
+	mm_segment_t old_fs = get_fs();
+	int err;
+
+	set_fs(KERNEL_DS);
+	err = sys_ioctl(fd, cmd, (unsigned long) &kevent);
+	set_fs(old_fs);
+
+	if (!err) {
+		struct compat_dmx_event __user *up = compat_ptr(arg);
+
+		err  = put_user(kevent.event, &up->event);
+		err |= put_user(kevent.timeStamp, &up->timeStamp);
+		err |= put_user(kevent.u.scrambling, &up->u.scrambling);
+		if (err)
+			err = -EFAULT;
+	}
+
+	return err;
 }
 
 struct compat_video_event {
@@ -2931,6 +2964,7 @@ HANDLE_IOCTL(NCP_IOC_SETPRIVATEDATA_32, do_ncp_setprivatedata)
 #endif
 
 /* dvb */
+HANDLE_IOCTL(DMX_GET_EVENT, do_dmx_get_event)
 HANDLE_IOCTL(VIDEO_GET_EVENT, do_video_get_event)
 HANDLE_IOCTL(VIDEO_STILLPICTURE, do_video_stillpicture)
 HANDLE_IOCTL(VIDEO_SET_SPU_PALETTE, do_video_set_spu_palette)

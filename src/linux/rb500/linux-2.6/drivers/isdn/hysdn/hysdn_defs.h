@@ -14,6 +14,7 @@
 #ifndef HYSDN_DEFS_H
 #define HYSDN_DEFS_H
 
+#include <linux/config.h>
 #include <linux/hysdn_if.h>
 #include <linux/interrupt.h>
 #include <linux/workqueue.h>

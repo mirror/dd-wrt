@@ -66,11 +66,11 @@ static irqreturn_t aac_sa_intr(int irq, void *dev_id, struct pt_regs *regs)
 			sa_writew(dev, DoorbellClrReg_p, PrintfReady); /* clear PrintfReady */
 			sa_writew(dev, DoorbellReg_s, PrintfDone);
 		} else if (intstat & DOORBELL_1) {	// dev -> Host Normal Command Ready
-			sa_writew(dev, DoorbellClrReg_p, DOORBELL_1);
 			aac_command_normal(&dev->queues->queue[HostNormCmdQueue]);
+			sa_writew(dev, DoorbellClrReg_p, DOORBELL_1);
 		} else if (intstat & DOORBELL_2) {	// dev -> Host Normal Response Ready
-			sa_writew(dev, DoorbellClrReg_p, DOORBELL_2);
 			aac_response_normal(&dev->queues->queue[HostNormRespQueue]);
+			sa_writew(dev, DoorbellClrReg_p, DOORBELL_2);
 		} else if (intstat & DOORBELL_3) {	// dev -> Host Normal Command Not Full
 			sa_writew(dev, DoorbellClrReg_p, DOORBELL_3);
 		} else if (intstat & DOORBELL_4) {	// dev -> Host Normal Response Not Full
@@ -318,16 +318,16 @@ int aac_sa_init(struct aac_dev *dev)
 	 *	Wait for the adapter to be up and running. Wait up to 3 minutes.
 	 */
 	while (!(sa_readl(dev, Mailbox7) & KERNEL_UP_AND_RUNNING)) {
-		if (time_after(jiffies, start+startup_timeout*HZ)) {
+		if (time_after(jiffies, start+180*HZ)) {
 			status = sa_readl(dev, Mailbox7);
 			printk(KERN_WARNING "%s%d: adapter kernel failed to start, init status = %lx.\n", 
 					name, instance, status);
 			goto error_iounmap;
 		}
-		msleep(1);
+		schedule_timeout_uninterruptible(1);
 	}
 
-	if (request_irq(dev->scsi_host_ptr->irq, aac_sa_intr, IRQF_SHARED|IRQF_DISABLED, "aacraid", (void *)dev ) < 0) {
+	if (request_irq(dev->scsi_host_ptr->irq, aac_sa_intr, SA_SHIRQ|SA_INTERRUPT, "aacraid", (void *)dev ) < 0) {
 		printk(KERN_WARNING "%s%d: Interrupt unavailable.\n", name, instance);
 		goto error_iounmap;
 	}

@@ -6,6 +6,7 @@
  * Copyright (C) 1997 Michael A. Griffith (grif@acm.org)
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 

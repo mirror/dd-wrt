@@ -24,12 +24,14 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -184,7 +186,7 @@ xfs_ihash_promote(
  */
 STATIC int
 xfs_iget_core(
-	bhv_vnode_t	*vp,
+	vnode_t		*vp,
 	xfs_mount_t	*mp,
 	xfs_trans_t	*tp,
 	xfs_ino_t	ino,
@@ -196,7 +198,7 @@ xfs_iget_core(
 	xfs_ihash_t	*ih;
 	xfs_inode_t	*ip;
 	xfs_inode_t	*iq;
-	bhv_vnode_t	*inode_vp;
+	vnode_t		*inode_vp;
 	ulong		version;
 	int		error;
 	/* REFERENCED */
@@ -466,7 +468,7 @@ finish_inode:
 	 * If we have a real type for an on-disk inode, we can set ops(&unlock)
 	 * now.	 If it's a new inode being created, xfs_ialloc will handle it.
 	 */
-	bhv_vfs_init_vnode(XFS_MTOVFS(mp), vp, XFS_ITOBHV(ip), 1);
+	VFS_INIT_VNODE(XFS_MTOVFS(mp), vp, XFS_ITOBHV(ip), 1);
 
 	return 0;
 }
@@ -487,7 +489,7 @@ xfs_iget(
 	xfs_daddr_t	bno)
 {
 	struct inode	*inode;
-	bhv_vnode_t	*vp = NULL;
+	vnode_t		*vp = NULL;
 	int		error;
 
 	XFS_STATS_INC(xs_ig_attempts);
@@ -541,7 +543,7 @@ retry:
 void
 xfs_inode_lock_init(
 	xfs_inode_t	*ip,
-	bhv_vnode_t	*vp)
+	vnode_t		*vp)
 {
 	mrlock_init(&ip->i_lock, MRLOCK_ALLOW_EQUAL_PRI|MRLOCK_BARRIER,
 		     "xfsino", (long)vp->v_number);
@@ -601,10 +603,12 @@ void
 xfs_iput(xfs_inode_t	*ip,
 	 uint		lock_flags)
 {
-	bhv_vnode_t	*vp = XFS_ITOV(ip);
+	vnode_t	*vp = XFS_ITOV(ip);
 
 	vn_trace_entry(vp, "xfs_iput", (inst_t *)__return_address);
+
 	xfs_iunlock(ip, lock_flags);
+
 	VN_RELE(vp);
 }
 
@@ -615,7 +619,7 @@ void
 xfs_iput_new(xfs_inode_t	*ip,
 	     uint		lock_flags)
 {
-	bhv_vnode_t	*vp = XFS_ITOV(ip);
+	vnode_t		*vp = XFS_ITOV(ip);
 	struct inode	*inode = vn_to_inode(vp);
 
 	vn_trace_entry(vp, "xfs_iput_new", (inst_t *)__return_address);
@@ -641,7 +645,7 @@ xfs_iput_new(xfs_inode_t	*ip,
 void
 xfs_ireclaim(xfs_inode_t *ip)
 {
-	bhv_vnode_t	*vp;
+	vnode_t		*vp;
 
 	/*
 	 * Remove from old hash list and mount list.
@@ -1029,6 +1033,6 @@ xfs_iflock_nowait(xfs_inode_t *ip)
 void
 xfs_ifunlock(xfs_inode_t *ip)
 {
-	ASSERT(issemalocked(&(ip->i_flock)));
+	ASSERT(valusema(&(ip->i_flock)) <= 0);
 	vsema(&(ip->i_flock));
 }

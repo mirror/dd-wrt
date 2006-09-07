@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2006 QLogic, Inc. All rights reserved.
  * Copyright (c) 2005, 2006 PathScale, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -158,20 +157,9 @@ struct ib_cq *ipath_create_cq(struct ib_device *ibdev, int entries,
 			      struct ib_ucontext *context,
 			      struct ib_udata *udata)
 {
-	struct ipath_ibdev *dev = to_idev(ibdev);
 	struct ipath_cq *cq;
 	struct ib_wc *wc;
 	struct ib_cq *ret;
-
-	if (entries > ib_ipath_max_cqes) {
-		ret = ERR_PTR(-EINVAL);
-		goto bail;
-	}
-
-	if (dev->n_cqs_allocated == ib_ipath_max_cqs) {
-		ret = ERR_PTR(-ENOMEM);
-		goto bail;
-	}
 
 	/*
 	 * Need to use vmalloc() if we want to support large #s of
@@ -208,8 +196,6 @@ struct ib_cq *ipath_create_cq(struct ib_device *ibdev, int entries,
 
 	ret = &cq->ibcq;
 
-	dev->n_cqs_allocated++;
-
 bail:
 	return ret;
 }
@@ -224,11 +210,9 @@ bail:
  */
 int ipath_destroy_cq(struct ib_cq *ibcq)
 {
-	struct ipath_ibdev *dev = to_idev(ibcq->device);
 	struct ipath_cq *cq = to_icq(ibcq);
 
 	tasklet_kill(&cq->comptask);
-	dev->n_cqs_allocated--;
 	vfree(cq->queue);
 	kfree(cq);
 

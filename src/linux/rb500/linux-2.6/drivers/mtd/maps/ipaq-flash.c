@@ -8,6 +8,7 @@
  * $Id: ipaq-flash.c,v 1.5 2005/11/07 11:14:27 gleixner Exp $
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

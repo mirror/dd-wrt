@@ -11,6 +11,7 @@
  * License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <asm/hardware.h>

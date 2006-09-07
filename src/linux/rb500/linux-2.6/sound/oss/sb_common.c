@@ -26,6 +26,7 @@
  * Chris Rankin <rankinc@zipworld.com.au>
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
@@ -677,7 +678,7 @@ int sb_dsp_init(struct address_info *hw_config, struct module *owner)
 		 *	will get shared PCI irq lines we must cope.
 		 */
 		 
-		int i=(devc->caps&SB_PCI_IRQ)?IRQF_SHARED:0;
+		int i=(devc->caps&SB_PCI_IRQ)?SA_SHIRQ:0;
 		
 		if (request_irq(hw_config->irq, sbintr, i, "soundblaster", devc) < 0)
 		{

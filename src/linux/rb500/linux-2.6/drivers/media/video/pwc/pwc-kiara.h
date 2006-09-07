@@ -1,5 +1,5 @@
 /* Linux driver for Philips webcam
-   (C) 2004-2006 Luc Saillard (luc@saillard.org)
+   (C) 2004      Luc Saillard (luc@saillard.org)
 
    NOTE: this version of pwc is an unofficial (modified) release of pwc & pcwx
    driver and thus may have bugs that are not present in the original version.
@@ -27,7 +27,7 @@
 #ifndef PWC_KIARA_H
 #define PWC_KIARA_H
 
-#include <media/pwc-ioctl.h>
+#include "pwc-ioctl.h"
 
 struct Kiara_table_entry
 {
@@ -37,8 +37,8 @@ struct Kiara_table_entry
 	unsigned char mode[12];		/* precomputed mode settings for cam */
 };
 
-extern const struct Kiara_table_entry Kiara_table[PSZ_MAX][6][4];
-extern const unsigned int KiaraRomTable[8][2][16][8];
+const extern struct Kiara_table_entry Kiara_table[PSZ_MAX][6][4];
+const extern unsigned int KiaraRomTable[8][2][16][8];
 
 #endif
 

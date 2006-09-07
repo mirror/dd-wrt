@@ -12,8 +12,6 @@
 #include <scsi/scsi.h>
 #include <scsi/scsi_cmnd.h>
 
-#define DM_MSG_PREFIX "multipath emc"
-
 struct emc_handler {
 	spinlock_t lock;
 
@@ -68,7 +66,7 @@ static struct bio *get_failover_bio(struct path *path, unsigned data_size)
 
 	bio = bio_alloc(GFP_ATOMIC, 1);
 	if (!bio) {
-		DMERR("get_failover_bio: bio_alloc() failed.");
+		DMERR("dm-emc: get_failover_bio: bio_alloc() failed.");
 		return NULL;
 	}
 
@@ -80,13 +78,13 @@ static struct bio *get_failover_bio(struct path *path, unsigned data_size)
 
 	page = alloc_page(GFP_ATOMIC);
 	if (!page) {
-		DMERR("get_failover_bio: alloc_page() failed.");
+		DMERR("dm-emc: get_failover_bio: alloc_page() failed.");
 		bio_put(bio);
 		return NULL;
 	}
 
 	if (bio_add_page(bio, page, data_size, 0) != data_size) {
-		DMERR("get_failover_bio: alloc_page() failed.");
+		DMERR("dm-emc: get_failover_bio: alloc_page() failed.");
 		__free_page(page);
 		bio_put(bio);
 		return NULL;
@@ -105,7 +103,7 @@ static struct request *get_failover_req(struct emc_handler *h,
 	/* FIXME: Figure out why it fails with GFP_ATOMIC. */
 	rq = blk_get_request(q, WRITE, __GFP_WAIT);
 	if (!rq) {
-		DMERR("get_failover_req: blk_get_request failed");
+		DMERR("dm-emc: get_failover_req: blk_get_request failed");
 		return NULL;
 	}
 
@@ -162,7 +160,7 @@ static struct request *emc_trespass_get(struct emc_handler *h,
 
 	bio = get_failover_bio(path, data_size);
 	if (!bio) {
-		DMERR("emc_trespass_get: no bio");
+		DMERR("dm-emc: emc_trespass_get: no bio");
 		return NULL;
 	}
 
@@ -175,7 +173,7 @@ static struct request *emc_trespass_get(struct emc_handler *h,
 	/* get request for block layer packet command */
 	rq = get_failover_req(h, bio, path);
 	if (!rq) {
-		DMERR("emc_trespass_get: no rq");
+		DMERR("dm-emc: emc_trespass_get: no rq");
 		free_bio(bio);
 		return NULL;
 	}
@@ -202,18 +200,18 @@ static void emc_pg_init(struct hw_handler *hwh, unsigned bypassed,
 	 * initial state passed into us and then get an update here.
 	 */
 	if (!q) {
-		DMINFO("emc_pg_init: no queue");
+		DMINFO("dm-emc: emc_pg_init: no queue");
 		goto fail_path;
 	}
 
 	/* FIXME: The request should be pre-allocated. */
 	rq = emc_trespass_get(hwh->context, path);
 	if (!rq) {
-		DMERR("emc_pg_init: no rq");
+		DMERR("dm-emc: emc_pg_init: no rq");
 		goto fail_path;
 	}
 
-	DMINFO("emc_pg_init: sending switch-over command");
+	DMINFO("dm-emc: emc_pg_init: sending switch-over command");
 	elv_add_request(q, rq, ELEVATOR_INSERT_FRONT, 1);
 	return;
 
@@ -243,18 +241,18 @@ static int emc_create(struct hw_handler *hwh, unsigned argc, char **argv)
 		hr = 0;
 		short_trespass = 0;
 	} else if (argc != 2) {
-		DMWARN("incorrect number of arguments");
+		DMWARN("dm-emc hwhandler: incorrect number of arguments");
 		return -EINVAL;
 	} else {
 		if ((sscanf(argv[0], "%u", &short_trespass) != 1)
 			|| (short_trespass > 1)) {
-			DMWARN("invalid trespass mode selected");
+			DMWARN("dm-emc: invalid trespass mode selected");
 			return -EINVAL;
 		}
 
 		if ((sscanf(argv[1], "%u", &hr) != 1)
 			|| (hr > 1)) {
-			DMWARN("invalid honor reservation flag selected");
+			DMWARN("dm-emc: invalid honor reservation flag selected");
 			return -EINVAL;
 		}
 	}
@@ -266,14 +264,14 @@ static int emc_create(struct hw_handler *hwh, unsigned argc, char **argv)
 	hwh->context = h;
 
 	if ((h->short_trespass = short_trespass))
-		DMWARN("short trespass command will be send");
+		DMWARN("dm-emc: short trespass command will be send");
 	else
-		DMWARN("long trespass command will be send");
+		DMWARN("dm-emc: long trespass command will be send");
 
 	if ((h->hr = hr))
-		DMWARN("honor reservation bit will be set");
+		DMWARN("dm-emc: honor reservation bit will be set");
 	else
-		DMWARN("honor reservation bit will not be set (default)");
+		DMWARN("dm-emc: honor reservation bit will not be set (default)");
 
 	return 0;
 }
@@ -338,9 +336,9 @@ static int __init dm_emc_init(void)
 	int r = dm_register_hw_handler(&emc_hwh);
 
 	if (r < 0)
-		DMERR("register failed %d", r);
+		DMERR("emc: register failed %d", r);
 
-	DMINFO("version 0.0.3 loaded");
+	DMINFO("dm-emc version 0.0.3 loaded");
 
 	return r;
 }
@@ -350,7 +348,7 @@ static void __exit dm_emc_exit(void)
 	int r = dm_unregister_hw_handler(&emc_hwh);
 
 	if (r < 0)
-		DMERR("unregister failed %d", r);
+		DMERR("emc: unregister failed %d", r);
 }
 
 module_init(dm_emc_init);

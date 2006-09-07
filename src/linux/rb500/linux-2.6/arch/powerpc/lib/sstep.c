@@ -10,6 +10,7 @@
  */
 #include <linux/kernel.h>
 #include <linux/ptrace.h>
+#include <linux/config.h>
 #include <asm/sstep.h>
 #include <asm/processor.h>
 

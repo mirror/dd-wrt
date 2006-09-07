@@ -2,6 +2,7 @@
  * Some macros to handle stack frames in assembly.
  */ 
 
+#include <linux/config.h>
 
 #define R15 0
 #define R14 8

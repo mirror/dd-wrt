@@ -59,7 +59,7 @@ static const struct file_operations jffs_file_operations;
 static struct inode_operations jffs_file_inode_operations;
 static const struct file_operations jffs_dir_operations;
 static struct inode_operations jffs_dir_inode_operations;
-static const struct address_space_operations jffs_address_operations;
+static struct address_space_operations jffs_address_operations;
 
 kmem_cache_t     *node_cache = NULL;
 kmem_cache_t     *fm_cache = NULL;
@@ -377,9 +377,9 @@ jffs_new_inode(const struct inode * dir, struct jffs_raw_inode *raw_inode,
 
 /* Get statistics of the file system.  */
 static int
-jffs_statfs(struct dentry *dentry, struct kstatfs *buf)
+jffs_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct jffs_control *c = (struct jffs_control *) dentry->d_sb->s_fs_info;
+	struct jffs_control *c = (struct jffs_control *) sb->s_fs_info;
 	struct jffs_fmcontrol *fmc;
 
 	lock_kernel();
@@ -1614,7 +1614,7 @@ jffs_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
 } /* jffs_ioctl()  */
 
 
-static const struct address_space_operations jffs_address_operations = {
+static struct address_space_operations jffs_address_operations = {
 	.readpage	= jffs_readpage,
 	.prepare_write	= jffs_prepare_write,
 	.commit_write	= jffs_commit_write,
@@ -1785,11 +1785,10 @@ static struct super_operations jffs_ops =
 	.remount_fs	= jffs_remount,
 };
 
-static int jffs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *jffs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, jffs_fill_super,
-			   mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, jffs_fill_super);
 }
 
 static struct file_system_type jffs_fs_type = {

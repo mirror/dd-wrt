@@ -38,6 +38,7 @@
 
 #if defined(__linux__)
 #if defined(__KERNEL__)
+#include <linux/config.h>
 #endif
 #include <asm/ioctl.h>		/* For _IO* macros */
 #define DRM_IOCTL_NR(n)		_IOC_NR(n)

@@ -22,11 +22,10 @@
 #include <linux/jiffies.h>
 #include <linux/cpuset.h>
 
-int sysctl_panic_on_oom;
 /* #define DEBUG */
 
 /**
- * badness - calculate a numeric value for how bad this task has been
+ * oom_badness - calculate a numeric value for how bad this task has been
  * @p: task struct of which task we should calculate
  * @uptime: current uptime in seconds
  *
@@ -201,7 +200,7 @@ static struct task_struct *select_bad_process(unsigned long *ppoints)
 			continue;
 
 		/*
-		 * This is in the process of releasing memory so wait for it
+		 * This is in the process of releasing memory so for wait it
 		 * to finish before killing some other task by mistake.
 		 */
 		releasing = test_tsk_thread_flag(p, TIF_MEMDIE) ||
@@ -225,7 +224,7 @@ static struct task_struct *select_bad_process(unsigned long *ppoints)
  * CAP_SYS_RAW_IO set, send SIGTERM instead (but it's unlikely that
  * we select a process with CAP_SYS_RAW_IO set).
  */
-static void __oom_kill_task(struct task_struct *p, const char *message)
+static void __oom_kill_task(task_t *p, const char *message)
 {
 	if (p->pid == 1) {
 		WARN_ON(1);
@@ -255,10 +254,10 @@ static void __oom_kill_task(struct task_struct *p, const char *message)
 	force_sig(SIGKILL, p);
 }
 
-static int oom_kill_task(struct task_struct *p, const char *message)
+static int oom_kill_task(task_t *p, const char *message)
 {
 	struct mm_struct *mm;
-	struct task_struct *g, *q;
+	task_t * g, * q;
 
 	mm = p->mm;
 
@@ -307,7 +306,7 @@ static int oom_kill_process(struct task_struct *p, unsigned long points,
 }
 
 /**
- * out_of_memory - kill the "best" process when we run out of memory
+ * oom_kill - kill the "best" process when we run out of memory
  *
  * If we run out of memory, we have the choice between either
  * killing a random task (bad), letting the system crash (worse)
@@ -316,7 +315,7 @@ static int oom_kill_process(struct task_struct *p, unsigned long points,
  */
 void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask, int order)
 {
-	struct task_struct *p;
+	task_t *p;
 	unsigned long points = 0;
 
 	if (printk_ratelimit()) {
@@ -345,8 +344,6 @@ void out_of_memory(struct zonelist *zonelist, gfp_t gfp_mask, int order)
 		break;
 
 	case CONSTRAINT_NONE:
-		if (sysctl_panic_on_oom)
-			panic("out of memory. panic_on_oom is selected\n");
 retry:
 		/*
 		 * Rambo mode: Shoot down a process and hope it solves whatever

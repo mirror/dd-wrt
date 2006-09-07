@@ -316,8 +316,6 @@ void snd_opl3_interrupt(struct snd_hwdep * hw)
 	}
 }
 
-EXPORT_SYMBOL(snd_opl3_interrupt);
-
 /*
 
  */
@@ -371,8 +369,6 @@ int snd_opl3_new(struct snd_card *card,
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_opl3_new);
-
 int snd_opl3_init(struct snd_opl3 *opl3)
 {
 	if (! opl3->command) {
@@ -396,8 +392,6 @@ int snd_opl3_init(struct snd_opl3 *opl3)
 	}
 	return 0;
 }
-
-EXPORT_SYMBOL(snd_opl3_init);
 
 int snd_opl3_create(struct snd_card *card,
 		    unsigned long l_port,
@@ -457,8 +451,6 @@ int snd_opl3_create(struct snd_card *card,
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_opl3_create);
-
 int snd_opl3_timer_new(struct snd_opl3 * opl3, int timer1_dev, int timer2_dev)
 {
 	int err;
@@ -475,8 +467,6 @@ int snd_opl3_timer_new(struct snd_opl3 * opl3, int timer1_dev, int timer2_dev)
 	}
 	return 0;
 }
-
-EXPORT_SYMBOL(snd_opl3_timer_new);
 
 int snd_opl3_hwdep_new(struct snd_opl3 * opl3,
 		       int device, int seq_device,
@@ -536,7 +526,16 @@ int snd_opl3_hwdep_new(struct snd_opl3 * opl3,
 	return 0;
 }
 
+EXPORT_SYMBOL(snd_opl3_interrupt);
+EXPORT_SYMBOL(snd_opl3_new);
+EXPORT_SYMBOL(snd_opl3_init);
+EXPORT_SYMBOL(snd_opl3_create);
+EXPORT_SYMBOL(snd_opl3_timer_new);
 EXPORT_SYMBOL(snd_opl3_hwdep_new);
+
+/* opl3_synth.c */
+EXPORT_SYMBOL(snd_opl3_regmap);
+EXPORT_SYMBOL(snd_opl3_reset);
 
 /*
  *  INIT part

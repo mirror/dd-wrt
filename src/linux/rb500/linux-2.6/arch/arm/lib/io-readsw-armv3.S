@@ -28,7 +28,7 @@
 		strb	r3, [r1], #1
 
 		subs	r2, r2, #1
-		moveq	pc, lr
+		RETINSTR(moveq, pc, lr)
 
 ENTRY(__raw_readsw)
 		teq	r2, #0		@ do we have to check for the zero len?
@@ -69,7 +69,7 @@ ENTRY(__raw_readsw)
 		bpl	.Linsw_8_lp
 
 		tst	r2, #7
-		ldmeqfd	sp!, {r4, r5, r6, pc}
+		LOADREGS(eqfd, sp!, {r4, r5, r6, pc})
 
 .Lno_insw_8:	tst	r2, #4
 		beq	.Lno_insw_4
@@ -102,6 +102,6 @@ ENTRY(__raw_readsw)
 		movne	r3, r3, lsr #8
 		strneb	r3, [r1]
 
-		ldmfd	sp!, {r4, r5, r6, pc}
+		LOADREGS(fd, sp!, {r4, r5, r6, pc})
 
 

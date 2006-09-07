@@ -20,8 +20,6 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/cfi.h>
 #include <linux/reboot.h>
-#include <linux/kdev_t.h>
-#include <linux/root_dev.h>
 #include <asm/io.h>
 
 /****************************************************************************/
@@ -190,7 +188,7 @@ int nettel_eraseconfig(void)
 		set_current_state(TASK_INTERRUPTIBLE);
 		add_wait_queue(&wait_q, &wait);
 
-		ret = mtd->erase(mtd, &nettel_erase);
+		ret = MTD_ERASE(mtd, &nettel_erase);
 		if (ret) {
 			set_current_state(TASK_RUNNING);
 			remove_wait_queue(&wait_q, &wait);

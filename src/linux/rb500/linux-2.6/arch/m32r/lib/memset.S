@@ -14,6 +14,7 @@
  */
 /* $Id$ */
 
+#include <linux/config.h>
 
 	.text
 	.global	memset

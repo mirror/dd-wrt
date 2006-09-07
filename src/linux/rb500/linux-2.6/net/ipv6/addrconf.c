@@ -40,6 +40,7 @@
  *						status etc.
  */
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/socket.h>
@@ -1780,9 +1781,6 @@ ok:
 			} else {
 				read_unlock_bh(&in6_dev->lock);
 			}
-#else
-			if (hiscore.rule < 7)
-				hiscore.rule++;
 #endif
 			in6_ifa_put(ifp);
 			addrconf_verify(0);
@@ -2876,11 +2874,6 @@ inet6_rtm_newaddr(struct sk_buff *skb, struct nlmsghdr *nlh, void *arg)
 		RTA_SPACE(16) /* IFA_ADDRESS */ + \
 		RTA_SPACE(sizeof(struct ifa_cacheinfo)) /* CACHEINFO */
 
-/* Maximum length of ifa_cacheinfo attributes */
-#define INET6_IFADDR_RTA_SPACE \
-		RTA_SPACE(16) /* IFA_ADDRESS */ + \
-		RTA_SPACE(sizeof(struct ifa_cacheinfo)) /* CACHEINFO */
-
 static int inet6_fill_ifaddr(struct sk_buff *skb, struct inet6_ifaddr *ifa,
 			     u32 pid, u32 seq, int event, unsigned int flags)
 {
@@ -3174,17 +3167,6 @@ static void inline ipv6_store_devconf(struct ipv6_devconf *cnf,
 		RTA_SPACE(sizeof(struct ifla_cacheinfo)) /* CACHEINFO */ + \
 		RTA_SPACE(sizeof(__s32[DEVCONF_MAX])) /* CONF */
 
-/* Maximum length of ifinfomsg attributes */
-#define INET6_IFINFO_RTA_SPACE \
-		RTA_SPACE(IFNAMSIZ) /* IFNAME */ + \
-		RTA_SPACE(MAX_ADDR_LEN) /* ADDRESS */ +	\
-		RTA_SPACE(sizeof(u32)) /* MTU */ + \
-		RTA_SPACE(sizeof(int)) /* LINK */ + \
-		RTA_SPACE(0) /* PROTINFO */ + \
-		RTA_SPACE(sizeof(u32)) /* FLAGS */ + \
-		RTA_SPACE(sizeof(struct ifla_cacheinfo)) /* CACHEINFO */ + \
-		RTA_SPACE(sizeof(__s32[DEVCONF_MAX])) /* CONF */
-
 static int inet6_fill_ifinfo(struct sk_buff *skb, struct inet6_dev *idev, 
 			     u32 pid, u32 seq, int event, unsigned int flags)
 {
@@ -3293,11 +3275,6 @@ void inet6_ifinfo_notify(int event, struct inet6_dev *idev)
 	NETLINK_CB(skb).dst_group = RTNLGRP_IPV6_IFINFO;
 	netlink_broadcast(rtnl, skb, 0, RTNLGRP_IPV6_IFINFO, GFP_ATOMIC);
 }
-
-/* Maximum length of prefix_cacheinfo attributes */
-#define INET6_PREFIX_RTA_SPACE \
-		RTA_SPACE(sizeof(((struct prefix_info *)NULL)->prefix)) /* ADDRESS */ + \
-		RTA_SPACE(sizeof(struct prefix_cacheinfo)) /* CACHEINFO */
 
 /* Maximum length of prefix_cacheinfo attributes */
 #define INET6_PREFIX_RTA_SPACE \

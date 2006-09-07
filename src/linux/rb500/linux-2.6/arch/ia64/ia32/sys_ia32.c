@@ -14,6 +14,7 @@
  * environment.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/syscalls.h>
 #include <linux/sysctl.h>

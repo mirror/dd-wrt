@@ -164,9 +164,7 @@ static int snd_opl4_seq_new_device(struct snd_seq_device *dev)
 						      SNDRV_SEQ_PORT_CAP_WRITE |
 						      SNDRV_SEQ_PORT_CAP_SUBS_WRITE,
 						      SNDRV_SEQ_PORT_TYPE_MIDI_GENERIC |
-						      SNDRV_SEQ_PORT_TYPE_MIDI_GM |
-						      SNDRV_SEQ_PORT_TYPE_HARDWARE |
-						      SNDRV_SEQ_PORT_TYPE_SYNTHESIZER,
+						      SNDRV_SEQ_PORT_TYPE_MIDI_GM,
 						      16, 24,
 						      "OPL4 Wavetable Port");
 	if (opl4->chset->port < 0) {

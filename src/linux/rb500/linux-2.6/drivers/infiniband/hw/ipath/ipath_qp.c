@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2006 QLogic, Inc. All rights reserved.
  * Copyright (c) 2005, 2006 PathScale, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -35,7 +34,7 @@
 #include <linux/vmalloc.h>
 
 #include "ipath_verbs.h"
-#include "ipath_common.h"
+#include "ips_common.h"
 
 #define BITS_PER_PAGE		(PAGE_SIZE*BITS_PER_BYTE)
 #define BITS_PER_PAGE_MASK	(BITS_PER_PAGE-1)
@@ -333,11 +332,10 @@ static void ipath_reset_qp(struct ipath_qp *qp)
 	qp->remote_qpn = 0;
 	qp->qkey = 0;
 	qp->qp_access_flags = 0;
-	clear_bit(IPATH_S_BUSY, &qp->s_flags);
 	qp->s_hdrwords = 0;
 	qp->s_psn = 0;
 	qp->r_psn = 0;
-	qp->r_msn = 0;
+	atomic_set(&qp->msn, 0);
 	if (qp->ibqp.qp_type == IB_QPT_RC) {
 		qp->s_state = IB_OPCODE_RC_SEND_LAST;
 		qp->r_state = IB_OPCODE_RC_SEND_LAST;
@@ -346,8 +344,7 @@ static void ipath_reset_qp(struct ipath_qp *qp)
 		qp->r_state = IB_OPCODE_UC_SEND_LAST;
 	}
 	qp->s_ack_state = IB_OPCODE_RC_ACKNOWLEDGE;
-	qp->r_ack_state = IB_OPCODE_RC_ACKNOWLEDGE;
-	qp->r_nak_state = 0;
+	qp->s_nak_state = 0;
 	qp->s_rnr_timeout = 0;
 	qp->s_head = 0;
 	qp->s_tail = 0;
@@ -365,10 +362,10 @@ static void ipath_reset_qp(struct ipath_qp *qp)
  * @qp: the QP to put into an error state
  *
  * Flushes both send and receive work queues.
- * QP s_lock should be held and interrupts disabled.
+ * QP r_rq.lock and s_lock should be held.
  */
 
-void ipath_error_qp(struct ipath_qp *qp)
+static void ipath_error_qp(struct ipath_qp *qp)
 {
 	struct ipath_ibdev *dev = to_idev(qp->ibqp.device);
 	struct ib_wc wc;
@@ -411,14 +408,12 @@ void ipath_error_qp(struct ipath_qp *qp)
 	qp->s_ack_state = IB_OPCODE_RC_ACKNOWLEDGE;
 
 	wc.opcode = IB_WC_RECV;
-	spin_lock(&qp->r_rq.lock);
 	while (qp->r_rq.tail != qp->r_rq.head) {
 		wc.wr_id = get_rwqe_ptr(&qp->r_rq, qp->r_rq.tail)->wr_id;
 		if (++qp->r_rq.tail >= qp->r_rq.size)
 			qp->r_rq.tail = 0;
 		ipath_cq_enter(to_icq(qp->ibqp.recv_cq), &wc, 1);
 	}
-	spin_unlock(&qp->r_rq.lock);
 }
 
 /**
@@ -438,7 +433,8 @@ int ipath_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 	unsigned long flags;
 	int ret;
 
-	spin_lock_irqsave(&qp->s_lock, flags);
+	spin_lock_irqsave(&qp->r_rq.lock, flags);
+	spin_lock(&qp->s_lock);
 
 	cur_state = attr_mask & IB_QP_CUR_STATE ?
 		attr->cur_qp_state : qp->state;
@@ -450,7 +446,7 @@ int ipath_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 
 	if (attr_mask & IB_QP_AV)
 		if (attr->ah_attr.dlid == 0 ||
-		    attr->ah_attr.dlid >= IPATH_MULTICAST_LID_BASE)
+		    attr->ah_attr.dlid >= IPS_MULTICAST_LID_BASE)
 			goto inval;
 
 	if (attr_mask & IB_QP_PKEY_INDEX)
@@ -509,19 +505,34 @@ int ipath_modify_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 	}
 
 	if (attr_mask & IB_QP_MIN_RNR_TIMER)
-		qp->r_min_rnr_timer = attr->min_rnr_timer;
+		qp->s_min_rnr_timer = attr->min_rnr_timer;
 
 	if (attr_mask & IB_QP_QKEY)
 		qp->qkey = attr->qkey;
 
-	qp->state = new_state;
-	spin_unlock_irqrestore(&qp->s_lock, flags);
+	if (attr_mask & IB_QP_PKEY_INDEX)
+		qp->s_pkey_index = attr->pkey_index;
 
+	qp->state = new_state;
+	spin_unlock(&qp->s_lock);
+	spin_unlock_irqrestore(&qp->r_rq.lock, flags);
+
+	/*
+	 * If QP1 changed to the RTS state, try to move to the link to INIT
+	 * even if it was ACTIVE so the SM will reinitialize the SMA's
+	 * state.
+	 */
+	if (qp->ibqp.qp_num == 1 && new_state == IB_QPS_RTS) {
+		struct ipath_ibdev *dev = to_idev(ibqp->device);
+
+		ipath_layer_set_linkstate(dev->dd, IPATH_IB_LINKDOWN);
+	}
 	ret = 0;
 	goto bail;
 
 inval:
-	spin_unlock_irqrestore(&qp->s_lock, flags);
+	spin_unlock(&qp->s_lock);
+	spin_unlock_irqrestore(&qp->r_rq.lock, flags);
 	ret = -EINVAL;
 
 bail:
@@ -555,7 +566,7 @@ int ipath_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
 	attr->sq_draining = 0;
 	attr->max_rd_atomic = 1;
 	attr->max_dest_rd_atomic = 1;
-	attr->min_rnr_timer = qp->r_min_rnr_timer;
+	attr->min_rnr_timer = qp->s_min_rnr_timer;
 	attr->port_num = 1;
 	attr->timeout = 0;
 	attr->retry_cnt = qp->s_retry_cnt;
@@ -582,17 +593,21 @@ int ipath_query_qp(struct ib_qp *ibqp, struct ib_qp_attr *attr,
  * @qp: the queue pair to compute the AETH for
  *
  * Returns the AETH.
+ *
+ * The QP s_lock should be held.
  */
 __be32 ipath_compute_aeth(struct ipath_qp *qp)
 {
-	u32 aeth = qp->r_msn & IPATH_MSN_MASK;
+	u32 aeth = atomic_read(&qp->msn) & IPS_MSN_MASK;
 
-	if (qp->ibqp.srq) {
+	if (qp->s_nak_state) {
+		aeth |= qp->s_nak_state << IPS_AETH_CREDIT_SHIFT;
+	} else if (qp->ibqp.srq) {
 		/*
 		 * Shared receive queues don't generate credits.
 		 * Set the credit field to the invalid value.
 		 */
-		aeth |= IPATH_AETH_CREDIT_INVAL << IPATH_AETH_CREDIT_SHIFT;
+		aeth |= IPS_AETH_CREDIT_INVAL << IPS_AETH_CREDIT_SHIFT;
 	} else {
 		u32 min, max, x;
 		u32 credits;
@@ -622,7 +637,7 @@ __be32 ipath_compute_aeth(struct ipath_qp *qp)
 			else
 				min = x;
 		}
-		aeth |= x << IPATH_AETH_CREDIT_SHIFT;
+		aeth |= x << IPS_AETH_CREDIT_SHIFT;
 	}
 	return cpu_to_be32(aeth);
 }
@@ -648,19 +663,9 @@ struct ib_qp *ipath_create_qp(struct ib_pd *ibpd,
 	size_t sz;
 	struct ib_qp *ret;
 
-	if (init_attr->cap.max_send_sge > ib_ipath_max_sges ||
-	    init_attr->cap.max_recv_sge > ib_ipath_max_sges ||
-	    init_attr->cap.max_send_wr > ib_ipath_max_qp_wrs ||
-	    init_attr->cap.max_recv_wr > ib_ipath_max_qp_wrs) {
+	if (init_attr->cap.max_send_sge > 255 ||
+	    init_attr->cap.max_recv_sge > 255) {
 		ret = ERR_PTR(-ENOMEM);
-		goto bail;
-	}
-
-	if (init_attr->cap.max_send_sge +
-	    init_attr->cap.max_recv_sge +
-	    init_attr->cap.max_send_wr +
-	    init_attr->cap.max_recv_wr == 0) {
-		ret = ERR_PTR(-EINVAL);
 		goto bail;
 	}
 
@@ -681,26 +686,18 @@ struct ib_qp *ipath_create_qp(struct ib_pd *ibpd,
 	case IB_QPT_GSI:
 		qp = kmalloc(sizeof(*qp), GFP_KERNEL);
 		if (!qp) {
-			vfree(swq);
 			ret = ERR_PTR(-ENOMEM);
 			goto bail;
 		}
-		if (init_attr->srq) {
-			qp->r_rq.size = 0;
-			qp->r_rq.max_sge = 0;
-			qp->r_rq.wq = NULL;
-		} else {
-			qp->r_rq.size = init_attr->cap.max_recv_wr + 1;
-			qp->r_rq.max_sge = init_attr->cap.max_recv_sge;
-			sz = (sizeof(struct ipath_sge) * qp->r_rq.max_sge) +
-				sizeof(struct ipath_rwqe);
-			qp->r_rq.wq = vmalloc(qp->r_rq.size * sz);
-			if (!qp->r_rq.wq) {
-				kfree(qp);
-				vfree(swq);
-				ret = ERR_PTR(-ENOMEM);
-				goto bail;
-			}
+		qp->r_rq.size = init_attr->cap.max_recv_wr + 1;
+		sz = sizeof(struct ipath_sge) *
+			init_attr->cap.max_recv_sge +
+			sizeof(struct ipath_rwqe);
+		qp->r_rq.wq = vmalloc(qp->r_rq.size * sz);
+		if (!qp->r_rq.wq) {
+			kfree(qp);
+			ret = ERR_PTR(-ENOMEM);
+			goto bail;
 		}
 
 		/*
@@ -711,7 +708,9 @@ struct ib_qp *ipath_create_qp(struct ib_pd *ibpd,
 		spin_lock_init(&qp->r_rq.lock);
 		atomic_set(&qp->refcount, 0);
 		init_waitqueue_head(&qp->wait);
-		tasklet_init(&qp->s_task, ipath_do_ruc_send,
+		tasklet_init(&qp->s_task,
+			     init_attr->qp_type == IB_QPT_RC ?
+			     ipath_do_rc_send : ipath_do_uc_send,
 			     (unsigned long)qp);
 		INIT_LIST_HEAD(&qp->piowait);
 		INIT_LIST_HEAD(&qp->timerwait);
@@ -719,6 +718,7 @@ struct ib_qp *ipath_create_qp(struct ib_pd *ibpd,
 		qp->s_wq = swq;
 		qp->s_size = init_attr->cap.max_send_wr + 1;
 		qp->s_max_sge = init_attr->cap.max_send_sge;
+		qp->r_rq.max_sge = init_attr->cap.max_recv_sge;
 		qp->s_flags = init_attr->sq_sig_type == IB_SIGNAL_REQ_WR ?
 			1 << IPATH_S_SIGNAL_REQ_WR : 0;
 		dev = to_idev(ibpd->device);
@@ -888,18 +888,18 @@ void ipath_sqerror_qp(struct ipath_qp *qp, struct ib_wc *wc)
  */
 void ipath_get_credit(struct ipath_qp *qp, u32 aeth)
 {
-	u32 credit = (aeth >> IPATH_AETH_CREDIT_SHIFT) & IPATH_AETH_CREDIT_MASK;
+	u32 credit = (aeth >> IPS_AETH_CREDIT_SHIFT) & IPS_AETH_CREDIT_MASK;
 
 	/*
 	 * If the credit is invalid, we can send
 	 * as many packets as we like.  Otherwise, we have to
 	 * honor the credit field.
 	 */
-	if (credit == IPATH_AETH_CREDIT_INVAL)
+	if (credit == IPS_AETH_CREDIT_INVAL) {
 		qp->s_lsn = (u32) -1;
-	else if (qp->s_lsn != (u32) -1) {
+	} else if (qp->s_lsn != (u32) -1) {
 		/* Compute new LSN (i.e., MSN + credit) */
-		credit = (aeth + credit_table[credit]) & IPATH_MSN_MASK;
+		credit = (aeth + credit_table[credit]) & IPS_MSN_MASK;
 		if (ipath_cmp24(credit, qp->s_lsn) > 0)
 			qp->s_lsn = credit;
 	}

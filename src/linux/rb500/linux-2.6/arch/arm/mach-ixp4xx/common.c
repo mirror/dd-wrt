@@ -13,6 +13,7 @@
  * warranty of any kind, whether express or implied.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/init.h>
@@ -275,7 +276,7 @@ static irqreturn_t ixp4xx_timer_interrupt(int irq, void *dev_id, struct pt_regs 
 	/*
 	 * Catch up with the real idea of time
 	 */
-	while ((signed long)(*IXP4XX_OSTS - last_jiffy_time) >= LATCH) {
+	while ((*IXP4XX_OSTS - last_jiffy_time) > LATCH) {
 		timer_tick(regs);
 		last_jiffy_time += LATCH;
 	}
@@ -287,7 +288,7 @@ static irqreturn_t ixp4xx_timer_interrupt(int irq, void *dev_id, struct pt_regs 
 
 static struct irqaction ixp4xx_timer_irq = {
 	.name		= "IXP4xx Timer Tick",
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= SA_INTERRUPT | SA_TIMER,
 	.handler	= ixp4xx_timer_interrupt,
 };
 

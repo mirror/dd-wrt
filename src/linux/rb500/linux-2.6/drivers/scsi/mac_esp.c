@@ -43,6 +43,9 @@
 
 /* #define DEBUG_MAC_ESP */
 
+#define mac_turnon_irq(x)	mac_enable_irq(x)
+#define mac_turnoff_irq(x)	mac_disable_irq(x)
+
 extern void esp_handle(struct NCR_ESP *esp);
 extern void mac_esp_intr(int irq, void *dev_id, struct pt_regs *pregs);
 
@@ -636,13 +639,13 @@ static void dma_init_write(struct NCR_ESP * esp, char * vaddress, int length)
 
 static void dma_ints_off(struct NCR_ESP * esp)
 {
-	disable_irq(esp->irq);
+	mac_turnoff_irq(esp->irq);
 }
 
 
 static void dma_ints_on(struct NCR_ESP * esp)
 {
-	enable_irq(esp->irq);
+	mac_turnon_irq(esp->irq);
 }
 
 /*

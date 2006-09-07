@@ -18,6 +18,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/netdevice.h>
 #include <linux/module.h>
 #include <linux/pci.h>

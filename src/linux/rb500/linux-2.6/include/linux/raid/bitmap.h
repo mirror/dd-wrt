@@ -140,7 +140,6 @@ typedef __u16 bitmap_counter_t;
 enum bitmap_state {
 	BITMAP_ACTIVE = 0x001, /* the bitmap is in use */
 	BITMAP_STALE  = 0x002,  /* the bitmap file is out of date or had -EIO */
-	BITMAP_WRITE_ERROR = 0x004, /* A write error has occurred */
 	BITMAP_HOSTENDIAN = 0x8000,
 };
 
@@ -245,9 +244,15 @@ struct bitmap {
 	unsigned long daemon_lastrun; /* jiffies of last run */
 	unsigned long daemon_sleep; /* how many seconds between updates? */
 
-	atomic_t pending_writes; /* pending writes to the bitmap file */
+	/*
+	 * bitmap_writeback_daemon waits for file-pages that have been written,
+	 * as there is no way to get a call-back when a page write completes.
+	 */
+	mdk_thread_t *writeback_daemon;
+	spinlock_t write_lock;
 	wait_queue_head_t write_wait;
-
+	struct list_head complete_pages;
+	mempool_t *write_pool;
 };
 
 /* the bitmap API */

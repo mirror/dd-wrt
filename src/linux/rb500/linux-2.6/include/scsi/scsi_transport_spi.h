@@ -20,6 +20,7 @@
 #ifndef SCSI_TRANSPORT_SPI_H
 #define SCSI_TRANSPORT_SPI_H
 
+#include <linux/config.h>
 #include <linux/transport_class.h>
 #include <linux/mutex.h>
 

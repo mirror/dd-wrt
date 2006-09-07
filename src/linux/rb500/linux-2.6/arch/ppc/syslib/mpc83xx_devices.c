@@ -186,7 +186,7 @@ struct platform_device ppc_sys_platform_devices[] = {
 		},
 	},
 	[MPC83xx_USB2_DR] = {
-		.name = "fsl-ehci",
+		.name = "fsl-usb2-dr",
 		.id	= 1,
 		.num_resources	 = 2,
 		.resource = (struct resource[]) {
@@ -203,8 +203,8 @@ struct platform_device ppc_sys_platform_devices[] = {
 		},
 	},
 	[MPC83xx_USB2_MPH] = {
-		.name = "fsl-ehci",
-		.id	= 2,
+		.name = "fsl-usb2-mph",
+		.id	= 1,
 		.num_resources	 = 2,
 		.resource = (struct resource[]) {
 			{

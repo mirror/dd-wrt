@@ -18,6 +18,7 @@
  */
 
 #ifdef CONFIG_DEBUG_SPINLOCK
+
 #define __raw_spin_is_locked(x)		((x)->slock == 0)
 
 static inline void __raw_spin_lock(raw_spinlock_t *lock)

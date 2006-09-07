@@ -15,6 +15,7 @@
 #ifndef _OPSPUT_OPSPUT_LCD_H
 #define _OPSPUT_OPSPUT_LCD_H
 
+#include <linux/config.h>
 
 #ifndef __ASSEMBLY__
 /*

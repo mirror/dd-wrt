@@ -62,6 +62,7 @@
  *	-	Move to libata once it grows up
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/module.h>
 #include <linux/pci.h>
@@ -649,8 +650,6 @@ static void __devinit init_hwif_it821x(ide_hwif_t *hwif)
 		goto fallback;
 	}
 	ide_set_hwifdata(hwif, idev);
-
-	hwif->atapi_dma = 1;
 
 	pci_read_config_byte(hwif->pci_dev, 0x50, &conf);
 	if(conf & 1) {

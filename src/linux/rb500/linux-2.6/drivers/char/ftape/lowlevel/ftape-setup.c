@@ -25,6 +25,7 @@
  *      "ftape" for Linux.
  */
 
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/errno.h>
 #include <linux/mm.h>

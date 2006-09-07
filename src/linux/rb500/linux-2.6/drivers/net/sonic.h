@@ -22,6 +22,7 @@
 #ifndef SONIC_H
 #define SONIC_H
 
+#include <linux/config.h>
 
 /*
  * SONIC register offsets

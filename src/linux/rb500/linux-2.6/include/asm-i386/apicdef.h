@@ -121,6 +121,7 @@
  */
 #define u32 unsigned int
 
+#define lapic ((volatile struct local_apic *)APIC_BASE)
 
 struct local_apic {
 

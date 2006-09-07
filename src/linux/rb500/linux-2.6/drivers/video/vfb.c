@@ -398,6 +398,12 @@ static int __init vfb_setup(char *options)
      *  Initialisation
      */
 
+static void vfb_platform_release(struct device *device)
+{
+	// This is called when the reference count goes to zero.
+	dev_err(device, "This driver is broken, please bug the authors so they will fix it.\n");
+}
+
 static int __init vfb_probe(struct platform_device *dev)
 {
 	struct fb_info *info;
@@ -476,7 +482,13 @@ static struct platform_driver vfb_driver = {
 	},
 };
 
-static struct platform_device *vfb_device;
+static struct platform_device vfb_device = {
+	.name	= "vfb",
+	.id	= 0,
+	.dev	= {
+		.release = vfb_platform_release,
+	}
+};
 
 static int __init vfb_init(void)
 {
@@ -496,19 +508,10 @@ static int __init vfb_init(void)
 	ret = platform_driver_register(&vfb_driver);
 
 	if (!ret) {
-		vfb_device = platform_device_alloc("vfb", 0);
-
-		if (vfb_device)
-			ret = platform_device_add(vfb_device);
-		else
-			ret = -ENOMEM;
-
-		if (ret) {
-			platform_device_put(vfb_device);
+		ret = platform_device_register(&vfb_device);
+		if (ret)
 			platform_driver_unregister(&vfb_driver);
-		}
 	}
-
 	return ret;
 }
 
@@ -517,7 +520,7 @@ module_init(vfb_init);
 #ifdef MODULE
 static void __exit vfb_exit(void)
 {
-	platform_device_unregister(vfb_device);
+	platform_device_unregister(&vfb_device);
 	platform_driver_unregister(&vfb_driver);
 }
 

@@ -17,6 +17,7 @@
  *
  * Reset the LASAT board.
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/pm.h>
 

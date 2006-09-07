@@ -41,6 +41,20 @@
 #define LPFC_ABORT_WAIT  2
 
 
+static inline void
+lpfc_block_requests(struct lpfc_hba * phba)
+{
+	down(&phba->hba_can_block);
+	scsi_block_requests(phba->host);
+}
+
+static inline void
+lpfc_unblock_requests(struct lpfc_hba * phba)
+{
+	scsi_unblock_requests(phba->host);
+	up(&phba->hba_can_block);
+}
+
 /*
  * This routine allocates a scsi buffer, which contains all the necessary
  * information needed to initiate a SCSI I/O.  The non-DMAable buffer region
@@ -845,6 +859,7 @@ lpfc_abort_handler(struct scsi_cmnd *cmnd)
 	unsigned int loop_count = 0;
 	int ret = SUCCESS;
 
+	lpfc_block_requests(phba);
 	spin_lock_irq(shost->host_lock);
 
 	lpfc_cmd = (struct lpfc_scsi_buf *)cmnd->host_scribble;
@@ -930,6 +945,7 @@ lpfc_abort_handler(struct scsi_cmnd *cmnd)
 			cmnd->device->lun, cmnd->serial_number);
 
 	spin_unlock_irq(shost->host_lock);
+	lpfc_unblock_requests(phba);
 
 	return ret;
 }
@@ -947,6 +963,7 @@ lpfc_reset_lun_handler(struct scsi_cmnd *cmnd)
 	int ret = FAILED;
 	int cnt, loopcnt;
 
+	lpfc_block_requests(phba);
 	spin_lock_irq(shost->host_lock);
 	/*
 	 * If target is not in a MAPPED state, delay the reset until
@@ -1048,6 +1065,7 @@ out_free_scsi_buf:
 
 out:
 	spin_unlock_irq(shost->host_lock);
+	lpfc_unblock_requests(phba);
 	return ret;
 }
 
@@ -1062,6 +1080,7 @@ lpfc_reset_bus_handler(struct scsi_cmnd *cmnd)
 	int cnt, loopcnt;
 	struct lpfc_scsi_buf * lpfc_cmd;
 
+	lpfc_block_requests(phba);
 	spin_lock_irq(shost->host_lock);
 
 	lpfc_cmd = lpfc_get_scsi_buf(phba);
@@ -1144,6 +1163,7 @@ lpfc_reset_bus_handler(struct scsi_cmnd *cmnd)
 			phba->brd_no, ret);
 out:
 	spin_unlock_irq(shost->host_lock);
+	lpfc_unblock_requests(phba);
 	return ret;
 }
 

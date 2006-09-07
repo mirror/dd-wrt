@@ -3,6 +3,7 @@
  * Copyright (C) 2006 David S. Miller <davem@davemloft.net>
  */
 
+#include <linux/config.h>
 
 #include <asm/tsb.h>
 #include <asm/hypervisor.h>

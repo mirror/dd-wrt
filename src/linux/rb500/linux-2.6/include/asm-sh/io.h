@@ -23,6 +23,7 @@
  *  inb   by default expands to _inb, but the machine specific code may
  *        define it to __inb if it chooses.
  */
+#include <linux/config.h>
 #include <asm/cache.h>
 #include <asm/system.h>
 #include <asm/addrspace.h>

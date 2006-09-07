@@ -25,7 +25,6 @@
 
 #include <linux/i2c.h>
 #include <linux/videodev.h>
-#include <media/v4l2-common.h>
 
 #include <media/tuner.h>
 

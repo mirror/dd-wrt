@@ -52,7 +52,6 @@
 #include <linux/init.h>
 #include <linux/smp_lock.h>
 #include <linux/delay.h>
-#include <linux/config.h>
 #include <linux/kthread.h>
 
 #include "cx88.h"
@@ -138,28 +137,21 @@ static void set_audio_finish(struct cx88_core *core, u32 ctl)
 {
 	u32 volume;
 
-#ifndef CONFIG_VIDEO_CX88_ALSA
+#ifndef USING_CX88_ALSA
 	/* restart dma; This avoids buzz in NICAM and is good in others  */
 	cx88_stop_audio_dma(core);
 #endif
 	cx_write(AUD_RATE_THRES_DMD, 0x000000C0);
-#ifndef CONFIG_VIDEO_CX88_ALSA
+#ifndef USING_CX88_ALSA
 	cx88_start_audio_dma(core);
 #endif
 
 	if (cx88_boards[core->board].blackbird) {
 		/* sets sound input from external adc */
-		switch (core->board) {
-		case CX88_BOARD_HAUPPAUGE_ROSLYN:
-		case CX88_BOARD_KWORLD_MCE200_DELUXE:
-		case CX88_BOARD_KWORLD_HARDWARE_MPEG_TV_XPERT:
-		case CX88_BOARD_PIXELVIEW_PLAYTV_P7000:
-		case CX88_BOARD_ASUS_PVR_416:
+		if (core->board == CX88_BOARD_HAUPPAUGE_ROSLYN)
 			cx_clear(AUD_CTL, EN_I2SIN_ENABLE);
-			break;
-		default:
+		else
 			cx_set(AUD_CTL, EN_I2SIN_ENABLE);
-		}
 
 		cx_write(AUD_I2SINPUTCNTL, 4);
 		cx_write(AUD_BAUDRATE, 1);
@@ -726,7 +718,7 @@ static void set_audio_standard_FM(struct cx88_core *core,
 
 /* ----------------------------------------------------------- */
 
-static int cx88_detect_nicam(struct cx88_core *core)
+int cx88_detect_nicam(struct cx88_core *core)
 {
 	int i, j = 0;
 

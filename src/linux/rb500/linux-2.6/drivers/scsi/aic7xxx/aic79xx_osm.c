@@ -484,6 +484,7 @@ ahd_linux_target_alloc(struct scsi_target *starget)
 	struct seeprom_config *sc = ahd->seep_config;
 	unsigned long flags;
 	struct scsi_target **ahd_targp = ahd_linux_target_in_softc(starget);
+	struct ahd_linux_target *targ = scsi_transport_target_data(starget);
 	struct ahd_devinfo devinfo;
 	struct ahd_initiator_tinfo *tinfo;
 	struct ahd_tmode_tstate *tstate;
@@ -494,6 +495,7 @@ ahd_linux_target_alloc(struct scsi_target *starget)
 	BUG_ON(*ahd_targp != NULL);
 
 	*ahd_targp = starget;
+	memset(targ, 0, sizeof(*targ));
 
 	if (sc) {
 		int flags = sc->device_flags[starget->id];
@@ -549,10 +551,14 @@ ahd_linux_slave_alloc(struct scsi_device *sdev)
 {
 	struct	ahd_softc *ahd =
 		*((struct ahd_softc **)sdev->host->hostdata);
+	struct scsi_target *starget = sdev->sdev_target;
+	struct ahd_linux_target *targ = scsi_transport_target_data(starget);
 	struct ahd_linux_device *dev;
 
 	if (bootverbose)
 		printf("%s: Slave Alloc %d\n", ahd_name(ahd), sdev->id);
+
+	BUG_ON(targ->sdev[sdev->lun] != NULL);
 
 	dev = scsi_transport_device_data(sdev);
 	memset(dev, 0, sizeof(*dev));
@@ -570,6 +576,8 @@ ahd_linux_slave_alloc(struct scsi_device *sdev)
 	 */
 	dev->maxtags = 0;
 	
+	targ->sdev[sdev->lun] = sdev;
+
 	return (0);
 }
 
@@ -589,6 +597,23 @@ ahd_linux_slave_configure(struct scsi_device *sdev)
 		spi_dv_device(sdev);
 
 	return 0;
+}
+
+static void
+ahd_linux_slave_destroy(struct scsi_device *sdev)
+{
+	struct	ahd_softc *ahd;
+	struct	ahd_linux_device *dev = scsi_transport_device_data(sdev);
+	struct  ahd_linux_target *targ = scsi_transport_target_data(sdev->sdev_target);
+
+	ahd = *((struct ahd_softc **)sdev->host->hostdata);
+	if (bootverbose)
+		printf("%s: Slave Destroy %d\n", ahd_name(ahd), sdev->id);
+
+	BUG_ON(dev->active);
+
+	targ->sdev[sdev->lun] = NULL;
+
 }
 
 #if defined(__i386__)
@@ -797,6 +822,7 @@ struct scsi_host_template aic79xx_driver_template = {
 	.use_clustering		= ENABLE_CLUSTERING,
 	.slave_alloc		= ahd_linux_slave_alloc,
 	.slave_configure	= ahd_linux_slave_configure,
+	.slave_destroy		= ahd_linux_slave_destroy,
 	.target_alloc		= ahd_linux_target_alloc,
 	.target_destroy		= ahd_linux_target_destroy,
 };
@@ -890,7 +916,7 @@ ahd_linux_setup_iocell_info(u_long index, int instance, int targ, int32_t value)
 {
 
 	if ((instance >= 0)
-	 && (instance < ARRAY_SIZE(aic79xx_iocell_info))) {
+	 && (instance < NUM_ELEMENTS(aic79xx_iocell_info))) {
 		uint8_t *iocell_info;
 
 		iocell_info = (uint8_t*)&aic79xx_iocell_info[instance];
@@ -908,7 +934,7 @@ ahd_linux_setup_tag_info_global(char *p)
 	tags = simple_strtoul(p + 1, NULL, 0) & 0xff;
 	printf("Setting Global Tags= %d\n", tags);
 
-	for (i = 0; i < ARRAY_SIZE(aic79xx_tag_info); i++) {
+	for (i = 0; i < NUM_ELEMENTS(aic79xx_tag_info); i++) {
 		for (j = 0; j < AHD_NUM_TARGETS; j++) {
 			aic79xx_tag_info[i].tag_commands[j] = tags;
 		}
@@ -920,7 +946,7 @@ ahd_linux_setup_tag_info(u_long arg, int instance, int targ, int32_t value)
 {
 
 	if ((instance >= 0) && (targ >= 0)
-	 && (instance < ARRAY_SIZE(aic79xx_tag_info))
+	 && (instance < NUM_ELEMENTS(aic79xx_tag_info))
 	 && (targ < AHD_NUM_TARGETS)) {
 		aic79xx_tag_info[instance].tag_commands[targ] = value & 0x1FF;
 		if (bootverbose)
@@ -1046,21 +1072,21 @@ aic79xx_setup(char *s)
 	end = strchr(s, '\0');
 
 	/*
-	 * XXX ia64 gcc isn't smart enough to know that ARRAY_SIZE
+	 * XXX ia64 gcc isn't smart enough to know that NUM_ELEMENTS
 	 * will never be 0 in this case.
-	 */
-	n = 0;
+	 */      
+	n = 0;  
 
 	while ((p = strsep(&s, ",.")) != NULL) {
 		if (*p == '\0')
 			continue;
-		for (i = 0; i < ARRAY_SIZE(options); i++) {
+		for (i = 0; i < NUM_ELEMENTS(options); i++) {
 
 			n = strlen(options[i].name);
 			if (strncmp(options[i].name, p, n) == 0)
 				break;
 		}
-		if (i == ARRAY_SIZE(options))
+		if (i == NUM_ELEMENTS(options))
 			continue;
 
 		if (strncmp(p, "global_tag_depth", n) == 0) {
@@ -1223,13 +1249,20 @@ void
 ahd_platform_free(struct ahd_softc *ahd)
 {
 	struct scsi_target *starget;
-	int i;
+	int i, j;
 
 	if (ahd->platform_data != NULL) {
 		/* destroy all of the device and target objects */
 		for (i = 0; i < AHD_NUM_TARGETS; i++) {
 			starget = ahd->platform_data->starget[i];
 			if (starget != NULL) {
+				for (j = 0; j < AHD_NUM_LUNS; j++) {
+					struct ahd_linux_target *targ =
+						scsi_transport_target_data(starget);
+					if (targ->sdev[j] == NULL)
+						continue;
+					targ->sdev[j] = NULL;
+				}
 				ahd->platform_data->starget[i] = NULL;
 			}
 		}
@@ -1261,7 +1294,7 @@ ahd_platform_init(struct ahd_softc *ahd)
 	/*
 	 * Lookup and commit any modified IO Cell options.
 	 */
-	if (ahd->unit < ARRAY_SIZE(aic79xx_iocell_info)) {
+	if (ahd->unit < NUM_ELEMENTS(aic79xx_iocell_info)) {
 		struct ahd_linux_iocell_opts *iocell_opts;
 
 		iocell_opts = &aic79xx_iocell_info[ahd->unit];
@@ -1285,13 +1318,20 @@ ahd_platform_freeze_devq(struct ahd_softc *ahd, struct scb *scb)
 }
 
 void
-ahd_platform_set_tags(struct ahd_softc *ahd, struct scsi_device *sdev,
-		      struct ahd_devinfo *devinfo, ahd_queue_alg alg)
+ahd_platform_set_tags(struct ahd_softc *ahd, struct ahd_devinfo *devinfo,
+		      ahd_queue_alg alg)
 {
+	struct scsi_target *starget;
+	struct ahd_linux_target *targ;
 	struct ahd_linux_device *dev;
+	struct scsi_device *sdev;
 	int was_queuing;
 	int now_queuing;
 
+	starget = ahd->platform_data->starget[devinfo->target];
+	targ = scsi_transport_target_data(starget);
+	BUG_ON(targ == NULL);
+	sdev = targ->sdev[devinfo->lun];
 	if (sdev == NULL)
 		return;
 
@@ -1386,7 +1426,7 @@ ahd_linux_user_tagdepth(struct ahd_softc *ahd, struct ahd_devinfo *devinfo)
 
 	tags = 0;
 	if ((ahd->user_discenable & devinfo->target_mask) != 0) {
-		if (ahd->unit >= ARRAY_SIZE(aic79xx_tag_info)) {
+		if (ahd->unit >= NUM_ELEMENTS(aic79xx_tag_info)) {
 
 			if (warned_user == 0) {
 				printf(KERN_WARNING
@@ -1427,15 +1467,11 @@ ahd_linux_device_queue_depth(struct scsi_device *sdev)
 	tags = ahd_linux_user_tagdepth(ahd, &devinfo);
 	if (tags != 0 && sdev->tagged_supported != 0) {
 
-		ahd_platform_set_tags(ahd, sdev, &devinfo, AHD_QUEUE_TAGGED);
-		ahd_send_async(ahd, devinfo.channel, devinfo.target,
-			       devinfo.lun, AC_TRANSFER_NEG);
+		ahd_set_tags(ahd, &devinfo, AHD_QUEUE_TAGGED);
 		ahd_print_devinfo(ahd, &devinfo);
 		printf("Tagged Queuing enabled.  Depth %d\n", tags);
 	} else {
-		ahd_platform_set_tags(ahd, sdev, &devinfo, AHD_QUEUE_NONE);
-		ahd_send_async(ahd, devinfo.channel, devinfo.target,
-			       devinfo.lun, AC_TRANSFER_NEG);
+		ahd_set_tags(ahd, &devinfo, AHD_QUEUE_NONE);
 	}
 }
 
@@ -1593,7 +1629,7 @@ ahd_linux_isr(int irq, void *dev_id, struct pt_regs * regs)
 
 void
 ahd_send_async(struct ahd_softc *ahd, char channel,
-	       u_int target, u_int lun, ac_code code)
+	       u_int target, u_int lun, ac_code code, void *arg)
 {
 	switch (code) {
 	case AC_TRANSFER_NEG:
@@ -1920,7 +1956,7 @@ ahd_linux_handle_scsi_status(struct ahd_softc *ahd,
 			}
 			ahd_set_transaction_status(scb, CAM_REQUEUE_REQ);
 			ahd_set_scsi_status(scb, SCSI_STATUS_OK);
-			ahd_platform_set_tags(ahd, sdev, &devinfo,
+			ahd_platform_set_tags(ahd, &devinfo,
 				     (dev->flags & AHD_DEV_Q_BASIC)
 				   ? AHD_QUEUE_BASIC : AHD_QUEUE_TAGGED);
 			break;
@@ -1930,7 +1966,7 @@ ahd_linux_handle_scsi_status(struct ahd_softc *ahd,
 		 * as if the target returned BUSY SCSI status.
 		 */
 		dev->openings = 1;
-		ahd_platform_set_tags(ahd, sdev, &devinfo,
+		ahd_platform_set_tags(ahd, &devinfo,
 			     (dev->flags & AHD_DEV_Q_BASIC)
 			   ? AHD_QUEUE_BASIC : AHD_QUEUE_TAGGED);
 		ahd_set_scsi_status(scb, SCSI_STATUS_BUSY);
@@ -2742,6 +2778,8 @@ ahd_linux_init(void)
 	if (!ahd_linux_transport_template)
 		return -ENODEV;
 
+	scsi_transport_reserve_target(ahd_linux_transport_template,
+				      sizeof(struct ahd_linux_target));
 	scsi_transport_reserve_device(ahd_linux_transport_template,
 				      sizeof(struct ahd_linux_device));
 

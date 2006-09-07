@@ -8,6 +8,7 @@
  * This file initializes the trap entry points
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/sched.h>
 #include <linux/tty.h>

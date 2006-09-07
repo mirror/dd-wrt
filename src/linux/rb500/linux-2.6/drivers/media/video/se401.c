@@ -27,6 +27,7 @@
 
 static const char version[] = "0.24";
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/vmalloc.h>

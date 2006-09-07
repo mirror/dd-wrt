@@ -1,6 +1,7 @@
 #ifndef _ASM_MSGBUF_H
 #define _ASM_MSGBUF_H
 
+#include <linux/config.h>
 
 /*
  * The msqid64_ds structure for the MIPS architecture.

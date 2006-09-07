@@ -19,6 +19,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/isapnp.h>
 #include <linux/proc_fs.h>

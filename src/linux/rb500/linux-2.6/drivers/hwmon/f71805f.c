@@ -99,6 +99,10 @@ superio_exit(int base)
 #define ADDR_REG_OFFSET		0
 #define DATA_REG_OFFSET		1
 
+static struct resource f71805f_resource __initdata = {
+	.flags	= IORESOURCE_IO,
+};
+
 /*
  * Registers
  */
@@ -778,11 +782,6 @@ static struct platform_driver f71805f_driver = {
 
 static int __init f71805f_device_add(unsigned short address)
 {
-	struct resource res = {
-		.start	= address,
-		.end	= address + REGION_LENGTH - 1,
-		.flags	= IORESOURCE_IO,
-	};
 	int err;
 
 	pdev = platform_device_alloc(DRVNAME, address);
@@ -792,8 +791,10 @@ static int __init f71805f_device_add(unsigned short address)
 		goto exit;
 	}
 
-	res.name = pdev->name;
-	err = platform_device_add_resources(pdev, &res, 1);
+	f71805f_resource.start = address;
+	f71805f_resource.end = address + REGION_LENGTH - 1;
+	f71805f_resource.name = pdev->name;
+	err = platform_device_add_resources(pdev, &f71805f_resource, 1);
 	if (err) {
 		printk(KERN_ERR DRVNAME ": Device resource addition failed "
 		       "(%d)\n", err);

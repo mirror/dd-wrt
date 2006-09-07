@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2003, 04 Ralf Baechle (ralf@linux-mips.org)
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
@@ -50,11 +51,11 @@ unsigned long PCIBIOS_MIN_MEM	= 0;
  */
 void
 pcibios_align_resource(void *data, struct resource *res,
-		       resource_size_t size, resource_size_t align)
+		       unsigned long size, unsigned long align)
 {
 	struct pci_dev *dev = data;
 	struct pci_controller *hose = dev->sysdata;
-	resource_size_t start = res->start;
+	unsigned long start = res->start;
 
 	if (res->flags & IORESOURCE_IO) {
 		/* Make sure we start at our min on all hoses */
@@ -75,6 +76,11 @@ pcibios_align_resource(void *data, struct resource *res,
 	}
 
 	res->start = start;
+}
+
+struct pci_controller * __init alloc_pci_controller(void)
+{
+	return alloc_bootmem(sizeof(struct pci_controller));
 }
 
 void __init register_pci_controller(struct pci_controller *hose)

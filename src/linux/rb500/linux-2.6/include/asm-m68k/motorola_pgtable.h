@@ -1,6 +1,7 @@
 #ifndef _MOTOROLA_PGTABLE_H
 #define _MOTOROLA_PGTABLE_H
 
+#include <linux/config.h>
 
 /*
  * Definitions for MMU descriptors

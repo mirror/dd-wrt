@@ -11,6 +11,7 @@
 #ifndef _XTENSA_SYSTEM_H
 #define _XTENSA_SYSTEM_H
 
+#include <linux/config.h>
 #include <linux/stringify.h>
 
 #include <asm/processor.h>

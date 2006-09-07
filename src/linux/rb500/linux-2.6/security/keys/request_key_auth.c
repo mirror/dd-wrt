@@ -20,7 +20,6 @@
 
 static int request_key_auth_instantiate(struct key *, const void *, size_t);
 static void request_key_auth_describe(const struct key *, struct seq_file *);
-static void request_key_auth_revoke(struct key *);
 static void request_key_auth_destroy(struct key *);
 static long request_key_auth_read(const struct key *, char __user *, size_t);
 
@@ -32,7 +31,6 @@ struct key_type key_type_request_key_auth = {
 	.def_datalen	= sizeof(struct request_key_auth),
 	.instantiate	= request_key_auth_instantiate,
 	.describe	= request_key_auth_describe,
-	.revoke		= request_key_auth_revoke,
 	.destroy	= request_key_auth_destroy,
 	.read		= request_key_auth_read,
 };
@@ -95,24 +93,6 @@ static long request_key_auth_read(const struct key *key,
 
 /*****************************************************************************/
 /*
- * handle revocation of an authorisation token key
- * - called with the key sem write-locked
- */
-static void request_key_auth_revoke(struct key *key)
-{
-	struct request_key_auth *rka = key->payload.data;
-
-	kenter("{%d}", key->serial);
-
-	if (rka->context) {
-		put_task_struct(rka->context);
-		rka->context = NULL;
-	}
-
-} /* end request_key_auth_revoke() */
-
-/*****************************************************************************/
-/*
  * destroy an instantiation authorisation token key
  */
 static void request_key_auth_destroy(struct key *key)
@@ -120,11 +100,6 @@ static void request_key_auth_destroy(struct key *key)
 	struct request_key_auth *rka = key->payload.data;
 
 	kenter("{%d}", key->serial);
-
-	if (rka->context) {
-		put_task_struct(rka->context);
-		rka->context = NULL;
-	}
 
 	key_put(rka->target_key);
 	kfree(rka);
@@ -156,26 +131,14 @@ struct key *request_key_auth_new(struct key *target, const char *callout_info)
 	 * another process */
 	if (current->request_key_auth) {
 		/* it is - use that instantiation context here too */
-		down_read(&current->request_key_auth->sem);
-
-		/* if the auth key has been revoked, then the key we're
-		 * servicing is already instantiated */
-		if (test_bit(KEY_FLAG_REVOKED,
-			     &current->request_key_auth->flags))
-			goto auth_key_revoked;
-
 		irka = current->request_key_auth->payload.data;
 		rka->context = irka->context;
 		rka->pid = irka->pid;
-		get_task_struct(rka->context);
-
-		up_read(&current->request_key_auth->sem);
 	}
 	else {
 		/* it isn't - use this process as the context */
 		rka->context = current;
 		rka->pid = current->pid;
-		get_task_struct(rka->context);
 	}
 
 	rka->target_key = key_get(target);
@@ -185,9 +148,9 @@ struct key *request_key_auth_new(struct key *target, const char *callout_info)
 	sprintf(desc, "%x", target->serial);
 
 	authkey = key_alloc(&key_type_request_key_auth, desc,
-			    current->fsuid, current->fsgid, current,
+			    current->fsuid, current->fsgid,
 			    KEY_POS_VIEW | KEY_POS_READ | KEY_POS_SEARCH |
-			    KEY_USR_VIEW, KEY_ALLOC_NOT_IN_QUOTA);
+			    KEY_USR_VIEW, 1);
 	if (IS_ERR(authkey)) {
 		ret = PTR_ERR(authkey);
 		goto error_alloc;
@@ -198,14 +161,8 @@ struct key *request_key_auth_new(struct key *target, const char *callout_info)
 	if (ret < 0)
 		goto error_inst;
 
-	kleave(" = {%d}", authkey->serial);
+	kleave(" = {%d})", authkey->serial);
 	return authkey;
-
-auth_key_revoked:
-	up_read(&current->request_key_auth->sem);
-	kfree(rka);
-	kleave("= -EKEYREVOKED");
-	return ERR_PTR(-EKEYREVOKED);
 
 error_inst:
 	key_revoke(authkey);

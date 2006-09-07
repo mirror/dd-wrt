@@ -24,12 +24,7 @@ struct inode_operations jffs2_symlink_inode_operations =
 {
 	.readlink =	generic_readlink,
 	.follow_link =	jffs2_follow_link,
-	.permission =	jffs2_permission,
-	.setattr =	jffs2_setattr,
-	.setxattr =	jffs2_setxattr,
-	.getxattr =	jffs2_getxattr,
-	.listxattr =	jffs2_listxattr,
-	.removexattr =	jffs2_removexattr
+	.setattr =	jffs2_setattr
 };
 
 static void *jffs2_follow_link(struct dentry *dentry, struct nameidata *nd)

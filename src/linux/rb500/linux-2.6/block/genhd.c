@@ -2,6 +2,7 @@
  *  gendisk handling
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/genhd.h>
@@ -16,7 +17,8 @@
 #include <linux/buffer_head.h>
 #include <linux/mutex.h>
 
-struct subsystem block_subsys;
+static struct subsystem block_subsys;
+
 static DEFINE_MUTEX(block_subsys_lock);
 
 /*
@@ -509,7 +511,9 @@ static struct kset_uevent_ops block_uevent_ops = {
 	.uevent		= block_uevent,
 };
 
-decl_subsys(block, &ktype_block, &block_uevent_ops);
+/* declare block_subsys. */
+static decl_subsys(block, &ktype_block, &block_uevent_ops);
+
 
 /*
  * aggregate disk stat collector.  Uses the same stats that the sysfs

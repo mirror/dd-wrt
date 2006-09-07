@@ -63,7 +63,7 @@
 
 struct ref_table tipc_ref_table = { NULL };
 
-static DEFINE_RWLOCK(ref_table_lock);
+static rwlock_t ref_table_lock = RW_LOCK_UNLOCKED;
 
 /**
  * tipc_ref_table_init - create reference table for objects
@@ -87,7 +87,7 @@ int tipc_ref_table_init(u32 requested_size, u32 start)
 	index_mask = sz - 1;
 	for (i = sz - 1; i >= 0; i--) {
 		table[i].object = NULL;
-		spin_lock_init(&table[i].lock);
+		table[i].lock = SPIN_LOCK_UNLOCKED;
 		table[i].data.next_plus_upper = (start & ~index_mask) + i - 1;
 	}
 	tipc_ref_table.entries = table;
@@ -127,14 +127,7 @@ u32 tipc_ref_acquire(void *object, spinlock_t **lock)
 	u32 next_plus_upper;
 	u32 reference = 0;
 
-	if (!object) {
-		err("Attempt to acquire reference to non-existent object\n");
-		return 0;
-	}
-	if (!tipc_ref_table.entries) {
-		err("Reference table not found during acquisition attempt\n");
-		return 0;
-	}
+	assert(tipc_ref_table.entries && object);
 
 	write_lock_bh(&ref_table_lock);
 	if (tipc_ref_table.first_free) {
@@ -169,28 +162,15 @@ void tipc_ref_discard(u32 ref)
 	u32 index; 
 	u32 index_mask;
 
-	if (!ref) {
-		err("Attempt to discard reference 0\n");
-		return;
-	}
-	if (!tipc_ref_table.entries) {
-		err("Reference table not found during discard attempt\n");
-		return;
-	}
+	assert(tipc_ref_table.entries);
+	assert(ref != 0);
 
 	write_lock_bh(&ref_table_lock);
 	index_mask = tipc_ref_table.index_mask;
 	index = ref & index_mask;
 	entry = &(tipc_ref_table.entries[index]);
-
-	if (!entry->object) {
-		err("Attempt to discard reference to non-existent object\n");
-		goto exit;
-	}
-	if (entry->data.reference != ref) {
-		err("Attempt to discard non-existent reference\n");
-		goto exit;
-	}
+	assert(entry->object != 0);
+	assert(entry->data.reference == ref);
 
 	/* mark entry as unused */
 	entry->object = NULL;
@@ -204,7 +184,6 @@ void tipc_ref_discard(u32 ref)
 
 	/* increment upper bits of entry to invalidate subsequent references */
 	entry->data.next_plus_upper = (ref & ~index_mask) + (index_mask + 1);
-exit:
 	write_unlock_bh(&ref_table_lock);
 }
 

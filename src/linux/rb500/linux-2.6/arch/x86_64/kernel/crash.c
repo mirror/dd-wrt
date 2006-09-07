@@ -111,14 +111,14 @@ static int crash_nmi_callback(struct pt_regs *regs, int cpu)
 	atomic_dec(&waiting_for_crash_ipi);
 	/* Assume hlt works */
 	for(;;)
-		halt();
+		asm("hlt");
 
 	return 1;
 }
 
 static void smp_send_nmi_allbutself(void)
 {
-	send_IPI_allbutself(NMI_VECTOR);
+	send_IPI_allbutself(APIC_DM_NMI);
 }
 
 /*
@@ -161,7 +161,7 @@ void machine_crash_shutdown(struct pt_regs *regs)
 {
 	/*
 	 * This function is only called after the system
-	 * has panicked or is otherwise in a critical state.
+	 * has paniced or is otherwise in a critical state.
 	 * The minimum amount of code to allow a kexec'd kernel
 	 * to run successfully needs to happen here.
 	 *

@@ -6,6 +6,7 @@
 #ifndef NET_ATM_RESOURCES_H
 #define NET_ATM_RESOURCES_H
 
+#include <linux/config.h>
 #include <linux/atmdev.h>
 #include <linux/mutex.h>
 
@@ -42,6 +43,4 @@ static inline void atm_proc_dev_deregister(struct atm_dev *dev)
 
 #endif /* CONFIG_PROC_FS */
 
-int atm_register_sysfs(struct atm_dev *adev);
-void atm_unregister_sysfs(struct atm_dev *adev);
 #endif

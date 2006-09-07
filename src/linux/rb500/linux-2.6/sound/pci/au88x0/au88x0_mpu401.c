@@ -70,6 +70,9 @@ static int __devinit snd_vortex_midi(vortex_t * vortex)
 	temp |= (MIDI_CLOCK_DIV << 8) | ((mode >> 24) & 0xff) << 4;
 	hwwrite(vortex->mmio, VORTEX_CTRL2, temp);
 	hwwrite(vortex->mmio, VORTEX_MIDI_CMD, MPU401_RESET);
+	/* Set some kind of mode */
+	if (mode)
+		hwwrite(vortex->mmio, VORTEX_MIDI_CMD, MPU401_ENTER_UART);
 
 	/* Check if anything is OK. */
 	temp = hwread(vortex->mmio, VORTEX_MIDI_DATA);
@@ -95,8 +98,7 @@ static int __devinit snd_vortex_midi(vortex_t * vortex)
 	port = (unsigned long)(vortex->mmio + VORTEX_MIDI_DATA);
 	if ((temp =
 	     snd_mpu401_uart_new(vortex->card, 0, MPU401_HW_AUREAL, port,
-				 MPU401_INFO_INTEGRATED | MPU401_INFO_MMIO,
-				 0, 0, &rmidi)) != 0) {
+				 1, 0, 0, &rmidi)) != 0) {
 		hwwrite(vortex->mmio, VORTEX_CTRL,
 			(hwread(vortex->mmio, VORTEX_CTRL) &
 			 ~CTRL_MIDI_PORT) & ~CTRL_MIDI_EN);
@@ -105,9 +107,6 @@ static int __devinit snd_vortex_midi(vortex_t * vortex)
 	mpu = rmidi->private_data;
 	mpu->cport = (unsigned long)(vortex->mmio + VORTEX_MIDI_CMD);
 #endif
-	/* Overwrite MIDI name */
-	snprintf(rmidi->name, sizeof(rmidi->name), "%s MIDI %d", CARD_NAME_SHORT , vortex->card->number);
-
 	vortex->rmidi = rmidi;
 	return 0;
 }

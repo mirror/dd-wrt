@@ -33,6 +33,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <linux/config.h>
 #include <linux/highmem.h>
 #include "drmP.h"
 

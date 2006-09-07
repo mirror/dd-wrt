@@ -1,6 +1,7 @@
 #ifndef _SPARC64_CACHEFLUSH_H
 #define _SPARC64_CACHEFLUSH_H
 
+#include <linux/config.h>
 #include <asm/page.h>
 
 #ifndef __ASSEMBLY__

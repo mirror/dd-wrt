@@ -17,6 +17,7 @@
 #define _ASM_POWERPC_SMP_H
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <linux/kernel.h>

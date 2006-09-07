@@ -1,6 +1,7 @@
 #ifndef _M68KNOMMU_PARAM_H
 #define _M68KNOMMU_PARAM_H
 
+#include <linux/config.h>
 
 #if defined(CONFIG_CLEOPATRA)
 #define	HZ 1000

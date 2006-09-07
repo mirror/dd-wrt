@@ -11,6 +11,7 @@
  *	based upon discusions in irc://irc.openprojects.net/#kernelnewbies
  */
 
+#include <linux/config.h>
 
 struct pt_regs;
 struct tty_struct;

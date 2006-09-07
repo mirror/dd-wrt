@@ -210,3 +210,4 @@ int fat_sync_bhs(struct buffer_head **bhs, int nr_bhs)
 	return err;
 }
 
+EXPORT_SYMBOL_GPL(fat_sync_bhs);

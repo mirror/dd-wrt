@@ -9,6 +9,7 @@
  *	published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/inet_diag.h>

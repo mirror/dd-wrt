@@ -57,8 +57,8 @@
 static struct sk_buff *msg_queue_head = NULL;
 static struct sk_buff *msg_queue_tail = NULL;
 
-DEFINE_SPINLOCK(tipc_port_list_lock);
-static DEFINE_SPINLOCK(queue_lock);
+spinlock_t tipc_port_list_lock = SPIN_LOCK_UNLOCKED;
+static spinlock_t queue_lock = SPIN_LOCK_UNLOCKED;
 
 static LIST_HEAD(ports);
 static void port_handle_node_down(unsigned long ref);
@@ -168,6 +168,7 @@ void tipc_port_recv_mcast(struct sk_buff *buf, struct port_list *dp)
 	struct port_list *item = dp;
 	int cnt = 0;
 
+	assert(buf);
 	msg = buf_msg(buf);
 
 	/* Create destination port list, if one wasn't supplied */
@@ -195,7 +196,7 @@ void tipc_port_recv_mcast(struct sk_buff *buf, struct port_list *dp)
 			struct sk_buff *b = skb_clone(buf, GFP_ATOMIC);
 
 			if (b == NULL) {
-				warn("Unable to deliver multicast message(s)\n");
+				warn("Buffer allocation failure\n");
 				msg_dbg(msg, "LOST:");
 				goto exit;
 			}
@@ -227,14 +228,14 @@ u32 tipc_createport_raw(void *usr_handle,
 	u32 ref;
 
 	p_ptr = kmalloc(sizeof(*p_ptr), GFP_ATOMIC);
-	if (!p_ptr) {
-		warn("Port creation failed, no memory\n");
+	if (p_ptr == NULL) {
+		warn("Memory squeeze; failed to create port\n");
 		return 0;
 	}
 	memset(p_ptr, 0, sizeof(*p_ptr));
 	ref = tipc_ref_acquire(p_ptr, &p_ptr->publ.lock);
 	if (!ref) {
-		warn("Port creation failed, reference table exhausted\n");
+		warn("Reference Table Exhausted\n");
 		kfree(p_ptr);
 		return 0;
 	}
@@ -809,20 +810,18 @@ static void port_dispatcher_sigh(void *dummy)
 		void *usr_handle;
 		int connected;
 		int published;
-		u32 message_type;
 
 		struct sk_buff *next = buf->next;
 		struct tipc_msg *msg = buf_msg(buf);
 		u32 dref = msg_destport(msg);
 		
-		message_type = msg_type(msg);
-		if (message_type > TIPC_DIRECT_MSG)
-			goto reject;	/* Unsupported message type */
-
 		p_ptr = tipc_port_lock(dref);
-		if (!p_ptr)
-			goto reject;	/* Port deleted while msg in queue */
-
+		if (!p_ptr) {
+			/* Port deleted while msg in queue */
+			tipc_reject_msg(buf, TIPC_ERR_NO_PORT);
+			buf = next;
+			continue;
+		}
 		orig.ref = msg_origport(msg);
 		orig.node = msg_orignode(msg);
 		up_ptr = p_ptr->user_port;
@@ -833,7 +832,7 @@ static void port_dispatcher_sigh(void *dummy)
 		if (unlikely(msg_errcode(msg)))
 			goto err;
 
-		switch (message_type) {
+		switch (msg_type(msg)) {
 		
 		case TIPC_CONN_MSG:{
 				tipc_conn_msg_event cb = up_ptr->conn_msg_cb;
@@ -875,7 +874,6 @@ static void port_dispatcher_sigh(void *dummy)
 				   &orig);
 				break;
 			}
-		case TIPC_MCAST_MSG:
 		case TIPC_NAMED_MSG:{
 				tipc_named_msg_event cb = up_ptr->named_msg_cb;
 
@@ -888,8 +886,7 @@ static void port_dispatcher_sigh(void *dummy)
 					goto reject;
 				dseq.type =  msg_nametype(msg);
 				dseq.lower = msg_nameinst(msg);
-				dseq.upper = (message_type == TIPC_NAMED_MSG)
-					? dseq.lower : msg_nameupper(msg);
+				dseq.upper = dseq.lower;
 				skb_pull(buf, msg_hdr_sz(msg));
 				cb(usr_handle, dref, &buf, msg_data(msg), 
 				   msg_data_sz(msg), msg_importance(msg),
@@ -902,7 +899,7 @@ static void port_dispatcher_sigh(void *dummy)
 		buf = next;
 		continue;
 err:
-		switch (message_type) {
+		switch (msg_type(msg)) {
 		
 		case TIPC_CONN_MSG:{
 				tipc_conn_shutdown_event cb = 
@@ -934,7 +931,6 @@ err:
 				   msg_data_sz(msg), msg_errcode(msg), &orig);
 				break;
 			}
-		case TIPC_MCAST_MSG:
 		case TIPC_NAMED_MSG:{
 				tipc_named_msg_err_event cb = 
 					up_ptr->named_err_cb;
@@ -944,8 +940,7 @@ err:
 					break;
 				dseq.type =  msg_nametype(msg);
 				dseq.lower = msg_nameinst(msg);
-				dseq.upper = (message_type == TIPC_NAMED_MSG)
-					? dseq.lower : msg_nameupper(msg);
+				dseq.upper = dseq.lower;
 				skb_pull(buf, msg_hdr_sz(msg));
 				cb(usr_handle, dref, &buf, msg_data(msg), 
 				   msg_data_sz(msg), msg_errcode(msg), &dseq);
@@ -1059,8 +1054,7 @@ int tipc_createport(u32 user_ref,
 	u32 ref;
 
 	up_ptr = (struct user_port *)kmalloc(sizeof(*up_ptr), GFP_ATOMIC);
-	if (!up_ptr) {
-		warn("Port creation failed, no memory\n");
+	if (up_ptr == NULL) {
 		return -ENOMEM;
 	}
 	ref = tipc_createport_raw(NULL, port_dispatcher, port_wakeup, importance);
@@ -1171,6 +1165,8 @@ int tipc_withdraw(u32 ref, unsigned int scope, struct tipc_name_seq const *seq)
 	p_ptr = tipc_port_lock(ref);
 	if (!p_ptr)
 		return -EINVAL;
+	if (!p_ptr->publ.published)
+		goto exit;
 	if (!seq) {
 		list_for_each_entry_safe(publ, tpubl, 
 					 &p_ptr->publications, pport_list) {
@@ -1197,6 +1193,7 @@ int tipc_withdraw(u32 ref, unsigned int scope, struct tipc_name_seq const *seq)
 	}
 	if (list_empty(&p_ptr->publications))
 		p_ptr->publ.published = 0;
+exit:
 	tipc_port_unlock(p_ptr);
 	return res;
 }

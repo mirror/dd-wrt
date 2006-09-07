@@ -7,14 +7,15 @@
  * Additions for SPC-3 T10/1416-D Rev 21 22 Sept 2004, D. Gilbert 20041025
  */
 
+#include <linux/config.h>
 #include <linux/blkdev.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 
 #include <scsi/scsi.h>
-#include <scsi/scsi_cmnd.h>
 #include <scsi/scsi_device.h>
 #include <scsi/scsi_host.h>
+#include <scsi/scsi_request.h>
 #include <scsi/scsi_eh.h>
 #include <scsi/scsi_dbg.h>
 
@@ -113,7 +114,8 @@ static const struct value_name_pair maint_in_arr[] = {
 	{0xd, "Report supported task management functions"},
 	{0xe, "Report priority"},
 };
-#define MAINT_IN_SZ ARRAY_SIZE(maint_in_arr)
+#define MAINT_IN_SZ \
+        (int)(sizeof(maint_in_arr) / sizeof(maint_in_arr[0]))
 
 static const struct value_name_pair maint_out_arr[] = {
 	{0x6, "Set device identifier"},
@@ -121,29 +123,34 @@ static const struct value_name_pair maint_out_arr[] = {
 	{0xb, "Change aliases"},
 	{0xe, "Set priority"},
 };
-#define MAINT_OUT_SZ ARRAY_SIZE(maint_out_arr)
+#define MAINT_OUT_SZ \
+        (int)(sizeof(maint_out_arr) / sizeof(maint_out_arr[0]))
 
 static const struct value_name_pair serv_in12_arr[] = {
 	{0x1, "Read media serial number"},
 };
-#define SERV_IN12_SZ ARRAY_SIZE(serv_in12_arr)
+#define SERV_IN12_SZ  \
+        (int)(sizeof(serv_in12_arr) / sizeof(serv_in12_arr[0]))
 
 static const struct value_name_pair serv_out12_arr[] = {
 	{-1, "dummy entry"},
 };
-#define SERV_OUT12_SZ ARRAY_SIZE(serv_out12_arr)
+#define SERV_OUT12_SZ \
+        (int)(sizeof(serv_out12_arr) / sizeof(serv_in12_arr[0]))
 
 static const struct value_name_pair serv_in16_arr[] = {
 	{0x10, "Read capacity(16)"},
 	{0x11, "Read long(16)"},
 };
-#define SERV_IN16_SZ ARRAY_SIZE(serv_in16_arr)
+#define SERV_IN16_SZ  \
+        (int)(sizeof(serv_in16_arr) / sizeof(serv_in16_arr[0]))
 
 static const struct value_name_pair serv_out16_arr[] = {
 	{0x11, "Write long(16)"},
 	{0x1f, "Notify data transfer device(16)"},
 };
-#define SERV_OUT16_SZ ARRAY_SIZE(serv_out16_arr)
+#define SERV_OUT16_SZ \
+        (int)(sizeof(serv_out16_arr) / sizeof(serv_in16_arr[0]))
 
 static const struct value_name_pair variable_length_arr[] = {
 	{0x1, "Rebuild(32)"},
@@ -183,7 +190,8 @@ static const struct value_name_pair variable_length_arr[] = {
 	{0x8f7e, "Perform SCSI command (osd)"},
 	{0x8f7f, "Perform task management function (osd)"},
 };
-#define VARIABLE_LENGTH_SZ ARRAY_SIZE(variable_length_arr)
+#define VARIABLE_LENGTH_SZ \
+        (int)(sizeof(variable_length_arr) / sizeof(variable_length_arr[0]))
 
 static const char * get_sa_name(const struct value_name_pair * arr,
 			        int arr_sz, int service_action)
@@ -1260,6 +1268,16 @@ void scsi_print_sense(const char *devclass, struct scsi_cmnd *cmd)
 }
 EXPORT_SYMBOL(scsi_print_sense);
 
+void scsi_print_req_sense(const char *devclass, struct scsi_request *sreq)
+{
+	const char *name = devclass;
+
+	if (sreq->sr_request->rq_disk)
+		name = sreq->sr_request->rq_disk->disk_name;
+	__scsi_print_sense(name, sreq->sr_sense_buffer, SCSI_SENSE_BUFFERSIZE);
+}
+EXPORT_SYMBOL(scsi_print_req_sense);
+
 void scsi_print_command(struct scsi_cmnd *cmd)
 {
 	/* Assume appended output (i.e. not at start of line) */
@@ -1272,10 +1290,10 @@ EXPORT_SYMBOL(scsi_print_command);
 #ifdef CONFIG_SCSI_CONSTANTS
 
 static const char * const hostbyte_table[]={
-"DID_OK", "DID_NO_CONNECT", "DID_BUS_BUSY", "DID_TIME_OUT", "DID_BAD_TARGET",
+"DID_OK", "DID_NO_CONNECT", "DID_BUS_BUSY", "DID_TIME_OUT", "DID_BAD_TARGET", 
 "DID_ABORT", "DID_PARITY", "DID_ERROR", "DID_RESET", "DID_BAD_INTR",
 "DID_PASSTHROUGH", "DID_SOFT_ERROR", "DID_IMM_RETRY"};
-#define NUM_HOSTBYTE_STRS ARRAY_SIZE(hostbyte_table)
+#define NUM_HOSTBYTE_STRS (sizeof(hostbyte_table) / sizeof(const char *))
 
 void scsi_print_hostbyte(int scsiresult)
 {
@@ -1285,7 +1303,7 @@ void scsi_print_hostbyte(int scsiresult)
 	if (hb < NUM_HOSTBYTE_STRS)
 		printk("(%s) ", hostbyte_table[hb]);
 	else
-		printk("is invalid ");
+		printk("is invalid "); 
 }
 #else
 void scsi_print_hostbyte(int scsiresult)
@@ -1297,14 +1315,14 @@ void scsi_print_hostbyte(int scsiresult)
 #ifdef CONFIG_SCSI_CONSTANTS
 
 static const char * const driverbyte_table[]={
-"DRIVER_OK", "DRIVER_BUSY", "DRIVER_SOFT",  "DRIVER_MEDIA", "DRIVER_ERROR",
+"DRIVER_OK", "DRIVER_BUSY", "DRIVER_SOFT",  "DRIVER_MEDIA", "DRIVER_ERROR", 
 "DRIVER_INVALID", "DRIVER_TIMEOUT", "DRIVER_HARD", "DRIVER_SENSE"};
-#define NUM_DRIVERBYTE_STRS ARRAY_SIZE(driverbyte_table)
+#define NUM_DRIVERBYTE_STRS (sizeof(driverbyte_table) / sizeof(const char *))
 
 static const char * const driversuggest_table[]={"SUGGEST_OK",
 "SUGGEST_RETRY", "SUGGEST_ABORT", "SUGGEST_REMAP", "SUGGEST_DIE",
 "SUGGEST_5", "SUGGEST_6", "SUGGEST_7", "SUGGEST_SENSE"};
-#define NUM_SUGGEST_STRS ARRAY_SIZE(driversuggest_table)
+#define NUM_SUGGEST_STRS (sizeof(driversuggest_table) / sizeof(const char *))
 
 void scsi_print_driverbyte(int scsiresult)
 {

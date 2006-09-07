@@ -26,6 +26,7 @@
 /* define _CPIA_DEBUG_ for verbose debug output (see cpia.h) */
 /* #define _CPIA_DEBUG_  1 */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
@@ -46,6 +47,13 @@
 
 #include "cpia.h"
 
+#ifdef CONFIG_VIDEO_CPIA_PP
+extern int cpia_pp_init(void);
+#endif
+#ifdef CONFIG_VIDEO_CPIA_USB
+extern int cpia_usb_init(void);
+#endif
+
 static int video_nr = -1;
 
 #ifdef MODULE
@@ -59,10 +67,10 @@ MODULE_SUPPORTED_DEVICE("video");
 static unsigned short colorspace_conv;
 module_param(colorspace_conv, ushort, 0444);
 MODULE_PARM_DESC(colorspace_conv,
-		 " Colorspace conversion:"
-		 "\n  0 = disable, 1 = enable"
-		 "\n  Default value is 0"
-		 );
+                 " Colorspace conversion:"
+                 "\n  0 = disable, 1 = enable"
+                 "\n  Default value is 0"
+                 );
 
 #define ABOUT "V4L-Driver for Vision CPiA based cameras"
 
@@ -4037,6 +4045,13 @@ static int __init cpia_init(void)
 
 #ifdef CONFIG_PROC_FS
 	proc_cpia_create();
+#endif
+
+#ifdef CONFIG_VIDEO_CPIA_PP
+	cpia_pp_init();
+#endif
+#ifdef CONFIG_VIDEO_CPIA_USB
+	cpia_usb_init();
 #endif
 
 	return 0;

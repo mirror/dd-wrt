@@ -12,6 +12,7 @@
 #ifndef __ASM_ARCH_HARDWARE_H
 #define __ASM_ARCH_HARDWARE_H
 
+#include <linux/config.h>
 
 #define UNCACHEABLE_ADDR	0xfa050000
 

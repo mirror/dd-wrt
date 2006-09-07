@@ -38,6 +38,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <linux/mm.h>
@@ -62,11 +63,13 @@
 
 /* Number of siblings per CPU package */
 int smp_num_siblings = 1;
-EXPORT_SYMBOL(smp_num_siblings);
+/* Package ID of each logical CPU */
+u8 phys_proc_id[NR_CPUS] __read_mostly = { [0 ... NR_CPUS-1] = BAD_APICID };
+/* core ID of each logical CPU */
+u8 cpu_core_id[NR_CPUS] __read_mostly = { [0 ... NR_CPUS-1] = BAD_APICID };
 
 /* Last level cache ID of each logical CPU */
 u8 cpu_llc_id[NR_CPUS] __cpuinitdata  = {[0 ... NR_CPUS-1] = BAD_APICID};
-EXPORT_SYMBOL(cpu_llc_id);
 
 /* Bitmask of currently online CPUs */
 cpumask_t cpu_online_map __read_mostly;
@@ -79,21 +82,18 @@ EXPORT_SYMBOL(cpu_online_map);
  */
 cpumask_t cpu_callin_map;
 cpumask_t cpu_callout_map;
-EXPORT_SYMBOL(cpu_callout_map);
 
 cpumask_t cpu_possible_map;
 EXPORT_SYMBOL(cpu_possible_map);
 
 /* Per CPU bogomips and other parameters */
 struct cpuinfo_x86 cpu_data[NR_CPUS] __cacheline_aligned;
-EXPORT_SYMBOL(cpu_data);
 
 /* Set when the idlers are all forked */
 int smp_threads_ready;
 
 /* representing HT siblings of each logical CPU */
 cpumask_t cpu_sibling_map[NR_CPUS] __read_mostly;
-EXPORT_SYMBOL(cpu_sibling_map);
 
 /* representing HT and core siblings of each logical CPU */
 cpumask_t cpu_core_map[NR_CPUS] __read_mostly;
@@ -454,12 +454,10 @@ cpumask_t cpu_coregroup_map(int cpu)
 	struct cpuinfo_x86 *c = cpu_data + cpu;
 	/*
 	 * For perf, we return last level cache shared map.
-	 * And for power savings, we return cpu_core_map
+	 * TBD: when power saving sched policy is added, we will return
+	 *      cpu_core_map when power saving policy is enabled
 	 */
-	if (sched_mc_power_savings || sched_smt_power_savings)
-		return cpu_core_map[cpu];
-	else
-		return c->llc_shared_map;
+	return c->llc_shared_map;
 }
 
 /* representing cpus for which sibling maps can be computed */
@@ -474,8 +472,8 @@ static inline void set_cpu_sibling_map(int cpu)
 
 	if (smp_num_siblings > 1) {
 		for_each_cpu_mask(i, cpu_sibling_setup_map) {
-			if (c[cpu].phys_proc_id == c[i].phys_proc_id &&
-			    c[cpu].cpu_core_id == c[i].cpu_core_id) {
+			if (phys_proc_id[cpu] == phys_proc_id[i] &&
+			    cpu_core_id[cpu] == cpu_core_id[i]) {
 				cpu_set(i, cpu_sibling_map[cpu]);
 				cpu_set(cpu, cpu_sibling_map[i]);
 				cpu_set(i, cpu_core_map[cpu]);
@@ -502,7 +500,7 @@ static inline void set_cpu_sibling_map(int cpu)
 			cpu_set(i, c[cpu].llc_shared_map);
 			cpu_set(cpu, c[i].llc_shared_map);
 		}
-		if (c[cpu].phys_proc_id == c[i].phys_proc_id) {
+		if (phys_proc_id[cpu] == phys_proc_id[i]) {
 			cpu_set(i, cpu_core_map[cpu]);
 			cpu_set(cpu, cpu_core_map[i]);
 			/*
@@ -775,8 +773,6 @@ static int __cpuinit do_boot_cpu(int cpu, int apicid)
 	};
 	DECLARE_WORK(work, do_fork_idle, &c_idle);
 
-	lockdep_set_class(&c_idle.done.wait.lock, &waitqueue_lock_key);
-
 	/* allocate memory for gdts of secondary cpus. Hotplug is considered */
 	if (!cpu_gdt_descr[cpu].address &&
 		!(cpu_gdt_descr[cpu].address = get_zeroed_page(GFP_KERNEL))) {
@@ -800,8 +796,6 @@ static int __cpuinit do_boot_cpu(int cpu, int apicid)
 				cpu, node);
 	}
 
-
-	alternatives_smp_switch(1);
 
 	c_idle.idle = get_idle_for_cpu(cpu);
 
@@ -1205,8 +1199,8 @@ static void remove_siblinginfo(int cpu)
 		cpu_clear(cpu, cpu_sibling_map[sibling]);
 	cpus_clear(cpu_sibling_map[cpu]);
 	cpus_clear(cpu_core_map[cpu]);
-	c[cpu].phys_proc_id = 0;
-	c[cpu].cpu_core_id = 0;
+	phys_proc_id[cpu] = BAD_APICID;
+	cpu_core_id[cpu] = BAD_APICID;
 	cpu_clear(cpu, cpu_sibling_setup_map);
 }
 
@@ -1265,8 +1259,6 @@ void __cpu_die(unsigned int cpu)
 		/* They ack this in play_dead by setting CPU_DEAD */
 		if (per_cpu(cpu_state, cpu) == CPU_DEAD) {
 			printk ("CPU %d is now offline\n", cpu);
-			if (1 == num_online_cpus())
-				alternatives_smp_switch(0);
 			return;
 		}
 		msleep(100);

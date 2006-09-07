@@ -19,6 +19,7 @@
  *
  */
 
+#include <linux/config.h>
 
 #define WDT_COUNT0		(io+0)
 #define WDT_COUNT1		(io+1)

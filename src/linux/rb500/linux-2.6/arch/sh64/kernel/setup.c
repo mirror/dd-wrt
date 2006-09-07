@@ -39,6 +39,7 @@
 #include <linux/tty.h>
 #include <linux/ioport.h>
 #include <linux/delay.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/seq_file.h>
 #include <linux/blkdev.h>
@@ -308,7 +309,7 @@ static struct cpu cpu[1];
 
 static int __init topology_init(void)
 {
-	return register_cpu(cpu, 0);
+	return register_cpu(cpu, 0, NULL);
 }
 
 subsys_initcall(topology_init);

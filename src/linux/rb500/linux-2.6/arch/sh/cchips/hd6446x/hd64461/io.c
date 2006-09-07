@@ -4,6 +4,7 @@
  *	Typical I/O routines for HD64461 system.
  */
 
+#include <linux/config.h>
 #include <asm/io.h>
 #include <asm/hd64461/hd64461.h>
 

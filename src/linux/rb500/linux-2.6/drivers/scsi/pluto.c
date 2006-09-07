@@ -13,6 +13,7 @@
 #include <linux/proc_fs.h>
 #include <linux/stat.h>
 #include <linux/init.h>
+#include <linux/config.h>
 #ifdef CONFIG_KMOD
 #include <linux/kmod.h>
 #endif
@@ -25,9 +26,6 @@
 #include "pluto.h"
 
 #include <linux/module.h>
-
-#define RQ_SCSI_BUSY		0xffff
-#define RQ_SCSI_DONE		0xfffe
 
 /* #define PLUTO_DEBUG */
 

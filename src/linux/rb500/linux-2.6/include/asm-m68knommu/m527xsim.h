@@ -11,6 +11,7 @@
 #define	m527xsim_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 /*
  *	Define the 5270/5271 SIM register set addresses.

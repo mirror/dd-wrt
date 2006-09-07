@@ -1,6 +1,7 @@
 #ifndef __ASM_MACH_APIC_H
 #define __ASM_MACH_APIC_H
 
+#include <linux/config.h>
 #include <asm/smp.h>
 
 #define esr_disable (1)

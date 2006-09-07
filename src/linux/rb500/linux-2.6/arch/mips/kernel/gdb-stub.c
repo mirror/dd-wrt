@@ -120,6 +120,7 @@
  *       breakpoints, single stepping,
  *       printing variables, etc.
  */
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/kernel.h>
 #include <linux/signal.h>

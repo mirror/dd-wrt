@@ -40,6 +40,7 @@
 #ifndef SYM_GLUE_H
 #define SYM_GLUE_H
 
+#include <linux/config.h>
 #include <linux/delay.h>
 #include <linux/ioport.h>
 #include <linux/pci.h>

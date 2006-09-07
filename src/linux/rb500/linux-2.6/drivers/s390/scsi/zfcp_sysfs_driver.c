@@ -1,8 +1,16 @@
 /*
- * This file is part of the zfcp device driver for
- * FCP adapters for IBM System z9 and zSeries.
+ * linux/drivers/s390/scsi/zfcp_sysfs_driver.c
  *
- * (C) Copyright IBM Corp. 2002, 2006
+ * FCP adapter driver for IBM eServer zSeries
+ *
+ * sysfs driver related routines
+ *
+ * (C) Copyright IBM Corp. 2003, 2004
+ *
+ * Authors:
+ *      Martin Peschke <mpeschke@de.ibm.com>
+ *	Heiko Carstens <heiko.carstens@de.ibm.com>
+ *      Andreas Herrmann <aherrman@de.ibm.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

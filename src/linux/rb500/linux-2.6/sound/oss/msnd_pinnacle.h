@@ -30,6 +30,7 @@
 #ifndef __MSND_PINNACLE_H
 #define __MSND_PINNACLE_H
 
+#include <linux/config.h>
 
 #define DSP_NUMIO				0x08
 

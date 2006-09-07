@@ -902,14 +902,14 @@ static int kimage_load_segment(struct kimage *image,
  * kexec does not sync, or unmount filesystems so if you need
  * that to happen you need to do that yourself.
  */
-struct kimage *kexec_image;
-struct kimage *kexec_crash_image;
+struct kimage *kexec_image = NULL;
+static struct kimage *kexec_crash_image = NULL;
 /*
  * A home grown binary mutex.
  * Nothing can wait so this mutex is safe to use
  * in interrupt context :)
  */
-static int kexec_lock;
+static int kexec_lock = 0;
 
 asmlinkage long sys_kexec_load(unsigned long entry, unsigned long nr_segments,
 				struct kexec_segment __user *segments,
@@ -1042,6 +1042,7 @@ asmlinkage long compat_sys_kexec_load(unsigned long entry,
 
 void crash_kexec(struct pt_regs *regs)
 {
+	struct kimage *image;
 	int locked;
 
 
@@ -1055,11 +1056,12 @@ void crash_kexec(struct pt_regs *regs)
 	 */
 	locked = xchg(&kexec_lock, 1);
 	if (!locked) {
-		if (kexec_crash_image) {
+		image = xchg(&kexec_crash_image, NULL);
+		if (image) {
 			struct pt_regs fixed_regs;
 			crash_setup_regs(&fixed_regs, regs);
 			machine_crash_shutdown(&fixed_regs);
-			machine_kexec(kexec_crash_image);
+			machine_kexec(image);
 		}
 		xchg(&kexec_lock, 0);
 	}

@@ -33,7 +33,6 @@
 
 #include <asm/io.h>
 
-#include <media/v4l2-common.h>
 #include <media/tuner.h>
 #include <media/ir-common.h>
 #include <media/ir-kbd-i2c.h>
@@ -222,7 +221,6 @@ struct saa7134_format {
 #define SAA7134_BOARD_AVERMEDIA_A169_B1 92
 #define SAA7134_BOARD_MD7134_BRIDGE_2     93
 #define SAA7134_BOARD_FLYDVBT_HYBRID_CARDBUS 94
-#define SAA7134_BOARD_FLYVIDEO3000_NTSC 95
 
 #define SAA7134_MAXBOARDS 8
 #define SAA7134_INPUT_MAX 8
@@ -533,7 +531,6 @@ struct saa7134_dev {
 
 	/* SAA7134_MPEG_DVB only */
 	struct videobuf_dvb        dvb;
-	int (*original_demod_sleep)(struct dvb_frontend* fe);
 };
 
 /* ----------------------------------------------------------- */

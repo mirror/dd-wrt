@@ -91,6 +91,7 @@
  * - Code works, detects all the partitions.
  *
  ************************************************************/
+#include <linux/config.h>
 #include <linux/crc32.h>
 #include "check.h"
 #include "efi.h"

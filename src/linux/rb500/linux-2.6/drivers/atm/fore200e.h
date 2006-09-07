@@ -3,6 +3,7 @@
 #define _FORE200E_H
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 
 /* rx buffer sizes */
 

@@ -12,6 +12,7 @@
  *  2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/smp.h>
@@ -140,7 +141,9 @@ static long restore_sigcontext(struct pt_regs *regs, sigset_t *set, int sig,
 	unsigned long err = 0;
 	unsigned long save_r13 = 0;
 	elf_greg_t *gregs = (elf_greg_t *)regs;
+#ifdef CONFIG_ALTIVEC
 	unsigned long msr;
+#endif
 	int i;
 
 	/* If this is not a signal return, we preserve the TLS in r13 */
@@ -151,12 +154,7 @@ static long restore_sigcontext(struct pt_regs *regs, sigset_t *set, int sig,
 	err |= __copy_from_user(regs, &sc->gp_regs,
 				PT_MSR*sizeof(unsigned long));
 
-	/* get MSR separately, transfer the LE bit if doing signal return */
-	err |= __get_user(msr, &sc->gp_regs[PT_MSR]);
-	if (sig)
-		regs->msr = (regs->msr & ~MSR_LE) | (msr & MSR_LE);
-
-	/* skip SOFTE */
+	/* skip MSR and SOFTE */
 	for (i = PT_MSR+1; i <= PT_RESULT; i++) {
 		if (i == PT_SOFTE)
 			continue;
@@ -181,6 +179,7 @@ static long restore_sigcontext(struct pt_regs *regs, sigset_t *set, int sig,
 
 #ifdef CONFIG_ALTIVEC
 	err |= __get_user(v_regs, &sc->v_regs);
+	err |= __get_user(msr, &sc->gp_regs[PT_MSR]);
 	if (err)
 		return err;
 	if (v_regs && !access_ok(VERIFY_READ, v_regs, 34 * sizeof(vector128)))
@@ -397,8 +396,8 @@ static int setup_rt_frame(int signr, struct k_sigaction *ka, siginfo_t *info,
 	current->thread.fpscr.val = 0;
 
 	/* Set up to return from userspace. */
-	if (vdso64_rt_sigtramp && current->mm->context.vdso_base) {
-		regs->link = current->mm->context.vdso_base + vdso64_rt_sigtramp;
+	if (vdso64_rt_sigtramp && current->thread.vdso_base) {
+		regs->link = current->thread.vdso_base + vdso64_rt_sigtramp;
 	} else {
 		err |= setup_trampoline(__NR_rt_sigreturn, &frame->tramp[0]);
 		if (err)
@@ -413,8 +412,6 @@ static int setup_rt_frame(int signr, struct k_sigaction *ka, siginfo_t *info,
 
 	/* Set up "regs" so we "return" to the signal handler. */
 	err |= get_user(regs->nip, &funct_desc_ptr->entry);
-	/* enter the signal handler in big-endian mode */
-	regs->msr &= ~MSR_LE;
 	regs->gpr[1] = newsp;
 	err |= get_user(regs->gpr[2], &funct_desc_ptr->toc);
 	regs->gpr[3] = signr;

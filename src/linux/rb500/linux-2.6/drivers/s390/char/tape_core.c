@@ -11,6 +11,7 @@
  *		 Stefan Bader <shbader@de.ibm.com>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>	     // for kernel parameters
 #include <linux/kmod.h>	     // for requesting modules

@@ -302,6 +302,12 @@ static struct file_operations proc_bus_pci_operations = {
 #endif /* HAVE_PCI_MMAP */
 };
 
+#if BITS_PER_LONG == 32
+#define LONG_FORMAT "\t%08lx"
+#else
+#define LONG_FORMAT "\t%16lx"
+#endif
+
 /* iterator */
 static void *pci_seq_start(struct seq_file *m, loff_t *pos)
 {
@@ -350,18 +356,18 @@ static int show_device(struct seq_file *m, void *v)
 			dev->irq);
 	/* Here should be 7 and not PCI_NUM_RESOURCES as we need to preserve compatibility */
 	for (i=0; i<7; i++) {
-		resource_size_t start, end;
+		u64 start, end;
 		pci_resource_to_user(dev, i, &dev->resource[i], &start, &end);
-		seq_printf(m, "\t%16llx",
-			(unsigned long long)(start |
-			(dev->resource[i].flags & PCI_REGION_FLAG_MASK)));
+		seq_printf(m, LONG_FORMAT,
+			((unsigned long)start) |
+			(dev->resource[i].flags & PCI_REGION_FLAG_MASK));
 	}
 	for (i=0; i<7; i++) {
-		resource_size_t start, end;
+		u64 start, end;
 		pci_resource_to_user(dev, i, &dev->resource[i], &start, &end);
-		seq_printf(m, "\t%16llx",
+		seq_printf(m, LONG_FORMAT,
 			dev->resource[i].start < dev->resource[i].end ?
-			(unsigned long long)(end - start) + 1 : 0);
+			(unsigned long)(end - start) + 1 : 0);
 	}
 	seq_putc(m, '\t');
 	if (drv)
@@ -451,6 +457,130 @@ int pci_proc_detach_bus(struct pci_bus* bus)
 		remove_proc_entry(de->name, proc_bus_pci_dir);
 	return 0;
 }
+#ifdef CONFIG_PCI_LEGACY_PROC
+
+/*
+ *  Backward compatible /proc/pci interface.
+ */
+
+/*
+ * Convert some of the configuration space registers of the device at
+ * address (bus,devfn) into a string (possibly several lines each).
+ * The configuration string is stored starting at buf[len].  If the
+ * string would exceed the size of the buffer (SIZE), 0 is returned.
+ */
+static int show_dev_config(struct seq_file *m, void *v)
+{
+	struct pci_dev *dev = v;
+	struct pci_dev *first_dev;
+	struct pci_driver *drv;
+	u32 class_rev;
+	unsigned char latency, min_gnt, max_lat;
+	int reg;
+
+	first_dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, NULL);
+	if (dev == first_dev)
+		seq_puts(m, "PCI devices found:\n");
+	pci_dev_put(first_dev);
+
+	drv = pci_dev_driver(dev);
+
+	pci_user_read_config_dword(dev, PCI_CLASS_REVISION, &class_rev);
+	pci_user_read_config_byte (dev, PCI_LATENCY_TIMER, &latency);
+	pci_user_read_config_byte (dev, PCI_MIN_GNT, &min_gnt);
+	pci_user_read_config_byte (dev, PCI_MAX_LAT, &max_lat);
+	seq_printf(m, "  Bus %2d, device %3d, function %2d:\n",
+	       dev->bus->number, PCI_SLOT(dev->devfn), PCI_FUNC(dev->devfn));
+	seq_printf(m, "    Class %04x", class_rev >> 16);
+	seq_printf(m, ": PCI device %04x:%04x", dev->vendor, dev->device);
+	seq_printf(m, " (rev %d).\n", class_rev & 0xff);
+
+	if (dev->irq)
+		seq_printf(m, "      IRQ %d.\n", dev->irq);
+
+	if (latency || min_gnt || max_lat) {
+		seq_printf(m, "      Master Capable.  ");
+		if (latency)
+			seq_printf(m, "Latency=%d.  ", latency);
+		else
+			seq_puts(m, "No bursts.  ");
+		if (min_gnt)
+			seq_printf(m, "Min Gnt=%d.", min_gnt);
+		if (max_lat)
+			seq_printf(m, "Max Lat=%d.", max_lat);
+		seq_putc(m, '\n');
+	}
+
+	for (reg = 0; reg < 6; reg++) {
+		struct resource *res = dev->resource + reg;
+		unsigned long base, end, flags;
+
+		base = res->start;
+		end = res->end;
+		flags = res->flags;
+		if (!end)
+			continue;
+
+		if (flags & PCI_BASE_ADDRESS_SPACE_IO) {
+			seq_printf(m, "      I/O at 0x%lx [0x%lx].\n",
+				base, end);
+		} else {
+			const char *pref, *type = "unknown";
+
+			if (flags & PCI_BASE_ADDRESS_MEM_PREFETCH)
+				pref = "P";
+			else
+				pref = "Non-p";
+			switch (flags & PCI_BASE_ADDRESS_MEM_TYPE_MASK) {
+			      case PCI_BASE_ADDRESS_MEM_TYPE_32:
+				type = "32 bit"; break;
+			      case PCI_BASE_ADDRESS_MEM_TYPE_1M:
+				type = "20 bit"; break;
+			      case PCI_BASE_ADDRESS_MEM_TYPE_64:
+				type = "64 bit"; break;
+			}
+			seq_printf(m, "      %srefetchable %s memory at "
+				       "0x%lx [0x%lx].\n", pref, type,
+				       base,
+				       end);
+		}
+	}
+	return 0;
+}
+
+static struct seq_operations proc_pci_op = {
+	.start	= pci_seq_start,
+	.next	= pci_seq_next,
+	.stop	= pci_seq_stop,
+	.show	= show_dev_config
+};
+
+static int proc_pci_open(struct inode *inode, struct file *file)
+{
+	return seq_open(file, &proc_pci_op);
+}
+static struct file_operations proc_pci_operations = {
+	.open		= proc_pci_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= seq_release,
+};
+
+static void legacy_proc_init(void)
+{
+	struct proc_dir_entry * entry = create_proc_entry("pci", 0, NULL);
+	if (entry)
+		entry->proc_fops = &proc_pci_operations;
+}
+
+#else
+
+static void legacy_proc_init(void)
+{
+
+}
+
+#endif /* CONFIG_PCI_LEGACY_PROC */
 
 static int proc_bus_pci_dev_open(struct inode *inode, struct file *file)
 {
@@ -475,6 +605,7 @@ static int __init pci_proc_init(void)
 	while ((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
 		pci_proc_attach_device(dev);
 	}
+	legacy_proc_init();
 	return 0;
 }
 

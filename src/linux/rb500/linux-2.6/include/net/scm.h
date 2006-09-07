@@ -19,10 +19,6 @@ struct scm_cookie
 {
 	struct ucred		creds;		/* Skb credentials	*/
 	struct scm_fp_list	*fp;		/* Passed files		*/
-#ifdef CONFIG_SECURITY_NETWORK
-	char			*secdata;	/* Security context	*/
-	u32			seclen;		/* Security length	*/
-#endif
 	unsigned long		seq;		/* Connection seqno	*/
 };
 
@@ -52,17 +48,6 @@ static __inline__ int scm_send(struct socket *sock, struct msghdr *msg,
 	return __scm_send(sock, msg, scm);
 }
 
-#ifdef CONFIG_SECURITY_NETWORK
-static inline void scm_passec(struct socket *sock, struct msghdr *msg, struct scm_cookie *scm)
-{
-	if (test_bit(SOCK_PASSSEC, &sock->flags) && scm->secdata != NULL)
-		put_cmsg(msg, SOL_SOCKET, SCM_SECURITY, scm->seclen, scm->secdata);
-}
-#else
-static inline void scm_passec(struct socket *sock, struct msghdr *msg, struct scm_cookie *scm)
-{ }
-#endif /* CONFIG_SECURITY_NETWORK */
-
 static __inline__ void scm_recv(struct socket *sock, struct msghdr *msg,
 				struct scm_cookie *scm, int flags)
 {
@@ -76,8 +61,6 @@ static __inline__ void scm_recv(struct socket *sock, struct msghdr *msg,
 
 	if (test_bit(SOCK_PASSCRED, &sock->flags))
 		put_cmsg(msg, SOL_SOCKET, SCM_CREDENTIALS, sizeof(scm->creds), &scm->creds);
-
-	scm_passec(sock, msg, scm);
 
 	if (!scm->fp)
 		return;

@@ -88,19 +88,20 @@ acpi_status acpi_ex_opcode_3A_0T_0R(struct acpi_walk_state *walk_state)
 	struct acpi_signal_fatal_info *fatal;
 	acpi_status status = AE_OK;
 
-	ACPI_FUNCTION_TRACE_STR(ex_opcode_3A_0T_0R,
+	ACPI_FUNCTION_TRACE_STR("ex_opcode_3A_0T_0R",
 				acpi_ps_get_opcode_name(walk_state->opcode));
 
 	switch (walk_state->opcode) {
 	case AML_FATAL_OP:	/* Fatal (fatal_type fatal_code fatal_arg) */
 
 		ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-				  "FatalOp: Type %X Code %X Arg %X <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+				  "fatal_op: Type %X Code %X Arg %X <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 				  (u32) operand[0]->integer.value,
 				  (u32) operand[1]->integer.value,
 				  (u32) operand[2]->integer.value));
 
-		fatal = ACPI_ALLOCATE(sizeof(struct acpi_signal_fatal_info));
+		fatal =
+		    ACPI_MEM_ALLOCATE(sizeof(struct acpi_signal_fatal_info));
 		if (fatal) {
 			fatal->type = (u32) operand[0]->integer.value;
 			fatal->code = (u32) operand[1]->integer.value;
@@ -113,7 +114,7 @@ acpi_status acpi_ex_opcode_3A_0T_0R(struct acpi_walk_state *walk_state)
 
 		/* Might return while OS is shutting down, just continue */
 
-		ACPI_FREE(fatal);
+		ACPI_MEM_FREE(fatal);
 		break;
 
 	default:
@@ -150,7 +151,7 @@ acpi_status acpi_ex_opcode_3A_1T_1R(struct acpi_walk_state *walk_state)
 	acpi_integer index;
 	acpi_size length;
 
-	ACPI_FUNCTION_TRACE_STR(ex_opcode_3A_1T_1R,
+	ACPI_FUNCTION_TRACE_STR("ex_opcode_3A_1T_1R",
 				acpi_ps_get_opcode_name(walk_state->opcode));
 
 	switch (walk_state->opcode) {
@@ -195,7 +196,7 @@ acpi_status acpi_ex_opcode_3A_1T_1R(struct acpi_walk_state *walk_state)
 
 			/* Always allocate a new buffer for the String */
 
-			buffer = ACPI_ALLOCATE_ZEROED((acpi_size) length + 1);
+			buffer = ACPI_MEM_CALLOCATE((acpi_size) length + 1);
 			if (!buffer) {
 				status = AE_NO_MEMORY;
 				goto cleanup;
@@ -207,10 +208,9 @@ acpi_status acpi_ex_opcode_3A_1T_1R(struct acpi_walk_state *walk_state)
 			/* If the requested length is zero, don't allocate a buffer */
 
 			if (length > 0) {
-
 				/* Allocate a new buffer for the Buffer */
 
-				buffer = ACPI_ALLOCATE_ZEROED(length);
+				buffer = ACPI_MEM_CALLOCATE(length);
 				if (!buffer) {
 					status = AE_NO_MEMORY;
 					goto cleanup;
@@ -225,7 +225,6 @@ acpi_status acpi_ex_opcode_3A_1T_1R(struct acpi_walk_state *walk_state)
 		}
 
 		if (buffer) {
-
 			/* We have a buffer, copy the portion requested */
 
 			ACPI_MEMCPY(buffer, operand[0]->string.pointer + index,

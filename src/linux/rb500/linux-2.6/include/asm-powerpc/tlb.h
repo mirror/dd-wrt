@@ -13,6 +13,7 @@
 #define _ASM_POWERPC_TLB_H
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #ifndef __powerpc64__
 #include <asm/pgtable.h>
 #endif

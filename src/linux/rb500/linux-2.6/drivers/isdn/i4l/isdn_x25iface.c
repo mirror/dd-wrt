@@ -208,7 +208,7 @@ static int isdn_x25iface_receive(struct concap_proto *cprot, struct sk_buff *skb
  */
 static int isdn_x25iface_connect_ind(struct concap_proto *cprot)
 {
-	struct sk_buff * skb;
+	struct sk_buff * skb = dev_alloc_skb(1);
 	enum wan_states *state_p 
 	  = &( ( (ix25_pdata_t*) (cprot->proto_data) ) -> state);
 	IX25DEBUG( "isdn_x25iface_connect_ind %s \n"
@@ -220,8 +220,6 @@ static int isdn_x25iface_connect_ind(struct concap_proto *cprot)
 		return -1;
 	}
 	*state_p = WAN_CONNECTED;
-
-	skb = dev_alloc_skb(1);
 	if( skb ){
 		*( skb_put(skb, 1) ) = 0x01;
 		skb->protocol = x25_type_trans(skb, cprot->net_dev);

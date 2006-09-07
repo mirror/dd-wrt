@@ -1,6 +1,7 @@
 #ifndef __ASM_FPU_H
 #define __ASM_FPU_H
 
+#include <linux/config.h>
 
 /*
  * MAX floating point unit state size (FSAVE/FRESTORE)

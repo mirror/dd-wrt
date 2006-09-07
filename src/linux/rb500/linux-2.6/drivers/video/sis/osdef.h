@@ -90,6 +90,7 @@
 /**********************************************************************/
 
 #ifdef SIS_LINUX_KERNEL
+#include <linux/config.h>
 #include <linux/version.h>
 
 #ifdef CONFIG_FB_SIS_300

@@ -4,6 +4,7 @@
  * Copyright (c) 2003 Hitoshi Yamamoto
  */
 
+#include <linux/config.h>
 #include <asm/ptrace.h>
 #include <asm/uaccess.h>
 

@@ -16,6 +16,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
@@ -509,7 +510,7 @@ static int load_flat_file(struct linux_binprm * bprm,
 		}
 
 		/* OK, This is the point of no return */
-		set_personality(PER_LINUX_32BIT);
+		set_personality(PER_LINUX);
 	}
 
 	/*

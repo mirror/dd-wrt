@@ -29,7 +29,9 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/kernel.h>
-#include <linux/usb/input.h>
+#include <linux/input.h>
+#include <linux/usb.h>
+#include <linux/usb_input.h>
 
 #undef DEBUG
 
@@ -565,23 +567,6 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 			break;
 	}
 
-	if (device->quirks & HID_QUIRK_MIGHTYMOUSE) {
-		if (usage->hid == HID_GD_Z)
-			map_rel(REL_HWHEEL);
-		else if (usage->code == BTN_1)
-			map_key(BTN_2);
-		else if (usage->code == BTN_2)
-			map_key(BTN_1);
-	}
-
-	if ((device->quirks & (HID_QUIRK_2WHEEL_MOUSE_HACK_7 | HID_QUIRK_2WHEEL_MOUSE_HACK_5)) &&
-		 (usage->type == EV_REL) && (usage->code == REL_WHEEL))
-			set_bit(REL_HWHEEL, bit);
-
-	if (((device->quirks & HID_QUIRK_2WHEEL_MOUSE_HACK_5) && (usage->hid == 0x00090005))
-		|| ((device->quirks & HID_QUIRK_2WHEEL_MOUSE_HACK_7) && (usage->hid == 0x00090007)))
-		goto ignore;
-
 	set_bit(usage->type, input->evbit);
 
 	while (usage->code <= max && test_and_set_bit(usage->code, bit))
@@ -590,6 +575,16 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 	if (usage->code > max)
 		goto ignore;
 
+	if (((device->quirks & (HID_QUIRK_2WHEEL_POWERMOUSE)) && (usage->hid == 0x00010032)))
+		map_rel(REL_HWHEEL);
+
+	if ((device->quirks & (HID_QUIRK_2WHEEL_MOUSE_HACK_7 | HID_QUIRK_2WHEEL_MOUSE_HACK_5)) &&
+		 (usage->type == EV_REL) && (usage->code == REL_WHEEL))
+			set_bit(REL_HWHEEL, bit);
+
+	if (((device->quirks & HID_QUIRK_2WHEEL_MOUSE_HACK_5) && (usage->hid == 0x00090005))
+		|| ((device->quirks & HID_QUIRK_2WHEEL_MOUSE_HACK_7) && (usage->hid == 0x00090007)))
+		goto ignore;
 
 	if (usage->type == EV_ABS) {
 
@@ -649,11 +644,6 @@ void hidinput_hid_event(struct hid_device *hid, struct hid_field *field, struct 
 		|| ((hid->quirks & HID_QUIRK_2WHEEL_MOUSE_HACK_7) && (usage->hid == 0x00090007))) {
 		if (value) hid->quirks |=  HID_QUIRK_2WHEEL_MOUSE_HACK_ON;
 		else       hid->quirks &= ~HID_QUIRK_2WHEEL_MOUSE_HACK_ON;
-		return;
-	}
-
-	if ((hid->quirks & HID_QUIRK_INVERT_HWHEEL) && (usage->code == REL_HWHEEL)) {
-		input_event(input, usage->type, usage->code, -value);
 		return;
 	}
 

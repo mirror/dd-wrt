@@ -15,6 +15,7 @@
  */
 
 #include <linux/types.h>
+#include <linux/config.h>
 #include <linux/string.h>
 
 #include <asm/page.h>

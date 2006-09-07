@@ -30,6 +30,7 @@
  *    Gareth Hughes <gareth@valinux.com>
  */
 
+#include <linux/config.h>
 #include "drmP.h"
 #include "drm.h"
 #include "i810_drm.h"

@@ -10,6 +10,7 @@
  * for more details.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/tty.h>
 #include <linux/console.h>

@@ -13,6 +13,7 @@
  * or implied.
  */
 
+#include <linux/config.h>
 #include <asm/cache.h>
 #include <asm/ppc_asm.h>
 

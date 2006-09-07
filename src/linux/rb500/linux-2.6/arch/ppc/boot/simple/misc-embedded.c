@@ -6,6 +6,7 @@
  * Currently maintained by: Tom Rini <trini@kernel.crashing.org>
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/string.h>
 #include <asm/bootinfo.h>

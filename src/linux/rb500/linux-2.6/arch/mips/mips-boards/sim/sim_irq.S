@@ -17,6 +17,7 @@
  * Interrupt exception dispatch code.
  *
  */
+#include <linux/config.h>
 
 #include <asm/asm.h>
 #include <asm/mipsregs.h>

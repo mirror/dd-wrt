@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include "arlan.h"
 
 #include <linux/sysctl.h>

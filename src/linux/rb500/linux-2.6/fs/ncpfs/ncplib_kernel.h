@@ -12,6 +12,7 @@
 #ifndef _NCPLIB_H
 #define _NCPLIB_H
 
+#include <linux/config.h>
 
 #include <linux/fs.h>
 #include <linux/types.h>

@@ -9,6 +9,7 @@
  * Copyright (C) 1995 Adrian M. Rodriguez (adrian@remus.rutgers.edu)
  */
 
+#include <linux/config.h>
 
 	.data
 	.align 4

@@ -49,18 +49,12 @@
 #include "name_table.h"
 #include "bcast.h"
 
+
 #define MAX_PKT_DEFAULT_MCAST 1500	/* bcast link max packet size (fixed) */
 
 #define BCLINK_WIN_DEFAULT 20		/* bcast link window size (default) */
 
 #define BCLINK_LOG_BUF_SIZE 0
-
-/*
- * Loss rate for incoming broadcast frames; used to test retransmission code.
- * Set to N to cause every N'th frame to be discarded; 0 => don't discard any.
- */
- 
-#define TIPC_BCAST_LOSS_RATE 0
 
 /**
  * struct bcbearer_pair - a pair of bearers used by broadcast link
@@ -81,14 +75,7 @@ struct bcbearer_pair {
  * @bearer: (non-standard) broadcast bearer structure
  * @media: (non-standard) broadcast media structure
  * @bpairs: array of bearer pairs
- * @bpairs_temp: temporary array of bearer pairs used by tipc_bcbearer_sort()
- * @remains: temporary node map used by tipc_bcbearer_send()
- * @remains_new: temporary node map used tipc_bcbearer_send()
- * 
- * Note: The fields labelled "temporary" are incorporated into the bearer
- * to avoid consuming potentially limited stack space through the use of
- * large local variables within multicast routines.  Concurrent access is
- * prevented through use of the spinlock "bc_lock".
+ * @bpairs_temp: array of bearer pairs used during creation of "bpairs"
  */
 
 struct bcbearer {
@@ -96,8 +83,6 @@ struct bcbearer {
 	struct media media;
 	struct bcbearer_pair bpairs[MAX_BEARERS];
 	struct bcbearer_pair bpairs_temp[TIPC_MAX_LINK_PRI + 1];
-	struct node_map remains;
-	struct node_map remains_new;
 };
 
 /**
@@ -117,7 +102,7 @@ struct bclink {
 static struct bcbearer *bcbearer = NULL;
 static struct bclink *bclink = NULL;
 static struct link *bcl = NULL;
-static DEFINE_SPINLOCK(bc_lock);
+static spinlock_t bc_lock = SPIN_LOCK_UNLOCKED;
 
 char tipc_bclink_name[] = "multicast-link";
 
@@ -180,18 +165,21 @@ static int bclink_ack_allowed(u32 n)
  * @after: sequence number of last packet to *not* retransmit
  * @to: sequence number of last packet to retransmit
  * 
- * Called with bc_lock locked
+ * Called with 'node' locked, bc_lock unlocked
  */
 
 static void bclink_retransmit_pkt(u32 after, u32 to)
 {
 	struct sk_buff *buf;
 
+	spin_lock_bh(&bc_lock);
 	buf = bcl->first_out;
 	while (buf && less_eq(buf_seqno(buf), after)) {
 		buf = buf->next;                
 	}
-	tipc_link_retransmit(bcl, buf, mod(to - after));
+	if (buf != NULL)
+		tipc_link_retransmit(bcl, buf, mod(to - after));
+	spin_unlock_bh(&bc_lock);              
 }
 
 /** 
@@ -358,10 +346,8 @@ static void tipc_bclink_peek_nack(u32 dest, u32 sender_tag, u32 gap_after, u32 g
 		for (; buf; buf = buf->next) {
 			u32 seqno = buf_seqno(buf);
 
-			if (mod(seqno - prev) != 1) {
+			if (mod(seqno - prev) != 1)
 				buf = NULL;
-				break;
-			}
 			if (seqno == gap_after)
 				break;
 			prev = seqno;
@@ -413,10 +399,7 @@ int tipc_bclink_send_msg(struct sk_buff *buf)
  */
 
 void tipc_bclink_recv_pkt(struct sk_buff *buf)
-{
-#if (TIPC_BCAST_LOSS_RATE)
-	static int rx_count = 0;
-#endif
+{        
 	struct tipc_msg *msg = buf_msg(buf);
 	struct node* node = tipc_node_find(msg_prevnode(msg));
 	u32 next_in;
@@ -437,13 +420,9 @@ void tipc_bclink_recv_pkt(struct sk_buff *buf)
 			tipc_node_lock(node);
 			tipc_bclink_acknowledge(node, msg_bcast_ack(msg));
 			tipc_node_unlock(node);
-			spin_lock_bh(&bc_lock);
 			bcl->stats.recv_nacks++;
-			bcl->owner->next = node;   /* remember requestor */
 			bclink_retransmit_pkt(msg_bcgap_after(msg),
 					      msg_bcgap_to(msg));
-			bcl->owner->next = NULL;
-			spin_unlock_bh(&bc_lock);              
 		} else {
 			tipc_bclink_peek_nack(msg_destnode(msg),
 					      msg_bcast_tag(msg),
@@ -453,14 +432,6 @@ void tipc_bclink_recv_pkt(struct sk_buff *buf)
 		buf_discard(buf);
 		return;
 	}
-
-#if (TIPC_BCAST_LOSS_RATE)
-	if (++rx_count == TIPC_BCAST_LOSS_RATE) {
-		rx_count = 0;
-		buf_discard(buf);
-		return;
-	}
-#endif
 
 	tipc_node_lock(node);
 receive:
@@ -560,8 +531,12 @@ static int tipc_bcbearer_send(struct sk_buff *buf,
 {
 	static int send_count = 0;
 
+	struct node_map *remains;
+	struct node_map *remains_new;
+	struct node_map *remains_tmp;
 	int bp_index;
 	int swap_time;
+	int err;
 
 	/* Prepare buffer for broadcasting (if first time trying to send it) */
 
@@ -582,7 +557,9 @@ static int tipc_bcbearer_send(struct sk_buff *buf,
 
 	/* Send buffer over bearers until all targets reached */
 	
-	bcbearer->remains = tipc_cltr_bcast_nodes;
+	remains = kmalloc(sizeof(struct node_map), GFP_ATOMIC);
+	remains_new = kmalloc(sizeof(struct node_map), GFP_ATOMIC);
+	*remains = tipc_cltr_bcast_nodes;
 
 	for (bp_index = 0; bp_index < MAX_BEARERS; bp_index++) {
 		struct bearer *p = bcbearer->bpairs[bp_index].primary;
@@ -591,8 +568,8 @@ static int tipc_bcbearer_send(struct sk_buff *buf,
 		if (!p)
 			break;	/* no more bearers to try */
 
-		tipc_nmap_diff(&bcbearer->remains, &p->nodes, &bcbearer->remains_new);
-		if (bcbearer->remains_new.count == bcbearer->remains.count)
+		tipc_nmap_diff(remains, &p->nodes, remains_new);
+		if (remains_new->count == remains->count)
 			continue;	/* bearer pair doesn't add anything */
 
 		if (!p->publ.blocked &&
@@ -610,17 +587,27 @@ swap:
 		bcbearer->bpairs[bp_index].primary = s;
 		bcbearer->bpairs[bp_index].secondary = p;
 update:
-		if (bcbearer->remains_new.count == 0)
-			return TIPC_OK;
+		if (remains_new->count == 0) {
+			err = TIPC_OK;
+			goto out;
+		}
 
-		bcbearer->remains = bcbearer->remains_new;
+		/* swap map */
+		remains_tmp = remains;
+		remains = remains_new;
+		remains_new = remains_tmp;
 	}
 	
 	/* Unable to reach all targets */
 
 	bcbearer->bearer.publ.blocked = 1;
 	bcl->stats.bearer_congs++;
-	return ~TIPC_OK;
+	err = ~TIPC_OK;
+
+ out:
+	kfree(remains_new);
+	kfree(remains);
+	return err;
 }
 
 /**
@@ -778,7 +765,7 @@ int tipc_bclink_init(void)
 	bclink = kmalloc(sizeof(*bclink), GFP_ATOMIC);
 	if (!bcbearer || !bclink) {
  nomem:
-	 	warn("Multicast link creation failed, no memory\n");
+	 	warn("Memory squeeze; Failed to create multicast link\n");
 		kfree(bcbearer);
 		bcbearer = NULL;
 		kfree(bclink);
@@ -796,7 +783,7 @@ int tipc_bclink_init(void)
 	memset(bclink, 0, sizeof(struct bclink));
 	INIT_LIST_HEAD(&bcl->waiting_ports);
 	bcl->next_out_no = 1;
-	spin_lock_init(&bclink->node.lock);
+	bclink->node.lock =  SPIN_LOCK_UNLOCKED;        
 	bcl->owner = &bclink->node;
         bcl->max_pkt = MAX_PKT_DEFAULT_MCAST;
 	tipc_link_set_queue_limits(bcl, BCLINK_WIN_DEFAULT);

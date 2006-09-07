@@ -30,7 +30,6 @@ static void __init free(void *where)
 
 static __initdata struct hash {
 	int ino, minor, major;
-	mode_t mode;
 	struct hash *next;
 	char name[N_ALIGN(PATH_MAX)];
 } *head[32];
@@ -42,8 +41,7 @@ static inline int hash(int major, int minor, int ino)
 	return tmp & 31;
 }
 
-static char __init *find_link(int major, int minor, int ino,
-			      mode_t mode, char *name)
+static char __init *find_link(int major, int minor, int ino, char *name)
 {
 	struct hash **p, *q;
 	for (p = head + hash(major, minor, ino); *p; p = &(*p)->next) {
@@ -53,17 +51,14 @@ static char __init *find_link(int major, int minor, int ino,
 			continue;
 		if ((*p)->major != major)
 			continue;
-		if (((*p)->mode ^ mode) & S_IFMT)
-			continue;
 		return (*p)->name;
 	}
 	q = (struct hash *)malloc(sizeof(struct hash));
 	if (!q)
 		panic("can't allocate link hash entry");
-	q->major = major;
-	q->minor = minor;
 	q->ino = ino;
-	q->mode = mode;
+	q->minor = minor;
+	q->major = major;
 	strcpy(q->name, name);
 	q->next = NULL;
 	*p = q;
@@ -234,23 +229,11 @@ static int __init do_reset(void)
 static int __init maybe_link(void)
 {
 	if (nlink >= 2) {
-		char *old = find_link(major, minor, ino, mode, collected);
+		char *old = find_link(major, minor, ino, collected);
 		if (old)
 			return (sys_link(old, collected) < 0) ? -1 : 1;
 	}
 	return 0;
-}
-
-static void __init clean_path(char *path, mode_t mode)
-{
-	struct stat st;
-
-	if (!sys_newlstat(path, &st) && (st.st_mode^mode) & S_IFMT) {
-		if (S_ISDIR(st.st_mode))
-			sys_rmdir(path);
-		else
-			sys_unlink(path);
-	}
 }
 
 static __initdata int wfd;
@@ -265,15 +248,9 @@ static int __init do_name(void)
 	}
 	if (dry_run)
 		return 0;
-	clean_path(collected, mode);
 	if (S_ISREG(mode)) {
-		int ml = maybe_link();
-		if (ml >= 0) {
-			int openflags = O_WRONLY|O_CREAT;
-			if (ml != 1)
-				openflags |= O_TRUNC;
-			wfd = sys_open(collected, openflags, mode);
-
+		if (maybe_link() >= 0) {
+			wfd = sys_open(collected, O_WRONLY|O_CREAT, mode);
 			if (wfd >= 0) {
 				sys_fchown(wfd, uid, gid);
 				sys_fchmod(wfd, mode);
@@ -314,7 +291,6 @@ static int __init do_copy(void)
 static int __init do_symlink(void)
 {
 	collected[N_ALIGN(name_len) + body_len] = '\0';
-	clean_path(collected, 0);
 	sys_symlink(collected + N_ALIGN(name_len), collected);
 	sys_lchown(collected, uid, gid);
 	state = SkipIt;

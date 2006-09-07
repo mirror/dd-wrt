@@ -1,7 +1,3 @@
-ifeq ($(CONFIG_PPC64),y)
-EXTRA_CFLAGS	+= -mno-minimal-toc
-endif
-
 obj-$(CONFIG_OPROFILE) += oprofile.o
 
 DRIVER_OBJS := $(addprefix ../../../drivers/oprofile/, \

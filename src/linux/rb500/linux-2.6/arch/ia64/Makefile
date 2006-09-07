@@ -71,8 +71,6 @@ all: compressed unwcheck
 
 compressed: vmlinux.gz
 
-vmlinuz: vmlinux.gz
-
 vmlinux.gz: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $@
 

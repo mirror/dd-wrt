@@ -22,6 +22,7 @@
  *           http://i4l.zabbadoz.net/i4l/cisco-hdlc.txt
  */
 
+#include <linux/config.h>
 #include <linux/isdn.h>
 #include <net/arp.h>
 #include <net/dst.h>

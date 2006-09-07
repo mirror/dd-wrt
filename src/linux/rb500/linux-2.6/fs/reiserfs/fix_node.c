@@ -34,6 +34,7 @@
  ** 
  **/
 
+#include <linux/config.h>
 #include <linux/time.h>
 #include <linux/string.h>
 #include <linux/reiserfs_fs.h>

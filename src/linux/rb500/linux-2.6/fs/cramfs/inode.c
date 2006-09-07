@@ -30,7 +30,7 @@
 static struct super_operations cramfs_ops;
 static struct inode_operations cramfs_dir_inode_operations;
 static const struct file_operations cramfs_directory_operations;
-static const struct address_space_operations cramfs_aops;
+static struct address_space_operations cramfs_aops;
 
 static DEFINE_MUTEX(read_mutex);
 
@@ -181,7 +181,9 @@ static void *cramfs_read(struct super_block *sb, unsigned int offset, unsigned i
 		struct page *page = NULL;
 
 		if (blocknr + i < devsize) {
-			page = read_mapping_page(mapping, blocknr + i, NULL);
+			page = read_cache_page(mapping, blocknr + i,
+				(filler_t *)mapping->a_ops->readpage,
+				NULL);
 			/* synchronous error? */
 			if (IS_ERR(page))
 				page = NULL;
@@ -320,10 +322,8 @@ out:
 	return -EINVAL;
 }
 
-static int cramfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+static int cramfs_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct super_block *sb = dentry->d_sb;
-
 	buf->f_type = CRAMFS_MAGIC;
 	buf->f_bsize = PAGE_CACHE_SIZE;
 	buf->f_blocks = CRAMFS_SB(sb)->blocks;
@@ -501,7 +501,7 @@ static int cramfs_readpage(struct file *file, struct page * page)
 	return 0;
 }
 
-static const struct address_space_operations cramfs_aops = {
+static struct address_space_operations cramfs_aops = {
 	.readpage = cramfs_readpage
 };
 
@@ -528,11 +528,10 @@ static struct super_operations cramfs_ops = {
 	.statfs		= cramfs_statfs,
 };
 
-static int cramfs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *cramfs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, cramfs_fill_super,
-			   mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, cramfs_fill_super);
 }
 
 static struct file_system_type cramfs_fs_type = {

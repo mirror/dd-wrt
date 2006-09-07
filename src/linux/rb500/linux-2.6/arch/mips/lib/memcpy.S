@@ -12,6 +12,7 @@
  *
  * Mnemonic names for arguments to memcpy/__copy_user
  */
+#include <linux/config.h>
 
 /*
  * Hack to resolve longstanding prefetch issue

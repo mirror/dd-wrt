@@ -27,7 +27,6 @@ void __init driver_init(void)
 	buses_init();
 	classes_init();
 	firmware_init();
-	hypervisor_init();
 
 	/* These are also core pieces, but must come after the
 	 * core core pieces.

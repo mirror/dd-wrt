@@ -13,6 +13,7 @@
 #ifndef _XTENSA_PLATFORM_H
 #define _XTENSA_PLATFORM_H
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/pci.h>
 

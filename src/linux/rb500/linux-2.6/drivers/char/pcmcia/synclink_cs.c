@@ -844,7 +844,7 @@ static int bh_action(MGSLPC_INFO *info)
 	return rc;
 }
 
-static void bh_handler(void* Context)
+void bh_handler(void* Context)
 {
 	MGSLPC_INFO *info = (MGSLPC_INFO*)Context;
 	int action;
@@ -888,7 +888,7 @@ static void bh_handler(void* Context)
 			__FILE__,__LINE__,info->device_name);
 }
 
-static void bh_transmit(MGSLPC_INFO *info)
+void bh_transmit(MGSLPC_INFO *info)
 {
 	struct tty_struct *tty = info->tty;
 	if (debug_level >= DEBUG_LEVEL_BH)
@@ -900,7 +900,7 @@ static void bh_transmit(MGSLPC_INFO *info)
 	}
 }
 
-static void bh_status(MGSLPC_INFO *info)
+void bh_status(MGSLPC_INFO *info)
 {
 	info->ri_chkcount = 0;
 	info->dsr_chkcount = 0;
@@ -1582,7 +1582,7 @@ static void mgslpc_put_char(struct tty_struct *tty, unsigned char ch)
 	if (mgslpc_paranoia_check(info, tty->name, "mgslpc_put_char"))
 		return;
 
-	if (!info->tx_buf)
+	if (!tty || !info->tx_buf)
 		return;
 
 	spin_lock_irqsave(&info->lock,flags);
@@ -1649,7 +1649,7 @@ static int mgslpc_write(struct tty_struct * tty,
 			__FILE__,__LINE__,info->device_name,count);
 	
 	if (mgslpc_paranoia_check(info, tty->name, "mgslpc_write") ||
-		!info->tx_buf)
+	    !tty || !info->tx_buf)
 		goto cleanup;
 
 	if (info->params.mode == MGSL_MODE_HDLC) {
@@ -2305,7 +2305,7 @@ static int mgslpc_ioctl(struct tty_struct *tty, struct file * file,
 	return ioctl_common(info, cmd, arg);
 }
 
-static int ioctl_common(MGSLPC_INFO *info, unsigned int cmd, unsigned long arg)
+int ioctl_common(MGSLPC_INFO *info, unsigned int cmd, unsigned long arg)
 {
 	int error;
 	struct mgsl_icount cnow;	/* kernel counter temps */
@@ -2877,7 +2877,7 @@ done:
 	return ((count < begin+len-off) ? count : begin+len-off);
 }
 
-static int rx_alloc_buffers(MGSLPC_INFO *info)
+int rx_alloc_buffers(MGSLPC_INFO *info)
 {
 	/* each buffer has header and data */
 	info->rx_buf_size = sizeof(RXBUF) + info->max_frame_size;
@@ -2900,13 +2900,13 @@ static int rx_alloc_buffers(MGSLPC_INFO *info)
 	return 0;
 }
 
-static void rx_free_buffers(MGSLPC_INFO *info)
+void rx_free_buffers(MGSLPC_INFO *info)
 {
 	kfree(info->rx_buf);
 	info->rx_buf = NULL;
 }
 
-static int claim_resources(MGSLPC_INFO *info)
+int claim_resources(MGSLPC_INFO *info)
 {
 	if (rx_alloc_buffers(info) < 0 ) {
 		printk( "Cant allocate rx buffer %s\n", info->device_name);
@@ -2916,7 +2916,7 @@ static int claim_resources(MGSLPC_INFO *info)
 	return 0;
 }
 
-static void release_resources(MGSLPC_INFO *info)
+void release_resources(MGSLPC_INFO *info)
 {
 	if (debug_level >= DEBUG_LEVEL_INFO)
 		printk("release_resources(%s)\n", info->device_name);
@@ -2928,7 +2928,7 @@ static void release_resources(MGSLPC_INFO *info)
  * 	
  * Arguments:		info	pointer to device instance data
  */
-static void mgslpc_add_device(MGSLPC_INFO *info)
+void mgslpc_add_device(MGSLPC_INFO *info)
 {
 	info->next_device = NULL;
 	info->line = mgslpc_device_count;
@@ -2964,7 +2964,7 @@ static void mgslpc_add_device(MGSLPC_INFO *info)
 #endif
 }
 
-static void mgslpc_remove_device(MGSLPC_INFO *remove_info)
+void mgslpc_remove_device(MGSLPC_INFO *remove_info)
 {
 	MGSLPC_INFO *info = mgslpc_device_list;
 	MGSLPC_INFO *last = NULL;
@@ -3257,7 +3257,7 @@ static void loopback_enable(MGSLPC_INFO *info)
 	write_reg(info, CHA + MODE, val);
 }
 
-static void hdlc_mode(MGSLPC_INFO *info)
+void hdlc_mode(MGSLPC_INFO *info)
 {
 	unsigned char val;
 	unsigned char clkmode, clksubmode;
@@ -3497,7 +3497,7 @@ static void hdlc_mode(MGSLPC_INFO *info)
 	rx_stop(info);
 }
 
-static void rx_stop(MGSLPC_INFO *info)
+void rx_stop(MGSLPC_INFO *info)
 {
 	if (debug_level >= DEBUG_LEVEL_ISR)
 		printk("%s(%d):rx_stop(%s)\n",
@@ -3510,7 +3510,7 @@ static void rx_stop(MGSLPC_INFO *info)
 	info->rx_overflow = 0;
 }
 
-static void rx_start(MGSLPC_INFO *info)
+void rx_start(MGSLPC_INFO *info)
 {
 	if (debug_level >= DEBUG_LEVEL_ISR)
 		printk("%s(%d):rx_start(%s)\n",
@@ -3526,7 +3526,7 @@ static void rx_start(MGSLPC_INFO *info)
 	info->rx_enabled = 1;
 }
 
-static void tx_start(MGSLPC_INFO *info)
+void tx_start(MGSLPC_INFO *info)
 {
 	if (debug_level >= DEBUG_LEVEL_ISR)
 		printk("%s(%d):tx_start(%s)\n",
@@ -3564,7 +3564,7 @@ static void tx_start(MGSLPC_INFO *info)
 		info->tx_enabled = 1;
 }
 
-static void tx_stop(MGSLPC_INFO *info)
+void tx_stop(MGSLPC_INFO *info)
 {
 	if (debug_level >= DEBUG_LEVEL_ISR)
 		printk("%s(%d):tx_stop(%s)\n",
@@ -3578,7 +3578,7 @@ static void tx_stop(MGSLPC_INFO *info)
 
 /* Reset the adapter to a known state and prepare it for further use.
  */
-static void reset_device(MGSLPC_INFO *info)
+void reset_device(MGSLPC_INFO *info)
 {
 	/* power up both channels (set BIT7) */ 
 	write_reg(info, CHA + CCR0, 0x80);
@@ -3628,7 +3628,7 @@ static void reset_device(MGSLPC_INFO *info)
 	write_reg(info, IPC, 0x05);
 }
 
-static void async_mode(MGSLPC_INFO *info)
+void async_mode(MGSLPC_INFO *info)
 {
 	unsigned char val;
 
@@ -3799,7 +3799,7 @@ static void async_mode(MGSLPC_INFO *info)
 
 /* Set the HDLC idle mode for the transmitter.
  */
-static void tx_set_idle(MGSLPC_INFO *info)
+void tx_set_idle(MGSLPC_INFO *info)
 {
 	/* Note: ESCC2 only supports flags and one idle modes */ 
 	if (info->idle_mode == HDLC_TXIDLE_FLAGS)
@@ -3810,7 +3810,7 @@ static void tx_set_idle(MGSLPC_INFO *info)
 
 /* get state of the V24 status (input) signals.
  */
-static void get_signals(MGSLPC_INFO *info)
+void get_signals(MGSLPC_INFO *info)
 {
 	unsigned char status = 0;
 	
@@ -3832,7 +3832,7 @@ static void get_signals(MGSLPC_INFO *info)
 /* Set the state of DTR and RTS based on contents of
  * serial_signals member of device extension.
  */
-static void set_signals(MGSLPC_INFO *info)
+void set_signals(MGSLPC_INFO *info)
 {
 	unsigned char val;
 
@@ -3856,7 +3856,7 @@ static void set_signals(MGSLPC_INFO *info)
 		set_reg_bits(info, CHA + PVR, PVR_DTR);
 }
 
-static void rx_reset_buffers(MGSLPC_INFO *info)
+void rx_reset_buffers(MGSLPC_INFO *info)
 {
 	RXBUF *buf;
 	int i;
@@ -3875,7 +3875,7 @@ static void rx_reset_buffers(MGSLPC_INFO *info)
  *
  * Returns 1 if frame returned, otherwise 0
  */
-static int rx_get_frame(MGSLPC_INFO *info)
+int rx_get_frame(MGSLPC_INFO *info)
 {
 	unsigned short status;
 	RXBUF *buf;
@@ -3961,7 +3961,7 @@ static int rx_get_frame(MGSLPC_INFO *info)
 	return 1;
 }
 
-static BOOLEAN register_test(MGSLPC_INFO *info)
+BOOLEAN register_test(MGSLPC_INFO *info)
 {
 	static unsigned char patterns[] = 
 	    { 0x00, 0xff, 0xaa, 0x55, 0x69, 0x96, 0x0f };
@@ -3987,7 +3987,7 @@ static BOOLEAN register_test(MGSLPC_INFO *info)
 	return rc;
 }
 
-static BOOLEAN irq_test(MGSLPC_INFO *info)
+BOOLEAN irq_test(MGSLPC_INFO *info)
 {
 	unsigned long end_time;
 	unsigned long flags;
@@ -4022,7 +4022,7 @@ static BOOLEAN irq_test(MGSLPC_INFO *info)
 	return info->irq_occurred ? TRUE : FALSE;
 }
 
-static int adapter_test(MGSLPC_INFO *info)
+int adapter_test(MGSLPC_INFO *info)
 {
 	if (!register_test(info)) {
 		info->init_error = DiagStatus_AddressFailure;
@@ -4044,7 +4044,7 @@ static int adapter_test(MGSLPC_INFO *info)
 	return 0;
 }
 
-static void trace_block(MGSLPC_INFO *info,const char* data, int count, int xmit)
+void trace_block(MGSLPC_INFO *info,const char* data, int count, int xmit)
 {
 	int i;
 	int linecount;
@@ -4079,7 +4079,7 @@ static void trace_block(MGSLPC_INFO *info,const char* data, int count, int xmit)
 /* HDLC frame time out
  * update stats and do tx completion processing
  */
-static void tx_timeout(unsigned long context)
+void tx_timeout(unsigned long context)
 {
 	MGSLPC_INFO *info = (MGSLPC_INFO*)context;
 	unsigned long flags;

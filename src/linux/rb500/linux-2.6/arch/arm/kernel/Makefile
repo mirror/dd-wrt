@@ -22,10 +22,7 @@ obj-$(CONFIG_PCI)		+= bios32.o
 obj-$(CONFIG_SMP)		+= smp.o
 obj-$(CONFIG_OABI_COMPAT)	+= sys_oabi-compat.o
 
-obj-$(CONFIG_CRUNCH)		+= crunch.o crunch-bits.o
-AFLAGS_crunch-bits.o		:= -Wa,-mcpu=ep9312
-
-obj-$(CONFIG_IWMMXT)		+= iwmmxt.o iwmmxt-notifier.o
+obj-$(CONFIG_IWMMXT)		+= iwmmxt.o
 AFLAGS_iwmmxt.o			:= -Wa,-mcpu=iwmmxt
 
 ifneq ($(CONFIG_ARCH_EBSA110),y)

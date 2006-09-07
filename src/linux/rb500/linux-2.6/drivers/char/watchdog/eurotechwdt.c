@@ -40,6 +40,7 @@
  * 	Added Matt Domsch's nowayout module option.
  */
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
@@ -356,7 +357,7 @@ static int eurwdt_notify_sys(struct notifier_block *this, unsigned long code,
  */
 
 
-static const struct file_operations eurwdt_fops = {
+static struct file_operations eurwdt_fops = {
 	.owner	= THIS_MODULE,
 	.llseek	= no_llseek,
 	.write	= eurwdt_write,
@@ -420,7 +421,7 @@ static int __init eurwdt_init(void)
 		goto out;
 	}
 
-	ret = request_irq(irq, eurwdt_interrupt, IRQF_DISABLED, "eurwdt", NULL);
+	ret = request_irq(irq, eurwdt_interrupt, SA_INTERRUPT, "eurwdt", NULL);
 	if(ret) {
 		printk(KERN_ERR "eurwdt: IRQ %d is not free.\n", irq);
 		goto outmisc;

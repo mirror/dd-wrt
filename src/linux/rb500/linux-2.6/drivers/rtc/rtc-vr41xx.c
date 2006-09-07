@@ -81,6 +81,7 @@ MODULE_LICENSE("GPL");
 
 #define RTC_FREQUENCY		32768
 #define MAX_PERIODIC_RATE	6553
+#define MAX_USER_PERIODIC_RATE	64
 
 static void __iomem *rtc1_base;
 static void __iomem *rtc2_base;
@@ -93,7 +94,7 @@ static void __iomem *rtc2_base;
 
 static unsigned long epoch = 1970;	/* Jan 1 1970 00:00:00 */
 
-static DEFINE_SPINLOCK(rtc_lock);
+static spinlock_t rtc_lock = SPIN_LOCK_UNLOCKED;
 static char rtc_name[] = "RTC";
 static unsigned long periodic_frequency;
 static unsigned long periodic_count;
@@ -239,6 +240,9 @@ static int vr41xx_rtc_ioctl(struct device *dev, unsigned int cmd, unsigned long 
 		if (arg > MAX_PERIODIC_RATE)
 			return -EINVAL;
 
+		if (arg > MAX_USER_PERIODIC_RATE && capable(CAP_SYS_RESOURCE) == 0)
+			return -EACCES;
+
 		periodic_frequency = arg;
 
 		count = RTC_FREQUENCY;
@@ -259,6 +263,10 @@ static int vr41xx_rtc_ioctl(struct device *dev, unsigned int cmd, unsigned long 
 		/* Doesn't support before 1900 */
 		if (arg < 1900)
 			return -EINVAL;
+
+		if (capable(CAP_SYS_TIME) == 0)
+			return -EACCES;
+
 		epoch = arg;
 		break;
 	default:
@@ -345,11 +353,11 @@ static int __devinit rtc_probe(struct platform_device *pdev)
 	spin_unlock_irq(&rtc_lock);
 
 	irq = ELAPSEDTIME_IRQ;
-	retval = request_irq(irq, elapsedtime_interrupt, IRQF_DISABLED,
+	retval = request_irq(irq, elapsedtime_interrupt, SA_INTERRUPT,
 	                     "elapsed_time", pdev);
 	if (retval == 0) {
 		irq = RTCLONG1_IRQ;
-		retval = request_irq(irq, rtclong1_interrupt, IRQF_DISABLED,
+		retval = request_irq(irq, rtclong1_interrupt, SA_INTERRUPT,
 		                     "rtclong1", pdev);
 	}
 

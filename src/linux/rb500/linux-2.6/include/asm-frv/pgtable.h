@@ -16,6 +16,7 @@
 #ifndef _ASM_PGTABLE_H
 #define _ASM_PGTABLE_H
 
+#include <linux/config.h>
 #include <asm/mem-layout.h>
 #include <asm/setup.h>
 #include <asm/processor.h>

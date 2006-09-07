@@ -8,6 +8,7 @@
  *		From code orinally in TCP
  */
 
+#include <linux/config.h>
 
 #include <net/inet_hashtables.h>
 #include <net/inet_timewait_sock.h>

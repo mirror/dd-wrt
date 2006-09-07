@@ -8,6 +8,7 @@
 -- Copyright 2004 Richard Curnow (evt_debug etc)
 --
 --------------------------------------------------------------------------*/
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>

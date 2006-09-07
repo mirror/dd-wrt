@@ -169,6 +169,12 @@ static int tipc_create(struct socket *sock, int protocol)
 	struct sock *sk;
         u32 ref;
 
+	if ((sock->type != SOCK_STREAM) && 
+	    (sock->type != SOCK_SEQPACKET) &&
+	    (sock->type != SOCK_DGRAM) &&
+	    (sock->type != SOCK_RDM))
+		return -EPROTOTYPE;
+
 	if (unlikely(protocol != 0))
 		return -EPROTONOSUPPORT;
 
@@ -193,9 +199,6 @@ static int tipc_create(struct socket *sock, int protocol)
 		sock->ops = &msg_ops;
 		sock->state = SS_READY;
 		break;
-	default:
-		tipc_deleteport(ref);
-		return -EPROTOTYPE;
 	}
 
 	sk = sk_alloc(AF_TIPC, GFP_KERNEL, &tipc_proto, 1);
@@ -423,7 +426,7 @@ static int dest_name_check(struct sockaddr_tipc *dest, struct msghdr *m)
 
         if (copy_from_user(&hdr, m->msg_iov[0].iov_base, sizeof(hdr)))
 		return -EFAULT;
-	if ((ntohs(hdr.tcm_type) & 0xC000) && (!capable(CAP_NET_ADMIN)))
+	if ((ntohs(hdr.tcm_type) & 0xC000) & (!capable(CAP_NET_ADMIN)))
 		return -EACCES;
         
 	return 0;
@@ -434,7 +437,7 @@ static int dest_name_check(struct sockaddr_tipc *dest, struct msghdr *m)
  * @iocb: (unused)
  * @sock: socket structure
  * @m: message to send
- * @total_len: length of message
+ * @total_len: (unused)
  * 
  * Message must have an destination specified explicitly.
  * Used for SOCK_RDM and SOCK_DGRAM messages, 
@@ -455,8 +458,7 @@ static int send_msg(struct kiocb *iocb, struct socket *sock,
 
 	if (unlikely(!dest))
 		return -EDESTADDRREQ;
-	if (unlikely((m->msg_namelen < sizeof(*dest)) ||
-		     (dest->family != AF_TIPC)))
+	if (unlikely(dest->family != AF_TIPC))
 		return -EINVAL;
 
 	needs_conn = (sock->state != SS_READY);
@@ -468,10 +470,6 @@ static int send_msg(struct kiocb *iocb, struct socket *sock,
 		if ((tsock->p->published) ||
 		    ((sock->type == SOCK_STREAM) && (total_len != 0)))
 			return -EOPNOTSUPP;
-		if (dest->addrtype == TIPC_ADDR_NAME) {
-			tsock->p->conn_type = dest->addr.name.name.type;
-			tsock->p->conn_instance = dest->addr.name.name.instance;
-		}
 	}
 
 	if (down_interruptible(&tsock->sem))
@@ -540,7 +538,7 @@ exit:
  * @iocb: (unused)
  * @sock: socket structure
  * @m: message to send
- * @total_len: length of message
+ * @total_len: (unused)
  * 
  * Used for SOCK_SEQPACKET messages and SOCK_STREAM data.
  * 
@@ -563,15 +561,15 @@ static int send_packet(struct kiocb *iocb, struct socket *sock,
 		return -ERESTARTSYS;
         }
 
-        do {
-		if (unlikely(sock->state != SS_CONNECTED)) {
-			if (sock->state == SS_DISCONNECTING)
-				res = -EPIPE;   
-			else
-				res = -ENOTCONN;
-			goto exit;
-		}
+        if (unlikely(sock->state != SS_CONNECTED)) {
+                if (sock->state == SS_DISCONNECTING)
+                        res = -EPIPE;   
+                else
+                        res = -ENOTCONN;
+                goto exit;
+        }
 
+        do {
                 res = tipc_send(tsock->p->ref, m->msg_iovlen, m->msg_iov);
                 if (likely(res != -ELINKCONG)) {
 exit:
@@ -599,8 +597,7 @@ exit:
  * 
  * Used for SOCK_STREAM data.
  * 
- * Returns the number of bytes sent on success (or partial success), 
- * or errno if no data sent
+ * Returns the number of bytes sent on success, or errno otherwise
  */
 
 
@@ -614,7 +611,6 @@ static int send_stream(struct kiocb *iocb, struct socket *sock,
 	char __user *curr_start;
 	int curr_left;
 	int bytes_to_send;
-	int bytes_sent;
 	int res;
 	
 	if (likely(total_len <= TIPC_MAX_USER_MSG_SIZE))
@@ -637,11 +633,11 @@ static int send_stream(struct kiocb *iocb, struct socket *sock,
 	 * of small iovec entries into send_packet().
 	 */
 
-	curr_iov = m->msg_iov;
-	curr_iovlen = m->msg_iovlen;
+	my_msg = *m;
+	curr_iov = my_msg.msg_iov;
+	curr_iovlen = my_msg.msg_iovlen;
 	my_msg.msg_iov = &my_iov;
 	my_msg.msg_iovlen = 1;
-	bytes_sent = 0;
 
 	while (curr_iovlen--) {
 		curr_start = curr_iov->iov_base;
@@ -652,18 +648,16 @@ static int send_stream(struct kiocb *iocb, struct socket *sock,
 				? curr_left : TIPC_MAX_USER_MSG_SIZE;
 			my_iov.iov_base = curr_start;
 			my_iov.iov_len = bytes_to_send;
-                        if ((res = send_packet(iocb, sock, &my_msg, 0)) < 0) {
-				return bytes_sent ? bytes_sent : res;
-			}
+                        if ((res = send_packet(iocb, sock, &my_msg, 0)) < 0)
+                                return res;
 			curr_left -= bytes_to_send;
 			curr_start += bytes_to_send;
-			bytes_sent += bytes_to_send;
 		}
 
 		curr_iov++;
 	}
 
-	return bytes_sent;
+	return total_len;
 }
 
 /**
@@ -733,7 +727,6 @@ static int anc_data_recv(struct msghdr *m, struct tipc_msg *msg,
 	u32 anc_data[3];
 	u32 err;
 	u32 dest_type;
-	int has_name;
 	int res;
 
 	if (likely(m->msg_controllen == 0))
@@ -745,10 +738,10 @@ static int anc_data_recv(struct msghdr *m, struct tipc_msg *msg,
 	if (unlikely(err)) {
 		anc_data[0] = err;
 		anc_data[1] = msg_data_sz(msg);
-		if ((res = put_cmsg(m, SOL_TIPC, TIPC_ERRINFO, 8, anc_data)))
+		if ((res = put_cmsg(m, SOL_SOCKET, TIPC_ERRINFO, 8, anc_data)))
 			return res;
 		if (anc_data[1] &&
-		    (res = put_cmsg(m, SOL_TIPC, TIPC_RETDATA, anc_data[1], 
+		    (res = put_cmsg(m, SOL_SOCKET, TIPC_RETDATA, anc_data[1], 
 				    msg_data(msg))))
 			return res;
 	}
@@ -758,28 +751,25 @@ static int anc_data_recv(struct msghdr *m, struct tipc_msg *msg,
 	dest_type = msg ? msg_type(msg) : TIPC_DIRECT_MSG;
 	switch (dest_type) {
 	case TIPC_NAMED_MSG:
-		has_name = 1;
 		anc_data[0] = msg_nametype(msg);
 		anc_data[1] = msg_namelower(msg);
 		anc_data[2] = msg_namelower(msg);
 		break;
 	case TIPC_MCAST_MSG:
-		has_name = 1;
 		anc_data[0] = msg_nametype(msg);
 		anc_data[1] = msg_namelower(msg);
 		anc_data[2] = msg_nameupper(msg);
 		break;
 	case TIPC_CONN_MSG:
-		has_name = (tport->conn_type != 0);
 		anc_data[0] = tport->conn_type;
 		anc_data[1] = tport->conn_instance;
 		anc_data[2] = tport->conn_instance;
 		break;
 	default:
-		has_name = 0;
+		anc_data[0] = 0;
 	}
-	if (has_name &&
-	    (res = put_cmsg(m, SOL_TIPC, TIPC_DESTNAME, 12, anc_data)))
+	if (anc_data[0] &&
+	    (res = put_cmsg(m, SOL_SOCKET, TIPC_DESTNAME, 12, anc_data)))
 		return res;
 
 	return 0;
@@ -970,7 +960,7 @@ static int recv_stream(struct kiocb *iocb, struct socket *sock,
 restart:
 	if (unlikely((skb_queue_len(&sock->sk->sk_receive_queue) == 0) &&
 		     (flags & MSG_DONTWAIT))) {
-		res = -EWOULDBLOCK;
+		res = (sz_copied == 0) ? -EWOULDBLOCK : 0;
 		goto exit;
 	}
 
@@ -1061,7 +1051,7 @@ restart:
 
 exit:
 	up(&tsock->sem);
-	return sz_copied ? sz_copied : res;
+	return res ? res : sz_copied;
 }
 
 /**
@@ -1246,8 +1236,7 @@ static int connect(struct socket *sock, struct sockaddr *dest, int destlen,
    if (sock->state == SS_READY)
 	   return -EOPNOTSUPP;
 
-   /* Issue Posix-compliant error code if socket is in the wrong state */
-
+   /* MOVE THE REST OF THIS ERROR CHECKING TO send_msg()? */
    if (sock->state == SS_LISTENING)
 	   return -EOPNOTSUPP;
    if (sock->state == SS_CONNECTING)
@@ -1255,20 +1244,13 @@ static int connect(struct socket *sock, struct sockaddr *dest, int destlen,
    if (sock->state != SS_UNCONNECTED)
            return -EISCONN;
 
-   /*
-    * Reject connection attempt using multicast address
-    *
-    * Note: send_msg() validates the rest of the address fields,
-    *       so there's no need to do it here
-    */
-
-   if (dst->addrtype == TIPC_ADDR_MCAST)
+   if ((dst->family != AF_TIPC) ||
+       ((dst->addrtype != TIPC_ADDR_NAME) && (dst->addrtype != TIPC_ADDR_ID)))
            return -EINVAL;
 
    /* Send a 'SYN-' to destination */
 
    m.msg_name = dest;
-   m.msg_namelen = destlen;
    if ((res = send_msg(NULL, sock, &m, 0)) < 0) {
 	   sock->state = SS_DISCONNECTING;
 	   return res;
@@ -1287,6 +1269,10 @@ static int connect(struct socket *sock, struct sockaddr *dest, int destlen,
 	   msg = buf_msg(buf);
            res = auto_connect(sock, tsock, msg);
            if (!res) {
+		   if (dst->addrtype == TIPC_ADDR_NAME) {
+			   tsock->p->conn_type = dst->addr.name.name.type;
+			   tsock->p->conn_instance = dst->addr.name.name.instance;
+		   }
 		   if (!msg_data_sz(msg))
 			   advance_queue(tsock);
 	   }
@@ -1400,7 +1386,7 @@ exit:
 /**
  * shutdown - shutdown socket connection
  * @sock: socket structure
- * @how: direction to close (unused; always treated as read + write)
+ * @how: direction to close (always treated as read + write)
  *
  * Terminates connection (if necessary), then purges socket's receive queue.
  * 
@@ -1483,8 +1469,7 @@ restart:
  * Returns 0 on success, errno otherwise
  */
 
-static int setsockopt(struct socket *sock, 
-		      int lvl, int opt, char __user *ov, int ol)
+static int setsockopt(struct socket *sock, int lvl, int opt, char *ov, int ol)
 {
 	struct tipc_sock *tsock = tipc_sk(sock->sk);
 	u32 value;
@@ -1540,8 +1525,7 @@ static int setsockopt(struct socket *sock,
  * Returns 0 on success, errno otherwise
  */
 
-static int getsockopt(struct socket *sock, 
-		      int lvl, int opt, char __user *ov, int *ol)
+static int getsockopt(struct socket *sock, int lvl, int opt, char *ov, int *ol)
 {
 	struct tipc_sock *tsock = tipc_sk(sock->sk);
         int len;

@@ -1,6 +1,6 @@
 /* ffb.c: Creator/Elite3D frame buffer driver
  *
- * Copyright (C) 2003, 2006 David S. Miller (davem@davemloft.net)
+ * Copyright (C) 2003 David S. Miller (davem@redhat.com)
  * Copyright (C) 1997,1998,1999 Jakub Jelinek (jj@ultra.linux.cz)
  *
  * Driver layout based loosely on tgafb.c, see that file for credits.
@@ -19,8 +19,7 @@
 
 #include <asm/io.h>
 #include <asm/upa.h>
-#include <asm/prom.h>
-#include <asm/of_device.h>
+#include <asm/oplib.h>
 #include <asm/fbio.h>
 
 #include "sbuslib.h"
@@ -185,161 +184,161 @@ static struct fb_ops ffb_ops = {
 
 struct ffb_fbc {
 	/* Next vertex registers */
-	u32	xxx1[3];
-	u32	alpha;
-	u32	red;
-	u32	green;
-	u32	blue;
-	u32	depth;
-	u32	y;
-	u32	x;
-	u32	xxx2[2];
-	u32	ryf;
-	u32	rxf;
-	u32	xxx3[2];
+	u32		xxx1[3];
+	volatile u32	alpha;
+	volatile u32	red;
+	volatile u32	green;
+	volatile u32	blue;
+	volatile u32	depth;
+	volatile u32	y;
+	volatile u32	x;
+	u32		xxx2[2];
+	volatile u32	ryf;
+	volatile u32	rxf;
+	u32		xxx3[2];
 	
-	u32	dmyf;
-	u32	dmxf;
-	u32	xxx4[2];
-	u32	ebyi;
-	u32	ebxi;
-	u32	xxx5[2];
-	u32	by;
-	u32	bx;
-	u32	dy;
-	u32	dx;
-	u32	bh;
-	u32	bw;
-	u32	xxx6[2];
+	volatile u32	dmyf;
+	volatile u32	dmxf;
+	u32		xxx4[2];
+	volatile u32	ebyi;
+	volatile u32	ebxi;
+	u32		xxx5[2];
+	volatile u32	by;
+	volatile u32	bx;
+	u32		dy;
+	u32		dx;
+	volatile u32	bh;
+	volatile u32	bw;
+	u32		xxx6[2];
 	
-	u32	xxx7[32];
+	u32		xxx7[32];
 	
 	/* Setup unit vertex state register */
-	u32	suvtx;
-	u32	xxx8[63];
+	volatile u32	suvtx;
+	u32		xxx8[63];
 	
 	/* Control registers */
-	u32	ppc;
-	u32	wid;
-	u32	fg;
-	u32	bg;
-	u32	consty;
-	u32	constz;
-	u32	xclip;
-	u32	dcss;
-	u32	vclipmin;
-	u32	vclipmax;
-	u32	vclipzmin;
-	u32	vclipzmax;
-	u32	dcsf;
-	u32	dcsb;
-	u32	dczf;
-	u32	dczb;
+	volatile u32	ppc;
+	volatile u32	wid;
+	volatile u32	fg;
+	volatile u32	bg;
+	volatile u32	consty;
+	volatile u32	constz;
+	volatile u32	xclip;
+	volatile u32	dcss;
+	volatile u32	vclipmin;
+	volatile u32	vclipmax;
+	volatile u32	vclipzmin;
+	volatile u32	vclipzmax;
+	volatile u32	dcsf;
+	volatile u32	dcsb;
+	volatile u32	dczf;
+	volatile u32	dczb;
 	
-	u32	xxx9;
-	u32	blendc;
-	u32	blendc1;
-	u32	blendc2;
-	u32	fbramitc;
-	u32	fbc;
-	u32	rop;
-	u32	cmp;
-	u32	matchab;
-	u32	matchc;
-	u32	magnab;
-	u32	magnc;
-	u32	fbcfg0;
-	u32	fbcfg1;
-	u32	fbcfg2;
-	u32	fbcfg3;
+	u32		xxx9;
+	volatile u32	blendc;
+	volatile u32	blendc1;
+	volatile u32	blendc2;
+	volatile u32	fbramitc;
+	volatile u32	fbc;
+	volatile u32	rop;
+	volatile u32	cmp;
+	volatile u32	matchab;
+	volatile u32	matchc;
+	volatile u32	magnab;
+	volatile u32	magnc;
+	volatile u32	fbcfg0;
+	volatile u32	fbcfg1;
+	volatile u32	fbcfg2;
+	volatile u32	fbcfg3;
 	
-	u32	ppcfg;
-	u32	pick;
-	u32	fillmode;
-	u32	fbramwac;
-	u32	pmask;
-	u32	xpmask;
-	u32	ypmask;
-	u32	zpmask;
-	u32	clip0min;
-	u32	clip0max;
-	u32	clip1min;
-	u32	clip1max;
-	u32	clip2min;
-	u32	clip2max;
-	u32	clip3min;
-	u32	clip3max;
+	u32		ppcfg;
+	volatile u32	pick;
+	volatile u32	fillmode;
+	volatile u32	fbramwac;
+	volatile u32	pmask;
+	volatile u32	xpmask;
+	volatile u32	ypmask;
+	volatile u32	zpmask;
+	volatile u32	clip0min;
+	volatile u32	clip0max;
+	volatile u32	clip1min;
+	volatile u32	clip1max;
+	volatile u32	clip2min;
+	volatile u32	clip2max;
+	volatile u32	clip3min;
+	volatile u32	clip3max;
 	
 	/* New 3dRAM III support regs */
-	u32	rawblend2;
-	u32	rawpreblend;
-	u32	rawstencil;
-	u32	rawstencilctl;
-	u32	threedram1;
-	u32	threedram2;
-	u32	passin;
-	u32	rawclrdepth;
-	u32	rawpmask;
-	u32	rawcsrc;
-	u32	rawmatch;
-	u32	rawmagn;
-	u32	rawropblend;
-	u32	rawcmp;
-	u32	rawwac;
-	u32	fbramid;
+	volatile u32	rawblend2;
+	volatile u32	rawpreblend;
+	volatile u32	rawstencil;
+	volatile u32	rawstencilctl;
+	volatile u32	threedram1;
+	volatile u32	threedram2;
+	volatile u32	passin;
+	volatile u32	rawclrdepth;
+	volatile u32	rawpmask;
+	volatile u32	rawcsrc;
+	volatile u32	rawmatch;
+	volatile u32	rawmagn;
+	volatile u32	rawropblend;
+	volatile u32	rawcmp;
+	volatile u32	rawwac;
+	volatile u32	fbramid;
 	
-	u32	drawop;
-	u32	xxx10[2];
-	u32	fontlpat;
-	u32	xxx11;
-	u32	fontxy;
-	u32	fontw;
-	u32	fontinc;
-	u32	font;
-	u32	xxx12[3];
-	u32	blend2;
-	u32	preblend;
-	u32	stencil;
-	u32	stencilctl;
+	volatile u32	drawop;
+	u32		xxx10[2];
+	volatile u32	fontlpat;
+	u32		xxx11;
+	volatile u32	fontxy;
+	volatile u32	fontw;
+	volatile u32	fontinc;
+	volatile u32	font;
+	u32		xxx12[3];
+	volatile u32	blend2;
+	volatile u32	preblend;
+	volatile u32	stencil;
+	volatile u32	stencilctl;
 
-	u32	xxx13[4];	
-	u32	dcss1;
-	u32	dcss2;
-	u32	dcss3;
-	u32	widpmask;
-	u32	dcs2;
-	u32	dcs3;
-	u32	dcs4;
-	u32	xxx14;
-	u32	dcd2;
-	u32	dcd3;
-	u32	dcd4;
-	u32	xxx15;
+	u32		xxx13[4];	
+	volatile u32	dcss1;
+	volatile u32	dcss2;
+	volatile u32	dcss3;
+	volatile u32	widpmask;
+	volatile u32	dcs2;
+	volatile u32	dcs3;
+	volatile u32	dcs4;
+	u32		xxx14;
+	volatile u32	dcd2;
+	volatile u32	dcd3;
+	volatile u32	dcd4;
+	u32		xxx15;
 	
-	u32	pattern[32];
+	volatile u32	pattern[32];
 	
-	u32	xxx16[256];
+	u32		xxx16[256];
 	
-	u32	devid;
-	u32	xxx17[63];
+	volatile u32	devid;
+	u32		xxx17[63];
 	
-	u32	ucsr;
-	u32	xxx18[31];
+	volatile u32	ucsr;
+	u32		xxx18[31];
 	
-	u32	mer;
+	volatile u32	mer;
 };
 
 struct ffb_dac {
-	u32	type;
-	u32	value;
-	u32	type2;
-	u32	value2;
+	volatile u32	type;
+	volatile u32	value;
+	volatile u32	type2;
+	volatile u32	value2;
 };
 
 struct ffb_par {
 	spinlock_t		lock;
-	struct ffb_fbc __iomem	*fbc;
-	struct ffb_dac __iomem	*dac;
+	struct ffb_fbc		*fbc;
+	struct ffb_dac		*dac;
 
 	u32			flags;
 #define FFB_FLAG_AFB		0x00000001
@@ -354,13 +353,16 @@ struct ffb_par {
 	unsigned long		physbase;
 	unsigned long		fbsize;
 
+	char			name[64];
+	int			prom_node;
+	int			prom_parent_node;
 	int			dac_rev;
 	int			board_type;
 };
 
 static void FFBFifo(struct ffb_par *par, int n)
 {
-	struct ffb_fbc __iomem *fbc;
+	struct ffb_fbc *fbc;
 	int cache = par->fifo_cache;
 
 	if (cache - n < 0) {
@@ -373,7 +375,7 @@ static void FFBFifo(struct ffb_par *par, int n)
 
 static void FFBWait(struct ffb_par *par)
 {
-	struct ffb_fbc __iomem *fbc;
+	struct ffb_fbc *fbc;
 	int limit = 10000;
 
 	fbc = par->fbc;
@@ -406,8 +408,8 @@ static __inline__ void ffb_rop(struct ffb_par *par, u32 rop)
 
 static void ffb_switch_from_graph(struct ffb_par *par)
 {
-	struct ffb_fbc __iomem *fbc = par->fbc;
-	struct ffb_dac __iomem *dac = par->dac;
+	struct ffb_fbc *fbc = par->fbc;
+	struct ffb_dac *dac = par->dac;
 	unsigned long flags;
 
 	spin_lock_irqsave(&par->lock, flags);
@@ -460,7 +462,7 @@ static int ffb_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
 static void ffb_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
 {
 	struct ffb_par *par = (struct ffb_par *) info->par;
-	struct ffb_fbc __iomem *fbc = par->fbc;
+	struct ffb_fbc *fbc = par->fbc;
 	unsigned long flags;
 	u32 fg;
 
@@ -503,7 +505,7 @@ static void
 ffb_copyarea(struct fb_info *info, const struct fb_copyarea *area) 
 {
 	struct ffb_par *par = (struct ffb_par *) info->par;
-	struct ffb_fbc __iomem *fbc = par->fbc;
+	struct ffb_fbc *fbc = par->fbc;
 	unsigned long flags;
 
 	if (area->dx != area->sx ||
@@ -539,7 +541,7 @@ ffb_copyarea(struct fb_info *info, const struct fb_copyarea *area)
 static void ffb_imageblit(struct fb_info *info, const struct fb_image *image)
 {
 	struct ffb_par *par = (struct ffb_par *) info->par;
-	struct ffb_fbc __iomem *fbc = par->fbc;
+	struct ffb_fbc *fbc = par->fbc;
 	const u8 *data = image->data;
 	unsigned long flags;
 	u32 fg, bg, xy;
@@ -662,7 +664,7 @@ static int
 ffb_blank(int blank, struct fb_info *info)
 {
 	struct ffb_par *par = (struct ffb_par *) info->par;
-	struct ffb_dac __iomem *dac = par->dac;
+	struct ffb_dac *dac = par->dac;
 	unsigned long flags;
 	u32 tmp;
 
@@ -881,42 +883,78 @@ ffb_init_fix(struct fb_info *info)
 	info->fix.accel = FB_ACCEL_SUN_CREATOR;
 }
 
+static int ffb_apply_upa_parent_ranges(int parent,
+				       struct linux_prom64_registers *regs)
+{
+	struct linux_prom64_ranges ranges[PROMREG_MAX];
+	char name[128];
+	int len, i;
+
+	prom_getproperty(parent, "name", name, sizeof(name));
+	if (strcmp(name, "upa") != 0)
+		return 0;
+
+	len = prom_getproperty(parent, "ranges", (void *) ranges, sizeof(ranges));
+	if (len <= 0)
+		return 1;
+
+	len /= sizeof(struct linux_prom64_ranges);
+	for (i = 0; i < len; i++) {
+		struct linux_prom64_ranges *rng = &ranges[i];
+		u64 phys_addr = regs->phys_addr;
+
+		if (phys_addr >= rng->ot_child_base &&
+		    phys_addr < (rng->ot_child_base + rng->or_size)) {
+			regs->phys_addr -= rng->ot_child_base;
+			regs->phys_addr += rng->ot_parent_base;
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 struct all_info {
 	struct fb_info info;
 	struct ffb_par par;
 	u32 pseudo_palette[256];
+	struct list_head list;
 };
+static LIST_HEAD(ffb_list);
 
-static int ffb_init_one(struct of_device *op)
+static void ffb_init_one(int node, int parent)
 {
-	struct device_node *dp = op->node;
-	struct ffb_fbc __iomem *fbc;
-	struct ffb_dac __iomem *dac;
+	struct linux_prom64_registers regs[2*PROMREG_MAX];
+	struct ffb_fbc *fbc;
+	struct ffb_dac *dac;
 	struct all_info *all;
-	int err;
 
-	all = kzalloc(sizeof(*all), GFP_KERNEL);
-	if (!all)
-		return -ENOMEM;
+	if (prom_getproperty(node, "reg", (void *) regs, sizeof(regs)) <= 0) {
+		printk("ffb: Cannot get reg device node property.\n");
+		return;
+	}
+
+	if (ffb_apply_upa_parent_ranges(parent, &regs[0])) {
+		printk("ffb: Cannot apply parent ranges to regs.\n");
+		return;
+	}
+
+	all = kmalloc(sizeof(*all), GFP_KERNEL);
+	if (!all) {
+		printk(KERN_ERR "ffb: Cannot allocate memory.\n");
+		return;
+	}
+	memset(all, 0, sizeof(*all));
+
+	INIT_LIST_HEAD(&all->list);	
 
 	spin_lock_init(&all->par.lock);
-	all->par.fbc = of_ioremap(&op->resource[2], 0,
-				  sizeof(struct ffb_fbc), "ffb fbc");
-	if (!all->par.fbc) {
-		kfree(all);
-		return -ENOMEM;
-	}
-
-	all->par.dac = of_ioremap(&op->resource[1], 0,
-				  sizeof(struct ffb_dac), "ffb dac");
-	if (!all->par.dac) {
-		of_iounmap(all->par.fbc, sizeof(struct ffb_fbc));
-		kfree(all);
-		return -ENOMEM;
-	}
-
+	all->par.fbc = (struct ffb_fbc *)(regs[0].phys_addr + FFB_FBC_REGS_POFF);
+	all->par.dac = (struct ffb_dac *)(regs[0].phys_addr + FFB_DAC_POFF);
 	all->par.rop_cache = FFB_ROP_NEW;
-	all->par.physbase = op->resource[0].start;
+	all->par.physbase = regs[0].phys_addr;
+	all->par.prom_node = node;
+	all->par.prom_parent_node = parent;
 
 	/* Don't mention copyarea, so SCROLL_REDRAW is always
 	 * used.  It is the fastest on this chip.
@@ -930,7 +968,7 @@ static int ffb_init_one(struct of_device *op)
 	all->info.par = &all->par;
 	all->info.pseudo_palette = all->pseudo_palette;
 
-	sbusfb_fill_var(&all->info.var, dp->node, 32);
+	sbusfb_fill_var(&all->info.var, all->par.prom_node, 32);
 	all->par.fbsize = PAGE_ALIGN(all->info.var.xres *
 				     all->info.var.yres *
 				     4);
@@ -938,13 +976,14 @@ static int ffb_init_one(struct of_device *op)
 
 	all->info.var.accel_flags = FB_ACCELF_TEXT;
 
-	if (!strcmp(dp->name, "SUNW,afb"))
+	prom_getstring(node, "name", all->par.name, sizeof(all->par.name));
+	if (!strcmp(all->par.name, "SUNW,afb"))
 		all->par.flags |= FFB_FLAG_AFB;
 
-	all->par.board_type = of_getintprop_default(dp, "board_type", 0);
+	all->par.board_type = prom_getintdefault(node, "board_type", 0);
 
 	fbc = all->par.fbc;
-	if ((upa_readl(&fbc->ucsr) & FFB_UCSR_ALL_ERRORS) != 0)
+	if((upa_readl(&fbc->ucsr) & FFB_UCSR_ALL_ERRORS) != 0)
 		upa_writel(FFB_UCSR_ALL_ERRORS, &fbc->ucsr);
 
 	ffb_switch_from_graph(&all->par);
@@ -969,88 +1008,81 @@ static int ffb_init_one(struct of_device *op)
 	if (fb_alloc_cmap(&all->info.cmap, 256, 0)) {
 		printk(KERN_ERR "ffb: Could not allocate color map.\n");
 		kfree(all);
-		return -ENOMEM;
+		return;
 	}
 
 	ffb_init_fix(&all->info);
 
-	err = register_framebuffer(&all->info);
-	if (err < 0) {
+	if (register_framebuffer(&all->info) < 0) {
 		printk(KERN_ERR "ffb: Could not register framebuffer.\n");
 		fb_dealloc_cmap(&all->info.cmap);
 		kfree(all);
-		return err;
+		return;
 	}
 
-	dev_set_drvdata(&op->dev, all);
+	list_add(&all->list, &ffb_list);
 
-	printk("%s: %s at %016lx, type %d, DAC revision %d\n",
-	       dp->full_name,
+	printk("ffb: %s at %016lx type %d DAC %d\n",
 	       ((all->par.flags & FFB_FLAG_AFB) ? "AFB" : "FFB"),
-	       all->par.physbase, all->par.board_type, all->par.dac_rev);
-
-	return 0;
+	       regs[0].phys_addr, all->par.board_type, all->par.dac_rev);
 }
 
-static int __devinit ffb_probe(struct of_device *dev, const struct of_device_id *match)
+static void ffb_scan_siblings(int root)
 {
-	struct of_device *op = to_of_device(&dev->dev);
+	int node, child;
 
-	return ffb_init_one(op);
+	child = prom_getchild(root);
+	for (node = prom_searchsiblings(child, "SUNW,ffb"); node;
+	     node = prom_searchsiblings(prom_getsibling(node), "SUNW,ffb"))
+		ffb_init_one(node, root);
+	for (node = prom_searchsiblings(child, "SUNW,afb"); node;
+	     node = prom_searchsiblings(prom_getsibling(node), "SUNW,afb"))
+		ffb_init_one(node, root);
 }
-
-static int __devexit ffb_remove(struct of_device *dev)
-{
-	struct all_info *all = dev_get_drvdata(&dev->dev);
-
-	unregister_framebuffer(&all->info);
-	fb_dealloc_cmap(&all->info.cmap);
-
-	of_iounmap(all->par.fbc, sizeof(struct ffb_fbc));
-	of_iounmap(all->par.dac, sizeof(struct ffb_dac));
-
-	kfree(all);
-
-	dev_set_drvdata(&dev->dev, NULL);
-
-	return 0;
-}
-
-static struct of_device_id ffb_match[] = {
-	{
-		.name = "SUNW,ffb",
-	},
-	{
-		.name = "SUNW,afb",
-	},
-	{},
-};
-MODULE_DEVICE_TABLE(of, ffb_match);
-
-static struct of_platform_driver ffb_driver = {
-	.name		= "ffb",
-	.match_table	= ffb_match,
-	.probe		= ffb_probe,
-	.remove		= __devexit_p(ffb_remove),
-};
 
 int __init ffb_init(void)
 {
+	int root;
+
 	if (fb_get_options("ffb", NULL))
 		return -ENODEV;
 
-	return of_register_driver(&ffb_driver, &of_bus_type);
+	ffb_scan_siblings(prom_root_node);
+
+	root = prom_getchild(prom_root_node);
+	for (root = prom_searchsiblings(root, "upa"); root;
+	     root = prom_searchsiblings(prom_getsibling(root), "upa"))
+		ffb_scan_siblings(root);
+
+	return 0;
 }
 
 void __exit ffb_exit(void)
 {
-	of_unregister_driver(&ffb_driver);
+	struct list_head *pos, *tmp;
+
+	list_for_each_safe(pos, tmp, &ffb_list) {
+		struct all_info *all = list_entry(pos, typeof(*all), list);
+
+		unregister_framebuffer(&all->info);
+		fb_dealloc_cmap(&all->info.cmap);
+		kfree(all);
+	}
+}
+
+int __init
+ffb_setup(char *arg)
+{
+	/* No cmdline options yet... */
+	return 0;
 }
 
 module_init(ffb_init);
+
+#ifdef MODULE
 module_exit(ffb_exit);
+#endif
 
 MODULE_DESCRIPTION("framebuffer driver for Creator/Elite3D chipsets");
-MODULE_AUTHOR("David S. Miller <davem@davemloft.net>");
-MODULE_VERSION("2.0");
+MODULE_AUTHOR("David S. Miller <davem@redhat.com>");
 MODULE_LICENSE("GPL");

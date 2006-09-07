@@ -2,6 +2,7 @@
 #ifndef __ASMPPC_AMIGAHW_H
 #define __ASMPPC_AMIGAHW_H
 
+#include <linux/config.h>
 #include <asm-m68k/amigahw.h>
 
 #undef CHIP_PHYSADDR

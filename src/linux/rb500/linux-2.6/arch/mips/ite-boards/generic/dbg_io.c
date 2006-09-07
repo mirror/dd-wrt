@@ -1,4 +1,5 @@
 
+#include <linux/config.h>
 
 #ifdef CONFIG_KGDB
 
