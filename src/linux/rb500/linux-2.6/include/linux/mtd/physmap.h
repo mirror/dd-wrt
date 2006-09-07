@@ -15,26 +15,33 @@
  */
 
 #ifndef __LINUX_MTD_PHYSMAP__
-#define __LINUX_MTD_PHYSMAP__
+
+#include <linux/config.h>
+
+#if defined(CONFIG_MTD_PHYSMAP)
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 
-struct physmap_flash_data {
-	unsigned int		width;
-	void			(*set_vpp)(struct map_info *, int);
-	unsigned int		nr_parts;
-	struct mtd_partition	*parts;
-};
+/*
+ * The map_info for physmap.  Board can override size, buswidth, phys,
+ * (*set_vpp)(), etc in their initial setup routine.
+ */
+extern struct map_info physmap_map;
 
 /*
  * Board needs to specify the exact mapping during their setup time.
  */
-void physmap_configure(unsigned long addr, unsigned long size,
-		int bankwidth, void (*set_vpp)(struct map_info *, int) );
+static inline void physmap_configure(unsigned long addr, unsigned long size, int bankwidth, void (*set_vpp)(struct map_info *, int) )
+{
+	physmap_map.phys = addr;
+	physmap_map.size = size;
+	physmap_map.bankwidth = bankwidth;
+	physmap_map.set_vpp = set_vpp;
+}
 
-#ifdef CONFIG_MTD_PARTITIONS
+#if defined(CONFIG_MTD_PARTITIONS)
 
 /*
  * Machines that wish to do flash partition may want to call this function in
@@ -48,5 +55,7 @@ void physmap_configure(unsigned long addr, unsigned long size,
 void physmap_set_partitions(struct mtd_partition *parts, int num_parts);
 
 #endif /* defined(CONFIG_MTD_PARTITIONS) */
+#endif /* defined(CONFIG_MTD) */
 
 #endif /* __LINUX_MTD_PHYSMAP__ */
+

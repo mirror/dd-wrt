@@ -12,8 +12,6 @@
 #include <linux/bio.h>
 #include <linux/slab.h>
 
-#define DM_MSG_PREFIX "linear"
-
 /*
  * Linear: maps a linear range of a device.
  */
@@ -31,7 +29,7 @@ static int linear_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	unsigned long long tmp;
 
 	if (argc != 2) {
-		ti->error = "Invalid argument count";
+		ti->error = "dm-linear: Invalid argument count";
 		return -EINVAL;
 	}
 
@@ -113,7 +111,7 @@ int __init dm_linear_init(void)
 	int r = dm_register_target(&linear_target);
 
 	if (r < 0)
-		DMERR("register failed %d", r);
+		DMERR("linear: register failed %d", r);
 
 	return r;
 }
@@ -123,5 +121,5 @@ void dm_linear_exit(void)
 	int r = dm_unregister_target(&linear_target);
 
 	if (r < 0)
-		DMERR("unregister failed %d", r);
+		DMERR("linear: unregister failed %d", r);
 }

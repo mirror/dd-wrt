@@ -22,15 +22,13 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 #include <linux/slab.h>
 #include "edac_mc.h"
-
-#define	E7XXX_REVISION " Ver: 2.0.1 " __DATE__
-#define	EDAC_MOD_STR	"e7xxx_edac"
 
 #define e7xxx_printk(level, fmt, arg...) \
 	edac_printk(level, "e7xxx", fmt, ##arg)
@@ -335,61 +333,99 @@ static void e7xxx_check(struct mem_ctl_info *mci)
 	e7xxx_process_error_info(mci, &info, 1);
 }
 
-/* Return 1 if dual channel mode is active.  Else return 0. */
-static inline int dual_channel_active(u32 drc, int dev_idx)
+static int e7xxx_probe1(struct pci_dev *pdev, int dev_idx)
 {
-	return (dev_idx == E7501) ? ((drc >> 22) & 0x1) : 1;
-}
-
-
-/* Return DRB granularity (0=32mb, 1=64mb). */
-static inline int drb_granularity(u32 drc, int dev_idx)
-{
-	/* only e7501 can be single channel */
-	return (dev_idx == E7501) ? ((drc >> 18) & 0x3) : 1;
-}
-
-
-static void e7xxx_init_csrows(struct mem_ctl_info *mci, struct pci_dev *pdev,
-		int dev_idx, u32 drc)
-{
-	unsigned long last_cumul_size;
+	int rc = -ENODEV;
 	int index;
-	u8 value;
-	u32 dra, cumul_size;
-	int drc_chan, drc_drbg, drc_ddim, mem_dev;
-	struct csrow_info *csrow;
+	u16 pci_data;
+	struct mem_ctl_info *mci = NULL;
+	struct e7xxx_pvt *pvt = NULL;
+	u32 drc;
+	int drc_chan = 1;	/* Number of channels 0=1chan,1=2chan */
+	int drc_drbg = 1;	/* DRB granularity 0=32mb,1=64mb */
+	int drc_ddim;		/* DRAM Data Integrity Mode 0=none,2=edac */
+	u32 dra;
+	unsigned long last_cumul_size;
+	struct e7xxx_error_info discard;
 
-	pci_read_config_dword(pdev, E7XXX_DRA, &dra);
-	drc_chan = dual_channel_active(drc, dev_idx);
-	drc_drbg = drb_granularity(drc, dev_idx);
+	debugf0("%s(): mci\n", __func__);
+
+	/* need to find out the number of channels */
+	pci_read_config_dword(pdev, E7XXX_DRC, &drc);
+
+	/* only e7501 can be single channel */
+	if (dev_idx == E7501) {
+		drc_chan = ((drc >> 22) & 0x1);
+		drc_drbg = (drc >> 18) & 0x3;
+	}
+
 	drc_ddim = (drc >> 20) & 0x3;
-	last_cumul_size = 0;
+	mci = edac_mc_alloc(sizeof(*pvt), E7XXX_NR_CSROWS, drc_chan + 1);
 
-	/* The dram row boundary (DRB) reg values are boundary address
+	if (mci == NULL) {
+		rc = -ENOMEM;
+		goto fail;
+	}
+
+	debugf3("%s(): init mci\n", __func__);
+	mci->mtype_cap = MEM_FLAG_RDDR;
+	mci->edac_ctl_cap = EDAC_FLAG_NONE | EDAC_FLAG_SECDED |
+			EDAC_FLAG_S4ECD4ED;
+	/* FIXME - what if different memory types are in different csrows? */
+	mci->mod_name = EDAC_MOD_STR;
+	mci->mod_ver = "$Revision: 1.5.2.9 $";
+	mci->pdev = pdev;
+
+	debugf3("%s(): init pvt\n", __func__);
+	pvt = (struct e7xxx_pvt *) mci->pvt_info;
+	pvt->dev_info = &e7xxx_devs[dev_idx];
+	pvt->bridge_ck = pci_get_device(PCI_VENDOR_ID_INTEL,
+					pvt->dev_info->err_dev,
+					pvt->bridge_ck);
+
+	if (!pvt->bridge_ck) {
+		e7xxx_printk(KERN_ERR, "error reporting device not found:"
+			"vendor %x device 0x%x (broken BIOS?)\n",
+			PCI_VENDOR_ID_INTEL, e7xxx_devs[dev_idx].err_dev);
+		goto fail;
+	}
+
+	debugf3("%s(): more mci init\n", __func__);
+	mci->ctl_name = pvt->dev_info->ctl_name;
+	mci->edac_check = e7xxx_check;
+	mci->ctl_page_to_phys = ctl_page_to_phys;
+
+	/* find out the device types */
+	pci_read_config_dword(pdev, E7XXX_DRA, &dra);
+
+	/*
+	 * The dram row boundary (DRB) reg values are boundary address
 	 * for each DRAM row with a granularity of 32 or 64MB (single/dual
 	 * channel operation).  DRB regs are cumulative; therefore DRB7 will
 	 * contain the total memory contained in all eight rows.
 	 */
-	for (index = 0; index < mci->nr_csrows; index++) {
+	for (last_cumul_size = index = 0; index < mci->nr_csrows; index++) {
+		u8 value;
+		u32 cumul_size;
 		/* mem_dev 0=x8, 1=x4 */
-		mem_dev = (dra >> (index * 4 + 3)) & 0x1;
-		csrow = &mci->csrows[index];
+		int mem_dev = (dra >> (index * 4 + 3)) & 0x1;
+		struct csrow_info *csrow = &mci->csrows[index];
 
-		pci_read_config_byte(pdev, E7XXX_DRB + index, &value);
+		pci_read_config_byte(mci->pdev, E7XXX_DRB + index, &value);
 		/* convert a 64 or 32 MiB DRB to a page size. */
 		cumul_size = value << (25 + drc_drbg - PAGE_SHIFT);
 		debugf3("%s(): (%d) cumul_size 0x%x\n", __func__, index,
 			cumul_size);
+
 		if (cumul_size == last_cumul_size)
-			continue;	/* not populated */
+			continue;  /* not populated */
 
 		csrow->first_page = last_cumul_size;
 		csrow->last_page = cumul_size - 1;
 		csrow->nr_pages = cumul_size - last_cumul_size;
 		last_cumul_size = cumul_size;
-		csrow->grain = 1 << 12;	/* 4KiB - resolution of CELOG */
-		csrow->mtype = MEM_RDDR;	/* only one type supported */
+		csrow->grain = 1 << 12;  /* 4KiB - resolution of CELOG */
+		csrow->mtype = MEM_RDDR;  /* only one type supported */
 		csrow->dtype = mem_dev ? DEV_X4 : DEV_X8;
 
 		/*
@@ -407,61 +443,16 @@ static void e7xxx_init_csrows(struct mem_ctl_info *mci, struct pci_dev *pdev,
 		} else
 			csrow->edac_mode = EDAC_NONE;
 	}
-}
 
-static int e7xxx_probe1(struct pci_dev *pdev, int dev_idx)
-{
-	u16 pci_data;
-	struct mem_ctl_info *mci = NULL;
-	struct e7xxx_pvt *pvt = NULL;
-	u32 drc;
-	int drc_chan;
-	struct e7xxx_error_info discard;
-
-	debugf0("%s(): mci\n", __func__);
-	pci_read_config_dword(pdev, E7XXX_DRC, &drc);
-
-	drc_chan = dual_channel_active(drc, dev_idx);
-	mci = edac_mc_alloc(sizeof(*pvt), E7XXX_NR_CSROWS, drc_chan + 1);
-
-	if (mci == NULL)
-		return -ENOMEM;
-
-	debugf3("%s(): init mci\n", __func__);
-	mci->mtype_cap = MEM_FLAG_RDDR;
-	mci->edac_ctl_cap = EDAC_FLAG_NONE | EDAC_FLAG_SECDED |
-			EDAC_FLAG_S4ECD4ED;
-	/* FIXME - what if different memory types are in different csrows? */
-	mci->mod_name = EDAC_MOD_STR;
-	mci->mod_ver = E7XXX_REVISION;
-	mci->dev = &pdev->dev;
-	debugf3("%s(): init pvt\n", __func__);
-	pvt = (struct e7xxx_pvt *) mci->pvt_info;
-	pvt->dev_info = &e7xxx_devs[dev_idx];
-	pvt->bridge_ck = pci_get_device(PCI_VENDOR_ID_INTEL,
-					pvt->dev_info->err_dev,
-					pvt->bridge_ck);
-
-	if (!pvt->bridge_ck) {
-		e7xxx_printk(KERN_ERR, "error reporting device not found:"
-			"vendor %x device 0x%x (broken BIOS?)\n",
-			PCI_VENDOR_ID_INTEL, e7xxx_devs[dev_idx].err_dev);
-		goto fail0;
-	}
-
-	debugf3("%s(): more mci init\n", __func__);
-	mci->ctl_name = pvt->dev_info->ctl_name;
-	mci->edac_check = e7xxx_check;
-	mci->ctl_page_to_phys = ctl_page_to_phys;
-	e7xxx_init_csrows(mci, pdev, dev_idx, drc);
 	mci->edac_cap |= EDAC_FLAG_NONE;
+
 	debugf3("%s(): tolm, remapbase, remaplimit\n", __func__);
 	/* load the top of low memory, remap base, and remap limit vars */
-	pci_read_config_word(pdev, E7XXX_TOLM, &pci_data);
+	pci_read_config_word(mci->pdev, E7XXX_TOLM, &pci_data);
 	pvt->tolm = ((u32) pci_data) << 4;
-	pci_read_config_word(pdev, E7XXX_REMAPBASE, &pci_data);
+	pci_read_config_word(mci->pdev, E7XXX_REMAPBASE, &pci_data);
 	pvt->remapbase = ((u32) pci_data) << 14;
-	pci_read_config_word(pdev, E7XXX_REMAPLIMIT, &pci_data);
+	pci_read_config_word(mci->pdev, E7XXX_REMAPLIMIT, &pci_data);
 	pvt->remaplimit = ((u32) pci_data) << 14;
 	e7xxx_printk(KERN_INFO,
 		"tolm = %x, remapbase = %x, remaplimit = %x\n", pvt->tolm,
@@ -470,25 +461,23 @@ static int e7xxx_probe1(struct pci_dev *pdev, int dev_idx)
 	/* clear any pending errors, or initial state bits */
 	e7xxx_get_error_info(mci, &discard);
 
-	/* Here we assume that we will never see multiple instances of this
-	 * type of memory controller.  The ID is therefore hardcoded to 0.
-	 */
-	if (edac_mc_add_mc(mci,0)) {
+	if (edac_mc_add_mc(mci) != 0) {
 		debugf3("%s(): failed edac_mc_add_mc()\n", __func__);
-		goto fail1;
+		goto fail;
 	}
 
 	/* get this far and it's successful */
 	debugf3("%s(): success\n", __func__);
 	return 0;
 
-fail1:
-	pci_dev_put(pvt->bridge_ck);
+fail:
+	if (mci != NULL) {
+		if(pvt != NULL && pvt->bridge_ck)
+			pci_dev_put(pvt->bridge_ck);
+		edac_mc_free(mci);
+	}
 
-fail0:
-	edac_mc_free(mci);
-
-	return -ENODEV;
+	return rc;
 }
 
 /* returns count (>= 0), or negative on error */
@@ -509,7 +498,7 @@ static void __devexit e7xxx_remove_one(struct pci_dev *pdev)
 
 	debugf0("%s()\n", __func__);
 
-	if ((mci = edac_mc_del_mc(&pdev->dev)) == NULL)
+	if ((mci = edac_mc_del_mc(pdev)) == NULL)
 		return;
 
 	pvt = (struct e7xxx_pvt *) mci->pvt_info;

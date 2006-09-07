@@ -8,6 +8,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/arch/io.h>

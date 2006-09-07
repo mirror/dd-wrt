@@ -5,6 +5,7 @@
 #define _ASM_POWERPC_PPC_ASM_H
 
 #include <linux/stringify.h>
+#include <linux/config.h>
 #include <asm/asm-compat.h>
 
 #ifndef __ASSEMBLY__

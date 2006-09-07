@@ -27,6 +27,7 @@
  *	request.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/string.h>
@@ -195,7 +196,8 @@ ide_startstop_t set_geometry_intr (ide_drive_t *drive)
 	if (stat & (ERR_STAT|DRQ_STAT))
 		return ide_error(drive, "set_geometry_intr", stat);
 
-	BUG_ON(HWGROUP(drive)->handler != NULL);
+	if (HWGROUP(drive)->handler != NULL)
+		BUG();
 	ide_set_handler(drive, &set_geometry_intr, WAIT_WORSTCASE, NULL);
 	return ide_started;
 }
@@ -222,7 +224,7 @@ ide_startstop_t task_no_data_intr (ide_drive_t *drive)
 	ide_hwif_t *hwif	= HWIF(drive);
 	u8 stat;
 
-	local_irq_enable_in_hardirq();
+	local_irq_enable();
 	if (!OK_STAT(stat = hwif->INB(IDE_STATUS_REG),READY_STAT,BAD_STAT)) {
 		return ide_error(drive, "task_no_data_intr", stat);
 		/* calls ide_end_drive_cmd */

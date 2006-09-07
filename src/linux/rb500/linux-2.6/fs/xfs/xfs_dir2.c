@@ -24,18 +24,21 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_da_btree.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
 #include "xfs_inode.h"
 #include "xfs_inode_item.h"
 #include "xfs_bmap.h"
+#include "xfs_dir_leaf.h"
 #include "xfs_dir2_data.h"
 #include "xfs_dir2_leaf.h"
 #include "xfs_dir2_block.h"
@@ -43,14 +46,69 @@
 #include "xfs_dir2_trace.h"
 #include "xfs_error.h"
 
+/*
+ * Declarations for interface routines.
+ */
+static void	xfs_dir2_mount(xfs_mount_t *mp);
+static int	xfs_dir2_isempty(xfs_inode_t *dp);
+static int	xfs_dir2_init(xfs_trans_t *tp, xfs_inode_t *dp,
+			      xfs_inode_t *pdp);
+static int	xfs_dir2_createname(xfs_trans_t *tp, xfs_inode_t *dp,
+				    char *name, int namelen, xfs_ino_t inum,
+				    xfs_fsblock_t *first,
+				    xfs_bmap_free_t *flist, xfs_extlen_t total);
+static int	xfs_dir2_lookup(xfs_trans_t *tp, xfs_inode_t *dp, char *name,
+				int namelen, xfs_ino_t *inum);
+static int	xfs_dir2_removename(xfs_trans_t *tp, xfs_inode_t *dp,
+				    char *name, int namelen, xfs_ino_t ino,
+				    xfs_fsblock_t *first,
+				    xfs_bmap_free_t *flist, xfs_extlen_t total);
+static int	xfs_dir2_getdents(xfs_trans_t *tp, xfs_inode_t *dp, uio_t *uio,
+				  int *eofp);
+static int	xfs_dir2_replace(xfs_trans_t *tp, xfs_inode_t *dp, char *name,
+				 int namelen, xfs_ino_t inum,
+				 xfs_fsblock_t *first, xfs_bmap_free_t *flist,
+				 xfs_extlen_t total);
+static int	xfs_dir2_canenter(xfs_trans_t *tp, xfs_inode_t *dp, char *name,
+				  int namelen);
+static int	xfs_dir2_shortform_validate_ondisk(xfs_mount_t *mp,
+						   xfs_dinode_t *dip);
+
+/*
+ * Utility routine declarations.
+ */
 static int	xfs_dir2_put_dirent64_direct(xfs_dir2_put_args_t *pa);
 static int	xfs_dir2_put_dirent64_uio(xfs_dir2_put_args_t *pa);
 
-void
-xfs_dir_mount(
-	xfs_mount_t	*mp)
+/*
+ * Directory operations vector.
+ */
+xfs_dirops_t	xfsv2_dirops = {
+	.xd_mount			= xfs_dir2_mount,
+	.xd_isempty			= xfs_dir2_isempty,
+	.xd_init			= xfs_dir2_init,
+	.xd_createname			= xfs_dir2_createname,
+	.xd_lookup			= xfs_dir2_lookup,
+	.xd_removename			= xfs_dir2_removename,
+	.xd_getdents			= xfs_dir2_getdents,
+	.xd_replace			= xfs_dir2_replace,
+	.xd_canenter			= xfs_dir2_canenter,
+	.xd_shortform_validate_ondisk	= xfs_dir2_shortform_validate_ondisk,
+	.xd_shortform_to_single		= xfs_dir2_sf_to_block,
+};
+
+/*
+ * Interface routines.
+ */
+
+/*
+ * Initialize directory-related fields in the mount structure.
+ */
+static void
+xfs_dir2_mount(
+	xfs_mount_t	*mp)		/* filesystem mount point */
 {
-	ASSERT(XFS_SB_VERSION_HASDIRV2(&mp->m_sb));
+	mp->m_dirversion = 2;
 	ASSERT((1 << (mp->m_sb.sb_blocklog + mp->m_sb.sb_dirblklog)) <=
 	       XFS_MAX_BLOCKSIZE);
 	mp->m_dirblksize = 1 << (mp->m_sb.sb_blocklog + mp->m_sb.sb_dirblklog);
@@ -70,15 +128,19 @@ xfs_dir_mount(
 /*
  * Return 1 if directory contains only "." and "..".
  */
-int
-xfs_dir_isempty(
-	xfs_inode_t	*dp)
+static int				/* return code */
+xfs_dir2_isempty(
+	xfs_inode_t	*dp)		/* incore inode structure */
 {
-	xfs_dir2_sf_t	*sfp;
+	xfs_dir2_sf_t	*sfp;		/* shortform directory structure */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
-	if (dp->i_d.di_size == 0)	/* might happen during shutdown. */
+	/*
+	 * Might happen during shutdown.
+	 */
+	if (dp->i_d.di_size == 0) {
 		return 1;
+	}
 	if (dp->i_d.di_size > XFS_IFORK_DSIZE(dp))
 		return 0;
 	sfp = (xfs_dir2_sf_t *)dp->i_df.if_u1.if_data;
@@ -86,83 +148,53 @@ xfs_dir_isempty(
 }
 
 /*
- * Validate a given inode number.
- */
-int
-xfs_dir_ino_validate(
-	xfs_mount_t	*mp,
-	xfs_ino_t	ino)
-{
-	xfs_agblock_t	agblkno;
-	xfs_agino_t	agino;
-	xfs_agnumber_t	agno;
-	int		ino_ok;
-	int		ioff;
-
-	agno = XFS_INO_TO_AGNO(mp, ino);
-	agblkno = XFS_INO_TO_AGBNO(mp, ino);
-	ioff = XFS_INO_TO_OFFSET(mp, ino);
-	agino = XFS_OFFBNO_TO_AGINO(mp, agblkno, ioff);
-	ino_ok =
-		agno < mp->m_sb.sb_agcount &&
-		agblkno < mp->m_sb.sb_agblocks &&
-		agblkno != 0 &&
-		ioff < (1 << mp->m_sb.sb_inopblog) &&
-		XFS_AGINO_TO_INO(mp, agno, agino) == ino;
-	if (unlikely(XFS_TEST_ERROR(!ino_ok, mp, XFS_ERRTAG_DIR_INO_VALIDATE,
-			XFS_RANDOM_DIR_INO_VALIDATE))) {
-		xfs_fs_cmn_err(CE_WARN, mp, "Invalid inode number 0x%Lx",
-				(unsigned long long) ino);
-		XFS_ERROR_REPORT("xfs_dir_ino_validate", XFS_ERRLEVEL_LOW, mp);
-		return XFS_ERROR(EFSCORRUPTED);
-	}
-	return 0;
-}
-
-/*
  * Initialize a directory with its "." and ".." entries.
  */
-int
-xfs_dir_init(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
-	xfs_inode_t	*pdp)
+static int				/* error */
+xfs_dir2_init(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
+	xfs_inode_t	*pdp)		/* incore parent directory inode */
 {
-	xfs_da_args_t	args;
-	int		error;
+	xfs_da_args_t	args;		/* operation arguments */
+	int		error;		/* error return value */
 
 	memset((char *)&args, 0, sizeof(args));
 	args.dp = dp;
 	args.trans = tp;
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
-	if ((error = xfs_dir_ino_validate(tp->t_mountp, pdp->i_ino)))
+	if ((error = xfs_dir_ino_validate(tp->t_mountp, pdp->i_ino))) {
 		return error;
+	}
 	return xfs_dir2_sf_create(&args, pdp->i_ino);
 }
 
 /*
   Enter a name in a directory.
  */
-int
-xfs_dir_createname(
-	xfs_trans_t		*tp,
-	xfs_inode_t		*dp,
-	char			*name,
-	int			namelen,
+static int					/* error */
+xfs_dir2_createname(
+	xfs_trans_t		*tp,		/* transaction pointer */
+	xfs_inode_t		*dp,		/* incore directory inode */
+	char			*name,		/* new entry name */
+	int			namelen,	/* new entry name length */
 	xfs_ino_t		inum,		/* new entry inode number */
 	xfs_fsblock_t		*first,		/* bmap's firstblock */
 	xfs_bmap_free_t		*flist,		/* bmap's freeblock list */
 	xfs_extlen_t		total)		/* bmap's total block count */
 {
-	xfs_da_args_t		args;
-	int			rval;
+	xfs_da_args_t		args;		/* operation arguments */
+	int			rval;		/* return value */
 	int			v;		/* type-checking value */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
-	if ((rval = xfs_dir_ino_validate(tp->t_mountp, inum)))
+	if ((rval = xfs_dir_ino_validate(tp->t_mountp, inum))) {
 		return rval;
+	}
 	XFS_STATS_INC(xs_dir_create);
-
+	/*
+	 * Fill in the arg structure for this request.
+	 */
 	args.name = name;
 	args.namelen = namelen;
 	args.hashval = xfs_da_hashname(name, namelen);
@@ -175,16 +207,18 @@ xfs_dir_createname(
 	args.trans = tp;
 	args.justcheck = 0;
 	args.addname = args.oknoent = 1;
-
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_addname(&args);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_addname(&args);
-	else if ((rval = xfs_dir2_isleaf(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isleaf(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_leaf_addname(&args);
 	else
 		rval = xfs_dir2_node_addname(&args);
@@ -194,21 +228,24 @@ xfs_dir_createname(
 /*
  * Lookup a name in a directory, give back the inode number.
  */
-int
-xfs_dir_lookup(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
-	char		*name,
-	int		namelen,
+static int				/* error */
+xfs_dir2_lookup(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
+	char		*name,		/* lookup name */
+	int		namelen,	/* lookup name length */
 	xfs_ino_t	*inum)		/* out: inode number */
 {
-	xfs_da_args_t	args;
-	int		rval;
+	xfs_da_args_t	args;		/* operation arguments */
+	int		rval;		/* return value */
 	int		v;		/* type-checking value */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
 	XFS_STATS_INC(xs_dir_lookup);
 
+	/*
+	 * Fill in the arg structure for this request.
+	 */
 	args.name = name;
 	args.namelen = namelen;
 	args.hashval = xfs_da_hashname(name, namelen);
@@ -221,16 +258,18 @@ xfs_dir_lookup(
 	args.trans = tp;
 	args.justcheck = args.addname = 0;
 	args.oknoent = 1;
-
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_lookup(&args);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_lookup(&args);
-	else if ((rval = xfs_dir2_isleaf(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isleaf(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_leaf_lookup(&args);
 	else
 		rval = xfs_dir2_node_lookup(&args);
@@ -244,24 +283,26 @@ xfs_dir_lookup(
 /*
  * Remove an entry from a directory.
  */
-int
-xfs_dir_removename(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
-	char		*name,
-	int		namelen,
-	xfs_ino_t	ino,
+static int				/* error */
+xfs_dir2_removename(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
+	char		*name,		/* name of entry to remove */
+	int		namelen,	/* name length of entry to remove */
+	xfs_ino_t	ino,		/* inode number of entry to remove */
 	xfs_fsblock_t	*first,		/* bmap's firstblock */
 	xfs_bmap_free_t	*flist,		/* bmap's freeblock list */
 	xfs_extlen_t	total)		/* bmap's total block count */
 {
-	xfs_da_args_t	args;
-	int		rval;
+	xfs_da_args_t	args;		/* operation arguments */
+	int		rval;		/* return value */
 	int		v;		/* type-checking value */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
 	XFS_STATS_INC(xs_dir_remove);
-
+	/*
+	 * Fill in the arg structure for this request.
+	 */
 	args.name = name;
 	args.namelen = namelen;
 	args.hashval = xfs_da_hashname(name, namelen);
@@ -273,16 +314,18 @@ xfs_dir_removename(
 	args.whichfork = XFS_DATA_FORK;
 	args.trans = tp;
 	args.justcheck = args.addname = args.oknoent = 0;
-
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_removename(&args);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_removename(&args);
-	else if ((rval = xfs_dir2_isleaf(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isleaf(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_leaf_removename(&args);
 	else
 		rval = xfs_dir2_node_removename(&args);
@@ -292,10 +335,10 @@ xfs_dir_removename(
 /*
  * Read a directory.
  */
-int
-xfs_dir_getdents(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
+static int				/* error */
+xfs_dir2_getdents(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
 	uio_t		*uio,		/* caller's buffer control */
 	int		*eofp)		/* out: eof reached */
 {
@@ -324,11 +367,14 @@ xfs_dir_getdents(
 	}
 
 	*eofp = 0;
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_getdents(dp, uio, eofp, dbp, put);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_getdents(tp, dp, uio, eofp, dbp, put);
 	else
 		rval = xfs_dir2_leaf_getdents(tp, dp, uio, eofp, dbp, put);
@@ -340,26 +386,29 @@ xfs_dir_getdents(
 /*
  * Replace the inode number of a directory entry.
  */
-int
-xfs_dir_replace(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
+static int				/* error */
+xfs_dir2_replace(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
 	char		*name,		/* name of entry to replace */
-	int		namelen,
+	int		namelen,	/* name length of entry to replace */
 	xfs_ino_t	inum,		/* new inode number */
 	xfs_fsblock_t	*first,		/* bmap's firstblock */
 	xfs_bmap_free_t	*flist,		/* bmap's freeblock list */
 	xfs_extlen_t	total)		/* bmap's total block count */
 {
-	xfs_da_args_t	args;
-	int		rval;
+	xfs_da_args_t	args;		/* operation arguments */
+	int		rval;		/* return value */
 	int		v;		/* type-checking value */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
 
-	if ((rval = xfs_dir_ino_validate(tp->t_mountp, inum)))
+	if ((rval = xfs_dir_ino_validate(tp->t_mountp, inum))) {
 		return rval;
-
+	}
+	/*
+	 * Fill in the arg structure for this request.
+	 */
 	args.name = name;
 	args.namelen = namelen;
 	args.hashval = xfs_da_hashname(name, namelen);
@@ -371,16 +420,18 @@ xfs_dir_replace(
 	args.whichfork = XFS_DATA_FORK;
 	args.trans = tp;
 	args.justcheck = args.addname = args.oknoent = 0;
-
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_replace(&args);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_replace(&args);
-	else if ((rval = xfs_dir2_isleaf(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isleaf(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_leaf_replace(&args);
 	else
 		rval = xfs_dir2_node_replace(&args);
@@ -390,19 +441,21 @@ xfs_dir_replace(
 /*
  * See if this entry can be added to the directory without allocating space.
  */
-int
-xfs_dir_canenter(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
+static int				/* error */
+xfs_dir2_canenter(
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
 	char		*name,		/* name of entry to add */
-	int		namelen)
+	int		namelen)	/* name length of entry to add */
 {
-	xfs_da_args_t	args;
-	int		rval;
+	xfs_da_args_t	args;		/* operation arguments */
+	int		rval;		/* return value */
 	int		v;		/* type-checking value */
 
 	ASSERT((dp->i_d.di_mode & S_IFMT) == S_IFDIR);
-
+	/*
+	 * Fill in the arg structure for this request.
+	 */
 	args.name = name;
 	args.namelen = namelen;
 	args.hashval = xfs_da_hashname(name, namelen);
@@ -414,20 +467,35 @@ xfs_dir_canenter(
 	args.whichfork = XFS_DATA_FORK;
 	args.trans = tp;
 	args.justcheck = args.addname = args.oknoent = 1;
-
+	/*
+	 * Decide on what work routines to call based on the inode size.
+	 */
 	if (dp->i_d.di_format == XFS_DINODE_FMT_LOCAL)
 		rval = xfs_dir2_sf_addname(&args);
-	else if ((rval = xfs_dir2_isblock(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isblock(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_block_addname(&args);
-	else if ((rval = xfs_dir2_isleaf(tp, dp, &v)))
+	else if ((rval = xfs_dir2_isleaf(tp, dp, &v))) {
 		return rval;
-	else if (v)
+	} else if (v)
 		rval = xfs_dir2_leaf_addname(&args);
 	else
 		rval = xfs_dir2_node_addname(&args);
 	return rval;
+}
+
+/*
+ * Dummy routine for shortform inode validation.
+ * Can't really do this.
+ */
+/* ARGSUSED */
+static int				/* error */
+xfs_dir2_shortform_validate_ondisk(
+	xfs_mount_t	*mp,		/* filesystem mount point */
+	xfs_dinode_t	*dip)		/* ondisk inode */
+{
+	return 0;
 }
 
 /*
@@ -439,24 +507,24 @@ xfs_dir_canenter(
  * This routine is for data and free blocks, not leaf/node blocks
  * which are handled by xfs_da_grow_inode.
  */
-int
+int					/* error */
 xfs_dir2_grow_inode(
-	xfs_da_args_t	*args,
+	xfs_da_args_t	*args,		/* operation arguments */
 	int		space,		/* v2 dir's space XFS_DIR2_xxx_SPACE */
 	xfs_dir2_db_t	*dbp)		/* out: block number added */
 {
 	xfs_fileoff_t	bno;		/* directory offset of new block */
 	int		count;		/* count of filesystem blocks */
 	xfs_inode_t	*dp;		/* incore directory inode */
-	int		error;
+	int		error;		/* error return value */
 	int		got;		/* blocks actually mapped */
-	int		i;
+	int		i;		/* temp mapping index */
 	xfs_bmbt_irec_t	map;		/* single structure for bmap */
 	int		mapi;		/* mapping index */
 	xfs_bmbt_irec_t	*mapp;		/* bmap mapping structure(s) */
-	xfs_mount_t	*mp;
+	xfs_mount_t	*mp;		/* filesystem mount point */
 	int		nmap;		/* number of bmap entries */
-	xfs_trans_t	*tp;
+	xfs_trans_t	*tp;		/* transaction pointer */
 
 	xfs_dir2_trace_args_s("grow_inode", args, space);
 	dp = args->dp;
@@ -470,8 +538,9 @@ xfs_dir2_grow_inode(
 	/*
 	 * Find the first hole for our block.
 	 */
-	if ((error = xfs_bmap_first_unused(tp, dp, count, &bno, XFS_DATA_FORK)))
+	if ((error = xfs_bmap_first_unused(tp, dp, count, &bno, XFS_DATA_FORK))) {
 		return error;
+	}
 	nmap = 1;
 	ASSERT(args->firstblock != NULL);
 	/*
@@ -480,9 +549,13 @@ xfs_dir2_grow_inode(
 	if ((error = xfs_bmapi(tp, dp, bno, count,
 			XFS_BMAPI_WRITE|XFS_BMAPI_METADATA|XFS_BMAPI_CONTIG,
 			args->firstblock, args->total, &map, &nmap,
-			args->flist, NULL)))
+			args->flist))) {
 		return error;
+	}
 	ASSERT(nmap <= 1);
+	/*
+	 * Got it in 1.
+	 */
 	if (nmap == 1) {
 		mapp = &map;
 		mapi = 1;
@@ -512,8 +585,7 @@ xfs_dir2_grow_inode(
 			if ((error = xfs_bmapi(tp, dp, b, c,
 					XFS_BMAPI_WRITE|XFS_BMAPI_METADATA,
 					args->firstblock, args->total,
-					&mapp[mapi], &nmap, args->flist,
-					NULL))) {
+					&mapp[mapi], &nmap, args->flist))) {
 				kmem_free(mapp, sizeof(*mapp) * count);
 				return error;
 			}
@@ -573,19 +645,20 @@ xfs_dir2_grow_inode(
 /*
  * See if the directory is a single-block form directory.
  */
-int
+int					/* error */
 xfs_dir2_isblock(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
 	int		*vp)		/* out: 1 is block, 0 is not block */
 {
 	xfs_fileoff_t	last;		/* last file offset */
-	xfs_mount_t	*mp;
-	int		rval;
+	xfs_mount_t	*mp;		/* filesystem mount point */
+	int		rval;		/* return value */
 
 	mp = dp->i_mount;
-	if ((rval = xfs_bmap_last_offset(tp, dp, &last, XFS_DATA_FORK)))
+	if ((rval = xfs_bmap_last_offset(tp, dp, &last, XFS_DATA_FORK))) {
 		return rval;
+	}
 	rval = XFS_FSB_TO_B(mp, last) == mp->m_dirblksize;
 	ASSERT(rval == 0 || dp->i_d.di_size == mp->m_dirblksize);
 	*vp = rval;
@@ -595,19 +668,20 @@ xfs_dir2_isblock(
 /*
  * See if the directory is a single-leaf form directory.
  */
-int
+int					/* error */
 xfs_dir2_isleaf(
-	xfs_trans_t	*tp,
-	xfs_inode_t	*dp,
+	xfs_trans_t	*tp,		/* transaction pointer */
+	xfs_inode_t	*dp,		/* incore directory inode */
 	int		*vp)		/* out: 1 is leaf, 0 is not leaf */
 {
 	xfs_fileoff_t	last;		/* last file offset */
-	xfs_mount_t	*mp;
-	int		rval;
+	xfs_mount_t	*mp;		/* filesystem mount point */
+	int		rval;		/* return value */
 
 	mp = dp->i_mount;
-	if ((rval = xfs_bmap_last_offset(tp, dp, &last, XFS_DATA_FORK)))
+	if ((rval = xfs_bmap_last_offset(tp, dp, &last, XFS_DATA_FORK))) {
 		return rval;
+	}
 	*vp = last == mp->m_dirleafblk + (1 << mp->m_sb.sb_dirblklog);
 	return 0;
 }
@@ -615,9 +689,9 @@ xfs_dir2_isleaf(
 /*
  * Getdents put routine for 64-bit ABI, direct form.
  */
-static int
+static int					/* error */
 xfs_dir2_put_dirent64_direct(
-	xfs_dir2_put_args_t	*pa)
+	xfs_dir2_put_args_t	*pa)		/* argument bundle */
 {
 	xfs_dirent_t		*idbp;		/* dirent pointer */
 	iovec_t			*iovp;		/* io vector */
@@ -652,9 +726,9 @@ xfs_dir2_put_dirent64_direct(
 /*
  * Getdents put routine for 64-bit ABI, uio form.
  */
-static int
+static int					/* error */
 xfs_dir2_put_dirent64_uio(
-	xfs_dir2_put_args_t	*pa)
+	xfs_dir2_put_args_t	*pa)		/* argument bundle */
 {
 	xfs_dirent_t		*idbp;		/* dirent pointer */
 	int			namelen;	/* entry name length */
@@ -690,17 +764,17 @@ xfs_dir2_put_dirent64_uio(
  */
 int
 xfs_dir2_shrink_inode(
-	xfs_da_args_t	*args,
-	xfs_dir2_db_t	db,
-	xfs_dabuf_t	*bp)
+	xfs_da_args_t	*args,		/* operation arguments */
+	xfs_dir2_db_t	db,		/* directory block number */
+	xfs_dabuf_t	*bp)		/* block's buffer */
 {
 	xfs_fileoff_t	bno;		/* directory file offset */
 	xfs_dablk_t	da;		/* directory file offset */
 	int		done;		/* bunmap is finished */
-	xfs_inode_t	*dp;
-	int		error;
-	xfs_mount_t	*mp;
-	xfs_trans_t	*tp;
+	xfs_inode_t	*dp;		/* incore directory inode */
+	int		error;		/* error return value */
+	xfs_mount_t	*mp;		/* filesystem mount point */
+	xfs_trans_t	*tp;		/* transaction pointer */
 
 	xfs_dir2_trace_args_db("shrink_inode", args, db, bp);
 	dp = args->dp;
@@ -712,7 +786,7 @@ xfs_dir2_shrink_inode(
 	 */
 	if ((error = xfs_bunmapi(tp, dp, da, mp->m_dirblkfsbs,
 			XFS_BMAPI_METADATA, 0, args->firstblock, args->flist,
-			NULL, &done))) {
+			&done))) {
 		/*
 		 * ENOSPC actually can happen if we're in a removename with
 		 * no space reservation, and the resulting block removal

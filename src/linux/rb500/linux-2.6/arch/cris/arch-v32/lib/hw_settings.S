@@ -10,6 +10,7 @@
  * Authors:  Mikael Starvik (starvik@axis.com)
  */
 
+#include <linux/config.h>
 #include <asm/arch/hwregs/asm/reg_map_asm.h>
 #include <asm/arch/hwregs/asm/bif_core_defs_asm.h>
 #include <asm/arch/hwregs/asm/gio_defs_asm.h>

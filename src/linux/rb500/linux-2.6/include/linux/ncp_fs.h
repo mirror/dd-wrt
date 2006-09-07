@@ -12,6 +12,8 @@
 #include <linux/in.h>
 #include <linux/types.h>
 
+#include <linux/ncp_fs_i.h>
+#include <linux/ncp_fs_sb.h>
 #include <linux/ipx.h>
 #include <linux/ncp_no.h>
 
@@ -144,8 +146,7 @@ struct ncp_nls_ioctl
 
 #ifdef __KERNEL__
 
-#include <linux/ncp_fs_i.h>
-#include <linux/ncp_fs_sb.h>
+#include <linux/config.h>
 
 /* undef because public define in umsdos_fs.h (ncp_fs.h isn't public) */
 #undef PRINTK

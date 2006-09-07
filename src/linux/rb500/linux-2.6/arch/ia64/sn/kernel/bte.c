@@ -6,6 +6,7 @@
  * Copyright (c) 2000-2006 Silicon Graphics, Inc.  All Rights Reserved.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <asm/sn/nodepda.h>
 #include <asm/sn/addrs.h>

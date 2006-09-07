@@ -11,6 +11,7 @@
 #ifndef _XTENSA_CHECKSUM_H
 #define _XTENSA_CHECKSUM_H
 
+#include <linux/config.h>
 #include <linux/in6.h>
 #include <xtensa/config/core.h>
 
@@ -43,7 +44,8 @@ asmlinkage unsigned int csum_partial_copy_generic( const char *src, char *dst, i
  *	Note: when you get a NULL pointer exception here this means someone
  *	passed in an incorrect kernel address to one of these functions.
  *
- *	If you use these functions directly please don't forget the access_ok().
+ *	If you use these functions directly please don't forget the
+ *	verify_area().
  */
 static inline
 unsigned int csum_partial_copy_nocheck ( const char *src, char *dst,

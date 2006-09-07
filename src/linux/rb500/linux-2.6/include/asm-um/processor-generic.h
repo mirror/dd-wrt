@@ -10,6 +10,7 @@ struct pt_regs;
 
 struct task_struct;
 
+#include "linux/config.h"
 #include "asm/ptrace.h"
 #include "choose-mode.h"
 #include "registers.h"

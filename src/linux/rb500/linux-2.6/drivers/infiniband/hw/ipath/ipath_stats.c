@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2006 QLogic, Inc. All rights reserved.
  * Copyright (c) 2003, 2004, 2005, 2006 PathScale, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
@@ -186,6 +185,7 @@ static void ipath_qcheck(struct ipath_devdata *dd)
 				   dd->ipath_port0head,
 				   (unsigned long long)
 				   ipath_stats.sps_port0pkts);
+			ipath_kreceive(dd);
 		}
 		dd->ipath_lastport0rcv_cnt = ipath_stats.sps_port0pkts;
 	}

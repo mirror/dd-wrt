@@ -3,6 +3,7 @@
  *
  * LED driver for OSK, and optionally Mistral QVGA, boards
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/workqueue.h>
 

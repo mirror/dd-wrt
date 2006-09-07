@@ -17,6 +17,7 @@
  *  - Jay Schulist <jschlst@samba.org>
  */
 
+#include <linux/config.h>
 
 #if defined(CONFIG_SMCTR) || defined(CONFIG_SMCTR_MODULE)
 

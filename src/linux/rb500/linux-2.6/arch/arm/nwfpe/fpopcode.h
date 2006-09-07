@@ -23,6 +23,7 @@
 #ifndef __FPOPCODE_H__
 #define __FPOPCODE_H__
 
+#include <linux/config.h>
 
 /*
 ARM Floating Point Instruction Classes

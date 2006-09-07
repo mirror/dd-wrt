@@ -15,6 +15,7 @@
  * Support for NEC-CMBVR4133 in 2.6
  * Manish Lachwani (mlachwani@mvista.com)
  */
+#include <linux/config.h>
 
 #ifdef CONFIG_ROCKHOPPER
 #include <asm/io.h>

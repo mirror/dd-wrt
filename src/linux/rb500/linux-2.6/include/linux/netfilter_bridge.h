@@ -4,6 +4,7 @@
 /* bridge-specific defines for netfilter. 
  */
 
+#include <linux/config.h>
 #include <linux/netfilter.h>
 #if defined(__KERNEL__) && defined(CONFIG_BRIDGE_NETFILTER)
 #include <asm/atomic.h>

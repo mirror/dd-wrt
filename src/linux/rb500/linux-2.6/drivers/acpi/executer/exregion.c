@@ -81,7 +81,7 @@ acpi_ex_system_memory_space_handler(u32 function,
 	u32 remainder;
 #endif
 
-	ACPI_FUNCTION_TRACE(ex_system_memory_space_handler);
+	ACPI_FUNCTION_TRACE("ex_system_memory_space_handler");
 
 	/* Validate and translate the bit width */
 
@@ -103,7 +103,7 @@ acpi_ex_system_memory_space_handler(u32 function,
 		break;
 
 	default:
-		ACPI_ERROR((AE_INFO, "Invalid SystemMemory width %d",
+		ACPI_ERROR((AE_INFO, "Invalid system_memory width %d",
 			    bit_width));
 		return_ACPI_STATUS(AE_AML_OPERAND_VALUE);
 	}
@@ -135,7 +135,6 @@ acpi_ex_system_memory_space_handler(u32 function,
 		 * Delete the existing mapping and create a new one.
 		 */
 		if (mem_info->mapped_length) {
-
 			/* Valid mapping, delete it */
 
 			acpi_os_unmap_memory(mem_info->mapped_logical_address,
@@ -182,8 +181,8 @@ acpi_ex_system_memory_space_handler(u32 function,
 	     (acpi_integer) mem_info->mapped_physical_address);
 
 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-			  "System-Memory (width %d) R/W %d Address=%8.8X%8.8X\n",
-			  bit_width, function, ACPI_FORMAT_UINT64(address)));
+			  "system_memory %d (%d width) Address=%8.8X%8.8X\n",
+			  function, bit_width, ACPI_FORMAT_UINT64(address)));
 
 	/*
 	 * Perform the memory read or write
@@ -284,11 +283,11 @@ acpi_ex_system_io_space_handler(u32 function,
 	acpi_status status = AE_OK;
 	u32 value32;
 
-	ACPI_FUNCTION_TRACE(ex_system_io_space_handler);
+	ACPI_FUNCTION_TRACE("ex_system_io_space_handler");
 
 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-			  "System-IO (width %d) R/W %d Address=%8.8X%8.8X\n",
-			  bit_width, function, ACPI_FORMAT_UINT64(address)));
+			  "system_iO %d (%d width) Address=%8.8X%8.8X\n",
+			  function, bit_width, ACPI_FORMAT_UINT64(address)));
 
 	/* Decode the function parameter */
 
@@ -343,7 +342,7 @@ acpi_ex_pci_config_space_handler(u32 function,
 	struct acpi_pci_id *pci_id;
 	u16 pci_register;
 
-	ACPI_FUNCTION_TRACE(ex_pci_config_space_handler);
+	ACPI_FUNCTION_TRACE("ex_pci_config_space_handler");
 
 	/*
 	 *  The arguments to acpi_os(Read|Write)pci_configuration are:
@@ -361,7 +360,7 @@ acpi_ex_pci_config_space_handler(u32 function,
 	pci_register = (u16) (u32) address;
 
 	ACPI_DEBUG_PRINT((ACPI_DB_INFO,
-			  "Pci-Config %d (%d) Seg(%04x) Bus(%04x) Dev(%04x) Func(%04x) Reg(%04x)\n",
+			  "pci_config %d (%d) Seg(%04x) Bus(%04x) Dev(%04x) Func(%04x) Reg(%04x)\n",
 			  function, bit_width, pci_id->segment, pci_id->bus,
 			  pci_id->device, pci_id->function, pci_register));
 
@@ -415,7 +414,7 @@ acpi_ex_cmos_space_handler(u32 function,
 {
 	acpi_status status = AE_OK;
 
-	ACPI_FUNCTION_TRACE(ex_cmos_space_handler);
+	ACPI_FUNCTION_TRACE("ex_cmos_space_handler");
 
 	return_ACPI_STATUS(status);
 }
@@ -447,7 +446,7 @@ acpi_ex_pci_bar_space_handler(u32 function,
 {
 	acpi_status status = AE_OK;
 
-	ACPI_FUNCTION_TRACE(ex_pci_bar_space_handler);
+	ACPI_FUNCTION_TRACE("ex_pci_bar_space_handler");
 
 	return_ACPI_STATUS(status);
 }
@@ -477,16 +476,23 @@ acpi_ex_data_table_space_handler(u32 function,
 				 acpi_integer * value,
 				 void *handler_context, void *region_context)
 {
-	ACPI_FUNCTION_TRACE(ex_data_table_space_handler);
+	acpi_status status = AE_OK;
+	u32 byte_width = ACPI_DIV_8(bit_width);
+	u32 i;
+	char *logical_addr_ptr;
+
+	ACPI_FUNCTION_TRACE("ex_data_table_space_handler");
+
+	logical_addr_ptr = ACPI_PHYSADDR_TO_PTR(address);
 
 	/* Perform the memory read or write */
 
 	switch (function) {
 	case ACPI_READ:
 
-		ACPI_MEMCPY(ACPI_CAST_PTR(char, value),
-			    ACPI_PHYSADDR_TO_PTR(address),
-			    ACPI_DIV_8(bit_width));
+		for (i = 0; i < byte_width; i++) {
+			((char *)value)[i] = logical_addr_ptr[i];
+		}
 		break;
 
 	case ACPI_WRITE:
@@ -495,5 +501,5 @@ acpi_ex_data_table_space_handler(u32 function,
 		return_ACPI_STATUS(AE_SUPPORT);
 	}
 
-	return_ACPI_STATUS(AE_OK);
+	return_ACPI_STATUS(status);
 }

@@ -12,6 +12,7 @@
  * M68360 Port by SED Systems, and Lineo.
  */
 
+#include <linux/config.h>
 #include <linux/sys.h>
 #include <linux/linkage.h>
 #include <asm/thread_info.h>

@@ -5,6 +5,7 @@
  *    Author(s): Ulrich Weigand (Ulrich.Weigand@de.ibm.com)
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/proc_fs.h>

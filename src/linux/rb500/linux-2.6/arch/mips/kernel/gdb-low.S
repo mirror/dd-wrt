@@ -3,6 +3,7 @@
  *
  * Copyright (C) 1995 Andreas Busse
  */
+#include <linux/config.h>
 #include <linux/sys.h>
 
 #include <asm/asm.h>
@@ -290,7 +291,7 @@
 		ori	t1, t2, TCSTATUS_IXMT
 		mtc0	t1, CP0_TCSTATUS
 		andi	t2, t2, TCSTATUS_IXMT
-		_ehb
+		ehb
 		DMT	9				# dmt	t1
 		jal	mips_ihb
 		nop
@@ -309,7 +310,7 @@
 		xori	t1, t1, TCSTATUS_IXMT
 		or	t1, t1, t2
 		mtc0	t1, CP0_TCSTATUS
-		_ehb
+		ehb
 #endif /* CONFIG_MIPS_MT_SMTC */
 		LONG_L	v0, GDB_FR_STATUS(sp)
 		LONG_L	v1, GDB_FR_EPC(sp)

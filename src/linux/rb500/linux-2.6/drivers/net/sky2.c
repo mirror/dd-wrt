@@ -23,6 +23,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/crc32.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -232,6 +233,8 @@ static void sky2_set_power_state(struct sky2_hw *hw, pci_power_t state)
 			if (hw->ports > 1)
 				reg1 |= PCI_Y2_PHY2_COMA;
 		}
+		sky2_pci_write32(hw, PCI_DEV_REG1, reg1);
+		udelay(100);
 
 		if (hw->chip_id == CHIP_ID_YUKON_EC_U) {
 			sky2_write16(hw, B0_CTST, Y2_HW_WOL_ON);
@@ -241,8 +244,6 @@ static void sky2_set_power_state(struct sky2_hw *hw, pci_power_t state)
 			sky2_pci_write32(hw, PCI_DEV_REG4, reg1);
 			sky2_pci_write32(hw, PCI_DEV_REG5, 0);
 		}
-
-		sky2_pci_write32(hw, PCI_DEV_REG1, reg1);
 
 		break;
 
@@ -1159,7 +1160,7 @@ static unsigned tx_le_req(const struct sk_buff *skb)
 	count = sizeof(dma_addr_t) / sizeof(u32);
 	count += skb_shinfo(skb)->nr_frags * count;
 
-	if (skb_shinfo(skb)->gso_size)
+	if (skb_shinfo(skb)->tso_size)
 		++count;
 
 	if (skb->ip_summed == CHECKSUM_HW)
@@ -1231,7 +1232,7 @@ static int sky2_xmit_frame(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	/* Check for TCP Segmentation Offload */
-	mss = skb_shinfo(skb)->gso_size;
+	mss = skb_shinfo(skb)->tso_size;
 	if (mss != 0) {
 		/* just drop the packet if non-linear expansion fails */
 		if (skb_header_cloned(skb) &&
@@ -2186,9 +2187,6 @@ static int sky2_poll(struct net_device *dev0, int *budget)
 	int work_done = 0;
 	u32 status = sky2_read32(hw, B0_Y2_SP_EISR);
 
-	if (!~status)
-		goto out;
-
 	if (status & Y2_IS_HW_ERR)
 		sky2_hw_intr(hw);
 
@@ -2225,7 +2223,7 @@ static int sky2_poll(struct net_device *dev0, int *budget)
 
 	if (sky2_more_work(hw))
 		return 1;
-out:
+
 	netif_rx_complete(dev0);
 
 	sky2_read32(hw, B0_Y2_SP_LISR);
@@ -3188,7 +3186,7 @@ static int __devinit sky2_test_msi(struct sky2_hw *hw)
 
 	sky2_write32(hw, B0_IMSK, Y2_IS_IRQ_SW);
 
-	err = request_irq(pdev->irq, sky2_test_intr, IRQF_SHARED, DRV_NAME, hw);
+	err = request_irq(pdev->irq, sky2_test_intr, SA_SHIRQ, DRV_NAME, hw);
 	if (err) {
 		printk(KERN_ERR PFX "%s: cannot assign irq %d\n",
 		       pci_name(pdev), pdev->irq);
@@ -3310,9 +3308,9 @@ static int __devinit sky2_probe(struct pci_dev *pdev,
 	if (err)
 		goto err_out_iounmap;
 
-	printk(KERN_INFO PFX "v%s addr 0x%llx irq %d Yukon-%s (0x%x) rev %d\n",
-	       DRV_VERSION, (unsigned long long)pci_resource_start(pdev, 0),
-	       pdev->irq, yukon2_name[hw->chip_id - CHIP_ID_YUKON_XL],
+	printk(KERN_INFO PFX "v%s addr 0x%lx irq %d Yukon-%s (0x%x) rev %d\n",
+	       DRV_VERSION, pci_resource_start(pdev, 0), pdev->irq,
+	       yukon2_name[hw->chip_id - CHIP_ID_YUKON_XL],
 	       hw->chip_id, hw->chip_rev);
 
 	dev = sky2_init_netdev(hw, 0, using_dac);
@@ -3348,7 +3346,7 @@ static int __devinit sky2_probe(struct pci_dev *pdev,
 			goto err_out_unregister;
  	}
 
-	err = request_irq(pdev->irq,  sky2_intr, IRQF_SHARED, DRV_NAME, hw);
+	err = request_irq(pdev->irq,  sky2_intr, SA_SHIRQ, DRV_NAME, hw);
 	if (err) {
 		printk(KERN_ERR PFX "%s: cannot assign irq %d\n",
 		       pci_name(pdev), pdev->irq);

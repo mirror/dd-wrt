@@ -60,6 +60,7 @@
  * found, we can hopefully stop hardcoding 32MB of RAM.
  */
 
+#include <linux/config.h>
 #include <linux/stddef.h>
 #include <linux/kernel.h>
 #include <linux/init.h>

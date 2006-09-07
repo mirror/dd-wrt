@@ -642,7 +642,7 @@ static void kick_open(void)
 	udelay(25);
 }
 
-static const struct file_operations flash_fops =
+static struct file_operations flash_fops =
 {
 	.owner		= THIS_MODULE,
 	.llseek		= flash_llseek,

@@ -2,6 +2,7 @@
  *	arch/alpha/lib/callback_srm.S
  */
 
+#include <linux/config.h>
 #include <asm/console.h>
 
 .text

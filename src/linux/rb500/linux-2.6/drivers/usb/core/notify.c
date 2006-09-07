@@ -9,6 +9,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/notifier.h>
 #include <linux/usb.h>

@@ -14,6 +14,7 @@
  *            Dustin Kirkland <dustin.kirkland@us.ibm.com>
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/shm.h>
 #include <linux/init.h>

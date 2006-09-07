@@ -20,6 +20,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <asm/uaccess.h>
@@ -42,8 +43,6 @@
 	"\tldil L%%" #lbl ", %%r1\n"			\
 	"\tldo R%%" #lbl "(%%r1), %%r1\n"		\
 	"\tbv,n %%r0(%%r1)\n"
-/* If you use FIXUP_BRANCH, then you must list this clobber */
-#define FIXUP_BRANCH_CLOBBER "r1"
 
 /* 1111 1100 0000 0000 0001 0011 1100 0000 */
 #define OPCODE1(a,b,c)	((a)<<26|(b)<<12|(c)<<6) 
@@ -158,7 +157,7 @@ static int emulate_ldh(struct pt_regs *regs, int toreg)
 "	.previous\n"
 	: "=r" (val), "=r" (ret)
 	: "0" (val), "r" (saddr), "r" (regs->isr)
-	: "r20", FIXUP_BRANCH_CLOBBER );
+	: "r20" );
 
 	DPRINTF("val = 0x" RFMT "\n", val);
 
@@ -203,7 +202,7 @@ static int emulate_ldw(struct pt_regs *regs, int toreg, int flop)
 "	.previous\n"
 	: "=r" (val), "=r" (ret)
 	: "0" (val), "r" (saddr), "r" (regs->isr)
-	: "r19", "r20", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20" );
 
 	DPRINTF("val = 0x" RFMT "\n", val);
 
@@ -254,7 +253,7 @@ static int emulate_ldd(struct pt_regs *regs, int toreg, int flop)
 "	.previous\n"
 	: "=r" (val), "=r" (ret)
 	: "0" (val), "r" (saddr), "r" (regs->isr)
-	: "r19", "r20", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20" );
 #else
     {
 	unsigned long valh=0,vall=0;
@@ -288,7 +287,7 @@ static int emulate_ldd(struct pt_regs *regs, int toreg, int flop)
 "	.previous\n"
 	: "=r" (valh), "=r" (vall), "=r" (ret)
 	: "0" (valh), "1" (vall), "r" (saddr), "r" (regs->isr)
-	: "r19", "r20", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20" );
 	val=((__u64)valh<<32)|(__u64)vall;
     }
 #endif
@@ -336,7 +335,7 @@ static int emulate_sth(struct pt_regs *regs, int frreg)
 "	.previous\n"
 	: "=r" (ret)
 	: "r" (val), "r" (regs->ior), "r" (regs->isr)
-	: "r19", FIXUP_BRANCH_CLOBBER );
+	: "r19" );
 
 	return ret;
 }
@@ -390,7 +389,7 @@ static int emulate_stw(struct pt_regs *regs, int frreg, int flop)
 "	.previous\n"
 	: "=r" (ret)
 	: "r" (val), "r" (regs->ior), "r" (regs->isr)
-	: "r19", "r20", "r21", "r22", "r1", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20", "r21", "r22", "r1" );
 
 	return 0;
 }
@@ -451,7 +450,7 @@ static int emulate_std(struct pt_regs *regs, int frreg, int flop)
 "	.previous\n"
 	: "=r" (ret)
 	: "r" (val), "r" (regs->ior), "r" (regs->isr)
-	: "r19", "r20", "r21", "r22", "r1", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20", "r21", "r22", "r1" );
 #else
     {
 	unsigned long valh=(val>>32),vall=(val&0xffffffffl);
@@ -496,7 +495,7 @@ static int emulate_std(struct pt_regs *regs, int frreg, int flop)
 "	.previous\n"
 	: "=r" (ret)
 	: "r" (valh), "r" (vall), "r" (regs->ior), "r" (regs->isr)
-	: "r19", "r20", "r21", "r1", FIXUP_BRANCH_CLOBBER );
+	: "r19", "r20", "r21", "r1" );
     }
 #endif
 

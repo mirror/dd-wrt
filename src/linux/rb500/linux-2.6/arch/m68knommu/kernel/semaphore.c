@@ -3,6 +3,7 @@
  * specific changes in <asm/semaphore-helper.h>
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/err.h>
 #include <linux/init.h>

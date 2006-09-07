@@ -17,6 +17,7 @@
  *      2000-09-04	Henner Eisen	Prevent freeing a dangling skb.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
 #include <linux/skbuff.h>

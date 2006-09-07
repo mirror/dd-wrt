@@ -10,6 +10,7 @@
 #ifndef __ASM_ARM_CPU_H
 #define __ASM_ARM_CPU_H
 
+#include <linux/config.h>
 #include <linux/percpu.h>
 
 struct cpuinfo_arm {

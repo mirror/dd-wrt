@@ -1,6 +1,7 @@
 #ifndef _ASM_IA64_CACHE_H
 #define _ASM_IA64_CACHE_H
 
+#include <linux/config.h>
 
 /*
  * Copyright (C) 1998-2000 Hewlett-Packard Co

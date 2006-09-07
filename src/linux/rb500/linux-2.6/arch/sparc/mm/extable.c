@@ -2,6 +2,7 @@
  * linux/arch/sparc/mm/extable.c
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <asm/uaccess.h>
 

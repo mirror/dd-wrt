@@ -14,6 +14,7 @@ __INIT
 __INITDATA
 
 	.text
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/segment.h>
 #include <asm/page.h>

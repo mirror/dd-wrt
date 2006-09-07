@@ -10,6 +10,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <asm/pgalloc.h>
 #include <asm/io.h>
 #include <asm/spitfire.h>

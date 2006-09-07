@@ -5,6 +5,7 @@
 #ifndef _ASM_PARISC_ATOMIC_H_
 #define _ASM_PARISC_ATOMIC_H_
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <asm/system.h>
 

@@ -11,6 +11,7 @@
  * This file handles the architecture-dependent parts of process handling..
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/err.h>
 #include <linux/fs.h>

@@ -10,6 +10,7 @@
 #ifndef _LINUX_RELAY_H
 #define _LINUX_RELAY_H
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/wait.h>

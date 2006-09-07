@@ -7,8 +7,6 @@
  *  	Karl Lessard <klessard@sunrisetelecom.com>
  *  	<c.pellegrin@exadron.com>
  *
- * PM support added by Rodolfo Giometti <giometti@linux.it>
- *
  * Copyright 2002 MontaVista Software
  * Author: MontaVista Software, Inc.
  *		ppopov@mvista.com or source@mvista.com
@@ -40,6 +38,7 @@
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -603,52 +602,17 @@ int au1100fb_drv_remove(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
-static u32 sys_clksrc;
-static struct au1100fb_regs fbregs;
-
 int au1100fb_drv_suspend(struct device *dev, pm_message_t state)
 {
-	struct au1100fb_device *fbdev = dev_get_drvdata(dev);
-
-	if (!fbdev)
-		return 0;
-
-	/* Save the clock source state */
-	sys_clksrc = au_readl(SYS_CLKSRC);
-
-	/* Blank the LCD */
-	au1100fb_fb_blank(VESA_POWERDOWN, &fbdev->info);
-
-	/* Stop LCD clocking */
-	au_writel(sys_clksrc & ~SYS_CS_ML_MASK, SYS_CLKSRC);
-
-	memcpy(&fbregs, fbdev->regs, sizeof(struct au1100fb_regs));
-
+	/* TODO */
 	return 0;
 }
 
 int au1100fb_drv_resume(struct device *dev)
 {
-	struct au1100fb_device *fbdev = dev_get_drvdata(dev);
-
-	if (!fbdev)
-		return 0;
-
-	memcpy(fbdev->regs, &fbregs, sizeof(struct au1100fb_regs));
-
-	/* Restart LCD clocking */
-	au_writel(sys_clksrc, SYS_CLKSRC);
-
-	/* Unblank the LCD */
-	au1100fb_fb_blank(VESA_NO_BLANKING, &fbdev->info);
-
+	/* TODO */
 	return 0;
 }
-#else
-#define au1100fb_drv_suspend NULL
-#define au1100fb_drv_resume NULL
-#endif
 
 static struct device_driver au1100fb_driver = {
 	.name		= "au1100-lcd",
@@ -742,7 +706,8 @@ void __exit au1100fb_cleanup(void)
 {
 	driver_unregister(&au1100fb_driver);
 
-	kfree(drv_info.opt_mode);
+	if (drv_info.opt_mode)
+		kfree(drv_info.opt_mode);
 }
 
 module_init(au1100fb_init);

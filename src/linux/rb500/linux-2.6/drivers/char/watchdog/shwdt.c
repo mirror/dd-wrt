@@ -17,6 +17,7 @@
  *     Added expect close support, made emulated timeout runtime changeable
  *     general cleanups, add some ioctls
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
@@ -344,7 +345,7 @@ static int sh_wdt_notify_sys(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
-static const struct file_operations sh_wdt_fops = {
+static struct file_operations sh_wdt_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= sh_wdt_write,

@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/kernel.h>
@@ -53,16 +54,15 @@ static int log_ce = 1;
 static int panic_on_ue;
 static int poll_msec = 1000;
 
+static int check_pci_parity = 0;	/* default YES check PCI parity */
+static int panic_on_pci_parity;		/* default no panic on PCI Parity */
+static atomic_t pci_parity_count = ATOMIC_INIT(0);
+
 /* lock to memory controller's control array */
 static DECLARE_MUTEX(mem_ctls_mutex);
 static struct list_head mc_devices = LIST_HEAD_INIT(mc_devices);
 
 static struct task_struct *edac_thread;
-
-#ifdef CONFIG_PCI
-static int check_pci_parity = 0;	/* default YES check PCI parity */
-static int panic_on_pci_parity;		/* default no panic on PCI Parity */
-static atomic_t pci_parity_count = ATOMIC_INIT(0);
 
 /* Structure of the whitelist and blacklist arrays */
 struct edac_pci_device_list {
@@ -79,12 +79,6 @@ static int pci_blacklist_count;
 /* List of PCI devices (vendor-id:device-id) that should be scanned */
 static struct edac_pci_device_list pci_whitelist[MAX_LISTED_PCI_DEVICES];
 static int pci_whitelist_count ;
-
-#ifndef DISABLE_EDAC_SYSFS
-static struct kobject edac_pci_kobj; /* /sys/devices/system/edac/pci */
-static struct completion edac_pci_kobj_complete;
-#endif	/* DISABLE_EDAC_SYSFS */
-#endif	/* CONFIG_PCI */
 
 /*  START sysfs data and methods */
 
@@ -133,15 +127,18 @@ static struct sysdev_class edac_class = {
 	set_kset_name("edac"),
 };
 
-/* sysfs object:
+/* sysfs objects:
  *	/sys/devices/system/edac/mc
+ *	/sys/devices/system/edac/pci
  */
 static struct kobject edac_memctrl_kobj;
+static struct kobject edac_pci_kobj;
 
 /* We use these to wait for the reference counts on edac_memctrl_kobj and
  * edac_pci_kobj to reach 0.
  */
 static struct completion edac_memctrl_kobj_complete;
+static struct completion edac_pci_kobj_complete;
 
 /*
  * /sys/devices/system/edac/mc;
@@ -326,8 +323,6 @@ static void edac_sysfs_memctrl_teardown(void)
 	sysdev_class_unregister(&edac_class);
 #endif  /* DISABLE_EDAC_SYSFS */
 }
-
-#ifdef CONFIG_PCI
 
 #ifndef DISABLE_EDAC_SYSFS
 
@@ -628,252 +623,6 @@ static void edac_sysfs_pci_teardown(void)
 	wait_for_completion(&edac_pci_kobj_complete);
 #endif
 }
-
-
-static u16 get_pci_parity_status(struct pci_dev *dev, int secondary)
-{
-	int where;
-	u16 status;
-
-	where = secondary ? PCI_SEC_STATUS : PCI_STATUS;
-	pci_read_config_word(dev, where, &status);
-
-	/* If we get back 0xFFFF then we must suspect that the card has been
-	 * pulled but the Linux PCI layer has not yet finished cleaning up.
-	 * We don't want to report on such devices
-	 */
-
-	if (status == 0xFFFF) {
-		u32 sanity;
-
-		pci_read_config_dword(dev, 0, &sanity);
-
-		if (sanity == 0xFFFFFFFF)
-			return 0;
-	}
-
-	status &= PCI_STATUS_DETECTED_PARITY | PCI_STATUS_SIG_SYSTEM_ERROR |
-		PCI_STATUS_PARITY;
-
-	if (status)
-		/* reset only the bits we are interested in */
-		pci_write_config_word(dev, where, status);
-
-	return status;
-}
-
-typedef void (*pci_parity_check_fn_t) (struct pci_dev *dev);
-
-/* Clear any PCI parity errors logged by this device. */
-static void edac_pci_dev_parity_clear(struct pci_dev *dev)
-{
-	u8 header_type;
-
-	get_pci_parity_status(dev, 0);
-
-	/* read the device TYPE, looking for bridges */
-	pci_read_config_byte(dev, PCI_HEADER_TYPE, &header_type);
-
-	if ((header_type & 0x7F) == PCI_HEADER_TYPE_BRIDGE)
-		get_pci_parity_status(dev, 1);
-}
-
-/*
- *  PCI Parity polling
- *
- */
-static void edac_pci_dev_parity_test(struct pci_dev *dev)
-{
-	u16 status;
-	u8  header_type;
-
-	/* read the STATUS register on this device
-	 */
-	status = get_pci_parity_status(dev, 0);
-
-	debugf2("PCI STATUS= 0x%04x %s\n", status, dev->dev.bus_id );
-
-	/* check the status reg for errors */
-	if (status) {
-		if (status & (PCI_STATUS_SIG_SYSTEM_ERROR))
-			edac_printk(KERN_CRIT, EDAC_PCI,
-				"Signaled System Error on %s\n",
-				pci_name(dev));
-
-		if (status & (PCI_STATUS_PARITY)) {
-			edac_printk(KERN_CRIT, EDAC_PCI,
-				"Master Data Parity Error on %s\n",
-				pci_name(dev));
-
-			atomic_inc(&pci_parity_count);
-		}
-
-		if (status & (PCI_STATUS_DETECTED_PARITY)) {
-			edac_printk(KERN_CRIT, EDAC_PCI,
-				"Detected Parity Error on %s\n",
-				pci_name(dev));
-
-			atomic_inc(&pci_parity_count);
-		}
-	}
-
-	/* read the device TYPE, looking for bridges */
-	pci_read_config_byte(dev, PCI_HEADER_TYPE, &header_type);
-
-	debugf2("PCI HEADER TYPE= 0x%02x %s\n", header_type, dev->dev.bus_id );
-
-	if ((header_type & 0x7F) == PCI_HEADER_TYPE_BRIDGE) {
-		/* On bridges, need to examine secondary status register  */
-		status = get_pci_parity_status(dev, 1);
-
-		debugf2("PCI SEC_STATUS= 0x%04x %s\n",
-				status, dev->dev.bus_id );
-
-		/* check the secondary status reg for errors */
-		if (status) {
-			if (status & (PCI_STATUS_SIG_SYSTEM_ERROR))
-				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
-					"Signaled System Error on %s\n",
-					pci_name(dev));
-
-			if (status & (PCI_STATUS_PARITY)) {
-				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
-					"Master Data Parity Error on "
-					"%s\n", pci_name(dev));
-
-				atomic_inc(&pci_parity_count);
-			}
-
-			if (status & (PCI_STATUS_DETECTED_PARITY)) {
-				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
-					"Detected Parity Error on %s\n",
-					pci_name(dev));
-
-				atomic_inc(&pci_parity_count);
-			}
-		}
-	}
-}
-
-/*
- * check_dev_on_list: Scan for a PCI device on a white/black list
- * @list:	an EDAC  &edac_pci_device_list  white/black list pointer
- * @free_index:	index of next free entry on the list
- * @pci_dev:	PCI Device pointer
- *
- * see if list contains the device.
- *
- * Returns:  	0 not found
- *		1 found on list
- */
-static int check_dev_on_list(struct edac_pci_device_list *list,
-		int free_index, struct pci_dev *dev)
-{
-	int i;
-	int rc = 0;     /* Assume not found */
-	unsigned short vendor=dev->vendor;
-	unsigned short device=dev->device;
-
-	/* Scan the list, looking for a vendor/device match */
-	for (i = 0; i < free_index; i++, list++ ) {
-		if ((list->vendor == vendor ) && (list->device == device )) {
-			rc = 1;
-			break;
-		}
-	}
-
-	return rc;
-}
-
-/*
- * pci_dev parity list iterator
- *	Scan the PCI device list for one iteration, looking for SERRORs
- *	Master Parity ERRORS or Parity ERRORs on primary or secondary devices
- */
-static inline void edac_pci_dev_parity_iterator(pci_parity_check_fn_t fn)
-{
-	struct pci_dev *dev = NULL;
-
-	/* request for kernel access to the next PCI device, if any,
-	 * and while we are looking at it have its reference count
-	 * bumped until we are done with it
-	 */
-	while((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
-		/* if whitelist exists then it has priority, so only scan
-		 * those devices on the whitelist
-		 */
-		if (pci_whitelist_count > 0 ) {
-			if (check_dev_on_list(pci_whitelist,
-					pci_whitelist_count, dev))
-				fn(dev);
-		} else {
-			/*
-			 * if no whitelist, then check if this devices is
-			 * blacklisted
-			 */
-			if (!check_dev_on_list(pci_blacklist,
-					pci_blacklist_count, dev))
-				fn(dev);
-		}
-	}
-}
-
-static void do_pci_parity_check(void)
-{
-	unsigned long flags;
-	int before_count;
-
-	debugf3("%s()\n", __func__);
-
-	if (!check_pci_parity)
-		return;
-
-	before_count = atomic_read(&pci_parity_count);
-
-	/* scan all PCI devices looking for a Parity Error on devices and
-	 * bridges
-	 */
-	local_irq_save(flags);
-	edac_pci_dev_parity_iterator(edac_pci_dev_parity_test);
-	local_irq_restore(flags);
-
-	/* Only if operator has selected panic on PCI Error */
-	if (panic_on_pci_parity) {
-		/* If the count is different 'after' from 'before' */
-		if (before_count != atomic_read(&pci_parity_count))
-			panic("EDAC: PCI Parity Error");
-	}
-}
-
-static inline void clear_pci_parity_errors(void)
-{
-	/* Clear any PCI bus parity errors that devices initially have logged
-	 * in their registers.
-	 */
-	edac_pci_dev_parity_iterator(edac_pci_dev_parity_clear);
-}
-
-#else	/* CONFIG_PCI */
-
-static inline void do_pci_parity_check(void)
-{
-	/* no-op */
-}
-
-static inline void clear_pci_parity_errors(void)
-{
-	/* no-op */
-}
-
-static void edac_sysfs_pci_teardown(void)
-{
-}
-
-static int edac_sysfs_pci_setup(void)
-{
-	return 0;
-}
-#endif	/* CONFIG_PCI */
 
 #ifndef DISABLE_EDAC_SYSFS
 
@@ -1383,7 +1132,7 @@ static int edac_create_sysfs_mci_device(struct mem_ctl_info *mci)
 		return err;
 
 	/* create a symlink for the device */
-	err = sysfs_create_link(edac_mci_kobj, &mci->dev->kobj,
+	err = sysfs_create_link(edac_mci_kobj, &mci->pdev->dev.kobj,
 				EDAC_DEVICE_SYMLINK);
 
 	if (err)
@@ -1489,7 +1238,7 @@ void edac_mc_dump_mci(struct mem_ctl_info *mci)
 	debugf4("\tmci->edac_check = %p\n", mci->edac_check);
 	debugf3("\tmci->nr_csrows = %d, csrows = %p\n",
 		mci->nr_csrows, mci->csrows);
-	debugf3("\tdev = %p\n", mci->dev);
+	debugf3("\tpdev = %p\n", mci->pdev);
 	debugf3("\tmod_name:ctl_name = %s:%s\n",
 		mci->mod_name, mci->ctl_name);
 	debugf3("\tpvt_info = %p\n\n", mci->pvt_info);
@@ -1614,7 +1363,7 @@ void edac_mc_free(struct mem_ctl_info *mci)
 }
 EXPORT_SYMBOL_GPL(edac_mc_free);
 
-static struct mem_ctl_info *find_mci_by_dev(struct device *dev)
+static struct mem_ctl_info *find_mci_by_pdev(struct pci_dev *pdev)
 {
 	struct mem_ctl_info *mci;
 	struct list_head *item;
@@ -1624,53 +1373,54 @@ static struct mem_ctl_info *find_mci_by_dev(struct device *dev)
 	list_for_each(item, &mc_devices) {
 		mci = list_entry(item, struct mem_ctl_info, link);
 
-		if (mci->dev == dev)
+		if (mci->pdev == pdev)
 			return mci;
 	}
 
 	return NULL;
 }
 
-/* Return 0 on success, 1 on failure.
- * Before calling this function, caller must
- * assign a unique value to mci->mc_idx.
- */
-static int add_mc_to_global_list (struct mem_ctl_info *mci)
+static int add_mc_to_global_list(struct mem_ctl_info *mci)
 {
 	struct list_head *item, *insert_before;
 	struct mem_ctl_info *p;
+	int i;
 
-	insert_before = &mc_devices;
-
-	if (unlikely((p = find_mci_by_dev(mci->dev)) != NULL))
-		goto fail0;
-
-	list_for_each(item, &mc_devices) {
-		p = list_entry(item, struct mem_ctl_info, link);
-
-		if (p->mc_idx >= mci->mc_idx) {
-			if (unlikely(p->mc_idx == mci->mc_idx))
-				goto fail1;
-
-			insert_before = item;
-			break;
+	if (list_empty(&mc_devices)) {
+		mci->mc_idx = 0;
+		insert_before = &mc_devices;
+	} else {
+		if (find_mci_by_pdev(mci->pdev)) {
+			edac_printk(KERN_WARNING, EDAC_MC,
+				"%s (%s) %s %s already assigned %d\n",
+				mci->pdev->dev.bus_id,
+				pci_name(mci->pdev), mci->mod_name,
+				mci->ctl_name, mci->mc_idx);
+			return 1;
 		}
+
+		insert_before = NULL;
+		i = 0;
+
+		list_for_each(item, &mc_devices) {
+			p = list_entry(item, struct mem_ctl_info, link);
+
+			if (p->mc_idx != i) {
+				insert_before = item;
+				break;
+			}
+
+			i++;
+		}
+
+		mci->mc_idx = i;
+
+		if (insert_before == NULL)
+			insert_before = &mc_devices;
 	}
 
 	list_add_tail_rcu(&mci->link, insert_before);
 	return 0;
-
-fail0:
-	edac_printk(KERN_WARNING, EDAC_MC,
-		    "%s (%s) %s %s already assigned %d\n", p->dev->bus_id,
-		    dev_name(p->dev), p->mod_name, p->ctl_name, p->mc_idx);
-	return 1;
-
-fail1:
-	edac_printk(KERN_WARNING, EDAC_MC,
-		    "bug in low-level driver: attempt to assign\n"
-		    "    duplicate mc_idx %d in %s()\n", p->mc_idx, __func__);
-	return 1;
 }
 
 static void complete_mc_list_del(struct rcu_head *head)
@@ -1694,7 +1444,6 @@ static void del_mc_from_global_list(struct mem_ctl_info *mci)
  * edac_mc_add_mc: Insert the 'mci' structure into the mci global list and
  *                 create sysfs entries associated with mci structure
  * @mci: pointer to the mci structure to be added to the list
- * @mc_idx: A unique numeric identifier to be assigned to the 'mci' structure.
  *
  * Return:
  *	0	Success
@@ -1702,10 +1451,9 @@ static void del_mc_from_global_list(struct mem_ctl_info *mci)
  */
 
 /* FIXME - should a warning be printed if no error detection? correction? */
-int edac_mc_add_mc(struct mem_ctl_info *mci, int mc_idx)
+int edac_mc_add_mc(struct mem_ctl_info *mci)
 {
 	debugf0("%s()\n", __func__);
-	mci->mc_idx = mc_idx;
 #ifdef CONFIG_EDAC_DEBUG
 	if (edac_debug_level >= 3)
 		edac_mc_dump_mci(mci);
@@ -1738,8 +1486,8 @@ int edac_mc_add_mc(struct mem_ctl_info *mci, int mc_idx)
         }
 
 	/* Report action taken */
-	edac_mc_printk(mci, KERN_INFO, "Giving out device to %s %s: DEV %s\n",
-		mci->mod_name, mci->ctl_name, dev_name(mci->dev));
+	edac_mc_printk(mci, KERN_INFO, "Giving out device to %s %s: PCI %s\n",
+		mci->mod_name, mci->ctl_name, pci_name(mci->pdev));
 
 	up(&mem_ctls_mutex);
 	return 0;
@@ -1756,18 +1504,18 @@ EXPORT_SYMBOL_GPL(edac_mc_add_mc);
 /**
  * edac_mc_del_mc: Remove sysfs entries for specified mci structure and
  *                 remove mci structure from global list
- * @pdev: Pointer to 'struct device' representing mci structure to remove.
+ * @pdev: Pointer to 'struct pci_dev' representing mci structure to remove.
  *
  * Return pointer to removed mci structure, or NULL if device not found.
  */
-struct mem_ctl_info * edac_mc_del_mc(struct device *dev)
+struct mem_ctl_info * edac_mc_del_mc(struct pci_dev *pdev)
 {
 	struct mem_ctl_info *mci;
 
 	debugf0("MC: %s()\n", __func__);
 	down(&mem_ctls_mutex);
 
-	if ((mci = find_mci_by_dev(dev)) == NULL) {
+	if ((mci = find_mci_by_pdev(pdev)) == NULL) {
 		up(&mem_ctls_mutex);
 		return NULL;
 	}
@@ -1776,8 +1524,8 @@ struct mem_ctl_info * edac_mc_del_mc(struct device *dev)
 	del_mc_from_global_list(mci);
 	up(&mem_ctls_mutex);
 	edac_printk(KERN_INFO, EDAC_MC,
-		"Removed device %d for %s %s: DEV %s\n", mci->mc_idx,
-		mci->mod_name, mci->ctl_name, dev_name(mci->dev));
+		"Removed device %d for %s %s: PCI %s\n", mci->mc_idx,
+		mci->mod_name, mci->ctl_name, pci_name(mci->pdev));
 	return mci;
 }
 EXPORT_SYMBOL_GPL(edac_mc_del_mc);
@@ -1991,6 +1739,244 @@ void edac_mc_handle_ue_no_info(struct mem_ctl_info *mci, const char *msg)
 }
 EXPORT_SYMBOL_GPL(edac_mc_handle_ue_no_info);
 
+#ifdef CONFIG_PCI
+
+static u16 get_pci_parity_status(struct pci_dev *dev, int secondary)
+{
+	int where;
+	u16 status;
+
+	where = secondary ? PCI_SEC_STATUS : PCI_STATUS;
+	pci_read_config_word(dev, where, &status);
+
+	/* If we get back 0xFFFF then we must suspect that the card has been
+	 * pulled but the Linux PCI layer has not yet finished cleaning up.
+	 * We don't want to report on such devices
+	 */
+
+	if (status == 0xFFFF) {
+		u32 sanity;
+
+		pci_read_config_dword(dev, 0, &sanity);
+
+		if (sanity == 0xFFFFFFFF)
+			return 0;
+	}
+
+	status &= PCI_STATUS_DETECTED_PARITY | PCI_STATUS_SIG_SYSTEM_ERROR |
+		PCI_STATUS_PARITY;
+
+	if (status)
+		/* reset only the bits we are interested in */
+		pci_write_config_word(dev, where, status);
+
+	return status;
+}
+
+typedef void (*pci_parity_check_fn_t) (struct pci_dev *dev);
+
+/* Clear any PCI parity errors logged by this device. */
+static void edac_pci_dev_parity_clear(struct pci_dev *dev)
+{
+	u8 header_type;
+
+	get_pci_parity_status(dev, 0);
+
+	/* read the device TYPE, looking for bridges */
+	pci_read_config_byte(dev, PCI_HEADER_TYPE, &header_type);
+
+	if ((header_type & 0x7F) == PCI_HEADER_TYPE_BRIDGE)
+		get_pci_parity_status(dev, 1);
+}
+
+/*
+ *  PCI Parity polling
+ *
+ */
+static void edac_pci_dev_parity_test(struct pci_dev *dev)
+{
+	u16 status;
+	u8  header_type;
+
+	/* read the STATUS register on this device
+	 */
+	status = get_pci_parity_status(dev, 0);
+
+	debugf2("PCI STATUS= 0x%04x %s\n", status, dev->dev.bus_id );
+
+	/* check the status reg for errors */
+	if (status) {
+		if (status & (PCI_STATUS_SIG_SYSTEM_ERROR))
+			edac_printk(KERN_CRIT, EDAC_PCI,
+				"Signaled System Error on %s\n",
+				pci_name(dev));
+
+		if (status & (PCI_STATUS_PARITY)) {
+			edac_printk(KERN_CRIT, EDAC_PCI,
+				"Master Data Parity Error on %s\n",
+				pci_name(dev));
+
+			atomic_inc(&pci_parity_count);
+		}
+
+		if (status & (PCI_STATUS_DETECTED_PARITY)) {
+			edac_printk(KERN_CRIT, EDAC_PCI,
+				"Detected Parity Error on %s\n",
+				pci_name(dev));
+
+			atomic_inc(&pci_parity_count);
+		}
+	}
+
+	/* read the device TYPE, looking for bridges */
+	pci_read_config_byte(dev, PCI_HEADER_TYPE, &header_type);
+
+	debugf2("PCI HEADER TYPE= 0x%02x %s\n", header_type, dev->dev.bus_id );
+
+	if ((header_type & 0x7F) == PCI_HEADER_TYPE_BRIDGE) {
+		/* On bridges, need to examine secondary status register  */
+		status = get_pci_parity_status(dev, 1);
+
+		debugf2("PCI SEC_STATUS= 0x%04x %s\n",
+				status, dev->dev.bus_id );
+
+		/* check the secondary status reg for errors */
+		if (status) {
+			if (status & (PCI_STATUS_SIG_SYSTEM_ERROR))
+				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
+					"Signaled System Error on %s\n",
+					pci_name(dev));
+
+			if (status & (PCI_STATUS_PARITY)) {
+				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
+					"Master Data Parity Error on "
+					"%s\n", pci_name(dev));
+
+				atomic_inc(&pci_parity_count);
+			}
+
+			if (status & (PCI_STATUS_DETECTED_PARITY)) {
+				edac_printk(KERN_CRIT, EDAC_PCI, "Bridge "
+					"Detected Parity Error on %s\n",
+					pci_name(dev));
+
+				atomic_inc(&pci_parity_count);
+			}
+		}
+	}
+}
+
+/*
+ * check_dev_on_list: Scan for a PCI device on a white/black list
+ * @list:	an EDAC  &edac_pci_device_list  white/black list pointer
+ * @free_index:	index of next free entry on the list
+ * @pci_dev:	PCI Device pointer
+ *
+ * see if list contains the device.
+ *
+ * Returns:  	0 not found
+ *		1 found on list
+ */
+static int check_dev_on_list(struct edac_pci_device_list *list,
+		int free_index, struct pci_dev *dev)
+{
+	int i;
+	int rc = 0;     /* Assume not found */
+	unsigned short vendor=dev->vendor;
+	unsigned short device=dev->device;
+
+	/* Scan the list, looking for a vendor/device match */
+	for (i = 0; i < free_index; i++, list++ ) {
+		if ((list->vendor == vendor ) && (list->device == device )) {
+			rc = 1;
+			break;
+		}
+	}
+
+	return rc;
+}
+
+/*
+ * pci_dev parity list iterator
+ *	Scan the PCI device list for one iteration, looking for SERRORs
+ *	Master Parity ERRORS or Parity ERRORs on primary or secondary devices
+ */
+static inline void edac_pci_dev_parity_iterator(pci_parity_check_fn_t fn)
+{
+	struct pci_dev *dev = NULL;
+
+	/* request for kernel access to the next PCI device, if any,
+	 * and while we are looking at it have its reference count
+	 * bumped until we are done with it
+	 */
+	while((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
+		/* if whitelist exists then it has priority, so only scan
+		 * those devices on the whitelist
+		 */
+		if (pci_whitelist_count > 0 ) {
+			if (check_dev_on_list(pci_whitelist,
+					pci_whitelist_count, dev))
+				fn(dev);
+		} else {
+			/*
+			 * if no whitelist, then check if this devices is
+			 * blacklisted
+			 */
+			if (!check_dev_on_list(pci_blacklist,
+					pci_blacklist_count, dev))
+				fn(dev);
+		}
+	}
+}
+
+static void do_pci_parity_check(void)
+{
+	unsigned long flags;
+	int before_count;
+
+	debugf3("%s()\n", __func__);
+
+	if (!check_pci_parity)
+		return;
+
+	before_count = atomic_read(&pci_parity_count);
+
+	/* scan all PCI devices looking for a Parity Error on devices and
+	 * bridges
+	 */
+	local_irq_save(flags);
+	edac_pci_dev_parity_iterator(edac_pci_dev_parity_test);
+	local_irq_restore(flags);
+
+	/* Only if operator has selected panic on PCI Error */
+	if (panic_on_pci_parity) {
+		/* If the count is different 'after' from 'before' */
+		if (before_count != atomic_read(&pci_parity_count))
+			panic("EDAC: PCI Parity Error");
+	}
+}
+
+static inline void clear_pci_parity_errors(void)
+{
+	/* Clear any PCI bus parity errors that devices initially have logged
+	 * in their registers.
+	 */
+	edac_pci_dev_parity_iterator(edac_pci_dev_parity_clear);
+}
+
+#else  /* CONFIG_PCI */
+
+static inline void do_pci_parity_check(void)
+{
+	/* no-op */
+}
+
+static inline void clear_pci_parity_errors(void)
+{
+	/* no-op */
+}
+
+#endif  /* CONFIG_PCI */
 
 /*
  * Iterate over all MC instances and check for ECC, et al, errors
@@ -2110,12 +2096,10 @@ MODULE_DESCRIPTION("Core library routines for MC reporting");
 
 module_param(panic_on_ue, int, 0644);
 MODULE_PARM_DESC(panic_on_ue, "Panic on uncorrected error: 0=off 1=on");
-#ifdef CONFIG_PCI
 module_param(check_pci_parity, int, 0644);
 MODULE_PARM_DESC(check_pci_parity, "Check for PCI bus parity errors: 0=off 1=on");
 module_param(panic_on_pci_parity, int, 0644);
 MODULE_PARM_DESC(panic_on_pci_parity, "Panic on PCI Bus Parity error: 0=off 1=on");
-#endif
 module_param(log_ue, int, 0644);
 MODULE_PARM_DESC(log_ue, "Log uncorrectable error to console: 0=off 1=on");
 module_param(log_ce, int, 0644);

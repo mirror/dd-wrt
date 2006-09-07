@@ -187,6 +187,7 @@ History:
 #include <linux/interrupt.h>
 #include <linux/timer.h>
 #include <linux/cdrom.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/ioport.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
@@ -914,7 +915,7 @@ static void seek(int lba)
 	cd->dsb = wait_dsb();
 }
 
-static uch bcdbin(unsigned char bcd)
+uch bcdbin(unsigned char bcd)
 {				/* stolen from mcd.c! */
 	return (bcd >> 4) * 10 + (bcd & 0xf);
 }
@@ -1532,7 +1533,7 @@ static void __init parse_options(void)
 	}
 }
 
-static int __init __cm206_init(void)
+static int __cm206_init(void)
 {
 	parse_options();
 #if !defined(AUTO_PROBE_MODULE)
@@ -1593,3 +1594,8 @@ __setup("cm206=", cm206_setup);
 #endif				/* !MODULE */
 MODULE_ALIAS_BLOCKDEV_MAJOR(CM206_CDROM_MAJOR);
 
+/*
+ * Local variables:
+ * compile-command: "gcc -D__KERNEL__ -I/usr/src/linux/include -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe -fno-strength-reduce -m486 -DMODULE -DMODVERSIONS -include /usr/src/linux/include/linux/modversions.h  -c -o cm206.o cm206.c"
+ * End:
+ */

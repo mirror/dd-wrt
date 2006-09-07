@@ -9,6 +9,7 @@
 #ifndef _LEC_H_
 #define _LEC_H_
 
+#include <linux/config.h>
 #include <linux/atmdev.h>
 #include <linux/netdevice.h>
 #include <linux/atmlec.h>

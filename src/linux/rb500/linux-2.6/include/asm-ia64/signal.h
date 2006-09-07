@@ -56,6 +56,7 @@
  * SA_FLAGS values:
  *
  * SA_ONSTACK indicates that a registered stack_t will be used.
+ * SA_INTERRUPT is a no-op, but left due to historical reasons.
  * SA_RESTART flag to get restarting signals (which were the default long ago)
  * SA_NOCLDSTOP flag to turn off SIGCHLD when children stop.
  * SA_RESETHAND clears the handler when the signal is delivered.
@@ -75,6 +76,7 @@
 
 #define SA_NOMASK	SA_NODEFER
 #define SA_ONESHOT	SA_RESETHAND
+#define SA_INTERRUPT	0x20000000 /* dummy -- ignored */
 
 #define SA_RESTORER	0x04000000
 
@@ -111,6 +113,8 @@
 #define _NSIG		64
 #define _NSIG_BPW	64
 #define _NSIG_WORDS	(_NSIG / _NSIG_BPW)
+
+#define SA_PERCPU_IRQ		0x02000000
 
 #endif /* __KERNEL__ */
 

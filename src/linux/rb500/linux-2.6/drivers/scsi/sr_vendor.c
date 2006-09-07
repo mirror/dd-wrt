@@ -34,6 +34,7 @@
  *              HP 6020 writers now supported.
  */
 
+#include <linux/config.h>
 #include <linux/cdrom.h>
 #include <linux/errno.h>
 #include <linux/string.h>

@@ -5,6 +5,7 @@
 #ifndef _LINUX_KALLSYMS_H
 #define _LINUX_KALLSYMS_H
 
+#include <linux/config.h>
 
 #define KSYM_NAME_LEN 127
 
@@ -57,25 +58,10 @@ do {						\
 #define print_fn_descriptor_symbol(fmt, addr) print_symbol(fmt, addr)
 #endif
 
-static inline void print_symbol(const char *fmt, unsigned long addr)
-{
-	__check_printsym_format(fmt, "");
-	__print_symbol(fmt, (unsigned long)
-		       __builtin_extract_return_addr((void *)addr));
-}
-
-#ifndef CONFIG_64BIT
-#define print_ip_sym(ip)		\
-do {					\
-	printk("[<%08lx>]", ip);	\
-	print_symbol(" %s\n", ip);	\
+#define print_symbol(fmt, addr)			\
+do {						\
+	__check_printsym_format(fmt, "");	\
+	__print_symbol(fmt, addr);		\
 } while(0)
-#else
-#define print_ip_sym(ip)		\
-do {					\
-	printk("[<%016lx>]", ip);	\
-	print_symbol(" %s\n", ip);	\
-} while(0)
-#endif
 
 #endif /*_LINUX_KALLSYMS_H*/

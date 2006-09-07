@@ -33,6 +33,7 @@
 #include <linux/slab.h>
 #include <linux/interrupt.h>
 #include <linux/input.h>
+#include <linux/config.h>
 #include <linux/serio.h>
 #include <linux/init.h>
 
@@ -253,7 +254,7 @@ static int sermouse_connect(struct serio *serio, struct serio_driver *drv)
 		goto fail;
 
 	sermouse->dev = input_dev;
-	snprintf(sermouse->phys, sizeof(sermouse->phys), "%s/input0", serio->phys);
+	sprintf(sermouse->phys, "%s/input0", serio->phys);
 	sermouse->type = serio->id.proto;
 
 	input_dev->name = sermouse_protocols[sermouse->type];

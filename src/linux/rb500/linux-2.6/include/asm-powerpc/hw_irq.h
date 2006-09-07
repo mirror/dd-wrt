@@ -6,6 +6,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <asm/ptrace.h>
 #include <asm/processor.h>
@@ -86,27 +87,27 @@ static inline void local_irq_save_ptr(unsigned long *flags)
 #define mask_irq(irq)						\
 	({							\
 	 	irq_desc_t *desc = get_irq_desc(irq);		\
-		if (desc->chip && desc->chip->disable)	\
-			desc->chip->disable(irq);		\
+		if (desc->handler && desc->handler->disable)	\
+			desc->handler->disable(irq);		\
 	})
 #define unmask_irq(irq)						\
 	({							\
 	 	irq_desc_t *desc = get_irq_desc(irq);		\
-		if (desc->chip && desc->chip->enable)	\
-			desc->chip->enable(irq);		\
+		if (desc->handler && desc->handler->enable)	\
+			desc->handler->enable(irq);		\
 	})
 #define ack_irq(irq)						\
 	({							\
 	 	irq_desc_t *desc = get_irq_desc(irq);		\
-		if (desc->chip && desc->chip->ack)	\
-			desc->chip->ack(irq);		\
+		if (desc->handler && desc->handler->ack)	\
+			desc->handler->ack(irq);		\
 	})
 
-/*
- * interrupt-retrigger: should we handle this via lost interrupts and IPIs
- * or should we not care like we do now ? --BenH.
+/* Should we handle this via lost interrupts and IPIs or should we don't care like
+ * we do now ? --BenH.
  */
 struct hw_interrupt_type;
+static inline void hw_resend_irq(struct hw_interrupt_type *h, unsigned int i) {}
 
 #endif	/* __KERNEL__ */
 #endif	/* _ASM_POWERPC_HW_IRQ_H */

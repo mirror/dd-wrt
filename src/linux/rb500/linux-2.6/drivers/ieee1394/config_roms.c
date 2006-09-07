@@ -9,6 +9,7 @@
  * directory of the kernel sources for details.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 
 #include "csr1212.h"

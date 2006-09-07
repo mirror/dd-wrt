@@ -64,7 +64,8 @@ static char *ocfs2_page_getlink(struct dentry * dentry,
 {
 	struct page * page;
 	struct address_space *mapping = dentry->d_inode->i_mapping;
-	page = read_mapping_page(mapping, 0, NULL);
+	page = read_cache_page(mapping, 0,
+			       (filler_t *)mapping->a_ops->readpage, NULL);
 	if (IS_ERR(page))
 		goto sync_fail;
 	wait_on_page_locked(page);
@@ -154,7 +155,7 @@ static void *ocfs2_follow_link(struct dentry *dentry,
 	}
 
 	status = vfs_follow_link(nd, link);
-	if (status && status != -ENOENT)
+	if (status)
 		mlog_errno(status);
 bail:
 	if (page) {

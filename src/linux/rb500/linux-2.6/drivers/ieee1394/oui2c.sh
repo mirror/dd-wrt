@@ -3,6 +3,7 @@
 cat <<EOF
 /* Generated file for OUI database */
 
+#include <linux/config.h>
 
 #ifdef CONFIG_IEEE1394_OUI_DB
 struct oui_list_struct {

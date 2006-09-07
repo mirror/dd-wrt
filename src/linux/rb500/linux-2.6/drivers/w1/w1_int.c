@@ -65,7 +65,7 @@ static struct w1_master * w1_alloc_dev(u32 id, int slave_count, int slave_ttl,
 	atomic_set(&dev->refcnt, 2);
 
 	INIT_LIST_HEAD(&dev->slist);
-	mutex_init(&dev->mutex);
+	init_MUTEX(&dev->mutex);
 
 	memcpy(&dev->dev, device, sizeof(struct device));
 	snprintf(dev->dev.bus_id, sizeof(dev->dev.bus_id),
@@ -74,11 +74,16 @@ static struct w1_master * w1_alloc_dev(u32 id, int slave_count, int slave_ttl,
 
 	dev->driver = driver;
 
+	dev->groups = 1;
 	dev->seq = 1;
+	dev_init_netlink(dev);
 
 	err = device_register(&dev->dev);
 	if (err) {
 		printk(KERN_ERR "Failed to register master device. err=%d\n", err);
+
+		dev_fini_netlink(dev);
+
 		memset(dev, 0, sizeof(struct w1_master));
 		kfree(dev);
 		dev = NULL;
@@ -126,12 +131,12 @@ int w1_add_master_device(struct w1_bus_master *master)
 
 	dev->initialized = 1;
 
-	mutex_lock(&w1_mlock);
+	spin_lock(&w1_mlock);
 	list_add(&dev->w1_master_entry, &w1_masters);
-	mutex_unlock(&w1_mlock);
+	spin_unlock(&w1_mlock);
 
-	memset(&msg, 0, sizeof(msg));
 	msg.id.mst.id = dev->id;
+	msg.id.mst.pid = dev->thread->pid;
 	msg.type = W1_MASTER_ADD;
 	w1_netlink_send(dev, &msg);
 
@@ -148,6 +153,7 @@ err_out_free_dev:
 void __w1_remove_master_device(struct w1_master *dev)
 {
 	struct w1_netlink_msg msg;
+	pid_t pid = dev->thread->pid;
 
 	set_bit(W1_MASTER_NEED_EXIT, &dev->flags);
 	kthread_stop(dev->thread);
@@ -160,8 +166,8 @@ void __w1_remove_master_device(struct w1_master *dev)
 			flush_signals(current);
 	}
 
-	memset(&msg, 0, sizeof(msg));
 	msg.id.mst.id = dev->id;
+	msg.id.mst.pid = pid;
 	msg.type = W1_MASTER_REMOVE;
 	w1_netlink_send(dev, &msg);
 

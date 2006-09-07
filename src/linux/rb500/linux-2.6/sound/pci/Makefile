@@ -57,7 +57,6 @@ obj-$(CONFIG_SND) += \
 	ca0106/ \
 	cs46xx/ \
 	cs5535audio/ \
-	echoaudio/ \
 	emu10k1/ \
 	hda/ \
 	ice1712/ \

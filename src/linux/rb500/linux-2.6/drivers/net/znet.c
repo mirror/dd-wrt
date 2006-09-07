@@ -85,6 +85,7 @@
    - Understand why some traffic patterns add a 1s latency...
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -543,7 +544,8 @@ static int znet_send_packet(struct sk_buff *skb, struct net_device *dev)
 		printk(KERN_DEBUG "%s: ZNet_send_packet.\n", dev->name);
 
 	if (length < ETH_ZLEN) {
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 		length = ETH_ZLEN;
 	}

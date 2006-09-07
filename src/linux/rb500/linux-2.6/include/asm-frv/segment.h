@@ -12,6 +12,7 @@
 #ifndef _ASM_SEGMENT_H
 #define _ASM_SEGMENT_H
 
+#include <linux/config.h>
 
 #ifndef __ASSEMBLY__
 

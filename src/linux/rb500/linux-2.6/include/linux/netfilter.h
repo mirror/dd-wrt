@@ -40,6 +40,7 @@
 #endif
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 #ifdef CONFIG_NETFILTER
 
 extern void netfilter_init(void);

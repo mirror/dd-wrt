@@ -707,9 +707,9 @@ mpage_writepages(struct address_space *mapping,
 	struct pagevec pvec;
 	int nr_pages;
 	pgoff_t index;
-	pgoff_t end;		/* Inclusive */
+	pgoff_t end = -1;		/* Inclusive */
 	int scanned = 0;
-	int range_whole = 0;
+	int is_range = 0;
 
 	if (wbc->nonblocking && bdi_write_congested(bdi)) {
 		wbc->encountered_congestion = 1;
@@ -721,14 +721,16 @@ mpage_writepages(struct address_space *mapping,
 		writepage = mapping->a_ops->writepage;
 
 	pagevec_init(&pvec, 0);
-	if (wbc->range_cyclic) {
+	if (wbc->sync_mode == WB_SYNC_NONE) {
 		index = mapping->writeback_index; /* Start from prev offset */
-		end = -1;
 	} else {
-		index = wbc->range_start >> PAGE_CACHE_SHIFT;
-		end = wbc->range_end >> PAGE_CACHE_SHIFT;
-		if (wbc->range_start == 0 && wbc->range_end == LLONG_MAX)
-			range_whole = 1;
+		index = 0;			  /* whole-file sweep */
+		scanned = 1;
+	}
+	if (wbc->start || wbc->end) {
+		index = wbc->start >> PAGE_CACHE_SHIFT;
+		end = wbc->end >> PAGE_CACHE_SHIFT;
+		is_range = 1;
 		scanned = 1;
 	}
 retry:
@@ -757,7 +759,7 @@ retry:
 				continue;
 			}
 
-			if (!wbc->range_cyclic && page->index > end) {
+			if (unlikely(is_range) && page->index > end) {
 				done = 1;
 				unlock_page(page);
 				continue;
@@ -808,7 +810,7 @@ retry:
 		index = 0;
 		goto retry;
 	}
-	if (wbc->range_cyclic || (range_whole && wbc->nr_to_write > 0))
+	if (!is_range)
 		mapping->writeback_index = index;
 	if (bio)
 		mpage_bio_submit(WRITE, bio);

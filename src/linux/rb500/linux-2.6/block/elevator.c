@@ -27,6 +27,7 @@
 #include <linux/blkdev.h>
 #include <linux/elevator.h>
 #include <linux/bio.h>
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/init.h>
@@ -765,7 +766,8 @@ void elv_unregister(struct elevator_type *e)
 		read_lock(&tasklist_lock);
 		do_each_thread(g, p) {
 			task_lock(p);
-			e->ops.trim(p->io_context);
+			if (p->io_context)
+				e->ops.trim(p->io_context);
 			task_unlock(p);
 		} while_each_thread(g, p);
 		read_unlock(&tasklist_lock);
@@ -849,9 +851,12 @@ fail_register:
 	 * one again (along with re-adding the sysfs dir)
 	 */
 	elevator_exit(e);
+	e = NULL;
 	q->elevator = old_elevator;
 	elv_register_queue(q);
 	clear_bit(QUEUE_FLAG_ELVSWITCH, &q->queue_flags);
+	if (e)
+		kobject_put(&e->kobj);
 	return 0;
 }
 

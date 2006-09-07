@@ -35,6 +35,7 @@
 	response to inb()s from other device probes!
 */
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>

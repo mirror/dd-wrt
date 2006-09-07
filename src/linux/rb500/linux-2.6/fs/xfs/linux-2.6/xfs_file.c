@@ -21,6 +21,7 @@
 #include "xfs_inum.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_trans.h"
 #include "xfs_dmapi.h"
@@ -31,6 +32,7 @@
 #include "xfs_alloc.h"
 #include "xfs_btree.h"
 #include "xfs_attr_sf.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_dinode.h"
 #include "xfs_inode.h"
@@ -56,12 +58,15 @@ __xfs_file_read(
 {
 	struct iovec		iov = {buf, count};
 	struct file		*file = iocb->ki_filp;
-	bhv_vnode_t		*vp = vn_from_inode(file->f_dentry->d_inode);
+	vnode_t			*vp = vn_from_inode(file->f_dentry->d_inode);
+	ssize_t			rval;
 
 	BUG_ON(iocb->ki_pos != pos);
+
 	if (unlikely(file->f_flags & O_DIRECT))
 		ioflags |= IO_ISDIRECT;
-	return bhv_vop_read(vp, iocb, &iov, 1, &iocb->ki_pos, ioflags, NULL);
+	VOP_READ(vp, iocb, &iov, 1, &iocb->ki_pos, ioflags, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -95,12 +100,15 @@ __xfs_file_write(
 	struct iovec	iov = {(void __user *)buf, count};
 	struct file	*file = iocb->ki_filp;
 	struct inode	*inode = file->f_mapping->host;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
+	ssize_t		rval;
 
 	BUG_ON(iocb->ki_pos != pos);
 	if (unlikely(file->f_flags & O_DIRECT))
 		ioflags |= IO_ISDIRECT;
-	return bhv_vop_write(vp, iocb, &iov, 1, &iocb->ki_pos, ioflags, NULL);
+
+	VOP_WRITE(vp, iocb, &iov, 1, &iocb->ki_pos, ioflags, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -132,7 +140,7 @@ __xfs_file_readv(
 	loff_t			*ppos)
 {
 	struct inode	*inode = file->f_mapping->host;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
 	struct kiocb	kiocb;
 	ssize_t		rval;
 
@@ -141,8 +149,7 @@ __xfs_file_readv(
 
 	if (unlikely(file->f_flags & O_DIRECT))
 		ioflags |= IO_ISDIRECT;
-	rval = bhv_vop_read(vp, &kiocb, iov, nr_segs,
-				&kiocb.ki_pos, ioflags, NULL);
+	VOP_READ(vp, &kiocb, iov, nr_segs, &kiocb.ki_pos, ioflags, NULL, rval);
 
 	*ppos = kiocb.ki_pos;
 	return rval;
@@ -177,7 +184,7 @@ __xfs_file_writev(
 	loff_t			*ppos)
 {
 	struct inode	*inode = file->f_mapping->host;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
 	struct kiocb	kiocb;
 	ssize_t		rval;
 
@@ -186,8 +193,7 @@ __xfs_file_writev(
 	if (unlikely(file->f_flags & O_DIRECT))
 		ioflags |= IO_ISDIRECT;
 
-	rval = bhv_vop_write(vp, &kiocb, iov, nr_segs,
-				 &kiocb.ki_pos, ioflags, NULL);
+	VOP_WRITE(vp, &kiocb, iov, nr_segs, &kiocb.ki_pos, ioflags, NULL, rval);
 
 	*ppos = kiocb.ki_pos;
 	return rval;
@@ -221,8 +227,11 @@ xfs_file_sendfile(
 	read_actor_t		actor,
 	void			*target)
 {
-	return bhv_vop_sendfile(vn_from_inode(filp->f_dentry->d_inode),
-				filp, pos, 0, count, actor, target, NULL);
+	vnode_t			*vp = vn_from_inode(filp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SENDFILE(vp, filp, pos, 0, count, actor, target, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -233,8 +242,11 @@ xfs_file_sendfile_invis(
 	read_actor_t		actor,
 	void			*target)
 {
-	return bhv_vop_sendfile(vn_from_inode(filp->f_dentry->d_inode),
-				filp, pos, IO_INVIS, count, actor, target, NULL);
+	vnode_t			*vp = vn_from_inode(filp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SENDFILE(vp, filp, pos, IO_INVIS, count, actor, target, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -245,8 +257,11 @@ xfs_file_splice_read(
 	size_t			len,
 	unsigned int		flags)
 {
-	return bhv_vop_splice_read(vn_from_inode(infilp->f_dentry->d_inode),
-				   infilp, ppos, pipe, len, flags, 0, NULL);
+	vnode_t			*vp = vn_from_inode(infilp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SPLICE_READ(vp, infilp, ppos, pipe, len, flags, 0, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -257,9 +272,11 @@ xfs_file_splice_read_invis(
 	size_t			len,
 	unsigned int		flags)
 {
-	return bhv_vop_splice_read(vn_from_inode(infilp->f_dentry->d_inode),
-				   infilp, ppos, pipe, len, flags, IO_INVIS,
-				   NULL);
+	vnode_t			*vp = vn_from_inode(infilp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SPLICE_READ(vp, infilp, ppos, pipe, len, flags, IO_INVIS, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -270,8 +287,11 @@ xfs_file_splice_write(
 	size_t			len,
 	unsigned int		flags)
 {
-	return bhv_vop_splice_write(vn_from_inode(outfilp->f_dentry->d_inode),
-				    pipe, outfilp, ppos, len, flags, 0, NULL);
+	vnode_t			*vp = vn_from_inode(outfilp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SPLICE_WRITE(vp, pipe, outfilp, ppos, len, flags, 0, NULL, rval);
+	return rval;
 }
 
 STATIC ssize_t
@@ -282,9 +302,11 @@ xfs_file_splice_write_invis(
 	size_t			len,
 	unsigned int		flags)
 {
-	return bhv_vop_splice_write(vn_from_inode(outfilp->f_dentry->d_inode),
-				    pipe, outfilp, ppos, len, flags, IO_INVIS,
-				    NULL);
+	vnode_t			*vp = vn_from_inode(outfilp->f_dentry->d_inode);
+	ssize_t			rval;
+
+	VOP_SPLICE_WRITE(vp, pipe, outfilp, ppos, len, flags, IO_INVIS, NULL, rval);
+	return rval;
 }
 
 STATIC int
@@ -292,18 +314,13 @@ xfs_file_open(
 	struct inode	*inode,
 	struct file	*filp)
 {
+	vnode_t		*vp = vn_from_inode(inode);
+	int		error;
+
 	if (!(filp->f_flags & O_LARGEFILE) && i_size_read(inode) > MAX_NON_LFS)
 		return -EFBIG;
-	return -bhv_vop_open(vn_from_inode(inode), NULL);
-}
-
-STATIC int
-xfs_file_close(
-	struct file	*filp,
-	fl_owner_t	id)
-{
-	return -bhv_vop_close(vn_from_inode(filp->f_dentry->d_inode), 0,
-				file_count(filp) > 1 ? L_FALSE : L_TRUE, NULL);
+	VOP_OPEN(vp, NULL, error);
+	return -error;
 }
 
 STATIC int
@@ -311,11 +328,12 @@ xfs_file_release(
 	struct inode	*inode,
 	struct file	*filp)
 {
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
+	int		error = 0;
 
 	if (vp)
-		return -bhv_vop_release(vp);
-	return 0;
+		VOP_RELEASE(vp, error);
+	return -error;
 }
 
 STATIC int
@@ -324,14 +342,15 @@ xfs_file_fsync(
 	struct dentry	*dentry,
 	int		datasync)
 {
-	bhv_vnode_t	*vp = vn_from_inode(dentry->d_inode);
+	struct inode	*inode = dentry->d_inode;
+	vnode_t		*vp = vn_from_inode(inode);
+	int		error;
 	int		flags = FSYNC_WAIT;
 
 	if (datasync)
 		flags |= FSYNC_DATA;
-	if (VN_TRUNC(vp))
-		VUNTRUNCATE(vp);
-	return -bhv_vop_fsync(vp, flags, NULL, (xfs_off_t)0, (xfs_off_t)-1);
+	VOP_FSYNC(vp, flags, NULL, (xfs_off_t)0, (xfs_off_t)-1, error);
+	return -error;
 }
 
 #ifdef CONFIG_XFS_DMAPI
@@ -342,11 +361,16 @@ xfs_vm_nopage(
 	int			*type)
 {
 	struct inode	*inode = area->vm_file->f_dentry->d_inode;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
+	xfs_mount_t	*mp = XFS_VFSTOM(vp->v_vfsp);
+	int		error;
 
 	ASSERT_ALWAYS(vp->v_vfsp->vfs_flag & VFS_DMI);
-	if (XFS_SEND_MMAP(XFS_VFSTOM(vp->v_vfsp), area, 0))
+
+	error = XFS_SEND_MMAP(mp, area, 0);
+	if (error)
 		return NULL;
+
 	return filemap_nopage(area, address, type);
 }
 #endif /* CONFIG_XFS_DMAPI */
@@ -358,7 +382,7 @@ xfs_file_readdir(
 	filldir_t	filldir)
 {
 	int		error = 0;
-	bhv_vnode_t	*vp = vn_from_inode(filp->f_dentry->d_inode);
+	vnode_t		*vp = vn_from_inode(filp->f_dentry->d_inode);
 	uio_t		uio;
 	iovec_t		iov;
 	int		eof = 0;
@@ -393,7 +417,7 @@ xfs_file_readdir(
 
 		start_offset = uio.uio_offset;
 
-		error = bhv_vop_readdir(vp, &uio, NULL, &eof);
+		VOP_READDIR(vp, &uio, NULL, &eof, error);
 		if ((uio.uio_offset == start_offset) || error) {
 			size = 0;
 			break;
@@ -432,28 +456,38 @@ xfs_file_mmap(
 	struct file	*filp,
 	struct vm_area_struct *vma)
 {
+	struct inode	*ip = filp->f_dentry->d_inode;
+	vnode_t		*vp = vn_from_inode(ip);
+	vattr_t		vattr;
+	int		error;
+
 	vma->vm_ops = &xfs_file_vm_ops;
 
 #ifdef CONFIG_XFS_DMAPI
-	if (vn_from_inode(filp->f_dentry->d_inode)->v_vfsp->vfs_flag & VFS_DMI)
+	if (vp->v_vfsp->vfs_flag & VFS_DMI) {
 		vma->vm_ops = &xfs_dmapi_file_vm_ops;
+	}
 #endif /* CONFIG_XFS_DMAPI */
 
-	file_accessed(filp);
+	vattr.va_mask = XFS_AT_UPDATIME;
+	VOP_SETATTR(vp, &vattr, XFS_AT_UPDATIME, NULL, error);
+	if (likely(!error))
+		__vn_revalidate(vp, &vattr);	/* update flags */
 	return 0;
 }
+
 
 STATIC long
 xfs_file_ioctl(
 	struct file	*filp,
 	unsigned int	cmd,
-	unsigned long	p)
+	unsigned long	arg)
 {
 	int		error;
 	struct inode	*inode = filp->f_dentry->d_inode;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
 
-	error = bhv_vop_ioctl(vp, inode, filp, 0, cmd, (void __user *)p);
+	VOP_IOCTL(vp, inode, filp, 0, cmd, (void __user *)arg, error);
 	VMODIFY(vp);
 
 	/* NOTE:  some of the ioctl's return positive #'s as a
@@ -469,13 +503,13 @@ STATIC long
 xfs_file_ioctl_invis(
 	struct file	*filp,
 	unsigned int	cmd,
-	unsigned long	p)
+	unsigned long	arg)
 {
-	int		error;
 	struct inode	*inode = filp->f_dentry->d_inode;
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
+	int		error;
 
-	error = bhv_vop_ioctl(vp, inode, filp, IO_INVIS, cmd, (void __user *)p);
+	VOP_IOCTL(vp, inode, filp, IO_INVIS, cmd, (void __user *)arg, error);
 	VMODIFY(vp);
 
 	/* NOTE:  some of the ioctl's return positive #'s as a
@@ -494,7 +528,7 @@ xfs_vm_mprotect(
 	struct vm_area_struct *vma,
 	unsigned int	newflags)
 {
-	bhv_vnode_t	*vp = vn_from_inode(vma->vm_file->f_dentry->d_inode);
+	vnode_t		*vp = vn_from_inode(vma->vm_file->f_dentry->d_inode);
 	int		error = 0;
 
 	if (vp->v_vfsp->vfs_flag & VFS_DMI) {
@@ -520,19 +554,24 @@ STATIC int
 xfs_file_open_exec(
 	struct inode	*inode)
 {
-	bhv_vnode_t	*vp = vn_from_inode(inode);
+	vnode_t		*vp = vn_from_inode(inode);
+	xfs_mount_t	*mp = XFS_VFSTOM(vp->v_vfsp);
+	int		error = 0;
+	xfs_inode_t	*ip;
 
-	if (unlikely(vp->v_vfsp->vfs_flag & VFS_DMI)) {
-		xfs_mount_t	*mp = XFS_VFSTOM(vp->v_vfsp);
-		xfs_inode_t	*ip = xfs_vtoi(vp);
-
-		if (!ip)
-			return -EINVAL;
-		if (DM_EVENT_ENABLED(vp->v_vfsp, ip, DM_EVENT_READ))
-			return -XFS_SEND_DATA(mp, DM_EVENT_READ, vp,
+	if (vp->v_vfsp->vfs_flag & VFS_DMI) {
+		ip = xfs_vtoi(vp);
+		if (!ip) {
+			error = -EINVAL;
+			goto open_exec_out;
+		}
+		if (DM_EVENT_ENABLED(vp->v_vfsp, ip, DM_EVENT_READ)) {
+			error = -XFS_SEND_DATA(mp, DM_EVENT_READ, vp,
 					       0, 0, 0, NULL);
+		}
 	}
-	return 0;
+open_exec_out:
+	return error;
 }
 #endif /* HAVE_FOP_OPEN_EXEC */
 
@@ -553,7 +592,6 @@ const struct file_operations xfs_file_operations = {
 #endif
 	.mmap		= xfs_file_mmap,
 	.open		= xfs_file_open,
-	.flush		= xfs_file_close,
 	.release	= xfs_file_release,
 	.fsync		= xfs_file_fsync,
 #ifdef HAVE_FOP_OPEN_EXEC
@@ -578,7 +616,6 @@ const struct file_operations xfs_invis_file_operations = {
 #endif
 	.mmap		= xfs_file_mmap,
 	.open		= xfs_file_open,
-	.flush		= xfs_file_close,
 	.release	= xfs_file_release,
 	.fsync		= xfs_file_fsync,
 };

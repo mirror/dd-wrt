@@ -6,6 +6,7 @@
  * This file has goodies to help simplify instantiation of machine vectors.
  */
 
+#include <linux/config.h>
 #include <asm/pgalloc.h>
 
 /* Whee.  These systems don't have an HAE:

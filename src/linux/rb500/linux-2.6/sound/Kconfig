@@ -58,8 +58,6 @@ source "sound/pci/Kconfig"
 
 source "sound/ppc/Kconfig"
 
-source "sound/aoa/Kconfig"
-
 source "sound/arm/Kconfig"
 
 source "sound/mips/Kconfig"

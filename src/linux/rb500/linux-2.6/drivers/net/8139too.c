@@ -93,6 +93,7 @@
 #define DRV_VERSION	"0.9.27"
 
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/compiler.h>
@@ -164,7 +165,7 @@ static int multicast_filter_limit = 32;
 static int debug = -1;
 
 /*
- * Receive ring size
+ * Receive ring size 
  * Warning: 64K ring has hardware issues and may lock up.
  */
 #if defined(CONFIG_SH_DREAMCAST)
@@ -256,7 +257,7 @@ static struct pci_device_id rtl8139_pci_tbl[] = {
 	{0x018a, 0x0106, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8139 },
 	{0x126c, 0x1211, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8139 },
 	{0x1743, 0x8139, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8139 },
-	{0x021b, 0x8139, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8139 },
+	{0x021b, 0x8139, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8139 }, 
 
 #ifdef CONFIG_SH_SECUREEDGE5410
 	/* Bogus 8139 silicon reports 8129 without external PROM :-( */
@@ -768,7 +769,7 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 	/* dev and priv zeroed in alloc_etherdev */
 	dev = alloc_etherdev (sizeof (*tp));
 	if (dev == NULL) {
-		dev_err(&pdev->dev, "Unable to alloc new net device\n");
+		printk (KERN_ERR PFX "%s: Unable to alloc new net device\n", pci_name(pdev));
 		return -ENOMEM;
 	}
 	SET_MODULE_OWNER(dev);
@@ -800,31 +801,31 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 #ifdef USE_IO_OPS
 	/* make sure PCI base addr 0 is PIO */
 	if (!(pio_flags & IORESOURCE_IO)) {
-		dev_err(&pdev->dev, "region #0 not a PIO resource, aborting\n");
+		printk (KERN_ERR PFX "%s: region #0 not a PIO resource, aborting\n", pci_name(pdev));
 		rc = -ENODEV;
 		goto err_out;
 	}
 	/* check for weird/broken PCI region reporting */
 	if (pio_len < RTL_MIN_IO_SIZE) {
-		dev_err(&pdev->dev, "Invalid PCI I/O region size(s), aborting\n");
+		printk (KERN_ERR PFX "%s: Invalid PCI I/O region size(s), aborting\n", pci_name(pdev));
 		rc = -ENODEV;
 		goto err_out;
 	}
 #else
 	/* make sure PCI base addr 1 is MMIO */
 	if (!(mmio_flags & IORESOURCE_MEM)) {
-		dev_err(&pdev->dev, "region #1 not an MMIO resource, aborting\n");
+		printk (KERN_ERR PFX "%s: region #1 not an MMIO resource, aborting\n", pci_name(pdev));
 		rc = -ENODEV;
 		goto err_out;
 	}
 	if (mmio_len < RTL_MIN_IO_SIZE) {
-		dev_err(&pdev->dev, "Invalid PCI mem region size(s), aborting\n");
+		printk (KERN_ERR PFX "%s: Invalid PCI mem region size(s), aborting\n", pci_name(pdev));
 		rc = -ENODEV;
 		goto err_out;
 	}
 #endif
 
-	rc = pci_request_regions (pdev, DRV_NAME);
+	rc = pci_request_regions (pdev, "8139too");
 	if (rc)
 		goto err_out;
 	disable_dev_on_err = 1;
@@ -835,7 +836,7 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 #ifdef USE_IO_OPS
 	ioaddr = ioport_map(pio_start, pio_len);
 	if (!ioaddr) {
-		dev_err(&pdev->dev, "cannot map PIO, aborting\n");
+		printk (KERN_ERR PFX "%s: cannot map PIO, aborting\n", pci_name(pdev));
 		rc = -EIO;
 		goto err_out;
 	}
@@ -846,7 +847,7 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 	/* ioremap MMIO region */
 	ioaddr = pci_iomap(pdev, 1, 0);
 	if (ioaddr == NULL) {
-		dev_err(&pdev->dev, "cannot remap MMIO, aborting\n");
+		printk (KERN_ERR PFX "%s: cannot remap MMIO, aborting\n", pci_name(pdev));
 		rc = -EIO;
 		goto err_out;
 	}
@@ -860,7 +861,8 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 
 	/* check for missing/broken hardware */
 	if (RTL_R32 (TxConfig) == 0xFFFFFFFF) {
-		dev_err(&pdev->dev, "Chip not responding, ignoring board\n");
+		printk (KERN_ERR PFX "%s: Chip not responding, ignoring board\n",
+			pci_name(pdev));
 		rc = -EIO;
 		goto err_out;
 	}
@@ -874,10 +876,9 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 		}
 
 	/* if unknown chip, assume array element #0, original RTL-8139 in this case */
-	dev_printk (KERN_DEBUG, &pdev->dev,
-		    "unknown chip version, assuming RTL-8139\n");
-	dev_printk (KERN_DEBUG, &pdev->dev,
-		    "TxConfig = 0x%lx\n", RTL_R32 (TxConfig));
+	printk (KERN_DEBUG PFX "%s: unknown chip version, assuming RTL-8139\n",
+		pci_name(pdev));
+	printk (KERN_DEBUG PFX "%s: TxConfig = 0x%lx\n", pci_name(pdev), RTL_R32 (TxConfig));
 	tp->chipset = 0;
 
 match:
@@ -954,11 +955,9 @@ static int __devinit rtl8139_init_one (struct pci_dev *pdev,
 
 	if (pdev->vendor == PCI_VENDOR_ID_REALTEK &&
 	    pdev->device == PCI_DEVICE_ID_REALTEK_8139 && pci_rev >= 0x20) {
-		dev_info(&pdev->dev,
-			   "This (id %04x:%04x rev %02x) is an enhanced 8139C+ chip\n",
-		       	   pdev->vendor, pdev->device, pci_rev);
-		dev_info(&pdev->dev,
-			   "Use the \"8139cp\" driver for improved performance and stability.\n");
+		printk(KERN_INFO PFX "pci dev %s (id %04x:%04x rev %02x) is an enhanced 8139C+ chip\n",
+		       pci_name(pdev), pdev->vendor, pdev->device, pci_rev);
+		printk(KERN_INFO PFX "Use the \"8139cp\" driver for improved performance and stability.\n");
 	}
 
 	i = rtl8139_init_board (pdev, &dev);
@@ -1312,7 +1311,7 @@ static int rtl8139_open (struct net_device *dev)
 	int retval;
 	void __iomem *ioaddr = tp->mmio_addr;
 
-	retval = request_irq (dev->irq, rtl8139_interrupt, IRQF_SHARED, dev->name, dev);
+	retval = request_irq (dev->irq, rtl8139_interrupt, SA_SHIRQ, dev->name, dev);
 	if (retval)
 		return retval;
 
@@ -1342,9 +1341,9 @@ static int rtl8139_open (struct net_device *dev)
 	netif_start_queue (dev);
 
 	if (netif_msg_ifup(tp))
-		printk(KERN_DEBUG "%s: rtl8139_open() ioaddr %#llx IRQ %d"
-			" GP Pins %2.2x %s-duplex.\n", dev->name,
-			(unsigned long long)pci_resource_start (tp->pci_dev, 1),
+		printk(KERN_DEBUG "%s: rtl8139_open() ioaddr %#lx IRQ %d"
+			" GP Pins %2.2x %s-duplex.\n",
+			dev->name, pci_resource_start (tp->pci_dev, 1),
 			dev->irq, RTL_R8 (MediaStatus),
 			tp->mii.full_duplex ? "full" : "half");
 
@@ -1825,7 +1824,7 @@ static void rtl8139_rx_err (u32 rx_status, struct net_device *dev,
 	int tmp_work;
 #endif
 
-	if (netif_msg_rx_err (tp))
+	if (netif_msg_rx_err (tp)) 
 		printk(KERN_DEBUG "%s: Ethernet frame had errors, status %8.8x.\n",
 			dev->name, rx_status);
 	tp->stats.rx_errors++;
@@ -1945,7 +1944,7 @@ static int rtl8139_rx(struct net_device *dev, struct rtl8139_private *tp,
 		 RTL_R16 (RxBufAddr),
 		 RTL_R16 (RxBufPtr), RTL_R8 (ChipCmd));
 
-	while (netif_running(dev) && received < budget
+	while (netif_running(dev) && received < budget 
 	       && (RTL_R8 (ChipCmd) & RxBufEmpty) == 0) {
 		u32 ring_offset = cur_rx % RX_BUF_LEN;
 		u32 rx_status;
@@ -2032,7 +2031,7 @@ no_early_rx:
 
 			netif_receive_skb (skb);
 		} else {
-			if (net_ratelimit())
+			if (net_ratelimit()) 
 				printk (KERN_WARNING
 					"%s: Memory squeeze, dropping packet.\n",
 					dev->name);
@@ -2159,13 +2158,13 @@ static irqreturn_t rtl8139_interrupt (int irq, void *dev_instance,
 	status = RTL_R16 (IntrStatus);
 
 	/* shared irq? */
-	if (unlikely((status & rtl8139_intr_mask) == 0))
+	if (unlikely((status & rtl8139_intr_mask) == 0)) 
 		goto out;
 
 	handled = 1;
 
 	/* h/w no longer present (hotplug?) or major error, bail */
-	if (unlikely(status == 0xFFFF))
+	if (unlikely(status == 0xFFFF)) 
 		goto out;
 
 	/* close possible race's with dev_close */

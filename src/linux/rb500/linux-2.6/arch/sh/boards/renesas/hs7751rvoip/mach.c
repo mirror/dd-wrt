@@ -9,6 +9,7 @@
  * Machine vector for the Renesas Technology sales HS7751RVoIP
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <asm/machvec.h>

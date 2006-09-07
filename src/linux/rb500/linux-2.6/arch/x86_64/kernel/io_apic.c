@@ -25,6 +25,7 @@
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
+#include <linux/config.h>
 #include <linux/smp_lock.h>
 #include <linux/mc146818rtc.h>
 #include <linux/acpi.h>
@@ -40,7 +41,6 @@
 #include <asm/mach_apic.h>
 #include <asm/acpi.h>
 #include <asm/dma.h>
-#include <asm/nmi.h>
 
 #define __apicdebuginit  __init
 
@@ -56,7 +56,6 @@ int timer_over_8254 __initdata = 0;
 static struct { int pin, apic; } ioapic_i8259 = { -1, -1 };
 
 static DEFINE_SPINLOCK(ioapic_lock);
-static DEFINE_SPINLOCK(vector_lock);
 
 /*
  * # of IRQ routing registers
@@ -318,7 +317,7 @@ void __init check_ioapic(void)
 				vendor &= 0xffff;
 				switch (vendor) { 
 				case PCI_VENDOR_ID_VIA:
-#ifdef CONFIG_IOMMU
+#ifdef CONFIG_GART_IOMMU
 					if ((end_pfn > MAX_DMA32_PFN ||
 					     force_iommu) &&
 					    !iommu_aperture_allowed) {
@@ -835,17 +834,10 @@ u8 irq_vector[NR_IRQ_VECTORS] __read_mostly = { FIRST_DEVICE_VECTOR , 0 };
 int assign_irq_vector(int irq)
 {
 	static int current_vector = FIRST_DEVICE_VECTOR, offset = 0;
-	unsigned long flags;
-	int vector;
 
 	BUG_ON(irq != AUTO_ASSIGN && (unsigned)irq >= NR_IRQ_VECTORS);
-
-	spin_lock_irqsave(&vector_lock, flags);
-
-	if (irq != AUTO_ASSIGN && IO_APIC_VECTOR(irq) > 0) {
-		spin_unlock_irqrestore(&vector_lock, flags);
+	if (irq != AUTO_ASSIGN && IO_APIC_VECTOR(irq) > 0)
 		return IO_APIC_VECTOR(irq);
-	}
 next:
 	current_vector += 8;
 	if (current_vector == IA32_SYSCALL_VECTOR)
@@ -857,14 +849,11 @@ next:
 		current_vector = FIRST_DEVICE_VECTOR + offset;
 	}
 
-	vector = current_vector;
-	vector_irq[vector] = irq;
+	vector_irq[current_vector] = irq;
 	if (irq != AUTO_ASSIGN)
-		IO_APIC_VECTOR(irq) = vector;
+		IO_APIC_VECTOR(irq) = current_vector;
 
-	spin_unlock_irqrestore(&vector_lock, flags);
-
-	return vector;
+	return current_vector;
 }
 
 extern void (*interrupt[NR_IRQS])(void);
@@ -875,18 +864,23 @@ static struct hw_interrupt_type ioapic_edge_type;
 #define IOAPIC_EDGE	0
 #define IOAPIC_LEVEL	1
 
-static void ioapic_register_intr(int irq, int vector, unsigned long trigger)
+static inline void ioapic_register_intr(int irq, int vector, unsigned long trigger)
 {
-	unsigned idx;
-
-	idx = use_pci_vector() && !platform_legacy_irq(irq) ? vector : irq;
-
-	if ((trigger == IOAPIC_AUTO && IO_APIC_irq_trigger(irq)) ||
-			trigger == IOAPIC_LEVEL)
-		irq_desc[idx].chip = &ioapic_level_type;
-	else
-		irq_desc[idx].chip = &ioapic_edge_type;
-	set_intr_gate(vector, interrupt[idx]);
+	if (use_pci_vector() && !platform_legacy_irq(irq)) {
+		if ((trigger == IOAPIC_AUTO && IO_APIC_irq_trigger(irq)) ||
+				trigger == IOAPIC_LEVEL)
+			irq_desc[vector].handler = &ioapic_level_type;
+		else
+			irq_desc[vector].handler = &ioapic_edge_type;
+		set_intr_gate(vector, interrupt[vector]);
+	} else	{
+		if ((trigger == IOAPIC_AUTO && IO_APIC_irq_trigger(irq)) ||
+				trigger == IOAPIC_LEVEL)
+			irq_desc[irq].handler = &ioapic_level_type;
+		else
+			irq_desc[irq].handler = &ioapic_edge_type;
+		set_intr_gate(vector, interrupt[irq]);
+	}
 }
 
 static void __init setup_IO_APIC_irqs(void)
@@ -987,7 +981,7 @@ static void __init setup_ExtINT_IRQ0_pin(unsigned int apic, unsigned int pin, in
 	 * The timer IRQ doesn't have to know that behind the
 	 * scene we have a 8259A-master in AEOI mode ...
 	 */
-	irq_desc[0].chip = &ioapic_edge_type;
+	irq_desc[0].handler = &ioapic_edge_type;
 
 	/*
 	 * Add it to the IO-APIC irq-routing table:
@@ -1617,13 +1611,6 @@ static void set_ioapic_affinity_vector (unsigned int vector,
 #endif // CONFIG_SMP
 #endif // CONFIG_PCI_MSI
 
-static int ioapic_retrigger(unsigned int irq)
-{
-	send_IPI_self(IO_APIC_VECTOR(irq));
-
-	return 1;
-}
-
 /*
  * Level and edge triggered IO-APIC interrupts need different handling,
  * so we use two separate IRQ descriptors. Edge triggered IRQs can be
@@ -1644,7 +1631,6 @@ static struct hw_interrupt_type ioapic_edge_type __read_mostly = {
 #ifdef CONFIG_SMP
 	.set_affinity = set_ioapic_affinity,
 #endif
-	.retrigger	= ioapic_retrigger,
 };
 
 static struct hw_interrupt_type ioapic_level_type __read_mostly = {
@@ -1658,7 +1644,6 @@ static struct hw_interrupt_type ioapic_level_type __read_mostly = {
 #ifdef CONFIG_SMP
 	.set_affinity = set_ioapic_affinity,
 #endif
-	.retrigger	= ioapic_retrigger,
 };
 
 static inline void init_IO_APIC_traps(void)
@@ -1693,7 +1678,7 @@ static inline void init_IO_APIC_traps(void)
 				make_8259A_irq(irq);
 			else
 				/* Strange. Oh, well.. */
-				irq_desc[irq].chip = &no_irq_type;
+				irq_desc[irq].handler = &no_irq_type;
 		}
 	}
 }
@@ -1910,7 +1895,7 @@ static inline void check_timer(void)
 	apic_printk(APIC_VERBOSE, KERN_INFO "...trying to set up timer as Virtual Wire IRQ...");
 
 	disable_8259A_irq(0);
-	irq_desc[0].chip = &lapic_irq_type;
+	irq_desc[0].handler = &lapic_irq_type;
 	apic_write(APIC_LVT0, APIC_DM_FIXED | vector);	/* Fixed mode */
 	enable_8259A_irq(0);
 

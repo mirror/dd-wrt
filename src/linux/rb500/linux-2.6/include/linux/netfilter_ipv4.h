@@ -5,6 +5,7 @@
  * (C)1998 Rusty Russell -- This code is GPL.
  */
 
+#include <linux/config.h>
 #include <linux/netfilter.h>
 
 /* only for userspace compatibility */

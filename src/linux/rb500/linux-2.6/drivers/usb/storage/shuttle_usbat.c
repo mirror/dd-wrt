@@ -131,30 +131,28 @@ static int usbat_write(struct us_data *us,
  * Convenience function to perform a bulk read
  */
 static int usbat_bulk_read(struct us_data *us,
-			   unsigned char *data,
-			   unsigned int len,
-			   int use_sg)
+							 unsigned char *data,
+							 unsigned int len)
 {
 	if (len == 0)
 		return USB_STOR_XFER_GOOD;
 
 	US_DEBUGP("usbat_bulk_read: len = %d\n", len);
-	return usb_stor_bulk_transfer_sg(us, us->recv_bulk_pipe, data, len, use_sg, NULL);
+	return usb_stor_bulk_transfer_buf(us, us->recv_bulk_pipe, data, len, NULL);
 }
 
 /*
  * Convenience function to perform a bulk write
  */
 static int usbat_bulk_write(struct us_data *us,
-			    unsigned char *data,
-			    unsigned int len,
-			    int use_sg)
+							unsigned char *data,
+							unsigned int len)
 {
 	if (len == 0)
 		return USB_STOR_XFER_GOOD;
 
 	US_DEBUGP("usbat_bulk_write:  len = %d\n", len);
-	return usb_stor_bulk_transfer_sg(us, us->send_bulk_pipe, data, len, use_sg, NULL);
+	return usb_stor_bulk_transfer_buf(us, us->send_bulk_pipe, data, len, NULL);
 }
 
 /*
@@ -319,8 +317,7 @@ static int usbat_wait_not_busy(struct us_data *us, int minutes)
  */
 static int usbat_read_block(struct us_data *us,
 			    unsigned char *content,
-			    unsigned short len,
-			    int use_sg)
+			    unsigned short len)
 {
 	int result;
 	unsigned char *command = us->iobuf;
@@ -341,7 +338,7 @@ static int usbat_read_block(struct us_data *us,
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_ERROR;
 
-	result = usbat_bulk_read(us, content, len, use_sg);
+	result = usbat_bulk_read(us, content, len);
 	return (result == USB_STOR_XFER_GOOD ?
 			USB_STOR_TRANSPORT_GOOD : USB_STOR_TRANSPORT_ERROR);
 }
@@ -353,8 +350,7 @@ static int usbat_write_block(struct us_data *us,
 			     unsigned char access,
 			     unsigned char *content,
 			     unsigned short len,
-			     int minutes,
-			     int use_sg)
+			     int minutes)
 {
 	int result;
 	unsigned char *command = us->iobuf;
@@ -376,7 +372,7 @@ static int usbat_write_block(struct us_data *us,
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_ERROR;
 
-	result = usbat_bulk_write(us, content, len, use_sg);
+	result = usbat_bulk_write(us, content, len);
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_ERROR;
 
@@ -469,7 +465,7 @@ static int usbat_hp8200e_rw_block_test(struct us_data *us,
 				data[1+(j<<1)] = data_out[j];
 			}
 
-			result = usbat_bulk_write(us, data, num_registers*2, 0);
+			result = usbat_bulk_write(us, data, num_registers*2);
 			if (result != USB_STOR_XFER_GOOD)
 				return USB_STOR_TRANSPORT_ERROR;
 
@@ -587,7 +583,7 @@ static int usbat_multiple_write(struct us_data *us,
 	}
 
 	/* Send the data */
-	result = usbat_bulk_write(us, data, num_registers*2, 0);
+	result = usbat_bulk_write(us, data, num_registers*2);
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_ERROR;
 
@@ -610,9 +606,8 @@ static int usbat_multiple_write(struct us_data *us,
  * other related details) are defined beforehand with _set_shuttle_features().
  */
 static int usbat_read_blocks(struct us_data *us,
-			     unsigned char *buffer,
-			     int len,
-			     int use_sg)
+							 unsigned char *buffer,
+							 int len)
 {
 	int result;
 	unsigned char *command = us->iobuf;
@@ -632,7 +627,7 @@ static int usbat_read_blocks(struct us_data *us,
 		return USB_STOR_TRANSPORT_FAILED;
 	
 	/* Read the blocks we just asked for */
-	result = usbat_bulk_read(us, buffer, len, use_sg);
+	result = usbat_bulk_read(us, buffer, len);
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_FAILED;
 
@@ -653,8 +648,7 @@ static int usbat_read_blocks(struct us_data *us,
  */
 static int usbat_write_blocks(struct us_data *us,
 							  unsigned char *buffer,
-			      int len,
-			      int use_sg)
+							  int len)
 {
 	int result;
 	unsigned char *command = us->iobuf;
@@ -674,7 +668,7 @@ static int usbat_write_blocks(struct us_data *us,
 		return USB_STOR_TRANSPORT_FAILED;
 	
 	/* Write the data */
-	result = usbat_bulk_write(us, buffer, len, use_sg);
+	result = usbat_bulk_write(us, buffer, len);
 	if (result != USB_STOR_XFER_GOOD)
 		return USB_STOR_TRANSPORT_FAILED;
 
@@ -893,28 +887,22 @@ static int usbat_identify_device(struct us_data *us,
  * Set the transport function based on the device type
  */
 static int usbat_set_transport(struct us_data *us,
-			       struct usbat_info *info,
-			       int devicetype)
+			       struct usbat_info *info)
 {
+	int rc;
 
-	if (!info->devicetype)
-		info->devicetype = devicetype;
-
-	if (!info->devicetype)
-		usbat_identify_device(us, info);
-
-	switch (info->devicetype) {
-	default:
-		return USB_STOR_TRANSPORT_ERROR;
-
-	case  USBAT_DEV_HP8200:
-		us->transport = usbat_hp8200e_transport;
-		break;
-
-	case USBAT_DEV_FLASH:
-		us->transport = usbat_flash_transport;
-		break;
+	if (!info->devicetype) {
+		rc = usbat_identify_device(us, info);
+		if (rc != USB_STOR_TRANSPORT_GOOD) {
+			US_DEBUGP("usbat_set_transport: Could not identify device\n");
+			return 1;
+		}
 	}
+
+	if (usbat_get_device_type(us) == USBAT_DEV_HP8200)
+		us->transport = usbat_hp8200e_transport;
+	else if (usbat_get_device_type(us) == USBAT_DEV_FLASH)
+		us->transport = usbat_flash_transport;
 
 	return 0;
 }
@@ -959,7 +947,7 @@ static int usbat_flash_get_sector_count(struct us_data *us,
 	msleep(100);
 
 	/* Read the device identification data */
-	rc = usbat_read_block(us, reply, 512, 0);
+	rc = usbat_read_block(us, reply, 512);
 	if (rc != USB_STOR_TRANSPORT_GOOD)
 		goto leave;
 
@@ -1043,7 +1031,7 @@ static int usbat_flash_read_data(struct us_data *us,
 			goto leave;
 
 		/* Read the data we just requested */
-		result = usbat_read_blocks(us, buffer, len, 0);
+		result = usbat_read_blocks(us, buffer, len);
 		if (result != USB_STOR_TRANSPORT_GOOD)
 			goto leave;
   	 
@@ -1137,7 +1125,7 @@ static int usbat_flash_write_data(struct us_data *us,
 			goto leave;
 
 		/* Write the data */
-		result = usbat_write_blocks(us, buffer, len, 0);
+		result = usbat_write_blocks(us, buffer, len);
 		if (result != USB_STOR_TRANSPORT_GOOD)
 			goto leave;
 
@@ -1322,7 +1310,7 @@ static int usbat_select_and_test_registers(struct us_data *us)
 /*
  * Initialize the USBAT processor and the storage device
  */
-static int init_usbat(struct us_data *us, int devicetype)
+int init_usbat(struct us_data *us)
 {
 	int rc;
 	struct usbat_info *info;
@@ -1404,7 +1392,7 @@ static int init_usbat(struct us_data *us, int devicetype)
 	US_DEBUGP("INIT 9\n");
 
 	/* At this point, we need to detect which device we are using */
-	if (usbat_set_transport(us, info, devicetype))
+	if (usbat_set_transport(us, info))
 		return USB_STOR_TRANSPORT_ERROR;
 
 	US_DEBUGP("INIT 10\n");
@@ -1515,10 +1503,10 @@ static int usbat_hp8200e_transport(struct scsi_cmnd *srb, struct us_data *us)
 	 * AT SPEED 4 IS UNRELIABLE!!!
 	 */
 
-	if ((result = usbat_write_block(us,
+	if ( (result = usbat_write_block(us, 
 			USBAT_ATA, srb->cmnd, 12,
-				(srb->cmnd[0]==GPCMD_BLANK ? 75 : 10), 0) !=
-			     USB_STOR_TRANSPORT_GOOD)) {
+			srb->cmnd[0]==GPCMD_BLANK ? 75 : 10)) !=
+				USB_STOR_TRANSPORT_GOOD) {
 		return result;
 	}
 
@@ -1545,7 +1533,7 @@ static int usbat_hp8200e_transport(struct scsi_cmnd *srb, struct us_data *us)
 			len = *status;
 
 
-		result = usbat_read_block(us, srb->request_buffer, len, srb->use_sg);
+		result = usbat_read_block(us, srb->request_buffer, len);
 
 		/* Debug-print the first 32 bytes of the transfer */
 
@@ -1707,22 +1695,6 @@ static int usbat_flash_transport(struct scsi_cmnd * srb, struct us_data *us)
 	return USB_STOR_TRANSPORT_FAILED;
 }
 
-int init_usbat_cd(struct us_data *us)
-{
-	return init_usbat(us, USBAT_DEV_HP8200);
-}
-
-
-int init_usbat_flash(struct us_data *us)
-{
-	return init_usbat(us, USBAT_DEV_FLASH);
-}
-
-int init_usbat_probe(struct us_data *us)
-{
-	return init_usbat(us, 0);
-}
-
 /*
  * Default transport function. Attempts to detect which transport function
  * should be called, makes it the new default, and calls it.
@@ -1736,8 +1708,9 @@ int usbat_transport(struct scsi_cmnd *srb, struct us_data *us)
 {
 	struct usbat_info *info = (struct usbat_info*) (us->extra);
 
-	if (usbat_set_transport(us, info, 0))
+	if (usbat_set_transport(us, info))
 		return USB_STOR_TRANSPORT_ERROR;
 
 	return us->transport(srb, us);	
 }
+

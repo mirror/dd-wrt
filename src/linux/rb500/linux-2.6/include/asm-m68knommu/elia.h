@@ -12,6 +12,7 @@
 #define	elia_h
 /****************************************************************************/
 
+#include <linux/config.h>
 #include <asm/coldfire.h>
 
 #ifdef CONFIG_eLIA

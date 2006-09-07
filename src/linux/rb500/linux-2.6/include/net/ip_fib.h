@@ -16,6 +16,7 @@
 #ifndef _NET_IP_FIB_H
 #define _NET_IP_FIB_H
 
+#include <linux/config.h>
 #include <net/flow.h>
 #include <linux/seq_file.h>
 

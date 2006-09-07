@@ -28,6 +28,7 @@
  *	See net/ipx/ChangeLog.
  */
 
+#include <linux/config.h>
 #include <linux/capability.h>
 #include <linux/errno.h>
 #include <linux/if_arp.h>
@@ -1646,7 +1647,8 @@ static int ipx_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_ty
 	ipx_pktsize	= ntohs(ipx->ipx_pktsize);
 	
 	/* Too small or invalid header? */
-	if (ipx_pktsize < sizeof(struct ipxhdr) || ipx_pktsize > skb->len)
+	if (ipx_pktsize < sizeof(struct ipxhdr)
+	   || !pskb_may_pull(skb, ipx_pktsize))
 		goto drop;
                         
 	if (ipx->ipx_checksum != IPX_NO_CHECKSUM &&

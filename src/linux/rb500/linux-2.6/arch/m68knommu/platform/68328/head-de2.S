@@ -1,3 +1,4 @@
+#include <linux/config.h>
 
 #if defined(CONFIG_RAM32MB)
 #define	MEM_END	0x02000000	/* Memory size 32Mb */

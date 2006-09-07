@@ -107,7 +107,7 @@ static irqreturn_t tmu_timer_interrupt(int irq, void *dev_id,
 static struct irqaction tmu_irq = {
 	.name		= "timer",
 	.handler	= tmu_timer_interrupt,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.mask		= CPU_MASK_NONE,
 };
 

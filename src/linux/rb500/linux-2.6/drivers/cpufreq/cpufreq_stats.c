@@ -9,6 +9,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sysdev.h>
 #include <linux/cpu.h>
@@ -73,7 +74,7 @@ static ssize_t
 show_total_trans(struct cpufreq_policy *policy, char *buf)
 {
 	struct cpufreq_stats *stat = cpufreq_stats_table[policy->cpu];
-	if (!stat)
+	if(!stat)
 		return 0;
 	return sprintf(buf, "%d\n",
 			cpufreq_stats_table[stat->cpu]->total_trans);
@@ -85,7 +86,7 @@ show_time_in_state(struct cpufreq_policy *policy, char *buf)
 	ssize_t len = 0;
 	int i;
 	struct cpufreq_stats *stat = cpufreq_stats_table[policy->cpu];
-	if (!stat)
+	if(!stat)
 		return 0;
 	cpufreq_stats_update(stat->cpu);
 	for (i = 0; i < stat->state_num; i++) {
@@ -103,7 +104,7 @@ show_trans_table(struct cpufreq_policy *policy, char *buf)
 	int i, j;
 
 	struct cpufreq_stats *stat = cpufreq_stats_table[policy->cpu];
-	if (!stat)
+	if(!stat)
 		return 0;
 	cpufreq_stats_update(stat->cpu);
 	len += snprintf(buf + len, PAGE_SIZE - len, "   From  :    To\n");
@@ -349,7 +350,7 @@ __init cpufreq_stats_init(void)
 		return ret;
 	}
 
-	register_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
+	register_cpu_notifier(&cpufreq_stat_cpu_notifier);
 	lock_cpu_hotplug();
 	for_each_online_cpu(cpu) {
 		cpufreq_stat_cpu_callback(&cpufreq_stat_cpu_notifier, CPU_ONLINE,
@@ -367,7 +368,7 @@ __exit cpufreq_stats_exit(void)
 			CPUFREQ_POLICY_NOTIFIER);
 	cpufreq_unregister_notifier(&notifier_trans_block,
 			CPUFREQ_TRANSITION_NOTIFIER);
-	unregister_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
+	unregister_cpu_notifier(&cpufreq_stat_cpu_notifier);
 	lock_cpu_hotplug();
 	for_each_online_cpu(cpu) {
 		cpufreq_stat_cpu_callback(&cpufreq_stat_cpu_notifier, CPU_DEAD,

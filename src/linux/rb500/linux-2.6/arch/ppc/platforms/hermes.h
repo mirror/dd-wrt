@@ -7,6 +7,7 @@
 #ifndef __MACH_HERMES_H
 #define __MACH_HERMES_H
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

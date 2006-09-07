@@ -13,6 +13,7 @@
  * option) any later version.
  *
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/string.h>
@@ -103,22 +104,7 @@ static int cis820x_config_intr(struct phy_device *phydev)
 	return err;
 }
 
-/* Cicada 8201, a.k.a Vitesse VSC8201 */
-static struct phy_driver cis8201_driver = {
-	.phy_id		= 0x000fc410,
-	.name		= "Cicada Cis8201",
-	.phy_id_mask	= 0x000ffff0,
-	.features	= PHY_GBIT_FEATURES,
-	.flags		= PHY_HAS_INTERRUPT,
-	.config_init	= &cis820x_config_init,
-	.config_aneg	= &genphy_config_aneg,
-	.read_status	= &genphy_read_status,
-	.ack_interrupt	= &cis820x_ack_interrupt,
-	.config_intr	= &cis820x_config_intr,
-	.driver 	= { .owner = THIS_MODULE,},
-};
-
-/* Cicada 8204 */
+/* Cicada 820x */
 static struct phy_driver cis8204_driver = {
 	.phy_id		= 0x000fc440,
 	.name		= "Cicada Cis8204",
@@ -133,30 +119,15 @@ static struct phy_driver cis8204_driver = {
 	.driver 	= { .owner = THIS_MODULE,},
 };
 
-static int __init cicada_init(void)
+static int __init cis8204_init(void)
 {
-	int ret;
-
-	ret = phy_driver_register(&cis8204_driver);
-	if (ret)
-		goto err1;
-
-	ret = phy_driver_register(&cis8201_driver);
-	if (ret)
-		goto err2;
-	return 0;
-
-err2:
-	phy_driver_unregister(&cis8204_driver);
-err1:
-	return ret;
+	return phy_driver_register(&cis8204_driver);
 }
 
-static void __exit cicada_exit(void)
+static void __exit cis8204_exit(void)
 {
 	phy_driver_unregister(&cis8204_driver);
-	phy_driver_unregister(&cis8201_driver);
 }
 
-module_init(cicada_init);
-module_exit(cicada_exit);
+module_init(cis8204_init);
+module_exit(cis8204_exit);

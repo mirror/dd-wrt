@@ -24,6 +24,7 @@
  *
  ********************************************************************/
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -42,8 +43,6 @@
 #include <net/irda/iriap.h>
 #include <net/irda/irlmp.h>
 #include <net/irda/irlmp_frame.h>
-
-#include <asm/unaligned.h>
 
 static __u8 irlmp_find_free_slsap(void);
 static int irlmp_slsap_inuse(__u8 slsap_sel);
@@ -841,7 +840,6 @@ void irlmp_do_expiry(void)
 void irlmp_do_discovery(int nslots)
 {
 	struct lap_cb *lap;
-	__u16 *data_hintsp;
 
 	/* Make sure the value is sane */
 	if ((nslots != 1) && (nslots != 6) && (nslots != 8) && (nslots != 16)){
@@ -851,8 +849,7 @@ void irlmp_do_discovery(int nslots)
 	}
 
 	/* Construct new discovery info to be used by IrLAP, */
-	data_hintsp = (__u16 *) irlmp->discovery_cmd.data.hints;
-	put_unaligned(irlmp->hints.word, data_hintsp);
+	u16ho(irlmp->discovery_cmd.data.hints) = irlmp->hints.word;
 
 	/*
 	 *  Set character set for device name (we use ASCII), and

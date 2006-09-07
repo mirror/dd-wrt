@@ -988,7 +988,9 @@ int ocfs2_request_mount_vote(struct ocfs2_super *osb)
 	}
 
 bail:
-	kfree(request);
+	if (request)
+		kfree(request);
+
 	return status;
 }
 
@@ -1019,7 +1021,9 @@ int ocfs2_request_umount_vote(struct ocfs2_super *osb)
 	}
 
 bail:
-	kfree(request);
+	if (request)
+		kfree(request);
+
 	return status;
 }
 

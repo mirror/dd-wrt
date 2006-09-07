@@ -41,6 +41,7 @@ MODULE_PARM_DESC(cidmode, "Call-ID mode");
 #define GIGASET_MINORS     1
 #define GIGASET_MINOR      8
 #define GIGASET_MODULENAME "usb_gigaset"
+#define GIGASET_DEVFSNAME  "gig/usb/"
 #define GIGASET_DEVNAME    "ttyGU"
 
 #define IF_WRITEBUF 2000 //FIXME  // WAKEUP_CHARS: 256
@@ -895,7 +896,8 @@ static int __init usb_gigaset_init(void)
 	/* allocate memory for our driver state and intialize it */
 	if ((driver = gigaset_initdriver(GIGASET_MINOR, GIGASET_MINORS,
 				       GIGASET_MODULENAME, GIGASET_DEVNAME,
-				       &ops, THIS_MODULE)) == NULL)
+				       GIGASET_DEVFSNAME, &ops,
+				       THIS_MODULE)) == NULL)
 		goto error;
 
 	/* allocate memory for our device state and intialize it */

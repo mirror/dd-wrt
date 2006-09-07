@@ -11,6 +11,7 @@
 #define	m523xsim_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 /*
  *	Define the 523x SIM register set addresses.

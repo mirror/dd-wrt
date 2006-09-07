@@ -1410,10 +1410,7 @@ static inline
 u16 bcm43xx_phy_lo_g_deviation_subval(struct bcm43xx_private *bcm, u16 control)
 {
 	struct bcm43xx_phyinfo *phy = bcm43xx_current_phy(bcm);
-	u16 ret;
-	unsigned long flags;
 
-	local_irq_save(flags);
 	if (phy->connected) {
 		bcm43xx_phy_write(bcm, 0x15, 0xE300);
 		control <<= 8;
@@ -1433,10 +1430,8 @@ u16 bcm43xx_phy_lo_g_deviation_subval(struct bcm43xx_private *bcm, u16 control)
 		bcm43xx_phy_write(bcm, 0x0015, control | 0xFFE0);
 		udelay(8);
 	}
-	ret = bcm43xx_phy_read(bcm, 0x002D);
-	local_irq_restore(flags);
 
-	return ret;
+	return bcm43xx_phy_read(bcm, 0x002D);
 }
 
 static u32 bcm43xx_phy_lo_g_singledeviation(struct bcm43xx_private *bcm, u16 control)
@@ -1653,7 +1648,7 @@ void bcm43xx_phy_set_baseband_attenuation(struct bcm43xx_private *bcm,
 void bcm43xx_phy_lo_g_measure(struct bcm43xx_private *bcm)
 {
 	static const u8 pairorder[10] = { 3, 1, 5, 7, 9, 2, 0, 4, 6, 8 };
-	const int is_initializing = (bcm43xx_status(bcm) == BCM43xx_STAT_INITIALIZING);
+	const int is_initializing = bcm43xx_is_initializing(bcm);
 	struct bcm43xx_phyinfo *phy = bcm43xx_current_phy(bcm);
 	struct bcm43xx_radioinfo *radio = bcm43xx_current_radio(bcm);
 	u16 h, i, oldi = 0, j;

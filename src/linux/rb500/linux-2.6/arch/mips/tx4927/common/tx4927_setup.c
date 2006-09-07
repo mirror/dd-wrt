@@ -24,6 +24,7 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/kernel_stat.h>
@@ -63,7 +64,7 @@ static void tx4927_write_buffer_flush(void)
 }
 
 
-void __init plat_mem_setup(void)
+void __init plat_setup(void)
 {
 	board_time_init = tx4927_time_init;
 	board_timer_setup = tx4927_timer_setup;

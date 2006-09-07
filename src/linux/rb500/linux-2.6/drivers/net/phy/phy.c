@@ -14,6 +14,7 @@
  * option) any later version.
  *
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/string.h>
@@ -556,7 +557,7 @@ int phy_start_interrupts(struct phy_device *phydev)
 	INIT_WORK(&phydev->phy_queue, phy_change, phydev);
 
 	if (request_irq(phydev->irq, phy_interrupt,
-				IRQF_SHARED,
+				SA_SHIRQ,
 				"phy_interrupt",
 				phydev) < 0) {
 		printk(KERN_WARNING "%s: Can't get IRQ %d (PHY)\n",

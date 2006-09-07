@@ -15,6 +15,7 @@
 #ifndef __IBM_EMAC_DEBUG_H_
 #define __IBM_EMAC_DEBUG_H_
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include "ibm_emac_core.h"
 #include "ibm_emac_mal.h"

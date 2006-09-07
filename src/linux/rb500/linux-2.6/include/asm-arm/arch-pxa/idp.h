@@ -15,6 +15,7 @@
  *             Changes for 2.6 kernel.
  */
 
+#include <linux/config.h>
 
 /*
  * Note: this file must be safe to include in assembly files

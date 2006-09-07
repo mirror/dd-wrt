@@ -665,7 +665,8 @@ static void process_rmpp_ack(struct ib_mad_agent_private *agent,
 			goto out;
 
 		mad_send_wr->refcount++;
-		list_move_tail(&mad_send_wr->agent_list,
+		list_del(&mad_send_wr->agent_list);
+		list_add_tail(&mad_send_wr->agent_list,
 			      &mad_send_wr->mad_agent_priv->send_list);
 	}
 out:

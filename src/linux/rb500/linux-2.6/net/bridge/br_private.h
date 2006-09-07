@@ -29,7 +29,7 @@
 
 #define BR_PORT_DEBOUNCE (HZ/10)
 
-#define BR_VERSION	"2.2"
+#define BR_VERSION	"2.1"
 
 typedef struct bridge_id bridge_id;
 typedef struct mac_addr mac_addr;
@@ -192,13 +192,8 @@ extern int br_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
 extern int br_ioctl_deviceless_stub(unsigned int cmd, void __user *arg);
 
 /* br_netfilter.c */
-#ifdef CONFIG_BRIDGE_NETFILTER
 extern int br_netfilter_init(void);
 extern void br_netfilter_fini(void);
-#else
-#define br_netfilter_init()	(0)
-#define br_netfilter_fini()	do { } while(0)
-#endif
 
 /* br_stp.c */
 extern void br_log_state(const struct net_bridge_port *p);
@@ -236,11 +231,6 @@ extern struct net_bridge_fdb_entry *(*br_fdb_get_hook)(struct net_bridge *br,
 						       unsigned char *addr);
 extern void (*br_fdb_put_hook)(struct net_bridge_fdb_entry *ent);
 
-
-/* br_netlink.c */
-extern void br_netlink_init(void);
-extern void br_netlink_fini(void);
-extern void br_ifinfo_notify(int event, struct net_bridge_port *port);
 
 #ifdef CONFIG_SYSFS
 /* br_sysfs_if.c */

@@ -8,6 +8,7 @@
  *
  *  Todo: - add support for the OF persistent properties
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/stddef.h>
@@ -28,8 +29,6 @@
 #include <asm/prom.h>
 #include <asm/machdep.h>
 #include <asm/nvram.h>
-
-#include "pmac.h"
 
 #define DEBUG
 
@@ -81,6 +80,9 @@ static int core99_bank = 0;
 static int nvram_partitions[3];
 // XXX Turn that into a sem
 static DEFINE_SPINLOCK(nv_lock);
+
+extern int pmac_newworld;
+extern int system_running;
 
 static int (*core99_write_bank)(int bank, u8* datas);
 static int (*core99_erase_bank)(int bank);

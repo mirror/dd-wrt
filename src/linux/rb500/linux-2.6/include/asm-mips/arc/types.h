@@ -9,6 +9,7 @@
 #ifndef _ASM_ARC_TYPES_H
 #define _ASM_ARC_TYPES_H
 
+#include <linux/config.h>
 
 #ifdef CONFIG_ARC32
 

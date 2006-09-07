@@ -5,6 +5,7 @@ Author: Marcell GAL, 2000, XDSL Ltd, Hungary
 */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/list.h>

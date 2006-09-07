@@ -9,8 +9,6 @@
  * Released under the General Public License (GPL).
  */
 
-#include <linux/lockdep.h>
-
 #if defined(CONFIG_SMP)
 # include <asm/spinlock_types.h>
 #else
@@ -26,9 +24,6 @@ typedef struct {
 	unsigned int magic, owner_cpu;
 	void *owner;
 #endif
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map dep_map;
-#endif
 } spinlock_t;
 
 #define SPINLOCK_MAGIC		0xdead4ead
@@ -42,53 +37,31 @@ typedef struct {
 	unsigned int magic, owner_cpu;
 	void *owner;
 #endif
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-	struct lockdep_map dep_map;
-#endif
 } rwlock_t;
 
 #define RWLOCK_MAGIC		0xdeaf1eed
 
 #define SPINLOCK_OWNER_INIT	((void *)-1L)
 
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-# define SPIN_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
-#else
-# define SPIN_DEP_MAP_INIT(lockname)
-#endif
-
-#ifdef CONFIG_DEBUG_LOCK_ALLOC
-# define RW_DEP_MAP_INIT(lockname)	.dep_map = { .name = #lockname }
-#else
-# define RW_DEP_MAP_INIT(lockname)
-#endif
-
 #ifdef CONFIG_DEBUG_SPINLOCK
-# define __SPIN_LOCK_UNLOCKED(lockname)					\
+# define SPIN_LOCK_UNLOCKED						\
 	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
 				.magic = SPINLOCK_MAGIC,		\
 				.owner = SPINLOCK_OWNER_INIT,		\
-				.owner_cpu = -1,			\
-				SPIN_DEP_MAP_INIT(lockname) }
-#define __RW_LOCK_UNLOCKED(lockname)					\
+				.owner_cpu = -1 }
+#define RW_LOCK_UNLOCKED						\
 	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
 				.magic = RWLOCK_MAGIC,			\
 				.owner = SPINLOCK_OWNER_INIT,		\
-				.owner_cpu = -1,			\
-				RW_DEP_MAP_INIT(lockname) }
+				.owner_cpu = -1 }
 #else
-# define __SPIN_LOCK_UNLOCKED(lockname) \
-	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED,	\
-				SPIN_DEP_MAP_INIT(lockname) }
-#define __RW_LOCK_UNLOCKED(lockname) \
-	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED,	\
-				RW_DEP_MAP_INIT(lockname) }
+# define SPIN_LOCK_UNLOCKED \
+	(spinlock_t)	{	.raw_lock = __RAW_SPIN_LOCK_UNLOCKED }
+#define RW_LOCK_UNLOCKED \
+	(rwlock_t)	{	.raw_lock = __RAW_RW_LOCK_UNLOCKED }
 #endif
 
-#define SPIN_LOCK_UNLOCKED	__SPIN_LOCK_UNLOCKED(old_style_spin_init)
-#define RW_LOCK_UNLOCKED	__RW_LOCK_UNLOCKED(old_style_rw_init)
-
-#define DEFINE_SPINLOCK(x)	spinlock_t x = __SPIN_LOCK_UNLOCKED(x)
-#define DEFINE_RWLOCK(x)	rwlock_t x = __RW_LOCK_UNLOCKED(x)
+#define DEFINE_SPINLOCK(x)	spinlock_t x = SPIN_LOCK_UNLOCKED
+#define DEFINE_RWLOCK(x)	rwlock_t x = RW_LOCK_UNLOCKED
 
 #endif /* __LINUX_SPINLOCK_TYPES_H */

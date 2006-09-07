@@ -20,6 +20,7 @@
  *
  */
 
+#include <linux/config.h>
 
 #include <asm/uaccess.h>
 
@@ -98,7 +99,7 @@ fail:
 /*
  * symlinks can't do much...
  */
-const struct address_space_operations ncp_symlink_aops = {
+struct address_space_operations ncp_symlink_aops = {
 	.readpage	= ncp_symlink_readpage,
 };
 	

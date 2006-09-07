@@ -7,6 +7,7 @@
 #ifndef _SPARC_WINMACRO_H
 #define _SPARC_WINMACRO_H
 
+#include <linux/config.h>
 #include <asm/ptrace.h>
 
 /* Store the register window onto the 8-byte aligned area starting

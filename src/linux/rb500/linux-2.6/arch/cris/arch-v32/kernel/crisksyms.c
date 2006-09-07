@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/irq.h>
 #include <asm/arch/dma.h>

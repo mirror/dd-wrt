@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/mm.h>
 #include <linux/proc_fs.h>
@@ -51,7 +52,7 @@ static int __init proc_ppc64_create(void)
 	if (!root)
 		return 1;
 
-	if (!of_find_node_by_path("/rtas"))
+	if (!machine_is(pseries) && !machine_is(cell))
 		return 0;
 
 	if (!proc_mkdir("rtas", root))
@@ -113,6 +114,8 @@ static ssize_t page_map_read( struct file *file, char __user *buf, size_t nbytes
 static int page_map_mmap( struct file *file, struct vm_area_struct *vma )
 {
 	struct proc_dir_entry *dp = PDE(file->f_dentry->d_inode);
+
+	vma->vm_flags |= VM_SHM | VM_LOCKED;
 
 	if ((vma->vm_end - vma->vm_start) > dp->size)
 		return -EINVAL;

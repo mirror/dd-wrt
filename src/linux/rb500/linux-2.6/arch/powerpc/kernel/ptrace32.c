@@ -17,6 +17,7 @@
  * this archive for more details.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/mm.h>

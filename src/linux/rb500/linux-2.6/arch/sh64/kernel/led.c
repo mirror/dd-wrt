@@ -8,6 +8,7 @@
  *
  * Flash the LEDs
  */
+#include <linux/config.h>
 #include <linux/stddef.h>
 #include <linux/sched.h>
 

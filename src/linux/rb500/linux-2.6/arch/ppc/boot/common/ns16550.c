@@ -2,6 +2,7 @@
  * COM1 NS16550 support
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/serial.h>
 #include <linux/serial_reg.h>

@@ -688,7 +688,7 @@ static void reader_detach(struct pcmcia_device *link)
 	return;
 }
 
-static const struct file_operations reader_fops = {
+static struct file_operations reader_fops = {
 	.owner		= THIS_MODULE,
 	.read		= cm4040_read,
 	.write		= cm4040_write,

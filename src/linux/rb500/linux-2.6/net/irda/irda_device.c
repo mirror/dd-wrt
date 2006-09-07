@@ -29,6 +29,7 @@
  *
  ********************************************************************/
 
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/proc_fs.h>
 #include <linux/skbuff.h>

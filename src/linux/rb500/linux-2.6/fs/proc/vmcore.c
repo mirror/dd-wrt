@@ -7,6 +7,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/proc_fs.h>
 #include <linux/user.h>

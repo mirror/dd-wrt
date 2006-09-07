@@ -7,6 +7,7 @@
 #ifndef __TQM8260_PLATFORM
 #define __TQM8260_PLATFORM
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

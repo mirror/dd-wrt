@@ -11,6 +11,7 @@
  * Written by Miles Bader <miles@gnu.org>
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/fs.h>

@@ -11,6 +11,7 @@
  */
 
 #include <linux/sys.h>
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/setup.h>
 #include <asm/segment.h>

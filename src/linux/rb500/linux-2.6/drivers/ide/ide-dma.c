@@ -74,6 +74,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
@@ -205,7 +206,8 @@ int ide_build_sglist(ide_drive_t *drive, struct request *rq)
 	ide_hwif_t *hwif = HWIF(drive);
 	struct scatterlist *sg = hwif->sg_table;
 
-	BUG_ON((rq->flags & REQ_DRIVE_TASKFILE) && rq->nr_sectors > 256);
+	if ((rq->flags & REQ_DRIVE_TASKFILE) && rq->nr_sectors > 256)
+		BUG();
 
 	ide_map_sg(drive, rq);
 
@@ -945,7 +947,8 @@ void ide_setup_dma (ide_hwif_t *hwif, unsigned long dma_base, unsigned int num_p
 	}
 	printk("\n");
 
-	BUG_ON(!hwif->dma_master);
+	if (!(hwif->dma_master))
+		BUG();
 }
 
 EXPORT_SYMBOL_GPL(ide_setup_dma);

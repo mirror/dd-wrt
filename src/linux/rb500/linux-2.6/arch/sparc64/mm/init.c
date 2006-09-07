@@ -5,6 +5,7 @@
  *  Copyright (C) 1997-1999 Jakub Jelinek (jj@sunsite.mff.cuni.cz)
  */
  
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -17,7 +18,6 @@
 #include <linux/initrd.h>
 #include <linux/swap.h>
 #include <linux/pagemap.h>
-#include <linux/poison.h>
 #include <linux/fs.h>
 #include <linux/seq_file.h>
 #include <linux/kprobes.h>
@@ -42,7 +42,6 @@
 #include <asm/sections.h>
 #include <asm/tsb.h>
 #include <asm/hypervisor.h>
-#include <asm/prom.h>
 
 extern void device_scan(void);
 
@@ -102,6 +101,8 @@ static void __init read_obp_memory(const char *property,
 		prom_halt();
 	}
 
+	*num_ents = ents;
+
 	/* Sanitize what we got from the firmware, by page aligning
 	 * everything.
 	 */
@@ -123,25 +124,6 @@ static void __init read_obp_memory(const char *property,
 		regs[i].phys_addr = base;
 		regs[i].reg_size = size;
 	}
-
-	for (i = 0; i < ents; i++) {
-		if (regs[i].reg_size == 0UL) {
-			int j;
-
-			for (j = i; j < ents - 1; j++) {
-				regs[j].phys_addr =
-					regs[j+1].phys_addr;
-				regs[j].reg_size =
-					regs[j+1].reg_size;
-			}
-
-			ents--;
-			i--;
-		}
-	}
-
-	*num_ents = ents;
-
 	sort(regs, ents, sizeof(struct linux_prom64_registers),
 	     cmp_p64, NULL);
 }
@@ -1357,8 +1339,6 @@ void __init paging_init(void)
 
 	kernel_physical_mapping_init();
 
-	prom_build_devicetree();
-
 	{
 		unsigned long zones_size[MAX_NR_ZONES];
 		unsigned long zholes_size[MAX_NR_ZONES];
@@ -1396,7 +1376,7 @@ static void __init taint_real_pages(void)
 		while (old_start < old_end) {
 			int n;
 
-			for (n = 0; n < pavail_rescan_ents; n++) {
+			for (n = 0; pavail_rescan_ents; n++) {
 				unsigned long new_start, new_end;
 
 				new_start = pavail_rescan[n].phys_addr;
@@ -1416,32 +1396,6 @@ static void __init taint_real_pages(void)
 			old_start += PAGE_SIZE;
 		}
 	}
-}
-
-int __init page_in_phys_avail(unsigned long paddr)
-{
-	int i;
-
-	paddr &= PAGE_MASK;
-
-	for (i = 0; i < pavail_rescan_ents; i++) {
-		unsigned long start, end;
-
-		start = pavail_rescan[i].phys_addr;
-		end = start + pavail_rescan[i].reg_size;
-
-		if (paddr >= start && paddr < end)
-			return 1;
-	}
-	if (paddr >= kern_base && paddr < (kern_base + kern_size))
-		return 1;
-#ifdef CONFIG_BLK_DEV_INITRD
-	if (paddr >= __pa(initrd_start) &&
-	    paddr < __pa(PAGE_ALIGN(initrd_end)))
-		return 1;
-#endif
-
-	return 0;
 }
 
 void __init mem_init(void)
@@ -1520,7 +1474,7 @@ void free_initmem(void)
 		page = (addr +
 			((unsigned long) __va(kern_base)) -
 			((unsigned long) KERNBASE));
-		memset((void *)addr, POISON_FREE_INITMEM, PAGE_SIZE);
+		memset((void *)addr, 0xcc, PAGE_SIZE);
 		p = virt_to_page(page);
 
 		ClearPageReserved(p);
@@ -1568,7 +1522,6 @@ pgprot_t PAGE_EXEC __read_mostly;
 unsigned long pg_iobits __read_mostly;
 
 unsigned long _PAGE_IE __read_mostly;
-EXPORT_SYMBOL(_PAGE_IE);
 
 unsigned long _PAGE_E __read_mostly;
 EXPORT_SYMBOL(_PAGE_E);

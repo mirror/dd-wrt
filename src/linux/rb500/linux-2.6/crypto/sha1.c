@@ -34,9 +34,9 @@ struct sha1_ctx {
         u8 buffer[64];
 };
 
-static void sha1_init(struct crypto_tfm *tfm)
+static void sha1_init(void *ctx)
 {
-	struct sha1_ctx *sctx = crypto_tfm_ctx(tfm);
+	struct sha1_ctx *sctx = ctx;
 	static const struct sha1_ctx initstate = {
 	  0,
 	  { 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0 },
@@ -46,10 +46,9 @@ static void sha1_init(struct crypto_tfm *tfm)
 	*sctx = initstate;
 }
 
-static void sha1_update(struct crypto_tfm *tfm, const u8 *data,
-			unsigned int len)
+static void sha1_update(void *ctx, const u8 *data, unsigned int len)
 {
-	struct sha1_ctx *sctx = crypto_tfm_ctx(tfm);
+	struct sha1_ctx *sctx = ctx;
 	unsigned int partial, done;
 	const u8 *src;
 
@@ -81,9 +80,9 @@ static void sha1_update(struct crypto_tfm *tfm, const u8 *data,
 
 
 /* Add padding and return the message digest. */
-static void sha1_final(struct crypto_tfm *tfm, u8 *out)
+static void sha1_final(void* ctx, u8 *out)
 {
-	struct sha1_ctx *sctx = crypto_tfm_ctx(tfm);
+	struct sha1_ctx *sctx = ctx;
 	__be32 *dst = (__be32 *)out;
 	u32 i, index, padlen;
 	__be64 bits;
@@ -94,10 +93,10 @@ static void sha1_final(struct crypto_tfm *tfm, u8 *out)
 	/* Pad out to 56 mod 64 */
 	index = sctx->count & 0x3f;
 	padlen = (index < 56) ? (56 - index) : ((64+56) - index);
-	sha1_update(tfm, padding, padlen);
+	sha1_update(sctx, padding, padlen);
 
 	/* Append length */
-	sha1_update(tfm, (const u8 *)&bits, sizeof(bits));
+	sha1_update(sctx, (const u8 *)&bits, sizeof(bits));
 
 	/* Store state in digest */
 	for (i = 0; i < 5; i++)
@@ -113,7 +112,6 @@ static struct crypto_alg alg = {
 	.cra_blocksize	=	SHA1_HMAC_BLOCK_SIZE,
 	.cra_ctxsize	=	sizeof(struct sha1_ctx),
 	.cra_module	=	THIS_MODULE,
-	.cra_alignmask	=	3,
 	.cra_list       =       LIST_HEAD_INIT(alg.cra_list),
 	.cra_u		=	{ .digest = {
 	.dia_digestsize	=	SHA1_DIGEST_SIZE,

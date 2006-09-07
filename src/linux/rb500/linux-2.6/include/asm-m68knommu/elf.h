@@ -5,6 +5,7 @@
  * ELF register definitions..
  */
 
+#include <linux/config.h>
 #include <asm/ptrace.h>
 #include <asm/user.h>
 

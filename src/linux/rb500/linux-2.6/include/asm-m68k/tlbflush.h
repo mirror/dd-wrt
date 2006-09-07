@@ -1,6 +1,7 @@
 #ifndef _M68K_TLBFLUSH_H
 #define _M68K_TLBFLUSH_H
 
+#include <linux/config.h>
 
 #ifndef CONFIG_SUN3
 

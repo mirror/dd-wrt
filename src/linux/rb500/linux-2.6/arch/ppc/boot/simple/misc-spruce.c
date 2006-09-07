@@ -13,6 +13,7 @@
  */
 
 #include <linux/types.h>
+#include <linux/config.h>
 #include <linux/pci.h>
 
 #include <asm/bootinfo.h>

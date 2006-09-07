@@ -14,6 +14,7 @@
 
 //#define DMA_DEBUG 1
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 
 #undef MAX_DMA_CHANNELS		/* don't use kernel/dma.c */

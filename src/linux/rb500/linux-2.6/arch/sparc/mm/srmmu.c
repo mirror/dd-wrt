@@ -8,6 +8,7 @@
  * Copyright (C) 1999,2000 Anton Blanchard (anton@samba.org)
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
 #include <linux/slab.h>

@@ -6,8 +6,7 @@
 /* Written 2002 by Andi Kleen */ 
 
 /* Only used for special circumstances. Stolen from i386/string.h */ 
-static __always_inline void *
-__inline_memcpy(void * to, const void * from, size_t n)
+static inline void * __inline_memcpy(void * to, const void * from, size_t n)
 {
 unsigned long d0, d1, d2;
 __asm__ __volatile__(

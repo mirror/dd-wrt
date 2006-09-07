@@ -10,6 +10,7 @@
  *	<tomsoft@informatik.tu-chemnitz.de>
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 /* include comes from machine specific directory */
 #include "irq_vectors.h"

@@ -8,6 +8,7 @@
  */
 
 #include <linux/types.h>
+#include <linux/config.h>
 #include <linux/string.h>
 #include <asm/reg.h>
 #ifdef CONFIG_8xx

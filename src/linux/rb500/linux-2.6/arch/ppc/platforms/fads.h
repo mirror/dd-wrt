@@ -19,6 +19,7 @@
 #ifndef __ASM_FADS_H__
 #define __ASM_FADS_H__
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

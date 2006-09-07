@@ -23,6 +23,7 @@
  * Send feedback to <gone@us.ibm.com>
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
 #include <linux/mmzone.h>
@@ -78,12 +79,10 @@ int __init get_memcfg_numaq(void)
 	return 1;
 }
 
-static int __init numaq_tsc_disable(void)
+static int __init numaq_dsc_disable(void)
 {
-	if (num_online_nodes() > 1) {
-		printk(KERN_DEBUG "NUMAQ: disabling TSC\n");
-		tsc_disable = 1;
-	}
+	printk(KERN_DEBUG "NUMAQ: disabling TSC\n");
+	tsc_disable = 1;
 	return 0;
 }
-arch_initcall(numaq_tsc_disable);
+core_initcall(numaq_dsc_disable);

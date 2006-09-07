@@ -46,6 +46,7 @@
 #include <asm/io.h>
 #include <linux/proc_fs.h>
 #include <linux/mman.h>
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/ioport.h>

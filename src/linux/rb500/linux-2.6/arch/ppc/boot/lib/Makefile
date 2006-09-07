@@ -5,7 +5,7 @@
 CFLAGS_kbd.o	:= -Idrivers/char
 CFLAGS_vreset.o := -Iarch/ppc/boot/include
 
-zlib  := inffast.c inflate.c inftrees.c
+zlib  := infblock.c infcodes.c inffast.c inflate.c inftrees.c infutil.c
 	 
 lib-y += $(zlib:.c=.o) div64.o
 lib-$(CONFIG_VGA_CONSOLE) += vreset.o kbd.o

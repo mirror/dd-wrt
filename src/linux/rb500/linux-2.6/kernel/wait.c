@@ -3,16 +3,13 @@
  *
  * (C) 2004 William Irwin, Oracle
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
 #include <linux/wait.h>
 #include <linux/hash.h>
-
-struct lock_class_key waitqueue_lock_key;
-
-EXPORT_SYMBOL(waitqueue_lock_key);
 
 void fastcall add_wait_queue(wait_queue_head_t *q, wait_queue_t *wait)
 {

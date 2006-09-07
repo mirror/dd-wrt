@@ -1,6 +1,7 @@
 #ifndef _ASM_LOCAL_H
 #define _ASM_LOCAL_H
 
+#include <linux/config.h>
 #include <linux/percpu.h>
 #include <asm/atomic.h>
 

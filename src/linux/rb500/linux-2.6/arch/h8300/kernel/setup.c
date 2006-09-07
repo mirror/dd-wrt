@@ -16,6 +16,7 @@
  * This file handles the architecture-dependent parts of system setup
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/delay.h>

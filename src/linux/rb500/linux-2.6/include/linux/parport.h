@@ -96,6 +96,7 @@ typedef enum {
 /* The rest is for the kernel only */
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/jiffies.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
@@ -127,10 +128,6 @@ struct amiga_parport_state {
        unsigned char statusdir;/* ciab.ddrb & 7 */
 };
 
-struct ax88796_parport_state {
-	unsigned char cpr;
-};
-
 struct ip32_parport_state {
 	unsigned int dcr;
 	unsigned int ecr;
@@ -142,7 +139,6 @@ struct parport_state {
 		/* ARC has no state. */
 		struct ax_parport_state ax;
 		struct amiga_parport_state amiga;
-		struct ax88796_parport_state ax88796;
 		/* Atari has not state. */
 		struct ip32_parport_state ip32;
 		void *misc; 

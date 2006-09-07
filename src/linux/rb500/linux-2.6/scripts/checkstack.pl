@@ -89,21 +89,11 @@ sub bysize($) {
 #
 my $funcre = qr/^$x* <(.*)>:$/;
 my $func;
-my $file, $lastslash;
-
 while (my $line = <STDIN>) {
 	if ($line =~ m/$funcre/) {
 		$func = $1;
 	}
-	elsif ($line =~ m/(.*):\s*file format/) {
-		$file = $1;
-		$file =~ s/\.ko//;
-		$lastslash = rindex($file, "/");
-		if ($lastslash != -1) {
-			$file = substr($file, $lastslash + 1);
-		}
-	}
-	elsif ($line =~ m/$re/) {
+	if ($line =~ m/$re/) {
 		my $size = $1;
 		$size = hex($size) if ($size =~ /^0x/);
 
@@ -119,7 +109,7 @@ while (my $line = <STDIN>) {
 		$addr =~ s/ /0/g;
 		$addr = "0x$addr";
 
-		my $intro = "$addr $func [$file]:";
+		my $intro = "$addr $func:";
 		my $padlen = 56 - length($intro);
 		while ($padlen > 0) {
 			$intro .= '	';

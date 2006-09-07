@@ -6,6 +6,7 @@
  */
 
 #include <linux/types.h>
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <asm/ppcboot.h>

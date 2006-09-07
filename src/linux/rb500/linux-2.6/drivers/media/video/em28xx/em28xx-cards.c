@@ -3,7 +3,7 @@
 
    Copyright (C) 2005 Ludovico Cavedon <cavedon@sssup.it>
 		      Markus Rechberger <mrechberger@gmail.com>
-		      Mauro Carvalho Chehab <mchehab@infradead.org>
+		      Mauro Carvalho Chehab <mchehab@brturbo.com.br>
 		      Sascha Sommer <saschasommer@freenet.de>
 
    This program is free software; you can redistribute it and/or modify
@@ -29,8 +29,6 @@
 #include <linux/usb.h>
 #include <media/tuner.h>
 #include <media/msp3400.h>
-#include <media/saa7115.h>
-#include <media/tvp5150.h>
 #include <media/tveeprom.h>
 #include <media/audiochip.h>
 #include <media/v4l2-common.h>
@@ -48,11 +46,11 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input           = {{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -66,11 +64,11 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input           = {{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -84,11 +82,11 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input           = {{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -102,15 +100,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE2,
+			.vmux     = 2,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -124,15 +122,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE2,
+			.vmux     = 2,
 			.amux     = 0,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -148,11 +146,11 @@ struct em28xx_board em28xx_boards[] = {
 		/*FIXME: S-Video not tested */
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = TVP5150_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = MSP_INPUT_DEFAULT,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = TVP5150_SVIDEO,
+			.vmux     = 2,
 			.amux     = MSP_INPUT(MSP_IN_SCART1, MSP_IN_TUNER1,
 					MSP_DSP_IN_SCART, MSP_DSP_IN_SCART),
 		}},
@@ -167,15 +165,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder        = EM28XX_SAA7114,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE4,
+			.vmux     = 4,
 			.amux     = 0,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -190,15 +188,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE2,
+			.vmux     = 2,
 			.amux     = 0,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -213,15 +211,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE2,
+			.vmux     = 2,
 			.amux     = 0,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -236,15 +234,15 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_TELEVISION,
-			.vmux     = SAA7115_COMPOSITE2,
+			.vmux     = 2,
 			.amux     = 0,
 		},{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -256,11 +254,11 @@ struct em28xx_board em28xx_boards[] = {
 		.decoder      = EM28XX_SAA7113,
 		.input          = {{
 			.type     = EM28XX_VMUX_COMPOSITE1,
-			.vmux     = SAA7115_COMPOSITE0,
+			.vmux     = 0,
 			.amux     = 1,
 		},{
 			.type     = EM28XX_VMUX_SVIDEO,
-			.vmux     = SAA7115_SVIDEO3,
+			.vmux     = 9,
 			.amux     = 1,
 		}},
 	},
@@ -325,5 +323,9 @@ void em28xx_card_setup(struct em28xx *dev)
 
 	}
 }
+
+EXPORT_SYMBOL(em28xx_boards);
+EXPORT_SYMBOL(em28xx_bcount);
+EXPORT_SYMBOL(em28xx_id_table);
 
 MODULE_DEVICE_TABLE (usb, em28xx_id_table);

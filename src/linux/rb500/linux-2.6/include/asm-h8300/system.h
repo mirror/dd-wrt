@@ -1,6 +1,7 @@
 #ifndef _H8300_SYSTEM_H
 #define _H8300_SYSTEM_H
 
+#include <linux/config.h> /* get configuration macros */
 #include <linux/linkage.h>
 
 /*

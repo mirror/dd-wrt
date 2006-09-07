@@ -28,6 +28,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -468,7 +469,7 @@ static void cyberjack_write_bulk_callback (struct urb *urb, struct pt_regs *regs
 
 exit:
 	spin_unlock(&priv->lock);
-	usb_serial_port_softint(port);
+	schedule_work(&port->work);
 }
 
 static int __init cyberjack_init (void)

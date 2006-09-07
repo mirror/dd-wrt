@@ -4,6 +4,7 @@
  * Copyright (C) 1998-2003 Hewlett-Packard Co
  *	David Mosberger-Tang <davidm@hpl.hp.com>
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 
@@ -651,7 +652,7 @@ void online_page(struct page *page)
 	num_physpages++;
 }
 
-int arch_add_memory(int nid, u64 start, u64 size)
+int add_memory(u64 start, u64 size)
 {
 	pg_data_t *pgdat;
 	struct zone *zone;
@@ -659,7 +660,7 @@ int arch_add_memory(int nid, u64 start, u64 size)
 	unsigned long nr_pages = size >> PAGE_SHIFT;
 	int ret;
 
-	pgdat = NODE_DATA(nid);
+	pgdat = NODE_DATA(0);
 
 	zone = pgdat->node_zones + ZONE_NORMAL;
 	ret = __add_pages(zone, start_pfn, nr_pages);
@@ -675,5 +676,4 @@ int remove_memory(u64 start, u64 size)
 {
 	return -EINVAL;
 }
-EXPORT_SYMBOL_GPL(remove_memory);
 #endif

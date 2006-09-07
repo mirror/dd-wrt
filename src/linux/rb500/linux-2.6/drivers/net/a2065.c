@@ -48,6 +48,7 @@
 #include <linux/skbuff.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/crc32.h>
 #include <linux/zorro.h>
@@ -495,7 +496,7 @@ static int lance_open (struct net_device *dev)
 	ll->rdp = LE_C0_STOP;
 
 	/* Install the Interrupt handler */
-	ret = request_irq(IRQ_AMIGA_PORTS, lance_interrupt, IRQF_SHARED,
+	ret = request_irq(IRQ_AMIGA_PORTS, lance_interrupt, SA_SHIRQ,
 			  dev->name, dev);
 	if (ret) return ret;
 
@@ -572,7 +573,8 @@ static int lance_start_xmit (struct sk_buff *skb, struct net_device *dev)
 	
 	if (len < ETH_ZLEN) {
 		len = ETH_ZLEN;
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 	}
 

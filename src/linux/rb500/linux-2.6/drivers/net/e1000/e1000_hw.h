@@ -1,7 +1,7 @@
 /*******************************************************************************
 
   
-  Copyright(c) 1999 - 2006 Intel Corporation. All rights reserved.
+  Copyright(c) 1999 - 2005 Intel Corporation. All rights reserved.
   
   This program is free software; you can redistribute it and/or modify it 
   under the terms of the GNU General Public License as published by the Free 
@@ -22,7 +22,6 @@
   
   Contact Information:
   Linux NICS <linux.nics@intel.com>
-  e1000-devel Mailing List <e1000-devel@lists.sourceforge.net>
   Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
 
 *******************************************************************************/
@@ -375,7 +374,7 @@ struct e1000_host_mng_dhcp_cookie{
 };
 #endif
 
-int32_t e1000_mng_write_dhcp_info(struct e1000_hw *hw, uint8_t *buffer,
+int32_t e1000_mng_write_dhcp_info(struct e1000_hw *hw, uint8_t *buffer, 
 							uint16_t length);
 boolean_t e1000_check_mng_mode(struct e1000_hw *hw);
 boolean_t e1000_enable_tx_pkt_filtering(struct e1000_hw *hw);
@@ -463,6 +462,7 @@ int32_t e1000_check_phy_reset_block(struct e1000_hw *hw);
 #define E1000_DEV_ID_82572EI_COPPER      0x107D
 #define E1000_DEV_ID_82572EI_FIBER       0x107E
 #define E1000_DEV_ID_82572EI_SERDES      0x107F
+#define E1000_DEV_ID_82572EI             0x10B9
 #define E1000_DEV_ID_82573E              0x108B
 #define E1000_DEV_ID_82573E_IAMT         0x108C
 #define E1000_DEV_ID_82573L              0x109A
@@ -1802,7 +1802,7 @@ struct e1000_hw {
  *       value2 = [0..64512],    default=4096
  *       value3 = [0..64512],    default=0
  */
-
+    
 #define E1000_PSRCTL_BSIZE0_MASK   0x0000007F
 #define E1000_PSRCTL_BSIZE1_MASK   0x00003F00
 #define E1000_PSRCTL_BSIZE2_MASK   0x003F0000

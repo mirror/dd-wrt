@@ -22,6 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/tty.h>
 #include <linux/slab.h>
@@ -48,12 +49,6 @@
  * This is used to lock changes in serial line configuration.
  */
 static DEFINE_MUTEX(port_mutex);
-
-/*
- * lockdep: port->lock is initialized in two places, but we
- *          want only one lock-class:
- */
-static struct lock_class_key port_lock_key;
 
 #define HIGH_BITS_OFFSET	((sizeof(long)-sizeof(int))*8)
 
@@ -696,8 +691,7 @@ static int uart_set_info(struct uart_state *state,
 		    (new_serial.baud_base != port->uartclk / 16) ||
 		    (close_delay != state->close_delay) ||
 		    (closing_wait != state->closing_wait) ||
-		    (new_serial.xmit_fifo_size &&
-		     new_serial.xmit_fifo_size != port->fifosize) ||
+		    (new_serial.xmit_fifo_size != port->fifosize) ||
 		    (((new_flags ^ old_flags) & ~UPF_USR_MASK) != 0))
 			goto exit;
 		port->flags = ((port->flags & ~UPF_USR_MASK) |
@@ -802,8 +796,7 @@ static int uart_set_info(struct uart_state *state,
 	port->custom_divisor   = new_serial.custom_divisor;
 	state->close_delay     = close_delay;
 	state->closing_wait    = closing_wait;
-	if (new_serial.xmit_fifo_size)
-		port->fifosize = new_serial.xmit_fifo_size;
+	port->fifosize         = new_serial.xmit_fifo_size;
 	if (state->info->tty)
 		state->info->tty->low_latency =
 			(port->flags & UPF_LOW_LATENCY) ? 1 : 0;
@@ -1873,7 +1866,6 @@ uart_set_options(struct uart_port *port, struct console *co,
 	 * early.
 	 */
 	spin_lock_init(&port->lock);
-	lockdep_set_class(&port->lock, &port_lock_key);
 
 	memset(&termios, 0, sizeof(struct termios));
 
@@ -2161,6 +2153,7 @@ int uart_register_driver(struct uart_driver *drv)
 
 	normal->owner		= drv->owner;
 	normal->driver_name	= drv->driver_name;
+	normal->devfs_name	= drv->devfs_name;
 	normal->name		= drv->dev_name;
 	normal->major		= drv->major;
 	normal->minor_start	= drv->minor;
@@ -2168,7 +2161,7 @@ int uart_register_driver(struct uart_driver *drv)
 	normal->subtype		= SERIAL_TYPE_NORMAL;
 	normal->init_termios	= tty_std_termios;
 	normal->init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
-	normal->flags		= TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
+	normal->flags		= TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS;
 	normal->driver_state    = drv;
 	tty_set_operations(normal, &uart_ops);
 
@@ -2256,10 +2249,8 @@ int uart_add_one_port(struct uart_driver *drv, struct uart_port *port)
 	 * If this port is a console, then the spinlock is already
 	 * initialised.
 	 */
-	if (!(uart_console(port) && (port->cons->flags & CON_ENABLED))) {
+	if (!(uart_console(port) && (port->cons->flags & CON_ENABLED)))
 		spin_lock_init(&port->lock);
-		lockdep_set_class(&port->lock, &port_lock_key);
-	}
 
 	uart_configure_port(drv, state, port);
 
@@ -2321,7 +2312,7 @@ int uart_remove_one_port(struct uart_driver *drv, struct uart_port *port)
 	mutex_unlock(&state->mutex);
 
 	/*
-	 * Remove the devices from the tty layer
+	 * Remove the devices from devfs
 	 */
 	tty_unregister_device(drv->tty_driver, port->line);
 

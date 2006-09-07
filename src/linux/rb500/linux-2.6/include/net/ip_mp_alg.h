@@ -7,6 +7,7 @@
 #ifndef _NET_IP_MP_ALG_H
 #define _NET_IP_MP_ALG_H
 
+#include <linux/config.h>
 #include <linux/ip_mp_alg.h>
 #include <net/flow.h>
 #include <net/route.h>

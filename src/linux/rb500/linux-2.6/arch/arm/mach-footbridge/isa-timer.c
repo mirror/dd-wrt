@@ -6,7 +6,6 @@
  */
 #include <linux/init.h>
 #include <linux/interrupt.h>
-#include <linux/irq.h>
 
 #include <asm/io.h>
 #include <asm/irq.h>
@@ -73,7 +72,7 @@ isa_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 static struct irqaction isa_timer_irq = {
 	.name		= "ISA timer tick",
 	.handler	= isa_timer_interrupt,
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= SA_INTERRUPT | SA_TIMER,
 };
 
 static void __init isa_timer_init(void)

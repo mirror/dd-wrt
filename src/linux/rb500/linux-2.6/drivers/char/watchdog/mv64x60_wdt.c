@@ -15,6 +15,7 @@
  * or implied.
  */
 
+#include <linux/config.h>
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -166,7 +167,7 @@ static int mv64x60_wdt_ioctl(struct inode *inode, struct file *file,
 	return 0;
 }
 
-static const struct file_operations mv64x60_wdt_fops = {
+static struct file_operations mv64x60_wdt_fops = {
 	.owner = THIS_MODULE,
 	.llseek = no_llseek,
 	.write = mv64x60_wdt_write,

@@ -1,6 +1,7 @@
 #ifndef _RRUNNER_H_
 #define _RRUNNER_H_
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 
 #if ((BITS_PER_LONG != 32) && (BITS_PER_LONG != 64))

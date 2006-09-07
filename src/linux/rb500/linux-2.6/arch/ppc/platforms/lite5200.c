@@ -21,6 +21,7 @@
  * kind, whether express or implied.
  */
 
+#include <linux/config.h>
 #include <linux/initrd.h>
 #include <linux/seq_file.h>
 #include <linux/kdev_t.h>

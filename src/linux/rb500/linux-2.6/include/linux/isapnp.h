@@ -22,6 +22,7 @@
 #ifndef LINUX_ISAPNP_H
 #define LINUX_ISAPNP_H
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/pnp.h>
 

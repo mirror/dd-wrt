@@ -25,6 +25,7 @@
 #include <linux/init.h>
 #include <linux/ide.h>
 
+#include <asm/traps.h>
 #include <asm/bootinfo.h>
 #include <asm/macintosh.h>
 #include <asm/macints.h>
@@ -70,6 +71,7 @@ void via_irq_enable(int irq);
 void via_irq_disable(int irq);
 void via_irq_clear(int irq);
 
+extern irqreturn_t mac_bang(int, void *, struct pt_regs *);
 extern irqreturn_t mac_scc_dispatch(int, void *, struct pt_regs *);
 extern int oss_present;
 
@@ -210,6 +212,11 @@ void __init via_init(void)
 			break;
 	}
 #else
+	/* The alernate IRQ mapping seems to just not work. Anyone with a   */
+	/* supported machine is welcome to take a stab at fixing it. It     */
+	/* _should_ work on the following Quadras: 610,650,700,800,900,950  */
+	/*                                               - 1999-06-12 (jmt) */
+
 	via_alt_mapping = 0;
 #endif
 
@@ -253,21 +260,27 @@ void __init via_init_clock(irqreturn_t (*func)(int, void *, struct pt_regs *))
 void __init via_register_interrupts(void)
 {
 	if (via_alt_mapping) {
-		request_irq(IRQ_AUTO_1, via1_irq,
+		cpu_request_irq(IRQ_AUTO_1, via1_irq,
 				IRQ_FLG_LOCK|IRQ_FLG_FAST, "software",
 				(void *) via1);
-		request_irq(IRQ_AUTO_6, via1_irq,
+		cpu_request_irq(IRQ_AUTO_6, via1_irq,
 				IRQ_FLG_LOCK|IRQ_FLG_FAST, "via1",
 				(void *) via1);
 	} else {
-		request_irq(IRQ_AUTO_1, via1_irq,
+		cpu_request_irq(IRQ_AUTO_1, via1_irq,
 				IRQ_FLG_LOCK|IRQ_FLG_FAST, "via1",
 				(void *) via1);
+#if 0 /* interferes with serial on some machines */
+		if (!psc_present) {
+			cpu_request_irq(IRQ_AUTO_6, mac_bang, IRQ_FLG_LOCK,
+					"Off Switch", mac_bang);
+		}
+#endif
 	}
-	request_irq(IRQ_AUTO_2, via2_irq, IRQ_FLG_LOCK|IRQ_FLG_FAST,
+	cpu_request_irq(IRQ_AUTO_2, via2_irq, IRQ_FLG_LOCK|IRQ_FLG_FAST,
 			"via2", (void *) via2);
 	if (!psc_present) {
-		request_irq(IRQ_AUTO_4, mac_scc_dispatch, IRQ_FLG_LOCK,
+		cpu_request_irq(IRQ_AUTO_4, mac_scc_dispatch, IRQ_FLG_LOCK,
 				"scc", mac_scc_dispatch);
 	}
 	request_irq(IRQ_MAC_NUBUS, via_nubus_irq, IRQ_FLG_LOCK|IRQ_FLG_FAST,
@@ -424,7 +437,7 @@ irqreturn_t via1_irq(int irq, void *dev_id, struct pt_regs *regs)
 	for (i = 0, irq_bit = 1 ; i < 7 ; i++, irq_bit <<= 1)
 		if (events & irq_bit) {
 			via1[vIER] = irq_bit;
-			m68k_handle_int(VIA1_SOURCE_BASE + i, regs);
+			mac_do_irq_list(VIA1_SOURCE_BASE + i, regs);
 			via1[vIFR] = irq_bit;
 			via1[vIER] = irq_bit | 0x80;
 		}
@@ -439,7 +452,7 @@ irqreturn_t via1_irq(int irq, void *dev_id, struct pt_regs *regs)
 		/* No, it won't be set. that's why we're doing this. */
 		via_irq_disable(IRQ_MAC_NUBUS);
 		via_irq_clear(IRQ_MAC_NUBUS);
-		m68k_handle_int(IRQ_MAC_NUBUS, regs);
+		mac_do_irq_list(IRQ_MAC_NUBUS, regs);
 		via_irq_enable(IRQ_MAC_NUBUS);
 	}
 #endif
@@ -458,8 +471,8 @@ irqreturn_t via2_irq(int irq, void *dev_id, struct pt_regs *regs)
 	for (i = 0, irq_bit = 1 ; i < 7 ; i++, irq_bit <<= 1)
 		if (events & irq_bit) {
 			via2[gIER] = irq_bit;
+			mac_do_irq_list(VIA2_SOURCE_BASE + i, regs);
 			via2[gIFR] = irq_bit | rbv_clear;
-			m68k_handle_int(VIA2_SOURCE_BASE + i, regs);
 			via2[gIER] = irq_bit | 0x80;
 		}
 	return IRQ_HANDLED;
@@ -481,7 +494,7 @@ irqreturn_t via_nubus_irq(int irq, void *dev_id, struct pt_regs *regs)
 	for (i = 0, irq_bit = 1 ; i < 7 ; i++, irq_bit <<= 1) {
 		if (events & irq_bit) {
 			via_irq_disable(NUBUS_SOURCE_BASE + i);
-			m68k_handle_int(NUBUS_SOURCE_BASE + i, regs);
+			mac_do_irq_list(NUBUS_SOURCE_BASE + i, regs);
 			via_irq_enable(NUBUS_SOURCE_BASE + i);
 		}
 	}
@@ -516,7 +529,6 @@ void via_irq_enable(int irq) {
 		}
 		via2[gIER] = irq_bit | 0x80;
 	} else if (irq_src == 7) {
-		nubus_active |= irq_bit;
 		if (rbv_present) {
 			/* enable the slot interrupt. SIER works like IER. */
 			via2[rSIER] = IER_SET_BIT(irq_idx);
@@ -538,6 +550,7 @@ void via_irq_enable(int irq) {
 				}
 			}
 		}
+		nubus_active |= irq_bit;
 	}
 }
 

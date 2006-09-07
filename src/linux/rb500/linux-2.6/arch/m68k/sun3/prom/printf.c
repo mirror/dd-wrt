@@ -8,6 +8,7 @@
  * about or use it!  It's simple and smelly anyway....
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 
 #include <asm/openprom.h>

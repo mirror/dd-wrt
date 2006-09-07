@@ -191,7 +191,7 @@ static int usb_ohci_au1xxx_probe(const struct hc_driver *driver,
 	au1xxx_start_ohc(dev);
 	ohci_hcd_init(hcd_to_ohci(hcd));
 
-	retval = usb_add_hcd(hcd, dev->resource[1].start, IRQF_DISABLED | IRQF_SHARED);
+	retval = usb_add_hcd(hcd, dev->resource[1].start, SA_INTERRUPT | SA_SHIRQ);
 	if (retval == 0)
 		return retval;
 

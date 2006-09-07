@@ -3,6 +3,7 @@
  * Licensed under the GPL
  */
 
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include "linux/sched.h"
 #include "linux/mm.h"

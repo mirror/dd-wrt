@@ -184,6 +184,7 @@ struct ocfs2_journal;
 struct ocfs2_journal_handle;
 struct ocfs2_super
 {
+	u32 osb_id;		/* id used by the proc interface */
 	struct task_struct *commit_task;
 	struct super_block *sb;
 	struct inode *root_inode;
@@ -221,11 +222,13 @@ struct ocfs2_super
 	unsigned long s_mount_opt;
 
 	u16 max_slots;
+	u16 num_nodes;
 	s16 node_num;
 	s16 slot_num;
 	int s_sectsize_bits;
 	int s_clustersize;
 	int s_clustersize_bits;
+	struct proc_dir_entry *proc_sub_dir; /* points to /proc/fs/ocfs2/<maj_min> */
 
 	atomic_t vol_state;
 	struct mutex recovery_lock;
@@ -291,6 +294,7 @@ struct ocfs2_super
 };
 
 #define OCFS2_SB(sb)	    ((struct ocfs2_super *)(sb)->s_fs_info)
+#define OCFS2_MAX_OSB_ID             65536
 
 static inline int ocfs2_should_order_data(struct inode *inode)
 {

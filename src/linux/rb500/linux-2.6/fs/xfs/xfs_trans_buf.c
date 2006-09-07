@@ -24,12 +24,14 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -318,7 +320,7 @@ xfs_trans_read_buf(
 			if (xfs_error_target == target) {
 				if (((xfs_req_num++) % xfs_error_mod) == 0) {
 					xfs_buf_relse(bp);
-					cmn_err(CE_DEBUG, "Returning error!\n");
+					printk("Returning error!\n");
 					return XFS_ERROR(EIO);
 				}
 			}
@@ -367,7 +369,7 @@ xfs_trans_read_buf(
 				 */
 				if (tp->t_flags & XFS_TRANS_DIRTY)
 					xfs_force_shutdown(tp->t_mountp,
-							SHUTDOWN_META_IO_ERROR);
+							   XFS_METADATA_IO_ERROR);
 				return error;
 			}
 		}
@@ -412,7 +414,7 @@ xfs_trans_read_buf(
 		xfs_ioerror_alert("xfs_trans_read_buf", mp,
 				  bp, blkno);
 		if (tp->t_flags & XFS_TRANS_DIRTY)
-			xfs_force_shutdown(tp->t_mountp, SHUTDOWN_META_IO_ERROR);
+			xfs_force_shutdown(tp->t_mountp, XFS_METADATA_IO_ERROR);
 		xfs_buf_relse(bp);
 		return error;
 	}
@@ -421,9 +423,9 @@ xfs_trans_read_buf(
 		if (xfs_error_target == target) {
 			if (((xfs_req_num++) % xfs_error_mod) == 0) {
 				xfs_force_shutdown(tp->t_mountp,
-						   SHUTDOWN_META_IO_ERROR);
+						   XFS_METADATA_IO_ERROR);
 				xfs_buf_relse(bp);
-				cmn_err(CE_DEBUG, "Returning trans error!\n");
+				printk("Returning error in trans!\n");
 				return XFS_ERROR(EIO);
 			}
 		}

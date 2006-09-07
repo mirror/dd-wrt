@@ -10,6 +10,7 @@
  *	Andi Kleen.
  *
  *	CPU hotplug support - ashok.raj@intel.com
+ *  $Id: process.c,v 1.38 2002/01/15 10:08:03 ak Exp $
  */
 
 /*
@@ -63,7 +64,6 @@ EXPORT_SYMBOL(boot_option_idle_override);
  * Powermanagement idle function, if any..
  */
 void (*pm_idle)(void);
-EXPORT_SYMBOL(pm_idle);
 static DEFINE_PER_CPU(unsigned int, cpu_idle_state);
 
 static ATOMIC_NOTIFIER_HEAD(idle_notifier);
@@ -111,7 +111,7 @@ static void default_idle(void)
 {
 	local_irq_enable();
 
-	current_thread_info()->status &= ~TS_POLLING;
+	clear_thread_flag(TIF_POLLING_NRFLAG);
 	smp_mb__after_clear_bit();
 	while (!need_resched()) {
 		local_irq_disable();
@@ -120,7 +120,7 @@ static void default_idle(void)
 		else
 			local_irq_enable();
 	}
-	current_thread_info()->status |= TS_POLLING;
+	set_thread_flag(TIF_POLLING_NRFLAG);
 }
 
 /*
@@ -203,7 +203,8 @@ static inline void play_dead(void)
  */
 void cpu_idle (void)
 {
-	current_thread_info()->status |= TS_POLLING;
+	set_thread_flag(TIF_POLLING_NRFLAG);
+
 	/* endless idle loop with no priority at all */
 	while (1) {
 		while (!need_resched()) {
@@ -296,7 +297,7 @@ void __show_regs(struct pt_regs * regs)
 		system_utsname.version);
 	printk("RIP: %04lx:[<%016lx>] ", regs->cs & 0xffff, regs->rip);
 	printk_address(regs->rip); 
-	printk("RSP: %04lx:%016lx  EFLAGS: %08lx\n", regs->ss, regs->rsp,
+	printk("\nRSP: %04lx:%016lx  EFLAGS: %08lx\n", regs->ss, regs->rsp,
 		regs->eflags);
 	printk("RAX: %016lx RBX: %016lx RCX: %016lx\n",
 	       regs->rax, regs->rbx, regs->rcx);
@@ -334,7 +335,7 @@ void show_regs(struct pt_regs *regs)
 {
 	printk("CPU %d:", smp_processor_id());
 	__show_regs(regs);
-	show_trace(NULL, regs, (void *)(regs + 1));
+	show_trace(&regs->rsp);
 }
 
 /*
@@ -364,11 +365,8 @@ void flush_thread(void)
 	struct task_struct *tsk = current;
 	struct thread_info *t = current_thread_info();
 
-	if (t->flags & _TIF_ABI_PENDING) {
+	if (t->flags & _TIF_ABI_PENDING)
 		t->flags ^= (_TIF_ABI_PENDING | _TIF_IA32);
-		if (t->flags & _TIF_IA32)
-			current_thread_info()->status |= TS_COMPAT;
-	}
 
 	tsk->thread.debugreg0 = 0;
 	tsk->thread.debugreg1 = 0;

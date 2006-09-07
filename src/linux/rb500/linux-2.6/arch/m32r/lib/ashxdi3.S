@@ -6,6 +6,7 @@
  */
 /* $Id$ */
 
+#include <linux/config.h>
 
 ;
 ;      input   (r0,r1)  src

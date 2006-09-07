@@ -12,6 +12,7 @@
  * Copyright (C) 2002 Stuart Menefy
  */
 
+#include <linux/config.h>
 #include <asm/irq.h>
 #include <asm/page.h>
 #include <asm/io.h>
@@ -44,13 +45,13 @@ static irqreturn_t cayman_interrupt_pci2(int irq, void *dev_id, struct pt_regs *
 static struct irqaction cayman_action_smsc = {
 	.name		= "Cayman SMSC Mux",
 	.handler	= cayman_interrupt_smsc,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 };
 
 static struct irqaction cayman_action_pci2 = {
 	.name		= "Cayman PCI2 Mux",
 	.handler	= cayman_interrupt_pci2,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 };
 
 static void enable_cayman_irq(unsigned int irq)
@@ -186,7 +187,7 @@ void init_cayman_irq(void)
 	}
 
 	for (i=0; i<NR_EXT_IRQS; i++) {
-		irq_desc[START_EXT_IRQS + i].chip = &cayman_irq_type;
+		irq_desc[START_EXT_IRQS + i].handler = &cayman_irq_type;
 	}
 
 	/* Setup the SMSC interrupt */

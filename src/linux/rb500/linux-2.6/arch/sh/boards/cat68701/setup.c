@@ -15,6 +15,7 @@
 #include <asm/io.h>
 #include <asm/machvec.h>
 #include <asm/mach/io.h>
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/sched.h>

@@ -15,7 +15,7 @@
 #include <linux/vmalloc.h>
 #include <linux/interrupt.h>
 #include <linux/bitops.h>
-#include <linux/mutex.h>
+#include <asm/semaphore.h>
 
 #include <linux/firmware.h>
 #include "base.h"
@@ -36,7 +36,7 @@ static int loading_timeout = 10;	/* In seconds */
 
 /* fw_lock could be moved to 'struct firmware_priv' but since it is just
  * guarding for corner cases a global lock should be OK */
-static DEFINE_MUTEX(fw_lock);
+static DECLARE_MUTEX(fw_lock);
 
 struct firmware_priv {
 	char fw_id[FIRMWARE_NAME_MAX];
@@ -142,9 +142,9 @@ firmware_loading_store(struct class_device *class_dev,
 
 	switch (loading) {
 	case 1:
-		mutex_lock(&fw_lock);
+		down(&fw_lock);
 		if (!fw_priv->fw) {
-			mutex_unlock(&fw_lock);
+			up(&fw_lock);
 			break;
 		}
 		vfree(fw_priv->fw->data);
@@ -152,7 +152,7 @@ firmware_loading_store(struct class_device *class_dev,
 		fw_priv->fw->size = 0;
 		fw_priv->alloc_size = 0;
 		set_bit(FW_STATUS_LOADING, &fw_priv->status);
-		mutex_unlock(&fw_lock);
+		up(&fw_lock);
 		break;
 	case 0:
 		if (test_bit(FW_STATUS_LOADING, &fw_priv->status)) {
@@ -185,7 +185,7 @@ firmware_data_read(struct kobject *kobj,
 	struct firmware *fw;
 	ssize_t ret_count = count;
 
-	mutex_lock(&fw_lock);
+	down(&fw_lock);
 	fw = fw_priv->fw;
 	if (!fw || test_bit(FW_STATUS_DONE, &fw_priv->status)) {
 		ret_count = -ENODEV;
@@ -200,7 +200,7 @@ firmware_data_read(struct kobject *kobj,
 
 	memcpy(buffer, fw->data + offset, ret_count);
 out:
-	mutex_unlock(&fw_lock);
+	up(&fw_lock);
 	return ret_count;
 }
 
@@ -253,7 +253,7 @@ firmware_data_write(struct kobject *kobj,
 	if (!capable(CAP_SYS_RAWIO))
 		return -EPERM;
 
-	mutex_lock(&fw_lock);
+	down(&fw_lock);
 	fw = fw_priv->fw;
 	if (!fw || test_bit(FW_STATUS_DONE, &fw_priv->status)) {
 		retval = -ENODEV;
@@ -268,7 +268,7 @@ firmware_data_write(struct kobject *kobj,
 	fw->size = max_t(size_t, offset + count, fw->size);
 	retval = count;
 out:
-	mutex_unlock(&fw_lock);
+	up(&fw_lock);
 	return retval;
 }
 
@@ -436,14 +436,14 @@ _request_firmware(const struct firmware **firmware_p, const char *name,
 	} else
 		wait_for_completion(&fw_priv->completion);
 
-	mutex_lock(&fw_lock);
+	down(&fw_lock);
 	if (!fw_priv->fw->size || test_bit(FW_STATUS_ABORT, &fw_priv->status)) {
 		retval = -ENOENT;
 		release_firmware(fw_priv->fw);
 		*firmware_p = NULL;
 	}
 	fw_priv->fw = NULL;
-	mutex_unlock(&fw_lock);
+	up(&fw_lock);
 	class_device_unregister(class_dev);
 	goto out;
 

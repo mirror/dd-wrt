@@ -1,6 +1,7 @@
 #ifndef _PARISC_DMA_MAPPING_H
 #define _PARISC_DMA_MAPPING_H
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <asm/cacheflush.h>
 #include <asm/scatterlist.h>

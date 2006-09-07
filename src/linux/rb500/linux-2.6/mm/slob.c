@@ -29,6 +29,7 @@
  * essentially no allocation space overhead.
  */
 
+#include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/mm.h>
 #include <linux/cache.h>

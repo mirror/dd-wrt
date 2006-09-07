@@ -63,7 +63,7 @@
 
 /* Current ACPICA subsystem version in YYYYMMDD format */
 
-#define ACPI_CA_VERSION                 0x20060623
+#define ACPI_CA_VERSION                 0x20060127
 
 /*
  * OS name, used for the _OS object.  The _OS object is essentially obsolete,
@@ -81,7 +81,6 @@
 #define ACPI_MAX_PARSE_CACHE_DEPTH      96	/* Parse tree objects */
 #define ACPI_MAX_EXTPARSE_CACHE_DEPTH   96	/* Parse tree objects */
 #define ACPI_MAX_OBJECT_CACHE_DEPTH     96	/* Interpreter operand objects */
-#define ACPI_MAX_NAMESPACE_CACHE_DEPTH  96	/* Namespace objects */
 
 /*
  * Should the subsystem abort the loading of an ACPI table if the
@@ -103,9 +102,9 @@
 
 #define ACPI_MAX_SEMAPHORE_COUNT        256
 
-/* Maximum object reference count (detects object deletion issues) */
+/* Max reference count (for debug only) */
 
-#define ACPI_MAX_REFERENCE_COUNT        0x800
+#define ACPI_MAX_REFERENCE_COUNT        0x400
 
 /* Size of cached memory mapping for system memory operation region */
 
@@ -172,7 +171,12 @@
 
 /* Array sizes.  Used for range checking also */
 
-#define ACPI_MAX_MATCH_OPCODE           5
+#define ACPI_NUM_ACCESS_TYPES           6
+#define ACPI_NUM_UPDATE_RULES           3
+#define ACPI_NUM_LOCK_RULES             2
+#define ACPI_NUM_MATCH_OPS              6
+#define ACPI_NUM_OPCODES                256
+#define ACPI_NUM_FIELD_NAMES            2
 
 /* RSDP checksums */
 
@@ -182,6 +186,10 @@
 /* SMBus bidirectional buffer size */
 
 #define ACPI_SMBUS_BUFFER_SIZE          34
+
+/* Number of strings associated with the _OSI reserved method */
+
+#define ACPI_NUM_OSI_STRINGS            10
 
 /******************************************************************************
  *

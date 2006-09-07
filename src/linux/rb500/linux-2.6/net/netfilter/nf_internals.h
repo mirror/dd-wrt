@@ -1,6 +1,7 @@
 #ifndef _NF_INTERNALS_H
 #define _NF_INTERNALS_H
 
+#include <linux/config.h>
 #include <linux/list.h>
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>

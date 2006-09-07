@@ -21,10 +21,4 @@
  */
 #define QEMU_C0_COUNTER_CLOCK	100000000
 
-/*
- * Magic qemu system control location.
- */
-#define QEMU_RESTART_REG	0xBFBF0000
-#define QEMU_HALT_REG		0xBFBF0004
-
 #endif /* __ASM_QEMU_H */

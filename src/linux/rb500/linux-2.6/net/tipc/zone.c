@@ -44,24 +44,19 @@
 
 struct _zone *tipc_zone_create(u32 addr)
 {
-	struct _zone *z_ptr;
+	struct _zone *z_ptr = NULL;
 	u32 z_num;
 
-	if (!tipc_addr_domain_valid(addr)) {
-		err("Zone creation failed, invalid domain 0x%x\n", addr);
+	if (!tipc_addr_domain_valid(addr))
 		return NULL;
-	}
 
 	z_ptr = (struct _zone *)kmalloc(sizeof(*z_ptr), GFP_ATOMIC);
-	if (!z_ptr) {
-		warn("Zone creation failed, insufficient memory\n");
-		return NULL;
+	if (z_ptr != NULL) {
+		memset(z_ptr, 0, sizeof(*z_ptr));
+		z_num = tipc_zone(addr);
+		z_ptr->addr = tipc_addr(z_num, 0, 0);
+		tipc_net.zones[z_num] = z_ptr;
 	}
-
-	memset(z_ptr, 0, sizeof(*z_ptr));
-	z_num = tipc_zone(addr);
-	z_ptr->addr = tipc_addr(z_num, 0, 0);
-	tipc_net.zones[z_num] = z_ptr;
 	return z_ptr;
 }
 

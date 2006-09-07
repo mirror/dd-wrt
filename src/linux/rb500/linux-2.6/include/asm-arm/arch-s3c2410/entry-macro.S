@@ -18,6 +18,8 @@
 
 #define INTPND		(0x10)
 #define INTOFFSET	(0x14)
+#define EXTINTPEND	(0xa8)
+#define EXTINTMASK	(0xa4)
 
 #include <asm/hardware.h>
 #include <asm/arch/irqs.h>
@@ -26,23 +28,37 @@
 
 		mov	\base, #S3C24XX_VA_IRQ
 
+		ldr	\irqstat, [ \base, #INTPND]
+		bics	\irqnr, \irqstat, #3<<4		@@ only an GPIO IRQ
+		beq	2000f
+
 		@@ try the interrupt offset register, since it is there
 
-		ldr	\irqstat, [ \base, #INTPND ]
-		teq	\irqstat, #0
-		beq	1002f
 		ldr	\irqnr, [ \base, #INTOFFSET ]
 		mov	\tmp, #1
 		tst	\irqstat, \tmp, lsl \irqnr
+		addne	\irqnr, \irqnr, #IRQ_EINT0
 		bne	1001f
 
 		@@ the number specified is not a valid irq, so try
 		@@ and work it out for ourselves
 
-		mov	\irqnr, #0		@@ start here
+		mov	\irqnr, #IRQ_EINT0		@@ start here
+		b	3000f
+
+2000:
+		@@ load the GPIO interrupt register, and check it
+
+		add	\tmp, \base, #S3C24XX_VA_GPIO - S3C24XX_VA_IRQ
+		ldr	\irqstat, [ \tmp, # EXTINTPEND ]
+		ldr	\irqnr,   [ \tmp, # EXTINTMASK ]
+		bics	\irqstat, \irqstat, \irqnr
+		beq	1001f
+
+		mov	\irqnr, #(IRQ_EINT4 - 4)
 
 		@@ work out which irq (if any) we got
-
+3000:
 		movs	\tmp, \irqstat, lsl#16
 		addeq	\irqnr, \irqnr, #16
 		moveq	\irqstat, \irqstat, lsr#16
@@ -59,9 +75,9 @@
 		addeq	\irqnr, \irqnr, #1
 
 		@@ we have the value
+		movs	\irqnr, \irqnr
+
 1001:
-		adds	\irqnr, \irqnr, #IRQ_EINT0
-1002:
 		@@ exit here, Z flag unset if IRQ
 
 	.endm

@@ -14,6 +14,7 @@
  * J Hadi Salim 980816:  ECN support
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

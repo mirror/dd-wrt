@@ -5,6 +5,7 @@
  * John Heffner <jheffner@sc.edu>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <net/tcp.h>
 

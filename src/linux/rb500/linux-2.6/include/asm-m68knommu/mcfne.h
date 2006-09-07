@@ -18,6 +18,7 @@
 #define	mcfne_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 /*
  *	Support for NE2000 clones devices in ColdFire based boards.

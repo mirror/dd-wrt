@@ -42,6 +42,7 @@
  * POSSIBILITY OF SUCH DAMAGES.
  */
 
+#include <linux/module.h>
 #include <acpi/acpi.h>
 
 #define _COMPONENT          ACPI_HARDWARE
@@ -60,13 +61,13 @@ ACPI_MODULE_NAME("hwtimer")
  ******************************************************************************/
 acpi_status acpi_get_timer_resolution(u32 * resolution)
 {
-	ACPI_FUNCTION_TRACE(acpi_get_timer_resolution);
+	ACPI_FUNCTION_TRACE("acpi_get_timer_resolution");
 
 	if (!resolution) {
 		return_ACPI_STATUS(AE_BAD_PARAMETER);
 	}
 
-	if (acpi_gbl_FADT->tmr_val_ext == 0) {
+	if (0 == acpi_gbl_FADT->tmr_val_ext) {
 		*resolution = 24;
 	} else {
 		*resolution = 32;
@@ -74,8 +75,6 @@ acpi_status acpi_get_timer_resolution(u32 * resolution)
 
 	return_ACPI_STATUS(AE_OK);
 }
-
-ACPI_EXPORT_SYMBOL(acpi_get_timer_resolution)
 
 /******************************************************************************
  *
@@ -88,11 +87,12 @@ ACPI_EXPORT_SYMBOL(acpi_get_timer_resolution)
  * DESCRIPTION: Obtains current value of ACPI PM Timer (in ticks).
  *
  ******************************************************************************/
+
 acpi_status acpi_get_timer(u32 * ticks)
 {
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(acpi_get_timer);
+	ACPI_FUNCTION_TRACE("acpi_get_timer");
 
 	if (!ticks) {
 		return_ACPI_STATUS(AE_BAD_PARAMETER);
@@ -103,7 +103,7 @@ acpi_status acpi_get_timer(u32 * ticks)
 	return_ACPI_STATUS(status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_timer)
+EXPORT_SYMBOL(acpi_get_timer);
 
 /******************************************************************************
  *
@@ -133,6 +133,7 @@ ACPI_EXPORT_SYMBOL(acpi_get_timer)
  *              2**32 Ticks / 3,600,000 Ticks/Sec = 1193 sec or 19.88 minutes
  *
  ******************************************************************************/
+
 acpi_status
 acpi_get_timer_duration(u32 start_ticks, u32 end_ticks, u32 * time_elapsed)
 {
@@ -140,7 +141,7 @@ acpi_get_timer_duration(u32 start_ticks, u32 end_ticks, u32 * time_elapsed)
 	u32 delta_ticks;
 	acpi_integer quotient;
 
-	ACPI_FUNCTION_TRACE(acpi_get_timer_duration);
+	ACPI_FUNCTION_TRACE("acpi_get_timer_duration");
 
 	if (!time_elapsed) {
 		return_ACPI_STATUS(AE_BAD_PARAMETER);
@@ -153,8 +154,7 @@ acpi_get_timer_duration(u32 start_ticks, u32 end_ticks, u32 * time_elapsed)
 	if (start_ticks < end_ticks) {
 		delta_ticks = end_ticks - start_ticks;
 	} else if (start_ticks > end_ticks) {
-		if (acpi_gbl_FADT->tmr_val_ext == 0) {
-
+		if (0 == acpi_gbl_FADT->tmr_val_ext) {
 			/* 24-bit Timer */
 
 			delta_ticks =
@@ -183,4 +183,4 @@ acpi_get_timer_duration(u32 start_ticks, u32 end_ticks, u32 * time_elapsed)
 	return_ACPI_STATUS(status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_timer_duration)
+EXPORT_SYMBOL(acpi_get_timer_duration);

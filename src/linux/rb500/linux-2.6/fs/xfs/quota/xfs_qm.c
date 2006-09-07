@@ -24,6 +24,7 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_alloc.h"
 #include "xfs_dmapi.h"
@@ -32,6 +33,7 @@
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -1601,7 +1603,7 @@ xfs_qm_dqiterate(
 				  maxlblkcnt - lblkno,
 				  XFS_BMAPI_METADATA,
 				  NULL,
-				  0, map, &nmaps, NULL, NULL);
+				  0, map, &nmaps, NULL);
 		xfs_iunlock(qip, XFS_ILOCK_SHARED);
 		if (error)
 			break;
@@ -1903,7 +1905,9 @@ xfs_qm_quotacheck(
 		 */
 		if ((error = xfs_bulkstat(mp, &lastino, &count,
 				     xfs_qm_dqusage_adjust, NULL,
-				     structsz, NULL, BULKSTAT_FG_IGET, &done)))
+				     structsz, NULL,
+				     BULKSTAT_FG_IGET|BULKSTAT_FG_VFSLOCKED,
+				     &done)))
 			break;
 
 	} while (! done);

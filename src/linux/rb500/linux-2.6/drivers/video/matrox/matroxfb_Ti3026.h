@@ -1,6 +1,7 @@
 #ifndef __MATROXFB_TI3026_H__
 #define __MATROXFB_TI3026_H__
 
+#include <linux/config.h>
 
 #include "matroxfb_base.h"
 

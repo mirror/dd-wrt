@@ -21,6 +21,7 @@
  *
  ********************************************************************/
 
+#include <linux/config.h>
 #include <linux/module.h>
  
 #define DRIVER_NAME 		"vlsi_ir"
@@ -958,7 +959,7 @@ static int vlsi_hard_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 			    ||  (now.tv_sec==ready.tv_sec && now.tv_usec>=ready.tv_usec))
 			    	break;
 			udelay(100);
-			/* must not sleep here - called under netif_tx_lock! */
+			/* must not sleep here - we are called under xmit_lock! */
 		}
 	}
 
@@ -1517,7 +1518,7 @@ static int vlsi_open(struct net_device *ndev)
 
 	outb(IRINTR_INT_MASK, ndev->base_addr+VLSI_PIO_IRINTR);
 
-	if (request_irq(ndev->irq, vlsi_interrupt, IRQF_SHARED,
+	if (request_irq(ndev->irq, vlsi_interrupt, SA_SHIRQ,
 			drivername, ndev)) {
 		IRDA_WARNING("%s: couldn't get IRQ: %d\n",
 			     __FUNCTION__, ndev->irq);

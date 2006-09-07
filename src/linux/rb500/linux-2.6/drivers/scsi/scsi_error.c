@@ -26,13 +26,13 @@
 #include <linux/delay.h>
 
 #include <scsi/scsi.h>
-#include <scsi/scsi_cmnd.h>
 #include <scsi/scsi_dbg.h>
 #include <scsi/scsi_device.h>
 #include <scsi/scsi_eh.h>
 #include <scsi/scsi_transport.h>
 #include <scsi/scsi_host.h>
 #include <scsi/scsi_ioctl.h>
+#include <scsi/scsi_request.h>
 
 #include "scsi_priv.h"
 #include "scsi_logging.h"
@@ -56,28 +56,6 @@ void scsi_eh_wakeup(struct Scsi_Host *shost)
 				printk("Waking error handler thread\n"));
 	}
 }
-
-/**
- * scsi_schedule_eh - schedule EH for SCSI host
- * @shost:	SCSI host to invoke error handling on.
- *
- * Schedule SCSI EH without scmd.
- **/
-void scsi_schedule_eh(struct Scsi_Host *shost)
-{
-	unsigned long flags;
-
-	spin_lock_irqsave(shost->host_lock, flags);
-
-	if (scsi_host_set_state(shost, SHOST_RECOVERY) == 0 ||
-	    scsi_host_set_state(shost, SHOST_CANCEL_RECOVERY) == 0) {
-		shost->host_eh_scheduled++;
-		scsi_eh_wakeup(shost);
-	}
-
-	spin_unlock_irqrestore(shost->host_lock, flags);
-}
-EXPORT_SYMBOL_GPL(scsi_schedule_eh);
 
 /**
  * scsi_eh_scmd_add - add scsi cmd to error handling.
@@ -474,6 +452,7 @@ static int scsi_send_eh_cmnd(struct scsi_cmnd *scmd, int timeout)
 			(sdev->lun << 5 & 0xe0);
 
 	shost->eh_action = &done;
+	scmd->request->rq_status = RQ_SCSI_BUSY;
 
 	spin_lock_irqsave(shost->host_lock, flags);
 	scsi_log_send(scmd);
@@ -482,6 +461,7 @@ static int scsi_send_eh_cmnd(struct scsi_cmnd *scmd, int timeout)
 
 	timeleft = wait_for_completion_timeout(&done, timeout);
 
+	scmd->request->rq_status = RQ_SCSI_DONE;
 	shost->eh_action = NULL;
 
 	scsi_log_completion(scmd, SUCCESS);
@@ -1537,7 +1517,7 @@ int scsi_error_handler(void *data)
 	 */
 	set_current_state(TASK_INTERRUPTIBLE);
 	while (!kthread_should_stop()) {
-		if ((shost->host_failed == 0 && shost->host_eh_scheduled == 0) ||
+		if (shost->host_failed == 0 ||
 		    shost->host_failed != shost->host_busy) {
 			SCSI_LOG_ERROR_RECOVERY(1,
 				printk("Error handler scsi_eh_%d sleeping\n",
@@ -1672,13 +1652,12 @@ int
 scsi_reset_provider(struct scsi_device *dev, int flag)
 {
 	struct scsi_cmnd *scmd = scsi_get_command(dev, GFP_KERNEL);
-	struct Scsi_Host *shost = dev->host;
 	struct request req;
-	unsigned long flags;
 	int rtn;
 
 	scmd->request = &req;
 	memset(&scmd->eh_timeout, 0, sizeof(scmd->eh_timeout));
+	scmd->request->rq_status      	= RQ_SCSI_BUSY;
 
 	memset(&scmd->cmnd, '\0', sizeof(scmd->cmnd));
     
@@ -1692,6 +1671,8 @@ scsi_reset_provider(struct scsi_device *dev, int flag)
 	scmd->cmd_len			= 0;
 
 	scmd->sc_data_direction		= DMA_BIDIRECTIONAL;
+	scmd->sc_request		= NULL;
+	scmd->sc_magic			= SCSI_CMND_MAGIC;
 
 	init_timer(&scmd->eh_timeout);
 
@@ -1700,10 +1681,6 @@ scsi_reset_provider(struct scsi_device *dev, int flag)
 	 * so use the pid as an identifier.
 	 */
 	scmd->pid			= 0;
-
-	spin_lock_irqsave(shost->host_lock, flags);
-	shost->tmf_in_progress = 1;
-	spin_unlock_irqrestore(shost->host_lock, flags);
 
 	switch (flag) {
 	case SCSI_TRY_RESET_DEVICE:
@@ -1722,22 +1699,6 @@ scsi_reset_provider(struct scsi_device *dev, int flag)
 	default:
 		rtn = FAILED;
 	}
-
-	spin_lock_irqsave(shost->host_lock, flags);
-	shost->tmf_in_progress = 0;
-	spin_unlock_irqrestore(shost->host_lock, flags);
-
-	/*
-	 * be sure to wake up anyone who was sleeping or had their queue
-	 * suspended while we performed the TMF.
-	 */
-	SCSI_LOG_ERROR_RECOVERY(3,
-		printk("%s: waking up host to restart after TMF\n",
-		__FUNCTION__));
-
-	wake_up(&shost->host_wait);
-
-	scsi_run_host_queues(shost);
 
 	scsi_next_command(scmd);
 	return rtn;
@@ -1807,6 +1768,14 @@ int scsi_normalize_sense(const u8 *sense_buffer, int sb_len,
 	return 1;
 }
 EXPORT_SYMBOL(scsi_normalize_sense);
+
+int scsi_request_normalize_sense(struct scsi_request *sreq,
+				 struct scsi_sense_hdr *sshdr)
+{
+	return scsi_normalize_sense(sreq->sr_sense_buffer,
+			sizeof(sreq->sr_sense_buffer), sshdr);
+}
+EXPORT_SYMBOL(scsi_request_normalize_sense);
 
 int scsi_command_normalize_sense(struct scsi_cmnd *cmd,
 				 struct scsi_sense_hdr *sshdr)

@@ -2735,7 +2735,7 @@ static int __devinit hrz_probe(struct pci_dev *pci_dev, const struct pci_device_
 	irq = pci_dev->irq;
 	if (request_irq(irq,
 			interrupt_handler,
-			IRQF_SHARED, /* irqflags guess */
+			SA_SHIRQ, /* irqflags guess */
 			DEV_LABEL, /* name guess */
 			dev)) {
 		PRINTD(DBG_WARN, "request IRQ failed!");

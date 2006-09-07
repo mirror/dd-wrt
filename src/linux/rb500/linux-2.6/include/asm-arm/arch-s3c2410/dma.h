@@ -18,6 +18,7 @@
 #ifndef __ASM_ARCH_DMA_H
 #define __ASM_ARCH_DMA_H __FILE__
 
+#include <linux/config.h>
 #include <linux/sysdev.h>
 #include "hardware.h"
 

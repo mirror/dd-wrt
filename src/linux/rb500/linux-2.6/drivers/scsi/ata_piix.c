@@ -93,7 +93,7 @@
 #include <linux/libata.h>
 
 #define DRV_NAME	"ata_piix"
-#define DRV_VERSION	"2.00"
+#define DRV_VERSION	"1.05"
 
 enum {
 	PIIX_IOCFG		= 0x54, /* IDE I/O configuration register */
@@ -146,10 +146,11 @@ struct piix_map_db {
 
 static int piix_init_one (struct pci_dev *pdev,
 				    const struct pci_device_id *ent);
+
+static int piix_pata_probe_reset(struct ata_port *ap, unsigned int *classes);
+static int piix_sata_probe_reset(struct ata_port *ap, unsigned int *classes);
 static void piix_set_piomode (struct ata_port *ap, struct ata_device *adev);
 static void piix_set_dmamode (struct ata_port *ap, struct ata_device *adev);
-static void piix_pata_error_handler(struct ata_port *ap);
-static void piix_sata_error_handler(struct ata_port *ap);
 
 static unsigned int in_module_init = 1;
 
@@ -158,7 +159,6 @@ static const struct pci_device_id piix_pci_tbl[] = {
 	{ 0x8086, 0x7111, PCI_ANY_ID, PCI_ANY_ID, 0, 0, piix4_pata },
 	{ 0x8086, 0x24db, PCI_ANY_ID, PCI_ANY_ID, 0, 0, ich5_pata },
 	{ 0x8086, 0x25a2, PCI_ANY_ID, PCI_ANY_ID, 0, 0, ich5_pata },
-	{ 0x8086, 0x27df, PCI_ANY_ID, PCI_ANY_ID, 0, 0, ich5_pata },
 #endif
 
 	/* NOTE: The following PCI ids must be kept in sync with the
@@ -218,7 +218,6 @@ static struct scsi_host_template piix_sht = {
 	.proc_name		= DRV_NAME,
 	.dma_boundary		= ATA_DMA_BOUNDARY,
 	.slave_configure	= ata_scsi_slave_config,
-	.slave_destroy		= ata_scsi_slave_destroy,
 	.bios_param		= ata_std_bios_param,
 	.resume			= ata_scsi_device_resume,
 	.suspend		= ata_scsi_device_suspend,
@@ -228,7 +227,6 @@ static const struct ata_port_operations piix_pata_ops = {
 	.port_disable		= ata_port_disable,
 	.set_piomode		= piix_set_piomode,
 	.set_dmamode		= piix_set_dmamode,
-	.mode_filter		= ata_pci_default_filter,
 
 	.tf_load		= ata_tf_load,
 	.tf_read		= ata_tf_read,
@@ -236,18 +234,16 @@ static const struct ata_port_operations piix_pata_ops = {
 	.exec_command		= ata_exec_command,
 	.dev_select		= ata_std_dev_select,
 
+	.probe_reset		= piix_pata_probe_reset,
+
 	.bmdma_setup		= ata_bmdma_setup,
 	.bmdma_start		= ata_bmdma_start,
 	.bmdma_stop		= ata_bmdma_stop,
 	.bmdma_status		= ata_bmdma_status,
 	.qc_prep		= ata_qc_prep,
 	.qc_issue		= ata_qc_issue_prot,
-	.data_xfer		= ata_pio_data_xfer,
 
-	.freeze			= ata_bmdma_freeze,
-	.thaw			= ata_bmdma_thaw,
-	.error_handler		= piix_pata_error_handler,
-	.post_internal_cmd	= ata_bmdma_post_internal_cmd,
+	.eng_timeout		= ata_eng_timeout,
 
 	.irq_handler		= ata_interrupt,
 	.irq_clear		= ata_bmdma_irq_clear,
@@ -266,18 +262,16 @@ static const struct ata_port_operations piix_sata_ops = {
 	.exec_command		= ata_exec_command,
 	.dev_select		= ata_std_dev_select,
 
+	.probe_reset		= piix_sata_probe_reset,
+
 	.bmdma_setup		= ata_bmdma_setup,
 	.bmdma_start		= ata_bmdma_start,
 	.bmdma_stop		= ata_bmdma_stop,
 	.bmdma_status		= ata_bmdma_status,
 	.qc_prep		= ata_qc_prep,
 	.qc_issue		= ata_qc_issue_prot,
-	.data_xfer		= ata_pio_data_xfer,
 
-	.freeze			= ata_bmdma_freeze,
-	.thaw			= ata_bmdma_thaw,
-	.error_handler		= piix_sata_error_handler,
-	.post_internal_cmd	= ata_bmdma_post_internal_cmd,
+	.eng_timeout		= ata_eng_timeout,
 
 	.irq_handler		= ata_interrupt,
 	.irq_clear		= ata_bmdma_irq_clear,
@@ -461,51 +455,59 @@ cbl40:
 }
 
 /**
- *	piix_pata_prereset - prereset for PATA host controller
+ *	piix_pata_probeinit - probeinit for PATA host controller
  *	@ap: Target port
  *
- *	Prereset including cable detection.
+ *	Probeinit including cable detection.
  *
  *	LOCKING:
  *	None (inherited from caller).
  */
-static int piix_pata_prereset(struct ata_port *ap)
+static void piix_pata_probeinit(struct ata_port *ap)
+{
+	piix_pata_cbl_detect(ap);
+	ata_std_probeinit(ap);
+}
+
+/**
+ *	piix_pata_probe_reset - Perform reset on PATA port and classify
+ *	@ap: Port to reset
+ *	@classes: Resulting classes of attached devices
+ *
+ *	Reset PATA phy and classify attached devices.
+ *
+ *	LOCKING:
+ *	None (inherited from caller).
+ */
+static int piix_pata_probe_reset(struct ata_port *ap, unsigned int *classes)
 {
 	struct pci_dev *pdev = to_pci_dev(ap->host_set->dev);
 
 	if (!pci_test_config_bits(pdev, &piix_enable_bits[ap->hard_port_no])) {
-		ata_port_printk(ap, KERN_INFO, "port disabled. ignoring.\n");
-		ap->eh_context.i.action &= ~ATA_EH_RESET_MASK;
+		printk(KERN_INFO "ata%u: port disabled. ignoring.\n", ap->id);
 		return 0;
 	}
 
-	piix_pata_cbl_detect(ap);
-
-	return ata_std_prereset(ap);
-}
-
-static void piix_pata_error_handler(struct ata_port *ap)
-{
-	ata_bmdma_drive_eh(ap, piix_pata_prereset, ata_std_softreset, NULL,
-			   ata_std_postreset);
+	return ata_drive_probe_reset(ap, piix_pata_probeinit,
+				     ata_std_softreset, NULL,
+				     ata_std_postreset, classes);
 }
 
 /**
- *	piix_sata_prereset - prereset for SATA host controller
- *	@ap: Target port
+ *	piix_sata_probe - Probe PCI device for present SATA devices
+ *	@ap: Port associated with the PCI device we wish to probe
  *
  *	Reads and configures SATA PCI device's PCI config register
  *	Port Configuration and Status (PCS) to determine port and
- *	device availability.  Return -ENODEV to skip reset if no
- *	device is present.
+ *	device availability.
  *
  *	LOCKING:
  *	None (inherited from caller).
  *
  *	RETURNS:
- *	0 if device is present, -ENODEV otherwise.
+ *	Mask of avaliable devices on the port.
  */
-static int piix_sata_prereset(struct ata_port *ap)
+static unsigned int piix_sata_probe (struct ata_port *ap)
 {
 	struct pci_dev *pdev = to_pci_dev(ap->host_set->dev);
 	const unsigned int *map = ap->host_set->private_data;
@@ -547,19 +549,29 @@ static int piix_sata_prereset(struct ata_port *ap)
 	DPRINTK("ata%u: LEAVE, pcs=0x%x present_mask=0x%x\n",
 		ap->id, pcs, present_mask);
 
-	if (!present_mask) {
-		ata_port_printk(ap, KERN_INFO, "SATA port has no device.\n");
-		ap->eh_context.i.action &= ~ATA_EH_RESET_MASK;
+	return present_mask;
+}
+
+/**
+ *	piix_sata_probe_reset - Perform reset on SATA port and classify
+ *	@ap: Port to reset
+ *	@classes: Resulting classes of attached devices
+ *
+ *	Reset SATA phy and classify attached devices.
+ *
+ *	LOCKING:
+ *	None (inherited from caller).
+ */
+static int piix_sata_probe_reset(struct ata_port *ap, unsigned int *classes)
+{
+	if (!piix_sata_probe(ap)) {
+		printk(KERN_INFO "ata%u: SATA port has no device.\n", ap->id);
 		return 0;
 	}
 
-	return ata_std_prereset(ap);
-}
-
-static void piix_sata_error_handler(struct ata_port *ap)
-{
-	ata_bmdma_drive_eh(ap, piix_sata_prereset, ata_std_softreset, NULL,
-			   ata_std_postreset);
+	return ata_drive_probe_reset(ap, ata_std_probeinit,
+				     ata_std_softreset, NULL,
+				     ata_std_postreset, classes);
 }
 
 /**
@@ -748,15 +760,15 @@ static int __devinit piix_check_450nx_errata(struct pci_dev *ata_dev)
 		pci_read_config_byte(pdev, PCI_REVISION_ID, &rev);
 		pci_read_config_word(pdev, 0x41, &cfg);
 		/* Only on the original revision: IDE DMA can hang */
-		if (rev == 0x00)
+		if(rev == 0x00)
 			no_piix_dma = 1;
 		/* On all revisions below 5 PXB bus lock must be disabled for IDE */
-		else if (cfg & (1<<14) && rev < 5)
+		else if(cfg & (1<<14) && rev < 5)
 			no_piix_dma = 2;
 	}
-	if (no_piix_dma)
+	if(no_piix_dma)
 		dev_printk(KERN_WARNING, &ata_dev->dev, "450NX errata present, disabling IDE DMA.\n");
-	if (no_piix_dma == 2)
+	if(no_piix_dma == 2)
 		dev_printk(KERN_WARNING, &ata_dev->dev, "A BIOS update may resolve this.\n");
 	return no_piix_dma;
 }

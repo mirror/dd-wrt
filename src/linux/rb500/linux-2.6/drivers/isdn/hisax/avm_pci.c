@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include "hisax.h"
 #include "isac.h"
@@ -808,7 +809,7 @@ setup_avm_pcipnp(struct IsdnCard *card)
 		printk(KERN_WARNING "FritzPCI: No PCI card found\n");
 		return(0);
 	}
-	cs->irq_flags |= IRQF_SHARED;
+	cs->irq_flags |= SA_SHIRQ;
 #else
 	printk(KERN_WARNING "FritzPCI: NO_PCI_BIOS\n");
 	return (0);

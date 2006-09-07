@@ -43,8 +43,6 @@ void snd_opl4_write(struct snd_opl4 *opl4, u8 reg, u8 value)
 	outb(value, opl4->pcm_port + 1);
 }
 
-EXPORT_SYMBOL(snd_opl4_write);
-
 u8 snd_opl4_read(struct snd_opl4 *opl4, u8 reg)
 {
 	snd_opl4_wait(opl4);
@@ -53,8 +51,6 @@ u8 snd_opl4_read(struct snd_opl4 *opl4, u8 reg)
 	snd_opl4_wait(opl4);
 	return inb(opl4->pcm_port + 1);
 }
-
-EXPORT_SYMBOL(snd_opl4_read);
 
 void snd_opl4_read_memory(struct snd_opl4 *opl4, char *buf, int offset, int size)
 {
@@ -80,8 +76,6 @@ void snd_opl4_read_memory(struct snd_opl4 *opl4, char *buf, int offset, int size
 	spin_unlock_irqrestore(&opl4->reg_lock, flags);
 }
 
-EXPORT_SYMBOL(snd_opl4_read_memory);
-
 void snd_opl4_write_memory(struct snd_opl4 *opl4, const char *buf, int offset, int size)
 {
 	unsigned long flags;
@@ -105,8 +99,6 @@ void snd_opl4_write_memory(struct snd_opl4 *opl4, const char *buf, int offset, i
 
 	spin_unlock_irqrestore(&opl4->reg_lock, flags);
 }
-
-EXPORT_SYMBOL(snd_opl4_write_memory);
 
 static void snd_opl4_enable_opl4(struct snd_opl4 *opl4)
 {
@@ -264,6 +256,10 @@ int snd_opl4_create(struct snd_card *card,
 	return 0;
 }
 
+EXPORT_SYMBOL(snd_opl4_write);
+EXPORT_SYMBOL(snd_opl4_read);
+EXPORT_SYMBOL(snd_opl4_write_memory);
+EXPORT_SYMBOL(snd_opl4_read_memory);
 EXPORT_SYMBOL(snd_opl4_create);
 
 static int __init alsa_opl4_init(void)

@@ -18,6 +18,7 @@
  *  option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/mm.h>

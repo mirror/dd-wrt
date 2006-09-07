@@ -4,6 +4,7 @@
  * in one page).  This script controls its layout.
  */
 
+#include <linux/config.h>
 
 #include <asm/system.h>
 

@@ -1,5 +1,4 @@
-/* in case the preprocessor is a 32bit one */
-#undef i386
+#include <linux/config.h>
 #ifdef CONFIG_LD_SCRIPT_STATIC
 #include "uml.lds.S"
 #else

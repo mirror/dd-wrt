@@ -1,6 +1,7 @@
 #ifndef _ASM_M32R_PAGE_H
 #define _ASM_M32R_PAGE_H
 
+#include <linux/config.h>
 
 /* PAGE_SHIFT determines the page size */
 #define PAGE_SHIFT	12

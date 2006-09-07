@@ -202,8 +202,7 @@ static int cobra_connect(struct gameport *gameport, struct gameport_driver *drv)
 			goto fail3;
 		}
 
-		snprintf(cobra->phys[i], sizeof(cobra->phys[i]),
-			 "%s/input%d", gameport->phys, i);
+		sprintf(cobra->phys[i], "%s/input%d", gameport->phys, i);
 
 		input_dev->name = "Creative Labs Blaster GamePad Cobra";
 		input_dev->phys = cobra->phys[i];

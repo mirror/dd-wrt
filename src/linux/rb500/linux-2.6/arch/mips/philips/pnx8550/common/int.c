@@ -23,6 +23,7 @@
  *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
  *
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/sched.h>
@@ -219,13 +220,13 @@ static struct hw_interrupt_type level_irq_type = {
 
 static struct irqaction gic_action = {
 	.handler =	no_action,
-	.flags =	IRQF_DISABLED,
+	.flags =	SA_INTERRUPT,
 	.name =		"GIC",
 };
 
 static struct irqaction timer_action = {
 	.handler =	no_action,
-	.flags =	IRQF_DISABLED,
+	.flags =	SA_INTERRUPT,
 	.name =		"Timer",
 };
 
@@ -235,7 +236,7 @@ void __init arch_init_irq(void)
 	int configPR;
 
 	for (i = 0; i < PNX8550_INT_CP0_TOTINT; i++) {
-		irq_desc[i].chip = &level_irq_type;
+		irq_desc[i].handler = &level_irq_type;
 		pnx8550_ack(i);	/* mask the irq just in case  */
 	}
 
@@ -272,7 +273,7 @@ void __init arch_init_irq(void)
 		/* mask/priority is still 0 so we will not get any
 		 * interrupts until it is unmasked */
 
-		irq_desc[i].chip = &level_irq_type;
+		irq_desc[i].handler = &level_irq_type;
 	}
 
 	/* Priority level 0 */
@@ -281,12 +282,12 @@ void __init arch_init_irq(void)
 	/* Set int vector table address */
 	PNX8550_GIC_VECTOR_0 = PNX8550_GIC_VECTOR_1 = 0;
 
-	irq_desc[MIPS_CPU_GIC_IRQ].chip = &level_irq_type;
+	irq_desc[MIPS_CPU_GIC_IRQ].handler = &level_irq_type;
 	setup_irq(MIPS_CPU_GIC_IRQ, &gic_action);
 
 	/* init of Timer interrupts */
 	for (i = PNX8550_INT_TIMER_MIN; i <= PNX8550_INT_TIMER_MAX; i++) {
-		irq_desc[i].chip = &level_irq_type;
+		irq_desc[i].handler = &level_irq_type;
 	}
 
 	/* Stop Timer 1-3 */
@@ -294,7 +295,7 @@ void __init arch_init_irq(void)
 	configPR |= 0x00000038;
 	write_c0_config7(configPR);
 
-	irq_desc[MIPS_CPU_TIMER_IRQ].chip = &level_irq_type;
+	irq_desc[MIPS_CPU_TIMER_IRQ].handler = &level_irq_type;
 	setup_irq(MIPS_CPU_TIMER_IRQ, &timer_action);
 }
 

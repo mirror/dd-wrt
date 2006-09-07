@@ -45,7 +45,9 @@ static void mtdblock_add_mtd(struct mtd_blktrans_ops *tr, struct mtd_info *mtd)
 	dev->blksize = 512;
 	dev->size = mtd->size >> 9;
 	dev->tr = tr;
-	dev->readonly = 1;
+	if ((mtd->flags & (MTD_CLEAR_BITS|MTD_SET_BITS|MTD_WRITEABLE)) !=
+	    (MTD_CLEAR_BITS|MTD_SET_BITS|MTD_WRITEABLE))
+		dev->readonly = 1;
 
 	add_mtd_blktrans_dev(dev);
 }

@@ -65,6 +65,7 @@ not be guaranteed. There are several ways to assure this:
 #include <linux/time.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/smp_lock.h>
 
 #include <asm/pgtable.h>
@@ -1004,6 +1005,11 @@ int slm_init( void )
 	BufferP = SLMBuffer;
 	SLMState = IDLE;
 	
+	devfs_mk_dir("slm");
+	for (i = 0; i < MAX_SLM; i++) {
+		devfs_mk_cdev(MKDEV(ACSI_MAJOR, i),
+				S_IFCHR|S_IRUSR|S_IWUSR, "slm/%d", i);
+	}
 	return 0;
 }
 
@@ -1026,6 +1032,10 @@ int init_module(void)
 
 void cleanup_module(void)
 {
+	int i;
+	for (i = 0; i < MAX_SLM; i++)
+		devfs_remove("slm/%d", i);
+	devfs_remove("slm");
 	if (unregister_chrdev( ACSI_MAJOR, "slm" ) != 0)
 		printk( KERN_ERR "acsi_slm: cleanup_module failed\n");
 	atari_stram_free( SLMBuffer );

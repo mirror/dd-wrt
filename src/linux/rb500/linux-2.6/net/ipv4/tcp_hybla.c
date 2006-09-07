@@ -10,6 +10,7 @@
  *    root at danielinux.net
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <net/tcp.h>
 

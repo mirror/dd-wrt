@@ -159,9 +159,7 @@ struct svc_rqst {
 						 * determine what device number
 						 * to report (real or virtual)
 						 */
-	int			rq_sendfile_ok; /* turned off in gss privacy
-						 * to prevent encrypting page
-						 * cache pages */
+
 	wait_queue_head_t	rq_wait;	/* synchronization */
 };
 

@@ -19,6 +19,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/list.h>
 #include <linux/stddef.h>
 #include <linux/spinlock.h>
@@ -68,7 +69,7 @@ struct task_struct;
 	wait_queue_t name = __WAITQUEUE_INITIALIZER(name, tsk)
 
 #define __WAIT_QUEUE_HEAD_INITIALIZER(name) {				\
-	.lock		= __SPIN_LOCK_UNLOCKED(name.lock),		\
+	.lock		= SPIN_LOCK_UNLOCKED,				\
 	.task_list	= { &(name).task_list, &(name).task_list } }
 
 #define DECLARE_WAIT_QUEUE_HEAD(name) \
@@ -77,15 +78,9 @@ struct task_struct;
 #define __WAIT_BIT_KEY_INITIALIZER(word, bit)				\
 	{ .flags = word, .bit_nr = bit, }
 
-/*
- * lockdep: we want one lock-class for all waitqueue locks.
- */
-extern struct lock_class_key waitqueue_lock_key;
-
 static inline void init_waitqueue_head(wait_queue_head_t *q)
 {
 	spin_lock_init(&q->lock);
-	lockdep_set_class(&q->lock, &waitqueue_lock_key);
 	INIT_LIST_HEAD(&q->task_list);
 }
 

@@ -7,6 +7,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/pagemap.h>
@@ -211,10 +212,8 @@ static void hfsplus_put_super(struct super_block *sb)
 	sb->s_fs_info = NULL;
 }
 
-static int hfsplus_statfs(struct dentry *dentry, struct kstatfs *buf)
+static int hfsplus_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct super_block *sb = dentry->d_sb;
-
 	buf->f_type = HFSPLUS_SUPER_MAGIC;
 	buf->f_bsize = sb->s_blocksize;
 	buf->f_blocks = HFSPLUS_SB(sb).total_blocks << HFSPLUS_SB(sb).fs_shift;
@@ -451,12 +450,10 @@ static void hfsplus_destroy_inode(struct inode *inode)
 
 #define HFSPLUS_INODE_SIZE	sizeof(struct hfsplus_inode_info)
 
-static int hfsplus_get_sb(struct file_system_type *fs_type,
-			  int flags, const char *dev_name, void *data,
-			  struct vfsmount *mnt)
+static struct super_block *hfsplus_get_sb(struct file_system_type *fs_type,
+					  int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, hfsplus_fill_super,
-			   mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, hfsplus_fill_super);
 }
 
 static struct file_system_type hfsplus_fs_type = {

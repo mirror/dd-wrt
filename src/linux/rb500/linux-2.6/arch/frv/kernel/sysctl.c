@@ -9,6 +9,7 @@
  * 2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/sysctl.h>
 #include <linux/proc_fs.h>
@@ -48,7 +49,7 @@ static void frv_change_dcache_mode(unsigned long newmode)
  * handle requests to dynamically switch the write caching mode delivered by /proc
  */
 static int procctl_frv_cachemode(ctl_table *table, int write, struct file *filp,
-				 void __user *buffer, size_t *lenp, loff_t *ppos)
+				 void *buffer, size_t *lenp, loff_t *ppos)
 {
 	unsigned long hsr0;
 	char buff[8];
@@ -122,7 +123,7 @@ static int procctl_frv_cachemode(ctl_table *table, int write, struct file *filp,
  */
 #ifdef CONFIG_MMU
 static int procctl_frv_pin_cxnr(ctl_table *table, int write, struct file *filp,
-				void __user *buffer, size_t *lenp, loff_t *ppos)
+				void *buffer, size_t *lenp, loff_t *ppos)
 {
 	pid_t pid;
 	char buff[16], *p;

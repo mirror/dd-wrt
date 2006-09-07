@@ -16,6 +16,7 @@
 
 #include <asm/types.h>
 #ifdef __KERNEL__
+# include <linux/config.h>
 # include <linux/types.h>
 # include <linux/string.h>
 # include <linux/fs.h>

@@ -3,6 +3,7 @@
  *
  * Author: Juergen Messerer <juergen.messerer@siemens.ch>
  */
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <asm/hardware.h>

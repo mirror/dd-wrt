@@ -27,6 +27,7 @@
 #undef	DEBUG
 // #define	VERBOSE	DBG_VERBOSE
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/ioport.h>
@@ -52,9 +53,7 @@
 #include <asm/mach-types.h>
 #include <asm/unaligned.h>
 #include <asm/hardware.h>
-#ifdef CONFIG_ARCH_PXA
 #include <asm/arch/pxa-regs.h>
-#endif
 
 #include <linux/usb_ch9.h>
 #include <linux/usb_gadget.h>
@@ -546,7 +545,6 @@ write_ep0_fifo (struct pxa2xx_ep *ep, struct pxa2xx_request *req)
 		count = req->req.length;
 		done (ep, req, 0);
 		ep0_idle(ep->dev);
-#ifndef CONFIG_ARCH_IXP4XX
 #if 1
 		/* This seems to get rid of lost status irqs in some cases:
 		 * host responds quickly, or next request involves config
@@ -566,7 +564,6 @@ write_ep0_fifo (struct pxa2xx_ep *ep, struct pxa2xx_request *req)
 				udelay(1);
 			} while (count);
 		}
-#endif
 #endif
 	} else if (ep->dev->req_pending)
 		ep0start(ep->dev, 0, "IN");
@@ -1588,7 +1585,7 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 	int			retval;
 
 	if (!driver
-			|| driver->speed < USB_SPEED_FULL
+			|| driver->speed != USB_SPEED_FULL
 			|| !driver->bind
 			|| !driver->unbind
 			|| !driver->disconnect
@@ -2430,7 +2427,6 @@ static struct pxa2xx_udc memory = {
 #define PXA210_B1		0x00000123
 #define PXA210_B0		0x00000122
 #define IXP425_A0		0x000001c1
-#define IXP465_AD		0x00000200
 
 /*
  * 	probe - binds to the platform device
@@ -2467,8 +2463,6 @@ static int __init pxa2xx_udc_probe(struct platform_device *pdev)
 		break;
 #elif	defined(CONFIG_ARCH_IXP4XX)
 	case IXP425_A0:
-	case IXP465_AD:
-		dev->has_cfr = 1;
 		out_dma = 0;
 		break;
 #endif
@@ -2521,7 +2515,7 @@ static int __init pxa2xx_udc_probe(struct platform_device *pdev)
 
 	/* irq setup after old hardware state is cleaned up */
 	retval = request_irq(IRQ_USB, pxa2xx_udc_irq,
-			IRQF_DISABLED, driver_name, dev);
+			SA_INTERRUPT, driver_name, dev);
 	if (retval != 0) {
 		printk(KERN_ERR "%s: can't get irq %i, err %d\n",
 			driver_name, IRQ_USB, retval);
@@ -2533,7 +2527,7 @@ static int __init pxa2xx_udc_probe(struct platform_device *pdev)
 	if (machine_is_lubbock()) {
 		retval = request_irq(LUBBOCK_USB_DISC_IRQ,
 				lubbock_vbus_irq,
-				IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
+				SA_INTERRUPT | SA_SAMPLE_RANDOM,
 				driver_name, dev);
 		if (retval != 0) {
 			printk(KERN_ERR "%s: can't get irq %i, err %d\n",
@@ -2544,7 +2538,7 @@ lubbock_fail0:
 		}
 		retval = request_irq(LUBBOCK_USB_IRQ,
 				lubbock_vbus_irq,
-				IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
+				SA_INTERRUPT | SA_SAMPLE_RANDOM,
 				driver_name, dev);
 		if (retval != 0) {
 			printk(KERN_ERR "%s: can't get irq %i, err %d\n",
@@ -2581,12 +2575,10 @@ static int __exit pxa2xx_udc_remove(struct platform_device *pdev)
 		free_irq(IRQ_USB, dev);
 		dev->got_irq = 0;
 	}
-#ifdef CONFIG_ARCH_LUBBOCK
 	if (machine_is_lubbock()) {
 		free_irq(LUBBOCK_USB_DISC_IRQ, dev);
 		free_irq(LUBBOCK_USB_IRQ, dev);
 	}
-#endif
 	platform_set_drvdata(pdev, NULL);
 	the_controller = NULL;
 	return 0;

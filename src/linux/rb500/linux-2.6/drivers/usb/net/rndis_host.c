@@ -20,6 +20,7 @@
 // #define	DEBUG			// error path messages, extra info
 // #define	VERBOSE			// more; success messages
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/init.h>
@@ -29,7 +30,7 @@
 #include <linux/workqueue.h>
 #include <linux/mii.h>
 #include <linux/usb.h>
-#include <linux/usb/cdc.h>
+#include <linux/usb_cdc.h>
 
 #include "usbnet.h"
 

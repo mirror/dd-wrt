@@ -538,7 +538,7 @@ fail:
 	return err;
 }
 
-const struct address_space_operations hpfs_symlink_aops = {
+struct address_space_operations hpfs_symlink_aops = {
 	.readpage	= hpfs_symlink_readpage
 };
 	

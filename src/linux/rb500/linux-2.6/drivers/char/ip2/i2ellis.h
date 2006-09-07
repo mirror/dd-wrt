@@ -47,6 +47,7 @@
 //----------------------
 // Mandatory Includes:
 //----------------------
+#include <linux/config.h>
 #include "ip2types.h"
 #include "i2hw.h"       // The hardware definitions
 

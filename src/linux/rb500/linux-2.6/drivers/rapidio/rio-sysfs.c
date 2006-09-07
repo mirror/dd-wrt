@@ -10,6 +10,7 @@
  * option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/rio.h>
 #include <linux/rio_drv.h>

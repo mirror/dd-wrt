@@ -27,6 +27,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/string.h>
@@ -83,8 +84,6 @@ static debug_info_t *qeth_dbf_sense = NULL;
 static debug_info_t *qeth_dbf_qerr = NULL;
 
 DEFINE_PER_CPU(char[256], qeth_dbf_txt_buf);
-
-static struct lock_class_key qdio_out_skb_queue_key;
 
 /**
  * some more definitions and declarations
@@ -3231,9 +3230,6 @@ qeth_alloc_qdio_buffers(struct qeth_card *card)
 				&card->qdio.out_qs[i]->qdio_bufs[j];
 			skb_queue_head_init(&card->qdio.out_qs[i]->bufs[j].
 					    skb_list);
-			lockdep_set_class(
-				&card->qdio.out_qs[i]->bufs[j].skb_list.lock,
-				&qdio_out_skb_queue_key);
 			INIT_LIST_HEAD(&card->qdio.out_qs[i]->bufs[j].ctx_list);
 		}
 	}
@@ -4421,7 +4417,7 @@ qeth_send_packet(struct qeth_card *card, struct sk_buff *skb)
 	struct qeth_eddp_context *ctx = NULL;
 	int tx_bytes = skb->len;
 	unsigned short nr_frags = skb_shinfo(skb)->nr_frags;
-	unsigned short tso_size = skb_shinfo(skb)->gso_size;
+	unsigned short tso_size = skb_shinfo(skb)->tso_size;
 	int rc;
 
 	QETH_DBF_TEXT(trace, 6, "sendpkt");
@@ -4457,7 +4453,7 @@ qeth_send_packet(struct qeth_card *card, struct sk_buff *skb)
 	queue = card->qdio.out_qs
 		[qeth_get_priority_queue(card, skb, ipv, cast_type)];
 
-	if (skb_shinfo(skb)->gso_size)
+	if (skb_shinfo(skb)->tso_size)
 		large_send = card->options.large_send;
 
 	/*are we able to do TSO ? If so ,prepare and send it from here */
@@ -5277,7 +5273,6 @@ qeth_free_vlan_buffer(struct qeth_card *card, struct qeth_qdio_out_buffer *buf,
 	struct sk_buff_head tmp_list;
 
 	skb_queue_head_init(&tmp_list);
-	lockdep_set_class(&tmp_list.lock, &qdio_out_skb_queue_key);
 	for(i = 0; i < QETH_MAX_BUFFER_ELEMENTS(card); ++i){
 		while ((skb = skb_dequeue(&buf->skb_list))){
 			if (vlan_tx_tag_present(skb) &&

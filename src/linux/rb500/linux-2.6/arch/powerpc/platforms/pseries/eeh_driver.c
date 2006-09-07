@@ -23,8 +23,9 @@
  *
  */
 #include <linux/delay.h>
-#include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/interrupt.h>
+#include <linux/notifier.h>
 #include <linux/pci.h>
 #include <asm/eeh.h>
 #include <asm/eeh_event.h>
@@ -175,7 +176,7 @@ static void eeh_report_failure(struct pci_dev *dev, void *userdata)
  *
  * pSeries systems will isolate a PCI slot if the PCI-Host
  * bridge detects address or data parity errors, DMA's
- * occurring to wild addresses (which usually happen due to
+ * occuring to wild addresses (which usually happen due to
  * bugs in device drivers or in PCI adapter firmware).
  * Slot isolations also occur if #SERR, #PERR or other misc
  * PCI-related errors are detected.
@@ -201,11 +202,7 @@ static void eeh_report_failure(struct pci_dev *dev, void *userdata)
 
 static int eeh_reset_device (struct pci_dn *pe_dn, struct pci_bus *bus)
 {
-	int cnt, rc;
-
-	/* pcibios will clear the counter; save the value */
-	cnt = pe_dn->eeh_freeze_count;
-
+	int rc;
 	if (bus)
 		pcibios_remove_pci_devices(bus);
 
@@ -244,7 +241,6 @@ static int eeh_reset_device (struct pci_dn *pe_dn, struct pci_bus *bus)
 		ssleep (5);
 		pcibios_add_pci_devices(bus);
 	}
-	pe_dn->eeh_freeze_count = cnt;
 
 	return 0;
 }
@@ -254,29 +250,23 @@ static int eeh_reset_device (struct pci_dn *pe_dn, struct pci_bus *bus)
  */
 #define MAX_WAIT_FOR_RECOVERY 15
 
-struct pci_dn * handle_eeh_events (struct eeh_event *event)
+void handle_eeh_events (struct eeh_event *event)
 {
 	struct device_node *frozen_dn;
 	struct pci_dn *frozen_pdn;
 	struct pci_bus *frozen_bus;
 	int rc = 0;
 	enum pci_ers_result result = PCI_ERS_RESULT_NONE;
-	const char *location, *pci_str, *drv_str;
+	const char *pci_str, *drv_str;
 
 	frozen_dn = find_device_pe(event->dn);
 	frozen_bus = pcibios_find_pci_bus(frozen_dn);
 
 	if (!frozen_dn) {
-
-		location = (char *) get_property(event->dn, "ibm,loc-code", NULL);
-		location = location ? location : "unknown";
-		printk(KERN_ERR "EEH: Error: Cannot find partition endpoint "
-		                "for location=%s pci addr=%s\n",
-		        location, pci_name(event->dev));
-		return NULL;
+		printk(KERN_ERR "EEH: Error: Cannot find partition endpoint for %s\n",
+		        pci_name(event->dev));
+		return;
 	}
-	location = (char *) get_property(frozen_dn, "ibm,loc-code", NULL);
-	location = location ? location : "unknown";
 
 	/* There are two different styles for coming up with the PE.
 	 * In the old style, it was the highest EEH-capable device
@@ -288,10 +278,9 @@ struct pci_dn * handle_eeh_events (struct eeh_event *event)
 		frozen_bus = pcibios_find_pci_bus (frozen_dn->parent);
 
 	if (!frozen_bus) {
-		printk(KERN_ERR "EEH: Cannot find PCI bus "
-		        "for location=%s dn=%s\n",
-		        location, frozen_dn->full_name);
-		return NULL;
+		printk(KERN_ERR "EEH: Cannot find PCI bus for %s\n",
+		        frozen_dn->full_name);
+		return;
 	}
 
 #if 0
@@ -325,9 +314,8 @@ struct pci_dn * handle_eeh_events (struct eeh_event *event)
 
 	eeh_slot_error_detail(frozen_pdn, 1 /* Temporary Error */);
 	printk(KERN_WARNING
-	   "EEH: This PCI device has failed %d times since last reboot: "
-		"location=%s driver=%s pci addr=%s\n",
-		frozen_pdn->eeh_freeze_count, location, drv_str, pci_str);
+	   "EEH: This PCI device has failed %d times since last reboot: %s - %s\n",
+		frozen_pdn->eeh_freeze_count, drv_str, pci_str);
 
 	/* Walk the various device drivers attached to this slot through
 	 * a reset sequence, giving each an opportunity to do what it needs
@@ -367,7 +355,7 @@ struct pci_dn * handle_eeh_events (struct eeh_event *event)
 	/* Tell all device drivers that they can resume operations */
 	pci_walk_bus(frozen_bus, eeh_report_resume, NULL);
 
-	return frozen_pdn;
+	return;
 	
 excess_failures:
 	/*
@@ -376,18 +364,17 @@ excess_failures:
 	 * due to actual, failed cards.
 	 */
 	printk(KERN_ERR
-	   "EEH: PCI device at location=%s driver=%s pci addr=%s \n"
-		"has failed %d times and has been permanently disabled. \n"
-		"Please try reseating this device or replacing it.\n",
-		location, drv_str, pci_str, frozen_pdn->eeh_freeze_count);
+	   "EEH: PCI device %s - %s has failed %d times \n"
+	   "and has been permanently disabled.  Please try reseating\n"
+	   "this device or replacing it.\n",
+		drv_str, pci_str, frozen_pdn->eeh_freeze_count);
 	goto perm_error;
 
 hard_fail:
 	printk(KERN_ERR
-	   "EEH: Unable to recover from failure of PCI device "
-	   "at location=%s driver=%s pci addr=%s \n"
+	   "EEH: Unable to recover from failure of PCI device %s - %s\n"
 	   "Please try reseating this device or replacing it.\n",
-		location, drv_str, pci_str);
+		drv_str, pci_str);
 
 perm_error:
 	eeh_slot_error_detail(frozen_pdn, 2 /* Permanent Error */);
@@ -397,8 +384,6 @@ perm_error:
 
 	/* Shut down the device drivers for good. */
 	pcibios_remove_pci_devices(frozen_bus);
-
-	return NULL;
 }
 
 /* ---------- end of file ---------- */

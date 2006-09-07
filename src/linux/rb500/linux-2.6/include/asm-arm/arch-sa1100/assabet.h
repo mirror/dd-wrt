@@ -12,6 +12,7 @@
 #ifndef __ASM_ARCH_ASSABET_H
 #define __ASM_ARCH_ASSABET_H
 
+#include <linux/config.h>
 
 /* System Configuration Register flags */
 

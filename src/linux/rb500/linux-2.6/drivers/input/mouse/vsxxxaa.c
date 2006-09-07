@@ -81,6 +81,7 @@
 #include <linux/slab.h>
 #include <linux/interrupt.h>
 #include <linux/input.h>
+#include <linux/config.h>
 #include <linux/serio.h>
 #include <linux/init.h>
 
@@ -152,25 +153,22 @@ vsxxxaa_detection_done (struct vsxxxaa *mouse)
 {
 	switch (mouse->type) {
 		case 0x02:
-			strlcpy (mouse->name, "DEC VSXXX-AA/-GA mouse",
-				 sizeof (mouse->name));
+			sprintf (mouse->name, "DEC VSXXX-AA/-GA mouse");
 			break;
 
 		case 0x04:
-			strlcpy (mouse->name, "DEC VSXXX-AB digitizer",
-				 sizeof (mouse->name));
+			sprintf (mouse->name, "DEC VSXXX-AB digitizer");
 			break;
 
 		default:
-			snprintf (mouse->name, sizeof (mouse->name),
-				  "unknown DEC pointer device (type = 0x%02x)",
-				  mouse->type);
+			sprintf (mouse->name, "unknown DEC pointer device "
+					"(type = 0x%02x)", mouse->type);
 			break;
 	}
 
-	printk (KERN_INFO
-		"Found %s version 0x%02x from country 0x%02x on port %s\n",
-		mouse->name, mouse->version, mouse->country, mouse->phys);
+	printk (KERN_INFO "Found %s version 0x%02x from country 0x%02x "
+			"on port %s\n", mouse->name, mouse->version,
+			mouse->country, mouse->phys);
 }
 
 /*
@@ -505,9 +503,8 @@ vsxxxaa_connect (struct serio *serio, struct serio_driver *drv)
 
 	mouse->dev = input_dev;
 	mouse->serio = serio;
-	strlcat (mouse->name, "DEC VSXXX-AA/-GA mouse or VSXXX-AB digitizer",
-		 sizeof (mouse->name));
-	snprintf (mouse->phys, sizeof (mouse->phys), "%s/input0", serio->phys);
+	sprintf (mouse->name, "DEC VSXXX-AA/-GA mouse or VSXXX-AB digitizer");
+	sprintf (mouse->phys, "%s/input0", serio->phys);
 
 	input_dev->name = mouse->name;
 	input_dev->phys = mouse->phys;

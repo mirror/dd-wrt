@@ -13,12 +13,12 @@
 #include <linux/module.h>
 #include <linux/kthread.h>
 #include <linux/stop_machine.h>
-#include <linux/mutex.h>
+#include <asm/semaphore.h>
 
 /* This protects CPUs going up and down... */
-static DEFINE_MUTEX(cpucontrol);
+static DECLARE_MUTEX(cpucontrol);
 
-static __cpuinitdata BLOCKING_NOTIFIER_HEAD(cpu_chain);
+static BLOCKING_NOTIFIER_HEAD(cpu_chain);
 
 #ifdef CONFIG_HOTPLUG_CPU
 static struct task_struct *lock_cpu_hotplug_owner;
@@ -30,9 +30,9 @@ static int __lock_cpu_hotplug(int interruptible)
 
 	if (lock_cpu_hotplug_owner != current) {
 		if (interruptible)
-			ret = mutex_lock_interruptible(&cpucontrol);
+			ret = down_interruptible(&cpucontrol);
 		else
-			mutex_lock(&cpucontrol);
+			down(&cpucontrol);
 	}
 
 	/*
@@ -56,7 +56,7 @@ void unlock_cpu_hotplug(void)
 {
 	if (--lock_cpu_hotplug_depth == 0) {
 		lock_cpu_hotplug_owner = NULL;
-		mutex_unlock(&cpucontrol);
+		up(&cpucontrol);
 	}
 }
 EXPORT_SYMBOL_GPL(unlock_cpu_hotplug);
@@ -69,13 +69,10 @@ EXPORT_SYMBOL_GPL(lock_cpu_hotplug_interruptible);
 #endif	/* CONFIG_HOTPLUG_CPU */
 
 /* Need to know about CPUs going up/down? */
-int __cpuinit register_cpu_notifier(struct notifier_block *nb)
+int register_cpu_notifier(struct notifier_block *nb)
 {
 	return blocking_notifier_chain_register(&cpu_chain, nb);
 }
-
-#ifdef CONFIG_HOTPLUG_CPU
-
 EXPORT_SYMBOL(register_cpu_notifier);
 
 void unregister_cpu_notifier(struct notifier_block *nb)
@@ -84,6 +81,7 @@ void unregister_cpu_notifier(struct notifier_block *nb)
 }
 EXPORT_SYMBOL(unregister_cpu_notifier);
 
+#ifdef CONFIG_HOTPLUG_CPU
 static inline void check_for_tasks(int cpu)
 {
 	struct task_struct *p;

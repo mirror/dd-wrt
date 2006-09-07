@@ -6,6 +6,7 @@
  * (C) IBM Corporation, IBM Deutschland Entwicklung GmbH, 1999,2000
  */
 
+#include <linux/config.h>
 #include <linux/buffer_head.h>
 #include <linux/hdreg.h>
 #include <linux/slab.h>

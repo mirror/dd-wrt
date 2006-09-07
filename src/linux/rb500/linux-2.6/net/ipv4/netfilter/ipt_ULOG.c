@@ -47,6 +47,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/spinlock.h>
 #include <linux/socket.h>
 #include <linux/skbuff.h>
@@ -113,6 +114,11 @@ static void ulog_send(unsigned int nlgroupnum)
 	if (timer_pending(&ub->timer)) {
 		DEBUGP("ipt_ULOG: ulog_send: timer was pending, deleting\n");
 		del_timer(&ub->timer);
+	}
+
+	if (!ub->skb) {
+		DEBUGP("ipt_ULOG: ulog_send: nothing to send\n");
+		return;
 	}
 
 	/* last nlmsg needs NLMSG_DONE */

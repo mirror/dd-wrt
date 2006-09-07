@@ -337,7 +337,7 @@ static int esb_notify_sys (struct notifier_block *this, unsigned long code, void
  *      Kernel Interfaces
  */
 
-static const struct file_operations esb_fops = {
+static struct file_operations esb_fops = {
         .owner =        THIS_MODULE,
         .llseek =       no_llseek,
         .write =        esb_write,

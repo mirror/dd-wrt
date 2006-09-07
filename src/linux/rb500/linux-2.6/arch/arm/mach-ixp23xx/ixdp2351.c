@@ -14,12 +14,12 @@
  * warranty of any kind, whether express or implied.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
-#include <linux/irq.h>
 #include <linux/serial.h>
 #include <linux/tty.h>
 #include <linux/bitops.h>
@@ -37,6 +37,7 @@
 #include <asm/memory.h>
 #include <asm/hardware.h>
 #include <asm/mach-types.h>
+#include <asm/irq.h>
 #include <asm/system.h>
 #include <asm/tlbflush.h>
 #include <asm/pgtable.h>
@@ -74,7 +75,7 @@ static void ixdp2351_inta_handler(unsigned int irq, struct irqdesc *desc, struct
 			int cpld_irq =
 				IXP23XX_MACH_IRQ(IXDP2351_INTA_IRQ_BASE + i);
 			cpld_desc = irq_desc + cpld_irq;
-			desc_handle_irq(cpld_irq, cpld_desc, regs);
+			cpld_desc->handle(cpld_irq, cpld_desc, regs);
 		}
 	}
 
@@ -111,7 +112,7 @@ static void ixdp2351_intb_handler(unsigned int irq, struct irqdesc *desc, struct
 			int cpld_irq =
 				IXP23XX_MACH_IRQ(IXDP2351_INTB_IRQ_BASE + i);
 			cpld_desc = irq_desc + cpld_irq;
-			desc_handle_irq(cpld_irq, cpld_desc, regs);
+			cpld_desc->handle(cpld_irq, cpld_desc, regs);
 		}
 	}
 
@@ -158,8 +159,8 @@ void ixdp2351_init_irq(void)
 		}
 	}
 
-	set_irq_chained_handler(IRQ_IXP23XX_INTA, ixdp2351_inta_handler);
-	set_irq_chained_handler(IRQ_IXP23XX_INTB, ixdp2351_intb_handler);
+	set_irq_chained_handler(IRQ_IXP23XX_INTA, &ixdp2351_inta_handler);
+	set_irq_chained_handler(IRQ_IXP23XX_INTB, &ixdp2351_intb_handler);
 }
 
 /*
@@ -297,29 +298,9 @@ static void __init ixdp2351_map_io(void)
 	iotable_init(ixdp2351_io_desc, ARRAY_SIZE(ixdp2351_io_desc));
 }
 
-static struct physmap_flash_data ixdp2351_flash_data = {
-	.width		= 1,
-};
-
-static struct resource ixdp2351_flash_resource = {
-	.start		= 0x90000000,
-	.end		= 0x93ffffff,
-	.flags		= IORESOURCE_MEM,
-};
-
-static struct platform_device ixdp2351_flash = {
-	.name		= "physmap-flash",
-	.id		= 0,
-	.dev		= {
-		.platform_data	= &ixdp2351_flash_data,
-	},
-	.num_resources	= 1,
-	.resource	= &ixdp2351_flash_resource,
-};
-
 static void __init ixdp2351_init(void)
 {
-	platform_device_register(&ixdp2351_flash);
+	physmap_configure(0x90000000, 0x04000000, 1, NULL);
 
 	/*
 	 * Mark flash as writeable

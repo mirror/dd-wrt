@@ -11,6 +11,7 @@
  * Fix bug in inverse translation. Stanislav Voronyi <stas@cnti.uanet.kharkov.ua>, Dec 1998
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kd.h>
 #include <linux/errno.h>

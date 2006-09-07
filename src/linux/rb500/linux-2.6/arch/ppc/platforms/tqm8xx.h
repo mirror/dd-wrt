@@ -8,6 +8,7 @@
 #ifndef __MACH_TQM8xx_H
 #define __MACH_TQM8xx_H
 
+#include <linux/config.h>
 
 #include <asm/ppcboot.h>
 

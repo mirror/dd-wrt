@@ -31,6 +31,7 @@
  * required, these have to be supplied via some other means (eg, GPIO)
  * and hooked into this driver.
  */
+#include <linux/config.h>
 
 #if defined(CONFIG_SERIAL_AMBA_PL010_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ)
 #define SUPPORT_SYSRQ
@@ -51,7 +52,7 @@
 
 #include <asm/io.h>
 
-#define UART_NR		8
+#define UART_NR		2
 
 #define SERIAL_AMBA_MAJOR	204
 #define SERIAL_AMBA_MINOR	16

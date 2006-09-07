@@ -10,6 +10,7 @@
  * 
  *  isofs directory handling functions
  */
+#include <linux/config.h>
 #include <linux/smp_lock.h>
 #include "isofs.h"
 

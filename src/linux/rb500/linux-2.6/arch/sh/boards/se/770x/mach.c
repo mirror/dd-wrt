@@ -9,6 +9,7 @@
  * Machine vector for the Hitachi SolutionEngine
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <asm/machvec.h>

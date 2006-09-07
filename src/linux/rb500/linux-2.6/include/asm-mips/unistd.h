@@ -326,17 +326,16 @@
 #define __NR_unshare			(__NR_Linux + 303)
 #define __NR_splice			(__NR_Linux + 304)
 #define __NR_sync_file_range		(__NR_Linux + 305)
-#define __NR_tee			(__NR_Linux + 306)
 
 /*
  * Offset of the last Linux o32 flavoured syscall
  */
-#define __NR_Linux_syscalls		306
+#define __NR_Linux_syscalls		305
 
 #endif /* _MIPS_SIM == _MIPS_SIM_ABI32 */
 
 #define __NR_O32_Linux			4000
-#define __NR_O32_Linux_syscalls		306
+#define __NR_O32_Linux_syscalls		305
 
 #if _MIPS_SIM == _MIPS_SIM_ABI64
 
@@ -609,17 +608,16 @@
 #define __NR_unshare			(__NR_Linux + 262)
 #define __NR_splice			(__NR_Linux + 263)
 #define __NR_sync_file_range		(__NR_Linux + 264)
-#define __NR_tee			(__NR_Linux + 265)
 
 /*
  * Offset of the last Linux 64-bit flavoured syscall
  */
-#define __NR_Linux_syscalls		265
+#define __NR_Linux_syscalls		264
 
 #endif /* _MIPS_SIM == _MIPS_SIM_ABI64 */
 
 #define __NR_64_Linux			5000
-#define __NR_64_Linux_syscalls		265
+#define __NR_64_Linux_syscalls		264
 
 #if _MIPS_SIM == _MIPS_SIM_NABI32
 
@@ -896,19 +894,16 @@
 #define __NR_unshare			(__NR_Linux + 266)
 #define __NR_splice			(__NR_Linux + 267)
 #define __NR_sync_file_range		(__NR_Linux + 268)
-#define __NR_tee			(__NR_Linux + 269)
 
 /*
  * Offset of the last N32 flavoured syscall
  */
-#define __NR_Linux_syscalls		269
+#define __NR_Linux_syscalls		268
 
 #endif /* _MIPS_SIM == _MIPS_SIM_NABI32 */
 
 #define __NR_N32_Linux			6000
-#define __NR_N32_Linux_syscalls		269
-
-#ifdef __KERNEL__
+#define __NR_N32_Linux_syscalls		268
 
 #ifndef __ASSEMBLY__
 
@@ -1173,6 +1168,9 @@ type name (atype a,btype b,ctype c,dtype d,etype e,ftype f) \
 
 #endif /* (_MIPS_SIM == _MIPS_SIM_NABI32) || (_MIPS_SIM == _MIPS_SIM_ABI64) */
 
+#ifdef __KERNEL__
+
+#include <linux/config.h>
 
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR
@@ -1199,6 +1197,7 @@ type name (atype a,btype b,ctype c,dtype d,etype e,ftype f) \
 # ifdef CONFIG_MIPS32_O32
 #  define __ARCH_WANT_COMPAT_SYS_TIME
 # endif
+#endif
 
 #ifdef __KERNEL_SYSCALLS__
 
@@ -1249,5 +1248,4 @@ asmlinkage long sys_rt_sigaction(int sig,
  */
 #define cond_syscall(x) asm(".weak\t" #x "\n" #x "\t=\tsys_ni_syscall")
 
-#endif /* __KERNEL__ */
 #endif /* _ASM_UNISTD_H */

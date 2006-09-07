@@ -28,10 +28,6 @@ config GENERIC_CALIBRATE_DELAY
 	bool
 	default y
 
-config IRQ_PER_CPU
-	bool
-	default y
-
 config CRIS
 	bool
 	default y

@@ -31,6 +31,7 @@
 #include <linux/string.h>
 #include <linux/smp_lock.h>
 #include <linux/inet.h>
+#include <linux/version.h>
 #include <linux/pagemap.h>
 #include <linux/idr.h>
 
@@ -102,6 +103,6 @@ UnmapAndUnlock:
 	return retval;
 }
 
-const struct address_space_operations v9fs_addr_operations = {
+struct address_space_operations v9fs_addr_operations = {
       .readpage = v9fs_vfs_readpage,
 };

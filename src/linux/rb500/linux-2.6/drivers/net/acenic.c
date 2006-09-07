@@ -50,6 +50,7 @@
  *   Grant Grundler <grundler@cup.hp.com>: PCI write posting fixes.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/version.h>
@@ -578,7 +579,11 @@ static int __devinit acenic_probe_one(struct pci_dev *pdev,
 	}
 
 	printk("Gigabit Ethernet at 0x%08lx, ", dev->base_addr);
-	printk("irq %d\n", pdev->irq);
+#ifdef __sparc__
+	printk("irq %s\n", __irq_itoa(pdev->irq));
+#else
+	printk("irq %i\n", pdev->irq);
+#endif
 
 #ifdef CONFIG_ACENIC_OMIT_TIGON_I
 	if ((readl(&ap->regs->HostCtrl) >> 28) == 4) {
@@ -1194,7 +1199,7 @@ static int __devinit ace_init(struct net_device *dev)
 		goto init_error;
 	}
 
-	ecode = request_irq(pdev->irq, ace_interrupt, IRQF_SHARED,
+	ecode = request_irq(pdev->irq, ace_interrupt, SA_SHIRQ,
 			    DRV_NAME, dev);
 	if (ecode) {
 		printk(KERN_WARNING "%s: Requested IRQ %d is busy\n",

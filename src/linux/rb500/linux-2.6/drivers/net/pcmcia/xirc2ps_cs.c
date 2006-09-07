@@ -1359,7 +1359,7 @@ do_start_xmit(struct sk_buff *skb, struct net_device *dev)
     kio_addr_t ioaddr = dev->base_addr;
     int okay;
     unsigned freespace;
-    unsigned pktlen = skb->len;
+    unsigned pktlen = skb? skb->len : 0;
 
     DEBUG(1, "do_start_xmit(skb=%p, dev=%p) len=%u\n",
 	  skb, dev, pktlen);
@@ -1374,7 +1374,8 @@ do_start_xmit(struct sk_buff *skb, struct net_device *dev)
      */
     if (pktlen < ETH_ZLEN)
     {
-        if (skb_padto(skb, ETH_ZLEN))
+        skb = skb_padto(skb, ETH_ZLEN);
+        if (skb == NULL)
         	return 0;
 	pktlen = ETH_ZLEN;
     }

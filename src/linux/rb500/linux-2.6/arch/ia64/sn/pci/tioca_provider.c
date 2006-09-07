@@ -515,15 +515,9 @@ tioca_dma_unmap(struct pci_dev *pdev, dma_addr_t bus_addr, int dir)
  * use the GART mapped mode.
  */
 static u64
-tioca_dma_map(struct pci_dev *pdev, u64 paddr, size_t byte_count, int dma_flags)
+tioca_dma_map(struct pci_dev *pdev, u64 paddr, size_t byte_count)
 {
 	u64 mapaddr;
-
-	/*
-	 * Not supported for now ...
-	 */
-	if (dma_flags & SN_DMA_MSI)
-		return 0;
 
 	/*
 	 * If card is 64 or 48 bit addresable, use a direct mapping.  32
@@ -595,7 +589,7 @@ tioca_bus_fixup(struct pcibus_bussoft *prom_bussoft, struct pci_controller *cont
 
 	/* sanity check prom rev */
 
-	if (is_shub1() && sn_sal_rev() < 0x0406) {
+	if (sn_sal_rev() < 0x0406) {
 		printk
 		    (KERN_ERR "%s:  SGI prom rev 4.06 or greater required "
 		     "for tioca support\n", __FUNCTION__);
@@ -646,7 +640,7 @@ tioca_bus_fixup(struct pcibus_bussoft *prom_bussoft, struct pci_controller *cont
 
 	if (request_irq(SGI_TIOCA_ERROR,
 			tioca_error_intr_handler,
-			IRQF_SHARED, "TIOCA error", (void *)tioca_common))
+			SA_SHIRQ, "TIOCA error", (void *)tioca_common))
 		printk(KERN_WARNING
 		       "%s:  Unable to get irq %d.  "
 		       "Error interrupts won't be routed for TIOCA bus %d\n",

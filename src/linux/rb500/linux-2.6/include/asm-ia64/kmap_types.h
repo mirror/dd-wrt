@@ -1,6 +1,7 @@
 #ifndef _ASM_IA64_KMAP_TYPES_H
 #define _ASM_IA64_KMAP_TYPES_H
 
+#include <linux/config.h>
 
 #ifdef CONFIG_DEBUG_HIGHMEM
 # define D(n) __KM_FENCE_##n ,

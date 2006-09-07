@@ -539,7 +539,6 @@ int main(int ac, char **av)
   	name = av[i];
 	if (!name) {
 		printf(_("%s: Kconfig file missing\n"), av[0]);
-		exit(1);
 	}
 	conf_parse(name);
 	//zconfdump(stdout);
@@ -574,7 +573,7 @@ int main(int ac, char **av)
 	case set_random:
 		name = getenv("KCONFIG_ALLCONFIG");
 		if (name && !stat(name, &tmpstat)) {
-			conf_read_simple(name, S_DEF_USER);
+			conf_read_simple(name);
 			break;
 		}
 		switch (input_mode) {
@@ -585,9 +584,9 @@ int main(int ac, char **av)
 		default: break;
 		}
 		if (!stat(name, &tmpstat))
-			conf_read_simple(name, S_DEF_USER);
+			conf_read_simple(name);
 		else if (!stat("all.config", &tmpstat))
-			conf_read_simple("all.config", S_DEF_USER);
+			conf_read_simple("all.config");
 		break;
 	default:
 		break;
@@ -600,15 +599,7 @@ int main(int ac, char **av)
 			input_mode = ask_silent;
 			valid_stdin = 1;
 		}
-	} else if (sym_change_count) {
-		name = getenv("KCONFIG_NOSILENTUPDATE");
-		if (name && *name) {
-			fprintf(stderr, _("\n*** Kernel configuration requires explicit update.\n\n"));
-			return 1;
-		}
-	} else
-		goto skip_check;
-
+	}
 	do {
 		conf_cnt = 0;
 		check_conf(&rootmenu);
@@ -617,11 +608,5 @@ int main(int ac, char **av)
 		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
 		return 1;
 	}
-skip_check:
-	if (input_mode == ask_silent && conf_write_autoconf()) {
-		fprintf(stderr, _("\n*** Error during writing of the kernel configuration.\n\n"));
-		return 1;
-	}
-
 	return 0;
 }

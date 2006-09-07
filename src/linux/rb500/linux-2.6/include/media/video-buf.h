@@ -23,7 +23,6 @@
  */
 
 #include <linux/videodev2.h>
-#include <linux/poll.h>
 
 #define UNSET (-1U)
 

@@ -23,6 +23,7 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_alloc.h"
 #include "xfs_dmapi.h"
@@ -31,6 +32,7 @@
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -442,7 +444,7 @@ xfs_qm_dqalloc(
 			      XFS_BMAPI_METADATA | XFS_BMAPI_WRITE,
 			      &firstblock,
 			      XFS_QM_DQALLOC_SPACE_RES(mp),
-			      &map, &nmaps, &flist, NULL))) {
+			      &map, &nmaps, &flist))) {
 		goto error0;
 	}
 	ASSERT(map.br_blockcount == XFS_DQUOT_CLUSTER_SIZE_FSB);
@@ -557,7 +559,7 @@ xfs_qm_dqtobp(
 		error = xfs_bmapi(NULL, quotip, dqp->q_fileoffset,
 				  XFS_DQUOT_CLUSTER_SIZE_FSB,
 				  XFS_BMAPI_METADATA,
-				  NULL, 0, &map, &nmaps, NULL, NULL);
+				  NULL, 0, &map, &nmaps, NULL);
 
 		xfs_iunlock(quotip, XFS_ILOCK_SHARED);
 		if (error)
@@ -1259,7 +1261,7 @@ xfs_qm_dqflush(
 
 	if (xfs_qm_dqcheck(&dqp->q_core, be32_to_cpu(ddqp->d_id),
 			   0, XFS_QMOPT_DOWARN, "dqflush (incore copy)")) {
-		xfs_force_shutdown(dqp->q_mount, SHUTDOWN_CORRUPT_INCORE);
+		xfs_force_shutdown(dqp->q_mount, XFS_CORRUPT_INCORE);
 		return XFS_ERROR(EIO);
 	}
 

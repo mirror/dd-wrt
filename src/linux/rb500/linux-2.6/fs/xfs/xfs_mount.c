@@ -24,12 +24,14 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -194,7 +196,7 @@ xfs_mount_free(
 		kmem_free(mp->m_logname, strlen(mp->m_logname) + 1);
 
 	if (remove_bhv) {
-		struct bhv_vfs	*vfsp = XFS_MTOVFS(mp);
+		struct vfs	*vfsp = XFS_MTOVFS(mp);
 
 		bhv_remove_all_vfsops(vfsp, 0);
 		VFS_REMOVEBHV(vfsp, &mp->m_bhv);
@@ -335,7 +337,7 @@ xfs_mount_validate_sb(
 
 xfs_agnumber_t
 xfs_initialize_perag(
-	bhv_vfs_t	*vfs,
+	struct vfs	*vfs,
 	xfs_mount_t	*mp,
 	xfs_agnumber_t	agcount)
 {
@@ -649,14 +651,14 @@ xfs_mount_common(xfs_mount_t *mp, xfs_sb_t *sbp)
  */
 int
 xfs_mountfs(
-	bhv_vfs_t	*vfsp,
+	vfs_t		*vfsp,
 	xfs_mount_t	*mp,
 	int		mfsi_flags)
 {
 	xfs_buf_t	*bp;
 	xfs_sb_t	*sbp = &(mp->m_sb);
 	xfs_inode_t	*rip;
-	bhv_vnode_t	*rvp = NULL;
+	vnode_t		*rvp = NULL;
 	int		readio_log, writeio_log;
 	xfs_daddr_t	d;
 	__uint64_t	ret64;
@@ -932,7 +934,18 @@ xfs_mountfs(
 	vfsp->vfs_altfsid = (xfs_fsid_t *)mp->m_fixedfsid;
 	mp->m_dmevmask = 0;	/* not persistent; set after each mount */
 
-	xfs_dir_mount(mp);
+	/*
+	 * Select the right directory manager.
+	 */
+	mp->m_dirops =
+		XFS_SB_VERSION_HASDIRV2(&mp->m_sb) ?
+			xfsv2_dirops :
+			xfsv1_dirops;
+
+	/*
+	 * Initialize directory manager's entries.
+	 */
+	XFS_DIR_MOUNT(mp);
 
 	/*
 	 * Initialize the attribute manager's entries.
@@ -993,9 +1006,8 @@ xfs_mountfs(
 
 	if (unlikely((rip->i_d.di_mode & S_IFMT) != S_IFDIR)) {
 		cmn_err(CE_WARN, "XFS: corrupted root inode");
-		cmn_err(CE_WARN, "Device %s - root %llu is not a directory",
-			XFS_BUFTARG_NAME(mp->m_ddev_targp),
-			(unsigned long long)rip->i_ino);
+		prdev("Root inode %llu is not a directory",
+		      mp->m_ddev_targp, (unsigned long long)rip->i_ino);
 		xfs_iunlock(rip, XFS_ILOCK_EXCL);
 		XFS_ERROR_REPORT("xfs_mountfs_int(2)", XFS_ERRLEVEL_LOW,
 				 mp);
@@ -1082,7 +1094,7 @@ xfs_mountfs(
 int
 xfs_unmountfs(xfs_mount_t *mp, struct cred *cr)
 {
-	struct bhv_vfs	*vfsp = XFS_MTOVFS(mp);
+	struct vfs	*vfsp = XFS_MTOVFS(mp);
 #if defined(DEBUG) || defined(INDUCE_IO_ERROR)
 	int64_t		fsid;
 #endif
@@ -1242,26 +1254,6 @@ xfs_mod_sb(xfs_trans_t *tp, __int64_t fields)
 
 	xfs_trans_log_buf(tp, bp, first, last);
 }
-
-/*
- * In order to avoid ENOSPC-related deadlock caused by
- * out-of-order locking of AGF buffer (PV 947395), we place
- * constraints on the relationship among actual allocations for
- * data blocks, freelist blocks, and potential file data bmap
- * btree blocks. However, these restrictions may result in no
- * actual space allocated for a delayed extent, for example, a data
- * block in a certain AG is allocated but there is no additional
- * block for the additional bmap btree block due to a split of the
- * bmap btree of the file. The result of this may lead to an
- * infinite loop in xfssyncd when the file gets flushed to disk and
- * all delayed extents need to be actually allocated. To get around
- * this, we explicitly set aside a few blocks which will not be
- * reserved in delayed allocation. Considering the minimum number of
- * needed freelist blocks is 4 fsbs, a potential split of file's bmap
- * btree requires 1 fsb, so we set the number of set-aside blocks to 8.
-*/
-#define SET_ASIDE_BLOCKS 8
-
 /*
  * xfs_mod_incore_sb_unlocked() is a utility routine common used to apply
  * a delta to a specified field in the in-core superblock.  Simply
@@ -1306,7 +1298,7 @@ xfs_mod_incore_sb_unlocked(xfs_mount_t *mp, xfs_sb_field_t field,
 		return 0;
 	case XFS_SBS_FDBLOCKS:
 
-		lcounter = (long long)mp->m_sb.sb_fdblocks - SET_ASIDE_BLOCKS;
+		lcounter = (long long)mp->m_sb.sb_fdblocks;
 		res_used = (long long)(mp->m_resblks - mp->m_resblks_avail);
 
 		if (delta > 0) {		/* Putting blocks back */
@@ -1340,7 +1332,7 @@ xfs_mod_incore_sb_unlocked(xfs_mount_t *mp, xfs_sb_field_t field,
 			}
 		}
 
-		mp->m_sb.sb_fdblocks = lcounter + SET_ASIDE_BLOCKS;
+		mp->m_sb.sb_fdblocks = lcounter;
 		return 0;
 	case XFS_SBS_FREXTENTS:
 		lcounter = (long long)mp->m_sb.sb_frextents;
@@ -1721,14 +1713,15 @@ xfs_mount_log_sbunit(
  * is present to prevent thrashing).
  */
 
-#ifdef CONFIG_HOTPLUG_CPU
 /*
  * hot-plug CPU notifier support.
  *
- * We need a notifier per filesystem as we need to be able to identify
- * the filesystem to balance the counters out. This is achieved by
- * having a notifier block embedded in the xfs_mount_t and doing pointer
- * magic to get the mount pointer from the notifier block address.
+ * We cannot use the hotcpu_register() function because it does
+ * not allow notifier instances. We need a notifier per filesystem
+ * as we need to be able to identify the filesystem to balance
+ * the counters out. This is achieved by having a notifier block
+ * embedded in the xfs_mount_t and doing pointer magic to get the
+ * mount pointer from the notifier block address.
  */
 STATIC int
 xfs_icsb_cpu_notify(
@@ -1778,7 +1771,6 @@ xfs_icsb_cpu_notify(
 
 	return NOTIFY_OK;
 }
-#endif /* CONFIG_HOTPLUG_CPU */
 
 int
 xfs_icsb_init_counters(
@@ -1791,11 +1783,9 @@ xfs_icsb_init_counters(
 	if (mp->m_sb_cnts == NULL)
 		return -ENOMEM;
 
-#ifdef CONFIG_HOTPLUG_CPU
 	mp->m_icsb_notifier.notifier_call = xfs_icsb_cpu_notify;
 	mp->m_icsb_notifier.priority = 0;
-	register_hotcpu_notifier(&mp->m_icsb_notifier);
-#endif /* CONFIG_HOTPLUG_CPU */
+	register_cpu_notifier(&mp->m_icsb_notifier);
 
 	for_each_online_cpu(i) {
 		cntp = (xfs_icsb_cnts_t *)per_cpu_ptr(mp->m_sb_cnts, i);
@@ -1814,7 +1804,7 @@ xfs_icsb_destroy_counters(
 	xfs_mount_t	*mp)
 {
 	if (mp->m_sb_cnts) {
-		unregister_hotcpu_notifier(&mp->m_icsb_notifier);
+		unregister_cpu_notifier(&mp->m_icsb_notifier);
 		free_percpu(mp->m_sb_cnts);
 	}
 }
@@ -2028,7 +2018,7 @@ xfs_icsb_balance_counter(
 	xfs_sb_field_t  field,
 	int		flags)
 {
-	uint64_t	count, resid;
+	uint64_t	count, resid = 0;
 	int		weight = num_online_cpus();
 	int		s;
 
@@ -2060,7 +2050,6 @@ xfs_icsb_balance_counter(
 		break;
 	default:
 		BUG();
-		count = resid = 0;	/* quiet, gcc */
 		break;
 	}
 

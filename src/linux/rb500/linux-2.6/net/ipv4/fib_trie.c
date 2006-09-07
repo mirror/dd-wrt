@@ -52,6 +52,7 @@
 
 #define VERSION "0.407"
 
+#include <linux/config.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
 #include <asm/bitops.h>

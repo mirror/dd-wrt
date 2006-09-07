@@ -4,6 +4,7 @@
  * Kernel entry-points.
  */
 
+#include <linux/config.h>
 #include <asm/asm-offsets.h>
 #include <asm/thread_info.h>
 #include <asm/pal.h>

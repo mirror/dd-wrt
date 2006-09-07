@@ -2,6 +2,7 @@
  * (C) P. Horton 2006
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/console.h>
@@ -39,9 +40,4 @@ void __init cobalt_early_console(void)
 	register_console(&cons_info);
 
 	printk("Cobalt: early console registered\n");
-}
-
-void __init disable_early_printk(void)
-{
-	unregister_console(&cons_info);
 }

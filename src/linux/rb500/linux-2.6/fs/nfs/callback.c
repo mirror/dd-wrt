@@ -6,6 +6,7 @@
  * NFSv4 callback handling
  */
 
+#include <linux/config.h>
 #include <linux/completion.h>
 #include <linux/ip.h>
 #include <linux/module.h>
@@ -181,6 +182,8 @@ static int nfs_callback_authenticate(struct svc_rqst *rqstp)
 /*
  * Define NFS4 callback program
  */
+extern struct svc_version nfs4_callback_version1;
+
 static struct svc_version *nfs4_callback_version[] = {
 	[1] = &nfs4_callback_version1,
 };

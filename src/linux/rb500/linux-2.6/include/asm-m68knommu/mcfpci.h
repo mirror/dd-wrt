@@ -12,6 +12,7 @@
 #define	mcfpci_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 #ifdef CONFIG_PCI
 

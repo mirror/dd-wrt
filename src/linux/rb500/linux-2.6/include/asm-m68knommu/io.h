@@ -3,6 +3,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 
 /*
  * These are for ISA/PCI shared memory _only_ and should never be used

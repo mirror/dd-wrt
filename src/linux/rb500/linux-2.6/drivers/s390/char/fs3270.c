@@ -8,6 +8,7 @@
  *	-- Copyright (C) 2003 IBM Deutschland Entwicklung GmbH, IBM Corporation
  */
 
+#include <linux/config.h>
 #include <linux/bootmem.h>
 #include <linux/console.h>
 #include <linux/init.h>

@@ -63,7 +63,6 @@ int snd_emux_new(struct snd_emux **remu)
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_emux_new);
 
 /*
  */
@@ -137,7 +136,6 @@ int snd_emux_register(struct snd_emux *emu, struct snd_card *card, int index, ch
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_emux_register);
 
 /*
  */
@@ -173,7 +171,17 @@ int snd_emux_free(struct snd_emux *emu)
 	return 0;
 }
 
+
+EXPORT_SYMBOL(snd_emux_new);
+EXPORT_SYMBOL(snd_emux_register);
 EXPORT_SYMBOL(snd_emux_free);
+
+EXPORT_SYMBOL(snd_emux_terminate_all);
+EXPORT_SYMBOL(snd_emux_lock_voice);
+EXPORT_SYMBOL(snd_emux_unlock_voice);
+
+/* soundfont.c */
+EXPORT_SYMBOL(snd_sf_linear_to_log);
 
 
 /*

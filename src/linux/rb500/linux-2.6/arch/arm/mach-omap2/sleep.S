@@ -21,6 +21,7 @@
  * MA 02111-1307 USA
  */
 
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/arch/io.h>

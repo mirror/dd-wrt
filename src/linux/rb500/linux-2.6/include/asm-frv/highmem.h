@@ -17,6 +17,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <asm/mem-layout.h>
 #include <asm/spr-regs.h>
@@ -134,7 +135,7 @@ static inline void *kmap_atomic(struct page *page, enum km_type type)
 
 	default:
 		BUG();
-		return NULL;
+		return 0;
 	}
 }
 

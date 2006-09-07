@@ -36,6 +36,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -73,7 +74,6 @@ SiSUSB_InitPtr(struct SiS_Private *SiS_Pr)
 /*            HELPER: Get ModeID             */
 /*********************************************/
 
-#if 0
 unsigned short
 SiSUSB_GetModeID(int HDisplay, int VDisplay, int Depth)
 {
@@ -157,7 +157,6 @@ SiSUSB_GetModeID(int HDisplay, int VDisplay, int Depth)
 
 	return ModeIndex;
 }
-#endif  /*  0  */
 
 /*********************************************/
 /*          HELPER: SetReg, GetReg           */
@@ -234,7 +233,7 @@ SiS_DisplayOn(struct SiS_Private *SiS_Pr)
 /*        HELPER: Init Port Addresses        */
 /*********************************************/
 
-static void
+void
 SiSUSBRegInit(struct SiS_Private *SiS_Pr, unsigned long BaseAddr)
 {
 	SiS_Pr->SiS_P3c4 = BaseAddr + 0x14;

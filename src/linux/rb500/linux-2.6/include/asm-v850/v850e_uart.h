@@ -19,6 +19,7 @@
 #ifndef __V850_V850E_UART_H__
 #define __V850_V850E_UART_H__
 
+#include <linux/config.h>
 #include <linux/termios.h>
 
 #include <asm/v850e_utils.h>

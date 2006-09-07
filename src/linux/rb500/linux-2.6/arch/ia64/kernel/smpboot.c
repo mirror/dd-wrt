@@ -21,6 +21,7 @@
  * 05/01/30 Suresh Siddha <suresh.b.siddha@intel.com>
  *						Setup cpu_sibling_map and cpu_core_map
  */
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/acpi.h>
@@ -124,7 +125,7 @@ extern void __devinit calibrate_delay (void);
 extern void start_ap (void);
 extern unsigned long ia64_iobase;
 
-struct task_struct *task_for_booting_cpu;
+task_t *task_for_booting_cpu;
 
 /*
  * State for each CPU
@@ -676,16 +677,16 @@ int migrate_platform_irqs(unsigned int cpu)
 			new_cpei_cpu = any_online_cpu(cpu_online_map);
 			mask = cpumask_of_cpu(new_cpei_cpu);
 			set_cpei_target_cpu(new_cpei_cpu);
-			desc = irq_desc + ia64_cpe_irq;
+			desc = irq_descp(ia64_cpe_irq);
 			/*
 			 * Switch for now, immediatly, we need to do fake intr
 			 * as other interrupts, but need to study CPEI behaviour with
 			 * polling before making changes.
 			 */
 			if (desc) {
-				desc->chip->disable(ia64_cpe_irq);
-				desc->chip->set_affinity(ia64_cpe_irq, mask);
-				desc->chip->enable(ia64_cpe_irq);
+				desc->handler->disable(ia64_cpe_irq);
+				desc->handler->set_affinity(ia64_cpe_irq, mask);
+				desc->handler->enable(ia64_cpe_irq);
 				printk ("Re-targetting CPEI to cpu %d\n", new_cpei_cpu);
 			}
 		}

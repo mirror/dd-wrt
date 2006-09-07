@@ -1,7 +1,11 @@
 /*
  *  Copyright (c) by James Courtier-Dutton <James@superbug.demon.co.uk>
- *  Driver tina2 chips
- *  Version: 0.1
+ *  Driver p16v chips
+ *  Version: 0.21
+ *
+ *
+ *  This code was initally based on code from ALSA's emu10k1x.c which is:
+ *  Copyright (c) by Francisco Moraes <fmoraes@nc.rr.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

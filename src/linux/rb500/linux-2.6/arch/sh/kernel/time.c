@@ -10,6 +10,7 @@
  *    Copyright (C) 1991, 1992, 1995  Linus Torvalds
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>

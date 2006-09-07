@@ -40,6 +40,7 @@
 */
 #define DOC_SINGLE_DRIVER
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <asm/errno.h>
@@ -230,10 +231,6 @@ static inline int __init doccheck(void __iomem *potential, unsigned long physadr
 
 static int docfound;
 
-extern void DoC2k_init(struct mtd_info *);
-extern void DoCMil_init(struct mtd_info *);
-extern void DoCMilPlus_init(struct mtd_info *);
-
 static void __init DoC_Probe(unsigned long physadr)
 {
 	void __iomem *docptr;
@@ -242,6 +239,8 @@ static void __init DoC_Probe(unsigned long physadr)
 	int ChipID;
 	char namebuf[15];
 	char *name = namebuf;
+	char *im_funcname = NULL;
+	char *im_modname = NULL;
 	void (*initroutine)(struct mtd_info *) = NULL;
 
 	docptr = ioremap(physadr, DOC_IOREMAP_LEN);
@@ -279,33 +278,41 @@ static void __init DoC_Probe(unsigned long physadr)
 		switch(ChipID) {
 		case DOC_ChipID_Doc2kTSOP:
 			name="2000 TSOP";
-			initroutine = symbol_request(DoC2k_init);
+			im_funcname = "DoC2k_init";
+			im_modname = "doc2000";
 			break;
 
 		case DOC_ChipID_Doc2k:
 			name="2000";
-			initroutine = symbol_request(DoC2k_init);
+			im_funcname = "DoC2k_init";
+			im_modname = "doc2000";
 			break;
 
 		case DOC_ChipID_DocMil:
 			name="Millennium";
 #ifdef DOC_SINGLE_DRIVER
-			initroutine = symbol_request(DoC2k_init);
+			im_funcname = "DoC2k_init";
+			im_modname = "doc2000";
 #else
-			initroutine = symbol_request(DoCMil_init);
+			im_funcname = "DoCMil_init";
+			im_modname = "doc2001";
 #endif /* DOC_SINGLE_DRIVER */
 			break;
 
 		case DOC_ChipID_DocMilPlus16:
 		case DOC_ChipID_DocMilPlus32:
 			name="MillenniumPlus";
-			initroutine = symbol_request(DoCMilPlus_init);
+			im_funcname = "DoCMilPlus_init";
+			im_modname = "doc2001plus";
 			break;
 		}
 
+		if (im_funcname)
+			initroutine = inter_module_get_request(im_funcname, im_modname);
+
 		if (initroutine) {
 			(*initroutine)(mtd);
-			symbol_put_addr(initroutine);
+			inter_module_put(im_funcname);
 			return;
 		}
 		printk(KERN_NOTICE "Cannot find driver for DiskOnChip %s at 0x%lX\n", name, physadr);

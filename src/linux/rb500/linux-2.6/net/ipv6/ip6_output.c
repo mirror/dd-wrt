@@ -28,6 +28,7 @@
  *				for datagram xmit
  */
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/string.h>
@@ -38,7 +39,6 @@
 #include <linux/in6.h>
 #include <linux/tcp.h>
 #include <linux/route.h>
-#include <linux/module.h>
 
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv6.h>
@@ -147,7 +147,7 @@ static int ip6_output2(struct sk_buff *skb)
 
 int ip6_output(struct sk_buff *skb)
 {
-	if ((skb->len > dst_mtu(skb->dst) && !skb_shinfo(skb)->gso_size) ||
+	if ((skb->len > dst_mtu(skb->dst) && !skb_shinfo(skb)->ufo_size) ||
 				dst_allfrag(skb->dst))
 		return ip6_fragment(skb, ip6_output2);
 	else
@@ -229,7 +229,7 @@ int ip6_xmit(struct sock *sk, struct sk_buff *skb, struct flowi *fl,
 	skb->priority = sk->sk_priority;
 
 	mtu = dst_mtu(dst);
-	if ((skb->len <= mtu) || ipfragok || skb_shinfo(skb)->gso_size) {
+	if ((skb->len <= mtu) || ipfragok) {
 		IP6_INC_STATS(IPSTATS_MIB_OUTREQUESTS);
 		return NF_HOOK(PF_INET6, NF_IP6_LOCAL_OUT, skb, NULL, dst->dev,
 				dst_output);
@@ -458,7 +458,6 @@ static void ip6_copy_metadata(struct sk_buff *to, struct sk_buff *from)
 	nf_bridge_get(to->nf_bridge);
 #endif
 #endif
-	skb_copy_secmark(to, from);
 }
 
 int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
@@ -489,7 +488,6 @@ int ip6_find_1stfragopt(struct sk_buff *skb, u8 **nexthdr)
 
 	return offset;
 }
-EXPORT_SYMBOL_GPL(ip6_find_1stfragopt);
 
 static int ip6_fragment(struct sk_buff *skb, int (*output)(struct sk_buff *))
 {
@@ -832,9 +830,8 @@ static inline int ip6_ufo_append_data(struct sock *sk,
 		struct frag_hdr fhdr;
 
 		/* specify the length of each IP datagram fragment*/
-		skb_shinfo(skb)->gso_size = mtu - fragheaderlen - 
-					    sizeof(struct frag_hdr);
-		skb_shinfo(skb)->gso_type = SKB_GSO_UDP;
+		skb_shinfo(skb)->ufo_size = (mtu - fragheaderlen) - 
+						sizeof(struct frag_hdr);
 		ipv6_select_ident(skb, &fhdr);
 		skb_shinfo(skb)->ip6_frag_id = fhdr.identification;
 		__skb_queue_tail(&sk->sk_write_queue, skb);

@@ -1,6 +1,6 @@
 /*
  *  fs/eventpoll.c ( Efficent event polling implementation )
- *  Copyright (C) 2001,...,2006	 Davide Libenzi
+ *  Copyright (C) 2001,...,2003	 Davide Libenzi
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ struct epoll_filefd {
  */
 struct wake_task_node {
 	struct list_head llink;
-	struct task_struct *task;
+	task_t *task;
 	wait_queue_head_t *wq;
 };
 
@@ -268,9 +268,9 @@ static int ep_poll(struct eventpoll *ep, struct epoll_event __user *events,
 		   int maxevents, long timeout);
 static int eventpollfs_delete_dentry(struct dentry *dentry);
 static struct inode *ep_eventpoll_inode(void);
-static int eventpollfs_get_sb(struct file_system_type *fs_type,
-			      int flags, const char *dev_name,
-			      void *data, struct vfsmount *mnt);
+static struct super_block *eventpollfs_get_sb(struct file_system_type *fs_type,
+					      int flags, const char *dev_name,
+					      void *data);
 
 /*
  * This semaphore is used to serialize ep_free() and eventpoll_release_file().
@@ -337,20 +337,20 @@ static inline int ep_cmp_ffd(struct epoll_filefd *p1,
 /* Special initialization for the rb-tree node to detect linkage */
 static inline void ep_rb_initnode(struct rb_node *n)
 {
-	rb_set_parent(n, n);
+	n->rb_parent = n;
 }
 
 /* Removes a node from the rb-tree and marks it for a fast is-linked check */
 static inline void ep_rb_erase(struct rb_node *n, struct rb_root *r)
 {
 	rb_erase(n, r);
-	rb_set_parent(n, n);
+	n->rb_parent = n;
 }
 
 /* Fast check to verify that the item is linked to the main rb-tree */
 static inline int ep_rb_linked(struct rb_node *n)
 {
-	return rb_parent(n) != n;
+	return n->rb_parent != n;
 }
 
 /*
@@ -413,7 +413,7 @@ static void ep_poll_safewake(struct poll_safewake *psw, wait_queue_head_t *wq)
 {
 	int wake_nests = 0;
 	unsigned long flags;
-	struct task_struct *this_task = current;
+	task_t *this_task = current;
 	struct list_head *lsthead = &psw->wake_task_list, *lnk;
 	struct wake_task_node *tncur;
 	struct wake_task_node tnode;
@@ -1004,7 +1004,7 @@ static int ep_insert(struct eventpoll *ep, struct epoll_event *event,
 
 		/* Notify waiting tasks that events are available */
 		if (waitqueue_active(&ep->wq))
-			__wake_up_locked(&ep->wq, TASK_UNINTERRUPTIBLE | TASK_INTERRUPTIBLE);
+			wake_up(&ep->wq);
 		if (waitqueue_active(&ep->poll_wait))
 			pwake++;
 	}
@@ -1083,8 +1083,7 @@ static int ep_modify(struct eventpoll *ep, struct epitem *epi, struct epoll_even
 
 				/* Notify waiting tasks that events are available */
 				if (waitqueue_active(&ep->wq))
-					__wake_up_locked(&ep->wq, TASK_UNINTERRUPTIBLE |
-							 TASK_INTERRUPTIBLE);
+					wake_up(&ep->wq);
 				if (waitqueue_active(&ep->poll_wait))
 					pwake++;
 			}
@@ -1261,8 +1260,7 @@ is_linked:
 	 * wait list.
 	 */
 	if (waitqueue_active(&ep->wq))
-		__wake_up_locked(&ep->wq, TASK_UNINTERRUPTIBLE |
-				 TASK_INTERRUPTIBLE);
+		wake_up(&ep->wq);
 	if (waitqueue_active(&ep->poll_wait))
 		pwake++;
 
@@ -1446,8 +1444,7 @@ static void ep_reinject_items(struct eventpoll *ep, struct list_head *txlist)
 		 * wait list.
 		 */
 		if (waitqueue_active(&ep->wq))
-			__wake_up_locked(&ep->wq, TASK_UNINTERRUPTIBLE |
-					 TASK_INTERRUPTIBLE);
+			wake_up(&ep->wq);
 		if (waitqueue_active(&ep->poll_wait))
 			pwake++;
 	}
@@ -1519,7 +1516,7 @@ retry:
 		 * ep_poll_callback() when events will become available.
 		 */
 		init_waitqueue_entry(&wait, current);
-		__add_wait_queue(&ep->wq, &wait);
+		add_wait_queue(&ep->wq, &wait);
 
 		for (;;) {
 			/*
@@ -1539,7 +1536,7 @@ retry:
 			jtimeout = schedule_timeout(jtimeout);
 			write_lock_irqsave(&ep->lock, flags);
 		}
-		__remove_wait_queue(&ep->wq, &wait);
+		remove_wait_queue(&ep->wq, &wait);
 
 		set_current_state(TASK_RUNNING);
 	}
@@ -1598,12 +1595,11 @@ eexit_1:
 }
 
 
-static int
+static struct super_block *
 eventpollfs_get_sb(struct file_system_type *fs_type, int flags,
-		   const char *dev_name, void *data, struct vfsmount *mnt)
+		   const char *dev_name, void *data)
 {
-	return get_sb_pseudo(fs_type, "eventpoll:", NULL, EVENTPOLLFS_MAGIC,
-			     mnt);
+	return get_sb_pseudo(fs_type, "eventpoll:", NULL, EVENTPOLLFS_MAGIC);
 }
 
 

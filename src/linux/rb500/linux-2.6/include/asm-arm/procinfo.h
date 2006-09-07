@@ -29,8 +29,7 @@ struct processor;
 struct proc_info_list {
 	unsigned int		cpu_val;
 	unsigned int		cpu_mask;
-	unsigned long		__cpu_mm_mmu_flags;	/* used by head.S */
-	unsigned long		__cpu_io_mmu_flags;	/* used by head.S */
+	unsigned long		__cpu_mmu_flags;	/* used by head.S */
 	unsigned long		__cpu_flush;		/* used by head.S */
 	const char		*arch_name;
 	const char		*elf_name;

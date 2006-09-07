@@ -24,6 +24,7 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
@@ -31,6 +32,7 @@
 #include "xfs_bmap_btree.h"
 #include "xfs_ialloc_btree.h"
 #include "xfs_alloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -129,6 +131,9 @@ xfs_init(void)
 #ifdef XFS_BMBT_TRACE
 	xfs_bmbt_trace_buf = ktrace_alloc(XFS_BMBT_TRACE_SIZE, KM_SLEEP);
 #endif
+#ifdef XFS_DIR_TRACE
+	xfs_dir_trace_buf = ktrace_alloc(XFS_DIR_TRACE_SIZE, KM_SLEEP);
+#endif
 #ifdef XFS_ATTR_TRACE
 	xfs_attr_trace_buf = ktrace_alloc(XFS_ATTR_TRACE_SIZE, KM_SLEEP);
 #endif
@@ -172,6 +177,9 @@ xfs_cleanup(void)
 #ifdef XFS_ATTR_TRACE
 	ktrace_free(xfs_attr_trace_buf);
 #endif
+#ifdef XFS_DIR_TRACE
+	ktrace_free(xfs_dir_trace_buf);
+#endif
 #ifdef XFS_BMBT_TRACE
 	ktrace_free(xfs_bmbt_trace_buf);
 #endif
@@ -204,7 +212,7 @@ xfs_cleanup(void)
  */
 STATIC int
 xfs_start_flags(
-	struct bhv_vfs		*vfs,
+	struct vfs		*vfs,
 	struct xfs_mount_args	*ap,
 	struct xfs_mount	*mp)
 {
@@ -329,7 +337,7 @@ xfs_start_flags(
  */
 STATIC int
 xfs_finish_flags(
-	struct bhv_vfs		*vfs,
+	struct vfs		*vfs,
 	struct xfs_mount_args	*ap,
 	struct xfs_mount	*mp)
 {
@@ -415,7 +423,7 @@ xfs_mount(
 	struct xfs_mount_args	*args,
 	cred_t			*credp)
 {
-	struct bhv_vfs		*vfsp = bhvtovfs(bhvp);
+	struct vfs		*vfsp = bhvtovfs(bhvp);
 	struct bhv_desc		*p;
 	struct xfs_mount	*mp = XFS_BHVTOM(bhvp);
 	struct block_device	*ddev, *logdev, *rtdev;
@@ -544,10 +552,10 @@ xfs_unmount(
 	int		flags,
 	cred_t		*credp)
 {
-	bhv_vfs_t	*vfsp = bhvtovfs(bdp);
+	struct vfs	*vfsp = bhvtovfs(bdp);
 	xfs_mount_t	*mp = XFS_BHVTOM(bdp);
 	xfs_inode_t	*rip;
-	bhv_vnode_t	*rvp;
+	vnode_t		*rvp;
 	int		unmount_event_wanted = 0;
 	int		unmount_event_flags = 0;
 	int		xfs_unmountfs_needed = 0;
@@ -657,8 +665,9 @@ xfs_mntupdate(
 	int				*flags,
 	struct xfs_mount_args		*args)
 {
-	bhv_vfs_t	*vfsp = bhvtovfs(bdp);
+	struct vfs	*vfsp = bhvtovfs(bdp);
 	xfs_mount_t	*mp = XFS_BHVTOM(bdp);
+	int		error;
 
 	if (!(*flags & MS_RDONLY)) {			/* rw/ro -> rw */
 		if (vfsp->vfs_flag & VFS_RDONLY)
@@ -670,7 +679,7 @@ xfs_mntupdate(
 			mp->m_flags &= ~XFS_MOUNT_BARRIER;
 		}
 	} else if (!(vfsp->vfs_flag & VFS_RDONLY)) {	/* rw -> ro */
-		bhv_vfs_sync(vfsp, SYNC_FSDATA|SYNC_BDFLUSH|SYNC_ATTR, NULL);
+		VFS_SYNC(vfsp, SYNC_FSDATA|SYNC_BDFLUSH|SYNC_ATTR, NULL, error);
 		xfs_quiesce_fs(mp);
 		xfs_log_unmount_write(mp);
 		xfs_unmountfs_writesb(mp);
@@ -693,7 +702,7 @@ xfs_unmount_flush(
 	xfs_inode_t	*rip = mp->m_rootip;
 	xfs_inode_t	*rbmip;
 	xfs_inode_t	*rsumip = NULL;
-	bhv_vnode_t	*rvp = XFS_ITOV(rip);
+	vnode_t		*rvp = XFS_ITOV(rip);
 	int		error;
 
 	xfs_ilock(rip, XFS_ILOCK_EXCL);
@@ -772,9 +781,9 @@ fscorrupt_out2:
 STATIC int
 xfs_root(
 	bhv_desc_t	*bdp,
-	bhv_vnode_t	**vpp)
+	vnode_t		**vpp)
 {
-	bhv_vnode_t	*vp;
+	vnode_t		*vp;
 
 	vp = XFS_ITOV((XFS_BHVTOM(bdp))->m_rootip);
 	VN_HOLD(vp);
@@ -792,8 +801,8 @@ xfs_root(
 STATIC int
 xfs_statvfs(
 	bhv_desc_t	*bdp,
-	bhv_statvfs_t	*statp,
-	bhv_vnode_t	*vp)
+	xfs_statfs_t	*statp,
+	vnode_t		*vp)
 {
 	__uint64_t	fakeinos;
 	xfs_extlen_t	lsize;
@@ -891,7 +900,7 @@ xfs_sync(
 /*
  * xfs sync routine for internal use
  *
- * This routine supports all of the flags defined for the generic vfs_sync
+ * This routine supports all of the flags defined for the generic VFS_SYNC
  * interface as explained above under xfs_sync.  In the interests of not
  * changing interfaces within the 6.5 family, additional internally-
  * required functions are specified within a separate xflags parameter,
@@ -908,7 +917,7 @@ xfs_sync_inodes(
 	xfs_inode_t	*ip = NULL;
 	xfs_inode_t	*ip_next;
 	xfs_buf_t	*bp;
-	bhv_vnode_t	*vp = NULL;
+	vnode_t		*vp = NULL;
 	int		error;
 	int		last_error;
 	uint64_t	fflag;
@@ -1147,9 +1156,9 @@ xfs_sync_inodes(
 			xfs_iunlock(ip, XFS_ILOCK_SHARED);
 
 			if (XFS_FORCED_SHUTDOWN(mp)) {
-				bhv_vop_toss_pages(vp, 0, -1, FI_REMAPF);
+				VOP_TOSS_PAGES(vp, 0, -1, FI_REMAPF);
 			} else {
-				bhv_vop_flushinval_pages(vp, 0, -1, FI_REMAPF);
+				VOP_FLUSHINVAL_PAGES(vp, 0, -1, FI_REMAPF);
 			}
 
 			xfs_ilock(ip, XFS_ILOCK_SHARED);
@@ -1169,8 +1178,8 @@ xfs_sync_inodes(
 				 * across calls to the buffer cache.
 				 */
 				xfs_iunlock(ip, XFS_ILOCK_SHARED);
-				error = bhv_vop_flush_pages(vp, (xfs_off_t)0,
-							-1, fflag, FI_NONE);
+				VOP_FLUSH_PAGES(vp, (xfs_off_t)0, -1,
+							fflag, FI_NONE, error);
 				xfs_ilock(ip, XFS_ILOCK_SHARED);
 			}
 
@@ -1222,7 +1231,9 @@ xfs_sync_inodes(
 						 * marker and free it.
 						 */
 						XFS_MOUNT_ILOCK(mp);
+
 						IPOINTER_REMOVE(ip, mp);
+
 						XFS_MOUNT_IUNLOCK(mp);
 
 						ASSERT(!(lock_flags &
@@ -1410,7 +1421,7 @@ xfs_sync_inodes(
 /*
  * xfs sync routine for internal use
  *
- * This routine supports all of the flags defined for the generic vfs_sync
+ * This routine supports all of the flags defined for the generic VFS_SYNC
  * interface as explained above under xfs_sync.  In the interests of not
  * changing interfaces within the 6.5 family, additional internally-
  * required functions are specified within a separate xflags parameter,
@@ -1563,7 +1574,7 @@ xfs_syncsub(
 STATIC int
 xfs_vget(
 	bhv_desc_t	*bdp,
-	bhv_vnode_t	**vpp,
+	vnode_t		**vpp,
 	fid_t		*fidp)
 {
 	xfs_mount_t	*mp = XFS_BHVTOM(bdp);
@@ -1646,10 +1657,10 @@ xfs_vget(
 #define MNTOPT_NOATTR2	"noattr2"	/* do not use attr2 attribute format */
 
 STATIC unsigned long
-suffix_strtoul(char *s, char **endp, unsigned int base)
+suffix_strtoul(const char *cp, char **endp, unsigned int base)
 {
 	int	last, shift_left_factor = 0;
-	char	*value = s;
+	char	*value = (char *)cp;
 
 	last = strlen(value) - 1;
 	if (value[last] == 'K' || value[last] == 'k') {
@@ -1665,7 +1676,7 @@ suffix_strtoul(char *s, char **endp, unsigned int base)
 		value[last] = '\0';
 	}
 
-	return simple_strtoul((const char *)s, endp, base) << shift_left_factor;
+	return simple_strtoul(cp, endp, base) << shift_left_factor;
 }
 
 STATIC int
@@ -1675,7 +1686,7 @@ xfs_parseargs(
 	struct xfs_mount_args	*args,
 	int			update)
 {
-	bhv_vfs_t		*vfsp = bhvtovfs(bhv);
+	struct vfs		*vfsp = bhvtovfs(bhv);
 	char			*this_char, *value, *eov;
 	int			dsunit, dswidth, vol_dsunit, vol_dswidth;
 	int			iosize;
@@ -1697,48 +1708,42 @@ xfs_parseargs(
 
 		if (!strcmp(this_char, MNTOPT_LOGBUFS)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			args->logbufs = simple_strtoul(value, &eov, 10);
 		} else if (!strcmp(this_char, MNTOPT_LOGBSIZE)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			args->logbufsize = suffix_strtoul(value, &eov, 10);
 		} else if (!strcmp(this_char, MNTOPT_LOGDEV)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			strncpy(args->logname, value, MAXNAMELEN);
 		} else if (!strcmp(this_char, MNTOPT_MTPT)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			strncpy(args->mtpt, value, MAXNAMELEN);
 		} else if (!strcmp(this_char, MNTOPT_RTDEV)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			strncpy(args->rtname, value, MAXNAMELEN);
 		} else if (!strcmp(this_char, MNTOPT_BIOSIZE)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
@@ -1747,8 +1752,7 @@ xfs_parseargs(
 			args->iosizelog = (uint8_t) iosize;
 		} else if (!strcmp(this_char, MNTOPT_ALLOCSIZE)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
@@ -1757,8 +1761,7 @@ xfs_parseargs(
 			args->iosizelog = ffs(iosize) - 1;
 		} else if (!strcmp(this_char, MNTOPT_IHASHSIZE)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
@@ -1779,8 +1782,7 @@ xfs_parseargs(
 		} else if (!strcmp(this_char, MNTOPT_INO64)) {
 			args->flags |= XFSMNT_INO64;
 #if !XFS_BIG_INUMS
-			cmn_err(CE_WARN,
-				"XFS: %s option not allowed on this system",
+			printk("XFS: %s option not allowed on this system\n",
 				this_char);
 			return EINVAL;
 #endif
@@ -1790,16 +1792,14 @@ xfs_parseargs(
 			args->flags |= XFSMNT_SWALLOC;
 		} else if (!strcmp(this_char, MNTOPT_SUNIT)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
 			dsunit = simple_strtoul(value, &eov, 10);
 		} else if (!strcmp(this_char, MNTOPT_SWIDTH)) {
 			if (!value || !*value) {
-				cmn_err(CE_WARN,
-					"XFS: %s option requires an argument",
+				printk("XFS: %s option requires an argument\n",
 					this_char);
 				return EINVAL;
 			}
@@ -1807,8 +1807,7 @@ xfs_parseargs(
 		} else if (!strcmp(this_char, MNTOPT_64BITINODE)) {
 			args->flags &= ~XFSMNT_32BITINODES;
 #if !XFS_BIG_INUMS
-			cmn_err(CE_WARN,
-				"XFS: %s option not allowed on this system",
+			printk("XFS: %s option not allowed on this system\n",
 				this_char);
 			return EINVAL;
 #endif
@@ -1832,41 +1831,36 @@ xfs_parseargs(
 			args->flags &= ~XFSMNT_ATTR2;
 		} else if (!strcmp(this_char, "osyncisdsync")) {
 			/* no-op, this is now the default */
-			cmn_err(CE_WARN,
-	"XFS: osyncisdsync is now the default, option is deprecated.");
+printk("XFS: osyncisdsync is now the default, option is deprecated.\n");
 		} else if (!strcmp(this_char, "irixsgid")) {
-			cmn_err(CE_WARN,
-	"XFS: irixsgid is now a sysctl(2) variable, option is deprecated.");
+printk("XFS: irixsgid is now a sysctl(2) variable, option is deprecated.\n");
 		} else {
-			cmn_err(CE_WARN,
-				"XFS: unknown mount option [%s].", this_char);
+			printk("XFS: unknown mount option [%s].\n", this_char);
 			return EINVAL;
 		}
 	}
 
 	if (args->flags & XFSMNT_NORECOVERY) {
 		if ((vfsp->vfs_flag & VFS_RDONLY) == 0) {
-			cmn_err(CE_WARN,
-				"XFS: no-recovery mounts must be read-only.");
+			printk("XFS: no-recovery mounts must be read-only.\n");
 			return EINVAL;
 		}
 	}
 
 	if ((args->flags & XFSMNT_NOALIGN) && (dsunit || dswidth)) {
-		cmn_err(CE_WARN,
-	"XFS: sunit and swidth options incompatible with the noalign option");
+		printk(
+	"XFS: sunit and swidth options incompatible with the noalign option\n");
 		return EINVAL;
 	}
 
 	if ((dsunit && !dswidth) || (!dsunit && dswidth)) {
-		cmn_err(CE_WARN,
-			"XFS: sunit and swidth must be specified together");
+		printk("XFS: sunit and swidth must be specified together\n");
 		return EINVAL;
 	}
 
 	if (dsunit && (dswidth % dsunit != 0)) {
-		cmn_err(CE_WARN,
-	"XFS: stripe width (%d) must be a multiple of the stripe unit (%d)",
+		printk(
+	"XFS: stripe width (%d) must be a multiple of the stripe unit (%d)\n",
 			dswidth, dsunit);
 		return EINVAL;
 	}
@@ -1913,7 +1907,7 @@ xfs_showargs(
 	};
 	struct proc_xfs_info	*xfs_infop;
 	struct xfs_mount	*mp = XFS_BHVTOM(bhv);
-	struct bhv_vfs		*vfsp = XFS_MTOVFS(mp);
+	struct vfs		*vfsp = XFS_MTOVFS(mp);
 
 	for (xfs_infop = xfs_info; xfs_infop->flag; xfs_infop++) {
 		if (mp->m_flags & xfs_infop->flag)
@@ -1973,7 +1967,7 @@ xfs_freeze(
 }
 
 
-bhv_vfsops_t xfs_vfsops = {
+vfsops_t xfs_vfsops = {
 	BHV_IDENTITY_INIT(VFS_BHV_XFS,VFS_POSITION_XFS),
 	.vfs_parseargs		= xfs_parseargs,
 	.vfs_showargs		= xfs_showargs,

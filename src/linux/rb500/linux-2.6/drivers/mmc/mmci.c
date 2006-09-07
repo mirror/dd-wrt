@@ -7,6 +7,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
@@ -531,11 +532,11 @@ static int mmci_probe(struct amba_device *dev, void *id)
 	writel(0, host->base + MMCIMASK1);
 	writel(0xfff, host->base + MMCICLEAR);
 
-	ret = request_irq(dev->irq[0], mmci_irq, IRQF_SHARED, DRIVER_NAME " (cmd)", host);
+	ret = request_irq(dev->irq[0], mmci_irq, SA_SHIRQ, DRIVER_NAME " (cmd)", host);
 	if (ret)
 		goto unmap;
 
-	ret = request_irq(dev->irq[1], mmci_pio_irq, IRQF_SHARED, DRIVER_NAME " (pio)", host);
+	ret = request_irq(dev->irq[1], mmci_pio_irq, SA_SHIRQ, DRIVER_NAME " (pio)", host);
 	if (ret)
 		goto irq0_free;
 
@@ -545,9 +546,9 @@ static int mmci_probe(struct amba_device *dev, void *id)
 
 	mmc_add_host(mmc);
 
-	printk(KERN_INFO "%s: MMCI rev %x cfg %02x at 0x%016llx irq %d,%d\n",
+	printk(KERN_INFO "%s: MMCI rev %x cfg %02x at 0x%08lx irq %d,%d\n",
 		mmc_hostname(mmc), amba_rev(dev), amba_config(dev),
-		(unsigned long long)dev->res.start, dev->irq[0], dev->irq[1]);
+		dev->res.start, dev->irq[0], dev->irq[1]);
 
 	init_timer(&host->timer);
 	host->timer.data = (unsigned long)host;

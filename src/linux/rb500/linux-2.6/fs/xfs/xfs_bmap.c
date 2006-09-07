@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000-2006 Silicon Graphics, Inc.
+ * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -24,11 +24,13 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_da_btree.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -38,15 +40,13 @@
 #include "xfs_mount.h"
 #include "xfs_ialloc.h"
 #include "xfs_itable.h"
-#include "xfs_dir2_data.h"
-#include "xfs_dir2_leaf.h"
-#include "xfs_dir2_block.h"
 #include "xfs_inode_item.h"
 #include "xfs_extfree_item.h"
 #include "xfs_alloc.h"
 #include "xfs_bmap.h"
 #include "xfs_rtalloc.h"
 #include "xfs_error.h"
+#include "xfs_dir_leaf.h"
 #include "xfs_attr_leaf.h"
 #include "xfs_rw.h"
 #include "xfs_quota.h"
@@ -101,7 +101,6 @@ xfs_bmap_add_extent(
 	xfs_fsblock_t		*first,	/* pointer to firstblock variable */
 	xfs_bmap_free_t		*flist,	/* list of extents to be freed */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork, /* data or attr fork */
 	int			rsvd);	/* OK to allocate reserved blocks */
 
@@ -119,7 +118,6 @@ xfs_bmap_add_extent_delay_real(
 	xfs_fsblock_t		*first,	/* pointer to firstblock variable */
 	xfs_bmap_free_t		*flist,	/* list of extents to be freed */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			rsvd);	/* OK to allocate reserved blocks */
 
 /*
@@ -133,7 +131,6 @@ xfs_bmap_add_extent_hole_delay(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
 	int			*logflagsp,/* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			rsvd);	/* OK to allocate reserved blocks */
 
 /*
@@ -147,7 +144,6 @@ xfs_bmap_add_extent_hole_real(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork); /* data or attr fork */
 
 /*
@@ -160,8 +156,7 @@ xfs_bmap_add_extent_unwritten_real(
 	xfs_extnum_t		idx,	/* extent number to update/insert */
 	xfs_btree_cur_t		**curp,	/* if *curp is null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
-	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta); /* Change made to incore extents */
+	int			*logflagsp); /* inode logging flags */
 
 /*
  * xfs_bmap_alloc is called by xfs_bmapi to allocate an extent for a file.
@@ -208,7 +203,6 @@ xfs_bmap_del_extent(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
 	int			*logflagsp,/* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork, /* data or attr fork */
 	int			rsvd);	 /* OK to allocate reserved blocks */
 
@@ -516,7 +510,7 @@ xfs_bmap_add_attrfork_local(
 		dargs.total = mp->m_dirblkfsbs;
 		dargs.whichfork = XFS_DATA_FORK;
 		dargs.trans = tp;
-		error = xfs_dir2_sf_to_block(&dargs);
+		error = XFS_DIR_SHORTFORM_TO_SINGLE(mp, &dargs);
 	} else
 		error = xfs_bmap_local_to_extents(tp, ip, firstblock, 1, flags,
 			XFS_DATA_FORK);
@@ -536,7 +530,6 @@ xfs_bmap_add_extent(
 	xfs_fsblock_t		*first,	/* pointer to firstblock variable */
 	xfs_bmap_free_t		*flist,	/* list of extents to be freed */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork, /* data or attr fork */
 	int			rsvd)	/* OK to use reserved data blocks */
 {
@@ -574,15 +567,6 @@ xfs_bmap_add_extent(
 			logflags = XFS_ILOG_CORE | XFS_ILOG_FEXT(whichfork);
 		} else
 			logflags = 0;
-		/* DELTA: single new extent */
-		if (delta) {
-			if (delta->xed_startoff > new->br_startoff)
-				delta->xed_startoff = new->br_startoff;
-			if (delta->xed_blockcount <
-					new->br_startoff + new->br_blockcount)
-				delta->xed_blockcount = new->br_startoff +
-						new->br_blockcount;
-		}
 	}
 	/*
 	 * Any kind of new delayed allocation goes here.
@@ -592,7 +576,7 @@ xfs_bmap_add_extent(
 			ASSERT((cur->bc_private.b.flags &
 				XFS_BTCUR_BPRV_WASDEL) == 0);
 		if ((error = xfs_bmap_add_extent_hole_delay(ip, idx, cur, new,
-				&logflags, delta, rsvd)))
+				&logflags, rsvd)))
 			goto done;
 	}
 	/*
@@ -603,7 +587,7 @@ xfs_bmap_add_extent(
 			ASSERT((cur->bc_private.b.flags &
 				XFS_BTCUR_BPRV_WASDEL) == 0);
 		if ((error = xfs_bmap_add_extent_hole_real(ip, idx, cur, new,
-				&logflags, delta, whichfork)))
+				&logflags, whichfork)))
 			goto done;
 	} else {
 		xfs_bmbt_irec_t	prev;	/* old extent at offset idx */
@@ -628,17 +612,17 @@ xfs_bmap_add_extent(
 						XFS_BTCUR_BPRV_WASDEL);
 				if ((error = xfs_bmap_add_extent_delay_real(ip,
 					idx, &cur, new, &da_new, first, flist,
-					&logflags, delta, rsvd)))
+					&logflags, rsvd)))
 					goto done;
 			} else if (new->br_state == XFS_EXT_NORM) {
 				ASSERT(new->br_state == XFS_EXT_NORM);
 				if ((error = xfs_bmap_add_extent_unwritten_real(
-					ip, idx, &cur, new, &logflags, delta)))
+					ip, idx, &cur, new, &logflags)))
 					goto done;
 			} else {
 				ASSERT(new->br_state == XFS_EXT_UNWRITTEN);
 				if ((error = xfs_bmap_add_extent_unwritten_real(
-					ip, idx, &cur, new, &logflags, delta)))
+					ip, idx, &cur, new, &logflags)))
 					goto done;
 			}
 			ASSERT(*curp == cur || *curp == NULL);
@@ -651,7 +635,7 @@ xfs_bmap_add_extent(
 				ASSERT((cur->bc_private.b.flags &
 					XFS_BTCUR_BPRV_WASDEL) == 0);
 			if ((error = xfs_bmap_add_extent_hole_real(ip, idx, cur,
-					new, &logflags, delta, whichfork)))
+					new, &logflags, whichfork)))
 				goto done;
 		}
 	}
@@ -716,7 +700,6 @@ xfs_bmap_add_extent_delay_real(
 	xfs_fsblock_t		*first,	/* pointer to firstblock variable */
 	xfs_bmap_free_t		*flist,	/* list of extents to be freed */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			rsvd)	/* OK to use reserved data block allocation */
 {
 	xfs_btree_cur_t		*cur;	/* btree cursor */
@@ -733,8 +716,8 @@ xfs_bmap_add_extent_delay_real(
 					/* left is 0, right is 1, prev is 2 */
 	int			rval=0;	/* return value (logging flags) */
 	int			state = 0;/* state bits, accessed thru macros */
-	xfs_filblks_t		temp=0;	/* value for dnew calculations */
-	xfs_filblks_t		temp2=0;/* value for dnew calculations */
+	xfs_filblks_t		temp;	/* value for dnew calculations */
+	xfs_filblks_t		temp2;	/* value for dnew calculations */
 	int			tmp_rval;	/* partial logging flags */
 	enum {				/* bit number definitions for state */
 		LEFT_CONTIG,	RIGHT_CONTIG,
@@ -856,11 +839,6 @@ xfs_bmap_add_extent_delay_real(
 				goto done;
 		}
 		*dnew = 0;
-		/* DELTA: Three in-core extents are replaced by one. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, RIGHT_FILLING, LEFT_CONTIG):
@@ -894,10 +872,6 @@ xfs_bmap_add_extent_delay_real(
 				goto done;
 		}
 		*dnew = 0;
-		/* DELTA: Two in-core extents are replaced by one. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, RIGHT_FILLING, RIGHT_CONTIG):
@@ -932,10 +906,6 @@ xfs_bmap_add_extent_delay_real(
 				goto done;
 		}
 		*dnew = 0;
-		/* DELTA: Two in-core extents are replaced by one. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK2(LEFT_FILLING, RIGHT_FILLING):
@@ -966,9 +936,6 @@ xfs_bmap_add_extent_delay_real(
 			ASSERT(i == 1);
 		}
 		*dnew = 0;
-		/* DELTA: The in-core extent described by new changed type. */
-		temp = new->br_startoff;
-		temp2 = new->br_blockcount;
 		break;
 
 	case MASK2(LEFT_FILLING, LEFT_CONTIG):
@@ -1011,10 +978,6 @@ xfs_bmap_add_extent_delay_real(
 		xfs_bmap_trace_post_update(fname, "LF|LC", ip, idx,
 			XFS_DATA_FORK);
 		*dnew = temp;
-		/* DELTA: The boundary between two in-core extents moved. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount;
 		break;
 
 	case MASK(LEFT_FILLING):
@@ -1062,9 +1025,6 @@ xfs_bmap_add_extent_delay_real(
 		xfs_bmap_trace_post_update(fname, "LF", ip, idx + 1,
 			XFS_DATA_FORK);
 		*dnew = temp;
-		/* DELTA: One in-core extent is split in two. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case MASK2(RIGHT_FILLING, RIGHT_CONTIG):
@@ -1107,10 +1067,6 @@ xfs_bmap_add_extent_delay_real(
 		xfs_bmap_trace_post_update(fname, "RF|RC", ip, idx,
 			XFS_DATA_FORK);
 		*dnew = temp;
-		/* DELTA: The boundary between two in-core extents moved. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK(RIGHT_FILLING):
@@ -1156,9 +1112,6 @@ xfs_bmap_add_extent_delay_real(
 		xfs_bmbt_set_startblock(ep, NULLSTARTBLOCK((int)temp));
 		xfs_bmap_trace_post_update(fname, "RF", ip, idx, XFS_DATA_FORK);
 		*dnew = temp;
-		/* DELTA: One in-core extent is split in two. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case 0:
@@ -1241,9 +1194,6 @@ xfs_bmap_add_extent_delay_real(
 		xfs_bmap_trace_post_update(fname, "0", ip, idx + 2,
 			XFS_DATA_FORK);
 		*dnew = temp + temp2;
-		/* DELTA: One in-core extent is split in three. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, LEFT_CONTIG, RIGHT_CONTIG):
@@ -1259,13 +1209,6 @@ xfs_bmap_add_extent_delay_real(
 		ASSERT(0);
 	}
 	*curp = cur;
-	if (delta) {
-		temp2 += temp;
-		if (delta->xed_startoff > temp)
-			delta->xed_startoff = temp;
-		if (delta->xed_blockcount < temp2)
-			delta->xed_blockcount = temp2;
-	}
 done:
 	*logflagsp = rval;
 	return error;
@@ -1292,8 +1235,7 @@ xfs_bmap_add_extent_unwritten_real(
 	xfs_extnum_t		idx,	/* extent number to update/insert */
 	xfs_btree_cur_t		**curp,	/* if *curp is null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
-	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta) /* Change made to incore extents */
+	int			*logflagsp) /* inode logging flags */
 {
 	xfs_btree_cur_t		*cur;	/* btree cursor */
 	xfs_bmbt_rec_t		*ep;	/* extent entry for idx */
@@ -1310,8 +1252,6 @@ xfs_bmap_add_extent_unwritten_real(
 					/* left is 0, right is 1, prev is 2 */
 	int			rval=0;	/* return value (logging flags) */
 	int			state = 0;/* state bits, accessed thru macros */
-	xfs_filblks_t		temp=0;
-	xfs_filblks_t		temp2=0;
 	enum {				/* bit number definitions for state */
 		LEFT_CONTIG,	RIGHT_CONTIG,
 		LEFT_FILLING,	RIGHT_FILLING,
@@ -1440,11 +1380,6 @@ xfs_bmap_add_extent_unwritten_real(
 				RIGHT.br_blockcount, LEFT.br_state)))
 				goto done;
 		}
-		/* DELTA: Three in-core extents are replaced by one. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, RIGHT_FILLING, LEFT_CONTIG):
@@ -1484,10 +1419,6 @@ xfs_bmap_add_extent_unwritten_real(
 				LEFT.br_state)))
 				goto done;
 		}
-		/* DELTA: Two in-core extents are replaced by one. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, RIGHT_FILLING, RIGHT_CONTIG):
@@ -1528,10 +1459,6 @@ xfs_bmap_add_extent_unwritten_real(
 				newext)))
 				goto done;
 		}
-		/* DELTA: Two in-core extents are replaced by one. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK2(LEFT_FILLING, RIGHT_FILLING):
@@ -1560,9 +1487,6 @@ xfs_bmap_add_extent_unwritten_real(
 				newext)))
 				goto done;
 		}
-		/* DELTA: The in-core extent described by new changed type. */
-		temp = new->br_startoff;
-		temp2 = new->br_blockcount;
 		break;
 
 	case MASK2(LEFT_FILLING, LEFT_CONTIG):
@@ -1610,10 +1534,6 @@ xfs_bmap_add_extent_unwritten_real(
 				LEFT.br_state))
 				goto done;
 		}
-		/* DELTA: The boundary between two in-core extents moved. */
-		temp = LEFT.br_startoff;
-		temp2 = LEFT.br_blockcount +
-			PREV.br_blockcount;
 		break;
 
 	case MASK(LEFT_FILLING):
@@ -1654,9 +1574,6 @@ xfs_bmap_add_extent_unwritten_real(
 				goto done;
 			ASSERT(i == 1);
 		}
-		/* DELTA: One in-core extent is split in two. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case MASK2(RIGHT_FILLING, RIGHT_CONTIG):
@@ -1700,10 +1617,6 @@ xfs_bmap_add_extent_unwritten_real(
 				newext)))
 				goto done;
 		}
-		/* DELTA: The boundary between two in-core extents moved. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount +
-			RIGHT.br_blockcount;
 		break;
 
 	case MASK(RIGHT_FILLING):
@@ -1744,9 +1657,6 @@ xfs_bmap_add_extent_unwritten_real(
 				goto done;
 			ASSERT(i == 1);
 		}
-		/* DELTA: One in-core extent is split in two. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case 0:
@@ -1800,9 +1710,6 @@ xfs_bmap_add_extent_unwritten_real(
 				goto done;
 			ASSERT(i == 1);
 		}
-		/* DELTA: One in-core extent is split in three. */
-		temp = PREV.br_startoff;
-		temp2 = PREV.br_blockcount;
 		break;
 
 	case MASK3(LEFT_FILLING, LEFT_CONTIG, RIGHT_CONTIG):
@@ -1818,13 +1725,6 @@ xfs_bmap_add_extent_unwritten_real(
 		ASSERT(0);
 	}
 	*curp = cur;
-	if (delta) {
-		temp2 += temp;
-		if (delta->xed_startoff > temp)
-			delta->xed_startoff = temp;
-		if (delta->xed_blockcount < temp2)
-			delta->xed_blockcount = temp2;
-	}
 done:
 	*logflagsp = rval;
 	return error;
@@ -1853,7 +1753,6 @@ xfs_bmap_add_extent_hole_delay(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			rsvd)		/* OK to allocate reserved blocks */
 {
 	xfs_bmbt_rec_t		*ep;	/* extent record for idx */
@@ -1866,8 +1765,7 @@ xfs_bmap_add_extent_hole_delay(
 	xfs_filblks_t		oldlen=0;	/* old indirect size */
 	xfs_bmbt_irec_t		right;	/* right neighbor extent entry */
 	int			state;  /* state bits, accessed thru macros */
-	xfs_filblks_t		temp=0;	/* temp for indirect calculations */
-	xfs_filblks_t		temp2=0;
+	xfs_filblks_t		temp;	/* temp for indirect calculations */
 	enum {				/* bit number definitions for state */
 		LEFT_CONTIG,	RIGHT_CONTIG,
 		LEFT_DELAY,	RIGHT_DELAY,
@@ -1946,9 +1844,6 @@ xfs_bmap_add_extent_hole_delay(
 			XFS_DATA_FORK);
 		xfs_iext_remove(ifp, idx, 1);
 		ip->i_df.if_lastex = idx - 1;
-		/* DELTA: Two in-core extents were replaced by one. */
-		temp2 = temp;
-		temp = left.br_startoff;
 		break;
 
 	case MASK(LEFT_CONTIG):
@@ -1969,9 +1864,6 @@ xfs_bmap_add_extent_hole_delay(
 		xfs_bmap_trace_post_update(fname, "LC", ip, idx - 1,
 			XFS_DATA_FORK);
 		ip->i_df.if_lastex = idx - 1;
-		/* DELTA: One in-core extent grew into a hole. */
-		temp2 = temp;
-		temp = left.br_startoff;
 		break;
 
 	case MASK(RIGHT_CONTIG):
@@ -1989,9 +1881,6 @@ xfs_bmap_add_extent_hole_delay(
 			NULLSTARTBLOCK((int)newlen), temp, right.br_state);
 		xfs_bmap_trace_post_update(fname, "RC", ip, idx, XFS_DATA_FORK);
 		ip->i_df.if_lastex = idx;
-		/* DELTA: One in-core extent grew into a hole. */
-		temp2 = temp;
-		temp = new->br_startoff;
 		break;
 
 	case 0:
@@ -2005,9 +1894,6 @@ xfs_bmap_add_extent_hole_delay(
 			XFS_DATA_FORK);
 		xfs_iext_insert(ifp, idx, 1, new);
 		ip->i_df.if_lastex = idx;
-		/* DELTA: A new in-core extent was added in a hole. */
-		temp2 = new->br_blockcount;
-		temp = new->br_startoff;
 		break;
 	}
 	if (oldlen != newlen) {
@@ -2017,13 +1903,6 @@ xfs_bmap_add_extent_hole_delay(
 		/*
 		 * Nothing to do for disk quota accounting here.
 		 */
-	}
-	if (delta) {
-		temp2 += temp;
-		if (delta->xed_startoff > temp)
-			delta->xed_startoff = temp;
-		if (delta->xed_blockcount < temp2)
-			delta->xed_blockcount = temp2;
 	}
 	*logflagsp = 0;
 	return 0;
@@ -2046,7 +1925,6 @@ xfs_bmap_add_extent_hole_real(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*new,	/* new data to add to file extents */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork) /* data or attr fork */
 {
 	xfs_bmbt_rec_t		*ep;	/* pointer to extent entry ins. point */
@@ -2058,10 +1936,7 @@ xfs_bmap_add_extent_hole_real(
 	xfs_ifork_t		*ifp;	/* inode fork pointer */
 	xfs_bmbt_irec_t		left;	/* left neighbor extent entry */
 	xfs_bmbt_irec_t		right;	/* right neighbor extent entry */
-	int			rval=0;	/* return value (logging flags) */
 	int			state;	/* state bits, accessed thru macros */
-	xfs_filblks_t		temp=0;
-	xfs_filblks_t		temp2=0;
 	enum {				/* bit number definitions for state */
 		LEFT_CONTIG,	RIGHT_CONTIG,
 		LEFT_DELAY,	RIGHT_DELAY,
@@ -2118,7 +1993,6 @@ xfs_bmap_add_extent_hole_real(
 		 left.br_blockcount + new->br_blockcount +
 		     right.br_blockcount <= MAXEXTLEN));
 
-	error = 0;
 	/*
 	 * Select which case we're in here, and implement it.
 	 */
@@ -2144,35 +2018,25 @@ xfs_bmap_add_extent_hole_real(
 		XFS_IFORK_NEXT_SET(ip, whichfork,
 			XFS_IFORK_NEXTENTS(ip, whichfork) - 1);
 		if (cur == NULL) {
-			rval = XFS_ILOG_CORE | XFS_ILOG_FEXT(whichfork);
-		} else {
-			rval = XFS_ILOG_CORE;
-			if ((error = xfs_bmbt_lookup_eq(cur,
-					right.br_startoff,
-					right.br_startblock,
-					right.br_blockcount, &i)))
-				goto done;
-			ASSERT(i == 1);
-			if ((error = xfs_bmbt_delete(cur, &i)))
-				goto done;
-			ASSERT(i == 1);
-			if ((error = xfs_bmbt_decrement(cur, 0, &i)))
-				goto done;
-			ASSERT(i == 1);
-			if ((error = xfs_bmbt_update(cur, left.br_startoff,
-					left.br_startblock,
-					left.br_blockcount +
-						new->br_blockcount +
-						right.br_blockcount,
-					left.br_state)))
-				goto done;
+			*logflagsp = XFS_ILOG_CORE | XFS_ILOG_FEXT(whichfork);
+			return 0;
 		}
-		/* DELTA: Two in-core extents were replaced by one. */
-		temp = left.br_startoff;
-		temp2 = left.br_blockcount +
-			new->br_blockcount +
-			right.br_blockcount;
-		break;
+		*logflagsp = XFS_ILOG_CORE;
+		if ((error = xfs_bmbt_lookup_eq(cur, right.br_startoff,
+				right.br_startblock, right.br_blockcount, &i)))
+			return error;
+		ASSERT(i == 1);
+		if ((error = xfs_bmbt_delete(cur, &i)))
+			return error;
+		ASSERT(i == 1);
+		if ((error = xfs_bmbt_decrement(cur, 0, &i)))
+			return error;
+		ASSERT(i == 1);
+		error = xfs_bmbt_update(cur, left.br_startoff,
+				left.br_startblock,
+				left.br_blockcount + new->br_blockcount +
+				right.br_blockcount, left.br_state);
+		return error;
 
 	case MASK(LEFT_CONTIG):
 		/*
@@ -2186,27 +2050,19 @@ xfs_bmap_add_extent_hole_real(
 		xfs_bmap_trace_post_update(fname, "LC", ip, idx - 1, whichfork);
 		ifp->if_lastex = idx - 1;
 		if (cur == NULL) {
-			rval = XFS_ILOG_FEXT(whichfork);
-		} else {
-			rval = 0;
-			if ((error = xfs_bmbt_lookup_eq(cur,
-					left.br_startoff,
-					left.br_startblock,
-					left.br_blockcount, &i)))
-				goto done;
-			ASSERT(i == 1);
-			if ((error = xfs_bmbt_update(cur, left.br_startoff,
-					left.br_startblock,
-					left.br_blockcount +
-						new->br_blockcount,
-					left.br_state)))
-				goto done;
+			*logflagsp = XFS_ILOG_FEXT(whichfork);
+			return 0;
 		}
-		/* DELTA: One in-core extent grew. */
-		temp = left.br_startoff;
-		temp2 = left.br_blockcount +
-			new->br_blockcount;
-		break;
+		*logflagsp = 0;
+		if ((error = xfs_bmbt_lookup_eq(cur, left.br_startoff,
+				left.br_startblock, left.br_blockcount, &i)))
+			return error;
+		ASSERT(i == 1);
+		error = xfs_bmbt_update(cur, left.br_startoff,
+				left.br_startblock,
+				left.br_blockcount + new->br_blockcount,
+				left.br_state);
+		return error;
 
 	case MASK(RIGHT_CONTIG):
 		/*
@@ -2221,27 +2077,19 @@ xfs_bmap_add_extent_hole_real(
 		xfs_bmap_trace_post_update(fname, "RC", ip, idx, whichfork);
 		ifp->if_lastex = idx;
 		if (cur == NULL) {
-			rval = XFS_ILOG_FEXT(whichfork);
-		} else {
-			rval = 0;
-			if ((error = xfs_bmbt_lookup_eq(cur,
-					right.br_startoff,
-					right.br_startblock,
-					right.br_blockcount, &i)))
-				goto done;
-			ASSERT(i == 1);
-			if ((error = xfs_bmbt_update(cur, new->br_startoff,
-					new->br_startblock,
-					new->br_blockcount +
-						right.br_blockcount,
-					right.br_state)))
-				goto done;
+			*logflagsp = XFS_ILOG_FEXT(whichfork);
+			return 0;
 		}
-		/* DELTA: One in-core extent grew. */
-		temp = new->br_startoff;
-		temp2 = new->br_blockcount +
-			right.br_blockcount;
-		break;
+		*logflagsp = 0;
+		if ((error = xfs_bmbt_lookup_eq(cur, right.br_startoff,
+				right.br_startblock, right.br_blockcount, &i)))
+			return error;
+		ASSERT(i == 1);
+		error = xfs_bmbt_update(cur, new->br_startoff,
+				new->br_startblock,
+				new->br_blockcount + right.br_blockcount,
+				right.br_state);
+		return error;
 
 	case 0:
 		/*
@@ -2256,41 +2104,29 @@ xfs_bmap_add_extent_hole_real(
 		XFS_IFORK_NEXT_SET(ip, whichfork,
 			XFS_IFORK_NEXTENTS(ip, whichfork) + 1);
 		if (cur == NULL) {
-			rval = XFS_ILOG_CORE | XFS_ILOG_FEXT(whichfork);
-		} else {
-			rval = XFS_ILOG_CORE;
-			if ((error = xfs_bmbt_lookup_eq(cur,
-					new->br_startoff,
-					new->br_startblock,
-					new->br_blockcount, &i)))
-				goto done;
-			ASSERT(i == 0);
-			cur->bc_rec.b.br_state = new->br_state;
-			if ((error = xfs_bmbt_insert(cur, &i)))
-				goto done;
-			ASSERT(i == 1);
+			*logflagsp = XFS_ILOG_CORE | XFS_ILOG_FEXT(whichfork);
+			return 0;
 		}
-		/* DELTA: A new extent was added in a hole. */
-		temp = new->br_startoff;
-		temp2 = new->br_blockcount;
-		break;
+		*logflagsp = XFS_ILOG_CORE;
+		if ((error = xfs_bmbt_lookup_eq(cur, new->br_startoff,
+				new->br_startblock, new->br_blockcount, &i)))
+			return error;
+		ASSERT(i == 0);
+		cur->bc_rec.b.br_state = new->br_state;
+		if ((error = xfs_bmbt_insert(cur, &i)))
+			return error;
+		ASSERT(i == 1);
+		return 0;
 	}
-	if (delta) {
-		temp2 += temp;
-		if (delta->xed_startoff > temp)
-			delta->xed_startoff = temp;
-		if (delta->xed_blockcount < temp2)
-			delta->xed_blockcount = temp2;
-	}
-done:
-	*logflagsp = rval;
-	return error;
 #undef	MASK
 #undef	MASK2
 #undef	STATE_SET
 #undef	STATE_TEST
 #undef	STATE_SET_TEST
 #undef	SWITCH_STATE
+	/* NOTREACHED */
+	ASSERT(0);
+	return 0; /* keep gcc quite */
 }
 
 /*
@@ -2762,7 +2598,6 @@ xfs_bmap_btalloc(
 	args.mp = mp;
 	args.fsbno = ap->rval;
 	args.maxlen = MIN(ap->alen, mp->m_sb.sb_agblocks);
-	args.firstblock = ap->firstblock;
 	blen = 0;
 	if (nullfb) {
 		args.type = XFS_ALLOCTYPE_START_BNO;
@@ -2822,7 +2657,7 @@ xfs_bmap_btalloc(
 		else
 			args.minlen = ap->alen;
 	} else if (ap->low) {
-		args.type = XFS_ALLOCTYPE_START_BNO;
+		args.type = XFS_ALLOCTYPE_FIRST_AG;
 		args.total = args.minlen = ap->minlen;
 	} else {
 		args.type = XFS_ALLOCTYPE_NEAR_BNO;
@@ -2834,7 +2669,7 @@ xfs_bmap_btalloc(
 		args.prod = ap->ip->i_d.di_extsize;
 		if ((args.mod = (xfs_extlen_t)do_mod(ap->off, args.prod)))
 			args.mod = (xfs_extlen_t)(args.prod - args.mod);
-	} else if (mp->m_sb.sb_blocksize >= NBPP) {
+	} else if (unlikely(mp->m_sb.sb_blocksize >= NBPP)) {
 		args.prod = 1;
 		args.mod = 0;
 	} else {
@@ -3050,7 +2885,6 @@ xfs_bmap_del_extent(
 	xfs_btree_cur_t		*cur,	/* if null, not a btree */
 	xfs_bmbt_irec_t		*del,	/* data to remove from extents */
 	int			*logflagsp, /* inode logging flags */
-	xfs_extdelta_t		*delta, /* Change made to incore extents */
 	int			whichfork, /* data or attr fork */
 	int			rsvd)	/* OK to allocate reserved blocks */
 {
@@ -3359,14 +3193,6 @@ xfs_bmap_del_extent(
 	if (da_old > da_new)
 		xfs_mod_incore_sb(mp, XFS_SBS_FDBLOCKS, (int)(da_old - da_new),
 			rsvd);
-	if (delta) {
-		/* DELTA: report the original extent. */
-		if (delta->xed_startoff > got.br_startoff)
-			delta->xed_startoff = got.br_startoff;
-		if (delta->xed_blockcount < got.br_startoff+got.br_blockcount)
-			delta->xed_blockcount = got.br_startoff +
-							got.br_blockcount;
-	}
 done:
 	*logflagsp = flags;
 	return error;
@@ -3453,7 +3279,6 @@ xfs_bmap_extents_to_btree(
 	XFS_IFORK_FMT_SET(ip, whichfork, XFS_DINODE_FMT_BTREE);
 	args.tp = tp;
 	args.mp = mp;
-	args.firstblock = *firstblock;
 	if (*firstblock == NULLFSBLOCK) {
 		args.type = XFS_ALLOCTYPE_START_BNO;
 		args.fsbno = XFS_INO_TO_FSB(mp, ip->i_ino);
@@ -3589,7 +3414,6 @@ xfs_bmap_local_to_extents(
 
 		args.tp = tp;
 		args.mp = ip->i_mount;
-		args.firstblock = *firstblock;
 		ASSERT((ifp->if_flags &
 			(XFS_IFINLINE|XFS_IFEXTENTS|XFS_IFEXTIREC)) == XFS_IFINLINE);
 		/*
@@ -3929,7 +3753,7 @@ xfs_bunmap_trace(
 	if (ip->i_rwtrace == NULL)
 		return;
 	ktrace_enter(ip->i_rwtrace,
-		(void *)(__psint_t)XFS_BUNMAP,
+		(void *)(__psint_t)XFS_BUNMAPI,
 		(void *)ip,
 		(void *)(__psint_t)((ip->i_d.di_size >> 32) & 0xffffffff),
 		(void *)(__psint_t)(ip->i_d.di_size & 0xffffffff),
@@ -4263,8 +4087,8 @@ xfs_bmap_finish(
 			if (!XFS_FORCED_SHUTDOWN(mp))
 				xfs_force_shutdown(mp,
 						   (error == EFSCORRUPTED) ?
-						   SHUTDOWN_CORRUPT_INCORE :
-						   SHUTDOWN_META_IO_ERROR);
+						   XFS_CORRUPT_INCORE :
+						   XFS_METADATA_IO_ERROR);
 			return error;
 		}
 		xfs_trans_log_efd_extent(ntp, efd, free->xbfi_startblock,
@@ -4714,8 +4538,7 @@ xfs_bmapi(
 	xfs_extlen_t	total,		/* total blocks needed */
 	xfs_bmbt_irec_t	*mval,		/* output: map values */
 	int		*nmap,		/* i/o: mval size/count */
-	xfs_bmap_free_t	*flist,		/* i/o: list extents to free */
-	xfs_extdelta_t	*delta)		/* o: change made to incore extents */
+	xfs_bmap_free_t	*flist)		/* i/o: list extents to free */
 {
 	xfs_fsblock_t	abno;		/* allocated block number */
 	xfs_extlen_t	alen;		/* allocated extent length */
@@ -4827,10 +4650,6 @@ xfs_bmapi(
 	end = bno + len;
 	obno = bno;
 	bma.ip = NULL;
-	if (delta) {
-		delta->xed_startoff = NULLFILEOFF;
-		delta->xed_blockcount = 0;
-	}
 	while (bno < end && n < *nmap) {
 		/*
 		 * Reading past eof, act as though there's a hole
@@ -5067,8 +4886,8 @@ xfs_bmapi(
 					got.br_state = XFS_EXT_UNWRITTEN;
 			}
 			error = xfs_bmap_add_extent(ip, lastx, &cur, &got,
-				firstblock, flist, &tmp_logflags, delta,
-				whichfork, (flags & XFS_BMAPI_RSVBLOCKS));
+				firstblock, flist, &tmp_logflags, whichfork,
+				(flags & XFS_BMAPI_RSVBLOCKS));
 			logflags |= tmp_logflags;
 			if (error)
 				goto error0;
@@ -5164,8 +4983,8 @@ xfs_bmapi(
 			}
 			mval->br_state = XFS_EXT_NORM;
 			error = xfs_bmap_add_extent(ip, lastx, &cur, mval,
-				firstblock, flist, &tmp_logflags, delta,
-				whichfork, (flags & XFS_BMAPI_RSVBLOCKS));
+				firstblock, flist, &tmp_logflags, whichfork,
+				(flags & XFS_BMAPI_RSVBLOCKS));
 			logflags |= tmp_logflags;
 			if (error)
 				goto error0;
@@ -5254,14 +5073,7 @@ xfs_bmapi(
 	ASSERT(XFS_IFORK_FORMAT(ip, whichfork) != XFS_DINODE_FMT_BTREE ||
 	       XFS_IFORK_NEXTENTS(ip, whichfork) > ifp->if_ext_max);
 	error = 0;
-	if (delta && delta->xed_startoff != NULLFILEOFF) {
-		/* A change was actually made.
-		 * Note that delta->xed_blockount is an offset at this
-		 * point and needs to be converted to a block count.
-		 */
-		ASSERT(delta->xed_blockcount > delta->xed_startoff);
-		delta->xed_blockcount -= delta->xed_startoff;
-	}
+
 error0:
 	/*
 	 * Log everything.  Do this after conversion, there's no point in
@@ -5373,8 +5185,6 @@ xfs_bunmapi(
 	xfs_fsblock_t		*firstblock,	/* first allocated block
 						   controls a.g. for allocs */
 	xfs_bmap_free_t		*flist,		/* i/o: list extents to free */
-	xfs_extdelta_t		*delta,		/* o: change made to incore
-						   extents */
 	int			*done)		/* set if not done yet */
 {
 	xfs_btree_cur_t		*cur;		/* bmap btree cursor */
@@ -5432,10 +5242,6 @@ xfs_bunmapi(
 	bno = start + len - 1;
 	ep = xfs_bmap_search_extents(ip, bno, whichfork, &eof, &lastx, &got,
 		&prev);
-	if (delta) {
-		delta->xed_startoff = NULLFILEOFF;
-		delta->xed_blockcount = 0;
-	}
 	/*
 	 * Check to see if the given block number is past the end of the
 	 * file, back up to the last block if so...
@@ -5534,8 +5340,7 @@ xfs_bunmapi(
 			}
 			del.br_state = XFS_EXT_UNWRITTEN;
 			error = xfs_bmap_add_extent(ip, lastx, &cur, &del,
-				firstblock, flist, &logflags, delta,
-				XFS_DATA_FORK, 0);
+				firstblock, flist, &logflags, XFS_DATA_FORK, 0);
 			if (error)
 				goto error0;
 			goto nodelete;
@@ -5589,7 +5394,7 @@ xfs_bunmapi(
 				prev.br_state = XFS_EXT_UNWRITTEN;
 				error = xfs_bmap_add_extent(ip, lastx - 1, &cur,
 					&prev, firstblock, flist, &logflags,
-					delta, XFS_DATA_FORK, 0);
+					XFS_DATA_FORK, 0);
 				if (error)
 					goto error0;
 				goto nodelete;
@@ -5598,7 +5403,7 @@ xfs_bunmapi(
 				del.br_state = XFS_EXT_UNWRITTEN;
 				error = xfs_bmap_add_extent(ip, lastx, &cur,
 					&del, firstblock, flist, &logflags,
-					delta, XFS_DATA_FORK, 0);
+					XFS_DATA_FORK, 0);
 				if (error)
 					goto error0;
 				goto nodelete;
@@ -5651,7 +5456,7 @@ xfs_bunmapi(
 			goto error0;
 		}
 		error = xfs_bmap_del_extent(ip, tp, lastx, flist, cur, &del,
-				&tmp_logflags, delta, whichfork, rsvd);
+			&tmp_logflags, whichfork, rsvd);
 		logflags |= tmp_logflags;
 		if (error)
 			goto error0;
@@ -5708,14 +5513,6 @@ nodelete:
 	ASSERT(ifp->if_ext_max ==
 	       XFS_IFORK_SIZE(ip, whichfork) / (uint)sizeof(xfs_bmbt_rec_t));
 	error = 0;
-	if (delta && delta->xed_startoff != NULLFILEOFF) {
-		/* A change was actually made.
-		 * Note that delta->xed_blockount is an offset at this
-		 * point and needs to be converted to a block count.
-		 */
-		ASSERT(delta->xed_blockcount > delta->xed_startoff);
-		delta->xed_blockcount -= delta->xed_startoff;
-	}
 error0:
 	/*
 	 * Log everything.  Do this after conversion, there's no point in
@@ -5759,7 +5556,7 @@ xfs_getbmap(
 	__int64_t		fixlen;		/* length for -1 case */
 	int			i;		/* extent number */
 	xfs_inode_t		*ip;		/* xfs incore inode pointer */
-	bhv_vnode_t		*vp;		/* corresponding vnode */
+	vnode_t			*vp;		/* corresponding vnode */
 	int			lock;		/* lock state */
 	xfs_bmbt_irec_t		*map;		/* buffer for user's data */
 	xfs_mount_t		*mp;		/* file system mount point */
@@ -5856,7 +5653,7 @@ xfs_getbmap(
 
 	if (whichfork == XFS_DATA_FORK && ip->i_delayed_blks) {
 		/* xfs_fsize_t last_byte = xfs_file_last_byte(ip); */
-		error = bhv_vop_flush_pages(vp, (xfs_off_t)0, -1, 0, FI_REMAPF);
+		VOP_FLUSH_PAGES(vp, (xfs_off_t)0, -1, 0, FI_REMAPF, error);
 	}
 
 	ASSERT(whichfork == XFS_ATTR_FORK || ip->i_delayed_blks == 0);
@@ -5892,8 +5689,7 @@ xfs_getbmap(
 		nmap = (nexleft > subnex) ? subnex : nexleft;
 		error = xfs_bmapi(NULL, ip, XFS_BB_TO_FSBT(mp, bmv->bmv_offset),
 				  XFS_BB_TO_FSB(mp, bmv->bmv_length),
-				  bmapi_flags, NULL, 0, map, &nmap,
-				  NULL, NULL);
+				  bmapi_flags, NULL, 0, map, &nmap, NULL);
 		if (error)
 			goto unlock_and_return;
 		ASSERT(nmap <= subnex);

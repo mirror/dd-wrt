@@ -16,6 +16,7 @@
  * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/dmapool.h>
@@ -888,59 +889,19 @@ MODULE_LICENSE ("GPL");
 
 #ifdef CONFIG_PCI
 #include "ehci-pci.c"
-#define	PCI_DRIVER		ehci_pci_driver
+#define	EHCI_BUS_GLUED
 #endif
 
 #ifdef CONFIG_PPC_83xx
 #include "ehci-fsl.c"
-#define	PLATFORM_DRIVER		ehci_fsl_driver
+#define	EHCI_BUS_GLUED
 #endif
 
-#ifdef CONFIG_SOC_AU1200
+#ifdef CONFIG_SOC_AU1X00
 #include "ehci-au1xxx.c"
-#define	PLATFORM_DRIVER		ehci_hcd_au1xxx_driver
+#define	EHCI_BUS_GLUED
 #endif
 
-#if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER)
+#ifndef	EHCI_BUS_GLUED
 #error "missing bus glue for ehci-hcd"
 #endif
-
-static int __init ehci_hcd_init(void)
-{
-	int retval = 0;
-
-	pr_debug("%s: block sizes: qh %Zd qtd %Zd itd %Zd sitd %Zd\n",
-		 hcd_name,
-		 sizeof(struct ehci_qh), sizeof(struct ehci_qtd),
-		 sizeof(struct ehci_itd), sizeof(struct ehci_sitd));
-
-#ifdef PLATFORM_DRIVER
-	retval = platform_driver_register(&PLATFORM_DRIVER);
-	if (retval < 0)
-		return retval;
-#endif
-
-#ifdef PCI_DRIVER
-	retval = pci_register_driver(&PCI_DRIVER);
-	if (retval < 0) {
-#ifdef PLATFORM_DRIVER
-		platform_driver_unregister(&PLATFORM_DRIVER);
-#endif
-	}
-#endif
-
-	return retval;
-}
-module_init(ehci_hcd_init);
-
-static void __exit ehci_hcd_cleanup(void)
-{
-#ifdef PLATFORM_DRIVER
-	platform_driver_unregister(&PLATFORM_DRIVER);
-#endif
-#ifdef PCI_DRIVER
-	pci_unregister_driver(&PCI_DRIVER);
-#endif
-}
-module_exit(ehci_hcd_cleanup);
-

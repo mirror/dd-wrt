@@ -1,6 +1,7 @@
 #ifndef _IPV6_H
 #define _IPV6_H
 
+#include <linux/config.h>
 #include <linux/in6.h>
 #include <asm/byteorder.h>
 

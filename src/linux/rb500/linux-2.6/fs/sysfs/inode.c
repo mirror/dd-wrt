@@ -16,7 +16,7 @@
 
 extern struct super_block * sysfs_sb;
 
-static const struct address_space_operations sysfs_aops = {
+static struct address_space_operations sysfs_aops = {
 	.readpage	= simple_readpage,
 	.prepare_write	= simple_prepare_write,
 	.commit_write	= simple_commit_write

@@ -4,6 +4,7 @@
 #define __RTC_H__
 
 
+#include <linux/config.h>
 
 #ifdef CONFIG_ETRAX_DS1302
    /* Dallas DS1302 clock/calendar register numbers. */

@@ -8,6 +8,7 @@ struct bootnode {
 };
 
 extern int compute_hash_shift(struct bootnode *nodes, int numnodes);
+extern int pxm_to_node(int nid);
 
 #define ZONE_ALIGN (1UL << (MAX_ORDER+PAGE_SHIFT))
 

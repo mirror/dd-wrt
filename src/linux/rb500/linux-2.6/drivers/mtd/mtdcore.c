@@ -6,6 +6,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -46,7 +47,6 @@ int add_mtd_device(struct mtd_info *mtd)
 {
 	int i;
 
-	BUG_ON(mtd->writesize == 0);
 	mutex_lock(&mtd_table_mutex);
 
 	for (i=0; i < MAX_MTD_DEVICES; i++)
@@ -254,6 +254,37 @@ int default_mtd_writev(struct mtd_info *mtd, const struct kvec *vecs,
 	return ret;
 }
 
+
+/* default_mtd_readv - default mtd readv method for MTD devices that dont
+ *		       implement their own
+ */
+
+int default_mtd_readv(struct mtd_info *mtd, struct kvec *vecs,
+		      unsigned long count, loff_t from, size_t *retlen)
+{
+	unsigned long i;
+	size_t totlen = 0, thislen;
+	int ret = 0;
+
+	if(!mtd->read) {
+		ret = -EIO;
+	} else {
+		for (i=0; i<count; i++) {
+			if (!vecs[i].iov_len)
+				continue;
+			ret = mtd->read(mtd, from, vecs[i].iov_len, &thislen, vecs[i].iov_base);
+			totlen += thislen;
+			if (ret || thislen != vecs[i].iov_len)
+				break;
+			from += vecs[i].iov_len;
+		}
+	}
+	if (retlen)
+		*retlen = totlen;
+	return ret;
+}
+
+
 EXPORT_SYMBOL(add_mtd_device);
 EXPORT_SYMBOL(del_mtd_device);
 EXPORT_SYMBOL(get_mtd_device);
@@ -261,6 +292,7 @@ EXPORT_SYMBOL(put_mtd_device);
 EXPORT_SYMBOL(register_mtd_user);
 EXPORT_SYMBOL(unregister_mtd_user);
 EXPORT_SYMBOL(default_mtd_writev);
+EXPORT_SYMBOL(default_mtd_readv);
 
 #ifdef CONFIG_PROC_FS
 

@@ -9,8 +9,6 @@
  *  Update for Linux-2.6 and cache flush improvements
  *  Copyright (C) 2004 Nokia Corporation by Tony Lindgren <tony@atomide.com>
  *
- *  hacked for non-paged-MM by Hyok S. Choi, 2004.
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -50,6 +48,7 @@
  */
 
 #include <linux/linkage.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <asm/assembler.h>
 #include <asm/pgtable-hwdef.h>
@@ -123,9 +122,7 @@ ENTRY(cpu_arm925_reset)
 	mov	ip, #0
 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
 	mcr	p15, 0, ip, c7, c10, 4		@ drain WB
-#ifdef CONFIG_MMU
 	mcr	p15, 0, ip, c8, c7, 0		@ invalidate I & D TLBs
-#endif
 	mrc	p15, 0, ip, c1, c0, 0		@ ctrl register
 	bic	ip, ip, #0x000f			@ ............wcam
 	bic	ip, ip, #0x1100			@ ...i...s........
@@ -372,7 +369,6 @@ ENTRY(cpu_arm925_dcache_clean_area)
  */
 	.align	5
 ENTRY(cpu_arm925_switch_mm)
-#ifdef CONFIG_MMU
 	mov	ip, #0
 #ifdef CONFIG_CPU_DCACHE_WRITETHROUGH
 	mcr	p15, 0, ip, c7, c6, 0		@ invalidate D cache
@@ -387,7 +383,6 @@ ENTRY(cpu_arm925_switch_mm)
 	mcr	p15, 0, ip, c7, c10, 4		@ drain WB
 	mcr	p15, 0, r0, c2, c0, 0		@ load page table pointer
 	mcr	p15, 0, ip, c8, c7, 0		@ invalidate I & D TLBs
-#endif
 	mov	pc, lr
 
 /*
@@ -397,7 +392,6 @@ ENTRY(cpu_arm925_switch_mm)
  */
 	.align	5
 ENTRY(cpu_arm925_set_pte)
-#ifdef CONFIG_MMU
 	str	r1, [r0], #-2048		@ linux version
 
 	eor	r1, r1, #L_PTE_PRESENT | L_PTE_YOUNG | L_PTE_WRITE | L_PTE_DIRTY
@@ -426,7 +420,6 @@ ENTRY(cpu_arm925_set_pte)
 	mcr	p15, 0, r0, c7, c10, 1		@ clean D entry
 #endif
 	mcr	p15, 0, r0, c7, c10, 4		@ drain WB
-#endif /* CONFIG_MMU */
 	mov	pc, lr
 
 	__INIT
@@ -445,20 +438,18 @@ __arm925_setup:
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c7		@ invalidate I,D caches on v4
 	mcr	p15, 0, r0, c7, c10, 4		@ drain write buffer on v4
-#ifdef CONFIG_MMU
 	mcr	p15, 0, r0, c8, c7		@ invalidate I,D TLBs on v4
-#endif
 
 #ifdef CONFIG_CPU_DCACHE_WRITETHROUGH
 	mov	r0, #4				@ disable write-back on caches explicitly
 	mcr	p15, 7, r0, c15, c0, 0
 #endif
 
-	adr	r5, arm925_crval
-	ldmia	r5, {r5, r6}
 	mrc	p15, 0, r0, c1, c0		@ get control register v4
+	ldr	r5, arm925_cr1_clear
 	bic	r0, r0, r5
-	orr	r0, r0, r6
+	ldr	r5, arm925_cr1_set
+	orr	r0, r0, r5
 #ifdef CONFIG_CPU_CACHE_ROUND_ROBIN
 	orr	r0, r0, #0x4000			@ .1.. .... .... ....
 #endif
@@ -471,9 +462,12 @@ __arm925_setup:
 	 * .011 0001 ..11 1101
 	 * 
 	 */
-	.type	arm925_crval, #object
-arm925_crval:
-	crval	clear=0x00007f3f, mmuset=0x0000313d, ucset=0x00001130
+	.type	arm925_cr1_clear, #object
+	.type	arm925_cr1_set, #object
+arm925_cr1_clear:
+	.word	0x7f3f
+arm925_cr1_set:
+	.word	0x313d
 
 	__INITDATA
 
@@ -507,7 +501,22 @@ cpu_elf_name:
 
 	.type	cpu_arm925_name, #object
 cpu_arm925_name:
-	.asciz	"ARM925T"
+	.ascii	"ARM925T"
+#ifndef CONFIG_CPU_ICACHE_DISABLE
+	.ascii	"i"
+#endif
+#ifndef CONFIG_CPU_DCACHE_DISABLE
+	.ascii	"d"
+#ifdef CONFIG_CPU_DCACHE_WRITETHROUGH
+	.ascii	"(wt)"
+#else
+	.ascii	"(wb)"
+#endif
+#ifdef CONFIG_CPU_CACHE_ROUND_ROBIN
+	.ascii	"RR"
+#endif
+#endif
+	.ascii	"\0"
 	.size	cpu_arm925_name, . - cpu_arm925_name
 
 	.align
@@ -518,10 +527,6 @@ cpu_arm925_name:
 __arm925_proc_info:
 	.long	0x54029250
 	.long	0xfffffff0
-	.long   PMD_TYPE_SECT | \
-		PMD_BIT4 | \
-		PMD_SECT_AP_WRITE | \
-		PMD_SECT_AP_READ
 	.long   PMD_TYPE_SECT | \
 		PMD_BIT4 | \
 		PMD_SECT_AP_WRITE | \
@@ -541,10 +546,6 @@ __arm925_proc_info:
 __arm915_proc_info:
 	.long	0x54029150
 	.long	0xfffffff0
-	.long   PMD_TYPE_SECT | \
-		PMD_BIT4 | \
-		PMD_SECT_AP_WRITE | \
-		PMD_SECT_AP_READ
 	.long   PMD_TYPE_SECT | \
 		PMD_BIT4 | \
 		PMD_SECT_AP_WRITE | \

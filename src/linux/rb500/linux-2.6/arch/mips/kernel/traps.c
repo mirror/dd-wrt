@@ -11,6 +11,7 @@
  * Copyright (C) 2000, 01 MIPS Technologies, Inc.
  * Copyright (C) 2002, 2003, 2004, 2005  Maciej W. Rozycki
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/mm.h>
 #include <linux/module.h>
@@ -64,7 +65,7 @@ extern asmlinkage void handle_mcheck(void);
 extern asmlinkage void handle_reserved(void);
 
 extern int fpu_emulator_cop1Handler(struct pt_regs *xcp,
-	struct mips_fpu_struct *ctx);
+	struct mips_fpu_soft_struct *ctx);
 
 void (*board_be_init)(void);
 int (*board_be_handler)(struct pt_regs *regs, int is_fixup);
@@ -599,7 +600,8 @@ asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 		preempt_enable();
 
 		/* Run the emulator */
-		sig = fpu_emulator_cop1Handler (regs, &current->thread.fpu);
+		sig = fpu_emulator_cop1Handler (regs,
+			&current->thread.fpu.soft);
 
 		preempt_disable();
 
@@ -608,7 +610,7 @@ asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 		 * We can't allow the emulated instruction to leave any of
 		 * the cause bit set in $fcr31.
 		 */
-		current->thread.fpu.fcr31 &= ~FPU_CSR_ALL_X;
+		current->thread.fpu.soft.fcr31 &= ~FPU_CSR_ALL_X;
 
 		/* Restore the hardware register state */
 		restore_fp(current);
@@ -753,7 +755,7 @@ asmlinkage void do_cpu(struct pt_regs *regs)
 
 		if (!cpu_has_fpu) {
 			int sig = fpu_emulator_cop1Handler(regs,
-						&current->thread.fpu);
+						&current->thread.fpu.soft);
 			if (sig)
 				force_sig(sig, current);
 #ifdef CONFIG_MIPS_MT_FPAFF
@@ -1049,7 +1051,7 @@ void *set_except_vector(int n, void *addr)
 	return (void *)old_handler;
 }
 
-#ifdef CONFIG_CPU_MIPSR2_SRS
+#ifdef CONFIG_CPU_MIPSR2
 /*
  * MIPSR2 shadow register set allocation
  * FIXME: SMP...
@@ -1068,9 +1070,11 @@ static struct shadow_registers {
 
 static void mips_srs_init(void)
 {
+#ifdef CONFIG_CPU_MIPSR2_SRS
 	shadow_registers.sr_supported = ((read_c0_srsctl() >> 26) & 0x0f) + 1;
 	printk(KERN_INFO "%d MIPSR2 register sets available\n",
 	       shadow_registers.sr_supported);
+#endif
 	shadow_registers.sr_allocated = 1;	/* Set 0 used by kernel */
 }
 
@@ -1195,14 +1199,7 @@ void *set_vi_handler(int n, void *addr)
 {
 	return set_vi_srs_handler(n, addr, 0);
 }
-
-#else
-
-static inline void mips_srs_init(void)
-{
-}
-
-#endif /* CONFIG_CPU_MIPSR2_SRS */
+#endif
 
 /*
  * This is used by native signal handling
@@ -1392,7 +1389,9 @@ void __init trap_init(void)
 	else
 		ebase = CAC_BASE;
 
+#ifdef CONFIG_CPU_MIPSR2
 	mips_srs_init();
+#endif
 
 	per_cpu_trap_init();
 

@@ -9,6 +9,7 @@
  * Atom Create Engineering Co., Ltd. 2002.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <asm/io.h>
@@ -99,7 +100,7 @@ static struct hw_interrupt_type rts7751r2d_irq_type = {
 static void make_rts7751r2d_irq(unsigned int irq)
 {
 	disable_irq_nosync(irq);
-	irq_desc[irq].chip = &rts7751r2d_irq_type;
+	irq_desc[irq].handler = &rts7751r2d_irq_type;
 	disable_rts7751r2d_irq(irq);
 }
 

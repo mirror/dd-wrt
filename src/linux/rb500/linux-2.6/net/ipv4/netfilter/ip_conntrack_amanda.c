@@ -17,29 +17,33 @@
  *	this value.
  *
  */
+
+#include <linux/in.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/moduleparam.h>
-#include <linux/textsearch.h>
-#include <linux/skbuff.h>
-#include <linux/in.h>
-#include <linux/ip.h>
-#include <linux/udp.h>
-
 #include <linux/netfilter.h>
+#include <linux/ip.h>
+#include <linux/moduleparam.h>
+#include <linux/udp.h>
+#include <net/checksum.h>
+#include <net/udp.h>
+
 #include <linux/netfilter_ipv4/ip_conntrack_helper.h>
 #include <linux/netfilter_ipv4/ip_conntrack_amanda.h>
 
 static unsigned int master_timeout = 300;
-static char *ts_algo = "kmp";
 
 MODULE_AUTHOR("Brian J. Murrell <netfilter@interlinx.bc.ca>");
 MODULE_DESCRIPTION("Amanda connection tracking module");
 MODULE_LICENSE("GPL");
 module_param(master_timeout, uint, 0600);
 MODULE_PARM_DESC(master_timeout, "timeout for the master connection");
-module_param(ts_algo, charp, 0400);
-MODULE_PARM_DESC(ts_algo, "textsearch algorithm to use (default kmp)");
+
+static const char *conns[] = { "DATA ", "MESG ", "INDEX " };
+
+/* This is slow, but it's simple. --RR */
+static char *amanda_buffer;
+static DEFINE_SPINLOCK(amanda_buffer_lock);
 
 unsigned int (*ip_nat_amanda_hook)(struct sk_buff **pskb,
 				   enum ip_conntrack_info ctinfo,
@@ -48,48 +52,12 @@ unsigned int (*ip_nat_amanda_hook)(struct sk_buff **pskb,
 				   struct ip_conntrack_expect *exp);
 EXPORT_SYMBOL_GPL(ip_nat_amanda_hook);
 
-enum amanda_strings {
-	SEARCH_CONNECT,
-	SEARCH_NEWLINE,
-	SEARCH_DATA,
-	SEARCH_MESG,
-	SEARCH_INDEX,
-};
-
-static struct {
-	char			*string;
-	size_t			len;
-	struct ts_config	*ts;
-} search[] = {
-	[SEARCH_CONNECT] = {
-		.string	= "CONNECT ",
-		.len	= 8,
-	},
-	[SEARCH_NEWLINE] = {
-		.string	= "\n",
-		.len	= 1,
-	},
-	[SEARCH_DATA] = {
-		.string	= "DATA ",
-		.len	= 5,
-	},
-	[SEARCH_MESG] = {
-		.string	= "MESG ",
-		.len	= 5,
-	},
-	[SEARCH_INDEX] = {
-		.string = "INDEX ",
-		.len	= 6,
-	},
-};
-
 static int help(struct sk_buff **pskb,
                 struct ip_conntrack *ct, enum ip_conntrack_info ctinfo)
 {
-	struct ts_state ts;
 	struct ip_conntrack_expect *exp;
-	unsigned int dataoff, start, stop, off, i;
-	char pbuf[sizeof("65535")], *tmp;
+	char *data, *data_limit, *tmp;
+	unsigned int dataoff, i;
 	u_int16_t port, len;
 	int ret = NF_ACCEPT;
 
@@ -109,34 +77,29 @@ static int help(struct sk_buff **pskb,
 		return NF_ACCEPT;
 	}
 
-	memset(&ts, 0, sizeof(ts));
-	start = skb_find_text(*pskb, dataoff, (*pskb)->len,
-			      search[SEARCH_CONNECT].ts, &ts);
-	if (start == UINT_MAX)
-		goto out;
-	start += dataoff + search[SEARCH_CONNECT].len;
+	spin_lock_bh(&amanda_buffer_lock);
+	skb_copy_bits(*pskb, dataoff, amanda_buffer, (*pskb)->len - dataoff);
+	data = amanda_buffer;
+	data_limit = amanda_buffer + (*pskb)->len - dataoff;
+	*data_limit = '\0';
 
-	memset(&ts, 0, sizeof(ts));
-	stop = skb_find_text(*pskb, start, (*pskb)->len,
-			     search[SEARCH_NEWLINE].ts, &ts);
-	if (stop == UINT_MAX)
+	/* Search for the CONNECT string */
+	data = strstr(data, "CONNECT ");
+	if (!data)
 		goto out;
-	stop += start;
+	data += strlen("CONNECT ");
 
-	for (i = SEARCH_DATA; i <= SEARCH_INDEX; i++) {
-		memset(&ts, 0, sizeof(ts));
-		off = skb_find_text(*pskb, start, stop, search[i].ts, &ts);
-		if (off == UINT_MAX)
+	/* Only search first line. */	
+	if ((tmp = strchr(data, '\n')))
+		*tmp = '\0';
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		char *match = strstr(data, conns[i]);
+		if (!match)
 			continue;
-		off += start + search[i].len;
-
-		len = min_t(unsigned int, sizeof(pbuf) - 1, stop - off);
-		if (skb_copy_bits(*pskb, off, pbuf, len))
-			break;
-		pbuf[len] = '\0';
-
-		port = simple_strtoul(pbuf, &tmp, 10);
-		len = tmp - pbuf;
+		tmp = data = match + strlen(conns[i]);
+		port = simple_strtoul(data, &data, 10);
+		len = data - tmp;
 		if (port == 0 || len > 5)
 			break;
 
@@ -162,7 +125,8 @@ static int help(struct sk_buff **pskb,
 		exp->mask.dst.u.tcp.port = 0xFFFF;
 
 		if (ip_nat_amanda_hook)
-			ret = ip_nat_amanda_hook(pskb, ctinfo, off - dataoff,
+			ret = ip_nat_amanda_hook(pskb, ctinfo,
+						 tmp - amanda_buffer,
 						 len, exp);
 		else if (ip_conntrack_expect_related(exp) != 0)
 			ret = NF_DROP;
@@ -170,11 +134,12 @@ static int help(struct sk_buff **pskb,
 	}
 
 out:
+	spin_unlock_bh(&amanda_buffer_lock);
 	return ret;
 }
 
 static struct ip_conntrack_helper amanda_helper = {
-	.max_expected = 3,
+	.max_expected = ARRAY_SIZE(conns),
 	.timeout = 180,
 	.me = THIS_MODULE,
 	.help = help,
@@ -190,36 +155,26 @@ static struct ip_conntrack_helper amanda_helper = {
 
 static void __exit ip_conntrack_amanda_fini(void)
 {
-	int i;
-
 	ip_conntrack_helper_unregister(&amanda_helper);
-	for (i = 0; i < ARRAY_SIZE(search); i++)
-		textsearch_destroy(search[i].ts);
+	kfree(amanda_buffer);
 }
 
 static int __init ip_conntrack_amanda_init(void)
 {
-	int ret, i;
+	int ret;
 
-	ret = -ENOMEM;
-	for (i = 0; i < ARRAY_SIZE(search); i++) {
-		search[i].ts = textsearch_prepare(ts_algo, search[i].string,
-						  search[i].len,
-						  GFP_KERNEL, TS_AUTOLOAD);
-		if (search[i].ts == NULL)
-			goto err;
-	}
+	amanda_buffer = kmalloc(65536, GFP_KERNEL);
+	if (!amanda_buffer)
+		return -ENOMEM;
+
 	ret = ip_conntrack_helper_register(&amanda_helper);
-	if (ret < 0)
-		goto err;
+	if (ret < 0) {
+		kfree(amanda_buffer);
+		return ret;
+	}
 	return 0;
 
-err:
-	for (; i >= 0; i--) {
-		if (search[i].ts)
-			textsearch_destroy(search[i].ts);
-	}
-	return ret;
+
 }
 
 module_init(ip_conntrack_amanda_init);

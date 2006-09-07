@@ -11,6 +11,7 @@
 #include <asm/page.h>
 #include <asm/pgtable.h>
 
+#include <linux/config.h>
 #include <asm/assembler.h>
 #include <asm/mmu_context.h>
 #include <asm/m32r.h>

@@ -1,3 +1,4 @@
+#include <linux/config.h>
 
 #ifdef CONFIG_PROC_FS
 #include <linux/errno.h>

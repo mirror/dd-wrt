@@ -5,6 +5,7 @@
  *
  * NFSv4 callback encode/decode procedures
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sunrpc/svc.h>
 #include <linux/nfs4.h>
@@ -201,7 +202,7 @@ static unsigned decode_recall_args(struct svc_rqst *rqstp, struct xdr_stream *xd
 	status = decode_fh(xdr, &args->fh);
 out:
 	dprintk("%s: exit with status = %d\n", __FUNCTION__, status);
-	return status;
+	return 0;
 }
 
 static unsigned encode_string(struct xdr_stream *xdr, unsigned int len, const char *str)

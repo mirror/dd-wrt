@@ -17,6 +17,7 @@
 #include <linux/init.h>
 #include <linux/acpi.h>
 #include <linux/delay.h>
+#include <linux/config.h>
 #include <linux/bootmem.h>
 #include <linux/smp_lock.h>
 #include <linux/kernel_stat.h>

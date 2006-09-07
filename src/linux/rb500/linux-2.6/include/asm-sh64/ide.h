@@ -15,6 +15,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 
 /* Without this, the initialisation of PCI IDE cards end up calling
  * ide_init_hwif_ports, which won't work. */

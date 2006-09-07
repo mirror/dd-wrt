@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/init.h>
 #include <linux/delay.h>
@@ -24,18 +25,19 @@ static irqreturn_t macio_gpio_irq(int irq, void *data, struct pt_regs *regs)
 
 static int macio_do_gpio_irq_enable(struct pmf_function *func)
 {
-	unsigned int irq = irq_of_parse_and_map(func->node, 0);
-	if (irq == NO_IRQ)
+	if (func->node->n_intrs < 1)
 		return -EINVAL;
-	return request_irq(irq, macio_gpio_irq, 0, func->node->name, func);
+
+	return request_irq(func->node->intrs[0].line, macio_gpio_irq, 0,
+			   func->node->name, func);
 }
 
 static int macio_do_gpio_irq_disable(struct pmf_function *func)
 {
-	unsigned int irq = irq_of_parse_and_map(func->node, 0);
-	if (irq == NO_IRQ)
+	if (func->node->n_intrs < 1)
 		return -EINVAL;
-	free_irq(irq, func);
+
+	free_irq(func->node->intrs[0].line, func);
 	return 0;
 }
 

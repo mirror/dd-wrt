@@ -5,6 +5,7 @@
  *  Copyright (C) 1997 David S. Miller (davem@caip.rutgers.edu)
  */
 
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/file.h>
@@ -299,5 +300,5 @@ void __init files_init(unsigned long mempages)
 	if (files_stat.max_files < NR_FILE)
 		files_stat.max_files = NR_FILE;
 	files_defer_init();
-	percpu_counter_init(&nr_files, 0);
+	percpu_counter_init(&nr_files);
 } 

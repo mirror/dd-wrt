@@ -11,6 +11,7 @@
 #ifndef __ASM_ARCH_DMA_H
 #define __ASM_ARCH_DMA_H
 
+#include <linux/config.h>
 #include <linux/device.h>
 #include <linux/pci.h>
 #include <asm/page.h>

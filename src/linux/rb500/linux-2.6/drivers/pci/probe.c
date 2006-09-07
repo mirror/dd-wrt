@@ -180,31 +180,25 @@ static void pci_read_bases(struct pci_dev *dev, unsigned int howmany, int rom)
 		res->flags |= pci_calc_resource_flags(l);
 		if ((l & (PCI_BASE_ADDRESS_SPACE | PCI_BASE_ADDRESS_MEM_TYPE_MASK))
 		    == (PCI_BASE_ADDRESS_SPACE_MEMORY | PCI_BASE_ADDRESS_MEM_TYPE_64)) {
-			u32 szhi, lhi;
-			pci_read_config_dword(dev, reg+4, &lhi);
-			pci_write_config_dword(dev, reg+4, ~0);
-			pci_read_config_dword(dev, reg+4, &szhi);
-			pci_write_config_dword(dev, reg+4, lhi);
-			szhi = pci_size(lhi, szhi, 0xffffffff);
+			pci_read_config_dword(dev, reg+4, &l);
 			next++;
 #if BITS_PER_LONG == 64
-			res->start |= ((unsigned long) lhi) << 32;
+			res->start |= ((unsigned long) l) << 32;
 			res->end = res->start + sz;
-			if (szhi) {
+			pci_write_config_dword(dev, reg+4, ~0);
+			pci_read_config_dword(dev, reg+4, &sz);
+			pci_write_config_dword(dev, reg+4, l);
+			sz = pci_size(l, sz, 0xffffffff);
+			if (sz) {
 				/* This BAR needs > 4GB?  Wow. */
-				res->end |= (unsigned long)szhi<<32;
+				res->end |= (unsigned long)sz<<32;
 			}
 #else
-			if (szhi) {
-				printk(KERN_ERR "PCI: Unable to handle 64-bit BAR for device %s\n", pci_name(dev));
+			if (l) {
+				printk(KERN_ERR "PCI: Unable to handle 64-bit address for device %s\n", pci_name(dev));
 				res->start = 0;
 				res->flags = 0;
-			} else if (lhi) {
-				/* 64-bit wide address, treat as disabled */
-				pci_write_config_dword(dev, reg, l & ~(u32)PCI_BASE_ADDRESS_MEM_MASK);
-				pci_write_config_dword(dev, reg+4, 0);
-				res->start = 0;
-				res->end = sz;
+				continue;
 			}
 #endif
 		}
@@ -383,9 +377,9 @@ struct pci_bus * __devinit pci_add_new_bus(struct pci_bus *parent, struct pci_de
 
 	child = pci_alloc_child_bus(parent, dev, busnr);
 	if (child) {
-		down_write(&pci_bus_sem);
+		spin_lock(&pci_bus_lock);
 		list_add_tail(&child->node, &parent->children);
-		up_write(&pci_bus_sem);
+		spin_unlock(&pci_bus_lock);
 	}
 	return child;
 }
@@ -851,9 +845,9 @@ void __devinit pci_device_add(struct pci_dev *dev, struct pci_bus *bus)
 	 * and the bus list for fixup functions, etc.
 	 */
 	INIT_LIST_HEAD(&dev->global_list);
-	down_write(&pci_bus_sem);
+	spin_lock(&pci_bus_lock);
 	list_add_tail(&dev->bus_list, &bus->devices);
-	up_write(&pci_bus_sem);
+	spin_unlock(&pci_bus_lock);
 }
 
 struct pci_dev * __devinit
@@ -991,10 +985,9 @@ struct pci_bus * __devinit pci_create_bus(struct device *parent,
 		pr_debug("PCI: Bus %04x:%02x already known\n", pci_domain_nr(b), bus);
 		goto err_out;
 	}
-
-	down_write(&pci_bus_sem);
+	spin_lock(&pci_bus_lock);
 	list_add_tail(&b->node, &pci_root_buses);
-	up_write(&pci_bus_sem);
+	spin_unlock(&pci_bus_lock);
 
 	memset(dev, 0, sizeof(*dev));
 	dev->parent = parent;
@@ -1034,9 +1027,9 @@ class_dev_create_file_err:
 class_dev_reg_err:
 	device_unregister(dev);
 dev_reg_err:
-	down_write(&pci_bus_sem);
+	spin_lock(&pci_bus_lock);
 	list_del(&b->node);
-	up_write(&pci_bus_sem);
+	spin_unlock(&pci_bus_lock);
 err_out:
 	kfree(dev);
 	kfree(b);

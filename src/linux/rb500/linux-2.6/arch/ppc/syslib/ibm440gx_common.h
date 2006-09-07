@@ -16,6 +16,7 @@
 
 #ifndef __ASSEMBLY__
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/seq_file.h>
 #include <syslib/ibm44x_common.h>

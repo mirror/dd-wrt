@@ -641,7 +641,6 @@ static int __init s3c2410fb_probe(struct platform_device *pdev)
 	int ret;
 	int irq;
 	int i;
-	u32 lcdcon1;
 
 	mach_info = pdev->dev.platform_data;
 	if (mach_info == NULL) {
@@ -672,11 +671,6 @@ static int __init s3c2410fb_probe(struct platform_device *pdev)
 	strcpy(fbinfo->fix.id, driver_name);
 
 	memcpy(&info->regs, &mach_info->regs, sizeof(info->regs));
-
-	/* Stop the video and unset ENVID if set */
-	info->regs.lcdcon1 &= ~S3C2410_LCDCON1_ENVID;
-	lcdcon1 = readl(S3C2410_LCDCON1);
-	writel(lcdcon1 & ~S3C2410_LCDCON1_ENVID, S3C2410_LCDCON1);
 
 	info->mach_info		    = pdev->dev.platform_data;
 
@@ -735,7 +729,7 @@ static int __init s3c2410fb_probe(struct platform_device *pdev)
 
 	dprintk("got LCD region\n");
 
-	ret = request_irq(irq, s3c2410fb_irq, IRQF_DISABLED, pdev->name, info);
+	ret = request_irq(irq, s3c2410fb_irq, SA_INTERRUPT, pdev->name, info);
 	if (ret) {
 		dev_err(&pdev->dev, "cannot get irq %d - err %d\n", irq, ret);
 		ret = -EBUSY;
@@ -800,14 +794,15 @@ dealloc_fb:
  * shutdown the lcd controller
 */
 
-static void s3c2410fb_stop_lcd(struct s3c2410fb_info *fbi)
+static void s3c2410fb_stop_lcd(void)
 {
 	unsigned long flags;
+	unsigned long tmp;
 
 	local_irq_save(flags);
 
-	fbi->regs.lcdcon1 &= ~S3C2410_LCDCON1_ENVID;
-	writel(fbi->regs.lcdcon1, S3C2410_LCDCON1);
+	tmp = readl(S3C2410_LCDCON1);
+	writel(tmp & ~S3C2410_LCDCON1_ENVID, S3C2410_LCDCON1);
 
 	local_irq_restore(flags);
 }
@@ -821,7 +816,7 @@ static int s3c2410fb_remove(struct platform_device *pdev)
 	struct s3c2410fb_info *info = fbinfo->par;
 	int irq;
 
-	s3c2410fb_stop_lcd(info);
+	s3c2410fb_stop_lcd();
 	msleep(1);
 
 	s3c2410fb_unmap_video_memory(info);
@@ -849,7 +844,7 @@ static int s3c2410fb_suspend(struct platform_device *dev, pm_message_t state)
 	struct fb_info	   *fbinfo = platform_get_drvdata(dev);
 	struct s3c2410fb_info *info = fbinfo->par;
 
-	s3c2410fb_stop_lcd(info);
+	s3c2410fb_stop_lcd();
 
 	/* sleep before disabling the clock, we need to ensure
 	 * the LCD DMA engine is not going to get back on the bus

@@ -12,6 +12,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <asm/hardware.h>

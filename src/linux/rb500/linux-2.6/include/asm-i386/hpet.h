@@ -27,6 +27,7 @@
 #include <asm/processor.h>
 
 #include <linux/timex.h>
+#include <linux/config.h>
 
 #include <asm/fixmap.h>
 

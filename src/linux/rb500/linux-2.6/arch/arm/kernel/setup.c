@@ -7,6 +7,7 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/stddef.h>
@@ -118,24 +119,9 @@ DEFINE_PER_CPU(struct cpuinfo_arm, cpu_data);
  * Standard memory resources
  */
 static struct resource mem_res[] = {
-	{
-		.name = "Video RAM",
-		.start = 0,
-		.end = 0,
-		.flags = IORESOURCE_MEM
-	},
-	{
-		.name = "Kernel text",
-		.start = 0,
-		.end = 0,
-		.flags = IORESOURCE_MEM
-	},
-	{
-		.name = "Kernel data",
-		.start = 0,
-		.end = 0,
-		.flags = IORESOURCE_MEM
-	}
+	{ "Video RAM",   0,     0,     IORESOURCE_MEM			},
+	{ "Kernel text", 0,     0,     IORESOURCE_MEM			},
+	{ "Kernel data", 0,     0,     IORESOURCE_MEM			}
 };
 
 #define video_ram   mem_res[0]
@@ -143,24 +129,9 @@ static struct resource mem_res[] = {
 #define kernel_data mem_res[2]
 
 static struct resource io_res[] = {
-	{
-		.name = "reserved",
-		.start = 0x3bc,
-		.end = 0x3be,
-		.flags = IORESOURCE_IO | IORESOURCE_BUSY
-	},
-	{
-		.name = "reserved",
-		.start = 0x378,
-		.end = 0x37f,
-		.flags = IORESOURCE_IO | IORESOURCE_BUSY
-	},
-	{
-		.name = "reserved",
-		.start = 0x278,
-		.end = 0x27f,
-		.flags = IORESOURCE_IO | IORESOURCE_BUSY
-	}
+	{ "reserved",    0x3bc, 0x3be, IORESOURCE_IO | IORESOURCE_BUSY },
+	{ "reserved",    0x378, 0x37f, IORESOURCE_IO | IORESOURCE_BUSY },
+	{ "reserved",    0x278, 0x27f, IORESOURCE_IO | IORESOURCE_BUSY }
 };
 
 #define lp0 io_res[0]
@@ -344,9 +315,9 @@ static void __init setup_processor(void)
 	cpu_cache = *list->cache;
 #endif
 
-	printk("CPU: %s [%08x] revision %d (ARMv%s), cr=%08lx\n",
+	printk("CPU: %s [%08x] revision %d (ARMv%s)\n",
 	       cpu_name, processor_id, (int)processor_id & 15,
-	       proc_arch[cpu_architecture()], cr_alignment);
+	       proc_arch[cpu_architecture()]);
 
 	sprintf(system_utsname.machine, "%s%c", list->arch_name, ENDIANNESS);
 	sprintf(elf_platform, "%s%c", list->elf_name, ENDIANNESS);
@@ -837,7 +808,7 @@ static int __init topology_init(void)
 	int cpu;
 
 	for_each_possible_cpu(cpu)
-		register_cpu(&per_cpu(cpu_data, cpu).cpu, cpu);
+		register_cpu(&per_cpu(cpu_data, cpu).cpu, cpu, NULL);
 
 	return 0;
 }

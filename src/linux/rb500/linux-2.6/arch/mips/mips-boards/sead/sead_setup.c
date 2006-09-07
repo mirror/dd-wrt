@@ -17,6 +17,7 @@
  *
  * SEAD specific setup.
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/ioport.h>
@@ -44,7 +45,7 @@ const char *get_system_type(void)
 	return "MIPS SEAD";
 }
 
-void __init plat_mem_setup(void)
+void __init plat_setup(void)
 {
 	ioport_resource.end = 0x7fffffff;
 

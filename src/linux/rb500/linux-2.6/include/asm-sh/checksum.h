@@ -9,6 +9,7 @@
  * Copyright (C) 1999 by Kaz Kojima & Niibe Yutaka
  */
 
+#include <linux/config.h>
 #include <linux/in6.h>
 
 /*

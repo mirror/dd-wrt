@@ -4,6 +4,7 @@
  * Written 1998,1999 by Werner Almesberger, EPFL ICA
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

@@ -21,6 +21,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/string.h>
@@ -2116,7 +2117,7 @@ init_fcc_startup(fcc_info_t *fip, struct net_device *dev)
 
 #ifdef	PHY_INTERRUPT
 #ifdef CONFIG_ADS8272
-	if (request_irq(PHY_INTERRUPT, mii_link_interrupt, IRQF_SHARED,
+	if (request_irq(PHY_INTERRUPT, mii_link_interrupt, SA_SHIRQ,
 				"mii", dev) < 0)
 		printk(KERN_CRIT "Can't get MII IRQ %d\n", PHY_INTERRUPT);
 #else

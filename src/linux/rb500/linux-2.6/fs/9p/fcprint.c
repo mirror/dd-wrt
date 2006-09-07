@@ -21,6 +21,7 @@
  *  Boston, MA  02111-1301  USA
  *
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/fs.h>

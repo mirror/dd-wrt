@@ -3,7 +3,7 @@
  * Authors: Phil Blundell <philb@gnu.org>
  *          Tim Waugh <tim@cyberelk.demon.co.uk>
  *	    Jose Renau <renau@acm.org>
- *          David Campbell
+ *          David Campbell <campbell@torque.net>
  *          Andrea Arcangeli
  *
  * based on work by Grant Guenther <grant@torque.net> and Phil Blundell.
@@ -42,6 +42,7 @@
  * but rather will start at port->base_hi.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/sched.h>

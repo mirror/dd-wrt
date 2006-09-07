@@ -109,7 +109,7 @@ static int hfsplus_writepages(struct address_space *mapping,
 	return mpage_writepages(mapping, wbc, hfsplus_get_block);
 }
 
-const struct address_space_operations hfsplus_btree_aops = {
+struct address_space_operations hfsplus_btree_aops = {
 	.readpage	= hfsplus_readpage,
 	.writepage	= hfsplus_writepage,
 	.sync_page	= block_sync_page,
@@ -119,7 +119,7 @@ const struct address_space_operations hfsplus_btree_aops = {
 	.releasepage	= hfsplus_releasepage,
 };
 
-const struct address_space_operations hfsplus_aops = {
+struct address_space_operations hfsplus_aops = {
 	.readpage	= hfsplus_readpage,
 	.writepage	= hfsplus_writepage,
 	.sync_page	= block_sync_page,

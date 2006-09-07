@@ -4,6 +4,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -183,7 +184,7 @@ static int button_read (struct file *filp, char __user *buffer,
  * attempts to perform these operations on the device.
  */
 
-static const struct file_operations button_fops = {
+static struct file_operations button_fops = {
 	.owner		= THIS_MODULE,
 	.read		= button_read,
 };
@@ -223,7 +224,7 @@ static int __init nwbutton_init(void)
 		return -EBUSY;
 	}
 
-	if (request_irq (IRQ_NETWINDER_BUTTON, button_handler, IRQF_DISABLED,
+	if (request_irq (IRQ_NETWINDER_BUTTON, button_handler, SA_INTERRUPT,
 			"nwbutton", NULL)) {
 		printk (KERN_WARNING "nwbutton: IRQ %d is not free.\n",
 				IRQ_NETWINDER_BUTTON);

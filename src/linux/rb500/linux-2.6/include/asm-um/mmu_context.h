@@ -7,6 +7,7 @@
 #define __UM_MMU_CONTEXT_H
 
 #include "linux/sched.h"
+#include "linux/config.h"
 #include "choose-mode.h"
 #include "um_mmu.h"
 

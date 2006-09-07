@@ -7,6 +7,7 @@
  * Copyright (C) 1996, Linus Torvalds
  */
 
+#include <linux/config.h>
 #include <asm/system.h>
 #include <asm/machvec.h>
 #include <asm/compiler.h>

@@ -20,6 +20,7 @@
 */
 #define __KERNEL_SYSCALLS__
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/syscalls.h>
@@ -233,7 +234,7 @@ static void __call_usermodehelper(void *data)
 int call_usermodehelper_keys(char *path, char **argv, char **envp,
 			     struct key *session_keyring, int wait)
 {
-	DECLARE_COMPLETION_ONSTACK(done);
+	DECLARE_COMPLETION(done);
 	struct subprocess_info sub_info = {
 		.complete	= &done,
 		.path		= path,

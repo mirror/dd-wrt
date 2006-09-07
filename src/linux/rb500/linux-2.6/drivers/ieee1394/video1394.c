@@ -28,6 +28,7 @@
  * ENOTTY for unsupported ioctl request
  *
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/slab.h>
@@ -330,7 +331,7 @@ alloc_dma_iso_ctx(struct ti_ohci *ohci, int type, int num_desc,
 
         spin_lock_init(&d->lock);
 
-	DBGMSG(ohci->host->id, "Iso %s DMA: %d buffers "
+	PRINT(KERN_INFO, ohci->host->id, "Iso %s DMA: %d buffers "
 	      "of size %d allocated for a frame size %d, each with %d prgs",
 	      (type == OHCI_ISO_RECEIVE) ? "receive" : "transmit",
 	      d->num_desc - 1, d->buf_size, d->frame_size, d->nb_cmd);
@@ -758,7 +759,7 @@ static int __video1394_ioctl(struct file *file,
 		} else {
 			mask = (u64)0x1<<v.channel;
 		}
-		DBGMSG(ohci->host->id, "mask: %08X%08X usage: %08X%08X\n",
+		PRINT(KERN_INFO, ohci->host->id, "mask: %08X%08X usage: %08X%08X\n",
 			(u32)(mask>>32),(u32)(mask&0xffffffff),
 			(u32)(ohci->ISO_channel_usage>>32),
 			(u32)(ohci->ISO_channel_usage&0xffffffff));
@@ -804,7 +805,7 @@ static int __video1394_ioctl(struct file *file,
 			v.buf_size = d->buf_size;
 			list_add_tail(&d->link, &ctx->context_list);
 
-			DBGMSG(ohci->host->id,
+			PRINT(KERN_INFO, ohci->host->id,
 			      "iso context %d listen on channel %d",
 			      d->ctx, v.channel);
 		}
@@ -827,7 +828,7 @@ static int __video1394_ioctl(struct file *file,
 
 			list_add_tail(&d->link, &ctx->context_list);
 
-			DBGMSG(ohci->host->id,
+			PRINT(KERN_INFO, ohci->host->id,
 			      "Iso context %d talk on channel %d", d->ctx,
 			      v.channel);
 		}
@@ -872,7 +873,7 @@ static int __video1394_ioctl(struct file *file,
 			d = find_ctx(&ctx->context_list, OHCI_ISO_TRANSMIT, channel);
 
 		if (d == NULL) return -ESRCH;
-		DBGMSG(ohci->host->id, "Iso context %d "
+		PRINT(KERN_INFO, ohci->host->id, "Iso context %d "
 		      "stop talking on channel %d", d->ctx, channel);
 		free_dma_iso_ctx(d);
 
@@ -934,7 +935,7 @@ static int __video1394_ioctl(struct file *file,
 		else {
 			/* Wake up dma context if necessary */
 			if (!(reg_read(ohci, d->ctrlSet) & 0x400)) {
-				DBGMSG(ohci->host->id,
+				PRINT(KERN_INFO, ohci->host->id,
 				      "Waking up iso dma ctx=%d", d->ctx);
 				reg_write(ohci, d->ctrlSet, 0x1000);
 			}
@@ -1105,7 +1106,7 @@ static int __video1394_ioctl(struct file *file,
 		else {
 			/* Wake up dma context if necessary */
 			if (!(reg_read(ohci, d->ctrlSet) & 0x400)) {
-				DBGMSG(ohci->host->id,
+				PRINT(KERN_INFO, ohci->host->id,
 				      "Waking up iso transmit dma ctx=%d",
 				      d->ctx);
 				put_timestamp(ohci, d, d->last_buffer);
@@ -1231,7 +1232,7 @@ static int video1394_release(struct inode *inode, struct file *file)
 			      "is not being used", d->channel);
 		else
 			ohci->ISO_channel_usage &= ~mask;
-		DBGMSG(ohci->host->id, "On release: Iso %s context "
+		PRINT(KERN_INFO, ohci->host->id, "On release: Iso %s context "
 		      "%d stop listening on channel %d",
 		      d->type == OHCI_ISO_RECEIVE ? "receive" : "transmit",
 		      d->ctx, d->channel);

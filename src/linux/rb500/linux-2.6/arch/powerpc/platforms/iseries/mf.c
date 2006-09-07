@@ -45,6 +45,7 @@
 
 #include "setup.h"
 
+extern int piranha_simulator;
 static int mf_initialized;
 
 /*
@@ -657,7 +658,7 @@ static void mf_clear_src(void)
 
 void __init mf_display_progress(u16 value)
 {
-	if (!mf_initialized)
+	if (piranha_simulator || !mf_initialized)
 		return;
 
 	if (0xFFFF == value)
@@ -1294,6 +1295,9 @@ __initcall(mf_proc_init);
  */
 void iSeries_get_rtc_time(struct rtc_time *rtc_tm)
 {
+	if (piranha_simulator)
+		return;
+
 	mf_get_rtc(rtc_tm);
 	rtc_tm->tm_mon--;
 }
@@ -1311,6 +1315,9 @@ int iSeries_set_rtc_time(struct rtc_time *tm)
 unsigned long iSeries_get_boot_time(void)
 {
 	struct rtc_time tm;
+
+	if (piranha_simulator)
+		return 0;
 
 	mf_get_boot_rtc(&tm);
 	return mktime(tm.tm_year + 1900, tm.tm_mon, tm.tm_mday,

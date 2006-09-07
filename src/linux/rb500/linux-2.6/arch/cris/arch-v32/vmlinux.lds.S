@@ -8,6 +8,7 @@
  * the kernel has booted.
  */
 
+#include <linux/config.h>
 #include <asm-generic/vmlinux.lds.h>
 
 jiffies = jiffies_64;

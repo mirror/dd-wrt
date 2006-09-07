@@ -183,6 +183,7 @@
  *
  */
 	
+#include <linux/config.h>
 #define ASSEMBLER_MACROS_ONLY
 /* The IO_* macros use the ## token concatenation operator, so
    -traditional must not be used when assembling this file.  */

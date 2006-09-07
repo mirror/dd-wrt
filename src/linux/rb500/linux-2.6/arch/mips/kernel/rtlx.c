@@ -487,7 +487,7 @@ static struct file_operations rtlx_fops = {
 
 static struct irqaction rtlx_irq = {
 	.handler	= rtlx_interrupt,
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.name		= "RTLX",
 };
 

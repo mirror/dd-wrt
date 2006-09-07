@@ -19,6 +19,7 @@
 **
 */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -1957,7 +1958,7 @@ sba_map_ioc_to_node(struct ioc *ioc, acpi_handle handle)
 	if (pxm < 0)
 		return;
 
-	node = pxm_to_node(pxm);
+	node = pxm_to_nid_map[pxm];
 
 	if (node >= MAX_NUMNODES || !node_online(node))
 		return;
@@ -1998,7 +1999,7 @@ acpi_sba_ioc_add(struct acpi_device *device)
 		if (!iovp_shift)
 			iovp_shift = min(PAGE_SHIFT, 16);
 	}
-	kfree(dev_info);
+	ACPI_MEM_FREE(dev_info);
 
 	/*
 	 * default anything not caught above or specified on cmdline to 4k

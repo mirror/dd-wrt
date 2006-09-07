@@ -46,6 +46,7 @@ typedef unsigned long long __u64;
 
 #ifndef __ASSEMBLY__
 
+#include <linux/config.h>
 
 typedef signed char s8;
 typedef unsigned char u8;

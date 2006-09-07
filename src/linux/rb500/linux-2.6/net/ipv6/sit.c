@@ -18,6 +18,7 @@
  * Nate Thompson <nate@thebog.net>:		6to4 support
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/capability.h>
 #include <linux/errno.h>

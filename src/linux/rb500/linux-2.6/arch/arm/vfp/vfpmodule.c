@@ -9,13 +9,12 @@
  * published by the Free Software Foundation.
  */
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
 #include <linux/init.h>
-
-#include <asm/thread_notify.h>
 #include <asm/vfp.h>
 
 #include "vfpinstr.h"
@@ -37,54 +36,37 @@ union vfp_state *last_VFP_context;
  */
 unsigned int VFP_arch;
 
-static int vfp_notifier(struct notifier_block *self, unsigned long cmd, void *v)
+/*
+ * Per-thread VFP initialisation.
+ */
+void vfp_flush_thread(union vfp_state *vfp)
 {
-	struct thread_info *thread = v;
-	union vfp_state *vfp = &thread->vfpstate;
+	memset(vfp, 0, sizeof(union vfp_state));
 
-	switch (cmd) {
-	case THREAD_NOTIFY_FLUSH:
-		/*
-		 * Per-thread VFP initialisation.
-		 */
-		memset(vfp, 0, sizeof(union vfp_state));
+	vfp->hard.fpexc = FPEXC_ENABLE;
+	vfp->hard.fpscr = FPSCR_ROUND_NEAREST;
 
-		vfp->hard.fpexc = FPEXC_ENABLE;
-		vfp->hard.fpscr = FPSCR_ROUND_NEAREST;
+	/*
+	 * Disable VFP to ensure we initialise it first.
+	 */
+	fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_ENABLE);
 
-		/*
-		 * Disable VFP to ensure we initialise it first.
-		 */
-		fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_ENABLE);
-
-		/*
-		 * FALLTHROUGH: Ensure we don't try to overwrite our newly
-		 * initialised state information on the first fault.
-		 */
-
-	case THREAD_NOTIFY_RELEASE:
-		/*
-		 * Per-thread VFP cleanup.
-		 */
-		if (last_VFP_context == vfp)
-			last_VFP_context = NULL;
-		break;
-
-	case THREAD_NOTIFY_SWITCH:
-		/*
-		 * Always disable VFP so we can lazily save/restore the
-		 * old state.
-		 */
-		fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_ENABLE);
-		break;
-	}
-
-	return NOTIFY_DONE;
+	/*
+	 * Ensure we don't try to overwrite our newly initialised
+	 * state information on the first fault.
+	 */
+	if (last_VFP_context == vfp)
+		last_VFP_context = NULL;
 }
 
-static struct notifier_block vfp_notifier_block = {
-	.notifier_call	= vfp_notifier,
-};
+/*
+ * Per-thread VFP cleanup.
+ */
+void vfp_release_thread(union vfp_state *vfp)
+{
+	if (last_VFP_context == vfp)
+		last_VFP_context = NULL;
+}
 
 /*
  * Raise a SIGFPE for the current process.
@@ -299,8 +281,6 @@ static int __init vfp_init(void)
 			(vfpsid & FPSID_VARIANT_MASK) >> FPSID_VARIANT_BIT,
 			(vfpsid & FPSID_REV_MASK) >> FPSID_REV_BIT);
 		vfp_vector = vfp_support_entry;
-
-		thread_register_notifier(&vfp_notifier_block);
 	}
 	return 0;
 }

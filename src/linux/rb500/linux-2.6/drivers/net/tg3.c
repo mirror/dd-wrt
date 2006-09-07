@@ -15,6 +15,7 @@
  *	notice is accompanying it.
  */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
@@ -68,8 +69,8 @@
 
 #define DRV_MODULE_NAME		"tg3"
 #define PFX DRV_MODULE_NAME	": "
-#define DRV_MODULE_VERSION	"3.62"
-#define DRV_MODULE_RELDATE	"June 30, 2006"
+#define DRV_MODULE_VERSION	"3.59"
+#define DRV_MODULE_RELDATE	"June 8, 2006"
 
 #define TG3_DEF_MAC_MODE	0
 #define TG3_DEF_RX_MODE		0
@@ -227,8 +228,6 @@ static struct pci_device_id tg3_pci_tbl[] = {
 	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5755,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
 	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5755M,
-	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
-	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5786,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
 	{ PCI_VENDOR_ID_BROADCOM, PCI_DEVICE_ID_TIGON3_5787,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0UL },
@@ -2966,27 +2965,6 @@ static int tg3_setup_phy(struct tg3 *tp, int force_reset)
 	return err;
 }
 
-/* This is called whenever we suspect that the system chipset is re-
- * ordering the sequence of MMIO to the tx send mailbox. The symptom
- * is bogus tx completions. We try to recover by setting the
- * TG3_FLAG_MBOX_WRITE_REORDER flag and resetting the chip later
- * in the workqueue.
- */
-static void tg3_tx_recover(struct tg3 *tp)
-{
-	BUG_ON((tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER) ||
-	       tp->write32_tx_mbox == tg3_write_indirect_mbox);
-
-	printk(KERN_WARNING PFX "%s: The system may be re-ordering memory-"
-	       "mapped I/O cycles to the network device, attempting to "
-	       "recover. Please report the problem to the driver maintainer "
-	       "and include system chipset information.\n", tp->dev->name);
-
-	spin_lock(&tp->lock);
-	tp->tg3_flags |= TG3_FLAG_TX_RECOVERY_PENDING;
-	spin_unlock(&tp->lock);
-}
-
 /* Tigon3 never reports partial packet sends.  So we do not
  * need special logic to handle SKBs that have not had all
  * of their frags sent yet, like SunGEM does.
@@ -2999,13 +2977,9 @@ static void tg3_tx(struct tg3 *tp)
 	while (sw_idx != hw_idx) {
 		struct tx_ring_info *ri = &tp->tx_buffers[sw_idx];
 		struct sk_buff *skb = ri->skb;
-		int i, tx_bug = 0;
+		int i;
 
-		if (unlikely(skb == NULL)) {
-			tg3_tx_recover(tp);
-			return;
-		}
-
+		BUG_ON(skb == NULL);
 		pci_unmap_single(tp->pdev,
 				 pci_unmap_addr(ri, mapping),
 				 skb_headlen(skb),
@@ -3016,9 +2990,10 @@ static void tg3_tx(struct tg3 *tp)
 		sw_idx = NEXT_TX(sw_idx);
 
 		for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
+			BUG_ON(sw_idx == hw_idx);
+
 			ri = &tp->tx_buffers[sw_idx];
-			if (unlikely(ri->skb != NULL || sw_idx == hw_idx))
-				tx_bug = 1;
+			BUG_ON(ri->skb != NULL);
 
 			pci_unmap_page(tp->pdev,
 				       pci_unmap_addr(ri, mapping),
@@ -3029,11 +3004,6 @@ static void tg3_tx(struct tg3 *tp)
 		}
 
 		dev_kfree_skb(skb);
-
-		if (unlikely(tx_bug)) {
-			tg3_tx_recover(tp);
-			return;
-		}
 	}
 
 	tp->tx_cons = sw_idx;
@@ -3194,7 +3164,7 @@ static int tg3_vlan_rx(struct tg3 *tp, struct sk_buff *skb, u16 vlan_tag)
  */
 static int tg3_rx(struct tg3 *tp, int budget)
 {
-	u32 work_mask, rx_std_posted = 0;
+	u32 work_mask;
 	u32 sw_idx = tp->rx_rcb_ptr;
 	u16 hw_idx;
 	int received;
@@ -3221,7 +3191,6 @@ static int tg3_rx(struct tg3 *tp, int budget)
 						  mapping);
 			skb = tp->rx_std_buffers[desc_idx].skb;
 			post_ptr = &tp->rx_std_ptr;
-			rx_std_posted++;
 		} else if (opaque_key == RXD_OPAQUE_RING_JUMBO) {
 			dma_addr = pci_unmap_addr(&tp->rx_jumbo_buffers[desc_idx],
 						  mapping);
@@ -3309,15 +3278,6 @@ static int tg3_rx(struct tg3 *tp, int budget)
 
 next_pkt:
 		(*post_ptr)++;
-
-		if (unlikely(rx_std_posted >= tp->rx_std_max_post)) {
-			u32 idx = *post_ptr % TG3_RX_RING_SIZE;
-
-			tw32_rx_mbox(MAILBOX_RCV_STD_PROD_IDX +
-				     TG3_64BIT_REG_LOW, idx);
-			work_mask &= ~RXD_OPAQUE_RING_STD;
-			rx_std_posted = 0;
-		}
 next_pkt_nopost:
 		sw_idx++;
 		sw_idx %= TG3_RX_RCB_RING_SIZE(tp);
@@ -3371,11 +3331,6 @@ static int tg3_poll(struct net_device *netdev, int *budget)
 	/* run TX completion thread */
 	if (sblk->idx[0].tx_consumer != tp->tx_cons) {
 		tg3_tx(tp);
-		if (unlikely(tp->tg3_flags & TG3_FLAG_TX_RECOVERY_PENDING)) {
-			netif_rx_complete(netdev);
-			schedule_work(&tp->reset_task);
-			return 0;
-		}
 	}
 
 	/* run RX thread, within the bounds set by NAPI.
@@ -3436,10 +3391,12 @@ static inline void tg3_full_lock(struct tg3 *tp, int irq_sync)
 	if (irq_sync)
 		tg3_irq_quiesce(tp);
 	spin_lock_bh(&tp->lock);
+	spin_lock(&tp->tx_lock);
 }
 
 static inline void tg3_full_unlock(struct tg3 *tp)
 {
+	spin_unlock(&tp->tx_lock);
 	spin_unlock_bh(&tp->lock);
 }
 
@@ -3622,13 +3579,6 @@ static void tg3_reset_task(void *_data)
 	restart_timer = tp->tg3_flags2 & TG3_FLG2_RESTART_TIMER;
 	tp->tg3_flags2 &= ~TG3_FLG2_RESTART_TIMER;
 
-	if (tp->tg3_flags & TG3_FLAG_TX_RECOVERY_PENDING) {
-		tp->write32_tx_mbox = tg3_write32_tx_mbox;
-		tp->write32_rx_mbox = tg3_write_flush_reg32;
-		tp->tg3_flags |= TG3_FLAG_MBOX_WRITE_REORDER;
-		tp->tg3_flags &= ~TG3_FLAG_TX_RECOVERY_PENDING;
-	}
-
 	tg3_halt(tp, RESET_KIND_SHUTDOWN, 0);
 	tg3_init_hw(tp, 1);
 
@@ -3768,11 +3718,14 @@ static int tg3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	len = skb_headlen(skb);
 
-	/* We are running in BH disabled context with netif_tx_lock
-	 * and TX reclaim runs via tp->poll inside of a software
+	/* No BH disabling for tx_lock here.  We are running in BH disabled
+	 * context and TX reclaim runs via tp->poll inside of a software
 	 * interrupt.  Furthermore, IRQ processing runs lockless so we have
 	 * no IRQ context deadlocks to worry about either.  Rejoice!
 	 */
+	if (!spin_trylock(&tp->tx_lock))
+		return NETDEV_TX_LOCKED;
+
 	if (unlikely(TX_BUFFS_AVAIL(tp) <= (skb_shinfo(skb)->nr_frags + 1))) {
 		if (!netif_queue_stopped(dev)) {
 			netif_stop_queue(dev);
@@ -3781,6 +3734,7 @@ static int tg3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			printk(KERN_ERR PFX "%s: BUG! Tx Ring full when "
 			       "queue awake!\n", dev->name);
 		}
+		spin_unlock(&tp->tx_lock);
 		return NETDEV_TX_BUSY;
 	}
 
@@ -3789,7 +3743,7 @@ static int tg3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 #if TG3_TSO_SUPPORT != 0
 	mss = 0;
 	if (skb->len > (tp->dev->mtu + ETH_HLEN) &&
-	    (mss = skb_shinfo(skb)->gso_size) != 0) {
+	    (mss = skb_shinfo(skb)->tso_size) != 0) {
 		int tcp_opt_len, ip_tcp_len;
 
 		if (skb_header_cloned(skb) &&
@@ -3798,24 +3752,18 @@ static int tg3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			goto out_unlock;
 		}
 
-		if (skb_shinfo(skb)->gso_type & SKB_GSO_TCPV6)
-			mss |= (skb_headlen(skb) - ETH_HLEN) << 9;
-		else {
-			tcp_opt_len = ((skb->h.th->doff - 5) * 4);
-			ip_tcp_len = (skb->nh.iph->ihl * 4) +
-				     sizeof(struct tcphdr);
-
-			skb->nh.iph->check = 0;
-			skb->nh.iph->tot_len = htons(mss + ip_tcp_len +
-						     tcp_opt_len);
-			mss |= (ip_tcp_len + tcp_opt_len) << 9;
-		}
+		tcp_opt_len = ((skb->h.th->doff - 5) * 4);
+		ip_tcp_len = (skb->nh.iph->ihl * 4) + sizeof(struct tcphdr);
 
 		base_flags |= (TXD_FLAG_CPU_PRE_DMA |
 			       TXD_FLAG_CPU_POST_DMA);
 
+		skb->nh.iph->check = 0;
+		skb->nh.iph->tot_len = htons(mss + ip_tcp_len + tcp_opt_len);
+
 		skb->h.th->check = 0;
 
+		mss |= (ip_tcp_len + tcp_opt_len) << 9;
 	}
 	else if (skb->ip_summed == CHECKSUM_HW)
 		base_flags |= TXD_FLAG_TCPUDP_CSUM;
@@ -3869,55 +3817,20 @@ static int tg3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	tw32_tx_mbox((MAILBOX_SNDHOST_PROD_IDX_0 + TG3_64BIT_REG_LOW), entry);
 
 	tp->tx_prod = entry;
-	if (unlikely(TX_BUFFS_AVAIL(tp) <= (MAX_SKB_FRAGS + 1))) {
-		spin_lock(&tp->tx_lock);
+	if (TX_BUFFS_AVAIL(tp) <= (MAX_SKB_FRAGS + 1)) {
 		netif_stop_queue(dev);
 		if (TX_BUFFS_AVAIL(tp) > TG3_TX_WAKEUP_THRESH)
 			netif_wake_queue(tp->dev);
-		spin_unlock(&tp->tx_lock);
 	}
 
 out_unlock:
     	mmiowb();
+	spin_unlock(&tp->tx_lock);
 
 	dev->trans_start = jiffies;
 
 	return NETDEV_TX_OK;
 }
-
-#if TG3_TSO_SUPPORT != 0
-static int tg3_start_xmit_dma_bug(struct sk_buff *, struct net_device *);
-
-/* Use GSO to workaround a rare TSO bug that may be triggered when the
- * TSO header is greater than 80 bytes.
- */
-static int tg3_tso_bug(struct tg3 *tp, struct sk_buff *skb)
-{
-	struct sk_buff *segs, *nskb;
-
-	/* Estimate the number of fragments in the worst case */
-	if (unlikely(TX_BUFFS_AVAIL(tp) <= (skb_shinfo(skb)->gso_segs * 3))) {
-		netif_stop_queue(tp->dev);
-		return NETDEV_TX_BUSY;
-	}
-
-	segs = skb_gso_segment(skb, tp->dev->features & ~NETIF_F_TSO);
-	if (unlikely(IS_ERR(segs)))
-		goto tg3_tso_bug_end;
-
-	do {
-		nskb = segs;
-		segs = segs->next;
-		nskb->next = NULL;
-		tg3_start_xmit_dma_bug(nskb, tp->dev);
-	} while (segs);
-
-tg3_tso_bug_end:
-	dev_kfree_skb(skb);
-
-	return NETDEV_TX_OK;
-}
-#endif
 
 /* hard_start_xmit for devices that have the 4G bug and/or 40-bit bug and
  * support TG3_FLG2_HW_TSO_1 or firmware TSO only.
@@ -3931,11 +3844,14 @@ static int tg3_start_xmit_dma_bug(struct sk_buff *skb, struct net_device *dev)
 
 	len = skb_headlen(skb);
 
-	/* We are running in BH disabled context with netif_tx_lock
-	 * and TX reclaim runs via tp->poll inside of a software
+	/* No BH disabling for tx_lock here.  We are running in BH disabled
+	 * context and TX reclaim runs via tp->poll inside of a software
 	 * interrupt.  Furthermore, IRQ processing runs lockless so we have
 	 * no IRQ context deadlocks to worry about either.  Rejoice!
 	 */
+	if (!spin_trylock(&tp->tx_lock))
+		return NETDEV_TX_LOCKED; 
+
 	if (unlikely(TX_BUFFS_AVAIL(tp) <= (skb_shinfo(skb)->nr_frags + 1))) {
 		if (!netif_queue_stopped(dev)) {
 			netif_stop_queue(dev);
@@ -3944,6 +3860,7 @@ static int tg3_start_xmit_dma_bug(struct sk_buff *skb, struct net_device *dev)
 			printk(KERN_ERR PFX "%s: BUG! Tx Ring full when "
 			       "queue awake!\n", dev->name);
 		}
+		spin_unlock(&tp->tx_lock);
 		return NETDEV_TX_BUSY;
 	}
 
@@ -3954,8 +3871,8 @@ static int tg3_start_xmit_dma_bug(struct sk_buff *skb, struct net_device *dev)
 #if TG3_TSO_SUPPORT != 0
 	mss = 0;
 	if (skb->len > (tp->dev->mtu + ETH_HLEN) &&
-	    (mss = skb_shinfo(skb)->gso_size) != 0) {
-		int tcp_opt_len, ip_tcp_len, hdr_len;
+	    (mss = skb_shinfo(skb)->tso_size) != 0) {
+		int tcp_opt_len, ip_tcp_len;
 
 		if (skb_header_cloned(skb) &&
 		    pskb_expand_head(skb, 0, 0, GFP_ATOMIC)) {
@@ -3966,16 +3883,11 @@ static int tg3_start_xmit_dma_bug(struct sk_buff *skb, struct net_device *dev)
 		tcp_opt_len = ((skb->h.th->doff - 5) * 4);
 		ip_tcp_len = (skb->nh.iph->ihl * 4) + sizeof(struct tcphdr);
 
-		hdr_len = ip_tcp_len + tcp_opt_len;
-		if (unlikely((ETH_HLEN + hdr_len) > 80) &&
-			     (tp->tg3_flags2 & TG3_FLG2_HW_TSO_1_BUG))
-			return (tg3_tso_bug(tp, skb));
-
 		base_flags |= (TXD_FLAG_CPU_PRE_DMA |
 			       TXD_FLAG_CPU_POST_DMA);
 
 		skb->nh.iph->check = 0;
-		skb->nh.iph->tot_len = htons(mss + hdr_len);
+		skb->nh.iph->tot_len = htons(mss + ip_tcp_len + tcp_opt_len);
 		if (tp->tg3_flags2 & TG3_FLG2_HW_TSO) {
 			skb->h.th->check = 0;
 			base_flags &= ~TXD_FLAG_TCPUDP_CSUM;
@@ -4086,16 +3998,15 @@ static int tg3_start_xmit_dma_bug(struct sk_buff *skb, struct net_device *dev)
 	tw32_tx_mbox((MAILBOX_SNDHOST_PROD_IDX_0 + TG3_64BIT_REG_LOW), entry);
 
 	tp->tx_prod = entry;
-	if (unlikely(TX_BUFFS_AVAIL(tp) <= (MAX_SKB_FRAGS + 1))) {
-		spin_lock(&tp->tx_lock);
+	if (TX_BUFFS_AVAIL(tp) <= (MAX_SKB_FRAGS + 1)) {
 		netif_stop_queue(dev);
 		if (TX_BUFFS_AVAIL(tp) > TG3_TX_WAKEUP_THRESH)
 			netif_wake_queue(tp->dev);
-		spin_unlock(&tp->tx_lock);
 	}
 
 out_unlock:
     	mmiowb();
+	spin_unlock(&tp->tx_lock);
 
 	dev->trans_start = jiffies;
 
@@ -6035,13 +5946,7 @@ static int tg3_reset_hw(struct tg3 *tp, int reset_phy)
 	}
 
 	/* Setup replenish threshold. */
-	val = tp->rx_pending / 8;
-	if (val == 0)
-		val = 1;
-	else if (val > tp->rx_std_max_post)
-		val = tp->rx_std_max_post;
-
-	tw32(RCVBDI_STD_THRESH, val);
+	tw32(RCVBDI_STD_THRESH, tp->rx_pending / 8);
 
 	/* Initialize TG3_BDINFO's at:
 	 *  RCVDBDI_STD_BD:	standard eth size rx ring
@@ -6201,12 +6106,8 @@ static int tg3_reset_hw(struct tg3 *tp, int reset_phy)
 #endif
 
 	/* Receive/send statistics. */
-	if (tp->tg3_flags2 & TG3_FLG2_5750_PLUS) {
-		val = tr32(RCVLPC_STATS_ENABLE);
-		val &= ~RCVLPC_STATSENAB_DACK_FIX;
-		tw32(RCVLPC_STATS_ENABLE, val);
-	} else if ((rdmac_mode & RDMAC_MODE_FIFO_SIZE_128) &&
-		   (tp->tg3_flags2 & TG3_FLG2_TSO_CAPABLE)) {
+	if ((rdmac_mode & RDMAC_MODE_FIFO_SIZE_128) &&
+	    (tp->tg3_flags2 & TG3_FLG2_TSO_CAPABLE)) {
 		val = tr32(RCVLPC_STATS_ENABLE);
 		val &= ~RCVLPC_STATSENAB_LNGBRST_RFIX;
 		tw32(RCVLPC_STATS_ENABLE, val);
@@ -6708,12 +6609,12 @@ static int tg3_request_irq(struct tg3 *tp)
 		fn = tg3_msi;
 		if (tp->tg3_flags2 & TG3_FLG2_1SHOT_MSI)
 			fn = tg3_msi_1shot;
-		flags = IRQF_SAMPLE_RANDOM;
+		flags = SA_SAMPLE_RANDOM;
 	} else {
 		fn = tg3_interrupt;
 		if (tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)
 			fn = tg3_interrupt_tagged;
-		flags = IRQF_SHARED | IRQF_SAMPLE_RANDOM;
+		flags = SA_SHIRQ | SA_SAMPLE_RANDOM;
 	}
 	return (request_irq(tp->pdev->irq, fn, flags, dev->name, dev));
 }
@@ -6732,7 +6633,7 @@ static int tg3_test_interrupt(struct tg3 *tp)
 	free_irq(tp->pdev->irq, dev);
 
 	err = request_irq(tp->pdev->irq, tg3_test_isr,
-			  IRQF_SHARED | IRQF_SAMPLE_RANDOM, dev->name, dev);
+			  SA_SHIRQ | SA_SAMPLE_RANDOM, dev->name, dev);
 	if (err)
 		return err;
 
@@ -7893,12 +7794,6 @@ static int tg3_set_tso(struct net_device *dev, u32 value)
 			return -EINVAL;
 		return 0;
 	}
-	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO_2) {
-		if (value)
-			dev->features |= NETIF_F_TSO6;
-		else
-			dev->features &= ~NETIF_F_TSO6;
-	}
 	return ethtool_op_set_tso(dev, value);
 }
 #endif
@@ -8808,9 +8703,6 @@ static void tg3_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
 {
 	struct tg3 *tp = netdev_priv(dev);
 
-	if (netif_running(dev))
-		tg3_netif_stop(tp);
-
 	tg3_full_lock(tp, 0);
 
 	tp->vlgrp = grp;
@@ -8819,25 +8711,16 @@ static void tg3_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
 	__tg3_set_rx_mode(dev);
 
 	tg3_full_unlock(tp);
-
-	if (netif_running(dev))
-		tg3_netif_start(tp);
 }
 
 static void tg3_vlan_rx_kill_vid(struct net_device *dev, unsigned short vid)
 {
 	struct tg3 *tp = netdev_priv(dev);
 
-	if (netif_running(dev))
-		tg3_netif_stop(tp);
-
 	tg3_full_lock(tp, 0);
 	if (tp->vlgrp)
 		tp->vlgrp->vlan_devices[vid] = NULL;
 	tg3_full_unlock(tp);
-
-	if (netif_running(dev))
-		tg3_netif_start(tp);
 }
 #endif
 
@@ -10242,14 +10125,8 @@ static int __devinit tg3_get_invariants(struct tg3 *tp)
 		    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5787) {
 			tp->tg3_flags2 |= TG3_FLG2_HW_TSO_2;
 			tp->tg3_flags2 |= TG3_FLG2_1SHOT_MSI;
-		} else {
-			tp->tg3_flags2 |= TG3_FLG2_HW_TSO_1 |
-					  TG3_FLG2_HW_TSO_1_BUG;
-			if (GET_ASIC_REV(tp->pci_chip_rev_id) ==
-				ASIC_REV_5750 &&
-	     		    tp->pci_chip_rev_id >= CHIPREV_ID_5750_C2)
-				tp->tg3_flags2 &= ~TG3_FLG2_HW_TSO_1_BUG;
-		}
+		} else
+			tp->tg3_flags2 |= TG3_FLG2_HW_TSO_1;
 	}
 
 	if (GET_ASIC_REV(tp->pci_chip_rev_id) != ASIC_REV_5705 &&
@@ -10621,16 +10498,6 @@ static int __devinit tg3_get_invariants(struct tg3 *tp)
 	    (tp->tg3_flags & TG3_FLAG_PCIX_MODE) != 0)
 		tp->rx_offset = 0;
 
-	tp->rx_std_max_post = TG3_RX_RING_SIZE;
-
-	/* Increment the rx prod index on the rx std ring by at most
-	 * 8 for these chips to workaround hw errata.
-	 */
-	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5750 ||
-	    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5752 ||
-	    GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5755)
-		tp->rx_std_max_post = 8;
-
 	/* By default, disable wake-on-lan.  User can change this
 	 * using ETHTOOL_SWOL.
 	 */
@@ -10647,13 +10514,11 @@ static int __devinit tg3_get_macaddr_sparc(struct tg3 *tp)
 	struct pcidev_cookie *pcp = pdev->sysdata;
 
 	if (pcp != NULL) {
-		unsigned char *addr;
-		int len;
+		int node = pcp->prom_node;
 
-		addr = of_get_property(pcp->prom_node, "local-mac-address",
-					&len);
-		if (addr && len == 6) {
-			memcpy(dev->dev_addr, addr, 6);
+		if (prom_getproplen(node, "local-mac-address") == 6) {
+			prom_getproperty(node, "local-mac-address",
+					 dev->dev_addr, 6);
 			memcpy(dev->perm_addr, dev->dev_addr, 6);
 			return 0;
 		}
@@ -11378,6 +11243,7 @@ static int __devinit tg3_init_one(struct pci_dev *pdev,
 	SET_MODULE_OWNER(dev);
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
+	dev->features |= NETIF_F_LLTX;
 #if TG3_VLAN_TAG_USED
 	dev->features |= NETIF_F_HW_VLAN_TX | NETIF_F_HW_VLAN_RX;
 	dev->vlan_rx_register = tg3_vlan_rx_register;
@@ -11519,11 +11385,8 @@ static int __devinit tg3_init_one(struct pci_dev *pdev,
 	 * Firmware TSO on older chips gives lower performance, so it
 	 * is off by default, but can be enabled using ethtool.
 	 */
-	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO) {
+	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO)
 		dev->features |= NETIF_F_TSO;
-		if (tp->tg3_flags2 & TG3_FLG2_HW_TSO_2)
-			dev->features |= NETIF_F_TSO6;
-	}
 
 #endif
 

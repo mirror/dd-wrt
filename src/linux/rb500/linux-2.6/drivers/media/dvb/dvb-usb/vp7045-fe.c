@@ -23,6 +23,8 @@
 
 struct vp7045_fe_state {
 	struct dvb_frontend fe;
+	struct dvb_frontend_ops ops;
+
 	struct dvb_usb_device *d;
 };
 
@@ -149,12 +151,15 @@ struct dvb_frontend * vp7045_fe_attach(struct dvb_usb_device *d)
 		goto error;
 
 	s->d = d;
-	memcpy(&s->fe.ops, &vp7045_fe_ops, sizeof(struct dvb_frontend_ops));
+	memcpy(&s->ops, &vp7045_fe_ops, sizeof(struct dvb_frontend_ops));
+	s->fe.ops = &s->ops;
 	s->fe.demodulator_priv = s;
 
-	return &s->fe;
+	goto success;
 error:
 	return NULL;
+success:
+	return &s->fe;
 }
 
 

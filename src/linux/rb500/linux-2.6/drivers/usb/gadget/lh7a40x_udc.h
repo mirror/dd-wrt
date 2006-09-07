@@ -24,6 +24,7 @@
 #ifndef __LH7A40X_H_
 #define __LH7A40X_H_
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/ioport.h>

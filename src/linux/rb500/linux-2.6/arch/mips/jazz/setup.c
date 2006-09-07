@@ -8,6 +8,7 @@
  * Copyright (C) 1996, 1997, 1998, 2001 by Ralf Baechle
  * Copyright (C) 2001 MIPS Technologies, Inc.
  */
+#include <linux/config.h>
 #include <linux/eisa.h>
 #include <linux/hdreg.h>
 #include <linux/init.h>
@@ -51,7 +52,7 @@ static struct resource jazz_io_resources[] = {
 	{ "dma2", 0xc0, 0xdf, IORESOURCE_BUSY },
 };
 
-void __init plat_mem_setup(void)
+void __init plat_setup(void)
 {
 	int i;
 

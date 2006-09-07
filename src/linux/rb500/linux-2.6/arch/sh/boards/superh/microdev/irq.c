@@ -9,6 +9,7 @@
  * License.  See linux/COPYING for more information.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 
@@ -146,7 +147,7 @@ static void enable_microdev_irq(unsigned int irq)
 static void __init make_microdev_irq(unsigned int irq)
 {
 	disable_irq_nosync(irq);
-	irq_desc[irq].chip = &microdev_irq_type;
+	irq_desc[irq].handler = &microdev_irq_type;
 	disable_microdev_irq(irq);
 }
 

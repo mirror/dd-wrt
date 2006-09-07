@@ -45,7 +45,7 @@
 
 static unsigned long rtc_freq = 1024;
 static struct rtc_time rtc_alarm;
-static DEFINE_SPINLOCK(sa1100_rtc_lock);
+static spinlock_t sa1100_rtc_lock = SPIN_LOCK_UNLOCKED;
 
 static int rtc_update_alarm(struct rtc_time *alrm)
 {
@@ -157,19 +157,19 @@ static int sa1100_rtc_open(struct device *dev)
 {
 	int ret;
 
-	ret = request_irq(IRQ_RTC1Hz, sa1100_rtc_interrupt, IRQF_DISABLED,
+	ret = request_irq(IRQ_RTC1Hz, sa1100_rtc_interrupt, SA_INTERRUPT,
 				"rtc 1Hz", dev);
 	if (ret) {
 		dev_err(dev, "IRQ %d already in use.\n", IRQ_RTC1Hz);
 		goto fail_ui;
 	}
-	ret = request_irq(IRQ_RTCAlrm, sa1100_rtc_interrupt, IRQF_DISABLED,
+	ret = request_irq(IRQ_RTCAlrm, sa1100_rtc_interrupt, SA_INTERRUPT,
 				"rtc Alrm", dev);
 	if (ret) {
 		dev_err(dev, "IRQ %d already in use.\n", IRQ_RTCAlrm);
 		goto fail_ai;
 	}
-	ret = request_irq(IRQ_OST1, timer1_interrupt, IRQF_DISABLED,
+	ret = request_irq(IRQ_OST1, timer1_interrupt, SA_INTERRUPT,
 				"rtc timer", dev);
 	if (ret) {
 		dev_err(dev, "IRQ %d already in use.\n", IRQ_OST1);
@@ -229,6 +229,8 @@ static int sa1100_rtc_ioctl(struct device *dev, unsigned int cmd,
 		spin_unlock_irq(&sa1100_rtc_lock);
 		return 0;
 	case RTC_PIE_ON:
+		if ((rtc_freq > 64) && !capable(CAP_SYS_RESOURCE))
+			return -EACCES;
 		spin_lock_irq(&sa1100_rtc_lock);
 		OSMR1 = TIMER_FREQ/rtc_freq + OSCR;
 		OIER |= OIER_E1;
@@ -240,6 +242,8 @@ static int sa1100_rtc_ioctl(struct device *dev, unsigned int cmd,
 	case RTC_IRQP_SET:
 		if (arg < 1 || arg > TIMER_FREQ)
 			return -EINVAL;
+		if ((arg > 64) && (!capable(CAP_SYS_RESOURCE)))
+			return -EACCES;
 		rtc_freq = arg;
 		return 0;
 	}

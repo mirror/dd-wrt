@@ -53,6 +53,7 @@
  */
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/compiler.h>
 #include <asm/uaccess.h>

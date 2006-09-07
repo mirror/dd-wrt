@@ -53,6 +53,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/mtd/cfi.h>
+#include <linux/config.h>
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 

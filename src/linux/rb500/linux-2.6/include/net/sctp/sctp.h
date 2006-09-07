@@ -63,6 +63,7 @@
  */
 
 
+#include <linux/config.h>
 
 #ifdef TEST_FRAME
 #undef CONFIG_PROC_FS
@@ -402,19 +403,6 @@ static inline struct list_head *sctp_list_dequeue(struct list_head *list)
 static inline int sctp_list_single_entry(struct list_head *head)
 {
 	return ((head->next != head) && (head->next == head->prev));
-}
-
-/* Calculate the size (in bytes) occupied by the data of an iovec.  */
-static inline size_t get_user_iov_size(struct iovec *iov, int iovlen)
-{
-	size_t retval = 0;
-
-	for (; iovlen > 0; --iovlen) {
-		retval += iov->iov_len;
-		iov++;
-	}
-
-	return retval;
 }
 
 /* Generate a random jitter in the range of -50% ~ +50% of input RTO. */

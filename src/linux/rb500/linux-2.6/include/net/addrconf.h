@@ -45,6 +45,7 @@ struct prefix_info {
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/netdevice.h>
 #include <net/if_inet6.h>
 #include <net/ipv6.h>

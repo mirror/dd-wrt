@@ -26,19 +26,8 @@
 #include <linux/pci.h>
 #include <linux/kernel.h>
 
-#include <asm/pci.h>
-#include <asm/io.h>
-#include <asm/rm9k-ocd.h>
+#include <asm/titan_dep.h>
 
-/*
- * PCI specific defines
- */
-#define	TITAN_PCI_0_CONFIG_ADDRESS	0x780
-#define	TITAN_PCI_0_CONFIG_DATA		0x784
-
-/*
- * Titan PCI Config Read Byte
- */
 static int titan_read_config(struct pci_bus *bus, unsigned int devfn, int reg,
 	int size, u32 * val)
 {
@@ -54,8 +43,8 @@ static int titan_read_config(struct pci_bus *bus, unsigned int devfn, int reg,
 
 
 	/* start the configuration cycle */
-	ocd_writel(address, TITAN_PCI_0_CONFIG_ADDRESS);
-	tmp = ocd_readl(TITAN_PCI_0_CONFIG_DATA) >> ((reg & 3) << 3);
+	TITAN_WRITE(TITAN_PCI_0_CONFIG_ADDRESS, address);
+	tmp = TITAN_READ(TITAN_PCI_0_CONFIG_DATA) >> ((reg & 3) << 3);
 
 	switch (size) {
 	case 1:
@@ -82,20 +71,20 @@ static int titan_write_config(struct pci_bus *bus, unsigned int devfn, int reg,
 		(reg & 0xfc) | 0x80000000;
 
 	/* start the configuration cycle */
-	ocd_writel(address, TITAN_PCI_0_CONFIG_ADDRESS);
+	TITAN_WRITE(TITAN_PCI_0_CONFIG_ADDRESS, address);
 
 	/* write the data */
 	switch (size) {
 	case 1:
-		ocd_writeb(val, TITAN_PCI_0_CONFIG_DATA + (~reg & 0x3));
+		TITAN_WRITE_8(TITAN_PCI_0_CONFIG_DATA + (~reg & 0x3), val);
 		break;
 
 	case 2:
-		ocd_writew(val, TITAN_PCI_0_CONFIG_DATA + (~reg & 0x2));
+		TITAN_WRITE_16(TITAN_PCI_0_CONFIG_DATA + (~reg & 0x2), val);
 		break;
 
 	case 4:
-		ocd_writel(val, TITAN_PCI_0_CONFIG_DATA);
+		TITAN_WRITE(TITAN_PCI_0_CONFIG_DATA, val);
 		break;
 	}
 

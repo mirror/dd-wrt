@@ -22,6 +22,7 @@
  *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <linux/bitops.h>
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -93,7 +94,7 @@ int cpu_check_affinity(unsigned int irq, cpumask_t *dest)
 	if (irq == TIMER_IRQ || irq == IPI_IRQ) {
 		/* Bad linux design decision.  The mask has already
 		 * been set; we must reset it */
-		irq_desc[irq].affinity = CPU_MASK_ALL;
+		irq_affinity[irq] = CPU_MASK_ALL;
 		return -EINVAL;
 	}
 
@@ -109,7 +110,7 @@ static void cpu_set_affinity_irq(unsigned int irq, cpumask_t dest)
 	if (cpu_check_affinity(irq, &dest))
 		return;
 
-	irq_desc[irq].affinity = dest;
+	irq_affinity[irq] = dest;
 }
 #endif
 
@@ -124,10 +125,6 @@ static struct hw_interrupt_type cpu_interrupt_type = {
 #ifdef CONFIG_SMP
 	.set_affinity	= cpu_set_affinity_irq,
 #endif
-	/* XXX: Needs to be written.  We managed without it so far, but
-	 * we really ought to write it.
-	 */
-	.retrigger	= NULL,
 };
 
 int show_interrupts(struct seq_file *p, void *v)
@@ -161,7 +158,7 @@ int show_interrupts(struct seq_file *p, void *v)
 		seq_printf(p, "%10u ", kstat_irqs(i));
 #endif
 
-		seq_printf(p, " %14s", irq_desc[i].chip->typename);
+		seq_printf(p, " %14s", irq_desc[i].handler->typename);
 #ifndef PARISC_IRQ_CR16_COUNTS
 		seq_printf(p, "  %s", action->name);
 
@@ -213,12 +210,12 @@ int cpu_claim_irq(unsigned int irq, struct hw_interrupt_type *type, void *data)
 {
 	if (irq_desc[irq].action)
 		return -EBUSY;
-	if (irq_desc[irq].chip != &cpu_interrupt_type)
+	if (irq_desc[irq].handler != &cpu_interrupt_type)
 		return -EBUSY;
 
 	if (type) {
-		irq_desc[irq].chip = type;
-		irq_desc[irq].chip_data = data;
+		irq_desc[irq].handler = type;
+		irq_desc[irq].handler_data = data;
 		cpu_interrupt_type.enable(irq);
 	}
 	return 0;
@@ -268,7 +265,7 @@ int txn_alloc_irq(unsigned int bits_wide)
 unsigned long txn_affinity_addr(unsigned int irq, int cpu)
 {
 #ifdef CONFIG_SMP
-	irq_desc[irq].affinity = cpumask_of_cpu(cpu);
+	irq_affinity[irq] = cpumask_of_cpu(cpu);
 #endif
 
 	return cpu_data[cpu].txn_addr;
@@ -329,7 +326,7 @@ void do_cpu_irq_mask(struct pt_regs *regs)
 		/* Work our way from MSb to LSb...same order we alloc EIRs */
 		for (irq = TIMER_IRQ; eirr_val && bit; bit>>=1, irq++) {
 #ifdef CONFIG_SMP
-			cpumask_t dest = irq_desc[irq].affinity;
+			cpumask_t dest = irq_affinity[irq];
 #endif
 			if (!(bit & eirr_val))
 				continue;
@@ -366,14 +363,14 @@ void do_cpu_irq_mask(struct pt_regs *regs)
 static struct irqaction timer_action = {
 	.handler = timer_interrupt,
 	.name = "timer",
-	.flags = IRQF_DISABLED,
+	.flags = SA_INTERRUPT,
 };
 
 #ifdef CONFIG_SMP
 static struct irqaction ipi_action = {
 	.handler = ipi_interrupt,
 	.name = "IPI",
-	.flags = IRQF_DISABLED,
+	.flags = SA_INTERRUPT,
 };
 #endif
 
@@ -381,7 +378,7 @@ static void claim_cpu_irqs(void)
 {
 	int i;
 	for (i = CPU_IRQ_BASE; i <= CPU_IRQ_MAX; i++) {
-		irq_desc[i].chip = &cpu_interrupt_type;
+		irq_desc[i].handler = &cpu_interrupt_type;
 	}
 
 	irq_desc[TIMER_IRQ].action = &timer_action;
@@ -405,6 +402,13 @@ void __init init_IRQ(void)
 #endif
         set_eiem(cpu_eiem);	/* EIEM : enable all external intr */
 
+}
+
+void hw_resend_irq(struct hw_interrupt_type *type, unsigned int irq)
+{
+	/* XXX: Needs to be written.  We managed without it so far, but
+	 * we really ought to write it.
+	 */
 }
 
 void ack_bad_irq(unsigned int irq)

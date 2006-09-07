@@ -7,7 +7,8 @@
 
 #define GPIO_BADDR  0xb8050000
 
-static unsigned char *devCtl3Base = (unsigned char *) KSEG1ADDR(0x18010030);
+//static unsigned char *devCtl3Base = (unsigned char *) KSEG1ADDR(0x18010030);
+static volatile unsigned char *devCtl3Base = 0;
 static unsigned char latchU5State = 0;
 static spinlock_t clu5Lock = SPIN_LOCK_UNLOCKED;
 
@@ -28,6 +29,8 @@ void changeLatchU5(unsigned char orMask, unsigned char nandMask) {
     unsigned flags;
     spin_lock_irqsave(&clu5Lock, flags);
     latchU5State = (latchU5State | orMask) & ~nandMask;
+    if( !devCtl3Base) devCtl3Base = (volatile unsigned char *) 
+    KSEG1ADDR(*(volatile unsigned *) KSEG1ADDR(0x18010030)); 
     *devCtl3Base = latchU5State;
     spin_unlock_irqrestore(&clu5Lock, flags);
 }

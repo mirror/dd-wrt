@@ -77,14 +77,13 @@ acpi_ns_load_table(struct acpi_table_desc *table_desc,
 {
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(ns_load_table);
+	ACPI_FUNCTION_TRACE("ns_load_table");
 
 	/* Check if table contains valid AML (must be DSDT, PSDT, SSDT, etc.) */
 
 	if (!
 	    (acpi_gbl_table_data[table_desc->type].
 	     flags & ACPI_TABLE_EXECUTABLE)) {
-
 		/* Just ignore this table */
 
 		return_ACPI_STATUS(AE_OK);
@@ -169,7 +168,7 @@ static acpi_status acpi_ns_load_table_by_type(acpi_table_type table_type)
 	acpi_status status;
 	struct acpi_table_desc *table_desc;
 
-	ACPI_FUNCTION_TRACE(ns_load_table_by_type);
+	ACPI_FUNCTION_TRACE("ns_load_table_by_type");
 
 	status = acpi_ut_acquire_mutex(ACPI_MTX_TABLES);
 	if (ACPI_FAILURE(status)) {
@@ -181,11 +180,11 @@ static acpi_status acpi_ns_load_table_by_type(acpi_table_type table_type)
 	 * DSDT (one), SSDT/PSDT (multiple)
 	 */
 	switch (table_type) {
-	case ACPI_TABLE_ID_DSDT:
+	case ACPI_TABLE_DSDT:
 
 		ACPI_DEBUG_PRINT((ACPI_DB_INFO, "Namespace load: DSDT\n"));
 
-		table_desc = acpi_gbl_table_lists[ACPI_TABLE_ID_DSDT].next;
+		table_desc = acpi_gbl_table_lists[ACPI_TABLE_DSDT].next;
 
 		/* If table already loaded into namespace, just return */
 
@@ -201,8 +200,8 @@ static acpi_status acpi_ns_load_table_by_type(acpi_table_type table_type)
 		}
 		break;
 
-	case ACPI_TABLE_ID_SSDT:
-	case ACPI_TABLE_ID_PSDT:
+	case ACPI_TABLE_SSDT:
+	case ACPI_TABLE_PSDT:
 
 		ACPI_DEBUG_PRINT((ACPI_DB_INFO,
 				  "Namespace load: %d SSDT or PSDTs\n",
@@ -259,7 +258,7 @@ acpi_status acpi_ns_load_namespace(void)
 {
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(acpi_load_name_space);
+	ACPI_FUNCTION_TRACE("acpi_load_name_space");
 
 	/* There must be at least a DSDT installed */
 
@@ -272,15 +271,15 @@ acpi_status acpi_ns_load_namespace(void)
 	 * Load the namespace.  The DSDT is required,
 	 * but the SSDT and PSDT tables are optional.
 	 */
-	status = acpi_ns_load_table_by_type(ACPI_TABLE_ID_DSDT);
+	status = acpi_ns_load_table_by_type(ACPI_TABLE_DSDT);
 	if (ACPI_FAILURE(status)) {
 		return_ACPI_STATUS(status);
 	}
 
 	/* Ignore exceptions from these */
 
-	(void)acpi_ns_load_table_by_type(ACPI_TABLE_ID_SSDT);
-	(void)acpi_ns_load_table_by_type(ACPI_TABLE_ID_PSDT);
+	(void)acpi_ns_load_table_by_type(ACPI_TABLE_SSDT);
+	(void)acpi_ns_load_table_by_type(ACPI_TABLE_PSDT);
 
 	ACPI_DEBUG_PRINT_RAW((ACPI_DB_INIT,
 			      "ACPI Namespace successfully loaded at root %p\n",
@@ -315,7 +314,7 @@ static acpi_status acpi_ns_delete_subtree(acpi_handle start_handle)
 	acpi_handle dummy;
 	u32 level;
 
-	ACPI_FUNCTION_TRACE(ns_delete_subtree);
+	ACPI_FUNCTION_TRACE("ns_delete_subtree");
 
 	parent_handle = start_handle;
 	child_handle = NULL;
@@ -326,7 +325,6 @@ static acpi_status acpi_ns_delete_subtree(acpi_handle start_handle)
 	 * to where we started.
 	 */
 	while (level > 0) {
-
 		/* Attempt to get the next object in this scope */
 
 		status = acpi_get_next_object(ACPI_TYPE_ANY, parent_handle,
@@ -337,7 +335,6 @@ static acpi_status acpi_ns_delete_subtree(acpi_handle start_handle)
 		/* Did we get a new object? */
 
 		if (ACPI_SUCCESS(status)) {
-
 			/* Check if this object has any children */
 
 			if (ACPI_SUCCESS
@@ -395,7 +392,7 @@ acpi_status acpi_ns_unload_namespace(acpi_handle handle)
 {
 	acpi_status status;
 
-	ACPI_FUNCTION_TRACE(ns_unload_name_space);
+	ACPI_FUNCTION_TRACE("ns_unload_name_space");
 
 	/* Parameter validation */
 

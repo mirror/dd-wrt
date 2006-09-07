@@ -26,6 +26,7 @@
 #include <linux/mman.h>
 #include <linux/proc_fs.h>
 #include <linux/ioport.h>
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/mmzone.h>
 #include <linux/pagemap.h>
@@ -119,6 +120,7 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 {
 	struct sysinfo i;
 	int len;
+	struct page_state ps;
 	unsigned long inactive;
 	unsigned long active;
 	unsigned long free;
@@ -127,6 +129,7 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 	struct vmalloc_info vmi;
 	long cached;
 
+	get_page_state(&ps);
 	get_zone_counts(&active, &inactive, &free);
 
 /*
@@ -141,8 +144,7 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 	allowed = ((totalram_pages - hugetlb_total_pages())
 		* sysctl_overcommit_ratio / 100) + total_swap_pages;
 
-	cached = global_page_state(NR_FILE_PAGES) -
-			total_swapcache_pages - i.bufferram;
+	cached = get_page_cache_size() - total_swapcache_pages - i.bufferram;
 	if (cached < 0)
 		cached = 0;
 
@@ -189,14 +191,11 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 		"SwapFree:     %8lu kB\n"
 		"Dirty:        %8lu kB\n"
 		"Writeback:    %8lu kB\n"
-		"AnonPages:    %8lu kB\n"
 		"Mapped:       %8lu kB\n"
 		"Slab:         %8lu kB\n"
-		"PageTables:   %8lu kB\n"
-		"NFS Unstable: %8lu kB\n"
-		"Bounce:       %8lu kB\n"
 		"CommitLimit:  %8lu kB\n"
 		"Committed_AS: %8lu kB\n"
+		"PageTables:   %8lu kB\n"
 		"VmallocTotal: %8lu kB\n"
 		"VmallocUsed:  %8lu kB\n"
 		"VmallocChunk: %8lu kB\n",
@@ -214,16 +213,13 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 		K(i.freeram-i.freehigh),
 		K(i.totalswap),
 		K(i.freeswap),
-		K(global_page_state(NR_FILE_DIRTY)),
-		K(global_page_state(NR_WRITEBACK)),
-		K(global_page_state(NR_ANON_PAGES)),
-		K(global_page_state(NR_FILE_MAPPED)),
-		K(global_page_state(NR_SLAB)),
-		K(global_page_state(NR_PAGETABLE)),
-		K(global_page_state(NR_UNSTABLE_NFS)),
-		K(global_page_state(NR_BOUNCE)),
+		K(ps.nr_dirty),
+		K(ps.nr_writeback),
+		K(ps.nr_mapped),
+		K(ps.nr_slab),
 		K(allowed),
 		K(committed),
+		K(ps.nr_page_table_pages),
 		(unsigned long)VMALLOC_TOTAL >> 10,
 		vmi.used >> 10,
 		vmi.largest_chunk >> 10

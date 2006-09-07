@@ -5,6 +5,7 @@
  * Copyright (C) 1997, 1998, 1999 Jakub Jelinek (jj@ultra.linux.cz)
  */
 
+#include <linux/config.h>
 
 #include <asm/asi.h>
 #include <asm/pstate.h>

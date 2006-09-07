@@ -19,7 +19,6 @@
 #include <asm/io.h>		/* outb, outb_p			*/
 #include <asm/uaccess.h>	/* copy to/from user		*/
 #include <linux/videodev.h>	/* kernel radio structs		*/
-#include <media/v4l2-common.h>
 #include <linux/mutex.h>
 
 static struct mutex lock;
@@ -203,7 +202,7 @@ static int fmr2_setvolume(struct fmr2_device *dev)
 }
 
 static int fmr2_do_ioctl(struct inode *inode, struct file *file,
-		      unsigned int cmd, void *arg)
+                      unsigned int cmd, void *arg)
 {
 	struct video_device *dev = video_devdata(file);
 	struct fmr2_device *fmr2 = dev->priv;
@@ -345,7 +344,7 @@ static int fmr2_do_ioctl(struct inode *inode, struct file *file,
 }
 
 static int fmr2_ioctl(struct inode *inode, struct file *file,
-		      unsigned int cmd, unsigned long arg)
+                      unsigned int cmd, unsigned long arg)
  {
 	return video_usercopy(inode, file, cmd, arg, fmr2_do_ioctl);
 }

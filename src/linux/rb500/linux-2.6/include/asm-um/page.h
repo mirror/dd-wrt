@@ -9,6 +9,7 @@
 
 struct page;
 
+#include <linux/config.h>
 #include <asm/vm-flags.h>
 
 /* PAGE_SHIFT determines the page size */

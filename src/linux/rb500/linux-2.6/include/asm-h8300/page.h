@@ -1,6 +1,7 @@
 #ifndef _H8300_PAGE_H
 #define _H8300_PAGE_H
 
+#include <linux/config.h>
 
 /* PAGE_SHIFT determines the page size */
 

@@ -65,7 +65,7 @@ struct raw_notifier_head {
 	} while (0)
 
 #define ATOMIC_NOTIFIER_INIT(name) {				\
-		.lock = __SPIN_LOCK_UNLOCKED(name.lock),	\
+		.lock = SPIN_LOCK_UNLOCKED,			\
 		.head = NULL }
 #define BLOCKING_NOTIFIER_INIT(name) {				\
 		.rwsem = __RWSEM_INITIALIZER((name).rwsem),	\

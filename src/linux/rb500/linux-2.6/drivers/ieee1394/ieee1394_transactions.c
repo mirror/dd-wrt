@@ -136,11 +136,8 @@ int hpsb_get_tlabel(struct hpsb_packet *packet)
 {
 	unsigned long flags;
 	struct hpsb_tlabel_pool *tp;
-	int n = NODEID_TO_NODE(packet->node_id);
 
-	if (unlikely(n == ALL_NODES))
-		return 0;
-	tp = &packet->host->tpool[n];
+	tp = &packet->host->tpool[packet->node_id & NODE_MASK];
 
 	if (irqs_disabled() || in_atomic()) {
 		if (down_trylock(&tp->count))
@@ -178,11 +175,8 @@ void hpsb_free_tlabel(struct hpsb_packet *packet)
 {
 	unsigned long flags;
 	struct hpsb_tlabel_pool *tp;
-	int n = NODEID_TO_NODE(packet->node_id);
 
-	if (unlikely(n == ALL_NODES))
-		return;
-	tp = &packet->host->tpool[n];
+	tp = &packet->host->tpool[packet->node_id & NODE_MASK];
 
 	BUG_ON(packet->tlabel > 63 || packet->tlabel < 0);
 

@@ -1,6 +1,7 @@
 #ifndef __LINUX_NET_AFUNIX_H
 #define __LINUX_NET_AFUNIX_H
 
+#include <linux/config.h>
 #include <linux/socket.h>
 #include <linux/un.h>
 #include <linux/mutex.h>
@@ -53,23 +54,14 @@ struct unix_address {
 struct unix_skb_parms {
 	struct ucred		creds;		/* Skb credentials	*/
 	struct scm_fp_list	*fp;		/* Passed files		*/
-#ifdef CONFIG_SECURITY_NETWORK
-	char			*secdata;	/* Security context	*/
-	u32			seclen;		/* Security length	*/
-#endif
 };
 
 #define UNIXCB(skb) 	(*(struct unix_skb_parms*)&((skb)->cb))
 #define UNIXCREDS(skb)	(&UNIXCB((skb)).creds)
-#define UNIXSECDATA(skb)	(&UNIXCB((skb)).secdata)
-#define UNIXSECLEN(skb)		(&UNIXCB((skb)).seclen)
 
 #define unix_state_rlock(s)	spin_lock(&unix_sk(s)->lock)
 #define unix_state_runlock(s)	spin_unlock(&unix_sk(s)->lock)
 #define unix_state_wlock(s)	spin_lock(&unix_sk(s)->lock)
-#define unix_state_wlock_nested(s) \
-				spin_lock_nested(&unix_sk(s)->lock, \
-				SINGLE_DEPTH_NESTING)
 #define unix_state_wunlock(s)	spin_unlock(&unix_sk(s)->lock)
 
 #ifdef __KERNEL__

@@ -15,7 +15,6 @@
 #define __LINUX_OVCAMCHIP_H
 
 #include <linux/videodev.h>
-#include <media/v4l2-common.h>
 #include <linux/i2c.h>
 
 /* --------------------------------- */

@@ -29,7 +29,7 @@
 #ifndef I2C_ALGO_ITE_H
 #define I2C_ALGO_ITE_H 1
 
-#include <linux/types.h>
+#include <linux/i2c.h>
 
 /* Example of a sequential read request:
 	struct i2c_iic_msg s_msg; 
@@ -49,9 +49,6 @@ struct i2c_iic_msg {
 	char *buf;	/* pointer to msg data */
 };
 
-#ifdef __KERNEL__
-struct i2c_adapter;
-
 struct i2c_algo_iic_data {
 	void *data;		/* private data for lolevel routines	*/
 	void (*setiic) (void *data, int ctl, int val);
@@ -68,5 +65,5 @@ struct i2c_algo_iic_data {
 
 int i2c_iic_add_bus(struct i2c_adapter *);
 int i2c_iic_del_bus(struct i2c_adapter *);
-#endif /* __KERNEL__ */
+
 #endif /* I2C_ALGO_ITE_H */

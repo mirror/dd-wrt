@@ -16,6 +16,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -161,17 +162,10 @@ static void destroy_serial(struct kref *kref)
 		}
 	}
 
-	flush_scheduled_work();		/* port->work */
-
 	usb_put_dev(serial->dev);
 
 	/* free up any memory that we allocated */
 	kfree (serial);
-}
-
-void usb_serial_put(struct usb_serial *serial)
-{
-	kref_put(&serial->kref, destroy_serial);
 }
 
 /*****************************************************************************
@@ -207,12 +201,12 @@ static int serial_open (struct tty_struct *tty, struct file * filp)
 	 
 	++port->open_count;
 
-	/* set up our port structure making the tty driver
-	 * remember our port object, and us it */
-	tty->driver_data = port;
-	port->tty = tty;
-
 	if (port->open_count == 1) {
+
+		/* set up our port structure making the tty driver
+		 * remember our port object, and us it */
+		tty->driver_data = port;
+		port->tty = tty;
 
 		/* lock this module before we call it
 		 * this may fail, which means we must bail out,
@@ -236,11 +230,9 @@ bailout_module_put:
 	module_put(serial->type->driver.owner);
 bailout_mutex_unlock:
 	port->open_count = 0;
-	tty->driver_data = NULL;
-	port->tty = NULL;
 	mutex_unlock(&port->mutex);
 bailout_kref_put:
-	usb_serial_put(serial);
+	kref_put(&serial->kref, destroy_serial);
 	return retval;
 }
 
@@ -276,7 +268,7 @@ static void serial_close(struct tty_struct *tty, struct file * filp)
 	}
 
 	mutex_unlock(&port->mutex);
-	usb_serial_put(port->serial);
+	kref_put(&port->serial->kref, destroy_serial);
 }
 
 static int serial_write (struct tty_struct * tty, const unsigned char *buf, int count)
@@ -284,7 +276,7 @@ static int serial_write (struct tty_struct * tty, const unsigned char *buf, int 
 	struct usb_serial_port *port = tty->driver_data;
 	int retval = -EINVAL;
 
-	if (!port || port->serial->dev->state == USB_STATE_NOTATTACHED)
+	if (!port)
 		goto exit;
 
 	dbg("%s - port %d, %d byte(s)", __FUNCTION__, port->number, count);
@@ -304,7 +296,7 @@ exit:
 static int serial_write_room (struct tty_struct *tty) 
 {
 	struct usb_serial_port *port = tty->driver_data;
-	int retval = -ENODEV;
+	int retval = -EINVAL;
 
 	if (!port)
 		goto exit;
@@ -326,7 +318,7 @@ exit:
 static int serial_chars_in_buffer (struct tty_struct *tty) 
 {
 	struct usb_serial_port *port = tty->driver_data;
-	int retval = -ENODEV;
+	int retval = -EINVAL;
 
 	if (!port)
 		goto exit;
@@ -481,7 +473,7 @@ static int serial_read_proc (char *page, char **start, off_t off, int count, int
 			begin += length;
 			length = 0;
 		}
-		usb_serial_put(serial);
+		kref_put(&serial->kref, destroy_serial);
 	}
 	*eof = 1;
 done:
@@ -496,18 +488,19 @@ static int serial_tiocmget (struct tty_struct *tty, struct file *file)
 	struct usb_serial_port *port = tty->driver_data;
 
 	if (!port)
-		return -ENODEV;
+		goto exit;
 
 	dbg("%s - port %d", __FUNCTION__, port->number);
 
 	if (!port->open_count) {
 		dbg("%s - port not open", __FUNCTION__);
-		return -ENODEV;
+		goto exit;
 	}
 
 	if (port->serial->type->tiocmget)
 		return port->serial->type->tiocmget(port, file);
 
+exit:
 	return -EINVAL;
 }
 
@@ -517,32 +510,23 @@ static int serial_tiocmset (struct tty_struct *tty, struct file *file,
 	struct usb_serial_port *port = tty->driver_data;
 
 	if (!port)
-		return -ENODEV;
+		goto exit;
 
 	dbg("%s - port %d", __FUNCTION__, port->number);
 
 	if (!port->open_count) {
 		dbg("%s - port not open", __FUNCTION__);
-		return -ENODEV;
+		goto exit;
 	}
 
 	if (port->serial->type->tiocmset)
 		return port->serial->type->tiocmset(port, file, set, clear);
 
+exit:
 	return -EINVAL;
 }
 
-/*
- * We would be calling tty_wakeup here, but unfortunately some line
- * disciplines have an annoying habit of calling tty->write from
- * the write wakeup callback (e.g. n_hdlc.c).
- */
-void usb_serial_port_softint(struct usb_serial_port *port)
-{
-	schedule_work(&port->work);
-}
-
-static void usb_serial_port_work(void *private)
+void usb_serial_port_softint(void *private)
 {
 	struct usb_serial_port *port = private;
 	struct tty_struct *tty;
@@ -805,7 +789,7 @@ int usb_serial_probe(struct usb_interface *interface,
 		port->serial = serial;
 		spin_lock_init(&port->lock);
 		mutex_init(&port->mutex);
-		INIT_WORK(&port->work, usb_serial_port_work, port);
+		INIT_WORK(&port->work, usb_serial_port_softint, port);
 		serial->port[i] = port;
 	}
 
@@ -1001,7 +985,6 @@ void usb_serial_disconnect(struct usb_interface *interface)
 	struct device *dev = &interface->dev;
 	struct usb_serial_port *port;
 
-	usb_serial_console_disconnect(serial);
 	dbg ("%s", __FUNCTION__);
 
 	usb_set_intfdata (interface, NULL);
@@ -1013,7 +996,7 @@ void usb_serial_disconnect(struct usb_interface *interface)
 		}
 		/* let the last holder of this object 
 		 * cause it to be cleaned up */
-		usb_serial_put(serial);
+		kref_put(&serial->kref, destroy_serial);
 	}
 	dev_info(dev, "device disconnected\n");
 }
@@ -1058,12 +1041,13 @@ static int __init usb_serial_init(void)
 
 	usb_serial_tty_driver->owner = THIS_MODULE;
 	usb_serial_tty_driver->driver_name = "usbserial";
+	usb_serial_tty_driver->devfs_name = "usb/tts/";
 	usb_serial_tty_driver->name = 	"ttyUSB";
 	usb_serial_tty_driver->major = SERIAL_TTY_MAJOR;
 	usb_serial_tty_driver->minor_start = 0;
 	usb_serial_tty_driver->type = TTY_DRIVER_TYPE_SERIAL;
 	usb_serial_tty_driver->subtype = SERIAL_TYPE_NORMAL;
-	usb_serial_tty_driver->flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
+	usb_serial_tty_driver->flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS;
 	usb_serial_tty_driver->init_termios = tty_std_termios;
 	usb_serial_tty_driver->init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
 	tty_set_operations(usb_serial_tty_driver, &serial_ops);

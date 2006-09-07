@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -110,10 +111,9 @@ static int jffs2_sb_set(struct super_block *sb, void *data)
 	return 0;
 }
 
-static int jffs2_get_sb_mtd(struct file_system_type *fs_type,
-			    int flags, const char *dev_name,
-			    void *data, struct mtd_info *mtd,
-			    struct vfsmount *mnt)
+static struct super_block *jffs2_get_sb_mtd(struct file_system_type *fs_type,
+					      int flags, const char *dev_name,
+					      void *data, struct mtd_info *mtd)
 {
 	struct super_block *sb;
 	struct jffs2_sb_info *c;
@@ -121,20 +121,19 @@ static int jffs2_get_sb_mtd(struct file_system_type *fs_type,
 
 	c = kmalloc(sizeof(*c), GFP_KERNEL);
 	if (!c)
-		return -ENOMEM;
+		return ERR_PTR(-ENOMEM);
 	memset(c, 0, sizeof(*c));
 	c->mtd = mtd;
 
 	sb = sget(fs_type, jffs2_sb_compare, jffs2_sb_set, c);
 
 	if (IS_ERR(sb))
-		goto out_error;
+		goto out_put;
 
 	if (sb->s_root) {
 		/* New mountpoint for JFFS2 which is already mounted */
 		D1(printk(KERN_DEBUG "jffs2_get_sb_mtd(): Device %d (\"%s\") is already mounted\n",
 			  mtd->index, mtd->name));
-		ret = simple_set_mnt(mnt, sb);
 		goto out_put;
 	}
 
@@ -152,57 +151,51 @@ static int jffs2_get_sb_mtd(struct file_system_type *fs_type,
 
 	sb->s_op = &jffs2_super_operations;
 	sb->s_flags = flags | MS_NOATIME;
-	sb->s_xattr = jffs2_xattr_handlers;
-#ifdef CONFIG_JFFS2_FS_POSIX_ACL
-	sb->s_flags |= MS_POSIXACL;
-#endif
+
 	ret = jffs2_do_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
 
 	if (ret) {
 		/* Failure case... */
 		up_write(&sb->s_umount);
 		deactivate_super(sb);
-		return ret;
+		return ERR_PTR(ret);
 	}
 
 	sb->s_flags |= MS_ACTIVE;
-	return simple_set_mnt(mnt, sb);
+	return sb;
 
-out_error:
-	ret = PTR_ERR(sb);
  out_put:
 	kfree(c);
 	put_mtd_device(mtd);
 
-	return ret;
+	return sb;
 }
 
-static int jffs2_get_sb_mtdnr(struct file_system_type *fs_type,
-			      int flags, const char *dev_name,
-			      void *data, int mtdnr,
-			      struct vfsmount *mnt)
+static struct super_block *jffs2_get_sb_mtdnr(struct file_system_type *fs_type,
+					      int flags, const char *dev_name,
+					      void *data, int mtdnr)
 {
 	struct mtd_info *mtd;
 
 	mtd = get_mtd_device(NULL, mtdnr);
 	if (!mtd) {
 		D1(printk(KERN_DEBUG "jffs2: MTD device #%u doesn't appear to exist\n", mtdnr));
-		return -EINVAL;
+		return ERR_PTR(-EINVAL);
 	}
 
-	return jffs2_get_sb_mtd(fs_type, flags, dev_name, data, mtd, mnt);
+	return jffs2_get_sb_mtd(fs_type, flags, dev_name, data, mtd);
 }
 
-static int jffs2_get_sb(struct file_system_type *fs_type,
-			int flags, const char *dev_name,
-			void *data, struct vfsmount *mnt)
+static struct super_block *jffs2_get_sb(struct file_system_type *fs_type,
+					int flags, const char *dev_name,
+					void *data)
 {
 	int err;
 	struct nameidata nd;
 	int mtdnr;
 
 	if (!dev_name)
-		return -EINVAL;
+		return ERR_PTR(-EINVAL);
 
 	D1(printk(KERN_DEBUG "jffs2_get_sb(): dev_name \"%s\"\n", dev_name));
 
@@ -224,7 +217,7 @@ static int jffs2_get_sb(struct file_system_type *fs_type,
 				mtd = get_mtd_device(NULL, mtdnr);
 				if (mtd) {
 					if (!strcmp(mtd->name, dev_name+4))
-						return jffs2_get_sb_mtd(fs_type, flags, dev_name, data, mtd, mnt);
+						return jffs2_get_sb_mtd(fs_type, flags, dev_name, data, mtd);
 					put_mtd_device(mtd);
 				}
 			}
@@ -237,7 +230,7 @@ static int jffs2_get_sb(struct file_system_type *fs_type,
 			if (!*endptr) {
 				/* It was a valid number */
 				D1(printk(KERN_DEBUG "jffs2_get_sb(): mtd%%d, mtdnr %d\n", mtdnr));
-				return jffs2_get_sb_mtdnr(fs_type, flags, dev_name, data, mtdnr, mnt);
+				return jffs2_get_sb_mtdnr(fs_type, flags, dev_name, data, mtdnr);
 			}
 		}
 	}
@@ -251,7 +244,7 @@ static int jffs2_get_sb(struct file_system_type *fs_type,
 		  err, nd.dentry->d_inode));
 
 	if (err)
-		return err;
+		return ERR_PTR(err);
 
 	err = -EINVAL;
 
@@ -273,11 +266,11 @@ static int jffs2_get_sb(struct file_system_type *fs_type,
 	mtdnr = iminor(nd.dentry->d_inode);
 	path_release(&nd);
 
-	return jffs2_get_sb_mtdnr(fs_type, flags, dev_name, data, mtdnr, mnt);
+	return jffs2_get_sb_mtdnr(fs_type, flags, dev_name, data, mtdnr);
 
 out:
 	path_release(&nd);
-	return err;
+	return ERR_PTR(err);
 }
 
 static void jffs2_put_super (struct super_block *sb)
@@ -300,7 +293,6 @@ static void jffs2_put_super (struct super_block *sb)
 		kfree(c->blocks);
 	jffs2_flash_cleanup(c);
 	kfree(c->inocache_list);
-	jffs2_clear_xattr_subsystem(c);
 	if (c->mtd->sync)
 		c->mtd->sync(c->mtd);
 
@@ -328,18 +320,6 @@ static int __init init_jffs2_fs(void)
 {
 	int ret;
 
-	/* Paranoia checks for on-medium structures. If we ask GCC
-	   to pack them with __attribute__((packed)) then it _also_
-	   assumes that they're not aligned -- so it emits crappy
-	   code on some architectures. Ideally we want an attribute
-	   which means just 'no padding', without the alignment
-	   thing. But GCC doesn't have that -- we have to just
-	   hope the structs are the right sizes, instead. */
-	BUG_ON(sizeof(struct jffs2_unknown_node) != 12);
-	BUG_ON(sizeof(struct jffs2_raw_dirent) != 40);
-	BUG_ON(sizeof(struct jffs2_raw_inode) != 68);
-	BUG_ON(sizeof(struct jffs2_raw_summary) != 32);
-
 	printk(KERN_INFO "JFFS2 version 2.2."
 #ifdef CONFIG_JFFS2_FS_WRITEBUFFER
 	       " (NAND)"
@@ -347,7 +327,7 @@ static int __init init_jffs2_fs(void)
 #ifdef CONFIG_JFFS2_SUMMARY
 	       " (SUMMARY) "
 #endif
-	       " (C) 2001-2006 Red Hat, Inc.\n");
+	       " (C) 2001-2003 Red Hat, Inc.\n");
 
 	jffs2_inode_cachep = kmem_cache_create("jffs2_i",
 					     sizeof(struct jffs2_inode_info),

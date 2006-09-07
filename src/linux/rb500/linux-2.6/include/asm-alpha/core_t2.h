@@ -1,6 +1,7 @@
 #ifndef __ALPHA_T2__H__
 #define __ALPHA_T2__H__
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/spinlock.h>
 #include <asm/compiler.h>
@@ -435,7 +436,7 @@ static inline void t2_outl(u32 b, unsigned long addr)
 	set_hae(msb); \
 }
 
-static DEFINE_SPINLOCK(t2_hae_lock);
+static spinlock_t t2_hae_lock = SPIN_LOCK_UNLOCKED;
 
 __EXTERN_INLINE u8 t2_readb(const volatile void __iomem *xaddr)
 {

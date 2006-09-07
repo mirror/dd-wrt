@@ -7,6 +7,7 @@
 #ifndef __SPARC_HARDIRQ_H
 #define __SPARC_HARDIRQ_H
 
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/spinlock.h>
 #include <linux/cache.h>

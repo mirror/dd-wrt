@@ -9,6 +9,7 @@
  * Keith Owens <kaos@ocs.com.au> July 2000.
  */
 
+#include <linux/config.h>
 
 /*
  * Simple wrappers reducing source bloat.  Define all irq_stat fields

@@ -15,6 +15,7 @@
  */
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 
 #ifdef __STDC__
 #define ____glue(name,fn)	name##fn

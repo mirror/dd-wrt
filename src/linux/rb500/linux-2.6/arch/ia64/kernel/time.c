@@ -8,6 +8,7 @@
  * Copyright (C) 1999-2000 VA Linux Systems
  * Copyright (C) 1999-2000 Walt Drummond <drummond@valinux.com>
  */
+#include <linux/config.h>
 
 #include <linux/cpu.h>
 #include <linux/init.h>
@@ -231,7 +232,7 @@ ia64_init_itm (void)
 
 static struct irqaction timer_irqaction = {
 	.handler =	timer_interrupt,
-	.flags =	IRQF_DISABLED,
+	.flags =	SA_INTERRUPT,
 	.name =		"timer"
 };
 

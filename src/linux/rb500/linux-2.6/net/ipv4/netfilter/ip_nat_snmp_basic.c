@@ -43,6 +43,7 @@
  * 2000-08-06: Convert to new helper API (Harald Welte).
  *
  */
+#include <linux/config.h>
 #include <linux/in.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -1347,4 +1348,4 @@ static void __exit ip_nat_snmp_basic_fini(void)
 module_init(ip_nat_snmp_basic_init);
 module_exit(ip_nat_snmp_basic_fini);
 
-module_param(debug, int, 0600);
+module_param(debug, bool, 0600);

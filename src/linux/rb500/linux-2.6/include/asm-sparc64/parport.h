@@ -67,17 +67,18 @@ static __inline__ unsigned int get_dma_residue(unsigned int dmanr)
 
 static int ebus_ecpp_p(struct linux_ebus_device *edev)
 {
-	if (!strcmp(edev->prom_node->name, "ecpp"))
+	if (!strcmp(edev->prom_name, "ecpp"))
 		return 1;
-	if (!strcmp(edev->prom_node->name, "parallel")) {
-		char *compat;
-
-		compat = of_get_property(edev->prom_node,
-					 "compatible", NULL);
-		if (compat &&
-		    (!strcmp(compat, "ecpp") ||
-		     !strcmp(compat, "ns87317-ecpp") ||
-		     !strcmp(compat + 13, "ecpp")))
+	if (!strcmp(edev->prom_name, "parallel")) {
+		char compat[19];
+		prom_getstring(edev->prom_node,
+			       "compatible",
+			       compat, sizeof(compat));
+		compat[18] = '\0';
+		if (!strcmp(compat, "ecpp"))
+			return 1;
+		if (!strcmp(compat, "ns87317-ecpp") &&
+		    !strcmp(compat + 13, "ecpp"))
 			return 1;
 	}
 	return 0;
@@ -93,12 +94,12 @@ static int parport_isa_probe(int count)
 			struct sparc_isa_device *child;
 			unsigned long base;
 
-			if (strcmp(isa_dev->prom_node->name, "dma"))
+			if (strcmp(isa_dev->prom_name, "dma"))
 				continue;
 
 			child = isa_dev->child;
 			while (child) {
-				if (!strcmp(child->prom_node->name, "parallel"))
+				if (!strcmp(child->prom_name, "parallel"))
 					break;
 				child = child->next;
 			}

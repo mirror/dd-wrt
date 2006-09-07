@@ -32,6 +32,7 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -66,6 +67,8 @@ EXPORT_SYMBOL(pm_power_off);
 
 unsigned char acpi_kbd_controller_present = 1;
 unsigned char acpi_legacy_devices;
+
+static unsigned int __initdata acpi_madt_rev;
 
 unsigned int acpi_cpei_override;
 unsigned int acpi_cpei_phys_cpuid;
@@ -240,8 +243,6 @@ acpi_parse_iosapic(acpi_table_entry_header * header, const unsigned long end)
 	return iosapic_init(iosapic->address, iosapic->global_irq_base);
 }
 
-static unsigned int __initdata acpi_madt_rev;
-
 static int __init
 acpi_parse_plat_int_src(acpi_table_entry_header * header,
 			const unsigned long end)
@@ -414,6 +415,9 @@ static int __initdata srat_num_cpus;	/* number of cpus */
 static u32 __devinitdata pxm_flag[PXM_FLAG_LEN];
 #define pxm_bit_set(bit)	(set_bit(bit,(void *)pxm_flag))
 #define pxm_bit_test(bit)	(test_bit(bit,(void *)pxm_flag))
+/* maps to convert between proximity domain and logical node ID */
+int __devinitdata pxm_to_nid_map[MAX_PXM_DOMAINS];
+int __initdata nid_to_pxm_map[MAX_NUMNODES];
 static struct acpi_table_slit __initdata *slit_table;
 
 static int get_processor_proximity_domain(struct acpi_table_processor_affinity *pa)
@@ -529,17 +533,22 @@ void __init acpi_numa_arch_fixup(void)
 	 * MCD - This can probably be dropped now.  No need for pxm ID to node ID
 	 * mapping with sparse node numbering iff MAX_PXM_DOMAINS <= MAX_NUMNODES.
 	 */
+	/* calculate total number of nodes in system from PXM bitmap */
+	memset(pxm_to_nid_map, -1, sizeof(pxm_to_nid_map));
+	memset(nid_to_pxm_map, -1, sizeof(nid_to_pxm_map));
 	nodes_clear(node_online_map);
 	for (i = 0; i < MAX_PXM_DOMAINS; i++) {
 		if (pxm_bit_test(i)) {
-			int nid = acpi_map_pxm_to_node(i);
+			int nid = num_online_nodes();
+			pxm_to_nid_map[i] = nid;
+			nid_to_pxm_map[nid] = i;
 			node_set_online(nid);
 		}
 	}
 
 	/* set logical node id in memory chunk structure */
 	for (i = 0; i < num_node_memblks; i++)
-		node_memblk[i].nid = pxm_to_node(node_memblk[i].nid);
+		node_memblk[i].nid = pxm_to_nid_map[node_memblk[i].nid];
 
 	/* assign memory bank numbers for each chunk on each node */
 	for_each_online_node(i) {
@@ -553,7 +562,7 @@ void __init acpi_numa_arch_fixup(void)
 
 	/* set logical node id in cpu structure */
 	for (i = 0; i < srat_num_cpus; i++)
-		node_cpuid[i].nid = pxm_to_node(node_cpuid[i].nid);
+		node_cpuid[i].nid = pxm_to_nid_map[node_cpuid[i].nid];
 
 	printk(KERN_INFO "Number of logical nodes in system = %d\n",
 	       num_online_nodes());
@@ -566,11 +575,11 @@ void __init acpi_numa_arch_fixup(void)
 	for (i = 0; i < slit_table->localities; i++) {
 		if (!pxm_bit_test(i))
 			continue;
-		node_from = pxm_to_node(i);
+		node_from = pxm_to_nid_map[i];
 		for (j = 0; j < slit_table->localities; j++) {
 			if (!pxm_bit_test(j))
 				continue;
-			node_to = pxm_to_node(j);
+			node_to = pxm_to_nid_map[j];
 			node_distance(node_from, node_to) =
 			    slit_table->entry[i * slit_table->localities + j];
 		}
@@ -617,7 +626,7 @@ EXPORT_SYMBOL(acpi_unregister_gsi);
 static int __init acpi_parse_fadt(unsigned long phys_addr, unsigned long size)
 {
 	struct acpi_table_header *fadt_header;
-	struct fadt_descriptor *fadt;
+	struct fadt_descriptor_rev2 *fadt;
 
 	if (!phys_addr || !size)
 		return -EINVAL;
@@ -626,7 +635,7 @@ static int __init acpi_parse_fadt(unsigned long phys_addr, unsigned long size)
 	if (fadt_header->revision != 3)
 		return -ENODEV;	/* Only deal with ACPI 2.0 FADT */
 
-	fadt = (struct fadt_descriptor *)fadt_header;
+	fadt = (struct fadt_descriptor_rev2 *)fadt_header;
 
 	if (!(fadt->iapc_boot_arch & BAF_8042_KEYBOARD_CONTROLLER))
 		acpi_kbd_controller_present = 0;
@@ -776,9 +785,9 @@ int acpi_map_cpu2node(acpi_handle handle, int cpu, long physid)
 
 	/*
 	 * Assuming that the container driver would have set the proximity
-	 * domain and would have initialized pxm_to_node(pxm_id) && pxm_flag
+	 * domain and would have initialized pxm_to_nid_map[pxm_id] && pxm_flag
 	 */
-	node_cpuid[cpu].nid = (pxm_id < 0) ? 0 : pxm_to_node(pxm_id);
+	node_cpuid[cpu].nid = (pxm_id < 0) ? 0 : pxm_to_nid_map[pxm_id];
 
 	node_cpuid[cpu].phys_id = physid;
 #endif
@@ -856,7 +865,7 @@ int acpi_map_lsapic(acpi_handle handle, int *pcpu)
 	obj = buffer.pointer;
 	if (obj->type != ACPI_TYPE_BUFFER ||
 	    obj->buffer.length < sizeof(*lsapic)) {
-		kfree(buffer.pointer);
+		acpi_os_free(buffer.pointer);
 		return -EINVAL;
 	}
 
@@ -864,13 +873,13 @@ int acpi_map_lsapic(acpi_handle handle, int *pcpu)
 
 	if ((lsapic->header.type != ACPI_MADT_LSAPIC) ||
 	    (!lsapic->flags.enabled)) {
-		kfree(buffer.pointer);
+		acpi_os_free(buffer.pointer);
 		return -EINVAL;
 	}
 
 	physid = ((lsapic->id << 8) | (lsapic->eid));
 
-	kfree(buffer.pointer);
+	acpi_os_free(buffer.pointer);
 	buffer.length = ACPI_ALLOCATE_BUFFER;
 	buffer.pointer = NULL;
 
@@ -934,20 +943,20 @@ acpi_map_iosapic(acpi_handle handle, u32 depth, void *context, void **ret)
 	obj = buffer.pointer;
 	if (obj->type != ACPI_TYPE_BUFFER ||
 	    obj->buffer.length < sizeof(*iosapic)) {
-		kfree(buffer.pointer);
+		acpi_os_free(buffer.pointer);
 		return AE_OK;
 	}
 
 	iosapic = (struct acpi_table_iosapic *)obj->buffer.pointer;
 
 	if (iosapic->header.type != ACPI_MADT_IOSAPIC) {
-		kfree(buffer.pointer);
+		acpi_os_free(buffer.pointer);
 		return AE_OK;
 	}
 
 	gsi_base = iosapic->global_irq_base;
 
-	kfree(buffer.pointer);
+	acpi_os_free(buffer.pointer);
 
 	/*
 	 * OK, it's an IOSAPIC MADT entry, look for a _PXM value to tell
@@ -957,7 +966,7 @@ acpi_map_iosapic(acpi_handle handle, u32 depth, void *context, void **ret)
 	if (pxm < 0)
 		return AE_OK;
 
-	node = pxm_to_node(pxm);
+	node = pxm_to_nid_map[pxm];
 
 	if (node >= MAX_NUMNODES || !node_online(node) ||
 	    cpus_empty(node_to_cpumask(node)))

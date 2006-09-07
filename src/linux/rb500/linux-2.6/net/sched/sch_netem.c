@@ -13,6 +13,7 @@
  *		Catalin(ux aka Dino) BOIE <catab at umbrella dot ro>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/bitops.h>
 #include <linux/types.h>

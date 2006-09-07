@@ -11,6 +11,7 @@
 #define m520xsim_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 /*
  *  Define the 5282 SIM register set addresses.

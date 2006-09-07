@@ -21,7 +21,8 @@ Authors:
 Module Parameters
 -----------------
 
-None.
+* force_addr: int
+  Forcibly enable the ICH at the given address. EXTREMELY DANGEROUS!
 
 
 Description

@@ -25,6 +25,7 @@
  */
 
 #include <linux/capability.h>
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/types.h>
 #include <linux/times.h>
@@ -348,7 +349,7 @@ static struct rt6_info *rt6_select(struct rt6_info **head, int oif,
 	    (strict & RT6_SELECT_F_REACHABLE) &&
 	    last && last != rt0) {
 		/* no entries matched; do round-robin */
-		static DEFINE_SPINLOCK(lock);
+		static spinlock_t lock = SPIN_LOCK_UNLOCKED;
 		spin_lock(&lock);
 		*head = rt0->u.next;
 		rt0->u.next = last->u.next;

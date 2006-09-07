@@ -16,6 +16,7 @@
  * Copyright (C) 2004, 05 Ralf Baechle DL5RB <ralf@linux-mips.org>
  * Copyright (C) 2004, 05 Thomas Osterried DL9SAU <thomas@x-berg.in-berlin.de>
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <asm/system.h>
 #include <linux/bitops.h>
@@ -356,9 +357,9 @@ static int ax_set_mac_address(struct net_device *dev, void *addr)
 {
 	struct sockaddr_ax25 *sa = addr;
 
-	netif_tx_lock_bh(dev);
+	spin_lock_irq(&dev->xmit_lock);
 	memcpy(dev->dev_addr, &sa->sax25_call, AX25_ADDR_LEN);
-	netif_tx_unlock_bh(dev);
+	spin_unlock_irq(&dev->xmit_lock);
 
 	return 0;
 }
@@ -885,9 +886,9 @@ static int mkiss_ioctl(struct tty_struct *tty, struct file *file,
 			break;
 		}
 
-		netif_tx_lock_bh(dev);
+		spin_lock_irq(&dev->xmit_lock);
 		memcpy(dev->dev_addr, addr, AX25_ADDR_LEN);
-		netif_tx_unlock_bh(dev);
+		spin_unlock_irq(&dev->xmit_lock);
 
 		err = 0;
 		break;

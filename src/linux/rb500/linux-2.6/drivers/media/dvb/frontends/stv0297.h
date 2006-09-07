@@ -38,11 +38,13 @@ struct stv0297_config
 	/* does the "inversion" need inverted? */
 	u8 invert:1;
 
-	/* set to 1 if the device requires an i2c STOP during reading */
-	u8 stop_during_read:1;
+	/* PLL maintenance */
+	int (*pll_init)(struct dvb_frontend* fe);
+	int (*pll_set)(struct dvb_frontend* fe, struct dvb_frontend_parameters* params);
 };
 
 extern struct dvb_frontend* stv0297_attach(const struct stv0297_config* config,
 					   struct i2c_adapter* i2c);
+extern int stv0297_enable_plli2c(struct dvb_frontend* fe);
 
 #endif // STV0297_H

@@ -16,6 +16,7 @@
  * option) any later version.
  *
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/ethtool.h>
 #include <asm/io.h>

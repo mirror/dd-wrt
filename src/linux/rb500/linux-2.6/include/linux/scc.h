@@ -3,6 +3,7 @@
 #ifndef	_SCC_H
 #define	_SCC_H
 
+#include <linux/config.h>
 
 /* selection of hardware types */
 

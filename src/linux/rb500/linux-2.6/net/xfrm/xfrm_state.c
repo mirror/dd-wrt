@@ -77,8 +77,6 @@ static void xfrm_state_gc_destroy(struct xfrm_state *x)
 	kfree(x->ealg);
 	kfree(x->calg);
 	kfree(x->encap);
-	if (x->mode)
-		xfrm_put_mode(x->mode);
 	if (x->type) {
 		x->type->destructor(x);
 		xfrm_put_type(x->type);
@@ -1105,14 +1103,17 @@ static struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned short family)
 		return NULL;
 	read_lock(&xfrm_state_afinfo_lock);
 	afinfo = xfrm_state_afinfo[family];
-	if (unlikely(!afinfo))
-		read_unlock(&xfrm_state_afinfo_lock);
+	if (likely(afinfo != NULL))
+		read_lock(&afinfo->lock);
+	read_unlock(&xfrm_state_afinfo_lock);
 	return afinfo;
 }
 
 static void xfrm_state_put_afinfo(struct xfrm_state_afinfo *afinfo)
 {
-	read_unlock(&xfrm_state_afinfo_lock);
+	if (unlikely(afinfo == NULL))
+		return;
+	read_unlock(&afinfo->lock);
 }
 
 /* Temporarily located here until net/xfrm/xfrm_tunnel.c is created */
@@ -1164,6 +1165,8 @@ int xfrm_state_mtu(struct xfrm_state *x, int mtu)
 	return res;
 }
 
+EXPORT_SYMBOL(xfrm_state_mtu);
+
 int xfrm_init_state(struct xfrm_state *x)
 {
 	struct xfrm_state_afinfo *afinfo;
@@ -1191,10 +1194,6 @@ int xfrm_init_state(struct xfrm_state *x)
 
 	err = x->type->init_state(x);
 	if (err)
-		goto error;
-
-	x->mode = xfrm_get_mode(x->props.mode, family);
-	if (x->mode == NULL)
 		goto error;
 
 	x->km.state = XFRM_STATE_VALID;

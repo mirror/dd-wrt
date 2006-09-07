@@ -24,6 +24,7 @@
 
 /* Bluetooth HCI connection handling. */
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/types.h>
@@ -115,8 +116,8 @@ void hci_add_sco(struct hci_conn *conn, __u16 handle)
 
 static void hci_conn_timeout(unsigned long arg)
 {
-	struct hci_conn *conn = (void *) arg;
-	struct hci_dev *hdev = conn->hdev;
+	struct hci_conn *conn = (void *)arg;
+	struct hci_dev  *hdev = conn->hdev;
 
 	BT_DBG("conn %p state %d", conn, conn->state);
 
@@ -132,13 +133,11 @@ static void hci_conn_timeout(unsigned long arg)
 	return;
 }
 
-static void hci_conn_idle(unsigned long arg)
+static void hci_conn_init_timer(struct hci_conn *conn)
 {
-	struct hci_conn *conn = (void *) arg;
-
-	BT_DBG("conn %p mode %d", conn, conn->mode);
-
-	hci_conn_enter_sniff_mode(conn);
+	init_timer(&conn->timer);
+	conn->timer.function = hci_conn_timeout;
+	conn->timer.data = (unsigned long)conn;
 }
 
 struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type, bdaddr_t *dst)
@@ -147,27 +146,17 @@ struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type, bdaddr_t *dst)
 
 	BT_DBG("%s dst %s", hdev->name, batostr(dst));
 
-	conn = kzalloc(sizeof(struct hci_conn), GFP_ATOMIC);
-	if (!conn)
+	if (!(conn = kmalloc(sizeof(struct hci_conn), GFP_ATOMIC)))
 		return NULL;
+	memset(conn, 0, sizeof(struct hci_conn));
 
 	bacpy(&conn->dst, dst);
-	conn->hdev   = hdev;
 	conn->type   = type;
-	conn->mode   = HCI_CM_ACTIVE;
+	conn->hdev   = hdev;
 	conn->state  = BT_OPEN;
 
-	conn->power_save = 1;
-
 	skb_queue_head_init(&conn->data_q);
-
-	init_timer(&conn->disc_timer);
-	conn->disc_timer.function = hci_conn_timeout;
-	conn->disc_timer.data = (unsigned long) conn;
-
-	init_timer(&conn->idle_timer);
-	conn->idle_timer.function = hci_conn_idle;
-	conn->idle_timer.data = (unsigned long) conn;
+	hci_conn_init_timer(conn);
 
 	atomic_set(&conn->refcnt, 0);
 
@@ -190,9 +179,7 @@ int hci_conn_del(struct hci_conn *conn)
 
 	BT_DBG("%s conn %p handle %d", hdev->name, conn, conn->handle);
 
-	del_timer(&conn->idle_timer);
-
-	del_timer(&conn->disc_timer);
+	hci_conn_del_timer(conn);
 
 	if (conn->type == SCO_LINK) {
 		struct hci_conn *acl = conn->link;
@@ -377,70 +364,6 @@ int hci_conn_switch_role(struct hci_conn *conn, uint8_t role)
 	return 0;
 }
 EXPORT_SYMBOL(hci_conn_switch_role);
-
-/* Enter active mode */
-void hci_conn_enter_active_mode(struct hci_conn *conn)
-{
-	struct hci_dev *hdev = conn->hdev;
-
-	BT_DBG("conn %p mode %d", conn, conn->mode);
-
-	if (test_bit(HCI_RAW, &hdev->flags))
-		return;
-
-	if (conn->mode != HCI_CM_SNIFF || !conn->power_save)
-		goto timer;
-
-	if (!test_and_set_bit(HCI_CONN_MODE_CHANGE_PEND, &conn->pend)) {
-		struct hci_cp_exit_sniff_mode cp;
-		cp.handle = __cpu_to_le16(conn->handle);
-		hci_send_cmd(hdev, OGF_LINK_POLICY,
-				OCF_EXIT_SNIFF_MODE, sizeof(cp), &cp);
-	}
-
-timer:
-	if (hdev->idle_timeout > 0)
-		mod_timer(&conn->idle_timer,
-			jiffies + msecs_to_jiffies(hdev->idle_timeout));
-}
-
-/* Enter sniff mode */
-void hci_conn_enter_sniff_mode(struct hci_conn *conn)
-{
-	struct hci_dev *hdev = conn->hdev;
-
-	BT_DBG("conn %p mode %d", conn, conn->mode);
-
-	if (test_bit(HCI_RAW, &hdev->flags))
-		return;
-
-	if (!lmp_sniff_capable(hdev) || !lmp_sniff_capable(conn))
-		return;
-
-	if (conn->mode != HCI_CM_ACTIVE || !(conn->link_policy & HCI_LP_SNIFF))
-		return;
-
-	if (lmp_sniffsubr_capable(hdev) && lmp_sniffsubr_capable(conn)) {
-		struct hci_cp_sniff_subrate cp;
-		cp.handle             = __cpu_to_le16(conn->handle);
-		cp.max_latency        = __constant_cpu_to_le16(0);
-		cp.min_remote_timeout = __constant_cpu_to_le16(0);
-		cp.min_local_timeout  = __constant_cpu_to_le16(0);
-		hci_send_cmd(hdev, OGF_LINK_POLICY,
-				OCF_SNIFF_SUBRATE, sizeof(cp), &cp);
-	}
-
-	if (!test_and_set_bit(HCI_CONN_MODE_CHANGE_PEND, &conn->pend)) {
-		struct hci_cp_sniff_mode cp;
-		cp.handle       = __cpu_to_le16(conn->handle);
-		cp.max_interval = __cpu_to_le16(hdev->sniff_max_interval);
-		cp.min_interval = __cpu_to_le16(hdev->sniff_min_interval);
-		cp.attempt      = __constant_cpu_to_le16(4);
-		cp.timeout      = __constant_cpu_to_le16(1);
-		hci_send_cmd(hdev, OGF_LINK_POLICY,
-				OCF_SNIFF_MODE, sizeof(cp), &cp);
-	}
-}
 
 /* Drop all connection on the device */
 void hci_conn_hash_flush(struct hci_dev *hdev)

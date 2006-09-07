@@ -454,7 +454,7 @@ static int register_serial_portandirq(unsigned int port, int irq)
 }
 
 
-static const struct file_operations mwave_fops = {
+static struct file_operations mwave_fops = {
 	.owner		= THIS_MODULE,
 	.read		= mwave_read,
 	.write		= mwave_write,

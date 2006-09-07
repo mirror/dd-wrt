@@ -19,6 +19,7 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/proc_fs.h>
@@ -416,6 +417,7 @@ static struct file_operations sq_fops = {
 static struct miscdevice sq_dev = {
 	.minor		= STORE_QUEUE_MINOR,
 	.name		= "sq",
+	.devfs_name	= "cpu/sq",
 	.fops		= &sq_fops,
 };
 

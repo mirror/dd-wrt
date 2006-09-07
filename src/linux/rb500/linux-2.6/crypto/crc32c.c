@@ -31,9 +31,9 @@ struct chksum_ctx {
  * crc using table.
  */
 
-static void chksum_init(struct crypto_tfm *tfm)
+static void chksum_init(void *ctx)
 {
-	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct chksum_ctx *mctx = ctx;
 
 	mctx->crc = ~(u32)0;			/* common usage */
 }
@@ -43,10 +43,10 @@ static void chksum_init(struct crypto_tfm *tfm)
  * If your algorithm starts with ~0, then XOR with ~0 before you set
  * the seed.
  */
-static int chksum_setkey(struct crypto_tfm *tfm, const u8 *key,
-			 unsigned int keylen, u32 *flags)
+static int chksum_setkey(void *ctx, const u8 *key, unsigned int keylen,
+	                  u32 *flags)
 {
-	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct chksum_ctx *mctx = ctx;
 
 	if (keylen != sizeof(mctx->crc)) {
 		if (flags)
@@ -57,10 +57,9 @@ static int chksum_setkey(struct crypto_tfm *tfm, const u8 *key,
 	return 0;
 }
 
-static void chksum_update(struct crypto_tfm *tfm, const u8 *data,
-			  unsigned int length)
+static void chksum_update(void *ctx, const u8 *data, unsigned int length)
 {
-	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct chksum_ctx *mctx = ctx;
 	u32 mcrc;
 
 	mcrc = crc32c(mctx->crc, data, (size_t)length);
@@ -68,9 +67,9 @@ static void chksum_update(struct crypto_tfm *tfm, const u8 *data,
 	mctx->crc = mcrc;
 }
 
-static void chksum_final(struct crypto_tfm *tfm, u8 *out)
+static void chksum_final(void *ctx, u8 *out)
 {
-	struct chksum_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct chksum_ctx *mctx = ctx;
 	u32 mcrc = (mctx->crc ^ ~(u32)0);
 	
 	*(u32 *)out = __le32_to_cpu(mcrc);

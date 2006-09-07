@@ -35,6 +35,7 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/entry.h>
 

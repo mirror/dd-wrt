@@ -2,6 +2,7 @@
  * We should not even be trying to compile this if we are not doing
  * a module.
  */
+#include <linux/config.h>
 #include <linux/module.h>
 
 #ifdef CONFIG_MODULES

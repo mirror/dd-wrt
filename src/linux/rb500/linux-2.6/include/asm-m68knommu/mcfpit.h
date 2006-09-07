@@ -11,6 +11,7 @@
 #define	mcfpit_h
 /****************************************************************************/
 
+#include <linux/config.h>
 
 /*
  *	Get address specific defines for the 5270/5271, 5280/5282, and 5208.
@@ -28,9 +29,11 @@
 /*
  *	Define the PIT timer register set addresses.
  */
-#define	MCFPIT_PCSR		0x0		/* PIT control register */
-#define	MCFPIT_PMR		0x2		/* PIT modulus register */
-#define	MCFPIT_PCNTR		0x4		/* PIT count register */
+struct mcfpit {
+	unsigned short	pcsr;			/* PIT control and status */
+	unsigned short	pmr;			/* PIT modulus register */
+	unsigned short	pcntr;			/* PIT count register */
+} __attribute__((packed));
 
 /*
  *	Bit definitions for the PIT Control and Status register.
