@@ -365,14 +365,14 @@ int main(int argc, char *argv[])
 			/* timeout dropped to zero */
 			switch (state) {
 			case INIT_SELECTING:
-				if (packet_num < 1) {
+				if (packet_num < 3) {
 					if (packet_num == 0)
 						xid = random_xid();
 
 					/* send discover packet */
 					send_discover(xid, requested_ip); /* broadcast */
 
-					timeout = now + ((packet_num == 2) ? 4 : 2);
+					timeout = now + ((packet_num == 2) ? 8 : 4);
 					packet_num++;
 				} else {
 					run_script(NULL, "leasefail");
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 				  	}
 					/* wait to try again */
 					packet_num = 0;
-					timeout = now + 5;
+					timeout = now + 10;
 				}
 				break;
 			case RENEW_REQUESTED:
