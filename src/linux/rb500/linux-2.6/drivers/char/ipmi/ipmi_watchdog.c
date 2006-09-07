@@ -31,6 +31,7 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/ipmi.h>
@@ -211,16 +212,24 @@ static int set_param_str(const char *val, struct kernel_param *kp)
 {
 	action_fn  fn = (action_fn) kp->arg;
 	int        rv = 0;
-	char       *dup, *s;
+	const char *end;
+	char       valcp[16];
+	int        len;
 
-	dup = kstrdup(val, GFP_KERNEL);
-	if (!dup)
-		return -ENOMEM;
-
-	s = strstrip(dup);
+	/* Truncate leading and trailing spaces. */
+	while (isspace(*val))
+		val++;
+	end = val + strlen(val) - 1;
+	while ((end >= val) && isspace(*end))
+		end--;
+	len = end - val + 1;
+	if (len > sizeof(valcp) - 1)
+		return -EINVAL;
+	memcpy(valcp, val, len);
+	valcp[len] = '\0';
 
 	down_read(&register_sem);
-	rv = fn(s, NULL);
+	rv = fn(valcp, NULL);
 	if (rv)
 		goto out_unlock;
 
@@ -230,7 +239,6 @@ static int set_param_str(const char *val, struct kernel_param *kp)
 
  out_unlock:
 	up_read(&register_sem);
-	kfree(dup);
 	return rv;
 }
 
@@ -807,7 +815,7 @@ static int ipmi_close(struct inode *ino, struct file *filep)
 	return 0;
 }
 
-static const struct file_operations ipmi_wdog_fops = {
+static struct file_operations ipmi_wdog_fops = {
 	.owner   = THIS_MODULE,
 	.read    = ipmi_read,
 	.poll    = ipmi_poll,
@@ -948,10 +956,9 @@ static int wdog_reboot_handler(struct notifier_block *this,
 			/* Disable the WDT if we are shutting down. */
 			ipmi_watchdog_state = WDOG_TIMEOUT_NONE;
 			panic_halt_ipmi_set_timeout();
-		} else if (ipmi_watchdog_state != WDOG_TIMEOUT_NONE) {
+		} else {
 			/* Set a long timer to let the reboot happens, but
-			   reboot if it hangs, but only if the watchdog
-			   timer was already running. */
+			   reboot if it hangs. */
 			timeout = 120;
 			pretimeout = 0;
 			ipmi_watchdog_state = WDOG_TIMEOUT_RESET;
@@ -973,17 +980,16 @@ static int wdog_panic_handler(struct notifier_block *this,
 {
 	static int panic_event_handled = 0;
 
-	/* On a panic, if we have a panic timeout, make sure to extend
-	   the watchdog timer to a reasonable value to complete the
-	   panic, if the watchdog timer is running.  Plus the
-	   pretimeout is meaningless at panic time. */
-	if (watchdog_user && !panic_event_handled &&
-	    ipmi_watchdog_state != WDOG_TIMEOUT_NONE) {
-		/* Make sure we do this only once. */
+	/* On a panic, if we have a panic timeout, make sure that the thing
+	   reboots, even if it hangs during that panic. */
+	if (watchdog_user && !panic_event_handled) {
+		/* Make sure the panic doesn't hang, and make sure we
+		   do this only once. */
 		panic_event_handled = 1;
 	    
 		timeout = 255;
 		pretimeout = 0;
+		ipmi_watchdog_state = WDOG_TIMEOUT_RESET;
 		panic_halt_ipmi_set_timeout();
 	}
 

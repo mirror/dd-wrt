@@ -42,6 +42,8 @@
  * POSSIBILITY OF SUCH DAMAGES.
  */
 
+#include <linux/module.h>
+
 #include <acpi/acpi.h>
 #include <acpi/acnamesp.h>
 
@@ -112,8 +114,9 @@ acpi_get_handle(acpi_handle parent,
 	/*
 	 *  Find the Node and convert to a handle
 	 */
-	status = acpi_ns_get_node(prefix_node, pathname, ACPI_NS_NO_UPSEARCH,
-				  &node);
+	status =
+	    acpi_ns_get_node_by_path(pathname, prefix_node, ACPI_NS_NO_UPSEARCH,
+				     &node);
 
 	*ret_handle = NULL;
 	if (ACPI_SUCCESS(status)) {
@@ -123,7 +126,7 @@ acpi_get_handle(acpi_handle parent,
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_handle)
+EXPORT_SYMBOL(acpi_get_handle);
 
 /******************************************************************************
  *
@@ -140,6 +143,7 @@ ACPI_EXPORT_SYMBOL(acpi_get_handle)
  *              complementary functions.
  *
  ******************************************************************************/
+
 acpi_status
 acpi_get_name(acpi_handle handle, u32 name_type, struct acpi_buffer * buffer)
 {
@@ -158,7 +162,6 @@ acpi_get_name(acpi_handle handle, u32 name_type, struct acpi_buffer * buffer)
 	}
 
 	if (name_type == ACPI_FULL_PATHNAME) {
-
 		/* Get the full pathname (From the namespace root) */
 
 		status = acpi_ns_handle_to_pathname(handle, buffer);
@@ -200,7 +203,7 @@ acpi_get_name(acpi_handle handle, u32 name_type, struct acpi_buffer * buffer)
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_name)
+EXPORT_SYMBOL(acpi_get_name);
 
 /******************************************************************************
  *
@@ -216,6 +219,7 @@ ACPI_EXPORT_SYMBOL(acpi_get_name)
  *              control methods (Such as in the case of a device.)
  *
  ******************************************************************************/
+
 acpi_status
 acpi_get_object_info(acpi_handle handle, struct acpi_buffer * buffer)
 {
@@ -237,7 +241,7 @@ acpi_get_object_info(acpi_handle handle, struct acpi_buffer * buffer)
 		return (status);
 	}
 
-	info = ACPI_ALLOCATE_ZEROED(sizeof(struct acpi_device_info));
+	info = ACPI_MEM_CALLOCATE(sizeof(struct acpi_device_info));
 	if (!info) {
 		return (AE_NO_MEMORY);
 	}
@@ -341,11 +345,11 @@ acpi_get_object_info(acpi_handle handle, struct acpi_buffer * buffer)
 	}
 
       cleanup:
-	ACPI_FREE(info);
+	ACPI_MEM_FREE(info);
 	if (cid_list) {
-		ACPI_FREE(cid_list);
+		ACPI_MEM_FREE(cid_list);
 	}
 	return (status);
 }
 
-ACPI_EXPORT_SYMBOL(acpi_get_object_info)
+EXPORT_SYMBOL(acpi_get_object_info);

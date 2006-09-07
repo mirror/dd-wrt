@@ -7,6 +7,7 @@
  * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
  * Copyright (C) 2001 MIPS Technologies, Inc.
  */
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <asm/asm.h>
 #include <asm/asmmacro.h>
@@ -461,4 +462,3 @@ sys_call_table:
 	PTR	sys_unshare
 	PTR	sys_splice
 	PTR	sys_sync_file_range
-	PTR	sys_tee				/* 5265 */

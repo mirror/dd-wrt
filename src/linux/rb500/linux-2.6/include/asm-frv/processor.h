@@ -12,6 +12,7 @@
 #ifndef _ASM_PROCESSOR_H
 #define _ASM_PROCESSOR_H
 
+#include <linux/config.h>
 #include <asm/mem-layout.h>
 
 #ifndef __ASSEMBLY__

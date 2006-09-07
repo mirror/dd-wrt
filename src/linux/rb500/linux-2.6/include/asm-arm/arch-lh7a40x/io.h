@@ -18,5 +18,6 @@
 /* No ISA or PCI bus on this machine. */
 #define __io(a)			((void __iomem *)(a))
 #define __mem_pci(a)		(a)
+#define __mem_isa(a)		(a)
 
 #endif /* __ASM_ARCH_IO_H */

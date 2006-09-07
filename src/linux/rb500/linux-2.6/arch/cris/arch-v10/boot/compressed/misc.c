@@ -20,6 +20,7 @@
 
 #define KERNEL_LOAD_ADR 0x40004000
 
+#include <linux/config.h>
 
 #include <linux/types.h>
 #include <asm/arch/svinto.h>

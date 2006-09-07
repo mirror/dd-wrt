@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/module.h>
 #include <net/ip.h>
 #include <net/xfrm.h>
@@ -118,7 +119,6 @@ error:
 static int ah_input(struct xfrm_state *x, struct sk_buff *skb)
 {
 	int ah_hlen;
-	int ihl;
 	struct iphdr *iph;
 	struct ip_auth_hdr *ah;
 	struct ah_data *ahp;
@@ -149,14 +149,13 @@ static int ah_input(struct xfrm_state *x, struct sk_buff *skb)
 	ah = (struct ip_auth_hdr*)skb->data;
 	iph = skb->nh.iph;
 
-	ihl = skb->data - skb->nh.raw;
-	memcpy(work_buf, iph, ihl);
+	memcpy(work_buf, iph, iph->ihl*4);
 
 	iph->ttl = 0;
 	iph->tos = 0;
 	iph->frag_off = 0;
 	iph->check = 0;
-	if (ihl > sizeof(*iph)) {
+	if (iph->ihl != 5) {
 		u32 dummy;
 		if (ip_clear_mutable_options(iph, &dummy))
 			goto out;
@@ -165,7 +164,7 @@ static int ah_input(struct xfrm_state *x, struct sk_buff *skb)
 		u8 auth_data[MAX_AH_AUTH_LEN];
 		
 		memcpy(auth_data, ah->auth_data, ahp->icv_trunc_len);
-		skb_push(skb, ihl);
+		skb_push(skb, skb->data - skb->nh.raw);
 		ahp->icv(ahp, skb, ah->auth_data);
 		if (memcmp(ah->auth_data, auth_data, ahp->icv_trunc_len)) {
 			x->stats.integrity_failed++;
@@ -173,8 +172,11 @@ static int ah_input(struct xfrm_state *x, struct sk_buff *skb)
 		}
 	}
 	((struct iphdr*)work_buf)->protocol = ah->nexthdr;
-	skb->h.raw = memcpy(skb->nh.raw += ah_hlen, work_buf, ihl);
-	__skb_pull(skb, ah_hlen + ihl);
+	skb->nh.raw = skb_pull(skb, ah_hlen);
+	memcpy(skb->nh.raw, work_buf, iph->ihl*4);
+	skb->nh.iph->tot_len = htons(skb->len);
+	skb_pull(skb, skb->nh.iph->ihl*4);
+	skb->h.raw = skb->data;
 
 	return 0;
 

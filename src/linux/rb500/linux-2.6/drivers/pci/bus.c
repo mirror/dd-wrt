@@ -34,11 +34,11 @@
  */
 int
 pci_bus_alloc_resource(struct pci_bus *bus, struct resource *res,
-		resource_size_t size, resource_size_t align,
-		resource_size_t min, unsigned int type_mask,
-		void (*alignf)(void *, struct resource *, resource_size_t,
-				resource_size_t),
-		void *alignf_data)
+	unsigned long size, unsigned long align, unsigned long min,
+	unsigned int type_mask,
+	void (*alignf)(void *, struct resource *,
+			unsigned long, unsigned long),
+	void *alignf_data)
 {
 	int i, ret = -ENOMEM;
 
@@ -81,9 +81,9 @@ void __devinit pci_bus_add_device(struct pci_dev *dev)
 {
 	device_add(&dev->dev);
 
-	down_write(&pci_bus_sem);
+	spin_lock(&pci_bus_lock);
 	list_add_tail(&dev->global_list, &pci_devices);
-	up_write(&pci_bus_sem);
+	spin_unlock(&pci_bus_lock);
 
 	pci_proc_attach_device(dev);
 	pci_create_sysfs_dev_files(dev);
@@ -125,10 +125,10 @@ void __devinit pci_bus_add_devices(struct pci_bus *bus)
 		 */
 		if (dev->subordinate) {
 		       if (list_empty(&dev->subordinate->node)) {
-			       down_write(&pci_bus_sem);
+			       spin_lock(&pci_bus_lock);
 			       list_add_tail(&dev->subordinate->node,
 					       &dev->bus->children);
-			       up_write(&pci_bus_sem);
+			       spin_unlock(&pci_bus_lock);
 		       }
 			pci_bus_add_devices(dev->subordinate);
 
@@ -168,7 +168,7 @@ void pci_walk_bus(struct pci_bus *top, void (*cb)(struct pci_dev *, void *),
 	struct list_head *next;
 
 	bus = top;
-	down_read(&pci_bus_sem);
+	spin_lock(&pci_bus_lock);
 	next = top->devices.next;
 	for (;;) {
 		if (next == &bus->devices) {
@@ -180,19 +180,22 @@ void pci_walk_bus(struct pci_bus *top, void (*cb)(struct pci_dev *, void *),
 			continue;
 		}
 		dev = list_entry(next, struct pci_dev, bus_list);
+		pci_dev_get(dev);
 		if (dev->subordinate) {
 			/* this is a pci-pci bridge, do its devices next */
 			next = dev->subordinate->devices.next;
 			bus = dev->subordinate;
 		} else
 			next = dev->bus_list.next;
+		spin_unlock(&pci_bus_lock);
 
-		/* Run device routines with the device locked */
-		down(&dev->dev.sem);
+		/* Run device routines with the bus unlocked */
 		cb(dev, userdata);
-		up(&dev->dev.sem);
+
+		spin_lock(&pci_bus_lock);
+		pci_dev_put(dev);
 	}
-	up_read(&pci_bus_sem);
+	spin_unlock(&pci_bus_lock);
 }
 EXPORT_SYMBOL_GPL(pci_walk_bus);
 

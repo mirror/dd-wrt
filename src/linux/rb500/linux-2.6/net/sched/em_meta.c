@@ -58,6 +58,7 @@
  * 	      only available if that subsytem is enabled in the kernel.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>

@@ -10,6 +10,7 @@
 #ifndef __ASM_ARM_PTRACE_H
 #define __ASM_ARM_PTRACE_H
 
+#include <linux/config.h>
 
 #define PTRACE_GETREGS		12
 #define PTRACE_SETREGS		13
@@ -24,11 +25,6 @@
 #define PTRACE_GET_THREAD_AREA	22
 
 #define PTRACE_SET_SYSCALL	23
-
-/* PTRACE_SYSCALL is 24 */
-
-#define PTRACE_GETCRUNCHREGS	25
-#define PTRACE_SETCRUNCHREGS	26
 
 /*
  * PSR bits

@@ -27,6 +27,7 @@
 */
 
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
@@ -75,13 +76,13 @@ static void ri_tasklet(unsigned long dev)
 	dp->st_task_enter++;
 	if ((skb = skb_peek(&dp->tq)) == NULL) {
 		dp->st_txq_refl_try++;
-		if (netif_tx_trylock(_dev)) {
+		if (spin_trylock(&_dev->xmit_lock)) {
 			dp->st_rxq_enter++;
 			while ((skb = skb_dequeue(&dp->rq)) != NULL) {
 				skb_queue_tail(&dp->tq, skb);
 				dp->st_rx2tx_tran++;
 			}
-			netif_tx_unlock(_dev);
+			spin_unlock(&_dev->xmit_lock);
 		} else {
 			/* reschedule */
 			dp->st_rxq_notenter++;
@@ -109,7 +110,7 @@ static void ri_tasklet(unsigned long dev)
 		}
 	}
 
-	if (netif_tx_trylock(_dev)) {
+	if (spin_trylock(&_dev->xmit_lock)) {
 		dp->st_rxq_check++;
 		if ((skb = skb_peek(&dp->rq)) == NULL) {
 			dp->tasklet_pending = 0;
@@ -117,10 +118,10 @@ static void ri_tasklet(unsigned long dev)
 				netif_wake_queue(_dev);
 		} else {
 			dp->st_rxq_rsch++;
-			netif_tx_unlock(_dev);
+			spin_unlock(&_dev->xmit_lock);
 			goto resched;
 		}
-		netif_tx_unlock(_dev);
+		spin_unlock(&_dev->xmit_lock);
 	} else {
 resched:
 		dp->tasklet_pending = 1;

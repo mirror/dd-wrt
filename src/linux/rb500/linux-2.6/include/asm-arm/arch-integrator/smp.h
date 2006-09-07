@@ -1,6 +1,7 @@
 #ifndef ASMARM_ARCH_SMP_H
 #define ASMARM_ARCH_SMP_H
 
+#include <linux/config.h>
 
 #include <asm/hardware.h>
 #include <asm/io.h>

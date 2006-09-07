@@ -26,6 +26,7 @@
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/ioport.h>
@@ -71,29 +72,11 @@ struct {
     struct resource flash;
     struct resource boot;
 } it8172_resources = {
-	{
-		.start	= 0,				/* to be initted */
-		.end	= 0,
-		.name	= "RAM",
-		.flags	= IORESOURCE_MEM
-	}, {
-		.start	= 0x10000000,
-		.end	= 0x13FFFFFF,
-		.name	= "PCI Mem",
-		.flags	= IORESOURCE_MEM
-	}, {
-		.start	= 0x14000000,
-		.end	= 0x17FFFFFF
-		.name	= "PCI I/O",
-	}, {
-		.start	= 0x08000000,
-		.end	= 0x0CFFFFFF
-		.name	= "Flash",
-	}, {
-		.start	= 0x1FC00000,
-		.end	= 0x1FFFFFFF
-		.name	= "Boot ROM",
-	}
+    { "RAM",           0,          0,          IORESOURCE_MEM }, /* to be initted */
+    { "PCI Mem",       0x10000000, 0x13FFFFFF, IORESOURCE_MEM },
+    { "PCI I/O",       0x14000000, 0x17FFFFFF                 },
+    { "Flash",         0x08000000, 0x0CFFFFFF                 },
+    { "Boot ROM",      0x1FC00000, 0x1FFFFFFF                 }
 };
 #else
 struct {
@@ -106,44 +89,14 @@ struct {
     struct resource flash;
     struct resource boot;
 } it8172_resources = {
-	{
-		.start	= 0,				/* to be initted */
-		.end	= 0,
-		.name	= "RAM",
-		.flags	= IORESOURCE_MEM
-	}, {
-		.start	= 0x0C000000,
-		.end	= 0x0FFFFFFF,
-		.name	= "PCI Mem0",
-		.flags	= IORESOURCE_MEM
-	 }, {
-		.start	= 0x10000000,
-		.end	= 0x13FFFFFF,
-		.name	= "PCI Mem1",
-		.flags	= IORESOURCE_MEM
-	 }, {
-		.start	= 0x14000000,
-		.end	= 0x17FFFFFF
-		.name	= "PCI I/O",
-	}, {
-		.start	= 0x1A000000,
-		.end	= 0x1BFFFFFF,
-		.name	= "PCI Mem2",
-		.flags	= IORESOURCE_MEM
-	}, {
-		.start	= 0x1C000000,
-		.end	= 0x1FBFFFFF,
-		.name	= "PCI Mem3",
-		.flags	= IORESOURCE_MEM
-	}, {
-		.start	= 0x08000000,
-		.end	= 0x0CFFFFFF
-		.name	= "Flash",
-	}, {
-		.start	= 0x1FC00000,
-		.end	= 0x1FFFFFFF
-		.name	= "Boot ROM",
-	}
+    { "RAM",           0,          0,          IORESOURCE_MEM }, /* to be initted */
+    { "PCI Mem0",      0x0C000000, 0x0FFFFFFF, IORESOURCE_MEM },
+    { "PCI Mem1",      0x10000000, 0x13FFFFFF, IORESOURCE_MEM },
+    { "PCI I/O",       0x14000000, 0x17FFFFFF                 },
+    { "PCI Mem2",      0x1A000000, 0x1BFFFFFF, IORESOURCE_MEM },
+    { "PCI Mem3",      0x1C000000, 0x1FBFFFFF, IORESOURCE_MEM },
+    { "Flash",         0x08000000, 0x0CFFFFFF                 },
+    { "Boot ROM",      0x1FC00000, 0x1FFFFFFF                 }
 };
 #endif
 
@@ -153,7 +106,7 @@ void __init it8172_init_ram_resource(unsigned long memsize)
 	it8172_resources.ram.end = memsize;
 }
 
-void __init plat_mem_setup(void)
+void __init plat_setup(void)
 {
 	unsigned short dsr;
 	char *argptr;

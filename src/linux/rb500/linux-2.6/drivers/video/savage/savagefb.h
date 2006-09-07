@@ -147,27 +147,7 @@ struct xtimings {
 	int	       interlaced;
 };
 
-struct savage_reg {
-	unsigned char MiscOutReg;     /* Misc */
-	unsigned char CRTC[25];       /* Crtc Controller */
-	unsigned char Sequencer[5];   /* Video Sequencer */
-	unsigned char Graphics[9];    /* Video Graphics */
-	unsigned char Attribute[21];  /* Video Atribute */
 
-	unsigned int mode, refresh;
-	unsigned char SR08, SR0E, SR0F;
-	unsigned char SR10, SR11, SR12, SR13, SR15, SR18, SR29, SR30;
-	unsigned char SR54[8];
-	unsigned char Clock;
-	unsigned char CR31, CR32, CR33, CR34, CR36, CR3A, CR3B, CR3C;
-	unsigned char CR40, CR41, CR42, CR43, CR45;
-	unsigned char CR50, CR51, CR53, CR55, CR58, CR5B, CR5D, CR5E;
-	unsigned char CR60, CR63, CR65, CR66, CR67, CR68, CR69, CR6D, CR6F;
-	unsigned char CR86, CR88;
-	unsigned char CR90, CR91, CRB0;
-	unsigned int  STREAMS[22];	/* yuck, streams regs */
-	unsigned int  MMPR0, MMPR1, MMPR2, MMPR3;
-};
 /* --------------------------------------------------------------------- */
 
 #define NR_PALETTE	256
@@ -187,8 +167,6 @@ struct savagefb_par {
 	struct pci_dev *pcidev;
 	savage_chipset  chip;
 	struct savagefb_i2c_chan chan;
-	struct savage_reg state;
-	struct savage_reg save;
 	unsigned char   *edid;
 	u32 pseudo_palette[16];
 	int paletteEnabled;
@@ -201,7 +179,6 @@ struct savagefb_par {
 	int minClock;
 	int numClocks;
 	int clock[4];
-	int MCLK, REFCLK, LCDclk;
 	struct {
 		u8   __iomem *vbase;
 		u32    pbase;
@@ -219,6 +196,7 @@ struct savagefb_par {
 
 	volatile u32  __iomem *bci_base;
 	unsigned int  bci_ptr;
+
 	u32           cob_offset;
 	u32           cob_size;
 	int           cob_index;
@@ -226,6 +204,7 @@ struct savagefb_par {
 	void (*SavageWaitIdle) (struct savagefb_par *par);
 	void (*SavageWaitFifo) (struct savagefb_par *par, int space);
 
+	int MCLK, REFCLK, LCDclk;
 	int HorizScaleFactor;
 
 	/* Panels size */
@@ -238,6 +217,26 @@ struct savagefb_par {
 
 	int depth;
 	int vwidth;
+
+	unsigned char MiscOutReg;     /* Misc */
+	unsigned char CRTC[25];       /* Crtc Controller */
+	unsigned char Sequencer[5];   /* Video Sequencer */
+	unsigned char Graphics[9];    /* Video Graphics */
+	unsigned char Attribute[21];  /* Video Atribute */
+
+	unsigned int mode, refresh;
+	unsigned char SR08, SR0E, SR0F;
+	unsigned char SR10, SR11, SR12, SR13, SR15, SR18, SR29, SR30;
+	unsigned char SR54[8];
+	unsigned char Clock;
+	unsigned char CR31, CR32, CR33, CR34, CR36, CR3A, CR3B, CR3C;
+	unsigned char CR40, CR41, CR42, CR43, CR45;
+	unsigned char CR50, CR51, CR53, CR55, CR58, CR5B, CR5D, CR5E;
+	unsigned char CR60, CR63, CR65, CR66, CR67, CR68, CR69, CR6D, CR6F;
+	unsigned char CR86, CR88;
+	unsigned char CR90, CR91, CRB0;
+	unsigned int  STREAMS[22];	/* yuck, streams regs */
+	unsigned int  MMPR0, MMPR1, MMPR2, MMPR3;
 };
 
 #define BCI_BD_BW_DISABLE            0x10000000

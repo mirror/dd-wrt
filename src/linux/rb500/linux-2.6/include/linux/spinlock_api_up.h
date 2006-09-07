@@ -49,7 +49,6 @@
   do { local_irq_restore(flags); __UNLOCK(lock); } while (0)
 
 #define _spin_lock(lock)			__LOCK(lock)
-#define _spin_lock_nested(lock, subclass)	__LOCK(lock)
 #define _read_lock(lock)			__LOCK(lock)
 #define _write_lock(lock)			__LOCK(lock)
 #define _spin_lock_bh(lock)			__LOCK_BH(lock)

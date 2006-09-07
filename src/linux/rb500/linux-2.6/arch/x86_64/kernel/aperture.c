@@ -8,7 +8,9 @@
  * because only the bootmem allocator can allocate 32+MB. 
  * 
  * Copyright 2002 Andi Kleen, SuSE Labs.
+ * $Id: aperture.c,v 1.7 2003/08/01 03:36:18 ak Exp $
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>
@@ -22,7 +24,6 @@
 #include <asm/proto.h>
 #include <asm/pci-direct.h>
 #include <asm/dma.h>
-#include <asm/k8.h>
 
 int iommu_aperture;
 int iommu_aperture_disabled __initdata = 0;
@@ -35,6 +36,8 @@ int fix_aperture __initdata = 1;
 
 /* This code runs before the PCI subsystem is initialized, so just
    access the northbridge directly. */
+
+#define NB_ID_3 (PCI_VENDOR_ID_AMD | (0x1103<<16))
 
 static u32 __init allocate_aperture(void) 
 {
@@ -65,20 +68,20 @@ static u32 __init allocate_aperture(void)
 	return (u32)__pa(p); 
 }
 
-static int __init aperture_valid(u64 aper_base, u32 aper_size)
+static int __init aperture_valid(char *name, u64 aper_base, u32 aper_size) 
 { 
 	if (!aper_base) 
 		return 0;
 	if (aper_size < 64*1024*1024) { 
-		printk("Aperture too small (%d MB)\n", aper_size>>20);
+		printk("Aperture from %s too small (%d MB)\n", name, aper_size>>20); 
 		return 0;
 	}
 	if (aper_base + aper_size >= 0xffffffff) { 
-		printk("Aperture beyond 4GB. Ignoring.\n");
+		printk("Aperture from %s beyond 4GB. Ignoring.\n",name);
 		return 0; 
 	}
 	if (e820_any_mapped(aper_base, aper_base + aper_size, E820_RAM)) {
-		printk("Aperture pointing to e820 RAM. Ignoring.\n");
+		printk("Aperture from %s pointing to e820 RAM. Ignoring.\n",name);
 		return 0; 
 	} 
 	return 1;
@@ -137,7 +140,7 @@ static __u32 __init read_agp(int num, int slot, int func, int cap, u32 *order)
 	printk("Aperture from AGP @ %Lx size %u MB (APSIZE %x)\n", 
 	       aper, 32 << *order, apsizereg);
 
-	if (!aperture_valid(aper, (32*1024*1024) << *order))
+	if (!aperture_valid("AGP bridge", aper, (32*1024*1024) << *order))
 	    return 0;
 	return (u32)aper; 
 } 
@@ -205,10 +208,10 @@ void __init iommu_hole_init(void)
 
 	fix = 0;
 	for (num = 24; num < 32; num++) {		
-		if (!early_is_k8_nb(read_pci_config(0, num, 3, 0x00)))
-			continue;
+		char name[30];
+		if (read_pci_config(0, num, 3, 0x00) != NB_ID_3) 
+			continue;	
 
-		iommu_detected = 1;
 		iommu_aperture = 1; 
 
 		aper_order = (read_pci_config(0, num, 3, 0x90) >> 1) & 7; 
@@ -219,7 +222,9 @@ void __init iommu_hole_init(void)
 		printk("CPU %d: aperture @ %Lx size %u MB\n", num-24, 
 		       aper_base, aper_size>>20);
 		
-		if (!aperture_valid(aper_base, aper_size)) {
+		sprintf(name, "northbridge cpu %d", num-24); 
+
+		if (!aperture_valid(name, aper_base, aper_size)) { 
 			fix = 1; 
 			break; 
 		}
@@ -268,7 +273,7 @@ void __init iommu_hole_init(void)
 
 	/* Fix up the north bridges */
 	for (num = 24; num < 32; num++) { 		
-		if (!early_is_k8_nb(read_pci_config(0, num, 3, 0x00)))
+		if (read_pci_config(0, num, 3, 0x00) != NB_ID_3) 
 			continue;	
 
 		/* Don't enable translation yet. That is done later. 

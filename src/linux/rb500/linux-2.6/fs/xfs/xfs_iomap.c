@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000-2006 Silicon Graphics, Inc.
+ * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or
@@ -23,6 +23,7 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_alloc.h"
 #include "xfs_dmapi.h"
@@ -31,6 +32,7 @@
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -250,7 +252,7 @@ xfs_iomap(
 	error = XFS_BMAPI(mp, NULL, io, offset_fsb,
 			(xfs_filblks_t)(end_fsb - offset_fsb),
 			bmapi_flags,  NULL, 0, &imap,
-			&nimaps, NULL, NULL);
+			&nimaps, NULL);
 
 	if (error)
 		goto out;
@@ -517,8 +519,8 @@ xfs_iomap_write_direct(
 	 */
 	XFS_BMAP_INIT(&free_list, &firstfsb);
 	nimaps = 1;
-	error = XFS_BMAPI(mp, tp, io, offset_fsb, count_fsb, bmapi_flag,
-		&firstfsb, 0, &imap, &nimaps, &free_list, NULL);
+	error = xfs_bmapi(tp, ip, offset_fsb, count_fsb,
+		bmapi_flag, &firstfsb, 0, &imap, &nimaps, &free_list);
 	if (error)
 		goto error0;
 
@@ -608,8 +610,8 @@ xfs_iomap_eof_want_preallocate(
 	while (count_fsb > 0) {
 		imaps = nimaps;
 		firstblock = NULLFSBLOCK;
-		error = XFS_BMAPI(mp, NULL, io, start_fsb, count_fsb, 0,
-				  &firstblock, 0, imap, &imaps, NULL, NULL);
+		error = XFS_BMAPI(mp, NULL, io, start_fsb, count_fsb,
+				  0, &firstblock, 0, imap, &imaps, NULL);
 		if (error)
 			return error;
 		for (n = 0; n < imaps; n++) {
@@ -693,11 +695,11 @@ retry:
 
 	nimaps = XFS_WRITE_IMAPS;
 	firstblock = NULLFSBLOCK;
-	error = XFS_BMAPI(mp, NULL, io, offset_fsb,
+	error = xfs_bmapi(NULL, ip, offset_fsb,
 			  (xfs_filblks_t)(last_fsb - offset_fsb),
 			  XFS_BMAPI_DELAY | XFS_BMAPI_WRITE |
 			  XFS_BMAPI_ENTIRE, &firstblock, 1, imap,
-			  &nimaps, NULL, NULL);
+			  &nimaps, NULL);
 	if (error && (error != ENOSPC))
 		return XFS_ERROR(error);
 
@@ -830,9 +832,9 @@ xfs_iomap_write_allocate(
 			}
 
 			/* Go get the actual blocks */
-			error = XFS_BMAPI(mp, tp, io, map_start_fsb, count_fsb,
+			error = xfs_bmapi(tp, ip, map_start_fsb, count_fsb,
 					XFS_BMAPI_WRITE, &first_block, 1,
-					imap, &nimaps, &free_list, NULL);
+					imap, &nimaps, &free_list);
 			if (error)
 				goto trans_cancel;
 
@@ -953,9 +955,9 @@ xfs_iomap_write_unwritten(
 		 */
 		XFS_BMAP_INIT(&free_list, &firstfsb);
 		nimaps = 1;
-		error = XFS_BMAPI(mp, tp, io, offset_fsb, count_fsb,
+		error = xfs_bmapi(tp, ip, offset_fsb, count_fsb,
 				  XFS_BMAPI_WRITE|XFS_BMAPI_CONVERT, &firstfsb,
-				  1, &imap, &nimaps, &free_list, NULL);
+				  1, &imap, &nimaps, &free_list);
 		if (error)
 			goto error_on_bmapi_transaction;
 

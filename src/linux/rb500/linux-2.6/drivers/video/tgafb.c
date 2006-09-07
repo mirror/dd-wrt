@@ -26,6 +26,7 @@
 #include <linux/selection.h>
 #include <asm/io.h>
 #include <video/tgafb.h>
+#include <linux/selection.h>
 
 /*
  * Local functions.

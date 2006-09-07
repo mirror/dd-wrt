@@ -49,6 +49,7 @@
 #define MPTBASE_H_INCLUDED
 /*{-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/pci.h>
 
@@ -75,8 +76,8 @@
 #define COPYRIGHT	"Copyright (c) 1999-2005 " MODULEAUTHOR
 #endif
 
-#define MPT_LINUX_VERSION_COMMON	"3.04.00"
-#define MPT_LINUX_PACKAGE_NAME		"@(#)mptlinux-3.04.00"
+#define MPT_LINUX_VERSION_COMMON	"3.03.09"
+#define MPT_LINUX_PACKAGE_NAME		"@(#)mptlinux-3.03.09"
 #define WHAT_MAGIC_STRING		"@" "(" "#" ")"
 
 #define show_mptmod_ver(s,ver)  \
@@ -307,8 +308,7 @@ typedef struct _SYSIF_REGS
 	u32	HostIndex;	/* 50     Host Index register        */
 	u32	Reserved4[15];	/* 54-8F                             */
 	u32	Fubar;		/* 90     For Fubar usage            */
-	u32     Reserved5[1050];/* 94-10F8                           */
-	u32     Reset_1078;     /* 10FC   Reset 1078                 */
+	u32	Reserved5[27];	/* 94-FF                             */
 } SYSIF_REGS;
 
 /*
@@ -342,7 +342,6 @@ typedef struct _VirtTarget {
 	u8			 negoFlags;	/* bit field, see above */
 	u8			 raidVolume;	/* set, if RAID Volume */
 	u8			 type;		/* byte 0 of Inquiry data */
-	u8			 deleted;	/* target in process of being removed */
 	u32			 num_luns;
 	u32			 luns[8];		/* Max LUNs is 256 */
 } VirtTarget;
@@ -488,15 +487,6 @@ typedef	struct _RaidCfgData {
 	int		 isRaid;		/* bit field, 1 if RAID */
 }RaidCfgData;
 
-typedef struct _FcCfgData {
-	/* will ultimately hold fc_port_page0 also */
-	struct {
-		FCPortPage1_t	*data;
-		dma_addr_t	 dma;
-		int		 pg_sz;
-	}			 fc_port_page1[2];
-} FcCfgData;
-
 #define MPT_RPORT_INFO_FLAGS_REGISTERED	0x01	/* rport registered */
 #define MPT_RPORT_INFO_FLAGS_MISSING	0x02	/* missing from DevPage0 scan */
 
@@ -575,7 +565,6 @@ typedef struct _MPT_ADAPTER
 	SpiCfgData		spi_data;	/* Scsi config. data */
 	RaidCfgData		raid_data;	/* Raid config. data */
 	SasCfgData		sas_data;	/* Sas config. data */
-	FcCfgData		fc_data;	/* Fc config. data */
 	MPT_IOCTL		*ioctl;		/* ioctl data pointer */
 	struct proc_dir_entry	*ioc_dentry;
 	struct _MPT_ADAPTER	*alt_ioc;	/* ptr to 929 bound adapter port */
@@ -631,20 +620,17 @@ typedef struct _MPT_ADAPTER
 	struct mutex		 sas_discovery_mutex;
 	u8			 sas_discovery_runtime;
 	u8			 sas_discovery_ignore_events;
-	u16			 handle;
 	int			 sas_index; /* index refrencing */
 	MPT_SAS_MGMT		 sas_mgmt;
 	int			 num_ports;
-	struct work_struct	 sas_persist_task;
+	struct work_struct	 mptscsih_persistTask;
 
-	struct work_struct	 fc_setup_reset_work;
 	struct list_head	 fc_rports;
 	spinlock_t		 fc_rescan_work_lock;
 	int			 fc_rescan_work_count;
 	struct work_struct	 fc_rescan_work;
 	char			 fc_rescan_work_q_name[KOBJ_NAME_LEN];
 	struct workqueue_struct *fc_rescan_work_q;
-	u8		port_serial_number;
 } MPT_ADAPTER;
 
 /*
@@ -896,13 +882,6 @@ typedef struct _mpt_sge {
 #define DBG_DUMP_REQUEST_FRAME_HDR(mfp)
 #endif
 
-// debug sas wide ports
-#ifdef MPT_DEBUG_SAS_WIDE
-#define dsaswideprintk(x) printk x
-#else
-#define dsaswideprintk(x)
-#endif
-
 
 /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*/
 
@@ -1048,6 +1027,7 @@ extern void	 mpt_alloc_fw_memory(MPT_ADAPTER *ioc, int size);
 extern void	 mpt_free_fw_memory(MPT_ADAPTER *ioc);
 extern int	 mpt_findImVolumes(MPT_ADAPTER *ioc);
 extern int	 mptbase_sas_persist_operation(MPT_ADAPTER *ioc, u8 persist_opcode);
+extern int	 mptbase_GetFcPortPage0(MPT_ADAPTER *ioc, int portnum);
 
 /*
  *  Public data decl's...

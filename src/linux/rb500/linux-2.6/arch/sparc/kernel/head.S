@@ -11,6 +11,7 @@
  */
 
 #include <linux/version.h>
+#include <linux/config.h>
 #include <linux/init.h>
 
 #include <asm/head.h>

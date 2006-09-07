@@ -36,6 +36,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/list.h>
 #include <linux/miscdevice.h>
 #include <linux/slab.h>

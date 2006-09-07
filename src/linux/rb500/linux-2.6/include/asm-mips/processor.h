@@ -11,6 +11,7 @@
 #ifndef _ASM_PROCESSOR_H
 #define _ASM_PROCESSOR_H
 
+#include <linux/config.h>
 #include <linux/cpumask.h>
 #include <linux/threads.h>
 
@@ -70,6 +71,11 @@ extern unsigned int vced_count, vcei_count;
 
 typedef __u64 fpureg_t;
 
+struct mips_fpu_hard_struct {
+	fpureg_t	fpr[NUM_FPU_REGS];
+	unsigned int	fcr31;
+};
+
 /*
  * It would be nice to add some more fields for emulator statistics, but there
  * are a number of fixed offsets in offset.h and elsewhere that would have to
@@ -77,13 +83,18 @@ typedef __u64 fpureg_t;
  * the FPU emulator for now.  See asm-mips/fpu_emulator.h.
  */
 
-struct mips_fpu_struct {
+struct mips_fpu_soft_struct {
 	fpureg_t	fpr[NUM_FPU_REGS];
 	unsigned int	fcr31;
 };
 
+union mips_fpu_union {
+        struct mips_fpu_hard_struct hard;
+        struct mips_fpu_soft_struct soft;
+};
+
 #define INIT_FPU { \
-	{0,} \
+	{{0,},} \
 }
 
 #define NUM_DSP_REGS   6
@@ -122,7 +133,7 @@ struct thread_struct {
 	unsigned long cp0_status;
 
 	/* Saved fpu/fpu emulator stuff. */
-	struct mips_fpu_struct fpu;
+	union mips_fpu_union fpu;
 #ifdef CONFIG_MIPS_MT_FPAFF
 	/* Emulated instruction count */
 	unsigned long emulated_fp;

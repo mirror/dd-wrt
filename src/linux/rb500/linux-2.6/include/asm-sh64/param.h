@@ -12,6 +12,7 @@
 #ifndef __ASM_SH64_PARAM_H
 #define __ASM_SH64_PARAM_H
 
+#include <linux/config.h>
 
 #ifdef __KERNEL__
 # ifdef CONFIG_SH_WDT

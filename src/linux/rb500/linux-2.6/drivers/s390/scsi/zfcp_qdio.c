@@ -1,8 +1,18 @@
 /*
- * This file is part of the zfcp device driver for
- * FCP adapters for IBM System z9 and zSeries.
+ * linux/drivers/s390/scsi/zfcp_qdio.c
  *
- * (C) Copyright IBM Corp. 2002, 2006
+ * FCP adapter driver for IBM eServer zSeries
+ *
+ * QDIO related routines
+ *
+ * (C) Copyright IBM Corp. 2002, 2004
+ *
+ * Authors:
+ *      Martin Peschke <mpeschke@de.ibm.com>
+ *      Raimund Schroeder <raimund.schroeder@de.ibm.com>
+ *      Wolfgang Taphorn
+ *      Heiko Carstens <heiko.carstens@de.ibm.com>
+ *      Andreas Herrmann <aherrman@de.ibm.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -168,8 +178,7 @@ zfcp_qdio_allocate(struct zfcp_adapter *adapter)
 
 	init_data->cdev = adapter->ccw_device;
 	init_data->q_format = QDIO_SCSI_QFMT;
-	memcpy(init_data->adapter_name, zfcp_get_busid_by_adapter(adapter), 8);
-	ASCEBC(init_data->adapter_name, 8);
+	memcpy(init_data->adapter_name, &adapter->name, 8);
 	init_data->qib_param_field_format = 0;
 	init_data->qib_param_field = NULL;
 	init_data->input_slib_elements = NULL;
@@ -427,7 +436,6 @@ int
 zfcp_qdio_reqid_check(struct zfcp_adapter *adapter, void *sbale_addr)
 {
 	struct zfcp_fsf_req *fsf_req;
-	unsigned long flags;
 
 	/* invalid (per convention used in this driver) */
 	if (unlikely(!sbale_addr)) {
@@ -439,15 +447,15 @@ zfcp_qdio_reqid_check(struct zfcp_adapter *adapter, void *sbale_addr)
 	fsf_req = (struct zfcp_fsf_req *) sbale_addr;
 
 	/* serialize with zfcp_fsf_req_dismiss_all */
-	spin_lock_irqsave(&adapter->fsf_req_list_lock, flags);
+	spin_lock(&adapter->fsf_req_list_lock);
 	if (list_empty(&adapter->fsf_req_list_head)) {
-		spin_unlock_irqrestore(&adapter->fsf_req_list_lock, flags);
+		spin_unlock(&adapter->fsf_req_list_lock);
 		return 0;
 	}
 	list_del(&fsf_req->list);
 	atomic_dec(&adapter->fsf_reqs_active);
-	spin_unlock_irqrestore(&adapter->fsf_req_list_lock, flags);
-
+	spin_unlock(&adapter->fsf_req_list_lock);
+	
 	if (unlikely(adapter != fsf_req->adapter)) {
 		ZFCP_LOG_NORMAL("bug: invalid reqid (fsf_req=%p, "
 				"fsf_req->adapter=%p, adapter=%p)\n",

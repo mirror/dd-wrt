@@ -26,6 +26,7 @@
 #include "fpmodule.h"
 #include "fpmodule.inl"
 
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/string.h>
 #include <asm/system.h>

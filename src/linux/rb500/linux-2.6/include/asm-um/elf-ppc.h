@@ -1,6 +1,7 @@
 #ifndef __UM_ELF_PPC_H
 #define __UM_ELF_PPC_H
 
+#include "linux/config.h"
 
 extern long elf_aux_hwcap;
 #define ELF_HWCAP (elf_aux_hwcap)

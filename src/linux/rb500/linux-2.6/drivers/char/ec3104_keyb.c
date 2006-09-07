@@ -26,6 +26,7 @@
  * (prumpf@tux.org).
  */
 
+#include <linux/config.h>
 
 #include <linux/spinlock.h>
 #include <linux/sched.h>

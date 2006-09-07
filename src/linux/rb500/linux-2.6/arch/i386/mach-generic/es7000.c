@@ -2,6 +2,7 @@
  * APIC driver for the Unisys ES7000 chipset.
  */
 #define APIC_DEFINITION 1
+#include <linux/config.h>
 #include <linux/threads.h>
 #include <linux/cpumask.h>
 #include <asm/mpspec.h>

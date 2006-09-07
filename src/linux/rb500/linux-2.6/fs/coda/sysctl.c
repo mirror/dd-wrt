@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/time.h>
 #include <linux/mm.h>
 #include <linux/sysctl.h>

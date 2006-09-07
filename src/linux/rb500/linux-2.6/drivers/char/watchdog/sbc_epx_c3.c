@@ -15,6 +15,7 @@
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
@@ -154,7 +155,7 @@ static int epx_c3_notify_sys(struct notifier_block *this, unsigned long code,
 	return NOTIFY_DONE;
 }
 
-static const struct file_operations epx_c3_fops = {
+static struct file_operations epx_c3_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= epx_c3_write,

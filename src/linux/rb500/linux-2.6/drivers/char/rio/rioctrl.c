@@ -80,7 +80,7 @@ static char *_rioctrl_c_sccs_ = "@(#)rioctrl.c	1.3";
 static struct LpbReq LpbReq;
 static struct RupReq RupReq;
 static struct PortReq PortReq;
-static struct HostReq HostReq;	/* oh really?  global?  and no locking? */
+static struct HostReq HostReq;
 static struct HostDpRam HostDpRam;
 static struct DebugCtrl DebugCtrl;
 static struct Map MapEnt;
@@ -126,19 +126,12 @@ static int
 
 #define drv_makedev(maj, min) ((((uint) maj & 0xff) << 8) | ((uint) min & 0xff))
 
-static int copy_from_io(void __user *to, void __iomem *from, size_t size)
-{
-	void *buf = kmalloc(size, GFP_KERNEL);
-	int res = -ENOMEM;
-	if (buf) {
-		rio_memcpy_fromio(buf, from, size);
-		res = copy_to_user(to, buf, size);
-		kfree(buf);
-	}
-	return res;
-}
-
-int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su)
+int riocontrol(p, dev, cmd, arg, su)
+struct rio_info *p;
+dev_t dev;
+int cmd;
+caddr_t arg;
+int su;
 {
 	uint Host;		/* leave me unsigned! */
 	uint port;		/* and me! */
@@ -146,10 +139,9 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 	ushort loop;
 	int Entry;
 	struct Port *PortP;
-	struct PKT __iomem *PacketP;
+	struct PKT *PacketP;
 	int retval = 0;
 	unsigned long flags;
-	void __user *argp = (void __user *)arg;
 
 	func_enter();
 
@@ -157,7 +149,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 	Host = 0;
 	PortP = NULL;
 
-	rio_dprintk(RIO_DEBUG_CTRL, "control ioctl cmd: 0x%x arg: %p\n", cmd, argp);
+	rio_dprintk(RIO_DEBUG_CTRL, "control ioctl cmd: 0x%x arg: %p\n", cmd, arg);
 
 	switch (cmd) {
 		/*
@@ -168,11 +160,11 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** otherwise just the specified host card will be changed.
 		 */
 	case RIO_SET_TIMER:
-		rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET_TIMER to %ldms\n", arg);
+		rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET_TIMER to %ldms\n", (unsigned long)arg);
 		{
 			int host, value;
-			host = (arg >> 16) & 0x0000FFFF;
-			value = arg & 0x0000ffff;
+			host = ((unsigned long) arg >> 16) & 0x0000FFFF;
+			value = (unsigned long) arg & 0x0000ffff;
 			if (host == -1) {
 				for (host = 0; host < p->RIONumHosts; host++) {
 					if (p->RIOHosts[host].Flags == RC_RUNNING) {
@@ -191,26 +183,26 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_FOAD_RTA:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_FOAD_RTA\n");
-		return RIOCommandRta(p, arg, RIOFoadRta);
+		return RIOCommandRta(p, (unsigned long)arg, RIOFoadRta);
 
 	case RIO_ZOMBIE_RTA:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_ZOMBIE_RTA\n");
-		return RIOCommandRta(p, arg, RIOZombieRta);
+		return RIOCommandRta(p, (unsigned long)arg, RIOZombieRta);
 
 	case RIO_IDENTIFY_RTA:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_IDENTIFY_RTA\n");
-		return RIOIdentifyRta(p, argp);
+		return RIOIdentifyRta(p, arg);
 
 	case RIO_KILL_NEIGHBOUR:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_KILL_NEIGHBOUR\n");
-		return RIOKillNeighbour(p, argp);
+		return RIOKillNeighbour(p, arg);
 
 	case SPECIAL_RUP_CMD:
 		{
 			struct CmdBlk *CmdBlkP;
 
 			rio_dprintk(RIO_DEBUG_CTRL, "SPECIAL_RUP_CMD\n");
-			if (copy_from_user(&SpecialRupCmd, argp, sizeof(SpecialRupCmd))) {
+			if (copy_from_user(&SpecialRupCmd, arg, sizeof(SpecialRupCmd))) {
 				rio_dprintk(RIO_DEBUG_CTRL, "SPECIAL_RUP_CMD copy failed\n");
 				p->RIOError.Error = COPYIN_FAILED;
 				return -EFAULT;
@@ -247,7 +239,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		if ((retval = RIOApel(p)) != 0)
 			return retval;
 
-		if (copy_to_user(argp, p->RIOConnectTable, TOTAL_MAP_ENTRIES * sizeof(struct Map))) {
+		if (copy_to_user(arg, p->RIOConnectTable, TOTAL_MAP_ENTRIES * sizeof(struct Map))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_GET_TABLE copy failed\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -292,7 +284,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&p->RIOConnectTable[0], argp, TOTAL_MAP_ENTRIES * sizeof(struct Map))) {
+		if (copy_from_user(&p->RIOConnectTable[0], arg, TOTAL_MAP_ENTRIES * sizeof(struct Map))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_PUT_TABLE copy failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -338,7 +330,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_to_user(argp, p->RIOBindTab, (sizeof(ulong) * MAX_RTA_BINDINGS))) {
+		if (copy_to_user(arg, p->RIOBindTab, (sizeof(ulong) * MAX_RTA_BINDINGS))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_GET_BINDINGS copy failed\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -357,7 +349,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&p->RIOBindTab[0], argp, (sizeof(ulong) * MAX_RTA_BINDINGS))) {
+		if (copy_from_user(&p->RIOBindTab[0], arg, (sizeof(ulong) * MAX_RTA_BINDINGS))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_PUT_BINDINGS copy failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -381,12 +373,12 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			for (Entry = 0; Entry < MAX_RTA_BINDINGS; Entry++) {
 				if ((EmptySlot == -1) && (p->RIOBindTab[Entry] == 0L))
 					EmptySlot = Entry;
-				else if (p->RIOBindTab[Entry] == arg) {
+				else if (p->RIOBindTab[Entry] == (long)arg) {
 					/*
 					 ** Already exists - delete
 					 */
 					p->RIOBindTab[Entry] = 0L;
-					rio_dprintk(RIO_DEBUG_CTRL, "Removing Rta %ld from p->RIOBindTab\n", arg);
+					rio_dprintk(RIO_DEBUG_CTRL, "Removing Rta %ld from p->RIOBindTab\n", (unsigned long)arg);
 					return 0;
 				}
 			}
@@ -394,10 +386,10 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			 ** Dosen't exist - add
 			 */
 			if (EmptySlot != -1) {
-				p->RIOBindTab[EmptySlot] = arg;
-				rio_dprintk(RIO_DEBUG_CTRL, "Adding Rta %lx to p->RIOBindTab\n", arg);
+				p->RIOBindTab[EmptySlot] = (unsigned long)arg;
+				rio_dprintk(RIO_DEBUG_CTRL, "Adding Rta %lx to p->RIOBindTab\n", (unsigned long) arg);
 			} else {
-				rio_dprintk(RIO_DEBUG_CTRL, "p->RIOBindTab full! - Rta %lx not added\n", arg);
+				rio_dprintk(RIO_DEBUG_CTRL, "p->RIOBindTab full! - Rta %lx not added\n", (unsigned long) arg);
 				return -ENOMEM;
 			}
 			return 0;
@@ -405,7 +397,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_RESUME:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_RESUME\n");
-		port = arg;
+		port = (unsigned long) arg;
 		if ((port < 0) || (port > 511)) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_RESUME: Bad port number %d\n", port);
 			p->RIOError.Error = PORT_NUMBER_OUT_OF_RANGE;
@@ -441,7 +433,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&MapEnt, argp, sizeof(MapEnt))) {
+		if (copy_from_user(&MapEnt, arg, sizeof(MapEnt))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "Copy from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -455,7 +447,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&MapEnt, argp, sizeof(MapEnt))) {
+		if (copy_from_user(&MapEnt, arg, sizeof(MapEnt))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "Copy from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -469,7 +461,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&MapEnt, argp, sizeof(MapEnt))) {
+		if (copy_from_user(&MapEnt, arg, sizeof(MapEnt))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "Copy from data space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -477,14 +469,14 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		return RIODeleteRta(p, &MapEnt);
 
 	case RIO_QUICK_CHECK:
-		if (copy_to_user(argp, &p->RIORtaDisCons, sizeof(unsigned int))) {
+		if (copy_to_user(arg, &p->RIORtaDisCons, sizeof(unsigned int))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
 		return 0;
 
 	case RIO_LAST_ERROR:
-		if (copy_to_user(argp, &p->RIOError, sizeof(struct Error)))
+		if (copy_to_user(arg, &p->RIOError, sizeof(struct Error)))
 			return -EFAULT;
 		return 0;
 
@@ -493,7 +485,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		return -EINVAL;
 
 	case RIO_GET_MODTYPE:
-		if (copy_from_user(&port, argp, sizeof(unsigned int))) {
+		if (copy_from_user(&port, arg, sizeof(unsigned int))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -513,7 +505,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** Return module type of port
 		 */
 		port = PortP->HostP->UnixRups[PortP->RupNum].ModTypes;
-		if (copy_to_user(argp, &port, sizeof(unsigned int))) {
+		if (copy_to_user(arg, &port, sizeof(unsigned int))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
@@ -529,7 +521,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_SETUP_PORTS:
 		rio_dprintk(RIO_DEBUG_CTRL, "Setup ports\n");
-		if (copy_from_user(&PortSetup, argp, sizeof(PortSetup))) {
+		if (copy_from_user(&PortSetup, arg, sizeof(PortSetup))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			rio_dprintk(RIO_DEBUG_CTRL, "EFAULT");
 			return -EFAULT;
@@ -559,7 +551,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_GET_PORT_SETUP:
 		rio_dprintk(RIO_DEBUG_CTRL, "Get port setup\n");
-		if (copy_from_user(&PortSetup, argp, sizeof(PortSetup))) {
+		if (copy_from_user(&PortSetup, arg, sizeof(PortSetup))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -580,7 +572,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		PortSetup.XpOn[MAX_XP_CTRL_LEN - 1] = '\0';
 		PortSetup.XpOff[MAX_XP_CTRL_LEN - 1] = '\0';
 
-		if (copy_to_user(argp, &PortSetup, sizeof(PortSetup))) {
+		if (copy_to_user(arg, &PortSetup, sizeof(PortSetup))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
@@ -588,7 +580,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_GET_PORT_PARAMS:
 		rio_dprintk(RIO_DEBUG_CTRL, "Get port params\n");
-		if (copy_from_user(&PortParams, argp, sizeof(struct PortParams))) {
+		if (copy_from_user(&PortParams, arg, sizeof(struct PortParams))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -601,7 +593,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		PortParams.State = PortP->State;
 		rio_dprintk(RIO_DEBUG_CTRL, "Port %d\n", PortParams.Port);
 
-		if (copy_to_user(argp, &PortParams, sizeof(struct PortParams))) {
+		if (copy_to_user(arg, &PortParams, sizeof(struct PortParams))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
@@ -609,7 +601,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_GET_PORT_TTY:
 		rio_dprintk(RIO_DEBUG_CTRL, "Get port tty\n");
-		if (copy_from_user(&PortTty, argp, sizeof(struct PortTty))) {
+		if (copy_from_user(&PortTty, arg, sizeof(struct PortTty))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -620,14 +612,14 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 		rio_dprintk(RIO_DEBUG_CTRL, "Port %d\n", PortTty.port);
 		PortP = (p->RIOPortp[PortTty.port]);
-		if (copy_to_user(argp, &PortTty, sizeof(struct PortTty))) {
+		if (copy_to_user(arg, &PortTty, sizeof(struct PortTty))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
 		return retval;
 
 	case RIO_SET_PORT_TTY:
-		if (copy_from_user(&PortTty, argp, sizeof(struct PortTty))) {
+		if (copy_from_user(&PortTty, arg, sizeof(struct PortTty))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -642,7 +634,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_SET_PORT_PARAMS:
 		rio_dprintk(RIO_DEBUG_CTRL, "Set port params\n");
-		if (copy_from_user(&PortParams, argp, sizeof(PortParams))) {
+		if (copy_from_user(&PortParams, arg, sizeof(PortParams))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -658,7 +650,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_GET_PORT_STATS:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_GET_PORT_STATS\n");
-		if (copy_from_user(&portStats, argp, sizeof(struct portStats))) {
+		if (copy_from_user(&portStats, arg, sizeof(struct portStats))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -673,14 +665,14 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		portStats.opens = PortP->opens;
 		portStats.closes = PortP->closes;
 		portStats.ioctls = PortP->ioctls;
-		if (copy_to_user(argp, &portStats, sizeof(struct portStats))) {
+		if (copy_to_user(arg, &portStats, sizeof(struct portStats))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
 		return retval;
 
 	case RIO_RESET_PORT_STATS:
-		port = arg;
+		port = (unsigned long) arg;
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_RESET_PORT_STATS\n");
 		if (port >= RIO_PORTS) {
 			p->RIOError.Error = PORT_NUMBER_OUT_OF_RANGE;
@@ -698,7 +690,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_GATHER_PORT_STATS:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_GATHER_PORT_STATS\n");
-		if (copy_from_user(&portStats, argp, sizeof(struct portStats))) {
+		if (copy_from_user(&portStats, arg, sizeof(struct portStats))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -714,7 +706,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_READ_CONFIG:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_READ_CONFIG\n");
-		if (copy_to_user(argp, &p->RIOConf, sizeof(struct Conf))) {
+		if (copy_to_user(arg, &p->RIOConf, sizeof(struct Conf))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
@@ -726,7 +718,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&p->RIOConf, argp, sizeof(struct Conf))) {
+		if (copy_from_user(&p->RIOConf, arg, sizeof(struct Conf))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -754,7 +746,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 	case RIO_SETDEBUG:
 	case RIO_GETDEBUG:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_SETDEBUG/RIO_GETDEBUG\n");
-		if (copy_from_user(&DebugCtrl, argp, sizeof(DebugCtrl))) {
+		if (copy_from_user(&DebugCtrl, arg, sizeof(DebugCtrl))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -771,7 +763,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 				rio_dprintk(RIO_DEBUG_CTRL, "Get global debug 0x%x wait 0x%x\n", p->rio_debug, p->RIODebugWait);
 				DebugCtrl.Debug = p->rio_debug;
 				DebugCtrl.Wait = p->RIODebugWait;
-				if (copy_to_user(argp, &DebugCtrl, sizeof(DebugCtrl))) {
+				if (copy_to_user(arg, &DebugCtrl, sizeof(DebugCtrl))) {
 					rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET/GET DEBUG: bad port number %d\n", DebugCtrl.SysPort);
 					p->RIOError.Error = COPYOUT_FAILED;
 					return -EFAULT;
@@ -793,7 +785,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		} else {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_GETDEBUG 0x%x\n", p->RIOPortp[DebugCtrl.SysPort]->Debug);
 			DebugCtrl.Debug = p->RIOPortp[DebugCtrl.SysPort]->Debug;
-			if (copy_to_user(argp, &DebugCtrl, sizeof(DebugCtrl))) {
+			if (copy_to_user(arg, &DebugCtrl, sizeof(DebugCtrl))) {
 				rio_dprintk(RIO_DEBUG_CTRL, "RIO_GETDEBUG: Bad copy to user space\n");
 				p->RIOError.Error = COPYOUT_FAILED;
 				return -EFAULT;
@@ -808,7 +800,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** textual null terminated string.
 		 */
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_VERSID\n");
-		if (copy_to_user(argp, RIOVersid(), sizeof(struct rioVersion))) {
+		if (copy_to_user(arg, RIOVersid(), sizeof(struct rioVersion))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_VERSID: Bad copy to user space (host=%d)\n", Host);
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -821,7 +813,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** at init time.
 		 */
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_NUM_HOSTS\n");
-		if (copy_to_user(argp, &p->RIONumHosts, sizeof(p->RIONumHosts))) {
+		if (copy_to_user(arg, &p->RIONumHosts, sizeof(p->RIONumHosts))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_NUM_HOSTS: Bad copy to user space\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -832,7 +824,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		/*
 		 ** Kill host. This may not be in the final version...
 		 */
-		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_FOAD %ld\n", arg);
+		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_FOAD %ld\n", (unsigned long) arg);
 		if (!su) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_FOAD: Not super user\n");
 			p->RIOError.Error = NOT_SUPER_USER;
@@ -866,7 +858,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			p->RIOError.Error = NOT_SUPER_USER;
 			return -EPERM;
 		}
-		if (copy_from_user(&DownLoad, argp, sizeof(DownLoad))) {
+		if (copy_from_user(&DownLoad, arg, sizeof(DownLoad))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_DOWNLOAD: Copy in from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -896,7 +888,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		{
 			unsigned int host;
 
-			if (copy_from_user(&host, argp, sizeof(host))) {
+			if (copy_from_user(&host, arg, sizeof(host))) {
 				rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_REQ: Copy in from user space failed\n");
 				p->RIOError.Error = COPYIN_FAILED;
 				return -EFAULT;
@@ -905,7 +897,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			 ** Fetch the parmmap
 			 */
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_PARMS\n");
-			if (copy_from_io(argp, p->RIOHosts[host].ParmMapP, sizeof(PARM_MAP))) {
+			if (copy_to_user(arg, p->RIOHosts[host].ParmMapP, sizeof(PARM_MAP))) {
 				p->RIOError.Error = COPYOUT_FAILED;
 				rio_dprintk(RIO_DEBUG_CTRL, "RIO_PARMS: Copy out to user space failed\n");
 				return -EFAULT;
@@ -915,7 +907,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_HOST_REQ:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_REQ\n");
-		if (copy_from_user(&HostReq, argp, sizeof(HostReq))) {
+		if (copy_from_user(&HostReq, arg, sizeof(HostReq))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_REQ: Copy in from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -936,7 +928,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_HOST_DPRAM:
 		rio_dprintk(RIO_DEBUG_CTRL, "Request for DPRAM\n");
-		if (copy_from_user(&HostDpRam, argp, sizeof(HostDpRam))) {
+		if (copy_from_user(&HostDpRam, arg, sizeof(HostDpRam))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_DPRAM: Copy in from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -953,13 +945,13 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			/* It's hardware like this that really gets on my tits. */
 			static unsigned char copy[sizeof(struct DpRam)];
 			for (off = 0; off < sizeof(struct DpRam); off++)
-				copy[off] = readb(p->RIOHosts[HostDpRam.HostNum].Caddr + off);
+				copy[off] = readb(&p->RIOHosts[HostDpRam.HostNum].Caddr[off]);
 			if (copy_to_user(HostDpRam.DpRamP, copy, sizeof(struct DpRam))) {
 				p->RIOError.Error = COPYOUT_FAILED;
 				rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_DPRAM: Bad copy to user space\n");
 				return -EFAULT;
 			}
-		} else if (copy_from_io(HostDpRam.DpRamP, p->RIOHosts[HostDpRam.HostNum].Caddr, sizeof(struct DpRam))) {
+		} else if (copy_to_user(HostDpRam.DpRamP, p->RIOHosts[HostDpRam.HostNum].Caddr, sizeof(struct DpRam))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_DPRAM: Bad copy to user space\n");
 			return -EFAULT;
@@ -968,13 +960,13 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_SET_BUSY:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET_BUSY\n");
-		if (arg > 511) {
-			rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET_BUSY: Bad port number %ld\n", arg);
+		if ((unsigned long) arg > 511) {
+			rio_dprintk(RIO_DEBUG_CTRL, "RIO_SET_BUSY: Bad port number %ld\n", (unsigned long) arg);
 			p->RIOError.Error = PORT_NUMBER_OUT_OF_RANGE;
 			return -EINVAL;
 		}
 		rio_spin_lock_irqsave(&PortP->portSem, flags);
-		p->RIOPortp[arg]->State |= RIO_BUSY;
+		p->RIOPortp[(unsigned long) arg]->State |= RIO_BUSY;
 		rio_spin_unlock_irqrestore(&PortP->portSem, flags);
 		return retval;
 
@@ -984,7 +976,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** (probably for debug reasons)
 		 */
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_PORT\n");
-		if (copy_from_user(&PortReq, argp, sizeof(PortReq))) {
+		if (copy_from_user(&PortReq, arg, sizeof(PortReq))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_PORT: Copy in from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -1009,7 +1001,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** (probably for debug reasons)
 		 */
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_RUP\n");
-		if (copy_from_user(&RupReq, argp, sizeof(RupReq))) {
+		if (copy_from_user(&RupReq, arg, sizeof(RupReq))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_RUP: Copy in from user space failed\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -1033,7 +1025,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		}
 		rio_dprintk(RIO_DEBUG_CTRL, "Request for rup %d from host %d\n", RupReq.RupNum, RupReq.HostNum);
 
-		if (copy_from_io(RupReq.RupP, HostP->UnixRups[RupReq.RupNum].RupP, sizeof(struct RUP))) {
+		if (copy_to_user(HostP->UnixRups[RupReq.RupNum].RupP, RupReq.RupP, sizeof(struct RUP))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_RUP: Bad copy to user space\n");
 			return -EFAULT;
@@ -1046,7 +1038,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 ** (probably for debug reasons)
 		 */
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_LPB\n");
-		if (copy_from_user(&LpbReq, argp, sizeof(LpbReq))) {
+		if (copy_from_user(&LpbReq, arg, sizeof(LpbReq))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_LPB: Bad copy from user space\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -1070,7 +1062,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		}
 		rio_dprintk(RIO_DEBUG_CTRL, "Request for lpb %d from host %d\n", LpbReq.Link, LpbReq.Host);
 
-		if (copy_from_io(LpbReq.LpbP, &HostP->LinkStrP[LpbReq.Link], sizeof(struct LPB))) {
+		if (copy_to_user(LpbReq.LpbP, &HostP->LinkStrP[LpbReq.Link], sizeof(struct LPB))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_HOST_LPB: Bad copy to user space\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -1144,7 +1136,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 	case RIO_MAP_B110_TO_110:
 	case RIO_MAP_B110_TO_115200:
 		rio_dprintk(RIO_DEBUG_CTRL, "Baud rate mapping\n");
-		port = arg;
+		port = (unsigned long) arg;
 		if (port < 0 || port > 511) {
 			rio_dprintk(RIO_DEBUG_CTRL, "Baud rate mapping: Bad port number %d\n", port);
 			p->RIOError.Error = PORT_NUMBER_OUT_OF_RANGE;
@@ -1174,7 +1166,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 
 	case RIO_SEND_PACKET:
 		rio_dprintk(RIO_DEBUG_CTRL, "RIO_SEND_PACKET\n");
-		if (copy_from_user(&SendPack, argp, sizeof(SendPack))) {
+		if (copy_from_user(&SendPack, arg, sizeof(SendPack))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_SEND_PACKET: Bad copy from user space\n");
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
@@ -1218,7 +1210,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		return su ? 0 : -EPERM;
 
 	case RIO_WHAT_MESG:
-		if (copy_to_user(argp, &p->RIONoMessage, sizeof(p->RIONoMessage))) {
+		if (copy_to_user(arg, &p->RIONoMessage, sizeof(p->RIONoMessage))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_WHAT_MESG: Bad copy to user space\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -1226,7 +1218,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		return 0;
 
 	case RIO_MEM_DUMP:
-		if (copy_from_user(&SubCmd, argp, sizeof(struct SubCmdStruct))) {
+		if (copy_from_user(&SubCmd, arg, sizeof(struct SubCmdStruct))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -1256,7 +1248,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			PortP->State |= RIO_BUSY;
 
 		rio_spin_unlock_irqrestore(&PortP->portSem, flags);
-		if (copy_to_user(argp, p->RIOMemDump, MEMDUMP_SIZE)) {
+		if (copy_to_user(arg, p->RIOMemDump, MEMDUMP_SIZE)) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_MEM_DUMP copy failed\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -1264,30 +1256,30 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		return 0;
 
 	case RIO_TICK:
-		if (arg >= p->RIONumHosts)
+		if ((unsigned long) arg >= p->RIONumHosts)
 			return -EINVAL;
-		rio_dprintk(RIO_DEBUG_CTRL, "Set interrupt for host %ld\n", arg);
-		writeb(0xFF, &p->RIOHosts[arg].SetInt);
+		rio_dprintk(RIO_DEBUG_CTRL, "Set interrupt for host %ld\n", (unsigned long) arg);
+		writeb(0xFF, &p->RIOHosts[(unsigned long) arg].SetInt);
 		return 0;
 
 	case RIO_TOCK:
-		if (arg >= p->RIONumHosts)
+		if ((unsigned long) arg >= p->RIONumHosts)
 			return -EINVAL;
-		rio_dprintk(RIO_DEBUG_CTRL, "Clear interrupt for host %ld\n", arg);
-		writeb(0xFF, &p->RIOHosts[arg].ResetInt);
+		rio_dprintk(RIO_DEBUG_CTRL, "Clear interrupt for host %ld\n", (unsigned long) arg);
+		writeb(0xFF, &p->RIOHosts[(unsigned long) arg].ResetInt);
 		return 0;
 
 	case RIO_READ_CHECK:
 		/* Check reads for pkts with data[0] the same */
 		p->RIOReadCheck = !p->RIOReadCheck;
-		if (copy_to_user(argp, &p->RIOReadCheck, sizeof(unsigned int))) {
+		if (copy_to_user(arg, &p->RIOReadCheck, sizeof(unsigned int))) {
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
 		}
 		return 0;
 
 	case RIO_READ_REGISTER:
-		if (copy_from_user(&SubCmd, argp, sizeof(struct SubCmdStruct))) {
+		if (copy_from_user(&SubCmd, arg, sizeof(struct SubCmdStruct))) {
 			p->RIOError.Error = COPYIN_FAILED;
 			return -EFAULT;
 		}
@@ -1322,7 +1314,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			PortP->State |= RIO_BUSY;
 
 		rio_spin_unlock_irqrestore(&PortP->portSem, flags);
-		if (copy_to_user(argp, &p->CdRegister, sizeof(unsigned int))) {
+		if (copy_to_user(arg, &p->CdRegister, sizeof(unsigned int))) {
 			rio_dprintk(RIO_DEBUG_CTRL, "RIO_READ_REGISTER copy failed\n");
 			p->RIOError.Error = COPYOUT_FAILED;
 			return -EFAULT;
@@ -1335,10 +1327,10 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 		 */
 	case RIO_MAKE_DEV:
 		{
-			unsigned int port = arg & RIO_MODEM_MASK;
+			unsigned int port = (unsigned long) arg & RIO_MODEM_MASK;
 			unsigned int ret;
 
-			switch (arg & RIO_DEV_MASK) {
+			switch ((unsigned long) arg & RIO_DEV_MASK) {
 			case RIO_DEV_DIRECT:
 				ret = drv_makedev(MAJOR(dev), port);
 				rio_dprintk(RIO_DEBUG_CTRL, "Makedev direct 0x%x is 0x%x\n", port, ret);
@@ -1366,7 +1358,7 @@ int riocontrol(struct rio_info *p, dev_t dev, int cmd, unsigned long arg, int su
 			int mino;
 			unsigned long ret;
 
-			dv = (dev_t) (arg);
+			dv = (dev_t) ((unsigned long) arg);
 			mino = RIO_UNMODEM(dv);
 
 			if (RIO_ISMODEM(dv)) {

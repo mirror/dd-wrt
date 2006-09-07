@@ -22,11 +22,13 @@
 #include "xfs_inum.h"
 #include "xfs_trans.h"
 #include "xfs_sb.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_da_btree.h"
 #include "xfs_bmap_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -503,6 +505,7 @@ xfs_dir2_leafn_lookup_int(
 							XFS_DATA_FORK))) {
 						return error;
 					}
+					curfdb = newfdb;
 					free = curbp->data;
 					ASSERT(be32_to_cpu(free->hdr.magic) ==
 					       XFS_DIR2_FREE_MAGIC);
@@ -524,11 +527,8 @@ xfs_dir2_leafn_lookup_int(
 				if (unlikely(be16_to_cpu(free->bests[fi]) == NULLDATAOFF)) {
 					XFS_ERROR_REPORT("xfs_dir2_leafn_lookup_int",
 							 XFS_ERRLEVEL_LOW, mp);
-					if (curfdb != newfdb)
-						xfs_da_brelse(tp, curbp);
 					return XFS_ERROR(EFSCORRUPTED);
 				}
-				curfdb = newfdb;
 				if (be16_to_cpu(free->bests[fi]) >= length) {
 					*indexp = index;
 					state->extravalid = 1;
@@ -580,7 +580,7 @@ xfs_dir2_leafn_lookup_int(
 			if (dep->namelen == args->namelen &&
 			    dep->name[0] == args->name[0] &&
 			    memcmp(dep->name, args->name, args->namelen) == 0) {
-				args->inumber = be64_to_cpu(dep->inumber);
+				args->inumber = INT_GET(dep->inumber, ARCH_CONVERT);
 				*indexp = index;
 				state->extravalid = 1;
 				state->extrablk.bp = curbp;
@@ -1695,7 +1695,7 @@ xfs_dir2_node_addname_int(
 	 * Fill in the new entry and log it.
 	 */
 	dep = (xfs_dir2_data_entry_t *)dup;
-	dep->inumber = cpu_to_be64(args->inumber);
+	INT_SET(dep->inumber, ARCH_CONVERT, args->inumber);
 	dep->namelen = args->namelen;
 	memcpy(dep->name, args->name, dep->namelen);
 	tagp = XFS_DIR2_DATA_ENTRY_TAG_P(dep);
@@ -1905,11 +1905,11 @@ xfs_dir2_node_replace(
 		dep = (xfs_dir2_data_entry_t *)
 		      ((char *)data +
 		       XFS_DIR2_DATAPTR_TO_OFF(state->mp, be32_to_cpu(lep->address)));
-		ASSERT(inum != be64_to_cpu(dep->inumber));
+		ASSERT(inum != INT_GET(dep->inumber, ARCH_CONVERT));
 		/*
 		 * Fill in the new inode number and log the entry.
 		 */
-		dep->inumber = cpu_to_be64(inum);
+		INT_SET(dep->inumber, ARCH_CONVERT, inum);
 		xfs_dir2_data_log_entry(args->trans, state->extrablk.bp, dep);
 		rval = 0;
 	}

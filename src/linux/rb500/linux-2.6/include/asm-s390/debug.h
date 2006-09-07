@@ -9,6 +9,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+#include <linux/config.h>
 #include <linux/fs.h>
 #include <linux/string.h>
 

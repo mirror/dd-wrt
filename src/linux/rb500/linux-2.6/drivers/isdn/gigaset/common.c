@@ -460,9 +460,6 @@ void gigaset_freecs(struct cardstate *cs)
 
 	switch (cs->cs_init) {
 	default:
-		/* clear device sysfs */
-		gigaset_free_dev_sysfs(cs);
-
 		gigaset_if_free(cs);
 
 		gig_dbg(DEBUG_INIT, "clearing hw");
@@ -702,7 +699,6 @@ struct cardstate *gigaset_initcs(struct gigaset_driver *drv, int channels,
 	cs->open_count = 0;
 	cs->dev = NULL;
 	cs->tty = NULL;
-	cs->class = NULL;
 	cs->cidmode = cidmode != 0;
 
 	//if(onechannel) { //FIXME
@@ -763,9 +759,6 @@ struct cardstate *gigaset_initcs(struct gigaset_driver *drv, int channels,
 	++cs->cs_init;
 
 	gigaset_if_init(cs);
-
-	/* set up device sysfs */
-	gigaset_init_dev_sysfs(cs);
 
 	spin_lock_irqsave(&cs->lock, flags);
 	cs->running = 1;
@@ -909,6 +902,9 @@ int gigaset_start(struct cardstate *cs)
 
 	wait_event(cs->waitqueue, !cs->waiting);
 
+	/* set up device sysfs */
+	gigaset_init_dev_sysfs(cs);
+
 	mutex_unlock(&cs->mutex);
 	return 1;
 
@@ -973,6 +969,9 @@ void gigaset_stop(struct cardstate *cs)
 		//FIXME
 	}
 
+	/* clear device sysfs */
+	gigaset_free_dev_sysfs(cs);
+
 	cleanup_cs(cs);
 
 exit:
@@ -981,7 +980,7 @@ exit:
 EXPORT_SYMBOL_GPL(gigaset_stop);
 
 static LIST_HEAD(drivers);
-static DEFINE_SPINLOCK(driver_lock);
+static spinlock_t driver_lock = SPIN_LOCK_UNLOCKED;
 
 struct cardstate *gigaset_get_cs_by_id(int id)
 {
@@ -1092,12 +1091,14 @@ EXPORT_SYMBOL_GPL(gigaset_freedriver);
  *	minors		Number of minors this driver can handle
  *	procname	Name of the driver
  *	devname		Name of the device files (prefix without minor number)
+ *	devfsname	Devfs name of the device files without %d
  * return value:
  *	Pointer to the gigaset_driver structure on success, NULL on failure.
  */
 struct gigaset_driver *gigaset_initdriver(unsigned minor, unsigned minors,
 					  const char *procname,
 					  const char *devname,
+					  const char *devfsname,
 					  const struct gigaset_ops *ops,
 					  struct module *owner)
 {
@@ -1137,7 +1138,7 @@ struct gigaset_driver *gigaset_initdriver(unsigned minor, unsigned minors,
 		drv->cs[i].minor_index = i;
 	}
 
-	gigaset_if_initdriver(drv, procname, devname);
+	gigaset_if_initdriver(drv, procname, devname, devfsname);
 
 	spin_lock_irqsave(&driver_lock, flags);
 	list_add(&drv->list, &drivers);

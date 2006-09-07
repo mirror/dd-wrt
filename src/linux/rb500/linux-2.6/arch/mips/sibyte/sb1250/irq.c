@@ -15,6 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/linkage.h>
@@ -245,10 +246,10 @@ void __init init_sb1250_irqs(void)
 		irq_desc[i].action = 0;
 		irq_desc[i].depth = 1;
 		if (i < SB1250_NR_IRQS) {
-			irq_desc[i].chip = &sb1250_irq_type;
+			irq_desc[i].handler = &sb1250_irq_type;
 			sb1250_irq_owner[i] = 0;
 		} else {
-			irq_desc[i].chip = &no_irq_type;
+			irq_desc[i].handler = &no_irq_type;
 		}
 	}
 }
@@ -434,17 +435,13 @@ static inline int dclz(unsigned long long x)
 	return lz;
 }
 
-extern void sb1250_timer_interrupt(struct pt_regs *regs);
-extern void sb1250_mailbox_interrupt(struct pt_regs *regs);
-extern void sb1250_kgdb_interrupt(struct pt_regs *regs);
-
 asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
 {
 	unsigned int pending;
 
 #ifdef CONFIG_SIBYTE_SB1250_PROF
 	/* Set compare to count to silence count/compare timer interrupts */
-	write_c0_compare(read_c0_count());
+	write_c0_count(read_c0_count());
 #endif
 
 	/*
@@ -485,7 +482,7 @@ asmlinkage void plat_irq_dispatch(struct pt_regs *regs)
 		 * Default...we've hit an IP[2] interrupt, which means we've
 		 * got to check the 1250 interrupt registers to figure out what
 		 * to do.  Need to detect which CPU we're on, now that
-		 * smp_affinity is supported.
+		 ~ smp_affinity is supported.
 		 */
 		mask = __raw_readq(IOADDR(A_IMR_REGISTER(smp_processor_id(),
 		                              R_IMR_INTERRUPT_STATUS_BASE)));

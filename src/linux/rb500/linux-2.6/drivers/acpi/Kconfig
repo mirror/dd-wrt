@@ -10,8 +10,9 @@ menu "ACPI (Advanced Configuration and Power Interface) Support"
 config ACPI
 	bool "ACPI Support"
 	depends on IA64 || X86
-	depends on PCI
 	select PM
+	select PCI
+
 	default y
 	---help---
 	  Advanced Configuration and Power Interface (ACPI) support for 
@@ -133,13 +134,6 @@ config ACPI_FAN
 	  This driver adds support for ACPI fan devices, allowing user-mode 
 	  applications to perform basic fan control (on, off, status).
 
-config ACPI_DOCK
-	tristate "Dock"
-	depends on !ACPI_IBM_DOCK
-	default y
-	help
-	  This driver adds support for ACPI controlled docking stations
-
 config ACPI_PROCESSOR
 	tristate "Processor"
 	default y
@@ -168,7 +162,7 @@ config ACPI_THERMAL
 config ACPI_NUMA
 	bool "NUMA support"
 	depends on NUMA
-	depends on (X86 || IA64)
+	depends on (IA64 || X86_64)
 	default y if IA64_GENERIC || IA64_SGI_SN2
 
 config ACPI_ASUS
@@ -335,7 +329,7 @@ config ACPI_CONTAINER
 config ACPI_HOTPLUG_MEMORY
 	tristate "Memory Hotplug"
 	depends on ACPI
-	depends on MEMORY_HOTPLUG
+	depends on MEMORY_HOTPLUG || X86_64
 	default n
 	help
 	  This driver adds supports for ACPI Memory Hotplug.  This driver
@@ -352,18 +346,6 @@ config ACPI_HOTPLUG_MEMORY
 	  If one selects "m," this driver can be loaded using the following
 	  command: 
 		$>modprobe acpi_memhotplug 
-
-config ACPI_SBS
-	tristate "Smart Battery System (EXPERIMENTAL)"
-	depends on X86 && I2C
-	depends on EXPERIMENTAL
-	default y
-	help
-	  This driver adds support for the Smart Battery System.
-	  Depends on I2C (Device Drivers ---> I2C support)
-	  A "Smart Battery" is quite old and quite rare compared
-	  to today's ACPI "Control Method" battery.
-
 endif	# ACPI
 
 endmenu

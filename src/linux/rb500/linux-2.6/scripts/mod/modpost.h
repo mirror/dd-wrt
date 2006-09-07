@@ -100,7 +100,6 @@ buf_write(struct buffer *buf, const char *s, int len);
 struct module {
 	struct module *next;
 	const char *name;
-	int gpl_compatible;
 	struct symbol *unres;
 	int seen;
 	int skip;
@@ -116,11 +115,6 @@ struct elf_info {
 	Elf_Shdr     *sechdrs;
 	Elf_Sym      *symtab_start;
 	Elf_Sym      *symtab_stop;
-	Elf_Section  export_sec;
-	Elf_Section  export_unused_sec;
-	Elf_Section  export_gpl_sec;
-	Elf_Section  export_unused_gpl_sec;
-	Elf_Section  export_gpl_future_sec;
 	const char   *strtab;
 	char	     *modinfo;
 	unsigned int modinfo_len;

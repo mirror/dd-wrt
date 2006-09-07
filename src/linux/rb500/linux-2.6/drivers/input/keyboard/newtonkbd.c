@@ -96,7 +96,7 @@ static int nkbd_connect(struct serio *serio, struct serio_driver *drv)
 
 	nkbd->serio = serio;
 	nkbd->dev = input_dev;
-	snprintf(nkbd->phys, sizeof(nkbd->phys), "%s/input0", serio->phys);
+	sprintf(nkbd->phys, "%s/input0", serio->phys);
 	memcpy(nkbd->keycode, nkbd_keycode, sizeof(nkbd->keycode));
 
 	input_dev->name = "Newton Keyboard";

@@ -20,7 +20,6 @@
  * Power off function, if any
  */
 void (*pm_power_off)(void);
-EXPORT_SYMBOL(pm_power_off);
 
 static long no_idt[3];
 static enum { 

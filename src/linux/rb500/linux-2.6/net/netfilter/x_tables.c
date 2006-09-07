@@ -13,6 +13,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/socket.h>
 #include <linux/net.h>

@@ -43,6 +43,7 @@ struct trh_hdr {
 };
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 #include <linux/skbuff.h>
 
 static inline struct trh_hdr *tr_hdr(const struct sk_buff *skb)

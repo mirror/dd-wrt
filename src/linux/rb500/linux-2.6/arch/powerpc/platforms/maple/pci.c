@@ -376,10 +376,9 @@ static void __init maple_fixup_phb_resources(void)
 		unsigned long offset = (unsigned long)hose->io_base_virt - pci_io_base;
 		hose->io_resource.start += offset;
 		hose->io_resource.end += offset;
-		printk(KERN_INFO "PCI Host %d, io start: %llx; io end: %llx\n",
+		printk(KERN_INFO "PCI Host %d, io start: %lx; io end: %lx\n",
 		       hose->global_number,
-		       (unsigned long long)hose->io_resource.start,
-		       (unsigned long long)hose->io_resource.end);
+		       hose->io_resource.start, hose->io_resource.end);
 	}
 }
 
@@ -438,28 +437,26 @@ void __init maple_pci_init(void)
 
 	/* Tell pci.c to not change any resource allocations.  */
 	pci_probe_only = 1;
+	
+	/* Allow all IO */
+	io_page_mask = -1;
 }
 
 int maple_pci_get_legacy_ide_irq(struct pci_dev *pdev, int channel)
 {
 	struct device_node *np;
-	unsigned int defirq = channel ? 15 : 14;
-	unsigned int irq;
+	int irq = channel ? 15 : 14;
 
 	if (pdev->vendor != PCI_VENDOR_ID_AMD ||
 	    pdev->device != PCI_DEVICE_ID_AMD_8111_IDE)
-		return defirq;
+		return irq;
 
 	np = pci_device_to_OF_node(pdev);
 	if (np == NULL)
-		return defirq;
-	irq = irq_of_parse_and_map(np, channel & 0x1);
-	if (irq == NO_IRQ) {
-		printk("Failed to map onboard IDE interrupt for channel %d\n",
-		       channel);
-		return defirq;
-	}
-	return irq;
+		return irq;
+	if (np->n_intrs < 2)
+		return irq;
+	return np->intrs[channel & 0x1].line;
 }
 
 /* XXX: To remove once all firmwares are ok */

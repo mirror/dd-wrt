@@ -23,6 +23,7 @@
 
 #include <asm/semaphore.h> /* Needed for MUTEX init macros */
 #include <linux/version.h>
+#include <linux/config.h>
 #include <linux/notifier.h>
 #include <asm/atomic.h>
 

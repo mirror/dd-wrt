@@ -22,6 +22,7 @@
 #include <asm/processor.h>
 #include <asm/page.h>
 #include <linux/threads.h>
+#include <linux/config.h>
 
 struct vm_area_struct;
 

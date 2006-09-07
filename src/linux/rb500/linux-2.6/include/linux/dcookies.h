@@ -9,6 +9,7 @@
 #ifndef DCOOKIES_H
 #define DCOOKIES_H
  
+#include <linux/config.h>
 
 #ifdef CONFIG_PROFILING
  

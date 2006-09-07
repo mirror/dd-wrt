@@ -115,16 +115,6 @@ static int mthca_query_device(struct ib_device *ibdev,
 	props->max_mcast_qp_attach = MTHCA_QP_PER_MGM;
 	props->max_total_mcast_qp_attach = props->max_mcast_qp_attach *
 					   props->max_mcast_grp;
-	/*
-	 * If Sinai memory key optimization is being used, then only
-	 * the 8-bit key portion will change.  For other HCAs, the
-	 * unused index bits will also be used for FMR remapping.
-	 */
-	if (mdev->mthca_flags & MTHCA_FLAG_SINAI_OPT)
-		props->max_map_per_fmr = 255;
-	else
-		props->max_map_per_fmr =
-			(1 << (32 - long_log2(mdev->limits.num_mpts))) - 1;
 
 	err = 0;
  out:
@@ -793,24 +783,18 @@ static int mthca_resize_cq(struct ib_cq *ibcq, int entries, struct ib_udata *uda
 	if (entries < 1 || entries > dev->limits.max_cqes)
 		return -EINVAL;
 
-	mutex_lock(&cq->mutex);
-
 	entries = roundup_pow_of_two(entries + 1);
-	if (entries == ibcq->cqe + 1) {
-		ret = 0;
-		goto out;
-	}
+	if (entries == ibcq->cqe + 1)
+		return 0;
 
 	if (cq->is_kernel) {
 		ret = mthca_alloc_resize_buf(dev, cq, entries);
 		if (ret)
-			goto out;
+			return ret;
 		lkey = cq->resize_buf->buf.mr.ibmr.lkey;
 	} else {
-		if (ib_copy_from_udata(&ucmd, udata, sizeof ucmd)) {
-			ret = -EFAULT;
-			goto out;
-		}
+		if (ib_copy_from_udata(&ucmd, udata, sizeof ucmd))
+			return -EFAULT;
 		lkey = ucmd.lkey;
 	}
 
@@ -827,7 +811,7 @@ static int mthca_resize_cq(struct ib_cq *ibcq, int entries, struct ib_udata *uda
 			cq->resize_buf = NULL;
 			spin_unlock_irq(&cq->lock);
 		}
-		goto out;
+		return ret;
 	}
 
 	if (cq->is_kernel) {
@@ -854,10 +838,7 @@ static int mthca_resize_cq(struct ib_cq *ibcq, int entries, struct ib_udata *uda
 	} else
 		ibcq->cqe = entries - 1;
 
-out:
-	mutex_unlock(&cq->mutex);
-
-	return ret;
+	return 0;
 }
 
 static int mthca_destroy_cq(struct ib_cq *cq)

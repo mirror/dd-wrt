@@ -4,6 +4,7 @@
  * Copyright (C) 1998-2001 Hewlett-Packard Co
  *	David Mosberger-Tang <davidm@hpl.hp.com>
  */
+#include <linux/config.h>
 
 #ifdef CONFIG_PCI
 # include <linux/pci.h>

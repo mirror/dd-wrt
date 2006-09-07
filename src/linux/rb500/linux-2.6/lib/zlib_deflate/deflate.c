@@ -164,17 +164,34 @@ static const config configuration_table[10] = {
     memset((char *)s->head, 0, (unsigned)(s->hash_size-1)*sizeof(*s->head));
 
 /* ========================================================================= */
-int zlib_deflateInit2(
+int zlib_deflateInit_(
+	z_streamp strm,
+	int level,
+	const char *version,
+	int stream_size
+)
+{
+    return zlib_deflateInit2_(strm, level, Z_DEFLATED, MAX_WBITS,
+			      DEF_MEM_LEVEL,
+			      Z_DEFAULT_STRATEGY, version, stream_size);
+    /* To do: ignore strm->next_in if we use it as window */
+}
+
+/* ========================================================================= */
+int zlib_deflateInit2_(
 	z_streamp strm,
 	int  level,
 	int  method,
 	int  windowBits,
 	int  memLevel,
-	int  strategy
+	int  strategy,
+	const char *version,
+	int stream_size
 )
 {
     deflate_state *s;
     int noheader = 0;
+    static char* my_version = ZLIB_VERSION;
     deflate_workspace *mem;
 
     ush *overlay;
@@ -182,6 +199,10 @@ int zlib_deflateInit2(
      * output size for (length,distance) codes is <= 24 bits.
      */
 
+    if (version == NULL || version[0] != my_version[0] ||
+        stream_size != sizeof(z_stream)) {
+	return Z_VERSION_ERROR;
+    }
     if (strm == NULL) return Z_STREAM_ERROR;
 
     strm->msg = NULL;

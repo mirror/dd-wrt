@@ -8,6 +8,7 @@
  *	Free Software Foundation, version 2.
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>

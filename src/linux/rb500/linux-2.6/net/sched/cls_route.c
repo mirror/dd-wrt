@@ -10,6 +10,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
 #include <linux/bitops.h>

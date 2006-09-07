@@ -11,6 +11,7 @@
 #ifndef _ASM_INTERRUPT_H
 #define _ASM_INTERRUPT_H
 
+#include <linux/config.h>
 #include <asm/hazards.h>
 
 __asm__ (

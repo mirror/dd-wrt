@@ -10,6 +10,7 @@
  *
  */
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/proc_fs.h>
 #include <linux/jhash.h>
 #include <linux/bitops.h>
@@ -240,17 +241,25 @@ clusterip_hashfn(struct sk_buff *skb, struct clusterip_config *config)
 	struct iphdr *iph = skb->nh.iph;
 	unsigned long hashval;
 	u_int16_t sport, dport;
-	u_int16_t *ports;
+	struct tcphdr *th;
+	struct udphdr *uh;
+	struct icmphdr *ih;
 
 	switch (iph->protocol) {
 	case IPPROTO_TCP:
+		th = (void *)iph+iph->ihl*4;
+		sport = ntohs(th->source);
+		dport = ntohs(th->dest);
+		break;
 	case IPPROTO_UDP:
-	case IPPROTO_SCTP:
-	case IPPROTO_DCCP:
+		uh = (void *)iph+iph->ihl*4;
+		sport = ntohs(uh->source);
+		dport = ntohs(uh->dest);
+		break;
 	case IPPROTO_ICMP:
-		ports = (void *)iph+iph->ihl*4;
-		sport = ports[0];
-		dport = ports[1];
+		ih = (void *)iph+iph->ihl*4;
+		sport = ntohs(ih->un.echo.id);
+		dport = (ih->type<<8)|ih->code;
 		break;
 	default:
 		if (net_ratelimit()) {

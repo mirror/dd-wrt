@@ -7,6 +7,7 @@
  *  to motorola.c and sun3mmu.c
  */
 
+#include <linux/config.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
 #include <linux/mm.h>

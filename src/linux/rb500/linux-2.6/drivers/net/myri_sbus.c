@@ -1,12 +1,13 @@
-/* myri_sbus.c: MyriCOM MyriNET SBUS card driver.
+/* myri_sbus.h: MyriCOM MyriNET SBUS card driver.
  *
- * Copyright (C) 1996, 1999, 2006 David S. Miller (davem@davemloft.net)
+ * Copyright (C) 1996, 1999 David S. Miller (davem@redhat.com)
  */
 
 static char version[] =
-        "myri_sbus.c:v2.0 June 23, 2006 David S. Miller (davem@davemloft.net)\n";
+        "myri_sbus.c:v1.9 12/Sep/99 David S. Miller (davem@redhat.com)\n";
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -78,6 +79,10 @@ static char version[] =
 #define DHDR(x) printk x
 #else
 #define DHDR(x)
+#endif
+
+#ifdef MODULE
+static struct myri_eth *root_myri_dev;
 #endif
 
 static void myri_reset_off(void __iomem *lp, void __iomem *cregs)
@@ -891,9 +896,8 @@ static void dump_eeprom(struct myri_eth *mp)
 }
 #endif
 
-static int __init myri_ether_init(struct sbus_dev *sdev)
+static int __init myri_ether_init(struct sbus_dev *sdev, int num)
 {
-	static int num;
 	static unsigned version_printed;
 	struct net_device *dev;
 	struct myri_eth *mp;
@@ -908,9 +912,6 @@ static int __init myri_ether_init(struct sbus_dev *sdev)
 
 	if (version_printed++ == 0)
 		printk(version);
-
-	SET_MODULE_OWNER(dev);
-	SET_NETDEV_DEV(dev, &sdev->ofdev.dev);
 
 	mp = (struct myri_eth *) dev->priv;
 	spin_lock_init(&mp->irq_lock);
@@ -1069,7 +1070,7 @@ static int __init myri_ether_init(struct sbus_dev *sdev)
 	/* Register interrupt handler now. */
 	DET(("Requesting MYRIcom IRQ line.\n"));
 	if (request_irq(dev->irq, &myri_interrupt,
-			IRQF_SHARED, "MyriCOM Ethernet", (void *) dev)) {
+			SA_SHIRQ, "MyriCOM Ethernet", (void *) dev)) {
 		printk("MyriCOM: Cannot register interrupt handler.\n");
 		goto err;
 	}
@@ -1091,9 +1092,10 @@ static int __init myri_ether_init(struct sbus_dev *sdev)
 		goto err_free_irq;
 	}
 
-	dev_set_drvdata(&sdev->ofdev.dev, mp);
-
-	num++;
+#ifdef MODULE
+	mp->next_module = root_myri_dev;
+	root_myri_dev = mp;
+#endif
 
 	printk("%s: MyriCOM MyriNET Ethernet ", dev->name);
 
@@ -1112,68 +1114,61 @@ err:
 	return -ENODEV;
 }
 
-
-static int __devinit myri_sbus_probe(struct of_device *dev, const struct of_device_id *match)
+static int __init myri_sbus_match(struct sbus_dev *sdev)
 {
-	struct sbus_dev *sdev = to_sbus_device(&dev->dev);
+	char *name = sdev->prom_name;
 
-	return myri_ether_init(sdev);
-}
-
-static int __devexit myri_sbus_remove(struct of_device *dev)
-{
-	struct myri_eth *mp = dev_get_drvdata(&dev->dev);
-	struct net_device *net_dev = mp->dev;
-
-	unregister_netdevice(net_dev);
-
-	free_irq(net_dev->irq, net_dev);
-
-	if (mp->eeprom.cpuvers < CPUVERS_4_0) {
-		sbus_iounmap(mp->regs, mp->reg_size);
-	} else {
-		sbus_iounmap(mp->cregs, PAGE_SIZE);
-		sbus_iounmap(mp->lregs, (256 * 1024));
-		sbus_iounmap(mp->lanai, (512 * 1024));
-	}
-
-	free_netdev(net_dev);
-
-	dev_set_drvdata(&dev->dev, NULL);
+	if (!strcmp(name, "MYRICOM,mlanai") ||
+	    !strcmp(name, "myri"))
+		return 1;
 
 	return 0;
 }
 
-static struct of_device_id myri_sbus_match[] = {
-	{
-		.name = "MYRICOM,mlanai",
-	},
-	{
-		.name = "myri",
-	},
-	{},
-};
-
-MODULE_DEVICE_TABLE(of, myri_sbus_match);
-
-static struct of_platform_driver myri_sbus_driver = {
-	.name		= "myri",
-	.match_table	= myri_sbus_match,
-	.probe		= myri_sbus_probe,
-	.remove		= __devexit_p(myri_sbus_remove),
-};
-
-static int __init myri_sbus_init(void)
+static int __init myri_sbus_probe(void)
 {
-	return of_register_driver(&myri_sbus_driver, &sbus_bus_type);
+	struct sbus_bus *bus;
+	struct sbus_dev *sdev = NULL;
+	static int called;
+	int cards = 0, v;
+
+#ifdef MODULE
+	root_myri_dev = NULL;
+#endif
+
+	if (called)
+		return -ENODEV;
+	called++;
+
+	for_each_sbus(bus) {
+		for_each_sbusdev(sdev, bus) {
+			if (myri_sbus_match(sdev)) {
+				cards++;
+				DET(("Found myricom myrinet as %s\n", sdev->prom_name));
+				if ((v = myri_ether_init(sdev, (cards - 1))))
+					return v;
+			}
+		}
+	}
+	if (!cards)
+		return -ENODEV;
+	return 0;
 }
 
-static void __exit myri_sbus_exit(void)
+static void __exit myri_sbus_cleanup(void)
 {
-	of_unregister_driver(&myri_sbus_driver);
+#ifdef MODULE
+	while (root_myri_dev) {
+		struct myri_eth *next = root_myri_dev->next_module;
+
+		unregister_netdev(root_myri_dev->dev);
+		/* this will also free the co-allocated 'root_myri_dev' */
+		free_netdev(root_myri_dev->dev);
+		root_myri_dev = next;
+	}
+#endif /* MODULE */
 }
 
-module_init(myri_sbus_init);
-module_exit(myri_sbus_exit);
-
+module_init(myri_sbus_probe);
+module_exit(myri_sbus_cleanup);
 MODULE_LICENSE("GPL");

@@ -1,6 +1,7 @@
 #ifndef _I386_PGALLOC_H
 #define _I386_PGALLOC_H
 
+#include <linux/config.h>
 #include <asm/fixmap.h>
 #include <linux/threads.h>
 #include <linux/mm.h>		/* for struct page */

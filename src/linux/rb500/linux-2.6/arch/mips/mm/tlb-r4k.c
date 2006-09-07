@@ -8,6 +8,7 @@
  * Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 2002 MIPS Technologies, Inc.  All rights reserved.
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
@@ -412,6 +413,7 @@ out:
 	return ret;
 }
 
+extern void __init sanitize_tlb_entries(void);
 static void __init probe_tlb(unsigned long config)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;

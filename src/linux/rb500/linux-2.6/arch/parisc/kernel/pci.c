@@ -9,6 +9,7 @@
  * Copyright (C) 1999-2001 Hewlett-Packard Company
  * Copyright (C) 1999-2001 Grant Grundler
  */
+#include <linux/config.h>
 #include <linux/eisa.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -288,7 +289,7 @@ EXPORT_SYMBOL(pcibios_bus_to_resource);
  * than res->start.
  */
 void pcibios_align_resource(void *data, struct resource *res,
-				resource_size_t size, resource_size_t alignment)
+				unsigned long size, unsigned long alignment)
 {
 	unsigned long mask, align;
 

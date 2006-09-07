@@ -3,6 +3,7 @@
 
 #include "asm/arch/linkage.h"
 
+#include <linux/config.h>
 
 /* <linux/linkage.h> will pick sane defaults */
 #ifdef CONFIG_GPROF

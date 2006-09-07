@@ -13,15 +13,13 @@
  * Note: E7210 appears same as D82875P - zhenyu.z.wang at intel.com
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 #include <linux/slab.h>
 #include "edac_mc.h"
-
-#define I82875P_REVISION	" Ver: 2.0.1 " __DATE__
-#define EDAC_MOD_STR		"i82875p_edac"
 
 #define i82875p_printk(level, fmt, arg...) \
 	edac_printk(level, "i82875p", fmt, ##arg)
@@ -187,22 +185,18 @@ static int i82875p_registered = 1;
 static void i82875p_get_error_info(struct mem_ctl_info *mci,
 		struct i82875p_error_info *info)
 {
-	struct pci_dev *pdev;
-
-	pdev = to_pci_dev(mci->dev);
-
 	/*
 	 * This is a mess because there is no atomic way to read all the
 	 * registers at once and the registers can transition from CE being
 	 * overwritten by UE.
 	 */
-	pci_read_config_word(pdev, I82875P_ERRSTS, &info->errsts);
-	pci_read_config_dword(pdev, I82875P_EAP, &info->eap);
-	pci_read_config_byte(pdev, I82875P_DES, &info->des);
-	pci_read_config_byte(pdev, I82875P_DERRSYN, &info->derrsyn);
-	pci_read_config_word(pdev, I82875P_ERRSTS, &info->errsts2);
+	pci_read_config_word(mci->pdev, I82875P_ERRSTS, &info->errsts);
+	pci_read_config_dword(mci->pdev, I82875P_EAP, &info->eap);
+	pci_read_config_byte(mci->pdev, I82875P_DES, &info->des);
+	pci_read_config_byte(mci->pdev, I82875P_DERRSYN, &info->derrsyn);
+	pci_read_config_word(mci->pdev, I82875P_ERRSTS, &info->errsts2);
 
-	pci_write_bits16(pdev, I82875P_ERRSTS, 0x0081, 0x0081);
+	pci_write_bits16(mci->pdev, I82875P_ERRSTS, 0x0081, 0x0081);
 
 	/*
 	 * If the error is the same then we can for both reads then
@@ -214,9 +208,9 @@ static void i82875p_get_error_info(struct mem_ctl_info *mci,
 		return;
 
 	if ((info->errsts ^ info->errsts2) & 0x0081) {
-		pci_read_config_dword(pdev, I82875P_EAP, &info->eap);
-		pci_read_config_byte(pdev, I82875P_DES, &info->des);
-		pci_read_config_byte(pdev, I82875P_DERRSYN,
+		pci_read_config_dword(mci->pdev, I82875P_EAP, &info->eap);
+		pci_read_config_byte(mci->pdev, I82875P_DES, &info->des);
+		pci_read_config_byte(mci->pdev, I82875P_DERRSYN,
 				&info->derrsyn);
 	}
 }
@@ -265,156 +259,92 @@ static void i82875p_check(struct mem_ctl_info *mci)
 extern int pci_proc_attach_device(struct pci_dev *);
 #endif
 
-/* Return 0 on success or 1 on failure. */
-static int i82875p_setup_overfl_dev(struct pci_dev *pdev,
-		struct pci_dev **ovrfl_pdev, void __iomem **ovrfl_window)
+static int i82875p_probe1(struct pci_dev *pdev, int dev_idx)
 {
-	struct pci_dev *dev;
-	void __iomem *window;
+	int rc = -ENODEV;
+	int index;
+	struct mem_ctl_info *mci = NULL;
+	struct i82875p_pvt *pvt = NULL;
+	unsigned long last_cumul_size;
+	struct pci_dev *ovrfl_pdev;
+	void __iomem *ovrfl_window = NULL;
+	u32 drc;
+	u32 drc_chan;		/* Number of channels 0=1chan,1=2chan */
+	u32 nr_chans;
+	u32 drc_ddim;		/* DRAM Data Integrity Mode 0=none,2=edac */
+	struct i82875p_error_info discard;
 
-	*ovrfl_pdev = NULL;
-	*ovrfl_window = NULL;
-	dev = pci_get_device(PCI_VEND_DEV(INTEL, 82875_6), NULL);
+	debugf0("%s()\n", __func__);
+	ovrfl_pdev = pci_get_device(PCI_VEND_DEV(INTEL, 82875_6), NULL);
 
-	if (dev == NULL) {
-		/* Intel tells BIOS developers to hide device 6 which
+	if (!ovrfl_pdev) {
+		/*
+		 * Intel tells BIOS developers to hide device 6 which
 		 * configures the overflow device access containing
 		 * the DRBs - this is where we expose device 6.
 		 * http://www.x86-secret.com/articles/tweak/pat/patsecrets-2.htm
 		 */
 		pci_write_bits8(pdev, 0xf4, 0x2, 0x2);
-		dev = pci_scan_single_device(pdev->bus, PCI_DEVFN(6, 0));
+		ovrfl_pdev =
+			pci_scan_single_device(pdev->bus, PCI_DEVFN(6, 0));
 
-		if (dev == NULL)
-			return 1;
+		if (!ovrfl_pdev)
+			return -ENODEV;
 	}
-
-	*ovrfl_pdev = dev;
 
 #ifdef CONFIG_PROC_FS
-	if ((dev->procent == NULL) && pci_proc_attach_device(dev)) {
-		i82875p_printk(KERN_ERR, "%s(): Failed to attach overflow "
-			       "device\n", __func__);
-		return 1;
+	if (!ovrfl_pdev->procent && pci_proc_attach_device(ovrfl_pdev)) {
+		i82875p_printk(KERN_ERR,
+			"%s(): Failed to attach overflow device\n", __func__);
+		return -ENODEV;
 	}
-#endif  /* CONFIG_PROC_FS */
-	if (pci_enable_device(dev)) {
-		i82875p_printk(KERN_ERR, "%s(): Failed to enable overflow "
-			       "device\n", __func__);
-		return 1;
+#endif
+				/* CONFIG_PROC_FS */
+	if (pci_enable_device(ovrfl_pdev)) {
+		i82875p_printk(KERN_ERR,
+			"%s(): Failed to enable overflow device\n", __func__);
+		return -ENODEV;
 	}
 
-	if (pci_request_regions(dev, pci_name(dev))) {
+	if (pci_request_regions(ovrfl_pdev, pci_name(ovrfl_pdev))) {
 #ifdef CORRECT_BIOS
 		goto fail0;
 #endif
 	}
 
 	/* cache is irrelevant for PCI bus reads/writes */
-	window = ioremap_nocache(pci_resource_start(dev, 0),
-				 pci_resource_len(dev, 0));
+	ovrfl_window = ioremap_nocache(pci_resource_start(ovrfl_pdev, 0),
+				pci_resource_len(ovrfl_pdev, 0));
 
-	if (window == NULL) {
+	if (!ovrfl_window) {
 		i82875p_printk(KERN_ERR, "%s(): Failed to ioremap bar6\n",
-			       __func__);
+			__func__);
 		goto fail1;
 	}
 
-	*ovrfl_window = window;
-	return 0;
-
-fail1:
-	pci_release_regions(dev);
-
-#ifdef CORRECT_BIOS
-fail0:
-	pci_disable_device(dev);
-#endif
-	/* NOTE: the ovrfl proc entry and pci_dev are intentionally left */
-	return 1;
-}
-
-
-/* Return 1 if dual channel mode is active.  Else return 0. */
-static inline int dual_channel_active(u32 drc)
-{
-	return (drc >> 21) & 0x1;
-}
-
-
-static void i82875p_init_csrows(struct mem_ctl_info *mci,
-		struct pci_dev *pdev, void __iomem *ovrfl_window, u32 drc)
-{
-	struct csrow_info *csrow;
-	unsigned long last_cumul_size;
-	u8 value;
-	u32 drc_ddim;  /* DRAM Data Integrity Mode 0=none,2=edac */
-	u32 cumul_size;
-	int index;
+	/* need to find out the number of channels */
+	drc = readl(ovrfl_window + I82875P_DRC);
+	drc_chan = ((drc >> 21) & 0x1);
+	nr_chans = drc_chan + 1;
 
 	drc_ddim = (drc >> 18) & 0x1;
-	last_cumul_size = 0;
-
-	/* The dram row boundary (DRB) reg values are boundary address
-	 * for each DRAM row with a granularity of 32 or 64MB (single/dual
-	 * channel operation).  DRB regs are cumulative; therefore DRB7 will
-	 * contain the total memory contained in all eight rows.
-	 */
-
-	for (index = 0; index < mci->nr_csrows; index++) {
-		csrow = &mci->csrows[index];
-
-		value = readb(ovrfl_window + I82875P_DRB + index);
-		cumul_size = value << (I82875P_DRB_SHIFT - PAGE_SHIFT);
-		debugf3("%s(): (%d) cumul_size 0x%x\n", __func__, index,
-			cumul_size);
-		if (cumul_size == last_cumul_size)
-			continue;	/* not populated */
-
-		csrow->first_page = last_cumul_size;
-		csrow->last_page = cumul_size - 1;
-		csrow->nr_pages = cumul_size - last_cumul_size;
-		last_cumul_size = cumul_size;
-		csrow->grain = 1 << 12;	/* I82875P_EAP has 4KiB reolution */
-		csrow->mtype = MEM_DDR;
-		csrow->dtype = DEV_UNKNOWN;
-		csrow->edac_mode = drc_ddim ? EDAC_SECDED : EDAC_NONE;
-	}
-}
-
-static int i82875p_probe1(struct pci_dev *pdev, int dev_idx)
-{
-	int rc = -ENODEV;
-	struct mem_ctl_info *mci;
-	struct i82875p_pvt *pvt;
-	struct pci_dev *ovrfl_pdev;
-	void __iomem *ovrfl_window;
-	u32 drc;
-	u32 nr_chans;
-	struct i82875p_error_info discard;
-
-	debugf0("%s()\n", __func__);
-	ovrfl_pdev = pci_get_device(PCI_VEND_DEV(INTEL, 82875_6), NULL);
-
-	if (i82875p_setup_overfl_dev(pdev, &ovrfl_pdev, &ovrfl_window))
-		return -ENODEV;
-	drc = readl(ovrfl_window + I82875P_DRC);
-	nr_chans = dual_channel_active(drc) + 1;
 	mci = edac_mc_alloc(sizeof(*pvt), I82875P_NR_CSROWS(nr_chans),
 				nr_chans);
 
 	if (!mci) {
 		rc = -ENOMEM;
-		goto fail0;
+		goto fail2;
 	}
 
 	debugf3("%s(): init mci\n", __func__);
-	mci->dev = &pdev->dev;
+	mci->pdev = pdev;
 	mci->mtype_cap = MEM_FLAG_DDR;
 	mci->edac_ctl_cap = EDAC_FLAG_NONE | EDAC_FLAG_SECDED;
 	mci->edac_cap = EDAC_FLAG_UNKNOWN;
+	/* adjust FLAGS */
+
 	mci->mod_name = EDAC_MOD_STR;
-	mci->mod_ver = I82875P_REVISION;
+	mci->mod_ver = "$Revision: 1.5.2.11 $";
 	mci->ctl_name = i82875p_devs[dev_idx].ctl_name;
 	mci->edac_check = i82875p_check;
 	mci->ctl_page_to_phys = NULL;
@@ -422,28 +352,59 @@ static int i82875p_probe1(struct pci_dev *pdev, int dev_idx)
 	pvt = (struct i82875p_pvt *) mci->pvt_info;
 	pvt->ovrfl_pdev = ovrfl_pdev;
 	pvt->ovrfl_window = ovrfl_window;
-	i82875p_init_csrows(mci, pdev, ovrfl_window, drc);
+
+	/*
+	 * The dram row boundary (DRB) reg values are boundary address
+	 * for each DRAM row with a granularity of 32 or 64MB (single/dual
+	 * channel operation).  DRB regs are cumulative; therefore DRB7 will
+	 * contain the total memory contained in all eight rows.
+	 */
+	for (last_cumul_size = index = 0; index < mci->nr_csrows; index++) {
+		u8 value;
+		u32 cumul_size;
+		struct csrow_info *csrow = &mci->csrows[index];
+
+		value = readb(ovrfl_window + I82875P_DRB + index);
+		cumul_size = value << (I82875P_DRB_SHIFT - PAGE_SHIFT);
+		debugf3("%s(): (%d) cumul_size 0x%x\n", __func__, index,
+			cumul_size);
+
+		if (cumul_size == last_cumul_size)
+			continue;	/* not populated */
+
+		csrow->first_page = last_cumul_size;
+		csrow->last_page = cumul_size - 1;
+		csrow->nr_pages = cumul_size - last_cumul_size;
+		last_cumul_size = cumul_size;
+		csrow->grain = 1 << 12;  /* I82875P_EAP has 4KiB reolution */
+		csrow->mtype = MEM_DDR;
+		csrow->dtype = DEV_UNKNOWN;
+		csrow->edac_mode = drc_ddim ? EDAC_SECDED : EDAC_NONE;
+	}
+
 	i82875p_get_error_info(mci, &discard);  /* clear counters */
 
-	/* Here we assume that we will never see multiple instances of this
-	 * type of memory controller.  The ID is therefore hardcoded to 0.
-	 */
-	if (edac_mc_add_mc(mci,0)) {
+	if (edac_mc_add_mc(mci)) {
 		debugf3("%s(): failed edac_mc_add_mc()\n", __func__);
-		goto fail1;
+		goto fail3;
 	}
 
 	/* get this far and it's successful */
 	debugf3("%s(): success\n", __func__);
 	return 0;
 
-fail1:
+fail3:
 	edac_mc_free(mci);
 
-fail0:
+fail2:
 	iounmap(ovrfl_window);
+
+fail1:
 	pci_release_regions(ovrfl_pdev);
 
+#ifdef CORRECT_BIOS
+fail0:
+#endif
 	pci_disable_device(ovrfl_pdev);
 	/* NOTE: the ovrfl proc entry and pci_dev are intentionally left */
 	return rc;
@@ -476,7 +437,7 @@ static void __devexit i82875p_remove_one(struct pci_dev *pdev)
 
 	debugf0("%s()\n", __func__);
 
-	if ((mci = edac_mc_del_mc(&pdev->dev)) == NULL)
+	if ((mci = edac_mc_del_mc(pdev)) == NULL)
 		return;
 
 	pvt = (struct i82875p_pvt *) mci->pvt_info;

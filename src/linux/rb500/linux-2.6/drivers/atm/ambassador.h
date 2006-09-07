@@ -23,6 +23,7 @@
 #ifndef AMBASSADOR_H
 #define AMBASSADOR_H
 
+#include <linux/config.h>
 
 #ifdef CONFIG_ATM_AMBASSADOR_DEBUG
 #define DEBUG_AMBASSADOR

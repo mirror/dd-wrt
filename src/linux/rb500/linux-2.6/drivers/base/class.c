@@ -10,6 +10,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/device.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -90,14 +91,14 @@ void class_remove_file(struct class * cls, const struct class_attribute * attr)
 		sysfs_remove_file(&cls->subsys.kset.kobj, &attr->attr);
 }
 
-static struct class *class_get(struct class *cls)
+struct class * class_get(struct class * cls)
 {
 	if (cls)
 		return container_of(subsys_get(&cls->subsys), struct class, subsys);
 	return NULL;
 }
 
-static void class_put(struct class * cls)
+void class_put(struct class * cls)
 {
 	if (cls)
 		subsys_put(&cls->subsys);
@@ -141,7 +142,6 @@ int class_register(struct class * cls)
 	pr_debug("device class '%s': registering\n", cls->name);
 
 	INIT_LIST_HEAD(&cls->children);
-	INIT_LIST_HEAD(&cls->devices);
 	INIT_LIST_HEAD(&cls->interfaces);
 	init_MUTEX(&cls->sem);
 	error = kobject_set_name(&cls->subsys.kset.kobj, "%s", cls->name);
@@ -504,21 +504,22 @@ void class_device_initialize(struct class_device *class_dev)
 	INIT_LIST_HEAD(&class_dev->node);
 }
 
-char *make_class_name(const char *name, struct kobject *kobj)
+static char *make_class_name(struct class_device *class_dev)
 {
-	char *class_name;
+	char *name;
 	int size;
 
-	size = strlen(name) + strlen(kobject_name(kobj)) + 2;
+	size = strlen(class_dev->class->name) +
+		strlen(kobject_name(&class_dev->kobj)) + 2;
 
-	class_name = kmalloc(size, GFP_KERNEL);
-	if (!class_name)
+	name = kmalloc(size, GFP_KERNEL);
+	if (!name)
 		return ERR_PTR(-ENOMEM);
 
-	strcpy(class_name, name);
-	strcat(class_name, ":");
-	strcat(class_name, kobject_name(kobj));
-	return class_name;
+	strcpy(name, class_dev->class->name);
+	strcat(name, ":");
+	strcat(name, kobject_name(&class_dev->kobj));
+	return name;
 }
 
 int class_device_add(struct class_device *class_dev)
@@ -534,22 +535,18 @@ int class_device_add(struct class_device *class_dev)
 		return -EINVAL;
 
 	if (!strlen(class_dev->class_id))
-		goto out1;
+		goto register_done;
 
 	parent_class = class_get(class_dev->class);
 	if (!parent_class)
-		goto out1;
-
+		goto register_done;
 	parent_class_dev = class_device_get(class_dev->parent);
 
 	pr_debug("CLASS: registering class device: ID = '%s'\n",
 		 class_dev->class_id);
 
 	/* first, register with generic layer. */
-	error = kobject_set_name(&class_dev->kobj, "%s", class_dev->class_id);
-	if (error)
-		goto out2;
-
+	kobject_set_name(&class_dev->kobj, "%s", class_dev->class_id);
 	if (parent_class_dev)
 		class_dev->kobj.parent = &parent_class_dev->kobj;
 	else
@@ -557,58 +554,41 @@ int class_device_add(struct class_device *class_dev)
 
 	error = kobject_add(&class_dev->kobj);
 	if (error)
-		goto out2;
+		goto register_done;
 
 	/* add the needed attributes to this device */
-	sysfs_create_link(&class_dev->kobj, &parent_class->subsys.kset.kobj, "subsystem");
 	class_dev->uevent_attr.attr.name = "uevent";
 	class_dev->uevent_attr.attr.mode = S_IWUSR;
 	class_dev->uevent_attr.attr.owner = parent_class->owner;
 	class_dev->uevent_attr.store = store_uevent;
-	error = class_device_create_file(class_dev, &class_dev->uevent_attr);
-	if (error)
-		goto out3;
+	class_device_create_file(class_dev, &class_dev->uevent_attr);
 
 	if (MAJOR(class_dev->devt)) {
 		struct class_device_attribute *attr;
 		attr = kzalloc(sizeof(*attr), GFP_KERNEL);
 		if (!attr) {
 			error = -ENOMEM;
-			goto out4;
+			kobject_del(&class_dev->kobj);
+			goto register_done;
 		}
 		attr->attr.name = "dev";
 		attr->attr.mode = S_IRUGO;
 		attr->attr.owner = parent_class->owner;
 		attr->show = show_dev;
-		error = class_device_create_file(class_dev, attr);
-		if (error) {
-			kfree(attr);
-			goto out4;
-		}
-
+		class_device_create_file(class_dev, attr);
 		class_dev->devt_attr = attr;
 	}
 
-	error = class_device_add_attrs(class_dev);
-	if (error)
-		goto out5;
-
+	class_device_add_attrs(class_dev);
 	if (class_dev->dev) {
-		class_name = make_class_name(class_dev->class->name,
-					     &class_dev->kobj);
-		error = sysfs_create_link(&class_dev->kobj,
-					  &class_dev->dev->kobj, "device");
-		if (error)
-			goto out6;
-		error = sysfs_create_link(&class_dev->dev->kobj, &class_dev->kobj,
-					  class_name);
-		if (error)
-			goto out7;
+		class_name = make_class_name(class_dev);
+		sysfs_create_link(&class_dev->kobj,
+				  &class_dev->dev->kobj, "device");
+		sysfs_create_link(&class_dev->dev->kobj, &class_dev->kobj,
+				  class_name);
 	}
 
-	error = class_device_add_groups(class_dev);
-	if (error)
-		goto out8;
+	class_device_add_groups(class_dev);
 
 	kobject_uevent(&class_dev->kobj, KOBJ_ADD);
 
@@ -621,28 +601,11 @@ int class_device_add(struct class_device *class_dev)
 	}
 	up(&parent_class->sem);
 
-	goto out1;
-
- out8:
-	if (class_dev->dev)
-		sysfs_remove_link(&class_dev->kobj, class_name);
- out7:
-	if (class_dev->dev)
-		sysfs_remove_link(&class_dev->kobj, "device");
- out6:
-	class_device_remove_attrs(class_dev);
- out5:
-	if (class_dev->devt_attr)
-		class_device_remove_file(class_dev, class_dev->devt_attr);
- out4:
-	class_device_remove_file(class_dev, &class_dev->uevent_attr);
- out3:
-	kobject_del(&class_dev->kobj);
- out2:
-	if(parent_class_dev)
+ register_done:
+	if (error) {
+		class_put(parent_class);
 		class_device_put(parent_class_dev);
-	class_put(parent_class);
- out1:
+	}
 	class_device_put(class_dev);
 	kfree(class_name);
 	return error;
@@ -732,12 +695,10 @@ void class_device_del(struct class_device *class_dev)
 	}
 
 	if (class_dev->dev) {
-		class_name = make_class_name(class_dev->class->name,
-					     &class_dev->kobj);
+		class_name = make_class_name(class_dev);
 		sysfs_remove_link(&class_dev->kobj, "device");
 		sysfs_remove_link(&class_dev->dev->kobj, class_name);
 	}
-	sysfs_remove_link(&class_dev->kobj, "subsystem");
 	class_device_remove_file(class_dev, &class_dev->uevent_attr);
 	if (class_dev->devt_attr)
 		class_device_remove_file(class_dev, class_dev->devt_attr);
@@ -799,16 +760,14 @@ int class_device_rename(struct class_device *class_dev, char *new_name)
 		 new_name);
 
 	if (class_dev->dev)
-		old_class_name = make_class_name(class_dev->class->name,
-						 &class_dev->kobj);
+		old_class_name = make_class_name(class_dev);
 
 	strlcpy(class_dev->class_id, new_name, KOBJ_NAME_LEN);
 
 	error = kobject_rename(&class_dev->kobj, new_name);
 
 	if (class_dev->dev) {
-		new_class_name = make_class_name(class_dev->class->name,
-						 &class_dev->kobj);
+		new_class_name = make_class_name(class_dev);
 		sysfs_create_link(&class_dev->dev->kobj, &class_dev->kobj,
 				  new_class_name);
 		sysfs_remove_link(&class_dev->dev->kobj, old_class_name);
@@ -899,6 +858,8 @@ EXPORT_SYMBOL_GPL(class_create_file);
 EXPORT_SYMBOL_GPL(class_remove_file);
 EXPORT_SYMBOL_GPL(class_register);
 EXPORT_SYMBOL_GPL(class_unregister);
+EXPORT_SYMBOL_GPL(class_get);
+EXPORT_SYMBOL_GPL(class_put);
 EXPORT_SYMBOL_GPL(class_create);
 EXPORT_SYMBOL_GPL(class_destroy);
 

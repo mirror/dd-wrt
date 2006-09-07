@@ -13,6 +13,7 @@
  * to ABI64 calling convention.  64-bit syscalls are also processed
  * here for now.
  */
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <asm/asm.h>
 #include <asm/asmmacro.h>
@@ -509,5 +510,4 @@ sys_call_table:
 	PTR	sys_unshare
 	PTR	sys_splice
 	PTR	sys32_sync_file_range		/* 4305 */
-	PTR	sys_tee
 	.size	sys_call_table,.-sys_call_table

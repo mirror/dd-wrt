@@ -6,6 +6,7 @@
  * Copyright (C) 1995, 1996 Olaf Kirch <okir@monad.swb.de>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/linkage.h>
@@ -493,10 +494,10 @@ static int nfsd_fill_super(struct super_block * sb, void * data, int silent)
 	return simple_fill_super(sb, 0x6e667364, nfsd_files);
 }
 
-static int nfsd_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *nfsd_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_single(fs_type, flags, data, nfsd_fill_super, mnt);
+	return get_sb_single(fs_type, flags, data, nfsd_fill_super);
 }
 
 static struct file_system_type nfsd_fs_type = {

@@ -12,6 +12,7 @@
  *
  */
 
+#include <linux/config.h>
 
 /*
  * Encoded IRQs are not considered worth to be supported.

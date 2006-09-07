@@ -10,6 +10,7 @@
  *		v 1.0 03/22/99
  */
 
+#include <linux/config.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
 #include <linux/types.h>

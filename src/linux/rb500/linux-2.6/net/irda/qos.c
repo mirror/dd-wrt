@@ -30,6 +30,7 @@
  *     
  ********************************************************************/
 
+#include <linux/config.h>
 #include <asm/byteorder.h>
 
 #include <net/irda/irda.h>

@@ -14,6 +14,7 @@
 
 #include <asm-generic/pgtable-nopud.h>
 
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <asm/types.h>
 #include <asm/spitfire.h>
@@ -755,8 +756,6 @@ extern unsigned long *sparc64_valid_addr_bitmap;
 /* Needs to be defined here and not in linux/mm.h, as it is arch dependent */
 #define kern_addr_valid(addr)	\
 	(test_bit(__pa((unsigned long)(addr))>>22, sparc64_valid_addr_bitmap))
-
-extern int page_in_phys_avail(unsigned long paddr);
 
 extern int io_remap_pfn_range(struct vm_area_struct *vma, unsigned long from,
 			       unsigned long pfn,

@@ -13,6 +13,7 @@
 #ifndef ASM_PCI_H
 #define	ASM_PCI_H
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <asm/scatterlist.h>
 #include <asm-generic/pci-dma-compat.h>

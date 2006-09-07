@@ -10,6 +10,7 @@
  * 15-Mar-2000:   Added NF_REPEAT --RR.
  * 08-May-2003:	  Internal logging interface added by Jozsef Kadlecsik.
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/netfilter.h>
 #include <net/protocol.h>

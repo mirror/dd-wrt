@@ -19,6 +19,7 @@
 
 #include <asm/processor.h>
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/elfcore.h>
 #include <linux/compat.h>
 

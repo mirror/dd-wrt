@@ -1,6 +1,7 @@
 #ifndef _ASM_CRIS_ARCH_PAGE_H
 #define _ASM_CRIS_ARCH_PAGE_H
 
+#include <linux/config.h>
 
 #ifdef __KERNEL__
 

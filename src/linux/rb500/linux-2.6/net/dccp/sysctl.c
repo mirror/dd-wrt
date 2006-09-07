@@ -9,6 +9,7 @@
  *	as published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/sysctl.h>
 

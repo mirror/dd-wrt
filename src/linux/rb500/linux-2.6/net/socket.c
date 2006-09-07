@@ -58,6 +58,7 @@
  *	Based upon Swansea University Computer Society NET3.039
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/smp_lock.h>
 #include <linux/socket.h>
@@ -334,11 +335,10 @@ static struct super_operations sockfs_ops = {
 	.statfs =	simple_statfs,
 };
 
-static int sockfs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *sockfs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_pseudo(fs_type, "socket:", &sockfs_ops, SOCKFS_MAGIC,
-			     mnt);
+	return get_sb_pseudo(fs_type, "socket:", &sockfs_ops, SOCKFS_MAGIC);
 }
 
 static struct vfsmount *sock_mnt __read_mostly;

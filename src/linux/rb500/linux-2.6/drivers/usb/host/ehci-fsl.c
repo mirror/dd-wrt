@@ -121,7 +121,7 @@ int usb_hcd_fsl_probe(const struct hc_driver *driver,
 	temp = in_le32(hcd->regs + 0x1a8);
 	out_le32(hcd->regs + 0x1a8, temp | 0x3);
 
-	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
+	retval = usb_add_hcd(hcd, irq, SA_SHIRQ);
 	if (retval != 0)
 		goto err4;
 	return retval;
@@ -324,12 +324,43 @@ static int ehci_fsl_drv_remove(struct platform_device *pdev)
 	return 0;
 }
 
-MODULE_ALIAS("fsl-ehci");
-
-static struct platform_driver ehci_fsl_driver = {
+static struct platform_driver ehci_fsl_dr_driver = {
 	.probe = ehci_fsl_drv_probe,
 	.remove = ehci_fsl_drv_remove,
 	.driver = {
-		   .name = "fsl-ehci",
+		   .name = "fsl-usb2-dr",
 		   },
 };
+
+static struct platform_driver ehci_fsl_mph_driver = {
+	.probe = ehci_fsl_drv_probe,
+	.remove = ehci_fsl_drv_remove,
+	.driver = {
+		   .name = "fsl-usb2-mph",
+		   },
+};
+
+static int __init ehci_fsl_init(void)
+{
+	int retval;
+
+	pr_debug("%s: block sizes: qh %Zd qtd %Zd itd %Zd sitd %Zd\n",
+		 hcd_name,
+		 sizeof(struct ehci_qh), sizeof(struct ehci_qtd),
+		 sizeof(struct ehci_itd), sizeof(struct ehci_sitd));
+
+	retval = platform_driver_register(&ehci_fsl_dr_driver);
+	if (retval)
+		return retval;
+
+	return platform_driver_register(&ehci_fsl_mph_driver);
+}
+
+static void __exit ehci_fsl_cleanup(void)
+{
+	platform_driver_unregister(&ehci_fsl_mph_driver);
+	platform_driver_unregister(&ehci_fsl_dr_driver);
+}
+
+module_init(ehci_fsl_init);
+module_exit(ehci_fsl_cleanup);

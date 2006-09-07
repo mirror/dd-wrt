@@ -6,7 +6,8 @@
 menu "Firmware Drivers"
 
 config EDD
-	tristate "BIOS Enhanced Disk Drive calls determine boot disk"
+	tristate "BIOS Enhanced Disk Drive calls determine boot disk (EXPERIMENTAL)"
+	depends on EXPERIMENTAL
 	depends on !IA64
 	help
 	  Say Y or M here if you want to enable BIOS Enhanced Disk Drive

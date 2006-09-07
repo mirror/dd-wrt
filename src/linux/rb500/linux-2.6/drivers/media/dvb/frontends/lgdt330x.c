@@ -29,7 +29,6 @@
  *   DViCO FusionHDTV 5 Lite
  *   DViCO FusionHDTV 5 USB Gold
  *   Air2PC/AirStar 2 ATSC 3rd generation (HD5000)
- *   pcHDTV HD5500
  *
  * TODO:
  * signal strength always returns 0.
@@ -60,6 +59,7 @@ if (debug) printk(KERN_DEBUG "lgdt330x: " args); \
 struct lgdt330x_state
 {
 	struct i2c_adapter* i2c;
+	struct dvb_frontend_ops ops;
 
 	/* Configuration settings */
 	const struct lgdt330x_config* config;
@@ -216,7 +216,7 @@ static int lgdt330x_init(struct dvb_frontend* fe)
 		AGC_DELAY0, 0x07,
 		AGC_DELAY2, 0xfe,
 		/* Change the value of IAGCBW[15:8]
-		   of inner AGC loop filter bandwidth */
+		   of inner AGC loop filter bandwith */
 		AGC_LOOP_BANDWIDTH0, 0x08,
 		AGC_LOOP_BANDWIDTH1, 0x9a
 	};
@@ -399,10 +399,8 @@ static int lgdt330x_set_parameters(struct dvb_frontend* fe,
 	}
 
 	/* Tune to the specified frequency */
-	if (fe->ops.tuner_ops.set_params) {
-		fe->ops.tuner_ops.set_params(fe, param);
-		if (fe->ops.i2c_gate_ctrl) fe->ops.i2c_gate_ctrl(fe, 0);
-	}
+	if (state->config->pll_set)
+		state->config->pll_set(fe, param);
 
 	/* Keep track of the new frequency */
 	/* FIXME this is the wrong way to do this...           */
@@ -674,7 +672,6 @@ static int lgdt3303_read_snr(struct dvb_frontend* fe, u16* snr)
 
 	if (state->current_modulation == VSB_8) {
 
-		i2c_read_demod_bytes(state, 0x6e, buf, 5);
 		/* Phase Tracker Mean-Square Error Register for VSB */
 		noise = ((buf[0] & 7) << 16) | (buf[3] << 8) | buf[4];
 	} else {
@@ -724,19 +721,16 @@ struct dvb_frontend* lgdt330x_attach(const struct lgdt330x_config* config,
 	/* Setup the state */
 	state->config = config;
 	state->i2c = i2c;
-
-	/* Create dvb_frontend */
 	switch (config->demod_chip) {
 	case LGDT3302:
-		memcpy(&state->frontend.ops, &lgdt3302_ops, sizeof(struct dvb_frontend_ops));
+		memcpy(&state->ops, &lgdt3302_ops, sizeof(struct dvb_frontend_ops));
 		break;
 	case LGDT3303:
-		memcpy(&state->frontend.ops, &lgdt3303_ops, sizeof(struct dvb_frontend_ops));
+		memcpy(&state->ops, &lgdt3303_ops, sizeof(struct dvb_frontend_ops));
 		break;
 	default:
 		goto error;
 	}
-	state->frontend.demodulator_priv = state;
 
 	/* Verify communication with demod chip */
 	if (i2c_read_demod_bytes(state, 2, buf, 1))
@@ -745,6 +739,9 @@ struct dvb_frontend* lgdt330x_attach(const struct lgdt330x_config* config,
 	state->current_frequency = -1;
 	state->current_modulation = -1;
 
+	/* Create dvb_frontend */
+	state->frontend.ops = &state->ops;
+	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 
 error:

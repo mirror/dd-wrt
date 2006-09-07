@@ -169,7 +169,7 @@ struct ip_sf_list
 struct ip_mc_list
 {
 	struct in_device	*interface;
-	__be32			multiaddr;
+	unsigned long		multiaddr;
 	struct ip_sf_list	*sources;
 	struct ip_sf_list	*tomb;
 	unsigned int		sfmode;

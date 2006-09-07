@@ -21,6 +21,7 @@
 
 #include <stdarg.h>
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/kernel.h>
 #include <linux/types.h>

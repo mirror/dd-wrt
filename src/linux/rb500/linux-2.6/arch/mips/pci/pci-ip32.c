@@ -6,6 +6,7 @@
  * Copyright (C) 2000, 2001 Keith M Wesolowski
  * Copyright (C) 2004 by Ralf Baechle (ralf@linux-mips.org)
  */
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>

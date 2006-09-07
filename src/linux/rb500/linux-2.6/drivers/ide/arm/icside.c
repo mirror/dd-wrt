@@ -6,6 +6,7 @@
  * Please note that this platform does not support 32-bit IDE IO.
  */
 
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/module.h>
 #include <linux/ioport.h>

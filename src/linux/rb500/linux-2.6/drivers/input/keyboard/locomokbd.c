@@ -25,6 +25,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/init.h>

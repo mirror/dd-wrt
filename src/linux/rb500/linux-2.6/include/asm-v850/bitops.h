@@ -14,6 +14,7 @@
 #define __V850_BITOPS_H__
 
 
+#include <linux/config.h>
 #include <linux/compiler.h>	/* unlikely  */
 #include <asm/byteorder.h>	/* swab32 */
 #include <asm/system.h>		/* interrupt enable/disable */

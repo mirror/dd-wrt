@@ -36,6 +36,7 @@
 
 struct ves1x93_state {
 	struct i2c_adapter* i2c;
+	struct dvb_frontend_ops ops;
 	/* configuration settings */
 	const struct ves1x93_config* config;
 	struct dvb_frontend frontend;
@@ -277,6 +278,12 @@ static int ves1x93_init (struct dvb_frontend* fe)
 		}
 	}
 
+	if (state->config->pll_init) {
+		ves1x93_writereg(state, 0x00, 0x11);
+		state->config->pll_init(fe);
+		ves1x93_writereg(state, 0x00, 0x01);
+	}
+
 	return 0;
 }
 
@@ -388,10 +395,9 @@ static int ves1x93_set_frontend(struct dvb_frontend* fe, struct dvb_frontend_par
 {
 	struct ves1x93_state* state = fe->demodulator_priv;
 
-	if (fe->ops.tuner_ops.set_params) {
-		fe->ops.tuner_ops.set_params(fe, p);
-		if (fe->ops.i2c_gate_ctrl) fe->ops.i2c_gate_ctrl(fe, 0);
-	}
+	ves1x93_writereg(state, 0x00, 0x11);
+	state->config->pll_set(fe, p);
+	ves1x93_writereg(state, 0x00, 0x01);
 	ves1x93_set_inversion (state, p->inversion);
 	ves1x93_set_fec (state, p->u.qpsk.fec_inner);
 	ves1x93_set_symbolrate (state, p->u.qpsk.symbol_rate);
@@ -436,17 +442,6 @@ static void ves1x93_release(struct dvb_frontend* fe)
 	kfree(state);
 }
 
-static int ves1x93_i2c_gate_ctrl(struct dvb_frontend* fe, int enable)
-{
-	struct ves1x93_state* state = fe->demodulator_priv;
-
-	if (enable) {
-		return ves1x93_writereg(state, 0x00, 0x11);
-	} else {
-		return ves1x93_writereg(state, 0x00, 0x01);
-	}
-}
-
 static struct dvb_frontend_ops ves1x93_ops;
 
 struct dvb_frontend* ves1x93_attach(const struct ves1x93_config* config,
@@ -462,6 +457,7 @@ struct dvb_frontend* ves1x93_attach(const struct ves1x93_config* config,
 	/* setup the state */
 	state->config = config;
 	state->i2c = i2c;
+	memcpy(&state->ops, &ves1x93_ops, sizeof(struct dvb_frontend_ops));
 	state->inversion = INVERSION_OFF;
 
 	/* check if the demod is there + identify it */
@@ -496,7 +492,7 @@ struct dvb_frontend* ves1x93_attach(const struct ves1x93_config* config,
 	}
 
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &ves1x93_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 
@@ -527,7 +523,6 @@ static struct dvb_frontend_ops ves1x93_ops = {
 
 	.init = ves1x93_init,
 	.sleep = ves1x93_sleep,
-	.i2c_gate_ctrl = ves1x93_i2c_gate_ctrl,
 
 	.set_frontend = ves1x93_set_frontend,
 	.get_frontend = ves1x93_get_frontend,

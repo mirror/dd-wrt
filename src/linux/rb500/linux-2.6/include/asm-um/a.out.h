@@ -1,6 +1,7 @@
 #ifndef __UM_A_OUT_H
 #define __UM_A_OUT_H
 
+#include "linux/config.h"
 #include "asm/arch/a.out.h"
 #include "choose-mode.h"
 

@@ -130,7 +130,7 @@ static int drm_irq_install(drm_device_t * dev)
 
 	/* Install handler */
 	if (drm_core_check_feature(dev, DRIVER_IRQ_SHARED))
-		sh_flags = IRQF_SHARED;
+		sh_flags = SA_SHIRQ;
 
 	ret = request_irq(dev->irq, dev->driver->irq_handler,
 			  sh_flags, dev->devname, dev);

@@ -31,6 +31,7 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <asm/system.h>
@@ -56,7 +57,8 @@ static int ipmi_init_msghandler(void);
 static int initialized = 0;
 
 #ifdef CONFIG_PROC_FS
-static struct proc_dir_entry *proc_ipmi_root = NULL;
+struct proc_dir_entry *proc_ipmi_root = NULL;
+EXPORT_SYMBOL(proc_ipmi_root);
 #endif /* CONFIG_PROC_FS */
 
 #define MAX_EVENTS_IN_QUEUE	25
@@ -934,8 +936,11 @@ int ipmi_set_gets_events(ipmi_user_t user, int val)
 
 	if (val) {
 		/* Deliver any queued events. */
-		list_for_each_entry_safe(msg, msg2, &intf->waiting_events, link)
-			list_move_tail(&msg->link, &msgs);
+		list_for_each_entry_safe(msg, msg2, &intf->waiting_events,
+					 link) {
+			list_del(&msg->link);
+			list_add_tail(&msg->link, &msgs);
+		}
 		intf->waiting_events_count = 0;
 	}
 
@@ -3672,7 +3677,7 @@ static void send_panic_events(char *str)
 }
 #endif /* CONFIG_IPMI_PANIC_EVENT */
 
-static int has_panicked = 0;
+static int has_paniced = 0;
 
 static int panic_event(struct notifier_block *this,
 		       unsigned long         event,
@@ -3681,9 +3686,9 @@ static int panic_event(struct notifier_block *this,
 	int        i;
 	ipmi_smi_t intf;
 
-	if (has_panicked)
+	if (has_paniced)
 		return NOTIFY_DONE;
-	has_panicked = 1;
+	has_paniced = 1;
 
 	/* For every registered interface, set it to run to completion. */
 	for (i = 0; i < MAX_IPMI_INTERFACES; i++) {
@@ -3737,8 +3742,11 @@ static int ipmi_init_msghandler(void)
 	proc_ipmi_root->owner = THIS_MODULE;
 #endif /* CONFIG_PROC_FS */
 
-	setup_timer(&ipmi_timer, ipmi_timeout, 0);
-	mod_timer(&ipmi_timer, jiffies + IPMI_TIMEOUT_JIFFIES);
+	init_timer(&ipmi_timer);
+	ipmi_timer.data = 0;
+	ipmi_timer.function = ipmi_timeout;
+	ipmi_timer.expires = jiffies + IPMI_TIMEOUT_JIFFIES;
+	add_timer(&ipmi_timer);
 
 	atomic_notifier_chain_register(&panic_notifier_list, &panic_block);
 

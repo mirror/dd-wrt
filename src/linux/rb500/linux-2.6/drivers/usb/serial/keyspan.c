@@ -95,6 +95,7 @@
 */
 
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/jiffies.h>
 #include <linux/errno.h>
@@ -480,7 +481,7 @@ static void	usa2x_outdat_callback(struct urb *urb, struct pt_regs *regs)
 	dbg ("%s - urb %d", __FUNCTION__, urb == p_priv->out_urbs[1]); 
 
 	if (port->open_count)
-		usb_serial_port_softint(port);
+		schedule_work(&port->work);
 }
 
 static void	usa26_inack_callback(struct urb *urb, struct pt_regs *regs)

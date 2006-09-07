@@ -30,6 +30,7 @@
 
 
 struct dvb_dummy_fe_state {
+	struct dvb_frontend_ops ops;
 	struct dvb_frontend frontend;
 };
 
@@ -76,11 +77,6 @@ static int dvb_dummy_fe_get_frontend(struct dvb_frontend* fe, struct dvb_fronten
 
 static int dvb_dummy_fe_set_frontend(struct dvb_frontend* fe, struct dvb_frontend_parameters *p)
 {
-	if (fe->ops->tuner_ops->set_params) {
-		fe->ops->tuner_ops->set_params(fe, p);
-		if (fe->ops->i2c_gate_ctrl) fe->ops->i2c_gate_ctrl(fe, 0);
-	}
-
 	return 0;
 }
 
@@ -120,8 +116,11 @@ struct dvb_frontend* dvb_dummy_fe_ofdm_attach(void)
 	state = kmalloc(sizeof(struct dvb_dummy_fe_state), GFP_KERNEL);
 	if (state == NULL) goto error;
 
+	/* setup the state */
+	memcpy(&state->ops, &dvb_dummy_fe_ofdm_ops, sizeof(struct dvb_frontend_ops));
+
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &dvb_dummy_fe_ofdm_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 
@@ -140,8 +139,11 @@ struct dvb_frontend* dvb_dummy_fe_qpsk_attach()
 	state = kmalloc(sizeof(struct dvb_dummy_fe_state), GFP_KERNEL);
 	if (state == NULL) goto error;
 
+	/* setup the state */
+	memcpy(&state->ops, &dvb_dummy_fe_qpsk_ops, sizeof(struct dvb_frontend_ops));
+
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &dvb_dummy_fe_qpsk_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 
@@ -160,8 +162,11 @@ struct dvb_frontend* dvb_dummy_fe_qam_attach()
 	state = kmalloc(sizeof(struct dvb_dummy_fe_state), GFP_KERNEL);
 	if (state == NULL) goto error;
 
+	/* setup the state */
+	memcpy(&state->ops, &dvb_dummy_fe_qam_ops, sizeof(struct dvb_frontend_ops));
+
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &dvb_dummy_fe_qam_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 

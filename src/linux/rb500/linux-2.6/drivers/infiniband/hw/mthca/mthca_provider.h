@@ -214,7 +214,6 @@ struct mthca_cq {
 	int			arm_sn;
 
 	wait_queue_head_t	wait;
-	struct mutex		mutex;
 };
 
 struct mthca_srq {
@@ -238,7 +237,6 @@ struct mthca_srq {
 	struct mthca_mr		mr;
 
 	wait_queue_head_t	wait;
-	struct mutex		mutex;
 };
 
 struct mthca_wq {
@@ -280,7 +278,6 @@ struct mthca_qp {
 	union mthca_buf	       queue;
 
 	wait_queue_head_t      wait;
-	struct mutex	       mutex;
 };
 
 struct mthca_sqp {

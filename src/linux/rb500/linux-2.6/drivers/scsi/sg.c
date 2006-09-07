@@ -28,6 +28,7 @@ static int sg_version_num = 30533;	/* 2 digits for each component */
  *        (otherwise the macros compile to empty statements).
  *
  */
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/fs.h>
@@ -1401,7 +1402,6 @@ sg_add(struct class_device *cl_dev, struct class_interface *cl_intf)
 	Sg_device *sdp = NULL;
 	struct cdev * cdev = NULL;
 	int error, k;
-	unsigned long iflags;
 
 	disk = alloc_disk(1);
 	if (!disk) {
@@ -1429,7 +1429,7 @@ sg_add(struct class_device *cl_dev, struct class_interface *cl_intf)
 
 	error = cdev_add(cdev, MKDEV(SCSI_GENERIC_MAJOR, k), 1);
 	if (error)
-		goto cdev_add_err;
+		goto out;
 
 	sdp->cdev = cdev;
 	if (sg_sysfs_valid) {
@@ -1455,13 +1455,6 @@ sg_add(struct class_device *cl_dev, struct class_interface *cl_intf)
 		    "Attached scsi generic sg%d type %d\n", k,scsidp->type);
 
 	return 0;
-
-cdev_add_err:
-	write_lock_irqsave(&sg_dev_arr_lock, iflags);
-	kfree(sg_dev_arr[k]);
-	sg_dev_arr[k] = NULL;
-	sg_nr_dev--;
-	write_unlock_irqrestore(&sg_dev_arr_lock, iflags);
 
 out:
 	put_disk(disk);
@@ -2642,7 +2635,8 @@ static int
 sg_proc_init(void)
 {
 	int k, mask;
-	int num_leaves = ARRAY_SIZE(sg_proc_leaf_arr);
+	int num_leaves =
+	    sizeof (sg_proc_leaf_arr) / sizeof (sg_proc_leaf_arr[0]);
 	struct proc_dir_entry *pdep;
 	struct sg_proc_leaf * leaf;
 
@@ -2667,7 +2661,8 @@ static void
 sg_proc_cleanup(void)
 {
 	int k;
-	int num_leaves = ARRAY_SIZE(sg_proc_leaf_arr);
+	int num_leaves =
+	    sizeof (sg_proc_leaf_arr) / sizeof (sg_proc_leaf_arr[0]);
 
 	if (!sg_proc_sgp)
 		return;

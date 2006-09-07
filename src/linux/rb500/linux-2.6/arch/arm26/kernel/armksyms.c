@@ -8,6 +8,7 @@
  * published by the Free Software Foundation.
  */
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/user.h>
 #include <linux/string.h>

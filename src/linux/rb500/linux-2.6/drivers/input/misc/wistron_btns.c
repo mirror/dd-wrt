@@ -285,15 +285,6 @@ static struct key_entry keymap_fujitsu_n3510[] = {
 	{ KE_END, 0 }
 };
 
-static struct key_entry keymap_wistron_ms2111[] = {
-	{ KE_KEY,  0x11, KEY_PROG1 },
-	{ KE_KEY,  0x12, KEY_PROG2 },
-	{ KE_KEY,  0x13, KEY_PROG3 },
-	{ KE_KEY,  0x31, KEY_MAIL },
-	{ KE_KEY,  0x36, KEY_WWW },
-	{ KE_END,  0 }
-};
-
 static struct key_entry keymap_wistron_ms2141[] = {
 	{ KE_KEY,  0x11, KEY_PROG1 },
 	{ KE_KEY,  0x12, KEY_PROG2 },
@@ -335,7 +326,6 @@ static struct key_entry keymap_aopen_1559as[] = {
 	{ KE_WIFI, 0x30, 0 },
 	{ KE_KEY,  0x31, KEY_MAIL },
 	{ KE_KEY,  0x36, KEY_WWW },
-	{ KE_END,  0 },
 };
 
 /*
@@ -397,15 +387,6 @@ static struct dmi_system_id dmi_ids[] = {
 			DMI_MATCH(DMI_BOARD_NAME, "E2U"),
 		},
 		.driver_data = keymap_aopen_1559as
-	},
-	{
-		.callback = dmi_matched,
-		.ident = "Medion MD 9783",
-		.matches = {
-			DMI_MATCH(DMI_SYS_VENDOR, "MEDIONNB"),
-			DMI_MATCH(DMI_PRODUCT_NAME, "MD 9783"),
-		},
-		.driver_data = keymap_wistron_ms2111
 	},
 	{ NULL, }
 };

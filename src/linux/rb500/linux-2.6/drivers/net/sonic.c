@@ -231,7 +231,8 @@ static int sonic_send_packet(struct sk_buff *skb, struct net_device *dev)
 
 	length = skb->len;
 	if (length < ETH_ZLEN) {
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 		length = ETH_ZLEN;
 	}

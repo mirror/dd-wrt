@@ -7,6 +7,7 @@
 
 .text
 
+#include <linux/config.h>
 #include <linux/linkage.h>
 
 	.global	startup

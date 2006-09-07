@@ -8,6 +8,7 @@
  * option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/pci.h>

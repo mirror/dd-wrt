@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/interrupt.h>
 
 

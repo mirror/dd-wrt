@@ -35,9 +35,7 @@
 #include <asm/ccwdev.h>
 #include <asm/ccwgroup.h>
 
-#include <linux/skbuff.h>
-#include <linux/netdevice.h>
-
+#include "ctctty.h"
 #include "fsm.h"
 #include "cu3088.h"
 
@@ -52,7 +50,9 @@
 
 #define CTC_PROTO_S390          0
 #define CTC_PROTO_LINUX         1
+#define CTC_PROTO_LINUX_TTY     2
 #define CTC_PROTO_OS390         3
+#define CTC_PROTO_MAX           3
 
 #define CTC_BUFSIZE_LIMIT       65535
 #define CTC_BUFSIZE_DEFAULT     32768
@@ -257,13 +257,15 @@ static __inline__ void
 ctc_clear_busy(struct net_device * dev)
 {
 	clear_bit(0, &(((struct ctc_priv *) dev->priv)->tbusy));
-	netif_wake_queue(dev);
+	if (((struct ctc_priv *)dev->priv)->protocol != CTC_PROTO_LINUX_TTY)
+		netif_wake_queue(dev);
 }
 
 static __inline__ int
 ctc_test_and_set_busy(struct net_device * dev)
 {
-	netif_stop_queue(dev);
+	if (((struct ctc_priv *)dev->priv)->protocol != CTC_PROTO_LINUX_TTY)
+		netif_stop_queue(dev);
 	return test_and_set_bit(0, &((struct ctc_priv *) dev->priv)->tbusy);
 }
 

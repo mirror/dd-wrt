@@ -767,6 +767,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 	if ((entry = snd_info_create_card_entry(card, "dsp", card->proc_root)) != NULL) {
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->mode = S_IFDIR | S_IRUGO | S_IXUGO;
+		entry->c.text.read_size = 512;
       
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -783,6 +784,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 512;
 		entry->c.text.read = cs46xx_dsp_proc_symbol_table_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -795,6 +797,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 512;
 		entry->c.text.read = cs46xx_dsp_proc_modules_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -807,6 +810,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 512;
 		entry->c.text.read = cs46xx_dsp_proc_parameter_dump_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -819,6 +823,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 512;
 		entry->c.text.read = cs46xx_dsp_proc_sample_dump_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -831,6 +836,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 512;
 		entry->c.text.read = cs46xx_dsp_proc_task_tree_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);
@@ -843,6 +849,7 @@ int cs46xx_dsp_proc_init (struct snd_card *card, struct snd_cs46xx *chip)
 		entry->content = SNDRV_INFO_CONTENT_TEXT;
 		entry->private_data = chip;
 		entry->mode = S_IFREG | S_IRUGO | S_IWUSR;
+		entry->c.text.read_size = 1024;
 		entry->c.text.read = cs46xx_dsp_proc_scb_read;
 		if (snd_info_register(entry) < 0) {
 			snd_info_free_entry(entry);

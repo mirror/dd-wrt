@@ -14,6 +14,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <asm/registers.h>
 #include <asm/processor.h>
 

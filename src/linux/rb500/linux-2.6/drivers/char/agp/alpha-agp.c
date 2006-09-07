@@ -46,6 +46,12 @@ struct vm_operations_struct alpha_core_agp_vm_ops = {
 };
 
 
+static int alpha_core_agp_nop(void)
+{
+	/* just return success */
+	return 0;
+}
+
 static int alpha_core_agp_fetch_size(void)
 {
 	return alpha_core_agp_sizes[0].size;
@@ -114,11 +120,6 @@ static int alpha_core_agp_remove_memory(struct agp_memory *mem, off_t pg_start,
 	return status;
 }
 
-static int alpha_core_agp_create_free_gatt_table(struct agp_bridge_data *a)
-{
-	return 0;
-}
-
 struct agp_bridge_driver alpha_core_agp_driver = {
 	.owner			= THIS_MODULE,
 	.aperture_sizes		= alpha_core_agp_sizes,
@@ -134,8 +135,8 @@ struct agp_bridge_driver alpha_core_agp_driver = {
 	.tlb_flush		= alpha_core_agp_tlbflush,
 	.mask_memory		= agp_generic_mask_memory,
 	.cache_flush		= global_cache_flush,
-	.create_gatt_table	= alpha_core_agp_create_free_gatt_table,
-	.free_gatt_table	= alpha_core_agp_create_free_gatt_table,
+	.create_gatt_table	= alpha_core_agp_nop,
+	.free_gatt_table	= alpha_core_agp_nop,
 	.insert_memory		= alpha_core_agp_insert_memory,
 	.remove_memory		= alpha_core_agp_remove_memory,
 	.alloc_by_type		= agp_generic_alloc_by_type,

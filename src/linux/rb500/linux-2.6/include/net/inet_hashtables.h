@@ -14,6 +14,7 @@
 #ifndef _INET_HASHTABLES_H
 #define _INET_HASHTABLES_H
 
+#include <linux/config.h>
 
 #include <linux/interrupt.h>
 #include <linux/ipv6.h>

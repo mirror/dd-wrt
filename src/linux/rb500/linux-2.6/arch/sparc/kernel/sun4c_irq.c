@@ -9,6 +9,7 @@
  *  Copyright (C) 1996 Dave Redman (djhr@tadpole.co.uk)
  */
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/linkage.h>
 #include <linux/kernel_stat.h>
@@ -179,7 +180,7 @@ static void __init sun4c_init_timers(irqreturn_t (*counter_fn)(int, void *, stru
 
 	irq = request_irq(TIMER_IRQ,
 			  counter_fn,
-			  (IRQF_DISABLED | SA_STATIC_ALLOC),
+			  (SA_INTERRUPT | SA_STATIC_ALLOC),
 			  "timer", NULL);
 	if (irq) {
 		prom_printf("time_init: unable to attach IRQ%d\n",TIMER_IRQ);
@@ -196,6 +197,8 @@ static void __init sun4c_init_timers(irqreturn_t (*counter_fn)(int, void *, stru
 #ifdef CONFIG_SMP
 static void sun4c_nop(void) {}
 #endif
+
+extern char *sun4m_irq_itoa(unsigned int irq);
 
 void __init sun4c_init_IRQ(void)
 {
@@ -235,6 +238,7 @@ void __init sun4c_init_IRQ(void)
 	BTFIXUPSET_CALL(clear_clock_irq, sun4c_clear_clock_irq, BTFIXUPCALL_NORM);
 	BTFIXUPSET_CALL(clear_profile_irq, sun4c_clear_profile_irq, BTFIXUPCALL_NOP);
 	BTFIXUPSET_CALL(load_profile_irq, sun4c_load_profile_irq, BTFIXUPCALL_NOP);
+	BTFIXUPSET_CALL(__irq_itoa, sun4m_irq_itoa, BTFIXUPCALL_NORM);
 	sparc_init_timers = sun4c_init_timers;
 #ifdef CONFIG_SMP
 	BTFIXUPSET_CALL(set_cpu_int, sun4c_nop, BTFIXUPCALL_NOP);

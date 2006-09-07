@@ -42,7 +42,6 @@
 #include <asm/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/videodev.h>
-#include <media/v4l2-common.h>
 
 #include "saa7146.h"
 #include "saa7146reg.h"
@@ -1983,7 +1982,7 @@ static int __devinit configure_saa7146(struct pci_dev *pdev, int num)
 	memcpy(&saa->video_dev, &saa_template, sizeof(saa_template));
 	saawrite(0, SAA7146_IER);	/* turn off all interrupts */
 
-	retval = request_irq(saa->irq, saa7146_irq, IRQF_SHARED | IRQF_DISABLED,
+	retval = request_irq(saa->irq, saa7146_irq, SA_SHIRQ | SA_INTERRUPT,
 		"stradis", saa);
 	if (retval == -EINVAL)
 		dev_err(&pdev->dev, "%d: Bad irq number or handler\n", num);
@@ -2181,7 +2180,6 @@ static struct pci_device_id stradis_pci_tbl[] = {
 	{ 0 }
 };
 
-MODULE_DEVICE_TABLE(pci, stradis_pci_tbl);
 
 static struct pci_driver stradis_driver = {
 	.name = "stradis",
@@ -2190,7 +2188,7 @@ static struct pci_driver stradis_driver = {
 	.remove = __devexit_p(stradis_remove)
 };
 
-static int __init stradis_init(void)
+int __init stradis_init(void)
 {
 	int retval;
 
@@ -2203,7 +2201,7 @@ static int __init stradis_init(void)
 	return retval;
 }
 
-static void __exit stradis_exit(void)
+void __exit stradis_exit(void)
 {
 	pci_unregister_driver(&stradis_driver);
 	printk(KERN_INFO "stradis: module cleanup complete\n");

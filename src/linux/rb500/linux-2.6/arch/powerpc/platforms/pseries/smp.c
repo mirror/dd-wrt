@@ -14,6 +14,7 @@
 
 #undef DEBUG
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/sched.h>
@@ -416,11 +417,26 @@ static struct smp_ops_t pSeries_xics_smp_ops = {
 #endif
 
 /* This is called very early */
-static void __init smp_init_pseries(void)
+void __init smp_init_pSeries(void)
 {
 	int i;
 
 	DBG(" -> smp_init_pSeries()\n");
+
+	switch (ppc64_interrupt_controller) {
+#ifdef CONFIG_MPIC
+	case IC_OPEN_PIC:
+		smp_ops = &pSeries_mpic_smp_ops;
+		break;
+#endif
+#ifdef CONFIG_XICS
+	case IC_PPC_XIC:
+		smp_ops = &pSeries_xics_smp_ops;
+		break;
+#endif
+	default:
+		panic("Invalid interrupt controller");
+	}
 
 #ifdef CONFIG_HOTPLUG_CPU
 	smp_ops->cpu_disable = pSeries_cpu_disable;
@@ -456,18 +472,3 @@ static void __init smp_init_pseries(void)
 	DBG(" <- smp_init_pSeries()\n");
 }
 
-#ifdef CONFIG_MPIC
-void __init smp_init_pseries_mpic(void)
-{
-	smp_ops = &pSeries_mpic_smp_ops;
-
-	smp_init_pseries();
-}
-#endif
-
-void __init smp_init_pseries_xics(void)
-{
-	smp_ops = &pSeries_xics_smp_ops;
-
-	smp_init_pseries();
-}

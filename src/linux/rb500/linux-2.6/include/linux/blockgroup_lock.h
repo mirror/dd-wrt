@@ -6,6 +6,7 @@
  * Simple hashed spinlocking.
  */
 
+#include <linux/config.h>
 #include <linux/spinlock.h>
 #include <linux/cache.h>
 

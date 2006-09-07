@@ -6,13 +6,14 @@
  * Copyright (C) 2002 Paul Mundt
  */
 
+#include <linux/config.h>
 
 /*
  *	switch_to() should switch tasks to task nr n, first
  */
 
 #define switch_to(prev, next, last) do {				\
- struct task_struct *__last;						\
+ task_t *__last;							\
  register unsigned long *__ts1 __asm__ ("r1") = &prev->thread.sp;	\
  register unsigned long *__ts2 __asm__ ("r2") = &prev->thread.pc;	\
  register unsigned long *__ts4 __asm__ ("r4") = (unsigned long *)prev;	\

@@ -3,6 +3,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 
 /*
  * This is used to ensure the compiler did actually allocate the register we

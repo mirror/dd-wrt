@@ -9,6 +9,7 @@
  *          that does not have the IEEE fpu (all processors before G5).
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/mm.h>

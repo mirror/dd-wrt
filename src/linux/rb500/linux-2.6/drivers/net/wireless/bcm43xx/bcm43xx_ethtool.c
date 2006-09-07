@@ -32,7 +32,7 @@
 #include <linux/netdevice.h>
 #include <linux/pci.h>
 #include <linux/string.h>
-#include <linux/utsrelease.h>
+#include <linux/version.h>
 
 
 static void bcm43xx_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)

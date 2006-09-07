@@ -10,6 +10,7 @@
  *                         2002/08/07 Erich Focht <efocht@ess.nec.de>
  */
 
+#include <linux/config.h>
 #include <linux/cpu.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>

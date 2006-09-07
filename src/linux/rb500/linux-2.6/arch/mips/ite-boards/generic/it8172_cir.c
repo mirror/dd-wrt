@@ -28,6 +28,7 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 
 #ifdef CONFIG_IT8172_CIR
 

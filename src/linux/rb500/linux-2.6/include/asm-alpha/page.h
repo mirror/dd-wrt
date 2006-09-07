@@ -1,6 +1,7 @@
 #ifndef _ALPHA_PAGE_H
 #define _ALPHA_PAGE_H
 
+#include <linux/config.h>
 #include <asm/pal.h>
 
 /* PAGE_SHIFT determines the page size */

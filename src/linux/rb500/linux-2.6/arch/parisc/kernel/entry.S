@@ -22,6 +22,7 @@
  *    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <asm/asm-offsets.h>
 
 /* we have the following possibilities to act on an interruption:
@@ -1637,7 +1638,7 @@ dbit_trap_20w:
 	load32		PA(pa_dbit_lock),t0
 
 dbit_spin_20w:
-	LDCW		0(t0),t1
+	ldcw            0(t0),t1
 	cmpib,=         0,t1,dbit_spin_20w
 	nop
 
@@ -1673,7 +1674,7 @@ dbit_trap_11:
 	load32		PA(pa_dbit_lock),t0
 
 dbit_spin_11:
-	LDCW		0(t0),t1
+	ldcw            0(t0),t1
 	cmpib,=         0,t1,dbit_spin_11
 	nop
 
@@ -1713,7 +1714,7 @@ dbit_trap_20:
 	load32		PA(pa_dbit_lock),t0
 
 dbit_spin_20:
-	LDCW		0(t0),t1
+	ldcw            0(t0),t1
 	cmpib,=         0,t1,dbit_spin_20
 	nop
 

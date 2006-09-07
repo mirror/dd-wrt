@@ -14,6 +14,7 @@
 #ifndef _LINUX_SKBUFF_H
 #define _LINUX_SKBUFF_H
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/compiler.h>
 #include <linux/time.h>
@@ -28,7 +29,6 @@
 #include <linux/net.h>
 #include <linux/textsearch.h>
 #include <net/checksum.h>
-#include <linux/dmaengine.h>
 
 #define HAVE_ALLOC_SKB		/* For the drivers to know */
 #define HAVE_ALIGNABLE_SKB	/* Ditto 8)		   */
@@ -134,10 +134,9 @@ struct skb_frag_struct {
 struct skb_shared_info {
 	atomic_t	dataref;
 	unsigned short	nr_frags;
-	unsigned short	gso_size;
-	/* Warning: this field is not always filled in (UFO)! */
-	unsigned short	gso_segs;
-	unsigned short  gso_type;
+	unsigned short	tso_size;
+	unsigned short	tso_segs;
+	unsigned short  ufo_size;
 	unsigned int    ip6_frag_id;
 	struct sk_buff	*frag_list;
 	skb_frag_t	frags[MAX_SKB_FRAGS];
@@ -167,19 +166,6 @@ enum {
 	SKB_FCLONE_UNAVAILABLE,
 	SKB_FCLONE_ORIG,
 	SKB_FCLONE_CLONE,
-};
-
-enum {
-	SKB_GSO_TCPV4 = 1 << 0,
-	SKB_GSO_UDP = 1 << 1,
-
-	/* This indicates the skb is from an untrusted source. */
-	SKB_GSO_DODGY = 1 << 2,
-
-	/* This indicates the tcp segment has CWR set. */
-	SKB_GSO_TCP_ECN = 1 << 3,
-
-	SKB_GSO_TCPV6 = 1 << 4,
 };
 
 /** 
@@ -223,9 +209,6 @@ enum {
  *	@nf_bridge: Saved data about a bridged frame - see br_netfilter.c
  *	@tc_index: Traffic control index
  *	@tc_verd: traffic control verdict
- *	@dma_cookie: a cookie to one of several possible DMA operations
- *		done by skb DMA functions
- *	@secmark: security marking
  */
 
 struct sk_buff {
@@ -306,12 +289,6 @@ struct sk_buff {
 	__u16			tc_verd;	/* traffic control verdict */
 #endif
 #endif
-#ifdef CONFIG_NET_DMA
-	dma_cookie_t		dma_cookie;
-#endif
-#ifdef CONFIG_NETWORK_SECMARK
-	__u32			secmark;
-#endif
 
 
 	/* These elements must be at the end, see alloc_skb() for details.  */
@@ -365,7 +342,7 @@ extern struct sk_buff *skb_realloc_headroom(struct sk_buff *skb,
 extern struct sk_buff *skb_copy_expand(const struct sk_buff *skb,
 				       int newheadroom, int newtailroom,
 				       gfp_t priority);
-extern int	       skb_pad(struct sk_buff *skb, int pad);
+extern struct sk_buff *		skb_pad(struct sk_buff *skb, int pad);
 #define dev_kfree_skb(a)	kfree_skb(a)
 extern void	      skb_over_panic(struct sk_buff *skb, int len,
 				     void *here);
@@ -608,12 +585,9 @@ static inline __u32 skb_queue_len(const struct sk_buff_head *list_)
 	return list_->qlen;
 }
 
-extern struct lock_class_key skb_queue_lock_key;
-
 static inline void skb_queue_head_init(struct sk_buff_head *list)
 {
 	spin_lock_init(&list->lock);
-	lockdep_set_class(&list->lock, &skb_queue_lock_key);
 	list->prev = list->next = (struct sk_buff *)list;
 	list->qlen = 0;
 }
@@ -1145,15 +1119,16 @@ static inline int skb_cow(struct sk_buff *skb, unsigned int headroom)
  *
  *	Pads up a buffer to ensure the trailing bytes exist and are
  *	blanked. If the buffer already contains sufficient data it
- *	is untouched. Otherwise it is extended. Returns zero on
- *	success. The skb is freed on error.
+ *	is untouched. Returns the buffer, which may be a replacement
+ *	for the original, or NULL for out of memory - in which case
+ *	the original buffer is still freed.
  */
  
-static inline int skb_padto(struct sk_buff *skb, unsigned int len)
+static inline struct sk_buff *skb_padto(struct sk_buff *skb, unsigned int len)
 {
 	unsigned int size = skb->len;
 	if (likely(size >= len))
-		return 0;
+		return skb;
 	return skb_pad(skb, len-size);
 }
 
@@ -1190,34 +1165,18 @@ static inline int skb_can_coalesce(struct sk_buff *skb, int i,
 	return 0;
 }
 
-static inline int __skb_linearize(struct sk_buff *skb)
-{
-	return __pskb_pull_tail(skb, skb->data_len) ? 0 : -ENOMEM;
-}
-
 /**
  *	skb_linearize - convert paged skb to linear one
  *	@skb: buffer to linarize
+ *	@gfp: allocation mode
  *
  *	If there is no free memory -ENOMEM is returned, otherwise zero
  *	is returned and the old skb data released.
  */
-static inline int skb_linearize(struct sk_buff *skb)
+extern int __skb_linearize(struct sk_buff *skb, gfp_t gfp);
+static inline int skb_linearize(struct sk_buff *skb, gfp_t gfp)
 {
-	return skb_is_nonlinear(skb) ? __skb_linearize(skb) : 0;
-}
-
-/**
- *	skb_linearize_cow - make sure skb is linear and writable
- *	@skb: buffer to process
- *
- *	If there is no free memory -ENOMEM is returned, otherwise zero
- *	is returned and the old skb data released.
- */
-static inline int skb_linearize_cow(struct sk_buff *skb)
-{
-	return skb_is_nonlinear(skb) || skb_cloned(skb) ?
-	       __skb_linearize(skb) : 0;
+	return __skb_linearize(skb, gfp);
 }
 
 /**
@@ -1313,7 +1272,7 @@ extern void	       skb_copy_and_csum_dev(const struct sk_buff *skb, u8 *to);
 extern void	       skb_split(struct sk_buff *skb,
 				 struct sk_buff *skb1, const u32 len);
 
-extern struct sk_buff *skb_segment(struct sk_buff *skb, int features);
+extern void	       skb_release_data(struct sk_buff *skb);
 
 static inline void *skb_header_pointer(const struct sk_buff *skb, int offset,
 				       int len, void *buffer)
@@ -1440,24 +1399,6 @@ static inline void nf_reset(struct sk_buff *skb)
 #else /* CONFIG_NETFILTER */
 static inline void nf_reset(struct sk_buff *skb) {}
 #endif /* CONFIG_NETFILTER */
-
-#ifdef CONFIG_NETWORK_SECMARK
-static inline void skb_copy_secmark(struct sk_buff *to, const struct sk_buff *from)
-{
-	to->secmark = from->secmark;
-}
-
-static inline void skb_init_secmark(struct sk_buff *skb)
-{
-	skb->secmark = 0;
-}
-#else
-static inline void skb_copy_secmark(struct sk_buff *to, const struct sk_buff *from)
-{ }
-
-static inline void skb_init_secmark(struct sk_buff *skb)
-{ }
-#endif
 
 #endif	/* __KERNEL__ */
 #endif	/* _LINUX_SKBUFF_H */

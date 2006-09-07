@@ -82,7 +82,7 @@ acpi_ex_add_table(struct acpi_table_header *table,
 	struct acpi_table_desc table_info;
 	union acpi_operand_object *obj_desc;
 
-	ACPI_FUNCTION_TRACE(ex_add_table);
+	ACPI_FUNCTION_TRACE("ex_add_table");
 
 	/* Create an object to be the table handle */
 
@@ -100,7 +100,7 @@ acpi_ex_add_table(struct acpi_table_header *table,
 
 	ACPI_MEMSET(&table_info, 0, sizeof(struct acpi_table_desc));
 
-	table_info.type = ACPI_TABLE_ID_SSDT;
+	table_info.type = ACPI_TABLE_SSDT;
 	table_info.pointer = table;
 	table_info.length = (acpi_size) table->length;
 	table_info.allocation = ACPI_MEM_ALLOCATED;
@@ -110,7 +110,6 @@ acpi_ex_add_table(struct acpi_table_header *table,
 
 	if (ACPI_FAILURE(status)) {
 		if (status == AE_ALREADY_EXISTS) {
-
 			/* Table already exists, just return the handle */
 
 			return_ACPI_STATUS(AE_OK);
@@ -122,7 +121,6 @@ acpi_ex_add_table(struct acpi_table_header *table,
 
 	status = acpi_ns_load_table(table_info.installed_desc, parent_node);
 	if (ACPI_FAILURE(status)) {
-
 		/* Uninstall table on error */
 
 		(void)acpi_tb_uninstall_table(table_info.installed_desc);
@@ -162,7 +160,7 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 	struct acpi_namespace_node *parameter_node = NULL;
 	union acpi_operand_object *ddb_handle;
 
-	ACPI_FUNCTION_TRACE(ex_load_table_op);
+	ACPI_FUNCTION_TRACE("ex_load_table_op");
 
 #if 0
 	/*
@@ -171,7 +169,6 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 	 */
 	status = acpi_tb_match_signature(operand[0]->string.pointer, NULL);
 	if (status == AE_OK) {
-
 		/* Signature matched -- don't allow override */
 
 		return_ACPI_STATUS(AE_ALREADY_EXISTS);
@@ -214,8 +211,9 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 		 * location within the namespace where the table will be loaded.
 		 */
 		status =
-		    acpi_ns_get_node(start_node, operand[3]->string.pointer,
-				     ACPI_NS_SEARCH_PARENT, &parent_node);
+		    acpi_ns_get_node_by_path(operand[3]->string.pointer,
+					     start_node, ACPI_NS_SEARCH_PARENT,
+					     &parent_node);
 		if (ACPI_FAILURE(status)) {
 			return_ACPI_STATUS(status);
 		}
@@ -236,8 +234,9 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 		/* Find the node referenced by the parameter_path_string */
 
 		status =
-		    acpi_ns_get_node(start_node, operand[4]->string.pointer,
-				     ACPI_NS_SEARCH_PARENT, &parameter_node);
+		    acpi_ns_get_node_by_path(operand[4]->string.pointer,
+					     start_node, ACPI_NS_SEARCH_PARENT,
+					     &parameter_node);
 		if (ACPI_FAILURE(status)) {
 			return_ACPI_STATUS(status);
 		}
@@ -253,7 +252,6 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 	/* Parameter Data (optional) */
 
 	if (parameter_node) {
-
 		/* Store the parameter data into the optional parameter object */
 
 		status = acpi_ex_store(operand[5],
@@ -265,10 +263,6 @@ acpi_ex_load_table_op(struct acpi_walk_state *walk_state,
 			return_ACPI_STATUS(status);
 		}
 	}
-
-	ACPI_INFO((AE_INFO,
-		   "Dynamic OEM Table Load - [%4.4s] OemId [%6.6s] OemTableId [%8.8s]",
-		   table->signature, table->oem_id, table->oem_table_id));
 
 	*return_desc = ddb_handle;
 	return_ACPI_STATUS(status);
@@ -300,10 +294,9 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 	struct acpi_table_header *table_ptr = NULL;
 	acpi_physical_address address;
 	struct acpi_table_header table_header;
-	acpi_integer temp;
 	u32 i;
 
-	ACPI_FUNCTION_TRACE(ex_load_op);
+	ACPI_FUNCTION_TRACE("ex_load_op");
 
 	/* Object can be either an op_region or a Field */
 
@@ -329,7 +322,7 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 
 		address = obj_desc->region.address;
 
-		/* Get part of the table header to get the table length */
+		/* Get the table length from the table header */
 
 		table_header.length = 0;
 		for (i = 0; i < 8; i++) {
@@ -337,14 +330,11 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 			    acpi_ev_address_space_dispatch(obj_desc, ACPI_READ,
 							   (acpi_physical_address)
 							   (i + address), 8,
-							   &temp);
+							   ((u8 *) &
+							    table_header) + i);
 			if (ACPI_FAILURE(status)) {
 				return_ACPI_STATUS(status);
 			}
-
-			/* Get the one valid byte of the returned 64-bit value */
-
-			ACPI_CAST_PTR(u8, &table_header)[i] = (u8) temp;
 		}
 
 		/* Sanity check the table length */
@@ -355,7 +345,7 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 
 		/* Allocate a buffer for the entire table */
 
-		table_ptr = ACPI_ALLOCATE(table_header.length);
+		table_ptr = ACPI_MEM_ALLOCATE(table_header.length);
 		if (!table_ptr) {
 			return_ACPI_STATUS(AE_NO_MEMORY);
 		}
@@ -367,14 +357,11 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 			    acpi_ev_address_space_dispatch(obj_desc, ACPI_READ,
 							   (acpi_physical_address)
 							   (i + address), 8,
-							   &temp);
+							   ((u8 *) table_ptr +
+							    i));
 			if (ACPI_FAILURE(status)) {
 				goto cleanup;
 			}
-
-			/* Get the one valid byte of the returned 64-bit value */
-
-			ACPI_CAST_PTR(u8, table_ptr)[i] = (u8) temp;
 		}
 		break;
 
@@ -420,8 +407,12 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 
 	/* The table must be either an SSDT or a PSDT */
 
-	if ((!ACPI_COMPARE_NAME(table_ptr->signature, PSDT_SIG)) &&
-	    (!ACPI_COMPARE_NAME(table_ptr->signature, SSDT_SIG))) {
+	if ((!ACPI_STRNCMP(table_ptr->signature,
+			   acpi_gbl_table_data[ACPI_TABLE_PSDT].signature,
+			   acpi_gbl_table_data[ACPI_TABLE_PSDT].sig_length)) &&
+	    (!ACPI_STRNCMP(table_ptr->signature,
+			   acpi_gbl_table_data[ACPI_TABLE_SSDT].signature,
+			   acpi_gbl_table_data[ACPI_TABLE_SSDT].sig_length))) {
 		ACPI_ERROR((AE_INFO,
 			    "Table has invalid signature [%4.4s], must be SSDT or PSDT",
 			    table_ptr->signature));
@@ -433,7 +424,6 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 
 	status = acpi_ex_add_table(table_ptr, acpi_gbl_root_node, &ddb_handle);
 	if (ACPI_FAILURE(status)) {
-
 		/* On error, table_ptr was deallocated above */
 
 		return_ACPI_STATUS(status);
@@ -450,13 +440,9 @@ acpi_ex_load_op(union acpi_operand_object *obj_desc,
 		return_ACPI_STATUS(status);
 	}
 
-	ACPI_INFO((AE_INFO,
-		   "Dynamic SSDT Load - OemId [%6.6s] OemTableId [%8.8s]",
-		   table_ptr->oem_id, table_ptr->oem_table_id));
-
       cleanup:
 	if (ACPI_FAILURE(status)) {
-		ACPI_FREE(table_ptr);
+		ACPI_MEM_FREE(table_ptr);
 	}
 	return_ACPI_STATUS(status);
 }
@@ -479,7 +465,7 @@ acpi_status acpi_ex_unload_table(union acpi_operand_object *ddb_handle)
 	union acpi_operand_object *table_desc = ddb_handle;
 	struct acpi_table_desc *table_info;
 
-	ACPI_FUNCTION_TRACE(ex_unload_table);
+	ACPI_FUNCTION_TRACE("ex_unload_table");
 
 	/*
 	 * Validate the handle

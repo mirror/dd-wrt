@@ -12,6 +12,7 @@
  * Infra-red driver (SIR/FIR) for the PXA2xx embedded microprocessor
  *
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/init.h>

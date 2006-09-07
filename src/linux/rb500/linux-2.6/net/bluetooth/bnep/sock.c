@@ -28,6 +28,7 @@
  * $Id: sock.c,v 1.4 2002/08/04 21:23:58 maxk Exp $
  */ 
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/types.h>

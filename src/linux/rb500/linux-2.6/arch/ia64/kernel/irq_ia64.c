@@ -14,6 +14,7 @@
  *						Added CPU Hotplug handling for IPF.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/jiffies.h>
@@ -45,10 +46,6 @@
 
 #define IRQ_DEBUG	0
 
-/* These can be overridden in platform_irq_init */
-int ia64_first_device_vector = IA64_DEF_FIRST_DEVICE_VECTOR;
-int ia64_last_device_vector = IA64_DEF_LAST_DEVICE_VECTOR;
-
 /* default base addr of IPI table */
 void __iomem *ipi_base_addr = ((void __iomem *)
 			       (__IA64_UNCACHED_OFFSET | IA64_IPI_DEFAULT_BASE_ADDR));
@@ -63,7 +60,7 @@ __u8 isa_irq_to_vector_map[16] = {
 };
 EXPORT_SYMBOL(isa_irq_to_vector_map);
 
-static unsigned long ia64_vector_mask[BITS_TO_LONGS(IA64_MAX_DEVICE_VECTORS)];
+static unsigned long ia64_vector_mask[BITS_TO_LONGS(IA64_NUM_DEVICE_VECTORS)];
 
 int
 assign_irq_vector (int irq)
@@ -90,19 +87,6 @@ free_irq_vector (int vector)
 	pos = vector - IA64_FIRST_DEVICE_VECTOR;
 	if (!test_and_clear_bit(pos, ia64_vector_mask))
 		printk(KERN_WARNING "%s: double free!\n", __FUNCTION__);
-}
-
-int
-reserve_irq_vector (int vector)
-{
-	int pos;
-
-	if (vector < IA64_FIRST_DEVICE_VECTOR ||
-	    vector > IA64_LAST_DEVICE_VECTOR)
-		return -EINVAL;
-
-	pos = vector - IA64_FIRST_DEVICE_VECTOR;
-	return test_and_set_bit(pos, ia64_vector_mask);
 }
 
 #ifdef CONFIG_SMP
@@ -235,7 +219,7 @@ extern irqreturn_t handle_IPI (int irq, void *dev_id, struct pt_regs *regs);
 
 static struct irqaction ipi_irqaction = {
 	.handler =	handle_IPI,
-	.flags =	IRQF_DISABLED,
+	.flags =	SA_INTERRUPT,
 	.name =		"IPI"
 };
 #endif
@@ -248,9 +232,9 @@ register_percpu_irq (ia64_vector vec, struct irqaction *action)
 
 	for (irq = 0; irq < NR_IRQS; ++irq)
 		if (irq_to_vector(irq) == vec) {
-			desc = irq_desc + irq;
+			desc = irq_descp(irq);
 			desc->status |= IRQ_PER_CPU;
-			desc->chip = &irq_type_ia64_lsapic;
+			desc->handler = &irq_type_ia64_lsapic;
 			if (action)
 				setup_irq(irq, action);
 		}

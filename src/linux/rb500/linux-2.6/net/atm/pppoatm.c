@@ -34,6 +34,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/skbuff.h>
 #include <linux/atm.h>

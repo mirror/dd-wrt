@@ -5,6 +5,7 @@
  */
 
 #include <asm/cpudata.h>
+#include <linux/config.h>
 
 extern unsigned long loops_per_jiffy;
 

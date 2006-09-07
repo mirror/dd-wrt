@@ -31,7 +31,6 @@ obj-$(CONFIG_IP_NF_AMANDA) += ip_conntrack_amanda.o
 obj-$(CONFIG_IP_NF_TFTP) += ip_conntrack_tftp.o
 obj-$(CONFIG_IP_NF_FTP) += ip_conntrack_ftp.o
 obj-$(CONFIG_IP_NF_IRC) += ip_conntrack_irc.o
-obj-$(CONFIG_IP_NF_SIP) += ip_conntrack_sip.o
 obj-$(CONFIG_IP_NF_NETBIOS_NS) += ip_conntrack_netbios_ns.o
 obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack_rtsp.o
 obj-$(CONFIG_IP_NF_SIP) += ip_conntrack_sip.o
@@ -70,7 +69,7 @@ obj-$(CONFIG_IP_NF_MATCH_ADDRTYPE) += ipt_addrtype.o
 obj-$(CONFIG_IP_NF_MATCH_LAYER7) += ipt_layer7.o
 obj-$(CONFIG_IP_NF_MATCH_WEBSTR) += ipt_webstr.o
 obj-$(CONFIG_IP_NF_TARGET_TRIGGER) += ipt_TRIGGER.o
-
+    
 # targets
 obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
 obj-$(CONFIG_IP_NF_TARGET_TOS) += ipt_TOS.o

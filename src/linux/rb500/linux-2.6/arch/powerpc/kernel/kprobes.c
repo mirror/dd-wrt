@@ -26,6 +26,7 @@
  *		for PPC64
  */
 
+#include <linux/config.h>
 #include <linux/kprobes.h>
 #include <linux/ptrace.h>
 #include <linux/preempt.h>

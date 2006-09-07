@@ -25,7 +25,7 @@ config VIDEO_DEV
 	  module will be called videodev.
 
 config VIDEO_V4L1
-	bool "Enable Video For Linux API 1 (DEPRECATED)"
+	boolean "Enable Video For Linux API 1 (DEPRECATED)"
 	depends on VIDEO_DEV
 	select VIDEO_V4L1_COMPAT
 	default y
@@ -36,7 +36,7 @@ config VIDEO_V4L1
 	  If you are unsure as to whether this is required, answer Y.
 
 config VIDEO_V4L1_COMPAT
-	bool "Enable Video For Linux API 1 compatible Layer"
+	boolean "Enable Video For Linux API 1 compatible Layer"
 	depends on VIDEO_DEV
 	default y
 	---help---

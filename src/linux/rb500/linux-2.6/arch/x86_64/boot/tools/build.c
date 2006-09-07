@@ -149,8 +149,10 @@ int main(int argc, char ** argv)
 	sz = sb.st_size;
 	fprintf (stderr, "System is %d kB\n", sz/1024);
 	sys_size = (sz + 15) / 16;
-	if (!is_big_kernel && sys_size > DEF_SYSSIZE)
-		die("System is too big. Try using bzImage or modules.");
+	/* 0x40000*16 = 4.0 MB, reasonable estimate for the current maximum */
+	if (sys_size > (is_big_kernel ? 0x40000 : DEF_SYSSIZE))
+		die("System is too big. Try using %smodules.",
+			is_big_kernel ? "" : "bzImage or ");
 	while (sz > 0) {
 		int l, n;
 

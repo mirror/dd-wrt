@@ -6,6 +6,7 @@
  *  Copyright (c) 2003  Hitoshi Yamamoto
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
 #include <linux/mmzone.h>

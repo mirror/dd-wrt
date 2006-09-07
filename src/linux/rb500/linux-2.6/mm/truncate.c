@@ -230,24 +230,14 @@ unsigned long invalidate_mapping_pages(struct address_space *mapping,
 			pagevec_lookup(&pvec, mapping, next, PAGEVEC_SIZE)) {
 		for (i = 0; i < pagevec_count(&pvec); i++) {
 			struct page *page = pvec.pages[i];
-			pgoff_t index;
-			int lock_failed;
 
-			lock_failed = TestSetPageLocked(page);
-
-			/*
-			 * We really shouldn't be looking at the ->index of an
-			 * unlocked page.  But we're not allowed to lock these
-			 * pages.  So we rely upon nobody altering the ->index
-			 * of this (pinned-by-us) page.
-			 */
-			index = page->index;
-			if (index > next)
-				next = index;
-			next++;
-			if (lock_failed)
+			if (TestSetPageLocked(page)) {
+				next++;
 				continue;
-
+			}
+			if (page->index > next)
+				next = page->index;
+			next++;
 			if (PageDirty(page) || PageWriteback(page))
 				goto unlock;
 			if (page_mapped(page))

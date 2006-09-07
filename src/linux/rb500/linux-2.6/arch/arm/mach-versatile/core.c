@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/dma-mapping.h>
@@ -869,7 +870,7 @@ static irqreturn_t versatile_timer_interrupt(int irq, void *dev_id, struct pt_re
 
 static struct irqaction versatile_timer_irq = {
 	.name		= "Versatile Timer Tick",
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= SA_INTERRUPT | SA_TIMER,
 	.handler	= versatile_timer_interrupt,
 };
 

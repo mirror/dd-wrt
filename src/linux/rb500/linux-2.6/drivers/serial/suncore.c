@@ -10,6 +10,7 @@
  * Copyright (C) 2002 David S. Miller (davem@redhat.com)
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/console.h>

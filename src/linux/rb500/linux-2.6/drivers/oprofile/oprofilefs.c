@@ -272,10 +272,10 @@ static int oprofilefs_fill_super(struct super_block * sb, void * data, int silen
 }
 
 
-static int oprofilefs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *oprofilefs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_single(fs_type, flags, data, oprofilefs_fill_super, mnt);
+	return get_sb_single(fs_type, flags, data, oprofilefs_fill_super);
 }
 
 

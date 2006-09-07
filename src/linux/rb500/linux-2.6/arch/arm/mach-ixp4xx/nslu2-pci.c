@@ -15,6 +15,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/pci.h>
 #include <linux/init.h>
 

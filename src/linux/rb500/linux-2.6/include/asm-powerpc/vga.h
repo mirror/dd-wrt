@@ -12,6 +12,7 @@
 
 #include <asm/io.h>
 
+#include <linux/config.h>
 
 #if defined(CONFIG_VGA_CONSOLE) || defined(CONFIG_MDA_CONSOLE)
 
@@ -41,9 +42,9 @@ static inline u16 scr_readw(volatile const u16 *addr)
 extern unsigned long vgacon_remap_base;
 
 #ifdef __powerpc64__
-#define VGA_MAP_MEM(x,s) ((unsigned long) ioremap((x), s))
+#define VGA_MAP_MEM(x) ((unsigned long) ioremap((x), 0))
 #else
-#define VGA_MAP_MEM(x,s) (x + vgacon_remap_base)
+#define VGA_MAP_MEM(x) (x + vgacon_remap_base)
 #endif
 
 #define vga_readb(x) (*(x))

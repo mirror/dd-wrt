@@ -1,6 +1,7 @@
 #ifndef __ASMARM_ELF_H
 #define __ASMARM_ELF_H
 
+#include <linux/config.h>
 
 /*
  * ELF register definitions..

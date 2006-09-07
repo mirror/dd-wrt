@@ -5,11 +5,12 @@
  * Collects accumulated network statistics (Packets received/transmitted,
  * dropped, errors, ...).
  *
- * Copyright (C) 2003,2006 IBM Corporation, IBM Deutschland Entwicklung GmbH.
+ * Copyright (C) 2003 IBM Corporation, IBM Deutschland Entwicklung GmbH.
  *
- * Author: Gerald Schaefer <gerald.schaefer@de.ibm.com>
+ * Author: Gerald Schaefer <geraldsc@de.ibm.com>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>
@@ -151,7 +152,6 @@ static struct appldata_ops ops = {
 	.callback  = &appldata_get_net_sum_data,
 	.data      = &appldata_net_sum_data,
 	.owner     = THIS_MODULE,
-	.mod_lvl   = {0xF0, 0xF0},		/* EBCDIC "00" */
 };
 
 

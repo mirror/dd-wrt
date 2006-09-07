@@ -28,7 +28,6 @@
 #include <linux/pm.h>
 #include <linux/pci.h>
 #include <linux/device.h>
-#include <linux/kthread.h>
 #include <asm/system.h>
 #include <asm/irq.h>
 
@@ -177,7 +176,6 @@ static int pccardd(void *__skt);
  */
 int pcmcia_register_socket(struct pcmcia_socket *socket)
 {
-	struct task_struct *tsk;
 	int ret;
 
 	if (!socket || !socket->ops || !socket->dev.dev || !socket->resource_ops)
@@ -241,18 +239,15 @@ int pcmcia_register_socket(struct pcmcia_socket *socket)
 	mutex_init(&socket->skt_mutex);
 	spin_lock_init(&socket->thread_lock);
 
-	tsk = kthread_run(pccardd, socket, "pccardd");
-	if (IS_ERR(tsk)) {
-		ret = PTR_ERR(tsk);
+	ret = kernel_thread(pccardd, socket, CLONE_KERNEL);
+	if (ret < 0)
 		goto err;
-	}
 
 	wait_for_completion(&socket->thread_done);
-	if (!socket->thread) {
+	if(!socket->thread) {
 		printk(KERN_WARNING "PCMCIA: warning: socket thread for socket %p did not start\n", socket);
 		return -EIO;
 	}
-
 	pcmcia_parse_events(socket, SS_DETECT);
 
 	return 0;
@@ -277,8 +272,10 @@ void pcmcia_unregister_socket(struct pcmcia_socket *socket)
 	cs_dbg(socket, 0, "pcmcia_unregister_socket(0x%p)\n", socket->ops);
 
 	if (socket->thread) {
+		init_completion(&socket->thread_done);
+		socket->thread = NULL;
 		wake_up(&socket->thread_wait);
-		kthread_stop(socket->thread);
+		wait_for_completion(&socket->thread_done);
 	}
 	release_cis_mem(socket);
 
@@ -633,6 +630,8 @@ static int pccardd(void *__skt)
 	DECLARE_WAITQUEUE(wait, current);
 	int ret;
 
+	daemonize("pccardd");
+
 	skt->thread = current;
 	skt->socket = dead_socket;
 	skt->ops->init(skt);
@@ -644,8 +643,7 @@ static int pccardd(void *__skt)
 		printk(KERN_WARNING "PCMCIA: unable to register socket 0x%p\n",
 			skt);
 		skt->thread = NULL;
-		complete(&skt->thread_done);
-		return 0;
+		complete_and_exit(&skt->thread_done, 0);
 	}
 
 	add_wait_queue(&skt->thread_wait, &wait);
@@ -676,7 +674,7 @@ static int pccardd(void *__skt)
 			continue;
 		}
 
-		if (kthread_should_stop())
+		if (!skt->thread)
 			break;
 
 		schedule();
@@ -690,7 +688,7 @@ static int pccardd(void *__skt)
 	/* remove from the device core */
 	class_device_unregister(&skt->dev);
 
-	return 0;
+	complete_and_exit(&skt->thread_done, 0);
 }
 
 /*
@@ -699,12 +697,11 @@ static int pccardd(void *__skt)
  */
 void pcmcia_parse_events(struct pcmcia_socket *s, u_int events)
 {
-	unsigned long flags;
 	cs_dbg(s, 4, "parse_events: events %08x\n", events);
 	if (s->thread) {
-		spin_lock_irqsave(&s->thread_lock, flags);
+		spin_lock(&s->thread_lock);
 		s->thread_events |= events;
-		spin_unlock_irqrestore(&s->thread_lock, flags);
+		spin_unlock(&s->thread_lock);
 
 		wake_up(&s->thread_wait);
 	}

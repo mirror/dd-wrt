@@ -11,6 +11,7 @@
  * PCI initialization for the Renesas SH7751R HS7751RVoIP board
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>

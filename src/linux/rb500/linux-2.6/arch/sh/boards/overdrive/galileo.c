@@ -9,6 +9,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/smp.h>
 #include <linux/smp_lock.h>
@@ -535,7 +536,7 @@ void __init pcibios_fixup_bus(struct pci_bus *bus)
 }
 
 void pcibios_align_resource(void *data, struct resource *res,
-			    resource_size_t size)
+			    unsigned long size)
 {
 }
 

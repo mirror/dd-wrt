@@ -330,7 +330,7 @@ out_err:
 	return rc;
 }
 
-static const struct file_operations tis_ops = {
+static struct file_operations tis_ops = {
 	.owner = THIS_MODULE,
 	.llseek = no_llseek,
 	.open = tpm_open,
@@ -424,6 +424,7 @@ static irqreturn_t tis_int_handler(int irq, void *dev_id, struct pt_regs *regs)
 	iowrite32(interrupt,
 		  chip->vendor.iobase +
 		  TPM_INT_STATUS(chip->vendor.locality));
+	ioread32(chip->vendor.iobase + TPM_INT_STATUS(chip->vendor.locality));
 	return IRQ_HANDLED;
 }
 
@@ -522,7 +523,7 @@ static int __devinit tpm_tis_pnp_init(struct pnp_dev *pnp_dev,
 			iowrite8(i, chip->vendor.iobase +
 				    TPM_INT_VECTOR(chip->vendor.locality));
 			if (request_irq
-			    (i, tis_int_probe, IRQF_SHARED,
+			    (i, tis_int_probe, SA_SHIRQ,
 			     chip->vendor.miscdev.name, chip) != 0) {
 				dev_info(chip->dev,
 					 "Unable to request irq: %d for probe\n",
@@ -557,7 +558,7 @@ static int __devinit tpm_tis_pnp_init(struct pnp_dev *pnp_dev,
 			 chip->vendor.iobase +
 			 TPM_INT_VECTOR(chip->vendor.locality));
 		if (request_irq
-		    (chip->vendor.irq, tis_int_handler, IRQF_SHARED,
+		    (chip->vendor.irq, tis_int_handler, SA_SHIRQ,
 		     chip->vendor.miscdev.name, chip) != 0) {
 			dev_info(chip->dev,
 				 "Unable to request irq: %d for use\n",

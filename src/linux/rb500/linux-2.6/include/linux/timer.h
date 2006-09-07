@@ -1,6 +1,7 @@
 #ifndef _LINUX_TIMER_H
 #define _LINUX_TIMER_H
 
+#include <linux/config.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
 #include <linux/stddef.h>

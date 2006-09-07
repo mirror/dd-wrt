@@ -48,6 +48,7 @@
 struct bcm3510_state {
 
 	struct i2c_adapter* i2c;
+	struct dvb_frontend_ops ops;
 	const struct bcm3510_config* config;
 	struct dvb_frontend frontend;
 
@@ -790,9 +791,10 @@ struct dvb_frontend* bcm3510_attach(const struct bcm3510_config *config,
 
 	state->config = config;
 	state->i2c = i2c;
+	memcpy(&state->ops, &bcm3510_ops, sizeof(struct dvb_frontend_ops));
 
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &bcm3510_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 
 	mutex_init(&state->hab_mutex);

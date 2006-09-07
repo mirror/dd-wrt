@@ -10,6 +10,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/device.h>
@@ -243,7 +244,8 @@ s390_subchannel_remove_chpid(struct device *dev, void *data)
 
 	if ((sch->schib.scsw.actl & SCSW_ACTL_DEVACT) &&
 	    (sch->schib.scsw.actl & SCSW_ACTL_SCHACT) &&
-	    (sch->schib.pmcw.lpum == mask)) {
+	    (sch->schib.pmcw.lpum == mask) &&
+	    (sch->vpm == 0)) {
 		int cc;
 
 		cc = cio_clear(sch);
@@ -916,13 +918,12 @@ chp_measurement_read(struct kobject *kobj, char *buf, loff_t off, size_t count)
 	chp = to_channelpath(container_of(kobj, struct device, kobj));
 	css = to_css(chp->dev.parent);
 
-	size = sizeof(struct cmg_entry);
+	size = sizeof(struct cmg_chars);
 
 	/* Only allow single reads. */
 	if (off || count < size)
 		return 0;
 	chp_measurement_copy_block((struct cmg_entry *)buf, css, chp->id);
-	count = size;
 	return count;
 }
 

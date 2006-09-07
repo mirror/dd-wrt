@@ -112,12 +112,11 @@ nlm_lookup_host(int server, struct sockaddr_in *sin,
 	host->h_version    = version;
 	host->h_proto      = proto;
 	host->h_rpcclnt    = NULL;
-	mutex_init(&host->h_mutex);
+	init_MUTEX(&host->h_sema);
 	host->h_nextrebind = jiffies + NLM_HOST_REBIND;
 	host->h_expires    = jiffies + NLM_HOST_EXPIRE;
 	atomic_set(&host->h_count, 1);
 	init_waitqueue_head(&host->h_gracewait);
-	init_rwsem(&host->h_rwsem);
 	host->h_state      = 0;			/* pseudo NSM state */
 	host->h_nsmstate   = 0;			/* real NSM state */
 	host->h_server	   = server;
@@ -173,7 +172,7 @@ nlm_bind_host(struct nlm_host *host)
 			(unsigned)ntohl(host->h_addr.sin_addr.s_addr));
 
 	/* Lock host handle */
-	mutex_lock(&host->h_mutex);
+	down(&host->h_sema);
 
 	/* If we've already created an RPC client, check whether
 	 * RPC rebind is required
@@ -205,12 +204,12 @@ nlm_bind_host(struct nlm_host *host)
 		host->h_rpcclnt = clnt;
 	}
 
-	mutex_unlock(&host->h_mutex);
+	up(&host->h_sema);
 	return clnt;
 
 forgetit:
 	printk("lockd: couldn't create RPC handle for %s\n", host->h_name);
-	mutex_unlock(&host->h_mutex);
+	up(&host->h_sema);
 	return NULL;
 }
 

@@ -10,6 +10,7 @@
  */
 
 #include <linux/sys.h>
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/page.h>
 #include <asm/ptrace.h>

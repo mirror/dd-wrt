@@ -16,6 +16,7 @@
  * Transparent decompression of files on an iso9660 filesystem
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/init.h>
 
@@ -311,7 +312,7 @@ eio:
 	return err;
 }
 
-const struct address_space_operations zisofs_aops = {
+struct address_space_operations zisofs_aops = {
 	.readpage = zisofs_readpage,
 	/* No sync_page operation supported? */
 	/* No bmap operation supported */

@@ -55,7 +55,7 @@ enum
 	CTL_KERN=1,		/* General kernel info and control */
 	CTL_VM=2,		/* VM management */
 	CTL_NET=3,		/* Networking */
-	/* was CTL_PROC */
+	CTL_PROC=4,		/* Process info */
 	CTL_FS=5,		/* Filesystems */
 	CTL_DEBUG=6,		/* Debugging */
 	CTL_DEV=7,		/* Devices */
@@ -148,10 +148,7 @@ enum
 	KERN_SPIN_RETRY=70,	/* int: number of spinlock retries */
 	KERN_ACPI_VIDEO_FLAGS=71, /* int: flags for setting up video after ACPI sleep */
 	KERN_IA64_UNALIGNED=72, /* int: ia64 unaligned userland trap enable */
-	KERN_COMPAT_LOG=73,	/* int: print compat layer  messages */
-	KERN_MAX_LOCK_DEPTH=74,
 };
-
 
 
 /* CTL_VM names: */
@@ -188,9 +185,7 @@ enum
 	VM_DROP_PAGECACHE=29,	/* int: nuke lots of pagecache */
 	VM_PERCPU_PAGELIST_FRACTION=30,/* int: fraction of pages in each percpu_pagelist */
 	VM_ZONE_RECLAIM_MODE=31, /* reclaim local zone memory before going off node */
-	VM_MIN_UNMAPPED=32,	/* Set min percent of unmapped pages */
-	VM_PANIC_ON_OOM=33,	/* panic at out-of-memory */
-	VM_VDSO_ENABLED=34,	/* map VDSO into new processes? */
+	VM_ZONE_RECLAIM_INTERVAL=32, /* time period to wait after reclaim failure */
 };
 
 
@@ -318,7 +313,6 @@ enum
 	NET_NF_CONNTRACK_FRAG6_TIMEOUT=29,
 	NET_NF_CONNTRACK_FRAG6_LOW_THRESH=30,
 	NET_NF_CONNTRACK_FRAG6_HIGH_THRESH=31,
-	NET_NF_CONNTRACK_CHECKSUM=32,
 };
 
 /* /proc/sys/net/ipv4 */
@@ -409,8 +403,6 @@ enum
  	NET_TCP_MTU_PROBING=113,
 	NET_TCP_BASE_MSS=114,
 	NET_IPV4_TCP_WORKAROUND_SIGNED_WINDOWS=115,
-	NET_TCP_DMA_COPYBREAK=116,
-	NET_TCP_SLOW_START_AFTER_IDLE=117,
 };
 
 enum {
@@ -499,7 +491,6 @@ enum
  	NET_IPV4_NF_CONNTRACK_SCTP_TIMEOUT_SHUTDOWN_RECD=25,
  	NET_IPV4_NF_CONNTRACK_SCTP_TIMEOUT_SHUTDOWN_ACK_SENT=26,
 	NET_IPV4_NF_CONNTRACK_COUNT=27,
-	NET_IPV4_NF_CONNTRACK_CHECKSUM=28,
 };
  
 /* /proc/sys/net/ipv6 */
@@ -770,6 +761,8 @@ enum {
 	NET_BRIDGE_NF_CALL_IP6TABLES = 3,
 	NET_BRIDGE_NF_FILTER_VLAN_TAGGED = 4,
 };
+
+/* CTL_PROC names: */
 
 /* CTL_FS names: */
 enum

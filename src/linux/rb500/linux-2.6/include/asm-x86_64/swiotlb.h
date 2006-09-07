@@ -1,6 +1,7 @@
 #ifndef _ASM_SWIOTLB_H
 #define _ASM_SWTIOLB_H 1
 
+#include <linux/config.h>
 
 #include <asm/dma-mapping.h>
 

@@ -11,6 +11,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/compat.h>
 
 #ifdef CONFIG_COMPAT

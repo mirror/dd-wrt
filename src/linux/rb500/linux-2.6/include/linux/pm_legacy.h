@@ -1,6 +1,7 @@
 #ifndef __LINUX_PM_LEGACY_H__
 #define __LINUX_PM_LEGACY_H__
 
+#include <linux/config.h>
 
 #ifdef CONFIG_PM_LEGACY
 

@@ -1,6 +1,7 @@
 #ifndef _M68K_SYSTEM_H
 #define _M68K_SYSTEM_H
 
+#include <linux/config.h> /* get configuration macros */
 #include <linux/linkage.h>
 #include <linux/kernel.h>
 #include <asm/segment.h>

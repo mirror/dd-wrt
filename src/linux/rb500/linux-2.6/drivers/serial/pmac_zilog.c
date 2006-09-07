@@ -42,6 +42,7 @@
 #undef DEBUG_HARD
 #undef USE_CTRL_O_SYSRQ
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/tty.h>
 
@@ -100,6 +101,7 @@ static DEFINE_MUTEX(pmz_irq_mutex);
 static struct uart_driver pmz_uart_reg = {
 	.owner		=	THIS_MODULE,
 	.driver_name	=	"ttyS",
+	.devfs_name	=	"tts/",
 	.dev_name	=	"ttyS",
 	.major		=	TTY_MAJOR,
 };
@@ -934,7 +936,7 @@ static int pmz_startup(struct uart_port *port)
 	}	
 
 	pmz_get_port_A(uap)->flags |= PMACZILOG_FLAG_IS_IRQ_ON;
-	if (request_irq(uap->port.irq, pmz_interrupt, IRQF_SHARED, "PowerMac Zilog", uap)) {
+	if (request_irq(uap->port.irq, pmz_interrupt, SA_SHIRQ, "PowerMac Zilog", uap)) {
 		dev_err(&uap->dev->ofdev.dev,
 			"Unable to register zs interrupt handler.\n");
 		pmz_set_scc_power(uap, 0);
@@ -1443,8 +1445,8 @@ static int __init pmz_init_port(struct uart_pmac_port *uap)
 			uap->flags &= ~PMACZILOG_FLAG_HAS_DMA;
 			goto no_dma;
 		}
-		uap->tx_dma_irq = irq_of_parse_and_map(np, 1);
-		uap->rx_dma_irq = irq_of_parse_and_map(np, 2);
+		uap->tx_dma_irq = np->intrs[1].line;
+		uap->rx_dma_irq = np->intrs[2].line;
 	}
 no_dma:
 
@@ -1491,7 +1493,7 @@ no_dma:
 	 * Init remaining bits of "port" structure
 	 */
 	uap->port.iotype = UPIO_MEM;
-	uap->port.irq = irq_of_parse_and_map(np, 0);
+	uap->port.irq = np->intrs[0].line;
 	uap->port.uartclk = ZS_CLOCK;
 	uap->port.fifosize = 1;
 	uap->port.ops = &pmz_pops;

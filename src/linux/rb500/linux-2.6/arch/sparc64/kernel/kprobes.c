@@ -3,6 +3,7 @@
  * Copyright (C) 2004 David S. Miller <davem@davemloft.net>
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/kprobes.h>
 #include <linux/module.h>

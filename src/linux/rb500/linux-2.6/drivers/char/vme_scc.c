@@ -14,6 +14,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/kdev_t.h>
 #include <asm/io.h>
 #include <linux/kernel.h>
@@ -146,6 +147,7 @@ static int scc_init_drivers(void)
 	scc_driver->owner = THIS_MODULE;
 	scc_driver->driver_name = "scc";
 	scc_driver->name = "ttyS";
+	scc_driver->devfs_name = "tts/";
 	scc_driver->major = TTY_MAJOR;
 	scc_driver->minor_start = SCC_MINOR_BASE;
 	scc_driver->type = TTY_DRIVER_TYPE_SERIAL;
@@ -203,13 +205,13 @@ static int mvme147_scc_init(void)
 	port->datap = port->ctrlp + 1;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(MVME147_IRQ_SCCA_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCA_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-A TX", port);
-	request_irq(MVME147_IRQ_SCCA_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCA_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-A status", port);
-	request_irq(MVME147_IRQ_SCCA_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCA_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-A RX", port);
-	request_irq(MVME147_IRQ_SCCA_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCA_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-A special cond", port);
 	{
 		SCC_ACCESS_INIT(port);
@@ -230,13 +232,13 @@ static int mvme147_scc_init(void)
 	port->datap = port->ctrlp + 1;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(MVME147_IRQ_SCCB_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCB_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-B TX", port);
-	request_irq(MVME147_IRQ_SCCB_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCB_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-B status", port);
-	request_irq(MVME147_IRQ_SCCB_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCB_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-B RX", port);
-	request_irq(MVME147_IRQ_SCCB_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(MVME147_IRQ_SCCB_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-B special cond", port);
 	{
 		SCC_ACCESS_INIT(port);
@@ -273,13 +275,13 @@ static int mvme162_scc_init(void)
 	port->datap = port->ctrlp + 2;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(MVME162_IRQ_SCCA_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCA_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-A TX", port);
-	request_irq(MVME162_IRQ_SCCA_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCA_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-A status", port);
-	request_irq(MVME162_IRQ_SCCA_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCA_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-A RX", port);
-	request_irq(MVME162_IRQ_SCCA_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCA_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-A special cond", port);
 	{
 		SCC_ACCESS_INIT(port);
@@ -300,13 +302,13 @@ static int mvme162_scc_init(void)
 	port->datap = port->ctrlp + 2;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(MVME162_IRQ_SCCB_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCB_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-B TX", port);
-	request_irq(MVME162_IRQ_SCCB_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCB_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-B status", port);
-	request_irq(MVME162_IRQ_SCCB_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCB_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-B RX", port);
-	request_irq(MVME162_IRQ_SCCB_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(MVME162_IRQ_SCCB_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-B special cond", port);
 
 	{
@@ -341,13 +343,13 @@ static int bvme6000_scc_init(void)
 	port->datap = port->ctrlp + 4;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(BVME_IRQ_SCCA_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCA_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-A TX", port);
-	request_irq(BVME_IRQ_SCCA_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCA_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-A status", port);
-	request_irq(BVME_IRQ_SCCA_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCA_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-A RX", port);
-	request_irq(BVME_IRQ_SCCA_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCA_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-A special cond", port);
 	{
 		SCC_ACCESS_INIT(port);
@@ -368,13 +370,13 @@ static int bvme6000_scc_init(void)
 	port->datap = port->ctrlp + 4;
 	port->port_a = &scc_ports[0];
 	port->port_b = &scc_ports[1];
-	request_irq(BVME_IRQ_SCCB_TX, scc_tx_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCB_TX, scc_tx_int, SA_INTERRUPT,
 		            "SCC-B TX", port);
-	request_irq(BVME_IRQ_SCCB_STAT, scc_stat_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCB_STAT, scc_stat_int, SA_INTERRUPT,
 		            "SCC-B status", port);
-	request_irq(BVME_IRQ_SCCB_RX, scc_rx_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCB_RX, scc_rx_int, SA_INTERRUPT,
 		            "SCC-B RX", port);
-	request_irq(BVME_IRQ_SCCB_SPCOND, scc_spcond_int, IRQF_DISABLED,
+	request_irq(BVME_IRQ_SCCB_SPCOND, scc_spcond_int, SA_INTERRUPT,
 		            "SCC-B special cond", port);
 
 	{

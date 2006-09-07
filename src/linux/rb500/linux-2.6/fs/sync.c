@@ -100,7 +100,7 @@ asmlinkage long sys_sync_file_range(int fd, loff_t offset, loff_t nbytes,
 	}
 
 	if (nbytes == 0)
-		endbyte = LLONG_MAX;
+		endbyte = -1;
 	else
 		endbyte--;		/* inclusive */
 

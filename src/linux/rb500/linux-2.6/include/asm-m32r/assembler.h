@@ -9,6 +9,7 @@
  * This file contains M32R architecture specific macro definitions.
  */
 
+#include <linux/config.h>
 
 #ifndef __STR
 #ifdef __ASSEMBLY__

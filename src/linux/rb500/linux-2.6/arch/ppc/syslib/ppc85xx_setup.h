@@ -15,6 +15,7 @@
 #ifndef __PPC_SYSLIB_PPC85XX_SETUP_H
 #define __PPC_SYSLIB_PPC85XX_SETUP_H
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <asm/ppcboot.h>
 

@@ -16,6 +16,7 @@
 
 #undef DEBUG
 
+#include <linux/config.h>
 #include <asm/pgtable.h>
 #include <asm/mmu.h>
 #include <asm/mmu_context.h>
@@ -59,19 +60,19 @@ static inline void create_slbe(unsigned long ea, unsigned long flags,
 		     : "memory" );
 }
 
-void slb_flush_and_rebolt(void)
+static void slb_flush_and_rebolt(void)
 {
 	/* If you change this make sure you change SLB_NUM_BOLTED
 	 * appropriately too. */
-	unsigned long linear_llp, vmalloc_llp, lflags, vflags;
+	unsigned long linear_llp, virtual_llp, lflags, vflags;
 	unsigned long ksp_esid_data;
 
 	WARN_ON(!irqs_disabled());
 
 	linear_llp = mmu_psize_defs[mmu_linear_psize].sllp;
-	vmalloc_llp = mmu_psize_defs[mmu_vmalloc_psize].sllp;
+	virtual_llp = mmu_psize_defs[mmu_virtual_psize].sllp;
 	lflags = SLB_VSID_KERNEL | linear_llp;
-	vflags = SLB_VSID_KERNEL | vmalloc_llp;
+	vflags = SLB_VSID_KERNEL | virtual_llp;
 
 	ksp_esid_data = mk_esid_data(get_paca()->kstack, 2);
 	if ((ksp_esid_data & ESID_MASK) == PAGE_OFFSET)
@@ -121,6 +122,9 @@ void switch_slb(struct task_struct *tsk, struct mm_struct *mm)
 
 	get_paca()->slb_cache_ptr = 0;
 	get_paca()->context = mm->context;
+#ifdef CONFIG_PPC_64K_PAGES
+	get_paca()->pgdir = mm->pgd;
+#endif /* CONFIG_PPC_64K_PAGES */
 
 	/*
 	 * preload some userspace segments into the SLB.
@@ -163,10 +167,11 @@ static inline void patch_slb_encoding(unsigned int *insn_addr,
 
 void slb_initialize(void)
 {
-	unsigned long linear_llp, vmalloc_llp, io_llp;
+	unsigned long linear_llp, virtual_llp;
 	static int slb_encoding_inited;
 	extern unsigned int *slb_miss_kernel_load_linear;
-	extern unsigned int *slb_miss_kernel_load_io;
+	extern unsigned int *slb_miss_kernel_load_virtual;
+	extern unsigned int *slb_miss_user_load_normal;
 #ifdef CONFIG_HUGETLB_PAGE
 	extern unsigned int *slb_miss_user_load_huge;
 	unsigned long huge_llp;
@@ -176,19 +181,18 @@ void slb_initialize(void)
 
 	/* Prepare our SLB miss handler based on our page size */
 	linear_llp = mmu_psize_defs[mmu_linear_psize].sllp;
-	io_llp = mmu_psize_defs[mmu_io_psize].sllp;
-	vmalloc_llp = mmu_psize_defs[mmu_vmalloc_psize].sllp;
-	get_paca()->vmalloc_sllp = SLB_VSID_KERNEL | vmalloc_llp;
-
+	virtual_llp = mmu_psize_defs[mmu_virtual_psize].sllp;
 	if (!slb_encoding_inited) {
 		slb_encoding_inited = 1;
 		patch_slb_encoding(slb_miss_kernel_load_linear,
 				   SLB_VSID_KERNEL | linear_llp);
-		patch_slb_encoding(slb_miss_kernel_load_io,
-				   SLB_VSID_KERNEL | io_llp);
+		patch_slb_encoding(slb_miss_kernel_load_virtual,
+				   SLB_VSID_KERNEL | virtual_llp);
+		patch_slb_encoding(slb_miss_user_load_normal,
+				   SLB_VSID_USER | virtual_llp);
 
 		DBG("SLB: linear  LLP = %04x\n", linear_llp);
-		DBG("SLB: io      LLP = %04x\n", io_llp);
+		DBG("SLB: virtual LLP = %04x\n", virtual_llp);
 #ifdef CONFIG_HUGETLB_PAGE
 		patch_slb_encoding(slb_miss_user_load_huge,
 				   SLB_VSID_USER | huge_llp);
@@ -203,7 +207,7 @@ void slb_initialize(void)
 	unsigned long lflags, vflags;
 
 	lflags = SLB_VSID_KERNEL | linear_llp;
-	vflags = SLB_VSID_KERNEL | vmalloc_llp;
+	vflags = SLB_VSID_KERNEL | virtual_llp;
 
 	/* Invalidate the entire SLB (even slot 0) & all the ERATS */
 	asm volatile("isync":::"memory");
@@ -211,6 +215,7 @@ void slb_initialize(void)
 	asm volatile("isync; slbia; isync":::"memory");
 	create_slbe(PAGE_OFFSET, lflags, 0);
 
+	/* VMALLOC space has 4K pages always for now */
 	create_slbe(VMALLOC_START, vflags, 1);
 
 	/* We don't bolt the stack for the time being - we're in boot,

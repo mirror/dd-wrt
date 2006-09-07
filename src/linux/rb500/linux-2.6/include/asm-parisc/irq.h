@@ -7,6 +7,7 @@
 #ifndef _ASM_PARISC_IRQ_H
 #define _ASM_PARISC_IRQ_H
 
+#include <linux/config.h>
 #include <linux/cpumask.h>
 #include <asm/types.h>
 
@@ -25,6 +26,11 @@
 #define CPU_IRQ_MAX	(CPU_IRQ_BASE + (BITS_PER_LONG - 1))
 
 #define NR_IRQS		(CPU_IRQ_MAX + 1)
+
+/*
+ * IRQ line status macro IRQ_PER_CPU is used
+ */
+#define ARCH_HAS_IRQ_PER_CPU
 
 static __inline__ int irq_canonicalize(int irq)
 {

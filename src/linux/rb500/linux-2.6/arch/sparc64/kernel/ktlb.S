@@ -6,6 +6,7 @@
  * Copyright (C) 1996,98,99 Jakub Jelinek  (jj@sunsite.mff.cuni.cz)
  */
 
+#include <linux/config.h>
 #include <asm/head.h>
 #include <asm/asi.h>
 #include <asm/page.h>

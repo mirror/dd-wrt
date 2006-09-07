@@ -23,6 +23,7 @@
  *	  			  David Pye <dmp@davidmpye.dyndns.org>
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/stddef.h>	/* for offsetof() */
 #include <linux/init.h>
@@ -410,17 +411,16 @@ static __inline__ int led_get_net_activity(void)
 static __inline__ int led_get_diskio_activity(void)
 {	
 	static unsigned long last_pgpgin, last_pgpgout;
-	unsigned long events[NR_VM_EVENT_ITEMS];
+	struct page_state pgstat;
 	int changed;
 
-	all_vm_events(events);
+	get_full_page_state(&pgstat); /* get no of sectors in & out */
 
 	/* Just use a very simple calculation here. Do not care about overflow,
 	   since we only want to know if there was activity or not. */
-	changed = (events[PGPGIN] != last_pgpgin) ||
-		  (events[PGPGOUT] != last_pgpgout);
-	last_pgpgin  = events[PGPGIN];
-	last_pgpgout = events[PGPGOUT];
+	changed = (pgstat.pgpgin != last_pgpgin) || (pgstat.pgpgout != last_pgpgout);
+	last_pgpgin  = pgstat.pgpgin;
+	last_pgpgout = pgstat.pgpgout;
 
 	return (changed ? LED_DISK_IO : 0);
 }

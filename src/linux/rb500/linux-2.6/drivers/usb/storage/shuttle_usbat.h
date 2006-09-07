@@ -106,9 +106,7 @@
 #define USBAT_FEAT_ET2	0x01
 
 extern int usbat_transport(struct scsi_cmnd *srb, struct us_data *us);
-extern int init_usbat_cd(struct us_data *us);
-extern int init_usbat_flash(struct us_data *us);
-extern int init_usbat_probe(struct us_data *us);
+extern int init_usbat(struct us_data *us);
 
 struct usbat_info {
 	int devicetype;

@@ -26,6 +26,7 @@
 #define FS_PART_EFI_H_INCLUDED
 
 #include <linux/types.h>
+#include <linux/config.h>
 #include <linux/fs.h>
 #include <linux/genhd.h>
 #include <linux/kernel.h>

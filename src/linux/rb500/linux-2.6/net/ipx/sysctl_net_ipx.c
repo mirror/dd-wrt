@@ -6,6 +6,7 @@
  * Added /proc/sys/net/ipx/ipx_pprop_broadcasting - acme March 4, 2001
  */
 
+#include <linux/config.h>
 #include <linux/mm.h>
 #include <linux/sysctl.h>
 

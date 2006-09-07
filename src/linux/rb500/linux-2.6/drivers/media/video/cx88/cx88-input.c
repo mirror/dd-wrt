@@ -70,33 +70,14 @@ MODULE_PARM_DESC(ir_debug, "enable debug messages [IR]");
 static void cx88_ir_handle_key(struct cx88_IR *ir)
 {
 	struct cx88_core *core = ir->core;
-	u32 gpio, data, auxgpio;
+	u32 gpio, data;
 
 	/* read gpio value */
 	gpio = cx_read(ir->gpio_addr);
-	if (core->board == CX88_BOARD_NPGTECH_REALTV_TOP10FM) {
-		/* This board apparently uses a combination of 2 GPIO
-		   to represent the keys. Additionally, the second GPIO
-		   can be used for parity.
-
-		   Example:
-
-		   for key "5"
-			gpio = 0x758, auxgpio = 0xe5 or 0xf5
-		   for key "Power"
-			gpio = 0x758, auxgpio = 0xed or 0xfd
-		 */
-
-		auxgpio = cx_read(MO_GP1_IO);
-		/* Take out the parity part */
-		gpio+=(gpio & 0x7fd) + (auxgpio & 0xef);
-	} else
-		auxgpio = gpio;
-
 	if (ir->polling) {
-		if (ir->last_gpio == auxgpio)
+		if (ir->last_gpio == gpio)
 			return;
-		ir->last_gpio = auxgpio;
+		ir->last_gpio = gpio;
 	}
 
 	/* extract data */
@@ -191,13 +172,12 @@ int cx88_ir_init(struct cx88_core *core, struct pci_dev *pci)
 		ir_type = IR_TYPE_RC5;
 		ir->sampling = 1;
 		break;
-	case CX88_BOARD_WINFAST_DTV2000H:
 	case CX88_BOARD_WINFAST2000XP_EXPERT:
 		ir_codes = ir_codes_winfast;
 		ir->gpio_addr = MO_GP0_IO;
 		ir->mask_keycode = 0x8f8;
 		ir->mask_keyup = 0x100;
-		ir->polling = 50; /* ms */
+		ir->polling = 1; /* ms */
 		break;
 	case CX88_BOARD_IODATA_GVBCTV7E:
 		ir_codes = ir_codes_iodata_bctv7e;
@@ -247,12 +227,6 @@ int cx88_ir_init(struct cx88_core *core, struct pci_dev *pci)
 		ir_codes = ir_codes_dntv_live_dvbt_pro;
 		ir_type = IR_TYPE_PD;
 		ir->sampling = 0xff00; /* address */
-		break;
-	case CX88_BOARD_NPGTECH_REALTV_TOP10FM:
-		ir_codes = ir_codes_npgtech;
-		ir->gpio_addr = MO_GP0_IO;
-		ir->mask_keycode = 0xfa;
-		ir->polling = 50; /* ms */
 		break;
 	}
 

@@ -64,6 +64,7 @@
  *   
  */
 
+#include <linux/config.h>
 #include <linux/pnp.h>
 #include <linux/init.h>
 #include <linux/module.h>

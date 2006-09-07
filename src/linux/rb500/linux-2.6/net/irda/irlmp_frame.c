@@ -24,6 +24,7 @@
  *
  ********************************************************************/
 
+#include <linux/config.h>
 #include <linux/skbuff.h>
 #include <linux/kernel.h>
 

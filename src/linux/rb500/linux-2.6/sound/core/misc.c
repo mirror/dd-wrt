@@ -34,8 +34,6 @@ void release_and_free_resource(struct resource *res)
 	}
 }
 
-EXPORT_SYMBOL(release_and_free_resource);
-
 #ifdef CONFIG_SND_VERBOSE_PRINTK
 void snd_verbose_printk(const char *file, int line, const char *format, ...)
 {
@@ -53,8 +51,6 @@ void snd_verbose_printk(const char *file, int line, const char *format, ...)
 	vprintk(format, args);
 	va_end(args);
 }
-
-EXPORT_SYMBOL(snd_verbose_printk);
 #endif
 
 #if defined(CONFIG_SND_DEBUG) && defined(CONFIG_SND_VERBOSE_PRINTK)
@@ -75,6 +71,4 @@ void snd_verbose_printd(const char *file, int line, const char *format, ...)
 	va_end(args);
 
 }
-
-EXPORT_SYMBOL(snd_verbose_printd);
 #endif

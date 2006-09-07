@@ -400,9 +400,7 @@ int ttpci_budget_init(struct budget *budget, struct saa7146_dev *dev,
 		budget->dev->name, budget->buffer_width, budget->buffer_height);
 	printk("%s: dma buffer size %u\n", budget->dev->name, budget->buffer_size);
 
-	if ((ret = dvb_register_adapter(&budget->dvb_adapter, budget->card->name, owner, &budget->dev->pci->dev)) < 0) {
-		return ret;
-	}
+	dvb_register_adapter(&budget->dvb_adapter, budget->card->name, owner);
 
 	/* set dd1 stream a & b */
 	saa7146_write(dev, DD1_STREAM_B, 0x00000000);

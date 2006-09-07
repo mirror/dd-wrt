@@ -22,6 +22,7 @@
  * 02-07-2003 Bug made it into first release. Take two.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>

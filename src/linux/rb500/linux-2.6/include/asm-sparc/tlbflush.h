@@ -1,6 +1,7 @@
 #ifndef _SPARC_TLBFLUSH_H
 #define _SPARC_TLBFLUSH_H
 
+#include <linux/config.h>
 #include <linux/mm.h>
 // #include <asm/processor.h>
 

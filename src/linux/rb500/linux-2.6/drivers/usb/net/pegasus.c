@@ -163,8 +163,6 @@ static int get_registers(pegasus_t * pegasus, __u16 indx, __u16 size,
 
 	/* using ATOMIC, we'd never wake up if we slept */
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb, GFP_ATOMIC))) {
-		if (ret == -ENODEV)
-			netif_device_detach(pegasus->net);
 		if (netif_msg_drv(pegasus))
 			dev_err(&pegasus->intf->dev, "%s, status %d\n",
 					__FUNCTION__, ret);
@@ -219,8 +217,6 @@ static int set_registers(pegasus_t * pegasus, __u16 indx, __u16 size,
 	set_current_state(TASK_UNINTERRUPTIBLE);
 
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb, GFP_ATOMIC))) {
-		if (ret == -ENODEV)
-			netif_device_detach(pegasus->net);
 		if (netif_msg_drv(pegasus))
 			dev_err(&pegasus->intf->dev, "%s, status %d\n",
 					__FUNCTION__, ret);
@@ -272,8 +268,6 @@ static int set_register(pegasus_t * pegasus, __u16 indx, __u8 data)
 	set_current_state(TASK_UNINTERRUPTIBLE);
 
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb, GFP_ATOMIC))) {
-		if (ret == -ENODEV)
-			netif_device_detach(pegasus->net);
 		if (netif_msg_drv(pegasus))
 			dev_err(&pegasus->intf->dev, "%s, status %d\n",
 					__FUNCTION__, ret);
@@ -304,13 +298,10 @@ static int update_eth_regs_async(pegasus_t * pegasus)
 			     (char *) &pegasus->dr,
 			     pegasus->eth_regs, 3, ctrl_callback, pegasus);
 
-	if ((ret = usb_submit_urb(pegasus->ctrl_urb, GFP_ATOMIC))) {
-		if (ret == -ENODEV)
-			netif_device_detach(pegasus->net);
+	if ((ret = usb_submit_urb(pegasus->ctrl_urb, GFP_ATOMIC)))
 		if (netif_msg_drv(pegasus))
 			dev_err(&pegasus->intf->dev, "%s, status %d\n",
 					__FUNCTION__, ret);
-	}
 
 	return ret;
 }
@@ -701,10 +692,7 @@ goon:
 			  usb_rcvbulkpipe(pegasus->usb, 1),
 			  pegasus->rx_skb->data, PEGASUS_MTU + 8,
 			  read_bulk_callback, pegasus);
-	rx_status = usb_submit_urb(pegasus->rx_urb, GFP_ATOMIC);
-	if (rx_status == -ENODEV)
-		netif_device_detach(pegasus->net);
-	else if (rx_status) {
+	if (usb_submit_urb(pegasus->rx_urb, GFP_ATOMIC)) {
 		pegasus->flags |= PEGASUS_RX_URB_FAIL;
 		goto tl_sched;
 	} else {
@@ -721,7 +709,6 @@ static void rx_fixup(unsigned long data)
 {
 	pegasus_t *pegasus;
 	unsigned long flags;
-	int status;
 
 	pegasus = (pegasus_t *) data;
 	if (pegasus->flags & PEGASUS_UNPLUG)
@@ -747,10 +734,7 @@ static void rx_fixup(unsigned long data)
 			  pegasus->rx_skb->data, PEGASUS_MTU + 8,
 			  read_bulk_callback, pegasus);
 try_again:
-	status = usb_submit_urb(pegasus->rx_urb, GFP_ATOMIC);
-	if (status == -ENODEV)
-		netif_device_detach(pegasus->net);
-	else if (status) {
+	if (usb_submit_urb(pegasus->rx_urb, GFP_ATOMIC)) {
 		pegasus->flags |= PEGASUS_RX_URB_FAIL;
 		tasklet_schedule(&pegasus->rx_tl);
 	} else {
@@ -852,8 +836,6 @@ static void intr_callback(struct urb *urb, struct pt_regs *regs)
 	}
 
 	status = usb_submit_urb(urb, SLAB_ATOMIC);
-	if (status == -ENODEV)
-		netif_device_detach(pegasus->net);
 	if (status && netif_msg_timer(pegasus))
 		printk(KERN_ERR "%s: can't resubmit interrupt urb, %d\n",
 				net->name, status);
@@ -892,7 +874,6 @@ static int pegasus_start_xmit(struct sk_buff *skb, struct net_device *net)
 			/* cleanup should already have been scheduled */
 			break;
 		case -ENODEV:		/* disconnect() upcoming */
-			netif_device_detach(pegasus->net);
 			break;
 		default:
 			pegasus->stats.tx_errors++;
@@ -1018,8 +999,6 @@ static int pegasus_open(struct net_device *net)
 			  pegasus->rx_skb->data, PEGASUS_MTU + 8,
 			  read_bulk_callback, pegasus);
 	if ((res = usb_submit_urb(pegasus->rx_urb, GFP_KERNEL))) {
-		if (res == -ENODEV)
-			netif_device_detach(pegasus->net);
 		if (netif_msg_ifup(pegasus))
 			pr_debug("%s: failed rx_urb, %d", net->name, res);
 		goto exit;
@@ -1030,8 +1009,6 @@ static int pegasus_open(struct net_device *net)
 			 pegasus->intr_buff, sizeof (pegasus->intr_buff),
 			 intr_callback, pegasus, pegasus->intr_interval);
 	if ((res = usb_submit_urb(pegasus->intr_urb, GFP_KERNEL))) {
-		if (res == -ENODEV)
-			netif_device_detach(pegasus->net);
 		if (netif_msg_ifup(pegasus))
 			pr_debug("%s: failed intr_urb, %d\n", net->name, res);
 		usb_kill_urb(pegasus->rx_urb);

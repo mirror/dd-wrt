@@ -10,6 +10,7 @@
  * 30-06-1998 by Frank DENIS : ugly filler.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/fs.h>

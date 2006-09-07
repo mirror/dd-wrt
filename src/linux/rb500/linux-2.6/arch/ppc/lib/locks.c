@@ -4,6 +4,7 @@
  * Written by Cort Dougan (cort@cs.nmt.edu)
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>
 #include <linux/module.h>

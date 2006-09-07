@@ -27,6 +27,7 @@
 #ifndef SCSI_TRANSPORT_FC_H
 #define SCSI_TRANSPORT_FC_H
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <scsi/scsi.h>
 

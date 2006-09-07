@@ -18,6 +18,7 @@
 #ifndef _ASM_DMA_H
 #define _ASM_DMA_H
 
+#include <linux/config.h>
 #include <linux/spinlock.h>
 #include <asm/io.h>
 

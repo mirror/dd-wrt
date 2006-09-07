@@ -354,8 +354,7 @@ static int grip_connect(struct gameport *gameport, struct gameport_driver *drv)
 			goto fail3;
 		}
 
-		snprintf(grip->phys[i], sizeof(grip->phys[i]),
-			 "%s/input%d", gameport->phys, i);
+		sprintf(grip->phys[i], "%s/input%d", gameport->phys, i);
 
 		input_dev->name = grip_name[grip->mode[i]];
 		input_dev->phys = grip->phys[i];

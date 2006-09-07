@@ -11,6 +11,7 @@
 #ifndef _ASM_SN_ARCH_H
 #define _ASM_SN_ARCH_H
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <asm/sn/types.h>
 #ifdef CONFIG_SGI_IP27

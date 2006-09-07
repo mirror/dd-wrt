@@ -1,5 +1,6 @@
 #define VMLINUX_SYMBOL(_sym_) _##_sym_
 #include <asm-generic/vmlinux.lds.h>
+#include <linux/config.h>
 
 /* target memory map */
 #ifdef CONFIG_H8300H_GENERIC

@@ -13,6 +13,7 @@
  */
 
 /* #define DEBUG */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/mount.h>
@@ -134,11 +135,11 @@ static int fill_super(struct super_block *sb, void *data, int silent)
 	return simple_fill_super(sb, SECURITYFS_MAGIC, files);
 }
 
-static int get_sb(struct file_system_type *fs_type,
-		  int flags, const char *dev_name,
-		  void *data, struct vfsmount *mnt)
+static struct super_block *get_sb(struct file_system_type *fs_type,
+				        int flags, const char *dev_name,
+					void *data)
 {
-	return get_sb_single(fs_type, flags, data, fill_super, mnt);
+	return get_sb_single(fs_type, flags, data, fill_super);
 }
 
 static struct file_system_type fs_type = {
@@ -223,7 +224,7 @@ struct dentry *securityfs_create_file(const char *name, mode_t mode,
 
 	pr_debug("securityfs: creating file '%s'\n",name);
 
-	error = simple_pin_fs(&fs_type, &mount, &mount_count);
+	error = simple_pin_fs("securityfs", &mount, &mount_count);
 	if (error) {
 		dentry = ERR_PTR(error);
 		goto exit;

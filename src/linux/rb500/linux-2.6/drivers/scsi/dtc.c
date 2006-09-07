@@ -145,35 +145,35 @@ static struct override {
 0, IRQ_AUTO}};
 #endif
 
-#define NO_OVERRIDES ARRAY_SIZE(overrides)
+#define NO_OVERRIDES (sizeof(overrides) / sizeof(struct override))
 
 static struct base {
 	unsigned long address;
 	int noauto;
-} bases[] __initdata = {
-	{ 0xcc000, 0 },
-	{ 0xc8000, 0 },
-	{ 0xdc000, 0 },
+} bases[] __initdata = { 
+	{ 0xcc000, 0 }, 
+	{ 0xc8000, 0 }, 
+	{ 0xdc000, 0 }, 
 	{ 0xd8000, 0 }
 };
 
-#define NO_BASES ARRAY_SIZE(bases)
+#define NO_BASES (sizeof (bases) / sizeof (struct base))
 
 static const struct signature {
 	const char *string;
 	int offset;
-} signatures[] = {
+} signatures[] = { 
 	{"DATA TECHNOLOGY CORPORATION BIOS", 0x25},
 };
 
-#define NO_SIGNATURES ARRAY_SIZE(signatures)
+#define NO_SIGNATURES (sizeof (signatures) /  sizeof (struct signature))
 
 #ifndef MODULE
 /*
  * Function : dtc_setup(char *str, int *ints)
  *
  * Purpose : LILO command line initialization of the overrides array,
- *
+ * 
  * Inputs : str - unused, ints - array of integer parameters with ints[0]
  *	equal to the number of ints.
  *
@@ -280,7 +280,7 @@ found:
 		/* With interrupts enabled, it will sometimes hang when doing heavy
 		 * reads. So better not enable them until I finger it out. */
 		if (instance->irq != SCSI_IRQ_NONE)
-			if (request_irq(instance->irq, dtc_intr, IRQF_DISABLED, "dtc", instance)) {
+			if (request_irq(instance->irq, dtc_intr, SA_INTERRUPT, "dtc", instance)) {
 				printk(KERN_ERR "scsi%d : IRQ%d not free, interrupts disabled\n", instance->host_no, instance->irq);
 				instance->irq = SCSI_IRQ_NONE;
 			}

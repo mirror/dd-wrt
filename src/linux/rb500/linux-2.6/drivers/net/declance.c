@@ -42,6 +42,7 @@
  *              bits. macro
  */
 
+#include <linux/config.h>
 #include <linux/crc32.h>
 #include <linux/delay.h>
 #include <linux/errno.h>
@@ -703,8 +704,8 @@ static irqreturn_t lance_dma_merr_int(const int irq, void *dev_id,
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t lance_interrupt(const int irq, void *dev_id,
-				   struct pt_regs *regs)
+static irqreturn_t
+lance_interrupt(const int irq, void *dev_id, struct pt_regs *regs)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
 	struct lance_private *lp = netdev_priv(dev);
@@ -884,7 +885,8 @@ static int lance_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	len = skblen;
 	
 	if (len < ETH_ZLEN) {
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 		len = ETH_ZLEN;
 	}
@@ -1253,7 +1255,7 @@ static int __init dec_lance_init(const int type, const int slot)
 	return 0;
 
 err_out_free_dev:
-	free_netdev(dev);
+	kfree(dev);
 
 err_out:
 	return ret;
@@ -1299,7 +1301,6 @@ static void __exit dec_lance_cleanup(void)
 	while (root_lance_dev) {
 		struct net_device *dev = root_lance_dev;
 		struct lance_private *lp = netdev_priv(dev);
-
 		unregister_netdev(dev);
 #ifdef CONFIG_TC
 		if (lp->slot >= 0)

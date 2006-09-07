@@ -9,6 +9,7 @@
  *
  *  32-bit debugging code
  */
+#include <linux/config.h>
 #include <linux/linkage.h>
 
 		.text

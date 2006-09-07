@@ -909,6 +909,7 @@ struct tcamsg
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/mutex.h>
 
 extern size_t rtattr_strlcpy(char *dest, const struct rtattr *rta, size_t size);

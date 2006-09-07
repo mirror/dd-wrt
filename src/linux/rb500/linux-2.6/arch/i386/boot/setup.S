@@ -46,8 +46,9 @@
  * by Robert Schwebel, December 2001 <robert@schwebel.de>
  */
 
+#include <linux/config.h>
 #include <asm/segment.h>
-#include <linux/utsrelease.h>
+#include <linux/version.h>
 #include <linux/compile.h>
 #include <asm/boot.h>
 #include <asm/e820.h>

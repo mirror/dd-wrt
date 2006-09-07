@@ -32,6 +32,7 @@
  *      2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/sched.h>
@@ -75,6 +76,7 @@
 
 /* keep track of when we need to update the rtc */
 time_t last_rtc_update;
+extern int piranha_simulator;
 #ifdef CONFIG_PPC_ISERIES
 unsigned long iSeries_recal_titan = 0;
 unsigned long iSeries_recal_tb = 0; 
@@ -101,7 +103,7 @@ EXPORT_SYMBOL(tb_ticks_per_sec);	/* for cputime_t conversions */
 u64 tb_to_xs;
 unsigned tb_to_us;
 
-#define TICKLEN_SCALE	TICK_LENGTH_SHIFT
+#define TICKLEN_SCALE	(SHIFT_SCALE - 10)
 u64 last_tick_len;	/* units are ns / 2^TICKLEN_SCALE */
 u64 ticklen_to_xs;	/* 0.64 fraction */
 
@@ -856,50 +858,42 @@ int do_settimeofday(struct timespec *tv)
 
 EXPORT_SYMBOL(do_settimeofday);
 
-static int __init get_freq(char *name, int cells, unsigned long *val)
+void __init generic_calibrate_decr(void)
 {
 	struct device_node *cpu;
 	unsigned int *fp;
-	int found = 0;
+	int node_found;
 
-	/* The cpu node should have timebase and clock frequency properties */
+	/*
+	 * The cpu node should have a timebase-frequency property
+	 * to tell us the rate at which the decrementer counts.
+	 */
 	cpu = of_find_node_by_type(NULL, "cpu");
 
-	if (cpu) {
-		fp = (unsigned int *)get_property(cpu, name, NULL);
-		if (fp) {
-			found = 1;
-			*val = 0;
-			while (cells--)
-				*val = (*val << 32) | *fp++;
-		}
-
-		of_node_put(cpu);
-	}
-
-	return found;
-}
-
-void __init generic_calibrate_decr(void)
-{
 	ppc_tb_freq = DEFAULT_TB_FREQ;		/* hardcoded default */
-
-	if (!get_freq("ibm,extended-timebase-frequency", 2, &ppc_tb_freq) &&
-	    !get_freq("timebase-frequency", 1, &ppc_tb_freq)) {
-
+	node_found = 0;
+	if (cpu) {
+		fp = (unsigned int *)get_property(cpu, "timebase-frequency",
+						  NULL);
+		if (fp) {
+			node_found = 1;
+			ppc_tb_freq = *fp;
+		}
+	}
+	if (!node_found)
 		printk(KERN_ERR "WARNING: Estimating decrementer frequency "
 				"(not found)\n");
+
+	ppc_proc_freq = DEFAULT_PROC_FREQ;
+	node_found = 0;
+	if (cpu) {
+		fp = (unsigned int *)get_property(cpu, "clock-frequency",
+						  NULL);
+		if (fp) {
+			node_found = 1;
+			ppc_proc_freq = *fp;
+		}
 	}
-
-	ppc_proc_freq = DEFAULT_PROC_FREQ;	/* hardcoded default */
-
-	if (!get_freq("ibm,extended-clock-frequency", 2, &ppc_proc_freq) &&
-	    !get_freq("clock-frequency", 1, &ppc_proc_freq)) {
-
-		printk(KERN_ERR "WARNING: Estimating processor frequency "
-				"(not found)\n");
-	}
-
 #ifdef CONFIG_BOOKE
 	/* Set the time base to zero */
 	mtspr(SPRN_TBWL, 0);
@@ -911,6 +905,11 @@ void __init generic_calibrate_decr(void)
 	/* Enable decrementer interrupt */
 	mtspr(SPRN_TCR, TCR_DIE);
 #endif
+	if (!node_found)
+		printk(KERN_ERR "WARNING: Estimating processor frequency "
+				"(not found)\n");
+
+	of_node_put(cpu);
 }
 
 unsigned long get_boot_time(void)
@@ -946,9 +945,9 @@ void __init time_init(void)
 	} else {
 		/* Normal PowerPC with timebase register */
 		ppc_md.calibrate_decr();
-		printk(KERN_DEBUG "time_init: decrementer frequency = %lu.%.6lu MHz\n",
+		printk(KERN_INFO "time_init: decrementer frequency = %lu.%.6lu MHz\n",
 		       ppc_tb_freq / 1000000, ppc_tb_freq % 1000000);
-		printk(KERN_DEBUG "time_init: processor frequency   = %lu.%.6lu MHz\n",
+		printk(KERN_INFO "time_init: processor frequency   = %lu.%.6lu MHz\n",
 		       ppc_proc_freq / 1000000, ppc_proc_freq % 1000000);
 		tb_last_stamp = tb_last_jiffy = get_tb();
 	}
@@ -1011,7 +1010,10 @@ void __init time_init(void)
 	tb_to_ns_scale = scale;
 	tb_to_ns_shift = shift;
 
-	tm = get_boot_time();
+#ifdef CONFIG_PPC_ISERIES
+	if (!piranha_simulator)
+#endif
+		tm = get_boot_time();
 
 	write_seqlock_irqsave(&xtime_lock, flags);
 

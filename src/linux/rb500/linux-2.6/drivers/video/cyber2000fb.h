@@ -9,6 +9,7 @@
  *
  * Integraphics Cyber2000 frame buffer device
  */
+#include <linux/config.h>
 
 /*
  * Internal CyberPro sizes and offsets.

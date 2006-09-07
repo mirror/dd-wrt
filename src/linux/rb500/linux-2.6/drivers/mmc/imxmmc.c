@@ -25,6 +25,7 @@
  *             deficiencies
  *
  */
+#include <linux/config.h>
 
 #ifdef CONFIG_MMC_DEBUG
 #define DEBUG
@@ -227,7 +228,7 @@ static int imxmci_busy_wait_for_status(struct imxmci_host *host,
 static void imxmci_setup_data(struct imxmci_host *host, struct mmc_data *data)
 {
 	unsigned int nob = data->blocks;
-	unsigned int blksz = data->blksz;
+	unsigned int blksz = 1 << data->blksz_bits;
 	unsigned int datasz = nob * blksz;
 	int i;
 

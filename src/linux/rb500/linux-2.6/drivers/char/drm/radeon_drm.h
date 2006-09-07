@@ -161,8 +161,7 @@
 #define R200_EMIT_PP_TXCTLALL_3                     91
 #define R200_EMIT_PP_TXCTLALL_4                     92
 #define R200_EMIT_PP_TXCTLALL_5                     93
-#define R200_EMIT_VAP_PVS_CNTL                      94
-#define RADEON_MAX_STATE_PACKETS                    95
+#define RADEON_MAX_STATE_PACKETS                    94
 
 /* Commands understood by cmd_buffer ioctl.  More can be added but
  * obviously these can't be removed or changed:
@@ -177,7 +176,6 @@
 #define RADEON_CMD_WAIT         8	/* emit hw wait commands -- note:
 					 *  doesn't make the cpu wait, just
 					 *  the graphics hardware */
-#define RADEON_CMD_VECLINEAR	9       /* another r200 stopgap */
 
 typedef union {
 	int i;
@@ -193,9 +191,6 @@ typedef union {
 	struct {
 		unsigned char cmd_type, offset, stride, count;
 	} vectors;
-	struct {
-		unsigned char cmd_type, addr_lo, addr_hi, count;
-	} veclinear;
 	struct {
 		unsigned char cmd_type, buf_idx, pad0, pad1;
 	} dma;

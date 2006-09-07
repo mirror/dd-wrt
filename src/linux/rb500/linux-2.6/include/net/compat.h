@@ -1,6 +1,7 @@
 #ifndef NET_COMPAT_H
 #define NET_COMPAT_H
 
+#include <linux/config.h>
 
 struct sock;
 

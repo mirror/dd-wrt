@@ -67,6 +67,7 @@ struct isdn_ppp_comp_data {
 #ifdef __KERNEL__
 
 
+#include <linux/config.h>
 
 #ifdef CONFIG_IPPP_FILTER
 #include <linux/filter.h>

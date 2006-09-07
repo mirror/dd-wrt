@@ -14,6 +14,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/config.h>
 #include <asm/cache.h>
 #include <asm/ptrace.h>  /* pt_regs */
 

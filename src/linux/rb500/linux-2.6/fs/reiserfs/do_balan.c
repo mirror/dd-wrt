@@ -15,6 +15,7 @@
  **
  **/
 
+#include <linux/config.h>
 #include <asm/uaccess.h>
 #include <linux/time.h>
 #include <linux/reiserfs_fs.h>

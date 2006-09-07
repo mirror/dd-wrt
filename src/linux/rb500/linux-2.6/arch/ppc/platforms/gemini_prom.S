@@ -6,6 +6,7 @@
  *    ---Dan
  */
 
+#include <linux/config.h>
 #include <asm/reg.h>
 #include <asm/page.h>
 #include <platforms/gemini.h>

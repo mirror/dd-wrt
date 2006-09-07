@@ -2,6 +2,7 @@
 #define _ASM_POWERPC_TOPOLOGY_H
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 
 struct sys_device;
 struct device_node;
@@ -31,13 +32,8 @@ static inline int node_to_first_cpu(int node)
 
 int of_node_to_nid(struct device_node *device);
 
-struct pci_bus;
-extern int pcibus_to_node(struct pci_bus *bus);
-
-#define pcibus_to_cpumask(bus)	(pcibus_to_node(bus) == -1 ? \
-					CPU_MASK_ALL : \
-					node_to_cpumask(pcibus_to_node(bus)) \
-				)
+#define pcibus_to_node(node)    (-1)
+#define pcibus_to_cpumask(bus)	(cpu_online_map)
 
 /* sched_domains SD_NODE_INIT for PPC64 machines */
 #define SD_NODE_INIT (struct sched_domain) {		\
@@ -92,11 +88,6 @@ static inline void sysfs_remove_device_from_node(struct sys_device *dev,
 #include <asm-generic/topology.h>
 
 #endif /* CONFIG_NUMA */
-
-#ifdef CONFIG_SMP
-#include <asm/cputable.h>
-#define smt_capable() 		(cpu_has_feature(CPU_FTR_SMT))
-#endif
 
 #endif /* __KERNEL__ */
 #endif	/* _ASM_POWERPC_TOPOLOGY_H */

@@ -9,6 +9,7 @@
  */
 
 #ifndef __ASSEMBLY__
+#include <linux/config.h>
 
 /* include compiler specific intrinsics */
 #include <asm/ia64regs.h>

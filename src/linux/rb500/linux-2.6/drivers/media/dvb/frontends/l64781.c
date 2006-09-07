@@ -32,6 +32,7 @@
 
 struct l64781_state {
 	struct i2c_adapter* i2c;
+	struct dvb_frontend_ops ops;
 	const struct l64781_config* config;
 	struct dvb_frontend frontend;
 
@@ -140,10 +141,7 @@ static int apply_frontend_param (struct dvb_frontend* fe, struct dvb_frontend_pa
 	u8 val0x06;
 	int bw = p->bandwidth - BANDWIDTH_8_MHZ;
 
-	if (fe->ops.tuner_ops.set_params) {
-		fe->ops.tuner_ops.set_params(fe, param);
-		if (fe->ops.i2c_gate_ctrl) fe->ops.i2c_gate_ctrl(fe, 0);
-	}
+	state->config->pll_set(fe, param);
 
 	if (param->inversion != INVERSION_ON &&
 	    param->inversion != INVERSION_OFF)
@@ -465,6 +463,8 @@ static int l64781_init(struct dvb_frontend* fe)
 	/* Everything is two's complement, soft bit and CSI_OUT too */
 	l64781_writereg (state, 0x1e, 0x09);
 
+	if (state->config->pll_init) state->config->pll_init(fe);
+
 	/* delay a bit after first init attempt */
 	if (state->first) {
 		state->first = 0;
@@ -508,6 +508,7 @@ struct dvb_frontend* l64781_attach(const struct l64781_config* config,
 	/* setup the state */
 	state->config = config;
 	state->i2c = i2c;
+	memcpy(&state->ops, &l64781_ops, sizeof(struct dvb_frontend_ops));
 	state->first = 1;
 
 	/**
@@ -553,7 +554,7 @@ struct dvb_frontend* l64781_attach(const struct l64781_config* config,
 	}
 
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &l64781_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 

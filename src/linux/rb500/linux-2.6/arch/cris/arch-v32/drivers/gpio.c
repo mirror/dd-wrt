@@ -62,6 +62,7 @@
  *
  */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 #include <linux/sched.h>
@@ -744,11 +745,11 @@ gpio_init(void)
 	 * in some tests.
 	 */
 	if (request_irq(TIMER_INTR_VECT, gpio_poll_timer_interrupt,
-			IRQF_SHARED | IRQF_DISABLED,"gpio poll", &alarmlist)) {
+			SA_SHIRQ | SA_INTERRUPT,"gpio poll", &alarmlist)) {
 		printk("err: timer0 irq for gpio\n");
 	}
 	if (request_irq(GEN_IO_INTR_VECT, gpio_pa_interrupt,
-			IRQF_SHARED | IRQF_DISABLED,"gpio PA", &alarmlist)) {
+			SA_SHIRQ | SA_INTERRUPT,"gpio PA", &alarmlist)) {
 		printk("err: PA irq for gpio\n");
 	}
 	/* enable the gio and timer irq in global config */

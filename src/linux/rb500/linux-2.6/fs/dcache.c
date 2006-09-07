@@ -14,6 +14,7 @@
  * the dcache entry is deleted or garbage collected.
  */
 
+#include <linux/config.h>
 #include <linux/syscalls.h>
 #include <linux/string.h>
 #include <linux/mm.h>
@@ -38,7 +39,7 @@ int sysctl_vfs_cache_pressure __read_mostly = 100;
 EXPORT_SYMBOL_GPL(sysctl_vfs_cache_pressure);
 
  __cacheline_aligned_in_smp DEFINE_SPINLOCK(dcache_lock);
-static __cacheline_aligned_in_smp DEFINE_SEQLOCK(rename_lock);
+static seqlock_t rename_lock __cacheline_aligned_in_smp = SEQLOCK_UNLOCKED;
 
 EXPORT_SYMBOL(dcache_lock);
 
@@ -358,13 +359,12 @@ restart:
 }
 
 /*
- * Throw away a dentry - free the inode, dput the parent.  This requires that
- * the LRU list has already been removed.
- *
+ * Throw away a dentry - free the inode, dput the parent.
+ * This requires that the LRU list has already been
+ * removed.
  * Called with dcache_lock, drops it and then regains.
- * Called with dentry->d_lock held, drops it.
  */
-static void prune_one_dentry(struct dentry * dentry)
+static inline void prune_one_dentry(struct dentry * dentry)
 {
 	struct dentry * parent;
 
@@ -382,8 +382,6 @@ static void prune_one_dentry(struct dentry * dentry)
 /**
  * prune_dcache - shrink the dcache
  * @count: number of entries to try and free
- * @sb: if given, ignore dentries for other superblocks
- *         which are being unmounted.
  *
  * Shrink the dcache. This is done when we need
  * more memory, or simply when we need to unmount
@@ -394,29 +392,16 @@ static void prune_one_dentry(struct dentry * dentry)
  * all the dentries are in use.
  */
  
-static void prune_dcache(int count, struct super_block *sb)
+static void prune_dcache(int count)
 {
 	spin_lock(&dcache_lock);
 	for (; count ; count--) {
 		struct dentry *dentry;
 		struct list_head *tmp;
-		struct rw_semaphore *s_umount;
 
 		cond_resched_lock(&dcache_lock);
 
 		tmp = dentry_unused.prev;
-		if (sb) {
-			/* Try to find a dentry for this sb, but don't try
-			 * too hard, if they aren't near the tail they will
-			 * be moved down again soon
-			 */
-			int skip = count;
-			while (skip && tmp != &dentry_unused &&
-			    list_entry(tmp, struct dentry, d_lru)->d_sb != sb) {
-				skip--;
-				tmp = tmp->prev;
-			}
-		}
 		if (tmp == &dentry_unused)
 			break;
 		list_del_init(tmp);
@@ -442,45 +427,7 @@ static void prune_dcache(int count, struct super_block *sb)
  			spin_unlock(&dentry->d_lock);
 			continue;
 		}
-		/*
-		 * If the dentry is not DCACHED_REFERENCED, it is time
-		 * to remove it from the dcache, provided the super block is
-		 * NULL (which means we are trying to reclaim memory)
-		 * or this dentry belongs to the same super block that
-		 * we want to shrink.
-		 */
-		/*
-		 * If this dentry is for "my" filesystem, then I can prune it
-		 * without taking the s_umount lock (I already hold it).
-		 */
-		if (sb && dentry->d_sb == sb) {
-			prune_one_dentry(dentry);
-			continue;
-		}
-		/*
-		 * ...otherwise we need to be sure this filesystem isn't being
-		 * unmounted, otherwise we could race with
-		 * generic_shutdown_super(), and end up holding a reference to
-		 * an inode while the filesystem is unmounted.
-		 * So we try to get s_umount, and make sure s_root isn't NULL.
-		 * (Take a local copy of s_umount to avoid a use-after-free of
-		 * `dentry').
-		 */
-		s_umount = &dentry->d_sb->s_umount;
-		if (down_read_trylock(s_umount)) {
-			if (dentry->d_sb->s_root != NULL) {
-				prune_one_dentry(dentry);
-				up_read(s_umount);
-				continue;
-			}
-			up_read(s_umount);
-		}
-		spin_unlock(&dentry->d_lock);
-		/* Cannot remove the first dentry, and it isn't appropriate
-		 * to move it to the head of the list, so give up, and try
-		 * later
-		 */
-		break;
+		prune_one_dentry(dentry);
 	}
 	spin_unlock(&dcache_lock);
 }
@@ -521,7 +468,8 @@ void shrink_dcache_sb(struct super_block * sb)
 		dentry = list_entry(tmp, struct dentry, d_lru);
 		if (dentry->d_sb != sb)
 			continue;
-		list_move(tmp, &dentry_unused);
+		list_del(tmp);
+		list_add(tmp, &dentry_unused);
 	}
 
 	/*
@@ -636,7 +584,7 @@ resume:
 		 * of the unused list for prune_dcache
 		 */
 		if (!atomic_read(&dentry->d_count)) {
-			list_add_tail(&dentry->d_lru, &dentry_unused);
+			list_add(&dentry->d_lru, dentry_unused.prev);
 			dentry_stat.nr_unused++;
 			found++;
 		}
@@ -682,7 +630,46 @@ void shrink_dcache_parent(struct dentry * parent)
 	int found;
 
 	while ((found = select_parent(parent)) != 0)
-		prune_dcache(found, parent->d_sb);
+		prune_dcache(found);
+}
+
+/**
+ * shrink_dcache_anon - further prune the cache
+ * @head: head of d_hash list of dentries to prune
+ *
+ * Prune the dentries that are anonymous
+ *
+ * parsing d_hash list does not hlist_for_each_entry_rcu() as it
+ * done under dcache_lock.
+ *
+ */
+void shrink_dcache_anon(struct hlist_head *head)
+{
+	struct hlist_node *lp;
+	int found;
+	do {
+		found = 0;
+		spin_lock(&dcache_lock);
+		hlist_for_each(lp, head) {
+			struct dentry *this = hlist_entry(lp, struct dentry, d_hash);
+			if (!list_empty(&this->d_lru)) {
+				dentry_stat.nr_unused--;
+				list_del_init(&this->d_lru);
+			}
+
+			/* 
+			 * move only zero ref count dentries to the end 
+			 * of the unused list for prune_dcache
+			 */
+			if (!atomic_read(&this->d_count)) {
+				list_add_tail(&this->d_lru, &dentry_unused);
+				dentry_stat.nr_unused++;
+				found++;
+			}
+		}
+		spin_unlock(&dcache_lock);
+		prune_dcache(found);
+	} while(found);
 }
 
 /*
@@ -702,7 +689,7 @@ static int shrink_dcache_memory(int nr, gfp_t gfp_mask)
 	if (nr) {
 		if (!(gfp_mask & __GFP_FS))
 			return -1;
-		prune_dcache(nr, NULL);
+		prune_dcache(nr);
 	}
 	return (dentry_stat.nr_unused / 100) * sysctl_vfs_cache_pressure;
 }
@@ -1339,10 +1326,10 @@ void d_move(struct dentry * dentry, struct dentry * target)
 	 */
 	if (target < dentry) {
 		spin_lock(&target->d_lock);
-		spin_lock_nested(&dentry->d_lock, DENTRY_D_LOCK_NESTED);
+		spin_lock(&dentry->d_lock);
 	} else {
 		spin_lock(&dentry->d_lock);
-		spin_lock_nested(&target->d_lock, DENTRY_D_LOCK_NESTED);
+		spin_lock(&target->d_lock);
 	}
 
 	/* Move the dentry to the target hash queue, if on different bucket */

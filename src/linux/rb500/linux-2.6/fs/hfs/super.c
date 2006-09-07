@@ -12,6 +12,7 @@
  * Based on the minix file system code, (C) 1991, 1992 by Linus Torvalds
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/blkdev.h>
 #include <linux/mount.h>
@@ -79,10 +80,8 @@ static void hfs_put_super(struct super_block *sb)
  *
  * changed f_files/f_ffree to reflect the fs_ablock/free_ablocks.
  */
-static int hfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+static int hfs_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct super_block *sb = dentry->d_sb;
-
 	buf->f_type = HFS_SUPER_MAGIC;
 	buf->f_bsize = sb->s_blocksize;
 	buf->f_blocks = (u32)HFS_SB(sb)->fs_ablocks * HFS_SB(sb)->fs_div;
@@ -414,11 +413,10 @@ bail:
 	return res;
 }
 
-static int hfs_get_sb(struct file_system_type *fs_type,
-		      int flags, const char *dev_name, void *data,
-		      struct vfsmount *mnt)
+static struct super_block *hfs_get_sb(struct file_system_type *fs_type,
+				      int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, hfs_fill_super, mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, hfs_fill_super);
 }
 
 static struct file_system_type hfs_fs_type = {

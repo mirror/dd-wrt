@@ -75,6 +75,7 @@
  *   - move reset into open to clean out spurious data
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>

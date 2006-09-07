@@ -24,6 +24,7 @@
  *
  ********************************************************************/
 
+#include <linux/config.h>
 #include <linux/skbuff.h>
 #include <linux/init.h>
 #include <linux/seq_file.h>

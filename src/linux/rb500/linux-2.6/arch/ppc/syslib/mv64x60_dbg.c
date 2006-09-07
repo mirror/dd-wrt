@@ -18,6 +18,7 @@
  */
 
 
+#include <linux/config.h>
 #include <linux/irq.h>
 #include <asm/delay.h>
 #include <asm/mv64x60.h>

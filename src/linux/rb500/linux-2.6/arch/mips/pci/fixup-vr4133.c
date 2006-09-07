@@ -15,6 +15,7 @@
  * Author: Manish Lachwani (mlachwani@mvista.com)
  *
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/pci.h>
 

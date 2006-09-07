@@ -11,6 +11,7 @@
  * Written by Miles Bader <miles@gnu.org>
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
@@ -328,7 +329,7 @@ void pcibios_fixup_bus(struct pci_bus *b)
 
 void
 pcibios_align_resource (void *data, struct resource *res,
-			resource_size_t size, resource_size_t align)
+			unsigned long size, unsigned long align)
 {
 }
 

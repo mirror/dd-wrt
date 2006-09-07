@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/interrupt.h>
 #include <linux/fs.h>
 #include <linux/blkpg.h>
@@ -66,6 +67,8 @@ dasd_gendisk_alloc(struct dasd_device *device)
 			       'a'+(((device->devindex-26)/26)%26));
 	}
 	len += sprintf(gdp->disk_name + len, "%c", 'a'+(device->devindex%26));
+
+ 	sprintf(gdp->devfs_name, "dasd/%s", device->cdev->dev.bus_id);
 
 	if (device->features & DASD_FEATURE_READONLY)
 		set_disk_ro(gdp, 1);

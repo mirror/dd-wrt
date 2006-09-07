@@ -3,6 +3,7 @@
  */
 
 #include <asm/byteorder.h>
+#include <linux/config.h>
 #include <linux/completion.h>
 
 /*	FIXME - rename and use the following two types or delete them!

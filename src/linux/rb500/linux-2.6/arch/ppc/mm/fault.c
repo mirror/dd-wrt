@@ -13,6 +13,7 @@
  *  2 of the License, or (at your option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
 #include <linux/kernel.h>

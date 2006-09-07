@@ -24,12 +24,14 @@
 #include "xfs_trans.h"
 #include "xfs_sb.h"
 #include "xfs_ag.h"
+#include "xfs_dir.h"
 #include "xfs_dir2.h"
 #include "xfs_dmapi.h"
 #include "xfs_mount.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
+#include "xfs_dir_sf.h"
 #include "xfs_dir2_sf.h"
 #include "xfs_attr_sf.h"
 #include "xfs_dinode.h"
@@ -139,7 +141,7 @@ xfs_growfs_rt_alloc(
 		cancelflags |= XFS_TRANS_ABORT;
 		error = xfs_bmapi(tp, ip, oblocks, nblocks - oblocks,
 			XFS_BMAPI_WRITE | XFS_BMAPI_METADATA, &firstblock,
-			resblks, &map, &nmap, &flist, NULL);
+			resblks, &map, &nmap, &flist);
 		if (!error && nmap < 1)
 			error = XFS_ERROR(ENOSPC);
 		if (error)
@@ -1929,7 +1931,7 @@ xfs_growfs_rt(
 	/*
 	 * Initial error checking.
 	 */
-	if (mp->m_rtdev_targp == NULL || mp->m_rbmip == NULL ||
+	if (mp->m_rtdev_targp || mp->m_rbmip == NULL ||
 	    (nrblocks = in->newblocks) <= sbp->sb_rblocks ||
 	    (sbp->sb_rblocks && (in->extsize != sbp->sb_rextsize)))
 		return XFS_ERROR(EINVAL);
@@ -2402,10 +2404,10 @@ xfs_rtprint_range(
 {
 	xfs_extlen_t	i;		/* block number in the extent */
 
-	cmn_err(CE_DEBUG, "%Ld: ", (long long)start);
+	printk("%Ld: ", (long long)start);
 	for (i = 0; i < len; i++)
-		cmn_err(CE_DEBUG, "%d", xfs_rtcheck_bit(mp, tp, start + i, 1));
-	cmn_err(CE_DEBUG, "\n");
+		printk("%d", xfs_rtcheck_bit(mp, tp, start + i, 1));
+	printk("\n");
 }
 
 /*
@@ -2429,17 +2431,17 @@ xfs_rtprint_summary(
 			(void)xfs_rtget_summary(mp, tp, l, i, &sumbp, &sb, &c);
 			if (c) {
 				if (!p) {
-					cmn_err(CE_DEBUG, "%Ld-%Ld:", 1LL << l,
+					printk("%Ld-%Ld:", 1LL << l,
 						XFS_RTMIN((1LL << l) +
 							  ((1LL << l) - 1LL),
 							 mp->m_sb.sb_rextents));
 					p = 1;
 				}
-				cmn_err(CE_DEBUG, " %Ld:%d", (long long)i, c);
+				printk(" %Ld:%d", (long long)i, c);
 			}
 		}
 		if (p)
-			cmn_err(CE_DEBUG, "\n");
+			printk("\n");
 	}
 	if (sumbp)
 		xfs_trans_brelse(tp, sumbp);

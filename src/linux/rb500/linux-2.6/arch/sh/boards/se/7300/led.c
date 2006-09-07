@@ -11,6 +11,7 @@
  * This file contains Solution Engine specific LED code.
  */
 
+#include <linux/config.h>
 #include <linux/sched.h>
 #include <asm/mach/se7300.h>
 

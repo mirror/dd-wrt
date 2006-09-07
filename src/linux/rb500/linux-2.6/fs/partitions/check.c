@@ -18,8 +18,10 @@
 #include <linux/fs.h>
 #include <linux/kmod.h>
 #include <linux/ctype.h>
+#include <linux/devfs_fs_kernel.h>
 
 #include "check.h"
+#include "devfs.h"
 
 #include "acorn.h"
 #include "amiga.h"
@@ -27,6 +29,7 @@
 #include "ldm.h"
 #include "mac.h"
 #include "msdos.h"
+#include "openwrt.h"
 #include "osf.h"
 #include "sgi.h"
 #include "sun.h"
@@ -46,6 +49,9 @@ static int (*check_part[])(struct parsed_partitions *, struct block_device *) = 
 	 * Probe partition formats with tables at disk address 0
 	 * that also have an ADFS boot block at 0xdc0.
 	 */
+#ifdef CONFIG_OPENWRT_PARTITION
+	openwrt_partition,
+#endif
 #ifdef CONFIG_ACORN_PARTITION_ICS
 	adfspart_check_ICS,
 #endif
@@ -159,11 +165,18 @@ check_partition(struct gendisk *hd, struct block_device *bdev)
 	if (!state)
 		return NULL;
 
-	disk_name(hd, 0, state->name);
-	printk(KERN_INFO " %s:", state->name);
-	if (isdigit(state->name[strlen(state->name)-1]))
+#ifdef CONFIG_DEVFS_FS
+	if (hd->devfs_name[0] != '\0') {
+		printk(KERN_INFO " /dev/%s:", hd->devfs_name);
 		sprintf(state->name, "p");
-
+	}
+#endif
+	else {
+		disk_name(hd, 0, state->name);
+		printk(KERN_INFO " %s:", state->name);
+		if (isdigit(state->name[strlen(state->name)-1]))
+			sprintf(state->name, "p");
+	}
 	state->limit = hd->minors;
 	i = res = 0;
 	while (!res && check_part[i]) {
@@ -319,7 +332,7 @@ void delete_partition(struct gendisk *disk, int part)
 	p->nr_sects = 0;
 	p->ios[0] = p->ios[1] = 0;
 	p->sectors[0] = p->sectors[1] = 0;
-	sysfs_remove_link(&p->kobj, "subsystem");
+	devfs_remove("%s/part%d", disk->devfs_name, part);
 	if (p->holder_dir)
 		kobject_unregister(p->holder_dir);
 	kobject_uevent(&p->kobj, KOBJ_REMOVE);
@@ -340,6 +353,10 @@ void add_partition(struct gendisk *disk, int part, sector_t start, sector_t len)
 	p->nr_sects = len;
 	p->partno = part;
 
+	devfs_mk_bdev(MKDEV(disk->major, disk->first_minor + part),
+			S_IFBLK|S_IRUSR|S_IWUSR,
+			"%s/part%d", disk->devfs_name, part);
+
 	if (isdigit(disk->kobj.name[strlen(disk->kobj.name)-1]))
 		snprintf(p->kobj.name,KOBJ_NAME_LEN,"%sp%d",disk->kobj.name,part);
 	else
@@ -350,7 +367,6 @@ void add_partition(struct gendisk *disk, int part, sector_t start, sector_t len)
 	kobject_add(&p->kobj);
 	if (!disk->part_uevent_suppress)
 		kobject_uevent(&p->kobj, KOBJ_ADD);
-	sysfs_create_link(&p->kobj, &block_subsys.kset.kobj, "subsystem");
 	partition_sysfs_add_subdir(p);
 	disk->part[part-1] = p;
 }
@@ -386,7 +402,6 @@ static void disk_sysfs_symlinks(struct gendisk *disk)
 			kfree(disk_name);
 		}
 	}
-	sysfs_create_link(&disk->kobj, &block_subsys.kset.kobj, "subsystem");
 }
 
 /* Not exported, helper to add_disk(). */
@@ -409,8 +424,14 @@ void register_disk(struct gendisk *disk)
  	disk_sysfs_add_subdirs(disk);
 
 	/* No minors to use for partitions */
-	if (disk->minors == 1)
+	if (disk->minors == 1) {
+		if (disk->devfs_name[0] != '\0')
+			devfs_add_disk(disk);
 		goto exit;
+	}
+
+	/* always add handle for the whole disk */
+	devfs_add_partitioned(disk);
 
 	/* No such device (e.g., media were just removed) */
 	if (!get_capacity(disk))
@@ -464,10 +485,6 @@ int rescan_partitions(struct gendisk *disk, struct block_device *bdev)
 		sector_t from = state->parts[p].from;
 		if (!size)
 			continue;
-		if (from + size > get_capacity(disk)) {
-			printk(" %s: p%d exceeds device capacity\n",
-				disk->disk_name, p);
-		}
 		add_partition(disk, p, from, size);
 #ifdef CONFIG_BLK_DEV_MD
 		if (state->parts[p].flags)
@@ -483,8 +500,8 @@ unsigned char *read_dev_sector(struct block_device *bdev, sector_t n, Sector *p)
 	struct address_space *mapping = bdev->bd_inode->i_mapping;
 	struct page *page;
 
-	page = read_mapping_page(mapping, (pgoff_t)(n >> (PAGE_CACHE_SHIFT-9)),
-				 NULL);
+	page = read_cache_page(mapping, (pgoff_t)(n >> (PAGE_CACHE_SHIFT-9)),
+			(filler_t *)mapping->a_ops->readpage, NULL);
 	if (!IS_ERR(page)) {
 		wait_on_page_locked(page);
 		if (!PageUptodate(page))
@@ -518,6 +535,8 @@ void del_gendisk(struct gendisk *disk)
 	disk_stat_set_all(disk, 0);
 	disk->stamp = 0;
 
+	devfs_remove_disk(disk);
+
 	kobject_uevent(&disk->kobj, KOBJ_REMOVE);
 	if (disk->holder_dir)
 		kobject_unregister(disk->holder_dir);
@@ -533,6 +552,5 @@ void del_gendisk(struct gendisk *disk)
 		put_device(disk->driverfs_dev);
 		disk->driverfs_dev = NULL;
 	}
-	sysfs_remove_link(&disk->kobj, "subsystem");
 	kobject_del(&disk->kobj);
 }

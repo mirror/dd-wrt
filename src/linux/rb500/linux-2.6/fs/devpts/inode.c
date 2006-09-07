@@ -130,10 +130,10 @@ fail:
 	return -ENOMEM;
 }
 
-static int devpts_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *devpts_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
+	return get_sb_single(fs_type, flags, data, devpts_fill_super);
 }
 
 static struct file_system_type devpts_fs_type = {

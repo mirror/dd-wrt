@@ -1083,7 +1083,8 @@ static int i596_start_xmit(struct sk_buff *skb, struct net_device *dev)
 				skb->len, skb->data));
 
 	if (length < ETH_ZLEN) {
-		if (skb_padto(skb, ETH_ZLEN))
+		skb = skb_padto(skb, ETH_ZLEN);
+		if (skb == NULL)
 			return 0;
 		length = ETH_ZLEN;
 	}

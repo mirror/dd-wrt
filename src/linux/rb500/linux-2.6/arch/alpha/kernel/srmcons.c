@@ -5,6 +5,7 @@
  * (TTY driver and console driver)
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/console.h>

@@ -1,6 +1,7 @@
 #ifndef _LINUX_HIGHMEM_H
 #define _LINUX_HIGHMEM_H
 
+#include <linux/config.h>
 #include <linux/fs.h>
 #include <linux/mm.h>
 

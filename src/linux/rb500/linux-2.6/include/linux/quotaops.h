@@ -10,6 +10,7 @@
 #ifndef _LINUX_QUOTAOPS_
 #define _LINUX_QUOTAOPS_
 
+#include <linux/config.h>
 #include <linux/smp_lock.h>
 
 #include <linux/fs.h>

@@ -19,6 +19,7 @@
  */
 #define __io_pci(a)		((void __iomem *)(PCIO_BASE + (a)))
 #define __mem_pci(a)		(a)
+#define __mem_isa(a)		(a)
 
 #define __ioaddr(p)             __io_pci(p)
 

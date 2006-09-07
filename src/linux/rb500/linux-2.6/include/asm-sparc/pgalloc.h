@@ -2,6 +2,7 @@
 #ifndef _SPARC_PGALLOC_H
 #define _SPARC_PGALLOC_H
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 

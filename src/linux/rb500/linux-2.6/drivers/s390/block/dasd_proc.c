@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/ctype.h>
 #include <linux/seq_file.h>
 #include <linux/vmalloc.h>

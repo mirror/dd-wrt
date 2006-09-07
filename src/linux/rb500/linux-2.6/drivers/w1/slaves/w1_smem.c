@@ -28,6 +28,7 @@
 #include <linux/types.h>
 
 #include "../w1.h"
+#include "../w1_io.h"
 #include "../w1_int.h"
 #include "../w1_family.h"
 

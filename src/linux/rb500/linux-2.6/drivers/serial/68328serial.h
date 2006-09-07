@@ -11,6 +11,7 @@
 #ifndef _MC683XX_SERIAL_H
 #define _MC683XX_SERIAL_H
 
+#include <linux/config.h>
 
 struct serial_struct {
 	int	type;

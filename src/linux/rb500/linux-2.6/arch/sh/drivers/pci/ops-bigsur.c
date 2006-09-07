@@ -11,6 +11,7 @@
  * PCI initialization for the Hitachi Big Sur Evaluation Board
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>

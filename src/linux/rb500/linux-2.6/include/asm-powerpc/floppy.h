@@ -11,6 +11,7 @@
 #define __ASM_POWERPC_FLOPPY_H
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <asm/machdep.h>
 
 #define fd_inb(port)		inb_p(port)
@@ -27,7 +28,8 @@
 #define fd_disable_irq()        disable_irq(FLOPPY_IRQ)
 #define fd_cacheflush(addr,size) /* nothing */
 #define fd_request_irq()        request_irq(FLOPPY_IRQ, floppy_interrupt, \
-					    IRQF_DISABLED, "floppy", NULL)
+					    SA_INTERRUPT|SA_SAMPLE_RANDOM, \
+				            "floppy", NULL)
 #define fd_free_irq()           free_irq(FLOPPY_IRQ, NULL);
 
 #ifdef CONFIG_PCI

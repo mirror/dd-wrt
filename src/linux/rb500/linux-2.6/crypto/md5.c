@@ -147,9 +147,9 @@ static inline void md5_transform_helper(struct md5_ctx *ctx)
 	md5_transform(ctx->hash, ctx->block);
 }
 
-static void md5_init(struct crypto_tfm *tfm)
+static void md5_init(void *ctx)
 {
-	struct md5_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct md5_ctx *mctx = ctx;
 
 	mctx->hash[0] = 0x67452301;
 	mctx->hash[1] = 0xefcdab89;
@@ -158,9 +158,9 @@ static void md5_init(struct crypto_tfm *tfm)
 	mctx->byte_count = 0;
 }
 
-static void md5_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
+static void md5_update(void *ctx, const u8 *data, unsigned int len)
 {
-	struct md5_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct md5_ctx *mctx = ctx;
 	const u32 avail = sizeof(mctx->block) - (mctx->byte_count & 0x3f);
 
 	mctx->byte_count += len;
@@ -188,9 +188,9 @@ static void md5_update(struct crypto_tfm *tfm, const u8 *data, unsigned int len)
 	memcpy(mctx->block, data, len);
 }
 
-static void md5_final(struct crypto_tfm *tfm, u8 *out)
+static void md5_final(void *ctx, u8 *out)
 {
-	struct md5_ctx *mctx = crypto_tfm_ctx(tfm);
+	struct md5_ctx *mctx = ctx;
 	const unsigned int offset = mctx->byte_count & 0x3f;
 	char *p = (char *)mctx->block + offset;
 	int padding = 56 - (offset + 1);

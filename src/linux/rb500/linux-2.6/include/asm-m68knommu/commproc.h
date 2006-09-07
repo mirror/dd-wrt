@@ -17,6 +17,7 @@
 #ifndef __CPM_360__
 #define __CPM_360__
 
+#include <linux/config.h>
 
 /* CPM Command register masks: */
 #define CPM_CR_RST	((ushort)0x8000)

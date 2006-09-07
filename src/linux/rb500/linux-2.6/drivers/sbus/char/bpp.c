@@ -20,6 +20,7 @@
 #include <linux/timer.h>
 #include <linux/ioport.h>
 #include <linux/major.h>
+#include <linux/devfs_fs_kernel.h>
 
 #include <asm/uaccess.h>
 #include <asm/io.h>
@@ -1030,6 +1031,11 @@ static int __init bpp_init(void)
 		instances[idx].opened = 0;
 		probeLptPort(idx);
 	}
+	devfs_mk_dir("bpp");
+	for (idx = 0; idx < BPP_NO; idx++) {
+		devfs_mk_cdev(MKDEV(BPP_MAJOR, idx),
+				S_IFCHR | S_IRUSR | S_IWUSR, "bpp/%d", idx);
+	}
 
 	return 0;
 }
@@ -1038,6 +1044,9 @@ static void __exit bpp_cleanup(void)
 {
 	unsigned idx;
 
+	for (idx = 0; idx < BPP_NO; idx++)
+		devfs_remove("bpp/%d", idx);
+	devfs_remove("bpp");
 	unregister_chrdev(BPP_MAJOR, dev_name);
 
 	for (idx = 0;  idx < BPP_NO; idx++) {

@@ -6,6 +6,7 @@
  * Copyright (C) 1999 Jakub Jelinek   (jj@ultra.linux.cz)
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -21,7 +22,6 @@
 #include <asm/irq.h>
 #include <asm/ebus.h>
 #include <asm/isa.h>
-#include <asm/prom.h>
 
 unsigned long pci_memspace_mask = 0xffffffffUL;
 
@@ -46,6 +46,12 @@ struct pci_controller_info *pci_controller_root = NULL;
 
 /* Each PCI controller found gets a unique index. */
 int pci_num_controllers = 0;
+
+/* At boot time the user can give the kernel a command
+ * line option which controls if and how PCI devices
+ * are reordered at PCI bus probing time.
+ */
+int pci_device_reorder = 0;
 
 volatile int pci_poke_in_progress;
 volatile int pci_poke_cpu = -1;
@@ -177,16 +183,16 @@ void pci_config_write32(u32 *addr, u32 val)
 }
 
 /* Probe for all PCI controllers in the system. */
-extern void sabre_init(struct device_node *, const char *);
-extern void psycho_init(struct device_node *, const char *);
-extern void schizo_init(struct device_node *, const char *);
-extern void schizo_plus_init(struct device_node *, const char *);
-extern void tomatillo_init(struct device_node *, const char *);
-extern void sun4v_pci_init(struct device_node *, const char *);
+extern void sabre_init(int, char *);
+extern void psycho_init(int, char *);
+extern void schizo_init(int, char *);
+extern void schizo_plus_init(int, char *);
+extern void tomatillo_init(int, char *);
+extern void sun4v_pci_init(int, char *);
 
 static struct {
 	char *model_name;
-	void (*init)(struct device_node *, const char *);
+	void (*init)(int, char *);
 } pci_controller_table[] __initdata = {
 	{ "SUNW,sabre", sabre_init },
 	{ "pci108e,a000", sabre_init },
@@ -204,7 +210,7 @@ static struct {
 #define PCI_NUM_CONTROLLER_TYPES (sizeof(pci_controller_table) / \
 				  sizeof(pci_controller_table[0]))
 
-static int __init pci_controller_init(const char *model_name, int namelen, struct device_node *dp)
+static int __init pci_controller_init(char *model_name, int namelen, int node)
 {
 	int i;
 
@@ -212,15 +218,18 @@ static int __init pci_controller_init(const char *model_name, int namelen, struc
 		if (!strncmp(model_name,
 			     pci_controller_table[i].model_name,
 			     namelen)) {
-			pci_controller_table[i].init(dp, model_name);
+			pci_controller_table[i].init(node, model_name);
 			return 1;
 		}
 	}
+	printk("PCI: Warning unknown controller, model name [%s]\n",
+	       model_name);
+	printk("PCI: Ignoring controller...\n");
 
 	return 0;
 }
 
-static int __init pci_is_controller(const char *model_name, int namelen, struct device_node *dp)
+static int __init pci_is_controller(char *model_name, int namelen, int node)
 {
 	int i;
 
@@ -234,35 +243,36 @@ static int __init pci_is_controller(const char *model_name, int namelen, struct 
 	return 0;
 }
 
-static int __init pci_controller_scan(int (*handler)(const char *, int, struct device_node *))
+static int __init pci_controller_scan(int (*handler)(char *, int, int))
 {
-	struct device_node *dp;
+	char namebuf[64];
+	int node;
 	int count = 0;
 
-	for_each_node_by_name(dp, "pci") {
-		struct property *prop;
+	node = prom_getchild(prom_root_node);
+	while ((node = prom_searchsiblings(node, "pci")) != 0) {
 		int len;
 
-		prop = of_find_property(dp, "model", &len);
-		if (!prop)
-			prop = of_find_property(dp, "compatible", &len);
-
-		if (prop) {
-			const char *model = prop->value;
+		if ((len = prom_getproperty(node, "model", namebuf, sizeof(namebuf))) > 0 ||
+		    (len = prom_getproperty(node, "compatible", namebuf, sizeof(namebuf))) > 0) {
 			int item_len = 0;
 
 			/* Our value may be a multi-valued string in the
 			 * case of some compatible properties. For sanity,
-			 * only try the first one.
-			 */
-			while (model[item_len] && len) {
+			 * only try the first one. */
+
+			while (namebuf[item_len] && len) {
 				len--;
 				item_len++;
 			}
 
-			if (handler(model, item_len, dp))
+			if (handler(namebuf, item_len, node))
 				count++;
 		}
+
+		node = prom_getsibling(node);
+		if (!node)
+			break;
 	}
 
 	return count;
@@ -306,6 +316,28 @@ static void __init pci_scan_each_controller_bus(void)
 		p->scan_bus(p);
 }
 
+/* Reorder the pci_dev chain, so that onboard devices come first
+ * and then come the pluggable cards.
+ */
+static void __init pci_reorder_devs(void)
+{
+	struct list_head *pci_onboard = &pci_devices;
+	struct list_head *walk = pci_onboard->next;
+
+	while (walk != pci_onboard) {
+		struct pci_dev *pdev = pci_dev_g(walk);
+		struct list_head *walk_next = walk->next;
+
+		if (pdev->irq && (__irq_ino(pdev->irq) & 0x20)) {
+			list_del(walk);
+			list_add(walk, pci_onboard);
+		}
+
+		walk = walk_next;
+	}
+}
+
+extern void clock_probe(void);
 extern void power_init(void);
 
 static int __init pcibios_init(void)
@@ -316,8 +348,12 @@ static int __init pcibios_init(void)
 
 	pci_scan_each_controller_bus();
 
+	if (pci_device_reorder)
+		pci_reorder_devs();
+
 	isa_init();
 	ebus_init();
+	clock_probe();
 	power_init();
 
 	return 0;
@@ -354,7 +390,7 @@ void pcibios_update_irq(struct pci_dev *pdev, int irq)
 }
 
 void pcibios_align_resource(void *data, struct resource *res,
-			    resource_size_t size, resource_size_t align)
+			    unsigned long size, unsigned long align)
 {
 }
 
@@ -405,6 +441,14 @@ EXPORT_SYMBOL(pcibios_bus_to_resource);
 
 char * __init pcibios_setup(char *str)
 {
+	if (!strcmp(str, "onboardfirst")) {
+		pci_device_reorder = 1;
+		return NULL;
+	}
+	if (!strcmp(str, "noreorder")) {
+		pci_device_reorder = 0;
+		return NULL;
+	}
 	return str;
 }
 

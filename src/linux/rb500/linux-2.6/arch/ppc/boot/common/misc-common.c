@@ -13,6 +13,7 @@
  */
 
 #include <stdarg.h>	/* for va_ bits */
+#include <linux/config.h>
 #include <linux/string.h>
 #include <linux/zlib.h>
 #include "nonstdio.h"

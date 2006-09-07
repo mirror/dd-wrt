@@ -19,6 +19,7 @@
 #ifndef _SIBYTE_BOARD_H
 #define _SIBYTE_BOARD_H
 
+#include <linux/config.h>
 
 #if defined(CONFIG_SIBYTE_SWARM) || defined(CONFIG_SIBYTE_PTSWARM) || \
     defined(CONFIG_SIBYTE_CRHONE) || defined(CONFIG_SIBYTE_CRHINE) || \

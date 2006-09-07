@@ -111,7 +111,7 @@ static int linear_issue_flush(request_queue_t *q, struct gendisk *disk,
 	return ret;
 }
 
-static linear_conf_t *linear_conf(mddev_t *mddev, int raid_disks)
+static int linear_run (mddev_t *mddev)
 {
 	linear_conf_t *conf;
 	dev_info_t **table;
@@ -121,21 +121,20 @@ static linear_conf_t *linear_conf(mddev_t *mddev, int raid_disks)
 	sector_t curr_offset;
 	struct list_head *tmp;
 
-	conf = kzalloc (sizeof (*conf) + raid_disks*sizeof(dev_info_t),
+	conf = kzalloc (sizeof (*conf) + mddev->raid_disks*sizeof(dev_info_t),
 			GFP_KERNEL);
 	if (!conf)
-		return NULL;
-
+		goto out;
 	mddev->private = conf;
 
 	cnt = 0;
-	conf->array_size = 0;
+	mddev->array_size = 0;
 
 	ITERATE_RDEV(mddev,rdev,tmp) {
 		int j = rdev->raid_disk;
 		dev_info_t *disk = conf->disks + j;
 
-		if (j < 0 || j > raid_disks || disk->rdev) {
+		if (j < 0 || j > mddev->raid_disks || disk->rdev) {
 			printk("linear: disk numbering problem. Aborting!\n");
 			goto out;
 		}
@@ -153,11 +152,11 @@ static linear_conf_t *linear_conf(mddev_t *mddev, int raid_disks)
 			blk_queue_max_sectors(mddev->queue, PAGE_SIZE>>9);
 
 		disk->size = rdev->size;
-		conf->array_size += rdev->size;
+		mddev->array_size += rdev->size;
 
 		cnt++;
 	}
-	if (cnt != raid_disks) {
+	if (cnt != mddev->raid_disks) {
 		printk("linear: not enough drives present. Aborting!\n");
 		goto out;
 	}
@@ -201,7 +200,7 @@ static linear_conf_t *linear_conf(mddev_t *mddev, int raid_disks)
 		unsigned round;
 		unsigned long base;
 
-		sz = conf->array_size >> conf->preshift;
+		sz = mddev->array_size >> conf->preshift;
 		sz += 1; /* force round-up */
 		base = conf->hash_spacing >> conf->preshift;
 		round = sector_div(sz, base);
@@ -248,56 +247,14 @@ static linear_conf_t *linear_conf(mddev_t *mddev, int raid_disks)
 
 	BUG_ON(table - conf->hash_table > nb_zone);
 
-	return conf;
-
-out:
-	kfree(conf);
-	return NULL;
-}
-
-static int linear_run (mddev_t *mddev)
-{
-	linear_conf_t *conf;
-
-	conf = linear_conf(mddev, mddev->raid_disks);
-
-	if (!conf)
-		return 1;
-	mddev->private = conf;
-	mddev->array_size = conf->array_size;
-
 	blk_queue_merge_bvec(mddev->queue, linear_mergeable_bvec);
 	mddev->queue->unplug_fn = linear_unplug;
 	mddev->queue->issue_flush_fn = linear_issue_flush;
 	return 0;
-}
 
-static int linear_add(mddev_t *mddev, mdk_rdev_t *rdev)
-{
-	/* Adding a drive to a linear array allows the array to grow.
-	 * It is permitted if the new drive has a matching superblock
-	 * already on it, with raid_disk equal to raid_disks.
-	 * It is achieved by creating a new linear_private_data structure
-	 * and swapping it in in-place of the current one.
-	 * The current one is never freed until the array is stopped.
-	 * This avoids races.
-	 */
-	linear_conf_t *newconf;
-
-	if (rdev->raid_disk != mddev->raid_disks)
-		return -EINVAL;
-
-	newconf = linear_conf(mddev,mddev->raid_disks+1);
-
-	if (!newconf)
-		return -ENOMEM;
-
-	newconf->prev = mddev_to_conf(mddev);
-	mddev->private = newconf;
-	mddev->raid_disks++;
-	mddev->array_size = newconf->array_size;
-	set_capacity(mddev->gendisk, mddev->array_size << 1);
-	return 0;
+out:
+	kfree(conf);
+	return 1;
 }
 
 static int linear_stop (mddev_t *mddev)
@@ -305,12 +262,8 @@ static int linear_stop (mddev_t *mddev)
 	linear_conf_t *conf = mddev_to_conf(mddev);
   
 	blk_sync_queue(mddev->queue); /* the unplug fn references 'conf'*/
-	do {
-		linear_conf_t *t = conf->prev;
-		kfree(conf->hash_table);
-		kfree(conf);
-		conf = t;
-	} while (conf);
+	kfree(conf->hash_table);
+	kfree(conf);
 
 	return 0;
 }
@@ -407,7 +360,6 @@ static struct mdk_personality linear_personality =
 	.run		= linear_run,
 	.stop		= linear_stop,
 	.status		= linear_status,
-	.hot_add_disk	= linear_add,
 };
 
 static int __init linear_init (void)

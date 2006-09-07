@@ -20,6 +20,7 @@
 // #define	DEBUG			// error path messages, extra info
 // #define	VERBOSE			// more; success messages
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/init.h>
@@ -29,7 +30,7 @@
 #include <linux/mii.h>
 #include <linux/crc32.h>
 #include <linux/usb.h>
-#include <linux/usb/cdc.h>
+#include <linux/usb_cdc.h>
 
 #include "usbnet.h"
 
@@ -108,7 +109,7 @@ static const struct driver_info	zaurus_sl5x00_info = {
 	.check_connect = always_connected,
 	.bind =		zaurus_bind,
 	.unbind =	usbnet_cdc_unbind,
-	.tx_fixup =	zaurus_tx_fixup,
+	.tx_fixup = 	zaurus_tx_fixup,
 };
 #define	ZAURUS_STRONGARM_INFO	((unsigned long)&zaurus_sl5x00_info)
 
@@ -118,7 +119,7 @@ static const struct driver_info	zaurus_pxa_info = {
 	.check_connect = always_connected,
 	.bind =		zaurus_bind,
 	.unbind =	usbnet_cdc_unbind,
-	.tx_fixup =	zaurus_tx_fixup,
+	.tx_fixup = 	zaurus_tx_fixup,
 };
 #define	ZAURUS_PXA_INFO		((unsigned long)&zaurus_pxa_info)
 
@@ -128,7 +129,7 @@ static const struct driver_info	olympus_mxl_info = {
 	.check_connect = always_connected,
 	.bind =		zaurus_bind,
 	.unbind =	usbnet_cdc_unbind,
-	.tx_fixup =	zaurus_tx_fixup,
+	.tx_fixup = 	zaurus_tx_fixup,
 };
 #define	OLYMPUS_MXL_INFO	((unsigned long)&olympus_mxl_info)
 
@@ -227,11 +228,6 @@ bad_detail:
 						detail->bDetailData[2]);
 				goto bad_desc;
 			}
-
-			/* same extra framing as for non-BLAN mode */
-			dev->net->hard_header_len += 6;
-			dev->rx_urb_size = dev->net->hard_header_len
-					+ dev->net->mtu;
 			break;
 		}
 next_desc:
@@ -262,7 +258,7 @@ static const struct driver_info	bogus_mdlm_info = {
 	.description =	"pseudo-MDLM (BLAN) device",
 	.flags =	FLAG_FRAMING_Z,
 	.check_connect = always_connected,
-	.tx_fixup =	zaurus_tx_fixup,
+	.tx_fixup = 	zaurus_tx_fixup,
 	.bind =		blan_mdlm_bind,
 };
 
@@ -371,13 +367,13 @@ static struct usb_driver zaurus_driver = {
 
 static int __init zaurus_init(void)
 {
-	return usb_register(&zaurus_driver);
+ 	return usb_register(&zaurus_driver);
 }
 module_init(zaurus_init);
 
 static void __exit zaurus_exit(void)
 {
-	usb_deregister(&zaurus_driver);
+ 	usb_deregister(&zaurus_driver);
 }
 module_exit(zaurus_exit);
 

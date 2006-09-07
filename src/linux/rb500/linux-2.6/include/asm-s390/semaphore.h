@@ -37,8 +37,7 @@ struct semaphore {
 
 static inline void sema_init (struct semaphore *sem, int val)
 {
-	atomic_set(&sem->count, val);
-	init_waitqueue_head(&sem->wait);
+	*sem = (struct semaphore) __SEMAPHORE_INITIALIZER((*sem),val);
 }
 
 static inline void init_MUTEX (struct semaphore *sem)

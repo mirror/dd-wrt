@@ -10,6 +10,7 @@
 #ifndef __ASM_CRIS_PROCESSOR_H
 #define __ASM_CRIS_PROCESSOR_H
 
+#include <linux/config.h>
 #include <asm/system.h>
 #include <asm/page.h>
 #include <asm/ptrace.h>

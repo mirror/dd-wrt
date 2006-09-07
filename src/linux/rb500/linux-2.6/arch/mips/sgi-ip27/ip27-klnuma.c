@@ -3,6 +3,7 @@
  * Copyright 2000 - 2001 Silicon Graphics, Inc.
  * Copyright 2000 - 2001 Kanoj Sarcar (kanoj@sgi.com)
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/mmzone.h>
 #include <linux/kernel.h>

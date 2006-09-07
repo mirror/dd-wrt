@@ -2,6 +2,7 @@
  * linux/drivers/char/ds1620.c: Dallas Semiconductors DS1620
  *   thermometer driver (as used in the Rebel.com NetWinder)
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/miscdevice.h>
@@ -336,7 +337,7 @@ proc_therm_ds1620_read(char *buf, char **start, off_t offset,
 static struct proc_dir_entry *proc_therm_ds1620;
 #endif
 
-static const struct file_operations ds1620_fops = {
+static struct file_operations ds1620_fops = {
 	.owner		= THIS_MODULE,
 	.open		= nonseekable_open,
 	.read		= ds1620_read,

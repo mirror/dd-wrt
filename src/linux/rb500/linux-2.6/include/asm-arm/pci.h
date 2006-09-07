@@ -2,6 +2,7 @@
 #define ASMARM_PCI_H
 
 #ifdef __KERNEL__
+#include <linux/config.h>
 #include <asm-generic/pci-dma-compat.h>
 
 #include <asm/hardware.h> /* for PCIBIOS_MIN_* */

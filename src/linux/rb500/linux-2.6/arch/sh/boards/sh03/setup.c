@@ -5,6 +5,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/irq.h>
 #include <linux/hdreg.h>

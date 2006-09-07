@@ -79,6 +79,7 @@
  * describeinterrupts.  Now we use "IRQ" only for Linux IRQ's.  ISA IRQ
  * (isa_irq) is the only exception in this source code.
  */
+#include <linux/config.h>
 
 #include <linux/acpi.h>
 #include <linux/init.h>
@@ -455,7 +456,7 @@ iosapic_startup_edge_irq (unsigned int irq)
 static void
 iosapic_ack_edge_irq (unsigned int irq)
 {
-	irq_desc_t *idesc = irq_desc + irq;
+	irq_desc_t *idesc = irq_descp(irq);
 
 	move_native_irq(irq);
 	/*
@@ -658,14 +659,14 @@ register_intr (unsigned int gsi, int vector, unsigned char delivery,
 	else
 		irq_type = &irq_type_iosapic_level;
 
-	idesc = irq_desc + vector;
-	if (idesc->chip != irq_type) {
-		if (idesc->chip != &no_irq_type)
+	idesc = irq_descp(vector);
+	if (idesc->handler != irq_type) {
+		if (idesc->handler != &no_irq_type)
 			printk(KERN_WARNING
 			       "%s: changing vector %d from %s to %s\n",
 			       __FUNCTION__, vector,
-			       idesc->chip->typename, irq_type->typename);
-		idesc->chip = irq_type;
+			       idesc->handler->typename, irq_type->typename);
+		idesc->handler = irq_type;
 	}
 	return 0;
 }
@@ -792,14 +793,14 @@ again:
 			return -ENOSPC;
 	}
 
-	spin_lock_irqsave(&irq_desc[vector].lock, flags);
+	spin_lock_irqsave(&irq_descp(vector)->lock, flags);
 	spin_lock(&iosapic_lock);
 	{
 		if (gsi_to_vector(gsi) > 0) {
 			if (list_empty(&iosapic_intr_info[vector].rtes))
 				free_irq_vector(vector);
 			spin_unlock(&iosapic_lock);
-			spin_unlock_irqrestore(&irq_desc[vector].lock,
+			spin_unlock_irqrestore(&irq_descp(vector)->lock,
 					       flags);
 			goto again;
 		}
@@ -809,7 +810,7 @@ again:
 			      polarity, trigger);
 		if (err < 0) {
 			spin_unlock(&iosapic_lock);
-			spin_unlock_irqrestore(&irq_desc[vector].lock,
+			spin_unlock_irqrestore(&irq_descp(vector)->lock,
 					       flags);
 			return err;
 		}
@@ -824,7 +825,7 @@ again:
 		set_rte(gsi, vector, dest, mask);
 	}
 	spin_unlock(&iosapic_lock);
-	spin_unlock_irqrestore(&irq_desc[vector].lock, flags);
+	spin_unlock_irqrestore(&irq_descp(vector)->lock, flags);
 
 	printk(KERN_INFO "GSI %u (%s, %s) -> CPU %d (0x%04x) vector %d\n",
 	       gsi, (trigger == IOSAPIC_EDGE ? "edge" : "level"),
@@ -859,7 +860,7 @@ iosapic_unregister_intr (unsigned int gsi)
 	}
 	vector = irq_to_vector(irq);
 
-	idesc = irq_desc + irq;
+	idesc = irq_descp(irq);
 	spin_lock_irqsave(&idesc->lock, flags);
 	spin_lock(&iosapic_lock);
 	{
@@ -902,7 +903,7 @@ iosapic_unregister_intr (unsigned int gsi)
 			BUG_ON(iosapic_intr_info[vector].count);
 
 			/* Clear the interrupt controller descriptor */
-			idesc->chip = &no_irq_type;
+			idesc->handler = &no_irq_type;
 
 			/* Clear the interrupt information */
 			memset(&iosapic_intr_info[vector], 0,

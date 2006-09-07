@@ -27,6 +27,7 @@
 
 /*****************************************************************************/
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/mount.h>
@@ -200,7 +201,7 @@ static void update_sb(struct super_block *sb)
 	if (!root)
 		return;
 
-	mutex_lock_nested(&root->d_inode->i_mutex, I_MUTEX_PARENT);
+	mutex_lock(&root->d_inode->i_mutex);
 
 	list_for_each_entry(bus, &root->d_subdirs, d_u.d_child) {
 		if (bus->d_inode) {
@@ -527,7 +528,7 @@ static void fs_remove_file (struct dentry *dentry)
 	if (!parent || !parent->d_inode)
 		return;
 
-	mutex_lock_nested(&parent->d_inode->i_mutex, I_MUTEX_PARENT);
+	mutex_lock(&parent->d_inode->i_mutex);
 	if (usbfs_positive(dentry)) {
 		if (dentry->d_inode) {
 			if (S_ISDIR(dentry->d_inode->i_mode))
@@ -542,10 +543,10 @@ static void fs_remove_file (struct dentry *dentry)
 
 /* --------------------------------------------------------------------- */
 
-static int usb_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *usb_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_single(fs_type, flags, data, usbfs_fill_super, mnt);
+	return get_sb_single(fs_type, flags, data, usbfs_fill_super);
 }
 
 static struct file_system_type usb_fs_type = {
@@ -568,7 +569,7 @@ static int create_special_files (void)
 	ignore_mount = 1;
 
 	/* create the devices special file */
-	retval = simple_pin_fs(&usb_fs_type, &usbfs_mount, &usbfs_mount_count);
+	retval = simple_pin_fs("usbfs", &usbfs_mount, &usbfs_mount_count);
 	if (retval) {
 		err ("Unable to get usbfs mount");
 		goto exit;
@@ -699,7 +700,7 @@ static void usbfs_remove_device(struct usb_device *dev)
 			sinfo.si_errno = EPIPE;
 			sinfo.si_code = SI_ASYNCIO;
 			sinfo.si_addr = ds->disccontext;
-			kill_proc_info_as_uid(ds->discsignr, &sinfo, ds->disc_pid, ds->disc_uid, ds->disc_euid, ds->secid);
+			kill_proc_info_as_uid(ds->discsignr, &sinfo, ds->disc_pid, ds->disc_uid, ds->disc_euid);
 		}
 	}
 }

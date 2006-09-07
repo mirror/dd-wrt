@@ -15,6 +15,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/pci.h>
 #include <linux/stddef.h>
 #include <asm/processor.h>

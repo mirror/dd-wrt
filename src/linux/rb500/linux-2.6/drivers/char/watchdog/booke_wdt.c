@@ -14,6 +14,7 @@
  * option) any later version.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
@@ -145,7 +146,7 @@ static int booke_wdt_open (struct inode *inode, struct file *file)
 	return 0;
 }
 
-static const struct file_operations booke_wdt_fops = {
+static struct file_operations booke_wdt_fops = {
   .owner = THIS_MODULE,
   .llseek = no_llseek,
   .write = booke_wdt_write,

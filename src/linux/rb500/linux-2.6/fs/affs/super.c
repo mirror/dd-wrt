@@ -18,7 +18,7 @@
 
 extern struct timezone sys_tz;
 
-static int affs_statfs(struct dentry *dentry, struct kstatfs *buf);
+static int affs_statfs(struct super_block *sb, struct kstatfs *buf);
 static int affs_remount (struct super_block *sb, int *flags, char *data);
 
 static void
@@ -271,7 +271,6 @@ static int affs_fill_super(struct super_block *sb, void *data, int silent)
 	int			 reserved;
 	unsigned long		 mount_flags;
 	int			 tmp_flags;	/* fix remount prototype... */
-	u8			 sig[4];
 
 	pr_debug("AFFS: read_super(%s)\n",data ? (const char *)data : "no options");
 
@@ -371,9 +370,8 @@ got_root:
 		printk(KERN_ERR "AFFS: Cannot read boot block\n");
 		goto out_error;
 	}
-	memcpy(sig, boot_bh->b_data, 4);
+	chksum = be32_to_cpu(*(__be32 *)boot_bh->b_data);
 	brelse(boot_bh);
-	chksum = be32_to_cpu(*(__be32 *)sig);
 
 	/* Dircache filesystems are compatible with non-dircache ones
 	 * when reading. As long as they aren't supported, writing is
@@ -422,11 +420,11 @@ got_root:
 	}
 
 	if (mount_flags & SF_VERBOSE) {
-		u8 len = AFFS_ROOT_TAIL(sb, root_bh)->disk_name[0];
-		printk(KERN_NOTICE "AFFS: Mounting volume \"%.*s\": Type=%.3s\\%c, Blocksize=%d\n",
-			len > 31 ? 31 : len,
+		chksum = cpu_to_be32(chksum);
+		printk(KERN_NOTICE "AFFS: Mounting volume \"%*s\": Type=%.3s\\%c, Blocksize=%d\n",
+			AFFS_ROOT_TAIL(sb, root_bh)->disk_name[0],
 			AFFS_ROOT_TAIL(sb, root_bh)->disk_name + 1,
-			sig, sig[3] + '0', blocksize);
+			(char *)&chksum,((char *)&chksum)[3] + '0',blocksize);
 	}
 
 	sb->s_flags |= MS_NODEV | MS_NOSUID;
@@ -510,9 +508,8 @@ affs_remount(struct super_block *sb, int *flags, char *data)
 }
 
 static int
-affs_statfs(struct dentry *dentry, struct kstatfs *buf)
+affs_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct super_block *sb = dentry->d_sb;
 	int		 free;
 
 	pr_debug("AFFS: statfs() partsize=%d, reserved=%d\n",AFFS_SB(sb)->s_partition_size,
@@ -527,11 +524,10 @@ affs_statfs(struct dentry *dentry, struct kstatfs *buf)
 	return 0;
 }
 
-static int affs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *affs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, affs_fill_super,
-			   mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, affs_fill_super);
 }
 
 static struct file_system_type affs_fs_type = {

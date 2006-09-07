@@ -8,12 +8,12 @@
  *		 Martin Schwidefsky (schwidefsky@de.ibm.com)
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/workqueue.h>
 #include <linux/time.h>
-#include <linux/kthread.h>
 
 #include <asm/lowcore.h>
 
@@ -56,6 +56,8 @@ s390_collect_crw_info(void *param)
 	unsigned int chain;
 
 	sem = (struct semaphore *)param;
+	/* Set a nice name. */
+	daemonize("kmcheck");
 repeat:
 	down_interruptible(sem);
 	slow = 0;
@@ -378,8 +380,6 @@ s390_do_machine_check(struct pt_regs *regs)
 	struct mcck_struct *mcck;
 	int umode;
 
-	lockdep_off();
-
 	mci = (struct mci *) &S390_lowcore.mcck_interruption_code;
 	mcck = &__get_cpu_var(cpu_mcck);
 	umode = user_mode(regs);
@@ -484,7 +484,6 @@ s390_do_machine_check(struct pt_regs *regs)
 		mcck->warning = 1;
 		set_thread_flag(TIF_MCCK_PENDING);
 	}
-	lockdep_on();
 }
 
 /*
@@ -517,7 +516,7 @@ arch_initcall(machine_check_init);
 static int __init
 machine_check_crw_init (void)
 {
-	kthread_run(s390_collect_crw_info, &m_sem, "kmcheck");
+	kernel_thread(s390_collect_crw_info, &m_sem, CLONE_FS|CLONE_FILES);
 	ctl_set_bit(14, 28);	/* enable channel report MCH */
 	return 0;
 }

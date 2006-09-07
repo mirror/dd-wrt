@@ -11,6 +11,7 @@
  * PCI initialization for the Hitachi SH7751 Solution Engine board (MS7751SE01)
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/init.h>

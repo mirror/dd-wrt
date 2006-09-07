@@ -7,6 +7,7 @@
  * impossible at the moment.
  */
 
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/linkage.h>
 #include <linux/ctype.h>

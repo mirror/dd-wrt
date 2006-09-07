@@ -49,13 +49,3 @@
 	.macro	asid, rd, rn
 	and	\rd, \rn, #255
 	.endm
-
-	.macro	crval, clear, mmuset, ucset
-#ifdef CONFIG_MMU
-	.word	\clear
-	.word	\mmuset
-#else
-	.word	\clear
-	.word	\ucset
-#endif
-	.endm

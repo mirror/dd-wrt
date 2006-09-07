@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/highmem.h>
 #include <asm/tlbflush.h>

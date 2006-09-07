@@ -8,6 +8,7 @@
  * Copyright (C) 2002, 2003, 2004 Paul Mundt
  */
 
+#include <linux/config.h>
 #include <asm/pgtable-2level.h>
 
 /*

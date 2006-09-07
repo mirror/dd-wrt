@@ -21,6 +21,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/crc32.h>
 #include <linux/delay.h>
@@ -1744,7 +1745,7 @@ spider_net_open(struct net_device *netdev)
 
 	result = -EBUSY;
 	if (request_irq(netdev->irq, spider_net_interrupt,
-			     IRQF_SHARED, netdev->name, netdev))
+			     SA_SHIRQ, netdev->name, netdev))
 		goto register_int_failed;
 
 	spider_net_enable_card(card);

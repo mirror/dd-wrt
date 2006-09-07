@@ -344,8 +344,6 @@
 #define __NR_inotify_add_watch	319
 #define __NR_inotify_rm_watch	320
 
-#ifdef __KERNEL__ 
-
 #define NR_syscalls 321
 
 /* user-visible error numbers are in the range -1 - -125: see <asm-sh64/errno.h> */
@@ -488,6 +486,7 @@ __asm__ __volatile__ ("!dummy	%0 %1 %2 %3 %4 %5 %6"		   	    \
 __syscall_return(type,__sc0); 						    \
 }
 
+#ifdef __KERNEL__
 #define __ARCH_WANT_IPC_PARSE_VERSION
 #define __ARCH_WANT_OLD_READDIR
 #define __ARCH_WANT_OLD_STAT
@@ -510,6 +509,7 @@ __syscall_return(type,__sc0); 						    \
 #define __ARCH_WANT_SYS_SIGPENDING
 #define __ARCH_WANT_SYS_SIGPROCMASK
 #define __ARCH_WANT_SYS_RT_SIGACTION
+#endif
 
 #ifdef __KERNEL_SYSCALLS__
 
@@ -550,7 +550,7 @@ static inline pid_t wait(int * wait_stat)
 {
 	return waitpid(-1,wait_stat,0);
 }
-#endif /* __KERNEL_SYSCALLS__ */
+#endif
 
 /*
  * "Conditional" syscalls
@@ -562,5 +562,4 @@ static inline pid_t wait(int * wait_stat)
 #define cond_syscall(x) asm(".weak\t" #x "\n\t.set\t" #x ",sys_ni_syscall")
 #endif
 
-#endif /* __KERNEL__ */
 #endif /* __ASM_SH64_UNISTD_H */

@@ -20,11 +20,14 @@
 #include <linux/netfilter_bridge.h>
 #include "br_private.h"
 
-/* Don't forward packets to originating port or forwarding diasabled */
 static inline int should_deliver(const struct net_bridge_port *p, 
 				 const struct sk_buff *skb)
 {
-	return (skb->dev != p->dev && p->state == BR_STATE_FORWARDING);
+	if (skb->dev == p->dev ||
+	    p->state != BR_STATE_FORWARDING)
+		return 0;
+
+	return 1;
 }
 
 static inline unsigned packet_length(const struct sk_buff *skb)
@@ -34,8 +37,8 @@ static inline unsigned packet_length(const struct sk_buff *skb)
 
 int br_dev_queue_push_xmit(struct sk_buff *skb)
 {
-	/* drop mtu oversized packets except gso */
-	if (packet_length(skb) > skb->dev->mtu && !skb_shinfo(skb)->gso_size)
+	/* drop mtu oversized packets except tso */
+	if (packet_length(skb) > skb->dev->mtu && !skb_shinfo(skb)->tso_size)
 		kfree_skb(skb);
 	else {
 #ifdef CONFIG_BRIDGE_NETFILTER
@@ -52,9 +55,10 @@ int br_dev_queue_push_xmit(struct sk_buff *skb)
 
 int br_forward_finish(struct sk_buff *skb)
 {
-	return NF_HOOK(PF_BRIDGE, NF_BR_POST_ROUTING, skb, NULL, skb->dev,
-		       br_dev_queue_push_xmit);
+	NF_HOOK(PF_BRIDGE, NF_BR_POST_ROUTING, skb, NULL, skb->dev,
+			br_dev_queue_push_xmit);
 
+	return 0;
 }
 
 static void __br_deliver(const struct net_bridge_port *to, struct sk_buff *skb)

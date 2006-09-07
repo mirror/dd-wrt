@@ -12,6 +12,7 @@
 #ifndef __ASM_IBM403_H__
 #define __ASM_IBM403_H__
 
+#include <linux/config.h>
 
 #if defined(CONFIG_403GCX)
 

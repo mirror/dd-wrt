@@ -14,6 +14,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <asm/processor.h>
 #include <asm/ppc_asm.h>
 #include <asm/cputable.h>

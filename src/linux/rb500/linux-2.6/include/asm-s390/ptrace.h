@@ -181,8 +181,11 @@
 #define PTRACE_OLDSETOPTIONS         21
 
 #ifndef __ASSEMBLY__
+#include <linux/config.h>
 #include <linux/stddef.h>
 #include <linux/types.h>
+#include <asm/setup.h>
+#include <asm/page.h>
 
 typedef union
 {
@@ -298,9 +301,6 @@ typedef struct
 } s390_regs;
 
 #ifdef __KERNEL__
-#include <asm/setup.h>
-#include <asm/page.h>
-
 /*
  * The pt_regs struct defines the way the registers are stored on
  * the stack during a system call.

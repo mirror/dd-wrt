@@ -12,7 +12,6 @@ typedef struct {
 	int size;
 	struct semaphore sem;
 	void *ldt;
-	void *vdso;
 } mm_context_t;
 
 #endif

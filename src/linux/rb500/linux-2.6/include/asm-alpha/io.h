@@ -3,6 +3,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <asm/compiler.h>
 #include <asm/system.h>

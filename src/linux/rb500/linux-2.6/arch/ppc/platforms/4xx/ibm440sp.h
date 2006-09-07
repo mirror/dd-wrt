@@ -15,6 +15,7 @@
 #ifndef __PPC_PLATFORMS_IBM440SP_H
 #define __PPC_PLATFORMS_IBM440SP_H
 
+#include <linux/config.h>
 
 #include <asm/ibm44x.h>
 

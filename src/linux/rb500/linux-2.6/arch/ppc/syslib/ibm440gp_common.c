@@ -13,6 +13,7 @@
  * option) any later version.
  *
  */
+#include <linux/config.h>
 #include <linux/types.h>
 #include <asm/reg.h>
 #include <asm/ibm44x.h>

@@ -7,6 +7,7 @@
  * Arbitrary resource management.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
@@ -22,18 +23,20 @@
 
 struct resource ioport_resource = {
 	.name	= "PCI IO",
-	.start	= 0,
+	.start	= 0x0000,
 	.end	= IO_SPACE_LIMIT,
 	.flags	= IORESOURCE_IO,
 };
+
 EXPORT_SYMBOL(ioport_resource);
 
 struct resource iomem_resource = {
 	.name	= "PCI mem",
-	.start	= 0,
-	.end	= -1,
+	.start	= 0UL,
+	.end	= ~0UL,
 	.flags	= IORESOURCE_MEM,
 };
+
 EXPORT_SYMBOL(iomem_resource);
 
 static DEFINE_RWLOCK(resource_lock);
@@ -80,10 +83,10 @@ static int r_show(struct seq_file *m, void *v)
 	for (depth = 0, p = r; depth < MAX_IORES_LEVEL; depth++, p = p->parent)
 		if (p->parent == root)
 			break;
-	seq_printf(m, "%*s%0*llx-%0*llx : %s\n",
+	seq_printf(m, "%*s%0*lx-%0*lx : %s\n",
 			depth * 2, "",
-			width, (unsigned long long) r->start,
-			width, (unsigned long long) r->end,
+			width, r->start,
+			width, r->end,
 			r->name ? r->name : "<BAD>");
 	return 0;
 }
@@ -148,8 +151,8 @@ __initcall(ioresources_init);
 /* Return the conflict entry if you can't request it */
 static struct resource * __request_resource(struct resource *root, struct resource *new)
 {
-	resource_size_t start = new->start;
-	resource_size_t end = new->end;
+	unsigned long start = new->start;
+	unsigned long end = new->end;
 	struct resource *tmp, **p;
 
 	if (end < start)
@@ -229,52 +232,15 @@ int release_resource(struct resource *old)
 
 EXPORT_SYMBOL(release_resource);
 
-#ifdef CONFIG_MEMORY_HOTPLUG
-/*
- * Finds the lowest memory reosurce exists within [res->start.res->end)
- * the caller must specify res->start, res->end, res->flags.
- * If found, returns 0, res is overwritten, if not found, returns -1.
- */
-int find_next_system_ram(struct resource *res)
-{
-	resource_size_t start, end;
-	struct resource *p;
-
-	BUG_ON(!res);
-
-	start = res->start;
-	end = res->end;
-
-	read_lock(&resource_lock);
-	for (p = iomem_resource.child; p ; p = p->sibling) {
-		/* system ram is just marked as IORESOURCE_MEM */
-		if (p->flags != res->flags)
-			continue;
-		if (p->start > end) {
-			p = NULL;
-			break;
-		}
-		if (p->start >= start)
-			break;
-	}
-	read_unlock(&resource_lock);
-	if (!p)
-		return -1;
-	/* copy data */
-	res->start = p->start;
-	res->end = p->end;
-	return 0;
-}
-#endif
-
 /*
  * Find empty slot in the resource tree given range and alignment.
  */
 static int find_resource(struct resource *root, struct resource *new,
-			 resource_size_t size, resource_size_t min,
-			 resource_size_t max, resource_size_t align,
+			 unsigned long size,
+			 unsigned long min, unsigned long max,
+			 unsigned long align,
 			 void (*alignf)(void *, struct resource *,
-					resource_size_t, resource_size_t),
+					unsigned long, unsigned long),
 			 void *alignf_data)
 {
 	struct resource *this = root->child;
@@ -316,10 +282,11 @@ static int find_resource(struct resource *root, struct resource *new,
  * Allocate empty slot in the resource tree given range and alignment.
  */
 int allocate_resource(struct resource *root, struct resource *new,
-		      resource_size_t size, resource_size_t min,
-		      resource_size_t max, resource_size_t align,
+		      unsigned long size,
+		      unsigned long min, unsigned long max,
+		      unsigned long align,
 		      void (*alignf)(void *, struct resource *,
-				     resource_size_t, resource_size_t),
+				     unsigned long, unsigned long),
 		      void *alignf_data)
 {
 	int err;
@@ -411,10 +378,10 @@ EXPORT_SYMBOL(insert_resource);
  * arguments.  Returns -EBUSY if it can't fit.  Existing children of
  * the resource are assumed to be immutable.
  */
-int adjust_resource(struct resource *res, resource_size_t start, resource_size_t size)
+int adjust_resource(struct resource *res, unsigned long start, unsigned long size)
 {
 	struct resource *tmp, *parent = res->parent;
-	resource_size_t end = start + size - 1;
+	unsigned long end = start + size - 1;
 	int result = -EBUSY;
 
 	write_lock(&resource_lock);
@@ -461,9 +428,7 @@ EXPORT_SYMBOL(adjust_resource);
  *
  * Release-region releases a matching busy region.
  */
-struct resource * __request_region(struct resource *parent,
-				   resource_size_t start, resource_size_t n,
-				   const char *name)
+struct resource * __request_region(struct resource *parent, unsigned long start, unsigned long n, const char *name)
 {
 	struct resource *res = kzalloc(sizeof(*res), GFP_KERNEL);
 
@@ -499,8 +464,7 @@ struct resource * __request_region(struct resource *parent,
 
 EXPORT_SYMBOL(__request_region);
 
-int __check_region(struct resource *parent, resource_size_t start,
-			resource_size_t n)
+int __check_region(struct resource *parent, unsigned long start, unsigned long n)
 {
 	struct resource * res;
 
@@ -515,11 +479,10 @@ int __check_region(struct resource *parent, resource_size_t start,
 
 EXPORT_SYMBOL(__check_region);
 
-void __release_region(struct resource *parent, resource_size_t start,
-			resource_size_t n)
+void __release_region(struct resource *parent, unsigned long start, unsigned long n)
 {
 	struct resource **p;
-	resource_size_t end;
+	unsigned long end;
 
 	p = &parent->child;
 	end = start + n - 1;
@@ -548,9 +511,7 @@ void __release_region(struct resource *parent, resource_size_t start,
 
 	write_unlock(&resource_lock);
 
-	printk(KERN_WARNING "Trying to free nonexistent resource "
-		"<%016llx-%016llx>\n", (unsigned long long)start,
-		(unsigned long long)end);
+	printk(KERN_WARNING "Trying to free nonexistent resource <%08lx-%08lx>\n", start, end);
 }
 
 EXPORT_SYMBOL(__release_region);

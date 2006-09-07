@@ -14,6 +14,7 @@
  * warranty of any kind, whether express or implied.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
@@ -271,7 +272,7 @@ static void pci_handler(unsigned int irq, struct irqdesc *desc, struct pt_regs *
 	}
 
 	int_desc = irq_desc + irqno;
-	desc_handle_irq(irqno, int_desc, regs);
+	int_desc->handle(irqno, int_desc, regs);
 
 	desc->chip->unmask(irq);
 }
@@ -333,7 +334,7 @@ void __init ixp23xx_init_irq(void)
 /*************************************************************************
  * Timer-tick functions for IXP23xx
  *************************************************************************/
-#define CLOCK_TICKS_PER_USEC	(CLOCK_TICK_RATE / USEC_PER_SEC)
+#define CLOCK_TICKS_PER_USEC	CLOCK_TICK_RATE / (USEC_PER_SEC)
 
 static unsigned long next_jiffy_time;
 
@@ -352,7 +353,7 @@ ixp23xx_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 {
 	/* Clear Pending Interrupt by writing '1' to it */
 	*IXP23XX_TIMER_STATUS = IXP23XX_TIMER1_INT_PEND;
-	while ((signed long)(*IXP23XX_TIMER_CONT - next_jiffy_time) >= LATCH) {
+	while ((*IXP23XX_TIMER_CONT - next_jiffy_time) > LATCH) {
 		timer_tick(regs);
 		next_jiffy_time += LATCH;
 	}
@@ -363,7 +364,7 @@ ixp23xx_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 static struct irqaction ixp23xx_timer_irq = {
 	.name		= "IXP23xx Timer Tick",
 	.handler	= ixp23xx_timer_interrupt,
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= SA_INTERRUPT | SA_TIMER,
 };
 
 void __init ixp23xx_init_timer(void)
@@ -438,6 +439,5 @@ static struct platform_device *ixp23xx_devices[] __initdata = {
 
 void __init ixp23xx_sys_init(void)
 {
-	*IXP23XX_EXP_UNIT_FUSE |= 0xf;
 	platform_add_devices(ixp23xx_devices, ARRAY_SIZE(ixp23xx_devices));
 }

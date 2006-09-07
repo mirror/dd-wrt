@@ -384,6 +384,7 @@
 *(.text.__end_that_request_first)
 *(.text.wake_up_bit)
 *(.text.unuse_mm)
+*(.text.skb_release_data)
 *(.text.shrink_icache_memory)
 *(.text.sched_balance_self)
 *(.text.__pmd_alloc)

@@ -4,6 +4,7 @@
 /* 2003 John Levon  <levon@movementarian.org> */
 
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/net.h>		/* struct socket, struct proto_ops */

@@ -40,7 +40,6 @@
 #include <linux/slab.h>
 #include <linux/stat.h>
 #include <linux/vfs.h>
-#include <linux/mount.h>
 
 #include "vxfs.h"
 #include "vxfs_extern.h"
@@ -56,7 +55,7 @@ MODULE_ALIAS("vxfs"); /* makes mount -t vxfs autoload the module */
 
 
 static void		vxfs_put_super(struct super_block *);
-static int		vxfs_statfs(struct dentry *, struct kstatfs *);
+static int		vxfs_statfs(struct super_block *, struct kstatfs *);
 static int		vxfs_remount(struct super_block *, int *, char *);
 
 static struct super_operations vxfs_super_ops = {
@@ -91,12 +90,12 @@ vxfs_put_super(struct super_block *sbp)
 
 /**
  * vxfs_statfs - get filesystem information
- * @dentry:	VFS dentry to locate superblock
+ * @sbp:	VFS superblock
  * @bufp:	output buffer
  *
  * Description:
  *   vxfs_statfs fills the statfs buffer @bufp with information
- *   about the filesystem described by @dentry.
+ *   about the filesystem described by @sbp.
  *
  * Returns:
  *   Zero.
@@ -108,12 +107,12 @@ vxfs_put_super(struct super_block *sbp)
  *   This is everything but complete...
  */
 static int
-vxfs_statfs(struct dentry *dentry, struct kstatfs *bufp)
+vxfs_statfs(struct super_block *sbp, struct kstatfs *bufp)
 {
-	struct vxfs_sb_info		*infp = VXFS_SBI(dentry->d_sb);
+	struct vxfs_sb_info		*infp = VXFS_SBI(sbp);
 
 	bufp->f_type = VXFS_SUPER_MAGIC;
-	bufp->f_bsize = dentry->d_sb->s_blocksize;
+	bufp->f_bsize = sbp->s_blocksize;
 	bufp->f_blocks = infp->vsi_raw->vs_dsize;
 	bufp->f_bfree = infp->vsi_raw->vs_free;
 	bufp->f_bavail = 0;
@@ -242,11 +241,10 @@ out:
 /*
  * The usual module blurb.
  */
-static int vxfs_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *vxfs_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_bdev(fs_type, flags, dev_name, data, vxfs_fill_super,
-			   mnt);
+	return get_sb_bdev(fs_type, flags, dev_name, data, vxfs_fill_super);
 }
 
 static struct file_system_type vxfs_fs_type = {

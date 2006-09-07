@@ -10,6 +10,7 @@
  * 27/03/03 Ian Molton Clean up CONFIG_CPU
  *
  */
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 		.text
@@ -40,7 +41,7 @@ ENTRY(c_backtrace)
 		movne	r0, #0
 		movs	frame, r0
 1:		moveq	r0, #-2
-		ldmeqfd	sp!, {r4 - r8, pc}
+		LOADREGS(eqfd, sp!, {r4 - r8, pc})
 
 2:		stmfd	sp!, {pc}		@ calculate offset of PC in STMIA instruction
 		ldr	r0, [sp], #4
@@ -84,7 +85,7 @@ ENTRY(c_backtrace)
 		 * A zero next framepointer means we're done.
 		 */
 		teq	next, #0
-		ldmeqfd	sp!, {r4 - r8, pc}
+		LOADREGS(eqfd, sp!, {r4 - r8, pc})
 
 		/*
 		 * The next framepointer must be above the
@@ -96,13 +97,16 @@ ENTRY(c_backtrace)
 		b	1007f
 
 /*
- * Fixup for LDMDB.  Note that this must not be in the fixup section.
+ * Fixup for LDMDB
  */
+		.section .fixup,"ax"
+		.align	0
 1007:		ldr	r0, =.Lbad
 		mov	r1, frame
 		bl	printk
-		ldmfd	sp!, {r4 - r8, pc}
+		LOADREGS(fd, sp!, {r4 - r8, pc})
 		.ltorg
+		.previous
 		
 		.section __ex_table,"a"
 		.align	3
@@ -141,7 +145,7 @@ ENTRY(c_backtrace)
 		adrne	r0, .Lcr
 		blne	printk
 		mov	r0, stack
-		ldmfd	sp!, {instr, reg, stack, r7, r8, pc}
+		LOADREGS(fd, sp!, {instr, reg, stack, r7, r8, pc})
 
 .Lfp:		.asciz	" r%d = %08X%c"
 .Lcr:		.asciz	"\n"

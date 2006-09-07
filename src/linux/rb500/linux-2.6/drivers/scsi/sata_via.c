@@ -47,7 +47,7 @@
 #include <asm/io.h>
 
 #define DRV_NAME	"sata_via"
-#define DRV_VERSION	"2.0"
+#define DRV_VERSION	"1.1"
 
 enum board_ids_enum {
 	vt6420,
@@ -103,7 +103,6 @@ static struct scsi_host_template svia_sht = {
 	.proc_name		= DRV_NAME,
 	.dma_boundary		= ATA_DMA_BOUNDARY,
 	.slave_configure	= ata_scsi_slave_config,
-	.slave_destroy		= ata_scsi_slave_destroy,
 	.bios_param		= ata_std_bios_param,
 };
 
@@ -116,6 +115,8 @@ static const struct ata_port_operations svia_sata_ops = {
 	.exec_command		= ata_exec_command,
 	.dev_select		= ata_std_dev_select,
 
+	.phy_reset		= sata_phy_reset,
+
 	.bmdma_setup            = ata_bmdma_setup,
 	.bmdma_start            = ata_bmdma_start,
 	.bmdma_stop		= ata_bmdma_stop,
@@ -123,12 +124,8 @@ static const struct ata_port_operations svia_sata_ops = {
 
 	.qc_prep		= ata_qc_prep,
 	.qc_issue		= ata_qc_issue_prot,
-	.data_xfer		= ata_pio_data_xfer,
 
-	.freeze			= ata_bmdma_freeze,
-	.thaw			= ata_bmdma_thaw,
-	.error_handler		= ata_bmdma_error_handler,
-	.post_internal_cmd	= ata_bmdma_post_internal_cmd,
+	.eng_timeout		= ata_eng_timeout,
 
 	.irq_handler		= ata_interrupt,
 	.irq_clear		= ata_bmdma_irq_clear,
@@ -143,7 +140,7 @@ static const struct ata_port_operations svia_sata_ops = {
 
 static struct ata_port_info svia_port_info = {
 	.sht		= &svia_sht,
-	.host_flags	= ATA_FLAG_SATA | ATA_FLAG_NO_LEGACY,
+	.host_flags	= ATA_FLAG_SATA | ATA_FLAG_SRST | ATA_FLAG_NO_LEGACY,
 	.pio_mask	= 0x1f,
 	.mwdma_mask	= 0x07,
 	.udma_mask	= 0x7f,
@@ -238,11 +235,12 @@ static struct ata_probe_ent *vt6421_init_probe_ent(struct pci_dev *pdev)
 	INIT_LIST_HEAD(&probe_ent->node);
 
 	probe_ent->sht		= &svia_sht;
-	probe_ent->host_flags	= ATA_FLAG_SATA | ATA_FLAG_NO_LEGACY;
+	probe_ent->host_flags	= ATA_FLAG_SATA | ATA_FLAG_SATA_RESET |
+				  ATA_FLAG_NO_LEGACY;
 	probe_ent->port_ops	= &svia_sata_ops;
 	probe_ent->n_ports	= N_PORTS;
 	probe_ent->irq		= pdev->irq;
-	probe_ent->irq_flags	= IRQF_SHARED;
+	probe_ent->irq_flags	= SA_SHIRQ;
 	probe_ent->pio_mask	= 0x1f;
 	probe_ent->mwdma_mask	= 0x07;
 	probe_ent->udma_mask	= 0x7f;
@@ -335,10 +333,10 @@ static int svia_init_one (struct pci_dev *pdev, const struct pci_device_id *ent)
 		if ((pci_resource_start(pdev, i) == 0) ||
 		    (pci_resource_len(pdev, i) < bar_sizes[i])) {
 			dev_printk(KERN_ERR, &pdev->dev,
-				"invalid PCI BAR %u (sz 0x%llx, val 0x%llx)\n",
-				i,
-			        (unsigned long long)pci_resource_start(pdev, i),
-			        (unsigned long long)pci_resource_len(pdev, i));
+				   "invalid PCI BAR %u (sz 0x%lx, val 0x%lx)\n",
+				   i,
+			           pci_resource_start(pdev, i),
+			           pci_resource_len(pdev, i));
 			rc = -ENODEV;
 			goto err_out_regions;
 		}

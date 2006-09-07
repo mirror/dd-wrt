@@ -306,8 +306,6 @@ void snd_trident_start_voice(struct snd_trident * trident, unsigned int voice)
 	outl(mask, TRID_REG(trident, reg));
 }
 
-EXPORT_SYMBOL(snd_trident_start_voice);
-
 /*---------------------------------------------------------------------------
    void snd_trident_stop_voice(struct snd_trident * trident, unsigned int voice)
 
@@ -329,8 +327,6 @@ void snd_trident_stop_voice(struct snd_trident * trident, unsigned int voice)
 
 	outl(mask, TRID_REG(trident, reg));
 }
-
-EXPORT_SYMBOL(snd_trident_stop_voice);
 
 /*---------------------------------------------------------------------------
     int snd_trident_allocate_pcm_channel(struct snd_trident *trident)
@@ -505,8 +501,6 @@ void snd_trident_write_voice_regs(struct snd_trident * trident,
 	printk("  regs[4] = 0x%x/0x%x\n", regs[4], inl(TRID_REG(trident, CH_START + 16)));
 #endif
 }
-
-EXPORT_SYMBOL(snd_trident_write_voice_regs);
 
 /*---------------------------------------------------------------------------
    snd_trident_write_cso_reg
@@ -3338,7 +3332,7 @@ static void __devinit snd_trident_proc_init(struct snd_trident * trident)
 	if (trident->device == TRIDENT_DEVICE_ID_SI7018)
 		s = "sis7018";
 	if (! snd_card_proc_new(trident->card, s, &entry))
-		snd_info_set_text_ops(entry, trident, snd_trident_proc_read);
+		snd_info_set_text_ops(entry, trident, 1024, snd_trident_proc_read);
 }
 
 static int snd_trident_dev_free(struct snd_device *device)
@@ -3599,7 +3593,7 @@ int __devinit snd_trident_create(struct snd_card *card,
 	}
 	trident->port = pci_resource_start(pci, 0);
 
-	if (request_irq(pci->irq, snd_trident_interrupt, IRQF_DISABLED|IRQF_SHARED,
+	if (request_irq(pci->irq, snd_trident_interrupt, SA_INTERRUPT|SA_SHIRQ,
 			"Trident Audio", trident)) {
 		snd_printk(KERN_ERR "unable to grab IRQ %d\n", pci->irq);
 		snd_trident_free(trident);
@@ -3890,8 +3884,6 @@ struct snd_trident_voice *snd_trident_alloc_voice(struct snd_trident * trident, 
 	return NULL;
 }
 
-EXPORT_SYMBOL(snd_trident_alloc_voice);
-
 void snd_trident_free_voice(struct snd_trident * trident, struct snd_trident_voice *voice)
 {
 	unsigned long flags;
@@ -3919,8 +3911,6 @@ void snd_trident_free_voice(struct snd_trident * trident, struct snd_trident_voi
 	if (private_free)
 		private_free(voice);
 }
-
-EXPORT_SYMBOL(snd_trident_free_voice);
 
 static void snd_trident_clear_voices(struct snd_trident * trident, unsigned short v_min, unsigned short v_max)
 {
@@ -4003,3 +3993,13 @@ int snd_trident_resume(struct pci_dev *pci)
 	return 0;
 }
 #endif /* CONFIG_PM */
+
+EXPORT_SYMBOL(snd_trident_alloc_voice);
+EXPORT_SYMBOL(snd_trident_free_voice);
+EXPORT_SYMBOL(snd_trident_start_voice);
+EXPORT_SYMBOL(snd_trident_stop_voice);
+EXPORT_SYMBOL(snd_trident_write_voice_regs);
+/* trident_memory.c symbols */
+EXPORT_SYMBOL(snd_trident_synth_alloc);
+EXPORT_SYMBOL(snd_trident_synth_free);
+EXPORT_SYMBOL(snd_trident_synth_copy_from_user);

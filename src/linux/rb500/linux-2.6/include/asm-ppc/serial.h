@@ -6,6 +6,7 @@
 #ifndef __ASM_SERIAL_H__
 #define __ASM_SERIAL_H__
 
+#include <linux/config.h>
 
 #if defined(CONFIG_EV64260)
 #include <platforms/ev64260.h>

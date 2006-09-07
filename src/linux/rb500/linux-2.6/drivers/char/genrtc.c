@@ -43,6 +43,7 @@
 #define RTC_VERSION	"1.07"
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/errno.h>
 #include <linux/miscdevice.h>
 #include <linux/fcntl.h>
@@ -482,7 +483,7 @@ static inline int gen_rtc_proc_init(void) { return 0; }
  *	The various file operations we support.
  */
 
-static const struct file_operations gen_rtc_fops = {
+static struct file_operations gen_rtc_fops = {
 	.owner		= THIS_MODULE,
 #ifdef CONFIG_GEN_RTC_X
 	.read		= gen_rtc_read,

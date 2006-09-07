@@ -8,6 +8,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <asm/mach/se73180.h>
 #include <asm/io.h>

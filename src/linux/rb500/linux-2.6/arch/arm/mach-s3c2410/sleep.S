@@ -24,6 +24,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <linux/config.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/hardware.h>
@@ -65,9 +66,7 @@ ENTRY(s3c2410_cpu_suspend)
 	@@ flush the caches to ensure everything is back out to
 	@@ SDRAM before the core powers down
 
-#ifndef CONFIG_CPU_DCACHE_WRITETHROUGH
 	bl	arm920_flush_kern_cache_all
-#endif
 
 	@@ prepare cpu to sleep
 
@@ -127,7 +126,7 @@ s3c2410_sleep_save_phys:
 	*/
 
 ENTRY(s3c2410_cpu_resume)
-	mov	r0, #PSR_I_BIT | PSR_F_BIT | SVC_MODE
+	mov	r0, #PSR_I_BIT | PSR_F_BIT | MODE_SVC
 	msr	cpsr_c, r0
 
 	@@ load UART to allow us to print the two characters for

@@ -1,3 +1,4 @@
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/string.h>
@@ -163,7 +164,8 @@ u8 ide_rate_filter (u8 mode, u8 speed)
 //	printk("%s: mode 0x%02x, speed 0x%02x\n", __FUNCTION__, mode, speed);
 
 	/* So that we remember to update this if new modes appear */
-	BUG_ON(mode > 4);
+	if (mode > 4)
+		BUG();
 	return min(speed, speed_max[mode]);
 #else /* !CONFIG_BLK_DEV_IDEDMA */
 	return min(speed, (u8)XFER_PIO_4);
@@ -484,7 +486,7 @@ static u8 ide_dump_ata_status(ide_drive_t *drive, const char *msg, u8 stat)
 	unsigned long flags;
 	u8 err = 0;
 
-	local_irq_save(flags);
+	local_irq_set(flags);
 	printk("%s: %s: status=0x%02x { ", drive->name, msg, stat);
 	if (stat & BUSY_STAT)
 		printk("Busy ");
@@ -566,7 +568,7 @@ static u8 ide_dump_atapi_status(ide_drive_t *drive, const char *msg, u8 stat)
 
 	status.all = stat;
 	error.all = 0;
-	local_irq_save(flags);
+	local_irq_set(flags);
 	printk("%s: %s: status=0x%02x { ", drive->name, msg, stat);
 	if (status.b.bsy)
 		printk("Busy ");

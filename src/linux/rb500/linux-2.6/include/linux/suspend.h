@@ -6,6 +6,7 @@
 #endif
 #include <linux/swap.h>
 #include <linux/notifier.h>
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/pm.h>
 

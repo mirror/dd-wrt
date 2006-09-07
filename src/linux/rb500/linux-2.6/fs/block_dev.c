@@ -5,12 +5,14 @@
  *  Copyright (C) 2001  Andrea Arcangeli <andrea@suse.de> SuSE
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/mm.h>
 #include <linux/fcntl.h>
 #include <linux/slab.h>
 #include <linux/kmod.h>
 #include <linux/major.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/smp_lock.h>
 #include <linux/highmem.h>
 #include <linux/blkdev.h>
@@ -298,10 +300,10 @@ static struct super_operations bdev_sops = {
 	.clear_inode = bdev_clear_inode,
 };
 
-static int bd_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static struct super_block *bd_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data)
 {
-	return get_sb_pseudo(fs_type, "bdev:", &bdev_sops, 0x62646576, mnt);
+	return get_sb_pseudo(fs_type, "bdev:", &bdev_sops, 0x62646576);
 }
 
 static struct file_system_type bd_type = {
@@ -412,31 +414,21 @@ EXPORT_SYMBOL(bdput);
 static struct block_device *bd_acquire(struct inode *inode)
 {
 	struct block_device *bdev;
-
 	spin_lock(&bdev_lock);
 	bdev = inode->i_bdev;
-	if (bdev) {
-		atomic_inc(&bdev->bd_inode->i_count);
+	if (bdev && igrab(bdev->bd_inode)) {
 		spin_unlock(&bdev_lock);
 		return bdev;
 	}
 	spin_unlock(&bdev_lock);
-
 	bdev = bdget(inode->i_rdev);
 	if (bdev) {
 		spin_lock(&bdev_lock);
-		if (!inode->i_bdev) {
-			/*
-			 * We take an additional bd_inode->i_count for inode,
-			 * and it's released in clear_inode() of inode.
-			 * So, we can access it via ->i_mapping always
-			 * without igrab().
-			 */
-			atomic_inc(&bdev->bd_inode->i_count);
-			inode->i_bdev = bdev;
-			inode->i_mapping = bdev->bd_inode->i_mapping;
-			list_add(&inode->i_devices, &bdev->bd_inodes);
-		}
+		if (inode->i_bdev)
+			__bd_forget(inode);
+		inode->i_bdev = bdev;
+		inode->i_mapping = bdev->bd_inode->i_mapping;
+		list_add(&inode->i_devices, &bdev->bd_inodes);
 		spin_unlock(&bdev_lock);
 	}
 	return bdev;
@@ -446,18 +438,10 @@ static struct block_device *bd_acquire(struct inode *inode)
 
 void bd_forget(struct inode *inode)
 {
-	struct block_device *bdev = NULL;
-
 	spin_lock(&bdev_lock);
-	if (inode->i_bdev) {
-		if (inode->i_sb != blockdev_superblock)
-			bdev = inode->i_bdev;
+	if (inode->i_bdev)
 		__bd_forget(inode);
-	}
 	spin_unlock(&bdev_lock);
-
-	if (bdev)
-		iput(bdev->bd_inode);
 }
 
 int bd_claim(struct block_device *bdev, void *holder)
@@ -739,7 +723,7 @@ static int bd_claim_by_kobject(struct block_device *bdev, void *holder,
 	if (!bo)
 		return -ENOMEM;
 
-	mutex_lock_nested(&bdev->bd_mutex, BD_MUTEX_PARTITION);
+	mutex_lock(&bdev->bd_mutex);
 	res = bd_claim(bdev, holder);
 	if (res || !add_bd_holder(bdev, bo))
 		free_bd_holder(bo);
@@ -764,7 +748,7 @@ static void bd_release_from_kobject(struct block_device *bdev,
 	if (!kobj)
 		return;
 
-	mutex_lock_nested(&bdev->bd_mutex, BD_MUTEX_PARTITION);
+	mutex_lock(&bdev->bd_mutex);
 	bd_release(bdev);
 	if ((bo = del_bd_holder(bdev, kobj)))
 		free_bd_holder(bo);
@@ -822,22 +806,6 @@ struct block_device *open_by_devnum(dev_t dev, unsigned mode)
 
 EXPORT_SYMBOL(open_by_devnum);
 
-static int
-blkdev_get_partition(struct block_device *bdev, mode_t mode, unsigned flags);
-
-struct block_device *open_partition_by_devnum(dev_t dev, unsigned mode)
-{
-	struct block_device *bdev = bdget(dev);
-	int err = -ENOMEM;
-	int flags = mode & FMODE_WRITE ? O_RDWR : O_RDONLY;
-	if (bdev)
-		err = blkdev_get_partition(bdev, mode, flags);
-	return err ? ERR_PTR(err) : bdev;
-}
-
-EXPORT_SYMBOL(open_partition_by_devnum);
-
-
 /*
  * This routine checks whether a removable media has been changed,
  * and invalidates all buffer-cache-entries in that case. This
@@ -884,11 +852,7 @@ void bd_set_size(struct block_device *bdev, loff_t size)
 }
 EXPORT_SYMBOL(bd_set_size);
 
-static int
-blkdev_get_whole(struct block_device *bdev, mode_t mode, unsigned flags);
-
-static int
-do_open(struct block_device *bdev, struct file *file, unsigned int subclass)
+static int do_open(struct block_device *bdev, struct file *file)
 {
 	struct module *owner = NULL;
 	struct gendisk *disk;
@@ -905,8 +869,7 @@ do_open(struct block_device *bdev, struct file *file, unsigned int subclass)
 	}
 	owner = disk->fops->owner;
 
-	mutex_lock_nested(&bdev->bd_mutex, subclass);
-
+	mutex_lock(&bdev->bd_mutex);
 	if (!bdev->bd_openers) {
 		bdev->bd_disk = disk;
 		bdev->bd_contains = bdev;
@@ -933,11 +896,11 @@ do_open(struct block_device *bdev, struct file *file, unsigned int subclass)
 			ret = -ENOMEM;
 			if (!whole)
 				goto out_first;
-			ret = blkdev_get_whole(whole, file->f_mode, file->f_flags);
+			ret = blkdev_get(whole, file->f_mode, file->f_flags);
 			if (ret)
 				goto out_first;
 			bdev->bd_contains = whole;
-			mutex_lock_nested(&whole->bd_mutex, BD_MUTEX_WHOLE);
+			mutex_lock(&whole->bd_mutex);
 			whole->bd_part_count++;
 			p = disk->part[part - 1];
 			bdev->bd_inode->i_data.backing_dev_info =
@@ -965,8 +928,7 @@ do_open(struct block_device *bdev, struct file *file, unsigned int subclass)
 			if (bdev->bd_invalidated)
 				rescan_partitions(bdev->bd_disk, bdev);
 		} else {
-			mutex_lock_nested(&bdev->bd_contains->bd_mutex,
-					  BD_MUTEX_PARTITION);
+			mutex_lock(&bdev->bd_contains->bd_mutex);
 			bdev->bd_contains->bd_part_count++;
 			mutex_unlock(&bdev->bd_contains->bd_mutex);
 		}
@@ -1007,48 +969,10 @@ int blkdev_get(struct block_device *bdev, mode_t mode, unsigned flags)
 	fake_file.f_dentry = &fake_dentry;
 	fake_dentry.d_inode = bdev->bd_inode;
 
-	return do_open(bdev, &fake_file, BD_MUTEX_NORMAL);
+	return do_open(bdev, &fake_file);
 }
 
 EXPORT_SYMBOL(blkdev_get);
-
-static int
-blkdev_get_whole(struct block_device *bdev, mode_t mode, unsigned flags)
-{
-	/*
-	 * This crockload is due to bad choice of ->open() type.
-	 * It will go away.
-	 * For now, block device ->open() routine must _not_
-	 * examine anything in 'inode' argument except ->i_rdev.
-	 */
-	struct file fake_file = {};
-	struct dentry fake_dentry = {};
-	fake_file.f_mode = mode;
-	fake_file.f_flags = flags;
-	fake_file.f_dentry = &fake_dentry;
-	fake_dentry.d_inode = bdev->bd_inode;
-
-	return do_open(bdev, &fake_file, BD_MUTEX_WHOLE);
-}
-
-static int
-blkdev_get_partition(struct block_device *bdev, mode_t mode, unsigned flags)
-{
-	/*
-	 * This crockload is due to bad choice of ->open() type.
-	 * It will go away.
-	 * For now, block device ->open() routine must _not_
-	 * examine anything in 'inode' argument except ->i_rdev.
-	 */
-	struct file fake_file = {};
-	struct dentry fake_dentry = {};
-	fake_file.f_mode = mode;
-	fake_file.f_flags = flags;
-	fake_file.f_dentry = &fake_dentry;
-	fake_dentry.d_inode = bdev->bd_inode;
-
-	return do_open(bdev, &fake_file, BD_MUTEX_PARTITION);
-}
 
 static int blkdev_open(struct inode * inode, struct file * filp)
 {
@@ -1065,7 +989,7 @@ static int blkdev_open(struct inode * inode, struct file * filp)
 
 	bdev = bd_acquire(inode);
 
-	res = do_open(bdev, filp, BD_MUTEX_NORMAL);
+	res = do_open(bdev, filp);
 	if (res)
 		return res;
 
@@ -1079,13 +1003,13 @@ static int blkdev_open(struct inode * inode, struct file * filp)
 	return res;
 }
 
-static int __blkdev_put(struct block_device *bdev, unsigned int subclass)
+int blkdev_put(struct block_device *bdev)
 {
 	int ret = 0;
 	struct inode *bd_inode = bdev->bd_inode;
 	struct gendisk *disk = bdev->bd_disk;
 
-	mutex_lock_nested(&bdev->bd_mutex, subclass);
+	mutex_lock(&bdev->bd_mutex);
 	lock_kernel();
 	if (!--bdev->bd_openers) {
 		sync_blockdev(bdev);
@@ -1095,8 +1019,7 @@ static int __blkdev_put(struct block_device *bdev, unsigned int subclass)
 		if (disk->fops->release)
 			ret = disk->fops->release(bd_inode, NULL);
 	} else {
-		mutex_lock_nested(&bdev->bd_contains->bd_mutex,
-				  subclass + 1);
+		mutex_lock(&bdev->bd_contains->bd_mutex);
 		bdev->bd_contains->bd_part_count--;
 		mutex_unlock(&bdev->bd_contains->bd_mutex);
 	}
@@ -1112,8 +1035,9 @@ static int __blkdev_put(struct block_device *bdev, unsigned int subclass)
 		}
 		bdev->bd_disk = NULL;
 		bdev->bd_inode->i_data.backing_dev_info = &default_backing_dev_info;
-		if (bdev != bdev->bd_contains)
-			__blkdev_put(bdev->bd_contains, subclass + 1);
+		if (bdev != bdev->bd_contains) {
+			blkdev_put(bdev->bd_contains);
+		}
 		bdev->bd_contains = NULL;
 	}
 	unlock_kernel();
@@ -1122,19 +1046,7 @@ static int __blkdev_put(struct block_device *bdev, unsigned int subclass)
 	return ret;
 }
 
-int blkdev_put(struct block_device *bdev)
-{
-	return __blkdev_put(bdev, BD_MUTEX_NORMAL);
-}
-
 EXPORT_SYMBOL(blkdev_put);
-
-int blkdev_put_partition(struct block_device *bdev)
-{
-	return __blkdev_put(bdev, BD_MUTEX_PARTITION);
-}
-
-EXPORT_SYMBOL(blkdev_put_partition);
 
 static int blkdev_close(struct inode * inode, struct file * filp)
 {
@@ -1165,7 +1077,7 @@ static long block_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 	return blkdev_ioctl(file->f_mapping->host, file, cmd, arg);
 }
 
-const struct address_space_operations def_blk_aops = {
+struct address_space_operations def_blk_aops = {
 	.readpage	= blkdev_readpage,
 	.writepage	= blkdev_writepage,
 	.sync_page	= block_sync_page,

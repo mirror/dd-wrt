@@ -12,6 +12,7 @@
  * See Documentation/usb/usb-serial.txt for more information on using this driver
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/tty.h>

@@ -21,6 +21,7 @@
 
 #include <sound/driver.h>
 #include <linux/init.h>
+#include <linux/vmalloc.h>
 #include <linux/time.h>
 #include <linux/smp_lock.h>
 #include <linux/string.h>
@@ -29,6 +30,7 @@
 #include <sound/info.h>
 #include <sound/version.h>
 #include <linux/proc_fs.h>
+#include <linux/devfs_fs_kernel.h>
 #include <linux/mutex.h>
 #include <stdarg.h>
 
@@ -80,24 +82,6 @@ static int snd_info_version_init(void);
 static int snd_info_version_done(void);
 
 
-/* resize the proc r/w buffer */
-static int resize_info_buffer(struct snd_info_buffer *buffer,
-			      unsigned int nsize)
-{
-	char *nbuf;
-
-	nsize = PAGE_ALIGN(nsize);
-	nbuf = kmalloc(nsize, GFP_KERNEL);
-	if (! nbuf)
-		return -ENOMEM;
-
-	memcpy(nbuf, buffer->buffer, buffer->len);
-	kfree(buffer->buffer);
-	buffer->buffer = nbuf;
-	buffer->len = nsize;
-	return 0;
-}
-
 /**
  * snd_iprintf - printf on the procfs buffer
  * @buffer: the procfs buffer
@@ -111,43 +95,30 @@ int snd_iprintf(struct snd_info_buffer *buffer, char *fmt,...)
 {
 	va_list args;
 	int len, res;
-	int err = 0;
 
-	might_sleep();
 	if (buffer->stop || buffer->error)
 		return 0;
 	len = buffer->len - buffer->size;
 	va_start(args, fmt);
-	for (;;) {
-		res = vsnprintf(buffer->buffer + buffer->curr, len, fmt, args);
-		if (res < len)
-			break;
-		err = resize_info_buffer(buffer, buffer->len + PAGE_SIZE);
-		if (err < 0)
-			break;
-		len = buffer->len - buffer->size;
-	}
+	res = vsnprintf(buffer->curr, len, fmt, args);
 	va_end(args);
-
-	if (err < 0)
-		return err;
+	if (res >= len) {
+		buffer->stop = 1;
+		return 0;
+	}
 	buffer->curr += res;
 	buffer->size += res;
 	return res;
 }
 
-EXPORT_SYMBOL(snd_iprintf);
-
 /*
 
  */
 
-static struct proc_dir_entry *snd_proc_root;
-struct snd_info_entry *snd_seq_root;
-EXPORT_SYMBOL(snd_seq_root);
-
+static struct proc_dir_entry *snd_proc_root = NULL;
+struct snd_info_entry *snd_seq_root = NULL;
 #ifdef CONFIG_SND_OSSEMUL
-struct snd_info_entry *snd_oss_root;
+struct snd_info_entry *snd_oss_root = NULL;
 #endif
 
 static inline void snd_info_entry_prepare(struct proc_dir_entry *de)
@@ -250,7 +221,7 @@ static ssize_t snd_info_entry_write(struct file *file, const char __user *buffer
 	struct snd_info_private_data *data;
 	struct snd_info_entry *entry;
 	struct snd_info_buffer *buf;
-	ssize_t size = 0;
+	size_t size = 0;
 	loff_t pos;
 
 	data = file->private_data;
@@ -266,20 +237,14 @@ static ssize_t snd_info_entry_write(struct file *file, const char __user *buffer
 		buf = data->wbuffer;
 		if (buf == NULL)
 			return -EIO;
-		mutex_lock(&entry->access);
-		if (pos + count >= buf->len) {
-			if (resize_info_buffer(buf, pos + count)) {
-				mutex_unlock(&entry->access);
-				return -ENOMEM;
-			}
-		}
-		if (copy_from_user(buf->buffer + pos, buffer, count)) {
-			mutex_unlock(&entry->access);
+		if (pos >= buf->len)
+			return -ENOMEM;
+		size = buf->len - pos;
+		size = min(count, size);
+		if (copy_from_user(buf->buffer + pos, buffer, size))
 			return -EFAULT;
-		}
-		buf->size = pos + count;
-		mutex_unlock(&entry->access);
-		size = count;
+		if ((long)buf->size < pos + size)
+			buf->size = pos + size;
 		break;
 	case SNDRV_INFO_CONTENT_DATA:
 		if (entry->c.ops->write)
@@ -314,14 +279,18 @@ static int snd_info_entry_open(struct inode *inode, struct file *file)
 	}
 	mode = file->f_flags & O_ACCMODE;
 	if (mode == O_RDONLY || mode == O_RDWR) {
-		if ((entry->content == SNDRV_INFO_CONTENT_DATA &&
+		if ((entry->content == SNDRV_INFO_CONTENT_TEXT &&
+		     !entry->c.text.read_size) ||
+		    (entry->content == SNDRV_INFO_CONTENT_DATA &&
 		     entry->c.ops->read == NULL)) {
 		    	err = -ENODEV;
 		    	goto __error;
 		}
 	}
 	if (mode == O_WRONLY || mode == O_RDWR) {
-		if ((entry->content == SNDRV_INFO_CONTENT_DATA &&
+		if ((entry->content == SNDRV_INFO_CONTENT_TEXT &&
+		     !entry->c.text.write_size) ||
+		    (entry->content == SNDRV_INFO_CONTENT_DATA &&
 		     entry->c.ops->write == NULL)) {
 		    	err = -ENODEV;
 		    	goto __error;
@@ -337,23 +306,49 @@ static int snd_info_entry_open(struct inode *inode, struct file *file)
 	case SNDRV_INFO_CONTENT_TEXT:
 		if (mode == O_RDONLY || mode == O_RDWR) {
 			buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
-			if (buffer == NULL)
-				goto __nomem;
+			if (buffer == NULL) {
+				kfree(data);
+				err = -ENOMEM;
+				goto __error;
+			}
+			buffer->len = (entry->c.text.read_size +
+				      (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
+			buffer->buffer = vmalloc(buffer->len);
+			if (buffer->buffer == NULL) {
+				kfree(buffer);
+				kfree(data);
+				err = -ENOMEM;
+				goto __error;
+			}
+			buffer->curr = buffer->buffer;
 			data->rbuffer = buffer;
-			buffer->len = PAGE_SIZE;
-			buffer->buffer = kmalloc(buffer->len, GFP_KERNEL);
-			if (buffer->buffer == NULL)
-				goto __nomem;
 		}
 		if (mode == O_WRONLY || mode == O_RDWR) {
 			buffer = kzalloc(sizeof(*buffer), GFP_KERNEL);
-			if (buffer == NULL)
-				goto __nomem;
+			if (buffer == NULL) {
+				if (mode == O_RDWR) {
+					vfree(data->rbuffer->buffer);
+					kfree(data->rbuffer);
+				}
+				kfree(data);
+				err = -ENOMEM;
+				goto __error;
+			}
+			buffer->len = (entry->c.text.write_size +
+				      (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
+			buffer->buffer = vmalloc(buffer->len);
+			if (buffer->buffer == NULL) {
+				if (mode == O_RDWR) {
+					vfree(data->rbuffer->buffer);
+					kfree(data->rbuffer);
+				}
+				kfree(buffer);
+				kfree(data);
+				err = -ENOMEM;
+				goto __error;
+			}
+			buffer->curr = buffer->buffer;
 			data->wbuffer = buffer;
-			buffer->len = PAGE_SIZE;
-			buffer->buffer = kmalloc(buffer->len, GFP_KERNEL);
-			if (buffer->buffer == NULL)
-				goto __nomem;
 		}
 		break;
 	case SNDRV_INFO_CONTENT_DATA:	/* data */
@@ -378,17 +373,6 @@ static int snd_info_entry_open(struct inode *inode, struct file *file)
 	}
 	return 0;
 
- __nomem:
-	if (data->rbuffer) {
-		kfree(data->rbuffer->buffer);
-		kfree(data->rbuffer);
-	}
-	if (data->wbuffer) {
-		kfree(data->wbuffer->buffer);
-		kfree(data->wbuffer);
-	}
-	kfree(data);
-	err = -ENOMEM;
       __error:
 	module_put(entry->module);
       __error1:
@@ -407,11 +391,11 @@ static int snd_info_entry_release(struct inode *inode, struct file *file)
 	entry = data->entry;
 	switch (entry->content) {
 	case SNDRV_INFO_CONTENT_TEXT:
-		if (data->rbuffer) {
-			kfree(data->rbuffer->buffer);
+		if (mode == O_RDONLY || mode == O_RDWR) {
+			vfree(data->rbuffer->buffer);
 			kfree(data->rbuffer);
 		}
-		if (data->wbuffer) {
+		if (mode == O_WRONLY || mode == O_RDWR) {
 			if (entry->c.text.write) {
 				entry->c.text.write(entry, data->wbuffer);
 				if (data->wbuffer->error) {
@@ -420,7 +404,7 @@ static int snd_info_entry_release(struct inode *inode, struct file *file)
 						data->wbuffer->error);
 				}
 			}
-			kfree(data->wbuffer->buffer);
+			vfree(data->wbuffer->buffer);
 			kfree(data->wbuffer);
 		}
 		break;
@@ -680,28 +664,28 @@ int snd_info_get_line(struct snd_info_buffer *buffer, char *line, int len)
 	if (len <= 0 || buffer->stop || buffer->error)
 		return 1;
 	while (--len > 0) {
-		c = buffer->buffer[buffer->curr++];
+		c = *buffer->curr++;
 		if (c == '\n') {
-			if (buffer->curr >= buffer->size)
+			if ((buffer->curr - buffer->buffer) >= (long)buffer->size) {
 				buffer->stop = 1;
+			}
 			break;
 		}
 		*line++ = c;
-		if (buffer->curr >= buffer->size) {
+		if ((buffer->curr - buffer->buffer) >= (long)buffer->size) {
 			buffer->stop = 1;
 			break;
 		}
 	}
 	while (c != '\n' && !buffer->stop) {
-		c = buffer->buffer[buffer->curr++];
-		if (buffer->curr >= buffer->size)
+		c = *buffer->curr++;
+		if ((buffer->curr - buffer->buffer) >= (long)buffer->size) {
 			buffer->stop = 1;
+		}
 	}
 	*line = '\0';
 	return 0;
 }
-
-EXPORT_SYMBOL(snd_info_get_line);
 
 /**
  * snd_info_get_str - parse a string token
@@ -738,8 +722,6 @@ char *snd_info_get_str(char *dest, char *src, int len)
 		src++;
 	return src;
 }
-
-EXPORT_SYMBOL(snd_info_get_str);
 
 /**
  * snd_info_create_entry - create an info entry
@@ -792,8 +774,6 @@ struct snd_info_entry *snd_info_create_module_entry(struct module * module,
 	return entry;
 }
 
-EXPORT_SYMBOL(snd_info_create_module_entry);
-
 /**
  * snd_info_create_card_entry - create an info entry for the given card
  * @card: the card instance
@@ -816,8 +796,6 @@ struct snd_info_entry *snd_info_create_card_entry(struct snd_card *card,
 	}
 	return entry;
 }
-
-EXPORT_SYMBOL(snd_info_create_card_entry);
 
 static int snd_info_dev_free_entry(struct snd_device *device)
 {
@@ -889,8 +867,6 @@ int snd_card_proc_new(struct snd_card *card, const char *name,
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_card_proc_new);
-
 /**
  * snd_info_free_entry - release the info entry
  * @entry: the info entry
@@ -906,8 +882,6 @@ void snd_info_free_entry(struct snd_info_entry * entry)
 		entry->private_free(entry);
 	kfree(entry);
 }
-
-EXPORT_SYMBOL(snd_info_free_entry);
 
 /**
  * snd_info_register - register the info entry
@@ -939,8 +913,6 @@ int snd_info_register(struct snd_info_entry * entry)
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_info_register);
-
 /**
  * snd_info_unregister - de-register the info entry
  * @entry: the info entry
@@ -965,13 +937,11 @@ int snd_info_unregister(struct snd_info_entry * entry)
 	return 0;
 }
 
-EXPORT_SYMBOL(snd_info_unregister);
-
 /*
 
  */
 
-static struct snd_info_entry *snd_info_version_entry;
+static struct snd_info_entry *snd_info_version_entry = NULL;
 
 static void snd_info_version_read(struct snd_info_entry *entry, struct snd_info_buffer *buffer)
 {
@@ -988,6 +958,7 @@ static int __init snd_info_version_init(void)
 	entry = snd_info_create_module_entry(THIS_MODULE, "version", NULL);
 	if (entry == NULL)
 		return -ENOMEM;
+	entry->c.text.read_size = 256;
 	entry->c.text.read = snd_info_version_read;
 	if (snd_info_register(entry) < 0) {
 		snd_info_free_entry(entry);

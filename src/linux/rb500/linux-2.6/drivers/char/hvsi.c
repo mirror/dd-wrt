@@ -1154,6 +1154,7 @@ static int __init hvsi_init(void)
 		return -ENOMEM;
 
 	hvsi_driver->owner = THIS_MODULE;
+	hvsi_driver->devfs_name = "hvsi/";
 	hvsi_driver->driver_name = "hvsi";
 	hvsi_driver->name = "hvsi";
 	hvsi_driver->major = HVSI_MAJOR;
@@ -1168,7 +1169,7 @@ static int __init hvsi_init(void)
 		struct hvsi_struct *hp = &hvsi_ports[i];
 		int ret = 1;
 
-		ret = request_irq(hp->virq, hvsi_interrupt, IRQF_DISABLED, "hvsi", hp);
+		ret = request_irq(hp->virq, hvsi_interrupt, SA_INTERRUPT, "hvsi", hp);
 		if (ret)
 			printk(KERN_ERR "HVSI: couldn't reserve irq 0x%x (error %i)\n",
 				hp->virq, ret);
@@ -1178,7 +1179,7 @@ static int __init hvsi_init(void)
 	if (tty_register_driver(hvsi_driver))
 		panic("Couldn't register hvsi console driver\n");
 
-	printk(KERN_DEBUG "HVSI: registered %i devices\n", hvsi_count);
+	printk(KERN_INFO "HVSI: registered %i devices\n", hvsi_count);
 
 	return 0;
 }
@@ -1299,12 +1300,13 @@ static int __init hvsi_console_init(void)
 		hp->inbuf_end = hp->inbuf;
 		hp->state = HVSI_CLOSED;
 		hp->vtermno = *vtermno;
-		hp->virq = irq_create_mapping(NULL, irq[0], 0);
+		hp->virq = virt_irq_create_mapping(irq[0]);
 		if (hp->virq == NO_IRQ) {
 			printk(KERN_ERR "%s: couldn't create irq mapping for 0x%x\n",
-				__FUNCTION__, irq[0]);
+				__FUNCTION__, hp->virq);
 			continue;
-		}
+		} else
+			hp->virq = irq_offset_up(hp->virq);
 
 		hvsi_count++;
 	}

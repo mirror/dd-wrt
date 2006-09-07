@@ -7,6 +7,7 @@
 #ifndef _ETRAX_SERIAL_H
 #define _ETRAX_SERIAL_H
 
+#include <linux/config.h>
 #include <linux/circ_buf.h>
 #include <asm/termios.h>
 

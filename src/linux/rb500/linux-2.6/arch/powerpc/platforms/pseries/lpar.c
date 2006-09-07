@@ -21,6 +21,7 @@
 
 #undef DEBUG_LOW
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/dma-mapping.h>
 #include <linux/console.h>
@@ -512,7 +513,7 @@ void pSeries_lpar_flush_hash_range(unsigned long number, int local)
 		spin_unlock_irqrestore(&pSeries_lpar_tlbie_lock, flags);
 }
 
-void __init hpte_init_lpar(void)
+void hpte_init_lpar(void)
 {
 	ppc_md.hpte_invalidate	= pSeries_lpar_hpte_invalidate;
 	ppc_md.hpte_updatepp	= pSeries_lpar_hpte_updatepp;
@@ -521,4 +522,6 @@ void __init hpte_init_lpar(void)
 	ppc_md.hpte_remove	= pSeries_lpar_hpte_remove;
 	ppc_md.flush_hash_range	= pSeries_lpar_flush_hash_range;
 	ppc_md.hpte_clear_all   = pSeries_lpar_hptab_clear;
+
+	htab_finish_init();
 }

@@ -113,6 +113,6 @@ out:
 /*
  * symlinks can't do much...
  */
-const struct address_space_operations udf_symlink_aops = {
+struct address_space_operations udf_symlink_aops = {
 	.readpage		= udf_symlink_filler,
 };

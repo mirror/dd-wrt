@@ -18,6 +18,8 @@ struct __kernel_sockaddr_storage {
 
 #if defined(__KERNEL__) || !defined(__GLIBC__) || (__GLIBC__ < 2)
 
+#include <linux/config.h>		/* for CONFIG_COMPAT */
+#include <linux/linkage.h>
 #include <asm/socket.h>			/* arch-dependent defines	*/
 #include <linux/sockios.h>		/* the SIOCxxx I/O controls	*/
 #include <linux/uio.h>			/* iovec support		*/

@@ -57,9 +57,9 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/hardirq.h>
+#include <asm/mach-au1x00/au1000.h>
 #include <asm/mach-au1x00/au1xxx_psc.h>
 #include <asm/mach-au1x00/au1xxx_dbdma.h>
-#include <asm/mach-au1x00/au1xxx.h>
 
 #undef OSS_DOCUMENTED_MIXER_SEMANTICS
 
@@ -213,8 +213,7 @@ rdcodec(struct ac97_codec *codec, u8 addr)
 	}
 	if (i == POLL_COUNT) {
 		err("rdcodec: read poll expired!");
-		data = 0;
-		goto out;
+		return 0;
 	}
 
 	/* wait for command done?
@@ -227,8 +226,7 @@ rdcodec(struct ac97_codec *codec, u8 addr)
 	}
 	if (i == POLL_COUNT) {
 		err("rdcodec: read cmdwait expired!");
-		data = 0;
-		goto out;
+		return 0;
 	}
 
 	data = au_readl(PSC_AC97CDC) & 0xffff;
@@ -239,7 +237,6 @@ rdcodec(struct ac97_codec *codec, u8 addr)
 	au_writel(PSC_AC97EVNT_CD, PSC_AC97EVNT);
 	au_sync();
 
- out:
 	spin_unlock_irqrestore(&s->lock, flags);
 
 	return data;
@@ -1895,8 +1892,6 @@ static /*const */ struct file_operations au1550_audio_fops = {
 
 MODULE_AUTHOR("Advanced Micro Devices (AMD), dan@embeddededge.com");
 MODULE_DESCRIPTION("Au1550 AC97 Audio Driver");
-MODULE_LICENSE("GPL");
-
 
 static int __devinit
 au1550_probe(void)

@@ -102,7 +102,7 @@ asmlinkage long sys_add_key(const char __user *_type,
 	/* create or update the requested key and add it to the target
 	 * keyring */
 	key_ref = key_create_or_update(keyring_ref, type, description,
-				       payload, plen, KEY_ALLOC_IN_QUOTA);
+				       payload, plen, 0);
 	if (!IS_ERR(key_ref)) {
 		ret = key_ref_to_ptr(key_ref)->serial;
 		key_ref_put(key_ref);
@@ -183,9 +183,8 @@ asmlinkage long sys_request_key(const char __user *_type,
 	}
 
 	/* do the search */
-	key = request_key_and_link(ktype, description, callout_info, NULL,
-				   key_ref_to_ptr(dest_ref),
-				   KEY_ALLOC_IN_QUOTA);
+	key = request_key_and_link(ktype, description, callout_info,
+				   key_ref_to_ptr(dest_ref));
 	if (IS_ERR(key)) {
 		ret = PTR_ERR(key);
 		goto error5;
@@ -673,7 +672,6 @@ long keyctl_read_key(key_serial_t keyid, char __user *buffer, size_t buflen)
  */
 long keyctl_chown_key(key_serial_t id, uid_t uid, gid_t gid)
 {
-	struct key_user *newowner, *zapowner = NULL;
 	struct key *key;
 	key_ref_t key_ref;
 	long ret;
@@ -697,50 +695,19 @@ long keyctl_chown_key(key_serial_t id, uid_t uid, gid_t gid)
 	if (!capable(CAP_SYS_ADMIN)) {
 		/* only the sysadmin can chown a key to some other UID */
 		if (uid != (uid_t) -1 && key->uid != uid)
-			goto error_put;
+			goto no_access;
 
 		/* only the sysadmin can set the key's GID to a group other
 		 * than one of those that the current process subscribes to */
 		if (gid != (gid_t) -1 && gid != key->gid && !in_group_p(gid))
-			goto error_put;
+			goto no_access;
 	}
 
-	/* change the UID */
+	/* change the UID (have to update the quotas) */
 	if (uid != (uid_t) -1 && uid != key->uid) {
-		ret = -ENOMEM;
-		newowner = key_user_lookup(uid);
-		if (!newowner)
-			goto error_put;
-
-		/* transfer the quota burden to the new user */
-		if (test_bit(KEY_FLAG_IN_QUOTA, &key->flags)) {
-			spin_lock(&newowner->lock);
-			if (newowner->qnkeys + 1 >= KEYQUOTA_MAX_KEYS ||
-			    newowner->qnbytes + key->quotalen >=
-			    KEYQUOTA_MAX_BYTES)
-				goto quota_overrun;
-
-			newowner->qnkeys++;
-			newowner->qnbytes += key->quotalen;
-			spin_unlock(&newowner->lock);
-
-			spin_lock(&key->user->lock);
-			key->user->qnkeys--;
-			key->user->qnbytes -= key->quotalen;
-			spin_unlock(&key->user->lock);
-		}
-
-		atomic_dec(&key->user->nkeys);
-		atomic_inc(&newowner->nkeys);
-
-		if (test_bit(KEY_FLAG_INSTANTIATED, &key->flags)) {
-			atomic_dec(&key->user->nikeys);
-			atomic_inc(&newowner->nikeys);
-		}
-
-		zapowner = key->user;
-		key->user = newowner;
-		key->uid = uid;
+		/* don't support UID changing yet */
+		ret = -EOPNOTSUPP;
+		goto no_access;
 	}
 
 	/* change the GID */
@@ -749,19 +716,11 @@ long keyctl_chown_key(key_serial_t id, uid_t uid, gid_t gid)
 
 	ret = 0;
 
-error_put:
+ no_access:
 	up_write(&key->sem);
 	key_put(key);
-	if (zapowner)
-		key_user_put(zapowner);
-error:
+ error:
 	return ret;
-
-quota_overrun:
-	spin_unlock(&newowner->lock);
-	zapowner = newowner;
-	ret = -EDQUOT;
-	goto error_put;
 
 } /* end keyctl_chown_key() */
 

@@ -1,6 +1,7 @@
 #ifndef _ASM_M32R_TLBFLUSH_H
 #define _ASM_M32R_TLBFLUSH_H
 
+#include <linux/config.h>
 #include <asm/m32r.h>
 
 /*

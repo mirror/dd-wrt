@@ -278,7 +278,6 @@ snd_seq_midisynth_register_port(struct snd_seq_device *dev)
 	struct seq_midisynth *msynth, *ms;
 	struct snd_seq_port_info *port;
 	struct snd_rawmidi_info *info;
-	struct snd_rawmidi *rmidi = dev->private_data;
 	int newclient = 0;
 	unsigned int p, ports;
 	struct snd_seq_port_callback pcallbacks;
@@ -321,8 +320,8 @@ snd_seq_midisynth_register_port(struct snd_seq_device *dev)
 		}
 		client->seq_client =
 			snd_seq_create_kernel_client(
-				card, 0, "%s", card->shortname[0] ?
-				(const char *)card->shortname : "External MIDI");
+				card, 0, "%s", info->name[0] ?
+				(const char *)info->name : "External MIDI");
 		if (client->seq_client < 0) {
 			kfree(client);
 			mutex_unlock(&register_mutex);
@@ -377,9 +376,7 @@ snd_seq_midisynth_register_port(struct snd_seq_device *dev)
 		if ((port->capability & (SNDRV_SEQ_PORT_CAP_WRITE|SNDRV_SEQ_PORT_CAP_READ)) == (SNDRV_SEQ_PORT_CAP_WRITE|SNDRV_SEQ_PORT_CAP_READ) &&
 		    info->flags & SNDRV_RAWMIDI_INFO_DUPLEX)
 			port->capability |= SNDRV_SEQ_PORT_CAP_DUPLEX;
-		port->type = SNDRV_SEQ_PORT_TYPE_MIDI_GENERIC
-			| SNDRV_SEQ_PORT_TYPE_HARDWARE
-			| SNDRV_SEQ_PORT_TYPE_PORT;
+		port->type = SNDRV_SEQ_PORT_TYPE_MIDI_GENERIC;
 		port->midi_channels = 16;
 		memset(&pcallbacks, 0, sizeof(pcallbacks));
 		pcallbacks.owner = THIS_MODULE;
@@ -390,8 +387,6 @@ snd_seq_midisynth_register_port(struct snd_seq_device *dev)
 		pcallbacks.unuse = midisynth_unuse;
 		pcallbacks.event_input = event_process_midi;
 		port->kernel = &pcallbacks;
-		if (rmidi->ops && rmidi->ops->get_port_info)
-			rmidi->ops->get_port_info(rmidi, p, port);
 		if (snd_seq_kernel_client_ctl(client->seq_client, SNDRV_SEQ_IOCTL_CREATE_PORT, port)<0)
 			goto __nomem;
 		ms->seq_client = client->seq_client;

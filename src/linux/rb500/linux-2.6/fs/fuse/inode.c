@@ -11,20 +11,25 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/file.h>
+#include <linux/mount.h>
 #include <linux/seq_file.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/parser.h>
 #include <linux/statfs.h>
-#include <linux/random.h>
 
 MODULE_AUTHOR("Miklos Szeredi <miklos@szeredi.hu>");
 MODULE_DESCRIPTION("Filesystem in Userspace");
 MODULE_LICENSE("GPL");
 
 static kmem_cache_t *fuse_inode_cachep;
-struct list_head fuse_conn_list;
-DEFINE_MUTEX(fuse_mutex);
+static struct subsystem connections_subsys;
+
+struct fuse_conn_attr {
+	struct attribute attr;
+	ssize_t (*show)(struct fuse_conn *, char *);
+	ssize_t (*store)(struct fuse_conn *, const char *, size_t);
+};
 
 #define FUSE_SUPER_MAGIC 0x65735546
 
@@ -97,14 +102,6 @@ static void fuse_clear_inode(struct inode *inode)
 		fuse_send_forget(fc, fi->forget_req, fi->nodeid, fi->nlookup);
 		fi->forget_req = NULL;
 	}
-}
-
-static int fuse_remount_fs(struct super_block *sb, int *flags, char *data)
-{
-	if (*flags & MS_MANDLOCK)
-		return -EINVAL;
-
-	return 0;
 }
 
 void fuse_change_attributes(struct inode *inode, struct fuse_attr *attr)
@@ -198,29 +195,31 @@ struct inode *fuse_iget(struct super_block *sb, unsigned long nodeid,
 	return inode;
 }
 
-static void fuse_umount_begin(struct vfsmount *vfsmnt, int flags)
+static void fuse_umount_begin(struct super_block *sb)
 {
-	if (flags & MNT_FORCE)
-		fuse_abort_conn(get_fuse_conn_super(vfsmnt->mnt_sb));
+	fuse_abort_conn(get_fuse_conn_super(sb));
 }
 
 static void fuse_put_super(struct super_block *sb)
 {
 	struct fuse_conn *fc = get_fuse_conn_super(sb);
 
+	down_write(&fc->sbput_sem);
+	while (!list_empty(&fc->background))
+		fuse_release_background(fc,
+					list_entry(fc->background.next,
+						   struct fuse_req, bg_entry));
+
 	spin_lock(&fc->lock);
+	fc->mounted = 0;
 	fc->connected = 0;
-	fc->blocked = 0;
 	spin_unlock(&fc->lock);
+	up_write(&fc->sbput_sem);
 	/* Flush all readers on this fs */
 	kill_fasync(&fc->fasync, SIGIO, POLL_IN);
 	wake_up_all(&fc->waitq);
-	wake_up_all(&fc->blocked_waitq);
-	mutex_lock(&fuse_mutex);
-	list_del(&fc->entry);
-	fuse_ctl_remove_conn(fc);
-	mutex_unlock(&fuse_mutex);
-	fuse_conn_put(fc);
+	kobject_del(&fc->kobj);
+	kobject_put(&fc->kobj);
 }
 
 static void convert_fuse_statfs(struct kstatfs *stbuf, struct fuse_kstatfs *attr)
@@ -237,9 +236,8 @@ static void convert_fuse_statfs(struct kstatfs *stbuf, struct fuse_kstatfs *attr
 	/* fsid is left zero */
 }
 
-static int fuse_statfs(struct dentry *dentry, struct kstatfs *buf)
+static int fuse_statfs(struct super_block *sb, struct kstatfs *buf)
 {
-	struct super_block *sb = dentry->d_sb;
 	struct fuse_conn *fc = get_fuse_conn_super(sb);
 	struct fuse_req *req;
 	struct fuse_statfs_out outarg;
@@ -370,6 +368,11 @@ static int fuse_show_options(struct seq_file *m, struct vfsmount *mnt)
 	return 0;
 }
 
+static void fuse_conn_release(struct kobject *kobj)
+{
+	kfree(get_fuse_conn_kobj(kobj));
+}
+
 static struct fuse_conn *new_conn(void)
 {
 	struct fuse_conn *fc;
@@ -377,32 +380,21 @@ static struct fuse_conn *new_conn(void)
 	fc = kzalloc(sizeof(*fc), GFP_KERNEL);
 	if (fc) {
 		spin_lock_init(&fc->lock);
-		atomic_set(&fc->count, 1);
 		init_waitqueue_head(&fc->waitq);
 		init_waitqueue_head(&fc->blocked_waitq);
 		INIT_LIST_HEAD(&fc->pending);
 		INIT_LIST_HEAD(&fc->processing);
 		INIT_LIST_HEAD(&fc->io);
-		INIT_LIST_HEAD(&fc->interrupts);
+		INIT_LIST_HEAD(&fc->background);
+		init_rwsem(&fc->sbput_sem);
+		kobj_set_kset_s(fc, connections_subsys);
+		kobject_init(&fc->kobj);
 		atomic_set(&fc->num_waiting, 0);
 		fc->bdi.ra_pages = (VM_MAX_READAHEAD * 1024) / PAGE_CACHE_SIZE;
 		fc->bdi.unplug_io_fn = default_unplug_io_fn;
 		fc->reqctr = 0;
 		fc->blocked = 1;
-		get_random_bytes(&fc->scramble_key, sizeof(fc->scramble_key));
 	}
-	return fc;
-}
-
-void fuse_conn_put(struct fuse_conn *fc)
-{
-	if (atomic_dec_and_test(&fc->count))
-		kfree(fc);
-}
-
-struct fuse_conn *fuse_conn_get(struct fuse_conn *fc)
-{
-	atomic_inc(&fc->count);
 	return fc;
 }
 
@@ -421,7 +413,6 @@ static struct super_operations fuse_super_operations = {
 	.destroy_inode  = fuse_destroy_inode,
 	.read_inode	= fuse_read_inode,
 	.clear_inode	= fuse_clear_inode,
-	.remount_fs	= fuse_remount_fs,
 	.put_super	= fuse_put_super,
 	.umount_begin	= fuse_umount_begin,
 	.statfs		= fuse_statfs,
@@ -441,12 +432,8 @@ static void process_init_reply(struct fuse_conn *fc, struct fuse_req *req)
 			ra_pages = arg->max_readahead / PAGE_CACHE_SIZE;
 			if (arg->flags & FUSE_ASYNC_READ)
 				fc->async_read = 1;
-			if (!(arg->flags & FUSE_POSIX_LOCKS))
-				fc->no_lock = 1;
-		} else {
+		} else
 			ra_pages = fc->max_read / PAGE_CACHE_SIZE;
-			fc->no_lock = 1;
-		}
 
 		fc->bdi.ra_pages = min(fc->bdi.ra_pages, ra_pages);
 		fc->minor = arg->minor;
@@ -464,7 +451,7 @@ static void fuse_send_init(struct fuse_conn *fc, struct fuse_req *req)
 	arg->major = FUSE_KERNEL_VERSION;
 	arg->minor = FUSE_KERNEL_MINOR_VERSION;
 	arg->max_readahead = fc->bdi.ra_pages * PAGE_CACHE_SIZE;
-	arg->flags |= FUSE_ASYNC_READ | FUSE_POSIX_LOCKS;
+	arg->flags |= FUSE_ASYNC_READ;
 	req->in.h.opcode = FUSE_INIT;
 	req->in.numargs = 1;
 	req->in.args[0].size = sizeof(*arg);
@@ -480,9 +467,10 @@ static void fuse_send_init(struct fuse_conn *fc, struct fuse_req *req)
 	request_send_background(fc, req);
 }
 
-static u64 conn_id(void)
+static unsigned long long conn_id(void)
 {
-	static u64 ctr = 1;
+	/* BKL is held for ->get_sb() */
+	static unsigned long long ctr = 1;
 	return ctr++;
 }
 
@@ -495,9 +483,6 @@ static int fuse_fill_super(struct super_block *sb, void *data, int silent)
 	struct dentry *root_dentry;
 	struct fuse_req *init_req;
 	int err;
-
-	if (sb->s_flags & MS_MANDLOCK)
-		return -EINVAL;
 
 	if (!parse_fuse_opt((char *) data, &d))
 		return -EINVAL;
@@ -542,21 +527,25 @@ static int fuse_fill_super(struct super_block *sb, void *data, int silent)
 	if (!init_req)
 		goto err_put_root;
 
-	mutex_lock(&fuse_mutex);
+	err = kobject_set_name(&fc->kobj, "%llu", conn_id());
+	if (err)
+		goto err_free_req;
+
+	err = kobject_add(&fc->kobj);
+	if (err)
+		goto err_free_req;
+
+	/* Setting file->private_data can't race with other mount()
+	   instances, since BKL is held for ->get_sb() */
 	err = -EINVAL;
 	if (file->private_data)
-		goto err_unlock;
+		goto err_kobject_del;
 
-	fc->id = conn_id();
-	err = fuse_ctl_add_conn(fc);
-	if (err)
-		goto err_unlock;
-
-	list_add_tail(&fc->entry, &fuse_conn_list);
 	sb->s_root = root_dentry;
+	fc->mounted = 1;
 	fc->connected = 1;
-	file->private_data = fuse_conn_get(fc);
-	mutex_unlock(&fuse_mutex);
+	kobject_get(&fc->kobj);
+	file->private_data = fc;
 	/*
 	 * atomic_dec_and_test() in fput() provides the necessary
 	 * memory barrier for file->private_data to be visible on all
@@ -568,22 +557,23 @@ static int fuse_fill_super(struct super_block *sb, void *data, int silent)
 
 	return 0;
 
- err_unlock:
-	mutex_unlock(&fuse_mutex);
+ err_kobject_del:
+	kobject_del(&fc->kobj);
+ err_free_req:
 	fuse_request_free(init_req);
  err_put_root:
 	dput(root_dentry);
  err:
 	fput(file);
-	fuse_conn_put(fc);
+	kobject_put(&fc->kobj);
 	return err;
 }
 
-static int fuse_get_sb(struct file_system_type *fs_type,
-		       int flags, const char *dev_name,
-		       void *raw_data, struct vfsmount *mnt)
+static struct super_block *fuse_get_sb(struct file_system_type *fs_type,
+				       int flags, const char *dev_name,
+				       void *raw_data)
 {
-	return get_sb_nodev(fs_type, flags, raw_data, fuse_fill_super, mnt);
+	return get_sb_nodev(fs_type, flags, raw_data, fuse_fill_super);
 }
 
 static struct file_system_type fuse_fs_type = {
@@ -593,8 +583,68 @@ static struct file_system_type fuse_fs_type = {
 	.kill_sb	= kill_anon_super,
 };
 
+static ssize_t fuse_conn_waiting_show(struct fuse_conn *fc, char *page)
+{
+	return sprintf(page, "%i\n", atomic_read(&fc->num_waiting));
+}
+
+static ssize_t fuse_conn_abort_store(struct fuse_conn *fc, const char *page,
+				     size_t count)
+{
+	fuse_abort_conn(fc);
+	return count;
+}
+
+static struct fuse_conn_attr fuse_conn_waiting =
+	__ATTR(waiting, 0400, fuse_conn_waiting_show, NULL);
+static struct fuse_conn_attr fuse_conn_abort =
+	__ATTR(abort, 0600, NULL, fuse_conn_abort_store);
+
+static struct attribute *fuse_conn_attrs[] = {
+	&fuse_conn_waiting.attr,
+	&fuse_conn_abort.attr,
+	NULL,
+};
+
+static ssize_t fuse_conn_attr_show(struct kobject *kobj,
+				   struct attribute *attr,
+				   char *page)
+{
+	struct fuse_conn_attr *fca =
+		container_of(attr, struct fuse_conn_attr, attr);
+
+	if (fca->show)
+		return fca->show(get_fuse_conn_kobj(kobj), page);
+	else
+		return -EACCES;
+}
+
+static ssize_t fuse_conn_attr_store(struct kobject *kobj,
+				    struct attribute *attr,
+				    const char *page, size_t count)
+{
+	struct fuse_conn_attr *fca =
+		container_of(attr, struct fuse_conn_attr, attr);
+
+	if (fca->store)
+		return fca->store(get_fuse_conn_kobj(kobj), page, count);
+	else
+		return -EACCES;
+}
+
+static struct sysfs_ops fuse_conn_sysfs_ops = {
+	.show	= &fuse_conn_attr_show,
+	.store	= &fuse_conn_attr_store,
+};
+
+static struct kobj_type ktype_fuse_conn = {
+	.release	= fuse_conn_release,
+	.sysfs_ops	= &fuse_conn_sysfs_ops,
+	.default_attrs	= fuse_conn_attrs,
+};
+
 static decl_subsys(fuse, NULL, NULL);
-static decl_subsys(connections, NULL, NULL);
+static decl_subsys(connections, &ktype_fuse_conn, NULL);
 
 static void fuse_inode_init_once(void *foo, kmem_cache_t *cachep,
 				 unsigned long flags)
@@ -668,7 +718,6 @@ static int __init fuse_init(void)
 	printk("fuse init (API version %i.%i)\n",
 	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
 
-	INIT_LIST_HEAD(&fuse_conn_list);
 	res = fuse_fs_init();
 	if (res)
 		goto err;
@@ -681,14 +730,8 @@ static int __init fuse_init(void)
 	if (res)
 		goto err_dev_cleanup;
 
-	res = fuse_ctl_init();
-	if (res)
-		goto err_sysfs_cleanup;
-
 	return 0;
 
- err_sysfs_cleanup:
-	fuse_sysfs_cleanup();
  err_dev_cleanup:
 	fuse_dev_cleanup();
  err_fs_cleanup:
@@ -701,7 +744,6 @@ static void __exit fuse_exit(void)
 {
 	printk(KERN_DEBUG "fuse exit\n");
 
-	fuse_ctl_cleanup();
 	fuse_sysfs_cleanup();
 	fuse_fs_cleanup();
 	fuse_dev_cleanup();

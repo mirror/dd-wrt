@@ -725,13 +725,12 @@ static const u8 acpi_gbl_long_op_index[NUM_EXTENDED_OPCODE] = {
 
 const struct acpi_opcode_info *acpi_ps_get_opcode_info(u16 opcode)
 {
-	ACPI_FUNCTION_NAME(ps_get_opcode_info);
+	ACPI_FUNCTION_NAME("ps_get_opcode_info");
 
 	/*
 	 * Detect normal 8-bit opcode or extended 16-bit opcode
 	 */
 	if (!(opcode & 0xFF00)) {
-
 		/* Simple (8-bit) opcode: 0-255, can't index beyond table  */
 
 		return (&acpi_gbl_aml_op_info
@@ -740,7 +739,6 @@ const struct acpi_opcode_info *acpi_ps_get_opcode_info(u16 opcode)
 
 	if (((opcode & 0xFF00) == AML_EXTENDED_OPCODE) &&
 	    (((u8) opcode) <= MAX_EXTENDED_OPCODE)) {
-
 		/* Valid extended (16-bit) opcode */
 
 		return (&acpi_gbl_aml_op_info
@@ -781,7 +779,7 @@ char *acpi_ps_get_opcode_name(u16 opcode)
 	return (op->name);
 
 #else
-	return ("OpcodeName unavailable");
+	return ("AE_NOT_CONFIGURED");
 
 #endif
 }

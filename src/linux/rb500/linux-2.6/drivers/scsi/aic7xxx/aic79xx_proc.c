@@ -47,7 +47,7 @@ static int	copy_info(struct info_str *info, char *fmt, ...);
 static void	ahd_dump_target_state(struct ahd_softc *ahd,
 				      struct info_str *info,
 				      u_int our_id, char channel,
-				      u_int target_id);
+				      u_int target_id, u_int target_offset);
 static void	ahd_dump_device_state(struct info_str *info,
 				      struct scsi_device *sdev);
 static int	ahd_proc_write_seeprom(struct ahd_softc *ahd,
@@ -76,9 +76,11 @@ static u_int
 ahd_calc_syncsrate(u_int period_factor)
 {
 	int i;
+	int num_syncrates;
 
+	num_syncrates = sizeof(scsi_syncrates) / sizeof(scsi_syncrates[0]);
 	/* See if the period is in the "exception" table */
-	for (i = 0; i < ARRAY_SIZE(scsi_syncrates); i++) {
+	for (i = 0; i < num_syncrates; i++) {
 
 		if (period_factor == scsi_syncrates[i].period_factor) {
 			/* Period in kHz */
@@ -204,8 +206,10 @@ ahd_format_transinfo(struct info_str *info, struct ahd_transinfo *tinfo)
 
 static void
 ahd_dump_target_state(struct ahd_softc *ahd, struct info_str *info,
-		      u_int our_id, char channel, u_int target_id)
+		      u_int our_id, char channel, u_int target_id,
+		      u_int target_offset)
 {
+	struct	ahd_linux_target *targ;
 	struct  scsi_target *starget;
 	struct	ahd_initiator_tinfo *tinfo;
 	struct	ahd_tmode_tstate *tstate;
@@ -216,9 +220,10 @@ ahd_dump_target_state(struct ahd_softc *ahd, struct info_str *info,
 	copy_info(info, "Target %d Negotiation Settings\n", target_id);
 	copy_info(info, "\tUser: ");
 	ahd_format_transinfo(info, &tinfo->user);
-	starget = ahd->platform_data->starget[target_id];
+	starget = ahd->platform_data->starget[target_offset];
 	if (starget == NULL)
 		return;
+	targ = scsi_transport_target_data(starget);
 
 	copy_info(info, "\tGoal: ");
 	ahd_format_transinfo(info, &tinfo->goal);
@@ -228,7 +233,7 @@ ahd_dump_target_state(struct ahd_softc *ahd, struct info_str *info,
 	for (lun = 0; lun < AHD_NUM_LUNS; lun++) {
 		struct scsi_device *dev;
 
-		dev = scsi_device_lookup_by_target(starget, lun);
+		dev = targ->sdev[lun];
 
 		if (dev == NULL)
 			continue;
@@ -352,7 +357,7 @@ ahd_linux_proc_info(struct Scsi_Host *shost, char *buffer, char **start,
 	copy_info(&info, "Allocated SCBs: %d, SG List Length: %d\n\n",
 		  ahd->scb_data.numscbs, AHD_NSEG);
 
-	max_targ = 16;
+	max_targ = 15;
 
 	if (ahd->seep_config == NULL)
 		copy_info(&info, "No Serial EEPROM\n");
@@ -370,12 +375,12 @@ ahd_linux_proc_info(struct Scsi_Host *shost, char *buffer, char **start,
 	copy_info(&info, "\n");
 
 	if ((ahd->features & AHD_WIDE) == 0)
-		max_targ = 8;
+		max_targ = 7;
 
-	for (i = 0; i < max_targ; i++) {
+	for (i = 0; i <= max_targ; i++) {
 
 		ahd_dump_target_state(ahd, &info, ahd->our_id, 'A',
-				      /*target_id*/i);
+				      /*target_id*/i, /*target_offset*/i);
 	}
 	retval = info.pos > info.offset ? info.pos - info.offset : 0;
 done:

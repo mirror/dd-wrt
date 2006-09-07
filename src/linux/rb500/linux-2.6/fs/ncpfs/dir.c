@@ -10,6 +10,7 @@
  *
  */
 
+#include <linux/config.h>
 
 #include <linux/time.h>
 #include <linux/errno.h>

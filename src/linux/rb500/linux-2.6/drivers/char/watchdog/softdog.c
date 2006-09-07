@@ -38,6 +38,7 @@
 
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/config.h>
 #include <linux/types.h>
 #include <linux/timer.h>
 #include <linux/miscdevice.h>
@@ -243,7 +244,7 @@ static int softdog_notify_sys(struct notifier_block *this, unsigned long code,
  *	Kernel Interfaces
  */
 
-static const struct file_operations softdog_fops = {
+static struct file_operations softdog_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= softdog_write,

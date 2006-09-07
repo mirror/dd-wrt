@@ -39,6 +39,7 @@
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <linux/config.h>
 #include <linux/bcd.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -358,7 +359,7 @@ static __init int __init ja_pci_init(void)
 
 arch_initcall(ja_pci_init);
 
-void __init plat_mem_setup(void)
+void __init plat_setup(void)
 {
 	unsigned int tmpword;
 
@@ -369,8 +370,8 @@ void __init plat_mem_setup(void)
 	pm_power_off = momenco_jaguar_power_off;
 
 	/*
-	 * initrd_start = (unsigned long)jaguar_initrd_start;
-	 * initrd_end = (unsigned long)jaguar_initrd_start + (ulong)jaguar_initrd_size;
+	 * initrd_start = (ulong)jaguar_initrd_start;
+	 * initrd_end = (ulong)jaguar_initrd_start + (ulong)jaguar_initrd_size;
 	 * initrd_below_start_ok = 1;
 	 */
 

@@ -30,6 +30,7 @@
  *    Gareth Hughes <gareth@valinux.com>
  */
 
+#include <linux/config.h>
 #include "drmP.h"
 #include "tdfx_drv.h"
 

@@ -123,7 +123,8 @@ int afs_server_lookup(struct afs_cell *cell, const struct in_addr *addr,
  resurrect_server:
 	_debug("resurrecting server");
 
-	list_move_tail(&zombie->link, &cell->sv_list);
+	list_del(&zombie->link);
+	list_add_tail(&zombie->link, &cell->sv_list);
 	afs_get_server(zombie);
 	afs_kafstimod_del_timer(&zombie->timeout);
 	spin_unlock(&cell->sv_gylock);
@@ -167,7 +168,8 @@ void afs_put_server(struct afs_server *server)
 	}
 
 	spin_lock(&cell->sv_gylock);
-	list_move_tail(&server->link, &cell->sv_graveyard);
+	list_del(&server->link);
+	list_add_tail(&server->link, &cell->sv_graveyard);
 
 	/* time out in 10 secs */
 	afs_kafstimod_add_timer(&server->timeout, 10 * HZ);

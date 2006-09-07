@@ -9,6 +9,7 @@
 #ifndef _ASM_PTRACE_H
 #define _ASM_PTRACE_H
 
+#include <linux/config.h>
 
 #include <asm/isadep.h>
 

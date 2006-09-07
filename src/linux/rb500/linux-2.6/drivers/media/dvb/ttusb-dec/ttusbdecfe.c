@@ -28,6 +28,8 @@
 
 struct ttusbdecfe_state {
 
+	struct dvb_frontend_ops ops;
+
 	/* configuration settings */
 	const struct ttusbdecfe_config* config;
 
@@ -201,9 +203,10 @@ struct dvb_frontend* ttusbdecfe_dvbt_attach(const struct ttusbdecfe_config* conf
 
 	/* setup the state */
 	state->config = config;
+	memcpy(&state->ops, &ttusbdecfe_dvbt_ops, sizeof(struct dvb_frontend_ops));
 
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &ttusbdecfe_dvbt_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 }
@@ -223,9 +226,10 @@ struct dvb_frontend* ttusbdecfe_dvbs_attach(const struct ttusbdecfe_config* conf
 	state->config = config;
 	state->voltage = 0;
 	state->hi_band = 0;
+	memcpy(&state->ops, &ttusbdecfe_dvbs_ops, sizeof(struct dvb_frontend_ops));
 
 	/* create dvb_frontend */
-	memcpy(&state->frontend.ops, &ttusbdecfe_dvbs_ops, sizeof(struct dvb_frontend_ops));
+	state->frontend.ops = &state->ops;
 	state->frontend.demodulator_priv = state;
 	return &state->frontend;
 }

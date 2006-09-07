@@ -213,16 +213,16 @@ static void *addresses[] = {
 	(void *) 0xd8000,
 	(void *) 0xc8000
 };
-#define ADDRESS_COUNT ARRAY_SIZE(addresses)
+#define ADDRESS_COUNT (sizeof( addresses ) / sizeof( unsigned ))
 #endif				/* USE_BIOS */
 
 /* possible i/o port addresses */
 static unsigned short ports[] = { 0x230, 0x330, 0x280, 0x290, 0x330, 0x340, 0x300, 0x310, 0x348, 0x350 };
-#define PORT_COUNT ARRAY_SIZE(ports)
+#define PORT_COUNT (sizeof( ports ) / sizeof( unsigned short ))
 
 /* possible interrupt channels */
 static unsigned short intrs[] = { 10, 11, 12, 15 };
-#define INTR_COUNT ARRAY_SIZE(intrs)
+#define INTR_COUNT (sizeof( intrs ) / sizeof( unsigned short ))
 
 /* signatures for NCR 53c406a based controllers */
 #if USE_BIOS
@@ -236,7 +236,7 @@ struct signature {
 	{
 "Copyright (C) Acculogic, Inc.\r\n2.8M Diskette Extension Bios ver 4.04.03 03/01/1993", 61, 82},};
 
-#define SIGNATURE_COUNT ARRAY_SIZE(signatures)
+#define SIGNATURE_COUNT (sizeof( signatures ) / sizeof( struct signature ))
 #endif				/* USE_BIOS */
 
 /* ============================================================ */

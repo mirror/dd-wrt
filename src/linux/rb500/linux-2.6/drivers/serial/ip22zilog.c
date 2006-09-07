@@ -12,6 +12,7 @@
  *  Copyright (C) 2002 Ralf Baechle (ralf@linux-mips.org)
  *  Copyright (C) 2002 David S. Miller (davem@redhat.com)
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -1084,6 +1085,7 @@ static struct console ip22zilog_console = {
 static struct uart_driver ip22zilog_reg = {
 	.owner		= THIS_MODULE,
 	.driver_name	= "serial",
+	.devfs_name	= "tts/",
 	.dev_name	= "ttyS",
 	.major		= TTY_MAJOR,
 	.minor		= 64,

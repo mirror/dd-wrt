@@ -93,6 +93,7 @@
 *!        (c) 1999 Axis Communications AB, Lund, Sweden
 *!*****************************************************************************/
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/fs.h>

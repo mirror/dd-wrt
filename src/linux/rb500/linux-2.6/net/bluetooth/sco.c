@@ -24,6 +24,7 @@
 
 /* Bluetooth SCO sockets. */
 
+#include <linux/config.h>
 #include <linux/module.h>
 
 #include <linux/types.h>
@@ -969,7 +970,7 @@ static int __init sco_init(void)
 		goto error;
 	}
 
-	class_create_file(bt_class, &class_attr_sco);
+	class_create_file(&bt_class, &class_attr_sco);
 
 	BT_INFO("SCO (Voice Link) ver %s", VERSION);
 	BT_INFO("SCO socket layer initialized");
@@ -983,7 +984,7 @@ error:
 
 static void __exit sco_exit(void)
 {
-	class_remove_file(bt_class, &class_attr_sco);
+	class_remove_file(&bt_class, &class_attr_sco);
 
 	if (bt_sock_unregister(BTPROTO_SCO) < 0)
 		BT_ERR("SCO socket unregistration failed");

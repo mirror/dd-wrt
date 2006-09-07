@@ -8,6 +8,7 @@
  * published by the Free Software Foundation.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/acpi.h>
@@ -50,7 +51,7 @@ static acpi_status hp_ccsr_locate(acpi_handle obj, u64 *base, u64 *length)
 	memcpy(length, vendor->byte_data + 8, sizeof(*length));
 
   exit:
-	kfree(buffer.pointer);
+	acpi_os_free(buffer.pointer);
 	return status;
 }
 

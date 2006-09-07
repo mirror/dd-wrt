@@ -24,7 +24,7 @@
 #include "event_buffer.h"
 #include "oprofile_stats.h"
 
-DEFINE_MUTEX(buffer_mutex);
+DECLARE_MUTEX(buffer_sem);
  
 static unsigned long buffer_opened;
 static DECLARE_WAIT_QUEUE_HEAD(buffer_wait);
@@ -32,7 +32,7 @@ static unsigned long * event_buffer;
 static unsigned long buffer_size;
 static unsigned long buffer_watershed;
 static size_t buffer_pos;
-/* atomic_t because wait_event checks it outside of buffer_mutex */
+/* atomic_t because wait_event checks it outside of buffer_sem */
 static atomic_t buffer_ready = ATOMIC_INIT(0);
 
 /* Add an entry to the event buffer. When we
@@ -60,10 +60,10 @@ void add_event_entry(unsigned long value)
  */
 void wake_up_buffer_waiter(void)
 {
-	mutex_lock(&buffer_mutex);
+	down(&buffer_sem);
 	atomic_set(&buffer_ready, 1);
 	wake_up(&buffer_wait);
-	mutex_unlock(&buffer_mutex);
+	up(&buffer_sem);
 }
 
  
@@ -162,7 +162,7 @@ static ssize_t event_buffer_read(struct file * file, char __user * buf,
 	if (!atomic_read(&buffer_ready))
 		return -EAGAIN;
 
-	mutex_lock(&buffer_mutex);
+	down(&buffer_sem);
 
 	atomic_set(&buffer_ready, 0);
 
@@ -177,7 +177,7 @@ static ssize_t event_buffer_read(struct file * file, char __user * buf,
 	buffer_pos = 0;
  
 out:
-	mutex_unlock(&buffer_mutex);
+	up(&buffer_sem);
 	return retval;
 }
  

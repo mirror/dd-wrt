@@ -9,6 +9,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/isdn.h>
 #include <linux/poll.h>
 #include <linux/ppp-comp.h>

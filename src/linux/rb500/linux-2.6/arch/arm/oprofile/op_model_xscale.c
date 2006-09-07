@@ -384,7 +384,7 @@ static int xscale_pmu_start(void)
 	int ret;
 	u32 pmnc = read_pmnc();
 
-	ret = request_irq(XSCALE_PMU_IRQ, xscale_pmu_interrupt, IRQF_DISABLED,
+	ret = request_irq(XSCALE_PMU_IRQ, xscale_pmu_interrupt, SA_INTERRUPT,
 			"XScale PMU", (void *)results);
 
 	if (ret < 0) {

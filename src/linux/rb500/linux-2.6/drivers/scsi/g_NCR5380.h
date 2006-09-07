@@ -32,6 +32,7 @@
 #ifndef GENERIC_NCR5380_H
 #define GENERIC_NCR5380_H
 
+#include <linux/config.h>
 
 #define GENERIC_NCR5380_PUBLIC_RELEASE 1
 

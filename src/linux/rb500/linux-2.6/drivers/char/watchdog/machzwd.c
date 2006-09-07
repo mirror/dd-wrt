@@ -28,6 +28,7 @@
  *      Added nowayout module option to override CONFIG_WATCHDOG_NOWAYOUT
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/types.h>
@@ -388,7 +389,7 @@ static int zf_notify_sys(struct notifier_block *this, unsigned long code,
 
 
 
-static const struct file_operations zf_fops = {
+static struct file_operations zf_fops = {
 	.owner          = THIS_MODULE,
 	.llseek         = no_llseek,
 	.write          = zf_write,

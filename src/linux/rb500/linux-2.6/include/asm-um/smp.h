@@ -3,6 +3,7 @@
 
 #ifdef CONFIG_SMP
 
+#include "linux/config.h"
 #include "linux/bitops.h"
 #include "asm/current.h"
 #include "linux/cpumask.h"

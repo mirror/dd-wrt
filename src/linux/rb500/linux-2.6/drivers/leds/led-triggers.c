@@ -11,6 +11,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -25,7 +26,7 @@
 /*
  * Nests outside led_cdev->trigger_lock
  */
-static DEFINE_RWLOCK(triggers_list_lock);
+static rwlock_t triggers_list_lock = RW_LOCK_UNLOCKED;
 static LIST_HEAD(trigger_list);
 
 ssize_t led_trigger_store(struct class_device *dev, const char *buf,

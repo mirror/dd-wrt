@@ -15,6 +15,7 @@
  * boot_pte_t is defined only if this all works correctly
  */
 
+#include <linux/config.h>
 #undef CONFIG_X86_PAE
 #include <asm/page.h>
 #include <asm/pgtable.h>

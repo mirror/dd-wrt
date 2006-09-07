@@ -4,6 +4,7 @@
  * Delay routines, using a pre-computed "loops_per_jiffy" value.
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h> /* for udelay's use of smp_processor_id */
 #include <asm/param.h>

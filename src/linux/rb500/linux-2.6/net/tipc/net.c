@@ -115,7 +115,7 @@
  *     - A local spin_lock protecting the queue of subscriber events.
 */
 
-DEFINE_RWLOCK(tipc_net_lock);
+rwlock_t tipc_net_lock = RW_LOCK_UNLOCKED;
 struct network tipc_net = { NULL };
 
 struct node *tipc_net_select_remote_node(u32 addr, u32 ref) 

@@ -83,6 +83,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
@@ -126,30 +127,6 @@ static atomic_t unix_nr_socks = ATOMIC_INIT(0);
 #define unix_sockets_unbound	(&unix_socket_table[UNIX_HASH_SIZE])
 
 #define UNIX_ABSTRACT(sk)	(unix_sk(sk)->addr->hash != UNIX_HASH_SIZE)
-
-#ifdef CONFIG_SECURITY_NETWORK
-static void unix_get_peersec_dgram(struct sk_buff *skb)
-{
-	int err;
-
-	err = security_socket_getpeersec_dgram(skb, UNIXSECDATA(skb),
-					       UNIXSECLEN(skb));
-	if (err)
-		*(UNIXSECDATA(skb)) = NULL;
-}
-
-static inline void unix_set_secdata(struct scm_cookie *scm, struct sk_buff *skb)
-{
-	scm->secdata = *UNIXSECDATA(skb);
-	scm->seclen = *UNIXSECLEN(skb);
-}
-#else
-static inline void unix_get_peersec_dgram(struct sk_buff *skb)
-{ }
-
-static inline void unix_set_secdata(struct scm_cookie *scm, struct sk_buff *skb)
-{ }
-#endif /* CONFIG_SECURITY_NETWORK */
 
 /*
  *  SMP locking strategy:
@@ -565,14 +542,6 @@ static struct proto unix_proto = {
 	.obj_size = sizeof(struct unix_sock),
 };
 
-/*
- * AF_UNIX sockets do not interact with hardware, hence they
- * dont trigger interrupts - so it's safe for them to have
- * bh-unsafe locking for their sk_receive_queue.lock. Split off
- * this special lock-class by reinitializing the spinlock key:
- */
-static struct lock_class_key af_unix_sk_receive_queue_lock_key;
-
 static struct sock * unix_create1(struct socket *sock)
 {
 	struct sock *sk = NULL;
@@ -588,8 +557,6 @@ static struct sock * unix_create1(struct socket *sock)
 	atomic_inc(&unix_nr_socks);
 
 	sock_init_data(sock,sk);
-	lockdep_set_class(&sk->sk_receive_queue.lock,
-				&af_unix_sk_receive_queue_lock_key);
 
 	sk->sk_write_space	= unix_write_space;
 	sk->sk_max_ack_backlog	= sysctl_unix_max_dgram_qlen;
@@ -1055,7 +1022,7 @@ restart:
 		goto out_unlock;
 	}
 
-	unix_state_wlock_nested(sk);
+	unix_state_wlock(sk);
 
 	if (sk->sk_state != st) {
 		unix_state_wunlock(sk);
@@ -1323,8 +1290,6 @@ static int unix_dgram_sendmsg(struct kiocb *kiocb, struct socket *sock,
 	memcpy(UNIXCREDS(skb), &siocb->scm->creds, sizeof(struct ucred));
 	if (siocb->scm->fp)
 		unix_attach_fds(siocb->scm, skb);
-
-	unix_get_peersec_dgram(skb);
 
 	skb->h.raw = skb->data;
 	err = memcpy_fromiovec(skb_put(skb,len), msg->msg_iov, len);
@@ -1605,7 +1570,6 @@ static int unix_dgram_recvmsg(struct kiocb *iocb, struct socket *sock,
 		memset(&tmp_scm, 0, sizeof(tmp_scm));
 	}
 	siocb->scm->creds = *UNIXCREDS(skb);
-	unix_set_secdata(siocb->scm, skb);
 
 	if (!(flags & MSG_PEEK))
 	{

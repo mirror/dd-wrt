@@ -7,6 +7,9 @@
 #ifndef _LINUX_NFS_H
 #define _LINUX_NFS_H
 
+#include <linux/sunrpc/msg_prot.h>
+#include <linux/string.h>
+
 #define NFS_PROGRAM	100003
 #define NFS_PORT	2049
 #define NFS_MAXDATA	8192
@@ -126,10 +129,7 @@ enum nfs_ftype {
 	NFFIFO = 8
 };
 
-#ifdef __KERNEL__
-#include <linux/sunrpc/msg_prot.h>
-#include <linux/string.h>
-
+#if defined(__KERNEL__)
 /*
  * This is the kernel NFS client file handle representation
  */

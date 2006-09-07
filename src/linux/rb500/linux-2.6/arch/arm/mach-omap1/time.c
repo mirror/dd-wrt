@@ -33,6 +33,7 @@
  * 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/delay.h>
@@ -93,7 +94,7 @@ static inline unsigned long long cycles_2_ns(unsigned long long cyc)
  * will break. On P2, the timer count rate is 6.5 MHz after programming PTV
  * with 0. This divides the 13MHz input by 2, and is undocumented.
  */
-#if defined(CONFIG_MACH_OMAP_PERSEUS2) || defined(CONFIG_MACH_OMAP_FSAMPLE)
+#ifdef CONFIG_MACH_OMAP_PERSEUS2
 /* REVISIT: This ifdef construct should be replaced by a query to clock
  * framework to see if timer base frequency is 12.0, 13.0 or 19.2 MHz.
  */
@@ -177,7 +178,7 @@ static irqreturn_t omap_mpu_timer_interrupt(int irq, void *dev_id,
 
 static struct irqaction omap_mpu_timer_irq = {
 	.name		= "mpu timer",
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+	.flags		= SA_INTERRUPT | SA_TIMER,
 	.handler	= omap_mpu_timer_interrupt,
 };
 
@@ -191,7 +192,7 @@ static irqreturn_t omap_mpu_timer1_interrupt(int irq, void *dev_id,
 
 static struct irqaction omap_mpu_timer1_irq = {
 	.name		= "mpu timer1 overflow",
-	.flags		= IRQF_DISABLED,
+	.flags		= SA_INTERRUPT,
 	.handler	= omap_mpu_timer1_interrupt,
 };
 

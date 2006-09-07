@@ -25,6 +25,7 @@
  *
  */
 
+#include <linux/config.h>
 #include "drmP.h"
 #include "sis_drm.h"
 #include "sis_drv.h"

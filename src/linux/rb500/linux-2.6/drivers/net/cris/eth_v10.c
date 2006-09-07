@@ -218,6 +218,7 @@
  *
  */
 
+#include <linux/config.h>
 
 #include <linux/module.h>
 
@@ -671,7 +672,7 @@ e100_open(struct net_device *dev)
 	/* allocate the irq corresponding to the receiving DMA */
 
 	if (request_irq(NETWORK_DMA_RX_IRQ_NBR, e100rxtx_interrupt,
-			IRQF_SAMPLE_RANDOM, cardname, (void *)dev)) {
+			SA_SAMPLE_RANDOM, cardname, (void *)dev)) {
 		goto grace_exit0;
 	}
 

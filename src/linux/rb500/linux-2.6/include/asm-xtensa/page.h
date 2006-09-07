@@ -14,6 +14,7 @@
 #ifdef __KERNEL__
 
 #include <asm/processor.h>
+#include <linux/config.h>
 
 /*
  * PAGE_SHIFT determines the page size

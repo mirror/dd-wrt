@@ -6,6 +6,7 @@
  *
  * Based on linux/include/asm-i386/serial.h
  */
+#include <linux/config.h>
 #include <asm/serial-regs.h>
 
 /*

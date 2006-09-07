@@ -323,10 +323,12 @@ int ibmebus_request_irq(struct ibmebus_dev *dev,
 			unsigned long irq_flags, const char * devname,
 			void *dev_id)
 {
-	unsigned int irq = irq_create_mapping(NULL, ist, 0);
+	unsigned int irq = virt_irq_create_mapping(ist);
 	
 	if (irq == NO_IRQ)
 		return -EINVAL;
+	
+	irq = irq_offset_up(irq);
 	
 	return request_irq(irq, handler,
 			   irq_flags, devname, dev_id);
@@ -335,9 +337,12 @@ EXPORT_SYMBOL(ibmebus_request_irq);
 
 void ibmebus_free_irq(struct ibmebus_dev *dev, u32 ist, void *dev_id)
 {
-	unsigned int irq = irq_find_mapping(NULL, ist);
+	unsigned int irq = virt_irq_create_mapping(ist);
 	
+	irq = irq_offset_up(irq);
 	free_irq(irq, dev_id);
+	
+	return;
 }
 EXPORT_SYMBOL(ibmebus_free_irq);
 

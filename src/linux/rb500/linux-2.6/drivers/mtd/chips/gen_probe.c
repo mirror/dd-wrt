@@ -37,15 +37,8 @@ struct mtd_info *mtd_do_chip_probe(struct map_info *map, struct chip_probe *cp)
 	if (!mtd)
 		mtd = check_cmd_set(map, 0); /* Then the secondary */
 
-	if (mtd) {
-		if (mtd->size > map->size) {
-			printk(KERN_WARNING "Reducing visibility of %ldKiB chip to %ldKiB\n",
-			       (unsigned long)mtd->size >> 10, 
-			       (unsigned long)map->size >> 10);
-			mtd->size = map->size;
-		}
+	if (mtd)
 		return mtd;
-	}
 
 	printk(KERN_WARNING"gen_probe: No supported Vendor Command Set found\n");
 
@@ -107,12 +100,7 @@ static struct cfi_private *genprobe_ident_chips(struct map_info *map, struct chi
 	 * Align bitmap storage size to full byte.
 	 */
 	max_chips = map->size >> cfi.chipshift;
-	if (!max_chips) {
-		printk(KERN_WARNING "NOR chip too large to fit in mapping. Attempting to cope...\n");
-		max_chips = 1;
-	}
-
-	mapsize = (max_chips + BITS_PER_LONG-1) / BITS_PER_LONG;
+	mapsize = (max_chips / 8) + ((max_chips % 8) ? 1 : 0);
 	chip_map = kmalloc(mapsize, GFP_KERNEL);
 	if (!chip_map) {
 		printk(KERN_WARNING "%s: kmalloc failed for CFI chip map\n", map->name);
@@ -206,28 +194,25 @@ static inline struct mtd_info *cfi_cmdset_unknown(struct map_info *map,
 {
 	struct cfi_private *cfi = map->fldrv_priv;
 	__u16 type = primary?cfi->cfiq->P_ID:cfi->cfiq->A_ID;
-#ifdef CONFIG_MODULES
-	char probename[16+sizeof(MODULE_SYMBOL_PREFIX)];
+#if defined(CONFIG_MODULES) && defined(HAVE_INTER_MODULE)
+	char probename[32];
 	cfi_cmdset_fn_t *probe_function;
 
-	sprintf(probename, MODULE_SYMBOL_PREFIX "cfi_cmdset_%4.4X", type);
+	sprintf(probename, "cfi_cmdset_%4.4X", type);
 
-	probe_function = __symbol_get(probename);
-	if (!probe_function) {
-		request_module(probename + sizeof(MODULE_SYMBOL_PREFIX) - 1);
-		probe_function = __symbol_get(probename);
-	}
+	probe_function = inter_module_get_request(probename, probename);
 
 	if (probe_function) {
 		struct mtd_info *mtd;
 
 		mtd = (*probe_function)(map, primary);
 		/* If it was happy, it'll have increased its own use count */
-		symbol_put_addr(probe_function);
+		inter_module_put(probename);
 		return mtd;
 	}
 #endif
-	printk(KERN_NOTICE "Support for command set %04X not present\n", type);
+	printk(KERN_NOTICE "Support for command set %04X not present\n",
+	       type);
 
 	return NULL;
 }
@@ -241,8 +226,12 @@ static struct mtd_info *check_cmd_set(struct map_info *map, int primary)
 		return NULL;
 
 	switch(type){
-		/* We need these for the !CONFIG_MODULES case,
-		   because symbol_get() doesn't work there */
+		/* Urgh. Ifdefs. The version with weak symbols was
+		 * _much_ nicer. Shame it didn't seem to work on
+		 * anything but x86, really.
+		 * But we can't rely in inter_module_get() because
+		 * that'd mean we depend on link order.
+		 */
 #ifdef CONFIG_MTD_CFI_INTELEXT
 	case 0x0001:
 	case 0x0003:
@@ -257,9 +246,9 @@ static struct mtd_info *check_cmd_set(struct map_info *map, int primary)
         case 0x0020:
 		return cfi_cmdset_0020(map, primary);
 #endif
-	default:
-		return cfi_cmdset_unknown(map, primary);
 	}
+
+	return cfi_cmdset_unknown(map, primary);
 }
 
 MODULE_LICENSE("GPL");

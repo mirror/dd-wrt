@@ -19,6 +19,7 @@
  *
  * PROM library initialisation code.
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/string.h>
 #include <linux/kernel.h>

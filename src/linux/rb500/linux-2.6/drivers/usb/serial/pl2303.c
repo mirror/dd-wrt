@@ -14,6 +14,7 @@
  *
  */
 
+#include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -313,7 +314,7 @@ static void pl2303_send(struct usb_serial_port *port)
 		// TODO: reschedule pl2303_send
 	}
 
-	usb_serial_port_softint(port);
+	schedule_work(&port->work);
 }
 
 static int pl2303_write_room(struct usb_serial_port *port)
@@ -599,7 +600,7 @@ static void pl2303_close (struct usb_serial_port *port, struct file *filp)
 	unsigned int c_cflag;
 	int bps;
 	long timeout;
-	wait_queue_t wait;
+	wait_queue_t wait;						\
 
 	dbg("%s - port %d", __FUNCTION__, port->number);
 
