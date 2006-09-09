@@ -22,7 +22,7 @@ override INITDIR:=$(DESTDIR)$(INITDIR)
 override SYSCONFIGDIR:=$(DESTDIR)$(SYSCONFIGDIR)
 
 
-#CFLAGS:=-Wall -Wunused
+CFLAGS += -DNEED_PRINTF
 #CC:=gcc
 #LD:=ld
 
