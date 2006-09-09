@@ -508,6 +508,8 @@ deconfigure_single (int count)
 //  eval ("ifconfig", buf, "down");
 }
 
+
+
 void
 deconfigure_wifi (void)
 {
@@ -709,6 +711,70 @@ setupSupplicant (char *prefix)
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
       eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+    }
+    else if (nvram_match (akm,"8021X"))
+    {
+    /*
+    network={
+	ssid="1x-test"
+	scan_ssid=1
+	key_mgmt=IEEE8021X
+	eap=TLS
+	identity="user@example.com"
+	ca_cert="/etc/cert/ca.pem"
+	client_cert="/etc/cert/user.pem"
+	private_key="/etc/cert/user.prv"
+	private_key_passwd="password"
+	eapol_flags=3
+     }*/
+      char fstr[32];
+      char psk[64];
+      char ath[64];
+      sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
+      FILE *fp = fopen (fstr, "wb");
+      fprintf (fp, "ap_scan=1\n");
+      fprintf (fp, "fast_reauth=1\n");
+      fprintf (fp, "eapol_version=1\n");
+      fprintf (fp, "ctrl_interface_group=0\n");
+      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+
+      fprintf (fp, "network={\n");
+      sprintf (psk, "%s_ssid", prefix);
+      fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
+//      fprintf (fp, "\tmode=0\n");
+      fprintf (fp, "\tscan_ssid=1\n");
+      fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
+      fprintf (fp, "\teap=TLS\n");
+      sprintf (psk ,"%s_identity",prefix);  
+      fprintf (fp, "\tidentify=\"%s\"\n",nvram_safe_get(psk));
+      sprintf (psk,"/tmp/%s",prefix);
+      mkdir(psk);
+      sprintf (psk,"/tmp/%s/ca.pem",prefix);
+      sprintf (ath,"%s_ca",prefix);
+      write_nvram (psk, ath);
+
+      sprintf (psk,"/tmp/%s/user.pem",prefix);
+      sprintf (ath,"%s_upem",prefix);
+      write_nvram (psk, ath);
+
+      sprintf (psk,"/tmp/%s/user.prv",prefix);
+      sprintf (ath,"%s_uprv",prefix);
+      write_nvram (psk, ath);
+
+
+      fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n",prefix);
+      fprintf (fp, "\tclient_cert=/tmp/%s/user.pem\n",prefix);
+      fprintf (fp, "\tprivate_key=/tmp/%s/user.prv\n",prefix);
+
+      sprintf (psk ,"%s_pkey",prefix);  
+      fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",nvram_safe_get(psk));
+      fprintf (fp, "\teapol_flags=3\n");
+      fprintf (fp, "}\n");
+      fclose (fp);
+      sprintf (psk, "-i%s", prefix);
+      eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+
+    
     }
   else
     {
