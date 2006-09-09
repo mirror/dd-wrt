@@ -1857,6 +1857,11 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
 
   else if (!strcmp (security_mode, "wep"))
     show_wep (wp, prefix);
+#ifdef HAVE_MADWIFI
+  else if (!strcmp (security_mode, "80211X"))
+    show_80211X (wp, prefix);
+#endif
+
   //do_ej ("WEP.asp", wp);
 
   return;
