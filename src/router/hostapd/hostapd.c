@@ -49,7 +49,7 @@
 
 
 struct hapd_interfaces {
-	int count;
+	size_t count;
 	struct hostapd_iface **iface;
 };
 
@@ -103,6 +103,9 @@ void hostapd_logger(struct hostapd_data *hapd, const u8 *addr,
 		break;
 	case HOSTAPD_MODULE_IAPP:
 		module_str = "IAPP";
+		break;
+	case HOSTAPD_MODULE_MLME:
+		module_str = "MLME";
 		break;
 	default:
 		module_str = NULL;
@@ -202,7 +205,17 @@ static void hostapd_deauth_all_stas(struct hostapd_data *hapd)
 }
 
 
-/* This function will be called whenever a station associates with the AP */
+/**
+ * hostapd_new_assoc_sta - Notify that a new station associated with the AP
+ * @hapd: Pointer to BSS data
+ * @sta: Pointer to the associated STA data
+ * @reassoc: 1 to indicate this was a re-association; 0 = first association
+ *
+ * This function will be called whenever a station associates with the AP. It
+ * can be called for ieee802_11.c for drivers that export MLME to hostapd and
+ * from driver_*.c for drivers that take care of management frames (IEEE 802.11
+ * authentication and association) internally.
+ */
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   int reassoc)
 {
@@ -282,7 +295,7 @@ static void handle_reload(int sig, void *eloop_ctx, void *signal_ctx)
 {
 	struct hapd_interfaces *hapds = (struct hapd_interfaces *) eloop_ctx;
 	struct hostapd_config *newconf;
-	int i;
+	size_t i;
 	struct wpa_auth_config wpa_auth_conf;
 
 	printf("Signal %d received - reloading configuration\n", sig);
@@ -408,7 +421,7 @@ static void handle_dump_state(int sig, void *eloop_ctx, void *signal_ctx)
 {
 #ifdef HOSTAPD_DUMP_STATE
 	struct hapd_interfaces *hapds = (struct hapd_interfaces *) eloop_ctx;
-	int i, j;
+	size_t i, j;
 
 	for (i = 0; i < hapds->count; i++) {
 		struct hostapd_iface *hapd_iface = hapds->iface[i];
@@ -420,6 +433,16 @@ static void handle_dump_state(int sig, void *eloop_ctx, void *signal_ctx)
 #endif /* CONFIG_NATIVE_WINDOWS */
 
 
+/**
+ * hostapd_cleanup - Per-BSS cleanup (deinitialization)
+ * @hapd: Pointer to BSS data
+ *
+ * This function is used to free all per-BSS data structures and resources.
+ * This gets called in a loop for each BSS between calls to
+ * hostapd_cleanup_iface_pre() and hostapd_cleanup_iface() when an interface
+ * is deinitialized. Most of the modules that are initialized in
+ * hostapd_setup_bss() are deinitialized here.
+ */
 static void hostapd_cleanup(struct hostapd_data *hapd)
 {
 	hostapd_ctrl_iface_deinit(hapd);
@@ -465,9 +488,34 @@ static void hostapd_cleanup(struct hostapd_data *hapd)
 	if (hapd->eap_sim_db_priv)
 		eap_sim_db_deinit(hapd->eap_sim_db_priv);
 #endif /* EAP_SERVER */
+
+	if (hapd->interface_added &&
+	    hostapd_bss_remove(hapd, hapd->conf->iface)) {
+		printf("Failed to remove BSS interface %s\n",
+		       hapd->conf->iface);
+	}
 }
 
 
+/**
+ * hostapd_cleanup_iface_pre - Preliminary per-interface cleanup
+ * @iface: Pointer to interface data
+ *
+ * This function is called before per-BSS data structures are deinitialized
+ * with hostapd_cleanup().
+ */
+static void hostapd_cleanup_iface_pre(struct hostapd_iface *iface)
+{
+}
+
+
+/**
+ * hostapd_cleanup_iface - Complete per-interface cleanup
+ * @iface: Pointer to interface data
+ *
+ * This function is called after per-BSS data structures are deinitialized
+ * with hostapd_cleanup().
+ */
 static void hostapd_cleanup_iface(struct hostapd_iface *iface)
 {
 	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
@@ -680,19 +728,152 @@ static int hostapd_wpa_auth_for_each_sta(
 }
 
 
-static int hostapd_setup_interface(struct hostapd_iface *iface)
+/**
+ * hostapd_validate_bssid_configuration - Validate BSSID configuration
+ * @iface: Pointer to interface data
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is used to validate that the configured BSSIDs are valid.
+ */
+static int hostapd_validate_bssid_configuration(struct hostapd_iface *iface)
 {
+	u8 mask[ETH_ALEN] = { 0 };
 	struct hostapd_data *hapd = iface->bss[0];
+	unsigned int i = iface->conf->num_bss, bits = 0, j;
+	int res;
+
+	/* Generate BSSID mask that is large enough to cover the BSSIDs. */
+
+	/* Determine the bits necessary to cover the number of BSSIDs. */
+	for (i--; i; i >>= 1)
+		bits++;
+
+	/* Determine the bits necessary to any configured BSSIDs,
+	   if they are higher than the number of BSSIDs. */
+	for (j = 0; j < iface->conf->num_bss; j++) {
+		if (hostapd_mac_comp_empty(iface->conf->bss[j].bssid) == 0)
+			continue;
+
+		for (i = 0; i < ETH_ALEN; i++) {
+			mask[i] |=
+				iface->conf->bss[j].bssid[i] ^
+				hapd->own_addr[i];
+		}
+	}
+
+	for (i = 0; i < ETH_ALEN && mask[i] == 0; i++)
+		;
+	j = 0;
+	if (i < ETH_ALEN) {
+		j = (5 - i) * 8;
+
+		while (mask[i] != 0) {
+			mask[i] >>= 1;
+			j++;
+		}
+	}
+
+	if (bits < j)
+		bits = j;
+
+	if (bits > 40)
+		return -1;
+
+	memset(mask, 0xff, ETH_ALEN);
+	j = bits / 8;
+	for (i = 5; i > 5 - j; i--)
+		mask[i] = 0;
+	j = bits % 8;
+	while (j--)
+		mask[i] <<= 1;
+
+	HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "BSS count %d, BSSID mask "
+		      MACSTR " (%d bits)\n",
+		      iface->conf->num_bss, MAC2STR(mask), bits);
+
+	res = hostapd_valid_bss_mask(hapd, hapd->own_addr, mask);
+	if (res == 0)
+		return 0;
+
+	if (res < 0) {
+		printf("Driver did not accept BSSID mask " MACSTR " for start "
+		       "address " MACSTR ".\n",
+		       MAC2STR(mask), MAC2STR(hapd->own_addr));
+		return -1;
+	}
+
+	for (i = 0; i < ETH_ALEN; i++) {
+		if ((hapd->own_addr[i] & mask[i]) != hapd->own_addr[i]) {
+			printf("Invalid BSSID mask " MACSTR " for start "
+			       "address " MACSTR ".\n"
+			       "Start address must be the first address in the"
+			       " block (i.e., addr AND mask == addr).\n",
+			       MAC2STR(mask), MAC2STR(hapd->own_addr));
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+
+static int mac_in_conf(struct hostapd_config *conf, const void *a)
+{
+	size_t i;
+
+	for (i = 0; i < conf->num_bss; i++) {
+		if (hostapd_mac_comp(conf->bss[i].bssid, a) == 0) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+/**
+ * hostapd_setup_bss - Per-BSS setup (initialization)
+ * @hapd: Pointer to BSS data
+ * @first: Whether this BSS is the first BSS of an interface
+ *
+ * This function is used to initialize all per-BSS data structures and
+ * resources. This gets called in a loop for each BSS when an interface is
+ * initialized. Most of the modules that are initialized here will be
+ * deinitialized in hostapd_cleanup().
+ */
+static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
+{
 	struct hostapd_bss_config *conf = hapd->conf;
 	u8 ssid[HOSTAPD_MAX_SSID_LEN + 1];
-	int ssid_len, set_ssid, freq;
-	int ret = 0;
+	int ssid_len, set_ssid;
 
-	if (hostapd_driver_init(hapd)) {
-		printf("%s driver initialization failed.\n",
-			hapd->driver ? hapd->driver->name : "Unknown");
-		hapd->driver = NULL;
-		return -1;
+	if (!first) {
+		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0) {
+			/* Allocate the next available BSSID. */
+			do {
+				inc_byte_array(hapd->own_addr, ETH_ALEN);
+			} while (mac_in_conf(hapd->iconf, hapd->own_addr));
+		} else {
+			/* Allocate the configured BSSID. */
+			memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
+
+			if (hostapd_mac_comp(hapd->own_addr,
+					     hapd->iface->bss[0]->own_addr) ==
+			    0) {
+				printf("BSS '%s' may not have BSSID "
+				       "set to the MAC address of the radio\n",
+				       hapd->conf->iface);
+				return -1;
+			}
+		}
+
+		hapd->interface_added = 1;
+		if (hostapd_bss_add(hapd->iface->bss[0], hapd->conf->iface,
+				    hapd->own_addr)) {
+			printf("Failed to add BSS (BSSID=" MACSTR ")\n",
+			       MAC2STR(hapd->own_addr));
+			return -1;
+		}
 	}
 
 	/*
@@ -733,6 +914,11 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 		return -1;
 	}
 
+	if (hostapd_set_dtim_period(hapd, hapd->conf->dtim_period)) {
+		printf("Could not set DTIM period for kernel driver\n");
+		return -1;
+	}
+
 	/* Set SSID for the kernel driver (to be used in beacon and probe
 	 * response frames) */
 	if (set_ssid && hostapd_set_ssid(hapd, (u8 *) conf->ssid.ssid,
@@ -748,21 +934,7 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 		printf("RADIUS client initialization failed.\n");
 		return -1;
 	}
-	if (conf->radius_server_clients) {
-		struct radius_server_conf srv;
-		memset(&srv, 0, sizeof(srv));
-		srv.client_file = conf->radius_server_clients;
-		srv.auth_port = conf->radius_server_auth_port;
-		srv.hostapd_conf = conf;
-		srv.eap_sim_db_priv = hapd->eap_sim_db_priv;
-		srv.ssl_ctx = hapd->ssl_ctx;
-		srv.ipv6 = conf->radius_server_ipv6;
-		hapd->radius_srv = radius_server_init(&srv);
-		if (hapd->radius_srv == NULL) {
-			printf("RADIUS server initialization failed.\n");
-			return -1;
-		}
-	}
+
 	if (hostapd_acl_init(hapd)) {
 		printf("ACL initialization failed.\n");
 		return -1;
@@ -829,6 +1001,64 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 		return -1;
 	}
 
+	if (hostapd_ctrl_iface_init(hapd)) {
+		printf("Failed to setup control interface\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+/**
+ * hostapd_setup_interface - Setup (initialize) an interface
+ * @iface: Pointer to interface data
+ * Returns: 0 on success, -1 on failure
+ */
+static int hostapd_setup_interface(struct hostapd_iface *iface)
+{
+	struct hostapd_data *hapd = iface->bss[0];
+	struct hostapd_bss_config *conf = hapd->conf;
+	int freq;
+	int ret = 0;
+	size_t i, j;
+	u8 *prev_addr;
+
+	/*
+	 * Initialize the driver interface and make sure that all BSSes get
+	 * configured with a pointer to this driver interface.
+	 */
+	if (hostapd_driver_init(hapd)) {
+		printf("%s driver initialization failed.\n",
+			hapd->driver ? hapd->driver->name : "Unknown");
+		hapd->driver = NULL;
+		return -1;
+	}
+	for (i = 0; i < iface->num_bss; i++)
+		iface->bss[i]->driver = hapd->driver;
+
+	if (hostapd_validate_bssid_configuration(iface))
+		return -1;
+
+	prev_addr = hapd->own_addr;
+
+	if (conf->radius_server_clients) {
+		struct radius_server_conf srv;
+		memset(&srv, 0, sizeof(srv));
+		srv.client_file = conf->radius_server_clients;
+		srv.auth_port = conf->radius_server_auth_port;
+		srv.hostapd_conf = conf;
+		srv.eap_sim_db_priv = hapd->eap_sim_db_priv;
+		srv.ssl_ctx = hapd->ssl_ctx;
+		srv.ipv6 = conf->radius_server_ipv6;
+		hapd->radius_srv = radius_server_init(&srv);
+		if (hapd->radius_srv == NULL) {
+			printf("RADIUS server initialization failed.\n");
+			return -1;
+		}
+	}
+
+	/* TODO: merge with hostapd_driver_init() ? */
 	if (hostapd_wireless_event_init(hapd) < 0)
 		return -1;
 
@@ -841,11 +1071,6 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 
 	if (hostapd_flush_old_stations(hapd))
 		return -1;
-
-	if (hostapd_ctrl_iface_init(hapd)) {
-		printf("Failed to setup control interface\n");
-		ret = -1;
-	}
 
 	if (hapd->iconf->channel) {
 		freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
@@ -861,6 +1086,29 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 
 	hostapd_set_beacon_int(hapd, hapd->iconf->beacon_int);
 	ieee802_11_set_beacon(hapd);
+
+	if (hapd->iconf->rts_threshold > -1 &&
+	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
+		printf("Could not set RTS threshold for kernel driver\n");
+		return -1;
+	}
+
+	if (hapd->iconf->fragm_threshold > -1 &&
+	    hostapd_set_frag(hapd, hapd->iconf->fragm_threshold)) {
+		printf("Could not set fragmentation threshold for kernel "
+		       "driver\n");
+		return -1;
+	}
+
+	for (j = 0; j < iface->num_bss; j++) {
+		hapd = iface->bss[j];
+		if (j)
+			memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+		if (hostapd_setup_bss(hapd, j == 0))
+			return -1;
+		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
+			prev_addr = hapd->own_addr;
+	}
 
 	ap_list_init(iface);
 
@@ -963,12 +1211,14 @@ static void usage(void)
 	show_version();
 	fprintf(stderr,
 		"\n"
-		"usage: hostapd [-hdBKt] <configuration file(s)>\n"
+		"usage: hostapd [-hdBKtv] [-P <PID file>] "
+		"<configuration file(s)>\n"
 		"\n"
 		"options:\n"
 		"   -h   show this usage\n"
 		"   -d   show more debug messages (-dd for even more)\n"
 		"   -B   run daemon in the background\n"
+		"   -P   PID file\n"
 		"   -K   include key data in debug messages\n"
 		"   -t   include timestamps in some debug messages\n"
 		"   -v   show hostapd version\n");
@@ -977,6 +1227,17 @@ static void usage(void)
 }
 
 
+/**
+ * hostapd_alloc_bss_data - Allocate and initialize per-BSS data
+ * @hapd_iface: Pointer to interface data
+ * @conf: Pointer to per-interface configuration
+ * @bss: Pointer to per-BSS configuration for this BSS
+ * Returns: Pointer to allocated BSS data
+ *
+ * This function is used to allocate per-BSS data structure. This data will be
+ * freed after hostapd_cleanup() is called for it during interface
+ * deinitialization.
+ */
 static struct hostapd_data *
 hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 		       struct hostapd_config *conf,
@@ -1057,12 +1318,21 @@ fail:
 }
 
 
+/**
+ * hostapd_init - Allocate and initialize per-interface data
+ * @config_file: Path to the configuration file
+ * Returns: Pointer to the allocated interface data or %NULL on failure
+ *
+ * This function is used to allocate main data structures for per-interface
+ * data. The allocated data buffer will be freed by calling
+ * hostapd_cleanup_iface().
+ */
 static struct hostapd_iface * hostapd_init(const char *config_file)
 {
 	struct hostapd_iface *hapd_iface = NULL;
 	struct hostapd_config *conf = NULL;
 	struct hostapd_data *hapd;
-	int i;
+	size_t i;
 
 	hapd_iface = wpa_zalloc(sizeof(*hapd_iface));
 	if (hapd_iface == NULL)
@@ -1083,7 +1353,7 @@ static struct hostapd_iface * hostapd_init(const char *config_file)
 	if (hapd_iface->bss == NULL)
 		goto fail;
 
-	for (i = 0; (size_t) i < conf->num_bss; i++) {
+	for (i = 0; i < conf->num_bss; i++) {
 		hapd = hapd_iface->bss[i] =
 			hostapd_alloc_bss_data(hapd_iface, conf,
 					       &conf->bss[i]);
@@ -1118,14 +1388,17 @@ fail:
  */
 void register_drivers(void);
 
+
 int main(int argc, char *argv[])
 {
 	struct hapd_interfaces interfaces;
-	int ret = 1, i, j;
+	int ret = 1, k;
+	size_t i, j;
 	int c, debug = 0, daemonize = 0;
+	const char *pid_file = NULL;
 
 	for (;;) {
-		c = getopt(argc, argv, "BdhKtv");
+		c = getopt(argc, argv, "BdhKP:tv");
 		if (c < 0)
 			break;
 		switch (c) {
@@ -1142,6 +1415,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'K':
 			wpa_debug_show_keys++;
+			break;
+		case 'P':
+			pid_file = optarg;
 			break;
 		case 't':
 			wpa_debug_timestamp++;
@@ -1187,12 +1463,13 @@ int main(int argc, char *argv[])
 #endif /* CONFIG_NATIVE_WINDOWS */
 	eloop_register_signal_terminate(handle_term, NULL);
 
+	/* Initialize interfaces */
 	for (i = 0; i < interfaces.count; i++) {
 		printf("Configuration file: %s\n", argv[optind + i]);
 		interfaces.iface[i] = hostapd_init(argv[optind + i]);
 		if (!interfaces.iface[i])
 			goto out;
-		for (j = 0; j < debug; j++) {
+		for (k = 0; k < debug; k++) {
 			if (interfaces.iface[i]->bss[0]->conf->
 			    logger_stdout_level > 0)
 				interfaces.iface[i]->bss[0]->conf->
@@ -1203,7 +1480,7 @@ int main(int argc, char *argv[])
 			goto out;
 	}
 
-	if (daemonize && os_daemonize(NULL)) {
+	if (daemonize && os_daemonize(pid_file)) {
 		perror("daemon");
 		goto out;
 	}
@@ -1214,6 +1491,7 @@ int main(int argc, char *argv[])
 
 	eloop_run();
 
+	/* Disconnect associated stations from all interfaces and BSSes */
 	for (i = 0; i < interfaces.count; i++) {
 		for (j = 0; j < interfaces.iface[i]->num_bss; j++) {
 			struct hostapd_data *hapd =
@@ -1226,9 +1504,11 @@ int main(int argc, char *argv[])
 	ret = 0;
 
  out:
+	/* Deinitialize all interfaces */
 	for (i = 0; i < interfaces.count; i++) {
 		if (!interfaces.iface[i])
 			continue;
+		hostapd_cleanup_iface_pre(interfaces.iface[i]);
 		for (j = 0; j < interfaces.iface[i]->num_bss; j++) {
 			struct hostapd_data *hapd =
 				interfaces.iface[i]->bss[j];
@@ -1236,8 +1516,9 @@ int main(int argc, char *argv[])
 			if (j == interfaces.iface[i]->num_bss - 1 &&
 			    hapd->driver)
 				hostapd_driver_deinit(hapd);
-			free(hapd);
 		}
+		for (j = 0; j < interfaces.iface[i]->num_bss; j++)
+			free(interfaces.iface[i]->bss[j]);
 		hostapd_cleanup_iface(interfaces.iface[i]);
 	}
 	free(interfaces.iface);
@@ -1252,7 +1533,7 @@ int main(int argc, char *argv[])
 
 	driver_unregister_all();
 
-	os_daemonize_terminate(NULL);
+	os_daemonize_terminate(pid_file);
 
 	return ret;
 }

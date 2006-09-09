@@ -53,12 +53,12 @@ int main(int argc, char *argv[])
 		passphrase = buf;
 	}
 
-	if (strlen(passphrase) < 8 || strlen(passphrase) > 63) {
+	if (os_strlen(passphrase) < 8 || os_strlen(passphrase) > 63) {
 		printf("Passphrase must be 8..63 characters\n");
 		return 1;
 	}
 
-	pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
+	pbkdf2_sha1(passphrase, ssid, os_strlen(ssid), 4096, psk, 32);
 
 	printf("network={\n");
 	printf("\tssid=\"%s\"\n", ssid);

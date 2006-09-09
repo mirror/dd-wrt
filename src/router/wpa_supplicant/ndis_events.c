@@ -24,6 +24,9 @@
 #include "common.h"
 
 
+static int wmi_refcnt = 0;
+static int wmi_first = 1;
+
 struct ndis_events_data {
 	IWbemObjectSink sink;
 	IWbemObjectSinkVtbl sink_vtbl;
@@ -34,10 +37,15 @@ struct ndis_events_data {
 	HANDLE read_pipe, write_pipe, event_avail;
 	UINT ref;
 	int terminating;
+	char *ifname; /* {GUID..} */
+	WCHAR *adapter_desc;
 };
 
 enum event_types { EVENT_CONNECT, EVENT_DISCONNECT, EVENT_MEDIA_SPECIFIC,
 		   EVENT_ADAPTER_ARRIVAL, EVENT_ADAPTER_REMOVAL };
+
+static int ndis_events_get_adapter(struct ndis_events_data *events,
+				   const char *ifname, const char *desc);
 
 
 static int ndis_events_constructor(struct ndis_events_data *events)
@@ -69,7 +77,8 @@ static void ndis_events_destructor(struct ndis_events_data *events)
 	CloseHandle(events->event_avail);
 	IWbemServices_Release(events->pSvc);
 	IWbemLocator_Release(events->pLoc);
-	CoUninitialize();
+	if (--wmi_refcnt == 0)
+		CoUninitialize();
 }
 
 
@@ -105,17 +114,19 @@ static ULONG STDMETHODCALLTYPE ndis_events_release(IWbemObjectSink *this)
 
 	ndis_events_destructor(events);
 	wpa_printf(MSG_DEBUG, "ndis_events: terminated");
+	free(events->adapter_desc);
+	free(events->ifname);
 	free(events);
 	return 0;
 }
 
 
 static int ndis_events_send_event(struct ndis_events_data *events,
-				  enum event_types type, BSTR instance,
+				  enum event_types type,
 				  char *data, size_t data_len)
 {
 	char buf[512], *pos, *end;
-	int len, _type;
+	int _type;
 	DWORD written;
 
 	end = buf + sizeof(buf);
@@ -123,20 +134,14 @@ static int ndis_events_send_event(struct ndis_events_data *events,
 	memcpy(buf, &_type, sizeof(_type));
 	pos = buf + sizeof(_type);
 
-	len = _snprintf(pos + 1, end - pos - 1, "%S", instance);
-	if (len < 0)
-		return -1;
-	if (len > 255)
-		len = 255;
-	*pos = (unsigned char) len;
-	pos += 1 + len;
 	if (data) {
-		if (data_len > 255 || 1 + data_len > (size_t) (end - pos)) {
+		if (2 + data_len > (size_t) (end - pos)) {
 			wpa_printf(MSG_DEBUG, "Not enough room for send_event "
 				   "data (%d)", data_len);
 			return -1;
 		}
-		*pos++ = (unsigned char) data_len;
+		*pos++ = data_len >> 8;
+		*pos++ = data_len & 0xff;
 		memcpy(pos, data, data_len);
 		pos += data_len;
 	}
@@ -150,35 +155,17 @@ static int ndis_events_send_event(struct ndis_events_data *events,
 }
 
 
-static void ndis_events_media_connect(struct ndis_events_data *events,
-				      IWbemClassObject *pObj)
+static void ndis_events_media_connect(struct ndis_events_data *events)
 {
-	VARIANT vt;
-	HRESULT hr;
 	wpa_printf(MSG_DEBUG, "MSNdis_StatusMediaConnect");
-	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
-	if (SUCCEEDED(hr)) {
-		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
-		ndis_events_send_event(events, EVENT_CONNECT, vt.bstrVal,
-				       NULL, 0);
-		VariantClear(&vt);
-	}
+	ndis_events_send_event(events, EVENT_CONNECT, NULL, 0);
 }
 
 
-static void ndis_events_media_disconnect(struct ndis_events_data *events,
-					 IWbemClassObject *pObj)
+static void ndis_events_media_disconnect(struct ndis_events_data *events)
 {
-	VARIANT vt;
-	HRESULT hr;
 	wpa_printf(MSG_DEBUG, "MSNdis_StatusMediaDisconnect");
-	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
-	if (SUCCEEDED(hr)) {
-		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
-		ndis_events_send_event(events, EVENT_DISCONNECT, vt.bstrVal,
-				       NULL, 0);
-		VariantClear(&vt);
-	}
+	ndis_events_send_event(events, EVENT_DISCONNECT, NULL, 0);
 }
 
 
@@ -224,47 +211,23 @@ static void ndis_events_media_specific(struct ndis_events_data *events,
 
 	VariantClear(&vt);
 
-	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
-	if (SUCCEEDED(hr)) {
-		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
-		ndis_events_send_event(events, EVENT_MEDIA_SPECIFIC,
-				       vt.bstrVal, data, data_len);
-		VariantClear(&vt);
-	}
+	ndis_events_send_event(events, EVENT_MEDIA_SPECIFIC, data, data_len);
 
 	free(data);
 }
 
 
-static void ndis_events_adapter_arrival(struct ndis_events_data *events,
-					IWbemClassObject *pObj)
+static void ndis_events_adapter_arrival(struct ndis_events_data *events)
 {
-	VARIANT vt;
-	HRESULT hr;
-	wpa_printf(MSG_DEBUG, "MSNdis_NotifierAdapterArrival");
-	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
-	if (SUCCEEDED(hr)) {
-		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
-		ndis_events_send_event(events, EVENT_ADAPTER_ARRIVAL,
-				       vt.bstrVal, NULL, 0);
-		VariantClear(&vt);
-	}
+	wpa_printf(MSG_DEBUG, "MSNdis_NotifyAdapterArrival");
+	ndis_events_send_event(events, EVENT_ADAPTER_ARRIVAL, NULL, 0);
 }
 
 
-static void ndis_events_adapter_removal(struct ndis_events_data *events,
-					IWbemClassObject *pObj)
+static void ndis_events_adapter_removal(struct ndis_events_data *events)
 {
-	VARIANT vt;
-	HRESULT hr;
-	wpa_printf(MSG_DEBUG, "MSNdis_NotifierAdapterRemoval");
-	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
-	if (SUCCEEDED(hr)) {
-		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
-		ndis_events_send_event(events, EVENT_ADAPTER_REMOVAL,
-				       vt.bstrVal, NULL, 0);
-		VariantClear(&vt);
-	}
+	wpa_printf(MSG_DEBUG, "MSNdis_NotifyAdapterRemoval");
+	ndis_events_send_event(events, EVENT_ADAPTER_REMOVAL, NULL, 0);
 }
 
 
@@ -286,7 +249,7 @@ ndis_events_indicate(IWbemObjectSink *this, long lObjectCount,
 	for (i = 0; i < lObjectCount; i++) {
 		IWbemClassObject *pObj = ppObjArray[i];
 		HRESULT hr;
-		VARIANT vtClass;
+		VARIANT vtClass, vt;
 
 		hr = IWbemClassObject_Get(pObj, L"__CLASS", 0, &vtClass, NULL,
 					  NULL);
@@ -297,21 +260,49 @@ ndis_events_indicate(IWbemObjectSink *this, long lObjectCount,
 		}
 		/* wpa_printf(MSG_DEBUG, "CLASS: '%S'", vtClass.bstrVal); */
 
+		hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL,
+					  NULL);
+		if (FAILED(hr)) {
+			wpa_printf(MSG_DEBUG, "Failed to get InstanceName "
+				   "from event.");
+			VariantClear(&vtClass);
+			break;
+		}
+
+		if (wcscmp(vtClass.bstrVal,
+			   L"MSNdis_NotifyAdapterArrival") == 0) {
+			wpa_printf(MSG_DEBUG, "ndis_events_indicate: Try to "
+				   "update adapter description since it may "
+				   "have changed with new adapter instance");
+			ndis_events_get_adapter(events, events->ifname, NULL);
+		}
+
+		if (wcscmp(events->adapter_desc, vt.bstrVal) != 0) {
+			wpa_printf(MSG_DEBUG, "ndis_events_indicate: Ignore "
+				   "indication for foreign adapter: "
+				   "InstanceName: '%S' __CLASS: '%S'",
+				   vt.bstrVal, vtClass.bstrVal);
+			VariantClear(&vtClass);
+			VariantClear(&vt);
+			continue;
+		}
+		VariantClear(&vt);
+
 		if (wcscmp(vtClass.bstrVal,
 			   L"MSNdis_StatusMediaSpecificIndication") == 0) {
 			ndis_events_media_specific(events, pObj);
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_StatusMediaConnect") == 0) {
-			ndis_events_media_connect(events, pObj);
+			ndis_events_media_connect(events);
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_StatusMediaDisconnect") == 0) {
-			ndis_events_media_disconnect(events, pObj);
+			ndis_events_media_disconnect(events);
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_NotifyAdapterArrival") == 0) {
-			ndis_events_adapter_arrival(events, pObj);
+			ndis_events_adapter_arrival(events);
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_NotifyAdapterRemoval") == 0) {
-			ndis_events_adapter_removal(events, pObj);
+			ndis_events_adapter_removal(events);
 		} else {
 			wpa_printf(MSG_DEBUG, "Unepected event - __CLASS: "
 				   "'%S'", vtClass.bstrVal);
@@ -332,76 +323,47 @@ ndis_events_set_status(IWbemObjectSink *this, long lFlags, HRESULT hResult,
 }
 
 
+static int notification_query(IWbemObjectSink *pDestSink,
+			      IWbemServices *pSvc, const char *class_name)
+{
+	HRESULT hr;
+	WCHAR query[256];
+
+	_snwprintf(query, 256,
+		  L"SELECT * FROM %S", class_name);
+	wpa_printf(MSG_DEBUG, "ndis_events: WMI: %S", query);
+	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, L"WQL", query, 0,
+						      0, pDestSink);
+	if (FAILED(hr)) {
+		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for %s "
+			   "failed with hresult of 0x%x",
+			   class_name, (int) hr);
+		return -1;
+	}
+
+	return 0;
+}
+
+
 static int register_async_notification(IWbemObjectSink *pDestSink,
 				       IWbemServices *pSvc)
 {
-	HRESULT hr;
-	int err = 0;
-	BSTR lang = SysAllocString(L"WQL");
+	int i;
+	const char *class_list[] = {
+		"MSNdis_StatusMediaConnect",
+		"MSNdis_StatusMediaDisconnect",
+		"MSNdis_StatusMediaSpecificIndication",
+		"MSNdis_NotifyAdapterArrival",
+		"MSNdis_NotifyAdapterRemoval",
+		NULL
+	};
 
-	BSTR query = SysAllocString(
-		L"SELECT * FROM MSNdis_StatusMediaConnect");
-	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
-						      pDestSink);
-	SysFreeString(query);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
-			   "MSNdis_StatusMediaConnect failed with hresult of "
-			   "0x%x", (int) hr);
-		err = -1;
+	for (i = 0; class_list[i]; i++) {
+		if (notification_query(pDestSink, pSvc, class_list[i]) < 0)
+			return -1;
 	}
 
-	query = SysAllocString(
-		L"SELECT * FROM MSNdis_StatusMediaDisconnect");
-	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
-						      pDestSink);
-	SysFreeString(query);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
-			   "MSNdis_StatusMediaDisconnect failed with hresult "
-			   "of 0x%x", (int) hr);
-		err = -1;
-	}
-
-	query = SysAllocString(
-		L"SELECT * FROM MSNdis_StatusMediaSpecificIndication");
-	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
-						      pDestSink);
-	SysFreeString(query);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
-			   "MSNdis_StatusMediaSpecificIndication failed with "
-			   "hresult of 0x%x", (int) hr);
-		err = -1;
-	}
-
-	query = SysAllocString(
-		L"SELECT * FROM MSNdis_NotifyAdapterArrival");
-	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
-						      pDestSink);
-	SysFreeString(query);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
-			   "MSNdis_NotifyAdapterArrival failed with hresult "
-			   "of 0x%x", (int) hr);
-		err = -1;
-	}
-
-	query = SysAllocString(
-		L"SELECT * FROM MSNdis_NotifyAdapterRemoval");
-	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
-						      pDestSink);
-	SysFreeString(query);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
-			   "MSNdis_NotifyAdapterRemoval failed with hresult "
-			   "of 0x%x", (int) hr);
-		err = -1;
-	}
-
-	SysFreeString(lang);
-
-	return err;
+	return 0;
 }
 
 
@@ -417,8 +379,260 @@ void ndis_events_deinit(struct ndis_events_data *events)
 }
 
 
+static int ndis_events_use_desc(struct ndis_events_data *events,
+				const char *desc)
+{
+	char *tmp, *pos;
+	size_t len;
+
+	if (desc == NULL) {
+		if (events->adapter_desc == NULL)
+			return -1;
+		/* Continue using old description */
+		return 0;
+	}
+
+	tmp = strdup(desc);
+	if (tmp == NULL)
+		return -1;
+
+	pos = strstr(tmp, " (Microsoft's Packet Scheduler)");
+	if (pos)
+		*pos = '\0';
+
+	len = strlen(tmp);
+	events->adapter_desc = malloc((len + 1) * sizeof(WCHAR));
+	if (events->adapter_desc == NULL) {
+		free(tmp);
+		return -1;
+	}
+	_snwprintf(events->adapter_desc, len + 1, L"%S", tmp);
+	free(tmp);
+	return 0;
+}
+
+
+static int ndis_events_get_adapter(struct ndis_events_data *events,
+				   const char *ifname, const char *desc)
+{
+	HRESULT hr;
+	IWbemServices *pSvc;
+#define MAX_QUERY_LEN 256
+	WCHAR query[MAX_QUERY_LEN];
+	IEnumWbemClassObject *pEnumerator;
+	IWbemClassObject *pObj;
+	ULONG uReturned;
+	VARIANT vt;
+	int len, pos;
+
+	/*
+	 * Try to get adapter descriptor through WMI CIMv2 Win32_NetworkAdapter
+	 * to have better probability of matching with InstanceName from
+	 * MSNdis events. If this fails, use the provided description.
+	 */
+
+	free(events->adapter_desc);
+	events->adapter_desc = NULL;
+
+	hr = IWbemLocator_ConnectServer(events->pLoc, L"ROOT\\CIMV2", NULL,
+					NULL, 0, 0, 0, 0, &pSvc);
+	if (hr) {
+		wpa_printf(MSG_ERROR, "ndis_events: Could not connect to WMI "
+			   "server (ROOT\\CIMV2) - error 0x%x", (int) hr);
+		return ndis_events_use_desc(events, desc);
+	}
+	wpa_printf(MSG_DEBUG, "ndis_events: Connected to ROOT\\CIMV2.");
+
+	_snwprintf(query, MAX_QUERY_LEN,
+		  L"SELECT Index FROM Win32_NetworkAdapterConfiguration "
+		  L"WHERE SettingID='%S'", ifname);
+	wpa_printf(MSG_DEBUG, "ndis_events: WMI: %S", query);
+
+	hr = IWbemServices_ExecQuery(pSvc, L"WQL", query,
+				     WBEM_FLAG_FORWARD_ONLY |
+				     WBEM_FLAG_RETURN_IMMEDIATELY,
+				     NULL, &pEnumerator);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to query interface "
+			   "GUID from Win32_NetworkAdapterConfiguration: "
+			   "0x%x", (int) hr);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+
+	uReturned = 0;
+	hr = IEnumWbemClassObject_Next(pEnumerator, WBEM_INFINITE, 1,
+				       &pObj, &uReturned);
+	if (!SUCCEEDED(hr) || uReturned == 0) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to find interface "
+			   "GUID from Win32_NetworkAdapterConfiguration: "
+			   "0x%x", (int) hr);
+		IEnumWbemClassObject_Release(pEnumerator);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+	IEnumWbemClassObject_Release(pEnumerator);
+
+	VariantInit(&vt);
+	hr = IWbemClassObject_Get(pObj, L"Index", 0, &vt, NULL, NULL);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to get Index from "
+			   "Win32_NetworkAdapterConfiguration: 0x%x",
+			   (int) hr);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+
+	_snwprintf(query, MAX_QUERY_LEN,
+		  L"SELECT Name,PNPDeviceID FROM Win32_NetworkAdapter WHERE "
+		  L"Index=%d",
+		  vt.uintVal);
+	wpa_printf(MSG_DEBUG, "ndis_events: WMI: %S", query);
+	VariantClear(&vt);
+	IWbemClassObject_Release(pObj);
+
+	hr = IWbemServices_ExecQuery(pSvc, L"WQL", query,
+				     WBEM_FLAG_FORWARD_ONLY |
+				     WBEM_FLAG_RETURN_IMMEDIATELY,
+				     NULL, &pEnumerator);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to query interface "
+			   "from Win32_NetworkAdapter: 0x%x", (int) hr);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+
+	uReturned = 0;
+	hr = IEnumWbemClassObject_Next(pEnumerator, WBEM_INFINITE, 1,
+				       &pObj, &uReturned);
+	if (!SUCCEEDED(hr) || uReturned == 0) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to find interface "
+			   "from Win32_NetworkAdapter: 0x%x", (int) hr);
+		IEnumWbemClassObject_Release(pEnumerator);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+	IEnumWbemClassObject_Release(pEnumerator);
+
+	hr = IWbemClassObject_Get(pObj, L"Name", 0, &vt, NULL, NULL);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to get Name from "
+			   "Win32_NetworkAdapter: 0x%x", (int) hr);
+		IWbemClassObject_Release(pObj);
+		IWbemServices_Release(pSvc);
+		return ndis_events_use_desc(events, desc);
+	}
+
+	wpa_printf(MSG_DEBUG, "ndis_events: Win32_NetworkAdapter::Name='%S'",
+		   vt.bstrVal);
+	events->adapter_desc = _wcsdup(vt.bstrVal);
+	VariantClear(&vt);
+
+	/*
+	 * Try to get even better candidate for matching with InstanceName
+	 * from Win32_PnPEntity. This is needed at least for some USB cards
+	 * that can change the InstanceName whenever being unplugged and
+	 * plugged again.
+	 */
+
+	hr = IWbemClassObject_Get(pObj, L"PNPDeviceID", 0, &vt, NULL, NULL);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to get PNPDeviceID "
+			   "from Win32_NetworkAdapter: 0x%x", (int) hr);
+		IWbemClassObject_Release(pObj);
+		IWbemServices_Release(pSvc);
+		if (events->adapter_desc == NULL)
+			return ndis_events_use_desc(events, desc);
+		return 0; /* use Win32_NetworkAdapter::Name */
+	}
+
+	wpa_printf(MSG_DEBUG, "ndis_events: Win32_NetworkAdapter::PNPDeviceID="
+		   "'%S'", vt.bstrVal);
+
+	len = _snwprintf(query, MAX_QUERY_LEN,
+			L"SELECT Name FROM Win32_PnPEntity WHERE DeviceID='");
+	if (len < 0 || len >= MAX_QUERY_LEN - 1) {
+		VariantClear(&vt);
+		IWbemClassObject_Release(pObj);
+		IWbemServices_Release(pSvc);
+		if (events->adapter_desc == NULL)
+			return ndis_events_use_desc(events, desc);
+		return 0; /* use Win32_NetworkAdapter::Name */
+	}
+
+	/* Escape \ as \\ */
+	for (pos = 0; vt.bstrVal[pos] && len < MAX_QUERY_LEN - 1; pos++) {
+		if (vt.bstrVal[pos] == '\\') {
+			if (len >= MAX_QUERY_LEN - 2)
+				break;
+			query[len++] = '\\';
+		}
+		query[len++] = vt.bstrVal[pos];
+	}
+	query[len++] = L'\'';
+	query[len] = L'\0';
+	VariantClear(&vt);
+	IWbemClassObject_Release(pObj);
+	wpa_printf(MSG_DEBUG, "ndis_events: WMI: %S", query);
+
+	hr = IWbemServices_ExecQuery(pSvc, L"WQL", query,
+				     WBEM_FLAG_FORWARD_ONLY |
+				     WBEM_FLAG_RETURN_IMMEDIATELY,
+				     NULL, &pEnumerator);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to query interface "
+			   "Name from Win32_PnPEntity: 0x%x", (int) hr);
+		IWbemServices_Release(pSvc);
+		if (events->adapter_desc == NULL)
+			return ndis_events_use_desc(events, desc);
+		return 0; /* use Win32_NetworkAdapter::Name */
+	}
+
+	uReturned = 0;
+	hr = IEnumWbemClassObject_Next(pEnumerator, WBEM_INFINITE, 1,
+				       &pObj, &uReturned);
+	if (!SUCCEEDED(hr) || uReturned == 0) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to find interface "
+			   "from Win32_PnPEntity: 0x%x", (int) hr);
+		IEnumWbemClassObject_Release(pEnumerator);
+		IWbemServices_Release(pSvc);
+		if (events->adapter_desc == NULL)
+			return ndis_events_use_desc(events, desc);
+		return 0; /* use Win32_NetworkAdapter::Name */
+	}
+	IEnumWbemClassObject_Release(pEnumerator);
+
+	hr = IWbemClassObject_Get(pObj, L"Name", 0, &vt, NULL, NULL);
+	if (!SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "ndis_events: Failed to get Name from "
+			   "Win32_PnPEntity: 0x%x", (int) hr);
+		IWbemClassObject_Release(pObj);
+		IWbemServices_Release(pSvc);
+		if (events->adapter_desc == NULL)
+			return ndis_events_use_desc(events, desc);
+		return 0; /* use Win32_NetworkAdapter::Name */
+	}
+
+	wpa_printf(MSG_DEBUG, "ndis_events: Win32_PnPEntity::Name='%S'",
+		   vt.bstrVal);
+	free(events->adapter_desc);
+	events->adapter_desc = _wcsdup(vt.bstrVal);
+	VariantClear(&vt);
+
+	IWbemClassObject_Release(pObj);
+
+	IWbemServices_Release(pSvc);
+
+	if (events->adapter_desc == NULL)
+		return ndis_events_use_desc(events, desc);
+
+	return 0;
+}
+
+
 struct ndis_events_data *
-ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail)
+ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
+		 const char *ifname, const char *desc)
 {
 	HRESULT hr;
 	IWbemObjectSink *pSink;
@@ -429,24 +643,38 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail)
 		wpa_printf(MSG_ERROR, "Could not allocate sink for events.");
 		return NULL;
 	}
-
-	hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_ERROR, "CoInitializeEx() failed - returned "
-			   "0x%x", (int) hr);
+	events->ifname = strdup(ifname);
+	if (events->ifname == NULL) {
 		free(events);
 		return NULL;
 	}
 
-	hr = CoInitializeSecurity(NULL, -1, NULL, NULL,
-				  RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
-				  RPC_C_IMP_LEVEL_IMPERSONATE,
-				  NULL, EOAC_SECURE_REFS, NULL);
-	if (FAILED(hr)) {
-		wpa_printf(MSG_ERROR, "CoInitializeSecurity() failed - "
-			   "returned 0x%x", (int) hr);
-		free(events);
-		return NULL;
+	if (wmi_refcnt++ == 0) {
+		hr = CoInitializeEx(0, COINIT_MULTITHREADED);
+		if (FAILED(hr)) {
+			wpa_printf(MSG_ERROR, "CoInitializeEx() failed - "
+				   "returned 0x%x", (int) hr);
+			free(events);
+			return NULL;
+		}
+	}
+
+	if (wmi_first) {
+		/* CoInitializeSecurity() must be called once and only once
+		 * per process, so let's use wmi_first flag to protect against
+		 * multiple calls. */
+		wmi_first = 0;
+
+		hr = CoInitializeSecurity(NULL, -1, NULL, NULL,
+					  RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+					  RPC_C_IMP_LEVEL_IMPERSONATE,
+					  NULL, EOAC_SECURE_REFS, NULL);
+		if (FAILED(hr)) {
+			wpa_printf(MSG_ERROR, "CoInitializeSecurity() failed "
+				   "- returned 0x%x", (int) hr);
+			free(events);
+			return NULL;
+		}
 	}
 
 	hr = CoCreateInstance(&CLSID_WbemLocator, 0, CLSCTX_INPROC_SERVER,
@@ -459,12 +687,21 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail)
 		return NULL;
 	}
 
+	if (ndis_events_get_adapter(events, ifname, desc) < 0) {
+		CoUninitialize();
+		free(events);
+		return NULL;
+	}
+	wpa_printf(MSG_DEBUG, "ndis_events: use adapter descriptor '%S'",
+		   events->adapter_desc);
+
 	hr = IWbemLocator_ConnectServer(events->pLoc, L"ROOT\\WMI", NULL, NULL,
 					0, 0, 0, 0, &events->pSvc);
 	if (hr) {
 		wpa_printf(MSG_ERROR, "Could not connect to server - error "
 			   "0x%x", (int) hr);
 		CoUninitialize();
+		free(events->adapter_desc);
 		free(events);
 		return NULL;
 	}
@@ -482,8 +719,8 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail)
 	if (register_async_notification(pSink, events->pSvc) < 0) {
 		wpa_printf(MSG_DEBUG, "Failed to register async "
 			   "notifications");
-		CoUninitialize();
 		ndis_events_destructor(events);
+		free(events->adapter_desc);
 		free(events);
 		return NULL;
 	}

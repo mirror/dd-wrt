@@ -128,6 +128,7 @@ struct hostapd_bss_config {
 #define HOSTAPD_MODULE_WPA BIT(3)
 #define HOSTAPD_MODULE_DRIVER BIT(4)
 #define HOSTAPD_MODULE_IAPP BIT(5)
+#define HOSTAPD_MODULE_MLME BIT(6)
 	unsigned int logger_syslog; /* module bitfield */
 	unsigned int logger_stdout; /* module bitfield */
 
@@ -138,6 +139,8 @@ struct hostapd_bss_config {
 	char *dump_log_name; /* file name for state dump (SIGUSR1) */
 
 	int max_num_sta; /* maximum number of STAs in station table */
+
+	int dtim_period;
 
 	int ieee802_1x; /* use IEEE 802.1X */
 	int eapol_version;
@@ -229,6 +232,8 @@ struct hostapd_bss_config {
 	int ignore_broadcast_ssid;
 
 	int wme_enabled;
+
+	macaddr bssid;
 };
 
 
@@ -245,9 +250,12 @@ typedef enum {
  */
 struct hostapd_config {
 	struct hostapd_bss_config *bss, *last_bss;
+	struct hostapd_radius_servers *radius;
 	size_t num_bss;
 
 	u16 beacon_int;
+	int rts_threshold;
+	int fragm_threshold;
 	u8 send_probe_response;
 	u8 channel;
 	hostapd_hw_mode hw_mode; /* HOSTAPD_MODE_IEEE80211A, .. */
@@ -286,6 +294,8 @@ struct hostapd_config {
 };
 
 
+int hostapd_mac_comp(const void *a, const void *b);
+int hostapd_mac_comp_empty(const void *a);
 struct hostapd_config * hostapd_config_read(const char *fname);
 void hostapd_config_free(struct hostapd_config *conf);
 int hostapd_maclist_found(macaddr *list, int num_entries, const u8 *addr);

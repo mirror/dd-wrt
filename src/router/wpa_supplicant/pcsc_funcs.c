@@ -338,7 +338,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 	wpa_printf(MSG_DEBUG, "SCARD: initializing smart card interface");
 	if (mingw_load_symbols())
 		return NULL;
-	scard = wpa_zalloc(sizeof(*scard));
+	scard = os_zalloc(sizeof(*scard));
 	if (scard == NULL)
 		return NULL;
 
@@ -357,7 +357,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 		goto failed;
 	}
 
-	readers = malloc(len);
+	readers = os_malloc(len);
 	if (readers == NULL) {
 		printf("malloc failed\n");
 		goto failed;
@@ -390,7 +390,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 		goto failed;
 	}
 
-	free(readers);
+	os_free(readers);
 	readers = NULL;
 
 	wpa_printf(MSG_DEBUG, "SCARD: card=0x%x active_protocol=%lu (%s)",
@@ -464,7 +464,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 failed:
 	if (transaction)
 		SCardEndTransaction(scard->card, SCARD_LEAVE_CARD);
-	free(readers);
+	os_free(readers);
 	scard_deinit(scard);
 	return NULL;
 }
@@ -528,7 +528,7 @@ void scard_deinit(struct scard_data *scard)
 				   "context (err=%ld)", ret);
 		}
 	}
-	free(scard);
+	os_free(scard);
 	mingw_unload_symbols();
 }
 
@@ -581,7 +581,7 @@ static int _scard_select_file(struct scard_data *scard, unsigned short file_id,
 	if (aid) {
 		cmd[2] = 0x04; /* Select by AID */
 		cmd[4] = 5; /* len */
-		memcpy(cmd + 5, aid, 5);
+		os_memcpy(cmd + 5, aid, 5);
 		cmdlen = 10;
 	} else {
 		cmd[5] = file_id >> 8;
@@ -654,7 +654,7 @@ static int scard_read_file(struct scard_data *scard,
 
 	cmd[4] = len;
 
-	buf = malloc(blen);
+	buf = os_malloc(blen);
 	if (buf == NULL)
 		return -1;
 
@@ -662,13 +662,13 @@ static int scard_read_file(struct scard_data *scard,
 		cmd[0] = USIM_CLA;
 	ret = scard_transmit(scard, cmd, sizeof(cmd), buf, &blen);
 	if (ret != SCARD_S_SUCCESS) {
-		free(buf);
+		os_free(buf);
 		return -2;
 	}
 	if (blen != len + 2) {
 		wpa_printf(MSG_DEBUG, "SCARD: file read returned unexpected "
 			   "length %d (expected %d)", blen, len + 2);
-		free(buf);
+		os_free(buf);
 		return -3;
 	}
 
@@ -676,12 +676,12 @@ static int scard_read_file(struct scard_data *scard,
 		wpa_printf(MSG_DEBUG, "SCARD: file read returned unexpected "
 			   "status %02x %02x (expected 90 00)",
 			   buf[len], buf[len + 1]);
-		free(buf);
+		os_free(buf);
 		return -4;
 	}
 
-	memcpy(data, buf, len);
-	free(buf);
+	os_memcpy(data, buf, len);
+	os_free(buf);
 
 	return 0;
 }
@@ -696,13 +696,13 @@ static int scard_verify_pin(struct scard_data *scard, const char *pin)
 
 	wpa_printf(MSG_DEBUG, "SCARD: verifying PIN");
 
-	if (pin == NULL || strlen(pin) > 8)
+	if (pin == NULL || os_strlen(pin) > 8)
 		return -1;
 
 	if (scard->sim_type == SCARD_USIM)
 		cmd[0] = USIM_CLA;
-	memcpy(cmd + 5, pin, strlen(pin));
-	memset(cmd + 5 + strlen(pin), 0xff, 8 - strlen(pin));
+	os_memcpy(cmd + 5, pin, os_strlen(pin));
+	os_memset(cmd + 5 + os_strlen(pin), 0xff, 8 - os_strlen(pin));
 
 	len = sizeof(resp);
 	ret = scard_transmit(scard, cmd, sizeof(cmd), resp, &len);
@@ -828,14 +828,14 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
 	wpa_hexdump(MSG_DEBUG, "SCARD: GSM auth - RAND", rand, 16);
 	if (scard->sim_type == SCARD_GSM_SIM) {
 		cmdlen = 5 + 16;
-		memcpy(cmd + 5, rand, 16);
+		os_memcpy(cmd + 5, rand, 16);
 	} else {
 		cmdlen = 5 + 1 + 16;
 		cmd[0] = USIM_CLA;
 		cmd[3] = 0x80;
 		cmd[4] = 17;
 		cmd[5] = 16;
-		memcpy(cmd + 6, rand, 16);
+		os_memcpy(cmd + 6, rand, 16);
 	}
 	len = sizeof(resp);
 	ret = scard_transmit(scard, cmd, cmdlen, resp, &len);
@@ -865,8 +865,8 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
 				   len);
 			return -5;
 		}
-		memcpy(sres, buf, 4);
-		memcpy(kc, buf + 4, 8);
+		os_memcpy(sres, buf, 4);
+		os_memcpy(kc, buf + 4, 8);
 	} else {
 		if (len != 1 + 4 + 1 + 8 + 2) {
 			wpa_printf(MSG_WARNING, "SCARD: unexpected data "
@@ -879,8 +879,8 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
 				   "length (%d %d, expected 4 8)",
 				   buf[0], buf[5]);
 		}
-		memcpy(sres, buf + 1, 4);
-		memcpy(kc, buf + 6, 8);
+		os_memcpy(sres, buf + 1, 4);
+		os_memcpy(kc, buf + 6, 8);
 	}
 
 	wpa_hexdump(MSG_DEBUG, "SCARD: GSM auth - SRES", sres, 4);
@@ -936,9 +936,9 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 	wpa_hexdump(MSG_DEBUG, "SCARD: UMTS auth - AUTN", autn, AKA_AUTN_LEN);
 	cmdlen = 5 + 1 + AKA_RAND_LEN + 1 + AKA_AUTN_LEN;
 	cmd[5] = AKA_RAND_LEN;
-	memcpy(cmd + 6, rand, AKA_RAND_LEN);
+	os_memcpy(cmd + 6, rand, AKA_RAND_LEN);
 	cmd[6 + AKA_RAND_LEN] = AKA_AUTN_LEN;
-	memcpy(cmd + 6 + AKA_RAND_LEN + 1, autn, AKA_AUTN_LEN);
+	os_memcpy(cmd + 6 + AKA_RAND_LEN + 1, autn, AKA_AUTN_LEN);
 
 	len = sizeof(resp);
 	ret = scard_transmit(scard, cmd, sizeof(cmd), resp, &len);
@@ -969,7 +969,7 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 	if (len >= 2 + AKA_AUTS_LEN && buf[0] == 0xdc &&
 	    buf[1] == AKA_AUTS_LEN) {
 		wpa_printf(MSG_DEBUG, "SCARD: UMTS Synchronization-Failure");
-		memcpy(auts, buf + 2, AKA_AUTS_LEN);
+		os_memcpy(auts, buf + 2, AKA_AUTS_LEN);
 		wpa_hexdump(MSG_DEBUG, "SCARD: AUTS", auts, AKA_AUTS_LEN);
 		return -2;
 	} else if (len >= 6 + IK_LEN + CK_LEN && buf[0] == 0xdb) {
@@ -982,7 +982,7 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 			return -1;
 		}
 		*res_len = *pos++;
-		memcpy(res, pos, *res_len);
+		os_memcpy(res, pos, *res_len);
 		pos += *res_len;
 		wpa_hexdump(MSG_DEBUG, "SCARD: RES", res, *res_len);
 
@@ -992,7 +992,7 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 			return -1;
 		}
 		pos++;
-		memcpy(ck, pos, CK_LEN);
+		os_memcpy(ck, pos, CK_LEN);
 		pos += CK_LEN;
 		wpa_hexdump(MSG_DEBUG, "SCARD: CK", ck, CK_LEN);
 
@@ -1002,7 +1002,7 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 			return -1;
 		}
 		pos++;
-		memcpy(ik, pos, IK_LEN);
+		os_memcpy(ik, pos, IK_LEN);
 		pos += IK_LEN;
 		wpa_hexdump(MSG_DEBUG, "SCARD: IK", ik, IK_LEN);
 

@@ -26,7 +26,7 @@
     <para>Changes to configuration file can be reloaded be sending
     SIGHUP signal to <command>wpa_supplicant</command> ('killall -HUP
     wpa_supplicant'). Similarly, reloading can be triggered with
-    'wpa_cli reconfigure' command.</para>
+    the 'wpa_cli reconfigure' command.</para>
 
     <para>Configuration file can include one or more network blocks,
     e.g., one for each used SSID. wpa_supplicant will automatically

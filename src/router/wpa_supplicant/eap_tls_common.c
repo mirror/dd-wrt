@@ -30,7 +30,7 @@ static int eap_tls_check_blob(struct eap_sm *sm, const char **name,
 {
 	const struct wpa_config_blob *blob;
 
-	if (*name == NULL || strncmp(*name, "blob://", 7) != 0)
+	if (*name == NULL || os_strncmp(*name, "blob://", 7) != 0)
 		return 0;
 
 	blob = eap_get_config_blob(sm, *name + 7);
@@ -84,7 +84,7 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 				    struct tls_connection_params *params,
 				    struct wpa_ssid *config, int phase2)
 {
-	memset(params, 0, sizeof(*params));
+	os_memset(params, 0, sizeof(*params));
 	params->engine = config->engine;
 	if (phase2)
 		eap_tls_params_from_conf2(params, config);
@@ -130,13 +130,13 @@ static int eap_tls_init_connection(struct eap_sm *sm,
 		/* At this point with the pkcs11 engine the PIN might be wrong.
 		 * We reset the PIN in the configuration to be sure to not use
 		 * it again and the calling function must request a new one */
-		free(config->pin);
+		os_free(config->pin);
 		config->pin = NULL;
 	} else if (res == TLS_SET_PARAMS_ENGINE_PRV_VERIFY_FAILED) {
 		wpa_printf(MSG_INFO, "TLS: Failed to load private key");
 		/* We don't know exactly but maybe the PIN was wrong,
 		 * so ask for a new one. */
-		free(config->pin);
+		os_free(config->pin);
 		config->pin = NULL;
 		eap_sm_request_pin(sm);
 		sm->ignore = TRUE;
@@ -189,7 +189,7 @@ int eap_tls_ssl_init(struct eap_sm *sm, struct eap_ssl_data *data,
 	}
 
 	if (config->phase1 &&
-	    strstr(config->phase1, "include_tls_length=1")) {
+	    os_strstr(config->phase1, "include_tls_length=1")) {
 		wpa_printf(MSG_DEBUG, "TLS: Include TLS Message Length in "
 			   "unfragmented packets");
 		data->include_tls_length = 1;
@@ -213,8 +213,8 @@ done:
 void eap_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
 {
 	tls_connection_deinit(sm->ssl_ctx, data->conn);
-	free(data->tls_in);
-	free(data->tls_out);
+	os_free(data->tls_in);
+	os_free(data->tls_out);
 }
 
 
@@ -238,7 +238,7 @@ u8 * eap_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	struct tls_keys keys;
 	u8 *rnd = NULL, *out;
 
-	out = malloc(len);
+	out = os_malloc(len);
 	if (out == NULL)
 		return NULL;
 
@@ -259,24 +259,24 @@ u8 * eap_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	    keys.master_key == NULL)
 		goto fail;
 
-	rnd = malloc(keys.client_random_len + keys.server_random_len);
+	rnd = os_malloc(keys.client_random_len + keys.server_random_len);
 	if (rnd == NULL)
 		goto fail;
-	memcpy(rnd, keys.client_random, keys.client_random_len);
-	memcpy(rnd + keys.client_random_len, keys.server_random,
-	       keys.server_random_len);
+	os_memcpy(rnd, keys.client_random, keys.client_random_len);
+	os_memcpy(rnd + keys.client_random_len, keys.server_random,
+		  keys.server_random_len);
 
 	if (tls_prf(keys.master_key, keys.master_key_len,
 		    label, rnd, keys.client_random_len +
 		    keys.server_random_len, out, len))
 		goto fail;
 
-	free(rnd);
+	os_free(rnd);
 	return out;
 
 fail:
-	free(out);
-	free(rnd);
+	os_free(out);
+	os_free(rnd);
 	return NULL;
 }
 
@@ -306,7 +306,7 @@ const u8 * eap_tls_data_reassemble(
 
 	if (data->tls_in_left > in_len || data->tls_in) {
 		if (data->tls_in_len + in_len == 0) {
-			free(data->tls_in);
+			os_free(data->tls_in);
 			data->tls_in = NULL;
 			data->tls_in_len = 0;
 			wpa_printf(MSG_WARNING, "SSL: Invalid reassembly "
@@ -317,16 +317,16 @@ const u8 * eap_tls_data_reassemble(
 				   (unsigned long) in_len);
 			return NULL;
 		}
-		buf = realloc(data->tls_in, data->tls_in_len + in_len);
+		buf = os_realloc(data->tls_in, data->tls_in_len + in_len);
 		if (buf == NULL) {
-			free(data->tls_in);
+			os_free(data->tls_in);
 			data->tls_in = NULL;
 			data->tls_in_len = 0;
 			wpa_printf(MSG_INFO, "SSL: Could not allocate memory "
 				   "for TLS data");
 			return NULL;
 		}
-		memcpy(buf + data->tls_in_len, in_data, in_len);
+		os_memcpy(buf + data->tls_in_len, in_data, in_len);
 		data->tls_in = buf;
 		data->tls_in_len += in_len;
 		if (in_len > data->tls_in_left) {
@@ -344,10 +344,10 @@ const u8 * eap_tls_data_reassemble(
 		}
 	} else {
 		data->tls_in_left = 0;
-		data->tls_in = malloc(in_len ? in_len : 1);
+		data->tls_in = os_malloc(in_len ? in_len : 1);
 		if (data->tls_in == NULL)
 			return NULL;
-		memcpy(data->tls_in, in_data, in_len);
+		os_memcpy(data->tls_in, in_data, in_len);
 		data->tls_in_len = in_len;
 	}
 
@@ -376,7 +376,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 		/* This should not happen.. */
 		wpa_printf(MSG_INFO, "SSL: eap_tls_process_helper - pending "
 			   "tls_out data even though tls_out_len = 0");
-		free(data->tls_out);
+		os_free(data->tls_out);
 		WPA_ASSERT(data->tls_out == NULL);
 	}
 	appl_data = NULL;
@@ -387,7 +387,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 
 	/* Clear reassembled input data (if the buffer was needed). */
 	data->tls_in_left = data->tls_in_total = data->tls_in_len = 0;
-	free(data->tls_in);
+	os_free(data->tls_in);
 	data->tls_in = NULL;
 
 	if (appl_data &&
@@ -400,7 +400,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 		return 2;
 	}
 
-	free(appl_data);
+	os_free(appl_data);
 
 	return 0;
 }
@@ -449,13 +449,13 @@ static int eap_tls_process_output(struct eap_ssl_data *data, int eap_type,
 		pos += 4;
 	}
 
-	memcpy(pos, &data->tls_out[data->tls_out_pos], len);
+	os_memcpy(pos, &data->tls_out[data->tls_out_pos], len);
 	data->tls_out_pos += len;
 
 	if (!more_fragments) {
 		data->tls_out_len = 0;
 		data->tls_out_pos = 0;
-		free(data->tls_out);
+		os_free(data->tls_out);
 		data->tls_out = NULL;
 	}
 
@@ -523,7 +523,7 @@ int eap_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 * needing more data should have been caught above based on
 		 * the TLS Message Length field. */
 		wpa_printf(MSG_DEBUG, "SSL: No data to be sent out");
-		free(data->tls_out);
+		os_free(data->tls_out);
 		data->tls_out = NULL;
 		return 1;
 	}
@@ -566,10 +566,10 @@ u8 * eap_tls_build_ack(struct eap_ssl_data *data, size_t *respDataLen, u8 id,
  */
 int eap_tls_reauth_init(struct eap_sm *sm, struct eap_ssl_data *data)
 {
-	free(data->tls_in);
+	os_free(data->tls_in);
 	data->tls_in = NULL;
 	data->tls_in_len = data->tls_in_left = data->tls_in_total = 0;
-	free(data->tls_out);
+	os_free(data->tls_out);
 	data->tls_out = NULL;
 	data->tls_out_len = data->tls_out_pos = 0;
 
@@ -590,11 +590,14 @@ int eap_tls_status(struct eap_sm *sm, struct eap_ssl_data *data, char *buf,
 		   size_t buflen, int verbose)
 {
 	char name[128];
-	int len = 0;
+	int len = 0, ret;
 
 	if (tls_get_cipher(sm->ssl_ctx, data->conn, name, sizeof(name)) == 0) {
-		len += snprintf(buf + len, buflen - len,
-				"EAP TLS cipher=%s\n", name);
+		ret = os_snprintf(buf + len, buflen - len,
+				  "EAP TLS cipher=%s\n", name);
+		if (ret < 0 || (size_t) ret >= buflen - len)
+			return len;
+		len += ret;
 	}
 
 	return len;
@@ -651,7 +654,7 @@ const u8 * eap_tls_process_init(struct eap_sm *sm, struct eap_ssl_data *data,
 		if (data->tls_in_left == 0) {
 			data->tls_in_total = tls_msg_len;
 			data->tls_in_left = tls_msg_len;
-			free(data->tls_in);
+			os_free(data->tls_in);
 			data->tls_in = NULL;
 			data->tls_in_len = 0;
 		}

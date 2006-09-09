@@ -22,6 +22,9 @@
 #include "ctrl_iface.h"
 #include "wpa_ctrl.h"
 
+
+#define COOKIE_LEN 8
+
 /* Per-interface ctrl_iface */
 
 /**
@@ -44,6 +47,7 @@ struct ctrl_iface_priv {
 	struct wpa_supplicant *wpa_s;
 	int sock;
 	struct wpa_ctrl_dst *ctrl_dst;
+	u8 cookie[COOKIE_LEN];
 };
 
 
@@ -53,10 +57,10 @@ static int wpa_supplicant_ctrl_iface_attach(struct ctrl_iface_priv *priv,
 {
 	struct wpa_ctrl_dst *dst;
 
-	dst = wpa_zalloc(sizeof(*dst));
+	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
-	memcpy(&dst->addr, from, sizeof(struct sockaddr_in));
+	os_memcpy(&dst->addr, from, sizeof(struct sockaddr_in));
 	dst->addrlen = fromlen;
 	dst->debug_level = MSG_INFO;
 	dst->next = priv->ctrl_dst;
@@ -81,7 +85,7 @@ static int wpa_supplicant_ctrl_iface_detach(struct ctrl_iface_priv *priv,
 				priv->ctrl_dst = dst->next;
 			else
 				prev->next = dst->next;
-			free(dst);
+			os_free(dst);
 			wpa_printf(MSG_DEBUG, "CTRL_IFACE monitor detached "
 				   "%s:%d", inet_ntoa(from->sin_addr),
 				   ntohs(from->sin_port));
@@ -120,18 +124,39 @@ static int wpa_supplicant_ctrl_iface_level(struct ctrl_iface_priv *priv,
 }
 
 
+static char *
+wpa_supplicant_ctrl_iface_get_cookie(struct ctrl_iface_priv *priv,
+				     size_t *reply_len)
+{
+	char *reply;
+	reply = os_malloc(7 + 2 * COOKIE_LEN + 1);
+	if (reply == NULL) {
+		*reply_len = 1;
+		return NULL;
+	}
+
+	os_memcpy(reply, "COOKIE=", 7);
+	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1,
+			 priv->cookie, COOKIE_LEN);
+
+	*reply_len = 7 + 2 * COOKIE_LEN;
+	return reply;
+}
+
+
 static void wpa_supplicant_ctrl_iface_receive(int sock, void *eloop_ctx,
 					      void *sock_ctx)
 {
 	struct wpa_supplicant *wpa_s = eloop_ctx;
 	struct ctrl_iface_priv *priv = sock_ctx;
-	char buf[256];
+	char buf[256], *pos;
 	int res;
 	struct sockaddr_in from;
 	socklen_t fromlen = sizeof(from);
 	char *reply = NULL;
 	size_t reply_len = 0;
 	int new_attached = 0;
+	u8 cookie[COOKIE_LEN];
 
 	res = recvfrom(sock, buf, sizeof(buf) - 1, 0,
 		       (struct sockaddr *) &from, &fromlen);
@@ -139,35 +164,81 @@ static void wpa_supplicant_ctrl_iface_receive(int sock, void *eloop_ctx,
 		perror("recvfrom(ctrl_iface)");
 		return;
 	}
+	if (from.sin_addr.s_addr != htonl((127 << 24) | 1)) {
+		/*
+		 * The OS networking stack is expected to drop this kind of
+		 * frames since the socket is bound to only localhost address.
+		 * Just in case, drop the frame if it is coming from any other
+		 * address.
+		 */
+		wpa_printf(MSG_DEBUG, "CTRL: Drop packet from unexpected "
+			   "source %s", inet_ntoa(from.sin_addr));
+		return;
+	}
 	buf[res] = '\0';
 
-	if (strcmp(buf, "ATTACH") == 0) {
+	if (os_strcmp(buf, "GET_COOKIE") == 0) {
+		reply = wpa_supplicant_ctrl_iface_get_cookie(priv, &reply_len);
+		goto done;
+	}
+
+	/*
+	 * Require that the client includes a prefix with the 'cookie' value
+	 * fetched with GET_COOKIE command. This is used to verify that the
+	 * client has access to a bidirectional link over UDP in order to
+	 * avoid attacks using forged localhost IP address even if the OS does
+	 * not block such frames from remote destinations.
+	 */
+	if (os_strncmp(buf, "COOKIE=", 7) != 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - "
+			   "drop request");
+		return;
+	}
+
+	if (hexstr2bin(buf + 7, cookie, COOKIE_LEN) < 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the "
+			   "request - drop request");
+		return;
+	}
+
+	if (os_memcmp(cookie, priv->cookie, COOKIE_LEN) != 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - "
+			   "drop request");
+		return;
+	}
+
+	pos = buf + 7 + 2 * COOKIE_LEN;
+	while (*pos == ' ')
+		pos++;
+
+	if (os_strcmp(pos, "ATTACH") == 0) {
 		if (wpa_supplicant_ctrl_iface_attach(priv, &from, fromlen))
 			reply_len = 1;
 		else {
 			new_attached = 1;
 			reply_len = 2;
 		}
-	} else if (strcmp(buf, "DETACH") == 0) {
+	} else if (os_strcmp(pos, "DETACH") == 0) {
 		if (wpa_supplicant_ctrl_iface_detach(priv, &from, fromlen))
 			reply_len = 1;
 		else
 			reply_len = 2;
-	} else if (strncmp(buf, "LEVEL ", 6) == 0) {
+	} else if (os_strncmp(pos, "LEVEL ", 6) == 0) {
 		if (wpa_supplicant_ctrl_iface_level(priv, &from, fromlen,
-						    buf + 6))
+						    pos + 6))
 			reply_len = 1;
 		else
 			reply_len = 2;
 	} else {
-		reply = wpa_supplicant_ctrl_iface_process(wpa_s, buf,
+		reply = wpa_supplicant_ctrl_iface_process(wpa_s, pos,
 							  &reply_len);
 	}
 
+ done:
 	if (reply) {
 		sendto(sock, reply, reply_len, 0, (struct sockaddr *) &from,
 		       fromlen);
-		free(reply);
+		os_free(reply);
 	} else if (reply_len == 1) {
 		sendto(sock, "FAIL\n", 5, 0, (struct sockaddr *) &from,
 		       fromlen);
@@ -187,11 +258,12 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 	struct ctrl_iface_priv *priv;
 	struct sockaddr_in addr;
 
-	priv = wpa_zalloc(sizeof(*priv));
+	priv = os_zalloc(sizeof(*priv));
 	if (priv == NULL)
 		return NULL;
 	priv->wpa_s = wpa_s;
 	priv->sock = -1;
+	os_get_random(priv->cookie, COOKIE_LEN);
 
 	if (wpa_s->conf->ctrl_interface == NULL)
 		return priv;
@@ -202,7 +274,7 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		goto fail;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl((127 << 24) | 1);
 	addr.sin_port = htons(WPA_CTRL_IFACE_PORT);
@@ -219,6 +291,7 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 fail:
 	if (priv->sock >= 0)
 		close(priv->sock);
+	os_free(priv);
 	return NULL;
 }
 
@@ -247,9 +320,9 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 	while (dst) {
 		prev = dst;
 		dst = dst->next;
-		free(prev);
+		os_free(prev);
 	}
-	free(priv);
+	os_free(priv);
 }
 
 
@@ -266,15 +339,15 @@ void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
 	if (priv->sock < 0 || dst == NULL)
 		return;
 
-	snprintf(levelstr, sizeof(levelstr), "<%d>", level);
+	os_snprintf(levelstr, sizeof(levelstr), "<%d>", level);
 
-	llen = strlen(levelstr);
-	sbuf = malloc(llen + len);
+	llen = os_strlen(levelstr);
+	sbuf = os_malloc(llen + len);
 	if (sbuf == NULL)
 		return;
 
-	memcpy(sbuf, levelstr, llen);
-	memcpy(sbuf + llen, buf, len);
+	os_memcpy(sbuf, levelstr, llen);
+	os_memcpy(sbuf + llen, buf, len);
 
 	idx = 0;
 	while (dst) {
@@ -299,7 +372,7 @@ void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
 		idx++;
 		dst = next;
 	}
-	free(sbuf);
+	os_free(sbuf);
 }
 
 
@@ -315,19 +388,42 @@ void wpa_supplicant_ctrl_iface_wait(struct ctrl_iface_priv *priv)
 
 struct ctrl_iface_global_priv {
 	int sock;
+	u8 cookie[COOKIE_LEN];
 };
+
+
+static char *
+wpa_supplicant_global_get_cookie(struct ctrl_iface_global_priv *priv,
+				 size_t *reply_len)
+{
+	char *reply;
+	reply = os_malloc(7 + 2 * COOKIE_LEN + 1);
+	if (reply == NULL) {
+		*reply_len = 1;
+		return NULL;
+	}
+
+	os_memcpy(reply, "COOKIE=", 7);
+	wpa_snprintf_hex(reply + 7, 2 * COOKIE_LEN + 1,
+			 priv->cookie, COOKIE_LEN);
+
+	*reply_len = 7 + 2 * COOKIE_LEN;
+	return reply;
+}
 
 
 static void wpa_supplicant_global_ctrl_iface_receive(int sock, void *eloop_ctx,
 						     void *sock_ctx)
 {
 	struct wpa_global *global = eloop_ctx;
-	char buf[256];
+	struct ctrl_iface_global_priv *priv = sock_ctx;
+	char buf[256], *pos;
 	int res;
 	struct sockaddr_in from;
 	socklen_t fromlen = sizeof(from);
 	char *reply;
 	size_t reply_len;
+	u8 cookie[COOKIE_LEN];
 
 	res = recvfrom(sock, buf, sizeof(buf) - 1, 0,
 		       (struct sockaddr *) &from, &fromlen);
@@ -335,15 +431,54 @@ static void wpa_supplicant_global_ctrl_iface_receive(int sock, void *eloop_ctx,
 		perror("recvfrom(ctrl_iface)");
 		return;
 	}
+	if (from.sin_addr.s_addr != htonl((127 << 24) | 1)) {
+		/*
+		 * The OS networking stack is expected to drop this kind of
+		 * frames since the socket is bound to only localhost address.
+		 * Just in case, drop the frame if it is coming from any other
+		 * address.
+		 */
+		wpa_printf(MSG_DEBUG, "CTRL: Drop packet from unexpected "
+			   "source %s", inet_ntoa(from.sin_addr));
+		return;
+	}
 	buf[res] = '\0';
 
-	reply = wpa_supplicant_global_ctrl_iface_process(global, buf,
+	if (os_strcmp(buf, "GET_COOKIE") == 0) {
+		reply = wpa_supplicant_global_get_cookie(priv, &reply_len);
+		goto done;
+	}
+
+	if (os_strncmp(buf, "COOKIE=", 7) != 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: No cookie in the request - "
+			   "drop request");
+		return;
+	}
+
+	if (hexstr2bin(buf + 7, cookie, COOKIE_LEN) < 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie format in the "
+			   "request - drop request");
+		return;
+	}
+
+	if (os_memcmp(cookie, priv->cookie, COOKIE_LEN) != 0) {
+		wpa_printf(MSG_DEBUG, "CTLR: Invalid cookie in the request - "
+			   "drop request");
+		return;
+	}
+
+	pos = buf + 7 + 2 * COOKIE_LEN;
+	while (*pos == ' ')
+		pos++;
+
+	reply = wpa_supplicant_global_ctrl_iface_process(global, pos,
 							 &reply_len);
 
+ done:
 	if (reply) {
 		sendto(sock, reply, reply_len, 0, (struct sockaddr *) &from,
 		       fromlen);
-		free(reply);
+		os_free(reply);
 	} else if (reply_len) {
 		sendto(sock, "FAIL\n", 5, 0, (struct sockaddr *) &from,
 		       fromlen);
@@ -357,10 +492,11 @@ wpa_supplicant_global_ctrl_iface_init(struct wpa_global *global)
 	struct ctrl_iface_global_priv *priv;
 	struct sockaddr_in addr;
 
-	priv = wpa_zalloc(sizeof(*priv));
+	priv = os_zalloc(sizeof(*priv));
 	if (priv == NULL)
 		return NULL;
 	priv->sock = -1;
+	os_get_random(priv->cookie, COOKIE_LEN);
 
 	if (global->params.ctrl_interface == NULL)
 		return priv;
@@ -374,7 +510,7 @@ wpa_supplicant_global_ctrl_iface_init(struct wpa_global *global)
 		goto fail;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	os_memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl((127 << 24) | 1);
 	addr.sin_port = htons(WPA_GLOBAL_CTRL_IFACE_PORT);
@@ -385,14 +521,14 @@ wpa_supplicant_global_ctrl_iface_init(struct wpa_global *global)
 
 	eloop_register_read_sock(priv->sock,
 				 wpa_supplicant_global_ctrl_iface_receive,
-				 global, NULL);
+				 global, priv);
 
 	return priv;
 
 fail:
 	if (priv->sock >= 0)
 		close(priv->sock);
-	free(priv);
+	os_free(priv);
 	return NULL;
 }
 
@@ -404,5 +540,5 @@ wpa_supplicant_global_ctrl_iface_deinit(struct ctrl_iface_global_priv *priv)
 		eloop_unregister_read_sock(priv->sock);
 		close(priv->sock);
 	}
-	free(priv);
+	os_free(priv);
 }

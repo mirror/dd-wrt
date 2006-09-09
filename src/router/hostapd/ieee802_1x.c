@@ -464,6 +464,7 @@ static void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 
 	snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT ":%s",
 		 MAC2STR(hapd->own_addr), hapd->conf->ssid.ssid);
+	buf[sizeof(buf) - 1] = '\0';
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLED_STATION_ID,
 				 (u8 *) buf, strlen(buf))) {
 		printf("Could not add Called-Station-Id\n");
@@ -472,6 +473,7 @@ static void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 
 	snprintf(buf, sizeof(buf), RADIUS_802_1X_ADDR_FORMAT,
 		 MAC2STR(sta->addr));
+	buf[sizeof(buf) - 1] = '\0';
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CALLING_STATION_ID,
 				 (u8 *) buf, strlen(buf))) {
 		printf("Could not add Calling-Station-Id\n");
@@ -500,6 +502,7 @@ static void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 			 (radius_sta_rate(hapd, sta) & 1) ? ".5" : "",
 			 radius_mode_txt(hapd));
 	}
+	buf[sizeof(buf) - 1] = '\0';
 	if (!radius_msg_add_attr(msg, RADIUS_ATTR_CONNECT_INFO,
 				 (u8 *) buf, strlen(buf))) {
 		printf("Could not add Connect-Info\n");
@@ -1004,6 +1007,7 @@ static void ieee802_1x_decapsulate_radius(struct hostapd_data *hapd,
 		snprintf(buf, sizeof(buf), "unknown EAP code");
 		break;
 	}
+	buf[sizeof(buf) - 1] = '\0';
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE8021X,
 		       HOSTAPD_LEVEL_DEBUG, "decapsulated EAP packet (code=%d "
 		       "id=%d len=%d) from RADIUS server: %s",
@@ -1690,125 +1694,140 @@ int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
 int ieee802_1x_get_mib_sta(struct hostapd_data *hapd, struct sta_info *sta,
 			   char *buf, size_t buflen)
 {
-	int len = 0;
+	int len = 0, ret;
 	struct eapol_state_machine *sm = sta->eapol_sm;
 
 	if (sm == NULL)
 		return 0;
 
-	len += snprintf(buf + len, buflen - len,
-			"dot1xPaePortNumber=%d\n"
-			"dot1xPaePortProtocolVersion=%d\n"
-			"dot1xPaePortCapabilities=1\n"
-			"dot1xPaePortInitialize=%d\n"
-			"dot1xPaePortReauthenticate=FALSE\n",
-			sta->aid,
-			EAPOL_VERSION,
-			sm->initialize);
+	ret = snprintf(buf + len, buflen - len,
+		       "dot1xPaePortNumber=%d\n"
+		       "dot1xPaePortProtocolVersion=%d\n"
+		       "dot1xPaePortCapabilities=1\n"
+		       "dot1xPaePortInitialize=%d\n"
+		       "dot1xPaePortReauthenticate=FALSE\n",
+		       sta->aid,
+		       EAPOL_VERSION,
+		       sm->initialize);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* dot1xAuthConfigTable */
-	len += snprintf(buf + len, buflen - len,
-			"dot1xAuthPaeState=%d\n"
-			"dot1xAuthBackendAuthState=%d\n"
-			"dot1xAuthAdminControlledDirections=%d\n"
-			"dot1xAuthOperControlledDirections=%d\n"
-			"dot1xAuthAuthControlledPortStatus=%d\n"
-			"dot1xAuthAuthControlledPortControl=%d\n"
-			"dot1xAuthQuietPeriod=%u\n"
-			"dot1xAuthServerTimeout=%u\n"
-			"dot1xAuthReAuthPeriod=%u\n"
-			"dot1xAuthReAuthEnabled=%s\n"
-			"dot1xAuthKeyTxEnabled=%s\n",
-			sm->auth_pae_state + 1,
-			sm->be_auth_state + 1,
-			sm->adminControlledDirections,
-			sm->operControlledDirections,
-			sm->authPortStatus,
-			sm->portControl,
-			sm->quietPeriod,
-			sm->serverTimeout,
-			sm->reAuthPeriod,
-			bool_txt(sm->reAuthEnabled),
-			bool_txt(sm->keyTxEnabled));
+	ret = snprintf(buf + len, buflen - len,
+		       "dot1xAuthPaeState=%d\n"
+		       "dot1xAuthBackendAuthState=%d\n"
+		       "dot1xAuthAdminControlledDirections=%d\n"
+		       "dot1xAuthOperControlledDirections=%d\n"
+		       "dot1xAuthAuthControlledPortStatus=%d\n"
+		       "dot1xAuthAuthControlledPortControl=%d\n"
+		       "dot1xAuthQuietPeriod=%u\n"
+		       "dot1xAuthServerTimeout=%u\n"
+		       "dot1xAuthReAuthPeriod=%u\n"
+		       "dot1xAuthReAuthEnabled=%s\n"
+		       "dot1xAuthKeyTxEnabled=%s\n",
+		       sm->auth_pae_state + 1,
+		       sm->be_auth_state + 1,
+		       sm->adminControlledDirections,
+		       sm->operControlledDirections,
+		       sm->authPortStatus,
+		       sm->portControl,
+		       sm->quietPeriod,
+		       sm->serverTimeout,
+		       sm->reAuthPeriod,
+		       bool_txt(sm->reAuthEnabled),
+		       bool_txt(sm->keyTxEnabled));
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* dot1xAuthStatsTable */
-	len += snprintf(buf + len, buflen - len,
-			"dot1xAuthEapolFramesRx=%u\n"
-			"dot1xAuthEapolFramesTx=%u\n"
-			"dot1xAuthEapolStartFramesRx=%u\n"
-			"dot1xAuthEapolLogoffFramesRx=%u\n"
-			"dot1xAuthEapolRespIdFramesRx=%u\n"
-			"dot1xAuthEapolRespFramesRx=%u\n"
-			"dot1xAuthEapolReqIdFramesTx=%u\n"
-			"dot1xAuthEapolReqFramesTx=%u\n"
-			"dot1xAuthInvalidEapolFramesRx=%u\n"
-			"dot1xAuthEapLengthErrorFramesRx=%u\n"
-			"dot1xAuthLastEapolFrameVersion=%u\n"
-			"dot1xAuthLastEapolFrameSource=" MACSTR "\n",
-			sm->dot1xAuthEapolFramesRx,
-			sm->dot1xAuthEapolFramesTx,
-			sm->dot1xAuthEapolStartFramesRx,
-			sm->dot1xAuthEapolLogoffFramesRx,
-			sm->dot1xAuthEapolRespIdFramesRx,
-			sm->dot1xAuthEapolRespFramesRx,
-			sm->dot1xAuthEapolReqIdFramesTx,
-			sm->dot1xAuthEapolReqFramesTx,
-			sm->dot1xAuthInvalidEapolFramesRx,
-			sm->dot1xAuthEapLengthErrorFramesRx,
-			sm->dot1xAuthLastEapolFrameVersion,
-			MAC2STR(sm->addr));
+	ret = snprintf(buf + len, buflen - len,
+		       "dot1xAuthEapolFramesRx=%u\n"
+		       "dot1xAuthEapolFramesTx=%u\n"
+		       "dot1xAuthEapolStartFramesRx=%u\n"
+		       "dot1xAuthEapolLogoffFramesRx=%u\n"
+		       "dot1xAuthEapolRespIdFramesRx=%u\n"
+		       "dot1xAuthEapolRespFramesRx=%u\n"
+		       "dot1xAuthEapolReqIdFramesTx=%u\n"
+		       "dot1xAuthEapolReqFramesTx=%u\n"
+		       "dot1xAuthInvalidEapolFramesRx=%u\n"
+		       "dot1xAuthEapLengthErrorFramesRx=%u\n"
+		       "dot1xAuthLastEapolFrameVersion=%u\n"
+		       "dot1xAuthLastEapolFrameSource=" MACSTR "\n",
+		       sm->dot1xAuthEapolFramesRx,
+		       sm->dot1xAuthEapolFramesTx,
+		       sm->dot1xAuthEapolStartFramesRx,
+		       sm->dot1xAuthEapolLogoffFramesRx,
+		       sm->dot1xAuthEapolRespIdFramesRx,
+		       sm->dot1xAuthEapolRespFramesRx,
+		       sm->dot1xAuthEapolReqIdFramesTx,
+		       sm->dot1xAuthEapolReqFramesTx,
+		       sm->dot1xAuthInvalidEapolFramesRx,
+		       sm->dot1xAuthEapLengthErrorFramesRx,
+		       sm->dot1xAuthLastEapolFrameVersion,
+		       MAC2STR(sm->addr));
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* dot1xAuthDiagTable */
-	len += snprintf(buf + len, buflen - len,
-			"dot1xAuthEntersConnecting=%u\n"
-			"dot1xAuthEapLogoffsWhileConnecting=%u\n"
-			"dot1xAuthEntersAuthenticating=%u\n"
-			"dot1xAuthAuthSuccessesWhileAuthenticating=%u\n"
-			"dot1xAuthAuthTimeoutsWhileAuthenticating=%u\n"
-			"dot1xAuthAuthFailWhileAuthenticating=%u\n"
-			"dot1xAuthAuthEapStartsWhileAuthenticating=%u\n"
-			"dot1xAuthAuthEapLogoffWhileAuthenticating=%u\n"
-			"dot1xAuthAuthReauthsWhileAuthenticated=%u\n"
-			"dot1xAuthAuthEapStartsWhileAuthenticated=%u\n"
-			"dot1xAuthAuthEapLogoffWhileAuthenticated=%u\n"
-			"dot1xAuthBackendResponses=%u\n"
-			"dot1xAuthBackendAccessChallenges=%u\n"
-			"dot1xAuthBackendOtherRequestsToSupplicant=%u\n"
-			"dot1xAuthBackendAuthSuccesses=%u\n"
-			"dot1xAuthBackendAuthFails=%u\n",
-			sm->authEntersConnecting,
-			sm->authEapLogoffsWhileConnecting,
-			sm->authEntersAuthenticating,
-			sm->authAuthSuccessesWhileAuthenticating,
-			sm->authAuthTimeoutsWhileAuthenticating,
-			sm->authAuthFailWhileAuthenticating,
-			sm->authAuthEapStartsWhileAuthenticating,
-			sm->authAuthEapLogoffWhileAuthenticating,
-			sm->authAuthReauthsWhileAuthenticated,
-			sm->authAuthEapStartsWhileAuthenticated,
-			sm->authAuthEapLogoffWhileAuthenticated,
-			sm->backendResponses,
-			sm->backendAccessChallenges,
-			sm->backendOtherRequestsToSupplicant,
-			sm->backendAuthSuccesses,
-			sm->backendAuthFails);
+	ret = snprintf(buf + len, buflen - len,
+		       "dot1xAuthEntersConnecting=%u\n"
+		       "dot1xAuthEapLogoffsWhileConnecting=%u\n"
+		       "dot1xAuthEntersAuthenticating=%u\n"
+		       "dot1xAuthAuthSuccessesWhileAuthenticating=%u\n"
+		       "dot1xAuthAuthTimeoutsWhileAuthenticating=%u\n"
+		       "dot1xAuthAuthFailWhileAuthenticating=%u\n"
+		       "dot1xAuthAuthEapStartsWhileAuthenticating=%u\n"
+		       "dot1xAuthAuthEapLogoffWhileAuthenticating=%u\n"
+		       "dot1xAuthAuthReauthsWhileAuthenticated=%u\n"
+		       "dot1xAuthAuthEapStartsWhileAuthenticated=%u\n"
+		       "dot1xAuthAuthEapLogoffWhileAuthenticated=%u\n"
+		       "dot1xAuthBackendResponses=%u\n"
+		       "dot1xAuthBackendAccessChallenges=%u\n"
+		       "dot1xAuthBackendOtherRequestsToSupplicant=%u\n"
+		       "dot1xAuthBackendAuthSuccesses=%u\n"
+		       "dot1xAuthBackendAuthFails=%u\n",
+		       sm->authEntersConnecting,
+		       sm->authEapLogoffsWhileConnecting,
+		       sm->authEntersAuthenticating,
+		       sm->authAuthSuccessesWhileAuthenticating,
+		       sm->authAuthTimeoutsWhileAuthenticating,
+		       sm->authAuthFailWhileAuthenticating,
+		       sm->authAuthEapStartsWhileAuthenticating,
+		       sm->authAuthEapLogoffWhileAuthenticating,
+		       sm->authAuthReauthsWhileAuthenticated,
+		       sm->authAuthEapStartsWhileAuthenticated,
+		       sm->authAuthEapLogoffWhileAuthenticated,
+		       sm->backendResponses,
+		       sm->backendAccessChallenges,
+		       sm->backendOtherRequestsToSupplicant,
+		       sm->backendAuthSuccesses,
+		       sm->backendAuthFails);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* dot1xAuthSessionStatsTable */
-	len += snprintf(buf + len, buflen - len,
-			/* TODO: dot1xAuthSessionOctetsRx */
-			/* TODO: dot1xAuthSessionOctetsTx */
-			/* TODO: dot1xAuthSessionFramesRx */
-			/* TODO: dot1xAuthSessionFramesTx */
-			"dot1xAuthSessionId=%08X-%08X\n"
-			"dot1xAuthSessionAuthenticMethod=%d\n"
-			"dot1xAuthSessionTime=%u\n"
-			"dot1xAuthSessionTerminateCause=999\n"
-			"dot1xAuthSessionUserName=%s\n",
-			sta->acct_session_id_hi, sta->acct_session_id_lo,
-			wpa_auth_sta_key_mgmt(sta->wpa_sm) ==
-			WPA_KEY_MGMT_IEEE8021X ? 1 : 2,
-			(unsigned int) (time(NULL) - sta->acct_session_start),
-			sm->identity);
+	ret = snprintf(buf + len, buflen - len,
+		       /* TODO: dot1xAuthSessionOctetsRx */
+		       /* TODO: dot1xAuthSessionOctetsTx */
+		       /* TODO: dot1xAuthSessionFramesRx */
+		       /* TODO: dot1xAuthSessionFramesTx */
+		       "dot1xAuthSessionId=%08X-%08X\n"
+		       "dot1xAuthSessionAuthenticMethod=%d\n"
+		       "dot1xAuthSessionTime=%u\n"
+		       "dot1xAuthSessionTerminateCause=999\n"
+		       "dot1xAuthSessionUserName=%s\n",
+		       sta->acct_session_id_hi, sta->acct_session_id_lo,
+		       wpa_auth_sta_key_mgmt(sta->wpa_sm) ==
+		       WPA_KEY_MGMT_IEEE8021X ? 1 : 2,
+		       (unsigned int) (time(NULL) - sta->acct_session_start),
+		       sm->identity);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	return len;
 }

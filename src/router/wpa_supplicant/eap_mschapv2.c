@@ -114,7 +114,7 @@ static void eap_mschapv2_deinit(struct eap_sm *sm, void *priv);
 static void * eap_mschapv2_init(struct eap_sm *sm)
 {
 	struct eap_mschapv2_data *data;
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
@@ -122,23 +122,23 @@ static void * eap_mschapv2_init(struct eap_sm *sm)
 
 	if (sm->peer_challenge) {
 		data->full_key = 1;
-		data->peer_challenge = malloc(MSCHAPV2_CHAL_LEN);
+		data->peer_challenge = os_malloc(MSCHAPV2_CHAL_LEN);
 		if (data->peer_challenge == NULL) {
 			eap_mschapv2_deinit(sm, data);
 			return NULL;
 		}
-		memcpy(data->peer_challenge, sm->peer_challenge,
-		       MSCHAPV2_CHAL_LEN);
+		os_memcpy(data->peer_challenge, sm->peer_challenge,
+			  MSCHAPV2_CHAL_LEN);
 	}
 
 	if (sm->auth_challenge) {
-		data->auth_challenge = malloc(MSCHAPV2_CHAL_LEN);
+		data->auth_challenge = os_malloc(MSCHAPV2_CHAL_LEN);
 		if (data->auth_challenge == NULL) {
 			eap_mschapv2_deinit(sm, data);
 			return NULL;
 		}
-		memcpy(data->auth_challenge, sm->auth_challenge,
-		       MSCHAPV2_CHAL_LEN);
+		os_memcpy(data->auth_challenge, sm->auth_challenge,
+			  MSCHAPV2_CHAL_LEN);
 	}
 
 	data->phase2 = sm->init_phase2;
@@ -150,10 +150,10 @@ static void * eap_mschapv2_init(struct eap_sm *sm)
 static void eap_mschapv2_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_mschapv2_data *data = priv;
-	free(data->peer_challenge);
-	free(data->auth_challenge);
-	free(data->prev_challenge);
-	free(data);
+	os_free(data->peer_challenge);
+	os_free(data->auth_challenge);
+	os_free(data->prev_challenge);
+	os_free(data);
 }
 
 
@@ -270,12 +270,12 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: peer_challenge generated "
 			   "in Phase 1");
 		peer_challenge = data->peer_challenge;
-		memset(r->peer_challenge, 0, MSCHAPV2_CHAL_LEN);
+		os_memset(r->peer_challenge, 0, MSCHAPV2_CHAL_LEN);
 	} else if (os_get_random(peer_challenge, MSCHAPV2_CHAL_LEN)) {
-		free(resp);
+		os_free(resp);
 		return NULL;
 	}
-	memset(r->reserved, 0, 8);
+	os_memset(r->reserved, 0, 8);
 	if (data->auth_challenge) {
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: auth_challenge generated "
 			   "in Phase 1");
@@ -288,7 +288,7 @@ static u8 * eap_mschapv2_challenge_reply(struct eap_sm *sm,
 
 	r->flags = 0; /* reserved, must be zero */
 
-	memcpy((u8 *) (r + 1), identity, identity_len);
+	os_memcpy((u8 *) (r + 1), identity, identity_len);
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: TX identifier %d mschapv2_id %d "
 		   "(response)", resp->identifier, ms->mschapv2_id);
 	return (u8 *) resp;
@@ -375,7 +375,7 @@ static void eap_mschapv2_password_changed(struct eap_sm *sm,
 			WPA_EVENT_PASSWORD_CHANGED
 			"EAP-MSCHAPV2: Password changed successfully");
 		data->prev_error = 0;
-		free(config->password);
+		os_free(config->password);
 		config->password = config->new_password;
 		config->new_password = NULL;
 		config->password_len = config->new_password_len;
@@ -415,7 +415,7 @@ static u8 * eap_mschapv2_success(struct eap_sm *sm,
 	if (!data->auth_response_valid || len < 42 ||
 	    pos[0] != 'S' || pos[1] != '=' ||
 	    hexstr2bin((char *) (pos + 2), recv_response, 20) ||
-	    memcmp(data->auth_response, recv_response, 20) != 0) {
+	    os_memcmp(data->auth_response, recv_response, 20) != 0) {
 		wpa_printf(MSG_WARNING, "EAP-MSCHAPV2: Invalid authenticator "
 			   "response in success request");
 		ret->methodState = METHOD_DONE;
@@ -471,30 +471,30 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 
 	pos = txt;
 
-	if (pos && strncmp(pos, "E=", 2) == 0) {
+	if (pos && os_strncmp(pos, "E=", 2) == 0) {
 		pos += 2;
 		data->prev_error = atoi(pos);
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: error %d",
 			   data->prev_error);
-		pos = strchr(pos, ' ');
+		pos = os_strchr(pos, ' ');
 		if (pos)
 			pos++;
 	}
 
-	if (pos && strncmp(pos, "R=", 2) == 0) {
+	if (pos && os_strncmp(pos, "R=", 2) == 0) {
 		pos += 2;
 		retry = atoi(pos);
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: retry is %sallowed",
 			   retry == 1 ? "" : "not ");
-		pos = strchr(pos, ' ');
+		pos = os_strchr(pos, ' ');
 		if (pos)
 			pos++;
 	}
 
-	if (pos && strncmp(pos, "C=", 2) == 0) {
+	if (pos && os_strncmp(pos, "C=", 2) == 0) {
 		int hex_len;
 		pos += 2;
-		hex_len = strchr(pos, ' ') - (char *) pos;
+		hex_len = os_strchr(pos, ' ') - (char *) pos;
 		if (hex_len == PASSWD_CHANGE_CHAL_LEN * 2) {
 			if (hexstr2bin(pos, data->passwd_change_challenge,
 				       PASSWD_CHANGE_CHAL_LEN)) {
@@ -511,7 +511,7 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 			wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: invalid failure "
 				   "challenge len %d", hex_len);
 		}
-		pos = strchr(pos, ' ');
+		pos = os_strchr(pos, ' ');
 		if (pos)
 			pos++;
 	} else {
@@ -519,17 +519,17 @@ static int eap_mschapv2_failure_txt(struct eap_sm *sm,
 			   "was not present in failure message");
 	}
 
-	if (pos && strncmp(pos, "V=", 2) == 0) {
+	if (pos && os_strncmp(pos, "V=", 2) == 0) {
 		pos += 2;
 		data->passwd_change_version = atoi(pos);
 		wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: password changing "
 			   "protocol version %d", data->passwd_change_version);
-		pos = strchr(pos, ' ');
+		pos = os_strchr(pos, ' ');
 		if (pos)
 			pos++;
 	}
 
-	if (pos && strncmp(pos, "M=", 2) == 0) {
+	if (pos && os_strncmp(pos, "M=", 2) == 0) {
 		pos += 2;
 		msg = pos;
 	}
@@ -612,12 +612,12 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
 
 	/* Peer-Challenge */
 	if (os_get_random(cp->peer_challenge, MSCHAPV2_CHAL_LEN)) {
-		free(resp);
+		os_free(resp);
 		return NULL;
 	}
 
 	/* Reserved, must be zero */
-	memset(cp->reserved, 0, 8);
+	os_memset(cp->reserved, 0, 8);
 
 	/* NT-Response */
 	wpa_hexdump(MSG_DEBUG, "EAP-MSCHAPV2: auth_challenge",
@@ -645,7 +645,7 @@ static u8 * eap_mschapv2_change_password(struct eap_sm *sm,
 	data->auth_response_valid = 1;
 
 	/* Flags */
-	memset(cp->flags, 0, 2);
+	os_memset(cp->flags, 0, 2);
 
 	wpa_printf(MSG_DEBUG, "EAP-MSCHAPV2: TX identifier %d mschapv2_id %d "
 		   "(change pw)", resp->identifier, ms->mschapv2_id);
@@ -688,12 +688,12 @@ static u8 * eap_mschapv2_failure(struct eap_sm *sm,
 	 * must allocate a large enough temporary buffer to create that since
 	 * the received message does not include nul termination.
 	 */
-	buf = malloc(len + 1);
+	buf = os_malloc(len + 1);
 	if (buf) {
-		memcpy(buf, msdata, len);
+		os_memcpy(buf, msdata, len);
 		buf[len] = '\0';
 		retry = eap_mschapv2_failure_txt(sm, data, buf);
-		free(buf);
+		os_free(buf);
 	}
 
 	ret->ignore = FALSE;
@@ -781,11 +781,11 @@ static void eap_mschapv2_copy_challenge(struct eap_mschapv2_data *data,
 	 * Store a copy of the challenge message, so that it can be processed
 	 * again in case retry is allowed after a possible failure.
 	 */
-	free(data->prev_challenge);
-	data->prev_challenge = malloc(reqDataLen);
+	os_free(data->prev_challenge);
+	data->prev_challenge = os_malloc(reqDataLen);
 	if (data->prev_challenge) {
 		data->prev_challenge_len = reqDataLen;
-		memcpy(data->prev_challenge, reqData, reqDataLen);
+		os_memcpy(data->prev_challenge, reqData, reqDataLen);
 	}
 }
 
@@ -891,7 +891,7 @@ static u8 * eap_mschapv2_getKey(struct eap_sm *sm, void *priv, size_t *len)
 		key_len = MSCHAPV2_KEY_LEN;
 	}
 
-	key = malloc(key_len);
+	key = os_malloc(key_len);
 	if (key == NULL)
 		return NULL;
 

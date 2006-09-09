@@ -239,8 +239,13 @@ enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 #define wpa_hexdump_key(l,t,b,le) do { } while (0)
 #define wpa_hexdump_ascii(l,t,b,le) do { } while (0)
 #define wpa_hexdump_ascii_key(l,t,b,le) do { } while (0)
+#define wpa_debug_open_file(void) do { } while (0)
+#define wpa_debug_close_file(void) do { } while (0)
 
 #else /* CONFIG_NO_STDOUT_DEBUG */
+
+int wpa_debug_open_file(void);
+void wpa_debug_close_file(void);
 
 /**
  * wpa_debug_printf_timestamp - Print timestamp for debug output
@@ -491,7 +496,7 @@ void perror(const char *s);
 
 #endif /* CONFIG_ANSI_C_EXTRA */
 
-void *wpa_zalloc(size_t size);
+#define wpa_zalloc(s) os_zalloc((s))
 
 #ifdef CONFIG_NATIVE_WINDOWS
 void wpa_unicode2ascii_inplace(TCHAR *str);

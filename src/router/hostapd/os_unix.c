@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd / OS specific functions for UNIX/POSIX systems
- * Copyright (c) 2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -33,6 +33,29 @@ int os_get_time(struct os_time *t)
 	t->sec = tv.tv_sec;
 	t->usec = tv.tv_usec;
 	return res;
+}
+
+
+int os_mktime(int year, int month, int day, int hour, int min, int sec,
+	      os_time_t *t)
+{
+	struct tm tm;
+
+	if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 ||
+	    hour < 0 || hour > 23 || min < 0 || min > 59 || sec < 0 ||
+	    sec > 60)
+		return -1;
+
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_year = year - 1900;
+	tm.tm_mon = month - 1;
+	tm.tm_mday = day;
+	tm.tm_hour = hour;
+	tm.tm_min = min;
+	tm.tm_sec = sec;
+
+	*t = (os_time_t) mktime(&tm);
+	return 0;
 }
 
 
@@ -150,4 +173,36 @@ int os_unsetenv(const char *name)
 #else
 	return unsetenv(name);
 #endif
+}
+
+
+char * os_readfile(const char *name, size_t *len)
+{
+	FILE *f;
+	char *buf;
+
+	f = fopen(name, "rb");
+	if (f == NULL)
+		return NULL;
+
+	fseek(f, 0, SEEK_END);
+	*len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	buf = malloc(*len);
+	if (buf == NULL) {
+		fclose(f);
+		return NULL;
+	}
+
+	fread(buf, 1, *len, f);
+	fclose(f);
+
+	return buf;
+}
+
+
+void * os_zalloc(size_t size)
+{
+	return calloc(1, size);
 }

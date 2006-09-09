@@ -124,12 +124,12 @@ struct eap_fast_data {
 
 static void eap_fast_free_pac(struct eap_fast_pac *pac)
 {
-	free(pac->pac_opaque);
-	free(pac->pac_info);
-	free(pac->a_id);
-	free(pac->i_id);
-	free(pac->a_id_info);
-	free(pac);
+	os_free(pac->pac_opaque);
+	os_free(pac->pac_info);
+	os_free(pac->a_id);
+	os_free(pac->i_id);
+	os_free(pac->a_id_info);
+	os_free(pac);
 }
 
 
@@ -140,7 +140,7 @@ static struct eap_fast_pac * eap_fast_get_pac(struct eap_fast_data *data,
 
 	while (pac) {
 		if (pac->a_id_len == a_id_len &&
-		    memcmp(pac->a_id, a_id, a_id_len) == 0) {
+		    os_memcmp(pac->a_id, a_id, a_id_len) == 0) {
 			return pac;
 		}
 		pac = pac->next;
@@ -162,7 +162,7 @@ static int eap_fast_add_pac(struct eap_fast_data *data,
 	prev = NULL;
 	while (pac) {
 		if (pac->a_id_len == entry->a_id_len &&
-		    memcmp(pac->a_id, entry->a_id, pac->a_id_len) == 0) {
+		    os_memcmp(pac->a_id, entry->a_id, pac->a_id_len) == 0) {
 			if (prev == NULL) {
 				data->pac = pac->next;
 			} else {
@@ -178,59 +178,59 @@ static int eap_fast_add_pac(struct eap_fast_data *data,
 	}
 
 	/* Allocate a new entry and add it to the list of PACs. */
-	pac = wpa_zalloc(sizeof(*pac));
+	pac = os_zalloc(sizeof(*pac));
 	if (pac == NULL)
 		return -1;
 
-	memcpy(pac->pac_key, entry->pac_key, EAP_FAST_PAC_KEY_LEN);
+	os_memcpy(pac->pac_key, entry->pac_key, EAP_FAST_PAC_KEY_LEN);
 	if (entry->pac_opaque) {
-		pac->pac_opaque = malloc(entry->pac_opaque_len);
+		pac->pac_opaque = os_malloc(entry->pac_opaque_len);
 		if (pac->pac_opaque == NULL) {
 			eap_fast_free_pac(pac);
 			return -1;
 		}
-		memcpy(pac->pac_opaque, entry->pac_opaque,
-		       entry->pac_opaque_len);
+		os_memcpy(pac->pac_opaque, entry->pac_opaque,
+			  entry->pac_opaque_len);
 		pac->pac_opaque_len = entry->pac_opaque_len;
 	}
 	if (entry->pac_info) {
-		pac->pac_info = malloc(entry->pac_info_len);
+		pac->pac_info = os_malloc(entry->pac_info_len);
 		if (pac->pac_info == NULL) {
 			eap_fast_free_pac(pac);
 			return -1;
 		}
-		memcpy(pac->pac_info, entry->pac_info,
-		       entry->pac_info_len);
+		os_memcpy(pac->pac_info, entry->pac_info,
+			  entry->pac_info_len);
 		pac->pac_info_len = entry->pac_info_len;
 	}
 	if (entry->a_id) {
-		pac->a_id = malloc(entry->a_id_len);
+		pac->a_id = os_malloc(entry->a_id_len);
 		if (pac->a_id == NULL) {
 			eap_fast_free_pac(pac);
 			return -1;
 		}
-		memcpy(pac->a_id, entry->a_id,
-		       entry->a_id_len);
+		os_memcpy(pac->a_id, entry->a_id,
+			  entry->a_id_len);
 		pac->a_id_len = entry->a_id_len;
 	}
 	if (entry->i_id) {
-		pac->i_id = malloc(entry->i_id_len);
+		pac->i_id = os_malloc(entry->i_id_len);
 		if (pac->i_id == NULL) {
 			eap_fast_free_pac(pac);
 			return -1;
 		}
-		memcpy(pac->i_id, entry->i_id,
-		       entry->i_id_len);
+		os_memcpy(pac->i_id, entry->i_id,
+			  entry->i_id_len);
 		pac->i_id_len = entry->i_id_len;
 	}
 	if (entry->a_id_info) {
-		pac->a_id_info = malloc(entry->a_id_info_len);
+		pac->a_id_info = os_malloc(entry->a_id_info_len);
 		if (pac->a_id_info == NULL) {
 			eap_fast_free_pac(pac);
 			return -1;
 		}
-		memcpy(pac->a_id_info, entry->a_id_info,
-		       entry->a_id_info_len);
+		os_memcpy(pac->a_id_info, entry->a_id_info,
+			  entry->a_id_info_len);
 		pac->a_id_info_len = entry->a_id_info_len;
 	}
 	pac->next = data->pac;
@@ -264,7 +264,7 @@ static int eap_fast_read_line(struct eap_fast_read_ctx *rc, char *buf,
 		len = l_end - rc->pos;
 		if (len >= buf_len)
 			len = buf_len - 1;
-		memcpy(buf, rc->pos, len);
+		os_memcpy(buf, rc->pos, len);
 		buf[len] = '\0';
 		rc->pos = l_end + 1;
 	}
@@ -290,15 +290,15 @@ static u8 * eap_fast_parse_hex(const char *value, size_t *len)
 
 	if (value == NULL)
 		return NULL;
-	hlen = strlen(value);
+	hlen = os_strlen(value);
 	if (hlen & 1)
 		return NULL;
 	*len = hlen / 2;
-	buf = malloc(*len);
+	buf = os_malloc(*len);
 	if (buf == NULL)
 		return NULL;
 	if (hexstr2bin(value, buf, *len)) {
-		free(buf);
+		os_free(buf);
 		return NULL;
 	}
 	return buf;
@@ -318,9 +318,9 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 	if (pac_file == NULL)
 		return -1;
 
-	memset(&rc, 0, sizeof(rc));
+	os_memset(&rc, 0, sizeof(rc));
 
-	if (strncmp(pac_file, "blob://", 7) == 0) {
+	if (os_strncmp(pac_file, "blob://", 7) == 0) {
 		const struct wpa_config_blob *blob;
 		blob = eap_get_config_blob(sm, pac_file + 7);
 		if (blob == NULL) {
@@ -341,17 +341,17 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		}
 	}
 
-	buf = malloc(buf_len);
+	buf = os_malloc(buf_len);
 	if (buf == NULL) {
 		return -1;
 	}
 
 	line++;
 	if (eap_fast_read_line(&rc, buf, buf_len) < 0 ||
-	    strcmp(pac_file_hdr, buf) != 0) {
+	    os_strcmp(pac_file_hdr, buf) != 0) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Unrecognized header line in "
 			   "PAC file '%s'", pac_file);
-		free(buf);
+		os_free(buf);
 		if (rc.f)
 			fclose(rc.f);
 		return -1;
@@ -359,12 +359,12 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 
 	while (eap_fast_read_line(&rc, buf, buf_len) == 0) {
 		line++;
-		pos = strchr(buf, '=');
+		pos = os_strchr(buf, '=');
 		if (pos) {
 			*pos++ = '\0';
 		}
 
-		if (strcmp(buf, "START") == 0) {
+		if (os_strcmp(buf, "START") == 0) {
 			if (pac) {
 				wpa_printf(MSG_INFO, "EAP-FAST: START line "
 					   "without END in '%s:%d'",
@@ -372,14 +372,14 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				ret = -1;
 				break;
 			}
-			pac = wpa_zalloc(sizeof(*pac));
+			pac = os_zalloc(sizeof(*pac));
 			if (pac == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: No memory for "
 					   "PAC entry");
 				ret = -1;
 				break;
 			}
-		} else if (strcmp(buf, "END") == 0) {
+		} else if (os_strcmp(buf, "END") == 0) {
 			if (pac == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: END line "
 					   "without START in '%s:%d'",
@@ -391,7 +391,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 			data->pac = pac;
 			pac = NULL;
 			count++;
-		} else if (pac && strcmp(buf, "PAC-Key") == 0) {
+		} else if (pac && os_strcmp(buf, "PAC-Key") == 0) {
 			u8 *key;
 			size_t key_len;
 			key = eap_fast_parse_hex(pos, &key_len);
@@ -399,13 +399,13 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				wpa_printf(MSG_INFO, "EAP-FAST: Invalid "
 					   "PAC-Key '%s:%d'", pac_file, line);
 				ret = -1;
-				free(key);
+				os_free(key);
 				break;
 			}
 
-			memcpy(pac->pac_key, key, EAP_FAST_PAC_KEY_LEN);
-			free(key);
-		} else if (pac && strcmp(buf, "PAC-Opaque") == 0) {
+			os_memcpy(pac->pac_key, key, EAP_FAST_PAC_KEY_LEN);
+			os_free(key);
+		} else if (pac && os_strcmp(buf, "PAC-Opaque") == 0) {
 			pac->pac_opaque =
 				eap_fast_parse_hex(pos, &pac->pac_opaque_len);
 			if (pac->pac_opaque == NULL) {
@@ -415,7 +415,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				ret = -1;
 				break;
 			}
-		} else if (pac && strcmp(buf, "A-ID") == 0) {
+		} else if (pac && os_strcmp(buf, "A-ID") == 0) {
 			pac->a_id = eap_fast_parse_hex(pos, &pac->a_id_len);
 			if (pac->a_id == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: Invalid "
@@ -423,7 +423,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				ret = -1;
 				break;
 			}
-		} else if (pac && strcmp(buf, "I-ID") == 0) {
+		} else if (pac && os_strcmp(buf, "I-ID") == 0) {
 			pac->i_id = eap_fast_parse_hex(pos, &pac->i_id_len);
 			if (pac->i_id == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: Invalid "
@@ -431,7 +431,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				ret = -1;
 				break;
 			}
-		} else if (pac && strcmp(buf, "A-ID-Info") == 0) {
+		} else if (pac && os_strcmp(buf, "A-ID-Info") == 0) {
 			pac->a_id_info =
 				eap_fast_parse_hex(pos, &pac->a_id_info_len);
 			if (pac->a_id_info == NULL) {
@@ -451,7 +451,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		ret = -1;
 	}
 
-	free(buf);
+	os_free(buf);
 	if (rc.f)
 		fclose(rc.f);
 
@@ -469,18 +469,19 @@ static void eap_fast_write(char **buf, char **pos, size_t *buf_len,
 			   size_t len, int txt)
 {
 	size_t i, need;
+	int ret;
 
 	if (data == NULL || *buf == NULL)
 		return;
 
-	need = strlen(field) + len * 2 + 30;
+	need = os_strlen(field) + len * 2 + 30;
 	if (txt)
-		need += strlen(field) + len + 20;
+		need += os_strlen(field) + len + 20;
 
 	if (*pos - *buf + need > *buf_len) {
-		char *nbuf = realloc(*buf, *buf_len + need);
+		char *nbuf = os_realloc(*buf, *buf_len + need);
 		if (nbuf == NULL) {
-			free(*buf);
+			os_free(*buf);
 			*buf = NULL;
 			return;
 		}
@@ -488,18 +489,33 @@ static void eap_fast_write(char **buf, char **pos, size_t *buf_len,
 		*buf_len += need;
 	}
 
-	*pos += snprintf(*pos, *buf + *buf_len - *pos, "%s=", field);
+	ret = os_snprintf(*pos, *buf + *buf_len - *pos, "%s=", field);
+	if (ret < 0 || ret >= *buf + *buf_len - *pos)
+		return;
+	*pos += ret;
 	*pos += wpa_snprintf_hex(*pos, *buf + *buf_len - *pos, data, len);
-	*pos += snprintf(*pos, *buf + *buf_len - *pos, "\n");
+	ret = os_snprintf(*pos, *buf + *buf_len - *pos, "\n");
+	if (ret < 0 || ret >= *buf + *buf_len - *pos)
+		return;
+	*pos += ret;
 
 	if (txt) {
-		*pos += snprintf(*pos, *buf + *buf_len - *pos,
-				 "%s-txt=", field);
+		ret = os_snprintf(*pos, *buf + *buf_len - *pos,
+				  "%s-txt=", field);
+		if (ret < 0 || ret >= *buf + *buf_len - *pos)
+			return;
+		*pos += ret;
 		for (i = 0; i < len; i++) {
-			*pos += snprintf(*pos, *buf + *buf_len - *pos,
-					 "%c", data[i]);
+			ret = os_snprintf(*pos, *buf + *buf_len - *pos,
+					  "%c", data[i]);
+			if (ret < 0 || ret >= *buf + *buf_len - *pos)
+				return;
+			*pos += ret;
 		}
-		*pos += snprintf(*pos, *buf + *buf_len - *pos, "\n");
+		ret = os_snprintf(*pos, *buf + *buf_len - *pos, "\n");
+		if (ret < 0 || ret >= *buf + *buf_len - *pos)
+			return;
+		*pos += ret;
 	}
 }
 
@@ -509,7 +525,7 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 {
 	FILE *f;
 	struct eap_fast_pac *pac;
-	int count = 0;
+	int count = 0, ret;
 	char *buf, *pos;
 	size_t buf_len;
 
@@ -517,15 +533,21 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		return -1;
 
 	buf_len = 1024;
-	pos = buf = malloc(buf_len);
+	pos = buf = os_malloc(buf_len);
 	if (buf == NULL)
 		return -1;
 
-	pos += snprintf(pos, buf + buf_len - pos, "%s\n", pac_file_hdr);
+	ret = os_snprintf(pos, buf + buf_len - pos, "%s\n", pac_file_hdr);
+	if (ret < 0 || ret >= buf + buf_len - pos)
+		return -1;
+	pos += ret;
 
 	pac = data->pac;
 	while (pac) {
-		pos += snprintf(pos, buf + buf_len - pos, "START\n");
+		ret = os_snprintf(pos, buf + buf_len - pos, "START\n");
+		if (ret < 0 || ret >= buf + buf_len - pos)
+			return -1;
+		pos += ret;
 		eap_fast_write(&buf, &pos, &buf_len, "PAC-Key", pac->pac_key,
 			       EAP_FAST_PAC_KEY_LEN, 0);
 		eap_fast_write(&buf, &pos, &buf_len, "PAC-Opaque",
@@ -538,7 +560,10 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 			       pac->i_id_len, 1);
 		eap_fast_write(&buf, &pos, &buf_len, "A-ID-Info",
 			       pac->a_id_info, pac->a_id_info_len, 1);
-		pos += snprintf(pos, buf + buf_len - pos, "END\n");
+		ret = os_snprintf(pos, buf + buf_len - pos, "END\n");
+		if (ret < 0 || ret >= buf + buf_len - pos)
+			return -1;
+		pos += ret;
 		count++;
 		pac = pac->next;
 
@@ -549,17 +574,17 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		}
 	}
 
-	if (strncmp(pac_file, "blob://", 7) == 0) {
+	if (os_strncmp(pac_file, "blob://", 7) == 0) {
 		struct wpa_config_blob *blob;
-		blob = wpa_zalloc(sizeof(*blob));
+		blob = os_zalloc(sizeof(*blob));
 		if (blob == NULL) {
-			free(buf);
+			os_free(buf);
 			return -1;
 		}
 		blob->data = (u8 *) buf;
 		blob->len = pos - buf;
 		buf = NULL;
-		blob->name = strdup(pac_file + 7);
+		blob->name = os_strdup(pac_file + 7);
 		if (blob->name == NULL) {
 			wpa_config_free_blob(blob);
 			return -1;
@@ -570,11 +595,11 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		if (f == NULL) {
 			wpa_printf(MSG_INFO, "EAP-FAST: Failed to open PAC "
 				   "file '%s' for writing", pac_file);
-			free(buf);
+			os_free(buf);
 			return -1;
 		}
 		fprintf(f, "%s", buf);
-		free(buf);
+		os_free(buf);
 		fclose(f);
 	}
 
@@ -590,13 +615,13 @@ static void * eap_fast_init(struct eap_sm *sm)
 	struct eap_fast_data *data;
 	struct wpa_ssid *config = eap_get_config(sm);
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 	data->fast_version = EAP_FAST_VERSION;
 
 	if (config && config->phase1) {
-		if (strstr(config->phase1, "fast_provisioning=1")) {
+		if (os_strstr(config->phase1, "fast_provisioning=1")) {
 			data->provisioning_allowed = 1;
 			wpa_printf(MSG_DEBUG, "EAP-FAST: Automatic PAC "
 				   "provisioning is allowed");
@@ -608,14 +633,14 @@ static void * eap_fast_init(struct eap_sm *sm)
 		struct eap_method_type *methods = NULL, *_methods;
 		u8 method;
 		size_t num_methods = 0;
-		start = buf = strdup(config->phase2);
+		start = buf = os_strdup(config->phase2);
 		if (buf == NULL) {
 			eap_fast_deinit(sm, data);
 			return NULL;
 		}
 		while (start && *start != '\0') {
 			int vendor;
-			pos = strstr(start, "auth=");
+			pos = os_strstr(start, "auth=");
 			if (pos == NULL)
 				break;
 			if (start != pos && *(pos - 1) != ' ') {
@@ -624,7 +649,7 @@ static void * eap_fast_init(struct eap_sm *sm)
 			}
 
 			start = pos + 5;
-			pos = strchr(start, ' ');
+			pos = os_strchr(start, ' ');
 			if (pos)
 				*pos++ = '\0';
 			method = eap_get_phase2_type(start, &vendor);
@@ -634,12 +659,12 @@ static void * eap_fast_init(struct eap_sm *sm)
 					   "Phase2 method '%s'", start);
 			} else {
 				num_methods++;
-				_methods = realloc(
+				_methods = os_realloc(
 					methods,
 					num_methods * sizeof(*methods));
 				if (_methods == NULL) {
-					free(methods);
-					free(buf);
+					os_free(methods);
+					os_free(buf);
 					eap_fast_deinit(sm, data);
 					return NULL;
 				}
@@ -650,7 +675,7 @@ static void * eap_fast_init(struct eap_sm *sm)
 
 			start = pos;
 		}
-		free(buf);
+		os_free(buf);
 		data->phase2_types = methods;
 		data->num_phase2_types = num_methods;
 	}
@@ -705,9 +730,9 @@ static void eap_fast_deinit(struct eap_sm *sm, void *priv)
 		return;
 	if (data->phase2_priv && data->phase2_method)
 		data->phase2_method->deinit(sm, data->phase2_priv);
-	free(data->phase2_types);
-	free(data->key_block_a);
-	free(data->key_block_p);
+	os_free(data->phase2_types);
+	os_free(data->key_block_a);
+	os_free(data->key_block_p);
 	eap_tls_ssl_deinit(sm, &data->ssl);
 
 	pac = data->pac;
@@ -717,7 +742,7 @@ static void eap_fast_deinit(struct eap_sm *sm, void *priv)
 		pac = pac->next;
 		eap_fast_free_pac(prev);
 	}
-	free(data);
+	os_free(data);
 }
 
 
@@ -731,7 +756,7 @@ static int eap_fast_encrypt(struct eap_sm *sm, struct eap_fast_data *data,
 
 	/* TODO: add support for fragmentation, if needed. This will need to
 	 * add TLS Message Length field, if the frame is fragmented. */
-	resp = malloc(sizeof(struct eap_hdr) + 2 + data->ssl.tls_out_limit);
+	resp = os_malloc(sizeof(struct eap_hdr) + 2 + data->ssl.tls_out_limit);
 	if (resp == NULL)
 		return 0;
 
@@ -748,7 +773,7 @@ static int eap_fast_encrypt(struct eap_sm *sm, struct eap_fast_data *data,
 	if (res < 0) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Failed to encrypt Phase 2 "
 			   "data");
-		free(resp);
+		os_free(resp);
 		return 0;
 	}
 
@@ -773,7 +798,7 @@ static int eap_fast_phase2_nak(struct eap_fast_data *data,
 		    (u8 *) data->phase2_types,
 		    data->num_phase2_types * sizeof(struct eap_method_type));
 	*resp_len = sizeof(struct eap_hdr) + 1;
-	*resp = malloc(*resp_len + data->num_phase2_types);
+	*resp = os_malloc(*resp_len + data->num_phase2_types);
 	if (*resp == NULL)
 		return -1;
 
@@ -803,7 +828,7 @@ static int eap_fast_derive_msk(struct eap_fast_data *data)
 	if (data->key_block_a == NULL)
 		return -1;
 
-	memset(isk, 0, sizeof(isk));
+	os_memset(isk, 0, sizeof(isk));
 	sha1_t_prf(data->key_block_a->session_key_seed,
 		   sizeof(data->key_block_a->session_key_seed),
 		   "Inner Methods Compound Keys",
@@ -866,12 +891,12 @@ static int eap_fast_set_tls_master_secret(struct eap_sm *sm,
 		    server_random, server_random_len);
 
 	seed_len = keys.client_random_len + server_random_len;
-	seed = malloc(seed_len);
+	seed = os_malloc(seed_len);
 	if (seed == NULL)
 		return -1;
-	memcpy(seed, server_random, server_random_len);
-	memcpy(seed + server_random_len,
-	       keys.client_random, keys.client_random_len);
+	os_memcpy(seed, server_random, server_random_len);
+	os_memcpy(seed + server_random_len,
+		  keys.client_random, keys.client_random_len);
 
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: T-PRF seed", seed, seed_len);
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: PAC-Key",
@@ -881,7 +906,7 @@ static int eap_fast_set_tls_master_secret(struct eap_sm *sm,
 	sha1_t_prf(data->current_pac->pac_key, EAP_FAST_PAC_KEY_LEN,
 		   "PAC to master secret label hash",
 		   seed, seed_len, master_secret, sizeof(master_secret));
-	free(seed);
+	os_free(seed);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-FAST: TLS pre-master-secret",
 			master_secret, sizeof(master_secret));
 
@@ -904,26 +929,26 @@ static u8 * eap_fast_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	if (block_size < 0)
 		return NULL;
 
-	out = malloc(block_size + len);
+	out = os_malloc(block_size + len);
 	if (out == NULL)
 		return NULL;
 
 	if (tls_connection_prf(sm->ssl_ctx, data->conn, label, 1, out,
 			       block_size + len) == 0) {
-		memmove(out, out + block_size, len);
+		os_memmove(out, out + block_size, len);
 		return out;
 	}
 
 	if (tls_connection_get_keys(sm->ssl_ctx, data->conn, &keys))
 		goto fail;
 
-	rnd = malloc(keys.client_random_len + keys.server_random_len);
+	rnd = os_malloc(keys.client_random_len + keys.server_random_len);
 	if (rnd == NULL)
 		goto fail;
 
-	memcpy(rnd, keys.server_random, keys.server_random_len);
-	memcpy(rnd + keys.server_random_len, keys.client_random,
-	       keys.client_random_len);
+	os_memcpy(rnd, keys.server_random, keys.server_random_len);
+	os_memcpy(rnd + keys.server_random_len, keys.client_random,
+		  keys.client_random_len);
 
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: master_secret for key "
 			"expansion", keys.master_key, keys.master_key_len);
@@ -931,13 +956,13 @@ static u8 * eap_fast_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 		    label, rnd, keys.client_random_len +
 		    keys.server_random_len, out, block_size + len))
 		goto fail;
-	free(rnd);
-	memmove(out, out + block_size, len);
+	os_free(rnd);
+	os_memmove(out, out + block_size, len);
 	return out;
 
 fail:
-	free(rnd);
-	free(out);
+	os_free(rnd);
+	os_free(out);
 	return NULL;
 }
 
@@ -945,7 +970,7 @@ fail:
 static void eap_fast_derive_key_auth(struct eap_sm *sm,
 				     struct eap_fast_data *data)
 {
-	free(data->key_block_a);
+	os_free(data->key_block_a);
 	data->key_block_a = (struct eap_fast_key_block_auth *)
 		eap_fast_derive_key(sm, &data->ssl, "key expansion",
 				    sizeof(*data->key_block_a));
@@ -963,7 +988,7 @@ static void eap_fast_derive_key_auth(struct eap_sm *sm,
 static void eap_fast_derive_key_provisioning(struct eap_sm *sm,
 					     struct eap_fast_data *data)
 {
-	free(data->key_block_p);
+	os_free(data->key_block_p);
 	data->key_block_p = (struct eap_fast_key_block_provisioning *)
 		eap_fast_derive_key(sm, &data->ssl, "key expansion",
 				    sizeof(*data->key_block_p));
@@ -1071,7 +1096,7 @@ static int eap_fast_phase2_request(struct eap_sm *sm,
 			ret->decision = DECISION_FAIL;
 			return -1;
 		}
-		memset(&iret, 0, sizeof(iret));
+		os_memset(&iret, 0, sizeof(iret));
 		*resp = data->phase2_method->process(sm, data->phase2_priv,
 						     &iret, (u8 *) hdr, len,
 						     resp_len);
@@ -1098,7 +1123,7 @@ static u8 * eap_fast_tlv_nak(int vendor_id, int tlv_type, size_t *len)
 {
 	struct eap_tlv_nak_tlv *nak;
 	*len = sizeof(*nak);
-	nak = malloc(*len);
+	nak = os_malloc(*len);
 	if (nak == NULL)
 		return NULL;
 	nak->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY | EAP_TLV_NAK_TLV);
@@ -1113,7 +1138,7 @@ static u8 * eap_fast_tlv_result(int status, int intermediate, size_t *len)
 {
 	struct eap_tlv_intermediate_result_tlv *result;
 	*len = sizeof(*result);
-	result = malloc(*len);
+	result = os_malloc(*len);
 	if (result == NULL)
 		return NULL;
 	result->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
@@ -1132,7 +1157,7 @@ static u8 * eap_fast_tlv_pac_ack(size_t *len)
 	struct eap_tlv_pac_ack_tlv *ack;
 
 	*len = sizeof(*res) + sizeof(*ack);
-	res = wpa_zalloc(*len);
+	res = os_zalloc(*len);
 	if (res == NULL)
 		return NULL;
 
@@ -1158,19 +1183,19 @@ static u8 * eap_fast_tlv_eap_payload(u8 *buf, size_t *len)
 	struct eap_tlv_hdr *tlv;
 
 	/* Encapsulate EAP packet in EAP Payload TLV */
-	tlv = malloc(sizeof(*tlv) + *len);
+	tlv = os_malloc(sizeof(*tlv) + *len);
 	if (tlv == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to "
 			   "allocate memory for TLV "
 			   "encapsulation");
-		free(buf);
+		os_free(buf);
 		return NULL;
 	}
 	tlv->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
 				     EAP_TLV_EAP_PAYLOAD_TLV);
 	tlv->length = host_to_be16(*len);
-	memcpy(tlv + 1, buf, *len);
-	free(buf);
+	os_memcpy(tlv + 1, buf, *len);
+	os_free(buf);
 	*len += sizeof(*tlv);
 	return (u8 *) tlv;
 }
@@ -1230,7 +1255,7 @@ static u8 * eap_fast_process_crypto_binding(
 		   "calculation");
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: S-IMCK[0] = SKS", sks, 40);
 
-	memset(isk, 0, sizeof(isk));
+	os_memset(isk, 0, sizeof(isk));
 	if (data->phase2_method == NULL || data->phase2_priv == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: Phase 2 method not "
 			   "available");
@@ -1250,11 +1275,11 @@ static u8 * eap_fast_process_crypto_binding(
 			key_len = sizeof(isk);
 		/* FIX: which end is being padded? */
 #if 0
-		memcpy(isk + (sizeof(isk) - key_len), key, key_len);
+		os_memcpy(isk + (sizeof(isk) - key_len), key, key_len);
 #else
-		memcpy(isk, key, key_len);
+		os_memcpy(isk, key, key_len);
 #endif
-		free(key);
+		os_free(key);
 	}
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: ISK[0]", isk, sizeof(isk));
 	sha1_t_prf(sks, 40, "Inner Methods Compound Keys",
@@ -1264,12 +1289,12 @@ static u8 * eap_fast_process_crypto_binding(
 	cmk = imck + 40;
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: CMK", cmk, 20);
 
-	memcpy(cmac, bind->compound_mac, sizeof(cmac));
-	memset(bind->compound_mac, 0, sizeof(cmac));
+	os_memcpy(cmac, bind->compound_mac, sizeof(cmac));
+	os_memset(bind->compound_mac, 0, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Crypto-Binding TLV for Compound "
 		    "MAC calculation", (u8 *) bind, bind_len);
 	hmac_sha1(cmk, 20, (u8 *) bind, bind_len, bind->compound_mac);
-	res = memcmp(cmac, bind->compound_mac, sizeof(cmac));
+	res = os_memcmp(cmac, bind->compound_mac, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Received Compound MAC",
 		    cmac, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Calculated Compound MAC",
@@ -1278,12 +1303,12 @@ static u8 * eap_fast_process_crypto_binding(
 		wpa_printf(MSG_INFO, "EAP-FAST: Compound MAC did not match");
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
 					   resp_len);
-		memcpy(bind->compound_mac, cmac, sizeof(cmac));
+		os_memcpy(bind->compound_mac, cmac, sizeof(cmac));
 		return resp;
 	}
 
 	*resp_len = sizeof(*rresult) + sizeof(*rbind);
-	resp = wpa_zalloc(*resp_len);
+	resp = os_zalloc(*resp_len);
 	if (resp == NULL)
 		return NULL;
 
@@ -1313,7 +1338,7 @@ static u8 * eap_fast_process_crypto_binding(
 	rbind->version = EAP_FAST_VERSION;
 	rbind->received_version = bind->version;
 	rbind->subtype = EAP_TLV_CRYPTO_BINDING_SUBTYPE_RESPONSE;
-	memcpy(rbind->nonce, bind->nonce, sizeof(bind->nonce));
+	os_memcpy(rbind->nonce, bind->nonce, sizeof(bind->nonce));
 	inc_byte_array(rbind->nonce, sizeof(bind->nonce));
 	hmac_sha1(cmk, 20, (u8 *) rbind, sizeof(*rbind), rbind->compound_mac);
 
@@ -1347,7 +1372,7 @@ static u8 * eap_fast_process_pac(struct eap_sm *sm, struct eap_fast_data *data,
 	int type, pac_key_found = 0;
 	struct eap_fast_pac entry;
 
-	memset(&entry, 0, sizeof(entry));
+	os_memset(&entry, 0, sizeof(entry));
 	pos = pac;
 	left = pac_len;
 	while (left > sizeof(*hdr)) {
@@ -1375,7 +1400,7 @@ static u8 * eap_fast_process_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				break;
 			}
 			pac_key_found = 1;
-			memcpy(entry.pac_key, pos, len);
+			os_memcpy(entry.pac_key, pos, len);
 			break;
 		case PAC_TYPE_PAC_OPAQUE:
 			wpa_hexdump(MSG_DEBUG, "EAP-FAST: PAC-Opaque",
@@ -1513,9 +1538,9 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 	buf_len = in_len;
 	if (data->ssl.tls_in_total > buf_len)
 		buf_len = data->ssl.tls_in_total;
-	in_decrypted = malloc(buf_len);
+	in_decrypted = os_malloc(buf_len);
 	if (in_decrypted == NULL) {
-		free(data->ssl.tls_in);
+		os_free(data->ssl.tls_in);
 		data->ssl.tls_in = NULL;
 		data->ssl.tls_in_len = 0;
 		wpa_printf(MSG_WARNING, "EAP-FAST: failed to allocate memory "
@@ -1526,13 +1551,13 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 	len_decrypted = tls_connection_decrypt(sm->ssl_ctx, data->ssl.conn,
 					       msg, msg_len,
 					       in_decrypted, buf_len);
-	free(data->ssl.tls_in);
+	os_free(data->ssl.tls_in);
 	data->ssl.tls_in = NULL;
 	data->ssl.tls_in_len = 0;
 	if (len_decrypted < 0) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Failed to decrypt Phase 2 "
 			   "data");
-		free(in_decrypted);
+		os_free(in_decrypted);
 		return -1;
 	}
 
@@ -1540,7 +1565,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		    in_decrypted, len_decrypted);
 
 	if (len_decrypted < 4) {
-		free(in_decrypted);
+		os_free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-FAST: Too short Phase 2 "
 			   "TLV frame (len=%d)", len_decrypted);
 		return -1;
@@ -1555,7 +1580,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		len = WPA_GET_BE16(pos);
 		pos += 2;
 		if (pos + len > end) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			wpa_printf(MSG_INFO, "EAP-FAST: TLV overflow");
 			return 0;
 		}
@@ -1654,7 +1679,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0,
 					   &resp_len);
 		if (!resp) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
@@ -1663,7 +1688,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
 					   &resp_len);
 		if (!resp) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
@@ -1673,7 +1698,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 			wpa_printf(MSG_DEBUG, "EAP-FAST: too short EAP "
 				   "Payload TLV (len=%lu)",
 				   (unsigned long) eap_payload_tlv_len);
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 		hdr = (struct eap_hdr *) eap_payload_tlv;
@@ -1684,20 +1709,20 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		if (hdr->code == EAP_CODE_REQUEST) {
 			if (eap_fast_phase2_request(sm, data, ret, req, hdr,
 						    &resp, &resp_len)) {
-				free(in_decrypted);
+				os_free(in_decrypted);
 				wpa_printf(MSG_INFO, "EAP-FAST: Phase2 "
 					   "Request processing failed");
 				return 0;
 			}
 			resp = eap_fast_tlv_eap_payload(resp, &resp_len);
 			if (resp == NULL) {
-				free(in_decrypted);
+				os_free(in_decrypted);
 				return 0;
 			}
 		} else {
 			wpa_printf(MSG_INFO, "EAP-FAST: Unexpected code=%d in "
 				   "Phase 2 EAP header", hdr->code);
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
@@ -1709,7 +1734,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 						       crypto_binding_len,
 						       &resp_len, final);
 		if (!resp) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
@@ -1720,7 +1745,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 0,
 					   &resp_len);
 		if (!resp) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
@@ -1729,17 +1754,17 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		resp = eap_fast_process_pac(sm, data, ret, pac, pac_len,
 					    &resp_len);
 		if (!resp) {
-			free(in_decrypted);
+			os_free(in_decrypted);
 			return 0;
 		}
 	}
 
-	free(in_decrypted);
+	os_free(in_decrypted);
 
 	if (resp == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-FAST: No recognized TLVs - send "
 			   "empty response packet");
-		resp = malloc(1);
+		resp = os_malloc(1);
 		if (resp == NULL)
 			return 0;
 		resp_len = 0;
@@ -1752,7 +1777,7 @@ static int eap_fast_decrypt(struct eap_sm *sm, struct eap_fast_data *data,
 		wpa_printf(MSG_INFO, "EAP-FAST: Failed to encrypt a Phase 2 "
 			   "frame");
 	}
-	free(resp);
+	os_free(resp);
 
 	return 0;
 }
@@ -1831,14 +1856,14 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 			struct eap_tlv_hdr *hdr;
 			olen = data->current_pac->pac_opaque_len;
 			tlv_len = sizeof(*hdr) + olen;
-			tlv = malloc(tlv_len);
+			tlv = os_malloc(tlv_len);
 			if (tlv) {
 				hdr = (struct eap_tlv_hdr *) tlv;
 				hdr->tlv_type =
 					host_to_be16(PAC_TYPE_PAC_OPAQUE);
 				hdr->length = host_to_be16(olen);
-				memcpy(hdr + 1, data->current_pac->pac_opaque,
-				       olen);
+				os_memcpy(hdr + 1,
+					  data->current_pac->pac_opaque, olen);
 			}
 			if (tlv == NULL ||
 			    tls_connection_client_hello_ext(
@@ -1846,10 +1871,10 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 				    TLS_EXT_PAC_OPAQUE, tlv, tlv_len) < 0) {
 				wpa_printf(MSG_DEBUG, "EAP-FAST: Failed to "
 					   "add PAC-Opaque TLS extension");
-				free(tlv);
+				os_free(tlv);
 				return NULL;
 			}
-			free(tlv);
+			os_free(tlv);
 		} else {
 			u8 ciphers[2];
 			if (!data->provisioning_allowed) {
@@ -1939,7 +1964,7 @@ static void * eap_fast_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_fast_data *data = priv;
 	if (eap_tls_reauth_init(sm, &data->ssl)) {
-		free(data);
+		os_free(data);
 		return NULL;
 	}
 	if (data->phase2_priv && data->phase2_method &&
@@ -1957,13 +1982,16 @@ static int eap_fast_get_status(struct eap_sm *sm, void *priv, char *buf,
 			       size_t buflen, int verbose)
 {
 	struct eap_fast_data *data = priv;
-	int len;
+	int len, ret;
 
 	len = eap_tls_status(sm, &data->ssl, buf, buflen, verbose);
 	if (data->phase2_method) {
-		len += snprintf(buf + len, buflen - len,
-				"EAP-FAST Phase2 method=%s\n",
-				data->phase2_method->name);
+		ret = os_snprintf(buf + len, buflen - len,
+				  "EAP-FAST Phase2 method=%s\n",
+				  data->phase2_method->name);
+		if (ret < 0 || (size_t) ret >= buflen - len)
+			return len;
+		len += ret;
 	}
 	return len;
 }
@@ -1984,12 +2012,12 @@ static u8 * eap_fast_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (!data->success)
 		return NULL;
 
-	key = malloc(EAP_FAST_KEY_LEN);
+	key = os_malloc(EAP_FAST_KEY_LEN);
 	if (key == NULL)
 		return NULL;
 
 	*len = EAP_FAST_KEY_LEN;
-	memcpy(key, data->key_data, EAP_FAST_KEY_LEN);
+	os_memcpy(key, data->key_data, EAP_FAST_KEY_LEN);
 
 	return key;
 }

@@ -329,7 +329,7 @@ static int hostap_send_mgmt_frame(void *priv, const void *msg, size_t len,
 
 
 static int hostap_send_eapol(void *priv, const u8 *addr, const u8 *data,
-			     size_t data_len, int encrypt)
+			     size_t data_len, int encrypt, const u8 *own_addr)
 {
 	struct hostap_driver_data *drv = priv;
 	struct ieee80211_hdr *hdr;
@@ -353,8 +353,8 @@ static int hostap_send_eapol(void *priv, const u8 *addr, const u8 *data,
 	if (encrypt)
 		hdr->frame_control |= host_to_le16(WLAN_FC_ISWEP);
 	memcpy(hdr->IEEE80211_DA_FROMDS, addr, ETH_ALEN);
-	memcpy(hdr->IEEE80211_BSSID_FROMDS, drv->hapd->own_addr, ETH_ALEN);
-	memcpy(hdr->IEEE80211_SA_FROMDS, drv->hapd->own_addr, ETH_ALEN);
+	memcpy(hdr->IEEE80211_BSSID_FROMDS, own_addr, ETH_ALEN);
+	memcpy(hdr->IEEE80211_SA_FROMDS, own_addr, ETH_ALEN);
 
 	pos = (u8 *) (hdr + 1);
 	memcpy(pos, rfc1042_header, sizeof(rfc1042_header));
@@ -572,7 +572,7 @@ static int hostap_set_ieee8021x(const char *ifname, void *priv, int enabled)
 }
 
 
-static int hostap_set_privacy(void *priv, int enabled)
+static int hostap_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct hostap_drvier_data *drv = priv;
 
@@ -581,7 +581,8 @@ static int hostap_set_privacy(void *priv, int enabled)
 }
 
  
-static int hostap_set_ssid(void *priv, const u8 *buf, int len)
+static int hostap_set_ssid(const char *ifname, void *priv, const u8 *buf,
+			   int len)
 {
 	struct hostap_driver_data *drv = priv;
 	struct iwreq iwr;
@@ -755,7 +756,7 @@ static int hostap_set_assoc_ap(void *priv, const u8 *addr)
 }
 
 
-static int hostap_set_generic_elem(void *priv,
+static int hostap_set_generic_elem(const char *ifname, void *priv,
 				   const u8 *elem, size_t elem_len)
 {
 	struct hostap_driver_data *drv = priv;

@@ -44,5 +44,15 @@ int tlsv1_client_set_master_key(struct tlsv1_client *conn,
 				const u8 *key, size_t key_len);
 int tlsv1_client_get_keyblock_size(struct tlsv1_client *conn);
 int tlsv1_client_set_cipher_list(struct tlsv1_client *conn, u8 *ciphers);
+int tlsv1_client_set_ca_cert(struct tlsv1_client *conn, const char *cert,
+			     const u8 *cert_blob, size_t cert_blob_len,
+			     const char *path);
+int tlsv1_client_set_client_cert(struct tlsv1_client *conn, const char *cert,
+				 const u8 *cert_blob, size_t cert_blob_len);
+int tlsv1_client_set_private_key(struct tlsv1_client *conn,
+				 const char *private_key,
+				 const char *private_key_passwd,
+				 const u8 *private_key_blob,
+				 size_t private_key_blob_len);
 
 #endif /* TLSV1_CLIENT_H */

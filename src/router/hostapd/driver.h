@@ -32,7 +32,7 @@ struct driver_ops {
 	 *
 	 * Configure privacy.
 	 */
-	int (*set_privacy)(void *priv, int enabled);
+	int (*set_privacy)(const char *ifname, void *priv, int enabled);
 
 	int (*set_encryption)(const char *ifname, void *priv, const char *alg,
 			      const u8 *addr, int idx,
@@ -40,17 +40,19 @@ struct driver_ops {
 	int (*get_seqnum)(const char *ifname, void *priv, const u8 *addr,
 			  int idx, u8 *seq);
 	int (*flush)(void *priv);
-	int (*set_generic_elem)(void *priv, const u8 *elem, size_t elem_len);
+	int (*set_generic_elem)(const char *ifname, void *priv, const u8 *elem,
+				size_t elem_len);
 
 	int (*read_sta_data)(void *priv, struct hostap_sta_driver_data *data,
 			     const u8 *addr);
 	int (*send_eapol)(void *priv, const u8 *addr, const u8 *data,
-			  size_t data_len, int encrypt);
+			  size_t data_len, int encrypt, const u8 *own_addr);
 	int (*sta_deauth)(void *priv, const u8 *addr, int reason);
 	int (*sta_disassoc)(void *priv, const u8 *addr, int reason);
 	int (*sta_remove)(void *priv, const u8 *addr);
-	int (*get_ssid)(void *priv, u8 *buf, int len);
-	int (*set_ssid)(void *priv, const u8 *buf, int len);
+	int (*get_ssid)(const char *ifname, void *priv, u8 *buf, int len);
+	int (*set_ssid)(const char *ifname, void *priv, const u8 *buf,
+			int len);
 	int (*set_countermeasures)(void *priv, int enabled);
 	int (*send_mgmt_frame)(void *priv, const void *msg, size_t len,
 			       int flags);
@@ -81,7 +83,7 @@ struct driver_ops {
 			  u8 *head, size_t head_len,
 			  u8 *tail, size_t tail_len);
 	int (*set_beacon_int)(void *priv, int value);
-	int (*set_dtim_period)(void *priv, int value);
+	int (*set_dtim_period)(const char *ifname, void *priv, int value);
 	/* Configure broadcast SSID mode:
 	 * 0 = include SSID in Beacon frames and reply to Probe Request frames
 	 *     that use broadcast SSID
@@ -95,6 +97,9 @@ struct driver_ops {
 	int (*set_short_slot_time)(void *priv, int value);
 	int (*set_tx_queue_params)(void *priv, int queue, int aifs, int cw_min,
 				   int cw_max, int burst_time);
+	int (*bss_add)(void *priv, const char *ifname, const u8 *bssid);
+	int (*bss_remove)(void *priv, const char *ifname);
+	int (*valid_bss_mask)(void *priv, const u8 *addr, const u8 *mask);
 	int (*passive_scan)(void *priv, int now, int our_mode_only,
 			    int interval, int listen, int *channel,
 			    int *last_rx);
@@ -153,7 +158,8 @@ hostapd_set_privacy(struct hostapd_data *hapd, int enabled)
 {
 	if (hapd->driver == NULL || hapd->driver->set_privacy == NULL)
 		return 0;
-	return hapd->driver->set_privacy(hapd->driver, enabled);
+	return hapd->driver->set_privacy(hapd->conf->iface, hapd->driver,
+					 enabled);
 }
 
 static inline int
@@ -190,7 +196,8 @@ hostapd_set_generic_elem(struct hostapd_data *hapd, const u8 *elem,
 {
 	if (hapd->driver == NULL || hapd->driver->set_generic_elem == NULL)
 		return 0;
-	return hapd->driver->set_generic_elem(hapd->driver, elem, elem_len);
+	return hapd->driver->set_generic_elem(hapd->conf->iface, hapd->driver,
+					      elem, elem_len);
 }
 
 static inline int
@@ -209,7 +216,7 @@ hostapd_send_eapol(struct hostapd_data *hapd, const u8 *addr, const u8 *data,
 	if (hapd->driver == NULL || hapd->driver->send_eapol == NULL)
 		return 0;
 	return hapd->driver->send_eapol(hapd->driver, addr, data, data_len,
-					encrypt);
+					encrypt, hapd->own_addr);
 }
 
 static inline int
@@ -241,7 +248,8 @@ hostapd_get_ssid(struct hostapd_data *hapd, u8 *buf, size_t len)
 {
 	if (hapd->driver == NULL || hapd->driver->get_ssid == NULL)
 		return 0;
-	return hapd->driver->get_ssid(hapd->driver, buf, len);
+	return hapd->driver->get_ssid(hapd->conf->iface, hapd->driver, buf,
+				      len);
 }
 
 static inline int
@@ -249,7 +257,8 @@ hostapd_set_ssid(struct hostapd_data *hapd, const u8 *buf, size_t len)
 {
 	if (hapd->driver == NULL || hapd->driver->set_ssid == NULL)
 		return 0;
-	return hapd->driver->set_ssid(hapd->driver, buf, len);
+	return hapd->driver->set_ssid(hapd->conf->iface, hapd->driver, buf,
+				      len);
 }
 
 static inline int
@@ -269,7 +278,7 @@ hostapd_set_assoc_ap(struct hostapd_data *hapd, const u8 *addr)
 	return hapd->driver->set_assoc_ap(hapd->driver, addr);
 }
 
-static inline int 
+static inline int
 hostapd_set_countermeasures(struct hostapd_data *hapd, int enabled)
 {
 	if (hapd->driver == NULL || hapd->driver->set_countermeasures == NULL)
@@ -430,7 +439,8 @@ hostapd_set_dtim_period(struct hostapd_data *hapd, int value)
 {
 	if (hapd->driver == NULL || hapd->driver->set_dtim_period == NULL)
 		return 0;
-	return hapd->driver->set_dtim_period(hapd->driver, value);
+	return hapd->driver->set_dtim_period(hapd->conf->iface, hapd->driver,
+					     value);
 }
 
 static inline int
@@ -482,6 +492,31 @@ hostapd_set_tx_queue_params(struct hostapd_data *hapd, int queue, int aifs,
 		return 0;
 	return hapd->driver->set_tx_queue_params(hapd->driver, queue, aifs,
 						 cw_min, cw_max, burst_time);
+}
+
+static inline int
+hostapd_bss_add(struct hostapd_data *hapd, const char *ifname, const u8 *bssid)
+{
+	if (hapd->driver == NULL || hapd->driver->bss_add == NULL)
+		return 0;
+	return hapd->driver->bss_add(hapd->driver, ifname, bssid);
+}
+
+static inline int
+hostapd_bss_remove(struct hostapd_data *hapd, const char *ifname)
+{
+	if (hapd->driver == NULL || hapd->driver->bss_remove == NULL)
+		return 0;
+	return hapd->driver->bss_remove(hapd->driver, ifname);
+}
+
+static inline int
+hostapd_valid_bss_mask(struct hostapd_data *hapd, const u8 *addr,
+		       const u8 *mask)
+{
+	if (hapd->driver == NULL || hapd->driver->valid_bss_mask == NULL)
+		return 1;
+	return hapd->driver->valid_bss_mask(hapd->driver, addr, mask);
 }
 
 static inline int

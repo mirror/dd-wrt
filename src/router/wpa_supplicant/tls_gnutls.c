@@ -139,7 +139,7 @@ static void tls_log_func(int level, const char *msg)
 		return;
 	}
 
-	s = strdup(msg);
+	s = os_strdup(msg);
 	if (s == NULL)
 		return;
 
@@ -153,7 +153,7 @@ static void tls_log_func(int level, const char *msg)
 	}
 	wpa_printf(level > 3 ? MSG_MSGDUMP : MSG_DEBUG,
 		   "gnutls<%d> %s", level, s);
-	free(s);
+	os_free(s);
 }
 
 
@@ -175,12 +175,12 @@ void * tls_init(const struct tls_config *conf)
 	int i;
 #endif /* GNUTLS_INTERNAL_STRUCTURE_HACK */
 
-	global = wpa_zalloc(sizeof(*global));
+	global = os_zalloc(sizeof(*global));
 	if (global == NULL)
 		return NULL;
 
 	if (tls_gnutls_ref_count == 0 && gnutls_global_init() < 0) {
-		free(global);
+		os_free(global);
 		return NULL;
 	}
 	tls_gnutls_ref_count++;
@@ -217,8 +217,8 @@ void tls_deinit(void *ssl_ctx)
 	if (global) {
 		if (global->params_set)
 			gnutls_certificate_free_credentials(global->xcred);
-		free(global->session_data);
-		free(global);
+		os_free(global->session_data);
+		os_free(global);
 	}
 
 	tls_gnutls_ref_count--;
@@ -246,11 +246,11 @@ static ssize_t tls_pull_func(gnutls_transport_ptr ptr, void *buf,
 	end = conn->pull_buf + conn->pull_buf_len;
 	if ((size_t) (end - conn->pull_buf_offset) < len)
 		len = end - conn->pull_buf_offset;
-	memcpy(buf, conn->pull_buf_offset, len);
+	os_memcpy(buf, conn->pull_buf_offset, len);
 	conn->pull_buf_offset += len;
 	if (conn->pull_buf_offset == end) {
 		wpa_printf(MSG_DEBUG, "%s - pull_buf consumed", __func__);
-		free(conn->pull_buf);
+		os_free(conn->pull_buf);
 		conn->pull_buf = conn->pull_buf_offset = NULL;
 		conn->pull_buf_len = 0;
 	} else {
@@ -267,12 +267,12 @@ static ssize_t tls_push_func(gnutls_transport_ptr ptr, const void *buf,
 	struct tls_connection *conn = (struct tls_connection *) ptr;
 	u8 *nbuf;
 
-	nbuf = realloc(conn->push_buf, conn->push_buf_len + len);
+	nbuf = os_realloc(conn->push_buf, conn->push_buf_len + len);
 	if (nbuf == NULL) {
 		errno = ENOMEM;
 		return -1;
 	}
-	memcpy(nbuf + conn->push_buf_len, buf, len);
+	os_memcpy(nbuf + conn->push_buf_len, buf, len);
 	conn->push_buf = nbuf;
 	conn->push_buf_len += len;
 
@@ -327,12 +327,12 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 	struct tls_connection *conn;
 	int ret;
 
-	conn = wpa_zalloc(sizeof(*conn));
+	conn = os_zalloc(sizeof(*conn));
 	if (conn == NULL)
 		return NULL;
 
 	if (tls_gnutls_init_session(global, conn)) {
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -343,13 +343,13 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 		if (ret < 0) {
 			wpa_printf(MSG_INFO, "Failed to configure "
 				   "credentials: %s", gnutls_strerror(ret));
-			free(conn);
+			os_free(conn);
 			return NULL;
 		}
 	}
 
 	if (gnutls_certificate_allocate_credentials(&conn->xcred)) {
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -368,19 +368,19 @@ void tls_connection_deinit(void *ssl_ctx, struct tls_connection *conn)
 	if (conn->iacred_cli)
 		gnutls_ia_free_client_credentials(conn->iacred_cli);
 	if (conn->session_keys) {
-		memset(conn->session_keys, 0, conn->session_keys_len);
-		free(conn->session_keys);
+		os_memset(conn->session_keys, 0, conn->session_keys_len);
+		os_free(conn->session_keys);
 	}
 #endif /* GNUTLS_IA */
 
 	gnutls_certificate_free_credentials(conn->xcred);
 	gnutls_deinit(conn->session);
-	free(conn->pre_shared_secret);
-	free(conn->subject_match);
-	free(conn->altsubject_match);
-	free(conn->push_buf);
-	free(conn->pull_buf);
-	free(conn);
+	os_free(conn->pre_shared_secret);
+	os_free(conn->subject_match);
+	os_free(conn->altsubject_match);
+	os_free(conn->push_buf);
+	os_free(conn->pull_buf);
+	os_free(conn);
 }
 
 
@@ -402,15 +402,15 @@ int tls_connection_shutdown(void *ssl_ctx, struct tls_connection *conn)
 	 * because the connection was already terminated in practice
 	 * and "close notify" shutdown alert would confuse AS. */
 	gnutls_bye(conn->session, GNUTLS_SHUT_RDWR);
-	free(conn->push_buf);
+	os_free(conn->push_buf);
 	conn->push_buf = NULL;
 	conn->push_buf_len = 0;
 	conn->established = 0;
 	conn->final_phase_finished = 0;
 #ifdef GNUTLS_IA
 	if (conn->session_keys) {
-		memset(conn->session_keys, 0, conn->session_keys_len);
-		free(conn->session_keys);
+		os_memset(conn->session_keys, 0, conn->session_keys_len);
+		os_free(conn->session_keys);
 	}
 	conn->session_keys_len = 0;
 #endif /* GNUTLS_IA */
@@ -481,15 +481,15 @@ static int tls_match_altsubject(X509 *cert, const char *match)
 
 		wpa_printf(MSG_DEBUG, "TLS: altSubjectName: %s:%s",
 			   field, gen->d.ia5->data);
-		len = strlen(field) + 1 + strlen((char *) gen->d.ia5->data) +
-			1;
-		tmp = malloc(len);
+		len = os_strlen(field) + 1 +
+			strlen((char *) gen->d.ia5->data) + 1;
+		tmp = os_malloc(len);
 		if (tmp == NULL)
 			continue;
 		snprintf(tmp, len, "%s:%s", field, gen->d.ia5->data);
 		if (strstr(tmp, match))
 			found++;
-		free(tmp);
+		os_free(tmp);
 	}
 
 	return found;
@@ -552,18 +552,18 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 	if (conn == NULL || params == NULL)
 		return -1;
 
-	free(conn->subject_match);
+	os_free(conn->subject_match);
 	conn->subject_match = NULL;
 	if (params->subject_match) {
-		conn->subject_match = strdup(params->subject_match);
+		conn->subject_match = os_strdup(params->subject_match);
 		if (conn->subject_match == NULL)
 			return -1;
 	}
 
-	free(conn->altsubject_match);
+	os_free(conn->altsubject_match);
 	conn->altsubject_match = NULL;
 	if (params->altsubject_match) {
-		conn->altsubject_match = strdup(params->altsubject_match);
+		conn->altsubject_match = os_strdup(params->altsubject_match);
 		if (conn->altsubject_match == NULL)
 			return -1;
 	}
@@ -796,7 +796,7 @@ int tls_connection_get_keys(void *ssl_ctx, struct tls_connection *conn,
 	if (conn == NULL || conn->session == NULL || keys == NULL)
 		return -1;
 
-	memset(keys, 0, sizeof(*keys));
+	os_memset(keys, 0, sizeof(*keys));
 
 #ifdef GNUTLS_INTERNAL_STRUCTURE_HACK
 	sec = &conn->session->security_parameters;
@@ -831,7 +831,7 @@ int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	if (conn == NULL || conn->session == NULL)
 		return -1;
 
-	return gnutls_prf(conn->session, strlen(label), label,
+	return gnutls_prf(conn->session, os_strlen(label), label,
 			  server_random_first, 0, NULL, out_len, out);
 #else /* LIBGNUTLS_VERSION_NUMBER >= 0x010302 */
 	return -1;
@@ -896,7 +896,7 @@ static int tls_connection_verify_peer(struct tls_connection *conn)
 
 		gnutls_x509_crt_get_dn(cert, NULL, &len);
 		len++;
-		buf = malloc(len + 1);
+		buf = os_malloc(len + 1);
 		if (buf) {
 			buf[0] = buf[len] = '\0';
 			gnutls_x509_crt_get_dn(cert, buf, &len);
@@ -908,7 +908,7 @@ static int tls_connection_verify_peer(struct tls_connection *conn)
 			/* TODO: validate subject_match and altsubject_match */
 		}
 
-		free(buf);
+		os_free(buf);
 
 		if (gnutls_x509_crt_get_expiration_time(cert) < now.sec ||
 		    gnutls_x509_crt_get_activation_time(cert) > now.sec) {
@@ -942,12 +942,12 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 		if (conn->pull_buf) {
 			wpa_printf(MSG_DEBUG, "%s - %d bytes remaining in "
 				   "pull_buf", __func__, conn->pull_buf_len);
-			free(conn->pull_buf);
+			os_free(conn->pull_buf);
 		}
-		conn->pull_buf = malloc(in_len);
+		conn->pull_buf = os_malloc(in_len);
 		if (conn->pull_buf == NULL)
 			return NULL;
-		memcpy(conn->pull_buf, in_data, in_len);
+		os_memcpy(conn->pull_buf, in_data, in_len);
 		conn->pull_buf_offset = conn->pull_buf;
 		conn->pull_buf_len = in_len;
 	}
@@ -960,7 +960,7 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 			    conn->push_buf == NULL) {
 				/* Need to return something to trigger
 				 * completion of EAP-TLS. */
-				conn->push_buf = malloc(1);
+				conn->push_buf = os_malloc(1);
 			}
 			break;
 		case GNUTLS_E_FATAL_ALERT_RECEIVED:
@@ -999,14 +999,14 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 		conn->established = 1;
 		if (conn->push_buf == NULL) {
 			/* Need to return something to get final TLS ACK. */
-			conn->push_buf = malloc(1);
+			conn->push_buf = os_malloc(1);
 		}
 
 		gnutls_session_get_data(conn->session, NULL, &size);
 		if (global->session_data == NULL ||
 		    global->session_data_size < size) {
-			free(global->session_data);
-			global->session_data = malloc(size);
+			os_free(global->session_data);
+			global->session_data = os_malloc(size);
 		}
 		if (global->session_data) {
 			global->session_data_size = size;
@@ -1055,8 +1055,8 @@ int tls_connection_encrypt(void *ssl_ctx, struct tls_connection *conn,
 		return -1;
 	if (conn->push_buf_len < out_len)
 		out_len = conn->push_buf_len;
-	memcpy(out_data, conn->push_buf, out_len);
-	free(conn->push_buf);
+	os_memcpy(out_data, conn->push_buf, out_len);
+	os_free(conn->push_buf);
 	conn->push_buf = NULL;
 	conn->push_buf_len = 0;
 	return out_len;
@@ -1072,12 +1072,12 @@ int tls_connection_decrypt(void *ssl_ctx, struct tls_connection *conn,
 	if (conn->pull_buf) {
 		wpa_printf(MSG_DEBUG, "%s - %d bytes remaining in "
 			   "pull_buf", __func__, conn->pull_buf_len);
-		free(conn->pull_buf);
+		os_free(conn->pull_buf);
 	}
-	conn->pull_buf = malloc(in_len);
+	conn->pull_buf = os_malloc(in_len);
 	if (conn->pull_buf == NULL)
 		return -1;
-	memcpy(conn->pull_buf, in_data, in_len);
+	os_memcpy(conn->pull_buf, in_data, in_len);
 	conn->pull_buf_offset = conn->pull_buf;
 	conn->pull_buf_len = in_len;
 
@@ -1095,9 +1095,9 @@ int tls_connection_decrypt(void *ssl_ctx, struct tls_connection *conn,
 				conn->session, conn->session_keys_len,
 				conn->session_keys);
 			if (conn->session_keys) {
-				memset(conn->session_keys, 0,
-				       conn->session_keys_len);
-				free(conn->session_keys);
+				os_memset(conn->session_keys, 0,
+					  conn->session_keys_len);
+				os_free(conn->session_keys);
 			}
 			conn->session_keys = NULL;
 			conn->session_keys_len = 0;
@@ -1291,8 +1291,8 @@ int tls_connection_ia_send_phase_finished(void *tls_ctx,
 					     conn->session_keys_len,
 					     conn->session_keys);
 	if (conn->session_keys) {
-		memset(conn->session_keys, 0, conn->session_keys_len);
-		free(conn->session_keys);
+		os_memset(conn->session_keys, 0, conn->session_keys_len);
+		os_free(conn->session_keys);
 	}
 	conn->session_keys = NULL;
 	conn->session_keys_len = 0;
@@ -1313,8 +1313,8 @@ int tls_connection_ia_send_phase_finished(void *tls_ctx,
 		return -1;
 	if (conn->push_buf_len < out_len)
 		out_len = conn->push_buf_len;
-	memcpy(out_data, conn->push_buf, out_len);
-	free(conn->push_buf);
+	os_memcpy(out_data, conn->push_buf, out_len);
+	os_free(conn->push_buf);
 	conn->push_buf = NULL;
 	conn->push_buf_len = 0;
 	return out_len;
@@ -1343,16 +1343,16 @@ int tls_connection_ia_permute_inner_secret(void *tls_ctx,
 		return -1;
 
 	if (conn->session_keys) {
-		memset(conn->session_keys, 0, conn->session_keys_len);
-		free(conn->session_keys);
+		os_memset(conn->session_keys, 0, conn->session_keys_len);
+		os_free(conn->session_keys);
 	}
 	conn->session_keys_len = 0;
 
 	if (key) {
-		conn->session_keys = malloc(key_len);
+		conn->session_keys = os_malloc(key_len);
 		if (conn->session_keys == NULL)
 			return -1;
-		memcpy(conn->session_keys, key, key_len);
+		os_memcpy(conn->session_keys, key, key_len);
 		conn->session_keys_len = key_len;
 	} else {
 		conn->session_keys = NULL;

@@ -3,13 +3,20 @@ LANGUAGE	= C++
 
 CONFIG	+= qt warn_on release
 
-# For Windows build:
-#LIBS += -lws2_32 -static
-#DEFINES += CONFIG_NATIVE_WINDOWS CONFIG_CTRL_IFACE_UDP CONFIG_CTRL_IFACE
-
 DEFINES += CONFIG_CTRL_IFACE
 
-INCLUDEPATH	+= .. ../../hostapd
+win32 {
+  LIBS += -lws2_32 -static
+  DEFINES += CONFIG_NATIVE_WINDOWS CONFIG_CTRL_IFACE_NAMED_PIPE
+} else:win32-g++ {
+  # cross compilation to win32
+  LIBS += -lws2_32 -static
+  DEFINES += CONFIG_NATIVE_WINDOWS CONFIG_CTRL_IFACE_NAMED_PIPE
+} else {
+  DEFINES += CONFIG_CTRL_IFACE_UNIX
+}
+
+INCLUDEPATH	+= . .. ../../hostapd
 
 HEADERS	+= wpamsg.h
 
@@ -29,5 +36,12 @@ unix {
   OBJECTS_DIR = .obj
 }
 
-
-
+qtver = $$[QT_VERSION]
+isEmpty( qtver ) {
+	message(Compiling for Qt 3.x)
+	DEFINES += Q3ListViewItem=QListViewItem
+} else {
+	message(Compiling for Qt $$qtver)
+	QT += qt3support
+	CONFIG += uic3
+}

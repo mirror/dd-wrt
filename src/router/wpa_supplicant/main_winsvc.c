@@ -51,7 +51,7 @@ static int read_interface(struct wpa_global *global, HKEY _hk,
 {
 	HKEY hk;
 #define TBUFLEN 255
-	TCHAR adapter[TBUFLEN], config[TBUFLEN];
+	TCHAR adapter[TBUFLEN], config[TBUFLEN], ctrl_interface[TBUFLEN];
 	DWORD buflen;
 	LONG ret;
 	struct wpa_interface iface;
@@ -63,8 +63,18 @@ static int read_interface(struct wpa_global *global, HKEY _hk,
 	}
 
 	memset(&iface, 0, sizeof(iface));
-	iface.ctrl_interface = "udp";
 	iface.driver = "ndis";
+
+	buflen = sizeof(ctrl_interface);
+	ret = RegQueryValueEx(hk, TEXT("ctrl_interface"), NULL, NULL,
+			      (LPBYTE) ctrl_interface, &buflen);
+	if (ret == ERROR_SUCCESS) {
+		ctrl_interface[TBUFLEN - 1] = TEXT('\0');
+		wpa_unicode2ascii_inplace(ctrl_interface);
+		printf("ctrl_interface[len=%d] '%s'\n",
+		       (int) buflen, (char *) ctrl_interface);
+		iface.ctrl_interface = (char *) ctrl_interface;
+	}
 
 	buflen = sizeof(adapter);
 	ret = RegQueryValueEx(hk, TEXT("adapter"), NULL, NULL,
@@ -131,6 +141,13 @@ static int wpa_supplicant_thread(void)
 			      (LPBYTE) &val, &buflen);
 	if (ret == ERROR_SUCCESS && buflen == sizeof(val)) {
 		params.wpa_debug_show_keys = val;
+	}
+
+	buflen = sizeof(val);
+	ret = RegQueryValueEx(hk, TEXT("debug_use_file"), NULL, NULL,
+			      (LPBYTE) &val, &buflen);
+	if (ret == ERROR_SUCCESS && buflen == sizeof(val)) {
+		params.wpa_debug_use_file = val;
 	}
 
 	exitcode = 0;

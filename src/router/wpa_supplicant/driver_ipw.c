@@ -96,7 +96,7 @@ static int ipw_ioctl(struct wpa_driver_ipw_data *drv,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
@@ -150,17 +150,17 @@ static int ipw_set_wpa_ie(struct wpa_driver_ipw_data *drv,
 	int ret;
 	size_t blen = sizeof(*param) + wpa_ie_len;
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 
 	param->cmd = IPW_CMD_SET_WPA_IE;
 	param->u.wpa_ie.len = wpa_ie_len;
-	memcpy(param->u.wpa_ie.data, wpa_ie, wpa_ie_len);
+	os_memcpy(param->u.wpa_ie.data, wpa_ie, wpa_ie_len);
 	
 	ret = ipw_ioctl(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 	return ret;
 }
 
@@ -170,7 +170,7 @@ static int ipw_set_wpa_param(struct wpa_driver_ipw_data *drv, u8 name,
 {
 	struct ipw_param param;
 
-	memset(&param, 0, sizeof(param));
+	os_memset(&param, 0, sizeof(param));
 	param.cmd = IPW_CMD_SET_WPA_PARAM;
 	param.u.wpa_param.name = name;
 	param.u.wpa_param.value = value;
@@ -184,8 +184,8 @@ static int ipw_mlme(struct wpa_driver_ipw_data *drv, const u8 *addr,
 {
 	struct ipw_param param;
 
-	memset(&param, 0, sizeof(param));
-	memcpy(param.sta_addr, addr, ETH_ALEN);	
+	os_memset(&param, 0, sizeof(param));
+	os_memcpy(param.sta_addr, addr, ETH_ALEN);	
 	param.cmd = IPW_CMD_MLME;
 	param.u.mlme.command = cmd;
 	param.u.mlme.reason_code = reason;
@@ -248,26 +248,26 @@ static int wpa_driver_ipw_set_key(void *priv, wpa_alg alg,
 		return -2;
 
 	blen = sizeof(*param) + key_len;
-	buf = wpa_zalloc(blen);
+	buf = os_zalloc(blen);
 	if (buf == NULL)
 		return -1;
 
 	param = (struct ipw_param *) buf;
 	param->cmd = IPW_CMD_SET_ENCRYPTION;
-	memset(param->sta_addr, 0xff, ETH_ALEN);
+	os_memset(param->sta_addr, 0xff, ETH_ALEN);
 	strncpy((char *) param->u.crypt.alg, alg_name, IPW_CRYPT_ALG_NAME_LEN);
 	param->u.crypt.set_tx = set_tx ? 1 : 0;
 	param->u.crypt.idx = key_idx;
-	memcpy(param->u.crypt.seq, seq, seq_len);
+	os_memcpy(param->u.crypt.seq, seq, seq_len);
 	param->u.crypt.key_len = key_len;
-	memcpy((u8 *) (param + 1), key, key_len);
+	os_memcpy((u8 *) (param + 1), key, key_len);
 
 	if (ipw_ioctl(drv, param, blen, 1)) {
 		wpa_printf(MSG_WARNING, "Failed to set encryption.");
 		ipw_show_set_key_error(param);
 		ret = -1;
 	}
-	free(buf);
+	os_free(buf);
 
 	return ret;
 }
@@ -400,12 +400,12 @@ static void * wpa_driver_ipw_init(void *ctx, const char *ifname)
 	struct wpa_driver_ipw_data *drv;
 
 	wpa_printf(MSG_DEBUG, "%s is called", __FUNCTION__);
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
 	if (drv->wext == NULL) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -414,7 +414,7 @@ static void * wpa_driver_ipw_init(void *ctx, const char *ifname)
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -427,7 +427,7 @@ static void wpa_driver_ipw_deinit(void *priv)
 	struct wpa_driver_ipw_data *drv = priv;
 	wpa_driver_wext_deinit(drv->wext);
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

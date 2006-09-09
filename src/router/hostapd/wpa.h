@@ -149,6 +149,7 @@ typedef enum {
 	WPA_AUTH, WPA_ASSOC, WPA_DISASSOC, WPA_DEAUTH, WPA_REAUTH,
 	WPA_REAUTH_EAPOL
 } wpa_event;
+void wpa_remove_ptk(struct wpa_state_machine *sm);
 void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event);
 void wpa_auth_sm_notify(struct wpa_state_machine *sm);
 void wpa_gtk_rekey(struct wpa_authenticator *wpa_auth);

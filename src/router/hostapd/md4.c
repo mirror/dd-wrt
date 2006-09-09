@@ -24,9 +24,9 @@
 #define	MD4_DIGEST_LENGTH		16
 
 typedef struct MD4Context {
-	u_int32_t state[4];			/* state */
-	u_int64_t count;			/* number of bits, mod 2^64 */
-	u_int8_t buffer[MD4_BLOCK_LENGTH];	/* input buffer */
+	u32 state[4];			/* state */
+	u64 count;			/* number of bits, mod 2^64 */
+	u8 buffer[MD4_BLOCK_LENGTH];	/* input buffer */
 } MD4_CTX;
 
 
@@ -72,7 +72,7 @@ void md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 
 
 static void
-MD4Transform(u_int32_t state[4], const u_int8_t block[MD4_BLOCK_LENGTH]);
+MD4Transform(u32 state[4], const u8 block[MD4_BLOCK_LENGTH]);
 
 #define PUT_64BIT_LE(cp, value) do {					\
 	(cp)[7] = (value) >> 56;					\
@@ -90,7 +90,7 @@ MD4Transform(u_int32_t state[4], const u_int8_t block[MD4_BLOCK_LENGTH]);
 	(cp)[1] = (value) >> 8;						\
 	(cp)[0] = (value); } while (0)
 
-static u_int8_t PADDING[MD4_BLOCK_LENGTH] = {
+static u8 PADDING[MD4_BLOCK_LENGTH] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -122,11 +122,11 @@ static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len)
 	need = MD4_BLOCK_LENGTH - have;
 
 	/* Update bitcount */
-	ctx->count += (u_int64_t)len << 3;
+	ctx->count += (u64)len << 3;
 
 	if (len >= need) {
 		if (have != 0) {
-			memcpy(ctx->buffer + have, input, need);
+			os_memcpy(ctx->buffer + have, input, need);
 			MD4Transform(ctx->state, ctx->buffer);
 			input += need;
 			len -= need;
@@ -143,7 +143,7 @@ static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len)
 
 	/* Handle any remaining bytes of data. */
 	if (len != 0)
-		memcpy(ctx->buffer + have, input, len);
+		os_memcpy(ctx->buffer + have, input, len);
 }
 
 /*
@@ -152,7 +152,7 @@ static void MD4Update(MD4_CTX *ctx, const unsigned char *input, size_t len)
  */
 static void MD4Pad(MD4_CTX *ctx)
 {
-	u_int8_t count[8];
+	u8 count[8];
 	size_t padlen;
 
 	/* Convert count to 8 bytes in little endian order. */
@@ -178,7 +178,7 @@ static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], MD4_CTX *ctx)
 	if (digest != NULL) {
 		for (i = 0; i < 4; i++)
 			PUT_32BIT_LE(digest + i * 4, ctx->state[i]);
-		memset(ctx, 0, sizeof(*ctx));
+		os_memset(ctx, 0, sizeof(*ctx));
 	}
 }
 
@@ -200,19 +200,19 @@ static void MD4Final(unsigned char digest[MD4_DIGEST_LENGTH], MD4_CTX *ctx)
  * the data and converts bytes into longwords for this routine.
  */
 static void
-MD4Transform(u_int32_t state[4], const u_int8_t block[MD4_BLOCK_LENGTH])
+MD4Transform(u32 state[4], const u8 block[MD4_BLOCK_LENGTH])
 {
-	u_int32_t a, b, c, d, in[MD4_BLOCK_LENGTH / 4];
+	u32 a, b, c, d, in[MD4_BLOCK_LENGTH / 4];
 
 #if BYTE_ORDER == LITTLE_ENDIAN
-	memcpy(in, block, sizeof(in));
+	os_memcpy(in, block, sizeof(in));
 #else
 	for (a = 0; a < MD4_BLOCK_LENGTH / 4; a++) {
-		in[a] = (u_int32_t)(
-		    (u_int32_t)(block[a * 4 + 0]) |
-		    (u_int32_t)(block[a * 4 + 1]) <<  8 |
-		    (u_int32_t)(block[a * 4 + 2]) << 16 |
-		    (u_int32_t)(block[a * 4 + 3]) << 24);
+		in[a] = (u32)(
+		    (u32)(block[a * 4 + 0]) |
+		    (u32)(block[a * 4 + 1]) <<  8 |
+		    (u32)(block[a * 4 + 2]) << 16 |
+		    (u32)(block[a * 4 + 3]) << 24);
 	}
 #endif
 

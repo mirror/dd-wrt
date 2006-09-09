@@ -52,13 +52,13 @@ set80211priv(struct wpa_driver_madwifi_data *drv, int op, void *data, int len,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	if (len < IFNAMSIZ) {
 		/*
 		 * Argument data fits inline; put it there.
 		 */
-		memcpy(iwr.u.name, data, len);
+		os_memcpy(iwr.u.name, data, len);
 	} else {
 		/*
 		 * Argument data too big for inline transfer; setup a
@@ -147,10 +147,10 @@ set80211param(struct wpa_driver_madwifi_data *drv, int op, int arg,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.mode = op;
-	memcpy(iwr.u.name+sizeof(__u32), &arg, sizeof(arg));
+	os_memcpy(iwr.u.name+sizeof(__u32), &arg, sizeof(arg));
 
 	if (ioctl(drv->sock, IEEE80211_IOCTL_SETPARAM, &iwr) < 0) {
 		if (show_err) 
@@ -166,7 +166,7 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa_driver_madwifi_data *drv,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	/* NB: SETOPTIE is not fixed-size so must not be inlined */
 	iwr.u.data.pointer = (void *) wpa_ie;
@@ -186,10 +186,10 @@ wpa_driver_madwifi_del_key(struct wpa_driver_madwifi_data *drv, int key_idx,
 	struct ieee80211req_del_key wk;
 
 	wpa_printf(MSG_DEBUG, "%s: keyidx=%d", __FUNCTION__, key_idx);
-	memset(&wk, 0, sizeof(wk));
+	os_memset(&wk, 0, sizeof(wk));
 	wk.idk_keyix = key_idx;
 	if (addr != NULL)
-		memcpy(wk.idk_macaddr, addr, IEEE80211_ADDR_LEN);
+		os_memcpy(wk.idk_macaddr, addr, IEEE80211_ADDR_LEN);
 
 	return set80211priv(drv, IEEE80211_IOCTL_DELKEY, &wk, sizeof(wk), 1);
 }
@@ -210,8 +210,8 @@ wpa_driver_madwifi_set_key(void *priv, wpa_alg alg,
 
 	switch (alg) {
 	case WPA_ALG_WEP:
-		if (addr == NULL || memcmp(addr, "\xff\xff\xff\xff\xff\xff",
-					   ETH_ALEN) == 0) {
+		if (addr == NULL || os_memcmp(addr, "\xff\xff\xff\xff\xff\xff",
+					      ETH_ALEN) == 0) {
 			/*
 			 * madwifi did not seem to like static WEP key
 			 * configuration with IEEE80211_IOCTL_SETKEY, so use
@@ -254,17 +254,17 @@ wpa_driver_madwifi_set_key(void *priv, wpa_alg alg,
 		return -3;
 	}
 
-	memset(&wk, 0, sizeof(wk));
+	os_memset(&wk, 0, sizeof(wk));
 	wk.ik_type = cipher;
 	wk.ik_flags = IEEE80211_KEY_RECV;
 	if (addr == NULL ||
-	    memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) == 0)
+	    os_memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) == 0)
 		wk.ik_flags |= IEEE80211_KEY_GROUP;
 	if (set_tx) {
 		wk.ik_flags |= IEEE80211_KEY_XMIT | IEEE80211_KEY_DEFAULT;
-		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+		os_memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
 	} else
-		memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
+		os_memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
 	wk.ik_keyix = key_idx;
 	wk.ik_keylen = key_len;
 #ifdef WORDS_BIGENDIAN
@@ -272,15 +272,15 @@ wpa_driver_madwifi_set_key(void *priv, wpa_alg alg,
 	{
 		size_t i;
 		u8 tmp[WPA_KEY_RSC_LEN];
-		memset(tmp, 0, sizeof(tmp));
+		os_memset(tmp, 0, sizeof(tmp));
 		for (i = 0; i < seq_len; i++)
 			tmp[WPA_KEY_RSC_LEN - i - 1] = seq[i];
-		memcpy(&wk.ik_keyrsc, tmp, WPA_KEY_RSC_LEN);
+		os_memcpy(&wk.ik_keyrsc, tmp, WPA_KEY_RSC_LEN);
 	}
 #else /* WORDS_BIGENDIAN */
-	memcpy(&wk.ik_keyrsc, seq, seq_len);
+	os_memcpy(&wk.ik_keyrsc, seq, seq_len);
 #endif /* WORDS_BIGENDIAN */
-	memcpy(wk.ik_keydata, key, key_len);
+	os_memcpy(wk.ik_keydata, key, key_len);
 
 	return set80211priv(drv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk), 1);
 }
@@ -311,7 +311,7 @@ wpa_driver_madwifi_deauthenticate(void *priv, const u8 *addr, int reason_code)
 	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
 	mlme.im_op = IEEE80211_MLME_DEAUTH;
 	mlme.im_reason = reason_code;
-	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme), 1);
 }
 
@@ -324,7 +324,7 @@ wpa_driver_madwifi_disassociate(void *priv, const u8 *addr, int reason_code)
 	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
 	mlme.im_op = IEEE80211_MLME_DISASSOC;
 	mlme.im_reason = reason_code;
-	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme), 1);
 }
 
@@ -371,20 +371,25 @@ wpa_driver_madwifi_associate(void *priv,
 		 * change something in the driver */
 		if (set80211param(drv, IEEE80211_PARAM_ROAMING, 0, 1) < 0)
 			ret = -1;
-	}
 
-	if (wpa_driver_wext_set_ssid(drv->wext, params->ssid,
-				     params->ssid_len) < 0)
-		ret = -1;
-	if (params->bssid) {
+		if (wpa_driver_wext_set_ssid(drv->wext, params->ssid,
+					     params->ssid_len) < 0)
+			ret = -1;
+	} else {
 		if (set80211param(drv, IEEE80211_PARAM_ROAMING, 2, 1) < 0)
 			ret = -1;
-		memset(&mlme, 0, sizeof(mlme));
-		mlme.im_op = IEEE80211_MLME_ASSOC;
-		memcpy(mlme.im_macaddr, params->bssid, IEEE80211_ADDR_LEN);
-		if (set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme,
-				 sizeof(mlme), 1) < 0)
+		if (wpa_driver_wext_set_ssid(drv->wext, params->ssid,
+					     params->ssid_len) < 0)
 			ret = -1;
+		os_memset(&mlme, 0, sizeof(mlme));
+		mlme.im_op = IEEE80211_MLME_ASSOC;
+		os_memcpy(mlme.im_macaddr, params->bssid, IEEE80211_ADDR_LEN);
+		if (set80211priv(drv, IEEE80211_IOCTL_SETMLME, &mlme,
+				 sizeof(mlme), 1) < 0) {
+			wpa_printf(MSG_DEBUG, "%s: SETMLME[ASSOC] failed",
+				   __func__);
+			ret = -1;
+		}
 	}
 
 	return ret;
@@ -414,7 +419,7 @@ wpa_driver_madwifi_scan(void *priv, const u8 *ssid, size_t ssid_len)
 	struct iwreq iwr;
 	int ret = 0;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 
 	/* set desired ssid before scan */
@@ -475,7 +480,7 @@ static void * wpa_driver_madwifi_init(void *ctx, const char *ifname)
 {
 	struct wpa_driver_madwifi_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
@@ -507,7 +512,7 @@ fail3:
 fail2:
 	wpa_driver_wext_deinit(drv->wext);
 fail:
-	free(drv);
+	os_free(drv);
 	return NULL;
 }
 
@@ -536,7 +541,7 @@ static void wpa_driver_madwifi_deinit(void *priv)
 	wpa_driver_wext_deinit(drv->wext);
 
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

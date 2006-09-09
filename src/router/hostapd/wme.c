@@ -13,12 +13,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#include <assert.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "ieee802_11.h"
@@ -89,7 +84,7 @@ int hostapd_eid_wme_valid(struct hostapd_data *hapd, u8 *eid, size_t len)
 	wpa_hexdump(MSG_MSGDUMP, "WME IE", eid, len);
 
 	if (len < sizeof(struct wme_information_element)) {
-		printf("Too short WME IE (len=%d)\n", len);
+		printf("Too short WME IE (len=%lu)\n", (unsigned long) len);
 		return -1;
 	}
 

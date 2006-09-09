@@ -44,16 +44,16 @@ static char * wpa_config_get_line(char *s, int size, FILE *stream, int *line,
 
 		/* Remove # comments unless they are within a double quoted
 		 * string. Remove trailing white space. */
-		sstart = strchr(pos, '"');
+		sstart = os_strchr(pos, '"');
 		if (sstart)
-			sstart = strrchr(sstart + 1, '"');
+			sstart = os_strrchr(sstart + 1, '"');
 		if (!sstart)
 			sstart = pos;
-		end = strchr(sstart, '#');
+		end = os_strchr(sstart, '#');
 		if (end)
 			*end-- = '\0';
 		else
-			end = pos + strlen(pos) - 1;
+			end = pos + os_strlen(pos) - 1;
 		while (end > pos &&
 		       (*end == '\n' || *end == ' ' || *end == '\t' ||
 			*end == '\r')) {
@@ -81,7 +81,7 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 
 	wpa_printf(MSG_MSGDUMP, "Line: %d - start of a new network block",
 		   *line);
-	ssid = wpa_zalloc(sizeof(*ssid));
+	ssid = os_zalloc(sizeof(*ssid));
 	if (ssid == NULL)
 		return NULL;
 	ssid->id = id;
@@ -89,12 +89,12 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 	wpa_config_set_network_defaults(ssid);
 
 	while (wpa_config_get_line(buf, sizeof(buf), f, line, &pos)) {
-		if (strcmp(pos, "}") == 0) {
+		if (os_strcmp(pos, "}") == 0) {
 			end = 1;
 			break;
 		}
 
-		pos2 = strchr(pos, '=');
+		pos2 = os_strchr(pos, '=');
 		if (pos2 == NULL) {
 			wpa_printf(MSG_ERROR, "Line %d: Invalid SSID line "
 				   "'%s'.", *line, pos);
@@ -104,7 +104,7 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 
 		*pos2++ = '\0';
 		if (*pos2 == '"') {
-			if (strchr(pos2 + 1, '"') == NULL) {
+			if (os_strchr(pos2 + 1, '"') == NULL) {
 				wpa_printf(MSG_ERROR, "Line %d: invalid "
 					   "quotation '%s'.", *line, pos2);
 				errors++;
@@ -169,39 +169,39 @@ static struct wpa_config_blob * wpa_config_read_blob(FILE *f, int *line,
 		   *line, name);
 
 	while (wpa_config_get_line(buf, sizeof(buf), f, line, &pos)) {
-		if (strcmp(pos, "}") == 0) {
+		if (os_strcmp(pos, "}") == 0) {
 			end = 1;
 			break;
 		}
 
-		len = strlen(pos);
-		nencoded = realloc(encoded, encoded_len + len);
+		len = os_strlen(pos);
+		nencoded = os_realloc(encoded, encoded_len + len);
 		if (nencoded == NULL) {
 			wpa_printf(MSG_ERROR, "Line %d: not enough memory for "
 				   "blob", *line);
-			free(encoded);
+			os_free(encoded);
 			return NULL;
 		}
 		encoded = nencoded;
-		memcpy(encoded + encoded_len, pos, len);
+		os_memcpy(encoded + encoded_len, pos, len);
 		encoded_len += len;
 	}
 
 	if (!end) {
 		wpa_printf(MSG_ERROR, "Line %d: blob was not terminated "
 			   "properly", *line);
-		free(encoded);
+		os_free(encoded);
 		return NULL;
 	}
 
-	blob = wpa_zalloc(sizeof(*blob));
+	blob = os_zalloc(sizeof(*blob));
 	if (blob == NULL) {
-		free(encoded);
+		os_free(encoded);
 		return NULL;
 	}
-	blob->name = strdup(name);
+	blob->name = os_strdup(name);
 	blob->data = base64_decode(encoded, encoded_len, &blob->len);
-	free(encoded);
+	os_free(encoded);
 
 	if (blob->name == NULL || blob->data == NULL) {
 		wpa_config_free_blob(blob);
@@ -227,12 +227,12 @@ struct wpa_config * wpa_config_read(const char *name)
 	wpa_printf(MSG_DEBUG, "Reading configuration file '%s'", name);
 	f = fopen(name, "r");
 	if (f == NULL) {
-		free(config);
+		os_free(config);
 		return NULL;
 	}
 
 	while (wpa_config_get_line(buf, sizeof(buf), f, &line, &pos)) {
-		if (strcmp(pos, "network={") == 0) {
+		if (os_strcmp(pos, "network={") == 0) {
 			ssid = wpa_config_read_network(f, &line, id++);
 			if (ssid == NULL) {
 				wpa_printf(MSG_ERROR, "Line %d: failed to "
@@ -253,11 +253,11 @@ struct wpa_config * wpa_config_read(const char *name)
 				errors++;
 				continue;
 			}
-		} else if (strncmp(pos, "blob-base64-", 12) == 0) {
+		} else if (os_strncmp(pos, "blob-base64-", 12) == 0) {
 			char *name = pos + 12, *name_end;
 			struct wpa_config_blob *blob;
 
-			name_end = strchr(name, '=');
+			name_end = os_strchr(name, '=');
 			if (name_end == NULL) {
 				wpa_printf(MSG_ERROR, "Line %d: no blob name "
 					   "terminator", line);
@@ -275,42 +275,19 @@ struct wpa_config * wpa_config_read(const char *name)
 			}
 			wpa_config_set_blob(config, blob);
 #ifdef CONFIG_CTRL_IFACE
-		} else if (strncmp(pos, "ctrl_interface=", 15) == 0) {
-			free(config->ctrl_interface);
-			config->ctrl_interface = strdup(pos + 15);
+		} else if (os_strncmp(pos, "ctrl_interface=", 15) == 0) {
+			os_free(config->ctrl_interface);
+			config->ctrl_interface = os_strdup(pos + 15);
 			wpa_printf(MSG_DEBUG, "ctrl_interface='%s'",
 				   config->ctrl_interface);
-#ifndef CONFIG_CTRL_IFACE_UDP
-		} else if (strncmp(pos, "ctrl_interface_group=", 21) == 0) {
-			struct group *grp;
-			char *endp;
-			const char *group = pos + 21;
-
-			grp = getgrnam(group);
-			if (grp) {
-				config->ctrl_interface_gid = grp->gr_gid;
-				config->ctrl_interface_gid_set = 1;
-				wpa_printf(MSG_DEBUG, "ctrl_interface_group=%d"
-					   " (from group name '%s')",
-					   (int) config->ctrl_interface_gid,
-					   group);
-				continue;
-			}
-
-			/* Group name not found - try to parse this as gid */
-			config->ctrl_interface_gid = strtol(group, &endp, 10);
-			if (*group == '\0' || *endp != '\0') {
-				wpa_printf(MSG_DEBUG, "Line %d: Invalid group "
-					   "'%s'", line, group);
-				errors++;
-				continue;
-			}
-			config->ctrl_interface_gid_set = 1;
-			wpa_printf(MSG_DEBUG, "ctrl_interface_group=%d",
-				   (int) config->ctrl_interface_gid);
-#endif /* CONFIG_CTRL_IFACE_UDP */
+		} else if (os_strncmp(pos, "ctrl_interface_group=", 21) == 0) {
+			os_free(config->ctrl_interface_group);
+			config->ctrl_interface_group = os_strdup(pos + 21);
+			wpa_printf(MSG_DEBUG, "ctrl_interface_group='%s' "
+				   "(DEPRECATED)",
+				   config->ctrl_interface_group);
 #endif /* CONFIG_CTRL_IFACE */
-		} else if (strncmp(pos, "eapol_version=", 14) == 0) {
+		} else if (os_strncmp(pos, "eapol_version=", 14) == 0) {
 			config->eapol_version = atoi(pos + 14);
 			if (config->eapol_version < 1 ||
 			    config->eapol_version > 2) {
@@ -322,56 +299,56 @@ struct wpa_config * wpa_config_read(const char *name)
 			}
 			wpa_printf(MSG_DEBUG, "eapol_version=%d",
 				   config->eapol_version);
-		} else if (strncmp(pos, "ap_scan=", 8) == 0) {
+		} else if (os_strncmp(pos, "ap_scan=", 8) == 0) {
 			config->ap_scan = atoi(pos + 8);
 			wpa_printf(MSG_DEBUG, "ap_scan=%d", config->ap_scan);
-		} else if (strncmp(pos, "fast_reauth=", 12) == 0) {
+		} else if (os_strncmp(pos, "fast_reauth=", 12) == 0) {
 			config->fast_reauth = atoi(pos + 12);
 			wpa_printf(MSG_DEBUG, "fast_reauth=%d",
 				   config->fast_reauth);
-		} else if (strncmp(pos, "opensc_engine_path=", 19) == 0) {
-			free(config->opensc_engine_path);
-			config->opensc_engine_path = strdup(pos + 19);
+		} else if (os_strncmp(pos, "opensc_engine_path=", 19) == 0) {
+			os_free(config->opensc_engine_path);
+			config->opensc_engine_path = os_strdup(pos + 19);
 			wpa_printf(MSG_DEBUG, "opensc_engine_path='%s'",
 				   config->opensc_engine_path);
-		} else if (strncmp(pos, "pkcs11_engine_path=", 19) == 0) {
-			free(config->pkcs11_engine_path);
-			config->pkcs11_engine_path = strdup(pos + 19);
+		} else if (os_strncmp(pos, "pkcs11_engine_path=", 19) == 0) {
+			os_free(config->pkcs11_engine_path);
+			config->pkcs11_engine_path = os_strdup(pos + 19);
 			wpa_printf(MSG_DEBUG, "pkcs11_engine_path='%s'",
 				   config->pkcs11_engine_path);
-		} else if (strncmp(pos, "pkcs11_module_path=", 19) == 0) {
-			free(config->pkcs11_module_path);
-			config->pkcs11_module_path = strdup(pos + 19);
+		} else if (os_strncmp(pos, "pkcs11_module_path=", 19) == 0) {
+			os_free(config->pkcs11_module_path);
+			config->pkcs11_module_path = os_strdup(pos + 19);
 			wpa_printf(MSG_DEBUG, "pkcs11_module_path='%s'",
 				   config->pkcs11_module_path);
-		} else if (strncmp(pos, "driver_param=", 13) == 0) {
-			free(config->driver_param);
-			config->driver_param = strdup(pos + 13);
+		} else if (os_strncmp(pos, "driver_param=", 13) == 0) {
+			os_free(config->driver_param);
+			config->driver_param = os_strdup(pos + 13);
 			wpa_printf(MSG_DEBUG, "driver_param='%s'",
 				   config->driver_param);
-		} else if (strncmp(pos, "dot11RSNAConfigPMKLifetime=", 27) ==
-			   0) {
+		} else if (os_strncmp(pos, "dot11RSNAConfigPMKLifetime=", 27)
+			   == 0) {
 			config->dot11RSNAConfigPMKLifetime = atoi(pos + 27);
 			wpa_printf(MSG_DEBUG, "dot11RSNAConfigPMKLifetime=%d",
 				   config->dot11RSNAConfigPMKLifetime);
-		} else if (strncmp(pos, "dot11RSNAConfigPMKReauthThreshold=",
-				   34) ==
-			   0) {
+		} else if (os_strncmp(pos,
+				      "dot11RSNAConfigPMKReauthThreshold=", 34)
+			   == 0) {
 			config->dot11RSNAConfigPMKReauthThreshold =
 				atoi(pos + 34);
 			wpa_printf(MSG_DEBUG,
 				   "dot11RSNAConfigPMKReauthThreshold=%d",
 				   config->dot11RSNAConfigPMKReauthThreshold);
-		} else if (strncmp(pos, "dot11RSNAConfigSATimeout=", 25) ==
+		} else if (os_strncmp(pos, "dot11RSNAConfigSATimeout=", 25) ==
 			   0) {
 			config->dot11RSNAConfigSATimeout = atoi(pos + 25);
 			wpa_printf(MSG_DEBUG, "dot11RSNAConfigSATimeout=%d",
 				   config->dot11RSNAConfigSATimeout);
-		} else if (strncmp(pos, "update_config=", 14) == 0) {
+		} else if (os_strncmp(pos, "update_config=", 14) == 0) {
 			config->update_config = atoi(pos + 14);
 			wpa_printf(MSG_DEBUG, "update_config=%d",
 				   config->update_config);
-		} else if (strncmp(pos, "load_dynamic_eap=", 17) == 0) {
+		} else if (os_strncmp(pos, "load_dynamic_eap=", 17) == 0) {
 			char *so = pos + 17;
 			int ret;
 			wpa_printf(MSG_DEBUG, "load_dynamic_eap=%s", so);
@@ -423,7 +400,7 @@ static void write_str(FILE *f, const char *field, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	fprintf(f, "\t%s=%s\n", field, value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -441,7 +418,7 @@ static void write_bssid(FILE *f, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	fprintf(f, "\tbssid=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -451,7 +428,7 @@ static void write_psk(FILE *f, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	fprintf(f, "\tpsk=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -467,7 +444,7 @@ static void write_proto(FILE *f, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		fprintf(f, "\tproto=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -483,7 +460,7 @@ static void write_key_mgmt(FILE *f, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		fprintf(f, "\tkey_mgmt=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -499,7 +476,7 @@ static void write_pairwise(FILE *f, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		fprintf(f, "\tpairwise=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -515,7 +492,7 @@ static void write_group(FILE *f, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		fprintf(f, "\tgroup=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -531,7 +508,7 @@ static void write_auth_alg(FILE *f, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		fprintf(f, "\tauth_alg=%s\n", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -546,7 +523,7 @@ static void write_eap(FILE *f, struct wpa_ssid *ssid)
 
 	if (value[0])
 		fprintf(f, "\teap=%s\n", value);
-	free(value);
+	os_free(value);
 }
 #endif /* IEEE8021X_EAPOL */
 
@@ -555,11 +532,11 @@ static void write_wep_key(FILE *f, int idx, struct wpa_ssid *ssid)
 {
 	char field[20], *value;
 
-	snprintf(field, sizeof(field), "wep_key%d", idx);
+	os_snprintf(field, sizeof(field), "wep_key%d", idx);
 	value = wpa_config_get(ssid, field);
 	if (value) {
 		fprintf(f, "\t%s=%s\n", field, value);
-		free(value);
+		os_free(value);
 	}
 }
 
@@ -623,6 +600,9 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT(mode);
 	INT(proactive_key_caching);
 	INT(disabled);
+	INT(stakey);
+	INT(peerkey);
+	STR(id_str);
 
 #undef STR
 #undef INT
@@ -639,7 +619,7 @@ static int wpa_config_write_blob(FILE *f, struct wpa_config_blob *blob)
 		return -1;
 
 	fprintf(f, "\nblob-base64-%s={\n%s}\n", blob->name, encoded);
-	free(encoded);
+	os_free(encoded);
 	return 0;
 }
 
@@ -663,12 +643,9 @@ int wpa_config_write(const char *name, struct wpa_config *config)
 #ifdef CONFIG_CTRL_IFACE
 	if (config->ctrl_interface)
 		fprintf(f, "ctrl_interface=%s\n", config->ctrl_interface);
-#ifndef CONFIG_CTRL_IFACE_UDP
-	if (config->ctrl_interface_gid_set) {
-		fprintf(f, "ctrl_interface_group=%d\n",
-			(int) config->ctrl_interface_gid);
-	}
-#endif /* CONFIG_CTRL_IFACE_UDP */
+	if (config->ctrl_interface_group)
+		fprintf(f, "ctrl_interface_group=%s\n",
+			config->ctrl_interface_group);
 #endif /* CONFIG_CTRL_IFACE */
 	if (config->eapol_version != DEFAULT_EAPOL_VERSION)
 		fprintf(f, "eapol_version=%d\n", config->eapol_version);

@@ -86,6 +86,11 @@ static const struct tls_cipher_data tls_ciphers[] = {
 #define NUM_TLS_CIPHER_DATA NUM_ELEMS(tls_ciphers)
 
 
+/**
+ * tls_get_cipher_suite - Get TLS cipher suite
+ * @suite: Cipher suite identifier
+ * Returns: Pointer to the cipher data or %NULL if not found
+ */
 const struct tls_cipher_suite * tls_get_cipher_suite(u16 suite)
 {
 	size_t i;
@@ -106,9 +111,20 @@ static const struct tls_cipher_data * tls_get_cipher_data(tls_cipher cipher)
 }
 
 
+/**
+ * tls_parse_cert - Parse DER encoded X.509 certificate and get public key
+ * @buf: ASN.1 DER encoded certificate
+ * @len: Length of the buffer
+ * @pk: Buffer for returning the allocated public key
+ * Returns: 0 on success, -1 on failure
+ *
+ * This functions parses an ASN.1 DER encoded X.509 certificate and retrieves
+ * the public key from it. The caller is responsible for freeing the public key
+ * by calling crypto_public_key_free().
+ */
 int tls_parse_cert(const u8 *buf, size_t len, struct crypto_public_key **pk)
 {
-	struct x509_certificate cert;
+	struct x509_certificate *cert;
 
 	wpa_hexdump(MSG_MSGDUMP, "TLSv1: Parse ASN.1 DER certificate",
 		    buf, len);
@@ -117,7 +133,8 @@ int tls_parse_cert(const u8 *buf, size_t len, struct crypto_public_key **pk)
 	if (*pk)
 		return 0;
 
-	if (x509_certificate_parse(buf, len, &cert) < 0) {
+	cert = x509_certificate_parse(buf, len);
+	if (cert == NULL) {
 		wpa_printf(MSG_DEBUG, "TLSv1: Failed to parse X.509 "
 			   "certificate");
 		return -1;
@@ -135,8 +152,8 @@ int tls_parse_cert(const u8 *buf, size_t len, struct crypto_public_key **pk)
 	 * set on Diffie-Hellman certificates. (PKIX: RFC 3280)
 	 */
 
-	*pk = crypto_public_key_import(cert.public_key, cert.public_key_len);
-	x509_certificate_free(&cert);
+	*pk = crypto_public_key_import(cert->public_key, cert->public_key_len);
+	x509_certificate_free(cert);
 
 	if (*pk == NULL) {
 		wpa_printf(MSG_ERROR, "TLSv1: Failed to import "
@@ -148,6 +165,17 @@ int tls_parse_cert(const u8 *buf, size_t len, struct crypto_public_key **pk)
 }
 
 
+/**
+ * tlsv1_record_set_cipher_suite - TLS record layer: Set cipher suite
+ * @rl: Pointer to TLS record layer data
+ * @cipher_suite: New cipher suite
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is used to prepare TLS record layer for cipher suite change.
+ * tlsv1_record_change_write_cipher() and
+ * tlsv1_record_change_read_cipher() functions can then be used to change the
+ * currently used ciphers.
+ */
 int tlsv1_record_set_cipher_suite(struct tlsv1_record_layer *rl,
 				  u16 cipher_suite)
 {
@@ -182,12 +210,20 @@ int tlsv1_record_set_cipher_suite(struct tlsv1_record_layer *rl,
 }
 
 
+/**
+ * tlsv1_record_change_write_cipher - TLS record layer: Change write cipher
+ * @rl: Pointer to TLS record layer data
+ * Returns: 0 on success (cipher changed), -1 on failure
+ *
+ * This function changes TLS record layer to use the new cipher suite
+ * configured with tlsv1_record_set_cipher_suite() for writing.
+ */
 int tlsv1_record_change_write_cipher(struct tlsv1_record_layer *rl)
 {
 	wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - New write cipher suite "
 		   "0x%04x", rl->cipher_suite);
 	rl->write_cipher_suite = rl->cipher_suite;
-	memset(rl->write_seq_num, 0, TLS_SEQ_NUM_LEN);
+	os_memset(rl->write_seq_num, 0, TLS_SEQ_NUM_LEN);
 
 	if (rl->write_cbc) {
 		crypto_cipher_deinit(rl->write_cbc);
@@ -208,12 +244,20 @@ int tlsv1_record_change_write_cipher(struct tlsv1_record_layer *rl)
 }
 
 
+/**
+ * tlsv1_record_change_read_cipher - TLS record layer: Change read cipher
+ * @rl: Pointer to TLS record layer data
+ * Returns: 0 on success (cipher changed), -1 on failure
+ *
+ * This function changes TLS record layer to use the new cipher suite
+ * configured with tlsv1_record_set_cipher_suite() for reading.
+ */
 int tlsv1_record_change_read_cipher(struct tlsv1_record_layer *rl)
 {
 	wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - New read cipher suite "
 		   "0x%04x", rl->cipher_suite);
 	rl->read_cipher_suite = rl->cipher_suite;
-	memset(rl->read_seq_num, 0, TLS_SEQ_NUM_LEN);
+	os_memset(rl->read_seq_num, 0, TLS_SEQ_NUM_LEN);
 
 	if (rl->read_cbc) {
 		crypto_cipher_deinit(rl->read_cbc);
@@ -234,6 +278,21 @@ int tlsv1_record_change_read_cipher(struct tlsv1_record_layer *rl)
 }
 
 
+/**
+ * tlsv1_record_send - TLS record layer: Send a message
+ * @rl: Pointer to TLS record layer data
+ * @content_type: Content type (TLS_CONTENT_TYPE_*)
+ * @buf: Buffer to send (with TLS_RECORD_HEADER_LEN octets reserved in the
+ * beginning for record layer to fill in; payload filled in after this and
+ * extra space in the end for HMAC).
+ * @buf_size: Maximum buf size
+ * @payload_len: Length of the payload
+ * @out_len: Buffer for returning the used buf length
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function fills in the TLS record layer header, adds HMAC, and encrypts
+ * the data using the current write cipher.
+ */
 int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 		      size_t buf_size, size_t payload_len, size_t *out_len)
 {
@@ -294,7 +353,7 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 					   "block cipher padding");
 				return -1;
 			}
-			memset(pos, pad, pad + 1);
+			os_memset(pos, pad, pad + 1);
 			pos += pad + 1;
 		}
 
@@ -312,6 +371,20 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 }
 
 
+/**
+ * tlsv1_record_receive - TLS record layer: Process a received message
+ * @rl: Pointer to TLS record layer data
+ * @in_data: Received data
+ * @in_len: Length of the received data
+ * @out_data: Buffer for output data (must be at least as long as in_data)
+ * @out_len: Set to maximum out_data length by caller; used to return the
+ * length of the used data
+ * @alert: Buffer for returning an alert value on failure
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function decrypts the received message, verifies HMAC and TLS record
+ * layer header.
+ */
 int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 			 const u8 *in_data, size_t in_len,
 			 u8 *out_data, size_t *out_len, u8 *alert)
@@ -381,7 +454,7 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 		return -1;
 	}
 
-	memcpy(out_data, in_data, in_len);
+	os_memcpy(out_data, in_data, in_len);
 	*out_len = in_len;
 
 	if (rl->read_cipher_suite != TLS_NULL_WITH_NULL_NULL) {
@@ -456,7 +529,7 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 			return -1;
 		}
 		if (hlen != rl->hash_size ||
-		    memcmp(hash, out_data + *out_len, hlen) != 0) {
+		    os_memcmp(hash, out_data + *out_len, hlen) != 0) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Invalid HMAC value in "
 				   "received message");
 			*alert = TLS_ALERT_BAD_RECORD_MAC;

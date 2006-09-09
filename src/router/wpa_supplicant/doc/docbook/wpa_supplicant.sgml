@@ -16,6 +16,7 @@
       <arg>-i<replaceable>ifname</replaceable></arg>
       <arg>-c<replaceable>config file</replaceable></arg>
       <arg>-D<replaceable>driver</replaceable></arg>
+      <arg>-P<replaceable>PID_file</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
@@ -343,6 +344,13 @@
 	<term>-c filename</term>
 	<listitem>
 	  <para>Path to configuration file.</para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>-P PID_file</term>
+	<listitem>
+	  <para>Path to PID file.</para>
 	</listitem>
       </varlistentry>
 

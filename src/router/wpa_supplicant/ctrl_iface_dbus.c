@@ -34,6 +34,8 @@ struct ctrl_iface_dbus_priv {
 	DBusConnection *con;
 	int should_dispatch;
 	struct wpa_global *global;
+
+	u32 next_objid;
 };
 
 
@@ -260,66 +262,91 @@ static int connection_setup_wakeup_main(struct ctrl_iface_dbus_priv *iface)
 
 
 /**
- * get_iface_from_object_path - Decompose an object path
- * @path: the dbus object path
+ * wpa_supplicant_dbus_next_objid - Return next available object id
+ * @iface: dbus control interface private data
+ * Returns: Object id
+ */
+u32 wpa_supplicant_dbus_next_objid (struct ctrl_iface_dbus_priv *iface)
+{
+	return iface->next_objid++;
+}
+
+
+/**
+ * wpas_dbus_decompose_object_path - Decompose an interface object path into parts
+ * @path: The dbus object path
  * @network: (out) the configured network this object path refers to, if any
  * @bssid: (out) the scanned bssid this object path refers to, if any
- * Returns: the network interface this object path refers to
+ * Returns: The object path of the network interface this path refers to
  *
- * Convenience function to create and return an invalid bssid error
+ * For a given object path, decomposes the object path into object id, network,
+ * and BSSID parts, if those parts exist.
  */
-static char * get_iface_from_object_path(const char *path, char **network,
-					 char **bssid)
+char * wpas_dbus_decompose_object_path(const char *path, char **network,
+				       char **bssid)
 {
 	const unsigned int dev_path_prefix_len =
-		strlen(WPAS_INTERFACES_DBUS_PATH "/");
-	const char *path_iface_name;
-	char *iface_name;
+		strlen(WPAS_DBUS_PATH_INTERFACES "/");
+	char *obj_path_only;
 	char *next_sep;
 
 	/* Be a bit paranoid about path */
-	if (!path || strncmp(path, WPAS_INTERFACES_DBUS_PATH "/",
+	if (!path || strncmp(path, WPAS_DBUS_PATH_INTERFACES "/",
 			     dev_path_prefix_len))
 		return NULL;
 
 	/* Ensure there's something at the end of the path */
-	path_iface_name = path + dev_path_prefix_len;
-	if (path_iface_name[0] == '\0')
+	if ((path + dev_path_prefix_len)[0] == '\0')
 		return NULL;
 
-	/* Extract the interface name and possibly a network name too. */
-	iface_name = strdup(path_iface_name);
-	if (iface_name == NULL)
+	obj_path_only = strdup(path);
+	if (obj_path_only == NULL)
 		return NULL;
-	next_sep = strchr(iface_name, '/');
+
+	next_sep = strchr(obj_path_only + dev_path_prefix_len, '/');
 	if (next_sep != NULL) {
 		const char *net_part = strstr(next_sep,
-					      INTERFACES_PATH_NETWORKS_PART);
+					      WPAS_DBUS_NETWORKS_PART "/");
 		const char *bssid_part = strstr(next_sep,
-						INTERFACES_PATH_BSSIDS_PART);
+						WPAS_DBUS_BSSIDS_PART "/");
 
 		if (network && net_part) {
 			/* Deal with a request for a configured network */
 			const char *net_name = net_part +
-				strlen(INTERFACES_PATH_NETWORKS_PART);
+				strlen(WPAS_DBUS_NETWORKS_PART "/");
 			*network = NULL;
 			if (strlen(net_name))
 				*network = strdup(net_name);
 		} else if (bssid && bssid_part) {
 			/* Deal with a request for a scanned BSSID */
 			const char *bssid_name = bssid_part +
-				strlen(INTERFACES_PATH_BSSIDS_PART);
+				strlen(WPAS_DBUS_BSSIDS_PART "/");
 			if (strlen(bssid_name))
 				*bssid = strdup(bssid_name);
 			else
 				*bssid = NULL;
 		}
 
-		/* Cut off interface name before "/" */
+		/* Cut off interface object path before "/" */
 		*next_sep = '\0';
 	}
 
-	return iface_name;
+	return obj_path_only;
+}
+
+
+/**
+ * wpas_dbus_new_invalid_iface_error - Return a new invalid interface error message
+ * @message: Pointer to incoming dbus message this error refers to
+ * Returns: A dbus error message
+ *
+ * Convenience function to create and return an invalid interface error
+ */
+DBusMessage * wpas_dbus_new_invalid_iface_error(DBusMessage *message)
+{
+	return dbus_message_new_error(message, WPAS_ERROR_INVALID_IFACE,
+				      "wpa_supplicant knows nothing about "
+				      "this interface.");
 }
 
 
@@ -330,10 +357,10 @@ static char * get_iface_from_object_path(const char *path, char **network,
  *
  * Convenience function to create and return an invalid network error
  */
-static DBusMessage * wpas_dbus_new_invalid_network_error(DBusMessage *message)
+DBusMessage * wpas_dbus_new_invalid_network_error(DBusMessage *message)
 {
 	return dbus_message_new_error(message, WPAS_ERROR_INVALID_NETWORK,
-				      "The network requested was invalid.");
+				      "The requested network does not exist.");
 }
 
 
@@ -364,15 +391,22 @@ static DBusMessage * wpas_dispatch_network_method(DBusMessage *message,
 						  struct wpa_supplicant *wpa_s,
 						  int network_id)
 {
+	DBusMessage *reply = NULL;
+	const char *method = dbus_message_get_member(message);
 	struct wpa_ssid *ssid;
 
 	ssid = wpa_config_get_network(wpa_s->conf, network_id);
 	if (ssid == NULL)
 		return wpas_dbus_new_invalid_network_error(message);
 
-	/* FIXME: do something here */
+	if (!strcmp(method, "set"))
+		reply = wpas_dbus_iface_set_network(message, wpa_s, ssid);
+	else if (!strcmp(method, "enable"))
+		reply = wpas_dbus_iface_enable_network(message, wpa_s, ssid);
+	else if (!strcmp(method, "disable"))
+		reply = wpas_dbus_iface_disable_network(message, wpa_s, ssid);
 
-	return NULL;
+	return reply;
 }
 
 
@@ -429,51 +463,56 @@ out:
 
 
 /**
- * wpas_dispatch_iface_method - dispatch messages for interfaces or networks
- * @message: the incoming dbus message
- * @path: the target object path of the message
- * @global: %wpa_supplicant global data
- * Returns: a reply dbus message, or a dbus error message
+ * wpas_iface_message_handler - Dispatch messages for interfaces or networks
+ * @connection: Connection to the system message bus
+ * @message: An incoming dbus message
+ * @user_data: A pointer to a dbus control interface data structure
+ * Returns: Whether or not the message was handled
  *
  * This function dispatches all incoming dbus messages for network interfaces,
  * or objects owned by them, such as scanned BSSIDs and configured networks.
  */
-static DBusMessage * wpas_dispatch_iface_method(DBusMessage *message,
-						const char *path,
-						struct wpa_global *global)
+static DBusHandlerResult wpas_iface_message_handler(DBusConnection *connection,
+						    DBusMessage *message,
+						    void *user_data)
 {
+	struct wpa_supplicant *wpa_s = user_data;
 	const char *method = dbus_message_get_member(message);
+	const char *path = dbus_message_get_path(message);
+	const char *msg_interface = dbus_message_get_interface(message);
+	char *iface_obj_path = NULL;
 	char *network = NULL;
 	char *bssid = NULL;
-	char *iface_name = NULL;
-	struct wpa_supplicant *wpa_s;
 	DBusMessage *reply = NULL;
 
- 	iface_name = get_iface_from_object_path(path, &network, &bssid);
- 	if (!iface_name || !strlen(iface_name)) {
-		reply = wpas_dbus_new_invalid_iface_error(message);
- 		goto out;
-	}
-
-	/* Find the interface this message is for */
-	wpa_s = wpa_supplicant_get_iface(global, iface_name);
-	if (wpa_s == NULL) {
+	iface_obj_path = wpas_dbus_decompose_object_path(path, &network,
+	                                                 &bssid);
+	if (iface_obj_path == NULL) {
 		reply = wpas_dbus_new_invalid_iface_error(message);
 		goto out;
 	}
 
-	if (network) {
-		/* A method for one of this interface's configured networks. */
+	/* Make sure the message's object path actually refers to the
+	 * wpa_supplicant structure it's supposed to (which is wpa_s)
+	 */
+	if (wpa_supplicant_get_iface_by_dbus_path(wpa_s->global,
+	                                          iface_obj_path) != wpa_s) {
+		reply = wpas_dbus_new_invalid_iface_error(message);
+		goto out;
+	}
+
+	if (network && !strcmp(msg_interface, WPAS_DBUS_IFACE_NETWORK)) {
+		/* A method for one of this interface's configured networks */
 		int nid = strtoul(network, NULL, 10);
 		if (errno != EINVAL)
 			reply = wpas_dispatch_network_method(message, wpa_s,
 							     nid);
 		else
 			reply = wpas_dbus_new_invalid_network_error(message);
-	} else if (bssid) {
+	} else if (bssid && !strcmp(msg_interface, WPAS_DBUS_IFACE_BSSID)) {
 		/* A method for one of this interface's scanned BSSIDs */
 		reply = wpas_dispatch_bssid_method(message, wpa_s, bssid);
-	} else {
+	} else if (!strcmp(msg_interface, WPAS_DBUS_IFACE_INTERFACE)) {
 		/* A method for an interface only. */
 		if (!strcmp(method, "scan"))
 			reply = wpas_dbus_iface_scan(message, wpa_s);
@@ -481,13 +520,30 @@ static DBusMessage * wpas_dispatch_iface_method(DBusMessage *message,
 			reply = wpas_dbus_iface_scan_results(message, wpa_s);
 		else if (!strcmp(method, "addNetwork"))
 			reply = wpas_dbus_iface_add_network(message, wpa_s);
+		else if (!strcmp(method, "removeNetwork"))
+			reply = wpas_dbus_iface_remove_network(message, wpa_s);
+		else if (!strcmp(method, "selectNetwork"))
+			reply = wpas_dbus_iface_select_network(message, wpa_s);
+		else if (!strcmp(method, "capabilities"))
+			reply = wpas_dbus_iface_capabilities(message, wpa_s);
+		else if (!strcmp(method, "disconnect"))
+			reply = wpas_dbus_iface_disconnect(message, wpa_s);
+		else if (!strcmp(method, "setAPScan"))
+			reply = wpas_dbus_iface_set_ap_scan(message, wpa_s);
+	}
+
+	/* If the message was handled, send back the reply */
+	if (reply) {
+		dbus_connection_send(connection, reply, NULL);
+		dbus_message_unref(reply);
 	}
 
 out:
-	free(iface_name);
+	free(iface_obj_path);
 	free(network);
 	free(bssid);
-	return reply;
+	return reply ? DBUS_HANDLER_RESULT_HANDLED :
+		DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 
@@ -523,12 +579,10 @@ static DBusHandlerResult wpas_message_handler(DBusConnection *connection,
 		} else if (!strcmp(method, "removeInterface")) {
 			reply = wpas_dbus_global_remove_interface(
 				message, ctrl_iface->global);
+		} else if (!strcmp(method, "getInterface")) {
+			reply = wpas_dbus_global_get_interface(
+				message, ctrl_iface->global);
 		}
-	} else if (!strncmp(path, WPAS_INTERFACES_DBUS_PATH "/",
-			    strlen(WPAS_INTERFACES_DBUS_PATH "/"))) {
-		/* Call interface message handler for all other messages */
-		reply = wpas_dispatch_iface_method(message, path,
-						   ctrl_iface->global);
 	}
 
 	/* If the message was handled, send back the reply */
@@ -544,7 +598,6 @@ static DBusHandlerResult wpas_message_handler(DBusConnection *connection,
 
 /**
  * wpa_supplicant_dbus_notify_scan_results - Send a scan results signal
- * @iface: a dbus control interface data structure
  * @wpa_s: %wpa_supplicant network interface data
  * Returns: 0 on success, -1 on failure
  *
@@ -554,31 +607,106 @@ void wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s)
 {
 	struct ctrl_iface_dbus_priv *iface = wpa_s->global->dbus_ctrl_iface;
 	DBusMessage *signal;
-	char *path;
+	const char *path;
 
-	path = wpa_zalloc(WPAS_DBUS_MAX_OBJECT_PATH_LEN);
+	/* Do nothing if the control interface is not turned on */
+	if (iface == NULL)
+		return;
+
+	path = wpa_supplicant_get_dbus_path(wpa_s);
 	if (path == NULL) {
 		perror("wpa_supplicant_dbus_notify_scan_results[dbus]: "
-		       "out of memory");
-		wpa_printf(MSG_ERROR, "dbus control interface: not enough "
-			   "memory to send scan results signal.");
+		       "interface didn't have a dbus path");
+		wpa_printf(MSG_ERROR,
+		           "wpa_supplicant_dbus_notify_scan_results[dbus]: "
+		           "interface didn't have a dbus path; can't send "
+		           "scan result signal.");
 		return;
 	}
-	snprintf(path, WPAS_DBUS_MAX_OBJECT_PATH_LEN,
-		 WPAS_INTERFACES_DBUS_PATH "/%s", wpa_s->ifname);
-	signal = dbus_message_new_signal(path, WPAS_INTERFACES_DBUS_INTERFACE,
+	signal = dbus_message_new_signal(path, WPAS_DBUS_IFACE_INTERFACE,
 					 "ScanResultsAvailable");
 	if (signal == NULL) {
 		perror("wpa_supplicant_dbus_notify_scan_results[dbus]: "
 		       "couldn't create dbus signal; likely out of memory");
-		wpa_printf(MSG_ERROR, "dbus control interface: not enough"
-			   " memory to send scan results signal.");
-		goto out;
+		wpa_printf(MSG_ERROR, "dbus control interface: not enough "
+			   "memory to send scan results signal.");
+		return;
 	}
 	dbus_connection_send(iface->con, signal, NULL);
+}
 
-out:
-	free(path);
+
+/**
+ * wpa_supplicant_dbus_notify_state_change - Send a state change signal
+ * @wpa_s: %wpa_supplicant network interface data
+ * @new_state: new state wpa_supplicant is entering
+ * @old_state: old state wpa_supplicant is leaving
+ * Returns: 0 on success, -1 on failure
+ *
+ * Notify listeners that wpa_supplicant has changed state
+ */
+void wpa_supplicant_dbus_notify_state_change(struct wpa_supplicant *wpa_s,
+					     wpa_states new_state,
+					     wpa_states old_state)
+{
+	struct ctrl_iface_dbus_priv *iface = wpa_s->global->dbus_ctrl_iface;
+	DBusMessage *signal;
+	const char *path;
+	const char *new_state_str, *old_state_str;
+
+	/* Do nothing if the control interface is not turned on */
+	if (iface == NULL)
+		return;
+
+	/* Only send signal if state really changed */
+	if (new_state == old_state)
+		return;
+
+	path = wpa_supplicant_get_dbus_path(wpa_s);
+	if (path == NULL) {
+		perror("wpa_supplicant_dbus_notify_state_change[dbus]: "
+		       "interface didn't have a dbus path");
+		wpa_printf(MSG_ERROR,
+		           "wpa_supplicant_dbus_notify_state_change[dbus]: "
+		           "interface didn't have a dbus path; can't send "
+		           "scan result signal.");
+		return;
+	}
+	signal = dbus_message_new_signal(path, WPAS_DBUS_IFACE_INTERFACE,
+					 "StateChange");
+	if (signal == NULL) {
+		perror("wpa_supplicant_dbus_notify_state_change[dbus]: "
+		       "couldn't create dbus signal; likely out of memory");
+		wpa_printf(MSG_ERROR,
+		           "wpa_supplicant_dbus_notify_state_change[dbus]: "
+		           "couldn't create dbus signal; likely out of "
+		           "memory.");
+		return;
+	}
+
+	new_state_str = wpa_supplicant_state_txt(new_state);
+	old_state_str = wpa_supplicant_state_txt(old_state);
+	if (new_state_str == NULL || old_state_str == NULL) {
+		perror("wpa_supplicant_dbus_notify_state_change[dbus]: "
+		       "couldn't convert state strings");
+		wpa_printf(MSG_ERROR,
+		           "wpa_supplicant_dbus_notify_state_change[dbus]: "
+		           "couldn't convert state strings.");
+		return;
+	}
+
+	if (!dbus_message_append_args(signal,
+	                              DBUS_TYPE_STRING, &new_state_str,
+	                              DBUS_TYPE_STRING, &old_state_str,
+	                              DBUS_TYPE_INVALID)) {
+		perror("wpa_supplicant_dbus_notify_state_change[dbus]: "
+		       "not enough memory to construct state change signal.");
+		wpa_printf(MSG_ERROR,
+		           "wpa_supplicant_dbus_notify_state_change[dbus]: "
+		           "not enough memory to construct state change "
+		           "signal.");
+	}
+	dbus_connection_send(iface->con, signal, NULL);
 }
 
 
@@ -680,6 +808,9 @@ wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global)
 	}
 	dbus_error_free(&error);
 
+	if (ret != 0)
+		goto fail;
+
 	/* Register the message handler for the global dbus interface */
 	if (!dbus_connection_register_object_path(iface->con,
 						  WPAS_DBUS_PATH, &wpas_vtable,
@@ -687,23 +818,8 @@ wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global)
 		perror("dbus_connection_register_object_path[dbus]");
 		wpa_printf(MSG_ERROR, "Could not set up DBus message "
 			   "handler.");
-		ret = -1;
-	}
-
-	/* Register the message handler for the network-interface-specific
-	 * dbus interface.
-	 */
-	if (!dbus_connection_register_fallback(iface->con,
-					       WPAS_INTERFACES_DBUS_PATH,
-					       &wpas_vtable, iface)) {
-		perror("dbus_connection_register_object_path[dbus]");
-		wpa_printf(MSG_ERROR, "Could not set up DBus message "
-			   "handler for interfaces.");
-		ret = -1;
-	}
-
-	if (ret != 0)
 		goto fail;
+	}
 
 	wpa_printf(MSG_DEBUG, "Providing DBus service '" WPAS_DBUS_SERVICE
 		   "'.");
@@ -739,4 +855,139 @@ void wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface)
 
 	memset(iface, 0, sizeof(struct ctrl_iface_dbus_priv));
 	free(iface);
+}
+
+
+/**
+ * wpas_dbus_register_new_iface - Register a new interface with dbus
+ * @global: Global %wpa_supplicant data
+ * @wpa_s: %wpa_supplicant interface description structure to register
+ * Returns: 0 on success, -1 on error
+ *
+ * Registers a new interface with dbus and assigns it a dbus object path.
+ */
+int wpas_dbus_register_iface(struct wpa_supplicant *wpa_s)
+{
+	struct ctrl_iface_dbus_priv *ctrl_iface =
+		wpa_s->global->dbus_ctrl_iface;
+	DBusConnection * con;
+	u32 next;
+	DBusObjectPathVTable vtable = {
+		NULL, &wpas_iface_message_handler, NULL, NULL, NULL, NULL
+	};
+	char *path;
+	int ret = -1;
+
+	/* Do nothing if the control interface is not turned on */
+	if (ctrl_iface == NULL)
+		return 0;
+
+	con = ctrl_iface->con;
+	next = wpa_supplicant_dbus_next_objid(ctrl_iface);
+
+	/* Create and set the interface's object path */
+	path = wpa_zalloc(WPAS_DBUS_OBJECT_PATH_MAX);
+	if (path == NULL)
+		return -1;
+	snprintf(path, WPAS_DBUS_OBJECT_PATH_MAX,
+		 WPAS_DBUS_PATH_INTERFACES "/%u",
+		 next);
+	if (wpa_supplicant_set_dbus_path(wpa_s, path)) {
+		wpa_printf(MSG_DEBUG,
+		           "Failed to set dbus path for interface %s",
+			   wpa_s->ifname);
+		goto out;
+	}
+
+	/* Register the message handler for the interface functions */
+	if (!dbus_connection_register_fallback(con, path, &vtable, wpa_s)) {
+		perror("wpas_dbus_register_iface [dbus]");
+		wpa_printf(MSG_ERROR, "Could not set up DBus message "
+			   "handler for interface %s.", wpa_s->ifname);
+		goto out;
+	}
+	ret = 0;
+
+out:
+	free(path);
+	return ret;
+}
+
+
+/**
+ * wpas_dbus_unregister_iface - Unregister an interface from dbus
+ * @wpa_s: wpa_supplicant interface structure
+ * Returns: 0 on success, -1 on failure
+ *
+ * Unregisters the interface with dbus
+ */
+int wpas_dbus_unregister_iface(struct wpa_supplicant *wpa_s)
+{
+	struct ctrl_iface_dbus_priv *ctrl_iface =
+		wpa_s->global->dbus_ctrl_iface;
+	DBusConnection *con;
+	const char *path;
+
+	/* Do nothing if the control interface is not turned on */
+	if (ctrl_iface == NULL)
+		return 0;
+
+	con = ctrl_iface->con;
+	path = wpa_supplicant_get_dbus_path(wpa_s);
+
+	if (!dbus_connection_unregister_object_path(con, path))
+		return -1;
+
+	free(wpa_s->dbus_path);
+
+	return 0;
+}
+
+
+/**
+ * wpa_supplicant_get_iface_by_dbus_path - Get a new network interface
+ * @global: Pointer to global data from wpa_supplicant_init()
+ * @path: Pointer to a dbus object path representing an interface
+ * Returns: Pointer to the interface or %NULL if not found
+ */
+struct wpa_supplicant * wpa_supplicant_get_iface_by_dbus_path(
+	struct wpa_global *global, const char *path)
+{
+	struct wpa_supplicant *wpa_s;
+
+	for (wpa_s = global->ifaces; wpa_s; wpa_s = wpa_s->next) {
+		if (strcmp(wpa_s->dbus_path, path) == 0)
+			return wpa_s;
+	}
+	return NULL;
+}
+
+
+/**
+ * wpa_supplicant_set_dbus_path - Assign a dbus path to an interface
+ * @wpa_s: wpa_supplicant interface structure
+ * @path: dbus path to set on the interface
+ * Returns: 0 on succes, -1 on error
+ */
+int wpa_supplicant_set_dbus_path(struct wpa_supplicant *wpa_s,
+				  const char *path)
+{
+	u32 len = strlen (path);
+	if (len >= WPAS_DBUS_OBJECT_PATH_MAX)
+		return -1;
+	if (wpa_s->dbus_path)
+		return -1;
+	wpa_s->dbus_path = strdup(path);
+	return 0;
+}
+
+
+/**
+ * wpa_supplicant_get_dbus_path - Get an interface's dbus path
+ * @wpa_s: %wpa_supplicant interface structure
+ * Returns: Interface's dbus object path, or %NULL on error
+ */
+const char * wpa_supplicant_get_dbus_path(struct wpa_supplicant *wpa_s)
+{
+	return wpa_s->dbus_path;
 }

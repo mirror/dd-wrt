@@ -121,7 +121,7 @@ SM_STATE(EAP, INITIALIZE)
 	eapol_set_int(sm, EAPOL_idleWhile, sm->ClientTimeout);
 	eapol_set_bool(sm, EAPOL_eapSuccess, FALSE);
 	eapol_set_bool(sm, EAPOL_eapFail, FALSE);
-	free(sm->eapKeyData);
+	os_free(sm->eapKeyData);
 	sm->eapKeyData = NULL;
 	sm->eapKeyAvailable = FALSE;
 	eapol_set_bool(sm, EAPOL_eapRestart, FALSE);
@@ -275,7 +275,7 @@ SM_STATE(EAP, GET_METHOD)
 	return;
 
 nak:
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	sm->eapRespData = eap_sm_buildNak(sm, sm->reqId, &sm->eapRespDataLen);
 }
 
@@ -312,12 +312,12 @@ SM_STATE(EAP, METHOD)
 	 * (methodState, decision, allowNotifications) = m.process(eapReqData)
 	 * eapRespData = m.buildResp(reqId)
 	 */
-	memset(&ret, 0, sizeof(ret));
+	os_memset(&ret, 0, sizeof(ret));
 	ret.ignore = sm->ignore;
 	ret.methodState = sm->methodState;
 	ret.decision = sm->decision;
 	ret.allowNotifications = sm->allowNotifications;
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	sm->eapRespData = sm->m->process(sm, sm->eap_method_priv, &ret,
 					 eapReqData, eapReqDataLen,
 					 &sm->eapRespDataLen);
@@ -336,7 +336,7 @@ SM_STATE(EAP, METHOD)
 
 	if (sm->m->isKeyAvailable && sm->m->getKey &&
 	    sm->m->isKeyAvailable(sm, sm->eap_method_priv)) {
-		free(sm->eapKeyData);
+		os_free(sm->eapKeyData);
 		sm->eapKeyData = sm->m->getKey(sm, sm->eap_method_priv,
 					       &sm->eapKeyDataLen);
 	}
@@ -350,15 +350,15 @@ SM_STATE(EAP, METHOD)
 SM_STATE(EAP, SEND_RESPONSE)
 {
 	SM_ENTRY(EAP, SEND_RESPONSE);
-	free(sm->lastRespData);
+	os_free(sm->lastRespData);
 	if (sm->eapRespData) {
 		if (sm->workaround)
-			memcpy(sm->last_md5, sm->req_md5, 16);
+			os_memcpy(sm->last_md5, sm->req_md5, 16);
 		sm->lastId = sm->reqId;
-		sm->lastRespData = malloc(sm->eapRespDataLen);
+		sm->lastRespData = os_malloc(sm->eapRespDataLen);
 		if (sm->lastRespData) {
-			memcpy(sm->lastRespData, sm->eapRespData,
-			       sm->eapRespDataLen);
+			os_memcpy(sm->lastRespData, sm->eapRespData,
+				  sm->eapRespDataLen);
 			sm->lastRespDataLen = sm->eapRespDataLen;
 		}
 		eapol_set_bool(sm, EAPOL_eapResp, TRUE);
@@ -392,7 +392,7 @@ SM_STATE(EAP, IDENTITY)
 	SM_ENTRY(EAP, IDENTITY);
 	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
 	eap_sm_processIdentity(sm, eapReqData);
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	sm->eapRespData = eap_sm_buildIdentity(sm, sm->reqId,
 					       &sm->eapRespDataLen, 0);
 }
@@ -409,7 +409,7 @@ SM_STATE(EAP, NOTIFICATION)
 	SM_ENTRY(EAP, NOTIFICATION);
 	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
 	eap_sm_processNotify(sm, eapReqData);
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	sm->eapRespData = eap_sm_buildNotify(sm->reqId, &sm->eapRespDataLen);
 }
 
@@ -420,12 +420,12 @@ SM_STATE(EAP, NOTIFICATION)
 SM_STATE(EAP, RETRANSMIT)
 {
 	SM_ENTRY(EAP, RETRANSMIT);
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	if (sm->lastRespData) {
-		sm->eapRespData = malloc(sm->lastRespDataLen);
+		sm->eapRespData = os_malloc(sm->lastRespDataLen);
 		if (sm->eapRespData) {
-			memcpy(sm->eapRespData, sm->lastRespData,
-			       sm->lastRespDataLen);
+			os_memcpy(sm->eapRespData, sm->lastRespData,
+				  sm->lastRespDataLen);
 			sm->eapRespDataLen = sm->lastRespDataLen;
 		}
 	} else
@@ -588,7 +588,7 @@ SM_STEP(EAP)
 	case EAP_RECEIVED:
 		duplicate = (sm->reqId == sm->lastId) && sm->rxReq;
 		if (sm->workaround && duplicate &&
-		    memcmp(sm->req_md5, sm->last_md5, 16) != 0) {
+		    os_memcmp(sm->req_md5, sm->last_md5, 16) != 0) {
 			/*
 			 * RFC 4137 uses (reqId == lastId) as the only
 			 * verification for duplicate EAP requests. However,
@@ -716,7 +716,7 @@ static u8 * eap_sm_build_expanded_nak(struct eap_sm *sm, int id, size_t *len,
 
 	/* RFC 3748 - 5.3.2: Expanded Nak */
 	*len = sizeof(struct eap_hdr) + 8;
-	resp = malloc(*len + 8 * (count + 1));
+	resp = os_malloc(*len + 8 * (count + 1));
 	if (resp == NULL)
 		return NULL;
 
@@ -785,7 +785,7 @@ static u8 * eap_sm_buildNak(struct eap_sm *sm, int id, size_t *len)
 
 	/* RFC 3748 - 5.3.1: Legacy Nak */
 	*len = sizeof(struct eap_hdr) + 1;
-	resp = malloc(*len + count + 1);
+	resp = os_malloc(*len + count + 1);
 	if (resp == NULL)
 		return NULL;
 
@@ -871,8 +871,8 @@ static int eap_sm_imsi_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 		}
 	}
 
-	free(ssid->identity);
-	ssid->identity = malloc(1 + imsi_len);
+	os_free(ssid->identity);
+	ssid->identity = os_malloc(1 + imsi_len);
 	if (ssid->identity == NULL) {
 		wpa_printf(MSG_WARNING, "Failed to allocate buffer for "
 			   "IMSI-based identity");
@@ -880,7 +880,7 @@ static int eap_sm_imsi_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 	}
 
 	ssid->identity[0] = aka ? '0' : '1';
-	memcpy(ssid->identity + 1, imsi, imsi_len);
+	os_memcpy(ssid->identity + 1, imsi, imsi_len);
 	ssid->identity_len = 1 + imsi_len;
 	return 0;
 }
@@ -893,7 +893,7 @@ static int eap_sm_get_scard_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 		 * Make sure the same PIN is not tried again in order to avoid
 		 * blocking SIM.
 		 */
-		free(ssid->pin);
+		os_free(ssid->pin);
 		ssid->pin = NULL;
 
 		wpa_printf(MSG_WARNING, "PIN validation failed");
@@ -966,7 +966,7 @@ u8 * eap_sm_buildIdentity(struct eap_sm *sm, int id, size_t *len,
 	}
 
 	*len = sizeof(struct eap_hdr) + 1 + identity_len;
-	resp = malloc(*len);
+	resp = os_malloc(*len);
 	if (resp == NULL)
 		return NULL;
 
@@ -975,7 +975,7 @@ u8 * eap_sm_buildIdentity(struct eap_sm *sm, int id, size_t *len,
 	resp->length = host_to_be16(*len);
 	pos = (u8 *) (resp + 1);
 	*pos++ = EAP_TYPE_IDENTITY;
-	memcpy(pos, identity, identity_len);
+	os_memcpy(pos, identity, identity_len);
 
 	return (u8 *) resp;
 }
@@ -998,7 +998,7 @@ static void eap_sm_processNotify(struct eap_sm *sm, const u8 *req)
 	wpa_hexdump_ascii(MSG_DEBUG, "EAP: EAP-Request Notification data",
 			  pos, msg_len);
 
-	msg = malloc(msg_len + 1);
+	msg = os_malloc(msg_len + 1);
 	if (msg == NULL)
 		return;
 	for (i = 0; i < msg_len; i++)
@@ -1006,7 +1006,7 @@ static void eap_sm_processNotify(struct eap_sm *sm, const u8 *req)
 	msg[msg_len] = '\0';
 	wpa_msg(sm->msg_ctx, MSG_INFO, "%s%s",
 		WPA_EVENT_EAP_NOTIFICATION, msg);
-	free(msg);
+	os_free(msg);
 }
 
 
@@ -1017,7 +1017,7 @@ static u8 * eap_sm_buildNotify(int id, size_t *len)
 
 	wpa_printf(MSG_DEBUG, "EAP: Generating EAP-Response Notification");
 	*len = sizeof(struct eap_hdr) + 1;
-	resp = malloc(*len);
+	resp = os_malloc(*len);
 	if (resp == NULL)
 		return NULL;
 
@@ -1145,7 +1145,7 @@ struct eap_sm * eap_sm_init(void *eapol_ctx, struct eapol_callbacks *eapol_cb,
 	struct eap_sm *sm;
 	struct tls_config tlsconf;
 
-	sm = wpa_zalloc(sizeof(*sm));
+	sm = os_zalloc(sizeof(*sm));
 	if (sm == NULL)
 		return NULL;
 	sm->eapol_ctx = eapol_ctx;
@@ -1153,7 +1153,7 @@ struct eap_sm * eap_sm_init(void *eapol_ctx, struct eapol_callbacks *eapol_cb,
 	sm->msg_ctx = msg_ctx;
 	sm->ClientTimeout = 60;
 
-	memset(&tlsconf, 0, sizeof(tlsconf));
+	os_memset(&tlsconf, 0, sizeof(tlsconf));
 	tlsconf.opensc_engine_path = conf->opensc_engine_path;
 	tlsconf.pkcs11_engine_path = conf->pkcs11_engine_path;
 	tlsconf.pkcs11_module_path = conf->pkcs11_module_path;
@@ -1161,7 +1161,7 @@ struct eap_sm * eap_sm_init(void *eapol_ctx, struct eapol_callbacks *eapol_cb,
 	if (sm->ssl_ctx == NULL) {
 		wpa_printf(MSG_WARNING, "SSL: Failed to initialize TLS "
 			   "context.");
-		free(sm);
+		os_free(sm);
 		return NULL;
 	}
 
@@ -1183,7 +1183,7 @@ void eap_sm_deinit(struct eap_sm *sm)
 	eap_deinit_prev_method(sm, "EAP deinit");
 	eap_sm_abort(sm);
 	tls_deinit(sm->ssl_ctx);
-	free(sm);
+	os_free(sm);
 }
 
 
@@ -1218,11 +1218,11 @@ int eap_sm_step(struct eap_sm *sm)
  */
 void eap_sm_abort(struct eap_sm *sm)
 {
-	free(sm->lastRespData);
+	os_free(sm->lastRespData);
 	sm->lastRespData = NULL;
-	free(sm->eapRespData);
+	os_free(sm->eapRespData);
 	sm->eapRespData = NULL;
-	free(sm->eapKeyData);
+	os_free(sm->eapKeyData);
 	sm->eapKeyData = NULL;
 
 	/* This is not clearly specified in the EAP statemachines draft, but
@@ -1322,14 +1322,16 @@ static const char * eap_sm_decision_txt(EapDecision decision)
  */
 int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 {
-	int len;
+	int len, ret;
 
 	if (sm == NULL)
 		return 0;
 
-	len = snprintf(buf, buflen,
-		       "EAP state=%s\n",
-		       eap_sm_state_txt(sm->EAP_state));
+	len = os_snprintf(buf, buflen,
+			  "EAP state=%s\n",
+			  eap_sm_state_txt(sm->EAP_state));
+	if (len < 0 || (size_t) len >= buflen)
+		return 0;
 
 	if (sm->selectedMethod != EAP_TYPE_NONE) {
 		const char *name;
@@ -1344,9 +1346,12 @@ int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 			else
 				name = "?";
 		}
-		len += snprintf(buf + len, buflen - len,
-				"selectedMethod=%d (EAP-%s)\n",
-				sm->selectedMethod, name);
+		ret = os_snprintf(buf + len, buflen - len,
+				  "selectedMethod=%d (EAP-%s)\n",
+				  sm->selectedMethod, name);
+		if (ret < 0 || (size_t) ret >= buflen - len)
+			return len;
+		len += ret;
 
 		if (sm->m && sm->m->get_status) {
 			len += sm->m->get_status(sm, sm->eap_method_priv,
@@ -1356,15 +1361,18 @@ int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 	}
 
 	if (verbose) {
-		len += snprintf(buf + len, buflen - len,
-				"reqMethod=%d\n"
-				"methodState=%s\n"
-				"decision=%s\n"
-				"ClientTimeout=%d\n",
-				sm->reqMethod,
-				eap_sm_method_state_txt(sm->methodState),
-				eap_sm_decision_txt(sm->decision),
-				sm->ClientTimeout);
+		ret = os_snprintf(buf + len, buflen - len,
+				  "reqMethod=%d\n"
+				  "methodState=%s\n"
+				  "decision=%s\n"
+				  "ClientTimeout=%d\n",
+				  sm->reqMethod,
+				  eap_sm_method_state_txt(sm->methodState),
+				  eap_sm_decision_txt(sm->decision),
+				  sm->ClientTimeout);
+		if (ret < 0 || (size_t) ret >= buflen - len)
+			return len;
+		len += ret;
 	}
 
 	return len;
@@ -1372,6 +1380,7 @@ int eap_sm_get_status(struct eap_sm *sm, char *buf, size_t buflen, int verbose)
 #endif /* CONFIG_CTRL_IFACE */
 
 
+#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 typedef enum {
 	TYPE_IDENTITY, TYPE_PASSWORD, TYPE_OTP, TYPE_PIN, TYPE_NEW_PASSWORD,
 	TYPE_PASSPHRASE
@@ -1417,15 +1426,15 @@ static void eap_sm_request(struct eap_sm *sm, eap_ctrl_req_type type,
 	case TYPE_OTP:
 		field = "OTP";
 		if (msg) {
-			tmp = malloc(msglen + 3);
+			tmp = os_malloc(msglen + 3);
 			if (tmp == NULL)
 				return;
 			tmp[0] = '[';
-			memcpy(tmp + 1, msg, msglen);
+			os_memcpy(tmp + 1, msg, msglen);
 			tmp[msglen + 1] = ']';
 			tmp[msglen + 2] = '\0';
 			txt = tmp;
-			free(config->pending_req_otp);
+			os_free(config->pending_req_otp);
 			config->pending_req_otp = tmp;
 			config->pending_req_otp_len = msglen + 3;
 		} else {
@@ -1443,20 +1452,29 @@ static void eap_sm_request(struct eap_sm *sm, eap_ctrl_req_type type,
 		return;
 	}
 
-	buflen = 100 + strlen(txt) + config->ssid_len;
-	buf = malloc(buflen);
+	buflen = 100 + os_strlen(txt) + config->ssid_len;
+	buf = os_malloc(buflen);
 	if (buf == NULL)
 		return;
-	len = snprintf(buf, buflen, WPA_CTRL_REQ "%s-%d:%s needed for SSID ",
-		       field, config->id, txt);
+	len = os_snprintf(buf, buflen,
+			  WPA_CTRL_REQ "%s-%d:%s needed for SSID ",
+			  field, config->id, txt);
+	if (len < 0 || (size_t) len >= buflen) {
+		os_free(buf);
+		return;
+	}
 	if (config->ssid && buflen > len + config->ssid_len) {
-		memcpy(buf + len, config->ssid, config->ssid_len);
+		os_memcpy(buf + len, config->ssid, config->ssid_len);
 		len += config->ssid_len;
 		buf[len] = '\0';
 	}
+	buf[buflen - 1] = '\0';
 	wpa_msg(sm->msg_ctx, MSG_INFO, "%s", buf);
-	free(buf);
+	os_free(buf);
 }
+#else /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+#define eap_sm_request(sm, type, msg, msglen) do { } while (0)
+#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
 
 
 /**
@@ -1637,7 +1655,7 @@ struct eap_method_type * eap_get_phase2_types(struct wpa_ssid *config,
 	if (methods == NULL)
 		return NULL;
 	*count = 0;
-	buf = malloc(mcount * sizeof(struct eap_method_type));
+	buf = os_malloc(mcount * sizeof(struct eap_method_type));
 	if (buf == NULL)
 		return NULL;
 
@@ -1774,8 +1792,8 @@ void eap_clear_config_otp(struct eap_sm *sm)
 	struct wpa_ssid *config = eap_get_config(sm);
 	if (config == NULL)
 		return;
-	memset(config->otp, 0, config->otp_len);
-	free(config->otp);
+	os_memset(config->otp, 0, config->otp_len);
+	os_free(config->otp);
 	config->otp = NULL;
 	config->otp_len = 0;
 }
@@ -2043,7 +2061,7 @@ struct eap_hdr * eap_msg_alloc(int vendor, EapType type, size_t *len,
 
 	*len = sizeof(struct eap_hdr) + (vendor == EAP_VENDOR_IETF ? 1 : 8) +
 		payload_len;
-	hdr = malloc(*len);
+	hdr = os_malloc(*len);
 	if (hdr) {
 		hdr->code = code;
 		hdr->identifier = identifier;
@@ -2063,4 +2081,19 @@ struct eap_hdr * eap_msg_alloc(int vendor, EapType type, size_t *len,
 	}
 
 	return hdr;
+}
+
+
+ /**
+ * eap_notify_pending - Notify that EAP method is ready to re-process a request
+ * @sm: Pointer to EAP state machine allocated with eap_sm_init()
+ *
+ * An EAP method can perform a pending operation (e.g., to get a response from
+ * an external process). Once the response is available, this function can be
+ * used to request EAPOL state machine to retry delivering the previously
+ * received (and still unanswered) EAP request to EAP state machine.
+ */
+void eap_notify_pending(struct eap_sm *sm)
+{
+	sm->eapol_cb->notify_pending(sm->eapol_ctx);
 }

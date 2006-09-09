@@ -15,11 +15,11 @@
 #ifndef DRIVER_NDIS_H
 #define DRIVER_NDIS_H
 
-#ifdef CONFIG_NDIS_EVENTS_INTEGRATED
 struct ndis_events_data;
-struct ndis_events_data * ndis_events_init(HANDLE *read_pipe, HANDLE *event);
+struct ndis_events_data * ndis_events_init(HANDLE *read_pipe, HANDLE *event,
+					   const char *ifname,
+					   const char *desc);
 void ndis_events_deinit(struct ndis_events_data *events);
-#endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
 struct ndis_pmkid_entry {
 	struct ndis_pmkid_entry *next;
@@ -48,12 +48,8 @@ struct wpa_driver_ndis_data {
 	int mode;
 	int wzc_disabled;
 	int oid_bssid_set;
-#ifdef CONFIG_NDIS_EVENTS_INTEGRATED
 	HANDLE events_pipe, event_avail;
 	struct ndis_events_data *events;
-#else /* CONFIG_NDIS_EVENTS_INTEGRATED */
-	int event_sock;
-#endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 };
 
 #endif /* DRIVER_NDIS_H */
