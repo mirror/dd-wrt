@@ -19,6 +19,15 @@
 #include "rc4.h"
 #include "crypto.h"
 
+#ifndef mp_init_multi
+#define mp_init_multi                ltc_init_multi
+#define mp_clear_multi               ltc_deinit_multi
+#define mp_unsigned_bin_size(a)      ltc_mp.unsigned_size(a)
+#define mp_to_unsigned_bin(a, b)     ltc_mp.unsigned_write(a, b)
+#define mp_read_unsigned_bin(a, b, c) ltc_mp.unsigned_read(a, b, c)
+#define mp_exptmod(a,b,c,d)          ltc_mp.exptmod(a,b,c,d)
+#endif
+
 
 void md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
@@ -81,11 +90,11 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 void * aes_encrypt_init(const u8 *key, size_t len)
 {
 	symmetric_key *skey;
-	skey = malloc(sizeof(*skey));
+	skey = os_malloc(sizeof(*skey));
 	if (skey == NULL)
 		return NULL;
 	if (aes_setup(key, len, 0, skey) != CRYPT_OK) {
-		free(skey);
+		os_free(skey);
 		return NULL;
 	}
 	return skey;
@@ -103,18 +112,18 @@ void aes_encrypt_deinit(void *ctx)
 {
 	symmetric_key *skey = ctx;
 	aes_done(skey);
-	free(skey);
+	os_free(skey);
 }
 
 
 void * aes_decrypt_init(const u8 *key, size_t len)
 {
 	symmetric_key *skey;
-	skey = malloc(sizeof(*skey));
+	skey = os_malloc(sizeof(*skey));
 	if (skey == NULL)
 		return NULL;
 	if (aes_setup(key, len, 0, skey) != CRYPT_OK) {
-		free(skey);
+		os_free(skey);
 		return NULL;
 	}
 	return skey;
@@ -132,15 +141,11 @@ void aes_decrypt_deinit(void *ctx)
 {
 	symmetric_key *skey = ctx;
 	aes_done(skey);
-	free(skey);
+	os_free(skey);
 }
 
 
 #ifdef CONFIG_TLS_INTERNAL
-
-static int ltc_prng_idx = -1;
-static prng_state ltc_prng_state;
-
 
 struct crypto_hash {
 	enum crypto_hash_alg alg;
@@ -157,7 +162,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 {
 	struct crypto_hash *ctx;
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
@@ -189,7 +194,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 	return ctx;
 
 fail:
-	free(ctx);
+	os_free(ctx);
 	return NULL;
 }
 
@@ -222,12 +227,12 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		return -2;
 
 	if (mac == NULL || len == NULL) {
-		free(ctx);
+		os_free(ctx);
 		return 0;
 	}
 
 	if (ctx->error) {
-		free(ctx);
+		os_free(ctx);
 		return -2;
 	}
 
@@ -235,7 +240,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_MD5:
 		if (*len < 16) {
 			*len = 16;
-			free(ctx);
+			os_free(ctx);
 			return -1;
 		}
 		*len = 16;
@@ -245,7 +250,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_SHA1:
 		if (*len < 20) {
 			*len = 20;
-			free(ctx);
+			os_free(ctx);
 			return -1;
 		}
 		*len = 20;
@@ -255,19 +260,19 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	case CRYPTO_HASH_ALG_HMAC_SHA1:
 		if (*len < 20) {
 			*len = 20;
-			free(ctx);
+			os_free(ctx);
 			return -1;
 		}
 		/* continue */
 	case CRYPTO_HASH_ALG_HMAC_MD5:
 		if (*len < 16) {
 			*len = 16;
-			free(ctx);
+			os_free(ctx);
 			return -1;
 		}
 		clen = *len;
 		if (hmac_done(&ctx->u.hmac, mac, &clen) != CRYPT_OK) {
-			free(ctx);
+			os_free(ctx);
 			return -1;
 		}
 		*len = clen;
@@ -277,7 +282,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		break;
 	}
 
-	free(ctx);
+	os_free(ctx);
 
 	return ret;
 }
@@ -324,24 +329,24 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 		return NULL;
 	}
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
 	if (rc4) {
 		ctx->rc4 = 1;
 		if (key_len > sizeof(ctx->u.rc4.key)) {
-			free(ctx);
+			os_free(ctx);
 			return NULL;
 		}
 		ctx->u.rc4.keylen = key_len;
-		memcpy(ctx->u.rc4.key, key, key_len);
+		os_memcpy(ctx->u.rc4.key, key, key_len);
 	} else {
 		res = cbc_start(idx, iv, key, key_len, 0, &ctx->u.cbc);
 		if (res != CRYPT_OK) {
 			wpa_printf(MSG_DEBUG, "LibTomCrypt: Cipher start "
 				   "failed: %s", error_to_string(res));
-			free(ctx);
+			os_free(ctx);
 			return NULL;
 		}
 	}
@@ -356,7 +361,7 @@ int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
 
 	if (ctx->rc4) {
 		if (plain != crypt)
-			memcpy(crypt, plain, len);
+			os_memcpy(crypt, plain, len);
 		rc4_skip(ctx->u.rc4.key, ctx->u.rc4.keylen,
 			 ctx->u.rc4.used_bytes, crypt, len);
 		ctx->u.rc4.used_bytes += len;
@@ -380,7 +385,7 @@ int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
 
 	if (ctx->rc4) {
 		if (plain != crypt)
-			memcpy(plain, crypt, len);
+			os_memcpy(plain, crypt, len);
 		rc4_skip(ctx->u.rc4.key, ctx->u.rc4.keylen,
 			 ctx->u.rc4.used_bytes, plain, len);
 		ctx->u.rc4.used_bytes += len;
@@ -402,11 +407,15 @@ void crypto_cipher_deinit(struct crypto_cipher *ctx)
 {
 	if (!ctx->rc4)
 		cbc_done(&ctx->u.cbc);
-	free(ctx);
+	os_free(ctx);
 }
 
 
 struct crypto_public_key {
+	rsa_key rsa;
+};
+
+struct crypto_private_key {
 	rsa_key rsa;
 };
 
@@ -416,7 +425,7 @@ struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 	int res;
 	struct crypto_public_key *pk;
 
-	pk = wpa_zalloc(sizeof(*pk));
+	pk = os_zalloc(sizeof(*pk));
 	if (pk == NULL)
 		return NULL;
 
@@ -425,7 +434,7 @@ struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 		wpa_printf(MSG_ERROR, "LibTomCrypt: Failed to import "
 			   "public key (res=%d '%s')",
 			   res, error_to_string(res));
-		free(pk);
+		os_free(pk);
 		return NULL;
 	}
 
@@ -433,7 +442,38 @@ struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 		wpa_printf(MSG_ERROR, "LibTomCrypt: Public key was not of "
 			   "correct type");
 		rsa_free(&pk->rsa);
-		free(pk);
+		os_free(pk);
+		return NULL;
+	}
+
+	return pk;
+}
+
+
+struct crypto_private_key * crypto_private_key_import(const u8 *key,
+						      size_t len)
+{
+	int res;
+	struct crypto_private_key *pk;
+
+	pk = os_zalloc(sizeof(*pk));
+	if (pk == NULL)
+		return NULL;
+
+	res = rsa_import(key, len, &pk->rsa);
+	if (res != CRYPT_OK) {
+		wpa_printf(MSG_ERROR, "LibTomCrypt: Failed to import "
+			   "private key (res=%d '%s')",
+			   res, error_to_string(res));
+		os_free(pk);
+		return NULL;
+	}
+
+	if (pk->rsa.type != PK_PRIVATE) {
+		wpa_printf(MSG_ERROR, "LibTomCrypt: Private key was not of "
+			   "correct type");
+		rsa_free(&pk->rsa);
+		os_free(pk);
 		return NULL;
 	}
 
@@ -449,88 +489,92 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 }
 
 
-/*
- * PKCS #1 v1.5 version of RSA encryption was unfortunately removed from
- * LibTomCrypt in v1.03, so let's maintain a local copy of the needed functions
- * here since TLSv1 uses the old version of PKCS #1. These are based on the
- * code from LibTomCrypt v1.02 that was released in public domain by
- * Tom St Denis.
- */
-
-#define mp_count_bits(a)		ltc_mp.count_bits(a)
-#define mp_unsigned_bin_size(a)		ltc_mp.unsigned_size(a)
-
-static int pkcs_1_v15_es_encode(const unsigned char *msg, unsigned long msglen,
-				unsigned long modulus_bitlen,
-				prng_state *prng, int prng_idx,
-				unsigned char *out, unsigned long *outlen)
+static int pkcs1_generate_encryption_block(u8 block_type, size_t modlen,
+					   const u8 *in, size_t inlen,
+					   u8 *out, size_t *outlen)
 {
-	unsigned long modulus_bytelen, x, y, i;
+	size_t ps_len;
+	u8 *pos;
 
-	/* get modulus len */
-	modulus_bytelen = (modulus_bitlen >> 3) + (modulus_bitlen & 7 ? 1 : 0);
-	if (modulus_bytelen < 12)
-		return CRYPT_INVALID_ARG;
+	/*
+	 * PKCS #1 v1.5, 8.1:
+	 *
+	 * EB = 00 || BT || PS || 00 || D
+	 * BT = 00 or 01 for private-key operation; 02 for public-key operation
+	 * PS = k-3-||D||; at least eight octets
+	 * (BT=0: PS=0x00, BT=1: PS=0xff, BT=2: PS=pseudorandom non-zero)
+	 * k = length of modulus in octets (modlen)
+	 */
 
-	/* verify length */
-	if (msglen > (modulus_bytelen - 11) || *outlen < modulus_bytelen)
-		return CRYPT_PK_INVALID_SIZE;
-
-	/* 0x00 0x02 PS 0x00 M */
-	x = 0;
-	out[x++] = 0x00;
-	out[x++] = 0x02;
-	y = modulus_bytelen - msglen - 3;
-	if (prng_descriptor[prng_idx].read(out + x, y, prng) != y)
-		return CRYPT_ERROR_READPRNG;
-	for (i = 0; i < y; i++) {
-		/*
-		 * PKCS #1 v1.5 block type 02: PS is pseusorandomly generated
-		 * and each octet is nonzero. Change zeroes to ones to avoid
-		 * including zeroes here.
-		 */
-		if (out[x + i] == 0)
-			out[x + i] = 1;
+	if (modlen < 12 || modlen > *outlen || inlen > modlen - 11) {
+		wpa_printf(MSG_DEBUG, "PKCS #1: %s - Invalid buffer "
+			   "lengths (modlen=%lu outlen=%lu inlen=%lu)",
+			   __func__, (unsigned long) modlen,
+			   (unsigned long) *outlen,
+			   (unsigned long) inlen);
+		return -1;
 	}
 
-	x += y;
-	out[x++] = 0x00;
-	memcpy(out + x, msg, msglen);
-	*outlen = modulus_bytelen;
+	pos = out;
+	*pos++ = 0x00;
+	*pos++ = block_type; /* BT */
+	ps_len = modlen - inlen - 3;
+	switch (block_type) {
+	case 0:
+		os_memset(pos, 0x00, ps_len);
+		pos += ps_len;
+		break;
+	case 1:
+		os_memset(pos, 0xff, ps_len);
+		pos += ps_len;
+		break;
+	case 2:
+		if (os_get_random(pos, ps_len) < 0) {
+			wpa_printf(MSG_DEBUG, "PKCS #1: %s - Failed to get "
+				   "random data for PS", __func__);
+			return -1;
+		}
+		while (ps_len--) {
+			if (*pos == 0x00)
+				*pos = 0x01;
+			pos++;
+		}
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "PKCS #1: %s - Unsupported block type "
+			   "%d", __func__, block_type);
+		return -1;
+	}
+	*pos++ = 0x00;
+	os_memcpy(pos, in, inlen); /* D */
 
-	return CRYPT_OK;
+	return 0;
 }
 
 
-static int rsa_v15_encrypt_key(const unsigned char *in, unsigned long inlen,
-			       unsigned char *out, unsigned long *outlen,
-			       prng_state *prng, int prng_idx, rsa_key *key)
+static int crypto_rsa_encrypt_pkcs1(int block_type, rsa_key *key, int key_type,
+				    const u8 *in, size_t inlen,
+				    u8 *out, size_t *outlen)
 {
-	unsigned long modulus_bitlen, modulus_bytelen, x;
-	int err;
+	unsigned long len, modlen;
+	int res;
 
-	/* valid prng? */
-	err = prng_is_valid(prng_idx);
-	if (err != CRYPT_OK)
-		return err;
+	modlen = mp_unsigned_bin_size(key->N);
 
-	/* get modulus len in bits */
-	modulus_bitlen = mp_count_bits(key->N);
+	if (pkcs1_generate_encryption_block(block_type, modlen, in, inlen,
+					    out, outlen) < 0)
+		return -1;
 
-	/* outlen must be at least the size of the modulus */
-	modulus_bytelen = mp_unsigned_bin_size(key->N);
-	if (modulus_bytelen > *outlen)
-		return CRYPT_BUFFER_OVERFLOW;
+	len = *outlen;
+	res = rsa_exptmod(out, modlen, out, &len, key_type, key);
+	if (res != CRYPT_OK) {
+		wpa_printf(MSG_DEBUG, "LibTomCrypt: rsa_exptmod failed: %s",
+			   error_to_string(res));
+		return -1;
+	}
+	*outlen = len;
 
-	/* pad it */
-	x = *outlen;
-	err = pkcs_1_v15_es_encode(in, inlen, modulus_bitlen, prng, prng_idx,
-				   out, &x);
-	if (err != CRYPT_OK)
-		return err;
-
-	/* encrypt it */
-	return rsa_exptmod(out, x, out, outlen, PK_PUBLIC, key);
+	return 0;
 }
 
 
@@ -538,20 +582,17 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 					const u8 *in, size_t inlen,
 					u8 *out, size_t *outlen)
 {
-	unsigned long clen;
-	int res;
+	return crypto_rsa_encrypt_pkcs1(2, &key->rsa, PK_PUBLIC, in, inlen,
+					out, outlen);
+}
 
-	clen = *outlen;
-	res = rsa_v15_encrypt_key(in, inlen, out, &clen, &ltc_prng_state,
-				  ltc_prng_idx, &key->rsa);
-	if (res != CRYPT_OK) {
-		wpa_printf(MSG_DEBUG, "LibTomCrypt: RSA encryption failed: %s",
-			   error_to_string(res));
-		return -1;
-	}
-	*outlen = clen;
 
-	return 0;
+int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
+				  const u8 *in, size_t inlen,
+				  u8 *out, size_t *outlen)
+{
+	return crypto_rsa_encrypt_pkcs1(1, &key->rsa, PK_PRIVATE, in, inlen,
+					out, outlen);
 }
 
 
@@ -559,16 +600,81 @@ void crypto_public_key_free(struct crypto_public_key *key)
 {
 	if (key) {
 		rsa_free(&key->rsa);
-		free(key);
+		os_free(key);
 	}
+}
+
+
+void crypto_private_key_free(struct crypto_private_key *key)
+{
+	if (key) {
+		rsa_free(&key->rsa);
+		os_free(key);
+	}
+}
+
+
+int crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
+				    const u8 *crypt, size_t crypt_len,
+				    u8 *plain, size_t *plain_len)
+{
+	int res;
+	unsigned long len;
+	u8 *pos;
+
+	len = *plain_len;
+	res = rsa_exptmod(crypt, crypt_len, plain, &len, PK_PUBLIC,
+			  &key->rsa);
+	if (res != CRYPT_OK) {
+		wpa_printf(MSG_DEBUG, "LibTomCrypt: rsa_exptmod failed: %s",
+			   error_to_string(res));
+		return -1;
+	}
+
+	/*
+	 * PKCS #1 v1.5, 8.1:
+	 *
+	 * EB = 00 || BT || PS || 00 || D
+	 * BT = 01
+	 * PS = k-3-||D|| times FF
+	 * k = length of modulus in octets
+	 */
+
+	if (len < 3 + 8 + 16 /* min hash len */ ||
+	    plain[0] != 0x00 || plain[1] != 0x01 || plain[2] != 0xff) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
+			   "structure");
+		return -1;
+	}
+
+	pos = plain + 3;
+	while (pos < plain + len && *pos == 0xff)
+		pos++;
+	if (pos - plain - 2 < 8) {
+		/* PKCS #1 v1.5, 8.1: At least eight octets long PS */
+		wpa_printf(MSG_INFO, "LibTomCrypt: Too short signature "
+			   "padding");
+		return -1;
+	}
+
+	if (pos + 16 /* min hash len */ >= plain + len || *pos != 0x00) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
+			   "structure (2)");
+		return -1;
+	}
+	pos++;
+	len -= pos - plain;
+
+	/* Strip PKCS #1 header */
+	os_memmove(plain, pos, len);
+	*plain_len = len;
+
+	return 0;
 }
 
 
 int crypto_global_init(void)
 {
-	int res;
-	u8 buf[32];
-
 	ltc_mp = tfm_desc;
 	/* TODO: only register algorithms that are really needed */
 	if (register_hash(&md4_desc) < 0 ||
@@ -576,26 +682,11 @@ int crypto_global_init(void)
 	    register_hash(&sha1_desc) < 0 ||
 	    register_cipher(&aes_desc) < 0 ||
 	    register_cipher(&des_desc) < 0 ||
-	    register_cipher(&des3_desc) < 0 ||
-	    register_prng(&fortuna_desc) < 0) {
+	    register_cipher(&des3_desc) < 0) {
 		wpa_printf(MSG_ERROR, "TLSv1: Failed to register "
-			   "hash/cipher/prng functions");
+			   "hash/cipher functions");
 		return -1;
 	}
-	ltc_prng_idx = find_prng("fortuna");
-	if (ltc_prng_idx < 0) {
-		wpa_printf(MSG_ERROR, "TLSv1: Failed to select PRNG");
-		return -1;
-	}
-	res =  rng_make_prng(128, ltc_prng_idx, &ltc_prng_state, NULL);
-	if (res != CRYPT_OK) {
-		wpa_printf(MSG_ERROR, "TLSv1: Failed to initialize "
-			   "PRNG: %s", error_to_string(res));
-		return -1;
-	}
-
-	os_get_random(buf, sizeof(buf));
-	fortuna_add_entropy(buf, sizeof(buf), &ltc_prng_state);
 
 	return 0;
 }
@@ -607,15 +698,6 @@ void crypto_global_deinit(void)
 
 
 #ifdef EAP_FAST
-
-#ifndef mp_init_multi
-#define mp_init_multi                ltc_init_multi
-#define mp_clear_multi               ltc_deinit_multi
-#define mp_unsigned_bin_size(a)      ltc_mp.unsigned_size(a)
-#define mp_to_unsigned_bin(a, b)     ltc_mp.unsigned_write(a, b)
-#define mp_read_unsigned_bin(a, b, c) ltc_mp.unsigned_read(a, b, c)
-#define mp_exptmod(a,b,c,d)          ltc_mp.exptmod(a,b,c,d)
-#endif
 
 int crypto_mod_exp(const u8 *base, size_t base_len,
 		   const u8 *power, size_t power_len,

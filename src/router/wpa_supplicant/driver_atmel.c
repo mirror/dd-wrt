@@ -105,7 +105,7 @@ static int atmel_ioctl(struct wpa_driver_atmel_data *drv,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
@@ -127,7 +127,7 @@ static int atmel2param(struct wpa_driver_atmel_data *drv, int param, int value)
 	struct iwreq iwr;
 	int *i, ret = 0;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = param;
@@ -151,16 +151,16 @@ static int wpa_driver_atmel_set_wpa_ie(struct wpa_driver_atmel_data *drv,
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 
 	param->cmd = ATMEL_SET_GENERIC_ELEMENT;
 	param->u.generic_elem.len = wpa_ie_len;
-	memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
+	os_memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
 	res = atmel_ioctl(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 
 	return res;
 }
@@ -232,7 +232,7 @@ static int wpa_driver_atmel_set_key(void *priv, wpa_alg alg,
 		return -2;
 
 	blen = sizeof(*param) + key_len;
-	buf = wpa_zalloc(blen);
+	buf = os_zalloc(blen);
 	if (buf == NULL)
 		return -1;
 
@@ -241,24 +241,24 @@ static int wpa_driver_atmel_set_key(void *priv, wpa_alg alg,
         param->cmd = SET_WPA_ENCRYPTION; 
         
         if (addr == NULL)
-		memset(param->sta_addr, 0xff, ETH_ALEN);
+		os_memset(param->sta_addr, 0xff, ETH_ALEN);
 	else
-		memcpy(param->sta_addr, addr, ETH_ALEN);
+		os_memcpy(param->sta_addr, addr, ETH_ALEN);
         
         param->alg = alg_type;
         param->key_idx = key_idx;
         param->set_tx = set_tx;
-        memcpy(param->seq, seq, seq_len);
+        os_memcpy(param->seq, seq, seq_len);
         param->seq_len = seq_len;
         param->key_len = key_len;
-	memcpy((u8 *)param->key, key, key_len);
+	os_memcpy((u8 *)param->key, key, key_len);
 	
         if (atmel_ioctl(drv, param, blen, 1)) {
 		wpa_printf(MSG_WARNING, "Failed to set encryption.");
 		/* TODO: show key error*/
 		ret = -1;
 	}
-	free(buf);
+	os_free(buf);
 
 	return ret;
 }
@@ -292,8 +292,8 @@ static int wpa_driver_atmel_mlme(void *priv, const u8 *addr, int cmd,
 	int ret;
         int mgmt_error = 0xaa;
         
-	memset(&param, 0, sizeof(param));
-	memcpy(param.sta_addr, addr, ETH_ALEN);
+	os_memset(&param, 0, sizeof(param));
+	os_memcpy(param.sta_addr, addr, ETH_ALEN);
 	param.cmd = cmd;
 	param.mlme.reason_code = reason_code;
         param.mlme.state = mgmt_error;
@@ -310,7 +310,7 @@ static int wpa_driver_atmel_set_suites(struct wpa_driver_atmel_data *drv,
 	struct atmel_param param;
 	int ret;
         
-	memset(&param, 0, sizeof(param));
+	os_memset(&param, 0, sizeof(param));
         param.cmd = SET_CIPHER_SUITES;
         param.pairwise_suite = pairwise_suite;
         param.group_suite = group_suite;
@@ -457,12 +457,12 @@ static void * wpa_driver_atmel_init(void *ctx, const char *ifname)
 {
 	struct wpa_driver_atmel_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
 	if (drv->wext == NULL) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -471,7 +471,7 @@ static void * wpa_driver_atmel_init(void *ctx, const char *ifname)
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -484,7 +484,7 @@ static void wpa_driver_atmel_deinit(void *priv)
 	struct wpa_driver_atmel_data *drv = priv;
 	wpa_driver_wext_deinit(drv->wext);
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

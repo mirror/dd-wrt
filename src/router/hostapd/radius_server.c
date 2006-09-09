@@ -31,6 +31,19 @@ static struct eapol_callbacks radius_server_eapol_cb;
 struct radius_client;
 struct radius_server_data;
 
+struct radius_server_counters {
+	u32 access_requests;
+	u32 invalid_requests;
+	u32 dup_access_requests;
+	u32 access_accepts;
+	u32 access_rejects;
+	u32 access_challenges;
+	u32 malformed_access_requests;
+	u32 bad_authenticators;
+	u32 packets_dropped;
+	u32 unknown_types;
+};
+
 struct radius_session {
 	struct radius_session *next;
 	struct radius_client *client;
@@ -60,6 +73,7 @@ struct radius_client {
 	char *shared_secret;
 	int shared_secret_len;
 	struct radius_session *sessions;
+	struct radius_server_counters counters;
 };
 
 struct radius_server_data {
@@ -71,6 +85,8 @@ struct radius_server_data {
 	void *eap_sim_db_priv;
 	void *ssl_ctx;
 	int ipv6;
+	struct os_time start_time;
+	struct radius_server_counters counters;
 };
 
 
@@ -306,6 +322,7 @@ radius_server_encapsulate_eap(struct radius_server_data *data,
 
 	msg = radius_msg_new(code, request->hdr->identifier);
 	if (msg == NULL) {
+		RADIUS_DEBUG("Failed to allocate reply message");
 		return NULL;
 	}
 
@@ -386,6 +403,8 @@ static int radius_server_reject(struct radius_server_data *data,
 		radius_msg_dump(msg);
 	}
 
+	data->counters.access_rejects++;
+	client->counters.access_rejects++;
 	if (sendto(data->auth_sock, msg->buf, msg->buf_used, 0,
 		   (struct sockaddr *) from, sizeof(*from)) < 0) {
 		perror("sendto[RADIUS SRV]");
@@ -415,7 +434,11 @@ static int radius_server_request(struct radius_server_data *data,
 	struct radius_msg *reply;
 	struct eap_hdr *hdr;
 
-	/* TODO: Implement duplicate packet processing */
+	/*
+	 * TODO: Implement duplicate packet processing
+	 * data->counters.dup_access_requests++;
+	 * client->counters.dup_access_requests++;
+	 */
 
 	if (force_sess)
 		sess = force_sess;
@@ -453,6 +476,8 @@ static int radius_server_request(struct radius_server_data *data,
 	if (eap == NULL) {
 		RADIUS_DEBUG("No EAP-Message in RADIUS packet from %s",
 			     from_addr);
+		data->counters.packets_dropped++;
+		client->counters.packets_dropped++;
 		return -1;
 	}
 
@@ -506,6 +531,8 @@ static int radius_server_request(struct radius_server_data *data,
 		RADIUS_DEBUG("No EAP data from the state machine - ignore this"
 			     " Access-Request silently (assuming it was a "
 			     "duplicate)");
+		data->counters.packets_dropped++;
+		client->counters.packets_dropped++;
 		return -1;
 	}
 
@@ -521,6 +548,20 @@ static int radius_server_request(struct radius_server_data *data,
 			radius_msg_dump(reply);
 		}
 
+		switch (reply->hdr->code) {
+		case RADIUS_CODE_ACCESS_ACCEPT:
+			data->counters.access_accepts++;
+			client->counters.access_accepts++;
+			break;
+		case RADIUS_CODE_ACCESS_REJECT:
+			data->counters.access_rejects++;
+			client->counters.access_rejects++;
+			break;
+		case RADIUS_CODE_ACCESS_CHALLENGE:
+			data->counters.access_challenges++;
+			client->counters.access_challenges++;
+			break;
+		}
 		res = sendto(data->auth_sock, reply->buf, reply->buf_used, 0,
 			     (struct sockaddr *) from, fromlen);
 		if (res < 0) {
@@ -528,6 +569,9 @@ static int radius_server_request(struct radius_server_data *data,
 		}
 		radius_msg_free(reply);
 		free(reply);
+	} else {
+		data->counters.packets_dropped++;
+		client->counters.packets_dropped++;
 	}
 
 	if (sess->eapSuccess || sess->eapFail) {
@@ -595,12 +639,15 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 
 	if (client == NULL) {
 		RADIUS_DEBUG("Unknown client %s - packet ignored", abuf);
+		data->counters.invalid_requests++;
 		goto fail;
 	}
 
 	msg = radius_msg_parse(buf, len);
 	if (msg == NULL) {
 		RADIUS_DEBUG("Parsing incoming RADIUS frame failed");
+		data->counters.malformed_access_requests++;
+		client->counters.malformed_access_requests++;
 		goto fail;
 	}
 
@@ -613,12 +660,19 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 
 	if (msg->hdr->code != RADIUS_CODE_ACCESS_REQUEST) {
 		RADIUS_DEBUG("Unexpected RADIUS code %d", msg->hdr->code);
+		data->counters.unknown_types++;
+		client->counters.unknown_types++;
 		goto fail;
 	}
+
+	data->counters.access_requests++;
+	client->counters.access_requests++;
 
 	if (radius_msg_verify_msg_auth(msg, (u8 *) client->shared_secret,
 				       client->shared_secret_len, NULL)) {
 		RADIUS_DEBUG("Invalid Message-Authenticator from %s", abuf);
+		data->counters.bad_authenticators++;
+		client->counters.bad_authenticators++;
 		goto fail;
 	}
 
@@ -888,6 +942,7 @@ radius_server_init(struct radius_server_conf *conf)
 	if (data == NULL)
 		return NULL;
 
+	os_get_time(&data->start_time);
 	data->hostapd_conf = conf->hostapd_conf;
 	data->eap_sim_db_priv = conf->eap_sim_db_priv;
 	data->ssl_ctx = conf->ssl_ctx;
@@ -943,8 +998,113 @@ void radius_server_deinit(struct radius_server_data *data)
 int radius_server_get_mib(struct radius_server_data *data, char *buf,
 			  size_t buflen)
 {
-	/* TODO: add support for RADIUS authentication server MIB */
-	return 0;
+	int ret, uptime;
+	unsigned int idx;
+	char *end, *pos;
+	struct os_time now;
+	struct radius_client *cli;
+
+	/* RFC 2619 - RADIUS Authentication Server MIB */
+
+	if (buflen == 0)
+		return 0;
+
+	pos = buf;
+	end = buf + buflen;
+
+	os_get_time(&now);
+	uptime = (now.sec - data->start_time.sec) * 100 +
+		((now.usec - data->start_time.usec) / 10000) % 100;
+	ret = snprintf(pos, end - pos,
+		       "RADIUS-AUTH-SERVER-MIB\n"
+		       "radiusAuthServIdent=hostapd\n"
+		       "radiusAuthServUpTime=%d\n"
+		       "radiusAuthServResetTime=0\n"
+		       "radiusAuthServConfigReset=4\n",
+		       uptime);
+	if (ret < 0 || ret >= end - pos) {
+		*pos = '\0';
+		return pos - buf;
+	}
+	pos += ret;
+
+	ret = snprintf(pos, end - pos,
+		       "radiusAuthServTotalAccessRequests=%u\n"
+		       "radiusAuthServTotalInvalidRequests=%u\n"
+		       "radiusAuthServTotalDupAccessRequests=%u\n"
+		       "radiusAuthServTotalAccessAccepts=%u\n"
+		       "radiusAuthServTotalAccessRejects=%u\n"
+		       "radiusAuthServTotalAccessChallenges=%u\n"
+		       "radiusAuthServTotalMalformedAccessRequests=%u\n"
+		       "radiusAuthServTotalBadAuthenticators=%u\n"
+		       "radiusAuthServTotalPacketsDropped=%u\n"
+		       "radiusAuthServTotalUnknownTypes=%u\n",
+		       data->counters.access_requests,
+		       data->counters.invalid_requests,
+		       data->counters.dup_access_requests,
+		       data->counters.access_accepts,
+		       data->counters.access_rejects,
+		       data->counters.access_challenges,
+		       data->counters.malformed_access_requests,
+		       data->counters.bad_authenticators,
+		       data->counters.packets_dropped,
+		       data->counters.unknown_types);
+	if (ret < 0 || ret >= end - pos) {
+		*pos = '\0';
+		return pos - buf;
+	}
+	pos += ret;
+
+	for (cli = data->clients, idx = 0; cli; cli = cli->next, idx++) {
+		char abuf[50], mbuf[50];
+#ifdef CONFIG_IPV6
+		if (data->ipv6) {
+			if (inet_ntop(AF_INET6, &cli->addr6, abuf,
+				      sizeof(abuf)) == NULL)
+				abuf[0] = '\0';
+			if (inet_ntop(AF_INET6, &cli->mask6, abuf,
+				      sizeof(mbuf)) == NULL)
+				mbuf[0] = '\0';
+		}
+#endif /* CONFIG_IPV6 */
+		if (!data->ipv6) {
+			snprintf(abuf, sizeof(abuf), "%s",
+				 inet_ntoa(cli->addr));
+			snprintf(mbuf, sizeof(mbuf), "%s",
+				 inet_ntoa(cli->mask));
+		}
+
+		ret = snprintf(pos, end - pos,
+			       "radiusAuthClientIndex=%u\n"
+			       "radiusAuthClientAddress=%s/%s\n"
+			       "radiusAuthServAccessRequests=%u\n"
+			       "radiusAuthServDupAccessRequests=%u\n"
+			       "radiusAuthServAccessAccepts=%u\n"
+			       "radiusAuthServAccessRejects=%u\n"
+			       "radiusAuthServAccessChallenges=%u\n"
+			       "radiusAuthServMalformedAccessRequests=%u\n"
+			       "radiusAuthServBadAuthenticators=%u\n"
+			       "radiusAuthServPacketsDropped=%u\n"
+			       "radiusAuthServUnknownTypes=%u\n",
+			       idx,
+			       abuf, mbuf,
+			       cli->counters.access_requests,
+			       cli->counters.dup_access_requests,
+			       cli->counters.access_accepts,
+			       cli->counters.access_rejects,
+			       cli->counters.access_challenges,
+			       cli->counters.malformed_access_requests,
+			       cli->counters.bad_authenticators,
+			       cli->counters.packets_dropped,
+			       cli->counters.unknown_types);
+		if (ret < 0 || ret >= end - pos) {
+			*pos = '\0';
+			return pos - buf;
+		}
+		pos += ret;
+	}
+
+	return pos - buf;
 }
 
 

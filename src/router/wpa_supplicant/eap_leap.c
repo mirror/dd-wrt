@@ -46,7 +46,7 @@ static void * eap_leap_init(struct eap_sm *sm)
 {
 	struct eap_leap_data *data;
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 	data->state = LEAP_WAIT_CHALLENGE;
@@ -58,7 +58,7 @@ static void * eap_leap_init(struct eap_sm *sm)
 
 static void eap_leap_deinit(struct eap_sm *sm, void *priv)
 {
-	free(priv);
+	os_free(priv);
 }
 
 
@@ -110,7 +110,7 @@ static u8 * eap_leap_process_request(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 	challenge = pos;
-	memcpy(data->peer_challenge, challenge, LEAP_CHALLENGE_LEN);
+	os_memcpy(data->peer_challenge, challenge, LEAP_CHALLENGE_LEN);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-LEAP: Challenge from AP",
 		    challenge, LEAP_CHALLENGE_LEN);
 
@@ -125,11 +125,11 @@ static u8 * eap_leap_process_request(struct eap_sm *sm, void *priv,
 	*rpos++ = 0; /* unused */
 	*rpos++ = LEAP_RESPONSE_LEN;
 	nt_challenge_response(challenge, password, password_len, rpos);
-	memcpy(data->peer_response, rpos, LEAP_RESPONSE_LEN);
+	os_memcpy(data->peer_response, rpos, LEAP_RESPONSE_LEN);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-LEAP: Response",
 		    rpos, LEAP_RESPONSE_LEN);
 	rpos += LEAP_RESPONSE_LEN;
-	memcpy(rpos, identity, identity_len);
+	os_memcpy(rpos, identity, identity_len);
 
 	data->state = LEAP_WAIT_SUCCESS;
 
@@ -174,15 +174,15 @@ static u8 * eap_leap_process_success(struct eap_sm *sm, void *priv,
 	if (hostapd_get_rand(pos, LEAP_CHALLENGE_LEN)) {
 		wpa_printf(MSG_WARNING, "EAP-LEAP: Failed to read random data "
 			   "for challenge");
-		free(resp);
+		os_free(resp);
 		ret->ignore = TRUE;
 		return NULL;
 	}
-	memcpy(data->ap_challenge, pos, LEAP_CHALLENGE_LEN);
+	os_memcpy(data->ap_challenge, pos, LEAP_CHALLENGE_LEN);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-LEAP: Challenge to AP/AS", pos,
 		    LEAP_CHALLENGE_LEN);
 	pos += LEAP_CHALLENGE_LEN;
-	memcpy(pos, identity, identity_len);
+	os_memcpy(pos, identity, identity_len);
 
 	data->state = LEAP_WAIT_RESPONSE;
 
@@ -238,7 +238,7 @@ static u8 * eap_leap_process_response(struct eap_sm *sm, void *priv,
 
 	wpa_hexdump(MSG_DEBUG, "EAP-LEAP: Response from AP",
 		    pos, LEAP_RESPONSE_LEN);
-	memcpy(data->ap_response, pos, LEAP_RESPONSE_LEN);
+	os_memcpy(data->ap_response, pos, LEAP_RESPONSE_LEN);
 
 	nt_password_hash(password, password_len, pw_hash);
 	hash_nt_password_hash(pw_hash, pw_hash_hash);
@@ -247,7 +247,7 @@ static u8 * eap_leap_process_response(struct eap_sm *sm, void *priv,
 	ret->methodState = METHOD_DONE;
 	ret->allowNotifications = FALSE;
 
-	if (memcmp(pos, expected, LEAP_RESPONSE_LEN) != 0) {
+	if (os_memcmp(pos, expected, LEAP_RESPONSE_LEN) != 0) {
 		wpa_printf(MSG_WARNING, "EAP-LEAP: AP sent an invalid "
 			   "response - authentication failed");
 		wpa_hexdump(MSG_DEBUG, "EAP-LEAP: Expected response from AP",
@@ -342,7 +342,7 @@ static u8 * eap_leap_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (password == NULL)
 		return NULL;
 
-	key = malloc(LEAP_KEY_LEN);
+	key = os_malloc(LEAP_KEY_LEN);
 	if (key == NULL)
 		return NULL;
 

@@ -43,7 +43,7 @@ void * tls_init(const struct tls_config *conf)
 	}
 	tls_ref_count++;
 
-	global = wpa_zalloc(sizeof(*global));
+	global = os_zalloc(sizeof(*global));
 	if (global == NULL)
 		return NULL;
 
@@ -57,7 +57,7 @@ void tls_deinit(void *ssl_ctx)
 	if (tls_ref_count == 0) {
 		tlsv1_client_global_deinit();
 	}
-	free(global);
+	os_free(global);
 }
 
 
@@ -71,13 +71,13 @@ struct tls_connection * tls_connection_init(void *tls_ctx)
 {
 	struct tls_connection *conn;
 
-	conn = wpa_zalloc(sizeof(*conn));
+	conn = os_zalloc(sizeof(*conn));
 	if (conn == NULL)
 		return NULL;
 
 	conn->client = tlsv1_client_init();
 	if (conn->client == NULL) {
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -87,8 +87,10 @@ struct tls_connection * tls_connection_init(void *tls_ctx)
 
 void tls_connection_deinit(void *tls_ctx, struct tls_connection *conn)
 {
+	if (conn == NULL)
+		return;
 	tlsv1_client_deinit(conn->client);
-	free(conn);
+	os_free(conn);
 }
 
 
@@ -107,7 +109,32 @@ int tls_connection_shutdown(void *tls_ctx, struct tls_connection *conn)
 int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 			      const struct tls_connection_params *params)
 {
-	printf("TLS: not implemented - %s\n", __func__);
+	if (tlsv1_client_set_ca_cert(conn->client, params->ca_cert,
+				     params->ca_cert_blob,
+				     params->ca_cert_blob_len,
+				     params->ca_path)) {
+		wpa_printf(MSG_INFO, "TLS: Failed to configure trusted CA "
+			   "certificates");
+		return -1;
+	}
+
+	if (tlsv1_client_set_client_cert(conn->client, params->client_cert,
+					 params->client_cert_blob,
+					 params->client_cert_blob_len)) {
+		wpa_printf(MSG_INFO, "TLS: Failed to configure client "
+			   "certificate");
+		return -1;
+	}
+
+	if (tlsv1_client_set_private_key(conn->client,
+					 params->private_key,
+					 params->private_key_passwd,
+					 params->private_key_blob,
+					 params->private_key_blob_len)) {
+		wpa_printf(MSG_INFO, "TLS: Failed to load private key");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -115,14 +142,14 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 int tls_global_set_params(void *tls_ctx,
 			  const struct tls_connection_params *params)
 {
-	printf("TLS: not implemented - %s\n", __func__);
+	wpa_printf(MSG_INFO, "TLS: not implemented - %s", __func__);
 	return -1;
 }
 
 
 int tls_global_set_verify(void *tls_ctx, int check_crl)
 {
-	printf("TLS: not implemented - %s\n", __func__);
+	wpa_printf(MSG_INFO, "TLS: not implemented - %s", __func__);
 	return -1;
 }
 
@@ -165,8 +192,8 @@ u8 * tls_connection_handshake(void *tls_ctx, struct tls_connection *conn,
 	if (appl_data)
 		*appl_data = NULL;
 
-	printf("TLS: %s(in_data=%p in_len=%lu)\n",
-	       __func__, in_data, (unsigned long) in_len);
+	wpa_printf(MSG_DEBUG, "TLS: %s(in_data=%p in_len=%lu)",
+		   __func__, in_data, (unsigned long) in_len);
 	return tlsv1_client_handshake(conn->client, in_data, in_len, out_len);
 }
 
@@ -176,7 +203,7 @@ u8 * tls_connection_server_handshake(void *tls_ctx,
 				     const u8 *in_data, size_t in_len,
 				     size_t *out_len)
 {
-	printf("TLS: not implemented - %s\n", __func__);
+	wpa_printf(MSG_INFO, "TLS: not implemented - %s", __func__);
 	return NULL;
 }
 

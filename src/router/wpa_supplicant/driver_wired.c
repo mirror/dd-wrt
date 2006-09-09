@@ -50,7 +50,7 @@ static int wpa_driver_wired_get_ssid(void *priv, u8 *ssid)
 static int wpa_driver_wired_get_bssid(void *priv, u8 *bssid)
 {
 	/* Report PAE group address as the "BSSID" for wired connection. */
-	memcpy(bssid, pae_group_addr, ETH_ALEN);
+	os_memcpy(bssid, pae_group_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -66,8 +66,8 @@ static int wpa_driver_wired_get_ifflags(const char *ifname, int *flags)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFFLAGS, (caddr_t) &ifr) < 0) {
 		perror("ioctl[SIOCGIFFLAGS]");
 		close(s);
@@ -90,8 +90,8 @@ static int wpa_driver_wired_set_ifflags(const char *ifname, int flags)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ifr.ifr_flags = flags & 0xffff;
 	if (ioctl(s, SIOCSIFFLAGS, (caddr_t) &ifr) < 0) {
 		perror("ioctl[SIOCSIFFLAGS]");
@@ -114,10 +114,10 @@ static int wpa_driver_wired_multi(const char *ifname, const u8 *addr, int add)
 		return -1;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
-	memcpy(ifr.ifr_hwaddr.sa_data, addr, ETH_ALEN);
+	os_memcpy(ifr.ifr_hwaddr.sa_data, addr, ETH_ALEN);
 
 	if (ioctl(s, add ? SIOCADDMULTI : SIOCDELMULTI, (caddr_t) &ifr) < 0) {
 		perror("ioctl[SIOC{ADD/DEL}MULTI]");
@@ -138,11 +138,11 @@ static int wpa_driver_wired_membership(struct wpa_driver_wired_data *drv,
 	if (drv->pf_sock == -1)
 		return -1;
 
-	memset(&mreq, 0, sizeof(mreq));
+	os_memset(&mreq, 0, sizeof(mreq));
 	mreq.mr_ifindex = if_nametoindex(drv->ifname);
 	mreq.mr_type = PACKET_MR_MULTICAST;
 	mreq.mr_alen = ETH_ALEN;
-	memcpy(mreq.mr_address, addr, ETH_ALEN);
+	os_memcpy(mreq.mr_address, addr, ETH_ALEN);
 
 	if (setsockopt(drv->pf_sock, SOL_PACKET,
 		       add ? PACKET_ADD_MEMBERSHIP : PACKET_DROP_MEMBERSHIP,
@@ -162,10 +162,10 @@ static void * wpa_driver_wired_init(void *ctx, const char *ifname)
 	struct wpa_driver_wired_data *drv;
 	int flags;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->ctx = ctx;
 
 #ifdef __linux__
@@ -193,7 +193,7 @@ static void * wpa_driver_wired_init(void *ctx, const char *ifname)
 	} else if (wpa_driver_wired_get_ifflags(ifname, &flags) < 0) {
 		wpa_printf(MSG_INFO, "%s: Could not get interface "
 			   "flags", __func__);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	} else if (flags & IFF_ALLMULTI) {
 		wpa_printf(MSG_DEBUG, "%s: Interface is already configured "
@@ -202,7 +202,7 @@ static void * wpa_driver_wired_init(void *ctx, const char *ifname)
 						flags | IFF_ALLMULTI) < 0) {
 		wpa_printf(MSG_INFO, "%s: Failed to enable allmulti",
 			   __func__);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	} else {
 		wpa_printf(MSG_DEBUG, "%s: Enabled allmulti mode",
@@ -250,7 +250,7 @@ static void wpa_driver_wired_deinit(void *priv)
 	if (drv->pf_sock != -1)
 		close(drv->pf_sock);
 	
-	free(drv);
+	os_free(drv);
 }
 
 

@@ -352,7 +352,7 @@ static ParseRes ieee802_11_parse_elems(u8 *start, size_t len,
 	u8 *pos = start;
 	int unknown = 0;
 
-	memset(elems, 0, sizeof(*elems));
+	os_memset(elems, 0, sizeof(*elems));
 
 	while (left >= 2) {
 		u8 id, elen;
@@ -566,9 +566,9 @@ static void ieee80211_set_associated(struct wpa_supplicant *wpa_s, int assoc)
 
 	if (assoc) {
 		union wpa_event_data data;
-		memset(&data, 0, sizeof(data));
+		os_memset(&data, 0, sizeof(data));
 		wpa_s->mlme.prev_bssid_set = 1;
-		memcpy(wpa_s->mlme.prev_bssid, wpa_s->bssid, ETH_ALEN);
+		os_memcpy(wpa_s->mlme.prev_bssid, wpa_s->bssid, ETH_ALEN);
 		data.assoc_info.req_ies = wpa_s->mlme.assocreq_ies;
 		data.assoc_info.req_ies_len = wpa_s->mlme.assocreq_ies_len;
 		data.assoc_info.resp_ies = wpa_s->mlme.assocresp_ies;
@@ -596,7 +596,7 @@ static void ieee80211_send_auth(struct wpa_supplicant *wpa_s,
 	size_t len;
 	struct ieee80211_mgmt *mgmt;
 
-	buf = malloc(sizeof(*mgmt) + 6 + extra_len);
+	buf = os_malloc(sizeof(*mgmt) + 6 + extra_len);
 	if (buf == NULL) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to allocate buffer for "
 			   "auth frame");
@@ -605,20 +605,20 @@ static void ieee80211_send_auth(struct wpa_supplicant *wpa_s,
 
 	mgmt = (struct ieee80211_mgmt *) buf;
 	len = 24 + 6;
-	memset(mgmt, 0, 24 + 6);
+	os_memset(mgmt, 0, 24 + 6);
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_AUTH);
 	if (encrypt)
 		mgmt->frame_control |= host_to_le16(WLAN_FC_ISWEP);
-	memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
-	memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-	memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
 	mgmt->u.auth.auth_alg = host_to_le16(wpa_s->mlme.auth_alg);
 	mgmt->u.auth.auth_transaction = host_to_le16(transaction);
 	wpa_s->mlme.auth_transaction = transaction + 1;
 	mgmt->u.auth.status_code = host_to_le16(0);
 	if (extra) {
-		memcpy(buf + len, extra, extra_len);
+		os_memcpy(buf + len, extra, extra_len);
 		len += extra_len;
 	}
 
@@ -668,8 +668,8 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 		return;
 	}
 
-	buf = malloc(sizeof(*mgmt) + 200 + wpa_s->mlme.extra_ie_len +
-		     wpa_s->mlme.ssid_len);
+	buf = os_malloc(sizeof(*mgmt) + 200 + wpa_s->mlme.extra_ie_len +
+			wpa_s->mlme.ssid_len);
 	if (buf == NULL) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to allocate buffer for "
 			   "assoc frame");
@@ -693,10 +693,10 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 
 	mgmt = (struct ieee80211_mgmt *) buf;
 	blen += 24;
-	memset(mgmt, 0, 24);
-	memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
-	memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-	memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
+	os_memset(mgmt, 0, 24);
+	os_memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
 
 	if (wpa_s->mlme.prev_bssid_set) {
 		blen += 10;
@@ -704,8 +704,9 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 						   WLAN_FC_STYPE_REASSOC_REQ);
 		mgmt->u.reassoc_req.capab_info = host_to_le16(capab);
 		mgmt->u.reassoc_req.listen_interval = host_to_le16(1);
-		memcpy(mgmt->u.reassoc_req.current_ap, wpa_s->mlme.prev_bssid,
-		       ETH_ALEN);
+		os_memcpy(mgmt->u.reassoc_req.current_ap,
+			  wpa_s->mlme.prev_bssid,
+			  ETH_ALEN);
 	} else {
 		blen += 4;
 		mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
@@ -719,7 +720,7 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 	blen += 2 + wpa_s->mlme.ssid_len;
 	*pos++ = WLAN_EID_SSID;
 	*pos++ = wpa_s->mlme.ssid_len;
-	memcpy(pos, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
+	os_memcpy(pos, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
 
 	len = wpa_s->mlme.num_curr_rates;
 	if (len > 8)
@@ -747,7 +748,7 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 	if (wpa_s->mlme.extra_ie) {
 		pos = buf + blen;
 		blen += wpa_s->mlme.extra_ie_len;
-		memcpy(pos, wpa_s->mlme.extra_ie, wpa_s->mlme.extra_ie_len);
+		os_memcpy(pos, wpa_s->mlme.extra_ie, wpa_s->mlme.extra_ie_len);
 	}
 
 	if (wmm && wpa_s->mlme.wmm_enabled) {
@@ -764,12 +765,12 @@ static void ieee80211_send_assoc(struct wpa_supplicant *wpa_s)
 		*pos++ = 0;
 	}
 
-	free(wpa_s->mlme.assocreq_ies);
+	os_free(wpa_s->mlme.assocreq_ies);
 	wpa_s->mlme.assocreq_ies_len = (buf + blen) - ies;
-	wpa_s->mlme.assocreq_ies = malloc(wpa_s->mlme.assocreq_ies_len);
+	wpa_s->mlme.assocreq_ies = os_malloc(wpa_s->mlme.assocreq_ies_len);
 	if (wpa_s->mlme.assocreq_ies) {
-		memcpy(wpa_s->mlme.assocreq_ies, ies,
-		       wpa_s->mlme.assocreq_ies_len);
+		os_memcpy(wpa_s->mlme.assocreq_ies, ies,
+			  wpa_s->mlme.assocreq_ies_len);
 	}
 
 	ieee80211_sta_tx(wpa_s, buf, blen);
@@ -782,7 +783,7 @@ static void ieee80211_send_deauth(struct wpa_supplicant *wpa_s, u16 reason)
 	size_t len;
 	struct ieee80211_mgmt *mgmt;
 
-	buf = wpa_zalloc(sizeof(*mgmt));
+	buf = os_zalloc(sizeof(*mgmt));
 	if (buf == NULL) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to allocate buffer for "
 			   "deauth frame");
@@ -791,9 +792,9 @@ static void ieee80211_send_deauth(struct wpa_supplicant *wpa_s, u16 reason)
 
 	mgmt = (struct ieee80211_mgmt *) buf;
 	len = 24;
-	memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
-	memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-	memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_DEAUTH);
 	len += 2;
@@ -809,7 +810,7 @@ static void ieee80211_send_disassoc(struct wpa_supplicant *wpa_s, u16 reason)
 	size_t len;
 	struct ieee80211_mgmt *mgmt;
 
-	buf = wpa_zalloc(sizeof(*mgmt));
+	buf = os_zalloc(sizeof(*mgmt));
 	if (buf == NULL) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to allocate buffer for "
 			   "disassoc frame");
@@ -818,9 +819,9 @@ static void ieee80211_send_disassoc(struct wpa_supplicant *wpa_s, u16 reason)
 
 	mgmt = (struct ieee80211_mgmt *) buf;
 	len = 24;
-	memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
-	memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-	memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->da, wpa_s->bssid, ETH_ALEN);
+	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_DISASSOC);
 	len += 2;
@@ -948,7 +949,7 @@ static void ieee80211_send_probe_req(struct wpa_supplicant *wpa_s,
 	u8 *esupp_rates = NULL;
 	int i;
 
-	buf = malloc(sizeof(*mgmt) + 200);
+	buf = os_malloc(sizeof(*mgmt) + 200);
 	if (buf == NULL) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to allocate buffer for "
 			   "probe request");
@@ -957,22 +958,22 @@ static void ieee80211_send_probe_req(struct wpa_supplicant *wpa_s,
 
 	mgmt = (struct ieee80211_mgmt *) buf;
 	len = 24;
-	memset(mgmt, 0, 24);
+	os_memset(mgmt, 0, 24);
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_PROBE_REQ);
-	memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
 	if (dst) {
-		memcpy(mgmt->da, dst, ETH_ALEN);
-		memcpy(mgmt->bssid, dst, ETH_ALEN);
+		os_memcpy(mgmt->da, dst, ETH_ALEN);
+		os_memcpy(mgmt->bssid, dst, ETH_ALEN);
 	} else {
-		memset(mgmt->da, 0xff, ETH_ALEN);
-		memset(mgmt->bssid, 0xff, ETH_ALEN);
+		os_memset(mgmt->da, 0xff, ETH_ALEN);
+		os_memset(mgmt->bssid, 0xff, ETH_ALEN);
 	}
 	pos = buf + len;
 	len += 2 + ssid_len;
 	*pos++ = WLAN_EID_SSID;
 	*pos++ = ssid_len;
-	memcpy(pos, ssid, ssid_len);
+	os_memcpy(pos, ssid, ssid_len);
 
 	supp_rates = buf + len;
 	len += 2;
@@ -1074,7 +1075,7 @@ static void ieee80211_rx_mgmt_auth(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	if (!adhoc && memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
+	if (!adhoc && os_memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
 		wpa_printf(MSG_DEBUG, "MLME: authentication frame received "
 			   "from unknown AP (SA=" MACSTR " BSSID=" MACSTR
 			   ") - ignored",
@@ -1082,7 +1083,7 @@ static void ieee80211_rx_mgmt_auth(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	if (adhoc && memcmp(wpa_s->bssid, mgmt->bssid, ETH_ALEN) != 0) {
+	if (adhoc && os_memcmp(wpa_s->bssid, mgmt->bssid, ETH_ALEN) != 0) {
 		wpa_printf(MSG_DEBUG, "MLME: authentication frame received "
 			   "from unknown BSSID (SA=" MACSTR " BSSID=" MACSTR
 			   ") - ignored",
@@ -1194,7 +1195,7 @@ static void ieee80211_rx_mgmt_deauth(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	if (memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
+	if (os_memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
 		wpa_printf(MSG_DEBUG, "MLME: deauthentication frame received "
 			   "from unknown AP (SA=" MACSTR " BSSID=" MACSTR
 			   ") - ignored",
@@ -1237,7 +1238,7 @@ static void ieee80211_rx_mgmt_disassoc(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	if (memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
+	if (os_memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
 		wpa_printf(MSG_DEBUG, "MLME: disassociation frame received "
 			   "from unknown AP (SA=" MACSTR " BSSID=" MACSTR
 			   ") - ignored",
@@ -1292,7 +1293,7 @@ static void ieee80211_rx_mgmt_assoc_resp(struct wpa_supplicant *wpa_s,
 		return;
 	}
 
-	if (memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
+	if (os_memcmp(wpa_s->bssid, mgmt->sa, ETH_ALEN) != 0) {
 		wpa_printf(MSG_DEBUG, "MLME: association frame received from "
 			   "unknown AP (SA=" MACSTR " BSSID=" MACSTR ") - "
 			   "ignored", MAC2STR(mgmt->sa), MAC2STR(mgmt->bssid));
@@ -1335,12 +1336,12 @@ static void ieee80211_rx_mgmt_assoc_resp(struct wpa_supplicant *wpa_s,
 	wpa_s->mlme.aid = aid;
 	wpa_s->mlme.ap_capab = capab_info;
 
-	free(wpa_s->mlme.assocresp_ies);
+	os_free(wpa_s->mlme.assocresp_ies);
 	wpa_s->mlme.assocresp_ies_len = len - (pos - (u8 *) mgmt);
-	wpa_s->mlme.assocresp_ies = malloc(wpa_s->mlme.assocresp_ies_len);
+	wpa_s->mlme.assocresp_ies = os_malloc(wpa_s->mlme.assocresp_ies_len);
 	if (wpa_s->mlme.assocresp_ies) {
-		memcpy(wpa_s->mlme.assocresp_ies, pos,
-		       wpa_s->mlme.assocresp_ies_len);
+		os_memcpy(wpa_s->mlme.assocresp_ies, pos,
+			  wpa_s->mlme.assocresp_ies_len);
 	}
 
 	ieee80211_set_associated(wpa_s, 1);
@@ -1348,12 +1349,12 @@ static void ieee80211_rx_mgmt_assoc_resp(struct wpa_supplicant *wpa_s,
 	rates_len = elems.supp_rates_len;
 	if (rates_len > sizeof(rates))
 		rates_len = sizeof(rates);
-	memcpy(rates, elems.supp_rates, rates_len);
+	os_memcpy(rates, elems.supp_rates, rates_len);
 	if (elems.ext_supp_rates) {
 		size_t len = elems.ext_supp_rates_len;
 		if (len > sizeof(rates) - rates_len)
 			len = sizeof(rates) - rates_len;
-		memcpy(rates + rates_len, elems.ext_supp_rates, len);
+		os_memcpy(rates + rates_len, elems.ext_supp_rates, len);
 		rates_len += len;
 	}
 
@@ -1425,10 +1426,10 @@ ieee80211_bss_add(struct wpa_supplicant *wpa_s, const u8 *bssid)
 {
 	struct ieee80211_sta_bss *bss;
 
-	bss = wpa_zalloc(sizeof(*bss));
+	bss = os_zalloc(sizeof(*bss));
 	if (bss == NULL)
 		return NULL;
-	memcpy(bss->bssid, bssid, ETH_ALEN);
+	os_memcpy(bss->bssid, bssid, ETH_ALEN);
 
 	/* TODO: order by RSSI? */
 	bss->next = wpa_s->mlme.sta_bss_list;
@@ -1445,7 +1446,7 @@ ieee80211_bss_get(struct wpa_supplicant *wpa_s, const u8 *bssid)
 
 	bss = wpa_s->mlme.sta_bss_hash[STA_HASH(bssid)];
 	while (bss) {
-		if (memcmp(bss->bssid, bssid, ETH_ALEN) == 0)
+		if (os_memcmp(bss->bssid, bssid, ETH_ALEN) == 0)
 			break;
 		bss = bss->hnext;
 	}
@@ -1457,10 +1458,10 @@ static void ieee80211_bss_free(struct wpa_supplicant *wpa_s,
 			       struct ieee80211_sta_bss *bss)
 {
 	__ieee80211_bss_hash_del(wpa_s, bss);
-	free(bss->wpa_ie);
-	free(bss->rsn_ie);
-	free(bss->wmm_ie);
-	free(bss);
+	os_free(bss->wpa_ie);
+	os_free(bss->rsn_ie);
+	os_free(bss->wmm_ie);
+	os_free(bss);
 }
 
 
@@ -1491,7 +1492,7 @@ static void ieee80211_bss_info(struct wpa_supplicant *wpa_s,
 	u64 timestamp;
 	u8 *pos;
 
-	if (!beacon && memcmp(mgmt->da, wpa_s->own_addr, ETH_ALEN))
+	if (!beacon && os_memcmp(mgmt->da, wpa_s->own_addr, ETH_ALEN))
 		return; /* ignore ProbeResp to foreign address */
 
 #if 0
@@ -1512,7 +1513,7 @@ static void ieee80211_bss_info(struct wpa_supplicant *wpa_s,
 
 #if 0 /* FIX */
 	if (local->conf.mode == IW_MODE_ADHOC && beacon &&
-	    memcmp(mgmt->bssid, local->bssid, ETH_ALEN) == 0) {
+	    os_memcmp(mgmt->bssid, local->bssid, ETH_ALEN) == 0) {
 #ifdef IEEE80211_IBSS_DEBUG
 		static unsigned long last_tsf_debug = 0;
 		u64 tsf;
@@ -1538,7 +1539,7 @@ static void ieee80211_bss_info(struct wpa_supplicant *wpa_s,
 
 #if 0 /* FIX */
 	if (local->conf.mode == IW_MODE_ADHOC && elems.supp_rates &&
-	    memcmp(mgmt->bssid, local->bssid, ETH_ALEN) == 0 &&
+	    os_memcmp(mgmt->bssid, local->bssid, ETH_ALEN) == 0 &&
 	    (sta = sta_info_get(local, mgmt->sa))) {
 		struct ieee80211_rate *rates;
 		size_t num_rates;
@@ -1625,7 +1626,7 @@ static void ieee80211_bss_info(struct wpa_supplicant *wpa_s,
 	bss->beacon_int = le_to_host16(mgmt->u.beacon.beacon_int);
 	bss->capability = le_to_host16(mgmt->u.beacon.capab_info);
 	if (elems.ssid && elems.ssid_len <= MAX_SSID_LEN) {
-		memcpy(bss->ssid, elems.ssid, elems.ssid_len);
+		os_memcpy(bss->ssid, elems.ssid, elems.ssid_len);
 		bss->ssid_len = elems.ssid_len;
 	}
 
@@ -1634,64 +1635,66 @@ static void ieee80211_bss_info(struct wpa_supplicant *wpa_s,
 		clen = IEEE80211_MAX_SUPP_RATES - bss->supp_rates_len;
 		if (clen > elems.supp_rates_len)
 			clen = elems.supp_rates_len;
-		memcpy(&bss->supp_rates[bss->supp_rates_len], elems.supp_rates,
-		       clen);
+		os_memcpy(&bss->supp_rates[bss->supp_rates_len],
+			  elems.supp_rates, clen);
 		bss->supp_rates_len += clen;
 	}
 	if (elems.ext_supp_rates) {
 		clen = IEEE80211_MAX_SUPP_RATES - bss->supp_rates_len;
 		if (clen > elems.ext_supp_rates_len)
 			clen = elems.ext_supp_rates_len;
-		memcpy(&bss->supp_rates[bss->supp_rates_len],
-		       elems.ext_supp_rates, clen);
+		os_memcpy(&bss->supp_rates[bss->supp_rates_len],
+			  elems.ext_supp_rates, clen);
 		bss->supp_rates_len += clen;
 	}
 
 	if (elems.wpa &&
 	    (bss->wpa_ie == NULL || bss->wpa_ie_len != elems.wpa_len ||
-	     memcmp(bss->wpa_ie, elems.wpa, elems.wpa_len))) {
-		free(bss->wpa_ie);
-		bss->wpa_ie = malloc(elems.wpa_len + 2);
+	     os_memcmp(bss->wpa_ie, elems.wpa, elems.wpa_len))) {
+		os_free(bss->wpa_ie);
+		bss->wpa_ie = os_malloc(elems.wpa_len + 2);
 		if (bss->wpa_ie) {
-			memcpy(bss->wpa_ie, elems.wpa - 2, elems.wpa_len + 2);
+			os_memcpy(bss->wpa_ie, elems.wpa - 2,
+				  elems.wpa_len + 2);
 			bss->wpa_ie_len = elems.wpa_len + 2;
 		} else
 			bss->wpa_ie_len = 0;
 	} else if (!elems.wpa && bss->wpa_ie) {
-		free(bss->wpa_ie);
+		os_free(bss->wpa_ie);
 		bss->wpa_ie = NULL;
 		bss->wpa_ie_len = 0;
 	}
 
 	if (elems.rsn &&
 	    (bss->rsn_ie == NULL || bss->rsn_ie_len != elems.rsn_len ||
-	     memcmp(bss->rsn_ie, elems.rsn, elems.rsn_len))) {
-		free(bss->rsn_ie);
-		bss->rsn_ie = malloc(elems.rsn_len + 2);
+	     os_memcmp(bss->rsn_ie, elems.rsn, elems.rsn_len))) {
+		os_free(bss->rsn_ie);
+		bss->rsn_ie = os_malloc(elems.rsn_len + 2);
 		if (bss->rsn_ie) {
-			memcpy(bss->rsn_ie, elems.rsn - 2, elems.rsn_len + 2);
+			os_memcpy(bss->rsn_ie, elems.rsn - 2,
+				  elems.rsn_len + 2);
 			bss->rsn_ie_len = elems.rsn_len + 2;
 		} else
 			bss->rsn_ie_len = 0;
 	} else if (!elems.rsn && bss->rsn_ie) {
-		free(bss->rsn_ie);
+		os_free(bss->rsn_ie);
 		bss->rsn_ie = NULL;
 		bss->rsn_ie_len = 0;
 	}
 
 	if (elems.wmm_param &&
 	    (bss->wmm_ie == NULL || bss->wmm_ie_len != elems.wmm_param_len ||
-	     memcmp(bss->wmm_ie, elems.wmm_param, elems.wmm_param_len))) {
-		free(bss->wmm_ie);
-		bss->wmm_ie = malloc(elems.wmm_param_len + 2);
+	     os_memcmp(bss->wmm_ie, elems.wmm_param, elems.wmm_param_len))) {
+		os_free(bss->wmm_ie);
+		bss->wmm_ie = os_malloc(elems.wmm_param_len + 2);
 		if (bss->wmm_ie) {
-			memcpy(bss->wmm_ie, elems.wmm_param - 2,
-			       elems.wmm_param_len + 2);
+			os_memcpy(bss->wmm_ie, elems.wmm_param - 2,
+				  elems.wmm_param_len + 2);
 			bss->wmm_ie_len = elems.wmm_param_len + 2;
 		} else
 			bss->wmm_ie_len = 0;
 	} else if (!elems.wmm_param && bss->wmm_ie) {
-		free(bss->wmm_ie);
+		os_free(bss->wmm_ie);
 		bss->wmm_ie = NULL;
 		bss->wmm_ie_len = 0;
 	}
@@ -1741,7 +1744,7 @@ static void ieee80211_rx_mgmt_beacon(struct wpa_supplicant *wpa_s,
 	ieee80211_bss_info(wpa_s, mgmt, len, rx_status, 1);
 
 	if (!wpa_s->mlme.associated ||
-	    memcmp(wpa_s->bssid, mgmt->bssid, ETH_ALEN) != 0)
+	    os_memcmp(wpa_s->bssid, mgmt->bssid, ETH_ALEN) != 0)
 		return;
 
 	/* Process beacon from the current BSS */
@@ -1810,8 +1813,8 @@ static void ieee80211_rx_mgmt_probe_req(struct wpa_supplicant *wpa_s,
 	if (!tx_last_beacon)
 		return;
 
-	if (memcmp(mgmt->bssid, wpa_s->bssid, ETH_ALEN) != 0 &&
-	    memcmp(mgmt->bssid, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) != 0)
+	if (os_memcmp(mgmt->bssid, wpa_s->bssid, ETH_ALEN) != 0 &&
+	    os_memcmp(mgmt->bssid, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) != 0)
 		return;
 
 	end = ((u8 *) mgmt) + len;
@@ -1824,7 +1827,8 @@ static void ieee80211_rx_mgmt_probe_req(struct wpa_supplicant *wpa_s,
 	}
 	if (pos[1] != 0 &&
 	    (pos[1] != wpa_s->mlme.ssid_len ||
-	     memcmp(pos + 2, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len) != 0)) {
+	     os_memcmp(pos + 2, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len) != 0))
+	{
 		/* Ignore ProbeReq for foreign SSID */
 		return;
 	}
@@ -1836,7 +1840,7 @@ static void ieee80211_rx_mgmt_probe_req(struct wpa_supplicant *wpa_s,
 		return;
 
 	resp = (struct ieee80211_mgmt *) skb->data;
-	memcpy(resp->da, mgmt->sa, ETH_ALEN);
+	os_memcpy(resp->da, mgmt->sa, ETH_ALEN);
 #ifdef IEEE80211_IBSS_DEBUG
 	wpa_printf(MSG_DEBUG, "MLME: Sending ProbeResp to " MACSTR,
 		   MAC2STR(resp->da));
@@ -2083,7 +2087,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 		local->hw->reset_tsf(local->mdev);
 	}
 #endif
-	memcpy(wpa_s->bssid, bss->bssid, ETH_ALEN);
+	os_memcpy(wpa_s->bssid, bss->bssid, ETH_ALEN);
 
 #if 0 /* FIX */
 	local->conf.beacon_int = bss->beacon_int >= 10 ? bss->beacon_int : 10;
@@ -2093,7 +2097,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 #endif
 
 #if 0 /* FIX */
-	memset(&rq, 0, sizeof(rq));
+	os_memset(&rq, 0, sizeof(rq));
 	rq.m = bss->freq * 100000;
 	rq.e = 1;
 	res = ieee80211_ioctl_siwfreq(wpa_s, NULL, &rq, NULL);
@@ -2109,7 +2113,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 	}
 
 	/* Set beacon template based on scan results */
-	buf = malloc(400);
+	buf = os_malloc(400);
 	len = 0;
 	do {
 		if (buf == NULL)
@@ -2117,12 +2121,12 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 
 		mgmt = (struct ieee80211_mgmt *) buf;
 		len += 24 + sizeof(mgmt->u.beacon);
-		memset(mgmt, 0, 24 + sizeof(mgmt->u.beacon));
+		os_memset(mgmt, 0, 24 + sizeof(mgmt->u.beacon));
 		mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 						   WLAN_FC_STYPE_BEACON);
-		memset(mgmt->da, 0xff, ETH_ALEN);
-		memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-		memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
+		os_memset(mgmt->da, 0xff, ETH_ALEN);
+		os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
+		os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
 #if 0 /* FIX */
 		mgmt->u.beacon.beacon_int =
 			host_to_le16(local->conf.beacon_int);
@@ -2133,7 +2137,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 		len += 2 + wpa_s->mlme.ssid_len;
 		*pos++ = WLAN_EID_SSID;
 		*pos++ = wpa_s->mlme.ssid_len;
-		memcpy(pos, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
+		os_memcpy(pos, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
 
 		rates = bss->supp_rates_len;
 		if (rates > 8)
@@ -2142,7 +2146,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 		len += 2 + rates;
 		*pos++ = WLAN_EID_SUPP_RATES;
 		*pos++ = rates;
-		memcpy(pos, bss->supp_rates, rates);
+		os_memcpy(pos, bss->supp_rates, rates);
 
 		pos = buf + len;
 		len += 2 + 1;
@@ -2164,13 +2168,13 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 			len += 2 + rates;
 			*pos++ = WLAN_EID_EXT_SUPP_RATES;
 			*pos++ = rates;
-			memcpy(pos, &bss->supp_rates[8], rates);
+			os_memcpy(pos, &bss->supp_rates[8], rates);
 		}
 
 #if 0 /* FIX */
-		memset(&control, 0, sizeof(control));
+		os_memset(&control, 0, sizeof(control));
 		control.pkt_type = PKT_PROBE_RESP;
-		memset(&extra, 0, sizeof(extra));
+		os_memset(&extra, 0, sizeof(extra));
 		extra.endidx = local->num_curr_rates;
 		rate = rate_control_get_rate(wpa_s, skb, &extra);
 		if (rate == NULL) {
@@ -2222,7 +2226,7 @@ static int ieee80211_sta_join_ibss(struct wpa_supplicant *wpa_s,
 		done = 1;
 	} while (0);
 
-	free(buf);
+	os_free(buf);
 	if (!done) {
 		wpa_printf(MSG_DEBUG, "MLME: Failed to configure IBSS beacon "
 			   "template");
@@ -2244,7 +2248,7 @@ static int ieee80211_sta_create_ibss(struct wpa_supplicant *wpa_s)
 
 #if 0
 	/* Easier testing, use fixed BSSID. */
-	memset(bssid, 0xfe, ETH_ALEN);
+	os_memset(bssid, 0xfe, ETH_ALEN);
 #else
 	/* Generate random, not broadcast, locally administered BSSID. Mix in
 	 * own MAC address to make sure that devices that do not have proper
@@ -2313,16 +2317,17 @@ static int ieee80211_sta_find_ibss(struct wpa_supplicant *wpa_s)
 #endif /* IEEE80211_IBSS_DEBUG */
 	for (bss = wpa_s->mlme.sta_bss_list; bss; bss = bss->next) {
 		if (wpa_s->mlme.ssid_len != bss->ssid_len ||
-		    memcmp(wpa_s->mlme.ssid, bss->ssid, bss->ssid_len) != 0
+		    os_memcmp(wpa_s->mlme.ssid, bss->ssid, bss->ssid_len) != 0
 		    || !(bss->capability & WLAN_CAPABILITY_IBSS))
 			continue;
 #ifdef IEEE80211_IBSS_DEBUG
 		wpa_printf(MSG_DEBUG, "   bssid=" MACSTR " found",
 			   MAC2STR(bss->bssid));
 #endif /* IEEE80211_IBSS_DEBUG */
-		memcpy(bssid, bss->bssid, ETH_ALEN);
+		os_memcpy(bssid, bss->bssid, ETH_ALEN);
 		found = 1;
-		if (active_ibss || memcmp(bssid, wpa_s->bssid, ETH_ALEN) != 0)
+		if (active_ibss ||
+		    os_memcmp(bssid, wpa_s->bssid, ETH_ALEN) != 0)
 			break;
 	}
 
@@ -2330,7 +2335,7 @@ static int ieee80211_sta_find_ibss(struct wpa_supplicant *wpa_s)
 	wpa_printf(MSG_DEBUG, "   sta_find_ibss: selected " MACSTR " current "
 		   MACSTR, MAC2STR(bssid), MAC2STR(wpa_s->bssid));
 #endif /* IEEE80211_IBSS_DEBUG */
-	if (found && memcmp(wpa_s->bssid, bssid, ETH_ALEN) != 0 &&
+	if (found && os_memcmp(wpa_s->bssid, bssid, ETH_ALEN) != 0 &&
 	    (bss = ieee80211_bss_get(wpa_s, bssid))) {
 		wpa_printf(MSG_DEBUG, "MLME: Selected IBSS BSSID " MACSTR
 			   " based on configured SSID",
@@ -2388,7 +2393,7 @@ static int ieee80211_sta_find_ibss(struct wpa_supplicant *wpa_s)
 int ieee80211_sta_get_ssid(struct wpa_supplicant *wpa_s, u8 *ssid,
 			   size_t *len)
 {
-	memcpy(ssid, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
+	os_memcpy(ssid, wpa_s->mlme.ssid, wpa_s->mlme.ssid_len);
 	*len = wpa_s->mlme.ssid_len;
 	return 0;
 }
@@ -2402,9 +2407,9 @@ int ieee80211_sta_associate(struct wpa_supplicant *wpa_s,
 	wpa_s->mlme.bssid_set = 0;
 	wpa_s->mlme.freq = params->freq;
 	if (params->bssid) {
-		memcpy(wpa_s->bssid, params->bssid, ETH_ALEN);
-		if (memcmp(params->bssid, "\x00\x00\x00\x00\x00\x00",
-			   ETH_ALEN))
+		os_memcpy(wpa_s->bssid, params->bssid, ETH_ALEN);
+		if (os_memcmp(params->bssid, "\x00\x00\x00\x00\x00\x00",
+			      ETH_ALEN))
 			wpa_s->mlme.bssid_set = 1;
 		bss = ieee80211_bss_get(wpa_s, wpa_s->bssid);
 		if (bss) {
@@ -2421,7 +2426,7 @@ int ieee80211_sta_associate(struct wpa_supplicant *wpa_s,
 		struct ieee80211_tx_queue_params qparam;
 		int i;
 
-		memset(&qparam, 0, sizeof(qparam));
+		os_memset(&qparam, 0, sizeof(qparam));
 		/* TODO: are these ok defaults for all hw_modes? */
 		qparam.aifs = 2;
 		qparam.cw_min =
@@ -2442,26 +2447,26 @@ int ieee80211_sta_associate(struct wpa_supplicant *wpa_s,
 #endif
 
 	if (wpa_s->mlme.ssid_len != params->ssid_len ||
-	    memcmp(wpa_s->mlme.ssid, params->ssid, params->ssid_len) != 0)
+	    os_memcmp(wpa_s->mlme.ssid, params->ssid, params->ssid_len) != 0)
 		wpa_s->mlme.prev_bssid_set = 0;
-	memcpy(wpa_s->mlme.ssid, params->ssid, params->ssid_len);
-	memset(wpa_s->mlme.ssid + params->ssid_len, 0,
-	       MAX_SSID_LEN - params->ssid_len);
+	os_memcpy(wpa_s->mlme.ssid, params->ssid, params->ssid_len);
+	os_memset(wpa_s->mlme.ssid + params->ssid_len, 0,
+		  MAX_SSID_LEN - params->ssid_len);
 	wpa_s->mlme.ssid_len = params->ssid_len;
 	wpa_s->mlme.ssid_set = 1;
 
-	free(wpa_s->mlme.extra_ie);
+	os_free(wpa_s->mlme.extra_ie);
 	if (params->wpa_ie == NULL || params->wpa_ie_len == 0) {
 		wpa_s->mlme.extra_ie = NULL;
 		wpa_s->mlme.extra_ie_len = 0;
 		return 0;
 	}
-	wpa_s->mlme.extra_ie = malloc(params->wpa_ie_len);
+	wpa_s->mlme.extra_ie = os_malloc(params->wpa_ie_len);
 	if (wpa_s->mlme.extra_ie == NULL) {
 		wpa_s->mlme.extra_ie_len = 0;
 		return -1;
 	}
-	memcpy(wpa_s->mlme.extra_ie, params->wpa_ie, params->wpa_ie_len);
+	os_memcpy(wpa_s->mlme.extra_ie, params->wpa_ie, params->wpa_ie_len);
 	wpa_s->mlme.extra_ie_len = params->wpa_ie_len;
 
 	wpa_s->mlme.key_mgmt = params->key_mgmt_suite;
@@ -2667,7 +2672,7 @@ int ieee80211_sta_req_scan(struct wpa_supplicant *wpa_s, const u8 *ssid,
 
 	if (ssid) {
 		wpa_s->mlme.scan_ssid_len = ssid_len;
-		memcpy(wpa_s->mlme.scan_ssid, ssid, ssid_len);
+		os_memcpy(wpa_s->mlme.scan_ssid, ssid, ssid_len);
 	} else
 		wpa_s->mlme.scan_ssid_len = 0;
 	wpa_s->mlme.scan_skip_11b = 1; /* FIX: clear this is 11g is not
@@ -2689,18 +2694,18 @@ int ieee80211_sta_get_scan_results(struct wpa_supplicant *wpa_s,
 	struct wpa_scan_result *r;
 	struct ieee80211_sta_bss *bss;
 
-	memset(results, 0, max_size * sizeof(struct wpa_scan_result));
+	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
 	for (bss = wpa_s->mlme.sta_bss_list; bss; bss = bss->next) {
 		r = &results[ap_num];
-		memcpy(r->bssid, bss->bssid, ETH_ALEN);
-		memcpy(r->ssid, bss->ssid, bss->ssid_len);
+		os_memcpy(r->bssid, bss->bssid, ETH_ALEN);
+		os_memcpy(r->ssid, bss->ssid, bss->ssid_len);
 		r->ssid_len = bss->ssid_len;
 		if (bss->wpa_ie && bss->wpa_ie_len < SSID_MAX_WPA_IE_LEN) {
-			memcpy(r->wpa_ie, bss->wpa_ie, bss->wpa_ie_len);
+			os_memcpy(r->wpa_ie, bss->wpa_ie, bss->wpa_ie_len);
 			r->wpa_ie_len = bss->wpa_ie_len;
 		}
 		if (bss->rsn_ie && bss->rsn_ie_len < SSID_MAX_WPA_IE_LEN) {
-			memcpy(r->rsn_ie, bss->rsn_ie, bss->rsn_ie_len);
+			os_memcpy(r->rsn_ie, bss->rsn_ie, bss->rsn_ie_len);
 			r->rsn_ie_len = bss->rsn_ie_len;
 		}
 		r->freq = bss->freq;
@@ -2740,7 +2745,7 @@ struct sta_info * ieee80211_ibss_add_sta(struct wpa_supplicant *wpa_s,
 	list_for_each(ptr, &local->sub_if_list) {
 		sdata = list_entry(ptr, struct ieee80211_sub_if_data, list);
 		if (sdata->type == IEEE80211_SUB_IF_TYPE_STA &&
-		    memcmp(bssid, sdata->u.sta.bssid, ETH_ALEN) == 0) {
+		    os_memcmp(bssid, sdata->u.sta.bssid, ETH_ALEN) == 0) {
 			sta_dev = sdata->dev;
 			break;
 		}
@@ -2818,7 +2823,7 @@ void ieee80211_sta_rx(struct wpa_supplicant *wpa_s, const u8 *buf, size_t len,
 		    WLAN_FC_FROMDS)
 			return;
 		/* mgmt->sa is actually BSSID for FromDS data frames */
-		if (memcmp(mgmt->sa, wpa_s->bssid, ETH_ALEN) != 0)
+		if (os_memcmp(mgmt->sa, wpa_s->bssid, ETH_ALEN) != 0)
 			return;
 		/* Skip IEEE 802.11 and LLC headers */
 		pos = buf + 24 + 6;
@@ -2841,11 +2846,11 @@ void ieee80211_sta_free_hw_features(struct wpa_hw_modes *hw_features,
 		return;
 
 	for (i = 0; i < num_hw_features; i++) {
-		free(hw_features[i].channels);
-		free(hw_features[i].rates);
+		os_free(hw_features[i].channels);
+		os_free(hw_features[i].rates);
 	}
 
-	free(hw_features);
+	os_free(hw_features);
 }
 
 
@@ -2875,11 +2880,11 @@ void ieee80211_sta_deinit(struct wpa_supplicant *wpa_s)
 {
 	eloop_cancel_timeout(ieee80211_sta_timer, wpa_s, NULL);
 	eloop_cancel_timeout(ieee80211_sta_scan_timer, wpa_s, NULL);
-	free(wpa_s->mlme.extra_ie);
+	os_free(wpa_s->mlme.extra_ie);
 	wpa_s->mlme.extra_ie = NULL;
-	free(wpa_s->mlme.assocreq_ies);
+	os_free(wpa_s->mlme.assocreq_ies);
 	wpa_s->mlme.assocreq_ies = NULL;
-	free(wpa_s->mlme.assocresp_ies);
+	os_free(wpa_s->mlme.assocresp_ies);
 	wpa_s->mlme.assocresp_ies = NULL;
 	ieee80211_bss_list_deinit(wpa_s);
 	ieee80211_sta_free_hw_features(wpa_s->mlme.modes,

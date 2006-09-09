@@ -156,6 +156,11 @@ struct wpa_params {
 	 * dbus_ctrl_interface - Enable the DBus control interface
 	 */
 	int dbus_ctrl_interface;
+
+	/**
+	 * wpa_debug_use_file - Write debug to a file (instead of stdout)
+	 */
+	int wpa_debug_use_file;
 };
 
 /**
@@ -269,6 +274,9 @@ struct wpa_supplicant {
 	struct l2_packet_data *l2_br;
 	unsigned char own_addr[ETH_ALEN];
 	char ifname[100];
+#ifdef CONFIG_CTRL_IFACE_DBUS
+	char *dbus_path;
+#endif /* CONFIG_CTRL_IFACE_DBUS */
 	char bridge_ifname[16];
 
 	char *confname;

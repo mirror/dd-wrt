@@ -81,7 +81,7 @@ static u8 * eap_otp_process(struct eap_sm *sm, void *priv,
 			     &rpos);
 	if (resp == NULL)
 		return NULL;
-	memcpy(rpos, password, password_len);
+	os_memcpy(rpos, password, password_len);
 	wpa_hexdump_ascii_key(MSG_MSGDUMP, "EAP-OTP: Response",
 			      password, password_len);
 

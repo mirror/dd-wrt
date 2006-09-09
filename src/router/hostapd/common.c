@@ -17,6 +17,10 @@
 #include "common.h"
 
 
+#ifdef CONFIG_DEBUG_FILE
+static FILE *out_file = NULL;
+#endif /* CONFIG_DEBUG_FILE */
+int wpa_debug_use_file = 0;
 int wpa_debug_level = MSG_INFO;
 int wpa_debug_show_keys = 0;
 int wpa_debug_timestamp = 0;
@@ -133,8 +137,8 @@ void wpa_get_ntp_timestamp(u8 *buf)
 	/* Estimate 2^32/10^6 = 4295 - 1/32 - 1/512 */
 	usec = now.usec;
 	usec = host_to_be32(4295 * usec - (usec >> 5) - (usec >> 9));
-	memcpy(buf, (u8 *) &sec, 4);
-	memcpy(buf + 4, (u8 *) &usec, 4);
+	os_memcpy(buf, (u8 *) &sec, 4);
+	os_memcpy(buf + 4, (u8 *) &usec, 4);
 }
 
 
@@ -149,6 +153,12 @@ void wpa_debug_print_timestamp(void)
 		return;
 
 	os_get_time(&tv);
+#ifdef CONFIG_DEBUG_FILE
+	if (out_file) {
+		fprintf(out_file, "%ld.%06u: ", (long) tv.sec,
+			(unsigned int) tv.usec);
+	} else
+#endif /* CONFIG_DEBUG_FILE */
 	printf("%ld.%06u: ", (long) tv.sec, (unsigned int) tv.usec);
 }
 
@@ -171,8 +181,17 @@ void wpa_printf(int level, char *fmt, ...)
 	va_start(ap, fmt);
 	if (level >= wpa_debug_level) {
 		wpa_debug_print_timestamp();
+#ifdef CONFIG_DEBUG_FILE
+		if (out_file) {
+			vfprintf(out_file, fmt, ap);
+			fprintf(out_file, "\n");
+		} else {
+#endif /* CONFIG_DEBUG_FILE */
 		vprintf(fmt, ap);
 		printf("\n");
+#ifdef CONFIG_DEBUG_FILE
+		}
+#endif /* CONFIG_DEBUG_FILE */
 	}
 	va_end(ap);
 }
@@ -185,6 +204,21 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 	if (level < wpa_debug_level)
 		return;
 	wpa_debug_print_timestamp();
+#ifdef CONFIG_DEBUG_FILE
+	if (out_file) {
+		fprintf(out_file, "%s - hexdump(len=%lu):",
+			title, (unsigned long) len);
+		if (buf == NULL) {
+			fprintf(out_file, " [NULL]");
+		} else if (show) {
+			for (i = 0; i < len; i++)
+				fprintf(out_file, " %02x", buf[i]);
+		} else {
+			fprintf(out_file, " [REMOVED]");
+		}
+		fprintf(out_file, "\n");
+	} else {
+#endif /* CONFIG_DEBUG_FILE */
 	printf("%s - hexdump(len=%lu):", title, (unsigned long) len);
 	if (buf == NULL) {
 		printf(" [NULL]");
@@ -195,6 +229,9 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 		printf(" [REMOVED]");
 	}
 	printf("\n");
+#ifdef CONFIG_DEBUG_FILE
+	}
+#endif /* CONFIG_DEBUG_FILE */
 }
 
 void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len)
@@ -219,6 +256,44 @@ static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 	if (level < wpa_debug_level)
 		return;
 	wpa_debug_print_timestamp();
+#ifdef CONFIG_DEBUG_FILE
+	if (out_file) {
+		if (!show) {
+			fprintf(out_file,
+				"%s - hexdump_ascii(len=%lu): [REMOVED]\n",
+				title, (unsigned long) len);
+			return;
+		}
+		if (buf == NULL) {
+			fprintf(out_file,
+				"%s - hexdump_ascii(len=%lu): [NULL]\n",
+				title, (unsigned long) len);
+			return;
+		}
+		fprintf(out_file, "%s - hexdump_ascii(len=%lu):\n",
+			title, (unsigned long) len);
+		while (len) {
+			llen = len > line_len ? line_len : len;
+			fprintf(out_file, "    ");
+			for (i = 0; i < llen; i++)
+				fprintf(out_file, " %02x", pos[i]);
+			for (i = llen; i < line_len; i++)
+				fprintf(out_file, "   ");
+			fprintf(out_file, "   ");
+			for (i = 0; i < llen; i++) {
+				if (isprint(pos[i]))
+					fprintf(out_file, "%c", pos[i]);
+				else
+					fprintf(out_file, "_");
+			}
+			for (i = llen; i < line_len; i++)
+				fprintf(out_file, " ");
+			fprintf(out_file, "\n");
+			pos += llen;
+			len -= llen;
+		}
+	} else {
+#endif /* CONFIG_DEBUG_FILE */
 	if (!show) {
 		printf("%s - hexdump_ascii(len=%lu): [REMOVED]\n",
 		       title, (unsigned long) len);
@@ -250,6 +325,9 @@ static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 		pos += llen;
 		len -= llen;
 	}
+#ifdef CONFIG_DEBUG_FILE
+	}
+#endif /* CONFIG_DEBUG_FILE */
 }
 
 
@@ -265,6 +343,39 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 	_wpa_hexdump_ascii(level, title, buf, len, wpa_debug_show_keys);
 }
 
+
+int wpa_debug_open_file(void)
+{
+#ifdef CONFIG_DEBUG_FILE
+	static int count = 0;
+	char fname[64];
+	if (!wpa_debug_use_file)
+		return 0;
+#ifdef _WIN32
+	os_snprintf(fname, sizeof(fname), "\\Temp\\wpa_supplicant-log-%d.txt",
+		    count++);
+#else /* _WIN32 */
+	os_snprintf(fname, sizeof(fname), "/tmp/wpa_supplicant-log-%d.txt",
+		    count++);
+#endif /* _WIN32 */
+	out_file = fopen(fname, "w");
+	return out_file == NULL ? -1 : 0;
+#else /* CONFIG_DEBUG_FILE */
+	return 0;
+#endif /* CONFIG_DEBUG_FILE */
+}
+
+
+void wpa_debug_close_file(void)
+{
+#ifdef CONFIG_DEBUG_FILE
+	if (!wpa_debug_use_file)
+		return;
+	fclose(out_file);
+	out_file = NULL;
+#endif /* CONFIG_DEBUG_FILE */
+}
+
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
@@ -273,10 +384,17 @@ static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
 {
 	size_t i;
 	char *pos = buf, *end = buf + buf_size;
+	int ret;
 	for (i = 0; i < len; i++) {
-		pos += snprintf(pos, end - pos, uppercase ? "%02X" : "%02x",
-				data[i]);
+		ret = os_snprintf(pos, end - pos, uppercase ? "%02X" : "%02x",
+				  data[i]);
+		if (ret < 0 || ret >= end - pos) {
+			end[-1] = '\0';
+			return pos - buf;
+		}
+		pos += ret;
 	}
+	end[-1] = '\0';
 	return pos - buf;
 }
 
@@ -570,20 +688,6 @@ int getopt(int argc, char *const argv[], const char *optstring)
 	return *cp;
 }
 #endif /* CONFIG_ANSI_C_EXTRA */
-
-
-/**
- * wpa_zalloc - Allocate and zero memory
- * @size: Number of bytes to allocate
- * Returns: Pointer to allocated and zeroed memory or %NULL on failure
- */
-void *wpa_zalloc(size_t size)
-{
-	void *b = malloc(size);
-	if (b)
-		memset(b, 0, size);
-	return b;
-}
 
 
 #ifdef CONFIG_NATIVE_WINDOWS

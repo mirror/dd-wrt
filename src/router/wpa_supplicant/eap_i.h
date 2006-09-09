@@ -338,5 +338,6 @@ eap_get_config_blob(struct eap_sm *sm, const char *name);
 struct eap_hdr * eap_msg_alloc(int vendor, EapType type, size_t *len,
 			       size_t payload_len, u8 code, u8 identifier,
 			       u8 **payload);
+void eap_notify_pending(struct eap_sm *sm);
 
 #endif /* EAP_I_H */

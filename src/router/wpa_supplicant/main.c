@@ -132,10 +132,10 @@ int main(int argc, char *argv[])
 	if (os_program_init())
 		return -1;
 
-	memset(&params, 0, sizeof(params));
+	os_memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = MSG_INFO;
 
-	iface = ifaces = wpa_zalloc(sizeof(struct wpa_interface));
+	iface = ifaces = os_zalloc(sizeof(struct wpa_interface));
 	if (ifaces == NULL)
 		return -1;
 	iface_count = 1;
@@ -215,13 +215,13 @@ int main(int argc, char *argv[])
 			break;
 		case 'N':
 			iface_count++;
-			iface = realloc(ifaces, iface_count *
-					sizeof(struct wpa_interface));
+			iface = os_realloc(ifaces, iface_count *
+					   sizeof(struct wpa_interface));
 			if (iface == NULL)
 				goto out;
 			ifaces = iface;
 			iface = &ifaces[iface_count - 1]; 
-			memset(iface, 0, sizeof(*iface));
+			os_memset(iface, 0, sizeof(*iface));
 			break;
 		default:
 			usage();
@@ -257,8 +257,8 @@ int main(int argc, char *argv[])
 	wpa_supplicant_deinit(global);
 
 out:
-	free(ifaces);
-	free(params.pid_file);
+	os_free(ifaces);
+	os_free(params.pid_file);
 
 	os_program_deinit();
 

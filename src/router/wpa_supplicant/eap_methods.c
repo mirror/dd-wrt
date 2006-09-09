@@ -55,7 +55,7 @@ EapType eap_get_type(const char *name, int *vendor)
 {
 	struct eap_method *m;
 	for (m = eap_methods; m; m = m->next) {
-		if (strcmp(m->name, name) == 0) {
+		if (os_strcmp(m->name, name) == 0) {
 			*vendor = m->vendor;
 			return m->method;
 		}
@@ -96,16 +96,59 @@ size_t eap_get_names(char *buf, size_t buflen)
 {
 	char *pos, *end;
 	struct eap_method *m;
+	int ret;
+
+	if (buflen == 0)
+		return 0;
 
 	pos = buf;
 	end = pos + buflen;
 
 	for (m = eap_methods; m; m = m->next) {
-		pos += snprintf(pos, end - pos, "%s%s",
-				m == eap_methods ? "" : " ", m->name);
+		ret = os_snprintf(pos, end - pos, "%s%s",
+				  m == eap_methods ? "" : " ", m->name);
+		if (ret < 0 || ret >= end - pos)
+			break;
+		pos += ret;
 	}
+	buf[buflen - 1] = '\0';
 
 	return pos - buf;
+}
+
+
+/**
+ * eap_get_names_as_string_array - Get supported EAP methods as string array
+ * @len: Buffer for returning the number of items in array, not including %NULL
+ * terminator. This parameter can be %NULL if the length is not needed.
+ * Returns: A %NULL-terminated array of strings, or %NULL on error.
+ *
+ * This function returns the list of names for all supported EAP methods as an
+ * array of strings. The caller must free the returned array items and the
+ * array.
+ */
+char ** eap_get_names_as_string_array(size_t *num)
+{
+	struct eap_method *m;
+	size_t array_len = 0;
+	char **array;
+	int i = 0;
+
+	for (m = eap_methods; m; m = m->next)
+		array_len++;
+
+	array = os_zalloc(sizeof(char *) * (array_len + 1));
+	if (array == NULL)
+		return NULL;
+
+	for (m = eap_methods; m; m = m->next)
+		array[i++] = os_strdup(m->name);
+	array[i] = NULL;
+
+	if (num)
+		*num = array_len;
+
+	return array;
 }
 
 
@@ -235,7 +278,7 @@ struct eap_method * eap_peer_method_alloc(int version, int vendor,
 					  EapType method, const char *name)
 {
 	struct eap_method *eap;
-	eap = wpa_zalloc(sizeof(*eap));
+	eap = os_zalloc(sizeof(*eap));
 	if (eap == NULL)
 		return NULL;
 	eap->version = version;
@@ -252,7 +295,7 @@ struct eap_method * eap_peer_method_alloc(int version, int vendor,
  */
 void eap_peer_method_free(struct eap_method *method)
 {
-	free(method);
+	os_free(method);
 }
 
 
@@ -276,7 +319,7 @@ int eap_peer_method_register(struct eap_method *method)
 	for (m = eap_methods; m; m = m->next) {
 		if ((m->vendor == method->vendor &&
 		     m->method == method->method) ||
-		    strcmp(m->name, method->name) == 0)
+		    os_strcmp(m->name, method->name) == 0)
 			return -2;
 		last = m;
 	}

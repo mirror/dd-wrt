@@ -45,7 +45,7 @@ CFLAGS = $(CFLAGS) /DEAP_AKA
 CFLAGS = $(CFLAGS) /DEAP_PAX
 CFLAGS = $(CFLAGS) /DPCSC_FUNCS
 CFLAGS = $(CFLAGS) /DCONFIG_CTRL_IFACE
-CFLAGS = $(CFLAGS) /DCONFIG_CTRL_IFACE_UDP
+CFLAGS = $(CFLAGS) /DCONFIG_CTRL_IFACE_NAMED_PIPE
 CFLAGS = $(CFLAGS) /DCONFIG_DRIVER_NDIS
 CFLAGS = $(CFLAGS) /I..\hostapd /I.
 CFLAGS = $(CFLAGS) /DWIN32
@@ -91,7 +91,7 @@ OBJS = \
 	$(OBJDIR)\eap_psk.obj \
 	$(OBJDIR)\eap_psk_common.obj \
 	$(OBJDIR)\ctrl_iface.obj \
-	$(OBJDIR)\ctrl_iface_udp.obj \
+	$(OBJDIR)\ctrl_iface_named_pipe.obj \
 	$(OBJDIR)\driver_ndis.obj \
 	$(OBJDIR)\driver_ndis_.obj \
 	$(OBJDIR)\events.obj \

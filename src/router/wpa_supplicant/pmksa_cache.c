@@ -62,7 +62,7 @@ static void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa,
 	addr[2] = spa;
 
 	hmac_sha1_vector(pmk, pmk_len, 3, addr, len, hash);
-	memcpy(pmkid, hash, PMKID_LEN);
+	os_memcpy(pmkid, hash, PMKID_LEN);
 }
 
 
@@ -71,7 +71,7 @@ static void pmksa_cache_set_expiration(struct rsn_pmksa_cache *pmksa);
 
 static void _pmksa_cache_free_entry(struct rsn_pmksa_cache_entry *entry)
 {
-	free(entry);
+	os_free(entry);
 }
 
 
@@ -164,10 +164,10 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 	if (pmksa->sm->proto != WPA_PROTO_RSN || pmk_len > PMK_LEN)
 		return NULL;
 
-	entry = wpa_zalloc(sizeof(*entry));
+	entry = os_zalloc(sizeof(*entry));
 	if (entry == NULL)
 		return NULL;
-	memcpy(entry->pmk, pmk, pmk_len);
+	os_memcpy(entry->pmk, pmk, pmk_len);
 	entry->pmk_len = pmk_len;
 	rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid);
 	os_get_time(&now);
@@ -175,7 +175,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 	entry->reauth_time = now.sec + pmksa->sm->dot11RSNAConfigPMKLifetime *
 		pmksa->sm->dot11RSNAConfigPMKReauthThreshold / 100;
 	entry->akmp = WPA_KEY_MGMT_IEEE8021X;
-	memcpy(entry->aa, aa, ETH_ALEN);
+	os_memcpy(entry->aa, aa, ETH_ALEN);
 	entry->ssid = ssid;
 
 	/* Replace an old entry for the same Authenticator (if found) with the
@@ -183,13 +183,14 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
 	pos = pmksa->pmksa;
 	prev = NULL;
 	while (pos) {
-		if (memcmp(aa, pos->aa, ETH_ALEN) == 0) {
+		if (os_memcmp(aa, pos->aa, ETH_ALEN) == 0) {
 			if (pos->pmk_len == pmk_len &&
-			    memcmp(pos->pmk, pmk, pmk_len) == 0 &&
-			    memcmp(pos->pmkid, entry->pmkid, PMKID_LEN) == 0) {
+			    os_memcmp(pos->pmk, pmk, pmk_len) == 0 &&
+			    os_memcmp(pos->pmkid, entry->pmkid, PMKID_LEN) ==
+			    0) {
 				wpa_printf(MSG_DEBUG, "WPA: reusing previous "
 					   "PMKSA entry");
-				free(entry);
+				os_free(entry);
 				return pos;
 			}
 			if (prev == NULL)
@@ -271,10 +272,10 @@ void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
 	while (entry) {
 		prev = entry;
 		entry = entry->next;
-		free(prev);
+		os_free(prev);
 	}
 	pmksa_cache_set_expiration(pmksa);
-	free(pmksa);
+	os_free(pmksa);
 }
 
 
@@ -290,9 +291,9 @@ struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
 {
 	struct rsn_pmksa_cache_entry *entry = pmksa->pmksa;
 	while (entry) {
-		if ((aa == NULL || memcmp(entry->aa, aa, ETH_ALEN) == 0) &&
+		if ((aa == NULL || os_memcmp(entry->aa, aa, ETH_ALEN) == 0) &&
 		    (pmkid == NULL ||
-		     memcmp(entry->pmkid, pmkid, PMKID_LEN) == 0))
+		     os_memcmp(entry->pmkid, pmkid, PMKID_LEN) == 0))
 			return entry;
 		entry = entry->next;
 	}
@@ -439,26 +440,35 @@ int pmksa_cache_set_current(struct wpa_sm *sm, const u8 *pmkid,
  */
 int pmksa_cache_list(struct wpa_sm *sm, char *buf, size_t len)
 {
-	int i;
+	int i, ret;
 	char *pos = buf;
 	struct rsn_pmksa_cache_entry *entry;
 	struct os_time now;
 
 	os_get_time(&now);
-	pos += snprintf(pos, buf + len - pos,
-			"Index / AA / PMKID / expiration (in seconds) / "
-			"opportunistic\n");
+	ret = os_snprintf(pos, buf + len - pos,
+			  "Index / AA / PMKID / expiration (in seconds) / "
+			  "opportunistic\n");
+	if (ret < 0 || ret >= buf + len - pos)
+		return pos - buf;
+	pos += ret;
 	i = 0;
 	entry = sm->pmksa->pmksa;
 	while (entry) {
 		i++;
-		pos += snprintf(pos, buf + len - pos, "%d " MACSTR " ",
-				i, MAC2STR(entry->aa));
+		ret = os_snprintf(pos, buf + len - pos, "%d " MACSTR " ",
+				  i, MAC2STR(entry->aa));
+		if (ret < 0 || ret >= buf + len - pos)
+			return pos - buf;
+		pos += ret;
 		pos += wpa_snprintf_hex(pos, buf + len - pos, entry->pmkid,
 					PMKID_LEN);
-		pos += snprintf(pos, buf + len - pos, " %d %d\n",
-				(int) (entry->expiration - now.sec),
-				entry->opportunistic);
+		ret = os_snprintf(pos, buf + len - pos, " %d %d\n",
+				  (int) (entry->expiration - now.sec),
+				  entry->opportunistic);
+		if (ret < 0 || ret >= buf + len - pos)
+			return pos - buf;
+		pos += ret;
 		entry = entry->next;
 	}
 	return pos - buf;
@@ -479,7 +489,7 @@ pmksa_cache_init(void (*free_cb)(struct rsn_pmksa_cache_entry *entry,
 {
 	struct rsn_pmksa_cache *pmksa;
 
-	pmksa = wpa_zalloc(sizeof(*pmksa));
+	pmksa = os_zalloc(sizeof(*pmksa));
 	if (pmksa) {
 		pmksa->free_cb = free_cb;
 		pmksa->ctx = ctx;

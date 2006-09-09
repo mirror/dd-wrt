@@ -130,7 +130,6 @@ void tls_deinit(void *tls_ctx);
 /**
  * tls_get_errors - Process pending errors
  * @tls_ctx: TLS context data from tls_init()
- *
  * Returns: Number of found error, 0 if no errors detected.
  *
  * Process all pending TLS errors.
@@ -140,7 +139,6 @@ int tls_get_errors(void *tls_ctx);
 /**
  * tls_connection_init - Initialize a new TLS connection
  * @tls_ctx: TLS context data from tls_init()
- *
  * Returns: Connection context data, conn for other function calls
  */
 struct tls_connection * tls_connection_init(void *tls_ctx);
@@ -158,16 +156,14 @@ void tls_connection_deinit(void *tls_ctx, struct tls_connection *conn);
  * tls_connection_established - Has the TLS connection been completed?
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: 1 if TLS connection has been completed, 0 if not.
  */
 int tls_connection_established(void *tls_ctx, struct tls_connection *conn);
 
 /**
- * tls_connection_shutdown - Shutdown TLS connection data.
+ * tls_connection_shutdown - Shutdown TLS connection
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: 0 on success, -1 on failure
  *
  * Shutdown current TLS connection without releasing all resources. New
@@ -187,7 +183,6 @@ enum {
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @params: Connection parameters
- *
  * Returns: 0 on success, -1 on failure,
  * TLS_SET_PARAMS_ENGINE_PRV_INIT_FAILED (-2) on possible PIN error causing
  * PKCS#11 engine failure, or
@@ -215,7 +210,6 @@ int tls_global_set_params(void *tls_ctx,
  * @tls_ctx: TLS context data from tls_init()
  * @check_crl: 0 = do not verify CRLs, 1 = verify CRL for the user certificate,
  * 2 = verify CRL for all certificates
- *
  * Returns: 0 on success, -1 on failure
  */
 int tls_global_set_verify(void *tls_ctx, int check_crl);
@@ -225,7 +219,6 @@ int tls_global_set_verify(void *tls_ctx, int check_crl);
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @verify_peer: 1 = verify peer certificate
- *
  * Returns: 0 on success, -1 on failure
  */
 int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
@@ -249,7 +242,6 @@ int tls_connection_set_ia(void *tls_ctx, struct tls_connection *conn,
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @keys: Structure of key/random data (filled on success)
- *
  * Returns: 0 on success, -1 on failure
  */
 int tls_connection_get_keys(void *tls_ctx, struct tls_connection *conn,
@@ -288,7 +280,6 @@ int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
  * @out_len: Length of the output buffer.
  * @appl_data: Pointer to application data pointer, or %NULL if dropped
  * @appl_data_len: Pointer to variable that is set to appl_data length
- *
  * Returns: Pointer to output data, %NULL on failure
  *
  * Caller is responsible for freeing returned output data. If the final
@@ -322,7 +313,6 @@ u8 * tls_connection_handshake(void *tls_ctx, struct tls_connection *conn,
  * @in_data: Input data from TLS peer
  * @in_len: Input data length
  * @out_len: Length of the output buffer.
- *
  * Returns: pointer to output data, %NULL on failure
  *
  * Caller is responsible for freeing returned output data.
@@ -340,7 +330,6 @@ u8 * tls_connection_server_handshake(void *tls_ctx,
  * @in_len: Input buffer length
  * @out_data: Pointer to output buffer (encrypted TLS data)
  * @out_len: Maximum out_data length 
- *
  * Returns: Number of bytes written to out_data, -1 on failure
  *
  * This function is used after TLS handshake has been completed successfully to
@@ -358,7 +347,6 @@ int tls_connection_encrypt(void *tls_ctx, struct tls_connection *conn,
  * @in_len: Input buffer length
  * @out_data: Pointer to output buffer (decrypted data from TLS tunnel)
  * @out_len: Maximum out_data length
- *
  * Returns: Number of bytes written to out_data, -1 on failure
  *
  * This function is used after TLS handshake has been completed successfully to
@@ -372,7 +360,6 @@ int tls_connection_decrypt(void *tls_ctx, struct tls_connection *conn,
  * tls_connection_resumed - Was session resumption used
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: 1 if current session used session resumption, 0 if not
  */
 int tls_connection_resumed(void *tls_ctx, struct tls_connection *conn);
@@ -383,7 +370,6 @@ int tls_connection_resumed(void *tls_ctx, struct tls_connection *conn);
  * @conn: Connection context data from tls_connection_init()
  * @key: TLS pre-master-secret
  * @key_len: length of key in bytes
- *
  * Returns: 0 on success, -1 on failure
  */
 int tls_connection_set_master_key(void *tls_ctx, struct tls_connection *conn,
@@ -414,7 +400,6 @@ int tls_connection_set_cipher_list(void *tls_ctx, struct tls_connection *conn,
  * @conn: Connection context data from tls_connection_init()
  * @buf: Buffer for the cipher name
  * @buflen: buf size
- *
  * Returns: 0 on success, -1 on failure
  *
  * Get the name of the currently used cipher.
@@ -426,7 +411,6 @@ int tls_get_cipher(void *tls_ctx, struct tls_connection *conn,
  * tls_connection_enable_workaround - Enable TLS workaround options
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: 0 on success, -1 on failure
  *
  * This function is used to enable connection-specific workaround options for
@@ -440,9 +424,8 @@ int tls_connection_enable_workaround(void *tls_ctx,
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
  * @ext_type: Extension type
- * @data: Extension payload (NULL to remove extension)
+ * @data: Extension payload (%NULL to remove extension)
  * @data_len: Extension payload length
- *
  * Returns: 0 on success, -1 on failure
  */
 int tls_connection_client_hello_ext(void *tls_ctx, struct tls_connection *conn,
@@ -462,7 +445,6 @@ int tls_connection_get_failed(void *tls_ctx, struct tls_connection *conn);
  * tls_connection_get_read_alerts - Get connection read alert status
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: Number of times a fatal read (remote end reported error) has
  * happened during this connection.
  */
@@ -472,7 +454,6 @@ int tls_connection_get_read_alerts(void *tls_ctx, struct tls_connection *conn);
  * tls_connection_get_write_alerts - Get connection write alert status
  * @tls_ctx: TLS context data from tls_init()
  * @conn: Connection context data from tls_connection_init()
- *
  * Returns: Number of times a fatal write (locally detected error) has happened
  * during this connection.
  */

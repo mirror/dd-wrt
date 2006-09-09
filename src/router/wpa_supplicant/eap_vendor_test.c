@@ -1,6 +1,6 @@
 /*
  * EAP peer method: Test method for vendor specific (expanded) EAP type
- * Copyright (c) 2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -21,24 +21,29 @@
 #include "common.h"
 #include "eap_i.h"
 #include "wpa_supplicant.h"
+#include "eloop.h"
 
 
 #define EAP_VENDOR_ID 0xfffefd
 #define EAP_VENDOR_TYPE 0xfcfbfaf9
 
 
+/* #define TEST_PENDING_REQUEST */
+
 struct eap_vendor_test_data {
 	enum { INIT, CONFIRM, SUCCESS } state;
+	int first_try;
 };
 
 
 static void * eap_vendor_test_init(struct eap_sm *sm)
 {
 	struct eap_vendor_test_data *data;
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 	data->state = INIT;
+	data->first_try = 1;
 	return data;
 }
 
@@ -46,8 +51,19 @@ static void * eap_vendor_test_init(struct eap_sm *sm)
 static void eap_vendor_test_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_vendor_test_data *data = priv;
-	free(data);
+	os_free(data);
 }
+
+
+#ifdef TEST_PENDING_REQUEST
+static void eap_vendor_ready(void *eloop_ctx, void *timeout_ctx)
+{
+	struct eap_sm *sm = eloop_ctx;
+	wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Ready to re-process pending "
+		   "request");
+	eap_notify_pending(sm);
+}
+#endif /* TEST_PENDING_REQUEST */
 
 
 static u8 * eap_vendor_test_process(struct eap_sm *sm, void *priv,
@@ -88,6 +104,20 @@ static u8 * eap_vendor_test_process(struct eap_sm *sm, void *priv,
 			   "in SUCCESS state");
 		ret->ignore = TRUE;
 		return NULL;
+	}
+
+	if (data->state == CONFIRM) {
+#ifdef TEST_PENDING_REQUEST
+		if (data->first_try) {
+			data->first_try = 0;
+			wpa_printf(MSG_DEBUG, "EAP-VENDOR-TEST: Testing "
+				   "pending request");
+			ret->ignore = TRUE;
+			eloop_register_timeout(1, 0, eap_vendor_ready, sm,
+					       NULL);
+			return NULL;
+		}
+#endif /* TEST_PENDING_REQUEST */
 	}
 
 	ret->ignore = FALSE;
@@ -133,12 +163,12 @@ static u8 * eap_vendor_test_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(key_len);
+	key = os_malloc(key_len);
 	if (key == NULL)
 		return NULL;
 
-	memset(key, 0x11, key_len / 2);
-	memset(key + key_len / 2, 0x22, key_len / 2);
+	os_memset(key, 0x11, key_len / 2);
+	os_memset(key + key_len / 2, 0x22, key_len / 2);
 	*len = key_len;
 
 	return key;

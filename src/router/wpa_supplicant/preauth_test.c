@@ -69,7 +69,7 @@ static u8 * wpa_alloc_eapol(const struct wpa_supplicant *wpa_s, u8 type,
 	struct ieee802_1x_hdr *hdr;
 
 	*msg_len = sizeof(*hdr) + data_len;
-	hdr = malloc(*msg_len);
+	hdr = os_malloc(*msg_len);
 	if (hdr == NULL)
 		return NULL;
 
@@ -78,9 +78,9 @@ static u8 * wpa_alloc_eapol(const struct wpa_supplicant *wpa_s, u8 type,
 	hdr->length = htons(data_len);
 
 	if (data)
-		memcpy(hdr + 1, data, data_len);
+		os_memcpy(hdr + 1, data, data_len);
 	else
-		memset(hdr + 1, 0, data_len);
+		os_memset(hdr + 1, 0, data_len);
 
 	if (data_pos)
 		*data_pos = hdr + 1;
@@ -245,7 +245,7 @@ static void wpa_init_conf(struct wpa_supplicant *wpa_s, const char *ifname)
 	struct l2_packet_data *l2;
 	struct wpa_sm_ctx *ctx;
 
-	memset(&dummy_driver, 0, sizeof(dummy_driver));
+	os_memset(&dummy_driver, 0, sizeof(dummy_driver));
 	wpa_s->driver = &dummy_driver;
 
 	ctx = wpa_zalloc(sizeof(*ctx));
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 	if (os_program_init())
 		return -1;
 
-	memset(&preauth_test, 0, sizeof(preauth_test));
+	os_memset(&preauth_test, 0, sizeof(preauth_test));
 
 	wpa_debug_level = 0;
 	wpa_debug_show_keys = 1;
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	memset(&wpa_s, 0, sizeof(wpa_s));
+	os_memset(&wpa_s, 0, sizeof(wpa_s));
 	wpa_s.conf = wpa_config_read(argv[1]);
 	if (wpa_s.conf == NULL) {
 		printf("Failed to parse configuration file '%s'.\n", argv[1]);

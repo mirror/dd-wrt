@@ -7,7 +7,7 @@
   </refmeta>
   <refnamediv>
     <refname>wpa_passphrase</refname>
-    <refpurpose>Set WPA passphrase for a SSID</refpurpose>
+    <refpurpose>Generate a WPA PSK from an ASCII passphrase for a SSID</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
@@ -22,7 +22,8 @@
 
     <para><command>wpa_passphrase</command> pre-computes PSK entries for
     network configuration blocks of a
-    <filename>wpa_supplicant.conf</filename> file.</para>
+    <filename>wpa_supplicant.conf</filename> file. An ASCII passphrase
+    and SSID are used to generate a 256-bit PSK.</para>
   </refsect1>
 
   <refsect1>

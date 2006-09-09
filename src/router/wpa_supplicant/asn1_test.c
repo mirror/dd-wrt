@@ -38,33 +38,17 @@ static const char * asn1_class_str(int class)
 }
 
 
-static void asn1_dump_oid(struct asn1_oid *oid)
-{
-	char str[100], *spos;
-	size_t i;
-
-	str[0] = '\0';
-	spos = str;
-
-	for (i = 0; i < oid->len; i++) {
-		spos += snprintf(spos, str + sizeof(str) - spos,
-				 ".%lu", oid->oid[i]);
-	}
-	wpa_printf(MSG_MSGDUMP, "ASN.1: OID %s", str);
-}
-
-
 int asn1_parse(const u8 *buf, size_t len, int level)
 {
 	const u8 *pos, *prev, *end;
-	char prefix[10];
+	char prefix[10], str[100];
 	int _level;
 	struct asn1_hdr hdr;
 	struct asn1_oid oid;
 	u8 tmp;
 
 	_level = level;
-	if (_level > sizeof(prefix) - 1)
+	if ((size_t) _level > sizeof(prefix) - 1)
 		_level = sizeof(prefix) - 1;
 	memset(prefix, ' ', _level);
 	prefix[_level] = '\0';
@@ -79,15 +63,22 @@ int asn1_parse(const u8 *buf, size_t len, int level)
 		prev = pos;
 		pos = hdr.payload;
 
-		if (hdr.class == ASN1_CLASS_CONTEXT_SPECIFIC)
-			continue;
-
 		wpa_printf(MSG_MSGDUMP, "ASN.1:%s Class %d(%s) P/C %d(%s) "
 			   "Tag %u Length %u",
 			   prefix, hdr.class, asn1_class_str(hdr.class),
 			   hdr.constructed,
 			   hdr.constructed ? "Constructed" : "Primitive",
 			   hdr.tag, hdr.length);
+
+		if (hdr.class == ASN1_CLASS_CONTEXT_SPECIFIC &&
+		    hdr.constructed) {
+			if (asn1_parse(pos, hdr.length, level + 1) < 0)
+				return -1;
+			pos += hdr.length;
+		}
+
+		if (hdr.class != ASN1_CLASS_UNIVERSAL)
+			continue;
 
 		switch (hdr.tag) {
 		case ASN1_TAG_EOC:
@@ -137,7 +128,8 @@ int asn1_parse(const u8 *buf, size_t len, int level)
 				wpa_printf(MSG_DEBUG, "ASN.1: Invalid OID");
 				return -1;
 			}
-			asn1_dump_oid(&oid);
+			asn1_oid_to_str(&oid, str, sizeof(str));
+			wpa_printf(MSG_DEBUG, "ASN.1:%s OID %s", prefix, str);
 			pos += hdr.length;
 			break;
 		case ANS1_TAG_RELATIVE_OID:
@@ -194,7 +186,7 @@ int main(int argc, char *argv[])
 	FILE *f;
 	u8 buf[3000];
 	size_t len;
-	struct x509_certificate cert;
+	struct x509_certificate *cert;
 
 	wpa_debug_level = 0;
 
@@ -209,9 +201,10 @@ int main(int argc, char *argv[])
 
 	printf("\n\n");
 
-	if (x509_certificate_parse(buf, len, &cert) < 0)
+	cert = x509_certificate_parse(buf, len);
+	if (cert == NULL)
 		printf("Failed to parse X.509 certificate\n");
-	x509_certificate_free(&cert);
+	x509_certificate_free(cert);
 
 	return 0;
 }

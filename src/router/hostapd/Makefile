@@ -3,7 +3,7 @@ DIR_WPA_SUPPLICANT=../wpa_supplicant
 DIR_HOSTAP=../driver/modules
 
 ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
+CFLAGS = $(COPTS)
 endif
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
@@ -27,6 +27,10 @@ CONFIG_OS=unix
 endif
 endif
 
+ifeq ($(CONFIG_OS), internal)
+CFLAGS += -DOS_NO_C_LIB_DEFINES
+endif
+
 ifdef CONFIG_NATIVE_WINDOWS
 CFLAGS += -DCONFIG_NATIVE_WINDOWS
 LIBS += -lws2_32
@@ -36,11 +40,11 @@ OBJS =	hostapd.o eloop.o ieee802_1x.o eapol_sm.o radius.o md5.o rc4.o md4.o \
 	common.o ieee802_11.o config.o ieee802_11_auth.o accounting.o \
 	sta_info.o radius_client.o sha1.o wpa.o aes_wrap.o ctrl_iface.o \
 	driver_conf.o os_$(CONFIG_OS).o preauth.o pmksa_cache.o beacon.o \
-	hw_features.o wme.o ap_list.o
+	hw_features.o wme.o ap_list.o mlme.o
 
 HOBJS=hlr_auc_gw.o common.o os_$(CONFIG_OS).o milenage.o aes_wrap.o
 
-CFLAGS += -DCONFIG_CTRL_IFACE
+CFLAGS += -DCONFIG_CTRL_IFACE -DCONFIG_CTRL_IFACE_UNIX
 
 ifdef CONFIG_IAPP
 CFLAGS += -DCONFIG_IAPP

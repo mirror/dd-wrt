@@ -50,8 +50,6 @@ static int hostapd_config_read_int10(const char *value)
 
 static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 {
-	bss->radius = (struct hostapd_radius_servers *) (bss + 1);
-
 	bss->logger_syslog_level = HOSTAPD_LEVEL_INFO;
 	bss->logger_stdout_level = HOSTAPD_LEVEL_INFO;
 	bss->logger_syslog = (unsigned int) -1;
@@ -69,6 +67,8 @@ static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->wpa_group = WPA_CIPHER_TKIP;
 
 	bss->max_num_sta = MAX_STA_COUNT;
+
+	bss->dtim_period = 2;
 
 	bss->radius_server_auth_port = 1812;
 	bss->ap_max_inactivity = AP_MAX_INACTIVITY;
@@ -92,7 +92,7 @@ static struct hostapd_config * hostapd_config_defaults(void)
 		{ aCWmin >> 2, aCWmin >> 1, 2, 1500 / 32, 1 };
 
 	conf = wpa_zalloc(sizeof(*conf));
-	bss = wpa_zalloc(sizeof(*bss) + sizeof(struct hostapd_radius_servers));
+	bss = wpa_zalloc(sizeof(*bss));
 	if (conf == NULL || bss == NULL) {
 		printf("Failed to allocate memory for configuration data.\n");
 		free(conf);
@@ -109,12 +109,21 @@ static struct hostapd_config * hostapd_config_defaults(void)
 		return NULL;
 	}
 
+	bss->radius = wpa_zalloc(sizeof(*bss->radius));
+	if (bss->radius == NULL) {
+		free(conf);
+		free(bss);
+		return NULL;
+	}
+
 	hostapd_config_defaults_bss(bss);
 
 	conf->num_bss = 1;
 	conf->bss = bss;
 
 	conf->beacon_int = 100;
+	conf->rts_threshold = -1; /* use driver default: 2347 */
+	conf->fragm_threshold = -1; /* user driver default: 2346 */
 	conf->send_probe_response = 1;
 
 	for (i = 0; i < NUM_TX_QUEUES; i++)
@@ -147,9 +156,16 @@ static int hostapd_parse_ip_addr(const char *txt, struct hostapd_ip_addr *addr)
 }
 
 
-static int mac_comp(const void *a, const void *b)
+int hostapd_mac_comp(const void *a, const void *b)
 {
 	return memcmp(a, b, sizeof(macaddr));
+}
+
+
+int hostapd_mac_comp_empty(const void *a)
+{
+	macaddr empty = { 0 };
+	return memcmp(a, empty, sizeof(macaddr));
 }
 
 
@@ -208,7 +224,7 @@ static int hostapd_config_read_maclist(const char *fname, macaddr **acl,
 
 	fclose(f);
 
-	qsort(*acl, *num, sizeof(macaddr), mac_comp);
+	qsort(*acl, *num, sizeof(macaddr), hostapd_mac_comp);
 
 	return 0;
 }
@@ -724,21 +740,51 @@ static int hostapd_config_parse_cipher(int line, const char *value)
 }
 
 
-static int hostapd_config_check(struct hostapd_bss_config *conf)
+static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
+				    struct hostapd_config *conf)
 {
-	if (conf->ieee802_1x && !conf->eap_server &&
-	    !conf->radius->auth_servers) {
+	if (bss->ieee802_1x && !bss->eap_server &&
+	    !bss->radius->auth_servers) {
 		printf("Invalid IEEE 802.1X configuration (no EAP "
 		       "authenticator configured).\n");
 		return -1;
 	}
 
-	if (conf->wpa && (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK) &&
-	    conf->ssid.wpa_psk == NULL && conf->ssid.wpa_passphrase == NULL &&
-	    conf->ssid.wpa_psk_file == NULL) {
+	if (bss->wpa && (bss->wpa_key_mgmt & WPA_KEY_MGMT_PSK) &&
+	    bss->ssid.wpa_psk == NULL && bss->ssid.wpa_passphrase == NULL &&
+	    bss->ssid.wpa_psk_file == NULL) {
 		printf("WPA-PSK enabled, but PSK or passphrase is not "
 		       "configured.\n");
 		return -1;
+	}
+
+	if (hostapd_mac_comp_empty(bss->bssid) != 0) {
+		size_t i;
+
+		for (i = 0; i < conf->num_bss; i++) {
+			if ((&conf->bss[i] != bss) &&
+			    (hostapd_mac_comp(conf->bss[i].bssid,
+					      bss->bssid) == 0)) {
+				printf("Duplicate BSSID " MACSTR
+				       " on interface '%s' and '%s'.\n",
+				       MAC2STR(bss->bssid),
+				       conf->bss[i].iface, bss->iface);
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+
+static int hostapd_config_check(struct hostapd_config *conf)
+{
+	size_t i;
+
+	for (i = 0; i < conf->num_bss; i++) {
+		if (hostapd_config_check_bss(&conf->bss[i], conf))
+			return -1;
 	}
 
 	return 0;
@@ -815,6 +861,41 @@ static int hostapd_parse_rates(int **rate_list, char *val)
 	list[count] = -1;
 
 	*rate_list = list;
+	return 0;
+}
+
+
+static int hostapd_config_bss(struct hostapd_config *conf, const char *ifname)
+{
+	struct hostapd_bss_config *bss;
+
+	if (*ifname == '\0')
+		return -1;
+
+	bss = realloc(conf->bss, (conf->num_bss + 1) *
+		      sizeof(struct hostapd_bss_config));
+	if (bss == NULL) {
+		printf("Failed to allocate memory for multi-BSS entry\n");
+		return -1;
+	}
+	conf->bss = bss;
+
+	bss = &(conf->bss[conf->num_bss]);
+	memset(bss, 0, sizeof(*bss));
+	bss->radius = wpa_zalloc(sizeof(*bss->radius));
+	if (bss->radius == NULL) {
+		printf("Failed to allocate memory for multi-BSS RADIUS "
+		       "data\n");
+		return -1;
+	}
+
+	conf->num_bss++;
+	conf->last_bss = bss;
+
+	hostapd_config_defaults_bss(bss);
+	snprintf(bss->iface, sizeof(bss->iface), "%s", ifname);
+	memcpy(bss->ssid.vlan, bss->iface, IFNAMSIZ + 1);
+
 	return 0;
 }
 
@@ -1041,7 +1122,7 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			bss->dump_log_name = strdup(pos);
 		} else if (strcmp(buf, "ssid") == 0) {
 			bss->ssid.ssid_len = strlen(pos);
-			if (bss->ssid.ssid_len >= HOSTAPD_MAX_SSID_LEN ||
+			if (bss->ssid.ssid_len > HOSTAPD_MAX_SSID_LEN ||
 			    bss->ssid.ssid_len < 1) {
 				printf("Line %d: invalid SSID '%s'\n", line,
 				       pos);
@@ -1418,6 +1499,29 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				errors++;
 			} else
 				conf->beacon_int = val;
+		} else if (strcmp(buf, "dtim_period") == 0) {
+			bss->dtim_period = atoi(pos);
+			if (bss->dtim_period < 1 || bss->dtim_period > 255) {
+				printf("Line %d: invalid dtim_period %d\n",
+				       line, bss->dtim_period);
+				errors++;
+			}
+		} else if (strcmp(buf, "rts_threshold") == 0) {
+			conf->rts_threshold = atoi(pos);
+			if (conf->rts_threshold < 0 ||
+			    conf->rts_threshold > 2347) {
+				printf("Line %d: invalid rts_threshold %d\n",
+				       line, conf->rts_threshold);
+				errors++;
+			}
+		} else if (strcmp(buf, "fragm_threshold") == 0) {
+			conf->fragm_threshold = atoi(pos);
+			if (conf->fragm_threshold < 256 ||
+			    conf->fragm_threshold > 2346) {
+				printf("Line %d: invalid fragm_threshold %d\n",
+				       line, conf->fragm_threshold);
+				errors++;
+			}
 		} else if (strcmp(buf, "send_probe_response") == 0) {
 			int val = atoi(pos);
 			if (val != 0 && val != 1) {
@@ -1480,6 +1584,20 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				       line);
 				errors++;
 			}
+		} else if (strcmp(buf, "bss") == 0) {
+			if (hostapd_config_bss(conf, pos)) {
+				printf("Line %d: invalid bss item\n", line);
+				errors++;
+			}
+		} else if (strcmp(buf, "bssid") == 0) {
+			if (bss == conf->bss) {
+				printf("Line %d: bssid item not allowed "
+				       "for the default interface\n", line);
+				errors++;
+			} else if (hwaddr_aton(pos, bss->bssid)) {
+				printf("Line %d: invalid bssid item\n", line);
+				errors++;
+			}
 		} else {
 			printf("Line %d: unknown configuration item '%s'\n",
 			       line, buf);
@@ -1506,10 +1624,10 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			bss->ssid.security_policy = SECURITY_STATIC_WEP;
 		else
 			bss->ssid.security_policy = SECURITY_PLAINTEXT;
-
-		if (hostapd_config_check(bss))
-			errors++;
 	}
+
+	if (hostapd_config_check(conf))
+		errors++;
 
 	if (errors) {
 		printf("%d errors found in configuration file '%s'\n",
@@ -1585,6 +1703,7 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	free(conf->eap_sim_db);
 	free(conf->radius_server_clients);
 	free(conf->test_socket);
+	free(conf->radius);
 }
 
 

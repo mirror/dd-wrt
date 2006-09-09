@@ -683,7 +683,7 @@ wpa_driver_bsd_init(void *ctx, const char *ifname)
 	(((v) = get80211param(drv, param)) != -1)
 	struct wpa_driver_bsd_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	/*

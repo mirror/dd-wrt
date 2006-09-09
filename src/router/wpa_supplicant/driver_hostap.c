@@ -40,7 +40,7 @@ static int hostapd_ioctl(struct wpa_driver_hostap_data *drv,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
@@ -65,16 +65,16 @@ static int wpa_driver_hostap_set_wpa_ie(struct wpa_driver_hostap_data *drv,
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 
 	param->cmd = PRISM2_HOSTAPD_SET_GENERIC_ELEMENT;
 	param->u.generic_elem.len = wpa_ie_len;
-	memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
+	os_memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
 	res = hostapd_ioctl(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 
 	return res;
 }
@@ -86,7 +86,7 @@ static int prism2param(struct wpa_driver_hostap_data *drv, int param,
 	struct iwreq iwr;
 	int *i, ret = 0;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = param;
@@ -186,7 +186,7 @@ static int wpa_driver_hostap_set_key(void *priv, wpa_alg alg,
 		return -2;
 
 	blen = sizeof(*param) + key_len;
-	buf = wpa_zalloc(blen);
+	buf = os_zalloc(blen);
 	if (buf == NULL)
 		return -1;
 
@@ -201,26 +201,26 @@ static int wpa_driver_hostap_set_key(void *priv, wpa_alg alg,
 	 * sake, the driver could be enhanced to support the missing key. */
 #if 0
 	if (addr == NULL)
-		memset(param->sta_addr, 0xff, ETH_ALEN);
+		os_memset(param->sta_addr, 0xff, ETH_ALEN);
 	else
-		memcpy(param->sta_addr, addr, ETH_ALEN);
+		os_memcpy(param->sta_addr, addr, ETH_ALEN);
 #else
-	memset(param->sta_addr, 0xff, ETH_ALEN);
+	os_memset(param->sta_addr, 0xff, ETH_ALEN);
 #endif
 	strncpy((char *) param->u.crypt.alg, alg_name,
 		HOSTAP_CRYPT_ALG_NAME_LEN);
 	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
 	param->u.crypt.idx = key_idx;
-	memcpy(param->u.crypt.seq, seq, seq_len);
+	os_memcpy(param->u.crypt.seq, seq, seq_len);
 	param->u.crypt.key_len = key_len;
-	memcpy((u8 *) (param + 1), key, key_len);
+	os_memcpy((u8 *) (param + 1), key, key_len);
 
 	if (hostapd_ioctl(drv, param, blen, 1)) {
 		wpa_printf(MSG_WARNING, "Failed to set encryption.");
 		show_set_key_error(param);
 		ret = -1;
 	}
-	free(buf);
+	os_free(buf);
 
 	return ret;
 }
@@ -250,7 +250,7 @@ static int wpa_driver_hostap_reset(struct wpa_driver_hostap_data *drv,
 
 	wpa_printf(MSG_DEBUG, "%s: type=%d", __FUNCTION__, type);
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = type;
@@ -273,9 +273,9 @@ static int wpa_driver_hostap_mlme(struct wpa_driver_hostap_data *drv,
 	 * disassociating with Prism2/2.5/3 than sending the management frame
 	 * and then resetting the Port0 to make sure both the AP and the STA
 	 * end up in disconnected state. */
-	memset(&param, 0, sizeof(param));
+	os_memset(&param, 0, sizeof(param));
 	param.cmd = PRISM2_HOSTAPD_MLME;
-	memcpy(param.sta_addr, addr, ETH_ALEN);
+	os_memcpy(param.sta_addr, addr, ETH_ALEN);
 	param.u.mlme.cmd = cmd;
 	param.u.mlme.reason_code = reason_code;
 	ret = hostapd_ioctl(drv, &param, sizeof(param), 1);
@@ -384,10 +384,10 @@ static int wpa_driver_hostap_scan(void *priv, const u8 *ssid, size_t ssid_len)
 	if (ssid_len > 32)
 		ssid_len = 32;
 
-	memset(&param, 0, sizeof(param));
+	os_memset(&param, 0, sizeof(param));
 	param.cmd = PRISM2_HOSTAPD_SCAN_REQ;
 	param.u.scan_req.ssid_len = ssid_len;
-	memcpy(param.u.scan_req.ssid, ssid, ssid_len);
+	os_memcpy(param.u.scan_req.ssid, ssid, ssid_len);
 	ret = hostapd_ioctl(drv, &param, sizeof(param), 1);
 
 	/* Not all drivers generate "scan completed" wireless event, so try to
@@ -451,12 +451,12 @@ static void * wpa_driver_hostap_init(void *ctx, const char *ifname)
 {
 	struct wpa_driver_hostap_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
 	if (drv->wext == NULL) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -466,18 +466,18 @@ static void * wpa_driver_hostap_init(void *ctx, const char *ifname)
 	if (drv->sock < 0) {
 		perror("socket");
 		wpa_driver_wext_deinit(drv->wext);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
-	if (strncmp(ifname, "wlan", 4) == 0) {
+	if (os_strncmp(ifname, "wlan", 4) == 0) {
 		/*
 		 * Host AP driver may use both wlan# and wifi# interface in
 		 * wireless events.
 		 */
 		char ifname2[IFNAMSIZ + 1];
 		strncpy(ifname2, ifname, sizeof(ifname2));
-		memcpy(ifname2, "wifi", 4);
+		os_memcpy(ifname2, "wifi", 4);
 		wpa_driver_wext_alternative_ifindex(drv->wext, ifname2);
 	}
 
@@ -490,7 +490,7 @@ static void wpa_driver_hostap_deinit(void *priv)
 	struct wpa_driver_hostap_data *drv = priv;
 	wpa_driver_wext_deinit(drv->wext);
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

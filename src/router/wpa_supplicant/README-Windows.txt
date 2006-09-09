@@ -167,10 +167,11 @@ description: Intel 8255x-based Integrated Fast Ethernet (Microsoft's Packet Sche
 
 Since the example configuration used Atheros WLAN card, the middle one
 is the correct interface in this case. The interface name for -i
-command line option is the full string following "ifname:". In other
-words, wpa_supplicant would be started with following command:
+command line option is the full string following "ifname:" (the
+"\Device\NPF_" prefix can be removed). In other words, wpa_supplicant
+would be started with the following command:
 
-# wpa_supplicant.exe -i'\Device\NPF_{769E012B-FD17-4935-A5E3-8090C38E25D2}' -c wpa_supplicant.conf -d
+# wpa_supplicant.exe -i'{769E012B-FD17-4935-A5E3-8090C38E25D2}' -c wpa_supplicant.conf -d
 
 -d optional enables some more debugging (use -dd for even more, if
 needed). It can be left out if debugging information is not needed.
@@ -184,7 +185,7 @@ command has identical results in this case:
 Simple configuration example for WPA-PSK:
 
 #ap_scan=2
-ctrl_interface=/var/run/wpa_supplicant
+ctrl_interface=
 network={
 	ssid="test"
 	key_mgmt=WPA-PSK
@@ -198,12 +199,58 @@ wpa_supplicant tries to associate with the SSID without doing
 scanning; this allows APs with hidden SSIDs to be used)
 
 
-wpa_cli.exe can be used to interact with the wpa_supplicant.exe
-program in the same way as with Linux. Note that ctrl_interface is
-using UNIX domain sockets when build for cygwin, but the native build
-for Windows uses UDP sockets and the contents of the ctrl_interface
-configuration item is ignore for this case. Anyway, this variable has
-to be included in the configuration to enable the control interface.
+wpa_cli.exe and wpa_gui.exe can be used to interact with the
+wpa_supplicant.exe program in the same way as with Linux. Note that
+ctrl_interface is using UNIX domain sockets when built for cygwin, but
+the native build for Windows uses named pipes and the contents of the
+ctrl_interface configuration item is used to control access to the
+interface. Anyway, this variable has to be included in the configuration
+to enable the control interface.
+
+
+Example SDDL string formats:
+
+(local admins group has permission, but nobody else):
+
+ctrl_interface=SDDL=D:(A;;GA;;;BA)
+
+("A" == "access allowed", "GA" == GENERIC_ALL == all permissions, and
+"BA" == "builtin administrators" == the local admins.  The empty fields
+are for flags and object GUIDs, none of which should be required in this
+case.)
+
+(local admins and the local "power users" group have permissions,
+but nobody else):
+
+ctrl_interface=SDDL=D:(A;;GA;;;BA)(A;;GA;;;PU)
+
+(One ACCESS_ALLOWED ACE for GENERIC_ALL for builtin administrators, and
+one ACCESS_ALLOWED ACE for GENERIC_ALL for power users.)
+
+(close to wide open, but you have to be a valid user on
+the machine):
+
+ctrl_interface=SDDL=D:(A;;GA;;;AU)
+
+(One ACCESS_ALLOWED ACE for GENERIC_ALL for the "authenticated users"
+group.)
+
+This one would allow absolutely everyone (including anonymous
+users) -- this is *not* recommended, since named pipes can be attached
+to from anywhere on the network (i.e. there's no "this machine only"
+like there is with 127.0.0.1 sockets):
+
+ctrl_interface=SDDL=D:(A;;GA;;;BU)(A;;GA;;;AN)
+
+(BU == "builtin users", "AN" == "anonymous")
+
+See also [1] for the format of ACEs, and [2] for the possible strings
+that can be used for principal names.
+
+[1]
+http://msdn.microsoft.com/library/default.asp?url=/library/en-us/secauthz/security/ace_strings.asp
+[2]
+http://msdn.microsoft.com/library/default.asp?url=/library/en-us/secauthz/security/sid_strings.asp
 
 
 Starting wpa_supplicant as a Windows service (wpasvc.exe)
@@ -221,7 +268,7 @@ The root of wpa_supplicant configuration in registry is
 HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant. This level includes global
 parameters and a 'interfaces' subkey with all the interface configuration
 (adapter to confname mapping). Each such mapping is a subkey that has
-'adapter' and 'config' values.
+'adapter', 'config', and 'ctrl_interface' values.
 
 This program can be run either as a normal command line application,
 e.g., for debugging, with 'wpasvc.exe app' or as a Windows service.

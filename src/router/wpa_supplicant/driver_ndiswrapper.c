@@ -103,7 +103,7 @@ static int wpa_ndiswrapper_set_wpa(void *priv, int enabled)
 	struct iwreq priv_req;
 	int ret = 0;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.data.flags = enabled;
 	if (iw_set_ext(drv, WPA_SET_WPA, &priv_req) < 0)
@@ -121,7 +121,7 @@ static int wpa_ndiswrapper_set_key(void *priv, wpa_alg alg, const u8 *addr,
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	wpa_key.alg = alg;
 	wpa_key.addr = addr;
@@ -159,7 +159,7 @@ static int wpa_ndiswrapper_set_countermeasures(void *priv, int enabled)
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.param.value = enabled;
 	if (iw_set_ext(drv, WPA_SET_COUNTERMEASURES, &priv_req) < 0)
@@ -175,7 +175,7 @@ static int wpa_ndiswrapper_set_drop_unencrypted(void *priv,
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.param.value = enabled;
 	if (iw_set_ext(drv, WPA_DROP_UNENCRYPTED, &priv_req) < 0)
@@ -190,10 +190,10 @@ static int wpa_ndiswrapper_deauthenticate(void *priv, const u8 *addr,
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.param.value = reason_code;
-	memcpy(&priv_req.u.ap_addr.sa_data, addr, ETH_ALEN);
+	os_memcpy(&priv_req.u.ap_addr.sa_data, addr, ETH_ALEN);
 	if (iw_set_ext(drv, WPA_DEAUTHENTICATE, &priv_req) < 0)
 		ret = -1;
 	return ret;
@@ -206,9 +206,9 @@ static int wpa_ndiswrapper_disassociate(void *priv, const u8 *addr,
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
-	memcpy(&priv_req.u.ap_addr.sa_data, addr, ETH_ALEN);
+	os_memcpy(&priv_req.u.ap_addr.sa_data, addr, ETH_ALEN);
 	if (iw_set_ext(drv, WPA_DISASSOCIATE, &priv_req) < 0)
 		ret = -1;
 	return ret;
@@ -223,8 +223,8 @@ wpa_ndiswrapper_associate(void *priv,
 	struct wpa_assoc_info wpa_assoc_info;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
-	memset(&wpa_assoc_info, 0, sizeof(wpa_assoc_info));
+	os_memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&wpa_assoc_info, 0, sizeof(wpa_assoc_info));
 
 	wpa_assoc_info.bssid = params->bssid;
 	wpa_assoc_info.ssid = params->ssid;
@@ -252,7 +252,7 @@ static int wpa_ndiswrapper_set_auth_alg(void *priv, int auth_alg)
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.param.value = auth_alg;
 	if (iw_set_ext(drv, WPA_SET_AUTH_ALG, &priv_req) < 0)
@@ -296,7 +296,7 @@ static int wpa_ndiswrapper_get_capa(void *priv, struct wpa_driver_capa *capa)
 	int ret = 0;
 	struct iwreq priv_req;
 
-	memset(&priv_req, 0, sizeof(priv_req));
+	os_memset(&priv_req, 0, sizeof(priv_req));
 
 	priv_req.u.data.pointer = (void *) capa;
 	priv_req.u.data.length = sizeof(*capa);
@@ -318,12 +318,12 @@ static void * wpa_ndiswrapper_init(void *ctx, const char *ifname)
 {
 	struct wpa_driver_ndiswrapper_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
 	if (drv->wext == NULL) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -332,7 +332,7 @@ static void * wpa_ndiswrapper_init(void *ctx, const char *ifname)
 	drv->sock = get_socket();
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -345,7 +345,7 @@ static void wpa_ndiswrapper_deinit(void *priv)
 	struct wpa_driver_ndiswrapper_data *drv = priv;
 	wpa_driver_wext_deinit(drv->wext);
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

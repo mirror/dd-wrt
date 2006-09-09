@@ -107,6 +107,7 @@ struct hostapd_data {
 	struct hostapd_iface *iface;
 	struct hostapd_config *iconf;
 	struct hostapd_bss_config *conf;
+	int interface_added; /* virtual interface added for this BSS */
 
 	u8 own_addr[ETH_ALEN];
 
@@ -164,7 +165,7 @@ struct hostapd_iface {
 	char *config_fname;
 	struct hostapd_config *conf;
 
-	int num_bss;
+	size_t num_bss;
 	struct hostapd_data **bss;
 
 	int num_ap; /* number of entries in ap_list */
