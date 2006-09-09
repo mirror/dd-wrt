@@ -53,7 +53,6 @@ struct asn1_hdr {
 	const u8 *payload;
 	u8 identifier, class, constructed;
 	unsigned int tag, length;
-	unsigned int context_specific;
 };
 
 #define ASN1_MAX_OID_LEN 20
@@ -66,5 +65,7 @@ struct asn1_oid {
 int asn1_get_next(const u8 *buf, size_t len, struct asn1_hdr *hdr);
 int asn1_get_oid(const u8 *buf, size_t len, struct asn1_oid *oid,
 		 const u8 **next);
+void asn1_oid_to_str(struct asn1_oid *oid, char *buf, size_t len);
+unsigned long asn1_bit_string_to_long(const u8 *buf, size_t len);
 
 #endif /* ASN1_H */

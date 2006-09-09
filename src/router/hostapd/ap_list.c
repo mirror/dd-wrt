@@ -14,13 +14,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <time.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "ieee802_11.h"
@@ -31,20 +25,20 @@
 
 
 struct ieee80211_frame_info {
-        u32 version;
-        u32 length;
-        u64 mactime;
-        u64 hosttime;
-        u32 phytype;
-        u32 channel;
-        u32 datarate;
-        u32 antenna;
-        u32 priority;
-        u32 ssi_type;
-        u32 ssi_signal;
-        u32 ssi_noise;
-        u32 preamble;
-        u32 encoding;
+	u32 version;
+	u32 length;
+	u64 mactime;
+	u64 hosttime;
+	u32 phytype;
+	u32 channel;
+	u32 datarate;
+	u32 antenna;
+	u32 priority;
+	u32 ssi_type;
+	u32 ssi_signal;
+	u32 ssi_noise;
+	u32 preamble;
+	u32 encoding;
 
 	/* Note: this structure is otherwise identical to capture format used
 	 * in linux-wlan-ng, but this additional field is used to provide meta
@@ -55,16 +49,16 @@ struct ieee80211_frame_info {
 
 
 enum ieee80211_phytype {
-        ieee80211_phytype_fhss_dot11_97  = 1,
-        ieee80211_phytype_dsss_dot11_97  = 2,
-        ieee80211_phytype_irbaseband     = 3,
-        ieee80211_phytype_dsss_dot11_b   = 4,
-        ieee80211_phytype_pbcc_dot11_b   = 5,
-        ieee80211_phytype_ofdm_dot11_g   = 6,
-        ieee80211_phytype_pbcc_dot11_g   = 7,
-        ieee80211_phytype_ofdm_dot11_a   = 8,
-        ieee80211_phytype_dsss_dot11_turbog = 255,
-        ieee80211_phytype_dsss_dot11_turbo = 256,
+	ieee80211_phytype_fhss_dot11_97  = 1,
+	ieee80211_phytype_dsss_dot11_97  = 2,
+	ieee80211_phytype_irbaseband     = 3,
+	ieee80211_phytype_dsss_dot11_b   = 4,
+	ieee80211_phytype_pbcc_dot11_b   = 5,
+	ieee80211_phytype_ofdm_dot11_g   = 6,
+	ieee80211_phytype_pbcc_dot11_g   = 7,
+	ieee80211_phytype_ofdm_dot11_a   = 8,
+	ieee80211_phytype_dsss_dot11_turbog = 255,
+	ieee80211_phytype_dsss_dot11_turbo = 256,
 };
 
 

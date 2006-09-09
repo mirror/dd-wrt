@@ -31,6 +31,7 @@ int eap_peer_method_register(struct eap_method *method);
 EapType eap_get_type(const char *name, int *vendor);
 const char * eap_get_name(int vendor, EapType type);
 size_t eap_get_names(char *buf, size_t buflen);
+char ** eap_get_names_as_string_array(size_t *num);
 int eap_peer_register_methods(void);
 void eap_peer_unregister_methods(void);
 

@@ -89,24 +89,26 @@ static void * eap_sake_init(struct eap_sm *sm)
 		return NULL;
 	}
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 	data->state = IDENTITY;
 
 	if (config->nai) {
-		data->peerid = malloc(config->nai_len);
+		data->peerid = os_malloc(config->nai_len);
 		if (data->peerid == NULL) {
 			eap_sake_deinit(sm, data);
 			return NULL;
 		}
-		memcpy(data->peerid, config->nai, config->nai_len);
+		os_memcpy(data->peerid, config->nai, config->nai_len);
 		data->peerid_len = config->nai_len;
 	}
 
-	memcpy(data->root_secret_a, config->eappsk, EAP_SAKE_ROOT_SECRET_LEN);
-	memcpy(data->root_secret_b, config->eappsk + EAP_SAKE_ROOT_SECRET_LEN,
-	       EAP_SAKE_ROOT_SECRET_LEN);
+	os_memcpy(data->root_secret_a, config->eappsk,
+		  EAP_SAKE_ROOT_SECRET_LEN);
+	os_memcpy(data->root_secret_b,
+		  config->eappsk + EAP_SAKE_ROOT_SECRET_LEN,
+		  EAP_SAKE_ROOT_SECRET_LEN);
 
 	return data;
 }
@@ -115,9 +117,9 @@ static void * eap_sake_init(struct eap_sm *sm)
 static void eap_sake_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_sake_data *data = priv;
-	free(data->serverid);
-	free(data->peerid);
-	free(data);
+	os_free(data->serverid);
+	os_free(data->peerid);
+	os_free(data);
 }
 
 
@@ -150,7 +152,7 @@ static u8 * eap_sake_build_msg(struct eap_sake_data *data, u8 **payload,
 	}
 	*length += pad;
 
-	msg = wpa_zalloc(*length);
+	msg = os_zalloc(*length);
 	if (msg == NULL) {
 		wpa_printf(MSG_ERROR, "EAP-SAKE: Failed to allocate memory "
 			   "request");
@@ -231,7 +233,7 @@ static u8 * eap_sake_process_identity(struct eap_sm *sm,
 	*rpos++ = EAP_SAKE_AT_PEERID;
 	*rpos++ = 2 + data->peerid_len;
 	if (data->peerid)
-		memcpy(rpos, data->peerid, data->peerid_len);
+		os_memcpy(rpos, data->peerid, data->peerid_len);
 
 	eap_sake_state(data, CHALLENGE);
 
@@ -270,7 +272,7 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 		return NULL;
 	}
 
-	memcpy(data->rand_s, attr.rand_s, EAP_SAKE_RAND_LEN);
+	os_memcpy(data->rand_s, attr.rand_s, EAP_SAKE_RAND_LEN);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SAKE: RAND_S (server rand)",
 		    data->rand_s, EAP_SAKE_RAND_LEN);
 
@@ -281,16 +283,16 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SAKE: RAND_P (peer rand)",
 		    data->rand_p, EAP_SAKE_RAND_LEN);
 
-	free(data->serverid);
+	os_free(data->serverid);
 	data->serverid = NULL;
 	data->serverid_len = 0;
 	if (attr.serverid) {
 		wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-SAKE: SERVERID",
 				  attr.serverid, attr.serverid_len);
-		data->serverid = malloc(attr.serverid_len);
+		data->serverid = os_malloc(attr.serverid_len);
 		if (data->serverid == NULL)
 			return NULL;
-		memcpy(data->serverid, attr.serverid, attr.serverid_len);
+		os_memcpy(data->serverid, attr.serverid, attr.serverid_len);
 		data->serverid_len = attr.serverid_len;
 	}
 
@@ -311,14 +313,14 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 	wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_RAND_P");
 	*rpos++ = EAP_SAKE_AT_RAND_P;
 	*rpos++ = 2 + EAP_SAKE_RAND_LEN;
-	memcpy(rpos, data->rand_p, EAP_SAKE_RAND_LEN);
+	os_memcpy(rpos, data->rand_p, EAP_SAKE_RAND_LEN);
 	rpos += EAP_SAKE_RAND_LEN;
 
 	if (data->peerid) {
 		wpa_printf(MSG_DEBUG, "EAP-SAKE: * AT_PEERID");
 		*rpos++ = EAP_SAKE_AT_PEERID;
 		*rpos++ = 2 + data->peerid_len;
-		memcpy(rpos, data->peerid, data->peerid_len);
+		os_memcpy(rpos, data->peerid, data->peerid_len);
 		rpos += data->peerid_len;
 	}
 
@@ -330,7 +332,7 @@ static u8 * eap_sake_process_challenge(struct eap_sm *sm,
 				 data->peerid, data->peerid_len, 1,
 				 resp, *respDataLen, rpos, rpos)) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Failed to compute MIC");
-		free(resp);
+		os_free(resp);
 		return NULL;
 	}
 
@@ -372,7 +374,7 @@ static u8 * eap_sake_process_confirm(struct eap_sm *sm,
 			     data->serverid, data->serverid_len,
 			     data->peerid, data->peerid_len, 0,
 			     reqData, reqDataLen, attr.mic_s, mic_s);
-	if (memcmp(attr.mic_s, mic_s, EAP_SAKE_MIC_LEN) != 0) {
+	if (os_memcmp(attr.mic_s, mic_s, EAP_SAKE_MIC_LEN) != 0) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Incorrect AT_MIC_S");
 		eap_sake_state(data, FAILURE);
 		ret->methodState = METHOD_DONE;
@@ -402,7 +404,7 @@ static u8 * eap_sake_process_confirm(struct eap_sm *sm,
 				 data->peerid, data->peerid_len, 1,
 				 resp, *respDataLen, rpos, rpos)) {
 		wpa_printf(MSG_INFO, "EAP-SAKE: Failed to compute MIC");
-		free(resp);
+		os_free(resp);
 		return NULL;
 	}
 
@@ -513,10 +515,10 @@ static u8 * eap_sake_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_MSK_LEN);
+	key = os_malloc(EAP_MSK_LEN);
 	if (key == NULL)
 		return NULL;
-	memcpy(key, data->msk, EAP_MSK_LEN);
+	os_memcpy(key, data->msk, EAP_MSK_LEN);
 	*len = EAP_MSK_LEN;
 
 	return key;

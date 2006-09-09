@@ -199,6 +199,18 @@ struct eapol_callbacks {
 	 */
 	const struct wpa_config_blob * (*get_config_blob)(void *ctx,
 							  const char *name);
+
+	/**
+	 * notify_pending - Notify that a pending request can be retried
+	 * @ctx: eapol_ctx from eap_sm_init() call
+	 *
+	 * An EAP method can perform a pending operation (e.g., to get a
+	 * response from an external process). Once the response is available,
+	 * this callback function can be used to request EAPOL state machine to
+	 * retry delivering the previously received (and still unanswered) EAP
+	 * request to EAP state machine.
+	 */
+	void (*notify_pending)(void *ctx);
 };
 
 /**

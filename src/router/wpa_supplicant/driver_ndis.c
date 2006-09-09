@@ -1801,7 +1801,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		   drv->adapter_desc);
 
 	return 0;
-#else /* CONFIG_USE_NDISUO */
+#else /* CONFIG_USE_NDISUIO */
 	PTSTR _names;
 	char *names, *pos, *pos2;
 	ULONG len;
@@ -1976,7 +1976,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		   drv->adapter_desc);
 
 	return 0;
-#endif /* CONFIG_USE_NDISUO */
+#endif /* CONFIG_USE_NDISUIO */
 }
 
 
@@ -2316,9 +2316,6 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 	else if (strncmp(ifname, "\\DEVICE\\", 8) == 0)
 		ifname += 8;
 	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
-#ifndef CONFIG_NDIS_EVENTS_INTEGRATED
-	drv->event_sock = -1;
-#endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
 	if (wpa_driver_ndis_adapter_init(drv) < 0) {
 		free(drv);
@@ -2354,15 +2351,14 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 	eloop_register_timeout(1, 0, wpa_driver_ndis_poll_timeout, drv, NULL);
 
 #ifdef CONFIG_NDIS_EVENTS_INTEGRATED
-	drv->events = ndis_events_init(&drv->events_pipe, &drv->event_avail);
+	drv->events = ndis_events_init(&drv->events_pipe, &drv->event_avail,
+				       drv->ifname, drv->adapter_desc);
 	if (drv->events == NULL) {
 		wpa_driver_ndis_deinit(drv);
 		return NULL;
 	}
 	eloop_register_event(drv->event_avail, sizeof(drv->event_avail),
 			     wpa_driver_ndis_event_pipe_cb, drv, NULL);
-#else /* CONFIG_NDIS_EVENTS_INTEGRATED */
-	wpa_driver_register_event_cb(drv);
 #endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
 	/* Set mode here in case card was configured for ad-hoc mode
@@ -2400,6 +2396,7 @@ static void wpa_driver_ndis_deinit(void *priv)
 	}
 #endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
+	eloop_cancel_timeout(wpa_driver_ndis_scan_timeout, drv, drv->ctx);
 	eloop_cancel_timeout(wpa_driver_ndis_poll_timeout, drv, NULL);
 	wpa_driver_ndis_flush_pmkid(drv);
 	wpa_driver_ndis_disconnect(drv);
@@ -2407,12 +2404,6 @@ static void wpa_driver_ndis_deinit(void *priv)
 		wpa_printf(MSG_DEBUG, "NDIS: failed to disassociate and turn "
 			   "radio off");
 	}
-#ifndef CONFIG_NDIS_EVENTS_INTEGRATED
-	if (drv->event_sock >= 0) {
-		eloop_unregister_read_sock(drv->event_sock);
-		close(drv->event_sock);
-	}
-#endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
 	wpa_driver_ndis_adapter_close(drv);
 

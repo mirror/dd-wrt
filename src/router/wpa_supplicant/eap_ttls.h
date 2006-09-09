@@ -38,9 +38,9 @@ struct ttls_avp_vendor {
 do { \
 	int pad; \
 	pad = (4 - (((pos) - (start)) & 3)) & 3; \
-	memset((pos), 0, pad); \
+	os_memset((pos), 0, pad); \
 	pos += pad; \
-} while(0)
+} while (0)
 
 
 /* RFC 2865 */

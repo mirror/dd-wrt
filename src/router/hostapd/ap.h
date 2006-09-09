@@ -48,6 +48,9 @@ struct sta_info {
 	unsigned int no_short_slot_time_set:1;
 	unsigned int no_short_preamble_set:1;
 
+	u16 auth_alg;
+	u8 previous_ap[6];
+
 	enum {
 		STA_NULLFUNC = 0, STA_DISASSOC, STA_DEAUTH, STA_REMOVE
 	} timeout_next;

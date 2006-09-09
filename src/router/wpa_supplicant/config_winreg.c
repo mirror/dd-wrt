@@ -264,7 +264,8 @@ static struct wpa_ssid * wpa_config_read_network(HKEY hk, const TCHAR *netw,
 
 	if ((ssid->key_mgmt & WPA_KEY_MGMT_PSK) && !ssid->psk_set) {
 		wpa_printf(MSG_ERROR, "WPA-PSK accepted for key management, "
-			   "but no PSK configured for network '" TSTR "'.", netw);
+			   "but no PSK configured for network '" TSTR "'.",
+			   netw);
 		errors++;
 	}
 
@@ -511,8 +512,8 @@ static int wpa_config_delete_subkeys(HKEY hk, const TCHAR *key)
 
 	ret = RegOpenKeyEx(hk, key, 0, KEY_ENUMERATE_SUB_KEYS | DELETE, &nhk);
 	if (ret != ERROR_SUCCESS) {
-		wpa_printf(MSG_DEBUG, "WINREG: Could not open key '" TSTR "' for "
-			   "subkey deletion: error 0x%x (%d)", key,
+		wpa_printf(MSG_DEBUG, "WINREG: Could not open key '" TSTR
+			   "' for subkey deletion: error 0x%x (%d)", key,
 			   (unsigned int) ret, (int) GetLastError());
 		return 0;
 	}
@@ -786,6 +787,9 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	INT(mode);
 	INT(proactive_key_caching);
 	INT(disabled);
+	INT(stakey);
+	INT(peerkey);
+	STR(id_str);
 
 #undef STR
 #undef INT

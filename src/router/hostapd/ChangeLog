@@ -1,11 +1,19 @@
 ChangeLog for hostapd
 
-????-??-?? - v0.5.5
+????-??-?? - v0.5.6
+	* added support for configuring and controlling multiple BSSes per
+	  radio interface (bss=<ifname> in hostapd.conf); this is only
+	  available with Devicescape and test driver interfaces
+
+2006-08-27 - v0.5.5
 	* added 'hostapd_cli new_sta <addr>' command for adding a new STA into
 	  hostapd (e.g., to initialize wired network authentication based on an
 	  external signal)
 	* fixed hostapd to add PMKID KDE into 4-Way Handshake Message 1 when
 	  using WPA2 even if PMKSA caching is not used
+	* added -P<pid file> argument for hostapd to write the current process
+	  id into a file
+	* added support for RADIUS Authentication Server MIB (RFC 2619)
 
 2006-06-20 - v0.5.4
 	* fixed nt_password_hash build [Bug 144]

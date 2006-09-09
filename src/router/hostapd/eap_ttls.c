@@ -538,6 +538,7 @@ static u8 * eap_ttls_build_phase2_mschapv2(struct eap_sm *sm,
 					   int id, size_t *reqDataLen)
 {
 	u8 *req, *encr_req, *pos, *end;
+	int ret;
 	size_t req_len;
 
 	pos = req = malloc(100);
@@ -549,7 +550,9 @@ static u8 * eap_ttls_build_phase2_mschapv2(struct eap_sm *sm,
 		pos = eap_ttls_avp_hdr(pos, RADIUS_ATTR_MS_CHAP2_SUCCESS,
 				       RADIUS_VENDOR_ID_MICROSOFT, 1, 43);
 		*pos++ = data->mschapv2_ident;
-		pos += snprintf((char *) pos, end - pos, "S=");
+		ret = snprintf((char *) pos, end - pos, "S=");
+		if (ret >= 0 && ret < end - pos)
+			pos += ret;
 		pos += wpa_snprintf_hex_uppercase(
 			(char *) pos, end - pos, data->mschapv2_auth_response,
 			sizeof(data->mschapv2_auth_response));

@@ -45,7 +45,7 @@ static void challenge_hash(const u8 *peer_challenge, const u8 *auth_challenge,
 	len[2] = username_len;
 
 	sha1_vector(3, addr, len, hash);
-	memcpy(challenge, hash, 8);
+	os_memcpy(challenge, hash, 8);
 }
 
 
@@ -102,7 +102,7 @@ void challenge_response(const u8 *challenge, const u8 *password_hash,
 	des_encrypt(challenge, password_hash + 7, response + 8);
 	zpwd[0] = password_hash[14];
 	zpwd[1] = password_hash[15];
-	memset(zpwd + 2, 0, 5);
+	os_memset(zpwd + 2, 0, 5);
 	des_encrypt(challenge, zpwd, response + 16);
 }
 
@@ -275,7 +275,7 @@ void get_master_key(const u8 *password_hash_hash, const u8 *nt_response,
 	addr[2] = magic1;
 
 	sha1_vector(3, addr, len, hash);
-	memcpy(master_key, hash, 16);
+	os_memcpy(master_key, hash, 16);
 }
 
 
@@ -343,7 +343,7 @@ void get_asymetric_start_key(const u8 *master_key, u8 *session_key,
 
 	if (session_key_len > SHA1_MAC_LEN)
 		session_key_len = SHA1_MAC_LEN;
-	memcpy(session_key, digest, session_key_len);
+	os_memcpy(session_key, digest, session_key_len);
 }
 
 
@@ -366,7 +366,7 @@ static void encrypt_pw_block_with_password_hash(
 	if (password_len > 256)
 		return;
 
-	memset(pw_block, 0, PWBLOCK_LEN);
+	os_memset(pw_block, 0, PWBLOCK_LEN);
 	offset = (256 - password_len) * 2;
 	os_get_random(pw_block, offset);
 	for (i = 0; i < password_len; i++)

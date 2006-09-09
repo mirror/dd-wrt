@@ -116,15 +116,21 @@ static int hostapd_ctrl_iface_sta_mib(struct hostapd_data *hapd,
 				      struct sta_info *sta,
 				      char *buf, size_t buflen)
 {
-	int len, res;
+	int len, res, ret;
 
 	if (sta == NULL) {
-		return snprintf(buf, buflen, "FAIL\n");
+		ret = snprintf(buf, buflen, "FAIL\n");
+		if (ret < 0 || (size_t) ret >= buflen)
+			return 0;
+		return ret;
 	}
 
 	len = 0;
-	len += snprintf(buf + len, buflen - len, MACSTR "\n",
-			MAC2STR(sta->addr));
+	ret = snprintf(buf + len, buflen - len, MACSTR "\n",
+		       MAC2STR(sta->addr));
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	res = ieee802_11_get_mib_sta(hapd, sta, buf + len, buflen - len);
 	if (res >= 0)
@@ -152,9 +158,14 @@ static int hostapd_ctrl_iface_sta(struct hostapd_data *hapd,
 				  char *buf, size_t buflen)
 {
 	u8 addr[ETH_ALEN];
+	int ret;
 
-	if (hwaddr_aton(txtaddr, addr))
-		return snprintf(buf, buflen, "FAIL\n");
+	if (hwaddr_aton(txtaddr, addr)) {
+		ret = snprintf(buf, buflen, "FAIL\n");
+		if (ret < 0 || (size_t) ret >= buflen)
+			return 0;
+		return ret;
+	}
 	return hostapd_ctrl_iface_sta_mib(hapd, ap_get_sta(hapd, addr),
 					  buf, buflen);
 }
@@ -166,10 +177,15 @@ static int hostapd_ctrl_iface_sta_next(struct hostapd_data *hapd,
 {
 	u8 addr[ETH_ALEN];
 	struct sta_info *sta;
+	int ret;
 
 	if (hwaddr_aton(txtaddr, addr) ||
-	    (sta = ap_get_sta(hapd, addr)) == NULL)
-		return snprintf(buf, buflen, "FAIL\n");
+	    (sta = ap_get_sta(hapd, addr)) == NULL) {
+		ret = snprintf(buf, buflen, "FAIL\n");
+		if (ret < 0 || (size_t) ret >= buflen)
+			return 0;
+		return ret;
+	}		
 	return hostapd_ctrl_iface_sta_mib(hapd, sta->next, buf, buflen);
 }
 
@@ -314,6 +330,7 @@ static char * hostapd_ctrl_iface_path(struct hostapd_data *hapd)
 
 	snprintf(buf, len, "%s/%s",
 		 hapd->conf->ctrl_interface, hapd->conf->iface);
+	buf[len - 1] = '\0';
 	return buf;
 }
 

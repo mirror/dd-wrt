@@ -331,7 +331,7 @@ void ieee802_11_set_beacon(struct hostapd_data *hapd)
 
 void ieee802_11_set_beacons(struct hostapd_iface *iface)
 {
-	int i;
+	size_t i;
 	for (i = 0; i < iface->num_bss; i++)
 		ieee802_11_set_beacon(iface->bss[i]);
 }

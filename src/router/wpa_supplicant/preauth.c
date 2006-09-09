@@ -53,7 +53,7 @@ void pmksa_candidate_free(struct wpa_sm *sm)
 	while (entry) {
 		prev = entry;
 		entry = entry->next;
-		free(prev);
+		os_free(prev);
 	}
 }
 
@@ -69,9 +69,9 @@ static void rsn_preauth_receive(void *ctx, const u8 *src_addr,
 	wpa_hexdump(MSG_MSGDUMP, "RX pre-auth", buf, len);
 
 	if (sm->preauth_eapol == NULL ||
-	    memcmp(sm->preauth_bssid, "\x00\x00\x00\x00\x00\x00",
-		   ETH_ALEN) == 0 ||
-	    memcmp(sm->preauth_bssid, src_addr, ETH_ALEN) != 0) {
+	    os_memcmp(sm->preauth_bssid, "\x00\x00\x00\x00\x00\x00",
+		      ETH_ALEN) == 0 ||
+	    os_memcmp(sm->preauth_bssid, src_addr, ETH_ALEN) != 0) {
 		wpa_printf(MSG_WARNING, "RSN pre-auth frame received from "
 			   "unexpected source " MACSTR " - dropped",
 			   MAC2STR(src_addr));
@@ -156,7 +156,7 @@ static int rsn_preauth_eapol_send(void *ctx, int type, const u8 *buf,
 	wpa_hexdump(MSG_MSGDUMP, "TX EAPOL (preauth)", msg, msglen);
 	res = l2_packet_send(sm->l2_preauth, sm->preauth_bssid,
 			     ETH_P_RSN_PREAUTH, msg, msglen);
-	free(msg);
+	os_free(msg);
 	return res;
 }
 
@@ -208,7 +208,7 @@ int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst, struct wpa_ssid *config)
 		}
 	}
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	if (ctx == NULL) {
 		wpa_printf(MSG_WARNING, "Failed to allocate EAPOL context.");
 		return -4;
@@ -226,12 +226,12 @@ int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst, struct wpa_ssid *config)
 
 	sm->preauth_eapol = eapol_sm_init(ctx);
 	if (sm->preauth_eapol == NULL) {
-		free(ctx);
+		os_free(ctx);
 		wpa_printf(MSG_WARNING, "RSN: Failed to initialize EAPOL "
 			   "state machines for pre-authentication");
 		return -3;
 	}
-	memset(&eapol_conf, 0, sizeof(eapol_conf));
+	os_memset(&eapol_conf, 0, sizeof(eapol_conf));
 	eapol_conf.accept_802_1x_keys = 0;
 	eapol_conf.required_keys = 0;
 	eapol_conf.fast_reauth = sm->fast_reauth;
@@ -245,7 +245,7 @@ int rsn_preauth_init(struct wpa_sm *sm, const u8 *dst, struct wpa_ssid *config)
 	 * after the 4-Way Handshake.
 	 */
 	eapol_sm_configure(sm->preauth_eapol, -1, -1, 5, 6);
-	memcpy(sm->preauth_bssid, dst, ETH_ALEN);
+	os_memcpy(sm->preauth_bssid, dst, ETH_ALEN);
 
 	eapol_sm_notify_portValid(sm->preauth_eapol, TRUE);
 	/* 802.1X::portControl = Auto */
@@ -273,7 +273,7 @@ void rsn_preauth_deinit(struct wpa_sm *sm)
 	eloop_cancel_timeout(rsn_preauth_timeout, sm, NULL);
 	eapol_sm_deinit(sm->preauth_eapol);
 	sm->preauth_eapol = NULL;
-	memset(sm->preauth_bssid, 0, ETH_ALEN);
+	os_memset(sm->preauth_bssid, 0, ETH_ALEN);
 
 	l2_packet_deinit(sm->l2_preauth);
 	sm->l2_preauth = NULL;
@@ -316,7 +316,7 @@ void rsn_preauth_candidate_process(struct wpa_sm *sm)
 		struct rsn_pmksa_cache_entry *p = NULL;
 		candidate = sm->pmksa_candidates;
 		p = pmksa_cache_get(sm->pmksa, candidate->bssid, NULL);
-		if (memcmp(sm->bssid, candidate->bssid, ETH_ALEN) != 0 &&
+		if (os_memcmp(sm->bssid, candidate->bssid, ETH_ALEN) != 0 &&
 		    (p == NULL || p->opportunistic)) {
 			wpa_msg(sm->ctx->ctx, MSG_DEBUG, "RSN: PMKSA "
 				"candidate " MACSTR
@@ -324,7 +324,7 @@ void rsn_preauth_candidate_process(struct wpa_sm *sm)
 				MAC2STR(candidate->bssid));
 			sm->pmksa_candidates = candidate->next;
 			rsn_preauth_init(sm, candidate->bssid, sm->cur_ssid);
-			free(candidate);
+			os_free(candidate);
 			return;
 		}
 		wpa_msg(sm->ctx->ctx, MSG_DEBUG, "RSN: PMKSA candidate "
@@ -337,7 +337,7 @@ void rsn_preauth_candidate_process(struct wpa_sm *sm)
 		}
 
 		sm->pmksa_candidates = candidate->next;
-		free(candidate);
+		os_free(candidate);
 	}
 	wpa_msg(sm->ctx->ctx, MSG_DEBUG, "RSN: no more pending PMKSA "
 		"candidates");
@@ -374,7 +374,7 @@ void pmksa_candidate_add(struct wpa_sm *sm, const u8 *bssid,
 	prev = NULL;
 	cand = sm->pmksa_candidates;
 	while (cand) {
-		if (memcmp(cand->bssid, bssid, ETH_ALEN) == 0) {
+		if (os_memcmp(cand->bssid, bssid, ETH_ALEN) == 0) {
 			if (prev)
 				prev->next = cand->next;
 			else
@@ -389,10 +389,10 @@ void pmksa_candidate_add(struct wpa_sm *sm, const u8 *bssid,
 		if (prio < PMKID_CANDIDATE_PRIO_SCAN)
 			cand->priority = prio;
 	} else {
-		cand = wpa_zalloc(sizeof(*cand));
+		cand = os_zalloc(sizeof(*cand));
 		if (cand == NULL)
 			return;
-		memcpy(cand->bssid, bssid, ETH_ALEN);
+		os_memcpy(cand->bssid, bssid, ETH_ALEN);
 		cand->priority = prio;
 	}
 
@@ -449,11 +449,11 @@ void rsn_preauth_scan_results(struct wpa_sm *sm,
 	for (i = count - 1; i >= 0; i--) {
 		r = &results[i];
 		if (r->ssid_len != sm->cur_ssid->ssid_len ||
-		    memcmp(r->ssid, sm->cur_ssid->ssid,
-			   r->ssid_len) != 0)
+		    os_memcmp(r->ssid, sm->cur_ssid->ssid,
+			      r->ssid_len) != 0)
 			continue;
 
-		if (memcmp(r->bssid, sm->bssid, ETH_ALEN) == 0)
+		if (os_memcmp(r->bssid, sm->bssid, ETH_ALEN) == 0)
 			continue;
 
 		if (r->rsn_ie_len == 0 ||
@@ -494,11 +494,14 @@ int rsn_preauth_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
 			   int verbose)
 {
 	char *pos = buf, *end = buf + buflen;
-	int res;
+	int res, ret;
 
 	if (sm->preauth_eapol) {
-		pos += snprintf(pos, end - pos, "Pre-authentication "
-				"EAPOL state machines:\n");
+		ret = os_snprintf(pos, end - pos, "Pre-authentication "
+				  "EAPOL state machines:\n");
+		if (ret < 0 || ret >= end - pos)
+			return pos - buf;
+		pos += ret;
 		res = eapol_sm_get_status(sm->preauth_eapol,
 					  pos, end - pos, verbose);
 		if (res >= 0)

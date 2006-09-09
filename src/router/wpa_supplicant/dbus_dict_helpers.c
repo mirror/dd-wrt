@@ -460,6 +460,147 @@ dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 }
 
 
+/**
+ * Begin a string array entry in the dict
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *                  {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param iter_dict_entry A private DBusMessageIter provided by the caller to
+ *                        be passed to {@link wpa_dbus_dict_end_string_array}
+ * @param iter_dict_val A private DBusMessageIter provided by the caller to
+ *                      be passed to {@link wpa_dbus_dict_end_string_array}
+ * @param iter_array On return, the DBusMessageIter to be passed to 
+ *                   {@link wpa_dbus_dict_string_array_add_element}
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t wpa_dbus_dict_begin_string_array(DBusMessageIter *iter_dict,
+                                             const char *key,
+                                             DBusMessageIter *iter_dict_entry,
+                                             DBusMessageIter *iter_dict_val,
+                                             DBusMessageIter *iter_array)
+{
+	if (!iter_dict || !iter_dict_entry || !iter_dict_val || !iter_array)
+		return FALSE;
+
+	if (!_wpa_dbus_add_dict_entry_start(iter_dict, iter_dict_entry,
+					    key, DBUS_TYPE_ARRAY))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container(iter_dict_entry,
+					      DBUS_TYPE_VARIANT,
+					      DBUS_TYPE_ARRAY_AS_STRING
+					      DBUS_TYPE_STRING_AS_STRING,
+					      iter_dict_val))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container(iter_dict_val, DBUS_TYPE_ARRAY,
+					      DBUS_TYPE_BYTE_AS_STRING,
+					      iter_array))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+/**
+ * Add a single string element to a string array dict entry
+ *
+ * @param iter_array A valid DBusMessageIter returned from
+ *                   {@link wpa_dbus_dict_begin_string_array}'s
+ *                   iter_array parameter
+ * @param elem The string element to be added to the dict entry's string array
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t wpa_dbus_dict_string_array_add_element(DBusMessageIter *iter_array,
+						   const char *elem)
+{
+	if (!iter_array || !elem)
+		return FALSE;
+
+	return dbus_message_iter_append_basic(iter_array, DBUS_TYPE_STRING,
+					      &elem);
+}
+
+
+/**
+ * End a string array dict entry
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *                  {@link nmu_dbus_dict_open_write}
+ * @param iter_dict_entry A private DBusMessageIter returned from
+ *                        {@link wpa_dbus_dict_end_string_array}
+ * @param iter_dict_val A private DBusMessageIter returned from
+ *                      {@link wpa_dbus_dict_end_string_array}
+ * @param iter_array A DBusMessageIter returned from
+ *                   {@link wpa_dbus_dict_end_string_array}
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t wpa_dbus_dict_end_string_array(DBusMessageIter *iter_dict,
+                                           DBusMessageIter *iter_dict_entry,
+                                           DBusMessageIter *iter_dict_val,
+                                           DBusMessageIter *iter_array)
+{
+	if (!iter_dict || !iter_dict_entry || !iter_dict_val || !iter_array)
+		return FALSE;
+
+	if (!dbus_message_iter_close_container(iter_dict_val, iter_array))
+		return FALSE;
+
+	if (!_wpa_dbus_add_dict_entry_end(iter_dict, iter_dict_entry,
+					  iter_dict_val))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+/**
+ * Convenience function to add an entire string array to the dict.
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *                  {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param items The array of strings
+ * @param num_items The number of strings in the array
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t wpa_dbus_dict_append_string_array(DBusMessageIter *iter_dict,
+					      const char *key,
+					      const char **items,
+					      const dbus_uint32_t num_items)
+{
+        DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
+        dbus_uint32_t i;
+
+	if (!key)
+		return FALSE;
+	if (!items && (num_items != 0))
+		return FALSE;
+
+	if (!wpa_dbus_dict_begin_string_array(iter_dict, key,
+					      &iter_dict_entry, &iter_dict_val,
+					      &iter_array))
+		return FALSE;
+
+	for (i = 0; i < num_items; i++) {
+		if (!wpa_dbus_dict_string_array_add_element(&iter_array,
+							    items[i]))
+			return FALSE;
+	}
+
+	if (!wpa_dbus_dict_end_string_array(iter_dict, &iter_dict_entry,
+					    &iter_dict_val, &iter_array))
+		return FALSE;
+
+	return TRUE;
+}
+
+
 /*****************************************************/
 /* Stuff for reading dicts                           */
 /*****************************************************/
@@ -525,6 +666,70 @@ done:
 }
 
 
+static dbus_bool_t _wpa_dbus_dict_entry_get_string_array(
+	DBusMessageIter *iter, int array_len, int array_type,
+	struct wpa_dbus_dict_entry *entry)
+{
+	dbus_uint32_t count = 0;
+	dbus_bool_t success = FALSE;
+	char **buffer;
+
+	entry->strarray_value = NULL;
+	entry->array_type = DBUS_TYPE_STRING;
+
+	/* Zero-length arrays are valid. */
+	if (array_len == 0) {
+		success = TRUE;
+		goto done;
+	}
+
+	buffer = wpa_zalloc(sizeof (char *) * 8);
+	if (buffer == NULL) {
+		perror("_wpa_dbus_dict_entry_get_string_array[dbus] out of "
+		       "memory trying to retrieve a string array");
+		goto done;
+	}
+
+	entry->strarray_value = buffer;
+	entry->array_len = 0;
+	while (dbus_message_iter_get_arg_type(iter) == DBUS_TYPE_STRING) {
+		const char *value;
+		char *str;
+
+		if ((count % 8) == 0 && count != 0) {
+			char **tmp;
+			tmp = realloc(buffer, sizeof(char *) * (count + 8));
+			if (tmp == NULL) {
+				perror("_wpa_dbus_dict_entry_get_string_array["
+				       "dbus] out of memory trying to "
+				       "retrieve the string array");
+				free(buffer);
+				buffer = NULL;
+				goto done;
+			}
+			buffer = tmp;
+		}
+		entry->strarray_value = buffer;
+
+		dbus_message_iter_get_basic(iter, &value);
+		str = strdup(value);
+		if (str == NULL) {
+			perror("_wpa_dbus_dict_entry_get_string_array[dbus] "
+			       "out of memory trying to duplicate the string "
+			       "array");
+			goto done;
+		}
+		entry->strarray_value[count] = str;
+		entry->array_len = ++count;
+		dbus_message_iter_next(iter);
+	}
+	success = TRUE;
+
+done:
+	return success;
+}
+
+
 static dbus_bool_t _wpa_dbus_dict_entry_get_array(
 	DBusMessageIter *iter_dict_val, struct wpa_dbus_dict_entry *entry)
 {
@@ -548,6 +753,12 @@ static dbus_bool_t _wpa_dbus_dict_entry_get_array(
 							      array_len,
 							      array_type,
 							      entry);
+		break;
+	case DBUS_TYPE_STRING:
+		success = _wpa_dbus_dict_entry_get_string_array(&iter_array,
+								array_len,
+								array_type,
+								entry);
 		break;
 	default:
 		break;

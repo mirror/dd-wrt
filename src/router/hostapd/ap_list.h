@@ -50,8 +50,8 @@ struct ap_info {
 			   * information about this AP */
 };
 
-struct ieee802_11_elems *elems;
-struct ieee80211_frame_info *fi;
+struct ieee802_11_elems;
+struct hostapd_frame_info;
 
 struct ap_info * ap_get_ap(struct hostapd_iface *iface, u8 *sta);
 int ap_ap_for_each(struct hostapd_iface *iface,

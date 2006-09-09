@@ -1,6 +1,16 @@
 ChangeLog for wpa_supplicant
 
-????-??-?? - v0.5.5
+????-??-?? - v0.5.6
+	* added experimental, integrated TLSv1 client implementation with the
+	  needed X.509/ASN.1/RSA/bignum processing (this can be enabled by
+	  setting CONFIG_TLS=internal and CONFIG_INTERNAL_LIBTOMMATH=y in
+	  .config); this can be useful, e.g., if the target system does not
+	  have a suitable TLS library and a minimal code size is required
+	  (total size of this internal TLS/crypto code is bit under 50 kB on
+	  x86 and the crypto code is shared by rest of the supplicant so some
+	  of it was already required; TLSv1/X.509/ASN.1/RSA added about 25 kB)
+
+2006-08-27 - v0.5.5
 	* added support for building Windows version with UNICODE defined
 	  (wide-char functions)
 	* driver_ndis: fixed static WEP configuration to avoid race condition
@@ -10,6 +20,51 @@ ChangeLog for wpa_supplicant
 	  avoid crashes when using buggy NDIS drivers [Bug 165]
 	* fixed Release|Win32 target in the Visual Studio project files
 	  (previously, only Debug|Win32 target was set properly)
+	* changed control interface API call wpa_ctrl_pending() to allow it to
+	  return -1 on error (e.g., connection lost); control interface clients
+	  will need to make sure that they verify that the value is indeed >0
+	  when determining whether there are pending messages
+	* added an alternative control interface backend for Windows targets:
+	  Named Pipe (CONFIG_CTRL_IFACE=named_pipe); this is now the default
+	  control interface mechanism for Windows builds (previously, UDP to
+	  localhost was used)
+	* changed ctrl_interface configuration for UNIX domain sockets:
+	  - deprecated ctrl_interface_group variable (it may be removed in
+	    future versions)
+	  - allow both directory and group be configured with ctrl_interface
+	    in following format: DIR=/var/run/wpa_supplicant GROUP=wheel
+	  - ctrl_interface=/var/run/wpa_supplicant is still supported for the
+	    case when group is not changed
+	* added support for controlling more than one interface per process in
+	  Windows version
+	* added a workaround for a case where the AP is using unknown address
+	  (e.g., MAC address of the wired interface) as the source address for
+	  EAPOL-Key frames; previously, that source address was used as the
+	  destination for EAPOL-Key frames and in key derivation; now, BSSID is
+	  used even if the source address does not match with it
+	  (this resolves an interoperability issue with Thomson SpeedTouch 580)
+	* added a workaround for UDP-based control interface (which was used in
+	  Windows builds before this release) to prevent packets with forged
+	  addresses from being accepted as local control requests
+	* removed ndis_events.cpp and possibility of using external
+	  ndis_events.exe; C version (ndis_events.c) is fully functional and
+	  there is no desire to maintain two separate versions of this
+	  implementation
+	* ndis_events: Changed NDIS event notification design to use WMI to
+	  learn the adapter description through Win32_PnPEntity class; this
+	  should fix some cases where the adapter name was not recognized
+	  correctly (e.g., with some USB WLAN adapters, e.g., Ralink RT2500
+	  USB) [Bug 113]
+	* fixed selection of the first network in ap_scan=2 mode; previously,
+	  wpa_supplicant could get stuck in SCANNING state when only the first
+	  network for enabled (e.g., after 'wpa_cli select_network 0')
+	* winsvc: added support for configuring ctrl_interface parameters in
+	  registry (ctrl_interface string value in
+	  HKLM\SOFTWARE\wpa_supplicant\interfaces\0000 key); this new value is
+	  required to enable control interface (previously, this was hardcoded
+	  to be enabled)
+	* allow wpa_gui subdirectory to be built with both Qt3 and Qt4
+	* converted wpa_gui-qt4 subdirectory to use Qt4 specific project format
 
 2006-06-20 - v0.5.4
 	* fixed build with CONFIG_STAKEY=y [Bug 143]

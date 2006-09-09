@@ -268,6 +268,9 @@ struct wpa_ssid {
 	 * On Windows, trusted CA certificates can be loaded from the system
 	 * certificate store by setting this to cert_store://<name>, e.g.,
 	 * ca_cert="cert_store://CA" or ca_cert="cert_store://ROOT".
+	 * Note that when running wpa_supplicant as an application, the user
+	 * certificate store (My user account) is used, whereas computer store
+	 * (Computer account) is used when running wpasvc as a service.
 	 */
 	u8 *ca_cert;
 
@@ -313,6 +316,10 @@ struct wpa_ssid {
 	 * hash://certificate_thumbprint_in_hex
 	 *
 	 * For example: private_key="hash://63093aa9c47f56ae88334c7b65a4"
+	 *
+	 * Note that when running wpa_supplicant as an application, the user
+	 * certificate store (My user account) is used, whereas computer store
+	 * (Computer account) is used when running wpasvc as a service.
 	 *
 	 * Alternatively, a named configuration blob can be used by setting
 	 * this to blob://<blob name>.

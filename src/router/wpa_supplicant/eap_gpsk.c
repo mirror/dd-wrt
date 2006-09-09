@@ -86,7 +86,7 @@ static void * eap_gpsk_init(struct eap_sm *sm)
 		return NULL;
 	}
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 	data->state = GPSK_1;
