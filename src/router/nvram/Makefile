@@ -21,10 +21,10 @@ else
 CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS)
+CFLAGS	+= -s $(COPTS) -fpic
 LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
-CFLAGS  += -DHAVE_MAGICBOX
+CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
 
 

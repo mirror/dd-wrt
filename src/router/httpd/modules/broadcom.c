@@ -4204,6 +4204,8 @@ ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_RB500
   websWrite (wp, "1");
+#elif HAVE_MAGICBOX
+  websWrite (wp, "1");
 #else
   websWrite (wp, "0");
 #endif
@@ -4301,6 +4303,18 @@ if (nvram_match(akm,"wep"))
 websWrite(wp,"\n</div>\n");
 
 }
+
+static void
+ej_get_txpower (int eid, webs_t wp, int argc, char_t ** argv)
+{
+#ifndef HAVE_MADWIFI
+websWrite(wp,"%s",nvram_safe_get("txpwr"));
+#else
+websWrite(wp,"%s",nvram_safe_get("ath0_txpwr"));
+#endif
+}
+
+
 static void
 ej_getencryptionstatus (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -4727,6 +4741,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_MSSID
   {"getwirelessstatus", ej_getwirelessstatus},
   {"getencryptionstatus", ej_getencryptionstatus},
+  {"get_txpower",ej_get_txpower},
 #endif
   {NULL, NULL}
 };
