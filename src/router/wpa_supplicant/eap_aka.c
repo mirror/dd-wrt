@@ -49,7 +49,7 @@ struct eap_aka_data {
 static void * eap_aka_init(struct eap_sm *sm)
 {
 	struct eap_aka_data *data;
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
@@ -63,10 +63,10 @@ static void eap_aka_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_aka_data *data = priv;
 	if (data) {
-		free(data->pseudonym);
-		free(data->reauth_id);
-		free(data->last_eap_identity);
-		free(data);
+		os_free(data->pseudonym);
+		os_free(data->reauth_id);
+		os_free(data->last_eap_identity);
+		os_free(data);
 	}
 }
 
@@ -120,17 +120,17 @@ static void eap_aka_clear_identities(struct eap_aka_data *data, int id)
 		   id & CLEAR_REAUTH_ID ? " reauth_id" : "",
 		   id & CLEAR_EAP_ID ? " eap_id" : "");
 	if (id & CLEAR_PSEUDONYM) {
-		free(data->pseudonym);
+		os_free(data->pseudonym);
 		data->pseudonym = NULL;
 		data->pseudonym_len = 0;
 	}
 	if (id & CLEAR_REAUTH_ID) {
-		free(data->reauth_id);
+		os_free(data->reauth_id);
 		data->reauth_id = NULL;
 		data->reauth_id_len = 0;
 	}
 	if (id & CLEAR_EAP_ID) {
-		free(data->last_eap_identity);
+		os_free(data->last_eap_identity);
 		data->last_eap_identity = NULL;
 		data->last_eap_identity_len = 0;
 	}
@@ -141,15 +141,15 @@ static int eap_aka_learn_ids(struct eap_aka_data *data,
 			     struct eap_sim_attrs *attr)
 {
 	if (attr->next_pseudonym) {
-		free(data->pseudonym);
-		data->pseudonym = malloc(attr->next_pseudonym_len);
+		os_free(data->pseudonym);
+		data->pseudonym = os_malloc(attr->next_pseudonym_len);
 		if (data->pseudonym == NULL) {
 			wpa_printf(MSG_INFO, "EAP-AKA: (encr) No memory for "
 				   "next pseudonym");
 			return -1;
 		}
-		memcpy(data->pseudonym, attr->next_pseudonym,
-		       attr->next_pseudonym_len);
+		os_memcpy(data->pseudonym, attr->next_pseudonym,
+			  attr->next_pseudonym_len);
 		data->pseudonym_len = attr->next_pseudonym_len;
 		wpa_hexdump_ascii(MSG_DEBUG,
 				  "EAP-AKA: (encr) AT_NEXT_PSEUDONYM",
@@ -158,15 +158,15 @@ static int eap_aka_learn_ids(struct eap_aka_data *data,
 	}
 
 	if (attr->next_reauth_id) {
-		free(data->reauth_id);
-		data->reauth_id = malloc(attr->next_reauth_id_len);
+		os_free(data->reauth_id);
+		data->reauth_id = os_malloc(attr->next_reauth_id_len);
 		if (data->reauth_id == NULL) {
 			wpa_printf(MSG_INFO, "EAP-AKA: (encr) No memory for "
 				   "next reauth_id");
 			return -1;
 		}
-		memcpy(data->reauth_id, attr->next_reauth_id,
-		       attr->next_reauth_id_len);
+		os_memcpy(data->reauth_id, attr->next_reauth_id,
+			  attr->next_reauth_id_len);
 		data->reauth_id_len = attr->next_reauth_id_len;
 		wpa_hexdump_ascii(MSG_DEBUG,
 				  "EAP-AKA: (encr) AT_NEXT_REAUTH_ID",
@@ -442,8 +442,8 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 		return eap_aka_client_error(data, req, respDataLen,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
-	memcpy(data->rand, attr->rand, EAP_AKA_RAND_LEN);
-	memcpy(data->autn, attr->autn, EAP_AKA_AUTN_LEN);
+	os_memcpy(data->rand, attr->rand, EAP_AKA_RAND_LEN);
+	os_memcpy(data->autn, attr->autn, EAP_AKA_AUTN_LEN);
 
 	res = eap_aka_umts_auth(sm, data);
 	if (res == -1) {
@@ -497,7 +497,7 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 				EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 		}
 		eap_aka_learn_ids(data, &eattr);
-		free(decrypted);
+		os_free(decrypted);
 	}
 
 	if (data->state != FAILURE)
@@ -538,11 +538,11 @@ static int eap_aka_process_notification_reauth(struct eap_aka_data *data,
 		wpa_printf(MSG_WARNING, "EAP-AKA: Counter in notification "
 			   "message does not match with counter in reauth "
 			   "message");
-		free(decrypted);
+		os_free(decrypted);
 		return -1;
 	}
 
-	free(decrypted);
+	os_free(decrypted);
 	return 0;
 }
 
@@ -662,7 +662,7 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 		wpa_printf(MSG_INFO, "EAP-AKA: (encr) No%s%s in reauth packet",
 			   !eattr.nonce_s ? " AT_NONCE_S" : "",
 			   eattr.counter < 0 ? " AT_COUNTER" : "");
-		free(decrypted);
+		os_free(decrypted);
 		return eap_aka_client_error(data, req, respDataLen,
 					    EAP_AKA_UNABLE_TO_PROCESS_PACKET);
 	}
@@ -676,17 +676,17 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 		 * However, since it was used in the last EAP-Response-Identity
 		 * packet, it has to saved for the following fullauth to be
 		 * used in MK derivation. */
-		free(data->last_eap_identity);
+		os_free(data->last_eap_identity);
 		data->last_eap_identity = data->reauth_id;
 		data->last_eap_identity_len = data->reauth_id_len;
 		data->reauth_id = NULL;
 		data->reauth_id_len = 0;
-		free(decrypted);
+		os_free(decrypted);
 		return eap_aka_response_reauth(data, req, respDataLen, 1);
 	}
 	data->counter = eattr.counter;
 
-	memcpy(data->nonce_s, eattr.nonce_s, EAP_SIM_NONCE_S_LEN);
+	os_memcpy(data->nonce_s, eattr.nonce_s, EAP_SIM_NONCE_S_LEN);
 	wpa_hexdump(MSG_DEBUG, "EAP-AKA: (encr) AT_NONCE_S",
 		    data->nonce_s, EAP_SIM_NONCE_S_LEN);
 
@@ -706,7 +706,7 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 			   "fast reauths performed - force fullauth");
 		eap_aka_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	}
-	free(decrypted);
+	os_free(decrypted);
 	return eap_aka_response_reauth(data, req, respDataLen, 0);
 }
 
@@ -859,12 +859,12 @@ static u8 * eap_aka_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_SIM_KEYING_DATA_LEN);
+	key = os_malloc(EAP_SIM_KEYING_DATA_LEN);
 	if (key == NULL)
 		return NULL;
 
 	*len = EAP_SIM_KEYING_DATA_LEN;
-	memcpy(key, data->msk, EAP_SIM_KEYING_DATA_LEN);
+	os_memcpy(key, data->msk, EAP_SIM_KEYING_DATA_LEN);
 
 	return key;
 }

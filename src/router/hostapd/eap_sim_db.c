@@ -550,7 +550,7 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 {
 	struct eap_sim_db_data *data = priv;
 	struct eap_sim_db_pending *entry;
-	int len;
+	int len, ret;
 	size_t i;
 	char msg[40];
 
@@ -606,11 +606,14 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 	}
 
 	len = snprintf(msg, sizeof(msg), "SIM-REQ-AUTH ");
-	if (len + identity_len >= sizeof(msg))
+	if (len < 0 || len + identity_len >= sizeof(msg))
 		return EAP_SIM_DB_FAILURE;
 	memcpy(msg + len, identity, identity_len);
 	len += identity_len;
-	len += snprintf(msg + len, sizeof(msg) - len, " %d", max_chal);
+	ret = snprintf(msg + len, sizeof(msg) - len, " %d", max_chal);
+	if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
+		return EAP_SIM_DB_FAILURE;
+	len += ret;
 
 	wpa_hexdump(MSG_DEBUG, "EAP-SIM DB: requesting SIM authentication "
 		    "data for IMSI", identity, identity_len);
@@ -1157,7 +1160,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 	}
 
 	len = snprintf(msg, sizeof(msg), "AKA-REQ-AUTH ");
-	if (len + identity_len >= sizeof(msg))
+	if (len < 0 || len + identity_len >= sizeof(msg))
 		return EAP_SIM_DB_FAILURE;
 	memcpy(msg + len, identity, identity_len);
 	len += identity_len;
@@ -1214,18 +1217,24 @@ int eap_sim_db_resynchronize(void *priv, const u8 *identity,
 
 	if (data->sock >= 0) {
 		char msg[100];
-		int len;
+		int len, ret;
 
 		len = snprintf(msg, sizeof(msg), "AKA-AUTS ");
-		if (len + identity_len - 1 >= sizeof(msg))
+		if (len < 0 || len + identity_len - 1 >= sizeof(msg))
 			return -1;
 		memcpy(msg + len, identity + 1, identity_len - 1);
 		len += identity_len - 1;
 
-		len += snprintf(msg + len, sizeof(msg) - len, " ");
+		ret = snprintf(msg + len, sizeof(msg) - len, " ");
+		if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
+			return -1;
+		len += ret;
 		len += wpa_snprintf_hex(msg + len, sizeof(msg) - len,
 					auts, EAP_AKA_AUTS_LEN);
-		len += snprintf(msg + len, sizeof(msg) - len, " ");
+		ret = snprintf(msg + len, sizeof(msg) - len, " ");
+		if (ret < 0 || (size_t) ret >= sizeof(msg) - len)
+			return -1;
+		len += ret;
 		len += wpa_snprintf_hex(msg + len, sizeof(msg) - len,
 					rand, EAP_AKA_RAND_LEN);
 		wpa_hexdump(MSG_DEBUG, "EAP-SIM DB: reporting AKA AUTS for "

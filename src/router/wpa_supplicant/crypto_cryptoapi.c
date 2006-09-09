@@ -658,10 +658,23 @@ struct crypto_public_key {
 	HCRYPTKEY rsa;
 };
 
+struct crypto_private_key {
+	HCRYPTPROV prov;
+	HCRYPTKEY rsa;
+};
+
 
 struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 {
 	/* Use crypto_public_key_from_cert() instead. */
+	return NULL;
+}
+
+
+struct crypto_private_key * crypto_private_key_import(const u8 *key,
+						      size_t len)
+{
+	/* TODO */
 	return NULL;
 }
 
@@ -697,8 +710,9 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 				      &cc->pCertInfo->SubjectPublicKeyInfo,
 				      &pk->rsa)) {
  		cryptoapi_report_error("CryptImportPublicKeyInfo");
-		free(pk);
 		CryptReleaseContext(pk->prov, 0);
+		free(pk);
+		CertFreeCertificateContext(cc);
 		return NULL;
 	}
 
@@ -743,7 +757,26 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 }
 
 
+int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
+				  const u8 *in, size_t inlen,
+				  u8 *out, size_t *outlen)
+{
+	/* TODO */
+	return -1;
+}
+
+
 void crypto_public_key_free(struct crypto_public_key *key)
+{
+	if (key) {
+		CryptDestroyKey(key->rsa);
+		CryptReleaseContext(key->prov, 0);
+		free(key);
+	}
+}
+
+
+void crypto_private_key_free(struct crypto_private_key *key)
 {
 	if (key) {
 		CryptDestroyKey(key->rsa);

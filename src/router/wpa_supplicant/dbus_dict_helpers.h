@@ -72,6 +72,27 @@ dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 					    const char *value,
 					    const dbus_uint32_t value_len);
 
+/* Manual construction and addition of string array elements */
+dbus_bool_t wpa_dbus_dict_begin_string_array(DBusMessageIter *iter_dict,
+                                             const char *key,
+                                             DBusMessageIter *iter_dict_entry,
+                                             DBusMessageIter *iter_dict_val,
+                                             DBusMessageIter *iter_array);
+
+dbus_bool_t wpa_dbus_dict_string_array_add_element(DBusMessageIter *iter_array,
+                                             const char *elem);
+
+dbus_bool_t wpa_dbus_dict_end_string_array(DBusMessageIter *iter_dict,
+                                           DBusMessageIter *iter_dict_entry,
+                                           DBusMessageIter *iter_dict_val,
+                                           DBusMessageIter *iter_array);
+
+/* Convenience function to add a whole string list */
+dbus_bool_t wpa_dbus_dict_append_string_array(DBusMessageIter *iter_dict,
+					      const char *key,
+					      const char **items,
+					      const dbus_uint32_t num_items);
+
 /*
  * Reading a dict from a DBusMessage
  */
@@ -94,7 +115,8 @@ struct wpa_dbus_dict_entry {
 		dbus_int64_t int64_value;
 		dbus_uint64_t uint64_value;
 		double double_value;
-		char * bytearray_value;
+		char *bytearray_value;
+		char **strarray_value;
 	};
 	dbus_uint32_t array_len; /** length of the array if the dict entry's
 				     value contains an array */

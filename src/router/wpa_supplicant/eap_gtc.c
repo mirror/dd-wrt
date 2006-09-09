@@ -27,7 +27,7 @@ struct eap_gtc_data {
 static void * eap_gtc_init(struct eap_sm *sm)
 {
 	struct eap_gtc_data *data;
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
@@ -43,7 +43,7 @@ static void * eap_gtc_init(struct eap_sm *sm)
 static void eap_gtc_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_gtc_data *data = priv;
-	free(data);
+	os_free(data);
 }
 
 
@@ -70,7 +70,7 @@ static u8 * eap_gtc_process(struct eap_sm *sm, void *priv,
 
 	wpa_hexdump_ascii(MSG_MSGDUMP, "EAP-GTC: Request message", pos, len);
 	if (data->prefix &&
-	    (len < 10 || memcmp(pos, "CHALLENGE=", 10) != 0)) {
+	    (len < 10 || os_memcmp(pos, "CHALLENGE=", 10) != 0)) {
 		wpa_printf(MSG_DEBUG, "EAP-GTC: Challenge did not start with "
 			   "expected prefix");
 
@@ -114,13 +114,13 @@ static u8 * eap_gtc_process(struct eap_sm *sm, void *priv,
 	if (resp == NULL)
 		return NULL;
 	if (data->prefix) {
-		memcpy(rpos, "RESPONSE=", 9);
+		os_memcpy(rpos, "RESPONSE=", 9);
 		rpos += 9;
-		memcpy(rpos, identity, identity_len);
+		os_memcpy(rpos, identity, identity_len);
 		rpos += identity_len;
 		*rpos++ = '\0';
 	}
-	memcpy(rpos, password, password_len);
+	os_memcpy(rpos, password, password_len);
 	wpa_hexdump_ascii_key(MSG_MSGDUMP, "EAP-GTC: Response",
 			      (u8 *) (resp + 1) + 1, plen);
 

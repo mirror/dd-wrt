@@ -56,20 +56,20 @@ static void * eap_sim_init(struct eap_sm *sm)
 	struct eap_sim_data *data;
 	struct wpa_ssid *config = eap_get_config(sm);
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
 	if (hostapd_get_rand(data->nonce_mt, EAP_SIM_NONCE_MT_LEN)) {
 		wpa_printf(MSG_WARNING, "EAP-SIM: Failed to get random data "
 			   "for NONCE_MT");
-		free(data);
+		os_free(data);
 		return NULL;
 	}
 
 	data->min_num_chal = 2;
 	if (config && config->phase1) {
-		char *pos = strstr(config->phase1, "sim_min_num_chal=");
+		char *pos = os_strstr(config->phase1, "sim_min_num_chal=");
 		if (pos) {
 			data->min_num_chal = atoi(pos + 17);
 			if (data->min_num_chal < 2 || data->min_num_chal > 3) {
@@ -77,7 +77,7 @@ static void * eap_sim_init(struct eap_sm *sm)
 					   "sim_min_num_chal configuration "
 					   "(%lu, expected 2 or 3)",
 					   (unsigned long) data->min_num_chal);
-				free(data);
+				os_free(data);
 				return NULL;
 			}
 			wpa_printf(MSG_DEBUG, "EAP-SIM: Set minimum number of "
@@ -96,11 +96,11 @@ static void eap_sim_deinit(struct eap_sm *sm, void *priv)
 {
 	struct eap_sim_data *data = priv;
 	if (data) {
-		free(data->ver_list);
-		free(data->pseudonym);
-		free(data->reauth_id);
-		free(data->last_eap_identity);
-		free(data);
+		os_free(data->ver_list);
+		os_free(data->pseudonym);
+		os_free(data->reauth_id);
+		os_free(data->last_eap_identity);
+		os_free(data);
 	}
 }
 
@@ -129,23 +129,23 @@ static int eap_sim_gsm_auth(struct eap_sm *sm, struct eap_sim_data *data)
 		size_t i;
 		for (i = 0; i < data->num_chal; i++) {
 			if (data->rand[i][0] == 0xaa) {
-				memcpy(data->kc[i],
-				       "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7",
-				       EAP_SIM_KC_LEN);
-				memcpy(data->sres[i], "\xd1\xd2\xd3\xd4",
-				       EAP_SIM_SRES_LEN);
+				os_memcpy(data->kc[i],
+					  "\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7",
+					  EAP_SIM_KC_LEN);
+				os_memcpy(data->sres[i], "\xd1\xd2\xd3\xd4",
+					  EAP_SIM_SRES_LEN);
 			} else if (data->rand[i][0] == 0xbb) {
-				memcpy(data->kc[i],
-				       "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7",
-				       EAP_SIM_KC_LEN);
-				memcpy(data->sres[i], "\xe1\xe2\xe3\xe4",
-				       EAP_SIM_SRES_LEN);
+				os_memcpy(data->kc[i],
+					  "\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7",
+					  EAP_SIM_KC_LEN);
+				os_memcpy(data->sres[i], "\xe1\xe2\xe3\xe4",
+					  EAP_SIM_SRES_LEN);
 			} else {
-				memcpy(data->kc[i],
-				       "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7",
-				       EAP_SIM_KC_LEN);
-				memcpy(data->sres[i], "\xf1\xf2\xf3\xf4",
-				       EAP_SIM_SRES_LEN);
+				os_memcpy(data->kc[i],
+					  "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7",
+					  EAP_SIM_KC_LEN);
+				os_memcpy(data->sres[i], "\xf1\xf2\xf3\xf4",
+					  EAP_SIM_SRES_LEN);
 			}
 		}
 	}
@@ -171,17 +171,17 @@ static void eap_sim_clear_identities(struct eap_sim_data *data, int id)
 		   id & CLEAR_REAUTH_ID ? " reauth_id" : "",
 		   id & CLEAR_EAP_ID ? " eap_id" : "");
 	if (id & CLEAR_PSEUDONYM) {
-		free(data->pseudonym);
+		os_free(data->pseudonym);
 		data->pseudonym = NULL;
 		data->pseudonym_len = 0;
 	}
 	if (id & CLEAR_REAUTH_ID) {
-		free(data->reauth_id);
+		os_free(data->reauth_id);
 		data->reauth_id = NULL;
 		data->reauth_id_len = 0;
 	}
 	if (id & CLEAR_EAP_ID) {
-		free(data->last_eap_identity);
+		os_free(data->last_eap_identity);
 		data->last_eap_identity = NULL;
 		data->last_eap_identity_len = 0;
 	}
@@ -192,15 +192,15 @@ static int eap_sim_learn_ids(struct eap_sim_data *data,
 			     struct eap_sim_attrs *attr)
 {
 	if (attr->next_pseudonym) {
-		free(data->pseudonym);
-		data->pseudonym = malloc(attr->next_pseudonym_len);
+		os_free(data->pseudonym);
+		data->pseudonym = os_malloc(attr->next_pseudonym_len);
 		if (data->pseudonym == NULL) {
 			wpa_printf(MSG_INFO, "EAP-SIM: (encr) No memory for "
 				   "next pseudonym");
 			return -1;
 		}
-		memcpy(data->pseudonym, attr->next_pseudonym,
-		       attr->next_pseudonym_len);
+		os_memcpy(data->pseudonym, attr->next_pseudonym,
+			  attr->next_pseudonym_len);
 		data->pseudonym_len = attr->next_pseudonym_len;
 		wpa_hexdump_ascii(MSG_DEBUG,
 				  "EAP-SIM: (encr) AT_NEXT_PSEUDONYM",
@@ -209,15 +209,15 @@ static int eap_sim_learn_ids(struct eap_sim_data *data,
 	}
 
 	if (attr->next_reauth_id) {
-		free(data->reauth_id);
-		data->reauth_id = malloc(attr->next_reauth_id_len);
+		os_free(data->reauth_id);
+		data->reauth_id = os_malloc(attr->next_reauth_id_len);
 		if (data->reauth_id == NULL) {
 			wpa_printf(MSG_INFO, "EAP-SIM: (encr) No memory for "
 				   "next reauth_id");
 			return -1;
 		}
-		memcpy(data->reauth_id, attr->next_reauth_id,
-		       attr->next_reauth_id_len);
+		os_memcpy(data->reauth_id, attr->next_reauth_id,
+			  attr->next_reauth_id_len);
 		data->reauth_id_len = attr->next_reauth_id_len;
 		wpa_hexdump_ascii(MSG_DEBUG,
 				  "EAP-SIM: (encr) AT_NEXT_REAUTH_ID",
@@ -412,15 +412,15 @@ static u8 * eap_sim_process_start(struct eap_sm *sm, struct eap_sim_data *data,
 					    EAP_SIM_UNSUPPORTED_VERSION);
 	}
 
-	free(data->ver_list);
-	data->ver_list = malloc(attr->version_list_len);
+	os_free(data->ver_list);
+	data->ver_list = os_malloc(attr->version_list_len);
 	if (data->ver_list == NULL) {
 		wpa_printf(MSG_DEBUG, "EAP-SIM: Failed to allocate "
 			   "memory for version list");
 		return eap_sim_client_error(data, req, respDataLen,
 					    EAP_SIM_UNABLE_TO_PROCESS_PACKET);
 	}
-	memcpy(data->ver_list, attr->version_list, attr->version_list_len);
+	os_memcpy(data->ver_list, attr->version_list, attr->version_list_len);
 	data->ver_list_len = attr->version_list_len;
 	pos = data->ver_list;
 	for (i = 0; i < data->ver_list_len / 2; i++) {
@@ -511,20 +511,20 @@ static u8 * eap_sim_process_challenge(struct eap_sm *sm,
 	}
 
 	/* Verify that RANDs are different */
-	if (memcmp(attr->rand, attr->rand + GSM_RAND_LEN,
+	if (os_memcmp(attr->rand, attr->rand + GSM_RAND_LEN,
 		   GSM_RAND_LEN) == 0 ||
 	    (attr->num_chal > 2 &&
-	     (memcmp(attr->rand, attr->rand + 2 * GSM_RAND_LEN,
-		     GSM_RAND_LEN) == 0 ||
-	      memcmp(attr->rand + GSM_RAND_LEN,
-		     attr->rand + 2 * GSM_RAND_LEN,
-		     GSM_RAND_LEN) == 0))) {
+	     (os_memcmp(attr->rand, attr->rand + 2 * GSM_RAND_LEN,
+			GSM_RAND_LEN) == 0 ||
+	      os_memcmp(attr->rand + GSM_RAND_LEN,
+			attr->rand + 2 * GSM_RAND_LEN,
+			GSM_RAND_LEN) == 0))) {
 		wpa_printf(MSG_INFO, "EAP-SIM: Same RAND used multiple times");
 		return eap_sim_client_error(data, req, respDataLen,
 					    EAP_SIM_RAND_NOT_FRESH);
 	}
 
-	memcpy(data->rand, attr->rand, attr->num_chal * GSM_RAND_LEN);
+	os_memcpy(data->rand, attr->rand, attr->num_chal * GSM_RAND_LEN);
 	data->num_chal = attr->num_chal;
 		
 	if (eap_sim_gsm_auth(sm, data)) {
@@ -573,7 +573,7 @@ static u8 * eap_sim_process_challenge(struct eap_sm *sm,
 				EAP_SIM_UNABLE_TO_PROCESS_PACKET);
 		}
 		eap_sim_learn_ids(data, &eattr);
-		free(decrypted);
+		os_free(decrypted);
 	}
 
 	if (data->state != FAILURE)
@@ -614,11 +614,11 @@ static int eap_sim_process_notification_reauth(struct eap_sim_data *data,
 		wpa_printf(MSG_WARNING, "EAP-SIM: Counter in notification "
 			   "message does not match with counter in reauth "
 			   "message");
-		free(decrypted);
+		os_free(decrypted);
 		return -1;
 	}
 
-	free(decrypted);
+	os_free(decrypted);
 	return 0;
 }
 
@@ -738,7 +738,7 @@ static u8 * eap_sim_process_reauthentication(struct eap_sm *sm,
 		wpa_printf(MSG_INFO, "EAP-SIM: (encr) No%s%s in reauth packet",
 			   !eattr.nonce_s ? " AT_NONCE_S" : "",
 			   eattr.counter < 0 ? " AT_COUNTER" : "");
-		free(decrypted);
+		os_free(decrypted);
 		return eap_sim_client_error(data, req, respDataLen,
 					    EAP_SIM_UNABLE_TO_PROCESS_PACKET);
 	}
@@ -752,17 +752,17 @@ static u8 * eap_sim_process_reauthentication(struct eap_sm *sm,
 		 * However, since it was used in the last EAP-Response-Identity
 		 * packet, it has to saved for the following fullauth to be
 		 * used in MK derivation. */
-		free(data->last_eap_identity);
+		os_free(data->last_eap_identity);
 		data->last_eap_identity = data->reauth_id;
 		data->last_eap_identity_len = data->reauth_id_len;
 		data->reauth_id = NULL;
 		data->reauth_id_len = 0;
-		free(decrypted);
+		os_free(decrypted);
 		return eap_sim_response_reauth(data, req, respDataLen, 1);
 	}
 	data->counter = eattr.counter;
 
-	memcpy(data->nonce_s, eattr.nonce_s, EAP_SIM_NONCE_S_LEN);
+	os_memcpy(data->nonce_s, eattr.nonce_s, EAP_SIM_NONCE_S_LEN);
 	wpa_hexdump(MSG_DEBUG, "EAP-SIM: (encr) AT_NONCE_S",
 		    data->nonce_s, EAP_SIM_NONCE_S_LEN);
 
@@ -782,7 +782,7 @@ static u8 * eap_sim_process_reauthentication(struct eap_sm *sm,
 			   "fast reauths performed - force fullauth");
 		eap_sim_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	}
-	free(decrypted);
+	os_free(decrypted);
 	return eap_sim_response_reauth(data, req, respDataLen, 0);
 }
 
@@ -897,7 +897,7 @@ static void * eap_sim_init_for_reauth(struct eap_sm *sm, void *priv)
 	if (hostapd_get_rand(data->nonce_mt, EAP_SIM_NONCE_MT_LEN)) {
 		wpa_printf(MSG_WARNING, "EAP-SIM: Failed to get random data "
 			   "for NONCE_MT");
-		free(data);
+		os_free(data);
 		return NULL;
 	}
 	data->num_id_req = 0;
@@ -941,12 +941,12 @@ static u8 * eap_sim_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_SIM_KEYING_DATA_LEN);
+	key = os_malloc(EAP_SIM_KEYING_DATA_LEN);
 	if (key == NULL)
 		return NULL;
 
 	*len = EAP_SIM_KEYING_DATA_LEN;
-	memcpy(key, data->msk, EAP_SIM_KEYING_DATA_LEN);
+	os_memcpy(key, data->msk, EAP_SIM_KEYING_DATA_LEN);
 
 	return key;
 }

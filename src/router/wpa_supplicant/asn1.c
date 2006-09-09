@@ -25,7 +25,7 @@ int asn1_get_next(const u8 *buf, size_t len, struct asn1_hdr *hdr)
 	const u8 *pos, *end;
 	u8 tmp;
 
-	memset(hdr, 0, sizeof(*hdr));
+	os_memset(hdr, 0, sizeof(*hdr));
 	pos = buf;
 	end = buf + len;
 
@@ -48,20 +48,6 @@ int asn1_get_next(const u8 *buf, size_t len, struct asn1_hdr *hdr)
 		} while (tmp & 0x80);
 	} else
 		hdr->tag = hdr->identifier & 0x1f;
-
-	if (hdr->class == ASN1_CLASS_CONTEXT_SPECIFIC) {
-		/* FIX: is this correct way of parsing
-		 * Context-Specific? */
-		wpa_printf(MSG_MSGDUMP, "ASN.1: Context-Specific %d", *pos);
-		hdr->context_specific = *pos;
-		pos++;
-		hdr->payload = pos;
-		return 0;
-	}
-
-	if (hdr->class == ASN1_CLASS_APPLICATION) {
-		/* TODO: any special processing? */
-	}
 
 	tmp = *pos++;
 	if (tmp & 0x80) {
@@ -103,10 +89,16 @@ int asn1_get_oid(const u8 *buf, size_t len, struct asn1_oid *oid,
 	unsigned long val;
 	u8 tmp;
 
-	memset(oid, 0, sizeof(*oid));
+	os_memset(oid, 0, sizeof(*oid));
 
 	if (asn1_get_next(buf, len, &hdr) < 0 || hdr.length == 0)
 		return -1;
+
+	if (hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_OID) {
+		wpa_printf(MSG_DEBUG, "ASN.1: Expected OID - found class %d "
+			   "tag 0x%x", hdr.class, hdr.tag);
+		return -1;
+	}
 
 	pos = hdr.payload;
 	end = hdr.payload + hdr.length;
@@ -142,6 +134,72 @@ int asn1_get_oid(const u8 *buf, size_t len, struct asn1_oid *oid,
 	}
 
 	return 0;
+}
+
+
+void asn1_oid_to_str(struct asn1_oid *oid, char *buf, size_t len)
+{
+	char *pos = buf;
+	size_t i;
+	int ret;
+
+	if (len == 0)
+		return;
+
+	buf[0] = '\0';
+
+	for (i = 0; i < oid->len; i++) {
+		ret = os_snprintf(pos, buf + len - pos,
+				  "%s%lu",
+				  i == 0 ? "" : ".", oid->oid[i]);
+		if (ret < 0 || ret >= buf + len - pos)
+			break;
+		pos += ret;
+	}
+	buf[len - 1] = '\0';
+}
+
+
+static u8 rotate_bits(u8 octet)
+{
+	int i;
+	u8 res;
+
+	res = 0;
+	for (i = 0; i < 8; i++) {
+		res <<= 1;
+		if (octet & 1)
+			res |= 1;
+		octet >>= 1;
+	}
+
+	return res;
+}
+
+
+unsigned long asn1_bit_string_to_long(const u8 *buf, size_t len)
+{
+	unsigned long val = 0;
+	const u8 *pos = buf;
+
+	/* BER requires that unused bits are zero, so we can ignore the number
+	 * of unused bits */
+	pos++;
+
+	if (len >= 2)
+		val |= rotate_bits(*pos++);
+	if (len >= 3)
+		val |= ((unsigned long) rotate_bits(*pos++)) << 8;
+	if (len >= 4)
+		val |= ((unsigned long) rotate_bits(*pos++)) << 16;
+	if (len >= 5)
+		val |= ((unsigned long) rotate_bits(*pos++)) << 24;
+	if (len >= 6)
+		wpa_printf(MSG_DEBUG, "X509: %s - some bits ignored "
+			   "(BIT STRING length %lu)",
+			   __func__, (unsigned long) len);
+
+	return val;
 }
 
 #endif /* CONFIG_INTERNAL_X509 */

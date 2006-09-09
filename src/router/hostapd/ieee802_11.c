@@ -36,6 +36,7 @@
 #include "accounting.h"
 #include "driver.h"
 #include "hostap_common.h"
+#include "mlme.h"
 
 
 u8 * hostapd_eid_supp_rates(struct hostapd_data *hapd, u8 *eid)
@@ -163,7 +164,7 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 		if (show_errors) {
 			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS, "short vendor "
 				      "specific information element ignored "
-				      "(len=%d)\n", elen);
+				      "(len=%lu)\n", (unsigned long) elen);
 		}
 		return -1;
 	}
@@ -184,7 +185,8 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 			if (elen < 5) {
 				HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
 					      "short WME information element "
-					      "ignored (len=%d)\n", elen);
+					      "ignored (len=%lu)\n",
+					      (unsigned long) elen);
 				return -1;
 			}
 			switch (pos[4]) {
@@ -200,16 +202,17 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 			default:
 				HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
 					      "unknown WME information element"
-					      " ignored (subtype=%d len=%d)\n",
-					      pos[4], elen);
+					      " ignored (subtype=%d "
+					      "len=%lu)\n",
+					      pos[4], (unsigned long) elen);
 				return -1;
 			}
 			break;
 		default:
 			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
 				      "Unknown Microsoft information element "
-				      "ignored (type=%d len=%d)\n",
-				      pos[3], elen);
+				      "ignored (type=%d len=%lu)\n",
+				      pos[3], (unsigned long) elen);
 			return -1;
 		}
 		break;
@@ -217,8 +220,8 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 	default:
 		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MSGDUMPS,
 			      "unknown vendor specific information element "
-			      "ignored (vendor OUI %02x:%02x:%02x len=%d)\n",
-			      pos[0], pos[1], pos[2], elen);
+			      "ignored (vendor OUI %02x:%02x:%02x len=%lu)\n",
+			      pos[0], pos[1], pos[2], (unsigned long) elen);
 		return -1;
 	}
 
@@ -660,11 +663,15 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 #else
 		sta->flags |= WLAN_STA_AUTH;
 		wpa_auth_sm_event(sta->wpa_sm, WPA_AUTH);
+		sta->auth_alg = WLAN_AUTH_OPEN;
+		mlme_authenticate_indication(hapd, sta);
 #endif
 		break;
 	case WLAN_AUTH_SHARED_KEY:
 		resp = auth_shared_key(hapd, sta, auth_transaction, challenge,
 				       fc & WLAN_FC_ISWEP);
+		sta->auth_alg = WLAN_AUTH_SHARED_KEY;
+		mlme_authenticate_indication(hapd, sta);
 		break;
 	}
 
@@ -732,6 +739,11 @@ static void handle_assoc(struct hostapd_data *hapd,
 	if (hapd->tkip_countermeasures) {
 		resp = WLAN_REASON_MICHAEL_MIC_FAILURE;
 		goto fail;
+	}
+
+	if (reassoc) {
+		memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
+		       ETH_ALEN);
 	}
 
 	sta->capability = capab_info;
@@ -956,7 +968,7 @@ static void handle_assoc(struct hostapd_data *hapd,
 		p = hostapd_eid_supp_rates(hapd, mgmt->u.assoc_resp.variable);
 		/* Extended supported rates */
 		p = hostapd_eid_ext_supp_rates(hapd, p);
-		if (sta->flags && WLAN_STA_WME)
+		if (sta->flags & WLAN_STA_WME)
 			p = hostapd_eid_wme(hapd, p);
 		send_len += p - mgmt->u.assoc_resp.variable;
 
@@ -1075,6 +1087,9 @@ static void handle_disassoc(struct hostapd_data *hapd,
 		eloop_register_timeout(AP_DEAUTH_DELAY, 0, ap_handle_timer,
 				       hapd, sta);
 	}
+
+	mlme_disassociate_indication(
+		hapd, sta, le_to_host16(mgmt->u.disassoc.reason_code));
 }
 
 
@@ -1117,6 +1132,8 @@ static void handle_deauth(struct hostapd_data *hapd,
 	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_DEBUG, "deauthenticated");
+	mlme_deauthenticate_indication(
+		hapd, sta, le_to_host16(mgmt->u.deauth.reason_code));
 	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 	ap_free_sta(hapd, sta);
@@ -1174,8 +1191,8 @@ static void handle_action(struct hostapd_data *hapd,
 	if (len < IEEE80211_HDRLEN + 1) {
 		hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_DEBUG,
-			       "handle_action - too short payload (len=%d)",
-			       len);
+			       "handle_action - too short payload (len=%lu)",
+			       (unsigned long) len);
 		return;
 	}
 
@@ -1378,6 +1395,11 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		new_assoc = 0;
 	sta->flags |= WLAN_STA_ASSOC;
 
+	if (reassoc)
+		mlme_reassociate_indication(hapd, sta);
+	else
+		mlme_associate_indication(hapd, sta);
+
 	if (hostapd_sta_add(hapd->conf->iface, hapd, sta->addr, sta->aid,
 			    sta->capability, sta->supported_rates,
 			    sta->supported_rates_len, 0)) {
@@ -1483,6 +1505,7 @@ void ieee80211_michael_mic_failure(struct hostapd_data *hapd, const u8 *addr,
 				       HOSTAPD_LEVEL_INFO,
 				       "Michael MIC failure detected in "
 				       "received frame");
+			mlme_michaelmicfailure_indication(hapd, addr);
 		} else {
 			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
 				      "MLME-MICHAELMICFAILURE.indication "

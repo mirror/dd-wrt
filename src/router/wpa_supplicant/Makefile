@@ -2,7 +2,7 @@ ifndef CC
 CC=gcc
 endif
 
-CFLAGS = -MMD -O2 -Wall -g
+CFLAGS = $(COPTS)
 
 # Include directories for CVS version
 CFLAGS += -I. -I../utils -I../hostapd
@@ -34,9 +34,9 @@ install: all
 
 OBJS = config.o \
 	../hostapd/common.o ../hostapd/md5.o ../hostapd/md4.o \
-	../hostapd/rc4.o ../hostapd/sha1.o
+	../hostapd/rc4.o ../hostapd/sha1.o ../hostapd/des.o
 OBJS_p = wpa_passphrase.o ../hostapd/sha1.o ../hostapd/md5.o ../hostapd/md4.o \
-	../hostapd/common.o
+	../hostapd/common.o ../hostapd/des.o
 OBJS_c = wpa_cli.o wpa_ctrl.o
 
 -include .config
@@ -47,6 +47,10 @@ CONFIG_OS=win32
 else
 CONFIG_OS=unix
 endif
+endif
+
+ifeq ($(CONFIG_OS), internal)
+CFLAGS += -DOS_NO_C_LIB_DEFINES
 endif
 
 OBJS += ../hostapd/os_$(CONFIG_OS).o
@@ -440,10 +444,13 @@ endif
 
 ifeq ($(CONFIG_TLS), internal)
 ifndef CONFIG_CRYPTO
-CONFIG_CRYPTO=libtomcrypt
+CONFIG_CRYPTO=internal
 endif
 endif
 ifeq ($(CONFIG_CRYPTO), libtomcrypt)
+CFLAGS += -DCONFIG_INTERNAL_X509
+endif
+ifeq ($(CONFIG_CRYPTO), internal)
 CFLAGS += -DCONFIG_INTERNAL_X509
 endif
 
@@ -472,7 +479,19 @@ OBJS += tls_schannel.o
 endif
 ifeq ($(CONFIG_TLS), internal)
 OBJS += tls_internal.o tlsv1_common.o tlsv1_client.o asn1.o x509v3.o
+OBJS_p += asn1.o ../hostapd/rc4.o ../hostapd/aes_wrap.o
+ifneq ($(CONFIG_BACKEND), file)
+OBJS += base64.o
+endif
 CFLAGS += -DCONFIG_TLS_INTERNAL
+ifeq ($(CONFIG_CRYPTO), internal)
+ifdef CONFIG_INTERNAL_LIBTOMMATH
+CFLAGS += -DCONFIG_INTERNAL_LIBTOMMATH
+else
+LIBS += -ltommath
+LIBS_p += -ltommath
+endif
+endif
 ifeq ($(CONFIG_CRYPTO), libtomcrypt)
 LIBS += -ltomcrypt -ltfm
 LIBS_p += -ltomcrypt -ltfm
@@ -551,6 +570,17 @@ OBJS += crypto_libtomcrypt.o
 OBJS_p += crypto_libtomcrypt.o
 CONFIG_INTERNAL_SHA256=y
 endif
+ifeq ($(CONFIG_CRYPTO), internal)
+OBJS += crypto_internal.o rsa.o bignum.o
+OBJS_p += crypto_internal.o rsa.o bignum.o
+CFLAGS += -DCONFIG_CRYPTO_INTERNAL
+CONFIG_INTERNAL_AES=y
+CONFIG_INTERNAL_DES=y
+CONFIG_INTERNAL_SHA1=y
+CONFIG_INTERNAL_MD4=y
+CONFIG_INTERNAL_MD5=y
+CONFIG_INTERNAL_SHA256=y
+endif
 ifeq ($(CONFIG_CRYPTO), cryptoapi)
 OBJS += crypto_cryptoapi.o
 OBJS_p += crypto_cryptoapi.o
@@ -584,6 +614,9 @@ endif
 ifdef CONFIG_INTERNAL_MD4
 CFLAGS += -DINTERNAL_MD4
 endif
+ifdef CONFIG_INTERNAL_DES
+CFLAGS += -DINTERNAL_DES
+endif
 
 ifdef NEED_SHA256
 OBJS += ../hostapd/sha256.o
@@ -597,14 +630,20 @@ endif
 ifdef CONFIG_CTRL_IFACE
 ifeq ($(CONFIG_CTRL_IFACE), y)
 ifdef CONFIG_NATIVE_WINDOWS
-CONFIG_CTRL_IFACE=udp
+CONFIG_CTRL_IFACE=named_pipe
 else
 CONFIG_CTRL_IFACE=unix
 endif
 endif
 CFLAGS += -DCONFIG_CTRL_IFACE
+ifeq ($(CONFIG_CTRL_IFACE), unix)
+CFLAGS += -DCONFIG_CTRL_IFACE_UNIX
+endif
 ifeq ($(CONFIG_CTRL_IFACE), udp)
 CFLAGS += -DCONFIG_CTRL_IFACE_UDP
+endif
+ifeq ($(CONFIG_CTRL_IFACE), named_pipe)
+CFLAGS += -DCONFIG_CTRL_IFACE_NAMED_PIPE
 endif
 OBJS += ctrl_iface.o ctrl_iface_$(CONFIG_CTRL_IFACE).o
 endif
@@ -626,6 +665,9 @@ CFLAGS += -DCONFIG_NATIVE_WINDOWS
 LIBS += -lws2_32 -lgdi32 -lcrypt32
 LIBS_c += -lws2_32
 LIBS_p += -lws2_32
+ifeq ($(CONFIG_CRYPTO), cryptoapi)
+LIBS_p += -lcrypt32
+endif
 endif
 
 ifdef CONFIG_NO_STDOUT_DEBUG
@@ -712,9 +754,21 @@ wpa_passphrase: $(OBJS_p)
 wpa_cli: $(OBJS_c)
 	$(LDO) $(LDFLAGS) -o wpa_cli $(OBJS_c) $(LIBS_c)
 
-OBJSa=asn1_test.o asn1.o x509v3.o ../hostapd/common.o ../hostapd/os_unix.o
+OBJSa=asn1_test.o asn1.o x509v3.o ../hostapd/common.o ../hostapd/os_unix.o \
+	crypto_$(CONFIG_CRYPTO).o ../hostapd/md5.o ../hostapd/sha1.o \
+	../hostapd/rc4.o ../hostapd/des.o ../hostapd/aes_wrap.o \
+	bignum.o rsa.o
 asn1_test: $(OBJSa)
 	$(LDO) $(LDFLAGS) -o asn1_test $(OBJSa)
+
+OBJSx=tests/test_x509v3.o asn1.o x509v3.o \
+	../hostapd/common.o ../hostapd/os_unix.o \
+	crypto_$(CONFIG_CRYPTO).o \
+	../hostapd/md5.o ../hostapd/sha1.o \
+	../hostapd/rc4.o ../hostapd/des.o ../hostapd/aes_wrap.o \
+	bignum.o rsa.o
+test_x509v3: $(OBJSx)
+	$(LDO) $(LDFLAGS) -o test_x509v3 $(OBJSx)
 
 win_if_list: win_if_list.c
 	$(LDO) $(LDFLAGS) -o $@ win_if_list.c $(CFLAGS) $(LIBS_w)
@@ -735,20 +789,6 @@ eap_sake.so: eap_sake.c eap_sake_common.c
 	$(CC) -o $@ $(CFLAGS) -shared -rdynamic -fPIC $< \
 		-D$(*:eap_%=eap_peer_%)_register=eap_peer_method_dynamic_init
 
-
-# parameters for Microsoft Visual C++ Toolkit 2003 compiler
-CL=cl
-CLDIR=C:\Program Files\Microsoft Visual C++ Toolkit 2003
-PSDKDIR=C:\Program Files\Microsoft Platform SDK for Windows XP SP2
-CLFLAGS=-O
-CLLIBS=wbemuuid.lib libcmt.lib kernel32.lib uuid.lib ole32.lib oleaut32.lib \
-	ws2_32.lib
-
-ndis_events: ndis_events.cpp
-	INCLUDE="$(CLDIR)\include;$(PSDKDIR)\Include" \
-	LIB="$(CLDIR)\lib;$(PSDKDIR)\Lib" \
-	$(CL) $(CLFLAGS) -o ndis_events.exe ndis_events.cpp \
-		/link -nodefaultlib $(CLLIBS)
 
 wpa_supplicant.exe: wpa_supplicant
 	mv -f $< $@

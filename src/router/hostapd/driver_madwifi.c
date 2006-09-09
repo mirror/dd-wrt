@@ -368,7 +368,7 @@ madwifi_set_ieee8021x(const char *ifname, void *priv, int enabled)
 }
 
 static int
-madwifi_set_privacy(void *priv, int enabled)
+madwifi_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct madwifi_driver_data *drv = priv;
 	struct hostapd_data *hapd = drv->hapd;
@@ -406,7 +406,7 @@ madwifi_sta_set_flags(void *priv, const u8 *addr, int flags_or, int flags_and)
 	/* For now, only support setting Authorized flag */
 	if (flags_or & WLAN_STA_AUTHORIZED)
 		return madwifi_set_sta_authorized(priv, addr, 1);
-	if (flags_and & WLAN_STA_AUTHORIZED)
+	if (!(flags_and & WLAN_STA_AUTHORIZED))
 		return madwifi_set_sta_authorized(priv, addr, 0);
 	return 0;
 }
@@ -646,7 +646,7 @@ madwifi_sta_clear_stats(void *priv, const u8 *addr)
 
 
 static int
-madwifi_set_opt_ie(void *priv, const u8 *ie, size_t ie_len)
+madwifi_set_opt_ie(const char *ifname, void *priv, const u8 *ie, size_t ie_len)
 {
 	/*
 	 * Do nothing; we setup parameters at startup that define the
@@ -1089,7 +1089,7 @@ madwifi_wireless_event_deinit(void *priv)
 
 static int
 madwifi_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
-		   int encrypt)
+		   int encrypt, const u8 *own_addr)
 {
 	struct madwifi_driver_data *drv = priv;
 	unsigned char buf[3000];
@@ -1115,7 +1115,7 @@ madwifi_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
 	}
 	eth = (struct l2_ethhdr *) bp;
 	memcpy(eth->h_dest, addr, ETH_ALEN);
-	memcpy(eth->h_source, drv->hapd->own_addr, ETH_ALEN);
+	memcpy(eth->h_source, own_addr, ETH_ALEN);
 	eth->h_proto = htons(ETH_P_EAPOL);
 	memcpy(eth+1, data, data_len);
 
@@ -1238,7 +1238,7 @@ madwifi_deinit(void *priv)
 }
 
 static int
-madwifi_set_ssid(void *priv, const u8 *buf, int len)
+madwifi_set_ssid(const char *ifname, void *priv, const u8 *buf, int len)
 {
 	struct madwifi_driver_data *drv = priv;
 	struct iwreq iwr;
@@ -1258,7 +1258,7 @@ madwifi_set_ssid(void *priv, const u8 *buf, int len)
 }
 
 static int
-madwifi_get_ssid(void *priv, u8 *buf, int len)
+madwifi_get_ssid(const char *ifname, void *priv, u8 *buf, int len)
 {
 	struct madwifi_driver_data *drv = priv;
 	struct iwreq iwr;

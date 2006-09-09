@@ -1268,7 +1268,7 @@ char sta[32];
 sprintf(sta, "%s_mode",prefix);
 if (nvram_match(sta,"sta"))
     {
-  websWrite (wp, "<option value=\"8021X\" %s>802.1X</option></select>\n",
+  websWrite (wp, "<option value=\"8021X\" %s>802.1x</option></select>\n",
 	     selmatch (var, "8021X", "selected"));
     }
 #endif

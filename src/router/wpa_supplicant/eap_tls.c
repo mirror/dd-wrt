@@ -42,7 +42,7 @@ static void * eap_tls_init(struct eap_sm *sm)
 		return NULL;
 	}
 
-	data = wpa_zalloc(sizeof(*data));
+	data = os_zalloc(sizeof(*data));
 	if (data == NULL)
 		return NULL;
 
@@ -74,8 +74,8 @@ static void eap_tls_deinit(struct eap_sm *sm, void *priv)
 	if (data == NULL)
 		return;
 	eap_tls_ssl_deinit(sm, &data->ssl);
-	free(data->key_data);
-	free(data);
+	os_free(data->key_data);
+	os_free(data);
 }
 
 
@@ -97,7 +97,7 @@ static u8 * eap_tls_failure(struct eap_sm *sm, struct eap_tls_data *data,
 			 * the wrong one again might block it on the card--so
 			 * better ask the user again.
 			 */
-			free(config->pin);
+			os_free(config->pin);
 			config->pin = NULL;
 		}
 	}
@@ -122,7 +122,7 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 	ret->methodState = METHOD_DONE;
 	ret->decision = DECISION_UNCOND_SUCC;
 
-	free(data->key_data);
+	os_free(data->key_data);
 	data->key_data = eap_tls_derive_key(sm, &data->ssl,
 					    "client EAP encryption",
 					    EAP_TLS_KEY_LEN);
@@ -196,10 +196,10 @@ static void eap_tls_deinit_for_reauth(struct eap_sm *sm, void *priv)
 static void * eap_tls_init_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_tls_data *data = priv;
-	free(data->key_data);
+	os_free(data->key_data);
 	data->key_data = NULL;
 	if (eap_tls_reauth_init(sm, &data->ssl)) {
-		free(data);
+		os_free(data);
 		return NULL;
 	}
 	return priv;
@@ -229,12 +229,12 @@ static u8 * eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->key_data == NULL)
 		return NULL;
 
-	key = malloc(EAP_TLS_KEY_LEN);
+	key = os_malloc(EAP_TLS_KEY_LEN);
 	if (key == NULL)
 		return NULL;
 
 	*len = EAP_TLS_KEY_LEN;
-	memcpy(key, data->key_data, EAP_TLS_KEY_LEN);
+	os_memcpy(key, data->key_data, EAP_TLS_KEY_LEN);
 
 	return key;
 }

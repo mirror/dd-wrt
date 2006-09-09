@@ -26,7 +26,7 @@ void NetworkConfig::init()
     new_network = false;
 }
 
-void NetworkConfig::paramsFromScanResults(QListViewItem *sel)
+void NetworkConfig::paramsFromScanResults(Q3ListViewItem *sel)
 {
     new_network = true;
 

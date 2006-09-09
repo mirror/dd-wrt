@@ -128,7 +128,8 @@ static int prism54_waitpim(void *priv, unsigned long oid, void *buf, int len,
 
 /* send an eapol packet */
 static int prism54_send_eapol(void *priv, const u8 *addr,
-			      const u8 *data, size_t data_len, int encrypt)
+			      const u8 *data, size_t data_len, int encrypt,
+			      const u8 *own_addr)
 {
 	struct prism54_driver_data *drv = priv;
 	ieee802_3_hdr *hdr;
@@ -145,7 +146,7 @@ static int prism54_send_eapol(void *priv, const u8 *addr,
 	}
 
 	memcpy(&hdr->da[0], addr, ETH_ALEN);
-	memcpy(&hdr->sa[0], drv->hapd->own_addr, ETH_ALEN);
+	memcpy(&hdr->sa[0], own_addr, ETH_ALEN);
 	hdr->type = htons(ETH_P_PAE);
 	pos = (u8 *) (hdr + 1);
 	memcpy(pos, data, data_len);
@@ -344,7 +345,8 @@ static int prism54_init_1x(void *priv)
 }
 
 
-static int prism54_set_privacy_invoked(void *priv, int flag)
+static int prism54_set_privacy_invoked(const char *ifname, void *priv,
+				       int flag)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -372,7 +374,8 @@ static int prism54_set_privacy_invoked(void *priv, int flag)
 }
 
  
-static int prism54_ioctl_setiwessid(void *priv, const u8 *buf, int len)
+static int prism54_ioctl_setiwessid(const char *ifname, void *priv,
+				    const u8 *buf, int len)
 {
 #if 0
 	struct prism54_driver_data *drv = priv;
@@ -532,7 +535,7 @@ static int prism54_get_inact_sec(void *priv, const u8 *addr)
 
 
 /* set attachments */
-static int prism54_set_generic_elem(void *priv,
+static int prism54_set_generic_elem(const char *ifname, void *priv,
 				    const u8 *elem, size_t elem_len)
 {
 	struct prism54_driver_data *drv = priv;

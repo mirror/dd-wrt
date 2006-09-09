@@ -34,6 +34,7 @@
 #define WLAN_REASON_PREV_AUTH_NOT_VALID 2
 #define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
 #endif /* CONFIG_NATIVE_WINDOWS */
+#include "mlme.h"
 
 
 int ap_for_each_sta(struct hostapd_data *hapd,
@@ -176,6 +177,10 @@ void hostapd_free_stas(struct hostapd_data *hapd)
 
 	while (sta) {
 		prev = sta;
+		if (sta->flags & WLAN_STA_AUTH) {
+			mlme_deauthenticate_indication(
+				hapd, sta, WLAN_REASON_UNSPECIFIED);
+		}
 		sta = sta->next;
 		printf("Removing station " MACSTR "\n", MAC2STR(prev->addr));
 		ap_free_sta(hapd, prev);
@@ -300,6 +305,8 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		sta->timeout_next = STA_DEAUTH;
 		eloop_register_timeout(AP_DEAUTH_DELAY, 0, ap_handle_timer,
 				       hapd, sta);
+		mlme_disassociate_indication(
+			hapd, sta, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
 		break;
 	case STA_DEAUTH:
 	case STA_REMOVE:
@@ -309,6 +316,9 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		if (!sta->acct_terminate_cause)
 			sta->acct_terminate_cause =
 				RADIUS_ACCT_TERMINATE_CAUSE_IDLE_TIMEOUT;
+		mlme_deauthenticate_indication(
+			hapd, sta,
+			WLAN_REASON_PREV_AUTH_NOT_VALID);
 		ap_free_sta(hapd, sta);
 		break;
 	}
@@ -323,6 +333,8 @@ void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 	if (!(sta->flags & WLAN_STA_AUTH))
 		return;
 
+	mlme_deauthenticate_indication(hapd, sta,
+				       WLAN_REASON_PREV_AUTH_NOT_VALID);
 	hostapd_sta_deauth(hapd, sta->addr, WLAN_REASON_PREV_AUTH_NOT_VALID);
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_INFO, "deauthenticated due to "

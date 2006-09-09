@@ -105,6 +105,20 @@ Supported WPA/IEEE 802.11i features:
   * pre-authentication
   * PMKSA caching
 
+Supported TLS/crypto libraries:
+- OpenSSL (default)
+- GnuTLS
+
+Internal TLS/crypto implementation (optional):
+- can be used in place of an external TLS/crypto library
+- TLSv1
+- X.509 certificate processing
+- PKCS #1
+- ASN.1
+- RSA
+- bignum
+- minimal size (ca. 50 kB binary, parts of which are already needed for WPA;
+  TLSv1/X.509/ASN.1/RSA/bignum parts are about 25 kB on x86)
 
 
 Requirements
@@ -202,9 +216,11 @@ Optional libraries for EAP-TLS, EAP-PEAP, and EAP-TTLS:
 - openssl (tested with 0.9.7c and 0.9.7d, assumed to work with most
   relatively recent versions; this is likely to be available with most
   distributions, http://www.openssl.org/)
+- GnuTLS
+- internal TLSv1 implementation
 
-This library is only needed when EAP-TLS, EAP-PEAP, or EAP-TTLS
-support is enabled. WPA-PSK mode does not require this or EAPOL/EAP
+One of these libraries is needed when EAP-TLS, EAP-PEAP, EAP-TTLS, or
+EAP-FAST support is enabled. WPA-PSK mode does not require this or EAPOL/EAP
 implementation. A configuration file, .config, for compilation is
 needed to enable IEEE 802.1X/EAPOL and EAP methods. Note that EAP-MD5,
 EAP-GTC, EAP-OTP, and EAP-MSCHAPV2 cannot be used alone with WPA, so
@@ -323,8 +339,8 @@ select which parts of it will be included. This is done by creating a
 build time configuration file, .config, in the wpa_supplicant root
 directory. Configuration options are text lines using following
 format: CONFIG_<option>=y. Lines starting with # are considered
-comments and are ignored. See defconfig file for example configuration
-and list of available option.
+comments and are ignored. See defconfig file for an example configuration
+and a list of available options and additional notes.
 
 The build time configuration can be used to select only the needed
 features and limit the binary size and requirements for external
@@ -334,8 +350,9 @@ methods (e.g., EAP-TLS, EAP-PEAP, ..) are included.
 
 Following build time configuration options are used to control IEEE
 802.1X/EAPOL and EAP state machines and all EAP methods. Including
-TLS, PEAP, or TTLS will require linking wpa_supplicant with openssl
-library for TLS implementation.
+TLS, PEAP, or TTLS will require linking wpa_supplicant with OpenSSL
+library for TLS implementation. Alternatively, GnuTLS or the internal
+TLSv1 implementation can be used for TLS functionaly.
 
 CONFIG_IEEE8021X_EAPOL=y
 CONFIG_EAP_MD5=y

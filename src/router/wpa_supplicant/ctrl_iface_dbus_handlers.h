@@ -25,6 +25,9 @@ DBusMessage * wpas_dbus_global_add_interface(DBusMessage *message,
 DBusMessage * wpas_dbus_global_remove_interface(DBusMessage *message,
 						struct wpa_global *global);
 
+DBusMessage * wpas_dbus_global_get_interface(DBusMessage *message,
+					     struct wpa_global *global);
+
 DBusMessage * wpas_dbus_iface_scan(DBusMessage *message,
 				   struct wpa_supplicant *wpa_s);
 
@@ -35,8 +38,35 @@ DBusMessage * wpas_dbus_bssid_properties(DBusMessage *message,
 					 struct wpa_supplicant *wpa_s,
 					 struct wpa_scan_result *res);
 
+DBusMessage * wpas_dbus_iface_capabilities(DBusMessage *message,
+					   struct wpa_supplicant *wpa_s);
+
 DBusMessage * wpas_dbus_iface_add_network(DBusMessage *message,
 					  struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_remove_network(DBusMessage *message,
+					     struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_set_network(DBusMessage *message,
+					  struct wpa_supplicant *wpa_s,
+					  struct wpa_ssid *ssid);
+
+DBusMessage * wpas_dbus_iface_enable_network(DBusMessage *message,
+					     struct wpa_supplicant *wpa_s,
+					     struct wpa_ssid *ssid);
+
+DBusMessage * wpas_dbus_iface_disable_network(DBusMessage *message,
+					      struct wpa_supplicant *wpa_s,
+					      struct wpa_ssid *ssid);
+
+DBusMessage * wpas_dbus_iface_select_network(DBusMessage *message,
+                                             struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_disconnect(DBusMessage *message,
+					 struct wpa_supplicant *wpa_s);
+
+DBusMessage * wpas_dbus_iface_set_ap_scan(DBusMessage *message,
+                                          struct wpa_supplicant *wpa_s);
 
 #endif /* CONFIG_CTRL_IFACE_DBUS */
 

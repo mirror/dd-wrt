@@ -2751,6 +2751,15 @@ static int wpa_verify_key_mic(struct wpa_ptk *PTK, u8 *data, size_t data_len)
 }
 
 
+void wpa_remove_ptk(struct wpa_state_machine *sm)
+{
+	sm->PTK_valid = FALSE;
+	memset(&sm->PTK, 0, sizeof(sm->PTK));
+	wpa_auth_set_key(sm->wpa_auth, "none", sm->addr, 0, (u8 *) "", 0);
+	sm->pairwise_set = FALSE;
+}
+
+
 void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 {
 	if (sm == NULL)
@@ -2776,11 +2785,8 @@ void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 	sm->PTK_valid = FALSE;
 	memset(&sm->PTK, 0, sizeof(sm->PTK));
 
-	if (event != WPA_REAUTH_EAPOL) {
-		sm->pairwise_set = FALSE;
-		wpa_auth_set_key(sm->wpa_auth, "none", sm->addr, 0,
-				 (u8 *) "", 0);
-	}
+	if (event != WPA_REAUTH_EAPOL)
+		wpa_remove_ptk(sm);
 
 	wpa_sm_step(sm);
 }
@@ -2822,10 +2828,7 @@ SM_STATE(WPA_PTK, INITIALIZE)
 		sm->Pair = TRUE;
 	}
 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_portEnabled, 0);
-	wpa_auth_set_key(sm->wpa_auth, "none", sm->addr, 0, (u8 *) "", 0);
-	sm->pairwise_set = FALSE;
-	sm->PTK_valid = FALSE;
-	memset(&sm->PTK, 0, sizeof(sm->PTK));
+	wpa_remove_ptk(sm);
 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_portValid, 0);
 	sm->TimeoutCtr = 0;
 	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK) {
@@ -2928,7 +2931,12 @@ SM_STATE(WPA_PTK, PTKSTART)
 	sm->TimeoutEvt = FALSE;
 	wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
 			"sending 1/4 msg of 4-Way Handshake");
-	if (sm->wpa == WPA_VERSION_WPA2) {
+	/*
+	 * TODO: Could add PMKID even with WPA2-PSK, but only if there is only
+	 * one possible PSK for this STA.
+	 */
+	if (sm->wpa == WPA_VERSION_WPA2 &&
+	    sm->wpa_key_mgmt != WPA_KEY_MGMT_PSK) {
 		pmkid = buf;
 		pmkid_len = 2 + RSN_SELECTOR_LEN + PMKID_LEN;
 		pmkid[0] = WLAN_EID_GENERIC;
@@ -3490,81 +3498,90 @@ static int wpa_cipher_bits(int cipher)
 
 int wpa_get_mib(struct wpa_authenticator *wpa_auth, char *buf, size_t buflen)
 {
-	int len = 0;
+	int len = 0, ret;
 	char pmkid_txt[PMKID_LEN * 2 + 1];
 
 	if (wpa_auth == NULL)
 		return len;
 
-	len += snprintf(buf + len, buflen - len,
-			"dot11RSNAOptionImplemented=TRUE\n"
+	ret = snprintf(buf + len, buflen - len,
+		       "dot11RSNAOptionImplemented=TRUE\n"
 #ifdef CONFIG_RSN_PREAUTH
-			"dot11RSNAPreauthenticationImplemented=TRUE\n"
+		       "dot11RSNAPreauthenticationImplemented=TRUE\n"
 #else /* CONFIG_RSN_PREAUTH */
-			"dot11RSNAPreauthenticationImplemented=FALSE\n"
+		       "dot11RSNAPreauthenticationImplemented=FALSE\n"
 #endif /* CONFIG_RSN_PREAUTH */
-			"dot11RSNAEnabled=%s\n"
-			"dot11RSNAPreauthenticationEnabled=%s\n",
-			wpa_bool_txt(wpa_auth->conf.wpa &
-				     HOSTAPD_WPA_VERSION_WPA2),
-			wpa_bool_txt(wpa_auth->conf.rsn_preauth));
+		       "dot11RSNAEnabled=%s\n"
+		       "dot11RSNAPreauthenticationEnabled=%s\n",
+		       wpa_bool_txt(wpa_auth->conf.wpa &
+				    HOSTAPD_WPA_VERSION_WPA2),
+		       wpa_bool_txt(wpa_auth->conf.rsn_preauth));
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	wpa_snprintf_hex(pmkid_txt, sizeof(pmkid_txt),
 			 wpa_auth->dot11RSNAPMKIDUsed, PMKID_LEN);
 
-	len += snprintf(buf + len, buflen - len,
-			"dot11RSNAConfigVersion=%u\n"
-			"dot11RSNAConfigPairwiseKeysSupported=9999\n"
-			/* FIX: dot11RSNAConfigGroupCipher */
-			/* FIX: dot11RSNAConfigGroupRekeyMethod */
-			/* FIX: dot11RSNAConfigGroupRekeyTime */
-			/* FIX: dot11RSNAConfigGroupRekeyPackets */
-			"dot11RSNAConfigGroupRekeyStrict=%u\n"
-			"dot11RSNAConfigGroupUpdateCount=%u\n"
-			"dot11RSNAConfigPairwiseUpdateCount=%u\n"
-			"dot11RSNAConfigGroupCipherSize=%u\n"
-			"dot11RSNAConfigPMKLifetime=%u\n"
-			"dot11RSNAConfigPMKReauthThreshold=%u\n"
-			"dot11RSNAConfigNumberOfPTKSAReplayCounters=0\n"
-			"dot11RSNAConfigSATimeout=%u\n"
-			"dot11RSNAAuthenticationSuiteSelected=" RSN_SUITE "\n"
-			"dot11RSNAPairwiseCipherSelected=" RSN_SUITE "\n"
-			"dot11RSNAGroupCipherSelected=" RSN_SUITE "\n"
-			"dot11RSNAPMKIDUsed=%s\n"
-			"dot11RSNAAuthenticationSuiteRequested=" RSN_SUITE "\n"
-			"dot11RSNAPairwiseCipherRequested=" RSN_SUITE "\n"
-			"dot11RSNAGroupCipherRequested=" RSN_SUITE "\n"
-			"dot11RSNATKIPCounterMeasuresInvoked=%u\n"
-			"dot11RSNA4WayHandshakeFailures=%u\n"
-			"dot11RSNAConfigNumberOfGTKSAReplayCounters=0\n",
-			RSN_VERSION,
-			!!wpa_auth->conf.wpa_strict_rekey,
-			dot11RSNAConfigGroupUpdateCount,
-			dot11RSNAConfigPairwiseUpdateCount,
-			wpa_cipher_bits(wpa_auth->conf.wpa_group),
-			dot11RSNAConfigPMKLifetime,
-			dot11RSNAConfigPMKReauthThreshold,
-			dot11RSNAConfigSATimeout,
-			RSN_SUITE_ARG(wpa_auth->
-				      dot11RSNAAuthenticationSuiteSelected),
-			RSN_SUITE_ARG(wpa_auth->
-				      dot11RSNAPairwiseCipherSelected),
-			RSN_SUITE_ARG(wpa_auth->dot11RSNAGroupCipherSelected),
-			pmkid_txt,
-			RSN_SUITE_ARG(wpa_auth->
-				      dot11RSNAAuthenticationSuiteRequested),
-			RSN_SUITE_ARG(wpa_auth->
-				      dot11RSNAPairwiseCipherRequested),
-			RSN_SUITE_ARG(wpa_auth->dot11RSNAGroupCipherRequested),
-			wpa_auth->dot11RSNATKIPCounterMeasuresInvoked,
-			wpa_auth->dot11RSNA4WayHandshakeFailures);
+	ret = snprintf(buf + len, buflen - len,
+		       "dot11RSNAConfigVersion=%u\n"
+		       "dot11RSNAConfigPairwiseKeysSupported=9999\n"
+		       /* FIX: dot11RSNAConfigGroupCipher */
+		       /* FIX: dot11RSNAConfigGroupRekeyMethod */
+		       /* FIX: dot11RSNAConfigGroupRekeyTime */
+		       /* FIX: dot11RSNAConfigGroupRekeyPackets */
+		       "dot11RSNAConfigGroupRekeyStrict=%u\n"
+		       "dot11RSNAConfigGroupUpdateCount=%u\n"
+		       "dot11RSNAConfigPairwiseUpdateCount=%u\n"
+		       "dot11RSNAConfigGroupCipherSize=%u\n"
+		       "dot11RSNAConfigPMKLifetime=%u\n"
+		       "dot11RSNAConfigPMKReauthThreshold=%u\n"
+		       "dot11RSNAConfigNumberOfPTKSAReplayCounters=0\n"
+		       "dot11RSNAConfigSATimeout=%u\n"
+		       "dot11RSNAAuthenticationSuiteSelected=" RSN_SUITE "\n"
+		       "dot11RSNAPairwiseCipherSelected=" RSN_SUITE "\n"
+		       "dot11RSNAGroupCipherSelected=" RSN_SUITE "\n"
+		       "dot11RSNAPMKIDUsed=%s\n"
+		       "dot11RSNAAuthenticationSuiteRequested=" RSN_SUITE "\n"
+		       "dot11RSNAPairwiseCipherRequested=" RSN_SUITE "\n"
+		       "dot11RSNAGroupCipherRequested=" RSN_SUITE "\n"
+		       "dot11RSNATKIPCounterMeasuresInvoked=%u\n"
+		       "dot11RSNA4WayHandshakeFailures=%u\n"
+		       "dot11RSNAConfigNumberOfGTKSAReplayCounters=0\n",
+		       RSN_VERSION,
+		       !!wpa_auth->conf.wpa_strict_rekey,
+		       dot11RSNAConfigGroupUpdateCount,
+		       dot11RSNAConfigPairwiseUpdateCount,
+		       wpa_cipher_bits(wpa_auth->conf.wpa_group),
+		       dot11RSNAConfigPMKLifetime,
+		       dot11RSNAConfigPMKReauthThreshold,
+		       dot11RSNAConfigSATimeout,
+		       RSN_SUITE_ARG(wpa_auth->
+				     dot11RSNAAuthenticationSuiteSelected),
+		       RSN_SUITE_ARG(wpa_auth->
+				     dot11RSNAPairwiseCipherSelected),
+		       RSN_SUITE_ARG(wpa_auth->dot11RSNAGroupCipherSelected),
+		       pmkid_txt,
+		       RSN_SUITE_ARG(wpa_auth->
+				     dot11RSNAAuthenticationSuiteRequested),
+		       RSN_SUITE_ARG(wpa_auth->
+				     dot11RSNAPairwiseCipherRequested),
+		       RSN_SUITE_ARG(wpa_auth->dot11RSNAGroupCipherRequested),
+		       wpa_auth->dot11RSNATKIPCounterMeasuresInvoked,
+		       wpa_auth->dot11RSNA4WayHandshakeFailures);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* TODO: dot11RSNAConfigPairwiseCiphersTable */
 	/* TODO: dot11RSNAConfigAuthenticationSuitesTable */
 
 	/* Private MIB */
-	len += snprintf(buf + len, buflen - len, "hostapdWPAGroupState=%d\n",
-			wpa_auth->wpa_group_state);
+	ret = snprintf(buf + len, buflen - len, "hostapdWPAGroupState=%d\n",
+		       wpa_auth->wpa_group_state);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	return len;
 }
@@ -3572,7 +3589,7 @@ int wpa_get_mib(struct wpa_authenticator *wpa_auth, char *buf, size_t buflen)
 
 int wpa_get_mib_sta(struct wpa_state_machine *sm, char *buf, size_t buflen)
 {
-	int len = 0;
+	int len = 0, ret;
 	u8 not_used[4] = { 0, 0, 0, 0 };
 	const u8 *pairwise = not_used;
 
@@ -3608,28 +3625,34 @@ int wpa_get_mib_sta(struct wpa_state_machine *sm, char *buf, size_t buflen)
 	} else
 		return 0;
 
-	len += snprintf(buf + len, buflen - len,
-			/* TODO: dot11RSNAStatsIndex */
-			"dot11RSNAStatsSTAAddress=" MACSTR "\n"
-			"dot11RSNAStatsVersion=1\n"
-			"dot11RSNAStatsSelectedPairwiseCipher=" RSN_SUITE "\n"
-			/* TODO: dot11RSNAStatsTKIPICVErrors */
-			"dot11RSNAStatsTKIPLocalMICFailures=%u\n"
-			"dot11RSNAStatsTKIPRemoveMICFailures=%u\n"
-			/* TODO: dot11RSNAStatsCCMPReplays */
-			/* TODO: dot11RSNAStatsCCMPDecryptErrors */
-			/* TODO: dot11RSNAStatsTKIPReplays */,
-			MAC2STR(sm->addr),
-			RSN_SUITE_ARG(pairwise),
-			sm->dot11RSNAStatsTKIPLocalMICFailures,
-			sm->dot11RSNAStatsTKIPRemoteMICFailures);
+	ret = snprintf(buf + len, buflen - len,
+		       /* TODO: dot11RSNAStatsIndex */
+		       "dot11RSNAStatsSTAAddress=" MACSTR "\n"
+		       "dot11RSNAStatsVersion=1\n"
+		       "dot11RSNAStatsSelectedPairwiseCipher=" RSN_SUITE "\n"
+		       /* TODO: dot11RSNAStatsTKIPICVErrors */
+		       "dot11RSNAStatsTKIPLocalMICFailures=%u\n"
+		       "dot11RSNAStatsTKIPRemoveMICFailures=%u\n"
+		       /* TODO: dot11RSNAStatsCCMPReplays */
+		       /* TODO: dot11RSNAStatsCCMPDecryptErrors */
+		       /* TODO: dot11RSNAStatsTKIPReplays */,
+		       MAC2STR(sm->addr),
+		       RSN_SUITE_ARG(pairwise),
+		       sm->dot11RSNAStatsTKIPLocalMICFailures,
+		       sm->dot11RSNAStatsTKIPRemoteMICFailures);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	/* Private MIB */
-	len += snprintf(buf + len, buflen - len,
-			"hostapdWPAPTKState=%d\n"
-			"hostapdWPAPTKGroupState=%d\n",
-			sm->wpa_ptk_state,
-			sm->wpa_ptk_group_state);
+	ret = snprintf(buf + len, buflen - len,
+		       "hostapdWPAPTKState=%d\n"
+		       "hostapdWPAPTKGroupState=%d\n",
+		       sm->wpa_ptk_state,
+		       sm->wpa_ptk_group_state);
+	if (ret < 0 || (size_t) ret >= buflen - len)
+		return len;
+	len += ret;
 
 	return len;
 }

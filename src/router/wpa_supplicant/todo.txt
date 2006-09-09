@@ -100,20 +100,18 @@ To do:
 - make sure that TLS session cache is not shared between EAP types or if it
   is, that the cache entries are bound to only one EAP type; e.g., cache entry
   created with EAP-TLS must not be allowed to do fast re-auth with EAP-TTLS
-- add proper support for receiving TLS Application Data from the last message
-  of TLS handshake
+- consider moving eap_tls_build_ack() call into eap_tls_process_helper()
+  (it seems to be called always if helper returns 1)
+  * could need to modify eap_{ttls,peap,fast}_decrypt to do same
+
+
+0.6.x branch:
 - clean up common.[ch]
   * consider adding os_malloc(), os_zalloc(), os_realloc(), os_strdup(),
     os_strlen(), etc.
   * os.h could define these by default to malloc(), ...
   * .config option and cpp define for selecting separate implementation in
     os_*.c
-- consider moving eap_tls_build_ack() call into eap_tls_process_helper()
-  (it seems to be called always is helper returns 1)
-  * could need to modify eap_{ttls,peap,fast}_decrypt to do same
-
-
-0.6.x branch:
 - change TLS/crypto library interface to use a structure of function
   pointers and helper inline functions (like driver_ops) instead of
   requiring every TLS wrapper to implement all functions
@@ -123,3 +121,5 @@ To do:
   into a repository that matches in directory structure with the release
   tarballs
   (subdirs: eap_common, eap_peer, eap_server, driver, driver_ap, ...)
+- make it clearer that EAP server/peer can be used as a separate library
+  for other programs

@@ -172,7 +172,8 @@ CONFIG_SMARTCARD=y
 
 # Select control interface backend for external programs, e.g, wpa_cli:
 # unix = UNIX domain sockets (default for Linux/*BSD)
-# udp = UDP sockets (default for Windows)
+# udp = UDP sockets using localhost (127.0.0.1)
+# named_pipe = Windows Named Pipe (default for Windows)
 # y = use default (backwards compatibility)
 # If this option is commented out, control interface is not included in the
 # build.
@@ -259,14 +260,18 @@ CONFIG_PEERKEY=y
 #CONFIG_GNUTLS_EXTRA=y
 
 # If CONFIG_TLS=internal is used, additional library and include paths are
-# needed for LibTomCrypt and TomsFastMath.
-#LTC_PATH=/usr/src/libtomcrypt-1.11
-#TFM_PATH=/usr/src/tomsfastmath-0.09
-#CFLAGS += -I$(LTC_PATH)/src/headers
-#LIBS += -L$(LTC_PATH) -L$(TFM_PATH)
-#LIBS_p += -L$(LTC_PATH) -L$(TFM_PATH)
+# needed for LibTomMath. Alternatively, an integrated, minimal version of
+# LibTomMath can be used. See beginning of libtommath.c for details on benefits
+# and drawbacks of this option.
+#CONFIG_INTERNAL_LIBTOMMATH=y
+#ifndef CONFIG_INTERNAL_LIBTOMMATH
+#LTM_PATH=/usr/src/libtommath-0.39
+#CFLAGS += -I$(LTM_PATH)
+#LIBS += -L$(LTM_PATH)
+#LIBS_p += -L$(LTM_PATH)
+#endif
 
-# Integrate ndis_events.exe functionality into wpa_supplicant.
+# Include NDIS event processing through WMI into wpa_supplicant/wpasvc.
 # This is only for Windows builds and requires WMI-related header files and
 # WbemUuid.Lib from Platform SDK even when building with MinGW.
 #CONFIG_NDIS_EVENTS_INTEGRATED=y

@@ -17,22 +17,29 @@
 
 #ifdef CONFIG_CTRL_IFACE_DBUS
 
+#include <dbus/dbus.h>
+
+#define WPAS_DBUS_OBJECT_PATH_MAX 150
+
 #define WPAS_DBUS_SERVICE	"fi.epitest.hostap.WPASupplicant"
 #define WPAS_DBUS_PATH		"/fi/epitest/hostap/WPASupplicant"
 #define WPAS_DBUS_INTERFACE	"fi.epitest.hostap.WPASupplicant"
 
-#define WPAS_INTERFACES_DBUS_PATH	WPAS_DBUS_PATH "/Interfaces"
-#define WPAS_INTERFACES_DBUS_INTERFACE	WPAS_DBUS_INTERFACE ".Interfaces"
+#define WPAS_DBUS_PATH_INTERFACES	WPAS_DBUS_PATH "/Interfaces"
+#define WPAS_DBUS_IFACE_INTERFACE	WPAS_DBUS_INTERFACE ".Interface"
 
-#define INTERFACES_PATH_NETWORKS_PART	"/Networks/"
-#define INTERFACES_PATH_BSSIDS_PART	"/BSSIDs/"
+#define WPAS_DBUS_NETWORKS_PART "Networks"
+#define WPAS_DBUS_IFACE_NETWORK	WPAS_DBUS_INTERFACE ".Network"
+
+#define WPAS_DBUS_BSSIDS_PART	"BSSIDs"
+#define WPAS_DBUS_IFACE_BSSID	WPAS_DBUS_INTERFACE ".BSSID"
 
 
 /* Errors */
 #define WPAS_ERROR_INVALID_NETWORK \
-	WPAS_INTERFACES_DBUS_INTERFACE ".InvalidNetwork"
+	WPAS_DBUS_IFACE_INTERFACE ".InvalidNetwork"
 #define WPAS_ERROR_INVALID_BSSID \
-	WPAS_INTERFACES_DBUS_INTERFACE ".InvalidBSSID"
+	WPAS_DBUS_IFACE_INTERFACE ".InvalidBSSID"
 
 #define WPAS_ERROR_INVALID_OPTS \
 	WPAS_DBUS_INTERFACE ".InvalidOptions"
@@ -47,14 +54,13 @@
 	WPAS_DBUS_INTERFACE ".RemoveError"
 
 #define WPAS_ERROR_SCAN_ERROR \
-	WPAS_INTERFACES_DBUS_INTERFACE ".ScanError"
+	WPAS_DBUS_IFACE_INTERFACE ".ScanError"
 #define WPAS_ERROR_ADD_NETWORK_ERROR \
-	WPAS_INTERFACES_DBUS_INTERFACE ".AddNetworkError"
+	WPAS_DBUS_IFACE_INTERFACE ".AddNetworkError"
 #define WPAS_ERROR_INTERNAL_ERROR \
-	WPAS_INTERFACES_DBUS_INTERFACE ".InternalError"
-
-/* Maximum length of an object path that we'll allocated dynamically. */
-#define WPAS_DBUS_MAX_OBJECT_PATH_LEN	150
+	WPAS_DBUS_IFACE_INTERFACE ".InternalError"
+#define WPAS_ERROR_REMOVE_NETWORK_ERROR \
+	WPAS_DBUS_IFACE_INTERFACE ".RemoveNetworkError"
 
 #define WPAS_DBUS_BSSID_FORMAT "%02x%02x%02x%02x%02x%02x"
 
@@ -65,6 +71,28 @@ struct ctrl_iface_dbus_priv *
 wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global);
 void wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface);
 void wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s);
+void wpa_supplicant_dbus_notify_state_change(struct wpa_supplicant *wpa_s,
+					     wpa_states new_state,
+					     wpa_states old_state);
+
+char * wpas_dbus_decompose_object_path(const char *path, char **network,
+                                       char **bssid);
+
+int wpas_dbus_register_iface(struct wpa_supplicant *wpa_s);
+int wpas_dbus_unregister_iface(struct wpa_supplicant *wpa_s);
+
+
+/* Methods internal to the dbus control interface */
+u32 wpa_supplicant_dbus_next_objid(struct ctrl_iface_dbus_priv *iface);
+
+int wpa_supplicant_set_dbus_path(struct wpa_supplicant *wpa_s,
+				 const char *path);
+const char *wpa_supplicant_get_dbus_path(struct wpa_supplicant *wpa_s);
+struct wpa_supplicant * wpa_supplicant_get_iface_by_dbus_path(
+	struct wpa_global *global, const char *path);
+
+DBusMessage * wpas_dbus_new_invalid_iface_error(DBusMessage *message);
+DBusMessage * wpas_dbus_new_invalid_network_error(DBusMessage *message);
 
 #else /* CONFIG_CTRL_IFACE_DBUS */
 
@@ -82,6 +110,25 @@ wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface)
 static inline void
 wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s)
 {
+}
+
+static inline void
+wpa_supplicant_dbus_notify_state_change(struct wpa_supplicant *wpa_s,
+					wpa_states new_state,
+					wpa_states old_state)
+{
+}
+
+static inline int
+wpas_dbus_register_iface(struct wpa_supplicant *wpa_s)
+{
+	return 0;
+}
+
+static inline int
+wpas_dbus_unregister_iface(struct wpa_supplicant *wpa_s)
+{
+	return 0;
 }
 
 #endif /* CONFIG_CTRL_IFACE_DBUS */

@@ -43,7 +43,7 @@ static int hostapd_ioctl_prism54(struct wpa_driver_prism54_data *drv,
 {
 	struct iwreq iwr;
 
-	memset(&iwr, 0, sizeof(iwr));
+	os_memset(&iwr, 0, sizeof(iwr));
 	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
@@ -69,16 +69,16 @@ static int wpa_driver_prism54_set_wpa_ie(struct wpa_driver_prism54_data *drv,
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 	
 	param->cmd = PRISM2_HOSTAPD_SET_GENERIC_ELEMENT;
 	param->u.generic_elem.len = wpa_ie_len;
-	memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
+	os_memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
 	res = hostapd_ioctl_prism54(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 
 	return res;
 }
@@ -94,7 +94,7 @@ static int wpa_driver_prism54_set_wpa(void *priv, int enabled)
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 
@@ -102,7 +102,7 @@ static int wpa_driver_prism54_set_wpa(void *priv, int enabled)
 	param->u.generic_elem.len = 0;
 	res = hostapd_ioctl_prism54(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 
 	return res;
 }
@@ -148,7 +148,7 @@ static int wpa_driver_prism54_set_key(void *priv, wpa_alg alg,
 		return -2;
 
 	blen = sizeof(*param) + key_len;
-	buf = wpa_zalloc(blen);
+	buf = os_zalloc(blen);
 	if (buf == NULL)
 		return -1;
 
@@ -163,26 +163,26 @@ static int wpa_driver_prism54_set_key(void *priv, wpa_alg alg,
 	 * sake, the driver could be enhanced to support the missing key. */
 #if 0
 	if (addr == NULL)
-		memset(param->sta_addr, 0xff, ETH_ALEN);
+		os_memset(param->sta_addr, 0xff, ETH_ALEN);
 	else
-		memcpy(param->sta_addr, addr, ETH_ALEN);
+		os_memcpy(param->sta_addr, addr, ETH_ALEN);
 #else
-	memset(param->sta_addr, 0xff, ETH_ALEN);
+	os_memset(param->sta_addr, 0xff, ETH_ALEN);
 #endif
 	strncpy((char *) param->u.crypt.alg, alg_name,
 		HOSTAP_CRYPT_ALG_NAME_LEN);
 	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
 	param->u.crypt.idx = key_idx;
-	memcpy(param->u.crypt.seq, seq, seq_len);
+	os_memcpy(param->u.crypt.seq, seq, seq_len);
 	param->u.crypt.key_len = key_len;
-	memcpy((u8 *) (param + 1), key, key_len);
+	os_memcpy((u8 *) (param + 1), key, key_len);
 
 	if (hostapd_ioctl_prism54(drv, param, blen, 1)) {
 		wpa_printf(MSG_WARNING, "Failed to set encryption.");
 		show_set_key_error(param);
 		ret = -1;
 	}
-	free(buf);
+	os_free(buf);
 
 	return ret;
 }
@@ -208,7 +208,7 @@ static int wpa_driver_prism54_set_drop_unencrypted(void *priv,
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
 
-	param = wpa_zalloc(blen);
+	param = os_zalloc(blen);
 	if (param == NULL)
 		return -1;
 
@@ -216,7 +216,7 @@ static int wpa_driver_prism54_set_drop_unencrypted(void *priv,
 	param->u.generic_elem.len = 0;
 	res = hostapd_ioctl_prism54(drv, param, blen, 1);
 
-	free(param);
+	os_free(param);
 
 	return res;
 }
@@ -333,12 +333,12 @@ static void * wpa_driver_prism54_init(void *ctx, const char *ifname)
 {
 	struct wpa_driver_prism54_data *drv;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->wext = wpa_driver_wext_init(ctx, ifname);
 	if (drv->wext == NULL) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -347,7 +347,7 @@ static void * wpa_driver_prism54_init(void *ctx, const char *ifname)
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -360,7 +360,7 @@ static void wpa_driver_prism54_deinit(void *priv)
 	struct wpa_driver_prism54_data *drv = priv;
 	wpa_driver_wext_deinit(drv->wext);
 	close(drv->sock);
-	free(drv);
+	os_free(drv);
 }
 
 

@@ -442,7 +442,7 @@ int eloop_register_signal_reconfig(eloop_signal_handler handler,
 void eloop_run(void)
 {
 	struct os_time tv, now;
-	DWORD count, ret, timeout;
+	DWORD count, ret, timeout, err;
 	size_t i;
 
 	while (!eloop.terminate &&
@@ -471,8 +471,15 @@ void eloop_run(void)
 		else
 			timeout = INFINITE;
 
-		ret = WaitForMultipleObjects(count, eloop.handles, FALSE,
-					     timeout);
+		if (count > MAXIMUM_WAIT_OBJECTS) {
+			printf("WaitForMultipleObjects: Too many events: "
+			       "%d > %d (ignoring extra events)\n",
+			       (int) count, MAXIMUM_WAIT_OBJECTS);
+			count = MAXIMUM_WAIT_OBJECTS;
+		}
+		ret = WaitForMultipleObjectsEx(count, eloop.handles, FALSE,
+					       timeout, TRUE);
+		err = GetLastError();
 
 		eloop_process_pending_signals();
 
@@ -492,13 +499,13 @@ void eloop_run(void)
 		}
 
 		if (ret == WAIT_FAILED) {
-			printf("WaitForMultipleObjects() failed: %d\n",
-			       (int) GetLastError());
+			printf("WaitForMultipleObjects(count=%d) failed: %d\n",
+			       (int) count, (int) err);
 			os_sleep(1, 0);
 			continue;
 		}
 
-		if (ret == WAIT_TIMEOUT)
+		if (ret == WAIT_TIMEOUT || ret == WAIT_IO_COMPLETION)
 			continue;
 
 		while (ret >= WAIT_OBJECT_0 &&

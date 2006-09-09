@@ -123,7 +123,7 @@ static void sim_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 			 char *imsi)
 {
 	FILE *f;
-	int count, max_chal;
+	int count, max_chal, ret;
 	char buf[80], *pos;
 	char reply[1000], *rpos, *rend;
 
@@ -140,7 +140,10 @@ static void sim_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 
 	rend = &reply[sizeof(reply)];
 	rpos = reply;
-	rpos += snprintf(rpos, rend - rpos, "SIM-RESP-AUTH %s", imsi);
+	ret = snprintf(rpos, rend - rpos, "SIM-RESP-AUTH %s", imsi);
+	if (ret < 0 || ret >= rend - rpos)
+		return;
+	rpos += ret;
 
 	/* TODO: could read triplet file into memory during startup and then
 	 * have pointer for IMSI to allow more than three first entries to be
@@ -149,7 +152,10 @@ static void sim_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 	if (f == NULL) {
 		printf("Could not open GSM triplet file '%s'\n",
 		       gsm_triplet_file);
-		rpos += snprintf(rpos, rend - rpos, " FAILURE");
+		ret = snprintf(rpos, rend - rpos, " FAILURE");
+		if (ret < 0 || ret >= rend - rpos)
+			return;
+		rpos += ret;
 		goto send;
 	}
 
@@ -172,7 +178,10 @@ static void sim_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 		if (strcmp(buf, imsi) != 0)
 			continue;
 
-		rpos += snprintf(rpos, rend - rpos, " %s", pos);
+		ret = snprintf(rpos, rend - rpos, " %s", pos);
+		if (ret < 0 || ret >= rend - rpos)
+			return;
+		rpos += ret;
 		count++;
 	}
 
@@ -180,7 +189,10 @@ static void sim_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 
 	if (count == 0) {
 		printf("No GSM triplets found for %s\n", imsi);
-		rpos += snprintf(rpos, rend - rpos, " FAILURE");
+		ret = snprintf(rpos, rend - rpos, " FAILURE");
+		if (ret < 0 || ret >= rend - rpos)
+			return;
+		rpos += ret;
 	}
 
 send:
@@ -202,6 +214,7 @@ static void aka_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 	u8 ck[EAP_AKA_CK_LEN];
 	u8 res[EAP_AKA_RES_MAX_LEN];
 	size_t res_len;
+	int ret;
 
 #ifdef AKA_USE_MILENAGE
 	os_get_random(rand, EAP_AKA_RAND_LEN);
@@ -223,7 +236,10 @@ static void aka_req_auth(int s, struct sockaddr_un *from, socklen_t fromlen,
 
 	pos = reply;
 	end = &reply[sizeof(reply)];
-	pos += snprintf(pos, end - pos, "AKA-RESP-AUTH %s ", imsi);
+	ret = snprintf(pos, end - pos, "AKA-RESP-AUTH %s ", imsi);
+	if (ret < 0 || ret >= end - pos)
+		return;
+	pos += ret;
 	pos += wpa_snprintf_hex(pos, end - pos, rand, EAP_AKA_RAND_LEN);
 	*pos++ = ' ';
 	pos += wpa_snprintf_hex(pos, end - pos, autn, EAP_AKA_AUTN_LEN);
