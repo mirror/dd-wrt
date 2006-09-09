@@ -122,7 +122,7 @@ daemon: ebtablesd ebtablesu
 static: extensions/ebt_*.c extensions/ebtable_*.c ebtables.c communication.c ebtables-standalone.c getethertype.c libebtc.c useful_functions.c
 	cp ebtables-standalone.c ebtables-standalone.c_ ; \
 	cp include/ebtables_u.h include/ebtables_u.h_ ; \
-	sed "s/ main(/ pseudomain2(/" ebtables-standalone.c > ebtables-standalone.c__ ; \
+	sed "s/ main(/ pseudomain(/" ebtables-standalone.c > ebtables-standalone.c__ ; \
 	mv ebtables-standalone.c__ ebtables-standalone.c ; \
 	printf "\nint main(int argc, char *argv[])\n{\n "  >> ebtables-standalone.c ; \
 	for arg in $(EXT_FUNC) \
@@ -139,7 +139,7 @@ static: extensions/ebt_*.c extensions/ebtable_*.c ebtables.c communication.c ebt
 	printf "\t%s();\n" _t_$${arg}_init >> ebtables-standalone.c ; \
 	printf "extern void %s();\n" _t_$${arg}_init >> include/ebtables_u.h ; \
 	done ; \
-	printf "\n\tpseudomain2(argc, argv);\n\treturn 0;\n}\n" >> ebtables-standalone.c ;\
+	printf "\n\tpseudomain(argc, argv);\n\treturn 0;\n}\n" >> ebtables-standalone.c ;\
 	$(CC) $(CFLAGS) $(PROGSPECS) -o ebtables $^ -Iinclude/ ; \
 	for arg in $(EXT_FUNC) \
 	; do \
