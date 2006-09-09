@@ -105,6 +105,14 @@ nvram_invmatch(char *name, char *invmatch) {
 	return (value && strcmp(value, invmatch));
 }
 
+
+char *nvram_prefix_get(const char *name, const char *prefix)
+{
+char p[64];
+sprintf(p,"%s_%s\n",prefix,name);
+return nvram_safe_get(p);
+}
+
 char *nvram_safe_get(const char *name)
 {
 return nvram_get(name)?:"";

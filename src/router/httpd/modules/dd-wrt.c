@@ -1263,6 +1263,16 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
 	     selmatch (var, "radius", "selected"));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
 	     selmatch (var, "wep", "selected"));
+#ifdef HAVE_MADWIFI
+char sta[32];
+sprintf(sta, "%s_mode",prefix);
+if (nvram_match(sta,"sta"))
+    {
+  websWrite (wp, "<option value=\"8021X\" %s>802.1X</option></select>\n",
+	     selmatch (var, "8021X", "selected"));
+    }
+#endif
+
   websWrite (wp, "</div>\n");
   rep (prefix, 'X', '.');
   cprintf ("ej show wpa\n");
@@ -2598,6 +2608,16 @@ show_radius (webs_t wp, char *prefix)
 	     prefix, nvram_safe_get (var));
 }
 
+
+
+#ifdef HAVE_MADWIFI
+void
+show_80211X (webs_t wp, char *prefix)
+{
+
+}
+#endif
+
 void
 show_wparadius (webs_t wp, char *prefix)
 {
@@ -3105,6 +3125,9 @@ ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 
+#ifndef HAVE_MADWIFI
+
+
 void
 ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -3132,6 +3155,47 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 
 }
+#else
+extern double wifi_getrate(char *ifname);
+#define KILO	1e3
+#define MEGA	1e6
+#define GIGA	1e9
+
+void
+ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
+{
+double rate = wifi_getrate("ath0");
+char		scale;
+int		divisor;
+
+  if(rate >= GIGA)
+    {
+      scale = 'G';
+      divisor = GIGA;
+    }
+  else
+    {
+      if(rate >= MEGA)
+	{
+	  scale = 'M';
+	  divisor = MEGA;
+	}
+      else
+	{
+	  scale = 'k';
+	  divisor = KILO;
+	}
+    }
+
+  if (rate > 0.0)
+    {
+       websWrite(wp,"%g %cb/s", rate / divisor, scale);
+    }
+  else
+    websWrite (wp, "%s", live_translate ("share.unknown"));
+ 
+}
+#endif
 
 #define UPTIME_TMP	"/tmp/.uptime"
 void
