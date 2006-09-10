@@ -1262,7 +1262,7 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
 	     selmatch (var, "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch (var, "radius", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
+  websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_MADWIFI
 char sta[32];
@@ -1274,7 +1274,7 @@ if (nvram_match(sta,"sta"))
     }
 #endif
 
-  websWrite (wp, "</div>\n");
+  websWrite (wp, "</select></div>\n");
   rep (prefix, 'X', '.');
   cprintf ("ej show wpa\n");
   ej_show_wpa_setting (eid, wp, argc, argv, prefix);
