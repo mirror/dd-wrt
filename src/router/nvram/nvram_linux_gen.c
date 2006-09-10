@@ -135,15 +135,19 @@ writedb (void)
 	  putc (fulllen & 255, in);
 
 	  putc (len, in);
+	  
+	  
+	  fwrite(values.values[i].name,len,1,in);
 
-	  for (a = 0; a < len; a++)
-	    putc (values.values[i].name[a], in);
+//	  for (a = 0; a < len; a++)
+//	    putc (values.values[i].name[a], in);
 
 	  len = strlen (values.values[i].value);
 	  putc (len >> 8, in);
 	  putc (len & 255, in);
-	  for (a = 0; a < len; a++)
-	    putc (values.values[i].value[a], in);
+	  fwrite(values.values[i].value,len,1,in);
+	 // for (a = 0; a < len; a++)
+	//    putc (values.values[i].value[a], in);
 	}
     }
   fclose (in);
@@ -156,8 +160,6 @@ void
 readdb (void)
 {
   FILE *in;
-//  if (values.nov>-1)
-//    return;
   in = fopen ("/tmp/nvram/nvram.db", "rb");
   if (in == NULL)
     {
@@ -177,15 +179,13 @@ readdb (void)
       int len = getc (in);
       values.values[i].name = (char *) malloc (len + 1);
       int a;
-      for (a = 0; a < len; a++)
-	values.values[i].name[a] = getc (in);
-      values.values[i].name[a] = 0;
+      fread(values.values[i].name,len,1,in);	
+      values.values[i].name[len] = 0;
       len = getc (in) << 8;
       len += getc (in);
       values.values[i].value = (char *) malloc (len + 1);
-      for (a = 0; a < len; a++)
-	values.values[i].value[a] = getc (in);
-      values.values[i].value[a] = 0;
+      fread(values.values[i].value,len,1,in);      
+      values.values[i].value[len] = 0;
     }
   fclose (in);
 }
@@ -204,6 +204,7 @@ closedb (void)
   if (values.values)
     free (values.values);
   values.nov = -1;
+  isni=0;
 }
 
 
@@ -279,9 +280,8 @@ begin:;
       fullen += getc (in);
       cprintf ("size of value = %d\n", fullen);
       char *value = malloc (fullen + 1);
-      for (i = 0; i < fullen; i++)
-	value[i] = getc (in);
-      value[i] = 0;
+      fread(value,fullen,1,in);
+      value[fullen] = 0;
       fclose (in);
       unlock ();
       cprintf ("nvram_get done %s\n", value);
