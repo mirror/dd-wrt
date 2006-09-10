@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 17/05/2006						//													//
+//				French translation DD-WRT V23 SP1 by Botho 17/05/2006															//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -104,6 +104,8 @@ share.port_range="Plage de ports";
 share.priority="Priorité";
 share.gateway="Passerelle";
 share.intrface="Interface";
+share.pintrface="Interface Physique";
+share.vintrface="Interfaces Virtuelles";
 share.router="Routeur";
 share.static_lease="Réservation d\'adresse";
 share.srvip="IP Serveur";
@@ -111,7 +113,7 @@ share.localdns="DNS Local";
 share.minutes="minutes";
 share.oui="Recherche OUI";
 share.sttic="Statique";
-share.connecting="Connection en cours";
+share.connecting="Connexion en cours";
 share.connect="Connecter";
 share.connected="Connecté";
 share.disconnect="Déconnecter";
@@ -350,15 +352,15 @@ bmenu.statuSysInfo="Système";
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl=" - Maintenir Actif";
-alive.h2="Maintenir Actif";
+alive.titl=" - Keep Alive";
+alive.h2="Keep Alive";
 alive.legend="Redémarrage Programmé du Routeur";
 alive.sevr1="Redémarrage programmé";
 alive.hour="A une heure définie";
-alive.legend2="WDS/Connection Watchdog";
+alive.legend2="WDS/Connexion Watchdog";
 alive.sevr2="Watchdog";
 alive.IP="Adresses IP";
-alive.legend3="Proxy/Connection Watchdog";
+alive.legend3="Proxy/Connexion Watchdog";
 alive.sevr3="Proxy Watchdog";
 alive.IP2="Adresse IP du proxy";
 alive.port="Port du proxy";
@@ -449,10 +451,10 @@ ddnsm.zone_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au b
 ddnsm.all_closed="Le serveur DDNS est actuellement fermé.";
 ddnsm.all_resolving="Résolution du nom de domaine en cours ...";
 ddnsm.all_errresolv="La résolution du nom de domaine a échoué.";
-ddnsm.all_connecting="Connection en cours...";
-ddnsm.all_connectfail="La connection au serveur a échoué";
+ddnsm.all_connecting="Connexion en cours...";
+ddnsm.all_connectfail="La connexion au serveur a échoué";
 ddnsm.all_disabled="DDNS est désactivé";
-ddnsm.all_noip="Connection Internet non détectée";
+ddnsm.all_noip="Connexion Internet non détectée";
 
 //help container
 
@@ -1136,7 +1138,7 @@ status_router.sys_load="Load Average";
 status_router.legend2="CPU";
 status_router.cpu="Type de CPU";
 status_router.clock="Fréquence du CPU";
-status_router.legend3="Memoire";
+status_router.legend3="Mémoire";
 status_router.mem_tot="Total Disponible";
 status_router.mem_free="Libre";
 status_router.mem_used="Utilisée";
@@ -1145,12 +1147,11 @@ status_router.mem_cached="En cache";
 status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
 status_router.legend4="Réseau";
-status_router.net_maxports="IP Filter Maximum Ports";
-status_router.net_conntrack="Connections actives";
+status_router.net_maxports="Nb de connexions max.";
+status_router.net_conntrack="connexion actives";
 status_router.h22="Internet";
 status_router.legend5="Type de configuration";
-status_router.www_login="Type de Login";
-status_router.www_loginstatus="Statut du Login";
+status_router.www_loginstatus="Statut de la connexion";
 status_router.leasetime="Renouvellement du bail dans";
 status_router.notavail="Indisponible";
 
