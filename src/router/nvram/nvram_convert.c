@@ -1,5 +1,6 @@
 
 #define WL(a)	"wl_"a
+#define ATH0(a)	"ath0_"a
 #define WL0(a)	"wl0_"a
 #define D11G(a)	"d11g_"a
 
@@ -15,7 +16,11 @@ struct nvram_convert
 
 struct nvram_convert nvram_converts[] = {
   // Bellow change from 3.11.48.7
+#ifdef HAVE_MADWIFI
+  {ATH0 ("ssid"), WL0 ("ssid"), ""},
+#else
   {WL ("ssid"), WL0 ("ssid"), ""},
+#endif
   {WL ("radio"), WL0 ("mode"), ""},
   {WL ("mode"), WL0 ("mode"), ""},
   {WL ("wds"), WL0 ("wds"), ""},

@@ -27,6 +27,9 @@ ifeq ($(ARCH),powerpc)
 CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
 
+ifeq ($(CONFIG_MADWIFI),y)
+CFLAGS += -DHAVE_MADWIFI
+endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 
