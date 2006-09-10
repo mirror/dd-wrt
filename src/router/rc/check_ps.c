@@ -91,17 +91,17 @@ do_mon (void)
     {
       if (v->name == NULL)
 	break;
-      printf ("checking %s\n", v->name);
+      cprintf ("checking %s\n", v->name);
       if (v->type == M_WAN)
 	if (!check_wan_link (0))
 	  {
-	    printf ("process is wan, but wan is not up\n");
+	    cprintf ("process is wan, but wan is not up\n");
 	    continue;
 	  }
       if (!search_process (v->name, v->count))
 	{
 
-	  printf ("Maybe %s had died, we need to re-exec it\n", v->name);
+	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
 	  sprintf (service, "stop_%s", v->name);
 	  fptr = (void (*)(void)) dlsym (handle, service);
 	  if (fptr)
@@ -112,7 +112,7 @@ do_mon (void)
 	  if (fptr)
 	    fptr ();
 	}
-      printf ("checking for %s done\n", v->name);
+      cprintf ("checking for %s done\n", v->name);
     }
   if (handle);
   dlclose (handle);
