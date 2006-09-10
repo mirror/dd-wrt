@@ -4205,7 +4205,7 @@ ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_RB500
   websWrite (wp, "1");
 #elif HAVE_MAGICBOX
-  websWrite (wp, "1");
+  websWrite (wp, "2");
 #else
   websWrite (wp, "0");
 #endif
