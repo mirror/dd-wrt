@@ -173,7 +173,6 @@ addEvent(window, "load", function() {
 	}
 	var wl_net_mode = "<% nvram_get("wl0_net_mode"); %>";
 	SelWL(wl_net_mode,document.wireless);
-	}
 });
 
 		</script>
