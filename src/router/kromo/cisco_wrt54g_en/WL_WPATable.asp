@@ -157,6 +157,17 @@ function generateKey64(F,PREFIX) {
 	F.submit_type.value = "key_64";
 	F.submit();
 }
+
+function enable_idpeap()
+{
+show_layer_ext(this, 'idtls', false)
+show_layer_ext(this, 'idpeap', true)
+}
+function enable_idtls()
+{
+show_layer_ext(this, 'idtls', true)
+show_layer_ext(this, 'idpeap', false)
+}
 function generateKey128(F,PREFIX) {
 
 	F.submit_button.value = "WL_WPATable";

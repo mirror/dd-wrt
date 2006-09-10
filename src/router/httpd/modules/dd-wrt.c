@@ -2629,15 +2629,19 @@ _8021xprv
 */
 websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">XSupplicant Type</div>\n");
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" %s onclick=\"show_layer_ext(this, 'idpeap', true)\" /> Peap &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"peap")?"enabled":"");
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" %s onclick=\"show_layer_ext(this, 'idtls', true)\" /> TLS &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"tls")?"enabled":"");
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" %s onclick=\"enable_idpeap()\" /> Peap &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"peap")?"enabled":"");
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" %s onclick=\"enable_idtls()\" /> TLS &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"tls")?"enabled":"");
 websWrite(wp,"</div>\n");
 //peap authentication
 websWrite(wp,"<div id=\"idpeap\">\n");
+websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">User</div>\n");
 websWrite(wp,"<input name=\"%s_8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xuser",prefix));
+websWrite(wp,"</div>\n");
+websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Password</div>\n");
 websWrite(wp,"<input name=\"%s_8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xpasswd",prefix));
+websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Public Server Cert</div>\n");
 websWrite(wp,"<textarea cols=\"60\" rows=\"10\" id=\"%s_8021xca\" name=\"%s_8021xca\">	</textarea><script language=\"javascript\">\n",prefix,prefix);
@@ -2645,12 +2649,17 @@ websWrite(wp,"var %s_8021xca = fix_cr( '%s' );\n",prefix,nvram_prefix_get("8021x
 websWrite(wp,"document.getElementById(\"%s_8021xca\").value = %s_8021xca;\n",prefix,prefix);
 websWrite(wp,"</script>\n");
 websWrite(wp,"</div>\n");
+websWrite(wp,"</div>\n");
 //tls authentication
 websWrite(wp,"<div id=\"idtls\">\n");
+websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Identity</div>\n");
 websWrite(wp,"<input name=\"%s_8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xuser",prefix));
+websWrite(wp,"</div>\n");
+websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Password</div>\n");
 websWrite(wp,"<input name=\"%s_8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xpasswd",prefix));
+websWrite(wp,"</div>\n");
 
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Public Server Certificate</div>\n");
