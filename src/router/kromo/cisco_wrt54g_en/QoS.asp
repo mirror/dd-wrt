@@ -157,8 +157,8 @@ function init() {
   								<legend><% tran("qos.legend"); %></legend>
   								<div class="setting">
 									<div class="label"><% tran("qos.srv"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_selmatch("wshaper_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_selmatch("wshaper_enable", "0", "checked"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.port"); %></div>

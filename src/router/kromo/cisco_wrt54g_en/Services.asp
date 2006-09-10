@@ -4,24 +4,25 @@
 
 document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
-function verify_unique_static_ip(F) {                                              
+function verify_unique_static_ip(F){                                              
 	static_leasenum = <% nvram_get("static_leasenum"); %>;
-                                                                                
+	
 	//Check all static leases
 	var static_leases=' ';                                                   
-    for(i=0;i < static_leasenum;i++) {                                               
-		var elem = F.elements["lease"+i+"_ip"];                                       
-		if (static_leases.indexOf(" " + elem.value + " ") == -1) {
-			static_leases += elem.value + " ";
-		} else {
-//			alert(elem.value + " is already defined as a static lease.");
-			alert(elem.value + errmsg.err62);
-			elem.focus();
-			return false;
-		}
+    for(i=0;i < static_leasenum;i++){
+    	var elem = F.elements["lease"+i+"_ip"];
+    	if (static_leases.indexOf(" " + elem.value + " ") == -1){
+    		static_leases += elem.value + " ";
+    	} else {
+    		alert(elem.value + errmsg.err62);
+    		elem.focus();
+    		
+    		return false;
+    	}
     }
+    
     return true;                                                            
-} 
+}
 
 function lease_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
