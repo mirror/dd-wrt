@@ -4282,7 +4282,7 @@ if (nvram_match(akm,"disabled"))
 else
     {	
     websWrite(wp,"Capture(share.enabled)");
-    websWrite(wp,"</script>&nbsp;(");
+    websWrite(wp,"</script>,&nbsp;");
     }
 if (nvram_match(akm,"psk"))
     websWrite(wp,"WPA Pre-shared Key");
@@ -4300,7 +4300,7 @@ if (nvram_match(akm,"radius"))
     websWrite(wp,"RADIUS");
 if (nvram_match(akm,"wep"))
     websWrite(wp,"WEP");
-websWrite(wp,")\n</div>\n");
+websWrite(wp,"\n</div>\n");
 
 }
 
