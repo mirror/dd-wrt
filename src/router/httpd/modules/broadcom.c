@@ -4199,6 +4199,11 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
+
+
+
+
+
 static void
 ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
 {
