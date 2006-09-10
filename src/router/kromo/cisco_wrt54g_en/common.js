@@ -881,6 +881,9 @@ function getTimeOut(clk, rest_default, flags) {
 	if (flags==1) {
 		coef = coef * 3;
 	}
+	if (flags==2) {
+		coef = coef * 1.5;
+	}
 	
 	this.wait_time = coef * wait_time * (125 / clk);
 	this.scroll_count = this.wait_time / 5 - 3;
