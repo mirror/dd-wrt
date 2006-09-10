@@ -1698,16 +1698,25 @@ _8021xprv
 */
 sprintf (n, "%s_8021xtype", prefix);
 copytonv (wp, n);
-sprintf (n, "%s_8021xuser", prefix);
+sprintf (n, "%s_tls8021xuser", prefix);
 copytonv (wp, n);
-sprintf (n, "%s_8021xpasswd", prefix);
+sprintf (n, "%s_tls8021xpasswd", prefix);
 copytonv (wp, n);
-sprintf (n, "%s_8021xca", prefix);
+sprintf (n, "%s_tls8021xca", prefix);
 copytonv (wp, n);
-sprintf (n, "%s_8021xpem", prefix);
+sprintf (n, "%s_tls8021xpem", prefix);
 copytonv (wp, n);
-sprintf (n, "%s_8021xprv", prefix);
+sprintf (n, "%s_tls8021xprv", prefix);
 copytonv (wp, n);
+
+sprintf (n, "%s_peap8021xuser", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_peap8021xpasswd", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_peap8021xca", prefix);
+copytonv (wp, n);
+
+
 #endif
 
   sprintf (n, "%s_crypto", prefix);
