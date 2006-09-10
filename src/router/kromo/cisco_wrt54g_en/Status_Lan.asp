@@ -25,21 +25,25 @@ function setDHCPTable() {
 	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-		row.insertCell(-1).innerHTML = val[i];
-		row.insertCell(-1).innerHTML = val[i + 1];
 		
-		var mac = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i];
+		
+		row.insertCell(-1).innerHTML = val[i+1];
+		
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		cellmac.innerHTML = mac;
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2]; + "') })");
+		cellmac.innerHTML = val[i+2];;
 
-		row.insertCell(-1).innerHTML = val[i + 3];
+		var cellbail = row.insertCell(-1);
+		cellbail.align = "center";
+		cellbail.innerHTML = val[i+3];
+		
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err58;
-		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i + 1] + "','" + mac + "') })");
+		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + mac + "') })");
 	}
 }
 
