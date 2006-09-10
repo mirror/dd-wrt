@@ -33,7 +33,7 @@ function setDHCPTable() {
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2]; + "') })");
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];;
 
 		var cellbail = row.insertCell(-1);
