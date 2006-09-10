@@ -140,7 +140,6 @@ int
 start_ddns (void)
 {
   int ret;
-  int i;
   FILE *fp;
 
   /* Get correct username, password and hostname */
