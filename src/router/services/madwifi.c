@@ -724,13 +724,13 @@ setupSupplicant (char *prefix)
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "ctrl_interface_group=0\n");
       fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
-    if (nvram_prefix_match("8021xtype",prefix,"tls"))
-    {
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
       fprintf (fp, "\tscan_ssid=1\n");
       fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
+    if (nvram_prefix_match("8021xtype",prefix,"tls"))
+    {
       fprintf (fp, "\teap=TLS\n");
       fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("8021xuser",prefix));
       sprintf (psk,"/tmp/%s",prefix);
@@ -754,11 +754,6 @@ setupSupplicant (char *prefix)
 
     if (nvram_prefix_match("8021xtype",prefix,"peap"))
     {
-      fprintf (fp, "network={\n");
-      sprintf (psk, "%s_ssid", prefix);
-      fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
-      fprintf (fp, "\tscan_ssid=1\n");
-      fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
       fprintf (fp, "\teap=PEAP\n");
       fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"");
       fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("8021xuser",prefix));
