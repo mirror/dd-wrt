@@ -64,6 +64,61 @@
 #endif
 
 
+
+#ifdef HAVE_MAGICBOX
+#include <sys/mman.h>
+
+#define GPIO0_OR   0x0700 /* rw, output */
+#define GPIO0_TCR  0x0704 /* rw, three-state control */
+#define GPIO0_ODR  0x0718 /* rw, open drain */
+#define GPIO0_IR   0x071c /* ro, input */
+#define GPIO0_BASE 0xef600000 /* page */
+
+#define GPIO_LED    0x20000000  /* GPIO1 */
+#define GPIO_BUTTON 0x40000000  /* GPIO2 */
+
+#define REG(buf, offset) ((unsigned int *)((void *)buf + offset))
+
+static unsigned int *page;
+static int fd;
+
+void init_gpio()
+{
+     void *start = 0;
+
+     fd = open("/dev/mem", O_RDWR);
+     if (fd < 0) {
+//	  syslog(LOG_ERR, "Can't open /dev/mem: %s", strerror(errno));
+	  exit(1);
+     }
+
+     page = mmap(start, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd,
+		 (off_t)GPIO0_BASE);
+     if (page == MAP_FAILED) {
+//	  syslog(LOG_ERR, "Can't mmap GPIO memory space: %s", strerror(errno));
+	  exit(1);
+     }
+
+     /* disable */
+     *REG(page, GPIO0_TCR) &= ~(GPIO_LED | GPIO_BUTTON);
+     /* enable led */
+     *REG(page, GPIO0_TCR) |= GPIO_LED | GPIO_BUTTON;
+     /* enable/disable(?) button */
+     *REG(page, GPIO0_TCR) &= ~GPIO_BUTTON;
+
+     *REG(page, GPIO0_IR) & GPIO_BUTTON;
+     *REG(page, GPIO0_IR) & GPIO_BUTTON;
+
+}
+int getbuttonstate()
+{
+return (*REG(page, GPIO0_IR) & GPIO_BUTTON)==0;
+
+}
+
+
+#endif
+
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
 static int count = 0;
@@ -179,6 +234,10 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
+#ifdef HAVE_MAGICBOX
+val = getbuttonstate();
+#else
+
   if ((fp = fopen (GPIO_FILE, "r")))
     {
 #ifdef HAVE_XSCALE
@@ -190,13 +249,15 @@ period_check (int sig)
     }
   else
     perror (GPIO_FILE);
-
+#endif
   DEBUG ("resetbutton: GPIO = 0x%x\n", val);
 
   int gpio = 0;
 
   int state = 0;
 #ifdef HAVE_XSCALE
+  state = val;
+#elif HAVE_MAGICBOX
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -247,6 +308,7 @@ period_check (int sig)
 		{
 		  printf ("resetbutton: factory default.\n");
 #ifndef HAVE_XSCALE
+#ifndef HAVE_MAGICBOX
 		  switch (brand)
 		    {
 		    case ROUTER_BUFFALO_WBR54G:
@@ -261,6 +323,7 @@ period_check (int sig)
 		      break;
 		    }
 #endif
+#endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
@@ -271,6 +334,7 @@ period_check (int sig)
 	}
     }
 #ifndef HAVE_XSCALE
+#ifndef HAVE_MAGICBOX
 
   else if (!(val & push) && push != 0x00)
     {
@@ -370,6 +434,7 @@ period_check (int sig)
 
     }
 #endif
+#endif
   else
     {
 
@@ -422,7 +487,9 @@ resetbutton_main (int argc, char *argv[])
       nvram_set ("resetbutton_enable", "0");
       return 0;
     }
-
+#ifdef HAVE_MAGICBOX
+   init_gpio();
+#endif
   /* Run it under background */
   switch (fork ())
     {

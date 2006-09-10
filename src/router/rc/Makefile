@@ -65,6 +65,8 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
+OBJS += ../wireless-tools/libiw.so.29 
+
 endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON

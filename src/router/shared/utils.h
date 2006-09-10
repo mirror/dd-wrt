@@ -98,7 +98,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WHRAM54G54 0x170f
 
 //Magicbox PowerPC board
-#define ROUTER_BOARD_MAGICBOX 0x180f
+#define ROUTER_BOARD_MAGICBOX 0x1801
 
 #define NVROUTER "DD_BOARD"
 
