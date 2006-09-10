@@ -178,7 +178,6 @@ struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-
 static int
 getsocket (void)
 {
@@ -221,8 +220,10 @@ double freq;
 int channel;
 strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 ioctl(getsocket(),SIOCGIWFREQ, &wrq);
-freq = iw_freq2float(&(wrq.u.freq));
-channel = ieee80211_mhz2ieee((u_int)freq);
+freq= ((double) wrq.u.freq.m) * pow(10,wrq.u.freq.e);
+freq/=1000000;
+cprintf("wifi channel %f\n",freq);
+channel = ieee80211_mhz2ieee(freq);
 
 return channel;
 }
