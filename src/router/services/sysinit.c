@@ -370,9 +370,17 @@ start_restore_defaults (void)
 #elif HAVE_XSCALE
   linux_overrides = generic;
   int brand = getRouterBrand ();
+      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+        {
+	restore_defaults = 1;
+	}
 #elif HAVE_MAGICBOX
   linux_overrides = generic;
   int brand = getRouterBrand ();
+      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+        {
+	restore_defaults = 1;
+	}
 #elif HAVE_GEMTEK
   linux_overrides = generic;
   int brand = getRouterBrand ();
@@ -488,6 +496,14 @@ start_restore_defaults (void)
 #ifdef HAVE_XSCALE
 if (restore_defaults)
     eval("rm","-f","/etc/nvram/*"); // delete nvram database
+#endif
+#ifdef HAVE_MAGICBOX
+if (restore_defaults)
+    {
+    eval("rm","-f","/tmp/nvram/*"); // delete nvram database
+    eval("rm","-f","/tmp/nvram/.lock"); // delete nvram database
+    eval("erase","nvram");	
+    }
 #endif
   int nvcnt = 0;
  
