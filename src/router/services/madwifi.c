@@ -732,23 +732,23 @@ setupSupplicant (char *prefix)
     if (nvram_prefix_match("8021xtype",prefix,"tls"))
     {
       fprintf (fp, "\teap=TLS\n");
-      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("8021xuser",prefix));
+      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("tls8021xuser",prefix));
       sprintf (psk,"/tmp/%s",prefix);
       mkdir(psk);
       sprintf (psk,"/tmp/%s/ca.pem",prefix);
-      sprintf (ath,"%s_8021xca",prefix);
+      sprintf (ath,"%s_tls8021xca",prefix);
       write_nvram (psk, ath);
       sprintf (psk,"/tmp/%s/user.pem",prefix);
-      sprintf (ath,"%s_8021xpem",prefix);
+      sprintf (ath,"%s_tls8021xpem",prefix);
       write_nvram (psk, ath);
 
       sprintf (psk,"/tmp/%s/user.prv",prefix);
-      sprintf (ath,"%s_8021xprv",prefix);
+      sprintf (ath,"%s_tls8021xprv",prefix);
       write_nvram (psk, ath);
       fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n",prefix);
       fprintf (fp, "\tclient_cert=/tmp/%s/user.pem\n",prefix);
       fprintf (fp, "\tprivate_key=/tmp/%s/user.prv\n",prefix);
-      fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",nvram_prefix_get("8021xpasswd",prefix));
+      fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",nvram_prefix_get("tls8021xpasswd",prefix));
       fprintf (fp, "\teapol_flags=3\n");
      }
 
@@ -756,12 +756,12 @@ setupSupplicant (char *prefix)
     {
       fprintf (fp, "\teap=PEAP\n");
       fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"");
-      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("8021xuser",prefix));
-      fprintf (fp, "\tpassword=\"%s\"\n",nvram_prefix_get("8021xpasswd",prefix));
+      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("peap8021xuser",prefix));
+      fprintf (fp, "\tpassword=\"%s\"\n",nvram_prefix_get("peap8021xpasswd",prefix));
       sprintf (psk,"/tmp/%s",prefix);
       mkdir(psk);
       sprintf (psk,"/tmp/%s/ca.pem",prefix);
-      sprintf (ath,"%s_8021xca",prefix);
+      sprintf (ath,"%s_peap8021xca",prefix);
       write_nvram (psk, ath);
       fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n",prefix);
      }
