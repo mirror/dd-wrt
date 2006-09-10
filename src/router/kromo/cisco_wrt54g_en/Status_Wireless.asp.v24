@@ -137,7 +137,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Xmit</div>
-									<span id="wl_xmit"><% get_txpower(); %> mW</span>&nbsp;
+									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.rates"); %></div>
