@@ -1887,7 +1887,7 @@ show_virtualssid (webs_t wp, char *prefix)
 		websWrite (wp, "</div>\n");
 		
 		websWrite (wp, "<script>\n");
-		websWrite (wp, "show_layer_ext(document.wireless.elements[\"%s_bridged\"], %s_idnetvifs, %s);\n",
+		websWrite (wp, "show_layer_ext(document.wireless.elements[\"%s_bridged\"], \"%s_idnetvifs\", %s);\n",
 			var, var, nvram_match (ssid, "1") ? "true" : "false");
 		websWrite (wp, "</script>\n");
 
