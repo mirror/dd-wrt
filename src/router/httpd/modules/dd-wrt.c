@@ -2613,7 +2613,6 @@ show_radius (webs_t wp, char *prefix)
 }
 
 
-
 #ifdef HAVE_MADWIFI
 void
 show_80211X (webs_t wp, char *prefix)
@@ -2645,7 +2644,6 @@ websWrite(wp,"<textarea cols=\"60\" rows=\"10\" id=\"%s_8021xca\" name=\"%s_8021
 websWrite(wp,"var %s_8021xca = fix_cr( '%s' );\n",prefix,nvram_prefix_get("8021xca",prefix));
 websWrite(wp,"document.getElementById(\"%s_8021xca\").value = %s_8021xca;\n",prefix,prefix);
 websWrite(wp,"</script>\n");
-websWrite(wp,"</div>\n");
 websWrite(wp,"</div>\n");
 //tls authentication
 websWrite(wp,"<div id=\"idtls\">\n");

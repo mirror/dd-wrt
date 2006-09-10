@@ -740,7 +740,7 @@ if(_ae==1){
 _b1=_b1*3;
 }
 if(_ae==2){
-_b1=_b1*1.5;
+_b1=_b1*1.8;
 }
 this.wait_time=_b1*_af*(125/clk);
 this.scroll_count=this.wait_time/5-3;
