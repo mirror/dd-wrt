@@ -4271,7 +4271,7 @@ char ssid[64];
 sprintf(akm,"%s_akm",prefix);
 sprintf(ssid,"%s_ssid",prefix);
 websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",prefix);
+websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",prefix);
 websWrite(wp,"<script type=\"text/javascript\">");
 if (nvram_match(akm,"disabled"))
     {
@@ -4282,7 +4282,7 @@ if (nvram_match(akm,"disabled"))
 else
     {	
     websWrite(wp,"Capture(share.enabled)");
-    websWrite(wp,"</script>,&nbsp;");
+    websWrite(wp,"</script>&nbsp;(");
     }
 if (nvram_match(akm,"psk"))
     websWrite(wp,"WPA Pre-shared Key");
@@ -4300,7 +4300,7 @@ if (nvram_match(akm,"radius"))
     websWrite(wp,"RADIUS");
 if (nvram_match(akm,"wep"))
     websWrite(wp,"WEP");
-websWrite(wp,"\n</div>\n");
+websWrite(wp,")\n</div>\n");
 
 }
 
