@@ -3301,6 +3301,8 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 
+#ifndef HAVE_MADWIFI
+
 void
 ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -3325,6 +3327,24 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 
+#else
+
+void
+ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *dev = NULL;
+  int channel = wifi_getchannel("ath0");
+  if (channel > 0)
+    {
+      websWrite (wp, "%d", channel);
+    }
+  else
+    //websWrite (wp, "unknown");
+    websWrite (wp, "%s", live_translate ("share.unknown"));
+  return;
+
+}
+#endif
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
