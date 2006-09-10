@@ -194,6 +194,39 @@ getsocket (void)
 }
 
 
+double wifi_getrate(char *ifname)
+{
+struct iwreq		wrq;
+strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+ioctl(getsocket(), SIOCGIWRATE, &wrq);
+return wrq.u.bitrate.value;
+}
+
+static u_int
+ieee80211_mhz2ieee (u_int freq)
+{
+  if (freq == 2484)
+    return 14;
+  if (freq < 2484)
+    return (freq - 2407) / 5;
+  if (freq < 5000)
+    return 15 + ((freq - 2512) / 20);
+  return (freq - 5000) / 5;
+}
+
+int wifi_getchannel(char *ifname)
+{
+struct iwreq		wrq;
+double freq;
+int channel;
+strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+ioctl(getsocket(),SIOCGIWFREQ, &wrq);
+freq = iw_freq2float(&(wrq.u.freq));
+channel = ieee80211_mhz2ieee((u_int)freq);
+
+return channel;
+}
+
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
 do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
@@ -274,17 +307,6 @@ struct wifi_channels
   int freq;
 };
 
-static u_int
-ieee80211_mhz2ieee (u_int freq)
-{
-  if (freq == 2484)
-    return 14;
-  if (freq < 2484)
-    return (freq - 2407) / 5;
-  if (freq < 5000)
-    return 15 + ((freq - 2512) / 20);
-  return (freq - 5000) / 5;
-}
 
 static struct wifi_channels *
 list_channelsext (const char *ifname, int allchans)
