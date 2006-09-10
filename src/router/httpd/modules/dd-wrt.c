@@ -1158,28 +1158,28 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 	     "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n");
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");</script>\n",
-	     selmatch ("security_mode", "disabled", "selected"));
+	     selmatch ("security_mode", "disabled", "selected=\\\"selected\\\""));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
-	     selmatch ("security_mode", "psk", "selected"));
+	     selmatch ("security_mode", "psk", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
-	     selmatch ("security_mode", "wpa", "selected"));
+	     selmatch ("security_mode", "wpa", "selected=\"selected\""));
   if (!nvram_match ("wl0_mode", "wet") && nvram_match ("wl_wds1_enable", "0") && nvram_match ("wl_wds2_enable", "0") && nvram_match ("wl_wds3_enable", "0") && nvram_match ("wl_wds4_enable", "0") && nvram_match ("wl_wds5_enable", "0") && nvram_match ("wl_wds6_enable", "0") && nvram_match ("wl_wds7_enable", "0") && nvram_match ("wl_wds8_enable", "0") && nvram_match ("wl_wds9_enable", "0") && nvram_match ("wl_wds10_enable", "0"))	//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
     {
       websWrite (wp,
 		 "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
 		 selmatch ("security_mode", "psk2", "selected"));
       websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
-		 selmatch ("security_mode", "wpa2", "selected"));
+		 selmatch ("security_mode", "wpa2", "selected=\"selected\""));
     }
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
 	     selmatch ("security_mode", "psk psk2", "selected"));
   websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
-	     selmatch ("security_mode", "wpa wpa2", "selected"));
+	     selmatch ("security_mode", "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
-	     selmatch ("security_mode", "radius", "selected"));
+	     selmatch ("security_mode", "radius", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
-	     selmatch ("security_mode", "wep", "selected"));
+	     selmatch ("security_mode", "wep", "selected=\"selected\""));
   websWrite (wp, "</div>\n");
   ej_show_wpa_setting (eid, wp, argc, argv);
   return;
@@ -1239,37 +1239,38 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
 //rep(p2,'X','.');
 //websWrite (wp, "<input type=\"hidden\" name=\"%s_security_mode\"/>\n",p2);
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Security Mode</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n");
   websWrite (wp,
 	     "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
 	     prefix, prefix, prefix);
-  websWrite (wp, "<option value=\"disabled\" %s>Disable</option>\n",
-	     selmatch (var, "disabled", "selected"));
+	websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");</script>\n",
+	     selmatch (var, "disabled", "selected=\\\"selected\\\""));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
-	     selmatch (var, "psk", "selected"));
+	     selmatch (var, "psk", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
-	     selmatch (var, "wpa", "selected"));
+	     selmatch (var, "wpa", "selected=\"selected\""));
   websWrite (wp,
 	     "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
-	     selmatch (var, "psk2", "selected"));
+	     selmatch (var, "psk2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
-	     selmatch (var, "wpa2", "selected"));
+	     selmatch (var, "wpa2", "selected=\"selected\""));
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
-	     selmatch (var, "psk psk2", "selected"));
+	     selmatch (var, "psk psk2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
-	     selmatch (var, "wpa wpa2", "selected"));
+	     selmatch (var, "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
-	     selmatch (var, "radius", "selected"));
+	     selmatch (var, "radius", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
-	     selmatch (var, "wep", "selected"));
+	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_MADWIFI
 char sta[32];
 sprintf(sta, "%s_mode",prefix);
 if (nvram_match(sta,"sta"))
     {
   websWrite (wp, "<option value=\"8021X\" %s>802.1x</option></select>\n",
-	     selmatch (var, "8021X", "selected"));
+	     selmatch (var, "8021X", "selected=\"selected\""));
     }
 #endif
 
@@ -1298,7 +1299,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
   websWrite (wp,
-	     "<legend>Physical Interface %s SSID [%s] HWAddr [%s]</legend>\n",
+	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
   show_security_prefix (eid, wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
@@ -1308,7 +1309,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
     websWrite (wp, "<br />\n");
     websWrite (wp, "<fieldset>\n");
     //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-    websWrite (wp, "<legend>Virtual Interface %s SSID [%s]</legend>\n", var,
+    websWrite (wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n", var,
 	       nvram_get (ssid));
     rep (var, '.', 'X');
     show_security_prefix (eid, wp, argc, argv, var);
@@ -1784,7 +1785,7 @@ show_virtualssid (webs_t wp, char *prefix)
 //    sprintf (mac, "%s_hwaddr", var);  ?? doesn't exists
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp,
-	       "<fieldset><legend>Interface %s SSID [%s]</legend>\n",
+	       "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
 	       var, nvram_safe_get (ssid));
 //             var, nvram_safe_get (ssid), nvram_safe_get (mac));
     websWrite (wp, "<div class=\"setting\">\n");
@@ -1836,15 +1837,18 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,
-	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
-	       var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
+	       var, var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
     websWrite (wp,
-	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
-	       var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
+	       var, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
     if (nvram_match (ssid, "0"))
       {
 //      websWrite (wp, "<legend>Network Settings</legend>\n");
+
+	websWrite (wp, "<div id=\"%s_idnetvifs\">\n",
+				var);
 	websWrite (wp, "<div class=\"setting\">\n");
 	websWrite (wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
@@ -1882,6 +1886,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	websWrite (wp,
 		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 3));
+	websWrite (wp, "</div>\n");
 	websWrite (wp, "</div>\n");
       }
     websWrite (wp, "</fieldset><br />\n");
@@ -2241,7 +2246,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script></h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
-	     "<legend>Interface %s - SSID [%s] HWAddr [%s]</legend>\n",
+	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
   websWrite (wp, "<div>\n");
   char power[16];
@@ -2401,7 +2406,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
-
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label13)</script></div><select name=\"%s\" >\n",
 	     wl_rxantenna);
@@ -2532,7 +2536,7 @@ show_preshared (webs_t wp, char *prefix)
   cprintf ("show preshared");
   sprintf (var, "%s_crypto", prefix);
   websWrite (wp, "<div><div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">WPA Algorithms</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
   websWrite (wp, "<select name=\"%s_crypto\">\n", prefix);
   websWrite (wp, "<option value=\"tkip\" %s>TKIP</option>\n",
 	     selmatch (var, "tkip", "selected=\"selected\""));
