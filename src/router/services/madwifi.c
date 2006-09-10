@@ -503,9 +503,9 @@ deconfigure_single (int count)
     {
       eval ("wlanconfig", var, "destroy");
     }
-//  char buf[16];
-//  sprintf (buf, "wifi%d", count);
-//  eval ("ifconfig", buf, "down");
+  char buf[16];
+  sprintf (buf, "wifi%d", count);
+  eval ("ifconfig", buf, "up");
 }
 
 
@@ -755,7 +755,7 @@ setupSupplicant (char *prefix)
     if (nvram_prefix_match("8021xtype",prefix,"peap"))
     {
       fprintf (fp, "\teap=PEAP\n");
-      fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"");
+      fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"\n");
       fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("peap8021xuser",prefix));
       fprintf (fp, "\tpassword=\"%s\"\n",nvram_prefix_get("peap8021xpasswd",prefix));
       sprintf (psk,"/tmp/%s",prefix);

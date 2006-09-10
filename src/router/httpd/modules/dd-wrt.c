@@ -2629,8 +2629,8 @@ _8021xprv
 */
 websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">XSupplicant Type</div>\n");
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" %s onclick=\"enable_idpeap()\" /> Peap &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"peap")?"enabled":"");
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" %s onclick=\"enable_idtls()\" /> TLS &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"tls")?"enabled":"");
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap()\" %s /> Peap &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"peap")?"checked":"");
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls()\" %s /> TLS &nbsp;\n",prefix,nvram_prefix_match("8021xtype",prefix,"tls")?"checked":"");
 websWrite(wp,"</div>\n");
 //peap authentication
 websWrite(wp,"<div id=\"idpeap\">\n");
