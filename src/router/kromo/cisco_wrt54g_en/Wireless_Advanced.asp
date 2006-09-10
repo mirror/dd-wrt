@@ -259,7 +259,7 @@ addEvent(window, "load", function() {
 									<div class="label"><% tran("wl_adv.label4"); %></div>
 									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %>><% tran("share.auto"); %></input>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %>><% tran("share.disable"); %></input>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label5"); %></div>
@@ -376,7 +376,7 @@ addEvent(window, "load", function() {
 									<div class="label"><% tran("wl_adv.label18"); %></div>
 									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.enable + ")")</script></span>
 								</div>
 								<div id="idwl_wme">
 									<div class="setting">
