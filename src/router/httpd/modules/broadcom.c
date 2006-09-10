@@ -4313,9 +4313,9 @@ static void
 ej_get_txpower (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-websWrite(wp,"%s",nvram_safe_get("txpwr"));
+websWrite(wp,"%s mW",nvram_safe_get("txpwr"));
 #else
-websWrite(wp,"%s",nvram_safe_get("ath0_txpwr"));
+websWrite(wp,"%s mW",nvram_safe_get("ath0_txpwr"));
 #endif
 }
 
