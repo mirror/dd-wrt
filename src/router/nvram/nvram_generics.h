@@ -109,8 +109,14 @@ nvram_invmatch(char *name, char *invmatch) {
 char *nvram_prefix_get(const char *name, const char *prefix)
 {
 char p[64];
-sprintf(p,"%s_%s\n",prefix,name);
+sprintf(p,"%s_%s",prefix,name);
 return nvram_safe_get(p);
+}
+int nvram_prefix_match(const char *name, const char *prefix,char *match)
+{
+char p[64];
+sprintf(p,"%s_%s",prefix,name);
+return nvram_match(p,match);
 }
 
 char *nvram_safe_get(const char *name)
