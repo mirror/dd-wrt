@@ -2637,11 +2637,9 @@ websWrite(wp,"<div id=\"idpeap\">\n");
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">User</div>\n");
 websWrite(wp,"<input name=\"%s_8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xuser",prefix));
-websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Password</div>\n");
 websWrite(wp,"<input name=\"%s_8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xpasswd",prefix));
-websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Public Server Cert</div>\n");
 websWrite(wp,"<textarea cols=\"60\" rows=\"10\" id=\"%s_8021xca\" name=\"%s_8021xca\">	</textarea><script language=\"javascript\">\n",prefix,prefix);
@@ -2653,13 +2651,11 @@ websWrite(wp,"</div>\n");
 //tls authentication
 websWrite(wp,"<div id=\"idtls\">\n");
 websWrite(wp,"<div class=\"setting\">\n");		
-websWrite(wp,"<div class=\"label\">Identity</div>\n");
+websWrite(wp,"<div class=\"label\">User</div>\n");
 websWrite(wp,"<input name=\"%s_8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xuser",prefix));
-websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Password</div>\n");
 websWrite(wp,"<input name=\"%s_8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xpasswd",prefix));
-websWrite(wp,"</div>\n");
 
 websWrite(wp,"<div class=\"setting\">\n");		
 websWrite(wp,"<div class=\"label\">Public Server Certificate</div>\n");
