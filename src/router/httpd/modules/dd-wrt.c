@@ -2641,7 +2641,7 @@ websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">Password</div>\n");
 websWrite(wp,"<input name=\"%s_8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("8021xpasswd",prefix));
 websWrite(wp,"<div class=\"setting\">\n");		
-websWrite(wp,"<div class=\"label\">Public Server Cert</div>\n");
+websWrite(wp,"<div class=\"label\">Public Server Certificate</div>\n");
 websWrite(wp,"<textarea cols=\"60\" rows=\"10\" id=\"%s_8021xca\" name=\"%s_8021xca\">	</textarea><script language=\"javascript\">\n",prefix,prefix);
 websWrite(wp,"var %s_8021xca = fix_cr( '%s' );\n",prefix,nvram_prefix_get("8021xca",prefix));
 websWrite(wp,"document.getElementById(\"%s_8021xca\").value = %s_8021xca;\n",prefix,prefix);
