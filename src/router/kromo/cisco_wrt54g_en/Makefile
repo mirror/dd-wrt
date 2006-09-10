@@ -14,18 +14,18 @@ install:
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
-#	cp common_micro.js $(INSTALLDIR)/www/common.js
-	cp common.compressed.js $(INSTALLDIR)/www/common.js
+	cp common_micro.js $(INSTALLDIR)/www/common.js
+#	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
-	rm -f $(INSTALLDIR)/www/common.compressed.js
+#	rm -f $(INSTALLDIR)/www/common.compressed.js
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
-#	cp common_micro.js $(INSTALLDIR)/www/common.js
-	cp common.compressed.js $(INSTALLDIR)/www/common.js
+	cp common_micro.js $(INSTALLDIR)/www/common.js
+#	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
-	rm -f $(INSTALLDIR)/www/common.compressed.js
+#	rm -f $(INSTALLDIR)/www/common.compressed.js
 endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
@@ -33,9 +33,9 @@ endif
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 	cp -a help $(INSTALLDIR)/www
-	cp common.compressed.js $(INSTALLDIR)/www/common.js
+#	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
-	rm -f $(INSTALLDIR)/www/common.compressed.js
+#	rm -f $(INSTALLDIR)/www/common.compressed.js
 endif
 endif
 	cp -a lang_pack $(INSTALLDIR)/www
