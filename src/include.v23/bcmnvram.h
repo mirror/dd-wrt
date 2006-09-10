@@ -95,6 +95,10 @@ extern void nvram_safe_unset(const char *name);
 
 extern void nvram_safe_set(const char *name, char *value);
 
+extern char *nvram_prefix_get(const char *name, const char *prefix);
+
+extern int nvram_prefix_match(const char *name, const char *prefix,char *match);
+
 /*
  * Set the value of an NVRAM variable. The name and value strings are
  * copied into private storage. Pointers to previously set values
