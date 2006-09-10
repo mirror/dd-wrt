@@ -495,7 +495,6 @@ deconfigure_single (int count)
   sprintf (dev, "ath%d", count);
   br_del_interface ("br0", dev);
   fprintf(stderr,"deconfigure %s\n",dev);
-//  eval ("ifconfig", dev, "down");
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -503,9 +502,6 @@ deconfigure_single (int count)
     {
       eval ("wlanconfig", var, "destroy");
     }
-  char buf[16];
-  sprintf (buf, "wifi%d", count);
-  eval ("ifconfig", buf, "up");
 }
 
 
@@ -1049,7 +1045,7 @@ configure_single (int count)
   sprintf (athmac, "ath%d_hwaddr", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
-
+  eval("ifconfig",wif,"up");
   sprintf (net, "%s_net_mode", dev);
   if (nvram_match (net, "disabled"))
     return;

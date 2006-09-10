@@ -816,7 +816,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath4_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath4_radius_key", "", 0},	/* RADIUS shared secret */
-
   {"ath5_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"ath5_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"ath5_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
@@ -824,6 +823,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath5_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath5_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath5_radius_key", "", 0},	/* RADIUS shared secret */
+  {"ath0_8021xtype","peap",0},
+  {"ath1_8021xtype","peap",0},
+  {"ath2_8021xtype","peap",0},
+  {"ath3_8021xtype","peap",0},
+  {"ath4_8021xtype","peap",0},
+  {"ath5_8021xtype","peap",0},
 #endif
   {"radius_override", "1", 0},	//overrides radius if server is unavailable
 #ifdef HAVE_SKYTEL
