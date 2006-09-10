@@ -1687,6 +1687,29 @@ save_prefix (webs_t wp, char *prefix)
   if (strcmp (prefix, "wl0"))
     rep (p2, '.', 'X');
 
+
+#ifdef HAVE_MADWIFI
+/*_8021xtype
+_8021xuser
+_8021xpasswd
+_8021xca
+_8021xpem
+_8021xprv
+*/
+sprintf (n, "%s_8021xtype", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_8021xuser", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_8021xpasswd", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_8021xca", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_8021xpem", prefix);
+copytonv (wp, n);
+sprintf (n, "%s_8021xprv", prefix);
+copytonv (wp, n);
+#endif
+
   sprintf (n, "%s_crypto", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_wpa_psk", prefix);
