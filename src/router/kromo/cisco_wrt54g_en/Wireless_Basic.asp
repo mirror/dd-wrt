@@ -173,11 +173,6 @@ addEvent(window, "load", function() {
 	}
 	var wl_net_mode = "<% nvram_get("wl0_net_mode"); %>";
 	SelWL(wl_net_mode,document.wireless);
-	
-	for (i=1; i<16; i++){
-		var wl0_b = "wl0."+i+"_bridged";
-		var wl0_net = "wl0."+i+"_idnetvifs";
-		if(document.wireless.elements[wl0_b]) show_layer_ext(document.wireless.elements[wl0_b], wl0_net, <% nvram_else_match(wl0_b, '1', '1', '0'); %> == 0);
 	}
 });
 
