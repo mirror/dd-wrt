@@ -4,7 +4,7 @@
 {lan_ip::<% nvram_get("lan_ipaddr"); %>}
 {wl_channel::<% get_curchannel(); %>}
 {wl_radio::<% get_radio_state(); %>}
-{wl_xmit::<% get_txpower(); %> mW}
+{wl_xmit::<% get_txpower(); %>}
 {wl_rate::<% get_currate(); %>}
 {packet_info::<% wl_packet_get(); %>}
 {wl_mode_short::<% nvram_get("wl0_mode"); %>}
