@@ -1192,7 +1192,7 @@ static int sg_mmap(struct file * filp, struct vm_area_struct *vma)
     	sg_rb_correct4mmap(rsv_schp, 1);  /* do only once per fd lifetime */
 	sfp->mmap_called = 1;
     }
-    vma->vm_flags |= (VM_RESERVED | VM_IO);
+    vma->vm_flags |= VM_RESERVED;
     vma->vm_private_data = sfp;
     vma->vm_ops = &sg_mmap_vm_ops;
     return 0;
