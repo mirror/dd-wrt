@@ -5741,7 +5741,7 @@ ej_css_include (int eid, webs_t wp, int argc, char_t ** argv)
   do_file ("style/common.css", wp);
 
   if (style == NULL || strlen (style) == 0)
-    do_file ("style/cyan/style.css", wp);
+    do_file ("style/elegant/style.css", wp);
   else
     {
 
