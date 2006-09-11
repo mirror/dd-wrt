@@ -865,6 +865,10 @@ config SONYPI
 	  To compile this driver as a module, choose M here: the
 	  module will be called sonypi.
 
+config IBM_OCP_GPIO
+	tristate "IBM GPIO Controler"
+	depends on IBM_OCP
+	
 config TANBAC_TB0219
 	tristate "TANBAC TB0219 base board support"
 	depends TANBAC_TB022X
