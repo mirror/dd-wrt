@@ -18,16 +18,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * $Id: wlcompat.c 2529 2005-11-19 01:07:28Z nbd $
+ * $Id: wlcompat.c 4735 2006-09-03 04:54:21Z nbd $
  */
 
 
 #include <linux/config.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/init.h>
 #include <linux/if_arp.h>
 #include <asm/uaccess.h>
 #include <linux/wireless.h>
+#include <linux/timer.h>
 
 #include <net/iw_handler.h>
 #include <linux/wlioctl.h>
@@ -35,6 +37,7 @@
 static struct net_device *dev;
 static unsigned short bss_force;
 static struct iw_statistics wstats;
+static int random = 1;
 char buf[WLC_IOCTL_MAXLEN];
 
 /* The frequency of each channel in MHz */
@@ -43,6 +46,8 @@ const long channel_frequency[] = {
 	2447, 2452, 2457, 2462, 2467, 2472, 2484
 };
 #define NUM_CHANNELS ( sizeof(channel_frequency) / sizeof(channel_frequency[0]) )
+
+#define RNG_POLL_FREQ	20
 
 typedef struct internal_wsec_key {
 	uint8 index;		// 0x00
@@ -183,45 +188,11 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 		range->max_frag = 2346;
 
 	range->txpower_capa = IW_TXPOW_DBM;
-/*	range->encoding_size[0] = WEP1_KEY_SIZE;
-	range->encoding_size[1] = WEP128_KEY_SIZE;
-#if WIRELESS_EXT > 17
-	range->encoding_size[2] = TKIP_KEY_SIZE;
-#else
-	range->encoding_size[2] = 0;
-	range->encoding_size[3] = AES_KEY_SIZE;
 
-
-
-	
-#if WIRELESS_EXT > 17
-	range->enc_capa = IW_ENC_CAPA_WPA;
-	range->enc_capa |= IW_ENC_CAPA_CHIPHER_TKIP;
-	range->enc_capa |= IW_ENC_CAPA_CHIPHER_CCMP;
-	range->enc_capa |= IW_ENC_CAPA_WPA2;
-#endif	
-*/	
 	return 0;
 }
-/*
-#if WIRELESS_EXT > 17
-static bool
-ie_is_wpa_ie(uint8 **wpaie, uint8 **tlvs, int *tlvs_len)
-{
-	uint8 *ie = *wpaie;
 
-	if ((ie[1] >= 6) && 
-		!bcmp((const void *)&ie[2], (const void *)(WPA_OUI "\x01"), 4)) {
-		return TRUE;
-	}
 
-	ie += ie[1] + 2;
-	*tlvs_len -= (int)ie - (int)*tlvs;
-	*tlvs = ie;
-	return FALSE;
-}
-#endif
-*/
 static int wlcompat_set_scan(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
@@ -1011,16 +982,35 @@ static int new_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd) {
 	return ret;
 }
 
+static struct timer_list rng_timer;
+
+static void rng_timer_tick(unsigned long n)
+{
+	struct net_device *dev = (struct net_device *) n;
+	u16 data[4];
+	int i, ret;
+	
+	ret = 0;
+	for (i = 0; i < 3; i++) {
+		ret |= wl_get_val(dev, "rand", &data[i], sizeof(u16));
+	}
+	if (!ret)
+		batch_entropy_store(*((u32 *) &data[0]), *((u32 *) &data[2]), (jiffies % 255));
+
+	mod_timer(&rng_timer, jiffies + (HZ/RNG_POLL_FREQ));
+}
+
+
 static int __init wlcompat_init()
 {
 	int found = 0, i;
-	char *devname = "eth0";
+	char devname[4] = "wl0";
 	bss_force = 0;
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
 		if ((dev->wireless_handlers == NULL) && ((wl_ioctl(dev, WLC_GET_MAGIC, &i, sizeof(i)) == 0) && i == WLC_IOCTL_MAGIC))
 			found = 1;
-		devname[3]++;
+		devname[2]++;
 	}
 	
 	if (!found) {
@@ -1033,6 +1023,14 @@ static int __init wlcompat_init()
 	dev->do_ioctl = new_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	dev->get_wireless_stats = wlcompat_get_wireless_stats;
+
+	if (random) {
+		init_timer(&rng_timer);
+		rng_timer.function = rng_timer_tick;
+		rng_timer.data = (unsigned long) dev;
+		rng_timer_tick((unsigned long) dev);
+	}
+	
 #ifdef DEBUG
 	printk("broadcom driver private data: 0x%08x\n", dev->priv);
 #endif
@@ -1041,6 +1039,8 @@ static int __init wlcompat_init()
 
 static void __exit wlcompat_exit()
 {
+	if (random)
+		del_timer(&rng_timer);
 	dev->get_wireless_stats = NULL;
 	dev->wireless_handlers = NULL;
 	dev->do_ioctl = old_ioctl;
@@ -1051,5 +1051,6 @@ EXPORT_NO_SYMBOLS;
 MODULE_AUTHOR("openwrt.org");
 MODULE_LICENSE("GPL");
 
+module_param(random, int, 0);
 module_init(wlcompat_init);
 module_exit(wlcompat_exit);

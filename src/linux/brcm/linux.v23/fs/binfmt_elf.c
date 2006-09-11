@@ -86,7 +86,7 @@ static struct linux_binfmt elf_format = {
 	elf_core_dump, ELF_EXEC_PAGESIZE
 };
 
-#define BAD_ADDR(x)	((unsigned long)(x) > TASK_SIZE)
+#define BAD_ADDR(x)	((unsigned long)(x) >= TASK_SIZE)
 
 static int set_brk(unsigned long start, unsigned long end)
 {
@@ -354,7 +354,7 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 	     * <= p_memsize so it is only necessary to check p_memsz.
 	     */
 	    k = load_addr + eppnt->p_vaddr;
-	    if (k > TASK_SIZE || eppnt->p_filesz > eppnt->p_memsz ||
+	    if (BAD_ADDR(k) || eppnt->p_filesz > eppnt->p_memsz ||
 		eppnt->p_memsz > TASK_SIZE || TASK_SIZE - eppnt->p_memsz < k) {
 	        error = -ENOMEM;
 		goto out_close;
@@ -798,7 +798,7 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 		 * allowed task size. Note that p_filesz must always be
 		 * <= p_memsz so it is only necessary to check p_memsz.
 		 */
-		if (k > TASK_SIZE || elf_ppnt->p_filesz > elf_ppnt->p_memsz ||
+		if (BAD_ADDR(k) || elf_ppnt->p_filesz > elf_ppnt->p_memsz ||
 		    elf_ppnt->p_memsz > TASK_SIZE ||
 		    TASK_SIZE - elf_ppnt->p_memsz < k) {
 			/* set_brk can never work.  Avoid overflows.  */
@@ -850,10 +850,13 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 						    interpreter,
 						    &interp_load_addr);
 		if (BAD_ADDR(elf_entry)) {
-			printk(KERN_ERR "Unable to load interpreter %.128s\n",
-				elf_interpreter);
+	     		// FIXME - ratelimit this before re-enabling
+			// printk(KERN_ERR "Unable to load interpreter %.128s\n",
+			//        elf_interpreter);
+
 			force_sig(SIGSEGV, current);
-			retval = IS_ERR((void *)elf_entry) ? PTR_ERR((void *)elf_entry) : -ENOEXEC;
+			retval = IS_ERR((void *)elf_entry) ?
+					(int)elf_entry : -EINVAL;
 			goto out_free_dentry;
 		}
 		reloc_func_desc = interp_load_addr;
@@ -861,6 +864,12 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 		allow_write_access(interpreter);
 		fput(interpreter);
 		kfree(elf_interpreter);
+	} else {
+		if (BAD_ADDR(elf_entry)) {
+			force_sig(SIGSEGV, current);
+			retval = -EINVAL;
+			goto out_free_dentry;
+		}
 	}
 
 	kfree(elf_phdata);
