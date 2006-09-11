@@ -86,7 +86,7 @@ int sun_partition(struct gendisk *hd, struct block_device *bdev, unsigned long f
 	spc = be16_to_cpu(label->ntrks) * be16_to_cpu(label->nsect);
 	for (i = 0; i < 8; i++, p++) {
 		unsigned long st_sector;
-		int num_sectors;
+		unsigned int num_sectors;
 
 		st_sector = first_sector + be32_to_cpu(p->start_cylinder) * spc;
 		num_sectors = be32_to_cpu(p->num_sectors);
