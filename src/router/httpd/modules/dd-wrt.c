@@ -1843,8 +1843,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
 	       var, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
-    if (nvram_match (ssid, "0"))
-      {
+//    if (nvram_match (ssid, "0")) {
     websWrite (wp, "<div id=\"%s_idnetvifs\">\n",
 					var);
 		websWrite (wp, "<div class=\"setting\">\n");
@@ -1886,14 +1885,13 @@ show_virtualssid (webs_t wp, char *prefix)
 			   var, get_single_ip (ipv, 3));
 		websWrite (wp, "</div>\n");
 		websWrite (wp, "</div>\n");
-  
-/*		
+	
 		websWrite (wp, "<script>\n");
-		websWrite (wp, "show_layer_ext(document.wireless.elements.\"%s_bridged\", \"%s_idnetvifs\", %s);\n",
+		websWrite (wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
 			var, var, nvram_match (ssid, "1") ? "true" : "false");
 		websWrite (wp, "</script>\n");
-*/
-      }
+
+//      }
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
