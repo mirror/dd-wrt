@@ -1888,7 +1888,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	
 		websWrite (wp, "<script>\n");
 		websWrite (wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
-			var, var, nvram_match (ssid, "1") ? "true" : "false");
+			var, var, nvram_match (ssid, "0") ? "true" : "false");
 		websWrite (wp, "</script>\n");
 
 //      }
@@ -2001,9 +2001,6 @@ add_vifs (webs_t wp)
 int
 remove_vifs_single (char *prefix)
 {
-  char *next;
-
-  char var[80];
   char wif[16];
   sprintf (wif, "%s_vifs", prefix);
   int o = -1;
@@ -2178,7 +2175,6 @@ wireless_save (webs_t wp)
 #endif
       if (vifs == NULL)
 	return 0;
-      int count = 0;
       foreach (var, vifs, next)
       {
 	save_prefix (wp, var);
