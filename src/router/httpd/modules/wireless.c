@@ -1814,7 +1814,6 @@ security_save_prefix (webs_t wp, char *prefix)
   char *vifs = nvram_safe_get (v);
   if (vifs == NULL)
     return 0;
-  int count = 0;
   foreach (var, vifs, next)
   {
     save_prefix (wp, var);
@@ -1850,7 +1849,6 @@ void
 ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
 		     char *prefix)
 {
-  int ret = 0;
   char *type, *security_mode;
   char var[80];
   sprintf (var, "%s_security_mode", prefix);
