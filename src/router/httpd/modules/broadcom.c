@@ -965,7 +965,6 @@ static void
 ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
-  struct support_list *v;
 
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
@@ -993,8 +992,9 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
     websWrite(wp,output);
 #endif
     
-/*    
-  for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
+/*
+   struct support_list *v;
+   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
 	{
@@ -1018,7 +1018,6 @@ static void
 ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
-  struct support_list *v;
 
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
@@ -1046,6 +1045,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
     websWrite(wp,output);
 #endif
 /*
+  struct support_list *v;
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name))
@@ -1074,7 +1074,6 @@ static void
 ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output1, *output2;
-  struct support_list *v;
 
   if (ejArgs (argc, argv, "%s %s %s %s", &name, &value, &output1, &output2) <
       3)
@@ -1110,7 +1109,7 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 /*
-
+  struct support_list *v;
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
