@@ -50,7 +50,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_CESAR
   {"router_style", "cesar", 0},
 #else
-  {"router_style", "cyan", 0},
+  {"router_style", "elegant", 0},
 #endif
   /* OS parameters */
   {"os_name", "", 0},		/* OS name string */
