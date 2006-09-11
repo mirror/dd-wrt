@@ -45,17 +45,13 @@ function time_enable_disable(F,I){
 	if(I == 1) {
 		choose_enable(F.start_hour);
 		choose_enable(F.start_min);
-		choose_enable(F.start_time);
 		choose_enable(F.end_hour);
 		choose_enable(F.end_min);
-		choose_enable(F.end_time);
 	} else if(I == 0) {
 		choose_disable(F.start_hour);
 		choose_disable(F.start_min);
-		choose_disable(F.start_time);
 		choose_disable(F.end_hour);
 		choose_disable(F.end_min);
-		choose_disable(F.end_time);
 	}
 }
 
@@ -108,8 +104,8 @@ function valid(F) {
 		return false;
 	}
 	if(F.time_all[1].checked == true){
-		start = (parseInt(F.start_time.value, 10)*12 + parseInt(F.start_hour.value, 10)) * 60 + parseInt(F.start_min.value, 10);
-		end = (parseInt(F.end_time.value, 10)*12 + parseInt(F.end_hour.value, 10)) * 60 + parseInt(F.end_min.value, 10);
+		start = (parseInt(F.start_hour.value, 10)) * 60 + parseInt(F.start_min.value, 10);
+		end = (parseInt(F.end_hour.value, 10)) * 60 + parseInt(F.end_min.value, 10);
 		if(end <= start){
 //			alert("The end time must be bigger than start time.");
 			alert(filter.mess3);
@@ -389,15 +385,9 @@ function Status(F,I) {
 									<div class="label"><% tran("share.from"); %></div>
 									<input type="hidden" name="allday" />
 									<input class="spaceradio" type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
-									<select name="start_hour"><% filter_tod_get("start_hour_12"); %></select>:<select name="start_min"><% filter_tod_get("start_min_5"); %></select>
-									<select name="start_time">
-										<option value="0" <% filter_tod_get("start_time_am"); %>>AM</option>
-										<option value="1" <% filter_tod_get("start_time_pm"); %>>PM</option>
-									</select>&nbsp;<% tran("share.to"); %>&nbsp;<select name="end_hour"><% filter_tod_get("end_hour_12"); %></select>:<select name="end_min"><% filter_tod_get("end_min_5"); %></select>
-									<select name="end_time">
-										<option value="0" <% filter_tod_get("end_time_am"); %>>AM</option>
-										<option value="1" <% filter_tod_get("end_time_pm"); %>>PM</option>
-									</select>
+									<select name="start_hour"><% filter_tod_get("start_hour_24"); %></select>:<select name="start_min"><% filter_tod_get("start_min_1"); %></select>&nbsp;&nbsp;&nbsp;
+									<% tran("share.to"); %>&nbsp;
+									<select name="end_hour"><% filter_tod_get("end_hour_24"); %></select>:<select name="end_min"><% filter_tod_get("end_min_1"); %></select>
 								</div>
 							</fieldset><br />
 							
