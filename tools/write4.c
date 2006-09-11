@@ -42,6 +42,8 @@ main (int argc, char *argv[])
       len = filter (m, "<option value=", "{o}", len);
       len = filter (m, "<select name=", "{s}", len);
       len = filter (m, "<span class=", "{u}", len);
+      len = filter (m, "document.write(\"", "{x}", len);
+      len = filter (m, "document.(\"", "{y}", len);
       printf ("writing \n");
 
       in = fopen (argv[a], "wb");
