@@ -31,6 +31,8 @@ CCPP = $(TARGET_PREFIX)g++
 COMPILER = $(TARGET_PREFIX)g++
 STRIP = $(TARGET_PREFIX)strip
 SIZE = $(TARGET_PREFIX)size
+include $(SRCBASE)/router/.config
+
 
 ifeq ($(CONFIG_MSSID),y)
 VPATH.h = .:..:../../include:$(SRCBASE)/include.v24:$(SRCBASE)/router/shared
@@ -44,7 +46,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -O2 -mips32 -mtune=mips32 -pipe -DNDEBUG
+CFLAGS += $(COPTS) -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
