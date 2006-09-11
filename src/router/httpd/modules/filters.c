@@ -808,10 +808,10 @@ validate_filter_tod (webs_t wp)
   time_all = websGetVar (wp, "time_all", "0");
   start_hour = websGetVar (wp, "start_hour", "0");
   start_min = websGetVar (wp, "start_min", "0");
-  start_time = websGetVar (wp, "start_time", "0");
+//  start_time = websGetVar (wp, "start_time", "0");
   end_hour = websGetVar (wp, "end_hour", "0");
   end_min = websGetVar (wp, "end_min", "0");
-  end_time = websGetVar (wp, "end_time", "0");
+//  end_time = websGetVar (wp, "end_time", "0");
 
   //if(atoi(time_all) == 0)
   //      if(!start_hour || !start_min || !start_time || !end_hour || !end_min || !end_time)
@@ -882,10 +882,9 @@ validate_filter_tod (webs_t wp)
     }
   else
     {
-      _start_hour =
-	atoi (start_time) ? 12 + atoi (start_hour) : atoi (start_hour);
+      _start_hour = atoi (start_hour);
       _start_min = atoi (start_min);
-      _end_hour = atoi (end_time) ? 12 + atoi (end_hour) : atoi (end_hour);
+      _end_hour = atoi (end_hour);
       _end_min = atoi (end_min);
     }
 
@@ -1355,7 +1354,7 @@ filter_tod_init (int which)
 	  start_hour = end_hour = 0;
 	  start_min = start_time = end_min = end_time = 0;
 	}
-      else
+/*      else
 	{			// check AM or PM
 	  time_all = 0;
 	  if (start_hour > 11)
@@ -1368,7 +1367,7 @@ filter_tod_init (int which)
 	      end_hour = end_hour - 12;
 	      end_time = 1;
 	    }
-	}
+	} */
     }
   else
     {				// default Everyday and 24 Hours
@@ -1483,8 +1482,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
 		     i ==
-		     start_hour +
-		     start_time * 12 ? "selected=\"selected\" " : "", i);
+		     start_hour ? "selected=\"selected\" " : "", i);
 	}
     }
   else if (!strcmp (type, "start_min_1"))
@@ -1504,7 +1502,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
 		     i ==
-		     end_hour + end_time * 12 ? "selected=\"selected\" " : "",
+		     end_hour ? "selected=\"selected\" " : "",
 		     i);
 	}
     }
@@ -1695,12 +1693,10 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	  else
 	    {
 	      snprintf (time_buf, sizeof (time_buf),
-			"%02d:%02d %s - %02d:%02d %s",
-			start_hour == 0 ? 12 : start_hour, start_min,
-			start_time == 0 ? am : pm,
-			end_hour == 0 ? 12 : end_hour, end_min,
-			end_time == 0 ? am : pm);
-	    }
+			"%02d:%02d - %02d:%02d",
+			start_hour, start_min,
+			end_hour, end_min,
+		}
 	}
       websWrite (wp, " \
         <td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n\
