@@ -120,7 +120,7 @@ void destroy_device(PDevice pdev)
 
     // call this device's destroy function, if defined.
     if ((func = pdev->template->devinit) != NULL) {
-	(*func)(pdev, DEVICE_DESTROY, (va_list) NULL );
+	(*func)(pdev, DEVICE_DESTROY, NULL );
     }
 
     // remove the device from the root device list

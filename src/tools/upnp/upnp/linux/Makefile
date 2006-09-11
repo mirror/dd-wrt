@@ -25,6 +25,8 @@ STRIP = $(TARGET_PREFIX)strip
 SIZE = $(TARGET_PREFIX)size
 RANLIB = $(TARGET_PREFIX)ranlib
 
+include $(SRCBASE)/router/.config
+
 ifeq ($(CONFIG_MSSID),y)
 VPATH.h=.:..:../../include:$(SRCBASE)/include.v24:$(SRCBASE)/router/shared
 else
@@ -37,7 +39,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -O2 -mips32 -mtune=mips32 -pipe -DNDEBUG
+CFLAGS += $(COPTS)
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
@@ -63,9 +65,9 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 ifeq ($(CONFIG_MSSID),y)
-$(SOURCES.OBJ): upnp.h  $(SRCBASE)/include.v23/cyutils.h $(SRCBASE)/include.v23/code_pattern.h
-else
 $(SOURCES.OBJ): upnp.h  $(SRCBASE)/include.v24/cyutils.h $(SRCBASE)/include.v24/code_pattern.h
+else
+$(SOURCES.OBJ): upnp.h  $(SRCBASE)/include.v23/cyutils.h $(SRCBASE)/include.v23/code_pattern.h
 endif
 
 $(OBJDIR)/%.o:	%.c
