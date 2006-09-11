@@ -83,7 +83,7 @@ int __init init_magic(void)
 			//	size |= (flash->erasesize - 1);
 			//	size += 1;
 			//}
-			magic_partitions[0].size = size;
+//			magic_partitions[0].size = size;
 			magic_partitions[1].offset = size;
 			magic_partitions[1].size = magic_partitions[2].offset - size;
 		}
