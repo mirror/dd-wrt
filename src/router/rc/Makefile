@@ -87,6 +87,7 @@ CFLAGS += -DHAVE_XSCALE
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -DHAVE_MAGICBOX
+OBJS += watchdog.o
 endif
 
 ifneq ($(CONFIG_RB500),y)
@@ -292,6 +293,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 ifneq ($(CONFIG_RB500),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
+endif
+ifeq ($(CONFIG_MAGICBOX),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
