@@ -776,10 +776,8 @@ main (int argc, char **argv)
   else if (strstr (base, "brctl"))
     return start_main ("brctl", argc, argv);
 #endif
-#ifdef HAVE_MAGICBOX
   else if (strstr (base, "watchdog"))
     return watchdog_main (argc, argv);
-#endif
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
 
