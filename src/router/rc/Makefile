@@ -19,7 +19,7 @@ LDFLAGS	+= -s -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shar
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o radio_timer.o 
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o radio_timer.o watchdog.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -87,7 +87,6 @@ CFLAGS += -DHAVE_XSCALE
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -DHAVE_MAGICBOX
-OBJS += watchdog.o
 endif
 
 ifneq ($(CONFIG_RB500),y)
