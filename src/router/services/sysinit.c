@@ -946,12 +946,12 @@ start_nvram (void)
       }
     nvram_set ("router_style", style);
 
-    if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))	//if still not set, force to cyan
-      nvram_set ("router_style", "cyan");
+    if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))	//if still not set, force to elegant
+      nvram_set ("router_style", "elegant");
 
 #ifdef DIST
-    if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to cyan
-      nvram_set ("router_style", "cyan");
+    if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to elegant
+      nvram_set ("router_style", "elegant");
 #endif
   }
 
