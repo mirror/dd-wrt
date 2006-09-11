@@ -34,7 +34,7 @@ function setDHCPTable() {
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
-		cellmac.innerHTML = val[i+2];;
+		cellmac.innerHTML = val[i+2];
 
 		var cellbail = row.insertCell(-1);
 		cellbail.align = "center";
@@ -43,7 +43,7 @@ function setDHCPTable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err58;
-		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + mac + "') })");
+		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i+1] + "','" + val[i+2] + "') })");
 	}
 }
 
