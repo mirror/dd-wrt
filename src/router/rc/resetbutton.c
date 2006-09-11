@@ -463,7 +463,6 @@ val = getbuttonstate();
     }
 }
 
-
 int
 resetbutton_main (int argc, char *argv[])
 {
