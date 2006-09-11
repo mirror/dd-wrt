@@ -786,8 +786,7 @@ validate_filter_tod (webs_t wp)
   D ("validate filter tod");
 
   char *day_all, *week0, *week1, *week2, *week3, *week4, *week5, *week6;
-  char *time_all, *start_hour, *start_min, *start_time, *end_hour, *end_min,
-    *end_time;
+  char *time_all, *start_hour, *start_min, *end_hour, *end_min;
   int _start_hour, _start_min, _end_hour, _end_min;
   char time[20];
   int week[7];
@@ -1644,8 +1643,8 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
     { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1",
     "share.thu_s1", "share.fri_s1", "share.sat_s1"
   };
-  char am[] = "AM";
-  char pm[] = "PM";
+//  char am[] = "AM";
+//  char pm[] = "PM";
   char _24h[] = "24 Hours.";
 #endif
   D ("filter summary show");
@@ -1695,7 +1694,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	      snprintf (time_buf, sizeof (time_buf),
 			"%02d:%02d - %02d:%02d",
 			start_hour, start_min,
-			end_hour, end_min,
+			end_hour, end_min);
 		}
 	}
       websWrite (wp, " \
