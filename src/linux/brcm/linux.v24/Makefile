@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
 SUBLEVEL = 34
-EXTRAVERSION = -pre1
+EXTRAVERSION = -pre2
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -103,7 +103,7 @@ endif
 AFLAGS := -D__ASSEMBLY__ $(CPPFLAGS)
 
 CFLAGS += $(call check_gcc, -funit-at-a-time,)
-CFLAGS += -fno-delayed-branch
+#CFLAGS += -fno-delayed-branch
 #CFLAGS += $(call check_gcc, -fno-delayed-branch)
 
 

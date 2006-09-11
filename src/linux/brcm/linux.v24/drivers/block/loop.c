@@ -693,12 +693,23 @@ static int loop_set_fd(struct loop_device *lo, struct file *lo_file, kdev_t dev,
 	set_blocksize(dev, bs);
 
 	lo->lo_bh = lo->lo_bhtail = NULL;
-	kernel_thread(loop_thread, lo, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-	down(&lo->lo_sem);
+	error = kernel_thread(loop_thread, lo,
+	    CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+	if (error < 0)
+		goto out_clr;
+	down(&lo->lo_sem); /* wait for the thread to start */
 
 	fput(file);
 	return 0;
 
+ out_clr:
+	lo->lo_backing_file = NULL;
+	lo->lo_device = 0;
+	lo->lo_flags = 0;
+	loop_sizes[lo->lo_number] = 0;
+	inode->i_mapping->gfp_mask = lo->old_gfp_mask;
+	lo->lo_state = Lo_unbound;
+	fput(file); /* yes, have to do it twice */
  out_putf:
 	fput(file);
  out:
