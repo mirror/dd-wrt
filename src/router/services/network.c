@@ -2125,6 +2125,7 @@ start_wan_done (char *wan_ifname)
       eval ("gpio", "disable", "7");
       break;
     case ROUTER_RT210W:
+    case ROUTER_BELKIN_F5D7230:
       eval ("gpio", "disable", "0");
       break;
     default:
