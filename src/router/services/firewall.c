@@ -1063,9 +1063,9 @@ schedule_by_tod (int seq)
 
       /* Write to crontab for triggering the event */
       /* "wday_xx + 1" can ignor the first character ',' */
-      fprintf (cfd, "%02d %2d * * %s root filter add %d\n",
+      fprintf (cfd, "%02d %2d * * %s root /sbin/filter add %d\n",
 	       mi_st, hr_st, wday_st + 1, seq);
-      fprintf (cfd, "%02d %2d * * %s root filter del %d\n",
+      fprintf (cfd, "%02d %2d * * %s root /sbin/filter del %d\n",
 	       mi_end, hr_end, wday_end + 1, seq);
       if (match_wday (wday))
 	intime = 1;
@@ -1073,9 +1073,9 @@ schedule_by_tod (int seq)
   else
     {				/* Nither 24-hour, nor everyday */
       /* Write to crontab for triggering the event */
-      fprintf (cfd, "%02d %2d * * %s root filter add %d\n",
+      fprintf (cfd, "%02d %2d * * %s root /sbin/filter add %d\n",
 	       mi_st, hr_st, wday, seq);
-      fprintf (cfd, "%02d %2d * * %s root filter del %d\n",
+      fprintf (cfd, "%02d %2d * * %s root /sbin/filter del %d\n",
 	       mi_end, hr_end, wday, seq);
       if (match_wday (wday) && match_hrmin (hr_st, mi_st, hr_end, mi_end))
 	intime = 1;
