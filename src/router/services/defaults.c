@@ -997,6 +997,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_passwd_7", "", 0},
   {"ddns_hostname_7", "", 0},
   {"ddns_wildcard_7", "", 0},
+  // for tzo.com 
+  {"ddns_username_8", "", 0},
+  {"ddns_passwd_8", "", 0},
+  {"ddns_hostname_8", "", 0},
 
   /* for last value */
   {"ddns_enable_buf", "", 0}, 
