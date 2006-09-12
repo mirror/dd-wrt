@@ -266,6 +266,12 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WZR series");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
+    	if (nvram_match ("melco_id", "28100"))
+    		{
+      		cprintf ("router is Buffalo WVR-G54-NF\n");
+      		setRouter ("Buffalo WVR-G54-NF");
+      		return ROUTER_BUFFALO_WZRRSG54;
+    		}
 	  }
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f") &&
