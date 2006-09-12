@@ -284,6 +284,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 	case ROUTER_SIEMENS:
 	case ROUTER_BELKIN_F5D7230:
       setup_4712 ();
+      eval ("gpio", "disable", "5"); // power led on
       break;
       
 	case ROUTER_RT210W:     
