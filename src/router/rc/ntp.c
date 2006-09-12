@@ -112,7 +112,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
       struct tm *tm = localtime (&tv.tv_sec);
       int mon = tm->tm_mon + 1;
       int day = tm->tm_mday;
-      int yi = tm->tm_year + 1900 - 2002;	// dst table starts at 2002
+      int yi = tm->tm_year + 1900 - 2006;	// dst table starts at 2006
       int mbeg = dstEntry[dst].startMonth;
       int mend = dstEntry[dst].endMonth;
       int dbeg = dstEntry[dst].startDay[yi];
@@ -147,7 +147,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	for (mon = 1; mon <= 12; ++mon) {
 		printf("[%02d] ", mon);
 		for (day = 1; day <= 31; ++day) {
-			int yi = 2005 - 2002; // dst table starts at 2002
+			int yi = 2005 - 2006; // dst table starts at 2006
 			int mbeg = dstEntry[dst].startMonth;
 			int mend = dstEntry[dst].endMonth;
 			int dbeg = dstEntry[dst].startDay[yi];
