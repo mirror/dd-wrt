@@ -81,6 +81,11 @@ init_ddns (void)
       strcpy (service, "default@easydns.com");
       flag = 7;
     }
+  else if (nvram_match ("ddns_enable", "8"))
+    {
+      strcpy (service, "default@tzo.com");
+      flag = 8;
+    }
 
 /* botho 30/07/06 : add www.3322.org */
   if (flag == 1)
@@ -131,6 +136,12 @@ init_ddns (void)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_7");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_7");
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_7");
+    }
+  else if (flag == 8)
+    {
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_8");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_8");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_8");
     }
 
   return 0;

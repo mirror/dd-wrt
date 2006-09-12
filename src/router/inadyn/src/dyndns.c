@@ -49,12 +49,14 @@ static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_S
 static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 
 static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
@@ -117,6 +119,13 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
              DYNDNS_3322_MY_IP_SERVER, DYNDNS_3322_MY_IP_SERVER_URL,
 			DYNDNS_3322_MY_DNS_SERVER, DYNDNS_3322_MY_DNS_SERVER_URL, NULL}},
+
+    {TZO_DEFAULT, 
+        {"default@tzo.com", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_tzo_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_tzo_http_dns_server,
+            DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
+			"cgi.tzo.com", "/webclient/signedon.html?TZOName=", ""}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
@@ -226,6 +235,18 @@ static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt, 
                 p_self->wildcard ? "ON" : "OFF",
         p_self->info.credentials.p_enc_usr_passwd_buffer,
 		p_self->info.dyndns_server_name.name		
+		);
+}
+static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, GENERIC_TZO_AUTH_MY_IP_REQUEST_FORMAT,
+		p_self->info.dyndns_server_url,		
+		p_self->alias_info.names[cnt].name,
+        p_self->info.credentials.my_username, 
+		p_self->info.credentials.my_password, 
+		p_self->info.my_ip_address.name,	
+		p_self->info.dyndns_server_name.name	
 		);
 }
 
@@ -430,6 +451,14 @@ BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_s
 BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	return (strstr(p_rsp, "NOERROR") != NULL);
+}
+
+/**
+	If we have an HTTP 302 the update wasn't good and we're being redirected
+*/
+BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+{
+	return (strstr(p_rsp, " HTTP/1.%*c 302") == NULL);
 }
 
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
