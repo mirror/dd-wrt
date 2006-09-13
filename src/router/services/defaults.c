@@ -1506,6 +1506,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wds_watchdog_ips", "", 0},
   {"dhcpfwd_enable", "0", 0},
   {"dhcpfwd_ip", "0.0.0.0", 0},
+  {"watchdog","60000",0},
   {"NC_enable", "0", 0},
 #ifdef CONFIG_BRANDING
   {"NC_GatewayName", "GATEWAY", 0},
