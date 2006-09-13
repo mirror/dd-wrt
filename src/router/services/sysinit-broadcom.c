@@ -188,68 +188,15 @@ start_sysinit (void)
   struct utsname name;
   struct stat tmp_stat;
   time_t tm = 0;
-#ifdef HAVE_RB500
-  unlink ("/etc/nvram/.lock");
-#elif HAVE_XSCALE
-  unlink ("/etc/nvram/.lock");
-#endif
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-#ifdef HAVE_XSCALE
-  system("/etc/convert");
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-#endif
   cprintf ("sysinit() tmp\n");
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-#ifdef HAVE_RB500
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-#elif HAVE_XSCALE
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
-  eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
-  eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
-#endif
   eval ("mkdir", "/tmp/www");
   
-#ifdef HAVE_RB500
-  //load ext2 
-  // eval("insmod","jbd");
-  eval ("insmod", "ext2");
-#ifndef KERNEL_24
-  if (mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
-#else
-  if (mount
-      ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
-#endif
-    {
-      //not created yet, create ext2 partition
-      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/cf/card0/part3");
-      //mount ext2 
-      mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
-      eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
-      mkdir ("/usr/local/nvram", 0777);
-//    eval("ln","-s","/etc/nvram","/usr/local/nvram");
-    }
-
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-#elif HAVE_XSCALE
-eval ("mount","-o","remount,rw","/");
-//if (eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram"))
-//    eval("mtd","erase","DDWRT");
-//eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram");    
-mkdir ("/usr/local/nvram", 0777);
-unlink ("/tmp/nvram/.lock");
-eval ("mkdir", "/tmp/nvram");
-eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-#endif
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -259,6 +206,8 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   mkdir ("/var/run", 0777);
   mkdir ("/var/tmp", 0777);
   cprintf ("sysinit() setup console\n");
+
+  eval("/sbin/watchdog"); // system watchdog
 
   /* Setup console */
 
@@ -367,13 +316,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   uname (&name);
 
   enableAfterBurner ();
-#ifdef HAVE_RB500
-#define MODULES
-#elif HAVE_XSCALE
-#define MODULES
-#endif
 
-#ifndef MODULES
   snprintf (buf, sizeof (buf), "/lib/modules/%s", name.release);
   if (stat ("/proc/modules", &tmp_stat) == 0 && stat (buf, &tmp_stat) == 0)
     {
@@ -492,56 +435,6 @@ if (check_vlan_support())
 #endif
       }
     }
-#else
-eval("insmod","md5");
-eval("insmod","aes");
-eval("insmod","blowfish");
-eval("insmod","deflate");
-eval("insmod","des");
-eval("insmod","michael_mic");
-eval("insmod","cast5");
-eval("insmod","crypto_null");
-
-system("/etc/kendin");
-eval("insmod","ixp400th");
-eval("insmod","ixp400");
-system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-eval("insmod","ixp400_eth");
-eval("insmod","ocf");
-eval("insmod","cryptodev");
-eval("insmod","ixp4xx","init_crypto=0");
-eval("ifconfig","ixp0","0.0.0.0","up");
-eval("vconfig","add","ixp0","1");
-eval("vconfig","add","ixp0","2");
-
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
-
-
-  eval ("insmod", "wlan_acl");
-  eval ("insmod", "wlan_ccmp");
-  eval ("insmod", "wlan_tkip");
-  eval ("insmod", "wlan_wep");
-  eval ("insmod", "wlan_xauth");
-  eval ("insmod", "wlan_scan_ap");
-  eval ("insmod", "wlan_scan_sta");
-
-  eval ("ifconfig", "wifi0", "up");
-  eval ("ifconfig", "wifi1", "up");
-  eval ("ifconfig", "wifi2", "up");
-  eval ("ifconfig", "wifi3", "up");
-  eval ("ifconfig", "wifi4", "up");
-  eval ("ifconfig", "wifi5", "up");
-
-
-//  eval ("insmod", "mii");
-//  eval ("insmod", "korina");
-//  eval ("insmod", "via-rhine");
-  eval ("insmod", "ipv6");
-//  load_drivers(); //load madwifi drivers
-#endif
   /* Set a sane date */
   stime (&tm);
   if (brand == ROUTER_SIEMENS)
