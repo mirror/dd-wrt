@@ -667,9 +667,7 @@ if (restore_defaults)
 #endif
 	}
     }
-#ifdef DIST
-  nvram_set ("dist_type", DIST);
-#endif
+
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
@@ -934,6 +932,10 @@ start_nvram (void)
     nvram_set("newhttp_username",zencrypt(nvram_safe_get("newhttp_username")));
     }
     }
+
+#ifdef DIST
+  nvram_set ("dist_type", DIST);
+#endif
 
   strcpy (style, nvram_safe_get ("router_style"));
 
