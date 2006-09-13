@@ -1907,9 +1907,8 @@ start_wan_service (void)
   stop_process_monitor ();
   stop_ddns ();
   cprintf ("start process monitor\n");
-  int timeout = 5;
-  while (start_process_monitor () && timeout--)
-    sleep (1);
+  start_process_monitor ();
+  sleep (5);
   cprintf ("start ddns\n");
   //start_ntp();
   start_ddns ();
