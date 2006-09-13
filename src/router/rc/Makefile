@@ -293,9 +293,9 @@ endif
 ifneq ($(CONFIG_RB500),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
 endif
-ifeq ($(CONFIG_MAGICBOX),y)
+#ifeq ($(CONFIG_MAGICBOX),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
-endif
+#endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
