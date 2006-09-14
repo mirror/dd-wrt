@@ -844,7 +844,9 @@ nat_postrouting (void)
 	     lanface);
 	  save2file ("-A POSTROUTING -o %s -s %s%s -d %s%s -j MASQUERADE\n",
 		     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
+	  #ifndef HAVE_MAGICBOX
 	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+	  #endif
 	}
     }
   else if (nvram_match ("wl_br1_enable", "1"))
