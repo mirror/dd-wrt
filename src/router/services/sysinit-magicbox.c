@@ -72,7 +72,25 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
+/* network drivers */
+eval("insmod","mii");
+eval("insmod","ibm_emac");
+eval("insmod","slhc");
+eval("insmod","imq");
+eval("insmod","tun");
 
+/* ppp drivers */
+
+eval("insmod","ppp_generic");
+eval("insmod","bsd_comp");
+eval("insmod","ppp_deflate");
+eval("insmod","ppp_mppe");
+eval("insmod","ppp_async");
+eval("insmod","ppp_synctty");
+eval("insmod","pppox");
+eval("insmod","pppoe");
+
+/* atheros drivers */
 eval("insmod","md5");
 eval("insmod","aes");
 eval("insmod","blowfish");
