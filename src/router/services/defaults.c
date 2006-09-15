@@ -1458,6 +1458,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ipv6_enable0", "0", 0},
   {"enable_jffs2", "0", 0},
   {"clean_jffs2", "0", 0},
+  {"sys_enable_jffs2", "0", 0},
   {"kaid_enable", "0", 0},
   {"kaid_macs", "", 0},
 #ifdef HAVE_WTS
