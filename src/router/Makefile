@@ -196,6 +196,7 @@ obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_RADIOOFF) += radiooff
+obj-$(CONFIG_WIFIDOG) += wifidog
 obj-y += sprom
 
 
@@ -665,6 +666,18 @@ else
         # So that generic rule does not take precedence
 	@true
 endif
+
+
+wifidog:
+	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	$(MAKE) -C wifidog
+
+wifidog-clean:
+	make -C wifidog clean
+
+wifidog-install:
+	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
+	install -D wifidog/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
 
 wol:
 	cd wol && ./configure --disable-nls --host=mipsel-linux CC=$(CC) CFLAGS="$(COPTS)"
