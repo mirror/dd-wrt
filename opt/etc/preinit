@@ -19,18 +19,18 @@ nvram set boot_wait=on
 if [ -z "$(nvram get ipv6_enable)" ]; then
     nvram set ipv6_enable=0
     nvram set ipv6_enable0=0
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 if [ -z "$(nvram get ipv6_enable0)" ]; then
     nvram set ipv6_enable=0
     nvram set ipv6_enable0=0
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 
 if [ -z "$(nvram get mmc_enable)" ]; then
     nvram set mmc_enable=0
     nvram set mmc_enable0=0
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 
 
@@ -39,12 +39,12 @@ if [ -z "$(nvram get enable_jffs2)" ]; then
     nvram set clean_jffs2=0
     nvram set sys_enable_jffs2=0
     nvram set sys_clean_jffs2=0
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 
 if [ -z "$(nvram get http_enable)" ]; then
     nvram set http_enable=1
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 
 
@@ -53,7 +53,7 @@ if [ -z "$(nvram get ip_conntrack_max)" ]; then
     nvram set ip_conntrack_max=4096
     nvram set ip_conntrack_tcp_timeouts=3600
     nvram set ip_conntrack_udp_timeouts=180
-    #nvram set need_commit=1
+    nvram set need_commit=1
 fi
 
 # read setting from nvram
