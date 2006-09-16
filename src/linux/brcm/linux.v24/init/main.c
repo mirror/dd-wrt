@@ -174,7 +174,7 @@ unsigned long loops_per_jiffy = (1<<12);
    better than 1% */
 #define LPS_PREC 8
 
-void __init calibrate_delay(void)
+void calibrate_delay(void)
 {
 	unsigned long ticks, loopbit;
 	int lps_precision = LPS_PREC;
