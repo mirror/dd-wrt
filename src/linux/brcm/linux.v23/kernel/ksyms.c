@@ -579,7 +579,6 @@ EXPORT_SYMBOL(get_write_access);
 EXPORT_SYMBOL(strnicmp);
 EXPORT_SYMBOL(strspn);
 EXPORT_SYMBOL(strsep);
-EXPORT_SYMBOL(memchr);
 
 
 #ifdef CONFIG_CRC32
