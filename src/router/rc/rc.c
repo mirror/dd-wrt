@@ -331,6 +331,9 @@ main_loop (void)
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
+#ifdef HAVE_WIFIDOG
+	  start_service ("wifidog");
+#endif
 
 	  state = IDLE;
 	  break;
@@ -479,6 +482,9 @@ main_loop (void)
 	  start_service ("modules");
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
+#endif
+#ifdef HAVE_WIFIDOG
+	  start_service ("wifidog");
 #endif
 	  cprintf ("start syslog\n");
 	  startstop ("syslog");

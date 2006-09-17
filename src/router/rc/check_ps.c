@@ -47,6 +47,9 @@ struct mon mons[] = {
 #ifdef HAVE_CHILLI
   {"chilli", 1, M_WAN},
 #endif
+#ifdef HAVE_WIFIDOG
+  {"wifidog", 1, M_WAN},
+#endif
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik", 1, M_WAN},
 #endif
