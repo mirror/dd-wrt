@@ -41,6 +41,9 @@ endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
+ifeq ($(CONFIG_WIFIDOG),y)
+CFLAGS += -DHAVE_WIFIDOG
+endif
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
