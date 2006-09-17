@@ -34,6 +34,9 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
 CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_WIFIDOG),y)
+CFLAGS += -DHAVE_WIFIDOG
+endif
 ifeq ($(CONFIG_GEMTEK),y)
 CFLAGS += -DHAVE_GEMTEK
 endif

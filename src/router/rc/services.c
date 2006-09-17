@@ -179,6 +179,10 @@ stop_services (void)
   stop_service ("radvd");
 #endif
 
+#ifdef HAVE_WIFIDOG
+  stop_service ("wifidog");
+#endif
+
 #ifdef HAVE_CHILLI
   stop_service ("chilli");
 #endif
@@ -242,6 +246,9 @@ start_single_service (void)
     }
   else if (!strcmp (service, "hotspot"))
     {
+#ifdef HAVE_WIFIDOG
+      startstop ("wifidog");
+#endif
 #ifdef HAVE_NOCAT
       startstop ("splashd");
 #endif

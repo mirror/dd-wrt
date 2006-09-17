@@ -3508,6 +3508,37 @@ start_force_to_dial (void)
 
   return ret;
 }
+#ifdef HAVE_WIFIDOG
+//unfinished. do not use
+void start_wifidog(void)
+{
+mkdir("/tmp/etc/",0744);
+FILE *fp=fopen("/tmp/etc/wifidog.conf","wb");
+if (!strlen(nvram_safe_get("wd_gwid")))
+    fprintf(fp,"GatewayID default\n");
+else
+    fprintf(fp,"GatewayID %s\n",nvram_safe_get("wd_gwid"));
+fprintf(fp,"ExternalInterface %s\n",get_wan_face());
+fprintf(fp,"GatewayInterface %s\n",nvram_safe_get("lan_ifname"));
+
+
+fclose(fp);
+eval("/usr/sbin/wifidog");
+}
+
+void stop_wifidog(void)
+{
+eval("killall","-9","wifidog");
+}
+
+
+
+
+
+#endif
+
+
+
 #ifdef HAVE_MEDIASERVER
 int
 start_hotplug_usb (void)
