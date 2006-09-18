@@ -750,6 +750,7 @@ idx.summt_opt1="Aucun";
 idx.summt_opt2="Premier Dim. Avril - Dernier Dim. Octobre";
 idx.summt_opt3="Dernier Dim. Mars - Dernier Dim. Octobre";
 idx.summt_opt4="Dernier Dim. Octobre - Dernier Dim. Mars";
+idx.summt_opt5="2ème Dim. Mars - Premier Dim. Novembre";
 
 
 
