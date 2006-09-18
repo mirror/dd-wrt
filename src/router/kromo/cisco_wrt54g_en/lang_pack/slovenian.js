@@ -743,6 +743,7 @@ idx.summt_opt1="brez";
 idx.summt_opt2="prva ned. apr. - zadnja ned. okt.";
 idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
 idx.summt_opt4="zadnja ned. okt. - zadnja ned. mar.";
+idx.summt_opt5="druga ned. mar. - prva ned. nov.";
 
 
 

@@ -749,6 +749,7 @@ idx.summt_opt1="none";
 idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
+idx.summt_opt5="2nd Sun Mar - first Sun Nov";
 
 
 

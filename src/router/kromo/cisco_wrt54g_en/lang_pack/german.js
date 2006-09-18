@@ -739,6 +739,7 @@ idx.summt_opt1="keine";
 idx.summt_opt2="erster Son Apr - letzter Son Okt";
 idx.summt_opt3="letzter Son Mär - letzter Son Okt";
 idx.summt_opt4="letzter Son Okt - letzter Son Mär";
+idx.summt_opt5="zweiter Son Mär - erster Son Nov";
 
 //help container
 
