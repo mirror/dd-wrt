@@ -99,6 +99,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 //Magicbox PowerPC board
 #define ROUTER_BOARD_MAGICBOX 0x1801
+//Magicbox PowerPC board 2.0
+//#define ROUTER_BOARD_MAGICBOX20 0x1801
 
 #define NVROUTER "DD_BOARD"
 

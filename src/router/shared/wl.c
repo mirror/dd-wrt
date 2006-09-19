@@ -225,6 +225,7 @@ ioctl(getsocket(),SIOCGIWFREQ, &wrq);
   freq = (double) wrq.u.freq.m;
   for(i = 0; i < wrq.u.freq.e; i++)
     freq *= 10;
+freq/=1000000;
 cprintf("wifi channel %f\n",freq);
 channel = ieee80211_mhz2ieee(freq);
 
