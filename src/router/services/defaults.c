@@ -1685,7 +1685,10 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"radio0_on_time", "111111111111111111111111", 0},  /* Radio timer, always on */
   {"radio_timer_enable", "0", 0},
-
+#ifdef HAVE_MAGICBOX
+  {"hwmon_temp_max","60",0},
+  {"hwmon_temp_hyst","50",0},
+#endif
   {0, 0, 0}
 };
 
