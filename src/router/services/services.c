@@ -3536,7 +3536,20 @@ eval("killall","-9","wifidog");
 
 
 #endif
+#ifdef HAVE_MAGICBOX
+void start_hwmon(void)
+{
+int temp_max=atoi(nvram_safe_get("hwmon_temp_max"))*1000; 
+int temp_hyst=atoi(nvram_safe_get("hwmon_temp_hyst"))*1000;
+char buf[128];
+sprintf(buf,"/bin/echo %d > /sys/devices/platform/i2c-0/0-0048/temp1_max",temp_max);
+system(buf);
+sprintf(buf,"/bin/echo %d > /sys/devices/platform/i2c-0/0-0048/temp1_max_hyst",temp_hyst);
+system(buf);
+}
 
+
+#endif
 
 
 #ifdef HAVE_MEDIASERVER
