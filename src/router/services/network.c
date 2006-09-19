@@ -581,28 +581,43 @@ start_wlconf (void)
 void
 start_lan (void)
 {
+  struct ifreq ifr;
+  unsigned char mac[20];
+  int s;
+      char eabuf[32];
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return;
 #ifdef HAVE_MAGICBOX
 if (nvram_match("ath0_mode","sta"))
     {
     nvram_set("lan_ifname","br0");
-    nvram_set("lan_ifnames","eth0 ath0");
+    nvram_set("lan_ifnames","eth0 eth1 ath0");
     nvram_set("wan_ifname","");
     nvram_set("wan_ifnames","");    
     }else
     {
     nvram_set("lan_ifname","br0");
-    nvram_set("lan_ifnames","ath0");
+    nvram_set("lan_ifnames","eth1 ath0");
     nvram_set("wan_ifname","eth0");
     nvram_set("wan_ifnames","eth0");        
     }
+      
+    
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+    ioctl (s, SIOCGIFHWADDR, &ifr);
+      nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      MAC_ADD (mac);
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
+      ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
   char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
   char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
   char name[80], *next, *svbuf;
   char realname[80];
-  int s;
-  struct ifreq ifr;
   char wl_face[10];
 
   strcpy (lan_ifname, nvram_safe_get ("lan_ifname"));
@@ -617,8 +632,6 @@ if (nvram_match("ath0_mode","sta"))
 
   cprintf ("%s\n", lan_ifname);
 
-  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-    return;
 
   // If running in client-mode, remove old WAN-configuration
   if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta"))
@@ -648,7 +661,6 @@ if (nvram_match("ath0_mode","sta"))
   /* you gotta bring it down before you can set its MAC */
   cprintf ("configure wl_face\n");
   ifconfig (wl_face, 0, 0, 0);
-  unsigned char mac[20];
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
@@ -1026,7 +1038,6 @@ if (nvram_match("ath0_mode","sta"))
   strncpy (ifr.ifr_name, lan_ifname, IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
-      char eabuf[32];
       nvram_set ("lan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
 #ifdef HAVE_RB500
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
