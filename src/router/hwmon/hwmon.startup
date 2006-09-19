@@ -1,3 +1,0 @@
-#!/bin/sh
-/bin/echo $(nvram get hwmon_temp_max) > /sys/devices/platform/i2c-0/0-0048/temp1_max
-/bin/echo $(nvram get hwmon_temp_hyst) > /sys/devices/platform/i2c-0/0-0048/temp1_max_hyst
