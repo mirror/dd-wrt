@@ -4266,6 +4266,40 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+#ifdef HAVE_MAGICBOX
+
+
+static void
+ej_get_cputemp(int eid, webs_t wp, int argc, char_t ** argv)
+{
+FILE *fp=fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input","rb");
+if (fp==NULL)
+    {
+    websWrite(wp,"N/A"); //no i2c lm75 found
+    return;
+    }
+int temp;
+fscanf(fp,"%d",&temp);
+fclose(fp);
+int high=temp/1000;
+int low=(temp-(high*1000))/100;
+websWrite(wp,"%d.%d °C",high,low); //no i2c lm75 found
+}
+
+
+static void
+ej_show_cpu_temperature (int eid, webs_t wp, int argc, char_t ** argv)
+{
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">CPU Temperature</div>\n");
+websWrite(wp,"<span id=\"cpu_temp\"></span>&nbsp;\n");
+websWrite(wp,"</div>\n");
+}
+
+
+#endif
+
+
 #ifdef HAVE_MSSID
 
 static void showencstatus(webs_t wp,char *prefix)
@@ -4747,6 +4781,11 @@ struct ej_handler ej_handlers[] = {
   {"getencryptionstatus", ej_getencryptionstatus},
   {"get_txpower",ej_get_txpower},
 #endif
+#ifdef HAVE_MAGICBOX
+  {"get_cputemp", ej_get_cputemp},
+  {"show_cpu_temperature", ej_show_cpu_temperature},
+#endif
+
   {NULL, NULL}
 };
 #endif /* !WEBS */

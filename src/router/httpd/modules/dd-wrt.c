@@ -2115,11 +2115,16 @@ save_prefix (webs_t wp, char *prefix)
 	}
 #endif
     }
+#ifndef HAVE_MADWIFI
   if (!strcmp (prefix, "wl0"))
+#endif
     {
+
       sprintf (n, "%s_net_mode", prefix);
       copytonv (wp, n);
+//#ifndef HAVE_MADWIFI
       convert_wl_gmode (nvram_safe_get (n));
+//#endif
     }
   sprintf (n, "%s_nbw", prefix);
   copytonv (wp, n);
