@@ -187,6 +187,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.clock"); %></div>
 									<% get_clkfreq(); %>&nbsp;MHz
 								</div>
+								<% show_cpu_temperature(); %>
 							</fieldset><br />
 							
 							<fieldset>
