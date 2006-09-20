@@ -1403,6 +1403,10 @@ start_wan (int status)
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth1";
       break;
+    case ROUTER_WLI2-TX1-G54:
+    if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
+	pppoe_wan_ifname = "eth0";
+	  break;
     }
 #endif
   if (nvram_match ("wl_mode", "wet"))
