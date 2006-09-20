@@ -647,8 +647,8 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\" />");
   websWrite (wp, "<input type=\"hidden\" name=\"no_note\" value=\"1\" />");
-  websWrite (wp,
-	     "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
+  websWrite (wp, "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
+  websWrite (wp, "<input type=\"hidden\" name=\"lc\" value=\"en\" />");
   websWrite (wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
   websWrite (wp,
 	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
