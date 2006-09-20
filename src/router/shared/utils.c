@@ -715,8 +715,9 @@ diag_led (int type, int act)
 {
 //show_hw_type(check_hw_type());
 
-	if (getRouterBrand () == ROUTER_BELKIN_F5D7230 ||  //fix for belkin DMZ=enable reboot problem
-		getRouterBrand () == ROUTER_BUFFALO_WBR2G54S)  //same for wbr2g54
+	if (getRouterBrand () == ROUTER_BELKIN_F5D7230 ||  //fix for belkin DMZ=enable reboot problem (gpio 7)
+		getRouterBrand () == ROUTER_BUFFALO_WBR2G54S || //same for wbr2g54
+		getRouterBrand () == ROUTER_MICROSOFT_MN700)  //same for MN700
 		return 0;
 	else
 		{
