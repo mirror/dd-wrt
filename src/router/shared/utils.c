@@ -363,6 +363,12 @@ internal_getRouterBrand ()
 			setRouter ("Motorola WR850G v1");
 			return ROUTER_MOTOROLA_V1;
 	      }
+	    if (nvram_match ("melco_id", "29016"))  //Buffalo WLI2-TX1-G54
+	      {
+			cprintf ("router is Buffalo WLI2-TX1-G54\n");
+			setRouter ("Buffalo WLI2-TX1-G54");
+			return ROUTER_WLI2-TX1-G54;
+	      }
 	    else
 	      {
 			cprintf ("router is linksys WRT55AG\n");
