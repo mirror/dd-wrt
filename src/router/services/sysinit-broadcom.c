@@ -255,11 +255,21 @@ start_sysinit (void)
       if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
       	{
       	nvram_set ("et0macaddr", "00:0C:6E:00:00:10"); //fix for missing cfe default = dead LAN ports.
-  		}      
+  		}
+  	  break;   
+  	  
+  	case ROUTER_WLI2-TX1-G54:
+  	  nvram_set ("lan_ifnames", "eth1 eth2");
+	  nvram_set ("wl0_ifname", "eth2");
+	  strcpy (wlifname, "eth2");
+      nvram_set ("wan_ifname", "eth0"); //WAN to nonexist. iface.
+      nvram_set ("wan_ifnames", "eth0");
+	  strcpy (wanifname, "eth0");
+	  break;
 
-      case ROUTER_WZRG300N:
-      case ROUTER_WRT300N:
-      case ROUTER_WRTSL54GS:
+    case ROUTER_WZRG300N:
+    case ROUTER_WRT300N:
+    case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
@@ -340,6 +350,7 @@ start_sysinit (void)
 	    case ROUTER_SIEMENS:
 	    case ROUTER_RT210W:
 	    case ROUTER_BRCM4702_GENERIC:
+	    case ROUTER_WLI2-TX1-G54:
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
