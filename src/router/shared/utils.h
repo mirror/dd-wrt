@@ -103,7 +103,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //#define ROUTER_BOARD_MAGICBOX20 0x1901
 
 //Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
-#define ROUTER_WLI2-TX1-G54 0x1a0f
+#define ROUTER_WLI2_TX1_G54 0x1a0f
 
 #define NVROUTER "DD_BOARD"
 
