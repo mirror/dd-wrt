@@ -77,7 +77,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BELKIN_F5D7230 0x100f
 
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
-#define ROUTER_MICROSOFT_MN700 0x110f
+#define ROUTER_MICROSOFT_MN700 0x1117
 
 // Buffalo WLA-G54C (4702 cpu)
 #define ROUTER_BUFFALO_WLAG54C 0x120f
