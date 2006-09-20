@@ -367,7 +367,7 @@ internal_getRouterBrand ()
 	      {
 			cprintf ("router is Buffalo WLI2-TX1-G54\n");
 			setRouter ("Buffalo WLI2-TX1-G54");
-			return ROUTER_WLI2-TX1-G54;
+			return ROUTER_WLI2_TX1_G54;
 	      }
 	    else
 	      {
