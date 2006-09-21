@@ -63,13 +63,13 @@ exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
 
-CC=mipsel-linux-uclibc-gcc
-LD=mipsel-linux-uclibc-ld
-AR=mipsel-linux-uclibc-ar
-RANLIB=mipsel-linux-uclibc-ranlib
-STRIP=@true
+CC=powerpc-linux-uclibc-gcc
+LD=powerpc-linux-uclibc-ld
+AR=powerpc-linux-uclibc-ar
+RANLIB=powerpc-linux-uclibc-ranlib
+STRIP=powerpc-linux-uclibc-strip
 INSTALL=install
-CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib
+CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib
 LIBS=$(LTC) $(LTM) -lutil -lz  -lcrypt
 LDFLAGS=-L../zlib
 
