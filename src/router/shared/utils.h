@@ -33,7 +33,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WBR-G54, WLA-G54 (4702 cpu)
 #define ROUTER_BUFFALO_WBR54G 0x0504
 
-// Buffalo WBR2-G54 (fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
+// Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
 #define ROUTER_BUFFALO_WBR2G54S 0x0607
 #define ROUTER_BUFFALO_WLA2G54L 0x0607	//should work like a WBR2
 
@@ -103,7 +103,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //#define ROUTER_BOARD_MAGICBOX20 0x1901
 
 //Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
-#define ROUTER_WLI2_TX1_G54 0x1a0f
+#define ROUTER_WLI2_TX1_G54 0x1a10
 
 #define NVROUTER "DD_BOARD"
 
