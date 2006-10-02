@@ -21,6 +21,7 @@ mkdir -p mmc
 mkdir -p usr
 mkdir -p usr/local
 mkdir -p opt
+mkdir -p sys
 cd usr/local
 ln -sf /tmp/share share
 cd ../../
