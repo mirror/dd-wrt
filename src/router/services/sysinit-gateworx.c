@@ -122,8 +122,19 @@ eval("ifconfig","ixp0","0.0.0.0","up");
   eval ("insmod", "ipv6");
 
   eval ("insmod", "ad741x"); // temp / voltage sensor
+/*
+Configure mac addresses by reading data from eeprom
+*/
+char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; /* bank2=0x100 */
+FILE file = fopen(filename, "r");
+unsigned char buf[16];
+fread(&buf[0],16,1,file);
+char mac[16];
+sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0], buf[1], buf[2],buf[3], buf[4], buf[5]);
+eval("ifconfig","ixp0","hw","ether",mac);
+sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x\n", buf[6], buf[7], buf[8],buf[9], buf[10], buf[11]);
+eval("ifconfig","ixp1","hw","ether",mac);
 
-//  load_drivers(); //load madwifi drivers
   /* Set a sane date */
   stime (&tm);
 
