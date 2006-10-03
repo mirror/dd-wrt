@@ -129,9 +129,9 @@ FILE *file = fopen(filename, "r");
 unsigned char buf[16];
 fread(&buf[0],16,1,file);
 char mac[16];
-sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0], buf[1], buf[2],buf[3], buf[4], buf[5]);
+sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],buf[3], buf[4], buf[5]);
 eval("ifconfig","ixp0","hw","ether",mac);
-sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x\n", buf[6], buf[7], buf[8],buf[9], buf[10], buf[11]);
+sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],buf[9], buf[10], buf[11]);
 eval("ifconfig","ixp1","hw","ether",mac);
 
   /* Set a sane date */
