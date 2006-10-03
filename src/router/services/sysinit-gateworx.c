@@ -26,7 +26,6 @@
 int
 start_sysinit (void)
 {
-  char buf[PATH_MAX];
   struct utsname name;
   struct stat tmp_stat;
   time_t tm = 0;
@@ -126,7 +125,7 @@ eval("ifconfig","ixp0","0.0.0.0","up");
 Configure mac addresses by reading data from eeprom
 */
 char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom"; /* bank2=0x100 */
-FILE file = fopen(filename, "r");
+FILE *file = fopen(filename, "r");
 unsigned char buf[16];
 fread(&buf[0],16,1,file);
 char mac[16];
