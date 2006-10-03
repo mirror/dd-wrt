@@ -2555,8 +2555,11 @@ show_preshared (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
-	     "<input name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />\n",
+	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />&nbsp;&nbsp;&nbsp;\n",
 	     prefix, nvram_safe_get (var));
+  websWrite (wp, 
+  		"<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+  		prefix, prefix);
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
