@@ -265,7 +265,7 @@ addEvent(window, "load", function() {
 									<div class="label"><% tran("wl_adv.label5"); %></div>
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %>><% tran("share.enable"); %></input>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %>><% tran("share.disable"); %></input>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.enable + ")")</script></span>
 								</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label6"); %></div>
@@ -342,7 +342,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<option value=\"on\" <% nvram_selected("wl_afterburner", "on", "js"); %>>" + share.enable + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label17"); %></div>
