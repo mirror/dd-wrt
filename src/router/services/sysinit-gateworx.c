@@ -76,7 +76,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   /* Modules */
   uname (&name);
 
-eval("insmod","md5");
+/*eval("insmod","md5");
 eval("insmod","aes");
 eval("insmod","blowfish");
 eval("insmod","deflate");
@@ -84,6 +84,7 @@ eval("insmod","des");
 eval("insmod","michael_mic");
 eval("insmod","cast5");
 eval("insmod","crypto_null");
+*/
 
 //system("/etc/kendin");
 eval("insmod","ixp400th");
@@ -109,6 +110,7 @@ eval("ifconfig","ixp0","0.0.0.0","up");
   eval ("insmod", "wlan_scan_ap");
   eval ("insmod", "wlan_scan_sta");
 
+
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
   eval ("ifconfig", "wifi2", "up");
@@ -118,6 +120,9 @@ eval("ifconfig","ixp0","0.0.0.0","up");
 
 
   eval ("insmod", "ipv6");
+
+  eval ("insmod", "ad741x"); // temp / voltage sensor
+
 //  load_drivers(); //load madwifi drivers
   /* Set a sane date */
   stime (&tm);
