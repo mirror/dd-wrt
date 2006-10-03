@@ -40,6 +40,10 @@ endif
 ifeq ($(CONFIG_GEMTEK),y)
 CFLAGS += -DHAVE_GEMTEK
 endif
+ifeq ($(CONFIG_GATEWORX),y)
+CFLAGS += -DHAVE_GATEWORX
+endif
+
 ifeq ($(CONFIG_KODATA),y)
 CFLAGS += -DHAVE_KODATA
 endif
