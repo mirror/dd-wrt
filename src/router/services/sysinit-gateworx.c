@@ -60,6 +60,9 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   mkdir ("/var/log", 0777);
   mkdir ("/var/run", 0777);
   mkdir ("/var/tmp", 0777);
+  
+ eval("/sbin/watchdog"); // system watchdog
+
   cprintf ("sysinit() setup console\n");
 
   /* Setup console */
@@ -73,7 +76,6 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   /* Modules */
   uname (&name);
 
-//  enableAfterBurner ();
 eval("insmod","md5");
 eval("insmod","aes");
 eval("insmod","blowfish");
@@ -83,7 +85,7 @@ eval("insmod","michael_mic");
 eval("insmod","cast5");
 eval("insmod","crypto_null");
 
-system("/etc/kendin");
+//system("/etc/kendin");
 eval("insmod","ixp400th");
 eval("insmod","ixp400");
 system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
@@ -92,8 +94,6 @@ eval("insmod","ocf");
 eval("insmod","cryptodev");
 eval("insmod","ixp4xx","init_crypto=0");
 eval("ifconfig","ixp0","0.0.0.0","up");
-eval("vconfig","add","ixp0","1");
-eval("vconfig","add","ixp0","2");
 
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
@@ -121,12 +121,6 @@ eval("vconfig","add","ixp0","2");
 //  load_drivers(); //load madwifi drivers
   /* Set a sane date */
   stime (&tm);
-  if (brand == ROUTER_SIEMENS)
-    {
-      eval ("insmod", "led.o");	// Jerry Lee
-      powerled_ctrl (0);
-      led_ctrl (0);		// turn LED2 off
-    }
 
   return 0;
   cprintf ("done\n");
