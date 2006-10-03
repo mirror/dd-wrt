@@ -123,6 +123,9 @@ internal_getRouterBrand ()
 #ifdef HAVE_RB500
   setRouter ("Mikrotik RB500");
   return ROUTER_BOARD_500;
+#elif HAVE_GATEWORX
+  setRouter ("Avila Gateworx");
+  return ROUTER_BOARD_GATEWORX;
 #elif HAVE_XSCALE
   setRouter ("NewMedia Dual A/B/G");
   return ROUTER_BOARD_XSCALE;

@@ -105,6 +105,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
 #define ROUTER_WLI2_TX1_G54 0x1a10
 
+// NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
+#define ROUTER_BOARD_GATEWORX 0x1b0f
+
 #define NVROUTER "DD_BOARD"
 
 

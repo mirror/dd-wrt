@@ -315,6 +315,15 @@ start_restore_defaults (void)
     {"wan_ifnames", "atm0", 0},
     {0, 0, 0}
   };
+#elif HAVE_GATEWORX
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames","ixp1 ath0 ath1 ath2 ath3",
+     0},
+    {"wan_ifname", "ixp0", 0},
+    {"wan_ifnames", "ixp0", 0},
+    {0, 0, 0}
+  };
 #elif HAVE_XSCALE
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
