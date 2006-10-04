@@ -131,7 +131,9 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	    tv.tv_sec += dstEntry[dst].dstBias;
 	}
       settimeofday (&tv, NULL);
-
+#ifdef HAVE_GATEWORX
+    eval("hwclock","-w");
+#endif
 /*              time_t now = time(0);
  *             syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
  */

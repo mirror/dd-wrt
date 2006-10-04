@@ -4210,6 +4210,8 @@ ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "1");
 #elif HAVE_MAGICBOX
   websWrite (wp, "2");
+#elif HAVE_GATEWORX
+  websWrite (wp, "2");
 #else
   websWrite (wp, "0");
 #endif

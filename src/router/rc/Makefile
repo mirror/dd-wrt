@@ -90,6 +90,7 @@ CFLAGS += -DHAVE_XSCALE
 endif
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_XSCALE
+CFLAGS += -DHAVE_GATEWORX
 CFLAGS += -DHAVE_CPUTEMP
 endif
 
@@ -286,7 +287,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
+ifneq ($(CONFIG_XSCALE),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc listen
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
