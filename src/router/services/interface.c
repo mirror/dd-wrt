@@ -457,8 +457,11 @@ flush_interfaces (void)
 
 
 #ifdef HAVE_MADWIFI
-    snprintf (all_ifnames, 255, "%s %s %s", "ixp0",
-	      nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#ifdef HAVE_GATEWORX
+    snprintf (all_ifnames, 255, "%s %s %s", "ixp1",nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#else
+    snprintf (all_ifnames, 255, "%s %s %s", "ixp0",nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#endif
 #else
   if (wl_probe ("eth2"))
     snprintf (all_ifnames, 255, "%s %s %s", "eth0",
