@@ -4271,8 +4271,10 @@ static void
 ej_get_cputemp(int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_GATEWORX
-FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input","rb");
+#define TEMP_MUL 100
+FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp_input","rb");
 #else
+#define TEMP_MUL 1000
 FILE *fp=fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input","rb");
 #endif
 
@@ -4284,8 +4286,8 @@ if (fp==NULL)
 int temp;
 fscanf(fp,"%d",&temp);
 fclose(fp);
-int high=temp/1000;
-int low=(temp-(high*1000))/100;
+int high=temp/TEMP_MUL;
+int low=(temp-(high*TEMP_MUL))/(TEMP_MUL/10);
 websWrite(wp,"%d.%d °C",high,low); //no i2c lm75 found
 }
 
@@ -4305,7 +4307,7 @@ websWrite(wp,"</div>\n");
 static void
 ej_get_voltage(int eid, webs_t wp, int argc, char_t ** argv)
 {
-FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in4","rb");
+FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/volt","rb");
 
 if (fp==NULL)
     {
@@ -4315,9 +4317,9 @@ if (fp==NULL)
 int temp;
 fscanf(fp,"%d",&temp);
 fclose(fp);
-temp*=564;
-int high=temp/10000;
-int low=(temp-(high*10000))/1000;
+//temp*=564;
+int high=temp/1000;
+int low=(temp-(high*1000))/100;
 websWrite(wp,"%d.%d Volt",high,low); //no i2c lm75 found
 }
 

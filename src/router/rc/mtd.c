@@ -178,15 +178,11 @@ mtd_write (const char *path, const char *mtd)
 trx.magic=STORE32_LE(trx.magic);
 trx.len=STORE32_LE(trx.len);
 trx.crc32=STORE32_LE(trx.crc32);
-
-
-//	uint32 magic;		/* "HDR0" */
-//	uint32 len;		/* Length of file including header */
-//	uint32 crc32;		/* 32-bit CRC from flag_version to end of file */
-//	uint32 flag_version;	/* 0:15 flags, 16:31 version */
-//	uint32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
-
-
+#endif
+#ifdef HAVE_XSCALE
+trx.magic=STORE32_LE(trx.magic);
+trx.len=STORE32_LE(trx.len);
+trx.crc32=STORE32_LE(trx.crc32);
 #endif
 
 
@@ -320,6 +316,7 @@ fail:
     close (mtd_fd);
   if (fp)
     fclose (fp);
+//    eval("fischecksum");
   return ret;
 }
 
