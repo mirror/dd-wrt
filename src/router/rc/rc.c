@@ -744,9 +744,10 @@ main (int argc, char **argv)
     return start_main ("hb_connect", argc, argv);
   else if (strstr (base, "hb_disconnect"))
     return start_main ("hb_disconnect", argc, argv);
-
+#ifndef HAVE_XSCALE
   else if (strstr (base, "gpio"))
     return start_main ("gpio", argc, argv);
+#endif
   else if (strstr (base, "listen"))
     return listen_main (argc, argv);
   else if (strstr (base, "check_ps"))

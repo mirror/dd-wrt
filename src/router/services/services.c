@@ -3512,6 +3512,8 @@ start_force_to_dial (void)
 //unfinished. do not use
 void start_wifidog(void)
 {
+if (nvram_match("wd_enabled","1"))
+{
 mkdir("/tmp/etc/",0744);
 FILE *fp=fopen("/tmp/etc/wifidog.conf","wb");
 if (!strlen(nvram_safe_get("wd_gwid")))
@@ -3525,15 +3527,12 @@ fprintf(fp,"GatewayInterface %s\n",nvram_safe_get("lan_ifname"));
 fclose(fp);
 eval("/usr/sbin/wifidog");
 }
+}
 
 void stop_wifidog(void)
 {
 eval("killall","-9","wifidog");
 }
-
-
-
-
 
 #endif
 #ifdef HAVE_CPUTEMP
