@@ -3536,16 +3536,29 @@ eval("killall","-9","wifidog");
 
 
 #endif
-#ifdef HAVE_MAGICBOX
+#ifdef HAVE_CPUTEMP
+
+#ifdef HAVE_GATEWORX
+#define TEMP_PATH "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028"
+#define TEMP_PREFIX "temp"
+#define TEMP_MUL 100
+#else
+#define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
+#define TEMP_PREFIX "temp1"
+#define TEMP_MUL 1000
+#endif
+
+ 
 void start_hwmon(void)
 {
-int temp_max=atoi(nvram_safe_get("hwmon_temp_max"))*1000; 
-int temp_hyst=atoi(nvram_safe_get("hwmon_temp_hyst"))*1000;
+int temp_max=atoi(nvram_safe_get("hwmon_temp_max"))*TEMP_MUL; 
+int temp_hyst=atoi(nvram_safe_get("hwmon_temp_hyst"))*TEMP_MUL;
 char buf[128];
-sprintf(buf,"/bin/echo %d > /sys/devices/platform/i2c-0/0-0048/temp1_max",temp_max);
+sprintf(buf,"/bin/echo %d > %s/%s_max",temp_max,TEMP_PATH,TEMP_PREFIX);
 system(buf);
-sprintf(buf,"/bin/echo %d > /sys/devices/platform/i2c-0/0-0048/temp1_max_hyst",temp_hyst);
+sprintf(buf,"/bin/echo %d > %s/%s_max_hyst",temp_hyst,TEMP_PATH,TEMP_PREFIX);
 system(buf);
+
 }
 
 

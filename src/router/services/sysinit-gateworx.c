@@ -46,11 +46,16 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/www");
   
 eval ("mount","-o","remount,rw","/");
-mkdir ("/usr/local/nvram", 0777);
-unlink ("/tmp/nvram/.lock");
-eval ("mkdir", "/tmp/nvram");
-eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+
+  unlink ("/tmp/nvram/.lock");
+  eval ("mkdir", "/tmp/nvram"); 
+  eval ("/bin/tar","-xzf","/dev/mtdblock/3","-C","/");
+
+//mkdir ("/usr/local/nvram", 0777);
+//unlink ("/tmp/nvram/.lock");
+//eval ("mkdir", "/tmp/nvram");
+//eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+//eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -120,7 +125,7 @@ eval("ifconfig","ixp0","0.0.0.0","up");
 
   eval ("insmod", "ipv6");
 
-  eval ("insmod", "ad741x"); // temp / voltage sensor
+  eval ("insmod", "ad7418"); // temp / voltage sensor
 /*
 Configure mac addresses by reading data from eeprom
 */

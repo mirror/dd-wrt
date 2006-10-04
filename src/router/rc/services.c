@@ -86,7 +86,7 @@ start_services (void)
 #else
   nvram_set ("sipgate", "0");
 #endif
-#ifdef HAVE_MAGICBOX
+#ifdef HAVE_CPUTEMP
       start_service("hwmon");
 #endif
 #ifdef HAVE_TELNET
@@ -264,7 +264,7 @@ start_single_service (void)
   else if (!strcmp (service, "services"))
     {
       startstop ("udhcpd");
-#ifdef HAVE_MAGICBOX
+#ifdef HAVE_CPUTEMP
       start_service("hwmon");
 #endif
 #ifdef HAVE_TELNET
