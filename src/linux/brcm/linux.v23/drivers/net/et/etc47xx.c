@@ -1082,6 +1082,9 @@ chipphyinit(struct bcm4xxx *ch, uint phyaddr)
 	phyid |=  chipphyrd( ch, phyaddr, 0x3) << 16;
 
 	if( phyid == 0x55210022) {
+        /* ALTIMA AC101L phyciever */
+        chipphyand(ch, phyaddr, 0, ~(1 << 10)); /* clear 0.10 isolate */
+        /* this bit gets set after phy reset on WAP54G v1.0 !! */
 		chipphywr( ch, phyaddr, 28, (uint16) (chipphyrd( ch, phyaddr, 28 ) & 0x0fff));
 		chipphywr( ch, phyaddr, 30, (uint16) (chipphyrd( ch, phyaddr, 30 ) | 0x3000));
 		chipphywr( ch, phyaddr, 22, (uint16) (chipphyrd( ch, phyaddr, 22 ) & 0xffdf));
