@@ -2555,7 +2555,7 @@ show_preshared (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
-	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />&nbsp;&nbsp;&nbsp;\n",
+	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />&nbsp;&nbsp;&nbsp;\n",prefix,
 	     prefix, nvram_safe_get (var));
   websWrite (wp, 
   		"<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
@@ -2569,8 +2569,7 @@ show_preshared (webs_t wp, char *prefix)
 	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp,
-	     "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\")</script></span>\n",
-	     prefix, nvram_safe_get (var));
+	     "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\")</script></span>\n");
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
 }
