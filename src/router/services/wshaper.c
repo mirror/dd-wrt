@@ -618,7 +618,11 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_XSCALE
+#ifdef HAVE_GATEWORX
+  ret = eval (script_name, "stop", "XX", "ixp0");
+#else
   ret = eval (script_name, "stop", "XX", "ixp1");
+#endif
   ret = eval (script_name, "stop", "XX", "ath0");
   ret = eval (script_name, "stop", "XX", "ath1");
 #elif HAVE_MAGICBOX

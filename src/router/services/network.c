@@ -613,6 +613,17 @@ if (nvram_match("ath0_mode","sta"))
       strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
       ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
+/*#ifdef HAVE_GATEWORKS
+  strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
+    ioctl (s, SIOCGIFHWADDR, &ifr);
+      nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      MAC_ADD (mac);
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
+      ioctl (s, SIOCSIFHWADDR, &ifr);
+#endif*/
   char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
   char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
@@ -1381,7 +1392,11 @@ start_wan (int status)
 #else
 
 #ifdef HAVE_XSCALE
+#ifdef HAVE_GATEWORX
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp0";
+#else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
+#endif
 #elif HAVE_MAGICBOX
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
