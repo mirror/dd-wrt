@@ -40,9 +40,10 @@ start_sysinit (void)
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
+/*  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
   eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
   eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
+ */
   eval ("mkdir", "/tmp/www");
   
 eval ("mount","-o","remount,rw","/");
@@ -139,9 +140,13 @@ eval("ifconfig","ixp0","hw","ether",mac);
 sprintf(mac,"%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],buf[9], buf[10], buf[11]);
 eval("ifconfig","ixp1","hw","ether",mac);
 
+
   /* Set a sane date */
   stime (&tm);
-
+  
+eval("mknod","/dev/gpio","c","127","0");
+eval("mknod","/dev/rtc","c","253","0");
+eval("hwclock","-s");
   return 0;
   cprintf ("done\n");
 }
