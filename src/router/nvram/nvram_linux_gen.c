@@ -30,7 +30,7 @@ struct nvrams
 
 struct nvramdb
 {
-  int offsets[256];
+  int offsets['z'-'A'];
   int nov;			//number of values;
   struct nvrams *values;
 };
@@ -111,7 +111,7 @@ writedb (void)
     return;
   int c = 0;
   int i;
-  for (i = 0; i < 256; i++)
+  for (i = 0; i < 'z'-'A'; i++)
     values.offsets[i] = -1;
   for (i = 0; i < values.nov; i++)
     {
@@ -127,8 +127,8 @@ writedb (void)
 	{
 	  //take a look in our offset table
 	  int a;
-	  if (values.offsets[values.values[i].name[0]] == -1)
-	    values.offsets[values.values[i].name[0]] = ftell (in);
+	  if (values.offsets[values.values[i].name[0]-'A'] == -1)
+	    values.offsets[values.values[i].name[0]-'A'] = ftell (in);
 	  int len = strlen (values.values[i].name);
 	  int fulllen = len + strlen (values.values[i].value) + 3;
 	  putc (fulllen >> 8, in);
@@ -152,7 +152,7 @@ writedb (void)
     }
   fclose (in);
   in = fopen ("/tmp/nvram/offsets.db", "wb");
-  fwrite (values.offsets, 1024, 1, in);
+  fwrite (values.offsets, ('z'-'A')*4, 1, in);
   fclose (in);
 }
 
@@ -227,10 +227,10 @@ nvram_get (const char *name)
       cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
-  fread (values.offsets, 1024, 1, in);
+  fread (values.offsets, ('z'-'A')*4, 1, in);
   fclose (in);
 
-  int offset = values.offsets[name[0]];
+  int offset = values.offsets[name[0]-'A'];
   if (offset == -1)
     {
       unlock ();
@@ -422,7 +422,10 @@ nvram_commit (void)
   lock ();
 #ifdef HAVE_MAGICBOX
   system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
-  system ("mtd write /tmp/nvram/nvram.tar.gz nvram");
+  system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
+#elif HAVE_GATEWORX
+  system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+  system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #else
   system ("cp /tmp/nvram/nvram.db /etc/nvram");
   system ("cp /tmp/nvram/offsets.db /etc/nvram");
