@@ -229,7 +229,10 @@ nvram_get (const char *name)
     }
   fread (values.offsets, ('z'-'A')*4, 1, in);
   fclose (in);
-
+  if (name[0]<'A' || name[0]>'z')
+    {
+     return NULL;
+    }
   int offset = values.offsets[name[0]-'A'];
   if (offset == -1)
     {
@@ -343,6 +346,12 @@ static int
 _nvram_set (const char *name, const char *value)
 {
   cprintf ("nvram_set %s %s\n", name, value);
+
+  if (name[0]<'A' || name[0]>'z')
+    {
+     fprintf(stderr,"nvram parameter %s starts with a illegal character\n",name);
+     return NULL;
+    }
 
   readdb ();
   int i;
