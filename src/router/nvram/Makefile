@@ -26,6 +26,9 @@ LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
 CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
+ifeq ($(ARCHITECTURE),gateworx)
+CFLAGS  += -DHAVE_GATEWORX
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
