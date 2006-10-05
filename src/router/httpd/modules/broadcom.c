@@ -3637,7 +3637,7 @@ static void
 do_fon_cgi (char *url, webs_t wp)
 {
 
-  nvram_set ("router_style", "fon");
+//  nvram_set ("router_style", "");
   nvram_set ("wl_ssid", "FON_HotSpot");
   nvram_set ("wl_ap_isolate", "1");	/* AP isolate mode */
   nvram_set ("dnsmasq_enable", "0");
