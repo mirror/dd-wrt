@@ -358,7 +358,7 @@ char * os_strstr(const char *haystack, const char *needle);
  * @format: printf format
  * Returns: Number of characters printed (not including trailing '\0').
  *
- *  If the output buffer is truncated, number of characters which would have
+ * If the output buffer is truncated, number of characters which would have
  * been written is returned. Since some C libraries return -1 in such a case,
  * the caller must be prepared on that value, too, to indicate truncation.
  *
@@ -367,6 +367,10 @@ char * os_strstr(const char *haystack, const char *needle);
  * os_snprintf() should provide this guarantee, i.e., to null terminate the
  * output buffer if a C library version of the function is used and if that
  * function does not guarantee null termination.
+ *
+ * If the target system does not include snprintf(), see, e.g.,
+ * http://www.ijs.si/software/snprintf/ for an example of a portable
+ * implementation of snprintf.
  */
 int os_snprintf(char *str, size_t size, const char *format, ...);
 
@@ -396,16 +400,28 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 #endif
 
 #ifndef os_strdup
+#ifdef _MSC_VER
+#define os_strdup(s) _strdup(s)
+#else
 #define os_strdup(s) strdup(s)
+#endif
 #endif
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
 #endif
 #ifndef os_strcasecmp
+#ifdef _MSC_VER
+#define os_strcasecmp(s1, s2) _stricmp((s1), (s2))
+#else
 #define os_strcasecmp(s1, s2) strcasecmp((s1), (s2))
 #endif
+#endif
 #ifndef os_strncasecmp
+#ifdef _MSC_VER
+#define os_strncasecmp(s1, s2, n) _strnicmp((s1), (s2), (n))
+#else
 #define os_strncasecmp(s1, s2, n) strncasecmp((s1), (s2), (n))
+#endif
 #endif
 #ifndef os_strchr
 #define os_strchr(s, c) strchr((s), (c))
@@ -427,7 +443,11 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 #endif
 
 #ifndef os_snprintf
+#ifdef _MSC_VER
+#define os_snprintf _snprintf
+#else
 #define os_snprintf snprintf
+#endif
 #endif
 
 #endif /* OS_NO_C_LIB_DEFINES */
@@ -452,9 +472,14 @@ int os_snprintf(char *str, size_t size, const char *format, ...);
 #define strcmp OS_DO_NOT_USE_strcmp
 #undef strncmp
 #define strncmp OS_DO_NOT_USE_strncmp
+#undef strncpy
+#define strncpy OS_DO_NOT_USE_strncpy
 #define strrchr OS_DO_NOT_USE_strrchr
 #define strstr OS_DO_NOT_USE_strstr
+#undef snprintf
 #define snprintf OS_DO_NOT_USE_snprintf
+
+#define strcpy OS_DO_NOT_USE_strcpy
 #endif /* OS_REJECT_C_LIB_FUNCTIONS */
 
 #endif /* OS_H */
