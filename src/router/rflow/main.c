@@ -1,3 +1,5 @@
+#   define __set_errno(val) ((errno) = (val))
+
 #include "rflow.h"
 #include "cfgvar.h"
 #include "servers.h"
