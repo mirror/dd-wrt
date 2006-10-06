@@ -45,7 +45,7 @@ struct site_survey_list
   unsigned char BSSID[18];
   uint8 channel;		/* Channel no. */
   int16 RSSI;			/* receive signal strength (in dBm) */
-  int8 phy_noise;		/* noise (in dBm) */
+  int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
   uint rate_count;		/* # rates in this set */

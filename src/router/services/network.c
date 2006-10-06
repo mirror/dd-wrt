@@ -613,7 +613,21 @@ if (nvram_match("ath0_mode","sta"))
       strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
       ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
-/*#ifdef HAVE_GATEWORKS
+#ifdef HAVE_GATEWORX
+if (nvram_match("ath0_mode","sta"))
+    {
+    nvram_set("lan_ifname","br0");
+    nvram_set("lan_ifnames","ixp0 ixp1 ath0 ath1 ath2 ath3");
+    nvram_set("wan_ifname","");
+    nvram_set("wan_ifnames","");    
+    }else
+    {
+    nvram_set("lan_ifname","br0");
+    nvram_set("lan_ifnames","ixp1 ath0 ath1 ath2 ath3");
+    nvram_set("wan_ifname","ixp0");
+    nvram_set("wan_ifnames","ixp0");        
+    }
+    /*
   strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
     ioctl (s, SIOCGIFHWADDR, &ifr);
       nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -622,8 +636,8 @@ if (nvram_match("ath0_mode","sta"))
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
       strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
-      ioctl (s, SIOCSIFHWADDR, &ifr);
-#endif*/
+      ioctl (s, SIOCSIFHWADDR, &ifr);*/
+#endif
   char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
   char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
