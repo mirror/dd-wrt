@@ -188,6 +188,7 @@ addEvent(window, "unload", function() {
 									<% get_clkfreq(); %>&nbsp;MHz
 								</div>
 								<% show_cpu_temperature(); %>
+								<% show_voltage(); %>
 							</fieldset><br />
 							
 							<fieldset>
