@@ -404,7 +404,8 @@ set80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
 #undef N
 }
 
-static int
+
+int
 do80211priv (const char *ifname, int op, void *data, size_t len)
 {
   struct iwreq iwr;
@@ -531,7 +532,7 @@ deconfigure_wifi (void)
 /*
  * Convert MHz frequency to IEEE channel number.
  */
-static u_int
+u_int
 ieee80211_mhz2ieee (u_int freq)
 {
   if (freq == 2484)
