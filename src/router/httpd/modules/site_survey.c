@@ -24,7 +24,7 @@ struct site_survey_list
   unsigned char BSSID[18];
   uint8 channel;		/* Channel no. */
   int16 RSSI;			/* receive signal strength (in dBm) */
-  int8 phy_noise;		/* noise (in dBm) */
+  int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
   uint rate_count;		/* # rates in this set */
@@ -63,8 +63,7 @@ ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
 
       if (site_survey_lists[i].SSID[0] == 0 ||
 	  site_survey_lists[i].BSSID[0] == 0 ||
-	  site_survey_lists[i].channel == 0 ||
-	  site_survey_lists[i].channel > 14)
+	  site_survey_lists[i].channel == 0)
 	break;
 
       if (startswith (site_survey_lists[i].SSID, "www.fbn-dd.de"))
@@ -104,8 +103,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 
       if (site_survey_lists[i].SSID[0] == 0 ||
 	  site_survey_lists[i].BSSID[0] == 0 ||
-	  site_survey_lists[i].channel == 0 ||
-	  site_survey_lists[i].channel > 14)
+	  site_survey_lists[i].channel == 0)
 	break;
 
       if (site_survey_lists[i].rate_count == 4)

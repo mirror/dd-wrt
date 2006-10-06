@@ -20,16 +20,64 @@
  * $Id:
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <signal.h>
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
 
-#include <typedefs.h>
-#include <bcmnvram.h>
-#include <shutils.h>
-#include <wlioctl.h>
-#include <wlutils.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include "wireless_copy.h"
+#include "net80211/ieee80211.h"
+#include "net80211/ieee80211_crypto.h"
+#include "net80211/ieee80211_ioctl.h"
+
+
+static int
+copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t essid_len)
+{
+	const u_int8_t *p; 
+	int maxlen;
+	int i;
+
+	if (essid_len > bufsize)
+		maxlen = bufsize;
+	else
+		maxlen = essid_len;
+	/* determine printable or not */
+	for (i = 0, p = essid; i < maxlen; i++, p++) {
+		if (*p < ' ' || *p > 0x7e)
+			break;
+	}
+	if (i != maxlen) {		/* not printable, print as hex */
+		if (bufsize < 3)
+			return 0;
+#if 0
+		strlcpy(buf, "0x", bufsize);
+#else
+		strncpy(buf, "0x", bufsize);
+#endif
+		bufsize -= 2;
+		p = essid;
+		for (i = 0; i < maxlen && bufsize >= 2; i++) {
+			sprintf(&buf[2 + 2 * i], "%02x", *p++);
+			bufsize -= 2;
+		}
+		maxlen = 2 + 2 * i;
+	} else {			/* printable, truncate as needed */
+		memcpy(buf, essid, maxlen);
+	}
+	if (maxlen != essid_len)
+		memcpy(buf+maxlen - 3, "...", 3);
+	return maxlen;
+}
 
 #define sys_restart() kill(1, SIGHUP)
 #define SITE_SURVEY_DB	"/tmp/site_survey"
@@ -39,107 +87,78 @@ int write_site_survey (void);
 static int open_site_survey (void);
 int write_site_survey (void);
 
+
 struct site_survey_list
 {
-  uint8 SSID[32];
+  unsigned char SSID[32];
   unsigned char BSSID[18];
-  uint8 channel;		/* Channel no. */
-  int16 RSSI;			/* receive signal strength (in dBm) */
-  int8 phy_noise;		/* noise (in dBm) */
-  uint16 beacon_period;		/* units are Kusec */
-  uint16 capability;		/* Capability information */
-  uint rate_count;		/* # rates in this set */
-  uint8 dtim_period;		/* DTIM period */
+  unsigned char channel;		/* Channel no. */
+  short RSSI;			/* receive signal strength (in dBm) */
+  short phy_noise;		/* noise (in dBm) */
+  unsigned short beacon_period;		/* units are Kusec */
+  unsigned short capability;		/* Capability information */
+  int rate_count;		/* # rates in this set */
+  unsigned char dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
+
+static const char *
+ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
+{
+	static char a[18];
+	int i;
+
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return (i < 17 ? NULL : a);
+}
 
 int
 site_survey_main (int argc, char *argv[])
 {
   char *name = nvram_safe_get ("wl0_ifname");
-  unsigned char buf[10000];
-  wl_scan_results_t *scan_res = (wl_scan_results_t *) buf;
-  wl_bss_info_t *bss_info;
   unsigned char mac[20];
-  int i;
+  int i=0;
   char *dev = name;
   unlink (SITE_SURVEY_DB);
   int ap = 0, oldap = 0;
-  wl_scan_params_t params;
 
-  memset (&params, 0, sizeof (params));
+	unsigned char buf[24 * 1024];
+	char ssid[31];
+	unsigned char *cp;
+	int len;
+  len = do80211priv("ath0", IEEE80211_IOCTL_SCAN_RESULTS,buf, sizeof(buf));
 
-  /* use defaults (same parameters as wl scan) */
+	if (len == -1)
+		fprintf(stderr,"unable to get scan results");
+	if (len < sizeof(struct ieee80211req_scan_result))
+		return;
+	cp=buf;
+	do {
+		struct ieee80211req_scan_result *sr;
+		unsigned char *vp;
+	        char ssid[14];
+		sr = (struct ieee80211req_scan_result *) cp;
+		vp = (u_int8_t *)(sr+1);
+		memset(ssid,0,sizeof(ssid));
+		strncpy(site_survey_lists[i].SSID,vp,sr->isr_ssid_len);
+		strcpy(site_survey_lists[i].BSSID,ieee80211_ntoa(sr->isr_bssid));
+		site_survey_lists[i].channel=ieee80211_mhz2ieee(sr->isr_freq);
+		int noise = 256;
+		noise-=(int)sr->isr_noise;
+		site_survey_lists[i].phy_noise=-noise;
+		site_survey_lists[i].RSSI=(int)site_survey_lists[i].phy_noise+(int)sr->isr_rssi;
+		site_survey_lists[i].capability=sr->isr_capinfo;
+		site_survey_lists[i].rate_count=sr->isr_nrates;
+		cp += sr->isr_len, len -= sr->isr_len;
+		i++;
+	} while (len >= sizeof(struct ieee80211req_scan_result));
 
-  memset (&params.bssid, 0xff, sizeof (params.bssid));
-  if (argc > 1)
-    {
-      params.ssid.SSID_len = strlen (argv[1]);
-      strcpy (params.ssid.SSID, argv[1]);
-    }
-  params.bss_type = DOT11_BSSTYPE_ANY;
-  params.scan_type = -1;
-  params.nprobes = -1;
-  params.active_time = -1;
-  params.passive_time = -1;
-  params.home_time = -1;
-
-  /* can only scan in STA mode */
-  
-  wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
-  if (oldap > 0)
-    wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
-  if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
-    {
-    fprintf(stderr,"scan failed\n");
-    return -1;
-    }
-  sleep (1);
-  bzero (buf, sizeof (buf));
-  scan_res->buflen = sizeof (buf);
-
-  if (wl_ioctl (dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
-  {
-    fprintf(stderr,"scan results failed\n");
-    return -1;
-  }
-
-  fprintf (stderr,"buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen,
-	  scan_res->version, scan_res->count);
-
-  if (scan_res->count == 0)
-    {
-      cprintf ("Can't find any wireless device\n");
-      goto endss;
-    }
-
-  bss_info = &scan_res->bss_info[0];
-  for (i = 0; i < scan_res->count; i++)
-    {
-      strcpy (site_survey_lists[i].SSID, bss_info->SSID);
-      strcpy (site_survey_lists[i].BSSID,
-	      ether_etoa (bss_info->BSSID.octet, mac));
-#ifndef HAVE_RB500
-#ifndef HAVE_MSSID
-      site_survey_lists[i].channel = bss_info->channel;
-#else
-      site_survey_lists[i].channel = bss_info->chanspec & 0xff;
-#endif
-#endif
-      site_survey_lists[i].RSSI = bss_info->RSSI;
-      site_survey_lists[i].phy_noise = bss_info->phy_noise;
-      site_survey_lists[i].beacon_period = bss_info->beacon_period;
-      site_survey_lists[i].capability = bss_info->capability;
-      site_survey_lists[i].rate_count = bss_info->rateset.count;
-      site_survey_lists[i].dtim_period = bss_info->dtim_period;
-
-      bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
-    }
   write_site_survey ();
   open_site_survey ();
   for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++)
     {
-      printf
-	("[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
+      fprintf(stderr,
+	"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
 	 i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
 	 site_survey_lists[i].channel, site_survey_lists[i].RSSI,
 	 site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period,
@@ -147,14 +166,6 @@ site_survey_main (int argc, char *argv[])
 	 site_survey_lists[i].rate_count);
     }
 
-endss:
-  if (oldap > 0)
-    wl_ioctl (dev, WLC_SET_AP, &oldap, sizeof (oldap));
-  
-  C_led (0);
-#ifdef HAVE_MSSID
-  eval("wl","up");
-#endif
   return 0;
 }
 
@@ -167,9 +178,9 @@ write_site_survey (void)
     {
       fwrite (&site_survey_lists[0], sizeof (site_survey_lists), 1, fp);
       fclose (fp);
-      return FALSE;
+      return 0;
     }
-  return TRUE;
+  return 1;
 }
 
 static int
@@ -183,7 +194,7 @@ open_site_survey (void)
     {
       fread (&site_survey_lists[0], sizeof (site_survey_lists), 1, fp);
       fclose (fp);
-      return TRUE;
+      return 1;
     }
-  return FALSE;
+  return 0;
 }
