@@ -57,7 +57,7 @@ int os_mktime(int year, int month, int day, int hour, int min, int sec,
 	    sec > 60)
 		return -1;
 
-	memset(&tm, 0, sizeof(tm));
+	os_memset(&tm, 0, sizeof(tm));
 	tm.tm_year = year - 1900;
 	tm.tm_mon = month - 1;
 	tm.tm_mday = day;
@@ -427,6 +427,10 @@ int os_snprintf(char *str, size_t size, const char *format, ...)
 {
 	va_list ap;
 	int ret;
+
+	/* See http://www.ijs.si/software/snprintf/ for portable
+	 * implementation of snprintf.
+	 */
 
 	va_start(ap, format);
 	ret = vsnprintf(str, size, format, ap);

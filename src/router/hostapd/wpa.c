@@ -3734,4 +3734,20 @@ int wpa_auth_pmksa_add(struct wpa_state_machine *sm, const u8 *pmk,
 	return -1;
 }
 
+
+int wpa_auth_pmksa_add_preauth(struct wpa_authenticator *wpa_auth,
+			       const u8 *pmk, size_t len, const u8 *sta_addr,
+			       int session_timeout,
+			       struct eapol_state_machine *eapol)
+{
+	if (wpa_auth == NULL)
+		return -1;
+
+	if (pmksa_cache_add(wpa_auth->pmksa, pmk, len, wpa_auth->addr,
+			    sta_addr, session_timeout, eapol))
+		return 0;
+
+	return -1;
+}
+
 #endif /* CONFIG_NATIVE_WINDOWS */
