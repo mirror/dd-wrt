@@ -48,7 +48,7 @@ int siginterrupt (int sig, int interrupt)
 
     return 0;
 #else
-    __set_errno (ENOSYS);
+//    __set_errno (ENOSYS);
     return -1;
 #endif
 }

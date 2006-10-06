@@ -1,7 +1,7 @@
 #ifndef __RING_H__
 #define __RING_H__
 
-#include "linux/ring.h"
+#include "include/linux/ring.h"
 
 #define RING_ERRBUF_SIZE 1024
 
