@@ -3,7 +3,7 @@ DIR_WPA_SUPPLICANT=../wpa_supplicant
 DIR_HOSTAP=../driver/modules
 
 ifndef CFLAGS
-CFLAGS = $(COPTS)
+CFLAGS = $(COPTS) 
 endif
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
@@ -11,7 +11,7 @@ endif
 CFLAGS += -DHOSTAPD_DUMP_STATE
 
 # Include directories for CVS version
-CFLAGS += -I. -I$(DIR_HOSTAP) -I../utils -I$(DIR_WPA_SUPPLICANT)
+CFLAGS += -I. -I$(DIR_HOSTAP) -I../utils -I$(DIR_WPA_SUPPLICANT) -I../openssl/include
 
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
@@ -329,7 +329,7 @@ install: all
 	for i in $(ALL); do install -D $$i $(INSTALLDIR)/hostapd/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
-	$(CC) -o hostapd $(OBJS) $(LIBS)
+	$(CC) -o hostapd -L../openssl.ixp $(OBJS) $(LIBS)
 
 driver_conf.c: Makefile .config
 	rm -f driver_conf.c
