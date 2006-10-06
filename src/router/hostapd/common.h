@@ -34,10 +34,19 @@
 #endif /* defined(__FreeBSD__) || defined(__NetBSD__) ||
 	* defined(__DragonFly__) */
 
+#ifdef CONFIG_TI_COMPILER
+#define __BIG_ENDIAN 4321
+#define __LITTLE_ENDIAN 1234
+#ifdef __big_endian__
+#define __BYTE_ORDER __BIG_ENDIAN
+#else
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#endif
+#endif /* CONFIG_TI_COMPILER */
+
 #ifdef CONFIG_NATIVE_WINDOWS
 #include <winsock.h>
 
-typedef int gid_t;
 typedef int socklen_t;
 
 #ifndef MSG_DONTWAIT
@@ -193,6 +202,22 @@ typedef INT8 s8;
 #define WPA_TYPES_DEFINED
 #endif /* __vxworks */
 
+#ifdef CONFIG_TI_COMPILER
+#ifdef _LLONG_AVAILABLE
+typedef unsigned long long u64;
+#else
+/*
+ * TODO: 64-bit variable not available. Using long as a workaround to test the
+ * build, but this will likely not work for all operations.
+ */
+typedef unsigned long u64;
+#endif
+typedef unsigned int u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
+#define WPA_TYPES_DEFINED
+#endif /* CONFIG_TI_COMPILER */
+
 #ifndef WPA_TYPES_DEFINED
 #ifdef CONFIG_USE_INTTYPES_H
 #include <inttypes.h>
@@ -227,7 +252,7 @@ void wpa_get_ntp_timestamp(u8 *buf);
 
 
 /* Debugging function - conditional printf and hex dump. Driver wrappers can
- *  use these for debugging purposes. */
+ * use these for debugging purposes. */
 
 enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 
@@ -355,76 +380,14 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 
 
 #ifdef _MSC_VER
-#undef snprintf
-#define snprintf _snprintf
 #undef vsnprintf
 #define vsnprintf _vsnprintf
 #undef close
 #define close closesocket
-#undef strdup
-#define strdup _strdup
 #endif /* _MSC_VER */
 
 
 #ifdef CONFIG_ANSI_C_EXTRA
-
-/*
- * Following non-ANSI C functions may need to be defined either as a macro to
- * native function with identical behavior or as a separate implementation,
- * e.g., in common.c or in a new OS / C library specific file, if needed.
- */
-
-#if 0
-/* List of used C library functions */
-
-/* Memory allocation */
-void free(void *ptr);
-void *malloc(size_t size);
-void *realloc(void *ptr, size_t size);
-
-/* Memory/string processing */
-void *memcpy(void *dest, const void *src, size_t n);
-void *memmove(void *dest, const void *src, size_t n);
-void *memset(void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-char *strchr(const char *s, int c);
-char *strrchr(const char *s, int c);
-int strcmp(const char *s1, const char *s2);
-size_t strlen(const char *s);
-char *strncpy(char *dest, const char *src, size_t n);
-char *strstr(const char *haystack, const char *needle);
-char *strdup(const char *s);
-
-/* printf like functions for writing to memory buffer */
-int snprintf(char *str, size_t size, const char *format, ...);
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-/* vsnprintf is only used for wpa_msg(); not needed if ctrl_iface is not used
- * and stdout debugging is disabled
- */
-#endif
-
-#if !defined(_MSC_VER) || _MSC_VER < 1400
-/* strdup - used in number of places - simple example implementation in
- * common.c */
-char * strdup(const char *s);
-#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
-
-/* strcasecmp - used in couple of places; not critical, so can be defined to
- * use strcmp instead */
-#if 0
-int strcasecmp(const char *s1, const char *s2);
-#else
-#define strcasecmp strcmp
-#endif
-
-/* strncasecmp - used only in wpa_cli.c; not critical, so can be defined to
- * use strncmp instead */
-#if 0
-int strncasecmp(const char *s1, const char *s2, size_t n);
-#else
-#define strncasecmp strncmp
-#endif
 
 #if !defined(_MSC_VER) || _MSC_VER < 1400
 /* snprintf - used in number of places; sprintf() is _not_ a good replacement
@@ -441,20 +404,6 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int getopt(int argc, char *const argv[], const char *optstring);
 extern char *optarg;
 extern int optind;
-
-/* gid_t - used in config.h, just typedef it to int here */
-
-#ifndef CONFIG_NO_GID_T_TYPEDEF
-#ifdef CONFIG_CTRL_IFACE
-#ifndef CONFIG_CTRL_IFACE_UDP
-#ifndef __gid_t_defined
-#ifndef _GID_T
-typedef int gid_t;
-#endif
-#endif
-#endif
-#endif
-#endif
 
 #ifndef CONFIG_NO_SOCKLEN_T_TYPEDEF
 #ifndef __socklen_t_defined

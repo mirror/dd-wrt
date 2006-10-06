@@ -29,16 +29,19 @@ void os_sleep(os_time_t sec, os_time_t usec)
 
 int os_get_time(struct os_time *t)
 {
-#ifdef _WIN32_WCE
-	/* TODO */
-	return 0;
-#else /* _WIN32_WCE */
 #define EPOCHFILETIME (116444736000000000ULL)
 	FILETIME ft;
 	LARGE_INTEGER li;
 	ULONGLONG tt;
 
+#ifdef _WIN32_WCE
+	SYSTEMTIME st;
+
+	GetSystemTime(&st);
+	SystemTimeToFileTime(&st, &ft);
+#else /* _WIN32_WCE */
 	GetSystemTimeAsFileTime(&ft);
+#endif /* _WIN32_WCE */
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
 	tt = (li.QuadPart - EPOCHFILETIME) / 10;
@@ -46,7 +49,6 @@ int os_get_time(struct os_time *t)
 	t->usec = (os_time_t) (tt % 1000000);
 
 	return 0;
-#endif /* _WIN32_WCE */
 }
 
 

@@ -8,7 +8,7 @@ endif
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
 # a file (undefine it, if you want to save in binary size)
-CFLAGS += -DHOSTAPD_DUMP_STATE
+CFLAGS += -DHOSTAPD_DUMP_STATE -DNEED_PRINTF
 
 # Include directories for CVS version
 CFLAGS += -I. -I$(DIR_HOSTAP) -I../utils -I$(DIR_WPA_SUPPLICANT) -I../openssl/include
