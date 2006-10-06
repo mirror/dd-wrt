@@ -698,7 +698,7 @@ bsd_wireless_event_deinit(void *priv)
 
 static int
 bsd_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
-	       int encrypt, const char *own_addr)
+	       int encrypt, const u8 *own_addr)
 {
 	struct bsd_driver_data *drv = priv;
 	unsigned char buf[3000];

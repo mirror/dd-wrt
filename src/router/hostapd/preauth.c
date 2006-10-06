@@ -25,6 +25,7 @@
 #include "eapol_sm.h"
 #include "hostap_common.h"
 #include "wpa.h"
+#include "preauth.h"
 
 
 static const int dot11RSNAConfigPMKLifetime = 43200;
@@ -205,12 +206,18 @@ void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta,
 
 	key = ieee802_1x_get_key_crypt(sta->eapol_sm, &len);
 	if (success && key) {
-		if (wpa_auth_pmksa_add(sta->wpa_sm, key,
-				       dot11RSNAConfigPMKLifetime,
-				       sta->eapol_sm) == 0) {
+		if (wpa_auth_pmksa_add_preauth(hapd->wpa_auth, key, len,
+					       sta->addr,
+					       dot11RSNAConfigPMKLifetime,
+					       sta->eapol_sm) == 0) {
 			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
 				       HOSTAPD_LEVEL_DEBUG,
 				       "added PMKSA cache entry (pre-auth)");
+		} else {
+			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
+				       HOSTAPD_LEVEL_DEBUG,
+				       "failed to add PMKSA cache entry "
+				       "(pre-auth)");
 		}
 	}
 
