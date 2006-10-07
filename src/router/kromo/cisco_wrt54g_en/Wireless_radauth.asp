@@ -56,50 +56,48 @@ addEvent(window, "load", function() {
                     
                     <fieldset>
                       <legend><% tran("radius.legend"); %></legend>
-                     <div>
-                        <div class="setting">
-                           <div class="label"><% tran("radius.label"); %></div>
-                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" /><% tran("share.enable"); %>&nbsp;
-                           <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
-                        </div>
-                        <div id="idradius">
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label2"); %></div>
-	                           <select name="wl_radmactype">
-	                              <option value="0" <% nvram_selected("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
-	                              <option value="1" <% nvram_selected("wl_radmactype","1"); %>>aabbccddeeff</option>
-	                              <option value="2" <% nvram_selected("wl_radmactype","2"); %>>aa:bb:cc:dd:ee:ff</option>
-	                              <option value="3" <% nvram_selected("wl_radmactype","3"); %>>aa-bb-cc-dd-ee-ff</option>
-	                           </select>
-	                        </div>
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label3"); %></div>
-	                           <input type="hidden" name="wl_radius_ipaddr" value="4" />
-	                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onblur="valid_range(this,1,254,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","3"); %>" />
-	                        </div>
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label4"); %></div>
-	                           <input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,radius.label4)" value="<% nvram_get("wl_radius_port"); %>" />
-	                        </div>
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label5"); %></div>
-	                           <input class="num" size="5" maxlength="5" name="max_unauth_users" value="<% nvram_get("max_unauth_users"); %>" />
-	                        </div>
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label6"); %></div>
-	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
-	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> /><% tran("share.mac"); %>
-	                        </div>
-	                        <div class="setting">
-	                           <div class="label"><% tran("radius.label7"); %></div>
-	                           <input size="20" maxlength="32" name="wl_radius_key" value="<% nvram_get("wl_radius_key"); %>" />
-	                        </div>
-	                        <div class="setting">
-	                        	<div class="label"><% tran("radius.label8"); %></div>
-	                        	<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("radius_override", "1"); %> />
-	                        </div>
+                      <div class="setting">
+                         <div class="label"><% tran("radius.label"); %></div>
+                         <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" /><% tran("share.enable"); %>&nbsp;
+                         <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
+                      </div>
+                      <div id="idradius">
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label2"); %></div>
+	                         <select name="wl_radmactype">
+	                            <option value="0" <% nvram_selected("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
+	                            <option value="1" <% nvram_selected("wl_radmactype","1"); %>>aabbccddeeff</option>
+	                            <option value="2" <% nvram_selected("wl_radmactype","2"); %>>aa:bb:cc:dd:ee:ff</option>
+	                            <option value="3" <% nvram_selected("wl_radmactype","3"); %>>aa-bb-cc-dd-ee-ff</option>
+	                         </select>
 	                      </div>
-	                	</div>
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label3"); %></div>
+	                         <input type="hidden" name="wl_radius_ipaddr" value="4" />
+	                         <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onblur="valid_range(this,1,254,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","3"); %>" />
+	                      </div>
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label4"); %></div>
+	                         <input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,radius.label4)" value="<% nvram_get("wl_radius_port"); %>" />
+	                      </div>
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label5"); %></div>
+	                         <input class="num" size="5" maxlength="5" name="max_unauth_users" value="<% nvram_get("max_unauth_users"); %>" />
+	                      </div>
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label6"); %></div>
+	                         <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
+	                         <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> /><% tran("share.mac"); %>
+	                      </div>
+	                      <div class="setting">
+	                         <div class="label"><% tran("radius.label7"); %></div>
+	                         <input size="20" maxlength="32" name="wl_radius_key" value="<% nvram_get("wl_radius_key"); %>" />
+	                      </div>
+	                      <div class="setting">
+	                      	<div class="label"><% tran("radius.label8"); %></div>
+	                       	<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("radius_override", "1"); %> />
+	                      </div>
+	                    </div>
                     </fieldset><br/>
                     
                     <div class="submitFooter">
