@@ -2980,7 +2980,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
@@ -2990,7 +2990,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
@@ -3055,7 +3055,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
@@ -3065,7 +3065,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
@@ -3129,7 +3129,7 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
@@ -3139,7 +3139,7 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
