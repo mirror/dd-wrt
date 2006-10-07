@@ -239,11 +239,11 @@ int
 start_setup_vlans (void)
 {
 #ifdef HAVE_RB500
-return 0;
+  return 0;
 #elif HAVE_XSCALE
-return 0;
+  return 0;
 #elif HAVE_MAGICBOX
-return 0;
+  return 0;
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
 
@@ -458,9 +458,11 @@ flush_interfaces (void)
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_GATEWORX
-    snprintf (all_ifnames, 255, "%s %s %s", "ixp1",nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+  snprintf (all_ifnames, 255, "%s %s %s", "ixp1",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #else
-    snprintf (all_ifnames, 255, "%s %s %s", "ixp0",nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+  snprintf (all_ifnames, 255, "%s %s %s", "ixp0",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #endif
 #else
   if (wl_probe ("eth2"))

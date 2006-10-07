@@ -255,7 +255,9 @@ get_wan_face (void)
 	strncpy (localwanface, nvram_safe_get ("pppd_pppifname"), IFNAMSIZ);
     }
 #ifndef HAVE_MADWIFI
-  else if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta") || nvram_match("wl0_mode","wet"))
+  else if (nvram_match ("wl0_mode", "sta")
+	   || nvram_match ("wl0_mode", "apsta")
+	   || nvram_match ("wl0_mode", "wet"))
     {
       if (wl_probe ("eth2"))
 	strcpy (localwanface, "eth1");
@@ -844,9 +846,9 @@ nat_postrouting (void)
 	     lanface);
 	  save2file ("-A POSTROUTING -o %s -s %s%s -d %s%s -j MASQUERADE\n",
 		     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
-	  #ifndef HAVE_MAGICBOX
+#ifndef HAVE_MAGICBOX
 	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
-	  #endif
+#endif
 	}
     }
   else if (nvram_match ("wl_br1_enable", "1"))

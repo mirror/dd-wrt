@@ -34,24 +34,25 @@ start_sysinit (void)
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  system("/etc/convert");
+  system ("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
   cprintf ("sysinit() tmp\n");
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
-  eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
-  eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
+  eval ("mount", "/etc/www.fs", "/www", "-t", "squashfs", "-o", "loop");
+  eval ("mount", "/etc/modules.fs", "/lib/modules", "-t", "squashfs", "-o",
+	"loop");
+  eval ("mount", "/etc/usr.fs", "/usr", "-t", "squashfs", "-o", "loop");
   eval ("mkdir", "/tmp/www");
-  
-eval ("mount","-o","remount,rw","/");
-mkdir ("/usr/local/nvram", 0777);
-unlink ("/tmp/nvram/.lock");
-eval ("mkdir", "/tmp/nvram");
-eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+
+  eval ("mount", "-o", "remount,rw", "/");
+  mkdir ("/usr/local/nvram", 0777);
+  unlink ("/tmp/nvram/.lock");
+  eval ("mkdir", "/tmp/nvram");
+  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -74,26 +75,26 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   uname (&name);
 
 //  enableAfterBurner ();
-eval("insmod","md5");
-eval("insmod","aes");
-eval("insmod","blowfish");
-eval("insmod","deflate");
-eval("insmod","des");
-eval("insmod","michael_mic");
-eval("insmod","cast5");
-eval("insmod","crypto_null");
+  eval ("insmod", "md5");
+  eval ("insmod", "aes");
+  eval ("insmod", "blowfish");
+  eval ("insmod", "deflate");
+  eval ("insmod", "des");
+  eval ("insmod", "michael_mic");
+  eval ("insmod", "cast5");
+  eval ("insmod", "crypto_null");
 
-system("/etc/kendin");
-eval("insmod","ixp400th");
-eval("insmod","ixp400");
-system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-eval("insmod","ixp400_eth");
-eval("insmod","ocf");
-eval("insmod","cryptodev");
-eval("insmod","ixp4xx","init_crypto=0");
-eval("ifconfig","ixp0","0.0.0.0","up");
-eval("vconfig","add","ixp0","1");
-eval("vconfig","add","ixp0","2");
+  system ("/etc/kendin");
+  eval ("insmod", "ixp400th");
+  eval ("insmod", "ixp400");
+  system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+  eval ("insmod", "ixp400_eth");
+  eval ("insmod", "ocf");
+  eval ("insmod", "cryptodev");
+  eval ("insmod", "ixp4xx", "init_crypto=0");
+  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+  eval ("vconfig", "add", "ixp0", "1");
+  eval ("vconfig", "add", "ixp0", "2");
 
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");

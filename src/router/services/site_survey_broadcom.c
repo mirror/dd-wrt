@@ -84,27 +84,27 @@ site_survey_main (int argc, char *argv[])
   params.home_time = -1;
 
   /* can only scan in STA mode */
-  
+
   wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
   if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
     {
-    fprintf(stderr,"scan failed\n");
-    return -1;
+      fprintf (stderr, "scan failed\n");
+      return -1;
     }
   sleep (1);
   bzero (buf, sizeof (buf));
   scan_res->buflen = sizeof (buf);
 
   if (wl_ioctl (dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
-  {
-    fprintf(stderr,"scan results failed\n");
-    return -1;
-  }
+    {
+      fprintf (stderr, "scan results failed\n");
+      return -1;
+    }
 
-  fprintf (stderr,"buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen,
-	  scan_res->version, scan_res->count);
+  fprintf (stderr, "buflen=[%d] version=[%d] count=[%d]\n", scan_res->buflen,
+	   scan_res->version, scan_res->count);
 
   if (scan_res->count == 0)
     {
@@ -150,10 +150,10 @@ site_survey_main (int argc, char *argv[])
 endss:
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &oldap, sizeof (oldap));
-  
+
   C_led (0);
 #ifdef HAVE_MSSID
-  eval("wl","up");
+  eval ("wl", "up");
 #endif
   return 0;
 }
