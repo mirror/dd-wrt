@@ -227,6 +227,7 @@ nvram_get (const char *name)
       cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
+  /*
   fread (values.offsets, ('z'-'A')*4, 1, in);
   fclose (in);
   if (name[0]<'A' || name[0]>'z')
@@ -234,6 +235,11 @@ nvram_get (const char *name)
      return NULL;
     }
   int offset = values.offsets[name[0]-'A'];
+  */
+  int offset;
+  fseek(in,(name[0]-'A')*4,SEEK_SET);
+  fread(&offset,4,1,in);
+  fclose (in);
   if (offset == -1)
     {
       unlock ();
@@ -284,6 +290,7 @@ begin:;
       cprintf ("size of value = %d\n", fullen);
       char *value = malloc (fullen + 1);
       fread(value,fullen,1,in);
+      
       value[fullen] = 0;
       fclose (in);
       unlock ();
