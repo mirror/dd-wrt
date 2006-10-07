@@ -80,7 +80,7 @@ function init() {
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
 							   <legend><% tran("vlan.legend"); %></legend>
-							   <table id="vlan" class="table center vlan">
+							   <table class="table center vlan" summary="virtual lan table">
   								<tbody>
   									<tr>
   										<th rowspan="2"><% tran("vlan.legend"); %></th>
