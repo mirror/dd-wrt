@@ -41,7 +41,7 @@ static int hostapd_ioctl(struct wpa_driver_hostap_data *drv,
 	struct iwreq iwr;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
 
@@ -87,7 +87,7 @@ static int prism2param(struct wpa_driver_hostap_data *drv, int param,
 	int *i, ret = 0;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = param;
 	*i++ = value;
@@ -207,8 +207,8 @@ static int wpa_driver_hostap_set_key(void *priv, wpa_alg alg,
 #else
 	os_memset(param->sta_addr, 0xff, ETH_ALEN);
 #endif
-	strncpy((char *) param->u.crypt.alg, alg_name,
-		HOSTAP_CRYPT_ALG_NAME_LEN);
+	os_strncpy((char *) param->u.crypt.alg, alg_name,
+		   HOSTAP_CRYPT_ALG_NAME_LEN);
 	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
 	param->u.crypt.idx = key_idx;
 	os_memcpy(param->u.crypt.seq, seq, seq_len);
@@ -251,7 +251,7 @@ static int wpa_driver_hostap_reset(struct wpa_driver_hostap_data *drv,
 	wpa_printf(MSG_DEBUG, "%s: type=%d", __FUNCTION__, type);
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = type;
 
@@ -461,7 +461,7 @@ static void * wpa_driver_hostap_init(void *ctx, const char *ifname)
 	}
 
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0) {
 		perror("socket");
@@ -476,7 +476,7 @@ static void * wpa_driver_hostap_init(void *ctx, const char *ifname)
 		 * wireless events.
 		 */
 		char ifname2[IFNAMSIZ + 1];
-		strncpy(ifname2, ifname, sizeof(ifname2));
+		os_strncpy(ifname2, ifname, sizeof(ifname2));
 		os_memcpy(ifname2, "wifi", 4);
 		wpa_driver_wext_alternative_ifindex(drv->wext, ifname2);
 	}

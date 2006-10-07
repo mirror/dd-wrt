@@ -48,7 +48,7 @@ struct l2_packet_data {
 
 int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
 {
-	memcpy(addr, l2->own_addr, ETH_ALEN);
+	os_memcpy(addr, l2->own_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -73,7 +73,7 @@ static int l2_packet_init_libdnet(struct l2_packet_data *l2)
 		l2->eth = NULL;
 		return -1;
 	}
-	memcpy(l2->own_addr, own_addr.data, ETH_ALEN);
+	os_memcpy(l2->own_addr, own_addr.data, ETH_ALEN);
 
 	return 0;
 }
@@ -97,14 +97,14 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 #endif /* CONFIG_WINPCAP */
 	} else {
 		size_t mlen = sizeof(*eth) + len;
-		eth = malloc(mlen);
+		eth = os_malloc(mlen);
 		if (eth == NULL)
 			return -1;
 
-		memcpy(eth->h_dest, dst_addr, ETH_ALEN);
-		memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
+		os_memcpy(eth->h_dest, dst_addr, ETH_ALEN);
+		os_memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
 		eth->h_proto = htons(proto);
-		memcpy(eth + 1, buf, len);
+		os_memcpy(eth + 1, buf, len);
 
 #ifdef CONFIG_WINPCAP
 		ret = pcap_sendpacket(l2->pcap, (u8 *) eth, mlen);
@@ -112,7 +112,7 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 		ret = eth_send(l2->eth, (u8 *) eth, mlen);
 #endif /* CONFIG_WINPCAP */
 
-		free(eth);
+		os_free(eth);
 	}
 
 	return ret;
@@ -208,7 +208,7 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 
 #ifdef CONFIG_WINPCAP
 	char ifname[128];
-	snprintf(ifname, sizeof(ifname), "\\Device\\NPF_%s", l2->ifname);
+	os_snprintf(ifname, sizeof(ifname), "\\Device\\NPF_%s", l2->ifname);
 	pcap_lookupnet(ifname, &pcap_netp, &pcap_maskp, pcap_err);
 	l2->pcap = pcap_open_live(ifname, 2500, 0, 10, pcap_err);
 	if (l2->pcap == NULL) {
@@ -234,13 +234,13 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 		return -1;
 	}
 #endif /* CONFIG_WINPCAP */
-	snprintf(pcap_filter, sizeof(pcap_filter),
-		 "not ether src " MACSTR " and "
-		 "( ether dst " MACSTR " or ether dst " MACSTR " ) and "
-		 "ether proto 0x%x",
-		 MAC2STR(l2->own_addr), /* do not receive own packets */
-		 MAC2STR(l2->own_addr), MAC2STR(pae_group_addr),
-		 protocol);
+	os_snprintf(pcap_filter, sizeof(pcap_filter),
+		    "not ether src " MACSTR " and "
+		    "( ether dst " MACSTR " or ether dst " MACSTR " ) and "
+		    "ether proto 0x%x",
+		    MAC2STR(l2->own_addr), /* do not receive own packets */
+		    MAC2STR(l2->own_addr), MAC2STR(pae_group_addr),
+		    protocol);
 	if (pcap_compile(l2->pcap, &pcap_fp, pcap_filter, 1, pcap_netp) < 0) {
 		fprintf(stderr, "pcap_compile: %s\n", pcap_geterr(l2->pcap));
 		return -1;
@@ -289,17 +289,17 @@ struct l2_packet_data * l2_packet_init(
 {
 	struct l2_packet_data *l2;
 
-	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
+	l2 = os_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	os_strncpy(l2->ifname, ifname, sizeof(l2->ifname));
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;
 
 #ifdef CONFIG_WINPCAP
 	if (own_addr)
-		memcpy(l2->own_addr, own_addr, ETH_ALEN);
+		os_memcpy(l2->own_addr, own_addr, ETH_ALEN);
 #else /* CONFIG_WINPCAP */
 	if (l2_packet_init_libdnet(l2))
 		return NULL;
@@ -309,7 +309,7 @@ struct l2_packet_data * l2_packet_init(
 #ifndef CONFIG_WINPCAP
 		eth_close(l2->eth);
 #endif /* CONFIG_WINPCAP */
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
 
@@ -331,7 +331,7 @@ void l2_packet_deinit(struct l2_packet_data *l2)
 #endif /* CONFIG_WINPCAP */
 	if (l2->pcap)
 		pcap_close(l2->pcap);
-	free(l2);
+	os_free(l2);
 }
 
 
@@ -349,15 +349,15 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	}
 
 	for (dev = devs; dev && !found; dev = dev->next) {
-		if (strcmp(dev->name, l2->ifname) != 0)
+		if (os_strcmp(dev->name, l2->ifname) != 0)
 			continue;
 
 		addr = dev->addresses;
 		while (addr) {
 			saddr = (struct sockaddr_in *) addr->addr;
 			if (saddr && saddr->sin_family == AF_INET) {
-				snprintf(buf, len, "%s",
-					 inet_ntoa(saddr->sin_addr));
+				os_snprintf(buf, len, "%s",
+					    inet_ntoa(saddr->sin_addr));
 				found = 1;
 				break;
 			}

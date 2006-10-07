@@ -30,6 +30,11 @@ struct ndis_pmkid_entry {
 struct wpa_driver_ndis_data {
 	void *ctx;
 	char ifname[100]; /* GUID: {7EE3EFE5-C165-472F-986D-F6FBEDFE8C8D} */
+#ifdef _WIN32_WCE
+	TCHAR *adapter_name;
+	HANDLE event_queue; /* NDISUIO notifier MsgQueue */
+	HANDLE connected_event; /* WpaSupplicantConnected event */
+#endif /* _WIN32_WCE */
 	u8 own_addr[ETH_ALEN];
 #ifdef CONFIG_USE_NDISUIO
 	HANDLE ndisuio;

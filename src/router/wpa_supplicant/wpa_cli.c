@@ -1314,6 +1314,7 @@ static void wpa_cli_interactive(void)
 #endif /* CONFIG_NATIVE_WINDOWS */
 		if (cmd == NULL)
 			break;
+		wpa_cli_recv_pending(ctrl_conn, 0, 0);
 		pos = cmd;
 		while (*pos != '\0') {
 			if (*pos == '\n') {

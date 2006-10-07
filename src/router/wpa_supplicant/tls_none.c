@@ -109,7 +109,8 @@ int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 
 u8 * tls_connection_handshake(void *tls_ctx, struct tls_connection *conn,
 			      const u8 *in_data, size_t in_len,
-			      size_t *out_len)
+			      size_t *out_len, u8 **appl_data,
+			      size_t *appl_data_len)
 {
 	return NULL;
 }

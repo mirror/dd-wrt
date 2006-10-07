@@ -15,6 +15,9 @@
 #include "includes.h"
 
 
+#ifdef CONFIG_DRIVER_WEXT
+extern struct wpa_driver_ops wpa_driver_wext_ops; /* driver_wext.c */
+#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_HOSTAP
 extern struct wpa_driver_ops wpa_driver_hostap_ops; /* driver_hostap.c */
 #endif /* CONFIG_DRIVER_HOSTAP */
@@ -30,9 +33,6 @@ extern struct wpa_driver_ops wpa_driver_madwifi_ops; /* driver_madwifi.c */
 #ifdef CONFIG_DRIVER_ATMEL
 extern struct wpa_driver_ops wpa_driver_atmel_ops; /* driver_atmel.c */
 #endif /* CONFIG_DRIVER_ATMEL */
-#ifdef CONFIG_DRIVER_WEXT
-extern struct wpa_driver_ops wpa_driver_wext_ops; /* driver_wext.c */
-#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_NDISWRAPPER
 /* driver_ndiswrapper.c */
 extern struct wpa_driver_ops wpa_driver_ndiswrapper_ops;
@@ -59,6 +59,9 @@ extern struct wpa_driver_ops wpa_driver_test_ops; /* driver_test.c */
 
 struct wpa_driver_ops *wpa_supplicant_drivers[] =
 {
+#ifdef CONFIG_DRIVER_WEXT
+	&wpa_driver_wext_ops,
+#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_HOSTAP
 	&wpa_driver_hostap_ops,
 #endif /* CONFIG_DRIVER_HOSTAP */
@@ -74,9 +77,6 @@ struct wpa_driver_ops *wpa_supplicant_drivers[] =
 #ifdef CONFIG_DRIVER_ATMEL
 	&wpa_driver_atmel_ops,
 #endif /* CONFIG_DRIVER_ATMEL */
-#ifdef CONFIG_DRIVER_WEXT
-	&wpa_driver_wext_ops,
-#endif /* CONFIG_DRIVER_WEXT */
 #ifdef CONFIG_DRIVER_NDISWRAPPER
 	&wpa_driver_ndiswrapper_ops,
 #endif /* CONFIG_DRIVER_NDISWRAPPER */

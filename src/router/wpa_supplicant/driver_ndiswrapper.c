@@ -93,7 +93,7 @@ static int get_socket(void)
 static int iw_set_ext(struct wpa_driver_ndiswrapper_data *drv, int request,
 		      struct iwreq *pwrq)
 {
-	strncpy(pwrq->ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(pwrq->ifr_name, drv->ifname, IFNAMSIZ);
 	return ioctl(drv->sock, request, pwrq);
 }
 
@@ -328,7 +328,7 @@ static void * wpa_ndiswrapper_init(void *ctx, const char *ifname)
 	}
 
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->sock = get_socket();
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);

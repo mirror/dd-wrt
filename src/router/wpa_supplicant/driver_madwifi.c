@@ -53,7 +53,7 @@ set80211priv(struct wpa_driver_madwifi_data *drv, int op, void *data, int len,
 	struct iwreq iwr;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	if (len < IFNAMSIZ) {
 		/*
 		 * Argument data fits inline; put it there.
@@ -148,7 +148,7 @@ set80211param(struct wpa_driver_madwifi_data *drv, int op, int arg,
 	struct iwreq iwr;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.mode = op;
 	os_memcpy(iwr.u.name+sizeof(__u32), &arg, sizeof(arg));
 
@@ -167,7 +167,7 @@ wpa_driver_madwifi_set_wpa_ie(struct wpa_driver_madwifi_data *drv,
 	struct iwreq iwr;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	/* NB: SETOPTIE is not fixed-size so must not be inlined */
 	iwr.u.data.pointer = (void *) wpa_ie;
 	iwr.u.data.length = wpa_ie_len;
@@ -420,7 +420,7 @@ wpa_driver_madwifi_scan(void *priv, const u8 *ssid, size_t ssid_len)
 	int ret = 0;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 
 	/* set desired ssid before scan */
 	/* FIX: scan should not break the current association, so using
@@ -488,7 +488,7 @@ static void * wpa_driver_madwifi_init(void *ctx, const char *ifname)
 		goto fail;
 
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0)
 		goto fail2;

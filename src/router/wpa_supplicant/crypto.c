@@ -93,10 +93,10 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 static void sha1_transform(u8 *state, const u8 data[64])
 {
 	SHA_CTX context;
-	memset(&context, 0, sizeof(context));
-	memcpy(&context.h0, state, 5 * 4);
+	os_memset(&context, 0, sizeof(context));
+	os_memcpy(&context.h0, state, 5 * 4);
 	SHA1_Transform(&context, data);
-	memcpy(state, &context.h0, 5 * 4);
+	os_memcpy(state, &context.h0, 5 * 4);
 }
 
 
@@ -113,8 +113,8 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 
 	/* FIPS 186-2 + change notice 1 */
 
-	memcpy(xkey, seed, seed_len);
-	memset(xkey + seed_len, 0, 64 - seed_len);
+	os_memcpy(xkey, seed, seed_len);
+	os_memset(xkey + seed_len, 0, 64 - seed_len);
 	t[0] = 0x67452301;
 	t[1] = 0xEFCDAB89;
 	t[2] = 0x98BADCFE;
@@ -128,14 +128,14 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 			/* XVAL = (XKEY + XSEED_j) mod 2^b */
 
 			/* w_i = G(t, XVAL) */
-			memcpy(_t, t, 20);
+			os_memcpy(_t, t, 20);
 			sha1_transform((u8 *) _t, xkey);
 			_t[0] = host_to_be32(_t[0]);
 			_t[1] = host_to_be32(_t[1]);
 			_t[2] = host_to_be32(_t[2]);
 			_t[3] = host_to_be32(_t[3]);
 			_t[4] = host_to_be32(_t[4]);
-			memcpy(xpos, _t, 20);
+			os_memcpy(xpos, _t, 20);
 
 			/* XKEY = (1 + XKEY + w_i) mod 2^b */
 			carry = 1;
@@ -157,11 +157,11 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 void * aes_encrypt_init(const u8 *key, size_t len)
 {
 	AES_KEY *ak;
-	ak = malloc(sizeof(*ak));
+	ak = os_malloc(sizeof(*ak));
 	if (ak == NULL)
 		return NULL;
 	if (AES_set_encrypt_key(key, 8 * len, ak) < 0) {
-		free(ak);
+		os_free(ak);
 		return NULL;
 	}
 	return ak;
@@ -176,18 +176,18 @@ void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 
 void aes_encrypt_deinit(void *ctx)
 {
-	free(ctx);
+	os_free(ctx);
 }
 
 
 void * aes_decrypt_init(const u8 *key, size_t len)
 {
 	AES_KEY *ak;
-	ak = malloc(sizeof(*ak));
+	ak = os_malloc(sizeof(*ak));
 	if (ak == NULL)
 		return NULL;
 	if (AES_set_decrypt_key(key, 8 * len, ak) < 0) {
-		free(ak);
+		os_free(ak);
 		return NULL;
 	}
 	return ak;
@@ -202,6 +202,6 @@ void aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 
 void aes_decrypt_deinit(void *ctx)
 {
-	free(ctx);
+	os_free(ctx);
 }
 #endif /* EAP_TLS_FUNCS */

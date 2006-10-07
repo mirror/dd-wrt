@@ -27,14 +27,22 @@
  */
 
 #include "includes.h"
+#include <windows.h>
 
 #include "common.h"
 #include "wpa_supplicant_i.h"
 #include "eloop.h"
 
-#define SERVICE_NAME_A "wpasvc"
-#define SERVICE_NAME TEXT("wpasvc")
-#define DISPLAY_NAME TEXT("wpa_supplicant service")
+#ifndef WPASVC_NAME
+#define WPASVC_NAME TEXT("wpasvc")
+#endif
+#ifndef WPASVC_DISPLAY_NAME
+#define WPASVC_DISPLAY_NAME TEXT("wpa_supplicant service")
+#endif
+#ifndef WPASVC_DESCRIPTION
+#define WPASVC_DESCRIPTION \
+TEXT("Provides IEEE 802.1X and WPA/WPA2 supplicant functionality")
+#endif
 
 static HANDLE kill_svc;
 
@@ -42,8 +50,18 @@ static SERVICE_STATUS_HANDLE svc_status_handle;
 static SERVICE_STATUS svc_status;
 
 
-#define KEY_ROOT HKEY_LOCAL_MACHINE
-#define KEY_PREFIX TEXT("SOFTWARE\\wpa_supplicant")
+#ifndef WPA_KEY_ROOT
+#define WPA_KEY_ROOT HKEY_LOCAL_MACHINE
+#endif
+#ifndef WPA_KEY_PREFIX
+#define WPA_KEY_PREFIX TEXT("SOFTWARE\\wpa_supplicant")
+#endif
+
+#ifdef UNICODE
+#define TSTR "%S"
+#else /* UNICODE */
+#define TSTR "%s"
+#endif /* UNICODE */
 
 
 static int read_interface(struct wpa_global *global, HKEY _hk,
@@ -62,7 +80,7 @@ static int read_interface(struct wpa_global *global, HKEY _hk,
 		return -1;
 	}
 
-	memset(&iface, 0, sizeof(iface));
+	os_memset(&iface, 0, sizeof(iface));
 	iface.driver = "ndis";
 
 	buflen = sizeof(ctrl_interface);
@@ -119,10 +137,10 @@ static int wpa_supplicant_thread(void)
 	if (os_program_init())
 		return -1;
 
-	memset(&params, 0, sizeof(params));
+	os_memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = MSG_INFO;
 
-	ret = RegOpenKeyEx(KEY_ROOT, KEY_PREFIX,
+	ret = RegOpenKeyEx(WPA_KEY_ROOT, WPA_KEY_PREFIX,
 			   0, KEY_QUERY_VALUE, &hk);
 	if (ret != ERROR_SUCCESS) {
 		printf("Could not open wpa_supplicant registry key\n");
@@ -222,8 +240,9 @@ static DWORD svc_thread(LPDWORD param)
 static int register_service(const TCHAR *exe)
 {
 	SC_HANDLE svc, scm;
+	SERVICE_DESCRIPTION sd;
 
-	printf("Registering service: " SERVICE_NAME_A "\n");
+	printf("Registering service: " TSTR "\n", WPASVC_NAME);
 
 	scm = OpenSCManager(0, 0, SC_MANAGER_CREATE_SERVICE);
 	if (!scm) {
@@ -231,7 +250,7 @@ static int register_service(const TCHAR *exe)
 		return -1;
 	}
 
-	svc = CreateService(scm, SERVICE_NAME, DISPLAY_NAME,
+	svc = CreateService(scm, WPASVC_NAME, WPASVC_DISPLAY_NAME,
 			    SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS,
 			    SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
 			    exe, NULL, NULL, NULL, NULL, NULL);
@@ -240,6 +259,14 @@ static int register_service(const TCHAR *exe)
 		printf("CreateService failed: %d\n\n", (int) GetLastError());
 		CloseServiceHandle(scm);
 		return -1;
+	}
+
+	os_memset(&sd, 0, sizeof(sd));
+	sd.lpDescription = WPASVC_DESCRIPTION;
+	if (!ChangeServiceConfig2(svc, SERVICE_CONFIG_DESCRIPTION, &sd)) {
+		printf("ChangeServiceConfig2 failed: %d\n",
+		       (int) GetLastError());
+		/* This is not a fatal error, so continue anyway. */
 	}
 
 	CloseServiceHandle(svc);
@@ -256,7 +283,7 @@ static int unregister_service(void)
 	SC_HANDLE svc, scm;
 	SERVICE_STATUS status;
 
-	printf("Unregistering service: " SERVICE_NAME_A "\n");
+	printf("Unregistering service: " TSTR "\n", WPASVC_NAME);
 
 	scm = OpenSCManager(0, 0, SC_MANAGER_CREATE_SERVICE);
 	if (!scm) {
@@ -264,7 +291,7 @@ static int unregister_service(void)
 		return -1;
 	}
 
-	svc = OpenService(scm, SERVICE_NAME, SERVICE_ALL_ACCESS | DELETE);
+	svc = OpenService(scm, WPASVC_NAME, SERVICE_ALL_ACCESS | DELETE);
 	if (!svc) {
 		printf("OpenService failed: %d\n\n", (int) GetLastError());
 		CloseServiceHandle(scm);
@@ -332,7 +359,7 @@ static void WINAPI service_start(DWORD argc, LPTSTR *argv)
 {
 	DWORD id;
 
-	svc_status_handle = RegisterServiceCtrlHandler(SERVICE_NAME,
+	svc_status_handle = RegisterServiceCtrlHandler(WPASVC_NAME,
 						       service_ctrl_handler);
 	if (svc_status_handle == (SERVICE_STATUS_HANDLE) 0) {
 		printf("RegisterServiceCtrlHandler failed: %d\n",
@@ -340,7 +367,7 @@ static void WINAPI service_start(DWORD argc, LPTSTR *argv)
 		return;
 	}
 
-	memset(&svc_status, 0, sizeof(svc_status));
+	os_memset(&svc_status, 0, sizeof(svc_status));
 	svc_status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	svc_status.dwCurrentState = SERVICE_START_PENDING;
 	svc_status.dwWaitHint = 1000;
@@ -383,23 +410,23 @@ static void WINAPI service_start(DWORD argc, LPTSTR *argv)
 int main(int argc, char *argv[])
 {
 	SERVICE_TABLE_ENTRY dt[] = {
-		{ SERVICE_NAME, service_start },
+		{ WPASVC_NAME, service_start },
 		{ NULL, NULL }
 	};
 
 	if (argc > 1) {
-		if (strcmp(argv[1], "reg") == 0) {
+		if (os_strcmp(argv[1], "reg") == 0) {
 			TCHAR *path;
 			int ret;
 
 			if (argc < 3) {
-				path = malloc(MAX_PATH * sizeof(TCHAR));
+				path = os_malloc(MAX_PATH * sizeof(TCHAR));
 				if (path == NULL)
 					return -1;
 				if (!GetModuleFileName(NULL, path, MAX_PATH)) {
 					printf("GetModuleFileName failed: "
 					       "%d\n", (int) GetLastError());
-					free(path);
+					os_free(path);
 					return -1;
 				}
 			} else {
@@ -408,11 +435,11 @@ int main(int argc, char *argv[])
 					return -1;
 			}
 			ret = register_service(path);
-			free(path);
+			os_free(path);
 			return ret;
-		} else if (strcmp(argv[1], "unreg") == 0) {
+		} else if (os_strcmp(argv[1], "unreg") == 0) {
 			return unregister_service();
-		} else if (strcmp(argv[1], "app") == 0) {
+		} else if (os_strcmp(argv[1], "app") == 0) {
 			return wpa_supplicant_thread();
 		}
 	}

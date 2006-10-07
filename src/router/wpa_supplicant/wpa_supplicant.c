@@ -906,7 +906,7 @@ static void wpa_supplicant_clear_status(struct wpa_supplicant *wpa_s)
 	wpa_s->pairwise_cipher = 0;
 	wpa_s->group_cipher = 0;
 	wpa_s->key_mgmt = 0;
-	wpa_s->wpa_state = 0;
+	wpa_s->wpa_state = WPA_DISCONNECTED;
 }
 
 
@@ -944,6 +944,7 @@ int wpa_supplicant_reload_configuration(struct wpa_supplicant *wpa_s)
 		wpa_s->ctrl_iface = NULL;
 	}
 
+	eapol_sm_invalidate_cached_session(wpa_s->eapol);
 	wpa_s->current_ssid = NULL;
 	/*
 	 * TODO: should notify EAPOL SM about changes in opensc_engine_path,
@@ -1525,6 +1526,13 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (wpa_s->current_ssid && wpa_s->current_ssid != ssid) {
+		/*
+		 * Do not allow EAP session resumption between different
+		 * network configurations.
+		 */
+		eapol_sm_invalidate_cached_session(wpa_s->eapol);
+	}
 	wpa_s->current_ssid = ssid;
 	wpa_sm_set_config(wpa_s->wpa, wpa_s->current_ssid);
 	wpa_supplicant_initiate_eapol(wpa_s);
@@ -2317,10 +2325,11 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s)
 		wpa_drv_set_drop_unencrypted(wpa_s, 0);
 		wpa_drv_set_countermeasures(wpa_s, 0);
 		wpa_clear_keys(wpa_s, NULL);
-
-		wpa_drv_deinit(wpa_s);
 	}
 	wpa_supplicant_cleanup(wpa_s);
+
+	if (wpa_s->drv_priv)
+		wpa_drv_deinit(wpa_s);
 }
 
 
