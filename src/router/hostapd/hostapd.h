@@ -47,6 +47,8 @@
 #pragma pack(push, 1)
 #endif /* _MSC_VER */
 
+#define MAX_VLAN_ID 4094
+
 struct ieee8023_hdr {
 	u8 dest[6];
 	u8 src[6];
@@ -99,6 +101,10 @@ struct hostap_sta_driver_data {
 struct driver_ops;
 struct wpa_ctrl_dst;
 struct radius_server_data;
+
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+struct full_dynamic_vlan;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
 /**
  * struct hostapd_data - hostapd per-BSS data structure
@@ -155,6 +161,10 @@ struct hostapd_data {
 	struct radius_server_data *radius_srv;
 
 	int parameter_set_count;
+
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+	struct full_dynamic_vlan *full_dynamic_vlan;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
 };
 
 

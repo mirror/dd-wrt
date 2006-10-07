@@ -49,6 +49,7 @@ struct test_driver_bss {
 	size_t ielen;
 	u8 ssid[32];
 	size_t ssid_len;
+	int privacy;
 };
 
 struct test_driver_data {
@@ -255,6 +256,13 @@ static void test_driver_scan(struct test_driver_data *drv,
 			return;
 		pos += ret;
 		pos += wpa_snprintf_hex(pos, end - pos, bss->ie, bss->ielen);
+
+		if (bss->privacy) {
+			ret = snprintf(pos, end - pos, " PRIVACY");
+			if (ret < 0 || ret >= end - pos)
+				return;
+			pos += ret;
+		}
 
 		sendto(drv->test_socket, buf, pos - buf, 0,
 		       (struct sockaddr *) from, fromlen);
@@ -707,6 +715,32 @@ static int test_driver_bss_remove(void *priv, const char *ifname)
 }
 
 
+static int test_driver_if_add(const char *iface, void *priv,
+			      enum hostapd_driver_if_type type, char *ifname,
+			      const u8 *addr)
+{
+	wpa_printf(MSG_DEBUG, "%s(iface=%s type=%d ifname=%s)",
+		   __func__, iface, type, ifname);
+	return 0;
+}
+
+
+static int test_driver_if_update(void *priv, enum hostapd_driver_if_type type,
+				 char *ifname, const u8 *addr)
+{
+	wpa_printf(MSG_DEBUG, "%s(type=%d ifname=%s)", __func__, type, ifname);
+	return 0;
+}
+
+
+static int test_driver_if_remove(void *priv, enum hostapd_driver_if_type type,
+				 const char *ifname, const u8 *addr)
+{
+	wpa_printf(MSG_DEBUG, "%s(type=%d ifname=%s)", __func__, type, ifname);
+	return 0;
+}
+
+
 static int test_driver_valid_bss_mask(void *priv, const u8 *addr,
 				      const u8 *mask)
 {
@@ -737,6 +771,50 @@ static int test_driver_set_ssid(const char *ifname, void *priv, const u8 *buf,
 	}
 
 	return -1;
+}
+
+
+static int test_driver_set_privacy(const char *ifname, void *priv, int enabled)
+{
+	struct test_driver_data *drv = priv;
+	struct test_driver_bss *bss;
+
+	wpa_printf(MSG_DEBUG, "%s(ifname=%s enabled=%d)",
+		   __func__, ifname, enabled);
+
+	for (bss = drv->bss; bss; bss = bss->next) {
+		if (strcmp(bss->ifname, ifname) != 0)
+			continue;
+
+		bss->privacy = enabled;
+
+		return 0;
+	}
+
+	return -1;
+}
+
+
+static int test_driver_set_encryption(const char *iface, void *priv,
+				      const char *alg, const u8 *addr, int idx,
+				      const u8 *key, size_t key_len, int txkey)
+{
+	wpa_printf(MSG_DEBUG, "%s(iface=%s alg=%s idx=%d txkey=%d)",
+		   __func__, iface, alg, idx, txkey);
+	if (addr)
+		wpa_printf(MSG_DEBUG, "   addr=" MACSTR, MAC2STR(addr));
+	if (key)
+		wpa_hexdump_key(MSG_DEBUG, "   key", key, key_len);
+	return 0;
+}
+
+
+static int test_driver_set_sta_vlan(void *priv, const u8 *addr,
+				    const char *ifname, int vlan_id)
+{
+	wpa_printf(MSG_DEBUG, "%s(addr=" MACSTR " ifname=%s vlan_id=%d)",
+		   __func__, MAC2STR(addr), ifname, vlan_id);
+	return 0;
 }
 
 
@@ -865,8 +943,14 @@ static const struct driver_ops test_driver_ops = {
 	.get_hw_feature_data = test_driver_get_hw_feature_data,
 	.bss_add = test_driver_bss_add,
 	.bss_remove = test_driver_bss_remove,
+	.if_add = test_driver_if_add,
+	.if_update = test_driver_if_update,
+	.if_remove = test_driver_if_remove,
 	.valid_bss_mask = test_driver_valid_bss_mask,
 	.set_ssid = test_driver_set_ssid,
+	.set_privacy = test_driver_set_privacy,
+	.set_encryption = test_driver_set_encryption,
+	.set_sta_vlan = test_driver_set_sta_vlan,
 };
 
 
