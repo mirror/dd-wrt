@@ -76,42 +76,42 @@ addEvent(window, "load", function() {
 							<legend><% tran("firewall.legend"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("firewall.firewall"); %></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" ><% tran("share.enable"); %></input>&nbsp;
-								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" ><% tran("share.disable"); %></input>
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" /><% tran("share.enable"); %>&nbsp;
+								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" /><% tran("share.disable"); %>
 							</div>
 						</fieldset><br />
 						
 						<fieldset>
 							<legend><% tran("firewall.legend2"); %></legend>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> ><% tran("firewall.proxy"); %></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> ><% tran("firewall.cookies"); %></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> ><% tran("firewall.applet"); %></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> /><% tran("firewall.applet"); %>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> ><% tran("firewall.activex"); %></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> /><% tran("firewall.activex"); %>
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
 								<legend><% tran("firewall.legend3"); %></legend>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> ><% tran("firewall.ping"); %></input>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> /><% tran("firewall.ping"); %>
 									</div>
 									<% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> ><% tran("firewall.muticast"); %></input>
+										<input class="spaceradio" type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> /><% tran("firewall.muticast"); %>
 									</div>
 									<% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> ><% tran("filter.nat"); %></input>
+										<input class="spaceradio" type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> /><% tran("filter.nat"); %>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> ><% tran("filter.port113"); %></input>
+										<input class="spaceradio" type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> /><% tran("filter.port113"); %>
 									</div>
 								</fieldset><br />
 								<div class="submitFooter">
