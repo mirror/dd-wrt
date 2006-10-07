@@ -495,7 +495,7 @@ deconfigure_single (int count)
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
   br_del_interface ("br0", dev);
-  fprintf(stderr,"deconfigure %s\n",dev);
+  fprintf (stderr, "deconfigure %s\n", dev);
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -709,7 +709,7 @@ setupSupplicant (char *prefix)
       sprintf (psk, "-i%s", prefix);
       eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
-    else if (nvram_match (akm,"8021X"))
+  else if (nvram_match (akm, "8021X"))
     {
       char fstr[32];
       char psk[64];
@@ -726,42 +726,46 @@ setupSupplicant (char *prefix)
       fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
       fprintf (fp, "\tscan_ssid=1\n");
       fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
-    if (nvram_prefix_match("8021xtype",prefix,"tls"))
-    {
-      fprintf (fp, "\teap=TLS\n");
-      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("tls8021xuser",prefix));
-      sprintf (psk,"/tmp/%s",prefix);
-      mkdir(psk);
-      sprintf (psk,"/tmp/%s/ca.pem",prefix);
-      sprintf (ath,"%s_tls8021xca",prefix);
-      write_nvram (psk, ath);
-      sprintf (psk,"/tmp/%s/user.pem",prefix);
-      sprintf (ath,"%s_tls8021xpem",prefix);
-      write_nvram (psk, ath);
+      if (nvram_prefix_match ("8021xtype", prefix, "tls"))
+	{
+	  fprintf (fp, "\teap=TLS\n");
+	  fprintf (fp, "\tidentity=\"%s\"\n",
+		   nvram_prefix_get ("tls8021xuser", prefix));
+	  sprintf (psk, "/tmp/%s", prefix);
+	  mkdir (psk);
+	  sprintf (psk, "/tmp/%s/ca.pem", prefix);
+	  sprintf (ath, "%s_tls8021xca", prefix);
+	  write_nvram (psk, ath);
+	  sprintf (psk, "/tmp/%s/user.pem", prefix);
+	  sprintf (ath, "%s_tls8021xpem", prefix);
+	  write_nvram (psk, ath);
 
-      sprintf (psk,"/tmp/%s/user.prv",prefix);
-      sprintf (ath,"%s_tls8021xprv",prefix);
-      write_nvram (psk, ath);
-      fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n",prefix);
-      fprintf (fp, "\tclient_cert=/tmp/%s/user.pem\n",prefix);
-      fprintf (fp, "\tprivate_key=/tmp/%s/user.prv\n",prefix);
-      fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",nvram_prefix_get("tls8021xpasswd",prefix));
-      fprintf (fp, "\teapol_flags=3\n");
-     }
+	  sprintf (psk, "/tmp/%s/user.prv", prefix);
+	  sprintf (ath, "%s_tls8021xprv", prefix);
+	  write_nvram (psk, ath);
+	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+	  fprintf (fp, "\tclient_cert=/tmp/%s/user.pem\n", prefix);
+	  fprintf (fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
+	  fprintf (fp, "\tprivate_key_passwd=\"%s\"\n",
+		   nvram_prefix_get ("tls8021xpasswd", prefix));
+	  fprintf (fp, "\teapol_flags=3\n");
+	}
 
-    if (nvram_prefix_match("8021xtype",prefix,"peap"))
-    {
-      fprintf (fp, "\teap=PEAP\n");
-      fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"\n");
-      fprintf (fp, "\tidentity=\"%s\"\n",nvram_prefix_get("peap8021xuser",prefix));
-      fprintf (fp, "\tpassword=\"%s\"\n",nvram_prefix_get("peap8021xpasswd",prefix));
-      sprintf (psk,"/tmp/%s",prefix);
-      mkdir(psk);
-      sprintf (psk,"/tmp/%s/ca.pem",prefix);
-      sprintf (ath,"%s_peap8021xca",prefix);
-      write_nvram (psk, ath);
-      fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n",prefix);
-     }
+      if (nvram_prefix_match ("8021xtype", prefix, "peap"))
+	{
+	  fprintf (fp, "\teap=PEAP\n");
+	  fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"\n");
+	  fprintf (fp, "\tidentity=\"%s\"\n",
+		   nvram_prefix_get ("peap8021xuser", prefix));
+	  fprintf (fp, "\tpassword=\"%s\"\n",
+		   nvram_prefix_get ("peap8021xpasswd", prefix));
+	  sprintf (psk, "/tmp/%s", prefix);
+	  mkdir (psk);
+	  sprintf (psk, "/tmp/%s/ca.pem", prefix);
+	  sprintf (ath, "%s_peap8021xca", prefix);
+	  write_nvram (psk, ath);
+	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+	}
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
@@ -862,7 +866,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "auth_server_shared_secret=%s\n",
 		   nvram_safe_get (psk));
 	}
-     if (nvram_invmatch (akm, "radius"))
+      if (nvram_invmatch (akm, "radius"))
 	{
 	  sprintf (psk, "%s_crypto", prefix);
 	  if (nvram_match (psk, "aes"))
@@ -924,7 +928,7 @@ set_netmode (char *wif, char *dev)
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
-  eval("iwconfig",dev,"channel","0");
+  eval ("iwconfig", dev, "channel", "0");
 //  else
   {
     eval ("iwpriv", dev, "turbo", "0");
@@ -1007,6 +1011,7 @@ setMacFilter (char *iface)
 
 
 }
+
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static void
@@ -1046,7 +1051,7 @@ configure_single (int count)
   sprintf (athmac, "ath%d_hwaddr", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
-  eval("ifconfig",wif,"up");
+  eval ("ifconfig", wif, "up");
   sprintf (net, "%s_net_mode", dev);
   if (nvram_match (net, "disabled"))
     return;
@@ -1054,15 +1059,8 @@ configure_single (int count)
     strcpy (iflist, dev);
 
 
-  char *m = default_get (wl, "ap");
-  cprintf ("mode %s\n", m);
-  if      (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
-  else if (!strcmp (m, "ap"))
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
-  else
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
-  
+  char *m;
+  int vif = 0;
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -1083,11 +1081,13 @@ configure_single (int count)
 	      || !strcmp (m, "wdssta"))
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
-	 else if (!strcmp (m, "ap"))
-         eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "ap");
-         else
-          eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", "adhoc");
- 
+	  else if (!strcmp (m, "ap"))
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
+		  "ap");
+	  else
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
+		  "adhoc");
+	  vif = 1;
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
 	  char vathmac[16];
@@ -1099,6 +1099,23 @@ configure_single (int count)
 	}
 //      sleep (1);
     }
+
+//create original primary interface
+  m = default_get (wl, "ap");
+  cprintf ("mode %s\n", m);
+  if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
+    {
+      if (vif)
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta",
+	      "nosbeacon");
+      else
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
+
+    }
+  else if (!strcmp (m, "ap"))
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
+  else
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
 
 
   cprintf ("detect maxpower\n");
@@ -1159,7 +1176,7 @@ configure_single (int count)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
-      br_add_interface (nvram_safe_get("lan_ifname"), dev);
+      br_add_interface (nvram_safe_get ("lan_ifname"), dev);
 
 //      eval ("brctl", "addif", "br0", dev);
     }
@@ -1209,21 +1226,22 @@ configure_single (int count)
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
       if (strcmp (m, "sta") && strcmp (m, "infra"))
 	{
-	char bridged[32];
-      sprintf (bridged, "%s_bridged", var);
-      if (nvram_match (bridged, "1"))
-	{
-	  ifconfig (var, IFUP, NULL, NULL);
-	  br_add_interface (nvram_safe_get("lan_ifname"), var);
-	}
-      else
-	{
-	  char ip[32];
-	  char mask[32];
-	  sprintf (ip, "%s_ipaddr", var);
-	  sprintf (mask, "%s_ipaddr", var);
-	  ifconfig (var, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
-	}
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", var);
+	  if (nvram_match (bridged, "1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      br_add_interface (nvram_safe_get ("lan_ifname"), var);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", var);
+	      sprintf (mask, "%s_ipaddr", var);
+	      ifconfig (var, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
 
 	  //  eval ("brctl", "addif", "br0", var);
 	}
