@@ -318,7 +318,7 @@ start_restore_defaults (void)
 #elif HAVE_GATEWORX
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames","ixp1 ath0 ath1 ath2 ath3",
+    {"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3",
      0},
     {"wan_ifname", "ixp0", 0},
     {"wan_ifnames", "ixp0", 0},
@@ -337,7 +337,7 @@ start_restore_defaults (void)
 #elif HAVE_MAGICBOX
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames","eth1 ath0",
+    {"lan_ifnames", "eth1 ath0",
      0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
@@ -379,17 +379,17 @@ start_restore_defaults (void)
 #elif HAVE_XSCALE
   linux_overrides = generic;
   int brand = getRouterBrand ();
-      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
-        {
-	restore_defaults = 1;
-	}
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
 #elif HAVE_MAGICBOX
   linux_overrides = generic;
   int brand = getRouterBrand ();
-      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
-        {
-	restore_defaults = 1;
-	}
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
 #elif HAVE_GEMTEK
   linux_overrides = generic;
   int brand = getRouterBrand ();
@@ -403,9 +403,9 @@ start_restore_defaults (void)
     default:
 
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
-        {
-//	nvram_unset("sv_restore_defaults");
-	restore_defaults = 1;
+	{
+//      nvram_unset("sv_restore_defaults");
+	  restore_defaults = 1;
 	}
       if (nvram_match ("product_name", "INSPECTION"))
 	{
@@ -503,19 +503,19 @@ start_restore_defaults (void)
     }
 #endif
 #ifdef HAVE_XSCALE
-if (restore_defaults)
-    eval("rm","-f","/etc/nvram/*"); // delete nvram database
+  if (restore_defaults)
+    eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #endif
 #ifdef HAVE_MAGICBOX
-if (restore_defaults)
+  if (restore_defaults)
     {
-    eval("rm","-f","/tmp/nvram/*"); // delete nvram database
-    eval("rm","-f","/tmp/nvram/.lock"); // delete nvram database
-    eval("erase","nvram");	
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
     }
 #endif
   int nvcnt = 0;
- 
+
 //  if (!nvram_match("default_init","1"))
   {
     for (t = srouter_defaults; t->name; t++)
@@ -670,9 +670,9 @@ if (restore_defaults)
       if (nvram_match ("http_username", ""))
 	{
 #ifdef HAVE_POWERNOC
-	  nvram_set ("http_username", "bJz7PcC1rCRJQ"); //admin
+	  nvram_set ("http_username", "bJz7PcC1rCRJQ");	//admin
 #else
-	  nvram_set ("http_username", "bJ/GddyoJuiU2"); //root
+	  nvram_set ("http_username", "bJ/GddyoJuiU2");	//root
 #endif
 	}
     }
@@ -923,23 +923,27 @@ start_nvram (void)
     nvram_set ("svqos_port3bw", "FULL");
   if (nvram_match ("svqos_port4bw", "full"))
     nvram_set ("svqos_port4bw", "FULL");
-    //dirty fix for WBR2 units
-    
+  //dirty fix for WBR2 units
 
-  if ((nvram_get("nvram_ver")==NULL || !nvram_match ("nvram_ver","2")) && nvram_get("http_passwd")!=NULL)
-    {
-    if (strlen(nvram_safe_get("http_username"))==0)
-    nvram_set("http_username",zencrypt("root"));
-    if (strlen(nvram_safe_get("http_passwd"))==0)
-    nvram_set("http_passwd",zencrypt("admin"));
 
-    nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd"))); 
-    nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
-    if (nvram_get("newhttp_passwd")!=NULL)
+  if ((nvram_get ("nvram_ver") == NULL || !nvram_match ("nvram_ver", "2"))
+      && nvram_get ("http_passwd") != NULL)
     {
-    nvram_set("newhttp_passwd",zencrypt(nvram_safe_get("newhttp_passwd"))); 
-    nvram_set("newhttp_username",zencrypt(nvram_safe_get("newhttp_username")));
-    }
+      if (strlen (nvram_safe_get ("http_username")) == 0)
+	nvram_set ("http_username", zencrypt ("root"));
+      if (strlen (nvram_safe_get ("http_passwd")) == 0)
+	nvram_set ("http_passwd", zencrypt ("admin"));
+
+      nvram_set ("http_passwd", zencrypt (nvram_safe_get ("http_passwd")));
+      nvram_set ("http_username",
+		 zencrypt (nvram_safe_get ("http_username")));
+      if (nvram_get ("newhttp_passwd") != NULL)
+	{
+	  nvram_set ("newhttp_passwd",
+		     zencrypt (nvram_safe_get ("newhttp_passwd")));
+	  nvram_set ("newhttp_username",
+		     zencrypt (nvram_safe_get ("newhttp_username")));
+	}
     }
 
 #ifdef DIST
@@ -1180,7 +1184,7 @@ check_cfe_nv (void)
 {
   int ret = 0;
 #ifdef HAVE_MSSID
-  ret+=check_nv ("pa0maxpwr", "251");
+  ret += check_nv ("pa0maxpwr", "251");
 #endif
 //      ret += check_nv("boardtype", "0x0101");
 //      ret += check_nv("boardflags", "0x0188");
@@ -1192,9 +1196,9 @@ check_cfe_nv (void)
   switch (getRouterBrand ())
     {
 
-	case ROUTER_ASUS:
-       ret += check_nv ("wl0_ifname", "eth1");
-     //check_nv ("wl0_hwaddr", nvram_safe_get ("et0macaddr")); //fixing missing wireless mac
+    case ROUTER_ASUS:
+      ret += check_nv ("wl0_ifname", "eth1");
+      //check_nv ("wl0_hwaddr", nvram_safe_get ("et0macaddr")); //fixing missing wireless mac
       //nvram_commit ();
       return 0;
       break;

@@ -35,8 +35,8 @@
 #endif
 
 struct nvram_tuple srouter_defaults[] = {
- // {"default_init","1",0},
-  {"nvram_ver","2",0},
+  // {"default_init","1",0},
+  {"nvram_ver", "2", 0},
 #ifdef HAVE_FON
 
 #ifdef HAVE_MSSID
@@ -369,7 +369,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"http2_username", "bJQHeWqy4l/Ng", 0},	/* Username */
   {"http2_passwd", "bJQHeWqy4l/Ng", 0},	/* Username */
 #endif
-#ifdef HAVE_POWERNOC 
+#ifdef HAVE_POWERNOC
   {"http_username", "bJz7PcC1rCRJQ", 0},	/* Username */
 #else
   {"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
@@ -385,7 +385,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_KODATA
   {"http_passwd", "bJDLObifZlIRQ", 0},	/* Password */
 #else
-  {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */  
+  {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
 #else
   {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
@@ -421,15 +421,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
 
   /* Wireless parameters */
-  
+
 #ifdef HAVE_MSSID
-{ "wl0_nbw", "40", 0},			/* N-BW */
-{ "wl0_nctrlsb", "lower", 0},		/* N-CTRL SB */
-{ "wl0_nband", "2", 0},			/* N-BAND */
-{ "wl0_nmcsidx", "-1", 0},		/* N-MCS Index - rate */
-{ "wl0_nmode", "-1", 0},                 /* N-mode */
-{ "wl0_leddc", "0x640000", 0},           /* 100% duty cycle for LED on router */
-{ "wl0_sta_retry_time", "5", 0},           /* 100% duty cycle for LED on router */
+  {"wl0_nbw", "40", 0},		/* N-BW */
+  {"wl0_nctrlsb", "lower", 0},	/* N-CTRL SB */
+  {"wl0_nband", "2", 0},	/* N-BAND */
+  {"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
+  {"wl0_nmode", "-1", 0},	/* N-mode */
+  {"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
+  {"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
 #endif
 #ifdef HAVE_DDLAN
   {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
@@ -528,7 +528,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_radio", "1", 0},		/* Enable (1) or disable (0) radio */
   {"wl_closed", "0", 0},	/* Closed (hidden) network */
 #ifdef HAVE_MSSID
-  {"wl0_radio", "1", 0},		/* Enable (1) or disable (0) radio */
+  {"wl0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
   {"wl0_closed", "0", 0},	/* Closed (hidden) network */
   {"wl0.1_closed", "0", 0},	/* Closed (hidden) network */
   {"wl0.2_closed", "0", 0},	/* Closed (hidden) network */
@@ -564,17 +564,17 @@ struct nvram_tuple srouter_defaults[] = {
 
 
 #ifdef HAVE_MSSID
-    #ifdef HAVE_FON
+#ifdef HAVE_FON
   {"wl_mode", "apsta", 0},
   {"wl0_mode", "apsta", 0},
   {"wl_vifs", "wl0.1", 0},
   {"wl0_vifs", "wl0.1", 0},
   {"wl0.1_ssid", "FON", 0},
-    #else
-	#ifndef HAVE_MADWIFI
+#else
+#ifndef HAVE_MADWIFI
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
-  {"wl0_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
-	#else
+  {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
+#else
   {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
@@ -589,21 +589,21 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
 
-  {"ath0_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-  {"ath1_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-  {"ath2_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-  {"ath3_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-  {"ath4_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-  {"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
-	#endif
-    #endif
+  {"ath0_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+  {"ath1_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+  {"ath2_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+  {"ath3_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+  {"ath4_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+  {"ath5_xr", "0", 0},		/* AP mode (ap|sta|wds) */
+#endif
+#endif
 #else
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
 #endif
 #endif
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
-  {"wl_wep", "disabled", 0},		/* Data encryption (off|wep|tkip|aes) */
+  {"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
 #ifdef HAVE_MSSID
   {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
@@ -616,28 +616,28 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
 
   {"wl0.1_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
-  {"wl0.1_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
-  {"wl0.1_key", "1", 0},		/* Current WEP key */
-  {"wl0.1_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.1_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.1_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.1_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_auth", "0", 0},	/* Shared key authentication optional (0) or required (1) */
+  {"wl0.1_key", "1", 0},	/* Current WEP key */
+  {"wl0.1_key1", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key2", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key3", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key4", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
 
   {"wl0.2_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
-  {"wl0.2_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
-  {"wl0.2_key", "1", 0},		/* Current WEP key */
-  {"wl0.2_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.2_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.2_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.2_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_auth", "0", 0},	/* Shared key authentication optional (0) or required (1) */
+  {"wl0.2_key", "1", 0},	/* Current WEP key */
+  {"wl0.2_key1", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key2", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key3", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key4", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
 
   {"wl0.3_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
-  {"wl0.3_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
-  {"wl0.3_key", "1", 0},		/* Current WEP key */
-  {"wl0.3_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.3_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.3_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-  {"wl0.3_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_auth", "0", 0},	/* Shared key authentication optional (0) or required (1) */
+  {"wl0.3_key", "1", 0},	/* Current WEP key */
+  {"wl0.3_key1", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key2", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key3", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key4", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
 #else
   {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
@@ -663,11 +663,11 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 
 #endif
-  { "wl_reg_mode", "off", 0 },            /* Regulatory: 802.11H(h)/802.11D(d)/off(off) */
-  { "wl_dfs_preism", "60", 0 },           /* 802.11H pre network CAC time */ 
-  { "wl_dfs_postism", "60", 0 },          /* 802.11H In Service Monitoring CAC time */
+  {"wl_reg_mode", "off", 0},	/* Regulatory: 802.11H(h)/802.11D(d)/off(off) */
+  {"wl_dfs_preism", "60", 0},	/* 802.11H pre network CAC time */
+  {"wl_dfs_postism", "60", 0},	/* 802.11H In Service Monitoring CAC time */
   {"wl_rate", "0", 0},		/* Rate (bps, 0 for auto) */
-{ "wl_mrate", "0", 0 },			/* Mcast Rate (bps, 0 for auto) */
+  {"wl_mrate", "0", 0},		/* Mcast Rate (bps, 0 for auto) */
   {"wl_rateset", "default", 0},	/* "default" or "all" or "12" */
   {"wl_frag", "2346", 0},	/* Fragmentation threshold */
 #ifdef HAVE_POWERNOC_WORT54G
@@ -712,7 +712,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SAGAR
   {"wl0_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
-  {"wl0_gmode", "0", 0},		/* 54g mode */
+  {"wl0_gmode", "0", 0},	/* 54g mode */
 #elif HAVE_NEWMEDIA
   {"wl0_gmode", "-1", 0},	/* 54g mode */
 #else
@@ -723,7 +723,7 @@ struct nvram_tuple srouter_defaults[] = {
 
 #ifdef HAVE_MSSID
   {"wl_gmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection (off|auto) */
-  {"wl_nmode_protection", "auto", 0 },	/* 802.11g RTS/CTS protection (off|auto) */
+  {"wl_nmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 #else
   {"wl_gmode_protection", "off", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 #endif
@@ -841,12 +841,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath5_wpa_psk", "", 0},	/* WPA pre-shared key */
   {"ath5_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"ath5_radius_key", "", 0},	/* RADIUS shared secret */
-  {"ath0_8021xtype","peap",0},
-  {"ath1_8021xtype","peap",0},
-  {"ath2_8021xtype","peap",0},
-  {"ath3_8021xtype","peap",0},
-  {"ath4_8021xtype","peap",0},
-  {"ath5_8021xtype","peap",0},
+  {"ath0_8021xtype", "peap", 0},
+  {"ath1_8021xtype", "peap", 0},
+  {"ath2_8021xtype", "peap", 0},
+  {"ath3_8021xtype", "peap", 0},
+  {"ath4_8021xtype", "peap", 0},
+  {"ath5_8021xtype", "peap", 0},
 #endif
   {"radius_override", "1", 0},	//overrides radius if server is unavailable
 #ifdef HAVE_SKYTEL
@@ -962,30 +962,30 @@ struct nvram_tuple srouter_defaults[] = {
   /* for DDNS */
   // for dyndns
   {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom 6:3322.org */
-  {"ddns_username", "", 0}, 
-  {"ddns_passwd", "", 0}, 
-  {"ddns_hostname", "", 0}, 
-  {"ddns_dyndnstype", "", 0}, 
-  {"ddns_wildcard", "", 0}, 
+  {"ddns_username", "", 0},
+  {"ddns_passwd", "", 0},
+  {"ddns_hostname", "", 0},
+  {"ddns_dyndnstype", "", 0},
+  {"ddns_wildcard", "", 0},
   // for afraid.org 
-  {"ddns_username_2", "", 0}, 
-  {"ddns_passwd_2", "", 0}, 
-  {"ddns_hostname_2", "", 0}, 
+  {"ddns_username_2", "", 0},
+  {"ddns_passwd_2", "", 0},
+  {"ddns_hostname_2", "", 0},
   // for zoneedit 
-  {"ddns_username_3", "", 0}, 
-  {"ddns_passwd_3", "", 0}, 
-  {"ddns_hostname_3", "", 0}, 
+  {"ddns_username_3", "", 0},
+  {"ddns_passwd_3", "", 0},
+  {"ddns_hostname_3", "", 0},
   // for no-ip 
-  {"ddns_username_4", "", 0}, 
-  {"ddns_passwd_4", "", 0}, 
-  {"ddns_hostname_4", "", 0}, 
+  {"ddns_username_4", "", 0},
+  {"ddns_passwd_4", "", 0},
+  {"ddns_hostname_4", "", 0},
   // for custom 
-  {"ddns_username_5", "", 0}, 
-  {"ddns_passwd_5", "", 0}, 
-  {"ddns_hostname_5", "", 0}, 
-  {"ddns_custom_5", "", 0}, 
-  {"ddns_conf", "", 0}, 
-  {"ddns_url", "", 0}, 
+  {"ddns_username_5", "", 0},
+  {"ddns_passwd_5", "", 0},
+  {"ddns_hostname_5", "", 0},
+  {"ddns_custom_5", "", 0},
+  {"ddns_conf", "", 0},
+  {"ddns_url", "", 0},
   // for 3322.org 
   {"ddns_username_6", "", 0},
   {"ddns_passwd_6", "", 0},
@@ -1003,10 +1003,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_hostname_8", "", 0},
 
   /* for last value */
-  {"ddns_enable_buf", "", 0}, 
-  {"ddns_username_buf", "", 0}, 
-  {"ddns_passwd_buf", "", 0}, 
-  {"ddns_hostname_buf", "", 0}, 
+  {"ddns_enable_buf", "", 0},
+  {"ddns_username_buf", "", 0},
+  {"ddns_passwd_buf", "", 0},
+  {"ddns_hostname_buf", "", 0},
 
   {"ddns_cache", "", 0},	/* DDNS cache */
   {"ddns_time", "", 0},		/* DDNS time */
@@ -1303,7 +1303,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wds8_if", "", 0},
   {"wl_wds9_if", "", 0},
   {"wl_wds10_if", "", 0},
-#ifdef HAVE_MSSID	
+#ifdef HAVE_MSSID
 
   {"wds0.1", "", 0},
   {"wds0.2", "", 0},
@@ -1507,7 +1507,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wds_watchdog_ips", "", 0},
   {"dhcpfwd_enable", "0", 0},
   {"dhcpfwd_ip", "0.0.0.0", 0},
-  {"watchdog","60000",0},
+  {"watchdog", "60000", 0},
   {"NC_enable", "0", 0},
 #ifdef CONFIG_BRANDING
   {"NC_GatewayName", "GATEWAY", 0},
@@ -1563,7 +1563,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wme_ap_vi", "7 15 1 6016 3008 off off", 0},	/* WME AP AC_VI paramters */
   {"wl_wme_ap_vo", "3 7 1 3264 1504 off off", 0},	/* WME AP AC_VO paramters */
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
-  {"wl_wme_apsd", "on", 0},		/* WME APSD mode */
+  {"wl_wme_apsd", "on", 0},	/* WME APSD mode */
 
   {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
 #ifdef HAVE_ZEROIP
@@ -1629,8 +1629,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"openvpn_tlsauth", "", 0},
   {"openvpn_onwan", "0", 0},
 #ifdef HAVE_KODATA
-{"newhttp_username", "bJ/GddyoJuiU2", 0},
-{"newhttp_passwd", "bJDLObifZlIRQ", 0},
+  {"newhttp_username", "bJ/GddyoJuiU2", 0},
+  {"newhttp_passwd", "bJDLObifZlIRQ", 0},
 #else
   {"newhttp_username", "", 0},
   {"newhttp_passwd", "bJxJZz5DYRGxI", 0},
@@ -1683,11 +1683,11 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RADIOOFF
   {"radiooff_button", "0", 0},
 #endif
-  {"radio0_on_time", "111111111111111111111111", 0},  /* Radio timer, always on */
+  {"radio0_on_time", "111111111111111111111111", 0},	/* Radio timer, always on */
   {"radio_timer_enable", "0", 0},
 #ifdef HAVE_CPUTEMP
-  {"hwmon_temp_max","60",0},
-  {"hwmon_temp_hyst","50",0},
+  {"hwmon_temp_max", "60", 0},
+  {"hwmon_temp_hyst", "50", 0},
 #endif
   {0, 0, 0}
 };
