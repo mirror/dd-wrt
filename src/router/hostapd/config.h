@@ -58,8 +58,30 @@ struct hostapd_ssid {
 #define DYNAMIC_VLAN_OPTIONAL 1
 #define DYNAMIC_VLAN_REQUIRED 2
 	int dynamic_vlan;
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+	char *vlan_tagged_interface;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+	struct hostapd_wep_keys **dyn_vlan_keys;
+	size_t max_dyn_vlan_keys;
 };
 
+
+#define VLAN_ID_WILDCARD -1
+
+struct hostapd_vlan {
+	struct hostapd_vlan *next;
+	int vlan_id; /* VLAN ID or -1 (VLAN_ID_WILDCARD) for wildcard entry */
+	char ifname[IFNAMSIZ + 1];
+	int dynamic_vlan;
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+
+#define DVLAN_CLEAN_BR 	0x1
+#define DVLAN_CLEAN_VLAN	0x2
+#define DVLAN_CLEAN_VLAN_PORT	0x4
+#define DVLAN_CLEAN_WLAN_PORT	0x8
+	int clean;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+};
 
 #define PMK_LEN 32
 struct hostapd_wpa_psk {
@@ -162,6 +184,7 @@ struct hostapd_bss_config {
 	size_t default_wep_key_len;
 	int individual_wep_key_len;
 	int wep_rekeying_period;
+	int broadcast_key_idx_min, broadcast_key_idx_max;
 	int eap_reauth_period;
 
 	int ieee802_11f; /* use IEEE 802.11f (IAPP) */
@@ -233,6 +256,8 @@ struct hostapd_bss_config {
 
 	int wme_enabled;
 
+	struct hostapd_vlan *vlan, *vlan_tail;
+
 	macaddr bssid;
 };
 
@@ -303,6 +328,8 @@ int hostapd_rate_found(int *list, int rate);
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
+const char * hostapd_get_vlan_id_ifname(struct hostapd_vlan *vlan,
+					int vlan_id);
 const struct hostapd_eap_user *
 hostapd_get_eap_user(const struct hostapd_bss_config *conf, const u8 *identity,
 		     size_t identity_len, int phase2);

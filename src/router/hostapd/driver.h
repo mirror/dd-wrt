@@ -1,6 +1,10 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
+enum hostapd_driver_if_type {
+	HOSTAPD_IF_VLAN, HOSTAPD_IF_WDS
+};
+
 struct driver_ops {
 	const char *name;		/* as appears in the config file */
 
@@ -106,6 +110,13 @@ struct driver_ops {
 	struct hostapd_hw_modes * (*get_hw_feature_data)(void *priv,
 							 u16 *num_modes,
 							 u16 *flags);
+	int (*if_add)(const char *iface, void *priv,
+		      enum hostapd_driver_if_type type, char *ifname,
+		      const u8 *addr);
+	int (*if_update)(void *priv, enum hostapd_driver_if_type type,
+			 char *ifname, const u8 *addr);
+	int (*if_remove)(void *priv, enum hostapd_driver_if_type type,
+			 const char *ifname, const u8 *addr);
 	int (*set_sta_vlan)(void *priv, const u8 *addr, const char *ifname,
 			    int vlan_id);
 };
@@ -517,6 +528,34 @@ hostapd_valid_bss_mask(struct hostapd_data *hapd, const u8 *addr,
 	if (hapd->driver == NULL || hapd->driver->valid_bss_mask == NULL)
 		return 1;
 	return hapd->driver->valid_bss_mask(hapd->driver, addr, mask);
+}
+
+static inline int
+hostapd_if_add(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+	       char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_add == NULL)
+		return -1;
+	return hapd->driver->if_add(hapd->conf->iface, hapd->driver, type,
+				    ifname, addr);
+}
+
+static inline int
+hostapd_if_update(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+		  char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_update == NULL)
+		return -1;
+	return hapd->driver->if_update(hapd->driver, type, ifname, addr);
+}
+
+static inline int
+hostapd_if_remove(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+		  char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_remove == NULL)
+		return -1;
+	return hapd->driver->if_remove(hapd->driver, type, ifname, addr);
 }
 
 static inline int
