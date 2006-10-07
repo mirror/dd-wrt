@@ -26,6 +26,7 @@
 #include <sbutils.h>
 #include <bcmenet47xx.h>
 #include <et_export.h>		/* for et_phyxx() routines */
+#include <utils.h>
 
 /* Remove these if each switch is compile time configurable */
 #define ETROBO
@@ -1082,13 +1083,22 @@ chipphyinit(struct bcm4xxx *ch, uint phyaddr)
 	phyid |=  chipphyrd( ch, phyaddr, 0x3) << 16;
 
 	if( phyid == 0x55210022) {
-        /* ALTIMA AC101L phyciever */
-        chipphyand(ch, phyaddr, 0, ~(1 << 10)); /* clear 0.10 isolate */
-        /* this bit gets set after phy reset on WAP54G v1.0 !! */
 		chipphywr( ch, phyaddr, 28, (uint16) (chipphyrd( ch, phyaddr, 28 ) & 0x0fff));
 		chipphywr( ch, phyaddr, 30, (uint16) (chipphyrd( ch, phyaddr, 30 ) | 0x3000));
 		chipphywr( ch, phyaddr, 22, (uint16) (chipphyrd( ch, phyaddr, 22 ) & 0xffdf));
-
+		
+if (getRouterBrand == ROUTER_RT210W)  //from Belkin sourece, try to fix wan problem on some v1xxx units
+	{
+		chipphyand(ch, phyaddr, 0, ~(1<<10)); // register0 10'bit reset,if system happen error,Wan breaking by ASKEY Colin 13/02/03 13:44:18,
+        chipphyand(ch, phyaddr, 16, (uint16) ~(1<<15));//  register16 15'bit reset, Jerry
+		chipphyand(ch, phyaddr, 0, ~(1<<11));//  register0's bit-11 reset
+		chipphyor(ch, phyaddr, 0, (1<<12));//  register0's bit-12 set
+		// the following set Register4's bit5-8
+		chipphyor(ch, phyaddr, 4, (1<<5));
+		chipphyor(ch, phyaddr, 4, (1<<6));
+		chipphyor(ch, phyaddr, 4, (1<<7));
+		chipphyor(ch, phyaddr, 4, (1<<8));
+	}
 		chipphywr( ch, phyaddr, 28, (uint16) ((chipphyrd( ch, phyaddr, 28 ) & 0x0fff) | 0x1000));
 		chipphywr( ch, phyaddr, 29, 1);
 		chipphywr( ch, phyaddr, 30, 4);
