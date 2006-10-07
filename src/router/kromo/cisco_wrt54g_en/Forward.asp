@@ -53,7 +53,7 @@ function to_submit(F) {
 							
 							<fieldset>
 								<legend><% tran("prforward.legend"); %></legend>
-								<table class="table center" cellspacing="5">
+								<table class="table center" cellspacing="5" summary="port forwarding table">
 									<tr>
 										<th><% tran("prforward.app"); %></th>
 										<th><% tran("share.start"); %></th>

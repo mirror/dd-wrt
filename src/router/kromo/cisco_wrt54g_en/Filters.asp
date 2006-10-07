@@ -350,7 +350,7 @@ function Status(F,I) {
 							<fieldset>
 								<legend><% tran("filter.legend2"); %></legend>
 								<div class="setting">
-									<table>
+									<table summary="week days table">
 										<tr>
 											<td align="center"><% tran("share.everyday"); %></td>
 											<td align="center"><% tran("share.sun_s"); %></td>
