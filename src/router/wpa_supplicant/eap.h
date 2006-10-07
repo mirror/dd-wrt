@@ -265,6 +265,7 @@ void eap_notify_lower_layer_success(struct eap_sm *sm);
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 u8 * eap_get_eapRespData(struct eap_sm *sm, size_t *len);
 void eap_register_scard_ctx(struct eap_sm *sm, void *ctx);
+void eap_invalidate_cached_session(struct eap_sm *sm);
 
 #endif /* IEEE8021X_EAPOL */
 

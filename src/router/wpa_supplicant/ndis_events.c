@@ -114,9 +114,9 @@ static ULONG STDMETHODCALLTYPE ndis_events_release(IWbemObjectSink *this)
 
 	ndis_events_destructor(events);
 	wpa_printf(MSG_DEBUG, "ndis_events: terminated");
-	free(events->adapter_desc);
-	free(events->ifname);
-	free(events);
+	os_free(events->adapter_desc);
+	os_free(events->ifname);
+	os_free(events);
 	return 0;
 }
 
@@ -131,7 +131,7 @@ static int ndis_events_send_event(struct ndis_events_data *events,
 
 	end = buf + sizeof(buf);
 	_type = (int) type;
-	memcpy(buf, &_type, sizeof(_type));
+	os_memcpy(buf, &_type, sizeof(_type));
 	pos = buf + sizeof(_type);
 
 	if (data) {
@@ -142,7 +142,7 @@ static int ndis_events_send_event(struct ndis_events_data *events,
 		}
 		*pos++ = data_len >> 8;
 		*pos++ = data_len & 0xff;
-		memcpy(pos, data, data_len);
+		os_memcpy(pos, data, data_len);
 		pos += data_len;
 	}
 
@@ -194,7 +194,7 @@ static void ndis_events_media_specific(struct ndis_events_data *events,
 	SafeArrayGetLBound(V_ARRAY(&vt), 1, &lower);
 	SafeArrayGetUBound(V_ARRAY(&vt), 1, &upper);
 	data_len = upper - lower + 1;
-	data = malloc(data_len);
+	data = os_malloc(data_len);
 	if (data == NULL) {
 		wpa_printf(MSG_DEBUG, "Failed to allocate buffer for event "
 			   "data");
@@ -213,7 +213,7 @@ static void ndis_events_media_specific(struct ndis_events_data *events,
 
 	ndis_events_send_event(events, EVENT_MEDIA_SPECIFIC, data, data_len);
 
-	free(data);
+	os_free(data);
 }
 
 
@@ -392,22 +392,22 @@ static int ndis_events_use_desc(struct ndis_events_data *events,
 		return 0;
 	}
 
-	tmp = strdup(desc);
+	tmp = os_strdup(desc);
 	if (tmp == NULL)
 		return -1;
 
-	pos = strstr(tmp, " (Microsoft's Packet Scheduler)");
+	pos = os_strstr(tmp, " (Microsoft's Packet Scheduler)");
 	if (pos)
 		*pos = '\0';
 
-	len = strlen(tmp);
-	events->adapter_desc = malloc((len + 1) * sizeof(WCHAR));
+	len = os_strlen(tmp);
+	events->adapter_desc = os_malloc((len + 1) * sizeof(WCHAR));
 	if (events->adapter_desc == NULL) {
-		free(tmp);
+		os_free(tmp);
 		return -1;
 	}
 	_snwprintf(events->adapter_desc, len + 1, L"%S", tmp);
-	free(tmp);
+	os_free(tmp);
 	return 0;
 }
 
@@ -431,7 +431,7 @@ static int ndis_events_get_adapter(struct ndis_events_data *events,
 	 * MSNdis events. If this fails, use the provided description.
 	 */
 
-	free(events->adapter_desc);
+	os_free(events->adapter_desc);
 	events->adapter_desc = NULL;
 
 	hr = IWbemLocator_ConnectServer(events->pLoc, L"ROOT\\CIMV2", NULL,
@@ -615,7 +615,7 @@ static int ndis_events_get_adapter(struct ndis_events_data *events,
 
 	wpa_printf(MSG_DEBUG, "ndis_events: Win32_PnPEntity::Name='%S'",
 		   vt.bstrVal);
-	free(events->adapter_desc);
+	os_free(events->adapter_desc);
 	events->adapter_desc = _wcsdup(vt.bstrVal);
 	VariantClear(&vt);
 
@@ -638,14 +638,14 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 	IWbemObjectSink *pSink;
 	struct ndis_events_data *events;
 
-	events = wpa_zalloc(sizeof(*events));
+	events = os_zalloc(sizeof(*events));
 	if (events == NULL) {
 		wpa_printf(MSG_ERROR, "Could not allocate sink for events.");
 		return NULL;
 	}
-	events->ifname = strdup(ifname);
+	events->ifname = os_strdup(ifname);
 	if (events->ifname == NULL) {
-		free(events);
+		os_free(events);
 		return NULL;
 	}
 
@@ -654,7 +654,7 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 		if (FAILED(hr)) {
 			wpa_printf(MSG_ERROR, "CoInitializeEx() failed - "
 				   "returned 0x%x", (int) hr);
-			free(events);
+			os_free(events);
 			return NULL;
 		}
 	}
@@ -672,7 +672,7 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 		if (FAILED(hr)) {
 			wpa_printf(MSG_ERROR, "CoInitializeSecurity() failed "
 				   "- returned 0x%x", (int) hr);
-			free(events);
+			os_free(events);
 			return NULL;
 		}
 	}
@@ -683,13 +683,13 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 		wpa_printf(MSG_ERROR, "CoCreateInstance() failed - returned "
 			   "0x%x", (int) hr);
 		CoUninitialize();
-		free(events);
+		os_free(events);
 		return NULL;
 	}
 
 	if (ndis_events_get_adapter(events, ifname, desc) < 0) {
 		CoUninitialize();
-		free(events);
+		os_free(events);
 		return NULL;
 	}
 	wpa_printf(MSG_DEBUG, "ndis_events: use adapter descriptor '%S'",
@@ -701,8 +701,8 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 		wpa_printf(MSG_ERROR, "Could not connect to server - error "
 			   "0x%x", (int) hr);
 		CoUninitialize();
-		free(events->adapter_desc);
-		free(events);
+		os_free(events->adapter_desc);
+		os_free(events);
 		return NULL;
 	}
 	wpa_printf(MSG_DEBUG, "Connected to ROOT\\WMI.");
@@ -720,8 +720,8 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 		wpa_printf(MSG_DEBUG, "Failed to register async "
 			   "notifications");
 		ndis_events_destructor(events);
-		free(events->adapter_desc);
-		free(events);
+		os_free(events->adapter_desc);
+		os_free(events);
 		return NULL;
 	}
 

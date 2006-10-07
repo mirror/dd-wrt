@@ -91,11 +91,11 @@ void * tls_init(const struct tls_config *conf)
 {
 	struct tls_global *global;
 
-	global = wpa_zalloc(sizeof(*global));
+	global = os_zalloc(sizeof(*global));
 	if (global == NULL)
 		return NULL;
 	if (schannel_load_lib(global)) {
-		free(global);
+		os_free(global);
 		return NULL;
 	}
 	return global;
@@ -109,7 +109,7 @@ void tls_deinit(void *ssl_ctx)
 	if (global->my_cert_store)
 		CertCloseStore(global->my_cert_store, 0);
 	FreeLibrary(global->hsecurity);
-	free(global);
+	os_free(global);
 }
 
 
@@ -123,7 +123,7 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 {
 	struct tls_connection *conn;
 
-	conn = wpa_zalloc(sizeof(*conn));
+	conn = os_zalloc(sizeof(*conn));
 	if (conn == NULL)
 		return NULL;
 	conn->start = 1;
@@ -137,7 +137,7 @@ void tls_connection_deinit(void *ssl_ctx, struct tls_connection *conn)
 	if (conn == NULL)
 		return;
 
-	free(conn);
+	os_free(conn);
 }
 
 
@@ -205,11 +205,11 @@ int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	 */
 
 	if (conn == NULL || !conn->eap_tls_prf_set || server_random_first ||
-	    strcmp(label, "client EAP encryption") != 0 ||
+	    os_strcmp(label, "client EAP encryption") != 0 ||
 	    out_len > sizeof(conn->eap_tls_prf))
 		return -1;
 
-	memcpy(out, conn->eap_tls_prf, out_len);
+	os_memcpy(out, conn->eap_tls_prf, out_len);
 
 	return 0;
 }
@@ -265,10 +265,10 @@ static u8 * tls_conn_hs_clienthello(struct tls_global *global,
 			    outbufs[0].pvBuffer, outbufs[0].cbBuffer);
 		conn->start = 0;
 		*out_len = outbufs[0].cbBuffer;
-		buf = malloc(*out_len);
+		buf = os_malloc(*out_len);
 		if (buf == NULL)
 			return NULL;
-		memcpy(buf, outbufs[0].pvBuffer, *out_len);
+		os_memcpy(buf, outbufs[0].pvBuffer, *out_len);
 		global->sspi->FreeContextBuffer(outbufs[0].pvBuffer);
 		return buf;
 	}
@@ -310,7 +310,7 @@ static int tls_get_eap(struct tls_global *global, struct tls_connection *conn)
 	wpa_hexdump_key(MSG_MSGDUMP, "Schannel - EapKeyBlock - rgbIVs",
 			kb.rgbIVs, sizeof(kb.rgbIVs));
 
-	memcpy(conn->eap_tls_prf, kb.rgbKeys, sizeof(kb.rgbKeys));
+	os_memcpy(conn->eap_tls_prf, kb.rgbKeys, sizeof(kb.rgbKeys));
 	conn->eap_tls_prf_set = 1;
 	return 0;
 }
@@ -393,9 +393,10 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 			wpa_hexdump(MSG_MSGDUMP, "SChannel - output",
 				    outbufs[0].pvBuffer, outbufs[0].cbBuffer);
 			*out_len = outbufs[0].cbBuffer;
-			out_buf = malloc(*out_len);
+			out_buf = os_malloc(*out_len);
 			if (out_buf)
-				memcpy(out_buf, outbufs[0].pvBuffer, *out_len);
+				os_memcpy(out_buf, outbufs[0].pvBuffer,
+					  *out_len);
 			global->sspi->FreeContextBuffer(outbufs[0].pvBuffer);
 			outbufs[0].pvBuffer = NULL;
 			if (out_buf == NULL)
@@ -419,7 +420,7 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 
 		/* Need to return something to get final TLS ACK. */
 		if (out_buf == NULL)
-			out_buf = malloc(1);
+			out_buf = os_malloc(1);
 
 		if (inbufs[1].BufferType == SECBUFFER_EXTRA) {
 			wpa_hexdump(MSG_MSGDUMP, "SChannel - Encrypted "
@@ -427,10 +428,11 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 				    inbufs[1].pvBuffer, inbufs[1].cbBuffer);
 			if (appl_data) {
 				*appl_data_len = outbufs[1].cbBuffer;
-				appl_data = malloc(*appl_data_len);
+				appl_data = os_malloc(*appl_data_len);
 				if (appl_data)
-					memcpy(appl_data, outbufs[1].pvBuffer,
-					       *appl_data_len);
+					os_memcpy(appl_data,
+						  outbufs[1].pvBuffer,
+						  *appl_data_len);
 			}
 			global->sspi->FreeContextBuffer(inbufs[1].pvBuffer);
 			inbufs[1].pvBuffer = NULL;
@@ -512,12 +514,12 @@ int tls_connection_encrypt(void *ssl_ctx, struct tls_connection *conn,
 		return -1;
 	}
 
-	memset(&bufs, 0, sizeof(bufs));
+	os_memset(&bufs, 0, sizeof(bufs));
 	bufs[0].pvBuffer = out_data;
 	bufs[0].cbBuffer = sizes.cbHeader;
 	bufs[0].BufferType = SECBUFFER_STREAM_HEADER;
 
-	memcpy(out_data + sizes.cbHeader, in_data, in_len);
+	os_memcpy(out_data + sizes.cbHeader, in_data, in_len);
 	bufs[1].pvBuffer = out_data + sizes.cbHeader;
 	bufs[1].cbBuffer = in_len;
 	bufs[1].BufferType = SECBUFFER_DATA;
@@ -583,8 +585,8 @@ int tls_connection_decrypt(void *ssl_ctx, struct tls_connection *conn,
 
 	wpa_hexdump(MSG_MSGDUMP, "Schannel: Encrypted data to DecryptMessage",
 		    in_data, in_len);
-	memset(&bufs, 0, sizeof(bufs));
-	memcpy(out_data, in_data, in_len);
+	os_memset(&bufs, 0, sizeof(bufs));
+	os_memcpy(out_data, in_data, in_len);
 	bufs[0].pvBuffer = out_data;
 	bufs[0].cbBuffer = in_len;
 	bufs[0].BufferType = SECBUFFER_DATA;
@@ -636,7 +638,7 @@ int tls_connection_decrypt(void *ssl_ctx, struct tls_connection *conn,
 				   __func__);
 			return -1;
 		}
-		memmove(out_data, bufs[i].pvBuffer, bufs[i].cbBuffer);
+		os_memmove(out_data, bufs[i].pvBuffer, bufs[i].cbBuffer);
 		return bufs[i].cbBuffer;
 	}
 
@@ -731,7 +733,7 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		return -1;
 	}
 
-	memset(&conn->schannel_cred, 0, sizeof(conn->schannel_cred));
+	os_memset(&conn->schannel_cred, 0, sizeof(conn->schannel_cred));
 	conn->schannel_cred.dwVersion = SCHANNEL_CRED_VERSION;
 	conn->schannel_cred.grbitEnabledProtocols = SP_PROT_TLS1;
 	algs[0] = CALG_RSA_KEYX;

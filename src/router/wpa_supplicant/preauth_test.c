@@ -248,7 +248,7 @@ static void wpa_init_conf(struct wpa_supplicant *wpa_s, const char *ifname)
 	os_memset(&dummy_driver, 0, sizeof(dummy_driver));
 	wpa_s->driver = &dummy_driver;
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	assert(ctx != NULL);
 
 	ctx->ctx = wpa_s;
@@ -275,7 +275,7 @@ static void wpa_init_conf(struct wpa_supplicant *wpa_s, const char *ifname)
 	assert(wpa_s->wpa != NULL);
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_PROTO, WPA_PROTO_RSN);
 
-	strncpy(wpa_s->ifname, ifname, sizeof(wpa_s->ifname));
+	os_strncpy(wpa_s->ifname, ifname, sizeof(wpa_s->ifname));
 	wpa_sm_set_ifname(wpa_s->wpa, wpa_s->ifname, NULL);
 
 	l2 = l2_packet_init(wpa_s->ifname, NULL, ETH_P_RSN_PREAUTH, NULL,

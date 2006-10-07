@@ -137,7 +137,7 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 	TCHAR name[256];
 
 	ctrl_flush_broken_pipes(priv);
-	dst = wpa_zalloc(sizeof(*dst));
+	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
 	wpa_printf(MSG_DEBUG, "CTRL: Open pipe %p", dst);
@@ -161,8 +161,8 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 	_snwprintf(name, 256, NAMED_PIPE_PREFIX TEXT("-%S"),
 		   priv->wpa_s->ifname);
 #else /* UNICODE */
-	snprintf(name, 256, NAMED_PIPE_PREFIX "-%s",
-		 priv->wpa_s->ifname);
+	os_snprintf(name, 256, NAMED_PIPE_PREFIX "-%s",
+		    priv->wpa_s->ifname);
 #endif /* UNICODE */
 
 	/* TODO: add support for configuring access list for the pipe */
@@ -184,7 +184,7 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 		wpa_printf(MSG_ERROR, "CTRL: ConnectNamedPipe failed: %d",
 			   (int) GetLastError());
 		CloseHandle(dst->pipe);
-		free(dst);
+		os_free(dst);
 		return -1;
 	}
 
@@ -204,7 +204,7 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 		wpa_printf(MSG_DEBUG, "CTRL: ConnectNamedPipe error: %d",
 			   (int) err);
 		CloseHandle(dst->pipe);
-		free(dst);
+		os_free(dst);
 		return -1;
 	}
 
@@ -248,8 +248,8 @@ static void ctrl_close_pipe(struct wpa_ctrl_dst *dst)
 	if (dst->next)
 		dst->next->prev = dst->prev;
 
-	free(dst->rsp_buf);
-	free(dst);
+	os_free(dst->rsp_buf);
+	os_free(dst);
 }
 
 
@@ -264,7 +264,7 @@ static VOID WINAPI ctrl_iface_write_completed(DWORD err, DWORD bytes,
 		return;
 	}
 
-	free(dst->rsp_buf);
+	os_free(dst->rsp_buf);
 	dst->rsp_buf = NULL;
 
 	if (!ReadFileEx(dst->pipe, dst->req_buf, sizeof(dst->req_buf),
@@ -289,16 +289,16 @@ static void wpa_supplicant_ctrl_iface_rx(struct wpa_ctrl_dst *dst, size_t len)
 		len = REQUEST_BUFSIZE - 1;
 	buf[len] = '\0';
 
-	if (strcmp(buf, "ATTACH") == 0) {
+	if (os_strcmp(buf, "ATTACH") == 0) {
 		dst->attached = 1;
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE monitor attached");
 		new_attached = 1;
 		reply_len = 2;
-	} else if (strcmp(buf, "DETACH") == 0) {
+	} else if (os_strcmp(buf, "DETACH") == 0) {
 		dst->attached = 0;
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE monitor detached");
 		reply_len = 2;
-	} else if (strncmp(buf, "LEVEL ", 6) == 0) {
+	} else if (os_strncmp(buf, "LEVEL ", 6) == 0) {
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE LEVEL %s", buf + 6);
 		dst->debug_level = atoi(buf + 6);
 		reply_len = 2;
@@ -318,15 +318,15 @@ static void wpa_supplicant_ctrl_iface_rx(struct wpa_ctrl_dst *dst, size_t len)
 		send_len = 5;
 	}
 
-	free(dst->rsp_buf);
-	dst->rsp_buf = malloc(send_len);
+	os_free(dst->rsp_buf);
+	dst->rsp_buf = os_malloc(send_len);
 	if (dst->rsp_buf == NULL) {
 		ctrl_close_pipe(dst);
-		free(reply);
+		os_free(reply);
 		return;
 	}
-	memcpy(dst->rsp_buf, send_buf, send_len);
-	free(reply);
+	os_memcpy(dst->rsp_buf, send_buf, send_len);
+	os_free(reply);
 
 	if (!WriteFileEx(dst->pipe, dst->rsp_buf, send_len, &dst->overlap,
 			 ctrl_iface_write_completed)) {
@@ -382,10 +382,10 @@ static int ctrl_iface_parse(struct ctrl_iface_priv *priv, const char *params)
 	const char *sddl = NULL;
 	TCHAR *t_sddl;
 
-	if (strncmp(params, "SDDL=", 5) == 0)
+	if (os_strncmp(params, "SDDL=", 5) == 0)
 		sddl = params + 5;
 	if (!sddl) {
-		sddl = strstr(params, " SDDL=");
+		sddl = os_strstr(params, " SDDL=");
 		if (sddl)
 			sddl += 6;
 	}
@@ -394,7 +394,7 @@ static int ctrl_iface_parse(struct ctrl_iface_priv *priv, const char *params)
 		return 0;
 
 	wpa_printf(MSG_DEBUG, "CTRL: SDDL='%s'", sddl);
-	memset(&priv->attr, 0, sizeof(priv->attr));
+	os_memset(&priv->attr, 0, sizeof(priv->attr));
 	priv->attr.nLength = sizeof(priv->attr);
 	priv->attr.bInheritHandle = FALSE;
 	t_sddl = wpa_strdup_tchar(sddl);
@@ -402,13 +402,13 @@ static int ctrl_iface_parse(struct ctrl_iface_priv *priv, const char *params)
 		    t_sddl, SDDL_REVISION_1,
 		    (PSECURITY_DESCRIPTOR *) &priv->attr.lpSecurityDescriptor,
 		    NULL)) {
-		free(t_sddl);
+		os_free(t_sddl);
 		wpa_printf(MSG_ERROR, "CTRL: SDDL='%s' - could not convert to "
 			   "security descriptor: %d",
 			   sddl, (int) GetLastError());
 		return -1;
 	}
-	free(t_sddl);
+	os_free(t_sddl);
 
 	priv->sec_attr_set = 1;
 
@@ -421,7 +421,7 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 {
 	struct ctrl_iface_priv *priv;
 
-	priv = wpa_zalloc(sizeof(*priv));
+	priv = os_zalloc(sizeof(*priv));
 	if (priv == NULL)
 		return NULL;
 	priv->wpa_s = wpa_s;
@@ -430,12 +430,12 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		return priv;
 
 	if (ctrl_iface_parse(priv, wpa_s->conf->ctrl_interface) < 0) {
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
 	if (ctrl_open_pipe(priv) < 0) {
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
@@ -449,7 +449,7 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 		ctrl_close_pipe(priv->ctrl_dst);
 	if (priv->sec_attr_set)
 		LocalFree(priv->attr.lpSecurityDescriptor);
-	free(priv);
+	os_free(priv);
 }
 
 
@@ -467,15 +467,15 @@ void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
 	if (dst == NULL)
 		return;
 
-	snprintf(levelstr, sizeof(levelstr), "<%d>", level);
+	os_snprintf(levelstr, sizeof(levelstr), "<%d>", level);
 
-	llen = strlen(levelstr);
-	sbuf = malloc(llen + len);
+	llen = os_strlen(levelstr);
+	sbuf = os_malloc(llen + len);
 	if (sbuf == NULL)
 		return;
 
-	memcpy(sbuf, levelstr, llen);
-	memcpy(sbuf + llen, buf, len);
+	os_memcpy(sbuf, levelstr, llen);
+	os_memcpy(sbuf + llen, buf, len);
 
 	idx = 0;
 	while (dst) {
@@ -497,7 +497,7 @@ void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
 		idx++;
 		dst = next;
 	}
-	free(sbuf);
+	os_free(sbuf);
 }
 
 
@@ -556,7 +556,7 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 	DWORD err;
 
 	global_flush_broken_pipes(priv);
-	dst = wpa_zalloc(sizeof(*dst));
+	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
 	wpa_printf(MSG_DEBUG, "CTRL: Open pipe %p", dst);
@@ -593,7 +593,7 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 		wpa_printf(MSG_ERROR, "CTRL: ConnectNamedPipe failed: %d",
 			   (int) GetLastError());
 		CloseHandle(dst->pipe);
-		free(dst);
+		os_free(dst);
 		return -1;
 	}
 
@@ -613,7 +613,7 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 		wpa_printf(MSG_DEBUG, "CTRL: ConnectNamedPipe error: %d",
 			   (int) err);
 		CloseHandle(dst->pipe);
-		free(dst);
+		os_free(dst);
 		return -1;
 	}
 
@@ -657,8 +657,8 @@ static void global_close_pipe(struct wpa_global_dst *dst)
 	if (dst->next)
 		dst->next->prev = dst->prev;
 
-	free(dst->rsp_buf);
-	free(dst);
+	os_free(dst->rsp_buf);
+	os_free(dst);
 }
 
 
@@ -673,7 +673,7 @@ static VOID WINAPI global_iface_write_completed(DWORD err, DWORD bytes,
 		return;
 	}
 
-	free(dst->rsp_buf);
+	os_free(dst->rsp_buf);
 	dst->rsp_buf = NULL;
 
 	if (!ReadFileEx(dst->pipe, dst->req_buf, sizeof(dst->req_buf),
@@ -707,20 +707,20 @@ static void wpa_supplicant_global_iface_rx(struct wpa_global_dst *dst,
 		send_buf = "FAIL\n";
 		send_len = 5;
 	} else {
-		free(dst->rsp_buf);
+		os_free(dst->rsp_buf);
 		dst->rsp_buf = NULL;
 		return;
 	}
 
-	free(dst->rsp_buf);
-	dst->rsp_buf = malloc(send_len);
+	os_free(dst->rsp_buf);
+	dst->rsp_buf = os_malloc(send_len);
 	if (dst->rsp_buf == NULL) {
 		global_close_pipe(dst);
-		free(reply);
+		os_free(reply);
 		return;
 	}
-	memcpy(dst->rsp_buf, send_buf, send_len);
-	free(reply);
+	os_memcpy(dst->rsp_buf, send_buf, send_len);
+	os_free(reply);
 
 	if (!WriteFileEx(dst->pipe, dst->rsp_buf, send_len, &dst->overlap,
 			 global_iface_write_completed)) {
@@ -774,13 +774,13 @@ wpa_supplicant_global_ctrl_iface_init(struct wpa_global *global)
 {
 	struct ctrl_iface_global_priv *priv;
 
-	priv = wpa_zalloc(sizeof(*priv));
+	priv = os_zalloc(sizeof(*priv));
 	if (priv == NULL)
 		return NULL;
 	priv->global = global;
 
 	if (global_open_pipe(priv) < 0) {
-		free(priv);
+		os_free(priv);
 		return NULL;
 	}
 
@@ -793,5 +793,5 @@ wpa_supplicant_global_ctrl_iface_deinit(struct ctrl_iface_global_priv *priv)
 {
 	while (priv->ctrl_dst)
 		global_close_pipe(priv->ctrl_dst);
-	free(priv);
+	os_free(priv);
 }

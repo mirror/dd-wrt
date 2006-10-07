@@ -953,6 +953,8 @@ void wpa_driver_wext_deinit(void *priv)
 	struct wpa_driver_wext_data *drv = priv;
 	int flags;
 
+	eloop_cancel_timeout(wpa_driver_wext_scan_timeout, drv, drv->ctx);
+
 	/*
 	 * Clear possibly configured driver parameters in order to make it
 	 * easier to use the driver after wpa_supplicant has been terminated.
@@ -962,6 +964,8 @@ void wpa_driver_wext_deinit(void *priv)
 	wpa_driver_wext_send_oper_ifla(priv, 0, IF_OPER_UP);
 
 	eloop_unregister_read_sock(drv->event_sock);
+	if (drv->mlme_sock >= 0)
+		eloop_unregister_read_sock(drv->mlme_sock);
 
 	if (wpa_driver_wext_get_ifflags(drv, &flags) == 0)
 		(void) wpa_driver_wext_set_ifflags(drv, flags & ~IFF_UP);

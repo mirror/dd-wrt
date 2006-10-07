@@ -106,7 +106,7 @@ static int atmel_ioctl(struct wpa_driver_atmel_data *drv,
 	struct iwreq iwr;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	iwr.u.data.pointer = (caddr_t) param;
 	iwr.u.data.length = len;
 
@@ -128,7 +128,7 @@ static int atmel2param(struct wpa_driver_atmel_data *drv, int param, int value)
 	int *i, ret = 0;
 
 	os_memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
 	i = (int *) iwr.u.name;
 	*i++ = param;
 	*i++ = value;
@@ -467,7 +467,7 @@ static void * wpa_driver_atmel_init(void *ctx, const char *ifname)
 	}
 
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->sock = socket(PF_INET, SOCK_DGRAM, 0);
 	if (drv->sock < 0) {
 		wpa_driver_wext_deinit(drv->wext);

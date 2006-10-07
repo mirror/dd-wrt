@@ -27,6 +27,12 @@ int close(int fd);
 #endif /* CONFIG_USE_NDISUIO */
 #include <ntddndis.h>
 
+#ifdef _WIN32_WCE
+#include <winioctl.h>
+#include <nuiouser.h>
+#include <devload.h>
+#endif /* _WIN32_WCE */
+
 #include "common.h"
 #include "driver.h"
 #include "wpa_supplicant.h"
@@ -340,6 +346,7 @@ typedef struct NDIS_802_11_PMKID_CANDIDATE_LIST {
 
 
 #ifdef CONFIG_USE_NDISUIO
+#ifndef _WIN32_WCE
 #ifdef __MINGW32_VERSION
 typedef ULONG NDIS_OID;
 #endif /* __MINGW32_VERSION */
@@ -393,6 +400,7 @@ typedef struct _NDISUIO_QUERY_BINDING
 	ULONG DeviceDescrOffset;
 	ULONG DeviceDescrLength;
 } NDISUIO_QUERY_BINDING, *PNDISUIO_QUERY_BINDING;
+#endif /* _WIN32_WCE */
 #endif /* CONFIG_USE_NDISUIO */
 
 
@@ -406,44 +414,47 @@ static int ndis_get_oid(struct wpa_driver_ndis_data *drv, unsigned int oid,
 	int ret;
 	size_t hdrlen;
 
-	o = wpa_zalloc(buflen);
+	o = os_zalloc(buflen);
 	if (o == NULL)
 		return -1;
 	o->Oid = oid;
+#ifdef _WIN32_WCE
+	o->ptcDeviceName = drv->adapter_name;
+#endif /* _WIN32_WCE */
 	if (data)
-		memcpy(o->Data, data, len);
+		os_memcpy(o->Data, data, len);
 	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_QUERY_OID_VALUE,
 			     o, sizeof(NDISUIO_QUERY_OID), o, buflen, &written,
 			     NULL)) {
 		wpa_printf(MSG_DEBUG, "NDIS: IOCTL_NDISUIO_QUERY_OID_VALUE "
 			   "failed (oid=%08x): %d", oid, (int) GetLastError());
-		free(o);
+		os_free(o);
 		return -1;
 	}
 	hdrlen = sizeof(NDISUIO_QUERY_OID) - sizeof(o->Data);
 	if (written < hdrlen) {
 		wpa_printf(MSG_DEBUG, "NDIS: query oid=%08x written (%d); "
 			   "too short", oid, (unsigned int) written);
-		free(o);
+		os_free(o);
 		return -1;
 	}
 	written -= hdrlen;
 	if (written > len) {
 		wpa_printf(MSG_DEBUG, "NDIS: query oid=%08x written (%d) > "
 			   "len (%d)",oid, (unsigned int) written, len);
-		free(o);
+		os_free(o);
 		return -1;
 	}
-	memcpy(data, o->Data, written);
+	os_memcpy(data, o->Data, written);
 	ret = written;
-	free(o);
+	os_free(o);
 	return ret;
 #else /* CONFIG_USE_NDISUIO */
 	char *buf;
 	PACKET_OID_DATA *o;
 	int ret;
 
-	buf = wpa_zalloc(sizeof(*o) + len);
+	buf = os_zalloc(sizeof(*o) + len);
 	if (buf == NULL)
 		return -1;
 	o = (PACKET_OID_DATA *) buf;
@@ -453,18 +464,18 @@ static int ndis_get_oid(struct wpa_driver_ndis_data *drv, unsigned int oid,
 	if (!PacketRequest(drv->adapter, FALSE, o)) {
 		wpa_printf(MSG_DEBUG, "%s: oid=0x%x len (%d) failed",
 			   __func__, oid, len);
-		free(buf);
+		os_free(buf);
 		return -1;
 	}
 	if (o->Length > len) {
 		wpa_printf(MSG_DEBUG, "%s: oid=0x%x Length (%d) > len (%d)",
 			   __func__, oid, (unsigned int) o->Length, len);
-		free(buf);
+		os_free(buf);
 		return -1;
 	}
-	memcpy(data, o->Data, o->Length);
+	os_memcpy(data, o->Data, o->Length);
 	ret = o->Length;
-	free(buf);
+	os_free(buf);
 	return ret;
 #endif /* CONFIG_USE_NDISUIO */
 }
@@ -479,50 +490,53 @@ static int ndis_set_oid(struct wpa_driver_ndis_data *drv, unsigned int oid,
 	DWORD written;
 	char txt[50];
 
-	snprintf(txt, sizeof(txt), "NDIS: Set OID %08x", oid);
+	os_snprintf(txt, sizeof(txt), "NDIS: Set OID %08x", oid);
 	wpa_hexdump_key(MSG_MSGDUMP, txt, data, len);
 
 	buflen = sizeof(*o) + len;
 	reallen = buflen - sizeof(o->Data);
-	o = wpa_zalloc(buflen);
+	o = os_zalloc(buflen);
 	if (o == NULL)
 		return -1;
 	o->Oid = oid;
+#ifdef _WIN32_WCE
+	o->ptcDeviceName = drv->adapter_name;
+#endif /* _WIN32_WCE */
 	if (data)
-		memcpy(o->Data, data, len);
+		os_memcpy(o->Data, data, len);
 	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_SET_OID_VALUE,
 			     o, reallen, NULL, 0, &written, NULL)) {
 		wpa_printf(MSG_DEBUG, "NDIS: IOCTL_NDISUIO_SET_OID_VALUE "
 			   "(oid=%08x) failed: %d", oid, (int) GetLastError());
-		free(o);
+		os_free(o);
 		return -1;
 	}
-	free(o);
+	os_free(o);
 	return 0;
 #else /* CONFIG_USE_NDISUIO */
 	char *buf;
 	PACKET_OID_DATA *o;
 	char txt[50];
 
-	snprintf(txt, sizeof(txt), "NDIS: Set OID %08x", oid);
+	os_snprintf(txt, sizeof(txt), "NDIS: Set OID %08x", oid);
 	wpa_hexdump_key(MSG_MSGDUMP, txt, data, len);
 
-	buf = wpa_zalloc(sizeof(*o) + len);
+	buf = os_zalloc(sizeof(*o) + len);
 	if (buf == NULL)
 		return -1;
 	o = (PACKET_OID_DATA *) buf;
 	o->Oid = oid;
 	o->Length = len;
 	if (data)
-		memcpy(o->Data, data, len);
+		os_memcpy(o->Data, data, len);
 
 	if (!PacketRequest(drv->adapter, TRUE, o)) {
 		wpa_printf(MSG_DEBUG, "%s: oid=0x%x len (%d) failed",
 			   __func__, oid, len);
-		free(buf);
+		os_free(buf);
 		return -1;
 	}
-	free(buf);
+	os_free(buf);
 	return 0;
 #endif /* CONFIG_USE_NDISUIO */
 }
@@ -625,7 +639,7 @@ static int wpa_driver_ndis_get_ssid(void *priv, u8 *ssid)
 		}
 		return -1;
 	}
-	memcpy(ssid, buf.Ssid, buf.SsidLength);
+	os_memcpy(ssid, buf.Ssid, buf.SsidLength);
 	return buf.SsidLength;
 }
 
@@ -635,9 +649,9 @@ static int wpa_driver_ndis_set_ssid(struct wpa_driver_ndis_data *drv,
 {
 	NDIS_802_11_SSID buf;
 
-	memset(&buf, 0, sizeof(buf));
+	os_memset(&buf, 0, sizeof(buf));
 	buf.SsidLength = ssid_len;
-	memcpy(buf.Ssid, ssid, ssid_len);
+	os_memcpy(buf.Ssid, ssid, ssid_len);
 	/*
 	 * Make sure radio is marked enabled here so that scan request will not
 	 * force SSID to be changed to a random one in order to enable radio at
@@ -737,11 +751,11 @@ static void wpa_driver_ndis_get_ies(struct wpa_scan_result *res, u8 *ie,
 			continue;
 		}
 		if (pos[0] == GENERIC_INFO_ELEM && pos[1] >= 4 &&
-		    memcmp(pos + 2, "\x00\x50\xf2\x01", 4) == 0) {
-			memcpy(res->wpa_ie, pos, ielen);
+		    os_memcmp(pos + 2, "\x00\x50\xf2\x01", 4) == 0) {
+			os_memcpy(res->wpa_ie, pos, ielen);
 			res->wpa_ie_len = ielen;
 		} else if (pos[0] == RSN_INFO_ELEM) {
-			memcpy(res->rsn_ie, pos, ielen);
+			os_memcpy(res->rsn_ie, pos, ielen);
 			res->rsn_ie_len = ielen;
 		}
 		pos += ielen;
@@ -760,13 +774,13 @@ static int wpa_driver_ndis_get_scan_results(void *priv,
 	char *pos;
 
 	blen = 65535;
-	b = wpa_zalloc(blen);
+	b = os_zalloc(blen);
 	if (b == NULL)
 		return -1;
 	len = ndis_get_oid(drv, OID_802_11_BSSID_LIST, (char *) b, blen);
 	if (len < 0) {
 		wpa_printf(MSG_DEBUG, "NDIS: failed to get scan results");
-		free(b);
+		os_free(b);
 		return -1;
 	}
 	count = b->NumberOfItems;
@@ -774,12 +788,13 @@ static int wpa_driver_ndis_get_scan_results(void *priv,
 	if (count > max_size)
 		count = max_size;
 
-	memset(results, 0, max_size * sizeof(struct wpa_scan_result));
+	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
 	pos = (char *) &b->Bssid[0];
 	for (i = 0; i < count; i++) {
 		NDIS_WLAN_BSSID_EX *bss = (NDIS_WLAN_BSSID_EX *) pos;
-		memcpy(results[i].bssid, bss->MacAddress, ETH_ALEN);
-		memcpy(results[i].ssid, bss->Ssid.Ssid, bss->Ssid.SsidLength);
+		os_memcpy(results[i].bssid, bss->MacAddress, ETH_ALEN);
+		os_memcpy(results[i].ssid, bss->Ssid.Ssid,
+			  bss->Ssid.SsidLength);
 		results[i].ssid_len = bss->Ssid.SsidLength;
 		if (bss->Privacy)
 			results[i].caps |= IEEE80211_CAP_PRIVACY;
@@ -811,7 +826,7 @@ static int wpa_driver_ndis_get_scan_results(void *priv,
 			break;
 	}
 
-	free(b);
+	os_free(b);
 	return (int) count;
 }
 
@@ -824,13 +839,13 @@ static int wpa_driver_ndis_remove_key(struct wpa_driver_ndis_data *drv,
 	NDIS_802_11_KEY_INDEX index;
 	int res, res2;
 
-	memset(&rkey, 0, sizeof(rkey));
+	os_memset(&rkey, 0, sizeof(rkey));
 
 	rkey.Length = sizeof(rkey);
 	rkey.KeyIndex = key_idx;
 	if (pairwise)
 		rkey.KeyIndex |= 1 << 30;
-	memcpy(rkey.BSSID, bssid, ETH_ALEN);
+	os_memcpy(rkey.BSSID, bssid, ETH_ALEN);
 
 	res = ndis_set_oid(drv, OID_802_11_REMOVE_KEY, (char *) &rkey,
 			   sizeof(rkey));
@@ -856,7 +871,7 @@ static int wpa_driver_ndis_add_wep(struct wpa_driver_ndis_data *drv,
 	int res;
 
 	len = 12 + key_len;
-	wep = wpa_zalloc(len);
+	wep = os_zalloc(len);
 	if (wep == NULL)
 		return -1;
 	wep->Length = len;
@@ -868,13 +883,13 @@ static int wpa_driver_ndis_add_wep(struct wpa_driver_ndis_data *drv,
 		wep->KeyIndex |= 1 << 30;
 #endif
 	wep->KeyLength = key_len;
-	memcpy(wep->KeyMaterial, key, key_len);
+	os_memcpy(wep->KeyMaterial, key, key_len);
 
 	wpa_hexdump_key(MSG_MSGDUMP, "NDIS: OID_802_11_ADD_WEP",
 			(char *) wep, len);
 	res = ndis_set_oid(drv, OID_802_11_ADD_WEP, (char *) wep, len);
 
-	free(wep);
+	os_free(wep);
 
 	return res;
 }
@@ -890,15 +905,15 @@ static int wpa_driver_ndis_set_key(void *priv, wpa_alg alg, const u8 *addr,
 	int res, pairwise;
 	u8 bssid[ETH_ALEN];
 
-	if (addr == NULL || memcmp(addr, "\xff\xff\xff\xff\xff\xff",
-				   ETH_ALEN) == 0) {
+	if (addr == NULL || os_memcmp(addr, "\xff\xff\xff\xff\xff\xff",
+				      ETH_ALEN) == 0) {
 		/* Group Key */
 		pairwise = 0;
 		wpa_driver_ndis_get_bssid(drv, bssid);
 	} else {
 		/* Pairwise Key */
 		pairwise = 1;
-		memcpy(bssid, addr, ETH_ALEN);
+		os_memcpy(bssid, addr, ETH_ALEN);
 	}
 
 	if (alg == WPA_ALG_NONE || key_len == 0) {
@@ -913,7 +928,7 @@ static int wpa_driver_ndis_set_key(void *priv, wpa_alg alg, const u8 *addr,
 
 	len = 12 + 6 + 6 + 8 + key_len;
 
-	nkey = wpa_zalloc(len);
+	nkey = os_zalloc(len);
 	if (nkey == NULL)
 		return -1;
 
@@ -926,23 +941,23 @@ static int wpa_driver_ndis_set_key(void *priv, wpa_alg alg, const u8 *addr,
 	if (seq && seq_len)
 		nkey->KeyIndex |= 1 << 29;
 	nkey->KeyLength = key_len;
-	memcpy(nkey->BSSID, bssid, ETH_ALEN);
+	os_memcpy(nkey->BSSID, bssid, ETH_ALEN);
 	if (seq && seq_len) {
 		for (i = 0; i < seq_len; i++)
 			nkey->KeyRSC |= seq[i] << (i * 8);
 	}
 	if (alg == WPA_ALG_TKIP && key_len == 32) {
-		memcpy(nkey->KeyMaterial, key, 16);
-		memcpy(nkey->KeyMaterial + 16, key + 24, 8);
-		memcpy(nkey->KeyMaterial + 24, key + 16, 8);
+		os_memcpy(nkey->KeyMaterial, key, 16);
+		os_memcpy(nkey->KeyMaterial + 16, key + 24, 8);
+		os_memcpy(nkey->KeyMaterial + 24, key + 16, 8);
 	} else {
-		memcpy(nkey->KeyMaterial, key, key_len);
+		os_memcpy(nkey->KeyMaterial, key, key_len);
 	}
 
 	wpa_hexdump_key(MSG_MSGDUMP, "NDIS: OID_802_11_ADD_KEY",
 			(char *) nkey, len);
 	res = ndis_set_oid(drv, OID_802_11_ADD_KEY, (char *) nkey, len);
-	free(nkey);
+	os_free(nkey);
 
 	return res;
 }
@@ -1080,7 +1095,7 @@ static int wpa_driver_ndis_set_pmkid(struct wpa_driver_ndis_data *drv)
 		entry = entry->next;
 	}
 	len = 8 + count * sizeof(BSSID_INFO);
-	p = wpa_zalloc(len);
+	p = os_zalloc(len);
 	if (p == NULL)
 		return -1;
 
@@ -1088,13 +1103,13 @@ static int wpa_driver_ndis_set_pmkid(struct wpa_driver_ndis_data *drv)
 	p->BSSIDInfoCount = count;
 	entry = drv->pmkid;
 	for (i = 0; i < count; i++) {
-		memcpy(&p->BSSIDInfo[i].BSSID, entry->bssid, ETH_ALEN);
-		memcpy(&p->BSSIDInfo[i].PMKID, entry->pmkid, 16);
+		os_memcpy(&p->BSSIDInfo[i].BSSID, entry->bssid, ETH_ALEN);
+		os_memcpy(&p->BSSIDInfo[i].PMKID, entry->pmkid, 16);
 		entry = entry->next;
 	}
 	wpa_hexdump(MSG_MSGDUMP, "NDIS: OID_802_11_PMKID", (char *) p, len);
 	ret = ndis_set_oid(drv, OID_802_11_PMKID, (char *) p, len);
-	free(p);
+	os_free(p);
 	return ret;
 }
 
@@ -1111,7 +1126,7 @@ static int wpa_driver_ndis_add_pmkid(void *priv, const u8 *bssid,
 	prev = NULL;
 	entry = drv->pmkid;
 	while (entry) {
-		if (memcmp(entry->bssid, bssid, ETH_ALEN) == 0)
+		if (os_memcmp(entry->bssid, bssid, ETH_ALEN) == 0)
 			break;
 		prev = entry;
 		entry = entry->next;
@@ -1120,17 +1135,17 @@ static int wpa_driver_ndis_add_pmkid(void *priv, const u8 *bssid,
 	if (entry) {
 		/* Replace existing entry for this BSSID and move it into the
 		 * beginning of the list. */
-		memcpy(entry->pmkid, pmkid, 16);
+		os_memcpy(entry->pmkid, pmkid, 16);
 		if (prev) {
 			prev->next = entry->next;
 			entry->next = drv->pmkid;
 			drv->pmkid = entry;
 		}
 	} else {
-		entry = malloc(sizeof(*entry));
+		entry = os_malloc(sizeof(*entry));
 		if (entry) {
-			memcpy(entry->bssid, bssid, ETH_ALEN);
-			memcpy(entry->pmkid, pmkid, 16);
+			os_memcpy(entry->bssid, bssid, ETH_ALEN);
+			os_memcpy(entry->pmkid, pmkid, 16);
 			entry->next = drv->pmkid;
 			drv->pmkid = entry;
 		}
@@ -1153,13 +1168,13 @@ static int wpa_driver_ndis_remove_pmkid(void *priv, const u8 *bssid,
 	prev = NULL;
 	drv->pmkid = NULL;
 	while (entry) {
-		if (memcmp(entry->bssid, bssid, ETH_ALEN) == 0 &&
-		    memcmp(entry->pmkid, pmkid, 16) == 0) {
+		if (os_memcmp(entry->bssid, bssid, ETH_ALEN) == 0 &&
+		    os_memcmp(entry->pmkid, pmkid, 16) == 0) {
 			if (prev)
 				prev->next = entry->next;
 			else
 				drv->pmkid = entry->next;
-			free(entry);
+			os_free(entry);
 			break;
 		}
 		prev = entry;
@@ -1183,10 +1198,10 @@ static int wpa_driver_ndis_flush_pmkid(void *priv)
 	while (pmkid) {
 		prev = pmkid;
 		pmkid = pmkid->next;
-		free(prev);
+		os_free(prev);
 	}
 
-	memset(&p, 0, sizeof(p));
+	os_memset(&p, 0, sizeof(p));
 	p.Length = 8;
 	p.BSSIDInfoCount = 0;
 	wpa_hexdump(MSG_MSGDUMP, "NDIS: OID_802_11_PMKID (flush)",
@@ -1256,20 +1271,20 @@ static int wpa_driver_ndis_get_associnfo(struct wpa_driver_ndis_data *drv)
 	wpa_hexdump(MSG_MSGDUMP, "NDIS: Response IEs", 
 		    buf + ai->OffsetResponseIEs, ai->ResponseIELength);
 
-	memset(&data, 0, sizeof(data));
+	os_memset(&data, 0, sizeof(data));
 	data.assoc_info.req_ies = buf + ai->OffsetRequestIEs;
 	data.assoc_info.req_ies_len = ai->RequestIELength;
 	data.assoc_info.resp_ies = buf + ai->OffsetResponseIEs;
 	data.assoc_info.resp_ies_len = ai->ResponseIELength;
 
 	blen = 65535;
-	b = wpa_zalloc(blen);
+	b = os_zalloc(blen);
 	if (b == NULL)
 		goto skip_scan_results;
 	len = ndis_get_oid(drv, OID_802_11_BSSID_LIST, (char *) b, blen);
 	if (len < 0) {
 		wpa_printf(MSG_DEBUG, "NDIS: failed to get scan results");
-		free(b);
+		os_free(b);
 		b = NULL;
 		goto skip_scan_results;
 	}
@@ -1279,7 +1294,7 @@ static int wpa_driver_ndis_get_associnfo(struct wpa_driver_ndis_data *drv)
 	pos = (char *) &b->Bssid[0];
 	for (i = 0; i < b->NumberOfItems; i++) {
 		NDIS_WLAN_BSSID_EX *bss = (NDIS_WLAN_BSSID_EX *) pos;
-		if (memcmp(drv->bssid, bss->MacAddress, ETH_ALEN) == 0 &&
+		if (os_memcmp(drv->bssid, bss->MacAddress, ETH_ALEN) == 0 &&
 		    bss->IELength > sizeof(NDIS_802_11_FIXED_IEs)) {
 			data.assoc_info.beacon_ies =
 				((u8 *) bss->IEs) +
@@ -1299,7 +1314,7 @@ static int wpa_driver_ndis_get_associnfo(struct wpa_driver_ndis_data *drv)
 skip_scan_results:
 	wpa_supplicant_event(drv->ctx, EVENT_ASSOCINFO, &data);
 
-	free(b);
+	os_free(b);
 
 	return 0;
 }
@@ -1316,15 +1331,15 @@ static void wpa_driver_ndis_poll_timeout(void *eloop_ctx, void *timeout_ctx)
 
 	if (wpa_driver_ndis_get_bssid(drv, bssid)) {
 		/* Disconnected */
-		if (memcmp(drv->bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN)
+		if (os_memcmp(drv->bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN)
 		    != 0) {
-			memset(drv->bssid, 0, ETH_ALEN);
+			os_memset(drv->bssid, 0, ETH_ALEN);
 			wpa_supplicant_event(drv->ctx, EVENT_DISASSOC, NULL);
 		}
 	} else {
 		/* Connected */
-		if (memcmp(drv->bssid, bssid, ETH_ALEN) != 0) {
-			memcpy(drv->bssid, bssid, ETH_ALEN);
+		if (os_memcmp(drv->bssid, bssid, ETH_ALEN) != 0) {
+			os_memcpy(drv->bssid, bssid, ETH_ALEN);
 			wpa_driver_ndis_get_associnfo(drv);
 			wpa_supplicant_event(drv->ctx, EVENT_ASSOC, NULL);
 		}
@@ -1338,7 +1353,9 @@ static void wpa_driver_ndis_poll_timeout(void *eloop_ctx, void *timeout_ctx)
 	 */
 	poll = drv->mode == IEEE80211_MODE_IBSS;
 #ifndef CONFIG_NDIS_EVENTS_INTEGRATED
+#ifndef _WIN32_WCE
 	poll = 1;
+#endif /* _WIN32_WCE */
 #endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
 	if (poll) {
@@ -1373,7 +1390,7 @@ void wpa_driver_ndis_event_connect(struct wpa_driver_ndis_data *drv)
 void wpa_driver_ndis_event_disconnect(struct wpa_driver_ndis_data *drv)
 {
 	wpa_printf(MSG_DEBUG, "NDIS: Media Disconnect Event");
-	memset(drv->bssid, 0, ETH_ALEN);
+	os_memset(drv->bssid, 0, ETH_ALEN);
 	wpa_supplicant_event(drv->ctx, EVENT_DISASSOC, NULL);
 }
 
@@ -1404,7 +1421,7 @@ static void wpa_driver_ndis_event_auth(struct wpa_driver_ndis_data *drv,
 		group = 1;
 
 	if (pairwise || group) {
-		memset(&event, 0, sizeof(event));
+		os_memset(&event, 0, sizeof(event));
 		event.michael_mic_failure.unicast = pairwise;
 		wpa_supplicant_event(drv->ctx, EVENT_MICHAEL_MIC_FAILURE,
 				     &event);
@@ -1440,12 +1457,12 @@ static void wpa_driver_ndis_event_pmkid(struct wpa_driver_ndis_data *drv,
 		return;
 	}
 
-	memset(&event, 0, sizeof(event));
+	os_memset(&event, 0, sizeof(event));
 	for (i = 0; i < pmkid->NumCandidates; i++) {
 		PMKID_CANDIDATE *p = &pmkid->CandidateList[i];
 		wpa_printf(MSG_DEBUG, "NDIS: %d: " MACSTR " Flags 0x%x",
 			   i, MAC2STR(p->BSSID), (int) p->Flags);
-		memcpy(event.pmkid_candidate.bssid, p->BSSID, ETH_ALEN);
+		os_memcpy(event.pmkid_candidate.bssid, p->BSSID, ETH_ALEN);
 		event.pmkid_candidate.index = i;
 		event.pmkid_candidate.preauth =
 			p->Flags & NDIS_802_11_PMKID_CANDIDATE_PREAUTH_ENABLED;
@@ -1509,9 +1526,9 @@ void wpa_driver_ndis_event_adapter_arrival(struct wpa_driver_ndis_data *drv)
 		}
 	}
 
-	memset(&event, 0, sizeof(event));
-	snprintf(event.interface_status.ifname,
-		 sizeof(event.interface_status.ifname), "%s", drv->ifname);
+	os_memset(&event, 0, sizeof(event));
+	os_snprintf(event.interface_status.ifname,
+		    sizeof(event.interface_status.ifname), "%s", drv->ifname);
 	event.interface_status.ievent = EVENT_INTERFACE_ADDED;
 	wpa_supplicant_event(drv->ctx, EVENT_INTERFACE_STATUS, &event);
 }
@@ -1523,9 +1540,9 @@ void wpa_driver_ndis_event_adapter_removal(struct wpa_driver_ndis_data *drv)
 	union wpa_event_data event;
 
 	wpa_printf(MSG_DEBUG, "NDIS: Notify Adapter Removal");
-	memset(&event, 0, sizeof(event));
-	snprintf(event.interface_status.ifname,
-		 sizeof(event.interface_status.ifname), "%s", drv->ifname);
+	os_memset(&event, 0, sizeof(event));
+	os_snprintf(event.interface_status.ifname,
+		    sizeof(event.interface_status.ifname), "%s", drv->ifname);
 	event.interface_status.ievent = EVENT_INTERFACE_REMOVED;
 	wpa_supplicant_event(drv->ctx, EVENT_INTERFACE_STATUS, &event);
 }
@@ -1690,7 +1707,7 @@ static int wpa_driver_ndis_get_capa(void *priv, struct wpa_driver_capa *capa)
 	struct wpa_driver_ndis_data *drv = priv;
 	if (!drv->has_capability)
 		return -1;
-	memcpy(capa, &drv->capa, sizeof(*capa));
+	os_memcpy(capa, &drv->capa, sizeof(*capa));
 	return 0;
 }
 
@@ -1709,6 +1726,171 @@ static const u8 * wpa_driver_ndis_get_mac_addr(void *priv)
 }
 
 
+#ifdef _WIN32_WCE
+
+#define NDISUIO_MSG_SIZE (sizeof(NDISUIO_DEVICE_NOTIFICATION) + 512)
+
+static void ndisuio_notification_receive(void *eloop_data, void *user_ctx)
+{
+	struct wpa_driver_ndis_data *drv = eloop_data;
+	NDISUIO_DEVICE_NOTIFICATION *hdr;
+	u8 buf[NDISUIO_MSG_SIZE];
+	DWORD len, flags;
+
+	if (!ReadMsgQueue(drv->event_queue, buf, NDISUIO_MSG_SIZE, &len, 0,
+			  &flags)) {
+		wpa_printf(MSG_DEBUG, "ndisuio_notification_receive: "
+			   "ReadMsgQueue failed: %d", (int) GetLastError());
+		return;
+	}
+
+	if (len < sizeof(NDISUIO_DEVICE_NOTIFICATION)) {
+		wpa_printf(MSG_DEBUG, "ndisuio_notification_receive: "
+			   "Too short message (len=%d)", (int) len);
+		return;
+	}
+
+	hdr = (NDISUIO_DEVICE_NOTIFICATION *) buf;
+	wpa_printf(MSG_DEBUG, "NDIS: Notification received: len=%d type=0x%x",
+		   (int) len, hdr->dwNotificationType);
+
+	switch (hdr->dwNotificationType) {
+#ifdef NDISUIO_NOTIFICATION_ADAPTER_ARRIVAL
+	case NDISUIO_NOTIFICATION_ADAPTER_ARRIVAL:
+		wpa_printf(MSG_DEBUG, "NDIS: ADAPTER_ARRIVAL");
+		wpa_driver_ndis_event_adapter_arrival(drv);
+		break;
+#endif
+#ifdef NDISUIO_NOTIFICATION_ADAPTER_REMOVAL
+	case NDISUIO_NOTIFICATION_ADAPTER_REMOVAL:
+		wpa_printf(MSG_DEBUG, "NDIS: ADAPTER_REMOVAL");
+		wpa_driver_ndis_event_adapter_removal(drv);
+		break;
+#endif
+	case NDISUIO_NOTIFICATION_MEDIA_CONNECT:
+		wpa_printf(MSG_DEBUG, "NDIS: MEDIA_CONNECT");
+		SetEvent(drv->connected_event);
+		wpa_driver_ndis_event_connect(drv);
+		break;
+	case NDISUIO_NOTIFICATION_MEDIA_DISCONNECT:
+		ResetEvent(drv->connected_event);
+		wpa_printf(MSG_DEBUG, "NDIS: MEDIA_DISCONNECT");
+		wpa_driver_ndis_event_disconnect(drv);
+		break;
+	case NDISUIO_NOTIFICATION_MEDIA_SPECIFIC_NOTIFICATION:
+		wpa_printf(MSG_DEBUG, "NDIS: MEDIA_SPECIFIC_NOTIFICATION");
+#if _WIN32_WCE == 420 || _WIN32_WCE == 0x420
+		wpa_driver_ndis_event_media_specific(
+			drv, hdr->pvStatusBuffer, hdr->uiStatusBufferSize);
+#else
+		wpa_driver_ndis_event_media_specific(
+			drv, ((const u8 *) hdr) + hdr->uiOffsetToStatusBuffer,
+			(size_t) hdr->uiStatusBufferSize);
+#endif
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "NDIS: Unknown notification type 0x%x",
+			   hdr->dwNotificationType);
+		break;
+	}
+}
+
+
+static void ndisuio_notification_deinit(struct wpa_driver_ndis_data *drv)
+{
+	NDISUIO_REQUEST_NOTIFICATION req;
+
+	memset(&req, 0, sizeof(req));
+	req.hMsgQueue = drv->event_queue;
+	req.dwNotificationTypes = 0;
+
+	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_REQUEST_NOTIFICATION,
+			     &req, sizeof(req), NULL, 0, NULL, NULL)) {
+		wpa_printf(MSG_INFO, "ndisuio_notification_deinit: "
+			   "IOCTL_NDISUIO_REQUEST_NOTIFICATION failed: %d",
+			   (int) GetLastError());
+	}
+
+	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_CANCEL_NOTIFICATION,
+			     NULL, 0, NULL, 0, NULL, NULL)) {
+		wpa_printf(MSG_INFO, "ndisuio_notification_deinit: "
+			   "IOCTL_NDISUIO_CANCEL_NOTIFICATION failed: %d",
+			   (int) GetLastError());
+	}
+
+	if (drv->event_queue) {
+		eloop_unregister_event(drv->event_queue,
+				       sizeof(drv->event_queue));
+		CloseHandle(drv->event_queue);
+		drv->event_queue = NULL;
+	}
+
+	if (drv->connected_event) {
+		CloseHandle(drv->connected_event);
+		drv->connected_event = NULL;
+	}
+}
+
+
+static int ndisuio_notification_init(struct wpa_driver_ndis_data *drv)
+{
+	MSGQUEUEOPTIONS opt;
+	NDISUIO_REQUEST_NOTIFICATION req;
+
+	drv->connected_event =
+		CreateEvent(NULL, TRUE, FALSE, TEXT("WpaSupplicantConnected"));
+	if (drv->connected_event == NULL) {
+		wpa_printf(MSG_INFO, "ndisuio_notification_init: "
+			   "CreateEvent failed: %d",
+			   (int) GetLastError());
+		return -1;
+	}
+
+	memset(&opt, 0, sizeof(opt));
+	opt.dwSize = sizeof(opt);
+	opt.dwMaxMessages = 5;
+	opt.cbMaxMessage = NDISUIO_MSG_SIZE;
+	opt.bReadAccess = TRUE;
+
+	drv->event_queue = CreateMsgQueue(NULL, &opt);
+	if (drv->event_queue == NULL) {
+		wpa_printf(MSG_INFO, "ndisuio_notification_init: "
+			   "CreateMsgQueue failed: %d",
+			   (int) GetLastError());
+		ndisuio_notification_deinit(drv);
+		return -1;
+	}
+
+	memset(&req, 0, sizeof(req));
+	req.hMsgQueue = drv->event_queue;
+	req.dwNotificationTypes =
+#ifdef NDISUIO_NOTIFICATION_ADAPTER_ARRIVAL
+		NDISUIO_NOTIFICATION_ADAPTER_ARRIVAL |
+#endif
+#ifdef NDISUIO_NOTIFICATION_ADAPTER_REMOVAL
+		NDISUIO_NOTIFICATION_ADAPTER_REMOVAL |
+#endif
+		NDISUIO_NOTIFICATION_MEDIA_CONNECT |
+		NDISUIO_NOTIFICATION_MEDIA_DISCONNECT |
+		NDISUIO_NOTIFICATION_MEDIA_SPECIFIC_NOTIFICATION;
+
+	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_REQUEST_NOTIFICATION,
+			     &req, sizeof(req), NULL, 0, NULL, NULL)) {
+		wpa_printf(MSG_INFO, "ndisuio_notification_init: "
+			   "IOCTL_NDISUIO_REQUEST_NOTIFICATION failed: %d",
+			   (int) GetLastError());
+		ndisuio_notification_deinit(drv);
+		return -1;
+	}
+
+	eloop_register_event(drv->event_queue, sizeof(drv->event_queue),
+			     ndisuio_notification_receive, drv, NULL);
+
+	return 0;
+}
+#endif /* _WIN32_WCE */
+
+
 static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 {
 #ifdef CONFIG_USE_NDISUIO
@@ -1720,12 +1902,12 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 	WCHAR *pos;
 	size_t j, len, dlen;
 
-	b = malloc(blen);
+	b = os_malloc(blen);
 	if (b == NULL)
 		return -1;
 
 	for (i = 0; ; i++) {
-		memset(b, 0, blen);
+		os_memset(b, 0, blen);
 		b->BindingIndex = i;
 		if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_QUERY_BINDING,
 				     b, sizeof(NDISUIO_QUERY_BINDING), b, blen,
@@ -1756,13 +1938,14 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 
 		wpa_printf(MSG_DEBUG, "NDIS: %d - %s - %s", i, name, desc);
 
-		if (strstr(name, drv->ifname)) {
+		if (os_strstr(name, drv->ifname)) {
 			wpa_printf(MSG_DEBUG, "NDIS: Interface name match");
 			found = 1;
 			break;
 		}
 
-		if (strncmp(desc, drv->ifname, strlen(drv->ifname)) == 0) {
+		if (os_strncmp(desc, drv->ifname, os_strlen(drv->ifname)) == 0)
+		{
 			wpa_printf(MSG_DEBUG, "NDIS: Interface description "
 				   "match");
 			found = 1;
@@ -1773,26 +1956,35 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 	if (!found) {
 		wpa_printf(MSG_DEBUG, "NDIS: Could not find interface '%s'",
 			   drv->ifname);
-		free(b);
+		os_free(b);
 		return -1;
 	}
 
-	strncpy(drv->ifname,
-		strncmp(name, "\\DEVICE\\", 8) == 0 ? name + 8 : name,
-		sizeof(drv->ifname));
+	os_strncpy(drv->ifname,
+		   os_strncmp(name, "\\DEVICE\\", 8) == 0 ? name + 8 : name,
+		   sizeof(drv->ifname));
+#ifdef _WIN32_WCE
+	drv->adapter_name = wpa_strdup_tchar(drv->ifname);
+	if (drv->adapter_name == NULL) {
+		wpa_printf(MSG_ERROR, "NDIS: Failed to allocate memory for "
+			   "adapter name");
+		os_free(b);
+		return -1;
+	}
+#endif /* _WIN32_WCE */
 
-	dpos = strstr(desc, " - ");
+	dpos = os_strstr(desc, " - ");
 	if (dpos)
 		dlen = dpos - desc;
 	else
-		dlen = strlen(desc);
-	drv->adapter_desc = malloc(dlen + 1);
+		dlen = os_strlen(desc);
+	drv->adapter_desc = os_malloc(dlen + 1);
 	if (drv->adapter_desc) {
-		memcpy(drv->adapter_desc, desc, dlen);
+		os_memcpy(drv->adapter_desc, desc, dlen);
 		drv->adapter_desc[dlen] = '\0';
 	}
 
-	free(b);
+	os_free(b);
 
 	if (drv->adapter_desc == NULL)
 		return -1;
@@ -1816,14 +2008,14 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		   PacketGetVersion());
 
 	len = 8192;
-	_names = wpa_zalloc(len);
+	_names = os_zalloc(len);
 	if (_names == NULL)
 		return -1;
 
 	res = PacketGetAdapterNames(_names, &len);
 	if (!res && len > 8192) {
-		free(_names);
-		_names = wpa_zalloc(len);
+		os_free(_names);
+		_names = os_zalloc(len);
 		if (_names == NULL)
 			return -1;
 		res = PacketGetAdapterNames(_names, &len);
@@ -1832,7 +2024,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 	if (!res) {
 		wpa_printf(MSG_ERROR, "NDIS: Failed to get adapter list "
 			   "(PacketGetAdapterNames)");
-		free(_names);
+		os_free(_names);
 		return -1;
 	}
 
@@ -1851,7 +2043,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 			*pos++ = pos2[0];
 			pos2 += 2;
 		}
-		memcpy(pos + 2, names, pos - names);
+		os_memcpy(pos + 2, names, pos - names);
 		pos += 2;
 	} else
 		pos = names;
@@ -1862,14 +2054,14 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		while (*pos && pos < names + len)
 			pos++;
 		if (pos + 1 >= names + len) {
-			free(names);
+			os_free(names);
 			return -1;
 		}
 		pos++;
 		num_name++;
 		if (num_name >= MAX_ADAPTERS) {
 			wpa_printf(MSG_DEBUG, "NDIS: Too many adapters");
-			free(names);
+			os_free(names);
 			return -1;
 		}
 		if (*pos == '\0') {
@@ -1886,7 +2078,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		while (*pos && pos < names + len)
 			pos++;
 		if (pos + 1 >= names + len) {
-			free(names);
+			os_free(names);
 			return -1;
 		}
 		pos++;
@@ -1894,7 +2086,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		if (num_desc >= MAX_ADAPTERS) {
 			wpa_printf(MSG_DEBUG, "NDIS: Too many adapter "
 				   "descriptions");
-			free(names);
+			os_free(names);
 			return -1;
 		}
 		if (*pos == '\0') {
@@ -1916,7 +2108,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 		wpa_printf(MSG_DEBUG, "NDIS: mismatch in adapter name and "
 			   "description counts (%d != %d)",
 			   num_name, num_desc);
-		free(names);
+		os_free(names);
 		return -1;
 	}
 
@@ -1924,13 +2116,12 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 	for (i = 0; i < num_name; i++) {
 		wpa_printf(MSG_DEBUG, "NDIS: %d - %s - %s",
 			   i, name[i], desc[i]);
-		if (found_name == -1 && strstr(name[i], drv->ifname)) {
+		if (found_name == -1 && os_strstr(name[i], drv->ifname))
 			found_name = i;
-		}
 		if (found_desc == -1 &&
-		    strncmp(desc[i], drv->ifname, strlen(drv->ifname)) == 0) {
+		    os_strncmp(desc[i], drv->ifname, os_strlen(drv->ifname)) ==
+		    0)
 			found_desc = i;
-		}
 	}
 
 	if (found_name < 0 && found_desc >= 0) {
@@ -1938,36 +2129,36 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 			   "description '%s'",
 			   name[found_desc], desc[found_desc]);
 		found_name = found_desc;
-		strncpy(drv->ifname,
-			strncmp(name[found_desc], "\\Device\\NPF_", 12) == 0 ?
-			name[found_desc] + 12 : name[found_desc],
-			sizeof(drv->ifname));
+		os_strncpy(drv->ifname,
+			   os_strncmp(name[found_desc], "\\Device\\NPF_", 12)
+			   == 0 ? name[found_desc] + 12 : name[found_desc],
+			   sizeof(drv->ifname));
 	}
 
 	if (found_name < 0) {
 		wpa_printf(MSG_DEBUG, "NDIS: Could not find interface '%s'",
 			   drv->ifname);
-		free(names);
+		os_free(names);
 		return -1;
 	}
 
 	i = found_name;
-	pos = strrchr(desc[i], '(');
+	pos = os_strrchr(desc[i], '(');
 	if (pos) {
 		dlen = pos - desc[i];
 		pos--;
 		if (pos > desc[i] && *pos == ' ')
 			dlen--;
 	} else {
-		dlen = strlen(desc[i]);
+		dlen = os_strlen(desc[i]);
 	}
-	drv->adapter_desc = malloc(dlen + 1);
+	drv->adapter_desc = os_malloc(dlen + 1);
 	if (drv->adapter_desc) {
-		memcpy(drv->adapter_desc, desc[i], dlen);
+		os_memcpy(drv->adapter_desc, desc[i], dlen);
 		drv->adapter_desc[dlen] = '\0';
 	}
 
-	free(names);
+	os_free(names);
 
 	if (drv->adapter_desc == NULL)
 		return -1;
@@ -1980,6 +2171,7 @@ static int wpa_driver_ndis_get_names(struct wpa_driver_ndis_data *drv)
 }
 
 
+#ifndef _WIN32_WCE
 /*
  * These structures are undocumented for WinXP; only WinCE version is
  * documented. These would be included wzcsapi.h if it were available. Some
@@ -2010,9 +2202,11 @@ typedef struct {
 	INT nInfraMode;
 	INT nAuthMode;
 	INT nWepStatus;
+#ifndef _WIN32_WCE
 	u8 pad[2]; /* why is this needed? */
+#endif /* _WIN32_WCE */
 	DWORD dwCtlFlags;
-	DWORD unknown; /* something added for WinXP SP2(?) */
+	DWORD dwCapabilities; /* something added for WinXP SP2(?) */
 	RAW_DATA rdSSID;
 	RAW_DATA rdBSSID;
 	RAW_DATA rdBSSIDList;
@@ -2031,11 +2225,159 @@ typedef struct {
 #define INTF_ALL_FLAGS 0x0000ffff
 #define INTF_CTLFLAGS 0x00000010
 #define INTFCTL_ENABLED 0x8000
+#endif /* _WIN32_WCE */
+
+
+#ifdef _WIN32_WCE
+static int wpa_driver_ndis_rebind_adapter(struct wpa_driver_ndis_data *drv)
+{
+	HANDLE ndis;
+	TCHAR multi[100];
+	int len;
+
+	len = _tcslen(drv->adapter_name);
+	if (len > 80)
+		return -1;
+
+	ndis = CreateFile(DD_NDIS_DEVICE_NAME, GENERIC_READ | GENERIC_WRITE,
+			  0, NULL, OPEN_EXISTING, 0, NULL);
+	if (ndis == INVALID_HANDLE_VALUE) {
+		wpa_printf(MSG_DEBUG, "NDIS: Failed to open file to NDIS "
+			   "device: %d", (int) GetLastError());
+		return -1;
+	}
+
+	len++;
+	memcpy(multi, drv->adapter_name, len * sizeof(TCHAR));
+	memcpy(&multi[len], TEXT("NDISUIO\0"), 9 * sizeof(TCHAR));
+	len += 9;
+
+	if (!DeviceIoControl(ndis, IOCTL_NDIS_REBIND_ADAPTER,
+			     multi, len * sizeof(TCHAR), NULL, 0, NULL, NULL))
+	{
+		wpa_printf(MSG_DEBUG, "NDIS: IOCTL_NDIS_REBIND_ADAPTER "
+			   "failed: 0x%x", (int) GetLastError());
+		wpa_hexdump_ascii(MSG_DEBUG, "NDIS: rebind multi_sz",
+				  (u8 *) multi, len * sizeof(TCHAR));
+		CloseHandle(ndis);
+		return -1;
+	}
+
+	CloseHandle(ndis);
+
+	wpa_printf(MSG_DEBUG, "NDIS: Requested NDIS rebind of NDISUIO "
+		   "protocol");
+
+	return 0;
+}
+#endif /* _WIN32_WCE */
 
 
 static int wpa_driver_ndis_set_wzc(struct wpa_driver_ndis_data *drv,
 				   int enable)
 {
+#ifdef _WIN32_WCE
+	HKEY hk, hk2;
+	LONG ret;
+	DWORD i, hnd, len;
+	TCHAR keyname[256], devname[256];
+
+#define WZC_DRIVER TEXT("Drivers\\BuiltIn\\ZeroConfig")
+
+	if (enable) {
+		HANDLE h;
+		h = ActivateDeviceEx(WZC_DRIVER, NULL, 0, NULL);
+		if (h == INVALID_HANDLE_VALUE || h == 0) {
+			wpa_printf(MSG_DEBUG, "NDIS: Failed to re-enable WZC "
+				   "- ActivateDeviceEx failed: %d",
+				   (int) GetLastError());
+			return -1;
+		}
+
+		wpa_printf(MSG_DEBUG, "NDIS: WZC re-enabled");
+		return wpa_driver_ndis_rebind_adapter(drv);
+	}
+
+	/*
+	 * Unfortunately, just disabling the WZC for an interface is not enough
+	 * to free NDISUIO for us, so need to disable and unload WZC completely
+	 * for now when using WinCE with NDISUIO. In addition, must request
+	 * NDISUIO protocol to be rebound to the adapter in order to free the
+	 * NDISUIO binding that WZC hold before us.
+	 */
+
+	/* Enumerate HKLM\Drivers\Active\* to find a handle to WZC. */
+	ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, DEVLOAD_ACTIVE_KEY, 0, 0, &hk);
+	if (ret != ERROR_SUCCESS) {
+		wpa_printf(MSG_DEBUG, "NDIS: RegOpenKeyEx(DEVLOAD_ACTIVE_KEY) "
+			   "failed: %d %d", (int) ret, (int) GetLastError());
+		return -1;
+	}
+
+	for (i = 0; ; i++) {
+		len = sizeof(keyname);
+		ret = RegEnumKeyEx(hk, i, keyname, &len, NULL, NULL, NULL,
+				   NULL);
+		if (ret != ERROR_SUCCESS) {
+			wpa_printf(MSG_DEBUG, "NDIS: Could not find active "
+				   "WZC - assuming it is not running.");
+			RegCloseKey(hk);
+			return -1;
+		}
+
+		ret = RegOpenKeyEx(hk, keyname, 0, 0, &hk2);
+		if (ret != ERROR_SUCCESS) {
+			wpa_printf(MSG_DEBUG, "NDIS: RegOpenKeyEx(active dev) "
+				   "failed: %d %d",
+				   (int) ret, (int) GetLastError());
+			continue;
+		}
+
+		len = sizeof(devname);
+		ret = RegQueryValueEx(hk2, DEVLOAD_DEVKEY_VALNAME, NULL, NULL,
+				      (LPBYTE) devname, &len);
+		if (ret != ERROR_SUCCESS) {
+			wpa_printf(MSG_DEBUG, "NDIS: RegQueryValueEx("
+				   "DEVKEY_VALNAME) failed: %d %d",
+				   (int) ret, (int) GetLastError());
+			RegCloseKey(hk2);
+			continue;
+		}
+
+		if (_tcscmp(devname, WZC_DRIVER) == 0)
+			break;
+
+		RegCloseKey(hk2);
+	}
+
+	RegCloseKey(hk);
+
+	/* Found WZC - get handle to it. */
+	len = sizeof(hnd);
+	ret = RegQueryValueEx(hk2, DEVLOAD_HANDLE_VALNAME, NULL, NULL,
+			      (PUCHAR) &hnd, &len);
+	if (ret != ERROR_SUCCESS) {
+		wpa_printf(MSG_DEBUG, "NDIS: RegQueryValueEx(HANDLE_VALNAME) "
+			   "failed: %d %d", (int) ret, (int) GetLastError());
+		RegCloseKey(hk2);
+		return -1;
+	}
+
+	RegCloseKey(hk2);
+
+	/* Deactivate WZC */
+	if (!DeactivateDevice((HANDLE) hnd)) {
+		wpa_printf(MSG_DEBUG, "NDIS: DeactivateDevice failed: %d",
+			   (int) GetLastError());
+		return -1;
+	}
+
+	wpa_printf(MSG_DEBUG, "NDIS: Disabled WZC temporarily");
+	drv->wzc_disabled = 1;
+	return wpa_driver_ndis_rebind_adapter(drv);
+
+#else /* _WIN32_WCE */
+
 	HMODULE hm;
 	DWORD (WINAPI *wzc_enum_interf)(LPWSTR pSrvAddr,
 					PINTFS_KEY_TABLE pIntfs);
@@ -2060,9 +2402,15 @@ static int wpa_driver_ndis_set_wzc(struct wpa_driver_ndis_data *drv,
 		return -1;
 	}
 
+#ifdef _WIN32_WCE
+	wzc_enum_interf = (void *) GetProcAddressA(hm, "WZCEnumInterfaces");
+	wzc_query_interf = (void *) GetProcAddressA(hm, "WZCQueryInterface");
+	wzc_set_interf = (void *) GetProcAddressA(hm, "WZCSetInterface");
+#else /* _WIN32_WCE */
 	wzc_enum_interf = (void *) GetProcAddress(hm, "WZCEnumInterfaces");
 	wzc_query_interf = (void *) GetProcAddress(hm, "WZCQueryInterface");
 	wzc_set_interf = (void *) GetProcAddress(hm, "WZCSetInterface");
+#endif /* _WIN32_WCE */
 
 	if (wzc_enum_interf == NULL || wzc_query_interf == NULL ||
 	    wzc_set_interf == NULL) {
@@ -2072,7 +2420,7 @@ static int wpa_driver_ndis_set_wzc(struct wpa_driver_ndis_data *drv,
 		goto fail;
 	}
 
-	memset(&guids, 0, sizeof(guids));
+	os_memset(&guids, 0, sizeof(guids));
 	res = wzc_enum_interf(NULL, &guids);
 	if (res != 0) {
 		wpa_printf(MSG_DEBUG, "NDIS: WZCEnumInterfaces failed: %d; "
@@ -2095,7 +2443,7 @@ static int wpa_driver_ndis_set_wzc(struct wpa_driver_ndis_data *drv,
 		guid[sizeof(guid) - 1] = '\0';
 		wpa_printf(MSG_DEBUG, "NDIS: intfs %d GUID '%s'",
 			   (int) i, guid);
-		if (strstr(drv->ifname, guid) == NULL)
+		if (os_strstr(drv->ifname, guid) == NULL)
 			continue;
 
 		wpa_printf(MSG_DEBUG, "NDIS: Current interface found from "
@@ -2109,7 +2457,7 @@ static int wpa_driver_ndis_set_wzc(struct wpa_driver_ndis_data *drv,
 		goto fail;
 	}
 
-	memset(&intf, 0, sizeof(intf));
+	os_memset(&intf, 0, sizeof(intf));
 	intf.wszGuid = guids.pIntfs[i].wszGuid;
 	/* Set flags to verify that the structure has not changed. */
 	intf.dwCtlFlags = -1;
@@ -2184,6 +2532,7 @@ fail:
 	FreeLibrary(hm);
 
 	return ret;
+#endif /* _WIN32_WCE */
 }
 
 
@@ -2205,8 +2554,11 @@ HANDLE driver_ndis_get_ndisuio_handle(void)
 static int wpa_driver_ndis_adapter_init(struct wpa_driver_ndis_data *drv)
 {
 #ifdef CONFIG_USE_NDISUIO
+#ifndef _WIN32_WCE
+#define NDISUIO_DEVICE_NAME TEXT("\\\\.\\\\Ndisuio")
 	DWORD written;
-	drv->ndisuio = CreateFile(TEXT("\\\\.\\\\Ndisuio"),
+#endif /* _WIN32_WCE */
+	drv->ndisuio = CreateFile(NDISUIO_DEVICE_NAME,
 				  GENERIC_READ | GENERIC_WRITE, 0, NULL,
 				  OPEN_EXISTING,
 				  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
@@ -2242,16 +2594,21 @@ static int wpa_driver_ndis_adapter_open(struct wpa_driver_ndis_data *drv)
 	DWORD written;
 #define MAX_NDIS_DEVICE_NAME_LEN 256
 	WCHAR ifname[MAX_NDIS_DEVICE_NAME_LEN];
-	size_t len, i;
+	size_t len, i, pos;
 	const char *prefix = "\\DEVICE\\";
 
-	len = 8 + strlen(drv->ifname);
+#ifdef _WIN32_WCE
+	pos = 0;
+#else /* _WIN32_WCE */
+	pos = 8;
+#endif /* _WIN32_WCE */
+	len = pos + os_strlen(drv->ifname);
 	if (len >= MAX_NDIS_DEVICE_NAME_LEN)
 		return -1;
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < pos; i++)
 		ifname[i] = (WCHAR) prefix[i];
-	for (i = 8; i < len; i++)
-		ifname[i] = (WCHAR) drv->ifname[i - 8];
+	for (i = pos; i < len; i++)
+		ifname[i] = (WCHAR) drv->ifname[i - pos];
 	ifname[i] = L'\0';
 
 	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_OPEN_DEVICE,
@@ -2271,7 +2628,7 @@ static int wpa_driver_ndis_adapter_open(struct wpa_driver_ndis_data *drv)
 	return 0;
 #else /* CONFIG_USE_NDISUIO */
 	char ifname[128];
-	snprintf(ifname, sizeof(ifname), "\\Device\\NPF_%s", drv->ifname);
+	os_snprintf(ifname, sizeof(ifname), "\\Device\\NPF_%s", drv->ifname);
 	drv->adapter = PacketOpenAdapter(ifname);
 	if (drv->adapter == NULL) {
 		wpa_printf(MSG_DEBUG, "NDIS: PacketOpenAdapter failed for "
@@ -2301,7 +2658,7 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 	struct wpa_driver_ndis_data *drv;
 	u32 mode;
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->ctx = ctx;
@@ -2311,26 +2668,28 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 	 * interface name is now only the GUI. Both Packet32 and NDISUIO
 	 * prefixes are supported.
 	 */
-	if (strncmp(ifname, "\\Device\\NPF_", 12) == 0)
+	if (os_strncmp(ifname, "\\Device\\NPF_", 12) == 0)
 		ifname += 12;
-	else if (strncmp(ifname, "\\DEVICE\\", 8) == 0)
+	else if (os_strncmp(ifname, "\\DEVICE\\", 8) == 0)
 		ifname += 8;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 
 	if (wpa_driver_ndis_adapter_init(drv) < 0) {
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
 	if (wpa_driver_ndis_get_names(drv) < 0) {
 		wpa_driver_ndis_adapter_close(drv);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
+	wpa_driver_ndis_set_wzc(drv, 0);
+
 	if (wpa_driver_ndis_adapter_open(drv) < 0) {
 		wpa_driver_ndis_adapter_close(drv);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -2339,7 +2698,7 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 		wpa_printf(MSG_DEBUG, "NDIS: Get OID_802_3_CURRENT_ADDRESS "
 			   "failed");
 		wpa_driver_ndis_adapter_close(drv);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 	wpa_driver_ndis_get_capability(drv);
@@ -2361,6 +2720,13 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 			     wpa_driver_ndis_event_pipe_cb, drv, NULL);
 #endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
+#ifdef _WIN32_WCE
+	if (ndisuio_notification_init(drv) < 0) {
+		wpa_driver_ndis_deinit(drv);
+		return NULL;
+	}
+#endif /* _WIN32_WCE */
+
 	/* Set mode here in case card was configured for ad-hoc mode
 	 * previously. */
 	mode = Ndis802_11Infrastructure;
@@ -2378,7 +2744,6 @@ static void * wpa_driver_ndis_init(void *ctx, const char *ifname)
 			drv->wired = 1;
 		}
 	}
-	wpa_driver_ndis_set_wzc(drv, 0);
 
 	return drv;
 }
@@ -2396,6 +2761,10 @@ static void wpa_driver_ndis_deinit(void *priv)
 	}
 #endif /* CONFIG_NDIS_EVENTS_INTEGRATED */
 
+#ifdef _WIN32_WCE
+	ndisuio_notification_deinit(drv);
+#endif /* _WIN32_WCE */
+
 	eloop_cancel_timeout(wpa_driver_ndis_scan_timeout, drv, drv->ctx);
 	eloop_cancel_timeout(wpa_driver_ndis_poll_timeout, drv, NULL);
 	wpa_driver_ndis_flush_pmkid(drv);
@@ -2410,8 +2779,11 @@ static void wpa_driver_ndis_deinit(void *priv)
 	if (drv->wzc_disabled)
 		wpa_driver_ndis_set_wzc(drv, 1);
 
-	free(drv->adapter_desc);
-	free(drv);
+#ifdef _WIN32_WCE
+	os_free(drv->adapter_name);
+#endif /* _WIN32_WCE */
+	os_free(drv->adapter_desc);
+	os_free(drv);
 }
 
 

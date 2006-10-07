@@ -56,8 +56,8 @@ struct wpa_driver_broadcom_data {
 #if !defined(PSK_ENABLED) /* NEW driver interface */
 #define WL_VERSION 360130
 /* wireless authentication bit vector */
-#define WPA_ENABLED 2
-#define PSK_ENABLED 4
+#define WPA_ENABLED 1
+#define PSK_ENABLED 2
                                                                                 
 #define WAUTH_WPA_ENABLED(wauth)  ((wauth) & WPA_ENABLED)
 #define WAUTH_PSK_ENABLED(wauth)  ((wauth) & PSK_ENABLED)
@@ -75,6 +75,9 @@ typedef struct {
 } wlc_deauth_t;
 
 
+static void wpa_driver_broadcom_scan_timeout(void *eloop_ctx,
+					     void *timeout_ctx);
+
 static int broadcom_ioctl(struct wpa_driver_broadcom_data *drv, int cmd,
 			  void *buf, int len)
 {
@@ -89,7 +92,7 @@ static int broadcom_ioctl(struct wpa_driver_broadcom_data *drv, int cmd,
 	ioc.cmd = cmd;
 	ioc.buf = buf;
 	ioc.len = len;
-	strncpy(ifr.ifr_name, drv->ifname, IFNAMSIZ);
+	os_strncpy(ifr.ifr_name, drv->ifname, IFNAMSIZ);
 	ifr.ifr_data = (caddr_t) &ioc;
 	if ((ret = ioctl(drv->ioctl_sock, SIOCDEVPRIVATE, &ifr)) < 0) {
 		if (cmd != WLC_GET_MAGIC)
@@ -107,7 +110,7 @@ static int wpa_driver_broadcom_get_bssid(void *priv, u8 *bssid)
 	if (broadcom_ioctl(drv, WLC_GET_BSSID, bssid, ETH_ALEN) == 0)
 		return 0;
 	
-	memset(bssid, 0, ETH_ALEN);
+	os_memset(bssid, 0, ETH_ALEN);
 	return -1;
 }
 
@@ -119,7 +122,7 @@ static int wpa_driver_broadcom_get_ssid(void *priv, u8 *ssid)
 	if (broadcom_ioctl(drv, WLC_GET_SSID, &s, sizeof(s)) == -1)
 		return -1;
 
-	memcpy(ssid, s.SSID, s.SSID_len);
+	os_memcpy(ssid, s.SSID, s.SSID_len);
 	return s.SSID_len;
 }
 
@@ -129,7 +132,7 @@ static int wpa_driver_broadcom_set_wpa(void *priv, int enable)
 	unsigned int wauth, wsec;
 	struct ether_addr ea;
 
-	memset(&ea, enable ? 0xff : 0, sizeof(ea));
+	os_memset(&ea, enable ? 0xff : 0, sizeof(ea));
 	if (broadcom_ioctl(drv, WLC_GET_WPA_AUTH, &wauth, sizeof(wauth)) ==
 	    -1 ||
 	    broadcom_ioctl(drv, WLC_GET_WSEC, &wsec, sizeof(wsec)) == -1)
@@ -163,7 +166,7 @@ static int wpa_driver_broadcom_set_key(void *priv, wpa_alg alg,
 	int ret;
 	wsec_key_t wkt;
 
-	memset(&wkt, 0, sizeof wkt);
+	os_memset(&wkt, 0, sizeof wkt);
 	wpa_printf(MSG_MSGDUMP, "BROADCOM: SET %sKEY[%d] alg=%d",
 		   set_tx ? "PRIMARY " : "", key_idx, alg);
 	if (key && key_len > 0)
@@ -177,11 +180,11 @@ static int wpa_driver_broadcom_set_key(void *priv, wpa_alg alg,
 		wkt.algo = CRYPTO_ALGO_WEP128; /* CRYPTO_ALGO_WEP1? */
 		break;
 	case WPA_ALG_TKIP:
-		wkt.algo = CRYPTO_ALGO_TKIP;
+		wkt.algo = 0; /* CRYPTO_ALGO_TKIP? */
 		break;
 	case WPA_ALG_CCMP:
-		wkt.algo = CRYPTO_ALGO_AES_CCM;
-			       /* AES_OCB_MSDU, AES_OCB_MPDU? */
+		wkt.algo = 0; /* CRYPTO_ALGO_AES_CCM;
+			       * AES_OCB_MSDU, AES_OCB_MPDU? */
 		break;
 	default:
 		wkt.algo = CRYPTO_ALGO_NALG;
@@ -197,17 +200,17 @@ static int wpa_driver_broadcom_set_key(void *priv, wpa_alg alg,
 	wkt.index = key_idx;
 	wkt.len = key_len;
 	if (key && key_len > 0) {
-		memcpy(wkt.data, key, key_len);
+		os_memcpy(wkt.data, key, key_len);
 		if (key_len == 32) {
 			/* hack hack hack XXX */
-			memcpy(&wkt.data[16], &key[24], 8);
-			memcpy(&wkt.data[24], &key[16], 8);
+			os_memcpy(&wkt.data[16], &key[24], 8);
+			os_memcpy(&wkt.data[24], &key[16], 8);
 		}
 	}
 	/* wkt.algo = CRYPTO_ALGO_...; */
 	wkt.flags = set_tx ? 0 : WSEC_PRIMARY_KEY;
 	if (addr && set_tx)
-		memcpy(&wkt.ea, addr, sizeof(wkt.ea));
+		os_memcpy(&wkt.ea, addr, sizeof(wkt.ea));
 	ret = broadcom_ioctl(drv, WLC_SET_KEY, &wkt, sizeof(wkt));
 	if (addr && set_tx) {
 		/* FIX: magic number / error handling? */
@@ -225,22 +228,22 @@ static void wpa_driver_broadcom_event_receive(int sock, void *ctx,
 	wl_wpa_header_t *wwh;
 	union wpa_event_data data;
 	
-	if ((left = recv(sock, buf, sizeof buf, 0)) == -1)
+	if ((left = recv(sock, buf, sizeof buf, 0)) < 0)
 		return;
 
 	wpa_hexdump(MSG_DEBUG, "RECEIVE EVENT", buf, left);
 
-	if (left < sizeof(wl_wpa_header_t))
+	if ((size_t) left < sizeof(wl_wpa_header_t))
 		return;
 
 	wwh = (wl_wpa_header_t *) buf;
 
 	if (wwh->snap.type != WL_WPA_ETHER_TYPE)
 		return;
-	if (memcmp(&wwh->snap, wl_wpa_snap_template, 6) != 0)
+	if (os_memcmp(&wwh->snap, wl_wpa_snap_template, 6) != 0)
 		return;
 
-	memset(&data, 0, sizeof(data));
+	os_memset(&data, 0, sizeof(data));
 
 	switch (wwh->type) {
 	case WLC_ASSOC_MSG:
@@ -248,11 +251,11 @@ static void wpa_driver_broadcom_event_receive(int sock, void *ctx,
 		wpa_printf(MSG_DEBUG, "BROADCOM: ASSOC MESSAGE (left: %d)",
 			   left);
 		if (left > 0) {
-			data.assoc_info.resp_ies = malloc(left);
+			data.assoc_info.resp_ies = os_malloc(left);
 			if (data.assoc_info.resp_ies == NULL)
 				return;
-			memcpy(data.assoc_info.resp_ies,
-			       buf + WL_WPA_HEADER_LEN, left);
+			os_memcpy(data.assoc_info.resp_ies,
+				  buf + WL_WPA_HEADER_LEN, left);
 			data.assoc_info.resp_ies_len = left;
 			wpa_hexdump(MSG_MSGDUMP, "BROADCOM: copying %d bytes "
 				    "into resp_ies",
@@ -283,9 +286,9 @@ static void wpa_driver_broadcom_event_receive(int sock, void *ctx,
 			   wwh->type);
 		break;
 	}
-	free(data.assoc_info.resp_ies);
+	os_free(data.assoc_info.resp_ies);
 }	
-u
+
 static void * wpa_driver_broadcom_init(void *ctx, const char *ifname)
 {
 	int s;
@@ -299,29 +302,29 @@ static void * wpa_driver_broadcom_init(void *ctx, const char *ifname)
 		return NULL;
 	}
 	/* do it */
-	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	os_strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFINDEX, &ifr) < 0) {
 		perror(ifr.ifr_name);
 		return NULL;
 	}
 
 
-	drv = wpa_zalloc(sizeof(*drv));
+	drv = os_zalloc(sizeof(*drv));
 	if (drv == NULL)
 		return NULL;
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 	drv->ioctl_sock = s;
 
 	s = socket(PF_PACKET, SOCK_RAW, ntohs(ETH_P_802_2));
 	if (s < 0) {
 		perror("socket(PF_PACKET, SOCK_RAW, ntohs(ETH_P_802_2))");
 		close(drv->ioctl_sock);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
-	memset(&ll, 0, sizeof(ll));
+	os_memset(&ll, 0, sizeof(ll));
 	ll.sll_family = AF_PACKET;
 	ll.sll_protocol = ntohs(ETH_P_802_2);
 	ll.sll_ifindex = ifr.ifr_ifindex;
@@ -333,7 +336,7 @@ static void * wpa_driver_broadcom_init(void *ctx, const char *ifname)
 		perror("bind(netlink)");
 		close(s);
 		close(drv->ioctl_sock);
-		free(drv);
+		os_free(drv);
 		return NULL;
 	}
 
@@ -347,10 +350,11 @@ static void * wpa_driver_broadcom_init(void *ctx, const char *ifname)
 static void wpa_driver_broadcom_deinit(void *priv)
 {
 	struct wpa_driver_broadcom_data *drv = priv;
+	eloop_cancel_timeout(wpa_driver_broadcom_scan_timeout, drv, drv->ctx);
 	eloop_unregister_read_sock(drv->event_sock);
 	close(drv->event_sock);
 	close(drv->ioctl_sock);
-	free(drv);
+	os_free(drv);
 }
 
 static int wpa_driver_broadcom_set_countermeasures(void *priv,
@@ -396,7 +400,7 @@ static int wpa_driver_broadcom_scan(void *priv, const u8 *ssid,
 
 	if (ssid && ssid_len > 0 && ssid_len <= sizeof(wst.SSID)) {
 		wst.SSID_len = ssid_len;
-		memcpy(wst.SSID, ssid, ssid_len);
+		os_memcpy(wst.SSID, ssid, ssid_len);
 	}
 	
 	if (broadcom_ioctl(drv, WLC_SCAN, &wst, sizeof(wst)) < 0)
@@ -430,9 +434,9 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 	char *buf;
 	wl_scan_results_t *wsr = (wl_scan_results_t *) buf;
 	wl_bss_info_t *wbi;
-	int ap_num;
+	size_t ap_num;
 
-	buf = malloc(WLC_IOCTL_MAXLEN);
+	buf = os_malloc(WLC_IOCTL_MAXLEN);
 	if (buf == NULL)
 		return -1;
 
@@ -443,18 +447,18 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 	wsr->count = 0;
 
 	if (broadcom_ioctl(drv, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0) {
-		free(buf);
+		os_free(buf);
 		return -1;
 	}
 
-	memset(results, 0, max_size * sizeof(struct wpa_scan_result));
+	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
 
 	for (ap_num = 0, wbi = wsr->bss_info; ap_num < wsr->count; ++ap_num) {
 		int left;
 		struct bss_ie_hdr *ie;
 		
-		memcpy(results[ap_num].bssid, &wbi->BSSID, ETH_ALEN);
-		memcpy(results[ap_num].ssid, wbi->SSID, wbi->SSID_len);
+		os_memcpy(results[ap_num].bssid, &wbi->BSSID, ETH_ALEN);
+		os_memcpy(results[ap_num].ssid, wbi->SSID, wbi->SSID_len);
 		results[ap_num].ssid_len = wbi->SSID_len;
 		results[ap_num].freq = frequency_list[wbi->channel - 1];
 		/* get ie's */
@@ -472,9 +476,9 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 					   ie->oui[0], ie->oui[1], ie->oui[2]);
 			if (ie->elem_id != 0xdd ||
 			    ie->len < 6 ||
-			    memcmp(ie->oui, WPA_OUI, 3) != 0)
+			    os_memcmp(ie->oui, WPA_OUI, 3) != 0)
 				continue;
-			memcpy(results[ap_num].wpa_ie, ie, ie->len + 2);
+			os_memcpy(results[ap_num].wpa_ie, ie, ie->len + 2);
 			results[ap_num].wpa_ie_len = ie->len + 2;
 			break;
 		}
@@ -485,7 +489,7 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 	wpa_printf(MSG_MSGDUMP, "Received %d bytes of scan results (%d BSSes)",
 		   wsr->buflen, ap_num);
 	
-	free(buf);
+	os_free(buf);
 	return ap_num;
 }
 
@@ -495,7 +499,7 @@ static int wpa_driver_broadcom_deauthenticate(void *priv, const u8 *addr,
 	struct wpa_driver_broadcom_data *drv = priv;
 	wlc_deauth_t wdt;
 	wdt.val = reason_code;
-	memcpy(&wdt.ea, addr, sizeof wdt.ea);
+	os_memcpy(&wdt.ea, addr, sizeof wdt.ea);
 	wdt.res = 0x7fff;
 	return broadcom_ioctl(drv, WLC_DEAUTHENTICATE_WITH_REASON, &wdt,
 			      sizeof(wdt));
@@ -521,7 +525,7 @@ wpa_driver_broadcom_associate(void *priv,
 	int wpa_auth;
 	
 	s.SSID_len = params->ssid_len;
-	memcpy(s.SSID, params->ssid, params->ssid_len);
+	os_memcpy(s.SSID, params->ssid, params->ssid_len);
 
 	switch (params->pairwise_suite) {
 	case CIPHER_WEP40:
@@ -544,11 +548,11 @@ wpa_driver_broadcom_associate(void *priv,
 
 	switch (params->key_mgmt_suite) {
 	case KEY_MGMT_802_1X:
-		wpa_auth = 2;
+		wpa_auth = 1;
 		break;
 
 	case KEY_MGMT_PSK:
-		wpa_auth = 4;
+		wpa_auth = 2;
 		break;
 
 	default:
@@ -560,7 +564,6 @@ wpa_driver_broadcom_associate(void *priv,
 	 * group_suite, key_mgmt_suite);
 	 * broadcom_ioctl(ifname, WLC_GET_WSEC, &wsec, sizeof(wsec));
 	 * wl join uses wlc_sec_wep here, not wlc_set_wsec */
-	wl_iovar_setint(name, "sup_wpa", 1);
 
 	if (broadcom_ioctl(drv, WLC_SET_WSEC, &wsec, sizeof(wsec)) < 0 ||
 	    broadcom_ioctl(drv, WLC_SET_WPA_AUTH, &wpa_auth,

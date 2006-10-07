@@ -2493,7 +2493,7 @@ static int tlsv1_client_set_cert_chain(struct x509_certificate **chain,
 		size_t len;
 		int ret;
 
-		buf = os_readfile(cert, &len);
+		buf = (u8 *) os_readfile(cert, &len);
 		if (buf == NULL) {
 			wpa_printf(MSG_INFO, "TLSv1: Failed to read '%s'",
 				   cert);
@@ -2593,7 +2593,7 @@ int tlsv1_client_set_private_key(struct tlsv1_client *conn,
 		size_t len;
 		int ret;
 
-		buf = os_readfile(private_key, &len);
+		buf = (u8 *) os_readfile(private_key, &len);
 		if (buf == NULL) {
 			wpa_printf(MSG_INFO, "TLSv1: Failed to read '%s'",
 				   private_key);

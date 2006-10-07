@@ -225,12 +225,12 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 		return;
 	}
 
-	memcpy(cypher, clear, 8);
+	os_memcpy(cypher, clear, 8);
 	dlen = 8;
 	if (!CryptEncrypt(ckey, 0, FALSE, 0, cypher, &dlen, 8)) {
 		wpa_printf(MSG_DEBUG, "CryptoAPI: CryptEncrypt failed: %d",
 			   (int) GetLastError());
-		memset(cypher, 0, 8);
+		os_memset(cypher, 0, 8);
 	}
 
 	CryptDestroyKey(ckey);
@@ -275,9 +275,9 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 	key_blob.hdr.reserved = 0;
 	key_blob.hdr.aiKeyAlg = CALG_AES_128;
 	key_blob.len = len;
-	memcpy(key_blob.key, key, len);
+	os_memcpy(key_blob.key, key, len);
 
-	akey = wpa_zalloc(sizeof(*akey));
+	akey = os_zalloc(sizeof(*akey));
 	if (akey == NULL)
 		return NULL;
 
@@ -286,7 +286,7 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 				 CRYPT_VERIFYCONTEXT)) {
  		wpa_printf(MSG_DEBUG, "CryptoAPI: CryptAcquireContext failed: "
 			   "%d", (int) GetLastError());
-		free(akey);
+		os_free(akey);
 		return NULL;
 	}
 
@@ -295,7 +295,7 @@ void * aes_encrypt_init(const u8 *key, size_t len)
  		wpa_printf(MSG_DEBUG, "CryptoAPI: CryptImportKey failed: %d",
 			   (int) GetLastError());
 		CryptReleaseContext(akey->prov, 0);
-		free(akey);
+		os_free(akey);
 		return NULL;
 	}
 
@@ -304,7 +304,7 @@ void * aes_encrypt_init(const u8 *key, size_t len)
 			   "failed: %d", (int) GetLastError());
 		CryptDestroyKey(akey->ckey);
 		CryptReleaseContext(akey->prov, 0);
-		free(akey);
+		os_free(akey);
 		return NULL;
 	}
 
@@ -317,12 +317,12 @@ void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 	struct aes_context *akey = ctx;
 	DWORD dlen;
 
-	memcpy(crypt, plain, 16);
+	os_memcpy(crypt, plain, 16);
 	dlen = 16;
 	if (!CryptEncrypt(akey->ckey, 0, FALSE, 0, crypt, &dlen, 16)) {
 		wpa_printf(MSG_DEBUG, "CryptoAPI: CryptEncrypt failed: %d",
 			   (int) GetLastError());
-		memset(crypt, 0, 16);
+		os_memset(crypt, 0, 16);
 	}
 }
 
@@ -333,7 +333,7 @@ void aes_encrypt_deinit(void *ctx)
 	if (akey) {
 		CryptDestroyKey(akey->ckey);
 		CryptReleaseContext(akey->prov, 0);
-		free(akey);
+		os_free(akey);
 	}
 }
 
@@ -349,7 +349,7 @@ void aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 	struct aes_context *akey = ctx;
 	DWORD dlen;
 
-	memcpy(plain, crypt, 16);
+	os_memcpy(plain, crypt, 16);
 	dlen = 16;
 
 	if (!CryptDecrypt(akey->ckey, 0, FALSE, 0, plain, &dlen)) {
@@ -385,7 +385,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		BYTE key[32];
 	} key_blob;
 
-	memset(&key_blob, 0, sizeof(key_blob));
+	os_memset(&key_blob, 0, sizeof(key_blob));
 	switch (alg) {
 	case CRYPTO_HASH_ALG_MD5:
 		calg = CALG_MD5;
@@ -409,13 +409,13 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		key_blob.len = key_len;
 		if (key_len > sizeof(key_blob.key))
 			return NULL;
-		memcpy(key_blob.key, key, key_len);
+		os_memcpy(key_blob.key, key, key_len);
 		break;
 	default:
 		return NULL;
 	}
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
@@ -423,7 +423,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 
 	if (!CryptAcquireContext(&ctx->prov, NULL, NULL, PROV_RSA_FULL, 0)) {
 		cryptoapi_report_error("CryptAcquireContext");
-		free(ctx);
+		os_free(ctx);
 		return NULL;
 	}
 
@@ -436,7 +436,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 				    &ctx->key)) {
 			cryptoapi_report_error("CryptImportKey");
 			CryptReleaseContext(ctx->prov, 0);
-			free(ctx);
+			os_free(ctx);
 			return NULL;
 		}
 	}
@@ -444,13 +444,13 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 	if (!CryptCreateHash(ctx->prov, calg, ctx->key, 0, &ctx->hash)) {
 		cryptoapi_report_error("CryptCreateHash");
 		CryptReleaseContext(ctx->prov, 0);
-		free(ctx);
+		os_free(ctx);
 		return NULL;
 	}
 
 	if (calg == CALG_HMAC) {
 		HMAC_INFO info;
-		memset(&info, 0, sizeof(info));
+		os_memset(&info, 0, sizeof(info));
 		switch (alg) {
 		case CRYPTO_HASH_ALG_HMAC_MD5:
 			info.HashAlgid = CALG_MD5;
@@ -468,7 +468,7 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 			cryptoapi_report_error("CryptSetHashParam");
 			CryptDestroyHash(ctx->hash);
 			CryptReleaseContext(ctx->prov, 0);
-			free(ctx);
+			os_free(ctx);
 			return NULL;
 		}
 	}
@@ -517,7 +517,7 @@ done:
 	    ctx->alg == CRYPTO_HASH_ALG_HMAC_MD5)
 		CryptDestroyKey(ctx->key);
 
-	free(ctx);
+	os_free(ctx);
 
 	return ret;
 }
@@ -547,7 +547,7 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 	key_blob.len = key_len;
 	if (key_len > sizeof(key_blob.key))
 		return NULL;
-	memcpy(key_blob.key, key, key_len);
+	os_memcpy(key_blob.key, key, key_len);
 
 	switch (alg) {
 	case CRYPTO_CIPHER_ALG_AES:
@@ -574,7 +574,7 @@ struct crypto_cipher * crypto_cipher_init(enum crypto_cipher_alg alg,
 		return NULL;
 	}
 
-	ctx = wpa_zalloc(sizeof(*ctx));
+	ctx = os_zalloc(sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
@@ -607,7 +607,7 @@ fail3:
 fail2:
 	CryptReleaseContext(ctx->prov, 0);
 fail1:
-	free(ctx);
+	os_free(ctx);
 	return NULL;
 }
 
@@ -617,11 +617,11 @@ int crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
 {
 	DWORD dlen;
 
-	memcpy(crypt, plain, len);
+	os_memcpy(crypt, plain, len);
 	dlen = len;
 	if (!CryptEncrypt(ctx->key, 0, FALSE, 0, crypt, &dlen, len)) {
  		cryptoapi_report_error("CryptEncrypt");
-		memset(crypt, 0, len);
+		os_memset(crypt, 0, len);
 		return -1;
 	}
 
@@ -634,7 +634,7 @@ int crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
 {
 	DWORD dlen;
 
-	memcpy(plain, crypt, len);
+	os_memcpy(plain, crypt, len);
 	dlen = len;
 	if (!CryptDecrypt(ctx->key, 0, FALSE, 0, plain, &dlen)) {
  		cryptoapi_report_error("CryptDecrypt");
@@ -649,7 +649,7 @@ void crypto_cipher_deinit(struct crypto_cipher *ctx)
 {
 	CryptDestroyKey(ctx->key);
 	CryptReleaseContext(ctx->prov, 0);
-	free(ctx);
+	os_free(ctx);
 }
 
 
@@ -685,7 +685,7 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 	struct crypto_public_key *pk;
 	PCCERT_CONTEXT cc;
 
-	pk = wpa_zalloc(sizeof(*pk));
+	pk = os_zalloc(sizeof(*pk));
 	if (pk == NULL)
 		return NULL;
 
@@ -693,14 +693,14 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 					  PKCS_7_ASN_ENCODING, buf, len);
 	if (!cc) {
  		cryptoapi_report_error("CryptCreateCertificateContext");
-		free(pk);
+		os_free(pk);
 		return NULL;
 	}
 
 	if (!CryptAcquireContext(&pk->prov, NULL, MS_DEF_PROV, PROV_RSA_FULL,
 				 0)) {
  		cryptoapi_report_error("CryptAcquireContext");
-		free(pk);
+		os_free(pk);
 		CertFreeCertificateContext(cc);
 		return NULL;
 	}
@@ -711,7 +711,7 @@ struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 				      &pk->rsa)) {
  		cryptoapi_report_error("CryptImportPublicKeyInfo");
 		CryptReleaseContext(pk->prov, 0);
-		free(pk);
+		os_free(pk);
 		CertFreeCertificateContext(cc);
 		return NULL;
 	}
@@ -736,12 +736,12 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 	if (tmp == NULL)
 		return -1;
 
-	memcpy(tmp, in, inlen);
+	os_memcpy(tmp, in, inlen);
 	clen = inlen;
 	if (!CryptEncrypt(key->rsa, 0, TRUE, 0, tmp, &clen, *outlen)) {
 		wpa_printf(MSG_DEBUG, "CryptoAPI: Failed to encrypt using "
 			   "public key: %d", (int) GetLastError());
-		free(tmp);
+		os_free(tmp);
 		return -1;
 	}
 
@@ -751,7 +751,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 	for (i = 0; i < *outlen; i++)
 		out[i] = tmp[*outlen - 1 - i];
 
-	free(tmp);
+	os_free(tmp);
 
 	return 0;
 }
@@ -771,7 +771,7 @@ void crypto_public_key_free(struct crypto_public_key *key)
 	if (key) {
 		CryptDestroyKey(key->rsa);
 		CryptReleaseContext(key->prov, 0);
-		free(key);
+		os_free(key);
 	}
 }
 
@@ -781,7 +781,7 @@ void crypto_private_key_free(struct crypto_private_key *key)
 	if (key) {
 		CryptDestroyKey(key->rsa);
 		CryptReleaseContext(key->prov, 0);
-		free(key);
+		os_free(key);
 	}
 }
 
