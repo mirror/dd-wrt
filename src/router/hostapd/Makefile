@@ -1,9 +1,9 @@
-CC=gcc
+
 DIR_WPA_SUPPLICANT=.
 DIR_HOSTAP=.
 
 ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
+CFLAGS = $(COPTS) -MMD -Wall -g
 endif
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to

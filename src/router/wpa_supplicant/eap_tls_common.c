@@ -406,7 +406,7 @@ static int eap_tls_process_input(struct eap_sm *sm, struct eap_ssl_data *data,
 }
 
 
-static int eap_tls_process_output(struct eap_ssl_data *data, int eap_type,
+static int eap_tls_process_output(struct eap_ssl_data *data, EapType eap_type,
 				  int peap_version, u8 id, int ret,
 				  u8 **out_data, size_t *out_len)
 {
@@ -487,7 +487,7 @@ static int eap_tls_process_output(struct eap_ssl_data *data, int eap_type,
  * *out_data is not %NULL.
  */
 int eap_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
-			   int eap_type, int peap_version,
+			   EapType eap_type, int peap_version,
 			   u8 id, const u8 *in_data, size_t in_len,
 			   u8 **out_data, size_t *out_len)
 {
@@ -543,7 +543,7 @@ int eap_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
  * Returns: Pointer to allocated ACK frames or %NULL on failure
  */
 u8 * eap_tls_build_ack(struct eap_ssl_data *data, size_t *respDataLen, u8 id,
-		       int eap_type, int peap_version)
+		       EapType eap_type, int peap_version)
 {
 	struct eap_hdr *resp;
 	u8 *pos;

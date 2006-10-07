@@ -166,10 +166,6 @@ CONFIG_SMARTCARD=y
 # Development testing
 #CONFIG_EAPOL_TEST=y
 
-# Replace native Linux implementation of packet sockets with libdnet/libpcap.
-# This will be automatically set for non-Linux OS.
-#CONFIG_DNET_PCAP=y
-
 # Select control interface backend for external programs, e.g, wpa_cli:
 # unix = UNIX domain sockets (default for Linux/*BSD)
 # udp = UDP sockets using localhost (127.0.0.1)

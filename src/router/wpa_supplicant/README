@@ -207,9 +207,10 @@ Optional libraries for layer2 packet processing:
 
 These libraries are _not_ used in the default Linux build. Instead,
 internal Linux specific implementation is used. libpcap/libdnet are
-more portable and they can be used by adding CONFIG_DNET_PCAP=y into
+more portable and they can be used by adding CONFIG_L2_PACKET=pcap into
 .config. They may also be selected automatically for other operating
-systems.
+systems. In case of Windows builds, WinPcap is used by default
+(CONFIG_L2_PACKET=winpcap).
 
 
 Optional libraries for EAP-TLS, EAP-PEAP, and EAP-TTLS:
@@ -375,11 +376,6 @@ authentication algorithm (for EAP-SIM/EAP-AKA). This requires pcsc-lite
 (http://www.linuxnet.com/) for smart card access.
 
 CONFIG_PCSC=y
-
-Following option can be used to replace the native Linux packet socket
-interface with libpcap/libdnet.
-
-CONFIG_DNET_PCAP=y
 
 Following options can be added to .config to select which driver
 interfaces are included. Hermes driver interface needs to be downloaded

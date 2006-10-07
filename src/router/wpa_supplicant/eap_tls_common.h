@@ -55,11 +55,11 @@ const u8 * eap_tls_data_reassemble(
 	struct eap_sm *sm, struct eap_ssl_data *data, const u8 *in_data,
 	size_t in_len, size_t *out_len, int *need_more_input);
 int eap_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
-			   int eap_type, int peap_version,
+			   EapType eap_type, int peap_version,
 			   u8 id, const u8 *in_data, size_t in_len,
 			   u8 **out_data, size_t *out_len);
 u8 * eap_tls_build_ack(struct eap_ssl_data *data, size_t *respDataLen, u8 id,
-		       int eap_type, int peap_version);
+		       EapType eap_type, int peap_version);
 int eap_tls_reauth_init(struct eap_sm *sm, struct eap_ssl_data *data);
 int eap_tls_status(struct eap_sm *sm, struct eap_ssl_data *data, char *buf,
 		   size_t buflen, int verbose);

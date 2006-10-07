@@ -61,6 +61,8 @@ static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s)
 		wpa_supplicant_set_non_wpa_policy(wpa_s, ssid);
 	}
 
+	if (wpa_s->current_ssid && wpa_s->current_ssid != ssid)
+		eapol_sm_invalidate_cached_session(wpa_s->eapol);
 	wpa_s->current_ssid = ssid;
 	wpa_sm_set_config(wpa_s->wpa, wpa_s->current_ssid);
 	wpa_supplicant_initiate_eapol(wpa_s);

@@ -696,8 +696,15 @@ static int wpa_supplicant_ctrl_iface_remove_network(
 		return -1;
 	}
 
-	if (ssid == wpa_s->current_ssid)
+	if (ssid == wpa_s->current_ssid) {
+		/*
+		 * Invalidate the EAP session cache if the current network is
+		 * removed.
+		 */
+		eapol_sm_invalidate_cached_session(wpa_s->eapol);
+
 		wpa_supplicant_disassociate(wpa_s, REASON_DEAUTH_LEAVING);
+	}
 
 	return 0;
 }
@@ -738,6 +745,14 @@ static int wpa_supplicant_ctrl_iface_set_network(
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE: Failed to set network "
 			   "variable '%s'", name);
 		return -1;
+	}
+
+	if (wpa_s->current_ssid == ssid) {
+		/*
+		 * Invalidate the EAP session cache if anything in the current
+		 * configuration changes.
+		 */
+		eapol_sm_invalidate_cached_session(wpa_s->eapol);
 	}
 
 	if ((os_strcmp(name, "psk") == 0 &&

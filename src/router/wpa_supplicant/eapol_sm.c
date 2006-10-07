@@ -1541,6 +1541,17 @@ void eapol_sm_notify_lower_layer_success(struct eapol_sm *sm)
 }
 
 
+/**
+ * eapol_sm_invalidate_cached_session - Mark cached EAP session data invalid
+ * @sm: Pointer to EAPOL state machine allocated with eapol_sm_init()
+ */
+void eapol_sm_invalidate_cached_session(struct eapol_sm *sm)
+{
+	if (sm)
+		eap_invalidate_cached_session(sm->eap);
+}
+
+
 static struct wpa_ssid * eapol_sm_get_config(void *ctx)
 {
 	struct eapol_sm *sm = ctx;
