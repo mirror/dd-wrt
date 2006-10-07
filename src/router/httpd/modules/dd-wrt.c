@@ -2252,7 +2252,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
-  websWrite (wp, "<div>\n");
   char power[16];
   char maxpower[16];
 #ifdef HAVE_MADWIFI
