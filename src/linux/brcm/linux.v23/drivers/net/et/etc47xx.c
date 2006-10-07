@@ -1087,7 +1087,7 @@ chipphyinit(struct bcm4xxx *ch, uint phyaddr)
 		chipphywr( ch, phyaddr, 30, (uint16) (chipphyrd( ch, phyaddr, 30 ) | 0x3000));
 		chipphywr( ch, phyaddr, 22, (uint16) (chipphyrd( ch, phyaddr, 22 ) & 0xffdf));
 		
-if (getRouterBrand == ROUTER_RT210W)  //from Belkin sourece, try to fix wan problem on some v1xxx units
+if (getRouterBrand () == ROUTER_RT210W)  //from Belkin sourece, try to fix wan problem on some v1xxx units
 	{
 		chipphyand(ch, phyaddr, 0, ~(1<<10)); // register0 10'bit reset,if system happen error,Wan breaking by ASKEY Colin 13/02/03 13:44:18,
         chipphyand(ch, phyaddr, 16, (uint16) ~(1<<15));//  register16 15'bit reset, Jerry
