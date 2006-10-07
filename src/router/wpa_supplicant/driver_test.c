@@ -318,8 +318,6 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 	res->ssid_len = len;
 
 	pos = pos2 + 1;
-	while (*pos == ' ')
-		pos++;
 	pos2 = os_strchr(pos, ' ');
 	if (pos2 == NULL)
 		len = os_strlen(pos) / 2;
@@ -347,6 +345,14 @@ static void wpa_driver_test_scanresp(struct wpa_driver_test_data *drv,
 		}
 
 		ipos += 2 + ipos[1];
+	}
+
+	if (pos2) {
+		pos = pos2 + 1;
+		while (*pos == ' ')
+			pos++;
+		if (os_strncmp(pos, "PRIVACY", 7) == 0)
+			res->caps |= IEEE80211_CAP_PRIVACY;
 	}
 
 	drv->num_scanres++;
@@ -506,6 +512,7 @@ static void wpa_driver_test_deinit(void *priv)
 {
 	struct wpa_driver_test_data *drv = priv;
 	wpa_driver_test_close_test_socket(drv);
+	eloop_cancel_timeout(wpa_driver_test_scan_timeout, drv, drv->ctx);
 	os_free(drv->test_dir);
 	os_free(drv);
 }

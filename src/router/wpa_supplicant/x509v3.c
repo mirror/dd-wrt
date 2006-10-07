@@ -773,14 +773,11 @@ static int x509_parse_extension_data(struct x509_certificate *cert,
 	switch (oid->oid[3]) {
 	case 15: /* id-ce-keyUsage */
 		return x509_parse_ext_key_usage(cert, pos, len);
-		break;
 	case 19: /* id-ce-basicConstraints */
 		return x509_parse_ext_basic_constraints(cert, pos, len);
 	default:
 		return 1;
 	}
-
-	return 0;
 }
 
 

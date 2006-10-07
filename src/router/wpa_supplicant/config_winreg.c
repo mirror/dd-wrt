@@ -36,8 +36,12 @@
 #include "wpa_supplicant.h"
 #include "config.h"
 
-#define KEY_ROOT HKEY_LOCAL_MACHINE
-#define KEY_PREFIX TEXT("SOFTWARE\\wpa_supplicant")
+#ifndef WPA_KEY_ROOT
+#define WPA_KEY_ROOT HKEY_LOCAL_MACHINE
+#endif
+#ifndef WPA_KEY_PREFIX
+#define WPA_KEY_PREFIX TEXT("SOFTWARE\\wpa_supplicant")
+#endif
 
 #ifdef UNICODE
 #define TSTR "%S"
@@ -92,19 +96,19 @@ static int wpa_config_read_blobs(struct wpa_config *config, HKEY hk)
 		wpa_printf(MSG_MSGDUMP, "blob %d: field='%s' len %d",
 			   (int) i, name, (int) datalen);
 
-		blob = wpa_zalloc(sizeof(*blob));
+		blob = os_zalloc(sizeof(*blob));
 		if (blob == NULL) {
 			errors++;
 			break;
 		}
-		blob->name = strdup((char *) name);
-		blob->data = malloc(datalen);
+		blob->name = os_strdup((char *) name);
+		blob->data = os_malloc(datalen);
 		if (blob->name == NULL || blob->data == NULL) {
 			wpa_config_free_blob(blob);
 			errors++;
 			break;
 		}
-		memcpy(blob->data, data, datalen);
+		os_memcpy(blob->data, data, datalen);
 		blob->len = datalen;
 
 		wpa_config_set_blob(config, blob);
@@ -124,7 +128,7 @@ static int wpa_config_read_reg_dword(HKEY hk, const TCHAR *name, int *_val)
 	buflen = sizeof(val);
 	ret = RegQueryValueEx(hk, name, NULL, NULL, (LPBYTE) &val, &buflen);
 	if (ret == ERROR_SUCCESS && buflen == sizeof(val)) {
-		wpa_printf(MSG_DEBUG, "%s=%d", name, (int) val);
+		wpa_printf(MSG_DEBUG, TSTR "=%d", name, (int) val);
 		*_val = val;
 		return 0;
 	}
@@ -143,18 +147,18 @@ static char * wpa_config_read_reg_string(HKEY hk, const TCHAR *name)
 	ret = RegQueryValueEx(hk, name, NULL, NULL, NULL, &buflen);
 	if (ret != ERROR_SUCCESS)
 		return NULL;
-	val = malloc(buflen);
+	val = os_malloc(buflen);
 	if (val == NULL)
 		return NULL;
 
 	ret = RegQueryValueEx(hk, name, NULL, NULL, (LPBYTE) val, &buflen);
 	if (ret != ERROR_SUCCESS) {
-		free(val);
+		os_free(val);
 		return NULL;
 	}
 
 	wpa_unicode2ascii_inplace(val);
-	wpa_printf(MSG_DEBUG, "%s=%s", name, (char *) val);
+	wpa_printf(MSG_DEBUG, TSTR "=%s", name, (char *) val);
 	return (char *) val;
 }
 
@@ -210,7 +214,7 @@ static struct wpa_ssid * wpa_config_read_network(HKEY hk, const TCHAR *netw,
 	}
 
 	wpa_printf(MSG_MSGDUMP, "Start of a new network '" TSTR "'", netw);
-	ssid = wpa_zalloc(sizeof(*ssid));
+	ssid = os_zalloc(sizeof(*ssid));
 	if (ssid == NULL) {
 		RegCloseKey(nhk);
 		return NULL;
@@ -370,16 +374,16 @@ struct wpa_config * wpa_config_read(const char *name)
 	wpa_printf(MSG_DEBUG, "Reading configuration profile '%s'", name);
 
 #ifdef UNICODE
-	_snwprintf(buf, 256, KEY_PREFIX TEXT("\\configs\\%S"), name);
+	_snwprintf(buf, 256, WPA_KEY_PREFIX TEXT("\\configs\\%S"), name);
 #else /* UNICODE */
-	snprintf(buf, 256, KEY_PREFIX TEXT("\\configs\\%s"), name);
+	os_snprintf(buf, 256, WPA_KEY_PREFIX TEXT("\\configs\\%s"), name);
 #endif /* UNICODE */
 
-	ret = RegOpenKeyEx(KEY_ROOT, buf, 0, KEY_QUERY_VALUE, &hk);
+	ret = RegOpenKeyEx(WPA_KEY_ROOT, buf, 0, KEY_QUERY_VALUE, &hk);
 	if (ret != ERROR_SUCCESS) {
 		wpa_printf(MSG_ERROR, "Could not open wpa_supplicant "
-			   "configuration registry %s", buf);
-		free(config);
+			   "configuration registry HKLM\\" TSTR, buf);
+		os_free(config);
 		return NULL;
 	}
 
@@ -450,26 +454,27 @@ static int wpa_config_write_reg_string(HKEY hk, const char *name,
 
 	if (val == NULL) {
 		RegDeleteValue(hk, _name);
-		free(_name);
+		os_free(_name);
 		return 0;
 	}
 
 	_val = wpa_strdup_tchar(val);
 	if (_val == NULL) {
-		free(_name);
+		os_free(_name);
 		return -1;
 	}
-	ret = RegSetValueEx(hk, _name, 0, REG_SZ, (BYTE *) _val, (strlen(val) + 1) * sizeof(TCHAR));
+	ret = RegSetValueEx(hk, _name, 0, REG_SZ, (BYTE *) _val,
+			    (os_strlen(val) + 1) * sizeof(TCHAR));
 	if (ret != ERROR_SUCCESS) {
 		wpa_printf(MSG_ERROR, "WINREG: Failed to set %s='%s': "
 			   "error %d", name, val, (int) GetLastError());
-		free(_name);
-		free(_val);
+		os_free(_name);
+		os_free(_val);
 		return -1;
 	}
 
-	free(_name);
-	free(_val);
+	os_free(_name);
+	os_free(_val);
 	return 0;
 }
 
@@ -559,7 +564,7 @@ static void write_str(HKEY hk, const char *field, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	wpa_config_write_reg_string(hk, field, value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -568,7 +573,7 @@ static void write_int(HKEY hk, const char *field, int value, int def)
 	char val[20];
 	if (value == def)
 		return;
-	snprintf(val, sizeof(val), "%d", value);
+	os_snprintf(val, sizeof(val), "%d", value);
 	wpa_config_write_reg_string(hk, field, val);
 }
 
@@ -579,7 +584,7 @@ static void write_bssid(HKEY hk, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	wpa_config_write_reg_string(hk, "bssid", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -589,7 +594,7 @@ static void write_psk(HKEY hk, struct wpa_ssid *ssid)
 	if (value == NULL)
 		return;
 	wpa_config_write_reg_string(hk, "psk", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -605,7 +610,7 @@ static void write_proto(HKEY hk, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		wpa_config_write_reg_string(hk, "proto", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -621,7 +626,7 @@ static void write_key_mgmt(HKEY hk, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		wpa_config_write_reg_string(hk, "key_mgmt", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -637,7 +642,7 @@ static void write_pairwise(HKEY hk, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		wpa_config_write_reg_string(hk, "pairwise", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -653,7 +658,7 @@ static void write_group(HKEY hk, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		wpa_config_write_reg_string(hk, "group", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -669,7 +674,7 @@ static void write_auth_alg(HKEY hk, struct wpa_ssid *ssid)
 		return;
 	if (value[0])
 		wpa_config_write_reg_string(hk, "auth_alg", value);
-	free(value);
+	os_free(value);
 }
 
 
@@ -684,7 +689,7 @@ static void write_eap(HKEY hk, struct wpa_ssid *ssid)
 
 	if (value[0])
 		wpa_config_write_reg_string(hk, "eap", value);
-	free(value);
+	os_free(value);
 }
 #endif /* IEEE8021X_EAPOL */
 
@@ -693,11 +698,11 @@ static void write_wep_key(HKEY hk, int idx, struct wpa_ssid *ssid)
 {
 	char field[20], *value;
 
-	snprintf(field, sizeof(field), "wep_key%d", idx);
+	os_snprintf(field, sizeof(field), "wep_key%d", idx);
 	value = wpa_config_get(ssid, field);
 	if (value) {
 		wpa_config_write_reg_string(hk, field, value);
-		free(value);
+		os_free(value);
 	}
 }
 
@@ -720,7 +725,7 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 #ifdef UNICODE
 	wsprintf(name, L"%04d", id);
 #else /* UNICODE */
-	snprintf(name, sizeof(name), "%04d", id);
+	os_snprintf(name, sizeof(name), "%04d", id);
 #endif /* UNICODE */
 	ret = RegCreateKeyEx(nhk, name, 0, NULL, 0, KEY_WRITE, NULL, &netw,
 			     NULL);
@@ -824,10 +829,10 @@ static int wpa_config_write_blob(HKEY hk, struct wpa_config_blob *blob)
 			   "error 0x%x (%d)", blob->name, (unsigned int) ret,
 			   (int) GetLastError());
 		RegCloseKey(bhk);
-		free(name);
+		os_free(name);
 		return -1;
 	}
-	free(name);
+	os_free(name);
 
 	RegCloseKey(bhk);
 
@@ -848,12 +853,12 @@ int wpa_config_write(const char *name, struct wpa_config *config)
 	wpa_printf(MSG_DEBUG, "Writing configuration file '%s'", name);
 
 #ifdef UNICODE
-	_snwprintf(buf, 256, KEY_PREFIX TEXT("\\configs\\%S"), name);
+	_snwprintf(buf, 256, WPA_KEY_PREFIX TEXT("\\configs\\%S"), name);
 #else /* UNICODE */
-	snprintf(buf, 256, KEY_PREFIX TEXT("\\configs\\%s"), name);
+	os_snprintf(buf, 256, WPA_KEY_PREFIX TEXT("\\configs\\%s"), name);
 #endif /* UNICODE */
 
-	ret = RegOpenKeyEx(KEY_ROOT, buf, 0, KEY_SET_VALUE | DELETE, &hk);
+	ret = RegOpenKeyEx(WPA_KEY_ROOT, buf, 0, KEY_SET_VALUE | DELETE, &hk);
 	if (ret != ERROR_SUCCESS) {
 		wpa_printf(MSG_ERROR, "Could not open wpa_supplicant "
 			   "configuration registry %s: error %d", buf,

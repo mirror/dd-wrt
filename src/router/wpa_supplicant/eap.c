@@ -846,6 +846,7 @@ static void eap_sm_processIdentity(struct eap_sm *sm, const u8 *req)
 }
 
 
+#ifdef PCSC_FUNCS
 static int eap_sm_imsi_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 {
 	int aka = 0;
@@ -882,12 +883,15 @@ static int eap_sm_imsi_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 	ssid->identity[0] = aka ? '0' : '1';
 	os_memcpy(ssid->identity + 1, imsi, imsi_len);
 	ssid->identity_len = 1 + imsi_len;
+
 	return 0;
 }
+#endif /* PCSC_FUNCS */
 
 
 static int eap_sm_get_scard_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 {
+#ifdef PCSC_FUNCS
 	if (scard_set_pin(sm->scard_ctx, ssid->pin)) {
 		/*
 		 * Make sure the same PIN is not tried again in order to avoid
@@ -902,6 +906,9 @@ static int eap_sm_get_scard_identity(struct eap_sm *sm, struct wpa_ssid *ssid)
 	}
 
 	return eap_sm_imsi_identity(sm, ssid);
+#else /* PCSC_FUNCS */
+	return -1;
+#endif /* PCSC_FUNCS */
 }
 
 
@@ -2096,4 +2103,15 @@ struct eap_hdr * eap_msg_alloc(int vendor, EapType type, size_t *len,
 void eap_notify_pending(struct eap_sm *sm)
 {
 	sm->eapol_cb->notify_pending(sm->eapol_ctx);
+}
+
+
+/**
+ * eap_invalidate_cached_session - Mark cached session data invalid
+ * @sm: Pointer to EAP state machine allocated with eap_sm_init()
+ */
+void eap_invalidate_cached_session(struct eap_sm *sm)
+{
+	if (sm)
+		eap_deinit_prev_method(sm, "invalidate");
 }

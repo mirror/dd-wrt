@@ -63,35 +63,35 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	struct wpa_ctrl *ctrl;
 	static int counter = 0;
 
-	ctrl = malloc(sizeof(*ctrl));
+	ctrl = os_malloc(sizeof(*ctrl));
 	if (ctrl == NULL)
 		return NULL;
-	memset(ctrl, 0, sizeof(*ctrl));
+	os_memset(ctrl, 0, sizeof(*ctrl));
 
 	ctrl->s = socket(PF_UNIX, SOCK_DGRAM, 0);
 	if (ctrl->s < 0) {
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
 	ctrl->local.sun_family = AF_UNIX;
-	snprintf(ctrl->local.sun_path, sizeof(ctrl->local.sun_path),
-		 "/tmp/wpa_ctrl_%d-%d", getpid(), counter++);
+	os_snprintf(ctrl->local.sun_path, sizeof(ctrl->local.sun_path),
+		    "/tmp/wpa_ctrl_%d-%d", getpid(), counter++);
 	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
 		    sizeof(ctrl->local)) < 0) {
 		close(ctrl->s);
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
 	ctrl->dest.sun_family = AF_UNIX;
-	snprintf(ctrl->dest.sun_path, sizeof(ctrl->dest.sun_path), "%s",
-		 ctrl_path);
+	os_snprintf(ctrl->dest.sun_path, sizeof(ctrl->dest.sun_path), "%s",
+		    ctrl_path);
 	if (connect(ctrl->s, (struct sockaddr *) &ctrl->dest,
 		    sizeof(ctrl->dest)) < 0) {
 		close(ctrl->s);
 		unlink(ctrl->local.sun_path);
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
@@ -103,7 +103,7 @@ void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 	unlink(ctrl->local.sun_path);
 	close(ctrl->s);
-	free(ctrl);
+	os_free(ctrl);
 }
 
 #endif /* CONFIG_CTRL_IFACE_UNIX */
@@ -117,15 +117,15 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	char buf[128];
 	size_t len;
 
-	ctrl = malloc(sizeof(*ctrl));
+	ctrl = os_malloc(sizeof(*ctrl));
 	if (ctrl == NULL)
 		return NULL;
-	memset(ctrl, 0, sizeof(*ctrl));
+	os_memset(ctrl, 0, sizeof(*ctrl));
 
 	ctrl->s = socket(PF_INET, SOCK_DGRAM, 0);
 	if (ctrl->s < 0) {
 		perror("socket");
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
@@ -134,7 +134,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
 		 sizeof(ctrl->local)) < 0) {
 		close(ctrl->s);
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
@@ -145,7 +145,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 		    sizeof(ctrl->dest)) < 0) {
 		perror("connect");
 		close(ctrl->s);
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
@@ -162,8 +162,8 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 	close(ctrl->s);
-	free(ctrl->cookie);
-	free(ctrl);
+	os_free(ctrl->cookie);
+	os_free(ctrl);
 }
 
 #endif /* CONFIG_CTRL_IFACE_UDP */
@@ -185,7 +185,7 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 	if (ctrl->cookie) {
 		char *pos;
 		_cmd_len = strlen(ctrl->cookie) + 1 + cmd_len;
-		cmd_buf = malloc(_cmd_len );
+		cmd_buf = os_malloc(_cmd_len );
 		if (cmd_buf == NULL)
 			return -1;
 		_cmd = cmd_buf;
@@ -202,10 +202,10 @@ int wpa_ctrl_request(struct wpa_ctrl *ctrl, const char *cmd, size_t cmd_len,
 	}
 
 	if (send(ctrl->s, _cmd, _cmd_len, 0) < 0) {
-		free(cmd_buf);
+		os_free(cmd_buf);
 		return -1;
 	}
-	free(cmd_buf);
+	os_free(cmd_buf);
 
 	for (;;) {
 		tv.tv_sec = 2;
@@ -253,7 +253,7 @@ static int wpa_ctrl_attach_helper(struct wpa_ctrl *ctrl, int attach)
 			       buf, &len, NULL);
 	if (ret < 0)
 		return ret;
-	if (len == 3 && memcmp(buf, "OK\n", 3) == 0)
+	if (len == 3 && os_memcmp(buf, "OK\n", 3) == 0)
 		return 0;
 	return -1;
 }
@@ -321,10 +321,10 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 	TCHAR name[256];
 	int i;
 
-	ctrl = malloc(sizeof(*ctrl));
+	ctrl = os_malloc(sizeof(*ctrl));
 	if (ctrl == NULL)
 		return NULL;
-	memset(ctrl, 0, sizeof(*ctrl));
+	os_memset(ctrl, 0, sizeof(*ctrl));
 
 #ifdef UNICODE
 	if (ctrl_path == NULL)
@@ -334,10 +334,10 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 			   ctrl_path);
 #else /* UNICODE */
 	if (ctrl_path == NULL)
-		snprintf(name, 256, NAMED_PIPE_PREFIX);
+		os_snprintf(name, 256, NAMED_PIPE_PREFIX);
 	else
-		snprintf(name, 256, NAMED_PIPE_PREFIX "-%s",
-			 ctrl_path);
+		os_snprintf(name, 256, NAMED_PIPE_PREFIX "-%s",
+			    ctrl_path);
 #endif /* UNICODE */
 
 	for (i = 0; i < 10; i++) {
@@ -356,14 +356,14 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 		WaitNamedPipe(name, 1000);
 	}
 	if (ctrl->pipe == INVALID_HANDLE_VALUE) {
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
 	mode = PIPE_READMODE_MESSAGE;
 	if (!SetNamedPipeHandleState(ctrl->pipe, &mode, NULL, NULL)) {
 		CloseHandle(ctrl->pipe);
-		free(ctrl);
+		os_free(ctrl);
 		return NULL;
 	}
 
@@ -374,7 +374,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 void wpa_ctrl_close(struct wpa_ctrl *ctrl)
 {
 	CloseHandle(ctrl->pipe);
-	free(ctrl);
+	os_free(ctrl);
 }
 
 

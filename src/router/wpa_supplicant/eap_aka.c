@@ -81,14 +81,14 @@ static int eap_aka_umts_auth(struct eap_sm *sm, struct eap_aka_data *data)
 #else /* PCSC_FUNCS */
 	/* These hardcoded Kc and SRES values are used for testing.
 	 * Could consider making them configurable. */
-	memset(data->res, '2', EAP_AKA_RES_MAX_LEN);
+	os_memset(data->res, '2', EAP_AKA_RES_MAX_LEN);
 	data->res_len = EAP_AKA_RES_MAX_LEN;
-	memset(data->ik, '3', EAP_AKA_IK_LEN);
-	memset(data->ck, '4', EAP_AKA_CK_LEN);
+	os_memset(data->ik, '3', EAP_AKA_IK_LEN);
+	os_memset(data->ck, '4', EAP_AKA_CK_LEN);
 	{
 		u8 autn[EAP_AKA_AUTN_LEN];
-		memset(autn, '1', EAP_AKA_AUTN_LEN);
-		if (memcmp(autn, data->autn, EAP_AKA_AUTN_LEN) != 0) {
+		os_memset(autn, '1', EAP_AKA_AUTN_LEN);
+		if (os_memcmp(autn, data->autn, EAP_AKA_AUTN_LEN) != 0) {
 			wpa_printf(MSG_WARNING, "EAP-AKA: AUTN did not match "
 				   "with expected value");
 			return -1;

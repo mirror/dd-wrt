@@ -1313,7 +1313,7 @@ static int tls_passwd_cb(char *buf, int size, int rwflag, void *password)
 	if (password == NULL) {
 		return 0;
 	}
-	strncpy(buf, (char *) password, size);
+	os_strncpy(buf, (char *) password, size);
 	buf[size - 1] = '\0';
 	return os_strlen(buf);
 }

@@ -45,8 +45,8 @@ set80211var(struct wpa_driver_bsd_data *drv, int op, const void *arg, int arg_le
 {
 	struct ieee80211req ireq;
 
-	memset(&ireq, 0, sizeof(ireq));
-	strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
+	os_memset(&ireq, 0, sizeof(ireq));
+	os_strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
 	ireq.i_type = op;
 	ireq.i_len = arg_len;
 	ireq.i_data = (void *) arg;
@@ -64,8 +64,8 @@ get80211var(struct wpa_driver_bsd_data *drv, int op, void *arg, int arg_len)
 {
 	struct ieee80211req ireq;
 
-	memset(&ireq, 0, sizeof(ireq));
-	strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
+	os_memset(&ireq, 0, sizeof(ireq));
+	os_strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
 	ireq.i_type = op;
 	ireq.i_len = arg_len;
 	ireq.i_data = arg;
@@ -83,8 +83,8 @@ set80211param(struct wpa_driver_bsd_data *drv, int op, int arg)
 {
 	struct ieee80211req ireq;
 
-	memset(&ireq, 0, sizeof(ireq));
-	strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
+	os_memset(&ireq, 0, sizeof(ireq));
+	os_strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
 	ireq.i_type = op;
 	ireq.i_val = arg;
 
@@ -101,8 +101,8 @@ get80211param(struct wpa_driver_bsd_data *drv, int op)
 {
 	struct ieee80211req ireq;
 
-	memset(&ireq, 0, sizeof(ireq));
-	strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
+	os_memset(&ireq, 0, sizeof(ireq));
+	os_strncpy(ireq.i_name, drv->ifname, IFNAMSIZ);
 	ireq.i_type = op;
 
 	if (ioctl(drv->sock, SIOCG80211, &ireq) < 0) {
@@ -118,8 +118,8 @@ getifflags(struct wpa_driver_bsd_data *drv, int *flags)
 {
 	struct ifreq ifr;
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, drv->ifname, sizeof (ifr.ifr_name));
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, drv->ifname, sizeof (ifr.ifr_name));
 	if (ioctl(drv->sock, SIOCGIFFLAGS, (caddr_t)&ifr) < 0) {
 		perror("SIOCGIFFLAGS");
 		return errno;
@@ -133,8 +133,8 @@ setifflags(struct wpa_driver_bsd_data *drv, int flags)
 {
 	struct ifreq ifr;
 
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, drv->ifname, sizeof (ifr.ifr_name));
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, drv->ifname, sizeof (ifr.ifr_name));
 	ifr.ifr_flags = flags & 0xffff;
 	if (ioctl(drv->sock, SIOCSIFFLAGS, (caddr_t)&ifr) < 0) {
 		perror("SIOCSIFFLAGS");
@@ -221,15 +221,15 @@ wpa_driver_bsd_del_key(struct wpa_driver_bsd_data *drv, int key_idx,
 {
 	struct ieee80211req_del_key wk;
 
-	memset(&wk, 0, sizeof(wk));
+	os_memset(&wk, 0, sizeof(wk));
 	if (addr != NULL &&
 	    bcmp(addr, "\xff\xff\xff\xff\xff\xff", IEEE80211_ADDR_LEN) != 0) {
 		struct ether_addr ea;
 
-		memcpy(&ea, addr, IEEE80211_ADDR_LEN);
+		os_memcpy(&ea, addr, IEEE80211_ADDR_LEN);
 		wpa_printf(MSG_DEBUG, "%s: addr=%s keyidx=%d",
 			__func__, ether_ntoa(&ea), key_idx);
-		memcpy(wk.idk_macaddr, addr, IEEE80211_ADDR_LEN);
+		os_memcpy(wk.idk_macaddr, addr, IEEE80211_ADDR_LEN);
 		wk.idk_keyix = (uint8_t) IEEE80211_KEYIX_NONE;
 	} else {
 		wpa_printf(MSG_DEBUG, "%s: keyidx=%d", __func__, key_idx);
@@ -272,7 +272,7 @@ wpa_driver_bsd_set_key(void *priv, wpa_alg alg,
 		return -1;
 	}
 
-	memcpy(&ea, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(&ea, addr, IEEE80211_ADDR_LEN);
 	wpa_printf(MSG_DEBUG,
 		"%s: alg=%s addr=%s key_idx=%d set_tx=%d seq_len=%zu key_len=%zu",
 		__func__, alg_name, ether_ntoa(&ea), key_idx, set_tx,
@@ -289,12 +289,12 @@ wpa_driver_bsd_set_key(void *priv, wpa_alg alg,
 		return -3;
 	}
 
-	memset(&wk, 0, sizeof(wk));
+	os_memset(&wk, 0, sizeof(wk));
 	wk.ik_type = cipher;
 	wk.ik_flags = IEEE80211_KEY_RECV;
 	if (set_tx)
 		wk.ik_flags |= IEEE80211_KEY_XMIT;
-	memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
 	/*
 	 * Deduce whether group/global or unicast key by checking
 	 * the address (yech).  Note also that we can only mark global
@@ -309,8 +309,8 @@ wpa_driver_bsd_set_key(void *priv, wpa_alg alg,
 	if (wk.ik_keyix != IEEE80211_KEYIX_NONE && set_tx)
 		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
 	wk.ik_keylen = key_len;
-	memcpy(&wk.ik_keyrsc, seq, seq_len);
-	memcpy(wk.ik_keydata, key, key_len);
+	os_memcpy(&wk.ik_keyrsc, seq, seq_len);
+	os_memcpy(wk.ik_keydata, key, key_len);
 
 	return set80211var(drv, IEEE80211_IOC_WPAKEY, &wk, sizeof(wk));
 }
@@ -341,10 +341,10 @@ wpa_driver_bsd_deauthenticate(void *priv, const u8 *addr, int reason_code)
 	struct ieee80211req_mlme mlme;
 
 	wpa_printf(MSG_DEBUG, "%s", __func__);
-	memset(&mlme, 0, sizeof(mlme));
+	os_memset(&mlme, 0, sizeof(mlme));
 	mlme.im_op = IEEE80211_MLME_DEAUTH;
 	mlme.im_reason = reason_code;
-	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211var(drv, IEEE80211_IOC_MLME, &mlme, sizeof(mlme));
 }
 
@@ -355,10 +355,10 @@ wpa_driver_bsd_disassociate(void *priv, const u8 *addr, int reason_code)
 	struct ieee80211req_mlme mlme;
 
 	wpa_printf(MSG_DEBUG, "%s", __func__);
-	memset(&mlme, 0, sizeof(mlme));
+	os_memset(&mlme, 0, sizeof(mlme));
 	mlme.im_op = IEEE80211_MLME_DISASSOC;
 	mlme.im_reason = reason_code;
-	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
+	os_memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211var(drv, IEEE80211_IOC_MLME, &mlme, sizeof(mlme));
 }
 
@@ -401,15 +401,15 @@ wpa_driver_bsd_associate(void *priv, struct wpa_driver_associate_params *params)
 			  params->wpa_ie[0] == RSN_INFO_ELEM ? 2 : 1) < 0)
 		return -1;
 
-	memset(&mlme, 0, sizeof(mlme));
+	os_memset(&mlme, 0, sizeof(mlme));
 	mlme.im_op = IEEE80211_MLME_ASSOC;
 #ifdef NEW_FREEBSD_MLME_ASSOC
 	if (params->ssid != NULL)
-		memcpy(mlme.im_ssid, params->ssid, params->ssid_len);
+		os_memcpy(mlme.im_ssid, params->ssid, params->ssid_len);
 	mlme.im_ssid_len = params->ssid_len;
 #endif
 	if (params->bssid != NULL)
-		memcpy(mlme.im_macaddr, params->bssid, IEEE80211_ADDR_LEN);
+		os_memcpy(mlme.im_macaddr, params->bssid, IEEE80211_ADDR_LEN);
 	if (set80211var(drv, IEEE80211_IOC_MLME, &mlme, sizeof(mlme)) < 0)
 		return -1;
 	return 0;
@@ -478,7 +478,7 @@ wpa_driver_bsd_event_receive(int sock, void *ctx, void *sock_ctx)
 			"understood\n", rtm->rtm_version);
 		return;
 	}
-	memset(&event, 0, sizeof(event));
+	os_memset(&event, 0, sizeof(event));
 	switch (rtm->rtm_type) {
 	case RTM_IFANNOUNCE:
 		ifan = (struct if_announcemsghdr *) rtm;
@@ -523,7 +523,7 @@ wpa_driver_bsd_event_receive(int sock, void *ctx, void *sock_ctx)
 				"keyix=%u src_addr=" MACSTR, mic->iev_keyix,
 				MAC2STR(mic->iev_src));
 
-			memset(&event, 0, sizeof(event));
+			os_memset(&event, 0, sizeof(event));
 			event.michael_mic_failure.unicast =
 				!IEEE80211_IS_MULTICAST(mic->iev_dst);
 			wpa_supplicant_event(ctx, EVENT_MICHAEL_MIC_FAILURE,
@@ -621,7 +621,7 @@ wpa_driver_bsd_get_scan_results(void *priv,
 	struct wpa_scan_result *wsr;
 	int len, ielen;
 
-	memset(results, 0, max_size * sizeof(struct wpa_scan_result));
+	os_memset(results, 0, max_size * sizeof(struct wpa_scan_result));
 
 	len = get80211var(drv, IEEE80211_IOC_SCAN_RESULTS, buf, sizeof(buf));
 	if (len < 0)
@@ -630,7 +630,7 @@ wpa_driver_bsd_get_scan_results(void *priv,
 	wsr = results;
 	while (len >= sizeof(struct ieee80211req_scan_result)) {
 		sr = (struct ieee80211req_scan_result *) cp;
-		memcpy(wsr->bssid, sr->isr_bssid, IEEE80211_ADDR_LEN);
+		os_memcpy(wsr->bssid, sr->isr_bssid, IEEE80211_ADDR_LEN);
 		wsr->ssid_len = sr->isr_ssid_len;
 		wsr->freq = sr->isr_freq;
 		wsr->noise = sr->isr_noise;
@@ -639,7 +639,7 @@ wpa_driver_bsd_get_scan_results(void *priv,
 		wsr->caps = sr->isr_capinfo;
 		wsr->maxrate = getmaxrate(sr->isr_rates, sr->isr_nrates);
 		vp = (u_int8_t *)(sr+1);
-		memcpy(wsr->ssid, vp, sr->isr_ssid_len);
+		os_memcpy(wsr->ssid, vp, sr->isr_ssid_len);
 		if (sr->isr_ie_len > 0) {
 			vp += sr->isr_ssid_len;
 			ielen = sr->isr_ie_len;
@@ -650,12 +650,14 @@ wpa_driver_bsd_get_scan_results(void *priv,
 						break;
 					wsr->wpa_ie_len =
 					    min(2+vp[1], SSID_MAX_WPA_IE_LEN);
-					memcpy(wsr->wpa_ie, vp, wsr->wpa_ie_len);
+					os_memcpy(wsr->wpa_ie, vp,
+						  wsr->wpa_ie_len);
 					break;
 				case IEEE80211_ELEMID_RSN:
 					wsr->rsn_ie_len =
 					    min(2+vp[1], SSID_MAX_WPA_IE_LEN);
-					memcpy(wsr->rsn_ie, vp, wsr->rsn_ie_len);
+					os_memcpy(wsr->rsn_ie, vp,
+						  wsr->rsn_ie_len);
 					break;
 				}
 				ielen -= 2+vp[1];
@@ -708,7 +710,7 @@ wpa_driver_bsd_init(void *ctx, const char *ifname)
 		wpa_driver_bsd_event_receive, ctx, drv);
 
 	drv->ctx = ctx;
-	strncpy(drv->ifname, ifname, sizeof(drv->ifname));
+	os_strncpy(drv->ifname, ifname, sizeof(drv->ifname));
 
 	if (!GETPARAM(drv, IEEE80211_IOC_ROAMING, drv->prev_roaming)) {
 		wpa_printf(MSG_DEBUG, "%s: failed to get roaming state: %s",
@@ -741,7 +743,7 @@ wpa_driver_bsd_init(void *ctx, const char *ifname)
 fail:
 	close(drv->sock);
 fail1:
-	free(drv);
+	os_free(drv);
 	return NULL;
 #undef GETPARAM
 }
@@ -751,6 +753,8 @@ wpa_driver_bsd_deinit(void *priv)
 {
 	struct wpa_driver_bsd_data *drv = priv;
 	int flags;
+
+	eloop_unregister_read_sock(drv->route);
 
 	/* NB: mark interface down */
 	if (getifflags(drv, &flags) == 0)
@@ -763,7 +767,7 @@ wpa_driver_bsd_deinit(void *priv)
 
 	(void) close(drv->route);		/* ioctl socket */
 	(void) close(drv->sock);		/* event socket */
-	free(drv);
+	os_free(drv);
 }
 
 
