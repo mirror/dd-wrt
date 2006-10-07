@@ -1,6 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Keep Alive</title>
 		<script type="text/javascript">
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + alive.titl;
 
@@ -51,6 +52,7 @@ function init() {
 	setPXY(<% nvram_get("squid_watchdog_enable"); %>);
 	setAlive();
 }
+		//]]>
 		</script>
 	</head>
 
@@ -74,8 +76,16 @@ function init() {
 							<h2><% tran("alive.h2"); %></h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />")</script>
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")
+								//]]>
+								</script>
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />")
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
