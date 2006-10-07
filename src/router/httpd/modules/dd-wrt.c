@@ -474,28 +474,28 @@ ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
 	      connected = 1;
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp,
-			 "<td bgcolor=\"#B2B2B2\" valign=\"center\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\"><b>Verbindungsstatus</b></font></td>\n");
+			 "<td bgcolor=\"#B2B2B2\" valign=\"middle\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\"><b>Verbindungsstatus</b></font></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#B2B2B2\"></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#FFFFFF\"></td>\n");
 	      websWrite (wp,
-			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"center\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Verbunden</font></td>\n");
+			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"middle\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Verbunden</font></td>\n");
 	      websWrite (wp, "</tr>\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp,
-			 "<td bgcolor=\"#B2B2B2\" valign=\"center\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Signal</font></td>\n");
+			 "<td bgcolor=\"#B2B2B2\" valign=\"middle\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Signal</font></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#B2B2B2\"></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#FFFFFF\"></td>\n");
 	      websWrite (wp,
-			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"center\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">%d dBm</font></td>\n",
+			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"middle\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">%d dBm</font></td>\n",
 			 rssi);
 	      websWrite (wp, "</tr>\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp,
-			 "<td bgcolor=\"#B2B2B2\" valign=\"center\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Rauschen</font></td>\n");
+			 "<td bgcolor=\"#B2B2B2\" valign=\"middle\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Rauschen</font></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#B2B2B2\"></td>\n");
 	      websWrite (wp, "<td bgcolor=\"#FFFFFF\"></td>\n");
 	      websWrite (wp,
-			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"center\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">%d dBm</font></td>\n",
+			 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"middle\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">%d dBm</font></td>\n",
 			 noise);
 	      websWrite (wp, "</tr>\n");
 	    }
@@ -509,11 +509,11 @@ ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
       connected = 1;
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td bgcolor=\"#B2B2B2\" valign=\"center\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\"><b>Verbindungsstatus</b></font></td>\n");
+		 "<td bgcolor=\"#B2B2B2\" valign=\"middle\" align=\"right\" width=\"200\" height=\"25\"><font face=\"Arial\" color=\"#000000\" size=\"2\"><b>Verbindungsstatus</b></font></td>\n");
       websWrite (wp, "<td bgcolor=\"#B2B2B2\"></td>\n");
       websWrite (wp, "<td bgcolor=\"#FFFFFF\"></td>\n");
       websWrite (wp,
-		 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"center\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Nicht Verbunden</font></td>\n");
+		 "<td colspan=\"2\" bgcolor=\"#FFFFFF\" valign=\"middle\" align=\"left\"><font face=\"Arial\" color=\"#000000\" size=\"2\">Nicht Verbunden</font></td>\n");
       websWrite (wp, "</tr>\n");
 
     }
