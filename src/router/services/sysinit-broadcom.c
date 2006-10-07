@@ -93,29 +93,29 @@ enableAfterBurner (void)
 {
 
   int boardflags;
-  int brand = getRouterBrand();
-  switch(brand)
-  {
-  case ROUTER_LINKSYS_WRT55AG:
-  case ROUTER_MOTOROLA_V1:
-  case ROUTER_BUFFALO_WZRRSG54:
-  return;
-  break;
-  default:
-  if (nvram_get ("boardflags") == NULL)
-    return;
-  boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-  fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
-  if (!(boardflags & BFL_AFTERBURNER))
+  int brand = getRouterBrand ();
+  switch (brand)
     {
-      boardflags |= BFL_AFTERBURNER;
-      char ab[100];
-      fprintf (stderr, "enable Afterburner....\n");
-      sprintf (ab, "0x0%X", boardflags);
-      nvram_set ("boardflags", ab);
-      nvram_set ("need_commit", "1");
+    case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_MOTOROLA_V1:
+    case ROUTER_BUFFALO_WZRRSG54:
+      return;
+      break;
+    default:
+      if (nvram_get ("boardflags") == NULL)
+	return;
+      boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+      fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
+      if (!(boardflags & BFL_AFTERBURNER))
+	{
+	  boardflags |= BFL_AFTERBURNER;
+	  char ab[100];
+	  fprintf (stderr, "enable Afterburner....\n");
+	  sprintf (ab, "0x0%X", boardflags);
+	  nvram_set ("boardflags", ab);
+	  nvram_set ("need_commit", "1");
+	}
     }
-  }
 }
 
 char wanifname[8], wlifname[8];
@@ -196,7 +196,7 @@ start_sysinit (void)
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
-  
+
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -207,7 +207,7 @@ start_sysinit (void)
   mkdir ("/var/tmp", 0777);
   cprintf ("sysinit() setup console\n");
 
-  eval("/sbin/watchdog"); // system watchdog
+  eval ("/sbin/watchdog");	// system watchdog
 
   /* Setup console */
 
@@ -218,54 +218,54 @@ start_sysinit (void)
   int brand = getRouterBrand ();
 
   switch (brand)
-  {
-      case ROUTER_BUFFALO_WZRRSG54:
+    {
+    case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
-	  break;
+      break;
 
-	case ROUTER_MOTOROLA:
+    case ROUTER_MOTOROLA:
       nvram_set ("cpu_type", "BCM4712");
       nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
       setup_4712 ();
       break;
-      
-	case ROUTER_SIEMENS:
-	case ROUTER_BELKIN_F5D7230:
+
+    case ROUTER_SIEMENS:
+    case ROUTER_BELKIN_F5D7230:
       setup_4712 ();
-      eval ("gpio", "disable", "5"); // power led on
+      eval ("gpio", "disable", "5");	// power led on
       break;
-      
-	case ROUTER_RT210W:     
+
+    case ROUTER_RT210W:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
-      if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
-      	{
-      	nvram_set ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
-  		}
-  	  eval ("gpio", "disable", "5");	// power led on
-  	  break;
-  	  
-	case ROUTER_BRCM4702_GENERIC:     
+      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
+	{
+	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	}
+      eval ("gpio", "disable", "5");	// power led on
+      break;
+
+    case ROUTER_BRCM4702_GENERIC:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
-      
-      if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
-      	{
-      	nvram_set ("et0macaddr", "00:0C:6E:00:00:10"); //fix for missing cfe default = dead LAN ports.
-  		}
-  	  break;   
-  	  
-  	case ROUTER_WLI2_TX1_G54:
-  	  nvram_set ("lan_ifnames", "eth1 eth2");
-	  nvram_set ("wl0_ifname", "eth2");
-	  strcpy (wlifname, "eth2");
-      nvram_set ("wan_ifname", "eth0"); //WAN to nonexist. iface.
+
+      if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
+	{
+	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
+	}
+      break;
+
+    case ROUTER_WLI2_TX1_G54:
+      nvram_set ("lan_ifnames", "eth1 eth2");
+      nvram_set ("wl0_ifname", "eth2");
+      strcpy (wlifname, "eth2");
+      nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
-	  strcpy (wanifname, "eth0");
-	  break;
+      strcpy (wanifname, "eth0");
+      break;
 
     case ROUTER_WZRG300N:
     case ROUTER_WRT300N:
@@ -274,35 +274,35 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
       break;
-      
+
     case ROUTER_ASUS_WL500G_PRE:
-          nvram_set ("sdram_init","0x0009");
-	  nvram_set ("lan_ifnames", "vlan0 eth2");
-	  nvram_set ("wl0_ifname", "eth2");
-	  strcpy (wlifname, "eth2");
+      nvram_set ("sdram_init", "0x0009");
+      nvram_set ("lan_ifnames", "vlan0 eth2");
+      nvram_set ("wl0_ifname", "eth2");
+      strcpy (wlifname, "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       nvram_set ("wan_ifnames", "vlan1");
-	  strcpy (wanifname, "vlan1");
+      strcpy (wanifname, "vlan1");
       nvram_set ("vlan1ports", "0 5");
       eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
       eval ("gpio", "disable", "0");	//reset the reset button to 0
       break;
-      
+
     case ROUTER_MICROSOFT_MN700:
       eval ("gpio", "enable", "6");	//MN700 power led on
       break;
-      
-#ifndef HAVE_MSSID      
-	case ROUTER_BUFFALO_WBR54G:
-      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
-	  break;
-#endif  
-      
-	case ROUTER_BUFFALO_WBR2G54S:
-      eval ("gpio", "disable", "1");	//WBR2G54 diag led off
-	  break;
 
-	case ROUTER_BUFFALO_WLA2G54C:
+#ifndef HAVE_MSSID
+    case ROUTER_BUFFALO_WBR54G:
+      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
+      break;
+#endif
+
+    case ROUTER_BUFFALO_WBR2G54S:
+      eval ("gpio", "disable", "1");	//WBR2G54 diag led off
+      break;
+
+    case ROUTER_BUFFALO_WLA2G54C:
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C interfaces
       nvram_set ("wl0_ifname", "eth1");
       strcpy (wlifname, "eth1");
@@ -311,8 +311,8 @@ start_sysinit (void)
       eval ("gpio", "enable", "3");	//WLA2-G54C, WLA3-TX1-G54 diag led off
       eval ("gpio", "enable", "4");
       break;
-  }
-	
+    }
+
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54Gv2 interfaces

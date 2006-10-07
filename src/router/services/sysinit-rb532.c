@@ -16,7 +16,7 @@ start_sysinit (void)
   // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
-  
+
   //load ext2 
   // eval("insmod","jbd");
   eval ("insmod", "ext2");
@@ -62,26 +62,26 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 
-eval("insmod","md5");
-eval("insmod","aes");
-eval("insmod","blowfish");
-eval("insmod","deflate");
-eval("insmod","des");
-eval("insmod","michael_mic");
-eval("insmod","cast5");
-eval("insmod","crypto_null");
+  eval ("insmod", "md5");
+  eval ("insmod", "aes");
+  eval ("insmod", "blowfish");
+  eval ("insmod", "deflate");
+  eval ("insmod", "des");
+  eval ("insmod", "michael_mic");
+  eval ("insmod", "cast5");
+  eval ("insmod", "crypto_null");
 
-system("/etc/kendin");
-eval("insmod","ixp400th");
-eval("insmod","ixp400");
-system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-eval("insmod","ixp400_eth");
-eval("insmod","ocf");
-eval("insmod","cryptodev");
-eval("insmod","ixp4xx","init_crypto=0");
-eval("ifconfig","ixp0","0.0.0.0","up");
-eval("vconfig","add","ixp0","1");
-eval("vconfig","add","ixp0","2");
+  system ("/etc/kendin");
+  eval ("insmod", "ixp400th");
+  eval ("insmod", "ixp400");
+  system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+  eval ("insmod", "ixp400_eth");
+  eval ("insmod", "ocf");
+  eval ("insmod", "cryptodev");
+  eval ("insmod", "ixp4xx", "init_crypto=0");
+  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+  eval ("vconfig", "add", "ixp0", "1");
+  eval ("vconfig", "add", "ixp0", "2");
 
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");

@@ -45,12 +45,12 @@ start_sshd (void)
   cprintf ("empty dir check\n");
   empty_dir_check ();
   cprintf ("write key file\n");
-int changed=0;
+  int changed = 0;
   if (write_key_file (NVRAM_RSA_KEY_NAME, RSA_HOST_KEY_FILE, 0600) == -1)
     {
       generate_dropbear_rsa_host_key ();
       write_key_file (NVRAM_RSA_KEY_NAME, RSA_HOST_KEY_FILE, 0600);
-      changed=1;
+      changed = 1;
     }
   cprintf ("convert key\n");
   eval ("dropbearkonvert", "openssh", "dropbear", RSA_HOST_KEY_FILE,
@@ -60,11 +60,11 @@ int changed=0;
     {
       generate_dropbear_dss_host_key ();
       write_key_file (NVRAM_DSS_KEY_NAME, DSS_HOST_KEY_FILE, 0600);
-      changed=1;
+      changed = 1;
     }
   cprintf ("convert dss key\n");
   if (changed)
-    nvram_commit();
+    nvram_commit ();
   eval ("dropbearkonvert", "openssh", "dropbear", DSS_HOST_KEY_FILE,
 	DSS_HOST_KEY_FILE);
   cprintf ("write authorized keys\n");
