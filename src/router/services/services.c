@@ -908,7 +908,8 @@ start_dnsmasq (void)
       if (nvram_match ("chilli_enable", "1"))
 	fprintf (fp, "interface=%s\n", nvram_safe_get ("wl0_ifname"));
       else if (nvram_match ("pptpd_enable", "1"))
-	fprintf (fp, "listen-address=%s,%s\n", "127.0.0.1", nvram_safe_get ("lan_ipaddr"));
+	fprintf (fp, "listen-address=%s,%s\n", "127.0.0.1",
+		 nvram_safe_get ("lan_ipaddr"));
       else
 	fprintf (fp, "interface=%s\n", nvram_safe_get ("lan_ifname"));
     }
@@ -2369,7 +2370,7 @@ start_chilli (void)
       || nvram_match ("chilli_interface", "wan"))
     {
 #ifdef HAVE_MADWIFI
-      if (nvram_match("ath0_mode","ap"))
+      if (nvram_match ("ath0_mode", "ap"))
 	fprintf (fp, "dhcpif ath0\n");
       else
 	fprintf (fp, "dhcpif ath1\n");
@@ -2402,7 +2403,7 @@ start_chilli (void)
 	}
       else
 	{
-	
+
 	  fprintf (fp, "dhcpif vlan0\n");
 	}
     }
@@ -2526,26 +2527,27 @@ stop_pppoe (void)
 }
 
 int
-stop_single_pppoe(int pppoe_num)
+stop_single_pppoe (int pppoe_num)
 {
-        int ret;
-        char pppoe_pid[15], pppoe_ifname[15];
-        char ppp_unlink[2][20]={"/tmp/ppp/link","/tmp/ppp/link_1"};
-        char ppp_wan_dns[2][20]={"wan_get_dns","wan_get_dns_1"};
-                                                                                                                             
-        sprintf(pppoe_pid,"pppoe_pid%d",pppoe_num);
-        sprintf(pppoe_ifname,"pppoe_ifname%d",pppoe_num);
-        dprintf("start! stop pppoe %d, pid %s \n",pppoe_num,nvram_safe_get(pppoe_pid));
-                                                                                                                             
-        ret = eval("kill",nvram_safe_get(pppoe_pid));
-        unlink(ppp_unlink[pppoe_num]);
-        nvram_unset(pppoe_ifname);
-                                                                                                                             
-        nvram_set(ppp_wan_dns[pppoe_num],"");
-        stop_dns_clear_resolv();
-                                                                                                                             
-        dprintf("done\n");
-        return ret ;
+  int ret;
+  char pppoe_pid[15], pppoe_ifname[15];
+  char ppp_unlink[2][20] = { "/tmp/ppp/link", "/tmp/ppp/link_1" };
+  char ppp_wan_dns[2][20] = { "wan_get_dns", "wan_get_dns_1" };
+
+  sprintf (pppoe_pid, "pppoe_pid%d", pppoe_num);
+  sprintf (pppoe_ifname, "pppoe_ifname%d", pppoe_num);
+  dprintf ("start! stop pppoe %d, pid %s \n", pppoe_num,
+	   nvram_safe_get (pppoe_pid));
+
+  ret = eval ("kill", nvram_safe_get (pppoe_pid));
+  unlink (ppp_unlink[pppoe_num]);
+  nvram_unset (pppoe_ifname);
+
+  nvram_set (ppp_wan_dns[pppoe_num], "");
+  stop_dns_clear_resolv ();
+
+  dprintf ("done\n");
+  return ret;
 }
 #endif
 int
@@ -3508,30 +3510,33 @@ start_force_to_dial (void)
 
   return ret;
 }
+
 #ifdef HAVE_WIFIDOG
 //unfinished. do not use
-void start_wifidog(void)
+void
+start_wifidog (void)
 {
-if (nvram_match("wd_enabled","1"))
-{
-mkdir("/tmp/etc/",0744);
-FILE *fp=fopen("/tmp/etc/wifidog.conf","wb");
-if (!strlen(nvram_safe_get("wd_gwid")))
-    fprintf(fp,"GatewayID default\n");
-else
-    fprintf(fp,"GatewayID %s\n",nvram_safe_get("wd_gwid"));
-fprintf(fp,"ExternalInterface %s\n",get_wan_face());
-fprintf(fp,"GatewayInterface %s\n",nvram_safe_get("lan_ifname"));
+  if (nvram_match ("wd_enabled", "1"))
+    {
+      mkdir ("/tmp/etc/", 0744);
+      FILE *fp = fopen ("/tmp/etc/wifidog.conf", "wb");
+      if (!strlen (nvram_safe_get ("wd_gwid")))
+	fprintf (fp, "GatewayID default\n");
+      else
+	fprintf (fp, "GatewayID %s\n", nvram_safe_get ("wd_gwid"));
+      fprintf (fp, "ExternalInterface %s\n", get_wan_face ());
+      fprintf (fp, "GatewayInterface %s\n", nvram_safe_get ("lan_ifname"));
 
 
-fclose(fp);
-eval("/usr/sbin/wifidog");
+      fclose (fp);
+      eval ("/usr/sbin/wifidog");
+    }
 }
-}
 
-void stop_wifidog(void)
+void
+stop_wifidog (void)
 {
-eval("killall","-9","wifidog");
+  eval ("killall", "-9", "wifidog");
 }
 
 #endif
@@ -3547,16 +3552,18 @@ eval("killall","-9","wifidog");
 #define TEMP_MUL 1000
 #endif
 
- 
-void start_hwmon(void)
+
+void
+start_hwmon (void)
 {
-int temp_max=atoi(nvram_safe_get("hwmon_temp_max"))*TEMP_MUL; 
-int temp_hyst=atoi(nvram_safe_get("hwmon_temp_hyst"))*TEMP_MUL;
-char buf[128];
-sprintf(buf,"/bin/echo %d > %s/%s_max",temp_max,TEMP_PATH,TEMP_PREFIX);
-system(buf);
-sprintf(buf,"/bin/echo %d > %s/%s_max_hyst",temp_hyst,TEMP_PATH,TEMP_PREFIX);
-system(buf);
+  int temp_max = atoi (nvram_safe_get ("hwmon_temp_max")) * TEMP_MUL;
+  int temp_hyst = atoi (nvram_safe_get ("hwmon_temp_hyst")) * TEMP_MUL;
+  char buf[128];
+  sprintf (buf, "/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
+  system (buf);
+  sprintf (buf, "/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
+	   TEMP_PREFIX);
+  system (buf);
 
 }
 
@@ -3569,20 +3576,20 @@ int
 start_hotplug_usb (void)
 {
 //      char *lan_ifname = nvram_safe_get("lan_ifname");
-  char *interface = getenv("INTERFACE"); 
-  char *action = getenv("ACTION");
-  char *product = getenv("PRODUCT");
-  char *devpath = getenv("DEVPATH");
-  char *type = getenv("TYPE");
-  char *devfs = getenv("DEVFS");
-  char *device = getenv("DEVICE");
-cprintf("interface %s\n",interface!=NULL?interface:"");
-cprintf("action %s\n",action!=NULL?action:"");
-cprintf("product %s\n",product!=NULL?product:"");
-cprintf("devpath %s\n",devpath!=NULL?devpath:"");
-cprintf("type %s\n",type!=NULL?type:"");
-cprintf("devfs %s\n",devfs!=NULL?devfs:"");
-cprintf("device %s\n",device!=NULL?device:"");
+  char *interface = getenv ("INTERFACE");
+  char *action = getenv ("ACTION");
+  char *product = getenv ("PRODUCT");
+  char *devpath = getenv ("DEVPATH");
+  char *type = getenv ("TYPE");
+  char *devfs = getenv ("DEVFS");
+  char *device = getenv ("DEVICE");
+  cprintf ("interface %s\n", interface != NULL ? interface : "");
+  cprintf ("action %s\n", action != NULL ? action : "");
+  cprintf ("product %s\n", product != NULL ? product : "");
+  cprintf ("devpath %s\n", devpath != NULL ? devpath : "");
+  cprintf ("type %s\n", type != NULL ? type : "");
+  cprintf ("devfs %s\n", devfs != NULL ? devfs : "");
+  cprintf ("device %s\n", device != NULL ? device : "");
 
 
   return 0;
@@ -3595,54 +3602,64 @@ extern int br_add_interface (const char *br, const char *dev);
 extern int br_del_interface (const char *br, const char *dev);
 extern int br_set_stp_state (const char *br, int stp_state);
 
-int brctl_main(int argc,char **argv)
+int
+brctl_main (int argc, char **argv)
 {
-if (argc==1)
+  if (argc == 1)
     {
-    fprintf(stderr,"try to be professional!\n");
-    return -1;
+      fprintf (stderr, "try to be professional!\n");
+      return -1;
     }
-br_init();
-if (!strcmp(argv[1],"addif"))
+  br_init ();
+  if (!strcmp (argv[1], "addif"))
     {
-    br_add_interface(argv[2],argv[3]);
+      br_add_interface (argv[2], argv[3]);
     }
-if (!strcmp(argv[1],"delif"))
+  if (!strcmp (argv[1], "delif"))
     {
-    br_del_interface(argv[2],argv[3]);
+      br_del_interface (argv[2], argv[3]);
     }
-if (!strcmp(argv[1],"addbr"))
+  if (!strcmp (argv[1], "addbr"))
     {
-    br_add_bridge(argv[2]);
+      br_add_bridge (argv[2]);
     }
-if (!strcmp(argv[1],"delbr"))
+  if (!strcmp (argv[1], "delbr"))
     {
-    br_del_bridge(argv[2]);
+      br_del_bridge (argv[2]);
     }
-br_shutdown();
+  br_shutdown ();
 }
 #else
-int br_add_bridge (const char *brname)
-    {
-    return eval("/usr/sbin/brctl","addbr",brname);
-    }
-int br_del_bridge (const char *brname)
-    {
-    return eval("/usr/sbin/brctl","delbr",brname);
-    }
-int br_add_interface (const char *br, const char *dev)
-    {
-    return eval("/usr/sbin/brctl","addif",br,dev);
-    }
-int br_del_interface (const char *br, const char *dev)
-    {
-    return eval("/usr/sbin/brctl","delif",br,dev);
-    }
-int br_set_stp_state (const char *br, int stp_state)
-    {
-    if (stp_state)
-    return eval("/usr/sbin/brctl","stp",br,"on");
-    else
-    return eval("/usr/sbin/brctl","stp",br,"off");
-    }
+int
+br_add_bridge (const char *brname)
+{
+  return eval ("/usr/sbin/brctl", "addbr", brname);
+}
+
+int
+br_del_bridge (const char *brname)
+{
+  return eval ("/usr/sbin/brctl", "delbr", brname);
+}
+
+int
+br_add_interface (const char *br, const char *dev)
+{
+  return eval ("/usr/sbin/brctl", "addif", br, dev);
+}
+
+int
+br_del_interface (const char *br, const char *dev)
+{
+  return eval ("/usr/sbin/brctl", "delif", br, dev);
+}
+
+int
+br_set_stp_state (const char *br, int stp_state)
+{
+  if (stp_state)
+    return eval ("/usr/sbin/brctl", "stp", br, "on");
+  else
+    return eval ("/usr/sbin/brctl", "stp", br, "off");
+}
 #endif

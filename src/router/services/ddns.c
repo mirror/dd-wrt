@@ -70,7 +70,7 @@ init_ddns (void)
       strcpy (service, "custom@http_svr_basic_auth");
       flag = 5;
     }
-    /* botho 30/07/06 : add www.3322.org */
+  /* botho 30/07/06 : add www.3322.org */
   else if (nvram_match ("ddns_enable", "6"))
     {
       strcpy (service, "dyndns@3322.org");
@@ -169,10 +169,11 @@ start_ddns (void)
       strcmp (nvram_safe_get ("ddns_passwd_buf"), nvram_safe_get (_passwd)) ||	// ddns password change
       strcmp (nvram_safe_get ("ddns_hostname_buf"), nvram_safe_get (_hostname)) ||	// ddns hostname change
       strcmp (nvram_safe_get ("ddns_dyndnstype_buf"), nvram_safe_get (_dyndnstype)) ||	// ddns dyndnstype change
-      strcmp (nvram_safe_get ("ddns_wildcard_buf"), nvram_safe_get (_wildcard)) || // ddns wildcard change
-      strcmp (nvram_safe_get ("ddns_url_buf"), nvram_safe_get (_url)) || //ddns url change
-      strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get (_conf)) || // ddns conf change
-      strcmp (nvram_safe_get ("ddns_custom_5_buf"), nvram_safe_get ("ddns_custom_5")))
+      strcmp (nvram_safe_get ("ddns_wildcard_buf"), nvram_safe_get (_wildcard)) ||	// ddns wildcard change
+      strcmp (nvram_safe_get ("ddns_url_buf"), nvram_safe_get (_url)) ||	//ddns url change
+      strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get (_conf)) ||	// ddns conf change
+      strcmp (nvram_safe_get ("ddns_custom_5_buf"),
+	      nvram_safe_get ("ddns_custom_5")))
     {
       /* If the user changed anything in the GUI, delete all cache and log */
       nvram_unset ("ddns_cache");
@@ -190,8 +191,8 @@ start_ddns (void)
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
-      if (nvram_match ("ddns_enable", "1") || nvram_match ("ddns_enable", "6") ||
-	  nvram_match ("ddns_enable", "7"))
+      if (nvram_match ("ddns_enable", "1") || nvram_match ("ddns_enable", "6")
+	  || nvram_match ("ddns_enable", "7"))
 	{
 	  if (nvram_match (_wildcard, "1"))
 	    fprintf (fp, " --wildcard");
@@ -206,13 +207,14 @@ start_ddns (void)
       fprintf (fp, " --exec %s", "ddns_success");	//run after update
       if (nvram_match ("ddns_enable", "5"))
 	{
-          fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
+	  fprintf (fp, " --dyndns_server_name %s",
+		   nvram_safe_get ("ddns_custom_5"));
 	  if (nvram_invmatch (_url, ""))
 	    fprintf (fp, " --dyndns_server_url %s", nvram_safe_get (_url));
 	  if (nvram_invmatch (_conf, ""))
 	    fprintf (fp, " %s", nvram_safe_get (_conf));
 	}
-      fprintf (fp, "\n"); 
+      fprintf (fp, "\n");
       fclose (fp);
     }
   else
@@ -222,8 +224,7 @@ start_ddns (void)
     }
 
   /* Restore cache data to file from NV */
-  if (nvram_invmatch ("ddns_cache", "")
-      && nvram_invmatch ("ddns_time", ""))
+  if (nvram_invmatch ("ddns_cache", "") && nvram_invmatch ("ddns_time", ""))
     {
       nvram2file ("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
       nvram2file ("ddns_time", "/tmp/ddns/inadyn_time.cache");
@@ -262,15 +263,15 @@ ddns_success_main (int argc, char *argv[])
 
   if ((fp = fopen ("/tmp/ddns/inadyn_ip.cache", "r")))
     {
-      fgets (buf, sizeof (buf),fp);
-      fclose(fp);
+      fgets (buf, sizeof (buf), fp);
+      fclose (fp);
       nvram_set ("ddns_cache", buf);
     }
 
   if ((fp = fopen ("/tmp/ddns/inadyn_time.cache", "r")))
     {
-      fgets (buf2, sizeof (buf2),fp);
-      fclose(fp);
+      fgets (buf2, sizeof (buf2), fp);
+      fclose (fp);
       nvram_set ("ddns_time", buf2);
     }
 

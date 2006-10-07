@@ -45,10 +45,10 @@ start_sysinit (void)
   // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   eval ("mkdir", "/tmp/www");
-  
+
   unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram"); 
-  eval ("/bin/tar","-xzf","/dev/mtdblock/2","-C","/");
+  eval ("mkdir", "/tmp/nvram");
+  eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
 //  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
 //  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   cprintf ("sysinit() var\n");
@@ -60,7 +60,7 @@ start_sysinit (void)
   mkdir ("/var/run", 0777);
   mkdir ("/var/tmp", 0777);
   cprintf ("sysinit() setup console\n");
-  eval("/sbin/watchdog");
+  eval ("/sbin/watchdog");
   /* Setup console */
 
   cprintf ("sysinit() klogctl\n");
@@ -103,7 +103,7 @@ eval("insmod","crypto_null");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
-  
+
   eval ("insmod", "wlan_acl");
   eval ("insmod", "wlan_ccmp");
   eval ("insmod", "wlan_tkip");
