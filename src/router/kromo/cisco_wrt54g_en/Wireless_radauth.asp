@@ -59,8 +59,8 @@ addEvent(window, "load", function() {
                      <div>
                         <div class="setting">
                            <div class="label"><% tran("radius.label"); %></div>
-                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" ><% tran("share.enable"); %></input>&nbsp;
-                           <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" ><% tran("share.disable"); %></input>
+                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" /><% tran("share.enable"); %>&nbsp;
+                           <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
                         </div>
                         <div id="idradius">
 	                        <div class="setting">
@@ -87,8 +87,8 @@ addEvent(window, "load", function() {
 	                        </div>
 	                        <div class="setting">
 	                           <div class="label"><% tran("radius.label6"); %></div>
-	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> ><% tran("share.share_key"); %></input>&nbsp;
-	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> ><% tran("share.mac"); %></input>
+	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
+	                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> /><% tran("share.mac"); %>
 	                        </div>
 	                        <div class="setting">
 	                           <div class="label"><% tran("radius.label7"); %></div>

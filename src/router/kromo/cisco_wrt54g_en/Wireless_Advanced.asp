@@ -217,14 +217,14 @@ addEvent(window, "load", function() {
 								<legend><% tran("wl_adv.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label"); %></div>
-									<input class="spaceradio" type="radio" name="wl_auth" value="0" <% nvram_checked("wl_auth", "0"); %> ><% tran("share.auto"); %></input>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_auth" value="1" <% nvram_checked("wl_auth", "1"); %> ><% tran("share.share_key"); %></input>
+									<input class="spaceradio" type="radio" name="wl_auth" value="0" <% nvram_checked("wl_auth", "0"); %> /><% tran("share.auto"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_auth" value="1" <% nvram_checked("wl_auth", "1"); %> /><% tran("share.share_key"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label2"); %></div>
 									<select name="wl_rateset">
-										<option value="12" <% nvram_selected("wl_rateset", "12"); %> />1-2 Mbps</option>
+										<option value="12" <% nvram_selected("wl_rateset", "12"); %>>1-2 Mbps</option>
 										<script type="text/javascript">document.write("<option value=\"default\" <% nvram_selected("wl_rateset", "default", "js"); %>>" + share.deflt + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"all\" <% nvram_selected("wl_rateset", "all", "js"); %>>" + share.all + "</option>");</script>
 									</select>
@@ -257,14 +257,14 @@ addEvent(window, "load", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label4"); %></div>
-									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %>><% tran("share.auto"); %></input>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %>><% tran("share.disable"); %></input>
+									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %> /><% tran("share.auto"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %> /><% tran("share.disable"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label5"); %></div>
-									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %>><% tran("share.enable"); %></input>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %>><% tran("share.disable"); %></input>
+									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %> /><% tran("share.disable"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.enable + ")")</script></span>
 								</div><br />
 								<div class="setting">
@@ -294,8 +294,8 @@ addEvent(window, "load", function() {
 							 	</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label11"); %></div>
-									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %>><% tran("share.enable"); %></input>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %>><% tran("share.disable"); %></input>
+									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %> /><% tran("share.disable"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 								</div>
 								<div class="setting">
@@ -385,9 +385,9 @@ addEvent(window, "load", function() {
 										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><% tran("share.disable"); %>
 										<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 									</div>
-									<table class="table center" cellspacing="5">
+									<table class="table center" cellspacing="5" summary="edca ap parameters">
 										<tr>
-											<th colspan="7"><% tran("wl_adv.table1"); %></td>
+											<th colspan="7"><% tran("wl_adv.table1"); %></th>
 										</tr>
 										<tr>
 											<td>&nbsp;</td>
@@ -435,9 +435,9 @@ addEvent(window, "load", function() {
 											<td align="center"><input type="hidden" name="wl_wme_ap_vo5" value="<% nvram_list("wl_wme_ap_vo", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vo5" <% wme_match_op("wl_wme_ap_vo", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
 										</tr>
 									</table>
-									<table cellspacing="5">
+									<table cellspacing="5" summary="edca sta parameters">
 										<tr>
-											<th colspan="7"><% tran("wl_adv.table2"); %></td>
+											<th colspan="7"><% tran("wl_adv.table2"); %></th>
 										</tr>
 										<tr>
 											<td>&nbsp;</td>
@@ -502,7 +502,7 @@ addEvent(window, "load", function() {
 							<dt class="term"><% tran("wl_adv.label"); %>:</dt>
 							<dd class="definition"><% tran("hwl_adv.right2"); %></dd>
 							<dt class="term"><% tran("wl_basic.legend2"); %>:</dt>
-							<dd class="definition"><% tran("hwl_basic.right6"); %></dt>
+							<dd class="definition"><% tran("hwl_basic.right6"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWirelessAdvanced.asp');"><% tran("share.more"); %></a>
 					</div>
