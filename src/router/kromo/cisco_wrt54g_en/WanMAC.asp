@@ -67,7 +67,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />")</script>
 									</div>
 									
-									<hr width="90%"><br />
+									<hr width="90%" /><br />
 									
 									<div class="setting">
 										<div class="label"><% tran("wanmac.wlan"); %></div>
