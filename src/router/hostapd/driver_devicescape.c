@@ -40,6 +40,7 @@
 #include <hostapd_ioctl.h>
 #include <net/d80211_common.h>
 #include <net/d80211_shared.h>
+#include "mlme.h"
 
 
 /* from net/d80211.h */
@@ -997,6 +998,113 @@ static int i802_set_short_slot_time(void *priv, int value)
 }
 
 
+static int i802_if_type(enum hostapd_driver_if_type type)
+{
+	switch (type) {
+	case HOSTAPD_IF_VLAN:
+		return HOSTAP_IF_VLAN;
+	case HOSTAPD_IF_WDS:
+		return HOSTAP_IF_WDS;
+	}
+	return -1;
+}
+
+
+static int i802_if_add(const char *iface, void *priv,
+		       enum hostapd_driver_if_type type, char *ifname,
+		       const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_ADD_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	/* FIX: should the size have + ETH_ALEN ? */
+	if (hostapd_ioctl_iface(iface, drv, param,
+				sizeof(struct prism2_hostapd_param))) {
+		printf("Could not add iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	snprintf(ifname, IFNAMSIZ, "%s", param->u.if_info.name);
+	free(param);
+	return 0;
+}
+
+
+static int i802_if_update(void *priv, enum hostapd_driver_if_type type,
+			  char *ifname, const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_UPDATE_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	/* FIX: should the size have + ETH_ALEN ? */
+	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
+		printf("Could not update iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	snprintf(ifname, IFNAMSIZ, "%s", param->u.if_info.name);
+	free(param);
+	return 0;
+}
+
+
+static int i802_if_remove(void *priv, enum hostapd_driver_if_type type,
+			  const char *ifname, const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_REMOVE_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
+		printf("Could not remove iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	free(param);
+	return 0;
+}
+
+
 static struct hostapd_hw_modes * i802_get_hw_feature_data(void *priv,
 							  u16 *num_modes,
 							  u16 *flags)
@@ -1252,7 +1360,7 @@ static void hostapd_michael_mic_failure(struct hostapd_data *hapd, u8 *buf,
 
 	hdr = (struct ieee80211_hdr *) buf;
 
-	/* TODO: mlme_michaelmicfailure_indication(hapd, hdr->addr2); */
+	mlme_michaelmicfailure_indication(hapd, hdr->addr2);
 }
 
 
@@ -1944,6 +2052,9 @@ static const struct driver_ops devicescape_driver_ops = {
 	.set_tx_queue_params = i802_set_tx_queue_params,
 	.bss_add = i802_bss_add,
 	.bss_remove = i802_bss_remove,
+	.if_add = i802_if_add,
+	.if_update = i802_if_update,
+	.if_remove = i802_if_remove,
 	.get_hw_feature_data = i802_get_hw_feature_data,
 	.set_sta_vlan = i802_set_sta_vlan,
 };

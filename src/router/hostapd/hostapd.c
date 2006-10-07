@@ -206,6 +206,38 @@ static void hostapd_deauth_all_stas(struct hostapd_data *hapd)
 
 
 /**
+ * hostapd_prune_associations - Remove extraneous associations
+ * @hapd: Pointer to BSS data for the most recent association
+ * @sta: Pointer to the associated STA data
+ *
+ * This function looks through all radios and BSS's for previous
+ * (stale) associations of STA. If any are found they are removed.
+ */
+static void hostapd_prune_associations(struct hostapd_data *hapd,
+				       struct sta_info *sta)
+{
+	struct sta_info *osta;
+	struct hostapd_data *ohapd;
+	size_t i, j;
+	struct hapd_interfaces *interfaces = eloop_get_user_data();
+
+	for (i = 0; i < interfaces->count; i++) {
+		for (j = 0; j < interfaces->iface[i]->num_bss; j++) {
+			ohapd = interfaces->iface[i]->bss[j];
+			if (ohapd == hapd)
+				continue;
+			osta = ap_get_sta(ohapd, sta->addr);
+			if (!osta)
+				continue;
+
+			ap_sta_disassociate(ohapd, osta,
+					    WLAN_REASON_UNSPECIFIED);
+		}
+	}
+}
+
+
+/**
  * hostapd_new_assoc_sta - Notify that a new station associated with the AP
  * @hapd: Pointer to BSS data
  * @sta: Pointer to the associated STA data
@@ -224,6 +256,8 @@ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
 				   WLAN_REASON_MICHAEL_MIC_FAILURE);
 		return;
 	}
+
+	hostapd_prune_associations(hapd, sta);
 
 	/* IEEE 802.11F (IAPP) */
 	if (hapd->conf->ieee802_11f)
@@ -687,11 +721,20 @@ static int hostapd_wpa_auth_get_pmk(void *ctx, const u8 *addr, u8 *pmk,
 }
 
 
-static int hostapd_wpa_auth_set_key(void *ctx, const char *alg, const u8 *addr,
-				    int idx, u8 *key, size_t key_len)
+static int hostapd_wpa_auth_set_key(void *ctx, int vlan_id, const char *alg,
+				    const u8 *addr, int idx, u8 *key,
+				    size_t key_len)
 {
 	struct hostapd_data *hapd = ctx;
-	return hostapd_set_encryption(hapd->conf->iface, hapd, alg, addr, idx,
+	const char *ifname = hapd->conf->iface;
+
+	if (vlan_id > 0) {
+		ifname = hostapd_get_vlan_id_ifname(hapd->conf->vlan, vlan_id);
+		if (ifname == NULL)
+			return -1;
+	}
+
+	return hostapd_set_encryption(ifname, hapd, alg, addr, idx,
 				      key, key_len, 1);
 }
 

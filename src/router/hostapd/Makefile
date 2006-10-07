@@ -1,17 +1,17 @@
-
-DIR_WPA_SUPPLICANT=../wpa_supplicant
-DIR_HOSTAP=../driver/modules
+CC=gcc
+DIR_WPA_SUPPLICANT=.
+DIR_HOSTAP=.
 
 ifndef CFLAGS
-CFLAGS = $(COPTS) 
+CFLAGS = -MMD -O2 -Wall -g
 endif
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
 # a file (undefine it, if you want to save in binary size)
-CFLAGS += -DHOSTAPD_DUMP_STATE -DNEED_PRINTF
+CFLAGS += -DHOSTAPD_DUMP_STATE
 
 # Include directories for CVS version
-CFLAGS += -I. -I$(DIR_HOSTAP) -I../utils -I$(DIR_WPA_SUPPLICANT) -I../openssl/include
+CFLAGS += -I. -I$(DIR_HOSTAP) -I../utils -I$(DIR_WPA_SUPPLICANT)
 
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
@@ -40,7 +40,7 @@ OBJS =	hostapd.o eloop.o ieee802_1x.o eapol_sm.o radius.o md5.o rc4.o md4.o \
 	common.o ieee802_11.o config.o ieee802_11_auth.o accounting.o \
 	sta_info.o radius_client.o sha1.o wpa.o aes_wrap.o ctrl_iface.o \
 	driver_conf.o os_$(CONFIG_OS).o preauth.o pmksa_cache.o beacon.o \
-	hw_features.o wme.o ap_list.o mlme.o
+	hw_features.o wme.o ap_list.o mlme.o vlan_init.o
 
 HOBJS=hlr_auc_gw.o common.o os_$(CONFIG_OS).o milenage.o aes_wrap.o
 
@@ -312,6 +312,12 @@ ifdef CONFIG_IPV6
 CFLAGS += -DCONFIG_IPV6
 endif
 
+ifdef CONFIG_FULL_DYNAMIC_VLAN
+# define CONFIG_FULL_DYNAMIC_VLAN to have hostapd manipulate bridges
+# and vlan interfaces for the vlan feature.
+CFLAGS += -DCONFIG_FULL_DYNAMIC_VLAN
+endif
+
 ALL=hostapd hostapd_cli
 
 all: verify_config $(ALL)
@@ -326,10 +332,10 @@ verify_config:
 	fi
 
 install: all
-	for i in $(ALL); do install -D $$i $(INSTALLDIR)/hostapd/usr/sbin/$$i; done
+	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
 
 hostapd: $(OBJS)
-	$(CC) -o hostapd -L../openssl.ixp $(OBJS) $(LIBS)
+	$(CC) -o hostapd $(OBJS) $(LIBS)
 
 driver_conf.c: Makefile .config
 	rm -f driver_conf.c
