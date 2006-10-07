@@ -172,7 +172,17 @@ SM_STATE(AUTH_PAE, HELD)
 	sm->eapolLogoff = FALSE;
 
 	hostapd_logger(sm->hapd, sm->addr, HOSTAPD_MODULE_IEEE8021X,
-		       HOSTAPD_LEVEL_WARNING, "authentication failed");
+		       HOSTAPD_LEVEL_WARNING, "authentication failed - "
+		       "EAP type: %d (%s)",
+		       sm->eap_type_authsrv,
+		       eap_type_text(sm->eap_type_authsrv));
+	if (sm->eap_type_authsrv != sm->eap_type_supp) {
+		hostapd_logger(sm->hapd, sm->addr,
+			       HOSTAPD_MODULE_IEEE8021X, HOSTAPD_LEVEL_INFO,
+			       "Supplicant used different EAP type: %d (%s)",
+			       sm->eap_type_supp,
+			       eap_type_text(sm->eap_type_supp));
+	}
 	if (sm->flags & EAPOL_SM_PREAUTH)
 		rsn_preauth_finished(sm->hapd, sm->sta, 0);
 	else
@@ -182,6 +192,8 @@ SM_STATE(AUTH_PAE, HELD)
 
 SM_STATE(AUTH_PAE, AUTHENTICATED)
 {
+	char *extra = "";
+
 	if (sm->auth_pae_state == AUTH_PAE_AUTHENTICATING && sm->authSuccess)
 		sm->authAuthSuccessesWhileAuthenticating++;
 							
@@ -190,8 +202,14 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 	sm->authPortStatus = Authorized;
 	setPortAuthorized();
 	sm->reAuthCount = 0;
+	if (sm->flags & EAPOL_SM_PREAUTH)
+		extra = " (pre-authentication)";
+	else if (wpa_auth_sta_get_pmksa(sm->sta->wpa_sm))
+		extra = " (PMKSA cache)";
 	hostapd_logger(sm->hapd, sm->addr, HOSTAPD_MODULE_IEEE8021X,
-		       HOSTAPD_LEVEL_INFO, "authenticated");
+		       HOSTAPD_LEVEL_INFO, "authenticated - EAP type: %d (%s)"
+		       "%s", sm->eap_type_authsrv,
+		       eap_type_text(sm->eap_type_authsrv), extra);
 	if (sm->flags & EAPOL_SM_PREAUTH)
 		rsn_preauth_finished(sm->hapd, sm->sta, 1);
 	else

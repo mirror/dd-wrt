@@ -6,6 +6,10 @@ ChangeLog for hostapd
 	  available with Devicescape and test driver interfaces
 	* fixed PMKSA cache update in the end of successful RSN
 	  pre-authentication
+	* added support for dynamic VLAN configuration (i.e., selecting VLAN-ID
+	  for each STA based on RADIUS Access-Accept attributes); this requires
+	  VLAN support from the kernel driver/802.11 stack and this is
+	  currently only available with Devicescape and test driver interfaces
 
 2006-08-27 - v0.5.5
 	* added 'hostapd_cli new_sta <addr>' command for adding a new STA into

@@ -28,6 +28,103 @@
 #define MAX_STA_COUNT 2007
 
 
+static int hostapd_config_read_vlan_file(struct hostapd_bss_config *bss,
+					 const char *fname)
+{
+	FILE *f;
+	char buf[128], *pos, *pos2;
+	int line = 0, vlan_id;
+	struct hostapd_vlan *vlan;
+
+	f = fopen(fname, "r");
+	if (!f) {
+		printf("VLAN file '%s' not readable.\n", fname);
+		return -1;
+	}
+
+	while (fgets(buf, sizeof(buf), f)) {
+		line++;
+
+		if (buf[0] == '#')
+			continue;
+		pos = buf;
+		while (*pos != '\0') {
+			if (*pos == '\n') {
+				*pos = '\0';
+				break;
+			}
+			pos++;
+		}
+		if (buf[0] == '\0')
+			continue;
+
+		if (buf[0] == '*') {
+			vlan_id = VLAN_ID_WILDCARD;
+			pos = buf + 1;
+		} else {
+			vlan_id = strtol(buf, &pos, 10);
+			if (buf == pos || vlan_id < 1 ||
+			    vlan_id > MAX_VLAN_ID) {
+				printf("Invalid VLAN ID at line %d in '%s'\n",
+				       line, fname);
+				fclose(f);
+				return -1;
+			}
+		}
+
+		while (*pos == ' ' || *pos == '\t')
+			pos++;
+		pos2 = pos;
+		while (*pos2 != ' ' && *pos2 != '\t' && *pos2 != '\0')
+			pos2++;
+		*pos2 = '\0';
+		if (*pos == '\0' || strlen(pos) > IFNAMSIZ) {
+			printf("Invalid VLAN ifname at line %d in '%s'\n",
+			       line, fname);
+			fclose(f);
+			return -1;
+		}
+
+		vlan = malloc(sizeof(*vlan));
+		if (vlan == NULL) {
+			printf("Out of memory while reading VLAN interfaces "
+			       "from '%s'\n", fname);
+			fclose(f);
+			return -1;
+		}
+
+		memset(vlan, 0, sizeof(*vlan));
+		vlan->vlan_id = vlan_id;
+		strncpy(vlan->ifname, pos, sizeof(vlan->ifname));
+		if (bss->vlan_tail)
+			bss->vlan_tail->next = vlan;
+		else
+			bss->vlan = vlan;
+		bss->vlan_tail = vlan;
+	}
+
+	fclose(f);
+
+	return 0;
+}
+
+
+static void hostapd_config_free_vlan(struct hostapd_bss_config *bss)
+{
+	struct hostapd_vlan *vlan, *prev;
+
+	vlan = bss->vlan;
+	prev = NULL;
+	while (vlan) {
+		prev = vlan;
+		vlan = vlan->next;
+		free(prev);
+	}
+
+	bss->vlan = NULL;
+}
+
+
 /* convert floats with one decimal place to value*10 int, i.e.,
  * "1.5" will return 15 */
 static int hostapd_config_read_int10(const char *value)
@@ -58,6 +155,9 @@ static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->auth_algs = HOSTAPD_AUTH_OPEN | HOSTAPD_AUTH_SHARED_KEY;
 
 	bss->wep_rekeying_period = 300;
+	/* use key0 in individual key and key1 in broadcast key */
+	bss->broadcast_key_idx_min = 1;
+	bss->broadcast_key_idx_max = 2;
 	bss->eap_reauth_period = 3600;
 
 	bss->wpa_group_rekey = 600;
@@ -1127,10 +1227,12 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				printf("Line %d: invalid SSID '%s'\n", line,
 				       pos);
 				errors++;
+			} else {
+				memcpy(bss->ssid.ssid, pos,
+				       bss->ssid.ssid_len);
+				bss->ssid.ssid[bss->ssid.ssid_len] = '\0';
+				bss->ssid.ssid_set = 1;
 			}
-			memcpy(bss->ssid.ssid, pos, bss->ssid.ssid_len);
-			bss->ssid.ssid[bss->ssid.ssid_len] = '\0';
-			bss->ssid.ssid_set = 1;
 		} else if (strcmp(buf, "macaddr_acl") == 0) {
 			bss->macaddr_acl = atoi(pos);
 			if (bss->macaddr_acl != ACCEPT_UNLESS_DENIED &&
@@ -1560,6 +1662,16 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (strcmp(buf, "dynamic_vlan") == 0) {
 			bss->ssid.dynamic_vlan = atoi(pos);
+		} else if (strcmp(buf, "vlan_file") == 0) {
+			if (hostapd_config_read_vlan_file(bss, pos)) {
+				printf("Line %d: failed to read VLAN file "
+				       "'%s'\n", line, pos);
+				errors++;
+			}
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+		} else if (strcmp(buf, "vlan_tagged_interface") == 0) {
+			bss->ssid.vlan_tagged_interface = strdup(pos);
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
 		} else if (strcmp(buf, "passive_scan_interval") == 0) {
 			conf->passive_scan_interval = atoi(pos);
 		} else if (strcmp(buf, "passive_scan_listen") == 0) {
@@ -1606,6 +1718,12 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	}
 
 	fclose(f);
+
+	if (bss->individual_wep_key_len == 0) {
+		/* individual keys are not use; can use key idx0 for broadcast
+		 * keys */
+		bss->broadcast_key_idx_min = 0;
+	}
 
 	for (i = 0; i < conf->num_bss; i++) {
 		bss = &conf->bss[i];
@@ -1660,6 +1778,16 @@ static void hostapd_config_free_eap_user(struct hostapd_eap_user *user)
 }
 
 
+static void hostapd_config_free_wep(struct hostapd_wep_keys *keys)
+{
+	int i;
+	for (i = 0; i < NUM_WEP_KEYS; i++) {
+		free(keys->key[i]);
+		keys->key[i] = NULL;
+	}
+}
+
+
 static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 {
 	struct hostapd_wpa_psk *psk, *prev;
@@ -1677,6 +1805,9 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 
 	free(conf->ssid.wpa_passphrase);
 	free(conf->ssid.wpa_psk_file);
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+	free(conf->ssid.vlan_tagged_interface);
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
 	user = conf->eap_user;
 	while (user) {
@@ -1704,6 +1835,19 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	free(conf->radius_server_clients);
 	free(conf->test_socket);
 	free(conf->radius);
+	hostapd_config_free_vlan(conf);
+	if (conf->ssid.dyn_vlan_keys) {
+		struct hostapd_ssid *ssid = &conf->ssid;
+		size_t i;
+		for (i = 0; i <= ssid->max_dyn_vlan_keys; i++) {
+			if (ssid->dyn_vlan_keys[i] == NULL)
+				continue;
+			hostapd_config_free_wep(ssid->dyn_vlan_keys[i]);
+			free(ssid->dyn_vlan_keys[i]);
+		}
+		free(ssid->dyn_vlan_keys);
+		ssid->dyn_vlan_keys = NULL;
+	}
 }
 
 
@@ -1758,6 +1902,18 @@ int hostapd_rate_found(int *list, int rate)
 			return 1;
 
 	return 0;
+}
+
+
+const char * hostapd_get_vlan_id_ifname(struct hostapd_vlan *vlan, int vlan_id)
+{
+	struct hostapd_vlan *v = vlan;
+	while (v) {
+		if (v->vlan_id == vlan_id || v->vlan_id == VLAN_ID_WILDCARD)
+			return v->ifname;
+		v = v->next;
+	}
+	return NULL;
 }
 
 

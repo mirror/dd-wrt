@@ -636,6 +636,15 @@ static void handle_auth(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	}
 
 	if (vlan_id > 0) {
+		if (hostapd_get_vlan_id_ifname(hapd->conf->vlan,
+					       sta->vlan_id) == NULL) {
+			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_RADIUS,
+				       HOSTAPD_LEVEL_INFO, "Invalid VLAN ID "
+				       "%d received from RADIUS server",
+				       vlan_id);
+			resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+			goto fail;
+		}
 		sta->vlan_id = vlan_id;
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_RADIUS,
 			       HOSTAPD_LEVEL_INFO, "VLAN ID %d", sta->vlan_id);
@@ -1408,6 +1417,17 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 			       "Could not add STA to kernel driver");
 	}
 
+	if (sta->eapol_sm == NULL) {
+		/*
+		 * This STA does not use RADIUS server for EAP authentication,
+		 * so bind it to the selected VLAN interface now, since the
+		 * interface selection is not going to change anymore.
+		 */
+		ap_sta_bind_vlan(hapd, sta, 0);
+	} else if (sta->vlan_id) {
+		/* VLAN ID already set (e.g., by PMKSA caching), so bind STA */
+		ap_sta_bind_vlan(hapd, sta, 0);
+	}
 	if (sta->flags & WLAN_STA_SHORT_PREAMBLE) {
 		hostapd_sta_set_flags(hapd, sta->addr,
 				      WLAN_STA_SHORT_PREAMBLE, ~0);

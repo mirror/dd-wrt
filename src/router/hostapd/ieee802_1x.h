@@ -76,6 +76,7 @@ int ieee802_1x_get_mib_sta(struct hostapd_data *hapd, struct sta_info *sta,
 void hostapd_get_ntp_timestamp(u8 *buf);
 void ieee802_1x_finished(struct hostapd_data *hapd, struct sta_info *sta,
 			 int success);
+char *eap_type_text(u8 type);
 
 struct radius_class_data;
 
