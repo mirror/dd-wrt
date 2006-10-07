@@ -4500,7 +4500,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
       if (i == 16 || i == 19)
 	{
-	  websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+	  websWrite (wp, "<tr><td>&nbsp;</td></tr>\n");
 	}
     }
 
@@ -4519,7 +4519,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, ">LAN</option></select></td>\n");
   websWrite (wp, "</tr>\n");
 
-  websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+  websWrite (wp, "<tr><td>&nbsp;</td></tr>\n");
 
   websWrite (wp, "<tr>\n");
   websWrite (wp,
