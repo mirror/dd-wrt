@@ -5417,8 +5417,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
 // write HTML data
 
-  websWrite (wp,
-	     "<input type=\"hidden\" name=\"svqos_nosvcs\" value=\"%d\" />",
+  websWrite (wp, "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_nosvcs\" value=\"%d\" /></td></tr>",
 	     no_svcs);
 
   qos_svcs = nvram_safe_get ("svqos_svcs");
@@ -5479,7 +5478,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
   // write HTML data
 
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" />",
+	     "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" /></td></tr>",
 	     no_ips);
 
   qos_ips = nvram_safe_get ("svqos_ips");
@@ -5537,7 +5536,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 // write HTML data
 
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" />",
+	     "<tr><td colspan=\"3\"><input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" /></td></tr>",
 	     no_ips);
 
   qos_ips = nvram_safe_get ("svqos_ips");
