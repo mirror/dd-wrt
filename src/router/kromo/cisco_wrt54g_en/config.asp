@@ -53,10 +53,10 @@ function to_submit(F) {
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">//<![CDATA[
-								document.write("<input type=\"button\" name=\"B1\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/nvrambak.bin'\" />");
+								document.write('<input type="button" name="B1" value="' + sbutton.backup + '" onclick=window.location.href="/nvrambak.bin" />');
 								//]]></script>
 								<script type="text/javascript">//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form)\" />");
+								document.write('<input type="button" name="save_button" value="' + sbutton.restore + '" onclick="to_submit(this.form)" />');
 								//]]></script>
 							</div>
 						</form>
