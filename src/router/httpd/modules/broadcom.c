@@ -3021,11 +3021,11 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       port_forward_table (wp, "sel_udp", i);
       websWrite (wp, ">UDP</option>\n");
       websWrite (wp,
-		 "<script type=\"text/javascript\"><![CDATA[\n\
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"both\\\" ");
       port_forward_table (wp, "sel_both", i);
       websWrite (wp, " >\" + share.both + \"</option>\");\n\
-      	]]></script>\n");
+      	\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
       FWSHOW1
@@ -3092,11 +3092,11 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       port_forward_spec (wp, "sel_udp", i);
       websWrite (wp, ">UDP</option>\n");
       websWrite (wp,
-		 "<script type=\"text/javascript\"><![CDATA[\n\
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"both\\\" ");
       port_forward_spec (wp, "sel_both", i);
       websWrite (wp, " >\" + share.both + \"</option>\");\n\
-      		]]></script>\n");
+      		\n//]]>\n</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
       FWSHOW1
@@ -3228,9 +3228,9 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
       strcpy (buf, entry->d_name);
       buf[strlen (buf) - 3] = 0;	//strip .js
       websWrite (wp,
-		 "<script type=\"text/javascript\"><![CDATA[\n\
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n\
-		 		]]></script>\n",
+		 		\n//]]>\n</script>\n",
 		 buf, nvram_match ("language",
 				   buf) ? "selected=\\\"selected\\\"" : "",
 		 buf);
@@ -3850,9 +3850,9 @@ int i,j;
 #ifdef HAVE_HTTPS  //until https will allow upgrade and backup
 				else if ((strlen(menu[i][j]) != 0) && (do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
 					{
-					websWrite (wp, "      <script type=\"text/javascript\"><![CDATA[\n");
+					websWrite (wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n", menuname[i][j+1]);
-					websWrite (wp, "      ]]></script>\n");
+					websWrite (wp, "      \n//]]>\n</script>\n");
 					}
 #endif
 				else if (strlen(menu[i][j]) != 0)
@@ -3882,7 +3882,8 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		char *style = nvram_get ("router_style");
 	
 			websWrite (wp,
-				"<\?xml version=\"1.0\" encoding=\"UTF-8\"\?>\n");
+				"<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
+				live_translate("lang_charset.set"));
 			websWrite (wp,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 			websWrite (wp, "<html>\n");
@@ -3960,9 +3961,9 @@ char str[11];
 			strcat (str, timeoption[j]);
 
 			websWrite (wp,
-			"<script type=\"text/javascript\"><![CDATA[\n\
+			"<script type=\"text/javascript\">\n//<![CDATA[\n\
 					document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%s + \"</option>\");\n\
-					]]></script>\n",
+					\n//]]>\n</script>\n",
 			str, nvram_match ("time_zone", str) ? "selected=\\\"selected\\\"" : "", timezones[i], timeoption[j]);
 		 }
 	}
@@ -3975,9 +3976,9 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
 //				<div id="statusInfo">
-//					<div class="info"><% tran("share.firmware"); %>: <script type="text/javascript"><![CDATA[
+//					<div class="info"><% tran("share.firmware"); %>: <script type="text/javascript">\n//<![CDATA[
 //					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
-//					]]></script></div>
+//					\n//]]>\n</script></div>
 //					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 //					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 //				</div>
@@ -4005,11 +4006,11 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	
 		websWrite (wp, "<div id=\"statusInfo\">\n");
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
-		websWrite (wp, "<script type=\"text/javascript\"><![CDATA[\n\
+		websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
 		ej_get_firmware_version(0,wp,argc,argv);
 		websWrite (wp, "</a>\");\n\
-				]]></script></div>\n"); 
+				\n//]]>\n</script></div>\n"); 
 		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
 		ej_get_uptime(0,wp,argc,argv);
 		websWrite (wp, "</div>\n");
