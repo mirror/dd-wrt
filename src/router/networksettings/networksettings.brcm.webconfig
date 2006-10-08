@@ -4,22 +4,22 @@
 	<div class="setting">
 		<div class="label"><% tran("management.net_port"); %></div>
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_max" onblur="valid_range(this,0,4096,management.net_port)" value="<% nvram_get("ip_conntrack_max"); %>" />&nbsp;
-		<span class="default"><script type="text/javascript">//<![CDATA[
+		<span class="default"><script type="text/javascript"><![CDATA[
 		document.write("(" + share.deflt + ": 512, " + share.range + ": 0 - 4096)");
-		//]]></script></span>
+		]]></script></span>
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("management.net_tcptimeout"); %></div>
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_tcp_timeouts" onblur="valid_range(this,0,3600,management.net_tcptimeout)" value="<% nvram_get("ip_conntrack_tcp_timeouts"); %>" />&nbsp;
-		<span class="default"><script type="text/javascript">//<![CDATA[
+		<span class="default"><script type="text/javascript"><![CDATA[
 		document.write("(" + share.deflt + ": 3600, " + share.range + ": 0 - 3600)");
-		//]]></script></span>
+		]]></script></span>
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("management.net_udptimeout"); %></div>
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_udp_timeouts" onblur="valid_range(this,0,3600,management.net_udptimeout)" value="<% nvram_get("ip_conntrack_udp_timeouts"); %>" />&nbsp;
-		<span class="default"><script type="text/javascript">//<![CDATA[
+		<span class="default"><script type="text/javascript"><![CDATA[
 		document.write("(" + share.deflt + ": 3600, " + share.range + ": 0 - 3600)");
-		//]]></script></span>
+		]]></script></span>
 	</div>
 </fieldset><br/>
