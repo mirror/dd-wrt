@@ -189,7 +189,7 @@ function init() {
 							
 							<fieldset>
 								<legend><% tran("qos.legend2"); %></legend>
-								<table class="table">
+								<table class="table" summary="services priority table">
 									<tr>
 										<th><% tran("share.del"); %></th>
 										<th><% tran("share.srv"); %></th>
@@ -226,7 +226,7 @@ document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbut
 							
 							<fieldset>
 								<legend><% tran("qos.legend3"); %></legend>
-								<table class="table">
+								<table class="table" summary="IP addresses priority table">
 									<% get_qosips(); %>
 									<tr>
 										<td>&nbsp;</td>
@@ -243,7 +243,7 @@ document.write("<input type=\"button\" name=\"add_ipsprio_button\" value=\"" + s
 							
 							<fieldset>
 								<legend><% tran("qos.legend4"); %></legend>
-								<table class="table">
+								<table class="table" summary="MAC priority table">
 									<% get_qosmacs(); %>
 									<tr>
 										<td>&nbsp;</td>
