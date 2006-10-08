@@ -6,7 +6,7 @@
 		<style type="text/css">
 <% css_include(); %>
 		</style>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 <% js_include(); %>
 		
 var submit_button = "<% get_web_page_name(); %>";
@@ -19,7 +19,7 @@ function to_submit()
 	else
 		document.location.href =  submit_button;
 }
-		</script>
+		//]]></script>
 	</head>
 
    <body>
@@ -27,7 +27,9 @@ function to_submit()
          <div>
             <form>
             	<% tran("fail.mess1"); %><br />
-            	<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
+            	<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
+//]]></script>
             </form>
          </div>
       </div>
