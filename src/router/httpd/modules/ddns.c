@@ -28,8 +28,6 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
   if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
     {
       websWrite (wp,
-//		 "<script type=\"text/javascript\">Capture(ddnsm.all_disabled)</script>");
-//		 "DDNS function is disabled");
 		 "%s", live_translate("ddnsm.all_disabled"));
       return;
     }
@@ -51,8 +49,6 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
   else
     {
       websWrite (wp,
-//		 "<script type=\"text/javascript\">Capture(ddnsm.all_connecting)</script>");
-//		 "Connecting to server");
 		 "%s", live_translate("ddnsm.all_connecting"));
       return;
     }
