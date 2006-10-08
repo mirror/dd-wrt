@@ -26,7 +26,9 @@
 			<div class="setting">
 				<div class="label"><% tran("management.remote_guiport"); %></div>
 				<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,management.remote_guiport)" value="<% nvram_get("http_wanport"); %>" />
-				<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 8080, " + share.range + ": 1 - 65535)")</script></span>
+				<span class="default"><script type="text/javascript">//<![CDATA[
+				document.write("(" + share.deflt + ": 8080, " + share.range + ": 1 - 65535)");
+				//]]></script></span>
 			</div>
 		</div>
 		<% nvram_match("dist_type", "micro", "<!--"); %>
@@ -39,7 +41,9 @@
 		<div class="setting" id="idssh">
 			<div class="label"><% tran("management.remote_sshport"); %></div>
 			<input class="num" maxlength="5" size="5" name="sshd_wanport" onblur="valid_range(this,1,65535,management.remote_sshport)" value="<% nvram_get("sshd_wanport"); %>" />
-			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 22, " + share.range + ": 1 - 65535)")</script></span>
+			<span class="default"><script type="text/javascript">//<![CDATA[
+			document.write("(" + share.deflt + ": 22, " + share.range + ": 1 - 65535)");
+			//]]></script></span>
 		</div>
 		<% nvram_match("sshd_web","0","-->"); %>
 		<% nvram_match("dist_type", "micro", "-->"); %>
@@ -151,7 +155,9 @@
 			<div class="setting">
 				<div class="label"><% tran("share.inter"); %></div>
 				<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvram_get("wol_interval"); %>" />
-				<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)")</script></span>
+				<span class="default"><script type="text/javascript">//<![CDATA[
+				document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)");
+				//]]></script></span>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("share.hostname"); %></div>
@@ -164,10 +170,10 @@
 			<div class="setting">
 				<div class="label"><% tran("management.wol_mac"); %></div>
 				<textarea id="wol_macs" name="wol_macs" cols="60" rows="2"></textarea>
-				<script type="text/javascript">
+				<script type="text/javascript">//<![CDATA[
 					var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
 					document.getElementById("wol_macs").value = wol_macs;
-				</script>
+				//]]></script>
 			</div>
 		</div>
 	</fieldset><br/>
