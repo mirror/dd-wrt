@@ -1,6 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Info</title>
-		<script type="text/javascript">
+		<script type="text/javascript">//
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + info.titl;
 
@@ -159,7 +160,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		</script>
+
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -201,15 +204,33 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">LAN MAC</div>
-									<script type="text/javascript">document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");</script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<script type="text/javascript">//
+									//<![CDATA[
+									document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
+									document.write("<% nvram_get("lan_hwaddr"); %>");
+									document.write("</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN MAC</div>
-									<script type="text/javascript">document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");</script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
+									document.write("<% nvram_get("wan_hwaddr"); %>");
+									document.write("</span>");
+									//]]>
+								  </script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("info.wlanmac"); %></div>
-									<script type="text/javascript">document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");</script><% show_wl_mac(); %></span>&nbsp;
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+									document.write("<% show_wl_mac(); %>");
+									document.write("</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN IP</div>
@@ -335,7 +356,7 @@ addEvent(window, "unload", function() {
 						<h2><% tran("share.wireless"); %></h2>
 						<fieldset>
 							<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
-							<table class="table center" cellspacing="6" id="wireless_table">
+							<table class="table center" cellspacing="6" id="wireless_table" summary="wireless clients table">
 								<tr>
 									<th width="43%"><% tran("share.mac"); %></th>
 									<th width="8%"><% tran("share.signal"); %></th>
@@ -346,10 +367,10 @@ addEvent(window, "unload", function() {
 							</table>
 						</fieldset><br />
 						
-						<span id="wds" style="display:none">
+						<div id="wds" style="display:none">
 							<fieldset>
 								<legend><% tran("status_wireless.wds"); %></legend>
-								<table class="table center" cellspacing="6" id="wds_table">
+								<table class="table center" cellspacing="6" id="wds_table" summary="wds clients table">
 									<tr>
 										<th width="16%"><% tran("share.mac"); %></th>
 										<th width="25%"><% tran("share.descr"); %></th>
@@ -361,12 +382,12 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							
-						</span>
-						<span id="dhcp" style="display:none">
+						</div>
+						<div id="dhcp" style="display:none">
 							<h2><% tran("share.dhcp"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend3"); %></legend>
-								<table class="table center" cellspacing="6" id="dhcp_leases_table">
+								<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 									<tr>
 										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="25%"><% tran("share.ip"); %></th>
@@ -376,12 +397,16 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							
-						</span>
+						</div>
 						<div class="center">
 							<% show_paypal(); %>
 						</div><br />
 						<div class="submitFooter">
-							<script type="text/javascript">document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
+							<script type="text/javascript">
+							//<![CDATA[
+							document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+							//]]>
+							</script>
 						</div>
 					</div>
 				</div>
