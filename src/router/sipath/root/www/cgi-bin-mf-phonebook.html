@@ -12,7 +12,8 @@ cat<<EOF
 
     <link href="mf.css" rel="StyleSheet" type="text/css" />
 
-    <script language="JavaScript" type="text/javascript"><!--
+    <script type="text/javascript"><!--
+    //<![CDATA[
 function navarr(){}
 navset=new navarr();
 navres=new navarr();
@@ -52,7 +53,9 @@ function ini() {
     }
   }
 }
-//--></script>
+//]]>
+//-->
+</script>
   </head>
 
   <body onload="if(null!=window.ini)window.ini()"><table border="0"
@@ -83,7 +86,8 @@ function ini() {
   valign="top" width="5"></td><td valign="top">
 
 
-<script language="JavaScript" type="text/javascript"><!--
+<script type="text/javascript"><!--
+//<![CDATA[
 function help(e) {
   if (!e) e = event;
   // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
@@ -108,6 +112,7 @@ if (document.all) {
 else {
   document.onkeypress = help;
 }
+//]]>
 //--></script>
 EOF
 
