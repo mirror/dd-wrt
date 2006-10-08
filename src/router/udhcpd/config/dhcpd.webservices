@@ -54,10 +54,10 @@
 				<td colspan="3">
 					<div class="center">
 						<script type="text/javascript">//<![CDATA[
-						document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form)\" />");
+						document.write("<input type='button' value='" + sbutton.add + "' onclick='lease_add_submit(this.form)' />");
 						//]]></script>
 						<script type="text/javascript">//<![CDATA[
-						document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form)\" />");
+						document.write("<input type='button' value='" + sbutton.remove + "' onclick='lease_remove_submit(this.form)' />");
 						//]]></script>
 					</div>
 				</td>
