@@ -1,7 +1,7 @@
 
 <fieldset>
 	<legend><% tran("hotspot.sputnik_legend"); %></legend>
-	<div class="center"><img src="images/sputnik.gif" /></div><br />
+	<div class="center"><img src="images/sputnik.gif" alt="sputnik logo" /></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspot.sputnik_srv"); %></div>
 		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idsputnik', true)" /><% tran("share.enable"); %>&nbsp;
@@ -24,7 +24,7 @@
 		</div>
 		<% nvram_invmatch("sputnik_done","1","-->"); %>
 		<div class="center">
-			<a href="http://www.sputnik.com/products/ddwrt.html" target="_new"><% tran("hotspot.sputnik_learn"); %></a>&nbsp;<% tran("hotspot.sputnik_about"); %>
+			<a href="http://www.sputnik.com/products/ddwrt.html" target="_blank"><% tran("hotspot.sputnik_learn"); %></a>&nbsp;<% tran("hotspot.sputnik_about"); %>
 		</div>
 	</div>
 </fieldset><br />
