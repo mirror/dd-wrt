@@ -3882,8 +3882,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		char *style = nvram_get ("router_style");
 	
 			websWrite (wp,
-				"<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
-				live_translate("lang_charset.set"));
+				"<\?xml version=\"1.0\" encoding=\"UTF-8\"\?>\n");
 			websWrite (wp,
 				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 			websWrite (wp, "<html>\n");
