@@ -54,7 +54,7 @@ function to_submit(F)
 							<h2><% tran("trforward.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("trforward.legend"); %></legend>
-								<table class="table center" cellspacing="5">
+								<table class="table center" cellspacing="5" summary="ports triggering table">
 									<tr>
 										<td></td>
 										<th colspan="2"><% tran("trforward.trrange"); %></th>

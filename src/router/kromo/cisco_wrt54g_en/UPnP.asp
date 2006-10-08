@@ -141,7 +141,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("upnp.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
-								<table class="table center" cellspacing="6" id="upnp_table">
+								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
 										<th width="40%"><% tran("share.descr"); %></th>
 										<th width="15%"><% tran("share.from"); %>&nbsp;(WAN)</th>
