@@ -102,30 +102,30 @@
 				<option value="58" <% nvram_selected("schedule_minutes","58"); %>>58</option>
 				<option value="59" <% nvram_selected("schedule_minutes","59"); %>>59</option>
 			</select>&nbsp;<select name="schedule_weekdays">
-				<script type="text/javascript">//<![CDATA[
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"*\" <% nvram_selected("schedule_weekdays","*","js"); %> >" + share.everyday + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"00\" <% nvram_selected("schedule_weekdays","00","js"); %> >" + share.sun + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"01\" <% nvram_selected("schedule_weekdays","01","js"); %> >" + share.mon + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"02\" <% nvram_selected("schedule_weekdays","02","js"); %> >" + share.tue + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"03\" <% nvram_selected("schedule_weekdays","03","js"); %> >" + share.wed + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"04\" <% nvram_selected("schedule_weekdays","04","js"); %> >" + share.thu + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"05\" <% nvram_selected("schedule_weekdays","05","js"); %> >" + share.fri + "</option>");
-				//]]></script>
-				<script type="text/javascript">//<![CDATA[
+				]]></script>
+				<script type="text/javascript"><![CDATA[
 				document.write("<option value=\"06\" <% nvram_selected("schedule_weekdays","06","js"); %> >" + share.sat + "</option>");
-				//]]></script>
+				]]></script>
 			</select>
 		</div>
 	</div>
