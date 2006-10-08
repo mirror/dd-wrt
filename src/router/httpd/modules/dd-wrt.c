@@ -651,19 +651,18 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<input type=\"hidden\" name=\"lc\" value=\"en\" />");
   websWrite (wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
   websWrite (wp,
-	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
+	     "<input type=\"image\" src=\"images/paypal.gif\" name=\"submit\" />");
   websWrite (wp, "</form>");
   websWrite (wp,
-	     "<br><script type=\"text/javascript\">Capture(donate.mb)</script><br>\n");
+	     "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
   websWrite (wp,
 	     "<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
   if (!strcmp (DIST, "micro"))
     websWrite (wp,
-	       "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" width=88 height=31 border=0>\n");
+	       "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" alt=\"donate thru moneybookers\" />\n");
   else
     websWrite (wp,
-	       "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" width=88 height=31 border=0>\n");
-
+	       "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" alt=\"donate thru interpayments\" />\n");
   websWrite (wp, "</a>\n");
 #endif
   return;
