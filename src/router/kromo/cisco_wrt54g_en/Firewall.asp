@@ -1,7 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Firewall</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
 function to_submit(F) {
@@ -43,7 +42,7 @@ addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
 });
 
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui">
@@ -115,8 +114,12 @@ addEvent(window, "load", function() {
 									</div>
 								</fieldset><br />
 								<div class="submitFooter">
-									<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-									<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />")</script>
+									<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+									<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />");
+//]]></script>
 								</div>
 							</form>
 						</div>
