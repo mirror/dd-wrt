@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - WOL</title>
-		<script type="text/javascript"> 
+		<script type="text/javascript">//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wol.titl;
 
@@ -254,7 +254,7 @@ addEvent(window, "load", function() {
 	setWolHostsTable();
 });
 
-	</script>
+	//]]></script>
 
 </head>
 
@@ -304,15 +304,17 @@ addEvent(window, "load", function() {
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value=""/></td>
 										<td></td>
-										<td><script language="javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");</script></td>
+										<td><script type="text/javascript">//<![CDATA[
+ocument.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");
+//]]></script></td>
 									</tr>
 								</table>
 							</fieldset><br />
 
 							<% nvram_selmatch("wol_cmd","","<!--"); %>
-								<script type="text/javascript">
+								<script type="text/javascript">//<![CDATA[
 									callDump();
-								</script>
+								//]]></script>
 							<% nvram_selmatch("wol_cmd","","-->"); %>
 
 							<fieldset> 
@@ -331,7 +333,9 @@ addEvent(window, "load", function() {
 									</div>
 
 								<div class="submitFooter">
-									<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />")</script>
+									<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />");
+//]]></script>
 								</div>
 							</fieldset><br />
 

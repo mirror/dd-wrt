@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - MAC Address Clone</title>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wanmac.titl;
 
@@ -31,7 +31,7 @@ addEvent(window, "load", function() {
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; SelMac(1);"); %>
 });
 
-    </script>
+    //]]></script>
    </head>
 
 	<body class="gui">
@@ -64,7 +64,9 @@ addEvent(window, "load", function() {
 										<input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value="<% get_clone_mac("0"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value="<% get_clone_mac("1"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value="<% get_clone_mac("2"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value="<% get_clone_mac("3"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value="<% get_clone_mac("4"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value="<% get_clone_mac("5"); %>" />
 									</div>
 									<div class="setting">
-										<script type="text/javascript">document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />")</script>
+										<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />");
+//]]></script>
 									</div>
 									
 									<hr width="90%" /><br />
@@ -78,8 +80,12 @@ addEvent(window, "load", function() {
 							</fieldset><br />
 							
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.replace('WanMAC.asp')\" />")</script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.replace('WanMAC.asp')\" />");
+//]]></script>
 							</div>
 						</form>
 					</div>
