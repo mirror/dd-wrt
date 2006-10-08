@@ -14,61 +14,59 @@
 	
 	<div class="setting">		
 		<div class="label">Public Server Cert</div>
-		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca"> </textarea>
+		<script type="text/javascript">//<![CDATA[
 				var openvpn_ca = fix_cr( '<% nvram_get("openvpn_ca"); %>' );
 				document.getElementById("openvpn_ca").value = openvpn_ca;
-		</script>
+		//]]></script>
 	</div>
 	<div class="setting">		
 		<div class="label">Certificate Revoke List</div>
-		<textarea cols="60" rows="10" id="openvpn_crl" name="openvpn_crl">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_crl" name="openvpn_crl"> </textarea>
+		<script type="text/javascript">//<![CDATA[
 				var openvpn_crl = fix_cr( '<% nvram_get("openvpn_crl"); %>' );
 				document.getElementById("openvpn_crl").value = openvpn_crl;
-		</script>
+		//]]></script>
 	</div>
 	<div class="setting">		
 		<div class="label">Public Client Cert</div>
-		<textarea cols="60" rows="10" id="openvpn_client" name="openvpn_client">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_client" name="openvpn_client"> </textarea>
+		<script type="text/javascript">//<![CDATA[
 				var openvpn_client = fix_cr( '<% nvram_get("openvpn_client"); %>' );
 				document.getElementById("openvpn_client").value = openvpn_client;
-		</script>
+		//]]></script>
 	</div>
 	<div class="setting">		
 		<div class="label">Private Client Key</div>
-		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key"> </textarea>
+		<script type="text/javascript">//<![CDATA[		
 				var openvpn_key = fix_cr( '<% nvram_get("openvpn_key"); %>' );
 				document.getElementById("openvpn_key").value = openvpn_key;
-		</script>
-
+		//]]></script>
 	</div>
 	<div class="setting">		
 		<div class="label">DH PEM </div>
-		<textarea cols="60" rows="10" id="openvpn_dh" name="openvpn_dh">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_dh" name="openvpn_dh"> </textarea>
+		<script type="text/javascript">//<![CDATA[		
 				var openvpn_dh = fix_cr( '<% nvram_get("openvpn_dh"); %>' );
 				document.getElementById("openvpn_dh").value = openvpn_dh;
-		</script>
+		//]]></script>
 	</div>
-
 	<div class="setting">		
 		<div class="label">OpenVPN Config </div>
-		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config">	</textarea><script language="javascript">
-		
+		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
+		<script type="text/javascript">//<![CDATA[
 				var openvpn_config = fix_cr( '<% nvram_get("openvpn_config"); %>' );
 				document.getElementById("openvpn_config").value = openvpn_config;
-		</script>
+		//]]></script>
 	</div>
-
 	<div class="setting">		
 		<div class="label">OpenVPN TLS Auth </div>
-		<textarea cols="60" rows="10" id="openvpn_tlsauth" name="openvpn_tlsauth">	</textarea><script language="javascript">		
+		<textarea cols="60" rows="10" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
+		<script type="text/javascript">//<![CDATA[
 				var openvpn_tlsauth = fix_cr( '<% nvram_get("openvpn_tlsauth"); %>' );
 				document.getElementById("openvpn_tlsauth").value = openvpn_tlsauth;
-		</script>
+		//]]></script>
 	</div>
 	</div>	
 </fieldset><br/>
