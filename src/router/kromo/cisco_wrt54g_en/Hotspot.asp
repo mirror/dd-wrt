@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Hotspot</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + hotspot.titl;
 
 function user_add_submit(F) {
@@ -52,7 +52,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvram_else_match("smtp_redirect_enable", "1", "1", "0"); %> == 1);
 });
 
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -75,15 +75,15 @@ addEvent(window, "load", function() {
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

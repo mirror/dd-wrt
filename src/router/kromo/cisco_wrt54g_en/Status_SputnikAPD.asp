@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Sputnik Agent Status</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_sputnik.titl;
 
@@ -17,7 +17,7 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		//]]></script>
+		]]></script>
 	</head>
 	<body class="gui">
 		<% showad(); %>
@@ -49,9 +49,9 @@ addEvent(window, "unload", function() {
                     </fieldset><br />
                     
                     <div class="submitFooter">
-                    	<script type="text/javascript">//<![CDATA[
+                    	<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-//]]></script>
+]]></script>
                     </div>
                 </div>
             </div>

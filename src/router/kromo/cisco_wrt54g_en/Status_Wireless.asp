@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Status</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_wireless.titl;
 
@@ -95,7 +95,7 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -116,9 +116,9 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_wireless.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
-//]]></script><% show_wl_mac(); %></span>&nbsp;
+]]></script><% show_wl_mac(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
@@ -150,8 +150,8 @@ document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.o
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.encrypt"); %></div>
-									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">//<![CDATA[Capture(share.disabled)//]]></script>"); %>
-									<% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">//<![CDATA[Capture(share.enabled)//]]></script>,&nbsp;"); %>
+									<% nvram_match("security_mode", "disabled", "<script type="text/javascript"><![CDATA[Capture(share.disabled)]]></script>"); %>
+									<% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript"><![CDATA[Capture(share.enabled)]]></script>,&nbsp;"); %>
 									<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
 									<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
 									<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
@@ -163,7 +163,7 @@ document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.o
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.pptp"); %></div>
-									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">//<![CDATA[Capture(share.connected)//]]></script>", "<script type="text/javascript">//<![CDATA[Capture(share.disconnected)//]]></script>"); %>&nbsp;
+									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript"><![CDATA[Capture(share.connected)]]></script>", "<script type="text/javascript"><![CDATA[Capture(share.disconnected)]]></script>"); %>&nbsp;
 								</div>
 							</fieldset><br />
 							
@@ -181,7 +181,7 @@ document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.o
 							
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
-								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">//<![CDATA[Capture(info.ap)//]]></script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">//<![CDATA[Capture(status_wireless.legend3)//]]></script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">//<![CDATA[Capture(info.ap)//]]></script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">//<![CDATA[Capture(info.ap)//]]></script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">//<![CDATA[Capture(status_wireless.legend3)//]]></script>"); %></legend>
+								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript"><![CDATA[Capture(info.ap)]]></script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript"><![CDATA[Capture(status_wireless.legend3)]]></script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript"><![CDATA[Capture(info.ap)]]></script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript"><![CDATA[Capture(info.ap)]]></script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript"><![CDATA[Capture(status_wireless.legend3)]]></script>"); %></legend>
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
 										<th width="54%"><% tran("share.mac"); %></th>
@@ -210,14 +210,14 @@ document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.o
 								
 							</span>
 							<div class="center">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
-//]]></script>
+]]></script>
 							</div><br />
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

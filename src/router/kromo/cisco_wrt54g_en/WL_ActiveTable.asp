@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Active Client MAC List</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 
@@ -37,7 +37,7 @@ function init() {
 	<% onload("WL_ActiveTable", "setTimeout('opener.window.location.reload();',500);"); %>
 	window.focus();
 }
-		//]]></script>
+		]]></script>
 	</head>
 	
 	<body onload="init()">
@@ -79,15 +79,15 @@ function init() {
 				</tbody>
 			</table></br />
 			<div class="submitFooter">
-					<script type="text/javascript">//<![CDATA[
+					<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\" />");
-//]]></script>
-					<script type="text/javascript">//<![CDATA[
+]]></script>
+					<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-//]]></script>
-					<script type="text/javascript">//<![CDATA[
+]]></script>
+					<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-//]]></script>
+]]></script>
 			</div>
 		</form>
 	</body>

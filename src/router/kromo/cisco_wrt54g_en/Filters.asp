@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Access Restrictions</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + filter.titl;
 
 <% filter_init(); %>
@@ -284,7 +284,7 @@ function Status(F,I) {
 		choose_disable(document.filters.port3_end);
 	}
 }
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui" onload="init()">
@@ -316,12 +316,12 @@ function Status(F,I) {
 								<div class="setting">
 									<div class="label"><% tran("filter.pol"); %></div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />");
-//]]></script>
-									<script type="text/javascript">//<![CDATA[
+]]></script>
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />");
-//]]></script>
+]]></script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.statu"); %></div>
@@ -334,9 +334,9 @@ document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("filter.pcs"); %></div>
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
-//]]></script>
+]]></script>
 								</div>
 								<div class="setting">
 									<div class="label">
@@ -405,43 +405,43 @@ document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclic
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
 										<option value="None" selected="selected">None</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 write_service_options(servport_name0);
-//]]></script>
+]]></script>
 									</select>
 									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service1" onchange="onchange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
 										<option value="None" selected="selected">None</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 write_service_options(servport_name1);
-//]]></script>
+]]></script>
 									</select>
 									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service2" onchange="onchange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
 										<option value="None" selected="selected">None</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 write_service_options(servport_name2);
-//]]></script>
+]]></script>
 									</select>
 										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service3" onchange="onchange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
 										<option value="None" selected="selected">None</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 write_service_options(servport_name3);
-//]]></script>
+]]></script>
 									</select>
 									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
-//]]></script>
+]]></script>
 								</div>
 							</fieldset><br />
 							
@@ -476,12 +476,12 @@ document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" oncli
 							</fieldset><br />
 							
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

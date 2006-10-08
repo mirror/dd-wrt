@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Log</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + log.titl;
 
 function to_submit(F) {
@@ -16,7 +16,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.log.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.log.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 });
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -46,15 +46,15 @@ addEvent(window, "load", function() {
 								<div class="setting">
 									<div class="label"><% tran("log.lvl"); %></div>
 									<select name="log_level">
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selected("log_level", "0", "js"); %> >" + share.low + "</option>");
-//]]></script>
-										<script type="text/javascript">//<![CDATA[
+]]></script>
+										<script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selected("log_level", "1", "js"); %> >" + share.medium + "</option>");
-//]]></script>
-										<script type="text/javascript">//<![CDATA[
+]]></script>
+										<script type="text/javascript"><![CDATA[
 document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %> >" + share.high + "</option>");
-//]]></script>
+]]></script>
 									</select>
 								</div>
 							</div>
@@ -87,22 +87,22 @@ document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %
 								</fieldset><br />
 
 								<div class="center">
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600)\" />");
-//]]></script>
-									<script type="text/javascript">//<![CDATA[
+]]></script>
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600)\" />");
-//]]></script>
+]]></script>
 								</div><br />
 							</div>
 							
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setLog('<% nvram_get("log_enable"); %>')\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>
