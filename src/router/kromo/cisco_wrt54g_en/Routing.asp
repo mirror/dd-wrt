@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Routing</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + route.titl;
 
 function DeleteEntry(F) {
@@ -50,7 +50,7 @@ function SelMode(num,F) {
 	F.wk_mode.value = F.wk_mode.options[num].value;
 	F.submit();
 }
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -104,14 +104,14 @@ function SelMode(num,F) {
 								<div class="setting">
 									<div class="label"><% tran("share.intrface"); %></div>
 									<select size="1" name="dr_setting">
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");
-//]]></script>
+]]></script>
 										<option value="1" <% nvram_selected("dr_setting", "1"); %> >WAN</option>
 										<option value="2" <% nvram_selected("dr_setting", "2"); %> >LAN &amp; WLAN</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); %> >" + share.both + "</option>");
-//]]></script>
+]]></script>
 									</select>
 								</div>
 							 </fieldset><br/>
@@ -124,9 +124,9 @@ document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); 
 									<select size="1" name="route_page" onchange="SelRoute(this.form.route_page.selectedIndex,this.form)">
 										<% static_route_table("select"); %>
 									</select>&nbsp;&nbsp;
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"DeleteEntry(this.form)\" />");
-//]]></script>
+]]></script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.static_name"); %></div>
@@ -155,20 +155,20 @@ document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"D
 									</select>
 								</div>
 								<div class="center">
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 720, 600)\" />");
-//]]></script>
+]]></script>
 									<input type="hidden" value="0" name="Route_reload" />
 								</div>
 							</fieldset><br />
 							
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

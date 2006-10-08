@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Access Restrictions Summary</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + filterSum.titl;
 
 function filter_del(F) {
@@ -10,7 +10,7 @@ function filter_del(F) {
 	F.submit_type.value = "delete";
 	F.submit();
 }
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body onunload="top.opener.window.location.href='Filters.asp'">
@@ -32,12 +32,12 @@ function filter_del(F) {
 					<tr>
 						<td colspan="3">&nbsp;</td>
 						<td colspan="2" align="right">
-							<script type="text/javascript">//<![CDATA[
+							<script type="text/javascript"><![CDATA[
 							document.write("<input type=\"button\" value=\"" + share.del + "\" onclick=\"filter_del(this.form)\" />");
-							//]]></script>&nbsp;
-							<script type="text/javascript">//<![CDATA[
+							]]></script>&nbsp;
+							<script type="text/javascript"><![CDATA[
 							document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-							//]]></script>
+							]]></script>
 						</td>
 					</tr>
 				</tbody>

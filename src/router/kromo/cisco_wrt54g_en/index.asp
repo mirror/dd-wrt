@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Setup</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + idx.titl;
 
 var wan_proto = "<% nvram_get("wan_proto"); %>";
@@ -342,7 +342,7 @@ function init()
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
 	setDNSMasq(document.setup);
 }
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui" onload="init();">
@@ -368,7 +368,7 @@ function init()
 							<input type="hidden" name="daylight_time" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							<% nvram_match("wl_mode", "wet", "<!--"); %>
-							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">//<![CDATA[Capture(idx.h2);//]]></script>", "<script type="text/javascript">//<![CDATA[Capture(idx.h22);//]]></script>"); %></h2>
+							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript"><![CDATA[Capture(idx.h2);]]></script>", "<script type="text/javascript"><![CDATA[Capture(idx.h22);]]></script>"); %></h2>
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
 								<div class="setting">
@@ -406,9 +406,9 @@ function init()
 									<div class="label"><% tran("idx.mtu"); %></div>
 									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
 										<option value="0" <% nvram_selmatch("mtu_enable", "0", "selected"); %>>Auto</option>
-										<script type="text/javascript">//<![CDATA[
+										<script type="text/javascript"><![CDATA[
 										document.write("<option value=\"1\" <% nvram_selmatch("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");
-										//]]></script>
+										]]></script>
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
@@ -457,12 +457,12 @@ function init()
 							</fieldset><br />
 							
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-								//]]></script>
-								<script type="text/javascript">//<![CDATA[
+								]]></script>
+								<script type="text/javascript"><![CDATA[
 								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-								//]]></script>
+								]]></script>
 							</div>
 						</form>
 					</div>

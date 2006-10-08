@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - WDS</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wds.titl;
 
@@ -74,7 +74,7 @@ addEvent(window, "load", function() {
 //	}
 });
 
-		//]]></script>
+		]]></script>
 	</head>
 
   <body class="gui">
@@ -105,16 +105,16 @@ addEvent(window, "load", function() {
 
                         <div class="setting">
                           <select name="wl_wds1_enable" size="1" onchange="SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(1); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds1_hwaddr" value="6" />
                           <input class="num" name="wl_wds1_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("1", "0"); %>" />:<input class="num" name="wl_wds1_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("1", "1"); %>" />:<input class="num" name="wl_wds1_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("1", "2"); %>" />:<input class="num" name="wl_wds1_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("1", "3"); %>" />:<input class="num" name="wl_wds1_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("1", "4"); %>" />:<input class="num" name="wl_wds1_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("1", "5"); %>" />&nbsp;&nbsp;
@@ -124,16 +124,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds1_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds2_enable" size="1" onchange="SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(2); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds2_hwaddr" value="6" />
                           <input class="num" name="wl_wds2_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("2", "0"); %>" />:<input class="num" name="wl_wds2_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("2", "1"); %>" />:<input class="num" name="wl_wds2_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("2", "2"); %>" />:<input class="num" name="wl_wds2_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("2", "3"); %>" />:<input class="num" name="wl_wds2_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("2", "4"); %>" />:<input class="num" name="wl_wds2_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("2", "5"); %>" />&nbsp;&nbsp;
@@ -143,16 +143,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds2_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds3_enable" size="1" onchange="SelWDS(3,this.form.wl_wds3_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds3_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds3_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(3); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds3_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds3_hwaddr" value="6" />
                           <input class="num" name="wl_wds3_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("3", "0"); %>" />:<input class="num" name="wl_wds3_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("3", "1"); %>" />:<input class="num" name="wl_wds3_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("3", "2"); %>" />:<input class="num" name="wl_wds3_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("3", "3"); %>" />:<input class="num" name="wl_wds3_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("3", "4"); %>" />:<input class="num" name="wl_wds3_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("3", "5"); %>" />&nbsp;&nbsp;
@@ -162,16 +162,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds3_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds4_enable" size="1" onchange="SelWDS(4,this.form.wl_wds4_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds4_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds4_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(4); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds4_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds4_hwaddr" value="6" />
                           <input class="num" name="wl_wds4_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("4", "0"); %>" />:<input class="num" name="wl_wds4_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("4", "1"); %>" />:<input class="num" name="wl_wds4_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("4", "2"); %>" />:<input class="num" name="wl_wds4_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("4", "3"); %>" />:<input class="num" name="wl_wds4_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("4", "4"); %>" />:<input class="num" name="wl_wds4_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("4", "5"); %>" />&nbsp;&nbsp;
@@ -181,16 +181,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds4_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds5_enable" size="1" onchange="SelWDS(5,this.form.wl_wds5_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds5_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds5_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(5); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds5_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds5_hwaddr" value="6" />
                           <input class="num" name="wl_wds5_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("5", "0"); %>" />:<input class="num" name="wl_wds5_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("5", "1"); %>" />:<input class="num" name="wl_wds5_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("5", "2"); %>" />:<input class="num" name="wl_wds5_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("5", "3"); %>" />:<input class="num" name="wl_wds5_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("5", "4"); %>" />:<input class="num" name="wl_wds5_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("5", "5"); %>" />&nbsp;&nbsp;
@@ -200,16 +200,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds5_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds6_enable" size="1" onchange="SelWDS(6,this.form.wl_wds6_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds6_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(6); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds6_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds6_hwaddr" value="6" />
                           <input class="num" name="wl_wds6_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("6", "0"); %>" />:<input class="num" name="wl_wds6_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("6", "1"); %>" />:<input class="num" name="wl_wds6_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("6", "2"); %>" />:<input class="num" name="wl_wds6_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("6", "3"); %>" />:<input class="num" name="wl_wds6_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("6", "4"); %>" />:<input class="num" name="wl_wds6_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("6", "5"); %>" />&nbsp;&nbsp;
@@ -219,16 +219,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds6_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds7_enable" size="1" onchange="SelWDS(7,this.form.wl_wds7_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds7_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(7); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds7_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
                           <input type="hidden" name="wl_wds7_hwaddr" value="6" />
  	          			  <input class="num" name="wl_wds7_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("7", "0"); %>" />:<input class="num" name="wl_wds7_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("7", "1"); %>" />:<input class="num" name="wl_wds7_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("7", "2"); %>" />:<input class="num" name="wl_wds7_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("7", "3"); %>" />:<input class="num" name="wl_wds7_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("7", "4"); %>" />:<input class="num" name="wl_wds7_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("7", "5"); %>" />&nbsp;&nbsp;
@@ -238,16 +238,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds7_enable", "3", "se
                			    
                			<div class="setting">
                    		  <select name="wl_wds8_enable" size="1" onchange="SelWDS(8,this.form.wl_wds8_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds8_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(8); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds8_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                    		  </select>
                    		  <input type="hidden" name="wl_wds8_hwaddr" value="6" />
                    		  <input class="num" name="wl_wds8_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("8", "0"); %>" />:<input class="num" name="wl_wds8_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("8", "1"); %>" />:<input class="num" name="wl_wds8_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("8", "2"); %>" />:<input class="num" name="wl_wds8_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("8", "3"); %>" />:<input class="num" name="wl_wds8_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("8", "4"); %>" />:<input class="num" name="wl_wds8_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("8", "5"); %>" />&nbsp;&nbsp;
@@ -257,16 +257,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds8_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds9_enable" size="1" onchange="SelWDS(9,this.form.wl_wds9_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds9_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(9); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds9_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
 			              <input type="hidden" name="wl_wds9_hwaddr" value="6" />
 			              <input class="num" name="wl_wds9_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("9", "0"); %>" />:<input class="num" name="wl_wds9_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("9", "1"); %>" />:<input class="num" name="wl_wds9_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("9", "2"); %>" />:<input class="num" name="wl_wds9_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("9", "3"); %>" />:<input class="num" name="wl_wds9_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("9", "4"); %>" />:<input class="num" name="wl_wds9_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("9", "5"); %>" />&nbsp;&nbsp;
@@ -276,16 +276,16 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds9_enable", "3", "se
 
                         <div class="setting">
                           <select name="wl_wds10_enable" size="1" onchange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>>" + share.disable + "</option>");
-//]]></script>
-                            <script type="text/javascript">//<![CDATA[
+]]></script>
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-//]]></script>
+]]></script>
                             <% show_wds_subnet(10); %>
-                            <script type="text/javascript">//<![CDATA[
+                            <script type="text/javascript"><![CDATA[
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds10_enable", "3", "selected"); %>>" + share.lan + "</option>");
-//]]></script>
+]]></script>
                           </select>
 			              <input type="hidden" name="wl_wds10_hwaddr" value="6" />
 			              <input class="num" name="wl_wds10_hwaddr0" size="2" maxlength="2" onblur="valid_mac(this,0)" value="<% get_wds_mac("10", "0"); %>" />:<input class="num" name="wl_wds10_hwaddr1" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("10", "1"); %>" />:<input class="num" name="wl_wds10_hwaddr2" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("10", "2"); %>" />:<input class="num" name="wl_wds10_hwaddr3" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("10", "3"); %>" />:<input class="num" name="wl_wds10_hwaddr4" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("10", "4"); %>" />:<input class="num" name="wl_wds10_hwaddr5" size="2" maxlength="2" onblur="valid_mac(this,1)" value="<% get_wds_mac("10", "5"); %>" />&nbsp;&nbsp;
@@ -301,9 +301,9 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds10_enable", "3", "s
                            <div class="label"><% tran("wds.label"); %></div>
                            <input class="spaceradio" type="radio" name="wl_lazywds" value="1" <% nvram_selmatch("wl_lazywds", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
                            <input class="spaceradio" type="radio" name="wl_lazywds" value="0" <% nvram_selmatch("wl_lazywds", "0", "checked"); %> /><% tran("share.disable"); %>
-						   <span class="default"><script type="text/javascript">//<![CDATA[
+						   <span class="default"><script type="text/javascript"><![CDATA[
 document.write("(" + share.deflt + ": " + share.disable + ")");
-//]]></script></span>
+]]></script></span>
                         </div>
                         <div class="setting">
                            <div class="label"><% tran("wds.label2"); %></div>
@@ -313,15 +313,15 @@ document.write("(" + share.deflt + ": " + share.disable + ")");
                         <div class="setting">
                            <div class="label"><% tran("share.nat"); %></div>
                            <select name="wl_br1_nat">
-                              <script type="text/javascript">//<![CDATA[
+                              <script type="text/javascript"><![CDATA[
 document.write("<option value='<% nvram_selmatch("wl_br1_nat", "0", "selected"); %>'>" + share.disable + "</option>");
-//]]></script>
-                              <script type="text/javascript">//<![CDATA[
+]]></script>
+                              <script type="text/javascript"><![CDATA[
 document.write("<option value='<% nvram_selmatch("wl_br1_nat", "1", "selected"); %>'>" + wds.nat1 + "</option>");
-//]]></script>
-                              <script type="text/javascript">//<![CDATA[
+]]></script>
+                              <script type="text/javascript"><![CDATA[
 document.write("<option value='<% nvram_selmatch("wl_br1_nat", "2", "selected"); %>'>" + wds.nat2 + "</option>");
-//]]></script>
+]]></script>
                            </select>
                         </div>
                         <div class="setting">
@@ -337,12 +337,12 @@ document.write("<option value='<% nvram_selmatch("wl_br1_nat", "2", "selected");
                      </div>
                      <br/>
                      <div class="submitFooter">
-                     	<script type="text/javascript">//<![CDATA[
+                     	<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-//]]></script>
-                     	<script type="text/javascript">//<![CDATA[
+]]></script>
+                     	<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-//]]></script>
+]]></script>
                      </div>
                   </form>
                </div>
