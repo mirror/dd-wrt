@@ -16,17 +16,21 @@
 			<div class="label"><% tran("share.port"); %></div>
 			<input class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,'SHHd Port')" value="<% nvram_get("sshd_port"); %>" />
 			<span class="default">
-			<script type="text/javascript"><![CDATA[
+			<script type="text/javascript">
+			//<![CDATA[
 			document.write("(" + share.deflt + ": 22)");
-			]]></script></span>
+			//]]>
+			</script></span>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.ssh_key"); %></div>
 			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">&nbsp;</textarea>
-			<script type="text/javascript"><![CDATA[
+			<script type="text/javascript">
+			//<![CDATA[
 				var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
 				document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
-			]]></script>
+			//]]>
+			</script>
 		</div>
 	</div>
 </fieldset><br />
