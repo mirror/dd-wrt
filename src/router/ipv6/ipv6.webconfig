@@ -15,10 +15,10 @@
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_radconf"); %></div>
 			<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
-			<script type="text/javascript">//<![CDATA[
+			<script type="text/javascript"><![CDATA[
 				var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
 				document.getElementById("radvd_conf").value = radvd_conf;
-			//]]></script>
+			]]></script>
 		</div>
 	</div>
 </fieldset><br/>
