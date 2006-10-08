@@ -6,9 +6,9 @@
 <div class="setting">
 	<div class="label"><% tran("radius.label4"); %></div>
 	<input class="num"  name="wl_radius_port" size="5" maxlength="5" onblur="valid_range(this,1,65535,wpa.radius_port)" value="<% nvram_get("wl_radius_port"); %>" />
-	<span class="default"><script type="text/javascript">//<![CDATA[
+	<span class="default"><script type="text/javascript"><![CDATA[
 document.write("(" + share.deflt + ": 1812)");
-//]]></script></span>
+]]></script></span>
 </div>
 <div class="setting">
 	<div class="label"><% tran("radius.label7"); %></div>

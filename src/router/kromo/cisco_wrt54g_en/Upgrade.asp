@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Firmware Upgrade</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + upgrad.titl;
 
@@ -38,7 +38,7 @@ function upgrade(F,id) {
 	apply(F);
 }
 
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -73,15 +73,15 @@ function upgrade(F,id) {
 							<div class="warning">
 								<p><div id="warning_text"><b><% tran("upgrad.warning"); %></b></div></p>
 								<p><% tran("upgrad.mess1"); %></p>
-								<div align="center"><script type="text/javascript">//<![CDATA[
+								<div align="center"><script type="text/javascript"><![CDATA[
 									var bar1 = createBar(500,15,100,15,50,"process_aborted(this.form)");
 									bar1.togglePause();
-								//]]></script></div><br />
+								]]></script></div><br />
 							</div><br />
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text')\" />");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

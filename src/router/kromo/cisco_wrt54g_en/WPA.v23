@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - WEP Keys</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
@@ -95,7 +95,7 @@ function valid_wpa_psk(I) {
 
 	return true;
 }
-		//]]></script>
+		]]></script>
 	</head>
 
    <body onload="init()">
@@ -109,18 +109,18 @@ function valid_wpa_psk(I) {
             <div class="setting">
                <div class="label"><% tran("wpa.auth_mode"); %></div>
                  <select name="auth_mode" onchange=SelMode(this.form.auth_mode.selectedIndex,this.form)>
-               		<script type="text/javascript">//<![CDATA[
+               		<script type="text/javascript"><![CDATA[
 document.write("<option value=\"disabled\" <% nvram_selected("auth_mode", "disabled", "js"); %>>" + share.disable + "</option>");
-//]]></script>
-                  	<script type="text/javascript">//<![CDATA[
+]]></script>
+                  	<script type="text/javascript"><![CDATA[
 document.write("<option value=\"psk\" <% nvram_selected("auth_mode", "psk", "js"); %>>" + wpa.psk + "</option>");
-//]]></script>
-                  	<script type="text/javascript">//<![CDATA[
+]]></script>
+                  	<script type="text/javascript"><![CDATA[
 document.write("<option value=\"wpa\" <% nvram_selected("auth_mode", "wpa", "js"); %>>" + wpa.wpa + "</option>");
-//]]></script>
-                  	<script type="text/javascript">//<![CDATA[
+]]></script>
+                  	<script type="text/javascript"><![CDATA[
 document.write("<option value=\"radius\" <% nvram_selected("auth_mode", "radius", "js"); %>>" + wpa.radius + "</option>");
-//]]></script>
+]]></script>
                  </select>
                </div>
             <div class="setting">
@@ -157,12 +157,12 @@ document.write("<option value=\"radius\" <% nvram_selected("auth_mode", "radius"
          	<br />
          	
          	<div class="submitFooter">
-         		<script type="text/javascript">//<![CDATA[
+         		<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" /><input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-//]]></script>
-         		<script type="text/javascript">//<![CDATA[
+]]></script>
+         		<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" value=\"" + sbutton.help + "\" name=\"Submit3\" onclick=\"showHELP(this.form)\" />");
-//]]></script>
+]]></script>
          	</div>
       </form>
    </body>

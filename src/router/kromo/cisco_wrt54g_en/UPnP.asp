@@ -6,7 +6,7 @@
 		11.2005	tofu10		init
 		Intergated to DD-WRT by LawnMowerGuy1
 -->
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
@@ -116,7 +116,7 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		//]]></script>
+		]]></script>
 		<style type="text/css">
 			tr.disabled td {text-decoration:line-through; color:#999;}
 		</style>
@@ -152,12 +152,12 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table><br />
 								<div class="center">
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all')\">");
-//]]></script>&nbsp;
-									<script type="text/javascript">//<![CDATA[
+]]></script>&nbsp;
+									<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-//]]></script>
+]]></script>
 								</div>
 							</fieldset><br />
 							<fieldset>
@@ -179,12 +179,12 @@ document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nv
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-//]]></script>
-								<script type="text/javascript">//<![CDATA[
+]]></script>
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>
