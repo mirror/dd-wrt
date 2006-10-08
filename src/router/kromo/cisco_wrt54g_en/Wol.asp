@@ -140,19 +140,16 @@ function submit_manual_wol(F) {
 
 function valid(F) {
 	if(F.manual_wol_mac.value == ""){
-//		alert("You must input a MAC address to run.");
 		alert(errmsg.err35);
 		F.manual_wol_mac.focus();
 		return false;
 	}
 	if(F.manual_wol_network.value == ""){
-//		alert("You must input a network broadcast address to run.");
 		alert(errmsg.err36);
 		F.manual_wol_network.focus();
 		return false;
 	}
 	if(F.manual_wol_port.value == ""){
-//		alert("You must input a UDP port to run.");
 		alert(errmsg.err37);
 		F.manual_wol_port.focus();
 		return false;
@@ -255,7 +252,6 @@ addEvent(window, "load", function() {
 	setAvailableHostsTable();
 	setWolHostsTable();
 });
-
 	
 //]]>
 </script>
@@ -309,24 +305,16 @@ addEvent(window, "load", function() {
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value=""/></td>
 										<td></td>
 										<td><script type="text/javascript">
-//<![CDATA[
-
-ocument.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");
-
-//]]>
-</script></td>
+										//<![CDATA[
+										document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");
+										//]]>
+										</script></td>
 									</tr>
 								</table>
 							</fieldset><br />
 
 							<% nvram_selmatch("wol_cmd","","<!--"); %>
-								<script type="text/javascript">
-//<![CDATA[
-
-									callDump();
-								
-//]]>
-</script>
+							<script type="text/javascript">callDump();</script>
 							<% nvram_selmatch("wol_cmd","","-->"); %>
 
 							<fieldset> 
@@ -346,12 +334,10 @@ ocument.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol +
 
 								<div class="submitFooter">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />");
+									//]]>
+									</script>
 								</div>
 							</fieldset><br />
 
