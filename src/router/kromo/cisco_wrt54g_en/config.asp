@@ -32,7 +32,7 @@ function to_submit(F) {
 				</div>
 				    <div id="main">
 					<div id="contents">
-						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
+						<form name="nvramrestore" action="nvram.cgi" method="post" enctype="multipart/form-data">
 							<h2><% tran("config.h2"); %></h2>
 							
 							<fieldset>

@@ -102,12 +102,12 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-
-//]]>
-</script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									//<![CDATA[
+									document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
+									<% nvram_get("lan_hwaddr"); %>
+									document.write("</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ip"); %></div>
@@ -131,17 +131,9 @@ document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.
 								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("service.dhcp_legend2"); %></div>
-									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.enabled)
-//]]>
-</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.disabled)
-//]]>
-</script>"); %>&nbsp;
+									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
-								<span id="dhcp_1" style="display:none">
+								<div id="dhcp_1" style="display:none">
 									<div class="setting">
 										<div class="label"><% tran("service.dhcp_srv"); %></div>
 										<span id="dhcp_daemon"><% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
@@ -158,12 +150,12 @@ Capture(share.disabled)
 										<div class="label"><% tran("idx.dhcp_lease"); %></div>
 										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %></span> <% tran("share.minutes"); %>&nbsp;
 									</div>
-								</span>
+								</div>
 							</fieldset><br />
-							<span id="dhcp_2" style="display:none">
+							<div id="dhcp_2" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
-									<table class="table center" cellspacing="6" id="dhcp_leases_table">
+									<table class="table center" cellspacing="6" id="dhcp_leases_table" summary="dhcp leases table">
 										<tr>
 											<th width="25%"><% tran("share.hostname"); %></th>
 											<th width="25%"><% tran("share.ip"); %></th>
@@ -173,15 +165,13 @@ Capture(share.disabled)
 										</tr>
 									</table>
 								</fieldset><br />
-							</span>
+							</div>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
