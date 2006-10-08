@@ -34,10 +34,10 @@
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_option"); %></div>
 		<textarea cols="60" rows="4" id="dhcpd_options" name="dhcpd_options"></textarea>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 			var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
 			document.getElementById("dhcpd_options").value = dhcpd_options;
-		</script>
+		//]]></script>
 	</div>
 	<% nvram_invmatch("expert_mode","1","-->"); %>
     	<table class="table center">
@@ -53,8 +53,12 @@
 			<tr>
 				<td colspan="3">
 					<div class="center">
-						<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form)\" />")</script>
-						<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form)\" />")</script>
+						<script type="text/javascript">//<![CDATA[
+						document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form)\" />");
+						//]]></script>
+						<script type="text/javascript">//<![CDATA[
+						document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form)\" />");
+						//]]></script>
 					</div>
 				</td>
 			</tr>
@@ -78,10 +82,10 @@
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
 					<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
-					<script type="text/javascript">
+					<script type="text/javascript">//<![CDATA[
 						var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
 						document.getElementById("dnsmasq_options").value = dnsmasq_options;
-					</script>
+					//]]></script>
 			</div>
 			<% nvram_invmatch("expert_mode","1","-->"); %>
 		</div>
