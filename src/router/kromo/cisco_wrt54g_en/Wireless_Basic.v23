@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless</title>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
@@ -44,7 +44,7 @@ addEvent(window, "load", function() {
 });
 
 
-		</script>
+		//]]></script>
 	</head>
 
   <body class="gui">
@@ -70,19 +70,35 @@ addEvent(window, "load", function() {
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label"); %></div>
                     <select name="wl_mode">
-                      <script type="text/javascript">document.write("<option value=\"ap\" <% nvram_selected("wl_mode", "ap", "js"); %>>" + wl_basic.ap + "</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"sta\" <% nvram_selected("wl_mode", "sta", "js"); %>>" + wl_basic.client + "</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"wet\" <% nvram_selected("wl_mode", "wet", "js"); %>>" + wl_basic.clientBridge + "</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"infra\" <% nvram_selected("wl_mode", "infra", "js"); %>>" + wl_basic.adhoc + "</option>");</script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"ap\" <% nvram_selected("wl_mode", "ap", "js"); %>>" + wl_basic.ap + "</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"sta\" <% nvram_selected("wl_mode", "sta", "js"); %>>" + wl_basic.client + "</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"wet\" <% nvram_selected("wl_mode", "wet", "js"); %>>" + wl_basic.clientBridge + "</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"infra\" <% nvram_selected("wl_mode", "infra", "js"); %>>" + wl_basic.adhoc + "</option>");
+//]]></script>
                     </select>
                   </div>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label2"); %></div>
                     <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
-                      <script type="text/javascript">document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");</script>
-                      <script type="text/javascript">document.write("<option value=\"g-only\" <% nvram_selected("wl_net_mode", "g-only", "js"); %>>" + wl_basic.g + "</option>");</script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");
+//]]></script>
+                      <script type="text/javascript">//<![CDATA[
+document.write("<option value=\"g-only\" <% nvram_selected("wl_net_mode", "g-only", "js"); %>>" + wl_basic.g + "</option>");
+//]]></script>
                     </select>
                   </div>
                   <div class="setting">
@@ -94,7 +110,7 @@ addEvent(window, "load", function() {
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label4"); %></div>
                     <select name="wl_channel" onFocus="check_action(this,0)">
-                      <script type="text/javascript">
+                      <script type="text/javascript">//<![CDATA[
                         var max_channel = 14;
                         var wl_channel = "<% nvram_get("wl_channel"); %>";
                         var buf = "";
@@ -112,7 +128,7 @@ addEvent(window, "load", function() {
                               document.write("<option value="+i+" "+buf+">"+i+" - "+freq[i]+"&nbsp;GHz</option>");
                           }
                         }
-                      </script>
+                      //]]></script>
                     </select>
                   </div>
                   <div class="setting">
@@ -126,13 +142,19 @@ addEvent(window, "load", function() {
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label6"); %></div>
                     <input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
-                    <span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 2000 " + share.meters + ")")</script></span>
+                    <span class="default"><script type="text/javascript">//<![CDATA[
+document.write("(" + share.deflt + ": 2000 " + share.meters + ")");
+//]]></script></span>
                   </div>
                 </fieldset><br />
                 
                 <div class="submitFooter">
-                    <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
-                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");</script>
+                    <script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+                    <script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+//]]></script>
                 </div>
               </form>
           </div>

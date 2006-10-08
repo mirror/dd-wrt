@@ -1,7 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Router Status</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + status_router.titl;
 
 function DHCPAction(F,I) {
@@ -113,7 +112,7 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui">
@@ -149,7 +148,9 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
-									<script type="text/javascript">document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");</script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<script type="text/javascript">//<![CDATA[
+document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
+//]]></script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -240,7 +241,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_router.legend5"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.conn_type"); %></div>
-									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">//<![CDATA[Capture(idx.dhcp)//]]></script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">//<![CDATA[Capture(share.sttic)//]]></script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">//<![CDATA[Capture(share.disabled)//]]></script>"); %>&nbsp;
 								</div>
 								<span id="wan_info" style="display:none">
 									<div class="setting" id="wan_connection">
@@ -278,14 +279,20 @@ addEvent(window, "unload", function() {
 											<span id="dhcp_remaining"><% dhcp_remaining_time(); %></span>&nbsp;
 										</div>
 										<div class="center">
-											<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");</script>&nbsp;
-											<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");</script>
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");
+//]]></script>&nbsp;
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");
+//]]></script>
 										</div>
 									</div>
 								</span>
 							</fieldset><br />
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+//]]></script>
 							</div>
 						</form>
 					</div>

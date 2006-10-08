@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Radius</title>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + radius.titl;
 
@@ -32,7 +32,7 @@ addEvent(window, "load", function() {
 	}
 });
 
-		</script>
+		//]]></script>
 	</head>
    <body class="gui">
    	  <% showad(); %>
@@ -101,8 +101,12 @@ addEvent(window, "load", function() {
                     </fieldset><br/>
                     
                     <div class="submitFooter">
-                    	<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-                    	<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+                    	<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+                    	<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+//]]></script>
                     </div>
                   </form>
                </div>
