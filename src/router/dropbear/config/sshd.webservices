@@ -17,7 +17,7 @@
 			<input class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,'SHHd Port')" value="<% nvram_get("sshd_port"); %>" />
 			<span class="default">
 			<script type="text/javascript">//<![CDATA[
-			document.write("(" + share.deflt + ": 22)");
+			document.write('(' + share.deflt + ': 22)');
 			//]]></script></span>
 		</div>
 		<div class="setting">
