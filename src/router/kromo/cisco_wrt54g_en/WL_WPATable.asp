@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Security</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
@@ -189,7 +189,7 @@ show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8
 
 });
 
-		//]]></script>
+		]]></script>
 	</head>
 
 
@@ -217,9 +217,9 @@ show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8
                   		<% show_security(); %><br />
 					
 					<div class="submitFooter">
-                  		<script type="text/javascript">//<![CDATA[
+                  		<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\"/><input type=\"reset\" value=\"" + sbutton.cancel + "\"/>");
-//]]></script>
+]]></script>
                   	</div>
 				</form>
 					</div>

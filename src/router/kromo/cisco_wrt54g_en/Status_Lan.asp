@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - LAN Status</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + status_lan.titl;
 
 function deleteLease(val, val2) {
@@ -72,7 +72,7 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	update.stop();
 });
-		//]]></script>
+		]]></script>
 	 </head>
 
 	 <body class="gui">
@@ -97,9 +97,9 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
-									<script type="text/javascript">//<![CDATA[
+									<script type="text/javascript"><![CDATA[
 document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-//]]></script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+]]></script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ip"); %></div>
@@ -123,7 +123,7 @@ document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.
 								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("service.dhcp_legend2"); %></div>
-									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">//<![CDATA[Capture(share.enabled)//]]></script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">//<![CDATA[Capture(share.disabled)//]]></script>"); %>&nbsp;
+									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript"><![CDATA[Capture(share.enabled)]]></script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript"><![CDATA[Capture(share.disabled)]]></script>"); %>&nbsp;
 								</div>
 								<span id="dhcp_1" style="display:none">
 									<div class="setting">
@@ -159,9 +159,9 @@ document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.
 								</fieldset><br />
 							</span>
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
+								<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-//]]></script>
+]]></script>
 							</div>
 						</form>
 					</div>

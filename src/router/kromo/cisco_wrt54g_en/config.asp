@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Backup &amp; Restore</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 
 
 document.title = "<% nvram_get("router_name"); %>" + config.titl;
@@ -15,7 +15,7 @@ function to_submit(F) {
 	apply(F);
 }
 
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -52,12 +52,12 @@ function to_submit(F) {
 								<p><% tran("config.mess4"); %></p>
 							</div><br />
 							<div class="submitFooter">
-								<script type="text/javascript">//<![CDATA[
-								document.write('<input type="button" name="B1" value="' + sbutton.backup + '" onclick=window.location.href="/nvrambak.bin" />');
-								//]]></script>
-								<script type="text/javascript">//<![CDATA[
-								document.write('<input type="button" name="save_button" value="' + sbutton.restore + '" onclick="to_submit(this.form)" />');
-								//]]></script>
+								<script type="text/javascript"><![CDATA[
+								document.write("<input type=\"button\" name=\"B1\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/nvrambak.bin'\" />");
+								]]></script>
+								<script type="text/javascript"><![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form)\" />");
+								]]></script>
 							</div>
 						</form>
 					</div>

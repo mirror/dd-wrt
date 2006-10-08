@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - DMZ</title>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + dmz.titl;
 
 function to_submit(F) {
@@ -19,7 +19,7 @@ function setDMZ(val) {
 addEvent(window, "load", function() {
 	setDMZ("<% nvram_get("dmz_enable"); %>");
 });
-		//]]></script>
+		]]></script>
 	</head>
 
 	<body class="gui">
@@ -53,12 +53,12 @@ addEvent(window, "load", function() {
 	                		</fieldset><br />
 	                		
 	                		<div class="submitFooter">
-	                			<script type="text/javascript">//<![CDATA[
+	                			<script type="text/javascript"><![CDATA[
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")
-//]]></script>
-	                			<script type="text/javascript">//<![CDATA[
+]]></script>
+	                			<script type="text/javascript"><![CDATA[
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")
-//]]></script>
+]]></script>
 	                		</div>
 	                	</form>
 					</div>
