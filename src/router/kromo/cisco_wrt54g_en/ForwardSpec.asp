@@ -51,7 +51,7 @@ function to_submit(F) {
 							<h2><% tran("pforward.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("pforward.legend"); %></legend>
-								<table class="table center" cellspacing="5">
+								<table class="table center" cellspacing="5" summary="ports forwardig table">
 									<tr>
 										<th><% tran("pforward.app"); %></th>
 										<th><% tran("pforward.from"); %></th>
