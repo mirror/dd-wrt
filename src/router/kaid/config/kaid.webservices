@@ -9,9 +9,9 @@
 	<div class="setting" id="idkaid">
 		<div class="label"><% tran("service.kaid_mac"); %></div>
 		<textarea id="kaid_macs" name="kaid_macs" cols="60" rows="4"></textarea>
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 			var kaid_macs = fix_cr( '<% nvram_get("kaid_macs"); %>' );
 			document.getElementById("kaid_macs").value = kaid_macs;
-		//]]></script>
+		]]></script>
 	</div>
 </fieldset><br/>
