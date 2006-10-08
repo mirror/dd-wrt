@@ -32,8 +32,8 @@ mkconfig:
 	echo CONFIG_WIRELESS_EXTENSION=y >> .config
 
 install: all
-	mkdir -p $(DESTDIR)/usr/local/sbin/
-	for i in $(ALL); do cp $$i $(DESTDIR)/usr/local/sbin/$$i; done
+	mkdir -p $(INSTALLDIR)/usr/sbin/
+	for i in $(ALL); do cp $$i $(DESTDIR)/usr/sbin/$$i; done
 
 OBJS = config.o \
 	common.o md5.o md4.o \
