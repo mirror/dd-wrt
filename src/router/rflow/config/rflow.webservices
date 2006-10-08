@@ -15,9 +15,9 @@
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
 			<input size="5" maxlength="5" class="num" name="rflow_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("rflow_port"); %>" />
-			<span class="default"><script type="text/javascript">//<![CDATA[
+			<span class="default"><script type="text/javascript"><![CDATA[
 			document.write("(" + share.deflt + ": 2055)");
-			//]]></script></span>
+			]]></script></span>
 		</div>
 	</div>
 	<div class="setting">
@@ -34,9 +34,9 @@
 		<div class="setting">
 			<div class="label"><% tran("share.port"); %></div>
 			<input size="5" maxlength="5" class="num" name="macupd_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("macupd_port"); %>" />
-			<span class="default"><script type="text/javascript">//<![CDATA[
+			<span class="default"><script type="text/javascript"><![CDATA[
 			document.write("(" + share.deflt + ": 2056)");
-			//]]></script></span>
+			]]></script></span>
 		</div>
 	</div>
 	<div class="setting">
