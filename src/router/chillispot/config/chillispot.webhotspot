@@ -64,10 +64,12 @@
 		<div class="setting">
 			<div class="label"><% tran("hotspot.option"); %></div>
 			<textarea id="chilli_additional" name="chilli_additional" cols="60" rows="4"></textarea>
-	        <script type="text/javascript"><![CDATA[
+	        <script type="text/javascript">
+	        //<![CDATA[
 	        	var chilli_additional = fix_cr( '<% nvram_get("chilli_additional"); %>' );
 	        	document.getElementById("chilli_additional").value = chilli_additional;
-	        ]]></script>
+	        //]]>
+	        </script>
 	    </div>
 	   </div>
 </fieldset><br />
