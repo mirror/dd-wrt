@@ -1,7 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Site Survey</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + survey.titl;
 
 function do_join (F,SSID) {
@@ -18,7 +17,7 @@ function do_join (F,SSID) {
 	F.action.value = "Apply";
 	apply(F);
 }
-		</script>
+		//]]></script>
 	</head>
 
 	<body>
@@ -42,7 +41,7 @@ function do_join (F,SSID) {
 				   <th width="7%"><% tran("share.rates"); %></th>
 				   <th width="10%"><% tran("survey.thjoin"); %></th>
 				</tr>
-	<script language="JavaScript">
+	<script type="text/javascript">//<![CDATA[
 
 var table = new Array(
 <% dump_site_survey(""); %>
@@ -66,11 +65,15 @@ if (table.length == 0) {
 		document.write("<\/tr>");
 	}
 }
-	</script>
+	//]]></script>
 			</table><br />
 			<div class="submitFooter">
-				<script type="text/javascript">document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />")</script>
-				<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
+				<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
+//]]></script>
+				<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
+//]]></script>
 			</div>
 		</form>
 	</body>
