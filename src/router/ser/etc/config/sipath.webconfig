@@ -1,12 +1,12 @@
 
 <fieldset>
-	<legend><script type="text/javascript">Capture(management.SIPatH_srv)</script></legend>
+	<legend><script type="text/javascript">//<![CDATA[Capture(management.SIPatH_srv)//]]></script></legend>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(management.SIPatH_port)</script></div>
+		<div class="label"><script type="text/javascript">//<![CDATA[Capture(management.SIPatH_port)//]]></script></div>
 		<input type="text" class="num" maxlength="5" size="5" name="sip_port" value="<% nvram_get("sip_port"); %>" onblur="valid_range(this,1,65535,management.SIPatH_port)" />
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(management.SIPatH_domain)</script></div>
+		<div class="label"><script type="text/javascript">//<![CDATA[Capture(management.SIPatH_domain)//]]></script></div>
 		<input maxlength="79" size="20" name="sip_domain" value="<% nvram_get("sip_domain"); %>" />
 	</div>
 </fieldset><br />
