@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
@@ -175,7 +177,9 @@ addEvent(window, "load", function() {
 	SelWL(wl_net_mode,document.wireless);
 });
 
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -202,12 +206,20 @@ addEvent(window, "load", function() {
                   	
                   	<br />
                   	<div class="submitFooter">
-                  		<script type="text/javascript"><![CDATA[
+                  		<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-]]></script>
-                  		<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+                  		<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-]]></script>
+
+//]]>
+</script>
                   	</div>
                   </form>
                 </div>

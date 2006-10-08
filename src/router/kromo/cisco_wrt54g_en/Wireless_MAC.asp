@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - MAC Filter</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 
 document.title = "<% nvram_get("router_name"); %>" + wl_mac.titl;
 
@@ -17,7 +19,9 @@ function to_submit(F) {
 addEvent(window, "load", function() {
 	show_layer_ext(document.wireless.wl_macmode1, 'idmac', "<% nvram_else_match("wl_macmode1", "other", "other", "disabled"); %>" == "other");
 });
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -49,18 +53,30 @@ addEvent(window, "load", function() {
 									<input class="spaceradio" type="radio" value="allow" name="wl_macmode" <% nvram_checked("wl_macmode","allow"); %> /><% tran("wl_mac.allow"); %>
 								</div><br />
 								<div class="center">
-									<script type="text/javascript"><![CDATA[
+									<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"mac_filter_button\" value=\"" + sbutton.filterMac + "\" onclick=\"openWindow('WL_FilterTable.asp', 880, 730)\" />");
-]]></script>
+
+//]]>
+</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<script type="text/javascript"><![CDATA[
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-]]></script>
-								<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"cancel\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload()\" />");
-]]></script>
+
+//]]>
+</script>
 							</div>
 						</form>
 					</div>

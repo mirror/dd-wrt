@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Port Services</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 document.title = "<% nvram_get("router_name"); %>" + portserv.titl;
 var ref_page = window.opener.location;
 
@@ -234,7 +236,9 @@ addEvent(window, "load", function() {
 addEvent(window, "unload", function() {
 	top.opener.window.location.href =  ref_page;
 });
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 	<body>
 		<form name="PortServices" method="<% get_http_method(); %>" action="apply.cgi" >
@@ -281,38 +285,66 @@ addEvent(window, "unload", function() {
 				<input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" /> ~ <input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" />
 			</div>
 				<div class="setting">
-					<script type="text/javascript"><![CDATA[
+					<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"onclick_Add()\" />");
-]]></script>
-					<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+					<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.modify + "\" onclick=\"onclick_Modify()\" />");
-]]></script>
-					<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+					<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"onclick_Delete()\" />");
-]]></script>
+
+//]]>
+</script>
 				</div>
 				<div class="setting">
 					<select name="ServiceTable" size="12" onchange="onchange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)" >
-						<script type="text/javascript"><![CDATA[
+						<script type="text/javascript">
+//<![CDATA[
+
 							var i=0;
 							for(i=0;i<services_length;i++)
 								document.write("<option value="+i+">"+services[i].name+ " [ "+
 								services[i].start+" ~ "+
 								services[i].end + " ]" + "</option>");
-						]]></script>
+						
+//]]>
+</script>
 					</select>
 				</div>
 			</div><br />
 			<div class="submitFooter">
-				<script type="text/javascript"><![CDATA[
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"Submit\" value=\"" + sbutton.apply + "\" onclick=\"onclick_Apply(this.form)\" />");
-]]></script>
-				<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"cancel\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload()\" />");
-]]></script>
-				<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-]]></script>
+
+//]]>
+</script>
 			</div>
 		</form>
 	</body>

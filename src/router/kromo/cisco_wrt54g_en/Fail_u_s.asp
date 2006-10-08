@@ -6,7 +6,9 @@
 		<style type="text/css">
 <% css_include(); %>
 		</style>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 <% js_include(); %>
 		
 function to_submit()
@@ -14,7 +16,9 @@ function to_submit()
 	document.location.href = "Upgrade.asp";
 }
 
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
    <body>
@@ -22,9 +26,13 @@ function to_submit()
          <div>
             <form>
             	<% tran("fail.mess2"); %><br />
-				<script type="text/javascript"><![CDATA[
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
-]]></script>
+
+//]]>
+</script>
 			</form>
          </div>
       </div>
