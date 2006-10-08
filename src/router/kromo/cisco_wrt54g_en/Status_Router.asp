@@ -153,12 +153,12 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
-
-//]]>
-</script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									//<![CDATA[
+									document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
+									<% nvram_get("wan_hwaddr"); %>
+									document.write("</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -249,25 +249,12 @@ document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.
 								<legend><% tran("status_router.legend5"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.conn_type"); %></div>
-									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">
-//<![CDATA[
-Capture(idx.dhcp)
-//]]>
-</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.sttic)
-//]]>
-</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.disabled)
-//]]>
-</script>"); %>&nbsp;
+									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
-								<span id="wan_info" style="display:none">
+								<div id="wan_info" style="display:none">
 									<div class="setting" id="wan_connection">
 										<div class="label"><% tran("status_router.www_loginstatus"); %></div>
-										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;
-										<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
+										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.ip"); %></div>
@@ -300,31 +287,25 @@ Capture(share.disabled)
 										</div>
 										<div class="center">
 											<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");
-
-//]]>
-</script>&nbsp;
+											//<![CDATA[
+											document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");
+											//]]>
+											</script>&nbsp;
 											<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");
-
-//]]>
-</script>
+											//<![CDATA[
+											document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");
+											//]]>
+											</script>
 										</div>
 									</div>
-								</span>
+								</div>
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
