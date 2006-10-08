@@ -1,6 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - VPN</title>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + vpn.titl;
 
@@ -12,7 +12,7 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui">
@@ -52,8 +52,12 @@ function to_submit(F) {
 							</fieldset><br/>
 							
 							<div class="submitFooter">
-									<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-									<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+									<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+									<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+//]]></script>
 								</div>
 						</form>
 					</div>
