@@ -1,4 +1,4 @@
-<script type="text/javascript">//<![CDATA[
+<script type="text/javascript"><![CDATA[
 function setStyle(val) {
 	var linkTags = document.getElementsByTagName("link");
 	for(var i = 0; i < linkTags.length; i++) {
@@ -13,7 +13,7 @@ function setStyle(val) {
 document.forms[0].onreset = function() { 
 	setStyle("<% nvram_get("router_style"); %>"); 
 }
-//]]></script>
+]]></script>
 <fieldset>
 	<legend><% tran("management.gui_style"); %></legend>
 	<div class="setting">
@@ -21,8 +21,8 @@ document.forms[0].onreset = function() {
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
-		<script type="text/javascript">//<![CDATA[
+		<script type="text/javascript"><![CDATA[
 		document.write("<input type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"setStyle(this.form.router_style.value)\" />");
-		//]]></script>
+		]]></script>
 	</div>
 </fieldset><br />
