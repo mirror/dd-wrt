@@ -3,7 +3,6 @@
 		<script type="text/javascript">
 //<![CDATA[
 
-
 document.title = "<% nvram_get("router_name"); %>" + status_wireless.titl;
 
 function setWirelessTable() {
@@ -113,7 +112,7 @@ addEvent(window, "unload", function() {
 
 				<div id="main">
 					<div id="contents">
-						<form>
+						<form action="apply.cgi" method="<% get_http_method(); %>">
 							<h2><% tran("status_wireless.h2"); %></h2>
 							
 							<fieldset>
@@ -121,12 +120,12 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
-
-//]]>
-</script><% show_wl_mac(); %></span>&nbsp;
+									//<![CDATA[
+									document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
+									<% show_wl_mac(); %>
+									document.write("</span>");
+									//]]>
+									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
@@ -158,16 +157,7 @@ document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.o
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.encrypt"); %></div>
-									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.disabled)
-//]]>
-</script>"); %>
-									<% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.enabled)
-//]]>
-</script>,&nbsp;"); %>
+									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enabled)</script>,&nbsp;"); %>
 									<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
 									<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
 									<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
@@ -179,15 +169,7 @@ Capture(share.enabled)
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.pptp"); %></div>
-									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.connected)
-//]]>
-</script>", "<script type="text/javascript">
-//<![CDATA[
-Capture(share.disconnected)
-//]]>
-</script>"); %>&nbsp;
+									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">Capture(share.connected)</script>", "<script type="text/javascript">Capture(share.disconnected)</script>"); %>&nbsp;
 								</div>
 							</fieldset><br />
 							
@@ -205,28 +187,8 @@ Capture(share.disconnected)
 							
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
-								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">
-//<![CDATA[
-Capture(info.ap)
-//]]>
-</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">
-//<![CDATA[
-Capture(status_wireless.legend3)
-//]]>
-</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">
-//<![CDATA[
-Capture(info.ap)
-//]]>
-</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">
-//<![CDATA[
-Capture(info.ap)
-//]]>
-</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">
-//<![CDATA[
-Capture(status_wireless.legend3)
-//]]>
-</script>"); %></legend>
-								<table class="table center" cellspacing="6" id="wireless_table">
+								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
+								<table class="table center" cellspacing="6" id="wireless_table" summary="wireless clients table">
 									<tr>
 										<th width="54%"><% tran("share.mac"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
@@ -237,7 +199,7 @@ Capture(status_wireless.legend3)
 								</table>
 							</fieldset><br />
 							
-							<span id="wds" style="display:none">
+							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table center" cellspacing="6" id="wds_table">
@@ -251,25 +213,20 @@ Capture(status_wireless.legend3)
 										</tr>
 									</table>
 								</fieldset><br />
-								
-							</span>
+							</div>
 							<div class="center">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
+								//]]>
+								</script>
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
