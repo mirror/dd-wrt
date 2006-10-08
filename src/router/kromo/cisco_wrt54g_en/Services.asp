@@ -1,7 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Services</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
 function verify_unique_static_ip(F){                                              
@@ -99,7 +98,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
 });
 
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui">
@@ -126,9 +125,15 @@ addEvent(window, "load", function() {
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />")</script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+//]]></script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
+//]]></script>
 							</div>
 						</form>
 					</div>
