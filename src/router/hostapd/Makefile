@@ -332,7 +332,8 @@ verify_config:
 	fi
 
 install: all
-	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
+	mkdir -p $(INSTALLDIR)/hostapd//usr/sbin/
+	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
 	$(CC) -o hostapd $(OBJS) $(LIBS)
