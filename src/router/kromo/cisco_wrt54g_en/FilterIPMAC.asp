@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - List of PCs</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 document.title = "<% nvram_get("router_name"); %>" + filterIP.titl;
 		
 function to_submit(F) {
@@ -27,7 +29,9 @@ function valid_macs_all(I) {
 		I.value = I.defaultValue;
 	}
 }
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body>
@@ -116,15 +120,27 @@ function valid_macs_all(I) {
 			</div>
 			<br />
 			<div class="submitFooter">
-				<script type="text/javascript"><![CDATA[
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-]]></script>
-				<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-]]></script>
-				<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-]]></script>
+
+//]]>
+</script>
 			</div>
 		</form>
 	</body>
