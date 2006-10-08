@@ -265,12 +265,12 @@ void status_page(void)
 		/* this little JavaScript allows for automatic refresh
                    of the page. There are other methods but this seems
                    to be the best alternative */
-		printf("<script language=\"JavaScript\">\n");
+		printf("<script type=\"text/javascript\">\n//<![CDATA[\n");
 		printf("<!--\nsetTimeout('window.location.replace(\"%s/status?refresh_interval=%d&refresh=1\")', %d)\n", 
 		       cgi_baseurl(),
 		       refresh_interval,
 		       refresh_interval*1000);
-		printf("//-->\n</script>\n");
+		printf("//-->\n//]]>\n</script>\n");
 	}
 }
 
