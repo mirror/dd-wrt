@@ -124,7 +124,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");
-									<% show_wl_mac(); %>
+									document.write("<% show_wl_mac(); %>");
 									document.write("</span>");
 									//]]>
 									</script>&nbsp;

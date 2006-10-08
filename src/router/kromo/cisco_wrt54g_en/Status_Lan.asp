@@ -104,7 +104,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-									<% nvram_get("lan_hwaddr"); %>
+									document.write("<% nvram_get("lan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
 									</script>&nbsp;
