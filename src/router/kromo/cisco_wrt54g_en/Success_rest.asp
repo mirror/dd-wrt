@@ -5,7 +5,8 @@
 		<style type="text/css">
 <% css_include(); %>
 		</style>
-		<script type="text/javascript">
+		<script type="text/javascript">//<![CDATA[
+
 <% js_include(); %>
 
 var clk = <% get_clkfreq(); %>;
@@ -41,7 +42,7 @@ function init()
 	bar1.togglePause();
 }
 
-		</script>
+		//]]></script>
 	</head>
 	
 	<body onload="init()" onunload="clearTimeout(timer)">
@@ -50,10 +51,10 @@ function init()
 				<form name="success">
 					<% tran("success.restore"); %><br /><br />
 					<div align="center">
-						<script type="text/javascript">
+						<script type="text/javascript">//<![CDATA[
 							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
 							bar1.togglePause();
-						</script>
+						//]]></script>
 	            	</div>
             		<div id="mess" style="display:none"><br /><br />
 	            		<div style="text-align:left">
@@ -64,11 +65,11 @@ function init()
 	            				<li><% tran("success.alert3"); %></li>
 	            			</ul>
 	            		</div>
-		            	<script type="text/javascript">
+		            	<script type="text/javascript">//<![CDATA[
 							document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
 							if (browserName == "Microsoft Internet Explorer")
 								document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-						</script>
+						//]]></script>
 	            	</div>
 				</form>
 			</div>

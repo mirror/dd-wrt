@@ -1,10 +1,9 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - OpenVPN Status</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + status_openvpn.titl;
 
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui">
