@@ -1,7 +1,6 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Quality of Service</title>
-		<script type="text/javascript">
-
+		<script type="text/javascript">//<![CDATA[
 document.title = "<% nvram_get("router_name"); %>" + qos.titl;
 		
 function svcs_grey(sw_disabled,F) {
@@ -131,7 +130,7 @@ function to_submit(F) {
 function init() {
 	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
 }
-		</script>
+		//]]></script>
 	</head>
 
 	<body class="gui" onload="init()">
@@ -200,22 +199,26 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">document.write("<input type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form)\" />")</script>&nbsp;&nbsp;&nbsp;
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form)\" />");
+//]]></script>&nbsp;&nbsp;&nbsp;
 											<select name="add_svc">
-												<script type="text/javascript">
+												<script type="text/javascript">//<![CDATA[
 													var i=0;
 													for(i=0;i<services_length;i++)
 													document.write("<option value=\""+services[i].name+"\">"+services[i].name+ " [ "+
 													services[i].start+" ~ "+
 													services[i].end + " ]" + "</option>");
-												</script>
+												//]]></script>
 											</select>
 										</td>
 									</tr>
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />")</script>&nbsp;&nbsp;&nbsp;
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
+//]]></script>&nbsp;&nbsp;&nbsp;
 										</td>
 									</tr>
 								</table>
@@ -228,7 +231,9 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">document.write("<input type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form)\" />")</script>&nbsp;&nbsp;&nbsp;
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form)\" />");
+//]]></script>&nbsp;&nbsp;&nbsp;
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
 											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,share.subnet)" class="num" />
 										</td>
@@ -243,7 +248,9 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">document.write("<input type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form)\" />")</script>&nbsp;&nbsp;&nbsp;
+											<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form)\" />")
+//]]></script>&nbsp;&nbsp;&nbsp;
 											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
 										</td>
 									</tr>
@@ -263,16 +270,28 @@ function init() {
 										<td><% tran("share.port"); %> 1</td>
 										<td>
 											<select name="svqos_port1prio">
-												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"40\" <% nvram_selmatch("svqos_port1prio", "40", "selected"); %> >" + qos.prio_b + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"100\" <% nvram_selmatch("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"10\" <% nvram_selmatch("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"20\" <% nvram_selmatch("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"40\" <% nvram_selmatch("svqos_port1prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+//]]></script>
 											</select>
 										</td>
 										<td>
 											<select name="svqos_port1bw">
-												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_match("svqos_port1bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"0\" <% nvram_match("svqos_port1bw", "0", "selected"); %> >" + share.disable + "</option>");
+//]]></script>
 												<option value="256K" <% nvram_match("svqos_port1bw", "256K", "selected"); %>>256k</option>
 												<option value="512K" <% nvram_match("svqos_port1bw", "512K", "selected"); %>>512k</option>
 												<option value="1M" <% nvram_match("svqos_port1bw", "1M", "selected"); %>>1M</option>
@@ -289,16 +308,28 @@ function init() {
 										<td><% tran("share.port"); %> 2</td>
 										<td>
 											<select name="svqos_port2prio">
-												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"40\" <% nvram_selmatch("svqos_port2prio", "40", "selected"); %> >" + qos.prio_b + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"100\" <% nvram_selmatch("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"10\" <% nvram_selmatch("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"20\" <% nvram_selmatch("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"40\" <% nvram_selmatch("svqos_port2prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+//]]></script>
 											</select>
 										</td>
 										<td>
 											<select name="svqos_port2bw">
-												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port2bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"0\" <% nvram_selmatch("svqos_port2bw", "0", "selected"); %> >" + share.disable + "</option>");
+//]]></script>
 												<option value="256K" <% nvram_selmatch("svqos_port2bw", "256K", "selected"); %>>256k</option>
 												<option value="512K" <% nvram_selmatch("svqos_port2bw", "512K", "selected"); %>>512k</option>
 												<option value="1M" <% nvram_selmatch("svqos_port2bw", "1M", "selected"); %>>1M</option>
@@ -315,16 +346,28 @@ function init() {
 										<td><% tran("share.port"); %> 3</td>
 										<td>
 											<select name="svqos_port3prio">
-												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"40\" <% nvram_selmatch("svqos_port3prio", "40", "selected"); %> >" + qos.prio_b + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"100\" <% nvram_selmatch("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"10\" <% nvram_selmatch("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"20\" <% nvram_selmatch("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"40\" <% nvram_selmatch("svqos_port3prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+//]]></script>
 										</select>
 										</td>
 										<td>
 											<select name="svqos_port3bw">
-												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port3bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"0\" <% nvram_selmatch("svqos_port3bw", "0", "selected"); %> >" + share.disable + "</option>");
+//]]></script>
 												<option value="256K" <% nvram_selmatch("svqos_port3bw", "256K", "selected"); %>>256k</option>
 												<option value="512K" <% nvram_selmatch("svqos_port3bw", "512K", "selected"); %>>512k</option>
 												<option value="1M" <% nvram_selmatch("svqos_port3bw", "1M", "selected"); %>>1M</option>
@@ -341,16 +384,28 @@ function init() {
 										<td><% tran("share.port"); %> 4</td>
 										<td>
 											<select name="svqos_port4prio">
-												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
-												<script type="text/javascript">document.write("<option value=\"40\" <% nvram_selmatch("svqos_port4prio", "40", "selected"); %> >" + qos.prio_b + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"100\" <% nvram_selmatch("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"10\" <% nvram_selmatch("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"20\" <% nvram_selmatch("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+//]]></script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"40\" <% nvram_selmatch("svqos_port4prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+//]]></script>
 											</select>
 										</td>
 										<td>
 											<select name="svqos_port4bw">
-												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port4bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
+												<script type="text/javascript">//<![CDATA[
+document.write("<option value=\"0\" <% nvram_selmatch("svqos_port4bw", "0", "selected"); %> >" + share.disable + "</option>");
+//]]></script>
 												<option value="256K" <% nvram_selmatch("svqos_port4bw", "256K", "selected"); %>>256k</option>
 												<option value="512K" <% nvram_selmatch("svqos_port4bw", "512K", "selected"); %>>512k</option>
 												<option value="1M" <% nvram_selmatch("svqos_port4bw", "1M", "selected"); %>>1M</option>
@@ -366,8 +421,12 @@ function init() {
 								</table>
 							</fieldset><br />
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+//]]></script>
+								<script type="text/javascript">//<![CDATA[
+document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+//]]></script>
 							</div>
 						</form>
 					</div>
