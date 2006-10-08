@@ -155,7 +155,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
-									<% nvram_get("wan_hwaddr"); %>
+									document.write("<% nvram_get("wan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
 									</script>&nbsp;
