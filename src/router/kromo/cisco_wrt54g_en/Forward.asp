@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Port Range Forwarding</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 document.title = "<% nvram_get("router_name"); %>" + prforward.titl;
 
 function forward_add_submit(F) {
@@ -29,7 +31,9 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -64,21 +68,37 @@ function to_submit(F) {
 									<% show_forward(); %>
 								</table><br />
 								<div class="center">
-									<script type="text/javascript"><![CDATA[
+									<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");
-]]></script>
-									<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+									<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");
-]]></script>
+
+//]]>
+</script>
 								</div>
 						 	</fieldset><br />
 							<div class="submitFooter">
-								<script type="text/javascript"><![CDATA[
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-]]></script>
-								<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
-]]></script>
+
+//]]>
+</script>
 							</div>
 						</form>
 					</div>

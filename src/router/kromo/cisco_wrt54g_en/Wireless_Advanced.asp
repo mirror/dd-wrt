@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Advanced Wireless Settings</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 
 document.title = "<% nvram_get("router_name"); %>" + wl_adv.titl;
 
@@ -192,7 +194,9 @@ addEvent(window, "load", function() {
 	if("<% nvram_get("wl0_phytype"); %>"=="n") create_nrate('<% nvram_get("wl0_nbw"); %>',document.wireless);
 
 });
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -219,37 +223,61 @@ addEvent(window, "load", function() {
 									<div class="label"><% tran("wl_adv.label"); %></div>
 									<input class="spaceradio" type="radio" name="wl_auth" value="0" <% nvram_checked("wl_auth", "0"); %> /><% tran("share.auto"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_auth" value="1" <% nvram_checked("wl_auth", "1"); %> /><% tran("share.share_key"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[document.write("(" + share.deflt + ": " + share.auto + ")");]]></script></span>
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+document.write("(" + share.deflt + ": " + share.auto + ")");
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label2"); %></div>
 									<select name="wl_rateset">
 										<option value="12" <% nvram_selected("wl_rateset", "12"); %>>1-2 Mbps</option>
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"default\" <% nvram_selected("wl_rateset", "default", "js"); %>>" + share.deflt + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"all\" <% nvram_selected("wl_rateset", "all", "js"); %>>" + share.all + "</option>");
-]]></script>
+
+//]]>
+</script>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.deflt + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div id="idwl0_nmcsidx" class="setting">
 									<div class="label">MIMO - <% tran("wl_adv.label3"); %></div>
 									<select name="wl0_nmcsidx">
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label3"); %></div>
 									<select name="wl_rate">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"0\" <% nvram_selected("wl_rate", "0", "js"); %>>" + share.auto + "</option>");
-]]></script>
+
+//]]>
+</script>
 										<option value="1000000" <% nvram_selected("wl_rate", "1000000"); %>>1 Mbps</option>
 										<option value="2000000" <% nvram_selected("wl_rate", "2000000"); %>>2 Mbps</option>
 										<option value="5500000" <% nvram_selected("wl_rate", "5500000"); %>>5.5 Mbps</option>
@@ -263,160 +291,276 @@ document.write("<option value=\"0\" <% nvram_selected("wl_rate", "0", "js"); %>>
 										<option value="48000000" <% nvram_selected("wl_rate", "48000000"); %>>48 Mbps</option>
 										<option value="54000000" <% nvram_selected("wl_rate", "54000000"); %>>54 Mbps</option>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label4"); %></div>
 									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %> /><% tran("share.auto"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label5"); %></div>
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.enable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label6"); %></div>
 									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,1,65535,wl_adv.label6)" value="<% nvram_selget("wl_bcn"); %>" />&nbsp;
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": 100ms, " + share.range + ": 1 - 65535)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label7"); %></div>
 									<input class="num" name="wl_dtim" size="6" maxlength="3" onblur="valid_range(this,1,255,wl_adv.label7)" value="<% nvram_selget("wl_dtim"); %>" />&nbsp;
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": ");
-]]></script><% get_wl_value("default_dtim"); %><script type="text/javascript"><![CDATA[
+
+//]]>
+</script><% get_wl_value("default_dtim"); %><script type="text/javascript">
+//<![CDATA[
+
 document.write(", " + share.range + ": 1 - 255)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label8"); %></div>
 									<input class="num" name="wl_frag" size="6" maxlength="4" onblur="valid_range(this,256,2346,wl_adv.label8)" value="<% nvram_selget("wl_frag"); %>" />&nbsp;
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": 2346, " + share.range + ": 256 - 2346)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label9"); %></div>
 									<input class="num" name="wl_rts" size="6" maxlength="4" onblur="valid_range(this,0,2347,wl_adv.label9)" value="<% nvram_selget("wl_rts"); %>" />&nbsp;
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": 2347, " + share.range + ": 0 - 2347)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label10"); %></div>
 									<input class="num" name="wl_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value="<% nvram_selget("wl_maxassoc"); %>" />&nbsp;
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": 128, " + share.range + ": 1 - 256)");
-]]></script></span>
+
+//]]>
+</script></span>
 							 	</div><br />
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label11"); %></div>
 									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.disable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label12"); %></div>
 									<select name="txant">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"0\" <% nvram_selected("txant", "0", "js"); %>>" + share.right + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"1\" <% nvram_selected("txant", "1", "js"); %>>" + share.left + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"3\" <% nvram_selected("txant", "3", "js"); %>>" + share.auto + "</option>");
-]]></script>
+
+//]]>
+</script>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label13"); %></div>
 									<select name="wl_antdiv">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"0\" <% nvram_selected("wl_antdiv", "0", "js"); %>>" + share.right + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"1\" <% nvram_selected("wl_antdiv", "1", "js"); %>>" + share.left + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"3\" <% nvram_selected("wl_antdiv", "3", "js"); %>>" + share.auto + "</option>");
-]]></script>
+
+//]]>
+</script>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label14"); %></div>
 									<select name="wl_plcphdr">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"long\" <% nvram_selected("wl_plcphdr", "long", "js"); %>>" + wl_adv.lng + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.shrt + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + share.auto + "</option>");
-]]></script>
+
+//]]>
+</script>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + wl_adv.lng + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label15"); %></div>
 									<input class="num" name="txpwr" size="6" maxlength="3" onblur="valid_range(this,0,251,wl_adv.label15)" value='<% nvram_selget("txpwr"); %>' />
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": 28, " + share.range + ": 0 - 251mW)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.reference"); %></div>
 									<input class="num" name="noise_reference" size="6" maxlength="4" onblur="valid_range(this,-100,0,wl_adv.reference)" value='<% nvram_selget("noise_reference"); %>' />
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": -98, " + share.range + ": 0 - -100dB)");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label16"); %></div>
 									<select name="wl_afterburner">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"off\" <% nvram_selected("wl_afterburner", "off", "js"); %>>" + share.disable + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"on\" <% nvram_selected("wl_afterburner", "on", "js"); %>>" + share.enable + "</option>");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + share.auto + "</option>");
-]]></script>
+
+//]]>
+</script>
 									</select>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.auto + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label17"); %></div>
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.enable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 							</fieldset><br />
 							
@@ -426,20 +570,32 @@ document.write("(" + share.deflt + ": " + share.enable + ")");
 									<div class="label"><% tran("wl_basic.radiotimer"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.disable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div id="radio">
 									<table id="radio_table"></table>
 									<br />
 									<div class="center">
-										<script type="text/javascript"><![CDATA[
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />");
-]]></script>
-										<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+										<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />");
-]]></script>
+
+//]]>
+</script>
 									</div>
 								</div>
 							</fieldset><br/>
@@ -450,18 +606,26 @@ document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onc
 									<div class="label"><% tran("wl_adv.label18"); %></div>
 									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript"><![CDATA[
+									<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.enable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 								</div>
 								<div id="idwl_wme">
 									<div class="setting">
 										<div class="label"><% tran("wl_adv.label19"); %></div>
 										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><% tran("share.enable"); %>&nbsp;
 										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><% tran("share.disable"); %>
-										<span class="default"><script type="text/javascript"><![CDATA[
+										<span class="default"><script type="text/javascript">
+//<![CDATA[
+
 document.write("(" + share.deflt + ": " + share.disable + ")");
-]]></script></span>
+
+//]]>
+</script></span>
 									</div>
 									<table class="table center" cellspacing="5" summary="edca ap parameters">
 										<tr>
@@ -567,12 +731,20 @@ document.write("(" + share.deflt + ": " + share.disable + ")");
 							</fieldset><br />
 							
 							<div class="submitFooter">
-								<script type="text/javascript"><![CDATA[
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-]]></script>
-								<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio0_on_time"); %>')\" />");
-]]></script>
+
+//]]>
+</script>
 							</div>
 						</form>
 					</div>

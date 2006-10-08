@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Administration</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 document.title = "<% nvram_get("router_name"); %>" + management.titl;
 
 function SelPort(num,F)	{
@@ -156,7 +158,9 @@ addEvent(window, "load", function() {
 
 });
 
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body class="gui">
@@ -184,15 +188,27 @@ addEvent(window, "load", function() {
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
 							<div class="submitFooter">
-								<script type="text/javascript"><![CDATA[
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-]]></script>
-								<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-]]></script>
-								<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+								<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
-]]></script>
+
+//]]>
+</script>
 							</div>
 						</form>
 					</div>

@@ -1,9 +1,13 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Routing Table</title>
-		<script type="text/javascript"><![CDATA[
+		<script type="text/javascript">
+//<![CDATA[
+
 document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 
-		]]></script>
+		
+//]]>
+</script>
 	</head>
 
 	<body>
@@ -16,7 +20,9 @@ document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 					<th><% tran("share.gateway"); %></th>
 					<th><% tran("share.intrface"); %></th>
 				</tr>
-				<script type="text/javascript"><![CDATA[
+				<script type="text/javascript">
+//<![CDATA[
+
 					var table = new Array(<% dump_route_table(""); %>);
 					
 					if(table.length == 0) {
@@ -30,15 +36,25 @@ document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 							document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
 						}
 					}
-				]]></script>
+				
+//]]>
+</script>
 			</table><br />
 			<div class="submitFooter">
-				<script type="text/javascript"><![CDATA[
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-]]></script>
-				<script type="text/javascript"><![CDATA[
+
+//]]>
+</script>
+				<script type="text/javascript">
+//<![CDATA[
+
 document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-]]></script>
+
+//]]>
+</script>
 			</div>
 		</form>
 	</body>
