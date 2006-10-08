@@ -8,6 +8,6 @@
     <% show_clocks(); %>
     </select>
    <% nvram_match("clkfreq","125","-->"); %>
-   <% nvram_match("clkfreq","125","<script type="text/javascript">Capture(management.clock_support)</script>"); %>
+   <% nvram_match("clkfreq","125","<script type="text/javascript">//<![CDATA[Capture(management.clock_support)//]]></script>"); %>
   </div>
 </fieldset><br/>
