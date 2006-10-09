@@ -356,7 +356,7 @@ alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Redémarrage Programmé du Routeur";
 alive.sevr1="Redémarrage programmé";
-alive.hour="A une heure définie";
+alive.hour="A heure fixe";
 alive.legend2="WDS/Connexion Watchdog";
 alive.sevr2="Watchdog";
 alive.IP="Adresses IP";
@@ -828,7 +828,7 @@ management.remote_ssh="Accès SSH";
 management.remote_sshport="Port SSH";
 
 management.web_legend="Console d\'Administration";
-management.web_refresh="Auto-Actualisation (en secondes)";
+management.web_refresh="Rafraîchissement auto (en sec.)";
 management.web_sysinfo="Activer page de démarrage";
 management.web_sysinfopass="Page de démarrage protégée";
 management.web_sysinfomasq="Masquer adresses MAC";
@@ -856,7 +856,7 @@ management.routing_srv="Routage";
 
 management.wol_legend="Wake-On-LAN";
 management.wol_srv="WOL";
-management.wol_pass="mot de passe SecureOn";
+management.wol_pass="Mot de passe SecureOn";
 management.wol_mac="Adresses MAC<br/>( Format: xx:xx:xx:xx:xx:xx )";
 
 management.ipv6_legend="Support IPv6";
@@ -913,7 +913,7 @@ management.gui_style="Skin de la console";
 
 //help container
 
-hmanagement.right1="Auto-Actualisation:";
+hmanagement.right1="Rafraîchissement auto:";
 hmanagement.right2="Saisissez l\'intervalle de rafraichissement automatique de la console d\'administration (seules certaines pages bénéficient de cette fonction). La valeur 0 désactive cette fonctionnalité et bascule le rafraichissement en mode manuel.";
 
 
@@ -1253,7 +1253,7 @@ hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour séléctionner le
 
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Forwards";
+upnp.legend="Listes Redirections UPnP";
 upnp.legend2="Configuration UPnP";
 upnp.serv="Service UPnP";
 upnp.clear="Réinitialiser au démarrage";

@@ -95,7 +95,8 @@ addEvent(window, "load", function() {
 	                      </div>
 	                      <div class="setting">
 	                         <div class="label"><% tran("radius.label7"); %></div>
-	                         <input size="20" maxlength="32" name="wl_radius_key" value="<% nvram_get("wl_radius_key"); %>" />
+	                         <input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvram_get("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
+	                         <input type="checkbox" name="_wl_radius_unmask" value="0" onclick="setElementMask('wl_radius_key', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 	                      </div>
 	                      <div class="setting">
 	                      	<div class="label"><% tran("radius.label8"); %></div>
