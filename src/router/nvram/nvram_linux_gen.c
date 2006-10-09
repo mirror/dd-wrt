@@ -19,6 +19,7 @@
 
 /* Globals */
 
+static char value[65536];
 
 static int isni = 0;
 
@@ -288,15 +289,14 @@ begin:;
       fullen = fullen << 8;
       fullen += getc (in);
       cprintf ("size of value = %d\n", fullen);
-      char *value = malloc (fullen + 1);
-      fread(value,fullen,1,in);
-      
-      value[fullen] = 0;
+      //char *value = malloc (fullen + 1);
+      fread(&value[offset],fullen,1,in);
+      value[offset+fullen] = 0;
       fclose (in);
       unlock ();
       cprintf ("nvram_get done %s\n", value);
 
-      return value;
+      return &value[offset];
     }
   fclose (in);
   unlock ();
