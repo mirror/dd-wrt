@@ -157,19 +157,15 @@ addEvent(window, "unload", function() {
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all')\">");
-
-//]]>
-</script>&nbsp;
+									//<![CDATA[
+									document.write("<input type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all')\">");
+									//]]>
+									</script>&nbsp;
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+									//]]>
+									</script>
 								</div>
 							</fieldset><br />
 							<fieldset>
@@ -192,19 +188,15 @@ document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nv
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
