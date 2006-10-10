@@ -905,6 +905,7 @@ management.lang_brazilian="brazilian";
 management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
+management.lang_japanese="japanese";
 
 management.net_legend="IP Filter Settings (adjust these for P2P)";
 management.net_port="Maximum Ports";

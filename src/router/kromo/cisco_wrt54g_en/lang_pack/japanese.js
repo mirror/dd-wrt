@@ -894,7 +894,8 @@ management.lang_italian="伊太利亜後";
 management.lang_brazilian="ブラジル語";
 management.lang_slovenian="スロベニア後";
 management.lang_spanish="スペイン語";
-management.lang_swedish="スウェーデン語"; // management.lang_japanese="日本語";
+management.lang_swedish="スウェーデン語";
+management.lang_japanese="日本語";
 
 management.net_legend="IPフィルター設定 (P2P用の設定)";
 management.net_port="最大Port";

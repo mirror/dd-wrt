@@ -876,6 +876,7 @@ management.lang_slovenian="sloven¹èina";
 management.lang_spanish="¹pan¹èina";
 management.lang_swedish="¹ved¹èina";
 management.lang_polish="polj¹èina";
+management.lang_japanese="japon¹èina";
 
 management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_port="Najveèje ¹t. vrat";

@@ -882,6 +882,7 @@ management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
 management.lang_polish="polish";
+management.lang_japanese="japanese";
 
 management.net_legend="IP Filter Instellingen (Pas deze aan voor P2P)";
 management.net_port="Maximum Poorten";
