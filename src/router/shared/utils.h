@@ -108,6 +108,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_GATEWORX 0x1b0f
 
+//Motorola WE800G - access point - no WAN, no switch
+#define ROUTER_MOTOROLA_WE800G 0x1c0f
+
 #define NVROUTER "DD_BOARD"
 
 
