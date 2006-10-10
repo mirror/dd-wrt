@@ -879,6 +879,7 @@ management.lang_slovenian="slovenian（斯洛文尼亞語）";
 management.lang_spanish="spanish（西班牙語）";
 management.lang_swedish="swedish（瑞典語）";
 management.lang_polish="polish";
+management.lang_japanese="japanese";
 
 management.net_legend="IP過濾設置（為P2P調整這些設置）";
 management.net_port="最大埠數";
