@@ -638,6 +638,8 @@ management.lang_brazilian="Brazylijski";
 management.lang_slovenian="Slowenski";
 management.lang_spanish="Hiszpanski";
 management.lang_swedish="Szwedzki";
+management.lang_japanese="japanese";
+
 management.net_legend="Parametry IP Filtra (regulacja dla P2P)";
 management.net_port="Max Otwartych Portow";
 management.net_tcptimeout="TCP Rozlaczenie (w sek)";

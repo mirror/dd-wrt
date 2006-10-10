@@ -884,6 +884,7 @@ management.lang_slovenian="slovenian（斯洛文尼亚语）";
 management.lang_spanish="spanish（西班牙语）";
 management.lang_swedish="swedish（瑞典语）";
 management.lang_polish="polish";
+management.lang_japanese="japanese";
 
 management.net_legend="IP过滤设置（为P2P调整这些设置）";
 management.net_port="最大端口数";

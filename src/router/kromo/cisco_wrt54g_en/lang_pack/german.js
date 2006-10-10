@@ -870,6 +870,7 @@ management.lang_brazilian="Portugiesisch (Brasil.)";
 management.lang_slovenian="Slowenisch";
 management.lang_spanish="Spanisch";
 management.lang_swedish="Schwedisch";
+management.lang_japanese="Japanisch";
 
 management.net_legend="IP-Filter-Einstellungen (Für P2P bitte anpassen)";
 management.net_port="Maximale Ports";
