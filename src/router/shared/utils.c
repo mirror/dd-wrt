@@ -373,7 +373,8 @@ internal_getRouterBrand ()
 			return ROUTER_MOTOROLA_V1;
 	      }
 	    if (nvram_match ("GemtekPmonVer", "9") &&
-		   (startswith (et0, "00:0C:90"))) 
+		   (startswith (et0, "00:0C:90") ||
+		    startswith (et0, "00:0c:90"))) 
 	      {
 			cprintf ("router Motorola WE800G v1\n");
 			setRouter ("Motorola WE800G v1");
