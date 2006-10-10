@@ -164,10 +164,7 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 	}
 	return 0;
 }
-static int madwifi_get_inact_sec(void *priv, const u8 *addr)
-{
-return 0;
-}
+
 static int
 set80211param(struct madwifi_driver_data *drv, int op, int arg)
 {
@@ -1203,6 +1200,8 @@ madwifi_init(struct hostapd_data *hapd)
 		goto bad;
 	}
 
+	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
+
 	hapd->driver = &drv->ops;
 	return 0;
 bad:
@@ -1223,6 +1222,7 @@ madwifi_deinit(void *priv)
 
 	drv->hapd->driver = NULL;
 
+	(void) madwifi_set_iface_flags(drv, 0);
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
@@ -1281,6 +1281,11 @@ madwifi_set_countermeasures(void *priv, int enabled)
 	return set80211param(drv, IEEE80211_PARAM_COUNTERMEASURES, enabled);
 }
 
+ static int madwifi_get_inact_sec(void *priv, const u8 *addr)
+ {
+ return 0;
+ }
+
 static const struct driver_ops madwifi_driver_ops = {
 	.name			= "madwifi",
 	.init			= madwifi_init,
@@ -1302,7 +1307,7 @@ static const struct driver_ops madwifi_driver_ops = {
 	.get_ssid		= madwifi_get_ssid,
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
-	.get_inact_sec 		= madwifi_get_inact_sec,
+ 	.get_inact_sec 		= madwifi_get_inact_sec,
 };
 
 void madwifi_driver_register(void)
