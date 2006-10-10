@@ -37,7 +37,7 @@ struct ieee802_1x_hdr {
 #pragma pack(pop)
 #endif /* _MSC_VER */
 
-#define EAPOL_VERSION 2
+#define EAPOL_VERSION 1
 
 enum { IEEE802_1X_TYPE_EAP_PACKET = 0,
        IEEE802_1X_TYPE_EAPOL_START = 1,
