@@ -1504,9 +1504,9 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 		/* Timeout for IEEE 802.11 authentication and association */
 		int timeout;
 		if (assoc_failed)
-			timeout = 5;
+			timeout = 15;
 		else if (wpa_s->conf->ap_scan == 1)
-			timeout = 10;
+			timeout = 15;
 		else
 			timeout = 60;
 		wpa_supplicant_req_auth_timeout(wpa_s, timeout, 0);
