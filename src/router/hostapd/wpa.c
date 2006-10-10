@@ -213,9 +213,9 @@ static void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 
 /* Default timeouts are 100 ms, but this seems to be a bit too fast for most
  * WPA Supplicants, so use a bit longer timeout. */
-static const u32 dot11RSNAConfigGroupUpdateTimeOut = 1000; /* ms */
+static const u32 dot11RSNAConfigGroupUpdateTimeOut = 5000; /* ms */
 static const u32 dot11RSNAConfigGroupUpdateCount = 3;
-static const u32 dot11RSNAConfigPairwiseUpdateTimeOut = 1000; /* ms */
+static const u32 dot11RSNAConfigPairwiseUpdateTimeOut = 5000; /* ms */
 static const u32 dot11RSNAConfigPairwiseUpdateCount = 3;
 
 /* TODO: make these configurable */
