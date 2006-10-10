@@ -886,6 +886,7 @@ management.lang_slovenian="slovène";
 management.lang_spanish="espagnol";
 management.lang_swedish="suédois";
 management.lang_polish="polonais";
+management.lang_japanese="japanese";
 
 management.net_legend="Filtrage IP (modifier pour une utilisation P2P)";
 management.net_port="Nombre de connexions maximum";

@@ -673,6 +673,7 @@ management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
 management.lang_polish="polish";
+management.lang_japanese="japanese";
 
 management.net_legend="Impostazioni Filtro IP (modificale per il P2P)";
 management.net_port="Max Porte";
