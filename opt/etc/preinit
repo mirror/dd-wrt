@@ -14,7 +14,8 @@ nvram set expert_mode=1
 #    nvram commit
 #    reboot
 #fi
-nvram set boot_wait=on
+
+#nvram set boot_wait=on
 
 if [ -z "$(nvram get ipv6_enable)" ]; then
     nvram set ipv6_enable=0
