@@ -125,13 +125,14 @@ ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", __TIME__);
 }
-
+#ifndef HAVE_SPECIALEDITION
 void
 ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
 	     nvram_safe_get ("dist_type"));
 }
+#endif
 
 void
 ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv)
