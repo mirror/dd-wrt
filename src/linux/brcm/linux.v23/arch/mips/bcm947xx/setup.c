@@ -286,7 +286,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	bcm947xx_parts[0].offset=0;
 	bcm947xx_parts[0].size=256*1024;
-	if (size==1024*1024*8)
+	if (size==1024*1024*8) // fix for WHR2 - A54G54
 	    {
 	bcm947xx_parts[3].offset = size - 0x20000;
 	bcm947xx_parts[3].size = size - bcm947xx_parts[3].offset;
