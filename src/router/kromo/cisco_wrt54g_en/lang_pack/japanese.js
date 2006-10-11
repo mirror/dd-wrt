@@ -12,10 +12,8 @@
 
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
-var lang_charset = new Object();
 lang_charset.set="EUC-JP";
 
-var share = new Object();
 share.firmware="ƒtƒ@[ƒ€ƒEƒFƒA";
 share.time="ŠÔ";
 share.interipaddr="ƒCƒ“ƒ^[ƒlƒbƒgIPƒAƒhƒŒƒX";
@@ -136,8 +134,6 @@ share.errs="ƒGƒ‰[";
 share.meters="ƒ[ƒ^[";
 
 
-
-var sbutton = new Object();
 sbutton.save="İ’è‚Ì•Û‘¶";
 sbutton.saving="•Û‘¶‚µ‚Ü‚µ‚½";
 sbutton.cmd="Às’†";
@@ -185,7 +181,6 @@ sbutton.preview="ƒvƒŠƒrƒ…[";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
-var errmsg = new Object();
 errmsg.err0="ƒ†[ƒU[–¼‚ğ“ü—Í‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB";
 errmsg.err1="ƒ‹ƒ^[–¼‚ª“ü—Í‚³‚ê‚Ä‚¢‚Ü‚¹‚ñB";
 errmsg.err2="”ÍˆÍŠO‚Å‚·BƒXƒ^[ƒgIPƒAƒhƒŒƒXA‚ ‚é‚¢‚Íƒ†[ƒU[”Ô†‚ğC³‚µ‚Ä‚­‚¾‚³‚¢B";
@@ -287,7 +282,6 @@ errmsg.err61="•s³‚ÈƒCƒ[ƒWƒtƒ@ƒCƒ‹‚Å‚·B";
 errmsg.err62="‚ÍÃ“IƒŠ[ƒX‚Éİ’è‚³‚ê‚Ä‚¢‚Ü‚·B";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
-var bmenu= new Object();
 bmenu.setup="İ’è";
 bmenu.setupbasic="Šî–{İ’è";
 bmenu.setupddns="DDNS";
@@ -347,7 +341,6 @@ bmenu.statuSysInfo="Sys-Info";
 
 // ******************************************* Alive.asp *******************************************//
 
-var alive = new Object();
 alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="ƒXƒPƒWƒ…[ƒ‹ƒŠƒu[ƒg";
@@ -362,7 +355,6 @@ alive.IP2="ƒvƒƒNƒV[IPƒAƒhƒŒƒX";
 alive.port="ƒvƒƒNƒV[ƒ|[ƒg";
 
 //help container
-var halive = new Object();
 halive.right2="ƒ‹[ƒ^[‚ğƒŠƒu[ƒg‚·‚éŠÔ‚ğ‘I‚ñ‚Å‚­‚¾‚³‚¢BŠÇ—ƒ^ƒu‚ÅCron‚ªİ’è‚³‚ê‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B";
 halive.right4="IP‚Í<em>‹ó”’</em>‚Å‹æØ‚è‚ÅÅ‘å‚Å‚R‚Â‚Ü‚Å‚Å‚·BIPƒtƒH[ƒ}ƒbƒg‚Í xxx.xxx.xxx.xxx ‚Å‚·";
 
@@ -370,7 +362,6 @@ halive.right4="IP‚Í<em>‹ó”’</em>‚Å‹æØ‚è‚ÅÅ‘å‚Å‚R‚Â‚Ü‚Å‚Å‚·BIPƒtƒH[ƒ}ƒbƒg‚Í x
 
 // ******************************************* config.asp *******************************************//
 
-var config = new Object();
 config.titl=" - ƒoƒbƒNƒAƒbƒv & •œŒ³";
 config.h2="ƒoƒbƒNƒAƒbƒv‹@Ší\¬";
 config.legend="ƒoƒbƒNƒAƒbƒvİ’è";
@@ -382,7 +373,6 @@ config.mess3="’ˆÓW A R N I N G";
 config.mess4="–{‹@Ší‚Æ“¯‚¶ƒtƒ@[ƒ€ƒEƒFƒA‚Æƒ‚ƒfƒ‹‚ÌƒoƒbƒNƒAƒbƒvƒtƒ@ƒCƒ‹‚Ì‚İ‚ğƒAƒbƒvƒ[ƒh‚µ‚Ä‚­‚¾‚³‚¢B<br />@–{İ’è‰æ–Ê‚Åì¬‚³‚ê‚Ä‚¢‚È‚¢ƒtƒ@ƒCƒ‹‚ğƒAƒbƒvƒ[ƒh‚µ‚È‚¢‚Å‚­‚¾‚³‚¢I";
 
 //help container
-var hconfig = new Object();
 hconfig.right2="Hêo‰×‚Ì‰Šú’l‚Éƒ‹[ƒ^[‚Ìİ’è‚ğ–ß‚·•K—v‚ª‚ ‚éê‡AŒ»İ‚Ìİ’è‚ğƒoƒbƒNƒAƒbƒv‚µ‚Ä‚­‚¾‚³‚¢B<br /><br /><em>ƒoƒbƒNƒAƒbƒv</em>ƒ{ƒ^ƒ“‚ğƒNƒŠƒbƒN‚µ‚ÄŒ»İ‚Ìİ’è‚ğƒoƒbƒNƒAƒbƒv‚µ‚Ü‚·B";
 hconfig.right4="<em>ƒuƒ‰ƒEƒY...</em>ƒ{ƒ^ƒ“‚ğ‰Ÿ‚·‚ÆPC‚É•Û‘¶‚³‚ê‚Ä‚¢‚éİ’èƒtƒ@ƒCƒ‹ˆê——‚ğ•\¦‚µ‚Ü‚·B<br /><br /><em>" + sbutton.restore + "</em>ƒ{ƒ^ƒ“‚ğƒNƒŠƒbƒN‚·‚é‚ÆA‘S‚Ä‚Ì‹@Šíİ’è‚ªİ’èƒtƒ@ƒCƒ‹‚É•Û‘¶‚³‚ê‚½’l‚Éã‘‚«‚³‚ê‚Ü‚·B";
 
@@ -390,7 +380,6 @@ hconfig.right4="<em>ƒuƒ‰ƒEƒY...</em>ƒ{ƒ^ƒ“‚ğ‰Ÿ‚·‚ÆPC‚É•Û‘¶‚³‚ê‚Ä‚¢‚éİ’èƒtƒ@ƒCƒ‹
 
 // ******************************************* DDNS.asp *******************************************//
 
-var ddns = new Object();
 ddns.titl=" - ƒ_ƒCƒiƒ~ƒbƒNDNS"
 ddns.h2="ƒ_ƒCƒiƒ~ƒbƒN ƒhƒƒCƒ“–¼ƒVƒXƒeƒ€(DDNS)";
 ddns.legend="DDNS";
@@ -404,7 +393,6 @@ ddns.statu="DDNSƒXƒe[ƒ^ƒX";
 ddns.system="DNSƒVƒXƒeƒ€";
 ddns.options="’Ç‰ÁDDNSƒIƒvƒVƒ‡ƒ“";
 
-var ddnsm = new Object();
 ddnsm.dyn_strange="ƒT[ƒo[‚©‚ç‚Ì‰“š‚É–â‘è‚ª‚ ‚è‚Ü‚·B³‚µ‚¢ƒT[ƒo[‚ÉÚ‘±‚µ‚Ä‚¢‚é‚©Šm”F‚µ‚Ä‚­‚¾‚³‚¢B";
 ddnsm.dyn_good="DDNS‚ÌƒAƒbƒvƒf[ƒg‚É¬Œ÷‚µ‚Ü‚µ‚½";
 ddnsm.dyn_noupdate="Œ»İAƒAƒbƒvƒf[ƒg‚Í•K—v‚ ‚è‚Ü‚¹‚ñ";
@@ -455,14 +443,12 @@ ddnsm.all_disabled="DDNS‹@”\‚Íg—p•s‰Â‚É‚È‚Á‚Ä‚¢‚Ü‚·";
 ddnsm.all_noip="ƒCƒ“ƒ^[ƒlƒbƒgÚ‘±‚Å‚«‚Ü‚¹‚ñ";
 
 //help container
-var hddns = new Object();
 hddns.right2="DDNS‚ğg‚¤‚ÆIPƒAƒhƒŒƒX‚Ì‘ã‚í‚è‚ÉƒhƒƒCƒ“–¼‚Åƒlƒbƒgƒ[ƒN‚ÉƒAƒNƒZƒX‚Å‚«‚Ü‚·BIPƒAƒhƒŒƒX‚Ì•ÏX‚É‘Î‰‚µ‚ÄAIPƒAƒhƒŒƒX‚ÆƒhƒƒCƒ“î•ñ‚ğ“®“I‚ÉƒAƒbƒvƒf[ƒg‚µ‚Ü‚·BDynDNSAfreedns.afraid.orgAZoneEdit.comANo-IP.comACustom‚È‚Ç‚ÌƒT[ƒrƒX‚ÆŒ_–ñ‚µ‚Ä‚­‚¾‚³‚¢B";
 
 
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-var diag = new Object();
 diag.titl=" - f’f";
 diag.h2="f’f";
 diag.legend="ƒRƒ}ƒ“ƒhƒVƒFƒ‹";
@@ -471,14 +457,13 @@ diag.startup="ƒXƒ^[ƒgƒAƒbƒv";
 diag.firewall="ƒtƒ@ƒCƒAƒEƒH[ƒ‹";
 
 //help container
-var hdiag = new Object();
+
 hdiag.right2="ƒEƒFƒu‰æ–Ê‚©‚çƒRƒ}ƒ“ƒh‚ğ”­s‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BƒeƒLƒXƒgƒGƒŠƒA‚ÉƒRƒ}ƒ“ƒh‚ğ‘Å‚¿‚İA<em>" + sbutton.runcmd + "</em>‚ğ‰Ÿ‚µ‚Ä‚­‚¾‚³‚¢B";
 
 
 
 // ******************************************* DMZ.asp *******************************************//
 
-var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="Demilitarized Zone (DMZ)";
 dmz.legend="DMZ";
@@ -487,14 +472,12 @@ dmz.host="DMZƒzƒXƒgIPƒAƒhƒŒƒX";
 
 
 //help container
-var hdmz = new Object();
 hdmz.right2="‚±‚ÌƒIƒvƒVƒ‡ƒ“‚ğg—p‚·‚é‚ÆA‘I‘ğ‚µ‚½ƒzƒXƒg‚ªƒCƒ“ƒ^[ƒlƒbƒg‚É‚³‚ç‚³‚ê‚Ü‚·B‘S‚Ä‚Ìƒ|[ƒg‚ªƒCƒ“ƒ^[ƒlƒbƒg‚©‚çƒAƒNƒZƒX‚Å‚«‚é‚æ‚¤‚É‚È‚è‚Ü‚·B";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-var factdef = new Object();
 factdef.titl=" - ‰Šúİ’è";
 factdef.h2="‰Šúİ’è";
 factdef.legend="ƒ‹[ƒ^[İ’è‚ÌƒŠƒZƒbƒg";
@@ -503,14 +486,12 @@ factdef.restore="‰Šúİ’è‚ğ•œŒ³‚·‚é";
 factdef.mess1="’ˆÓI‚n‚j‚ğƒNƒŠƒbƒN‚·‚é‚Æ‹@Ší‚Ìİ’è‚Í‰Šúİ’è‚É–ß‚èA¡‚Ü‚Å‚Ìİ’è‚Í‘S‚ÄÁ‹‚³‚ê‚Ü‚·B";
 
 //help container
-var hfactdef = new Object();
 hfactdef.right1="‘S‚Ä‚Ìİ’è‚ğ‰Šúİ’è‚É–ß‚µ‚Ü‚·B¡‚Ü‚Å‚Ìİ’è‚ÍÁ‹‚³‚ê‚Ü‚·B";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-var filterIP = new Object();
 filterIP.titl=" - PCƒŠƒXƒg";
 filterIP.h2="PCƒŠƒXƒg";
 filterIP.h3="PC‚ÌMACƒAƒhƒŒƒX‚ğ xx:xx:xx:xx:xx:xx ‚ÌƒtƒH[ƒ}ƒbƒg‚Å“ü—Í‚µ‚Ä‚­‚¾‚³‚¢";
@@ -522,7 +503,6 @@ filterIP.ip_range="IPƒŒƒ“ƒW";
 
 // ******************************************* Filter.asp *******************************************//
 
-var filter = new Object();
 filter.titl=" - ƒAƒNƒZƒX§ŒÀ";
 filter.h2="ƒCƒ“ƒ^[ƒlƒbƒgƒAƒNƒZƒX";
 filter.legend="ƒAƒNƒZƒXƒ|ƒŠƒV[";
@@ -544,7 +524,6 @@ filter.mess2="Å’á1“ú‚Í‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢B";
 filter.mess3="ƒXƒ^[ƒgŠÔ‚ÍI—¹ŠÔˆÈ‘O‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢B";
 
 //help container
-var hfilter = new Object();
 hfilter.right2="Å‘å10‚ÌƒAƒNƒZƒXƒ|ƒŠƒV[‚ğ’è‹`‚Å‚«‚Ü‚·B<em>" + sbutton.del + "</em>‚ğƒNƒŠƒbƒN‚µ‚Äƒ|ƒŠƒV[‚ğíœ‚·‚é‚©A<em>" + sbutton.summary + "</em>‚ğƒNƒŠƒbƒN‚µ‚Äƒ|ƒŠƒV[‚Ìˆê——‚ğ•\¦‚µ‚Ä‚­‚¾‚³‚¢B";
 hfilter.right4="ƒ|ƒŠƒV[‚ğ—LŒø‚ ‚é‚¢‚Í–³Œø‚É‚·‚éB";
 hfilter.right6="ƒ|ƒŠƒV[‚É–¼‘O‚ğ‚Â‚¯‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·B";
@@ -558,7 +537,6 @@ hfilter.right16="w’è‚µ‚½ƒL[ƒ[ƒh‚ğŠÜ‚ŞƒEƒFƒuƒTƒCƒg‚Ö‚ÌƒAƒNƒZƒX‚ğƒuƒƒbƒN‚Å‚«‚
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-var filterSum = new Object();
 filterSum.titl=" - ƒAƒNƒZƒX§ŒÀƒTƒ}ƒŠ[";
 filterSum.h2="ƒCƒ“ƒ^[ƒlƒbƒg ƒ|ƒŠƒV[ ƒTƒ}ƒŠ[";
 filterSum.polnum="No.";
@@ -568,7 +546,7 @@ filterSum.polday="";
 
 // ******************************************* Firewall.asp *******************************************//
 
-var firewall = new Object();
+
 firewall.titl=" - ƒtƒ@ƒCƒAƒEƒH[ƒ‹";
 firewall.h2="ƒZƒLƒ…ƒŠƒeƒB";
 firewall.legend="ƒtƒ@ƒCƒAƒEƒH[ƒ‹‚É‚æ‚é•ÛŒì";
@@ -585,28 +563,24 @@ filter.nat="ƒCƒ“ƒ^[ƒlƒbƒgNATƒŠƒ_ƒCƒŒƒNƒVƒ‡ƒ“‚ğƒtƒBƒ‹ƒ^[";
 filter.port113="IDENT (Port 113)‚ğƒtƒBƒ‹ƒ^[";
 
 //help container
-var hfirewall = new Object();
 hfirewall.right2="SPIƒtƒ@ƒCƒAƒEƒH[ƒ‹‚ğ—LŒø¥–³Œø‚É‚·‚é";
 
 
 
 // ******************************************* Forward.asp *******************************************//
 
-var prforward = new Object();
 prforward.titl=" - Port Range Forwarding";
 prforward.h2="Port Range Forward";
 prforward.legend="“]‘—";
 prforward.app="ƒAƒvƒŠƒP[ƒVƒ‡ƒ“";
 
 //help container
-var hprforward = new Object();
 hprforward.right2="ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚É‚æ‚Á‚Ä‚Íƒ|[ƒg‚ğŠJ•ú‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B—á‚Æ‚µ‚ÄƒT[ƒo[‚âƒIƒ“ƒ‰ƒCƒ“ƒQ[ƒ€‚È‚Ç‚ª‚ ‚è‚Ü‚·BƒCƒ“ƒ^[ƒlƒbƒg‚©‚ç‚ ‚éƒ|[ƒg‚Ö‚Ì—v‹‚ª—ˆ‚½ê‡Aƒ‹[ƒ^[‚Íw’è‚³‚ê‚½ƒRƒ“ƒsƒ…[ƒ^[‚Öƒf[ƒ^‚ğƒ‹[ƒg‚µ‚Ü‚·BƒZƒLƒ…ƒŠƒeƒB‚Ì‚½‚ßg—p‚µ‚Ä‚¢‚éƒ|[ƒg‚Öƒ|[ƒgƒtƒHƒ[ƒfƒBƒ“ƒO‚ğ‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BI—¹Œã‚Í<em>" + share.enable +"</em>‚Ìƒ`ƒFƒbƒN‚ğŠO‚µ‚Ä‚­‚¾‚³‚¢B";
 
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-var pforward = new Object();
 pforward.titl=" - ƒ|[ƒgƒtƒHƒ[ƒfƒBƒ“ƒO";
 pforward.h2="ƒ|[ƒg“]‘—";
 pforward.legend="“]‘—";
@@ -615,14 +589,13 @@ pforward.from="ó•tƒ|[ƒg";
 pforward.to="o—Íƒ|[ƒg";
 
 //help container
-var hpforward = new Object();
 hpforward.right2="ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚É‚æ‚Á‚Ä‚Íƒ|[ƒg‚ğŠJ•ú‚·‚é•K—v‚ª‚ ‚è‚Ü‚·B—á‚Æ‚µ‚ÄƒT[ƒo[‚âƒIƒ“ƒ‰ƒCƒ“ƒQ[ƒ€‚È‚Ç‚ª‚ ‚è‚Ü‚·BƒCƒ“ƒ^[ƒlƒbƒg‚©‚ç‚ ‚éƒ|[ƒg‚Ö‚Ì—v‹‚ª—ˆ‚½ê‡Aƒ‹[ƒ^[‚Íw’è‚³‚ê‚½ƒRƒ“ƒsƒ…[ƒ^[‚Öƒf[ƒ^‚ğƒ‹[ƒg‚µ‚Ü‚·BƒZƒLƒ…ƒŠƒeƒB‚Ì‚½‚ßg—p‚µ‚Ä‚¢‚éƒ|[ƒg‚Öƒ|[ƒgƒtƒHƒ[ƒfƒBƒ“ƒO‚ğ‚·‚é‚±‚Æ‚ª‚Å‚«‚Ü‚·BI—¹Œã‚Í<em>" + share.enable +"</em>‚Ìƒ`ƒFƒbƒN‚ğŠO‚µ‚Ä‚­‚¾‚³‚¢B";
 
 
 
 // ******************************************* Hotspot.asp *******************************************//
 
-var hotspot = new Object();
+
 hotspot.titl=" - ƒzƒbƒgƒXƒ|ƒbƒg";
 hotspot.h2="ƒzƒbƒgƒXƒ|ƒbƒg Portal";
 hotspot.legend="ƒ`ƒŠƒXƒ|ƒbƒg";
@@ -675,7 +648,6 @@ hotspot.sputnik_about="Sputnik‚É‚Â‚¢‚Ä";
 
 // ******************************************* Info.htm *******************************************//
 
-var info = new Object();
 info.titl=" - î•ñ";
 info.h2="ƒVƒXƒeƒ€î•ñ";
 info.wlanmac="ƒƒCƒAƒŒƒXMAC";
@@ -686,7 +658,6 @@ info.ap="ƒAƒNƒZƒXƒ|ƒCƒ“ƒg";
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
-var idx_h = new Object();
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Ú‘±íp";
 idx_h.max_idle="—v‹‚É‰‚¶‚½Ú‘±: ƒAƒCƒhƒ‹ŠÔ‚ğÅ‘å";
@@ -696,21 +667,19 @@ idx_h.alive="Keep Alive: Redial Period";
 
 // ******************************************* index_l2tp.asp *******************************************//
 
-var idx_l = new Object();
 idx_l.srv="L2TPƒT[ƒo[";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
 
-var idx_pppoe = new Object();
 idx_pppoe.use_rp="RP PPPoE‚ğ—p‚¢‚é";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
 
-var idx_pptp = new Object();
+
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="ƒCƒ“ƒ^[ƒlƒbƒgIPƒAƒhƒŒƒX";
 idx_pptp.gateway="ƒQ[ƒgƒEƒFƒC (PPTPƒT[ƒo[)";
@@ -720,14 +689,13 @@ idx_pptp.encrypt="PPTPˆÃ†‰»";
 
 // ******************************************* index_static.asp *******************************************//
 
-var idx_static = new Object();
+
 idx_static.dns="ƒXƒ^ƒeƒBƒbƒNDNS";
 
 
 
 // ******************************************* index.asp *******************************************//
 
-var idx = new Object();
 idx.titl=" - İ’è";
 idx.h2="ƒCƒ“ƒ^[ƒlƒbƒgİ’è";
 idx.h22="ƒƒCƒAƒŒƒXİ’è";
@@ -762,7 +730,6 @@ idx.auth_dnsmasq="DHCP-Authoritative";
 
 
 //help container
-var hidx = new Object();
 hidx.right2="‚±‚Ìİ’è‚ÍAƒP[ƒuƒ‹‰ïĞ‚Å‚à‚Á‚Æ‚àL‚­g‚í‚ê‚Ä‚¢‚Ü‚·B";
 hidx.right4="Enter the host name provided by your ISP‚©‚çw’è‚³‚ê‚½ƒzƒXƒg–¼‚ğ“ü—Í";
 hidx.right6="Enter the domain name provided by your ISP‚©‚çw’è‚³‚ê‚½ƒhƒƒCƒ“–¼‚ğ“ü—Í";
@@ -777,7 +744,6 @@ hidx.right18="ƒ^ƒCƒ€ƒ][ƒ“‚Æ‰ÄŠÔiDSTj‚ğw’è‚µ‚Ä‚­‚¾‚³‚¢Bƒ‹[ƒ^[‚ªƒ[ƒJƒ‹
 
 // ******************************************* Join.asp *******************************************//
 
-var join = new Object();
 
 //sshd.webservices
 join.titl=" - ƒWƒ‡ƒCƒ“";
@@ -787,7 +753,7 @@ join.mess1="Ÿ‚Ìƒlƒbƒgƒ[ƒN‚ÆƒNƒ‰ƒCƒAƒ“ƒg‚Æ‚µ‚ÄƒWƒ‡ƒCƒ“‚É¬Œ÷‚µ‚Ü‚µ‚½: ";
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-var log_in = new Object();
+
 log_in.titl=" - IncomingƒƒOƒe[ƒuƒ‹";
 log_in.h2="IncomingƒƒOƒe[ƒuƒ‹";
 log_in.th_ip="Source IP";
@@ -797,7 +763,6 @@ log_in.th_port="Destination Port Number";
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-var log_out = new Object();
 log_out.titl=" - OutgoingƒƒOƒe[ƒuƒ‹";
 log_out.h2="OutgoingƒƒOƒe[ƒuƒ‹";
 log_out.th_lanip="LAN IP";
@@ -808,7 +773,6 @@ log_out.th_port="ƒT[ƒrƒX/ƒ|[ƒg”Ô†";
 
 // ******************************************* Log.asp *******************************************//
 
-var log = new Object();
 log.titl=" - ƒƒO";
 log.h2="ƒƒOŠÇ—";
 log.legend="ƒƒO";
@@ -821,7 +785,6 @@ log.accept="ƒAƒNƒZƒvƒg";
 
 // ******************************************* Management.asp *******************************************//
 
-var management = new Object();
 management.titl=" - ŠÇ—Ò";
 management.h2="ƒ‹[ƒ^[ŠÇ—";
 
@@ -923,7 +886,6 @@ management.gui_style="ƒ‹[ƒ^[GUIƒXƒ^ƒCƒ‹";
 
 
 //help container
-var hmanagement = new Object();
 hmanagement.right1="Auto-Refresh:";
 hmanagement.right2="ƒEƒFƒuGUI‚Ì©“®XVŠÔ‚ğ’²®‚µ‚Ü‚·B0‚Í–³Œø‚É‚µ‚Ü‚·B";
 
@@ -931,7 +893,6 @@ hmanagement.right2="ƒEƒFƒuGUI‚Ì©“®XVŠÔ‚ğ’²®‚µ‚Ü‚·B0‚Í–³Œø‚É‚µ‚Ü‚·B";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-var portserv = new Object();
 portserv.titl=" - ƒ|[ƒgƒT[ƒrƒX";
 portserv.h2="ƒ|[ƒgƒT[ƒrƒX";
 
@@ -939,7 +900,6 @@ portserv.h2="ƒ|[ƒgƒT[ƒrƒX";
 
 // ******************************************* QoS.asp *******************************************//
 
-var qos = new Object();
 qos.titl=" - Quality of Service";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="QoSİ’è";
@@ -964,7 +924,6 @@ qos.legend6="ƒfƒBƒtƒHƒ‹ƒg‰ñü—e—ÊƒŒƒxƒ‹";
 qos.bandwith="‰ñü—e—ÊiKbitsj";
 
 //help container
-var hqos = new Object();
 hqos.right1="Uplink:";
 hqos.right2="ƒAƒbƒvƒ[ƒh§ŒÀ‚Ì80%-95% (max)‚Éİ’è‚µ‚Ä‚­‚¾‚³‚¢";
 hqos.right3="Downlink:";
@@ -978,7 +937,6 @@ hqos.right12="ƒfƒoƒCƒX‚ªÚ‘±‚µ‚Ä‚¢‚é•¨—“ILANƒ|[ƒg‚ğŒ³‚ÉAƒf[ƒ^ƒŒ[ƒg‚ğ§Œä‚Å‚
 
 // ******************************************* RouteTable.asp *******************************************//
 
-var routetbl = new Object();
 routetbl.titl=" - ƒ‹[ƒeƒBƒ“ƒO ƒe[ƒuƒ‹";
 routetbl.h2="ƒ‹[ƒeƒBƒ“ƒO ƒe[ƒuƒ‹ “ü—ÍƒŠƒXƒg";
 routetbl.th1="Destination LAN IP";
@@ -987,7 +945,6 @@ routetbl.th1="Destination LAN IP";
 
 // ******************************************* Routing.asp *******************************************//
 
-var route = new Object();
 route.titl=" - ƒ‹[ƒeƒBƒ“ƒO";
 route.h2="Advanced ƒ‹[ƒeƒBƒ“ƒO";
 route.mod="“®ìƒ‚[ƒh";
@@ -1003,7 +960,6 @@ route.static_name="ƒ‹[ƒg–¼";
 route.static_ip="Destination LAN IP";
 
 //help container
-var hroute = new Object();
 hroute.right2="ƒ‹[ƒ^[‚ğ—p‚¢‚ÄƒCƒ“ƒ^[ƒlƒbƒgÚ‘±‚ğŠ±‚·‚Æ‚µ‚Ä‚¢‚éê‡‚ÍA<em>ƒQ[ƒgƒEƒFƒC</em>ƒ‚[ƒh‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢B‘¼‚Ìƒ‹[ƒ^[‚ªƒlƒbƒgƒ[ƒNã‚É‚ ‚éê‡A<em>ƒ‹[ƒ^[</em>ƒ‚[ƒh‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢B";
 hroute.right4="‚±‚ê‚Íƒ†ƒj[ƒN‚Èƒ‹[ƒg”Ô†‚Å‚·BÅ‘å20‚Ü‚Å‚Ìƒ‹[ƒg‚É‚Â‚«İ’è‚Å‚«‚Ü‚·B";
 hroute.right6="‚±‚Ìƒ‹[ƒg‚É‚Â‚¯‚é–¼‘O‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B";
@@ -1013,7 +969,6 @@ hroute.right10="ƒzƒXƒg‚Æƒlƒbƒgƒ[ƒNƒ|[ƒVƒ‡ƒ“‚ğŒˆ’è‚µ‚Ü‚·B";
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-var survey = new Object();
 survey.titl=" - ƒTƒCƒg’²¸";
 survey.h2="Neighbor&#39;s Wireless Networks";
 survey.thjoin="ƒTƒCƒg‚ÌƒWƒ‡ƒCƒ“";
@@ -1022,7 +977,6 @@ survey.thjoin="ƒTƒCƒg‚ÌƒWƒ‡ƒCƒ“";
 
 // ******************************************* Services.asp *******************************************//
 
-var service = new Object();
 
 service.titl=" - ƒT[ƒrƒX";
 service.h2="ƒT[ƒrƒXŠÇ—";
@@ -1114,7 +1068,6 @@ service.ssh_key="Authorized Keys";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-var sipath = new Object();
 sipath.titl=" - SiPath ŠT—v";
 sipath.phone_titl=" - ƒtƒH[ƒ“ƒuƒbƒN";
 sipath.status_titl=" - ƒXƒe[ƒ^ƒX";
@@ -1123,7 +1076,6 @@ sipath.status_titl=" - ƒXƒe[ƒ^ƒX";
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-var status_lan = new Object();
 status_lan.titl=" - LANƒXƒe[ƒ^ƒX";
 status_lan.h2="ƒ[ƒJƒ‹ ƒlƒbƒgƒ[ƒN";
 status_lan.legend="LANƒXƒe[ƒ^ƒX";
@@ -1132,7 +1084,6 @@ status_lan.legend2="DHCPƒXƒe[ƒ^ƒX";
 status_lan.legend3="DHCPƒNƒ‰ƒCƒAƒ“ƒg";
 
 //help container
-var hstatus_lan = new Object();
 hstatus_lan.right2="ƒ[ƒJƒ‹Ethernetƒlƒbƒgƒ[ƒN‚É‚¨‚¯‚éƒ‹[ƒ^[‚ÌMACƒAƒhƒŒƒX‚Å‚·B";
 hstatus_lan.right4="ƒ[ƒJƒ‹Ethernetƒlƒbƒgƒ[ƒN‚É‚¨‚¯‚éƒ‹[ƒ^[‚ÌIPƒAƒhƒŒƒX‚Å‚·B";
 hstatus_lan.right6="ƒ‹[ƒ^[‚ªSubnetƒ}ƒXƒN‚ğg—p‚µ‚Ä‚¢‚éê‡A‚±‚±‚É•\¦‚³‚ê‚Ü‚·B";
@@ -1143,7 +1094,6 @@ hstatus_lan.right10="MACƒAƒhƒŒƒX‚ğƒNƒŠƒbƒN‚·‚é‚ÆAƒlƒbƒgƒ[ƒNƒCƒ“ƒ^[ƒtƒF[ƒX‚Ì
 
 // ******************************************* Status_Router.asp *******************************************//
 
-var status_router = new Object();
 status_router.titl=" - ƒ‹[ƒ^[ ƒXƒe[ƒ^ƒX";
 status_router.h2="ƒ‹[ƒ^[î•ñ";
 status_router.legend="ƒVƒXƒeƒ€";
@@ -1172,7 +1122,6 @@ status_router.www_login="ƒƒOƒCƒ“ƒ^ƒCƒv";
 status_router.www_loginstatus="ƒƒOƒCƒ“ ƒXƒe[ƒ^ƒX";
 
 //help container
-var hstatus_router = new Object();
 hstatus_router.right2="ƒ‹[ƒ^[‚Ì–¼‘O‚Å‚·Bƒ^ƒu‚Ì<i>ƒZƒbƒgƒAƒbƒv</i>ƒ^ƒu‚©‚çİ’è‚Å‚«‚Ü‚·B";
 hstatus_router.right4="ISP‚©‚çŒ©‚¦‚éƒ‹[ƒ^[‚ÌMACƒAƒhƒŒƒX‚Å‚·B";
 hstatus_router.right6="Œ»İ‚Ìƒ‹[ƒ^[‚Ìƒtƒ@[ƒ€ƒEƒFƒA‚Å‚·";
@@ -1185,14 +1134,12 @@ hstatus_router.right14="‚¨g‚¢‚ÌISP‚ğg‚Á‚ÄƒCƒ“ƒ^[ƒlƒbƒgÚ‘±‚É•K—v‚Èî•ñ‚Å‚·B
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-var status_sputnik = new Object();
 status_sputnik.titl=" - SputnikƒG[ƒWƒFƒ“ƒg ƒXƒe[ƒ^ƒX";
 status_sputnik.h2="Sputnik&reg; ƒG[ƒWƒFƒ“ƒg&trade;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCCƒ‰ƒCƒZƒ“ƒX”Ô†";
 
 //help container
-var hstatus_sputnik = new Object();
 hstatus_sputnik.right1="SputnikƒG[ƒWƒFƒ“ƒg ƒXƒe[ƒ^ƒX";
 hstatus_sputnik.right2="SputnikƒG[ƒWƒFƒ“ƒgƒvƒƒZƒX‚ÌƒXƒe[ƒ^ƒX‚ğ•\¦‚µ‚Ä‚¢‚Ü‚·B";
 hstatus_sputnik.right4="ƒAƒNƒZƒXƒ|ƒCƒ“ƒg‚ªÚ‘±‚µ‚Ä‚¢‚éSputnikƒRƒ“ƒgƒ[ƒ‹ƒZƒ“ƒ^[";
@@ -1203,7 +1150,6 @@ hstatus_sputnik.right8="SputnikƒRƒ“ƒgƒ[ƒ‹ƒZƒ“ƒ^[‚Ìƒ‰ƒCƒZƒ“ƒX”Ô†";
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-var status_wireless = new Object();
 status_wireless.titl=" - ƒƒCƒAƒŒƒX ƒXƒe[ƒ^ƒX";
 status_wireless.h2="ƒƒCƒAƒŒƒX";
 status_wireless.legend="ƒƒCƒAƒŒƒX ƒXƒe[ƒ^ƒX";
@@ -1218,7 +1164,6 @@ status_wireless.signal_qual="ƒVƒOƒiƒ‹•i¿";
 status_wireless.wds="WDSƒm[ƒh";
 
 //help container
-var hstatus_wireless = new Object();
 hstatus_wireless.right2="ƒ[ƒJƒ‹ƒƒCƒAƒŒƒXƒlƒbƒgƒ[ƒN‚É‚¨‚¯‚éƒ‹[ƒ^[‚ÌMACƒAƒhƒŒƒX‚Å‚·B";
 hstatus_wireless.right4="ƒƒCƒAƒŒƒXƒ^ƒu‚Åw’è‚³‚ê‚½Aƒlƒbƒgƒ[ƒN‚Åg—p‚·‚éƒƒCƒAƒŒƒXƒ‚[ƒh‚ğ•\¦‚µ‚Ü‚·i¬İAG‚Ì‚İAB‚Ì‚İA–³Œøj";
 
@@ -1226,7 +1171,6 @@ hstatus_wireless.right4="ƒƒCƒAƒŒƒXƒ^ƒu‚Åw’è‚³‚ê‚½Aƒlƒbƒgƒ[ƒN‚Åg—p‚·‚éƒƒCƒ
 
 // ******************************************* Triggering.asp *******************************************//
 
-var trforward = new Object();
 trforward.titl=" - ƒ|[ƒgTriggering";
 trforward.h2="ƒ|[ƒgTriggering";
 trforward.legend="Forwards";
@@ -1235,7 +1179,6 @@ trforward.fwdrange="Forwardedƒ|[ƒgƒŒƒ“ƒW";
 trforward.app="ƒAƒvƒŠƒP[ƒVƒ‡ƒ“";
 
 //help container
-var htrforward = new Object();
 htrforward.right2="trigger‚Æ‚È‚éƒAƒvƒŠƒP[ƒVƒ‡ƒ“–¼‚ğ“ü—Í";
 htrforward.right4="ŠeƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚²‚Æ‚ÉATriggered”Ô†‚Ì”ÍˆÍ‚ğˆê——‚µ‚Ü‚·BƒCƒ“ƒ^[ƒlƒbƒgƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒhƒLƒ…ƒƒ“ƒg‚©‚ç•K—v‚Æ‚³‚ê‚éƒ|[ƒg”Ô†‚ğŠm”F‚µ‚Ä‚­‚¾‚³‚¢B";
 htrforward.right6="ŠeƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚²‚Æ‚ÉAForwarded”Ô†‚Ì”ÍˆÍ‚ğˆê——‚µ‚Ü‚·BƒCƒ“ƒ^[ƒlƒbƒgƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒhƒLƒ…ƒƒ“ƒg‚©‚ç•K—v‚Æ‚³‚ê‚éƒ|[ƒg”Ô†‚ğŠm”F‚µ‚Ä‚­‚¾‚³‚¢B";
@@ -1246,7 +1189,6 @@ htrforward.right10="Triggered and Forwarded”ÍˆÍ‚ÌI‚í‚è‚Ìƒ|[ƒg”Ô†‚ğ“ü—Í‚µ‚Ä‚­‚
 
 // ******************************************* Upgrade.asp *******************************************//
 
-var upgrad = new Object();
 upgrad.titl=" - ƒtƒ@[ƒ€ƒEƒFƒA ƒAƒbƒvƒOƒŒ[ƒh";
 upgrad.h2="ƒtƒ@[ƒ€ƒEƒFƒAŠÇ—";
 upgrad.legend="ƒtƒ@[ƒ€ƒEƒFƒA ƒAƒbƒvƒOƒŒ[ƒh";
@@ -1258,14 +1200,12 @@ upgrad.warning="W A R N I N G";
 upgrad.mess1="ƒtƒ@[ƒ€ƒEƒFƒA‚ÌƒAƒbƒvƒOƒŒ[ƒh‚É‚Í”•ª‚©‚©‚éê‡‚ª‚ ‚è‚Ü‚·B<br />‚»‚ÌŠÔAƒŠƒZƒbƒg‚µ‚½‚è“dŒ¹‚ğØ‚ç‚È‚¢‚Å‚­‚¾‚³‚¢I";
 
 //help container
-var hupgrad = new Object();
 hupgrad.right2="<em>Browse...</em>ƒ{ƒ^ƒ“‚ğƒNƒŠƒbƒN‚·‚é‚ÆƒAƒbƒvƒ[ƒh‚·‚éƒtƒ@[ƒ€ƒEƒFƒAƒtƒ@ƒCƒ‹‚ğ‘I‘ğ‚Å‚«‚Ü‚·B<br /><br /><em>Upgrade</em>ƒ{ƒ^ƒ“‚ğ‰Ÿ‚·‚ÆƒAƒbƒvƒOƒŒ[ƒh‚ªn‚Ü‚è‚Ü‚·BƒAƒbƒvƒOƒŒ[ƒhˆ—‚Í’†’f‚µ‚È‚¢‚Å‚­‚¾‚³‚¢B";
 
 
 
 // ******************************************* UPnP.asp *******************************************//
 
-var upnp = new Object();
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="“]‘—";
@@ -1278,7 +1218,6 @@ upnp.msg2="‘S‚Ä‚Ì“ü—Í‚ğíœ‚µ‚Ü‚·‚©H";
 
 
 //help container
-var hupnp = new Object();
 hupnp.right2="ƒSƒ~” ‚ğƒNƒŠƒbƒN‚·‚é‚ÆŠe“ü—Í‚ğíœ‚Å‚«‚Ü‚·B";
 hupnp.right4="©“®‚ÅƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ªƒ|[ƒg“]‘—‚ğİ’è‚·‚é‚±‚Æ‚ğ‹–‰Â‚µ‚Ü‚·B";
 
@@ -1286,7 +1225,6 @@ hupnp.right4="©“®‚ÅƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ªƒ|[ƒg“]‘—‚ğİ’è‚·‚é‚±‚Æ‚ğ‹–‰Â‚µ‚Ü‚·B";
 
 // ******************************************* VPN.asp *******************************************//
 
-var vpn = new Object();
 vpn.titl=" - VPN";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPNƒpƒXƒXƒ‹[";
@@ -1295,13 +1233,11 @@ vpn.pptp="PPTPƒpƒXƒXƒ‹[";
 vpn.l2tp="L2TPƒpƒXƒXƒ‹[";
 
 //help container
-var hvpn = new Object();
 hvpn.right1="VPN‚ğg‚Á‚Äƒlƒbƒgƒ[ƒNƒfƒoƒCƒX‚Æ‚Ì’ÊM‚ğ‹–‰Â‚·‚é‚½‚ßAIPSecAPPTPA‚ ‚é‚¢‚ÍL2TPƒpƒXƒXƒ‹[‚ğ—LŒø‚É‚Å‚«‚Ü‚·B";
 
 
 // ******************************************* Vlan.asp *******************************************//
 
-var vlan = new Object();
 vlan.titl=" - Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -1314,7 +1250,6 @@ vlan.trunk="Trunk";
 
 // ******************************************* WEP.asp *******************************************//
 
-var wep = new Object();
 wep.defkey="ƒfƒtƒHƒ‹ƒgTransmit Key";
 wep.passphrase="ƒpƒXƒtƒŒ[ƒY";
 
@@ -1322,7 +1257,6 @@ wep.passphrase="ƒpƒXƒtƒŒ[ƒY";
 
 // ******************************************* WOL.asp *******************************************//
 
-var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="ƒzƒXƒgˆê——";
@@ -1336,7 +1270,6 @@ wol.udp="UDPƒ|[ƒg";
 wol.msg1="ƒNƒŠƒbƒN‚·‚é‚ÆWOLƒzƒXƒg‚ğíœ‚µ‚Ü‚·";
 
 //help container
-var hwol = new Object();
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
 hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
@@ -1345,7 +1278,6 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 
 // ******************************************* WanMAC.asp *******************************************//
 
-var wanmac = new Object();
 wanmac.titl=" - MACƒAƒhƒŒƒXƒNƒ[ƒ“";
 wanmac.h2="MACƒAƒhƒŒƒXƒNƒ[ƒ“";
 wanmac.legend="MACƒNƒ[ƒ“";
@@ -1353,14 +1285,12 @@ wanmac.wan="ƒNƒ[ƒ“WAN MAC";
 wanmac.wlan="ƒNƒ[ƒ“ ƒƒCƒAƒŒƒXMAC";
 
 //help container
-var hwanmac = new Object();
 hwanmac.right2="Some ISPs will require you to register your MAC address. If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
 
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-var wpa = new Object();
 wpa.titl=" - ƒƒCƒAƒŒƒX ƒZƒLƒ…ƒŠƒeƒB";
 wpa.h2="ƒƒCƒAƒŒƒX ƒZƒLƒ…ƒŠƒeƒB";
 wpa.secmode="ƒZƒLƒ…ƒŠƒeƒB ƒ‚[ƒh";
@@ -1377,14 +1307,12 @@ wpa.algorithms="WPAƒAƒ‹ƒSƒŠƒYƒ€";
 wpa.shared_key="WPA Shared Key";
 
 //help container
-var hwpa = new Object();
 hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-var wl_filter = new Object();
 wl_filter.titl=" - MACƒAƒhƒŒƒX ƒtƒBƒ‹ƒ^[ˆê——";
 wl_filter.h2="MACƒAƒhƒŒƒX ƒtƒBƒ‹ƒ^[ˆê——";
 wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
@@ -1393,7 +1321,6 @@ wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-var wl_active = new Object();
 wl_active.titl=" - ƒƒCƒAƒŒƒX Active ƒNƒ‰ƒCƒAƒ“ƒgMACˆê——";
 wl_active.h2="ƒƒCƒAƒŒƒX ƒNƒ‰ƒCƒAƒ“ƒgMACˆê——";
 wl_active.h3="MACƒtƒBƒ‹ƒ^[‚ğ—LŒø‚É‚·‚é";
@@ -1404,7 +1331,6 @@ wl_active.inactive="Inactive PC";
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-var wds = new Object();
 wds.titl=" - WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="WDSİ’è";
@@ -1421,7 +1347,6 @@ wds.legend2="’Ç‰ÁƒIƒvƒVƒ‡ƒ“";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-var radius = new Object();
 radius.titl=" - Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
@@ -1438,7 +1363,6 @@ radius.label8="ƒT[ƒo[‚ª—˜—p‚Å‚«‚È‚¢ê‡Radius‚ğ–³Œø‚É‚·‚é";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-var wl_mac = new Object();
 wl_mac.titl=" - MAC ƒtƒBƒ‹ƒ^[";
 wl_mac.h2="ƒƒCƒAƒŒƒX MAC ƒtƒBƒ‹ƒ^[";
 wl_mac.legend="MAC ƒtƒBƒ‹ƒ^[";
@@ -1451,7 +1375,6 @@ wl_mac.allow="ˆê——‚ÌPC‚ÌƒƒCƒAƒŒƒXƒlƒbƒgƒ[ƒN‚Ö‚ÌÚ‘±‚ğ‹–‰Â‚·‚éB";
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-var wl_basic = new Object();
 wl_basic.titl=" - ƒƒCƒAƒŒƒX";
 wl_basic.h2="ƒƒCƒAƒŒƒX";
 wl_basic.legend="Šî–{İ’è";
@@ -1472,7 +1395,6 @@ wl_basic.a="A-Only";
 wl_basic.g="G-Only";
 
 //help container
-var hwl_basic = new Object();
 hwl_basic.right2="ƒƒCƒAƒŒƒXGƒNƒ‰ƒCƒAƒ“ƒg‚ğ”rœ‚µ‚½‚¢ê‡‚ÍA<em>B-Only</em>ƒ‚[ƒh‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢BƒƒCƒAƒŒƒX‚É‚æ‚éƒAƒNƒZƒX‚ğ–³Œø‚É‚µ‚½‚¢ê‡‚Í<em>Disable</em>‚ğ‘I‘ğ‚µ‚Ä‚­‚¾‚³‚¢";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="ackƒ^ƒCƒ~ƒ“ƒO‚ğ’²®‚µ‚Ü‚·B0‚Åackƒ^ƒCƒ~ƒ“ƒO‚ğŠ®‘S‚É–³Œø‚É‚µ‚Ü‚·B";
@@ -1481,7 +1403,6 @@ hwl_basic.right4="ackƒ^ƒCƒ~ƒ“ƒO‚ğ’²®‚µ‚Ü‚·B0‚Åackƒ^ƒCƒ~ƒ“ƒO‚ğŠ®‘S‚É–³Œø‚É‚µ‚Ü‚
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-var wl_adv = new Object();
 wl_adv.titl=" - ƒAƒhƒoƒ“ƒXƒg ƒƒCƒAƒŒƒX İ’è";
 wl_adv.h2="ƒAƒhƒoƒ“ƒXƒg ƒƒCƒAƒŒƒX İ’è";
 wl_adv.legend="ƒAƒhƒoƒ“ƒXƒg İ’è";
@@ -1522,14 +1443,12 @@ wl_adv.lng="Long";                  //************* don't use .long ! **********
 wl_adv.shrt="Short";                //************* don't use .short ! **************
 
 //help container
-var hwl_adv = new Object();
 hwl_adv.right2="Auto‚ ‚é‚¢‚ÍShared Key‚ğ‘I‚×‚Ü‚·BShared Key”FØ‚Ì‚Ù‚¤‚ªƒZƒLƒ…ƒŠƒeƒB‚ª‚‚­‚È‚è‚Ü‚·‚ªAƒlƒbƒgƒ[ƒNã‚Ì‘S‚Ä‚ÌƒfƒoƒCƒX‚ªSheared Key”FØ‚ğƒTƒ|[ƒg‚µ‚Ä‚¢‚é•K—v‚ª‚ ‚è‚Ü‚·B";
 
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-var fail = new Object();
 fail.mess1="•s³‚È’l‚Å‚·B‚à‚¤ˆê“x“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B";
 fail.mess2="ƒAƒbƒvƒOƒŒ[ƒh¸”sB";
 
@@ -1537,7 +1456,6 @@ fail.mess2="ƒAƒbƒvƒOƒŒ[ƒh¸”sB";
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-var success = new Object();
 success.saved="İ’è‚ğ•Û‘¶‚µ‚Ü‚µ‚½B";
 success.restore="İ’è‚ğ•œŒ³‚µ‚Ü‚µ‚½B<br/>ƒŠƒu[ƒg‚ğŠJn‚µ‚Ü‚·B­‚µ‚¨‘Ò‚¿‚­‚¾‚³‚¢...";
 success.upgrade="ƒAƒbƒvƒOƒŒ[ƒh‚µ‚Ü‚µ‚½B<br/>ƒŠƒu[ƒg‚ğŠJn‚µ‚Ü‚·B­‚µ‚¨‘Ò‚¿‚­‚¾‚³‚¢...";
@@ -1552,11 +1470,9 @@ success.alert3="WLAN‚ÅÚ‘±‚µ‚Ä‚¢‚éê‡Aƒlƒbƒgƒ[ƒN‚ğƒWƒ‡ƒCƒ“‚µ‚ÄA<em>‘±‚¯‚é</
 // *****************************************************        OLD PAGES       ************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-var dhcp = new Object();
 dhcp.titl=" - DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
 dhcp.server="DHCP Server IP Address :";
 dhcp.tclient="Client Host Name";
 
-var donate = new Object();
 donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";
