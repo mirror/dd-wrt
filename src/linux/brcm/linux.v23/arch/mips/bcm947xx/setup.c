@@ -286,10 +286,16 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	bcm947xx_parts[0].offset=0;
 	bcm947xx_parts[0].size=256*1024;
-
-	/* Find and size nvram */
-	bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	if (size==1024*1024*8)
+	    {
+	bcm947xx_parts[3].offset = size - 0x20000;
 	bcm947xx_parts[3].size = size - bcm947xx_parts[3].offset;
+	    }else
+	    {
+	bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	bcm947xx_parts[3].size = size - bcm947xx_parts[3].offset;        
+	    }
+	/* Find and size nvram */
 
 	/* Find and size rootfs */
 	//if (off < size) {
