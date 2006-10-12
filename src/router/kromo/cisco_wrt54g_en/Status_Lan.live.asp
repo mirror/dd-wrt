@@ -10,3 +10,4 @@
 {dhcp_num::<% nvram_get("dhcp_num"); %>}
 {dhcp_lease_time::<% nvram_get("dhcp_lease"); %>}
 {dhcp_leases::<% dumpleases(0); %>}
+{arp_table::<% dumparptable(); %>}
