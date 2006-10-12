@@ -4551,20 +4551,21 @@ static void
 ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
-	char s[512];
+	char buf[512];
+	char hostname[256];
 	char ip[16];
 	char mac[18];
-	int n;
-
-
-		if ((f = fopen("/proc/net/arp", "r")) != NULL) {
-		n = 0;
-		while (fgets(s, sizeof(s), f)) {
-			if (sscanf(s, "%15s %*s %*s %17s %*s", ip, mac) != 2) continue;
+	int count=0;
+	
+	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
+		while (fgets(buf, sizeof(s), f)) {
+			if (sscanf(buf, "%15s %*s %*s %17s %*s", ip, mac) != 2) continue;
 			if ((strlen(mac) != 17) || (strcmp(mac, "00:00:00:00:00:00") == 0)) continue;
 			if (strcmp(ip, nvram_get ("wan_gateway")) !=0)  //skip WAN arp entry
-			websWrite (wp, "%s'Hostname','%s','%s'", (n > 0) ? "," : "", ip, mac);
-			++n;
+			websWrite (wp, "%c'%s','%s','%s'",
+				 (count ? ',' : ' '),
+				 , hostname, ip, mac);
+			++count;
 		}
 		fclose(f);
 	}
