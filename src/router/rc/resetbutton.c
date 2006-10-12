@@ -312,7 +312,8 @@ val = getbuttonstate();
 		  switch (brand)
 		    {
 		    case ROUTER_BUFFALO_WBR54G:
-		      eval ("gpio", "disable", "7");	//turn on DIAG led on WBR-G54/WLA-G54
+		    case ROUTER_BUFFALO_WZRRSG54:
+		      eval ("gpio", "disable", "7");	//turn on DIAG led on some Buffalos
 		      break;
 		    case ROUTER_BUFFALO_WBR2G54S:
 		      eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
