@@ -4557,6 +4557,8 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	char mac[18];
 	int count=0;
 	
+	hostname="Hostname";
+	
 	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
 		while (fgets(buf, sizeof(buf), f)) {
 			if (sscanf(buf, "%15s %*s %*s %17s %*s", ip, mac) != 2) continue;
