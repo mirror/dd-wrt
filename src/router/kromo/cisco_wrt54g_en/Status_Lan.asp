@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - LAN Status</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_lan.titl;
 
@@ -48,11 +48,40 @@ function setDHCPTable() {
 	}
 }
 
+function setARPTable() {
+	var table = document.getElementById("arp_table");
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 3;
+		cell.align = "center";
+		cell.innerHTML = "- " + share.none + " -";
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 3) {
+	
+		var row = table.insertRow(-1);
+		row.style.height = "15px";
+		
+		row.insertCell(-1).innerHTML = val[i];
+		
+		row.insertCell(-1).innerHTML = val[i+1];
+		
+		var cellmac = row.insertCell(-1);
+		cellmac.title = share.oui;
+		cellmac.style.cursor = "pointer";
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
+		cellmac.innerHTML = val[i+2];
+	}
+}
+
 var update;
 
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
+	setARPTable(<% dumparptable(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
@@ -67,6 +96,9 @@ addEvent(window, "load", function() {
 	});
 	update.onUpdate("dhcp_leases", function(u) {
 		eval('setDHCPTable(' + u.dhcp_leases + ')');
+	});
+	update.onUpdate("arp_table", function(u) {
+		eval('setARPTable(' + u.arp_table + ')');
 	});
 	update.start();
 });
@@ -165,6 +197,19 @@ addEvent(window, "unload", function() {
 										</tr>
 									</table>
 								</fieldset><br />
+							</div>
+							
+							<fieldset>
+								<legend><% tran("status_lan.legend4"); %></legend>
+								<table class="table center" cellspacing="4" id="arp_table" summary="active clients in arp table">
+									<tr>
+										<th width="25%"><% tran("share.hostname"); %></th>
+										<th width="25%"><% tran("share.ip"); %></th>
+										<th width="50%"><% tran("share.mac"); %></th>
+									</tr>
+								</table>
+							</fieldset><br />
+							
 							</div>
 							<div class="submitFooter">
 								<script type="text/javascript">
