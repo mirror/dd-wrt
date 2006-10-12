@@ -128,6 +128,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="ip_del" />
 							<input type="hidden" name="mac_del" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
+							
 							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend"); %></legend>
@@ -158,6 +159,7 @@ addEvent(window, "unload", function() {
 									<span id="lan_dns"><% nvram_get("sv_localdns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
+							
 							<h2><% tran("status_lan.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend2"); %></legend>
@@ -184,6 +186,7 @@ addEvent(window, "unload", function() {
 									</div>
 								</div>
 							</fieldset><br />
+							
 							<div id="dhcp_2" style="display:none">
 								<fieldset>
 									<legend><% tran("status_lan.legend3"); %></legend>
