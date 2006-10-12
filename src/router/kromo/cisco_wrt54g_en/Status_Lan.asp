@@ -209,8 +209,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							
-							</div>
+
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
