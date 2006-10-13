@@ -790,6 +790,8 @@ status_lan.legend="LAN Status";
 status_lan.h22="Dynamiczny Host, Konfiguracja Protokolu";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Klientci";
+status_lan.legend4="Active Clients";
+
 hstatus_lan.right2="To jest adres mac routera jaki widzisz w sieci lokalnej.";
 hstatus_lan.right4="To jest adres mac routera jaki widzisz w sieci lokalnej.";
 hstatus_lan.right6="Jesli router uzywa maski podsieci widoczna jest tutaj..";

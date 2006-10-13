@@ -1109,6 +1109,7 @@ status_lan.legend="LAN Status";
 status_lan.h22="Dynamic Host Configuratie Protocol";
 status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Clienten";
+status_lan.legend4="Active Clients";
 
 //help container
 

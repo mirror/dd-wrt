@@ -1103,6 +1103,7 @@ status_lan.legend="LAN status";
 status_lan.h22="DHCP - Protokol za dinamicènego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
+status_lan.legend4="Aktivni odjemalci";
 
 //help container
 
