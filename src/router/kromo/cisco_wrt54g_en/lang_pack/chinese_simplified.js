@@ -1113,6 +1113,7 @@ status_lan.legend="LAN状态";
 status_lan.h22="动态主机配置协议";
 status_lan.legend2="DHCP状态";
 status_lan.legend3="DHCP客户端";
+status_lan.legend4="Active Clients";
 
 //help container
 

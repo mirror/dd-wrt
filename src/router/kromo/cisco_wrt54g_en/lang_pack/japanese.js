@@ -1082,6 +1082,7 @@ status_lan.legend="LANステータス";
 status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCPステータス";
 status_lan.legend3="DHCPクライアント";
+status_lan.legend4="Active Clients";
 
 //help container
 hstatus_lan.right2="ローカルEthernetネットワークにおけるルーターのMACアドレスです。";

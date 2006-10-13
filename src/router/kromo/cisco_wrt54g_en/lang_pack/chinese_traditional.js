@@ -1107,6 +1107,7 @@ status_lan.legend="LAN î‘B";
 status_lan.h22="„Ó‘BÖ÷™CÅäÖÃ…f¶¨";
 status_lan.legend2="DHCP î‘B";
 status_lan.legend3="DHCPÓÃ‘ô¶Ë";
+status_lan.legend4="Active Clients";
 
 //help container
 

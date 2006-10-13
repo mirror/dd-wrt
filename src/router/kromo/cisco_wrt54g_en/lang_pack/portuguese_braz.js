@@ -1019,6 +1019,7 @@ status_lan.legend="Status da LAN";
 status_lan.h22="Protocolo de Configuração Dinâmica de Hosts (DHCP)";
 status_lan.legend2="Status DHCP";
 status_lan.legend3="Clientes DHCP";
+status_lan.legend4="Active Clients";
 
 hstatus_lan.right2="Este é o Endereço MAC do Roteador, como visto na sua rede local (rede Ethernet).";
 hstatus_lan.right4="Este é o Endereço IP do Roteador, como visto na sua rede local (rede Ethernet).";
