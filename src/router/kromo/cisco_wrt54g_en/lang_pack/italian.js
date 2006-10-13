@@ -833,6 +833,7 @@ status_lan.legend="Stato della LAN";
 status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP Stato";
 status_lan.legend3="DHCP Clients";
+status_lan.legend4="Active Clients";
 
 hstatus_lan.right2="E' l'indirizzo MAC del router, com'è visto sulla tua rete locale Ethernet.";
 hstatus_lan.right4="Mostra l'indirizzo IP del router, come appare sulla tua rete locale Ethernet.";
