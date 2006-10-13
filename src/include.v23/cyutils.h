@@ -23,7 +23,7 @@
 #elif HAVE_FON
 #define CYBERTAN_VERSION	"FON powered by DD-WRT v23 (" BUILD_DATE ")"
 #else
-#define CYBERTAN_VERSION	"DD-WRT v23 SP2 (" BUILD_DATE ")"
+#define CYBERTAN_VERSION	"DD-WRT v23 SP3 (" BUILD_DATE ")"
 #endif
 
 #define LANG_VERSION		"v1.00.00"
