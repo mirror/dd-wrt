@@ -289,15 +289,15 @@ main_loop (void)
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-	     "DD-WRT v23 SP2 %s (c) 2006 NewMedia-NET GmbH\nRelease: "
+	     "DD-WRT v23 SP3 %s (c) 2006 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
   else
     fprintf (fp,
-	     "DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	     "DD-WRT v23 SP3 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
   fprintf (fp,
-	   "DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	   "DD-WRT v23 SP3 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
 	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #else
