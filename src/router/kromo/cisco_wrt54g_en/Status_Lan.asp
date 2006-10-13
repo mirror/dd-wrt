@@ -160,6 +160,17 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							
+							<fieldset>
+								<legend><% tran("status_lan.legend4"); %></legend>
+								<table class="table center" cellspacing="4" id="active_clients_table" summary="active clients in arp table">
+									<tr>
+										<th width="25%"><% tran("share.hostname"); %></th>
+										<th width="25%"><% tran("share.ip"); %></th>
+										<th width="50%"><% tran("share.mac"); %></th>
+									</tr>
+								</table>
+							</fieldset><br />
+							
 							<h2><% tran("status_lan.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("status_lan.legend2"); %></legend>
@@ -201,17 +212,6 @@ addEvent(window, "unload", function() {
 									</table>
 								</fieldset><br />
 							</div>
-							
-							<fieldset>
-								<legend><% tran("status_lan.legend4"); %></legend>
-								<table class="table center" cellspacing="4" id="active_clients_table" summary="active clients in arp table">
-									<tr>
-										<th width="25%"><% tran("share.hostname"); %></th>
-										<th width="25%"><% tran("share.ip"); %></th>
-										<th width="50%"><% tran("share.mac"); %></th>
-									</tr>
-								</table>
-							</fieldset><br />
 
 							<div class="submitFooter">
 								<script type="text/javascript">
