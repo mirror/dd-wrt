@@ -4554,9 +4554,8 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	FILE *host;
 	char buf[256];
 	char hostname[128];
-	char *temp;
 	char ip[16];
-	char fullip[16];
+	char fullip[18];
 	char mac[18];
 	int count = 0;
 	
@@ -4568,7 +4567,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 			if ((strlen(mac) != 17) || (strcmp(mac, "00:00:00:00:00:00") == 0)) continue;
 			if (strcmp(ip, nvram_get ("wan_gateway")) == 0) continue;  //skip WAN arp entry
 
-/* look into hosts file for hostname in static leases */
+/* look into hosts file for hostnames  (static leases) */
 			strcpy (hostname, "*");
 				if ((host = fopen("/tmp/hosts", "r")) != NULL)
 				 {
@@ -4579,14 +4578,12 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 
 						if (strstr(buf, fullip) != NULL)
 							{
-							temp = strtok(buf,"\t");
-							temp = strtok(NULL,"\n");
-							strcpy (hostname, temp);
+							sscanf(buf, "%*15s %s", hostname);
 							}
 						}
 					fclose (host);
 				}
-/* end hoosts file lookup */
+/* end hosts file lookup */
 
 /* check nvram for dnsmasq leases in nvram if hostname is still unknown */
 
