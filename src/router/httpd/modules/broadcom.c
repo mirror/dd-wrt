@@ -4552,7 +4552,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
 	FILE *host;
-	char buf[128];
+	char buf[256];
 	char hostname[128];
 	char *temp;
 	char ip[16];
@@ -4592,7 +4592,8 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 
 		if (!strcmp(hostname, "*") && nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("dhcpd_usenvram", "1"))
 			{
-			sscanf (nvram_safe_get("dnsmasq_lease_%s", ip), "%*lu %*17s %*15s %s", hostname);
+			sprintf (buf, "dnsmasq_lease_%s", ip);
+			sscanf (nvram_safe_get (buf), "%*lu %*17s %*15s %s", hostname);
 			}
 /* end nvram check */
 	
