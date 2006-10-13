@@ -4551,9 +4551,12 @@ static void
 ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 {
 	FILE *f;
+	FILE *host;
 	char buf[128];
-	char hostname[64] = "*";  //for now set to *, until name can be resolved
+	char hostname[128];
+	char *temp;
 	char ip[16];
+	char fullip[16];
 	char mac[18];
 	int count = 0;
 	
@@ -4565,6 +4568,26 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 			if ((strlen(mac) != 17) || (strcmp(mac, "00:00:00:00:00:00") == 0)) continue;
 			if (strcmp(ip, nvram_get ("wan_gateway")) == 0) continue;  //skip WAN arp entry
 
+/* look into hosts file for hostname in static leases */
+			strcpy (hostname, "*");
+				if ((host = fopen("/tmp/hosts", "r")) != NULL)
+				 {
+					while (fgets(buf, sizeof(buf), host))
+						{
+							strcpy (fullip, ip);
+							strcat (fullip, "\t");
+
+						if (strstr(buf, fullip) != NULL)
+							{
+							temp = strtok(buf,"\t");
+							temp = strtok(NULL,"\n");
+							strcpy (hostname, temp);
+							}
+						}
+					fclose (host);
+				}
+/* end hoosts file lookup */	
+	
 			websWrite (wp, "%c'%s','%s','%s'", (count ? ',' : ' '), hostname, ip, mac);
 			++count;
 		}
