@@ -4586,7 +4586,16 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 						}
 					fclose (host);
 				}
-/* end hoosts file lookup */	
+/* end hoosts file lookup */
+
+/* check nvram for dnsmasq leases in nvram if hostname is still unknown */
+
+		if (!strcmp(hostname, "*") && nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("dhcpd_usenvram", "1"))
+			{
+			sscanf (nvram_safe_get("dnsmasq_lease_%s", ip), "%*lu %*17s %*15s %s", hostname);
+			}
+/* end nvram check */
+	
 	
 			websWrite (wp, "%c'%s','%s','%s'", (count ? ',' : ' '), hostname, ip, mac);
 			++count;
