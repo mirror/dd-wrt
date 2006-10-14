@@ -1,4 +1,5 @@
-CFLAGS += -Os -Wall
+CFLAGS += -Os -Wall -fpic
+
 ARCH = powerpc
 #CC = /opt/staging_dir_armeb/bin/armeb-linux-uclibc-gcc
 CC = $(ARCH)-linux-uclibc-gcc
@@ -72,7 +73,7 @@ install: all
 	$(STRIP) $(INSTALLDIR)/sbin/apd
 
 libiksemel.so: $(IOBJS)
-	$(CC) -shared -o $(ARCH)/$@ $^ $(LDFLAGS)
+	$(CC) -shared -o $(ARCH)/$@ $^ $(LDFLAGS) -fpic
 	
 sputnik: $(OBJS) 
 	$(CC) -o $(ARCH)/$@ $^ $(LDFLAGS) -L$(ARCH) -liksemel

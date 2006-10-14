@@ -11,14 +11,14 @@
 
 # Sed substitution that helps us do robust quoting.  It backslashifies
 # metacharacters that are still active within double-quoted strings.
-Xsed='/opt/3.3.4/bin//sed -e 1s/^X//'
+Xsed='sed -e 1s/^X//'
 sed_quote_subst='s/\([\\`\\"$\\\\]\)/\\\1/g'
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
 if test "${CDPATH+set}" = set; then CDPATH=:; export CDPATH; fi
 
-relink_command="(cd /home/dd-wrt/DEV/src/router/glib/tests; { test -z \"\${LIBRARY_PATH+set}\" || unset LIBRARY_PATH || { LIBRARY_PATH=; export LIBRARY_PATH; }; }; { test -z \"\${COMPILER_PATH+set}\" || unset COMPILER_PATH || { COMPILER_PATH=; export COMPILER_PATH; }; }; { test -z \"\${GCC_EXEC_PREFIX+set}\" || unset GCC_EXEC_PREFIX || { GCC_EXEC_PREFIX=; export GCC_EXEC_PREFIX; }; }; { test -z \"\${LD_RUN_PATH+set}\" || unset LD_RUN_PATH || { LD_RUN_PATH=; export LD_RUN_PATH; }; }; PATH=\"/home/dd-wrt/DEV/tools:/opt/3.3.4/bin/:/sbin:/usr/sbin:/usr/local/sbin:/opt/kde3/sbin:/opt/gnome/sbin:/root/bin:/usr/local/bin:/usr/bin:/usr/X11R6/bin:/bin:/usr/games:/opt/gnome/bin:/opt/kde3/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin\"; export PATH; mipsel-linux-uclibc-gcc -pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time -Wall -D_REENTRANT -s -o \$progdir/\$file string-test.o  ../.libs/libglib.so -Wl,--rpath -Wl,/home/dd-wrt/DEV/src/router/glib/.libs -Wl,--rpath -Wl,/home/dd-wrt/DEV/src/router/glib/../glib-1.2.10-install/lib)"
+relink_command="(cd /home/dd-wrt/DEV/src/router/glib/tests; { test -z \"\${LIBRARY_PATH+set}\" || unset LIBRARY_PATH || { LIBRARY_PATH=; export LIBRARY_PATH; }; }; { test -z \"\${COMPILER_PATH+set}\" || unset COMPILER_PATH || { COMPILER_PATH=; export COMPILER_PATH; }; }; { test -z \"\${GCC_EXEC_PREFIX+set}\" || unset GCC_EXEC_PREFIX || { GCC_EXEC_PREFIX=; export GCC_EXEC_PREFIX; }; }; { test -z \"\${LD_RUN_PATH+set}\" || unset LD_RUN_PATH || { LD_RUN_PATH=; export LD_RUN_PATH; }; }; PATH=\"/home/dd-wrt/DEV/tools:/opt/4.1.1/bin:/opt/staging_dir_mips/bin/:/opt/4.1.1/bin/:/sbin:/usr/sbin:/usr/local/sbin:/opt/gnome/sbin:/root/bin:/usr/local/bin:/usr/bin:/usr/X11R6/bin:/bin:/usr/games:/opt/gnome/bin:/usr/lib/mit/bin:/usr/lib/mit/sbin\"; export PATH; mipsel-linux-uclibc-gcc -pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time -Wall -D_REENTRANT -s -o \$progdir/\$file string-test.o  ../.libs/libglib.so -Wl,--rpath -Wl,/home/dd-wrt/DEV/src/router/glib/.libs -Wl,--rpath -Wl,/home/dd-wrt/DEV/src/router/glib/../glib-1.2.10-install/lib)"
 
 # This environment variable determines our operation mode.
 if test "$libtool_install_magic" = "%%%MAGIC variable%%%"; then
@@ -47,7 +47,7 @@ else
   test "x$thisdir" = "x$file" && thisdir=.
 
   # Follow symbolic links until we get to the real thisdir.
-  file=`ls -ld "$file" | /opt/3.3.4/bin//sed -n 's/.*-> //p'`
+  file=`ls -ld "$file" | sed -n 's/.*-> //p'`
   while test -n "$file"; do
     destdir=`$echo "X$file" | $Xsed -e 's%/[^/]*$%%'`
 
@@ -60,7 +60,7 @@ else
     fi
 
     file=`$echo "X$file" | $Xsed -e 's%^.*/%%'`
-    file=`ls -ld "$thisdir/$file" | /opt/3.3.4/bin//sed -n 's/.*-> //p'`
+    file=`ls -ld "$thisdir/$file" | sed -n 's/.*-> //p'`
   done
 
   # Try to get the absolute directory name.
@@ -71,7 +71,7 @@ else
   progdir="$thisdir/.libs"
 
   if test ! -f "$progdir/$program" || \
-     { file=`ls -1dt "$progdir/$program" "$progdir/../$program" 2>/dev/null | /opt/3.3.4/bin//sed 1q`; \
+     { file=`ls -1dt "$progdir/$program" "$progdir/../$program" 2>/dev/null | sed 1q`; \
        test "X$file" != "X$progdir/$program"; }; then
 
     file="$$-$program"

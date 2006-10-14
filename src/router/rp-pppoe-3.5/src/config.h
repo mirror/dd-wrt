@@ -64,7 +64,7 @@
 #define HAVE_LINUX_IF_ETHER_H 1
 
 /* Define if you have kernel-mode PPPoE in Linux file.  */
-/* #undef HAVE_LINUX_KERNEL_PPPOE */
+#define HAVE_LINUX_KERNEL_PPPOE 1
 
 /* Define if you have the <linux/if_packet.h> header file.  */
 #define HAVE_LINUX_IF_PACKET_H 1
