@@ -1,6 +1,5 @@
 #include <linux/delay.h>
 #include <linux/timer.h>
-
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/init.h>
@@ -31,13 +30,27 @@ MODULE_LICENSE ("GPL");
 
 
 
+#ifdef HAVE_MAGICBOX
+
+#define GPIO0_BASE 0xef600000 /* page */
+
+#define SD_DIV1 1<<20
+#define SD_DO 1<<22
+#define SD_CLK 1<<21
+#define SD_CS 1<<3
+static int SD_DI = SD_DI;
+
+
+#else
+
 #define SD_DIV1 0x20
 #define SD_DIV4 0x04
 #define SD_DO 0x10
 #define SD_CLK 0x08
 #define SD_CS 0x80
-
 static int SD_DI = SD_DIV1;
+
+#endif
 
 /* we have only one device */
 static int hd_sizes[1 << 6];
@@ -53,11 +66,18 @@ static int mmc_media_changed = 1;
 typedef unsigned int uint32;
 
 static unsigned char port_state = 0x00;
+
+#ifdef HAVE_MAGICBOX
+static volatile uint32 *gpioaddr_input = (uint32 *) GPIO0_BASE+0x071c;
+static volatile uint32 *gpioaddr_output = (uint32 *) GPIO0_BASE+0x0700;
+static volatile uint32 *gpioaddr_enable = (uint32 *) GPIO0_BASE+0x0718;
+static volatile uint32 *gpioaddr_control = (uint32 *) GPIO0_BASE+0x0704;
+#else
 static volatile uint32 *gpioaddr_input = (uint32 *) 0xb8000060;
 static volatile uint32 *gpioaddr_output = (uint32 *) 0xb8000064;
 static volatile uint32 *gpioaddr_enable = (uint32 *) 0xb8000068;
 static volatile uint32 *gpioaddr_control = (uint32 *) 0xb800006c;
-
+#endif
 static void
 mmc_spi_cs_low (void)
 {

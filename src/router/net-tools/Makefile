@@ -89,7 +89,7 @@ endif
 #CC = mipsel-linux-uclibc-gcc
 # Compiler and Linker Options
 # You may need to uncomment and edit these if you are using libc5 and IPv6.
-COPTS += -D_GNU_SOURCE -Wall # -I/usr/inet6/include
+COPTS += -D_GNU_SOURCE -Wall -DNEED_PRINTF # -I/usr/inet6/include
 ifeq ($(origin LOPTS), undefined)
 LOPTS = 
 endif
