@@ -1125,6 +1125,12 @@ service.ssh_key="Authorized Keys";
 service.radiooff_legend="SES Button";
 service.radiooff_srv="Use SES for turning off radio";
 
+//hwmon.webservices
+service.hwmon_legend="Hardware Monitoring";
+service.hwmon_critemp="Critical Temperature (FAN Switch On)";
+service.hwmon_hystemp="Hysteresis Temperature (FAN Switch Off)";
+
+
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 

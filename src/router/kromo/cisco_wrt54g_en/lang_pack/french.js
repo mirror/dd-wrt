@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 17/05/2006															//
+//				French translation DD-WRT V23 SP1 by Botho 17/05/2006						//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1098,6 +1098,12 @@ service.ssh_key="Authorized Keys";
 //radiooff.webservices
 service.radiooff_legend="Fonction du Bouton SES";
 service.radiooff_srv="Gérer l\'émission radio";
+
+//hwmon.webservices
+service.hwmon_legend="Surveillance du Matériel";
+service.hwmon_critemp="Température Critique (Ventillateur On)";
+service.hwmon_hystemp="Temperature Hystérésis (Ventillateur Off)";
+
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
