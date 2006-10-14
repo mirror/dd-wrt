@@ -124,14 +124,10 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
   char *filebuffer;
   int filecount = 0;
 
-  cdebug ("do_ej_buffer2 entry");
   if (buffer == NULL)
     return;
   filebuffer = buffer;
-  LOG ("alloc");
   pattern = (char *) malloc (PATTERN_BUFFER + 1);
-  LOG ("parse");
-  LOG (filebuffer);
   while ((c = filebuffer[filecount++]) != 0)
     {
 
@@ -288,14 +284,9 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 		  *end++ = '\0';
 
 		  /* Call function */
-		  LOG ("exec");
-		  LOG (func);
 		  cdebug (func);
-		  //("Call %s\n",func);
 		  call (func, stream);
-		  //cprintf("Return %s okay\n",func);
 		  cdebug (func);
-		  LOG ("return");
 		}
 	      asp = NULL;
 	      len = 0;
@@ -310,7 +301,6 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
       len = 0;
     }
   free (pattern);
-  cdebug ("do_ej_buffer2 leave");
 }
 
 
@@ -393,7 +383,6 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 #endif
   int len;
   int i;
-  cdebug ("do_ej entry");
 #ifdef DEBUGLOG
   if (log == NULL)
     log = fopen ("/tmp/log.tmp", "wb");
@@ -471,7 +460,6 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
 //fprintf(stderr,"do_ej_buffer done\n");
   if (le)
     free (buffer);
-  cdebug ("do_ej leave");
 }
 
 int

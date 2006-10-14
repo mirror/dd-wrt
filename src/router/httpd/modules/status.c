@@ -89,7 +89,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-  cdebug ("nvram_status_get proto check");
   if (nvram_match ("wan_proto", "pptp"))
     {
       wan_ipaddr =
@@ -127,7 +126,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
       wan_netmask = nvram_safe_get ("wan_netmask");
     }
 
-  cdebug ("nvram_status_get get dns list");
 
   dns_list = get_dns_list ();
 
@@ -169,7 +167,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
       hidden2 = "-->";
     }
 
-  cdebug ("nvram_status_get wan ip addr");
 
   if (!strcmp (type, "wan_ipaddr"))
     {
@@ -206,7 +203,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "%s", hidden2);
   if (dns_list)
     free (dns_list);
-  cdebug ("nvram_status_get leave");
 
   return;
 }
