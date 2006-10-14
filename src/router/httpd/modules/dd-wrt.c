@@ -2550,8 +2550,9 @@ show_preshared (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
-	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />&nbsp;&nbsp;&nbsp;\n",prefix,
-	     prefix, nvram_safe_get (var));
+	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"",prefix,prefix);
+tf_webWriteESCNV(wp,nvram_safe_get(var)); 	     
+  websWrite (wp,"\" />&nbsp;&nbsp;&nbsp;\n");
   websWrite (wp, 
   		"<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
   		prefix, prefix);
@@ -3385,7 +3386,8 @@ int
 ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 		       char *ifname,int cnt)
 {
-  unsigned char buf[24 * 1024];
+//  unsigned char buf[24 * 1024];
+  
   unsigned char *cp;
   int s, len;
   struct iwreq iwr;
@@ -3397,17 +3399,20 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
+  unsigned char *buf=(unsigned char*)malloc(24*1024);
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = sizeof (buf);
+  iwr.u.data.length = 24*1024;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
+      free(buf);
       return cnt;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
       close (s);
+      free(buf);
       return cnt;
     }
   cp = buf;
@@ -3430,6 +3435,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
+  free(buf);
 
 return cnt;
 }
