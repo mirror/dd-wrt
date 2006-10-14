@@ -11,10 +11,11 @@
 #
 # $Id: Makefile,v 1.1.1.6 2004/04/12 04:34:09 honor Exp $
 #
+include $(TOP)/.config
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-CFLAGS	+= -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time
-#CFLAGS	+= -s $(COPTS)
+#CFLAGS	+= -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time
+CFLAGS	+= -s $(COPTS)
 #DEBUG	:= 1
 
 all: upnp

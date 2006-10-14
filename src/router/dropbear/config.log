@@ -28,6 +28,8 @@ hostinfo               = unknown
 /bin/universe          = unknown
 
 PATH: /opt/staging_dir_powerpc/bin/
+PATH: /opt/armb-4.1.0/bin/
+PATH: /opt/4.1.1/bin/
 PATH: /sbin
 PATH: /usr/sbin
 PATH: /usr/local/sbin
@@ -278,7 +280,7 @@ configure:3829: result: Disabling PAM
 configure:3977: result: Using openpty if available
 configure:3979: checking for library containing openpty
 configure:4009: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lz  -lcrypt >&5
-/tmp/ccVjBr3u.o: In function `main':
+/tmp/ccywPRrH.o: In function `main':
 conftest.c:(.text+0xc): undefined reference to `openpty'
 collect2: ld returned 1 exit status
 configure:4015: $? = 1
@@ -3506,10 +3508,10 @@ configure:8510: $? = 0
 configure:8522: result: yes
 configure:8540: checking for endutxent
 configure:8597: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cc1WgwP4.o: In function `main':
+/tmp/ccp8ewvc.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `endutxent'
 conftest.c:(.text+0xe): undefined reference to `endutxent'
-/tmp/cc1WgwP4.o:(.sdata+0x0): undefined reference to `endutxent'
+/tmp/ccp8ewvc.o:(.sdata+0x0): undefined reference to `endutxent'
 collect2: ld returned 1 exit status
 configure:8603: $? = 1
 configure: failed program was:
@@ -3630,10 +3632,10 @@ configure: failed program was:
 configure:8627: result: no
 configure:8540: checking for getutxent
 configure:8597: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccvOCU6a.o: In function `main':
+/tmp/ccZYYBWi.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `getutxent'
 conftest.c:(.text+0xe): undefined reference to `getutxent'
-/tmp/ccvOCU6a.o:(.sdata+0x0): undefined reference to `getutxent'
+/tmp/ccZYYBWi.o:(.sdata+0x0): undefined reference to `getutxent'
 collect2: ld returned 1 exit status
 configure:8603: $? = 1
 configure: failed program was:
@@ -3754,10 +3756,10 @@ configure: failed program was:
 configure:8627: result: no
 configure:8540: checking for getutxid
 configure:8597: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccHcUDvc.o: In function `main':
+/tmp/ccjT2ijk.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `getutxid'
 conftest.c:(.text+0xe): undefined reference to `getutxid'
-/tmp/ccHcUDvc.o:(.sdata+0x0): undefined reference to `getutxid'
+/tmp/ccjT2ijk.o:(.sdata+0x0): undefined reference to `getutxid'
 collect2: ld returned 1 exit status
 configure:8603: $? = 1
 configure: failed program was:
@@ -3878,10 +3880,10 @@ configure: failed program was:
 configure:8627: result: no
 configure:8540: checking for getutxline
 configure:8597: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccd5X6vg.o: In function `main':
+/tmp/cc30oflo.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `getutxline'
 conftest.c:(.text+0xe): undefined reference to `getutxline'
-/tmp/ccd5X6vg.o:(.sdata+0x0): undefined reference to `getutxline'
+/tmp/cc30oflo.o:(.sdata+0x0): undefined reference to `getutxline'
 collect2: ld returned 1 exit status
 configure:8603: $? = 1
 configure: failed program was:
@@ -4002,10 +4004,10 @@ configure: failed program was:
 configure:8627: result: no
 configure:8540: checking for pututxline
 configure:8597: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccEYKfSa.o: In function `main':
+/tmp/ccNi0qqu.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `pututxline'
 conftest.c:(.text+0xe): undefined reference to `pututxline'
-/tmp/ccEYKfSa.o:(.sdata+0x0): undefined reference to `pututxline'
+/tmp/ccNi0qqu.o:(.sdata+0x0): undefined reference to `pututxline'
 collect2: ld returned 1 exit status
 configure:8603: $? = 1
 configure: failed program was:
@@ -4126,10 +4128,10 @@ configure: failed program was:
 configure:8627: result: no
 configure:8642: checking for setutxent
 configure:8699: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/ccowS9ah.o: In function `main':
+/tmp/ccVMv30v.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `setutxent'
 conftest.c:(.text+0xe): undefined reference to `setutxent'
-/tmp/ccowS9ah.o:(.sdata+0x0): undefined reference to `setutxent'
+/tmp/ccVMv30v.o:(.sdata+0x0): undefined reference to `setutxent'
 collect2: ld returned 1 exit status
 configure:8705: $? = 1
 configure: failed program was:
@@ -4250,10 +4252,10 @@ configure: failed program was:
 configure:8729: result: no
 configure:8642: checking for utmpxname
 configure:8699: powerpc-linux-uclibc-gcc -o conftest -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib  -L../zlib conftest.c -lutil -lz  -lcrypt >&5
-/tmp/cceRfCVk.o: In function `main':
+/tmp/cc9PxI2z.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `utmpxname'
 conftest.c:(.text+0xe): undefined reference to `utmpxname'
-/tmp/cceRfCVk.o:(.sdata+0x0): undefined reference to `utmpxname'
+/tmp/cc9PxI2z.o:(.sdata+0x0): undefined reference to `utmpxname'
 collect2: ld returned 1 exit status
 configure:8705: $? = 1
 configure: failed program was:
@@ -4962,10 +4964,10 @@ conftest.c:78:1: warning: "DISABLE_UTMPX" redefined
 conftest.c:75:1: warning: this is the location of the previous definition
 conftest.c:79:1: warning: "DISABLE_WTMPX" redefined
 conftest.c:77:1: warning: this is the location of the previous definition
-/tmp/ccQmCqHV.o: In function `main':
+/tmp/ccFmCYDf.o: In function `main':
 conftest.c:(.text+0xa): undefined reference to `_getpty'
 conftest.c:(.text+0xe): undefined reference to `_getpty'
-/tmp/ccQmCqHV.o:(.sdata+0x0): undefined reference to `_getpty'
+/tmp/ccFmCYDf.o:(.sdata+0x0): undefined reference to `_getpty'
 collect2: ld returned 1 exit status
 configure:10150: $? = 1
 configure: failed program was:
