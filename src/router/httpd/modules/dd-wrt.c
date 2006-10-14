@@ -1767,7 +1767,7 @@ show_virtualssid (webs_t wp, char *prefix)
   char var[80];
   char ssid[80];
   char vif[16];
-//  char mac[16];
+
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
@@ -1837,7 +1837,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
 	       var, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
-//    if (nvram_match (ssid, "0")) {
+
     websWrite (wp, "<div id=\"%s_idnetvifs\">\n",
 					var);
 		websWrite (wp, "<div class=\"setting\">\n");
@@ -1885,28 +1885,26 @@ show_virtualssid (webs_t wp, char *prefix)
 			var, var, nvram_match (ssid, "0") ? "true" : "false");
 		websWrite (wp, "//]]>\n</script>\n");
 
-//      }
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
+  
+  websWrite (wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
   if (count < 16)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
-  {
-  	websWrite (wp, "<div class=\"center\">\n");
   	websWrite (wp,
   			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
   			prefix);
-  			
-  	if (count > 1)
-  		websWrite (wp,
-  				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-  				prefix);
-  				
-  	websWrite (wp, "</div><br />\n");
-  }
+  
+  if (count > 1)
+  	websWrite (wp,
+  			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+  			prefix);
+  					
+  websWrite (wp, "</div><br />\n");
 
   return 0;
 }
