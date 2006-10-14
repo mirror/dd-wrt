@@ -10,7 +10,7 @@ mandir=${prefix}/man
 
 LIBS=-ldl  -lcrypt
 CC=$(ARCH)-linux-uclibc-gcc
-CFLAGS=$(COPTS)-DNEED_PRINTF
+CFLAGS=$(COPTS) -DNEED_PRINTF
 CPPFLAGS=
 LDFLAGS=
 AWK=mawk
