@@ -1781,12 +1781,10 @@ show_virtualssid (webs_t wp, char *prefix)
 	     "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
   foreach (var, vifs, next)
   {
-//    sprintf (mac, "%s_hwaddr", var);  ?? doesn't exists
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp,
 	       "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
 	       var, nvram_safe_get (ssid));
-//             var, nvram_safe_get (ssid), nvram_safe_get (mac));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
@@ -1809,7 +1807,7 @@ show_virtualssid (webs_t wp, char *prefix)
     char wl_mode[16];
     sprintf (wl_mode, "%s_mode", var);
     websWrite (wp,
-	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
+	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 	       wl_mode);
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
@@ -1826,9 +1824,6 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "</select>\n");
     websWrite (wp, "</div>\n");
 #endif
-//mode
-//    show_netmode (wp, var);
-//    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
 
@@ -1899,15 +1894,19 @@ show_virtualssid (webs_t wp, char *prefix)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
-    websWrite (wp, "<div class=\"center\">\n");
-  websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-	     prefix);
-  if (count > 1)
-    websWrite (wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
-	       prefix);
-  websWrite (wp, "</div><br />\n");
+  {
+  	websWrite (wp, "<div class=\"center\">\n");
+  	websWrite (wp,
+  			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+  			prefix);
+  			
+  	if (count > 1)
+  		websWrite (wp,
+  				"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
+  				prefix);
+  				
+  	websWrite (wp, "</div><br />\n");
+  }
 
   return 0;
 }
