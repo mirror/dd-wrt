@@ -1243,7 +1243,7 @@ upgrad.resetOff="Ne pas réinitialiser";
 upgrad.resetOn="les paramètres usine";
 upgrad.file="Veuillez séléctionner le fichier de mise à jour";
 upgrad.warning="A T T E N T I O N";
-upgrad.mess1="La mise à jour du firmware peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
+upgrad.mess1="La mise à jour du firmware peut prendre quelques minutes.<br /><br/>N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
 
 //help container
 

@@ -73,8 +73,8 @@ function upgrade(F,id) {
 							</fieldset><br />
 							
 							<div class="warning">
-								<div id="warning_text"><b><% tran("upgrad.warning"); %></b></div>
-								<% tran("upgrad.mess1"); %><br />
+								<div id="warning_text"><b><% tran("upgrad.warning"); %></b></div><br />
+								<% tran("upgrad.mess1"); %><br /><br/>
 								<div align="center"><script type="text/javascript">
 								//<![CDATA[
 								var bar1 = createBar(500,15,100,15,50,"process_aborted(this.form)");
