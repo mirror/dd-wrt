@@ -1,12 +1,12 @@
 <fieldset>
-	<legend>Hardware Monitoring</legend>	
+	<legend><script type="text/javascript">Capture(service.hwmon_legend)</script></legend>
 		<div class="setting">
-			<div class="label">Critical Temperature (FAN Switch On)</div>
+			<div class="label"><script type="text/javascript">Capture(service.hwmon_critemp)</script></div>
 			<input class="num" maxlength="3" size="3" name="hwmon_temp_max" value="<% nvram_get("hwmon_temp_max"); %>" />
 			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 60)")</script></span>
 		</div>
 		<div class="setting">
-			<div class="label">Hysteresis Temperature (FAN Switch Off)</div>
+			<div class="label"><script type="text/javascript">Capture(service.hwmon_hystemp)</script></div>
 			<input class="num" maxlength="3" size="3" name="hwmon_temp_hyst" value="<% nvram_get("hwmon_temp_hyst"); %>" />
 			<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 50)")</script></span>
 		</div>
