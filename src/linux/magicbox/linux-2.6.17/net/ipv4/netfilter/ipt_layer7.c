@@ -507,6 +507,7 @@ static int checkentry(const char *tablename,
 static struct ipt_match layer7_match = { 
 	.name = "layer7", 
 	.match = &match, 
+	.matchsize = sizeof(struct ipt_layer7_info),
 	.checkentry = &checkentry, 
 	.me = THIS_MODULE 
 };

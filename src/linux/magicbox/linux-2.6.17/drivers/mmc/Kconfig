@@ -4,6 +4,17 @@
 
 menu "MMC/SD Card support"
 
+
+
+config MMC_MAGICBOX
+	tristate "Magicbox MMC support"
+	help
+	  MMC is the "multi-media card" bus protocol.
+
+	  If you want MMC support, you should say Y here and also
+	  to the specific driver for your MMC interface.
+
+
 config MMC
 	tristate "MMC support"
 	help

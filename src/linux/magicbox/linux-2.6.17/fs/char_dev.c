@@ -83,9 +83,7 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 
 	cd = kzalloc(sizeof(struct char_device_struct), GFP_KERNEL);
 	if (cd == NULL)
-		{
 		return ERR_PTR(-ENOMEM);
-		}
 
 	mutex_lock(&chrdevs_lock);
 

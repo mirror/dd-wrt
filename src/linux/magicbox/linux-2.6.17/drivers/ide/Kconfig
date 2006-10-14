@@ -808,6 +808,9 @@ config BLK_DEV_IDE_AU1XXX_SEQTS_PER_RQ
 config IDE_ARM
 	def_bool ARM && (ARCH_A5K || ARCH_CLPS7500 || ARCH_RPC || ARCH_SHARK)
 
+config IDE_MAGICBOX
+	bool "MagicBox CF-IDE support"
+
 config BLK_DEV_IDE_ICSIDE
 	tristate "ICS IDE interface support"
 	depends on ARM && ARCH_ACORN
@@ -923,12 +926,26 @@ config BLK_DEV_Q40IDE
 	  normally be on; disable it only if you are running a custom hard
 	  drive subsystem through an expansion card.
 
+config BLK_DEV_CFIDE
+	tristate "Compact Flash in True IDE mode"
+	help
+	  This is the IDE driver for a Memory Mapped Compact Flash Device
+	  running in True IDE mode.
+
 config BLK_DEV_MPC8xx_IDE
 	bool "MPC8xx IDE support"
 	depends on 8xx && IDE=y && BLK_DEV_IDE=y
 	help
 	  This option provides support for IDE on Motorola MPC8xx Systems.
 	  Please see 'Type of MPC8xx IDE interface' for details.
+
+	  If unsure, say N.
+
+config BLK_DEV_MAGICBOX_IDE
+	bool "MagicBox 2.0 CF IDE support"
+	depends on 4xx && IDE=y && BLK_DEV_IDE=y
+	help
+	  This option provides support for IDE on MagicBox 2.0 boards.
 
 	  If unsure, say N.
 
