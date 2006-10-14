@@ -2551,7 +2551,7 @@ show_preshared (webs_t wp, char *prefix)
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
 	     "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"",prefix,prefix);
-tf_webWriteESCNV(wp,nvram_safe_get(var)); 	     
+tf_webWriteESCNV(wp,var); 	     
   websWrite (wp,"\" />&nbsp;&nbsp;&nbsp;\n");
   websWrite (wp, 
   		"<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
