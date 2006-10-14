@@ -1834,6 +1834,12 @@ static void __init probe_for_hwifs (void)
 		buddha_init();
 	}
 #endif /* CONFIG_BLK_DEV_BUDDHA */
+#ifdef CONFIG_BLK_DEV_MAGICBOX_IDE
+	{
+		extern void ide_magicbox_init(void);
+		ide_magicbox_init();
+	}
+#endif
 #ifdef CONFIG_BLK_DEV_IDEPNP
 	pnpide_init();
 #endif
@@ -1847,6 +1853,7 @@ void ide_register_subdriver(ide_drive_t *drive, ide_driver_t *driver)
 #ifdef CONFIG_PROC_FS
 	ide_add_proc_entries(drive->proc, driver->proc, drive);
 #endif
+
 }
 
 EXPORT_SYMBOL(ide_register_subdriver);

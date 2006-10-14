@@ -17,14 +17,14 @@ HAS_BIARCH	:= $(call cc-option-yn, -m32)
 ifeq ($(HAS_BIARCH),y)
 AS		:= $(AS) -a32
 LD		:= $(LD) -m elf32ppc
-CC		:= $(CC) -m32
+CC		:= $(CC) -m32 
 endif
 
 LDFLAGS_vmlinux	:= -Ttext $(KERNELLOAD) -Bstatic
 # The -Iarch/$(ARCH)/include is temporary while we are merging
 CPPFLAGS	+= -Iarch/$(ARCH) -Iarch/$(ARCH)/include
 AFLAGS		+= -Iarch/$(ARCH)
-CFLAGS		+= -Iarch/$(ARCH) -msoft-float -pipe \
+CFLAGS		+= -Iarch/$(ARCH) -mcpu=405 -mtune=405 -msoft-float -pipe \
 		-ffixed-r2 -mmultiple
 
 # No AltiVec instruction when building kernel

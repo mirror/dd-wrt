@@ -35,11 +35,13 @@
 /* Flash */
 #define PPC40x_FPGA_BASE	0xF0300000
 #define PPC40x_FPGA_REG_OFFS	1	/* offset to flash map reg */
+
 #define PPC40x_FLASH_ONBD_N(x)	(x & 0x02)
 #define PPC40x_FLASH_SRAM_SEL(x) (x & 0x01)
 #define PPC40x_FLASH_LOW	0xFFF00000
 #define PPC40x_FLASH_HIGH	0xFFF80000
 #define PPC40x_FLASH_SIZE	0x80000
+#define CFG_FPGA_CTRL_CF_RESET	0x0001
 
 #define PPC4xx_MACHINE_NAME	"MagicBox"
 
