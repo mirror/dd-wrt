@@ -348,14 +348,14 @@ static void nfnetlink_rcv(struct sock *sk, int len)
 
 static void __exit nfnetlink_exit(void)
 {
-	printk(KERN_INFO "Removing netfilter NETLINK layer.\n");
+	printk("Removing netfilter NETLINK layer.\n");
 	sock_release(nfnl->sk_socket);
 	return;
 }
 
 static int __init nfnetlink_init(void)
 {
-	printk(KERN_INFO "Netfilter messages via NETLINK v%s.\n", nfversion);
+	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
 
 	nfnl = netlink_kernel_create(NETLINK_NETFILTER, NFNLGRP_MAX,
 	                             nfnetlink_rcv, THIS_MODULE);

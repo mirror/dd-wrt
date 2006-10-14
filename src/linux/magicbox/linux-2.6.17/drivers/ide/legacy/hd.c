@@ -55,22 +55,26 @@
 #define HD_IRQ IRQ_HARDDISK
 #endif
 
+#define HD_IRQ 25
+
 /* Hd controller regster ports */
 
-#define HD_DATA		0x1f0		/* _CTL when writing */
-#define HD_ERROR	0x1f1		/* see err-bits */
-#define HD_NSECTOR	0x1f2		/* nr of sectors to read/write */
-#define HD_SECTOR	0x1f3		/* starting sector */
-#define HD_LCYL		0x1f4		/* starting cylinder */
-#define HD_HCYL		0x1f5		/* high byte of starting cyl */
-#define HD_CURRENT	0x1f6		/* 101dhhhh , d=drive, hhhh=head */
-#define HD_STATUS	0x1f7		/* see status-bits */
+#define HD_BASE         0xf0300000
+
+#define HD_DATA		(HD_BASE)	/* _CTL when writing */
+#define HD_ERROR	(HD_BASE+3)	/* see err-bits */
+#define HD_NSECTOR	(HD_BASE+5)	/* nr of sectors to read/write */
+#define HD_SECTOR	(HD_BASE+7)	/* starting sector */
+#define HD_LCYL		(HD_BASE+9)	/* starting cylinder */
+#define HD_HCYL		(HD_BASE+0xb)	/* high byte of starting cyl */
+#define HD_CURRENT	(HD_BASE+0xd)	/* 101dhhhh , d=drive, hhhh=head */
+#define HD_STATUS	(HD_BASE+0xf)	/* see status-bits */
 #define HD_FEATURE	HD_ERROR	/* same io address, read=error, write=feature */
-#define HD_PRECOMP	HD_FEATURE	/* obsolete use of this port - predates IDE */
+#define HD_PRECOMP	(HD_BASE+0x3)	/* obsolete use of this port - predates IDE */
 #define HD_COMMAND	HD_STATUS	/* same io address, read=status, write=cmd */
 
-#define HD_CMD		0x3f6		/* used for resets */
-#define HD_ALTSTATUS	0x3f6		/* same as HD_STATUS but doesn't clear irq */
+#define HD_CMD		0xf070000d	/* used for resets */
+#define HD_ALTSTATUS	HD_CMD		/* same as HD_STATUS but doesn't clear irq */
 
 /* Bits of HD_STATUS */
 #define ERR_STAT		0x01

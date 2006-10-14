@@ -97,8 +97,8 @@ magicbox_early_serial_map(void)
 	port.irq = ACTING_UART0_INT;
 	port.uartclk = uart_clock;
 	port.regshift = 0;
-	port.iotype = SERIAL_IO_MEM;
-	port.flags = ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST;
+	port.iotype = UPIO_MEM;
+	port.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
 	port.line = 0;
 
 	if (early_serial_setup(&port) != 0) {
@@ -204,6 +204,7 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].ma)));
 		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].la)));
 		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pcila)));
+
 		printk(" pmm%dma\t0x%x\n", i, in_le32(&(pcip->pmm[i].pciha)));
 	}
 	printk(" ptm1ms\t0x%x\n", in_le32(&(pcip->ptm1ms)));
@@ -214,14 +215,97 @@ bios_fixup(struct pci_controller *hose, struct pcil0_regs *pcip)
 #endif /* DEBUG */
 }
 
+
+static void reset_ide(int on)
+{
+//#define PPC40x_FPGA_BASE	0xF0300000
+	volatile unsigned short *fpga_mode =
+		(unsigned short *)((ulong)PPC40x_FPGA_BASE);
+
+	/*
+	 * Assert or deassert CompactFlash Reset Pin
+	 */
+	if (on) {		/* assert RESET */
+		*fpga_mode &= ~(CFG_FPGA_CTRL_CF_RESET);
+	} else {		/* release RESET */
+		*fpga_mode |= CFG_FPGA_CTRL_CF_RESET;
+	}
+}
 void __init
 magicbox_setup_arch(void)
 {
+
+	/* Mask to apply to ebc0_bncr register as per 405ep_um.pdf, page 97.
+	 * 
+	 * This is endian-mess, I mean -- it's fscked probably exactly here 
+	 */
+	printk("reseting CF Card IDE\n");
+	//reset_ide(1);
+	//reset_ide(0);
+	printk("done CF Card IDE\n");
+					
+
+//#define CFG_EBC_PB3AP		0x010053C0  /* BWT=2,WBN=1,WBF=1,TH=1,RE=1,SOR=1,BEM=1 */
+//#define CFG_EBC_PB3CR		0xF011A000  /* BAS=0xF01,BS=1MB,BU=R/W,BW=16bit */
+
+  	u32 ebc0_b1cr_mask = 0xec01a000; //0xfffb10ce;
+  	u32 ebc0_b2cr_mask = 0xec11a000; //0xfffb11ce;
+	u32 ebc0_bnap_mask = 0x010053C0; //
+//	u32 ebc0_bnap_mask = 0x081bb41f;//0xf14bb180;
+	u32 reg;
+
 	ppc4xx_setup_arch();
-
 	ibm_ocp_set_emac(0, 1);
-
 	magicbox_early_serial_map();
+	
+
+	/* Program BnCR, BnAP according to some TOSHIBA-CF sample application
+	   note. */
+	printk("magicbox: init\n");
+
+	printk("Interrupt enable:   0x%x\n", mfdcr(0x0c2));
+	printk("Interrupt polarity: 0x%x\n", mfdcr(0x0c4));
+
+	printk("enabling ext irq0\n");
+	reg = mfdcr(0x0c2) | (1<<7);
+	mtdcr(0x0c2, reg);
+
+	printk("setting ext irq0 polarity to high\n");
+	reg = mfdcr(0x0c4) | (1<<7);
+	mtdcr(0xc4, reg);
+
+	printk("Interrupt enable:   0x%x\n", mfdcr(0xc2));
+	printk("Interrupt polarity: 0x%x\n", mfdcr(0xc4));
+
+	printk("magicbox: compact-flash init\n");
+	
+#define EBC0_CFGADDR 0x12
+#define EBC0_CFGDATA 0x13
+#define EBC0_B1CR    0x01
+#define EBC0_B2CR    0x02
+#define EBC0_B1AP    0x11
+#define EBC0_B2AP    0x12
+
+//	mtdcr(EBC0_CFGADDR, EBC0_B1CR);
+//	reg = mfdcr(EBC0_CFGDATA);
+	mtdcr(EBC0_CFGADDR, EBC0_B1CR);
+	mtdcr(EBC0_CFGDATA, ebc0_b1cr_mask);
+
+//	mtdcr(EBC0_CFGADDR, EBC0_B2CR);
+//	reg = mfdcr(EBC0_CFGDATA);
+	mtdcr(EBC0_CFGADDR, EBC0_B2CR);
+	mtdcr(EBC0_CFGDATA, ebc0_b2cr_mask);
+
+//	mtdcr(EBC0_CFGADDR, EBC0_B1AP);
+//	reg = mfdcr(EBC0_CFGDATA);
+	mtdcr(EBC0_CFGADDR, EBC0_B1AP);
+	mtdcr(EBC0_CFGDATA, ebc0_bnap_mask);
+
+//	mtdcr(EBC0_CFGADDR, EBC0_B2AP);
+//	reg = mfdcr(EBC0_CFGDATA);
+	mtdcr(EBC0_CFGADDR, EBC0_B2AP);
+	mtdcr(EBC0_CFGDATA, ebc0_bnap_mask);
+
 
 	/* Identify the system */
 	printk("MagicBox port (C) 2005 Karol Lewandowski <kl@jasmine.eu.org>\n");
@@ -243,7 +327,7 @@ platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	ppc_md.setup_io_mappings = magicbox_map_io;
 
 #ifdef CONFIG_KGDB
-	ppc_md.early_serial_map = bubinga_early_serial_map;
+	ppc_md.early_serial_map = magicbox_early_serial_map;
 #endif
 
 }

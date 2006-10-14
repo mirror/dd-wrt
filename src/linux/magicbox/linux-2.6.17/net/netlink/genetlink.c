@@ -534,17 +534,14 @@ static struct genl_family genl_ctrl = {
 
 static int __init genl_init(void)
 {
-printk(KERN_INFO "genl_init\n"); 
 	int i, err;
 
 	for (i = 0; i < GENL_FAM_TAB_SIZE; i++)
 		INIT_LIST_HEAD(&family_ht[i]);
-printk(KERN_INFO "register family\n"); 
 
 	err = genl_register_family(&genl_ctrl);
 	if (err < 0)
 		goto errout;
-printk(KERN_INFO "register ops\n"); 
 
 	err = genl_register_ops(&genl_ctrl, &genl_ctrl_ops);
 	if (err < 0)
@@ -555,7 +552,6 @@ printk(KERN_INFO "register ops\n");
 					  genl_rcv, THIS_MODULE);
 	if (genl_sock == NULL)
 		panic("GENL: Cannot initialize generic netlink\n");
-printk(KERN_INFO "done \n"); 
 
 	return 0;
 
