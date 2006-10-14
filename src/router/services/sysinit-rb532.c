@@ -20,6 +20,32 @@
  * $Id:
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <time.h>
+#include <unistd.h>
+#include <errno.h>
+#include <syslog.h>
+#include <signal.h>
+#include <string.h>
+#include <termios.h>
+#include <sys/klog.h>
+#include <sys/types.h>
+#include <sys/mount.h>
+#include <sys/reboot.h>
+#include <sys/stat.h>
+#include <sys/sysmacros.h>
+#include <sys/time.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
+
+#include <bcmnvram.h>
+#include <shutils.h>
+#include <utils.h>
+
+char wanifname[8], wlifname[8];
+
 int
 start_sysinit (void)
 {
