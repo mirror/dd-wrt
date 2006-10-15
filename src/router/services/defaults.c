@@ -1702,6 +1702,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"hwmon_temp_max", "60", 0},
   {"hwmon_temp_hyst", "50", 0},
 #endif
+#ifdef HAVE_RSTATS
+  {"rstats_enable","1",0},
+#endif
   {0, 0, 0}
 };
 

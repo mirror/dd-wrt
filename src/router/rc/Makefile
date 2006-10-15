@@ -38,6 +38,10 @@ endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
 endif
+ifeq ($(CONFIG_RSTATS),y)
+CFLAGS += -DHAVE_RSTATS
+endif
+
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
