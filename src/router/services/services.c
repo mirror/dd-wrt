@@ -3510,6 +3510,24 @@ start_force_to_dial (void)
 
   return ret;
 }
+#ifdef HAVE_RSTATS
+
+void stop_rstats(void)
+{
+	eval("killall","rstats");
+}
+
+void start_rstats(void)
+{
+	if (nvram_match("rstats_enable", "1")) {
+		stop_rstats();
+		eval("rstats");
+	}
+}
+
+#endif
+
+
 
 #ifdef HAVE_WIFIDOG
 //unfinished. do not use
