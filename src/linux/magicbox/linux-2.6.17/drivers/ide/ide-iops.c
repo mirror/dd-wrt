@@ -241,6 +241,8 @@ static void ata_input_data(ide_drive_t *drive, void *buffer, u32 wcount)
 	ide_hwif_t *hwif	= HWIF(drive);
 	u8 io_32bit		= drive->io_32bit;
 
+//	printk ("ata_input_data: wcount=%d, io-32bit: %s\n", wcount, io_32bit ? "yes" : "no");
+
 	if (io_32bit) {
 		if (io_32bit & 2) {
 			unsigned long flags;
@@ -251,7 +253,9 @@ static void ata_input_data(ide_drive_t *drive, void *buffer, u32 wcount)
 		} else
 			hwif->INSL(IDE_DATA_REG, buffer, wcount);
 	} else {
-		hwif->INSW(IDE_DATA_REG, buffer, wcount<<1);
+#define IDE_DATA_READ_REG (HWIF(drive)->io_ports[IDE_DATA_OFFSET] + 1)
+	  hwif->INSW(IDE_DATA_READ_REG, buffer, wcount<<1);
+	  //	  hwif->INSW(IDE_DATA_REG, buffer, wcount<<1);
 	}
 }
 
@@ -262,6 +266,8 @@ static void ata_output_data(ide_drive_t *drive, void *buffer, u32 wcount)
 {
 	ide_hwif_t *hwif	= HWIF(drive);
 	u8 io_32bit		= drive->io_32bit;
+
+//	printk ("ata_output_data: count=%d, io-32bit: %s\n", wcount, io_32bit ? "yes" : "no");
 
 	if (io_32bit) {
 		if (io_32bit & 2) {
