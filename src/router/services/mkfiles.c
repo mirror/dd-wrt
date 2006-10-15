@@ -153,6 +153,9 @@ start_mkfiles (void)
   system ("/bin/mkdir /var/spool/cron");
   system ("/bin/mkdir /var/spool/cron/crontabs");
   system ("/bin/touch /var/spool/cron/crontabs/root");
+  system ("/bin/mkdir /var/lib");
+  system ("/bin/mkdir /var/lib/misc");
+  system ("/bin/mkdir /var/tmp");
 
   system ("/bin/mkdir /var/log");
   system ("/bin/touch /var/log/messages");

@@ -198,7 +198,7 @@ obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_RADIOOFF) += radiooff
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-y += sprom
-obj-y += rstats
+obj-$(CONFIG_RSTATS) += rstats
 
 
 

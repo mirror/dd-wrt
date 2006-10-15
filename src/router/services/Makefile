@@ -21,6 +21,10 @@ ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio.o
 endif
 
+ifeq ($(CONFIG_RSTATS),y)
+CFLAGS += -DHAVE_RSTATS
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
 else
