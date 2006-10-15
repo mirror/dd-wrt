@@ -227,13 +227,13 @@ typedef struct{
 
 
 typedef struct {
-	unsigned char	ver_inet_hdr_length	PACKED;
-	unsigned char	service_type		PACKED;
+	unsigned char	ver_inet_hdr_length;
+	unsigned char	service_type;
 	unsigned short	total_length		PACKED;
 	unsigned short	identifier		PACKED;
 	unsigned short	flags_frag_offset	PACKED;
-	unsigned char	ttl			PACKED;
-	unsigned char	protocol		PACKED;
+	unsigned char	ttl;
+	unsigned char	protocol;
 	unsigned short	hdr_checksum		PACKED;
 	unsigned long	ip_src_address		PACKED;
 	unsigned long	ip_dst_address		PACKED;
@@ -241,10 +241,10 @@ typedef struct {
 
 
 typedef struct {
-        unsigned char           signature[8]    PACKED;
-        unsigned char           request_reply   PACKED;
-        unsigned char           id              PACKED;
-        unsigned char           reserved[6]     PACKED;
+        unsigned char           signature[8];
+        unsigned char           request_reply;
+        unsigned char           id;
+        unsigned char           reserved[6];
 } wp_mgmt_t;
 
 /*************************************************************************

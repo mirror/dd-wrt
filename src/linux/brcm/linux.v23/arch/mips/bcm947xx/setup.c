@@ -205,6 +205,9 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "pmon",	offset: 0, size: 0, /*mask_flags: MTD_WRITEABLE,*/ },
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, /*mask_flags: MTD_WRITEABLE,*/ },
+#ifdef CONFIG_REGISTER
+	{ name: "mampf", offset: 0, size: 0, },
+#endif
 	{ name: "nvram", offset: 0, size: 0, },
 	{ name: "ddwrt", offset: 0, size: 0, },
 
@@ -286,15 +289,23 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	bcm947xx_parts[0].offset=0;
 	bcm947xx_parts[0].size=256*1024;
+	int nvramidx=3;
+#ifdef CONFIG_REGISTER
+	nvramidx=4;
+#endif
 	if (size==1024*1024*8) // fix for WHR2 - A54G54
 	    {
-	bcm947xx_parts[3].offset = size - 0x20000;
-	bcm947xx_parts[3].size = size - bcm947xx_parts[3].offset;
+	bcm947xx_parts[nvramidx].offset = size - 0x20000;
+	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;
 	    }else
 	    {
-	bcm947xx_parts[3].offset = size - 0x10000;
-	bcm947xx_parts[3].size = size - bcm947xx_parts[3].offset;        
+	bcm947xx_parts[nvramidx].offset = size - 0x10000;
+	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;        
 	    }
+#ifdef CONFIG_REGISTER
+	bcm947xx_parts[3].offset = bcm947xx_parts[4].offset - mtd->erasesize;
+	bcm947xx_parts[3].size = mtd->erasesize;        
+#endif
 	/* Find and size nvram */
 
 	/* Find and size rootfs */
@@ -329,11 +340,13 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	spot&=mask;
 	//  length = flashsize - start position - nvram size
 	len=size-spot;
+	len=len-bcm947xx_parts[nvramidx].size;
+#ifdef CONFIG_REGISTER
 	len=len-bcm947xx_parts[3].size;
-	
+#endif
 
-	bcm947xx_parts[4].offset = spot;
-	bcm947xx_parts[4].size = len;
+	bcm947xx_parts[nvramidx+1].offset = spot;
+	bcm947xx_parts[nvramidx+1].size = len;
 
 
 

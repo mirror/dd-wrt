@@ -118,14 +118,16 @@ static inline void xram_copy_from (void *p, xram_p x, int len)
 
 		val = ((sbus_readw(x + 0x00UL) << 16) |
 		       (sbus_readw(x + 0x02UL)));
-		*((u32 *)p)++ = val;
+		*(u32 *)p = val;
+		p += sizeof(u32);
 	}
 }
 
 static inline void xram_copy_to (xram_p x, void *p, int len)
 {
 	for (len >>= 2; len > 0; len--, x += sizeof(u32)) {
-		u32 tmp = *((u32 *)p)++;
+		u32 tmp = *(u32 *)p;
+		p += sizeof(u32);
 		sbus_writew(tmp >> 16, x + 0x00UL);
 		sbus_writew(tmp, x + 0x02UL);
 	}

@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
 SUBLEVEL = 34
-EXTRAVERSION = -pre2
+EXTRAVERSION = -pre3
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -25,15 +25,15 @@ CROSS_COMPILE   = mipsel-linux-
 # Include the make variables (CC, etc...)
 #
 
-AS		= /opt/3.3.6/bin/$(CROSS_COMPILE)as
-LD		= /opt/3.3.6/bin/$(CROSS_COMPILE)ld
-CC		= /opt/3.3.6/bin/$(CROSS_COMPILE)gcc
+AS		= /opt/3.3.4/bin/$(CROSS_COMPILE)as
+LD		= /opt/3.3.4/bin/$(CROSS_COMPILE)ld
+CC		= /opt/3.3.4/bin/$(CROSS_COMPILE)gcc
 CPP		= $(CC) -E
-AR		= /opt/3.3.6/bin/$(CROSS_COMPILE)ar
-NM		= /opt/3.3.6/bin/$(CROSS_COMPILE)nm
-STRIP		= /opt/3.3.6/bin/$(CROSS_COMPILE)strip
-OBJCOPY		= /opt/3.3.6/bin/$(CROSS_COMPILE)objcopy
-OBJDUMP		= /opt/3.3.6/bin/$(CROSS_COMPILE)objdump
+AR		= /opt/3.3.4/bin/$(CROSS_COMPILE)ar
+NM		= /opt/3.3.4/bin/$(CROSS_COMPILE)nm
+STRIP		= /opt/3.3.4/bin/$(CROSS_COMPILE)strip
+OBJCOPY		= /opt/3.3.4/bin/$(CROSS_COMPILE)objcopy
+OBJDUMP		= /opt/3.3.4/bin/$(CROSS_COMPILE)objdump
 MAKEFILES	= $(TOPDIR)/.config
 GENKSYMS	= /sbin/genksyms
 DEPMOD		= /sbin/depmod
@@ -95,6 +95,7 @@ CPPFLAGS := -D__KERNEL__ -I$(HPATH)
 
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 	  -fno-strict-aliasing -fno-common
+CFLAGS += -fno-builtin-sprintf
 
 
 ifndef CONFIG_FRAME_POINTER
@@ -103,6 +104,11 @@ endif
 AFLAGS := -D__ASSEMBLY__ $(CPPFLAGS)
 
 CFLAGS += $(call check_gcc, -funit-at-a-time,)
+
+ 
+# disable pointer signedness warnings in gcc 4.0
+CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
+
 #CFLAGS += -fno-delayed-branch
 #CFLAGS += $(call check_gcc, -fno-delayed-branch)
 
