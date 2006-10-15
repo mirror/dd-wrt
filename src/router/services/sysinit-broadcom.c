@@ -244,6 +244,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
+      eval ("gpio", "disable", "4");  //maybe fix for reset button not working
       break;
 
     case ROUTER_MOTOROLA:
