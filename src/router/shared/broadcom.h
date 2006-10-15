@@ -126,6 +126,7 @@ extern int has_mimo(void);
 
 
 /* for index */
+extern void ej_getregcode (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv);
@@ -381,6 +382,8 @@ extern int remove_vifs (webs_t wp);
 
 //extern int ej_show_virtualssid(int eid, webs_t wp, int argc, char_t **argv);
 extern void ej_show_security (int eid, webs_t wp, int argc, char_t ** argv);
+
+extern int reg_validate (webs_t wp);
 extern int wireless_save (webs_t wp);
 extern int set_security (webs_t wp);
 extern int forward_add (webs_t wp);
