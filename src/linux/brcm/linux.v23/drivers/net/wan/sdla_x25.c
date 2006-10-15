@@ -304,26 +304,26 @@ typedef struct x25_channel
 #ifdef NEX_OLD_CALL_INFO
 typedef struct x25_call_info
 {
-	char dest[17];			PACKED;/* ASCIIZ destination address */
-	char src[17];			PACKED;/* ASCIIZ source address */
-	char nuser;			PACKED;/* number of user data bytes */
-	unsigned char user[127];	PACKED;/* user data */
-	char nfacil;			PACKED;/* number of facilities */
+	char dest[17];			/* ASCIIZ destination address */
+	char src[17];			/* ASCIIZ source address */
+	char nuser;			/* number of user data bytes */
+	unsigned char user[127];	/* user data */
+	char nfacil;			/* number of facilities */
 	struct
 	{
-		unsigned char code;     PACKED;
-		unsigned char parm;     PACKED;
+		unsigned char code;
+		unsigned char parm;
 	} facil[64];			        /* facilities */
 } x25_call_info_t;
 #else
 typedef struct x25_call_info
 {
-	char dest[MAX_X25_ADDR_SIZE]		PACKED;/* ASCIIZ destination address */
-	char src[MAX_X25_ADDR_SIZE]		PACKED;/* ASCIIZ source address */
-	unsigned char nuser			PACKED;
-	unsigned char user[MAX_X25_DATA_SIZE]	PACKED;/* user data */
-	unsigned char nfacil			PACKED;
-	unsigned char facil[MAX_X25_FACL_SIZE]	PACKED;
+	char dest[MAX_X25_ADDR_SIZE];	/* ASCIIZ destination address */
+	char src[MAX_X25_ADDR_SIZE];	/* ASCIIZ source address */
+	unsigned char nuser;
+	unsigned char user[MAX_X25_DATA_SIZE];/* user data */
+	unsigned char nfacil;
+	unsigned char facil[MAX_X25_FACL_SIZE];
 	unsigned short lcn             		PACKED;
 } x25_call_info_t;
 #endif

@@ -131,13 +131,13 @@ struct frad_conf
 /* these are the fields of an RFC 1490 header */
 struct frhdr
 {
-   unsigned char  control	__attribute__((packed));
+   unsigned char  control;
 
    /* for IP packets, this can be the NLPID */
-   unsigned char  pad		__attribute__((packed)); 
+   unsigned char  pad	; 
 
-   unsigned char  NLPID		__attribute__((packed));
-   unsigned char  OUI[3]	__attribute__((packed));
+   unsigned char  NLPID	;
+   unsigned char  OUI[3];
    unsigned short PID		__attribute__((packed));
 
 #define IP_NLPID pad 
