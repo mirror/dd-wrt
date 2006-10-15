@@ -1668,15 +1668,15 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 
 #ifdef HAVE_WIFIDOG
-  {"wifidog_enable", "0", 0},
-  {"wifidog_GatewayID", "default", 0},
-  {"wifidog_Portal", "http://www.yourportalurl/", 0},
-  {"wifidog_GatewayPort", "2060", 0},
-  {"wifidog_HTTPDName", "WiFiDog", 0},
-  {"wifidog_HTTPDMaxConn", "10", 0},
-  {"wifidog_CheckInterval", "60", 0},
-  {"wifidog_ClientTimeout", "5", 0},
-  {"wifidog_TrustedMACList", "", 0},
+  {"wd_enable", "0", 0},
+  {"wd_gwid", "default", 0},
+  {"wd_url", "http://www.yourportalurl/", 0},
+  {"wd_gwport", "2060", 0},
+  {"wd_httpdname", "WiFiDog", 0},
+  {"wd_httpdcon", "10", 0},
+  {"wd_interval", "60", 0},
+  {"wd_timeout", "5", 0},
+  {"wd_maclist", "", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
