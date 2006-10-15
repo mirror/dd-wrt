@@ -13,14 +13,33 @@
 #include <linux/hdreg.h>
 #include <linux/ide.h>
 #include <linux/delay.h>
-
+#include <linux/byteorder/swab.h>
 
 #define UIC0_PR 0xc4
 #define UIC0_TR 0xc5
 #define IRQ 25
 
-static int ide_offsets[IDE_NR_PORTS] = {1, 3, 5, 7, 9, 11, 13, 15, -1, -1};
+static int ide_offsets[IDE_NR_PORTS] = {0, 3, 5, 7, 9, 11, 13, 15, -1, -1};
 
+static void magicbox_outsw(void __iomem *port, void *addr, u32 count)
+{
+//	printk("magicbox_outsw: mark\n");
+	while (count--) {
+//		printk("magicbox_outsw: %c,%c\n", *(u8 *)addr, *(u8 *)(addr + 1));
+		u16 tmp = swab16(*(u16 *)addr);
+		writew(tmp, port);
+		addr += 2;
+	}
+}
+
+static void magicbox_insw(void __iomem *port, void *addr, u32 count)
+{
+	while (count--) {
+		*(u16 *)addr = readw(port+1);
+		addr += 2;
+	}
+}
+ 
 static void __init ide_magicbox_register(unsigned long addr,
 					 unsigned long caddr, int irq)
 {
@@ -36,6 +55,10 @@ static void __init ide_magicbox_register(unsigned long addr,
 		hwif->mmio = 2;
 		hwif->drives[0].unmask = 1;
 		default_hwif_mmiops(hwif);
+
+//		hwif->OUTSW = magicbox_outsw;
+//		hwif->INSW = magicbox_insw;
+//		hwif->INW = magicbox_inw;
 	}
 }
 
@@ -51,17 +74,19 @@ void __init ide_magicbox_init(void)
 	mtdcr(DCRN_EBC_BASE, 0x02);
 	mtdcr(DCRN_EBC_BASE + 1, 0xff11a000);
 	mtdcr(DCRN_EBC_BASE, 0x12);
-	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+	//	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd400);
 
 	/* PerCS1 (CF's CS1): base 0xff200000, 16-bit, rw */
 	mtdcr(DCRN_EBC_BASE, 0x01);
-	mtdcr(DCRN_EBC_BASE + 1, 0xff21a000);
+	mtdcr(DCRN_EBC_BASE + 1, 0xff31a000);
 	mtdcr(DCRN_EBC_BASE, 0x11);
-	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+	//	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd400);
 
 	/* Remap physical address space */
 	addr = ioremap_nocache(0xff100000, 4096);
-	caddr = ioremap_nocache(0xff200000, 4096);
+	caddr = ioremap_nocache(0xff300000, 4096);
 
 	/* Set interrupt to low-to-high-edge-triggered */
 	mtdcr(UIC0_TR, mfdcr(UIC0_TR) & ~(0x80000000L >> IRQ));
