@@ -99,56 +99,56 @@ struct dn_dev {
 
 struct dn_short_packet
 {
-	unsigned char   msgflg          __attribute__((packed));
+	unsigned char   msgflg;
         unsigned short  dstnode         __attribute__((packed));
         unsigned short  srcnode         __attribute__((packed));
-        unsigned char   forward         __attribute__((packed));
+        unsigned char   forward;
 };
 
 struct dn_long_packet
 {
-	unsigned char   msgflg          __attribute__((packed));
-        unsigned char   d_area          __attribute__((packed));
-        unsigned char   d_subarea       __attribute__((packed));
-        unsigned char   d_id[6]         __attribute__((packed));
-        unsigned char   s_area          __attribute__((packed));
-        unsigned char   s_subarea       __attribute__((packed));
-        unsigned char   s_id[6]         __attribute__((packed));
-        unsigned char   nl2             __attribute__((packed));
-        unsigned char   visit_ct        __attribute__((packed));
-        unsigned char   s_class         __attribute__((packed));
-        unsigned char   pt              __attribute__((packed));
+	unsigned char   msgflg;
+        unsigned char   d_area;
+        unsigned char   d_subarea;
+        unsigned char   d_id[6];
+        unsigned char   s_area;
+        unsigned char   s_subarea;
+        unsigned char   s_id[6];
+        unsigned char   nl2;
+        unsigned char   visit_ct;
+        unsigned char   s_class;
+        unsigned char   pt;
 };
 
 /*------------------------- DRP - Routing messages ---------------------*/
 
 struct endnode_hello_message
 {
-	unsigned char   msgflg          __attribute__((packed));
-        unsigned char   tiver[3]        __attribute__((packed));
-        unsigned char   id[6]           __attribute__((packed));
-        unsigned char   iinfo           __attribute__((packed));
+	unsigned char   msgflg;
+        unsigned char   tiver[3];
+        unsigned char   id[6];
+        unsigned char   iinfo;
         unsigned short  blksize         __attribute__((packed));
-        unsigned char   area            __attribute__((packed));
-        unsigned char   seed[8]         __attribute__((packed));
-        unsigned char   neighbor[6]     __attribute__((packed));
+        unsigned char   area;
+        unsigned char   seed[8];
+        unsigned char   neighbor[6];
         unsigned short  timer           __attribute__((packed));
-        unsigned char   mpd             __attribute__((packed));
-        unsigned char   datalen         __attribute__((packed));
-        unsigned char   data[2]         __attribute__((packed));
+        unsigned char   mpd;
+        unsigned char   datalen;
+        unsigned char   data[2];
 };
 
 struct rtnode_hello_message
 {
-	unsigned char   msgflg          __attribute__((packed));
-        unsigned char   tiver[3]        __attribute__((packed));
-        unsigned char   id[6]           __attribute__((packed));
-        unsigned char   iinfo           __attribute__((packed));
+	unsigned char   msgflg;
+        unsigned char   tiver[3];
+        unsigned char   id[6];
+        unsigned char   iinfo;
         unsigned short  blksize         __attribute__((packed));
-        unsigned char   priority        __attribute__((packed));
-        unsigned char   area            __attribute__((packed));
+        unsigned char   priority;
+        unsigned char   area;
         unsigned short  timer           __attribute__((packed));
-        unsigned char   mpd             __attribute__((packed));
+        unsigned char   mpd;
 };
 
 

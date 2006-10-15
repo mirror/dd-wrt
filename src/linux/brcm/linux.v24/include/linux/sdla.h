@@ -293,23 +293,23 @@ void sdla(void *cfg_info, char *dev, struct frad_conf *conf, int quiet);
 #define SDLA_S508_INTEN			0x10
 
 struct sdla_cmd {
-   char  opp_flag		__attribute__((packed));
-   char  cmd			__attribute__((packed));
+   char  opp_flag;
+   char  cmd;
    short length			__attribute__((packed));
-   char  retval			__attribute__((packed));
+   char  retval;
    short dlci			__attribute__((packed));
-   char  flags			__attribute__((packed));
+   char  flags;
    short rxlost_int		__attribute__((packed));
    long  rxlost_app		__attribute__((packed));
-   char  reserve[2]		__attribute__((packed));
-   char  data[SDLA_MAX_DATA]	__attribute__((packed));	/* transfer data buffer */
+   char  reserve[2];
+   char  data[SDLA_MAX_DATA];	/* transfer data buffer */
 };
 
 struct intr_info {
-   char  flags		__attribute__((packed));
+   char  flags;
    short txlen		__attribute__((packed));
-   char  irq		__attribute__((packed));
-   char  flags2		__attribute__((packed));
+   char  irq;
+   char  flags2;
    short timeout	__attribute__((packed));
 };
 
@@ -325,10 +325,10 @@ struct buf_info {
 
 /* structure pointed to by rse_base in RXBUF_INFO struct */
 struct buf_entry {
-   char  opp_flag	__attribute__((packed));
+   char  opp_flag;
    short length		__attribute__((packed));
    short dlci		__attribute__((packed));
-   char  flags		__attribute__((packed));
+   char  flags;
    short timestamp	__attribute__((packed));
    short reserved[2]	__attribute__((packed));
    long  buf_addr	__attribute__((packed));

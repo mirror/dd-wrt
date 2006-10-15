@@ -31,9 +31,6 @@
 extern unsigned char pckbd_read_mask;
 extern unsigned char aux_device_present;
 
-extern unsigned long pcikbd_iobase;
-extern unsigned int pcikbd_irq;
-
 /*
  *	Keyboard Controller Registers
  *

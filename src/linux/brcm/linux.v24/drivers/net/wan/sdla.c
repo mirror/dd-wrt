@@ -319,7 +319,7 @@ static int sdla_cpuspeed(struct net_device *dev, struct ifreq *ifr)
 struct _dlci_stat 
 {
 	short dlci		__attribute__((packed));
-	char  flags		__attribute__((packed));
+	char  flags;
 };
 
 struct _frad_stat 

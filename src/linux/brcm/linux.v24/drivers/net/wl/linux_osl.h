@@ -38,10 +38,12 @@ extern uint osl_malloced(osl_t *osh);
 extern uint osl_malloc_failed(osl_t *osh);
 
 /* API for DMA addressing capability */
-#define	DMA_MAP(osh, va, size, direction, p) \
+
+#define	DMA_MAP(osh, va, size, direction, p, dmah) \
 	osl_dma_map((osh), (va), (size), (direction))
-#define	DMA_UNMAP(osh, pa, size, direction, p) \
+#define	DMA_UNMAP(osh, pa, size, direction, p, dmah) \
 	osl_dma_unmap((osh), (pa), (size), (direction))
+
 static inline uint
 osl_dma_map(void *osh, void *va, uint size, int direction)
 {

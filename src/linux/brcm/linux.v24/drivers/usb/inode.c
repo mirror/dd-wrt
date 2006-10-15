@@ -44,6 +44,9 @@
 static struct inode_operations usbdevfs_bus_inode_operations;
 static struct file_operations usbdevfs_bus_file_operations;
 
+static struct inode_operations usbdevfs_bus_inode_operations;
+static struct file_operations usbdevfs_bus_file_operations;
+
 /* --------------------------------------------------------------------- */
 static struct file_operations usbdevfs_bus_file_operations;
 static struct inode_operations usbdevfs_bus_inode_operations;

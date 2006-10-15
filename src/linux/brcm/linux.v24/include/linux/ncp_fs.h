@@ -180,9 +180,9 @@ struct ncp_entry_info {
 	ino_t			ino;
 	int			opened;
 	int			access;
-	__u32			server_file_handle __attribute__((packed));
-	__u8			open_create_action __attribute__((packed));
-	__u8			file_handle[6] __attribute__((packed));
+	__u32			server_file_handle;
+	__u8			open_create_action;
+	__u8			file_handle[6];
 };
 
 /* Guess, what 0x564c is :-) */
