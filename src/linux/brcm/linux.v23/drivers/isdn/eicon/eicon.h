@@ -154,18 +154,18 @@ typedef struct {
   __u16 NextReq  __attribute__ ((packed));  /* pointer to next Req Buffer */
   __u16 NextRc   __attribute__ ((packed));  /* pointer to next Rc Buffer  */
   __u16 NextInd  __attribute__ ((packed));  /* pointer to next Ind Buffer */
-  __u8 ReqInput  __attribute__ ((packed));  /* number of Req Buffers sent */
-  __u8 ReqOutput  __attribute__ ((packed)); /* number of Req Buffers returned */
-  __u8 ReqReserved  __attribute__ ((packed));/*number of Req Buffers reserved */
-  __u8 Int  __attribute__ ((packed));       /* ISDN-P interrupt           */
-  __u8 XLock  __attribute__ ((packed));     /* Lock field for arbitration */
-  __u8 RcOutput  __attribute__ ((packed));  /* number of Rc buffers received */
-  __u8 IndOutput  __attribute__ ((packed)); /* number of Ind buffers received */
-  __u8 IMask  __attribute__ ((packed));     /* Interrupt Mask Flag        */
-  __u8 Reserved1[2]  __attribute__ ((packed)); /* reserved field, do not use */
-  __u8 ReadyInt  __attribute__ ((packed));  /* request field for ready int */
-  __u8 Reserved2[12]  __attribute__ ((packed)); /* reserved field, do not use */
-  __u8 InterfaceType  __attribute__ ((packed)); /* interface type 1=16K    */
+  __u8 ReqInput;  /* number of Req Buffers sent */
+  __u8 ReqOutput; /* number of Req Buffers returned */
+  __u8 ReqReserved;/*number of Req Buffers reserved */
+  __u8 Int;       /* ISDN-P interrupt           */
+  __u8 XLock;     /* Lock field for arbitration */
+  __u8 RcOutput;  /* number of Rc buffers received */
+  __u8 IndOutput; /* number of Ind buffers received */
+  __u8 IMask;     /* Interrupt Mask Flag        */
+  __u8 Reserved1[2]; /* reserved field, do not use */
+  __u8 ReadyInt;  /* request field for ready int */
+  __u8 Reserved2[12]; /* reserved field, do not use */
+  __u8 InterfaceType; /* interface type 1=16K    */
   __u16 Signature  __attribute__ ((packed));    /* ISDN-P initialized ind  */
   __u8 B[1];                            /* buffer space for Req,Ind and Rc */
 } eicon_pr_ram;

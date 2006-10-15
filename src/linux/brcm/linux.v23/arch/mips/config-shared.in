@@ -215,6 +215,7 @@ if [ "$CONFIG_BCM947XX" = "y" ] ; then
    bool '    Support for Broadcom BCM4310' CONFIG_BCM4310
    bool '    Support for Broadcom BCM4704' CONFIG_BCM4704
    bool '    Support for Broadcom BCM5365' CONFIG_BCM5365
+   bool '    Support for Register Dialog' CONFIG_REGISTER
 fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
 bool 'Support for TANBAC TB0226 (Mbase)' CONFIG_TANBAC_TB0226
