@@ -293,7 +293,7 @@ void * vmap(struct page **pages, int count,
 	struct vm_struct *area;
 	unsigned long size = count << PAGE_SHIFT;
 
-	if (!size || size > (max_mapnr << PAGE_SHIFT))
+	if (count <= 0 || count > max_mapnr)
 		return NULL;
 	area = get_vm_area(size, flags);
 	if (!area) {

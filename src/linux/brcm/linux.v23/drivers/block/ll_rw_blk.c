@@ -575,6 +575,7 @@ static struct request *get_request(request_queue_t *q, int rw)
 		rq->rq_status = RQ_ACTIVE;
 		rq->cmd = rw;
 		rq->special = NULL;
+		rq->io_account = 0;
 		rq->q = q;
 	}
 
@@ -813,6 +814,7 @@ void req_new_io(struct request *req, int merge, int sectors)
 	struct hd_struct *hd1, *hd2;
 
 	locate_hd_struct(req, &hd1, &hd2);
+	req->io_account = 1;
 	if (hd1)
 		account_io_start(hd1, req, merge, sectors);
 	if (hd2)
@@ -823,6 +825,8 @@ void req_merged_io(struct request *req)
 {
 	struct hd_struct *hd1, *hd2;
 
+	if (unlikely(req->io_account == 0))
+		return;
 	locate_hd_struct(req, &hd1, &hd2);
 	if (hd1)
 		down_ios(hd1);
@@ -834,6 +838,8 @@ void req_finished_io(struct request *req)
 {
 	struct hd_struct *hd1, *hd2;
 
+	if (unlikely(req->io_account == 0))
+		return;
 	locate_hd_struct(req, &hd1, &hd2);
 	if (hd1)
 		account_io_end(hd1, req);

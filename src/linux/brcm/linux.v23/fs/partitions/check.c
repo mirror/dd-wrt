@@ -204,7 +204,8 @@ char *disk_name (struct gendisk *hd, int minor, char *buf)
 /*
  * Add a partitions details to the devices partition description.
  */
-void add_gd_partition(struct gendisk *hd, int minor, int start, int size)
+void add_gd_partition(struct gendisk *hd, int minor, unsigned int start,
+                      unsigned int size)
 {
 #ifndef CONFIG_DEVFS_FS
 	char buf[40];
