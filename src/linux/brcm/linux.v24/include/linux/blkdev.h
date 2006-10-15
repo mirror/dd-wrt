@@ -46,6 +46,7 @@ struct request {
 	struct buffer_head * bh;
 	struct buffer_head * bhtail;
 	request_queue_t *q;
+	char io_account;
 };
 
 #include <linux/elevator.h>
