@@ -74,8 +74,11 @@ start_sysinit (void)
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
+#ifdef HAVE_REGISTER
+  eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
+#else
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-
+#endif
 //mkdir ("/usr/local/nvram", 0777);
 //unlink ("/tmp/nvram/.lock");
 //eval ("mkdir", "/tmp/nvram");
@@ -136,8 +139,8 @@ eval("insmod","crypto_null");
   eval ("insmod", "wlan_tkip");
   eval ("insmod", "wlan_wep");
   eval ("insmod", "wlan_xauth");
-//  eval ("insmod", "wlan_scan_ap");
-//  eval ("insmod", "wlan_scan_sta");
+  eval ("insmod", "wlan_scan_ap");
+  eval ("insmod", "wlan_scan_sta");
 
 
   eval ("ifconfig", "wifi0", "up");
