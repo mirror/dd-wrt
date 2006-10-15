@@ -4,21 +4,21 @@
 	<div class="center"><img src="images/wifidog.png" alt="wifidog logo" /></div><br />
 	<div class="setting">
 		<div class="label"><% tran("hotspot.wifidog_srv"); %></div>
-		<input class="spaceradio" type="radio" name="wifidog_enable" value="1" <% nvram_selmatch("wifidog_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="wifidog_enable" value="0" <% nvram_selmatch("wifidog_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="wd_enable" value="1" <% nvram_selmatch("wd_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="wd_enable" value="0" <% nvram_selmatch("wd_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidog', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idwifidog">
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_id"); %></div>
-			<input class="text" maxLength="100" size="39" name="wifidog_GatewayID" value="<% nvram_get("wifidog_GatewayID"); %>" />
+			<input class="text" maxLength="100" size="39" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_url"); %></div>
-			<input class="text" maxLength="100" size="39" name="wifidog_Portal" value="<% nvram_get("wifidog_Portal"); %>" />
+			<input class="text" maxLength="100" size="39" name="wd_url" value="<% nvram_get("wd_url"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_port"); %></div>
-			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wifidog_GatewayPort" value="<% nvram_get("wifidog_GatewayPort"); %>" />
+			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wd_gwport" value="<% nvram_get("wd_gwport"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 2060, " + share.range + ": 1 - 65535)");
@@ -27,11 +27,11 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
-			<input class="text" maxLength="100" size="39" name="wifidog_HTTPDName" value="<% nvram_get("wifidog_HTTPDName"); %>" />
+			<input class="text" maxLength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_httpdconn"); %></div>
-			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wifidog_HTTPDMaxConn" value="<% nvram_get("wifidog_HTTPDMaxConn"); %>" />
+			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvram_get("wd_httpdcon"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 10, " + share.range + ": 1 - 50)");
@@ -40,7 +40,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checkinter"); %></div>
-			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_checkinter)" name="wifidog_CheckInterval" value="<% nvram_get("wifidog_CheckInterval"); %>" />
+			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvram_get("wd_interval"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 60, " + share.range + ": 1 - 3600)");
@@ -49,7 +49,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checktimeout"); %></div>
-			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_checktimeout)" name="wifidog_ClientTimeout" value="<% nvram_get("wifidog_ClientTimeout"); %>" />
+			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvram_get("wd_timeout"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 5, " + share.range + ": 1 - 99)");
