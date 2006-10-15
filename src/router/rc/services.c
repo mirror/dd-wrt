@@ -142,6 +142,9 @@ start_services (void)
 #ifdef HAVE_NEWMEDIA
   start_service ("openvpnserversys");
 #endif
+#ifdef HAVE_RSTATS
+  start_service ("rstats");
+#endif
 
 
 
@@ -153,6 +156,9 @@ int
 stop_services (void)
 {
   //stop_ses();
+#ifdef HAVE_RSTATS
+  stop_service ("rstats");
+#endif
   stop_service ("nas");
 #ifdef HAVE_UPNP
   stop_service ("upnp");
@@ -263,6 +269,9 @@ start_single_service (void)
     }
   else if (!strcmp (service, "services"))
     {
+#ifdef HAVE_RSTATS
+      startstop ("rstats");
+#endif
       startstop ("udhcpd");
 #ifdef HAVE_CPUTEMP
       start_service("hwmon");
