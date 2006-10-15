@@ -641,13 +641,16 @@ hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Allowed";
 hotspot.macauth="MACauth";
 hotspot.option="Additional Chillispot Options";
+
 hotspot.fon_chilli="Chillispot Local User Management";
 hotspot.fon_user="User List";
+
 hotspot.http_legend="HTTP Redirect";
 hotspot.http_srv="HTTP Redirect";
 hotspot.http_ip="HTTP Destination IP";
 hotspot.http_port="HTTP Destination Port";
 hotspot.http_net="HTTP Source Network";
+
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Gateway Name";
@@ -660,13 +663,16 @@ hotspot.nocat_timeout="Login Timeout";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Route Only";
 hotspot.nocat_MAClist="MAC White List";
+
 hotspot.smtp_legend="SMTP Redirect";
 hotspot.smtp_srv="SMTP Redirect";
 hotspot.smtp_ip="SMTP Destination IP";
 hotspot.smtp_net="SMTP Source Network";
+
 hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config enabled";
+
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_id="Sputnik Server ID";
@@ -674,6 +680,16 @@ hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 hotspot.sputnik_about="about Sputnik";
 hotspot.sputnik_learn="Learn more";
+
+hotspot.wifidog_legend="Wifidog";
+hotspot.wifidog_svr="Wifidog daemon";
+hotspot.wifidog_id="Gateway ID";
+hotspot.wifidog_url="Portal's URL";
+hotspot.wifidog_port="Port";
+hotspot.wifidog_httpdname="Web Server Name";
+hotspot.wifidog_httpdconn="Max Users";
+hotspot.wifidog_checkinter="CheckInterval (in sec.)";
+hotspot.wifidog_checktimeout="ClientTimeout";
 
 
 
