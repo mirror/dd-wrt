@@ -56,16 +56,16 @@
  */
 typedef struct X25Cmd
 {
-	unsigned char command	PACKED;	/* command code */
+	unsigned char command;	/* command code */
 	unsigned short length	PACKED;	/* transfer data length */
-	unsigned char result	PACKED;	/* return code */
-	unsigned char pf	PACKED;	/* P/F bit */
+	unsigned char result;	/* return code */
+	unsigned char pf;	/* P/F bit */
 	unsigned short lcn	PACKED;	/* logical channel */
-	unsigned char qdm	PACKED;	/* Q/D/M bits */
-	unsigned char cause	PACKED;	/* cause field */
-	unsigned char diagn	PACKED;	/* diagnostics */
-	unsigned char pktType	PACKED;	/* packet type */
-	unsigned char resrv[4]	PACKED;	/* reserved */
+	unsigned char qdm;	/* Q/D/M bits */
+	unsigned char cause;	/* cause field */
+	unsigned char diagn;	/* diagnostics */
+	unsigned char pktType;	/* packet type */
+	unsigned char resrv[4];	/* reserved */
 } TX25Cmd;
 
 /*
@@ -228,9 +228,9 @@ typedef struct X25Cmd
  */
 typedef struct X25Mbox
 {
-	unsigned char opflag	PACKED;	/* 00h: execution flag */
+	unsigned char opflag;	/* 00h: execution flag */
 	TX25Cmd cmd		PACKED;	/* 01h: command block */
-	unsigned char data[1]	PACKED;	/* 10h: data buffer */
+	unsigned char data[1];	/* 10h: data buffer */
 } TX25Mbox;
 
 /*----------------------------------------------------------------------------
@@ -238,11 +238,11 @@ typedef struct X25Mbox
  */
 typedef struct X25TimeStamp
 {
-	unsigned char month	PACKED;
-	unsigned char date	PACKED;
-	unsigned char sec	PACKED;
-	unsigned char min	PACKED;
-	unsigned char hour	PACKED;
+	unsigned char month;
+	unsigned char date;
+	unsigned char sec;
+	unsigned char min;
+	unsigned char hour;
 } TX25TimeStamp;
 
 /*----------------------------------------------------------------------------
@@ -257,11 +257,11 @@ typedef struct X25Status
 	unsigned short twc_map	PACKED;	/* 04h: Two-way Cnan. map */
 	unsigned short ogc_map	PACKED;	/* 06h: Outgoing Chan. map */
 	TX25TimeStamp tstamp	PACKED;	/* 08h: timestamp (BCD) */
-	unsigned char iflags	PACKED;	/* 0Dh: interrupt flags */
-	unsigned char imask     PACKED; /* 0Eh: interrupt mask  */
-	unsigned char resrv	PACKED;	/* 0Eh: */
-	unsigned char gflags	PACKED;	/* 10h: misc. HDLC/X25 flags */
-	unsigned char cflags[X25_MAX_CHAN] PACKED; /* channel status bytes */
+	unsigned char iflags;	/* 0Dh: interrupt flags */
+	unsigned char imask;		/* 0Eh: interrupt mask  */
+	unsigned char resrv;	/* 0Eh: */
+	unsigned char gflags;	/* 10h: misc. HDLC/X25 flags */
+	unsigned char cflags[X25_MAX_CHAN]; /* channel status bytes */
 } TX25Status;
 
 /*
@@ -299,9 +299,9 @@ typedef struct X25Status
  */
 typedef struct X25GlobalVars
 {
-	unsigned char resrv	PACKED;	/* 00h: reserved */
-	unsigned char dtrCtl	PACKED;	/* 01h: DTR control code */
-	unsigned char resErr	PACKED;	/* 01h: '1' - reset modem error */
+	unsigned char resrv;	/* 00h: reserved */
+	unsigned char dtrCtl;	/* 01h: DTR control code */
+	unsigned char resErr;	/* 01h: '1' - reset modem error */
 } TX25GlobalVars;
 
 /*
@@ -315,7 +315,7 @@ typedef struct X25GlobalVars
  */
 typedef struct X25ModemStatus
 {
-	unsigned char	status	PACKED;		/* 00h: modem status */
+	unsigned char	status;		/* 00h: modem status */
 } TX25ModemStatus;
 
 /*
@@ -329,11 +329,11 @@ typedef struct X25ModemStatus
  */
 typedef struct X25LinkStatus
 {
-	unsigned char txQueued	PACKED;	/* 00h: queued Tx I-frames*/
-	unsigned char rxQueued	PACKED;	/* 01h: queued Rx I-frames*/
-	unsigned char station	PACKED;	/* 02h: DTE/DCE config. */
-	unsigned char reserved	PACKED;	/* 03h: reserved */
-	unsigned char sfTally	PACKED;	/* 04h: supervisory frame tally */
+	unsigned char txQueued;	/* 00h: queued Tx I-frames*/
+	unsigned char rxQueued;	/* 01h: queued Rx I-frames*/
+	unsigned char station;	/* 02h: DTE/DCE config. */
+	unsigned char reserved;	/* 03h: reserved */
+	unsigned char sfTally;	/* 04h: supervisory frame tally */
 } TX25LinkStatus;
 
 /*
@@ -371,16 +371,16 @@ typedef struct HdlcStats
  */
 typedef struct HdlcCommErr
 {						/*	a number of ... */
-	unsigned char rxOverrun		PACKED;	/* 00h: Rx overrun errors */
-	unsigned char rxBadCrc		PACKED;	/* 01h: Rx CRC errors */
-	unsigned char rxAborted		PACKED;	/* 02h: Rx aborted frames */
-	unsigned char rxDropped		PACKED;	/* 03h: frames lost */
-	unsigned char txAborted		PACKED;	/* 04h: Tx aborted frames */
-	unsigned char txUnderrun	PACKED;	/* 05h: Tx underrun errors */
-	unsigned char txMissIntr	PACKED;	/* 06h: missed underrun ints */
-	unsigned char reserved		PACKED;	/* 07h: reserved */
-	unsigned char droppedDCD	PACKED;	/* 08h: times DCD dropped */
-	unsigned char droppedCTS	PACKED;	/* 09h: times CTS dropped */
+	unsigned char rxOverrun;	/* 00h: Rx overrun errors */
+	unsigned char rxBadCrc;	/* 01h: Rx CRC errors */
+	unsigned char rxAborted;	/* 02h: Rx aborted frames */
+	unsigned char rxDropped;	/* 03h: frames lost */
+	unsigned char txAborted;	/* 04h: Tx aborted frames */
+	unsigned char txUnderrun;	/* 05h: Tx underrun errors */
+	unsigned char txMissIntr;	/* 06h: missed underrun ints */
+	unsigned char reserved;	/* 07h: reserved */
+	unsigned char droppedDCD;	/* 08h: times DCD dropped */
+	unsigned char droppedCTS;	/* 09h: times CTS dropped */
 } THdlcCommErr;
 
 /* ---------------------------------------------------------------------------
@@ -388,18 +388,18 @@ typedef struct HdlcCommErr
  */
 typedef struct X25Config
 {
-unsigned char baudRate		PACKED;	/* 00h:  */
-	unsigned char t1		PACKED;	/* 01h:  */
-	unsigned char t2		PACKED;	/* 02h:  */
-	unsigned char n2		PACKED;	/* 03h:  */
+unsigned char baudRate;	/* 00h:  */
+	unsigned char t1;	/* 01h:  */
+	unsigned char t2;	/* 02h:  */
+	unsigned char n2;	/* 03h:  */
 	unsigned short hdlcMTU		PACKED;	/* 04h:  */
-	unsigned char hdlcWindow	PACKED;	/* 06h:  */
-	unsigned char t4		PACKED;	/* 07h:  */
-	unsigned char autoModem		PACKED;	/* 08h:  */
-	unsigned char autoHdlc		PACKED;	/* 09h:  */
-	unsigned char hdlcOptions	PACKED;	/* 0Ah:  */
-	unsigned char station		PACKED;	/* 0Bh:  */
-	unsigned char pktWindow		PACKED;	/* 0Ch:  */
+	unsigned char hdlcWindow;	/* 06h:  */
+	unsigned char t4;	/* 07h:  */
+	unsigned char autoModem;	/* 08h:  */
+	unsigned char autoHdlc;	/* 09h:  */
+	unsigned char hdlcOptions;	/* 0Ah:  */
+	unsigned char station;	/* 0Bh:  */
+	unsigned char pktWindow;	/* 0Ch:  */
 	unsigned short defPktSize	PACKED;	/* 0Dh:  */
 	unsigned short pktMTU		PACKED;	/* 0Fh:  */
 	unsigned short loPVC		PACKED;	/* 11h:  */
@@ -411,21 +411,21 @@ unsigned char baudRate		PACKED;	/* 00h:  */
 	unsigned short loOutgoingSVC	PACKED;	/* 1Dh:  */
 	unsigned short hiOutgoingSVC	PACKED;	/* 1Fh:  */
 	unsigned short options		PACKED;	/* 21h:  */
-	unsigned char responseOpt	PACKED;	/* 23h:  */
+	unsigned char responseOpt;	/* 23h:  */
 	unsigned short facil1		PACKED;	/* 24h:  */
 	unsigned short facil2		PACKED;	/* 26h:  */
 	unsigned short ccittFacil	PACKED;	/* 28h:  */
 	unsigned short otherFacil	PACKED;	/* 2Ah:  */
 	unsigned short ccittCompat	PACKED;	/* 2Ch:  */
-	unsigned char t10t20		PACKED;	/* 2Eh:  */
-	unsigned char t11t21		PACKED;	/* 2Fh:  */
-	unsigned char t12t22		PACKED;	/* 30h:  */
-	unsigned char t13t23		PACKED;	/* 31h:  */
-	unsigned char t16t26		PACKED;	/* 32H:  */
-	unsigned char t28		PACKED;	/* 33h:  */
-	unsigned char r10r20		PACKED;	/* 34h:  */
-	unsigned char r12r22		PACKED;	/* 35h:  */
-	unsigned char r13r23		PACKED;	/* 36h:  */
+	unsigned char t10t20;	/* 2Eh:  */
+	unsigned char t11t21;	/* 2Fh:  */
+	unsigned char t12t22;	/* 30h:  */
+	unsigned char t13t23;	/* 31h:  */
+	unsigned char t16t26;	/* 32H:  */
+	unsigned char t28;	/* 33h:  */
+	unsigned char r10r20;	/* 34h:  */
+	unsigned char r12r22;	/* 35h:  */
+	unsigned char r13r23;	/* 36h:  */
 } TX25Config;
 
 /* ---------------------------------------------------------------------------
@@ -445,9 +445,9 @@ typedef struct X25ChanAlloc			/*----- Channel allocation -*/
 
 typedef struct X25ChanCfg		/*------ Channel configuration -----*/
 {
-	unsigned char type	PACKED;	/* 00h: channel type */
-	unsigned char txConf	PACKED;	/* 01h: Tx packet and window sizes */
-	unsigned char rxConf	PACKED;	/* 01h: Rx packet and window sizes */
+	unsigned char type;	/* 00h: channel type */
+	unsigned char txConf;	/* 01h: Tx packet and window sizes */
+	unsigned char rxConf;	/* 01h: Rx packet and window sizes */
 } TX25ChanCfg;
 
 /*
@@ -502,11 +502,11 @@ typedef struct X25Stats
  */
 typedef struct X25EventLog
 {
-	unsigned char	type	PACKED;	/* 00h: transaction type */
+	unsigned char	type;	/* 00h: transaction type */
 	unsigned short	lcn	PACKED;	/* 01h: logical channel num */
-	unsigned char	packet	PACKED;	/* 03h: async packet type */
-	unsigned char	cause	PACKED;	/* 04h: X.25 cause field */
-	unsigned char	diag	PACKED;	/* 05h: X.25 diag field */
+	unsigned char	packet;	/* 03h: async packet type */
+	unsigned char	cause;	/* 04h: X.25 cause field */
+	unsigned char	diag;	/* 05h: X.25 diag field */
 	TX25TimeStamp	ts	PACKED;	/* 06h: time stamp */
 } TX25EventLog;
 
@@ -540,8 +540,8 @@ typedef struct X25EventLog
  */
 typedef struct X25TraceCfg
 {
-	unsigned char flags	PACKED;	/* 00h: trace configuration flags */
-	unsigned char timeout	PACKED;	/* 01h: timeout for trace delay mode*/
+	unsigned char flags;	/* 00h: trace configuration flags */
+	unsigned char timeout;	/* 01h: timeout for trace delay mode*/
 } TX25TraceCfg;
 
 /*
@@ -562,11 +562,11 @@ typedef struct X25TraceCfg
 typedef struct X25Trace			/*----- Trace data structure -------*/
 {
 	unsigned short length	PACKED;	/* 00h: trace data length */
-	unsigned char type	PACKED;	/* 02h: trace type */
-	unsigned char lost_cnt	PACKED;	/* 03h: N of traces lost */
+	unsigned char type;	/* 02h: trace type */
+	unsigned char lost_cnt;	/* 03h: N of traces lost */
 	TX25TimeStamp tstamp	PACKED;	/* 04h: mon/date/sec/min/hour */
 	unsigned short millisec	PACKED;	/* 09h: ms time stamp */
-	unsigned char data[0]	PACKED;	/* 0Bh: traced frame */
+	unsigned char data[0];	/* 0Bh: traced frame */
 } TX25Trace;
 
 /*
@@ -591,17 +591,17 @@ typedef struct X25Trace			/*----- Trace data structure -------*/
 
 typedef struct HDLCFrame		/*----- DHLC Frame Format ----------*/
 {
-	unsigned char addr	PACKED;	/* address field */
-	unsigned char cntl	PACKED;	/* control field */
-	unsigned char data[0]	PACKED;
+	unsigned char addr;	/* address field */
+	unsigned char cntl;	/* control field */
+	unsigned char data[0];
 } THDLCFrame;
 
 typedef struct X25Pkt			/*----- X.25 Paket Format ----------*/
 {
-	unsigned char lcn_hi	PACKED;	/* 4 MSB of Logical Channel Number */
-	unsigned char lcn_lo	PACKED;	/* 8 LSB of Logical Channel Number */
-	unsigned char type	PACKED;
-	unsigned char data[0]	PACKED;
+	unsigned char lcn_hi;	/* 4 MSB of Logical Channel Number */
+	unsigned char lcn_lo;	/* 8 LSB of Logical Channel Number */
+	unsigned char type;
+	unsigned char data[0];
 } TX25Pkt;
 
 /*
@@ -636,25 +636,25 @@ typedef struct X25Pkt			/*----- X.25 Paket Format ----------*/
 
 typedef struct {
 	TX25Cmd cmd		PACKED;
-	char data[X25_MAX_DATA]	PACKED;
+	char data[X25_MAX_DATA];
 } mbox_cmd_t;
 
 
 typedef struct {
-	unsigned char  qdm	PACKED;	/* Q/D/M bits */
-	unsigned char  cause	PACKED;	/* cause field */
-	unsigned char  diagn	PACKED;	/* diagnostics */
-	unsigned char  pktType  PACKED;
+	unsigned char  qdm;	/* Q/D/M bits */
+	unsigned char  cause;	/* cause field */
+	unsigned char  diagn;	/* diagnostics */
+	unsigned char  pktType;
 	unsigned short length   PACKED;
-	unsigned char  result	PACKED;
+	unsigned char  result;
 	unsigned short lcn	PACKED;
-	char reserved[7]	PACKED;
+	char reserved[7];
 }x25api_hdr_t;
 
 
 typedef struct {
 	x25api_hdr_t hdr	PACKED;
-	char data[X25_MAX_DATA]	PACKED;
+	char data[X25_MAX_DATA];
 }x25api_t;
 
 
@@ -674,17 +674,17 @@ typedef struct {
 
 
 typedef struct {
-	unsigned char opp_flag  PACKED; /* the opp flag */
-	unsigned char command	PACKED;	/* command code */
+	unsigned char opp_flag; /* the opp flag */
+	unsigned char command;	/* command code */
 	unsigned short length	PACKED;	/* transfer data length */
-	unsigned char result	PACKED;	/* return code */
-	unsigned char pf	PACKED;	/* P/F bit */
+	unsigned char result;	/* return code */
+	unsigned char pf;	/* P/F bit */
 	unsigned short lcn	PACKED;	/* logical channel */
-	unsigned char qdm	PACKED;	/* Q/D/M bits */
-	unsigned char cause	PACKED;	/* cause field */
-	unsigned char diagn	PACKED;	/* diagnostics */
-	unsigned char pktType	PACKED;	/* packet type */
-	unsigned char resrv[4]	PACKED;	/* reserved */
+	unsigned char qdm;	/* Q/D/M bits */
+	unsigned char cause;	/* cause field */
+	unsigned char diagn;	/* diagnostics */
+	unsigned char pktType;	/* packet type */
+	unsigned char resrv[4];	/* reserved */
 } cblock_t;
 
 typedef struct {
@@ -692,7 +692,7 @@ typedef struct {
 	udp_pkt_t		udp_pkt		PACKED;
 	wp_mgmt_t 		wp_mgmt       	PACKED;
         cblock_t                cblock          PACKED;
-        unsigned char           data[4080]      PACKED;
+        unsigned char           data[4080];
 } x25_udp_pkt_t;
 
 
@@ -717,25 +717,25 @@ typedef struct read_hdlc_stat {
 } read_hdlc_stat_t;
 
 typedef struct read_comms_err_stats{
-	unsigned char overrun_err_rx PACKED;
-	unsigned char CRC_err PACKED;
-	unsigned char abort_frames_rx PACKED;
-	unsigned char frames_dropped_buf_full PACKED;
-	unsigned char abort_frames_tx PACKED;
-	unsigned char transmit_underruns PACKED;
-	unsigned char missed_tx_underruns_intr PACKED;
-	unsigned char reserved PACKED;
-	unsigned char DCD_drop PACKED;
-	unsigned char CTS_drop PACKED;
+	unsigned char overrun_err_rx;
+	unsigned char CRC_err;
+	unsigned char abort_frames_rx;
+	unsigned char frames_dropped_buf_full;
+	unsigned char abort_frames_tx;
+	unsigned char transmit_underruns;
+	unsigned char missed_tx_underruns_intr;
+	unsigned char reserved;
+	unsigned char DCD_drop;
+	unsigned char CTS_drop;
 } read_comms_err_stats_t;
 
 typedef struct trace_data {
 	unsigned short length PACKED;
-	unsigned char  type PACKED;
-	unsigned char  trace_dropped PACKED;
-	unsigned char  reserved[5] PACKED;
+	unsigned char  type;
+	unsigned char  trace_dropped;
+	unsigned char  reserved[5];
 	unsigned short timestamp PACKED;
-        unsigned char  data PACKED;
+        unsigned char  data;
 } trace_data_t;
 
 enum {UDP_XPIPE_TYPE};

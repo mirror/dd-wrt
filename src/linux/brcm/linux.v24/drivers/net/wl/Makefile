@@ -11,7 +11,7 @@
 #
 # $Id: Makefile,v 1.2 2005/03/29 03:32:18 mbm Exp $
 
-EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER
+EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER -DBCMDMA64
 
 O_TARGET	:= wl.o
 

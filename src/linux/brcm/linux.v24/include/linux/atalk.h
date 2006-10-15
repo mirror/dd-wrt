@@ -137,14 +137,14 @@ struct elapaarp
 #define AARP_REQUEST			1
 #define AARP_REPLY			2
 #define AARP_PROBE			3
-	__u8	hw_src[ETH_ALEN]	__attribute__ ((packed));
-	__u8	pa_src_zero		__attribute__ ((packed));
+	__u8	hw_src[ETH_ALEN];
+	__u8	pa_src_zero;
 	__u16	pa_src_net		__attribute__ ((packed));
-	__u8	pa_src_node		__attribute__ ((packed));
-	__u8	hw_dst[ETH_ALEN]	__attribute__ ((packed));
-	__u8	pa_dst_zero		__attribute__ ((packed));
+	__u8	pa_src_node;
+	__u8	hw_dst[ETH_ALEN];
+	__u8	pa_dst_zero;
 	__u16	pa_dst_net		__attribute__ ((packed));
-	__u8	pa_dst_node		__attribute__ ((packed));	
+	__u8	pa_dst_node;	
 };
 
 #define AARP_EXPIRY_TIME	(5*60*HZ)	/* Not specified - how long till we drop a resolved entry */
