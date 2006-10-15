@@ -80,13 +80,16 @@ static inline void copy_user_page(void * to, void * from, unsigned long vaddr)
   #ifdef CONFIG_CPU_MIPS32
     typedef struct { unsigned long pte_low, pte_high; } pte_t;
     #define pte_val(x)    ((x).pte_low | ((unsigned long long)(x).pte_high << 32))
+    #define __pte(x)	({ pte_t __pte = {(x), ((unsigned long long)(x)) >> 32}; __pte; })
   #else
     typedef struct { unsigned long long pte_low; } pte_t;
     #define pte_val(x)    ((x).pte_low)
+    #define __pte(x)	((pte_t) { (x) } )
   #endif
 #else
 typedef struct { unsigned long pte_low; } pte_t;
 #define pte_val(x)    ((x).pte_low)
+#define __pte(x)	((pte_t) { (x) } )
 #endif
 
 typedef struct { unsigned long pmd; } pmd_t;
@@ -99,7 +102,6 @@ typedef struct { unsigned long pgprot; } pgprot_t;
 
 #define ptep_buddy(x)	((pte_t *)((unsigned long)(x) ^ sizeof(pte_t)))
 
-#define __pte(x)	((pte_t) { (x) } )
 #define __pmd(x)	((pmd_t) { (x) } )
 #define __pgd(x)	((pgd_t) { (x) } )
 #define __pgprot(x)	((pgprot_t) { (x) } )
