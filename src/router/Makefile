@@ -40,7 +40,7 @@ ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
 endif
 
-export LINUXVER := 2.4.34-pre2
+export LINUXVER := 2.4.34-pre3
 ifeq ($(CONFIG_MSSID),y)
 export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v24
 else
@@ -198,6 +198,8 @@ obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_RADIOOFF) += radiooff
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-y += sprom
+obj-y += rstats
+
 
 
 
