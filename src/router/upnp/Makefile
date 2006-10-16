@@ -14,9 +14,7 @@
 include $(TOP)/.config
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-#CFLAGS	+= -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time
 CFLAGS	+= -s $(COPTS)
-#DEBUG	:= 1
 
 all: upnp
 
@@ -32,6 +30,5 @@ clean:
 upnp: FORCE
 	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE)
 	cp $(UPNP)/upnp .
-#	cp $(UPNP)/../../upnp/linux/libupnp.a .
 
 FORCE:
