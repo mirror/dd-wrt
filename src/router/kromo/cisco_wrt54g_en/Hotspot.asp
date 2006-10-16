@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Hotspot</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + hotspot.titl;
 
@@ -48,6 +48,7 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.apd_enable, 'idsputnik', <% nvram_else_match("apd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wd_enable, 'idwifidog', <% nvram_else_match("wd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.chilli_enable, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvram_else_match("http_redirect_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.NC_enable, 'idnocat', <% nvram_else_match("NC_enable", "1", "1", "0"); %> == 1);
@@ -55,7 +56,7 @@ addEvent(window, "load", function() {
 });
 
 		
-//]]>
+	//]]>
 </script>
 	</head>
 
@@ -80,26 +81,20 @@ addEvent(window, "load", function() {
 							<% show_modules(".webhotspot"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
