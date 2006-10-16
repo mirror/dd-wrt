@@ -672,7 +672,7 @@ hotspot.sputnik_about="à propos de Sputnik";
 hotspot.sputnik_learn="En savoir plus";
 
 hotspot.wifidog_legend="Wifidog";
-hotspot.wifidog_svr="Démon Wifidog";
+hotspot.wifidog_srv="Démon Wifidog";
 hotspot.wifidog_id="Gateway ID";
 hotspot.wifidog_url="URL du Hotspot";
 hotspot.wifidog_port="Port";
