@@ -908,6 +908,9 @@ handle_request (void)
 	{
 	  if (match (handler->pattern, file))
 	    {
+#ifdef HAVE_REGISTER
+	    if (registered)
+#endif
 	      if (handler->auth)
 		{
 		  int result =
