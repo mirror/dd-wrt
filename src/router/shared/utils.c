@@ -239,7 +239,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f"))
       {
-      	if (nvram_match ("product_name", "WZR-RS-G54"))
+      	if (nvram_match ("product_name", "WZR-RS-G54") || nvram_match ("melco_id", "30083"))
     		{
       		cprintf ("router is Buffalo WZR-RS-G54\n");
       		setRouter ("Buffalo WZR-RS-G54");
@@ -275,7 +275,7 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WVR-G54-NF");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
-    	if (nvram_match ("melco_id", "30083") || nvram_match ("melco_id", "29115") || atol (nvram_get ("melco_id")) > 0)
+    	if (nvram_match ("melco_id", "29115") || atol (nvram_get ("melco_id")) > 0)
     		{
       		cprintf ("router is Buffalo WZR series\n");
       		setRouter ("Buffalo WZR series");
