@@ -630,6 +630,9 @@ start_lan (void)
       nvram_set ("wan_ifname", "ixp0");
       nvram_set ("wan_ifnames", "ixp0");
     }
+  strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
   /*
      strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
      ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -1074,7 +1077,9 @@ start_lan (void)
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
 #ifdef HAVE_XSCALE
+#ifndef HAVE_GATEWORX
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
+#endif
 #endif
 #ifdef HAVE_MAGICBOX
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
