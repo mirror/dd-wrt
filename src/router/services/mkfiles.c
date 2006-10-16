@@ -135,11 +135,14 @@ start_mkfiles (void)
       perror (PASSWD_FILE);
       return errno;
     }
+#ifdef HAVE_REGISTER
+if (isregistered())
+#endif
+{
   fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", http_passwd);
-  fprintf (fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
-	   http_passwd);
+  fprintf (fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",http_passwd);
   fclose (fp);
-
+}
   /* Write group file with group 'root' */
   if (!(fp = fopen (GROUP_FILE, "w")))
     {

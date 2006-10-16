@@ -1811,6 +1811,8 @@ int
 endswith (char *str, char *cmp)
 {
   int cmp_len, str_len, i;
+  if (cmp==NULL)return 0;
+  if (str==NULL)return 0;
   cmp_len = strlen (cmp);
   str_len = strlen (str);
   if (cmp_len > str_len)
@@ -2742,6 +2744,9 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
 #endif
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
+#ifdef HAVE_REGISTER
+  {"Register", "activate", "", 1, RESTART, reg_validate},
+#endif
   {"Services", "add_lease", "", 1, REFRESH, lease_add},
   {"Services", "remove_lease", "", 1, REFRESH, lease_remove},
 #ifdef HAVE_CHILLILOCAL
@@ -4059,6 +4064,7 @@ struct mime_handler mime_handlers[] = {
   {"Ping.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
+  {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
@@ -4852,7 +4858,9 @@ struct ej_handler ej_handlers[] = {
   {"get_voltage", ej_get_voltage},
   {"show_voltage", ej_show_voltage},
 #endif
-
+#ifdef HAVE_REGISTER
+  {"getregcode", ej_getregcode},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */

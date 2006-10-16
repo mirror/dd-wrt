@@ -624,7 +624,7 @@ contains (char *source, char *cmp)
   return 0;
 }
 
-
+static int registered = -1;
 #define LINE_LEN 10000
 static void
 handle_request (void)
@@ -755,27 +755,48 @@ handle_request (void)
       return;
     }
   // seg change for status site
+#ifdef HAVE_REGISTER
+  if (registered == -1)
+    registered = isregistered ();
+#endif
+
 
 #ifdef HAVE_SKYTRON
   if (file[0] == '\0' || file[len - 1] == '/')
     {
-      file = "setupindex.asp";
+	file = "setupindex.asp";
     }
 #else
   if (file[0] == '\0' || file[len - 1] == '/')
     {
-      if (nvram_invmatch ("status_auth", "0"))
-	file = "Info.htm";
-      else
-	file = "index.asp";
+	{
+	  if (nvram_invmatch ("status_auth", "0"))
+	    file = "Info.htm";
+	  else
+	    file = "index.asp";
+	}
     }
   else
     {
-      if (nvram_invmatch ("status_auth", "1"))
-	if (strcmp (file, "Info.htm") == 0)
-	  file = "index.asp";
-
+	{
+	  if (nvram_invmatch ("status_auth", "1"))
+	    if (strcmp (file, "Info.htm") == 0)
+	      file = "index.asp";
+	}
     }
+#endif
+
+#ifdef HAVE_REGISTER
+  if (!registered)
+    {
+      if (endswith (file, ".asp"))
+	file = "register.asp";
+      if (endswith (file, ".htm"))
+	file = "register.asp";
+      if (endswith (file, ".html"))
+	file = "register.asp";
+    }
+
 #endif
 
 #ifdef HAVE_MACBIND

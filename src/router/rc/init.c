@@ -34,7 +34,7 @@
 #include <utils.h>
 
 #define loop_forever() do { sleep(1); } while (1)
-#define SHELL "/bin/sh"
+#define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
 static void
@@ -152,7 +152,7 @@ ddrun_shell (int timeout, int nowait)
        * so nothing further in init.c should be run. */
       execve (SHELL, (char *[])
 	      {
-	      "/bin/sh", NULL}, envp);
+	      "/bin/login", NULL}, envp);
 
       /* We're still here?  Some error happened. */
       perror (SHELL);
