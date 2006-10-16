@@ -180,11 +180,13 @@ int check_action(void)
 
 int wait_action_idle(int n)
 {
+return 1;
+/*
 	while (n-- > 0) {
 		if (check_action() == ACT_IDLE) return 1;
 		sleep(1);
 	}
-	return 0;
+	return 0;*/
 }
 
 // -----------------------------------------------------------------------------
