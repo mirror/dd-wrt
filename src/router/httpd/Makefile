@@ -37,7 +37,10 @@ REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
 REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
-
+ifeq ($(CONFIG_SPECIALEDITION),y)
+CFLAGS += -DHAVE_SPECIALEDITION
+ADDOBJ = special.o
+endif
 
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
@@ -275,7 +278,7 @@ endif
 #OBJS  += code_header.o
 
 
-vpath %.c modules $(SRCBASE)/../tools/src
+vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src
 
 all: httpd cert
 
@@ -300,7 +303,7 @@ cert:
 
 httpd: cgi.c ej.c httpd.c broadcom.c \
        index.c status.c dhcp.c log.c filters.c forward.c dynamic_route.c static_route.c wireless.c ddns.c \
-       find_pattern.c lib.c diag.c sysinfo.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
+       find_pattern.c lib.c $(ADDOBJ) diag.c sysinfo.c wepkey.c md5c.c getservice.c dd-wrt.c nvramsr.c $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
