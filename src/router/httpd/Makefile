@@ -59,6 +59,7 @@ OBJS += upgrade_rb500.c
 else
 OBJS += upgrade.c
 endif
+
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
@@ -125,7 +126,10 @@ ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 OBJS += sputnik.c
 endif
-
+ifeq ($(CONFIG_REGISTER),y)
+CFLAGS += -DHAVE_REGISTER
+OBJS += crc.c register.c
+endif
 #ifeq ($(HSIAB_SUPPORT),1)
 #CFLAGS += -I$(TOP)/hsiab
 #LDFLAGS += -L$(TOP)/openssl -L$(TOP)/hsiab -lcrypto -lssl -lhsiab
