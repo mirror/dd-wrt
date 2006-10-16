@@ -682,7 +682,7 @@ hotspot.sputnik_about="about Sputnik";
 hotspot.sputnik_learn="Learn more";
 
 hotspot.wifidog_legend="Wifidog";
-hotspot.wifidog_svr="Wifidog daemon";
+hotspot.wifidog_srv="Wifidog daemon";
 hotspot.wifidog_id="Gateway ID";
 hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
