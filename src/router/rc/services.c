@@ -90,6 +90,9 @@ start_services (void)
       start_service("hwmon");
 #endif
 #ifdef HAVE_TELNET
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
   start_service ("telnetd");
 #endif
   start_service ("syslog");
@@ -116,6 +119,9 @@ start_services (void)
 #endif
 
 #ifdef HAVE_SSHD
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
   start_service ("sshd");
 #endif
 
@@ -177,9 +183,15 @@ stop_services (void)
 #endif
   stop_service ("wland");
 #ifdef HAVE_TELNET
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
   stop_service ("telnetd");
 #endif
 #ifdef HAVE_SSHD
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
   stop_service ("sshd");
 #endif
 
@@ -277,12 +289,18 @@ start_single_service (void)
       start_service("hwmon");
 #endif
 #ifdef HAVE_TELNET
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
       startstop ("telnetd");
 #endif
 #ifdef HAVE_SNMP
       startstop ("snmp");
 #endif
 #ifdef HAVE_SSHD
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
       startstop ("sshd");
 #endif
       startstop ("firewall");
