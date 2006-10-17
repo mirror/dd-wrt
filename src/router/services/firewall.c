@@ -2547,6 +2547,9 @@ start_firewall (void)
   /* begin Sveasoft add */
   /* run rc_firewall script */
   cprintf ("Exec RC Filewall\n");
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
   if (create_rc_file (RC_FIREWALL) == 0)
     {
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
