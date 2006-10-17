@@ -391,6 +391,7 @@ main_loop (void)
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
 	  cprintf ("STOP LAN\n");
+          stop_service ("stabridge");
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
@@ -452,6 +453,7 @@ main_loop (void)
 #endif
 	  start_service ("setup_vlans");
 	  start_service ("lan");
+          start_service ("stabridge");
 	  cprintf ("start services\n");
 	  start_services ();
 	  cprintf ("start wan boot\n");
@@ -474,12 +476,17 @@ main_loop (void)
 	  cprintf ("start nas\n");
 	  start_service ("nas_wan");
 	  cprintf ("create rc file\n");
+#ifdef HAVE_REGISTER
+  if (isregistered())
+#endif
+	{
 	  start_service ("create_rc_startup");
 	  chmod ("/tmp/.rc_startup", 0700);
 	  system ("/tmp/.rc_startup");
 	  system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
 	  cprintf ("start modules\n");
 	  start_service ("modules");
+	}
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
