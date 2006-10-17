@@ -17,6 +17,10 @@
 			<input class="text" maxLength="100" size="39" name="wd_url" value="<% nvram_get("wd_url"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
+			<input class="text" maxLength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_port"); %></div>
 			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wd_gwport" value="<% nvram_get("wd_gwport"); %>" />
 			<span class="default"><script type="text/javascript">
@@ -25,13 +29,9 @@
 			//]]>
 			</script>
 		</div>
-		<div class="setting">
-			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
-			<input class="text" maxLength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
-		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_httpdconn"); %></div>
-			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvram_get("wd_httpdcon"); %>" />
+			<input class="num" maxLength="2" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvram_get("wd_httpdcon"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 10, " + share.range + ": 1 - 50)");
@@ -40,7 +40,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checkinter"); %></div>
-			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvram_get("wd_interval"); %>" />
+			<input class="num" maxLength="4" size="5" onblur="valid_range(this,1,3600,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvram_get("wd_interval"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 60, " + share.range + ": 1 - 3600)");
@@ -49,7 +49,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checktimeout"); %></div>
-			<input class="num" maxLength="2" size="3" onblur="valid_range(this,1,50,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvram_get("wd_timeout"); %>" />
+			<input class="num" maxLength="2" size="5" onblur="valid_range(this,1,99,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvram_get("wd_timeout"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 5, " + share.range + ": 1 - 99)");
