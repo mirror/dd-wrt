@@ -40,6 +40,12 @@
 #include <cy_conf.h>
 #include <utils.h>
 
+
+static void filterarp(char *ifname)
+{
+      eval("ebtables","-t","broute","-A","BROUTING","-p","ARP","-i",ifname,"--arp-mac-dst","!",nvram_safe_get("lan_hwaddr"),"--arp-ip-dst","!",nvram_safe_get("lan_ipaddr"),"-j","DROP");
+
+}
 void start_stabridge(void)
 {
 #ifdef HAVE_MADWIFI
@@ -55,16 +61,67 @@ if (nvram_match("wl0_mode","wet"))
       eval ("insmod", "ebt_snat");
       eval ("insmod", "ebt_arp");
       eval ("insmod", "ebt_arpreply");
-      eval("ebtables","-t","broute","-A","BROUTING","-p","ARP","-i","vlan0","--arp-op","Reply","--arp-mac-dst","!",nvram_safe_get("lan_hwaddr"),"-j","DROP");
-      eval("ebtables","-t","broute","-A","BROUTING","-p","ARP","-i","vlan0","--arp-op","Request","--arp-mac-dst","!",nvram_safe_get("lan_hwaddr"),"-j","DROP");
+#ifdef HAVE_MAGICBOX
+      filterarp("eth0");
+      filterarp("eth1");
+      filterarp("eth2");
+#elif HAVE_GATEWORX
+      filterarp("ixp0");
+      filterarp("ixp1");
+#elif HAVE_RB500
+      filterarp("eth0");
+      filterarp("eth1");
+      filterarp("eth2");
+#else
+switch(getRouterBrand())
+{
+    case ROUTER_WRTSL54GS:
+    case ROUTER_WZRG300N:
+    case ROUTER_WRT300N:
+    case ROUTER_BUFFALO_WZRRSG54:
+    filterarp("eth1");
+    break;
+    default:
+    filterarp("vlan0");
+    break;
+}
+#endif
       eval("ebtables","-t","nat","-A","POSTROUTING","-o",nvram_safe_get("wl0_ifname"),"-j","snat","--to-src",nvram_safe_get("wan_hwaddr"),"--snat-target","ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
 		"\t-w <devname>\t- Use wireless device name. Default is ath0 if no in configuration found\n"
 		"\t-b <devname>\t- Use bridge device name. Default is br0 if no in configuration found\n"
 		"\t-e <devname(s)>\t- Use ethernet device(s) name(s) separated by space. Default is eth0 if no in configuration found\n",
-*/	
-      eval("stabridge","-w",nvram_safe_get("wl0_ifname"),"-b","br0","-e","vlan0"); // broadcom only right now
+*/
+#ifdef HAVE_MAGICBOX
+      filterarp("eth0");
+      filterarp("eth1");
+      filterarp("eth2");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2"); // broadcom only right now
+#elif HAVE_GATEWORX
+      filterarp("ixp0");
+      filterarp("ixp1");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0 ixp1"); // broadcom only right now
+#elif HAVE_RB500
+      filterarp("eth0");
+      filterarp("eth1");
+      filterarp("eth2");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2"); // broadcom only right now
+#else
+switch(getRouterBrand())
+{
+    case ROUTER_WRTSL54GS:
+    case ROUTER_WZRG300N:
+    case ROUTER_WRT300N:
+    case ROUTER_BUFFALO_WZRRSG54:
+      eval("stabridge","-d","-w","eth2","-b","br0","-e","eth1"); // broadcom only right now
+    break;
+    default:
+      eval("stabridge","-d","-w","eth1","-b","br0","-e","vlan0"); // broadcom only right now
+    break;
+}
+#endif
+	
     
     }
 }
