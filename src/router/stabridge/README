@@ -1,0 +1,95 @@
+Wireless Client Bridge.======================
+Author:
+    Kestutis Barkauskas
+    URL: http://www.wilibox.com/
+    
+Version:
+    1.0
+
+Date:
+    2005-01-09
+
+License
+=======
+Copyright (c) 2002-2005, Kestutis Barkauskas <gpl@wilibox.com> 
+All Rights Reserved.
+
+This program is licensed under the GPL version 2. For more details see COPYING.
+
+Abstract
+========
+The purpose of this document is to describe Wireless Client bridge implementation principles and configuration items contained in system configuration file.
+
+The main problem to make wireless client working as bridge to send all packets coming from the Ethernet side as wireless client packets (source MAC should be wireless device MAC). It should be done because of 802.11 standard. The standard says that AP does not accept any packet (source MAC) coming not from associated wireless client (Wireless Client MAC). Implementation contains two parts:
+
+   1. EBTABLES rules to control MAC addresses coming from/to Wireless client to AP.
+   2. Helper daemon for ARP requests/responses handling. 
+
+EBTABLES rules
+==============
+It is the built-in EBTABLES functionality for MAC layer. Two tables are invoked to help Wireless Client Bridge work correctly:
+
+   1. broute
+      ebtables -t broute -A BROUTING -p ARP -i <ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+      NOTE: That rule should be added as many times as many <ethernet interface> are plugged into bridge interface.
+   2. nat
+      ebtables -t nat -A POSTROUTING -o <wireless interface> -j snat --to-src <wireless MAC address> --snat-target ACCEPT
+      NOTE: <wireless interface> is that one which is plugged into bridge interface. 
+
+Helper daemon
+=============
+It is daemon that does SNAT and DNAT for ARP packets coming through Wireless Client Bridge. The main purpose of that daemon is not only NAT source and/or destination MAC address in ARP packet ethernet header but in ARP packet data too. Ideas are:
+
+   1. Read all ARP requests and responses on incoming interfaces (ethernet interfaces) that are not directed to the bridge itself.
+   2. Do SNAT into wireless device MAC on packet ethernet header and change ARP source MAC in packet data to wireless device MAC.
+   3. Store ARP information from incoming interfaces.
+   4. Sent SNAT'ed packet directly through wireless interface.
+   5. Read all ARP responses on bridge interface.
+   6. Do DNAT into corresponding ethernet MAC (from stored ARP information) on packet ethernet header and change ARP destination MAC in packet data to appropriate ethernet device MAC.
+   7. Sent DNAT'ed packet directly through appropriate ethernet interface. 
+
+Configuration Guide
+===================
+To properly configure Wireless Client Bridge service, one has to follow these steps:
+
+   1. setup wireless device in wireless client mode:
+	* iwconfig <wireless interface> mode managed
+	* iwconfig <wireless interface> essid <SSID>
+	* ifconfig <wireless interface> 0.0.0.0 up
+   2. setup ethernet network device(s):
+	* ifconfig <first ethernet interface> 0.0.0.0 up
+	* ...
+	* ifconfig <last ethernet interface> 0.0.0.0 up        
+   3. setup bridge device:
+	* brctl bradd <bridge interface>
+	* brctl ifadd <bridge interface> <wireless interface>
+	* brctl ifadd <bridge interface> <first ethernet interface>
+	* ...
+	* brctl ifadd <bridge interface> <last ethernet interface>
+	* brctl stp <bridge interface> off
+	* ifconfig <bridge interface> <IP addess> up
+	* route add default gw <GW IP address>
+   4. create Wireless Client Bridge service dependency on EBTABLES for each ethernet device:
+	* ebtables -t broute -A BROUTING -p ARP -i <first ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+	* ...
+	* ebtables -t broute -A BROUTING -p ARP -i <last ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+	* ebtables -t nat -A POSTROUTING -o <wireless interface> -j snat --to-src <wireless MAC address> --snat-target ACCEPT
+   5. run Wireless Client bridge daemon:
+	* stabridge -d -w <wireless interface> -b <bridge interface> -e <first ethernet interface> ... <last ethernet interface>
+
+Wireless Client Bridge daemon usage
+===================================
+Usage: stabridge [options...]
+Options:
+        -h              - Help. This message.
+        -d              - Become a daemon.
+        -s <size>       - Use MAC DB size. Default is 256.
+        -w <devname>    - Use wireless device name. Default is ath0.
+        -b <devname>    - Use bridge device name. Default is br0.
+        -e <devname(s)> - Use ethernet device(s) name(s) separated by space. Default is eth0.
+
+How to make Client Bridge daemon
+================================
+To make Wireless Client Bridge daemon you need execute the followed command:
+	* make all
+
