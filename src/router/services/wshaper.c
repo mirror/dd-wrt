@@ -252,7 +252,7 @@ svqos_iptables (void)
 
   /* mac format is "mac level | mac level |" ..etc */
 #ifndef HAVE_AQOS
-  if (strcmp (dev, "br0"))
+  if (strcmp (dev, "br0") && nvram_invmatch("wl0_mode","wet"))
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
