@@ -350,10 +350,12 @@ start_single_service (void)
 	   || !strcmp (service, "start_heartbeat"))
     {
       unlink ("/tmp/ppp/log");
+      stop_service ("stabridge");
       stop_service ("lan");
       stop_service ("wan");
       start_service ("lan");
       start_service ("wan_boot");
+      start_service ("stabridge");
     }
   else if (!strcmp (service, "stop_pppoe") || !strcmp (service, "stop_pptp")
 	   || !strcmp (service, "stop_l2tp")
@@ -481,6 +483,7 @@ END OBSOLETE */
     {
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
       stop_services ();
+      stop_service ("stabridge");
       stop_service ("lan");
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
@@ -494,6 +497,7 @@ END OBSOLETE */
 #endif
       start_service ("wlconf");
       start_service ("lan");
+      start_service ("stabridge");
       start_services ();
     }
   else if (!strcmp (service, "dhcp_release"))
