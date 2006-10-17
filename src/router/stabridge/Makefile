@@ -21,7 +21,7 @@ strip: $(TARGET)
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
-	install -D rstats $(INSTALLDIR)/usr/sbin/stabridge
+	install -D stabridge $(INSTALLDIR)/usr/sbin/stabridge
 
 TMPSRC := /tmp/stabridge
 
