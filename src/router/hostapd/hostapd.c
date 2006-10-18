@@ -1112,8 +1112,7 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 		printf("Could not select hw_mode and channel.\n");
 	}
 
-	if (hostapd_flush_old_stations(hapd))
-		return -1;
+	hostapd_flush_old_stations(hapd);
 
 	if (hapd->iconf->channel) {
 		freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
@@ -1154,6 +1153,12 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 	}
 
 	ap_list_init(iface);
+
+	if (hostapd_driver_commit(hapd) < 0) {
+		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
+			   "configuration", __func__);
+		return -1;
+	}
 
 	return ret;
 }

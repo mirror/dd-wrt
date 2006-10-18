@@ -512,6 +512,7 @@ bsd_sta_disassoc(void *priv, const u8 *addr, int reason_code)
 		"%s: addr=%s reason_code=%d\n",
 		__func__, ether_sprintf(addr), reason_code);
 
+	mlme.im_op = IEEE80211_MLME_DISASSOC;
 	mlme.im_reason = reason_code;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211var(priv, IEEE80211_IOC_MLME, &mlme, sizeof(mlme));

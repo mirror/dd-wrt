@@ -119,6 +119,17 @@ struct driver_ops {
 			 const char *ifname, const u8 *addr);
 	int (*set_sta_vlan)(void *priv, const u8 *addr, const char *ifname,
 			    int vlan_id);
+	/**
+	 * commit - Optional commit changes handler
+	 * @priv: driver private data
+	 * Returns: 0 on success, -1 on failure
+	 *
+	 * This optional handler function can be registered if the driver
+	 * interface implementation needs to commit changes (e.g., by setting
+	 * network interface up) at the end of initial configuration. If set,
+	 * this handler will be called after initial setup has been completed.
+	 */
+	int (*commit)(void *priv);
 };
 
 static inline int
@@ -586,6 +597,14 @@ hostapd_set_sta_vlan(const char *ifname, struct hostapd_data *hapd,
 	if (hapd->driver == NULL || hapd->driver->set_sta_vlan == NULL)
 		return 0;
 	return hapd->driver->set_sta_vlan(hapd->driver, addr, ifname, vlan_id);
+}
+
+static inline int
+hostapd_driver_commit(struct hostapd_data *hapd)
+{
+	if (hapd->driver == NULL || hapd->driver->commit == NULL)
+		return 0;
+	return hapd->driver->commit(hapd->driver);
 }
 
 #endif /* DRIVER_H */

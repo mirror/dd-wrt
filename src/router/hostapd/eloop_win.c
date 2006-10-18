@@ -89,6 +89,14 @@ int eloop_init(void *user_data)
 	if (eloop.handles == NULL)
 		return -1;
 
+	eloop.term_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (eloop.term_event == NULL) {
+		printf("CreateEvent() failed: %d\n",
+		       (int) GetLastError());
+		os_free(eloop.handles);
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -403,15 +411,6 @@ static BOOL eloop_handle_console_ctrl(DWORD type)
 int eloop_register_signal_terminate(eloop_signal_handler handler,
 				    void *user_data)
 {
-	if (eloop.term_event == NULL) {
-		eloop.term_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-		if (eloop.term_event == NULL) {
-			printf("CreateEvent() failed: %d\n",
-			       (int) GetLastError());
-			return -1;
-		}
-	}
-
 #ifndef _WIN32_WCE
 	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE) eloop_handle_console_ctrl,
 				  TRUE) == 0) {
@@ -546,6 +545,7 @@ void eloop_run(void)
 void eloop_terminate(void)
 {
 	eloop.terminate = 1;
+	SetEvent(eloop.term_event);
 }
 
 
