@@ -48,6 +48,7 @@ static void filterarp(char *ifname)
 }
 void start_stabridge(void)
 {
+
 #ifdef HAVE_MADWIFI
 if (nvram_match("ath0_mode","wet"))
 #else
@@ -72,21 +73,15 @@ if (nvram_match("wl0_mode","wet"))
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
-#else
-switch(getRouterBrand())
-{
-    case ROUTER_WRTSL54GS:
-    case ROUTER_WZRG300N:
-    case ROUTER_WRT300N:
-    case ROUTER_BUFFALO_WZRRSG54:
-    filterarp("eth1");
-    break;
-    default:
-    filterarp("vlan0");
-    break;
-}
+#else  //Broadcom
+
+char firstlanif[16];
+
+		sscanf (nvram_safe_get("lan_ifnames"), "%s ", firstlanif);
+
+	  filterarp(firstlanif);
 #endif
-      eval("ebtables","-t","nat","-A","POSTROUTING","-o",nvram_safe_get("wl0_ifname"),"-j","snat","--to-src",nvram_safe_get("wan_hwaddr"),"--snat-target","ACCEPT");
+      eval("ebtables","-t","nat","-A","POSTROUTING","-o",nvram_safe_get("wl0_ifname"),"-j","snat","--to-src",nvram_safe_get("wl0_hwaddr"),"--snat-target","ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
 		"\t-w <devname>\t- Use wireless device name. Default is ath0 if no in configuration found\n"
@@ -97,29 +92,20 @@ switch(getRouterBrand())
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2"); // broadcom only right now
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
 #elif HAVE_GATEWORX
       filterarp("ixp0");
       filterarp("ixp1");
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0 ixp1"); // broadcom only right now
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0 ixp1");
 #elif HAVE_RB500
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2"); // broadcom only right now
-#else
-switch(getRouterBrand())
-{
-    case ROUTER_WRTSL54GS:
-    case ROUTER_WZRG300N:
-    case ROUTER_WRT300N:
-    case ROUTER_BUFFALO_WZRRSG54:
-      eval("stabridge","-d","-w","eth2","-b","br0","-e","eth1"); // broadcom only right now
-    break;
-    default:
-      eval("stabridge","-d","-w","eth1","-b","br0","-e","vlan0"); // broadcom only right now
-    break;
-}
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
+#else //Broadcom
+
+      eval("stabridge","-d","-w",nvram_safe_get("wl0_ifname"),"-b","br0","-e",firstlanif);
+
 #endif
 	
     
