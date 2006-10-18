@@ -62,6 +62,16 @@ if (nvram_match("wl0_mode","wet"))
       eval ("insmod", "ebt_snat");
       eval ("insmod", "ebt_arp");
       eval ("insmod", "ebt_arpreply");
+/* ...
+   4. create Wireless Client Bridge service dependency on EBTABLES for each ethernet device:
+	* ebtables -t broute -A BROUTING -p ARP -i <first ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+	* ...
+	* ebtables -t broute -A BROUTING -p ARP -i <last ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+	* ebtables -t nat -A POSTROUTING -o <wireless interface> -j snat --to-src <wireless MAC address> --snat-target ACCEPT
+   5. run Wireless Client bridge daemon:
+	* stabridge -d -w <wireless interface> -b <bridge interface> -e <first ethernet interface> ... <last ethernet interface>
+*/
+      
 #ifdef HAVE_MAGICBOX
       filterarp("eth0");
       filterarp("eth1");
@@ -74,9 +84,7 @@ if (nvram_match("wl0_mode","wet"))
       filterarp("eth1");
       filterarp("eth2");
 #else  //Broadcom
-
-char firstlanif[16];
-
+		char firstlanif[16];
 		sscanf (nvram_safe_get("lan_ifnames"), "%s ", firstlanif);
 
 	  filterarp(firstlanif);
@@ -89,26 +97,15 @@ char firstlanif[16];
 		"\t-e <devname(s)>\t- Use ethernet device(s) name(s) separated by space. Default is eth0 if no in configuration found\n",
 */
 #ifdef HAVE_MAGICBOX
-      filterarp("eth0");
-      filterarp("eth1");
-      filterarp("eth2");
       eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
 #elif HAVE_GATEWORX
-      filterarp("ixp0");
-      filterarp("ixp1");
       eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0 ixp1");
 #elif HAVE_RB500
-      filterarp("eth0");
-      filterarp("eth1");
-      filterarp("eth2");
       eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
 #else //Broadcom
-
       eval("stabridge","-d","-w",nvram_safe_get("wl0_ifname"),"-b","br0","-e",firstlanif);
-
 #endif
 	
-    
     }
 }
 
