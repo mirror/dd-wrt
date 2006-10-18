@@ -1651,7 +1651,8 @@ int ieee802_1x_init(struct hostapd_data *hapd)
 
 		if (hapd->default_wep_key == NULL)
 			return -1;
-	}
+	} else
+		hostapd_set_privacy(hapd, 0);
 
 	return 0;
 }
