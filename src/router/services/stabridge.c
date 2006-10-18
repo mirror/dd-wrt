@@ -97,11 +97,11 @@ if (nvram_match("wl0_mode","wet"))
 		"\t-e <devname(s)>\t- Use ethernet device(s) name(s) separated by space. Default is eth0 if no in configuration found\n",
 */
 #ifdef HAVE_MAGICBOX
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0","eth1","eth2");
 #elif HAVE_GATEWORX
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0 ixp1");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0","ixp1");
 #elif HAVE_RB500
-      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0 eth1 eth2");
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0","eth1","eth2");
 #else //Broadcom
       eval("stabridge","-d","-w",nvram_safe_get("wl0_ifname"),"-b","br0","-e",firstlanif);
 #endif
