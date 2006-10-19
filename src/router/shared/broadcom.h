@@ -317,6 +317,7 @@ extern void ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv);
 /* Added by Botho 21.April.06 */
 extern void ej_js_include (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_css_include (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_logout(void);
 
 
 /* for all */
