@@ -140,7 +140,6 @@ extern char *get_mac_from_ip (char *ip);
 /* Forwards. */
 static int initialize_listen_socket (usockaddr * usaP);
 static int auth_check (char *dirname, char *authorization);
-static void send_authenticate (char *realm);
 static void send_error (int status, char *title, char *extra_header,
 			char *text);
 static void send_headers (int status, char *title, char *extra_header,
@@ -292,7 +291,7 @@ fprintf(stderr,"3Enc2 %s\n",enc2);
 }
 
 
-static void
+void
 send_authenticate (char *realm)
 {
   char header[10000];
