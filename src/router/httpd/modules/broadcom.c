@@ -3297,7 +3297,7 @@ static int
 apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	   char_t * url, char_t * path, char_t * query)
 {
-  int action = NOTHING;
+	int action = NOTHING;
   char *value;
   char *submit_button, *next_page;
 
@@ -3317,11 +3317,11 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("action = %s\n", value);
 
   if (value && !strcmp (value, "gozila_cgi"))
-    {
-      cprintf ("start gozila_cgi");
-      gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
-      return 1;
-    }
+  {
+  	cprintf ("start gozila_cgi");
+    gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
+    return 1;
+  }
   cprintf ("get submit button");
 	/********************/
   submit_button = websGetVar (wp, "submit_button", "");
@@ -3340,78 +3340,89 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("get action\n");
   value = websGetVar (wp, "action", "");
   cprintf ("action = %s\n", value);
+  
   /* Apply values */
   if (!strcmp (value, "Apply"))
+  {
+  	struct apply_action *act;
+    cprintf ("validate cgi");
+    validate_cgi (wp);
+    cprintf ("handle apply action\n");
+    act = handle_apply_action (submit_button);
+    cprintf ("done\n");
+    //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+    nvram_set ("is_default", "0");
+    nvram_set ("is_modified", "1");
+
+    if (act)
     {
-      struct apply_action *act;
-      cprintf ("validate cgi");
-      validate_cgi (wp);
-      cprintf ("handle apply action\n");
-      act = handle_apply_action (submit_button);
-      cprintf ("done\n");
-      //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-      nvram_set ("is_default", "0");
-      nvram_set ("is_modified", "1");
-
-      if (act)
-	{
-	  cprintf
-	    ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-	     act->name, act->service, act->sleep_time, act->action);
-	  if ((act->action == SYS_RESTART)
-	      || (act->action == SERVICE_RESTART))
-	    nvram_set ("action_service", act->service);
-	  else
-	    nvram_set ("action_service", "");
-	  sleep_time = act->sleep_time;
-	  action = act->action;
-
-	  if (act->go)
-	    ret_code = act->go (wp);
-	}
-      else
-	{
-	  nvram_set ("action_service", "");
-	  sleep_time = 1;
-	  action = RESTART;
-	}
-
-      if (need_commit)
-	{
-	  //If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
-//        nvram_set ("eou_configured", "1");
-//        eval ("wl", "custom_ie", "0");
-	  diag_led (DIAG, STOP_LED);
-	  //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-	  //nvram_set("is_default", "0");
-	  //nvram_set("is_modified", "1");
-	  sys_commit ();
-	}
+    	cprintf ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
+    		act->name, act->service, act->sleep_time, act->action);
+    	if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
+    		nvram_set ("action_service", act->service);
+    	else
+    		nvram_set ("action_service", "");
+    	
+    	sleep_time = act->sleep_time;
+    	action = act->action;
+			
+			if (act->go)
+				ret_code = act->go (wp);
     }
+    else
+    {
+    	nvram_set ("action_service", "");
+    	sleep_time = 1;
+    	action = RESTART;
+    }
+    
+    if (need_commit) 
+    {
+    	//If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
+      //        nvram_set ("eou_configured", "1");
+      //        eval ("wl", "custom_ie", "0");
+      diag_led (DIAG, STOP_LED);
+      //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+      //nvram_set("is_default", "0");
+      //nvram_set("is_modified", "1");
+      sys_commit ();
+    }
+  }
+  
   /* Restore defaults */
   else if (!strncmp (value, "Restore", 7))
-    {
-      ACTION ("ACT_SW_RESTORE");
-      nvram_set ("sv_restore_defaults", "1");
-      eval ("killall", "-9", "udhcpc");
-      sys_commit ();
-      eval ("erase", "nvram");
-      action = REBOOT;
-    }
-
+  {
+  	ACTION ("ACT_SW_RESTORE");
+    nvram_set ("sv_restore_defaults", "1");
+    eval ("killall", "-9", "udhcpc");
+    sys_commit ();
+    eval ("erase", "nvram");
+    action = REBOOT;
+  }
+  
   /* Reboot */
-  else if (!strncmp (value, "Reboot", 7))
-    {
-      action = REBOOT;
-      do_ej ("Reboot.asp", wp);
-      websDone (wp, 200);
-      sleep (5);
-      sys_reboot ();
-      return 1;
-    }
+  else if (!strncmp (value, "Reboot", 6))
+  {
+    do_ej ("Reboot.asp", wp);
+    websDone (wp, 200);
+    sleep (5);
+    sys_reboot ();
+    return 1;
+  }
+    
+  /* GUI Logout */
+  else if (!strncmp (value, "Logout", 6))
+  {
+    do_ej ("Logout.asp", wp);
+    websDone (wp, 200);
+    sleep (2);
+    ej_logout ();
+    return 1;
+  }
+  
   /* Invalid action */
   else
-    websDebugWrite (wp, "Invalid action %s<br>", value);
+    websDebugWrite (wp, "Invalid action %s<br />", value);
 
 
 footer:
@@ -3423,52 +3434,42 @@ footer:
     action = REBOOT;
 
   if (action != REBOOT)
-    {
-      if (!error_value)
-	{
-	  if (my_next_page[0] != '\0')
-	    {
-	      sprintf (path, "%s", my_next_page);
-	    }
-	  else
-	    {
-	      next_page = websGetVar (wp, "next_page", NULL);
-	      if (next_page)
-		sprintf (path, "%s", next_page);
-	      else
-		sprintf (path, "%s.asp", submit_button);
-	    }
-	  cprintf ("refresh to %s\n", path);
-	  do_ej (path, wp);	//refresh
-	  websDone (wp, 200);
-
-/* if (websGetVar (wp, "small_screen", NULL))		// this was replaced by the "saved" button value and all controls are now grey out
- * 	do_ej ("Success_s.asp", wp);
- * else
- * 	do_ej ("Success.asp", wp);
- */
-	}
-      else
-	{
-	  if (websGetVar (wp, "small_screen", NULL))
-	    {
-	      do_ej ("Fail_s.asp", wp);
-	    }
-	  else
-	    {
-	      do_ej ("Fail.asp", wp);
-	    }
-	  websDone (wp, 200);
-	}
-    }
+  {
+  	if (!error_value)
+  	{
+  		if (my_next_page[0] != '\0')
+  			sprintf (path, "%s", my_next_page);
+  		else
+  		{
+  			next_page = websGetVar (wp, "next_page", NULL);
+  			if (next_page)
+  				sprintf (path, "%s", next_page);
+  			else
+  				sprintf (path, "%s.asp", submit_button);
+  		}
+  		
+  		cprintf ("refresh to %s\n", path);
+  		do_ej (path, wp);	//refresh
+  		websDone (wp, 200);
+  	}
+  	else
+  	{
+  		if (websGetVar (wp, "small_screen", NULL))
+  			do_ej ("Fail_s.asp", wp);
+  		else
+  			do_ej ("Fail.asp", wp);
+  		
+  		websDone (wp, 200);
+  	}
+  }
   else
-    {
-      do_ej ("Reboot.asp", wp);
-      websDone (wp, 200);
-      sleep (5);
-      sys_reboot ();
-      return 1;
-    }
+  {
+  	do_ej ("Reboot.asp", wp);
+  	websDone (wp, 200);
+  	sleep (5);
+  	sys_reboot ();
+  	return 1;
+  }
 
   nvram_set ("upnp_wan_proto", "");
   sleep (sleep_time);
@@ -3982,57 +3983,47 @@ char str[11];
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-
-//				<div id="statusInfo">
-//					<div class="info"><% tran("share.firmware"); %>: <script type="text/javascript">\n//<![CDATA[
-//					document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");
-//					\n//]]>\n</script></div>
-//					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
-//					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
-//				</div>
-
-  char *wan_ipaddr;
+	char *wan_ipaddr;
   int wan_link = check_wan_link (0);
   
-    if (nvram_match ("wan_proto", "pptp"))
-		{
-		wan_ipaddr = wan_link ? nvram_safe_get ("pptp_get_ip") : nvram_safe_get ("wan_ipaddr");
-    	}
+  if (nvram_match ("wan_proto", "pptp"))
+  {
+  	wan_ipaddr = wan_link ? nvram_safe_get ("pptp_get_ip") : nvram_safe_get ("wan_ipaddr");
+  }
 	else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
-    	{
+	{
 		wan_ipaddr = wan_link ? nvram_safe_get ("wan_ipaddr") : "0.0.0.0";
-      	}
+	}
 	else if (nvram_match ("wan_proto", "l2tp"))
-		{
+	{
 		wan_ipaddr = wan_link ? nvram_safe_get ("l2tp_get_ip") : nvram_safe_get ("wan_ipaddr");
-		}
+	}
 	else
-		{
+	{
 		wan_ipaddr = nvram_safe_get ("wan_ipaddr");
-		}
-
+	}
 	
-		websWrite (wp, "<div id=\"statusInfo\">\n");
-		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
-		websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
+	websWrite (wp, "<div id=\"statusInfo\">\n");
+	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
+	websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
-		ej_get_firmware_version(0,wp,argc,argv);
-		websWrite (wp, "</a>\");\n\
+	ej_get_firmware_version(0,wp,argc,argv);
+	websWrite (wp, "</a>\");\n\
 				\n//]]>\n</script></div>\n"); 
-		websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
-		ej_get_uptime(0,wp,argc,argv);
-		websWrite (wp, "</div>\n");
-		websWrite (wp, "<div class=\"info\">WAN");
-			if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
-				{
-				websWrite (wp, ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
-				}
-			else 
-				{
-				websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
-				}
-		websWrite (wp, "</div>\n");	
-		
+	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
+	ej_get_uptime(0,wp,argc,argv);
+	websWrite (wp, "</div>\n");
+	websWrite (wp, "<div class=\"info\">WAN");
+	
+	if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
+	{
+		websWrite (wp, ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
+	}
+	else 
+	{
+		websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
+	}
+	websWrite (wp, "</div>\n");		
 }
 
 static char no_cache[] =
