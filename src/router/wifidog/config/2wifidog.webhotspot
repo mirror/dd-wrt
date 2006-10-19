@@ -28,6 +28,7 @@
 				document.write("(" + share.deflt + ": 2060, " + share.range + ": 1 - 65535)");
 			//]]>
 			</script>
+			</span>
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_httpdconn"); %></div>
@@ -37,6 +38,7 @@
 				document.write("(" + share.deflt + ": 10, " + share.range + ": 1 - 50)");
 			//]]>
 			</script>
+			</span>
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checkinter"); %></div>
@@ -46,6 +48,7 @@
 				document.write("(" + share.deflt + ": 60, " + share.range + ": 1 - 3600)");
 			//]]>
 			</script>
+			</span>
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checktimeout"); %></div>
@@ -55,6 +58,7 @@
 				document.write("(" + share.deflt + ": 5, " + share.range + ": 1 - 99)");
 			//]]>
 			</script>
+			</span>
 		</div>
 	</div>
 </fieldset><br />
