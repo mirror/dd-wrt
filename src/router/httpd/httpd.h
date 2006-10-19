@@ -63,13 +63,14 @@ extern size_t wfwrite(char *buf, int size, int n, FILE *fp);
 extern size_t wfread(char *buf, int size, int n, FILE *fp);
 extern int wfflush(FILE *fp);
 extern int wfclose(FILE *fp);
-extern char auth_realm[AUTH_MAX];
-extern void send_authenticate (char *realm);
 #ifdef HAVE_HTTPS  
 int do_ssl;
 #endif
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
+
+extern char auth_realm[AUTH_MAX];
+extern void send_authenticate (char *realm);
 
 /* Generic MIME type handler */
 struct mime_handler {
