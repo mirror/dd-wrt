@@ -135,6 +135,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="Unknown";
 share.expired="expired";
+share.logout="logout";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
