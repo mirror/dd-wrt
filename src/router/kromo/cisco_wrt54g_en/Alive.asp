@@ -4,12 +4,6 @@
 		//<![CDATA[
 		
 document.title = "<% nvram_get("router_name"); %>" + alive.titl;
-		
-
-function logout(F) {
-	F.action.value = "Logout";
-	F.submit();
-}
 
 function to_submit(F) {
 	F.submit_button.value = "Alive";
@@ -86,15 +80,6 @@ function init() {
 								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />");
 								//]]>
 								</script>
-								
-								
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"button\" value=\"logout\" onclick=\"logout(this.form)\" />");
-								//]]>
-								</script>
-								
-								
 							</div>
 						</form>
 					</div>

@@ -846,3 +846,8 @@ function show_layer_ext(obj, id, state)
 		eval("document.getElementById('" + id + "').style.display='" + display_style + "'");
 	}
 }
+
+function logout() {
+	document.forms[0].action.value = "Logout";
+	document.forms[0].submit();
+}
