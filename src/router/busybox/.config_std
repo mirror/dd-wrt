@@ -474,7 +474,7 @@ CONFIG_TIME=y
 # Networking Utilities
 #
 # CONFIG_FEATURE_IPV6 is not set
-# CONFIG_ARPING is not set
+CONFIG_ARPING=y
 # CONFIG_DNSD is not set
 # CONFIG_ETHER_WAKE is not set
 # CONFIG_FAKEIDENTD is not set
