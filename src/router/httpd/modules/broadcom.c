@@ -3415,7 +3415,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   {
     do_ej ("Logout.asp", wp);
     websDone (wp, 200);
-    sleep (2);
     do_logout();
     return 1;
   }
