@@ -10,19 +10,19 @@
 	<div id="idwifidog">
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_id"); %></div>
-			<input class="text" maxLength="100" size="39" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
+			<input class="text" maxlength="100" size="39" name="wd_gwid" value="<% nvram_get("wd_gwid"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_url"); %></div>
-			<input class="text" maxLength="100" size="39" name="wd_url" value="<% nvram_get("wd_url"); %>" />
+			<input class="text" maxlength="100" size="39" name="wd_url" value="<% nvram_get("wd_url"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_httpdname"); %></div>
-			<input class="text" maxLength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
+			<input class="text" maxlength="100" size="39" name="wd_httpdname" value="<% nvram_get("wd_httpdname"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.wifidog_port"); %></div>
-			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wd_gwport" value="<% nvram_get("wd_gwport"); %>" />
+			<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,hotspot.wifidog_port)" name="wd_gwport" value="<% nvram_get("wd_gwport"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 2060, " + share.range + ": 1 - 65535)");
@@ -32,7 +32,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_httpdconn"); %></div>
-			<input class="num" maxLength="2" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvram_get("wd_httpdcon"); %>" />
+			<input class="num" maxlength="2" size="5" onblur="valid_range(this,1,50,hotspot.wifidog_httpdconn)" name="wd_httpdcon" value="<% nvram_get("wd_httpdcon"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 10, " + share.range + ": 1 - 50)");
@@ -42,7 +42,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checkinter"); %></div>
-			<input class="num" maxLength="4" size="5" onblur="valid_range(this,1,3600,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvram_get("wd_interval"); %>" />
+			<input class="num" maxlength="4" size="5" onblur="valid_range(this,1,3600,hotspot.wifidog_checkinter)" name="wd_interval" value="<% nvram_get("wd_interval"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 60, " + share.range + ": 1 - 3600)");
@@ -52,7 +52,7 @@
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.wifidog_checktimeout"); %></div>
-			<input class="num" maxLength="2" size="5" onblur="valid_range(this,1,99,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvram_get("wd_timeout"); %>" />
+			<input class="num" maxlength="2" size="5" onblur="valid_range(this,1,99,hotspot.wifidog_checktimeout)" name="wd_timeout" value="<% nvram_get("wd_timeout"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 				document.write("(" + share.deflt + ": 5, " + share.range + ": 1 - 99)");
@@ -61,27 +61,39 @@
 			</span>
 		</div>
 		<div class="setting">	
-			<div class="label">AuthServer Hostname</div>
-			<input class="text" maxLength="100" size="39" name="wd_hostname" value="<% nvram_get("wd_hostname"); %>" />
+			<div class="label"><% tran("hotspot.wifidog_authsrv"); %></div>
+			<input class="text" maxlength="100" size="39" name="wd_hostname" value="<% nvram_get("wd_hostname"); %>" />
 		</div>
 		<div class="setting">	
-			<div class="label">AuthServer SSL Available</div>
+			<div class="label"><% tran("hotspot.wifidog_authsrvssl"); %></div>
 			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_selmatch("wd_sslavailable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_selmatch("wd_sslavailable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idwifidogssl">
 			<div class="setting">	
-			    <div class="label">AuthServer SSL Port</div>
-			    <input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,'ssl port')" name="wd_sslport" value="<% nvram_get("wd_sslport"); %>" />
+			    <div class="label"><% tran("hotspot.wifidog_authsrvsslport"); %></div>
+			    <input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvsslport)" name="wd_sslport" value="<% nvram_get("wd_sslport"); %>" />
+			    <span class="default"><script type="text/javascript">
+						//<![CDATA[
+						document.write("(" + share.deflt + ": 443, " + share.range + ": 1 - 65535)");
+						//]]>
+						</script>
+					</span>
 			</div>
 		</div>
 		<div class="setting">	
-			<div class="label">AuthServer HTTP Port</div>
-			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,'http port')" name="wd_httpport" value="<% nvram_get("wd_httpport"); %>" />
+			<div class="label"><% tran("hotspot.wifidog_authsrvhttpport"); %></div>
+			<input class="num" maxlength="5" size="5" onblur="valid_range(this,1,65535,wifidog_authsrvhttpport)" name="wd_httpport" value="<% nvram_get("wd_httpport"); %>" />
+			<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 80, " + share.range + ": 1 - 65535)");
+				//]]>
+				</script>
+			</span>
 		</div>
 		<div class="setting">	
-			<div class="label">AuthServer Path</div>
-			<input class="text" maxLength="100" size="39" name="wd_path" value="<% nvram_get("wd_path"); %>" />
+			<div class="label"><% tran("hotspot.wifidog_authsrvpath"); %></div>
+			<input class="text" maxlength="100" size="39" name="wd_path" value="<% nvram_get("wd_path"); %>" />
 		</div>
 	</div>
 </fieldset><br />
