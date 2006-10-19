@@ -30,7 +30,9 @@ ifdef CONFIG_XSCALE
 	install kendin $(INSTALLDIR)/etc
 	cp firmware/* $(INSTALLDIR)/usr/lib/firmware
 endif
-
+ifdef CONFIG_SNMP
+	install wl_snmpd.sh $(INSTALLDIR)/etc/wl_snmpd.sh
+endif
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
 	install protocols $(INSTALLDIR)/etc
