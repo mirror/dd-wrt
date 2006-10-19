@@ -127,7 +127,7 @@ smb_handler ()
 static webs_t conn_fp;		// jimmy, https, 8/4/2003
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
-static char auth_realm[AUTH_MAX];
+extern char auth_realm[AUTH_MAX];
 //#ifdef GET_POST_SUPPORT
 int post;
 //#endif
