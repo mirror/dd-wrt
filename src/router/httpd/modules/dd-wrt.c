@@ -5875,7 +5875,7 @@ Inter-|   Receive                                                |  Transmit
 
 
 
-static void ej_logout(void)
+void do_logout(void)  //static functions are not exportable, additionally this is no ej function
 {
 	send_authenticate (auth_realm);
 }
