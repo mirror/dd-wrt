@@ -136,6 +136,7 @@ share.seealso="Voir aussi";
 share.never="jamais";
 share.unknown="Status inconnu";
 share.expired="Expiré";
+share.logout="Déconnection";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
