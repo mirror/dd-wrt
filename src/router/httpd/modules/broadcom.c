@@ -4023,6 +4023,9 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	{
 		websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
 	}
+	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">\n//<![CDATA[\n\
+				document.write(\"<a href=\\\"javascript:logout()\\\">\"+ share.logout + \"</a>\");\n\
+				\n//]]>\n</script></div>\n"); 
 	websWrite (wp, "</div>\n");		
 }
 
