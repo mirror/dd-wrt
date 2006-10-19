@@ -366,23 +366,20 @@ internal_getRouterBrand ()
 		    startswith (et0, "00:0c:e5") ||
 		    startswith (et0, "00:0C:10") ||
 		    startswith (et0, "00:0c:10") ||
-		    startswith (et0, "00:11:22") ||
-		    startswith (et0, "00:0C:90") ||
-		    startswith (et0, "00:0c:90")))
+		    startswith (et0, "00:11:22")))
 	      {
-			if (nvram_match ("altima_phy", "0"))
-				{
 			cprintf ("router Motorola WR850G v1\n");
 			setRouter ("Motorola WR850G v1");
 			return ROUTER_MOTOROLA_V1;
-	      		}
-			else 
-	      		{
+	      }
+	    if (nvram_match ("GemtekPmonVer", "9") &&
+		   (startswith (et0, "00:0C:90") ||
+		    startswith (et0, "00:0c:90"))) 
+	      {
 			cprintf ("router Motorola WE800G v1\n");
 			setRouter ("Motorola WE800G v1");
 			return ROUTER_MOTOROLA_WE800G;
-	      		}
-		  }
+	      }
 	    if (nvram_match ("melco_id", "29016"))  //Buffalo WLI2-TX1-G54
 	      {
 			cprintf ("router is Buffalo WLI2-TX1-G54\n");
