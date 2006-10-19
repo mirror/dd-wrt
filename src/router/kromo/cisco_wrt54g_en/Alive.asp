@@ -1,14 +1,14 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Keep Alive</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
+		
 document.title = "<% nvram_get("router_name"); %>" + alive.titl;
+		
 
-function to_reboot(F) {
-	F.action.value = "Reboot";
+function logout(F) {
+	F.action.value = "Logout";
 	F.submit();
-	return true;
 }
 
 function to_submit(F) {
@@ -53,7 +53,7 @@ function init() {
 	setAlive();
 }
 		
-//]]>
+	//]]>
 </script>
 	</head>
 
@@ -72,25 +72,29 @@ function init() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" />
-							<input type="hidden" name="reboot_button" />
 							<input type="hidden" name="commit" value="1" />
 							<h2><% tran("alive.h2"); %></h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
+								//<![CDATA[
 								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");								
-								
-//]]>
-</script>
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
+								//<![CDATA[
 								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />");
+								//]]>
+								</script>
 								
-//]]>
-</script>
+								
+								<script type="text/javascript">
+								//<![CDATA[
+								document.write("<input type=\"button\" value=\"logout\" onclick=\"logout(this.form)\" />");
+								//]]>
+								</script>
+								
+								
 							</div>
 						</form>
 					</div>
