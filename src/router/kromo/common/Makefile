@@ -38,6 +38,9 @@ else
 	-cp -a Info.htm $(INSTALLDIR)/www/
 	-cp -a Info.live.htm $(INSTALLDIR)/www/
 endif
+ifeq ($(CONFIG_REGISTER),y)
+	-cp -a register.asp $(INSTALLDIR)/www/register.asp
+endif
 
 ifdef EMI_TEST
 	cp -a emi_test.asp $(INSTALLDIR)/www/
