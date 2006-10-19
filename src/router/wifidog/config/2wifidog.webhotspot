@@ -60,5 +60,28 @@
 			</script>
 			</span>
 		</div>
+		<div class="setting">	
+			<div class="label">AuthServer Hostname</div>
+			<input class="text" maxLength="100" size="39" name="wd_hostname" value="<% nvram_get("wd_hostname"); %>" />
+		</div>
+		<div class="setting">	
+			<div class="label">AuthServer SSL Available</div>
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="1" <% nvram_selmatch("wd_sslavailable", "1", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="wd_sslavailable" value="0" <% nvram_selmatch("wd_sslavailable", "0", "checked"); %> onclick="show_layer_ext(this, 'idwifidogssl', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idwifidogssl">
+			<div class="setting">	
+			    <div class="label">AuthServer SSL Port</div>
+			    <input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,'ssl port')" name="wd_sslport" value="<% nvram_get("wd_sslport"); %>" />
+			</div>
+		</div>
+		<div class="setting">	
+			<div class="label">AuthServer HTTP Port</div>
+			<input class="num" maxLength="5" size="5" onblur="valid_range(this,1,65535,'http port')" name="wd_httpport" value="<% nvram_get("wd_httpport"); %>" />
+		</div>
+		<div class="setting">	
+			<div class="label">AuthServer Path</div>
+			<input class="text" maxLength="100" size="39" name="wd_path" value="<% nvram_get("wd_path"); %>" />
+		</div>
 	</div>
 </fieldset><br />

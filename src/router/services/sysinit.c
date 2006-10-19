@@ -935,8 +935,7 @@ start_nvram (void)
 	nvram_set ("http_passwd", zencrypt ("admin"));
 
       nvram_set ("http_passwd", zencrypt (nvram_safe_get ("http_passwd")));
-      nvram_set ("http_username",
-		 zencrypt (nvram_safe_get ("http_username")));
+      nvram_set ("http_username",zencrypt ("root"));
       if (nvram_get ("newhttp_passwd") != NULL)
 	{
 	  nvram_set ("newhttp_passwd",

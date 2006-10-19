@@ -1677,6 +1677,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wd_interval", "60", 0},
   {"wd_timeout", "5", 0},
   {"wd_maclist", "", 0},
+  {"wd_hostname","", 0},
+  {"wd_sslavailable","0",0},
+  {"wd_sslport","443",0},
+  {"wd_httpport","80",0},
+  {"wd_path","/wifidog",0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
