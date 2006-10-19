@@ -690,7 +690,11 @@ hotspot.wifidog_httpdname="Web Server Name";
 hotspot.wifidog_httpdconn="Max Users";
 hotspot.wifidog_checkinter="CheckInterval (in sec.)";
 hotspot.wifidog_checktimeout="ClientTimeout";
-
+hotspot.wifidog_authsrv="AuthServer Hostname";
+hotspot.wifidog_authsrvssl="AuthServer SSL Available";
+hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
+hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
+hotspot.wifidog_authsrvpath="AuthServer Path";
 
 
 // ******************************************* Info.htm *******************************************//
@@ -1621,6 +1625,11 @@ success.alert_reset="All configuration settings have been restored to their defa
 success.alert1="Please check the followings before connecting again:";
 success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
 success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
+
+// ******************************************* Logout.asp  *******************************************//
+var logout = new Object();
+logout.message="You have successfully logout.<br />Thanks for using DD-WRT !";
+
 
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//

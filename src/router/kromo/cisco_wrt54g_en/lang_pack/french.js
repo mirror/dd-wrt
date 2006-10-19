@@ -680,6 +680,11 @@ hotspot.wifidog_httpdname="Nom du serveur Web";
 hotspot.wifidog_httpdconn="Utilisateurs Max.";
 hotspot.wifidog_checkinter="CheckInterval (en sec.)";
 hotspot.wifidog_checktimeout="ClientTimeout";
+hotspot.wifidog_authsrv="Nom Serveur Authentification";
+hotspot.wifidog_authsrvssl="Authentification SSL";
+hotspot.wifidog_authsrvsslport="Port SSL Serveur Authentification";
+hotspot.wifidog_authsrvhttpport="Port HTTP Serveur Authentification";
+hotspot.wifidog_authsrvpath="Path Serveur Authentification";
 
 
 
@@ -1568,3 +1573,7 @@ success.alert_reset="Tous les paramètres ont été initialisés à leur valeur par d
 success.alert1="Veuillez vérifier les points suivants avant de vous connecter de nouveau :";
 success.alert2="Si l\'adresse IP du routeur a changé, veuillez SVP renouveler les adresses IP de tous les clients connectés.";
 success.alert3="Si vous êtes connecté au routeur par une connexion sans fil, veuillez SVP vous connecter de nouveau avant de cliquer sur le bouton <em>Continuer</em>.";
+
+// ******************************************* Logout.asp  *******************************************//
+
+logout.message="Vous vous êtes déconnecté avec succès.<br />Merci d\'avoir utilisé DD-WRT !";
