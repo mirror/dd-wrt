@@ -508,7 +508,7 @@ static int b44_setup_phy(struct b44 *bp)
 //		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
 	}
 
-	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713)
+	if ((bp->pdev->device == PCI_DEVICE_ID_BCM4713) && (__b44_readphy(bp, 0, MII_BMCR, &val) == 0))
 			nvram_set ("altima_phy", "1");
 		else
 			nvram_set ("altima_phy", "0");
