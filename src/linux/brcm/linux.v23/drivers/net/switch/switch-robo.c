@@ -31,6 +31,7 @@
 #include <linux/ethtool.h>
 #include <linux/mii.h>
 #include <asm/uaccess.h>
+#include <bcmnvram.h>
 
 #include "switch-core.h"
 #include "etc53xx.h"
@@ -256,6 +257,10 @@ static int robo_probe(char *devname)
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
+		if (phyid == 0x55210022)
+			nvram_set ("altima_phy", "1");
+		else 
+			nvram_set ("altima_phy", "0");
 		ROBO_DBG("No Robo switch in managed mode found\n");
 		return 1;
 	}
