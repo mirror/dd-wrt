@@ -63,6 +63,7 @@ extern size_t wfwrite(char *buf, int size, int n, FILE *fp);
 extern size_t wfread(char *buf, int size, int n, FILE *fp);
 extern int wfflush(FILE *fp);
 extern int wfclose(FILE *fp);
+extern void send_authenticate (char *realm);
 #ifdef HAVE_HTTPS  
 int do_ssl;
 #endif
@@ -144,6 +145,7 @@ struct ej_handler {
 	void (*output)(int eid, webs_t wp, int argc, char_t **argv);
 };
 extern struct ej_handler ej_handlers[];
+
 
 
 #endif /* _httpd_h_ */
