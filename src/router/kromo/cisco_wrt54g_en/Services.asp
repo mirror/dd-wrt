@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Services</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
@@ -101,8 +101,8 @@ addEvent(window, "load", function() {
 });
 
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -120,7 +120,6 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" />
-							<input type="hidden" name="reboot_button" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="static_leases" value="13" />
 							<input type="hidden" name="openvpn_certtype" />
@@ -130,26 +129,20 @@ addEvent(window, "load", function() {
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

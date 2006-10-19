@@ -76,7 +76,6 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type"/>
 							<input type="hidden" name="action"/>
-							<input type="hidden" name="reboot_button"/>
 							<input type="hidden" name="commit" value="1"/>
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
