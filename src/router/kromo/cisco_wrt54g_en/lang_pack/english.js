@@ -1629,7 +1629,7 @@ success.alert3="If you are connected via WLAN, please join the network and then 
 
 // ******************************************* Logout.asp  *******************************************//
 var logout = new Object();
-logout.message="You have successfully logout.<br />Thanks for using DD-WRT !";
+logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
