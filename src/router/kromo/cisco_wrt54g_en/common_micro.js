@@ -847,7 +847,7 @@ function show_layer_ext(obj, id, state)
 	}
 }
 
-function logout() {
+function lgout() {
 	document.forms[0].action.value = "Logout";
 	document.forms[0].submit();
 }
