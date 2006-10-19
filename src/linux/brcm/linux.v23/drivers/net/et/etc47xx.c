@@ -27,6 +27,7 @@
 #include <bcmenet47xx.h>
 #include <et_export.h>		/* for et_phyxx() routines */
 #include <utils.h>
+#include <bcmnvram.h>
 
 /* Remove these if each switch is compile time configurable */
 #define ETROBO
@@ -1083,7 +1084,8 @@ chipphyinit(struct bcm4xxx *ch, uint phyaddr)
 	phyid |=  chipphyrd( ch, phyaddr, 0x3) << 16;
 
 	if( phyid == 0x55210022) {
-		
+
+	nvram_set ("altima_phy", "1");		
 if (getRouterBrand () == ROUTER_RT210W)  //from Belkin 4.05.03 source, try to fix wan problem on some v1xxx units -Eko
 	{
 		chipphywr( ch, phyaddr, 30, (uint16) (chipphyrd( ch, phyaddr, 30 ) | 0x3000));
@@ -1111,6 +1113,8 @@ else  //default for all other routers
 		chipphywr( ch, phyaddr, 28, (uint16) (chipphyrd( ch, phyaddr, 28 ) & 0x0fff));	
 	}				
 	}
+	else
+		nvram_set ("altima_phy", "0");
 }
 
 static void
