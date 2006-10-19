@@ -5873,3 +5873,11 @@ Inter-|   Receive                                                |  Transmit
 
 /* END  Added by Botho 10.May.06 */
 
+
+
+static void ej_logout(void)
+{
+	send_authenticate (auth_realm);
+}
+
+
