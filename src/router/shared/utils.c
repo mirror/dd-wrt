@@ -126,6 +126,9 @@ internal_getRouterBrand ()
 #elif HAVE_GATEWORX
   setRouter ("Avila Gateworks");
   return ROUTER_BOARD_GATEWORX;
+#elif HAVE_X86
+  setRouter ("Generic X86");
+  return ROUTER_BOARD_GATEWORX;
 #elif HAVE_XSCALE
   setRouter ("NewMedia Dual A/B/G");
   return ROUTER_BOARD_XSCALE;
