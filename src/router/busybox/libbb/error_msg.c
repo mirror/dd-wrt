@@ -12,9 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libbb.h"
-
-#ifndef HAVE_NOMESSAGE
-
+/*
 void bb_error_msg(const char *s, ...)
 {
 	va_list p;
@@ -24,6 +22,4 @@ void bb_error_msg(const char *s, ...)
 	va_end(p);
 	putc('\n', stderr);
 }
-#endif
-
-
+*/
