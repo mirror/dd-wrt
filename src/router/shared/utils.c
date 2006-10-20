@@ -469,6 +469,8 @@ diag_led_4702 (int type, int act)
   return 0;
 #elif HAVE_XSCALE
   return 0;
+#elif HAVE_X86
+  return 0;
 #elif HAVE_MAGICBOX
   return 0;
 #else
@@ -500,6 +502,8 @@ C_led_4702 (int i)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+  return 0;  
+#elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
   return 0;
@@ -583,6 +587,8 @@ diag_led_4704 (int type, int act)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+ return 0;
+#elif HAVE_X86
  return 0;
 #elif HAVE_MAGICBOX
  return 0;
@@ -680,6 +686,8 @@ diag_led_4712 (int type, int act)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+  return 0;
+#elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
   return 0;
@@ -1793,6 +1801,8 @@ check_vlan_support (void)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE // dues support vlans, but not yet implemented
+  return 0;
+#elif HAVE_X86 // dues support vlans, but not yet implemented
   return 0;
 #elif HAVE_MAGICBOX // dues support vlans, but not yet implemented
   return 0;
