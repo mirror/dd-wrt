@@ -254,6 +254,45 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "unknown");
   return;
 }
+#elif HAVE_X86
+void
+ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 7)
+	{
+	  getc (fp);
+	  char cpuclk[32];
+	  int i=0;
+	  b=getc(fp);
+	  while(b!=0xa && b!=0xd && b!=0x20)
+	    {
+	    cpuclk[i++]=b;
+	    b=getc(fp);
+	    }
+	  cpuclk[i++]=0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
 #elif HAVE_MAGICBOX
 void
 ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
