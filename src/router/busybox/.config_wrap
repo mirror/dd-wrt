@@ -37,8 +37,8 @@ CONFIG_BUSYBOX_EXEC_PATH="/bin"
 # CONFIG_FEATURE_SHARED_BUSYBOX is not set
 # CONFIG_LFS is not set
 USING_CROSS_COMPILER=y
-CROSS_COMPILER_PREFIX="armeb-linux-uclibc-"
-CONFIG_BUILD_AT_ONCE=y
+CROSS_COMPILER_PREFIX="i386-linux-uclibc-"
+# CONFIG_BUILD_AT_ONCE is not set
 
 #
 # Debugging Options
