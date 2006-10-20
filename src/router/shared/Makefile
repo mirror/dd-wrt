@@ -69,6 +69,9 @@ endif
 ifeq ($(CONFIG_GATEWORX),y)
   CFLAGS += -DHAVE_GATEWORX
 endif
+ifeq ($(CONFIG_X86),y)
+  CFLAGS += -DHAVE_X86
+endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
 endif
