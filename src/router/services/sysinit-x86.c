@@ -69,21 +69,22 @@ start_sysinit (void)
   eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
  */
   eval ("mkdir", "/tmp/www");
-
-  eval ("mount", "-o", "remount,rw", "/");
-
+  
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
-#ifdef HAVE_REGISTER
+
+/*#ifdef HAVE_REGISTER
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
 #else
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-#endif
-//mkdir ("/usr/local/nvram", 0777);
-//unlink ("/tmp/nvram/.lock");
-//eval ("mkdir", "/tmp/nvram");
-//eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-//eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+#endif*/
+  mkdir ("/usr/local/nvram", 0777);
+  unlink ("/tmp/nvram/.lock");
+  eval ("mkdir", "/tmp/nvram");
+  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+
+
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -119,14 +120,11 @@ eval("insmod","crypto_null");
 */
 
 //system("/etc/kendin");
-  eval ("insmod", "ixp400th");
-  eval ("insmod", "ixp400");
-  system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-  eval ("insmod", "ixp400_eth");
-  eval ("insmod", "ocf");
-  eval ("insmod", "cryptodev");
-  eval ("insmod", "ixp4xx", "init_crypto=0");
-  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+  eval ("insmod", "natsemi");
+  eval ("ifconfig", "eth0", "0.0.0.0", "up");
+  eval ("ifconfig", "eth1", "0.0.0.0", "up");
+  eval ("ifconfig", "eth2", "0.0.0.0", "up");
+  eval ("ifconfig", "eth3", "0.0.0.0", "up");
 
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
@@ -152,30 +150,8 @@ eval("insmod","crypto_null");
 
 
   eval ("insmod", "ipv6");
-
-  eval ("insmod", "ad7418");	// temp / voltage sensor
-/*
-Configure mac addresses by reading data from eeprom
-*/
-  char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0051/eeprom";	/* bank2=0x100 */
-  FILE *file = fopen (filename, "r");
-  unsigned char buf[16];
-  fread (&buf[0], 16, 1, file);
-  char mac[16];
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-	   buf[3], buf[4], buf[5]);
-  eval ("ifconfig", "ixp0", "hw", "ether", mac);
-  sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-	   buf[9], buf[10], buf[11]);
-  eval ("ifconfig", "ixp1", "hw", "ether", mac);
-
-
   /* Set a sane date */
   stime (&tm);
-
-  eval ("mknod", "/dev/gpio", "c", "127", "0");
-  eval ("mknod", "/dev/rtc", "c", "253", "0");
-  eval ("hwclock", "-s");
   return 0;
   cprintf ("done\n");
 }
