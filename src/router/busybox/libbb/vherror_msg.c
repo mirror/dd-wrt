@@ -25,7 +25,8 @@
 
 #include "libbb.h"
 
-/*
+#ifndef HAVE_NOMESSAGE
+
 void bb_vherror_msg(const char *s, va_list p)
 {
 	if(s == 0)
@@ -35,4 +36,5 @@ void bb_vherror_msg(const char *s, va_list p)
 		fputs(": ", stderr);
 	herror("");
 }
-*/
+#endif
+
