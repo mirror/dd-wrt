@@ -1,0 +1,4 @@
+ "ip_conntrack_max"   "IP Conntrack MAX" "RANGE" "1" "4096" "FALSE" "0"
+ "ip_conntrack_tcp_timeouts"  "IP Conntrack TCP Timeout" "RANGE" "1" "3600" "FALSE" "0"
+ "ip_conntrack_udp_timeouts"  "IP Conntrack UDP Timeout" "RANGE" "1" "3600" "FALSE" "0"
+ 

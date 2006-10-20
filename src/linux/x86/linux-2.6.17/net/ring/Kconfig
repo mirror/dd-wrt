@@ -1,0 +1,14 @@
+config RING
+	tristate "PF_RING sockets (EXPERIMENTAL)"
+	depends on EXPERIMENTAL
+	---help---
+	  PF_RING socket family, optimized for packet capture.
+          If a PF_RING socket is bound to an adapter (via the bind() system
+          call), such adapter will be used in read-only mode until the socket
+          is destroyed. Whenever an incoming packet is received from the adapter
+          it will not passed to upper layers, but instead it is copied to a ring
+          buffer, which in turn is exported to user space applications via mmap.
+          Please refer to http://luca.ntop.org/Ring.pdf for more.
+
+	  Say N unless you know what you are doing.
+

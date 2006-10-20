@@ -1,0 +1,4 @@
+ "ipv6_enable" "ipv6 support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "ipv6_enable0" "ipv6 support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "radvd_enable" "ipv6 support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "radvd_conf"  "ipv6 support"  "NULL"  "TRUE" "0"
