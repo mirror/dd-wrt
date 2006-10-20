@@ -392,6 +392,13 @@ start_restore_defaults (void)
     {
       restore_defaults = 1;
     }
+#elif HAVE_X86
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
 #elif HAVE_MAGICBOX
   linux_overrides = generic;
   int brand = getRouterBrand ();

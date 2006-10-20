@@ -76,7 +76,7 @@ if (nvram_match("wl0_mode","wet"))
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
-#ifdef HAVE_X86
+#elif HAVE_X86
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
