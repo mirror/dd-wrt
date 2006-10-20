@@ -433,9 +433,8 @@ static const char *unpack_usage_messages(void)
 #else
 #define unpack_usage_messages() usage_messages
 #endif /* ENABLE_FEATURE_COMPRESS_USAGE */
-#ifndef HAVE_NOMESSAGE
 
-void bb_show_usage (void)
+/*void bb_show_usage (void)
 {
 	if (ENABLE_SHOW_USAGE) {
 		const char *format_string;
@@ -454,7 +453,7 @@ void bb_show_usage (void)
 
   exit (bb_default_error_retval);
 }
-#endif
+*/
 static int applet_name_compare (const void *x, const void *y)
 {
   const char *name = x;

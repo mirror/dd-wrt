@@ -1050,7 +1050,6 @@ static void c_lex_src(const char *fname, long fsize)
     return;
   }
   fd = open(fname, O_RDONLY);
-  fprintf(stderr,fname);
   if(fd < 0) {
 	perror(fname);
 	return;
