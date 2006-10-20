@@ -11,7 +11,8 @@
 #include <stdlib.h>
 
 #include "libbb.h"
-/*
+#ifndef HAVE_NOMESSAGE
+
 void bb_herror_msg(const char *s, ...)
 {
 	va_list p;
@@ -20,4 +21,4 @@ void bb_herror_msg(const char *s, ...)
 	bb_vherror_msg(s, p);
 	va_end(p);
 }
-*/
+#endif
