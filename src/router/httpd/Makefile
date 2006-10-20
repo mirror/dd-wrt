@@ -60,12 +60,20 @@ ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.c
 else
+ifneq ($(CONFIG_X86),y)
 OBJS += upgrade.c
+endif
 endif
 
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+
+ifeq ($(CONFIG_X86),y)
+CFLAGS += -DHAVE_X86
+OBJS += upgrade_x86.c
+endif
+
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -DHAVE_MAGICBOX
 CFLAGS += -DHAVE_CPUTEMP

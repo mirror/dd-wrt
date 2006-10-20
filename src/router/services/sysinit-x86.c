@@ -57,28 +57,28 @@ start_sysinit (void)
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  system ("/etc/convert");
+//  system ("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
   cprintf ("sysinit() tmp\n");
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-/*  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
-  eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
-  eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
- */
+
+  if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+
+    {
+      //not created yet, create ext2 partition
+      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/discs/disc0/part3");
+      //mount ext2 
+      mount ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
+      eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+      mkdir ("/usr/local/nvram", 0777);
+//    eval("ln","-s","/etc/nvram","/usr/local/nvram");
+    }
+
   eval ("mkdir", "/tmp/www");
   
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-
-/*#ifdef HAVE_REGISTER
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
-#else
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-#endif*/
-  mkdir ("/usr/local/nvram", 0777);
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
@@ -121,6 +121,7 @@ eval("insmod","crypto_null");
 
 //system("/etc/kendin");
   eval ("insmod", "natsemi");
+  eval ("insmod", "pcnet32");
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
   eval ("ifconfig", "eth2", "0.0.0.0", "up");
