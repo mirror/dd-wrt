@@ -22,9 +22,9 @@
 
 #include <stddef.h>
 #include <libbb.h>
-#ifndef HAVE_NOMESSAGE
+/*
 void bb_perror_nomsg(void)
 {
 	bb_perror_msg(NULL);
 }
-#endif
+*/
