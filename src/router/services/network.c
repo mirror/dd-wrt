@@ -644,6 +644,35 @@ start_lan (void)
      strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
+#ifdef HAVE_X86
+  if (nvram_match ("ath0_mode", "sta"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+      nvram_set ("wan_ifname", "eth0");
+      nvram_set ("wan_ifnames", "eth0");
+    }
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  /*
+     strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
+     ioctl (s, SIOCGIFHWADDR, &ifr);
+     nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+     strcpy (mac, nvram_safe_get ("et0macaddr"));
+     MAC_ADD (mac);
+     ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+     ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+     strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
+     ioctl (s, SIOCSIFHWADDR, &ifr); */
+#endif
   char *lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   char *wan_ifname = strdup (nvram_safe_get ("wan_ifname"));
   char *lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
@@ -1431,6 +1460,10 @@ start_wan (int status)
 		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
 #endif
 #elif HAVE_MAGICBOX
+  char *pppoe_wan_ifname =
+    nvram_invmatch ("pppoe_wan_ifname",
+		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#elif HAVE_X86
   char *pppoe_wan_ifname =
     nvram_invmatch ("pppoe_wan_ifname",
 		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";

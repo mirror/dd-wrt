@@ -76,6 +76,18 @@ if (nvram_match("wl0_mode","wet"))
       filterarp("eth0");
       filterarp("eth1");
       filterarp("eth2");
+#ifdef HAVE_X86
+      filterarp("eth0");
+      filterarp("eth1");
+      filterarp("eth2");
+      filterarp("eth3");
+      filterarp("eth4");
+      filterarp("eth5");
+      filterarp("eth6");
+      filterarp("eth7");
+      filterarp("eth8");
+      filterarp("eth9");
+      filterarp("eth10");
 #elif HAVE_GATEWORX
       filterarp("ixp0");
       filterarp("ixp1");
@@ -102,6 +114,8 @@ if (nvram_match("wl0_mode","wet"))
       eval("stabridge","-d","-w","ath0","-b","br0","-e","ixp0","ixp1");
 #elif HAVE_RB500
       eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0","eth1","eth2");
+#elif HAVE_X86
+      eval("stabridge","-d","-w","ath0","-b","br0","-e","eth0","eth1","eth2","eth3","eth4","eth5","eth6","eth7","eth8","eth9","eth10");
 #else //Broadcom
       eval("stabridge","-d","-w",nvram_safe_get("wl0_ifname"),"-b","br0","-e",firstlanif);
 #endif
