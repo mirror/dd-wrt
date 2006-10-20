@@ -1,0 +1,13 @@
+
+<fieldset>
+  <legend><% tran("management.clock_legend"); %></legend>
+  <div class="setting">
+   <% nvram_match("clkfreq","125","<!--"); %>
+    <div class="label"><% tran("management.clock_frq"); %></div>
+    <select name="overclocking">
+    <% show_clocks(); %>
+    </select>
+   <% nvram_match("clkfreq","125","-->"); %>
+   <% nvram_match("clkfreq","125","<script type="text/javascript">Capture(management.clock_support)</script>"); %>
+  </div>
+</fieldset><br/>
