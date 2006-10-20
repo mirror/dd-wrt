@@ -11,7 +11,8 @@
 #include <stdlib.h>
 
 #include "libbb.h"
-/*
+#ifndef HAVE_NOMESSAGE
+
 void bb_herror_msg_and_die(const char *s, ...)
 {
 	va_list p;
@@ -21,4 +22,5 @@ void bb_herror_msg_and_die(const char *s, ...)
 	va_end(p);
 	exit(bb_default_error_retval);
 }
-*/
+#endif
+
