@@ -15,6 +15,9 @@ install:
 	install -d $(INSTALLDIR)/usr/lib/firmware	
 	install -d $(INSTALLDIR)/lib
 	install services $(INSTALLDIR)/etc
+ifdef CONFIG_X86
+	install -d $(INSTALLDIR)/grub
+endif
 ifdef CONFIG_SER
 	install profile2 $(INSTALLDIR)/etc/profile
 else
