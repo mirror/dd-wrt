@@ -138,10 +138,24 @@ if (detect("PCnet32"))  //vmware?
     eval ("insmod", "pcnet32");
 if (detect("Tigon3"))  //Broadcom 
     eval ("insmod", "tg3");
+if (detect("NetXtreme"))  //Broadcom 
+    eval ("insmod", "tg3");
+if (detect("NetXtreme II"))  //Broadcom 
+    eval ("insmod", "bnx2");
+if (detect("BCM44"))  //Broadcom 
+    eval ("insmod", "b44");
 if (detect("EtherExpress PRO/100"))  //intel 100 mbit 
     eval ("insmod", "e100");
 if (detect("PRO/1000"))  //Intel Gigabit 
     eval ("insmod", "e1000");
+if (detect("RTL-8169"))  // Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "r8169");
+if (detect("nForce2 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "forcedeth");
+if (detect("nForce3 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "forcedeth");
+if (detect("nForce Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "forcedeth");
     
     
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
