@@ -47,6 +47,18 @@
 #include <utils.h>
 
 
+static int detect(char *devicename)
+{
+char devcall[128];
+int res;
+sprintf(devcall,"/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l",devicename);
+//system(devcall);
+FILE *in=popen(devcall,"rb");
+fscanf(in,"%d",&res);
+fclose(in);
+return res>0?1:0;
+} 
+
 int
 start_sysinit (void)
 {
@@ -120,8 +132,18 @@ eval("insmod","crypto_null");
 */
 
 //system("/etc/kendin");
-  eval ("insmod", "natsemi");
-  eval ("insmod", "pcnet32");
+if (detect("DP8381"))  
+    eval ("insmod", "natsemi");
+if (detect("PCnet32"))  //vmware?
+    eval ("insmod", "pcnet32");
+if (detect("Tigon3"))  //Broadcom 
+    eval ("insmod", "tg3");
+if (detect("EtherExpress PRO/100"))  //intel 100 mbit 
+    eval ("insmod", "e100");
+if (detect("PRO/1000"))  //Intel Gigabit 
+    eval ("insmod", "e1000");
+    
+    
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
   eval ("ifconfig", "eth2", "0.0.0.0", "up");
@@ -151,6 +173,8 @@ eval("insmod","crypto_null");
 
 
   eval ("insmod", "ipv6");
+  eval ("mknod", "/dev/rtc", "c", "253", "0");
+
   /* Set a sane date */
   stime (&tm);
   return 0;
