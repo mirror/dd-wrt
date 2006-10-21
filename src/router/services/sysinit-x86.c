@@ -150,6 +150,8 @@ if (detect("PRO/1000"))  //Intel Gigabit
     eval ("insmod", "e1000");
 if (detect("RTL-8169"))  // Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
+if (detect("8139"))  // Realtek 8169 Adapter (various notebooks) 
+    eval ("insmod", "8139too");
 if (detect("nForce2 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "forcedeth");
 if (detect("nForce3 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
