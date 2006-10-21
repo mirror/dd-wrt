@@ -76,7 +76,7 @@ start_sysinit (void)
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-
+  mount ("/dev/discs/disc0/part1","/grub","ext2",MS_MGC_VAL,NULL);
   if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
 
     {
