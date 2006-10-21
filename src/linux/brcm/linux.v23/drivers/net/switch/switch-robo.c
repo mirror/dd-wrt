@@ -35,6 +35,8 @@
 #include "switch-core.h"
 #include "etc53xx.h"
 
+#include <bcmdevs.h>
+
 #define DRIVER_NAME		"bcm53xx"
 #define DRIVER_VERSION	"0.01"
 
@@ -254,7 +256,19 @@ static int robo_probe(char *devname)
 
 	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
-
+		
+	switch (phyid)
+	{
+	case 0xffffffff:
+		nvram_set ("phy_type", "none");
+		break;
+	case 0x55210022:
+		nvram_set ("phy_type", "altima");
+		break;
+	default:
+		nvram_set ("phy_type", "unknown");
+	}
+	
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		ROBO_DBG("No Robo switch in managed mode found\n");
 		return 1;
