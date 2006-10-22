@@ -324,6 +324,9 @@ int route_add (char *name, int metric, char *dst, char *gateway,
 	       char *genmask);
 int route_del (char *name, int metric, char *dst, char *gateway,
 	       char *genmask);
+extern char *psname(int pid, char *buffer, int maxlen);
+extern int pidof(const char *name);
+extern int killall(const char *name, int sig);
 
 #define MAX_WDS_DEVS 10
 #endif

@@ -68,6 +68,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_RSTATS),y)
+CFLAGS += -DHAVE_RSTATS
+endif
 
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
