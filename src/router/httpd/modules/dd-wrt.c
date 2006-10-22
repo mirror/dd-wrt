@@ -25,6 +25,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <signal.h>
+
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -369,6 +371,9 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MAGICBOX 
   int cnt=0;
 #endif
+#ifdef HAVE_X86
+  int cnt=0;
+#endif
   for (i = 0; i < 256; i++)
     {
       int c = getc (fcpu);
@@ -382,6 +387,10 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MAGICBOX
         cnt++;
       if (cnt==2)
+        break;
+#elif HAVE_X86
+        cnt++;
+      if (cnt==5)
         break;
 #else
 	break;
@@ -5936,5 +5945,32 @@ void ej_statfs (int eid, webs_t wp, int argc, char_t ** argv)
 			};\n",
 			argv[1], ((uint64_t)sizefs.f_bsize * sizefs.f_blocks), ((uint64_t)sizefs.f_bsize * sizefs.f_bfree));
 }
+#ifdef HAVE_RSTATS
+void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
+{
+	char *name;
+	int sig;
+        char argument[64];
+	if (ejArgs (argc, argv, "%s", &argument) < 1)
+        {
+           websError (wp, 400, "Insufficient args\n");
+           return;
+        }
 
-
+	if (argc == 1) {
+		if (strcmp(argument, "speed") == 0) {
+			sig = SIGUSR1;
+			name = "/var/spool/rstats-speed.js";
+		}
+		else {
+			sig = SIGUSR2;
+			name = "/var/spool/rstats-history.js";
+		}
+		unlink(name);
+		killall("rstats", sig);
+		wait_file_exists(name, 5, 0);
+		do_file(name,wp);
+		unlink(name);
+	}
+}
+#endif
