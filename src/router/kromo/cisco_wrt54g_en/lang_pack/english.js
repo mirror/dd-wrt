@@ -137,6 +137,8 @@ share.unknown="Unknown";
 share.expired="expired";
 share.logout="logout";
 share.nmounted="Not mounted";
+share.fssize="Total / Free Size";
+
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -908,7 +910,6 @@ management.ipv6_radconf="Radvd config";
 management.jffs_legend="JFFS2 Support";
 management.jffs_srv="JFFS2";
 management.jffs_clean="Clean JFFS2";
-management.jffs_size="Total / Free Size";
 
 management.lang_legend="Language Selection";
 management.lang_srv="Language";
