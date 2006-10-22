@@ -1,4 +1,3 @@
-
 <fieldset>
 	<legend><% tran("management.jffs_legend"); %></legend>
 	<div class="setting">
@@ -6,9 +5,20 @@
 		<input class="spaceradio" type="radio" value="1" name="enable_jffs2" <% nvram_checked("enable_jffs2","1"); %> onclick="show_layer_ext(this, 'idjffs2', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="enable_jffs2" <% nvram_checked("enable_jffs2","0"); %> onclick="show_layer_ext(this, 'idjffs2', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting" id="idjffs2">
-		<div class="label"><% tran("management.jffs_clean"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="clean_jffs2" <% nvram_checked("clean_jffs2","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="clean_jffs2" <% nvram_checked("clean_jffs2","0"); %> /><% tran("share.disable"); %>
+	<div id="idjffs2">
+		<div class="setting">
+			<div class="label"><% tran("management.jffs_clean"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="clean_jffs2" <% nvram_checked("clean_jffs2","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="clean_jffs2" <% nvram_checked("clean_jffs2","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.jffs_size"); %></div>
+			<script type="text/javascript">
+			//<![CDATA[
+			<% statfs("/jffs", "my_jffs"); %>
+			document.write( (<% nvram_get("enable_jffs2"); %> && (my_jffs.size)) ? (scaleSize(my_jffs.size) + " / " + scaleSize(my_jffs.free)) : Capture(share.mounted) );
+			//]]>
+			</script>
+		</div>
 	</div>
 </fieldset><br/>
