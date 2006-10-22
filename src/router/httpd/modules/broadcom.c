@@ -4857,6 +4857,9 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_REGISTER
   {"getregcode", ej_getregcode},
 #endif
+#ifdef HAVE_RSTATS
+  {"bandwidth",ej_bandwidth},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */

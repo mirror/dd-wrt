@@ -148,6 +148,7 @@ extern void ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
 
 /* for status */
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
+extern void ej_bandwidth (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv);

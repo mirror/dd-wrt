@@ -10,6 +10,8 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
@@ -2228,3 +2230,113 @@ if (strcmp(argv[2],encrypted))
 
 }
 #endif
+int f_exists(const char *path)	// note: anything but a directory
+{
+	struct stat st;
+	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
+}
+
+int f_read_string(const char *path, char *buffer, int max)
+{
+	if (max <= 0) return -1;
+	int n = f_read(path, buffer, max - 1);
+	buffer[(n > 0) ? n : 0] = 0;
+	return n;
+}
+int f_read(const char *path, void *buffer, int max)
+{
+	int f;
+	int n;
+	
+	if ((f = open(path, O_RDONLY)) < 0) return -1;
+	n = read(f, buffer, max);
+	close(f);
+	return n;
+}
+
+int wait_file_exists(const char *name, int max, int invert)
+{
+	while (max-- > 0) {
+		if (f_exists(name) ^ invert) return 1;
+		sleep(1);
+	}
+	return 0;
+}
+
+char *psname(int pid, char *buffer, int maxlen)
+{
+	char buf[512];
+	char path[64];
+	char *p;
+	
+	if (maxlen <= 0) return NULL;
+	*buffer = 0;
+	sprintf(path, "/proc/%d/stat", pid);
+	if ((f_read_string(path, buf, sizeof(buf)) > 4) && ((p = strrchr(buf, ')')) != NULL)) {
+		*p = 0;
+		if (((p = strchr(buf, '(')) != NULL) && (atoi(buf) == pid)) {
+			strlcpy(buffer, p + 1, maxlen);
+		}
+	}
+	return buffer;
+}
+
+static int _pidof(const char *name, pid_t** pids)
+{
+	const char *p;
+	char *e;
+	DIR *dir;
+	struct dirent *de;
+	pid_t i;
+	int count;
+	char buf[256];
+
+	count = 0;
+	*pids = NULL;
+	if ((p = strchr(name, '/')) != NULL) name = p + 1;
+	if ((dir = opendir("/proc")) != NULL) {
+		while ((de = readdir(dir)) != NULL) {
+			i = strtol(de->d_name, &e, 10);
+			if (*e != 0) continue;
+			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
+				if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
+					return -1;
+				}
+				(*pids)[count++] = i;
+			}
+		}
+	}
+	closedir(dir);
+	return count;
+}
+
+int pidof(const char *name)
+{
+	pid_t *pids;
+	pid_t p;
+	
+	if (_pidof(name, &pids) > 0) {
+		p = *pids;
+		free(pids);
+		return p;
+	}
+	return -1;
+}
+
+int killall(const char *name, int sig)
+{
+	pid_t *pids;
+	int i;
+	int r;
+	
+	if ((i = _pidof(name, &pids)) > 0) {
+		r = 0;
+		do {
+			r |= kill(pids[--i], sig);
+		} while (i > 0);
+		free(pids);
+		return r;
+	}
+	return -2;
+}
+
