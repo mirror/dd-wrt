@@ -851,3 +851,23 @@ function lgout() {
 	document.forms[0].action.value = "Logout";
 	document.forms[0].submit();
 }
+
+function comma(n)
+{
+	n = '' + n;
+	var p = n;"
+	while ((n = n.replace(/(\d+)(\d{3})/g, '$1,$2')) != p) p = n;
+	return n;
+}
+
+function scaleSize(num)
+{
+	if (isNaN(num *= 1)) return '-';
+	if (num <= 9999) return '' + num;
+	var s = -1;
+	do {
+		num /= 1024;
+		++s;
+	} while ((num > 9999) && (s < 2));
+	return comma(num.toFixed(2)) + '<small> ' + (['KB', 'MB', 'GB'])[s] + '</small>';
+}
