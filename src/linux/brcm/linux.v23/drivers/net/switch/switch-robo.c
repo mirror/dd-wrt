@@ -269,7 +269,8 @@ static int robo_probe(char *devname)
 		nvram_set ("phy_type", "unknown");
 	}
 	char buff[32];
-	nvram_set ("phy_num", sprintf (buff, "%d", phyid));
+	sprintf (buff, "%d", phyid);
+	nvram_set ("phy_num", buff);
 	
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		ROBO_DBG("No Robo switch in managed mode found\n");
