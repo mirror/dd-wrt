@@ -257,21 +257,12 @@ static int robo_probe(char *devname)
 	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
 		
-	switch (phyid)
-	{
-	case 0xffffffff:
-		nvram_set ("phy_type", "none");
-		break;
-	case 0x55210022:
-		nvram_set ("phy_type", "altima");
-		break;
-	default:
-		nvram_set ("phy_type", "unknown");
-	}
+/* set phy id number, used for id-ing hardware. Eko */
 	char buff[32];
-	sprintf (buff, "%#x", phyid);
-	nvram_set ("phy_num", buff);
-	
+	sprintf (buff, "%#010x", phyid);
+	nvram_set ("phyid_num", buff);
+/* end */	
+
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		ROBO_DBG("No Robo switch in managed mode found\n");
 		return 1;
