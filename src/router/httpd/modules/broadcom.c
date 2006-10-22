@@ -4821,6 +4821,7 @@ struct ej_handler ej_handlers[] = {
   {"css_include", ej_css_include},
 /* Added by Botho 10.May.06 */
   {"show_wan_to_switch", ej_show_wan_to_switch},
+  {"statfs", ej_statfs},
 
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
