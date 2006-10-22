@@ -24,5 +24,14 @@
 			<div class="label"><% tran("management.samba_stscript"); %></div>
 			<input maxlength="100" size="25" name="samba_script" value="<% nvram_get("samba_script"); %>" />
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.fssize"); %></div>
+			<script type="text/javascript">
+			//<![CDATA[
+			<% statfs("/tmp/smbshare", "samba"); %>
+			document.write( (<% nvram_get("samba_mount"); %> && (samba.size)) ? (scaleSize(samba.size) + " / " + scaleSize(samba.free)) : Capture(share.mounted) );
+			//]]>
+			</script>
+		</div>
 	</div>
 </fieldset><br/>
