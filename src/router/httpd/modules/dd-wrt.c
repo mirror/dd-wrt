@@ -29,6 +29,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/statfs.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <broadcom.h>
@@ -5917,6 +5918,23 @@ Inter-|   Receive                                                |  Transmit
 void do_logout(void)  //static functions are not exportable, additionally this is no ej function
 {
 	send_authenticate (auth_realm);
+}
+
+
+void ej_statfs (int eid, webs_t wp, int argc, char_t ** argv)
+{
+	struct statfs sizefs;
+
+	if (argc != 2) return;
+	
+	if ((statfs(argv[0], &sizefs) != 0) || (sizefs.f_type == 0x73717368))
+		memset(&sizefs, 0, sizeof(sizefs));
+
+	websWrite(wp, "%s = {\n\
+			\tsize: %llu,\n\
+			\tfree: %llu\n\
+			};\n",
+			argv[1], ((uint64_t)sizefs.f_bsize * sizefs.f_blocks), ((uint64_t)sizefs.f_bsize * sizefs.f_bfree));
 }
 
 
