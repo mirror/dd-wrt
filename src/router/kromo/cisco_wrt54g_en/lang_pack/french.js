@@ -138,6 +138,7 @@ share.unknown="Status inconnu";
 share.expired="Expiré";
 share.logout="Déconnection";
 share.nmounted="Partition non montée";
+share.fssize=="Total / libre";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -889,7 +890,6 @@ management.ipv6_radconf="Configuration Radvd";
 management.jffs_legend="Support JFFS2";
 management.jffs_srv="JFFS2";
 management.jffs_clean="Effacer JFFS2";
-management.jffs_size="Total / libre";
 
 management.lang_legend="Langue";
 management.lang_srv="Langue";

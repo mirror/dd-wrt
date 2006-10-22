@@ -958,7 +958,7 @@ function lgout() {
 function comma(n)
 {
 	n = '' + n;
-	var p = n;"
+	var p = n;
 	while ((n = n.replace(/(\d+)(\d{3})/g, '$1,$2')) != p) p = n;
 	return n;
 }
