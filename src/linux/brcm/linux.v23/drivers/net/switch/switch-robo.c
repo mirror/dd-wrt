@@ -36,7 +36,6 @@
 #include "etc53xx.h"
 
 #include <bcmdevs.h>
-#include <stdlib.h>                     // This header file contains the itoa function ?
 
 #define DRIVER_NAME		"bcm53xx"
 #define DRIVER_VERSION	"0.01"
@@ -270,7 +269,7 @@ static int robo_probe(char *devname)
 		nvram_set ("phy_type", "unknown");
 	}
 	char buff[32];
-	nvram_set ("phy_num", itoa(phyid, buff, 16));
+	nvram_set ("phy_num", sprintf (buff, "%d", phyid));
 	
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		ROBO_DBG("No Robo switch in managed mode found\n");
