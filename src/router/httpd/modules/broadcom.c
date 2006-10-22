@@ -4860,6 +4860,9 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_RSTATS
   {"bandwidth",ej_bandwidth},
 #endif
+#ifdef HAVE_PORTSETUP
+  {"portsetup",ej_portsetup},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */

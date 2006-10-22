@@ -5974,3 +5974,82 @@ void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
 	}
 }
 #endif
+
+
+
+
+
+#ifdef HAVE_PORTSETUP
+void ej_portsetup(int eid, webs_t wp, int argc, char_t ** argv)
+{
+char ssid[64];
+char *next;
+char var[64];
+char eths[256];
+    websWrite (wp,"<fieldset>\n");
+    websWrite (wp,"<legend>Port Setup</legend>\n");
+memset(eths,0,256);
+getinterfacelist("eth",eths);
+  foreach (var, eths, next)
+  {
+    sprintf (ssid, "%s_bridged", var);
+    websWrite (wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",var);
+    websWrite (wp,
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
+	       var, var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
+    websWrite (wp,
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
+	       var, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
+    websWrite (wp, "</div>\n");
+
+    websWrite (wp, "<div id=\"%s_idnet\">\n",
+					var);
+		websWrite (wp, "<div class=\"setting\">\n");
+		websWrite (wp,
+			   "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+		char ip[32];
+		sprintf (ip, "%s_ipaddr", var);
+		char *ipv = nvram_safe_get (ip);
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 0));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 1));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 2));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
+			   var, get_single_ip (ipv, 3));
+		websWrite (wp, "</div>\n");
+		websWrite (wp, "<div class=\"setting\">\n");
+		websWrite (wp,
+			   "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+		sprintf (ip, "%s_netmask", var);
+		ipv = nvram_safe_get (ip);
+	
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 0));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 1));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 2));
+		websWrite (wp,
+			   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
+			   var, get_single_ip (ipv, 3));
+		websWrite (wp, "</div>\n");
+		websWrite (wp, "</div>\n");
+	
+		websWrite (wp, "<script>\n//<![CDATA[\n ");
+		websWrite (wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n",
+			var, var, nvram_match (ssid, "0") ? "true" : "false");
+		websWrite (wp, "//]]>\n</script>\n");
+    }
+    websWrite (wp,"</fieldset>\n");
+
+}
+#endif

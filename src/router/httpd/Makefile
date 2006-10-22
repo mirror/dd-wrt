@@ -71,6 +71,9 @@ endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
+ifeq ($(CONFIG_PORTSETUP),y)
+CFLAGS += -DHAVE_PORTSETUP
+endif
 
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86

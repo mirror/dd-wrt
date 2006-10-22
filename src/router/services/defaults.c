@@ -1698,6 +1698,52 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RSTATS
   {"rstats_enable","1",0},
 #endif
+#ifdef HAVE_PORTSETUP
+  {"eth0_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth0_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth1_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth1_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth2_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth2_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth3_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth3_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth4_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth4_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth4_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth5_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth5_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth5_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth6_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth6_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth6_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth7_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth7_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth7_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth8_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth8_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth8_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth9_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth9_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth9_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+
+  {"eth10_bridged", "1", 0},	/* Service set ID (network name) */
+  {"eth10_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"eth10_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+#endif
+
   {0, 0, 0}
 };
 
