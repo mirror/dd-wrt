@@ -269,7 +269,7 @@ static int robo_probe(char *devname)
 		nvram_set ("phy_type", "unknown");
 	}
 	char buff[32];
-	sprintf (buff, "%d", phyid);
+	sprintf (buff, "%#x", phyid);
 	nvram_set ("phy_num", buff);
 	
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
