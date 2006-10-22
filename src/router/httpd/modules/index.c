@@ -144,7 +144,11 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
       nvram_set ("pptp_server_ip", wan_gateway);
       return;
     }
+}
 #ifdef HAVE_PORTSETUP
+void
+validate_portsetup (webs_t wp, char *value, struct variable *v)
+{
 char *next;
 char var[64];
 char eths[256];
@@ -169,9 +173,8 @@ getinterfacelist("eth",eths);
     nvram_set (val, netmask);
     }
   }
-#endif
 }
-
+#endif
 void
 ej_get_wl_max_channel (int eid, webs_t wp, int argc, char_t ** argv)
 {

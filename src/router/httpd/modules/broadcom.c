@@ -2045,6 +2045,12 @@ Initnvramtab ()
 		    {
 		      tmp->validate = validate_statics;
 		    }
+#ifdef HAVE_PORTSETUP
+		  if (!stricmp (tmpstr, "PORTSETUP"))
+		    {
+		      tmp->validate = validate_portsetup;
+		    }
+#endif
 		  if (!stricmp (tmpstr, "REBOOT"))
 		    {
 		      tmp->validate = validate_reboot;
