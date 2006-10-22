@@ -799,23 +799,17 @@ start_lan (void)
       {
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_RB500
+#ifndef HAVE_XSCALE
+#ifndef HAVE_MAGICBOX
+#ifndef HAVE_X86
 	if (!strcmp (name, "eth2"))
 	  {
 	    strcpy (realname, "ath0");
 	  }
 	else
-#elif HAVE_XSCALE
-	if (!strcmp (name, "eth2"))
-	  {
-	    strcpy (realname, "ath0");
-	  }
-	else
-#elif HAVE_MAGICBOX
-	if (!strcmp (name, "eth2"))
-	  {
-	    strcpy (realname, "ath0");
-	  }
-	else
+#endif
+#endif
+#endif
 #endif
 #endif
 	  strcpy (realname, name);
