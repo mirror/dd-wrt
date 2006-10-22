@@ -327,6 +327,8 @@ int route_del (char *name, int metric, char *dst, char *gateway,
 extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
+extern int getifcount(const char *ifprefix);
+extern void getinterfacelist(const char *ifprefix,char *buffer);
 
 #define MAX_WDS_DEVS 10
 #endif
