@@ -2340,3 +2340,27 @@ int killall(const char *name, int sig)
 	return -2;
 }
 
+int getifcount(const char *ifprefix)
+{
+char devcall[64];
+sprintf(devcall,"cat /proc/net/dev|grep %s|wc -l",ifprefix);
+FILE *in=popen(devcall,"rb");
+int count;
+fscanf(in,"%d",&count);
+fclose(in);
+return count;
+}
+
+void getinterfacelist(const char *ifprefix,char *buffer)
+{
+int count=getifcount(ifprefix);
+int i;
+for (i=0;i<count;i++)
+    {
+    char ifname[32];
+    sprintf(ifname,"%s%d",ifprefix,i);
+    strcat(buffer,ifname);
+    if (i<count-1)
+	strcat(buffer," ");
+    }
+}
