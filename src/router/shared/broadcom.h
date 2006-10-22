@@ -140,6 +140,7 @@ extern void validate_ntp (webs_t wp, char *value, struct variable *v);
 extern void validate_catchall (webs_t wp, char *value, struct variable *v);
 extern void validate_lan_ipaddr (webs_t wp, char *value, struct variable *v);
 extern void validate_wan_ipaddr (webs_t wp, char *value, struct variable *v);
+extern void validate_portsetup (webs_t wp, char *value, struct variable *v);
 extern int clone_mac (webs_t wp);
 extern int dhcpfwd (webs_t wp);
 extern int wan_proto (webs_t wp);
