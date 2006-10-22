@@ -5992,6 +5992,8 @@ memset(eths,0,256);
 getinterfacelist("eth",eths);
   foreach (var, eths, next)
   {
+    if (nvram_match("wan_ifnames",var))
+	continue;
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",var);
     websWrite (wp,

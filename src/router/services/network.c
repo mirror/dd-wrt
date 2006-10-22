@@ -583,6 +583,7 @@ start_wlconf (void)
 static void do_portsetup(char *lan,char *ifname)
 {
 char var[64];
+char var2[64];
 sprintf(var,"%s_bridged",ifname);
 if (nvram_match(var,"1"))
     {
