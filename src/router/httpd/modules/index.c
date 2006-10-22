@@ -144,9 +144,32 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
       nvram_set ("pptp_server_ip", wan_gateway);
       return;
     }
-
-
-
+#ifdef HAVE_PORTSETUP
+char *next;
+char var[64];
+char eths[256];
+memset(eths,0,256);
+getinterfacelist("eth",eths);
+  foreach (var, eths, next)
+  {
+  char val[64];
+  sprintf(val,"%s_bridged",var);
+  char *bridged = websGetVar (wp, val, NULL);
+  if (bridged)
+  nvram_set (val, bridged);
+  if (bridged && strcmp(bridged,"0")==0)
+    {
+  sprintf(val,"%s_ipaddr",var);
+  char ipaddr[64];
+  if (get_merge_ipaddr (wp, val, ipaddr))
+    nvram_set (val, ipaddr);
+  sprintf(val,"%s_netmask",var);
+  char netmask[64];
+  if (get_merge_ipaddr (wp, val, netmask))
+    nvram_set (val, netmask);
+    }
+  }
+#endif
 }
 
 void

@@ -578,6 +578,27 @@ start_wlconf (void)
 {
   wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
+#ifdef HAVE_PORTSETUP
+
+static void do_portsetup(char *lan,char *ifname)
+{
+char var[64];
+sprintf(var,"%s_bridged",ifname);
+if (nvram_match(var,"1"))
+    {
+    br_add_interface(lan,ifname);
+    }else
+    {
+sprintf(var,"%s_ipaddr",ifname);
+sprintf(var2,"%s_netmask",ifname);
+    ifconfig (ifname, IFUP, nvram_safe_get(var), nvram_safe_get(var2));
+    
+    }
+
+}
+
+#endif
+
 
 void
 start_lan (void)
@@ -846,8 +867,13 @@ start_lan (void)
 	/* If not a wl i/f then simply add it to the bridge */
 #ifndef HAVE_MADWIFI
 	if (wlconf_up (name))
-	  br_add_interface (lan_ifname, name);	// eval ("brctl", "addif", lan_ifname, name);
-	else
+	{
+	    #ifdef HAVE_PORTSETUP
+	    do_portsetup(lan_ifname,name);
+	    #else
+	    br_add_interface (lan_ifname, name);
+	    #endif
+  	}else
 	  {
 
 	    if (nvram_match ("mac_clone_enable", "1") &&
@@ -920,7 +946,11 @@ start_lan (void)
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
 	  {
+	    #ifdef HAVE_PORTSETUP
+	    do_portsetup(lan_ifname,name);
+	    #else
 	    br_add_interface (lan_ifname, name);
+	    #endif
 	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
 	else
