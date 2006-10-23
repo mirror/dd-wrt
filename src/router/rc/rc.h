@@ -239,7 +239,7 @@ extern int dropbear_main (int argc, char **argv);
 extern int scp_main (int argc, char **argv);
 #endif
 
-#ifdef HAVE_PPTP
+#ifdef HAVE_PPTPD
 extern int pptpd_main (int argc, char **argv);
 extern int start_pptpd (void);
 extern int stop_pptpd (void);
