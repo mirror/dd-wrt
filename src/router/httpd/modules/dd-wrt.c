@@ -5986,6 +5986,9 @@ char ssid[64];
 char *next;
 char var[64];
 char eths[256];
+if (getifcount("eth")==1)
+    return;
+
     websWrite (wp,"<fieldset>\n");
     websWrite (wp,"<legend>Port Setup</legend>\n");
 memset(eths,0,256);
