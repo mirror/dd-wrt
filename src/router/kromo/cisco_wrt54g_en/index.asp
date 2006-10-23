@@ -397,6 +397,7 @@ Capture(idx.h22);
 									<span class="default"><% tran("idx.stp_mess"); %></span>
 								</div>
 							</fieldset><br />
+							<% portsetup(); %>
 							<% nvram_match("wl_mode", "wet", "-->"); %>
 							
 							<fieldset>
