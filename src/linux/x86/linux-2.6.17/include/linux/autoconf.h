@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
  * Linux kernel version: 2.6.17.14
- * Sat Oct 21 22:29:49 2006
+ * Mon Oct 23 22:57:01 2006
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_X86_32 1
