@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <bcmnvram.h>
@@ -86,8 +87,7 @@ stop_snmp (void)
 {
   int ret;
 
-  ret = eval ("killall", "-9", "snmpd");
-//  eval ("rmmod", "wlcompat");
+  ret=killall("snmpd",SIGKILL);
   cprintf ("done\n");
 
   return ret;

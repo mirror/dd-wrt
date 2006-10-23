@@ -346,8 +346,8 @@ stop_pptpd (void)
 {
   int ret = 0;
 
-  ret = eval ("killall", "-9", "pptpd");
-  eval ("killall", "-9", "bcrelay");
+  ret=killall("pptpd",SIGKILL);
+  killall("bcrelay",SIGKILL);
   return ret;
 }
 #endif
@@ -358,12 +358,7 @@ void start_tmp_ppp (int num);
 int
 softkill (char *name)
 {
-  char sigusr1[] = "-XX";
-  sprintf (sigusr1, "-%d", SIGUSR1);
-  eval ("killall", sigusr1, name);
-  sleep (1);
-  return eval ("killall", "-9", name);
-
+  killall(name,SIGKILL);
 }
 
 
@@ -565,10 +560,10 @@ void
 stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
-  eval ("killall", "dhcpfwd");	//kill also dhcp forwarder if available
+  killall("dhcpfwd",SIGTERM); //kill also dhcp forwarder if available
 #endif
 #ifdef HAVE_DHCPRELAY
-  eval ("killall", "dhcrelay");
+  killall("dhcrelay",SIGTERM);
 #endif
 }
 
@@ -1072,8 +1067,8 @@ stop_dns_clear_resolv (void)
 {
   FILE *fp_w;
   //int ret = killps("dnsmasq",NULL);
-  int ret = eval ("killall", "dnsmasq");
-
+  int ret = killall("dnsmasq",SIGTERM);
+  
   /* Save DNS to resolv.conf */
   if (!(fp_w = fopen (RESOLV_FILE, "w")))
     {
@@ -1124,7 +1119,7 @@ int
 stop_httpd (void)
 {
   //int ret = killps("httpd",NULL);
-  int ret = eval ("killall", "httpd");
+  int ret = killall("httpd",SIGTERM);
 
   unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
@@ -1147,7 +1142,7 @@ start_upnp (void)
       return 0;
     }
   /* Make sure its not running first */
-  ret = eval ("killall", "-SIGUSR1", "upnp");
+  ret = killall("upnp",SIGUSR1);
   if (ret != 0)
     {
       ret = eval ("upnp", "-D",
@@ -1166,10 +1161,10 @@ stop_upnp (void)
 {
   //int ret = killps("upnp","-USR1");
 
-  eval ("killall", "-USR1", "upnp");
+  killall("upnp",SIGUSR1);
 
   //killps("upnp",NULL);
-  eval ("killall", "upnp");
+  killall("upnp",SIGTERM);
 
   cprintf ("done\n");
   return 0;
@@ -1571,10 +1566,10 @@ stop_nas (void)
 {
   /* NAS sometimes won't exit properly on a normal kill */
   //int ret = killps("nas",NULL);
-  int ret = eval ("killall", "nas");
+  int ret = killall("nas",SIGTERM);
   sleep (2);
   //killps("nas","-9");
-  eval ("killall", "-9", "nas");
+  killall("nas",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -1599,7 +1594,7 @@ start_sputnik (void)
 int
 stop_sputnik (void)
 {
-  int ret = eval ("killall", "sputnik");
+  int ret = killall("sputnik",SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -1637,7 +1632,7 @@ int
 stop_ntpc (void)
 {
   //int ret = killps("ntpclient",NULL);
-  int ret = eval ("killall", "ntpclient");
+  int ret = killall("ntpclient",SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -1667,7 +1662,7 @@ stop_resetbutton (void)
   int ret = 0;
 
   //ret = killps("resetbutton","-9");
-  ret = eval ("killall", "-9", "resetbutton");
+  ret = killall("resetbutton",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -1694,43 +1689,12 @@ stop_iptqueue (void)
   int ret = 0;
 
   //ret = killps("iptqueue","-9");
-  ret = eval ("killall", "-9", "iptqueue");
+  ret = killall("iptqueue",SIGKILL);
 
   cprintf ("done\n");
   return ret;
 }
 
-#ifdef HAVE_TFTP
-int
-start_tftpd (void)
-{
-  int ret = 0;
-  pid_t pid;
-  char *tftpd_argv[] = { "tftpd",
-    "-s", "/tmp",		// chroot to /tmp
-    "-c",			// allow new files to be created
-    "-l",			// standalone
-    NULL
-  };
-#ifndef ANTI_FLASH
-  ret = _eval (tftpd_argv, NULL, 0, &pid);
-#endif
-  cprintf ("done\n");
-  return ret;
-}
-
-int
-stop_tftpd (void)
-{
-  int ret;
-#ifndef ANTI_FLASH
-  //ret = killps("tftpd","-9");
-  ret = eval ("killall", "-9", "tftpd");
-#endif
-  cprintf ("done\n");
-  return ret;
-}
-#endif
 int
 start_cron (void)
 {
@@ -1764,7 +1728,7 @@ stop_cron (void)
   int ret = 0;
 
   //ret = killps("cron","-9");
-  ret = eval ("killall", "-9", "cron");
+  ret = killall("cron",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2168,13 +2132,13 @@ stop_zebra (void)
 
 #ifdef HAVE_ZEBRA
   int ret2, ret3;
-  ret1 = eval ("killall", "zebra");
-  ret2 = eval ("killall", "ripd");
-  ret3 = eval ("killall", "ospfd");
+  ret1 = killall("zebra",SIGTERM);
+  ret2 = killall ("ripd",SIGTERM);
+  ret3 = killall ("ospfd",SIGTERM);
 
   while (!
-	 (eval ("killall", "zebra") && eval ("killall", "ripd")
-	  && eval ("killall", "ospfd")))
+	 (killall("zebra",SIGTERM) && killall("ripd",SIGTERM)
+	  && killall("ospfd",SIGTERM)))
     sleep (1);
 
   cprintf ("done\n");
@@ -2182,7 +2146,7 @@ stop_zebra (void)
 
 #elif defined(HAVE_BIRD)
 
-  ret1 = eval ("killall", "bird");
+  ret1 = killall("bird",SIGTERM);
 
   cprintf ("done\n");
   return ret1;
@@ -2217,8 +2181,8 @@ stop_syslog (void)
 {
   int ret;
 
-  ret = eval ("killall", "-9", "klogd");
-  ret += eval ("killall", "-9", "syslogd");
+  ret = killall("logd",SIGKILL);
+  ret += killall("syslogd",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2249,7 +2213,7 @@ stop_redial (void)
   int ret;
 
   //ret = killps("redial","-9");
-  ret = eval ("killall", "-9", "redial");
+  ret = killall("redial",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2305,7 +2269,7 @@ stop_radvd (void)
   int ret = 0;
 
   //ret = killps("radvd",NULL);
-  ret = eval ("killall", "radvd");
+  ret = killall("radvd",SIGKILL);
 
   unlink ("/var/run/radvd.pid");
 
@@ -2503,11 +2467,10 @@ start_chilli (void)
 
 int
 stop_chilli (void)
-{
-  int ret = 0;
+{  int ret = 0;
 
   //ret = killps("chilli","-9");
-  ret = eval ("killall", "-9", "chilli");
+  ret = killall("chilli",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2524,9 +2487,9 @@ stop_pppoe (void)
   //ret = killps("pppoecd",NULL);
   //ret += killps("ip-up",NULL);
   //ret += killps("ip-down",NULL);
-  ret = eval ("killall", "pppoecd");
-  ret += eval ("killall", "ip-up");
-  ret += eval ("killall", "ip-down");
+  ret = killall("pppoecd",SIGKILL);
+  ret += killall("ip-up",SIGKILL);
+  ret += killall("ip-down",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2562,7 +2525,7 @@ stop_dhcpc (void)
   int ret = 0;
 
   //ret += killps("udhcpc",NULL);
-  ret += eval ("killall", "udhcpc");
+  ret += killall("udhcpc",SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -2829,9 +2792,9 @@ stop_pptp (void)
   //ret = killps("pppd","-9");
   //ret += killps("pptp","-9");
   //ret += killps("listen","-9");
-  ret = eval ("killall", "-9", "pppd");
-  ret += eval ("killall", "-9", "pptp");
-  ret += eval ("killall", "-9", "listen");
+  ret = killall("pppd",SIGKILL);
+  ret += killall("pptp",SIGKILL);
+  ret += killall("listen",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3258,9 +3221,9 @@ stop_l2tp (void)
   //ret += killps("l2tpd","-9");
   //ret += killps("listen","-9");
 
-  ret = eval ("killall", "-9", "pppd");
-  ret += eval ("killall", "-9", "l2tpd");
-  ret += eval ("killall", "-9", "listen");
+  ret = killall("pppd",SIGKILL);
+  ret += killall("l2tpd",SIGKILL);
+  ret += killall("listen",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3288,7 +3251,7 @@ int
 stop_igmp_proxy (void)
 {
   //int ret = killps("igmprt","-9");
-  int ret = eval ("killall", "-9", "igmprt");
+  int ret = killall("igmprt",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3336,7 +3299,7 @@ stop_splashd (void)
 {
   int ret;
   //ret = killps("splashd",NULL);
-  ret = eval ("killall", "splashd");
+  ret = killall("splashd",SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -3373,7 +3336,7 @@ stop_telnetd (void)
   int ret;
 
   //ret = killps("telnetd","-9");
-  ret = eval ("killall", "-9", "telnetd");
+  ret = killall("telnetd",SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -3383,7 +3346,7 @@ stop_telnetd (void)
 int
 stop_wland (void)
 {
-  int ret = eval ("killall", "-9", "wland");
+  int ret = killall("wland",SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3431,7 +3394,7 @@ stop_process_monitor (void)
 {
   int ret;
 
-  ret = eval ("killall", "process_monitor");
+  ret = killall("process_monitor",SIGKILL);
 
   cprintf ("done\n");
 
@@ -3459,7 +3422,7 @@ stop_radio_timer (void)
 {
   int ret;
 
-  ret = eval ("killall", "radio_timer");
+  ret = killall("radio_timer",SIGKILL);
 
   cprintf ("done\n");
 
@@ -3469,7 +3432,7 @@ stop_radio_timer (void)
 int
 stop_ntp (void)
 {
-  eval ("killall", "-9", "ntpclient");
+  killall("ntpclient",SIGKILL);
   return 0;
 }
 
@@ -3520,7 +3483,7 @@ start_force_to_dial (void)
 
 void stop_rstats(void)
 {
-	eval("killall","rstats");
+	killall("rstats",SIGTERM);
 }
 
 void start_rstats(void)
@@ -3572,7 +3535,7 @@ start_wifidog (void)
 void
 stop_wifidog (void)
 {
-  eval ("killall", "-9", "wifidog");
+  killall("wifidog",SIGKILL);
 }
 
 #endif
