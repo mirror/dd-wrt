@@ -366,25 +366,36 @@ internal_getRouterBrand ()
 	if (nvram_match ("boardnum", "2") &&
 	    nvram_match ("boardtype", "bcm94710dev"))
 	  {
-	    if (nvram_match ("GemtekPmonVer", "9") &&
+		 if (nvram_match ("GemtekPmonVer", "9") &&
 		   (startswith (et0, "00:0C:E5") ||
 		    startswith (et0, "00:0c:e5") ||
 		    startswith (et0, "00:0C:10") ||
 		    startswith (et0, "00:0c:10") ||
-		    startswith (et0, "00:11:22")))
+		    startswith (et0, "00:11:22") ||
+		    startswith (et0, "00:0C:90") ||
+		    startswith (et0, "00:0c:90")))
 	      {
-			cprintf ("router Motorola WR850G v1\n");
-			setRouter ("Motorola WR850G v1");
-			return ROUTER_MOTOROLA_V1;
-	      }
-	    if (nvram_match ("GemtekPmonVer", "9") &&
-		   (startswith (et0, "00:0C:90") ||
-		    startswith (et0, "00:0c:90"))) 
-	      {
-			cprintf ("router Motorola WE800G v1\n");
-			setRouter ("Motorola WE800G v1");
-			return ROUTER_MOTOROLA_WE800G;
-	      }
+		     char *phy = nvram_safe_get ("phyid_num");
+		     if (!strlen (phy))
+		     	{
+			     eval ("insmod","switch-core");  //get phy type
+			     eval ("insmod","switch-robo");
+			     eval ("rmmod","switch-robo");
+			     eval ("rmmod","switch-core");
+		 	 	}
+		 	if (nvram_match ("phyid_num", "0x00000000")
+		 		{	
+			 	cprintf ("router Motorola WE800G v1\n");
+				setRouter ("Motorola WE800G v1");
+				return ROUTER_MOTOROLA_WE800G;	      
+				}
+			else							//phyid_num == 0xffffffff
+				{
+				cprintf ("router Motorola WR850G v1\n");  
+				setRouter ("Motorola WR850G v1");
+				return ROUTER_MOTOROLA_V1;
+	      		}
+      		}
 	    if (nvram_match ("melco_id", "29016"))  //Buffalo WLI2-TX1-G54
 	      {
 			cprintf ("router is Buffalo WLI2-TX1-G54\n");
@@ -436,7 +447,7 @@ internal_getRouterBrand ()
       if (!strncmp (cfe, "MotoWR", 6))
 	{
 	  cprintf ("router is motorola\n");
-	  setRouter ("Motorola WR850G");
+	  setRouter ("Motorola WR850G v2");
 	  return ROUTER_MOTOROLA;
 	}
     }
