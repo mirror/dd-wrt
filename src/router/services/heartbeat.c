@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -143,8 +144,7 @@ stop_heartbeat (void)
   int ret;
 
   unlink ("/tmp/ppp/link");
-  ret = eval ("killall", "bpalogin");
-  // ret += eval("killall", "-9", "bpalogin");
+  ret=killall("bpalogin",SIGTERM);
 
   cprintf ("done\n");
 

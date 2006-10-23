@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <net/route.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -50,7 +51,7 @@ ipup_main (int argc, char **argv)
 
   cprintf ("%s\n", argv[0]);
 
-  eval ("killall", "-9", "listen");
+  killall("listen",SIGKILL);
   nvram_set ("wan_iface", wan_ifname);
   if (check_action () != ACT_IDLE)
     return -1;
@@ -194,7 +195,7 @@ ipdown_main (int argc, char **argv)
       && (nvram_match ("wan_proto", "pptp")
 	  || nvram_match ("wan_proto", "l2tp")))
     {
-      eval ("killall", "-9", "listen");
+      killall("listen",SIGKILL);
       eval ("listen", nvram_safe_get ("lan_ifname"));
     }
   if (getRouterBrand () == ROUTER_SIEMENS)

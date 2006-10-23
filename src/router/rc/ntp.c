@@ -47,8 +47,8 @@ check_udhcpd (timer_t t, int arg)
 	    {
 	      //killps("dnsmasq","-9");
 	      //killps("udhcpd","-9");
-	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
-	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
+	      killall("dnsmasq",SIGKILL);
+	      killall("udhcpd",SIGKILL);
 	      sleep (1);
 	      start_service ("udhcpd");
 	      sleep (1);
@@ -59,8 +59,8 @@ check_udhcpd (timer_t t, int arg)
 	{
 	  if (!isRunning ("udhcpd"))
 	    {
-	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
-	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
+	      killall("dnsmasq",SIGKILL);
+	      killall("udhcpd",SIGKILL);
 	      sleep (1);
 	      start_service ("udhcpd");
 	      sleep (1);

@@ -38,8 +38,8 @@ int
 stop_wol (void)
 {
   int ret;
+  ret=killall("wol",SIGKILL);
 
-  ret = eval ("killall", "-9", "wol");
 
   cprintf ("done\n");
 

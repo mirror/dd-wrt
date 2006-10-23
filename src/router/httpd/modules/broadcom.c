@@ -502,7 +502,7 @@ sys_commit (void)
 
   if (nvram_match ("dhcpnvram", "1"))
     {				// update lease -- tofu
-      eval ("killall", "-SIGUSR2", "dnsmasq");
+      killall("dnsmasq",SIGUSR2);
       sleep (1);
     }
 
@@ -2885,7 +2885,7 @@ struct apply_action apply_actions[] = {
   {"index", "index", 0, RESTART, NULL},
 //#else
   {"OnePage", "", 0, RESTART, NULL},	// same as index
-  {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
+  {"Expose", "filters", 0, SERVICE_RESTART, NULL},	// same as DMZ
   {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
 #ifdef HAVE_UPNP
   {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
@@ -2893,37 +2893,37 @@ struct apply_action apply_actions[] = {
 //#endif
   {"Security", "", 1, RESTART, NULL},
   {"System", "", 0, RESTART, NULL},
-  {"DHCP", "dhcp", 0, SYS_RESTART, NULL},
-  {"WL_WEPTable", "", 0, RESTART, NULL},
-  {"WL_WPATable", "wireless", 0, SYS_RESTART, NULL},
+  {"DHCP", "dhcp", 0, SERVICE_RESTART, NULL},
+  {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
+  {"WL_WPATable", "wireless", 0, SERVICE_RESTART, NULL},
   /* bellow for advanced page */
-  {"DMZ", "filters", 0, SYS_RESTART, NULL},	// for cisco style
-  {"Filters", "filters", 0, SYS_RESTART, NULL},
-  {"FilterIPMAC", "filters", 0, SYS_RESTART, NULL},
-  {"FilterIP", "filters", 0, SYS_RESTART, NULL},
-  {"FilterMAC", "filters", 0, SYS_RESTART, NULL},
-  {"FilterPort", "filters", 0, SYS_RESTART, NULL},
-  {"VPN", "filters", 0, SYS_RESTART, NULL},	// for cisco style
-  {"Firewall", "filters", 0, SYS_RESTART, NULL},	// for cisco style
+  {"DMZ", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
+  {"Filters", "filters", 0, SERVICE_RESTART, NULL},
+  {"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
+  {"FilterIP", "filters", 0, SERVICE_RESTART, NULL},
+  {"FilterMAC", "filters", 0, SERVICE_RESTART, NULL},
+  {"FilterPort", "filters", 0, SERVICE_RESTART, NULL},
+  {"VPN", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
+  {"Firewall", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
   {"Forward", "forward", 0, SERVICE_RESTART, NULL},
   {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
   {"Routing", "", 0, RESTART, NULL},
-  {"DDNS", "ddns", 4, SYS_RESTART, ddns_save_value},
+  {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
   /* Sveasoft additions */
-  {"Management", "management", 4, SYS_RESTART, NULL},
-  {"Alive", "alive", 4, SYS_RESTART, NULL},
-  {"Hotspot", "hotspot", 4, SYS_RESTART, NULL},
-  {"Services", "services", 4, SYS_RESTART, NULL},
+  {"Management", "management", 0, SYS_RESTART, NULL},
+  {"Alive", "alive", 0, SERVICE_RESTART, NULL},
+  {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
+  {"Services", "services", 0, SERVICE_RESTART, NULL},
   {"Triggering", "filters", 0, SERVICE_RESTART, NULL},
-  {"Wireless_WDS", "", 4, RESTART, NULL},
-  {"QoS", "filters", 0, SYS_RESTART, NULL},
+  {"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
+  {"QoS", "qos", 0, SERVICE_RESTART, NULL},
   {"Log", "logging", 0, SERVICE_RESTART, NULL},
   /* end Sveasoft additions */
-  {"Wireless", "wireless", 0, SYS_RESTART, NULL},
-  {"Wireless_Basic", "wireless", 0, RESTART, NULL},
-  {"Wireless_Advanced", "wireless", 0, SYS_RESTART, NULL},
-  {"Wireless_MAC", "wireless", 0, SYS_RESTART, NULL},
-  {"WL_FilterTable", "macfilter", 0, SYS_RESTART, NULL},
+  {"Wireless", "wireless", 0, SERVICE_RESTART, NULL},
+  {"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},
+  {"Wireless_Advanced", "wireless", 0, SERVICE_RESTART, NULL},
+  {"Wireless_MAC", "wireless", 0, SERVICE_RESTART, NULL},
+  {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
 
   /* begin lonewolf additions */
   {"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
@@ -3400,7 +3400,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   {
   	ACTION ("ACT_SW_RESTORE");
     nvram_set ("sv_restore_defaults", "1");
-    eval ("killall", "-9", "udhcpc");
+    killall("udhcpc",SIGKILL);
     sys_commit ();
     eval ("erase", "nvram");
     action = REBOOT;
@@ -3435,7 +3435,7 @@ footer:
     action = REBOOT;
 
   /* The will let PC to re-get a new IP Address automatically */
-  if (lan_ip_changed || need_reboot)
+  if (need_reboot)
     action = REBOOT;
 
   if (action != REBOOT)

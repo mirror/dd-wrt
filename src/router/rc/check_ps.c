@@ -109,7 +109,7 @@ do_mon (void)
 	  fptr = (void (*)(void)) dlsym (handle, service);
 	  if (fptr)
 	    fptr ();
-	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
+	  killall(v->name,SIGKILL);
 	  sprintf (service, "start_%s", v->name);
 	  fptr = (void (*)(void)) dlsym (handle, service);
 	  if (fptr)
