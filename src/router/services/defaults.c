@@ -457,7 +457,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 #ifdef HAVE_MSSID
 
-#ifndef HAVE_MADWIFI
+#ifdef HAVE_MADWIFI
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
