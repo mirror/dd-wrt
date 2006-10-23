@@ -912,6 +912,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_MAGICBOX
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_X86
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #else
   {"remote_management", "0", 0},	/* Remote Management [1|0] */
 #endif
@@ -1182,6 +1184,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_enable", "1", 0},
 #elif HAVE_MAGICBOX
   {"sshd_enable", "1", 0},
+#elif HAVE_X86
+  {"sshd_enable", "1", 0},
 #else
   {"sshd_enable", "0", 0},
 #endif
@@ -1191,6 +1195,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_dss_host_key", "", 0},
   {"sshd_authorized_keys", "", 0},
 #ifdef HAVE_MAGICBOX
+  {"remote_mgt_ssh", "1", 0},
+#elif HAVE_X86
   {"remote_mgt_ssh", "1", 0},
 #else
   {"remote_mgt_ssh", "0", 0},
