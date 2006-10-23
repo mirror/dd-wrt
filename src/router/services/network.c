@@ -1150,6 +1150,14 @@ start_lan (void)
       nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
     }
 #endif
+#ifdef HAVE_X86
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
 #ifdef HAVE_XSCALE
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
