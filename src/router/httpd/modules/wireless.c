@@ -999,8 +999,7 @@ dhcp_lease_table_init (void)
       char hostname[256];
       char buf[512];
       char *p;
-
-      eval ("killall", "-SIGUSR2", "dnsmasq");
+      killall("dnsmasq",SIGUSR2);
       sleep (1);
 
       if ((fp_w = fopen (LEASES_NAME_IP, "w")) != NULL)
@@ -1030,8 +1029,7 @@ dhcp_lease_table_init (void)
       struct lease_t lease;
       struct in_addr addr;
       char mac[20] = "";
-
-      eval ("killall", "-SIGUSR1", "udhcpd");
+      killall("udhcpd",SIGUSR1);
       fp_w = fopen (LEASES_NAME_IP, "w");
 
       // Parse leases file 

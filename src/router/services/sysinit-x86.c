@@ -58,6 +58,28 @@ fscanf(in,"%d",&res);
 fclose(in);
 return res>0?1:0;
 } 
+static int getdiscindex(void) //works only for squashfs 
+{
+int i;
+for (i=0;i<10;i++)
+    {
+    char dev[64];
+    sprintf(dev,"/dev/discs/disc%d/part2",i);
+    FILE *in=fopen(dev,"rb");
+    if (in==NULL)
+	continue; //no second partition or disc does not exist, skipping
+    char buf[4];
+    fread(buf,4,1,in);
+    if (buf[0]=='h' && buf[1]=='s' && buf[2]=='q' && buf[3]=='t')
+	{
+	fclose(in); 
+	//filesystem detected
+	return i;
+	}
+    fclose(in);
+    }
+return -1;
+}
 
 int
 start_sysinit (void)
@@ -76,14 +98,24 @@ start_sysinit (void)
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  mount ("/dev/discs/disc0/part1","/grub","ext2",MS_MGC_VAL,NULL);
-  if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+  char dev[64];
+  int index=getdiscindex();
+  if (index==-1)
+    {
+    fprintf(stderr,"no valid dd-wrt partition found, calling shell");
+    eval("/bin/sh");
+    exit(0);
+    }
+  sprintf(dev,"/dev/discs/disc%d/part1",index);
+  mount (dev,"/boot","ext2",MS_MGC_VAL,NULL);
+  sprintf(dev,"/dev/discs/disc%d/part3",index);
+  if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
 
     {
       //not created yet, create ext2 partition
-      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/discs/disc0/part3");
+      eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
       //mount ext2 
-      mount ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
+      mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
       mkdir ("/usr/local/nvram", 0777);
 //    eval("ln","-s","/etc/nvram","/usr/local/nvram");

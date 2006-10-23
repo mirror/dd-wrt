@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <net/route.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -132,7 +133,7 @@ if (nvram_match("ath0_mode","wet"))
 if (nvram_match("wl0_mode","wet"))
 #endif
     {
-      eval ("killall","stabridge");
+      killall("stabridge",SIGTERM);
       eval ("rmmod", "ebt_arpreply");
       eval ("rmmod", "ebt_arp");
       eval ("rmmod", "ebt_snat");

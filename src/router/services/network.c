@@ -19,6 +19,7 @@
 #include <syslog.h>
 #include <ctype.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #ifdef HAVE_MSSID
 #include <math.h>
@@ -320,7 +321,7 @@ start_dhcpc (char *wan_ifname)
   symlink ("/sbin/rc", "/tmp/udhcpc");
 
   nvram_set ("wan_get_dns", "");
-  eval ("killall", "udhcpc");
+  killall("udhcpc",SIGTERM);
   if (vendorclass != NULL && strlen (vendorclass) > 0)
     {
       char *dhcp_argv[] = { "udhcpc",
@@ -819,6 +820,8 @@ start_lan (void)
 
       foreach (name, lan_ifnames, next)
       {
+      if (!ifexists(name))
+        continue;
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
@@ -1420,6 +1423,8 @@ stop_lan (void)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
+        if (!ifexists(name))
+	    continue;
 	eval ("wlconf", name, "down");
 	ifconfig (name, 0, NULL, NULL);
 	br_del_interface (lan_ifname, name);

@@ -267,7 +267,7 @@ void
 //do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, https, 8/6/2003
 {
-  eval ("killall", "-9", "udhcpc");
+  killall("udhcpc",SIGKILL);
 
 #ifndef ANTI_FLASH
   char buf[1024];
