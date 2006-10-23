@@ -2340,6 +2340,11 @@ int killall(const char *name, int sig)
 	return -2;
 }
 
+int ifexists(const char *ifname)
+{
+return getifcount(ifname)>0?1:0;
+}
+
 int getifcount(const char *ifprefix)
 {
 char devcall[64];
