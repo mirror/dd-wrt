@@ -383,7 +383,7 @@ internal_getRouterBrand ()
 			     eval ("rmmod","switch-robo");
 			     eval ("rmmod","switch-core");
 		 	 	}
-		 	if (nvram_match ("phyid_num", "0x00000000")
+		 	if (nvram_match ("phyid_num", "0x00000000"))
 		 		{	
 			 	cprintf ("router Motorola WE800G v1\n");
 				setRouter ("Motorola WE800G v1");
