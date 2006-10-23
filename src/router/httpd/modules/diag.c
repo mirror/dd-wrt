@@ -134,7 +134,7 @@ ping_wol (webs_t wp)
 int
 diag_ping_stop (webs_t wp)
 {
-  return eval ("killall", "-9", "ping");
+  return killall("ping",SIGKILL);
 }
 
 int

@@ -241,9 +241,9 @@ start_single_service (void)
   char *service;
 
   service = nvram_get ("action_service");
-
   if (!service)
     kill (1, SIGHUP);
+  fprintf(stderr,"Action %s\n",service);
 
   cprintf ("Restart service=[%s]\n", service);
   start_service ("overclocking");
@@ -252,7 +252,7 @@ start_single_service (void)
     {
       startstop ("udhcpd");
     }
-  else if (!strcmp (service, "logging"))
+  if (!strcmp (service, "logging"))
     {
       startstop ("firewall");
       startstop ("syslog");
@@ -278,9 +278,13 @@ start_single_service (void)
 #ifdef HAVE_SPUTNIK_APD
       startstop ("sputnik");
 #endif
+     eval("/etc/config/http-redirect.startup");
+     eval("/etc/config/smtp-redirect.startup");
+    
     }
   else if (!strcmp (service, "services"))
     {
+      startstop ("syslog");
 #ifdef HAVE_RSTATS
       startstop ("rstats");
 #endif
@@ -296,6 +300,18 @@ start_single_service (void)
 #endif
 #ifdef HAVE_SNMP
       startstop ("snmp");
+#endif
+#ifdef HAVE_OPENVPN
+      startstop ("openvpn");
+#endif
+#ifdef HAVE_PPTPD
+      startstop ("pptpd");
+#endif
+#ifdef HAVE_PPTP
+      eval ("/etc/config/pptpd_client.startup");
+#endif
+#ifdef HAVE_RFLOW
+      startstop ("rflow");
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -370,9 +386,19 @@ start_single_service (void)
       startstop ("wshaper");
       start_service ("cron");
     }
+   else if (!strcmp (service, "alive"))
+    {
+      eval("/etc/config/wdswatchdog.startup");
+      eval("/etc/config/schedulerb.startup");
+      eval("/etc/config/proxywatchdog.startup");
+    }
   else if (!strcmp (service, "forward"))
     {
       startstop ("firewall");
+      startstop ("wshaper");
+    }
+  else if (!strcmp (service, "qos"))
+    {
       startstop ("wshaper");
     }
   else if (!strcmp (service, "forward_upnp"))
@@ -505,7 +531,7 @@ END OBSOLETE */
       char sigusr[] = "-XX";
       sprintf (sigusr, "-%d", SIGUSR2);
       //killps("udhcpc",sigusr);
-      eval ("killall", sigusr, "udhcpc");
+      killall("udhcpc",sigusr);
       sleep (1);
     }
   else
@@ -635,7 +661,7 @@ redial_main (int argc, char **argv)
 		{
 		  stop_service ("pppoe");
 		  //killps("pppoecd","-9");
-		  eval ("killall", "-9", "pppoecd");
+		  killall("pppoecd",SIGKILL);
 		  sleep (1);
 		  start_service ("wan_redial");
 		}

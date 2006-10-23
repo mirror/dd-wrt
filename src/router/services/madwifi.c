@@ -42,6 +42,7 @@ i
 #include <sys/mman.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 #include <fcntl.h>
 
 #define AR5K_PCICFG 0x4010
@@ -513,13 +514,13 @@ deconfigure_wifi (void)
 
 
   memset (iflist, 0, 1024);
-  eval ("killall", "wrt-radauth");
-  eval ("killall", "hostapd");
-  eval ("killall", "wpa_supplicant");
+  killall("wrt-radauth",SIGTERM);
+  killall("hostapd",SIGTERM);
+  killall("wpa_supplicant",SIGTERM);
   sleep (2);
-  eval ("killall", "-9", "wrt-radauth");
-  eval ("killall", "-9", "hostapd");
-  eval ("killall", "-9", "wpa_supplicant");
+  killall("wrt-radauth",SIGKILL);
+  killall("hostapd",SIGKILL);
+  killall("wpa_supplicant",SIGKILL);
 
 
   int c = getdevicecount ();

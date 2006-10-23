@@ -161,6 +161,9 @@ ifeq ($(CONFIG_PPTPD),y)
 OBJS += pptpd.o
 CFLAGS += -DHAVE_PPTPD
 endif
+ifeq ($(CONFIG_PPTP),y)
+CFLAGS += -DHAVE_PPTP
+endif
 
 ifeq ($(CONFIG_L2TP),y)
 CFLAGS += -DHAVE_L2TP

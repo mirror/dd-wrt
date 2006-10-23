@@ -145,8 +145,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char *ipaddr, mac[20] = "", expires_time[50] = "";
 
       /* Write out leases file from udhcpd */
-      sprintf (sigusr1, "-%d", SIGUSR1);
-      eval ("killall", sigusr1, "udhcpd");
+      killall("udhcpd",SIGUSR1);
 
       /* Parse leases file */
       if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
@@ -286,8 +285,7 @@ dhcp_renew (webs_t wp)
   int ret;
   char sigusr[] = "-XX";
 
-  sprintf (sigusr, "-%d", SIGUSR1);
-  ret = eval ("killall", sigusr, "udhcpc");
+  ret = killall("udhcpc",SIGUSR1);
 
   return ret;
 }

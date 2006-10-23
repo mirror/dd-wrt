@@ -379,7 +379,7 @@ main_loop (void)
 	  /* Fall through */
 	case STOP:
 	  cprintf ("STOP\n");
-	  system ("killall -9 udhcpc");
+	  killall("udhcpc",SIGKILL);
 	  setenv ("PATH",
 		  "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
 		  1);

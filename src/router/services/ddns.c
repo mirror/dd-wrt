@@ -264,7 +264,7 @@ stop_ddns (void)
   int ret;
 
   unlink ("/tmp/ddns/ddns.log");
-  ret = eval ("killall", "inadyn");
+  ret = killall("inadyn",SIGTERM);
 
   cprintf ("done\n");
 
