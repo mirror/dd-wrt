@@ -369,7 +369,7 @@ listen_interface (char *interface)
 	      inet_aton (nvram_safe_get ("lan_ipaddr"), &ipaddr);
 	    }
 #endif
-#ifdef HAVE_PPTP | HAVE_L2TP
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP)
 	  else
 #endif
 	    {
