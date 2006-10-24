@@ -45,6 +45,11 @@ static struct mtd_partition magic_partitions[] = {
 	},
 	{
 		.name =   "nvram",
+		.offset = 0x380000,
+		.size =   0x020000,
+	},
+	{
+		.name =   "mampf",
 		.offset = 0x3a0000,
 		.size =   0x020000,
 	},
