@@ -710,7 +710,7 @@ enum { STRVERSIONLEN = 32 };
 static int flag_force_load = 0;
 static int flag_autoclean = 0;
 static int flag_verbose = 0;
-static int flag_quiet = 0;
+static int flag_quiet = 1;
 static int flag_export = 1;
 
 
