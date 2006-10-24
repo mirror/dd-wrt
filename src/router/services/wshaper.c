@@ -110,6 +110,10 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
   system
     ("echo full > /proc/sys/dev/adm6996/port4/bandwidth 2>&1 > /dev/null");
 */
+#ifndef HAVE_XSCALE
+#ifndef HAVE_MAGICBOX
+#ifndef HAVE_X86
+
   system ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
@@ -130,12 +134,17 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
   system ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
   system ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
   system ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
-
+#endif
+#endif
+#endif
 }
 
 int
 svqos_set_ports (void)
 {
+#ifndef HAVE_XSCALE
+#ifndef HAVE_MAGICBOX
+#ifndef HAVE_X86
   int loop = 1;
   char cmd[255] = { 0 }, nvram_var[32] =
   {
@@ -168,6 +177,9 @@ svqos_set_ports (void)
 		atoi (level) / 10 - 1, loop);
       system (cmd);
     }
+#endif
+#endif
+#endif
 
   return 0;
 }
