@@ -922,6 +922,18 @@ function setElementMask(id, state) {
 	
 }
 
+var windo = {
+	getWindoSize: function() {
+		if (window.innerHeight)
+			return {height: window.innerHeight, width: window.innerWidth};
+		else if (document.documentElement && document.documentElement.clientHeight)
+			return {height: document.documentElement.clientHeight, width: document.documentElement.clientWidth};
+		
+		return {Height: document.body.clientHeight,	width: document.body.clientWidth};
+	}
+
+};
+
 function show_layer_ext(obj, id, state)
 {
 	if(!obj) return;
