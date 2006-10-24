@@ -23,23 +23,24 @@ ifneq ($(CONFIG_DIST),"micro")
 UTILS += epi_ttcp
 endif
 
-CFLAGS += -s $(COPTS) -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe 
+CFLAGS += -s $(COPTS) -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR)
 
 vpath %.c $(SRCBASE)/tools/misc
 
 
 vpath %.c $(SRCBASE)/et/freebsd
+ifeq ($(ARCHITECTURE),gateworx)
+UTILS += showmac gpio
+endif
 
-ifneq ($(ARCH),armeb)
-all: $(UTILS)
-else
+ifeq ($(ARCHITECTURE),newmedia)
 all:
 	$(CC) -o mtd -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 	$(CC) -o epi_ttcp -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
+else
+all: $(UTILS)
 endif
-
-
 
 clean:
 	rm -f *.o *~ $(UTILS)
@@ -57,10 +58,12 @@ else
 
 ifneq ($(CONFIG_RB500),y)
 ifneq ($(CONFIG_MAGICBOX),y)
+ifneq ($(CONFIG_X86),y)
 ifeq ($(CONFIG_MSSID),y)
 	install wl $(INSTALLDIR)/usr/sbin
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
+endif
 endif
 endif
 endif
