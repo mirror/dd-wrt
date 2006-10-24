@@ -1,5 +1,4 @@
-/*
- * wshaper.c
+/* wshaper.c
  *
  * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
@@ -264,7 +263,11 @@ svqos_iptables (void)
 
   /* mac format is "mac level | mac level |" ..etc */
 #ifndef HAVE_AQOS
-  if (strcmp (dev, "br0") && nvram_invmatch("wl0_mode","wet"))
+char *wl0mode=nvram_get("wl0_mode");
+if (wl0mode==NULL)
+    wl0mode="";
+
+  if (strcmp (dev, "br0") && strcmp(wl0mode,"wet"))
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
@@ -672,6 +675,19 @@ stop_wshaper (void)
 
   stop_firewall ();
   start_firewall ();
-
+char *dev = get_wshaper_dev ();
+char *wl0mode=nvram_get("wl0_mode");
+if (wl0mode==NULL)
+    wl0mode="";
+  if (strcmp (dev, "br0") && strcmp(wl0mode,"wet"))
+  {
+      eval ("rmmod", "ebt_dnat");
+      eval ("rmmod", "ebt_snat");
+      eval ("rmmod", "ebt_mark_m");
+      eval ("rmmod", "ebt_mark");
+      eval ("rmmod", "ebtable_filter");
+      eval ("rmmod", "ebtable_nat");
+      eval ("rmmod", "ebtables");
+  }
   return ret;
 }

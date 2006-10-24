@@ -847,7 +847,11 @@ nat_postrouting (void)
 	  save2file ("-A POSTROUTING -o %s -s %s%s -d %s%s -j MASQUERADE\n",
 		     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_XSCALE
+#ifndef HAVE_X86
 	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+#endif
+#endif
 #endif
 	}
     }
