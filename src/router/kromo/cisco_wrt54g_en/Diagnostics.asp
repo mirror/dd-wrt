@@ -62,10 +62,10 @@ function valid(F,I) {
 									<script type="text/javascript">
 									//<![CDATA[
 									var table = new Array(<% dump_ping_log(""); %>);
-									var h = Math.floor(windo.getWindoSize().height * 0.8);
+									var h = Math.floor(windo.getWindoSize().height * 0.7);
 
 									if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-										document.write("<br /><br /><textarea style=\"margin:0; width:100%; height:" + ((h > 300) ? h : 300) + ";\">" + table.join("\n") + "</textarea>");
+										document.write("<br /><br /><textarea style=\"margin:0; width:100%; height:" + ((h > 300) ? h : 300) + "px;\">" + table.join("\n") + "</textarea>");
 									}
 									//]]>
 									</script>
