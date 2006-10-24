@@ -495,17 +495,18 @@ static int b44_setup_phy(struct b44 *bp)
 
 
 	/*
-	 * workaround for bad hardware design in Linksys WAP54G v1.0
+	 * workaround for bad hardware design in Linksys WAP54G v1.0 and Belkin f5d7230 v1xxx
 	 * see https://dev.openwrt.org/ticket/146
 	 * check and reset bit "isolate"
 	 */
 	if ((bp->pdev->device == PCI_DEVICE_ID_BCM4713) &&
-			(atoi(nvram_get("boardnum")) == 2) &&
+			((atoi(nvram_get("boardnum")) == 2) || (atoi(nvram_get("boardnum")) == 100)) &&
 			(__b44_readphy(bp, 0, MII_BMCR, &val) == 0) && 
 			(val & BMCR_ISOLATE) &&
 			(__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)) {
 //		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
 	}
+
 	
 	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
 		return 0;

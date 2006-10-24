@@ -35,6 +35,8 @@
 #include "switch-core.h"
 #include "etc53xx.h"
 
+#include <bcmdevs.h>
+
 #define DRIVER_NAME		"bcm53xx"
 #define DRIVER_VERSION	"0.01"
 
@@ -254,6 +256,12 @@ static int robo_probe(char *devname)
 
 	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
+		
+/* set phy id number, used for id-ing hardware. Eko */
+	char buff[32];
+	sprintf (buff, "%#010x", phyid);
+	nvram_set ("phyid_num", buff);
+/* end */
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		ROBO_DBG("No Robo switch in managed mode found\n");
