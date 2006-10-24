@@ -311,7 +311,7 @@ start_single_service (void)
       eval ("/etc/config/pptpd_client.startup");
 #endif
 #ifdef HAVE_RFLOW
-      startstop ("rflow");
+      eval ("/etc/config/rflow.startup");
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
