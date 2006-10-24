@@ -229,6 +229,10 @@ ifeq ($(CONFIG_NOCAT),y)
 CFLAGS += -DHAVE_NOCAT
 endif
 
+ifeq ($(CONFIG_RFLOW),y)
+CFLAGS += -DHAVE_RFLOW
+endif
+
 ifeq ($(CONFIG_SER),y)
 CFLAGS += -DHAVE_SER
 endif
