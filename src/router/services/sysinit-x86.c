@@ -188,18 +188,52 @@ if (detect("8255"))  //intel 100 mbit
     
 if (detect("PRO/1000"))  //Intel Gigabit 
     eval ("insmod", "e1000");
+else
+if (detect("82541"))  // Intel Gigabit
+    eval ("insmod", "e1000");
+else
+if (detect("82547"))  // Intel Gigabit
+    eval ("insmod", "e1000");
+
+
 if (detect("RTL-8169"))  // Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
 if (detect("8139"))  // Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "8139too");
-if (detect("nForce2 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+
+if (detect("nForce2 Ethernet"))  // nForce2 
     eval ("insmod", "forcedeth");
 else
-if (detect("nForce3 Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+if (detect("nForce3 Ethernet"))  // nForce3 
     eval ("insmod", "forcedeth");
 else
-if (detect("nForce Ethernet"))  // Realtek 8169 Adapter (various notebooks) 
+if (detect("nForce Ethernet"))  // nForce 
     eval ("insmod", "forcedeth");
+else
+if (detect("CK804 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("CK8S Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP04 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP2A Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP51 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP55 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP61 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+else
+if (detect("MCP65 Ethernet"))  // nForce
+    eval ("insmod", "forcedeth");
+
     
     
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
