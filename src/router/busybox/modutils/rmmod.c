@@ -68,7 +68,8 @@ int rmmod_main(int argc, char **argv)
 			if (syscall(__NR_delete_module, NULL, flags) != 0) {
 				if (errno==EFAULT)
 					return(ret);
-				bb_perror_msg_and_die("rmmod");
+				//bb_perror_msg_and_die("rmmod");
+				exit(0);
 			}
 			pnmod = nmod;
 #ifdef CONFIG_FEATURE_QUERY_MODULE_INTERFACE
@@ -100,7 +101,7 @@ int rmmod_main(int argc, char **argv)
 #define module_name		argv[n]
 #endif
 		if (syscall(__NR_delete_module, module_name, flags) != 0) {
-			bb_perror_msg("%s", argv[n]);
+			//bb_perror_msg("%s", argv[n]);
 			ret = EXIT_FAILURE;
 		}
 	}
