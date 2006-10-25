@@ -2602,6 +2602,15 @@ start_firewall (void)
     }
   else
     perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
+#elif HAVE_X86
+  if ((fp =
+       fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
+    {
+      fprintf (fp, "%d", 65);
+      fclose (fp);
+    }
+  else
+    perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
 #else
   if ((fp = fopen ("/proc/sys/net/ipv4/ip_conntrack_udp_timeouts", "r+")))
     {
