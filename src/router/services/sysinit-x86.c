@@ -237,6 +237,8 @@ if (detect("RTL-8029"))  // Old Realtek PCI NE2000 clone (10M only)
     eval ("insmod", "ne2k-pci");
 if (detect("Rhine-"))  // VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
+if (detect("3c905"))  // 3Com
+    eval ("insmod", "3c59x");
 
     
     
