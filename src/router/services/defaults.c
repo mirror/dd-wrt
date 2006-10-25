@@ -1477,7 +1477,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ip_conntrack_max", "512", 0},
 #endif
   {"ip_conntrack_tcp_timeouts", "3600", 0},
-  {"ip_conntrack_udp_timeouts", "3600", 0},
+  {"ip_conntrack_udp_timeouts", "120", 0},
   {"rflow_ip", "0.0.0.0", 0},
   {"rflow_port", "2055", 0},
   {"rflow_if", "br0", 0},
