@@ -774,18 +774,6 @@ wpa_supplicant_event_interface_status(struct wpa_supplicant *wpa_s,
 }
 
 
-#ifdef CONFIG_STAKEY
-static void
-wpa_supplicant_event_stakey_request(struct wpa_supplicant *wpa_s,
-				    union wpa_event_data *data)
-{
-	if (data == NULL)
-		return;
-	wpa_sm_stakey_request(wpa_s->wpa, data->stakey_request.peer);
-}
-#endif /* CONFIG_STAKEY */
-
-
 #ifdef CONFIG_PEERKEY
 static void
 wpa_supplicant_event_stkstart(struct wpa_supplicant *wpa_s,
@@ -823,11 +811,6 @@ void wpa_supplicant_event(struct wpa_supplicant *wpa_s, wpa_event_type event,
 	case EVENT_PMKID_CANDIDATE:
 		wpa_supplicant_event_pmkid_candidate(wpa_s, data);
 		break;
-#ifdef CONFIG_STAKEY
-	case EVENT_STAKEY_REQUEST:
-		wpa_supplicant_event_stakey_request(wpa_s, data);
-		break;
-#endif /* CONFIG_STAKEY */
 #ifdef CONFIG_PEERKEY
 	case EVENT_STKSTART:
 		wpa_supplicant_event_stkstart(wpa_s, data);

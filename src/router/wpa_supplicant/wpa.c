@@ -90,10 +90,12 @@ static const u8 RSN_CIPHER_SUITE_CCMP[] = { 0x00, 0x0f, 0xac, 4 };
 static const u8 RSN_CIPHER_SUITE_WEP104[] = { 0x00, 0x0f, 0xac, 5 };
 
 /* EAPOL-Key Key Data Encapsulation
- * GroupKey and STAKey require encryption, otherwise, encryption is optional.
+ * GroupKey and PeerKey require encryption, otherwise, encryption is optional.
  */
 static const u8 RSN_KEY_DATA_GROUPKEY[] = { 0x00, 0x0f, 0xac, 1 };
+#if 0
 static const u8 RSN_KEY_DATA_STAKEY[] = { 0x00, 0x0f, 0xac, 2 };
+#endif
 static const u8 RSN_KEY_DATA_MAC_ADDR[] = { 0x00, 0x0f, 0xac, 3 };
 static const u8 RSN_KEY_DATA_PMKID[] = { 0x00, 0x0f, 0xac, 4 };
 #ifdef CONFIG_PEERKEY
@@ -315,10 +317,8 @@ static u8 * wpa_add_ie(u8 *pos, const u8 *ie, size_t ie_len)
 	os_memcpy(pos, ie, ie_len);
 	return pos + ie_len;
 }
-#endif /* CONFIG_PEERKEY */
 
 
-#if defined(CONFIG_STAKEY) || defined(CONFIG_PEERKEY)
 static u8 * wpa_add_kde(u8 *pos, const u8 *kde, const u8 *data,
 			size_t data_len)
 {
@@ -330,7 +330,7 @@ static u8 * wpa_add_kde(u8 *pos, const u8 *kde, const u8 *data,
 	pos += data_len;
 	return pos;
 }
-#endif /* CONFIG_STAKEY || CONFIG_PEERKEY */
+#endif /* CONFIG_PEERKEY */
 
 
 static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
@@ -944,79 +944,6 @@ void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
 
 
 /**
- * wpa_sm_stakey_request - Send EAPOL-Key Request for STAKey handshake
- * @sm: Pointer to WPA state machine data from wpa_sm_init()
- * @peer: MAC address of the peer STA
- * Returns: 0 on success, or -1 on failure
- *
- * Send an EAPOL-Key Request to the current authenticator to start STAKey
- * handeshake with the peer.
- */
-int wpa_sm_stakey_request(struct wpa_sm *sm, const u8 *peer)
-{
-#ifdef CONFIG_STAKEY
-	size_t rlen, kde_len;
-	struct wpa_eapol_key *reply;
-	int key_info, ver, alg;
-	u8 bssid[ETH_ALEN], *rbuf, *pos;
-	struct wpa_ssid *ssid = sm->cur_ssid;
-
-	if (sm->proto != WPA_PROTO_RSN || !sm->ptk_set ||
-	    ssid == NULL || !ssid->stakey)
-		return -1;
-
-	/* TODO: how to select which cipher to use? */
-	alg = sm->pairwise_cipher;
-
-	if (alg == WPA_CIPHER_CCMP)
-		ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-	else
-		ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
-
-	if (wpa_sm_get_bssid(sm, bssid) < 0) {
-		wpa_printf(MSG_WARNING, "Failed to read BSSID for EAPOL-Key "
-			   "STAKey Request");
-		return -1;
-	}
-
-	kde_len = 2 + sizeof(RSN_KEY_DATA_MAC_ADDR) + ETH_ALEN;
-
-	rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
-				  sizeof(*reply) + kde_len, &rlen,
-				  (void *) &reply);
-	if (rbuf == NULL)
-		return -1;
-
-	reply->type = EAPOL_KEY_TYPE_RSN;
-	key_info = WPA_KEY_INFO_REQUEST | WPA_KEY_INFO_SECURE |
-		WPA_KEY_INFO_MIC | ver;
-	WPA_PUT_BE16(reply->key_info, key_info);
-	WPA_PUT_BE16(reply->key_length, 0);
-	os_memcpy(reply->replay_counter, sm->request_counter,
-		  WPA_REPLAY_COUNTER_LEN);
-	inc_byte_array(sm->request_counter, WPA_REPLAY_COUNTER_LEN);
-
-	/* MAC address KDE */
-	WPA_PUT_BE16(reply->key_data_length, (u16) kde_len);
-	pos = (u8 *) (reply + 1);
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, peer, ETH_ALEN);
-
-	wpa_printf(MSG_INFO, "RSN: Sending EAPOL-Key STAKey Request (peer "
-		   MACSTR ")", MAC2STR(peer));
-	wpa_eapol_key_send(sm, sm->ptk.kck, ver, bssid, ETH_P_EAPOL,
-			   rbuf, rlen, reply->key_mic);
-
-	return 0;
-
-#else /* CONFIG_STAKEY */
-
-	return -1;
-
-#endif /* CONFIG_STAKEY */
-}
-
-
-/**
  * wpa_sm_stkstart - Send EAPOL-Key Request for STK handshake (STK M1)
  * @sm: Pointer to WPA state machine data from wpa_sm_init()
  * @peer: MAC address of the peer STA
@@ -1167,8 +1094,6 @@ struct wpa_eapol_ie_parse {
 	const u8 *pmkid;
 	const u8 *gtk;
 	size_t gtk_len;
-	const u8 *stakey;
-	size_t stakey_len;
 	const u8 *mac_addr;
 	size_t mac_addr_len;
 #ifdef CONFIG_PEERKEY
@@ -1217,13 +1142,6 @@ static int wpa_supplicant_parse_generic(const u8 *pos, const u8 *end,
 	    os_memcmp(pos + 2, RSN_KEY_DATA_GROUPKEY, RSN_SELECTOR_LEN) == 0) {
 		ie->gtk = pos + 2 + RSN_SELECTOR_LEN;
 		ie->gtk_len = pos[1] - RSN_SELECTOR_LEN;
-		return 0;
-	}
-
-	if (pos[1] > RSN_SELECTOR_LEN + 2 &&
-	    os_memcmp(pos + 2, RSN_KEY_DATA_STAKEY, RSN_SELECTOR_LEN) == 0) {
-		ie->stakey = pos + 2 + RSN_SELECTOR_LEN;
-		ie->stakey_len = pos[1] - RSN_SELECTOR_LEN;
 		return 0;
 	}
 
@@ -2007,116 +1925,6 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 		wpa_printf(MSG_INFO, "RSN: Failed to configure GTK");
 	}
 }
-
-
-#ifdef CONFIG_STAKEY
-static int wpa_supplicant_send_stakey_2_of_2(struct wpa_sm *sm,
-					     const unsigned char *src_addr,
-					     const struct wpa_eapol_key *key,
-					     int ver, u16 key_info,
-					     const u8 *peer)
-{
-	size_t rlen;
-	struct wpa_eapol_key *reply;
-	u8 *rbuf, *pos;
-	size_t kde_len;
-
-	kde_len = 2 + sizeof(RSN_KEY_DATA_MAC_ADDR) + ETH_ALEN;
-
-	rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
-				  sizeof(*reply) + kde_len, &rlen,
-				  (void *) &reply);
-	if (rbuf == NULL)
-		return -1;
-
-	reply->type = EAPOL_KEY_TYPE_RSN;
-	key_info &= WPA_KEY_INFO_KEY_INDEX_MASK;
-	key_info |= ver | WPA_KEY_INFO_MIC | WPA_KEY_INFO_SECURE;
-	WPA_PUT_BE16(reply->key_info, key_info);
-	WPA_PUT_BE16(reply->key_length, 0);
-	os_memcpy(reply->replay_counter, key->replay_counter,
-		  WPA_REPLAY_COUNTER_LEN);
-
-	/* MAC address KDE */
-	WPA_PUT_BE16(reply->key_data_length, (u16) kde_len);
-	pos = (u8 *) (reply + 1);
-	pos = wpa_add_kde(pos, RSN_KEY_DATA_MAC_ADDR, peer, ETH_ALEN);
-
-	wpa_printf(MSG_DEBUG, "RSN: Sending EAPOL-Key STAKey 2/2 for " MACSTR,
-		   MAC2STR(peer));
-	wpa_eapol_key_send(sm, sm->ptk.kck, ver, src_addr, ETH_P_EAPOL,
-			   rbuf, rlen, reply->key_mic);
-
-	return 0;
-}
-
-
-static int wpa_supplicant_process_stakey_1_of_2(
-	struct wpa_sm *sm, const unsigned char *src_addr,
-	const struct wpa_eapol_key *key, u16 key_info,
-	const u8 *stakey, size_t stakey_len)
-{
-	struct wpa_ssid *ssid = sm->cur_ssid;
-	u16 ver;
-	size_t keylen;
-	int cipher;
-	const u8 *_key;
-	u8 key_buf[32], rsc[6];
-
-	wpa_printf(MSG_DEBUG, "RSN: Received STAKey msg 1/2");
-	if (ssid == NULL || !ssid->stakey || sm->proto != WPA_PROTO_RSN) {
-		wpa_printf(MSG_DEBUG, "RSN: STAKey negotiation not allowed for"
-			   " the current network");
-		return -1;
-	}
-	
-	/* STAKey KDE: Reserved(2 octets) PeerSTA Addr(6 octets) STAKey */
-
-	ver = key_info & WPA_KEY_INFO_TYPE_MASK;
-	if (ver == WPA_KEY_INFO_TYPE_HMAC_MD5_RC4) {
-		cipher = WPA_CIPHER_TKIP;
-		keylen = 32;
-	} else if (ver == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
-		cipher = WPA_CIPHER_CCMP;
-		keylen = 16;
-	} else {
-		wpa_printf(MSG_DEBUG, "RSN: Invalid STAKey key_info version "
-			   "%d", ver);
-		return -1;
-	}
-
-	if (stakey_len < 8 + keylen) {
-		wpa_printf(MSG_DEBUG, "RSN: Too short STAKey KDE");
-		return -1;
-	}
-
-	wpa_printf(MSG_DEBUG, "RSN: STAKey for peer STA " MACSTR,
-		   MAC2STR(stakey + 2));
-	wpa_hexdump_key(MSG_DEBUG, "RSN: STAKey", stakey + 8, keylen);
-
-	if (cipher == WPA_CIPHER_TKIP) {
-		/* Swap Tx/Rx keys for Michael MIC */
-		os_memcpy(key_buf, stakey + 2, 16);
-		os_memcpy(key_buf + 16, stakey + 2 + 24, 8);
-		os_memcpy(key_buf + 24, stakey + 2 + 16, 8);
-		_key = key_buf;
-	} else
-		_key = stakey + 8;
-
-	os_memset(rsc, 0, 6);
-	if (wpa_sm_set_key(sm, cipher, stakey + 2, 0, 0, rsc, sizeof(rsc),
-			   _key, keylen) < 0) {
-		wpa_printf(MSG_WARNING, "RSN: Failed to set STAKey to "
-			   "the driver.");
-		return -1;
-	}
-
-	wpa_supplicant_send_stakey_2_of_2(sm, src_addr, key, ver, key_info,
-		stakey + 2);
-
-	return 0;
-}
-#endif /* CONFIG_STAKEY */
 
 
 #ifdef CONFIG_PEERKEY
@@ -2964,8 +2772,6 @@ static void wpa_supplicant_process_stk_4_of_4(struct wpa_sm *sm,
 
 
 static int wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm,
-					     const unsigned char *src_addr,
-					     const struct wpa_eapol_key *key,
 					     const u8 *keydata,
 					     size_t keydatalen,
 					     u16 key_info,
@@ -2979,21 +2785,6 @@ static int wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm,
 	if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
 		wpa_printf(MSG_WARNING, "WPA: GTK IE in unencrypted key data");
 		return -1;
-	}
-	if (ie.stakey) {
-#ifdef CONFIG_STAKEY
-		if (!(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
-			wpa_printf(MSG_WARNING, "WPA: STAKey KDE in "
-				   "unencrypted key data");
-			return -1;
-		}
-
-		wpa_supplicant_process_stakey_1_of_2(sm, src_addr, key,
-						     key_info, ie.stakey,
-						     ie.stakey_len);
-#endif /* CONFIG_STAKEY */
-		/* Abort GTK processing since this was a STAKey message. */
-		return 1;
 	}
 	if (ie.gtk == NULL) {
 		wpa_printf(MSG_INFO, "WPA: No GTK IE in Group Key msg 1/2");
@@ -3140,15 +2931,14 @@ static void wpa_supplicant_process_1_of_2(struct wpa_sm *sm,
 	os_memset(&gd, 0, sizeof(gd));
 
 	rekey = wpa_sm_get_state(sm) == WPA_COMPLETED;
-	wpa_printf(MSG_DEBUG, "WPA: RX message 1 of Group Key or STAKey "
-		   "Handshake from " MACSTR " (ver=%d)",
-		   MAC2STR(src_addr), ver);
+	wpa_printf(MSG_DEBUG, "WPA: RX message 1 of Group Key Handshake from "
+		   MACSTR " (ver=%d)", MAC2STR(src_addr), ver);
 
 	key_info = WPA_GET_BE16(key->key_info);
 	keydatalen = WPA_GET_BE16(key->key_data_length);
 
 	if (sm->proto == WPA_PROTO_RSN) {
-		ret = wpa_supplicant_process_1_of_2_rsn(sm, src_addr, key,
+		ret = wpa_supplicant_process_1_of_2_rsn(sm,
 							(const u8 *) (key + 1),
 							keydatalen, key_info,
 							&gd);
@@ -3156,11 +2946,6 @@ static void wpa_supplicant_process_1_of_2(struct wpa_sm *sm,
 		ret = wpa_supplicant_process_1_of_2_wpa(sm, key, keydatalen,
 							key_info, extra_len,
 							ver, &gd);
-	}
-
-	if (ret == 1) {
-		/* STAKey handshake - abort Group Key processing */
-		return;
 	}
 
 	wpa_sm_set_state(sm, WPA_GROUP_HANDSHAKE);

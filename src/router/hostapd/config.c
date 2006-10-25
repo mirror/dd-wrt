@@ -225,6 +225,9 @@ static struct hostapd_config * hostapd_config_defaults(void)
 	conf->rts_threshold = -1; /* use driver default: 2347 */
 	conf->fragm_threshold = -1; /* user driver default: 2346 */
 	conf->send_probe_response = 1;
+	conf->bridge_packets = INTERNAL_BRIDGE_DO_NOT_CONTROL;
+
+	sprintf(conf->country, "US ");
 
 	for (i = 0; i < NUM_TX_QUEUES; i++)
 		conf->tx_queue[i].aifs = -1; /* use hw default */
@@ -1261,6 +1264,14 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (strcmp(buf, "ap_max_inactivity") == 0) {
 			bss->ap_max_inactivity = atoi(pos);
+		} else if (strcmp(buf, "country_code") == 0) {
+			memcpy(conf->country, pos, 2);
+			/* FIX: make this configurable */
+			conf->country[2] = ' ';
+		} else if (strcmp(buf, "ieee80211d") == 0) {
+			conf->ieee80211d = atoi(pos);
+		} else if (strcmp(buf, "ieee80211h") == 0) {
+			conf->ieee80211h = atoi(pos);
 		} else if (strcmp(buf, "assoc_ap_addr") == 0) {
 			if (hwaddr_aton(pos, bss->assoc_ap_addr)) {
 				printf("Line %d: invalid MAC address '%s'\n",
@@ -1520,10 +1531,6 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (strcmp(buf, "rsn_preauth_interfaces") == 0) {
 			bss->rsn_preauth_interfaces = strdup(pos);
 #endif /* CONFIG_RSN_PREAUTH */
-#ifdef CONFIG_STAKEY
-		} else if (strcmp(buf, "stakey") == 0) {
-			bss->stakey = atoi(pos);
-#endif /* CONFIG_STAKEY */
 #ifdef CONFIG_PEERKEY
 		} else if (strcmp(buf, "peerkey") == 0) {
 			bss->peerkey = atoi(pos);
@@ -1643,6 +1650,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 			}
 		} else if (strcmp(buf, "ignore_broadcast_ssid") == 0) {
 			bss->ignore_broadcast_ssid = atoi(pos);
+		} else if (strcmp(buf, "bridge_packets") == 0) {
+			conf->bridge_packets = atoi(pos);
 		} else if (strcmp(buf, "wep_default_key") == 0) {
 			bss->ssid.wep.idx = atoi(pos);
 			if (bss->ssid.wep.idx > 3) {
@@ -1755,6 +1764,20 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	}
 
 	return conf;
+}
+
+
+int hostapd_wep_key_cmp(struct hostapd_wep_keys *a, struct hostapd_wep_keys *b)
+{
+	int i;
+
+	if (a->idx != b->idx || a->default_len != b->default_len)
+		return 1;
+	for (i = 0; i < NUM_WEP_KEYS; i++)
+		if (a->len[i] != b->len[i] ||
+		    memcmp(a->key[i], b->key[i], a->len[i]) != 0)
+			return 1;
+	return 0;
 }
 
 

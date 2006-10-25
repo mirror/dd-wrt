@@ -1153,7 +1153,6 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(proactive_key_caching, 0, 1) },
 	{ INT_RANGE(disabled, 0, 1) },
 	{ STR(id_str) },
-	{ INT_RANGE(stakey, 0, 1) },
 	{ INT_RANGE(peerkey, 0, 1) }
 };
 

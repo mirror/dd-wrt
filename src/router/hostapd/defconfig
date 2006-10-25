@@ -44,11 +44,7 @@ CONFIG_IAPP=y
 # WPA2/IEEE 802.11i RSN pre-authentication
 CONFIG_RSN_PREAUTH=y
 
-# IEEE 802.11i/IEEE 802.11e STAKey negotiation for direct link connection
-#CONFIG_STAKEY=y
-
-# Proposed replacement for STAKey negotiation: PeerKey handshake for
-# Station to Station Link
+# PeerKey handshake for Station to Station Link (IEEE 802.11e DLS)
 CONFIG_PEERKEY=y
 
 # Integrated EAP server

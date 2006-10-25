@@ -83,9 +83,18 @@ struct driver_ops {
 				unsigned char power_level,
 				unsigned char antenna_max);
 	int (*set_regulatory_domain)(void *priv, unsigned int rd);
+	int (*set_country)(void *priv, const char *country);
+	int (*set_ieee80211d)(void *priv, int enabled);
 	int (*set_beacon)(const char *ifname, void *priv,
 			  u8 *head, size_t head_len,
 			  u8 *tail, size_t tail_len);
+
+	/* Configure internal bridge:
+	 * 0 = disabled, i.e., client separation is enabled (no bridging of
+	 *     packets between associated STAs
+	 * 1 = enabled, i.e., bridge packets between associated STAs (default)
+	 */
+	int (*set_internal_bridge)(void *priv, int value);
 	int (*set_beacon_int)(void *priv, int value);
 	int (*set_dtim_period)(const char *ifname, void *priv, int value);
 	/* Configure broadcast SSID mode:
@@ -424,6 +433,23 @@ hostapd_set_regulatory_domain(struct hostapd_data *hapd, unsigned int rd)
 	return hapd->driver->set_regulatory_domain(hapd->driver, rd);
 }
 
+static inline int
+hostapd_set_country(struct hostapd_data *hapd, const char *country)
+{
+	if (hapd->driver == NULL ||
+	    hapd->driver->set_country == NULL)
+		return 0;
+	return hapd->driver->set_country(hapd->driver, country);
+}
+
+static inline int
+hostapd_set_ieee80211d(struct hostapd_data *hapd, int enabled)
+{
+	if (hapd->driver == NULL ||
+	    hapd->driver->set_ieee80211d == NULL)
+		return 0;
+	return hapd->driver->set_ieee80211d(hapd->driver, enabled);
+}
 
 void driver_register(const char *name, const struct driver_ops *ops);
 void driver_unregister(const char *name);
@@ -446,6 +472,14 @@ hostapd_set_beacon(const char *ifname, struct hostapd_data *hapd,
 		return 0;
 	return hapd->driver->set_beacon(ifname, hapd->driver, head, head_len,
 					tail, tail_len);
+}
+
+static inline int
+hostapd_set_internal_bridge(struct hostapd_data *hapd, int value)
+{
+	if (hapd->driver == NULL || hapd->driver->set_internal_bridge == NULL)
+		return 0;
+	return hapd->driver->set_internal_bridge(hapd->driver, value);
 }
 
 static inline int

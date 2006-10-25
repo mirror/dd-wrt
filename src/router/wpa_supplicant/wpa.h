@@ -134,8 +134,6 @@ int wpa_sm_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
 
 void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise);
 
-int wpa_sm_stakey_request(struct wpa_sm *sm, const u8 *peer);
-
 int wpa_sm_stkstart(struct wpa_sm *sm, const u8 *peer);
 
 int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
@@ -252,11 +250,6 @@ static inline int wpa_sm_get_status(struct wpa_sm *sm, char *buf,
 static inline void wpa_sm_key_request(struct wpa_sm *sm, int error,
 				      int pairwise)
 {
-}
-
-static inline int wpa_sm_stakey_request(struct wpa_sm *sm, const u8 *peer)
-{
-	return -1;
 }
 
 static inline int wpa_sm_stkstart(struct wpa_sm *sm, const u8 *peer)

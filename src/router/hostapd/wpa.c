@@ -42,18 +42,6 @@
 
 struct wpa_group;
 
-struct wpa_stakey_negotiation {
-	struct wpa_stakey_negotiation *next;
-	u8 initiator[ETH_ALEN];
-	u8 peer[ETH_ALEN];
-	enum { PEER, INITIATOR } state;
-	unsigned int num_retries;
-	u8 key[32];
-	size_t key_len;
-	int alg;
-};
-
-
 struct wpa_stsl_negotiation {
 	struct wpa_stsl_negotiation *next;
 	u8 initiator[ETH_ALEN];
@@ -179,7 +167,6 @@ struct wpa_authenticator {
 	unsigned int dot11RSNATKIPCounterMeasuresInvoked;
 	unsigned int dot11RSNA4WayHandshakeFailures;
 
-	struct wpa_stakey_negotiation *stakey_negotiations;
 	struct wpa_stsl_negotiation *stsl_negotiations;
 
 	struct wpa_auth_config conf;
@@ -200,8 +187,6 @@ static int wpa_verify_key_mic(struct wpa_ptk *PTK, u8 *data, size_t data_len);
 static void wpa_sm_call_step(void *eloop_ctx, void *timeout_ctx);
 static void wpa_group_sm_step(struct wpa_authenticator *wpa_auth,
 			      struct wpa_group *group);
-static int wpa_stakey_remove(struct wpa_authenticator *wpa_auth,
-			     struct wpa_stakey_negotiation *neg);
 static int wpa_stsl_remove(struct wpa_authenticator *wpa_auth,
 			   struct wpa_stsl_negotiation *neg);
 static void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
@@ -248,10 +233,12 @@ static const u8 RSN_CIPHER_SUITE_CCMP[] = { 0x00, 0x0f, 0xac, 4 };
 static const u8 RSN_CIPHER_SUITE_WEP104[] = { 0x00, 0x0f, 0xac, 5 };
 
 /* EAPOL-Key Key Data Encapsulation
- * GroupKey and STAKey require encryption, otherwise, encryption is optional.
+ * GroupKey and PeerKey require encryption, otherwise, encryption is optional.
  */
 static const u8 RSN_KEY_DATA_GROUPKEY[] = { 0x00, 0x0f, 0xac, 1 };
+#if 0
 static const u8 RSN_KEY_DATA_STAKEY[] = { 0x00, 0x0f, 0xac, 2 };
+#endif
 static const u8 RSN_KEY_DATA_MAC_ADDR[] = { 0x00, 0x0f, 0xac, 3 };
 static const u8 RSN_KEY_DATA_PMKID[] = { 0x00, 0x0f, 0xac, 4 };
 #ifdef CONFIG_PEERKEY
@@ -324,17 +311,6 @@ struct rsn_ie_hdr {
 	u8 elem_id; /* WLAN_EID_RSN */
 	u8 len;
 	u16 version;
-} STRUCT_PACKED;
-
-
-struct rsn_stakey_kde {
-	u8 id;
-	u8 len;
-	u8 oui[3];
-	u8 oui_type;
-	u8 reserved[2];
-	u8 mac_addr[ETH_ALEN];
-	u8 stakey[32]; /* up to 32 bytes */
 } STRUCT_PACKED;
 
 
@@ -875,8 +851,6 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth)
 	eloop_cancel_timeout(wpa_rekey_gmk, wpa_auth, NULL);
 	eloop_cancel_timeout(wpa_rekey_gtk, wpa_auth, NULL);
 
-	while (wpa_auth->stakey_negotiations)
-		wpa_stakey_remove(wpa_auth, wpa_auth->stakey_negotiations);
 	while (wpa_auth->stsl_negotiations)
 		wpa_stsl_remove(wpa_auth, wpa_auth->stsl_negotiations);
 
@@ -1345,8 +1319,6 @@ struct wpa_eapol_ie_parse {
 	const u8 *pmkid;
 	const u8 *gtk;
 	size_t gtk_len;
-	const u8 *stakey;
-	size_t stakey_len;
 	const u8 *mac_addr;
 	size_t mac_addr_len;
 #ifdef CONFIG_PEERKEY
@@ -1395,13 +1367,6 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 	    memcmp(pos + 2, RSN_KEY_DATA_GROUPKEY, RSN_SELECTOR_LEN) == 0) {
 		ie->gtk = pos + 2 + RSN_SELECTOR_LEN;
 		ie->gtk_len = pos[1] - RSN_SELECTOR_LEN;
-		return 0;
-	}
-
-	if (pos[1] > RSN_SELECTOR_LEN + 2 &&
-	    memcmp(pos + 2, RSN_KEY_DATA_STAKEY, RSN_SELECTOR_LEN) == 0) {
-		ie->stakey = pos + 2 + RSN_SELECTOR_LEN;
-		ie->stakey_len = pos[1] - RSN_SELECTOR_LEN;
 		return 0;
 	}
 
@@ -1578,212 +1543,6 @@ static void wpa_request_new_ptk(struct wpa_state_machine *sm)
 	sm->PTKRequest = TRUE;
 	sm->PTK_valid = 0;
 }
-
-
-#ifdef CONFIG_STAKEY
-static struct wpa_stakey_negotiation *
-wpa_stakey_get(struct wpa_authenticator *wpa_auth, const u8 *addr1,
-	       const u8 *addr2)
-{
-	struct wpa_stakey_negotiation *neg;
-	if (wpa_auth == NULL)
-		return NULL;
-	neg = wpa_auth->stakey_negotiations;
-	while (neg) {
-		if ((memcmp(neg->initiator, addr1, ETH_ALEN) == 0 &&
-		     memcmp(neg->peer, addr2, ETH_ALEN) == 0) ||
-		    (memcmp(neg->initiator, addr2, ETH_ALEN) == 0 &&
-		     memcmp(neg->peer, addr1, ETH_ALEN) == 0))
-			return neg;
-		neg = neg->next;
-	}
-	return NULL;
-}
-
-
-struct wpa_stakey_search {
-	const u8 *addr;
-	struct wpa_state_machine *sm;
-};
-
-
-static int wpa_stakey_select_sta(struct wpa_state_machine *sm, void *ctx)
-{
-	struct wpa_stakey_search *search = ctx;
-	if (memcmp(search->addr, sm->addr, ETH_ALEN) == 0) {
-		search->sm = sm;
-		return 1;
-	}
-	return 0;
-}
-
-
-static void wpa_stakey_step(void *eloop_ctx, void *timeout_ctx)
-{
-	struct wpa_authenticator *wpa_auth = eloop_ctx;
-	struct wpa_stakey_negotiation *neg = timeout_ctx;
-	const u8 *dst, *peer;
-	struct rsn_stakey_kde kde;
-	int version;
-	struct wpa_stakey_search search;
-
-	dst = neg->state == PEER ? neg->peer : neg->initiator;
-	peer = neg->state == PEER ? neg->initiator : neg->peer;
-	search.addr = dst;
-	search.sm = NULL;
-	if (wpa_auth_for_each_sta(wpa_auth, wpa_stakey_select_sta, &search) ==
-	    0 || search.sm == NULL) {
-		wpa_printf(MSG_DEBUG, "RSN: STAKey handshake with " MACSTR
-			   " aborted - STA not associated anymore",
-			   MAC2STR(dst));
-		wpa_stakey_remove(wpa_auth, neg);
-		return;
-	}
-
-	neg->num_retries++;
-	if (neg->num_retries > dot11RSNAConfigPairwiseUpdateCount) {
-		wpa_printf(MSG_DEBUG, "RSN: STAKey handshake with " MACSTR
-			   " timed out", MAC2STR(dst));
-		wpa_stakey_remove(wpa_auth, neg);
-		return;
-	}
-
-	wpa_printf(MSG_DEBUG, "RSN: Sending STAKey 1/2 to " MACSTR " (try=%d)",
-		   MAC2STR(dst), neg->num_retries);
-	memset(&kde, 0, sizeof(kde));
-	kde.id = GENERIC_INFO_ELEM;
-	kde.len = sizeof(kde) - 2 - 32 + neg->key_len;
-	memcpy(kde.oui, RSN_KEY_DATA_STAKEY, RSN_SELECTOR_LEN);
-	memcpy(kde.mac_addr, peer, ETH_ALEN);
-	memcpy(kde.stakey, neg->key, neg->key_len);
-
-	if (neg->alg == WPA_CIPHER_CCMP)
-		version = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-	else
-		version = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
-
-	__wpa_send_eapol(wpa_auth, search.sm,
-			 WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
-			 WPA_KEY_INFO_ACK,
-			 NULL, NULL /* nonce */,
-			 (u8 *) &kde, sizeof(kde) - 32 + neg->key_len,
-			 NULL, 0, 0, 1, version);
-
-	eloop_register_timeout(dot11RSNAConfigPairwiseUpdateTimeOut / 1000,
-			       (dot11RSNAConfigPairwiseUpdateTimeOut % 1000) *
-			       1000, wpa_stakey_step, wpa_auth, neg);
-}
-#endif /* CONFIG_STAKEY */
-
-
-static int wpa_stakey_remove(struct wpa_authenticator *wpa_auth,
-			     struct wpa_stakey_negotiation *neg)
-{
-#ifdef CONFIG_STAKEY
-	struct wpa_stakey_negotiation *pos, *prev;
-
-	if (wpa_auth == NULL)
-		return -1;
-	pos = wpa_auth->stakey_negotiations;
-	prev = NULL;
-	while (pos) {
-		if (pos == neg) {
-			if (prev)
-				prev->next = pos->next;
-			else
-				wpa_auth->stakey_negotiations = pos->next;
-
-			eloop_cancel_timeout(wpa_stakey_step, wpa_auth, pos);
-			free(pos);
-			return 0;
-		}
-		prev = pos;
-		pos = pos->next;
-	}
-#endif /* CONFIG_STAKEY */
-
-	return -1;
-}
-
-
-#ifdef CONFIG_STAKEY
-static int wpa_stakey_initiate(struct wpa_authenticator *wpa_auth,
-			       const u8 *initiator, const u8 *peer, int alg)
-{
-	struct wpa_stakey_negotiation *neg;
-
-	if (wpa_auth == NULL)
-		return -1;
-
-	neg = wpa_stakey_get(wpa_auth, initiator, peer);
-	if (neg) {
-		wpa_printf(MSG_DEBUG, "RSN: Pending STAKey handshake in "
-			   "progress - ignoring new request");
-		return -1;
-	}
-
-	neg = wpa_zalloc(sizeof(*neg));
-	if (neg == NULL)
-		return -1;
-	memcpy(neg->initiator, initiator, ETH_ALEN);
-	memcpy(neg->peer, peer, ETH_ALEN);
-	neg->state = PEER;
-	neg->alg = alg;
-	if (alg == WPA_CIPHER_TKIP)
-		neg->key_len = 32;
-	else
-		neg->key_len = 16;
-	if (hostapd_get_rand(neg->key, neg->key_len)) {
-		wpa_printf(MSG_DEBUG, "RSN: Failed to get random data for "
-			   "STAKey");
-		free(neg);
-		return -1;
-	}
-
-	neg->next = wpa_auth->stakey_negotiations;
-	wpa_auth->stakey_negotiations = neg;
-	wpa_stakey_step(wpa_auth, neg);
-
-	return 0;
-}
-#endif /* CONFIG_STAKEY */
-
-
-static void wpa_stakey_receive(struct wpa_authenticator *wpa_auth,
-			       const u8 *src_addr, const u8 *peer)
-{
-#ifdef CONFIG_STAKEY
-	struct wpa_stakey_negotiation *neg;
-
-	neg = wpa_stakey_get(wpa_auth, src_addr, peer);
-	if (neg == NULL) {
-		wpa_printf(MSG_DEBUG, "RSN: No matching STAKey negotiation "
-			   "found - ignored received STAKey frame");
-		return;
-	}
-
-	if (neg->state == PEER &&
-	    memcmp(src_addr, neg->peer, ETH_ALEN) == 0) {
-		neg->state = INITIATOR;
-		neg->num_retries = 0;
-		wpa_printf(MSG_DEBUG, "RSN: STAKey completed with peer "
-			   MACSTR, MAC2STR(neg->peer));
-		eloop_cancel_timeout(wpa_stakey_step, wpa_auth, neg);
-		wpa_stakey_step(wpa_auth, neg);
-	} else if (neg->state == INITIATOR &&
-		   memcmp(src_addr, neg->initiator, ETH_ALEN) == 0) {
-		wpa_printf(MSG_DEBUG, "RSN: STAKey negotiation completed "
-			   MACSTR " <-> " MACSTR,
-			   MAC2STR(neg->initiator), MAC2STR(neg->peer));
-		wpa_stakey_remove(wpa_auth, neg);
-	} else {
-		wpa_printf(MSG_DEBUG, "RSN: Unexpected STAKey message - "
-			   "src " MACSTR " peer " MACSTR " - dropped",
-			   MAC2STR(src_addr), MAC2STR(peer));
-	}
-#endif /* CONFIG_STAKEY */
-}
-
 
 
 #ifdef CONFIG_PEERKEY
@@ -2179,11 +1938,10 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 	struct ieee802_1x_hdr *hdr;
 	struct wpa_eapol_key *key;
 	u16 key_info, key_data_length;
-	enum { PAIRWISE_2, PAIRWISE_4, GROUP_2, STAKEY_2, REQUEST,
+	enum { PAIRWISE_2, PAIRWISE_4, GROUP_2, REQUEST,
 	       SMK_M1, SMK_M3, SMK_ERROR } msg;
 	char *msgtxt;
 	struct wpa_eapol_ie_parse kde;
-	const u8 *mac_addr = NULL;
 
 	if (wpa_auth == NULL || !wpa_auth->conf.wpa || sm == NULL)
 		return;
@@ -2223,18 +1981,8 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 		msg = REQUEST;
 		msgtxt = "Request";
 	} else if (!(key_info & WPA_KEY_INFO_KEY_TYPE)) {
-		/* FIX: should decrypt key_data if encrypted */
-		if (key_data_length > 0 &&
-		    wpa_parse_kde_ies((const u8 *) (key + 1),
-				      key_data_length, &kde) == 0 &&
-		    kde.mac_addr) {
-			msg = STAKEY_2;
-			msgtxt = "2/2 STAKey";
-			mac_addr = kde.mac_addr;
-		} else {
-			msg = GROUP_2;
-			msgtxt = "2/2 Group";
-		}
+		msg = GROUP_2;
+		msgtxt = "2/2 Group";
 	} else if (key_data_length == 0) {
 		msg = PAIRWISE_4;
 		msgtxt = "4/4 Pairwise";
@@ -2312,14 +2060,6 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 					 "received EAPOL-Key msg 2/2 in "
 					 "invalid state (%d) - dropped",
 					 sm->wpa_ptk_group_state);
-			return;
-		}
-		break;
-	case STAKEY_2:
-		if (!sm->PTK_valid) {
-			wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
-					"received EAPOL-Key msg STAKey 2/2 in "
-					"invalid state - dropped");
 			return;
 		}
 		break;
@@ -2422,42 +2162,6 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 			   wpa_parse_kde_ies((const u8 *) (key + 1),
 					     key_data_length, &kde) == 0 &&
 			   kde.mac_addr) {
-#ifdef CONFIG_STAKEY
-			/* STAKey Request */
-			if (!wpa_auth->conf.stakey) {
-				wpa_printf(MSG_DEBUG, "RSN: STAKey Request, "
-					   "but STAKey use disabled - ignoring"
-					   " request");
-			} else if (kde.mac_addr_len != ETH_ALEN) {
-				wpa_printf(MSG_DEBUG, "RSN: Invalid MAC "
-					   "address KDE length %lu",
-					   (unsigned long) kde.mac_addr_len);
-			} else {
-				int alg;
-				wpa_printf(MSG_DEBUG, "RSN: STAKey Request for"
-					   " peer " MACSTR,
-					   MAC2STR(kde.mac_addr));
-				switch (key_info & WPA_KEY_INFO_TYPE_MASK) {
-				case 1:
-					alg = WPA_CIPHER_TKIP;
-					break;
-				case 2:
-					alg = WPA_CIPHER_CCMP;
-					break;
-				default:
-					wpa_printf(MSG_DEBUG, "Unexpected "
-						   "STAKey key version (%d)",
-						   key_info &
-						   WPA_KEY_INFO_TYPE_MASK);
-					alg = WPA_CIPHER_NONE;
-					break;
-				}
-				if (alg != WPA_CIPHER_NONE) {
-					wpa_stakey_initiate(wpa_auth, sm->addr,
-							    kde.mac_addr, alg);
-				}
-			}
-#endif /* CONFIG_STAKEY */
 		} else {
 			wpa_auth_logger(wpa_auth, sm->addr, LOGGER_INFO,
 					"received EAPOL-Key Request for GTK "
@@ -2471,11 +2175,6 @@ void wpa_receive(struct wpa_authenticator *wpa_auth,
 	} else {
 		/* Do not allow the same key replay counter to be reused. */
 		sm->key_replay_counter_valid = FALSE;
-	}
-
-	if (msg == STAKEY_2) {
-		wpa_stakey_receive(wpa_auth, sm->addr, mac_addr);
-		return;
 	}
 
 #ifdef CONFIG_PEERKEY
