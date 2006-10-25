@@ -530,3 +530,4 @@ void *memchr(const void *s, int c, size_t n)
 	return NULL;
 }
 #endif
+EXPORT_SYMBOL(memchr);
