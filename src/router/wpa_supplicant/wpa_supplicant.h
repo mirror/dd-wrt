@@ -124,23 +124,13 @@ typedef enum wpa_event_type {
 	EVENT_PMKID_CANDIDATE,
 
 	/**
-	 * EVENT_STAKEY_REQUEST - Request STAKey negotiation
-	 *
-	 * This event can be used to inform wpa_supplicant about desire to set
-	 * up secure direct link connection between two stations as defined in
-	 * IEEE 802.11e. The caller will need to set peer address for the
-	 * event.
-	 */
-	EVENT_STAKEY_REQUEST,
-
-	/**
 	 * EVENT_STKSTART - Request STK handshake (MLME-STKSTART.request)
 	 *
 	 * This event can be used to inform wpa_supplicant about desire to set
 	 * up secure direct link connection between two stations as defined in
-	 * IEEE 802.11e with a proposed new mechanism that is designed to
-	 * replace STAKey negotiation. The caller will need to set peer address
-	 * for the event.
+	 * IEEE 802.11e with a new PeerKey mechanism that replaced the original
+	 * STAKey negotiation. The caller will need to set peer address for the
+	 * event.
 	 */
 	EVENT_STKSTART
 } wpa_event_type;
@@ -246,13 +236,6 @@ union wpa_event_data {
 		/** Whether RSN IE includes pre-authenticate flag */
 		int preauth;
 	} pmkid_candidate;
-
-	/**
-	 * struct stakey_request - Data for EVENT_STAKEY_REQUEST
-	 */
-	struct stakey_request {
-		u8 peer[ETH_ALEN];
-	} stakey_request;
 
 	/**
 	 * struct stkstart - Data for EVENT_STKSTART

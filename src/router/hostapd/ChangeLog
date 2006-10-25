@@ -12,6 +12,8 @@ ChangeLog for hostapd
 	  currently only available with Devicescape and test driver interfaces
 	* driver_madwifi: fixed configuration of unencrypted modes (plaintext
 	  and IEEE 802.1X without WEP)
+	* removed STAKey handshake since PeerKey handshake has replaced it in
+	  IEEE 802.11ma and there are no known deployments of STAKey
 
 2006-08-27 - v0.5.5
 	* added 'hostapd_cli new_sta <addr>' command for adding a new STA into

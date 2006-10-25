@@ -96,26 +96,6 @@ static int wpa_supplicant_ctrl_iface_preauth(struct wpa_supplicant *wpa_s,
 }
 
 
-#ifdef CONFIG_STAKEY
-static int wpa_supplicant_ctrl_iface_stakey_request(
-	struct wpa_supplicant *wpa_s, char *addr)
-{
-	u8 peer[ETH_ALEN];
-
-	if (hwaddr_aton(addr, peer)) {
-		wpa_printf(MSG_DEBUG, "CTRL_IFACE STAKEY-REQUEST: invalid "
-			   "address '%s'", peer);
-		return -1;
-	}
-
-	wpa_printf(MSG_DEBUG, "CTRL_IFACE STAKEY-REQUEST " MACSTR,
-		   MAC2STR(peer));
-
-	return wpa_sm_stakey_request(wpa_s->wpa, peer);
-}
-#endif /* CONFIG_STAKEY */
-
-
 #ifdef CONFIG_PEERKEY
 /* MLME-STKSTART.request(peer) */
 static int wpa_supplicant_ctrl_iface_stkstart(
@@ -1143,11 +1123,6 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "PREAUTH ", 8) == 0) {
 		if (wpa_supplicant_ctrl_iface_preauth(wpa_s, buf + 8))
 			reply_len = -1;
-#ifdef CONFIG_STAKEY
-	} else if (os_strncmp(buf, "STAKEY-REQUEST ", 15) == 0) {
-		if (wpa_supplicant_ctrl_iface_stakey_request(wpa_s, buf + 15))
-			reply_len = -1;
-#endif /* CONFIG_STAKEY */
 #ifdef CONFIG_PEERKEY
 	} else if (os_strncmp(buf, "STKSTART ", 9) == 0) {
 		if (wpa_supplicant_ctrl_iface_stkstart(wpa_s, buf + 9))
