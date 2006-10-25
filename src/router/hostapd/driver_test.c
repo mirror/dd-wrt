@@ -156,7 +156,7 @@ static int test_driver_send_eapol(void *priv, const u8 *addr, const u8 *data,
 
 
 static int test_driver_send_mgmt_frame(void *priv, const void *buf,
-				  size_t len, int flags)
+				       size_t len, int flags)
 {
 	struct test_driver_data *drv = priv;
 	struct msghdr msg;
@@ -170,8 +170,12 @@ static int test_driver_send_mgmt_frame(void *priv, const void *buf,
 	struct ieee80211_hdr *hdr;
 	u16 fc;
 
-	if (drv->test_socket < 0 || len < 10 || drv->socket_dir == NULL)
+	if (drv->test_socket < 0 || len < 10 || drv->socket_dir == NULL) {
+		wpa_printf(MSG_DEBUG, "%s: invalid parameters (sock=%d len=%d "
+			   "socket_dir=%p)",
+			   __func__, drv->test_socket, len, drv->socket_dir);
 		return -1;
+	}
 
 	dest = buf;
 	dest += 4;
@@ -188,8 +192,10 @@ static int test_driver_send_mgmt_frame(void *priv, const void *buf,
 	msg.msg_iovlen = 2;
 
 	dir = opendir(drv->socket_dir);
-	if (dir == NULL)
+	if (dir == NULL) {
+		perror("test_driver: opendir");
 		return -1;
+	}
 	while ((dent = readdir(dir))) {
 #ifdef _DIRENT_HAVE_D_TYPE
 		/* Skip the file if it is not a socket. Also accept
@@ -218,6 +224,8 @@ static int test_driver_send_mgmt_frame(void *priv, const void *buf,
 		msg.msg_name = &addr;
 		msg.msg_namelen = sizeof(addr);
 		ret = sendmsg(drv->test_socket, &msg, 0);
+		if (ret < 0)
+			perror("driver_test: sendmsg");
 	}
 	closedir(dir);
 
@@ -276,6 +284,11 @@ static struct hostapd_data * test_driver_get_hapd(struct test_driver_data *drv,
 	struct hostapd_iface *iface = drv->hapd->iface;
 	struct hostapd_data *hapd = NULL;
 	size_t i;
+
+	if (bss == NULL) {
+		wpa_printf(MSG_DEBUG, "%s: bss == NULL", __func__);
+		return NULL;
+	}
 
 	for (i = 0; i < iface->num_bss; i++) {
 		hapd = iface->bss[i];
@@ -630,7 +643,7 @@ test_driver_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
 {
 	struct hostapd_hw_modes *modes;
 
-	*num_modes = 1;
+	*num_modes = 3;
 	*flags = 0;
 	modes = wpa_zalloc(*num_modes * sizeof(struct hostapd_hw_modes));
 	if (modes == NULL)
@@ -651,6 +664,40 @@ test_driver_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
 	modes[0].rates[0].rate = 10;
 	modes[0].rates[0].flags = HOSTAPD_RATE_BASIC | HOSTAPD_RATE_SUPPORTED |
 		HOSTAPD_RATE_CCK | HOSTAPD_RATE_MANDATORY;
+
+	modes[1].mode = HOSTAPD_MODE_IEEE80211B;
+	modes[1].num_channels = 1;
+	modes[1].num_rates = 1;
+	modes[1].channels = wpa_zalloc(sizeof(struct hostapd_channel_data));
+	modes[1].rates = wpa_zalloc(sizeof(struct hostapd_rate_data));
+	if (modes[1].channels == NULL || modes[1].rates == NULL) {
+		hostapd_free_hw_features(modes, *num_modes);
+		return NULL;
+	}
+	modes[1].channels[0].chan = 1;
+	modes[1].channels[0].freq = 2412;
+	modes[1].channels[0].flag = HOSTAPD_CHAN_W_SCAN |
+		HOSTAPD_CHAN_W_ACTIVE_SCAN;
+	modes[1].rates[0].rate = 10;
+	modes[1].rates[0].flags = HOSTAPD_RATE_BASIC | HOSTAPD_RATE_SUPPORTED |
+		HOSTAPD_RATE_CCK | HOSTAPD_RATE_MANDATORY;
+
+	modes[2].mode = HOSTAPD_MODE_IEEE80211A;
+	modes[2].num_channels = 1;
+	modes[2].num_rates = 1;
+	modes[2].channels = wpa_zalloc(sizeof(struct hostapd_channel_data));
+	modes[2].rates = wpa_zalloc(sizeof(struct hostapd_rate_data));
+	if (modes[2].channels == NULL || modes[2].rates == NULL) {
+		hostapd_free_hw_features(modes, *num_modes);
+		return NULL;
+	}
+	modes[2].channels[0].chan = 60;
+	modes[2].channels[0].freq = 5300;
+	modes[2].channels[0].flag = HOSTAPD_CHAN_W_SCAN |
+		HOSTAPD_CHAN_W_ACTIVE_SCAN;
+	modes[2].rates[0].rate = 60;
+	modes[2].rates[0].flags = HOSTAPD_RATE_BASIC | HOSTAPD_RATE_SUPPORTED |
+		HOSTAPD_RATE_MANDATORY;
 
 	return modes;
 }
@@ -818,6 +865,48 @@ static int test_driver_set_sta_vlan(void *priv, const u8 *addr,
 }
 
 
+static int test_driver_sta_add(const char *ifname, void *priv, const u8 *addr,
+			       u16 aid, u16 capability, u8 *supp_rates,
+			       size_t supp_rates_len, int flags)
+{
+	struct test_driver_data *drv = priv;
+	struct test_client_socket *cli;
+	struct test_driver_bss *bss;
+
+	wpa_printf(MSG_DEBUG, "%s(ifname=%s addr=" MACSTR " aid=%d "
+		   "capability=0x%x flags=0x%x",
+		   __func__, ifname, MAC2STR(addr), aid, capability, flags);
+	wpa_hexdump(MSG_DEBUG, "test_driver_sta_add - supp_rates",
+		    supp_rates, supp_rates_len);
+
+	cli = drv->cli;
+	while (cli) {
+		if (memcmp(cli->addr, addr, ETH_ALEN) == 0)
+			break;
+		cli = cli->next;
+	}
+	if (!cli) {
+		wpa_printf(MSG_DEBUG, "%s: no matching client entry",
+			   __func__);
+		return -1;
+	}
+
+	for (bss = drv->bss; bss; bss = bss->next) {
+		if (strcmp(ifname, bss->ifname) == 0)
+			break;
+	}
+	if (bss == NULL) {
+		wpa_printf(MSG_DEBUG, "%s: No matching interface found from "
+			   "configured BSSes", __func__);
+		return -1;
+	}
+
+	cli->bss = bss;
+
+	return 0;
+}
+
+
 static int test_driver_init(struct hostapd_data *hapd)
 {
 	struct test_driver_data *drv;
@@ -951,6 +1040,7 @@ static const struct driver_ops test_driver_ops = {
 	.set_privacy = test_driver_set_privacy,
 	.set_encryption = test_driver_set_encryption,
 	.set_sta_vlan = test_driver_set_sta_vlan,
+	.sta_add = test_driver_sta_add,
 };
 
 

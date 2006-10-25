@@ -792,7 +792,6 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	INT(mode);
 	INT(proactive_key_caching);
 	INT(disabled);
-	INT(stakey);
 	INT(peerkey);
 	STR(id_str);
 

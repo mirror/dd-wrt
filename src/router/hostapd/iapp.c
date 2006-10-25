@@ -519,3 +519,26 @@ void iapp_deinit(struct iapp_data *iapp)
 	}
 	free(iapp);
 }
+
+int iapp_reconfig(struct hostapd_data *hapd, struct hostapd_config *oldconf,
+		  struct hostapd_bss_config *oldbss)
+{
+	if (hapd->conf->ieee802_11f != oldbss->ieee802_11f ||
+	    (hapd->conf->iapp_iface && !oldbss->iapp_iface) ||
+	    (!hapd->conf->iapp_iface && oldbss->iapp_iface) ||
+	    (hapd->conf->iapp_iface &&
+	     strcmp(hapd->conf->iapp_iface, oldbss->iapp_iface) != 0)) {
+
+		iapp_deinit(hapd->iapp);
+		hapd->iapp = NULL;
+
+		if (hapd->conf->ieee802_11f) {
+			hapd->iapp = iapp_init(hapd, hapd->conf->iapp_iface);
+
+			if (hapd->iapp == NULL)
+				return -1;
+		}
+	}
+
+	return 0;
+}

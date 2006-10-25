@@ -1666,6 +1666,15 @@ void ieee802_1x_deinit(struct hostapd_data *hapd)
 }
 
 
+int ieee802_1x_reconfig(struct hostapd_data *hapd, 
+			struct hostapd_config *oldconf,
+			struct hostapd_bss_config *oldbss)
+{
+	ieee802_1x_deinit(hapd);
+	return ieee802_1x_init(hapd);
+}
+
+
 static void ieee802_1x_new_auth_session(struct hostapd_data *hapd,
 					struct sta_info *sta)
 {

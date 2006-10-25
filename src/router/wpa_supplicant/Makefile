@@ -1,6 +1,6 @@
 
 #ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
+CFLAGS = $(COPTS) -MMD -Wall
 #endif
 
 # Include directories for CVS version
@@ -677,10 +677,6 @@ endif
 ifdef CONFIG_IPV6
 # for eapol_test only
 CFLAGS += -DCONFIG_IPV6
-endif
-
-ifdef CONFIG_STAKEY
-CFLAGS += -DCONFIG_STAKEY
 endif
 
 ifdef CONFIG_PEERKEY

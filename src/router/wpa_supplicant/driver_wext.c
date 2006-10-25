@@ -376,15 +376,6 @@ wpa_driver_wext_event_wireless_custom(void *ctx, char *custom)
 	done:
 		os_free(data.assoc_info.resp_ies);
 		os_free(data.assoc_info.req_ies);
-#ifdef CONFIG_STAKEY
-	} else if (os_strncmp(custom, "STAKey-Request=", 15) == 0) {
-		if (hwaddr_aton(custom + 15, data.stakey_request.peer)) {
-			wpa_printf(MSG_DEBUG, "WEXT: unrecognized "
-				   "STAKey-Request '%s'", custom + 15);
-			return;
-		}
-		wpa_supplicant_event(ctx, EVENT_STAKEY_REQUEST, &data);
-#endif /* CONFIG_STAKEY */
 #ifdef CONFIG_PEERKEY
 	} else if (os_strncmp(custom, "STKSTART.request=", 17) == 0) {
 		if (hwaddr_aton(custom + 17, data.stkstart.peer)) {

@@ -943,6 +943,14 @@ static int i802_set_privacy(const char *ifname, void *priv, int enabled)
 }
 
 
+static int i802_set_internal_bridge(void *priv, int value)
+{
+	struct i802_driver_data *drv = priv;
+	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_AP_BRIDGE_PACKETS,
+					value);
+}
+
+
 static int i802_set_beacon_int(void *priv, int value)
 {
 	struct i802_driver_data *drv = priv;
@@ -2042,6 +2050,7 @@ static const struct driver_ops devicescape_driver_ops = {
 	.set_channel_flag = i802_set_channel_flag,
 	.set_regulatory_domain = i802_set_regulatory_domain,
 	.set_beacon = i802_set_beacon,
+	.set_internal_bridge = i802_set_internal_bridge,
 	.set_beacon_int = i802_set_beacon_int,
 	.set_dtim_period = i802_set_dtim_period,
 	.set_broadcast_ssid = i802_set_broadcast_ssid,
