@@ -198,7 +198,7 @@ if (detect("82547"))  // Intel Gigabit
 
 if (detect("RTL-8169"))  // Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
-if (detect("8139"))  // Realtek 8169 Adapter (various notebooks) 
+if (detect("8139"))  // Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
 
 if (detect("nForce2 Ethernet"))  // nForce2 
@@ -233,6 +233,10 @@ if (detect("MCP61 Ethernet"))  // nForce
 else
 if (detect("MCP65 Ethernet"))  // nForce
     eval ("insmod", "forcedeth");
+if (detect("RTL-8029"))  // Old Realtek PCI NE2000 clone (10M only)
+    eval ("insmod", "ne2k-pci");
+if (detect("Rhine-"))  // VIA Rhine-I, Rhine-II, Rhine-III
+    eval ("insmod", "via-rhine");
 
     
     
