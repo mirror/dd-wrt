@@ -227,7 +227,6 @@ struct hostapd_bss_config {
 	int wpa_gmk_rekey;
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
-	int stakey;
 	int peerkey;
 
 	char *ctrl_interface; /* directory for UNIX domain sockets */
@@ -306,6 +305,16 @@ struct hostapd_config {
 	int ap_table_max_size;
 	int ap_table_expiration_time;
 
+	char country[3]; /* first two octets: country code as described in
+			  * ISO/IEC 3166-1. Third octet:
+			  * ' ' (ascii 32): all environments
+			  * 'O': Outdoor environemnt only
+			  * 'I': Indoor environment only
+			  */
+
+	int ieee80211d;
+	unsigned int ieee80211h; /* Enable/Disable 80211h */
+
 	struct hostapd_tx_queue_params tx_queue[NUM_TX_QUEUES];
 
 	/*
@@ -316,6 +325,12 @@ struct hostapd_config {
 	 * 3 = VO (voice)
 	 */
 	struct hostapd_wme_ac_params wme_ac_params[4];
+
+	enum {
+		INTERNAL_BRIDGE_DO_NOT_CONTROL = -1,
+		INTERNAL_BRIDGE_DISABLED = 0,
+		INTERNAL_BRIDGE_ENABLED = 1
+	} bridge_packets;
 };
 
 
@@ -325,6 +340,8 @@ struct hostapd_config * hostapd_config_read(const char *fname);
 void hostapd_config_free(struct hostapd_config *conf);
 int hostapd_maclist_found(macaddr *list, int num_entries, const u8 *addr);
 int hostapd_rate_found(int *list, int rate);
+int hostapd_wep_key_cmp(struct hostapd_wep_keys *a,
+			struct hostapd_wep_keys *b);
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);

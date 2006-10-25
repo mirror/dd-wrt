@@ -9,6 +9,8 @@ ChangeLog for wpa_supplicant
 	  (total size of this internal TLS/crypto code is bit under 50 kB on
 	  x86 and the crypto code is shared by rest of the supplicant so some
 	  of it was already required; TLSv1/X.509/ASN.1/RSA added about 25 kB)
+	* removed STAKey handshake since PeerKey handshake has replaced it in
+	  IEEE 802.11ma and there are no known deployments of STAKey
 
 2006-08-27 - v0.5.5
 	* added support for building Windows version with UNICODE defined

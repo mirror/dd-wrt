@@ -36,6 +36,7 @@
 #include "accounting.h"
 #include "driver.h"
 #include "hostap_common.h"
+#include "ieee802_11h.h"
 #include "mlme.h"
 
 
@@ -142,6 +143,9 @@ u16 hostapd_own_capab_info(struct hostapd_data *hapd, struct sta_info *sta,
 	    hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211G &&
 	    hapd->iface->num_sta_no_short_slot_time == 0)
 		capab |= WLAN_CAPABILITY_SHORT_SLOT_TIME;
+
+	if (hapd->iface->dfs_enable) 
+		capab |= WLAN_CAPABILITY_SPECTRUM_MGMT;
 
 	return capab;
 }
@@ -310,6 +314,14 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 			elems->rsn_ie = pos;
 			elems->rsn_ie_len = elen;
 			break;
+		case WLAN_EID_PWR_CAPABILITY:
+			elems->power_cap = pos;
+			elems->power_cap_len = elen;
+			break;
+		case WLAN_EID_SUPPORTED_CHANNELS:
+			elems->supp_channels = pos;
+			elems->supp_channels_len = elen;
+			break;
 		default:
 			unknown++;
 			if (!show_errors)
@@ -341,6 +353,28 @@ void ieee802_11_print_ssid(const u8 *ssid, u8 len)
 		else
 			printf("<%02x>", ssid[i]);
 	}
+}
+
+
+void ieee802_11_send_deauth(struct hostapd_data *hapd, u8 *addr, u16 reason)
+{
+	struct ieee80211_mgmt mgmt;
+	char buf[30];
+
+	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
+		       HOSTAPD_LEVEL_DEBUG,
+		       "deauthenticate - reason %d", reason);
+	snprintf(buf, sizeof(buf), "SEND-DEAUTHENTICATE %d", reason);
+	memset(&mgmt, 0, sizeof(mgmt));
+	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
+					  WLAN_FC_STYPE_DEAUTH);
+	memcpy(mgmt.da, addr, ETH_ALEN);
+	memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
+	memcpy(mgmt.bssid, hapd->own_addr, ETH_ALEN);
+	mgmt.u.deauth.reason_code = host_to_le16(reason);
+	if (hostapd_send_mgmt_frame(hapd, &mgmt, IEEE80211_HDRLEN +
+				    sizeof(mgmt.u.deauth), 0) < 0)
+		perror("ieee802_11_send_deauth: send");
 }
 
 
@@ -871,6 +905,20 @@ static void handle_assoc(struct hostapd_data *hapd,
 			resp = WLAN_STATUS_INVALID_IE;
 		if (resp != WLAN_STATUS_SUCCESS)
 			goto fail;
+	}
+
+	if (hapd->iface->dfs_enable &&
+	    hapd->iconf->ieee80211h == SPECT_STRICT_BINDING) {
+		if (hostapd_check_power_cap(hapd, elems.power_cap,
+					    elems.power_cap_len)) {
+			resp = WLAN_STATUS_PWR_CAPABILITY_NOT_VALID;
+			hostapd_logger(hapd, sta->addr,
+				       HOSTAPD_MODULE_IEEE80211,
+				       HOSTAPD_LEVEL_DEBUG,
+				       "Power capabilities of the station not "
+				       "acceptable");
+			goto fail;
+		}
 	}
 
 	if (hapd->iface->current_mode->mode == HOSTAPD_MODE_IEEE80211G)
@@ -1469,6 +1517,9 @@ void ieee802_11_mgmt_cb(struct hostapd_data *hapd, u8 *buf, size_t len,
 		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
 			      "mgmt::reassoc_resp cb\n");
 		handle_assoc_cb(hapd, mgmt, len, 1, ok);
+		break;
+	case WLAN_FC_STYPE_PROBE_RESP:
+		HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL, "mgmt::proberesp cb\n");
 		break;
 	default:
 		printf("unknown mgmt cb frame subtype %d\n", stype);

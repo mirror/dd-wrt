@@ -600,7 +600,6 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT(mode);
 	INT(proactive_key_caching);
 	INT(disabled);
-	INT(stakey);
 	INT(peerkey);
 	STR(id_str);
 

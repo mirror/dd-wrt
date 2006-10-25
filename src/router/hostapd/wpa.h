@@ -86,7 +86,6 @@ struct wpa_auth_config {
 	int wpa_strict_rekey;
 	int wpa_gmk_rekey;
 	int rsn_preauth;
-	int stakey;
 	int eapol_version;
 	int peerkey;
 	int wme_enabled;

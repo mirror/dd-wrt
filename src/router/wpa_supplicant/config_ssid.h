@@ -785,17 +785,6 @@ struct wpa_ssid {
 	int disabled;
 
 	/**
-	 * stakey - Whether STAKey negotiation for direct links is allowed
-	 *
-	 * This is only used when both RSN/WPA2 and IEEE 802.11e (QoS) are
-	 * enabled.
-	 *
-	 * 0 = disabled (default)
-	 * 1 = enabled
-	 */
-	int stakey;
-
-	/**
 	 * peerkey -  Whether PeerKey handshake for direct links is allowed
 	 *
 	 * This is only used when both RSN/WPA2 and IEEE 802.11e (QoS) are

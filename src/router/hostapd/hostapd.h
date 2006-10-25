@@ -133,6 +133,7 @@ struct hostapd_data {
 	u8 default_wep_key_idx;
 
 	struct radius_client_data *radius;
+	int radius_client_reconfigured;
 	u32 acct_session_id_hi, acct_session_id_lo;
 
 	struct iapp_data *iapp;
@@ -169,11 +170,23 @@ struct hostapd_data {
 
 
 /**
+ * hostapd_iface_cb - Generic callback type for per-iface asynchronous requests
+ * @iface: the interface the event occured on.
+ * @status: 0 if the request succeeded; -1 if the request failed.
+ */
+typedef void (*hostapd_iface_cb)(struct hostapd_iface *iface, int status);
+
+
+struct hostapd_config_change;
+
+/**
  * struct hostapd_iface - hostapd per-interface data structure
  */
 struct hostapd_iface {
 	char *config_fname;
 	struct hostapd_config *conf;
+
+	hostapd_iface_cb setup_cb;
 
 	size_t num_bss;
 	struct hostapd_data **bss;
@@ -190,6 +203,7 @@ struct hostapd_iface {
 	 * current_mode->channels */
 	int num_rates;
 	struct hostapd_rate_data *current_rates;
+	hostapd_iface_cb hw_mode_sel_cb;
 
 	u16 hw_flags;
 
@@ -204,6 +218,17 @@ struct hostapd_iface {
 	int num_sta_no_short_preamble;
 
 	int olbc; /* Overlapping Legacy BSS Condition */
+
+	int dfs_enable;
+	u8 pwr_const;
+	unsigned int tx_power;
+	unsigned int sta_max_power;
+
+	unsigned int channel_switch;
+
+	struct hostapd_config_change *change;
+	hostapd_iface_cb reload_iface_cb;
+	hostapd_iface_cb config_reload_cb;
 };
 
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
@@ -225,5 +250,6 @@ do { \
 
 const char * hostapd_ip_txt(const struct hostapd_ip_addr *addr, char *buf,
 			    size_t buflen);
+int hostapd_ip_diff(struct hostapd_ip_addr *a, struct hostapd_ip_addr *b);
 
 #endif /* HOSTAPD_H */

@@ -126,7 +126,6 @@ static const char *commands_help =
 "  scan_results = get latest scan results\n"
 "  get_capability <eap/pairwise/group/key_mgmt/proto/auth_alg> = "
 "get capabilies\n"
-"  stakey-request <addr> = request STAKey negotiation with <addr>\n"
 "  ap_scan <value> = set ap_scan parameter\n"
 "  stkstart <addr> = request STK negotiation with <addr>\n"
 "  terminate = terminate wpa_supplicant\n"
@@ -365,27 +364,6 @@ static int wpa_cli_cmd_preauthenticate(struct wpa_ctrl *ctrl, int argc,
 	res = os_snprintf(cmd, sizeof(cmd), "PREAUTH %s", argv[0]);
 	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
 		printf("Too long PREAUTH command.\n");
-		return 0;
-	}
-	return wpa_ctrl_command(ctrl, cmd);
-}
-
-
-static int wpa_cli_cmd_stakey_request(struct wpa_ctrl *ctrl, int argc,
-				      char *argv[])
-{
-	char cmd[256];
-	int res;
-
-	if (argc != 1) {
-		printf("Invalid STAKEY-REQUEST command: needs one argument "
-		       "(Peer STA MAC address)\n");
-		return 0;
-	}
-
-	res = os_snprintf(cmd, sizeof(cmd), "STAKEY-REQUEST %s", argv[0]);
-	if (res < 0 || (size_t) res >= sizeof(cmd) - 1) {
-		printf("Too long STAKEY-REQUEST command.\n");
 		return 0;
 	}
 	return wpa_ctrl_command(ctrl, cmd);
@@ -1031,7 +1009,6 @@ static struct wpa_cli_cmd wpa_cli_commands[] = {
 	{ "terminate", wpa_cli_cmd_terminate },
 	{ "interface_add", wpa_cli_cmd_interface_add },
 	{ "interface_remove", wpa_cli_cmd_interface_remove },
-	{ "stakey-request", wpa_cli_cmd_stakey_request },
 	{ "ap_scan", wpa_cli_cmd_ap_scan },
 	{ "stkstart", wpa_cli_cmd_stkstart },
 	{ NULL, NULL }
