@@ -5946,6 +5946,15 @@ void ej_statfs (int eid, webs_t wp, int argc, char_t ** argv)
 			argv[1], ((uint64_t)sizefs.f_bsize * sizefs.f_blocks), ((uint64_t)sizefs.f_bsize * sizefs.f_bfree));
 }
 #ifdef HAVE_RSTATS
+/*
+
+	rstats
+	Copyright (C) 2006 Jonathan Zarate
+
+	Licensed under GNU GPL v2 or later.
+	
+*/
+
 void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
