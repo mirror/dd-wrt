@@ -937,7 +937,7 @@ ej_haswifi (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *output;
 
-  if (ejArgs (argc, argv, "%s", &output) < 3)
+  if (ejArgs (argc, argv, "%s", &output) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
