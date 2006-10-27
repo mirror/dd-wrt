@@ -2249,6 +2249,14 @@ getifcount (const char *ifprefix)
   fclose (in);
   return count;
 }
+int haswifi(void)
+{
+#ifdef HAVE_MADWIFI
+return getifcount("wifi")>0?1:0;
+#else
+return 1;
+#endif
+}
 
 void
 getinterfacelist (const char *ifprefix, char *buffer)

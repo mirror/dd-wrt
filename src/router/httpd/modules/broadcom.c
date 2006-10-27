@@ -932,6 +932,23 @@ ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+static void
+ej_haswifi (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *output;
+
+  if (ejArgs (argc, argv, "%s", &output) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+
+  if (!haswifi())
+    websWrite (wp, output);
+
+  return;
+}
+
 /*
  * Example:
  * wan_proto=dhcp
@@ -3800,7 +3817,7 @@ int openvpn = nvram_match ("openvpn_enable", "1");
 int openvpn = 0;
 #endif
 int auth = nvram_match ("status_auth", "1");
-
+int wifi=haswifi();
 
 char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
 						{"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","",""},
@@ -3831,6 +3848,10 @@ int i,j;
 		{
 		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))  //jump over Sipath
 			i++;
+#ifdef HAVE_MADWIFI
+		if (!wifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
+			i++;
+#endif
 		if (!strcmp (menu[i][0], mainmenu))
 			{
 			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n", menuname[i][0]);
@@ -3845,6 +3866,8 @@ int i,j;
 				if (!strcmp(menu[i][j], "Wireless_Advanced.asp"))
 					j++;
 				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))
+					j++;
+				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
 					j++;
 #endif
 				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))  //jump over Sputnik
@@ -4869,6 +4892,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_PORTSETUP
   {"portsetup",ej_portsetup},
 #endif
+  {"haswifi",ej_haswifi},
   {NULL, NULL}
 };
 #endif /* !WEBS */
