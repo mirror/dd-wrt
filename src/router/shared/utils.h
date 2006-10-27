@@ -312,6 +312,7 @@ struct detect_wans
 
 
 int ishexit (char c);
+int haswifi (void);
 int sv_valid_hwaddr (char *value);
 int sv_valid_ipaddr (char *value);
 int sv_valid_range (char *value, int low, int high);
