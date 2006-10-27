@@ -21,9 +21,13 @@ int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
 char * __initdata root_device_name;
+char * __initdata root_device_name1;
+char * __initdata root_device_name2;
 static char __initdata saved_root_name[64];
 
 dev_t ROOT_DEV;
+dev_t ROOT_DEV1;
+dev_t ROOT_DEV2;
 
 static int __init load_ramdisk(char *str)
 {
@@ -280,7 +284,7 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 	return 0;
 }
 
-void __init mount_block_root(char *name, int flags)
+int __init mount_block_root(char *name, int flags)
 {
 	char *fs_names = __getname();
 	char *p;
@@ -304,20 +308,23 @@ retry:
 		 * and bad superblock on root device.
 		 */
 		__bdevname(ROOT_DEV, b);
-		printk("VFS: Cannot open root device \"%s\" or %s\n",
-				root_device_name, b);
-		printk("Please append a correct \"root=\" boot option\n");
+//		printk("VFS: Cannot open root device \"%s\" or %s\n",
+//				root_device_name, b);
+//		printk("Please append a correct \"root=\" boot option\n");
+		return -1;
 
-		panic("VFS: Unable to mount root fs on %s", b);
+//		panic("VFS: Unable to mount root fs on %s", b);
 	}
 
 	printk("No filesystem could mount root, tried: ");
 	for (p = fs_names; *p; p += strlen(p)+1)
 		printk(" %s", p);
 	printk("\n");
-	panic("VFS: Unable to mount root fs on %s", __bdevname(ROOT_DEV, b));
+	return -1;
+//	panic("VFS: Unable to mount root fs on %s", __bdevname(ROOT_DEV, b));
 out:
 	putname(fs_names);
+	return 0;
 }
  
 #ifdef CONFIG_ROOT_NFS
@@ -387,7 +394,16 @@ void __init mount_root(void)
 	}
 #endif
 	create_dev("/dev/root", ROOT_DEV, root_device_name);
-	mount_block_root("/dev/root", root_mountflags);
+	if (mount_block_root("/dev/root", root_mountflags)==-1)
+	    {
+	    create_dev("/dev/root1", ROOT_DEV1, root_device_name1);
+	    if (mount_block_root("/dev/root1", root_mountflags)==-1)
+		{
+		create_dev("/dev/root2", ROOT_DEV2, root_device_name2);
+	        if (mount_block_root("/dev/root2", root_mountflags)==-1)
+		    panic("unable to mount dd-wrt\n");
+		}	    
+	    }
 }
 
 /*
@@ -408,10 +424,19 @@ void __init prepare_namespace(void)
 	md_run_setup();
 
 	if (saved_root_name[0]) {
-		root_device_name = saved_root_name;
-		ROOT_DEV = name_to_dev_t(root_device_name);
+		root_device_name = "/dev/hda2";
+		root_device_name1 = "/dev/hdb2";
+		root_device_name2 = "/dev/hdc2";
+		ROOT_DEV = name_to_dev_t("/dev/hda2");
+		ROOT_DEV1 = name_to_dev_t("/dev/hdb2");
+		ROOT_DEV2 = name_to_dev_t("/dev/hdc2");
+
 		if (strncmp(root_device_name, "/dev/", 5) == 0)
 			root_device_name += 5;
+		if (strncmp(root_device_name1, "/dev/", 5) == 0)
+			root_device_name1 += 5;
+		if (strncmp(root_device_name2, "/dev/", 5) == 0)
+			root_device_name2 += 5;
 	}
 
 	is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
