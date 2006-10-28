@@ -5835,7 +5835,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   	websWrite (wp, "<tr>\n");
   	
   	// Nb
-	  websWrite (wp, "%d", ip_count);
+  	websWrite (wp, "<td>%d</td>\n", ip_count);
   	
   	// Proto
   	if (string_search(line, "tcp"))
