@@ -3846,12 +3846,12 @@ int i,j;
 
 	  for (i=0; i<8; i++)
 		{
-		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))  //jump over Sipath
-			i++;
 #ifdef HAVE_MADWIFI
 		if (!wifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
 			i++;
 #endif
+		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))  //jump over Sipath
+			i++;
 		if (!strcmp (menu[i][0], mainmenu))
 			{
 			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n", menuname[i][0]);
