@@ -1205,7 +1205,6 @@ hstatus_router.right14="Ce sont les informations requise par votre provider afin
 
 // ******************************************* Status_Conntrack.asp *******************************************//
 
-var status_router = new Object();
 status_conn.titl=" - Active IP Connections Table";
 status_conn.h2="Active IP Connections";
 
