@@ -3525,7 +3525,7 @@ initHandlers (void)
 
   websAspDefine ("static_route", ej_static_route);
   websAspDefine ("localtime", ej_localtime);
-  websAspDefine ("dumplog", ej_dumplog;
+  websAspDefine ("dumplog", ej_dumplog);
 #ifdef HAVE_SPUTNIK_APD
 		 websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
 #endif
@@ -4720,6 +4720,8 @@ struct ej_handler ej_handlers[] = {
   {"dhcp_remaining_time", ej_dhcp_remaining_time},
   {"show_wan_domain", ej_show_wan_domain},
   {"show_wl_mac", ej_show_wl_mac},
+  {"dumpip_conntrack", ej_dumpip_conntrack},
+  {"ip_conntrack_table", ej_ip_conntrack_table},
   /* for dhcp */
   {"dumpleases", ej_dumpleases},
   /* for ddm */
@@ -4843,8 +4845,6 @@ struct ej_handler ej_handlers[] = {
   {"get_clkfreq", ej_get_clkfreq},
   {"dumpmeminfo", ej_dumpmeminfo},
 
-/* Added by Botho 03.April.06 */
-  {"dumpip_conntrack", ej_dumpip_conntrack},
 /* Added by Botho 21.April.06 */
   {"js_include", ej_js_include},
   {"css_include", ej_css_include},
