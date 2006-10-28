@@ -5792,6 +5792,22 @@ static int search_hit(char *search, char *line, char *ret)
     return(0);
 }
 
+static int string_search(char *string, char *search)
+{
+    int searchLen;
+    int i;
+    searchLen = strlen(search);
+    if (searchLen > strlen(string)) {
+	return(0); // this can't match
+    }
+    for (i = 0; i < strlen(string) - searchLen + 1; i++) {
+	if (!strncasecmp((char *)&string[i], search, searchLen)) {
+	    return(1); // we got hit
+	}
+    }
+    return(0);
+}
+
 
 void
 ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
