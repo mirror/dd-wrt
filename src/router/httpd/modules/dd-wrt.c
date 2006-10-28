@@ -5761,6 +5761,121 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+/* Added by Botho 28.Oct.06 */
+static int search_hit(char *search, char *line, char *ret)
+{
+    unsigned int searchLen;
+    unsigned int i;
+    unsigned int j;
+    unsigned int lineLen;
+
+    lineLen = strlen(line);
+    searchLen = strlen(search);
+
+    if (searchLen > lineLen) {
+	return(1); // this can't match, invalid data?
+    }
+    for (i = 0; i < lineLen - searchLen + 1; i++) {
+	if (!strncasecmp((char *)&line[i], search, searchLen)) {
+	    break; // we got hit
+	}
+    }
+    for (j = i + searchLen; j < i + 15 + searchLen; j++) {
+        if (j > lineLen) {
+            return(1); // incomplete data
+        }
+        if (line[j] == ' ') {
+            break; // we reach _space_ delimiter
+        }
+    }
+    memcpy(ret, &line[i + searchLen], j - i - searchLen);
+    return(0);
+}
+
+
+void
+ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp;
+  char line[200];
+  char protocol[5] = "";
+  int timeout;
+  char srcip[16] = "";
+  char dstip[16] = "";
+  int _dport;
+  struct servent *servp;
+  char dstport[6] = "";
+  char state[12] = "";
+  
+  fp = fopen ("/proc/net/ip_conntrack", "rb");
+  if (fp == NULL)
+    return;
+    
+  while (fgets(line, sizeof(line), fp) != NULL)
+  {
+  	websWrite (wp, "<tr>\n");
+  	
+  	// Proto
+  	if (string_search(line, "tcp"))
+  		sprintf (protocol, "TCP");
+    else if (string_search(line, "udp"))
+    	sprintf (protocol, "UDP");
+    else if (string_search(line, "icmp"))
+    	sprintf (protocol, "ICMP");
+    else
+    	sprintf (protocol, "Unknown");
+    websWrite (wp, "<td>%s</td>\n", protocol);
+    
+    // Timeout ??? BS'help plz
+    websWrite (wp, "<td>%d</td>\n", timeout);
+    
+    // src
+    search_hit("src=", line, srcip);
+    websWrite (wp, "<td>%s</td>\n", srcip);
+    
+    // dst
+    search_hit("dst=", line, dstip);
+    websWrite (wp, "<td>%s</td>\n", dstip);
+    
+    // service
+    search_hit("dport=", line, dstport);
+    _dport = atoi (dstport);
+    servp = my_getservbyport (htons (_dport), protocol);
+    websWrite (wp, "<td>%s</td>\n", servp ? servp->s_name : dstport);
+    
+    // State
+    if (string_search(line, "ESTABLISHED"))
+    	sprintf (state, "ESTABLISHED");
+    else if (string_search(line, "TIME_WAIT"))
+    	sprintf (state, "TIME_WAIT");
+    else if (string_search(line, "UNREPLIED"))
+    	sprintf (state, "UNREPLIED");
+    else if (string_search(line, "CLOSE"))
+    	sprintf (state, "CLOSE");
+    else if (string_search(line, "ASSURED"))
+    	sprintf (state, "ASSURED");
+    else
+    {
+    	if (string_search(line, "udp"))
+				sprintf (state, "UNREPLIED");
+			else
+	     	sprintf (state, "&nbsp;");
+    }
+    websWrite (wp, "<td>%s</td>\n", state);
+    
+    // Name resolution ??? BS'help plz
+    sprintf (state, "&nbsp;");
+    websWrite (wp, "<td>%s</td>\n", state);
+    websWrite (wp, "</tr>\n");
+
+  }
+
+  fclose (fp);
+
+  return;
+}
+
+
 
 /* BEGIN  Added by Botho 21.April.06 */
 void
