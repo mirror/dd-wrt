@@ -234,8 +234,10 @@ else
 if (detect("MCP65 Ethernet"))  // nForce
     eval ("insmod", "forcedeth");
 if (detect("RTL-8029"))  // Old Realtek PCI NE2000 clone (10M only)
+    {
     eval ("insmod", "8390");
     eval ("insmod", "ne2k-pci");
+    }
 if (detect("Rhine-"))  // VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
 if (detect("3c905"))  // 3Com
@@ -273,7 +275,7 @@ if (detect("3c905"))  // 3Com
 
   eval ("insmod", "ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
-
+  nvram_set("wl0_ifname","ath0");
   /* Set a sane date */
   stime (&tm);
   return 0;
