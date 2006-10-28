@@ -139,6 +139,11 @@ share.expired="Expiré";
 share.logout="Déconnection";
 share.nmounted="Partition non montée";
 share.fssize=="Total / libre";
+share.src="IP Source";
+share.dst="IP Destination";
+share.name_resolution="Nom";
+share.timeout="Timeout (s)";
+share.detail="Voir le détail";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -1196,6 +1201,13 @@ hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable
 hstatus_router.right10="Temps écoulé depuis le dernier démarrage/redémarrage du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
 hstatus_router.right14="Ce sont les informations requise par votre provider afin de vous connecter à internet, configurée dans l\'onglet Setup. Vous pouvez connecter votre routeur à internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+
+
+// ******************************************* Status_Conntrack.asp *******************************************//
+
+var status_router = new Object();
+status_conn.titl=" - Active IP Connections Table";
+status_conn.h2="Active IP Connections";
 
 
 

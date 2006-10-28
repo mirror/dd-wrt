@@ -19,41 +19,6 @@ function connect(F,I) {
 	F.submit();
 }
 
-/* function init() {
-	<% show_status("onload"); %>
-} */
-
-/* function ShowAlert(M) {
-	var str = "";
-	var mode = "";
-	var wan_ip = "<% nvram_status_get("wan_ipaddr"); %>";
-	var wan_proto = "<% nvram_safe_get("wan_proto"); %>";
-
-	if(document.status.wan_proto.value == "pppoe")
-		mode = "PPPoE";
-	else if(document.status.wan_proto.value == "heartbeat")
-		mode = "HBS";
-	else
-		mode = "PPTP";
-
-	if(M == "AUTH_FAIL" || M == "PAP_AUTH_FAIL" || M == "CHAP_AUTH_FAIL")
-		str = mode + " authentication fail";
-	else if(M == "IP_FAIL" || (M == "TIMEOUT" && wan_ip == "0.0.0.0"))
-		str = "Can not get a IP address from " + mode + " server";
-	else if(M == "NEG_FAIL")
-		str = mode + " negotication fail";
-	else if(M == "LCP_FAIL")
-		str = mode + " LCP negotication fail";
-	else if(M == "TCP_FAIL" || (M == "TIMEOUT" && wan_ip != "0.0.0.0" && wan_proto == "heartbeat"))
-		str = "Can not build a TCP connection to " + mode + " server";
-	else
-		str = "Can not connect to " + mode + " server";
-
-	alert(str);
-
-	Refresh();
-} */
-
 var update;
 
 function setMemoryValues(val) {
@@ -240,7 +205,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.net_conntrack"); %></div>
-									<span id="ip_count"></span>&nbsp;
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<span id=\"ip_count\" style=\"cursor:pointer\" title=\"" + share.detail + "\" onclick=\"openWindow('Status_Conntrack.asp', 800, 600)\" >");
+									document.write("</span>&nbsp;");
+									//]]>
+									</script>&nbsp;
 								</div>
 							</fieldset><br />
 							
