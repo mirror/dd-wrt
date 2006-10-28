@@ -5831,11 +5831,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     
   while (fgets(line, sizeof(line), fp) != NULL)
   {
-  	protocol[] ="";
-  	srcip[] = "";
-  	dstip[] = "";
-  	dstport[] = "";
-  	
+  	  	
   	websWrite (wp, "<tr>\n");
   	
   	// Nb
