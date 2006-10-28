@@ -208,7 +208,7 @@ closedb (void)
   isni=0;
 }
 
-
+static char cache[512];
 char *
 nvram_get (const char *name)
 {
@@ -222,6 +222,7 @@ nvram_get (const char *name)
 
   cprintf ("get nvram %s\n", name);
   FILE *in = fopen ("/tmp/nvram/offsets.db", "rb");
+  setvbuf(in,&cache[0],_IOFBF,32);
   if (in == NULL)
     {
       unlock ();
@@ -248,6 +249,7 @@ nvram_get (const char *name)
       return NULL;
     }
   in = fopen ("/tmp/nvram/nvram.db", "rb");
+  setvbuf(in,&cache[0],_IOFBF,32);
   fseek (in, offset, SEEK_SET);
 
 begin:;
@@ -266,7 +268,7 @@ begin:;
       if (namelen != len)
 	{
 	  offset += fullen + 2;
-	  fseek (in, offset, SEEK_SET);
+	  fseek (in, fullen-1, SEEK_CUR);
 	  goto begin;
 	}
       if (getc (in) != name[0])
@@ -280,7 +282,7 @@ begin:;
 	  {
 //          cprintf("not equal, continue\n");
 	    offset += fullen + 2;
-	    fseek (in, offset, SEEK_SET);
+	    fseek (in, fullen-(i+2), SEEK_CUR);
 	    goto begin;
 	  }
       fullen = getc (in);
