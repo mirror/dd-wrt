@@ -1,0 +1,22 @@
+Sept 8 2004:
+Ver 1.3.4
+=========
+Changes to tracker.cpp fixes bug in compact peer address acquisition
+This will speed up download starts using compact tracker protocol
+
+Addition of peer identifier
+Peer identifier can be set to any string <= 8 chrs
+Peer identifier can be set to - to present an anonymous client
+Peer identifer defaults to -CT1304- where 1304 represents ctorrent-1.3.4
+
+CTorrent resolves internal domain address if behind firewall
+
+Ver 1.3.3
+=========
+Added compact tracker protocol handling
+
+Vers < 1.3.3
+============
+cache io.		modified
+virtual host.		added
+rate limits.		added
