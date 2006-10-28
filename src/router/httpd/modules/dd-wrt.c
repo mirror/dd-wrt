@@ -39,6 +39,7 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 #include <dirent.h>
+#include <netdb.h>
 
 
 
@@ -5857,8 +5858,8 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     search_hit("dport=", line, dstport);
     _dport = atoi (dstport);
     servp = my_getservbyport (htons (_dport), protocol);
-    //websWrite (wp, "<td>%s</td>\n", servp ? servp->s_name : dstport);  see why have this error : "error: dereferencing pointer to incomplete type"
-    websWrite (wp, "<td>&nbsp;</td>\n");
+    websWrite (wp, "<td>%s</td>\n", servp ? servp->s_name : dstport);  //see why have this error : "error: dereferencing pointer to incomplete type"
+    //websWrite (wp, "<td>&nbsp;</td>\n");
     
     // State
     if (string_search(line, "ESTABLISHED"))
