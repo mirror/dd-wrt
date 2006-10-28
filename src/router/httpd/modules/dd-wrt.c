@@ -5773,21 +5773,21 @@ static int search_hit(char *search, char *line, char *ret)
     lineLen = strlen(line);
     searchLen = strlen(search);
 
-    if (searchLen > lineLen) {
-	return(1); // this can't match, invalid data?
+    if (searchLen > lineLen)
+			return(1); // this can't match, invalid data?
+    
+    for (i = 0; i < lineLen - searchLen + 1; i++)
+    {
+    	if (!strncasecmp((char *)&line[i], search, searchLen))
+    		break; // we got hit
     }
-    for (i = 0; i < lineLen - searchLen + 1; i++) {
-	if (!strncasecmp((char *)&line[i], search, searchLen)) {
-	    break; // we got hit
-	}
-    }
-    for (j = i + searchLen; j < i + 15 + searchLen; j++) {
-        if (j > lineLen) {
-            return(1); // incomplete data
-        }
-        if (line[j] == ' ') {
-            break; // we reach _space_ delimiter
-        }
+    
+    for (j = i + searchLen; j < i + 15 + searchLen; j++)
+    {
+    	if (j > lineLen)
+    		return(1); // incomplete data
+      if (line[j] == ' ')
+      	break; // we reach _space_ delimiter
     }
     memcpy(ret, &line[i + searchLen], j - i - searchLen);
     return(0);
@@ -5814,9 +5814,10 @@ void
 ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
+  int ip_count = 0;
   char line[200];
   char protocol[5] = "";
-  int timeout;
+  int timeout = 0;
   char srcip[16] = "";
   char dstip[16] = "";
   int _dport;
@@ -5830,7 +5831,15 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     
   while (fgets(line, sizeof(line), fp) != NULL)
   {
+  	protocol ="";
+  	srcip = "";
+  	dstip = "";
+  	dstport = "";
+  	
   	websWrite (wp, "<tr>\n");
+  	
+  	// Nb
+	  websWrite (wp, "%d", ip_count);
   	
   	// Proto
   	if (string_search(line, "tcp"))
@@ -5885,7 +5894,8 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     sprintf (state, "&nbsp;");
     websWrite (wp, "<td>%s</td>\n", state);
     websWrite (wp, "</tr>\n");
-
+    
+    ip_count++;
   }
 
   fclose (fp);
