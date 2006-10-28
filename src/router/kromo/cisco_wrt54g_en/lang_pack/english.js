@@ -138,6 +138,11 @@ share.expired="expired";
 share.logout="logout";
 share.nmounted="Not mounted";
 share.fssize="Total / Free Size";
+share.src="Source Address";
+share.dst="Remote Address";
+share.name_resolution="Name Resolution";
+share.timeout="Timeout (s)";
+share.detail="See detail";
 
 
 var sbutton = new Object();
@@ -1226,6 +1231,13 @@ hstatus_router.right8="This is time received from the ntp server set on the <em>
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
 hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+
+
+// ******************************************* Status_Conntrack.asp *******************************************//
+
+var status_router = new Object();
+status_conn.titl=" - Active IP Connections Table";
+status_conn.h2="Active IP Connections";
 
 
 
