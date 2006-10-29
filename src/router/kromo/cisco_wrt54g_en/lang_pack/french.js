@@ -565,7 +565,7 @@ hfilter.right16="Si vous souhaitez bloquer des sites Web à l\'aide de mots clés 
 
 filterSum.titl=" - Récapitulatif des Restrictions d\'accès";
 filterSum.h2="Récapitulatif de la Stratégie d\'accès à Internet";
-filterSum.polnum="N°.";
+filterSum.polnum="N°";
 filterSum.polday="Plage Horaire";
 
 
@@ -1185,7 +1185,7 @@ status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
 status_router.legend4="Réseau";
 status_router.net_maxports="Nb de connexions max.";
-status_router.net_conntrack="connexion actives";
+status_router.net_conntrack="Connexions actives";
 status_router.h22="Internet";
 status_router.legend5="Type de configuration";
 status_router.www_loginstatus="Statut de la connexion";
