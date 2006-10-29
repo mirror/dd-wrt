@@ -76,6 +76,9 @@ endif
 ifeq ($(CONFIG_L2TP),y)
 CFLAGS += -DHAVE_L2TP
 endif
+ifeq ($(CONFIG_NOWIFI),y)
+CFLAGS += -DHAVE_NOWIFI
+endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 OBJS += ppp.o
