@@ -61,7 +61,8 @@ load_service (char *name)
 
 
 void *fhandle;
-void *getPointer(char *name)
+void *
+getPointer (char *name)
 {
   fhandle = load_service (name);
   if (fhandle == NULL)
@@ -70,18 +71,36 @@ void *getPointer(char *name)
     }
   void *fptr;
   fptr = (int (*)(int, char **)) dlsym (fhandle, name);
-return fptr;
+  return fptr;
 }
-void closePointer(void)
+
+void
+closePointer (void)
 {
-if (fhandle)
- dlclose(fhandle);
+  if (fhandle)
+    dlclose (fhandle);
 }
 
 
 static int restore_ret;
 
 
+static char *filter[] = { "lan_ifnames",
+  "lan_ifname",
+  "wan_ifnames",
+  "wan_ifname",
+  "et0macaddr",
+  "il0macaddr",
+  "boardnum",
+  "boardtype",
+  "boardrev",
+  "melco_id",
+  "product_name",
+  "phyid_num",
+  "cardbus",
+  "CFEver",
+  NULL
+};
 void
 nv_file_in (char *url, webs_t wp, int len, char *boundary)
 {
@@ -124,6 +143,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
       wfread (&count, 2, 1, wp);
       len -= 2;
       int i;
+    again:;
       for (i = 0; i < count; i++)
 	{
 	  unsigned short l = 0;
@@ -139,7 +159,18 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  len -= (l + 2);
 	  value[l] = 0;
 	  //cprintf("setting %s to %s\n",name,value);
-	  if (!strcmp(name,"nvram_ver"))nvram_ver=value;
+	  if (!strcmp (name, "nvram_ver"))
+	    nvram_ver = value;
+	  int a = 0;
+	  while (filter[a] != NULL)
+	    {
+	      if (!strcmp (name, filter[a++]))
+		{
+		  free (value);
+		  free (name);
+		  goto again;
+		}
+	    }
 	  nvram_set (name, value);
 	  free (value);
 	  free (name);
@@ -172,7 +203,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  len -= (l + 2);
 	  value[l] = 0;
 	  //cprintf("setting %s to %s\n",name,value);
-	  if (!strcmp(name,"nvram_ver"))nvram_ver=value;
+	  if (!strcmp (name, "nvram_ver"))
+	    nvram_ver = value;
 	  nvram_set (name, value);
 	  free (value);
 	  free (name);
@@ -202,14 +234,17 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 #endif
 	(void) fgetc (wp);
     }
-    if (nvram_ver==NULL)
+  if (nvram_ver == NULL)
     {
-    nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd"))); 
-    nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
-    if (nvram_get("newhttp_passwd")!=NULL)
+      nvram_set ("http_passwd", zencrypt (nvram_safe_get ("http_passwd")));
+      nvram_set ("http_username",
+		 zencrypt (nvram_safe_get ("http_username")));
+      if (nvram_get ("newhttp_passwd") != NULL)
 	{
-	nvram_set("newhttp_passwd",zencrypt(nvram_safe_get("newhttp_passwd"))); 
-	nvram_set("newhttp_username",zencrypt(nvram_safe_get("newhttp_username")));
+	  nvram_set ("newhttp_passwd",
+		     zencrypt (nvram_safe_get ("newhttp_passwd")));
+	  nvram_set ("newhttp_username",
+		     zencrypt (nvram_safe_get ("newhttp_username")));
 	}
     }
 
@@ -239,13 +274,14 @@ void
 nv_file_out (char *path, webs_t wp)
 {
 
-struct nvram_tuple *router_defaults = (struct nvram_tuple *)getPointer("srouter_defaults"); 
-if (router_defaults==NULL)
-    {
-    closePointer();
-    return;
-    }
-  struct nvram_tuple *v;
+  // struct nvram_tuple *router_defaults =
+//    (struct nvram_tuple *) getPointer ("srouter_defaults");
+//  if (router_defaults == NULL)
+//    {
+//      closePointer ();
+//      return;
+//    }
+//  struct nvram_tuple *v;
   int backupcount = 0;
 #ifdef HAVE_NEWMEDIA
   char sign[7] = { "XX-WRT" };
@@ -253,25 +289,35 @@ if (router_defaults==NULL)
   char sign[7] = { "DD-WRT" };
 #endif
 
-  for (v = router_defaults; v->name; v++)
+  char *buf = (char *) malloc (NVRAM_SPACE);
+  nvram_getall (buf, NVRAM_SPACE);
+  char *p = buf;
+  int i;
+  for (i = 0; i < NVRAM_SPACE; i++)
     {
-      backupcount++;
+      if (buf[i] == '=')
+	backupcount++;
     }
   wfwrite (sign, 6, 1, wp);
   wfputc (backupcount & 255, wp);	//high byte
   wfputc (backupcount >> 8, wp);	//low byte
-  for (v = router_defaults; v->name; v++)
+  while (strlen (p) != 0)
     {
-      wfputc (strlen (v->name), wp);
-      int i;
+      int len = strlen (p);
+      for (i = 0; i < len; i++)
+	if (p[i] == '=')
+	  p[i] = 0;
+      char *name = p;
+      wfputc (strlen (name), wp);
+
 #ifdef HAVE_NEWMEDIA
-      for (i = 0; i < strlen (v->name); i++)
-	wfputc (v->name[i] ^ 37, wp);
+      for (i = 0; i < strlen (name); i++)
+	wfputc (name[i] ^ 37, wp);
 #else
-      for (i = 0; i < strlen (v->name); i++)
-	wfputc (v->name[i], wp);
+      for (i = 0; i < strlen (name); i++)
+	wfputc (name[i], wp);
 #endif
-      char *val = nvram_safe_get (v->name);
+      char *val = nvram_safe_get (name);
       wfputc (strlen (val) & 255, wp);
       wfputc (strlen (val) >> 8, wp);
 #ifdef HAVE_NEWMEDIA
@@ -281,7 +327,11 @@ if (router_defaults==NULL)
       for (i = 0; i < strlen (val); i++)
 	wfputc (val[i], wp);
 #endif
+
+      *p += len;
     }
-closePointer();
+    free(buf);
+
+//  closePointer ();
   return;
 }
