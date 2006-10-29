@@ -5769,7 +5769,7 @@ static int search_hit(char *search, char *line, char *ret)
     unsigned int i;
     unsigned int j;
     unsigned int lineLen;
-    if (line==NULL || search==NULL || ret=NULL)
+    if (line==NULL || search==NULL || ret==NULL)
 	return 1;
     lineLen = strlen(line);
     searchLen = strlen(search);
