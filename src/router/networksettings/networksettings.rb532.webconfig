@@ -24,7 +24,7 @@
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_udp_timeouts" onblur="valid_range(this,0,3600,management.net_udptimeout)" value="<% nvram_get("ip_conntrack_udp_timeouts"); %>" />&nbsp;
 		<span class="default"><script type="text/javascript">
 		//<![CDATA[
-		document.write("(" + share.deflt + ": 3600, " + share.range + ": 0 - 3600)");
+		document.write("(" + share.deflt + ": 120, " + share.range + ": 0 - 3600)");
 		//]]>
 		</script></span>
 	</div>
