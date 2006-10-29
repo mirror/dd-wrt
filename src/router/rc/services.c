@@ -79,10 +79,6 @@ start_services (void)
 {
 #ifdef HAVE_SER
   nvram_set ("sipgate", "1");
-  //      out=fopen("/tmp/httpd.conf","wb");
-  //      fprintf(out,"/:root:%s\n",nvram_get("http_passwd"));
-  //      fclose(out);
-  //      ret |= eval("httpd2","-h","/sipath","-p","81","-c","/tmp/httpd.conf","-r","DD-WRT Router");
 #else
   nvram_set ("sipgate", "0");
 #endif
@@ -278,8 +274,8 @@ start_single_service (void)
 #ifdef HAVE_SPUTNIK_APD
       startstop ("sputnik");
 #endif
-     eval("/etc/config/http-redirect.startup");
-     eval("/etc/config/smtp-redirect.startup");
+     eval("/etc/config/http-redirect.firewall");
+     eval("/etc/config/smtp-redirect.firewall");
     
     }
   else if (!strcmp (service, "services"))
@@ -507,7 +503,9 @@ END OBSOLETE */
     }
   else if (!strcmp (service, "wireless"))
     {
+#ifndef HAVE_MADWIFI
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
       stop_services ();
       stop_service ("stabridge");
       stop_service ("lan");
@@ -521,7 +519,9 @@ END OBSOLETE */
 	  nvram_match ("wl_akm", "radius"))
 	sleep (4);
 #endif
+#ifndef HAVE_MADWIFI
       start_service ("wlconf");
+#endif
       start_service ("lan");
       start_service ("stabridge");
       start_services ();
