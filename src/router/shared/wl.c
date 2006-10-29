@@ -447,15 +447,7 @@ list_channels (char *devnr)
 int
 getdevicecount (void)
 {
-
-  system ("cat /proc/net/dev|grep wifi|wc -l>/tmp/.counts");
-  FILE *in = fopen ("/tmp/.counts", "rb");
-  if (in == NULL)
-    return 0;
-  int count;
-  fscanf (in, "%d", &count);
-  fclose (in);
-//  unlink ("/tmp/.counts");
+  int count=getifcount("wifi");
   if (count < 7 && count > 0)
     return count;
   return 0;
