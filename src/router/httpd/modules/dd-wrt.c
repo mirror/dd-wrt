@@ -5792,6 +5792,7 @@ static int search_hit(char *search, char *line, char *ret)
       	break; // we reach _space_ delimiter
     }
     memcpy(ret, &line[i + searchLen], j - (i + searchLen));
+    ret[j - (i + searchLen)]=0;
     return(0);
 }
 
