@@ -2559,6 +2559,8 @@ start_firewall (void)
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
       system ("/tmp/.rc_firewall");
     }
+  runStartup ("/etc/config", ".firewall");
+
   cprintf ("Ready\n");
   /* end Sveasoft add */
 

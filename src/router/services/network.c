@@ -612,7 +612,7 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_MAGICBOX
-  if (nvram_match ("ath0_mode", "sta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0");
@@ -639,7 +639,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_GATEWORX
-  if (nvram_match ("ath0_mode", "sta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
@@ -668,7 +668,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
