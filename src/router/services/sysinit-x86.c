@@ -233,6 +233,7 @@ if (detect("MCP61 Ethernet"))  // nForce
 else
 if (detect("MCP65 Ethernet"))  // nForce
     eval ("insmod", "forcedeth");
+
 if (detect("RTL-8029"))  // Old Realtek PCI NE2000 clone (10M only)
     {
     eval ("insmod", "8390");

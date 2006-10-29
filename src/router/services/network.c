@@ -731,7 +731,9 @@ start_lan (void)
   diag_led (DIAG, STOP_LED);	// stop that blinking
   strcpy (wl_face, get_wdev ());
 #ifdef HAVE_MADWIFI
+#ifndef HAVE_NOWIFI
   deconfigure_wifi ();
+#endif
 #else
   eval ("wlconf", wl_face, "down");
 #endif
@@ -1090,7 +1092,9 @@ start_lan (void)
   free (lan_ifname);
   free (lan_ifnames);
 #ifdef HAVE_MADWIFI
+#ifndef HAVE_NOWIFI
   configure_wifi ();
+#endif
 #endif
   lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
   lan_ifnames = strdup (nvram_safe_get ("lan_ifnames"));
