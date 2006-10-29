@@ -33,6 +33,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
+ifeq ($(CONFIG_NOWIFI),y)
+CFLAGS += -DHAVE_NOWIFI
+endif
 
 vpath %.c $(SRCBASE)/shared/nvram
 

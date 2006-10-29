@@ -3817,8 +3817,11 @@ int openvpn = nvram_match ("openvpn_enable", "1");
 int openvpn = 0;
 #endif
 int auth = nvram_match ("status_auth", "1");
+#ifdef HAVE_NOWIFI
+int wifi=0;
+#else
 int wifi=haswifi();
-
+#endif
 char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
 						{"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","",""},
 						{"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","",""},

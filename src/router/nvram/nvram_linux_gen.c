@@ -222,7 +222,7 @@ nvram_get (const char *name)
 
   cprintf ("get nvram %s\n", name);
   FILE *in = fopen ("/tmp/nvram/offsets.db", "rb");
-  setvbuf(in,&cache[0],_IOFBF,32);
+  setvbuf(in,&cache[0],_IOFBF,4);
   if (in == NULL)
     {
       unlock ();
@@ -403,6 +403,20 @@ int
 nvram_set (const char *name, const char *value)
 {
   lock ();
+#ifdef HAVE_NOWIFI
+    if (!strcmp(name,"conntrack_max"))
+	{
+	int val=atoi(value);
+	if (val>4096) 
+	    {
+	    int ret = _nvram_set (name, "4096");
+	    unlock();
+	    return ret;
+	    }
+	
+	}
+#endif
+
   cprintf ("set nvram %s to %s\n", name, value);
   extern struct nvram_convert nvram_converts[];
   struct nvram_convert *v;
