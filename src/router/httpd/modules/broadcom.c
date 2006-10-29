@@ -3824,7 +3824,7 @@ char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan
 						{"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","",""},
 						{"Firewall.asp","VPN.asp","","","","","","","","",""},
 						{"Filters.asp","","","","","","","","","",""},
-						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","","","","",""},
+						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","P2P.asp","","","",""},
 						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp",""},
 						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Info.htm","","","","",""}};
 
@@ -3834,7 +3834,7 @@ char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","s
 							{"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","",""},
 							{"security","firwall","vpn","","","","","","","",""},
 							{"accrestriction","webaccess","","","","","","","","",""},
-							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","","","",""},
+							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","applicationsP2P","","",""},
 							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup"},
 							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuSysInfo","","","",""}};
 
