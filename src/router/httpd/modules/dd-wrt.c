@@ -6211,7 +6211,7 @@ getinterfacelist("eth",eths);
 			var, var, nvram_match (ssid, "0") ? "true" : "false");
 		websWrite (wp, "//]]>\n</script>\n");
     }
-    websWrite (wp,"</fieldset>\n");
+    websWrite (wp,"</fieldset><br />\n");
 
 }
 #endif
