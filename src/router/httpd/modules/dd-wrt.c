@@ -5820,7 +5820,7 @@ void
 ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
-  int ip_count = 0;
+  int ip_count = 1;
   char line[200];
   char protocol[5] = "";
   int timeout = 0;
@@ -5856,8 +5856,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     	sprintf (protocol, "Unknown");
     websWrite (wp, "<td>%s</td>\n", protocol);
     
-    // Timeout ??? BS'help plz
-    //search for timeout
+    // Timeout
     sscanf(line,"%s %d %d",&dum1[0],&dum2,&timeout);
     websWrite (wp, "<td>%d</td>\n", timeout);
     
