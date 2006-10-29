@@ -328,6 +328,7 @@ bmenu.applicationsptriggering="Port Triggering";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
+bmenu.applicationsP2P="P2P";
 
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Overview";
@@ -612,6 +613,19 @@ prforward.app="Application";
 //help container
 var hprforward = new Object();
 hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
+
+
+// ******************************************* P2P.asp *******************************************//
+
+var p2p = new Object();
+p2p.titl=" - Peer-to-Peer Apps";
+p2p.h2="BitTorrent Client";
+p2p.legend="CTorrent";
+
+
+//help container
+//var hp2p = new Object();
+//hpp2p.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
 
 
 
