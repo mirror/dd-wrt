@@ -3386,7 +3386,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
   int channel = wifi_getchannel("ath0");
-  if (channel > 0)
+  if (channel > 0 && channel<1000)
     {
       websWrite (wp, "%d", channel);
     }
