@@ -5843,7 +5843,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   	websWrite (wp, "<tr>\n");
   	
   	// Nb
-  	websWrite (wp, "<td>%d</td>\n", ip_count);
+  	websWrite (wp, "\t<td align=\"right\">%d</td>\n", ip_count);
   	
   	// Proto
   	if (string_search(line, "tcp"))
@@ -5854,25 +5854,25 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     	sprintf (protocol, "ICMP");
     else
     	sprintf (protocol, "Unknown");
-    websWrite (wp, "<td>%s</td>\n", protocol);
+    websWrite (wp, "\t<td>%s</td>\n", protocol);
     
     // Timeout
     sscanf(line,"%s %d %d",&dum1[0],&dum2,&timeout);
-    websWrite (wp, "<td>%d</td>\n", timeout);
+    websWrite (wp, "\t<td align=\"right\">%d</td>\n", timeout);
     
     // src
     search_hit("src=", line, srcip);
-    websWrite (wp, "<td>%s</td>\n", srcip);
+    websWrite (wp, "\t<td align=\"right\">%s</td>\n", srcip);
     
     // dst
     search_hit("dst=", line, dstip);
-    websWrite (wp, "<td>%s</td>\n", dstip);
+    websWrite (wp, "\t<td align=\"right\">%s</td>\n", dstip);
     
     // service
     search_hit("dport=", line, dstport);
     _dport = atoi (dstport);
     servp = my_getservbyport (htons (_dport), protocol);
-    websWrite (wp, "<td>%s</td>\n", servp ? servp->s_name : dstport);  //see why have this error : "error: dereferencing pointer to incomplete type"
+    websWrite (wp, "\t<td align=\"right\">%s</td>\n", servp ? servp->s_name : dstport);  //see why have this error : "error: dereferencing pointer to incomplete type"
     //websWrite (wp, "<td>&nbsp;</td>\n");
     
     // State
@@ -5893,11 +5893,11 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 			else
 	     	sprintf (state, "&nbsp;");
     }
-    websWrite (wp, "<td>%s</td>\n", state);
+    websWrite (wp, "\t<td>%s</td>\n", state);
     
     // Name resolution ??? BS'help plz
     sprintf (state, "&nbsp;");
-    websWrite (wp, "<td>%s</td>\n", state);
+    websWrite (wp, "\t<td>%s</td>\n", state);
     websWrite (wp, "</tr>\n");
     
     ip_count++;
