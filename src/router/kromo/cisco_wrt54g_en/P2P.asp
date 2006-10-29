@@ -59,16 +59,16 @@ function to_submit(F) {
 					</div>
 				</div>
 				<div id="helpContainer">
+				<!--
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<!--
 							<dt class="term"><% tran("p2p.h2"); %>:</dt>
 							<dd class="definition"><% tran("hp2p.right2"); %></dd>
-							 -->
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HForward.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HP2P.asp')"><% tran("share.more"); %></a>
 					</div>
+					-->
 				</div>
 				<div id="floatKiller"></div>
 				<% do_statusinfo(); %>
