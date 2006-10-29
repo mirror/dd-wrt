@@ -100,6 +100,10 @@ ifeq ($(CONFIG_34TELECOM),y)
   CFLAGS += -DHAVE_34TELECOM
 endif
 
+ifeq ($(CONFIG_NOWIFI),y)
+CFLAGS += -DHAVE_NOWIFI
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 

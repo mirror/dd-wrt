@@ -103,13 +103,14 @@ setRouter (char *name)
 {
 #ifdef HAVE_POWERNOC_WORT54G
   nvram_set (NVROUTER, "WORT54G");
-#endif
-#ifdef HAVE_POWERNOC_WOAP54G
+#elif HAVE_POWERNOC_WOAP54G
   nvram_set (NVROUTER, "WOAP54G");
-#endif
-
+#elif HAVE_OMNI
+  nvram_set (NVROUTER, "Omni Wifi Router");
+#else
   if (name)
     nvram_set (NVROUTER, name);
+#endif
 }
 
 char *
@@ -2251,7 +2252,9 @@ getifcount (const char *ifprefix)
 }
 int haswifi(void)
 {
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_NOWIFI
+return 0;
+#elif HAVE_MADWIFI
 return getifcount("wifi")>0?1:0;
 #else
 return 1;
