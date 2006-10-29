@@ -5769,14 +5769,15 @@ static int search_hit(char *search, char *line, char *ret)
     unsigned int i;
     unsigned int j;
     unsigned int lineLen;
-
+    if (line==NULL || search==NULL || ret=NULL)
+	return 1;
     lineLen = strlen(line);
     searchLen = strlen(search);
 
     if (searchLen > lineLen)
 			return(1); // this can't match, invalid data?
     
-    for (i = 0; i < lineLen - searchLen + 1; i++)
+    for (i = 0; i < lineLen - searchLen; i++)
     {
     	if (!strncasecmp((char *)&line[i], search, searchLen))
     		break; // we got hit
@@ -5784,12 +5785,13 @@ static int search_hit(char *search, char *line, char *ret)
     
     for (j = i + searchLen; j < i + 15 + searchLen; j++)
     {
-    	if (j > lineLen)
-    		return(1); // incomplete data
+    	if (j >= lineLen)
+		break; // end of line may be a delimiter too
+//    		return(1); // incomplete data
       if (line[j] == ' ')
       	break; // we reach _space_ delimiter
     }
-    memcpy(ret, &line[i + searchLen], j - i - searchLen);
+    memcpy(ret, &line[i + searchLen], j - (i + searchLen));
     return(0);
 }
 
@@ -5797,11 +5799,15 @@ static int string_search(char *string, char *search)
 {
     int searchLen;
     int i;
+    if (search==NULL)
+	return 0;
     searchLen = strlen(search);
+    if (string==NULL)
+	return 0;
     if (searchLen > strlen(string)) {
 	return(0); // this can't match
     }
-    for (i = 0; i < strlen(string) - searchLen + 1; i++) {
+    for (i = 0; i < strlen(string) - searchLen; i++) {  //+1 removed. 
 	if (!strncasecmp((char *)&string[i], search, searchLen)) {
 	    return(1); // we got hit
 	}
