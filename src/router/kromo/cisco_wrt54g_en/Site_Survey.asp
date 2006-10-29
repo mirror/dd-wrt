@@ -59,7 +59,7 @@ if (table.length == 0) {
 	for (var i = 0; i < table.length; i = i + 9) {
 		document.write("<tr>");
 		document.write("<td>"+table[i]+"</td>");
-		document.write("<td align=\"center\" style=\"cursor:pointer\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+1] + "')\" >"+table[i+1]+"</td>");
+		document.write("<td align=\"center\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+1] + "')\" >"+table[i+1]+"</td>");
 		document.write("<td align=\"center\">"+table[i+2]+"</td>");
 		document.write("<td align=\"center\">"+table[i+3]+"</td>");
 		document.write("<td align=\"center\">"+table[i+4]+"</td>");
