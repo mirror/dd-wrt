@@ -251,6 +251,7 @@ if (detect("3c905"))  // 3Com
   eval ("ifconfig", "eth2", "0.0.0.0", "up");
   eval ("ifconfig", "eth3", "0.0.0.0", "up");
 
+#ifndef HAVE_NOWIFI
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
@@ -272,7 +273,7 @@ if (detect("3c905"))  // 3Com
   eval ("ifconfig", "wifi3", "up");
   eval ("ifconfig", "wifi4", "up");
   eval ("ifconfig", "wifi5", "up");
-
+#endif
 
   eval ("insmod", "ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
