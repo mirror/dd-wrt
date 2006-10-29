@@ -671,14 +671,22 @@ start_lan (void)
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
+#ifdef HAVE_NOWIFI
+      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+#else
       nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+#endif
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
+#ifdef HAVE_NOWIFI
+      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+#else
       nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+#endif
       nvram_set ("wan_ifname", "eth0");
       nvram_set ("wan_ifnames", "eth0");
     }

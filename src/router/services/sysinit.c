@@ -327,8 +327,11 @@ start_restore_defaults (void)
 #elif HAVE_X86
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3",
-     0},
+#ifdef HAVE_NOWIFI
+    {"lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10",0},
+#else
+    {"lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3",0},
+#endif
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
