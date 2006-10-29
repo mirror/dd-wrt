@@ -1082,7 +1082,7 @@ configure_single (int count)
 	      || !strcmp (m, "wdssta"))
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
-	  else if (!strcmp (m, "ap"))
+	  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "ap");
 	  else
@@ -1113,7 +1113,7 @@ configure_single (int count)
 	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
     }
-  else if (!strcmp (m, "ap"))
+  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
   else
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
