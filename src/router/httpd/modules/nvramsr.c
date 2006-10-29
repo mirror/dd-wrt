@@ -328,7 +328,7 @@ nv_file_out (char *path, webs_t wp)
 	wfputc (val[i], wp);
 #endif
 
-      *p += len;
+      p += len+1;
     }
     free(buf);
 
