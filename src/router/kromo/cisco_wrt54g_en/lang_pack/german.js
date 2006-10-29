@@ -572,7 +572,7 @@ firewall.legend3="WAN-Zugriffe blockieren";
 firewall.ping="Anonyme Internetzugriffsversuche blockieren";
 firewall.muticast="Multicast filtern";
 filter.nat="Internet-NAT-Umleitung filtern";
-filter.port113="IDENT (Port 113) filttern";
+filter.port113="IDENT (Port 113) filtern";
 
 //help container
 
