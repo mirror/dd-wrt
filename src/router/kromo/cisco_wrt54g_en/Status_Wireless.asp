@@ -23,7 +23,7 @@ function setWirelessTable() {
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.text-decoration = "underline";
+		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
 
@@ -49,7 +49,7 @@ function setWDSTable() {
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.text-decoration = "underline";
+		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
 		
