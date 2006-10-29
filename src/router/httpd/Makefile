@@ -74,6 +74,9 @@ endif
 ifeq ($(CONFIG_PORTSETUP),y)
 CFLAGS += -DHAVE_PORTSETUP
 endif
+ifeq ($(CONFIG_NOWIFI),y)
+CFLAGS += -DHAVE_NOWIFI
+endif
 
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
