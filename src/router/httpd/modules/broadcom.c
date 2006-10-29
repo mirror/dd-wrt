@@ -3865,8 +3865,8 @@ int i,j;
 					j++;
 				if (!strcmp(menu[i][j], "Wireless_Advanced.asp"))
 					j++;
-				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))
-					j++;
+//				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))
+//					j++;
 				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
 					j++;
 #endif
