@@ -1140,6 +1140,10 @@ configure_single (int count)
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
+   foreach(var, nvram_safe_get("wl0_wds"), next)
+   {
+    eval("iwpriv","ath0","wds_add",var);
+   }
 
   char macaddr[32];
   getMacAddr (dev, macaddr);
