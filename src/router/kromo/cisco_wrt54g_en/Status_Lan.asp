@@ -34,7 +34,7 @@ function setDHCPTable() {
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.text-decoration = "underline";
+		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];
 
@@ -72,7 +72,7 @@ function setARPTable() {
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
-		cellmac.style.text-decoration = "underline";
+		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];
 	}
