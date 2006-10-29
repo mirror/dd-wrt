@@ -5824,6 +5824,8 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   struct servent *servp;
   char dstport[6] = "";
   char state[12] = "";
+  char dum1[32];
+  int dum2;
   
   fp = fopen ("/proc/net/ip_conntrack", "rb");
   if (fp == NULL)
@@ -5849,6 +5851,8 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "<td>%s</td>\n", protocol);
     
     // Timeout ??? BS'help plz
+    //search for timeout
+    sscanf(line,"%s %d %d",&dum1[0],&dum2,&timeout);
     websWrite (wp, "<td>%d</td>\n", timeout);
     
     // src
