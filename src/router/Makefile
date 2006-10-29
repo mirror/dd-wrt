@@ -851,7 +851,7 @@ http-redirect-clean:
 http-redirect-install:
 	install -D http-redirect/http-redirect.nvramconfig $(INSTALLDIR)/http-redirect/etc/config/http-redirect.nvramconfig
 	install -D http-redirect/http-redirect.webhotspot $(INSTALLDIR)/http-redirect/etc/config/http-redirect.webhotspot
-	install -D http-redirect/http-redirect.startup $(INSTALLDIR)/http-redirect/etc/config/http-redirect.startup
+	install -D http-redirect/http-redirect.firewall $(INSTALLDIR)/http-redirect/etc/config/http-redirect.firewall
 
 
 smtp-redirect:
@@ -863,7 +863,7 @@ smtp-redirect-clean:
 smtp-redirect-install:
 	install -D smtp-redirect/smtp-redirect.nvramconfig $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.nvramconfig
 	install -D smtp-redirect/smtp-redirect.webhotspot $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.webhotspot
-	install -D smtp-redirect/smtp-redirect.startup $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.startup
+	install -D smtp-redirect/smtp-redirect.firewall $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.firewall
 
 		
 chillispot:
