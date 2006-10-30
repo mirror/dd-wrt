@@ -13,6 +13,11 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
+
+addEvent(window, "load", function() {
+	show_layer_ext(document.p2p.ctorrent_enable, 'idctorrent', <% nvram_else_match("ctorrent_enable", "1", "1", "0"); %> == 1);
+
+});
 		
 		//]]>
 		</script>
@@ -35,14 +40,8 @@ function to_submit(F) {
 							<input type="hidden" name="action" />
 							<h2><% tran("p2p.h2"); %></h2>
 							
-							<fieldset>
-								<legend><% tran("p2p.legend"); %></legend>
-								
-								
-								
-								
-								<br />
-						 	</fieldset><br />
+							<% show_modules(".p2pwebconfig"); %>
+						 	
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
