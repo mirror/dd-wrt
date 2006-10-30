@@ -416,6 +416,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_nband", "2", 0},	/* N-BAND */
   {"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
   {"wl0_nmode", "-1", 0},	/* N-mode */
+  {"wl0_nreqd", "0", 0},			/* Require 802.11n support */
+  {"wl0_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
   {"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
   {"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
 #endif
