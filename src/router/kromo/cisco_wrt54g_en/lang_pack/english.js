@@ -621,6 +621,7 @@ var p2p = new Object();
 p2p.titl=" - Peer-to-Peer Apps";
 p2p.h2="BitTorrent Client";
 p2p.legend="CTorrent";
+p2p.ctorrent_srv="Ctorrent Service";
 
 
 //help container
