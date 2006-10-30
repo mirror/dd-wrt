@@ -576,8 +576,7 @@ _dma_rxfill(dma_info_t *di)
 		/* the di->rxbufsize doesn't include the extra headroom, we need to add it to the
 		   size to be allocated
 		*/
-		if ((p = PKTGET(di->osh, di->rxbufsize + extra_offset,
-		                FALSE)) == NULL) {
+		if ((p = PKTGET(di->osh, di->rxbufsize + extra_offset,FALSE)) == NULL) {
 			DMA_ERROR(("%s: dma_rxfill: out of rxbufs\n", di->name));
 			di->hnddma.rxnobuf++;
 			break;

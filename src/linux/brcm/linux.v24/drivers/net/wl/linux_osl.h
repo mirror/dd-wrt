@@ -21,6 +21,8 @@
 
 #define OSL_PKTTAG_SZ     32 /* Size of PktTag */
 
+
+
 /* osl handle type forward declaration */
 typedef struct osl_dmainfo osldma_t;
 
@@ -91,8 +93,8 @@ osl_dma_free_consistent(osl_t *osh, void *va, uint size, ulong pa)
 #endif /* defined(BCMSDIO) */
 
 /* packet primitives */
-#define	PKTGET(osh, len, send)		osl_pktget((osh), (len), (send))
-#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb))
+#define	PKTGET(osh, len, send)		osl_pktget((osh), (len))
+#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb),(send))
 #define	PKTDATA(osh, skb)		(((struct sk_buff*)(skb))->data)
 #define	PKTLEN(osh, skb)		(((struct sk_buff*)(skb))->len)
 #define PKTHEADROOM(osh, skb)		(PKTDATA(osh, skb)-(((struct sk_buff*)(skb))->head))
@@ -157,7 +159,7 @@ osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
 #define	PKTSETPRIO(skb, x)		(((struct sk_buff*)(skb))->priority = (x))
 #define PKTSHARED(skb)                  (((struct sk_buff*)(skb))->cloned)
 
-extern void *osl_pktget(osl_t *osh, uint len, bool send);
+extern void *osl_pktget(osl_t *osh, uint len);
 extern void osl_pktfree(osl_t *osh, void *skb, bool send);
 extern void *osl_pktdup(osl_t *osh, void *skb);
 extern uint osl_pktalloced(osl_t *osh);
