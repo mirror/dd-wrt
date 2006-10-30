@@ -425,6 +425,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
       setRouter ("Linksys WRT-300N v1");
+      nvram_set("wl0gpio0", "8");
       return ROUTER_WRT300N;
     }
 

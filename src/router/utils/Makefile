@@ -20,11 +20,11 @@ include $(TOP)/.config
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
 UTILS := mtd
 ifneq ($(CONFIG_DIST),"micro")
-UTILS += epi_ttcp
+UTILS += epi_ttcp sbsrom
 endif
 
-CFLAGS += -s $(COPTS) -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR)
-
+CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR)
+LDFLAGS += -L../nvram -L../shared -lnvram -lshared
 vpath %.c $(SRCBASE)/tools/misc
 
 
