@@ -1057,6 +1057,15 @@ wlconf(char *name)
 		int nmode = AUTO;
 
 		/* Set n mode */
+
+
+		strcat_r(prefix, "nreqd", tmp);
+		if (nvram_match(tmp, "0"))
+			nmode = 0;
+		if (nvram_match(tmp, "1"))
+			nmode = 1;
+		WL_IOVAR_SETINT(name, "nreqd", (uint32)nmode);
+
 		strcat_r(prefix, "nmode", tmp);
 		if (nvram_match(tmp, "0"))
 			nmode = OFF;
