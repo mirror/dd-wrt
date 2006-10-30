@@ -141,7 +141,7 @@ osl_detach(osl_t *osh)
 
 /* Return a new packet. zero out pkttag */
 void*
-osl_pktget(osl_t *osh, uint len, bool send)
+osl_pktget(osl_t *osh, uint len)
 {
 	struct sk_buff *skb;
 
@@ -161,11 +161,14 @@ osl_pktget(osl_t *osh, uint len, bool send)
 
 /* Free the driver packet. Free the tag if present */
 void
-osl_pktfree(osl_t *osh, void *p)
+osl_pktfree(osl_t *osh, void *p, bool send)
 {
 	struct sk_buff *skb, *nskb;
 
 	skb = (struct sk_buff*) p;
+ 
+	if (send && osh->pub.tx_fn)
+		osh->pub.tx_fn(osh->pub.tx_ctx, p, 0);
 
 	/* perversion: we use skb->next to chain multi-skb packets */
 	while (skb) {

@@ -483,7 +483,6 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 			w = DEFAULT_GPIOTIMERVAL;
 		sb_corereg(si, 0, OFFSETOF(chipcregs_t, gpiotimerval), ~0, w);
 	}
-	if ((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev <= 1)) {
 
 	if (FORCEHT_WAR32414(si)) {
 		/* set proper clk setup delays before forcing HT */
