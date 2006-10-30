@@ -1,0 +1,16 @@
+
+<fieldset>
+	<legend><% tran("p2p.legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("p2p.ctorrent_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="ctorrent_enable" <% nvram_selmatch("ctorrent_enable","1","checked"); %> onclick="show_layer_ext(this, 'idctorrent', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="ctorrent_enable" <% nvram_selmatch("ctorrent_enable","0","checked"); %> onclick="show_layer_ext(this, 'idctorrent', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idctorrent">
+	
+		<div class="setting">Still Under Developpement</div>
+	
+	</div>
+
+
+</fieldset><br />
