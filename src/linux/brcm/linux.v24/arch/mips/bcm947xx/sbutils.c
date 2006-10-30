@@ -142,6 +142,12 @@ static uint32 sb_gpioreservation = 0;
 #define PCIE_CONFIGREGS 	1		/* Access to config space */
 #define PCIE_PCIEREGS 		2		/* Access to pcie registers */
 
+/* force HT war check */
+#define FORCEHT_WAR32414(si)	\
+	((PCIE(si)) && (((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev == 1)) ||	\
+	((si->sb.chip == BCM4321_CHIP_ID) && (si->sb.chiprev <= 3))))
+
+
 /* GPIO Based LED powersave defines */
 #define DEFAULT_GPIO_ONTIME	10		/* Default: 10% on */
 #define DEFAULT_GPIO_OFFTIME	90		/* Default: 10% on */
@@ -335,7 +341,7 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 		si->memseg = TRUE;
 
 	/* kludge to enable the clock on the 4306 which lacks a slowclock */
-	if (BUSTYPE(si->sb.bustype) == PCI_BUS)
+	if (BUSTYPE(si->sb.bustype) == PCI_BUS && !sb_ispcie(si))
 		sb_clkctl_xtal(&si->sb, XTAL|PLL, ON);
 
 	if (BUSTYPE(si->sb.bustype) == PCI_BUS) {
@@ -478,15 +484,34 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 		sb_corereg(si, 0, OFFSETOF(chipcregs_t, gpiotimerval), ~0, w);
 	}
 	if ((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev <= 1)) {
+
+	if (FORCEHT_WAR32414(si)) {
 		/* set proper clk setup delays before forcing HT */
-		sb_clkctl_init((void *)si);
-		sb_corereg((void*)si, SB_CC_IDX, OFFSETOF(chipcregs_t, system_clk_ctl),
-		           SYCC_HR, SYCC_HR);
+ 		sb_clkctl_init((void *)si);
+		sb_war32414_forceHT((void *)si, 1);
 	}
 
 
 	return (si);
 }
+
+void
+BCMINITFN(sb_war32414_forceHT)(sb_t *sbh, bool forceHT)
+{
+	sb_info_t *si;
+
+	si = SB_INFO(sbh);
+
+
+	if (FORCEHT_WAR32414(si)) {
+		uint32 val = 0;
+		if (forceHT)
+			val = SYCC_HR;
+		sb_corereg((void*)si, SB_CC_IDX, OFFSETOF(chipcregs_t, system_clk_ctl),
+			SYCC_HR, val);
+	}
+}
+
 
 uint
 sb_coreid(sb_t *sbh)
@@ -3077,5 +3102,3 @@ done:
 	INTR_RESTORE(si, intr_val);
 	return memsize;
 }
-
-
