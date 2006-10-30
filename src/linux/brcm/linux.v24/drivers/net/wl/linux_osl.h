@@ -158,7 +158,7 @@ osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
 #define PKTSHARED(skb)                  (((struct sk_buff*)(skb))->cloned)
 
 extern void *osl_pktget(osl_t *osh, uint len, bool send);
-extern void osl_pktfree(osl_t *osh, void *skb);
+extern void osl_pktfree(osl_t *osh, void *skb, bool send);
 extern void *osl_pktdup(osl_t *osh, void *skb);
 extern uint osl_pktalloced(osl_t *osh);
 
