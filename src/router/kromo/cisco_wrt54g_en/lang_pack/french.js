@@ -329,6 +329,7 @@ bmenu.applicationsptriggering="Déclenchement de connexion";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
+bmenu.applicationsP2P="P2P";
 
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Vue d\'ensemble";
@@ -604,6 +605,19 @@ prforward.app="Application";
 //help container
 
 hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+
+
+// ******************************************* P2P.asp *******************************************//
+
+p2p.titl=" - Appications Peer-to-Peer";
+p2p.h2="Client BitTorrent";
+p2p.legend="CTorrent";
+
+
+//help container
+
+//hpp2p.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
+
 
 
 
@@ -960,7 +974,7 @@ qos.titl=" - Qualité de Service";
 qos.h2="Qualité de Service (QoS)";
 qos.legend="Configuration QoS";
 qos.srv="QoS";
-qos.type="Ordonanceur de Packet";
+qos.type="Ordonanceur de Packets";
 qos.uplink="Débit montant (kbps)";
 qos.dnlink="Débit descendant (kbps)";
 qos.gaming="Optimiser pour le jeu";
