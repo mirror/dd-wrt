@@ -6128,7 +6128,7 @@ void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
 		killall("rstats", sig);
 		wait_file_exists(name, 5, 0);
 		do_file(name,wp);
-		unlink(name);
+//		unlink(name);
 	}
 }
 #endif
