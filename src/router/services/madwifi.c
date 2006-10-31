@@ -514,13 +514,13 @@ deconfigure_wifi (void)
 
 
   memset (iflist, 0, 1024);
-  killall("wrt-radauth",SIGTERM);
-  killall("hostapd",SIGTERM);
-  killall("wpa_supplicant",SIGTERM);
+  killall ("wrt-radauth", SIGTERM);
+  killall ("hostapd", SIGTERM);
+  killall ("wpa_supplicant", SIGTERM);
   sleep (2);
-  killall("wrt-radauth",SIGKILL);
-  killall("hostapd",SIGKILL);
-  killall("wpa_supplicant",SIGKILL);
+  killall ("wrt-radauth", SIGKILL);
+  killall ("hostapd", SIGKILL);
+  killall ("wpa_supplicant", SIGKILL);
 
 
   int c = getdevicecount ();
@@ -708,7 +708,11 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+      if (nvram_match (wmode, "wdssta"))
+	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
+	      "-Dmadwifi", psk, "-c", fstr);
+      else
+	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
   else if (nvram_match (akm, "8021X"))
     {
@@ -770,7 +774,13 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+      char wmode[16];
+      sprintf (wmode, "%s_mode", prefix);
+      if (nvram_match (wmode, "wdssta"))
+	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
+	      "-Dmadwifi", psk, "-c", fstr);
+      else
+	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
   else
     {
@@ -1141,10 +1151,10 @@ configure_single (int count)
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
-   foreach(var, nvram_safe_get("wl0_wds"), next)
-   {
-    eval("iwpriv","ath0","wds_add",var);
-   }
+  foreach (var, nvram_safe_get ("wl0_wds"), next)
+  {
+    eval ("iwpriv", "ath0", "wds_add", var);
+  }
 
   char macaddr[32];
   getMacAddr (dev, macaddr);
