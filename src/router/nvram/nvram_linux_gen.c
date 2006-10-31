@@ -46,8 +46,8 @@ nvram_init (void *unused)
 }
 
 #define cprintf(fmt, args...)
-/*
-#define cprintf(fmt, args...) do { \
+
+/*#define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
 		fprintf(fp, fmt, ## args); \
@@ -222,13 +222,13 @@ nvram_get (const char *name)
 
   cprintf ("get nvram %s\n", name);
   FILE *in = fopen ("/tmp/nvram/offsets.db", "rb");
-  setvbuf(in,&cache[0],_IOFBF,4);
   if (in == NULL)
     {
       unlock ();
       cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
+  setvbuf(in,&cache[0],_IOFBF,4);
   /*
   fread (values.offsets, ('z'-'A')*4, 1, in);
   fclose (in);
@@ -249,6 +249,12 @@ nvram_get (const char *name)
       return NULL;
     }
   in = fopen ("/tmp/nvram/nvram.db", "rb");
+  if (in == NULL)
+    {
+      unlock ();
+      cprintf ("nvram_get NULL (offsets)\n");
+      return NULL;
+    }
   setvbuf(in,&cache[0],_IOFBF,32);
   fseek (in, offset, SEEK_SET);
 
@@ -404,8 +410,8 @@ nvram_set (const char *name, const char *value)
 {
   lock ();
 #ifdef HAVE_NOWIFI
-    if (!strcmp(name,"conntrack_max"))
-	{
+    if (!strcmp(name,"ip_conntrack_max") && value!=NULL)
+	{	
 	int val=atoi(value);
 	if (val>4096) 
 	    {
