@@ -238,4 +238,6 @@ source "security/Kconfig"
 
 source "crypto/Kconfig"
 
+# source "acrypto/Kconfig"
+
 source "lib/Kconfig"

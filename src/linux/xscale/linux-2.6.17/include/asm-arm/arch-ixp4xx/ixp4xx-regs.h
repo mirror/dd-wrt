@@ -15,9 +15,6 @@
  *
  */
 
-#ifndef __ASM_ARCH_HARDWARE_H__
-#error "Do not include this directly, instead #include <asm/hardware.h>"
-#endif
 
 #ifndef _ASM_ARM_IXP4XX_H_
 #define _ASM_ARM_IXP4XX_H_
@@ -247,6 +244,11 @@
 #define IXP4XX_GPIO_GPIT2R      IXP4XX_GPIO_REG(IXP4XX_GPIO_GPIT2R_OFFSET)
 #define IXP4XX_GPIO_GPCLKR      IXP4XX_GPIO_REG(IXP4XX_GPIO_GPCLKR_OFFSET)
 #define IXP4XX_GPIO_GPDBSELR    IXP4XX_GPIO_REG(IXP4XX_GPIO_GPDBSELR_OFFSET)
+
+#define GPIO_GET_BIT  0x0000001
+#define GPIO_SET_BIT  0x0000002
+#define GPIO_GET_CONFIG 0x0000003
+#define GPIO_SET_CONFIG 0x0000004
 
 /*
  * GPIO register bit definitions

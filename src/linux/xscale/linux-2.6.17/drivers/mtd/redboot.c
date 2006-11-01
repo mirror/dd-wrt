@@ -39,7 +39,7 @@ static inline int redboot_checksum(struct fis_image_desc *img)
 	return 1;
 }
 
-static int parse_redboot_partitions(struct mtd_info *master,
+int parse_redboot_partitions(struct mtd_info *master,
                              struct mtd_partition **pparts,
                              unsigned long fis_origin)
 {
@@ -120,11 +120,19 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		goto out;
 	}
 
+	if (!fis_origin) {
+		for (i = 0; i < numslots; i++) {
+			if (!strncmp(buf[i].name, "RedBoot", 8)) {
+				fis_origin = (buf[i].flash_base & (master->size << 1) - 1);
+			}
+		}
+	}
+
 	for (i = 0; i < numslots; i++) {
 		struct fis_list *new_fl, **prev;
 
 		if (buf[i].name[0] == 0xff)
-			continue;
+			break;
 		if (!redboot_checksum(&buf[i]))
 			break;
 
@@ -135,11 +143,10 @@ static int parse_redboot_partitions(struct mtd_info *master,
 			goto out;
 		}
 		new_fl->img = &buf[i];
-                if (fis_origin) {
-                        buf[i].flash_base -= fis_origin;
-                } else {
-                        buf[i].flash_base &= master->size-1;
-                }
+		if (fis_origin) {
+				buf[i].flash_base -= fis_origin;
+		}
+		buf[i].flash_base &= (master->size << 1) - 1;
 
 		/* I'm sure the JFFS2 code has done me permanent damage.
 		 * I now think the following is _normal_
@@ -215,10 +222,16 @@ static int parse_redboot_partitions(struct mtd_info *master,
 			parts[i].name = nullname;
 		}
 #endif
+//		if (!memcmp(names, "ramdisk",8)) {
+//			parts[i-1].size+=parts[i].size;
+//		printk(KERN_NOTICE "adjust size to %d",parts[i-1].size);		
+//		}
 		tmp_fl = fl;
 		fl = fl->next;
 		kfree(tmp_fl);
 	}
+//BrainSlayer: extend zImage partition to include both, kernel and filesystem in one image
+	parts[1].size+=parts[2].size;
 	ret = nrparts;
 	*pparts = parts;
  out:

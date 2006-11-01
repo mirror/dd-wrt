@@ -2852,7 +2852,7 @@ static void npreal_flush_to_ldisc(void *private_)
 	tty = info->tty;
 	if ( tty && (info->flags & ASYNC_INITIALIZED))  {
 
-		if (tty->flip.buf_num) {
+			if (tty->flip.buf_num) {
 			cp = tty->flip.char_buf + TTY_FLIPBUF_SIZE;
 			fp = tty->flip.flag_buf + TTY_FLIPBUF_SIZE;
 			tty->flip.buf_num = 0;

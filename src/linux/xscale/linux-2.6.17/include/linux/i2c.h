@@ -253,6 +253,9 @@ static inline void i2c_set_adapdata (struct i2c_adapter *dev, void *data)
 	dev_set_drvdata (&dev->dev, data);
 }
 
+
+#define I2C_DF_NOTIFY	0x01		/* notify on bus (de/a)ttaches 	*/
+
 /*flags for the client struct: */
 #define I2C_CLIENT_PEC  0x04			/* Use Packet Error Checking */
 #define I2C_CLIENT_TEN	0x10			/* we have a ten bit chip address	*/

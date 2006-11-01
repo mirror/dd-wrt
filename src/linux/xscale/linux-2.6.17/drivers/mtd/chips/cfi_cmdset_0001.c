@@ -609,6 +609,15 @@ static int cfi_intelext_partition_fixup(struct mtd_info *mtd,
 		map->fldrv_priv = newcfi;
 		*pcfi = newcfi;
 		kfree(cfi);
+	} else {
+		struct flchip *chip;
+		int i;
+		for (i = 0; i < cfi->numchips; i++) {
+			chip = &cfi->chips[i];
+			init_waitqueue_head(&chip->wq);
+			spin_lock_init(&chip->_spinlock);
+			chip->mutex = &chip->_spinlock;
+		}
 	}
 
 	return 0;
