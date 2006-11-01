@@ -253,8 +253,8 @@ if (detect("3c556"))  // 3Com
 if (detect("LNE100TX"))  // liteon / linksys
     {
     eval ("insmod", "tulip");
-    eval ("insmod", "pnic");
-    eval ("insmod", "pnic2");
+//    eval ("insmod", "pnic");
+//    eval ("insmod", "pnic2");
     }
     
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
