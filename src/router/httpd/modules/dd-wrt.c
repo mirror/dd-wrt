@@ -5488,8 +5488,8 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 						<input type=\"hidden\" name=\"svqos_svctype%d\" value=\"%s\" />\n\
 					</td>\n\
 					<td><em>%s</em></td>\n\
-					<td >\n\
-						<select name=\"svqos_svcprio%d\"> \n\
+					<td >\n", i, i, name, i, type, name);
+      websWrite (wp, "<select name=\"svqos_svcprio%d\"> \n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
@@ -5497,7 +5497,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 		           </td>\n\
-				</tr>\n", i, i, name, i, type, name, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_svcs = strpbrk (++qos_svcs, "|");
       qos_svcs++;
