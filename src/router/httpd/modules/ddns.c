@@ -59,7 +59,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 int
 ddns_save_value (webs_t wp)
 {
-  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url;
+  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url,*force;
   struct variable ddns_variables[] = {
   {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5", "6", "7", "8")},
   {longname: "DDNS password", argv:ARGV ("30")},
@@ -73,6 +73,7 @@ ddns_save_value (webs_t wp)
   char _custom[] = "ddns_custom_X";
   char _conf[] = "ddns_conf";
   char _url[] = "ddns_url";
+  char _force[] = "ddns_force";
 
   which = &ddns_variables[0];
 
@@ -154,8 +155,9 @@ ddns_save_value (webs_t wp)
   custom = websGetVar (wp, _custom, NULL);
   conf = websGetVar (wp, _conf, NULL);
   url = websGetVar (wp, _url, NULL);
+  force = websGetVar (wp, _force, NULL);
 
-  if (!username || !passwd || !hostname)
+  if (!username || !passwd || !hostname || !force)
     {
       error_value = 1;
       return 1;
@@ -171,6 +173,7 @@ ddns_save_value (webs_t wp)
   nvram_set (_custom, custom);
   nvram_set (_conf, conf);
   nvram_set (_url, url);
+  nvram_set (_force,force);
 
   return ret;
 }
