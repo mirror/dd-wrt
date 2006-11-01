@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 				sa.sin_port = htons(NTP_PORT);
 				sa.sin_family = AF_INET;
 	
-				printf("trying %s [%s]\n", argv[i], inet_ntoa(sa.sin_addr));
+				//printf("trying %s [%s]\n", argv[i], inet_ntoa(sa.sin_addr));
 	
 				if (connect(usd, (struct sockaddr*)&sa, sizeof(sa)) != -1) {
 					send_packet(usd);
