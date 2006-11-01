@@ -144,6 +144,17 @@ share.dst="IP Destination";
 share.name_resolution="Nom";
 share.timeout="Timeout (s)";
 share.detail="Voir le détail";
+share.tmpmem="Mémoire Temporaire";
+share.1h="Toutes les heures";
+share.2h="Toutes les 2 heures";
+share.3h="Toutes les 3 heures";
+share.4h="Toutes les 4 heures";
+share.5h="Toutes les 5 heures";
+share.6h="Toutes les 6 heures";
+share.12h="Toutes les 12 heures";
+share.24h="Tous les jours";
+share.48h="Tous les 2 jours";
+share.168h="Toute les semaines";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -1146,6 +1157,12 @@ service.hwmon_legend="Surveillance du Matériel";
 service.hwmon_critemp="Température Critique (Ventillateur On)";
 service.hwmon_hystemp="Temperature Hystérésis (Ventillateur Off)";
 
+//rstat.webservices
+service.rstats_legend="Contrôle de la Bande passante";
+service.rstats_srv="Démon rstats";
+service.rstats_path="Emplacement des données";
+service.rstats_time="Intervalle des sauvegardes";
+service.rstats_usrdir="Répertoire utilisateur";
 
 
 // ******************************************* Sipath.asp + cgi *******************************************//
