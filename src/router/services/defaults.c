@@ -1706,7 +1706,10 @@ struct nvram_tuple srouter_defaults[] = {
   {"hwmon_temp_hyst", "50", 0},
 #endif
 #ifdef HAVE_RSTATS
-  {"rstats_enable","1",0},
+  {"rstats_enable", "1", 0},
+  {"rstats_path", "", 0},
+  {"rstats_stime", "48", 0},
+  {"rstats_data", "", 0},  
 #endif
 #ifdef HAVE_PORTSETUP
   {"eth0_bridged", "1", 0},	/* Service set ID (network name) */
