@@ -117,6 +117,10 @@ ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
 
+ifeq ($(CONFIG_CTORRENT),y)
+CFLAGS += -DHAVE_CTORRENT
+endif
+
 ifeq ($(CONFIG_UPNP),y)
 CFLAGS += -DHAVE_UPNP
 endif

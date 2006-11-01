@@ -3873,6 +3873,10 @@ int i,j;
 				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
 					j++;
 #endif
+#ifndef HAVE_CTORRENT
+				if (!strcmp(menu[i][j], "P2P.asp"))
+					j++;
+#endif
 				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))  //jump over Sputnik
 					j++;
 				if ((!openvpn) && !strcmp(menu[i][j], "Status_OpenVPN.asp"))  //jump over OpenVPN
