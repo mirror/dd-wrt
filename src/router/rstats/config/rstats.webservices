@@ -14,7 +14,7 @@
 	}
 //]]>
 </script>
-
+<input type="hidden" name="rstats_path" />
 <fieldset>
 	<legend><% tran("service.rstats_legend"); %></legend>
 	<div class="setting">
