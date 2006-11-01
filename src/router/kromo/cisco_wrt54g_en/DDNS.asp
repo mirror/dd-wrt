@@ -500,6 +500,8 @@ addEvent(window, "unload", function() {
 						<dl>
 							<dt class="term"><% tran("ddns.srv"); %>:</dt>
 							<dd class="definition"><% tran("hddns.right2"); %></dd>
+							<dt class="term"><% tran("ddns.forceupd"); %>:</dt>
+							<dd class="definition"><% tran("hddns.right4"); %></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
 					</div>
