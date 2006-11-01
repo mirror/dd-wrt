@@ -1289,12 +1289,9 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
 //websWrite (wp, "<input type=\"hidden\" name=\"%s_security_mode\"/>\n",p2);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n");
-  websWrite (wp,
-	     "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
+  websWrite (wp,"<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
 	     prefix, prefix, prefix);
-	websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
-	     selmatch (var, "disabled", "selected=\\\"selected\\\""));
+	websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",selmatch (var, "disabled", "selected=\\\"selected\\\""));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch (var, "psk", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
@@ -6151,9 +6148,19 @@ if (getifcount("eth")==1)
     websWrite (wp,"<legend>Port Setup</legend>\n");
 memset(eths,0,256);
 getinterfacelist("eth",eths);
+websWrite (wp,"<div class=\"setting\">\n<div class=\"label\">WAN Port Assignment</div>\n");
+websWrite (wp,"<select name=\"wan_ifname\">\n");
+  foreach (var, eths, next)
+  {
+  websWrite (wp,"<option value=\"%s\" %s >\n",var,nvram_match("wan_ifname",var)?"selected=\"selected\"":"");
+  }
+websWrite (wp,"</select>\n");
+
   foreach (var, eths, next)
   {
     if (nvram_match("wan_ifnames",var))
+	continue;
+    if (nvram_match("wan_ifname",var))
 	continue;
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</div>\n",var);
