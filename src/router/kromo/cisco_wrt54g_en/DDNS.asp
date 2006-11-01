@@ -127,12 +127,10 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("ddns.srv"); %></div>
 									<select name="ddns_enable" onchange="SelDDNS(this.form.ddns_enable.selectedIndex,this.form)">
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selected"); %> >" + share.disable + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selected"); %> >" + share.disable + "</option>");
+										//]]>
+										</script>
 										<option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
 										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
@@ -141,12 +139,10 @@ document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selec
 										<option value="7" <% nvram_selmatch("ddns_enable", "7", "selected"); %> >easyDNS.com</option>
 										<option value="8" <% nvram_selmatch("ddns_enable", "8", "selected"); %> >TZO.com</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");
+										//]]>
+										</script>
 									</select>
 								</div>
 
@@ -175,26 +171,20 @@ document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selec
 									<div class="label"><% tran("ddns.typ"); %></div>
 									<select name="ddns_dyndnstype">
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");
+										//]]>
+										</script>
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");
+										//]]>
+										</script>
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");
+										//]]>
+										</script>
 									</select>
 								</div>
 								<div class="setting">
@@ -321,12 +311,10 @@ document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "s
 									<div class="label"><% tran("ddns.typ"); %></div>
 									<select name="ddns_dyndnstype_6">
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", "selected"); %> >" + ddns.dynamic + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", "selected"); %> >" + ddns.dynamic + "</option>");
+										//]]>
+										</script>
 									</select>
 								</div>
 								<div class="setting">
@@ -432,26 +420,26 @@ document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", 
 									<div class="label">URL</div>
 									<textarea cols="60" rows="2" id="ddns_url" name="ddns_url"></textarea>
 									<script type="text/javascript">
-//<![CDATA[
-
+									//<![CDATA[
+									
 									var ddns_url = fix_cr( '<% nvram_get("ddns_url"); %>' );
 									document.getElementById("ddns_url").value = ddns_url;						
-
-//]]>
-</script>
+									
+									//]]>
+									</script>
 								</div>
 								<% nvram_invmatch("expert_mode","1","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.options"); %></div>
 									<textarea cols="60" rows="4" id="ddns_conf" name="ddns_conf"></textarea>
 									<script type="text/javascript">
-//<![CDATA[
-
+									//<![CDATA[
+									
 									var ddns_conf = fix_cr( '<% nvram_get("ddns_conf"); %>' );
 									document.getElementById("ddns_conf").value = ddns_conf;
-
-//]]>
-</script>
+									
+									//]]>
+									</script>
 								</div>
 								<% nvram_invmatch("expert_mode","1","-->"); %>
 
@@ -463,12 +451,20 @@ document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", 
 								<% nvram_selmatch("ddns_enable","7","-->"); %>
 								<% nvram_selmatch("ddns_enable","8","-->"); %>
 							</fieldset><br />
-							</fieldset>
-								<legend>Options</legend>
+							
+							<fieldset>
+								<legend><% tran("share.option"); %></legend>
 								<div class="setting">
-									<div class="label">Force Update</div>
+									<div class="label"><% tran("ddns.forceupd"); %></div>
 									<input type="text" size="4" class="num" name="ddns_force" value="<% nvram_get("ddns_force"); %>" />
+									<span class="default">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("(" + share.deflt + ": 10 " + filter.legend2 + ")");
+									//]]>
+									</script></span>
 								</div>
+							</fieldset>
 
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
@@ -477,28 +473,23 @@ document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", 
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
 							</fieldset><br />
+							
 							<div class="submitFooter">
 							 <script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
+							 //<![CDATA[
+							 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+							 //]]>
+							 </script>
 							 <script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+							 //<![CDATA[
+							 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+							 //]]>
+							 </script>
 							 <script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-
-//]]>
-</script>
+							 //<![CDATA[
+							 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+							 //]]>
+							 </script>
 							</div>
 						</form>
 					</div>
