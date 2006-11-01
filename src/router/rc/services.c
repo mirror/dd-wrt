@@ -284,6 +284,7 @@ start_single_service (void)
 #ifdef HAVE_RSTATS
       startstop ("rstats");
 #endif
+      startstop ("dnsmasq");
       startstop ("udhcpd");
 #ifdef HAVE_CPUTEMP
       start_service("hwmon");
