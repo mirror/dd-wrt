@@ -31,7 +31,7 @@
 			</select>
 			<input type="text" style="display: none;" name="u_path" maxlength="48" size="50" />
 		</div>
-		<div class="label"><% tran("service.rstats_stime"); %></div>
+		<div class="label"><% tran("service.rstats_time"); %></div>
 			<select name="rstats_stime">
 				<script type="text/javascript">
 				//<![CDATA[
