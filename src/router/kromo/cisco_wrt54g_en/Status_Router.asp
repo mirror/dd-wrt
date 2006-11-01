@@ -198,6 +198,32 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 							<fieldset>
+								<legend><% tran("status_router.legend6"); %></legend>
+							
+								<% nvram_match("dist_type", "vpn", "<!--"); %>
+									<div class="setting">
+										<div class="label"><% tran("management.samba_legend"); %></div>
+										<script type="text/javascript">
+										//<![CDATA[
+										<% statfs("/tmp/smbshare", "samba"); %>
+										document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.size) + ' / ' + scaleSize(samba.free)) : '<em>(' + share.nmounted + ')</em>' );
+										//]]>
+										</script>
+									</div>
+								<% nvram_match("dist_type", "vpn", "-->"); %>
+								
+								<div class="setting">
+									<div class="label"><% tran("management.jffs_legend"); %></div>
+									<script type="text/javascript">
+									//<![CDATA[
+									<% statfs("/jffs", "my_jffs"); %>
+									document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.size) + ' / ' + scaleSize(my_jffs.free)) : '<em>(' + share.nmounted + ')</em>' );
+									//]]>
+									</script>
+								</div>
+							</fieldset><br />
+							
+							<fieldset>
 								<legend><% tran("status_router.legend4"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("status_router.net_maxports"); %></div>
