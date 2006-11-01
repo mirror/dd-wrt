@@ -463,6 +463,13 @@ document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", 
 								<% nvram_selmatch("ddns_enable","7","-->"); %>
 								<% nvram_selmatch("ddns_enable","8","-->"); %>
 							</fieldset><br />
+							</fieldset>
+								<legend>Options</legend>
+								<div class="setting">
+									<div class="label">Force Update</div>
+									<input type="text" size="4" class="num" name="ddns_force" value="<% nvram_get("ddns_force"); %>" />
+								</div>
+
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
