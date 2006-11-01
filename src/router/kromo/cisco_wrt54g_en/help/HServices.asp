@@ -85,7 +85,7 @@
 				<dd>rstats is a bandwidth monitoring tool developped by Jonathan Zarate. The Adobe's SVG plugin is required to display bandwidth graphs. You can download this plugin <a href="http://www.adobe.com/svg/viewer/install/main.html" title="Adobe SVG Viewer download area" target="_blank">here</a><br/><br/>
 					<div class="note">
 						<h4>Note</h4>
-						<div>Take care, that inspite of general purpose read/write not to store frequently changed files on <em>NVRAM</em> (non-volatile RAM) or <em>JFFS2</em> (Journaled flash file system) as this can cause flash wear out.</div>
+						<div>When choosing to store data into both <em>NVRAM</em> (non-volatile RAM) or <em>JFFS2</em> (Journaled flash file system), <stong>Saving Interval</strong> is forced to <em>Every 2 days</em> to avoid too much read/write.</div>
 					</div>
 				</dd> 
 				
