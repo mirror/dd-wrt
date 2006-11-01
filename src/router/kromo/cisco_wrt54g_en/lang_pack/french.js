@@ -425,7 +425,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="Etat";
 ddns.system="DNS System";
 ddns.options="Options Supplémentaires";
-
+ddns.forceupd="Forcer la mise à jour";
 
 ddnsm.dyn_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au bon serveur.";
 ddnsm.dyn_good="DDNS a été mis à jour avec succès.";
