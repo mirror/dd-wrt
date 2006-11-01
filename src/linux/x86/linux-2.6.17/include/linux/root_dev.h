@@ -16,6 +16,6 @@ enum {
 	Root_SR0 = MKDEV(SCSI_CDROM_MAJOR, 0),
 };
 
-extern dev_t ROOT_DEV;
+extern dev_t ROOT_DEV[];
 
 #endif
