@@ -5547,8 +5547,8 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
 					</td>\n\
 					<td><em>%s</em></td>\n\
-					<td>\n\
-						<select name=\"svqos_ipprio%d\"> \n\
+					<td>\n", i, i, ip, ip);
+      websWrite (wp, "<select name=\"svqos_ipprio%d\"> \n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
@@ -5556,7 +5556,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -5660,8 +5660,8 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
 					</td>\n\
 					<td><em>%s</em></td>\n\
-					<td>\n\
-						<select name=\"svqos_macprio%d\"> \n\
+					<td>\n", i, i, mac, mac); 
+      websWrite (wp, "<select name=\"svqos_macprio%d\"> \n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
@@ -5669,7 +5669,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
