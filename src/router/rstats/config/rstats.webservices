@@ -21,11 +21,11 @@
 			<select name="rstats_select" onchange="setRstatsVal(this.form);">
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<option value=\"\" <% nvram_selected("rstats_path", "", "js"); %> >" + share.tmpmem + "</option>");
-				document.write("<option value=\"*nvram\" <% nvram_selected("rstats_path", "*nvram", "js"); %> >NVRAM</option>");
-				document.write("<option value=\"/jffs/\" <% nvram_selected("rstats_path", "/jffs/", "js"); %>" + (<% nvram_get("enable_jffs2"); %>) ? + "disabled=\"disabled\"" + : + " >JFFS2</option>");
-				document.write("<option value=\"/tmp/smbshare/\" <% nvram_selected("rstats_path", "/tmp/smbshare/", "js"); %>" + (<% nvram_get("samba_mount"); %>) ? + "disabled=\"disabled\"" + : + " >Samba FS</option>");
-				document.write("<option value=\"*user\" <% nvram_selected("rstats_path", "*user", "js"); %> >" + service.rstats_usrdir + "</option>");
+				document.write('<option value="" <% nvram_selected("rstats_path", "", "js"); %> >' + share.tmpmem + '</option>');
+				document.write('<option value="*nvram" <% nvram_selected("rstats_path", "*nvram", "js"); %> >NVRAM</option>');
+				document.write('<option value="/jffs/" <% nvram_selected("rstats_path", "/jffs/", "js"); %>' + ( (<% nvram_get("enable_jffs2"); %>) ? + 'disabled="disabled"' + : + '' +)+' >JFFS2</option>');
+				document.write('<option value="/tmp/smbshare/" <% nvram_selected("rstats_path", "/tmp/smbshare/", "js"); %>' + ( (<% nvram_get("samba_mount"); %>) ? + 'disabled="disabled"' + : + '' +)+' >Samba FS</option>');
+				document.write('<option value="*user" <% nvram_selected("rstats_path", "*user", "js"); %> >' + service.rstats_usrdir + '</option>');
 				//]]>
 				</script>
 			</select>
