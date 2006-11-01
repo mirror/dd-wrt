@@ -1,0 +1,60 @@
+<script type="text/javascript">
+//<![CDATA[
+	function setRstatsVal(F) {
+		if (F.rstats_select.value == '')
+			F.rstats_stime.value = 1;
+		F.u_path.style.display = (F.rstats_select.value == '*user') ? '' : 'none';
+	}
+//]]>
+</script>
+
+<fieldset>
+	<legend><% tran("service.rstats_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.rstats_srv"); %></div>
+		<input class="spaceradio" type="radio" name="rstats_enable" value="1" <% nvram_selmatch("rstats_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idrstats', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="rstats_enable" value="0" <% nvram_selmatch("rstats_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idrstats', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idrstats">
+		<div class="setting">
+			<div class="label"><% tran("service.rstats_path"); %></div>
+			<select name="rstats_select" onchange="setRstatsVal(this.form);">
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<option value=\"\" <% nvram_selected("rstats_path", "", "js"); %> >" + share.tmpmem + "</option>");
+				document.write("<option value=\"*nvram\" <% nvram_selected("rstats_path", "*nvram", "js"); %> >NVRAM</option>");
+				document.write("<option value=\"/jffs/\" <% nvram_selected("rstats_path", "/jffs/", "js"); %>" + (<% nvram_get("enable_jffs2"); %>) ? + "disabled=\"disabled\"" + : + " >JFFS2</option>");
+				document.write("<option value=\"/tmp/smbshare/\" <% nvram_selected("rstats_path", "/tmp/smbshare/", "js"); %>" + (<% nvram_get("samba_mount"); %>) ? + "disabled=\"disabled\"" + : + " >Samba FS</option>");
+				document.write("<option value=\"*user\" <% nvram_selected("rstats_path", "*user", "js"); %> >" + service.rstats_usrdir + "</option>");
+				//]]>
+				</script>
+			</select>
+			<input type="text" style="display: none;" name="u_path" maxlength="48" size="50" />
+		</div>
+		<div class="label"><% tran("service.rstats_stime"); %></div>
+			<select name="rstats_stime">
+				<script type="text/javascript">
+				//<![CDATA[
+				document.write("<option value=\"1\" <% nvram_selected("rstats_stime", "1", "js"); %> >" + share.1h + "</option>");
+				document.write("<option value=\"2\" <% nvram_selected("rstats_stime", "2", "js"); %> >" + share.2h + "</option>");
+				document.write("<option value=\"3\" <% nvram_selected("rstats_stime", "3", "js"); %> >" + share.3h + "</option>");
+				document.write("<option value=\"4\" <% nvram_selected("rstats_stime", "4", "js"); %> >" + share.4h + "</option>");
+				document.write("<option value=\"5\" <% nvram_selected("rstats_stime", "5", "js"); %> >" + share.5h + "</option>");
+				document.write("<option value=\"6\" <% nvram_selected("rstats_stime", "6", "js"); %> >" + share.6h + "</option>");
+				document.write("<option value=\"12\" <% nvram_selected("rstats_stime", "12", "js"); %> >" + share.12h + "</option>");
+				document.write("<option value=\"48\" <% nvram_selected("rstats_stime", "48", "js"); %> >" + share.48h + "</option>");
+				document.write("<option value=\"168\" <% nvram_selected("rstats_stime", "168", "js"); %> >" + share.168h + "</option>");
+				//]]>
+				</script>
+			</select>
+		</div>
+	</div>
+</fieldset><br />
+
+
+
+
+
+
+
+
