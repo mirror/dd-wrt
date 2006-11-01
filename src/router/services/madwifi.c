@@ -638,6 +638,8 @@ setupSupplicant (char *prefix)
 {
   char akm[16];
   sprintf (akm, "%s_akm", prefix);
+  char wmode[16];
+  sprintf (wmode, "%s_mode", prefix);
   if (nvram_match (akm, "wep"))
     {
       char key[16];
@@ -708,7 +710,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if (nvram_match (wmode, "wdssta"))
+      if (nvram_match (wmode, "wdssta") || nvram_match(wmode,"wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -774,9 +776,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      char wmode[16];
-      sprintf (wmode, "%s_mode", prefix);
-      if (nvram_match (wmode, "wdssta"))
+      if (nvram_match (wmode, "wdssta") || nvram_match(wmode,"wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
