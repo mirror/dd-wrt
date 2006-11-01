@@ -1253,6 +1253,7 @@ status_router.legend5="Configuration Type";
 status_router.www_loginstatus="Login Status";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
+status_router.legend6="Space Usage";
 
 //help container
 var hstatus_router = new Object();
