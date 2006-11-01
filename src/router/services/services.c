@@ -2181,7 +2181,7 @@ stop_syslog (void)
 {
   int ret;
 
-  ret = killall("logd",SIGKILL);
+  ret = killall("klogd",SIGKILL);
   ret += killall("syslogd",SIGKILL);
 
   cprintf ("done\n");
