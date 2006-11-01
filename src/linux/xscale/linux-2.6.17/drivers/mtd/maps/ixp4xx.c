@@ -1,5 +1,5 @@
 /*
- * $Id: ixp4xx.c,v 1.13 2005/11/16 16:23:21 dvrabel Exp $
+ * $Id: ixp4xx.c,v 1.8 2006/01/18 03:35:19 gerg Exp $
  *
  * drivers/mtd/maps/ixp4xx.c
  *
@@ -151,101 +151,7 @@ struct ixp4xx_flash_info {
 	struct resource *res;
 };
 
-#if defined (CONFIG_MACH_GTWX5715)
-
-#define SECTION_MAGIC 0xfeedbabe
-
-struct section_header {
-    __u32	magic;      /* feedbabe */
-	__u32	size;       /* Length of file excluding header */
-	__u32	checksum;   /* checksum from magic to end of file */
-	__u32	counter;    /* write counter */
-	__u32	offset;     /* offset */
-	char	name[128];  /* name of the section */
-};
-
-struct loader_header {
-	__u32	startup_code[4];
-	__u32	code_offset;
-	__u32	rootfs_size;
-	__u32	atag_list_start;
-	__u32	atag_list_dest;
-	__u32	atag_list_size;
-	__u32	linux_zimage_start;
-	__u32	linux_zimage_dest;
-	__u32	linux_zimage_size;
-};
-
-struct image_header {
-	struct section_header sh;
-	struct loader_header  lh;
-};
-						
-#define PART_rg_boot	0
-#define PART_boot		1
-#define PART_rootfs		2
-#define PART_linux		3
-#define PART_rg_conf	4
-#define PART_nvram		5
-#define PART_kernel		6
-
-static struct mtd_partition gtwx5715_parts[] = {
-    { name: "rg_boot", offset: 0x00000000, size: 0x00140000, mask_flags: MTD_WRITEABLE, },
-	{ name: "boot",    offset: 0x00140000, size: 0x00020000, mask_flags: 0, },
-	{ name: "rootfs",  offset: 0x00160000, size: 0xFFFFFFFF, mask_flags: 0, },
-	{ name: "linux",   offset: 0xFFFFFFFF, size: 0xFFFFFFFF, mask_flags: 0, },
-	{ name: "rg_conf", offset: 0x006C0000, size: 0x00020000, mask_flags: MTD_WRITEABLE, },
-	{ name: "nvram",   offset: 0x006E0000, size: 0x00020000, mask_flags: 0, },
-	{ name: "kernel",  offset: 0x00700000, size: 0x00100000, mask_flags: 0, },
-};
-
-static int init_mtd_partitions( struct mtd_info *mtd, struct mtd_partition **ppartitions )
-{
-	int err, new_layout, num_parts;
-	struct mtd_partition* parts;
-	struct image_header ihdr;
-	size_t len;
-
-	if( 0 != (err = MTD_READ( mtd, gtwx5715_parts[PART_boot].offset, sizeof(ihdr), &len, (void*)&ihdr )) )
-		return -err;
-	if( len != sizeof(ihdr) )
-		return -ENXIO;
-	if( ihdr.sh.magic != SECTION_MAGIC )
-		return -ENXIO;
-
-    new_layout = ihdr.sh.size <= sizeof(struct loader_header) ? 1 : 0;
-			
-	num_parts = 7;
-	
-	if( !(parts = kmalloc( num_parts * sizeof(struct mtd_partition), GFP_KERNEL )) )
-	{
-		printk(KERN_ERR "IXP4XXFlash: out of memory\n");
-		return -ENOMEM;
-	}
-
-	memcpy( parts, gtwx5715_parts, sizeof(gtwx5715_parts) );
-
-	if( new_layout )
-	{
-		parts[PART_rootfs].size  = parts[PART_rg_conf].offset - parts[PART_rootfs].offset;
-		parts[PART_linux].offset = parts[PART_boot].offset;
-		parts[PART_linux].size   = parts[PART_rg_conf].offset - parts[PART_linux].offset;
-	}
-	else
-	{
-		parts[PART_rootfs].size  = ihdr.lh.rootfs_size;
-		parts[PART_linux].offset = parts[PART_rootfs].offset + parts[PART_rootfs].size;
-		parts[PART_linux].size   = parts[PART_rg_conf].offset - parts[PART_linux].offset;
-		parts[PART_linux].name   = "DDWRT";
-	}
-	
-	*ppartitions = parts;
-	
-	return num_parts;
-}
-#else
 static const char *probes[] = { "RedBoot", "cmdlinepart", NULL };
-#endif
 
 static int ixp4xx_flash_remove(struct platform_device *dev)
 {
@@ -347,11 +253,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	/* Use the fast version */
 	info->map.write = ixp4xx_write16,
 
-#if defined (CONFIG_MACH_GTWX5715)
-	err = init_mtd_partitions(info->mtd, &info->partitions);
-#else
 	err = parse_mtd_partitions(info->mtd, probes, &info->partitions, 0);
-#endif
 	if (err > 0) {
 		err = add_mtd_partitions(info->mtd, info->partitions, err);
 		if(err)

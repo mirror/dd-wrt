@@ -45,6 +45,8 @@ static inline int ixp4xx_sda_pin(void *data)
 	return ((struct ixp4xx_i2c_pins*)data)->sda_pin;
 }
 
+
+
 static void ixp4xx_bit_setscl(void *data, int val)
 {
 	gpio_line_set(ixp4xx_scl_pin(data), 0);
@@ -108,6 +110,7 @@ static int ixp4xx_i2c_probe(struct platform_device *plat_dev)
 	if(!drv_data)
 		return -ENOMEM;
 
+	memzero(drv_data, sizeof(struct ixp4xx_i2c_data));
 	drv_data->gpio_pins = gpio;
 
 	/*
@@ -126,7 +129,6 @@ static int ixp4xx_i2c_probe(struct platform_device *plat_dev)
 	drv_data->algo_data.timeout = 100;
 
 	drv_data->adapter.id = I2C_HW_B_IXP4XX;
-	drv_data->adapter.class = I2C_CLASS_HWMON;
 	strlcpy(drv_data->adapter.name, plat_dev->dev.driver->name,
 		I2C_NAME_SIZE);
 	drv_data->adapter.algo_data = &drv_data->algo_data;
