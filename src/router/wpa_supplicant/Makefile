@@ -4,7 +4,7 @@ CFLAGS = $(COPTS) -MMD -Wall
 #endif
 
 # Include directories for CVS version
-CFLAGS += -I. -I../utils -I../hostapd
+CFLAGS += -I. -I../utils 
 
 ALL=wpa_supplicant wpa_passphrase wpa_cli dynamic_eap_methods
 
