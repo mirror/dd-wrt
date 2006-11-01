@@ -108,7 +108,9 @@ start_sysinit (void)
     }
   sprintf(dev,"/dev/discs/disc%d/part1",index);
   mount (dev,"/boot","ext2",MS_MGC_VAL,NULL);
+  
   sprintf(dev,"/dev/discs/disc%d/part3",index);
+  eval("fsck",dev);  //checking nvram partition and correcting errors
   if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
 
     {
