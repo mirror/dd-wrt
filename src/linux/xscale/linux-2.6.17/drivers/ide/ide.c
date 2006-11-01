@@ -1822,6 +1822,13 @@ static void __init probe_for_hwifs (void)
 		macide_init();
 	}
 #endif /* CONFIG_BLK_DEV_MAC_IDE */
+#ifdef CONFIG_BLK_DEV_IDE_AVILA
+        {
+		extern void avila_ide_init(void);
+		avila_ide_init();
+	}
+#endif /* CONFIG_BLK_DEV_IDE_AVILA */
+
 #ifdef CONFIG_BLK_DEV_Q40IDE
 	{
 		extern void q40ide_init(void);

@@ -850,6 +850,16 @@ config BLK_DEV_IDE_BAST
 	  Say Y here if you want to support the onboard IDE channels on the
 	  Simtec BAST or the Thorcom VR1000
 
+config BLK_DEV_IDE_AVILA
+	bool "Gateworks Avila IDE/CF Interface"
+	depends on (ARCH_IXDP425 || ARCH_AVILA) && BLK_DEV_IDEDISK && IDE_GENERIC
+	help
+		Say Y here if you want to build support for the Gateworks Avila
+		IDE/CF interface attached to the IXP4XX Expansion Bus. The IDE/CF
+		interface will allow Linux to see an inserted Compact Flash Card
+		as an ATA device which can be mounted and used as a normal hard
+		drive.
+
 config BLK_DEV_GAYLE
 	bool "Amiga Gayle IDE interface support"
 	depends on AMIGA

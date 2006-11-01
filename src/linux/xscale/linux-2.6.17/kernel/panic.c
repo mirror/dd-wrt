@@ -26,7 +26,7 @@ static int pause_on_oops;
 static int pause_on_oops_flag;
 static DEFINE_SPINLOCK(pause_on_oops_lock);
 
-int panic_timeout;
+int panic_timeout=10;
 
 ATOMIC_NOTIFIER_HEAD(panic_notifier_list);
 
@@ -34,7 +34,7 @@ EXPORT_SYMBOL(panic_notifier_list);
 
 static int __init panic_setup(char *str)
 {
-	panic_timeout = simple_strtoul(str, NULL, 0);
+//	panic_timeout = simple_strtoul(str, NULL, 0);
 	return 1;
 }
 __setup("panic=", panic_setup);

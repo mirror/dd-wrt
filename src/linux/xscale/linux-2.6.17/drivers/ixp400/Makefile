@@ -76,6 +76,7 @@ EXTRA_CFLAGS += \
 endif
 EXTRA_CFLAGS += \
 	-I$(IX_XSCALE_SW)/src/include \
+	-I$(IX_XSCALE_SW)/src/errHdlAcc/include \
 	-I$(IX_XSCALE_SW)/src/ethAcc/include \
 	-I$(IX_XSCALE_SW)/src/hssAcc/include \
 	-I$(IX_XSCALE_SW)/src/ethDB/include \
@@ -121,6 +122,16 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/qmgr/IxQMgrHwQIfIxp400.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrQAccess.o \
 	ixp400_xscale_sw/src/qmgr/IxQMgrSymbols.o
+
+ifeq ($(CPU_IXP46X),y)
+
+ixp400-objs += \
+	ixp400_xscale_sw/src/errHdlAcc/IxErrHdlAcc.o \
+	ixp400_xscale_sw/src/errHdlAcc/IxErrHdlAccControl.o \
+	ixp400_xscale_sw/src/errHdlAcc/IxErrHdlAccEthNPE.o \
+	ixp400_xscale_sw/src/errHdlAcc/IxErrHdlAccSymbols.o 
+endif
+
 ixp400-objs += \
 	ixp400_xscale_sw/src/ethAcc/IxEthAcc.o \
 	ixp400_xscale_sw/src/ethAcc/IxEthAccCommon.o \

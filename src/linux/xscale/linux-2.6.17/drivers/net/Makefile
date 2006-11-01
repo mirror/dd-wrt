@@ -1,6 +1,62 @@
 #
 # Makefile for the Linux network (ethercard) device drivers.
 #
+IX_XSCALE_SW := drivers/ixp400/ixp400_xscale_sw
+OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
+
+
+#OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
+
+
+
+CFLAGS_ixp400_eth.o	= -DWall \
+			  -I$(IX_XSCALE_SW)/src/include \
+			  -I$(OSAL_DIR)/ \
+			  -I$(OSAL_DIR)/os/linux/include/ \
+			  -I$(OSAL_DIR)/os/linux/include/modules/ \
+			  -I$(OSAL_DIR)/os/linux/include/modules/ioMem/ \
+			  -I$(OSAL_DIR)/os/linux/include/modules/core/ \
+			  -I$(OSAL_DIR)/os/linux/include/modules/bufferMgt/ \
+			  -I$(OSAL_DIR)/os/linux/include/core/  \
+			  -I$(OSAL_DIR)/os/linux/include/platforms/ \
+			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ \
+			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp425 \
+			  -I$(OSAL_DIR)/os/linux/include/platforms/ixp400/ixp465 \
+			  -I$(OSAL_DIR)/os/linux/include/core/ \
+			  -I$(OSAL_DIR)/include/ \
+			  -I$(OSAL_DIR)/include/modules/ \
+			  -I$(OSAL_DIR)/include/modules/bufferMgt/ \
+			  -I$(OSAL_DIR)/include/modules/ioMem/ \
+			  -I$(OSAL_DIR)/include/modules/core/ \
+			  -I$(OSAL_DIR)/include/platforms/ \
+			  -I$(OSAL_DIR)/include/platforms/ixp400/ \
+			  -I$(OSAL_DIR)/include/platforms/ixp400/ixp425 \
+			  -I$(OSAL_DIR)/include/platforms/ixp400/ixp465
+
+ifeq ($(CONFIG_ARCH_IXDP465),y)
+CFLAGS_ixp400_eth.o += -D__ixp46X
+else
+CFLAGS_ixp400_eth.o += -D__ixp42X
+endif
+
+ifeq ($(CPU_IXP46X),y)
+CFLAGS_ixp400_eth.o += -D__ixp46X
+CFLAGS_ixp400_eth.o += -DIX_DEVICE=ixp46X
+CFLAGS_ixp400_eth.o += -DIX_PLATFORM=ixdp46x
+else
+CFLAGS_ixp400_eth.o += -D__ixp42X
+CFLAGS_ixp400_eth.o += -DIX_DEVICE=ixp42X
+CFLAGS_ixp400_eth.o += -DIX_PLATFORM=ixdp42x
+endif
+
+CFLAGS_ixp400_eth.o += \
+	-D__linux \
+	-DIX_TARGET=linuxbe \
+	-DIX_UTOPIAMODE=0 \
+	-DIX_MPHYSINGLEPORT=0 \
+	-D__LINUX_ARM_ARCH__=5 \
+	-DCPU=33 \
+	-DXSCALE=33 \
 
 ifeq ($(CONFIG_ISDN_PPP),y)
   obj-$(CONFIG_ISDN) += slhc.o
@@ -40,6 +96,7 @@ obj-$(CONFIG_BMAC) += bmac.o
 
 obj-$(CONFIG_OAKNET) += oaknet.o 8390.o
 
+obj-$(CONFIG_IXP400_ETH) += ixp400_eth.o
 obj-$(CONFIG_DGRS) += dgrs.o
 obj-$(CONFIG_VORTEX) += 3c59x.o
 obj-$(CONFIG_TYPHOON) += typhoon.o
@@ -211,7 +268,8 @@ obj-$(CONFIG_HAMRADIO) += hamradio/
 obj-$(CONFIG_IRDA) += irda/
 obj-$(CONFIG_ETRAX_ETHERNET) += cris/
 obj-$(CONFIG_ENP2611_MSF_NET) += ixp2000/
-obj-$(CONFIG_IXP400_ETH) += ixp400/
+#obj-$(CONFIG_IXP400_ETH) += ixp400/
+
 
 obj-$(CONFIG_NETCONSOLE) += netconsole.o
 
