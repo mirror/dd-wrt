@@ -425,6 +425,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 ddns.system="DYNDNS Server";
 ddns.options="Additional DDNS Options";
+ddns.forceupd="Force Update";
 
 var ddnsm = new Object();
 ddnsm.dyn_strange="Strange server response, are you connecting to the right server?";
