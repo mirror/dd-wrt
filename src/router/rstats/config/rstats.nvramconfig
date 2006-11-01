@@ -1,3 +1,4 @@
  "rstats_enable" "rstats Bandwidth Monitoring Enable" "CHOICE" "2" "0" "1" "FALSE" "0"
  "rstats_path" "rstats files path" "NULL" "FALSE" "0"
  "rstats_stime" "rstats save interval (in hours)" "NULL" "FALSE" "0"
+ "rstats_data" "rstats data when NVRAM saved" "NULL" "FALSE" "0"
