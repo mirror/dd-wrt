@@ -1,9 +1,16 @@
 <script type="text/javascript">
 //<![CDATA[
 	function setRstatsVal(F) {
-		if (F.rstats_select.value == '')
+		setElementActive("rstats_stime", true);
+		if (F.rstats_select.value == '') {
 			F.rstats_stime.value = 1;
-		F.u_path.style.display = (F.rstats_select.value == '*user') ? '' : 'none';
+			setElementActive("rstats_stime", false);
+		}
+		else if (F.rstats_select.value == '*nvram' || F.rstats_select.value == '/jffs/') {
+			F.rstats_stime.value = 48;
+			setElementActive("rstats_stime", false);
+		}
+		show_layer_ext(F.rstats_select, 'idupath', F.rstats_select.value == '*user');
 	}
 //]]>
 </script>
@@ -29,7 +36,10 @@
 				//]]>
 				</script>
 			</select>
-			<input type="text" style="display: none;" name="u_path" maxlength="48" size="50" />
+		</div>
+		<div class="setting" id="idupath">
+			<div class="label"><% tran("service.rstats_usrdir"); %></div>
+			<input type="text" name="u_path" maxlength="48" size="25" />
 		</div>
 		<div class="setting">		
 			<div class="label"><% tran("service.rstats_time"); %></div>
@@ -51,11 +61,3 @@
 		</div>
 	</div>
 </fieldset><br />
-
-
-
-
-
-
-
-
