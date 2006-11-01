@@ -79,7 +79,15 @@
 						<h4>Note</h4>
 						<div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div>
 					</div>
-				 </dd>
+				</dd>
+				
+				<dt><% tran("service.rstats_legend"); %></dt>
+				<dd>rstats is a bandwidth monitoring tool developped by Jonathan Zarate. The Adobe's SVG plugin is required to display bandwidth graphs. You can download this plugin <a href="http://www.adobe.com/svg/viewer/install/main.html">here</a>a><br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>Take care, that inspite of general purpose read/write not to store frequently changed files on <em>NVRAM</em> (non-volatile RAM) or <em>JFFS2</em> (Journaled flash file system) as this can cause flash wear out.</div>
+					</div>
+				</dd> 
 				
 				<dt><% tran("service.ssh_legend"); %></dt>
 				<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).
