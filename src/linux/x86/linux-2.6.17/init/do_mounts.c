@@ -20,14 +20,11 @@ extern int get_filesystem_list(char * buf);
 int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
-char * __initdata root_device_name;
-char * __initdata root_device_name1;
-char * __initdata root_device_name2;
+int root_devices=4;
+char * __initdata root_device_name[4]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2"};
 static char __initdata saved_root_name[64];
 
-dev_t ROOT_DEV;
-dev_t ROOT_DEV1;
-dev_t ROOT_DEV2;
+dev_t ROOT_DEV[4];
 
 static int __init load_ramdisk(char *str)
 {
@@ -276,7 +273,7 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 		return err;
 
 	sys_chdir("/root");
-	ROOT_DEV = current->fs->pwdmnt->mnt_sb->s_dev;
+	ROOT_DEV[0] = current->fs->pwdmnt->mnt_sb->s_dev;
 	printk("VFS: Mounted root (%s filesystem)%s.\n",
 	       current->fs->pwdmnt->mnt_sb->s_type->name,
 	       current->fs->pwdmnt->mnt_sb->s_flags & MS_RDONLY ? 
@@ -307,7 +304,7 @@ retry:
 		 * Allow the user to distinguish between failed sys_open
 		 * and bad superblock on root device.
 		 */
-		__bdevname(ROOT_DEV, b);
+//		__bdevname(ROOT_DEV, b);
 //		printk("VFS: Cannot open root device \"%s\" or %s\n",
 //				root_device_name, b);
 //		printk("Please append a correct \"root=\" boot option\n");
@@ -332,7 +329,7 @@ static int __init mount_nfs_root(void)
 {
 	void *data = nfs_root_data();
 
-	create_dev("/dev/root", ROOT_DEV, NULL);
+	create_dev("/dev/root", ROOT_DEV[0], NULL);
 	if (data &&
 	    do_mount_root("/dev/root", "nfs", root_mountflags, data) == 0)
 		return 1;
@@ -373,37 +370,35 @@ void __init change_floppy(char *fmt, ...)
 void __init mount_root(void)
 {
 #ifdef CONFIG_ROOT_NFS
-	if (MAJOR(ROOT_DEV) == UNNAMED_MAJOR) {
+	if (MAJOR(ROOT_DEV[0]) == UNNAMED_MAJOR) {
 		if (mount_nfs_root())
 			return;
 
 		printk(KERN_ERR "VFS: Unable to mount root fs via NFS, trying floppy.\n");
-		ROOT_DEV = Root_FD0;
+		ROOT_DEV[0] = Root_FD0;
 	}
 #endif
 #ifdef CONFIG_BLK_DEV_FD
-	if (MAJOR(ROOT_DEV) == FLOPPY_MAJOR) {
+	if (MAJOR(ROOT_DEV[0]) == FLOPPY_MAJOR) {
 		/* rd_doload is 2 for a dual initrd/ramload setup */
 		if (rd_doload==2) {
 			if (rd_load_disk(1)) {
-				ROOT_DEV = Root_RAM1;
-				root_device_name = NULL;
+				ROOT_DEV[0] = Root_RAM1;
+				root_device_name[0] = NULL;
 			}
 		} else
 			change_floppy("root floppy");
 	}
 #endif
-	create_dev("/dev/root", ROOT_DEV, root_device_name);
-	if (mount_block_root("/dev/root", root_mountflags)==-1)
-	    {
-	    create_dev("/dev/root1", ROOT_DEV1, root_device_name1);
-	    if (mount_block_root("/dev/root1", root_mountflags)==-1)
-		{
-		create_dev("/dev/root2", ROOT_DEV2, root_device_name2);
-	        if (mount_block_root("/dev/root2", root_mountflags)==-1)
-		    panic("unable to mount dd-wrt\n");
-		}	    
-	    }
+	int i;
+	for (i=0;i<root_devices;i++)
+	{
+	create_dev("/dev/root", ROOT_DEV[i], root_device_name[i]);
+	int ret = mount_block_root("/dev/root", root_mountflags);
+	if (ret==0)
+	    return;
+	}
+	panic("unable to mount root\n");
 }
 
 /*
@@ -424,28 +419,22 @@ void __init prepare_namespace(void)
 	md_run_setup();
 
 	if (saved_root_name[0]) {
-		root_device_name = "/dev/hda2";
-		root_device_name1 = "/dev/hdb2";
-		root_device_name2 = "/dev/hdc2";
-		ROOT_DEV = name_to_dev_t("/dev/hda2");
-		ROOT_DEV1 = name_to_dev_t("/dev/hdb2");
-		ROOT_DEV2 = name_to_dev_t("/dev/hdc2");
-
-		if (strncmp(root_device_name, "/dev/", 5) == 0)
-			root_device_name += 5;
-		if (strncmp(root_device_name1, "/dev/", 5) == 0)
-			root_device_name1 += 5;
-		if (strncmp(root_device_name2, "/dev/", 5) == 0)
-			root_device_name2 += 5;
+		int i;
+		for (i=0;i<root_devices;i++)
+		{
+		ROOT_DEV[i] = name_to_dev_t(root_device_name[i]);
+		if (strncmp(root_device_name[i], "/dev/", 5) == 0)
+			root_device_name[i] += 5;
+		}
 	}
 
-	is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
+	is_floppy = MAJOR(ROOT_DEV[0]) == FLOPPY_MAJOR;
 
 	if (initrd_load())
 		goto out;
 
 	if (is_floppy && rd_doload && rd_load_disk(0))
-		ROOT_DEV = Root_RAM0;
+		ROOT_DEV[0] = Root_RAM0;
 
 	mount_root();
 out:

@@ -13,7 +13,7 @@ void  change_floppy(char *fmt, ...);
 int  mount_block_root(char *name, int flags);
 void  mount_root(void);
 extern int root_mountflags;
-extern char *root_device_name;
+extern char *root_device_name[];
 
 #ifdef CONFIG_DEVFS_FS
 
