@@ -102,7 +102,7 @@ addEvent(window, "load", function() {
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
 			path_input = '';
-			a = <% nvram_get("rstats_path"); %>;
+			a = '<% nvram_get("rstats_path"); %>';
 			switch (a) {
 				case '':
 				case '*nvram':
