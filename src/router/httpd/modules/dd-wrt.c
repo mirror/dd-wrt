@@ -6152,7 +6152,7 @@ websWrite (wp,"<div class=\"setting\">\n<div class=\"label\">WAN Port Assignment
 websWrite (wp,"<select name=\"wan_ifname\">\n");
   foreach (var, eths, next)
   {
-  websWrite (wp,"<option value=\"%s\" %s >\n",var,nvram_match("wan_ifname",var)?"selected=\"selected\"":"");
+  websWrite (wp,"<option value=\"%s\" %s >%s</option>\n",var,nvram_match("wan_ifname",var)?"selected=\"selected\"":"",var);
   }
 websWrite (wp,"</select>\n");
 
