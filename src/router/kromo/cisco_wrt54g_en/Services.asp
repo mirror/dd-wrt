@@ -98,6 +98,25 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
+		
+		if(document.setup.rstats_enable) {
+			rstats_select = '*user';
+			path_input = '';
+			a = <% nvram_get("rstats_path"); %>;
+			switch (a) {
+				case '':
+				case '*nvram':
+				case '/jffs/':
+				case '/tmp/smbshare/':
+				rstats_select = a;
+				break;
+			}
+			document.setup.rstats_select.value=rstats_select;
+			(rstats_select == '*user') ? document.setup.u_path.value=path_input : document.setup.u_path.value='';
+			
+			setRstatsVal(document.setup);
+			show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvram_else_match("rstats_enable", "1", "1", "0"); %> == 1);
+		}
 });
 
 		

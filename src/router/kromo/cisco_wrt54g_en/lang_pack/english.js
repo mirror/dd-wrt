@@ -143,7 +143,17 @@ share.dst="Remote Address";
 share.name_resolution="Name Resolution";
 share.timeout="Timeout (s)";
 share.detail="See detail";
-
+share.tmpmem="Temporary Memory";
+share.1h="Every hour";
+share.2h="Every 2 hours";
+share.3h="Every 3 hours";
+share.4h="Every 4 hours";
+share.5h="Every 5 hours";
+share.6h="Every 6 hours";
+share.12h="Every 12 hours";
+share.24h="Every day";
+share.48h="Every 2 days";
+share.168h="Every week";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -1173,6 +1183,13 @@ service.radiooff_srv="Use SES for turning off radio";
 service.hwmon_legend="Hardware Monitoring";
 service.hwmon_critemp="Critical Temperature (FAN Switch On)";
 service.hwmon_hystemp="Hysteresis Temperature (FAN Switch Off)";
+
+//rstat.webservices
+service.rstats_legend="Bandwidth Monitoring";
+service.rstats_srv="rstats Daemon";
+service.rstats_path="Save Bandwidth Data to";
+service.rstats_time="Saving Interval";
+service.rstats_usrdir="User Directory";
 
 
 
