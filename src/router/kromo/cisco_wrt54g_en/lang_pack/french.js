@@ -480,6 +480,7 @@ ddnsm.all_noip="Connexion Internet non détectée";
 //help container
 
 hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalisé</em> si vous connaissez tous les paramètres.";
+hddns.right4="Les mises à jour doivent se faire automatiquement quand votre adresse IP change. Attention à la politique d'abus de votre fourisseur DDNS; vous éviterez ainsi d'avoir votre compte bloqué.";
 
 
 

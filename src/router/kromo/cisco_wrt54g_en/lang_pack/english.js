@@ -481,6 +481,7 @@ ddnsm.all_noip="No Internet connection";
 //help container
 var hddns = new Object();
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP addresses and updates your domain information dynamically. You must sign up for service through DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com or Custom.";
+hddns.right4="Updates should only be performed automaticaly when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
 
 
 
