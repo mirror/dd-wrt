@@ -223,7 +223,7 @@ start_ddns (void)
       else
 	fprintf (fp, " --update_period_sec %s", "360");	// check ip every 6 mins
 //      fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
-      fprintf (fp, " --forced_update_period %s", atoi(nvram_safe_get("ddns_force"))*24*60*60);	//force update after 28days
+      fprintf (fp, " --forced_update_period %d", atoi(nvram_safe_get("ddns_force"))*24*60*60);	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns/ddns.log");	//log to file
       fprintf (fp, " --cache_dir %s", "/tmp/ddns");	//cache dir
       fprintf (fp, " --exec %s", "ddns_success");	//run after update
