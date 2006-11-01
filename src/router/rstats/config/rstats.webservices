@@ -35,15 +35,15 @@
 			<select name="rstats_stime">
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<option value=\"1\" <% nvram_selected("rstats_stime", "1", "js"); %> >" + share.1h + "</option>");
-				document.write("<option value=\"2\" <% nvram_selected("rstats_stime", "2", "js"); %> >" + share.2h + "</option>");
-				document.write("<option value=\"3\" <% nvram_selected("rstats_stime", "3", "js"); %> >" + share.3h + "</option>");
-				document.write("<option value=\"4\" <% nvram_selected("rstats_stime", "4", "js"); %> >" + share.4h + "</option>");
-				document.write("<option value=\"5\" <% nvram_selected("rstats_stime", "5", "js"); %> >" + share.5h + "</option>");
-				document.write("<option value=\"6\" <% nvram_selected("rstats_stime", "6", "js"); %> >" + share.6h + "</option>");
-				document.write("<option value=\"12\" <% nvram_selected("rstats_stime", "12", "js"); %> >" + share.12h + "</option>");
-				document.write("<option value=\"48\" <% nvram_selected("rstats_stime", "48", "js"); %> >" + share.48h + "</option>");
-				document.write("<option value=\"168\" <% nvram_selected("rstats_stime", "168", "js"); %> >" + share.168h + "</option>");
+				document.write("<option value=\"1\" <% nvram_selected("rstats_stime", "1", "js"); %> >" + share._1h + "</option>");
+				document.write("<option value=\"2\" <% nvram_selected("rstats_stime", "2", "js"); %> >" + share._2h + "</option>");
+				document.write("<option value=\"3\" <% nvram_selected("rstats_stime", "3", "js"); %> >" + share._3h + "</option>");
+				document.write("<option value=\"4\" <% nvram_selected("rstats_stime", "4", "js"); %> >" + share._4h + "</option>");
+				document.write("<option value=\"5\" <% nvram_selected("rstats_stime", "5", "js"); %> >" + share._5h + "</option>");
+				document.write("<option value=\"6\" <% nvram_selected("rstats_stime", "6", "js"); %> >" + share._6h + "</option>");
+				document.write("<option value=\"12\" <% nvram_selected("rstats_stime", "12", "js"); %> >" + share._12h + "</option>");
+				document.write("<option value=\"48\" <% nvram_selected("rstats_stime", "48", "js"); %> >" + share._48h + "</option>");
+				document.write("<option value=\"168\" <% nvram_selected("rstats_stime", "168", "js"); %> >" + share._168h + "</option>");
 				//]]>
 				</script>
 			</select>
