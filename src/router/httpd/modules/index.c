@@ -173,6 +173,31 @@ getinterfacelist("eth",eths);
     nvram_set (val, netmask);
     }
   }
+next=websGetVar(wp,"wan_ifname",NULL);
+if (next)  
+{
+    nvram_set("wan_ifname",next); 
+    nvram_set("wan_ifnames",next); 
+}
+if (next)
+{
+memset(eths,0,256); 
+int i;
+for (i=0;i<10;i++)
+    {
+    sprintf(var,"eth%d",i);
+    if (nvram_match("wan_ifname",next))
+	continue;
+    if (i>0)
+	strcat(eths," ");
+    strcat(eths,var);
+    }
+#ifndef HAVE_NOWIFI
+strcat(eths," ath0 ath1 ath2 ath3");
+#endif
+nvram_set("lan_ifnames",eths);
+
+}
 }
 #endif
 void
