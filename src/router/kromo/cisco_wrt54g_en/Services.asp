@@ -53,6 +53,10 @@ function to_submit(F) {
 		return false;
 	}
 	
+	if(F.rstats_enable) {
+		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
+	}
+	
 	F.submit_button.value = "Services";
 	F.save_button.value = sbutton.saving;
 	checked(F);
