@@ -999,7 +999,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_username_buf", "", 0},
   {"ddns_passwd_buf", "", 0},
   {"ddns_hostname_buf", "", 0},
-
+  {"ddns_force","10",0},
   {"ddns_cache", "", 0},	/* DDNS cache */
   {"ddns_time", "", 0},		/* DDNS time */
 
