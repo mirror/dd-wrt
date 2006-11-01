@@ -154,6 +154,7 @@ share._12h="Every 12 hours";
 share._24h="Every day";
 share._48h="Every 2 days";
 share._168h="Every week";
+share.days="Days";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";

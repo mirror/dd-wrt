@@ -460,11 +460,11 @@ addEvent(window, "unload", function() {
 									<span class="default">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": 10 " + filter.legend2 + ")");
+									document.write("(" + share.deflt + ": 10 " + share.days + ")");
 									//]]>
 									</script></span>
 								</div>
-							</fieldset>
+							</fieldset><br />
 
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>

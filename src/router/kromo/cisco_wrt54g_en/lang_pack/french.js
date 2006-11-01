@@ -155,6 +155,7 @@ share._12h="Toutes les 12 heures";
 share._24h="Tous les jours";
 share._48h="Tous les 2 jours";
 share._168h="Toute les semaines";
+share.days="Jours";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
