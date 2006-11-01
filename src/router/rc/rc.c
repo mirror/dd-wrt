@@ -590,7 +590,9 @@ main (int argc, char **argv)
   else if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
-      if (brand == ROUTER_MOTOROLA)
+      if ((brand == ROUTER_MOTOROLA) ||
+      	(brand == ROUTER_MOTOROLA_V1) ||
+      	(brand == ROUTER_MOTOROLA_WE800G))
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
