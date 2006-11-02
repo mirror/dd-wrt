@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	char *srv;
 	char buf[256];
 
-	printf("mini ntpclient\n");
+//	printf("mini ntpclient\n");
 
 	if (argc <= 1) {
 		printf("Usage: %s <server> [server [...]]\n", argv[0]);
