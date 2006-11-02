@@ -3570,7 +3570,7 @@ start_hwmon (void)
 #endif
 
 
-#ifdef HAVE_MEDIASERVER
+#ifdef HAVE_USBHOTPLUG
 int
 start_hotplug_usb (void)
 {
