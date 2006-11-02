@@ -3829,7 +3829,7 @@ char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan
 						{"Filters.asp","","","","","","","","","",""},
 						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","P2P.asp","","","",""},
 						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp",""},
-						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Info.htm","","","","",""}};
+						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Status_Bandwidth.asp","Info.htm","","","",""}};
 
 /* real name is bmenu.menuname[i][j] */
 char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","",""},
@@ -3839,7 +3839,7 @@ char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","s
 							{"accrestriction","webaccess","","","","","","","","",""},
 							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","applicationsP2P","","",""},
 							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup"},
-							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuSysInfo","","","",""}};
+							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuBand","statuSysInfo","","",""}};
 
 int i,j;
 
@@ -4539,18 +4539,9 @@ fclose(in);
 websWrite(wp,"</fieldset>");
 
 }
-/* done in do_menu
-static void
-ej_show_openvpn (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  if (nvram_match ("openvpn_enable", "1"))
-    {
-      websWrite (wp,
-		 "<li><a href=\"Status_OpenVPN.asp\">VPN</a></li>\n");
-    }
-  return;
-} */
+
 #endif
+
 static void
 ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -4566,19 +4557,14 @@ wl_ioctl(get_wdev(), WLC_GET_RADIO, &radiooff, sizeof(int));
 switch (radiooff)
 	{	
 	case 0:
-		//websWrite (wp, "On&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
-		//websWrite (wp, "On");
 		websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
 		break;
 	case 1: // software disabled
 	case 2: // hardware disabled
 	case 3: // both are disabled
-		//websWrite (wp, "Off&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
-		//websWrite (wp, "Off");
 		websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
 		break;
 	case -1:
-		//websWrite (wp, "Unknown");
 		websWrite (wp, "%s", live_translate ("share.unknown"));
 		break;
 	}
@@ -4904,6 +4890,8 @@ struct ej_handler ej_handlers[] = {
 };
 #endif /* !WEBS */
 
+
+
 #ifdef HAVE_UPNP
 // changed by steve
 // writes javascript-string safe text
@@ -4950,18 +4938,17 @@ tf_upnp (webs_t wp)
   char *v;
   char s[64];
 
-  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v))
-    {
-      if (strcmp (v, "all") == 0)
-	{
-	  nvram_set ("upnp_clear", "1");
-	}
-      else
-	{
-	  sprintf (s, "forward_port%s", v);
-	  nvram_unset (s);
-	}
-    }
+  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v)) {
+  	if (strcmp (v, "all") == 0)
+  	{
+  		nvram_set ("upnp_clear", "1");
+  	}
+  	else
+  	{
+  		sprintf (s, "forward_port%s", v);
+  		nvram_unset (s);
+  	}
+  }
   // firewall + upnp service is restarted after this
   return 0;
 }
@@ -4975,18 +4962,17 @@ ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
   char s[32];
 
   if (nvram_match ("upnp_enable", "1"))
-    {
-      for (i = 0; i < 50; i++)
-	{
-	  websWrite (wp, (i > 0) ? ",'" : "'");
-	  sprintf (s, "forward_port%d", i);
-	  tf_webWriteJS (wp, nvram_safe_get (s));
-	  websWrite (wp, "'");
-	}
-    }
+  {
+  	for (i = 0; i < 50; i++)
+  	{
+  		websWrite (wp, (i > 0) ? ",'" : "'");
+  		sprintf (s, "forward_port%d", i);
+  		tf_webWriteJS (wp, nvram_safe_get (s));
+  		websWrite (wp, "'");
+  	}
+  }
 
   return;
-
 }
 
 // end changed by steve
