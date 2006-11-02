@@ -3582,13 +3582,13 @@ start_hotplug_usb (void)
   char *type = getenv ("TYPE");
   char *devfs = getenv ("DEVFS");
   char *device = getenv ("DEVICE");
-  cprintf ("interface %s\n", interface != NULL ? interface : "");
-  cprintf ("action %s\n", action != NULL ? action : "");
-  cprintf ("product %s\n", product != NULL ? product : "");
-  cprintf ("devpath %s\n", devpath != NULL ? devpath : "");
-  cprintf ("type %s\n", type != NULL ? type : "");
-  cprintf ("devfs %s\n", devfs != NULL ? devfs : "");
-  cprintf ("device %s\n", device != NULL ? device : "");
+  fprintf (stderr,"interface %s\n", interface != NULL ? interface : "");
+  fprintf (stderr,"action %s\n", action != NULL ? action : "");
+  fprintf (stderr,"product %s\n", product != NULL ? product : "");
+  fprintf (stderr,"devpath %s\n", devpath != NULL ? devpath : "");
+  fprintf (stderr,"type %s\n", type != NULL ? type : "");
+  fprintf (stderr,"devfs %s\n", devfs != NULL ? devfs : "");
+  fprintf (stderr,"device %s\n", device != NULL ? device : "");
 
 
   return 0;
