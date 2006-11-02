@@ -496,7 +496,7 @@ diag_led_4702 (int type, int act)
       switch (type)
 	{
 	case DMZ:
-	  system ("echo 1 > /proc/sys/diag");
+	  system2 ("echo 1 > /proc/sys/diag");
 	  break;
 	}
     }
@@ -505,7 +505,7 @@ diag_led_4702 (int type, int act)
       switch (type)
 	{
 	case DMZ:
-	  system ("echo 0 > /proc/sys/diag");
+	  system2 ("echo 0 > /proc/sys/diag");
 	  break;
 	}
     }
@@ -1228,7 +1228,7 @@ find_pid_by_ps (char *pidName)
   int pid = -1;
   char line[254];
 
-  if ((fp = popen ("ps -ax", "r")))
+  if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
@@ -1721,6 +1721,7 @@ get_wl_assoc_mac (int *c)
 
   wlmac = NULL;
   count = *c = 0;
+  fprintf(stderr,"assoclist\n");
 
   if ((fp = popen ("wl assoclist", "r")))
     {
@@ -1962,11 +1963,11 @@ wds_dev_config (int dev, int up)
 #endif
 
       snprintf (cmd, 99, "ifconfig %s down", wds_dev);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 99, "ifconfig %s %s netmask %s up", wds_dev, ip,
 		netmask);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (wds_gw_var, 31, "%s_gw", wds_var);
       gw = nvram_safe_get (wds_gw_var);
@@ -1984,7 +1985,7 @@ wds_dev_config (int dev, int up)
       fprintf (fp, "running down\n");
 #endif
       snprintf (cmd, 99, "ifconfig %s down", wds_dev);
-      system (cmd);
+      system2 (cmd);
 
     }
 
@@ -2244,12 +2245,18 @@ int
 getifcount (const char *ifprefix)
 {
   char devcall[64];
-  sprintf (devcall, "cat /proc/net/dev|grep %s|wc -l", ifprefix);
-  FILE *in = popen (devcall, "rb");
+  fprintf(stderr,"get ifcount\n");
+  return 0;
+  
+  sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l >/tmp/.ifcount", ifprefix);
+  system2(devcall);
+  FILE *in = fopen ("/tmp/.ifcount", "rb");
+  if (in==NULL)return 0;
   int count;
   fscanf (in, "%d", &count);
   fclose (in);
   return count;
+  
 }
 int haswifi(void)
 {
