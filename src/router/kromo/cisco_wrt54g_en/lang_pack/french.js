@@ -367,6 +367,7 @@ bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Sans fil";
 bmenu.statuVPN="OpenVPN";
+bmenu.statuBand="Bande Passante";
 bmenu.statuSysInfo="Système";
 
 
@@ -426,7 +427,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="Journal";
 ddns.system="DNS System";
 ddns.options="Options Supplémentaires";
-ddns.forceupd="Intervalle de mise à jour forcée (en jour)";
+ddns.forceupd="Intervalle de mise à jour forcée";
 
 ddnsm.all_closed="Le serveur DDNS est actuellement ferm&#233;.";
 ddnsm.all_resolving="R&#233;solution du nom de domaine en cours ...";
