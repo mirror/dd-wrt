@@ -401,47 +401,6 @@ ddns.system="DNS sistem";
 ddns.options="Dodatne DDNS mo¾nosti";
 
 
-ddnsm.dyn_strange="Neprièakovani odziv stre¾nika; ali se prikljuèujete na pravilni stre¾nik ?";
-ddnsm.dyn_good="DDNS posodobitev je uspela";
-ddnsm.dyn_noupdate="Posodobitev trenutno ni potrebna";
-ddnsm.dyn_nohost="Ime gostitelja ne obstaja";
-ddnsm.dyn_notfqdn="Ime gostitelja ni pravilno";
-ddnsm.dyn_yours="Ime gostitelja ni va¹a last";
-ddnsm.dyn_abuse="Gostitelj je bil blokiran zaradi zlorabe";
-ddnsm.dyn_nochg="IP naslov se ni spremenil od zadnje posodobitve";
-ddnsm.dyn_badauth="Overjanje ni uspelo (uporabni¹ko ime ali geslo)";
-ddnsm.dyn_badsys="Neveljavni sistemski parameter";
-ddnsm.dyn_badagent="Ta uporabni¹ki agent je bil blokiran";
-ddnsm.dyn_numhost="Najdeno preveè ali premalo gostiteljev";
-ddnsm.dyn_dnserr="DNS notranja napaka";
-ddnsm.dyn_911="Neprièakovana napaka 911";
-ddnsm.dyn_999="Neprièakovana napaka 999";
-ddnsm.dyn_donator="Zahtevana funkcija je na voljo samo za donatorje, prosimo, da darujete";
-ddnsm.dyn_uncode="Neznana povratna koda";
-
-ddnsm.tzo_good="Operacija zakljuèena";
-ddnsm.tzo_noupdate="Posodobitev trenutno ni potrebna";
-ddnsm.tzo_notfqdn="Napaèno domensko ime";
-ddnsm.tzo_notmail="Napaèen email";
-ddnsm.tzo_notact="Napaèno dejanje";
-ddnsm.tzo_notkey="Napaèen kljuè";
-ddnsm.tzo_notip="Nepravilen IP naslov";
-ddnsm.tzo_dupfqdn="Podvojeno domensko ime";
-ddnsm.tzo_fqdncre="Domensko ime je ¾e bilo ustvarjeno za to domensko ime";
-ddnsm.tzo_expired="Raèun je potekel";
-ddnsm.tzo_error="Neprièakovana napaka na stre¾niku";
-
-ddnsm.zone_701="Cona ni nastavljena za ta raèun";
-ddnsm.zone_702="Posodobitev ni uspela";
-ddnsm.zone_703="Potreben vsaj en parameter: <em>cona</em> ali <em>gostitelj</em>";
-ddnsm.zone_704="Cona mora biti veljaveno internetno ime s <em>pikami</em>";
-ddnsm.zone_705="Cona ne more biti prazna";
-ddnsm.zone_707="Podvojena posodobitev za istega gostitelja/IP, prilagodi odjemalèeve nastavitve";
-ddnsm.zone_201="Zapis ne potrebuje posodobitve";
-ddnsm.zone_badauth="Overjanje ni uspelo (uporabni¹ko ime ali geslo)";
-ddnsm.zone_good="ZoneEdit je uspe¹no posodobljen";
-ddnsm.zone_strange="Neprièakovani odziv stre¾nika; ali se prikljuèujete na pravilni stre¾nik ?";
-
 ddnsm.all_closed="DDNS stre¾nik je trenutno zaprt";
 ddnsm.all_resolving="Rezre¹evanje domenskega imena";
 ddnsm.all_errresolv="Rezre¹evanje domenskega imena ni uspelo";

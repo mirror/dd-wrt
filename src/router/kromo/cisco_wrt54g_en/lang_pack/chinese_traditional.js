@@ -396,47 +396,6 @@ ddns.wildcard="統配符";
 ddns.statu="DDNS狀態";
 
 
-ddnsm.dyn_strange="奇怪的伺服器回應，您是否確定所連接的伺服器是正確的？";
-ddnsm.dyn_good="DDNS更新成功";
-ddnsm.dyn_noupdate="當前沒有更新的需要";
-ddnsm.dyn_nohost="主機名不存在";
-ddnsm.dyn_notfqdn="主機名不正確";
-ddnsm.dyn_yours="主機不在您的控制下";
-ddnsm.dyn_abuse="主機被因為受虐被暫時封禁";
-ddnsm.dyn_nochg="IP位址自從上次更新以來未改變";
-ddnsm.dyn_badauth="認證失敗（用戶名或密碼）";
-ddnsm.dyn_badsys="無效的系統參數";
-ddnsm.dyn_badagent="這個用戶代理被封禁";
-ddnsm.dyn_numhost="找到過多或過少主機";
-ddnsm.dyn_dnserr="DNS內部錯誤";
-ddnsm.dyn_911="未知錯誤911";
-ddnsm.dyn_999="未知錯誤999";
-ddnsm.dyn_donator="所請求的特性中有一個是僅對捐贈者可用的特性，請捐贈";
-ddn?6csm.dyn_uncode="未知返回代碼";
-
-ddnsm.tzo_good="操作完成";
-ddnsm.tzo_noupdate="當前不需要更新";
-ddnsm.tzo_notfqdn="無效功能變數名稱";
-ddnsm.tzo_notmail="無效Email";
-ddnsm.tzo_notact="無效操作";
-ddnsm.tzo_notkey="無效秘鑰";
-ddnsm.tzo_notip="無效IP地址";
-ddnsm.tzo_dupfqdn="重複的功能變數名稱";
-ddnsm.tzo_fqdncre="這個功能變數名稱稱的功能變數名稱已經被建立";
-ddnsm.tzo_expired="帳號已過期";
-ddnsm.tzo_error="未知伺服器錯誤";
-
-ddnsm.zone_701="本帳號的Zone未設置";
-ddnsm.zone_702="更新失敗";
-ddnsm.zone_703="必須提供<em>zones</em> 或者 <em>host</em> 兩個參數中的一個";
-ddnsm.zone_704="Zone必須是有效的 <em>用點分割的</em> internet名稱";
-ddnsm.zone_705="Zone不能為空";
-ddnsm.zone_707="對同一個主機/ip進行了重複的更新，請調整用戶端設置";
-ddnsm.zone_201="沒有記錄需要更新";
-ddnsm.zone_badauth="授權失敗（用戶名或密碼）";
-ddnsm.zone_good="ZoneEdit更新成功";
-ddnsm.zone_strange="奇怪的伺服器回應，您是否確定所連接的伺服器是正確的？";
-
 ddnsm.all_closed="DDNS伺服器當前處於關閉狀態";
 ddnsm.all_resolving="正在解析功能變數名稱";
 ddnsm.all_errresolv="功能變數名稱解析失敗";
