@@ -219,11 +219,6 @@ server strictly in the order they appear in /etc/resolv.conf
 .B \-n, --no-poll
 Don't poll /etc/resolv.conf for changes.
 .TP
-.B --clear-on-reload
-Whenever /etc/resolv.conf is re-read, clear the DNS cache.
-This is useful when new nameservers may have different
-data than that held in cache.
-.TP
 .B \-D, --domain-needed
 Tells dnsmasq to never forward queries for plain names, without dots
 or domain parts, to upstream nameservers. If the name is not known
@@ -331,11 +326,11 @@ Disable negative caching. Negative caching allows dnsmasq to remember
 identical queries without forwarding them again. This flag disables
 negative caching.
 .TP
-.B \-0, --dns-forward-max=<queries>
-Set the maximum number of concurrent DNS queries. The default value is
-150, which should be fine for most setups. The only known situation
-where this needs to be increased is when using web-server log file
-resolvers, which can generate large numbers of concurrent queries.
+.B \-0, --dns-forward-max
+Set the maximum number of concurrent DNS queries. Unanswered queries
+time out after 20 seconds. If you sometimes see the log message 
+"forwarding table overflow: check for server loops." then it is worth
+experimenting with this setting. The default value is 150.
 .TP
 .B \-F, --dhcp-range=[[net:]network-id,]<start-addr>,<end-addr>[[,<netmask>],<broadcast>][,<default lease time>]
 Enable the DHCP server. Addresses will be given out from the range
@@ -354,7 +349,7 @@ always optional. On some broken systems, dnsmasq can listen on only
 one interface when using DHCP, and the name of that interface must be
 given using the
 .B interface
-option. This limitation currently affects OpenBSD before version 4.0. It is always
+option. This limitation currently affects OpenBSD. It is always
 allowed to have more than one dhcp-range in a single subnet. The optional
 network-id is a alphanumeric label which marks this network so that
 dhcp options may be specified on a per-network basis. 
@@ -368,7 +363,7 @@ addresses given via
 .B dhcp-host
 or from /etc/ethers will be served.
 .TP
-.B \-G, --dhcp-host=[[<hwaddr>]|[id:[<client_id>][*]]][,net:<netid>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
+.B \-G, --dhcp-host=[[<hwaddr>]|[id:[<client_id>][*]]][net:<netid>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
 Specify per host parameters for the DHCP server. This allows a machine
 with a particular hardware address to be always allocated the same
 hostname, IP address and lease time. A hostname specified like this
@@ -562,22 +557,16 @@ if known. "add" means a lease has been created, "del" means it has
 been destroyed, "old" is a notification of an existing lease when
 dnsmasq starts or a change to MAC address or hostname of an existing
 lease (also, lease length or expiry and client-id, if leasefile-ro is set).
-The process is run as root (assuming that dnsmasq was originally run as
-root) even if dnsmasq is configured to change UID to an unprivileged user.
+The process is run as any unprivileged user which dnsmasq
+runs as, so it may be necessary to inhibit dropping of the root user,
+using the
+.B -u
+directive, if the script needs root privs.
 The environment is inherited from the invoker of dnsmasq, and if the
-host provided a client-id, this is stored in the environment variable
-DNSMASQ_CLIENT_ID. If the client provides vendor-class or user-class 
-information, these are provided in DNSMASQ_VENDOR_CLASS and 
-DNSMASQ_USER_CLASS0..DNSMASQ_USER_CLASSn variables, but only fory
-"add" actions or "old" actions when a host resumes an existing lease,
-since these data are not held in dnsmasq's lease
-database. If dnsmasq was compiled with HAVE_BROKEN_RTC, then
+host provided a client-id, this is stored in the variable
+DNSMASQ_CLIENT_ID. If dnsmasq was compiled with HAVE_BROKEN_RTC, then
 the length of the lease (in seconds) is stored in
-DNSMASQ_LEASE_LENGTH, otherwise the time of lease expiry is stored in
-DNSMASQ_LEASE_EXPIRES. If a lease used to have a hostname, which is
-removed, an "old" event is generated with the new state of the lease, 
-ie no name, and the former name is provided in the environment 
-variable DNSMASQ_OLD_HOSTNAME.
+DNSMASQ_LEASE_LENGTH, otherwise the time of lease expiry is stored in DNSMASQ_LEASE_EXPIRES.
 All file decriptors are
 closed except stdin, stdout and stderr which are open to /dev/null
 (except in debug mode).

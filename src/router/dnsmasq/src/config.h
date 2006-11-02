@@ -10,14 +10,15 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.35"
+#define VERSION "2.33"
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define EDNS_PKTSZ 1280 /* default max EDNS.0 UDP packet from RFC2671 */
-#define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
+#define TIMEOUT 20 /* drop UDP queries after TIMEOUT seconds */
 #define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
+#define LOGRATE 120 /* log table overflows every LOGRATE seconds */
 #define CACHESIZ 150 /* default cache size */
 #define MAXLEASES 150 /* maximum number of DHCP leases */
 #define PING_WAIT 3 /* wait for ping address-in-use test */
@@ -33,7 +34,7 @@
 #  define RESOLVFILE "/etc/resolv.conf"
 #endif
 #define RUNFILE "/var/run/dnsmasq.pid"
-#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined (__OpenBSD__)
 #   define LEASEFILE "/var/db/dnsmasq.leases"
 #else
 #   define LEASEFILE "/tmp/dnsmasq.leases"
@@ -216,7 +217,7 @@ typedef unsigned long in_addr_t;
 #   define HAVE_BROKEN_SOCKADDR_IN6
 #endif
 
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 #undef HAVE_LINUX_NETWORK
 /* Later verions of FreeBSD have getopt_long() */
 #if defined(optional_argument) && defined(required_argument)
