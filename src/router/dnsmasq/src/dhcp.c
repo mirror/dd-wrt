@@ -31,7 +31,7 @@ void dhcp_init(struct daemon *daemon)
   if (fd == -1)
     die (_("cannot create DHCP socket : %s"), NULL);
   
-  if (!fix_fd(fd) || 
+  if (!fix_fd(fd) ||
 #if defined(HAVE_LINUX_NETWORK)
       setsockopt(fd, SOL_IP, IP_PKTINFO, &oneopt, sizeof(oneopt)) == -1 ||
 #elif defined(IP_RECVIF)
@@ -41,24 +41,11 @@ void dhcp_init(struct daemon *daemon)
     die(_("failed to set options on DHCP socket: %s"), NULL);
   
   /* When bind-interfaces is set, there might be more than one dnmsasq
-     instance binding port 67. That's OK if they serve different networks.
-     Need to set REUSEADDR to make this posible, or REUSEPORT on *BSD.
-     OpenBSD <= 4.0 screws up IP_RECVIF when SO_REUSEPORT is set, but
-     OpenBSD <= 3.9 doesn't have IP_RECVIF anyway, so we just have to elide
-     this for OpenBSD 4.0, if you want more than one instance on oBSD4.0, tough. */
-
-#ifndef OpenBSD4_0
-  if (daemon->options & OPT_NOWILD)
-    {
-#ifdef SO_REUSEPORT
-      int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &oneopt, sizeof(oneopt));
-#else
-      int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt));
-#endif
-      if (rc == -1)
-	die(_("failed to set SO_REUSE{ADDR|PORT} on DHCP socket: %s"), NULL);
-    }
-#endif
+     instance binding port 67. That's Ok if they serve different networks.
+     Need to set REUSEADDR to make this posible. */
+  if ((daemon->options & OPT_NOWILD) &&
+      setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt)) == -1)
+    die(_("failed to set SO_REUSEADDR on DHCP socket: %s"), NULL);
   
   memset(&saddr, 0, sizeof(saddr));
   saddr.sin_family = AF_INET;
@@ -129,8 +116,8 @@ void dhcp_packet(struct daemon *daemon, time_t now)
 #endif
   } control_u;
   
-  msg.msg_control = NULL;
-  msg.msg_controllen = 0;
+  msg.msg_control = control_u.control;
+  msg.msg_controllen = sizeof(control_u);
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
   msg.msg_iov = &daemon->dhcp_packet;
@@ -147,48 +134,42 @@ void dhcp_packet(struct daemon *daemon, time_t now)
   /* expand_buf may have moved buffer */
   mess = daemon->dhcp_packet.iov_base;
   msg.msg_controllen = sizeof(control_u);
-  msg.msg_control = control_u.control;
   msg.msg_flags = 0;
   msg.msg_name = &dest;
   msg.msg_namelen = sizeof(dest);
 
-  while ((sz = recvmsg(daemon->dhcpfd, &msg, 0)) == -1 && errno == EINTR);
+  while ((sz = recvmsg(daemon->dhcpfd, &msg, 0)) && errno == EINTR);
  
-  if (sz < (ssize_t)(sizeof(*mess) - sizeof(mess->options)))
+  if ((msg.msg_flags & MSG_TRUNC) ||
+      sz < (ssize_t)(sizeof(*mess) - sizeof(mess->options)))
     return;
   
 #if defined (HAVE_LINUX_NETWORK)
-  if (msg.msg_controllen >= sizeof(struct cmsghdr))
-    for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
-      if (cmptr->cmsg_level == SOL_IP && cmptr->cmsg_type == IP_PKTINFO)
-	{
-	  iface_index = ((struct in_pktinfo *)CMSG_DATA(cmptr))->ipi_ifindex;
-	  if (((struct in_pktinfo *)CMSG_DATA(cmptr))->ipi_addr.s_addr != INADDR_BROADCAST)
-	    unicast_dest = 1;
-	}
-  
+  if (msg.msg_controllen < sizeof(struct cmsghdr))
+    return;
+  for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
+    if (cmptr->cmsg_level == SOL_IP && cmptr->cmsg_type == IP_PKTINFO)
+      {
+	iface_index = ((struct in_pktinfo *)CMSG_DATA(cmptr))->ipi_ifindex;
+	if (((struct in_pktinfo *)CMSG_DATA(cmptr))->ipi_addr.s_addr != INADDR_BROADCAST)
+	  unicast_dest = 1;
+      }
+
   if (!(ifr.ifr_ifindex = iface_index) || 
       ioctl(daemon->dhcpfd, SIOCGIFNAME, &ifr) == -1)
     return;
   
 #elif defined(IP_RECVIF)
-  if (msg.msg_controllen >= sizeof(struct cmsghdr))
-    for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
-      if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
-	iface_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
-  
+  if (msg.msg_controllen < sizeof(struct cmsghdr))
+    return;
+  for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
+    if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_RECVIF)
+      iface_index = ((struct sockaddr_dl *)CMSG_DATA(cmptr))->sdl_index;
+
   if (!iface_index || !if_indextoname(iface_index, ifr.ifr_name))
     return;
-  
-#ifdef MSG_BCAST
-  /* OpenBSD tells us when a packet was broadcast */
-  if (!(msg.msg_flags & MSG_BCAST))
-    unicast_dest = 1;
-#endif
- 
+
 #else
-  /* fallback for systems without IP_RECVIF - allow only one interface
-     and assume packets arrive from it - yuk. */
   {
     struct iname *name;
     for (name = daemon->if_names; name->isloop; name = name->next);
@@ -198,7 +179,7 @@ void dhcp_packet(struct daemon *daemon, time_t now)
 #endif
 
   ifr.ifr_addr.sa_family = AF_INET;
-  if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) == -1 )
+  if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) < 0 )
     return;
   iface_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
 
@@ -224,7 +205,8 @@ void dhcp_packet(struct daemon *daemon, time_t now)
   iov.iov_len = dhcp_reply(daemon, parm.current, ifr.ifr_name, (size_t)sz, now, unicast_dest);
   lease_update_file(daemon, now);
   lease_update_dns(daemon);
-    
+  lease_collect(daemon);
+  
   if (iov.iov_len == 0)
     return;
   
@@ -643,7 +625,7 @@ void dhcp_read_ethers(struct daemon *daemon)
   struct in_addr addr;
   unsigned char hwaddr[ETHER_ADDR_LEN];
   struct dhcp_config **up, *tmp;
-  struct dhcp_config *config;
+  struct dhcp_config *config, *configs = daemon->dhcp_conf;
   int count = 0, lineno = 0;
 
   addr.s_addr = 0; /* eliminate warning */
@@ -655,7 +637,7 @@ void dhcp_read_ethers(struct daemon *daemon)
     }
 
   /* This can be called again on SIGHUP, so remove entries created last time round. */
-  for (up = &daemon->dhcp_conf, config = daemon->dhcp_conf; config; config = tmp)
+  for (up = &daemon->dhcp_conf, config = configs; config; config = tmp)
     {
       tmp = config->next;
       if (config->flags & CONFIG_FROM_ETHERS)
@@ -704,7 +686,7 @@ void dhcp_read_ethers(struct daemon *daemon)
 
 	  flags = CONFIG_ADDR;
 	  
-	  for (config = daemon->dhcp_conf; config; config = config->next)
+	  for (config = configs; config; config = config->next)
 	    if ((config->flags & CONFIG_ADDR) && config->addr.s_addr == addr.s_addr)
 	      break;
 	}
@@ -718,14 +700,14 @@ void dhcp_read_ethers(struct daemon *daemon)
 
 	  flags = CONFIG_NAME;
 
-	  for (config = daemon->dhcp_conf; config; config = config->next)
+	  for (config = configs; config; config = config->next)
 	    if ((config->flags & CONFIG_NAME) && hostname_isequal(config->hostname, ip))
 	      break;
 	}
       
       if (!config)
 	{ 
-	  for (config = daemon->dhcp_conf; config; config = config->next)
+	  for (config = configs; config; config = config->next)
 	    if ((config->flags & CONFIG_HWADDR) && 
 		config->wildcard_mask == 0 &&
 		config->hwaddr_len == ETHER_ADDR_LEN &&
@@ -739,8 +721,8 @@ void dhcp_read_ethers(struct daemon *daemon)
 		continue;
 	      config->flags = CONFIG_FROM_ETHERS;
 	      config->wildcard_mask = 0;
-	      config->next = daemon->dhcp_conf;
-	      daemon->dhcp_conf = config;
+	      config->next = configs;
+	      configs = config;
 	    }
 	  
 	  config->flags |= flags;
@@ -767,6 +749,8 @@ void dhcp_read_ethers(struct daemon *daemon)
   fclose(f);
 
   syslog(LOG_INFO, _("read %s - %d addresses"), ETHERSFILE, count);
+  
+  daemon->dhcp_conf =  configs;
 }
 
 void dhcp_update_configs(struct dhcp_config *configs)

@@ -111,7 +111,6 @@ extern int capset(cap_user_header_t header, cap_user_data_t data);
 #define OPT_BOOTP_DYNAMIC  1048576
 #define OPT_NO_PING        2097152
 #define OPT_LEASE_RO       4194304
-#define OPT_RELOAD         8388608
 
 struct all_addr {
   union {
@@ -230,7 +229,8 @@ struct serverfd {
 
 struct server {
   union mysockaddr addr, source_addr;
-  struct serverfd *sfd; 
+  struct serverfd *sfd; /* non-NULL if this server has its own fd bound to
+			   a source port */
   char *domain; /* set if this server only handles a domain. */ 
   int flags, tcpfd;
   struct server *next; 
@@ -283,19 +283,12 @@ struct frec {
   struct frec *next;
 };
 
-/* actions in the daemon->helper RPC */
-#define ACTION_DEL           1
-#define ACTION_OLD_HOSTNAME  2
-#define ACTION_OLD           3
-#define ACTION_ADD           4
-
 #define DHCP_CHADDR_MAX 16
 
 struct dhcp_lease {
   int clid_len;          /* length of client identifier */
   unsigned char *clid;   /* clientid */
   char *hostname, *fqdn; /* name from client-hostname option or config */
-  char *old_hostname;    /* hostname before it moved to another lease */
   char auth_name;        /* hostname came from config, not from client */
   char new;              /* newly created */
   char changed;          /* modified */
@@ -307,8 +300,6 @@ struct dhcp_lease {
   int hwaddr_len, hwaddr_type;
   unsigned char hwaddr[DHCP_CHADDR_MAX]; 
   struct in_addr addr;
-  unsigned char *vendorclass, *userclass;
-  unsigned int vendorclass_len, userclass_len;
   struct dhcp_lease *next;
 };
 
@@ -321,7 +312,6 @@ struct dhcp_netid_list {
   struct dhcp_netid *list;
   struct dhcp_netid_list *next;
 };
-
 struct dhcp_config {
   unsigned int flags;
   int clid_len;          /* length of client identifier */
@@ -460,10 +450,11 @@ struct daemon {
   struct server *last_server;
   struct server *srv_save; /* Used for resend on DoD */
   size_t packet_len;       /*      "        "        */
-  pid_t tcp_pids[MAX_PROCS];
- 
+  pid_t script_pid, tcp_pids[MAX_PROCS];
+  int num_kids;
+  
   /* DHCP state */
-  int dhcpfd, helperfd; 
+  int dhcpfd; 
 #ifdef HAVE_LINUX_NETWORK
   int netlinkfd;
 #else
@@ -543,9 +534,6 @@ int memcmp_masked(unsigned char *a, unsigned char *b, int len,
 		  unsigned int mask);
 int expand_buf(struct iovec *iov, size_t size);
 char *print_mac(struct daemon *daemon, unsigned char *mac, int len);
-void bump_maxfd(int fd, int *max);
-void log_start(struct daemon *daemon);
-int read_write(int fd, unsigned char *packet, int size, int rw);
 
 /* option.c */
 struct daemon *read_opts (int argc, char **argv, char *compile_opts);
@@ -556,7 +544,6 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now);
 unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
 			   struct in_addr local_addr, struct in_addr netmask);
 void server_gone(struct daemon *daemon, struct server *server);
-struct frec *get_new_frec(struct daemon *daemon, time_t now, int *wait);
 
 /* network.c */
 struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds);
@@ -605,7 +592,7 @@ struct dhcp_lease *lease_find_by_client(unsigned char *hwaddr, int hw_len, int h
 struct dhcp_lease *lease_find_by_addr(struct in_addr addr);
 void lease_prune(struct dhcp_lease *target, time_t now);
 void lease_update_from_configs(struct daemon *daemon);
-int do_script_run(struct daemon *daemon);
+void lease_collect(struct daemon *daemon);
 
 /* rfc2131.c */
 size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_name, size_t sz, time_t now, int unicast_dest);
@@ -642,13 +629,6 @@ int iface_enumerate(struct daemon *daemon, void *parm,
 char *dbus_init(struct daemon *daemon);
 void check_dbus_listeners(struct daemon *daemon,
 			  fd_set *rset, fd_set *wset, fd_set *eset);
-void set_dbus_listeners(struct daemon *daemon, int *maxfdp, 
-			fd_set *rset, fd_set *wset, fd_set *eset);
+int set_dbus_listeners(struct daemon *daemon, int maxfd, 
+		       fd_set *rset, fd_set *wset, fd_set *eset);
 #endif
-
-/* helper.c */
-int create_helper(struct daemon *daemon);
-void helper_write(struct daemon *daemon);
-void queue_script(struct daemon *daemon, int action, 
-		  struct dhcp_lease *lease, char *hostname);
-int helper_buf_empty(void);
