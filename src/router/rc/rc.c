@@ -215,8 +215,13 @@ main_loop (void)
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 
+#ifdef HAVE_REGISTER
+	  itworked +=
+	    mount ("/dev/mtdblock/5", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#else
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
 	  if (itworked)
 	    {
 	      nvram_set ("jffs_mounted", "0");
@@ -232,8 +237,13 @@ main_loop (void)
 	  itworked = mtd_unlock (rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
+#ifdef HAVE_REGISTER
+	  itworked +=
+	    mount ("/dev/mtdblock/5", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#else
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
 	  if (itworked)
 	    {
 	      nvram_set ("jffs_mounted", "0");
