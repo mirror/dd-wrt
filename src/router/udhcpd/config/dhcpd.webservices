@@ -9,12 +9,17 @@
 
 <fieldset>
 	<legend><% tran("service.dhcp_legend2"); %></legend>
-	<% nvram_invmatch("enable_jffs2","1","<!--"); %>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_jffs2"); %></div>
-		<input type="checkbox" value="1" name="_dhcpd_usejffs" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />
+		<script type="text/javascript">
+		//<![CDATA[
+		if (<% nvram_get("enable_jffs2"); %> == 1 )
+			document.write('<input type="checkbox" value="1" name="_dhcpd_usejffs" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />');
+		else
+			document.write('<em>(' + share.nmounted + ')</em>');
+		//]]>
+		</script>
 	</div>
-	<% nvram_invmatch("enable_jffs2","1","-->"); %>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_nvramlease"); %></div>
 		<input type="checkbox" value="1" name="_dhcpd_usenvram" <% nvram_selmatch("dhcpd_usenvram", "1", "checked"); %> />
