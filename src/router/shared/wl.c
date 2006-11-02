@@ -37,7 +37,7 @@ getchannels (unsigned int *list)
 //  memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
 
 //  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
-fprintf(stderr,"get channels\n");
+//fprintf(stderr,"get channels\n");
 FILE *in=popen("wl channels","r");
 #ifndef HAVE_MSSID
 while(fgetc(in)!=':');
@@ -321,7 +321,7 @@ list_channelsext (const char *ifname, int allchans)
   struct ieee80211req_chaninfo achans;
   const struct ieee80211_channel *c;
   int i, half;
-  fprintf (stderr, "list channels for %s\n", ifname);
+//  fprintf (stderr, "list channels for %s\n", ifname);
   if (get80211priv
       (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
     {
@@ -350,7 +350,7 @@ list_channelsext (const char *ifname, int allchans)
     achans = chans;
 
 
-  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
+//  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
   struct wifi_channels *list =
     (struct wifi_channels *) malloc (sizeof (struct wifi_channels) *
 				     (achans.ic_nchans + 1));
