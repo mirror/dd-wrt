@@ -115,9 +115,9 @@ stop_sshd (void)
 //  char buf[255] = { 0 };
 
 //  if (nvram_match("sshd_enable", "0"))
-  killall("dropbear",SIGTERM);
+  killall ("dropbear", SIGTERM);
   sleep (1);
-  ret=killall("dropbear",SIGKILL);
+  ret = killall ("dropbear", SIGKILL);
 
   cprintf ("done\n");
 

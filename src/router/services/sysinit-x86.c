@@ -47,38 +47,40 @@
 #include <utils.h>
 
 
-static int detect(char *devicename)
+static int
+detect (char *devicename)
 {
-char devcall[128];
-int res;
-sprintf(devcall,"/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l",devicename);
+  char devcall[128];
+  int res;
+  sprintf (devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename);
 //system(devcall);
-FILE *in=popen(devcall,"rb");
-fscanf(in,"%d",&res);
-fclose(in);
-return res>0?1:0;
-} 
-static int getdiscindex(void) //works only for squashfs 
+  FILE *in = popen (devcall, "rb");
+  fscanf (in, "%d", &res);
+  fclose (in);
+  return res > 0 ? 1 : 0;
+}
+static int
+getdiscindex (void)		//works only for squashfs 
 {
-int i;
-for (i=0;i<10;i++)
+  int i;
+  for (i = 0; i < 10; i++)
     {
-    char dev[64];
-    sprintf(dev,"/dev/discs/disc%d/part2",i);
-    FILE *in=fopen(dev,"rb");
-    if (in==NULL)
-	continue; //no second partition or disc does not exist, skipping
-    char buf[4];
-    fread(buf,4,1,in);
-    if (buf[0]=='h' && buf[1]=='s' && buf[2]=='q' && buf[3]=='t')
+      char dev[64];
+      sprintf (dev, "/dev/discs/disc%d/part2", i);
+      FILE *in = fopen (dev, "rb");
+      if (in == NULL)
+	continue;		//no second partition or disc does not exist, skipping
+      char buf[4];
+      fread (buf, 4, 1, in);
+      if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
 	{
-	fclose(in); 
-	//filesystem detected
-	return i;
+	  fclose (in);
+	  //filesystem detected
+	  return i;
 	}
-    fclose(in);
+      fclose (in);
     }
-return -1;
+  return -1;
 }
 
 int
@@ -99,19 +101,19 @@ start_sysinit (void)
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
   char dev[64];
-  int index=getdiscindex();
-  if (index==-1)
+  int index = getdiscindex ();
+  if (index == -1)
     {
-    fprintf(stderr,"no valid dd-wrt partition found, calling shell");
-    eval("/bin/sh");
-    exit(0);
+      fprintf (stderr, "no valid dd-wrt partition found, calling shell");
+      eval ("/bin/sh");
+      exit (0);
     }
-  sprintf(dev,"/dev/discs/disc%d/part1",index);
-  mount (dev,"/boot","ext2",MS_MGC_VAL,NULL);
-  
-  sprintf(dev,"/dev/discs/disc%d/part3",index);
-  eval("fsck",dev);  //checking nvram partition and correcting errors
-  if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
+  sprintf (dev, "/dev/discs/disc%d/part1", index);
+  mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
+
+  sprintf (dev, "/dev/discs/disc%d/part3", index);
+  eval ("fsck", dev);		//checking nvram partition and correcting errors
+  if (mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
 
     {
       //not created yet, create ext2 partition
@@ -124,7 +126,7 @@ start_sysinit (void)
     }
 
   eval ("mkdir", "/tmp/www");
-  
+
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
@@ -166,99 +168,88 @@ eval("insmod","crypto_null");
 */
 
 //system("/etc/kendin");
-if (detect("DP8381"))  
+  if (detect ("DP8381"))
     eval ("insmod", "natsemi");
-if (detect("PCnet32"))  //vmware?
+  if (detect ("PCnet32"))	//vmware?
     eval ("insmod", "pcnet32");
-if (detect("Tigon3"))  //Broadcom 
+  if (detect ("Tigon3"))	//Broadcom 
     eval ("insmod", "tg3");
-else
-if (detect("NetXtreme"))  //Broadcom 
+  else if (detect ("NetXtreme"))	//Broadcom 
     eval ("insmod", "tg3");
-if (detect("NetXtreme II"))  //Broadcom 
+  if (detect ("NetXtreme II"))	//Broadcom 
     eval ("insmod", "bnx2");
-if (detect("BCM44"))  //Broadcom 
+  if (detect ("BCM44"))		//Broadcom 
     eval ("insmod", "b44");
-if (detect("EtherExpress PRO/100"))  //intel 100 mbit 
+
+  if (detect ("EtherExpress PRO/100"))	//intel 100 mbit 
     eval ("insmod", "e100");
-else
-if (detect("Ethernet Pro 100"))  //intel 100 mbit 
+  else if (detect ("Ethernet Pro 100"))	//intel 100 mbit 
     eval ("insmod", "e100");
-else
-if (detect("8255"))  //intel 100 mbit 
+  else if (detect ("8255"))	//intel 100 mbit 
     eval ("insmod", "e100");
-    
-if (detect("PRO/1000"))  //Intel Gigabit 
+  else if (detect ("PRO/100"))	//intel 100 mbit
+    eval ("insmod", "e100");
+  else if (detect ("8280"))	//intel 100 mbit 
+    eval ("insmod", "e100");
+
+
+  if (detect ("PRO/1000"))	//Intel Gigabit 
     eval ("insmod", "e1000");
-else
-if (detect("82541"))  // Intel Gigabit
+  else if (detect ("82541"))	// Intel Gigabit
     eval ("insmod", "e1000");
-else
-if (detect("82547"))  // Intel Gigabit
+  else if (detect ("82547"))	// Intel Gigabit
     eval ("insmod", "e1000");
 
 
-if (detect("RTL-8169"))  // Realtek 8169 Adapter (various notebooks) 
+  if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
     eval ("insmod", "r8169");
-if (detect("8139"))  // Realtek 8139 Adapter (various notebooks) 
+  if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
 
-if (detect("nForce2 Ethernet"))  // nForce2 
+  if (detect ("nForce2 Ethernet"))	// nForce2 
     eval ("insmod", "forcedeth");
-else
-if (detect("nForce3 Ethernet"))  // nForce3 
+  else if (detect ("nForce3 Ethernet"))	// nForce3 
     eval ("insmod", "forcedeth");
-else
-if (detect("nForce Ethernet"))  // nForce 
+  else if (detect ("nForce Ethernet"))	// nForce 
     eval ("insmod", "forcedeth");
-else
-if (detect("CK804 Ethernet"))  // nForce
+  else if (detect ("CK804 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("CK8S Ethernet"))  // nForce
+  else if (detect ("CK8S Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP04 Ethernet"))  // nForce
+  else if (detect ("MCP04 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP2A Ethernet"))  // nForce
+  else if (detect ("MCP2A Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP51 Ethernet"))  // nForce
+  else if (detect ("MCP51 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP55 Ethernet"))  // nForce
+  else if (detect ("MCP55 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP61 Ethernet"))  // nForce
+  else if (detect ("MCP61 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
-else
-if (detect("MCP65 Ethernet"))  // nForce
+  else if (detect ("MCP65 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
 
-if (detect("RTL-8029"))  // Old Realtek PCI NE2000 clone (10M only)
+  if (detect ("RTL-8029"))	// Old Realtek PCI NE2000 clone (10M only)
     {
-    eval ("insmod", "8390");
-    eval ("insmod", "ne2k-pci");
+      eval ("insmod", "8390");
+      eval ("insmod", "ne2k-pci");
     }
-if (detect("Rhine-"))  // VIA Rhine-I, Rhine-II, Rhine-III
+  if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
-if (detect("3c905"))  // 3Com
+  if (detect ("3c905"))		// 3Com
     eval ("insmod", "3c59x");
-else
-if (detect("3c555"))  // 3Com
+  else if (detect ("3c555"))	// 3Com
     eval ("insmod", "3c59x");
-else
-if (detect("3c556"))  // 3Com
+  else if (detect ("3c556"))	// 3Com
     eval ("insmod", "3c59x");
 
-if (detect("LNE100TX"))  // liteon / linksys
+  if (detect ("LNE100TX"))	// liteon / linksys
     {
-    eval ("insmod", "tulip");
+      eval ("insmod", "tulip");
 //    eval ("insmod", "pnic");
 //    eval ("insmod", "pnic2");
     }
-    
+
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
   eval ("ifconfig", "eth2", "0.0.0.0", "up");
@@ -290,7 +281,7 @@ if (detect("LNE100TX"))  // liteon / linksys
 
   eval ("insmod", "ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
-  nvram_set("wl0_ifname","ath0");
+  nvram_set ("wl0_ifname", "ath0");
   /* Set a sane date */
   stime (&tm);
   return 0;

@@ -144,7 +144,7 @@ stop_heartbeat (void)
   int ret;
 
   unlink ("/tmp/ppp/link");
-  ret=killall("bpalogin",SIGTERM);
+  ret = killall ("bpalogin", SIGTERM);
 
   cprintf ("done\n");
 
@@ -201,7 +201,7 @@ hb_connect_main (int argc, char **argv)
 
   MY_LOG (LOG_INFO, "Adding firewall [%s]\n", buf);
 
-  system (buf);
+  system2 (buf);
 
   return TRUE;
 }

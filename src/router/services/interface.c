@@ -173,7 +173,7 @@ start_config_vlan (void)
 
 // configure ports
 
-  system ("echo 1 > /proc/switch/eth0/reset");
+  system2 ("echo 1 > /proc/switch/eth0/reset");
   for (i = 0; i < 16; i++)
     {
       char vlanb[16];
@@ -182,7 +182,7 @@ start_config_vlan (void)
 	continue;
       sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
 	       nvram_safe_get (vlanb), i);
-      system (tmp);
+      system2 (tmp);
     }
 
 

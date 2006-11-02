@@ -71,7 +71,7 @@ start_snmp (void)
 	fprintf (fp, "rwcommunity %s\n",
 		 nvram_safe_get ("snmpd_rwcommunity"));
     }
-   fprintf (fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
+  fprintf (fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
 
   fclose (fp);
 //  eval ("insmod", "wlcompat");
@@ -87,7 +87,7 @@ stop_snmp (void)
 {
   int ret;
 
-  ret=killall("snmpd",SIGKILL);
+  ret = killall ("snmpd", SIGKILL);
   cprintf ("done\n");
 
   return ret;

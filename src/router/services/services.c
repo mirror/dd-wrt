@@ -108,7 +108,7 @@ addHost (char *host, char *ip)
   if (alreadyInHost (newhost))
     return;
   sprintf (buf, "echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
-  system (buf);
+  system2 (buf);
 }
 
 void
@@ -346,8 +346,8 @@ stop_pptpd (void)
 {
   int ret = 0;
 
-  ret=killall("pptpd",SIGKILL);
-  killall("bcrelay",SIGKILL);
+  ret = killall ("pptpd", SIGKILL);
+  killall ("bcrelay", SIGKILL);
   return ret;
 }
 #endif
@@ -358,7 +358,7 @@ void start_tmp_ppp (int num);
 int
 softkill (char *name)
 {
-  killall(name,SIGKILL);
+  killall (name, SIGKILL);
 }
 
 
@@ -560,10 +560,10 @@ void
 stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
-  killall("dhcpfwd",SIGTERM); //kill also dhcp forwarder if available
+  killall ("dhcpfwd", SIGTERM);	//kill also dhcp forwarder if available
 #endif
 #ifdef HAVE_DHCPRELAY
-  killall("dhcrelay",SIGTERM);
+  killall ("dhcrelay", SIGTERM);
 #endif
 }
 
@@ -1067,8 +1067,8 @@ stop_dns_clear_resolv (void)
 {
   FILE *fp_w;
   //int ret = killps("dnsmasq",NULL);
-  int ret = killall("dnsmasq",SIGTERM);
-  
+  int ret = killall ("dnsmasq", SIGTERM);
+
   /* Save DNS to resolv.conf */
   if (!(fp_w = fopen (RESOLV_FILE, "w")))
     {
@@ -1119,7 +1119,7 @@ int
 stop_httpd (void)
 {
   //int ret = killps("httpd",NULL);
-  int ret = killall("httpd",SIGTERM);
+  int ret = killall ("httpd", SIGTERM);
 
   unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
@@ -1142,7 +1142,7 @@ start_upnp (void)
       return 0;
     }
   /* Make sure its not running first */
-  ret = killall("upnp",SIGUSR1);
+  ret = killall ("upnp", SIGUSR1);
   if (ret != 0)
     {
       ret = eval ("upnp", "-D",
@@ -1161,10 +1161,10 @@ stop_upnp (void)
 {
   //int ret = killps("upnp","-USR1");
 
-  killall("upnp",SIGUSR1);
+  killall ("upnp", SIGUSR1);
 
   //killps("upnp",NULL);
-  killall("upnp",SIGTERM);
+  killall ("upnp", SIGTERM);
 
   cprintf ("done\n");
   return 0;
@@ -1566,10 +1566,10 @@ stop_nas (void)
 {
   /* NAS sometimes won't exit properly on a normal kill */
   //int ret = killps("nas",NULL);
-  int ret = killall("nas",SIGTERM);
+  int ret = killall ("nas", SIGTERM);
   sleep (2);
   //killps("nas","-9");
-  killall("nas",SIGKILL);
+  killall ("nas", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -1594,7 +1594,7 @@ start_sputnik (void)
 int
 stop_sputnik (void)
 {
-  int ret = killall("sputnik",SIGTERM);
+  int ret = killall ("sputnik", SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -1632,7 +1632,7 @@ int
 stop_ntpc (void)
 {
   //int ret = killps("ntpclient",NULL);
-  int ret = killall("ntpclient",SIGTERM);
+  int ret = killall ("ntpclient", SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -1662,7 +1662,7 @@ stop_resetbutton (void)
   int ret = 0;
 
   //ret = killps("resetbutton","-9");
-  ret = killall("resetbutton",SIGKILL);
+  ret = killall ("resetbutton", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -1689,7 +1689,7 @@ stop_iptqueue (void)
   int ret = 0;
 
   //ret = killps("iptqueue","-9");
-  ret = killall("iptqueue",SIGKILL);
+  ret = killall ("iptqueue", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -1728,7 +1728,7 @@ stop_cron (void)
   int ret = 0;
 
   //ret = killps("cron","-9");
-  ret = killall("cron",SIGKILL);
+  ret = killall ("cron", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2132,13 +2132,13 @@ stop_zebra (void)
 
 #ifdef HAVE_ZEBRA
   int ret2, ret3;
-  ret1 = killall("zebra",SIGTERM);
-  ret2 = killall ("ripd",SIGTERM);
-  ret3 = killall ("ospfd",SIGTERM);
+  ret1 = killall ("zebra", SIGTERM);
+  ret2 = killall ("ripd", SIGTERM);
+  ret3 = killall ("ospfd", SIGTERM);
 
   while (!
-	 (killall("zebra",SIGTERM) && killall("ripd",SIGTERM)
-	  && killall("ospfd",SIGTERM)))
+	 (killall ("zebra", SIGTERM) && killall ("ripd", SIGTERM)
+	  && killall ("ospfd", SIGTERM)))
     sleep (1);
 
   cprintf ("done\n");
@@ -2146,7 +2146,7 @@ stop_zebra (void)
 
 #elif defined(HAVE_BIRD)
 
-  ret1 = killall("bird",SIGTERM);
+  ret1 = killall ("bird", SIGTERM);
 
   cprintf ("done\n");
   return ret1;
@@ -2181,8 +2181,8 @@ stop_syslog (void)
 {
   int ret;
 
-  ret = killall("klogd",SIGKILL);
-  ret += killall("syslogd",SIGKILL);
+  ret = killall ("klogd", SIGKILL);
+  ret += killall ("syslogd", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2213,7 +2213,7 @@ stop_redial (void)
   int ret;
 
   //ret = killps("redial","-9");
-  ret = killall("redial",SIGKILL);
+  ret = killall ("redial", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2255,7 +2255,7 @@ start_radvd (void)
     }
   //nvram2file("radvd_conf", "/tmp/radvd.conf");
 
-  system ("sync");
+  system2 ("sync");
 
   ret = eval ("/sbin/radvd");
 
@@ -2269,7 +2269,7 @@ stop_radvd (void)
   int ret = 0;
 
   //ret = killps("radvd",NULL);
-  ret = killall("radvd",SIGKILL);
+  ret = killall ("radvd", SIGKILL);
 
   unlink ("/var/run/radvd.pid");
 
@@ -2467,10 +2467,11 @@ start_chilli (void)
 
 int
 stop_chilli (void)
-{  int ret = 0;
+{
+  int ret = 0;
 
   //ret = killps("chilli","-9");
-  ret = killall("chilli",SIGKILL);
+  ret = killall ("chilli", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2487,9 +2488,9 @@ stop_pppoe (void)
   //ret = killps("pppoecd",NULL);
   //ret += killps("ip-up",NULL);
   //ret += killps("ip-down",NULL);
-  ret = killall("pppoecd",SIGKILL);
-  ret += killall("ip-up",SIGKILL);
-  ret += killall("ip-down",SIGKILL);
+  ret = killall ("pppoecd", SIGKILL);
+  ret += killall ("ip-up", SIGKILL);
+  ret += killall ("ip-down", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -2525,7 +2526,7 @@ stop_dhcpc (void)
   int ret = 0;
 
   //ret += killps("udhcpc",NULL);
-  ret += killall("udhcpc",SIGTERM);
+  ret += killall ("udhcpc", SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -2792,9 +2793,9 @@ stop_pptp (void)
   //ret = killps("pppd","-9");
   //ret += killps("pptp","-9");
   //ret += killps("listen","-9");
-  ret = killall("pppd",SIGKILL);
-  ret += killall("pptp",SIGKILL);
-  ret += killall("listen",SIGKILL);
+  ret = killall ("pppd", SIGKILL);
+  ret += killall ("pptp", SIGKILL);
+  ret += killall ("listen", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3193,7 +3194,7 @@ start_l2tp (int status)
 	eval ("listen", nvram_safe_get ("lan_ifname"));
     }
   else
-    system (l2tpctrl);
+    system2 (l2tpctrl);
 
   cprintf ("done\n");
   return ret;
@@ -3221,9 +3222,9 @@ stop_l2tp (void)
   //ret += killps("l2tpd","-9");
   //ret += killps("listen","-9");
 
-  ret = killall("pppd",SIGKILL);
-  ret += killall("l2tpd",SIGKILL);
-  ret += killall("listen",SIGKILL);
+  ret = killall ("pppd", SIGKILL);
+  ret += killall ("l2tpd", SIGKILL);
+  ret += killall ("listen", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3251,7 +3252,7 @@ int
 stop_igmp_proxy (void)
 {
   //int ret = killps("igmprt","-9");
-  int ret = killall("igmprt",SIGKILL);
+  int ret = killall ("igmprt", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3287,7 +3288,7 @@ start_splashd (void)
   fprintf (fp, "splashd >> /tmp/nocat.log 2>&1 &\n");
   fclose (fp);
   chmod ("/tmp/start_splashd.sh", 0700);
-  system ("/tmp/start_splashd.sh&");
+  system2 ("/tmp/start_splashd.sh&");
   //ret = eval("sh", "/tmp/start_splashd.sh");
 
   cprintf ("done\n");
@@ -3299,7 +3300,7 @@ stop_splashd (void)
 {
   int ret;
   //ret = killps("splashd",NULL);
-  ret = killall("splashd",SIGTERM);
+  ret = killall ("splashd", SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -3336,7 +3337,7 @@ stop_telnetd (void)
   int ret;
 
   //ret = killps("telnetd","-9");
-  ret = killall("telnetd",SIGTERM);
+  ret = killall ("telnetd", SIGTERM);
 
   cprintf ("done\n");
   return ret;
@@ -3346,7 +3347,7 @@ stop_telnetd (void)
 int
 stop_wland (void)
 {
-  int ret = killall("wland",SIGKILL);
+  int ret = killall ("wland", SIGKILL);
 
   cprintf ("done\n");
   return ret;
@@ -3394,7 +3395,7 @@ stop_process_monitor (void)
 {
   int ret;
 
-  ret = killall("process_monitor",SIGKILL);
+  ret = killall ("process_monitor", SIGKILL);
 
   cprintf ("done\n");
 
@@ -3422,7 +3423,7 @@ stop_radio_timer (void)
 {
   int ret;
 
-  ret = killall("radio_timer",SIGKILL);
+  ret = killall ("radio_timer", SIGKILL);
 
   cprintf ("done\n");
 
@@ -3432,7 +3433,7 @@ stop_radio_timer (void)
 int
 stop_ntp (void)
 {
-  killall("ntpclient",SIGKILL);
+  killall ("ntpclient", SIGKILL);
   return 0;
 }
 
@@ -3464,7 +3465,7 @@ start_force_to_dial (void)
       snprintf (l2tpctrl, sizeof (l2tpctrl),
 		"/usr/sbin/l2tp-control \"start-session %s\"",
 		nvram_safe_get ("l2tp_server_ip"));
-      system (l2tpctrl);
+      system2 (l2tpctrl);
       return ret;
     }
 #endif
@@ -3479,19 +3480,23 @@ start_force_to_dial (void)
 
   return ret;
 }
+
 #ifdef HAVE_RSTATS
 
-void stop_rstats(void)
+void
+stop_rstats (void)
 {
-	killall("rstats",SIGTERM);
+  killall ("rstats", SIGTERM);
 }
 
-void start_rstats(void)
+void
+start_rstats (void)
 {
-	if (nvram_match("rstats_enable", "1")) {
-		stop_rstats();
-		eval("rstats");
-	}
+  if (nvram_match ("rstats_enable", "1"))
+    {
+      stop_rstats ();
+      eval ("rstats");
+    }
 }
 
 #endif
@@ -3513,18 +3518,19 @@ start_wifidog (void)
 	fprintf (fp, "GatewayID %s\n", nvram_safe_get ("wd_gwid"));
       fprintf (fp, "ExternalInterface %s\n", get_wan_face ());
       fprintf (fp, "GatewayInterface %s\n", nvram_safe_get ("lan_ifname"));
-      fprintf (fp, "Portal %s\n",nvram_safe_get("wd_url"));
-      fprintf (fp, "GatewayPort %s\n",nvram_safe_get("wd_gwport"));
-      fprintf (fp, "HTTPDMaxConn %s\n",nvram_safe_get("wd_httpdcon"));
-      fprintf (fp, "HTTPDName %s\n",nvram_safe_get("wd_httpdname"));
-      fprintf (fp, "CheckInterval %s\n",nvram_safe_get("wd_interval"));
-      fprintf (fp, "ClientTimeout %s\n",nvram_safe_get("wd_timeout"));
+      fprintf (fp, "Portal %s\n", nvram_safe_get ("wd_url"));
+      fprintf (fp, "GatewayPort %s\n", nvram_safe_get ("wd_gwport"));
+      fprintf (fp, "HTTPDMaxConn %s\n", nvram_safe_get ("wd_httpdcon"));
+      fprintf (fp, "HTTPDName %s\n", nvram_safe_get ("wd_httpdname"));
+      fprintf (fp, "CheckInterval %s\n", nvram_safe_get ("wd_interval"));
+      fprintf (fp, "ClientTimeout %s\n", nvram_safe_get ("wd_timeout"));
       fprintf (fp, "AuthServer {\n");
-      fprintf (fp, "Hostname %s\n",nvram_safe_get("wd_hostname")); 
-      fprintf (fp, "SSLAvailable %s\n",nvram_match("wd_sslavailable","1")?"yes":"no");
-      fprintf (fp, "SSLPort %s\n",nvram_safe_get("wd_sslport"));
-      fprintf (fp, "HTTPPort %s\n",nvram_safe_get("wd_httpport"));
-      fprintf (fp, "Path %s\n",nvram_safe_get("wd_path"));
+      fprintf (fp, "Hostname %s\n", nvram_safe_get ("wd_hostname"));
+      fprintf (fp, "SSLAvailable %s\n",
+	       nvram_match ("wd_sslavailable", "1") ? "yes" : "no");
+      fprintf (fp, "SSLPort %s\n", nvram_safe_get ("wd_sslport"));
+      fprintf (fp, "HTTPPort %s\n", nvram_safe_get ("wd_httpport"));
+      fprintf (fp, "Path %s\n", nvram_safe_get ("wd_path"));
       fprintf (fp, "}\n");
 
       fclose (fp);
@@ -3535,7 +3541,7 @@ start_wifidog (void)
 void
 stop_wifidog (void)
 {
-  killall("wifidog",SIGKILL);
+  killall ("wifidog", SIGKILL);
 }
 
 #endif
@@ -3559,10 +3565,10 @@ start_hwmon (void)
   int temp_hyst = atoi (nvram_safe_get ("hwmon_temp_hyst")) * TEMP_MUL;
   char buf[128];
   sprintf (buf, "/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
-  system (buf);
+  system2 (buf);
   sprintf (buf, "/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
 	   TEMP_PREFIX);
-  system (buf);
+  system2 (buf);
 
 }
 
@@ -3582,13 +3588,13 @@ start_hotplug_usb (void)
   char *type = getenv ("TYPE");
   char *devfs = getenv ("DEVFS");
   char *device = getenv ("DEVICE");
-  fprintf (stderr,"interface %s\n", interface != NULL ? interface : "");
-  fprintf (stderr,"action %s\n", action != NULL ? action : "");
-  fprintf (stderr,"product %s\n", product != NULL ? product : "");
-  fprintf (stderr,"devpath %s\n", devpath != NULL ? devpath : "");
-  fprintf (stderr,"type %s\n", type != NULL ? type : "");
-  fprintf (stderr,"devfs %s\n", devfs != NULL ? devfs : "");
-  fprintf (stderr,"device %s\n", device != NULL ? device : "");
+  fprintf (stderr, "interface %s\n", interface != NULL ? interface : "");
+  fprintf (stderr, "action %s\n", action != NULL ? action : "");
+  fprintf (stderr, "product %s\n", product != NULL ? product : "");
+  fprintf (stderr, "devpath %s\n", devpath != NULL ? devpath : "");
+  fprintf (stderr, "type %s\n", type != NULL ? type : "");
+  fprintf (stderr, "devfs %s\n", devfs != NULL ? devfs : "");
+  fprintf (stderr, "device %s\n", device != NULL ? device : "");
 
 
   return 0;

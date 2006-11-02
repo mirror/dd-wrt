@@ -372,8 +372,7 @@ ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   char line[254];
-
-  if ((fp = popen ("free -simple", "r")))
+  if ((fp = popen ("free", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{

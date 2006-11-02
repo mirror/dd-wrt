@@ -416,7 +416,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0_nband", "2", 0},	/* N-BAND */
   {"wl0_nmcsidx", "-1", 0},	/* N-MCS Index - rate */
   {"wl0_nmode", "-1", 0},	/* N-mode */
-  {"wl0_nreqd", "0", 0},			/* Require 802.11n support */
+  {"wl0_nreqd", "0", 0},	/* Require 802.11n support */
   {"wl0_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
   {"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
   {"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
@@ -999,7 +999,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_username_buf", "", 0},
   {"ddns_passwd_buf", "", 0},
   {"ddns_hostname_buf", "", 0},
-  {"ddns_force","10",0},
+  {"ddns_force", "10", 0},
   {"ddns_cache", "", 0},	/* DDNS cache */
   {"ddns_time", "", 0},		/* DDNS time */
 
@@ -1675,11 +1675,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wd_interval", "60", 0},
   {"wd_timeout", "5", 0},
   {"wd_maclist", "", 0},
-  {"wd_hostname","", 0},
-  {"wd_sslavailable","0",0},
-  {"wd_sslport","443",0},
-  {"wd_httpport","80",0},
-  {"wd_path","/wifidog",0},
+  {"wd_hostname", "", 0},
+  {"wd_sslavailable", "0", 0},
+  {"wd_sslport", "443", 0},
+  {"wd_httpport", "80", 0},
+  {"wd_path", "/wifidog", 0},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
@@ -1709,7 +1709,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"rstats_enable", "1", 0},
   {"rstats_path", "", 0},
   {"rstats_stime", "48", 0},
-  {"rstats_data", "", 0},  
+  {"rstats_data", "", 0},
 #endif
 #ifdef HAVE_PORTSETUP
   {"eth0_bridged", "1", 0},	/* Service set ID (network name) */
