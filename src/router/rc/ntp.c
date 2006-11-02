@@ -98,7 +98,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
   char *argv[] = { "ntpclient", servers, NULL };
   if (_eval (argv, NULL, 20, NULL) != 0)
     {
-      fprintf (stderr, "ntp returned a error\n");
+//      fprintf (stderr, "ntp returned a error\n");
       return 1;
     }
 
