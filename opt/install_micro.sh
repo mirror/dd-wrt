@@ -23,8 +23,10 @@ make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
 #mkdir ../src/router/mipsel-uclibc/target/etc/langpack
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/lib/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/lib/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
 
 #cp ./bin/ipkg ../src/router/mipsel-uclibc/target/bin
@@ -71,6 +73,12 @@ rm ../src/router/mipsel-uclibc/target/usr/sbin/mtd
 #mkvfs ../usr/lib/vfs.lib *.asp
 #rm *.asp
 #cd ../../../../../opt
+
+export TARGETDIR=../src/router/mipsel-uclibc/target
+../tools/write4 $TARGETDIR/etc/config/*.webconfig
+../tools/write4 $TARGETDIR/etc/config/*.webservices
+../tools/write4 $TARGETDIR/etc/config/*.webalive
+../tools/write4 $TARGETDIR/etc/config/*.webhotspot
 
 
 ../src/linux/brcm/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
