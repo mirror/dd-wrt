@@ -272,6 +272,7 @@ val = getbuttonstate();
   switch (brand)
   	{
   	case ROUTER_BUFFALO_WHRG54S: // ROUTER_BUFFALO_HP_WHRG54S too
+  	case ROUTER_BUFFALO_WZRRSG54:
 		push = 0x01;  //gpio 0
   		break;
   	case ROUTER_ASUS_WL500G_PRE:
