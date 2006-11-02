@@ -160,7 +160,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
-										<th width="50%"><% tran("share.descr"); %></th>
+										<th width="35%"><% tran("share.descr"); %></th>
 										<th><% tran("share.from"); %>&nbsp;(WAN)</th>
 										<th><% tran("share.to"); %>&nbsp;(LAN)</th>
 										<th><% tran("share.ip"); %></th>
