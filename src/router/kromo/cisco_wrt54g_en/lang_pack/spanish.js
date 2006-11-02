@@ -393,52 +393,10 @@ ddns.srv="Servicio DDNS";
 ddns.emailaddr="Dirección E-mail";
 ddns.typ="Tipo";
 ddns.dynamic="Dinámico";
-// ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Personalizado";
 ddns.wildcard="Comodín";
 ddns.statu="Estado DDNS";
 
-
-ddnsm.dyn_strange="Respuesta extraña del servidor.¿ Estás conectandote al correcto ?";
-ddnsm.dyn_good="DDNS actualizado correctamente";
-ddnsm.dyn_noupdate="No es necesario actualizar en este momento";
-ddnsm.dyn_nohost="El Nombre del Host no existe";
-ddnsm.dyn_notfqdn="El Nombre del Host Name no es correcto";
-ddnsm.dyn_yours="El Host no está bajo tu control";
-ddnsm.dyn_abuse="El Host ha sido bloqueado por abuso";
-ddnsm.dyn_nochg="La dirección IP no ha cambiado desde la última actualización";
-ddnsm.dyn_badauth="Fallo en la autentificación (Nombre de Usuario ó Clave)";
-ddnsm.dyn_badsys="Parámetro de sistema inválido";
-ddnsm.dyn_badagent="Este agente de usuario ha sido bloqueado";
-ddnsm.dyn_numhost="Demasiados o muy pocos hosts encontrados";
-ddnsm.dyn_dnserr="Error interno en DNS";
-ddnsm.dyn_911="Error inesperado 911";
-ddnsm.dyn_999="Error inesperado 999";
-ddnsm.dyn_donator="La función requerida está solo disponible a los donantes. Por favor dona";
-ddnsm.dyn_uncode="Código de retorno desconocido";
-
-ddnsm.tzo_good="Operación Completa";
-ddnsm.tzo_noupdate="No se requiere actualización en este momento";
-ddnsm.tzo_notfqdn="Nombre de Dominio Inválido";
-ddnsm.tzo_notmail="E-mail Inválido";
-ddnsm.tzo_notact="Acción Inválida";
-ddnsm.tzo_notkey="Clave Inválida";
-ddnsm.tzo_notip="Dirección IP inválida";
-ddnsm.tzo_dupfqdn="Duplicar Nombre de Dominio";
-ddnsm.tzo_fqdncre="El nombre de dominio ya ha sido creado para este nombre de dominio";
-ddnsm.tzo_expired="La cuenta ha expirado";
-ddnsm.tzo_error="Error inexperado en el servidor";
-
-ddnsm.zone_701="La zona no está establecida en esta cuenta";
-ddnsm.zone_702="Actualización fallida";
-ddnsm.zone_703="Uno de los parámetros <em>zonas</em> ó <em>host</em> son requeridos";
-ddnsm.zone_704="La zona debe ser un nombre de internet válido y <em>con puntos</em>";
-ddnsm.zone_705="La zona no puede estar vacía";
-ddnsm.zone_707="Duplicar actualizaciones para la misma host/ip, ajustar configurción de cliente";
-ddnsm.zone_201="Ningun dato grabado necesita actualización";
-ddnsm.zone_badauth="Autorización fallida (nombre de usuario o clave)";
-ddnsm.zone_good="ZoneEdit ha sido actualizado correctamente";
-ddnsm.zone_strange="Respuesta extraña del servidor.¿ Estás conectandote al correcto ?";
 
 ddnsm.all_closed="El servidor DDNS está actualmente cerrado";
 ddnsm.all_resolving="Resolviendo el nombre de dominio";

@@ -398,47 +398,6 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 
 
-ddnsm.dyn_strange="Ongewoon server antwoord, hebt u de juiste server in gegeven?";
-ddnsm.dyn_good="DDNS is succesvol geupdate";
-ddnsm.dyn_noupdate="Er is geen update noodzakelijk op dit moment";
-ddnsm.dyn_nohost="De hostnaam bestaat niet";
-ddnsm.dyn_notfqdn="De hostnaam isniet correct";
-ddnsm.dyn_yours="De hostnaam kan niet door jou veranderd worden";
-ddnsm.dyn_abuse="De hostnaam werd geblokkeerd door misbruik";
-ddnsm.dyn_nochg="Het IP Adres is niet veranderd sins de laatste update";
-ddnsm.dyn_badauth="Authenticatie fout (gebruikersnaam of wachtwoord)";
-ddnsm.dyn_badsys="Ongeldige systeem parameter";
-ddnsm.dyn_badagent="Deze user agent werd geblokkeerd";
-ddnsm.dyn_numhost="Te veel of te weinig hosts gevonden";
-ddnsm.dyn_dnserr="DNS interne fout";
-ddnsm.dyn_911="Onverwachte fout 911";
-ddnsm.dyn_999="Onverwachte fout 999";
-ddnsm.dyn_donator="De gevraagde functie is alleen beschikbaar voor betalende gebruikers.";
-ddnsm.dyn_uncode="Onbekend antwoord";
-
-ddnsm.tzo_good="Operatie Volledig";
-ddnsm.tzo_noupdate="Geen update nodig";
-ddnsm.tzo_notfqdn="Ongeldige Domein Naam";
-ddnsm.tzo_notmail="Ongeldig Email";
-ddnsm.tzo_notact="Ongeldige Actie";
-ddnsm.tzo_notkey="Ongeldige Sleutel";
-ddnsm.tzo_notip="Ongeldig IP adres";
-ddnsm.tzo_dupfqdn="Domein Naam duplicatie";
-ddnsm.tzo_fqdncre="Domein Naam werd reeds aangemaakt voor deze domein naam";
-ddnsm.tzo_expired="De account is verlopen";
-ddnsm.tzo_error="Een onverwachte server fout";
-
-ddnsm.zone_701="Zone werd niet ingesteld op deze account";
-ddnsm.zone_702="Update mislukt";
-ddnsm.zone_703="Een of meerdere parameter <em>zones</em> of <em>host</em> zijn vereist";
-ddnsm.zone_704="Zone moet een geldige internet naam zijn";
-ddnsm.zone_705="Zone kan niet leeg zijn";
-ddnsm.zone_707="Meerdere updates voor dezelfde host/ip, verander client instellingen";
-ddnsm.zone_201="Er zijn geen updates vereist.";
-ddnsm.zone_badauth="Authenticatie mislukt (gebruikersnaam of wachtwoord)";
-ddnsm.zone_good="ZoneEdit werd succesvol geupdate";
-ddnsm.zone_strange="Onverwacht server antwoord, bent u verbonden op de juiste server ?";
-
 ddnsm.all_closed="DDNS server is niet actief";
 ddnsm.all_resolving="Bezig met opzoeken domein naam";
 ddnsm.all_errresolv="Opzoeken domein naam mislukt";
