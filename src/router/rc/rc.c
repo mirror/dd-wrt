@@ -199,7 +199,11 @@ main_loop (void)
   system ("/etc/preinit");	//sets default values for ip_conntrack
 
 #ifndef HAVE_RB500
+#ifdef HAVE_REGISTER
+  char *rwpart = "mtd5";
+#else
   char *rwpart = "mtd4";
+#endif
   int itworked = 0;
   if (nvram_match ("sys_enable_jffs2", "1"))
     {
@@ -225,7 +229,7 @@ main_loop (void)
 	}
       else
 	{
-	  itworked = mtd_unlock ("mtd4");
+	  itworked = mtd_unlock (rwpart);
 	  eval ("insmod", "crc32");
 	  eval ("insmod", "jffs2");
 	  itworked +=
