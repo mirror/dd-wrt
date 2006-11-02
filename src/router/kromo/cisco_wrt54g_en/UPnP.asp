@@ -1,20 +1,17 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - UPnP</title>
-
 <!--
 		UPnP
 		11.2005	tofu10		init
 		Intergated to DD-WRT by LawnMowerGuy1
 -->
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "UPnP";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
@@ -63,15 +60,29 @@ function setUPnPTable(forwards) {
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
 		row.className = (data[i].enabled ? '' : 'disabled');
+		//descr
 		row.insertCell(-1).innerHTML = data[i].desc;
-		row.insertCell(-1).innerHTML = data[i].wanPorts;
-		row.insertCell(-1).innerHTML = data[i].lanPorts;
-		row.insertCell(-1).innerHTML = data[i].lanIP;
+
+		//wan port
+		var cell = row.insertCell(-1)
+		cell.innerHTML = data[i].wanPorts;
+		cell.align="right";
+		
+		//lan port
+		var cell = row.insertCell(-1)
+		cell.innerHTML = data[i].lanPorts;
+		cell.align="right";
+		
+		//IP
+		var cell = row.insertCell(-1)
+		cell.innerHTML = data[i].lanIP;
+		cell.align="right";
+		
 		row.insertCell(-1).innerHTML = data[i].proto;
-		var cell = row.insertCell(-1);
+		
+		cell = row.insertCell(-1);
 		cell.className = "bin";
-//		cell.title = upnp.msg1;
-		cell.title = "";
+		cell.title = upnp.msg1;
 		cell.innerHTML = " ";
 		eval("addEvent(cell, 'click', function() { deleteForward(" + i + ") })");
 	}
@@ -89,7 +100,6 @@ function deleteForward(x) {
 	fupnp.submit_button.value = "UPnP";
 	fupnp.action.value = "Apply";
 	fupnp.remove.value = (x == 'all' ? 'all' : e.index);
-//	fupnp.delete_button.value = "Deleted";
 	fupnp.delete_button.value = sbutton.deleted;
 	fupnp.save_button.disabled = true;
 	fupnp.delete_button.disabled = true;
@@ -119,8 +129,9 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-//]]>
-</script>
+		//]]>
+		</script>
+	
 		<style type="text/css">
 			tr.disabled td {text-decoration:line-through; color:#999;}
 		</style>
@@ -132,7 +143,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Forward.asp","UPnP.asp"); %>
+					<% do_menu("Forward.asp","UPnP.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -142,16 +153,18 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="remove" />
+							
 							<h2><% tran("upnp.h2"); %></h2>
+							
 							<fieldset>
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
-										<th width="40%"><% tran("share.descr"); %></th>
-										<th width="15%"><% tran("share.from"); %>&nbsp;(WAN)</th>
-										<th width="15%"><% tran("share.to"); %>&nbsp;(LAN)</th>
-										<th width="20%"><% tran("share.ip"); %></th>
-										<th width="10%"><% tran("share.proto"); %></th>
+										<th width="50%"><% tran("share.descr"); %></th>
+										<th><% tran("share.from"); %>&nbsp;(WAN)</th>
+										<th><% tran("share.to"); %>&nbsp;(LAN)</th>
+										<th><% tran("share.ip"); %></th>
+										<th><% tran("share.proto"); %></th>
 										<th><% tran("share.del"); %></th>
 									</tr>
 								</table><br />
@@ -168,6 +181,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
 								<legend><% tran("upnp.legend2"); %></legend>
 								<div class="setting">
@@ -186,6 +200,7 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" name="upnpmnp" value="0" <% nvram_checked("upnpmnp","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
+							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
