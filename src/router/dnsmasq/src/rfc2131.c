@@ -72,7 +72,7 @@ static void bootp_option_put(struct dhcp_packet *mess,
 			     struct dhcp_boot *boot_opts, struct dhcp_netid *netids);
 static struct in_addr option_addr(unsigned char *opt);
 static unsigned int option_uint(unsigned char *opt, int size);
-static void log_packet(struct daemon *daemon, char *type, void *addr, 
+static void log_packet(struct daemon *daemon, char *type, struct in_addr *addr, 
 		       struct dhcp_packet *mess, char *interface, char *string);
 static unsigned char *option_find(struct dhcp_packet *mess, size_t size, int opt_type, int minsize);
 static unsigned char *option_find1(unsigned char *p, unsigned char *end, int opt, int minsize);
@@ -95,7 +95,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
   struct dhcp_vendor *vendor;
   struct dhcp_mac *mac;
   struct dhcp_netid_list *id_list;
-  int clid_len = 0, ignore = 0, do_classes = 0;
+  int clid_len = 0, ignore = 0;
   struct dhcp_packet *mess = daemon->dhcp_packet.iov_base;
   unsigned char *p, *end = (unsigned char *)(mess + 1);
   char *hostname = NULL, *offer_hostname = NULL, *client_hostname = NULL;
@@ -214,7 +214,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
   if (mess->giaddr.s_addr || subnet_addr.s_addr || mess->ciaddr.s_addr)
     {
       struct dhcp_context *context_tmp, *context_new = NULL;
-      struct in_addr addr;
+      struct in_addr addr = mess->ciaddr;
       int force = 0;
       
       if (subnet_addr.s_addr)
@@ -227,33 +227,19 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	  addr = mess->giaddr;
 	  force = 1;
 	}
-      else
-	{
-	  /* If ciaddr is in the hardware derived set of contexts, leave that unchanged */
-	  addr = mess->ciaddr;
-	  for (context_tmp = context; context_tmp; context_tmp = context_tmp->current)
-	    if (context_tmp->netmask.s_addr && 
-		is_same_net(addr, context_tmp->start, context_tmp->netmask) &&
-		is_same_net(addr, context_tmp->end, context_tmp->netmask))
-	      {
-		context_new = context;
-		break;
-	      }
-	} 
-		
-      if (!context_new)
-	for (context_tmp = daemon->dhcp; context_tmp; context_tmp = context_tmp->next)
-	  if (context_tmp->netmask.s_addr  && 
-	      is_same_net(addr, context_tmp->start, context_tmp->netmask) &&
-	      is_same_net(addr, context_tmp->end, context_tmp->netmask))
-	    {
-	      context_tmp->current = context_new;
-	      context_new = context_tmp;
-	    }
       
+      for (context_tmp = daemon->dhcp; context_tmp; context_tmp = context_tmp->next)
+	if (context_tmp->netmask.s_addr  && 
+	    is_same_net(addr, context_tmp->start, context_tmp->netmask) &&
+	    is_same_net(addr, context_tmp->end, context_tmp->netmask))
+	  {
+	    context_tmp->current = context_new;
+	    context_new = context_tmp;
+	  }
+
       if (context_new || force)
 	context = context_new;
-      
+
     }
   
   if (!context)
@@ -475,10 +461,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
      so zero the counts so that we don't get spurious matches between 
      the vendor string and the counts. If the lengths don't add up, we
      assume that the option is a single string and non RFC3004 compliant 
-     and just do the substring match. dhclient provides these broken options.
-     The code, later, which sends user-class data to the lease-change script
-     relies on the transformation done here.
-  */
+     and just do the substring match. dhclient provides these broken options. */
 
   if ((opt = option_find(mess, sz, OPTION_USER_CLASS, 1)))
     {
@@ -569,8 +552,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
       return 0;
 
     case DHCPRELEASE:
-      if (!(context = narrow_context(context, mess->ciaddr)) ||
-	  !(opt = option_find(mess, sz, OPTION_SERVER_IDENTIFIER, INADDRSZ)) ||
+      if (!(opt = option_find(mess, sz, OPTION_SERVER_IDENTIFIER, INADDRSZ)) ||
 	  (context->local.s_addr != option_addr(opt).s_addr))
 	return 0;
       
@@ -631,7 +613,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	    message = _("no address available");      
 	}
       
-      log_packet(daemon, "DISCOVER", opt ? option_ptr(opt) : NULL, mess, iface_name, message); 
+      log_packet(daemon, "DISCOVER", opt ? (struct in_addr *)option_ptr(opt) : NULL, mess, iface_name, message); 
 
       if (message || !(context = narrow_context(context, mess->yiaddr)))
 	return 0;
@@ -668,9 +650,6 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	{
 	  /* SELECTING  or INIT_REBOOT */
 	  mess->yiaddr = option_addr(opt);
-	  
-	  /* send vendor and user class info for new or recreated lease */
-	  do_classes = 1;
 	  
 	  if ((opt = option_find(mess, sz, OPTION_SERVER_IDENTIFIER, INADDRSZ)))
 	    {
@@ -764,15 +743,11 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	  else if (!clid && mess->hlen == 0)
 	    message = _("no unique-id");
 	  
-	  else if (!lease)
-	    {	     
-	      if ((lease = lease_allocate(mess->yiaddr)))
-		do_classes = 1;
-	      else
-		message = _("no leases left");
-	    }
+	  else if (!lease && 
+		   !(lease = lease_allocate(mess->yiaddr)))
+	    message = _("no leases left");
 	}
-
+      
       if (message)
 	{
 	  log_packet(daemon, "NAK", &mess->yiaddr, mess, iface_name, message);
@@ -794,43 +769,8 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	}
       else
 	{
-	   if (do_classes)
-	     {
-	       lease->changed = 1;
-	       /* copy user-class and vendor class into new lease, for the script */
-	       if ((opt = option_find(mess, sz, OPTION_USER_CLASS, 1)))
-		 {
-		   int len = option_len(opt);
-		   unsigned char *ucp = option_ptr(opt);
-		   /* If the user-class option started as counted strings, the first byte will be zero. */
-		   if (len != 0 && ucp[0] == 0)
-		     ucp++, len--;
-		   if (lease->userclass)
-		     free(lease->userclass);
-		   if ((lease->userclass = malloc(len+1)))
-		     {
-		       memcpy(lease->userclass, ucp, len);
-		       lease->userclass[len] = 0;
-		       lease->userclass_len = len+1;
-		     }
-		 }
-	       if ((opt = option_find(mess, sz, OPTION_VENDOR_ID, 1)))
-		 {
-		   int len = option_len(opt);
-		   unsigned char *ucp = option_ptr(opt);
-		   if (lease->vendorclass)
-		     free(lease->vendorclass);
-		   if ((lease->vendorclass = malloc(len+1)))
-		     {
-		       memcpy(lease->vendorclass, ucp, len);
-		       lease->vendorclass[len] = 0;
-		       lease->vendorclass_len = len+1;
-		     }
-		 }
-	     }
-	   
-	   if (!hostname_auth && (client_hostname = host_from_dns(daemon, mess->yiaddr)))
-	     {
+	  if (!hostname_auth && (client_hostname = host_from_dns(daemon, mess->yiaddr)))
+	    {
 	      hostname = client_hostname;
 	      hostname_auth = 1;
 	    }
@@ -929,20 +869,14 @@ static unsigned int calc_time(struct dhcp_context *context, struct dhcp_config *
   return time;
 }
 
-static void log_packet(struct daemon *daemon, char *type, void *addr, 
+static void log_packet(struct daemon *daemon, char *type, struct in_addr *addr, 
 		       struct dhcp_packet *mess, char *interface, char *string)
 {
-  struct in_addr a;
-
-  /* addr may be misaligned */
-  if (addr)
-    memcpy(&a, addr, sizeof(a));
-  
   syslog(LOG_INFO, "%s%s(%s) %s%s%s %s",
 	 type ? "DHCP" : "BOOTP",
 	 type ? type : "",
 	 interface, 
-	 addr ? inet_ntoa(a) : "",
+	 addr ? inet_ntoa(*addr) : "",
 	 addr ? " " : "",
 	 print_mac(daemon, mess->chaddr, mess->hlen),
 	 string ? string : "");

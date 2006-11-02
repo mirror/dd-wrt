@@ -26,10 +26,6 @@ struct myoption {
 
 #define OPTSTRING "9531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:0:"
 
-/* options which don't have a one-char version */
-#define LOPT_RELOAD 256
-
-
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
 #else
@@ -101,41 +97,39 @@ static const struct myoption opts[] =
     {"log-facility", 1, 0 ,'8'},
     {"leasefile-ro", 0, 0, '9'},
     {"dns-forward-max", 1, 0, '0'},
-    {"clear-on-reload", 0, 0, LOPT_RELOAD },
     { NULL, 0, 0, 0 }
   };
 
 struct optflags {
-  int c;
+  char c;
   unsigned int flag; 
 };
 
 static const struct optflags optmap[] = {
-  { 'b',            OPT_BOGUSPRIV },
-  { 'f',            OPT_FILTER },
-  { 'q',            OPT_LOG },
-  { 'e',            OPT_SELFMX },
-  { 'h',            OPT_NO_HOSTS },
-  { 'n',            OPT_NO_POLL },
-  { 'd',            OPT_DEBUG },
-  { 'k',            OPT_NO_FORK },
-  { 'K',            OPT_AUTHORITATIVE },
-  { 'o',            OPT_ORDER },
-  { 'R',            OPT_NO_RESOLV },
-  { 'E',            OPT_EXPAND },
-  { 'L',            OPT_LOCALMX },
-  { 'N',            OPT_NO_NEG },
-  { 'D',            OPT_NODOTS_LOCAL },
-  { 'z',            OPT_NOWILD },
-  { 'Z',            OPT_ETHERS },
-  { 'y',            OPT_LOCALISE },
-  { '1',            OPT_DBUS },
-  { '3',            OPT_BOOTP_DYNAMIC },
-  { '5',            OPT_NO_PING },
-  { '9',            OPT_LEASE_RO },
-  { LOPT_RELOAD,    OPT_RELOAD },
-  { 'v',            0},
-  { 'w',            0},
+  { 'b', OPT_BOGUSPRIV },
+  { 'f', OPT_FILTER },
+  { 'q', OPT_LOG },
+  { 'e', OPT_SELFMX },
+  { 'h', OPT_NO_HOSTS },
+  { 'n', OPT_NO_POLL },
+  { 'd', OPT_DEBUG },
+  { 'k', OPT_NO_FORK },
+  { 'K', OPT_AUTHORITATIVE },
+  { 'o', OPT_ORDER },
+  { 'R', OPT_NO_RESOLV },
+  { 'E', OPT_EXPAND },
+  { 'L', OPT_LOCALMX },
+  { 'N', OPT_NO_NEG },
+  { 'D', OPT_NODOTS_LOCAL },
+  { 'z', OPT_NOWILD },
+  { 'Z', OPT_ETHERS },
+  { 'y', OPT_LOCALISE },
+  { '1', OPT_DBUS },
+  { '3', OPT_BOOTP_DYNAMIC },
+  { '5', OPT_NO_PING },
+  { '9', OPT_LEASE_RO },
+  { 'v', 0},
+  { 'w', 0},
   { 0, 0 }
 };
 
@@ -207,7 +201,6 @@ static const struct {
   { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility. (defaults to DAEMON)"), NULL },
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
   { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
-  { "    --clear-on-reload", gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
   { NULL, NULL, NULL }
 }; 
 

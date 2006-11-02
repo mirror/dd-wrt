@@ -11,9 +11,9 @@
 # these requests from bringing up the link uneccessarily.
 
 # Never forward plain names (without a dot or domain part)
-#domain-needed
+domain-needed
 # Never forward addresses in the non-routed address spaces.
-#bogus-priv
+bogus-priv
 
 
 # Uncomment this to filter useless windows-originated DNS requests
@@ -382,4 +382,3 @@
 
 # Include a another lot of configuration options.
 #conf-file=/etc/dnsmasq.more.conf
-#conf-dir=/etc/dnsmasq.d
