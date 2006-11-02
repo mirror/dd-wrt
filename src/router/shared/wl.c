@@ -48,6 +48,7 @@ while (fscanf(in,"%d",&chan)!=EOF)
     {
     list[count++]=chan;
     }
+pclose(in);
 return count;
 }
 
