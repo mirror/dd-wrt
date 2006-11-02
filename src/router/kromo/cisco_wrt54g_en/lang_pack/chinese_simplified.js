@@ -395,47 +395,6 @@ ddns.wildcard="统配符";
 ddns.statu="DDNS状态";
 
 
-ddnsm.dyn_strange="奇怪的服务器响应，您是否确定所连接的服务器是正确的？";
-ddnsm.dyn_good="DDNS更新成功";
-ddnsm.dyn_noupdate="当前没有更新的需要";
-ddnsm.dyn_nohost="主机名不存在";
-ddnsm.dyn_notfqdn="主机名不正确";
-ddnsm.dyn_yours="主机不在您的控制下";
-ddnsm.dyn_abuse="主机被因为受虐被暂时封禁";
-ddnsm.dyn_nochg="IP地址自从上次更新以来未改变";
-ddnsm.dyn_badauth="认证失败（用户名或密码）";
-ddnsm.dyn_badsys="无效的系统参数";
-ddnsm.dyn_badagent="这个用户代理被封禁";
-ddnsm.dyn_numhost="找到过多或过少主机";
-ddnsm.dyn_dnserr="DNS内部错误";
-ddnsm.dyn_911="未知错误911";
-ddnsm.dyn_999="未知错误999";
-ddnsm.dyn_donator="所请求的特性中有一个是仅对捐赠者可用的特性，请捐赠";
-ddnsm.dyn_uncode="未知返回代码";
-
-ddnsm.tzo_good="操作完成";
-ddnsm.tzo_noupdate="当前不需要更新";
-ddnsm.tzo_notfqdn="无效域名";
-ddnsm.tzo_notmail="无效Email";
-ddnsm.tzo_notact="无效操作";
-ddnsm.tzo_notkey="无效秘钥";
-ddnsm.tzo_notip="无效IP地址";
-ddnsm.tzo_dupfqdn="重复的域名";
-ddnsm.tzo_fqdncre="这个域名称的域名已经被建立";
-ddnsm.tzo_expired="帐号已过期";
-ddnsm.tzo_error="未知服务器错误";
-
-ddnsm.zone_701="本帐号的Zone未设置";
-ddnsm.zone_702="更新失败";
-ddnsm.zone_703="必须提供<em>zones</em> 或者 <em>host</em> 两个参数中的一个";
-ddnsm.zone_704="Zone必须是有效的 <em>用点分割的</em> internet名称";
-ddnsm.zone_705="Zone不能为空";
-ddnsm.zone_707="对同一个主机/ip进行了重复的更新，请调整客户端设置";
-ddnsm.zone_201="没有记录需要更新";
-ddnsm.zone_badauth="授权失败（用户名或密码）";
-ddnsm.zone_good="ZoneEdit更新成功";
-ddnsm.zone_strange="奇怪的服务器响应，您是否确定所连接的服务器是正确的？";
-
 ddnsm.all_closed="DDNS服务器当前处于关闭状态";
 ddnsm.all_resolving="正在解析域名";
 ddnsm.all_errresolv="域名解析失败";

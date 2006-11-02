@@ -423,64 +423,23 @@ ddns.typ="Type";
 ddns.dynamic="Dynamique";
 ddns.custom="Personnalisé";
 ddns.wildcard="Wildcard";
-ddns.statu="Etat";
+ddns.statu="Journal";
 ddns.system="DNS System";
 ddns.options="Options Supplémentaires";
-ddns.forceupd="Forcer la mise à jour";
+ddns.forceupd="Intervalle de mise à jour forcée (en jour)";
 
-ddnsm.dyn_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au bon serveur.";
-ddnsm.dyn_good="DDNS a été mis à jour avec succès.";
-ddnsm.dyn_noupdate="Aucune mise à jour nécessaire pour le moment.";
-ddnsm.dyn_nohost="Nom d&#39;hôte inconnu.";
-ddnsm.dyn_notfqdn="Nom d&#39;hôte incorrect.";
-ddnsm.dyn_yours="Ce nom d&#39;hôte ne vous appartient pas.";
-ddnsm.dyn_abuse="Hôte bloqué pour abus.";
-ddnsm.dyn_nochg="Adresse IP inchangée depuis la dernière mise à jour.";
-ddnsm.dyn_badauth="L&#39;authentification a échoué (nom d&#39;utilisateur ou mot de passe incorrect).";
-ddnsm.dyn_badsys="Paramètre système incorrect.";
-ddnsm.dyn_badagent="Utilisateur bloqué.";
-ddnsm.dyn_numhost="Trop ou pas assez d&#39;hôte trouvés";
-ddnsm.dyn_dnserr="Erreur interne DNS.";
-ddnsm.dyn_911="Erreur inattendue 911.";
-ddnsm.dyn_999="Erreur inattendue 999.";
-ddnsm.dyn_donator="Une des fonctionnalités demandées n'est accessible qu'aux donateurs, faites une donation afin de la débloquer";
-ddnsm.dyn_uncode="Erreur inconnue.";
-
-ddnsm.tzo_good="Mise à jour terminée avec succès.";
-ddnsm.tzo_noupdate="Aucune mise à jour nécessaire pour le moment.";
-ddnsm.tzo_notfqdn="Nom d&#39;hôte incorrect.";
-ddnsm.tzo_notmail="Adresse E-mail invalide.";
-ddnsm.tzo_notact="Action invalide.";
-ddnsm.tzo_notkey="Clé invalide.";
-ddnsm.tzo_notip="Adresse IP invalide.";
-ddnsm.tzo_dupfqdn="Nom d&#39;hôte incorrect.";
-ddnsm.tzo_fqdncre="Ce nom d&#39;hôte ne vous appartient pas.";
-ddnsm.tzo_expired="Le compte utilisateur est expiré.";
-ddnsm.tzo_error="Erreur inconnue.";
-
-ddnsm.zone_701="Ce nom d&#39;hôte n&#39;a pas été trouvé dans le compte spécifié";
-ddnsm.zone_702="Echec de la mise à jour.";
-ddnsm.zone_703="Les paramètres de <em>zone</em> ou de <em>nom d&#39;hôte</em> sont requis";
-ddnsm.zone_704="Le nom d&#39;hôte doit être un domaine internet valide.";
-ddnsm.zone_705="Nom d&#39;hôte incorrect ou vide.";
-ddnsm.zone_707="Duplicate updates for the same host/ip, adjust client settings";
-ddnsm.zone_201="Aucune mise à jour nécessaire pour le moment.";
-ddnsm.zone_badauth="L&#39;authentification a échoué (nom d&#39;utilisateur ou mot de passe incorrect).";
-ddnsm.zone_good="ZoneEdit a été mis à jour avec succès.";
-ddnsm.zone_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au bon serveur.";
-
-ddnsm.all_closed="Le serveur DDNS est actuellement fermé.";
-ddnsm.all_resolving="Résolution du nom de domaine en cours ...";
-ddnsm.all_errresolv="La résolution du nom de domaine a échoué.";
+ddnsm.all_closed="Le serveur DDNS est actuellement ferm&#233;.";
+ddnsm.all_resolving="R&#233;solution du nom de domaine en cours ...";
+ddnsm.all_errresolv="La r&#233;solution du nom de domaine a échou&#233;.";
 ddnsm.all_connecting="Connexion en cours...";
-ddnsm.all_connectfail="La connexion au serveur a échoué";
-ddnsm.all_disabled="DDNS est désactivé";
-ddnsm.all_noip="Connexion Internet non détectée";
+ddnsm.all_connectfail="La connexion au serveur a &#233;chou&#233;";
+ddnsm.all_disabled="DDNS est désactiv&#233;";
+ddnsm.all_noip="Connexion Internet non détect&#233;e";
 
 //help container
 
 hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalisé</em> si vous connaissez tous les paramètres.";
-hddns.right4="Les mises à jour doivent se faire automatiquement quand votre adresse IP change. Attention à la politique d'abus de votre fourisseur DDNS; vous éviterez ainsi d'avoir votre compte bloqué.";
+hddns.right4="Saisir un nombre de jour après lequel la mise à jour sera forcée même si l'adresse IP reste inchangée. Les mises à jour doivent se faire automatiquement quand votre adresse IP change. Renseignez-vous après de votre fourisseur DDNS pour connaître sa politique contre les abus; vous éviterez ainsi d'avoir votre compte bloqué.";
 
 
 
