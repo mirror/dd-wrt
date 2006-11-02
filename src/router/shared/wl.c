@@ -365,8 +365,7 @@ list_channelsext (const char *ifname, int allchans)
       //filter out A channels if mode isnt A-Only or mixed
       if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))
 	{
-	  if (nvram_invmatch (wl_mode, "a-only")
-	      && nvram_invmatch (wl_mode, "mixed"))
+	  if (nvram_invmatch (wl_mode, "a-only") && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
       //filter out B/G channels if mode isnt g-only, b-only or mixed
@@ -378,7 +377,7 @@ list_channelsext (const char *ifname, int allchans)
 	    continue;
 	}
       //filter out channels which are not supporting turbo mode if turbo is enabled
-      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
+/*      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
 	{
 	  if (nvram_match (wl_turbo, "1"))
 	    continue;
@@ -389,7 +388,7 @@ list_channelsext (const char *ifname, int allchans)
 	{
 	  if (nvram_match (wl_turbo, "0"))
 	    continue;
-	}
+	}*/
 
       list[l].channel = achans.ic_chans[i].ic_ieee;
       list[l].freq = achans.ic_chans[i].ic_freq;
