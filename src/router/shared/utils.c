@@ -1721,7 +1721,7 @@ get_wl_assoc_mac (int *c)
 
   wlmac = NULL;
   count = *c = 0;
-  fprintf(stderr,"assoclist\n");
+//  fprintf(stderr,"assoclist\n");
 
   if ((fp = popen ("wl assoclist", "r")))
     {
@@ -2244,11 +2244,9 @@ ifexists (const char *ifname)
 int
 getifcount (const char *ifprefix)
 {
-  char devcall[64];
-  fprintf(stderr,"get ifcount\n");
-  return 0;
+  char devcall[128];
   
-  sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l >/tmp/.ifcount", ifprefix);
+  sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l > /tmp/.ifcount", ifprefix);
   system2(devcall);
   FILE *in = fopen ("/tmp/.ifcount", "rb");
   if (in==NULL)return 0;
