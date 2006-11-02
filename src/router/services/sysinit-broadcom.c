@@ -244,7 +244,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
-      eval ("gpio", "disable", "4");  //maybe fix for reset button not working
+      eval ("gpio", "disable", "4");	//maybe fix for reset button not working
 #ifndef HAVE_MSSID
       nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
 #endif

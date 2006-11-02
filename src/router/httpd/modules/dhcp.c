@@ -267,7 +267,7 @@ delete_leases (webs_t wp)
   mac = websGetVar (wp, "mac_del", NULL);
 
   snprintf (buf, sizeof(buf), "dhcp_release %s %s %s", iface, ip, mac);
-  system (buf);
+  system2 (buf);
 
   return 0;
 }

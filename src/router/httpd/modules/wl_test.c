@@ -24,7 +24,7 @@ static int
 mysystem (char *cmd)
 {
   cprintf ("cmd: [%s]\n", cmd);
-  return system (cmd);
+  return system2 (cmd);
 }
 
 void

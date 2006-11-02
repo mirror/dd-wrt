@@ -57,7 +57,7 @@ start_sysinit (void)
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  system ("/etc/convert");
+  system2 ("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
   cprintf ("sysinit() tmp\n");
 
@@ -121,7 +121,7 @@ eval("insmod","crypto_null");
 //system("/etc/kendin");
   eval ("insmod", "ixp400th");
   eval ("insmod", "ixp400");
-  system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+  system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
   eval ("insmod", "ixp400_eth");
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");

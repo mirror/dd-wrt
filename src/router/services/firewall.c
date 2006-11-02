@@ -849,7 +849,7 @@ nat_postrouting (void)
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_XSCALE
 #ifndef HAVE_X86
-	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+	  system2 ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
 #endif
 #endif
 #endif
@@ -2552,13 +2552,13 @@ start_firewall (void)
   /* run rc_firewall script */
   cprintf ("Exec RC Filewall\n");
 #ifdef HAVE_REGISTER
-  if (isregistered())
+  if (isregistered ())
 #endif
-  if (create_rc_file (RC_FIREWALL) == 0)
-    {
-      setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-      system ("/tmp/.rc_firewall");
-    }
+    if (create_rc_file (RC_FIREWALL) == 0)
+      {
+	setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+	system2 ("/tmp/.rc_firewall");
+      }
   runStartup ("/etc/config", ".firewall");
 
   cprintf ("Ready\n");
@@ -2665,7 +2665,7 @@ start_firewall (void)
   foreach (var, wordlist, next)
   {
     sprintf (buf, "/usr/sbin/iptables -I INPUT -s %s -j ACCEPT", var);
-    system (buf);
+    system2 (buf);
   }
   cprintf ("ready");
 
@@ -2685,7 +2685,7 @@ stop_firewall (void)
   foreach (var, wordlist, next)
   {
     sprintf (buf, "/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var);
-    system (buf);
+    system2 (buf);
   }
 
   cprintf ("done\n");

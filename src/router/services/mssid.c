@@ -24,8 +24,8 @@
 #ifdef HAVE_MSSID
 #include <ctype.h>
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>

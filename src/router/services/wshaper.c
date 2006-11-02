@@ -46,7 +46,7 @@ void
 system_debug (char *sys)
 {
   cprintf ("%s\n", sys);
-  system (sys);
+  system2 (sys);
 }
 
 #define system(a) system_debug(a)
@@ -113,26 +113,26 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_X86
 
-  system ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
-  system ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
-  system ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
-  system ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
+  system2 ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
+  system2 ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
+  system2 ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
+  system2 ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
 
-  system ("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
-  system ("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
-  system ("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
-  system ("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
+  system2 ("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
+  system2 ("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
+  system2 ("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
+  system2 ("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
 
 
-  system ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
-  system ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
-  system ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
-  system ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
+  system2 ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
+  system2 ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
+  system2 ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
+  system2 ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
 
-  system ("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
-  system ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
-  system ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
-  system ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
+  system2 ("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
+  system2 ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
+  system2 ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
+  system2 ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
 #endif
 #endif
 #endif
@@ -162,19 +162,19 @@ svqos_set_ports (void)
       else
 	snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
 		  loop);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 254,
 		"echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
 		loop);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (nvram_var, 31, "svqos_port%dprio", loop);
       level = nvram_safe_get (nvram_var);
       snprintf (cmd, 254,
 		"echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
 		atoi (level) / 10 - 1, loop);
-      system (cmd);
+      system2 (cmd);
     }
 #endif
 #endif
@@ -201,59 +201,59 @@ svqos_iptables (void)
   outmacs = fopen ("/tmp/aqos_macs", "wb");
 #endif
 
-  system ("/usr/sbin/iptables -t mangle -F SVQOS_OUT");
-  system ("/usr/sbin/iptables -t mangle -X SVQOS_OUT");
-  system ("/usr/sbin/iptables -t mangle -N SVQOS_OUT");
+  system2 ("/usr/sbin/iptables -t mangle -F SVQOS_OUT");
+  system2 ("/usr/sbin/iptables -t mangle -X SVQOS_OUT");
+  system2 ("/usr/sbin/iptables -t mangle -N SVQOS_OUT");
 
-  system ("/usr/sbin/iptables -t mangle -F SVQOS_IN");
-  system ("/usr/sbin/iptables -t mangle -X SVQOS_IN");
-  system ("/usr/sbin/iptables -t mangle -N SVQOS_IN");
+  system2 ("/usr/sbin/iptables -t mangle -F SVQOS_IN");
+  system2 ("/usr/sbin/iptables -t mangle -X SVQOS_IN");
+  system2 ("/usr/sbin/iptables -t mangle -N SVQOS_IN");
 
 
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j SVQOS_IN",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j SVQOS_IN",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
   // enable IMQ device for ingress policing
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
   snprintf (cmd, 1023,
 	    "/usr/sbin/iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT",
 	    dev);
-  system (cmd);
+  system2 (cmd);
 
-  system
+  system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark");
-  system
+  system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -m mark ! --mark 0 -j RETURN");
 
-  system
+  system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j CONNMARK --restore-mark");
-  system
+  system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_IN -m mark ! --mark 0 -j RETURN");
 
   // if OSPF is active put it into the Express bucket for outgoing QoS
   if (nvram_match ("wk_mode", "ospf"))
-    system
+    system2
       ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p ospf -m mark --mark 0 -j MARK --set-mark 20");
 
   // non-TCP and TCP ACK packets are all 1:10 for ingress policing
@@ -263,11 +263,11 @@ svqos_iptables (void)
 
   /* mac format is "mac level | mac level |" ..etc */
 #ifndef HAVE_AQOS
-char *wl0mode=nvram_get("wl0_mode");
-if (wl0mode==NULL)
-    wl0mode="";
+  char *wl0mode = nvram_get ("wl0_mode");
+  if (wl0mode == NULL)
+    wl0mode = "";
 
-  if (strcmp (dev, "br0") && strcmp(wl0mode,"wet"))
+  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet"))
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
@@ -300,20 +300,20 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A PREROUTING -j CONNMARK --save-mark");
-	  system (cmd);
+	  system2 (cmd);
 	}
       else
 	{
@@ -321,44 +321,44 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 #else
 
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/ebtables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/ebtables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/ebtables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/ebtables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 #endif
 	}
 #else
@@ -370,13 +370,13 @@ if (wl0mode==NULL)
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -D PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -m mac --mac-source %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
 
-      system (cmd);
+      system2 (cmd);
 
       /*      snprintf(cmd, 1023, "/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
          system(cmd);
@@ -398,22 +398,22 @@ if (wl0mode==NULL)
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A SVQOS_OUT -s %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A SVQOS_OUT -d %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A SVQOS_IN -s %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A SVQOS_IN -d %s -m mark --mark 0 -j MARK --set-mark %s",
 		data, level);
-      system (cmd);
+      system2 (cmd);
 #else
       fprintf (outips, "%s\n", data);
 
@@ -424,22 +424,22 @@ if (wl0mode==NULL)
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -s %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A PREROUTING -i br0 -d %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A POSTROUTING -s %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
-      system (cmd);
+      system2 (cmd);
 
       snprintf (cmd, 1023,
 		"/usr/sbin/iptables -t mangle -A POSTROUTING -d %s -m connrate --connrate ! 0:%d -j DROP",
 		data, ilevel);
-      system (cmd);
+      system2 (cmd);
 
 
 #endif
@@ -465,12 +465,12 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 	}
 
       // tcp and L7 is managed on both ingress and egress
@@ -479,22 +479,22 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
 		    data, level);
-	  system (cmd);
+	  system2 (cmd);
 	}
 
       if (strstr (type, "l7"))
@@ -502,12 +502,12 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
 		    name, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_IN -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
 		    name, level);
-	  system (cmd);
+	  system2 (cmd);
 	}
 
       if (strstr (type, "p2p"))
@@ -545,12 +545,12 @@ if (wl0mode==NULL)
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 		    proto, level);
-	  system (cmd);
+	  system2 (cmd);
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 		    proto, level);
-	  system (cmd);
+	  system2 (cmd);
 	}
 
 
@@ -560,12 +560,12 @@ if (wl0mode==NULL)
   // set port priority and port bandwidth
   svqos_set_ports ();
 
-  system
+  system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --save-mark");
-  system ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j RETURN");
+  system2 ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j RETURN");
 
-  system ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark");
-  system ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j RETURN");
+  system2 ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark");
+  system2 ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j RETURN");
 
   return 0;
 }
@@ -675,12 +675,12 @@ stop_wshaper (void)
 
   stop_firewall ();
   start_firewall ();
-char *dev = get_wshaper_dev ();
-char *wl0mode=nvram_get("wl0_mode");
-if (wl0mode==NULL)
-    wl0mode="";
-  if (strcmp (dev, "br0") && strcmp(wl0mode,"wet"))
-  {
+  char *dev = get_wshaper_dev ();
+  char *wl0mode = nvram_get ("wl0_mode");
+  if (wl0mode == NULL)
+    wl0mode = "";
+  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet"))
+    {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
       eval ("rmmod", "ebt_mark_m");
@@ -688,6 +688,6 @@ if (wl0mode==NULL)
       eval ("rmmod", "ebtable_filter");
       eval ("rmmod", "ebtable_nat");
       eval ("rmmod", "ebtables");
-  }
+    }
   return ret;
 }
