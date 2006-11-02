@@ -62,6 +62,7 @@ OBJS += upgrade_rb500.c
 else
 ifneq ($(CONFIG_X86),y)
 OBJS += upgrade.c
+CFLAGS += -DHAVE_LOUD
 endif
 endif
 

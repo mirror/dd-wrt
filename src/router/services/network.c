@@ -119,8 +119,9 @@ wlc_get_mem_offset (void)
   /* yes, i'm lazy ;) */
   f = popen ("grep '\\[wl]' /proc/ksyms | sort", "r");
   if (fgets (s, 64, f) == 0)
+    {
     return;
-
+    }
   pclose (f);
 
   s[8] = 0;
@@ -321,7 +322,7 @@ start_dhcpc (char *wan_ifname)
   symlink ("/sbin/rc", "/tmp/udhcpc");
 
   nvram_set ("wan_get_dns", "");
-  killall("udhcpc",SIGTERM);
+  killall ("udhcpc", SIGTERM);
   if (vendorclass != NULL && strlen (vendorclass) > 0)
     {
       char *dhcp_argv[] = { "udhcpc",
@@ -579,22 +580,25 @@ start_wlconf (void)
 {
   wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
+
 #ifdef HAVE_PORTSETUP
 
-static void do_portsetup(char *lan,char *ifname)
+static void
+do_portsetup (char *lan, char *ifname)
 {
-char var[64];
-char var2[64];
-sprintf(var,"%s_bridged",ifname);
-if (nvram_match(var,"1"))
+  char var[64];
+  char var2[64];
+  sprintf (var, "%s_bridged", ifname);
+  if (nvram_match (var, "1"))
     {
-    br_add_interface(lan,ifname);
-    }else
+      br_add_interface (lan, ifname);
+    }
+  else
     {
-sprintf(var,"%s_ipaddr",ifname);
-sprintf(var2,"%s_netmask",ifname);
-    ifconfig (ifname, IFUP, nvram_safe_get(var), nvram_safe_get(var2));
-    
+      sprintf (var, "%s_ipaddr", ifname);
+      sprintf (var2, "%s_netmask", ifname);
+      ifconfig (ifname, IFUP, nvram_safe_get (var), nvram_safe_get (var2));
+
     }
 
 }
@@ -672,9 +676,11 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
 #endif
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
@@ -683,9 +689,11 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+      nvram_set ("lan_ifnames",
+		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+      nvram_set ("lan_ifnames",
+		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
 #endif
       nvram_set ("wan_ifname", "eth0");
       nvram_set ("wan_ifnames", "eth0");
@@ -830,8 +838,8 @@ start_lan (void)
 
       foreach (name, lan_ifnames, next)
       {
-      if (!ifexists(name))
-        continue;
+	if (!ifexists (name))
+	  continue;
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
@@ -881,13 +889,14 @@ start_lan (void)
 	/* If not a wl i/f then simply add it to the bridge */
 #ifndef HAVE_MADWIFI
 	if (wlconf_up (name))
-	{
-	    #ifdef HAVE_PORTSETUP
-	    do_portsetup(lan_ifname,name);
-	    #else
+	  {
+#ifdef HAVE_PORTSETUP
+	    do_portsetup (lan_ifname, name);
+#else
 	    br_add_interface (lan_ifname, name);
-	    #endif
-  	}else
+#endif
+	  }
+	else
 	  {
 
 	    if (nvram_match ("mac_clone_enable", "1") &&
@@ -960,11 +969,11 @@ start_lan (void)
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
 	  {
-	    #ifdef HAVE_PORTSETUP
-	    do_portsetup(lan_ifname,name);
-	    #else
+#ifdef HAVE_PORTSETUP
+	    do_portsetup (lan_ifname, name);
+#else
 	    br_add_interface (lan_ifname, name);
-	    #endif
+#endif
 	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
 	else
@@ -1386,9 +1395,9 @@ start_lan (void)
 #ifndef HAVE_MSSID
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
     {
-      system ("wl wep sw");
+      system2 ("wl wep sw");
       sleep (1);
-      system ("wl wep hw");
+      system2 ("wl wep hw");
     }
 #endif
 #endif
@@ -1443,8 +1452,8 @@ stop_lan (void)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
-        if (!ifexists(name))
-	    continue;
+	if (!ifexists (name))
+	  continue;
 	eval ("wlconf", name, "down");
 	ifconfig (name, 0, NULL, NULL);
 	br_del_interface (lan_ifname, name);
@@ -1494,33 +1503,33 @@ start_wan (int status)
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
 
 #ifdef HAVE_XSCALE
 #ifdef HAVE_GATEWORX
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "ixp0";
 #else
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
 #endif
 #elif HAVE_MAGICBOX
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #elif HAVE_X86
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #endif
   /* Rewritten by Eko, May 10, 2006 */
   int brand = getRouterBrand ();
@@ -2005,9 +2014,9 @@ start_wan (int status)
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "apsta"))
     {
-      system ("wl wep sw");
+      system2 ("wl wep sw");
       sleep (1);
-      system ("wl wep hw");
+      system2 ("wl wep hw");
     }
 #endif
   cprintf ("disable stp if needed\n");
@@ -2222,7 +2231,7 @@ start_wan_done (char *wan_ifname)
 	  chmod ("/tmp/ppp/sh_pptp_customipup", 0744);
 
 	  // Execute our custom ipup script
-	  system ("/tmp/ppp/sh_pptp_customipup");
+	  system2 ("/tmp/ppp/sh_pptp_customipup");
 
 	}
     }

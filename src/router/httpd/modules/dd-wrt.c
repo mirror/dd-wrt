@@ -463,7 +463,7 @@ ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
 
   mode = nvram_safe_get ("wl_mode");
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system (cmd);			// get active wireless mac
+  system2 (cmd);			// get active wireless mac
 
   int connected = 0;
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
@@ -484,13 +484,13 @@ ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
 	  else
 	    snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
 		      RSSI_TMP);
-	  system (cmd);
+	  system2 (cmd);
 
 	  // get noise value if not ap mode
 	  if (strcmp (mode, "ap"))
 	    snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
 
-	  system (cmd);		// get RSSI value for mac
+	  system2 (cmd);		// get RSSI value for mac
 
 	  fp2 = fopen (RSSI_TMP, "r");
 	  if (fgets (line, sizeof (line), fp2) != NULL)
@@ -3328,7 +3328,7 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (UPTIME_TMP);
 
   snprintf (cmd, 254, "uptime 2>&1 > %s", UPTIME_TMP);
-  system (cmd);
+  system2 (cmd);
 
   if ((fp = fopen (UPTIME_TMP, "r")) != NULL)
     fgets (uptime, sizeof (uptime), fp);
@@ -3562,12 +3562,12 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       else
 	snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
 		  RSSI_TMP);
-      system (cmd);
+      system2 (cmd);
 
       // get noise value if not ap mode
       if (strcmp (mode, "ap"))
 	snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
-      system (cmd);		// get RSSI value for mac
+      system2 (cmd);		// get RSSI value for mac
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)
@@ -3666,12 +3666,12 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       else
 	snprintf (cmd, sizeof (cmd), "wl -i %s rssi \"%s\" > %s", iface, mac,
 		  RSSI_TMP);
-      system (cmd);
+      system2 (cmd);
 
       // get noise value if not ap mode
       if (strcmp (mode, "ap"))
 	snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface, RSSI_TMP);
-      system (cmd);		// get RSSI value for mac
+      system2 (cmd);		// get RSSI value for mac
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)
@@ -3812,7 +3812,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	}
 
       snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP);
-      system (cmd);
+      system2 (cmd);
 
       fp2 = fopen (RSSI_TMP, "r");
       if (fgets (line, sizeof (line), fp2) != NULL)

@@ -872,8 +872,8 @@ handle_request (void)
 	  fclose (exec);
 	}
 
-      system ("chmod 700 /tmp/exec.tmp");
-      system ("/tmp/exec.tmp>/tmp/shellout.asp");
+      system2 ("chmod 700 /tmp/exec.tmp");
+      system2 ("/tmp/exec.tmp>/tmp/shellout.asp");
       if (check_connect_type () < 0)
 	{
 	  send_error (401, "Bad Request", (char *) 0,

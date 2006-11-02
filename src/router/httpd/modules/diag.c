@@ -126,7 +126,7 @@ ping_wol (webs_t wp)
   // use Wol.asp as a debugging console
   char cmd[256] = { 0 };
   snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", wol_cmd, PING_TMP);
-  system (cmd);
+  system2 (cmd);
 
   return ret;
 }

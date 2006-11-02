@@ -328,7 +328,7 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
    */
   if (nvram_match ("sv_restore_defaults", "1"))
     {
-      system ("/sbin/erase nvram");
+      system2 ("/sbin/erase nvram");
     }
   /* Slurp anything remaining in the request */
 

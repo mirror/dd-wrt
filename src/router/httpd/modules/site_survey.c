@@ -54,7 +54,7 @@ void
 ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  system ("site_survey");
+  system2 ("site_survey");
 
   open_site_survey ();
   for (i = 0; i < SITE_SURVEY_NUM; i++)
@@ -88,11 +88,11 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
   char *name;
   name = websGetVar (wp, "hidden_scan", NULL);
   if (name == NULL || strlen (name) == 0)
-    system ("site_survey");
+    system2 ("site_survey");
   else
     {
       sprintf (buf, "site_survey \"%s\"", name);
-      system (buf);
+      system2 (buf);
     }
 
   open_site_survey ();

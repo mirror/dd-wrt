@@ -136,13 +136,15 @@ start_mkfiles (void)
       return errno;
     }
 #ifdef HAVE_REGISTER
-if (isregistered())
+  if (isregistered ())
 #endif
-{
-  fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", http_passwd);
-  fprintf (fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",http_passwd);
-  fclose (fp);
-}
+    {
+      fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+	       http_passwd);
+      fprintf (fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
+	       http_passwd);
+      fclose (fp);
+    }
   /* Write group file with group 'root' */
   if (!(fp = fopen (GROUP_FILE, "w")))
     {
@@ -152,21 +154,21 @@ if (isregistered())
   fprintf (fp, "root:x:0:\n");
   fclose (fp);
 
-  system ("/bin/mkdir /var/spool");
-  system ("/bin/mkdir /var/spool/cron");
-  system ("/bin/mkdir /var/spool/cron/crontabs");
-  system ("/bin/touch /var/spool/cron/crontabs/root");
-  system ("/bin/mkdir /var/lib");
-  system ("/bin/mkdir /var/lib/misc");
-  system ("/bin/mkdir /var/tmp");
+  system2 ("/bin/mkdir /var/spool");
+  system2 ("/bin/mkdir /var/spool/cron");
+  system2 ("/bin/mkdir /var/spool/cron/crontabs");
+  system2 ("/bin/touch /var/spool/cron/crontabs/root");
+  system2 ("/bin/mkdir /var/lib");
+  system2 ("/bin/mkdir /var/lib/misc");
+  system2 ("/bin/mkdir /var/tmp");
 
-  system ("/bin/mkdir /var/log");
-  system ("/bin/touch /var/log/messages");
+  system2 ("/bin/mkdir /var/log");
+  system2 ("/bin/touch /var/log/messages");
 
 #ifdef HAVE_SNMP
-  system ("/bin/mkdir /var/snmp");
+  system2 ("/bin/mkdir /var/snmp");
 #endif
-  system ("/bin/chmod 0777 /tmp");
+  system2 ("/bin/chmod 0777 /tmp");
 
   dns_to_resolv ();
 

@@ -451,7 +451,7 @@ setsysctrl (const char *dev, const char *control, u_long value)
 
   snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
 	    dev, control);
-  system (buffer);
+  system2 (buffer);
   /* fd = fopen (buffer, "w");
      if (fd != NULL)
      {
@@ -584,7 +584,7 @@ getMaxPower (char *ifname)
   char buf[32];
   sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
 	   ifname);
-  system (buf);
+  system2 (buf);
   FILE *in = fopen ("/tmp/.power", "rb");
   if (in == NULL)
     return 1000;
@@ -710,7 +710,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if (nvram_match (wmode, "wdssta") || nvram_match(wmode,"wet"))
+      if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -776,7 +776,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if (nvram_match (wmode, "wdssta") || nvram_match(wmode,"wet"))
+      if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -907,7 +907,7 @@ setupHostAP (char *prefix)
       char exec[64];
       sprintf (exec, "wrt-radauth %s %s %s %s 1 1 0 &", prefix, server, port,
 	       share);
-      system (exec);
+      system2 (exec);
 
 //    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
 

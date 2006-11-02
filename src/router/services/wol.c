@@ -38,7 +38,7 @@ int
 stop_wol (void)
 {
   int ret;
-  ret=killall("wol",SIGKILL);
+  ret = killall ("wol", SIGKILL);
 
 
   cprintf ("done\n");

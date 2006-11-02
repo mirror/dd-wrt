@@ -1225,7 +1225,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	nv_count++;
       }
       snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-      system (cmd);		// get active wireless mac
+      system2 (cmd);		// get active wireless mac
 
 
       if ((fp = fopen (ASSOCLIST_TMP, "r")))
@@ -1624,7 +1624,7 @@ ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
   int count = 0;
 
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system (cmd);			// get active wireless mac
+  system2 (cmd);			// get active wireless mac
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
     {
@@ -2076,7 +2076,7 @@ convert_wl_gmode (char *value)
 	}
 }else*/
   {
-  fprintf(stderr,"gmode = %s\n",value);
+//  fprintf(stderr,"gmode = %s\n",value);
 #ifndef HAVE_MSSID
     if (nvram_match ("wl_net_mode", value))
       {
