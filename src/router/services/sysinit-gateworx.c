@@ -74,11 +74,11 @@ start_sysinit (void)
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
-#ifdef HAVE_REGISTER
+//#ifdef HAVE_REGISTER
   eval ("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
-#else
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-#endif
+//#else
+//  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
+//#endif
 //mkdir ("/usr/local/nvram", 0777);
 //unlink ("/tmp/nvram/.lock");
 //eval ("mkdir", "/tmp/nvram");
