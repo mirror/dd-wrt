@@ -365,6 +365,7 @@ bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
+bmenu.statuBand="Bandwidth";
 bmenu.statuSysInfo="Sys-Info";
 
 
@@ -426,50 +427,9 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 ddns.system="DYNDNS Server";
 ddns.options="Additional DDNS Options";
-ddns.forceupd="Force Update";
+ddns.forceupd="Force Update Interval";
 
 var ddnsm = new Object();
-ddnsm.dyn_strange="Strange server response, are you connecting to the right server?";
-ddnsm.dyn_good="DDNS is updated successfully";
-ddnsm.dyn_noupdate="No update needed at this time";
-ddnsm.dyn_nohost="The hostname does not exist";
-ddnsm.dyn_notfqdn="Host Name is not correct";
-ddnsm.dyn_yours="Host is not under your control";
-ddnsm.dyn_abuse="Host has been blocked for abuse";
-ddnsm.dyn_nochg="IP address has not changed since the last update";
-ddnsm.dyn_badauth="Authentication failure (username or passwords)";
-ddnsm.dyn_badsys="Invalid system parameter";
-ddnsm.dyn_badagent="This useragent has been blocked";
-ddnsm.dyn_numhost="Too many or too few hosts found";
-ddnsm.dyn_dnserr="DNS internal error";
-ddnsm.dyn_911="Unexpected error 911";
-ddnsm.dyn_999="Unexpected error 999";
-ddnsm.dyn_donator="A feature requested is only available to donators, please donate";
-ddnsm.dyn_uncode="Unknown return code";
-
-ddnsm.tzo_good="Operation Complete";
-ddnsm.tzo_noupdate="No update needed at this time";
-ddnsm.tzo_notfqdn="Invalid Domain Name";
-ddnsm.tzo_notmail="Invalid Email";
-ddnsm.tzo_notact="Invalid Action";
-ddnsm.tzo_notkey="Invalid Key";
-ddnsm.tzo_notip="Invalid IP address";
-ddnsm.tzo_dupfqdn="Duplicate Domain Name";
-ddnsm.tzo_fqdncre="Domain Name has already been created for this domain name";
-ddnsm.tzo_expired="The account has expired";
-ddnsm.tzo_error="An unexpected server error";
-
-ddnsm.zone_701="Zone is not set up in this account";
-ddnsm.zone_702="Update failed";
-ddnsm.zone_703="One of either parameters <em>zones</em> or <em>host</em> are required";
-ddnsm.zone_704="Zone must be a valid <em>dotted</em> internet name";
-ddnsm.zone_705="Zone cannot be empty";
-ddnsm.zone_707="Duplicate updates for the same host/ip, adjust client settings";
-ddnsm.zone_201="No records need updating";
-ddnsm.zone_badauth="Authorization fails (username or passwords)";
-ddnsm.zone_good="ZoneEdit is updated successfully";
-ddnsm.zone_strange="Strange server response, are you connecting to the right server?";
-
 ddnsm.all_closed="DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
 ddnsm.all_errresolv="Domain name resolv fail";
@@ -481,7 +441,7 @@ ddnsm.all_noip="No Internet connection";
 //help container
 var hddns = new Object();
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP addresses and updates your domain information dynamically. You must sign up for service through DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com or Custom.";
-hddns.right4="Updates should only be performed automaticaly when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
+hddns.right4="Type an integer number in the box to set the force update interval (in days). Updates should only be performed automaticaly when your IP address has changed. Beware of your DDNS provider update abuse policy to avoid your hostname or domain to be blocked.";
 
 
 
@@ -1223,6 +1183,19 @@ hstatus_lan.right4="This shows the Router's IP Address, as it appears on your lo
 hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
 hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
 hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
+
+
+// ******************************************* Status_Bandwidth.asp *******************************************//
+
+var status_band = new Object();
+status_band.titl=" - Bandwidth Monitoring";
+status_band.h2="Bandwidth Monitoring";
+status_band.legend="System";
+status_band.sys_model="Router Model";
+status_band.sys_firmver="Firmware Version";
+status_band.sys_time="Current Time";
+status_band.sys_up="Uptime";
+
 
 
 

@@ -401,47 +401,6 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS-Status";
 
 
-ddnsm.dyn_strange="Ungewöhnliche Serverantwort, ist dies der richtige Server?";
-ddnsm.dyn_good="DDNS erfolgreich aktualisiert";
-ddnsm.dyn_noupdate="Diesmal ist keine Aktualisierung erforderlich";
-ddnsm.dyn_nohost="Der Hostname existiert nicht";
-ddnsm.dyn_notfqdn="Der Hostname ist nicht korrekt";
-ddnsm.dyn_yours="Der Host gehört Ihnen nicht";
-ddnsm.dyn_abuse="Der Host wurde wegen Missbrauchs blockiert";
-ddnsm.dyn_nochg="Die IP-Adresse hat sich seit der letzten Aktualisierung nicht geändert";
-ddnsm.dyn_badauth="Authentizifierung fehlgeschlagen (Nutzername oder Passwort)";
-ddnsm.dyn_badsys="Ungültiger Systemparameter";
-ddnsm.dyn_badagent="Dieser Nutzeragent wurde blockiert";
-ddnsm.dyn_numhost="Zu viele oder zu wenige Hosts gefunden";
-ddnsm.dyn_dnserr="DNS-interner Fehler";
-ddnsm.dyn_911="Unerwarteter Fehler 911";
-ddnsm.dyn_999="Unerwarteter Fehler 999";
-ddnsm.dyn_donator="Dieses Features ist nur für Spender verfügbar, bitte spenden Sie";
-ddnsm.dyn_uncode="Unbekannter Rückgabewert";
-
-ddnsm.tzo_good="Operation erfolgreich ausgeführt ";
-ddnsm.tzo_noupdate="Diesmal ist kein Update notwendig";
-ddnsm.tzo_notfqdn="Ungültiger Domainname";
-ddnsm.tzo_notmail="Ungültige Email";
-ddnsm.tzo_notact="Ungültige Aktion";
-ddnsm.tzo_notkey="Ungültiger Schlüssel";
-ddnsm.tzo_notip="Ungültige IP-Adresse";
-ddnsm.tzo_dupfqdn="Duplizierter Domainname";
-ddnsm.tzo_fqdncre="Domainname wurde schon erstellt";
-ddnsm.tzo_expired="Der Account ist abgelaufen";
-ddnsm.tzo_error="Ein unerwarteter Serverfehler";
-
-ddnsm.zone_701="Die Zone ist nicht in diesem Account eingestellt";
-ddnsm.zone_702="Update fehlgeschlagen";
-ddnsm.zone_703="Einer der Parameter <em>zones</em> oder <em>host</em> wird benötigt";
-ddnsm.zone_704="Die Zone muß eine gültiger <em>dotted</em> Internet-Name sein";
-ddnsm.zone_705="Zone darf nicht leer sein";
-ddnsm.zone_707="Doppelte Aktualisierung for den selben Host / die selbe IP, bitte verändern Sie die Client-Einstellungen";
-ddnsm.zone_201="Keiner der Einträge erfordert eine Aktualisierung";
-ddnsm.zone_badauth="Autorisierung fehlgeschlagen (Nutzername oder Passwort)";
-ddnsm.zone_good="ZoneEdit wurde erfolgreich aktualisiert";
-ddnsm.zone_strange="Eigenartige Server-Antwort! Sind Sie sicher, dass Sie mit dem richtigen Server verbunden sind?";
-
 ddnsm.all_closed="DDNS-Server ist aktuell geschlossen";
 ddnsm.all_resolving="Domainnamen auflösen";
 ddnsm.all_errresolv="Domainnamen-Auflösung fehlgeschlagen";
