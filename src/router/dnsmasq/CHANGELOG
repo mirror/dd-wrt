@@ -1935,3 +1935,106 @@ version 2.33
 	    Add contrib/wrt/dhcp_release.c which is a small utility 
 	    which removes DHCP leases using DHCPRELEASE operation in
 	    the DHCP protocol.
+
+version 2.34
+	    Tweak network-determination code for another corner case:
+	    in this case a host forced to move between dhcp-ranges on
+	    the same physical interface. Thanks to Matthias Andree.
+	    
+	    Improve handling of high DNS loads by throttling acceptance of
+	    new queries when resources are tight. This should be a
+	    better response than the "forwarding table full..."
+	    message which was logged before.
+
+	    Fixed intermittent infinite loop when re-reading
+	    /etc/ethers after SIGHUP. Thanks to Eldon Ziegler for the
+	    bug report.
+
+	    Provide extra information to the lease-change script: when
+	    a lease loses its hostname (because a new lease comes
+	    along and claims the same new), the "old" action is called 
+	    with the current state of the lease, ie no name. The
+	    change is to provide the former name which the lease had
+	    in the environment variable DNSMASQ_OLD_HOSTNAME. This
+	    helps scripts which do stuff based on hostname, rather
+	    than IP address. Also provide vendor-class and user-class
+	    information to the lease-change script when a new lease is
+	    created in the DNSMASQ_VENDOR_CLASS and
+	    DNSMASQ_USER_CLASS<n> environment variables. Suggestion 
+            from Francois-Xavier Le Bail.
+
+	    Run the lease change script as root, even when dnsmasq is
+	    configured to change UID to an unprivileged user. Since
+	    most uses of the lease change script need root, this
+	    allows its use whilst keeping the security advantages of
+	    running the daemon without privs. The script is invoked
+	    via a small helper process which keeps root UID, and
+	    validates all data received from the main process. To get
+	    root, an attacker would have to break dnsmasq and then
+	    break the helper through the restricted comms channel 
+	    linking the two.
+	    
+	    Add contrib/port-forward/* which is a script to set up 
+	    port-forwards using the DHCP lease-change script. It's
+	    possible to add a host to a config file by name, and when
+	    that host gets a DHCP lease, the script will use iptables
+	    to set up port-forwards to configured ports at the address
+	    which the host is allocated. The script also handles
+	    setting up the port-forward iptables entries after reboot,
+	    using the persistent lease database, and removing them
+	    when a host leaves and its DHCP lease expires.
+
+	    Fix unaligned access problem which caused wrong log
+	    messages with some clients on some architectures. Thanks
+	    to Francois-Xavier Le Bail for the bugreport.
+
+	    Fixed problem with DHCPRELEASE and multi-address
+	    interfaces. Enhanced contrib/wrt/dhcp_release to cope
+	    under these circumstances too. Thanks to Eldon Ziegler for
+	    input on this.
+
+	    Updated French translation: thanks to Gildas Le Nadan.
+
+	    Upgraded the name hash function in the DNS cache. Thanks
+	    to Oleg Khovayko for good work on this.
+
+	    Added --clear-on-reload flag.  Suggestion from Johannes
+	    Stezenbach.
+
+	    Treat a nameserver address of 0.0.0.0 as "nothing". Erwin 
+            Cabrera spotted that specifying a nameserver as 0.0.0.0 
+	    breaks things badly; this is because the network stack
+	    treats is as "this host" and an endless loop ensues.
+		   
+            Added Webmin module in contrib/webmin. Thanks to Neil
+            Fisher for that.
+
+version 2.35
+	    Generate an "old" script event when a client does a DHCPREQUEST
+	    in INIT-REBOOT or SELECTING state and the lease already
+	    exists. Supply vendor and user class information to these
+	    script calls.
+
+	    Added support for Dragonfly BSD to src/config.h
+
+	    Removed "Upgrading to 2.0" document, which is ancient
+	    history now.
+
+	    Tweak DHCP networking code for BSD, esp OpenBSD. Added a 
+	    workaround for a bug in OpenBSD 4.0: there should finally
+            be support for multiple interfaces under OpenBSD now.
+	    Note that no version of dnsmasq before 2.35 will work for 
+	    DHCP under OpenBSD 4.0 because of a kernel bug.
+	    Thanks to Claudio Jeker, Jeb Campbell and Cristobal 
+	    Palmer for help with this.
+
+	    Optimised the cache code for the case of large
+	    /etc/hosts. This is mainly to remove the O(n-squared)
+	    algorithm which made reading large (50000 lines) files 
+	    slow, but it also takes into account the size of 
+	    /etc/hosts when building hash tables, so overall 
+	    performance should be better. Thanks to "koko" for 
+	    pointing out the problem.
+
+
+ 

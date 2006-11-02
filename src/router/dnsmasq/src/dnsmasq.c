@@ -24,6 +24,9 @@ static char *compile_opts =
 #ifdef HAVE_BROKEN_RTC
 "no-RTC "
 #endif
+#ifdef NO_FORK
+"no-MMU "
+#endif
 #ifndef HAVE_ISC_READER
 "no-"
 #endif
@@ -40,7 +43,7 @@ static char *compile_opts =
 static pid_t pid;
 static int pipewrite;
 
-static int set_dns_listeners(struct daemon *daemon, fd_set *set, int maxfd);
+static int set_dns_listeners(struct daemon *daemon, time_t now, fd_set *set, int *maxfdp);
 static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now);
 static void sig_handler(int sig);
 
@@ -195,62 +198,18 @@ int main (int argc, char **argv)
   /* prime the pipe to load stuff first time. */
   sig = SIGHUP; 
   write(pipewrite, &sig, 1);
- 
-  if (daemon->options & OPT_DEBUG)   
-    {
-#ifdef LOG_PERROR
-      openlog("dnsmasq", LOG_PERROR, daemon->log_fac);
-#else
-      openlog("dnsmasq", 0, daemon->log_fac);
-#endif
-      
-#ifdef HAVE_LINUX_NETWORK
-      prctl(PR_SET_DUMPABLE, 1);
-#endif
-    }
-  else
+  
+  if (!(daemon->options & OPT_DEBUG))   
     {
       FILE *pidfile;
-      struct passwd *ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;
       fd_set test_set;
-      int maxfd, i; 
+      int maxfd = -1, i; 
       int nullfd = open("/dev/null", O_RDWR);
 
-#ifdef HAVE_LINUX_NETWORK
-      cap_user_header_t hdr = NULL;
-      cap_user_data_t data = NULL; 
-      
-      /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
-	 CAP_NET_RAW (for icmp) if we're doing dhcp */
-      if (ent_pw && ent_pw->pw_uid != 0)
-	{
-	  hdr = safe_malloc(sizeof(*hdr));
-	  data = safe_malloc(sizeof(*data));
-	  hdr->version = _LINUX_CAPABILITY_VERSION;
-	  hdr->pid = 0; /* this process */
-	  data->effective = data->permitted = data->inheritable =
-	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) |
-	    (1 << CAP_SETGID) | (1 << CAP_SETUID);
-	  	  
-	  /* Tell kernel to not clear capabilities when dropping root */
-	  if (capset(hdr, data) == -1 || prctl(PR_SET_KEEPCAPS, 1) == -1)
-	    {
-	      bad_capabilities = errno;
-	      ent_pw = NULL;
-	    }
-	}
-#endif
-
-      FD_ZERO(&test_set);
-      maxfd = set_dns_listeners(daemon, &test_set, -1);
-#ifdef HAVE_DBUS
-      maxfd = set_dbus_listeners(daemon, maxfd, &test_set, &test_set, &test_set);
-#endif
-      
       /* The following code "daemonizes" the process. 
 	 See Stevens section 12.4 */
-      
-#ifndef NO_FORK
+
+#ifndef NO_FORK      
       if (!(daemon->options & OPT_NO_FORK))
 	{
 	  if (fork() != 0 )
@@ -274,7 +233,12 @@ int main (int argc, char **argv)
 	}
       
       umask(0);
-
+      
+      FD_ZERO(&test_set);
+      set_dns_listeners(daemon, now, &test_set, &maxfd);
+#ifdef HAVE_DBUS
+      set_dbus_listeners(daemon, &maxfd, &test_set, &test_set, &test_set);
+#endif
       for (i=0; i<64; i++)
 	{
 	  if (i == piperead || i == pipewrite)
@@ -303,7 +267,16 @@ int main (int argc, char **argv)
 	  else
 	    close(i);
 	}
-
+    }
+  
+  /* if we are to run scripts, we need to fork a helper before dropping root. */
+      daemon->helperfd = create_helper(daemon);
+    
+  if (!(daemon->options & OPT_DEBUG))   
+    {
+      /* UID changing, etc */
+      struct passwd *ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;    
+      
       if (daemon->groupname || ent_pw)
 	{
 	  gid_t dummy;
@@ -318,32 +291,55 @@ int main (int argc, char **argv)
 	      setgid(gp->gr_gid);
 	    } 
 	}
-
+      
       if (ent_pw && ent_pw->pw_uid != 0)
-	{
-	  /* finally drop root */
-	  setuid(ent_pw->pw_uid);
-	  
+	{     
 #ifdef HAVE_LINUX_NETWORK
-	  data->effective = data->permitted = 
-	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
-	  data->inheritable = 0;
+	  /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
+	     CAP_NET_RAW (for icmp) if we're doing dhcp */
+	  cap_user_header_t hdr = safe_malloc(sizeof(*hdr));
+	  cap_user_data_t data = safe_malloc(sizeof(*data));
+	  hdr->version = _LINUX_CAPABILITY_VERSION;
+	  hdr->pid = 0; /* this process */
+	  data->effective = data->permitted = data->inheritable =
+	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) |
+	    (1 << CAP_SETGID) | (1 << CAP_SETUID);
 	  
-	  /* lose the setuid and setgid capbilities */
-	  capset(hdr, data);
+	  /* Tell kernel to not clear capabilities when dropping root */
+	  if (capset(hdr, data) == -1 || prctl(PR_SET_KEEPCAPS, 1) == -1)
+	    bad_capabilities = errno;
+	  else
 #endif
+	    {
+	      /* finally drop root */
+	      setuid(ent_pw->pw_uid);
+	      
+#ifdef HAVE_LINUX_NETWORK
+	      data->effective = data->permitted = 
+		(1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
+	      data->inheritable = 0;
+	      
+	      /* lose the setuid and setgid capbilities */
+	      capset(hdr, data);
+#endif
+	    }
 	}
-
-      openlog("dnsmasq", LOG_PID, daemon->log_fac);
     }
+  
+  log_start(daemon);
+  
+#ifdef HAVE_LINUX_NETWORK
+  if (daemon->options & OPT_DEBUG) 
+    prctl(PR_SET_DUMPABLE, 1);
+#endif
 
   if (daemon->cachesize != 0)
     syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
   else
     syslog(LOG_INFO, _("started, version %s cache disabled"), VERSION);
-
+  
   syslog(LOG_INFO, _("compile time options: %s"), compile_opts);
-
+  
 #ifdef HAVE_DBUS
   if (daemon->options & OPT_DBUS)
     {
@@ -399,53 +395,59 @@ int main (int argc, char **argv)
 
   pid = getpid();
   
-  /* Start lease-change script */
-  if (daemon->dhcp)
-    lease_collect(daemon);
-  
   while (1)
     {
-      int maxfd;
+      int maxfd = -1;
       struct timeval t, *tp = NULL;
       fd_set rset, wset, eset;
-
-      t.tv_sec = 0; /* no warning */
       
       FD_ZERO(&rset);
       FD_ZERO(&wset);
       FD_ZERO(&eset);
       
-      maxfd = set_dns_listeners(daemon, &rset, -1);
-	
+      /* if we are out of resources, find how long we have to wait
+	 for some to come free, we'll loop around then and restart
+	 listening for queries */
+      if ((t.tv_sec = set_dns_listeners(daemon, now, &rset, &maxfd)) != 0)
+	{
+	  t.tv_usec = 0;
+	  tp = &t;
+	}
+
 #ifdef HAVE_DBUS
       /* Whilst polling for the dbus, wake every quarter second */
       if ((daemon->options & OPT_DBUS) && !daemon->dbus)
 	{
+	  t.tv_sec = 0;
+	  t.tv_usec = 250000;
 	  tp = &t;
-	  tp->tv_sec = 0;
-	  tp->tv_usec = 250000;
 	}
 
-      maxfd = set_dbus_listeners(daemon, maxfd, &rset, &wset, &eset);
+      set_dbus_listeners(daemon, &maxfd, &rset, &wset, &eset);
 #endif	
   
       if (daemon->dhcp)
 	{
 	  FD_SET(daemon->dhcpfd, &rset);
-	  if (daemon->dhcpfd > maxfd)
-	    maxfd = daemon->dhcpfd;
+	  bump_maxfd(daemon->dhcpfd, &maxfd);
 	}
 
 #ifdef HAVE_LINUX_NETWORK
       FD_SET(daemon->netlinkfd, &rset);
-      if (daemon->netlinkfd > maxfd)
-	maxfd = daemon->netlinkfd;
+      bump_maxfd(daemon->netlinkfd, &maxfd);
 #endif
       
       FD_SET(piperead, &rset);
-      if (piperead > maxfd)
-	maxfd = piperead;
-      
+      bump_maxfd(piperead, &maxfd);
+
+      while (helper_buf_empty() && do_script_run(daemon));
+
+      if (!helper_buf_empty())
+	{
+	  FD_SET(daemon->helperfd, &wset);
+	  bump_maxfd(daemon->helperfd, &maxfd);
+	}
+
       if (select(maxfd+1, &rset, &wset, &eset, tp) < 0)
 	{
 	  /* otherwise undefined after error */
@@ -502,6 +504,8 @@ int main (int argc, char **argv)
 		      syslog(LOG_INFO, _("reading %s"), latest->name);
 		      warned = 0;
 		      check_servers(daemon);
+		      if (daemon->options & OPT_RELOAD)
+			cache_reload(daemon->options, daemon->namebuff, daemon->domain_suffix, daemon->addn_hosts);
 		    }
 		  else 
 		    {
@@ -541,22 +545,33 @@ int main (int argc, char **argv)
 		  {
 		    lease_prune(NULL, now);
 		    lease_update_file(daemon, now);
-		    lease_collect(daemon);
 		  }
 		break;
 		
 	      case SIGTERM:
 		{
 		  int i;
-		  syslog(LOG_INFO, _("exiting on receipt of SIGTERM"));
 		  /* Knock all our children on the head. */
 		  for (i = 0; i < MAX_PROCS; i++)
 		    if (daemon->tcp_pids[i] != 0)
 		      kill(daemon->tcp_pids[i], SIGALRM);
 		  
+		  /* handle pending lease transitions */
+		  if (daemon->helperfd != -1)
+		    {
+		      /* block in writes until all done */
+		      if ((i = fcntl(daemon->helperfd, F_GETFL)) != -1)
+			fcntl(daemon->helperfd, F_SETFL, i & ~O_NONBLOCK); 
+		      do {
+			helper_write(daemon);
+		      } while (!helper_buf_empty() || do_script_run(daemon));
+		      close(daemon->helperfd);
+		    }
+		     
 		  if (daemon->lease_stream)
 		    fclose(daemon->lease_stream);
-		    
+
+		  syslog(LOG_INFO, _("exiting on receipt of SIGTERM"));
 		  exit(0);
 		}
 
@@ -568,22 +583,13 @@ int main (int argc, char **argv)
 		   whose pid != script_pid are TCP server threads. */ 
 		while ((p = waitpid(-1, NULL, WNOHANG)) > 0)
 		  {
-		    if (p == daemon->script_pid)
-		      {
-			daemon->script_pid = 0;
-			lease_collect(daemon);
-		      }
-		    else
-		      {
-			int i;
-			for (i = 0 ; i < MAX_PROCS; i++)
-			  if (daemon->tcp_pids[i] == p)
-			    {
-			      daemon->tcp_pids[i] = 0;
-			      daemon->num_kids--;
-			      break;
-			    }
-		      }
+		    int i;
+		    for (i = 0 ; i < MAX_PROCS; i++)
+		      if (daemon->tcp_pids[i] == p)
+			{
+			  daemon->tcp_pids[i] = 0;
+			  break;
+			}
 		  }
 		break;
 	      }
@@ -611,6 +617,9 @@ int main (int argc, char **argv)
       
       if (daemon->dhcp && FD_ISSET(daemon->dhcpfd, &rset))
 	dhcp_packet(daemon, now);
+
+      if (daemon->helperfd != -1 && FD_ISSET(daemon->helperfd, &wset))
+	helper_write(daemon);
     }
 }
 
@@ -618,7 +627,8 @@ static void sig_handler(int sig)
 {
   if (pid == 0)
     {
-      /* ignore anything other than TERM during startup */
+      /* ignore anything other than TERM during startup
+	 and in helper proc. (helper ignore TERM too) */
       if (sig == SIGTERM)
 	exit(0);
     }
@@ -632,7 +642,7 @@ static void sig_handler(int sig)
     }
   else
     {
-      /* alarm is used to kill children after a fixed time. */
+      /* alarm is used to kill TCP children after a fixed time. */
       if (sig == SIGALRM)
 	_exit(0);
     }
@@ -653,29 +663,42 @@ void clear_cache_and_reload(struct daemon *daemon, time_t now)
     }
 }
 
-static int set_dns_listeners(struct daemon *daemon, fd_set *set, int maxfd)
+static int set_dns_listeners(struct daemon *daemon, time_t now, fd_set *set, int *maxfdp)
 {
   struct serverfd *serverfdp;
   struct listener *listener;
+  int wait, i;
 
+  /* will we be able to get memory? */
+  get_new_frec(daemon, now, &wait);
+  
   for (serverfdp = daemon->sfds; serverfdp; serverfdp = serverfdp->next)
     {
       FD_SET(serverfdp->fd, set);
-      if (serverfdp->fd > maxfd)
-	maxfd = serverfdp->fd;
+      bump_maxfd(serverfdp->fd, maxfdp);
     }
 	  
   for (listener = daemon->listeners; listener; listener = listener->next)
     {
-      FD_SET(listener->fd, set);
-      if (listener->fd > maxfd)
-	maxfd = listener->fd;
-      FD_SET(listener->tcpfd, set);
-      if (listener->tcpfd > maxfd)
-	maxfd = listener->tcpfd;
+      /* only listen for queries if we have resources */
+      if (wait == 0)
+	{
+	  FD_SET(listener->fd, set);
+	  bump_maxfd(listener->fd, maxfdp);
+	}
+
+      /* death of a child goes through the select loop, so
+	 we don't need to explicitly arrange to wake up here */
+      for (i = 0; i < MAX_PROCS; i++)
+	if (daemon->tcp_pids[i] == 0)
+	  {
+	    FD_SET(listener->tcpfd, set);
+	    bump_maxfd(listener->tcpfd, maxfdp);
+	    break;
+	  }
     }
 
-  return maxfd;
+  return wait;
 }
 
 static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now)
@@ -723,7 +746,7 @@ static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now)
 		     break;
 	     }
 	   
-	   if ((daemon->num_kids >= MAX_PROCS) || !iface)
+	   if (!iface)
 	     {
 	       shutdown(confd, SHUT_RDWR);
 	       close(confd);
@@ -740,7 +763,6 @@ static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now)
 			 daemon->tcp_pids[i] = p;
 			 break;
 		       }
-		   daemon->num_kids++;
 		 }
 	       close(confd);
 	     }
@@ -869,7 +891,7 @@ int icmp_ping(struct daemon *daemon, struct in_addr addr)
       struct timeval tv;
       fd_set rset;
       struct sockaddr_in faddr;
-      int maxfd; 
+      int maxfd = fd; 
       socklen_t len = sizeof(faddr);
       
       tv.tv_usec = 250000;
@@ -877,7 +899,7 @@ int icmp_ping(struct daemon *daemon, struct in_addr addr)
       
       FD_ZERO(&rset);
       FD_SET(fd, &rset);
-      maxfd = set_dns_listeners(daemon, &rset, fd);
+      set_dns_listeners(daemon, now, &rset, &maxfd);
 		
       if (select(maxfd+1, &rset, NULL, NULL, &tv) < 0)
 	FD_ZERO(&rset);
