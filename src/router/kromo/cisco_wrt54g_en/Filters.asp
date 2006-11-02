@@ -321,19 +321,15 @@ function Status(F,I) {
 									<div class="label"><% tran("filter.pol"); %></div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />");
+									//]]>
+									</script>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />");
+									//]]>
+									</script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.statu"); %></div>
@@ -347,12 +343,10 @@ document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick
 								<div class="setting">
 									<div class="label"><% tran("filter.pcs"); %></div>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
+									//]]>
+									</script>
 								</div>
 								<div class="setting">
 									<div class="label">
@@ -422,12 +416,10 @@ document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclic
 									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-write_service_options(servport_name0);
-
-//]]>
-</script>
+										//<![CDATA[
+										write_service_options(servport_name0);
+										//]]>
+										</script>
 									</select>
 									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
 								</div>
@@ -435,12 +427,10 @@ write_service_options(servport_name0);
 									<select size="1" name="blocked_service1" onchange="onchange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-write_service_options(servport_name1);
-
-//]]>
-</script>
+										//<![CDATA[
+										write_service_options(servport_name1);
+										//]]>
+										</script>
 									</select>
 									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
 								</div>
@@ -448,12 +438,10 @@ write_service_options(servport_name1);
 									<select size="1" name="blocked_service2" onchange="onchange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-write_service_options(servport_name2);
-
-//]]>
-</script>
+										//<![CDATA[
+										write_service_options(servport_name2);
+										//]]>
+										</script>
 									</select>
 										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
 								</div>
@@ -461,71 +449,63 @@ write_service_options(servport_name2);
 									<select size="1" name="blocked_service3" onchange="onchange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
 										<option value="None" selected="selected">None</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-write_service_options(servport_name3);
-
-//]]>
-</script>
+										//<![CDATA[
+										write_service_options(servport_name3);
+										//]]>
+										</script>
 									</select>
 									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
+									//]]>
+									</script>
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
 								<legend><% tran("filter.legend4"); %></legend>
 								<div class="setting center">
-									<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
+									<input size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
 								</div>
 								<div class="setting center">
-									<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" />
+									<input size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" />
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
 								<legend><% tran("filter.legend5"); %></legend>
 								<div class="setting center">
-									<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
+									<input size="21" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
 								</div>
 								<div class="setting center">
-									<input class="num" size="18" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url6" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","6"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url7" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","7"); %>" />
+									<input size="21" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url6" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input size="21" maxlength="79" name="url7" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","7"); %>" />
 								</div>
 							</fieldset><br />
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+								//]]>
+								</script>
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
