@@ -51,7 +51,7 @@ ipup_main (int argc, char **argv)
 
   cprintf ("%s\n", argv[0]);
 
-  killall("listen",SIGKILL);
+  killall ("listen", SIGKILL);
   nvram_set ("wan_iface", wan_ifname);
   if (check_action () != ACT_IDLE)
     return -1;
@@ -195,7 +195,7 @@ ipdown_main (int argc, char **argv)
       && (nvram_match ("wan_proto", "pptp")
 	  || nvram_match ("wan_proto", "l2tp")))
     {
-      killall("listen",SIGKILL);
+      killall ("listen", SIGKILL);
       eval ("listen", nvram_safe_get ("lan_ifname"));
     }
   if (getRouterBrand () == ROUTER_SIEMENS)

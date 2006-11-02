@@ -132,7 +132,7 @@ site_survey_main (int argc, char *argv[])
   char ssid[31];
   unsigned char *cp;
   int len;
-  system("iwlist ath0 scan >/dev/null");
+  system2 ("iwlist ath0 scan >/dev/null");
   len = do80211priv ("ath0", IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof (buf));
 
   if (len == -1)

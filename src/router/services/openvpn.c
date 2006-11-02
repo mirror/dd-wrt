@@ -23,9 +23,9 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <stdio.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>
@@ -68,7 +68,7 @@ start_openvpnserver (void)
 static int
 stop_openvpnserver (void)
 {
-  killall("openvpn",SIGKILL);
+  killall ("openvpn", SIGKILL);
   return 0;
 }
 
@@ -184,7 +184,7 @@ start_openvpn (void)
 int
 stop_openvpn (void)
 {
-  killall("openvpn",SIGKILL);
+  killall ("openvpn", SIGKILL);
 }
 
 #endif

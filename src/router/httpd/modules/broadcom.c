@@ -1658,7 +1658,7 @@ validate_password (webs_t wp, char *value, struct variable *v)
     {
       nvram_set (v->name, zencrypt(value));
 
-      system ("/sbin/setpasswd");
+      system2 ("/sbin/setpasswd");
     }
 }
 
@@ -1669,7 +1669,7 @@ validate_password2 (webs_t wp, char *value, struct variable *v)
     {
       nvram_set (v->name, value);
 
-      system ("/sbin/setpasswd");
+      system2 ("/sbin/setpasswd");
     }
 }
 
@@ -2686,7 +2686,7 @@ static int execute (webs_t wp);
   char command[256];
   char *var = websGetVar (wp, "command", "");
   sprintf (command, "%s > /tmp/.result");
-  system (command);
+  system2 (command);
 }
 
 #endif
@@ -3311,7 +3311,7 @@ do_shell_script (char *url, webs_t stream)
 {
   char buf[256];
   sprintf (buf, "%s >/tmp/shellout.asp", url);
-  system (buf);
+  system2 (buf);
   do_ej("/tmp/shellout.asp", stream);
 }
 
