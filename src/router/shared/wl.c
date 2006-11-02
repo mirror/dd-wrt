@@ -37,6 +37,7 @@ getchannels (unsigned int *list)
 //  memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
 
 //  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
+fprintf(stderr,"get channels\n");
 FILE *in=popen("wl channels","r");
 #ifndef HAVE_MSSID
 while(fgetc(in)!=':');
