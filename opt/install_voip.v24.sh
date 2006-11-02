@@ -23,8 +23,8 @@ make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
 #mkdir ../src/router/mipsel-uclibc/target/etc/langpack
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
 
 cp ./bin/ipkg ../src/router/mipsel-uclibc/target/bin

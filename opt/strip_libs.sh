@@ -1,7 +1,7 @@
 
 # strip executables
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/bin/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/*

@@ -22,8 +22,8 @@ make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
 #mkdir ../src/router/mipsel-uclibc/target/etc/langpack
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
-./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/*
+./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/*
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
 
 cp ./bin/ipkg ../src/router/mipsel-uclibc/target/bin
@@ -94,7 +94,9 @@ cp dd-wrt.v23_mini_wrt54gsv4.bin /GruppenLW
 cp dd-wrt.v23_mini_wrtsl54gs.bin /GruppenLW
 
 cp dd-wrt.v23_mini.trx /GruppenLW/dd-wrt.v23_mini_generic.bin
-./tools/motorola-bin dd-wrt.v23_mini.trx dd-wrt.bin
-cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_moto.bin
+./tools/motorola-bin -1 dd-wrt.v23_mini.trx dd-wrt.bin
+cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_wr850g.bin
+./tools/motorola-bin -3 dd-wrt.v23_mini.trx dd-wrt.bin
+cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_we800g.bin
 
 #cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
