@@ -27,8 +27,11 @@
 				DynDNS' <em>Custom</em> DNS service provides a managed primary DNS solution, giving you complete control over an entire domain name and providing a unified primary/secondary DNS service. A web-based interface provides two levels of control over your domain, catering to average or power users.</dd>
 				
 				<dt><% tran("ddns.wildcard"); %></dt>
-				<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname</dd>
-
+				<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname.</dd>
+				
+				<dt><% tran("ddns.forceupd"); %></dt>
+				<dd>Type an integer number in the box to set the force update interval (in days). Force update is an update which will be done although your IP address is still the same. Force update is required, especially for non donator of dyndns.org users, in order to avoid the host name of being deleted.</dd>
+				
 				<dt><% tran("ddns.statu"); %></dt>
 				<dd>The status of the DDNS service connection is displayed here.</dd>
 			</dl>
