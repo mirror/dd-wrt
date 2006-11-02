@@ -2246,13 +2246,12 @@ getifcount (const char *ifprefix)
 {
   char devcall[128];
   
-  sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l > /tmp/.ifcount", ifprefix);
-  system2(devcall);
-  FILE *in = fopen ("/tmp/.ifcount", "rb");
+  sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l", ifprefix);
+  FILE *in = popen (devcall, "rb");
   if (in==NULL)return 0;
   int count;
   fscanf (in, "%d", &count);
-  fclose (in);
+  pclose (in);
   return count;
   
 }
