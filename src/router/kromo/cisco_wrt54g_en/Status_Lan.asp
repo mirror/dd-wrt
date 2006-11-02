@@ -166,9 +166,9 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="4" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="25%"><% tran("share.hostname"); %></th>
+										<th width="50%"><% tran("share.hostname"); %></th>
 										<th width="25%"><% tran("share.ip"); %></th>
-										<th width="50%"><% tran("share.mac"); %></th>
+										<th width="25%"><% tran("share.mac"); %></th>
 									</tr>
 								</table>
 							</fieldset><br />
