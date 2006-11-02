@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Diagnostics</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + diag.titl;
 
@@ -30,8 +30,8 @@ function valid(F,I) {
 	return true;
 }
 
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -57,7 +57,7 @@ function valid(F,I) {
 								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("diag.cmd"); %></div>
-									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New"><% nvram_get("ping_ip"); %></textarea>
+									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New" wrap="off"><% nvram_get("ping_ip"); %></textarea>
 								</div>
 									<script type="text/javascript">
 									//<![CDATA[
