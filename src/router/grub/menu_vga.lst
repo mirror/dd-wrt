@@ -1,0 +1,8 @@
+default 0
+timeout 5
+
+title   DD-WRT
+root    (hd0,0)
+kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=tty0,115200n8 reboot=bios
+boot
+
