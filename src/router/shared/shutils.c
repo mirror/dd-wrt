@@ -109,6 +109,11 @@ waitfor (int fd, int timeout)
  */
 
 
+int system2(char *command)
+{
+//fprintf(stderr,"system: %s\n",command);
+return system(command);
+}
 int _eval (char *const argv[], char *path, int timeout, int *ppid)
 {
   pid_t pid;
@@ -117,15 +122,16 @@ int _eval (char *const argv[], char *path, int timeout, int *ppid)
   int flags;
   int sig;
 //  char buf[254] = "";
-#ifndef HAVE_SILENCE
+//#ifndef HAVE_SILENCE
+
   int i = 0;
-  cprintf ("executing from %s ", path);
+/*  fprintf (stderr,"executing from %s ", path);
   while (argv[i] != NULL)
     {
-      cprintf ("%s ", argv[i++]);
+      fprintf (stderr,"%s ", argv[i++]);
     }
-  cprintf ("\n");
-#endif
+  fprintf (stderr,"\n");*/
+//#endif
 
   switch (pid = fork ())
     {
