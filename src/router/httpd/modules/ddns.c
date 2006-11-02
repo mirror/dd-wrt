@@ -21,16 +21,13 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
     enable = nvram_safe_get ("ddns_enable");	// for first time
 
   if (strcmp (nvram_safe_get ("ddns_enable"), enable))	// change service
-    {
-      websWrite (wp, " ");
-    }
+		websWrite (wp, " ");
 
   if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
-    {
-      websWrite (wp,
-		 "%s", live_translate("ddnsm.all_disabled"));
-      return;
-    }
+  {
+  	websWrite (wp, "%s", live_translate("ddnsm.all_disabled"));
+  	return;
+  }
 
   /*if (!check_wan_link (0))
     {
@@ -40,18 +37,18 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
     }*/
 
   if ((fp = fopen ("/tmp/ddns/ddns.log", "r")))
-    {
-      /* Just dump the log file onto the web page */
-      while (fgets (buff, sizeof (buff), fp))
-	websWrite (wp, "%s <br />", buff);
-      fclose (fp);
-    }
+  {
+  	/* Just dump the log file onto the web page */
+  	while (fgets (buff, sizeof (buff), fp)) {
+  		websWrite (wp, "%s <br />", buff);
+  	}
+  	fclose (fp);
+  }
   else
-    {
-      websWrite (wp,
-		 "%s", live_translate("ddnsm.all_connecting"));
-      return;
-    }
+  {
+    websWrite (wp, "%s", live_translate("ddnsm.all_connecting"));
+    return;
+  }
 
   return;
 }
@@ -79,18 +76,20 @@ ddns_save_value (webs_t wp)
 
   enable = websGetVar (wp, "ddns_enable", NULL);
   if (!enable && !valid_choice (wp, enable, &which[0]))
-    {
-      error_value = 1;
-      return 1;
-    }
+  {
+    error_value = 1;
+    return 1;
+  }
 
   if (atoi (enable) == 0)
-    {				// Disable
-      nvram_set ("ddns_enable", enable);
-      return 1;
-    }
+  {	
+  	// Disable
+    nvram_set ("ddns_enable", enable);
+    return 1;
+  }
   else if (atoi (enable) == 1)
-    {				// dyndns
+    {
+    	// dyndns
       snprintf (_username, sizeof (_username), "%s", "ddns_username");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
@@ -98,54 +97,60 @@ ddns_save_value (webs_t wp)
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
   else if (atoi (enable) == 2)
-    {				// afraid
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-    }
+  {
+  	// afraid
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+  }
   else if (atoi (enable) == 3)
-    {				// zoneedit
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-    }
+  {
+  	// zoneedit
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+  }
   else if (atoi (enable) == 4)
-    {				// no-ip
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-    }
+  {
+  	// no-ip
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+  }
   else if (atoi (enable) == 5)
-    {				// custom
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-      snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
-      snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
-      snprintf (_url, sizeof (_url), "%s", "ddns_url");
-    }
-   /* botho 30/07/06 : add www.3322.org */
+  {
+  	// custom
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+    snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
+    snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
+    snprintf (_url, sizeof (_url), "%s", "ddns_url");
+  }
   else if (atoi (enable) == 6)
-    {				// 3322 dynamic
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-      snprintf (_dyndnstype, sizeof (_dyndnstype), "ddns_dyndnstype_%s", enable);
-      snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", enable);
-    }
-  else if (atoi (enable) == 7)
-    {				// easydns
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-      snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", enable);
-    }
+  {
+  	// 3322 dynamic : added botho 30/07/06
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+    snprintf (_dyndnstype, sizeof (_dyndnstype), "ddns_dyndnstype_%s", enable);
+    snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", enable);
+  }
+ 	else if (atoi (enable) == 7)
+  {
+  	// easydns
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+    snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", enable);
+  }
   else if (atoi (enable) == 8)
-    {				// tzo
-      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
-    }
+  {
+  	// tzo
+    snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+    snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+    snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+  }
 
   username = websGetVar (wp, _username, NULL);
   passwd = websGetVar (wp, _passwd, NULL);
@@ -158,15 +163,16 @@ ddns_save_value (webs_t wp)
   force = websGetVar (wp, _force, NULL);
 
   if (!username || !passwd || !hostname || !force)
-    {
-      error_value = 1;
-      return 1;
-    }
+  {
+    error_value = 1;
+    return 1;
+  }
 
   nvram_set ("ddns_enable", enable);
   nvram_set (_username, username);
-  if (strcmp (passwd, TMP_PASSWD))
-    nvram_set (_passwd, passwd);
+  if (strcmp (passwd, TMP_PASSWD)) {
+  	nvram_set (_passwd, passwd);
+  }
   nvram_set (_hostname, hostname);
   nvram_set (_dyndnstype, dyndnstype);
   nvram_set (_wildcard, wildcard);
@@ -183,26 +189,3 @@ ddns_update_value (webs_t wp)
 {
   return 1;
 }
-
-/*
-void
-ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv)
-{
-
-  if (check_wan_link (0))
-    {
-      if (nvram_match ("wan_proto", "pptp"))
-	websWrite (wp, "%s", nvram_safe_get ("pptp_get_ip"));
-      else if (nvram_match ("wan_proto", "l2tp"))
-	websWrite (wp, "%s", nvram_safe_get ("l2tp_get_ip"));
-      else if (nvram_match ("pptpd_connected", "1"))
-	websWrite (wp, "%s", nvram_safe_get ("pptpd_client_info_localip"));
-      else
-	websWrite (wp, "%s", nvram_safe_get ("wan_ipaddr"));
-    }
-  else
-    websWrite (wp, "0.0.0.0");
-
-  return;
-}
-*/
