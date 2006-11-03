@@ -382,6 +382,7 @@ start_single_service (void)
       startstop ("firewall");
       startstop ("wshaper");
       start_service ("cron");
+      startstop ("igmp_proxy");      
     }
    else if (!strcmp (service, "alive"))
     {
