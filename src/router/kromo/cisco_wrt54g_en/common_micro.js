@@ -772,14 +772,20 @@ function getOUIFromMAC(mac) {
 }
 
  
-function getTimeOut(clk, rest_default) {
+function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
-	var coef = 1;
+	var coef = 1.1;
 	
 	if (rest_default == 1) {
 		coef = 1.5;
+	}
+	if (flags==1) {
+		coef = coef * 3;
+	}
+	if (flags==2) {
+		coef = coef * 1.8;
 	}
 	
 	this.wait_time = coef * wait_time * (125 / clk);

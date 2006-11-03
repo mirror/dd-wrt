@@ -873,7 +873,7 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	var coef = 1;
+	var coef = 1.1;									// +10% to be on a safe side if many services need to be restarted, Eko
 	
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
 		coef = 1.5;
