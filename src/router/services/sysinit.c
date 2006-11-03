@@ -335,6 +335,7 @@ start_restore_defaults (void)
      0},
 #endif
     {"wan_ifname", "eth0", 0},
+    {"wan_ifname2", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
   };
