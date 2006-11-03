@@ -3235,14 +3235,18 @@ int
 start_igmp_proxy (void)
 {
   int ret = 0;
+  pid_t pid;
+  
   char *igmp_proxy_argv[] = { "igmprt",
     "-f",
     "-i", get_wan_face (),
     NULL
   };
+  
+  stop_igmp_proxy ();
 
-  if (nvram_match ("multicast_pass", "1"))
-    ret = _eval (igmp_proxy_argv, NULL, 0, NULL);
+  if (nvram_match ("block_multicast", "0"))
+    ret = _eval (igmp_proxy_argv, NULL, 0, &pid);
 
   cprintf ("done\n");
   return ret;

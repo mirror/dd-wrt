@@ -183,7 +183,7 @@ nvram_get (const char *name)
       "block_java", "",
       "block_activex", "",
       "block_proxy", "1",
-      "multicast_pass", "", "remote_management", "1", "dr_wan_rx", "0",
+      "block_multicast", "", "remote_management", "1", "dr_wan_rx", "0",
       //"aol_block_traffic", "",
   "port_trigger",
       "test1:on:both:10000-20000>1000-2000 test2:off:both:30000-40000>3000-4000",
@@ -1740,7 +1740,7 @@ filter_input (void)
 
   /* IGMP query from WAN interface */
   save2file ("-A INPUT -p igmp -j %s\n",
-	     nvram_match ("multicast_pass", "0") ? log_drop : TARG_PASS);
+	     nvram_match ("block_multicast", "1") ? log_drop : TARG_PASS);
 
   /* Remote Upgrade */
   if (nvram_match ("remote_upgrade", "1"))
@@ -1748,7 +1748,7 @@ filter_input (void)
 	       TARG_PASS);
 
   /* Ident request backs by telnet or IRC server */
-  if (nvram_match ("ident_pass", "1"))
+  if (nvram_match ("block_ident", "0"))
     save2file ("-A INPUT -p tcp -m tcp --dport %d -j %s\n", IDENT_PORT,
 	       TARG_PASS);
 
@@ -1889,7 +1889,7 @@ filter_forward (void)
 	}
     }
   /* ACCEPT packets for Multicast pass through */
-  if (nvram_match ("multicast_pass", "1"))
+  if (nvram_match ("block_multicast", "0"))
     save2file ("-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 	       wanface, IP_MULTICAST, log_accept);
 
@@ -2645,19 +2645,6 @@ start_firewall (void)
       else
 	perror ("/proc/sys/net/ipv6/conf/all/forwarding");
     }
-
-  /* Enable multicast_pass_through */
-/*
-	DEBUG("start firewall()........7\n");
-	if( nvram_match("multicast_pass","1") ){
-		if( (fp=fopen("/proc/sys/net/ipv4/multicast_pass_through", "r+")) ){
-			fputc('1', fp);
-			fclose(fp);
-		} else
-			perror("/proc/sys/net/ipv4/multicast_pass_through");
-	}
-*/
-
 
   char *wordlist = nvram_safe_get ("ral");
   char var[256], *next;
