@@ -1164,7 +1164,7 @@ status_router.sys_model="Modèle du Router";
 status_router.sys_firmver="Version du Firmware";
 status_router.sys_time="Current Time";
 status_router.sys_up="Uptime";
-status_router.sys_load="Load Average";
+status_router.sys_load="Charge CPU";
 status_router.legend2="CPU";
 status_router.cpu="Type de CPU";
 status_router.clock="Fréquence du CPU";
@@ -1294,7 +1294,7 @@ upnp.legend2="Configuration UPnP";
 upnp.serv="Service UPnP";
 upnp.clear="Réinitialiser au démarrage";
 upnp.url="Présentation URL";
-upnp.msg1="Cliquez pour supprimer le bail";
+upnp.msg1="Cliquez pour supprimer la redirection";
 upnp.msg2="Etes vous sûr de vouloir effacer toutes les régles UPNP ?";
 
 
