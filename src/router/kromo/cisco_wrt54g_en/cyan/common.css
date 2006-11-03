@@ -20,8 +20,12 @@ width:100%;
 height:.09em;
 }
 pre {
-text-align:left;
-font-family:Courier New, Courier;
+	overflow: auto !important;
+	overflow: scroll;
+	padding: 1em;
+	margin: 0;
+	font-family:Courier New, Courier;
+	background-color:#F7F7F7;
 }
 form {
 margin:0;
@@ -219,7 +223,7 @@ background:#fff;
 table {
 margin:0 auto;
 width:100%;
-border-spacing:.543em;
+border-spacing:.3em;
 }
 table tr th {
 color:#fff;
@@ -231,6 +235,9 @@ text-align:left;
 padding:.09em .543em;
 background:#999;
 vertical-align:bottom;
+}
+table tr:hover {
+background: #F7F7F7;
 }
 table td {
 padding:0;
