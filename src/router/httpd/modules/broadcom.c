@@ -2899,7 +2899,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 struct apply_action apply_actions[] = {
   /* bellow for setup page */
 //#ifdef OEM == LINKSYS
-  {"index", "index", 0, RESTART, NULL},
+  {"index", "index", 0, SERVICE_RESTART, NULL},
 //#else
   {"OnePage", "", 0, RESTART, NULL},	// same as index
   {"Expose", "filters", 0, SERVICE_RESTART, NULL},	// same as DMZ
