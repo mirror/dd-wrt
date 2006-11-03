@@ -7,29 +7,34 @@ document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "Firewall";
-	F.block_wan.value = (F._block_wan.checked == true) ? 1 : 0;
-	if(F._block_loopback){
-		F.block_loopback.value = (F._block_loopback.checked == true) ? 1 : 0;
+	
+	if(F._block_proxy){
+		F.block_proxy.value = F._block_proxy.checked ? 1 : 0;
 	}
 	if(F._block_cookie){
-		F.block_cookie.value = (F._block_cookie.checked == true) ? 1 : 0;
+		F.block_cookie.value = F._block_cookie.checked ? 1 : 0;
 	}
 	if(F._block_java){
-		F.block_java.value = (F._block_java.checked == true) ? 1 : 0;
+		F.block_java.value = F._block_java.checked ? 1 : 0;
 	}
-	if(F._block_proxy){
-		F.block_proxy.value = (F._block_proxy.checked == true) ? 1 : 0;
+		if(F._block_activex){
+		F.block_activex.value = F._block_activex.checked ? 1 : 0;
 	}
-	if(F._block_activex){
-		F.block_activex.value = (F._block_activex.checked == true) ? 1 : 0;
-	}
-	if(F._ident_pass){
-		F.ident_pass.value = (F._ident_pass.checked == true) ? 0 : 1;
+	
+	if (F._block_wan){
+		F.block_wan.value = F._block_wan.checked ? 1 : 0;
 	}
 	if(F._block_multicast) {
-		F.multicast_pass.value = (F._block_multicast.checked == true) ? 0 : 1;
+		F.block_multicast.value = F._block_multicast.checked ? 1 : 0;
 	}
-//	F.save_button.value = "Saved";
+	if(F._block_loopback){
+		F.block_loopback.value = F._block_loopback.checked ? 1 : 0;
+	}
+	if(F._block_ident){
+		F.block_ident.value = F._block_ident.checked ? 1 : 0;
+	}
+	
+
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
@@ -37,16 +42,17 @@ function to_submit(F) {
 }
 
 function setFirewall(val) {
-	setElementsActive("_block_proxy", "_ident_pass", val == "on");
+	setElementsActive("_block_proxy", "_block_ident", val == "on");
 }
 
 addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
+	//show_layer_ext(document.firewall.log_enable, 'idfilter', <% nvram_else_match("filter", "on", "on", "off"); %> == 'on');
 });
 
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -67,71 +73,72 @@ addEvent(window, "load", function() {
 						<input type="hidden" name="action" />
 						<input type="hidden" name="block_wan" />
 						<input type="hidden" name="block_loopback" />
-						<input type="hidden" name="multicast_pass" value="0" />
-						<input type="hidden" name="ident_pass" />
-						<input type="hidden" name="block_cookie" value="0" />
-						<input type="hidden" name="block_java" value="0" />
-						<input type="hidden" name="block_proxy" value="0" />
-						<input type="hidden" name="block_activex" value="0" />
+						<input type="hidden" name="block_multicast" />
+						<input type="hidden" name="block_ident" />
+						<input type="hidden" name="block_cookie" />
+						<input type="hidden" name="block_java" />
+						<input type="hidden" name="block_proxy" />
+						<input type="hidden" name="block_activex" />
 						<h2><% tran("firewall.h2"); %></h2>
 						
 						<fieldset>
 							<legend><% tran("firewall.legend"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("firewall.firewall"); %></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" /><% tran("share.enable"); %>&nbsp;
-								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" /><% tran("share.disable"); %>
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value);" /><% tran("share.enable"); %>&nbsp;
+								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value);" /><% tran("share.disable"); %>
 							</div>
 						</fieldset><br />
 						
-						<fieldset>
-							<legend><% tran("firewall.legend2"); %></legend>
-								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
-								</div>
-								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
-								</div>
-								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> /><% tran("firewall.applet"); %>
-								</div>
-								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> /><% tran("firewall.activex"); %>
-								</div>
-							</fieldset><br />
-							
+						<div id="idfilter">
 							<fieldset>
-								<legend><% tran("firewall.legend3"); %></legend>
+								<legend><% tran("firewall.legend2"); %></legend>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> /><% tran("firewall.ping"); %>
-									</div>
-									<% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
-									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> /><% tran("firewall.muticast"); %>
-									</div>
-									<% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
-									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> /><% tran("filter.nat"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> /><% tran("filter.port113"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
+									</div>
+									<div class="setting">
+										<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> /><% tran("firewall.applet"); %>
+									</div>
+									<div class="setting">
+										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> /><% tran("firewall.activex"); %>
 									</div>
 								</fieldset><br />
+								
+								<fieldset>
+									<legend><% tran("firewall.legend3"); %></legend>
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> /><% tran("firewall.ping"); %>
+										</div>
+										
+										<% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvram_checked("block_multicast", "1"); %> /><% tran("firewall.muticast"); %>
+										</div>
+										<% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
+										
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> /><% tran("filter.nat"); %>
+										</div>
+										<div class="setting">
+											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvram_checked("block_ident", "1"); %> /><% tran("filter.port113"); %>
+										</div>
+									</fieldset><br />
+								</div>
+								
 								<div class="submitFooter">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+									//]]>
+									</script>
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />");
+									//]]>
+									</script>
 								</div>
 							</form>
 						</div>
