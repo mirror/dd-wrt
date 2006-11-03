@@ -145,59 +145,57 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
       return;
     }
 }
+
 #ifdef HAVE_PORTSETUP
 void
 validate_portsetup (webs_t wp, char *value, struct variable *v)
 {
-char *next;
-char var[64];
-char eths[256];
-memset(eths,0,256);
-getinterfacelist("eth",eths);
+  char *next;
+  char var[64];
+  char eths[256];
+  memset (eths, 0, 256);
+  getinterfacelist ("eth", eths);
   foreach (var, eths, next)
   {
-  char val[64];
-  sprintf(val,"%s_bridged",var);
-  char *bridged = websGetVar (wp, val, NULL);
-  if (bridged)
-  nvram_set (val, bridged);
-  if (bridged && strcmp(bridged,"0")==0)
-    {
-  sprintf(val,"%s_ipaddr",var);
-  char ipaddr[64];
-  if (get_merge_ipaddr (wp, val, ipaddr))
-    nvram_set (val, ipaddr);
-  sprintf(val,"%s_netmask",var);
-  char netmask[64];
-  if (get_merge_ipaddr (wp, val, netmask))
-    nvram_set (val, netmask);
-    }
+    char val[64];
+    sprintf (val, "%s_bridged", var);
+    char *bridged = websGetVar (wp, val, NULL);
+    if (bridged)
+      nvram_set (val, bridged);
+    if (bridged && strcmp (bridged, "0") == 0)
+      {
+	sprintf (val, "%s_ipaddr", var);
+	char ipaddr[64];
+	if (get_merge_ipaddr (wp, val, ipaddr))
+	  nvram_set (val, ipaddr);
+	sprintf (val, "%s_netmask", var);
+	char netmask[64];
+	if (get_merge_ipaddr (wp, val, netmask))
+	  nvram_set (val, netmask);
+      }
   }
-next=websGetVar(wp,"wan_ifname",NULL);
-if (next)  
-{
-    nvram_set("wan_ifname",next); 
-    nvram_set("wan_ifnames",next); 
-}
-if (next)
-{
-memset(eths,0,256); 
-int i;
-for (i=0;i<10;i++)
+  next = websGetVar (wp, "wan_ifname", NULL);
+  if (next)
     {
-    sprintf(var,"eth%d",i);
-    if (nvram_match("wan_ifname",next))
-	continue;
-    if (i>0)
-	strcat(eths," ");
-    strcat(eths,var);
-    }
+      nvram_set ("wan_ifname", next);
+      nvram_set ("wan_ifnames", next);
+      memset (eths, 0, 256);
+      int i;
+      for (i = 0; i < 10; i++)
+	{
+	  sprintf (var, "eth%d", i);
+	  if (nvram_match ("wan_ifname", next))
+	    continue;
+	  if (i > 0)
+	    strcat (eths, " ");
+	  strcat (eths, var);
+	}
 #ifndef HAVE_NOWIFI
-strcat(eths," ath0 ath1 ath2 ath3");
+      strcat (eths, " ath0 ath1 ath2 ath3");
 #endif
-nvram_set("lan_ifnames",eths);
+      nvram_set ("lan_ifnames", eths);
 
-}
+    }
 }
 #endif
 void
