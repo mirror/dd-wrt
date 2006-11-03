@@ -243,7 +243,7 @@ function callDump() {
 		if(table.length > 0 && location.href.indexOf("Wol.asp") == -1) {
 		document.write("<fieldset>");
 		document.write("<legend>" + wol.legend3 + "</legend>");
-		document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
+		document.write("<br /><pre>" + table.join("\n") + "</pre>");
 		document.write("<\/fieldset><br />");
 	}
 }
