@@ -564,7 +564,8 @@ svqos_iptables (void)
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --save-mark");
   system2 ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j RETURN");
 
-  system2 ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark");
+  system2
+    ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark");
   system2 ("/usr/sbin/iptables -t mangle -A SVQOS_IN -j RETURN");
 
   return 0;
