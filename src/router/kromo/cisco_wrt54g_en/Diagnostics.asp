@@ -62,10 +62,11 @@ function valid(F,I) {
 									<script type="text/javascript">
 									//<![CDATA[
 									var table = new Array(<% dump_ping_log(""); %>);
-									var h = Math.floor(windo.getWindoSize().height * 0.5);
+									var h = Math.floor(windo.getWindoSize().height * 0.4);
 
 									if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-										document.write("<br /><br /><textarea style=\"margin:0; width:100%; height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</textarea>");
+										//document.write("<br /><br /><textarea style=\"margin:0; width:100%; height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</textarea>");
+										document.write("<br /><br /><pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
 									}
 									//]]>
 									</script>
@@ -74,7 +75,7 @@ function valid(F,I) {
 							<% nvram_match("rc_startup", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.startup"); %></legend>
-								<pre id="startup" style="margin:0"><% nvram_get("rc_startup"); %></pre><br />
+								<pre id="startup"><% nvram_get("rc_startup"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -88,7 +89,7 @@ function valid(F,I) {
 							<% nvram_match("rc_firewall", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.firewall"); %></legend>
-								<pre id="firewall" style="margin:0"><% nvram_get("rc_firewall"); %></pre><br />
+								<pre id="firewall"><% nvram_get("rc_firewall"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
