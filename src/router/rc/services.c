@@ -83,13 +83,13 @@ start_services (void)
   nvram_set ("sipgate", "0");
 #endif
 #ifdef HAVE_CPUTEMP
-      start_service("hwmon");
+  start_service ("hwmon");
 #endif
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
-  if (isregistered())
+  if (isregistered ())
 #endif
-  start_service ("telnetd");
+    start_service ("telnetd");
 #endif
   start_service ("syslog");
 #ifdef HAVE_TFTP
@@ -116,9 +116,9 @@ start_services (void)
 
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-  if (isregistered())
+  if (isregistered ())
 #endif
-  start_service ("sshd");
+    start_service ("sshd");
 #endif
 
 #ifdef HAVE_RADVD
@@ -180,15 +180,15 @@ stop_services (void)
   stop_service ("wland");
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
-  if (isregistered())
+  if (isregistered ())
 #endif
-  stop_service ("telnetd");
+    stop_service ("telnetd");
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-  if (isregistered())
+  if (isregistered ())
 #endif
-  stop_service ("sshd");
+    stop_service ("sshd");
 #endif
 
 #ifdef HAVE_RADVD
@@ -239,7 +239,7 @@ start_single_service (void)
   service = nvram_get ("action_service");
   if (!service)
     kill (1, SIGHUP);
-  fprintf(stderr,"Action %s\n",service);
+  fprintf (stderr, "Action %s\n", service);
 
   cprintf ("Restart service=[%s]\n", service);
   start_service ("overclocking");
@@ -247,8 +247,26 @@ start_single_service (void)
   if (!strcmp (service, "dhcp") || !strcmp (service, "services"))
     {
       startstop ("udhcpd");
+      nvram_set ("action_service", "");
+      nvram_set ("action_service_arg1", "");
+      return 0;
     }
-  if (!strcmp (service, "logging"))
+  if (!strcmp (service, "index"))
+    {
+      unlink ("/tmp/ppp/log");
+      stop_service ("stabridge");
+      stop_service ("lan");
+      stop_service ("wan");
+      start_service ("lan");
+      start_service ("wan_boot");
+      start_service ("stabridge");
+      startstop ("udhcpd");
+#ifdef HAVE_BIRD
+      startstop ("zebra");
+#endif
+      startstop ("firewall");
+    }
+  else if (!strcmp (service, "logging"))
     {
       startstop ("firewall");
       startstop ("syslog");
@@ -274,9 +292,9 @@ start_single_service (void)
 #ifdef HAVE_SPUTNIK_APD
       startstop ("sputnik");
 #endif
-     eval("/etc/config/http-redirect.firewall");
-     eval("/etc/config/smtp-redirect.firewall");
-    
+      eval ("/etc/config/http-redirect.firewall");
+      eval ("/etc/config/smtp-redirect.firewall");
+
     }
   else if (!strcmp (service, "services"))
     {
@@ -287,13 +305,13 @@ start_single_service (void)
       startstop ("dnsmasq");
       startstop ("udhcpd");
 #ifdef HAVE_CPUTEMP
-      start_service("hwmon");
+      start_service ("hwmon");
 #endif
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
-  if (isregistered())
+      if (isregistered ())
 #endif
-      startstop ("telnetd");
+	startstop ("telnetd");
 #endif
 #ifdef HAVE_SNMP
       startstop ("snmp");
@@ -312,9 +330,9 @@ start_single_service (void)
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-  if (isregistered())
+      if (isregistered ())
 #endif
-      startstop ("sshd");
+	startstop ("sshd");
 #endif
       startstop ("firewall");
       startstop ("syslog");
@@ -382,13 +400,13 @@ start_single_service (void)
       startstop ("firewall");
       startstop ("wshaper");
       start_service ("cron");
-      startstop ("igmp_proxy");      
+      startstop ("igmp_proxy");
     }
-   else if (!strcmp (service, "alive"))
+  else if (!strcmp (service, "alive"))
     {
-      eval("/etc/config/wdswatchdog.startup");
-      eval("/etc/config/schedulerb.startup");
-      eval("/etc/config/proxywatchdog.startup");
+      eval ("/etc/config/wdswatchdog.startup");
+      eval ("/etc/config/schedulerb.startup");
+      eval ("/etc/config/proxywatchdog.startup");
     }
   else if (!strcmp (service, "forward"))
     {
@@ -433,50 +451,12 @@ start_single_service (void)
 //      snprintf (cmd, sizeof (cmd), "%s 2>&1 &", ip);
 //      system (cmd);
 
-	      	snprintf (cmd, sizeof (cmd), "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
-      		system (cmd);
+      snprintf (cmd, sizeof (cmd),
+		"alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
+		PING_TMP);
+      system (cmd);
 
-/*
-		if(!check_wan_link(0))
-			buf_to_file(PING_TMP, "Network is unreachable\n");
-
-		else if(strchr(ip, ' ') || strchr(ip, '`') || strstr(ip, PING_TMP))		// Fix Ping.asp bug, user can execute command ping in Ping.asp
-			buf_to_file(PING_TMP, "Invalid IP Address or Domain Name\n");
-
-		else if(nvram_invmatch("ping_times","") && nvram_invmatch("ping_ip","")){
-			char cmd[80];
-			snprintf(cmd, sizeof(cmd), "ping -c %s -f %s %s &", nvram_safe_get("ping_times"), PING_TMP, ip);
-	   	     	printf("cmd=[%s]\n",cmd);
-			eval("killall", "ping");
-			unlink(PING_TMP);
-	        	system(cmd);
-		}
-*/
-    } 
-/* OBSOLETE
-  else if (!strcmp (service, "start_traceroute"))
-    {
-      char *ip = nvram_safe_get ("traceroute_ip");
-      if (!check_wan_link (0))
-	buf_to_file (TRACEROUTE_TMP, "Network is unreachable\n");
-
-      else if (strchr (ip, ' ') || strchr (ip, '`') || strstr (ip, TRACEROUTE_TMP))	// Fix Traceroute.asp bug, users can execute command in Traceroute.asp 
-	buf_to_file (TRACEROUTE_TMP, "Invalid IP Address or Domain Name\n");
-
-      else if (nvram_invmatch ("traceroute_ip", ""))
-	{
-	  // Some site block UDP packets, so we want to use ICMP packets
-	  char cmd[80];
-	  snprintf (cmd, sizeof (cmd), "/usr/bin/traceroute -f %s %s &",
-		    TRACEROUTE_TMP, ip);
-	  printf ("cmd=[%s]\n", cmd);
-	  //killps("traceroute",NULL);
-	  eval ("killall", "traceroute");
-	  unlink (TRACEROUTE_TMP);
-	  system (cmd);
-	}
-    } 
-END OBSOLETE */
+    }
 #ifdef HAVE_TFTP
   else if (!strcmp (service, "tftp_upgrade"))
     {
@@ -489,7 +469,7 @@ END OBSOLETE */
       stop_service ("upnp");
 #endif
       stop_service ("cron");
-    } 
+    }
 #endif
 
   else if (!strcmp (service, "http_upgrade"))
@@ -533,7 +513,7 @@ END OBSOLETE */
       char sigusr[] = "-XX";
       sprintf (sigusr, "-%d", SIGUSR2);
       //killps("udhcpc",sigusr);
-      killall("udhcpc",sigusr);
+      killall ("udhcpc", sigusr);
       sleep (1);
     }
   else
@@ -663,14 +643,13 @@ redial_main (int argc, char **argv)
 		{
 		  stop_service ("pppoe");
 		  //killps("pppoecd","-9");
-		  killall("pppoecd",SIGKILL);
+		  killall ("pppoecd", SIGKILL);
 		  sleep (1);
 		  start_service ("wan_redial");
 		}
 #endif
 #ifdef HAVE_PPTP
-	      else
-	      if (nvram_match ("wan_proto", "pptp"))
+	      else if (nvram_match ("wan_proto", "pptp"))
 		{
 		  stop_service ("pptp");
 		  sleep (1);
