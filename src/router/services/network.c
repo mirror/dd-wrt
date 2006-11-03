@@ -120,7 +120,7 @@ wlc_get_mem_offset (void)
   f = popen ("grep '\\[wl]' /proc/ksyms | sort", "r");
   if (fgets (s, 64, f) == 0)
     {
-    return;
+      return;
     }
   pclose (f);
 
@@ -695,8 +695,17 @@ start_lan (void)
       nvram_set ("lan_ifnames",
 		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
 #endif
-      nvram_set ("wan_ifname", "eth0");
-      nvram_set ("wan_ifnames", "eth0");
+      if (nvram_get ("wan_ifname2") != NULL)
+	{
+	  nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
+	  nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
+
+	}
+      else
+	{
+	  nvram_set ("wan_ifname", "eth0");
+	  nvram_set ("wan_ifnames", "eth0");
+	}
     }
   strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
