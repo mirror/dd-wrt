@@ -145,10 +145,6 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.sys_up"); %></div>
 									<span id="uptime_up"></span>&nbsp;
 								</div>
-								<div class="setting">
-									<div class="label"><% tran("status_router.sys_load"); %></div>
-									<span id="uptime_load"></span>&nbsp;
-								</div>
 							</fieldset><br />
 							
 							<fieldset>
@@ -160,6 +156,10 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("status_router.clock"); %></div>
 									<% get_clkfreq(); %>&nbsp;MHz
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.sys_load"); %></div>
+									<span id="uptime_load"></span>&nbsp;
 								</div>
 								<% show_cpu_temperature(); %>
 								<% show_voltage(); %>
