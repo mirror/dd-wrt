@@ -229,6 +229,16 @@ eval("insmod","crypto_null");
   else if (detect ("MCP65 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
 
+
+  if ((detect ("88E8001"))
+    eval ("insmod","sk98lin");
+  else if ((detect ("RDK-"))
+    eval ("insmod","sk98lin");
+  else if ((detect ("SK-98"))
+    eval ("insmod","sk98lin");
+  else if ((detect ("Marvell Yukon"))
+    eval ("insmod","sk98lin");
+      
   if (detect ("RTL-8029"))	// Old Realtek PCI NE2000 clone (10M only)
     {
       eval ("insmod", "8390");
