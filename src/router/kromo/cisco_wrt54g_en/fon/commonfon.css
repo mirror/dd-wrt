@@ -20,8 +20,12 @@ width:100%;
 height:.09em;
 }
 pre {
-text-align:left;
-font-family:Courier New, Courier;
+	overflow: auto !important;
+	overflow: scroll;
+	padding: 1em;
+	margin: 0;
+	font-family:Courier New, Courier;
+	background-color:#F7F7F7;
 }
 form {
 margin:0;
@@ -48,9 +52,9 @@ padding-top:.908em;
 height:6.612em;
 }
 #header #logo {
-background:url(fon.jpg) left center no-repeat;
+background:url(logo.png) left center no-repeat;
 height:4.076em;
-width:260px;
+width:454px;
 margin-bottom:.272em;
 }
 #header #logo h1 {
@@ -101,7 +105,7 @@ list-style-type:none;
 #menuMainList li a, 
 #menuSubList li a {
 display:block;
-margin-left:.369em;
+margin-left:.362em;
 border-style:solid solid none solid;
 border-width:.09em;
 padding:.453em .906em;
@@ -180,8 +184,9 @@ letter-spacing:.09em;
 }
 .setting {
 position:relative;
-margin-bottom:.543em;
-line-height:1.902em;
+margin-bottom:.453em;
+line-height:1.993em;
+width:100%;
 }
 .setting .label {
 float:left;
@@ -190,24 +195,19 @@ width:18.931em;
 fieldset .setting .label {
 width:18.116em;
 }
-.setting span.default {
+.setting .default {
 display:block;
 position:absolute;
 color:#666;
 top:0;
-left:34.420em;
+right:0;
+width:16.304em;
 }
 .warning {
 font-weight:bold;
 padding:.725em;
-border:solid .09em #f99;
+border:solid .181em #f99;
 text-align:center;
-}
-.comment {
-display:block;
-margin-bottom:.725em;
-font-style:italic;
-color:#999;
 }
 fieldset {
 border:solid .09em #ccc;
@@ -223,7 +223,7 @@ background:#fff;
 table {
 margin:0 auto;
 width:100%;
-border-spacing:.543em;
+border-spacing:.3em;
 }
 table tr th {
 color:#fff;
@@ -235,6 +235,9 @@ text-align:left;
 padding:.09em .543em;
 background:#999;
 vertical-align:bottom;
+}
+table tr:hover {
+background: #F7F7F7;
 }
 table td {
 padding:0;
@@ -364,12 +367,9 @@ padding-top:0;
 fieldset legend {
 position:relative;
 left:-1.268em;
-margin-bottom:.634em;
+margin-bottom:.723em;
 }
 .setting {
-margin-bottom:.362em;
-}
-.setting span.default {
-margin-top:0;
+line-height:1.812em;
 }
 }
