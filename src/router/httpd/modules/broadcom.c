@@ -3401,13 +3401,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     
     if (need_commit) 
     {
-    	//If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
-      //        nvram_set ("eou_configured", "1");
-      //        eval ("wl", "custom_ie", "0");
       diag_led (DIAG, STOP_LED);
-      //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-      //nvram_set("is_default", "0");
-      //nvram_set("is_modified", "1");
       sys_commit ();
     }
   }
@@ -3442,7 +3436,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     return 1;
   }
   
-  /* Invalid action */
+  /* DEBUG : Invalid action */
   else
     websDebugWrite (wp, "Invalid action %s<br />", value);
 
