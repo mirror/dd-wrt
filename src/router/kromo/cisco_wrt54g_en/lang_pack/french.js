@@ -1177,8 +1177,8 @@ status_router.mem_cached="En cache";
 status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
 status_router.legend4="Réseau";
-status_router.net_maxports="Nb de connexions max.";
-status_router.net_conntrack="Connexions actives";
+status_router.net_maxports="Nb de connexions maximun";
+status_router.net_conntrack="Nb de connexions actives";
 status_router.h22="Internet";
 status_router.legend5="Type de configuration";
 status_router.www_loginstatus="Statut de la connexion";
@@ -1224,8 +1224,8 @@ hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik
 // ******************************************* Status_Wireless.asp *******************************************//
 
 status_wireless.titl=" - Etat Sans Fil";
-status_wireless.h2="Sans Fil";
-status_wireless.legend="Etat Sans Fil";
+status_wireless.h2="Informations Sans Fil";
+status_wireless.legend="Wifi";
 status_wireless.net="Réseau";
 status_wireless.pptp="Etat PPTP";
 status_wireless.legend2="Information Paquets";

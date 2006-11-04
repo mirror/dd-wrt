@@ -39,7 +39,7 @@ function setDHCPTable() {
 		cellmac.innerHTML = val[i+2];
 
 		var cellbail = row.insertCell(-1);
-		cellbail.align = "center";
+		//cellbail.align = "center";
 		cellbail.innerHTML = val[i+3];
 		
 		var cell = row.insertCell(-1);
