@@ -29,9 +29,19 @@ function setWirelessTable() {
 		cellmac.innerHTML = mac;
 
 		row.insertCell(-1).innerHTML = val[i + 1];
-		row.insertCell(-1).innerHTML = val[i + 2];
-		row.insertCell(-1).innerHTML = val[i + 3];
-		row.insertCell(-1).innerHTML = val[i + 4];
+		
+		var cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 2];
+		cell.align = "right";
+		
+		cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 3];
+		cell.align = "right";
+		
+		cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 4];
+		cell.align = "right";
+		
 		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
 	}
 }
@@ -56,9 +66,19 @@ function setWDSTable() {
 		cellmac.innerHTML = mac;
 		
 		row.insertCell(-1).innerHTML = val[i + 1];
-		row.insertCell(-1).innerHTML = val[i + 2];
-		row.insertCell(-1).innerHTML = val[i + 3];
-		row.insertCell(-1).innerHTML = val[i + 4];
+		
+		var cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 2];
+		cell.align = "right";
+		
+		cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 3];
+		cell.align = "right";
+		
+		cell = row.insertCell(-1);
+		cell.innerHTML = val[i + 4];
+		cell.align = "right";
+		
 		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
 	}
 	setElementVisible("wds", true);
