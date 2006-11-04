@@ -111,15 +111,17 @@ start_sysinit (void)
   sprintf (dev, "/dev/discs/disc%d/part1", index);
   mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
 
-  sprintf (dev, "/dev/discs/disc%d/part3", index);
-  eval ("fsck", dev);		//checking nvram partition and correcting errors
-  if (mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
-
+  sprintf (dev, "block2mtd=/dev/discs/disc%d/part3", index);
+  eval("insmod","block2mtd",dev);
+  sprintf (dev, "/dev/mtdblock/0");
+  //eval ("fsck", dev);		//checking nvram partition and correcting errors
+  if (mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
     {
       //not created yet, create ext2 partition
-      eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
+      //eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
       //mount ext2 
-      mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
+      eval("mtd","erase","mtd0");
+      mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
       mkdir ("/usr/local/nvram", 0777);
 //    eval("ln","-s","/etc/nvram","/usr/local/nvram");
@@ -229,6 +231,11 @@ eval("insmod","crypto_null");
   else if (detect ("MCP65 Ethernet"))	// nForce
     eval ("insmod", "forcedeth");
 
+  if (detect ("Sundance"))	//Dlink fibre
+    eval ("insmod", "sundance");
+  else if (detect ("DL10050"))	
+    eval ("insmod", "sundance");
+
 
   if (detect ("88E8001"))	//Marvell Yukon
     eval ("insmod", "sk98lin");
@@ -239,13 +246,16 @@ eval("insmod","crypto_null");
   else if (detect ("Marvell Yukon"))
     eval ("insmod", "sk98lin");
 
+
   if (detect ("RTL-8029"))	// Old Realtek PCI NE2000 clone (10M only)
     {
       eval ("insmod", "8390");
       eval ("insmod", "ne2k-pci");
     }
+  
   if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
+ 
   if (detect ("3c905"))		// 3Com
     eval ("insmod", "3c59x");
   else if (detect ("3c555"))	// 3Com
