@@ -123,10 +123,9 @@ start_sysinit (void)
       eval("mtd","erase","mtd0");
       mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
-      mkdir ("/usr/local/nvram", 0777);
 //    eval("ln","-s","/etc/nvram","/usr/local/nvram");
     }
-
+  eval ("-p","/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
 
   unlink ("/tmp/nvram/.lock");
