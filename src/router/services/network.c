@@ -690,10 +690,10 @@ start_lan (void)
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
       nvram_set ("lan_ifnames",
-		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
       nvram_set ("lan_ifnames",
-		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
 #endif
       if (nvram_get ("wan_ifname2") != NULL)
 	{
@@ -847,6 +847,8 @@ start_lan (void)
 
       foreach (name, lan_ifnames, next)
       {
+        if (nvram_match("wan_ifname",name))
+	    continue;
 	if (!ifexists (name))
 	  continue;
 #ifdef HAVE_MADWIFI
