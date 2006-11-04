@@ -366,6 +366,7 @@ enable_dhcprelay (char *ifname)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
+        
 	char mode[] = "wlXXXXXXXXXX_mode";
 	int unit;
 
@@ -1463,6 +1464,8 @@ stop_lan (void)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
+        if (nvram_match("wan_ifname",name))
+	    continue;
 	if (!ifexists (name))
 	  continue;
 	eval ("wlconf", name, "down");
