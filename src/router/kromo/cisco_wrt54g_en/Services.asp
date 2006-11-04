@@ -103,7 +103,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.oet1_bridged, 'idbridged', <% nvram_else_match("oet1_bridged", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.oet1_bridged, 'idbridged', <% nvram_else_match("oet1_bridged", "1", "0", "1"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
