@@ -178,6 +178,7 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   if (next)
     {
       nvram_set ("wan_ifname", next);
+      nvram_set ("wan_ifname2", next);
       nvram_set ("wan_ifnames", next);
       memset (eths, 0, 256);
       int i;

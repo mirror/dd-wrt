@@ -1759,7 +1759,19 @@ struct nvram_tuple srouter_defaults[] = {
   {"eth10_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"eth10_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #endif
-
+#ifdef HAVE_EOP
+  {"eot1_en","0",0},
+  {"eot1_rem","192.168.90.1",0},
+  {"oet1_ip","1.2.3.4",0},
+  {"oet1_netmask","255.255.255.0",0},
+  {"oet1_id","1",0},
+  {"oet1_comp","0",0},
+  {"oet1_pt","0",0},
+  {"oet1_fragment","0",0},
+  {"oet1_mssfix","0",0},
+  {"oet1_shaper","0",0},
+  {"oet1_bridged","1",0},
+#endif
   {0, 0, 0}
 };
 
