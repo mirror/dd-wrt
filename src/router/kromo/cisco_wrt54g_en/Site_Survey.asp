@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Site Survey</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + survey.titl;
 
@@ -10,7 +10,6 @@ function do_join (F,SSID) {
 	<% nvram_invmatch("wl_mode", "ap", "/"); %><% nvram_invmatch("wl_mode", "ap", "/"); %>F.wl_mode.value="<% nvram_match("wl_mode", "ap", "sta"); %>"
 
 	if (F.wl_ssid.value == "") {
-//		alert("invalid SSID.");
 		alert(errmsg.err47);
 		return false;
 	}
@@ -20,8 +19,8 @@ function do_join (F,SSID) {
 	apply(F);
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body>
@@ -46,50 +45,46 @@ function do_join (F,SSID) {
 				   <th width="10%"><% tran("survey.thjoin"); %></th>
 				</tr>
 	<script type="text/javascript">
-//<![CDATA[
-
-
-var table = new Array(
-<% dump_site_survey(""); %>
-);
-
-if (table.length == 0) {
-	document.write("<tr><td colspan=\"10\" align=\"center\">" + share.none + "</td></tr>");
-} else {
-	for (var i = 0; i < table.length; i = i + 9) {
-		document.write("<tr>");
-		document.write("<td>"+table[i]+"</td>");
-		document.write("<td align=\"center\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+1] + "')\" >"+table[i+1]+"</td>");
-		document.write("<td align=\"center\">"+table[i+2]+"</td>");
-		document.write("<td align=\"center\">"+table[i+3]+"</td>");
-		document.write("<td align=\"center\">"+table[i+4]+"</td>");
-		document.write("<td align=\"center\">"+table[i+5]+"</td>");
-		document.write("<td align=\"center\">"+table[i+6]+"</td>");
-		document.write("<td align=\"center\">"+table[i+7]+"</td>");
-		document.write("<td align=\"center\">"+table[i+8]+"</td>");
-		document.write("<td align=\"center\"><input type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
-		document.write("<\/tr>");
-	}
-}
+	//<![CDATA[
 	
-//]]>
-</script>
+	var table = new Array(
+	<% dump_site_survey(""); %>
+	);
+	
+	if (table.length == 0) {
+		document.write("<tr><td colspan=\"10\" align=\"center\">" + share.none + "</td></tr>");
+	}
+	else {
+		for (var i = 0; i < table.length; i = i + 9) {
+			document.write("<tr>");
+			document.write("<td>"+table[i]+"</td>");
+			document.write("<td align=\"left\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+1] + "')\" >"+table[i+1]+"</td>");
+			document.write("<td align=\"right\">"+table[i+2]+"</td>");
+			document.write("<td align=\"right\">"+table[i+3]+"</td>");
+			document.write("<td align=\"right\">"+table[i+4]+"</td>");
+			document.write("<td align=\"right\">"+table[i+5]+"</td>");
+			document.write("<td align=\"left\">"+table[i+6]+"</td>");
+			document.write("<td align=\"right\">"+table[i+7]+"</td>");
+			document.write("<td align=\"right\">"+table[i+8]+"</td>");
+			document.write("<td align=\"right\"><input type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
+			document.write("<\/tr>");
+		}
+	}
+	
+	//]]>
+	</script>
 			</table><br />
 			<div class="submitFooter">
 				<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-
-//]]>
-</script>
+				//<![CDATA[
+				document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
+				//]]>
+				</script>
 				<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-
-//]]>
-</script>
+				//<![CDATA[
+				document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
+				//]]>
+				</script>
 			</div>
 		</form>
 	</body>
