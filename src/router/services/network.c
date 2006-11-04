@@ -681,7 +681,7 @@ start_lan (void)
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
       nvram_set ("lan_ifnames",
-		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
@@ -694,7 +694,7 @@ start_lan (void)
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
       nvram_set ("lan_ifnames",
-		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3");
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
       if (nvram_get ("wan_ifname2") != NULL)
 	{

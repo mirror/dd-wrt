@@ -331,7 +331,7 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10", 0},
 #else
     {"lan_ifnames",
-     "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3",
+     "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath5 ath6 ath7 ath8",
      0},
 #endif
     {"wan_ifname", "eth0", 0},
