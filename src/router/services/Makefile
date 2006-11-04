@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
 endif
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+CFLAGS += -DHAVE_EOP
+endif
 ifeq ($(CONFIG_IPROUTE2),y)
 CFLAGS += -DHAVE_IPROUTE2
 endif
