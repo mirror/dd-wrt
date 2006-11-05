@@ -1519,7 +1519,7 @@ start_wan (int status)
 #ifdef HAVE_RB500
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #else
 
 #ifdef HAVE_XSCALE
@@ -1539,7 +1539,7 @@ start_wan (int status)
 #elif HAVE_X86
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
 #else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -1786,6 +1786,7 @@ start_wan (int status)
       if (nvram_invmatch ("pppoe_service", ""))
 	fprintf (fp, " rp_pppoe_service %s", nvram_safe_get ("pppoe_service"));
       fprintf(fp,"\n");
+      fprintf(fp,"nic-%s\n",pppoe_wan_ifname);
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
