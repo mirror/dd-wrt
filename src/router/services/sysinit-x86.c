@@ -125,7 +125,7 @@ start_sysinit (void)
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 //    eval("ln","-s","/etc/nvram","/usr/local/nvram");
     }
-  eval ("-p","/usr/local/nvram");
+  eval ("mkdir","-p","/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
 
   unlink ("/tmp/nvram/.lock");
