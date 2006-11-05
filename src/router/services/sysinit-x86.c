@@ -108,8 +108,8 @@ start_sysinit (void)
       eval ("/bin/sh");
       exit (0);
     }
-  sprintf (dev, "/dev/discs/disc%d/part1", index);
-  mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
+//  sprintf (dev, "/dev/discs/disc%d/part1", index);
+//  mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
 
   sprintf (dev, "block2mtd=/dev/discs/disc%d/part3", index);
   eval("insmod","block2mtd",dev);
