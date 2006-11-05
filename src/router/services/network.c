@@ -1869,7 +1869,7 @@ start_wan (int status)
 
       stop_dhcpc ();
       stop_pptp ();
-
+      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");	
       eval ("/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe");
 
       // This is horrible.
