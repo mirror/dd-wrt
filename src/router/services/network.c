@@ -1750,7 +1750,7 @@ start_wan (int status)
 
       // Lets open option file and enter all the parameters.
       fp = fopen ("/tmp/ppp/options.pppoe", "w");
-      
+#if 0
       // pty is used by pppd to initiate PPPoE binary for connection negotiation
       fprintf (fp, "pty '/usr/sbin/pppoe -I %s", pppoe_wan_ifname);
 
@@ -1779,7 +1779,7 @@ start_wan (int status)
 	fprintf (fp, " -s'\nsync\n");
       else
 	fprintf (fp, "'\n");
-
+#endif
       // rp-pppoe kernelmode plugin
       fprintf(fp,"plugin /usr/lib/rp-pppoe.so"); 	
 
