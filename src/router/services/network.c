@@ -1750,7 +1750,7 @@ start_wan (int status)
 
       // Lets open option file and enter all the parameters.
       fp = fopen ("/tmp/ppp/options.pppoe", "w");
-
+      
       // pty is used by pppd to initiate PPPoE binary for connection negotiation
       fprintf (fp, "pty '/usr/sbin/pppoe -I %s", pppoe_wan_ifname);
 
@@ -1780,6 +1780,13 @@ start_wan (int status)
       else
 	fprintf (fp, "'\n");
 
+      // rp-pppoe kernelmode plugin
+      fprintf(fp,"plugin /usr/lib/rp-pppoe.so"); 	
+
+      if (nvram_invmatch ("pppoe_service", ""))
+	fprintf (fp, " rp_pppoe_service %s", nvram_safe_get ("pppoe_service"));
+      fprintf(fp,"\n");
+
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
       fprintf (fp, "noipdefault\n"
@@ -1805,7 +1812,7 @@ start_wan (int status)
 	fprintf (fp, "asyncmap 0\n");
       else
 	fprintf (fp, "default-asyncmap\n");
-
+      
 
       // Allow users some control on PPP interface MTU and MRU
       // If pppoe_ppp_mtu > 0 will set mtu of pppX interface to the value in the nvram variable
@@ -1869,7 +1876,7 @@ start_wan (int status)
 
       stop_dhcpc ();
       stop_pptp ();
-      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");	
+//      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");	
       eval ("/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe");
 
       // This is horrible.
