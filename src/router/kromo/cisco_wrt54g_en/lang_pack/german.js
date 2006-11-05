@@ -1031,14 +1031,40 @@ service.vpn_srvcert="Öffentliches Server-Zertifikat";
 service.vpn_clicert="Öffentliches Client-Zertifikat";
 service.vpn_clikey="Privater Client-Schlüssel";
 
-
-
+//radiooff.webservices
+service.radiooff_legend="SES Button";
+service.radiooff_srv="Nutze SES um Wireless abzuschalten";
 
 //sshd.webservices
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Passwort-Login";
 service.ssh_key="Authorisierte Schlüssel";
+
+//hwmon.webservices
+service.hwmon_legend="Hardware Überwachung";
+service.hwmon_critemp="Kritische Temperatur (Lüfter An)";
+service.hwmon_hystemp="Hysterese Temperatur (Lüfter Aus)";
+
+//rstat.webservices
+service.rstats_legend="Bandbreiten Überwachung";
+service.rstats_srv="rstats Daemon";
+service.rstats_path="Speichere Daten nach";
+service.rstats_time="Speicher Zyklus";
+service.rstats_usrdir="Nutzer Verzeichniss";
+
+//eoip.webservices
+service.eoip_legend="Ethernet Über IP Tunneln";
+service.eoip_srv="EoIP Tunnel";
+service.eoip_remoteIP="Entfernte IP Address";
+service.eoip_tunnelID="Tunnel Nummer";
+service.eoip_passtos="TOS Durchleitung";
+service.eoip_frag="fragment";
+service.eoip_mssfix="mssfix";
+service.eoip_shaper="shaper";
+service.eoip_bridging="Brücken";
+
+
 
 // **************************************************************** Sipath.asp + cgi **********************************************************************//
 
