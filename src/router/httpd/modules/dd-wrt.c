@@ -6105,7 +6105,7 @@ void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
 	int sig;
-        char argument[64];
+        char *argument;
 	if (ejArgs (argc, argv, "%s", &argument) < 1)
         {
            websError (wp, 400, "Insufficient args\n");
