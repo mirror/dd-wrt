@@ -865,7 +865,7 @@ setupHostAP (char *prefix)
 //        fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 //        fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
 	  fprintf (fp, "own_ip_addr=%s\n", nvram_safe_get ("lan_ipaddr"));
-	  fprintf (fp, "eap_server=0\n");
+//	  fprintf (fp, "eap_server=0\n");
 	  fprintf (fp, "auth_algs=1\n");
 
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
