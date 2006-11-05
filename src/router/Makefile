@@ -947,7 +947,7 @@ ppp-clean:
 	$(MAKE) -C rp-pppoe-3.5/src clean
 
 ppp-install:
-	install -D rp-pppoe-3.5/src/pppoe $(INSTALLDIR)/ppp/usr/sbin/pppoe
+#	install -D rp-pppoe-3.5/src/pppoe $(INSTALLDIR)/ppp/usr/sbin/pppoe
 #	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe
 ifeq ($(CONFIG_PPPOERELAY),y)
 	install -D rp-pppoe-3.5/src/pppoe-relay $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
@@ -1131,7 +1131,7 @@ else
 	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rad*.so
 	rm -rf $(INSTALLDIR)/pppd/etc/radiusclient
 endif
-	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rp-pppoe.so
+#	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rp-pppoe.so
 
 #	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppd
 ifeq ($(CONFIG_PPPSTATS),y)
