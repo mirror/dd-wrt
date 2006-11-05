@@ -1,59 +1,59 @@
 
 <fieldset>
-	<legend>Ethernet Over IP Tunnel</legend>
+	<legend><% tran("service.eoip_legend"); %></legend>
 		<div class="setting">
-			<div class="label">EOP Tunnel</div>
+			<div class="label"><% tran("service.eoip_srv"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="oet1_en" <% nvram_selmatch("oet1_en","1","checked"); %> onclick="show_layer_ext(this, 'idoet', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="oet1_en" <% nvram_selmatch("oet1_en","0","checked"); %> onclick="show_layer_ext(this, 'idoet', false)" /><% tran("share.disable"); %>
 		</div>
 	<div id="idoet">
 		<div class="setting">
-			<div class="label">Remote IP Address</div>
+			<div class="label"><% tran("service.eoip_remoteIP"); %></div>
 			<input type="hidden" name="oet1_rem" value="0.0.0.0"/>
-			<input size="3" maxlength="3" class="num" name="oet1_rem_0" onblur="valid_range(this,0,255,hotspot.http_ip)" value="<% get_single_ip("oet1_rem","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_1" onblur="valid_range(this,0,255,hotspot.http_ip)" value="<% get_single_ip("oet1_rem","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_2" onblur="valid_range(this,0,255,hotspot.http_ip)" value="<% get_single_ip("oet1_rem","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_3" onblur="valid_range(this,1,254,hotspot.http_ip)" value="<% get_single_ip("oet1_rem","3"); %>" />
+			<input size="3" maxlength="3" class="num" name="oet1_rem_0" onblur="valid_range(this,0,255,service.eoip_remoteIP)" value="<% get_single_ip("oet1_rem","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_1" onblur="valid_range(this,0,255,service.eoip_tunnelID)" value="<% get_single_ip("oet1_rem","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_2" onblur="valid_range(this,0,255,service.eoip_tunnelID)" value="<% get_single_ip("oet1_rem","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_rem_3" onblur="valid_range(this,1,254,service.eoip_tunnelID)" value="<% get_single_ip("oet1_rem","3"); %>" />
 		</div>
 		<div class="setting">
-			<div class="label">Tunnel ID</div>
-			<input size="3" maxlength="3" class="num" name="oet1_id" onblur="valid_range(this,0,999,hotspot.http_ip)" value="<% nvram_get("oet1_id"); %>" />
+			<div class="label"><% tran("service.eoip_tunnelID"); %></div>
+			<input size="4" maxlength="3" class="num" name="oet1_id" onblur="valid_range(this,0,999,service.eoip_tunnelID)" value="<% nvram_get("oet1_id"); %>" />
 		</div>			
 		<div class="setting">
-			<div class="label">Compression Enable</div>
+			<div class="label"><% tran("service.eoip_comp"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="oet1_comp" <% nvram_selmatch("oet1_comp","1","checked"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="oet1_comp" <% nvram_selmatch("oet1_comp","0","checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label">Passtos</div>
+			<div class="label"><% tran("service.eoip_passtos"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="oet1_pt" <% nvram_selmatch("oet1_pt","1","checked"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="oet1_pt" <% nvram_selmatch("oet1_pt","0","checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label">Fragment</div>
-			<input size="4" maxlength="4" class="num" name="oet1_fragment" onblur="valid_range(this,0,1500,hotspot.http_ip)" value="<% nvram_get("oet1_fragment"); %>" />
+			<div class="label"><% tran("service.eoip_frag"); %></div>
+			<input size="4" maxlength="4" class="num" name="oet1_fragment" onblur="valid_range(this,0,1500,service.eoip_frag)" value="<% nvram_get("oet1_fragment"); %>" />
 		</div>			
 		<div class="setting">
-			<div class="label">mssfix</div>
+			<div class="label"><% tran("service.eoip_mssfix"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="oet1_mssfix" <% nvram_selmatch("oet1_mssfix","1","checked"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="oet1_mssfix" <% nvram_selmatch("oet1_mssfix","0","checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label">Shaper</div>
-			<input size="6" maxlength="6" class="num" name="oet1_shaper" onblur="valid_range(this,0,100000,hotspot.http_ip)" value="<% nvram_get("oet1_shaper"); %>" />
+			<div class="label"><% tran("service.eoip_shaper"); %></div>
+			<input size="6" maxlength="6" class="num" name="oet1_shaper" onblur="valid_range(this,0,100000,service.eoip_shaper)" value="<% nvram_get("oet1_shaper"); %>" />
 		</div>	
 		<div class="setting">
-			<div class="label">Bridging</div>
+			<div class="label"><% tran("service.eoip_bridging"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged', false)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged', true)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idbridged">
 			<div class="setting">
-				<div class="label">IP Address</div>
+				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet1_ip" value="0.0.0.0"/>
-				<input size="3" maxlength="3" class="num" name="oet1_ip_0" onblur="valid_range(this,0,255,'IP Address')" value="<% get_single_ip("oet1_ip","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_1" onblur="valid_range(this,0,255,hotspot.http_ip)" value="<% get_single_ip("oet1_ip","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_2" onblur="valid_range(this,0,255,hotspot.http_ip)" value="<% get_single_ip("oet1_ip","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_3" onblur="valid_range(this,1,254,hotspot.http_ip)" value="<% get_single_ip("oet1_ip","3"); %>" />
+				<input size="3" maxlength="3" class="num" name="oet1_ip_0" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("oet1_ip","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_1" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("oet1_ip","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_2" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("oet1_ip","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_ip_3" onblur="valid_range(this,1,254,share.ip)" value="<% get_single_ip("oet1_ip","3"); %>" />
 			</div>
 			<div class="setting">
-				<div class="label">Netmask</div>
+				<div class="label"><% tran("share.subnet"); %></div>
 				<input type="hidden" name="oet1_netmask" value="0.0.0.0"/>
-				<input size="3" maxlength="3" class="num" name="oet1_netmask_0" onblur="valid_range(this,0,255,hotspot.http_net)" value="<% get_single_ip("oet1_netmask","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_1" onblur="valid_range(this,0,255,hotspot.http_net)" value="<% get_single_ip("oet1_netmask","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_2" onblur="valid_range(this,0,255,hotspot.http_net)" value="<% get_single_ip("oet1_netmask","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_3" onblur="valid_range(this,0,254,'HTTP Source IP')" value="<% get_single_ip("oet1_netmask","3"); %>" />
+				<input size="3" maxlength="3" class="num" name="oet1_netmask_0" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("oet1_netmask","0"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_1" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("oet1_netmask","1"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_2" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_ip("oet1_netmask","2"); %>" />.<input size="3" maxlength="3" class="num" name="oet1_netmask_3" onblur="valid_range(this,0,254,share.subnet)" value="<% get_single_ip("oet1_netmask","3"); %>" />
 			</div>
 		</div>
 	</div>
