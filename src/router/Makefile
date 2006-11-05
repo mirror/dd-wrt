@@ -1099,6 +1099,7 @@ pppd: pppd-symlinks
 ifeq ($(CONFIG_PPPSTATS),y)
 	$(MAKE) -C pppd.new/pppstats
 endif
+	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
 	$(MAKE) -C pppd.new/pppd/plugins/radius
 endif
@@ -1110,6 +1111,7 @@ pppd-clean pppd-distclean: pppd-symlinks
 
 pppd-install:
 	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
+	install -D pppd.new/pppd/plugins/rp-pppoe/rp-pppoe.so $(INSTALLDIR)/pppd/usr/lib/rp-pppoe.so
 ifeq ($(CONFIG_PPPSTATS),y)
 	install -D pppd.new/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
 else
