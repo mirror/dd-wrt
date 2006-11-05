@@ -98,6 +98,15 @@
 					</ul>
 				</dd>
 				
+				<dt><% tran("service.eoip_legend"); %></dt>
+				<dd>Ethernet over IP (EoIP) Tunneling enable you to create an Ethernet tunnel between two routers on top of an IP connection. The EoIP interface appears as an Ethernet interface. When the bridging function of the router is enabled, all Ethernet traffic (all Ethernet protocols) will be bridged just as if there where a physical Ethernet interface and cable between the two routers (with bridging enabled).<br/>Network setups with EoIP interfaces : <br/>
+					<ul>
+						<li>Possibility to bridge LANs over the Internet</li>
+						<li>Possibility to bridge LANs over encrypted tunnels</li>
+						<li>Possibility to bridge LANs over 802.11b 'ad-hoc' wireless networks</li>
+					</ul>
+				</dd> 
+				
 				<dt><% tran("service.syslog_legend"); %></dt>
 				<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file /var/log/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>
 				
