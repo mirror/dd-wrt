@@ -154,19 +154,19 @@ start_mkfiles (void)
   fprintf (fp, "root:x:0:\n");
   fclose (fp);
 
-  system2 ("/bin/mkdir /var/spool");
-  system2 ("/bin/mkdir /var/spool/cron");
-  system2 ("/bin/mkdir /var/spool/cron/crontabs");
+  system2 ("/bin/mkdir -p /var/spool");
+  system2 ("/bin/mkdir -p /var/spool/cron");
+  system2 ("/bin/mkdir -p /var/spool/cron/crontabs");
   system2 ("/bin/touch /var/spool/cron/crontabs/root");
-  system2 ("/bin/mkdir /var/lib");
-  system2 ("/bin/mkdir /var/lib/misc");
-  system2 ("/bin/mkdir /var/tmp");
+  system2 ("/bin/mkdir -p /var/lib");
+  system2 ("/bin/mkdir -p /var/lib/misc");
+  system2 ("/bin/mkdir -p /var/tmp");
 
-  system2 ("/bin/mkdir /var/log");
-  system2 ("/bin/touch /var/log/messages");
+  system2 ("/bin/mkdir -p /var/log");
+  system2 ("/bin/touch -p /var/log/messages");
 
 #ifdef HAVE_SNMP
-  system2 ("/bin/mkdir /var/snmp");
+  system2 ("/bin/mkdir -p /var/snmp");
 #endif
   system2 ("/bin/chmod 0777 /tmp");
 
