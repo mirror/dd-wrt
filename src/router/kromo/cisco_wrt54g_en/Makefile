@@ -7,7 +7,7 @@ endif
 all:
 
 install:
-	rm -rf $(INSTALLDIR)/www
+#	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
 
@@ -158,6 +158,10 @@ endif
 
 ifeq ($(CONFIG_GGEW),y)
 	cp -f ggew/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
+
+ifeq ($(CONFIG_MAKSAT),y)
+	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
 ifeq ($(CONFIG_KODATA),y)
