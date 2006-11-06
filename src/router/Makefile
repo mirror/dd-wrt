@@ -232,6 +232,7 @@ clean: $(obj-clean)
 
 clean_target:
 	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
 	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
 
 distclean mrproper: $(obj-distclean) clean_target
@@ -480,7 +481,7 @@ libnet:
 	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 
-httpd: nvram shared hsiab matrixssl eop-tunnel-install www-install
+httpd: nvram shared hsiab matrixssl www-install
 	$(MAKE) -C httpd
 
 httpd-clean:
@@ -489,7 +490,7 @@ httpd-clean:
 
 rc: netconf nvram shared hsiab libnet dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
 
-www www-%:
+www www-%: eop-tunnel-install
 
 
 ifeq ($(KROMOGUI),y)
