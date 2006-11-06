@@ -2926,6 +2926,7 @@ struct apply_action apply_actions[] = {
   {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
   {"Routing", "", 0, RESTART, NULL},
   {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
+  {"EOP", "eop", 0, SERVICE_RESTART, NULL},
   /* Sveasoft additions */
   {"Management", "management", 0, SYS_RESTART, NULL},
   {"Alive", "alive", 0, SERVICE_RESTART, NULL},
@@ -3816,7 +3817,7 @@ int wifi=0;
 #else
 int wifi=haswifi();
 #endif
-char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","","","","","",""},
+char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","eop-tunnel.asp","","","",""},
 						{"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","",""},
 						{"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","",""},
 						{"Firewall.asp","VPN.asp","","","","","","","","",""},
@@ -3826,7 +3827,7 @@ char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan
 						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Status_Bandwidth.asp","Info.htm","","","",""}};
 
 /* real name is bmenu.menuname[i][j] */
-char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","","","","",""},
+char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","setupeop","","","",""},
 							{"wireless","wirelessBasic","wirelessRadius","wirelessSecurity","wirelessMac","wirelessAdvanced","wirelessWds","","","",""},
 							{"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","",""},
 							{"security","firwall","vpn","","","","","","","",""},
@@ -3865,6 +3866,10 @@ int i,j;
 				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))
 					j++;
 				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
+					j++;
+#endif
+#ifndef HAVE_EOP_TUNNEL
+				if (!strcmp(menu[i][j], "eop-tunnel.asp"))
 					j++;
 #endif
 #ifndef HAVE_CTORRENT
