@@ -481,7 +481,7 @@ libnet:
 	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 
-httpd: nvram shared hsiab matrixssl www-install
+httpd: clean_target nvram shared hsiab matrixssl www-install
 	$(MAKE) -C httpd
 
 httpd-clean:
