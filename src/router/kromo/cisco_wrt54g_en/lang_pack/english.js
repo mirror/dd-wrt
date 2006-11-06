@@ -1160,6 +1160,7 @@ service.eoip_legend="Ethernet Over IP Tunneling";
 service.eoip_srv="EoIP Tunnel";
 service.eoip_remoteIP="Remote IP Address";
 service.eoip_tunnelID="Tunnel ID";
+service.eoip_comp="Compression";
 service.eoip_passtos="TOS passthrough";
 service.eoip_frag="fragment";
 service.eoip_mssfix="mssfix";
