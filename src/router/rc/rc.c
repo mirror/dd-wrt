@@ -66,6 +66,7 @@ enum
   TIMER,
   USER,
   IDLE,
+  REBOOT,
 };
 static int state = START;
 static int signalled = -1;
@@ -78,26 +79,37 @@ rc_signal (int sig)
     {
       if (sig == SIGHUP)
 	{
+	  lcdmessage("Signal RESTART");
 	  printf ("signalling RESTART\n");
 	  signalled = RESTART;
 	}
       else if (sig == SIGUSR2)
 	{
+	  lcdmessage("Signal START");
 	  printf ("signalling START\n");
 	  signalled = START;
 	}
       else if (sig == SIGINT)
 	{
+	lcdmessage("Signal STOP");
 	  printf ("signalling STOP\n");
 	  signalled = STOP;
 	}
       else if (sig == SIGALRM)
 	{
+	lcdmessage("Signal TIMER");
 	  printf ("signalling TIMER\n");
 	  signalled = TIMER;
 	}
+      else if (sig == SIGTERM)
+	{
+	lcdmessage("Signal Reboot");
+	  printf ("signalling REBOOT\n");
+	  signalled = REBOOT;
+	}
       else if (sig == SIGUSR1)
 	{			// Receive from WEB
+	lcdmessage("Signal USER");
 	  printf ("signalling USER1\n");
 	  signalled = USER;
 	}
@@ -124,9 +136,11 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
+ 
   if (console_init ())
     noconsole = 1;
-
+  initlcd();
+  lcdmessage("System Start");
   start_service ("sysinit");
 
   /* Setup signal handlers */
@@ -136,6 +150,7 @@ main_loop (void)
   signal (SIGUSR2, rc_signal);
   signal (SIGINT, rc_signal);
   signal (SIGALRM, rc_signal);
+  signal (SIGTERM, rc_signal);
   sigemptyset (&sigset);
 
   /* Give user a chance to run a shell before bringing up the rest of the system */
@@ -340,6 +355,7 @@ main_loop (void)
       switch (state)
 	{
 	case USER:		// Restart single service from WEB of tftpd, by honor
+	  lcdmessage("RESTART SERVICES");
 	  cprintf ("USER1\n");
 	  start_single_service ();
 #ifdef HAVE_CHILLI
@@ -352,6 +368,7 @@ main_loop (void)
 	  state = IDLE;
 	  break;
 	case RESTART:
+	lcdmessage("RESTART SYSTEM");
 	  start_service ("overclocking");
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
@@ -392,6 +409,7 @@ main_loop (void)
 #endif
 	  /* Fall through */
 	case STOP:
+	  lcdmessage("STOPPING SERVICES");
 	  cprintf ("STOP\n");
 	  killall("udhcpc",SIGKILL);
 	  setenv ("PATH",
@@ -435,6 +453,7 @@ main_loop (void)
 	    }
 	  /* Fall through */
 	case START:
+	  lcdmessage("START SERVICES");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 #ifndef HAVE_MSSID
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
@@ -513,6 +532,7 @@ main_loop (void)
 	  system ("/etc/postinit");
 
 	  diag_led (DIAG, STOP_LED);
+	  lcdmessage("System Ready");
 	  /* Fall through */
 	case TIMER:
 	  cprintf ("TIMER\n");
@@ -533,6 +553,10 @@ main_loop (void)
 	  state = signalled;
 	  signalled = -1;
 	  break;
+	case REBOOT:
+	  lcdmessage("System Reboots!");
+	  system("reboot");
+	break;
 	default:
 	  cprintf ("UNKNOWN\n");
 	  return;

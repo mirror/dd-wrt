@@ -310,7 +310,15 @@ struct detect_wans
 	printf("\n\n"); \
 }
 
-
+#ifdef HAVE_X86
+void lcdmessage(char *message);
+void initlcd(void);
+void lcdmessaged(char *dual,char *message);
+#else
+#define initlcd()
+#define lcdmessage(a)
+#define lcdmessaged(a,b)
+#endif
 int ishexit (char c);
 int haswifi (void);
 int sv_valid_hwaddr (char *value);
