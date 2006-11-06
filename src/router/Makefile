@@ -200,6 +200,7 @@ obj-$(CONFIG_WIFIDOG) += wifidog
 obj-y += sprom
 obj-y += stabridge
 obj-$(CONFIG_RSTATS) += rstats
+obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 
 
 
@@ -479,7 +480,7 @@ libnet:
 	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 
-httpd: nvram shared hsiab matrixssl www-install
+httpd: nvram shared hsiab matrixssl eop-tunnel-install www-install
 	$(MAKE) -C httpd
 
 httpd-clean:
