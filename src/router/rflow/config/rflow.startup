@@ -3,7 +3,7 @@ RFLOW_IP=$(nvram get rflow_ip)
 RFLOW_PORT=$(nvram get rflow_port)
 RFLOW_IF=$(nvram get rflow_if)
 killall -q -9 rflow
-if [ "$RFLOW_IF" = "vlan1" ]; then
+if [ "$RFLOW_IF" = "$(vram get wan_ifname)" ]; then
 
 if [ "$(nvram get wan_proto)" = "pppoe" ]; then
     RFLOW_IF="ppp0"
