@@ -921,9 +921,11 @@ handle_request (void)
 			{
 			  send_authenticate (auth_realm);
 			  syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
+			  lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
 			  return;
 			  //auth_fail = 1;
 			}
+			  lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
 			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
 		    }
 		}

@@ -163,7 +163,7 @@ start_mkfiles (void)
   system2 ("/bin/mkdir -p /var/tmp");
 
   system2 ("/bin/mkdir -p /var/log");
-  system2 ("/bin/touch -p /var/log/messages");
+  system2 ("/bin/touch /var/log/messages");
 
 #ifdef HAVE_SNMP
   system2 ("/bin/mkdir -p /var/snmp");
