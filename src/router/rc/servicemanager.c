@@ -67,6 +67,7 @@ load_service (char *name)
 int
 start_service (char *name)
 {
+//  lcdmessaged("Starting Service",name);
   cprintf ("start_service\n");
   char service[64];
   sprintf (service, "/etc/config/%s", name);
@@ -121,6 +122,7 @@ start_servicep (char *name, char *param)
 int
 start_servicei (char *name, int param)
 {
+  //lcdmessaged("Starting Service",name);
   cprintf ("start_servicei\n");
   void *handle = load_service (name);
   if (handle == NULL)
@@ -168,6 +170,7 @@ start_main (char *name, int argc, char **argv)
 int
 stop_service (char *name)
 {
+  //lcdmessaged("Stopping Service",name);
   cprintf ("stop service()\n");
   void *handle = load_service (name);
   if (handle == NULL)
