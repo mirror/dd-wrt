@@ -920,9 +920,11 @@ handle_request (void)
 		      if (!auth_check (auth_realm, authorization))
 			{
 			  send_authenticate (auth_realm);
+			  syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
 			  return;
 			  //auth_fail = 1;
 			}
+			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
 		    }
 		}
 	      post = 0;
