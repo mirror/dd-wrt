@@ -516,6 +516,10 @@ start_single_service (void)
       killall ("udhcpc", sigusr);
       sleep (1);
     }
+  else if (!strcmp (service, "eop"))
+    {
+    //nothing right now, will come soon
+    }
   else
     {
       nvram_unset ("action_service");
