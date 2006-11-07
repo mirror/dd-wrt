@@ -8,6 +8,11 @@
 		<input class="spaceradio" type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idsputnik', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idsputnik">
+		<div class="setting">
+			<div class="label">Sputnik Mode</div>
+			<input class="spaceradio" type="radio" name="sputnik_mode" value="1" <% nvram_selmatch("sputnik_mode", "1", "checked"); %> />Standard&nbsp;
+			<input class="spaceradio" type="radio" name="sputnik_mode" value="0" <% nvram_selmatch("sputnik_mode", "0", "checked"); %> />NMS
+		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.sputnik_id"); %></div>
 			<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="0" <% nvram_selmatch("sputnik_mjid_type", "0", "checked"); %> /><% tran("hotspot.sputnik_instant"); %>
