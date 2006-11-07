@@ -143,9 +143,9 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
       wfread (&count, 2, 1, wp);
       len -= 2;
       int i;
-    again:;
       for (i = 0; i < count; i++)
 	{
+    again:;
 	  unsigned short l = 0;
 	  unsigned char c = 0;
 	  wfread (&c, 1, 1, wp);
