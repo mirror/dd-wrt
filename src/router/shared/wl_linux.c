@@ -86,29 +86,32 @@ wl_hwaddr (char *name, unsigned char *hwaddr)
 }
 
 int
-wl_get_dev_type(char *name, void *buf, int len)
+wl_get_dev_type (char *name, void *buf, int len)
 {
-	int s;
-	int ret;
-	struct ifreq ifr;
-	struct ethtool_drvinfo info;
+  int s;
+  int ret;
+  struct ifreq ifr;
+  struct ethtool_drvinfo info;
 
-	/* open socket to kernel */
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-		perror("socket");
-		return -1;
-	}
+  /* open socket to kernel */
+  if ((s = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+      perror ("socket");
+      return -1;
+    }
 
-	/* get device type */
-	memset(&info, 0, sizeof(info));
-	info.cmd = ETHTOOL_GDRVINFO;
-	ifr.ifr_data = (caddr_t)&info;
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
-		*(char *)buf = '\0';
-	} else
-		strncpy(buf, info.driver, len);
+  /* get device type */
+  memset (&info, 0, sizeof (info));
+  info.cmd = ETHTOOL_GDRVINFO;
+  ifr.ifr_data = (caddr_t) & info;
+  strncpy (ifr.ifr_name, name, IFNAMSIZ);
+  if ((ret = ioctl (s, SIOCETHTOOL, &ifr)) < 0)
+    {
+      *(char *) buf = '\0';
+    }
+  else
+    strncpy (buf, info.driver, len);
 
-	close(s);
-	return ret;
+  close (s);
+  return ret;
 }
