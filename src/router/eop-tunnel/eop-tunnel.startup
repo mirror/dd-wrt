@@ -1,0 +1,71 @@
+#!/bin/sh
+nv=/usr/sbin/nvram
+/bin/mkdir /tmp/oet
+/bin/mkdir /tmp/oet/pid
+cd /tmp/oet/pid
+for i in 1 2 3 4 5
+do
+	/bin/kill -9 `cat ${i}.pid`
+	/usr/sbin/brctl delif br0 tap10${i}
+	/usr/sbin/openvpn --rmtun --dev tap10${i}
+	if [ "$($nv get oet${i}_en)" = "1" ]
+	then
+		/usr/sbin/openvpn --mktun --dev tap10${i}
+		if [ "$($nv get oet${i}_bridged)" = "1" ]
+		then
+			/sbin/ifconfig tap10${i} up
+			/sbin/ifconfig tap10${i} PROMISC
+			/usr/sbin/brctl addif br0 tap10${i}
+		else
+			/sbin/ifconfig tap10${i} $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) up
+		fi
+		id=$($nv get oet${i}_id)
+		if [ "$($nv get oet${i}_comp)" = "1" ]
+		then
+			comp="--comp-lzo"
+		else
+			comp=""
+		fi
+		if [ "$($nv get oet${i}_pt)" = "1" ]
+		then
+			pt="--passtos"
+		else
+			pt=""
+		fi
+		if [ "$($nv get oet${i}_mssfix)" = "1" ]
+		then
+			mssfix="--mssfix"
+		else
+			mssfix=""
+		fi
+		if [ "$($nv get oet${i}_fragment)" != "0" ]
+		then
+			fragment="--fragment $($nv get oet${i}_fragment)"
+		else
+			fragment=""
+		fi
+		if [ "$($nv get oet${i}_shaper)" != "0" ]
+		then
+			shaper="--shaper $($nv get oet${i}_shaper)"
+		else
+			shaper=""
+		fi
+	
+	/usr/sbin/openvpn --mode p2p \
+		--daemon \
+		${pt} \
+		--status ../${i}.txt \
+		--status-version 2 \
+		--tun-mtu 1500 \
+		${fragment} \
+		${mssfix} \
+		--ping 60 \
+		--persist-tun \
+		--remote $($nv get oet${i}_rem) \
+		--port 3500${id} \
+		${comp} \
+		${shaper} \
+	 	--dev tap10${i} \
+		--writepid ${i}.pid
+	fi
+done
