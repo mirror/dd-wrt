@@ -522,13 +522,7 @@ int ip_nat_helper_register(struct ip_nat_helper *me)
 static int
 kill_helper(struct ip_conntrack *i, void *helper)
 {
-	int ret;
-
-	READ_LOCK(&ip_nat_lock);
-	ret = (i->nat.info.helper == helper);
-	READ_UNLOCK(&ip_nat_lock);
-
-	return ret;
+	return (i->nat.info.helper == helper);
 }
 
 void ip_nat_helper_unregister(struct ip_nat_helper *me)
