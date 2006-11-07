@@ -5841,7 +5841,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   	websWrite (wp, "<tr>\n");
   	
   	// Nb
-  	websWrite (wp, "\t<td align=\"right\">%d</td>", ip_count);
+  	websWrite (wp, "<td align=\"right\">%d</td>", ip_count);
   	
   	// Proto
   	if (string_search(line, "tcp"))
@@ -5852,25 +5852,25 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     	sprintf (protocol, "ICMP");
     else
     	sprintf (protocol, live_translate ("share.unknown"));
-    websWrite (wp, "\t<td>%s</td>", protocol);
+    websWrite (wp, "<td>%s</td>", protocol);
     
     // Timeout
     sscanf(line,"%s %d %d",&dum1[0],&dum2,&timeout);
-    websWrite (wp, "\t<td align=\"right\">%d</td>", timeout);
+    websWrite (wp, "<td align=\"right\">%d</td>", timeout);
     
     // src
     search_hit("src=", line, srcip);
-    websWrite (wp, "\t<td align=\"right\" onmouseover=\"DisplayHostNameDiv(this,event,20,50,'<% gethostnamebyip(\"this.value\") %>')\" onmouseout=\"unDisplayHostNameDiv()\">%s</td>", srcip);
+    websWrite (wp, "<td align=\"right\" onmouseover=\"DisplayHostNameDiv(this, event, 20, 50, '<\% gethostnamebyip(\"this.value\") \%>')\" onmouseout=\"unDisplayHostNameDiv()\">%s</td>", srcip);
     
     // dst
     search_hit("dst=", line, dstip);
-    websWrite (wp, "\t<td align=\"right\">%s</td>", dstip);
+    websWrite (wp, "<td align=\"right\">%s</td>", dstip);
     
     // service
     search_hit("dport=", line, dstport);
     _dport = atoi (dstport);
     servp = my_getservbyport (htons (_dport), protocol);
-    websWrite (wp, "\t<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
+    websWrite (wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
     
     // State
     if (string_search(line, "ESTABLISHED"))
@@ -5890,7 +5890,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 			else
 	     	sprintf (state, "&nbsp;");
     }
-    websWrite (wp, "\t<td>%s</td>\n", state);
+    websWrite (wp, "<td>%s</td>\n", state);
     websWrite (wp, "</tr>\n");
     
     ip_count++;
