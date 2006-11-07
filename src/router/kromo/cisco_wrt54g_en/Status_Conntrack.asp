@@ -11,6 +11,7 @@ document.title = "<% nvram_get("router_name"); %>" + status_conn.titl;
 	<body>
 		<div class="popup">
 			<form>
+				<div id="bulle" class="bulle"></div>
 				<h2><% tran("status_conn.h2"); %></h2>
 				<div class="setting">
 					<div class="label"><% tran("status_router.net_conntrack"); %></div>
@@ -24,7 +25,6 @@ document.title = "<% nvram_get("router_name"); %>" + status_conn.titl;
 						<th><% tran("share.dst"); %></th>
 						<th><% tran("share.srv"); %></th>
 						<th><% tran("share.state"); %></th>
-						<th><% tran("share.name_resolution"); %></th>
 					</tr>
 					<% ip_conntrack_table(); %>
 				</table><br />
