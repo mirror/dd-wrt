@@ -16,7 +16,7 @@
 		if (<% nvram_get("enable_jffs2"); %> == 1 )
 			document.write('<input type="checkbox" value="1" name="_dhcpd_usejffs" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />');
 		else
-			document.write('<em>(' + share.nmounted + ')</em>');
+			document.write('<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>');
 		//]]>
 		</script>
 	</div>
