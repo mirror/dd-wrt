@@ -517,11 +517,13 @@ start_single_service (void)
       killall ("udhcpc", sigusr);
       sleep (1);
     }
+#ifdef HAVE_EOP_TUNNEL
   else if (!strcmp (service, "eop"))
     {
       eval ("/etc/config/eop-tunnel.startup");
       eval ("/etc/config/eop-tunnel.firewall");
     }
+#endif
   else
     {
       nvram_unset ("action_service");
