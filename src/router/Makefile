@@ -40,7 +40,7 @@ ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
 endif
 
-export LINUXVER := 2.4.34-pre4
+export LINUXVER := 2.4.34-pre5
 ifeq ($(CONFIG_MSSID),y)
 export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v24
 else
@@ -941,7 +941,8 @@ ntpclient-install:
 
 # AhMan March 19 2005
 pppoe pppoe-%:
-	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/pppoe
+	@true
+#	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/pppoe
 
 ppp:
 	$(MAKE) -C rp-pppoe-3.5/src
