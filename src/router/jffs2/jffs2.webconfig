@@ -16,7 +16,7 @@
 			<script type="text/javascript">
 			//<![CDATA[
 			<% statfs("/jffs", "my_jffs"); %>
-			document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.size) + ' / ' + scaleSize(my_jffs.free)) : '<em>(' + share.nmounted + ')</em>' );
+			document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.size) + ' / ' + scaleSize(my_jffs.free)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 			//]]>
 			</script>
 		</div>
