@@ -1,7 +1,6 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
-/bin/mkdir /tmp/oet
-/bin/mkdir /tmp/oet/pid
+/bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
 for i in 1 2 3 4 5
 do
