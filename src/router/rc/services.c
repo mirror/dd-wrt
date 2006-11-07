@@ -518,7 +518,8 @@ start_single_service (void)
     }
   else if (!strcmp (service, "eop"))
     {
-    //nothing right now, will come soon
+      eval ("/etc/config/eop-tunnel.startup");
+      eval ("/etc/config/eop-tunnel.firewall");
     }
   else
     {
