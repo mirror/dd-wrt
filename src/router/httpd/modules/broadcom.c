@@ -2926,7 +2926,7 @@ struct apply_action apply_actions[] = {
   {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
   {"Routing", "", 0, RESTART, NULL},
   {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
-  {"EOP", "eop", 0, SERVICE_RESTART, NULL},
+  {"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
   /* Sveasoft additions */
   {"Management", "management", 0, SYS_RESTART, NULL},
   {"Alive", "alive", 0, SERVICE_RESTART, NULL},
