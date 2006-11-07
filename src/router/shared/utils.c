@@ -107,6 +107,8 @@ setRouter (char *name)
   nvram_set (NVROUTER, "WOAP54G");
 #elif HAVE_OMNI
   nvram_set (NVROUTER, "Omni Wifi Router");
+#elif HAVE_MAKSAT
+  nvram_set (NVROUTER, "MAKSAT");
 #else
   if (name)
     nvram_set (NVROUTER, name);
