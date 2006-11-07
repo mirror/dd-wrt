@@ -382,7 +382,7 @@ static int __init sc1200wdt_init(void)
 	if (io == -1) {
 		printk(KERN_ERR PFX "io parameter must be specified\n");
 		ret = -EINVAL;
-		goto out_clean;
+		goto out_pnp;
 	}
 
 	if (!request_region(io, io_len, SC1200_MODULE_NAME)) {
