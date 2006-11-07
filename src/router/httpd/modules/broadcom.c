@@ -4736,6 +4736,7 @@ struct ej_handler ej_handlers[] = {
   {"show_wl_mac", ej_show_wl_mac},
   {"dumpip_conntrack", ej_dumpip_conntrack},
   {"ip_conntrack_table", ej_ip_conntrack_table},
+  {"gethostnamebyip", ej_gethostnamebyip},
   /* for dhcp */
   {"dumpleases", ej_dumpleases},
   /* for ddm */
