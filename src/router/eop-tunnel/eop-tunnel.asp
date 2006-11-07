@@ -90,8 +90,8 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged1', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet1_bridged" <% nvram_selmatch("oet1_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged1', true)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idbridged1">
 			<div class="setting">
