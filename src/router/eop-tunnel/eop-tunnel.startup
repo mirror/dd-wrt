@@ -4,20 +4,20 @@ nv=/usr/sbin/nvram
 cd /tmp/oet/pid
 for i in 1 2 3 4 5
 do
-	/bin/kill -9 `cat ${i}.pid`
-	/usr/sbin/brctl delif br0 tap10${i}
-	/usr/sbin/openvpn --rmtun --dev tap10${i}
+	/bin/kill -9 `cat ${i}.pid` 2>&1 > /dev/null
+	/usr/sbin/brctl delif br0 tap10${i} 2>&1 > /dev/null
+	/usr/sbin/openvpn --rmtun --dev tap10${i} 2>&1 > /dev/null
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
-		/usr/sbin/openvpn --mktun --dev tap10${i}
+		/usr/sbin/openvpn --mktun --dev tap10${i} 2>&1 > /dev/null
 		if [ "$($nv get oet${i}_bridged)" = "1" ]
 		then
-			/sbin/ifconfig tap10${i} up
-			/sbin/ifconfig tap10${i} PROMISC
-			/usr/sbin/brctl addif br0 tap10${i}
+			/sbin/ifconfig tap10${i} up 2>&1 > /dev/null
+			/sbin/ifconfig tap10${i} PROMISC 2>&1 > /dev/null
+			/usr/sbin/brctl addif br0 tap10${i} 2>&1 > /dev/null
 		else
-			/sbin/ifconfig tap10${i} $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) up
-		fi
+			/sbin/ifconfig tap10${i} $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) up 2>&1 > /dev/null
+    		fi
 		id=$($nv get oet${i}_id)
 		if [ "$($nv get oet${i}_comp)" = "1" ]
 		then
