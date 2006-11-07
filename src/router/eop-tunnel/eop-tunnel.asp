@@ -5,7 +5,7 @@
 document.title = "<% nvram_get("router_name"); %> EOP Tunnel";
 
 function to_submit(F) {
-	F.submit_button.value = "EOP";
+	F.submit_button.value = "eop-tunnel";
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 	
@@ -356,11 +356,6 @@ addEvent(window, "load", function() {
 							 <script type="text/javascript">
 							 //<![CDATA[
 							 document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-							 //]]>
-							 </script>
-							 <script type="text/javascript">
-							 //<![CDATA[
-							 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
 							 //]]>
 							 </script>
 							</div>
