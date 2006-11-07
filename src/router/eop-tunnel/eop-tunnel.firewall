@@ -1,0 +1,18 @@
+#!/bin/sh
+nv=/usr/sbin/nvram
+for i in 1 2 3 4 5
+do
+	/usr/sbin/iptables -D FORWARD -i tap10${i} -j ACCEPT
+	/usr/sbin/iptables -D FORWARD -o tap10${i} -j ACCEPT
+	/usr/sbin/iptables -D INPUT -i tap10${i} -j ACCEPT
+	if [ "$($nv get oet${i}_en)" = "1" ]
+	then
+		if [ "$($nv get oet${i}_bridged)" != "1" ]
+		then
+
+			/usr/sbin/iptables -I FORWARD -i tap10${i} -j ACCEPT
+			/usr/sbin/iptables -I FORWARD -o tap10${i} -j ACCEPT
+			/usr/sbin/iptables -I INPUT -i tap10${i} -j ACCEPT
+		fi
+	fi
+done
