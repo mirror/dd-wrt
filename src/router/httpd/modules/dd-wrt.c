@@ -5860,7 +5860,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     
     // src
     search_hit("src=", line, srcip);
-    websWrite (wp, "<td align=\"right\" onmouseover=\"DisplayHostNameDiv(this, event, 20, 50, '<\% gethostnamebyip(\"this.value\"); \%>')\" onmouseout=\"unDisplayHostNameDiv()\">%s</td>", srcip);
+    websWrite (wp, "<td align=\"right\" onmouseover='DisplayHostNameDiv(this, event, 20, 50, <\% gethostnamebyip(\"this.value\"); \%>)' onmouseout=\"unDisplayHostNameDiv()\">%s</td>", srcip);
     
     // dst
     search_hit("dst=", line, dstip);
