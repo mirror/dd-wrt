@@ -5841,7 +5841,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   	websWrite (wp, "<tr>\n");
   	
   	// Nb
-  	websWrite (wp, "\t<td align=\"right\">%d</td>\n", ip_count);
+  	websWrite (wp, "\t<td align=\"right\">%d</td>", ip_count);
   	
   	// Proto
   	if (string_search(line, "tcp"))
@@ -5851,27 +5851,26 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     else if (string_search(line, "icmp"))
     	sprintf (protocol, "ICMP");
     else
-    	sprintf (protocol, "Unknown");
-    websWrite (wp, "\t<td>%s</td>\n", protocol);
+    	sprintf (protocol, live_translate ("share.unknown"));
+    websWrite (wp, "\t<td>%s</td>", protocol);
     
     // Timeout
     sscanf(line,"%s %d %d",&dum1[0],&dum2,&timeout);
-    websWrite (wp, "\t<td align=\"right\">%d</td>\n", timeout);
+    websWrite (wp, "\t<td align=\"right\">%d</td>", timeout);
     
     // src
     search_hit("src=", line, srcip);
-    websWrite (wp, "\t<td align=\"right\">%s</td>\n", srcip);
+    websWrite (wp, "\t<td align=\"right\" onmouseover=\"DisplayHostNameDiv(this,event,20,50,'<% gethostnamebyip(\"this.value\") %>')\" onmouseout=\"unDisplayHostNameDiv()\">%s</td>", srcip);
     
     // dst
     search_hit("dst=", line, dstip);
-    websWrite (wp, "\t<td align=\"right\">%s</td>\n", dstip);
+    websWrite (wp, "\t<td align=\"right\">%s</td>", dstip);
     
     // service
     search_hit("dport=", line, dstport);
     _dport = atoi (dstport);
     servp = my_getservbyport (htons (_dport), protocol);
-    websWrite (wp, "\t<td align=\"right\">%s</td>\n", servp ? servp->s_name : dstport);  //see why have this error : "error: dereferencing pointer to incomplete type"
-    //websWrite (wp, "<td>&nbsp;</td>\n");
+    websWrite (wp, "\t<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
     
     // State
     if (string_search(line, "ESTABLISHED"))
@@ -5892,10 +5891,6 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 	     	sprintf (state, "&nbsp;");
     }
     websWrite (wp, "\t<td>%s</td>\n", state);
-    
-    // Name resolution ??? BS'help plz
-    sprintf (state, "&nbsp;");
-    websWrite (wp, "\t<td>%s</td>\n", state);
     websWrite (wp, "</tr>\n");
     
     ip_count++;
@@ -5904,6 +5899,25 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   fclose (fp);
 
   return;
+}
+
+void
+ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
+{
+	char mybuf[64];
+	char *argument;
+  
+	if (ejArgs (argc, argv, "%s", &argument) < 1) {
+		websError (wp, 400, "Insufficient args\n");
+		return;
+	}
+	
+	if (argc == 1) {
+		getHostName(mybuf, argument);
+		websWrite (wp, "%s", mybuf);
+	}
+	
+	return;
 }
 
 
@@ -6061,7 +6075,6 @@ Inter-|   Receive                                                |  Transmit
   websWrite (wp, "SWTXerrorPacket=%ld;",
 	     info.tx_errs + info.tx_drops + info.tx_colls);
 
-
   return;
 }
 
@@ -6105,7 +6118,8 @@ void ej_bandwidth(int eid, webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
 	int sig;
-        char *argument;
+  char *argument;
+  
 	if (ejArgs (argc, argv, "%s", &argument) < 1)
         {
            websError (wp, 400, "Insufficient args\n");
