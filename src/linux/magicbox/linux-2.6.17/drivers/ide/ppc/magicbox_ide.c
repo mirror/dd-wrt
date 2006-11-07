@@ -1,7 +1,5 @@
 /* Driver for MagicBox 2.0 onboard CompactFlash adapter.
- *
- * Driver written with an invaluable help of Wojtek Kaniewski.
- * Modifications by Karol Lewandowski.
+ * Written by Wojtek Kaniewski <wojtekka@toxygen.net>
  *
  * GNU General Public License.
  */
@@ -13,33 +11,82 @@
 #include <linux/hdreg.h>
 #include <linux/ide.h>
 #include <linux/delay.h>
-#include <linux/byteorder/swab.h>
+
 
 #define UIC0_PR 0xc4
 #define UIC0_TR 0xc5
 #define IRQ 25
 
-static int ide_offsets[IDE_NR_PORTS] = {0, 3, 5, 7, 9, 11, 13, 15, -1, -1};
+static int ide_offsets[IDE_NR_PORTS] = {0, 2, 4, 6, 8, 10, 12, 14, -1, -1};
 
-static void magicbox_outsw(void __iomem *port, void *addr, u32 count)
+static u8 magicbox_ide_inb (unsigned long port)
 {
-//	printk("magicbox_outsw: mark\n");
-	while (count--) {
-//		printk("magicbox_outsw: %c,%c\n", *(u8 *)addr, *(u8 *)(addr + 1));
-		u16 tmp = swab16(*(u16 *)addr);
-		writew(tmp, port);
-		addr += 2;
-	}
+	return (u8) (readw((void __iomem *) port) >> 8) & 255;
 }
 
-static void magicbox_insw(void __iomem *port, void *addr, u32 count)
+static u16 magicbox_ide_inw (unsigned long port)
 {
-	while (count--) {
-		*(u16 *)addr = readw(port+1);
-		addr += 2;
-	}
+	return (u16) readw((void __iomem *) port);
 }
- 
+
+static void magicbox_ide_insw (unsigned long port, void *addr, u32 count)
+{
+	u16 *ptr;
+
+	for (ptr = addr; count--; ptr++)
+		*ptr = readw((void __iomem *) port);
+}
+
+static u32 magicbox_ide_inl (unsigned long port)
+{
+	return (u32) readl((void __iomem *) port);
+}
+
+static void magicbox_ide_insl (unsigned long port, void *addr, u32 count)
+{
+	u32 *ptr;
+
+	for (ptr = addr; count--; ptr++)
+		*ptr = readl((void __iomem *) port);
+}
+
+static void magicbox_ide_outb (u8 value, unsigned long port)
+{
+	writew(value << 8, (void __iomem *) port);
+}
+
+static void magicbox_ide_outbsync (ide_drive_t *drive, u8 value, unsigned long port)
+{
+	writew(value << 8, (void __iomem *) port);
+}
+
+static void magicbox_ide_outw (u16 value, unsigned long port)
+{
+	writew(value, (void __iomem *) port);
+}
+
+static void magicbox_ide_outsw (unsigned long port, void *addr, u32 count)
+{
+	u16 *ptr;
+
+	for (ptr = addr; count--; ptr++)
+		writew(*ptr, (void __iomem *) port);
+}
+
+static void magicbox_ide_outl (u32 value, unsigned long port)
+{
+	writel(value, (void __iomem *) port);
+}
+
+static void magicbox_ide_outsl (unsigned long port, void *addr, u32 count)
+{
+	u32 *ptr;
+
+	for (ptr = addr; count--; ptr++)
+		writel(*ptr, (void __iomem *) port);
+}
+
+
 static void __init ide_magicbox_register(unsigned long addr,
 					 unsigned long caddr, int irq)
 {
@@ -47,18 +94,24 @@ static void __init ide_magicbox_register(unsigned long addr,
 	ide_hwif_t *hwif;
 
   	memset(&hw, 0, sizeof(hw));
-	ide_setup_ports(&hw, addr, ide_offsets, caddr + 0xd, 0, NULL,irq);
+	ide_setup_ports(&hw, addr, ide_offsets, caddr + 12, 0, NULL,irq);
 
 	if (ide_register_hw(&hw, &hwif) != -1)
 	{
-		printk(KERN_NOTICE "magicbox-cf: Found IDE-CF adapter\n");
+		printk(KERN_NOTICE "magicbox-ide: Registered IDE-CF driver\n");
 		hwif->mmio = 2;
 		hwif->drives[0].unmask = 1;
-		default_hwif_mmiops(hwif);
-
-//		hwif->OUTSW = magicbox_outsw;
-//		hwif->INSW = magicbox_insw;
-//		hwif->INW = magicbox_inw;
+		hwif->OUTB = magicbox_ide_outb;
+		hwif->OUTBSYNC = magicbox_ide_outbsync;
+		hwif->OUTW = magicbox_ide_outw;
+		hwif->OUTL = magicbox_ide_outl;
+		hwif->OUTSW = magicbox_ide_outsw;
+		hwif->OUTSL = magicbox_ide_outsl;
+		hwif->INB = magicbox_ide_inb;
+		hwif->INW = magicbox_ide_inw;
+		hwif->INL = magicbox_ide_inl;
+		hwif->INSW = magicbox_ide_insw;
+		hwif->INSL = magicbox_ide_insl;
 	}
 }
 
@@ -74,19 +127,17 @@ void __init ide_magicbox_init(void)
 	mtdcr(DCRN_EBC_BASE, 0x02);
 	mtdcr(DCRN_EBC_BASE + 1, 0xff11a000);
 	mtdcr(DCRN_EBC_BASE, 0x12);
-	//	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
-	mtdcr(DCRN_EBC_BASE + 1, 0x080bd400);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
 
 	/* PerCS1 (CF's CS1): base 0xff200000, 16-bit, rw */
 	mtdcr(DCRN_EBC_BASE, 0x01);
-	mtdcr(DCRN_EBC_BASE + 1, 0xff31a000);
+	mtdcr(DCRN_EBC_BASE + 1, 0xff21a000);
 	mtdcr(DCRN_EBC_BASE, 0x11);
-	//	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
-	mtdcr(DCRN_EBC_BASE + 1, 0x080bd400);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
 
 	/* Remap physical address space */
 	addr = ioremap_nocache(0xff100000, 4096);
-	caddr = ioremap_nocache(0xff300000, 4096);
+	caddr = ioremap_nocache(0xff200000, 4096);
 
 	/* Set interrupt to low-to-high-edge-triggered */
 	mtdcr(UIC0_TR, mfdcr(UIC0_TR) & ~(0x80000000L >> IRQ));
