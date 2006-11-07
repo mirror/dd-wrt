@@ -169,6 +169,7 @@ extern int stop_ppp (webs_t wp);
 extern void ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv);
 
 
 /*for dhcp */
