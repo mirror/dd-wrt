@@ -16,8 +16,3 @@
 	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% nvram_checked("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,0,9999,'Idle time')" value="<% nvram_get("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
 	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% nvram_checked("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,'Redial period')" value="<% nvram_get("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>
 </div>
-<div class="setting">
-	<div class="label"><% tran("idx_pppoe.use_rp"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pppoe_ver" <% nvram_checked("pppoe_ver","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pppoe_ver" <% nvram_checked("pppoe_ver","0"); %> /><% tran("share.disable"); %>
-</div>
