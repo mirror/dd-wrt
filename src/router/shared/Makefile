@@ -151,6 +151,9 @@ endif
 ifeq ($(CONFIG_OMNI),y)
 CFLAGS += -DHAVE_OMNI
 endif
+ifeq ($(CONFIG_MAKSAT),y)
+CFLAGS += -DHAVE_MAKSAT
+endif
 
 ifeq ($(CONFIG_ZEROIP),y)
 CFLAGS += -DHAVE_ZEROIP
