@@ -877,3 +877,41 @@ function scaleSize(num)
 	} while ((num > 9999) && (s < 2));
 	return comma(num.toFixed(2)) + '<small> ' + (['KB', 'MB', 'GB'])[s] + '</small>';
 }
+
+function DisplayDiv(current,evt,h,w,text)
+{
+	var width = w;
+	var height = h;
+	
+	text = text.replace(/&lt;/gi,'<');
+	text = text.replace(/&gt;/gi,'>');
+	
+	if(document.all) {
+		if(document.readyState == 'complete') {
+			document.all.bulle.innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
+			document.all.bulle.style.pixelLeft = event.clientX + document.body.scrollLeft + largeur;
+			document.all.bulle.style.pixelTop = event.clientY + document.body.scrollTop + hauteur;
+			document.all.bulle.style.visibility = 'visible';
+		}
+	}
+	
+	else if(document.getElementById) {
+		document.getElementById('bulle').innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
+		document.getElementById('bulle').style.left = evt.pageX + largeur + 'px';
+		document.getElementById('bulle').style.top = evt.pageY + hauteur + 'px';
+		document.getElementById('bulle').style.visibility = 'visible';
+	}
+}
+
+function unDisplayHostNameDiv()
+{
+	if(document.all) {
+		document.all.bulle.style.visibility = 'hidden';
+	}
+	else if(document.layers) {
+		document.bulle.visibility = 'hidden';
+	}
+	else if(document.getElementById) {
+		document.getElementById('bulle').style.visibility = 'hidden';
+	}
+}
