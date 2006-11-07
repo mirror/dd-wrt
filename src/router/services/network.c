@@ -1600,12 +1600,15 @@ start_wan (int status)
     return;
 #ifdef HAVE_PPPOE
   /* Check PPPoE version, RP or linksys */
+#if 0
   int pppoe_rp;
   if (!strcmp (nvram_safe_get ("pppoe_ver"), "1"))
     pppoe_rp = 1;
   else
     pppoe_rp = 0;
-
+#else
+int pppoe_rp = 1;
+#endif
   if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
   else
@@ -1643,6 +1646,7 @@ start_wan (int status)
 
 #ifdef HAVE_PPPOE
   /* PPPOE MAC fix */
+#if 0
   if (nvram_match ("ppp_demand", "1") && !pppoe_rp
       && (strcmp (wan_proto, "pppoe") == 0))
     {
@@ -1650,6 +1654,7 @@ start_wan (int status)
       nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
       pppoe_flag = 1;
     }
+#endif
 #endif
 
 #endif
