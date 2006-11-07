@@ -315,11 +315,7 @@ bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC Address Clone";
 bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
-<<<<<<< .mine
 bmenu.setupeop="EoIP Tunnel";
-=======
-bmenu.setupeop="EOP Tunnel";
->>>>>>> .r4566
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Basic Settings";
