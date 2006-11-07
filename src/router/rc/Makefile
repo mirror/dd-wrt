@@ -88,6 +88,9 @@ endif
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP
 endif
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+CFLAGS += -DHAVE_EOP_TUNNEL
+endif
 ifeq ($(CONFIG_DDLAN),y)
 CFLAGS += -DHAVE_DDLAN
 endif
