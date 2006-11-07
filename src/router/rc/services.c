@@ -244,13 +244,13 @@ start_single_service (void)
   cprintf ("Restart service=[%s]\n", service);
   start_service ("overclocking");
 
-  if (!strcmp (service, "dhcp") || !strcmp (service, "services"))
+  if (!strcmp (service, "dhcp"))
     {
       startstop ("udhcpd");
       nvram_set ("action_service", "");
       nvram_set ("action_service_arg1", "");
       return 0;
-    }
+    }else
   if (!strcmp (service, "index"))
     {
       unlink ("/tmp/ppp/log");
@@ -298,6 +298,7 @@ start_single_service (void)
     }
   else if (!strcmp (service, "services"))
     {
+      startstop ("udhcpd");
       startstop ("syslog");
 #ifdef HAVE_RSTATS
       startstop ("rstats");
