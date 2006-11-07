@@ -2,11 +2,14 @@
 nv=/usr/sbin/nvram
 for i in 1 2 3 4 5
 do
+	id=$($nv get oet${i}_id)
 	/usr/sbin/iptables -D FORWARD -i tap10${i} -j ACCEPT
 	/usr/sbin/iptables -D FORWARD -o tap10${i} -j ACCEPT
 	/usr/sbin/iptables -D INPUT -i tap10${i} -j ACCEPT
+	/usr/sbin/iptables -D INPUT -p udp --dport 3500${id}  -j ACCEPT
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
+	/usr/sbin/iptables -I INPUT -p udp --dport 3500${id}  -j ACCEPT
 		if [ "$($nv get oet${i}_bridged)" != "1" ]
 		then
 
