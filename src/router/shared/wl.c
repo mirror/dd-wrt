@@ -32,24 +32,24 @@ struct nvram_tuple router_defaults[] = {
 int
 getchannels (unsigned int *list)
 {
- // int ret, num;
-//  num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
-//  memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
+  // int ret, num;
+//  num = (sizeof (*list) - 4) / 6;     /* Maximum number of entries in the buffer */
+//  memcpy (list, &num, 4);     /* First 4 bytes are the number of ent. */
 
 //  ret = wl_ioctl (name, WLC_GET_VALID_CHANNELS, list, 128);
 //fprintf(stderr,"get channels\n");
-FILE *in=popen("wl channels","r");
+  FILE *in = popen ("wl channels", "r");
 #ifndef HAVE_MSSID
-while(fgetc(in)!=':');
+  while (fgetc (in) != ':');
 #endif
-int chan;
-int count=0;
-while (fscanf(in,"%d",&chan)!=EOF)
+  int chan;
+  int count = 0;
+  while (fscanf (in, "%d", &chan) != EOF)
     {
-    list[count++]=chan;
+      list[count++] = chan;
     }
-pclose(in);
-return count;
+  pclose (in);
+  return count;
 }
 
 int
@@ -80,7 +80,7 @@ getassoclist (char *name, unsigned char *list)
 	struct maclist *l = (struct maclist*)list;
 	l->count=1;
 	memcpy(&l->ea,&sta_info->ea,6);*/
-return ret;
+  return ret;
 }
 
 int
@@ -96,26 +96,27 @@ getwdslist (char *name, unsigned char *list)
   return (ret);
 }
 
-int getNoise(char *name)
+int
+getNoise (char *name)
 {
-	unsigned int noise;
-	//rssi = 0;
-        //char buf[WLC_IOCTL_MAXLEN];
-	if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+  unsigned int noise;
+  //rssi = 0;
+  //char buf[WLC_IOCTL_MAXLEN];
+  if (wl_ioctl (name, WLC_GET_PHY_NOISE, &noise, sizeof (noise)) < 0)
 
-	/*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
-	memset(buf,0,WLC_IOCTL_MAXLEN);
-	
-	wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
-	if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
-		if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
-			noise = 0;
-	} else {
-		// somehow the structure doesn't fit here
-		rssi = buf[82];
-		noise = buf[84];
-	}*/
-return noise;
+    /*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+       memset(buf,0,WLC_IOCTL_MAXLEN);
+
+       wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
+       if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
+       if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+       noise = 0;
+       } else {
+       // somehow the structure doesn't fit here
+       rssi = buf[82];
+       noise = buf[84];
+       } */
+    return noise;
 }
 
 
@@ -195,12 +196,13 @@ getsocket (void)
 }
 
 
-double wifi_getrate(char *ifname)
+double
+wifi_getrate (char *ifname)
 {
-struct iwreq		wrq;
-strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-ioctl(getsocket(), SIOCGIWRATE, &wrq);
-return wrq.u.bitrate.value;
+  struct iwreq wrq;
+  strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
+  ioctl (getsocket (), SIOCGIWRATE, &wrq);
+  return wrq.u.bitrate.value;
 }
 
 static u_int
@@ -215,23 +217,24 @@ ieee80211_mhz2ieee (u_int freq)
   return (freq - 5000) / 5;
 }
 
-int wifi_getchannel(char *ifname)
+int
+wifi_getchannel (char *ifname)
 {
-struct iwreq		wrq;
-double freq;
-int channel;
-strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-ioctl(getsocket(),SIOCGIWFREQ, &wrq);
+  struct iwreq wrq;
+  double freq;
+  int channel;
+  strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
+  ioctl (getsocket (), SIOCGIWFREQ, &wrq);
 
-  int		i;
+  int i;
   freq = (double) wrq.u.freq.m;
-  for(i = 0; i < wrq.u.freq.e; i++)
+  for (i = 0; i < wrq.u.freq.e; i++)
     freq *= 10;
-freq/=1000000;
-cprintf("wifi channel %f\n",freq);
-channel = ieee80211_mhz2ieee(freq);
+  freq /= 1000000;
+  cprintf ("wifi channel %f\n", freq);
+  channel = ieee80211_mhz2ieee (freq);
 
-return channel;
+  return channel;
 }
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
@@ -326,7 +329,7 @@ list_channelsext (const char *ifname, int allchans)
   if (get80211priv
       (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
     {
-    fprintf(stderr,"unable to get channel information\n");
+      fprintf (stderr, "unable to get channel information\n");
       return NULL;
     }
   if (!allchans)
@@ -336,7 +339,7 @@ list_channelsext (const char *ifname, int allchans)
       if (get80211priv
 	  (ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)
 	{
-      fprintf(stderr, "unable to get active channel list\n");
+	  fprintf (stderr, "unable to get active channel list\n");
 	  return NULL;
 	}
       memset (&achans, 0, sizeof (achans));
@@ -367,7 +370,8 @@ list_channelsext (const char *ifname, int allchans)
       //filter out A channels if mode isnt A-Only or mixed
       if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))
 	{
-	  if (nvram_invmatch (wl_mode, "a-only") && nvram_invmatch (wl_mode, "mixed"))
+	  if (nvram_invmatch (wl_mode, "a-only")
+	      && nvram_invmatch (wl_mode, "mixed"))
 	    continue;
 	}
       //filter out B/G channels if mode isnt g-only, b-only or mixed
@@ -448,7 +452,7 @@ list_channels (char *devnr)
 int
 getdevicecount (void)
 {
-  int count=getifcount("wifi");
+  int count = getifcount ("wifi");
   if (count < 7 && count > 0)
     return count;
   return 0;
@@ -458,7 +462,8 @@ getdevicecount (void)
 
 
 
-int getassoclist(char *ifname, unsigned char *list)
+int
+getassoclist (char *ifname, unsigned char *list)
 {
   unsigned char buf[24 * 1024];
   unsigned char *cp;
@@ -477,7 +482,7 @@ int getassoclist(char *ifname, unsigned char *list)
   iwr.u.data.length = sizeof (buf);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
-      close(s);
+      close (s);
       return -1;
     }
   len = iwr.u.data.length;
@@ -485,22 +490,22 @@ int getassoclist(char *ifname, unsigned char *list)
     return -1;
   int cnt = 0;
   cp = buf;
-  unsigned char *l = (unsigned char*)list;
-  uint *count = (uint*)list;
-  l+=4;
+  unsigned char *l = (unsigned char *) list;
+  uint *count = (uint *) list;
+  l += 4;
   do
     {
       struct ieee80211req_sta_info *si;
-      si = (struct ieee80211req_sta_info *) cp;            
-      memcpy(l,&si->isi_macaddr[0],6);
+      si = (struct ieee80211req_sta_info *) cp;
+      memcpy (l, &si->isi_macaddr[0], 6);
 //      printf("%X%X%X%X%X%X\n",l[0],l[1],l[2],l[3],l[4],l[5]);
-      l+=6;
-      count[0]++;      
+      l += 6;
+      count[0]++;
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-close(s);
-return count[0];
+  close (s);
+  return count[0];
 }
 
 
@@ -524,28 +529,28 @@ get_wdev (void)
 /* end Sveasoft addition */
 
 int
-wl_probe(char *name)
+wl_probe (char *name)
 {
-	int ret, val;
+  int ret, val;
 
 #if defined(linux)
-	char buf[DEV_TYPE_LEN];
-	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0)
-		return ret;
-	/* Check interface */
-	if (strncmp(buf, "wl", 2))
-		return -1;
+  char buf[DEV_TYPE_LEN];
+  if ((ret = wl_get_dev_type (name, buf, DEV_TYPE_LEN)) < 0)
+    return ret;
+  /* Check interface */
+  if (strncmp (buf, "wl", 2))
+    return -1;
 #else
-	/* Check interface */
-	if ((ret = wl_ioctl(name, WLC_GET_MAGIC, &val, sizeof(val))))
-		return ret;
+  /* Check interface */
+  if ((ret = wl_ioctl (name, WLC_GET_MAGIC, &val, sizeof (val))))
+    return ret;
 #endif
-	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val))))
-		return ret;
-	if (val > WLC_IOCTL_VERSION)
-		return -1;
+  if ((ret = wl_ioctl (name, WLC_GET_VERSION, &val, sizeof (val))))
+    return ret;
+  if (val > WLC_IOCTL_VERSION)
+    return -1;
 
-	return ret;
+  return ret;
 }
 
 /*int
@@ -860,4 +865,3 @@ wl_printlasterror(char *name)
 */
 
 //#endif
-
