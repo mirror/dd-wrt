@@ -319,6 +319,7 @@ void lcdmessaged(char *dual,char *message);
 #define lcdmessage(a)
 #define lcdmessaged(a,b)
 #endif
+void getHostName (char *buf, char *ip);
 int ishexit (char c);
 int haswifi (void);
 int sv_valid_hwaddr (char *value);

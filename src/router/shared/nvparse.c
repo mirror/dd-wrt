@@ -571,7 +571,7 @@ valid_filter_client (const netconf_filter_t * start,
     return FALSE;
 
   /* Check time range */
-  if (start->match.secs[0] < 0 || start->match.secs[0] >= 86400 ||   //24 * 60 * 60
+  if (start->match.secs[0] < 0 || start->match.secs[0] >= 86400 ||	//24 * 60 * 60
       start->match.secs[1] < 0 || start->match.secs[1] >= 86400 ||
       start->match.secs[0] != end->match.secs[0] ||
       start->match.secs[1] != end->match.secs[1])
