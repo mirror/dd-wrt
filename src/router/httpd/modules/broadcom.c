@@ -4595,10 +4595,9 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 				 {
 					while (fgets(buf, sizeof(buf), host))
 						{
-							strcpy (fullip, ip);
-							strcat (fullip, "\t");
-
-						if (strstr(buf, fullip) != NULL)
+						sscanf (buf, "%15s %*s", fullip);
+						
+							if (strcmp(ip, fullip) == 0)
 							{
 							sscanf(buf, "%*15s %s", hostname);
 							}
@@ -4616,10 +4615,9 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 
 					while (fgets(buf, sizeof(buf), host))
 						{
-							strcpy (fullip, ip);
-							strcat (fullip, " ");
+						sscanf (buf, "%*lu %*17s %15s %*s", fullip);
 
-							if (strstr(buf, fullip) != NULL)
+							if (strcmp(ip, fullip) == 0)
 							{
 							sscanf (buf, "%*lu %*17s %*15s %s", hostname);
 							}
