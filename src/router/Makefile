@@ -253,7 +253,7 @@ optimize-lib:
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
 
-install package: $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
+install package: clean_target $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
