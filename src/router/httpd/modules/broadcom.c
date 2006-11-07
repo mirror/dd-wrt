@@ -4606,11 +4606,14 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 				}
 /* end hosts file lookup */
 
-/* check  for dnsmasq leases in /tmp/dnsmasq.leases if hostname is still unknown */
+/* check  for dnsmasq leases in /tmp/dnsmasq.leases and /jffs/ if hostname is still unknown */
 
 		if (!strcmp(hostname, "*") && nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("dhcpd_usenvram", "0"))
 			{
-			if ((host = fopen("/tmp/dnsmasq.leases", "r")) != NULL)
+			      if (!(host = fopen ("/tmp/dnsmasq.leases", "r")))
+					host = fopen ("/jffs/dnsmasq.leases", "r");
+
+      		if (host)	
 				 {
 
 					while (fgets(buf, sizeof(buf), host))
