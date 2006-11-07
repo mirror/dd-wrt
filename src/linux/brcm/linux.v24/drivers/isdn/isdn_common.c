@@ -1213,6 +1213,10 @@ isdn_read(struct file *file, char *buf, size_t count, loff_t * off)
 			len = dev->drv[drvidx]->interface->
 				readstat(buf, count, 1, drvidx,
 					 isdn_minor2chan(minor));
+			if (len < 0) {
+				retval = len;
+				goto out;
+			}
 		} else {
 			len = 0;
 		}

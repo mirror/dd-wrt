@@ -140,8 +140,8 @@ void br_become_root_bridge(struct net_bridge *br)
 	br->forward_delay = br->bridge_forward_delay;
 	br_topology_change_detection(br);
 	br_timer_clear(&br->tcn_timer);
-	br_config_bpdu_generation(br);
-	br_timer_set(&br->hello_timer, jiffies);
+
+	br_timer_set(&br->hello_timer, jiffies - br->hello_time);
 }
 
 /* called under bridge lock */
