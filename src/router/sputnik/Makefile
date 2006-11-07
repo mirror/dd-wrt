@@ -1,6 +1,6 @@
-CFLAGS += -Os -Wall -fpic
+CFLAGS += $(COPTS)
 
-ARCH = powerpc
+#ARCH = mipsel
 #CC = /opt/staging_dir_armeb/bin/armeb-linux-uclibc-gcc
 CC = $(ARCH)-linux-uclibc-gcc
 
