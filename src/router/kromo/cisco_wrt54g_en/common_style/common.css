@@ -358,6 +358,28 @@ padding:.0em .5em;
 input.spaceradio {
 margin-right:.4em;
 }
+/* gor DIV popup Style */
+div.bulle {
+	width:300em;
+	background-color:#e8e8e8;
+	position:absolute;
+	visibility:hidden;
+	z-index:2000;
+}
+table.bulle {
+	width:100%;
+	height:auto;
+	margin:0em;
+	padding:0em;
+	border:1em solid #000000;
+	text-align:justify;
+}
+td.bulle {
+	width:100%;
+	height:auto;
+	padding:5em;
+	border:0em;
+}
 
 /* For Opera browsers only */
 @media all and (min-width: 0px){
