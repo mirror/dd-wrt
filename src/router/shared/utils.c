@@ -17,6 +17,7 @@
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #ifndef TESTUTIL
 
@@ -427,7 +428,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
       setRouter ("Linksys WRT-300N v1");
-      nvram_set("wl0gpio0", "8");
+      nvram_set ("wl0gpio0", "8");
       return ROUTER_WRT300N;
     }
 
@@ -2247,25 +2248,50 @@ int
 getifcount (const char *ifprefix)
 {
   char devcall[128];
-  
+
   sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l", ifprefix);
   FILE *in = popen (devcall, "rb");
-  if (in==NULL)return 0;
+  if (in == NULL)
+    return 0;
   int count;
   fscanf (in, "%d", &count);
   pclose (in);
   return count;
-  
+
 }
-int haswifi(void)
+
+int
+haswifi (void)
 {
 #ifdef HAVE_NOWIFI
-return 0;
+  return 0;
 #elif HAVE_MADWIFI
-return getifcount("wifi")>0?1:0;
+  return getifcount ("wifi") > 0 ? 1 : 0;
 #else
-return 1;
+  return 1;
 #endif
+}
+static uint32_t
+str_to_addr (const char *addr)
+{
+  uint32_t split[4];
+  uint32_t ip;
+
+  sscanf (addr, "%d.%d.%d.%d", &split[0], &split[1], &split[2], &split[3]);
+
+  ip = (split[0] << 24) | (split[1] << 16) | (split[2] << 8) | (split[3]);
+
+  return htonl (ip);
+}
+
+void
+getHostName (char *buf, char *ip)
+{
+  struct hostent *host;
+  struct in_addr addr;
+  addr.s_addr = str_to_addr (ip);
+  host = gethostbyaddr ((char *) &addr, 4, AF_INET);
+  strcpy (buf, host->h_name);
 }
 
 void
@@ -2428,157 +2454,196 @@ killall (const char *name, int sig)
     }
   return -2;
 }
+
 #ifdef HAVE_X86
 
 static int fd;
 
-void SetEnvironment () {
-  system("stty ispeed 2400 < /dev/tts/1");
-  system("stty raw < /dev/tts/1");
+void
+SetEnvironment ()
+{
+  system ("stty ispeed 2400 < /dev/tts/1");
+  system ("stty raw < /dev/tts/1");
 }
 
-int Cmd = 254;  /* EZIO Command */
-int cls = 1;    /* Clear screen */
-void Cls () { 
-  write(fd,&Cmd,1);
-  write(fd,&cls,1);	
+int Cmd = 254;			/* EZIO Command */
+int cls = 1;			/* Clear screen */
+void
+Cls ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &cls, 1);
 }
 
 int init = 0x28;
-void Init () {
-  write(fd,&Cmd,1);
-  write(fd,&init,1);	
+void
+Init ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &init, 1);
 }
 
 int stopsend = 0x37;
-void StopSend () {
-  write(fd,&Cmd,1);
-  write(fd,&init,1);	
-}
-
-int home = 2	;   /* Home cursor */
-void Home () {
-  write(fd,&Cmd,1);
-  write(fd,&home,1);
-}
-	
-int readkey = 6	;   /* Read key */
-void ReadKey () {
-  write(fd,&Cmd,1);
-  write(fd,&readkey,1);
-}
-
-int blank = 8	;   /* Blank display */
-void Blank () {
-  write(fd,&Cmd,1);
-  write(fd,&blank,1);
-}
-
-int hide = 12	;   /* Hide cursor & display blanked characters */
-void Hide () {
-  write(fd,&Cmd,1);
-  write(fd,&hide,1);
-}
-
-int turn = 13	;   /* Turn On (blinking block cursor) */
-void TurnOn () {
-  write(fd,&Cmd,1);
-  write(fd,&turn,1);
-}
-
-int show = 14	;   /* Show underline cursor */
-void Show () {
-  write(fd,&Cmd,1);
-  write(fd,&show,1);
-}
-
-int movel = 16	;   /* Move cursor 1 character left */
-void MoveL () {
-  write(fd,&Cmd,1);
-  write(fd,&movel,1);
-}
-
-int mover = 20	;   /* Move cursor 1 character right */
-void MoveR () {
-  write(fd,&Cmd,1);
-  write(fd,&mover,1);
-}
-
-int scl = 24;  	    /* Scroll cursor 1 character left */
-void ScrollL(){
-  write(fd,&Cmd,1);
-  write(fd,&scl,1);
-}
-
-int scr = 28;       /* Scroll cursor 1 character right */
-void ScrollR(){
-  write(fd,&Cmd,1);
-  write(fd,&scr,1);
-}
-
-int setdis =  64;/* Command */
-void SetDis(){
-  write(fd,&Cmd,1);
-  write(fd,&setdis,1);
-  
- }
-
-
-int a,b;
-void ShowMessage (char *str1 , char *str2) {
-char nul[] = "                                       ";
-   a = strlen(str1);
-   b = 40 - a;
-   write(fd,str1,a);
-   write(fd,nul,b);
-   write(fd,str2,strlen(str2));
-}
-
-void initlcd()
+void
+StopSend ()
 {
-  SetEnvironment();	/* Set RAW mode */
-  
-  fd = open("/dev/tts/1" ,O_RDWR);/** Open Serial port (COM2) */
-  if (fd>0)
-  {        
-	Init(); /* Initialize EZIO twice */
-        Init();
-        
-	Cls();	/* Clear screen */
-  }
-  close(fd);
+  write (fd, &Cmd, 1);
+  write (fd, &init, 1);
 }
 
-void lcdmessage(char *message) {
-   fd = open("/dev/tts/1" ,O_RDWR);/** Open Serial port (COM2) */
- 
-  if (fd>0)
-  {        
-	Init(); /* Initialize EZIO twice */
-        Init();
-        SetDis();  
-	Cls();
-	Home();
-	ShowMessage("State",message);
-  close(fd);
-  }	
+int home = 2;			/* Home cursor */
+void
+Home ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &home, 1);
 }
-void lcdmessaged(char *dual,char *message) {
-        
-  fd = open("/dev/tts/1" ,O_RDWR);/** Open Serial port (COM2) */
 
-  if (fd>0)
-  {        
-	Init(); /* Initialize EZIO twice */
-        Init();
-        SetDis();  
-	Cls();	/* Clear screen */
-	Home();
-	ShowMessage(dual,message);
-  close(fd);
-  }	
+int readkey = 6;		/* Read key */
+void
+ReadKey ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &readkey, 1);
+}
+
+int blank = 8;			/* Blank display */
+void
+Blank ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &blank, 1);
+}
+
+int hide = 12;			/* Hide cursor & display blanked characters */
+void
+Hide ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &hide, 1);
+}
+
+int turn = 13;			/* Turn On (blinking block cursor) */
+void
+TurnOn ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &turn, 1);
+}
+
+int show = 14;			/* Show underline cursor */
+void
+Show ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &show, 1);
+}
+
+int movel = 16;			/* Move cursor 1 character left */
+void
+MoveL ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &movel, 1);
+}
+
+int mover = 20;			/* Move cursor 1 character right */
+void
+MoveR ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &mover, 1);
+}
+
+int scl = 24;			/* Scroll cursor 1 character left */
+void
+ScrollL ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &scl, 1);
+}
+
+int scr = 28;			/* Scroll cursor 1 character right */
+void
+ScrollR ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &scr, 1);
+}
+
+int setdis = 64;		/* Command */
+void
+SetDis ()
+{
+  write (fd, &Cmd, 1);
+  write (fd, &setdis, 1);
+
+}
+
+
+int a, b;
+void
+ShowMessage (char *str1, char *str2)
+{
+  char nul[] = "                                       ";
+  a = strlen (str1);
+  b = 40 - a;
+  write (fd, str1, a);
+  write (fd, nul, b);
+  write (fd, str2, strlen (str2));
+}
+
+void
+initlcd ()
+{
+  SetEnvironment ();		/* Set RAW mode */
+
+  fd = open ("/dev/tts/1", O_RDWR);
+				  /** Open Serial port (COM2) */
+  if (fd > 0)
+    {
+      Init ();			/* Initialize EZIO twice */
+      Init ();
+
+      Cls ();			/* Clear screen */
+    }
+  close (fd);
+}
+
+void
+lcdmessage (char *message)
+{
+  fd = open ("/dev/tts/1", O_RDWR);/** Open Serial port (COM2) */
+
+  if (fd > 0)
+    {
+      Init ();			/* Initialize EZIO twice */
+      Init ();
+      SetDis ();
+      Cls ();
+      Home ();
+      ShowMessage ("State", message);
+      close (fd);
+    }
+}
+void
+lcdmessaged (char *dual, char *message)
+{
+
+  fd = open ("/dev/tts/1", O_RDWR);
+				  /** Open Serial port (COM2) */
+
+  if (fd > 0)
+    {
+      Init ();			/* Initialize EZIO twice */
+      Init ();
+      SetDis ();
+      Cls ();			/* Clear screen */
+      Home ();
+      ShowMessage (dual, message);
+      close (fd);
+    }
 }
 
 
 #endif
-

@@ -109,12 +109,15 @@ waitfor (int fd, int timeout)
  */
 
 
-int system2(char *command)
+int
+system2 (char *command)
 {
 //fprintf(stderr,"system: %s\n",command);
-return system(command);
+  return system (command);
 }
-int _eval (char *const argv[], char *path, int timeout, int *ppid)
+
+int
+_eval (char *const argv[], char *path, int timeout, int *ppid)
 {
   pid_t pid;
   int status;
