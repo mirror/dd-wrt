@@ -83,6 +83,9 @@ ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 OBJS += ppp.o
 endif
+ifeq ($(CONFIG_PPPOERELAY),y)
+CFLAGS += -DHAVE_PPPOERELAY
+endif
 
 ifeq ($(CONFIG_DDLAN),y)
 CFLAGS += -DHAVE_DDLAN

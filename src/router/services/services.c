@@ -3593,7 +3593,27 @@ start_hwmon (void)
 
 
 #endif
+#ifdef HAVE_PPPOERELAY
+void start_pppoerelay(void)
+{
+killall("pppoe-relay",SIGTERM);
 
+#ifdef HAVE_MADWIFI
+if (nvram_match("ath0_mode","sta"))
+    eval("pppoe-relay","-S","ath0","-C","br0");
+else
+#else
+if (nvram_match("wl_mode","sta"))
+    eval("pppoe-relay","-S","eth1","-C","br0");
+else
+#endif
+eval("pppoe-relay","-S",nvram_safe_get("wan_ifname"),"-C","br0");
+}
+void stop_pppoerelay(void)
+{
+killall("pppoe-relay",SIGTERM);
+}
+#endif
 
 #ifdef HAVE_USBHOTPLUG
 int

@@ -147,6 +147,9 @@ start_services (void)
 #ifdef HAVE_RSTATS
   start_service ("rstats");
 #endif
+#ifdef HAVE_PPPOERELAY
+  start_service ("pppoerelay");
+#endif
 
 
 
@@ -158,6 +161,9 @@ int
 stop_services (void)
 {
   //stop_ses();
+#ifdef HAVE_PPPOERELAY
+  stop_service ("pppoerelay");
+#endif
 #ifdef HAVE_RSTATS
   stop_service ("rstats");
 #endif
@@ -298,6 +304,9 @@ start_single_service (void)
     }
   else if (!strcmp (service, "services"))
     {
+#ifdef HAVE_PPPOERELAY
+      startstop ("pppoerelay");
+#endif
       startstop ("udhcpd");
       startstop ("syslog");
 #ifdef HAVE_RSTATS
