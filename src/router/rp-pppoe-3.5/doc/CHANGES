@@ -1,8 +1,76 @@
 # LIC: GPL
 
+Changes from Version 3.7 to 3.8: (2 April 2006)
+
+- Adjusted code and made it possible to disable debugging code to shrink
+  size of pppoe executable.
+
+- Fixed bug in MD5 code that caused pppoe-server to segfault on 64-bit
+  machines.
+
+- Made various functions and variables static that didn't need to be visible
+  outside their source files.
+
+Changes from Version 3.6 to 3.7:
+
+- Fixed typo in the firewall-standalone sample firewall script.
+  Fix courtesy of Robert Vogelgesang <vogel@users.sourceforge.net>
+
+- Added -O option to pppoe-server to let you specify a different default
+  options file for pppd instead of /etc/ppp/pppoe-server-options
+  Feature courtesy of Robert Vogelgesang <vogel@users.sourceforge.net>
+
+- Fixed some silliness and incorrectness in configure.in.
+  Feature courtesy of Robert Vogelgesang <vogel@users.sourceforge.net>
+
+- Fixed a typo in pppoe-connect.in that made it fail if used with the
+  kernel-mode plugin.
+
+- Make pppoe-server prepend "nic-" to interface name if used with
+  kernel-mode plugin.  This lets you use interfaces that don't start
+  with "eth" more easily.
+
+
+Changes from Version 3.5 to 3.6:
+
+- Changed the names of commands from adsl-* to pppoe-* to more logically
+  name the scripts.  NOTE INCOMPATIBILITY:
+
+  OLD NAME                   NEW NAME
+  adsl-start                 pppoe-start
+  adsl-stop                  pppoe-stop
+  adsl-status                pppoe-status
+  adsl-connect               pppoe-connect
+  adsl-setup                 pppoe-setup
+
+- Changed sample firewall scripts to use iptables instead of the old ipchains
+  command.
+
+- Updated KERNEL-MODE-PPPOE instructions to reflect more modern pppd that
+  is commonly distributed.
+
+- Make the userland pppoe daemon run as "nobody" if possible, once session
+  has started.
+
+- Make userland pppoe program somewhat safe if it is installed SUID or
+  SGID.  Note that I still do *NOT* recommend a SUID/SGID pppoe.
+
+- Fix long-standing bug in pppoe-server that passed arguments to pppd in the
+  wrong order.
+
+- Fix kernel-mode plugin.  It was broken by changes to pppd.  The pppd
+  maintainers fixed their version of the plugin, but neglected to inform me.
+  Thanks a lot, guys!
+
+- Make plugin accept argument of the form "nix-XXXX" to force it to use
+  device "XXXX" as the Ethernet interface.  This allows the use of devices
+  whose names do not start with "eth"
+
+
 Changes from Version 3.4 to 3.5:
 
 - Fixes for compilation on Solaris.
+
 
 Changes from Version 3.3 to 3.4:
 
@@ -19,6 +87,7 @@ Changes from Version 3.3 to 3.4:
 
 - Ignore SIGINT and SIGTERM so LCP termination packets make it out.
 
+
 Changes from Version 3.2 to 3.3:
 
 - Client works on Solaris again.  It was broken in 3.2.
@@ -32,12 +101,14 @@ Changes from Version 3.2 to 3.3:
 - Added "-d" (=debug) and "-P" (=check pool file syntax) options to
   pppoe-server.
 
+
 Changes from Version 3.1 to 3.2:
 
 - Client now ignores PADT's if they are from the wrong source MAC address
   or to the wrong destination MAC address.
 
 - Minor fixes to Makefile.in for Turbolinux.
+
 
 Changes from Version 3.0 to 3.1:
 
@@ -51,6 +122,7 @@ Changes from Version 3.0 to 3.1:
 - SECURITY BUG FIX: Server now ignores PADT's if they are from the wrong
   source MAC address.  You are STRONGLY RECOMMENDED to upgrade to 3.1
   if you use pppoe-server in production.
+
 
 Changes from Version 2.8 to 3.0:
 
@@ -74,6 +146,7 @@ Changes from Version 2.8 to 3.0:
 - Made relay.c check packet lengths rigorously; made it throw out Ethernet
   frame padding on session packets as well as discovery packets.
 
+
 Changes from Version 2.7 to 2.8:
 
 - Added init scripts for TurboLinux, courtesy of Yasuhiro Sumi.
@@ -82,6 +155,7 @@ Changes from Version 2.7 to 2.8:
   frame padding on discovery packets.
 
 *** NOTE: 2.7 was not released publicly
+
 
 Changes from Version 2.6 to 2.7:
 
@@ -104,6 +178,7 @@ Changes from Version 2.6 to 2.7:
 - Added "-o" option to PPPoE server; encoded server PID in pppoe-server
   cookie.
 
+
 Changes from Version 2.5 to 2.6:
 
 - Code should now compile cleanly on Caldera and Slackware Linux
@@ -122,6 +197,7 @@ Changes from Version 2.5 to 2.6:
 - Added PPPD_EXTRA to pppoe.conf; made the PID file depend on the config
   file name.  This makes it easier to run multiple PPPoE sessions.
 
+
 Changes from Version 2.4 to 2.5:
 
 - Tested for zero-length TCP option-length field, and for reverse-packing
@@ -130,6 +206,7 @@ Changes from Version 2.4 to 2.5:
 
 - Set umask to 077 in adsl-setup.in to protect created files like
   /etc/ppp/pap-secrets.
+
 
 Changes from Version 2.3 to 2.4:
 
@@ -142,6 +219,7 @@ Changes from Version 2.3 to 2.4:
 
 - Added FAQ to HOW-TO-CONNECT regarding running a script each time a
   connection is made.
+
 
 Changes from Version 2.2 to 2.3:
 
@@ -165,6 +243,7 @@ Changes from Version 2.2 to 2.3:
   from source unless you get the latest rpm package and make sure it
   compresses man pages.
 
+
 Changes from Version 2.1 to 2.2:
 
 - Added "-f" option to pppoe to allow use of any Ethernet frame type
@@ -172,6 +251,7 @@ Changes from Version 2.1 to 2.2:
   providers, not something you should monkey with freely!
 
 - Added pppoe-sniff program to help expose non-standard PPPoE implementations.
+
 
 Changes from Version 2.0 to 2.1:
 
@@ -181,6 +261,7 @@ Changes from Version 2.0 to 2.1:
   or not link is up.  This should make it independent of locale, I hope!
 
 - Added "-k" and "-d" options to pppoe.
+
 
 Changes from Version 1.9 to 2.0:
 
@@ -202,6 +283,7 @@ Changes from Version 1.9 to 2.0:
 
 - Addition of SuSE-specific "init" script, courtesy of Gary Cameron.
 
+
 Changes from Version 1.8 to 1.9:
 
 - Added some more documentation to HOW-TO-CONNECT
@@ -211,6 +293,7 @@ Changes from Version 1.8 to 1.9:
 - SIGHUP terminates pppoe after sending a PADT to the access concentrator
 
 - Minor cleanups to connection shell scripts
+
 
 Changes from Version 1.7 to 1.8:
 
@@ -228,4 +311,4 @@ Changes from Version 1.7 to 1.8:
 
 - Made pppoe send a PADT frame if connection is terminated
 
-$Id: CHANGES,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+$Id: CHANGES,v 1.26 2006/04/02 14:29:25 dfs Exp $

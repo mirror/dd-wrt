@@ -1,6 +1,6 @@
 # LIC: GPL
 
-$Id: HOW-TO-CONNECT,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+$Id: HOW-TO-CONNECT,v 1.4 2005/08/09 02:49:13 dfs Exp $
 
 This package lets you connect a Linux machine to Sympatico HSE or Magma's
 high-speed service using a Nortel 1-meg modem.
@@ -39,7 +39,7 @@ card to come up at boot time.
 Several files need editing.  The easiest way to do this is to run
 the following command as root:
 
-	adsl-setup
+	pppoe-setup
 
 Answer the questions and you should be all set.  If you want to know what
 goes on behind the scenes, continue reading this document.  If you don't
@@ -57,10 +57,10 @@ Your ISP may use CHAP authentication.  In this case, add the line to
 -----------------------------
 
 The file /etc/ppp/pppoe.conf contains configuration information for the
-ADSL connection.  You need to edit the following items:
+DSL connection.  You need to edit the following items:
 
 - Change ETH=eth1 to the correct Ethernet device for your modem.
-- Change USER=bxxxnxnx@sympatico.ca to your proper ADSL user-ID.
+- Change USER=bxxxnxnx@sympatico.ca to your proper DSL user-ID.
 
 Don't edit any of the other settings unless you're an expert.
 
@@ -97,15 +97,15 @@ You may want to tweak the script somewhat.
 ---------------------------------------
 
 On a Red Hat system, the installation procedure should have installed
-a script called /etc/rc.d/init.d/adsl.  To bring up the connection
+a script called /etc/rc.d/init.d/pppoe.  To bring up the connection
 at boot time, just type this command as root:
 
-	chkconfig --add adsl
+	chkconfig --add pppoe
 
 On non-Red-Hat systems, add this line to the end
 of /etc/rc.d/rc.local:
 
-	/usr/sbin/adsl-start
+	/usr/sbin/pppoe-start
 
 8. Configure LAN Hosts
 ----------------------
@@ -125,11 +125,11 @@ in an /etc/rc.d/rc.local script.
 For Windows, machines, see http://lan.cns.ksu.edu/OS/WIN95/slip95.htm.
 Set the MaxMTU to 1452.
 
-9. Commands to control the ADSL link
-------------------------------------
+9. Commands to control the PPPoE link
+-------------------------------------
 
-As root, bring up the link by typing:   adsl-start
-As root, bring down the link by typing: adsl-stop
+As root, bring up the link by typing:   pppoe-start
+As root, bring down the link by typing: pppoe-stop
 
 That's it!
 
@@ -172,7 +172,7 @@ D) pppd complains about (i) "unknown option pty" or (ii) "pty option precludes
 -----------------------------------------------------------------------------
 E) pppoe dies with the log message "Message too long"
 
-You set the MTU of the Ethernet interface connected to the ADSL modem
+You set the MTU of the Ethernet interface connected to the DSL modem
 to less than 1500.  Don't do that.
 
 -----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ G) Authentication fails
 Make sure you have the right secret in /etc/ppp/pap-secrets.  Your ISP
 may be using CHAP; it won't hurt to copy the line to /etc/ppp/chap-secrets.
 
-Also, MAKE SURE that /etc/ppp/options is EMPTY.  The "adsl-connect" script
+Also, MAKE SURE that /etc/ppp/options is EMPTY.  The "pppoe-connect" script
 supplies all required options on the command line; additional options
 in /etc/ppp/options may mess things up.
 
@@ -211,12 +211,12 @@ One possible workaround:  In /etc/ppp/pppoe.conf, find the line which reads:
 Try lowering the 1412 until it works (go down in steps of 100 or so.)  Each
 time you lower the value, you have to restart your connection like this:
 
-	adsl-stop; adsl-start
+	pppoe-stop; pppoe-start
 
 This should work around buggy routers which do not support Path MTU discovery.
 
 -----------------------------------------------------------------------------
-J) Whenever I connect using ADSL, my internal LAN no longer sees the gateway
+J) Whenever I connect using DSL, my internal LAN no longer sees the gateway
 
 You are more than likely running a 2.0.X Linux kernel.  To solve this
 problem, give the Ethernet card connected to the DSL modem a fake IP
@@ -238,7 +238,7 @@ work with the DSL modem.  You may have to run a DOS program to do this,
 or pass special parameters to the Linux driver.
 
 Some providers object to attempts to set the MRU or MTU.  Try removing
-"mtu 1492 mru 1492" from PPP_STD_OPTIONS in the adsl-connect script.
+"mtu 1492 mru 1492" from PPP_STD_OPTIONS in the pppoe-connect script.
 This problem has been seen with an ISP in Hong Kong.
 
 Your DSL provider may be using non-standard PPPoE frames or require
@@ -249,7 +249,7 @@ you'll have to ask your DSL provider if it uses non-standard PPPoE frames
 or special Service-Name fields.  Good luck getting an answer...
 
 If pppoe-sniff indicates that nothing is amiss, make sure the Ethernet
-card associated with the ADSL modem does NOT have a valid IP address.
+card associated with the DSL modem does NOT have a valid IP address.
 (NOTE: For 2.0 kernels, you may have to give it a fake IP address
 which is not on your internal subnet.  Something like 192.168.42.42
 might work if you are not using 192.168.42.*)
@@ -258,8 +258,8 @@ If you are using synchronous PPP on a slow machine, try switching to
 asynchronous PPP.
 
 Make sure no entries in the routing table go through the Ethernet card
-connected to the ADSL modem.  You might want to add these lines in
-adsl-connect:
+connected to the DSL modem.  You might want to add these lines in
+pppoe-connect:
 
 	ifconfig ethx down
 	ifconfig ethx up mtu 1500
@@ -270,15 +270,15 @@ which should reset things to sane values.
 #                        WHEN ALL ELSE FAILS:                         #
 #######################################################################
 
-If you are completely unable to connect, run the adsl-start script in
+If you are completely unable to connect, run the pppoe-start script in
 debugging mode.  If you are using bash as your shell (if you don't
 know what your shell is, it's probably bash), type this:
 
-	DEBUG=1 adsl-start
+	DEBUG=1 pppoe-start
 
 In tcsh or csh, use:
 
-	setenv DEBUG 1; adsl-start
+	setenv DEBUG 1; pppoe-start
 
 Then follow the instructions to mail the debugging file to me.  PLEASE
 DON'T DO THIS until you have exhausted all other avenues; rp-pppoe is
@@ -286,12 +286,12 @@ free software and it costs me time and money to help people with
 problems.  While I don't mind doing this, I do mind it if you don't
 make an effort to fix the problem yourself first.
 
-WARNING: If you run adsl-start in debugging mode and you manage to
+WARNING: If you run pppoe-start in debugging mode and you manage to
 connect, your connection will be extremely slow and huge amounts of
 data will quickly fill your /tmp directory.  Do not use debugging mode
 unless you really cannot get your connection to work.
 
 Be aware that debugging mode produces hex dumps which potentially reveal
 your user name and password.  If the debugging output includes packets
-labeled "PPPOE Session", you may wish to remove these packets from the
+labeled "PPPoE Session", you may wish to remove these packets from the
 dump before mailing it to me.
