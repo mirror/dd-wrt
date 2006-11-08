@@ -838,8 +838,8 @@ setupHostAP (char *prefix)
       fprintf (fp, "logger_stdout_level=2\n");
       fprintf (fp, "debug=0\n");
       fprintf (fp, "dump_file=/tmp/hostapd.dump\n");
-      fprintf (fp, "eap_server=0\n");
-      fprintf (fp, "own_ip_addr=127.0.0.1\n");
+//      fprintf (fp, "eap_server=0\n");
+//      fprintf (fp, "own_ip_addr=127.0.0.1\n");
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "eapol_key_index_workaround=0\n");
       if (nvram_match (akm, "psk") || nvram_match (akm, "wpa"))
