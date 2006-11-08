@@ -956,13 +956,13 @@ ifeq ($(CONFIG_PPPOERELAY),y)
 	install -D rp-pppoe-3.5/src/pppoe-relay $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 	install -D rp-pppoe-3.5/config/pppoe-relay.nvramconfig $(INSTALLDIR)/ppp/etc/config/pppoe-relay.nvramconfig
 	install -D rp-pppoe-3.5/config/pppoe-relay.webservices $(INSTALLDIR)/ppp/etc/config/pppoe-relay.webservices
-	install -D rp-pppoe-3.5/config/pppoe-relay.startup $(INSTALLDIR)/ppp/etc/config/pppoe-relay.startup
+#	install -D rp-pppoe-3.5/config/pppoe-relay.startup $(INSTALLDIR)/ppp/etc/config/pppoe-relay.startup
 #	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 else
 	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 endif
-	install -D rp-pppoe-3.5/config/rppppoe.startup $(INSTALLDIR)/ppp/etc/config/rppppoe.startup
-	install -D rp-pppoe-3.5/config/rppppoe.nvramconfig $(INSTALLDIR)/ppp/etc/config/rppppoe.nvramconfig
+#	install -D rp-pppoe-3.5/config/rppppoe.startup $(INSTALLDIR)/ppp/etc/config/rppppoe.startup
+#	install -D rp-pppoe-3.5/config/rppppoe.nvramconfig $(INSTALLDIR)/ppp/etc/config/rppppoe.nvramconfig
 
 ifeq ($(CONFIG_PPPOESERVER),y)
 	install -D rp-pppoe-3.5/src/pppoe-server $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
@@ -1400,10 +1400,10 @@ madwifi-install:
 
 
 sputnik:
-	@true
+	if test -e "sputnik/Makefile"; then make -C sputnik; fi
 
 sputnik-clean:
-	@true
+	if test -e "sputnik/Makefile"; then make -C sputnik clean; fi
 
 sputnik-install:
 	mkdir -p $(INSTALLDIR)/sputnik/etc/config
