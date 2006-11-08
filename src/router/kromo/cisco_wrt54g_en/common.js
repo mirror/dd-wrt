@@ -1012,7 +1012,7 @@ function DisplayDiv(current,evt,h,w,text)
 	}
 }
 
-function unDisplayHostNameDiv()
+function unDisplayDiv()
 {
 	if(document.all) {
 		document.all.bulle.style.visibility = 'hidden';
