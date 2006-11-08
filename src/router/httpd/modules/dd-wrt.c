@@ -5865,7 +5865,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 //    getHostName (buf1, srcip);
 //    strcpy (buf, buf1);
     websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 20, 50, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
-    	"<\% gethostnamebyip(this.value); \%>", srcip);
+    	getHostName(srcip) , srcip);
     
     // dst
     search_hit("dst=", line, dstip);
