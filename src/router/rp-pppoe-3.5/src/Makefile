@@ -29,8 +29,8 @@ install_dir=/usr/bin/install -c -d
 sbindir=${exec_prefix}/sbin
 
 # Plugin for pppd on Linux
-LINUX_KERNELMODE_PLUGIN=
-PPPD_INCDIR=
+LINUX_KERNELMODE_PLUGIN=rp-pppoe
+PPPD_INCDIR=../../pppd.new
 
 # Licensed version
 LIC_INCDIR=

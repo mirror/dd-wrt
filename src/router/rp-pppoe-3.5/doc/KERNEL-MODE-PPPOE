@@ -29,8 +29,9 @@ You might want to add these lines to /etc/modules.conf:
 	alias tty-ldisc-14 ppp_synctty
 	alias net-pf-24 pppoe
 
-1) Check out the latest version of the PPP software from the CVS
-repository at cvs.samba.org.  Here's how to do this:
+1) If you are running pppd older than 2.4.0, check out the latest
+version of the PPP software from the CVS repository at cvs.samba.org.
+Here's how to do this:
 
 	cvs -d :pserver:cvs@pserver.samba.org:/cvsroot login
 	# When prompted for a password, type "cvs"
@@ -42,6 +43,9 @@ repository at cvs.samba.org.  Here's how to do this:
 	# Check out the source
 	cvs -z5 -d :pserver:cvs@pserver.samba.org:/cvsroot co ppp
 
+If you are running pppd 2.4.0 or newer, and have the pppd development
+headers installed, you can skip steps 1 and 2.
+
 2) The source gets checked out into a subdirectory called ppp.  If
 the source ends up in /path/to/checked/out/sources/ppp, then call
 that path $PPPDIR.
@@ -50,12 +54,16 @@ Build and install the checked-out ppp code according to its instructions.
 
 3) Unpack rp-pppoe.
 
-3) In the rp-pppoe directory, change to src/ and type:
+4) In the rp-pppoe directory, change to src/ and type:
 
 	./configure --enable-plugin=$PPPDIR
 
 where $PPPDIR, of course, refers to the checked-out "ppp" directory
 from cvs.samba.org.
+
+If you didn't check out the PPP software from cvs.samba.org, use:
+
+	./configure --enable-plugin
 
 4) Type make; make install
 
@@ -63,9 +71,22 @@ from cvs.samba.org.
 
 	LINUX_PLUGIN=/etc/ppp/plugins/rp-pppoe.so
 
-After that, adsl-start should use kernel-mode PPPoE.
+After that, pppoe-start should use kernel-mode PPPoE.
 
-This code is experimental and unsupported.  Use at your own risk.
+The rp-pppoe.so plugin adds the following command-line options to pppd:
+
+ethXXX                          -- Use interface ethXXX as Ethernet interface
+brXXX                           -- Use interface brXXX as Ethernet interface
+nic-XXXX                        -- Use interface XXXX as the Ethernet interface
+
+rp_pppoe_service SERVICE_NAME   -- Specify desired service name
+rp_pppoe_ac NAME                -- Specify desired access concentrator name
+rp_pppoe_verbose 0|1            -- Print names of access concentrators
+
+rp_pppoe_sess nnnn:aa:bb:cc:dd:ee:ff -- Attach to existing session 'nnnn'
+                                on AC with Ethernet address aa:bb:cc:dd:ee:ff
+                                This skips the discovery phase.
+
 
 --
 David F. Skoll <dfs@roaringpenguin.com>
