@@ -7,7 +7,6 @@ document.title = "<% nvram_get("router_name"); %>" + upgrad.titl;
 
 function process_aborted(F) {
 	bar1.togglePause();
-//	alert("Upgrade failed.");
 	alert(fail.mess2);
 	window.location.replace("Upgrade.asp")
 	return false;
@@ -15,7 +14,6 @@ function process_aborted(F) {
 
 function upgrade(F,id) {
 	if (F.file.value == "")	{
-//		alert("Please select a file to upgrade.");
 		alert(errmsg.err60);
 		return false;
 	}
@@ -24,7 +22,6 @@ function upgrade(F,id) {
 	var IMAGE = F.file.value.toLowerCase();
 	for (i=0; i < 4; i++)	{
 		if (ext[i] != IMAGE.charAt(len-4+i)){
-//			alert("Incorrect image file.");
 			alert(errmsg.err61);
 			return false;
 		}
@@ -39,8 +36,8 @@ function upgrade(F,id) {
 	apply(F);
 }
 
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -63,8 +60,14 @@ function upgrade(F,id) {
 								<legend><% tran("upgrad.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("upgrad.info1"); %></div>
-									<input class="spaceradio" type="radio" value="0" name="erase" checked="checked" /><% tran("upgrad.resetOff"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="1" name="erase" /><% tran("upgrad.resetOn"); %>
+									<select name="erase">
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selmatch("erase", "0", "selected"); %> >" + upgrad.resetOff + "</option>");
+										document.write("<option value=\"1\" <% nvram_selmatch("erase", "1", "selected"); %> >" + upgrad.resetOn + "</option>");
+										//]]>
+										</script>
+									</select>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("upgrad.file"); %></div>
