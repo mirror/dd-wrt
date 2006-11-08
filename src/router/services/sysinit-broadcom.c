@@ -327,6 +327,7 @@ start_sysinit (void)
 
     case ROUTER_BUFFALO_WBR2G54S:
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
+      eval ("gpio", "disable", "6");	//AOSS led off
       break;
 
     case ROUTER_BUFFALO_WLA2G54C:
