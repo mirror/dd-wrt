@@ -423,7 +423,9 @@ main_loop (void)
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
 	  cprintf ("STOP LAN\n");
+#ifdef HAVE_MADWIFI
           stop_service ("stabridge");
+#endif
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
@@ -486,7 +488,9 @@ main_loop (void)
 #endif
 	  start_service ("setup_vlans");
 	  start_service ("lan");
+#ifdef HAVE_MADWIFI
           start_service ("stabridge");
+#endif
 	  cprintf ("start services\n");
 	  start_services ();
 	  cprintf ("start wan boot\n");
