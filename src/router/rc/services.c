@@ -260,12 +260,16 @@ start_single_service (void)
   if (!strcmp (service, "index"))
     {
       unlink ("/tmp/ppp/log");
+#ifdef HAVE_MADWIFI
       stop_service ("stabridge");
+#endif
       stop_service ("lan");
       stop_service ("wan");
       start_service ("lan");
       start_service ("wan_boot");
+#ifdef HAVE_MADWIFI
       start_service ("stabridge");
+#endif
       startstop ("udhcpd");
 #ifdef HAVE_BIRD
       startstop ("zebra");
@@ -391,12 +395,16 @@ start_single_service (void)
 	   || !strcmp (service, "start_heartbeat"))
     {
       unlink ("/tmp/ppp/log");
+#ifdef HAVE_MADWIFI
       stop_service ("stabridge");
+#endif
       stop_service ("lan");
       stop_service ("wan");
       start_service ("lan");
       start_service ("wan_boot");
+#ifdef HAVE_MADWIFI
       start_service ("stabridge");
+#endif
     }
   else if (!strcmp (service, "stop_pppoe") || !strcmp (service, "stop_pptp")
 	   || !strcmp (service, "stop_l2tp")
@@ -499,7 +507,9 @@ start_single_service (void)
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
       stop_services ();
+#ifdef HAVE_MADWIFI
       stop_service ("stabridge");
+#endif
       stop_service ("lan");
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
@@ -515,7 +525,9 @@ start_single_service (void)
       start_service ("wlconf");
 #endif
       start_service ("lan");
+#ifdef HAVE_MADWIFI
       start_service ("stabridge");
+#endif
       start_services ();
     }
   else if (!strcmp (service, "dhcp_release"))
