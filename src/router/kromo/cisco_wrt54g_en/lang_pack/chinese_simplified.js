@@ -130,6 +130,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="unknown";
 share.expired="expired";
+share.standard="Standard（标准）";
 
 
 sbutton.save="保存设置";
@@ -898,7 +899,6 @@ qos.legend2="服务优先级";
 qos.prio_x="Exempt（豁免）";
 qos.prio_p="Premium（促进）";
 qos.prio_e="Express（快速）";
-qos.prio_s="Standard（标准）";
 qos.prio_b="Bulk（压底）";
 qos.legend3="Netmask优先级";
 qos.ipmask="IP/掩模";

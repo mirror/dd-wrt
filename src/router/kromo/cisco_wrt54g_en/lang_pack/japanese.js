@@ -124,6 +124,7 @@ share.seealso="関連している設定";
 share.never="しない";
 share.unknown="不明";
 share.expired="有効期限が切れた";
+share.standard="スタンダード";
 
 sbutton.save="保存";
 sbutton.saving="保存完了";
@@ -686,7 +687,6 @@ qos.legend2="サービスの優先度";
 qos.prio_x="免除";
 qos.prio_p="プレミアム";
 qos.prio_e="エキスプレス";
-qos.prio_s="スタンダード";
 qos.prio_b="迷惑 (Bulk)";
 qos.legend3="ネットマスクの優先度";
 qos.ipmask="IP/マスク";
