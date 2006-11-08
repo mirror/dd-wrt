@@ -17,7 +17,7 @@
 #***********************************************************************
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-VERSION=3.5
+VERSION=3.8
 
 DEFINES=
 prefix=/usr
