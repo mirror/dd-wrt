@@ -569,9 +569,13 @@ wlconf_up (char *name)
 int
 isClient (void)
 {
+#ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta"))
     return 1;
-
+#else
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "apsta"))
+    return 1;
+#endif
   return 0;
 
 }
