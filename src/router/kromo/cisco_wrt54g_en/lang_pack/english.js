@@ -155,6 +155,8 @@ share._24h="Every day";
 share._48h="Every 2 days";
 share._168h="Every week";
 share.days="Days";
+share.standard="Standard";
+
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -673,6 +675,7 @@ hotspot.shat_srv2="Zero IP Config enabled";
 
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
+hotspot.sputnik_mode="Sputnik Mode";
 hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
@@ -980,7 +983,6 @@ qos.legend2="Services Priority";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standard";
 qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
 qos.ipmask="IP/Mask";
