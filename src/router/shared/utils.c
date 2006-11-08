@@ -2289,6 +2289,7 @@ getHostName (char *buf, char *ip)
 {
   struct hostent *host;
   struct in_addr addr;
+  res_init();
   addr.s_addr = str_to_addr (ip);
   host = gethostbyaddr ((char *) &addr, 4, AF_INET);
   strcpy (buf, host->h_name);
