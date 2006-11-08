@@ -9,9 +9,16 @@
 	</div>
 	<div id="idsputnik">
 		<div class="setting">
-			<div class="label">Sputnik Mode</div>
-			<input class="spaceradio" type="radio" name="sputnik_mode" value="1" <% nvram_selmatch("sputnik_mode", "1", "checked"); %> />Standard&nbsp;
-			<input class="spaceradio" type="radio" name="sputnik_mode" value="0" <% nvram_selmatch("sputnik_mode", "0", "checked"); %> />NMS
+			<div class="label"><% tran("hotspot.sputnik_mode"); %></div>
+				<select name="sputnik_mode" >
+					<script type="text/javascript">
+					//<![CDATA[
+						document.write("<option value=\"0\" <% nvram_selmatch("sputnik_mode", "0", "selected"); %> >" + share.standard + "</option>");
+					//]]>
+					</script>
+					<option value="1" <% nvram_selmatch("sputnik_mode", "1", "selected"); %> >NMS</option>
+					</script>
+				</select>
 		</div>
 		<div class="setting">	
 			<div class="label"><% tran("hotspot.sputnik_id"); %></div>
