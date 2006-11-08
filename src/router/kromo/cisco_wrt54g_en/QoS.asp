@@ -300,7 +300,7 @@ function init() {
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
@@ -350,7 +350,7 @@ function init() {
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
@@ -400,7 +400,7 @@ function init() {
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
@@ -450,7 +450,7 @@ function init() {
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + qos.prio_s + "</option>");
+												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">

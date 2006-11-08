@@ -155,6 +155,7 @@ share._24h="Vsak dan";
 share._48h="Vsaka 2 dneva";
 share._168h="Vsak teden";
 share.days="Dnevi";
+share.standard="Standard";
 
 
 sbutton.save="Shrani nastavitve";
@@ -979,7 +980,6 @@ qos.legend2="Prioriteta storitev";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standard";
 qos.prio_b="Bulk";
 qos.legend3="Prioriteta maske omre¾ja";
 qos.ipmask="IP/maska";

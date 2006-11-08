@@ -132,6 +132,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="unknown";
 share.expired="expired";
+share.standard="Standard（標準）";
 
 sbutton.save="保存設置";
 sbutton.saving="已保存"; // is this saving or saved? if saving, use "正在保存"
@@ -893,7 +894,6 @@ qos.legend2="服務優先順序";
 qos.prio_x="Exempt（豁免）";
 qos.prio_p="Premium（促進）";
 qos.prio_e="Express（快速）";
-qos.prio_s="Standard（標準）";
 qos.prio_b="Bulk（壓底）";
 qos.legend3="Netmask優先順序";
 qos.ipmask="IP/掩模";

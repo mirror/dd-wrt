@@ -131,6 +131,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="unknown";
 share.expired="expired";
+share.standard="Standaard";
 
 sbutton.save="Bewaar instellingen";
 sbutton.saving="Opgeslagen";
@@ -895,7 +896,6 @@ qos.legend2="Diensten Prioriteit";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standaard";
 qos.prio_b="Bulk";
 qos.legend3="Netmask Prioriteit";
 qos.ipmask="IP/Mask";
