@@ -5490,7 +5490,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
-							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");\n//]]>\n</script>\n\
+							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 		           </td>\n\
@@ -5549,7 +5549,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
-							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");\n//]]>\n</script>\n\
+							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 					</td>\n\
@@ -5662,7 +5662,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");\n//]]>\n</script>\n\
-							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");\n//]]>\n</script>\n\
+							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"30\\\" %s >\" + share.standard + \"</option>\");\n//]]>\n</script>\n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 					</td>\n\
