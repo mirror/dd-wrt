@@ -133,6 +133,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="unknown";
 share.expired="expired";
+share.standard="Estándar";
 
 
 
@@ -895,7 +896,6 @@ qos.legend2="Prioridad de Servicios";
 qos.prio_x="Exento";
 qos.prio_p="Premium";
 qos.prio_e="Expreso";
-qos.prio_s="Estándar";
 qos.prio_b="Bulk";
 qos.legend3="Prioridad Máscara RED";
 qos.ipmask="IP/Masc";

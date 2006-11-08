@@ -156,6 +156,7 @@ share._24h="Tous les jours";
 share._48h="Tous les 2 jours";
 share._168h="Toute les semaines";
 share.days="Jours";
+share.standard="Standard";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -661,6 +662,7 @@ hotspot.shat_srv2="Zero IP Config enabled";
 
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Agent Sputnik";
+hotspot.sputnik_mode="Mode";
 hotspot.sputnik_id="ID Serveur Sputnik";
 hotspot.sputnik_instant="Sputnik Instant Setup";
 hotspot.sputnik_express="SputnikNet Express";
@@ -956,7 +958,6 @@ qos.legend2="Priorité des Services";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standard";
 qos.prio_b="Bulk";
 qos.legend3="Priorité Sous-réseau";
 qos.ipmask="IP/Masque";

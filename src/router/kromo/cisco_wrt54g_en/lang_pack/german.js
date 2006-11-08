@@ -133,6 +133,7 @@ share.seealso="See also";
 share.never="never";
 share.unknown="Unbekannt";
 share.expired="expired";
+share.standard="Standard";
 
 
 sbutton.save="Einstellungen speichern";
@@ -882,7 +883,6 @@ qos.legend2="Service-Priorität";
 qos.prio_x="Ausgenommen";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standard";
 qos.prio_b="Bulk";
 qos.legend3="Netzmasken-Priorität";
 qos.ipmask="IP/Maske";
