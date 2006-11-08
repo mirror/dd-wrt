@@ -998,16 +998,16 @@ function DisplayDiv(current,evt,h,w,text)
 	if(document.all) {
 		if(document.readyState == 'complete') {
 			document.all.bulle.innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
-			document.all.bulle.style.pixelLeft = event.clientX + document.body.scrollLeft + largeur;
-			document.all.bulle.style.pixelTop = event.clientY + document.body.scrollTop + hauteur;
+			document.all.bulle.style.pixelLeft = event.clientX + document.body.scrollLeft + width;
+			document.all.bulle.style.pixelTop = event.clientY + document.body.scrollTop + height;
 			document.all.bulle.style.visibility = 'visible';
 		}
 	}
 	
 	else if(document.getElementById) {
 		document.getElementById('bulle').innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
-		document.getElementById('bulle').style.left = evt.pageX + largeur + 'px';
-		document.getElementById('bulle').style.top = evt.pageY + hauteur + 'px';
+		document.getElementById('bulle').style.left = evt.pageX + width + 'px';
+		document.getElementById('bulle').style.top = evt.pageY + height + 'px';
 		document.getElementById('bulle').style.visibility = 'visible';
 	}
 }
