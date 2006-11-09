@@ -58,6 +58,13 @@ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
 fi
 tristate '802.1Q VLAN Support' CONFIG_VLAN_8021Q
 
+comment 'Linux Cisco Discovery Protocol'
+
+dep_tristate 'The Cisco Discovery Protocol (EXPERIMENTAL)' CONFIG_CDP $CONFIG_EXPERIMENTAL
+if [ "$CONFIG_CDP" != "n" ]; then
+	source net/cdp/Config.in
+fi
+
 comment ' '
 tristate 'The IPX protocol' CONFIG_IPX
 if [ "$CONFIG_IPX" != "n" ]; then

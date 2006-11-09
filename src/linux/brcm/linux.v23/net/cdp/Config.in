@@ -1,0 +1,5 @@
+#
+# CDP ancilliary options
+#
+
+bool '  Enable Debug code' CONFIG_CDP_DEBUG $CONFIG_CDP

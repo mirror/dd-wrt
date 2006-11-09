@@ -40,6 +40,7 @@ subdir-$(CONFIG_PACKET)		+= packet
 subdir-$(CONFIG_NET_SCHED)	+= sched
 subdir-$(CONFIG_BRIDGE)		+= bridge
 subdir-$(CONFIG_IPX)		+= ipx
+subdir-$(CONFIG_CDP)		+= cdp
 subdir-$(CONFIG_ATALK)		+= appletalk
 subdir-$(CONFIG_WAN_ROUTER)	+= wanrouter
 subdir-$(CONFIG_X25)		+= x25
