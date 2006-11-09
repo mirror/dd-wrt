@@ -293,15 +293,21 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 #ifdef CONFIG_REGISTER
 	nvramidx=4;
 #endif
-	if (size==1024*1024*8) // fix for WHR2 - A54G54
+	if (size==1024*1024*8) // fix for 8mb flashes
 	    {
 	bcm947xx_parts[nvramidx].offset = size - 0x20000;
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;
-	    }else
+	    }
+	else if (ROUNDUP(NVRAM_SPACE, mtd->erasesize) < 0x10000)
 	    {
-	bcm947xx_parts[nvramidx].offset = size - 0x10000;
+	bcm947xx_parts[nvramidx].offset = size - 0x10000;  // fix for most 4mb flashes
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;        
 	    }
+	else
+		{
+	bcm947xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize); // fix for some Intel 4mb flashes with blocksize=0x20000
+	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset; 
+		}
 #ifdef CONFIG_REGISTER
 	bcm947xx_parts[3].offset = bcm947xx_parts[4].offset - mtd->erasesize;
 	bcm947xx_parts[3].size = mtd->erasesize;        
