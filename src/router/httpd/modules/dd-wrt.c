@@ -5906,7 +5906,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-/* is not used yet 
+
 void
 ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -5925,7 +5925,7 @@ ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 	
 	return;
 }
-*/
+
 
 
 /* BEGIN  Added by Botho 21.April.06 */
