@@ -115,15 +115,17 @@ start_sysinit (void)
   eval("insmod","block2mtd",dev);
   sprintf (dev, "/dev/mtdblock/0");
   //eval ("fsck", dev);		//checking nvram partition and correcting errors
-  if (mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
+ //detect jffs
+  FILE *fp=fopen(dev,"rb");
+  int nojffs=0;
+  if (getc(fp)!=0x85)nojffs=1;
+  if (getc(fp)!=0x19)nojffs=1;
+  fclose(fp);
+  if (!nojffs || mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
     {
-      //not created yet, create ext2 partition
-      //eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
-      //mount ext2 
       eval("mtd","erase","mtd0");
       mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
-//    eval("ln","-s","/etc/nvram","/usr/local/nvram");
     }
   eval ("mkdir","-p","/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
