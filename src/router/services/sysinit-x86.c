@@ -121,11 +121,16 @@ start_sysinit (void)
   if (getc(fp)!=0x85)nojffs=1;
   if (getc(fp)!=0x19)nojffs=1;
   fclose(fp);
-  if (!nojffs || mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
+  if (nojffs)
     {
       eval("mtd","erase","mtd0");
       mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+    }else if (mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
+    {
+      eval("mtd","erase","mtd0");
+      mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
+      eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");    
     }
   eval ("mkdir","-p","/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
