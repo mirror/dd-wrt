@@ -1,0 +1,13 @@
+scdp -- Send cdp packets
+$Id$
+
+This utility is hosted at Sourceforge (http://www.sourceforge.net) and
+has a homepage with more information at: http://scdp.sourceforge.net.
+
+This small utility is used to send cdp packets to the Cisco
+switch/hub/router to which the host is connected. Use it from cron.
+To compile it you need the libnet library. It can be found at the
+address http://www.packetfactory.net/libnet.
+
+Please send bug reports to the authors:
+Mikael Wedlin, mwe@unit.liu.se or Kent Engström, kent@unit.liu.se

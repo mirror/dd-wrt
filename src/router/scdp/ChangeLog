@@ -1,0 +1,5 @@
+$Id: ChangeLog,v 1.1.1.1 2001/03/20 20:16:48 mwedlin Exp $
+$Log: ChangeLog,v $
+Revision 1.1.1.1  2001/03/20 20:16:48  mwedlin
+Moved to Sourceforge. Now uses Automake.
+
