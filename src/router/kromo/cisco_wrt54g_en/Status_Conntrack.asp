@@ -17,7 +17,8 @@ document.title = "<% nvram_get("router_name"); %>" + status_conn.titl;
 					<div class="label"><% tran("status_router.net_conntrack"); %></div>
 					<% dumpip_conntrack(); %>
 				</div></br>
-				<table class="table">
+				<table class="table" cellspacing="4" id="conntrack_table" summary="conntrack table">
+					<tr>
 						<th><% tran("filterSum.polnum"); %></th>
 						<th><% tran("share.proto"); %></th>
 						<th><% tran("share.timeout"); %></th>
