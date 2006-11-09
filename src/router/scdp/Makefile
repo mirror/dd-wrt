@@ -28,4 +28,4 @@ clean:
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
-	install $(UTILS) $(INSTALLDIR)/usr/lib
+	install scdp $(INSTALLDIR)/usr/sbin
