@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
@@ -11,7 +10,6 @@ var wl_nctrlsb = '<% nvram_get("wl0_nctrlsb"); %>';
 var wl_nbw = '<% nvram_get("wl0_nbw"); %>';
 var wl_phytype = '<% nvram_get("wl0_phytype"); %>';
 var wl_40m_disable = '<% nvram_get("wl0_40m_disable"); %>';
-
 
 function SelWL(num,F) {
   if ( num == 0)
@@ -121,6 +119,7 @@ function vifs_add_submit(F,I) {
  	F.action.value = "Apply";
 	F.submit();
 }
+
 function vifs_remove_submit(F,I) {
 	F.iface.value = I;
 	F.change_action.value = "gozila_cgi";
@@ -177,9 +176,8 @@ addEvent(window, "load", function() {
 	SelWL(wl_net_mode,document.wireless);
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -190,7 +188,7 @@ addEvent(window, "load", function() {
                <div id="logo">
                   <h1><% show_control(); %></h1>
                </div>
-			   <% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
+               <% do_menu("Wireless_Basic.asp","Wireless_Basic.asp"); %>
             </div>
             <div id="main">
                <div id="contents">
@@ -207,19 +205,11 @@ addEvent(window, "load", function() {
                   	<br />
                   	<div class="submitFooter">
                   		<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-                  		<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+                  		//<![CDATA[
+                  		document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+                  		document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+                  		//]]>
+                  		</script>
                   	</div>
                   </form>
                 </div>
