@@ -2598,12 +2598,14 @@ ShowMessage (char *str1, char *str2)
 void
 initlcd ()
 {
-  SetEnvironment ();		/* Set RAW mode */
 
   fd = open ("/dev/tts/1", O_RDWR);
 				  /** Open Serial port (COM2) */
   if (fd > 0)
     {
+      close (fd);
+      SetEnvironment ();		/* Set RAW mode */
+      fd = open ("/dev/tts/1", O_RDWR);
       Init ();			/* Initialize EZIO twice */
       Init ();
 
