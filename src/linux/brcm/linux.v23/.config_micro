@@ -453,6 +453,11 @@ CONFIG_IP_NF_MATCH_CONNLIMIT=y
 CONFIG_VLAN_8021Q=y
 
 #
+# Linux Cisco Discovery Protocol
+#
+# CONFIG_CDP is not set
+
+#
 #  
 #
 # CONFIG_IPX is not set

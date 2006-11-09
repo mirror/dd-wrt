@@ -467,6 +467,12 @@ CONFIG_IPV6=m
 CONFIG_VLAN_8021Q=y
 
 #
+# Linux Cisco Discovery Protocol
+#
+CONFIG_CDP=y
+# CONFIG_CDP_DEBUG is not set
+
+#
 #  
 #
 # CONFIG_IPX is not set
