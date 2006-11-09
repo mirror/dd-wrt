@@ -286,6 +286,7 @@ start_sysinit (void)
 
     case ROUTER_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
+    case ROUTER_BUFFALO_WLAG54C:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
       strcpy (wlifname, "eth2");
@@ -380,6 +381,7 @@ start_sysinit (void)
 	    case ROUTER_BRCM4702_GENERIC:
 	    case ROUTER_WLI2_TX1_G54:
 	    case ROUTER_MOTOROLA_WE800G:
+	    case ROUTER_BUFFALO_WLAG54C:
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
