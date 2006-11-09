@@ -300,7 +300,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	    }
 	else if (ROUNDUP(NVRAM_SPACE, mtd->erasesize) < 0x10000)
 	    {
-	bcm947xx_parts[nvramidx].offset = size - 0x10000;  // fix for most 4mb flashes
+	bcm947xx_parts[nvramidx].offset = size - mtd->erasesize;
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;        
 	    }
 	else
