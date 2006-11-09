@@ -201,6 +201,7 @@ obj-y += sprom
 obj-y += stabridge
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
+obj-$(CONFIG_SCDP) += scdp
 
 
 
