@@ -1567,6 +1567,7 @@ start_wan (int status)
       break;
     case ROUTER_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
+    case ROUTER_BUFFALO_WLAG54C:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth0";
       break;
