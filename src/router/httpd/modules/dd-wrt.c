@@ -5860,14 +5860,16 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     
     // src
     search_hit("src=", line, srcip);
-    char buf[128];
+    char buf[200];
     getHostName (buf, srcip);
     websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 20, 50, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
     	buf , srcip);
     
     // dst
     search_hit("dst=", line, dstip);
-    websWrite (wp, "<td align=\"right\">%s</td>", dstip);
+    getHostName (buf, dstip);
+    websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 20, 50, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
+    	buf , dstip);
     
     // service
     search_hit("dport=", line, dstport);
@@ -5904,10 +5906,11 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+/* is not used yet 
 void
 ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	char mybuf[64];
+	char mybuf[128];
 	char *argument;
   
 	if (ejArgs (argc, argv, "%s", &argument) < 1) {
@@ -5922,7 +5925,7 @@ ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 	
 	return;
 }
-
+*/
 
 
 /* BEGIN  Added by Botho 21.April.06 */
