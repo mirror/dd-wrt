@@ -6500,6 +6500,31 @@ CONFIG_KHTTPD
   The kHTTPd is experimental. Be careful when using it on a production
   machine. Also note that kHTTPd doesn't support virtual servers yet.
 
+CDP Reporting (EXPERIMENTAL)
+CONFIG_CDP
+  This is support for reporting the Cisco CDP packets which can be
+  broadcast by various Cisco kit.  Information is written to proc file
+  system.
+
+  This protocol support is also available as a module ( = code which
+  can be inserted in and removed from the running kernel whenever you
+  want). The module will be called cdp.o. If you want to compile it
+  as a module, say M here and read Documentation/modules.txt.
+
+  Be sure to say Y to "/proc file system support" otherwise you won't
+  see anything.
+
+CDP Debuging
+CONFIG_CDP_DEBUG
+  Enable debuging information in the CDP code - this generate a lot of
+  information at KERN_DEBUG level - it should only be used for
+  troubleshooting - you *really* do *not* want to use it on a production
+  system, your log files will be full of data.  Every incoming packet
+  generates over 20 lines of debuging information.
+
+  You probably want to say N here - only enable if you know you really
+  want it.
+
 The IPX protocol
 CONFIG_IPX
   This is support for the Novell networking protocol, IPX, commonly
