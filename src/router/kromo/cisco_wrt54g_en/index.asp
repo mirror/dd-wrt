@@ -5,11 +5,15 @@
 
 document.title = "<% nvram_get("router_name"); %>" + idx.titl;
 
-var wan_proto = "<% nvram_get("wan_proto"); %>";
-	if ("<% nvram_get("wl_mode"); %>" == "wet")
-	{
-	wan_proto = "disabled"
-	}
+if ("<% nvram_get("wl_mode"); %>" == "wet")
+{
+	var wan_proto = "disabled";
+}
+else
+{
+	var wan_proto = "<% nvram_get("wan_proto"); %>";
+}
+
 var dhcp_win = null;
 
 function pptpUseDHCP(F, value)
