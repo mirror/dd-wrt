@@ -42,7 +42,7 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');
-	show_layer_ext(document.wireless.wl_mode, 'idssid', (<% nvram_match("wl_mode", "ap", "1"); %> || <% nvram_match("wl_mode", "infra", "1"); %>) == 1);
+	show_layer_ext(document.wireless.wl_mode, 'idssid', (<% nvram_else_match("wl_mode", "ap", "1", "0"); %> || <% nvram_else_match("wl_mode", "infra", "1", "0"); %>) == 1);
 });
 
 		//]]>
