@@ -29,6 +29,11 @@ static char *fileconf = "/etc/dnsd.conf";
 #define LOCK_FILE       "/var/run/dnsd.lock"
 #define LOG_FILE        "/var/log/dnsd.log"
 
+#define is_daemon()  (flags&16)
+#define is_verbose() (flags&32)
+//#define DEBUG 
+
+
 enum {
 	MAX_HOST_LEN = 16,      // longest host name allowed is 15
 	IP_STRING_LEN = 18,     // .xxx.xxx.xxx.xxx\0
@@ -223,29 +228,35 @@ static int listen_socket(char *iface_addr, int listen_port)
 static int table_lookup(uint16_t type, uint8_t * as, uint8_t * qs)
 {
 	int i;
-	struct dns_entry *d=dnsentry;
+	struct dns_entry *d = dnsentry;
 
-	do {
+	if(d) do {
 #ifdef DEBUG
-		char *p,*q;
-		q = (char *)&(qs[1]);
-		p = &(d->name[1]);
-		fprintf(stderr, "\ntest: %d <%s> <%s> %d", strlen(p), p, q, strlen(q));
+		if(qs && d) {
+			char *p,*q;
+			q = (char *)&(qs[1]);
+			p = &(d->name[1]);
+			fprintf(stderr, "\n%s: %d/%d p:%s q:%s %d", 
+				__FUNCTION__, strlen(p), (int)(d->name[0]), 
+				p, q, strlen(q));
+		}
 #endif
-		if (type == REQ_A) { /* search by host name */
+		if (type == REQ_A) { 			/* search by host name */
 			for(i = 1; i <= (int)(d->name[0]); i++)
 				if(tolower(qs[i]) != d->name[i])
-					continue;
+					break;
+			if(i > (int)(d->name[0])) {
 #ifdef DEBUG
-			fprintf(stderr, " OK");
+				fprintf(stderr, " OK");
 #endif
-			strcpy((char *)as, d->ip);
+				strcpy((char *)as, d->ip);
 #ifdef DEBUG
-			fprintf(stderr, " %s ", as);
+				fprintf(stderr, " as:%s\n", as);
 #endif
-					return 0;
-				}
-		else if (type == REQ_PTR) { /* search by IP-address */
+				return 0;
+			}
+		} else 
+		if (type == REQ_PTR) { 			/* search by IP-address */
 			if (!strncmp((char*)&d->rip[1], (char*)&qs[1], strlen(d->rip)-1)) {
 				strcpy((char *)as, d->name);
 				return 0;
@@ -281,7 +292,7 @@ static int process_packet(uint8_t * buf)
 		eret("ignoring response packet");
 
 	from = (void *)&head[1];	//  start of query string
-	next = answb = from + strlen((char *)&head[1]) + 1 + sizeof(struct dns_prop);   // where to append answer block
+	next = answb = from + strlen((char *)from) + 1 + sizeof(struct dns_prop);   // where to append answer block
 
 	outr.rlen = 0;			// may change later
 	outr.r = NULL;
@@ -305,9 +316,8 @@ static int process_packet(uint8_t * buf)
 		goto empty_packet;
 
 	// We have a standard query
-
-	log_message(LOG_FILE, (char *)head);
-	lookup_result = table_lookup(type, answstr, (uint8_t*)(&head[1]));
+	log_message(LOG_FILE, (char *)from);
+	lookup_result = table_lookup(type, answstr, (uint8_t*)from);
 	if (lookup_result != 0) {
 		outr.flags = 3 | 0x0400;	//name do not exist and auth
 		goto empty_packet;
@@ -341,8 +351,7 @@ static int process_packet(uint8_t * buf)
 	memcpy(next, (void *)answstr, outr.rlen);
 	next += outr.rlen;
 
-      empty_packet:
-
+empty_packet:
 	flags = ntohs(head->flags);
 	// clear rcode and RA, set responsebit and our new flags
 	flags |= (outr.flags & 0xff80) | 0x8000;
@@ -364,9 +373,6 @@ static void interrupt(int x)
 	exit(2);
 }
 
-#define is_daemon()  (flags&16)
-#define is_verbose() (flags&32)
-//#define DEBUG 1
 
 int dnsd_main(int argc, char **argv)
 {
@@ -437,8 +443,8 @@ int dnsd_main(int argc, char **argv)
 				     (struct sockaddr *)&from,
 				     (void *)&fromlen);
 			if(is_verbose())
-				fprintf(stderr, "\n--- Got UDP  ");
-			log_message(LOG_FILE, "\n--- Got UDP  ");
+				fprintf(stderr, "\n--- Got UDP size=%d ", r);
+			log_message(LOG_FILE, "\n--- Got UDP ");
 
 			if (r < 12 || r > 512) {
 				bb_error_msg("invalid packet size");

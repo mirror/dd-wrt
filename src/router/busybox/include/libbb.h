@@ -106,6 +106,7 @@ extern void llist_add_to_end(llist_t **list_head, void *data);
 extern void *llist_pop(llist_t **elm);
 extern void llist_free(llist_t *elm, void (*freeit)(void *data));
 
+#ifdef HAVE_NOMESSAGE
 #define bb_show_usage() exit(-1)
 //extern void bb_show_usage(void) ATTRIBUTE_NORETURN ATTRIBUTE_EXTERNALLY_VISIBLE;
 
@@ -135,6 +136,25 @@ extern void llist_free(llist_t *elm, void (*freeit)(void *data));
 
 #define bb_perror_nomsg()
 //extern void bb_perror_nomsg(void);
+
+#else
+extern void bb_show_usage(void) ATTRIBUTE_NORETURN ATTRIBUTE_EXTERNALLY_VISIBLE;
+
+extern void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+extern void bb_perror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern void bb_perror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+
+extern void bb_vherror_msg(const char *s, va_list p);
+extern void bb_herror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+extern void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+extern void bb_perror_nomsg_and_die(void) ATTRIBUTE_NORETURN;
+
+extern void bb_perror_nomsg(void);
+#endif
 
 
 

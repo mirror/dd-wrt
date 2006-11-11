@@ -17,6 +17,12 @@
 #include <string.h>
 #include <assert.h>
 
+#if ENABLE_STATIC && defined(__GLIBC__)
+#warning Static linking against glibc produces buggy executables
+#warning See sources.redhat.com/bugzilla/show_bug.cgi?id=3400
+#warning Note that glibc is utterly unsuitable for static linking anyway.
+#endif
+
 #if ENABLE_SHOW_USAGE && !ENABLE_FEATURE_COMPRESS_USAGE
 static const char usage_messages[] =
 #define MAKE_USAGE
@@ -433,8 +439,9 @@ static const char *unpack_usage_messages(void)
 #else
 #define unpack_usage_messages() usage_messages
 #endif /* ENABLE_FEATURE_COMPRESS_USAGE */
+#ifndef HAVE_NOMESSAGE
 
-/*void bb_show_usage (void)
+void bb_show_usage (void)
 {
 	if (ENABLE_SHOW_USAGE) {
 		const char *format_string;
@@ -453,7 +460,7 @@ static const char *unpack_usage_messages(void)
 
   exit (bb_default_error_retval);
 }
-*/
+#endif
 static int applet_name_compare (const void *x, const void *y)
 {
   const char *name = x;
