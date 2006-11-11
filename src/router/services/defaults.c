@@ -1825,7 +1825,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"oet5_shaper","0",0},
   {"oet5_bridged","1",0},
 
-  {"oet6_en","0",0}
+  {"oet6_en","0",0},
   {"oet6_rem","192.168.90.1",0},
   {"oet6_ip","1.2.3.4",0},
   {"oet6_netmask","255.255.255.0",0},

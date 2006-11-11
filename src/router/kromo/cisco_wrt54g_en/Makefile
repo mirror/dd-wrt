@@ -162,6 +162,14 @@ endif
 
 ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
+	cp -f maksat/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp -f maksat/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f maksat/About.htm $(INSTALLDIR)/www/About.htm
+	cp -f maksat/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
+	cp -f maksat/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
+	cp -f maksat/help/HUpgrade.asp $(INSTALLDIR)/www/help/HUpgrade.asp
+	cp -f maksat/help/HStatus.asp $(INSTALLDIR)/www/help/HStatus.asp
 endif
 
 ifeq ($(CONFIG_KODATA),y)
