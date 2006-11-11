@@ -14,7 +14,7 @@ endif
 PROG      := busybox
 MAJOR_VERSION   :=1
 MINOR_VERSION   :=2
-SUBLEVEL_VERSION:=1
+SUBLEVEL_VERSION:=2
 EXTRAVERSION    :=
 VERSION   :=$(MAJOR_VERSION).$(MINOR_VERSION).$(SUBLEVEL_VERSION)$(EXTRAVERSION)
 BUILDTIME := $(shell TZ=UTC date -u "+%Y.%m.%d-%H:%M%z")
@@ -308,7 +308,7 @@ ifeq ($(strip $(CONFIG_DEBUG)),y)
 else
     CFLAGS +=-DNDEBUG
     CHECKED_LDFLAGS += $(call check_ld,$(LD),--sort-common,)
-    CHECKED_LDFLAGS += $(call check_ld,--gc-sections,)
+    CHECKED_LDFLAGS += $(call check_ld,$(LD),--gc-sections,)
 endif
 
 ifneq ($(strip $(CONFIG_DEBUG_PESSIMIZE)),y)
@@ -338,7 +338,7 @@ ifeq ($(strip $(CONFIG_BUILD_LIBBUSYBOX)),y)
 endif
 
 ifeq ($(strip $(CONFIG_SELINUX)),y)
-    LIBRARIES += -lselinux
+    LIBRARIES += -lselinux -lsepol
 endif
 
 ifeq ($(strip $(PREFIX)),)

@@ -14,17 +14,15 @@
 #include "busybox.h"
 #include <mntent.h>
 #include <errno.h>
-#include <string.h>
 #include <getopt.h>
 
-#define OPTION_STRING		"flDnrvad"
+#define OPTION_STRING		"flDnravd"
 #define OPT_FORCE			1
 #define OPT_LAZY			2
 #define OPT_DONTFREELOOP	4
 #define OPT_NO_MTAB			8
 #define OPT_REMOUNT			16
-#define OPT_IGNORED			32	// -v is ignored
-#define OPT_ALL				(ENABLE_FEATURE_UMOUNT_ALL ? 64 : 0)
+#define OPT_ALL				(ENABLE_FEATURE_UMOUNT_ALL ? 32 : 0)
 
 int umount_main(int argc, char **argv)
 {
@@ -77,12 +75,11 @@ int umount_main(int argc, char **argv)
 		m = 0;
 		if (!argc) bb_show_usage();
 	}
-
-
 	
 	// Loop through everything we're supposed to umount, and do so.
 	for (;;) {
 		int curstat;
+		char *zapit = *argv;
 
 		// Do we already know what to umount this time through the loop?
 		if (m) safe_strncpy(path, m->dir, PATH_MAX);
@@ -91,43 +88,49 @@ int umount_main(int argc, char **argv)
 		// Get next command line argument (and look it up in mtab list)
 		else if (!argc--) break;
 		else {
-			realpath(*argv++, path);
+			argv++;
+			realpath(zapit, path);
 			for (m = mtl; m; m = m->next)
 				if (!strcmp(path, m->dir) || !strcmp(path, m->device))
 					break;
 		}
+		// If we couldn't find this sucker in /etc/mtab, punt by passing our
+		// command line argument straight to the umount syscall.  Otherwise,
+		// umount the directory even if we were given the block device.
+		if (m) zapit = m->dir;
 
 		// Let's ask the thing nicely to unmount.
-		curstat = umount(path);
+		curstat = umount(zapit);
 
 		// Force the unmount, if necessary.
 		if (curstat && doForce) {
-			curstat = umount2(path, doForce);
+			curstat = umount2(zapit, doForce);
 			if (curstat)
-				bb_error_msg_and_die("forced umount of %s failed!", path);
+				bb_error_msg_and_die("forced umount of %s failed!", zapit);
 		}
 
 		// If still can't umount, maybe remount read-only?
 		if (curstat && (opt & OPT_REMOUNT) && errno == EBUSY && m) {
-			curstat = mount(m->device, path, NULL, MS_REMOUNT|MS_RDONLY, NULL);
+			curstat = mount(m->device, zapit, NULL, MS_REMOUNT|MS_RDONLY, NULL);
 			bb_error_msg(curstat ? "Cannot remount %s read-only" :
 						 "%s busy - remounted read-only", m->device);
 		}
 
-		/* De-allocate the loop device.  This ioctl should be ignored on any
-		 * non-loop block devices. */
-		if (ENABLE_FEATURE_MOUNT_LOOP && !(opt & OPT_DONTFREELOOP) && m)
-			del_loop(m->device);
-
 		if (curstat) {
-			/* Yes, the ENABLE is redundant here, but the optimizer for ARM
-			 * can't do simple constant propagation in local variables... */
-			if(ENABLE_FEATURE_MTAB_SUPPORT && !(opt & OPT_NO_MTAB) && m)
-				erase_mtab(m->dir);
 			status = EXIT_FAILURE;
-			bb_perror_msg("Couldn't umount %s", path);
+			bb_perror_msg("Couldn't umount %s", zapit);
+		} else {
+			/* De-allocate the loop device.  This ioctl should be ignored on
+			 * any non-loop block devices. */
+			if (ENABLE_FEATURE_MOUNT_LOOP && !(opt & OPT_DONTFREELOOP) && m)
+				del_loop(m->device);
+			if (ENABLE_FEATURE_MTAB_SUPPORT && !(opt & OPT_NO_MTAB) && m)
+				erase_mtab(m->dir);
 		}
+
 		// Find next matching mtab entry for -a or umount /dev
+		// Note this means that "umount /dev/blah" will unmount all instances
+		// of /dev/blah, not just the most recent.
 		while (m && (m = m->next))
 			if ((opt & OPT_ALL) || !strcmp(path,m->device))
 				break;
