@@ -107,7 +107,7 @@ function to_submit(F) {
 }
 
 function valid_value(F) {
-	if (!('<% nvram_get("wl_mode"); %>' == 'wet') {
+	if (!('<% nvram_get("wl_mode"); %>' == 'wet')) {
 		if (F.now_proto.value == "pptp" || F.now_proto.value == "static") {
 			pptp_dhcp = "";
 	
