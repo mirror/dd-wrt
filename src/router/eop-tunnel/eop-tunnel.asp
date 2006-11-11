@@ -401,10 +401,10 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet6_bridged" <% nvram_selmatch("oet6_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged1', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet6_bridged" <% nvram_selmatch("oet6_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged1', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet6_bridged" <% nvram_selmatch("oet6_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged6', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet6_bridged" <% nvram_selmatch("oet6_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged6', true)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idbridged1">
+		<div id="idbridged6">
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet6_ip" value="0.0.0.0"/>
@@ -461,10 +461,10 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet7_bridged" <% nvram_selmatch("oet7_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged2', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet7_bridged" <% nvram_selmatch("oet7_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged2', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet7_bridged" <% nvram_selmatch("oet7_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged7', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet7_bridged" <% nvram_selmatch("oet7_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged7', true)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idbridged2">
+		<div id="idbridged7">
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet7_ip" value="0.0.0.0"/>
@@ -521,10 +521,10 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet8_bridged" <% nvram_selmatch("oet8_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged3', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet8_bridged" <% nvram_selmatch("oet8_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged3', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet8_bridged" <% nvram_selmatch("oet8_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged8', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet8_bridged" <% nvram_selmatch("oet8_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged8', true)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idbridged3">
+		<div id="idbridged8">
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet8_ip" value="0.0.0.0"/>
@@ -581,10 +581,10 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet9_bridged" <% nvram_selmatch("oet9_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged4', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet9_bridged" <% nvram_selmatch("oet9_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged4', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet9_bridged" <% nvram_selmatch("oet9_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged9', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet9_bridged" <% nvram_selmatch("oet9_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged9', true)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idbridged4">
+		<div id="idbridged9">
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet9_ip" value="0.0.0.0"/>
@@ -641,10 +641,10 @@ addEvent(window, "load", function() {
 		</div>	
 		<div class="setting">
 			<div class="label"><% tran("service.eoip_bridging"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="oet10_bridged" <% nvram_selmatch("oet10_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged5', false)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="oet10_bridged" <% nvram_selmatch("oet10_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged5', true)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="oet10_bridged" <% nvram_selmatch("oet10_bridged","1","checked"); %> onclick="show_layer_ext(this, 'idbridged10', false)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="oet10_bridged" <% nvram_selmatch("oet10_bridged","0","checked"); %> onclick="show_layer_ext(this, 'idbridged10', true)" /><% tran("share.disable"); %>
 		</div>
-		<div id="idbridged5">
+		<div id="idbridged10">
 			<div class="setting">
 				<div class="label"><% tran("share.ip"); %></div>
 				<input type="hidden" name="oet10_ip" value="0.0.0.0"/>
