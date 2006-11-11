@@ -448,6 +448,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif HAVE_NEWMEDIA
   {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
+#elif HAVE_MAKSAT
+  {"wl_ssid", "maksat", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
   {"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #elif HAVE_FON
@@ -863,6 +865,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_name", "skymax254b", 0},
 #elif  HAVE_34TELECOM
   {"router_name", "MiuraBasic", 0},
+#elif  HAVE_MAKSAT
+  {"router_name", "MAKSAT", 0},
 #else
   {"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1820,6 +1824,68 @@ struct nvram_tuple srouter_defaults[] = {
   {"oet5_mssfix","0",0},
   {"oet5_shaper","0",0},
   {"oet5_bridged","1",0},
+
+  {"oet6_en","0",0}
+  {"oet6_rem","192.168.90.1",0},
+  {"oet6_ip","1.2.3.4",0},
+  {"oet6_netmask","255.255.255.0",0},
+  {"oet6_id","1",0},
+  {"oet6_comp","0",0},
+  {"oet6_pt","0",0},
+  {"oet6_fragment","0",0},
+  {"oet6_mssfix","0",0},
+  {"oet6_shaper","0",0},
+  {"oet6_bridged","1",0},
+
+  {"oet7_en","0",0},
+  {"oet7_rem","192.168.90.1",0},
+  {"oet7_ip","1.2.3.4",0},
+  {"oet7_netmask","255.255.255.0",0},
+  {"oet7_id","1",0},
+  {"oet7_comp","0",0},
+  {"oet7_pt","0",0},
+  {"oet7_fragment","0",0},
+  {"oet7_mssfix","0",0},
+  {"oet7_shaper","0",0},
+  {"oet7_bridged","1",0},
+
+  {"oet8_en","0",0},
+  {"oet8_rem","192.168.90.1",0},
+  {"oet8_ip","1.2.3.4",0},
+  {"oet8_netmask","255.255.255.0",0},
+  {"oet8_id","1",0},
+  {"oet8_comp","0",0},
+  {"oet8_pt","0",0},
+  {"oet8_fragment","0",0},
+  {"oet8_mssfix","0",0},
+  {"oet8_shaper","0",0},
+  {"oet8_bridged","1",0},
+
+  {"oet9_en","0",0},
+  {"oet9_rem","192.168.90.1",0},
+  {"oet9_ip","1.2.3.4",0},
+  {"oet9_netmask","255.255.255.0",0},
+  {"oet9_id","1",0},
+  {"oet9_comp","0",0},
+  {"oet9_pt","0",0},
+  {"oet9_fragment","0",0},
+  {"oet9_mssfix","0",0},
+  {"oet9_shaper","0",0},
+  {"oet9_bridged","1",0},
+
+  {"oet10_en","0",0},
+  {"oet10_rem","192.168.90.1",0},
+  {"oet10_ip","1.2.3.4",0},
+  {"oet10_netmask","255.255.255.0",0},
+  {"oet10_id","1",0},
+  {"oet10_comp","0",0},
+  {"oet10_pt","0",0},
+  {"oet10_fragment","0",0},
+  {"oet10_mssfix","0",0},
+  {"oet10_shaper","0",0},
+  {"oet10_bridged","1",0},
+
+
 #endif
   {0, 0, 0}
 };
