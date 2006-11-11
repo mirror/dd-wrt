@@ -105,16 +105,18 @@ void
 ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  
   websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
+	     "document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n",
 	     nvram_selmatch (wp, "wan_proto",
 			     "disabled") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n//]]>\n</script>\n",
+	     "document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");\n",
 	     nvram_selmatch (wp, "wan_proto",
 			     "static") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");\n//]]>\n</script>\n",
+	     "document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");\n",
 	     nvram_selmatch (wp, "wan_proto",
 			     "dhcp") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_PPPOE
@@ -138,6 +140,9 @@ ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 	     nvram_selmatch (wp, "wan_proto",
 			     "heartbeat") ? "selected=\"selected\"" : "");
 #endif
+	
+	websWrite (wp, "\n//]]>\n</script>\n");
+	
   return;
 }
 
