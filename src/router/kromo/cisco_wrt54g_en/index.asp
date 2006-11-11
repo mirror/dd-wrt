@@ -9,7 +9,7 @@ var wan_proto = "<% nvram_get("wan_proto"); %>";
 var dhcp_win = null;
 
 function pptpUseDHCP(F, val) {
-	setElementsActive(F.wan_ipaddr_0, F.wan_netmask_3, !val)
+	setElementsActive("wan_ipaddr_0", "wan_netmask_3", val==0)
 }
 
 function valid_mtu(I) {
