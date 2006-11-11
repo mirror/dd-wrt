@@ -3993,6 +3993,8 @@ char timeoption[5][2] = {"1","2","3","4","5"};
 int i,j;
 char str[11];
 
+websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+
 	for (i=0; i<37; i++)
 	{
 	  	for (j=0; j<5; j++)
@@ -4002,13 +4004,12 @@ char str[11];
 			strcat (str, timeoption[j]);
 
 			websWrite (wp,
-			"<script type=\"text/javascript\">\n//<![CDATA[\n\
-					document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%s + \"</option>\");\n\
-					\n//]]>\n</script>\n",
-			str, nvram_match ("time_zone", str) ? "selected=\\\"selected\\\"" : "", timezones[i], timeoption[j]);
+				"document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%s + \"</option>\");\n",
+				str, nvram_match ("time_zone", str) ? "selected=\\\"selected\\\"" : "", timezones[i], timeoption[j]);
 		 }
 	}
-		
+	
+	websWrite (wp, "//]]>\n</script>\n");
 }
 
 
