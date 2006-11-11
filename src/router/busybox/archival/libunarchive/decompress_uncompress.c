@@ -69,22 +69,12 @@ static int block_mode = BLOCK_MODE;
 /* user settable max # bits/code */
 static int maxbits = BITS;
 
-/* Input buffer */
-static unsigned char inbuf[IBUFSIZ + 64];
-
-/* Output buffer */
-static unsigned char outbuf[OBUFSIZ + 2048];
-
-
-static unsigned char htab[HSIZE];
-static unsigned short codetab[HSIZE];
-
 #define	htabof(i)				htab[i]
 #define	codetabof(i)			codetab[i]
 #define	tab_prefixof(i)			codetabof(i)
 #define	tab_suffixof(i)			((unsigned char *)(htab))[i]
 #define	de_stack				((unsigned char *)&(htab[HSIZE-1]))
-#define	clear_htab()			memset(htab, -1, sizeof(htab))
+#define	clear_htab()			memset(htab, -1, HSIZE)
 #define	clear_tab_prefixof()	memset(codetab, 0, 256);
 
 
@@ -112,6 +102,12 @@ int uncompress(int fd_in, int fd_out)
 	long int maxmaxcode;
 	int n_bits;
 	int rsize = 0;
+	RESERVE_CONFIG_UBUFFER(inbuf, IBUFSIZ + 64);
+	RESERVE_CONFIG_UBUFFER(outbuf, OBUFSIZ + 2048);
+	unsigned char htab[HSIZE];
+	unsigned short codetab[HSIZE];
+	memset(inbuf, 0, IBUFSIZ + 64);
+	memset(outbuf, 0, OBUFSIZ + 2048);
 
 	insize = 0;
 
@@ -159,7 +155,7 @@ int uncompress(int fd_in, int fd_out)
 			posbits = 0;
 		}
 
-		if (insize < (int) sizeof(inbuf) - IBUFSIZ) {
+		if (insize < (int) (IBUFSIZ + 64) - IBUFSIZ) {
 			rsize = safe_read(fd_in, inbuf + insize, IBUFSIZ);
 			insize += rsize;
 		}
@@ -285,5 +281,7 @@ int uncompress(int fd_in, int fd_out)
 		write(fd_out, outbuf, outpos);
 	}
 
+	RELEASE_CONFIG_BUFFER(inbuf);
+	RELEASE_CONFIG_BUFFER(outbuf);
 	return 0;
 }
