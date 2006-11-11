@@ -152,7 +152,7 @@ function valid_value(F) {
 		}
 	}
 	
-	if(!<% nvram_selmatch("dhcpfwd_enable", "1", "1"); %>) {
+	if(!<% nvram_else_selmatch("dhcpfwd_enable", "1", "1", "0"); %>) {
 		if(!valid_dhcp_server(F))
 			return false;
 	}
