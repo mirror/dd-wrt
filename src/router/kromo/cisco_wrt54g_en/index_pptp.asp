@@ -1,7 +1,7 @@
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="pptpUseDHCP(this.form,'1')" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="pptpUseDHCP(this.form,'0')" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="pptpUseDHCP(this.form, this.value)" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="pptpUseDHCP(this.form, this.value)" /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.wan_ip"); %></div>
