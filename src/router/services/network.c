@@ -1801,7 +1801,7 @@ int pppoe_rp = 1;
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
       fprintf (fp, "noipdefault\n"
-	       "noauth\n"
+//	       "noauth\n"
 	       "defaultroute\n"
 	       "noaccomp\n"
 	       "noccp\n"
