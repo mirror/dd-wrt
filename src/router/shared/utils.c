@@ -2293,10 +2293,10 @@ getHostName (char *buf, char *ip)
   res_init();
   addr.s_addr = str_to_addr (ip);
   host = gethostbyaddr ((char *) &addr, 4, AF_INET);
-  if (host && host->h_name)
-    strcpy (buf, host->h_name);
-  else
+  if (!host || !host->h_name)
     strcpy (buf, "unknown");
+  else
+    strcpy (buf, host->h_name);
 }
 
 void
