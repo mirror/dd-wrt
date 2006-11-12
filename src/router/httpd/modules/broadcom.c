@@ -4666,9 +4666,9 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_srv)</script></div>\n");
 		sprintf (temp, "oet%d_en", tun);
 			websWrite (wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked" : ""), tun);
+						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
 			websWrite (wp," <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked" : ""), tun);
+						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""), tun);
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div id=\"idoet1\">\n");
 			websWrite (wp, "<div class=\"setting\">\n");
@@ -4687,17 +4687,17 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_comp)</script></div>\n");
 		sprintf (temp, "oet%d_comp", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked" : ""));
+						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked" : ""));
+						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_passtos)</script></div>\n");
 		sprintf (temp, "oet%d_pt", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked" : ""));
+						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked" : ""));
+						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_frag)</script></div>\n");
@@ -4708,9 +4708,9 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_mssfix)</script></div>\n");
 		sprintf (temp, "oet%d_mssfix", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked" : ""));
+						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked" : ""));
+						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_shaper)</script></div>\n");
@@ -4721,9 +4721,9 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_bridging)</script></div>\n");
 		sprintf (temp, "oet%d_bridged", tun);
 			websWrite (wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked" : ""), tun);
+						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
 			websWrite (wp," <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked" : ""), tun);
+						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""), tun);
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div id=\"idbridged1\">\n");
 			websWrite (wp, "<div class=\"setting\">\n");
