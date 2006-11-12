@@ -1,0 +1,37 @@
+<html>
+
+<head>
+<title>WindowCloseKey example</title>
+<script type="text/javascript" src="../javascripts/prototype.js"> </script> 
+<script type="text/javascript" src="../javascripts/window.js"> </script> 
+<script type="text/javascript" src="../javascripts/window_ext.js"> </script> 
+<script type="text/javascript" src="../javascripts/effects.js"> </script> 
+<script type="text/javascript" src="../javascripts/debug.js"> </script> 
+<link href="../themes/default.css" rel="stylesheet" type="text/css"> 
+<!-- Add this to have a specific theme--> 
+<link href="../themes/alphacube.css" rel="stylesheet" type="text/css"> 
+
+
+</head>
+
+<body>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<center><a href="#" onclick="dialog();">open dialog (and close it with escape key)</a></center>
+
+<script type="text/javascript">
+
+function dialog() {
+  Dialog.alert("You can close this panel with escape key or by clicking on the close button below.", 
+               {windowParameters: {className: "alphacube", width:300, height:100}, okLabel: "close", 
+                ok:function(win) {debug("validate alert panel"); return true;}, cancel:function(win) {debug("validate cancel panel"); return true;}});
+}
+WindowCloseKey.init();
+</script>
+</body>
+
+</html>

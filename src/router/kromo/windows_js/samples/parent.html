@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <link href="../themes/default.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="../javascripts/prototype.js"> </script>
+    <script type="text/javascript" src="../javascripts/window.js"></script>
+    <script type="text/javascript">
+      function init() {
+        var win = new Window('Works', {top:100, left:100, zIndex:150, resizable: true, title: "Body as parent"})
+        win.setContent("f");
+        win.show();
+
+        var win2 = new Window('Does Not Work', {top:100, left:400, zIndex:150, resizable:true, parent:$('f2'), title: "Specific element as parent"});
+        win2.setContent("d2");
+        win2.show();
+      }
+    </script>
+  </head>
+  <body onload="init()">
+    <form id="f" name="f" action="http://prototype.conio.net/">
+      <div id="d">
+        The form works because it is inside the window content<br />
+        <input type="text" name="key" value="value" />
+        <input type="submit" value="Submit" />
+      </div>
+    </form>
+
+    <form id="f2" name="f2" action="http://blogus.xilinus.com/pages/javawin">
+      <div id="d2">
+        The form also work even if it's not inside the window content but the parent's window is the form itself<br />
+        <input type="text" name="key" value="value" />
+        <input type="submit" value="Submit" />
+      </div>
+    </form>
+  </body>
+</html>
+
+

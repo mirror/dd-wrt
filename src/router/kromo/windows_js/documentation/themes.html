@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Prototype Window Class : Themes</title>
+	<!--  Prototype Window Class Part -->
+  <script type="text/javascript" src="javascripts/prototype.js"> </script> 
+	<script type="text/javascript" src="javascripts/effects.js"> </script>
+	<script type="text/javascript" src="javascripts/window.js"> </script>
+	<script type="text/javascript" src="javascripts/debug.js"> </script>
+	
+	<link href="themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/debug.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/nuncio.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/darkX.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/spread.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/mac_os_x.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+	
+  <!--  Doc Part-->
+  <link href="stylesheets/style.css" rel="stylesheet" type="text/css" >	 </link>
+	<script type="text/javascript" src="js/application.js"> </script>  		
+</head>
+
+<body>
+  <script>Application.insertNavigation('themes')</script>
+  <div class="content">
+    <h2 class="first"> Overview</h2>
+    
+    Creating a new theme is very easy. You need to describe window's look and feel in a CSS file. Name your CSS file THEME_NAME.css with thoses CSS definition:<br/>
+    By convention the images used in the CSS files are in THEME_NAME directory (it's just a convention, do it as you feel!)<br/>
+    A window is divided into 9 parts, 4 corners, 4 borders and the main content in the middle.<br/><br/>
+    View a detail <a href="#" onclick=" Effect.toggle('css_file', 'blind')">template CSS file </a>(you can copy-paste it to start a new theme). See <a href="http://art.gnome.org/themes/metacity">Art.Gnome.Org</a> for cool designs. I used two of them, it's easy to integrate in the class.<br/><br/>
+    <div style="display:none;text-align:left;color:#000000; background-color:#F8F8F8; border:solid black 1px; padding:0.5em 1em 0.5em 1em; overflow:auto;font-size:small; font-family:monospace;margin:5px; " id='css_file'  >
+      <span style="color:#236e25;">/* North-West corner */</span><br />
+    .THEME_NAME_nw {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/TOP_LEFT_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">10px</span>;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">25px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* North border */</span><br />
+    .THEME_NAME_n {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/TOP_IMAGE.gif) <span style="color:#9b4400;">repeat-x</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">25px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* North-East corner */</span><br />
+    .THEME_NAME_ne {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/TOP_RIGHT_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">10px</span>; &nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">25px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* West border */</span><br />
+    .THEME_NAME_w {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/LEFT_IMAGE.gif) <span style="color:#9b4400;">repeat-y</span> <span style="color:#9b4400;">top</span> <span style="color:#9b4400;">left</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">7px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* East border */</span><br />
+    .THEME_NAME_e {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/RIGHT_IMAGE.gif) <span style="color:#9b4400;">repeat-y</span> <span style="color:#9b4400;">top</span> <span style="color:#9b4400;">right</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">7px</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* South-West corner */</span><br />
+    .THEME_NAME_sw {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/BOTTOM_LEFT_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">7px</span>;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">7px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* South border */</span><br />
+    .THEME_NAME_s {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/BOTTOM_IMAGE.gif) <span style="color:#9b4400;">repeat-x</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">7px</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* South-East corner */</span><br />
+    .THEME_NAME_se {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/BOTTOM_RIGHT_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">7px</span>;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">7px</span>;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">vertical-align</span>:<span style="color:#9b4400;">top</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Resize button */</span><br />
+    .THEME_NAME_sizer {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#0000ff;">7px</span>;<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">7px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/RESIZE_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; <br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">cursor</span>:<span style="color:#9b4400;">se-resize</span>; &nbsp;&nbsp;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Close button */</span><br />
+    .THEME_NAME_close {<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">width</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">height</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/CLOSE_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">position</span>:<span style="color:#9b4400;">absolute</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">top</span>:<span style="color:#0000ff;">0px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">right</span>:<span style="color:#0000ff;">11px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">cursor</span>:<span style="color:#9b4400;">pointer</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">z-index</span>:<span style="color:#0000ff;">1000</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Minimize button */</span><br />
+    .THEME_NAME_minimize {<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">width</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">height</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/MINIMIZE_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">position</span>:<span style="color:#9b4400;">absolute</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">top</span>:<span style="color:#0000ff;">0px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">right</span>:<span style="color:#0000ff;">55px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">cursor</span>:<span style="color:#9b4400;">pointer</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">z-index</span>:<span style="color:#0000ff;">1000</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Maximize button */</span><br />
+    .THEME_NAME_maximize {<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">width</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">height</span>: <span style="color:#0000ff;">23px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">background</span>: <span style="color:#9b4400;">transparent</span> <span style="color:#9b4400;">url</span>(THEME_NAME/MAXIMIZE_IMAGE.gif) <span style="color:#9b4400;">no-repeat</span> <span style="color:#0000ff;">0 0</span>; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">position</span>:<span style="color:#9b4400;">absolute</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">top</span>:<span style="color:#0000ff;">0px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#9b4400;">right</span>:<span style="color:#0000ff;">33px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">cursor</span>:<span style="color:#9b4400;">pointer</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">z-index</span>:<span style="color:#0000ff;">1000</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Title bar */</span><br />
+    .THEME_NAME_title {<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">float</span>:<span style="color:#9b4400;">left</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">height</span>:<span style="color:#0000ff;">14px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">font-size</span>:<span style="color:#0000ff;">14px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">text-align</span>:<span style="color:#9b4400;">center</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">margin-top</span>:<span style="color:#0000ff;">2px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">width</span>:<span style="color:#9b4400;">100</span><span style="color:#0000ff;">%</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">color</span>:<span style="color:#760f15;">#123456</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Content div (not used for url) */</span><br />
+    .THEME_NAME_content {<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">overflow</span>:<span style="color:#9b4400;">auto</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">color</span>: <span style="color:#760f15;">#000</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">font-family</span>: Tahoma, Arial, sans-serif;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">font-size</span>: <span style="color:#0000ff;">10px</span>;<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#88134f;">background</span>:<span style="color:#760f15;">#FDFDFD</span>;<br />
+    }<br />
+    <br />
+    <span style="color:#236e25;">/* Overlay for modal window, sp&eacute;cify color and opacity (three times to work on all browsers */</span><br />
+    .overlay_THEME_NAME {<br />
+    &nbsp;&nbsp;<span style="color:#88134f;">background-color</span>: <span style="color:#760f15;">#85BBEF</span>;<br />
+    &nbsp;&nbsp;filter:alpha(opacity=<span style="color:#0000ff;">60</span>);<br />
+    &nbsp;&nbsp;-moz-opacity: <span style="color:#0000ff;">0</span>.<span style="color:#0000ff;">6</span>;<br />
+    &nbsp;&nbsp;opacity: <span style="color:#0000ff;">0</span>.<span style="color:#0000ff;">6</span>;<br />
+    }<br />
+    <br />
+    <br />
+    </div>    
+    
+    Take a look to an existing CSS file like <a href="themes/alphacube.css">alphacube.css</a> or <a href="themes/mac_os_x.css">mac_os_x.css</a> (with PNG image and IE specific code)
+  
+  <h2>Themes included in this release</h2>
+  <ul>
+    <li>Default (<script>Application.addViewThemeButton('dialog')</script>)</li>
+    <li>MacShadow (<script>Application.addViewThemeButton('mac_os_x')</script>)</li>
+    <li>Nuncio (from Brice Joly) (<script>Application.addViewThemeButton('nuncio')</script>)</li>
+    <li>Alphacube from <a href="http://art.gnome.org/themes/metacity/1171">Art.Gnome.Org</a> (<script>Application.addViewThemeButton('alphacube')</script>)</li>
+    <li>Spread (Alphacube with a different color scheme) (<script>Application.addViewThemeButton('spread')</script>)</li>
+    <li>DarkX from <a href="http://art.gnome.org/themes/metacity/708">Art.Gnome.Org</a> (<script>Application.addViewThemeButton('darkX')</script>)</li>
+    <br/>
+    <li>Default dialog (<script>Application.addViewThemeDialogButton('alert')</script>)</li>
+    <li>Alphacube as dialog (<script>Application.addViewThemeDialogButton('alphacube')</script>)</li>
+    
+  </ul>
+</div>
+  
+</body>
+
+</html>
