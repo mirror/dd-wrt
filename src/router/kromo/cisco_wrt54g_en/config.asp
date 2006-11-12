@@ -1,15 +1,12 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Backup &amp; Restore</title>
 		<script type="text/javascript">
-//<![CDATA[
-
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + config.titl;
 
 function to_submit(F) {
 	if (F.file.value == "")	{
-//		alert("Please select a configuration file to restore.");
 		alert(errmsg.err42);
 		return false;
 	}
@@ -17,9 +14,8 @@ function to_submit(F) {
 	apply(F);
 }
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -28,7 +24,7 @@ function to_submit(F) {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Management.asp","config.asp"); %>
+					<% do_menu("Management.asp","config.asp"); %>
 				</div>
 				    <div id="main">
 					<div id="contents">
@@ -57,19 +53,11 @@ function to_submit(F) {
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
+								//<![CDATA[
 								document.write("<input type=\"button\" name=\"B1\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/nvrambak.bin'\" />");
-								
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form)\" />");
-								
-//]]>
-</script>
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form);\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

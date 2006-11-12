@@ -72,12 +72,8 @@ function init() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");								
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />");
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");								
+								document.write("<input type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
 								//]]>
 								</script>
 							</div>

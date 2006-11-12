@@ -21,7 +21,7 @@ color:#30519c;
 } 
 #help a { 
 color:#fff; 
-} 
+}
 #help a:hover { 
 color:#fff; 
 }
@@ -40,4 +40,18 @@ border-width:.09em;
 .progressbarblock {
 background-color: #496fc7;
 font-size:.09em;
+}
+
+input[type='button'] {
+background: #496fc7;
+color: #fff;
+border-style: solid none none solid ;
+border-width: .1em;
+cursor:pointer;
+}
+
+input[type='button']:hover {
+background: #6384cf;
+color: #fff;
+cursor:pointer;
 }
