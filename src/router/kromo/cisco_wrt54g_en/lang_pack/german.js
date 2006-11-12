@@ -1053,16 +1053,21 @@ service.rstats_path="Speichere Daten nach";
 service.rstats_time="Speicher Zyklus";
 service.rstats_usrdir="Nutzer Verzeichniss";
 
-//eoip.webservices
-service.eoip_legend="Ethernet Über IP Tunneln";
-service.eoip_srv="EoIP Tunnel";
-service.eoip_remoteIP="Entfernte IP Address";
-service.eoip_tunnelID="Tunnel Nummer";
-service.eoip_passtos="TOS Durchleitung";
-service.eoip_frag="fragment";
-service.eoip_mssfix="mssfix";
-service.eoip_shaper="shaper";
-service.eoip_bridging="Brücken";
+
+
+// ******************************************* eop-tunnel.asp *******************************************//
+
+eoip.titl=" - EoIP Tunnel";
+eoip.tunnel="Tunnel";
+eoip.legend="Ethernet Über IP Tunneln";
+eoip.srv="EoIP Tunnel";
+eoip.remoteIP="Entfernte IP Address";
+eoip.tunnelID="Tunnel Nummer";
+eoip.passtos="TOS Durchleitung";
+eoip.frag="fragment";
+eoip.mssfix="mssfix";
+eoip.shaper="shaper";
+eoip.bridging="Brücken";
 
 
 
