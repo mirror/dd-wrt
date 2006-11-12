@@ -98,7 +98,20 @@ start_services (void)
   start_service ("httpd");
   start_service ("udhcpd");
   start_service ("dnsmasq");
-  start_service ("nas_lan");
+/* nas mode select*/
+	  if (nvram_match ("wl_mode", "sta")
+	      || nvram_match ("wl_mode", "wet")
+	      || nvram_match ("wl_mode", "apsta"))
+	    {
+	  	cprintf ("start nas wan\n");
+	  	start_service ("nas_wan");
+	    }
+	  else
+	  	{  
+	  	cprintf ("start nas lan\n");
+	  	start_service ("nas_lan");
+  		}
+/*end nas mode select */
 #ifdef HAVE_MSSID
   start_service ("guest_nas");
 #endif
