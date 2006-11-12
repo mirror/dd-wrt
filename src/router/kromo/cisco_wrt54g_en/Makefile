@@ -334,7 +334,7 @@ endif
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* > $(SRCBASE)/router/httpd/html.c 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
 	rm -rf $(INSTALLDIR)/www/style/pwc/common_style
 	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
