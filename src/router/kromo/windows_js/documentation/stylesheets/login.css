@@ -1,0 +1,25 @@
+.login_label, .login_input, .login_error  {
+  padding:10px;
+  color:#000;
+  text-align:left;
+  float:left; 
+  width:100px;
+  font-size:20px;
+  color:#64355A;
+}
+
+.login_input {
+  width:200px;
+}
+
+.login_error {
+  width:250px;
+  color:#F00;
+}
+
+.login_input input {
+  width:100%;
+}
+#login {
+  background:#123;
+}

@@ -1,0 +1,54 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Test</title>
+
+	<style>
+
+	* {
+		margin: 0px;
+		padding: 0px;
+	}
+	</style>
+
+	<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+	<script type="text/javascript" src="../javascripts/effects.js"> </script>
+	<script type="text/javascript" src="../javascripts/window.js"> </script>
+	<script type="text/javascript" src="../javascripts/debug.js"> </script>
+	<link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="../themes/theme1.css" rel="stylesheet" type="text/css" >	 </link>
+	<title>Sample Windows</title>
+</head>
+<body>
+<script>
+// Martys cascade test
+var idx = 0;
+var xidx = 0;
+var cascade = 0;
+var cOffset = 23;
+var cWins = new Array();
+function showWin(ajaxArgs) {
+	foo = new Window('dialog'+xidx, {className: "dialog", title: "Yahoo"+idx, top:(0+(cascade*cOffset)), left:(0+(cascade*cOffset)), width:300, height:200, zIndex:100, opacity:1, resizable: true, xurl:'http://www.yahoo.com'});
+    foo.getContent().innerHTML='stubbed:getAjax(ajaxArgs)';
+    foo.show();
+    foo.toFront();
+    cascade++;
+    idx++;
+    xidx++;
+	cWins.push(foo);
+}
+
+function closeAll() {
+    var x = 0;
+    var lag=250;
+	for(var i=(cWins.length-1);  i>=0;  i--) {
+	  setTimeout('cWins['+i+'].hide()',(x*lag));
+	  x++;
+	}
+	setTimeout('cWins.length=0; idx=0; cascade=0;',x*lag);
+}
+</script>
+</body>
+</html>

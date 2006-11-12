@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>Prototype Window Class : Samples</title>
+    
+    <!--  Prototype Window Class Part -->
+    <script type="text/javascript" src="../javascripts/prototype.js"> </script> 
+  	<script type="text/javascript" src="../javascripts/effects.js"> </script>
+  	<script type="text/javascript" src="../javascripts/window.js"> </script>
+  	<script type="text/javascript" src="../javascripts/debug.js"> </script>
+  	
+  	<link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="../themes/spread.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="../themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="../themes/alert_lite.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="../themes/debug.css" rel="stylesheet" type="text/css" >	 </link>
+  	
+    <!--  Doc Part-->
+  	<script type="text/javascript" src="js/application.js"> </script>  	
+  	<link href="stylesheets/login.css" rel="stylesheet" type="text/css" >	 </link>
+  	<link href="stylesheets/style.css" rel="stylesheet" type="text/css" >	 </link>
+  	<style>
+      #myDialogId .myButtonClass {
+      padding:3px;
+      font-size:20px;
+      width:100px;
+      }
+      #myDialogId .ok_button {
+      color:#2F2;
+      }
+      #myDialogId .cancel_button {
+      color:#F88;
+      }
+  </style>
+  </head>
+  <script>
+    var contentWin;
+  </script>
+  <body onload="">
+    <script>Application.insertNavigation('samples')</script>
+    <div class="content">
+      <div id="samples">
+        Here is a list of sample codes to show different ways to create windows and dialogs. You can view source of each example, even edit it and test your modification immediatly in your browser. Just click again on the link to open a new window/dialog with the modified code. Each window uses a javascript function to get a new id and DO NOT call setDestroyOnClose().<br/>
+You can open <a href="#" onclick="showDebug();"> the debug window </a> if you want to see some debug outputs.
+        
+        <script>Application.addTitle('Open a simple window', 'open_window1')</script>
+        <p class="description">
+            This sample opens a simple window with some parameters like specific hide and show effects.
+        </p>
+        <script>Application.addShowButton('open_window1')</script>
+        
+        <div class="listing" style="display:none" id="open_window1_codediv">
+          <xmp id="open_window1" class="listing" >
+var win = new Window(Application.getNewId(), {className: "dialog",  width:350, height:400, zIndex: 100, resizable: true, title: "Sample window", showEffect:Effect.BlindDown, hideEffect: Effect.SwitchOff, draggable:true})
+
+win.getContent().innerHTML= "<div style='padding:10px'> Lorem ipsum dolor sit amet, consectetur adipiscing elit, set eiusmod tempor incidunt et labore et dolore magna aliquam. Ut enim ad minim veniam, quis nostrud exerc. Irure dolor in reprehend incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse molestaie cillum. Tia non ob ea soluad incom dereud facilis est er expedit distinct. Nam liber te conscient to factor tum poen legum odioque civiuda et tam. \
+At vver eos et accusam dignissum qui blandit est praesent. Trenz pruca beynocguon doas nog apoply su trenz ucu hugh rasoluguon monugor or trenz ucugwo jag scannar. Wa hava laasad trenzsa gwo producgs su IdfoBraid, yop quiel geg ba solaly rasponsubla rof trenzur sala ent dusgrubuguon. Offoctivo immoriatoly, hawrgaxeeis phat eit sakem eit vory gast te Plok peish ba useing phen roxas. Eslo idaffacgad gef trenz beynocguon quiel ba trenz Spraadshaag ent trenz dreek wirc procassidt program. Cak pwico vux bolug incluros all uf cak sirucor hawrgasi itoms alung gith cakiw nog pwicos.\
+Lor sum amet, commy nulputat. Duipit lum ipisl eros dolortionsed tin hent aliquis illam volor in ea feum in ut adipsustrud elent ulluptat. Duisl ullan ex et am vulputem augiam doloreet amet enibh eui te dipit acillutat acilis amet, suscil er iuscilla con utat, quisis eu feugait ad dolore commy nullam iuscilisl iureril ilisl del ut pratuer iliquis acipissit accum quis nulluptat. Dui bla faccumsan velis auguero con henis duismolor sumsandrem quat vulluptat alit er iniamcore exeriure vero core te dit ut nulla feummolore commod dipis augiamcommod tem ese dolestrud do odo odiamco eetummy nis aliquamcommy nonse eu feugue del eugiamconsed ming estrud magnis exero eumsandio enisim del dio od tat.sumsan et pratum velit ing etue te consequis alis nullan et, quis am iusci bla feummy.</div>"
+win.setStatusBar("Status bar info");
+win.showCenter();        
+          </xmp>        
+          <script>Application.addEditButton('open_window1')</script>
+        </div>
+        
+        <script>Application.addTitle('Open a window with an URL inside', 'open_window2')</script>
+        <p class="description">
+            This sample opens a window with RubyOnRails.com site in it. It uses another theme.
+        </p>
+        <script>Application.addShowButton('open_window2')</script>
+        
+        <div class="listing" style="display:none" id="open_window2_codediv">
+          <xmp id="open_window2" class="listing">
+var win = new Window(Application.getNewId(), {className: "spread", title: "Ruby on Rails", 
+                                              top:70, left:100, width:300, height:200, 
+                                              resizable: true, url: "http://www.rubyonrails.org/", showEffectOptions: {duration:3}})
+win.show();                                            
+          </xmp>        
+          <script>Application.addEditButton('open_window2')</script>
+        </div>
+              	
+        <script>Application.addTitle('Open a window with an existing content inside', 'open_window3')</script>
+        <p class="description">
+          <div id="container">
+        	   <div id="test_content" style="float:right;width:100px; height:150px;background:#DFA; color:#000; font-size:12px;">
+        		   Lorem ipsum dolor sit amet, consectetur adipiscing elit
+        	  </div>
+          
+            This sample opens a window with green div on the right as content. It will keep the same size and position. Close the window to restore the div in the page.<br/>
+            It also uses a window observer to restore the div after closing the window.
+        </p>
+      	</div>
+        
+        <script>Application.addShowButton('open_window3')</script>
+
+        <div class="listing" style="display:none" id="open_window3_codediv">
+          <xmp id="open_window3" class="listing">
+if (contentWin != null) {
+	Dialog.alert("Close the window 'Test' before opening it again!", {windowParameters:{ width:200, height:130}}); 
+}
+else {
+  contentWin = new Window('content_win', {resizable: false, hideEffect:Element.hide, showEffect:Element.show, minWidth: 10})
+  contentWin.setContent('test_content', true, true)
+  contentWin.toFront();
+  contentWin.setDestroyOnClose();
+  contentWin.show();	
+
+  // Set up a windows observer, check ou debug window to get messages
+  myObserver = {
+    onDestroy: function(eventName, win) {
+      if (win == contentWin) {
+        $('container').appendChild($('test_content'));
+        contentWin = null;
+        Windows.removeObserver(this);
+      }
+      debug(eventName + " on " + win.getId())
+    }
+  }
+  Windows.addObserver(myObserver);
+}
+          </xmp>        
+          <script>Application.addEditButton('open_window3')</script>
+        </div>
+
+        
+        <script>Application.addTitle('Open an alert dialog', 'open_alert')</script>
+        <p class="description">
+            This sample opens a alert dialog with the default alert theme (alert.css). width/height/okLabel are specified and also ok callback function.
+        </p>
+        <script>Application.addShowButton('open_alert')</script>
+                
+        <div class="listing" style="display:none" id="open_alert_codediv">
+          <xmp id="open_alert" class="listing">
+Dialog.alert("Test of alert panel, check out debug window after closing it", 
+             {windowParameters: {width:300, height:100}, okLabel: "close", 
+              ok:function(win) {debug("validate alert panel"); return true;}});
+          </xmp>        
+          <script>Application.addEditButton('open_alert')</script>
+        </div>
+        
+        <script>Application.addTitle('Open a confirm dialog', 'open_confirm')</script>
+        <p class="description">
+          This sample opens a confirm dialog with the default alert theme (alert.css). width/okLabel are specified and also ok/cancel callback function.
+          Height is not set so the dialog will fit content's height. It also change ok/cancel button class (CSS above).
+        </p>
+        <xmp id="button_css"><style>
+#myDialogId .myButtonClass {
+  padding:3px;
+  font-size:20px;
+  width:100px;
+}
+#myDialogId .ok_button {
+  color:#2F2;
+}
+#myDialogId .cancel_button {
+  color:#F88;
+}
+</style></xmp>        
+  <script>Application.addShowButton('open_confirm')</script>
+        <div class="listing" style="display:none" id="open_confirm_codediv">        
+          <xmp id="open_confirm">
+Dialog.confirm("Test of confirm panel, check out debug window after closing it.", 
+              {windowParameters: {width:300}, okLabel: "close", 
+               buttonClass: "myButtonClass",
+               id: "myDialogId",
+               cancel:function(win) {debug("cancel confirm panel")},
+               ok:function(win) {debug("validate confirm panel"); return true;}
+              });
+            </xmp>
+            <script>Application.addEditButton('open_confirm')</script>
+        </div>
+ 
+        <script>Application.addTitle('Open a info dialog', 'open_info')</script>
+        <p class="description">
+          This sample opens a info dialog with a progress image. It will be display 3 seconds with a countdown.
+        </p>
+        <script>Application.addShowButton('open_info')</script>
+
+        <div class="listing" style="display:none" id="open_info_codediv">        
+          <xmp id="open_info">
+var timeout;
+function openInfoDialog() {
+  Dialog.info("Test of info panel, it will close <br>in 3s ...",
+               {windowParameters: {width:250, height:100}, showProgress: true});
+  timeout=3;
+  setTimeout(infoTimeout, 1000)
+}
+
+function infoTimeout() {
+  timeout--;
+  if (timeout >0) {
+    Dialog.setInfoMessage("Test of info panel, it will close <br>in " + timeout + "s ...")
+    setTimeout(infoTimeout, 1000)
+ }
+ else
+  Dialog.closeInfo()
+}
+openInfoDialog();
+          </xmp>
+          <script>Application.addEditButton('open_info')</script>
+        </div>
+        
+        
+        <script>Application.addTitle('Open a login window', 'open_login')</script>
+        <p class="description">
+          This advanced sample opens a login window with a nice effect if login fails. The window update also its height to display an error message to avoid scrollbars.
+          The login window design is done in the HTML file with display:none.<br/>
+          Here is the login HTML code (<a href="stylesheets/login.css">see also login CSS file</a>):
+          </p>
+          
+<xmp><div id="login" style="display:none">
+  <p><span id='login_error_msg' class="login_error" style="display:none">&nbsp;</span></p>
+  <div style="clear:both"></div>
+  <p><span class="login_label">login</span> <span class="login_input"><input type="text"/></span></p>
+  <div style="clear:both"></div>
+  <p><span class="login_label">password</span> <span class="login_input"><input type="password"/></span></p>
+  <div style="clear:both"></div>
+</div></xmp>
+        </p>
+        <div id="login" style="display:none">
+          <p><span id='login_error_msg' class="login_error" style="display:none">&nbsp;</span></p>
+          <div style="clear:both"></div>
+          <p><span class="login_label">login</span> <span class="login_input"><input type="text"/></span></p>
+          <div style="clear:both"></div>
+          <p><span class="login_label">password</span> <span class="login_input"><input type="password"/></span></p>
+          <div style="clear:both"></div>
+        </div>
+        <script>Application.addShowButton('open_login')</script>
+
+        <div class="listing" style="display:none" id="open_login_codediv">        
+          <xmp id="open_login">
+Dialog.confirm($('login').innerHTML, {windowParameters: {className:"alphacube", width:400}, 
+                                      okLabel: "login", cancelLabel: "cancel",
+                                      ok:function(win){
+                                        $('login_error_msg').innerHTML='Login or password inccorect';
+                                        $('login_error_msg').show(); 
+                                        Windows.focusedWindow.updateHeight();
+                                        new Effect.Shake(Windows.focusedWindow.getId()); return false;}});
+          </xmp>
+          <script>Application.addEditButton('open_login')</script>
+        </div>
+        
+        <script>Application.addTitle('Ajax Dialog', 'ajax_dialog')</script>
+        <p class="description">
+          Instead of writing HTML in the same page, fill the dialog with an Ajax request. (View the requested file <a href="info_panel.html">info_panel.html</a>, do view source to see HTML content)
+        </p>
+        <script>Application.addShowButton('open_ajax_dialog')</script>
+
+        <div class="listing" style="display:none" id="open_ajax_dialog_codediv">        
+          <xmp id="ajax_dialog">Dialog.alert({url: "info_panel.html", options: {method: 'get'}}, 
+            {windowParameters: {className: "alphacube", width:540}, okLabel: "Close"});</xmp>
+          <script>Application.addEditButton('open_ajax_dialog')</script>
+        </div>
+        
+    </div>
+   </div>   
+  </body>
+</html>

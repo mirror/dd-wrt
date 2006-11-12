@@ -1,0 +1,418 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Prototype Window Class : Documentation</title>
+  <!--  Prototype Window Class Part -->
+  <script type="text/javascript" src="javascripts/prototype.js"> </script> 
+	<script type="text/javascript" src="javascripts/effects.js"> </script>
+	<script type="text/javascript" src="javascripts/window.js"> </script>
+	<script type="text/javascript" src="javascripts/debug.js"> </script>
+	
+	<link href="themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+	
+  <!--  Doc Part-->
+	<link href="stylesheets/style.css" rel="stylesheet" type="text/css" >	 </link>
+	<script type="text/javascript" src="js/application.js"> </script>  	
+	
+</head>
+
+<body onload="Application.insertDocOverview()">
+  <script>Application.insertNavigation('documentation')</script>
+  
+  <div class="content">
+    <h2 class="first"> Overview</h2>
+    <div id="Overview"></div>
+    <h2>Window Class</h2>
+    Main class to handle windows<br/><br/>
+    <div class="function window" title="keepMultiModalWindow"><a name="keepMultiModalWindow"></a>
+      <p class="title"><span class="function">Window.keepMultiModalWindow</span> Constant for multi modal window behavior.<br><br>
+      By default (<strong>Window.keepMultiModalWindow=false</strong>), a new modal window will hide the previous one. if <strong>Window.keepMultiModalWindow=true</strong>, a new modal window will move the previous one under the overlay. </p>
+    </div>
+    <div class="function window" title="initialize"><a name="initialize"></a>
+      <p class="title"><span class="function">initialize(id, options)</span> Window constructor used when creating new window (new Window(id, options))</p>
+      <!--       
+        <p class="parameter_header">
+          <span class="field">Argument</span>
+          <span class="explanation">Description</span>
+        </p>
+      --> 
+       <p class="parameter">
+        <span class="field">id</span>
+        <span class="explanation">DOM id of the window must be unique</span>
+      </p>
+      <p class="parameter">
+        <span class="field">options</span>
+        <span class="explanation">
+          Hash map of window options, here is the key list:
+          <table>
+            <tr><th>Key</th>   <th>Default</th> <th>Description </th></tr>
+            <tr><td class="key">className</td>            <td class="default">dialog</td> <td class="detail">Class name prefix </td></tr>
+            <tr><td class="key">title</td>                <td class="default">none</td>   <td class="detail">Window's title </td></tr>
+            <tr><td class="key">url</td>                  <td class="default">none</td>   <td class="detail">URL of window content (use an iframe)</td></tr>
+            <tr><td class="key">parent</td>               <td class="default">body</td>   <td class="detail">Parent node of the window </td></tr>
+            <tr><td class="key">top | bottom</td>         <td class="default">top:0</td>  <td class="detail">Top or bottom position of the window in pixels </td></tr>
+            <tr><td class="key">right | left</td>         <td class="default">left:0</td> <td class="detail">Right or left position of the window in pixels</td></tr>  
+            <tr><td class="key">width / height</td>       <td class="default">100</td>    <td class="detail">width and height of the window  </td></tr>  
+            <tr><td class="key">maxWidth / maxHeight</td> <td class="default">none</td>   <td class="detail">Maximum width and height of the window</td></tr>
+            <tr><td class="key">minWidth / minHeight</td> <td class="default">100/20</td> <td class="detail">Minimum width and height of the window </td></tr>
+            <tr><td class="key">resizable</td>            <td class="default">true</td>   <td class="detail">Specify if the window can be resized </td></tr>
+            <tr><td class="key">closable</td>             <td class="default">true</td>   <td class="detail">Specify if the window can be closed </td></tr>
+            <tr><td class="key">minimizable</td>          <td class="default">true</td>   <td class="detail">Specify if the window can be minimized </td></tr>
+            <tr><td class="key">maximizable</td>          <td class="default">true</td>   <td class="detail">Specify if the window can be maximized</td></tr>
+            <tr><td class="key">draggable</td>            <td class="default">true</td>   <td class="detail">Specify if the window can be moved </td></tr>
+            <tr><td class="key">showEffect</td>           <td class="default">Effect.Appear or<br> Element.show</td>   <td class="detail">Show effect function. The default value depends if effect.js of script.aculo.us is included </td></tr>
+            <tr><td  class="key">hideEffect</td>          <td class="default">Effect.Fade or<br> Element.hide</td>   <td class="detail">Hide effect function. The default value depends if effect.js of script.aculo.us is included </td></tr>
+            <tr><td  class="key">showEffectOptions</td>   <td class="default">none</td>   <td class="detail">Show effect options (see script.aculo.us documentation).</td></tr>
+            <tr><td  class="key">hideEffectOptions</td>   <td class="default">none</td>   <td class="detail">Hid effect options (see script.aculo.us documentation).</td></tr>
+            <tr><td  class="key">effectOptions</td>       <td class="default">none</td>       <td class="detail">Show and hide effect options (see script.aculo.us documentation).</td></tr>
+            <tr><td  class="key">onload</td>              <td class="default">none</td>       <td class="detail">Onload function of the main window div or iframe</td></tr>
+            <tr><td  class="key">opacity</td>             <td class="default">1</td>       <td class="detail">Window opacity </td></tr>
+            <tr><td  class="key">recenterModal</td>             <td class="default">true</td>       <td class="detail">Recenter modal window </td></tr>
+          </table>
+        </span>
+      </p>
+    </div>
+
+
+    <div class="function window" title="destroy"><a name="destroy"></a>
+      <p class="title"><span class="function">destroy()</span> Window destructor</p>
+    </div>
+    
+    <div class="function window" title="getId"><a name="getId"></a>
+      <p class="title"><span class="function">getId()</span> Returns current window id</p>
+    </div>
+    
+    <div class="function window" title="setDestroyOnClose"><a name="setDestroyOnClose"></a>
+      <p class="title"><span class="function">setDestroyOnClose()</span> The window will be destroy by clicking on close button instead of being hidden</p>
+    </div>
+    
+    <div class="function window" title="setDelegate"><a name="setDelegate"></a>
+      <p class="title"><span class="function">setDelegate(delegate)</span> Sets window delegate</p>
+      <p class="parameter">
+        <span class="field">delegate</span>
+        <span class="explanation">Window delegate, should have canClose(window) function</span>
+      </p>
+    </div>
+
+    <div class="function window" title="getDelegate"><a name="getDelegate"></a>
+      <p class="title"><span class="function">getDelegate()</span> Returns current window delegate</p>
+    </div>
+    
+    <div class="function window" title="setContent"><a name="setContent"></a>
+      <p class="title"><span class="function">setContent(id, autoresize, autoposition)</span> Sets window content using an existing element (does not work woth url/iframe)</p>
+      <p class="parameter">
+        <span class="field">id</span>
+        <span class="explanation">Element id to insert in the window</span>
+      </p>
+      <p class="parameter">
+        <span class="field">autoresize (default false)</span>
+        <span class="explanation">Resizes the window to fit with its content</span>
+      </p>
+      <p class="parameter">
+        <span class="field">autoposition (default false)</span>
+        <span class="explanation">Sets the current window position to the specified input element</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setAjaxContent"><a name="setAjaxContent"></a>
+      <p class="title"><span class="function">setAjaxContent(url, options, showCentered, showModal)</span> Sets window content using an Ajax request. The request must return HTML code. See script.aculo.us <a href="http://wiki.script.aculo.us/scriptaculous/show/Ajax.Request">Ajax.request </a>documentation for details. When the response is received, the window is shown.</p>
+      <p class="parameter">
+        <span class="field">url</span>
+        <span class="explanation">Ajax request URL</span>
+      </p>
+      <p class="parameter">
+        <span class="field">options</span>
+        <span class="explanation">Ajax request options</span>
+      </p>
+      <p class="parameter">
+        <span class="field">showCentered (default false)</span>
+        <span class="explanation">Displays window centered when response is received</span>
+      </p>
+      <p class="parameter">
+        <span class="field">showModal (default false)</span>
+        <span class="explanation">Displays window in modal mode when response is received</span>
+      </p>
+    </div>
+    
+    
+    
+  	
+    <div class="function window" title="getContent"><a name="getContent"></a>
+      <p class="title"><span class="function">getContent()</span> Returns current window content (a div or an iframe)</p>
+    </div>
+    
+    <div class="function window" title="setCookie"><a name="setCookie"></a>
+      <p class="title"><span class="function">setCookie(name, expires, path, domain, secure)</span> Sets cookie informations to store window size and position</p>
+      <p class="parameter">
+        <span class="field">name (default window's id)</span>
+        <span class="explanation">Cookie name</span>
+      </p>
+      <p class="parameter">
+        <span class="field">expires, path, domain, secure</span>
+        <span class="explanation">Cookie attributes</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setLocation"><a name="setLocation"></a>
+      <p class="title"><span class="function">setLocation(top, left)</span> Sets window top-left position</p>
+      <p class="parameter">
+        <span class="field">top</span>
+        <span class="explanation">Top position in pixels</span>
+      </p>
+      <p class="parameter">
+        <span class="field">bottom</span>
+        <span class="explanation">Bottom position in pixels</span>
+      </p>
+    </div>
+ 
+    <div class="function window" title="getSize"><a name="getSize"></a>
+      <p class="title"><span class="function">getSize()</span> Gets window content size. Return an hash with width and height as keys</p>
+    </div>
+    <div class="function window" title="setSize"><a name="setSize"></a>
+      <p class="title"><span class="function">setSize(width, height)</span> Sets window content size</p>
+      <p class="parameter">
+        <span class="field">width</span>
+        <span class="explanation">Width in pixels</span>
+      </p>
+      <p class="parameter">
+        <span class="field">height</span>
+        <span class="explanation">Height in pixels</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="updateWidth"><a name="updateWidth"></a>
+      <p class="title"><span class="function">updateWidth()</span> Recompute window width, useful when you change window content and do not want scrolling</p>
+    </div>
+    
+    <div class="function window" title="updateHeight"><a name="updateHeight"></a>
+      <p class="title"><span class="function">updateHeight()</span> Recompute window height, useful when you change window content and do not want scrolling</p>
+    </div>
+    
+    <div class="function window" title="toFront"><a name="toFront"></a>
+      <p class="title"><span class="function">toFront()</span> Brings current window in front of all others</p>
+    </div>
+    
+    <div class="function window" title="toFront"><a name="toFront"></a>
+      <p class="title"><span class="function">toFront()</span> Brings current window in front of all others</p>
+    </div>
+    
+    <div class="function window" title="show"><a name="show"></a>
+      <p class="title"><span class="function">show(modal)</span> Shows window at its current position</p>
+      <p class="parameter">
+        <span class="field">modal (default false)</span>
+        <span class="explanation">Modal mode</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="showCenter"><a name="showCenter"></a>
+      <p class="title"><span class="function">showCenter(modal, top, left)</span> Shows window in page's center. You can set top (or left) if you want to center only left (or top) value</p>
+      <p class="parameter">
+        <span class="field">modal (default false)</span>
+        <span class="field">top (default null)</span>
+        <span class="field">left (default null)</span>
+        <span class="explanation">Modal mode</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="minimize"><a name="minimize"></a>
+      <p class="title"><span class="function">minimize()</span> Minimizes the window, only top bar will be displayed</p>
+    </div>
+
+    <div class="function window" title="maximize"><a name="maximize"></a>
+      <p class="title"><span class="function">maximize()</span> Maximizes the window, the window will fit the viewable area of the page</p>
+    </div>
+    
+    <div class="function window" title="isMinimized"><a name="isMinimized"></a>
+      <p class="title"><span class="function">isMinimized()</span> Returns true if the window is minimized</p>
+    </div>
+    
+    <div class="function window" title="isMaximized"><a name="isMaximized"></a>
+      <p class="title"><span class="function">isMaximized()</span> Returns true if the window is maximized</p>
+    </div>
+    
+    <div class="function window" title="setOpacity"><a name="setOpacity"></a>
+      <p class="title"><span class="function">setOpacity(opacity)</span> Sets window opacity</p>
+      <p class="parameter">
+        <span class="field">opacity</span>
+        <span class="explanation">Float value between 0 and 1</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setZIndex"><a name="setZIndex"></a>
+      <p class="title"><span class="function">setZIndex(zindex)</span> Sets window zindex</p>
+      <p class="parameter">
+        <span class="field">zindex</span>
+        <span class="explanation">Int value</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setTitle"><a name="setTitle"></a>
+      <p class="title"><span class="function">setTitle(title)</span> Sets window title</p>
+      <p class="parameter">
+        <span class="field">title</span>
+        <span class="explanation">Window title (can be null)</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setStatusBar"><a name="setStatusBar"></a>
+      <p class="title"><span class="function">setStatusBar(element)</span> Sets window status bar</p>
+      <p class="parameter">
+        <span class="field">element</span>
+        <span class="explanation">Can be HTML code or an element</span>
+      </p>
+    </div>
+    
+  	
+    <h2> Dialog module</h2>
+    Dialog factory to open alert/confirm/info modal panels<br/><br/>
+
+    <div class="function dialogmodule" title="confirm"><a name="confirm"></a>
+      <p class="title"><span class="function">confirm(content, options)</span> Opens a modal dialog with two buttons (ok/cancel for example)</p>
+       <p class="parameter">
+        <span class="field">content</span>
+        <span class="explanation">
+          - If the content is a string, it will be the message displayed in the dialog (HTML code)<br>
+          - If the content is an hash map, it will be used for setting content with an AJAX request. The hashmap must have url key and an optional options key (ajax options request)
+          </span>
+      </p>
+      <p class="parameter">
+        <span class="field">options</span>
+        <span class="explanation">
+          Hash map of dialog options, here is the key list:
+          <table>
+            <tr><th>Key</th>   <th>Default</th> <th>Description </th></tr>
+            <tr><td class="key">top</td>            <td class="default">null</td> <td class="detail">Top position </td></tr>
+            <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
+            <tr><td class="key">okLabel</td>            <td class="default">Ok</td> <td class="detail">Ok button label </td></tr>
+            <tr><td class="key">cancelLabel</td>        <td class="default">Cancel</td> <td class="detail">Cancel button label </td></tr>
+            <tr><td class="key">ok</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
+            <tr><td class="key">cancel</td>        <td class="default">none</td> <td class="detail">Cancel callback function called on ok button </td></tr>
+            <tr><td class="key">buttonClass</td>        <td class="default">none</td> <td class="detail">Ok/Cancel button css class name </td></tr>
+            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+          </table>
+        </span>
+      </p>
+    </div>
+    
+    <div class="function dialogmodule" title="alert"><a name="alert"></a>
+      <p class="title"><span class="function">alert(content, options)</span> Opens a modal alert with one button (ok for example)</p>
+       <p class="parameter">
+         <span class="field">content</span>
+         <span class="explanation">
+           - If the content is a string, it will be the message displayed in the dialog (HTML code)<br>
+           - If the content is an hash map, it will be used for setting content with an AJAX request. The hashmap must have url key and an optional options key (ajax options request)
+           </span>
+      </p>
+      <p class="parameter">
+        <span class="field">options</span>
+        <span class="explanation">
+          Hash map of dialog options, here is the key list:
+          <table>
+            <tr><th>Key</th>   <th>Default</th> <th>Description </th></tr>
+            <tr><td class="key">top</td>            <td class="default">null</td> <td class="detail">Top position </td></tr>
+            <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
+            <tr><td class="key">okLabel</td>            <td class="default">Ok</td> <td class="detail">Ok button label </td></tr>
+            <tr><td class="key">okCallback</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
+            <tr><td class="key">buttonClass</td>        <td class="default">none</td> <td class="detail">Ok/Cancel button css class name </td></tr>
+            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+          </table>
+        </span>
+      </p>
+    </div>
+
+    <div class="function dialogmodule" title="info"><a name="info"></a>
+      <p class="title"><span class="function">info(content, options)</span> Opens a modal info panel without any button. It can have a progress image (Used to display submit waiting message for example)</p>
+       <p class="parameter">
+         <span class="field">content</span>
+         <span class="explanation">
+           - If the content is a string, it will be the message displayed in the dialog (HTML code)<br>
+           - If the content is an hash map, it will be used for setting content with an AJAX request. The hashmap must have url key and an optional options key (ajax options request)
+           </span>
+      </p>
+      <p class="parameter">
+        <span class="field">options</span>
+        <span class="explanation">
+          Hash map of dialog options, here is the key list:
+          <table>
+            <tr><th>Key</th>   <th>Default</th> <th>Description </th></tr>
+            <tr><td class="key">top</td>            <td class="default">null</td> <td class="detail">Top position </td></tr>
+            <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
+            <tr><td class="key">showProgress</td>            <td class="default">false</td> <td class="detail">Add a progress image (info found in the css file) </td></tr>
+            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+          </table>
+        </span>
+      </p>
+    </div>
+
+    <div class="function dialogmodule" title="setInfoMessage"><a name="setInfoMessage"></a>
+      <p class="title"><span class="function">setInfoMessage(message)</span> Sets info message (Used to display waiting information like 32% done for example)</p>
+      <p class="parameter">
+        <span class="field">message</span>
+        <span class="explanation">New info message</span>
+      </p>
+    </div>
+
+    <div class="function dialogmodule" title="closeInfo"><a name="closeInfo"></a>
+      <p class="title"><span class="function">closeInfo()</span> Closes the current modal dialog</p>
+    </div>
+    <div style="clear:both"></div>
+
+    <h2> Windows</h2>
+    Windows factory. Handles created windows, and windows  observers<br/><br/>
+
+    <div class="function windows" title="addObserver"><a name="addObserver"></a>
+      <p class="title"><span class="function">addObserver(observer)</span> Registers a new windows observer. Should be able to respond to onStartResize(), onEndResize(), onStartMove(), onEndMove(), onClose(), onDestroy(), onMaximize(), onMinimize(), onFocus(), onHide(), onShow() functions</p>
+      <p class="parameter">
+        <span class="field">observer</span>
+        <span class="explanation">Observer object</span>
+      </p>
+    </div>
+    
+    <div class="function windows" title="removeObserver"><a name="removeObserver"></a>
+      <p class="title"><span class="function">removeObserver(observer)</span> Unregisters a windows observer. </p>
+      <p class="parameter">
+        <span class="field">observer</span>
+        <span class="explanation">Observer object</span>
+      </p>
+    </div>
+    
+    <div class="function windows" title="closeAll"><a name="closeAll"></a>
+      <p class="title"><span class="function">closeAll()</span> Closes all closeable windows. </p>
+    </div>
+    
+    <div class="function windows" title="getFocusedWindow"><a name="getFocusedWindow"></a>
+      <p class="title"><span class="function">getFocusedWindow()</span> Returns the last focused window. </p>
+    </div>
+    
+    
+    <h2> Add-ons</h2>
+    Add-on behaviors to PWC<br/><br/>
+    <div class="function addons" title="WindowsStore.init"><a name="WindowsStore.init"></a>
+      <p class="title"><span class="function">WindowsStore.init(cookieName, expired)</span> Save automatically show/hide window status. Just add WindowsStore.init() at the end of you HTML file. </p>
+      <p class="parameter">
+        <span class="field">cookieName</span>
+        <span class="explanation">Cookie name used to store window information (default: <em>__window_store__</em>)</span>
+      </p>
+      <p class="parameter">
+        <span class="field">expired</span>
+        <span class="explanation">Cookie expiration date (default: <em>In 3 years!!</em>)</span>
+      </p>
+    </div>
+    
+    <div class="function addons" title="WindowCloseKey.init"><a name="WindowCloseKey.init"></a>
+      <p class="title"><span class="function">WindowCloseKey.init(keyCode)</span> Handlea key to close windows or dialogs. Just add WindowsStore.init() at the end of you HTML file.  </p>
+      <p class="parameter">
+        <span class="field">keyCode</span>
+        <span class="explanation">Key used to close windows  (default: <em>Event.KEY_ESC</em>)</span>
+      </p>
+    </div>
+    
+    
+  </div>
+</body>
+</html>
+

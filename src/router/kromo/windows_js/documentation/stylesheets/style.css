@@ -1,0 +1,295 @@
+html, body {
+  margin: 0px;
+  padding: 0px;
+  height: 100%;
+	font: 14px "Trebuchet MS",Verdana,Arial,sans-serif; 
+	background:#FFF
+}
+
+.content {
+  margin:10px 30px 10px 30px;
+}
+
+iframe.frame_content {
+  width:100%;
+  height:100%;
+  border:0;
+  overflow:visible;
+}
+
+pre, xmp {
+  font: 12px Courier;
+  background:#F5F5F5;
+  padding:10px;
+  border: 1px dotted #272727;
+  overflow:auto;
+  width:100%;
+  margin:0;
+}
+
+textarea.listing {
+  width:100%;
+  font: 12px Courier;
+}
+
+a {
+  font: 14px "Trebuchet MS",Verdana,Arial,sans-serif; 
+	text-decoration:none;
+	color:#ED2123;
+}
+
+a:hover {
+	text-decoration:underline;
+}
+
+
+.navigation a.selected {
+	background:#FFF;
+	border-bottom:none;
+  border-bottom: 1px solid #FFF;
+}
+
+h1 {
+  font: 20px "Trebuchet MS",Verdana,Arial,sans-serif; 
+	clear:left;
+	text-align:center;
+	padding-top:5px;
+	padding-bottom:10px;
+}
+
+h2 {
+  font: 16px "Trebuchet MS",Verdana,Arial,sans-serif; 
+	color:#F37D1F;
+	clear:left;
+	padding-top:20px;
+	padding-bottom:0px;
+	margin:0 0 10px 0;
+}
+
+h2.first {
+	padding-top:0px;
+}
+
+h3 {
+  font-size: 14px;
+	font-weight: normal; 
+	color:#272727;
+	padding-top:10px;
+}
+
+p {
+  margin:0;
+  margin-bottom:5px;
+  padding:0;
+}
+
+span.title {
+  font: 16px "Trebuchet MS",Verdana,Arial,sans-serif; 
+ 	color:#ED2123;
+  cursor:pointer
+}
+
+span.title2 {
+  font: 12px "Trebuchet MS",Verdana,Arial,sans-serif; 
+ 	color:#ED2123;
+  cursor:pointer
+}
+
+.navigation ul {
+  margin:0;
+  padding:10px 0 5px 0;  
+  text-align:center;
+  border-bottom: 1px solid #272727;
+}
+
+.navigation li {
+  display:inline;
+  padding:0px;
+  margin:0px;
+}
+
+.navigation a {
+  border: 1px solid #272727;
+  padding:5px;
+  background:#DDD;
+}
+
+p.description {
+  padding-bottom:0;  
+  margin-bottom:0;  
+}
+
+p.buttons {
+  margin:0;
+  padding:0;
+}
+
+span.button {
+  margin:0;
+  padding:0;  
+  border-bottom: 1px dotted #272727;
+  border-right: 1px dotted #272727;
+  border-left: 1px dotted #272727;  
+  width:100px;
+  text-align:center;
+  float:left;
+  background:#EEE;
+  color:#ED2123;
+}
+
+span.selected {
+  background:#ED2123;
+  color:#FFF;
+}
+
+div.separator {
+  margin:20px;
+  clear:both;
+}
+div.versions {
+  font-size: 12px;	
+}
+div.versions ul  {
+  font-size: 12px;	
+  margin:4px;
+  padding-left:20px;
+}
+
+/* DOCUMENATION PART*/
+div.function {
+  border: 1px solid #888;
+  background:#FAF1E4;
+  float:left;
+	width:825px;
+	margin-bottom: 20px;
+}
+div.function .title {
+	padding: 5px 5px 5px 10px;
+  margin:0;
+  background:#F9F7F4;
+}
+
+p.parameter, p.parameter_header {
+  font-size: 12px;	
+  margin:0;
+  clear:left;
+  border-top: 1px dotted #272727;
+}
+
+p.parameter_header {
+  border-top: 1px dotted #272727;
+  border-bottom: 1px dotted #272727;
+  background:#F9F7F4;
+  float:left;
+}
+
+span.field, span.explanation {
+	float:left;
+	width:200px;
+	padding: 2px 2px 2px 10px;  
+}
+
+span.explanation {
+  border-left: 1px dotted #272727;
+}
+
+span.explanation {
+	width:600px;	
+}
+
+span.function {
+  font-family:"Courier";
+  display:block;
+  color:#A57F00;
+}
+
+th {
+  font: 14px "Trebuchet MS",Verdana,Arial,sans-serif; 
+  font-variant: small-caps;
+  color:#000;
+  text-align:left;
+}
+
+th, td.key, td.default, td.detail {
+  padding-right:10px;
+  padding-bottom:3px;
+  vertical-align: top;
+}
+
+td.key {
+  font-style: italic ;
+  color:#666;
+}
+
+span.key, span.default, span.detail {
+  padding-bottom:3px;
+}
+
+span.header {
+  font: 14px "Trebuchet MS",Verdana,Arial,sans-serif; 
+  font-variant: small-caps;
+  color:#000;
+}
+
+.explanation ul {
+	padding:0;
+	margin:0;
+}
+
+.explanation .details {
+  float:left;
+}
+
+table.overview td {
+  vertical-align: top;
+  padding-right:30px;
+}
+table.overview ul {
+  margin:0;
+  padding-left:5px;
+  padding-top:5px;
+}
+
+.versions ul {
+  padding:0;
+	padding-bottom:5px;
+	margin:0;
+}
+
+/* Intro panel */
+h2.intro_message {
+  padding-top:0px;
+  font-size:24px;
+}
+ul.intro_message {
+  text-align:left;
+  padding:0, 10px;
+  margin:0;
+}
+h3.intro_message {
+  font-size:12px;
+  color:#666;
+  margin:0;
+  padding:0;
+  margin-top:10px;
+  text-align:left;
+  
+}
+h4.intro_message {
+  font-size:12px;
+  color:#666;
+  margin:0;
+  padding:0;
+  text-align:left;
+}
+
+span.intro_message {
+  text-align:left;
+  font-size:16px;
+}
+xmp.intro {
+  padding:5px;
+  margin:0 2%;
+  text-align:left;
+  width:93%;
+}

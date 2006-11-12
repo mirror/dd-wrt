@@ -1,0 +1,30 @@
+.accordionTabTitleBar {
+   font-size           : 12px;
+	padding             : 4px 6px 4px 6px;
+   border-style        : solid none solid none;
+	border-top-color    : #BDC7E7;
+	border-bottom-color : #182052;
+   border-width        : 1px 0px 1px 0px;
+}
+
+.accordionTabTitleBarHover {
+   font-size        : 11px;
+	background-color : #1f669b;
+	color            : #000000;
+}
+
+.accordionTabContentBox {
+   font-size        : 12px;
+   border           : 1px solid #1f669b;
+   border-top-width : 0px;
+   padding          : 0px 8px 0px 8px;
+}
+.instructions {
+	font-family: Arial, Helvetica, sans-serif;
+}
+.step {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	list-style-position: inside;
+	list-style-type: disc;
+}
