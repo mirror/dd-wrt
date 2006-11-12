@@ -3236,7 +3236,7 @@ start_igmp_proxy (void)
 {
   int ret = 0;
   pid_t pid;
-  
+
   char *igmp_proxy_argv[] = { "igmprt",
 #ifndef HAVE_X86
 #ifndef HAVE_XSCALE
@@ -3250,7 +3250,7 @@ start_igmp_proxy (void)
     "-i", get_wan_face (),
     NULL
   };
-  
+
   stop_igmp_proxy ();
 
   if (nvram_match ("block_multicast", "0"))
@@ -3504,18 +3504,19 @@ stop_rstats (void)
 void
 start_rstats (void)
 {
-	// If jffs has been disabled force rstats files to temp memory
-	if (nvram_match ("rstats_path", "/jffs/") && nvram_match ("enable_jffs2", "1"))
-	{
-		nvram_set ("rstats_path", "");
-	  nvram_commit ();
-	}
-	
+  // If jffs has been disabled force rstats files to temp memory
+  if (nvram_match ("rstats_path", "/jffs/")
+      && nvram_match ("enable_jffs2", "1"))
+    {
+      nvram_set ("rstats_path", "");
+      nvram_commit ();
+    }
+
   if (nvram_match ("rstats_enable", "1"))
-  {
-  	stop_rstats ();
-  	eval ("rstats");
-  }
+    {
+      stop_rstats ();
+      eval ("rstats");
+    }
 }
 
 #endif
@@ -3594,24 +3595,29 @@ start_hwmon (void)
 
 #endif
 #ifdef HAVE_PPPOERELAY
-void start_pppoerelay(void)
+void
+start_pppoerelay (void)
 {
-killall("pppoe-relay",SIGTERM);
-
+  killall ("pppoe-relay", SIGTERM);
+  if (nvram_match ("pppoerelay_enable", "1"))
+    {
 #ifdef HAVE_MADWIFI
-if (nvram_match("ath0_mode","sta"))
-    eval("pppoe-relay","-S","ath0","-C","br0");
-else
+      if (nvram_match ("ath0_mode", "sta"))
+	eval ("pppoe-relay", "-S", "ath0", "-C", "br0");
+      else
 #else
-if (nvram_match("wl_mode","sta"))
-    eval("pppoe-relay","-S","eth1","-C","br0");
-else
+      if (nvram_match ("wl_mode", "sta"))
+	eval ("pppoe-relay", "-S", "eth1", "-C", "br0");
+      else
 #endif
-eval("pppoe-relay","-S",nvram_safe_get("wan_ifname"),"-C","br0");
+	eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C",
+	      "br0");
+    }
 }
-void stop_pppoerelay(void)
+void
+stop_pppoerelay (void)
 {
-killall("pppoe-relay",SIGTERM);
+  killall ("pppoe-relay", SIGTERM);
 }
 #endif
 
