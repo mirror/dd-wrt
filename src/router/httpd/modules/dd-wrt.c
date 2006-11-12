@@ -5867,13 +5867,13 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     char buf[200];
     getHostName (buf, srcip);
     websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 20, 120, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
-    	buf , srcip);
+    	buf != "unknown" ? buf : live_translate ("share.unknown") , srcip);
     
     // dst
     search_hit("dst=", line, dstip);
     getHostName (buf, dstip);
     websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 20, 120, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
-    	buf , dstip);
+    	buf != "unknown" ? buf : live_translate ("share.unknown") , dstip);
     
     // service
     search_hit("dport=", line, dstport);
