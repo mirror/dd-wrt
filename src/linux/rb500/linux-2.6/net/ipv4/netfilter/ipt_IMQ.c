@@ -57,6 +57,7 @@ static int imq_checkentry(const char *tablename,
 static struct ipt_target ipt_imq_reg = {
        .name           = "IMQ",
        .target         = imq_target,
+       .targetsize     = sizeof(struct ipt_imq_info),
        .checkentry     = imq_checkentry,
        .me             = THIS_MODULE
 };
