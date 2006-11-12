@@ -989,8 +989,8 @@ function scaleSize(num)
 
 function DisplayDiv(current,evt,h,w,text)
 {
-	var width = w;
 	var height = h;
+	var width = w;
 	
 	text = text.replace(/&lt;/gi,'<');
 	text = text.replace(/&gt;/gi,'>');
@@ -1003,7 +1003,6 @@ function DisplayDiv(current,evt,h,w,text)
 			document.all.bulle.style.visibility = 'visible';
 		}
 	}
-	
 	else if(document.getElementById) {
 		document.getElementById('bulle').innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
 		document.getElementById('bulle').style.left = evt.pageX + width + 'px';
