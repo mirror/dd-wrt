@@ -3962,7 +3962,19 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			websWrite (wp,
 				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
 				style);
-		
+				
+#ifdef HAVE_PWC
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
+			websWrite (wp,
+				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
+#endif		
 			
 }
 
