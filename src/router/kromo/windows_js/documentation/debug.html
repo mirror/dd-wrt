@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+	"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" version="-//W3C//DTD XHTML 1.1//EN" xml:lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Prototype Window Class : Debug</title>
+	<!--  Prototype Window Class Part -->
+  <script type="text/javascript" src="../javascripts/prototype.js"> </script> 
+	<script type="text/javascript" src="../javascripts/effects.js"> </script>
+	<script type="text/javascript" src="../javascripts/window.js"> </script>
+	<script type="text/javascript" src="../javascripts/debug.js"> </script>
+  <script type="text/javascript" src="../javascripts/extended_debug.js"> </script>
+	
+	<link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="../themes/debug.css" rel="stylesheet" type="text/css" >	 </link>
+	
+  <!--  Doc Part-->
+  <link href="stylesheets/style.css" rel="stylesheet" type="text/css" >	 </link>
+	<script type="text/javascript" src="js/application.js"> </script>  		
+</head>
+
+<body>
+  <script>Application.insertNavigation('debug')</script>
+  <div class="content">
+  
+In addtion of <tt>window.js</tt>, there is a little javascript <tt>debug.js</tt> more usefull than the alert javascript function to display debug information.
+
+There are few functions:
+<ul>
+  <li> <tt>showDebug()</tt> : to open the debug window.</li>
+  <li> <tt>hideDebug()</tt> to remove it.</li>
+  <li> <tt>debug(message, reverse)</tt>: to display a message in the debug window. reverse is optional if you want to append text at the beginning of the window instead of the end.</li>
+  <li> <tt>clearDebug()</tt>: to clear debug window content.</li>
+</ul>
+Just add this lines in your HTML page
+<xmp><script type="text/javascript" src="/javascripts/prototype.js"> </script>
+<script type="text/javascript" src="/javascripts/window.js"> </script>
+<script type="text/javascript" src="/javascripts/debug.js"> </script>
+
+<link href="/stylesheets/themes/default.css" rel="stylesheet" type="text/css"></link>
+<link href="/stylesheets/themes/debug.css" rel="stylesheet" type="text/css"></link>
+</xmp>
+
+<br/>And this in your code
+<xmp><script>showDebug()</script>
+</xmp>
+<br/>This window uses setCookie() to save its size and position. You will see after using it you cannot live without :).<br/>
+<a href="javascript:showDebugWindow()">Click here</a> to open the debug window that displays mouse coordinates.
+
+<script>
+var mouseTracker = null;
+var MouseTracker = Class.create();
+MouseTracker.prototype = {
+    initialize: function() {    
+        this.eventMouseMove = this.mouseMoved.bindAsEventListener(this);
+        Event.observe(document, "mousemove", this.eventMouseMove);
+    },
+    destroy: function() {
+      Event.stopObserving(document, "mousemove", this.eventMouseMove);
+    },
+    mouseMoved: function(event) {
+        var pointer = [Event.pointerX(event), Event.pointerY(event)];
+        clearDebug();
+        debug("Mouse  : " + pointer[0] + "," + + pointer[1]);
+    }
+}
+
+function showDebugWindow() {
+    if (mouseTracker == null)
+        mouseTracker = new MouseTracker();
+    hideDebug();
+    showDebug();
+}
+
+</script>
+
+<h2 id="addon">Add on</h2>
+Nick Hemsley has done a nice add-on to the debug window that allows you to inspect any object.<br/>
+<a href="javascript:editAddOn()">Click here</a> to inspect the H2 "Add on" title.
+
+<script>
+function editAddOn(){
+  if (mouseTracker != null) {
+    mouseTracker.destroy();
+    mouseTracker = null;
+  }
+  showDebug();
+  clearDebug();
+  inspect($('addon'));
+}
+</script>
+
+<h2 id="addon">Add on - extended</h2>
+Jason Pollard has included the Nick's add-on inside the window debug by adding a "inspect" icon in the top bar. <br/>
+Click on the <img src="../themes/default/inspect.gif"> icon and then click on an element in the page you want to inspect.<br/>
+He has also included an eval text field with history (use up and down keys).<br/><br/>
+To use it just include <tt>extended_debug.js</tt> after <tt>debug.js</tt>.<br/>
+
+<a href="javascript:showExtendedDebug()">Click here</a> to open the extended debug window.
+
+</div>
+
+</body>
+</html>
