@@ -1169,6 +1169,7 @@ configure_single (int count)
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
+
   setsysctrl (wif, "diversity", diva);
   setsysctrl (wif, "rxantenna", rx);
   setsysctrl (wif, "txantenna", tx);
