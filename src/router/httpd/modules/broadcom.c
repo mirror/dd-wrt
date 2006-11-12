@@ -4667,7 +4667,7 @@ ej_show_eop_tunnels (int eid, webs_t wp, int argc, char_t ** argv)
 int tun;
 char temp[32];
 
-	  for (tun=1; i<11; i++)
+	  for (tun=1; tun<11; tun++)
 		{
 
 			websWrite (wp, "<fieldset>\n");
@@ -4747,8 +4747,7 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf (temp, "oet%d_netmask", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />,
-						temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
+			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />",temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "</div>\n");
