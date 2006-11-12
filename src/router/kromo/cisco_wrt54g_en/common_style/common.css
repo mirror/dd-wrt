@@ -358,10 +358,10 @@ padding:.0em .5em;
 input.spaceradio {
 margin-right:.4em;
 }
-/* gor DIV popup Style */
+/* for DIV popup Style */
 div.bulle {
-	width:300em;
-	background-color:#e8e8e8;
+	width:300px;
+	background-color:#FFFFE1;
 	position:absolute;
 	visibility:hidden;
 	z-index:2000;
@@ -371,13 +371,13 @@ table.bulle {
 	height:auto;
 	margin:0em;
 	padding:0em;
-	border:1em solid #000000;
+	border:0.09em solid #000000;
 	text-align:justify;
 }
 td.bulle {
 	width:100%;
 	height:auto;
-	padding:5em;
+	padding:0.09em;
 	border:0em;
 }
 
