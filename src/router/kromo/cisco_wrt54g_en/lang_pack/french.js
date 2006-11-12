@@ -1128,17 +1128,21 @@ service.rstats_path="Emplacement des données";
 service.rstats_time="Intervalle des sauvegardes";
 service.rstats_usrdir="Répertoire utilisateur";
 
-//eoip.webservices
-service.eoip_legend="Tunnel IP sur Ethernet Over IP Tunnel";
-service.eoip_srv="Tunnel EoIP";
-service.eoip_remoteIP="Adresse IP Distante";
-service.eoip_tunnelID="ID du Tunnel";
-service.eoip_comp="Compression";
-service.eoip_passtos="TOS passthrough";
-service.eoip_frag="fragment";
-service.eoip_mssfix="mssfix";
-service.eoip_shaper="shaper";
-service.eoip_bridging="Bridging";
+
+// ******************************************* eop-tunnel.asp *******************************************//
+
+eoip.titl=" - Tunel EoIP";
+eoip.tunnel="Tunel";
+eoip.legend="Tunel IP sur Ethernet Over IP Tunel";
+eoip.srv="Tunel EoIP";
+eoip.remoteIP="Adresse IP Distante";
+eoip.tunnelID="ID du Tunel";
+eoip.comp="Compression";
+eoip.passtos="TOS passthrough";
+eoip.frag="fragment";
+eoip.mssfix="mssfix";
+eoip.shaper="shaper";
+eoip.bridging="Bridging";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 

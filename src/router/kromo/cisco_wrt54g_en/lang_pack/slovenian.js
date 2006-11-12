@@ -1154,16 +1154,21 @@ service.rstats_path="Shrani podatke na";
 service.rstats_time="Interval shranjevanja";
 service.rstats_usrdir="Uporabnikov imenik";
 
-//eoip.webservices
-service.eoip_legend="Ethernet Over IP tuneliranje";
-service.eoip_srv="EoIP tunel";
-service.eoip_remoteIP="Oddaljeni IP naslov";
-service.eoip_tunnelID="ID tunela";
-service.eoip_passtos="TOS prehajanje";
-service.eoip_frag="fragment";
-service.eoip_mssfix="mssfix";
-service.eoip_shaper="oblikovanje";
-service.eoip_bridging="premo¹èanje";
+
+
+// ******************************************* eop-tunnel.asp *******************************************//
+
+eoip.titl=" - EoIP Tunnel";
+eoip.tunnel="Tunnel";
+eoip.legend="Ethernet Over IP tuneliranje";
+eoip.srv="EoIP tunel";
+eoip.remoteIP="Oddaljeni IP naslov";
+eoip.tunnelID="ID tunela";
+eoip.passtos="TOS prehajanje";
+eoip.frag="fragment";
+eoip.mssfix="mssfix";
+eoip.shaper="oblikovanje";
+eoip.bridging="premo¹èanje";
 
 
 
