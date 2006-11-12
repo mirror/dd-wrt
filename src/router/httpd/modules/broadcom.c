@@ -4740,8 +4740,7 @@ char temp[32];
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_ip\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf (temp, "oet%d_ip", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />,
-						temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
+			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />",temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
