@@ -75,13 +75,9 @@ struct boot_header {
 /***************************************
  * define upnp misc                    *
  ***************************************/
-  #if LANGUAGE == ENGLISH
-    #define URL			"http://www.linksys.com/"
-  #else
-    #define URL			"http://www.linksys.co.jp/"
-  #endif
+  #define URL			"http://www.dd-wrt.com/"
   #define DEV_FRIENDLY_NAME	MODEL_NAME
-  #define DEV_MFR		"Linksys Inc."
+  #define DEV_MFR		"NewMedia-NET GmbH"
   #define DEV_MFR_URL		URL
   #define DEV_MODEL_DESCRIPTION	"Internet Access Server"
   #define DEV_MODEL		MODEL_NAME
