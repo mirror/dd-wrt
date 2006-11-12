@@ -857,6 +857,7 @@ static struct ipt_match ipp2p_match = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	.name		= "ipp2p",
 	.match		= &match,
+	.matchsize      = sizeof(struct ipt_p2p_info),
 	.checkentry	= &checkentry,
 	.me		= THIS_MODULE,
 #endif
