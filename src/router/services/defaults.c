@@ -540,7 +540,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_ap_isolate", "0", 0},	/* AP isolate mode */
 #endif
 #ifdef HAVE_POWERNOC_WORT54G
-  {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+  {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
   {"wl0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_SKYTRON
   {"wl_mode", "sta", 0},
@@ -564,8 +564,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.1_ssid", "FON", 0},
 #else
 #ifndef HAVE_MADWIFI
-  {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
-  {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
+  {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
+  {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
   {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
@@ -590,7 +590,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #endif
 #else
-  {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
+  {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
 #endif
 #endif
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
