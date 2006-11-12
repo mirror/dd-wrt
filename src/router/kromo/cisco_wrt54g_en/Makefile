@@ -33,11 +33,22 @@ endif
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 	cp -a help $(INSTALLDIR)/www
-#	cp common.compressed.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
-#	rm -f $(INSTALLDIR)/www/common.compressed.js
+	mkdir -p $(INSTALLDIR)/www/js
 endif
 endif
+
+ifeq ($(CONFIG_PWC),y)
+	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
+	mkdir -p $(INSTALLDIR)/www/style/pwc
+	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc
+	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
+	cp -r common_style $(INSTALLDIR)/www/style/pwc
+endif
+
+
 	cp -a lang_pack $(INSTALLDIR)/www
 
 ifneq ($(CONFIG_LANGUAGE),y)
@@ -324,6 +335,7 @@ endif
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* > $(SRCBASE)/router/httpd/html.c 
+	rm -rf $(INSTALLDIR)/www/style/pwc/common_style
 	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
 #../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
