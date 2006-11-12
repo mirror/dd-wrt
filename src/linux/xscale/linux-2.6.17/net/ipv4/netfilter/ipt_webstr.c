@@ -405,6 +405,7 @@ checkentry(const char *tablename,
 static struct ipt_match webstr_match = {
 	.name		= "webstr",
 	.match		= &match,
+	.matchsize      = sizeof(struct ipt_webstr_info),
 	.checkentry	= &checkentry,
 	.me		= THIS_MODULE,
 };
