@@ -567,6 +567,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
   {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
+  {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
   {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
