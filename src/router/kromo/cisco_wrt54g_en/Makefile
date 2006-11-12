@@ -45,6 +45,8 @@ ifeq ($(CONFIG_PWC),y)
 	mkdir -p $(INSTALLDIR)/www/style/pwc
 	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc
 	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
+	cp common_style/pwc/ddwrt/* $(INSTALLDIR)/www/style/pwc
+	cp common_style/pwc/ddwrt.css $(INSTALLDIR)/www/style/pwc
 	cp -r common_style $(INSTALLDIR)/www/style/pwc
 endif
 
