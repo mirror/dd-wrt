@@ -237,7 +237,7 @@ bound (void)
     }
   if (!changed)
     {
-      cprintf ("interface havent changed, do nothing\n");
+      cprintf ("interface hasnt changed, do nothing\n");
       return 0;
     }
   stop_firewall ();
