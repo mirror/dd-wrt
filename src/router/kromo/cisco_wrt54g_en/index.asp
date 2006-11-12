@@ -332,6 +332,7 @@ function init() {
 									<div class="label"><% tran("share.routername"); %></div>
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
 								</div>
+			
 				<% nvram_match("wl_mode", "wet", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
