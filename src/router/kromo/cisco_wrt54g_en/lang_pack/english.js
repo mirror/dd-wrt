@@ -1157,17 +1157,22 @@ service.rstats_path="Save Bandwidth Data to";
 service.rstats_time="Saving Interval";
 service.rstats_usrdir="User Directory";
 
-//eoip.webservices
-service.eoip_legend="Ethernet Over IP Tunneling";
-service.eoip_srv="EoIP Tunnel";
-service.eoip_remoteIP="Remote IP Address";
-service.eoip_tunnelID="Tunnel ID";
-service.eoip_comp="Compression";
-service.eoip_passtos="TOS passthrough";
-service.eoip_frag="fragment";
-service.eoip_mssfix="mssfix";
-service.eoip_shaper="shaper";
-service.eoip_bridging="Bridging";
+
+// ******************************************* eop-tunnel.asp *******************************************//
+
+var eoip = new Object();
+eoip.titl=" - EoIP Tunnel";
+eoip.tunnel="Tunnel";
+eoip.legend="Ethernet Over IP Tunneling";
+eoip.srv="EoIP Tunnel";
+eoip.remoteIP="Remote IP Address";
+eoip.tunnelID="Tunnel ID";
+eoip.comp="Compression";
+eoip.passtos="TOS passthrough";
+eoip.frag="fragment";
+eoip.mssfix="mssfix";
+eoip.shaper="shaper";
+eoip.bridging="Bridging";
 
 
 
