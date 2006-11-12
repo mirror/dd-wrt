@@ -296,11 +296,14 @@ function init() {
 
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
+								
 				<% nvram_invmatch("wl_mode", "wet", "<!--"); %>
 								<div class="setting">
-							    	<div class="label"><% tran("idx.conn_type"); %></div><% tran("share.disabled"); %>
+							    	<div class="label"><% tran("idx.conn_type"); %></div>
+							    	<% tran("share.disabled"); %>
 								</div>
 				<% nvram_invmatch("wl_mode", "wet", "-->"); %>
+				
 				<% nvram_match("wl_mode", "wet", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
@@ -310,6 +313,7 @@ function init() {
 								</div>
 								<% show_index_setting(); %>
 				<% nvram_match("wl_mode", "wet", "-->"); %>
+				
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
@@ -317,6 +321,7 @@ function init() {
 									<span class="default"><% tran("idx.stp_mess"); %></span>
 								</div>
 							</fieldset><br />
+				
 				<% nvram_match("wl_mode", "wet", "<!--"); %>
 							<% portsetup(); %>
 				<% nvram_match("wl_mode", "wet", "-->"); %>
