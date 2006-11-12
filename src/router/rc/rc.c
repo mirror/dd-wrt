@@ -314,6 +314,7 @@ main_loop (void)
 //create loginprompt
   FILE *fp = fopen ("/tmp/loginprompt", "wb");
 
+#ifndef HAVE_MAKSAT
 #ifndef HAVE_MSSID
 #ifdef DIST
   if (strlen (DIST) > 0)
@@ -345,7 +346,7 @@ main_loop (void)
 	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
-
+#endif
 
   fclose (fp);
 
