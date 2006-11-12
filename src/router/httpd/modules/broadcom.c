@@ -4712,7 +4712,7 @@ char temp[32];
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_frag)</script></div>\n");
 		sprintf (temp, "oet%d_fragment", tun);
-			websWrite (wp, "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,service.eoip_frag)\" value=\"%s\" />\n"), temp, nvram_get(temp));
+			websWrite (wp, "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,service.eoip_frag)\" value=\"%s\" />\n", temp, nvram_get(temp));
 			websWrite (wp, "</div>\n");			
 			websWrite (wp, "<div class=\"setting\">\n");
 			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_mssfix)</script></div>\n");
