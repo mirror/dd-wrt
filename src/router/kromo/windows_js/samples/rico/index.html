@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+<SCRIPT type="text/javascript" LANGUAGE="JavaScript"  src="../../javascripts/prototype.js"> </SCRIPT>
+<SCRIPT type="text/javascript" LANGUAGE="JavaScript"  src="../../javascripts/window.js"> </SCRIPT>
+<SCRIPT type="text/javascript" LANGUAGE="JavaScript"  src="rico_change.js"> </SCRIPT>
+<LINK href="../../themes/default.css" rel="stylesheet" type="text/css" />
+<LINK rel="stylesheet" type="text/css" href="rico.css" />
+
+<script language="JavaScript" type="text/javascript">
+//dump multi dimensional array to page
+function dumpArray(trialArray) {
+	
+	var win = new Window('window_id', {className: "dialog", title: "dumpArray",top:100, left:100,  width:400, height:575, zIndex:150, opacity:1, resizable: false, minimizable: true, maximizable: false});
+
+	win.getContent().innerHTML = accordian();
+	win.setDestroyOnClose();
+	win.showCenter(); 
+	win.toFront();
+
+	var myAccordion2 = new Rico.Accordion( $('accordionDiv'), {panelHeight:300} );
+
+}
+function accordian(){
+	var htmlString = '';
+	htmlString += '<div id="accordionDiv">';
+	htmlString += '<div id="help2Panel">';
+	htmlString += '<div id="help2Header" class="accordionTabTitleBar">';
+	htmlString += 'Help +';
+	htmlString += '</div>';
+	htmlString += '<div id="helpContent2" class="accordionTabContentBox">';
+	htmlString += 'Click on the blue title bars below to view ';
+	htmlString += 'additional content';
+	htmlString += '</div>';
+	htmlString += '</div>';
+	htmlString += '<div id="addcomment2Panel">';
+	htmlString += '<div id="addcomment2Header" class="accordionTabTitleBar">';
+	htmlString += 'Add Comment Form';
+	htmlString += '</div>';
+	htmlString += '<div id="addcomment2Content" class="accordionTabContentBox">';
+	htmlString += 'Use the Add a comment tool to add ';
+	htmlString += 'a comment';
+	htmlString += '</div>';
+	htmlString += '</div> ';
+	htmlString += '<div id="disclaimer2Panel">';
+	htmlString += '<div id="disclaimer2Header" class="accordionTabTitleBar">';
+	htmlString += 'Disclaimer-NOTICE-';
+	htmlString += '</div>';
+	htmlString += '<div id="disclaimer2Content" class="accordionTabContentBox">';
+	htmlString += '-NOTICE-<BR/>';
+	htmlString += 'DRAFT preliminary floodplain data is being provided solely for community review and';
+	htmlString += ' comment and is not to be used for flood insurance determination purposes of any kind. ';
+	htmlString += ' This data is currently being modified as a result of comments received by community ';
+	htmlString += ' officials and other mapping partners in Wayne County and may change substantially without ';
+	htmlString += ' notice before the Preliminary maps are published.';
+	htmlString += '</div>';
+	htmlString += '</div>';
+	htmlString += '</div>';	
+
+return htmlString;
+
+}
+</script>
+
+
+</head>
+
+<body>
+<img src="properties_1.gif" width="160" height="160" onclick="javascript:dumpArray();"/>
+</body>
+</html>

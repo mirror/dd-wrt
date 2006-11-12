@@ -1,0 +1,56 @@
+<html>
+
+<head>
+<title>WindowStore example</title>
+<script type="text/javascript" src="../javascripts/prototype.js"> </script> 
+<script type="text/javascript" src="../javascripts/window.js"> </script> 
+<script type="text/javascript" src="../javascripts/window_ext.js"> </script> 
+<script type="text/javascript" src="../javascripts/effects.js"> </script> 
+<script type="text/javascript" src="../javascripts/debug.js"> </script> 
+<link href="../themes/default.css" rel="stylesheet" type="text/css"> 
+<!-- Add this to have a specific theme--> 
+<link href="../themes/alphacube.css" rel="stylesheet" type="text/css"> 
+
+
+</head>
+
+<body>
+<b>My personal configuration of the windows:</b><br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<center><a href="#" onclick="win1.show();">open window1</a></center>
+<center><a href="#" onclick="win2.show();">open window2</a></center>
+<center><a href="#" onclick="win3.show();">open window3</a></center>
+<center><a href="#" onclick="win4.show();">open window4</a></center>
+
+<script type="text/javascript">
+
+function dialog() {
+  Dialog.alert("Test of alert panel, check out debug window after closing it", 
+               {windowParameters: {className: "alphacube", width:300, height:100}, okLabel: "close", 
+                ok:function(win) {debug("validate alert panel"); return true;}, cancel:function(win) {debug("validate cancel panel"); return true;}});
+}
+  
+win1 = new Window('1', {className: "alphacube", title: "Sample1", width:200, height:150, top:70, left:100}); win1.setCookie(); win1.getContent().innerHTML = "<h1>1</h1>";
+</script>
+
+<script type="text/javascript">
+win2 = new Window('2', {className: "alphacube", title: "Sample2", width:200, height:150, top:270, left:100}); win2.setCookie(); win2.getContent().innerHTML = "<h1>2</h1>";
+</script>
+
+<script type="text/javascript">
+win3 = new Window('3', {className: "alphacube", title: "Sample3", width:200, height:150, top:270, left:400}); win3.setCookie(); win3.getContent().innerHTML = "<h1>3</h1>";
+</script>
+
+<script type="text/javascript">
+win4 = new Window('4', {className: "alphacube", title: "Sample4", width:200, height:150, top:70, left:800}); win4.setCookie(); win4.getContent().innerHTML = "<h1>4</h1>"; 
+
+WindowStore.init();
+</script>
+</body>
+
+</html>

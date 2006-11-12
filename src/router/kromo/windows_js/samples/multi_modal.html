@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+<script>
+  var cssPath ="../themes/"
+</script>
+<!-- <link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link> -->
+<link href="../themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+<link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+
+<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+<script type="text/javascript" src="../javascripts/window.js"> </script>
+<script type="text/javascript" src="../javascripts/debug.js"> </script>
+<script type="text/javascript" src="../javascripts/effects.js"> </script>
+
+<style>
+.alphacube_buttons input    {
+  	width:40%;
+  }
+  
+</style>
+</head>
+
+<body>
+<a href="#" onclick="openDialog('content')"><span style="font-size:16px">Open a modal window</span></a><br/>
+<input type="checkbox" checked="checked" value="1" onchange="Window.keepMultiModalWindow = ! this.checked" >Hide modal window when on new one is open
+<div id="content" style="display:none">
+  <a href="#" onclick="openDialog('content2')"><span style="font-size:16px">Open another modal window</span></a>
+	Test select for IE <SELECT NAME="partnumber1">
+		<OPTION VALUE="1"> One
+		<OPTION VALUE="2"> Two
+		<OPTION VALUE="3"> Three
+		<OPTION VALUE="5"> Five
+		<OPTION VALUE="4"> Oooopppppppps I forgot four
+	</SELECT>
+</div>
+<div id="content2" style="display:none">
+  <br /><br />
+  <a href="#" onclick="lastDialog('content3')"><span style="font-size:16px">Open one more modal window</span></a>
+  <br /><br />
+	Test select for IE <SELECT NAME="partnumber2">
+		<OPTION VALUE="1"> One
+		<OPTION VALUE="2"> Two
+		<OPTION VALUE="3"> Three
+		<OPTION VALUE="5"> Five
+		<OPTION VALUE="4"> Oooopppppppps I forgot four
+	</SELECT>
+</div>
+<div id="content3" style="display:none">
+  <br /><br />
+  Last one
+  <br /><br />
+	Test select for IE <SELECT NAME="partnumber3">
+		<OPTION VALUE="1"> One
+		<OPTION VALUE="2"> Two
+		<OPTION VALUE="3"> Three
+		<OPTION VALUE="5"> Five
+		<OPTION VALUE="4"> Oooopppppppps I forgot four
+	</SELECT>
+</div>
+
+
+<script type="text/javascript">
+  var win = null;
+  showDebug();
+	function openWindow() {
+	  if (win == null) {
+	    win = new Window('google2', {className: "alphacube", 
+		                               title: "", 
+		                               parent: document.body, 
+		                               width:375, 
+		                               height:30,
+		                               top:25,
+		                               left:25});
+  	  win.getContent().innerHTML="coucou";
+	  }
+	  win.show();
+  }
+	function openDialog(id) {
+	  Dialog.alert($(id).innerHTML, {windowParameters: {className: "alphacube",  width:250}})
+  }
+  
+  function lastDialog(id) {
+	  Dialog.confirm($(id).innerHTML, {windowParameters: {className: "alphacube",  width:250}, okLabel: "Close All", ok: closeAllModalWindows})
+  }
+  
+  function closeAllModalWindows() {
+    Windows.closeAllModalWindows();
+    return true;
+  }
+	
+</script>
+
+</body>
+</html>
