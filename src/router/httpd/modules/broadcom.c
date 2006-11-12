@@ -4657,7 +4657,7 @@ ej_show_eop_tunnels (int eid, webs_t wp, int argc, char_t ** argv)
 int tun;
 char temp[32];
 
-	  for (tun=1; i<10; i++)
+	  for (tun=1; i<11; i++)
 		{
 
 			websWrite (wp, "<fieldset>\n");
@@ -4989,7 +4989,9 @@ struct ej_handler ej_handlers[] = {
   {"getwirelessnetmode", ej_getwirelessnetmode},
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
+#ifdef HAVE_EOP_TUNNEL
   {"show_eop_tunnels", ej_show_eop_tunnels},
+#endif
 #ifdef HAVE_MSSID
   {"getwirelessstatus", ej_getwirelessstatus},
   {"getencryptionstatus", ej_getencryptionstatus},
