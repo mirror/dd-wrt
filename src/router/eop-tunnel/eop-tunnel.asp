@@ -534,9 +534,9 @@ addEvent(window, "load", function() {
 							</div>
 						</div>
 					</div>
-			<	/fieldset><br/>
+				</fieldset><br/>
 			
-			<	fieldset>
+				<fieldset>
 					<legend><% tran("eoip.tunnel"); %> 9</legend>
 							<div class="setting">
 							<div class="label"><% tran("service.eoip_srv"); %></div>
@@ -594,9 +594,9 @@ addEvent(window, "load", function() {
 							</div>
 						</div>
 					</div>
-			<	/fieldset><br/>
+				</fieldset><br/>
 			
-			<	fieldset>
+				<fieldset>
 					<legend><% tran("eoip.tunnel"); %> 10</legend>
 							<div class="setting">
 							<div class="label"><% tran("service.eoip_srv"); %></div>
@@ -654,7 +654,7 @@ addEvent(window, "load", function() {
 							</div>
 						</div>
 					</div>
-			<	/fieldset><br/>
+				    </fieldset><br/>
 				
 								<div class="submitFooter">
 									<script type="text/javascript">
