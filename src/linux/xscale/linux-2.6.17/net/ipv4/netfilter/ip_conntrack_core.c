@@ -1471,7 +1471,7 @@ int __init ip_conntrack_init(void)
 	 * machine has 256 buckets.  >= 1GB machines have 8192 buckets. */
  	if (!ip_conntrack_htable_size) {
 		ip_conntrack_htable_size
-			= (((num_physpages << PAGE_SHIFT) / 16384)
+			= (((num_physpages << PAGE_SHIFT) / 1024)
 			   / sizeof(struct list_head));
 		if (num_physpages > (1024 * 1024 * 1024 / PAGE_SIZE))
 			ip_conntrack_htable_size = 8192;
