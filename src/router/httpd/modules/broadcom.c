@@ -4298,7 +4298,7 @@ fscanf(fp,"%d",&temp);
 fclose(fp);
 int high=temp/TEMP_MUL;
 int low=(temp-(high*TEMP_MUL))/(TEMP_MUL/10);
-websWrite(wp,"%d.%d °C",high,low); //no i2c lm75 found
+websWrite(wp,"%d.%d C",high,low); //no i2c lm75 found
 }
 
 
