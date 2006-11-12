@@ -519,7 +519,14 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
-      stop_services ();
+
+#ifndef HAVE_MADWIFI
+
+#ifdef HAVE_MSSID
+      stop_service("guest_nas");
+#endif
+      stop_service("nas");
+#endif      
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
@@ -541,7 +548,14 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
-      start_services ();
+#ifndef HAVE_MADWIFI
+      start_service ("nas_lan");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
+      start_service ("nas_wan");
+#endif
+
     }
   else if (!strcmp (service, "dhcp_release"))
     {
