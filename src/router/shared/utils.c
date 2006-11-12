@@ -2294,7 +2294,7 @@ getHostName (char *buf, char *ip)
   addr.s_addr = str_to_addr (ip);
   host = gethostbyaddr ((char *) &addr, 4, AF_INET);
   if (!host || !host->h_name)
-    strcpy (buf, "unknown");
+    strcpy (buf, live_translate ("share.unknown"));
   else
     strcpy (buf, host->h_name);
 }
