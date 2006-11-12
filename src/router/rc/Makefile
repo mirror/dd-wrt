@@ -277,6 +277,10 @@ ifeq ($(CONFIG_MATRIXSSL),y)
 CFLAGS += -DHAVE_HTTPS
 endif
 
+ifeq ($(CONFIG_MAKSAT),y)
+CFLAGS += -DHAVE_MAKSAT
+endif
+
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 endif
