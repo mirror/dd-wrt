@@ -3960,7 +3960,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
 				style);
 			websWrite (wp,
-				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
+				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n",
 				style);
 				
 #ifdef HAVE_PWC
