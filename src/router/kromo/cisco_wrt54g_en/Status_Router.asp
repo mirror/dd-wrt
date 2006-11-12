@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Router Status</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_router.titl;
 
@@ -80,8 +80,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -90,7 +90,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_Router.asp"); %>
+					<% do_menu("Status_Router.asp","Status_Router.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -119,7 +119,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
+									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>');\" >");
 									document.write("<% nvram_get("wan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
@@ -199,8 +199,7 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_router.legend6"); %></legend>
-							
-								<% nvram_match("dist_type", "vpn", "<!--"); %>
+				<% nvram_match("dist_type", "vpn", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("management.samba_legend"); %></div>
 										<script type="text/javascript">
@@ -210,8 +209,7 @@ addEvent(window, "unload", function() {
 										//]]>
 										</script>
 									</div>
-								<% nvram_match("dist_type", "vpn", "-->"); %>
-								
+				<% nvram_match("dist_type", "vpn", "-->"); %>
 								<div class="setting">
 									<div class="label"><% tran("management.jffs_legend"); %></div>
 									<script type="text/javascript">
@@ -240,6 +238,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							
+				<% nvram_match("wl_mode", "wet", "<!--"); %>
 							<h2><% tran("status_router.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("status_router.legend5"); %></legend>
@@ -250,7 +249,7 @@ addEvent(window, "unload", function() {
 								<div id="wan_info" style="display:none">
 									<div class="setting" id="wan_connection">
 										<div class="label"><% tran("status_router.www_loginstatus"); %></div>
-										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
+										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>');" /></span>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.ip"); %></div>
@@ -284,22 +283,20 @@ addEvent(window, "unload", function() {
 										<div class="center">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");
-											//]]>
-											</script>&nbsp;
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");
+											document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release');\">");
+											document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew');\">");
 											//]]>
 											</script>
 										</div>
 									</div>
 								</div>
 							</fieldset><br />
+				<% nvram_match("wl_mode", "wet", "-->"); %>
+							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\">");
 								//]]>
 								</script>
 							</div>
