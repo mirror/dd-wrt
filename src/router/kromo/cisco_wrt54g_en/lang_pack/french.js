@@ -24,7 +24,7 @@ share.hostname="Nom d\'hôte";
 share.domainname="Nom de domaine";
 share.wandomainname="Nom de domaine WAN";
 share.landomainname="Nom de domaine LAN";
-share.statu="Etat";
+share.statu="Statut";
 share.start="Début";
 share.end="Fin";
 share.proto="Protocole";
@@ -119,7 +119,7 @@ share.connected="Connecté";
 share.disconnect="Déconnecter";
 share.disconnected="Déconnecté";
 share.info="Information";
-share.state="Etat";
+share.state="Statut";
 share.mode="Mode";
 share.encrypt="Cryptage";
 share.key="Clé";
@@ -348,7 +348,7 @@ bmenu.applicationsP2P="P2P";
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="Vue d\'ensemble";
 bmenu.sipathphone="Carnet d\'adresses";
-bmenu.sipathstatus="Etat";
+bmenu.sipathstatus="Statut";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Gestion";
@@ -363,7 +363,7 @@ bmenu.adminUpgrade="Mise à niveau";
 bmenu.adminBackup="Sauvegarde";
 
 
-bmenu.statu="Etat";
+bmenu.statu="Statut";
 bmenu.statuRouter="Routeur";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
@@ -1148,17 +1148,17 @@ eoip.bridging="Bridging";
 
 sipath.titl=" - Généralités SiPath";
 sipath.phone_titl=" - Répertoire";
-sipath.status_titl=" - Etat";
+sipath.status_titl=" - Statut";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl=" - Etat LAN";
+status_lan.titl=" - Statut LAN";
 status_lan.h2="Réseau Local";
-status_lan.legend="Etat LAN";
+status_lan.legend="Statut LAN";
 status_lan.h22="Dynamic Host Configuration Protocol (DHCP)";
-status_lan.legend2="Etat DHCP";
+status_lan.legend2="Statut DHCP";
 status_lan.legend3="Clients DHCP";
 status_lan.legend4="Clients Connectés";
 
@@ -1174,7 +1174,7 @@ hstatus_lan.right10="En cliquant sur n\'importe quelle adresse Mac, vous obtiend
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl=" - Etat du Router";
+status_router.titl=" - Statut du Router";
 status_router.h2="Informations Router";
 status_router.legend="Système";
 status_router.sys_model="Modèle du Router";
@@ -1223,28 +1223,28 @@ status_conn.h2="Active IP Connections";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-status_sputnik.titl=" - Etat de l\'Agent Sputnik";
+status_sputnik.titl=" - Statut de l\'Agent Sputnik";
 status_sputnik.h2="Agent&trade; Sputnik&reg;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="No. de License SCC";
 
 //help container
 
-hstatus_sputnik.right1="Etat de l\'Agent Sputnik";
+hstatus_sputnik.right1="Statut de l\'Agent Sputnik";
 hstatus_sputnik.right2="Cette partie affiche l\'état du processus de l\'Agent Sputnik.";
 hstatus_sputnik.right4="Le centre de contrôle Sputnik auquel ce point d\'accès est connecté.";
-hstatus_sputnik.right6="Etat actuel de l\'Agent Sputnik";
+hstatus_sputnik.right6="Statut actuel de l\'Agent Sputnik";
 hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik.";
 
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl=" - Etat Sans Fil";
+status_wireless.titl=" - Statut Sans Fil";
 status_wireless.h2="Informations Sans Fil";
 status_wireless.legend="Wifi";
 status_wireless.net="Réseau";
-status_wireless.pptp="Etat PPTP";
+status_wireless.pptp="Statut PPTP";
 status_wireless.legend2="Information Paquets";
 status_wireless.rx="Recus (RX)";
 status_wireless.tx="Transmis (TX)";
@@ -1262,7 +1262,7 @@ hstatus_wireless.right4="Comme configuré dans l\'onglet Wireless, ce sont les no
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl=" - Etat OpenVPN";
+status_openvpn.titl=" - Statut OpenVPN";
 
 
 // ******************************************* Triggering.asp *******************************************//
