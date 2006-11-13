@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - MAC Address Filter List</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wl_filter.titl;
 
@@ -13,18 +12,16 @@ function SelPage(num,F) {
 	F.submit();
 }
 
-function to_submit_mac(F) {
+function to_submit(F) {
 	F.submit_button.value = "WL_FilterTable";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
 }
-
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	
 	<body>
@@ -42,37 +39,19 @@ function to_submit_mac(F) {
 						<tr>
 							<td align="left"><% tran("wl_filter.h3"); %></td>
 							<td align="right"><script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" id=\"button4\" name=\"button5\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable.asp', 650, 450)\" />");
-
-//]]>
-</script></td>
+							//<![CDATA[
+							document.write("<input class=\"button\" type=\"button\" name=\"table_button\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable.asp', 650, 450);\" />");
+							//]]>
+							</script></td>
 						</tr>
 					</table><br/>
 					<% wireless_filter_table("input"); %>
 					<div class="submitFooter">
 						<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit_mac(this.form)\" />");
-
-//]]>
-</script>
-						<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
-						<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input onclick=\"self.close()\" type=\"reset\" value=\"" + sbutton.clos + "\" />");
-
-//]]>
-</script>
+						//<![CDATA[
+						submitFooterButton(1,1,0,0,0,1);
+						//]]>
+						</script>
 					</div>
 				</div>
 			</div>

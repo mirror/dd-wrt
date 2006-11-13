@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Security</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
@@ -197,9 +196,8 @@ addEvent(window, "load", function() {
 		}
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
    <body class="gui">
@@ -207,10 +205,8 @@ addEvent(window, "load", function() {
       <div id="wrapper">
          <div id="content">
             <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-			   <% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
+               <div id="logo"><h1><% show_control(); %></h1></div>
+               <% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
             </div>
             <div id="main">
                <div id="contents">
@@ -231,12 +227,10 @@ addEvent(window, "load", function() {
                   	
                   	<div class="submitFooter">
                   		<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\"/><input type=\"reset\" value=\"" + sbutton.cancel + "\"/>");
-
-//]]>
-</script>
+                  		//<![CDATA[
+                  		submitFooterButton(1);
+                  		//]]>
+                  		</script>
                   	</div>
                   </form>
                </div>

@@ -1,4 +1,4 @@
-@import url(../common.css); 
+@import url(../common.css);
 #menuSub, 
 #menuMainList li span, 
 #help h2 { 
@@ -41,17 +41,11 @@ border-width:.09em;
 background-color: #496fc7;
 font-size:.09em;
 }
-
-input[type='button'] {
+input.button {
 background: #496fc7;
 color: #fff;
-border-style: solid none none solid ;
-border-width: .1em;
-cursor:pointer;
 }
-
-input[type='button']:hover {
+input.button:hover {
 background: #6384cf;
 color: #fff;
-cursor:pointer;
 }

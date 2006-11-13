@@ -15,7 +15,6 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
-	update.stop();
 	apply(F);
 }
 
@@ -131,10 +130,6 @@ addEvent(window, "unload", function() {
 		
 		//]]>
 		</script>
-	
-		<style type="text/css">
-			tr.disabled td {text-decoration:line-through; color:#999;}
-		</style>
 	</head>
 
 	<body class="gui">
@@ -171,12 +166,8 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all')\">");
-									//]]>
-									</script>&nbsp;
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+									document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all');\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
 									//]]>
 									</script>
 								</div>
@@ -204,12 +195,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
+								submitFooterButton(1,1);
 								//]]>
 								</script>
 							</div>

@@ -1,5 +1,5 @@
 * {
-font-family:Tahoma, Arial, Helvetica, sans-serif;
+font-family:Tahoma, Arial, sans-serif;
 font-size:1em;
 }
 body {
@@ -20,11 +20,10 @@ width:100%;
 height:.09em;
 }
 pre {
-	overflow: auto !important;
-	overflow: scroll;
+	overflow: auto;
 	padding: 1em;
 	margin: 0;
-	font-family:Courier New, Courier;
+	font-family:"Courier New", Courier, monospace;
 	background-color:#F7F7F7;
 }
 form {
@@ -119,9 +118,9 @@ padding-bottom:.626em;
 margin-top:0;
 }
 #menuSubList li span {
-background:#fff !important;
-color:#000 !important;
-border-color:#fff #ccc #000 #fff !important;
+background:#fff;
+color:#000;
+border-color:#fff #ccc #000 #fff;
 font-weight:normal;
 padding-bottom:.543em;
 }
@@ -276,7 +275,7 @@ padding:.725em;
 margin:0;
 text-align:center;
 }
-.submitFooter input,
+.submitFooter,
 .message div input {
 padding:.362em 1.087em;
 margin:0 .362em;
@@ -332,9 +331,9 @@ text-align:center;
 line-height:1.181em;
 }
 td .meter {
-float:none !important;
-margin-top:0 !important;
-width:99% !important;
+float:none;
+margin-top:0;
+width:99%;
 }
 .progressbar {
 visibility:visible;
@@ -352,22 +351,33 @@ text-decoration:blink;
 background:url(/images/bin_bt.gif) center no-repeat;
 cursor:pointer;
 }
-input.btn {
-padding:.0em .5em;
+body input.button {
+	padding: .1em;
+	margin: 0 .3em 0 0;
+	cursor:pointer;
+	border-width: .1em;
+	border-bottom-color: #ccc;
+	border-right-color: #ccc;
+	border-left-color: #ddd;
+	border-top-color: #ddd
+}
+.submitFooter .button {
+  padding: .5em;
+  margin: 0 .5em 0 0;
 }
 input.spaceradio {
 margin-right:.4em;
 }
 /* for DIV popup Style */
 div.bulle {
-	width:300px;
+	width:auto;
 	background-color:#FFFFE1;
 	position:absolute;
 	visibility:hidden;
 	z-index:2000;
 }
 table.bulle {
-	width:100%;
+	width:auto;
 	height:auto;
 	margin:0em;
 	padding:0em;
@@ -375,7 +385,7 @@ table.bulle {
 	text-align:justify;
 }
 td.bulle {
-	width:100%;
+	width:auto;
 	height:auto;
 	padding:0.09em;
 	border:0em;

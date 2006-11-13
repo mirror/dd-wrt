@@ -278,9 +278,6 @@ cursor:pointer;
 .textblink {
 text-decoration:blink;
 }
-input.btn {
-padding:.0em .5em;
-}
 input.spaceradio {
 margin-right:.4em;
 }

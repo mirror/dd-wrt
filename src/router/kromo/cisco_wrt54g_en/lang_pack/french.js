@@ -308,7 +308,8 @@ errmsg.err61="Fichier incorrect.";
 //Services.asp error messages
 errmsg.err62=" est déjà definie comme bail dhcp statique.";
 
-
+//Saving message
+errmsg.err100="Sauvegarde en cours...<br/> Patientez SVP.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 

@@ -41,3 +41,11 @@ border-width:.09em;
 background-color: #d55;
 font-size:.09em;
 }
+input.button {
+background: #d55;
+color: #fcc;
+}
+input.button:hover {
+background: #e77;
+color: #fff;
+}

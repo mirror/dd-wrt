@@ -46,7 +46,7 @@ function upgrade(F,id) {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Management.asp","Upgrade.asp"); %>
+					<% do_menu("Management.asp","Upgrade.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -88,7 +88,7 @@ function upgrade(F,id) {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text')\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"Upgrade_b\" value=\"" + sbutton.upgrade + "\" onclick=\"upgrade(this.form,'warning_text');\" />");
 								//]]>
 								</script>
 							</div>

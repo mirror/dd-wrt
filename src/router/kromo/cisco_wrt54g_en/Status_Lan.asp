@@ -39,7 +39,6 @@ function setDHCPTable() {
 		cellmac.innerHTML = val[i+2];
 
 		var cellbail = row.insertCell(-1);
-		//cellbail.align = "center";
 		cellbail.innerHTML = val[i+3];
 		
 		var cell = row.insertCell(-1);
@@ -109,8 +108,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	 </head>
 
 	 <body class="gui">
@@ -119,7 +118,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_Lan.asp"); %>
+					<% do_menu("Status_Router.asp","Status_Lan.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -218,7 +217,8 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
+								var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								submitFooterButton(0,0,0,autoref);
 								//]]>
 								</script>
 							</div>

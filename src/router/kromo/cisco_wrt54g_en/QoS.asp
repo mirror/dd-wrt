@@ -132,8 +132,8 @@ function init() {
 	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
 }
 		
-	//]]>
-</script>
+			//]]>
+		</script>
 	</head>
 
 	<body class="gui" onload="init()">
@@ -142,7 +142,7 @@ function init() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Forward.asp","QoS.asp"); %>
+					<% do_menu("Forward.asp","QoS.asp"); %>
 				</div>
             	<div id="main">
 					<div id="contents">
@@ -204,7 +204,7 @@ function init() {
 										<td colspan="2">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form)\" />");
+											document.write("<input class=\"button\" type=\"button\" name=\"add_svc_button\" value=\"" + sbutton.add + "\" onclick=\"svc_add_submit(this.form);\" />");
 											//]]>
 											</script>&nbsp;&nbsp;&nbsp;
 											<select name="add_svc">
@@ -225,7 +225,7 @@ function init() {
 										<td colspan="2">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
+											document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420);\" />");
 											//]]>
 											</script>&nbsp;&nbsp;&nbsp;
 										</td>
@@ -242,7 +242,7 @@ function init() {
 										<td colspan="2">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form)\" />");
+											document.write("<input class=\"button\" type=\"button\" name=\"add_ipsprio_button\" value=\"" + sbutton.add + "\" onclick=\"ip_add_submit(this.form);\" />");
 											//]]>
 											</script>&nbsp;&nbsp;&nbsp;
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num" />&nbsp;/&nbsp;
@@ -261,7 +261,7 @@ function init() {
 										<td colspan="2">
 											<script type="text/javascript">
 											//<![CDATA[
-											document.write("<input type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form)\" />")
+											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
 											//]]>
 											</script>&nbsp;&nbsp;&nbsp;
 											<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num" />:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num" />
@@ -484,12 +484,7 @@ function init() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+								submitFooterButton(1,1);
 								//]]>
 								</script>
 							</div>

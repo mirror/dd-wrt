@@ -65,7 +65,6 @@ function valid(F,I) {
 									var h = Math.floor(windo.getWindoSize().height * 0.4);
 
 									if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-										//document.write("<br /><br /><textarea style=\"margin:0; width:100%; height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</textarea>");
 										document.write("<br /><br /><pre style=\"height:" + ((h > 200) ? h : 200) + "px;\">" + table.join("\n") + "</pre>");
 									}
 									//]]>
@@ -79,7 +78,7 @@ function valid(F,I) {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" name=\"button_start\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('startup').firstChild.data\" />")
+									document.write("<input class=\"button\" type=\"button\" name=\"button_start\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('startup').firstChild.data\" />")
 									//]]>
 									</script>
 								</div>
@@ -93,7 +92,7 @@ function valid(F,I) {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" name=\"button_firewall\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('firewall').firstChild.data\" />")
+									document.write("<input class=\"button\" type=\"button\" name=\"button_firewall\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('firewall').firstChild.data\" />")
 									//]]>
 									</script>
 								</div>
@@ -103,17 +102,9 @@ function valid(F,I) {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start')\" />")
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup')\" />")
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall')\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start');\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />")
 								//]]>
 								</script>
 							</div>

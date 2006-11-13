@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Administration</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + management.titl;
 
@@ -69,7 +69,6 @@ function to_reboot(F) {
 
 function to_submit(F) {
 	if( F.http_passwd.value != F.http_passwdConfirm.value ) {
-//		alert("Password confirmation doesn't match.");
 		alert(errmsg.err52);
 		F.http_passwd.focus();
 		return false;
@@ -114,7 +113,6 @@ function to_submit(F) {
 	}
 
 	F.submit_button.value = "Management";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value="Apply";
@@ -157,10 +155,9 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvram_else_match("enable_jffs2", "1", "1", "0"); %> == 1);
 
 });
-
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -169,7 +166,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Management.asp","Management.asp"); %>
+					<% do_menu("Management.asp","Management.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -185,30 +182,14 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="info_passwd" />
 							<input type="hidden" name="https_enable" />
 							<h2><% tran("management.h2"); %></h2>
-							<% show_modules(".webconfig"); %>
-							<% show_modules(".webconfig_release"); %>
+				<% show_modules(".webconfig"); %>
+				<% show_modules(".webconfig_release"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								submitFooterButton(1,1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
