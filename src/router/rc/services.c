@@ -442,8 +442,10 @@ start_single_service (void)
     }
   else if (!strcmp (service, "forward"))
     {
-      startstop ("firewall");
-      startstop ("wshaper");
+      stopservice("wshaper");
+      stopservice("firewall");
+      startservice("firewall");
+      startservice("wshaper");
     }
   else if (!strcmp (service, "qos"))
     {
