@@ -17,7 +17,7 @@
 #define BANNER "DD-WRT VeryBusyBox v" BB_VER " (" BB_EXTRA_VERSION ")"
 #endif
 
-##endif
+#endif
 
 
 const char BB_BANNER[]=BANNER;
