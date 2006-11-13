@@ -81,6 +81,9 @@ ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
 LIBRARIES += ../bird/bird.a
 endif
+ifeq ($(CONFIG_BRANDING),y)
+CFLAGS += -DHAVE_BRANDING
+endif
 
 #LDFLAGS += ../wireless-tools/libiw.so.29
 
