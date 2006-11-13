@@ -1190,7 +1190,7 @@ configure_single (int count)
     setupHostAP (dev);
   else
     setupSupplicant (dev);
-
+  sleep(3);
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))

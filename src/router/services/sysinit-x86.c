@@ -111,26 +111,23 @@ start_sysinit (void)
 //  sprintf (dev, "/dev/discs/disc%d/part1", index);
 //  mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
 
-  sprintf (dev, "block2mtd=/dev/discs/disc%d/part3", index);
-  eval("insmod","block2mtd",dev);
-  sprintf (dev, "/dev/mtdblock/0");
+  sprintf (dev, "/dev/discs/disc%d/part3", index);
+//  eval("insmod","block2mtd",dev);
+//  sprintf (dev, "/dev/mtdblock/0");
   //eval ("fsck", dev);		//checking nvram partition and correcting errors
  //detect jffs
-  FILE *fp=fopen(dev,"rb");
+/*  FILE *fp=fopen(dev,"rb");
   int nojffs=0;
   if (getc(fp)!=0x85)nojffs=1;
   if (getc(fp)!=0x19)nojffs=1;
-  fclose(fp);
-  if (nojffs)
+  fclose(fp);*/
+//      eval("mtd","erase","mtd0");
+  
+if (mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
     {
-      eval("mtd","erase","mtd0");
-      mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
+      eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
+      mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
-    }else if (mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL))
-    {
-      eval("mtd","erase","mtd0");
-      mount (dev, "/usr/local", "jffs2", MS_MGC_VAL, NULL);
-      eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");    
     }
   eval ("mkdir","-p","/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
@@ -139,7 +136,8 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-
+  eval ("mount","/usr/local","-o","remount,ro");
+  
 
   cprintf ("sysinit() var\n");
 
