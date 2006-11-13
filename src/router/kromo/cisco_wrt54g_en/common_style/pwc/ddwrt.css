@@ -31,6 +31,7 @@
 }
 .ddwrt_content {
 	overflow:auto;
+	color: #000000;
 	font-family: Tahoma, Arial, sans-serif;
 	font-size: 10px;
 	background: #FFFFFF;
@@ -66,8 +67,8 @@
 	text-align:center;
 	width:100%;
 	height:30px;
-	background: url('ddwrt/progress.gif') no-repeat center center;
-  background-color: transparent;
+	background: url('ddwrt/progress.gif') no-repeat center center
+  	background-color: #FFFFFF;
 }
 table.ddwrt_header  {
   border:1px solid #F00;
