@@ -1,14 +1,12 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - MAC Address Clone</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wanmac.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "WanMAC";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
@@ -32,10 +30,9 @@ addEvent(window, "load", function() {
 	SelMac("<% nvram_get("mac_clone_enable"); %>");
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; SelMac(1);"); %>
 });
-
     
-//]]>
-</script>
+		//]]>
+		</script>
    </head>
 
 	<body class="gui">
@@ -69,12 +66,10 @@ addEvent(window, "load", function() {
 									</div>
 									<div class="setting">
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />");
+										/]]>
+										</script>
 									</div>
 									
 									<hr width="90%" /><br />
@@ -89,19 +84,11 @@ document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanm
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.replace('WanMAC.asp')\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
+								document.write("<input type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
