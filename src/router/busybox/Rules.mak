@@ -77,6 +77,10 @@ ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
 endif
+ifeq ($(CONFIG_BIRD),y)
+CFLAGS += -DHAVE_BIRD
+LIBRARIES += ../bird/bird.a
+endif
 
 #LDFLAGS += ../wireless-tools/libiw.so.29
 
