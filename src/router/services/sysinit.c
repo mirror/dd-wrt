@@ -112,7 +112,7 @@ runStartup (char *folder, char *extension)
     {
       if (endswith (entry->d_name, extension))
 	{
-	  sprintf (buf, "%s/%s&\n", folder, entry->d_name);
+	  sprintf (buf, "%s/%s 2>&1 > /dev/null&\n", folder, entry->d_name);
 	  //execute script     
 	  system2 (buf);
 	}

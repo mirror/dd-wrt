@@ -19,7 +19,7 @@
  *
  * $Id:
  * 
- * System Initialisation for Avila Gateworks and compatible Routers
+ * System Initialisation for Standard PC and compatible Routers
  */
 
 #include <stdio.h>
@@ -273,6 +273,8 @@ eval("insmod","crypto_null");
 //    eval ("insmod", "pnic");
 //    eval ("insmod", "pnic2");
     }
+  if (detect ("FasterNet"))
+      eval ("insmod","de4x5");    
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
@@ -283,7 +285,7 @@ eval("insmod","crypto_null");
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+  eval ("insmod", "ath_pci", "rfkill=0","autocreate=none");
 
 
   eval ("insmod", "wlan_acl");
