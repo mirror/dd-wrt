@@ -4,9 +4,12 @@ nv=/usr/sbin/nvram
 cd /tmp/oet/pid
 for i in 1 2 3 4 5 6 7 8 9 10
 do
-	/bin/kill -9 `cat ${i}.pid` 2>&1 > /dev/null
-	/usr/sbin/brctl delif br0 tap10${i} 2>&1 > /dev/null
-	/usr/sbin/openvpn --rmtun --dev tap10${i} 2>&1 > /dev/null
+	if test -e "${i}.pid"
+	then 
+	    /bin/kill -9 `cat ${i}.pid` 2>&1 > /dev/null
+	    /usr/sbin/brctl delif br0 tap10${i} 2>&1 > /dev/null
+	    /usr/sbin/openvpn --rmtun --dev tap10${i} 2>&1 > /dev/null
+	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
 		/usr/sbin/openvpn --mktun --dev tap10${i} 2>&1 > /dev/null
