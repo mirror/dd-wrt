@@ -1164,8 +1164,9 @@ configure_single (int count)
 
   cprintf ("adjust sensitivity\n");
 
-  int distance = atoi (default_get (sens, "20000"));	//to meter
-  setdistance (wif, distance);	//sets the receiver sensitivity
+  int distance = atoi (default_get (sens, "2000"));	//to meter
+  if (distance>0)
+    setdistance (wif, distance);	//sets the receiver sensitivity
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
   int diva = atoi (default_get (diversity, "0"));
