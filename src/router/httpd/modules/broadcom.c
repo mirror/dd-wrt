@@ -3415,8 +3415,14 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     killall("udhcpc",SIGKILL);
     sys_commit ();
 #ifdef HAVE_X86
+    eval ("mount","/usr/local","-o","remount,rw");
+    eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
     eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+    eval ("mount","/usr/local","-o","remount,ro");
 #elif HAVE_RB500
+    eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
     eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #elif HAVE_MAGICBOX
     eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
