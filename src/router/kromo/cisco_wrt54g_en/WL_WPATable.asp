@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Security</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
@@ -15,28 +14,13 @@ function SelMode(varname,num,F)	{
 }
 
 function to_submit(F) {
-	if (valid_value(F)) {
-		F.submit_button.value = "WL_WPATable";
-		F.change_action.value = "gozila_cgi";
-		F.submit_type.value = "save";
-		F.save_button.value = sbutton.saving;
+	F.submit_button.value = "WL_WPATable";
+	F.change_action.value = "gozila_cgi";
+	F.submit_type.value = "save";
+	F.save_button.value = sbutton.saving;
 
-		F.action.value = "Apply";
-       	apply(F);
-	}
-}
-
-function valid_value(F) {
-	return true;
-	//if (wl0_security_mode)
-	//if(F.security_mode.value == "disabled")
-	//	return true;
-
-	//if(!valid_wpa_psk(F) || !valid_wep(F) || !valid_radius(F)) {
-	//	return false;
-	//} else  {
-	//	return true;
-	//}
+	F.action.value = "Apply";
+   apply(F);
 }
 
 function valid_radius(F) {
@@ -191,45 +175,39 @@ show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8
 
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
-
 
    <body class="gui">
    	<% showad(); %>
       <div id="wrapper">
-         <div id="content">
-            <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-			   <% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
-            </div>
-            <div id="main">
-               <div id="contents">
-                  <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" />
-                  	<input type="hidden" name="submit_type" />
-                  	<input type="hidden" name="change_action" />
-                  	<input type="hidden" name="action" />
-                  	<input type="hidden" name="security_varname" />
-                  	<input type="hidden" name="security_mode_last" />
-                  	<input type="hidden" name="wl_wep_last" />
-                  	<input type="hidden" name="filter_mac_value" />
-                  	<h2><% tran("wpa.h2"); %></h2>
-                  		<% show_security(); %><br />
-					
-					<div class="submitFooter">
-                  		<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\"/><input type=\"reset\" value=\"" + sbutton.cancel + "\"/>");
-
-//]]>
-</script>
-                  	</div>
-				</form>
+        <div id="content">
+          <div id="header">
+          	<div id="logo"><h1><% show_control(); %></h1></div>
+            <% do_menu("Wireless_Basic.asp","WL_WPATable.asp"); %>
+          </div>
+          <div id="main">
+            <div id="contents">
+              <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" />
+               	<input type="hidden" name="submit_type" />
+               	<input type="hidden" name="change_action" />
+               	<input type="hidden" name="action" />
+               	<input type="hidden" name="security_varname" />
+               	<input type="hidden" name="security_mode_last" />
+               	<input type="hidden" name="wl_wep_last" />
+               	<input type="hidden" name="filter_mac_value" />
+               	<h2><% tran("wpa.h2"); %></h2>
+             		<% show_security(); %><br />
+             		
+             		<div class="submitFooter">
+	             		<script type="text/javascript">
+									//<![CDATA[
+									submitFooterButton(1);
+									//]]>
+									</script>
+								</div>
+							</form>
 					</div>
 				</div>
 				<div id="helpContainer">

@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - WOL</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wol.titl;
 
@@ -232,7 +231,7 @@ function setWolHostsTable() {
 			cell.className = "bin";
 			cell.title = wol.msg1;
 			eval("addEvent(cell, 'click', function() { del_wol_host('" + mac + "') })");
-			row.insertCell(-1).innerHTML = "\t\t<input type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
+			row.insertCell(-1).innerHTML = "\t\t<input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
 		}
 	}
 
@@ -253,10 +252,9 @@ addEvent(window, "load", function() {
 	setWolHostsTable();
 });
 	
-//]]>
-</script>
-
-</head>
+		//]]>
+		</script>
+	</head>
 
 	<body class="gui">
 		<% showad(); %>
@@ -264,7 +262,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Management.asp","Wol.asp"); %>
+					<% do_menu("Management.asp","Wol.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -306,7 +304,7 @@ addEvent(window, "load", function() {
 										<td></td>
 										<td><script type="text/javascript">
 										//<![CDATA[
-										document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");
+										document.write("<input class=\"button\" type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form);\" />");
 										//]]>
 										</script></td>
 									</tr>
@@ -335,7 +333,7 @@ addEvent(window, "load", function() {
 								<div class="submitFooter">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
 									//]]>
 									</script>
 								</div>

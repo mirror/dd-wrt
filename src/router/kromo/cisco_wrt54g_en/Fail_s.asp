@@ -7,7 +7,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 <% js_include(); %>
 
@@ -23,8 +23,8 @@ function to_submit()
 		document.location.href =  submit_button;
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
    <body>
@@ -33,12 +33,10 @@ function to_submit()
             <form>
             	<% tran("fail.mess1"); %><br />
 	            <script type="text/javascript">
-//<![CDATA[
-
-	            document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
-	            
-//]]>
-</script>
+	            //<![CDATA[
+	            document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
+	            //]]>
+	            </script>
             </form>
          </div>
       </div>

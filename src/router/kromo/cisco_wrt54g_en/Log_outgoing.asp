@@ -1,13 +1,12 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Outgoing Log Table</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + log_out.titl;
-
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	<body>
 		<div class="popup">
@@ -25,19 +24,10 @@ document.title = "<% nvram_get("router_name"); %>" + log_out.titl;
 				</table><br />
 				<div class="submitFooter">
 					<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-
-//]]>
-</script>
-					<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-
-//]]>
-</script>
+					//<![CDATA[
+					submitFooterButton(0,0,0,0,1,1);
+					//]]>
+					</script>
 				</div>
 			</form>
 		</div>

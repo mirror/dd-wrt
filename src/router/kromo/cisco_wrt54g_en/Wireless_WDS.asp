@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - WDS</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wds.titl;
 
@@ -17,27 +16,17 @@ function SelSubnet(F,num) {
 }
 
 function SelWDS(index, num, F) {
-	if(index==1){
-		F.wl_wds1_enable.value=F.wl_wds1_enable.options[num].value;
-	} else if(index==2) {
-		F.wl_wds2_enable.value=F.wl_wds2_enable.options[num].value;
-	} else if(index==3){
-		F.wl_wds3_enable.value=F.wl_wds3_enable.options[num].value;
-	} else if(index==4){
-		F.wl_wds4_enable.value=F.wl_wds4_enable.options[num].value;
-	} else if(index==5){
-		F.wl_wds5_enable.value=F.wl_wds5_enable.options[num].value;
-	} else if(index==6){
-		F.wl_wds6_enable.value=F.wl_wds6_enable.options[num].value;
-	} else if(index==7){
-		F.wl_wds7_enable.value=F.wl_wds7_enable.options[num].value;
-	} else if(index==8) {
-		F.wl_wds8_enable.value=F.wl_wds8_enable.options[num].value;
-	} else if(index==9){
-		F.wl_wds9_enable.value=F.wl_wds9_enable.options[num].value;
-	} else if(index==10){
-		F.wl_wds10_enable.value=F.wl_wds10_enable.options[num].value;
-	}
+	if(index==1) F.wl_wds1_enable.value=F.wl_wds1_enable.options[num].value;
+	else if(index==2) F.wl_wds2_enable.value=F.wl_wds2_enable.options[num].value;
+	else if(index==3) F.wl_wds3_enable.value=F.wl_wds3_enable.options[num].value;
+	else if(index==4) F.wl_wds4_enable.value=F.wl_wds4_enable.options[num].value;
+	else if(index==5) F.wl_wds5_enable.value=F.wl_wds5_enable.options[num].value;
+	else if(index==6) F.wl_wds6_enable.value=F.wl_wds6_enable.options[num].value;
+	else if(index==7) F.wl_wds7_enable.value=F.wl_wds7_enable.options[num].value;
+	else if(index==8) F.wl_wds8_enable.value=F.wl_wds8_enable.options[num].value;
+	else if(index==9) F.wl_wds9_enable.value=F.wl_wds9_enable.options[num].value;
+	else if(index==10) F.wl_wds10_enable.value=F.wl_wds10_enable.options[num].value;
+
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_WDS";
 	F.submit_type.value = "save";
@@ -50,7 +39,6 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.submit_button.value = "Wireless_WDS";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
@@ -69,16 +57,10 @@ function setWDS(val) {
 addEvent(window, "load", function() {
 	var wds = "1";
 	setElementsActive("wl_br1_nat", "wl_br1_netmask3", "<% nvram_get("wl_br1_enable"); %>" == 1);
-//	if ("ap" != "<% nvram_get("wl0_mode"); %>" || "psk2" == "<% nvram_get("wl0_akm"); %>" || "wpa2" == "<% nvram_get("wl0_akm"); %>"){
-//		var wds = "0";
-//		setWDS(wds);
-//		alert(errmsg.err48);
-//	}
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
   <body class="gui">
@@ -86,10 +68,8 @@ addEvent(window, "load", function() {
       <div id="wrapper">
          <div id="content">
             <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-			<% do_menu("Wireless_Basic.asp","Wireless_WDS.asp"); %>
+               <div id="logo"><h1><% show_control(); %></h1></div>
+               <% do_menu("Wireless_Basic.asp","Wireless_WDS.asp"); %>
             </div>
             <div id="main">
                <div id="contents">
@@ -110,25 +90,19 @@ addEvent(window, "load", function() {
                         <div class="setting">
                           <select name="wl_wds1_enable" size="1" onchange="SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)">
                             <script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"0\" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>" + share.disable + "</option>");
-
-//]]>
-</script>
+                            //<![CDATA[
+                            document.write("<option value=\"0\" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>" + share.disable + "</option>");
+                            //]]>
+                            </script>
                             <script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-
 //]]>
 </script>
                             <% show_wds_subnet(1); %>
                             <script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>>" + share.lan + "</option>");
-
 //]]>
 </script>
                           </select>
@@ -142,24 +116,18 @@ document.write("<option value=\"3\" <% nvram_selmatch("wl_wds1_enable", "3", "se
                           <select name="wl_wds2_enable" size="1" onchange="SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)">
                             <script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value=\"0\" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>" + share.disable + "</option>");
-
 //]]>
 </script>
                             <script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value=\"1\" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>>" + share.point2point + "</option>");
-
 //]]>
 </script>
                             <% show_wds_subnet(2); %>
                             <script type="text/javascript">
 //<![CDATA[
-
 document.write("<option value=\"3\" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>>" + share.lan + "</option>");
-
 //]]>
 </script>
                           </select>
@@ -478,19 +446,10 @@ document.write("<option value='<% nvram_selmatch("wl_br1_nat", "2", "selected");
                      <br/>
                      <div class="submitFooter">
                      	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-                     	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+                     	//<![CDATA[
+                     	submitFooterButton(1,1);
+                     	//]]>
+                     	</script>
                      </div>
                   </form>
                </div>

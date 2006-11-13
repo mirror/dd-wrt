@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Radius</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + radius.titl;
 
@@ -14,7 +13,6 @@ function to_submit(F) {
 	}
 
 	F.submit_button.value = "Wireless_radauth";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
@@ -34,19 +32,16 @@ addEvent(window, "load", function() {
 	}
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
    <body class="gui">
    	  <% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-			   <% do_menu("Wireless_Basic.asp","Wireless_radauth.asp"); %>
+            <div id="logo"><h1><% show_control(); %></h1></div>
+			   		<% do_menu("Wireless_Basic.asp","Wireless_radauth.asp"); %>
             </div>
             <div id="main">
                <div id="contents">
@@ -107,19 +102,10 @@ addEvent(window, "load", function() {
                     
                     <div class="submitFooter">
                     	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-                    	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+                    	//<![CDATA[
+                    	submitFooterButton(1,1);
+                    	//]]>
+                    	</script>
                     </div>
                   </form>
                </div>

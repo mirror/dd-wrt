@@ -400,11 +400,10 @@ function init() {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
-								document.write("<input type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
-								//]]>
-								</script>
+	            	//<![CDATA[
+	            	submitFooterButton(1,1);
+	            	//]]>
+	            	</script>
 							</div>
 						</form>
 					</div>

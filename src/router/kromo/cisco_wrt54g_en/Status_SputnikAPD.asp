@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Sputnik Agent Status</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_sputnik.titl;
 
@@ -19,9 +18,8 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	<body class="gui">
 		<% showad(); %>
@@ -29,7 +27,7 @@ addEvent(window, "unload", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_SputnikAPD.asp"); %>
+					<% do_menu("Status_Router.asp","Status_SputnikAPD.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -54,12 +52,11 @@ addEvent(window, "unload", function() {
                     
                     <div class="submitFooter">
                     	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");
-
-//]]>
-</script>
+											//<![CDATA[
+											var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+											submitFooterButton(0,0,0,autoref);
+											//]]>
+											</script>
                     </div>
                 </div>
             </div>

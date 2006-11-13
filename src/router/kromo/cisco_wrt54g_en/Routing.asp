@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Routing</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + route.titl;
 
@@ -20,7 +20,6 @@ function to_submit(F) {
 	
 	if(!valid_value(F)) return;
 	F.submit_button.value = "Routing";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
@@ -53,8 +52,8 @@ function SelMode(num,F) {
 	F.submit();
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -109,21 +108,17 @@ function SelMode(num,F) {
 									<div class="label"><% tran("share.intrface"); %></div>
 									<select size="1" name="dr_setting">
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");
+										//]]>
+										</script>
 										<option value="1" <% nvram_selected("dr_setting", "1"); %> >WAN</option>
 										<option value="2" <% nvram_selected("dr_setting", "2"); %> >LAN &amp; WLAN</option>
 										<script type="text/javascript">
-//<![CDATA[
-
-document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); %> >" + share.both + "</option>");
-
-//]]>
-</script>
+										//<![CDATA[
+										document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); %> >" + share.both + "</option>");
+										//]]>
+										</script>
 									</select>
 								</div>
 							 </fieldset><br/>
@@ -137,12 +132,10 @@ document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); 
 										<% static_route_table("select"); %>
 									</select>&nbsp;&nbsp;
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"DeleteEntry(this.form)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.del + "\" onclick=\"DeleteEntry(this.form);\" />");
+									//]]>
+									</script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.static_name"); %></div>
@@ -172,31 +165,20 @@ document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"D
 								</div>
 								<div class="center">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 720, 600)\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"button2\" value=\"" + sbutton.routingtab + "\" onclick=\"openWindow('RouteTable.asp', 720, 600);\" />");
+									//]]>
+									</script>
 									<input type="hidden" value="0" name="Route_reload" />
 								</div>
 							</fieldset><br />
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

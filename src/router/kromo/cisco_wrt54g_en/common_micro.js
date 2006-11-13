@@ -915,3 +915,18 @@ function unDisplayDiv()
 		document.getElementById('bulle').style.visibility = 'hidden';
 	}
 }
+
+function submitFooterButton(sub, res, reb, autoref, ref, clo) {
+	if(sub)
+		document.write("<input class=\"button\" type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
+	if(res)
+		document.write("<input class=\"button\" type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
+	if(reb)
+		document.write("<input class=\"button\" type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form);\" />");
+	if(autoref)
+		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + autoref + "\" onclick=\"window.location.reload();\">");
+	if(ref)
+		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload().\" />");
+	if(clo)
+		document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
+}

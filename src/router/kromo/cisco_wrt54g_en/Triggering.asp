@@ -1,9 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Port Triggering</title>
 		<script type="text/javascript">
-//<![CDATA[
-
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + trforward.titl;
 
@@ -28,15 +26,14 @@ function trigger_remove_submit(F) {
 function to_submit(F)
 {
 	F.submit_button.value = "Triggering";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -45,7 +42,7 @@ function to_submit(F)
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Forward.asp","Triggering.asp"); %>
+					<% do_menu("Forward.asp","Triggering.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -77,36 +74,19 @@ function to_submit(F)
 								</table><br />
 								<div class="center">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"trigger_add_submit(this.form)\">");
-
-//]]>
-</script>
-									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"trigger_remove_submit(this.form)\">");
-
-//]]>
-</script>
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name =\"add_button\" value=\"" + sbutton.add + "\" onclick=\"trigger_add_submit(this.form);\" />");
+									document.write("<input class=\"button\" type=\"button\" name =\"del_button\" value=\"" + sbutton.remove + "\" onclick=\"trigger_remove_submit(this.form);\" />");
+									//]]>
+									</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
-
-//]]>
-</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>
