@@ -4683,32 +4683,32 @@ char temp[32];
 
 	  for (tun=1; tun<11; tun++)
 		{
-
+			websWrite (wp, "\n");
 			websWrite (wp, "<fieldset>\n");
 			websWrite (wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n", tun);
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_srv)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_srv)</script></div>\n");
 		sprintf (temp, "oet%d_en", tun);
-			websWrite (wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
-			websWrite (wp," <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""), tun);
 			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div id=\"idoet1\">\n");
+			websWrite (wp, "<div id=\"idoet%d\">\n", tun);
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_remoteIP)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_remoteIP)</script></div>\n");
 			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf (temp, "oet%d_rem", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,service.eoip_remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,service.eoip_tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,service.eoip_tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,service.eoip_tunnelID)\" value=\"%d\" />\n", 
+			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,eoip.eoip_remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,eoip.eoip_tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,eoip.eoip_tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,eoip.eoip_tunnelID)\" value=\"%d\" />\n", 
 						temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_tunnelID)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_tunnelID)</script></div>\n");
 		sprintf (temp, "oet%d_id", tun);
-			websWrite (wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,service.eoip_tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
+			websWrite (wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.eoip_tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
 			websWrite (wp, "</div>\n");			
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_comp)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_comp)</script></div>\n");
 		sprintf (temp, "oet%d_comp", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
@@ -4716,7 +4716,7 @@ char temp[32];
 						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_passtos)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_passtos)</script></div>\n");
 		sprintf (temp, "oet%d_pt", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
@@ -4724,12 +4724,12 @@ char temp[32];
 						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_frag)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_frag)</script></div>\n");
 		sprintf (temp, "oet%d_fragment", tun);
-			websWrite (wp, "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,service.eoip_frag)\" value=\"%s\" />\n", temp, nvram_get(temp));
+			websWrite (wp, "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,eoip.eoip_frag)\" value=\"%s\" />\n", temp, nvram_get(temp));
 			websWrite (wp, "</div>\n");			
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_mssfix)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_mssfix)</script></div>\n");
 		sprintf (temp, "oet%d_mssfix", tun);
 			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
@@ -4737,12 +4737,12 @@ char temp[32];
 						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
 			websWrite (wp, "</div>\n");
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_shaper)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_shaper)</script></div>\n");
 		sprintf (temp, "oet%d_shaper", tun);
-			websWrite (wp, "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,service.eoip_shaper)\" value=\"%s\" />\n", temp, nvram_get(temp));
+			websWrite (wp, "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,eoip.eoip_shaper)\" value=\"%s\" />\n", temp, nvram_get(temp));
 			websWrite (wp, "</div>\n");	
 			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.eoip_bridging)</script></div>\n");
+			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.eoip_bridging)</script></div>\n");
 		sprintf (temp, "oet%d_bridged", tun);
 			websWrite (wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
