@@ -83,7 +83,7 @@ function init() {
 			<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
-					document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\" />");
+					document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form);\" />");
 					submitFooterButton(0,0,0,0,1,1);
 					//]]>
 					</script>
