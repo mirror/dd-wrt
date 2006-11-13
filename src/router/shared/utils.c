@@ -370,8 +370,10 @@ internal_getRouterBrand ()
 	      }
 	  }
 
-	if (nvram_match ("boardnum", "2") &&
-	    nvram_match ("boardtype", "bcm94710dev"))
+	if ((nvram_match ("boardnum", "2") &&
+	    nvram_match ("boardtype", "bcm94710dev")) ||
+	    ((nvram_match ("boardnum", "") &&   // fix for we800g v1 cleared nvram
+	    nvram_match ("boardtype", ""))))	// or restored to fac.def.
 	  {
 	    if (nvram_match ("GemtekPmonVer", "9") &&
 		(startswith (et0, "00:0C:E5") ||
@@ -389,10 +391,12 @@ internal_getRouterBrand ()
 		    eval ("insmod", "switch-robo");
 		    eval ("rmmod", "switch-robo");
 		    eval ("rmmod", "switch-core");
+		    nvram set ("boardnum", "2");
+		    nvram_set ("boardtype", "bcm94710dev");
 		  }
 		if (nvram_match ("phyid_num", "0x00000000"))
 		  {
-		    cprintf ("router Motorola WE800G v1\n");
+			cprintf ("router Motorola WE800G v1\n");
 		    setRouter ("Motorola WE800G v1");
 		    return ROUTER_MOTOROLA_WE800G;
 		  }
