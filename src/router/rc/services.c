@@ -284,6 +284,7 @@ start_single_service (void)
       start_service ("stabridge");
 #endif
       startstop ("udhcpd");
+      startstop ("dnsmasq");
 #ifdef HAVE_BIRD
       startstop ("zebra");
 #endif
