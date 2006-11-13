@@ -16,7 +16,7 @@ subdir depend: .dir-stamp
 	set -e ; for a in $(dynamic-dirs) ; do $(MAKE) -C $$a $@ ; done
 	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile $@ ; done
 
-$(exedir)/bird: $(addsuffix /all.o, $(static-dirs)) conf/all.o lib/birdlib.a
+$(exedir)/bird: $(addsuffix /all.o, $(static-dirs)) conf/all.o
 #	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 	$(AR) arc -o $@.a $^
 

@@ -71,15 +71,18 @@ LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcryp
 endif
 ifeq ($(CONFIG_RFLOW),y)
 CFLAGS += -DHAVE_RFLOW
-LIBRARIES += ../rflow/rflow.a -lpthread
+LIBRARIES += ../rflow/rflow.a 
+LDFLAGS += -lpthread
 endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
-LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
+LIBRARIES += ../dhcpforwarder/dhcpfwd.a
+LDFLAGS += -lpthread
 endif
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
 LIBRARIES += ../bird/bird.a
+LIBRARIES += ../bird/obj/lib/birdlib.a
 endif
 ifeq ($(CONFIG_BRANDING),y)
 CFLAGS += -DHAVE_BRANDING
