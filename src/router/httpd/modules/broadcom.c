@@ -4683,7 +4683,7 @@ char temp[32];
 
 	  for (tun=1; tun<11; tun++)
 		{
-			websWrite (wp, "\n");
+
 			websWrite (wp, "<fieldset>\n");
 			websWrite (wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n", tun);
 			websWrite (wp, "<div class=\"setting\">\n");
