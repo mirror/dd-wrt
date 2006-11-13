@@ -926,7 +926,7 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(autoref)
 		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + autoref + "\" onclick=\"window.location.reload();\">");
 	if(ref)
-		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload().\" />");
+		document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload();\" />");
 	if(clo)
 		document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
 }
