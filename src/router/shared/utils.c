@@ -372,9 +372,9 @@ internal_getRouterBrand ()
 
 	if ((nvram_match ("boardnum", "2") &&
 	    nvram_match ("boardtype", "bcm94710dev")) ||
-	    ((nvram_match ("boardnum", "") &&   	// fix for we800g v1 cleared nvram
-	    nvram_match ("boardtype", "") &&		// or restored to fac.def.
-	    nvram_match ("GemtekPmonVer", "9"))))	// stupid! I know...
+	    (!strlen (nvram_safe_get ("boardnum")) &&   	// fix for we800g v1 cleared nvram
+	    !strlen (nvram_safe_get ("boardtype")) &&		// or restored to fac.def.
+	    nvram_match ("GemtekPmonVer", "9")))			// stupid! I know...
 	  {
 	    if (nvram_match ("GemtekPmonVer", "9") &&
 		(startswith (et0, "00:0C:E5") ||
@@ -385,8 +385,7 @@ internal_getRouterBrand ()
 		 startswith (et0, "00:0C:90") ||
 		 startswith (et0, "00:0c:90")))
 	      {
-		char *phy = nvram_safe_get ("phyid_num");
-		if (!strlen (phy))
+		if (!strlen (nvram_safe_get ("phyid_num")))
 		  {
 		    eval ("insmod", "switch-core");	//get phy type
 		    eval ("insmod", "switch-robo");
