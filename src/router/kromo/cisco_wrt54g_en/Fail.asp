@@ -7,13 +7,12 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 <% js_include(); %>
 		
 var submit_button = "<% get_web_page_name(); %>";
-function to_submit()
-{
+function to_submit() {
 	if(submit_button == ".asp")
 		history.go(-1);
 	else if(submit_button == "WL_WEPTable.asp")
@@ -22,8 +21,8 @@ function to_submit()
 		document.location.href =  submit_button;
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
    <body>
@@ -32,12 +31,10 @@ function to_submit()
             <form>
             	<% tran("fail.mess1"); %><br />
             	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
-
-//]]>
-</script>
+            	//<![CDATA[
+            	document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
+            	//]]>
+            	</script>
             </form>
          </div>
       </div>

@@ -17,6 +17,7 @@ function CloneMAC(F) {
 	F.submit_button.value = "WanMAC";
 	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "clone_mac";
+	
 	F.action.value = "Apply";
 	F.submit();
 }
@@ -67,7 +68,7 @@ addEvent(window, "load", function() {
 									<div class="setting">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<input type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form)\" />");
+										document.write("<input class=\"button\" type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form);\" />");
 										/]]>
 										</script>
 									</div>
@@ -85,8 +86,7 @@ addEvent(window, "load", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-								document.write("<input type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
+								submitFooterButton(1,1);
 								//]]>
 								</script>
 							</div>

@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Firewall</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
@@ -33,7 +33,6 @@ function to_submit(F) {
 	if(F._block_ident){
 		F.block_ident.value = F._block_ident.checked ? 1 : 0;
 	}
-	
 
 	F.save_button.value = sbutton.saving;
 
@@ -50,7 +49,6 @@ addEvent(window, "load", function() {
 	//show_layer_ext(document.firewall.log_enable, 'idfilter', <% nvram_else_match("filter", "on", "on", "off"); %> == 'on');
 });
 
-		
 		//]]>
 		</script>
 	</head>
@@ -63,7 +61,7 @@ addEvent(window, "load", function() {
 					<div id="logo">
 						<h1><% show_control(); %></h1>
 					</div>
-				<% do_menu("Firewall.asp","Firewall.asp"); %>
+					<% do_menu("Firewall.asp","Firewall.asp"); %>
 				</div>
 				<div id="main">
 				<div id="contents">
@@ -130,15 +128,10 @@ addEvent(window, "load", function() {
 								
 								<div class="submitFooter">
 									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-									//]]>
-									</script>
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />");
-									//]]>
-									</script>
+		            	//<![CDATA[
+		            	submitFooterButton(1,1);
+		            	//]]>
+		            	</script>
 								</div>
 							</form>
 						</div>

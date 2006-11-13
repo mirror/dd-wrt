@@ -1,13 +1,12 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - OpenVPN Status</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + status_openvpn.titl;
 
-		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -16,7 +15,7 @@ document.title = "<% nvram_get("router_name"); %>" + status_openvpn.titl;
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Status_Router.asp","Status_OpenVPN.asp"); %>
+					<% do_menu("Status_Router.asp","Status_OpenVPN.asp"); %>
 				</div>
 
 				<div id="main">

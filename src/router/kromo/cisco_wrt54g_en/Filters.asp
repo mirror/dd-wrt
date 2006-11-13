@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Access Restrictions</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + filter.titl;
 
@@ -9,12 +9,12 @@ document.title = "<% nvram_get("router_name"); %>" + filter.titl;
 var summary_win = null;
 var ipmac_win = null;
 
-function dayall(F){
-	if(F.day_all.checked == false) {
+function dayall(F) {
+	if(F.day_all.checked == false)
 		I = 1;
-	} else {
+	else
 		I = 0;
-	}
+	
 	day_enable_disable(F,I);
 }
 
@@ -100,7 +100,6 @@ function valid(F) {
 		F.week5.checked == false &&
 		F.week6.checked == false
 	){
-//		alert("You must at least select a day.");
 		alert(filter.mess2);
 		return false;
 	}
@@ -108,7 +107,6 @@ function valid(F) {
 		start = (parseInt(F.start_hour.value, 10)) * 60 + parseInt(F.start_min.value, 10);
 		end = (parseInt(F.end_hour.value, 10)) * 60 + parseInt(F.end_min.value, 10);
 		if(end <= start){
-//			alert("The end time must be bigger than start time.");
 			alert(filter.mess3);
 			return false;
 		}
@@ -287,8 +285,8 @@ function Status(F,I) {
 	}
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui" onload="init()">
@@ -299,7 +297,7 @@ function Status(F,I) {
 					<div id="logo">
 						<h1><% show_control(); %></h1>
 					</div>
-				<% do_menu("Filters.asp","Filters.asp"); %>
+					<% do_menu("Filters.asp","Filters.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -322,12 +320,8 @@ function Status(F,I) {
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />");
-									//]]>
-									</script>
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form);\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480);\" />");
 									//]]>
 									</script>
 								</div>
@@ -344,7 +338,7 @@ function Status(F,I) {
 									<div class="label"><% tran("filter.pcs"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
 									//]]>
 									</script>
 								</div>
@@ -497,15 +491,10 @@ function Status(F,I) {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-								//]]>
-								</script>
+	            	//<![CDATA[
+	            	submitFooterButton(1,1);
+	            	//]]>
+	            	</script>
 							</div>
 						</form>
 					</div>

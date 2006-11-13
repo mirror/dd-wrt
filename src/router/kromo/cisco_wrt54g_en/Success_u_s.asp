@@ -6,7 +6,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 <% js_include(); %>
 
@@ -42,10 +42,9 @@ function init()
 {
 	bar1.togglePause();
 }
-
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	
 	<body onload="init()" onunload="clearTimeout(timer)">
@@ -55,40 +54,38 @@ function init()
 					<% tran("success.upgrade"); %><br /><br />
 					<div align="center">
 						<script type="text/javascript">
-//<![CDATA[
+						//<![CDATA[
 
 							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
 							bar1.togglePause();
-						
-//]]>
-</script>
+						//]]>
+						</script>
 	            	</div>
             		<div id="mess" style="display:none"><br /><br />
 	            		<div style="text-align:left">
 	            			<script type="text/javascript">
-//<![CDATA[
+	            			//<![CDATA[
 
 	            				if (rest_default == 1) {
 	            					Capture(success.alert_reset);
 	            				}
 	            				Capture(success.alert1);
 	            			
-//]]>
-</script>
+										//]]>
+										</script>
 	            			<ul>
 	            				<li><% tran("success.alert2"); %></li>
 	            				<li><% tran("success.alert3"); %></li>
 	            			</ul>
 	            		</div>
 		            	<script type="text/javascript">
-//<![CDATA[
+		            	//<![CDATA[
 
-							document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
+							document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
 							if (browserName == "Microsoft Internet Explorer")
-								document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-						
-//]]>
-</script>
+								document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+						//]]>
+						</script>
 	            	</div>
 				</form>
 			</div>

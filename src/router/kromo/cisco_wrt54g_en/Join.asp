@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Join</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + join.titl;
 
@@ -13,8 +13,8 @@ function to_send(url)
 	opener.location.href = url;
 }
       
-//]]>
-</script>
+		//]]>
+		</script>
     </head>
 
     <body onunload="to_send('Wireless_Basic.asp')">
@@ -22,19 +22,11 @@ function to_send(url)
          <div>
             <form>
             	<script type="text/javascript">
-//<![CDATA[
-
-document.write(join.mess1 + "&nbsp;" + SSID);
-
-//]]>
-</script><br/>
-            	<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"self.close()\" />");
-
-//]]>
-</script>
+            	//<![CDATA[
+            	document.write(join.mess1 + "&nbsp;" + SSID + "<br/>");
+            	document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"self.close();\" />");
+            	//]]>
+            	</script>
             </form>
          </div>
       </div>

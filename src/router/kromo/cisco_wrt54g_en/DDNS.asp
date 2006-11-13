@@ -452,9 +452,8 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 							 <script type="text/javascript">
 							 //<![CDATA[
-							 document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form);\" />");
-							 document.write("<input type=\"button\" name=\"reset_button\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload();\" />");
-							 document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\">");
+							 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+							 submitFooterButton(1,1,0,autoref);
 							 //]]>
 							 </script>
 							</div>

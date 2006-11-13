@@ -1,13 +1,12 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - List of PCs</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + filterIP.titl;
 		
 function to_submit(F) {
 	F.submit_button.value = "FilterIPMAC";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 	
 	F.action.value = "Apply";
@@ -15,23 +14,21 @@ function to_submit(F) {
 }
 
 function valid_macs_all(I) {
-	if(I.value == "") {
+	if(I.value == "")
 		return true;
-	}
 
 	if(I.value.length == 12) {
 		valid_macs_12(I);
 	} else if(I.value.length == 17) {
 		valid_macs_17(I);
 	} else {
-//		alert("The MAC Address length is not correct.");
 		alert(errmsg.err18);
 		I.value = I.defaultValue;
 	}
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body>
@@ -121,26 +118,10 @@ function valid_macs_all(I) {
 			<br />
 			<div class="submitFooter">
 				<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-				<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
-				<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-
-//]]>
-</script>
+				//<![CDATA[
+				submitFooterButton(1,1,0,0,0,1);
+				//]]>
+				</script>
 			</div>
 		</form>
 	</body>

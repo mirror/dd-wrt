@@ -18,7 +18,7 @@
 	<div class="label"><% tran("wep.passphrase"); %></div>
 	<input name="wl_passphrase" maxlength="16" size="20" value="<% get_wep_value("passphrase"); %>" />
 	<input type="hidden" value="Null" name="generateButton" />
-	<input type="button" value="Generate" onclick="generateKey(this.form,'wl')" name="wepGenerate" />
+	<input class="button" type="button" name="wepGenerate" value="Generate" onclick="generateKey(this.form,'wl');" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.key"); %> 1</div>

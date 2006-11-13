@@ -32,12 +32,7 @@ document.title = "<% nvram_get("router_name"); %>" + status_conn.titl;
 				<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
-					document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
+					submitFooterButton(0,0,0,0,1,1);
 					//]]>
 					</script>
 				</div>
