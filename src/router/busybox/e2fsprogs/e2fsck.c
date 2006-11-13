@@ -12275,7 +12275,8 @@ static int ask_yn(const char * string, int def)
 	const char      *defstr;
 	static const char short_yes[] = "yY";
 	static const char short_no[] = "nN";
-
+return 1;
+/*
 #ifdef HAVE_TERMIOS_H
 	struct termios  termios, tmp;
 
@@ -12328,7 +12329,7 @@ static int ask_yn(const char * string, int def)
 #ifdef HAVE_TERMIOS_H
 	tcsetattr (0, TCSANOW, &termios);
 #endif
-	return def;
+	return def;*/
 }
 
 int ask (e2fsck_t ctx, const char * string, int def)
