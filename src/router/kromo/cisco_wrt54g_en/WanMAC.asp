@@ -69,7 +69,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" name=\"clone_b\" value=\"" + sbutton.wanmac + "\" onclick=\"CloneMAC(this.form);\" />");
-										/]]>
+										//]]>
 										</script>
 									</div>
 									
