@@ -20,9 +20,9 @@ void cmd_reconfig(char *name);
 
 /* io.c */
 
-volatile int async_config_flag;
-volatile int async_dump_flag;
-volatile int async_shutdown_flag;
+extern int async_config_flag;
+extern int async_dump_flag;
+extern int async_shutdown_flag;
 
 #ifdef IPV6
 #define BIRD_PF PF_INET6
