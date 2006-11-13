@@ -1,19 +1,17 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Virtual LAN</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + vlan.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "Vlan";
 	F.save_button.value = sbutton.saving;
+	
 	F.action.value = "Apply";
 	apply(F);
 }
-
-
 
 function SelSpeed(F,I) {
 	if(eval("F."+I+"vlan17").checked) {
@@ -63,8 +61,8 @@ function init() {
 	}
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui" onload="init()">
@@ -105,19 +103,10 @@ function init() {
   							 <br/>
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+								//<![CDATA[
+								submitFooterButton(1,1);
+								//]]>
+								</script>
 							</div>
 						</form>
 					</div>

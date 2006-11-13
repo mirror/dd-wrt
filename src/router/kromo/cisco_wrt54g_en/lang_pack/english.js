@@ -309,7 +309,7 @@ errmsg.err61="Incorrect image file.";
 //Services.asp error messages
 errmsg.err62=" is already defined as a static lease.";
 
-//All pages
+//Saving message
 errmsg.err100="Processing...<br/> Please, wait.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//

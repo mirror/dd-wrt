@@ -6,7 +6,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 <% js_include(); %>
 
@@ -54,35 +54,30 @@ function init()
 		<div class="message">
 			<div>
 			<form>
-            	<% tran("success.success_reboot"); %><br /><br />
-	            	<div align="center">
-	            		<script type="text/javascript">
-//<![CDATA[
-
-	            			var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
-	            			bar1.togglePause();
-	            		
-//]]>
-</script>
-	            	</div>
-	            	<div id="mess" style="display:none"><br /><br />
-	            		<div style="text-align:left">
-							<% tran("success.alert1"); %>
-	            			<ul>
-	            				<li><% tran("success.alert2"); %></li>
-	            				<li><% tran("success.alert3"); %></li>
-	            			</ul>
-	            		</div>
-		            	<script type="text/javascript">
-//<![CDATA[
-
-							document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
-							if (browserName == "Microsoft Internet Explorer")
-								document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-						
-//]]>
-</script>
-	            	</div>
+				<% tran("success.success_reboot"); %><br /><br />
+					<div align="center">
+						<script type="text/javascript">
+						//<![CDATA[
+							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
+	            bar1.togglePause();
+	            //]]>
+	            </script>
+	        </div>
+	        <div id="mess" style="display:none"><br /><br />
+	        	<div style="text-align:left"><% tran("success.alert1"); %>
+	        		<ul>
+	        			<li><% tran("success.alert2"); %></li>
+	        			<li><% tran("success.alert3"); %></li>
+	        		</ul>
+	        	</div>
+	        	<script type="text/javascript">
+	        	//<![CDATA[
+	        		document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit();\" />");
+	        		if (browserName == "Microsoft Internet Explorer")
+	        			document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+	        	//]]>
+	        	</script>
+	        </div>
 				</form>
 			</div>
 		</div>

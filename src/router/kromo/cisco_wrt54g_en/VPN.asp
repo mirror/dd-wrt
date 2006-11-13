@@ -1,22 +1,20 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - VPN</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + vpn.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "VPN";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -27,7 +25,7 @@ function to_submit(F) {
 					<div id="logo">
 						<h1><% show_control(); %></h1>
 					</div>
-				<% do_menu("Firewall.asp","VPN.asp"); %>
+					<% do_menu("Firewall.asp","VPN.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -57,19 +55,10 @@ function to_submit(F) {
 							
 							<div class="submitFooter">
 									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-
-//]]>
-</script>
-									<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
-
-//]]>
-</script>
+									//<![CDATA[
+									submitFooterButton(1,1);
+									//]]>
+									</script>
 								</div>
 						</form>
 					</div>

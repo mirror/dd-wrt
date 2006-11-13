@@ -68,30 +68,28 @@ function InitBW(num,F)
 function SelBW(num,F)
 {
 	if (num == 0) {	// Auto
-		if(F.wl0_wchannel) choose_enable(F.wl0_wchannel);
+		if(F.wl0_wchannel)
+			choose_enable(F.wl0_wchannel);
+			
 		choose_enable(F.wl0_channel);
-
-		if(F.wl0_wchannel) create_wchannel_auto(F)
-	
-//		create_schannel_auto(F);
+		if(F.wl0_wchannel)
+			create_wchannel_auto(F)
 	}
-	else if (num == 20){
-		if(F.wl0_wchannel) choose_disable(F.wl0_wchannel);
-		choose_enable(F.wl0_schannel);
+	else if (num == 20) {
+		if(F.wl0_wchannel)
+			choose_disable(F.wl0_wchannel);
 		
-		if(F.wl0_wchannel) create_wchannel(F)
-	
-//		create_schannel(F);
+		choose_enable(F.wl0_schannel);
+		if(F.wl0_wchannel)
+			create_wchannel(F)
 	}
 	else {
-		if(F.wl0_wchannel) choose_enable(F.wl0_wchannel);
+		if(F.wl0_wchannel)
+			choose_enable(F.wl0_wchannel);
+		
 		choose_enable(F.wl0_schannel);
-		
-		if(F.wl0_wchannel) create_wchannel(F);
-		
-		var curvalue = document.forms[0].wl0_wchannel[document.forms[0].wl0_wchannel.selectedIndex].value;
-
-//		create_schannel2(curvalue,F);
+		if(F.wl0_wchannel)
+			create_wchannel(F);
 	}
 }
 
@@ -206,8 +204,7 @@ addEvent(window, "load", function() {
                   	<div class="submitFooter">
                   		<script type="text/javascript">
                   		//<![CDATA[
-                  		document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");
-                  		document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");
+                  		submitFooterButton(1,1);
                   		//]]>
                   		</script>
                   	</div>

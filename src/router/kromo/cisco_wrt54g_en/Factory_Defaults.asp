@@ -1,7 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Factory Defaults</title>
 		<script type="text/javascript">
-//<![CDATA[
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + factdef.titl;
 
@@ -11,7 +11,6 @@ function to_submit(F) {
 			return false;
 		}
 		F.submit_button.value = "Factory_Defaults";
-//		F.save_button.value = "Saved";
 		F.save_button.value = sbutton.saving;
 		
 		F.action.value="Restore";
@@ -19,8 +18,8 @@ function to_submit(F) {
 	}
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -29,7 +28,7 @@ function to_submit(F) {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Management.asp","Factory_Defaults.asp"); %>
+					<% do_menu("Management.asp","Factory_Defaults.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -50,19 +49,10 @@ function to_submit(F) {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")
-
-//]]>
-</script>
-								<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")
-
-//]]>
-</script>
+	            	//<![CDATA[
+	            	submitFooterButton(1,1);
+	            	//]]>
+	            	</script>
 							</div>
 						</form>
 					</div>

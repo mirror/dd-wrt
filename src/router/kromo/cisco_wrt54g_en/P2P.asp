@@ -5,7 +5,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + p2p.titl;
 
-
 function to_submit(F) {
 	F.submit_button.value = "Forward";
 	F.save_button.value = sbutton.saving;
@@ -29,7 +28,7 @@ addEvent(window, "load", function() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-				<% do_menu("Forward.asp","P2P.asp"); %>
+					<% do_menu("Forward.asp","P2P.asp"); %>
 				</div>
 				<div id="main">
 					<div id="contents">
@@ -45,12 +44,7 @@ addEvent(window, "load", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");
-								//]]>
-								</script>
-								<script type="text/javascript">
-								//<![CDATA[
-								document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");
+								submitFooterButton(1,1);
 								//]]>
 								</script>
 							</div>

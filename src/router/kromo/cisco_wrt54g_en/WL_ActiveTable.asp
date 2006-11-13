@@ -1,8 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless Active Client MAC List</title>
 		<script type="text/javascript">
-//<![CDATA[
-
+		//<![CDATA[
 
 document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 
@@ -28,7 +27,6 @@ function valid_value(F)
 		}
 	}
 	if(count > 128){
-//		alert("The total checks exceed 128 counts.");
 		alert(errmsg.err44);
 		return false;
 	}
@@ -40,8 +38,8 @@ function init() {
 	window.focus();
 }
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	
 	<body onload="init()">
@@ -84,26 +82,11 @@ function init() {
 			</table></br />
 			<div class="submitFooter">
 					<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\" />");
-
-//]]>
-</script>
-					<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />");
-
-//]]>
-</script>
-					<script type="text/javascript">
-//<![CDATA[
-
-document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />");
-
-//]]>
-</script>
+					//<![CDATA[
+					document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\" />");
+					submitFooterButton(0,0,0,0,1,1);
+					//]]>
+					</script>
 			</div>
 		</form>
 	</body>
