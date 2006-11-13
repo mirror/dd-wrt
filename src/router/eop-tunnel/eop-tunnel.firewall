@@ -3,10 +3,13 @@ nv=/usr/sbin/nvram
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	id=$($nv get oet${i}_id)
+	if test -e "${i}.pid"
+	then 
 	/usr/sbin/iptables -D FORWARD -i tap10${i} -j ACCEPT 2>&1 > /dev/null
 	/usr/sbin/iptables -D FORWARD -o tap10${i} -j ACCEPT 2>&1 > /dev/null
 	/usr/sbin/iptables -D INPUT -i tap10${i} -j ACCEPT 2>&1 > /dev/null
 	/usr/sbin/iptables -D INPUT -p udp --dport 3500${id}  -j ACCEPT 2>&1 > /dev/null
+	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
 	/usr/sbin/iptables -I INPUT -p udp --dport 3500${id}  -j ACCEPT 2>&1 > /dev/null
