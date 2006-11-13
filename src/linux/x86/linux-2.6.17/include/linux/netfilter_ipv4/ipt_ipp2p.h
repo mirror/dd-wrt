@@ -1,6 +1,6 @@
 #ifndef __IPT_IPP2P_H
 #define __IPT_IPP2P_H
-#define IPP2P_VERSION "0.8.1_rc1"
+#define IPP2P_VERSION "0.8.2"
 
 struct ipt_p2p_info {
     int cmd;
