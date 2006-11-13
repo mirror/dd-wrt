@@ -66,7 +66,7 @@ function do_join (F,SSID) {
 							document.write("<td align=\"left\">"+table[i+6]+"</td>");
 							document.write("<td align=\"right\">"+table[i+7]+"</td>");
 							document.write("<td align=\"right\">"+table[i+8]+"</td>");
-							document.write("<td align=\"right\"><input type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
+							document.write("<td align=\"right\"><input class=\"button\" type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
 							document.write("<\/tr>");
 						}
 					}
