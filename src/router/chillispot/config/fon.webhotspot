@@ -16,12 +16,8 @@
 				<div class="center">
 					<script type="text/javascript">
 					//<![CDATA[
-					document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"user_add_submit(this.form)\" />");
-					//]]>
-					</script>
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"user_remove_submit(this.form)\" />");
+					document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"user_add_submit(this.form)\" />");
+					document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"user_remove_submit(this.form)\" />");
 					//]]>
 					</script>
 				</div>
