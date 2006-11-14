@@ -45,7 +45,8 @@ ifeq ($(CONFIG_PWC),y)
 	mkdir -p $(INSTALLDIR)/www/style/pwc
 	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc
 	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
-	cp -r common_style $(INSTALLDIR)/www/style/pwc
+	cp -r common_style/pwc $(INSTALLDIR)/www/style
+	cp common_style/common.css $(INSTALLDIR)/www/style/pwc
 endif
 
 
@@ -335,7 +336,9 @@ endif
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
-	rm -rf $(INSTALLDIR)/www/style/pwc/common_style
+ifeq ($(CONFIG_PWC),y)
+	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
+endif
 	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
 #../../../../tools/webcomp . filelist $(INSTALLDIR)/www/*.asp $(INSTALLDIR)/www/*.htm  > webrom.c
