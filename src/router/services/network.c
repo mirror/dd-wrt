@@ -1163,6 +1163,11 @@ start_lan (void)
 
 
   /* Get current LAN hardware address */
+
+#ifndef HAVE_MADWIFI
+      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+#endif   
   strncpy (ifr.ifr_name, lan_ifname, IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
