@@ -43,14 +43,11 @@ ifeq ($(CONFIG_PWC),y)
 	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
 	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
 	mkdir -p $(INSTALLDIR)/www/style/pwc
-	mkdir $(INSTALLDIR)/www/style/pwc/default
-	mkdir $(INSTALLDIR)/www/style/pwc/ddwrt
-	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
+	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc
 	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
-	#cp common_style/pwc/ddwrt/* $(INSTALLDIR)/www/style/pwc/ddwrt
-	#cp common_style/pwc/ddwrt.css $(INSTALLDIR)/www/style/pwc
-	cp -r common_style $(INSTALLDIR)/www/style
+	cp -r common_style $(INSTALLDIR)/www/style/pwc
 endif
+
 
 	cp -a lang_pack $(INSTALLDIR)/www
 
