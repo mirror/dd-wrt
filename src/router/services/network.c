@@ -1808,7 +1808,7 @@ int pppoe_rp = 1;
 	       "noccp\n"
 	       "nobsdcomp\n"
 	       "nodeflate\n"
-//	       "maxfail 0\n"
+	       "maxfail 0\n"
 //	       "nocrtscts\n"
 //	       "lock\n"
 	       "nopcomp\n"
