@@ -272,9 +272,9 @@ eval("insmod","crypto_null");
       eval ("insmod", "tulip");
 //    eval ("insmod", "pnic");
 //    eval ("insmod", "pnic2");
-    }
+    }else
   if (detect ("FasterNet"))
-      eval ("insmod","de4x5");    
+      eval ("insmod","tulip");    
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
