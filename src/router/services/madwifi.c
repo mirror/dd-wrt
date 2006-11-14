@@ -494,23 +494,24 @@ deconfigure_single (int count)
   char var[80];
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
-  sprintf (dev, "ath%d", count);
   br_del_interface ("br0", dev);
-  fprintf (stderr, "deconfigure %s\n", dev);
-  int s;
-  for (s = 1; s <= 10; s++)
-    {
-      sprintf(dev,"wds0.%d",s);
-      eval ("wlanconfig", dev,"destroy");
-    }
-  
- 
+  sprintf (dev, "ath%d", count);
+//  fprintf (stderr, "deconfigure %s\n", dev);
+   
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
       eval ("wlanconfig", var, "destroy");
+    }
+
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      sprintf(dev,"wds0.%d",s);
+      br_del_interface ("br0", dev);
+      eval ("wlanconfig", dev,"destroy");
     }
   
 }
