@@ -211,7 +211,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"filter_macmode", "deny", 0},	/* "allow" only, "deny" only, or "disabled" (allow all) */
   {"filter_client0", "", 0},	/* [lan_ipaddr0-lan_ipaddr1|*]:lan_port0-lan_port1,proto,enable,day_start-day_end,sec_start-sec_end,desc */
 
-  {"filter", "on", 0},		/* [on | off] Firewall Protection */
   {"filter_port", "", 0},	/* [lan_ipaddr|*]:lan_port0-lan_port1 */
   {"filter_rule1", "", 0},	/* $STAT: $NAME:$$ */
   {"filter_rule2", "", 0},	/* $STAT: $NAME:$$ */
@@ -853,7 +852,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"restore_defaults", "0", 0},	/* Set to 0 to not restore defaults on boot */
 
   ////////////////////////////////////////
-  {"filter", "on", 0},		/* Firewall Protection [on|off] */
 #ifdef HAVE_WTS
   {"router_name", "WTS", 0},	/* Router name string */
 #elif  HAVE_SKYTEL
@@ -905,6 +903,19 @@ struct nvram_tuple srouter_defaults[] = {
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
   {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_MAKSAT
+  {"filter", "off", 0},		/* Firewall Protection [on|off] */
+  {"block_wan", "0", 0},	/* Block WAN Request [1|0] */
+  {"block_ident", "0", 0},	/* Block IDENT passthrough [1|0] */
+  {"block_proxy", "0", 0},	/* Block Proxy [1|0] */
+  {"block_java", "0", 0},	/* Block Java [1|0] */
+  {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
+  {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
+  {"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+  {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+  {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
+  {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
+  {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #else
   {"filter", "on", 0},		/* Firewall Protection [on|off] */
   {"block_wan", "1", 0},	/* Block WAN Request [1|0] */
