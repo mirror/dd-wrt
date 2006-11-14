@@ -2840,7 +2840,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
   if (act)
     {
-      cprintf ("name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
+      fprintf (stderr,"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
 	       act->name, act->type, act->service, act->sleep_time,
 	       act->action);
       nvram_set ("action_service", act->service);
@@ -3380,7 +3380,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
     if (act)
     {
-    	cprintf ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
+    	fprintf (stderr,"submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
     		act->name, act->service, act->sleep_time, act->action);
     	if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
     		nvram_set ("action_service", act->service);
