@@ -729,8 +729,15 @@ static int
 match(const struct sk_buff *skb,
       const struct net_device *in,
       const struct net_device *out,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+      const struct xt_match  *mymatch,
       const void *matchinfo,
       int offset,
+      unsigned int myprotoff,
+#else
+      const void *matchinfo,
+      int offset,
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
       const void *hdr,
@@ -817,10 +824,15 @@ match(const struct sk_buff *skb,
 
 static int
 checkentry(const char *tablename,
-            const struct ipt_ip *ip,
-	    void *matchinfo,
-	    unsigned int matchsize,
-	    unsigned int hook_mask)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+           const void *ip, 
+           const struct xt_match *mymatch,
+#else
+           const struct ipt_ip *ip,
+#endif
+	   void *matchinfo,
+	   unsigned int matchsize,
+	   unsigned int hook_mask)
 {
         /* Must specify -p tcp */
 /*    if (ip->proto != IPPROTO_TCP || (ip->invflags & IPT_INV_PROTO)) {
@@ -831,7 +843,14 @@ checkentry(const char *tablename,
 }
 									    
 
-
+// TODO: find out what this structure is for (scheme taken
+// from kernel sources)
+// content seems to have a length of 8 bytes 
+// (at least on my x86 machine)
+struct ipp2p_match_info {
+	long int dunno_what_this_is_for;
+	long int i_also_dunno_what_this_is_for;
+};
 
 static struct ipt_match ipp2p_match = { 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -842,9 +861,16 @@ static struct ipt_match ipp2p_match = {
 	NULL, 
 	THIS_MODULE
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17))
 	.name		= "ipp2p",
 	.match		= &match,
+	.checkentry	= &checkentry,
+	.me		= THIS_MODULE,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,17)
+	.name		= "ipp2p",
+	.match		= &match,
+	.family         = AF_INET,
+	.matchsize      = sizeof(struct ipp2p_match_info),
 	.checkentry	= &checkentry,
 	.me		= THIS_MODULE,
 #endif
