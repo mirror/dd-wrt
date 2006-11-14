@@ -309,7 +309,7 @@ errmsg.err61="Fichier incorrect.";
 errmsg.err62=" est déjà definie comme bail dhcp statique.";
 
 //Saving message
-errmsg.err100="Sauvegarde en cours...<br/> Patientez SVP.";
+errmsg.err100="Veuillez patienter SVP...";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
