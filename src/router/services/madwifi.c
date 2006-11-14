@@ -1113,6 +1113,26 @@ configure_single (int count)
 	}
 //      sleep (1);
     }
+//create wds interface
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char *dev;
+
+      sprintf (wdsvarname, "wl_wds%d_enable", s);
+      sprintf (wdsdevname, "wl_wds%d_if", s);
+      dev = nvram_safe_get (wdsdevname);
+      if (strlen (dev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+      eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "wds");
+      eval ("iwpriv", dev, "wds_add", var);
+      eval ("iwpriv", dev, "wds", 1);
+    }
+
 
 //create original primary interface
   m = default_get (wl, "ap");
@@ -1153,10 +1173,10 @@ configure_single (int count)
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
-  foreach (var, nvram_safe_get ("wl0_wds"), next)
+/*  foreach (var, nvram_safe_get ("wl0_wds"), next)
   {
     eval ("iwpriv", "ath0", "wds_add", var);
-  }
+  }*/
 
   char macaddr[32];
   getMacAddr (dev, macaddr);
@@ -1165,7 +1185,7 @@ configure_single (int count)
   cprintf ("adjust sensitivity\n");
 
   int distance = atoi (default_get (sens, "2000"));	//to meter
-  if (distance>0)
+  if (distance > 0)
     setdistance (wif, distance);	//sets the receiver sensitivity
   int rx = atoi (default_get (rxantenna, "1"));
   int tx = atoi (default_get (txantenna, "1"));
@@ -1191,7 +1211,7 @@ configure_single (int count)
     setupHostAP (dev);
   else
     setupSupplicant (dev);
-  sleep(3);
+  sleep (3);
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
