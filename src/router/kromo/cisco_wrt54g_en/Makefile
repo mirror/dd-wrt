@@ -38,16 +38,6 @@ ifneq ($(CONFIG_DIST),"micro-special")
 endif
 endif
 
-ifeq ($(CONFIG_PWC),y)
-	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
-	mkdir -p $(INSTALLDIR)/www/style/pwc
-	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc
-	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
-	cp -r common_style/pwc $(INSTALLDIR)/www/style
-	cp common_style/common.css $(INSTALLDIR)/www/style/pwc
-endif
 
 
 	cp -a lang_pack $(INSTALLDIR)/www
@@ -158,6 +148,28 @@ ifeq ($(CONFIG_ORANGE),y)
 	cp orange/style_ie.css $(INSTALLDIR)/www/style/orange
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp orange/logo.png $(INSTALLDIR)/www/style
+endif
+
+ifeq ($(CONFIG_34TELECOM),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/34telecom/ install
+	mkdir $(INSTALLDIR)/www/style/cyan
+	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
+	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
+	cp 34telecom/common.css $(INSTALLDIR)/www/style
+#	cp cyan/logo.png $(INSTALLDIR)/www/style
+	cp -f 34telecom/logo.png $(INSTALLDIR)/www/style/
+else
+
+ifeq ($(CONFIG_PWC),y)
+	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
+	mkdir -p $(INSTALLDIR)/www/style/pwc
+	mkdir -p $(INSTALLDIR)/www/style/pwc/default
+	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
+	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
+	cp -r common_style/pwc $(INSTALLDIR)/www/style
+	cp common_style/common.css $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_SKYTEL),y)
@@ -285,16 +297,6 @@ ifeq ($(CONFIG_RAMON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
 else
 
-ifeq ($(CONFIG_34TELECOM),y)
-	$(MAKE) -C $(SRCBASE)/router/kromo/34telecom/ install
-	mkdir $(INSTALLDIR)/www/style/cyan
-	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
-	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
-	cp 34telecom/common.css $(INSTALLDIR)/www/style
-#	cp cyan/logo.png $(INSTALLDIR)/www/style
-	cp -f 34telecom/logo.png $(INSTALLDIR)/www/style/
-else
-
 ifeq ($(CONFIG_SKYTRON),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/skytron/ install
 else
@@ -339,6 +341,7 @@ endif
 	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* > $(SRCBASE)/router/httpd/html.c 
 ifeq ($(CONFIG_PWC),y)
 	rm -rf $(INSTALLDIR)/www/style/pwc/ddwrt
+	rm -rf $(INSTALLDIR)/www/style/pwc/default
 endif
 	cd $(INSTALLDIR)/www && rm -f *.asp *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/*
 #	cd $(INSTALLDIR)/www  &&  find . -name "*lzma" | xargs rm -f
