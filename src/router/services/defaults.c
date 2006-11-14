@@ -179,6 +179,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
   {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
   {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
+#elif HAVE_X86
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+
+  {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
+  {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
+  {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
+  {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #else
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 

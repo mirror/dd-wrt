@@ -677,7 +677,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") )
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
@@ -690,7 +690,20 @@ start_lan (void)
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
     }
-  else
+  else if (nvram_match ("wan_proto", "disabled"))
+    {
+      nvram_set ("lan_ifname", "br0");
+#ifdef HAVE_NOWIFI
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+#else
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+#endif
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+    else
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
