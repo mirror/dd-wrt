@@ -798,7 +798,6 @@ function StatusUpdate(_url, _frequency) {
 
 // Gray all form when submitting
 function apply(form) {
-	form.submit();
 	/*
 	for (i = 0; i < form.elements.length; i++) {
 		if(defined(form.elements[i].disabled)) 
@@ -807,6 +806,7 @@ function apply(form) {
 	if (form.contents) document.getElementById("contents").style.color = '#999999';
 	*/
 	Dialog.info(errmsg.err100, {windowParameters: {className: "ddwrt", width:250, height:100}, showProgress: true});
+	form.submit();
 }
 
 // Class for sending a request using ajax
