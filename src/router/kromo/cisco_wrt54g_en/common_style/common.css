@@ -20,6 +20,7 @@ hr {
   height:.09em;
 }
 pre {
+	width: 95%;
   overflow: auto;
   padding: 1em;
   margin: 0;
