@@ -310,6 +310,8 @@ errmsg.err62=" est déjà definie comme bail dhcp statique.";
 
 //Saving message
 errmsg.err100="Veuillez patienter SVP...";
+errmsg.err101="Restauration des paramètres en cours...<br/>Veuillez patienter SVP.";
+errmsg.err102="La mise à jour est en cours...<br/>Veuillez patienter SVP.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
