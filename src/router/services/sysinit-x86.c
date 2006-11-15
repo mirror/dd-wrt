@@ -211,6 +211,8 @@ eval("insmod","crypto_null");
     eval ("insmod", "r8169");
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
+  else if (detect ("SMC2-1211TX"))		// Realtek 8139 Adapter (various notebooks) 
+    eval ("insmod", "8139too");
 
   if (detect ("nForce2 Ethernet"))	// nForce2 
     eval ("insmod", "forcedeth");
@@ -268,12 +270,10 @@ eval("insmod","crypto_null");
     eval ("insmod", "3c59x");
 
   if (detect ("LNE100TX"))	// liteon / linksys
-    {
-      eval ("insmod", "tulip");
-//    eval ("insmod", "pnic");
-//    eval ("insmod", "pnic2");
-    }else
-  if (detect ("FasterNet"))
+    eval ("insmod", "tulip");
+  else if (detect ("FasterNet"))
+      eval ("insmod","tulip");    
+  else if (detect ("ADMtek NC100"))
       eval ("insmod","tulip");    
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
