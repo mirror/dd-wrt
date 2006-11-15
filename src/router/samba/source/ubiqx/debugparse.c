@@ -283,9 +283,9 @@ void dbg_test( void )
         case dbg_ignore:
           break;
         default:
-          if( old != new )
-            (void)printf( "\n[%05d]%12s: ", linecount, dbg_token2string(new) );
-          (void)putchar( bufr[i] );
+//          if( old != new )
+//            (void)printf( "\n[%05d]%12s: ", linecount, dbg_token2string(new) );
+//          (void)putchar( bufr[i] );
         }
       }
     }
