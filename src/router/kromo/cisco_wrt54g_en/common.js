@@ -751,8 +751,11 @@ function StatusUpdate(_url, _frequency) {
 	
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
-		if(document.getElementsByName("refresh_button")) 
+		if(document.getElementsByName("refresh_button")) {
 			document.getElementsByName("refresh_button")[0].disabled = true;
+			document.getElementsByName("refresh_button")[0].style.background = '#dddddd';
+			document.getElementsByName("refresh_button")[0].style.cursor = "default";
+		}
 		timer = setTimeout(me.doUpdate, frequency);
 	}
 	
