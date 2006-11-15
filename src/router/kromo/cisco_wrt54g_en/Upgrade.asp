@@ -33,7 +33,7 @@ function upgrade(F,id) {
 	F.Upgrade_b.value = sbutton.upgrading;
 	
 	F.submit_button.value = "Upgrade";
-	apply(F);
+	apply(F, errmsg.err102);
 }
 
 		//]]>
