@@ -2459,6 +2459,8 @@ start_chilli (void)
     }
   }
 */
+  ret = killall ("chilli", SIGTERM);
+  ret = killall ("chilli", SIGKILL);
   ret = eval ("/usr/sbin/chilli", "-c", "/tmp/chilli.conf");
 
   cprintf ("done\n");
