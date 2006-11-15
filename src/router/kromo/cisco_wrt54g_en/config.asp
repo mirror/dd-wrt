@@ -11,7 +11,7 @@ function to_submit(F) {
 		return false;
 	}
 	F.save_button.value = sbutton.saving;
-	apply(F);
+	apply(F, errmsg.err101);
 }
 
 		//]]>
