@@ -435,7 +435,7 @@ function to_submit(F) {
 								<div class="setting">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420);\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 430);\" />");
 									//]]>
 									</script>
 								</div>
