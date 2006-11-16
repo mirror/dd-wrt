@@ -209,17 +209,15 @@ function init() {
 											</select>
 										</td>
 									</tr>
-									<tr>
-										<td>&nbsp;</td>
-										<td colspan="2">
-											<script type="text/javascript">
-											//<![CDATA[
-											document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420);\" />");
-											//]]>
-											</script>&nbsp;&nbsp;&nbsp;
-										</td>
-									</tr>
-								</table>
+								</table><br />
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 430);\" />");
+									//]]>
+									</script>&nbsp;&nbsp;&nbsp;
+								</div>
+								
 							</fieldset><br />
 							
 							<fieldset>
