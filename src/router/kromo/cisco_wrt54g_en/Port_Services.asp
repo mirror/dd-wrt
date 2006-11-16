@@ -173,7 +173,7 @@ function onclick_Add(){
 	services_length++;
 }
 
-function onclick_Apply(F) {
+function to_submit(F) {
  	var i=0;
 	var index=0;
 	var svclen=0;
@@ -193,23 +193,16 @@ function onclick_Apply(F) {
 		if(services[i].deleted == true){
 			continue;
 		}
-
  		svc = services[i].start+":"+services[i].end+":"+services[i].protocol+":"+services[i].name+"(&nbsp;)";
-
 		eval("svclen = F.services_array"+index+".value.length + svc.length");
-
 		if( svclen > 1024) {
 		   index = index + 1;
 		   svclen = 0;
 		}
-
  		eval("F.services_array"+index+".value += svc");
-
  	}
- 	
  	F.Submit.value = sbutton.saving;
 	apply(F);
-	
 }
 
 function onchange_Prot(I) {
@@ -312,8 +305,7 @@ addEvent(window, "unload", function() {
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" name=\"Submit\" value=\"" + sbutton.apply + "\" onclick=\"onclick_Apply(this.form);\" />");
-				submitFooterButton(0,1,0,0,0,1);
+				submitFooterButton(1,1,0,0,0,1);
 				//]]>
 				</script>
 			</div>
