@@ -6,19 +6,14 @@
 document.title = "<% nvram_get("router_name"); %>" + wanmac.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "WanMAC";
+	F.submit_type.value = "";
+	F.change_action.value = "";	
 	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
 	apply(F);
 }
 
 function CloneMAC(F) {
-	F.submit_button.value = "WanMAC";
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "clone_mac";
-	
-	F.action.value = "Apply";
 	F.submit();
 }
 
@@ -47,10 +42,11 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="mac" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="WanMAC" />
+							<input type="hidden" name="action" value="Apply"/>
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
+							
 							<h2><% tran("wanmac.h2"); %></h2>
 							
 							<fieldset>
