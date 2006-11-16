@@ -40,72 +40,6 @@ function mtu_enable_disable(F,I) {
 		choose_enable(F.wan_mtu);
 }
 
-function SelWAN(num,F) {
-	F.submit_button.value = "index";
-	F.submit_type.value = "wan_proto";
-	F.change_action.value = "gozila_cgi";
-	F.wan_proto.value=F.wan_proto.options[num].value;
-	F.submit();
-}
-
-function SelPPP(num,F) {
-	F.submit_button.value = "index";
-	F.change_action.value = "gozila_cgi";
-	F.mpppoe_enable.value = F.mpppoe_enable.options[num].value;
-	F.submit();
-}
-
-function SelDHCPFWD(num,F) {
-	F.submit_button.value = "index";
-	F.submit_type.value = "dhcpfwd";
-	F.change_action.value = "gozila_cgi";
-	F.dhcpfwd_enable.value = F.dhcpfwd_enable.options[num].value;
-	F.submit();
-}
-
-function to_submit(F) {
-	if(valid_value(F)) {
-		if(F._daylight_time.checked == false)
-			F.daylight_time.value = 0;
-		else
-			F.daylight_time.value = 1;
-
-		if(F._dhcp_dnsmasq) {
-			if(F._dhcp_dnsmasq.checked == false)
-				F.dhcp_dnsmasq.value = 0;
-			else
-				F.dhcp_dnsmasq.value = 1;
-		}
-
-		if(F._dns_dnsmasq) {
-			if(F._dns_dnsmasq.checked == false)
-				F.dns_dnsmasq.value = 0;
-			else
-				F.dns_dnsmasq.value = 1;
-		}
-
-		if(F._auth_dnsmasq) {
-			if(F._auth_dnsmasq.checked == false)
-				F.auth_dnsmasq.value = 0;
-			else
-				F.auth_dnsmasq.value = 1;
-		}
-		
-		if(F._fullswitch) {
-			if(F._fullswitch.checked == false)
-				F.fullswitch.value = 0;
-			else
-				F.fullswitch.value = 1;
-		}
-		
-		F.submit_button.value = "index";
-		F.save_button.value = sbutton.saving;
-
-		F.action.value = "Apply";
-		apply(F);
-	}
-}
-
 function valid_value(F) {
 	if (!('<% nvram_get("wl_mode"); %>' == 'wet')) {
 		if (F.now_proto.value == "pptp" || F.now_proto.value == "static") {
@@ -253,6 +187,60 @@ function setDNSMasq(F) {
 	}
 }
 
+function SelWAN(num,F) {
+	F.submit_type.value = "wan_proto";
+	F.wan_proto.value=F.wan_proto.options[num].value;
+	F.submit();
+}
+
+function SelDHCPFWD(num,F) {
+	F.submit_type.value = "dhcpfwd";
+	F.dhcpfwd_enable.value = F.dhcpfwd_enable.options[num].value;
+	F.submit();
+}
+
+function to_submit(F) {
+	if(valid_value(F)) {
+		if(F._daylight_time.checked == false)
+			F.daylight_time.value = 0;
+		else
+			F.daylight_time.value = 1;
+
+		if(F._dhcp_dnsmasq) {
+			if(F._dhcp_dnsmasq.checked == false)
+				F.dhcp_dnsmasq.value = 0;
+			else
+				F.dhcp_dnsmasq.value = 1;
+		}
+
+		if(F._dns_dnsmasq) {
+			if(F._dns_dnsmasq.checked == false)
+				F.dns_dnsmasq.value = 0;
+			else
+				F.dns_dnsmasq.value = 1;
+		}
+
+		if(F._auth_dnsmasq) {
+			if(F._auth_dnsmasq.checked == false)
+				F.auth_dnsmasq.value = 0;
+			else
+				F.auth_dnsmasq.value = 1;
+		}
+		
+		if(F._fullswitch) {
+			if(F._fullswitch.checked == false)
+				F.fullswitch.value = 0;
+			else
+				F.fullswitch.value = 1;
+		}
+		
+		F.submit_type.value = "";
+		F.change_action.value = "";
+		F.save_button.value = sbutton.saving;
+		apply(F);
+	}
+}
+
 function init() {
 	mtu_enable_disable(document.setup,'<% nvram_get("mtu_enable"); %>');
 
@@ -281,10 +269,11 @@ function init() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="index" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
+							
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="dhcp_dnsmasq" value="0" />
 							<input type="hidden" name="dns_dnsmasq" value="0" />
