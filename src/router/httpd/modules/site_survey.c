@@ -101,8 +101,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
     {
 
 
-      if (site_survey_lists[i].SSID[0] == 0 ||
-	  site_survey_lists[i].BSSID[0] == 0 ||
+      if (site_survey_lists[i].BSSID[0] == 0 ||
 	  site_survey_lists[i].channel == 0)
 	break;
 
@@ -134,7 +133,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
-		 i ? ',' : ' ', site_survey_lists[i].SSID,
+		 i ? ',' : ' ', site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
