@@ -2702,10 +2702,10 @@ enum
 };
 
 struct gozila_action gozila_actions[] = {
-  /* bellow for setup page */
+  /* SETUP */
   {"index", "wan_proto", "", 1, REFRESH, wan_proto},
   {"index", "dhcpfwd", "", 1, REFRESH, dhcpfwd},
-  {"index", "clone_mac", "", 1, REFRESH, clone_mac},
+  //{"index", "clone_mac", "", 1, REFRESH, clone_mac}, //OBSOLETE
 #ifdef HAVE_CCONTROL
   {"ccontrol", "execute", "", 1, REFRESH, execute},
 #endif
@@ -2716,14 +2716,6 @@ struct gozila_action gozila_actions[] = {
   {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
   {"Status_Router", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},	// for cisco style
   {"Status_Router", "renew", "", 3, REFRESH, dhcp_renew},	// for cisco style
-  {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
-  {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
-  {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
-   stop_ppp},
   {"Status_Router", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
   {"Status_Router", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for cisco style
   {"Status_Router", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
@@ -2732,15 +2724,20 @@ struct gozila_action gozila_actions[] = {
   {"Status_Router", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for cisco style
   {"Status_Router", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, stop_ppp},	// for cisco style{ "Status_Router",    "Connect_heartbeat",    "start_heartbeat",      1,      RESTART,                NULL},  // for cisco style
   {"Status_Router", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},	// for cisco style
+  {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
+  {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
+  {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
+  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},
   {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
   {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
-  {"FilterSummary", "delete", "filters", 1, SYS_RESTART,
-   summary_delete_policy},
+  {"FilterSummary", "delete", "filters", 1, SYS_RESTART, summary_delete_policy},
   {"Routing", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
-  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
-   delete_static_route},
-  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64},
-  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128},
+  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
+//  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
+//  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE
   {"WL_WPATable", "key_64", "", 1, REFRESH, generate_key_64},
   {"WL_WPATable", "key_128", "", 1, REFRESH, generate_key_128},
   {"WL_WPATable", "security", "", 1, REFRESH, set_security},
@@ -2838,53 +2835,48 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	   submit_type);
   act = handle_gozila_action (submit_button, submit_type);
 
-  if (act)
-    {
-      fprintf (stderr,"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
-	       act->name, act->type, act->service, act->sleep_time,
-	       act->action);
-      nvram_set ("action_service", act->service);
-      sleep_time = act->sleep_time;
-      action = act->action;
-      if (act->go)
-	ret = act->go (wp);
-    }
-  else
-    {
-      sleep_time = 0;
-      action = REFRESH;
-    }
+  if (act) {
+  	fprintf (stderr,"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
+  		act->name, act->type, act->service, act->sleep_time, act->action);
+  	nvram_set ("action_service", act->service);
+    sleep_time = act->sleep_time;
+    action = act->action;
+    if (act->go)
+    	ret = act->go (wp);
+	}
+  else {
+  	sleep_time = 0;
+  	action = REFRESH;
+  }
 
-  if (action == REFRESH)
+  if (action == REFRESH) {
     sleep (sleep_time);
-  else if (action == SERVICE_RESTART)
-    {
-      sys_commit ();
-      service_restart ();
-      sleep (sleep_time);
-    }
-  else if (action == SYS_RESTART)
-    {
-      sys_commit ();
-      sys_restart ();
-    }
-  else if (action == RESTART)
-    {
-      sys_commit ();
-      sys_restart ();
-    }
-  if (my_next_page[0] != '\0')
-    {
-      sprintf (path, "%s", my_next_page);
-    }
-  else
-    {
-      next_page = websGetVar (wp, "next_page", NULL);
-      if (next_page)
-	sprintf (path, "%s", next_page);
-      else
-	sprintf (path, "%s.asp", submit_button);
-    }
+  }
+  else if (action == SERVICE_RESTART) {
+  	sys_commit ();
+  	service_restart ();
+    sleep (sleep_time);
+  }
+  else if (action == SYS_RESTART) {
+  	sys_commit ();
+    sys_restart ();
+  }
+  else if (action == RESTART) {
+  	sys_commit ();
+  	sys_restart ();
+  }
+  
+  if (my_next_page[0] != '\0') {
+  	sprintf (path, "%s", my_next_page);
+  }
+  else {
+  	next_page = websGetVar (wp, "next_page", NULL);
+  	if (next_page)
+	  	sprintf (path, "%s", next_page);
+	  else
+	  	sprintf (path, "%s.asp", submit_button);
+	}
+	
   cprintf ("refresh to %s\n", path);
   do_ej (path, wp);		//refresh
   websDone (wp, 200);
@@ -2897,55 +2889,57 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 }
 
 struct apply_action apply_actions[] = {
-  /* bellow for setup page */
-//#ifdef OEM == LINKSYS
-  {"index", "index", 0, SERVICE_RESTART, NULL},
-//#else
-  {"OnePage", "", 0, RESTART, NULL},	// same as index
-  {"Expose", "filters", 0, SERVICE_RESTART, NULL},	// same as DMZ
-  {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
-#ifdef HAVE_UPNP
-  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
-#endif
-//#endif
-  {"Security", "", 1, RESTART, NULL},
-  {"System", "", 0, RESTART, NULL},
-  {"DHCP", "dhcp", 0, SERVICE_RESTART, NULL},
-  {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
-  {"WL_WPATable", "wireless", 0, SERVICE_RESTART, NULL},
-  /* bellow for advanced page */
-  {"DMZ", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
-  {"Filters", "filters", 0, SERVICE_RESTART, NULL},
-  {"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
-  {"FilterIP", "filters", 0, SERVICE_RESTART, NULL},
-  {"FilterMAC", "filters", 0, SERVICE_RESTART, NULL},
-  {"FilterPort", "filters", 0, SERVICE_RESTART, NULL},
-  {"VPN", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
-  {"Firewall", "filters", 0, SERVICE_RESTART, NULL},	// for cisco style
-  {"Forward", "forward", 0, SERVICE_RESTART, NULL},
-  {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
-  {"Routing", "", 0, RESTART, NULL},
-  {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
+/* name, service, sleep_time, action, function_to_execute */	
+	
+  /* SETUP */
+	{"index", "index", 0, SERVICE_RESTART, NULL},
+	{"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
+	{"Routing", "", 0, RESTART, NULL},
+	{"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
   {"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
-  /* Sveasoft additions */
-  {"Management", "management", 0, SYS_RESTART, NULL},
-  {"Alive", "alive", 0, SERVICE_RESTART, NULL},
-  {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
-  {"Services", "services", 0, SERVICE_RESTART, NULL},
-  {"Triggering", "filters", 0, SERVICE_RESTART, NULL},
-  {"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
-  {"QoS", "qos", 0, SERVICE_RESTART, NULL},
-  {"Log", "logging", 0, SERVICE_RESTART, NULL},
-  /* end Sveasoft additions */
-  {"Wireless", "wireless", 0, SERVICE_RESTART, NULL},
-  {"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},
-  {"Wireless_Advanced", "wireless", 0, SERVICE_RESTART, NULL},
-  {"Wireless_MAC", "wireless", 0, SERVICE_RESTART, NULL},
-  {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
+  
+  /* WIRELESS */
+	{"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},			//Only for V23, since V24 it's a gozilla save
+	{"Wireless_Advanced", "wireless", 0, SERVICE_RESTART, NULL},
+	{"Wireless_MAC", "wireless", 0, SERVICE_RESTART, NULL},
+	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
+	{"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
+	{"WL_WPATable", "wireless", 0, SERVICE_RESTART, NULL},
+  
+  /* MANAGEMENT */
+	{"Management", "management", 0, SYS_RESTART, NULL},
+	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
+	{"Services", "services", 0, SERVICE_RESTART, NULL},
+	{"Alive", "alive", 0, SERVICE_RESTART, NULL},
+	{"Log", "logging", 0, SERVICE_RESTART, NULL},
+  
+  /* APP & GAMING */
+	{"Forward", "forward", 0, SERVICE_RESTART, NULL},
+	{"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
+	{"Triggering", "filters", 0, SERVICE_RESTART, NULL},
+	{"DMZ", "filters", 0, SERVICE_RESTART, NULL},
+	{"Filters", "filters", 0, SERVICE_RESTART, NULL},
+	{"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
+	{"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},
+	  
+  /* SECURITY */
+	{"Firewall", "filters", 0, SERVICE_RESTART, NULL},
+	{"VPN", "filters", 0, SERVICE_RESTART, NULL},
+  
+/* Obsolete ?
+ * {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
+ * {"Security", "", 1, RESTART, NULL},
+ * {"System", "", 0, RESTART, NULL},
+ * {"DHCP", "dhcp", 0, SERVICE_RESTART, NULL},
+ * {"FilterIP", "filters", 0, SERVICE_RESTART, NULL},
+ * {"FilterMAC", "filters", 0, SERVICE_RESTART, NULL},
+ * {"FilterPort", "filters", 0, SERVICE_RESTART, NULL},
+ * {"Wireless", "wireless", 0, SERVICE_RESTART, NULL},
+ * 
+ * {"QoS", "qos", 0, SERVICE_RESTART, NULL},  //gozilla does the save
+ * 
+ */
 
-  /* begin lonewolf additions */
-  {"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
-  /* end lonewolf additions */
 };
 
 struct apply_action *
@@ -2956,13 +2950,12 @@ handle_apply_action (char *name)
   if (!name)
     return NULL;
 
-  for (v = apply_actions; v < &apply_actions[STRUCT_LEN (apply_actions)]; v++)
-    {
-      if (!strcmp (v->name, name))
-	{
-	  return v;
-	}
-    }
+  for (v = apply_actions; v < &apply_actions[STRUCT_LEN (apply_actions)]; v++) {
+  	if (!strcmp (v->name, name)) {
+  		return v;
+  	}
+  }
+  
   return NULL;
 }
 
@@ -2976,21 +2969,6 @@ getFileLen (FILE * in)
   return len;
 }
 
-/*
-              <TR align=middle>
-                <TD width=76 height=30><FONT size=2><INPUT  maxlength=12 size=7 name=name12 onblur=valid_name(this,"Name") value='<% port_forward_table("name","12"); %>' class=num></FONT></TD>
-                <TD width=70 height=30 valign=middle valign=middle><FONT face="Arial, Helvetica, sans-serif"><INPUT  maxlength=5 size=5 value='<% port_forward_table("from","12"); %>' name=from12 onblur=valid_range(this,1,65535,"Port") class=num><span >&nbsp;</span></FONT></TD>
-                <TD width=58 height=30><INPUT  maxlength=5 size=5 value='<% port_forward_table("to","12"); %>' name=to12 onblur=valid_range(this,1,65535,"Port") class=num></TD>
-                <TD align=middle width=78 height=30><FONT face=Arial color=blue>
-			<SELECT size=1 name=pro12>
-				<OPTION value=tcp <% port_forward_table("sel_tcp","12"); %>>TCP</OPTION>
-				<OPTION value=udp <% port_forward_table("sel_udp","12"); %>>UDP</OPTION>
-				<OPTION value=both <% port_forward_table("sel_both","12"); %>>Both</OPTION>
-			</SELECT></FONT></TD>
-                <TD width=96 height=30><FONT style="FONT-SIZE: 8pt" face=Arial><INPUT  maxlength=15 size=11 value='<% port_forward_table("ip","12"); %>' name=ip12  class=num></FONT></TD>
-                <TD width=47 height=30><INPUT type=checkbox value=on name=enable12 <% port_forward_table("enable","12"); %>></TD></TR>
-
-*/
 #define FWSHOW2(a,b,c) sprintf(buffer,a,b,c); do_ej_buffer(buffer,wp);
 #define FWSHOW1(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
@@ -3006,7 +2984,6 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   if (count == NULL || strlen (count) == 0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
-      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
 		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
@@ -3016,7 +2993,6 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   if (c <= 0)
     {
       //return -1;      botho 07/03/06 add "- None -" if empty
-      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
 		 "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
@@ -3324,7 +3300,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	int action = NOTHING;
   char *value;
   char *submit_button, *next_page;
-
   int sleep_time = 0;
   int need_commit = 1;
   cprintf ("need reboot\n");
@@ -3334,22 +3309,20 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   error_value = 0;
   ret_code = -1;
 
-	/********************/
+	
+	/**********   get "change_action" and launch gozila_cgi if needed **********/
 
-  cprintf ("get change action\n");
   value = websGetVar (wp, "change_action", "");
-  cprintf ("action = %s\n", value);
+  cprintf ("get change_action = %s\n", value);
 
-  if (value && !strcmp (value, "gozila_cgi"))
-  {
+  if (value && !strcmp (value, "gozila_cgi")) {
   	cprintf ("start gozila_cgi");
     gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
     return 1;
   }
-  cprintf ("get submit button");
-	/********************/
-  submit_button = websGetVar (wp, "submit_button", "");
-
+  
+  /***************************************************************************/
+  
   if (!query)
     goto footer;
 
@@ -3359,15 +3332,22 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     browser_method = USE_LAN;
   else
     browser_method = USE_WAN;
-
-  need_commit = atoi (websGetVar (wp, "commit", "1"));
-  cprintf ("get action\n");
-  value = websGetVar (wp, "action", "");
-  cprintf ("action = %s\n", value);
   
-  /* Apply values */
-  if (!strcmp (value, "Apply"))
-  {
+  /**********   get all webs var **********/
+  
+  submit_button = websGetVar (wp, "submit_button", "");
+  cprintf ("get submit_button = %s\n", submit_button);
+  
+  need_commit = atoi (websGetVar (wp, "commit", "1"));
+  cprintf ("get need_commit = %d\n", need_commit);
+  
+  value = websGetVar (wp, "action", "");
+  cprintf ("get action = %s\n", value);
+  
+  /**********   check action to do **********/
+  
+  /** Apply **/
+  if (!strcmp (value, "Apply")) {
   	struct apply_action *act;
     cprintf ("validate cgi");
     validate_cgi (wp);
@@ -3378,8 +3358,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     nvram_set ("is_default", "0");
     nvram_set ("is_modified", "1");
 
-    if (act)
-    {
+    if (act) {
     	fprintf (stderr,"submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
     		act->name, act->service, act->sleep_time, act->action);
     	if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
@@ -3393,8 +3372,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 			if (act->go)
 				ret_code = act->go (wp);
     }
-    else
-    {
+    else {
     	nvram_set ("action_service", "");
     	sleep_time = 1;
     	action = RESTART;
@@ -3407,26 +3385,25 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     }
   }
   
-  /* Restore defaults */
-  else if (!strncmp (value, "Restore", 7))
-  {
+  /** Restore defaults **/
+  else if (!strncmp (value, "Restore", 7)) {
   	ACTION ("ACT_SW_RESTORE");
     nvram_set ("sv_restore_defaults", "1");
     killall("udhcpc",SIGKILL);
     sys_commit ();
 #ifdef HAVE_X86
     eval ("mount","/usr/local","-o","remount,rw");
-    eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-    eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
+    eval ("rm", "-f", "/etc/nvram/*");							// delete nvram database
     eval ("mount","/usr/local","-o","remount,ro");
 #elif HAVE_RB500
-    eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-    eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
+    eval ("rm", "-f", "/etc/nvram/*");							// delete nvram database
 #elif HAVE_MAGICBOX
-    eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
+    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
     eval ("erase", "nvram");
 #else
     eval ("erase", "nvram");
@@ -3434,19 +3411,17 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     action = REBOOT;
   }
   
-  /* Reboot */
-  else if (!strncmp (value, "Reboot", 6))
-  {
+  /** Reboot **/
+  else if (!strncmp (value, "Reboot", 6)) {
     do_ej ("Reboot.asp", wp);
     websDone (wp, 200);
-    sleep (5);
+    sleep (3);
     sys_reboot ();
     return 1;
   }
     
-  /* GUI Logout */
-  else if (!strncmp (value, "Logout", 6))
-  {
+  /** GUI Logout **/		// Experimental, not work yet ... 
+  else if (!strncmp (value, "Logout", 6)) {
     do_ej ("Logout.asp", wp);
     websDone (wp, 200);
     do_logout();
@@ -3466,14 +3441,11 @@ footer:
   if (need_reboot)
     action = REBOOT;
 
-  if (action != REBOOT)
-  {
-  	if (!error_value)
-  	{
+  if (action != REBOOT) {
+  	if (!error_value) {
   		if (my_next_page[0] != '\0')
   			sprintf (path, "%s", my_next_page);
-  		else
-  		{
+  		else {
   			next_page = websGetVar (wp, "next_page", NULL);
   			if (next_page)
   				sprintf (path, "%s", next_page);
@@ -3485,13 +3457,8 @@ footer:
   		do_ej (path, wp);	//refresh
   		websDone (wp, 200);
   	}
-  	else
-  	{
-  		if (websGetVar (wp, "small_screen", NULL))
-  			do_ej ("Fail_s.asp", wp);
-  		else
-  			do_ej ("Fail.asp", wp);
-  		
+  	else {
+  		do_ej ("Fail.asp", wp);
   		websDone (wp, 200);
   	}
   }
