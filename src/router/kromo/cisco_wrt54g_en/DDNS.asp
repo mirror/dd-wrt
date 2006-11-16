@@ -66,18 +66,16 @@ function ddns_check(F,T) {
 }
 
 function to_submit(F) {
-	if(!ddns_check(F,"save")) return;
-	F.submit_button.value = "DDNS";
-	F.save_button.value = sbutton.saving;
+	if(!ddns_check(F,"save"))
+		return;
 	
-	F.action.value = "Apply";
+	F.change_action.value = "";
+	F.save_button.value = sbutton.saving;
 	update.stop();
 	apply(F);
 }
 
 function SelDDNS(num,F) {
-	F.submit_button.value = "DDNS";
-	F.change_action.value = "gozila_cgi";
 	F.ddns_enable.value=F.ddns_enable.options[num].value;
 	update.stop();
 	F.submit();
@@ -109,10 +107,11 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="ddns" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="action" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="DDNS" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("ddns.h2"); %></h2>
 							
 							<fieldset>
