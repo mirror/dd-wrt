@@ -6,44 +6,26 @@
 document.title = "<% nvram_get("router_name"); %>" + hotspot.titl;
 
 function user_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Hotspot";
 	F.submit_type.value = "add_user";
-	
- 	F.action.value = "Apply";
 	F.submit();
 }
+
 function iradius_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Hotspot";
 	F.submit_type.value = "add_iradius";
- 	F.action.value = "Apply";
 	F.submit();
 }
 
 function user_remove_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Hotspot";
 	F.submit_type.value = "remove_user";
-	
- 	F.action.value = "Apply";
 	F.submit();
-}
-
-function to_reboot(F) {
-	F.action.value="Reboot";
-	F.submit();
-	return true;
 }
 
 function to_submit(F) {
 	<% show_iradius_check(); %>
-	F.submit_button.value = "Hotspot";
+	F.change_action.value = "";
+	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value="Apply";
 	apply(F);
-	return true;
 }
 
 addEvent(window, "load", function() {
@@ -56,8 +38,8 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvram_else_match("smtp_redirect_enable", "1", "1", "0"); %> == 1);
 });
 		
-	//]]>
-</script>
+			//]]>
+		</script>
 	</head>
 
 	<body class="gui">
@@ -71,17 +53,18 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="action"/>
+							<input type="hidden" name="submit_button" value="Hotspot" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
+							
 							<h2><% tran("hotspot.h2"); %></h2>
 							<% show_modules(".webhotspot"); %>
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								submitFooterButton(1,1,1);
+								submitFooterButton(1,1);
 								//]]>
 								</script>
 							</div>
