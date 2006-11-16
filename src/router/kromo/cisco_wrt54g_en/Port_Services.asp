@@ -305,7 +305,7 @@ addEvent(window, "unload", function() {
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[
-				submitFooterButton(1,1,0,0,0,1);
+				submitFooterButton(1,1);
 				//]]>
 				</script>
 			</div>
