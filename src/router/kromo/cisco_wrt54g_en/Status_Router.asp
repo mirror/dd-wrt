@@ -5,20 +5,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + status_router.titl;
 
-function DHCPAction(F,I) {
-	F.submit_type.value = I;
-	F.submit_button.value = "Status_Router";
-	F.change_action.value = "gozila_cgi";
-	F.submit();
-}
-
-function connect(F,I) {
-	F.submit_type.value = I;
-	F.submit_button.value = "Status_Router";
-	F.change_action.value = "gozila_cgi";
-	F.submit();
-}
-
 var update;
 
 function setMemoryValues(val) {
@@ -48,6 +34,16 @@ function setUptimeValues(val) {
 
 function setIpconntrackValues(val) {
 	setMeterBar("ip_count", val / <% nvram_get("ip_conntrack_max"); %> * 100, val);
+}
+
+function DHCPAction(F,I) {
+	F.submit_type.value = I;
+	F.submit();
+}
+
+function connect(F,I) {
+	F.submit_type.value = I;
+	F.submit();
 }
 
 addEvent(window, "load", function() {
@@ -95,10 +91,11 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="status" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="Status_Router" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("status_router.h2"); %></h2>
 							
 							<fieldset>
