@@ -5,7 +5,7 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 
-function MACAct(F)
+function to_submit(F)
 {
 	if(valid_value(F)){
 		F.submit_type.value="add_mac";
@@ -46,6 +46,7 @@ function init() {
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_type" />
+			<input type="hidden" name="commit" value="1" />
 			
 			<h2><% tran("wl_active.h2"); %></h2>
 			<table>
@@ -83,8 +84,7 @@ function init() {
 			<div class="submitFooter">
 					<script type="text/javascript">
 					//<![CDATA[
-					document.write("<input class=\"button\" type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form);\" />");
-					submitFooterButton(0,0,0,0,1,1);
+					submitFooterButton(1,0,0,0,1,1);
 					//]]>
 					</script>
 			</div>
