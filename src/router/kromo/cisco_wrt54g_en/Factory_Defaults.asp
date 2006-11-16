@@ -10,10 +10,7 @@ function to_submit(F) {
 		if(!confirm(factdef.mess1)) {
 			return false;
 		}
-		F.submit_button.value = "Factory_Defaults";
 		F.save_button.value = sbutton.saving;
-		
-		F.action.value="Restore";
 		apply(F);
 	}
 }
@@ -33,9 +30,11 @@ function to_submit(F) {
 				<div id="main">
 					<div id="contents">
 						<form name="default" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="action" />
+							<input type="hidden" name="submit_button" value="Factory_Defaults" />
+							<input type="hidden" name="action" value="Restore" />
 							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("factdef.h2"); %></h2>
 							
 							<fieldset>

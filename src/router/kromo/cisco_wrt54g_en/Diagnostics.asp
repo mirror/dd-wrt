@@ -8,8 +8,6 @@ document.title = "<% nvram_get("router_name"); %>" + diag.titl;
 function to_submit(F, I) {
 	if(!valid(F, I)) return;
 	F.submit_type.value = I;
-	F.submit_button.value = "Ping";
-	F.change_action.value = "gozila_cgi";
 	
 	if (I == "start") 
 		F.ping.value = sbutton.cmd;
@@ -44,10 +42,10 @@ function valid(F,I) {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="ping" action="apply.cgi" method="post" >
-							<input type="hidden" name="action" value="Apply" />
+						<form name="ping" action="apply.cgi" method="<% get_http_method(); %>" >
 							<input type="hidden" name="submit_button" value="Ping" />
-							<input type="hidden" name="submit_type" value="start" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Diagnostics.asp" />

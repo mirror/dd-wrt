@@ -6,10 +6,7 @@
 document.title = "<% nvram_get("router_name"); %>" + dmz.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "DMZ";
 	F.save_button.value = sbutton.saving;
-		
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -36,9 +33,11 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="dmz" action="apply.cgi" method="<% get_http_method(); %>" >
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="DMZ" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("dmz.h2"); %></h2>
 							
 							<fieldset>

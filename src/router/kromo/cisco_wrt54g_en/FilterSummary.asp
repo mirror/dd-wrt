@@ -6,9 +6,6 @@
 document.title = "<% nvram_get("router_name"); %>" + filterSum.titl;
 
 function filter_del(F) {
-	F.submit_button.value = "FilterSummary";
-	F.change_action.value = "gozila_cgi";
-	
 	F.submit_type.value = "delete";
 	F.submit();
 }
@@ -19,9 +16,9 @@ function filter_del(F) {
 
 	<body onunload="top.opener.window.location.href='Filters.asp'">
 		<form action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_button" value="FilterSummary" />
 			<input type="hidden" name="submit_type" />
-			<input type="hidden" name="change_action" />
+			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<h2><% tran("filterSum.h2"); %></h2>
 			<table>
 				<tbody>

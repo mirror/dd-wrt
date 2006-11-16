@@ -6,10 +6,7 @@
 document.title = "<% nvram_get("router_name"); %>" + alive.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "Alive";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value="Apply";
 	apply(F);
 }
 
@@ -62,11 +59,12 @@ function init() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Alive" />
+							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
+							
 							<h2><% tran("alive.h2"); %></h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
