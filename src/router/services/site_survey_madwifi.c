@@ -165,7 +165,7 @@ site_survey_main (int argc, char *argv[])
 
   write_site_survey ();
   open_site_survey ();
-  for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++)
+  for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0] && site_survey_lists[i].channel!=0; i++)
     {
       fprintf (stderr,
 	       "[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
