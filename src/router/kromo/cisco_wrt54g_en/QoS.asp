@@ -69,30 +69,6 @@ function qos_grey(num,F) {
 	svcs_grey(sw_disabled, F);
 }
 
-function svc_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "QoS";
-	F.submit_type.value = "add_svc";
- 	F.action.value = "Apply";
-	F.submit();
-}
-
-function ip_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "QoS";
-	F.submit_type.value = "add_ip";
- 	F.action.value = "Apply";
-	F.submit();
-}
-
-function mac_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "QoS";
-	F.submit_type.value = "add_mac";
- 	F.action.value = "Apply";
-	F.submit();
-}
-
 function service(id, name, port_start, port_end) {
 	this.id = id;
 	this.name = name;
@@ -112,6 +88,21 @@ services_length=0;
 <% filter_port_services_get("all_list", "0"); %>
 services.sort(sorton);
 
+function svc_add_submit(F) {
+	F.submit_type.value = "add_svc";
+	F.submit();
+}
+
+function ip_add_submit(F) {
+	F.submit_type.value = "add_ip";
+	F.submit();
+}
+
+function mac_add_submit(F) {
+	F.submit_type.value = "add_mac";
+	F.submit();
+}
+
 function to_submit(F) {
 	if (F._enable_game.checked == false){
 	    F.enable_game.value = 0;
@@ -119,12 +110,8 @@ function to_submit(F) {
 	    F.enable_game.value = 1;
 	}
 
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "QoS";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-
- 	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -146,13 +133,15 @@ function init() {
 				</div>
             	<div id="main">
 					<div id="contents">
-						<form name="QoS" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="enable_game" value="1" />
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="submit_type" />
+						<form name="QoS" action="apply.cgi" method="<% get_http_method(); %>" >
+							<input type="hidden" name="submit_button" value="QoS" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
+							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
+							
+							<input type="hidden" name="enable_game" value="1" />
+							
 							<h2><% tran("qos.h2"); %></h2>
 							
 							<fieldset>
