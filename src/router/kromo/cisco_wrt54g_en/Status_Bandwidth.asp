@@ -21,9 +21,10 @@ document.title = "<% nvram_get("router_name"); %>" + status_band.titl;
 					<div id="contents">
 						<form name="status_band" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("status_band.h2"); %></h2>
 							
 <br /><br/>Still under developpement  ....<br /><br />
