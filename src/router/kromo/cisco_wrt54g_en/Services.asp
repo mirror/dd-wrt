@@ -25,45 +25,6 @@ function verify_unique_static_ip(F){
     return true;                                                            
 }
 
-function lease_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Services";
-	F.submit_type.value = "add_lease";
-	checked(F);
-	F.action.value = "Apply";
-	F.submit();
-}
-
-function lease_remove_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Services";
-	F.submit_type.value = "remove_lease";
-	checked(F);
-	F.action.value = "Apply";
-	F.submit();
-}
-
-function to_reboot(F) {
-	F.action.value = "Reboot";
-	F.submit();
-}
-
-function to_submit(F) {
-	if(!verify_unique_static_ip(F)) {
-		return false;
-	}
-	
-	if(F.rstats_enable) {
-		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
-	}
-	
-	F.submit_button.value = "Services";
-	F.save_button.value = sbutton.saving;
-	checked(F);
-	F.action.value = "Apply";
-	apply(F);
-}
-
 function checked(F) {
 	if (F._openvpn_certtype) {
 		if (F._openvpn_certtype.checked == true) {
@@ -88,6 +49,41 @@ function checked(F) {
 			F.dhcpd_usenvram.value = 0;
 		}
 	}
+}
+
+function lease_add_submit(F) {
+	F.submit_type.value = "add_lease";
+	checked(F);
+	F.submit();
+}
+
+function lease_remove_submit(F) {
+	F.submit_type.value = "remove_lease";
+	checked(F);
+	F.submit();
+}
+
+function to_reboot(F) {
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.action.value = "Reboot";
+	apply(F);
+}
+
+function to_submit(F) {
+	if(!verify_unique_static_ip(F)) {
+		return false;
+	}
+	
+	if(F.rstats_enable) {
+		F.rstats_path.value = (F.rstats_select.value == '*user') ? F.u_path.value : F.rstats_select.value;
+	}
+	
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.save_button.value = sbutton.saving;
+	checked(F);
+	apply(F);
 }
 
 addEvent(window, "load", function() {
@@ -140,11 +136,12 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="Services" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
+							
 							<input type="hidden" name="static_leases" value="13" />
 							<input type="hidden" name="openvpn_certtype" />
 							<input type="hidden" name="dhcpd_usejffs" />
