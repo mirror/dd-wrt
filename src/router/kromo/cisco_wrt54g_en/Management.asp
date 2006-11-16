@@ -60,11 +60,30 @@ function valid_password(F) {
 	return true;
 }
 
+function handle_https(F)
+{
+	if(F._https_enable.checked == true && F.remote_management[0].checked == true) {
+		choose_enable(F._remote_mgt_https);
+	}
+	else {
+		F._remote_mgt_https.checked = false;
+		choose_disable(F._remote_mgt_https);
+	}
+}
+
+function selSSH(val, load) {
+	if (load == 1) {
+		sshd = document.getElementsByName('remote_mgt_ssh');
+		setElementActive("remote_mgt_ssh", val == "1");
+		setElementActive("sshd_wanport", val == "1" && sshd[0].checked);
+	} else {
+		setElementActive("sshd_wanport", val == "1");
+	}
+}
+
 function to_reboot(F) {
-	F.submit_button.value = "Management";
 	F.action.value="Reboot";
-	F.submit();
-	return true;
+	apply(F);
 }
 
 function to_submit(F) {
@@ -112,32 +131,8 @@ function to_submit(F) {
 			F.info_passwd.value = 0;
 	}
 
-	F.submit_button.value = "Management";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value="Apply";
 	apply(F);
-}
-
-function handle_https(F)
-{
-	if(F._https_enable.checked == true && F.remote_management[0].checked == true) {
-		choose_enable(F._remote_mgt_https);
-	}
-	else {
-		F._remote_mgt_https.checked = false;
-		choose_disable(F._remote_mgt_https);
-	}
-}
-
-function selSSH(val, load) {
-	if (load == 1) {
-		sshd = document.getElementsByName('remote_mgt_ssh');
-		setElementActive("remote_mgt_ssh", val == "1");
-		setElementActive("sshd_wanport", val == "1" && sshd[0].checked);
-	} else {
-		setElementActive("sshd_wanport", val == "1");
-	}
 }
 
 addEvent(window, "load", function() {
@@ -171,11 +166,12 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Management" />
+							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
+
 							<input type="hidden" name="PasswdModify" value="<% nvram_else_match("http_passwd", "admin", "1", "0"); %>" />
 							<input type="hidden" name="remote_mgt_https" />
 							<input type="hidden" name="http_enable" />
