@@ -495,7 +495,7 @@ hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut d
 
 
 
-// ******************************************* FilterIP%AC.asp *******************************************//
+// ******************************************* FilterIPMAC.asp *******************************************//
 
 filterIP.titl=" - Liste des Ordinateurs";
 filterIP.h2="Liste des Ordinateurs";

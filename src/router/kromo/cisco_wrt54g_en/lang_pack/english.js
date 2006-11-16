@@ -501,7 +501,7 @@ hfactdef.right1="This will reset all settings back to factory defaults. All of y
 
 
 
-// ******************************************* FilterIP%AC.asp *******************************************//
+// ******************************************* FilterIPMAC.asp *******************************************//
 
 var filterIP = new Object();
 filterIP.titl=" - List of PCs";
