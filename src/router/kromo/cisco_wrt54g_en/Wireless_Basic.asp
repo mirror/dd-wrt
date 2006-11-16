@@ -111,19 +111,13 @@ function wl_enable_disable(F,I) {
 
 function vifs_add_submit(F,I) {
 	F.iface.value = I;
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "add_vifs";
- 	F.action.value = "Apply";
 	F.submit();
 }
 
 function vifs_remove_submit(F,I) {
 	F.iface.value = I;
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "remove_vifs";
- 	F.action.value = "Apply";
 	F.submit();
 }
 
@@ -153,12 +147,8 @@ function to_submit(F) {
 		F.wl0_nbw.value = 40;
 	}
 	}
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -192,11 +182,12 @@ addEvent(window, "load", function() {
                <div id="contents">
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
                   	<input type="hidden" name="submit_button" value="Wireless_Basic" />
+                  	<input type="hidden" name="action" value="Apply" />
+                  	<input type="hidden" name="change_action" value="gozila_cgi" />
                   	<input type="hidden" name="submit_type" />
-                  	<input type="hidden" name="change_action" />
+                  	
                   	<input type="hidden" name="wl0_nctrlsb" />
                   	<input type="hidden" name="iface" />
-                  	<input type="hidden" name="action" value="Apply" />
                   	
                   	<% show_wireless(); %>
                   	
