@@ -8,8 +8,6 @@ document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 function MACAct(F)
 {
 	if(valid_value(F)){
-		F.submit_button.value="WL_ActiveTable";
-		F.change_action.value="gozila_cgi";
 		F.submit_type.value="add_mac";
 		F.submit();
 	}
@@ -44,9 +42,11 @@ function init() {
 	
 	<body onload="init()">
 		<form action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_button" value="WL_ActiveTable" />
+			<input type="hidden" name="action" value="Apply" />
+			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_type" />
-			<input type="hidden" name="change_action" />
+			
 			<h2><% tran("wl_active.h2"); %></h2>
 			<table>
 				<tbody>
