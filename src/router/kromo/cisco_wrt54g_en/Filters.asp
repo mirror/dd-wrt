@@ -250,13 +250,6 @@ function SelFilter(num,F) {
 	F.submit();
 }
 
-function to_save(F) {
-	if(valid(F) == true) {
-		F.submit_type.value = "save";
-		F.submit();
-	}
-}
-
 function to_delete(F) {
 	if(confirm(filter.mess1)) {
 		F.submit_type.value = "delete";
