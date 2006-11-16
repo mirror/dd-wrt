@@ -5,18 +5,8 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_filter.titl;
 
-function SelPage(num,F) {
-	F.submit_button.value = "WL_FilterTable";
-	F.change_action.value = "gozila_cgi";
-	F.wl_filter_page.value=F.wl_filter_page.options[num].value;
-	F.submit();
-}
-
 function to_submit(F) {
-	F.submit_button.value = "WL_FilterTable";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 		
@@ -26,12 +16,12 @@ function to_submit(F) {
 	
 	<body>
 		<form name="macfilter" action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button" />
-			<input type="hidden" name="submit_type" />
+			<input type="hidden" name="submit_button" value="WL_FilterTable" />
+			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" />
-			<input type="hidden" name="action" />
+			<input type="hidden" name="submit_type" />
+			
 			<input type="hidden" name="wl_mac_list" />
-			<input type="hidden" name="small_screen" />
 			<div id="main">
 				<div id="contentsInfo">
 					<h2><% tran("wl_filter.h2"); %></h2>

@@ -6,20 +6,38 @@
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
 function SelMode(varname,num,F)	{
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "security";
 	F.security_varname.value = varname;
 	F.submit();
 }
 
+function generateKey(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	if(F.wl_wep_bit.value == 64) {
+		F.submit_type.value = "key_64";
+	} else {
+		F.submit_type.value = "key_128";
+	}
+	F.submit();
+}
+
+function generateKey64(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	F.submit_type.value = "key_64";
+	F.submit();
+}
+function generateKey128(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	F.submit_type.value = "key_128";
+	F.submit();
+}
+
 function to_submit(F) {
 	if (valid_value(F)) {
-		F.submit_button.value = "WL_WPATable";
+		F.change_action.value = "";
+		F.submit_type.value = "";
 		F.save_button.value = sbutton.saving;
-		
-		F.action.value = "Apply";
-       	apply(F);
+    apply(F);
 	}
 }
 
@@ -84,7 +102,6 @@ function valid_wep(F) {
 	for (var i=1; i <= 4; i++) {
 		if(F.wl_key[i-1].checked){
 			aaa = eval("F.wl_key"+i).value;
-			//if(aaa == "" && F.security_mode.value == "wep"){
 			if(aaa == ""){
 				alert(errmsg.err40 + i);
 				return false;
@@ -157,36 +174,6 @@ function keyMode(num, F) {
 	F.wl_key3.value = key3;
 	F.wl_key4.value = key4;
 }
-function generateKey(F,PREFIX) {
-
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	if(F.wl_wep_bit.value == 64) {
-		F.submit_type.value = "key_64";
-	} else {
-		F.submit_type.value = "key_128";
-	}
-
-	F.submit();
-}
-function generateKey64(F,PREFIX) {
-
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_64";
-	F.submit();
-}
-function generateKey128(F,PREFIX) {
-
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_128";
-
-	F.submit();
-}
 
 addEvent(window, "load", function() {
 	var F = document.forms[0];
@@ -210,10 +197,12 @@ addEvent(window, "load", function() {
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" />
+                  <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>">
+                  	<input type="hidden" name="submit_button" value="WL_WPATable" />
+                  	<input type="hidden" name="action" value="Apply" />
+                  	<input type="hidden" name="change_action" value="gozila_cgi" />
                   	<input type="hidden" name="submit_type" />
-                  	<input type="hidden" name="change_action" />
-                  	<input type="hidden" name="action" />
+                  	
                   	<input type="hidden" name="security_varname" />
                   	<input type="hidden" name="security_mode_last" />
                   	<input type="hidden" name="wl_wep_last" />
