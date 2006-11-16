@@ -124,11 +124,13 @@ addEvent(window, "unload", function() {
 					<div id="contents">
 						<form action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="DHCPTable" />
+							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="delete" />
+							<input type="hidden" name="next_page" value="Status_Lan.asp" />
+							
 							<input type="hidden" name="ip_del" />
 							<input type="hidden" name="mac_del" />
-							<input type="hidden" name="next_page" value="Status_Lan.asp" />
 							
 							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
