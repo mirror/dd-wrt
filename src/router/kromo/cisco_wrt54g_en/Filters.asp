@@ -320,7 +320,7 @@ function to_submit(F) {
 									<div class="label"><% tran("filter.pcs"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700);\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 730);\" />");
 									//]]>
 									</script>
 								</div>
