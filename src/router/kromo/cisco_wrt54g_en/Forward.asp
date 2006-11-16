@@ -6,28 +6,19 @@
 document.title = "<% nvram_get("router_name"); %>" + prforward.titl;
 
 function forward_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Forward";
 	F.submit_type.value = "add_forward";
-	
- 	F.action.value = "Apply";
 	F.submit();
 }
 
 function forward_remove_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Forward";
 	F.submit_type.value = "remove_forward";
-	
- 	F.action.value = "Apply";
 	F.submit();
 }
 
 function to_submit(F) {
-	F.submit_button.value = "Forward";
+	F.change_action.value = "";
+	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 		
@@ -46,10 +37,11 @@ function to_submit(F) {
 				<div id="main">
 					<div id="contents">
 						<form name="portRange" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Forward" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="action" />
+							
 							<input type="hidden" name="forward_port" value="13" />
 							<h2><% tran("prforward.h2"); %></h2>
 							

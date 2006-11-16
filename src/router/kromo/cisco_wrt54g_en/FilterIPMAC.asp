@@ -6,10 +6,7 @@
 document.title = "<% nvram_get("router_name"); %>" + filterIP.titl;
 		
 function to_submit(F) {
-	F.submit_button.value = "FilterIPMAC";
 	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -33,10 +30,11 @@ function valid_macs_all(I) {
 
 	<body>
 		<form name="ipfilter" action="apply.cgi" method="<% get_http_method(); %>" >
-			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_button" value="FilterIPMAC" />
+			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" />
-			<input type="hidden" name="action" />
-			<input type="hidden" name="small_screen" />
+			<input type="hidden" name="submit_type" />
+			
 			<input type="hidden" name="filter_ip_value" />
 			<input type="hidden" name="filter_mac_value" />
 			<h2><% tran("filterIP.h2"); %></h2>
