@@ -1,15 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %></title>
 
-<!-- Botho 22/04 : css_include() and js_include() correct in a temporary way the loss of style and javascript includes -->
-
-		<style type="text/css">
-<% css_include(); %>
-		</style>
 		<script type="text/javascript">
 		//<![CDATA[
-
-<% js_include(); %>
 		
 var submit_button = "<% get_web_page_name(); %>";
 
