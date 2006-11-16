@@ -205,6 +205,8 @@ eval("insmod","crypto_null");
     eval ("insmod", "e1000");
   else if (detect ("82547"))	// Intel Gigabit
     eval ("insmod", "e1000");
+  else if (detect ("82546"))	// Intel Gigabit
+    eval ("insmod", "e1000");
 
 
   if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
