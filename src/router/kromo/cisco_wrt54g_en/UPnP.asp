@@ -10,14 +10,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
-function to_submit(F) {
-	F.submit_button.value = "UPnP";
-	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
-	apply(F);
-}
-
 var data = new Array();
 
 function parseForwards(upnpForwards) {
@@ -96,8 +88,6 @@ function deleteForward(x) {
 		if (!confirm(upnp.msg2)) return;
 	}
 	var fupnp = document.getElementById("fupnp");
-	fupnp.submit_button.value = "UPnP";
-	fupnp.action.value = "Apply";
 	fupnp.remove.value = (x == 'all' ? 'all' : e.index);
 	fupnp.delete_button.value = sbutton.deleted;
 	fupnp.save_button.disabled = true;
@@ -109,6 +99,11 @@ function deleteForward(x) {
 function setUPnP(val) {
 	setElementsActive("upnpcas", "upnpmnp", val == "1");
 	setElementActive("upnpmnp", val == "1");
+}
+
+function to_submit(F) {
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
 
 var update;
@@ -143,10 +138,12 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="UPnP" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
+							
 							<input type="hidden" name="remove" />
 							
 							<h2><% tran("upnp.h2"); %></h2>
