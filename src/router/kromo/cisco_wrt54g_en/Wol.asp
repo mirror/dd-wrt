@@ -267,14 +267,15 @@ addEvent(window, "load", function() {
 				<div id="main">
 					<div id="contents">
 						<form name="ping" action="apply.cgi" method="post">
-							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_button" value="Ping" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="wol" />
+							<input type="hidden" name="next_page" value="Wol.asp" />
+							
 							<input type="hidden" name="wol_hosts" value="" />
 							<input type="hidden" name="wol_type" value="wol" />
-							<input type="hidden" name="change_action" value="gozila_cgi" />
-							<input type="hidden" name="next_page" value="Wol.asp" />
-
+							
 							<h2><% tran("wol.h2"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend"); %></legend>
