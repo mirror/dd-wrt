@@ -20,7 +20,6 @@ function to_submit(F) {
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" />
 			<input type="hidden" name="submit_type" />
-			<input type="hidden" name="commit" value="1" />
 			
 			<input type="hidden" name="wl_mac_list" />
 			<div id="main">
