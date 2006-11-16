@@ -6,10 +6,7 @@
 document.title = "<% nvram_get("router_name"); %>" + vpn.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "VPN";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 		
@@ -30,8 +27,11 @@ function to_submit(F) {
 				<div id="main">
 					<div id="contents">
 						<form action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="action"/>
+							<input type="hidden" name="submit_button" value="VPN" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("vpn.h2"); %></h2>
 							
 							<fieldset>
