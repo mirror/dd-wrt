@@ -221,9 +221,7 @@ function onchange_Prot(I) {
 }
 
 addEvent(window, "load", function() {
-
    setValue();
-   
    if (ref_page == "Filters.asp") {
       document.PortServices.submit_button.value = "Port_Services";
       document.PortServices.submit_type.value = "save_services";
@@ -241,10 +239,12 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 	<body>
-		<form name="PortServices" method="<% get_http_method(); %>" action="apply.cgi" >
+		<form name="PortServices" action="apply.cgi" method="<% get_http_method(); %>" >
 		<input type="hidden" name="submit_button" />
+		<input type="hidden" name="action" />
 		<input type="hidden" name="change_action" value="gozila_cgi" />
 		<input type="hidden" name="submit_type" />
+		
 		<input type="hidden" name="services_array" />
 		<input type="hidden" name="services_array0" />
 		<input type="hidden" name="services_array1" />
