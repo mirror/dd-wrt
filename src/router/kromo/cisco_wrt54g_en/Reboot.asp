@@ -1,14 +1,7 @@
 <% do_pagehead(); %>
 
-<!-- Botho 22/04 : css_include() and js_include() correct in a temporary way the loss of style and javascript includes -->
-
-		<style type="text/css">
-<% css_include(); %>
-		</style>
 		<script type="text/javascript">
 		//<![CDATA[
-
-<% js_include(); %>
 
 var clk = <% get_clkfreq(); %>;
 var rest_default = <% nvram_get("sv_restore_defaults"); %>;
