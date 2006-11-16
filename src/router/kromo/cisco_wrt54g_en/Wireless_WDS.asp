@@ -7,11 +7,7 @@ document.title = "<% nvram_get("router_name"); %>" + wds.titl;
 
 function SelSubnet(F,num) {
 	setElementsActive("wl_br1_nat", "wl_br1_netmask3", num == 1);
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Wireless_WDS";
 	F.submit_type.value = "save";
- 	
- 	F.action.value = "Apply";
 	F.submit();
 }
 
@@ -27,21 +23,14 @@ function SelWDS(index, num, F) {
 	else if(index==9) F.wl_wds9_enable.value=F.wl_wds9_enable.options[num].value;
 	else if(index==10) F.wl_wds10_enable.value=F.wl_wds10_enable.options[num].value;
 
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Wireless_WDS";
 	F.submit_type.value = "save";
-	
-	F.action.value = "Apply";
 	F.submit();
 }
 
 function to_submit(F) {
+	F.submit_type.value = "";		//avoid gozilla and force save process
 	F.change_action.value = "";
-	F.submit_type.value = "";
-	F.submit_button.value = "Wireless_WDS";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -75,10 +64,11 @@ addEvent(window, "load", function() {
                <div id="contents">
                   <form name="wds" action="apply.cgi" method="<% get_http_method(); %>">
                   	<input type="hidden" name="submit_button" value="Wireless_WDS" />
-                  	<input type="hidden" name="change_action" />
+                  	<input type="hidden" name="action" value="Apply" />
+                  	<input type="hidden" name="change_action" value="gozila_cgi" />
                   	<input type="hidden" name="submit_type" />
                   	<input type="hidden" name="commit" value="1" />
-                  	<input type="hidden" name="action" value="Apply" />
+                  	
                   	<h2><% tran("wds.h2"); %></h2>
                      <div>
                       <fieldset>

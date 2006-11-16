@@ -12,10 +12,7 @@ function to_submit(F) {
 	    F.radius_override.value = 1;
 	}
 
-	F.submit_button.value = "Wireless_radauth";
 	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -47,10 +44,13 @@ addEvent(window, "load", function() {
                <div id="contents">
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
                     <input type="hidden" name="submit_button" value="Wireless_radauth" />
-                    <input type="hidden" name="change_action" />
-                    <input type="hidden" name="radius_override" />
                     <input type="hidden" name="action" value="Apply" />
+                    <input type="hidden" name="change_action" />
+                    <input type="hidden" name="submit_type" />
                     <input type="hidden" name="commit" value="1" />
+                    
+                    <input type="hidden" name="radius_override" />
+                    
                     <h2><% tran("radius.h2"); %></h2>
                     
                     <fieldset>
