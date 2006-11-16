@@ -6,21 +6,42 @@
 document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
 function SelMode(varname,num,F)	{
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "security";
 	F.security_varname.value = varname;
 	F.submit();
 }
 
+function keyMode(F) {
+	F.submit_type.value = "keysize";
+	F.submit();
+}
+
+function generateKey(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	if(F.wl_wep_bit.value == 64) {
+		F.submit_type.value = "key_64";
+	} else {
+		F.submit_type.value = "key_128";
+	}
+	F.submit();
+}
+
+function generateKey64(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	F.submit_type.value = "key_64";
+	F.submit();
+}
+
+function generateKey128(F,PREFIX) {
+	F.security_varname.value = PREFIX;
+	F.submit_type.value = "key_128";
+	F.submit();
+}
+
 function to_submit(F) {
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
-   apply(F);
+  apply(F);
 }
 
 function valid_radius(F) {
@@ -71,10 +92,9 @@ function valid_wep(F) {
 		return false;
 
 	for (var i=1; i <= 4; i++) {
-		if(F.wl_key[i-1].checked){
+		if(F.wl_key[i-1].checked) {
 			aaa = eval("F.wl_key"+i).value;
-			//if(aaa == "" && F.security_mode.value == "wep"){
-			if(aaa == ""){
+			if(aaa == "") {
 				alert(errmsg.err40 + i);
 				return false;
 			}
@@ -82,12 +102,12 @@ function valid_wep(F) {
 		}
 	}
 
-    return true;
+  return true;
 }
 
 function ValidateKey(key, bit, index) {
 	if(bit == 64) {
-		switch(key.value.length){
+		switch(key.value.length) {
 			case 0:
 				break;
 			case 10:
@@ -100,7 +120,7 @@ function ValidateKey(key, bit, index) {
 				return false;
 		}
 	} else {
-		switch(key.value.length){
+		switch(key.value.length) {
 			case 0:
 				break;
 			case 26:
@@ -116,52 +136,15 @@ function ValidateKey(key, bit, index) {
 
 	return true;
 }
-function keyMode(F) {
-F.submit_button.value = "WL_WPATable";
-F.change_action.value = "gozila_cgi";
-F.submit_type.value = "keysize";
-F.submit();
-}
-function generateKey(F,PREFIX) {
 
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	if(F.wl_wep_bit.value == 64) {
-		F.submit_type.value = "key_64";
-	} else {
-		F.submit_type.value = "key_128";
-	}
-
-	F.submit();
-}
-function generateKey64(F,PREFIX) {
-
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_64";
-	F.submit();
+function enable_idpeap() {
+	show_layer_ext(this, 'idtls', false)
+	show_layer_ext(this, 'idpeap', true)
 }
 
-function enable_idpeap()
-{
-show_layer_ext(this, 'idtls', false)
-show_layer_ext(this, 'idpeap', true)
-}
-function enable_idtls()
-{
-show_layer_ext(this, 'idtls', true)
-show_layer_ext(this, 'idpeap', false)
-}
-function generateKey128(F,PREFIX) {
-
-	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_128";
-
-	F.submit();
+function enable_idtls() {
+	show_layer_ext(this, 'idtls', true)
+	show_layer_ext(this, 'idpeap', false)
 }
 
 addEvent(window, "load", function() {
@@ -189,14 +172,17 @@ show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8
           </div>
           <div id="main">
             <div id="contents">
-              <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" />
+              <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>">
+              	<input type="hidden" name="submit_button" value="WL_WPATable" />
+               	<input type="hidden" name="action" value="Apply" />
+               	<input type="hidden" name="change_action" value="gozila_cgi" />
                	<input type="hidden" name="submit_type" />
-               	<input type="hidden" name="change_action" />
-               	<input type="hidden" name="action" />
+               	
                	<input type="hidden" name="security_varname" />
                	<input type="hidden" name="security_mode_last" />
                	<input type="hidden" name="wl_wep_last" />
                	<input type="hidden" name="filter_mac_value" />
+               	
                	<h2><% tran("wpa.h2"); %></h2>
              		<% show_security(); %><br />
              		
