@@ -21,8 +21,6 @@ function to_submit()
 {
 	if(submit_button == ".asp")
 		history.go(-1);
-	else if(submit_button == "WL_WEPTable.asp")
-		self.close();
 	else
 		document.location.href =  submit_button;
 }
@@ -44,10 +42,9 @@ function init()
 {
 	bar1.togglePause();
 }
-
 		
-//]]>
-</script>
+		//]]>
+		</script>
 	</head>
 	
 	<body onload="init()" onunload="clearTimeout(timer)">
