@@ -5,27 +5,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + route.titl;
 
-function DeleteEntry(F) {
-	if(!confirm(errmsg.err57)) return;
-	F.submit_button.value = "Routing";
-	F.change_action.value = "gozila_cgi";
-	F.submit_type.value = "del";
-	F.submit();
-}
-
-function to_submit(F) {
-	if (F.routing_bgp_neighbor_ip != null) {
-		F.routing_bgp_neighbor_ip.value = F.routing_bgp_neighbor_ip_0.value+'.'+F.routing_bgp_neighbor_ip_1.value+'.'+F.routing_bgp_neighbor_ip_2.value+'.'+F.routing_bgp_neighbor_ip_3.value;
-	}
-	
-	if(!valid_value(F)) return;
-	F.submit_button.value = "Routing";
-	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
-	apply(F);
-}
-
 function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {
 		if(!valid_ip(F,"F.route_ipaddr","IP",0))
@@ -38,18 +17,33 @@ function valid_value(F) {
 	return true;
 }
 
+function DeleteEntry(F) {
+	if(!confirm(errmsg.err57)) return;
+	F.submit_type.value = "del";
+	F.submit();
+}
+
 function SelRoute(num,F) {
-	F.submit_button.value = "Routing";
-	F.change_action.value = "gozila_cgi";
 	F.route_page.value = F.route_page.options[num].value;
 	F.submit();
 }
 
 function SelMode(num,F) {
-	F.submit_button.value = "Routing";
-	F.change_action.value = "gozila_cgi";
 	F.wk_mode.value = F.wk_mode.options[num].value;
 	F.submit();
+}
+
+function to_submit(F) {
+	if (F.routing_bgp_neighbor_ip != null) {
+		F.routing_bgp_neighbor_ip.value = F.routing_bgp_neighbor_ip_0.value+'.'+F.routing_bgp_neighbor_ip_1.value+'.'+F.routing_bgp_neighbor_ip_2.value+'.'+F.routing_bgp_neighbor_ip_3.value;
+	}
+	
+	if(!valid_value(F)) return;
+	
+	F.change_action.value = "";
+	F.submit_type.value = "";
+	F.save_button.value = sbutton.saving;
+	apply(F);
 }
 		
 		//]]>
@@ -67,10 +61,11 @@ function SelMode(num,F) {
 				<div id="main">
 					<div id="contents">
 						<form name="static" action="apply.cgi" method="<% get_http_method(); %>" >
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Routing" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="action" />
+							
 							<input type="hidden" name="static_route" />
 							<h2><% tran("route.h2"); %></h2>
 							<fieldset>
@@ -78,7 +73,7 @@ function SelMode(num,F) {
 								<div class="setting">
 									<div class="label"><% tran("route.mod"); %></div>
 									<select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
-									<% show_routing(); %>
+										<% show_routing(); %>
 									</select>
 								</div>
 							</fieldset><br />
