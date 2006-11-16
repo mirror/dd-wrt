@@ -31,8 +31,6 @@ function upgrade(F,id) {
 	bar1.togglePause();
 	change_style(id,'textblink');
 	F.Upgrade_b.value = sbutton.upgrading;
-	
-	F.submit_button.value = "Upgrade";
 	apply(F, errmsg.err102);
 }
 
@@ -51,9 +49,11 @@ function upgrade(F,id) {
 				<div id="main">
 					<div id="contents">
 						<form name="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Upgrade" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							
 							<h2><% tran("upgrad.h2"); %></h2>
 							
 							<fieldset>

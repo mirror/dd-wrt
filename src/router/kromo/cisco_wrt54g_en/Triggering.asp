@@ -6,29 +6,19 @@
 document.title = "<% nvram_get("router_name"); %>" + trforward.titl;
 
 function trigger_add_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Triggering";
 	F.submit_type.value = "add_trigger";
-	
-	F.action.value = "Apply";
 	F.submit();
 }
 
 function trigger_remove_submit(F) {
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Triggering";
 	F.submit_type.value = "remove_trigger";
-	
-	F.action.value = "Apply";
 	F.submit();
 }
 
-function to_submit(F)
-{
-	F.submit_button.value = "Triggering";
+function to_submit(F) {
+	F.submit_type.value = "";
+	F.change_action.value = "";
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 		
@@ -47,10 +37,11 @@ function to_submit(F)
 				<div id="main">
 					<div id="contents">
 						<form name="trigger" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="action" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_button" value="Triggering" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
+							
 							<input type="hidden" name="port_trigger" value="10" />
 							<h2><% tran("trforward.h2"); %></h2>
 							<fieldset>
