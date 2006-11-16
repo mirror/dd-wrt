@@ -5,6 +5,7 @@ function setStyle(val) {
 	for(var i = 0; i < linkTags.length; i++) {
 		var t = linkTags[i];
 		if(t.getAttribute("rel") != "stylesheet") continue;
+		if(t.getAttribute("href").indexOf("style/pwc/") != -1) continue;
 		if(t.getAttribute("href").indexOf("/" + val + "/") != -1) return false;
 		var newStyle = t.getAttribute("href").replace(/style\/\w+\//, "style/" + val + "/");
 		t.removeAttribute("href");
@@ -25,7 +26,7 @@ document.forms[0].onreset = function() {
 		</select>&nbsp;
 		<script type="text/javascript">
 		//<![CDATA[
-		document.write("<input type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"setStyle(this.form.router_style.value)\" />");
+		document.write("<input class=\"button\" type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"setStyle(this.form.router_style.value)\" />");
 		//]]>
 		</script>
 	</div>
