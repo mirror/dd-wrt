@@ -169,11 +169,8 @@ function create_nrate(num,F)
 
 function to_submit(F) {
 	F.wl_nmode_protection.value = F.wl_gmode_protection.value;
-	F.submit_button.value = "Wireless_Advanced";
 	F.save_button.value = sbutton.saving;
 	F.radio0_on_time.value = computeWlTimer();
-
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -210,8 +207,11 @@ addEvent(window, "load", function() {
 					<div id="contents">
 						<form id="wireless" name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Wireless_Advanced" />
-							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="commit" value="1" />
+							
 							<input type="hidden" name="radio0_on_time" />
 							<input type="hidden" name="wl_nmode_protection" />
 							<h2><% tran("wl_adv.h2"); %></h2>

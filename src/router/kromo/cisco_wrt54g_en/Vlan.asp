@@ -6,10 +6,7 @@
 document.title = "<% nvram_get("router_name"); %>" + vlan.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "Vlan";
 	F.save_button.value = sbutton.saving;
-	
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -78,7 +75,10 @@ function init() {
 						<form name="vlan" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Vlan" />
 							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
+
 							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
 							   <legend><% tran("vlan.legend"); %></legend>
