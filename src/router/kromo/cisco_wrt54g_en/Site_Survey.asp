@@ -13,9 +13,6 @@ function do_join (F,SSID) {
 		alert(errmsg.err47);
 		return false;
 	}
-	F.submit_button.value = "Join";
-
-	F.action.value = "Apply";
 	apply(F);
 }
 		
@@ -25,9 +22,12 @@ function do_join (F,SSID) {
 
 	<body>
 		<form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_button" value="Join" />
+			<input type="hidden" name="action" value="Apply" />
+			<input type="hidden" name="change_action" />
+			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="commit" value="1" />
-			<input type="hidden" name="action" />
+			
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
 			<h2><% tran("survey.h2"); %></h2>
