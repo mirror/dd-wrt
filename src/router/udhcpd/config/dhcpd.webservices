@@ -47,33 +47,25 @@
 		</script>
 	</div>
 	<% nvram_invmatch("expert_mode","1","-->"); %>
-    	<table class="table center" summary="static lease table">
-			<tr>
-				<th colspan="3"><% tran("share.static_lease"); %></th>
-			</tr>
-			<tr>
-				<th width="33%"><% tran("share.mac"); %></th>
-				<th width="34%"><% tran("share.hostname"); %></th>
-				<th width="33%"><% tran("share.ip"); %></th>
-			</tr>
-                        <% show_staticleases(); %>
-			<tr>
-				<td colspan="3">
-					<div class="center">
-						<script type="text/javascript">
-						//<![CDATA[
-						document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form)\" />");
-						//]]>
-						</script>
-						<script type="text/javascript">
-						//<![CDATA[
-						document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form)\" />");
-						//]]>
-						</script>
-					</div>
-				</td>
-			</tr>
-		</table>
+	<table class="table center" summary="static lease table">
+		<tr>
+			<th colspan="3"><% tran("share.static_lease"); %></th>
+		</tr>
+		<tr>
+			<th width="33%"><% tran("share.mac"); %></th>
+			<th width="34%"><% tran("share.hostname"); %></th>
+			<th width="33%"><% tran("share.ip"); %></th>
+		</tr>
+			<% show_staticleases(); %>
+	</table><br />
+	<div class="center">
+		<script type="text/javascript">
+		//<![CDATA[
+		document.write("<input class=\"button\" type=\"button\" name=\"add_button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form);\" />");
+		document.write("<input class=\"button\" type=\"button\" name=\"del_button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form);\" />");
+		//]]>
+		</script>
+	</div>
 </fieldset><br/>
 
 <fieldset>
