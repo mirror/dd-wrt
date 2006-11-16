@@ -1,0 +1,164 @@
+<% do_pagehead(); %>
+		<title><% nvram_get("router_name"); %> - WEP Keys</title>
+		<script type="text/javascript">
+		//<![CDATA[
+
+document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
+
+function to_submit(F)	{
+	if(valid_value(F)){
+		F.save_button.value = sbutton.saving;
+		apply(F);
+	}
+}
+function valid_value(F) {
+	return valid_wpa_psk(F.wpa_psk);
+}
+function init(){
+	SelMode("<% nvram_get("auth_mode"); %>",document.wpa);
+}
+
+function SelMode(num,F) {
+	if(num == 0 || num == 'disabled'){
+		choose_disable(F.wpa_psk);
+		choose_disable(F.wpa_gtk_rekey);
+		choose_disable(F.radius_ipaddr_0);
+		choose_disable(F.radius_ipaddr_1);
+		choose_disable(F.radius_ipaddr_2);
+		choose_disable(F.radius_ipaddr_3);
+		choose_disable(F.radius_port);
+		choose_disable(F.radius_key);
+	}else if (num == 1 || num == 'radius'){
+		choose_disable(F.wpa_psk);
+		choose_disable(F.wpa_gtk_rekey);
+		choose_enable(F.radius_ipaddr_0);
+		choose_enable(F.radius_ipaddr_1);
+		choose_enable(F.radius_ipaddr_2);
+		choose_enable(F.radius_ipaddr_3);
+		choose_enable(F.radius_port);
+		choose_enable(F.radius_key);
+	} else if (num == 2 || num == 'wpa'){
+		choose_disable(F.wpa_psk);
+		choose_enable(F.wpa_gtk_rekey);
+		choose_enable(F.radius_ipaddr_0);
+		choose_enable(F.radius_ipaddr_1);
+		choose_enable(F.radius_ipaddr_2);
+		choose_enable(F.radius_ipaddr_3);
+		choose_enable(F.radius_port);
+		choose_enable(F.radius_key);
+	} else if (num == 3 || num == 'psk'){
+		choose_enable(F.wpa_psk);
+		choose_enable(F.wpa_gtk_rekey);
+		choose_disable(F.radius_ipaddr_0);
+		choose_disable(F.radius_ipaddr_1);
+		choose_disable(F.radius_ipaddr_2);
+		choose_disable(F.radius_ipaddr_3);
+		choose_disable(F.radius_port);
+		choose_disable(F.radius_key);
+	}
+
+	if(num == 2 || num == 'wpa' || num == 3 || num == 'psk'){
+		document.forms[0].wl_wep.length = 2;
+		document.forms[0].wl_wep[0] = new Option("TKIP","tkip");
+		document.forms[0].wl_wep[0].value = "tkip";
+		document.forms[0].wl_wep[1] = new Option("AES","aes");
+		document.forms[0].wl_wep[1].value = "aes";
+		document.forms[0].wl_wep[1] = new Option("TKIP+AES","tkip+aes");
+		document.forms[0].wl_wep[1].value = "tkip+aes";
+	} else{
+		document.forms[0].wl_wep.length = 2;
+		document.forms[0].wl_wep[0] = new Option("OFF","off");
+		document.forms[0].wl_wep[0].value = "off";
+		document.forms[0].wl_wep[1] = new Option("WEP","restricted");
+		document.forms[0].wl_wep[1].value = "restricted";
+	}
+
+	for(i=0 ; i < document.forms[0].wl_wep.length; i++){
+		if(document.forms[0].wl_wep[i].value == "<% nvram_get("wl_wep"); %>"){
+			document.forms[0].wl_wep[i].selected = true;
+			break;
+		}
+	}
+}
+function valid_wpa_psk(I) {
+	if(I.value.length == 64){
+		if(!isxdigit(I,I.value)) return false;
+	} else if(I.value.length >=8 && I.value.length <= 63 ){
+		if(!isascii(I,I.value)) return false;
+	} else{
+		alert(errmsg.err39);
+		return false;
+	}
+
+	return true;
+}
+		
+		//]]>
+		</script>
+	</head>
+
+   <body onload="init()">
+      <form name="wpa" action="apply.cgi" method="<% get_http_method(); %>">
+	      <input type="hidden" name="submit_button" value="WPA" />
+	      <input type="hidden" name="action" value="Apply" />
+	      <input type="hidden" name="submit_type" />
+	      <input type="hidden" name="change_action" />
+      
+      	<div> 
+            <div class="setting">
+               <div class="label"><% tran("wpa.auth_mode"); %></div>
+                 <select name="auth_mode" onchange=SelMode(this.form.auth_mode.selectedIndex,this.form)>
+               		<script type="text/javascript">
+               		//<![CDATA[
+               		document.write("<option value=\"disabled\" <% nvram_selected("auth_mode", "disabled", "js"); %>>" + share.disable + "</option>");
+									document.write("<option value=\"psk\" <% nvram_selected("auth_mode", "psk", "js"); %>>" + wpa.psk + "</option>");
+									document.write("<option value=\"wpa\" <% nvram_selected("auth_mode", "wpa", "js"); %>>" + wpa.wpa + "</option>");
+									document.write("<option value=\"radius\" <% nvram_selected("auth_mode", "radius", "js"); %>>" + wpa.radius + "</option>");
+									//]]>
+									</script>
+                 </select>
+               </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.psk"); %></div>
+               <input name="wpa_psk" maxlength="64" size="32" value="<% nvram_get("wpa_psk"); %>" />
+            </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.gtk_rekey"); %></div>
+               <input name="wpa_gtk_rekey" size="10" maxlength="79" onblur="valid_range(this,0,99999,wpa.rekeyInt)" value="<% nvram_get("wpa_gtk_rekey"); %>" />Sec.
+            </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.radius_ipaddr"); %></div>
+               <input type="hidden" name="radius_ipaddr" value="4" />
+               <input class="num" size="3" maxlength="3" name="radius_ipaddr_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="radius_ipaddr_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="radius_ipaddr_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="radius_ipaddr_3" onblur="valid_range(this,1,254,'IP')" value="<% get_single_ip("radius_ipaddr","3"); %>" />
+            </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.radius_port"); %></div>
+               <input size="5" maxlength="32" name="radius_port" onblur="valid_range(this,0,65535,'Port')" value="<% nvram_get("radius_port"); %>" />
+            </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.radius_key"); %></div>
+               <input size="20" maxlength="79" name="radius_key" value="<% nvram_get("radius_key"); %>" />
+            </div>
+            <div class="setting">
+               <div class="label"><% tran("wpa.algorithms"); %></div>
+	               <select name="wl_wep">
+	                  <option value="tkip" <% nvram_selected("wl_wep","tkip"); %>>TKIP</option>
+	                  <option value="aes" <% nvram_selected("wl_wep","aes"); %>>AES</option>
+	                  <option value="tkip+aes" <% nvram_selected("wl_wep","tkip+aes"); %>>TKIP+AES</option>
+	               </select>
+               </div>
+         	</div>
+         	
+         	<br />
+         	
+         	<div class="submitFooter">
+         		<script type="text/javascript">
+         		//<![CDATA[
+         		submitFooterButton(1,1);
+						document.write("<input type=\"button\" value=\"" + sbutton.help + "\" name=\"Submit3\" onclick=\"showHELP(this.form);\" />");
+						//]]>
+						</script>
+         	</div>
+      </form>
+   </body>
+</html>
