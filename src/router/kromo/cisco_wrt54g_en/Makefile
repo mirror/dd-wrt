@@ -204,7 +204,7 @@ endif
 ifneq ($(CONFIG_MSSID),y)
 	cp WEP.v23 $(INSTALLDIR)/www/WEP.asp
 	cp WL_WPATable.v23 $(INSTALLDIR)/www/WL_WPATable.asp
-	cp WPA.v23 $(INSTALLDIR)/www/WPA.asp
+#	cp WPA.v23 $(INSTALLDIR)/www/WPA.asp
 	cp WPA_Preshared.v23 $(INSTALLDIR)/www/WPA_Preshared.asp
 	cp WPA_Radius.v23 $(INSTALLDIR)/www/WPA_Radius.asp	
 	cp Wireless_Basic.v23 $(INSTALLDIR)/www/Wireless_Basic.asp
