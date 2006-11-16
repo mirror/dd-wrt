@@ -6,8 +6,6 @@
 document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
 function to_submit(F) {
-	F.submit_button.value = "Firewall";
-	
 	if(F._block_proxy){
 		F.block_proxy.value = F._block_proxy.checked ? 1 : 0;
 	}
@@ -35,8 +33,6 @@ function to_submit(F) {
 	}
 
 	F.save_button.value = sbutton.saving;
-
-	F.action.value = "Apply";
 	apply(F);
 }
 
@@ -66,9 +62,11 @@ addEvent(window, "load", function() {
 				<div id="main">
 				<div id="contents">
 					<form name="firewall" action="apply.cgi" method="<% get_http_method(); %>" >
-						<input type="hidden" name="submit_button" />
+						<input type="hidden" name="submit_button" value="Firewall" />
+						<input type="hidden" name="action" value="Apply" />
 						<input type="hidden" name="change_action" />
-						<input type="hidden" name="action" />
+						<input type="hidden" name="submit_type" />
+						
 						<input type="hidden" name="block_wan" />
 						<input type="hidden" name="block_loopback" />
 						<input type="hidden" name="block_multicast" />

@@ -56,39 +56,6 @@ function time_enable_disable(F,I){
 	}
 }
 
-
-function to_submit(F) {
-	if(valid(F) == true) {
-		F.submit_type.value = "save";
-		F.submit_button.value = "Filters";
-		F.save_button.value = sbutton.saving;
-		
-		F.action.value = "Apply";
-		apply(F);
-
-	}
-}
-
-function to_save(F) {
-	if(valid(F) == true) {
-		F.submit_button.value = "Filters";
-		F.change_action.value = "gozila_cgi";
-		F.submit_type.value = "save";
-		F.action.value = "Apply";
-		F.submit();
-	}
-}
-
-function to_delete(F) {
-	if(confirm(filter.mess1)) {
-		F.submit_button.value = "Filters";
-		F.change_action.value = "gozila_cgi";
-		F.submit_type.value = "delete";
-		F.action.value = "Apply";
-		F.submit();
-	}
-}
-
 function valid(F) {
 	if(
 		F.day_all.checked == false &&
@@ -128,13 +95,6 @@ function valid(F) {
 	}
 
 	return true;
-}
-
-function SelFilter(num,F) {
-	F.submit_button.value = "Filters";
-	F.change_action.value = "gozila_cgi";
-	F.f_id.value=F.f_id.options[num].value;
-	F.submit();
 }
 
 function init() {
@@ -284,6 +244,34 @@ function Status(F,I) {
 		choose_disable(document.filters.port3_end);
 	}
 }
+
+function SelFilter(num,F) {
+	F.f_id.value=F.f_id.options[num].value;
+	F.submit();
+}
+
+function to_save(F) {
+	if(valid(F) == true) {
+		F.submit_type.value = "save";
+		F.submit();
+	}
+}
+
+function to_delete(F) {
+	if(confirm(filter.mess1)) {
+		F.submit_type.value = "delete";
+		F.submit();
+	}
+}
+
+function to_submit(F) {
+	if(valid(F) == true) {
+		F.change_action.value = "";
+		F.submit_type.value = "";
+		F.save_button.value = sbutton.saving;
+		apply(F);
+	}
+}
 		
 		//]]>
 		</script>
@@ -302,10 +290,11 @@ function Status(F,I) {
 				<div id="main">
 					<div id="contents">
 						<form name="filters" action="apply.cgi" method="<% get_http_method(); %>" >
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="action" />
-							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_button" value="Filters" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" />
+							
 							<input type="hidden" name="blocked_service" />
 							<input type="hidden" name="filter_web" />
 							<input type="hidden" name="filter_policy" />
@@ -338,7 +327,7 @@ function Status(F,I) {
 									<div class="label"><% tran("filter.pcs"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700);\" />");
 									//]]>
 									</script>
 								</div>
@@ -453,7 +442,7 @@ function Status(F,I) {
 								<div class="setting">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420);\" />");
 									//]]>
 									</script>
 								</div>
