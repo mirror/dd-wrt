@@ -109,7 +109,7 @@ do_mon (void)
 	  fptr = (void (*)(void)) dlsym (handle, service);
 	  if (fptr)
 	    fptr ();
-	  killall(v->name,SIGKILL);
+	  killall (v->name, SIGKILL);
 	  sprintf (service, "start_%s", v->name);
 	  fptr = (void (*)(void)) dlsym (handle, service);
 	  if (fptr)

@@ -175,14 +175,14 @@ mtd_write (const char *path, const char *mtd)
       goto fail;
     }
 #ifdef HAVE_MAGICBOX
-trx.magic=STORE32_LE(trx.magic);
-trx.len=STORE32_LE(trx.len);
-trx.crc32=STORE32_LE(trx.crc32);
+  trx.magic = STORE32_LE (trx.magic);
+  trx.len = STORE32_LE (trx.len);
+  trx.crc32 = STORE32_LE (trx.crc32);
 #endif
 #ifdef HAVE_XSCALE
-trx.magic=STORE32_LE(trx.magic);
-trx.len=STORE32_LE(trx.len);
-trx.crc32=STORE32_LE(trx.crc32);
+  trx.magic = STORE32_LE (trx.magic);
+  trx.len = STORE32_LE (trx.len);
+  trx.crc32 = STORE32_LE (trx.crc32);
 #endif
 
 
@@ -244,7 +244,7 @@ trx.crc32=STORE32_LE(trx.crc32);
 						      flag_version),
 	       CRC32_INIT_VALUE);
 
-  if (STORE32_LE(trx.flag_version) & TRX_NO_HEADER)
+  if (STORE32_LE (trx.flag_version) & TRX_NO_HEADER)
     trx.len -= sizeof (struct trx_header);
 
   /* Write file or URL to MTD device */
@@ -252,7 +252,7 @@ trx.crc32=STORE32_LE(trx.crc32);
        erase_info.start += count)
     {
       len = MIN (erase_info.length, trx.len - erase_info.start);
-      if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
+      if ((STORE32_LE (trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
 	count = off = 0;
       else
 	{

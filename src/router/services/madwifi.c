@@ -497,7 +497,7 @@ deconfigure_single (int count)
   br_del_interface ("br0", dev);
   sprintf (dev, "ath%d", count);
 //  fprintf (stderr, "deconfigure %s\n", dev);
-   
+
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -509,11 +509,11 @@ deconfigure_single (int count)
   int s;
   for (s = 1; s <= 10; s++)
     {
-      sprintf(dev,"wds0.%d",s);
+      sprintf (dev, "wds0.%d", s);
       br_del_interface ("br0", dev);
-      eval ("wlanconfig", dev,"destroy");
+      eval ("wlanconfig", dev, "destroy");
     }
-  
+
 }
 
 
@@ -1039,7 +1039,7 @@ setMacFilter (char *iface)
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static void
-configure_single (int count,int isbond)
+configure_single (int count, int isbond)
 {
   char *next;
   char var[80];
@@ -1060,10 +1060,10 @@ configure_single (int count,int isbond)
   char rxantenna[16];
   char txantenna[16];
   char athmac[16];
-  sprintf (wifivifs, "ath%d_vifs", isbond?-1:count);
+  sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (dev, "ath%d", count);
   sprintf (wif, "wifi%d", count);
-  sprintf (wl, "ath%d_mode", isbond?0:count);
+  sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (ssid, "ath%d_ssid", count);
   sprintf (broadcast, "ath%d_closed", count);
@@ -1392,9 +1392,9 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #endif
 	{
 #ifdef HAVE_BONDING
-	configure_single (i,nvram_match("wifi_bonding"));
+	  configure_single (i, nvram_match ("wifi_bonding"));
 #else
-	configure_single (i,0);
+	  configure_single (i, 0);
 #endif
 	}
     }
@@ -1405,21 +1405,21 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       configure_wifi ();
     }
 #ifdef HAVE_BONDING
-    eval("ifconfig","bond0","down");
-    eval("rmmod","bonding");
-    if (nvram_match("wifi_bonding"))
+  eval ("ifconfig", "bond0", "down");
+  eval ("rmmod", "bonding");
+  if (nvram_match ("wifi_bonding"))
+    {
+      eval ("insmod", "bonding");
+      eval ("ifconfig", "bond0", "0.0.0.0", "up");
+      for (i = 0; i < c; i++)
 	{
-        eval("insmod","bonding");
-        eval ("ifconfig", "bond0", "0.0.0.0", "up");
-	for (i=0;i<c;i++)
-	    {
-	    char dev[16];
-	    sprintf(dev,"ath%d",i);
-	    eval("ifenslave","bond0",dev);	    
-	    }
-	
-	
+	  char dev[16];
+	  sprintf (dev, "ath%d", i);
+	  eval ("ifenslave", "bond0", dev);
 	}
+
+
+    }
 #endif
 }
 #endif

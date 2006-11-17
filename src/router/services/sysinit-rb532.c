@@ -81,7 +81,7 @@ start_sysinit (void)
       mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
     }
-  eval("mkdir","-p","/usr/local/nvram");
+  eval ("mkdir", "-p", "/usr/local/nvram");
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
