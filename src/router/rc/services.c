@@ -99,18 +99,17 @@ start_services (void)
   start_service ("udhcpd");
   start_service ("dnsmasq");
 /* nas mode select*/
-	  if (nvram_match ("wl_mode", "sta")
-	      || nvram_match ("wl_mode", "wet")
-	      || nvram_match ("wl_mode", "apsta"))
-	    {
-	  	cprintf ("start nas wan\n");
-	  	start_service ("nas_wan");
-	    }
-	  else
-	  	{  
-	  	cprintf ("start nas lan\n");
-	  	start_service ("nas_lan");
-  		}
+  if (nvram_match ("wl_mode", "sta")
+      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
+    {
+      cprintf ("start nas wan\n");
+      start_service ("nas_wan");
+    }
+  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
 /*end nas mode select */
 #ifdef HAVE_MSSID
   start_service ("guest_nas");
@@ -269,8 +268,8 @@ start_single_service (void)
       nvram_set ("action_service", "");
       nvram_set ("action_service_arg1", "");
       return 0;
-    }else
-  if (!strcmp (service, "index"))
+    }
+  else if (!strcmp (service, "index"))
     {
       unlink ("/tmp/ppp/log");
 #ifdef HAVE_MADWIFI
@@ -442,12 +441,12 @@ start_single_service (void)
     }
   else if (!strcmp (service, "forward"))
     {
-      stop_service("wshaper");
+      stop_service ("wshaper");
       stop_service ("upnp");
-      stop_service("firewall");
-      start_service("firewall");
+      stop_service ("firewall");
+      start_service ("firewall");
       start_service ("upnp");
-      start_service("wshaper");
+      start_service ("wshaper");
     }
   else if (!strcmp (service, "qos"))
     {
@@ -528,10 +527,10 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI
 
 #ifdef HAVE_MSSID
-      stop_service("guest_nas");
+      stop_service ("guest_nas");
 #endif
-      stop_service("nas");
-#endif      
+      stop_service ("nas");
+#endif
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif

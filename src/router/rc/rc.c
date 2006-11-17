@@ -81,39 +81,39 @@ rc_signal (int sig)
     {
       if (sig == SIGHUP)
 	{
-	  lcdmessage("Signal RESTART");
+	  lcdmessage ("Signal RESTART");
 	  printf ("signalling RESTART\n");
 	  signalled = RESTART;
 	}
       else if (sig == SIGUSR2)
 	{
-	  lcdmessage("Signal START");
+	  lcdmessage ("Signal START");
 	  printf ("signalling START\n");
 	  signalled = START;
 	}
       else if (sig == SIGINT)
 	{
-	lcdmessage("Signal STOP");
+	  lcdmessage ("Signal STOP");
 	  printf ("signalling STOP\n");
 	  signalled = STOP;
 	}
       else if (sig == SIGALRM)
 	{
-	lcdmessage("Signal TIMER");
+	  lcdmessage ("Signal TIMER");
 	  printf ("signalling TIMER\n");
 	  signalled = TIMER;
 	}
 #ifdef HAVE_X86
       else if (sig == SIGTERM)
 	{
-	lcdmessage("Signal Reboot");
+	  lcdmessage ("Signal Reboot");
 	  printf ("signalling REBOOT\n");
 	  signalled = REBOOT;
 	}
 #endif
       else if (sig == SIGUSR1)
 	{			// Receive from WEB
-	lcdmessage("Signal USER");
+	  lcdmessage ("Signal USER");
 	  printf ("signalling USER1\n");
 	  signalled = USER;
 	}
@@ -140,11 +140,11 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
- 
+
   if (console_init ())
     noconsole = 1;
-  initlcd();
-  lcdmessage("System Start");
+  initlcd ();
+  lcdmessage ("System Start");
   start_service ("sysinit");
 
   /* Setup signal handlers */
@@ -362,7 +362,7 @@ main_loop (void)
       switch (state)
 	{
 	case USER:		// Restart single service from WEB of tftpd, by honor
-	  lcdmessage("RESTART SERVICES");
+	  lcdmessage ("RESTART SERVICES");
 	  cprintf ("USER1\n");
 	  start_single_service ();
 #ifdef HAVE_CHILLI
@@ -375,7 +375,7 @@ main_loop (void)
 	  state = IDLE;
 	  break;
 	case RESTART:
-	lcdmessage("RESTART SYSTEM");
+	  lcdmessage ("RESTART SYSTEM");
 	  start_service ("overclocking");
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
@@ -416,9 +416,9 @@ main_loop (void)
 #endif
 	  /* Fall through */
 	case STOP:
-	  lcdmessage("STOPPING SERVICES");
+	  lcdmessage ("STOPPING SERVICES");
 	  cprintf ("STOP\n");
-	  killall("udhcpc",SIGKILL);
+	  killall ("udhcpc", SIGKILL);
 	  setenv ("PATH",
 		  "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
 		  1);
@@ -431,7 +431,7 @@ main_loop (void)
 	  stop_services ();
 	  cprintf ("STOP LAN\n");
 #ifdef HAVE_MADWIFI
-          stop_service ("stabridge");
+	  stop_service ("stabridge");
 #endif
 	  stop_service ("lan");
 #ifndef HAVE_RB500
@@ -462,7 +462,7 @@ main_loop (void)
 	    }
 	  /* Fall through */
 	case START:
-	  lcdmessage("START SERVICES");
+	  lcdmessage ("START SERVICES");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 #ifndef HAVE_MSSID
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
@@ -496,7 +496,7 @@ main_loop (void)
 	  start_service ("setup_vlans");
 	  start_service ("lan");
 #ifdef HAVE_MADWIFI
-          start_service ("stabridge");
+	  start_service ("stabridge");
 #endif
 	  cprintf ("start services\n");
 	  start_services ();
@@ -521,16 +521,16 @@ main_loop (void)
 	  start_service ("nas_wan");
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
-  if (isregistered())
+	  if (isregistered ())
 #endif
-	{
-	  start_service ("create_rc_startup");
-	  chmod ("/tmp/.rc_startup", 0700);
-	  system ("/tmp/.rc_startup");
-	  system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
-	  cprintf ("start modules\n");
-	  start_service ("modules");
-	}
+	    {
+	      start_service ("create_rc_startup");
+	      chmod ("/tmp/.rc_startup", 0700);
+	      system ("/tmp/.rc_startup");
+	      system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
+	      cprintf ("start modules\n");
+	      start_service ("modules");
+	    }
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
@@ -543,7 +543,7 @@ main_loop (void)
 	  system ("/etc/postinit");
 
 	  diag_led (DIAG, STOP_LED);
-	  lcdmessage("System Ready");
+	  lcdmessage ("System Ready");
 	  /* Fall through */
 	case TIMER:
 	  cprintf ("TIMER\n");
@@ -565,10 +565,10 @@ main_loop (void)
 	  signalled = -1;
 	  break;
 #ifdef HAVE_X86
-	case REBOOT:	
-	  lcdmessage("System Reboots!");
-	  system("reboot");
-	break;
+	case REBOOT:
+	  lcdmessage ("System Reboots!");
+	  system ("reboot");
+	  break;
 #endif
 	default:
 	  cprintf ("UNKNOWN\n");
@@ -637,13 +637,13 @@ main (int argc, char **argv)
     return pptpd_main (argc, argv);
 #endif
 #ifndef HAVE_RB500
+#ifndef HAVE_X86
   /* erase [device] */
   else if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
       if ((brand == ROUTER_MOTOROLA) ||
-      	(brand == ROUTER_MOTOROLA_V1) ||
-      	(brand == ROUTER_MOTOROLA_WE800G))
+	  (brand == ROUTER_MOTOROLA_V1) || (brand == ROUTER_MOTOROLA_WE800G))
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
@@ -675,6 +675,20 @@ main (int argc, char **argv)
 	  return EINVAL;
 	}
     }
+#else
+  else if (strstr (base, "erase"))
+    {
+      if (argv[1] && strcmp (argv[1], "nvram"))
+	{
+	  fprintf (stderr, "Erasing configuration data...\n");
+	  eval ("mount", "/usr/local", "-o", "remount,rw");
+	  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+	  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+	  eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+	  eval ("mount", "/usr/local", "-o", "remount,ro");
+	}
+    }
+#endif
 #endif
   /* hotplug [event] */
   else if (strstr (base, "hotplug"))

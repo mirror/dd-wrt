@@ -366,7 +366,7 @@ enable_dhcprelay (char *ifname)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
-        
+
 	char mode[] = "wlXXXXXXXXXX_mode";
 	int unit;
 
@@ -677,19 +677,19 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") )
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
       nvram_set ("lan_ifnames",
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-if (nvram_match("wifi_bonding","1"))
-      nvram_set ("lan_ifnames",
-		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
-else
-      nvram_set ("lan_ifnames",
-		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+      if (nvram_match ("wifi_bonding", "1"))
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+      else
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 
 #endif
       nvram_set ("wan_ifname", "");
@@ -702,25 +702,29 @@ else
       nvram_set ("lan_ifnames",
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-if (nvram_match("wifi_bonding","1"))
-      nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
-else
-      nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+      if (nvram_match ("wifi_bonding", "1"))
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+      else
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
     }
-    else
+  else
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
       nvram_set ("lan_ifnames",
 		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-if (nvram_match("wifi_bonding","1"))
-      nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
-else
-      nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+      if (nvram_match ("wifi_bonding", "1"))
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+      else
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
       if (nvram_get ("wan_ifname2") != NULL)
 	{
@@ -876,8 +880,8 @@ else
 
       foreach (name, lan_ifnames, next)
       {
-        if (nvram_match("wan_ifname",name))
-	    continue;
+	if (nvram_match ("wan_ifname", name))
+	  continue;
 	if (!ifexists (name))
 	  continue;
 #ifdef HAVE_MADWIFI
@@ -1493,8 +1497,8 @@ stop_lan (void)
     {
       foreach (name, nvram_safe_get ("lan_ifnames"), next)
       {
-        if (nvram_match("wan_ifname",name))
-	    continue;
+	if (nvram_match ("wan_ifname", name))
+	  continue;
 	if (!ifexists (name))
 	  continue;
 	eval ("wlconf", name, "down");
@@ -1548,7 +1552,7 @@ start_wan (int status)
 #ifdef HAVE_RB500
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get ("wan_ifname");
 #else
 
 #ifdef HAVE_XSCALE
@@ -1568,7 +1572,7 @@ start_wan (int status)
 #elif HAVE_X86
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get("wan_ifname");
+    nvram_safe_get ("pppoe_wan_ifname") : nvram_safe_get ("wan_ifname");
 #else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
@@ -1637,7 +1641,7 @@ start_wan (int status)
   else
     pppoe_rp = 0;
 #else
-int pppoe_rp = 1;
+  int pppoe_rp = 1;
 #endif
   if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
@@ -1816,12 +1820,13 @@ int pppoe_rp = 1;
 	fprintf (fp, "'\n");
 #endif
       // rp-pppoe kernelmode plugin
-      fprintf(fp,"plugin /usr/lib/rp-pppoe.so"); 	
+      fprintf (fp, "plugin /usr/lib/rp-pppoe.so");
 
       if (nvram_invmatch ("pppoe_service", ""))
-	fprintf (fp, " rp_pppoe_service %s", nvram_safe_get ("pppoe_service"));
-      fprintf(fp,"\n");
-      fprintf(fp,"nic-%s\n",pppoe_wan_ifname);
+	fprintf (fp, " rp_pppoe_service %s",
+		 nvram_safe_get ("pppoe_service"));
+      fprintf (fp, "\n");
+      fprintf (fp, "nic-%s\n", pppoe_wan_ifname);
 
       // Those are default options we use + user/passwd
       // By using user/password options we dont have to deal with chap/pap secrets files.
@@ -1829,12 +1834,9 @@ int pppoe_rp = 1;
 	       "noauth\n"
 	       "defaultroute\n"
 	       "noaccomp\n"
-	       "noccp\n"
-	       "nobsdcomp\n"
-	       "nodeflate\n"
-	       "maxfail 0\n"
-//	       "nocrtscts\n"
-//	       "lock\n"
+	       "noccp\n" "nobsdcomp\n" "nodeflate\n" "maxfail 0\n"
+//             "nocrtscts\n"
+//             "lock\n"
 	       "nopcomp\n"
 	       "novj\n"
 	       "novjccomp\n"
@@ -1851,7 +1853,7 @@ int pppoe_rp = 1;
 	fprintf (fp, "asyncmap 0\n");
       else
 	fprintf (fp, "default-asyncmap\n");
-      
+
 
       // Allow users some control on PPP interface MTU and MRU
       // If pppoe_ppp_mtu > 0 will set mtu of pppX interface to the value in the nvram variable
@@ -1915,7 +1917,7 @@ int pppoe_rp = 1;
 
       stop_dhcpc ();
       stop_pptp ();
-//      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");	
+//      system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so");     
       eval ("/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe");
 
       // This is horrible.
