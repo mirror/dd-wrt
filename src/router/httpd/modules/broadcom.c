@@ -2733,8 +2733,8 @@ struct gozila_action gozila_actions[] = {
   {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},
   {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
   {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
-  {"FilterSummary", "delete", "filters", 1, SYS_RESTART, summary_delete_policy},
-  {"Routing", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
+  {"FilterSummary", "delete", "filters", 1, REFRESH, summary_delete_policy},
+  {"Routing", "del", "static_route_del", 1, REFRESH, delete_static_route},
   {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
 //  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
 //  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE
@@ -2894,7 +2894,7 @@ struct apply_action apply_actions[] = {
   /* SETUP */
 	{"index", "index", 0, SERVICE_RESTART, NULL},
 	{"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
-	{"Routing", "", 0, RESTART, NULL},
+	{"Routing", "routing", 0, SERVICE_RESTART, NULL},
 	{"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
   {"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
   

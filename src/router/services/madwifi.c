@@ -527,7 +527,7 @@ deconfigure_wifi (void)
   killall ("wrt-radauth", SIGTERM);
   killall ("hostapd", SIGTERM);
   killall ("wpa_supplicant", SIGTERM);
-  sleep (2);
+  sleep (1);
   killall ("wrt-radauth", SIGKILL);
   killall ("hostapd", SIGKILL);
   killall ("wpa_supplicant", SIGKILL);
@@ -1221,7 +1221,6 @@ configure_single (int count, int isbond)
     setupHostAP (dev);
   else
     setupSupplicant (dev);
-  sleep (3);
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
