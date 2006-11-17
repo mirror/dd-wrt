@@ -117,18 +117,6 @@ start_sysinit (void)
   eval ("insmod", "cast5");
   eval ("insmod", "crypto_null");
 
-  system ("/etc/kendin");
-  eval ("insmod", "ixp400th");
-  eval ("insmod", "ixp400");
-  system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-  eval ("insmod", "ixp400_eth");
-  eval ("insmod", "ocf");
-  eval ("insmod", "cryptodev");
-  eval ("insmod", "ixp4xx", "init_crypto=0");
-  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
-  eval ("vconfig", "add", "ixp0", "1");
-  eval ("vconfig", "add", "ixp0", "2");
-
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
@@ -140,8 +128,8 @@ start_sysinit (void)
   eval ("insmod", "wlan_tkip");
   eval ("insmod", "wlan_wep");
   eval ("insmod", "wlan_xauth");
-//  eval ("insmod", "wlan_scan_ap");
-//  eval ("insmod", "wlan_scan_sta");
+  eval ("insmod", "wlan_scan_ap");
+  eval ("insmod", "wlan_scan_sta");
 
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
@@ -151,18 +139,12 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 
 
-//  eval ("insmod", "mii");
-//  eval ("insmod", "korina");
-//  eval ("insmod", "via-rhine");
+  eval ("insmod", "mii");
+  eval ("insmod", "korina");
+  eval ("insmod", "via-rhine");
   eval ("insmod", "ipv6");
   /* Set a sane date */
   stime (&tm);
-  if (brand == ROUTER_SIEMENS)
-    {
-      eval ("insmod", "led.o");	// Jerry Lee
-      powerled_ctrl (0);
-      led_ctrl (0);		// turn LED2 off
-    }
 
   return 0;
   cprintf ("done\n");
