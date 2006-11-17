@@ -36,13 +36,13 @@
 #include <dirent.h>
 
 // #define BCM47XX_SOFTWARE_RESET  0x40 /* GPIO 6 */
-// #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
+// #define BCM47XX_SW_PUSH         0x10 /* GPIO 4 */
 
 // #define WHR_SOFTWARE_RESET 0x10      //GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
-// #define WHR_SW_PUSH 0		//GPIO 0, code unknown
+// #define WHR_SW_PUSH 0                //GPIO 0, code unknown
 
 // #define WBR2_SOFTWARE_RESET 0x80     //GPIO 7
-// #define WBR2_SW_PUSH 0		//GPIO 0, code unknown
+// #define WBR2_SW_PUSH 0               //GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
@@ -68,51 +68,56 @@
 #ifdef HAVE_MAGICBOX
 #include <sys/mman.h>
 
-#define GPIO0_OR   0x0700 /* rw, output */
-#define GPIO0_TCR  0x0704 /* rw, three-state control */
-#define GPIO0_ODR  0x0718 /* rw, open drain */
-#define GPIO0_IR   0x071c /* ro, input */
-#define GPIO0_BASE 0xef600000 /* page */
+#define GPIO0_OR   0x0700	/* rw, output */
+#define GPIO0_TCR  0x0704	/* rw, three-state control */
+#define GPIO0_ODR  0x0718	/* rw, open drain */
+#define GPIO0_IR   0x071c	/* ro, input */
+#define GPIO0_BASE 0xef600000	/* page */
 
-#define GPIO_LED    0x20000000  /* GPIO1 */
-#define GPIO_BUTTON 0x40000000  /* GPIO2 */
+#define GPIO_LED    0x20000000	/* GPIO1 */
+#define GPIO_BUTTON 0x40000000	/* GPIO2 */
 
 #define REG(buf, offset) ((unsigned int *)((void *)buf + offset))
 
 static unsigned int *page;
 static int fd;
 
-void init_gpio()
+void
+init_gpio ()
 {
-     void *start = 0;
+  void *start = 0;
 
-     fd = open("/dev/mem", O_RDWR);
-     if (fd < 0) {
-//	  syslog(LOG_ERR, "Can't open /dev/mem: %s", strerror(errno));
-	  exit(1);
-     }
+  fd = open ("/dev/mem", O_RDWR);
+  if (fd < 0)
+    {
+//        syslog(LOG_ERR, "Can't open /dev/mem: %s", strerror(errno));
+      exit (1);
+    }
 
-     page = mmap(start, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd,
-		 (off_t)GPIO0_BASE);
-     if (page == MAP_FAILED) {
-//	  syslog(LOG_ERR, "Can't mmap GPIO memory space: %s", strerror(errno));
-	  exit(1);
-     }
+  page = mmap (start, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+	       (off_t) GPIO0_BASE);
+  if (page == MAP_FAILED)
+    {
+//        syslog(LOG_ERR, "Can't mmap GPIO memory space: %s", strerror(errno));
+      exit (1);
+    }
 
-     /* disable */
-     *REG(page, GPIO0_TCR) &= ~(GPIO_LED | GPIO_BUTTON);
-     /* enable led */
-     *REG(page, GPIO0_TCR) |= GPIO_LED | GPIO_BUTTON;
-     /* enable/disable(?) button */
-     *REG(page, GPIO0_TCR) &= ~GPIO_BUTTON;
+  /* disable */
+  *REG (page, GPIO0_TCR) &= ~(GPIO_LED | GPIO_BUTTON);
+  /* enable led */
+  *REG (page, GPIO0_TCR) |= GPIO_LED | GPIO_BUTTON;
+  /* enable/disable(?) button */
+  *REG (page, GPIO0_TCR) &= ~GPIO_BUTTON;
 
-     *REG(page, GPIO0_IR) & GPIO_BUTTON;
-     *REG(page, GPIO0_IR) & GPIO_BUTTON;
+  *REG (page, GPIO0_IR) & GPIO_BUTTON;
+  *REG (page, GPIO0_IR) & GPIO_BUTTON;
 
 }
-int getbuttonstate()
+
+int
+getbuttonstate ()
 {
-return (*REG(page, GPIO0_IR) & GPIO_BUTTON)==0;
+  return (*REG (page, GPIO0_IR) & GPIO_BUTTON) == 0;
 
 }
 
@@ -235,7 +240,7 @@ period_check (int sig)
 //      DEBUG("resetbutton: now time=%d\n", t);
 
 #ifdef HAVE_MAGICBOX
-val = getbuttonstate();
+  val = getbuttonstate ();
 #else
 
   if ((fp = fopen (GPIO_FILE, "r")))
@@ -267,22 +272,22 @@ val = getbuttonstate();
     state = (val & gpio);
   else
     state = !(val & gpio);
-    
+
   int push;
   switch (brand)
-  	{
-  	case ROUTER_BUFFALO_WHRG54S: // ROUTER_BUFFALO_HP_WHRG54S too
-  	case ROUTER_BUFFALO_WZRRSG54:
-		push = 0x01;  //gpio 0
-  		break;
-  	case ROUTER_ASUS_WL500G_PRE:
-	case ROUTER_WRT54G:
-  		push = 0x10;  //gpio 4
-  		break;
-  	default:
-  		push = 0x00;  //code unknown = disabled
-	}
-  
+    {
+    case ROUTER_BUFFALO_WHRG54S:	// ROUTER_BUFFALO_HP_WHRG54S too
+    case ROUTER_BUFFALO_WZRRSG54:
+      push = 0x01;		//gpio 0
+      break;
+    case ROUTER_ASUS_WL500G_PRE:
+    case ROUTER_WRT54G:
+      push = 0x10;		//gpio 4
+      break;
+    default:
+      push = 0x00;		//code unknown = disabled
+    }
+
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
@@ -489,7 +494,7 @@ resetbutton_main (int argc, char *argv[])
       return 0;
     }
 #ifdef HAVE_MAGICBOX
-   init_gpio();
+  init_gpio ();
 #endif
   /* Run it under background */
   switch (fork ())

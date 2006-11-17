@@ -47,8 +47,8 @@ check_udhcpd (timer_t t, int arg)
 	    {
 	      //killps("dnsmasq","-9");
 	      //killps("udhcpd","-9");
-	      killall("dnsmasq",SIGKILL);
-	      killall("udhcpd",SIGKILL);
+	      killall ("dnsmasq", SIGKILL);
+	      killall ("udhcpd", SIGKILL);
 	      sleep (1);
 	      start_service ("udhcpd");
 	      sleep (1);
@@ -59,8 +59,8 @@ check_udhcpd (timer_t t, int arg)
 	{
 	  if (!isRunning ("udhcpd"))
 	    {
-	      killall("dnsmasq",SIGKILL);
-	      killall("udhcpd",SIGKILL);
+	      killall ("dnsmasq", SIGKILL);
+	      killall ("udhcpd", SIGKILL);
 	      sleep (1);
 	      start_service ("udhcpd");
 	      sleep (1);
@@ -132,7 +132,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	}
       settimeofday (&tv, NULL);
 #ifdef HAVE_GATEWORX
-    eval("hwclock","-w");
+      eval ("hwclock", "-w");
 #endif
 /*              time_t now = time(0);
  *             syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
