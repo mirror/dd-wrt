@@ -517,6 +517,9 @@ char *
 get_wdev (void)
 {
 #ifdef HAVE_MADWIFI
+if (nvram_match("wifi_bonding","1"))
+  return "bond0";
+else
   return "ath0";
 #else
   if (wl_probe ("eth2"))

@@ -1016,6 +1016,9 @@ get_wan_face (void)
 #else
   else if (nvram_match ("ath0_mode", "sta"))
     {
+if (nvram_match("wifi_bonding","1"))
+      strcpy (localwanface, "bond0");
+else
       strcpy (localwanface, "ath0");
     }
 #endif
