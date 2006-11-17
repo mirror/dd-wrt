@@ -1254,7 +1254,7 @@ status_wireless.tx="Transmis (TX)";
 status_wireless.h22="Noeuds Sans fil";
 status_wireless.legend3="Clients Sans fil";
 status_wireless.signal_qual="Qualité du Signal";
-status_wireless.wds="Noueds WDS";
+status_wireless.wds="Noeuds WDS";
 
 //help container
 
