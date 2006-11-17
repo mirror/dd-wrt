@@ -30,6 +30,7 @@ OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o utils.o nvports.o
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
+
 endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
