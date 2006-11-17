@@ -433,6 +433,16 @@ start_single_service (void)
       start_service ("cron");
       startstop ("igmp_proxy");
     }
+  else if (!strcmp (service, "routing"))
+    {
+#ifdef HAVE_BIRD
+    stop_service("zebra");
+#endif
+    startstop("firewall");
+#ifdef HAVE_BIRD
+    start_service("zebra");
+#endif    
+    }
   else if (!strcmp (service, "alive"))
     {
       eval ("/etc/config/wdswatchdog.startup");
