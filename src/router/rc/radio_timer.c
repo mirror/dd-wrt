@@ -88,7 +88,7 @@ radio_timer_main (void)
 		  break;
 
 		case 2:	//10 - turn radio off
-		
+
 		  syslog (LOG_DEBUG, "Turning radio off\n");
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");

@@ -114,30 +114,30 @@ start_sysinit (void)
   sprintf (dev, "/dev/discs/disc%d/part3", index);
 //  eval("insmod","block2mtd",dev);
 //  sprintf (dev, "/dev/mtdblock/0");
-  //eval ("fsck", dev);		//checking nvram partition and correcting errors
- //detect jffs
+  //eval ("fsck", dev);         //checking nvram partition and correcting errors
+  //detect jffs
 /*  FILE *fp=fopen(dev,"rb");
   int nojffs=0;
   if (getc(fp)!=0x85)nojffs=1;
   if (getc(fp)!=0x19)nojffs=1;
   fclose(fp);*/
 //      eval("mtd","erase","mtd0");
-  
-if (mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
+
+  if (mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL))
     {
       eval ("/sbin/mke2fs", "-F", "-b", "1024", dev);
       mount (dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
     }
-  eval ("mkdir","-p","/usr/local/nvram");
+  eval ("mkdir", "-p", "/usr/local/nvram");
   eval ("mkdir", "/tmp/www");
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-  eval ("mount","/usr/local","-o","remount,ro");
-  
+  eval ("mount", "/usr/local", "-o", "remount,ro");
+
 
   cprintf ("sysinit() var\n");
 
@@ -213,7 +213,7 @@ eval("insmod","crypto_null");
     eval ("insmod", "r8169");
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
-  else if (detect ("SMC2-1211TX"))		// Realtek 8139 Adapter (various notebooks) 
+  else if (detect ("SMC2-1211TX"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
 
   if (detect ("nForce2 Ethernet"))	// nForce2 
@@ -241,7 +241,7 @@ eval("insmod","crypto_null");
 
   if (detect ("Sundance"))	//Dlink fibre
     eval ("insmod", "sundance");
-  else if (detect ("DL10050"))	
+  else if (detect ("DL10050"))
     eval ("insmod", "sundance");
 
 
@@ -260,10 +260,10 @@ eval("insmod","crypto_null");
       eval ("insmod", "8390");
       eval ("insmod", "ne2k-pci");
     }
-  
+
   if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
     eval ("insmod", "via-rhine");
- 
+
   if (detect ("3c905"))		// 3Com
     eval ("insmod", "3c59x");
   else if (detect ("3c555"))	// 3Com
@@ -274,9 +274,9 @@ eval("insmod","crypto_null");
   if (detect ("LNE100TX"))	// liteon / linksys
     eval ("insmod", "tulip");
   else if (detect ("FasterNet"))
-      eval ("insmod","tulip");    
+    eval ("insmod", "tulip");
   else if (detect ("ADMtek NC100"))
-      eval ("insmod","tulip");    
+    eval ("insmod", "tulip");
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
@@ -287,7 +287,7 @@ eval("insmod","crypto_null");
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "rfkill=0","autocreate=none");
+  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
 
   eval ("insmod", "wlan_acl");
