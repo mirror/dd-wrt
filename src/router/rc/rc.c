@@ -66,7 +66,9 @@ enum
   TIMER,
   USER,
   IDLE,
+#ifdef HAVE_X86
   REBOOT,
+#endif
 };
 static int state = START;
 static int signalled = -1;
@@ -101,12 +103,14 @@ rc_signal (int sig)
 	  printf ("signalling TIMER\n");
 	  signalled = TIMER;
 	}
+#ifdef HAVE_X86
       else if (sig == SIGTERM)
 	{
 	lcdmessage("Signal Reboot");
 	  printf ("signalling REBOOT\n");
 	  signalled = REBOOT;
 	}
+#endif
       else if (sig == SIGUSR1)
 	{			// Receive from WEB
 	lcdmessage("Signal USER");
@@ -150,7 +154,9 @@ main_loop (void)
   signal (SIGUSR2, rc_signal);
   signal (SIGINT, rc_signal);
   signal (SIGALRM, rc_signal);
+#ifdef HAVE_X86
   signal (SIGTERM, rc_signal);
+#endif
   sigemptyset (&sigset);
 
   /* Give user a chance to run a shell before bringing up the rest of the system */
@@ -558,10 +564,12 @@ main_loop (void)
 	  state = signalled;
 	  signalled = -1;
 	  break;
-	case REBOOT:
+#ifdef HAVE_X86
+	case REBOOT:	
 	  lcdmessage("System Reboots!");
 	  system("reboot");
 	break;
+#endif
 	default:
 	  cprintf ("UNKNOWN\n");
 	  return;

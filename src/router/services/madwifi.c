@@ -1039,7 +1039,7 @@ setMacFilter (char *iface)
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static void
-configure_single (int count)
+configure_single (int count,int isbond)
 {
   char *next;
   char var[80];
@@ -1060,10 +1060,10 @@ configure_single (int count)
   char rxantenna[16];
   char txantenna[16];
   char athmac[16];
-  sprintf (wifivifs, "ath%d_vifs", count);
+  sprintf (wifivifs, "ath%d_vifs", isbond?-1:count);
   sprintf (dev, "ath%d", count);
   sprintf (wif, "wifi%d", count);
-  sprintf (wl, "ath%d_mode", count);
+  sprintf (wl, "ath%d_mode", isbond?0:count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (ssid, "ath%d_ssid", count);
   sprintf (broadcast, "ath%d_closed", count);
@@ -1390,7 +1390,13 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       cprintf ("configure next\n");
       if (!changed)		// if regdomain not changed, configure it
 #endif
-	configure_single (i);
+	{
+#ifdef HAVE_BONDING
+	configure_single (i,nvram_match("wifi_bonding"));
+#else
+	configure_single (i,0);
+#endif
+	}
     }
 
   if (changed)			// if changed, deconfigure myself and reconfigure me in the same way. 
@@ -1398,6 +1404,22 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       deconfigure_wifi ();
       configure_wifi ();
     }
-
+#ifdef HAVE_BONDING
+    eval("ifconfig","bond0","down");
+    eval("rmmod","bonding");
+    if (nvram_match("wifi_bonding"))
+	{
+        eval("insmod","bonding");
+        eval ("ifconfig", "bond0", "0.0.0.0", "up");
+	for (i=0;i<c;i++)
+	    {
+	    char dev[16];
+	    sprintf(dev,"ath%d",i);
+	    eval("ifenslave","bond0",dev);	    
+	    }
+	
+	
+	}
+#endif
 }
 #endif
