@@ -1903,9 +1903,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"oet10_mssfix","0",0},
   {"oet10_shaper","0",0},
   {"oet10_bridged","1",0},
-
-
 #endif
+  {"wifi_bonding","0",0},
   {0, 0, 0}
 };
 
