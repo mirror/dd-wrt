@@ -812,11 +812,6 @@ management.rst_srv="复位按钮";
 management.routing_legend="路由";
 management.routing_srv="路由";
 
-management.wol_legend="网络唤醒";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn密码";
-management.wol_mac="MAC地址<br/>( 格式: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="IPv6支持";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd已开启";
@@ -1276,6 +1271,10 @@ wol.mac="MAC地址";
 wol.broadcast="网络广播";
 wol.udp="UDP端口";
 wol.msg1="点击移除WOL主机";
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="网络唤醒";
+wold.srv="WOL";
+wold.pass="SecureOn密码";
 
 //help container
 

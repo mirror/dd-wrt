@@ -798,11 +798,6 @@ management.rst_srv="Reset-Knopf";
 management.routing_legend="Routing";
 management.routing_srv="Routing";
 
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn-Passwort";
-management.wol_mac="MAC-Adressen<br/>( Format: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="IPv6-Unterstützung";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd eingeschaltet";
@@ -1283,6 +1278,11 @@ wol.mac="MAC-Adresse(n)";
 wol.broadcast="Netz-Broadcast";
 wol.udp="UDP-Port";
 wol.msg1="Klicken, um einen WOL-Host zu entfernen";
+
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN daemon";
+wold.srv="WOL daemon";
+wold.pass="SecureOn Password";
 
 //help container
 
