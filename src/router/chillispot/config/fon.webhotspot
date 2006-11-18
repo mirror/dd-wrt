@@ -11,17 +11,13 @@
 			<th><% tran("share.passwd"); %></th>
 		</tr>
 		<% show_userlist(); %>
-		<tr>
-			<td colspan="2">
-				<div class="center">
-					<script type="text/javascript">
-					//<![CDATA[
-					document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"user_add_submit(this.form)\" />");
-					document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"user_remove_submit(this.form)\" />");
-					//]]>
-					</script>
-				</div>
-			</td>
-		</tr>
-	</table>
+	</table><br />
+	<div class="center">
+		<script type="text/javascript">
+		//<![CDATA[
+			document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"user_add_submit(this.form);\" />");
+			document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"user_remove_submit(this.form);\" />");
+		//]]>
+		</script>
+	</div>
 </fieldset><br />
