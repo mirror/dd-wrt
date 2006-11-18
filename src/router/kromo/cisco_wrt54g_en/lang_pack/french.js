@@ -157,6 +157,7 @@ share._48h="Tous les 2 jours";
 share._168h="Toute les semaines";
 share.days="Jours";
 share.standard="Standard";
+share.execscript="Exécuter un script";
 
 sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
@@ -1113,6 +1114,12 @@ service.ssh_key="Authorized Keys";
 //radiooff.webservices
 service.radiooff_legend="Fonction du Bouton SES";
 service.radiooff_srv="Gérer l\'émission radio";
+
+//ses.webservices
+service.ses_legend="Bouton SES (SecureEasySetup)";
+service.ses_srv="Appuyer sur le bouton pour ...";
+service.ses_toggleradio="Activer/Désactiver le Wifi";
+service.ses_script="Script à lancer";
 
 //hwmon.webservices
 service.hwmon_legend="Surveillance du Matériel";
