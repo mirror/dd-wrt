@@ -936,9 +936,9 @@ wol.udp="Porta UDP";
 wol.msg1="Clicca per rimuovere un host WOL";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="SecureOn Password";
+wol.legend5="Wake-On-LAN";
+wol.srv="WOL";
+wol.pass="SecureOn Password";
 
 hwol.right2="Questa pagina permette di fare il <em>Wake Up</em> degli host sulla tua rete locale (cioè connessi localmente al tuo router).";
 hwol.right4="Gli indirizzi MAC sono inseriti nel formato xx:xx:xx:xx:xx:xx (cioè 01:23:45:67:89:AB)";

@@ -1430,9 +1430,9 @@ wol.udp="UDP Port";
 wol.msg1="Click to remove WOL host";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN daemon";
-wold.srv="WOL daemon";
-wold.pass="SecureOn Password";
+wol.legend5="Wake-On-LAN daemon";
+wol.srv="WOL daemon";
+wol.pass="SecureOn Password";
 
 //help container
 var hwol = new Object();

@@ -1157,9 +1157,9 @@ wol.broadcast="Broadcast de Rede";
 wol.udp="Porta UDP";
 wol.msg1="Clique para remover o host WOL";
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="SecureOn Password";
+wol.legend5="Wake-On-LAN";
+wol.srv="WOL";
+wol.pass="SecureOn Password";
 
 hwol.right2="Esta página lhe permite <em>Acordar</em> hosts na sua rede local (ex.: conectado localmente ao roteador).";
 hwol.right4="Endereços MAC são inseridos no formato xx:xx:xx:xx:xx:xx (ex.: 01:23:45:67:89:AB)";
