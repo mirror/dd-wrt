@@ -156,6 +156,7 @@ share._48h="Every 2 days";
 share._168h="Every week";
 share.days="Days";
 share.standard="Standard";
+share.execscript="Excecute script";
 
 
 var sbutton = new Object();
@@ -1144,6 +1145,12 @@ service.ssh_key="Authorized Keys";
 //radiooff.webservices
 service.radiooff_legend="SES Button";
 service.radiooff_srv="Use SES for turning off radio";
+
+//ses.webservices ====> might replace the above radiooff_button
+service.ses_legend="SES Button";
+service.ses_srv="SES Button action";
+service.ses_toggleradio="Toggle Wireless";
+service.ses_script="Custom Script";
 
 //hwmon.webservices
 service.hwmon_legend="Hardware Monitoring";
