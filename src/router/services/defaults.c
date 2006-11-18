@@ -207,8 +207,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_lease", "86400", 0},	/* WAN lease time in seconds */
   {"static_route", "", 0},	/* Static routes (ipaddr:netmask:gateway:metric:ifname ...) */
   {"static_route_name", "", 0},	/* Static routes name ($NAME:name) */
+  
   {"ses_enable", "1", 0},	/* enable ses */
   {"ses_event", "2", 0},	/* initial ses event */
+  {"ses_button", "0", 0},	/* Affect custom actions to SES Button - 0-3: nothing, reboot, enable/disable wireless, custom script */
+  {"ses_script", "", 0},	/* Custom script to launch when pushing SES Button */
 
   {"wan_primary", "1", 0},	/* Primary wan connection */
   {"wan_unit", "0", 0},		/* Last configured connection */
