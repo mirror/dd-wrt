@@ -234,7 +234,6 @@ function setWolHostsTable() {
 			row.insertCell(-1).innerHTML = "\t\t<input class=\"button\" type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
 		}
 	}
-
 }
 
 function callDump() {
@@ -349,6 +348,13 @@ addEvent(window, "load", function() {
 										//]]>
 										</script>
 									</div>
+									<div class="submitFooter">
+										<script type="text/javascript">
+										//<![CDATA[
+											document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
+										//]]>
+										</script>
+									</div>									
 								</div>
 							</fieldset><br/>
 
@@ -374,7 +380,6 @@ addEvent(window, "load", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 										submitFooterButton(1,1);
-										document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
 									//]]>
 									</script>
 								</div>
