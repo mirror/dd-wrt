@@ -341,9 +341,9 @@ addEvent(window, "load", function() {
 							
 							<h2><% tran("wold.h22"); %></h2>
 							<fieldset>
-								<legend><% tran("wold.legend"); %></legend>
+								<legend><% tran("wol.legend5"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("wold.srv"); %></div>
+									<div class="label"><% tran("wol.srv"); %></div>
 									<input class="spaceradio" type="radio" name="wol_enable" value="1" <% nvram_checked("wol_enable", "1"); %> onclick="show_layer_ext(this, 'idwol', true)" /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="wol_enable" value="0" <% nvram_checked("wol_enable", "0"); %> onclick="show_layer_ext(this, 'idwol', false)" /><% tran("share.disable"); %>
 								</div>
@@ -362,7 +362,7 @@ addEvent(window, "load", function() {
 										<input maxlength="100" size="25" name="wol_hostname" value="<% nvram_get("wol_hostname"); %>" />
 									</div>
 									<div class="setting">
-										<div class="label"><% tran("wold.pass"); %></div>
+										<div class="label"><% tran("wol.pass"); %></div>
 										<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" />
 									</div>
 									<div class="setting">

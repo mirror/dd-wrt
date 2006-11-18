@@ -1268,9 +1268,9 @@ wol.udp="Puerto UDP";
 wol.msg1="Click para eliminar host WOL";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="Clave SecureOn";
+wol.legend5="Wake-On-LAN";
+wol.srv="WOL";
+wol.pass="Clave SecureOn";
 
 //help container
 

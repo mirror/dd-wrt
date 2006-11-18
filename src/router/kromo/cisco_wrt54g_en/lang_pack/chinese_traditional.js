@@ -1265,9 +1265,9 @@ wol.broadcast="網路廣播";
 wol.udp="UDP埠";
 wol.msg1="點擊移除WOL主機";
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="網路喚醒";
-wold.srv="WOL";
-wold.pass="SecureOn密碼";
+wol.legend5="網路喚醒";
+wol.srv="WOL";
+wol.pass="SecureOn密碼";
 //help container
 
 hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機（例如，本地的連接到您的路由器上的）。";
