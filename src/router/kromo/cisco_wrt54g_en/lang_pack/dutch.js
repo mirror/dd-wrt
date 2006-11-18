@@ -1271,7 +1271,7 @@ wol.udp="UDP Poort";
 wol.msg1="Klik om een WOL host te verwijderen";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
+wol.legend5="Wake-On-LAN";
 wol.srv="WOL";
 wol.pass="SecureOn Wachtwoord";
 

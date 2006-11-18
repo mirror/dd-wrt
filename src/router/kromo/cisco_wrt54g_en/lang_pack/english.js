@@ -1436,7 +1436,7 @@ wol.pass="SecureOn Password";
 
 //help container
 var hwol = new Object();
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wold.wol_srv+".";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol_srv+".";
 hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
