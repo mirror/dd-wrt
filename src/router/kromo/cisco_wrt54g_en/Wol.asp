@@ -339,7 +339,7 @@ addEvent(window, "load", function() {
 								</div>
 							</fieldset><br />
 							
-							<h2><% tran("wold.h22"); %></h2>
+							<h2><% tran("wol.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("wol.legend5"); %></legend>
 								<div class="setting">
