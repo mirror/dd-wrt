@@ -265,7 +265,7 @@ sr_config_cgi (char *path, webs_t wp)
   if (restore_ret == 0)
     {
       nvram_commit ();
-      sleep (1);
+      sleep (5);
       sys_reboot ();
     }
 }
