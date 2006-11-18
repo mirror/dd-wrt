@@ -1,0 +1,37 @@
+
+<script type="text/javascript">
+	//<![CDATA[
+		function setSESVal(F) {
+			show_layer_ext(F.ses_button, 'idses', F.ses_button.value == '3');
+		}
+	//]]>
+</script>
+
+<fieldset>
+	<legend><% tran("service.ses_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("service.ses_srv"); %></div>
+		<select name="ses_button" onchange="setSESVal(this.form);">
+				<script type="text/javascript">
+				//<![CDATA[
+					document.write('<option value="0" <% nvram_selected("ses_button", "0", "js"); %> >' + share.disabled + '</option>');
+					document.write('<option value="1" <% nvram_selected("ses_button", "1", "js"); %> >' + sbutton.reboot + '</option>');
+					document.write('<option value="2" <% nvram_selected("ses_button", "2", "js"); %> >' + service.ses_toggleradio + '</option>');
+					document.write('<option value="3" <% nvram_selected("ses_button", "3", "js"); %> >' + share.execscript + '</option>');
+				//]]>
+				</script>
+			</select>
+	</div>
+	<div id="idses">
+		<div class="setting">
+			<div class="label"><% tran("service.ses_script"); %></div>
+			<textarea cols="60" rows="4" id="ses_script" name="ses_script"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var ses_script = fix_cr( '<% nvram_get("ses_script"); %>' );
+				document.getElementById("ses_script").value = ses_script;
+			//]]>
+			</script>
+		</div>
+	</div>
+</fieldset><br/>
