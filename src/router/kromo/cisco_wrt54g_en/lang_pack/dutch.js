@@ -1272,8 +1272,8 @@ wol.msg1="Klik om een WOL host te verwijderen";
 
 wol.h22="Automatic Wake-On-LAN";
 wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="SecureOn Wachtwoord";
+wol.srv="WOL";
+wol.pass="SecureOn Wachtwoord";
 
 //help container
 

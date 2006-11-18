@@ -1272,9 +1272,9 @@ wol.broadcast="ÍøÂç¹ã²¥";
 wol.udp="UDP¶Ë¿Ú";
 wol.msg1="µã»÷ÒÆ³ıWOLÖ÷»ú";
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="ÍøÂç»½ĞÑ";
-wold.srv="WOL";
-wold.pass="SecureOnÃÜÂë";
+wol.legend5="ÍøÂç»½ĞÑ";
+wol.srv="WOL";
+wol.pass="SecureOnÃÜÂë";
 
 //help container
 
