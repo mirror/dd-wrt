@@ -810,11 +810,6 @@ management.rst_srv="Reset Knop";
 management.routing_legend="Routing";
 management.routing_srv="Routing";
 
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn Wachtwoord";
-management.wol_mac="MAC Adressen<br/>( Formaat: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="IPv6 Support";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd geactiveerd";
@@ -1274,6 +1269,11 @@ wol.mac="MAC Adres(sen)";
 wol.broadcast="Net Broadcast";
 wol.udp="UDP Poort";
 wol.msg1="Klik om een WOL host te verwijderen";
+
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN";
+wold.srv="WOL";
+wold.pass="SecureOn Wachtwoord";
 
 //help container
 
