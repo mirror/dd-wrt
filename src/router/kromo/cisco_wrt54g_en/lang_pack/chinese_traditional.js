@@ -807,11 +807,6 @@ management.rst_srv="重定按鈕";
 management.routing_legend="路由";
 management.routing_srv="路由";
 
-management.wol_legend="網路喚醒";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn密碼";
-management.wol_mac="MAC地址<br/>( 格式: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="IPv6支持";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd已開啟";
@@ -1269,7 +1264,10 @@ wol.mac="MAC地址";
 wol.broadcast="網路廣播";
 wol.udp="UDP埠";
 wol.msg1="點擊移除WOL主機";
-
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="網路喚醒";
+wold.srv="WOL";
+wold.pass="SecureOn密碼";
 //help container
 
 hwol.right2="本頁面允許您 <em>喚醒</em> 在您本地網路上的主機（例如，本地的連接到您的路由器上的）。";

@@ -621,10 +621,6 @@ management.rst_legend="リセットボタン";
 management.rst_srv="リセットボタン";
 management.routing_legend="ルーティング";
 management.routing_srv="ルーティング";
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn パスワード";
-management.wol_mac="MAC アドレス<br/>( 形式： xx:xx:xx:xx:xx:xx )";
 management.ipv6_legend="IPv6 の設定";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd を使用中";
@@ -963,6 +959,11 @@ wol.mac="MAC アドレス";
 wol.broadcast="Net ブロードキャスト";
 wol.udp="UDP ポート";
 wol.msg1="クリックして WOL ホストを削除します。";
+
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN";
+wold.srv="WOL";
+wold.pass="SecureOn パスワード";
 
 hwol.right2="このページを用いて、ネットワーク上のコンピュータをスリープ解除することができます。";
 hwol.right4="MAC アドレスを次の形式で入力してください。(xx:xx:xx:xx:xx:xx 例： 01:23:45:67:89:AB)";

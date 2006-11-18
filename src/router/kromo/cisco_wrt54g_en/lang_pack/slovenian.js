@@ -891,11 +891,6 @@ management.rst_srv="Gumb za ponastavitev";
 management.routing_legend="Usmerjanje";
 management.routing_srv="Usmerjanje";
 
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="SecureOn geslo";
-management.wol_mac="MAC naslovi<br/>( format: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="IPv6 podpora";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd omogoèen";
@@ -1423,6 +1418,10 @@ wol.mac="MAC naslov(i)";
 wol.broadcast="Mre¾ni broadcast";
 wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN";
+wold.srv="WOL";
+wold.pass="SecureOn geslo";
 
 //help container
 
