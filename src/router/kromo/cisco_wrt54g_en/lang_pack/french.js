@@ -1369,9 +1369,9 @@ wol.udp="Port UDP";
 wol.msg1="Cliquer pour supprimer l\'hôte";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN daemon";
-wold.srv="WOL";
-wold.pass="Mot de passe SecureOn";
+wol.legend5="Wake-On-LAN daemon";
+wol.srv="WOL";
+wol.pass="Mot de passe SecureOn";
 
 //help container
 

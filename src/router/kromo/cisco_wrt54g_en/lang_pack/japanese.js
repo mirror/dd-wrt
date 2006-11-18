@@ -961,9 +961,9 @@ wol.udp="UDP ポート";
 wol.msg1="クリックして WOL ホストを削除します。";
 
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="SecureOn パスワード";
+wol.legend5="Wake-On-LAN";
+wol.srv="WOL";
+wol.pass="SecureOn パスワード";
 
 hwol.right2="このページを用いて、ネットワーク上のコンピュータをスリープ解除することができます。";
 hwol.right4="MAC アドレスを次の形式で入力してください。(xx:xx:xx:xx:xx:xx 例： 01:23:45:67:89:AB)";

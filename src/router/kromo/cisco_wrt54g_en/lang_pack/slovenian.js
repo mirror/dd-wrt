@@ -1419,9 +1419,9 @@ wol.broadcast="Mre¾ni broadcast";
 wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
 wol.h22="Automatic Wake-On-LAN";
-wold.legend="Wake-On-LAN";
-wold.srv="WOL";
-wold.pass="SecureOn geslo";
+wol.legend5="Wake-On-LAN";
+wol.srv="WOL";
+wol.pass="SecureOn geslo";
 
 //help container
 
