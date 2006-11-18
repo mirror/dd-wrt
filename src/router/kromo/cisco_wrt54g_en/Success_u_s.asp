@@ -32,16 +32,19 @@ function message()
 	}
 }
 
-function init()
-{
+addEvent(window, "load", function() {
 	bar1.togglePause();
-}
+});
+
+addEvent(window, "unload", function() {
+	clearTimeout(timer);
+});
 		
 		//]]>
 		</script>
 	</head>
 	
-	<body onload="init()" onunload="clearTimeout(timer)">
+	<body>
 		<div class="message">
 			<div>
 				<form name="success">
