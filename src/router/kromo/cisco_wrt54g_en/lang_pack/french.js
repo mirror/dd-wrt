@@ -138,7 +138,7 @@ share.unknown="Inconnu";
 share.expired="Expiré";
 share.logout="Déconnection";
 share.nmounted="Partition non montée";
-share.fssize=="Total / libre";
+share.fssize="Total / libre";
 share.src="IP Source";
 share.dst="IP Destination";
 share.name_resolution="Nom";
@@ -875,11 +875,6 @@ management.rst_srv="Bouton d\'initialisation";
 management.routing_legend="Routage";
 management.routing_srv="Routage";
 
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="Mot de passe SecureOn";
-management.wol_mac="Adresses MAC<br/>( Format: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="Support IPv6";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Activation Radvd";
@@ -1373,10 +1368,15 @@ wol.broadcast="Net Broadcast";
 wol.udp="Port UDP";
 wol.msg1="Cliquer pour supprimer l\'hôte";
 
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN daemon";
+wold.srv="WOL";
+wold.pass="Mot de passe SecureOn";
+
 //help container
 
-hwol.right2="Cette fonctionnalité permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer.";
-hwol.right4="Les adresses MAC doivent être saisies dans le format XX:XX:XX:XX:XX:XX (ex. 01:23:45:67:89:AB)";
+hwol.right2="Cette fonctionnalité permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer. Vous pouvez réveiller un hôte manuellement en cliquant sur le bouton <em>"+sbutton.wol+"</em> ou programmer des réveils automatiques grâce au daemon.";
+hwol.right4="Les adress(es) MAC doivent être saisie(s) dans le format xx:xx:xx:xx:xxx:xx (ex. 01:23:45:67:89:AB) et séparé(es) par un <em>espace</em>.";
 hwol.right6="L\'adresse IP désigne généralement l\'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l\'hôte n'est pas sur le réseau local connecté au routuer."
 
 

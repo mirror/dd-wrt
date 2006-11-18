@@ -809,11 +809,6 @@ management.rst_srv="Botón de Reset";
 management.routing_legend="Ruteo";
 management.routing_srv="Ruteo";
 
-management.wol_legend="Wake-On-LAN";
-management.wol_srv="WOL";
-management.wol_pass="Clave SecureOn";
-management.wol_mac="Direcciones MAC<br/>( Formato: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="Soporte IPv6";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd Activado";
@@ -1271,6 +1266,11 @@ wol.mac="Dirección(es) MAC Address";
 wol.broadcast="Broadcast de Red";
 wol.udp="Puerto UDP";
 wol.msg1="Click para eliminar host WOL";
+
+wol.h22="Automatic Wake-On-LAN";
+wold.legend="Wake-On-LAN";
+wold.srv="WOL";
+wold.pass="Clave SecureOn";
 
 //help container
 
