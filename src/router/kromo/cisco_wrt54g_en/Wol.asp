@@ -312,32 +312,6 @@ addEvent(window, "load", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-
-							<% nvram_selmatch("wol_cmd","","<!--"); %><script type="text/javascript">callDump();</script><% nvram_selmatch("wol_cmd","","-->"); %>
-
-							<fieldset> 
-								<legend><% tran("wol.legend4"); %></legend>
-									<div class="setting">
-										<div class="label"><% tran("wol.mac"); %></div>
-										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="60"><% nvram_get("manual_wol_mac"); %></textarea>
-									</div>
-									<div class="setting">
-										<div class="label"><% tran("share.ip"); %></div>
-										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
-									</div>
-									<div class="setting">
-										<div class="label"><% tran("wol.udp"); %></div>
-										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvram_get("manual_wol_port"); %>" />
-									</div>
-
-								<div class="submitFooter">
-									<script type="text/javascript">
-									//<![CDATA[
-										document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
-									//]]>
-									</script>
-								</div>
-							</fieldset><br />
 							
 							<h2><% tran("wol.h22"); %></h2>
 							<fieldset>
@@ -378,6 +352,32 @@ addEvent(window, "load", function() {
 								</div>
 							</fieldset><br/>
 
+							<fieldset> 
+								<legend><% tran("wol.legend4"); %></legend>
+									<div class="setting">
+										<div class="label"><% tran("wol.mac"); %></div>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="60"><% nvram_get("manual_wol_mac"); %></textarea>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("share.ip"); %></div>
+										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("wol.udp"); %></div>
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvram_get("manual_wol_port"); %>" />
+									</div>
+								</fieldset><br />
+									
+								<% nvram_selmatch("wol_cmd","","<!--"); %><script type="text/javascript">callDump();</script><% nvram_selmatch("wol_cmd","","-->"); %>
+
+								<div class="submitFooter">
+									<script type="text/javascript">
+									//<![CDATA[
+										submitFooterButton(1,1);
+										document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form);\" />");
+									//]]>
+									</script>
+								</div>
 						</form>
 					</div>
 				</div>
