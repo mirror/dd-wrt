@@ -445,10 +445,8 @@ ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
 {
-
   websWrite (wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
-  websWrite (wp,
-	     "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
+  websWrite (wp, "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
   websWrite (wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
 
   return;
@@ -499,12 +497,10 @@ prefix_ip_get (char *name, char *buf, int type)
 int
 sys_commit (void)
 {
-
-  if (nvram_match ("dhcpnvram", "1"))
-    {				// update lease -- tofu
-      killall("dnsmasq",SIGUSR2);
-      sleep (1);
-    }
+  if (nvram_match ("dhcpnvram", "1")) {
+  	killall("dnsmasq",SIGUSR2);					// update lease -- tofu
+  	sleep (1);
+ 	}
 
   //if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") )
   //      nvram_set("wan_ifname", "ppp0");
