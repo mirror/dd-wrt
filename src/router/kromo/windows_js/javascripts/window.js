@@ -1372,6 +1372,3 @@ var WindowUtilities = {
   	return size;
   }	
 }
-Event.observe(window, "load", WindowUtilities.addCss);
-
-
