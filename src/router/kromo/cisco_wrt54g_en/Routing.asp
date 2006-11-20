@@ -20,7 +20,7 @@ function valid_value(F) {
 function DeleteEntry(F) {
 	if(!confirm(errmsg.err57)) return;
 	F.submit_type.value = "del";
-	F.submit();
+	apply(F);
 }
 
 function SelRoute(num,F) {
