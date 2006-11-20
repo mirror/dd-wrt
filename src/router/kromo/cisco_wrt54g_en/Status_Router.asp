@@ -38,12 +38,12 @@ function setIpconntrackValues(val) {
 
 function DHCPAction(F,I) {
 	F.submit_type.value = I;
-	F.submit();
+	apply(F);
 }
 
 function connect(F,I) {
 	F.submit_type.value = I;
-	F.submit();
+	apply(F);
 }
 
 addEvent(window, "load", function() {

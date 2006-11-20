@@ -7,7 +7,7 @@ document.title = "<% nvram_get("router_name"); %>" + filterSum.titl;
 
 function filter_del(F) {
 	F.submit_type.value = "delete";
-	F.submit();
+	apply(F);
 }
 		
 		//]]>
@@ -30,19 +30,16 @@ function filter_del(F) {
 						<th><% tran("share.del"); %></th>
 					</tr>
 					<% filter_summary_show(); %>
-					<tr>
-						<td colspan="3">&nbsp;</td>
-						<td colspan="2" align="right">
-							<script type="text/javascript">
-							//<![CDATA[
-							document.write("<input class=\"button\" type=\"button\" value=\"" + share.del + "\" onclick=\"filter_del(this.form);\" />");
-							document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
-							//]]>
-							</script>
-						</td>
-					</tr>
 				</tbody>
 			</table>
+			<div align="right">
+				<script type="text/javascript">
+					//<![CDATA[
+					document.write("<input class=\"button\" type=\"button\" value=\"" + share.del + "\" onclick=\"filter_del(this.form);\" />");
+					document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
+					//]]>
+				</script>
+			</div>
 		</form>
 	</body>
 </html>
