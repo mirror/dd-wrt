@@ -7,12 +7,12 @@ document.title = "<% nvram_get("router_name"); %>" + pforward.titl;
 
 function forward_add_submit(F) {
 	F.submit_type.value = "add_forward_spec";
-	F.submit();
+	apply(F);
 }
 
 function forward_remove_submit(F) {
 	F.submit_type.value = "remove_forward_spec";
-	F.submit();
+	apply(F);
 }
 
 function to_submit(F) {
