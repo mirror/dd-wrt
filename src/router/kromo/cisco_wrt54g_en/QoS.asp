@@ -90,17 +90,17 @@ services.sort(sorton);
 
 function svc_add_submit(F) {
 	F.submit_type.value = "add_svc";
-	F.submit();
+	apply(F);
 }
 
 function ip_add_submit(F) {
 	F.submit_type.value = "add_ip";
-	F.submit();
+	apply(F);
 }
 
 function mac_add_submit(F) {
 	F.submit_type.value = "add_mac";
-	F.submit();
+	apply(F);
 }
 
 function to_submit(F) {

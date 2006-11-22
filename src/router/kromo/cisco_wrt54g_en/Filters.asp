@@ -247,7 +247,7 @@ function Status(F,I) {
 
 function SelFilter(num,F) {
 	F.f_id.value=F.f_id.options[num].value;
-	F.submit();
+	apply(F);
 }
 
 function to_delete(F) {
