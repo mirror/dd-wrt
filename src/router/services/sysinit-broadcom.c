@@ -329,6 +329,9 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WBR2G54S:
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
       eval ("gpio", "disable", "6");	//AOSS led off
+#ifndef HAVE_MSSID
+      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
+#endif
       break;
 
     case ROUTER_BUFFALO_WLA2G54C:
@@ -392,13 +395,13 @@ start_sysinit (void)
 		eval ("insmod", "switch-adm");
 
 	      break;
-//          case ROUTER_BUFFALO_WBR54G:
+
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_BUFFALO_WBR2G54S:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-robo switch-adm";
+		"diag wl switch-core switch-adm";
 	      break;
 	    default:
 //          case ROUTER_MOTOROLA:
