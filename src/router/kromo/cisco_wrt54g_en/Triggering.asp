@@ -7,12 +7,12 @@ document.title = "<% nvram_get("router_name"); %>" + trforward.titl;
 
 function trigger_add_submit(F) {
 	F.submit_type.value = "add_trigger";
-	F.submit();
+	apply(F);
 }
 
 function trigger_remove_submit(F) {
 	F.submit_type.value = "remove_trigger";
-	F.submit();
+	apply(F);
 }
 
 function to_submit(F) {
