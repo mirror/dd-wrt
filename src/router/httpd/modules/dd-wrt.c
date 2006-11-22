@@ -5922,7 +5922,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	char mybuf[128];
+	char buf[200];
 	char *argument;
   
 	if (ejArgs (argc, argv, "%s", &argument) < 1) {
@@ -5931,8 +5931,8 @@ ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 	}
 	
 	if (argc == 1) {
-		getHostName(mybuf, argument);
-		websWrite (wp, "%s", mybuf);
+		getHostName(buf, argument);
+		websWrite (wp, "%s", buf != "unknown" ? buf : live_translate ("share.unknown"));
 	}
 	
 	return;
