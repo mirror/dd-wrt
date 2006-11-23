@@ -284,20 +284,20 @@ eval("insmod","crypto_null");
   eval ("ifconfig", "eth3", "0.0.0.0", "up");
 
 #ifndef HAVE_NOWIFI
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_sample");
+//  eval ("insmod", "ath_hal");
+//  eval ("insmod", "wlan");
+//  eval ("insmod", "ath_rate_sample");
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
 
-  eval ("insmod", "wlan_acl");
+/*  eval ("insmod", "wlan_acl");
   eval ("insmod", "wlan_ccmp");
   eval ("insmod", "wlan_tkip");
   eval ("insmod", "wlan_wep");
   eval ("insmod", "wlan_xauth");
   eval ("insmod", "wlan_scan_ap");
   eval ("insmod", "wlan_scan_sta");
-
+*/
 
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
