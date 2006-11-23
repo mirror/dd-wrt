@@ -13,10 +13,10 @@
 				<select name="sputnik_mode" >
 					<script type="text/javascript">
 					//<![CDATA[
-						document.write("<option value=\"0\" <% nvram_selmatch("sputnik_mode", "0", "selected"); %> >" + share.standard + "</option>");
+						document.write("<option value=\"standard\" <% nvram_selmatch("sputnik_mode", "standard", "selected"); %> >" + share.standard + "</option>");
 					//]]>
 					</script>
-					<option value="1" <% nvram_selmatch("sputnik_mode", "1", "selected"); %> >NMS</option>
+					<option value="nms" <% nvram_selmatch("sputnik_mode", "nms", "selected"); %> >NMS</option>
 					</script>
 				</select>
 		</div>
