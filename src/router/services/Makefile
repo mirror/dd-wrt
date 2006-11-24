@@ -30,6 +30,9 @@ endif
 ifeq ($(CONFIG_BRANDING),y)
 CFLAGS += -DCONFIG_BRANDING
 endif
+ifeq ($(CONFIG_THOM),y)
+CFLAGS += -DHAVE_THOM
+endif
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
 else
