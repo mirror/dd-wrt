@@ -35,6 +35,8 @@
 #include <stdarg.h>
 #include <dirent.h>
 
+#include <syslog.h>
+
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
