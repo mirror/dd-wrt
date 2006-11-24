@@ -133,6 +133,9 @@ internal_getRouterBrand ()
 #ifdef HAVE_RB500
   setRouter ("Mikrotik RB500");
   return ROUTER_BOARD_500;
+#elif HAVE_GEMTEK
+  setRouter ("SuperGerry");
+  return ROUTER_SUPERGERRY;
 #elif HAVE_GATEWORX
   setRouter ("Avila Gateworks");
   return ROUTER_BOARD_GATEWORX;
@@ -617,6 +620,8 @@ diag_led_4704 (int type, int act)
   return 0;
 #elif HAVE_MAGICBOX
   return 0;
+#elif HAVE_GEMTEK
+ return 0;
 #else
   unsigned int control, in, outen, out;
 
@@ -711,6 +716,8 @@ diag_led_4712 (int type, int act)
 #ifdef HAVE_RB500
   return 0;
 #elif HAVE_XSCALE
+  return 0;
+#elif HAVE_GEMTEK
   return 0;
 #elif HAVE_X86
   return 0;

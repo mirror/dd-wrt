@@ -45,6 +45,9 @@ ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 endif
 
+ifeq ($(CONFIG_GEMTEK),y)
+CFLAGS += -DHAVE_GEMTEK
+endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif

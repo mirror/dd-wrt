@@ -88,11 +88,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid: Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
 
+
 //Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
 #define ROUTER_WZRG300N 0x1504
 
 //Linksys WRT300N v1 (4704 cpu + BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
+
 
 //Buffalo WHR-AM54G54
 #define ROUTER_BUFFALO_WHRAM54G54 0x170f
@@ -112,6 +114,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_MOTOROLA_WE800G 0x1c0f
 
 #define ROUTER_BOARD_X86 0x1e0f
+
+#define ROUTER_SUPERGERRY 0x1f0f
 
 #define NVROUTER "DD_BOARD"
 
