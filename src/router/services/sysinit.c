@@ -418,11 +418,11 @@ start_restore_defaults (void)
 #else
   int brand = getRouterBrand ();
 
-  switch (brand)
-    {
-    case ROUTER_BUFFALO_WLA2G54L:
-      break;
-    default:
+//  switch (brand)
+//    {
+//    case ROUTER_BUFFALO_WLA2G54L:
+//      break;
+//    default:
 
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	{
@@ -440,7 +440,7 @@ start_restore_defaults (void)
       if (restore_defaults)
 	cprintf ("Restoring defaults...");
 
-    }
+//    }
 
 /* Delete dynamically generated variables */
   /* Choose default lan/wan i/f list. */
