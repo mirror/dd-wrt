@@ -35,7 +35,6 @@
 #include <stdarg.h>
 #include <dirent.h>
 
-#include <syslog.h>
 
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
@@ -297,7 +296,7 @@ period_check (int sig)
     }
     
 	push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
-   syslog(LOG_INFO, "ses debug: push=%d, sesgpio=%d, val=%d, state=%d\n", push, sesgpio, val, state);	
+	
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
