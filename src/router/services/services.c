@@ -3530,7 +3530,7 @@ start_rstats (void)
 void
 start_wifidog (void)
 {
-  if (nvram_match ("wd_enabled", "1"))
+  if (nvram_match ("wd_enable", "1"))
     {
       mkdir ("/tmp/etc/", 0744);
       FILE *fp = fopen ("/tmp/etc/wifidog.conf", "wb");
