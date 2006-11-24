@@ -273,19 +273,33 @@ period_check (int sig)
   else
     state = !(val & gpio);
 
+/* 1 byte router's SES or AOSS button gpio number and polarity; Eko 25.nov.06
+
+  R R R P N N N N   = 0xXX
+  ----- - -------
+    |   | gpio num (1111 = f = disable SES - AOSS button)
+    |   |
+    |   |--- SES - AOSS button polarity (0: normal, 1 inversed)
+    |
+    |-------- reserved for future use 
+*/
   int push;
+  int sesgpio;
   switch (brand)
     {
-    case ROUTER_BUFFALO_WHRG54S:	// ROUTER_BUFFALO_HP_WHRG54S too
+    case ROUTER_BUFFALO_WHRG54S:	
     case ROUTER_BUFFALO_WZRRSG54:
-      push = 0x01;		//gpio 0
+      sesgpio = 0x10;	//gpio 0, inversed
       break;
     case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_WRT54G:
-      push = 0x10;		//gpio 4
+      sesgpio = 0x14;	//gpio 4, inversed
+      break;
+    case ROUTER_BUFFALO_WBR2G54S:
+      sesgpio = 0x04;	//gpio 4, normal
       break;
     default:
-      push = 0x00;		//code unknown = disabled
+      sesgpio = 0x0f;		//gpio unknown, disabled
     }
 
 #endif
@@ -343,7 +357,9 @@ period_check (int sig)
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 
-  else if (!(val & push) && push != 0x00)
+  push = 1 << (sesgpio & 0x0f);	//calculate ses gpio pin no.
+
+  else if ((sesgpio & 0x0f != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
@@ -351,41 +367,61 @@ period_check (int sig)
       runStartup ("/tmp/etc/config", ".sesbutton");	//if available
       if (ses_mode == 1)
 	{
-	  //enable orange led
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "on");
 #endif
-	  if (brand == ROUTER_WRT54G)
-	    {
-	      eval ("gpio", "enable", "2");
-	      eval ("gpio", "disable", "3");
-	    }
-	  if (brand == ROUTER_WRTSL54GS)
-	    {
-	      eval ("gpio", "enable", "5");
-	      eval ("gpio", "disable", "7");
-	    }
-	  ses_mode = 2;
+	switch (brand)
+		{
+		case ROUTER_WRT54G: 	  //enable orange led
+			eval ("gpio", "enable", "2");
+	      	eval ("gpio", "disable", "3");
+			ses_mode = 2;
+	      	break;
+	    case ROUTER_WRTSL54GS:	  //enable orange led
+	    	eval ("gpio", "enable", "5");
+			eval ("gpio", "disable", "7");
+			ses_mode = 2;
+			break;
+		case ROUTER_BUFFALO_WBR2G54S: //blink AOSS led
+			eval ("gpio", "enable", "6");
+			sleep (1);
+			eval ("gpio", "disable", "6");
+			ses_mode = 0;
+			break;
+		default:
+			ses_mode = 0;
+		}
+	    
 	}
       else if (ses_mode == 0)
 	{
-	  //enable white led
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
-	    eval ("wl", "radio", "on");
+	    eval ("wl", "radio", "off");
 #endif
-	  if (brand == ROUTER_WRT54G)
-	    {
-	      eval ("gpio", "enable", "3");
-	      eval ("gpio", "disable", "2");
-	    }
-	  if (brand == ROUTER_WRTSL54GS)
-	    {
-	      eval ("gpio", "enable", "7");
-	      eval ("gpio", "disable", "5");
-	    }
-	  ses_mode = 1;
+	switch (brand)
+		{
+		case ROUTER_WRT54G: 		//enable white led
+			eval ("gpio", "enable", "3");
+			eval ("gpio", "disable", "2");
+			ses_mode = 1;
+	      	break;
+	    case ROUTER_WRTSL54GS:		//enable white led
+			eval ("gpio", "enable", "7");
+			eval ("gpio", "disable", "5");
+			ses_mode = 1;
+			break;
+		case ROUTER_BUFFALO_WBR2G54S: //blink AOSS led
+			eval ("gpio", "enable", "6");
+			sleep (1);
+			eval ("gpio", "disable", "6");
+			ses_mode = 1;
+			break;
+		default:
+			ses_mode = 1;
+		}
+
 	}
       else if (ses_mode == 2)
 	{
@@ -393,17 +429,22 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "on");
 #endif
-	  if (brand == ROUTER_WRT54G)
-	    {
-	      eval ("gpio", "disable", "3");
-	      eval ("gpio", "disable", "2");
-	    }
-	  if (brand == ROUTER_WRTSL54GS)
-	    {
-	      eval ("gpio", "disable", "5");
-	      eval ("gpio", "disable", "7");
-	    }
-	  ses_mode = 3;
+	switch (brand)
+		{
+		case ROUTER_WRT54G:
+			eval ("gpio", "disable", "3");
+			eval ("gpio", "disable", "2");
+			ses_mode = 3;
+	      	break;
+	    case ROUTER_WRTSL54GS:
+			eval ("gpio", "disable", "5");
+			eval ("gpio", "disable", "7");
+			ses_mode = 3;
+			break;
+		default:
+			ses_mode = 3;
+		}
+
 	}
       else if (ses_mode == 3)
 	{
@@ -411,17 +452,22 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "off");
 #endif
-	  if (brand == ROUTER_WRT54G)
-	    {
-	      eval ("gpio", "enable", "3");
-	      eval ("gpio", "enable", "2");
-	    }
-	  if (brand == ROUTER_WRTSL54GS)
-	    {
-	      eval ("gpio", "enable", "5");
-	      eval ("gpio", "enable", "7");
-	    }
-	  ses_mode = 0;
+	switch (brand)
+		{
+		case ROUTER_WRT54G:
+			eval ("gpio", "enable", "3");
+			eval ("gpio", "enable", "2");
+			ses_mode = 0;
+	      	break;
+	    case ROUTER_WRTSL54GS:
+			eval ("gpio", "enable", "5");
+			eval ("gpio", "enable", "7");
+			ses_mode = 0;
+			break;
+		default:
+			ses_mode = 0;
+		}
+		
 	}
 
       /*
