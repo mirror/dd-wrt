@@ -147,7 +147,6 @@ strcat_r (const char *s1, const char *s2, char *buf)
 #define safe_getenv(s) (getenv(s) ? : "")
 
 
-
 #define HAVE_SILENCE 1
 
 /* Print directly to the console */
