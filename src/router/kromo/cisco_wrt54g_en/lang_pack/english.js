@@ -1143,12 +1143,12 @@ service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
 
 //radiooff.webservices
-service.radiooff_legend="SES Button";
-service.radiooff_srv="Use SES for turning off radio";
+service.radiooff_legend="SES / AOSS Button";
+service.radiooff_srv="Use SES / AOSS for turning off radio";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES Button";
-service.ses_srv="SES Button action";
+service.ses_legend="SES / AOSS Button";
+service.ses_srv="SES / AOSS Button action";
 service.ses_toggleradio="Toggle Wireless";
 service.ses_script="Custom Script";
 
