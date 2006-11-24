@@ -301,7 +301,9 @@ period_check (int sig)
     default:
       sesgpio = 0x0f;		//gpio unknown, disabled
     }
-
+    
+	push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
+	
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
@@ -356,8 +358,6 @@ period_check (int sig)
     }
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
-
-  push = 1 << (sesgpio & 0x0f);	//calculate ses gpio pin no.
 
   else if ((sesgpio & 0x0f != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
