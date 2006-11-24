@@ -35,14 +35,6 @@
 #include <stdarg.h>
 #include <dirent.h>
 
-// #define BCM47XX_SOFTWARE_RESET  0x40 /* GPIO 6 */
-// #define BCM47XX_SW_PUSH         0x10 /* GPIO 4 */
-
-// #define WHR_SOFTWARE_RESET 0x10      //GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
-// #define WHR_SW_PUSH 0                //GPIO 0, code unknown
-
-// #define WBR2_SOFTWARE_RESET 0x80     //GPIO 7
-// #define WBR2_SW_PUSH 0               //GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
@@ -266,7 +258,7 @@ period_check (int sig)
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
-    gpio = 1 << (brand & 0x000f);	//calculate gpio pin no.
+    gpio = 1 << (brand & 0x000f);	//calculate gpio value.
 
   if ((brand & 0x0010) == 0)	//check reset button polarity: 0 normal, 1 inversed
     state = (val & gpio);
@@ -303,7 +295,7 @@ period_check (int sig)
     }
     
 	push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
-	
+   syslog(LOG_INFO, "ses debug: push=%d, sesgpio=%d, val=%d, state=%d\n", push, sesgpio, val, state);	
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
@@ -359,7 +351,7 @@ period_check (int sig)
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 
-  else if ((sesgpio & 0x0f != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
+  else if ((sesgpio != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
@@ -524,16 +516,6 @@ resetbutton_main (int argc, char *argv[])
 
   if ((brand & 0x000f) == 0x000f)
 
-/*  	if ((brand == ROUTER_SIEMENS) || 
-  		(brand == ROUTER_BELKIN) || 
-  		(brand == ROUTER_RT210W) ||
-  		(brand == ROUTER_MOTOROLA) || 
-  		(brand == ROUTER_BELKIN_F5D7230) ||
-  		(brand == ROUTER_MICROSOFT_MN700) ||
-  		(brand == ROUTER_BUFFALO_WLAG54C) ||
-  		(brand == ROUTER_BUFFALO_WLA2G54C) ||
-  		(brand == ROUTER_ASUS_WL500G_PRE))
-*/
     {
       puts ("sorry, your unit does not support resetbutton feature\n");
       nvram_set ("resetbutton_enable", "0");
