@@ -2327,7 +2327,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (power, "%s_txpwr", prefix);
   sprintf (maxpower, "%s_maxpower", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" disabled=\"%s\" /> mW (Max: %s)\n",power, nvram_safe_get (power), nvram_safe_get (maxpower),nvram_match("wifi_bonding","1")?"true":"false");
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> mW (Max: %s)\n",power, nvram_safe_get (power), nvram_safe_get (maxpower));
   websWrite (wp, "</div>\n");
 
 #endif
@@ -2376,6 +2376,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   else
     {
+
+
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\">\n",
+		 wl_mode);
       if (nvram_match("wifi_bonding","1"))
       {
       strcpy(wl_mode,"ath0_mode");
@@ -2384,11 +2389,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 nvram_match (wl_mode,
 			      "sta") ? "selected=\\\"selected\\\"" : "");
       }
-
-
-      websWrite (wp,
-		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\">\n",
-		 wl_mode);
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
 		 nvram_match (wl_mode,
