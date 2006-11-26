@@ -289,10 +289,8 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WLAG54C:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
-      strcpy (wlifname, "eth2");
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
-      strcpy (wanifname, "eth0");
       break;
 
     case ROUTER_WZRG300N:
@@ -307,10 +305,8 @@ start_sysinit (void)
       nvram_set ("sdram_init", "0x0009");
       nvram_set ("lan_ifnames", "vlan0 eth2");
       nvram_set ("wl0_ifname", "eth2");
-      strcpy (wlifname, "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       nvram_set ("wan_ifnames", "vlan1");
-      strcpy (wanifname, "vlan1");
       nvram_set ("vlan1ports", "0 5");
       eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
       eval ("gpio", "disable", "0");	//reset the reset button to 0
@@ -337,7 +333,6 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WLA2G54C:
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C interfaces
       nvram_set ("wl0_ifname", "eth1");
-      strcpy (wlifname, "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
       eval ("gpio", "enable", "3");	//WLA2-G54C, WLA3-TX1-G54 diag led off
@@ -349,11 +344,15 @@ start_sysinit (void)
     {
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54Gv2 interfaces
       nvram_set ("wl0_ifname", "eth1");
-      strcpy (wlifname, "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
     }
 
+  /* ifnames */    
+    strcpy (wanifname, nvram_safe_get ("wan_ifname"));
+    strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
+    
+    
   /* Modules */
   uname (&name);
 
@@ -371,6 +370,8 @@ start_sysinit (void)
 	    {
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
+	    case ROUTER_MOTOROLA:
+	    case ROUTER_BUFFALO_WBR2G54S:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
@@ -380,11 +381,7 @@ start_sysinit (void)
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
-	    case ROUTER_RT210W:
-	    case ROUTER_BRCM4702_GENERIC:
 	    case ROUTER_WLI2_TX1_G54:
-	    case ROUTER_MOTOROLA_WE800G:
-	    case ROUTER_BUFFALO_WLAG54C:
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
@@ -396,18 +393,8 @@ start_sysinit (void)
 
 	      break;
 
-	    case ROUTER_MOTOROLA:
-	    case ROUTER_BUFFALO_WBR2G54S:
-	      modules =
-		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-adm";
-	      break;
 	    default:
-//          case ROUTER_MOTOROLA:
-//          case ROUTER_BELKIN:
-//          case ROUTER_BUFFALO_WBR2G54S:
-//          case ROUTER_ASUS:
+
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
@@ -465,15 +452,7 @@ start_sysinit (void)
 	if (nvram_match ("et0macaddr", MACBRAND))
 	  eval ("insmod", module);
 #else
-/*insmod("diag");
-insmod("wl");
-if (check_vlan_support())
-    {
-    insmod("switch-core");
-    if (insmod("switch-robo"))
-	insmod("switch-adm");
-    }
-*/
+
 	cprintf ("loading %s\n", module);
 	eval ("insmod", module);
 	cprintf ("done\n");
