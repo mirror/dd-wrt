@@ -63,6 +63,10 @@ ifeq ($(CONFIG_BCMWPA2),y)
 export CFLAGS += -DBCMWPA2 
 endif
 
+ifeq ($(CONFIG_BRANDING),y)
+export CFLAGS += -DCONFIG_BRANDING 
+endif
+
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
 export BASEOPT:=-Os
@@ -202,6 +206,7 @@ obj-y += stabridge
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_SCDP) += scdp
+obj-$(CONFIG_WIVIZ) += wiviz
 obj-y += ses
 
 
@@ -870,7 +875,7 @@ smtp-redirect-install:
 
 		
 chillispot:
-	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc"
+	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -DNEED_PRINTF"
 	$(MAKE) -C chillispot
 
 chillispot-install:
