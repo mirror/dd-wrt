@@ -5872,16 +5872,16 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
     
     // src
     search_hit("src=", line, srcip);
-    char buf[200];
-    getHostName (buf, srcip);
-    websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
-    	buf != "unknown" ? buf : live_translate ("share.unknown") , srcip);
+    //char buf[200];
+    //getHostName (buf, srcip);
+    //websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",	buf != "unknown" ? buf : live_translate ("share.unknown") , srcip);
+    websWrite (wp, "<td align=\"right\">%s</td>", srcip);
     
     // dst
     search_hit("dst=", line, dstip);
-    getHostName (buf, dstip);
-    websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
-    	buf != "unknown" ? buf : live_translate ("share.unknown") , dstip);
+    //getHostName (buf, dstip);
+    //websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this, event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>", buf != "unknown" ? buf : live_translate ("share.unknown") , dstip);
+    websWrite (wp, "<td align=\"right\">%s</td>", dstip);
     
     // service
     search_hit("dport=", line, dstport);
