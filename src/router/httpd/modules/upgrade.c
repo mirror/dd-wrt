@@ -47,7 +47,7 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
 
   /* Reboot if successful */
   if (upgrade_ret == 0) {
-  	sleep (5);
+  	sleep (10);
   	sys_reboot ();
   }
   
