@@ -965,6 +965,8 @@ set_netmode (char *wif, char *dev)
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", dev, "mode", "1");
   }
+  long tb =atol(nvram_safe_get(turbo));
+  setsysctrl (wif, "turbo", tb);
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta"))
