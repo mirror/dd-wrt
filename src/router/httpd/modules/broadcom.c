@@ -2916,8 +2916,9 @@ struct apply_action apply_actions[] = {
 	{"DMZ", "filters", 0, SERVICE_RESTART, NULL},
 	{"Filters", "filters", 0, SERVICE_RESTART, NULL},
 	{"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
+#ifdef HAVE_UPNP
 	{"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},
-	  
+#endif
   /* SECURITY */
 	{"Firewall", "filters", 0, SERVICE_RESTART, NULL},
 	{"VPN", "filters", 0, SERVICE_RESTART, NULL},
