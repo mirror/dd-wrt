@@ -1,11 +1,11 @@
 ## Wi-viz makefile
 # Supply your own C cross-compiler; I recommend the one from the OpenWRT buildroot
 # Also requires a libpcap to link with, use libpcap.a for static, .so for shared
-CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
-LIBS=libpcap.a
+#CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
+LIBS=../libpcap/libpcap.a
 
-CCOPTS=-O2 -Os -pipe -mips32 -mtune=mips32
-INCLUDE=~/buildroot/staging_dir_mipsel/include
+CCOPTS=$(COPTS) 
+INCLUDE=../libpcap
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
@@ -22,3 +22,6 @@ channelhopper.o: channelhopper.c
 
 remake:
 	touch wiviz.c wl_access.c channelhopper.c
+
+install:
+	install -D wiviz $(INSTALLDIR)/usr/sbin
