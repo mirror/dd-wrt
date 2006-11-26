@@ -11,9 +11,9 @@
  *   matching modules. 
  */
 
-
 #include <linux/types.h>
 #include <linux/ip.h>
+#include <linux/tcp.h>
 #include <linux/timer.h>
 #include <linux/module.h>
 #include <linux/netfilter.h>
@@ -207,7 +207,6 @@ trigger_in(struct sk_buff **pskb,
     struct ipt_trigger *found;
     const struct iphdr *iph = (*pskb)->nh.iph;
     struct tcphdr *tcph = (void *)iph + iph->ihl*4;	/* Might be TCP, UDP */
-
     /* Check if the trigger-ed range has already existed in 'trigger_list'. */
     found = LIST_FIND(&trigger_list, trigger_in_matched,
 	    struct ipt_trigger *, iph->protocol, ntohs(tcph->dest));
