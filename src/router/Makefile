@@ -464,9 +464,7 @@ libpcap:
 	$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.a
 
 libpcap-install:
-#	install -d $(INSTALLDIR)/libpcap/usr/lib
-#	install libpcap/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
-#	$(STRIP) $(INSTALLDIR)/libpcap/usr/lib/libpcap.so
+	@true
 
 eou: libnet libpcap
 	[ ! -d eou ] || $(MAKE) -C eou
