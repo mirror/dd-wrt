@@ -3411,7 +3411,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   /** Reboot **/
   else if (!strncmp (value, "Reboot", 6)) {
     do_ej ("Reboot.asp", wp);
-    sleep (5);
     websDone (wp, 200);
     sleep (1);
     sys_reboot ();
