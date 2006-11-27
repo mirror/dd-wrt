@@ -43,6 +43,7 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
   } else {
     do_ej ("Success_u_s.asp", stream);
   }
+    	sleep (10); //test
   websDone (stream, 200);
 
   /* Reboot if successful */
