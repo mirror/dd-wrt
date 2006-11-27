@@ -1602,7 +1602,7 @@ wl_basic.extchannel="Extended Channel Mode";
 wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Channel Width";
 wl_basic.channel_wide="Wide Channel";
-
+wl_basic.regulatory="Regulatory";
 
 
 //help container

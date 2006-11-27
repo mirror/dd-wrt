@@ -967,6 +967,10 @@ set_netmode (char *wif, char *dev)
   }
   long tb =atol(nvram_safe_get(turbo));
   setsysctrl (wif, "turbo", tb);
+  long regulatory =atol(nvram_safe_get("ath_regulatory"));
+  setsysctrl (wif, "regulatory", regulatory);
+  
+  
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta"))
