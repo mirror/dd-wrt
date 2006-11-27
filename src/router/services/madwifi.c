@@ -826,7 +826,7 @@ setupHostAP (char *prefix)
       sprintf (key, "%s_key", prefix);
       sprintf (bul, "[%s]", nvram_safe_get (key));
       eval ("iwconfig", prefix, "key", bul);
-      eval ("iwpriv", prefix, "authmode", "2");
+    //  eval ("iwpriv", prefix, "authmode", "2");
     }
   else
     if (nvram_match (akm, "psk") ||
