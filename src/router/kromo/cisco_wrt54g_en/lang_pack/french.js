@@ -1515,6 +1515,7 @@ wl_basic.radio="Radio";
 wl_basic.radiotimer="Programmation Emission Radio";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
+wl_basic.regulatory="Dénormalisation";
 
 wl_basic.h2_v24="Interface Sans fil";
 wl_basic.h2_vi="Interfaces Virtuelles";
