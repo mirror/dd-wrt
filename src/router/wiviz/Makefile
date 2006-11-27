@@ -25,7 +25,7 @@ remake:
 
 install:
 	install -d $(INSTALLDIR)/usr/sbin
-	cp wiviz $(INSTALDIR)/usr/sbin
+	cp wiviz $(INSTALLDIR)/usr/sbin
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
