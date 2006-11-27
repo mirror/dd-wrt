@@ -24,7 +24,8 @@ remake:
 	touch wiviz.c wl_access.c channelhopper.c
 
 install:
-	install -D wiviz $(INSTALLDIR)/usr/sbin
+	install -d $(INSTALLDIR)/usr/sbin
+	cp wiviz $(INSTALDIR)/usr/sbin
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
