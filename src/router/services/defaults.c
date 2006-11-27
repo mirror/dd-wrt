@@ -473,6 +473,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MSSID
 
 #ifdef HAVE_MADWIFI
+  {"ath_regulatory","1",0},
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
@@ -1681,13 +1682,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath4_turbo", "0", 0},
   {"ath5_turbo", "0", 0},
 
-  {"ath0_regdomain", "96", 0},
+/*  {"ath0_regdomain", "96", 0},
   {"ath1_regdomain", "96", 0},
   {"ath2_regdomain", "96", 0},
   {"ath3_regdomain", "96", 0},
   {"ath4_regdomain", "96", 0},
   {"ath5_regdomain", "96", 0},
-
+*/
 #endif
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik_mjid_type", "0", 0},

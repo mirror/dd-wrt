@@ -2109,6 +2109,8 @@ save_prefix (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   sprintf (n, "%s_txpwr", prefix);
   copytonv (wp, n);
+  sprintf (n, "ath_regulatory");
+  copytonv (wp, n);
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
@@ -2326,6 +2328,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
   sprintf (maxpower, "%s_maxpower", prefix);
+  if (!strcmp (prefix, "ath0"))	//show client only on first interface
+  {
+  char *wl_regulatory="ath_regulatory";
+  showOption (wp, "wl_basic.regulatory", wl_regulatory);
+  }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> mW (Max: %s)\n",power, nvram_safe_get (power), nvram_safe_get (maxpower));
   websWrite (wp, "</div>\n");
