@@ -31,13 +31,13 @@ function upgrade(F,id) {
 	bar1.togglePause();
 	change_style(id,'textblink');
 	F.Upgrade_b.value = sbutton.upgrading;
-	
-	for (i = 0; i < F.elements.length; i++) {
-		if(defined(F.elements[i].disabled)) 
-			F.elements[i].disabled = true;
-	}
-	if (F.contents) document.getElementById("contents").style.color = '#999999';
-	F.submit();
+apply(F, errmsg.err102);	
+//	for (i = 0; i < F.elements.length; i++) {
+//		if(defined(F.elements[i].disabled)) 
+//			F.elements[i].disabled = true;
+//	}
+//	if (F.contents) document.getElementById("contents").style.color = '#999999';
+//	F.submit();
 }
 
 		//]]>
