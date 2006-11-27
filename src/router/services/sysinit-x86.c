@@ -192,7 +192,7 @@ eval("insmod","crypto_null");
   else if (detect ("Ethernet Pro 100"))	//intel 100 mbit 
     eval ("insmod", "e100");
   else if (detect ("8255"))	//intel 100 mbit 
-    eval ("insmod", "e100");
+    eval ("insmod", "eepro100");
   else if (detect ("PRO/100"))	//intel 100 mbit
     eval ("insmod", "e100");
   else if (detect ("8280"))	//intel 100 mbit 
