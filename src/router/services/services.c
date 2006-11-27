@@ -1086,6 +1086,7 @@ int
 start_httpd (void)
 {
   int ret = 0;
+
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
@@ -1093,7 +1094,15 @@ start_httpd (void)
 //      cprintf ("[HTTPD Starting on /tmp/www]\n");
 //      else
       cprintf ("[HTTPD Starting on /www]\n");
-      ret = eval ("httpd");
+       if (nvram_invmatch ("http_lanport", ""))
+		{
+			char *lan_port = nvram_safe_get ("http_lanport");
+			ret = eval ("httpd", "-p", lan_port);
+ 		}
+ 		else
+ 		{
+	 		ret = eval ("httpd");
+ 		}
       chdir ("/");
     }
 #ifdef HAVE_HTTPS
