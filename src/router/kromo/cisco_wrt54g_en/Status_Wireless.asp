@@ -214,6 +214,12 @@ addEvent(window, "unload", function() {
 											<th width="22%"><% tran("status_wireless.signal_qual"); %></th>
 										</tr>
 									</table>
+// for debug only									
+								<div class="setting">
+									<div class="label">Wiviz data</div>
+									<span id="wiviz_data"><% dump_wiviz_data(); %></span>&nbsp;
+								</div>
+// end for debug only								
 								</fieldset><br />
 							</div>
 							<div class="center">
