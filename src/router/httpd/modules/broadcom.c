@@ -4057,12 +4057,12 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
 {
 	FILE *f;
 	char buf[128];
-
+	
 	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
 	    {
 		while (fgets(buf, sizeof(buf), f))
 		 {
-		websWrite (wp, "%s", buf);
+		websWrite (wp, "%s\n", buf);
 		}
 		fclose(f);
 	}
