@@ -4052,6 +4052,24 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	websWrite (wp, "</div>\n");		
 }
 
+void
+ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
+{
+	FILE *f;
+	char buf[128];
+
+	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
+	    {
+		while (fgets(buf, sizeof(buf), f))
+		 {
+		websWrite (wp, "%s", buf);
+		}
+		fclose(f);
+	}
+	else
+		websWrite (wp, "Can't open file; wiviz not running?\n");	
+}
+
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
@@ -4977,6 +4995,7 @@ struct ej_handler ej_handlers[] = {
   {"getwirelessnetmode", ej_getwirelessnetmode},
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
+  {"dump_wiviz_data", ej_dump_wiviz_data}, //Eko, for testing only
 #ifdef HAVE_EOP_TUNNEL
   {"show_eop_tunnels", ej_show_eop_tunnels},
 #endif
