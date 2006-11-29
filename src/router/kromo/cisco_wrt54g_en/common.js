@@ -671,6 +671,14 @@ function openWindow(url, width, height) {
 	win.focus();
 }
 
+function openWindowTitle(url, width, height, title) {
+	var top = Math.floor((screen.availHeight - height - 10) / 2);
+	var left = Math.floor((screen.availWidth - width) / 2);
+	var win = window.open(url, 'DDWRT_' + title, 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
+	win.focus();
+}
+
 
 // Renders a nice meter with the percentage value
 function setMeterBar(id, fraq, text) {
