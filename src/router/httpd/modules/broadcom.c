@@ -4066,10 +4066,11 @@ if [ 0 -ne $? ]
   $WIVIZ_PATH >/dev/null </dev/null 2>&1 &
   killall -USR1 wiviz > /dev/null
 */
+
 	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");  //be on a safe side
 	eval ("rm", "/tmp/wiviz-pipe");
 	eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
-//	sleep (1);  // need to be adjusted - maybe not needed?
+	sleep (2);  // need to be adjusted - maybe not needed?
 	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");
 	
 		
