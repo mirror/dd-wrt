@@ -166,6 +166,7 @@ extern void ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_get_len (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv);
 extern int dhcp_renew (webs_t wp);
+extern int save_macmode (webs_t wp);
 extern int dhcp_release (webs_t wp);
 extern int stop_ppp (webs_t wp);
 extern void ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv);
