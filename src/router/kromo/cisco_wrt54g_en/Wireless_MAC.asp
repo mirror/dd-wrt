@@ -11,7 +11,7 @@ function to_submit(F) {
 }
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.wireless.wl_macmode1, 'idmac', "<% nvram_else_match("wl_macmode1", "other", "other", "disabled"); %>" == "other");
+	<% list_mac_layers(); %>
 });
 		
 		//]]>
