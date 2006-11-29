@@ -21,7 +21,7 @@ function to_submit(F) {
 			<input type="hidden" name="change_action" />
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="ifname" value="%s" />
-			<input type="hidden" name="%s_mac_list" />
+			<input type="hidden" name="wl_mac_list" />
 			<div id="main">
 				<div id="contentsInfo">
 					<h2><%% tran("wl_filter.h2"); %%></h2>
