@@ -6271,6 +6271,7 @@ websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">%s</div>\n",live_translate("wl_mac.label"));
 char macmode[32];
 sprintf(macmode,"%s_macmode1",ifname);
+if (nvram_get(macmode)==NULL)nvram_set(macmode,"disabled");
 char id[32];
 sprintf(id,"idmac%s",ifname);
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"other")?"checked=\"checked\"":"",id,live_translate("share.enable"));
@@ -6279,6 +6280,7 @@ websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\" id=\"%s\">\n",id);
 websWrite(wp,"<div class=\"label\">%s<br />&nbsp;</div>\n",live_translate("wl_mac.label2"));
 sprintf(macmode,"%s_macmode",ifname);
+if (nvram_get(macmode)==NULL)nvram_set(macmode,"disabled");
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s\n",macmode,nvram_invmatch(macmode,"allow")?"checked=\"checked\"":"",live_translate("wl_mac.deny"));
 websWrite(wp,"<br />\n");
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"allow\" name=\"%s\" %s />%s\n",macmode,nvram_match(macmode,"allow")?"checked=\"checked\"":"",live_translate("wl_mac.allow"));
@@ -6293,7 +6295,41 @@ websWrite(wp,"</div>\n");
 websWrite(wp,"</fieldset>\n");
 }
 
+void ej_list_mac_layers(int eid, webs_t wp, int argc, char_t ** argv)
+{
+#ifndef HAVE_MADWIFI
+websWrite(wp,"show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" == \"other\");\n",nvram_match("wl_macmode1","other")?"other":"disabled");
 
+#else
+
+  int c = getdevicecount ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      char macmode[32];
+      char id[32];
+      sprintf (devs, "ath%d", i);
+      sprintf(macmode,"%s_macmode1",devs);
+      sprintf(id,"idmac%s",devs);
+      websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
+      //show_macfilter_if (wp, devs);
+      char vif[32];
+      sprintf (vif, "%s_vifs", devs);
+      char var[80], *next;
+      char *vifs = nvram_safe_get (vif);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+      sprintf(macmode,"%s_macmode1",var);
+      sprintf(id,"idmac%s",var);
+      websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
+	}
+    }
+
+
+#endif
+}
 void ej_show_macfilter(int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
