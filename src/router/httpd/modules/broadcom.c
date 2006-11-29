@@ -4067,12 +4067,14 @@ if [ 0 -ne $? ]
   killall -USR1 wiviz > /dev/null
 */
 
-	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");  //be on a safe side
+/*	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");  //be on a safe side
 	eval ("rm", "/tmp/wiviz-pipe");
 	eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
 	sleep (2);  // need to be adjusted - maybe not needed?
 	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");
-	
+*/
+
+	eval ("/usr/sbin/wiviz", ">/dev/null", "&", "killall", "-USR1", "wiviz"); //KISS	
 		
 	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
 	    {
