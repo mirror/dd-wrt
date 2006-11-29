@@ -4,6 +4,7 @@
 # Makefile for the Linux Wireless network device drivers.
 #
 
+EXTRA_CFLAGS := -I$(TOPDIR)/arch/mips/bcm947xx/include
 
 O_TARGET := wireless_net.o
 
