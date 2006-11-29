@@ -1010,9 +1010,14 @@ setMacFilter (char *iface)
   char var[32];
   set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
 
-  if (!nvram_match ("wl_macmode", "disabled"))
+  char nvvar[32];
+  sprintf(nvvar,"%s_macmode",iface);
+  if (!nvram_match (nvvar, "disabled"))
     {
-      foreach (var, nvram_safe_get ("wl_maclist"), next)
+      car nvlist[32];
+      sprintf(nvlist,"%s_maclist",iface);
+
+      foreach (var, nvram_safe_get (nvlist), next)
       {
 	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
@@ -1029,10 +1034,10 @@ setMacFilter (char *iface)
 
 
   /* Set the MAC list mode */
-  if (nvram_match ("wl_macmode", "deny"))
+  if (nvram_match (nvvar, "deny"))
     set80211param (iface, IEEE80211_PARAM_MACCMD,
 		   IEEE80211_MACCMD_POLICY_DENY);
-  else if (nvram_match ("wl_macmode", "allow"))
+  else if (nvram_match (nvvar, "allow"))
     set80211param (iface, IEEE80211_PARAM_MACCMD,
 		   IEEE80211_MACCMD_POLICY_ALLOW);
   else
@@ -1302,6 +1307,7 @@ configure_single (int count, int isbond)
 	}
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
+       setMacFilter (var);
       cnt++;
     }
 
