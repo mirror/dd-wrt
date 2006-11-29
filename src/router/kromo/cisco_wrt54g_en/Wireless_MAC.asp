@@ -35,27 +35,8 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="submit_type" />
 							
 							<h2><% tran("wl_mac.h2"); %></h2>
-							<fieldset>
-								<legend><% tran("wl_mac.legend"); %></legend>
-								<div class="setting">
-									<div class="label"><% tran("wl_mac.label"); %></div>
-									<input class="spaceradio" type="radio" value="other" name="wl_macmode1" <% nvram_checked("wl_macmode1","other"); %> onclick="show_layer_ext(this, 'idmac', true)"/><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="disabled" name="wl_macmode1" <% nvram_checked("wl_macmode1","disabled"); %> onclick="show_layer_ext(this, 'idmac', false)"/><% tran("share.disable"); %>
-								</div>
-								<div class="setting" id="idmac">
-									<div class="label"><% tran("wl_mac.label2"); %><br />&nbsp;</div>
-									<input class="spaceradio" type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> /><% tran("wl_mac.deny"); %>
-									<br />
-									<input class="spaceradio" type="radio" value="allow" name="wl_macmode" <% nvram_checked("wl_macmode","allow"); %> /><% tran("wl_mac.allow"); %>
-								</div><br />
-								<div class="center">
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"mac_filter_button\" value=\"" + sbutton.filterMac + "\" onclick=\"openWindow('WL_FilterTable.asp', 930, 740);\" />");
-									//]]>
-									</script>
-								</div>
-							</fieldset><br />
+							<% show_macfilter(); %>
+							<br />
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

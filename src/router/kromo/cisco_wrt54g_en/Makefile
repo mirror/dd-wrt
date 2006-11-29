@@ -201,6 +201,10 @@ ifeq ($(CONFIG_KODATA),y)
 	cp -f kodata/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
+ifeq ($(CONFIG_THOM),y)
+	cp -f thom/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
+
 ifneq ($(CONFIG_MSSID),y)
 	cp WEP.v23 $(INSTALLDIR)/www/WEP.asp
 	cp WL_WPATable.v23 $(INSTALLDIR)/www/WL_WPATable.asp
