@@ -6288,7 +6288,7 @@ websWrite(wp,"</div><br />\n");
 websWrite(wp,"<div class=\"center\">\n");
 websWrite(wp,"<script type=\"text/javascript\">\n");
 websWrite(wp,"//<![CDATA[\n");
-websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindow('WL_FilterTable.%s', 930, 740);\\\" />\");\n",ifname);
+websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindowTitle('WL_FilterTable.%s', 930, 740,'MACList');\\\" />\");\n",ifname);
 websWrite(wp,"//]]>\n");
 websWrite(wp,"</script>\n");
 websWrite(wp,"</div>\n");
