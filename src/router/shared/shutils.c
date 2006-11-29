@@ -599,6 +599,6 @@ int indexof(char *str,char c)
 if (str==NULL)return -1;
 int i;
 for (i=0;i<strlen(str);i++)
-    if (str[i]==c)return i;
+    if (str[(strlen(str)-1)-i]==c)return (strlen(str)-1)-i;
 return -1;
 }
