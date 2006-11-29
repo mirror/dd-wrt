@@ -1014,7 +1014,7 @@ setMacFilter (char *iface)
   sprintf(nvvar,"%s_macmode",iface);
   if (!nvram_match (nvvar, "disabled"))
     {
-      car nvlist[32];
+      char nvlist[32];
       sprintf(nvlist,"%s_maclist",iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
