@@ -1881,16 +1881,19 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp,
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
     sprintf (ssid, "%s_bridged", var);
+    char vvar[32];
+    strcpy(vvar,var);
+    rep(vvar,'.','X');
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
-	       var, var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
+	       vvar, var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
-	       var, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
+	       vvar, var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnetvifs\">\n",
-					var);
+					vvar);
 		websWrite (wp, "<div class=\"setting\">\n");
 		websWrite (wp,
 			   "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
@@ -1933,7 +1936,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	
 		websWrite (wp, "<script>\n//<![CDATA[\n ");
 		websWrite (wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
-			var, var, nvram_match (ssid, "0") ? "true" : "false");
+			var, vvar, nvram_match (ssid, "0") ? "true" : "false");
 		websWrite (wp, "//]]>\n</script>\n");
 
     websWrite (wp, "</fieldset><br />\n");
@@ -6274,6 +6277,7 @@ sprintf(macmode,"%s_macmode1",ifname);
 if (nvram_get(macmode)==NULL)nvram_set(macmode,"disabled");
 char id[32];
 sprintf(id,"idmac%s",ifname);
+rep(id,'.','X');
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"other")?"checked=\"checked\"":"",id,live_translate("share.enable"));
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
 websWrite(wp,"</div>\n");
@@ -6312,6 +6316,7 @@ websWrite(wp,"show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" ==
       sprintf (devs, "ath%d", i);
       sprintf(macmode,"%s_macmode1",devs);
       sprintf(id,"idmac%s",devs);
+      rep(id,'.','X');
       websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
       //show_macfilter_if (wp, devs);
       char vif[32];
@@ -6323,6 +6328,7 @@ websWrite(wp,"show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" ==
 	{
       sprintf(macmode,"%s_macmode1",var);
       sprintf(id,"idmac%s",var);
+      rep(id,'.','X');
       websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
 	}
     }
