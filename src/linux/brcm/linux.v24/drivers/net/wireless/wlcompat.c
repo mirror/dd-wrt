@@ -33,6 +33,7 @@
 
 #include <net/iw_handler.h>
 #include <linux/wlioctl.h>
+#include <proto/802.11.h> 
 
 static struct net_device *dev;
 static unsigned short bss_force;
@@ -304,6 +305,16 @@ static int wlcompat_get_scan(struct net_device *dev,
 			iwe.u.data.length = IW_ESSID_MAX_SIZE;
 		iwe.u.data.flags = 1;
 		current_ev = iwe_stream_add_point(current_ev, end_buf, &iwe, bss_info->SSID);
+		
+		/* send mode */ 
+		if  (bss_info->capability & (DOT11_CAP_ESS | DOT11_CAP_IBSS)) { 
+			iwe.cmd = SIOCGIWMODE; 
+			if (bss_info->capability & DOT11_CAP_ESS) 
+					iwe.u.mode = IW_MODE_MASTER; 
+			else if (bss_info->capability & DOT11_CAP_IBSS) 
+					iwe.u.mode = IW_MODE_ADHOC; 
+			current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_UINT_LEN); 
+		} 
 
 		/* send frequency/channel info */
 		iwe.cmd = SIOCGIWFREQ;
@@ -317,6 +328,16 @@ static int wlcompat_get_scan(struct net_device *dev,
 		iwe.u.qual.level = bss_info->RSSI;
 		iwe.u.qual.noise = bss_info->phy_noise;
 		current_ev = iwe_stream_add_event(current_ev, end_buf, &iwe, IW_EV_QUAL_LEN);
+		
+		/* send encryption capability */ 
+		iwe.cmd = SIOCGIWENCODE; 
+		iwe.u.data.pointer = NULL; 
+		iwe.u.data.length = 0; 
+		if (bss_info->capability & DOT11_CAP_PRIVACY) 
+				iwe.u.data.flags = IW_ENCODE_ENABLED | IW_ENCODE_NOKEY; 
+		else 
+				iwe.u.data.flags = IW_ENCODE_DISABLED; 
+		current_ev = iwe_stream_add_point(current_ev, end_buf, &iwe, NULL); 
 	
 		/* send rate information */
 		iwe.cmd = SIOCGIWRATE;
