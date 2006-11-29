@@ -2178,10 +2178,6 @@ Initnvramtab ()
 		    {
 		      tmp->validate = validate_wl_wep_key;
 		    }
-		  if (!stricmp (tmpstr, "MACMODE"))
-		    {
-		      tmp->validate = validate_macmode;
-		    }
 
 		  if (!stricmp (tmpstr, "WLAUTH"))
 		    {
@@ -2897,7 +2893,7 @@ struct apply_action apply_actions[] = {
   /* WIRELESS */
 	{"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},			//Only for V23, since V24 it's a gozilla save
 	{"Wireless_Advanced", "wireless", 0, SERVICE_RESTART, NULL},
-	{"Wireless_MAC", "wireless", 0, SERVICE_RESTART, NULL},
+	{"Wireless_MAC", "wireless", 0, SERVICE_RESTART, save_macmode},
 	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
 	{"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
 	{"WL_WPATable", "wireless", 0, SERVICE_RESTART, NULL},
@@ -4119,7 +4115,7 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-  {"WL_FilterTable.*", "text/html", no_cache, NULL, do_filtertable, do_auth},
+  {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
   {"*.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
