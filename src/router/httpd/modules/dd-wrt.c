@@ -6266,7 +6266,7 @@ websWrite (wp,"</select>\n");
 static void show_macfilter_if(webs_t wp,char *ifname)
 {
 websWrite(wp,"<fieldset>\n");
-websWrite(wp,"<legend>%s</legend>\n",live_translate("wl_mac.legend"));
+websWrite(wp,"<legend>%s - %s</legend>\n",ifname,live_translate("wl_mac.legend"));
 websWrite(wp,"<div class=\"setting\">\n");
 websWrite(wp,"<div class=\"label\">%s</div>\n",live_translate("wl_mac.label"));
 char macmode[32];
@@ -6288,7 +6288,7 @@ websWrite(wp,"</div><br />\n");
 websWrite(wp,"<div class=\"center\">\n");
 websWrite(wp,"<script type=\"text/javascript\">\n");
 websWrite(wp,"//<![CDATA[\n");
-websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindowTitle('WL_FilterTable.%s', 930, 740,'MACList');\\\" />\");\n",ifname);
+websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindowTitle('WL_FilterTable-%s.asp', 930, 740,'MACList');\\\" />\");\n",ifname);
 websWrite(wp,"//]]>\n");
 websWrite(wp,"</script>\n");
 websWrite(wp,"</div>\n");
@@ -6363,6 +6363,64 @@ do_filtertable (char *path, webs_t stream)
 char *ifname = &path[indexof(path,'.')+1];
 char *webfile = getWebsFile ("WL_FilterTable.asp");
 char temp[4096];
-sprintf(temp,webfile,ifname,ifname,ifname);
+sprintf(temp,webfile,ifname,ifname,ifname,ifname);
 do_ej_buffer(temp,stream);
+}
+
+static void save_macmode_if (webs_t wp,char *ifname)
+{
+
+char macmode[32];
+char macmode1[32];
+sprintf(macmode,"%s_macmode",ifname);
+sprintf(macmode1,"%s_macmode1",ifname);
+
+  char *wl_macmode1, *wl_macmode;
+  wl_macmode = websGetVar (wp, macmode, NULL);
+  wl_macmode1 = websGetVar (wp, macmode1, NULL);
+
+  if (!wl_macmode1)
+    return;
+
+  if (!strcmp (wl_macmode1, "disabled"))
+    {
+      nvram_set (macmode1, "disabled");
+      nvram_set (macmode, "disabled");
+    }
+  else if (!strcmp (wl_macmode1, "other"))
+    {
+      if (!wl_macmode)
+	nvram_set (macmode, "deny");
+      else
+	nvram_set (macmode, wl_macmode);
+      nvram_set (macmode1, "other");
+    }
+}
+
+
+int save_macmode(webs_t wp)
+{
+#ifndef HAVE_MADWIFI
+save_macmode_if(wp,"wl");
+#else
+  int c = getdevicecount ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (devs, "ath%d", i);
+      save_macmode_if(wp, devs);
+      char vif[32];
+      sprintf (vif, "%s_vifs", devs);
+      char var[80], *next;
+      char *vifs = nvram_safe_get (vif);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+    	  save_macmode_if(wp, var);
+	}
+    }
+
+#endif
+
 }
