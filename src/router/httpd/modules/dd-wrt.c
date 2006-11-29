@@ -6278,8 +6278,9 @@ if (nvram_get(macmode)==NULL)nvram_set(macmode,"disabled");
 char id[32];
 sprintf(id,"idmac%s",ifname);
 rep(id,'.','X');
+rep(macmode,'.','X');
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"other")?"checked=\"checked\"":"",id,live_translate("share.enable"));
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"disabled\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
 websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\" id=\"%s\">\n",id);
 websWrite(wp,"<div class=\"label\">%s<br />&nbsp;</div>\n",live_translate("wl_mac.label2"));
@@ -6317,6 +6318,7 @@ websWrite(wp,"show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" ==
       sprintf(macmode,"%s_macmode1",devs);
       sprintf(id,"idmac%s",devs);
       rep(id,'.','X');
+      rep(macmode,'.','X');
       websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
       //show_macfilter_if (wp, devs);
       char vif[32];
@@ -6329,6 +6331,7 @@ websWrite(wp,"show_layer_ext(document.wireless.wl_macmode1, 'idmacwl', \"%s\" ==
       sprintf(macmode,"%s_macmode1",var);
       sprintf(id,"idmac%s",var);
       rep(id,'.','X');
+      rep(macmode,'.','X');
       websWrite(wp,"show_layer_ext(document.wireless.%s, '%s', \"%s\" == \"other\");\n",macmode,id,nvram_match(macmode,"other")?"other":"disabled");
 	}
     }
@@ -6383,7 +6386,7 @@ char macmode[32];
 char macmode1[32];
 sprintf(macmode,"%s_macmode",ifname);
 sprintf(macmode1,"%s_macmode1",ifname);
-
+rep(macmode1,'.','X');
   char *wl_macmode1, *wl_macmode;
   wl_macmode = websGetVar (wp, macmode, NULL);
   wl_macmode1 = websGetVar (wp, macmode1, NULL);
