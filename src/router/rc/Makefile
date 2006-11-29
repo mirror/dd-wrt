@@ -19,7 +19,7 @@ LDFLAGS	+= -s -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shar
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o radio_timer.o watchdog.o
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o radio_timer.o watchdog.o event.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -312,6 +312,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 	cd $(INSTALLDIR)/sbin && ln -sf rc stats
+	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
 	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
