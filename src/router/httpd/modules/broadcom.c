@@ -66,9 +66,6 @@ int debug_value = 0;
 #include <time.h>
 #include <sys/klog.h>
 #include <sys/wait.h>
-#define service_restart() kill(1, SIGUSR1)
-#define sys_restart() kill(1, SIGHUP)
-#define sys_reboot() kill(1, SIGTERM)
 #define sys_stats(url) eval("stats", (url))
 
 

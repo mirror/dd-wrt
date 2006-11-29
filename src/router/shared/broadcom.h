@@ -9,8 +9,15 @@
 #include <syslog.h>
 #include <bcmcvar.h>		//Added by Daniel(2004-07-29) for EZC
 
+/*
+#define service_restart() kill(1, SIGUSR1)
 #define sys_restart() kill(1, SIGHUP)
 #define sys_reboot() kill(1, SIGTERM)
+*/
+#define service_restart() eval("event","3","1","16")
+#define sys_restart() eval("event","3","1","1")
+#define sys_reboot() eval("event","3","1","15")
+
 #define sys_stats(url) eval("stats", (url))
 #define ARGV(args...) ((char *[]) { args, NULL })
 #define STRUCT_LEN(name)    sizeof(name)/sizeof(name[0])
