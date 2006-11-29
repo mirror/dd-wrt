@@ -592,3 +592,13 @@ osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 #endif
 
 #endif
+
+
+int indexof(char *str,char c)
+{
+if (str==NULL)return -1;
+int i;
+for (i=0;i<strlen(str);i++)
+    if (str[i]==c)return i;
+return -1;
+}

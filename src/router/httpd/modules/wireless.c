@@ -755,7 +755,7 @@ validate_d11b_rateset (webs_t wp, char *value, struct variable *v)
 #endif
 
 char *
-wl_filter_mac_get (char *type, int which)
+wl_filter_mac_get (char *ifname,char *type, int which)
 {
   static char word[50];
   char *wordlist, *next;
@@ -764,12 +764,16 @@ wl_filter_mac_get (char *type, int which)
   if (!strcmp (nvram_safe_get ("wl_active_add_mac"), "1"))
     {
       //cprintf("%s(): wl_active_add_mac = 1\n",__FUNCTION__);
-      wordlist = nvram_safe_get ("wl_active_mac");
+      char var[32];
+      sprintf(var,"%s_active_mac",ifname);
+      wordlist = nvram_safe_get (var);
     }
   else
     {
       //cprintf("%s(): wl_active_add_mac = 0\n",__FUNCTION__);
-      wordlist = nvram_safe_get ("wl_mac_list");
+      char var[32];
+      sprintf(var,"%s_maclist",ifname);
+      wordlist = nvram_safe_get (var);
     }
 
   if (!wordlist)
@@ -801,18 +805,22 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
   char buf[19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE] = "", *cur = buf;
   char *wordlist;
   unsigned char m[6];
-
-  wordlist = nvram_safe_get ("wl_mac_list");
+  char *ifname = websGetVar (wp, "ifname", NULL);	//64 or 128
+  if (ifname==NULL)
+    return;
+  char mlist[32];
+  sprintf(mlist,"%s_maclist",ifname);
+  wordlist = nvram_safe_get (mlist);
   if (!wordlist)
     return;
 
   for (i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++)
     {
-      char filter_mac[] = "wl_macXXX";
+      char filter_mac[] = "ath10.99_macXXX";
       char *mac = NULL;
       char mac1[20];
 
-      snprintf (filter_mac, sizeof (filter_mac), "%s%d", "wl_mac", i);
+      snprintf (filter_mac, sizeof (filter_mac), "%s%s%d",ifname, "_mac", i);
 
       mac = websGetVar (wp, filter_mac, NULL);
 
@@ -859,7 +867,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
   if (!error_value)
     {
       nvram_set (v->name, buf);
-      nvram_set ("wl_maclist", buf);
+      nvram_set (mlist, buf);
       nvram_set ("wl_active_mac", "");
     }
 }
@@ -869,6 +877,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *type;
+  char *ifname;
   int item;
 #if LANGUAGE == JAPANESE
   int box_len = 20;
@@ -878,7 +887,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
   char *mac_mess = "MAC";
 
-  if (ejArgs (argc, argv, "%s", &type) < 1)
+  if (ejArgs (argc, argv, "%s %s", &type,&ifname) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -894,15 +903,15 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
 
 	  websWrite (wp,
-		     "<div>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		     mac_mess, item, box_len, item - 1,
-		     wl_filter_mac_get ("mac", item - 1));
+		     "<div>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		     mac_mess, item, box_len,ifname, item - 1,
+		     wl_filter_mac_get (ifname,"mac", item - 1));
 
 	  websWrite (wp,
-		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
-		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,ifname,
 		     item + (WL_FILTER_MAC_NUM / 2) - 1,
-		     wl_filter_mac_get ("mac",
+		     wl_filter_mac_get (ifname,"mac",
 					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
@@ -917,15 +926,15 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
 
 	  websWrite (wp,
-		     "<div/>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		     mac_mess, item, box_len, item - 1,
-		     wl_filter_mac_get ("mac", item - 1));
+		     "<div/>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		     mac_mess, item, box_len, ifname,item - 1,
+		     wl_filter_mac_get (ifname,"mac", item - 1));
 
 	  websWrite (wp,
-		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
-		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,ifname,
 		     item + (WL_FILTER_MAC_NUM / 2) - 1,
-		     wl_filter_mac_get ("mac",
+		     wl_filter_mac_get (ifname,"mac",
 					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
