@@ -5042,6 +5042,7 @@ struct ej_handler ej_handlers[] = {
 #endif
   {"haswifi",ej_haswifi},
   {"show_macfilter",ej_show_macfilter},
+  {"list_mac_layers",ej_list_mac_layers},
   {NULL, NULL}
 };
 #endif /* !WEBS */
