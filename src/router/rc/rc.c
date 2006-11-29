@@ -851,6 +851,8 @@ main (int argc, char **argv)
 #endif
   else if (strstr (base, "sendudp"))
     return sendudp_main (argc, argv);
+  else if (strstr (base, "event"))
+    return event_main (argc, argv);
   else if (strstr (base, "check_ses_led"))
     return check_ses_led_main (argc, argv);
 #ifdef HAVE_MICRO
