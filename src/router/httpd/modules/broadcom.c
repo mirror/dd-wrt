@@ -3447,7 +3447,7 @@ footer:
   		}
   		
   		cprintf ("refresh to %s\n", path);
- 		if (strncmp(path,"WL_FilterTable",strlen("WL_FilterTable")))
+ 		if (!strncmp(path,"WL_FilterTable",strlen("WL_FilterTable")))
   		    do_filtertable (path, wp);	//refresh
   		else
 		    do_ej (path, wp);	//refresh
