@@ -131,6 +131,10 @@ ifeq ($(CONFIG_OPENVPN),y)
   CFLAGS += -DHAVE_OPENVPN
 endif
 
+ifeq ($(CONFIG_THOM),y)
+  CFLAGS += -DHAVE_THOM
+endif
+
 ifeq ($(CONFIG_CDEBUG),y)
   CFLAGS += -DCDEBUG
 endif
