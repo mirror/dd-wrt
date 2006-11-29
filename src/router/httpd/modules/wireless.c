@@ -1470,7 +1470,7 @@ ret += websWrite(wp," \
   return;
 }
 
-void
+/*void
 validate_macmode (webs_t wp, char *value, struct variable *v)
 {
   char *wl_macmode1, *wl_macmode;
@@ -1494,7 +1494,7 @@ validate_macmode (webs_t wp, char *value, struct variable *v)
 	nvram_set ("wl_macmode", wl_macmode);
       nvram_set ("wl_macmode1", "other");
     }
-}
+}*/
 
 int
 generate_wep_key (webs_t wp, int key, char *prefix)
