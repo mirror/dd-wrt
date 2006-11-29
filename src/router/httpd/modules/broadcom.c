@@ -4120,6 +4120,7 @@ struct mime_handler mime_handlers[] = {
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
   {"WL_FilterTable.*", "text/html", no_cache, NULL, do_filtertable, do_auth},
+  {"*.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
