@@ -6360,7 +6360,7 @@ show_macfilter_if(wp,"wl");
 void
 do_filtertable (char *path, webs_t stream)
 {
-char *ifname = &path[indexof(path,".")+1];
+char *ifname = &path[indexof(path,'.')+1];
 char *webfile = getWebsFile ("WL_FilterTable.asp");
 char temp[4096];
 sprintf(temp,webfile,ifname,ifname,ifname);
