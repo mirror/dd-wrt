@@ -6275,7 +6275,7 @@ if (nvram_get(macmode)==NULL)nvram_set(macmode,"disabled");
 char id[32];
 sprintf(id,"idmac%s",ifname);
 websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"other")?"checked=\"checked\"":"",id,live_translate("share.enable"));
-websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
 websWrite(wp,"</div>\n");
 websWrite(wp,"<div class=\"setting\" id=\"%s\">\n",id);
 websWrite(wp,"<div class=\"label\">%s<br />&nbsp;</div>\n",live_translate("wl_mac.label2"));
