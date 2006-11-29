@@ -96,6 +96,8 @@ extern int safe_fwrite (const void *ptr, size_t size, size_t nmemb,
  */
 extern int ether_atoe (const char *a, unsigned char *e);
 
+
+int indexof(char *str,char c);
 /*
  * Convert Ethernet address binary data to string representation
  * @param	e	binary data

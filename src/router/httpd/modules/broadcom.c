@@ -4119,7 +4119,7 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-  {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
+  {"WL_FilterTable.*", "text/html", no_cache, NULL, do_filtertable, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
@@ -5040,6 +5040,7 @@ struct ej_handler ej_handlers[] = {
   {"portsetup",ej_portsetup},
 #endif
   {"haswifi",ej_haswifi},
+  {"show_macfilter",ej_show_macfilter},
   {NULL, NULL}
 };
 #endif /* !WEBS */

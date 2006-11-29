@@ -65,6 +65,9 @@ OBJS += upgrade.c
 CFLAGS += -DHAVE_LOUD
 endif
 endif
+ifeq ($(CONFIG_THOM),y)
+  CFLAGS += -DHAVE_THOM
+endif
 
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE

@@ -6262,3 +6262,71 @@ websWrite (wp,"</select>\n");
 
 }
 #endif
+
+static void show_macfilter_if(webs_t wp,char *ifname)
+{
+websWrite(wp,"<fieldset>\n");
+websWrite(wp,"<legend>%s</legend>\n",live_translate("wl_mac.legend"));
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\">%s</div>\n",live_translate("wl_mac.label"));
+char macmode[32];
+sprintf(macmode,"%s_macmode1",ifname);
+char id[32];
+sprintf(id,"idmac%s",ifname);
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"other")?"checked=\"checked\"":"",id,live_translate("share.enable"));
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\"/>%s&nbsp;\n",macmode,nvram_match(macmode,"disabled")?"checked=\"checked\"":"",id,live_translate("share.disable"));
+websWrite(wp,"</div>\n");
+websWrite(wp,"<div class=\"setting\" id=\"%s\">\n",id);
+websWrite(wp,"<div class=\"label\">%s<br />&nbsp;</div>\n",live_translate("wl_mac.label2"));
+sprintf(macmode,"%s_macmode",ifname);
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s\n",macmode,nvram_invmatch(macmode,"allow")?"checked=\"checked\"":"",live_translate("wl_mac.deny"));
+websWrite(wp,"<br />\n");
+websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" value=\"allow\" name=\"%s\" %s />%s\n",macmode,nvram_match(macmode,"allow")?"checked=\"checked\"":"",live_translate("wl_mac.allow"));
+websWrite(wp,"</div><br />\n");
+websWrite(wp,"<div class=\"center\">\n");
+websWrite(wp,"<script type=\"text/javascript\">\n");
+websWrite(wp,"//<![CDATA[\n");
+websWrite(wp,"document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"mac_filter_button\\\" value=\\\"\" + sbutton.filterMac + \"\\\" onclick=\\\"openWindow('WL_FilterTable.%s', 930, 740);\\\" />\");\n",ifname);
+websWrite(wp,"//]]>\n");
+websWrite(wp,"</script>\n");
+websWrite(wp,"</div>\n");
+websWrite(wp,"</fieldset>\n");
+}
+
+
+void ej_show_macfilter(int eid, webs_t wp, int argc, char_t ** argv)
+{
+#ifndef HAVE_MADWIFI
+show_macfilter_if(wp,"wl");
+#else
+  int c = getdevicecount ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (devs, "ath%d", i);
+      show_macfilter_if (wp, devs);
+      char vif[32];
+      sprintf (vif, "%s_vifs", devs);
+      char var[80], *next;
+      char *vifs = nvram_safe_get (vif);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+    	  show_macfilter_if (wp, var);
+	}
+    }
+
+#endif
+}
+
+//and now the tricky part (more dirty as dirty)
+void
+do_filtertable (char *path, webs_t stream)
+{
+char *ifname = &path[indexof(path,".")+1];
+char *webfile = getWebsFile ("WL_FilterTable.asp");
+char temp[4096];
+sprintf(temp,webfile,ifname,ifname,ifname);
+do_ej_buffer(temp,stream);
+}
