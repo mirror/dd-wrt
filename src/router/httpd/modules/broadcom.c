@@ -4057,7 +4057,21 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
 {
 	FILE *f;
 	char buf[128];
+
+//run wiviz and get result
+/* original script
+killall -USR1 wiviz >/dev/null 2>&1
+if [ 0 -ne $? ]
+ then #### Wi-Viz daemon not running, start it
+  $WIVIZ_PATH >/dev/null </dev/null 2>&1 &
+  killall -USR1 wiviz > /dev/null
+*/
+	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");  //be on a safe side
+	eval ("/usr/sbin/wiviz",">/dev/null", "</dev/null", "2>&1", "&");
+	sleep (1);  // need to be adjusted
+	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");
 	
+		
 	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
 	    {
 		while (fgets(buf, sizeof(buf), f))
