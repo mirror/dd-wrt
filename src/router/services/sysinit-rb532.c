@@ -117,20 +117,20 @@ start_sysinit (void)
   eval ("insmod", "cast5");
   eval ("insmod", "crypto_null");
 
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_sample");
+//  eval ("insmod", "ath_hal");
+//  eval ("insmod", "wlan");
+//  eval ("insmod", "ath_rate_sample");
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
 
-  eval ("insmod", "wlan_acl");
+  /*eval ("insmod", "wlan_acl");
   eval ("insmod", "wlan_ccmp");
   eval ("insmod", "wlan_tkip");
   eval ("insmod", "wlan_wep");
   eval ("insmod", "wlan_xauth");
   eval ("insmod", "wlan_scan_ap");
   eval ("insmod", "wlan_scan_sta");
-
+*/
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
   eval ("ifconfig", "wifi2", "up");
