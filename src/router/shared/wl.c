@@ -383,18 +383,23 @@ list_channelsext (const char *ifname, int allchans)
 	    continue;
 	}
       //filter out channels which are not supporting turbo mode if turbo is enabled
-/*      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
+      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
 	{
 	  if (nvram_match (wl_turbo, "1"))
 	    continue;
 	}
       //filter out turbo channels if turbo mode is disabled
-      if (IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i])
-	  || IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
+/*      if (IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i])
+      || IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
 	{
 	  if (nvram_match (wl_turbo, "0"))
 	    continue;
 	}*/
+      if (IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
+	{
+	  if (nvram_match (wl_turbo, "0"))
+	    continue;
+	}
 
       list[l].channel = achans.ic_chans[i].ic_ieee;
       list[l].freq = achans.ic_chans[i].ic_freq;
