@@ -176,7 +176,7 @@ ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
     }
   char buf[128];
   int n = 0;
-rep:;
+rept:;
   if (n == EOF)
     {
       fclose (fcpu);
@@ -187,7 +187,7 @@ rep:;
   n = fscanf (fcpu, "%s", buf);
   if (n != EOF)
     websWrite (wp, ",");
-  goto rep;
+  goto rept;
 }
 
 #ifdef HAVE_RB500
