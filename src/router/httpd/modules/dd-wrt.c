@@ -1181,6 +1181,15 @@ ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
 }
 #endif
 
+void
+rep (char *in, char from, char to)
+{
+  int i;
+  for (i = 0; i < strlen (in); i++)
+    if (in[i] == from)
+      in[i] = to;
+
+}
 
 
 #ifndef HAVE_MSSID
@@ -1249,16 +1258,6 @@ extern struct wifi_channels *list_channels (char *devnr);
 extern int getdevicecount (void);
 #endif
 
-
-void
-rep (char *in, char from, char to)
-{
-  int i;
-  for (i = 0; i < strlen (in); i++)
-    if (in[i] == from)
-      in[i] = to;
-
-}
 
 int
 set_security (webs_t wp)
