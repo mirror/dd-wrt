@@ -1403,7 +1403,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #endif
 	{
 #ifdef HAVE_BONDING
-	  configure_single (i, nvram_match ("wifi_bonding"));
+	  configure_single (i, nvram_match ("wifi_bonding","1")?1:0);
 #else
 	  configure_single (i, 0);
 #endif
@@ -1418,7 +1418,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #ifdef HAVE_BONDING
   eval ("ifconfig", "bond0", "down");
   eval ("rmmod", "bonding");
-  if (nvram_match ("wifi_bonding"))
+  if (nvram_match ("wifi_bonding","1"))
     {
       eval ("insmod", "bonding");
       eval ("ifconfig", "bond0", "0.0.0.0", "up");
