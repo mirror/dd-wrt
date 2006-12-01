@@ -1481,8 +1481,8 @@ wl_mac.h2="Filtre MAC sans fil";
 wl_mac.legend="Filtrage par Adresse MAC";
 wl_mac.label="Filtre";
 wl_mac.label2="Mode de Filtrage";
-wl_mac.deny="Bloquer l\'accès au réseau sans fil pour les ordinateurs référencés";
-wl_mac.allow="Autoriser l\'accès au réseau sans fil pour les ordinateurs référencés";
+wl_mac.deny="Bloquer l'accès au réseau sans fil pour les ordinateurs référencés";
+wl_mac.allow="Autoriser l'accès au réseau sans fil pour les ordinateurs référencés";
 
 
 
