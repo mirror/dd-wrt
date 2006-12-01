@@ -379,6 +379,39 @@ void wpa_debug_close_file(void)
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
+#ifndef CONFIG_NO_WPA_MSG
+static wpa_msg_cb_func wpa_msg_cb = NULL;
+
+void wpa_msg_register_cb(wpa_msg_cb_func func)
+{
+	wpa_msg_cb = func;
+}
+
+
+void wpa_msg(void *ctx, int level, char *fmt, ...)
+{
+	va_list ap;
+	char *buf;
+	const int buflen = 2048;
+	int len;
+
+	buf = os_malloc(buflen);
+	if (buf == NULL) {
+		wpa_printf(MSG_ERROR, "wpa_msg: Failed to allocate message "
+			   "buffer");
+		return;
+	}
+	va_start(ap, fmt);
+	len = vsnprintf(buf, buflen, fmt, ap);
+	va_end(ap);
+	wpa_printf(level, "%s", buf);
+	if (wpa_msg_cb)
+		wpa_msg_cb(ctx, level, buf, len);
+	os_free(buf);
+}
+#endif /* CONFIG_NO_WPA_MSG */
+
+
 static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
 				    size_t len, int uppercase)
 {
@@ -533,3 +566,34 @@ TCHAR * wpa_strdup_tchar(const char *str)
 #endif /* UNICODE */
 }
 #endif /* CONFIG_NATIVE_WINDOWS */
+
+
+/**
+ * wpa_ssid_txt - Convert SSID to a printable string
+ * @ssid: SSID (32-octet string)
+ * @ssid_len: Length of ssid in octets
+ * Returns: Pointer to a printable string
+ *
+ * This function can be used to convert SSIDs into printable form. In most
+ * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
+ * does not limit the used character set, so anything could be used in an SSID.
+ *
+ * This function uses a static buffer, so only one call can be used at the
+ * time, i.e., this is not re-entrant and the returned buffer must be used
+ * before calling this again.
+ */
+const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len)
+{
+	static char ssid_txt[33];
+	char *pos;
+
+	if (ssid_len > 32)
+		ssid_len = 32;
+	os_memcpy(ssid_txt, ssid, ssid_len);
+	ssid_txt[ssid_len] = '\0';
+	for (pos = ssid_txt; *pos != '\0'; pos++) {
+		if ((u8) *pos < 32 || (u8) *pos >= 127)
+			*pos = '_';
+	}
+	return ssid_txt;
+}

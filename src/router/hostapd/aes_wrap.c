@@ -50,8 +50,8 @@ int aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 	r = cipher + 8;
 
 	/* 1) Initialize variables. */
-	memset(a, 0xa6, 8);
-	memcpy(r, plain, 8 * n);
+	os_memset(a, 0xa6, 8);
+	os_memcpy(r, plain, 8 * n);
 
 	ctx = aes_encrypt_init(kek, 16);
 	if (ctx == NULL)
@@ -67,12 +67,12 @@ int aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 	for (j = 0; j <= 5; j++) {
 		r = cipher + 8;
 		for (i = 1; i <= n; i++) {
-			memcpy(b, a, 8);
-			memcpy(b + 8, r, 8);
+			os_memcpy(b, a, 8);
+			os_memcpy(b + 8, r, 8);
 			aes_encrypt(ctx, b, b);
-			memcpy(a, b, 8);
+			os_memcpy(a, b, 8);
 			a[7] ^= n * j + i;
-			memcpy(r, b + 8, 8);
+			os_memcpy(r, b + 8, 8);
 			r += 8;
 		}
 	}
@@ -105,9 +105,9 @@ int aes_unwrap(const u8 *kek, int n, const u8 *cipher, u8 *plain)
 	void *ctx;
 
 	/* 1) Initialize variables. */
-	memcpy(a, cipher, 8);
+	os_memcpy(a, cipher, 8);
 	r = plain;
-	memcpy(r, cipher + 8, 8 * n);
+	os_memcpy(r, cipher + 8, 8 * n);
 
 	ctx = aes_decrypt_init(kek, 16);
 	if (ctx == NULL)
@@ -123,13 +123,13 @@ int aes_unwrap(const u8 *kek, int n, const u8 *cipher, u8 *plain)
 	for (j = 5; j >= 0; j--) {
 		r = plain + (n - 1) * 8;
 		for (i = n; i >= 1; i--) {
-			memcpy(b, a, 8);
+			os_memcpy(b, a, 8);
 			b[7] ^= n * j + i;
 
-			memcpy(b + 8, r, 8);
+			os_memcpy(b + 8, r, 8);
 			aes_decrypt(ctx, b, b);
-			memcpy(a, b, 8);
-			memcpy(r, b + 8, 8);
+			os_memcpy(a, b, 8);
+			os_memcpy(r, b + 8, 8);
 			r -= 8;
 		}
 	}
@@ -184,7 +184,7 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 	ctx = aes_encrypt_init(key, 16);
 	if (ctx == NULL)
 		return -1;
-	memset(cbc, 0, BLOCK_SIZE);
+	os_memset(cbc, 0, BLOCK_SIZE);
 
 	while (left >= BLOCK_SIZE) {
 		for (i = 0; i < BLOCK_SIZE; i++)
@@ -194,7 +194,7 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 		left -= BLOCK_SIZE;
 	}
 
-	memset(pad, 0, BLOCK_SIZE);
+	os_memset(pad, 0, BLOCK_SIZE);
 	aes_encrypt(ctx, pad, pad);
 	gf_mulx(pad);
 
@@ -256,7 +256,7 @@ int aes_128_ctr_encrypt(const u8 *key, const u8 *nonce,
 	ctx = aes_encrypt_init(key, 16);
 	if (ctx == NULL)
 		return -1;
-	memcpy(counter, nonce, BLOCK_SIZE);
+	os_memcpy(counter, nonce, BLOCK_SIZE);
 
 	while (left > 0) {
 		aes_encrypt(ctx, counter, buf);
@@ -311,26 +311,26 @@ int aes_128_eax_encrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 		buf_len = hdr_len;
 	buf_len += 16;
 
-	buf = malloc(buf_len);
+	buf = os_malloc(buf_len);
 	if (buf == NULL)
 		return -1;
 
-	memset(buf, 0, 15);
+	os_memset(buf, 0, 15);
 
 	buf[15] = 0;
-	memcpy(buf + 16, nonce, nonce_len);
+	os_memcpy(buf + 16, nonce, nonce_len);
 	omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac);
 
 	buf[15] = 1;
-	memcpy(buf + 16, hdr, hdr_len);
+	os_memcpy(buf + 16, hdr, hdr_len);
 	omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac);
 
 	aes_128_ctr_encrypt(key, nonce_mac, data, data_len);
 	buf[15] = 2;
-	memcpy(buf + 16, data, data_len);
+	os_memcpy(buf + 16, data, data_len);
 	omac1_aes_128(key, buf, 16 + data_len, data_mac);
 
-	free(buf);
+	os_free(buf);
 
 	for (i = 0; i < BLOCK_SIZE; i++)
 		tag[i] = nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i];
@@ -368,25 +368,25 @@ int aes_128_eax_decrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 		buf_len = hdr_len;
 	buf_len += 16;
 
-	buf = malloc(buf_len);
+	buf = os_malloc(buf_len);
 	if (buf == NULL)
 		return -1;
 
-	memset(buf, 0, 15);
+	os_memset(buf, 0, 15);
 
 	buf[15] = 0;
-	memcpy(buf + 16, nonce, nonce_len);
+	os_memcpy(buf + 16, nonce, nonce_len);
 	omac1_aes_128(key, buf, 16 + nonce_len, nonce_mac);
 
 	buf[15] = 1;
-	memcpy(buf + 16, hdr, hdr_len);
+	os_memcpy(buf + 16, hdr, hdr_len);
 	omac1_aes_128(key, buf, 16 + hdr_len, hdr_mac);
 
 	buf[15] = 2;
-	memcpy(buf + 16, data, data_len);
+	os_memcpy(buf + 16, data, data_len);
 	omac1_aes_128(key, buf, 16 + data_len, data_mac);
 
-	free(buf);
+	os_free(buf);
 
 	for (i = 0; i < BLOCK_SIZE; i++) {
 		if (tag[i] != (nonce_mac[i] ^ data_mac[i] ^ hdr_mac[i]))
@@ -421,14 +421,14 @@ int aes_128_cbc_encrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
 	ctx = aes_encrypt_init(key, 16);
 	if (ctx == NULL)
 		return -1;
-	memcpy(cbc, iv, BLOCK_SIZE);
+	os_memcpy(cbc, iv, BLOCK_SIZE);
 
 	blocks = data_len / BLOCK_SIZE;
 	for (i = 0; i < blocks; i++) {
 		for (j = 0; j < BLOCK_SIZE; j++)
 			cbc[j] ^= pos[j];
 		aes_encrypt(ctx, cbc, cbc);
-		memcpy(pos, cbc, BLOCK_SIZE);
+		os_memcpy(pos, cbc, BLOCK_SIZE);
 		pos += BLOCK_SIZE;
 	}
 	aes_encrypt_deinit(ctx);
@@ -454,15 +454,15 @@ int aes_128_cbc_decrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
 	ctx = aes_decrypt_init(key, 16);
 	if (ctx == NULL)
 		return -1;
-	memcpy(cbc, iv, BLOCK_SIZE);
+	os_memcpy(cbc, iv, BLOCK_SIZE);
 
 	blocks = data_len / BLOCK_SIZE;
 	for (i = 0; i < blocks; i++) {
-		memcpy(tmp, pos, BLOCK_SIZE);
+		os_memcpy(tmp, pos, BLOCK_SIZE);
 		aes_decrypt(ctx, pos, pos);
 		for (j = 0; j < BLOCK_SIZE; j++)
 			pos[j] ^= cbc[j];
-		memcpy(cbc, tmp, BLOCK_SIZE);
+		os_memcpy(cbc, tmp, BLOCK_SIZE);
 		pos += BLOCK_SIZE;
 	}
 	aes_decrypt_deinit(ctx);

@@ -295,7 +295,7 @@ int tls_prf(const u8 *secret, size_t secret_len, const char *label,
 
 
 static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
-			  size_t ssid_len, int iterations, int count,
+			  size_t ssid_len, int iterations, unsigned int count,
 			  u8 *digest)
 {
 	unsigned char tmp[SHA1_MAC_LEN], tmp2[SHA1_MAC_LEN];
@@ -349,7 +349,7 @@ static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
 void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 		 int iterations, u8 *buf, size_t buflen)
 {
-	int count = 0;
+	unsigned int count = 0;
 	unsigned char *pos = buf;
 	size_t left = buflen, plen;
 	unsigned char digest[SHA1_MAC_LEN];

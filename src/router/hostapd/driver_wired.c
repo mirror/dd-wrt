@@ -299,7 +299,8 @@ static int wired_init_sockets(struct wired_driver_data *drv)
 
 
 static int wired_send_eapol(void *priv, const u8 *addr,
-			    const u8 *data, size_t data_len, int encrypt)
+			    const u8 *data, size_t data_len, int encrypt,
+			    const u8 *own_addr)
 {
 	struct wired_driver_data *drv = priv;
 	u8 pae_group_addr[ETH_ALEN] = WIRED_EAPOL_MULTICAST_GROUP;
@@ -318,7 +319,7 @@ static int wired_send_eapol(void *priv, const u8 *addr,
 
 	memcpy(hdr->dest, drv->use_pae_group_addr ? pae_group_addr : addr,
 	       ETH_ALEN);
-	memcpy(hdr->src, drv->hapd->own_addr, ETH_ALEN);
+	memcpy(hdr->src, own_addr, ETH_ALEN);
 	hdr->ethertype = htons(ETH_P_PAE);
 
 	pos = (u8 *) (hdr + 1);

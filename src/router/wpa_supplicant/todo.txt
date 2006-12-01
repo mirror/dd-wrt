@@ -103,15 +103,13 @@ To do:
 - consider moving eap_tls_build_ack() call into eap_tls_process_helper()
   (it seems to be called always if helper returns 1)
   * could need to modify eap_{ttls,peap,fast}_decrypt to do same
+- add support for fetching full user cert chain from Windows certificate
+  stores even when there are intermediate CA certs that are not in the
+  configured ca_cert store (e.g., ROOT) (they could be, e.g., in CA store)
 
 
 0.6.x branch:
 - clean up common.[ch]
-  * consider adding os_malloc(), os_zalloc(), os_realloc(), os_strdup(),
-    os_strlen(), etc.
-  * os.h could define these by default to malloc(), ...
-  * .config option and cpp define for selecting separate implementation in
-    os_*.c
 - change TLS/crypto library interface to use a structure of function
   pointers and helper inline functions (like driver_ops) instead of
   requiring every TLS wrapper to implement all functions
@@ -123,3 +121,7 @@ To do:
   (subdirs: eap_common, eap_peer, eap_server, driver, driver_ap, ...)
 - make it clearer that EAP server/peer can be used as a separate library
   for other programs
+- add support for encrypted configuration fields (e.g., password, psk,
+  passphrase, pin)
+- wpa_gui: add support for setting and showing priority, id_str, auth_alg
+  (open/shared for static WEP)

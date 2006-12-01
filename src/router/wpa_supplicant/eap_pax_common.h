@@ -57,8 +57,7 @@ enum {
 
 /* mac_id: */
 #define EAP_PAX_MAC_HMAC_SHA1_128		0x01
-#define EAP_PAX_MAC_AES_CBC_MAC_128		0x02
-#define EAP_PAX_HMAC_SHA256_128			0x03
+#define EAP_PAX_HMAC_SHA256_128			0x02
 
 /* dh_group_id: */
 #define EAP_PAX_DH_GROUP_NONE			0x00

@@ -15,6 +15,7 @@ struct hostapd_ip_addr;
 
 const char * hostapd_ip_txt(const struct hostapd_ip_addr *addr, char *buf,
 			    size_t buflen);
+int hostapd_ip_diff(struct hostapd_ip_addr *a, struct hostapd_ip_addr *b);
 
 enum {
 	HOSTAPD_LEVEL_DEBUG_VERBOSE = 0,

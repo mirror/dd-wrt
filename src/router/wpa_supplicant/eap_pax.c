@@ -1,5 +1,5 @@
 /*
- * EAP peer method: EAP-PAX (draft-clancy-eap-pax-06.txt)
+ * EAP peer method: EAP-PAX (draft-clancy-eap-pax-11.txt)
  * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,6 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "eap_pax_common.h"
 #include "sha1.h"
@@ -401,8 +400,7 @@ static u8 * eap_pax_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
-	/* TODO: add support for EAP_PAX_MAC_AES_CBC_MAC_128 and
-	 * EAP_PAX_HMAC_SHA256_128 */
+	/* TODO: add support EAP_PAX_HMAC_SHA256_128 */
 	if (req->mac_id != EAP_PAX_MAC_HMAC_SHA1_128) {
 		wpa_printf(MSG_INFO, "EAP-PAX: Unsupported MAC ID 0x%x",
 			   req->mac_id);
@@ -507,6 +505,28 @@ static u8 * eap_pax_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_pax_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_pax_data *data = priv;
+	u8 *key;
+
+	if (data->state != PAX_DONE)
+		return NULL;
+
+	key = os_malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN,
+		    "Extended Master Session Key",
+		    data->rand.e, 2 * EAP_PAX_RAND_LEN,
+		    EAP_EMSK_LEN, key);
+
+	return key;
+}
+
+
 int eap_peer_pax_register(void)
 {
 	struct eap_method *eap;
@@ -522,6 +542,7 @@ int eap_peer_pax_register(void)
 	eap->process = eap_pax_process;
 	eap->isKeyAvailable = eap_pax_isKeyAvailable;
 	eap->getKey = eap_pax_getKey;
+	eap->getKey = eap_pax_get_emsk;
 
 	ret = eap_peer_method_register(eap);
 	if (ret)

@@ -82,20 +82,6 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s);
 void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv);
 
 /**
- * wpa_supplicant_ctrl_iface_send - Send a control interface packet to monitors
- * @priv: Pointer to private data from wpa_supplicant_ctrl_iface_init()
- * @level: Priority level of the message
- * @buf: Message data
- * @len: Message length
- *
- * Send a packet to all monitor programs attached to the control interface.
- *
- * Required to be implemented in each control interface backend.
- */
-void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
-				    const char *buf, size_t len);
-
-/**
  * wpa_supplicant_ctrl_iface_wait - Wait for ctrl_iface monitor
  * @priv: Pointer to private data from wpa_supplicant_ctrl_iface_init()
  *

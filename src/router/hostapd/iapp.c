@@ -1,6 +1,6 @@
 /*
  * hostapd / IEEE 802.11F-2003 Inter-Access Point Protocol (IAPP)
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -51,7 +51,6 @@
 #include "iapp.h"
 #include "eloop.h"
 #include "sta_info.h"
-#include "hostap_common.h"
 
 
 #define IAPP_MULTICAST "224.0.1.178"
@@ -179,7 +178,7 @@ struct iapp_data {
 };
 
 
-static void iapp_send_add(struct iapp_data *iapp, u8 *macaddr, u16 seq_num)
+static void iapp_send_add(struct iapp_data *iapp, u8 *mac_addr, u16 seq_num)
 {
 	char buf[128];
 	struct iapp_hdr *hdr;
@@ -198,7 +197,7 @@ static void iapp_send_add(struct iapp_data *iapp, u8 *macaddr, u16 seq_num)
 	add = (struct iapp_add_notify *) (hdr + 1);
 	add->addr_len = ETH_ALEN;
 	add->reserved = 0;
-	memcpy(add->mac_addr, macaddr, ETH_ALEN);
+	memcpy(add->mac_addr, mac_addr, ETH_ALEN);
 
 	add->seq_num = host_to_be16(seq_num);
 	
@@ -518,4 +517,27 @@ void iapp_deinit(struct iapp_data *iapp)
 		close(iapp->packet_sock);
 	}
 	free(iapp);
+}
+
+int iapp_reconfig(struct hostapd_data *hapd, struct hostapd_config *oldconf,
+		  struct hostapd_bss_config *oldbss)
+{
+	if (hapd->conf->ieee802_11f != oldbss->ieee802_11f ||
+	    (hapd->conf->iapp_iface && !oldbss->iapp_iface) ||
+	    (!hapd->conf->iapp_iface && oldbss->iapp_iface) ||
+	    (hapd->conf->iapp_iface &&
+	     strcmp(hapd->conf->iapp_iface, oldbss->iapp_iface) != 0)) {
+
+		iapp_deinit(hapd->iapp);
+		hapd->iapp = NULL;
+
+		if (hapd->conf->ieee802_11f) {
+			hapd->iapp = iapp_init(hapd, hapd->conf->iapp_iface);
+
+			if (hapd->iapp == NULL)
+				return -1;
+		}
+	}
+
+	return 0;
 }

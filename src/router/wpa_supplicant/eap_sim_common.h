@@ -1,6 +1,6 @@
 /*
  * EAP peer: EAP-SIM/AKA shared routines
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -76,10 +76,12 @@ void eap_sim_derive_mk(const u8 *identity, size_t identity_len,
 		       int num_chal, const u8 *kc, u8 *mk);
 void eap_aka_derive_mk(const u8 *identity, size_t identity_len,
 		       const u8 *ik, const u8 *ck, u8 *mk);
-int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk);
+int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk,
+			u8 *emsk);
 int eap_sim_derive_keys_reauth(u16 _counter,
 			       const u8 *identity, size_t identity_len,
-			       const u8 *nonce_s, const u8 *mk, u8 *msk);
+			       const u8 *nonce_s, const u8 *mk, u8 *msk,
+			       u8 *emsk);
 int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
 		       const u8 *mac, const u8 *extra, size_t extra_len);
 void eap_sim_add_mac(const u8 *k_aut, u8 *msg, size_t msg_len, u8 *mac,

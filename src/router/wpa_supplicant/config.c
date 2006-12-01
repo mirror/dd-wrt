@@ -17,7 +17,6 @@
 #include "common.h"
 #include "wpa.h"
 #include "sha1.h"
-#include "wpa_supplicant.h"
 #include "eapol_sm.h"
 #include "eap.h"
 #include "l2_packet.h"
@@ -44,9 +43,11 @@ struct parse_data {
 	/* Variable specific parameters for the parser. */
 	void *param1, *param2, *param3, *param4;
 
-	/* 0 = this variable can be included in debug output
+	/* 0 = this variable can be included in debug output and ctrl_iface
 	 * 1 = this variable contains key/private data and it must not be
-	 *     included in debug output unless explicitly requested
+	 *     included in debug output unless explicitly requested. In
+	 *     addition, this variable will not be readable through the
+	 *     ctrl_iface.
 	 */
 	int key_data;
 };
@@ -66,7 +67,7 @@ static char * wpa_config_parse_string(const char *value, size_t *len)
 	} else {
 		u8 *str;
 		size_t hlen = os_strlen(value);
-		if (hlen % 1)
+		if (hlen & 1)
 			return NULL;
 		*len = hlen / 2;
 		str = os_malloc(*len);
@@ -86,36 +87,29 @@ static int wpa_config_parse_str(const struct parse_data *data,
 				int line, const char *value)
 {
 	size_t res_len, *dst_len;
-	char **dst;
+	char **dst, *tmp;
 
-	dst = (char **) (((u8 *) ssid) + (long) data->param1);
-	dst_len = (size_t *) (((u8 *) ssid) + (long) data->param2);
-
-	os_free(*dst);
-	*dst = wpa_config_parse_string(value, &res_len);
-	if (*dst == NULL) {
+	tmp = wpa_config_parse_string(value, &res_len);
+	if (tmp == NULL) {
 		wpa_printf(MSG_ERROR, "Line %d: failed to parse %s '%s'.",
 			   line, data->name,
 			   data->key_data ? "[KEY DATA REMOVED]" : value);
 		return -1;
 	}
-	if (data->param2)
-		*dst_len = res_len;
 
 	if (data->key_data) {
 		wpa_hexdump_ascii_key(MSG_MSGDUMP, data->name,
-				      (u8 *) *dst, res_len);
+				      (u8 *) tmp, res_len);
 	} else {
 		wpa_hexdump_ascii(MSG_MSGDUMP, data->name,
-				  (u8 *) *dst, res_len);
+				  (u8 *) tmp, res_len);
 	}
 
 	if (data->param3 && res_len < (size_t) data->param3) {
 		wpa_printf(MSG_ERROR, "Line %d: too short %s (len=%lu "
 			   "min_len=%ld)", line, data->name,
 			   (unsigned long) res_len, (long) data->param3);
-		os_free(*dst);
-		*dst = NULL;
+		os_free(tmp);
 		return -1;
 	}
 
@@ -123,10 +117,16 @@ static int wpa_config_parse_str(const struct parse_data *data,
 		wpa_printf(MSG_ERROR, "Line %d: too long %s (len=%lu "
 			   "max_len=%ld)", line, data->name,
 			   (unsigned long) res_len, (long) data->param4);
-		os_free(*dst);
-		*dst = NULL;
+		os_free(tmp);
 		return -1;
 	}
+
+	dst = (char **) (((u8 *) ssid) + (long) data->param1);
+	dst_len = (size_t *) (((u8 *) ssid) + (long) data->param2);
+	os_free(*dst);
+	*dst = tmp;
+	if (data->param2)
+		*dst_len = res_len;
 
 	return 0;
 }
@@ -1153,6 +1153,9 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(proactive_key_caching, 0, 1) },
 	{ INT_RANGE(disabled, 0, 1) },
 	{ STR(id_str) },
+#ifdef CONFIG_IEEE80211W
+	{ INT_RANGE(ieee80211w, 0, 2) },
+#endif /* CONFIG_IEEE80211W */
 	{ INT_RANGE(peerkey, 0, 1) }
 };
 
@@ -1557,6 +1560,53 @@ char * wpa_config_get(struct wpa_ssid *ssid, const char *var)
 
 
 /**
+ * wpa_config_get_no_key - Get a variable in network configuration (no keys)
+ * @ssid: Pointer to network configuration data
+ * @var: Variable name, e.g., "ssid"
+ * Returns: Value of the variable or %NULL on failure
+ *
+ * This function can be used to get network configuration variable like
+ * wpa_config_get(). The only difference is that this functions does not expose
+ * key/password material from the configuration. In case a key/password field
+ * is requested, the returned value is an empty string or %NULL if the variable
+ * is not set or "*" if the variable is set (regardless of its value). The
+ * returned value is a copy of the configuration variable in text format, i.e,.
+ * the same format that the text-based configuration file and wpa_config_set()
+ * are using for the value. The caller is responsible for freeing the returned
+ * value.
+ */
+char * wpa_config_get_no_key(struct wpa_ssid *ssid, const char *var)
+{
+	size_t i;
+
+	if (ssid == NULL || var == NULL)
+		return NULL;
+
+	for (i = 0; i < NUM_SSID_FIELDS; i++) {
+		const struct parse_data *field = &ssid_fields[i];
+		if (os_strcmp(var, field->name) == 0) {
+			char *res = field->writer(field, ssid);
+			if (field->key_data) {
+				if (res && res[0]) {
+					wpa_printf(MSG_DEBUG, "Do not allow "
+						   "key_data field to be "
+						   "exposed");
+					os_free(res);
+					return os_strdup("*");
+				}
+
+				os_free(res);
+				return NULL;
+			}
+			return res;
+		}
+	}
+
+	return NULL;
+}
+
+
+/**
  * wpa_config_update_psk - Update WPA PSK based on passphrase and SSID
  * @ssid: Pointer to network configuration data
  *
@@ -1678,3 +1728,28 @@ struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 
 	return config;
 }
+
+
+#ifndef CONFIG_NO_STDOUT_DEBUG
+/**
+ * wpa_config_debug_dump_networks - Debug dump of configured networks
+ * @config: Configuration data from wpa_config_read()
+ */
+void wpa_config_debug_dump_networks(struct wpa_config *config)
+{
+	int prio;
+	struct wpa_ssid *ssid;
+
+	for (prio = 0; prio < config->num_prio; prio++) {
+		ssid = config->pssid[prio];
+		wpa_printf(MSG_DEBUG, "Priority group %d",
+			   ssid->priority);
+		while (ssid) {
+			wpa_printf(MSG_DEBUG, "   id=%d ssid='%s'",
+				   ssid->id,
+				   wpa_ssid_txt(ssid->ssid, ssid->ssid_len));
+			ssid = ssid->pnext;
+		}
+	}
+}
+#endif /* CONFIG_NO_STDOUT_DEBUG */

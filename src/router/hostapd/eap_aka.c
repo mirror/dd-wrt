@@ -28,6 +28,7 @@ struct eap_aka_data {
 	u8 k_aut[EAP_SIM_K_AUT_LEN];
 	u8 k_encr[EAP_SIM_K_ENCR_LEN];
 	u8 msk[EAP_SIM_KEYING_DATA_LEN];
+	u8 emsk[EAP_EMSK_LEN];
 	u8 rand[EAP_AKA_RAND_LEN];
 	u8 autn[EAP_AKA_AUTN_LEN];
 	u8 ck[EAP_AKA_CK_LEN];
@@ -224,10 +225,11 @@ static u8 * eap_aka_build_reauth(struct eap_sm *sm,
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-AKA: NONCE_S",
 			data->nonce_s, EAP_SIM_NONCE_S_LEN);
 
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
+			    data->emsk);
 	eap_sim_derive_keys_reauth(data->counter, sm->identity,
 				   sm->identity_len, data->nonce_s, data->mk,
-				   data->msk);
+				   data->msk, data->emsk);
 
 	msg = eap_sim_msg_init(EAP_CODE_REQUEST, id, EAP_TYPE_AKA,
 			       EAP_AKA_SUBTYPE_REAUTHENTICATION);
@@ -410,7 +412,8 @@ static void eap_aka_determine_identity(struct eap_sm *sm,
 
 	eap_aka_derive_mk(sm->identity, sm->identity_len, data->ik, data->ck,
 			  data->mk);
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
+			    data->emsk);
 
 	eap_aka_state(data, CHALLENGE);
 }
@@ -703,6 +706,23 @@ static u8 * eap_aka_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_aka_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_aka_data *data = priv;
+	u8 *key;
+
+	if (data->state != SUCCESS)
+		return NULL;
+
+	key = malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+	memcpy(key, data->emsk, EAP_EMSK_LEN);
+	*len = EAP_EMSK_LEN;
+	return key;
+}
+
+
 static Boolean eap_aka_isSuccess(struct eap_sm *sm, void *priv)
 {
 	struct eap_aka_data *data = priv;
@@ -728,6 +748,7 @@ int eap_server_aka_register(void)
 	eap->isDone = eap_aka_isDone;
 	eap->getKey = eap_aka_getKey;
 	eap->isSuccess = eap_aka_isSuccess;
+	eap->get_emsk = eap_aka_get_emsk;
 
 	ret = eap_server_method_register(eap);
 	if (ret)

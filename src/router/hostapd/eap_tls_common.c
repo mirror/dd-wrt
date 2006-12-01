@@ -1,6 +1,6 @@
 /*
  * hostapd / EAP-TLS/PEAP/TTLS common functions
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -113,6 +113,16 @@ int eap_tls_data_reassemble(struct eap_sm *sm, struct eap_ssl_data *data,
 	u8 *buf;
 
 	if (data->tls_in_left > *in_len || data->tls_in) {
+		if (data->tls_in_len + *in_len > 65536) {
+			/* Limit length to avoid rogue peers from causing large
+			 * memory allocations. */
+			free(data->tls_in);
+			data->tls_in = NULL;
+			data->tls_in_len = 0;
+			wpa_printf(MSG_INFO, "SSL: Too long TLS fragment (size"
+				   " over 64 kB)");
+			return -1;
+		}
 		buf = realloc(data->tls_in, data->tls_in_len + *in_len);
 		if (buf == NULL) {
 			free(data->tls_in);

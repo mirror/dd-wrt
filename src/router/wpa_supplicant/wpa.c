@@ -21,7 +21,6 @@
 #include "aes_wrap.h"
 #include "wpa.h"
 #include "eloop.h"
-#include "wpa_supplicant.h"
 #include "config.h"
 #include "l2_packet.h"
 #include "eapol_sm.h"
@@ -88,6 +87,9 @@ static const u8 RSN_CIPHER_SUITE_WRAP[] = { 0x00, 0x0f, 0xac, 3 };
 #endif
 static const u8 RSN_CIPHER_SUITE_CCMP[] = { 0x00, 0x0f, 0xac, 4 };
 static const u8 RSN_CIPHER_SUITE_WEP104[] = { 0x00, 0x0f, 0xac, 5 };
+#ifdef CONFIG_IEEE80211W
+static const u8 RSN_CIPHER_SUITE_AES_128_CMAC[] = { 0x00, 0x0f, 0xac, 6 };
+#endif /* CONFIG_IEEE80211W */
 
 /* EAPOL-Key Key Data Encapsulation
  * GroupKey and PeerKey require encryption, otherwise, encryption is optional.
@@ -103,7 +105,16 @@ static const u8 RSN_KEY_DATA_SMK[] = { 0x00, 0x0f, 0xac, 5 };
 static const u8 RSN_KEY_DATA_NONCE[] = { 0x00, 0x0f, 0xac, 6 };
 static const u8 RSN_KEY_DATA_LIFETIME[] = { 0x00, 0x0f, 0xac, 7 };
 static const u8 RSN_KEY_DATA_ERROR[] = { 0x00, 0x0f, 0xac, 8 };
+#endif /* CONFIG_PEERKEY */
+#ifdef CONFIG_IEEE80211W
+/* FIX: IEEE 802.11w/D1.0 is using subtypes 5 and 6 for these, but they were
+ * already taken by 802.11ma (PeerKey). Need to update the values here once
+ * IEEE 802.11w fixes these. */
+static const u8 RSN_KEY_DATA_DHV[] = { 0x00, 0x0f, 0xac, 9 };
+static const u8 RSN_KEY_DATA_IGTK[] = { 0x00, 0x0f, 0xac, 10 };
+#endif /* CONFIG_IEEE80211W */
 
+#ifdef CONFIG_PEERKEY
 enum {
 	STK_MUI_4WAY_STA_AP = 1,
 	STK_MUI_4WAY_STAT_STA = 2,
@@ -140,6 +151,7 @@ enum {
  * RSN Capabilities (2 octets, little endian) (default: 0)
  * PMKID Count (2 octets) (default: 0)
  * PMKID List (16 * n octets)
+ * Management Group Cipher Suite (4 octets) (default: AES-128-CMAC)
  */
 
 #ifdef _MSC_VER
@@ -173,6 +185,18 @@ struct rsn_error_kde {
 	u16 mui;
 	u16 error_type;
 } STRUCT_PACKED;
+
+#ifdef CONFIG_IEEE80211W
+struct wpa_dhv_kde {
+	u8 dhv[WPA_DHV_LEN];
+} STRUCT_PACKED;
+
+struct wpa_igtk_kde {
+	u8 keyid[2];
+	u8 pn[6];
+	u8 igtk[WPA_IGTK_LEN];
+} STRUCT_PACKED;
+#endif /* CONFIG_IEEE80211W */
 
 #ifdef _MSC_VER
 #pragma pack(pop)
@@ -294,6 +318,10 @@ static int rsn_selector_to_bitfield(const u8 *s)
 		return WPA_CIPHER_CCMP;
 	if (os_memcmp(s, RSN_CIPHER_SUITE_WEP104, RSN_SELECTOR_LEN) == 0)
 		return WPA_CIPHER_WEP104;
+#ifdef CONFIG_IEEE80211W
+	if (os_memcmp(s, RSN_CIPHER_SUITE_AES_128_CMAC, RSN_SELECTOR_LEN) == 0)
+		return WPA_CIPHER_AES_128_CMAC;
+#endif /* CONFIG_IEEE80211W */
 	return 0;
 }
 
@@ -348,6 +376,7 @@ static int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 	data->capabilities = 0;
 	data->pmkid = NULL;
 	data->num_pmkid = 0;
+	data->mgmt_group_cipher = 0;
 
 	if (wpa_ie_len == 0) {
 		/* No WPA IE - fail silently */
@@ -457,6 +486,12 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	data->capabilities = 0;
 	data->pmkid = NULL;
 	data->num_pmkid = 0;
+#ifdef CONFIG_IEEE80211W
+	data->mgmt_group_cipher = WPA_CIPHER_AES_128_CMAC;
+#else /* CONFIG_IEEE80211W */
+	data->mgmt_group_cipher = 0;
+#endif /* CONFIG_IEEE80211W */
+
 
 	if (rsn_ie_len == 0) {
 		/* No RSN IE - fail silently */
@@ -484,6 +519,13 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 
 	if (left >= RSN_SELECTOR_LEN) {
 		data->group_cipher = rsn_selector_to_bitfield(pos);
+#ifdef CONFIG_IEEE80211W
+		if (data->group_cipher == WPA_CIPHER_AES_128_CMAC) {
+			wpa_printf(MSG_DEBUG, "%s: AES-128-CMAC used as group "
+				   "cipher", __func__);
+			return -1;
+		}
+#endif /* CONFIG_IEEE80211W */
 		pos += RSN_SELECTOR_LEN;
 		left -= RSN_SELECTOR_LEN;
 	} else if (left > 0) {
@@ -507,6 +549,13 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			pos += RSN_SELECTOR_LEN;
 			left -= RSN_SELECTOR_LEN;
 		}
+#ifdef CONFIG_IEEE80211W
+		if (data->pairwise_cipher & WPA_CIPHER_AES_128_CMAC) {
+			wpa_printf(MSG_DEBUG, "%s: AES-128-CMAC used as "
+				   "pairwise cipher", __func__);
+			return -1;
+		}
+#endif /* CONFIG_IEEE80211W */
 	} else if (left == 1) {
 		wpa_printf(MSG_DEBUG, "%s: ie too short (for key mgmt)",
 			   __func__);
@@ -555,6 +604,20 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			left -= data->num_pmkid * PMKID_LEN;
 		}
 	}
+
+#ifdef CONFIG_IEEE80211W
+	if (left >= 4) {
+		data->mgmt_group_cipher = rsn_selector_to_bitfield(pos);
+		if (data->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC) {
+			wpa_printf(MSG_DEBUG, "%s: Unsupported management "
+				   "group cipher 0x%x", __func__,
+				   data->mgmt_group_cipher);
+			return -1;
+		}
+		pos += RSN_SELECTOR_LEN;
+		left -= RSN_SELECTOR_LEN;
+	}
+#endif /* CONFIG_IEEE80211W */
 
 	if (left > 0) {
 		wpa_printf(MSG_DEBUG, "%s: ie has %u trailing bytes - ignored",
@@ -663,11 +726,13 @@ static int wpa_gen_wpa_ie_wpa(u8 *wpa_ie, size_t wpa_ie_len,
 
 static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 			      int pairwise_cipher, int group_cipher,
-			      int key_mgmt, struct wpa_sm *sm)
+			      int key_mgmt, int mgmt_group_cipher,
+			      struct wpa_sm *sm)
 {
 #ifndef CONFIG_NO_WPA2
 	u8 *pos;
 	struct rsn_ie_hdr *hdr;
+	u16 capab;
 
 	if (rsn_ie_len < sizeof(*hdr) + RSN_SELECTOR_LEN +
 	    2 + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2 +
@@ -725,8 +790,13 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 	pos += RSN_SELECTOR_LEN;
 
 	/* RSN Capabilities */
-	*pos++ = 0;
-	*pos++ = 0;
+	capab = 0;
+#ifdef CONFIG_IEEE80211W
+	if (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC)
+		capab |= WPA_CAPABILITY_MGMT_FRAME_PROTECTION;
+#endif /* CONFIG_IEEE80211W */
+	WPA_PUT_LE16(pos, capab);
+	pos += 2;
 
 	if (sm->cur_pmksa) {
 		/* PMKID Count (2 octets, little endian) */
@@ -736,6 +806,21 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 		os_memcpy(pos, sm->cur_pmksa->pmkid, PMKID_LEN);
 		pos += PMKID_LEN;
 	}
+
+#ifdef CONFIG_IEEE80211W
+	if (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
+		if (!sm->cur_pmksa) {
+			/* PMKID Count */
+			WPA_PUT_LE16(pos, 0);
+			pos += 2;
+
+			/* Management Group Cipher Suite */
+			memcpy(pos, RSN_CIPHER_SUITE_AES_128_CMAC,
+			       RSN_SELECTOR_LEN);
+			pos += RSN_SELECTOR_LEN;
+		}
+	}
+#endif /* CONFIG_IEEE80211W */
 
 	hdr->len = (pos - rsn_ie) - 2;
 
@@ -761,7 +846,8 @@ static int wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len)
 		return wpa_gen_wpa_ie_rsn(wpa_ie, wpa_ie_len,
 					  sm->pairwise_cipher,
 					  sm->group_cipher,
-					  sm->key_mgmt, sm);
+					  sm->key_mgmt, sm->mgmt_group_cipher,
+					  sm);
 	else
 		return wpa_gen_wpa_ie_wpa(wpa_ie, wpa_ie_len,
 					  sm->pairwise_cipher,
@@ -1106,6 +1192,12 @@ struct wpa_eapol_ie_parse {
 	const u8 *error;
 	size_t error_len;
 #endif /* CONFIG_PEERKEY */
+#ifdef CONFIG_IEEE80211W
+	const u8 *dhv;
+	size_t dhv_len;
+	const u8 *igtk;
+	size_t igtk_len;
+#endif /* CONFIG_IEEE80211W */
 };
 
 
@@ -1181,6 +1273,22 @@ static int wpa_supplicant_parse_generic(const u8 *pos, const u8 *end,
 		return 0;
 	}
 #endif /* CONFIG_PEERKEY */
+
+#ifdef CONFIG_IEEE80211W
+	if (pos[1] > RSN_SELECTOR_LEN + 2 &&
+	    os_memcmp(pos + 2, RSN_KEY_DATA_DHV, RSN_SELECTOR_LEN) == 0) {
+		ie->dhv = pos + 2 + RSN_SELECTOR_LEN;
+		ie->dhv_len = pos[1] - RSN_SELECTOR_LEN;
+		return 0;
+	}
+
+	if (pos[1] > RSN_SELECTOR_LEN + 2 &&
+	    os_memcmp(pos + 2, RSN_KEY_DATA_IGTK, RSN_SELECTOR_LEN) == 0) {
+		ie->igtk = pos + 2 + RSN_SELECTOR_LEN;
+		ie->igtk_len = pos[1] - RSN_SELECTOR_LEN;
+		return 0;
+	}
+#endif /* CONFIG_IEEE80211W */
 
 	return 0;
 }
@@ -1400,10 +1508,10 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 #ifndef CONFIG_NO_WPA2
 	if (sm->proto == WPA_PROTO_RSN) {
 		/* RSN: msg 1/4 should contain PMKID for the selected PMK */
-		const u8 *buf = (const u8 *) (key + 1);
+		const u8 *_buf = (const u8 *) (key + 1);
 		size_t len = WPA_GET_BE16(key->key_data_length);
-		wpa_hexdump(MSG_DEBUG, "RSN: msg 1/4 key data", buf, len);
-		wpa_supplicant_parse_ies(buf, len, &ie);
+		wpa_hexdump(MSG_DEBUG, "RSN: msg 1/4 key data", _buf, len);
+		wpa_supplicant_parse_ies(_buf, len, &ie);
 		if (ie.pmkid) {
 			wpa_hexdump(MSG_DEBUG, "RSN: PMKID from "
 				    "Authenticator", ie.pmkid, PMKID_LEN);
@@ -1706,6 +1814,62 @@ static int wpa_supplicant_pairwise_gtk(struct wpa_sm *sm,
 }
 
 
+static int ieee80211w_set_keys(struct wpa_sm *sm,
+			       struct wpa_eapol_ie_parse *ie)
+{
+#ifdef CONFIG_IEEE80211W
+	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC)
+		return 0;
+
+	if (ie->igtk) {
+		const struct wpa_igtk_kde *igtk;
+		u16 keyidx;
+		if (ie->igtk_len != sizeof(*igtk))
+			return -1;
+		igtk = (const struct wpa_igtk_kde *) ie->igtk;
+		keyidx = WPA_GET_LE16(igtk->keyid);
+		wpa_printf(MSG_DEBUG, "WPA: IGTK keyid %d "
+			   "pn %02x%02x%02x%02x%02x%02x",
+			   keyidx, MAC2STR(igtk->pn));
+		wpa_hexdump_key(MSG_DEBUG, "WPA: IGTK",
+				igtk->igtk, WPA_IGTK_LEN);
+		if (keyidx > 4095) {
+			wpa_printf(MSG_WARNING, "WPA: Invalid IGTK KeyID %d",
+				   keyidx);
+			return -1;
+		}
+		if (wpa_sm_set_key(sm, WPA_ALG_IGTK,
+				   (u8 *) "\xff\xff\xff\xff\xff\xff",
+				   keyidx, 0, igtk->pn, sizeof(igtk->pn),
+				   igtk->igtk, WPA_IGTK_LEN) < 0) {
+			wpa_printf(MSG_WARNING, "WPA: Failed to configure IGTK"
+				   " to the driver");
+			return -1;
+		}
+	}
+
+	if (ie->dhv) {
+		const struct wpa_dhv_kde *dhv;
+		if (ie->dhv_len != sizeof(*dhv))
+			return -1;
+		dhv = (const struct wpa_dhv_kde *) ie->dhv;
+		wpa_hexdump_key(MSG_DEBUG, "WPA: DHV", dhv->dhv, WPA_DHV_LEN);
+		if (wpa_sm_set_key(sm, WPA_ALG_DHV,
+				   (u8 *) "\xff\xff\xff\xff\xff\xff", 0, 0,
+				   NULL, 0, dhv->dhv, WPA_DHV_LEN) < 0) {
+			wpa_printf(MSG_WARNING, "WPA: Failed to configure DHV "
+				   "to the driver");
+			return -1;
+		}
+	}
+
+	return 0;
+#else /* CONFIG_IEEE80211W */
+	return 0;
+#endif /* CONFIG_IEEE80211W */
+}
+
+
 static void wpa_report_ie_mismatch(struct wpa_sm *sm,
 				   const char *reason, const u8 *src_addr,
 				   const u8 *wpa_ie, size_t wpa_ie_len,
@@ -1867,6 +2031,25 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 		wpa_printf(MSG_WARNING, "WPA: GTK IE in unencrypted key data");
 		return;
 	}
+#ifdef CONFIG_IEEE80211W
+	if ((ie.dhv || ie.igtk) && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
+		wpa_printf(MSG_WARNING, "WPA: DHV/IGTK KDE in unencrypted key "
+			   "data");
+		return;
+	}
+
+	if (ie.dhv && ie.dhv_len != sizeof(struct wpa_dhv_kde)) {
+		wpa_printf(MSG_WARNING, "WPA: Invalid DHV KDE length %lu",
+			   (unsigned long) ie.dhv_len);
+		return;
+	}
+
+	if (ie.igtk && ie.igtk_len != sizeof(struct wpa_igtk_kde)) {
+		wpa_printf(MSG_WARNING, "WPA: Invalid IGTK KDE length %lu",
+			   (unsigned long) ie.igtk_len);
+		return;
+	}
+#endif /* CONFIG_IEEE80211W */
 
 	if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0)
 		return;
@@ -1924,6 +2107,9 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 					ie.gtk, ie.gtk_len, key_info) < 0) {
 		wpa_printf(MSG_INFO, "RSN: Failed to configure GTK");
 	}
+
+	if (ieee80211w_set_keys(sm, &ie) < 0)
+		wpa_printf(MSG_INFO, "RSN: Failed to configure DHV/IGTK");
 }
 
 
@@ -2809,6 +2995,9 @@ static int wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm,
 	}
 	os_memcpy(gd->gtk, ie.gtk + 2, ie.gtk_len - 2);
 
+	if (ieee80211w_set_keys(sm, &ie) < 0)
+		wpa_printf(MSG_INFO, "RSN: Failed to configure DHV/IGTK");
+
 	return 0;
 }
 
@@ -3297,11 +3486,11 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
 				   "packet");
 			goto out;
 		} else if (peerkey->initiator) {
-			u8 tmp[WPA_REPLAY_COUNTER_LEN];
-			os_memcpy(tmp, key->replay_counter,
+			u8 _tmp[WPA_REPLAY_COUNTER_LEN];
+			os_memcpy(_tmp, key->replay_counter,
 				  WPA_REPLAY_COUNTER_LEN);
-			inc_byte_array(tmp, WPA_REPLAY_COUNTER_LEN);
-			if (os_memcmp(tmp, peerkey->replay_counter,
+			inc_byte_array(_tmp, WPA_REPLAY_COUNTER_LEN);
+			if (os_memcmp(_tmp, peerkey->replay_counter,
 				      WPA_REPLAY_COUNTER_LEN) != 0) {
 				wpa_printf(MSG_DEBUG, "RSN: EAPOL-Key Replay "
 					   "Counter did not match (STK) - "
@@ -3881,6 +4070,13 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
 	case WPA_PARAM_KEY_MGMT:
 		sm->key_mgmt = value;
 		break;
+#ifdef CONFIG_IEEE80211W
+	case WPA_PARAM_MGMT_GROUP:
+		sm->mgmt_group_cipher = value;
+		break;
+#endif /* CONFIG_IEEE80211W */
+	default:
+		break;
 	}
 
 	return ret;
@@ -3913,6 +4109,10 @@ unsigned int wpa_sm_get_param(struct wpa_sm *sm, enum wpa_sm_conf_params param)
 		return sm->group_cipher;
 	case WPA_PARAM_KEY_MGMT:
 		return sm->key_mgmt;
+#ifdef CONFIG_IEEE80211W
+	case WPA_PARAM_MGMT_GROUP:
+		return sm->mgmt_group_cipher;
+#endif /* CONFIG_IEEE80211W */
 	default:
 		return 0;
 	}

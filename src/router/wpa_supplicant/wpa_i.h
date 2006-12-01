@@ -123,6 +123,7 @@ struct wpa_sm {
 	unsigned int pairwise_cipher;
 	unsigned int group_cipher;
 	unsigned int key_mgmt;
+	unsigned int mgmt_group_cipher;
 
 	u8 *assoc_wpa_ie; /* Own WPA/RSN IE from (Re)AssocReq */
 	size_t assoc_wpa_ie_len;

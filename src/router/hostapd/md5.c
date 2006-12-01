@@ -61,8 +61,8 @@ void hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 	 * and text is the data being protected */
 
 	/* start out by storing key in ipad */
-	memset(k_pad, 0, sizeof(k_pad));
-	memcpy(k_pad, key, key_len);
+	os_memset(k_pad, 0, sizeof(k_pad));
+	os_memcpy(k_pad, key, key_len);
 
 	/* XOR key with ipad values */
 	for (i = 0; i < 64; i++)
@@ -77,8 +77,8 @@ void hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 	}
 	md5_vector(1 + num_elem, _addr, _len, mac);
 
-	memset(k_pad, 0, sizeof(k_pad));
-	memcpy(k_pad, key, key_len);
+	os_memset(k_pad, 0, sizeof(k_pad));
+	os_memcpy(k_pad, key, key_len);
 	/* XOR key with opad values */
 	for (i = 0; i < 64; i++)
 		k_pad[i] ^= 0x5c;
@@ -115,11 +115,14 @@ struct MD5Context {
 	u8 in[64];
 };
 
+#ifndef CONFIG_CRYPTO_INTERNAL
 static void MD5Init(struct MD5Context *context);
 static void MD5Update(struct MD5Context *context, unsigned char const *buf,
-		      unsigned len);
+			  unsigned len);
 static void MD5Final(unsigned char digest[16], struct MD5Context *context);
+#endif /* CONFIG_CRYPTO_INTERNAL */
 static void MD5Transform(u32 buf[4], u32 const in[16]);
+
 
 typedef struct MD5Context MD5_CTX;
 
@@ -183,7 +186,7 @@ static void byteReverse(unsigned char *buf, unsigned longs)
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-static void MD5Init(struct MD5Context *ctx)
+void MD5Init(struct MD5Context *ctx)
 {
     ctx->buf[0] = 0x67452301;
     ctx->buf[1] = 0xefcdab89;
@@ -198,8 +201,7 @@ static void MD5Init(struct MD5Context *ctx)
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
-		      unsigned len)
+void MD5Update(struct MD5Context *ctx, unsigned char const *buf, unsigned len)
 {
     u32 t;
 
@@ -219,10 +221,10 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
 
 	t = 64 - t;
 	if (len < t) {
-	    memcpy(p, buf, len);
+	    os_memcpy(p, buf, len);
 	    return;
 	}
-	memcpy(p, buf, t);
+	os_memcpy(p, buf, t);
 	byteReverse(ctx->in, 16);
 	MD5Transform(ctx->buf, (u32 *) ctx->in);
 	buf += t;
@@ -231,7 +233,7 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
     /* Process data in 64-byte chunks */
 
     while (len >= 64) {
-	memcpy(ctx->in, buf, 64);
+	os_memcpy(ctx->in, buf, 64);
 	byteReverse(ctx->in, 16);
 	MD5Transform(ctx->buf, (u32 *) ctx->in);
 	buf += 64;
@@ -240,14 +242,14 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
 
     /* Handle any remaining bytes of data. */
 
-    memcpy(ctx->in, buf, len);
+    os_memcpy(ctx->in, buf, len);
 }
 
 /*
  * Final wrapup - pad to 64-byte boundary with the bit pattern
  * 1 0* (64-bit count of bits processed, MSB-first)
  */
-static void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
+void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 {
     unsigned count;
     unsigned char *p;
@@ -266,15 +268,15 @@ static void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
     /* Pad out to 56 mod 64 */
     if (count < 8) {
 	/* Two lots of padding:  Pad the first block to 64 bytes */
-	memset(p, 0, count);
+	os_memset(p, 0, count);
 	byteReverse(ctx->in, 16);
 	MD5Transform(ctx->buf, (u32 *) ctx->in);
 
 	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
+	os_memset(ctx->in, 0, 56);
     } else {
 	/* Pad block to 56 bytes */
-	memset(p, 0, count - 8);
+	os_memset(p, 0, count - 8);
     }
     byteReverse(ctx->in, 14);
 
@@ -284,8 +286,8 @@ static void MD5Final(unsigned char digest[16], struct MD5Context *ctx)
 
     MD5Transform(ctx->buf, (u32 *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
-    memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(ctx));	/* In case it's sensitive */
+    os_memcpy(digest, ctx->buf, 16);
+    os_memset(ctx, 0, sizeof(ctx));	/* In case it's sensitive */
 }
 
 /* The four core functions - F1 is optimized somewhat */

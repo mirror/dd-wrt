@@ -43,7 +43,7 @@ static void * eap_psk_init(struct eap_sm *sm)
 	if (data == NULL)
 		return NULL;
 	data->state = PSK_1;
-	data->id_s = "hostapd";
+	data->id_s = (u8 *) "hostapd";
 	data->id_s_len = 7;
 
 	return data;

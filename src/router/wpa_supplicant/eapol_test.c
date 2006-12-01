@@ -128,6 +128,12 @@ const char * hostapd_ip_txt(const struct hostapd_ip_addr *addr, char *buf,
 }
 
 
+int hostapd_ip_diff(struct hostapd_ip_addr *a, struct hostapd_ip_addr *b)
+{
+	return 0;
+}
+
+
 static void ieee802_1x_encapsulate_radius(struct eapol_test_data *e,
 					  const u8 *eap, size_t len)
 {
@@ -538,16 +544,16 @@ static void ieee802_1x_decapsulate_radius(struct eapol_test_data *e)
 	e->last_eap_radius_len = len;
 
 	{
-		struct ieee802_1x_hdr *hdr;
-		hdr = os_malloc(sizeof(*hdr) + len);
-		assert(hdr != NULL);
-		hdr->version = EAPOL_VERSION;
-		hdr->type = IEEE802_1X_TYPE_EAP_PACKET;
-		hdr->length = htons(len);
-		os_memcpy((u8 *) (hdr + 1), eap, len);
+		struct ieee802_1x_hdr *dot1x;
+		dot1x = os_malloc(sizeof(*dot1x) + len);
+		assert(dot1x != NULL);
+		dot1x->version = EAPOL_VERSION;
+		dot1x->type = IEEE802_1X_TYPE_EAP_PACKET;
+		dot1x->length = htons(len);
+		os_memcpy((u8 *) (dot1x + 1), eap, len);
 		eapol_sm_rx_eapol(e->wpa_s->eapol, e->wpa_s->bssid,
-				  (u8 *) hdr, sizeof(*hdr) + len);
-		os_free(hdr);
+				  (u8 *) dot1x, sizeof(*dot1x) + len);
+		os_free(dot1x);
 	}
 }
 
@@ -705,7 +711,7 @@ static int scard_test(void)
 	struct scard_data *scard;
 	size_t len;
 	char imsi[20];
-	unsigned char rand[16];
+	unsigned char _rand[16];
 #ifdef PCSC_FUNCS
 	unsigned char sres[4];
 	unsigned char kc[8];
@@ -746,12 +752,12 @@ static int scard_test(void)
 	wpa_hexdump_ascii(MSG_DEBUG, "SCARD: IMSI", (u8 *) imsi, len);
 	/* NOTE: Permanent Username: 1 | IMSI */
 
-	os_memset(rand, 0, sizeof(rand));
-	if (scard_gsm_auth(scard, rand, sres, kc))
+	os_memset(_rand, 0, sizeof(_rand));
+	if (scard_gsm_auth(scard, _rand, sres, kc))
 		goto failed;
 
-	os_memset(rand, 0xff, sizeof(rand));
-	if (scard_gsm_auth(scard, rand, sres, kc))
+	os_memset(_rand, 0xff, sizeof(_rand));
+	if (scard_gsm_auth(scard, _rand, sres, kc))
 		goto failed;
 
 	for (i = 0; i < num_triplets; i++) {
@@ -811,7 +817,7 @@ static int scard_get_triplets(int argc, char *argv[])
 	struct scard_data *scard;
 	size_t len;
 	char imsi[20];
-	unsigned char rand[16];
+	unsigned char _rand[16];
 	unsigned char sres[4];
 	unsigned char kc[8];
 	int num_triplets;
@@ -846,8 +852,8 @@ static int scard_get_triplets(int argc, char *argv[])
 	}
 
 	for (i = 0; i < num_triplets; i++) {
-		os_memset(rand, i, sizeof(rand));
-		if (scard_gsm_auth(scard, rand, sres, kc))
+		os_memset(_rand, i, sizeof(_rand));
+		if (scard_gsm_auth(scard, _rand, sres, kc))
 			break;
 
 		/* IMSI:Kc:SRES:RAND */
@@ -861,7 +867,7 @@ static int scard_get_triplets(int argc, char *argv[])
 			printf("%02X", sres[j]);
 		printf(":");
 		for (j = 0; j < 16; j++)
-			printf("%02X", rand[j]);
+			printf("%02X", _rand[j]);
 		printf("\n");
 	}
 

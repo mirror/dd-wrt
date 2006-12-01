@@ -18,7 +18,6 @@
 #include "wpa.h"
 #include "driver.h"
 #include "eloop.h"
-#include "wpa_supplicant.h"
 #include "config.h"
 #include "l2_packet.h"
 #include "eapol_sm.h"

@@ -59,6 +59,9 @@ void ieee802_1x_set_sta_authorized(struct hostapd_data *hapd,
 void ieee802_1x_dump_state(FILE *f, const char *prefix, struct sta_info *sta);
 int ieee802_1x_init(struct hostapd_data *hapd);
 void ieee802_1x_deinit(struct hostapd_data *hapd);
+int ieee802_1x_reconfig(struct hostapd_data *hapd,
+			struct hostapd_config *oldconf,
+			struct hostapd_bss_config *oldbss);
 int ieee802_1x_tx_status(struct hostapd_data *hapd, struct sta_info *sta,
 			 u8 *buf, size_t len, int ack);
 u8 * ieee802_1x_get_identity(struct eapol_state_machine *sm, size_t *len);
@@ -76,6 +79,7 @@ int ieee802_1x_get_mib_sta(struct hostapd_data *hapd, struct sta_info *sta,
 void hostapd_get_ntp_timestamp(u8 *buf);
 void ieee802_1x_finished(struct hostapd_data *hapd, struct sta_info *sta,
 			 int success);
+char *eap_type_text(u8 type);
 
 struct radius_class_data;
 

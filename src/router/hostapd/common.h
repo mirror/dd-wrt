@@ -34,10 +34,19 @@
 #endif /* defined(__FreeBSD__) || defined(__NetBSD__) ||
 	* defined(__DragonFly__) */
 
+#ifdef CONFIG_TI_COMPILER
+#define __BIG_ENDIAN 4321
+#define __LITTLE_ENDIAN 1234
+#ifdef __big_endian__
+#define __BYTE_ORDER __BIG_ENDIAN
+#else
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#endif
+#endif /* CONFIG_TI_COMPILER */
+
 #ifdef CONFIG_NATIVE_WINDOWS
 #include <winsock.h>
 
-typedef int gid_t;
 typedef int socklen_t;
 
 #ifndef MSG_DONTWAIT
@@ -193,6 +202,22 @@ typedef INT8 s8;
 #define WPA_TYPES_DEFINED
 #endif /* __vxworks */
 
+#ifdef CONFIG_TI_COMPILER
+#ifdef _LLONG_AVAILABLE
+typedef unsigned long long u64;
+#else
+/*
+ * TODO: 64-bit variable not available. Using long as a workaround to test the
+ * build, but this will likely not work for all operations.
+ */
+typedef unsigned long u64;
+#endif
+typedef unsigned int u32;
+typedef unsigned short u16;
+typedef unsigned char u8;
+#define WPA_TYPES_DEFINED
+#endif /* CONFIG_TI_COMPILER */
+
 #ifndef WPA_TYPES_DEFINED
 #ifdef CONFIG_USE_INTTYPES_H
 #include <inttypes.h>
@@ -227,7 +252,7 @@ void wpa_get_ntp_timestamp(u8 *buf);
 
 
 /* Debugging function - conditional printf and hex dump. Driver wrappers can
- *  use these for debugging purposes. */
+ * use these for debugging purposes. */
 
 enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 
@@ -334,6 +359,37 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
+#ifdef CONFIG_NO_WPA_MSG
+#define wpa_msg(args...) do { } while (0)
+#define wpa_msg_register_cb(f) do { } while (0)
+#else /* CONFIG_NO_WPA_MSG */
+/**
+ * wpa_msg - Conditional printf for default target and ctrl_iface monitors
+ * @ctx: Pointer to context data; this is the ctx variable registered
+ *	with struct wpa_driver_ops::init()
+ * @level: priority level (MSG_*) of the message
+ * @fmt: printf format string, followed by optional arguments
+ *
+ * This function is used to print conditional debugging and error messages. The
+ * output may be directed to stdout, stderr, and/or syslog based on
+ * configuration. This function is like wpa_printf(), but it also sends the
+ * same message to all attached ctrl_iface monitors.
+ *
+ * Note: New line '\n' is added to the end of the text when printing to stdout.
+ */
+void wpa_msg(void *ctx, int level, char *fmt, ...) PRINTF_FORMAT(3, 4);
+
+typedef void (*wpa_msg_cb_func)(void *ctx, int level, const char *txt,
+				size_t len);
+
+/**
+ * wpa_msg_register_cb - Register callback function for wpa_msg() messages
+ * @func: Callback function (%NULL to unregister)
+ */
+void wpa_msg_register_cb(wpa_msg_cb_func func);
+#endif /* CONFIG_NO_WPA_MSG */
+
+
 int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len);
 int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 			       size_t len);
@@ -355,76 +411,14 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 
 
 #ifdef _MSC_VER
-#undef snprintf
-#define snprintf _snprintf
 #undef vsnprintf
 #define vsnprintf _vsnprintf
 #undef close
 #define close closesocket
-#undef strdup
-#define strdup _strdup
 #endif /* _MSC_VER */
 
 
 #ifdef CONFIG_ANSI_C_EXTRA
-
-/*
- * Following non-ANSI C functions may need to be defined either as a macro to
- * native function with identical behavior or as a separate implementation,
- * e.g., in common.c or in a new OS / C library specific file, if needed.
- */
-
-#if 0
-/* List of used C library functions */
-
-/* Memory allocation */
-void free(void *ptr);
-void *malloc(size_t size);
-void *realloc(void *ptr, size_t size);
-
-/* Memory/string processing */
-void *memcpy(void *dest, const void *src, size_t n);
-void *memmove(void *dest, const void *src, size_t n);
-void *memset(void *s, int c, size_t n);
-int memcmp(const void *s1, const void *s2, size_t n);
-
-char *strchr(const char *s, int c);
-char *strrchr(const char *s, int c);
-int strcmp(const char *s1, const char *s2);
-size_t strlen(const char *s);
-char *strncpy(char *dest, const char *src, size_t n);
-char *strstr(const char *haystack, const char *needle);
-char *strdup(const char *s);
-
-/* printf like functions for writing to memory buffer */
-int snprintf(char *str, size_t size, const char *format, ...);
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-/* vsnprintf is only used for wpa_msg(); not needed if ctrl_iface is not used
- * and stdout debugging is disabled
- */
-#endif
-
-#if !defined(_MSC_VER) || _MSC_VER < 1400
-/* strdup - used in number of places - simple example implementation in
- * common.c */
-char * strdup(const char *s);
-#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
-
-/* strcasecmp - used in couple of places; not critical, so can be defined to
- * use strcmp instead */
-#if 0
-int strcasecmp(const char *s1, const char *s2);
-#else
-#define strcasecmp strcmp
-#endif
-
-/* strncasecmp - used only in wpa_cli.c; not critical, so can be defined to
- * use strncmp instead */
-#if 0
-int strncasecmp(const char *s1, const char *s2, size_t n);
-#else
-#define strncasecmp strncmp
-#endif
 
 #if !defined(_MSC_VER) || _MSC_VER < 1400
 /* snprintf - used in number of places; sprintf() is _not_ a good replacement
@@ -441,20 +435,6 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int getopt(int argc, char *const argv[], const char *optstring);
 extern char *optarg;
 extern int optind;
-
-/* gid_t - used in config.h, just typedef it to int here */
-
-#ifndef CONFIG_NO_GID_T_TYPEDEF
-#ifdef CONFIG_CTRL_IFACE
-#ifndef CONFIG_CTRL_IFACE_UDP
-#ifndef __gid_t_defined
-#ifndef _GID_T
-typedef int gid_t;
-#endif
-#endif
-#endif
-#endif
-#endif
 
 #ifndef CONFIG_NO_SOCKLEN_T_TYPEDEF
 #ifndef __socklen_t_defined
@@ -496,7 +476,7 @@ void perror(const char *s);
 
 #endif /* CONFIG_ANSI_C_EXTRA */
 
-void *wpa_zalloc(size_t size);
+#define wpa_zalloc(s) os_zalloc((s))
 
 #ifdef CONFIG_NATIVE_WINDOWS
 void wpa_unicode2ascii_inplace(TCHAR *str);
@@ -505,5 +485,7 @@ TCHAR * wpa_strdup_tchar(const char *str);
 #define wpa_unicode2ascii_inplace(s) do { } while (0)
 #define wpa_strdup_tchar(s) strdup((s))
 #endif /* CONFIG_NATIVE_WINDOWS */
+
+const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len);
 
 #endif /* COMMON_H */
