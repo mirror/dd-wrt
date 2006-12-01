@@ -7,7 +7,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -64,7 +64,7 @@
  * This string will be updated with each customer release of the IXP400
  * Software.
  */
-#define IX_VERSION_ID "2_3"
+#define IX_VERSION_ID "2_3_1"
 
 /**
  * This string will be updated with each customer release of the IXP400
@@ -112,7 +112,7 @@
  * This string will be updated with each internal release (SQA drop)
  * of the IXP400 Software.
  */
-#define IX_VERSION_INTERNAL_ID "SQA3_1"
+#define IX_VERSION_INTERNAL_ID "SQA1_1"
 
 /**
  * @brief Compatible Tornado Version Identifier
