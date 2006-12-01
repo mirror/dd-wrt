@@ -8,7 +8,7 @@
  *
  * 
  * @par
- * IXP400 SW Release Crypto version 2.3
+ * IXP400 SW Release version 2.3
  * 
  * -- Copyright Notice --
  * 
@@ -331,7 +331,7 @@ ixFeatureCtrlProductIdRead ()
 #endif
 
 #endif
-  return (pdId);
+  return (((pdId&0xFFFFFFF0)+((pdId&IX_FEATURE_CTRL_SILICON_STEPPING_MASK)?1:0)));
 #else
   /* Return an invalid value for VxWorks simulation */
   return 0xffffffff;
