@@ -29,16 +29,19 @@ void os_sleep(os_time_t sec, os_time_t usec)
 
 int os_get_time(struct os_time *t)
 {
-#ifdef _WIN32_WCE
-	/* TODO */
-	return 0;
-#else /* _WIN32_WCE */
 #define EPOCHFILETIME (116444736000000000ULL)
 	FILETIME ft;
 	LARGE_INTEGER li;
 	ULONGLONG tt;
 
+#ifdef _WIN32_WCE
+	SYSTEMTIME st;
+
+	GetSystemTime(&st);
+	SystemTimeToFileTime(&st, &ft);
+#else /* _WIN32_WCE */
 	GetSystemTimeAsFileTime(&ft);
+#endif /* _WIN32_WCE */
 	li.LowPart = ft.dwLowDateTime;
 	li.HighPart = ft.dwHighDateTime;
 	tt = (li.QuadPart - EPOCHFILETIME) / 10;
@@ -46,7 +49,29 @@ int os_get_time(struct os_time *t)
 	t->usec = (os_time_t) (tt % 1000000);
 
 	return 0;
-#endif /* _WIN32_WCE */
+}
+
+
+int os_mktime(int year, int month, int day, int hour, int min, int sec,
+	      os_time_t *t)
+{
+	struct tm tm;
+
+	if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 ||
+	    hour < 0 || hour > 23 || min < 0 || min > 59 || sec < 0 ||
+	    sec > 60)
+		return -1;
+
+	memset(&tm, 0, sizeof(tm));
+	tm.tm_year = year - 1900;
+	tm.tm_mon = month - 1;
+	tm.tm_mday = day;
+	tm.tm_hour = hour;
+	tm.tm_min = min;
+	tm.tm_sec = sec;
+
+	*t = (os_time_t) mktime(&tm);
+	return 0;
 }
 
 
@@ -120,4 +145,36 @@ int os_setenv(const char *name, const char *value, int overwrite)
 int os_unsetenv(const char *name)
 {
 	return -1;
+}
+
+
+char * os_readfile(const char *name, size_t *len)
+{
+	FILE *f;
+	char *buf;
+
+	f = fopen(name, "rb");
+	if (f == NULL)
+		return NULL;
+
+	fseek(f, 0, SEEK_END);
+	*len = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	buf = malloc(*len);
+	if (buf == NULL) {
+		fclose(f);
+		return NULL;
+	}
+
+	fread(buf, 1, *len, f);
+	fclose(f);
+
+	return buf;
+}
+
+
+void * os_zalloc(size_t size)
+{
+	return calloc(1, size);
 }

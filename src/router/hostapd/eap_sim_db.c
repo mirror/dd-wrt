@@ -522,7 +522,7 @@ static void eap_sim_db_expire_pending(struct eap_sim_db_data *data)
  * @identity: User name identity
  * @identity_len: Length of identity in bytes
  * @max_chal: Maximum number of triplets
- * @rand: Buffer for RAND values
+ * @_rand: Buffer for RAND values
  * @kc: Buffer for Kc values
  * @sres: Buffer for SRES values
  * @cb_session_ctx: Session callback context for get_complete_cb()
@@ -545,7 +545,7 @@ static void eap_sim_db_expire_pending(struct eap_sim_db_data *data)
  */
 int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 				size_t identity_len, int max_chal,
-				u8 *rand, u8 *kc, u8 *sres,
+				u8 *_rand, u8 *kc, u8 *sres,
 				void *cb_session_ctx)
 {
 	struct eap_sim_db_data *data = priv;
@@ -593,7 +593,7 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 		num_chal = entry->u.sim.num_chal;
 		if (num_chal > max_chal)
 			num_chal = max_chal;
-		memcpy(rand, entry->u.sim.rand, num_chal * GSM_RAND_LEN);
+		memcpy(_rand, entry->u.sim.rand, num_chal * GSM_RAND_LEN);
 		memcpy(sres, entry->u.sim.sres, num_chal * EAP_SIM_SRES_LEN);
 		memcpy(kc, entry->u.sim.kc, num_chal * EAP_SIM_KC_LEN);
 		free(entry);
@@ -1077,7 +1077,7 @@ void eap_sim_db_remove_reauth(void *priv, struct eap_sim_reauth *reauth)
  * @priv: Private data pointer from eap_sim_db_init()
  * @identity: User name identity
  * @identity_len: Length of identity in bytes
- * @rand: Buffer for RAND value
+ * @_rand: Buffer for RAND value
  * @autn: Buffer for AUTN value
  * @ik: Buffer for IK value
  * @ck: Buffer for CK value
@@ -1101,7 +1101,7 @@ void eap_sim_db_remove_reauth(void *priv, struct eap_sim_reauth *reauth)
  * received triplets will then be given to the caller.
  */
 int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
-			    size_t identity_len, u8 *rand, u8 *autn, u8 *ik,
+			    size_t identity_len, u8 *_rand, u8 *autn, u8 *ik,
 			    u8 *ck, u8 *res, size_t *res_len,
 			    void *cb_session_ctx)
 {
@@ -1144,7 +1144,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 
 		wpa_printf(MSG_DEBUG, "EAP-SIM DB: Returning successfully "
 			   "received authentication data");
-		memcpy(rand, entry->u.aka.rand, EAP_AKA_RAND_LEN);
+		memcpy(_rand, entry->u.aka.rand, EAP_AKA_RAND_LEN);
 		memcpy(autn, entry->u.aka.autn, EAP_AKA_AUTN_LEN);
 		memcpy(ik, entry->u.aka.ik, EAP_AKA_IK_LEN);
 		memcpy(ck, entry->u.aka.ck, EAP_AKA_CK_LEN);
@@ -1193,7 +1193,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
  * @identity: User name identity
  * @identity_len: Length of identity in bytes
  * @auts: AUTS value from the peer
- * @rand: RAND value used in the rejected message
+ * @_rand: RAND value used in the rejected message
  * Returns: 0 on success, -1 on failure
  *
  * This function is called when the peer reports synchronization failure in the
@@ -1204,7 +1204,7 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
  */
 int eap_sim_db_resynchronize(void *priv, const u8 *identity,
 			     size_t identity_len, const u8 *auts,
-			     const u8 *rand)
+			     const u8 *_rand)
 {
 	struct eap_sim_db_data *data = priv;
 
@@ -1236,7 +1236,7 @@ int eap_sim_db_resynchronize(void *priv, const u8 *identity,
 			return -1;
 		len += ret;
 		len += wpa_snprintf_hex(msg + len, sizeof(msg) - len,
-					rand, EAP_AKA_RAND_LEN);
+					_rand, EAP_AKA_RAND_LEN);
 		wpa_hexdump(MSG_DEBUG, "EAP-SIM DB: reporting AKA AUTS for "
 			    "IMSI", identity + 1, identity_len - 1);
 		if (eap_sim_db_send(data, msg, len) < 0)

@@ -20,7 +20,6 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "wpa_supplicant.h"
 #include "eloop.h"
 
 

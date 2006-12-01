@@ -74,6 +74,7 @@ struct wpa_ctrl_dst {
 	int errors;
 	char req_buf[REQUEST_BUFSIZE];
 	char *rsp_buf;
+	int used;
 };
 
 
@@ -84,6 +85,10 @@ struct ctrl_iface_priv {
 	int sec_attr_set;
 };
 
+
+static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
+					   int level, const char *buf,
+					   size_t len);
 
 static void ctrl_close_pipe(struct wpa_ctrl_dst *dst);
 static void wpa_supplicant_ctrl_iface_receive(void *, void *);
@@ -98,7 +103,7 @@ static VOID WINAPI global_iface_read_completed(DWORD err, DWORD bytes,
 					       LPOVERLAPPED overlap);
 
 
-static int ctrl_broken_pipe(HANDLE pipe)
+static int ctrl_broken_pipe(HANDLE pipe, int used)
 {
 	DWORD err;
 
@@ -106,7 +111,7 @@ static int ctrl_broken_pipe(HANDLE pipe)
 		return 0;
 
 	err = GetLastError();
-	if (err == ERROR_BAD_PIPE || err == ERROR_BROKEN_PIPE)
+	if (err == ERROR_BROKEN_PIPE || (err == ERROR_BAD_PIPE && used))
 		return 1;
 	return 0;
 }
@@ -120,7 +125,7 @@ static void ctrl_flush_broken_pipes(struct ctrl_iface_priv *priv)
 
 	while (dst) {
 		next = dst->next;
-		if (ctrl_broken_pipe(dst->pipe)) {
+		if (ctrl_broken_pipe(dst->pipe, dst->used)) {
 			wpa_printf(MSG_DEBUG, "CTRL: closing broken pipe %p",
 				   dst);
 			ctrl_close_pipe(dst);
@@ -136,7 +141,6 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 	DWORD err;
 	TCHAR name[256];
 
-	ctrl_flush_broken_pipes(priv);
 	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
@@ -149,7 +153,7 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 	dst->overlap.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 	if (dst->overlap.hEvent == NULL) {
 		wpa_printf(MSG_ERROR, "CTRL: CreateEvent failed: %d",
-			   (int) GetLastError()); 
+			   (int) GetLastError());
 		goto fail;
 	}
 
@@ -176,7 +180,7 @@ static int ctrl_open_pipe(struct ctrl_iface_priv *priv)
 				    priv->sec_attr_set ? &priv->attr : NULL);
 	if (dst->pipe == INVALID_HANDLE_VALUE) {
 		wpa_printf(MSG_ERROR, "CTRL: CreateNamedPipe failed: %d",
-			   (int) GetLastError()); 
+			   (int) GetLastError());
 		goto fail;
 	}
 
@@ -272,6 +276,7 @@ static VOID WINAPI ctrl_iface_write_completed(DWORD err, DWORD bytes,
 		wpa_printf(MSG_DEBUG, "CTRL: ReadFileEx failed: %d",
 			   (int) GetLastError());
 		ctrl_close_pipe(dst);
+		return;
 	}
 	wpa_printf(MSG_DEBUG, "CTRL: Overlapped read started for %p", dst);
 }
@@ -285,6 +290,7 @@ static void wpa_supplicant_ctrl_iface_rx(struct wpa_ctrl_dst *dst, size_t len)
 	int new_attached = 0;
 	char *buf = dst->req_buf;
 
+	dst->used = 1;
 	if (len >= REQUEST_BUFSIZE)
 		len = REQUEST_BUFSIZE - 1;
 	buf[len] = '\0';
@@ -333,8 +339,10 @@ static void wpa_supplicant_ctrl_iface_rx(struct wpa_ctrl_dst *dst, size_t len)
 		wpa_printf(MSG_DEBUG, "CTRL: WriteFileEx failed: %d",
 			   (int) GetLastError());
 		ctrl_close_pipe(dst);
+	} else {
+		wpa_printf(MSG_DEBUG, "CTRL: Overlapped write started for %p",
+			   dst);
 	}
-	wpa_printf(MSG_DEBUG, "CTRL: Overlapped write started for %p", dst);
 
 	if (new_attached)
 		eapol_sm_notify_ctrl_attached(wpa_s->eapol);
@@ -370,10 +378,12 @@ static void wpa_supplicant_ctrl_iface_receive(void *eloop_data, void *user_ctx)
 		   "connected");
 
 	/* Open a new named pipe for the next client. */
-	ctrl_open_pipe(priv); 
+	ctrl_open_pipe(priv);
 
 	/* Use write completion function to start reading a command */
 	ctrl_iface_write_completed(0, 0, &dst->overlap);
+
+	ctrl_flush_broken_pipes(priv);
 }
 
 
@@ -398,6 +408,8 @@ static int ctrl_iface_parse(struct ctrl_iface_priv *priv, const char *params)
 	priv->attr.nLength = sizeof(priv->attr);
 	priv->attr.bInheritHandle = FALSE;
 	t_sddl = wpa_strdup_tchar(sddl);
+	if (t_sddl == NULL)
+		return -1;
 	if (!ConvertStringSecurityDescriptorToSecurityDescriptor(
 		    t_sddl, SDDL_REVISION_1,
 		    (PSECURITY_DESCRIPTOR *) &priv->attr.lpSecurityDescriptor,
@@ -413,6 +425,16 @@ static int ctrl_iface_parse(struct ctrl_iface_priv *priv, const char *params)
 	priv->sec_attr_set = 1;
 
 	return 0;
+}
+
+
+static void wpa_supplicant_ctrl_iface_msg_cb(void *ctx, int level,
+					     const char *txt, size_t len)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	if (wpa_s == NULL || wpa_s->ctrl_iface == NULL)
+		return;
+	wpa_supplicant_ctrl_iface_send(wpa_s->ctrl_iface, level, txt, len);
 }
 
 
@@ -439,6 +461,8 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		return NULL;
 	}
 
+	wpa_msg_register_cb(wpa_supplicant_ctrl_iface_msg_cb);
+
 	return priv;
 }
 
@@ -453,8 +477,9 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 }
 
 
-void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
-				    const char *buf, size_t len)
+static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
+					   int level, const char *buf,
+					   size_t len)
 {
 	struct wpa_ctrl_dst *dst, *next;
 	char levelstr[10];
@@ -524,6 +549,7 @@ struct wpa_global_dst {
 	HANDLE pipe;
 	char req_buf[REQUEST_BUFSIZE];
 	char *rsp_buf;
+	int used;
 };
 
 struct ctrl_iface_global_priv {
@@ -540,7 +566,7 @@ static void global_flush_broken_pipes(struct ctrl_iface_global_priv *priv)
 
 	while (dst) {
 		next = dst->next;
-		if (ctrl_broken_pipe(dst->pipe)) {
+		if (ctrl_broken_pipe(dst->pipe, dst->used)) {
 			wpa_printf(MSG_DEBUG, "CTRL: closing broken pipe %p",
 				   dst);
 			global_close_pipe(dst);
@@ -555,7 +581,6 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 	struct wpa_global_dst *dst;
 	DWORD err;
 
-	global_flush_broken_pipes(priv);
 	dst = os_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
@@ -567,7 +592,7 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 	dst->overlap.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 	if (dst->overlap.hEvent == NULL) {
 		wpa_printf(MSG_ERROR, "CTRL: CreateEvent failed: %d",
-			   (int) GetLastError()); 
+			   (int) GetLastError());
 		goto fail;
 	}
 
@@ -585,7 +610,7 @@ static int global_open_pipe(struct ctrl_iface_global_priv *priv)
 				    1000, NULL);
 	if (dst->pipe == INVALID_HANDLE_VALUE) {
 		wpa_printf(MSG_ERROR, "CTRL: CreateNamedPipe failed: %d",
-			   (int) GetLastError()); 
+			   (int) GetLastError());
 		goto fail;
 	}
 
@@ -681,6 +706,10 @@ static VOID WINAPI global_iface_write_completed(DWORD err, DWORD bytes,
 		wpa_printf(MSG_DEBUG, "CTRL: ReadFileEx failed: %d",
 			   (int) GetLastError());
 		global_close_pipe(dst);
+		/* FIX: if this was the pipe waiting for new global
+		 * connections, at this point there are no open global pipes..
+		 * Should try to open a new pipe.. */
+		return;
 	}
 	wpa_printf(MSG_DEBUG, "CTRL: Overlapped read started for %p", dst);
 }
@@ -694,6 +723,7 @@ static void wpa_supplicant_global_iface_rx(struct wpa_global_dst *dst,
 	size_t reply_len = 0, send_len;
 	char *buf = dst->req_buf;
 
+	dst->used = 1;
 	if (len >= REQUEST_BUFSIZE)
 		len = REQUEST_BUFSIZE - 1;
 	buf[len] = '\0';
@@ -762,10 +792,15 @@ static void wpa_supplicant_global_iface_receive(void *eloop_data,
 		   "connected");
 
 	/* Open a new named pipe for the next client. */
-	global_open_pipe(priv); 
+	if (global_open_pipe(priv) < 0) {
+		wpa_printf(MSG_DEBUG, "CTRL: global_open_pipe failed");
+		return;
+	}
 
 	/* Use write completion function to start reading a command */
 	global_iface_write_completed(0, 0, &dst->overlap);
+
+	global_flush_broken_pipes(priv);
 }
 
 

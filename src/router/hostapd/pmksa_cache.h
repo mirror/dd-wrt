@@ -30,6 +30,8 @@ struct rsn_pmksa_cache_entry {
 	u8 *identity;
 	size_t identity_len;
 	struct radius_class_data radius_class;
+	u8 eap_type_authsrv;
+	int vlan_id;
 };
 
 struct rsn_pmksa_cache;

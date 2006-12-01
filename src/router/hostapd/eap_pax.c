@@ -1,5 +1,5 @@
 /*
- * hostapd / EAP-PAX (draft-clancy-eap-pax-06.txt) server
+ * hostapd / EAP-PAX (draft-clancy-eap-pax-11.txt) server
  * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@ static void * eap_pax_init(struct eap_sm *sm)
 		return NULL;
 	data->state = PAX_STD_1;
 	/*
-	 * TODO: make this configurable once EAP_PAX_MAC_AES_CBC_MAC_128 is
+	 * TODO: make this configurable once EAP_PAX_HMAC_SHA256_128 is
 	 * supported
 	 */
 	data->mac_id = EAP_PAX_MAC_HMAC_SHA1_128;
@@ -505,6 +505,28 @@ static u8 * eap_pax_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_pax_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_pax_data *data = priv;
+	u8 *key;
+
+	if (data->state != SUCCESS)
+		return NULL;
+
+	key = malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+	eap_pax_kdf(data->mac_id, data->mk, EAP_PAX_MK_LEN,
+		    "Extended Master Session Key",
+		    data->rand.e, 2 * EAP_PAX_RAND_LEN,
+		    EAP_EMSK_LEN, key);
+
+	return key;
+}
+
+
 static Boolean eap_pax_isSuccess(struct eap_sm *sm, void *priv)
 {
 	struct eap_pax_data *data = priv;
@@ -530,6 +552,7 @@ int eap_server_pax_register(void)
 	eap->isDone = eap_pax_isDone;
 	eap->getKey = eap_pax_getKey;
 	eap->isSuccess = eap_pax_isSuccess;
+	eap->get_emsk = eap_pax_get_emsk;
 
 	ret = eap_server_method_register(eap);
 	if (ret)

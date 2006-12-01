@@ -17,7 +17,6 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "md5.h"
 #include "sha1.h"
@@ -203,12 +202,12 @@ done:
 
 
 /**
- * eap_tls_process_deinit - Deinitialize shared TLS functionality
+ * eap_tls_ssl_deinit - Deinitialize shared TLS functionality
  * @sm: Pointer to EAP state machine allocated with eap_sm_init()
  * @data: Data for TLS processing
  *
  * This function deinitializes shared TLS functionality that was initialized
- * with eap_tls_process_init().
+ * with eap_tls_ssl_init().
  */
 void eap_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
 {
@@ -315,6 +314,16 @@ const u8 * eap_tls_data_reassemble(
 				   (unsigned long) data->tls_in_left,
 				   (unsigned long) data->tls_in_len,
 				   (unsigned long) in_len);
+			return NULL;
+		}
+		if (data->tls_in_len + in_len > 65536) {
+			/* Limit length to avoid rogue servers from causing
+			 * large memory allocations. */
+			os_free(data->tls_in);
+			data->tls_in = NULL;
+			data->tls_in_len = 0;
+			wpa_printf(MSG_INFO, "SSL: Too long TLS fragment (size"
+				   " over 64 kB)");
 			return NULL;
 		}
 		buf = os_realloc(data->tls_in, data->tls_in_len + in_len);

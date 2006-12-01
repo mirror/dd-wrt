@@ -37,7 +37,7 @@ struct l2_packet_data {
 
 int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
 {
-	memcpy(addr, l2->own_addr, ETH_ALEN);
+	os_memcpy(addr, l2->own_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -54,12 +54,12 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 			perror("l2_packet_send - send");
 	} else {
 		struct sockaddr_ll ll;
-		memset(&ll, 0, sizeof(ll));
+		os_memset(&ll, 0, sizeof(ll));
 		ll.sll_family = AF_PACKET;
 		ll.sll_ifindex = l2->ifindex;
 		ll.sll_protocol = htons(proto);
 		ll.sll_halen = ETH_ALEN;
-		memcpy(ll.sll_addr, dst_addr, ETH_ALEN);
+		os_memcpy(ll.sll_addr, dst_addr, ETH_ALEN);
 		ret = sendto(l2->fd, buf, len, 0, (struct sockaddr *) &ll,
 			     sizeof(ll));
 		if (ret < 0)
@@ -77,7 +77,7 @@ static void l2_packet_receive(int sock, void *eloop_ctx, void *sock_ctx)
 	struct sockaddr_ll ll;
 	socklen_t fromlen;
 
-	memset(&ll, 0, sizeof(ll));
+	os_memset(&ll, 0, sizeof(ll));
 	fromlen = sizeof(ll);
 	res = recvfrom(sock, buf, sizeof(buf), 0, (struct sockaddr *) &ll,
 		       &fromlen);
@@ -100,10 +100,10 @@ struct l2_packet_data * l2_packet_init(
 	struct ifreq ifr;
 	struct sockaddr_ll ll;
 
-	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
+	l2 = os_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	os_strncpy(l2->ifname, ifname, sizeof(l2->ifname));
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;
@@ -112,36 +112,36 @@ struct l2_packet_data * l2_packet_init(
 			htons(protocol));
 	if (l2->fd < 0) {
 		perror("socket(PF_PACKET)");
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
-	strncpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
+	os_strncpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
 	if (ioctl(l2->fd, SIOCGIFINDEX, &ifr) < 0) {
 		perror("ioctl[SIOCGIFINDEX]");
 		close(l2->fd);
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
 	l2->ifindex = ifr.ifr_ifindex;
 
-	memset(&ll, 0, sizeof(ll));
+	os_memset(&ll, 0, sizeof(ll));
 	ll.sll_family = PF_PACKET;
 	ll.sll_ifindex = ifr.ifr_ifindex;
 	ll.sll_protocol = htons(protocol);
 	if (bind(l2->fd, (struct sockaddr *) &ll, sizeof(ll)) < 0) {
 		perror("bind[PF_PACKET]");
 		close(l2->fd);
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
 
 	if (ioctl(l2->fd, SIOCGIFHWADDR, &ifr) < 0) {
 		perror("ioctl[SIOCGIFHWADDR]");
 		close(l2->fd);
-		free(l2);
+		os_free(l2);
 		return NULL;
 	}
-	memcpy(l2->own_addr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
+	os_memcpy(l2->own_addr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 
 	eloop_register_read_sock(l2->fd, l2_packet_receive, l2, NULL);
 
@@ -159,7 +159,7 @@ void l2_packet_deinit(struct l2_packet_data *l2)
 		close(l2->fd);
 	}
 		
-	free(l2);
+	os_free(l2);
 }
 
 
@@ -174,8 +174,8 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 		perror("socket");
 		return -1;
 	}
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
+	os_memset(&ifr, 0, sizeof(ifr));
+	os_strncpy(ifr.ifr_name, l2->ifname, sizeof(ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, &ifr) < 0) {
 		perror("ioctl[SIOCGIFADDR]");
 		close(s);
@@ -185,7 +185,7 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	saddr = (struct sockaddr_in *) &ifr.ifr_addr;
 	if (saddr->sin_family != AF_INET)
 		return -1;
-	snprintf(buf, len, "%s", inet_ntoa(saddr->sin_addr));
+	os_snprintf(buf, len, "%s", inet_ntoa(saddr->sin_addr));
 	return 0;
 }
 

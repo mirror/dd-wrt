@@ -221,11 +221,11 @@ static int wpa_supplicant_ctrl_iface_status(struct wpa_supplicant *wpa_s,
 			size_t ssid_len = ssid->ssid_len;
 			u8 ssid_buf[MAX_SSID_LEN];
 			if (ssid_len == 0) {
-				int res = wpa_drv_get_ssid(wpa_s, ssid_buf);
-				if (res < 0)
+				int _res = wpa_drv_get_ssid(wpa_s, ssid_buf);
+				if (_res < 0)
 					ssid_len = 0;
 				else
-					ssid_len = res;
+					ssid_len = _res;
 				_ssid = ssid_buf;
 			}
 			ret = os_snprintf(pos, end - pos, "ssid=%s\nid=%d\n",
@@ -480,6 +480,8 @@ static int wpa_supplicant_ctrl_iface_scan_results(
 
 	if (wpa_s->scan_results == NULL &&
 	    wpa_supplicant_get_scan_results(wpa_s) < 0)
+		return 0;
+	if (wpa_s->scan_results == NULL)
 		return 0;
 
 	pos = buf;
@@ -768,7 +770,7 @@ static int wpa_supplicant_ctrl_iface_get_network(
 		return -1;
 	}
 
-	value = wpa_config_get(ssid, name);
+	value = wpa_config_get_no_key(ssid, name);
 	if (value == NULL) {
 		wpa_printf(MSG_DEBUG, "CTRL_IFACE: Failed to get network "
 			   "variable '%s'", name);
@@ -822,10 +824,8 @@ static int wpa_supplicant_ctrl_iface_get_capability(
 	strict = os_strchr(field, ' ');
 	if (strict != NULL) {
 		*strict++ = '\0';
-		if (os_strcmp(strict, "strict") != 0) {
-			os_free(field);
+		if (os_strcmp(strict, "strict") != 0)
 			return -1;
-		}
 	}
 
 	wpa_printf(MSG_DEBUG, "CTRL_IFACE: GET_CAPABILITY '%s' %s",
@@ -1352,6 +1352,8 @@ char * wpa_supplicant_global_ctrl_iface_process(struct wpa_global *global,
 	} else if (os_strcmp(buf, "INTERFACES") == 0) {
 		reply_len = wpa_supplicant_global_iface_interfaces(
 			global, reply, reply_size);
+	} else if (os_strcmp(buf, "TERMINATE") == 0) {
+		eloop_terminate();
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;

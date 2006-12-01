@@ -62,8 +62,8 @@ void hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 	 * and text is the data being protected */
 
 	/* start out by storing key in ipad */
-	memset(k_pad, 0, sizeof(k_pad));
-	memcpy(k_pad, key, key_len);
+	os_memset(k_pad, 0, sizeof(k_pad));
+	os_memcpy(k_pad, key, key_len);
 	/* XOR key with ipad values */
 	for (i = 0; i < 64; i++)
 		k_pad[i] ^= 0x36;
@@ -77,8 +77,8 @@ void hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 	}
 	sha1_vector(1 + num_elem, _addr, _len, mac);
 
-	memset(k_pad, 0, sizeof(k_pad));
-	memcpy(k_pad, key, key_len);
+	os_memset(k_pad, 0, sizeof(k_pad));
+	os_memcpy(k_pad, key, key_len);
 	/* XOR key with opad values */
 	for (i = 0; i < 64; i++)
 		k_pad[i] ^= 0x5c;
@@ -126,7 +126,7 @@ void sha1_prf(const u8 *key, size_t key_len, const char *label,
 	u8 zero = 0, counter = 0;
 	size_t pos, plen;
 	u8 hash[SHA1_MAC_LEN];
-	size_t label_len = strlen(label);
+	size_t label_len = os_strlen(label);
 	const unsigned char *addr[4];
 	size_t len[4];
 
@@ -149,7 +149,7 @@ void sha1_prf(const u8 *key, size_t key_len, const char *label,
 		} else {
 			hmac_sha1_vector(key, key_len, 4, addr, len,
 					 hash);
-			memcpy(&buf[pos], hash, plen);
+			os_memcpy(&buf[pos], hash, plen);
 			break;
 		}
 		counter++;
@@ -177,7 +177,7 @@ void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 	unsigned char counter = 0;
 	size_t pos, plen;
 	u8 hash[SHA1_MAC_LEN];
-	size_t label_len = strlen(label);
+	size_t label_len = os_strlen(label);
 	u8 output_len[2];
 	const unsigned char *addr[5];
 	size_t len[5];
@@ -201,10 +201,10 @@ void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 		plen = buf_len - pos;
 		hmac_sha1_vector(key, key_len, 5, addr, len, hash);
 		if (plen >= SHA1_MAC_LEN) {
-			memcpy(&buf[pos], hash, SHA1_MAC_LEN);
+			os_memcpy(&buf[pos], hash, SHA1_MAC_LEN);
 			pos += SHA1_MAC_LEN;
 		} else {
-			memcpy(&buf[pos], hash, plen);
+			os_memcpy(&buf[pos], hash, plen);
 			break;
 		}
 		len[0] = SHA1_MAC_LEN;
@@ -245,14 +245,14 @@ int tls_prf(const u8 *secret, size_t secret_len, const char *label,
 	MD5_addr[0] = A_MD5;
 	MD5_len[0] = MD5_MAC_LEN;
 	MD5_addr[1] = (unsigned char *) label;
-	MD5_len[1] = strlen(label);
+	MD5_len[1] = os_strlen(label);
 	MD5_addr[2] = seed;
 	MD5_len[2] = seed_len;
 
 	SHA1_addr[0] = A_SHA1;
 	SHA1_len[0] = SHA1_MAC_LEN;
 	SHA1_addr[1] = (unsigned char *) label;
-	SHA1_len[1] = strlen(label);
+	SHA1_len[1] = os_strlen(label);
 	SHA1_addr[2] = seed;
 	SHA1_len[2] = seed_len;
 
@@ -295,7 +295,7 @@ int tls_prf(const u8 *secret, size_t secret_len, const char *label,
 
 
 static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
-			  size_t ssid_len, int iterations, int count,
+			  size_t ssid_len, int iterations, unsigned int count,
 			  u8 *digest)
 {
 	unsigned char tmp[SHA1_MAC_LEN], tmp2[SHA1_MAC_LEN];
@@ -303,7 +303,7 @@ static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
 	unsigned char count_buf[4];
 	const u8 *addr[2];
 	size_t len[2];
-	size_t passphrase_len = strlen(passphrase);
+	size_t passphrase_len = os_strlen(passphrase);
 
 	addr[0] = (u8 *) ssid;
 	len[0] = ssid_len;
@@ -321,12 +321,12 @@ static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
 	count_buf[2] = (count >> 8) & 0xff;
 	count_buf[3] = count & 0xff;
 	hmac_sha1_vector((u8 *) passphrase, passphrase_len, 2, addr, len, tmp);
-	memcpy(digest, tmp, SHA1_MAC_LEN);
+	os_memcpy(digest, tmp, SHA1_MAC_LEN);
 
 	for (i = 1; i < iterations; i++) {
 		hmac_sha1((u8 *) passphrase, passphrase_len, tmp, SHA1_MAC_LEN,
 			  tmp2);
-		memcpy(tmp, tmp2, SHA1_MAC_LEN);
+		os_memcpy(tmp, tmp2, SHA1_MAC_LEN);
 		for (j = 0; j < SHA1_MAC_LEN; j++)
 			digest[j] ^= tmp2[j];
 	}
@@ -349,7 +349,7 @@ static void pbkdf2_sha1_f(const char *passphrase, const char *ssid,
 void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 		 int iterations, u8 *buf, size_t buflen)
 {
-	int count = 0;
+	unsigned int count = 0;
 	unsigned char *pos = buf;
 	size_t left = buflen, plen;
 	unsigned char digest[SHA1_MAC_LEN];
@@ -359,7 +359,7 @@ void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 		pbkdf2_sha1_f(passphrase, ssid, ssid_len, iterations, count,
 			      digest);
 		plen = left > SHA1_MAC_LEN ? SHA1_MAC_LEN : left;
-		memcpy(pos, digest, plen);
+		os_memcpy(pos, digest, plen);
 		pos += plen;
 		left -= plen;
 	}
@@ -368,15 +368,19 @@ void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 
 #ifdef INTERNAL_SHA1
 
-typedef struct {
+struct SHA1Context {
 	u32 state[5];
 	u32 count[2];
 	unsigned char buffer[64];
-} SHA1_CTX;
+};
 
-static void SHA1Init(SHA1_CTX *context);
-static void SHA1Update(SHA1_CTX *context, const void *data, u32 len);
-static void SHA1Final(unsigned char digest[20], SHA1_CTX* context);
+typedef struct SHA1Context SHA1_CTX;
+
+#ifndef CONFIG_CRYPTO_INTERNAL
+static void SHA1Init(struct SHA1Context *context);
+static void SHA1Update(struct SHA1Context *context, const void *data, u32 len);
+static void SHA1Final(unsigned char digest[20], struct SHA1Context *context);
+#endif /* CONFIG_CRYPTO_INTERNAL */
 static void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
 
 
@@ -413,8 +417,8 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 
 	/* FIPS 186-2 + change notice 1 */
 
-	memcpy(xkey, seed, seed_len);
-	memset(xkey + seed_len, 0, 64 - seed_len);
+	os_memcpy(xkey, seed, seed_len);
+	os_memset(xkey + seed_len, 0, 64 - seed_len);
 	t[0] = 0x67452301;
 	t[1] = 0xEFCDAB89;
 	t[2] = 0x98BADCFE;
@@ -428,14 +432,14 @@ int fips186_2_prf(const u8 *seed, size_t seed_len, u8 *x, size_t xlen)
 			/* XVAL = (XKEY + XSEED_j) mod 2^b */
 
 			/* w_i = G(t, XVAL) */
-			memcpy(_t, t, 20);
+			os_memcpy(_t, t, 20);
 			SHA1Transform(_t, xkey);
 			_t[0] = host_to_be32(_t[0]);
 			_t[1] = host_to_be32(_t[1]);
 			_t[2] = host_to_be32(_t[2]);
 			_t[3] = host_to_be32(_t[3]);
 			_t[4] = host_to_be32(_t[4]);
-			memcpy(xpos, _t, 20);
+			os_memcpy(xpos, _t, 20);
 
 			/* XKEY = (1 + XKEY + w_i) mod 2^b */
 			carry = 1;
@@ -593,7 +597,7 @@ static void SHA1Transform(u32 state[5], const unsigned char buffer[64])
 #ifdef SHA1HANDSOFF
 	u32 workspace[16];
 	block = (CHAR64LONG16 *) workspace;
-	memcpy(block, buffer, 64);
+	os_memcpy(block, buffer, 64);
 #else
 	block = (CHAR64LONG16 *) buffer;
 #endif
@@ -633,14 +637,14 @@ static void SHA1Transform(u32 state[5], const unsigned char buffer[64])
 	/* Wipe variables */
 	a = b = c = d = e = 0;
 #ifdef SHA1HANDSOFF
-	memset(block, 0, 64);
+	os_memset(block, 0, 64);
 #endif
 }
 
 
 /* SHA1Init - Initialize new context */
 
-static void SHA1Init(SHA1_CTX* context)
+void SHA1Init(SHA1_CTX* context)
 {
 	/* SHA1 initialization constants */
 	context->state[0] = 0x67452301;
@@ -654,7 +658,7 @@ static void SHA1Init(SHA1_CTX* context)
 
 /* Run your data through this. */
 
-static void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
+void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 {
 	u32 i, j;
 	const unsigned char *data = _data;
@@ -667,7 +671,7 @@ static void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 		context->count[1]++;
 	context->count[1] += (len >> 29);
 	if ((j + len) > 63) {
-		memcpy(&context->buffer[j], data, (i = 64-j));
+		os_memcpy(&context->buffer[j], data, (i = 64-j));
 		SHA1Transform(context->state, context->buffer);
 		for ( ; i + 63 < len; i += 64) {
 			SHA1Transform(context->state, &data[i]);
@@ -675,7 +679,7 @@ static void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 		j = 0;
 	}
 	else i = 0;
-	memcpy(&context->buffer[j], &data[i], len - i);
+	os_memcpy(&context->buffer[j], &data[i], len - i);
 #ifdef VERBOSE
 	SHAPrintContext(context, "after ");
 #endif
@@ -684,7 +688,7 @@ static void SHA1Update(SHA1_CTX* context, const void *_data, u32 len)
 
 /* Add padding and return the message digest. */
 
-static void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
+void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 {
 	u32 i;
 	unsigned char finalcount[8];
@@ -707,10 +711,10 @@ static void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 	}
 	/* Wipe variables */
 	i = 0;
-	memset(context->buffer, 0, 64);
-	memset(context->state, 0, 20);
-	memset(context->count, 0, 8);
-	memset(finalcount, 0, 8);
+	os_memset(context->buffer, 0, 64);
+	os_memset(context->state, 0, 20);
+	os_memset(context->count, 0, 8);
+	os_memset(finalcount, 0, 8);
 }
 
 /* ===== end - public domain SHA1 implementation ===== */

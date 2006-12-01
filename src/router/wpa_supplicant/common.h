@@ -359,6 +359,37 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
+#ifdef CONFIG_NO_WPA_MSG
+#define wpa_msg(args...) do { } while (0)
+#define wpa_msg_register_cb(f) do { } while (0)
+#else /* CONFIG_NO_WPA_MSG */
+/**
+ * wpa_msg - Conditional printf for default target and ctrl_iface monitors
+ * @ctx: Pointer to context data; this is the ctx variable registered
+ *	with struct wpa_driver_ops::init()
+ * @level: priority level (MSG_*) of the message
+ * @fmt: printf format string, followed by optional arguments
+ *
+ * This function is used to print conditional debugging and error messages. The
+ * output may be directed to stdout, stderr, and/or syslog based on
+ * configuration. This function is like wpa_printf(), but it also sends the
+ * same message to all attached ctrl_iface monitors.
+ *
+ * Note: New line '\n' is added to the end of the text when printing to stdout.
+ */
+void wpa_msg(void *ctx, int level, char *fmt, ...) PRINTF_FORMAT(3, 4);
+
+typedef void (*wpa_msg_cb_func)(void *ctx, int level, const char *txt,
+				size_t len);
+
+/**
+ * wpa_msg_register_cb - Register callback function for wpa_msg() messages
+ * @func: Callback function (%NULL to unregister)
+ */
+void wpa_msg_register_cb(wpa_msg_cb_func func);
+#endif /* CONFIG_NO_WPA_MSG */
+
+
 int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len);
 int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 			       size_t len);
@@ -454,5 +485,7 @@ TCHAR * wpa_strdup_tchar(const char *str);
 #define wpa_unicode2ascii_inplace(s) do { } while (0)
 #define wpa_strdup_tchar(s) strdup((s))
 #endif /* CONFIG_NATIVE_WINDOWS */
+
+const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len);
 
 #endif /* COMMON_H */

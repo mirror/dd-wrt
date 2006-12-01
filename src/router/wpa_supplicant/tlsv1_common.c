@@ -331,6 +331,7 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 		if (clen < rl->hash_size) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Not "
 				   "enough room for MAC");
+			crypto_hash_finish(hmac, NULL, NULL);
 			return -1;
 		}
 

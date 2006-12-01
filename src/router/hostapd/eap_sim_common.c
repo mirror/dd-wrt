@@ -1,6 +1,6 @@
 /*
  * EAP peer: EAP-SIM/AKA shared routines
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -77,26 +77,31 @@ void eap_aka_derive_mk(const u8 *identity, size_t identity_len,
 }
 
 
-int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk)
+int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk, u8 *emsk)
 {
-	u8 buf[120], *pos;
-	if (eap_sim_prf(mk, buf, 120) < 0) {
+	u8 buf[EAP_SIM_K_ENCR_LEN + EAP_SIM_K_AUT_LEN +
+	       EAP_SIM_KEYING_DATA_LEN + EAP_EMSK_LEN], *pos;
+	if (eap_sim_prf(mk, buf, sizeof(buf)) < 0) {
 		wpa_printf(MSG_ERROR, "EAP-SIM: Failed to derive keys");
 		return -1;
 	}
 	pos = buf;
-	memcpy(k_encr, pos, EAP_SIM_K_ENCR_LEN);
+	os_memcpy(k_encr, pos, EAP_SIM_K_ENCR_LEN);
 	pos += EAP_SIM_K_ENCR_LEN;
-	memcpy(k_aut, pos, EAP_SIM_K_AUT_LEN);
+	os_memcpy(k_aut, pos, EAP_SIM_K_AUT_LEN);
 	pos += EAP_SIM_K_AUT_LEN;
-	memcpy(msk, pos, EAP_SIM_KEYING_DATA_LEN);
+	os_memcpy(msk, pos, EAP_SIM_KEYING_DATA_LEN);
+	pos += EAP_SIM_KEYING_DATA_LEN;
+	os_memcpy(emsk, pos, EAP_EMSK_LEN);
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: K_encr",
 			k_encr, EAP_SIM_K_ENCR_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: K_aut",
-			k_aut, EAP_SIM_K_ENCR_LEN);
-	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: keying material",
+			k_aut, EAP_SIM_K_AUT_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: keying material (MSK)",
 			msk, EAP_SIM_KEYING_DATA_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: EMSK", emsk, EAP_EMSK_LEN);
+	os_memset(buf, 0, sizeof(buf));
 
 	return 0;
 }
@@ -104,9 +109,11 @@ int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk)
 
 int eap_sim_derive_keys_reauth(u16 _counter,
 			       const u8 *identity, size_t identity_len,
-			       const u8 *nonce_s, const u8 *mk, u8 *msk)
+			       const u8 *nonce_s, const u8 *mk, u8 *msk,
+			       u8 *emsk)
 {
 	u8 xkey[SHA1_MAC_LEN];
+	u8 buf[EAP_SIM_KEYING_DATA_LEN + EAP_EMSK_LEN + 32];
 	u8 counter[2];
 	const u8 *addr[4];
 	size_t len[4];
@@ -134,12 +141,16 @@ int eap_sim_derive_keys_reauth(u16 _counter,
 	sha1_vector(4, addr, len, xkey);
 	wpa_hexdump(MSG_DEBUG, "EAP-SIM: XKEY'", xkey, SHA1_MAC_LEN);
 
-	if (eap_sim_prf(xkey, msk, EAP_SIM_KEYING_DATA_LEN) < 0) {
+	if (eap_sim_prf(xkey, buf, sizeof(buf)) < 0) {
 		wpa_printf(MSG_ERROR, "EAP-SIM: Failed to derive keys");
 		return -1;
 	}
-	wpa_hexdump(MSG_DEBUG, "EAP-SIM: keying material",
+	os_memcpy(msk, buf, EAP_SIM_KEYING_DATA_LEN);
+	os_memcpy(emsk, buf + EAP_SIM_KEYING_DATA_LEN, EAP_EMSK_LEN);
+	wpa_hexdump(MSG_DEBUG, "EAP-SIM: keying material (MSK)",
 		    msk, EAP_SIM_KEYING_DATA_LEN);
+	wpa_hexdump(MSG_DEBUG, "EAP-SIM: EMSK", emsk, EAP_EMSK_LEN);
+	os_memset(buf, 0, sizeof(buf));
 
 	return 0;
 }
@@ -157,7 +168,7 @@ int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
 	    mac > req + req_len - EAP_SIM_MAC_LEN)
 		return -1;
 
-	tmp = malloc(req_len);
+	tmp = os_malloc(req_len);
 	if (tmp == NULL)
 		return -1;
 
@@ -167,12 +178,12 @@ int eap_sim_verify_mac(const u8 *k_aut, const u8 *req, size_t req_len,
 	len[1] = extra_len;
 
 	/* HMAC-SHA1-128 */
-	memcpy(tmp, req, req_len);
-	memset(tmp + (mac - req), 0, EAP_SIM_MAC_LEN);
+	os_memcpy(tmp, req, req_len);
+	os_memset(tmp + (mac - req), 0, EAP_SIM_MAC_LEN);
 	hmac_sha1_vector(k_aut, EAP_SIM_K_AUT_LEN, 2, addr, len, hmac);
-	free(tmp);
+	os_free(tmp);
 
-	return (memcmp(hmac, mac, EAP_SIM_MAC_LEN) == 0) ? 0 : 1;
+	return (os_memcmp(hmac, mac, EAP_SIM_MAC_LEN) == 0) ? 0 : 1;
 }
 
 
@@ -189,9 +200,9 @@ void eap_sim_add_mac(const u8 *k_aut, u8 *msg, size_t msg_len, u8 *mac,
 	len[1] = extra_len;
 
 	/* HMAC-SHA1-128 */
-	memset(mac, 0, EAP_SIM_MAC_LEN);
+	os_memset(mac, 0, EAP_SIM_MAC_LEN);
 	hmac_sha1_vector(k_aut, EAP_SIM_K_AUT_LEN, 2, addr, len, hmac);
-	memcpy(mac, hmac, EAP_SIM_MAC_LEN);
+	os_memcpy(mac, hmac, EAP_SIM_MAC_LEN);
 }
 
 
@@ -201,7 +212,7 @@ int eap_sim_parse_attr(const u8 *start, const u8 *end,
 	const u8 *pos = start, *apos;
 	size_t alen, plen, i, list_len;
 
-	memset(attr, 0, sizeof(*attr));
+	os_memset(attr, 0, sizeof(*attr));
 	attr->id_req = NO_ID_REQ;
 	attr->notification = -1;
 	attr->counter = -1;
@@ -521,10 +532,10 @@ u8 * eap_sim_parse_encr(const u8 *k_encr, const u8 *encr_data,
 		return NULL;
 	}
 
-	decrypted = malloc(encr_data_len);
+	decrypted = os_malloc(encr_data_len);
 	if (decrypted == NULL)
 		return NULL;
-	memcpy(decrypted, encr_data, encr_data_len);
+	os_memcpy(decrypted, encr_data, encr_data_len);
 
 	aes_128_cbc_decrypt(k_encr, iv, decrypted, encr_data_len);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-SIM: Decrypted AT_ENCR_DATA",
@@ -534,7 +545,7 @@ u8 * eap_sim_parse_encr(const u8 *k_encr, const u8 *encr_data,
 			       aka, 1)) {
 		wpa_printf(MSG_INFO, "EAP-SIM: (encr) Failed to parse "
 			   "decrypted AT_ENCR_DATA");
-		free(decrypted);
+		os_free(decrypted);
 		return NULL;
 	}
 
@@ -557,13 +568,13 @@ struct eap_sim_msg * eap_sim_msg_init(int code, int id, int type, int subtype)
 	struct eap_hdr *eap;
 	u8 *pos;
 
-	msg = wpa_zalloc(sizeof(*msg));
+	msg = os_zalloc(sizeof(*msg));
 	if (msg == NULL)
 		return NULL;
 
-	msg->buf = wpa_zalloc(EAP_SIM_INIT_LEN);
+	msg->buf = os_zalloc(EAP_SIM_INIT_LEN);
 	if (msg->buf == NULL) {
-		free(msg);
+		os_free(msg);
 		return NULL;
 	}
 	msg->buf_len = EAP_SIM_INIT_LEN;
@@ -602,7 +613,7 @@ u8 * eap_sim_msg_finish(struct eap_sim_msg *msg, size_t *len, const u8 *k_aut,
 
 	*len = msg->used;
 	buf = msg->buf;
-	free(msg);
+	os_free(msg);
 	return buf;
 }
 
@@ -610,8 +621,8 @@ u8 * eap_sim_msg_finish(struct eap_sim_msg *msg, size_t *len, const u8 *k_aut,
 void eap_sim_msg_free(struct eap_sim_msg *msg)
 {
 	if (msg) {
-		free(msg->buf);
-		free(msg);
+		os_free(msg->buf);
+		os_free(msg);
 	}
 }
 
@@ -619,7 +630,7 @@ void eap_sim_msg_free(struct eap_sim_msg *msg)
 static int eap_sim_msg_resize(struct eap_sim_msg *msg, size_t add_len)
 {
 	if (msg->used + add_len > msg->buf_len) {
-		u8 *nbuf = realloc(msg->buf, msg->used + add_len);
+		u8 *nbuf = os_realloc(msg->buf, msg->used + add_len);
 		if (nbuf == NULL)
 			return -1;
 		msg->buf = nbuf;
@@ -646,10 +657,10 @@ u8 * eap_sim_msg_add_full(struct eap_sim_msg *msg, u8 attr,
 	start = pos = msg->buf + msg->used;
 	*pos++ = attr;
 	*pos++ = attr_len / 4;
-	memcpy(pos, data, len);
+	os_memcpy(pos, data, len);
 	if (pad_len) {
 		pos += len;
-		memset(pos, 0, pad_len);
+		os_memset(pos, 0, pad_len);
 	}
 	msg->used += attr_len;
 	return start;
@@ -676,10 +687,10 @@ u8 * eap_sim_msg_add(struct eap_sim_msg *msg, u8 attr, u16 value,
 	WPA_PUT_BE16(pos, value);
 	pos += 2;
 	if (data)
-		memcpy(pos, data, len);
+		os_memcpy(pos, data, len);
 	if (pad_len) {
 		pos += len;
-		memset(pos, 0, pad_len);
+		os_memset(pos, 0, pad_len);
 	}
 	msg->used += attr_len;
 	return start;
@@ -739,7 +750,7 @@ int eap_sim_msg_add_encr_end(struct eap_sim_msg *msg, u8 *k_encr, int attr_pad)
 		pos = eap_sim_msg_add(msg, attr_pad, 0, NULL, pad_len - 4);
 		if (pos == NULL)
 			return -1;
-		memset(pos + 4, 0, pad_len - 4);
+		os_memset(pos + 4, 0, pad_len - 4);
 		encr_len += pad_len;
 	}
 	wpa_printf(MSG_DEBUG, "   (AT_ENCR_DATA data len %lu)",

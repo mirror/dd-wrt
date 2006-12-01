@@ -436,7 +436,7 @@ static int ndis_events_get_adapter(struct ndis_events_data *events,
 
 	hr = IWbemLocator_ConnectServer(events->pLoc, L"ROOT\\CIMV2", NULL,
 					NULL, 0, 0, 0, 0, &pSvc);
-	if (hr) {
+	if (FAILED(hr)) {
 		wpa_printf(MSG_ERROR, "ndis_events: Could not connect to WMI "
 			   "server (ROOT\\CIMV2) - error 0x%x", (int) hr);
 		return ndis_events_use_desc(events, desc);
@@ -697,7 +697,7 @@ ndis_events_init(HANDLE *read_pipe, HANDLE *event_avail,
 
 	hr = IWbemLocator_ConnectServer(events->pLoc, L"ROOT\\WMI", NULL, NULL,
 					0, 0, 0, 0, &events->pSvc);
-	if (hr) {
+	if (FAILED(hr)) {
 		wpa_printf(MSG_ERROR, "Could not connect to server - error "
 			   "0x%x", (int) hr);
 		CoUninitialize();

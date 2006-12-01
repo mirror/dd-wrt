@@ -24,12 +24,12 @@ struct radius_msg *radius_msg_new(u8 code, u8 identifier)
 {
 	struct radius_msg *msg;
 
-	msg = (struct radius_msg *) malloc(sizeof(*msg));
+	msg = os_malloc(sizeof(*msg));
 	if (msg == NULL)
 		return NULL;
 
 	if (radius_msg_initialize(msg, RADIUS_DEFAULT_MSG_SIZE)) {
-		free(msg);
+		os_free(msg);
 		return NULL;
 	}
 
@@ -44,7 +44,7 @@ int radius_msg_initialize(struct radius_msg *msg, size_t init_len)
 	if (msg == NULL || init_len < sizeof(struct radius_hdr))
 		return -1;
 
-	memset(msg, 0, sizeof(*msg));
+	os_memset(msg, 0, sizeof(*msg));
 	msg->buf = wpa_zalloc(init_len);
 	if (msg->buf == NULL)
 		return -1;
@@ -53,10 +53,10 @@ int radius_msg_initialize(struct radius_msg *msg, size_t init_len)
 	msg->hdr = (struct radius_hdr *) msg->buf;
 	msg->buf_used = sizeof(*msg->hdr);
 
-	msg->attrs = (struct radius_attr_hdr **)
-		malloc(RADIUS_DEFAULT_ATTR_COUNT * sizeof(*msg->attrs));
+	msg->attrs =
+		os_malloc(RADIUS_DEFAULT_ATTR_COUNT * sizeof(*msg->attrs));
 	if (msg->attrs == NULL) {
-		free(msg->buf);
+		os_free(msg->buf);
 		msg->buf = NULL;
 		msg->hdr = NULL;
 		return -1;
@@ -79,14 +79,14 @@ void radius_msg_set_hdr(struct radius_msg *msg, u8 code, u8 identifier)
 void radius_msg_free(struct radius_msg *msg)
 {
 	if (msg->buf != NULL) {
-		free(msg->buf);
+		os_free(msg->buf);
 		msg->buf = NULL;
 		msg->hdr = NULL;
 	}
 	msg->buf_size = msg->buf_used = 0;
 
 	if (msg->attrs != NULL) {
-		free(msg->attrs);
+		os_free(msg->attrs);
 		msg->attrs = NULL;
 	}
 	msg->attr_size = msg->attr_used = 0;
@@ -290,7 +290,7 @@ int radius_msg_finish(struct radius_msg *msg, u8 *secret, size_t secret_len)
 		u8 auth[MD5_MAC_LEN];
 		struct radius_attr_hdr *attr;
 
-		memset(auth, 0, MD5_MAC_LEN);
+		os_memset(auth, 0, MD5_MAC_LEN);
 		attr = radius_msg_add_attr(msg,
 					   RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
 					   auth, MD5_MAC_LEN);
@@ -322,7 +322,7 @@ int radius_msg_finish_srv(struct radius_msg *msg, const u8 *secret,
 	const u8 *addr[4];
 	size_t len[4];
 
-	memset(auth, 0, MD5_MAC_LEN);
+	os_memset(auth, 0, MD5_MAC_LEN);
 	attr = radius_msg_add_attr(msg, RADIUS_ATTR_MESSAGE_AUTHENTICATOR,
 				   auth, MD5_MAC_LEN);
 	if (attr == NULL) {
@@ -330,8 +330,8 @@ int radius_msg_finish_srv(struct radius_msg *msg, const u8 *secret,
 		return -1;
 	}
 	msg->hdr->length = htons(msg->buf_used);
-	memcpy(msg->hdr->authenticator, req_authenticator,
-	       sizeof(msg->hdr->authenticator));
+	os_memcpy(msg->hdr->authenticator, req_authenticator,
+		  sizeof(msg->hdr->authenticator));
 	hmac_md5(secret, secret_len, msg->buf, msg->buf_used,
 		 (u8 *) (attr + 1));
 
@@ -362,7 +362,7 @@ void radius_msg_finish_acct(struct radius_msg *msg, u8 *secret,
 	size_t len[2];
 
 	msg->hdr->length = htons(msg->buf_used);
-	memset(msg->hdr->authenticator, 0, MD5_MAC_LEN);
+	os_memset(msg->hdr->authenticator, 0, MD5_MAC_LEN);
 	addr[0] = msg->buf;
 	len[0] = msg->buf_used;
 	addr[1] = secret;
@@ -383,9 +383,7 @@ static int radius_msg_add_attr_to_array(struct radius_msg *msg,
 		struct radius_attr_hdr **nattrs;
 		int nlen = msg->attr_size * 2;
 
-		nattrs = (struct radius_attr_hdr **)
-			realloc(msg->attrs, nlen * sizeof(*msg->attrs));
-
+		nattrs = os_realloc(msg->attrs, nlen * sizeof(*msg->attrs));
 		if (nattrs == NULL)
 			return -1;
 
@@ -421,7 +419,7 @@ struct radius_attr_hdr *radius_msg_add_attr(struct radius_msg *msg, u8 type,
 
 		while (nlen < buf_needed)
 			nlen *= 2;
-		nbuf = (unsigned char *) realloc(msg->buf, nlen);
+		nbuf = os_realloc(msg->buf, nlen);
 		if (nbuf == NULL)
 			return NULL;
 		diff = nbuf - msg->buf;
@@ -431,7 +429,7 @@ struct radius_attr_hdr *radius_msg_add_attr(struct radius_msg *msg, u8 type,
 		for (i = 0; i < msg->attr_used; i++)
 			msg->attrs[i] = (struct radius_attr_hdr *)
 				(((u8 *) msg->attrs[i]) + diff);
-		memset(msg->buf + msg->buf_size, 0, nlen - msg->buf_size);
+		os_memset(msg->buf + msg->buf_size, 0, nlen - msg->buf_size);
 		msg->buf_size = nlen;
 	}
 
@@ -439,7 +437,7 @@ struct radius_attr_hdr *radius_msg_add_attr(struct radius_msg *msg, u8 type,
 	attr->type = type;
 	attr->length = sizeof(*attr) + data_len;
 	if (data_len > 0)
-		memcpy(attr + 1, data, data_len);
+		os_memcpy(attr + 1, data, data_len);
 
 	msg->buf_used += sizeof(*attr) + data_len;
 
@@ -474,16 +472,16 @@ struct radius_msg *radius_msg_parse(const u8 *data, size_t len)
 		       (unsigned long) len - msg_len);
 	}
 
-	msg = (struct radius_msg *) malloc(sizeof(*msg));
+	msg = os_malloc(sizeof(*msg));
 	if (msg == NULL)
 		return NULL;
 
 	if (radius_msg_initialize(msg, msg_len)) {
-		free(msg);
+		os_free(msg);
 		return NULL;
 	}
 
-	memcpy(msg->buf, data, msg_len);
+	os_memcpy(msg->buf, data, msg_len);
 	msg->buf_size = msg->buf_used = msg_len;
 
 	/* parse attributes */
@@ -510,7 +508,7 @@ struct radius_msg *radius_msg_parse(const u8 *data, size_t len)
 
  fail:
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 	return NULL;
 }
 
@@ -557,7 +555,7 @@ u8 *radius_msg_get_eap(struct radius_msg *msg, size_t *eap_len)
 	if (len == 0)
 		return NULL;
 
-	eap = malloc(len);
+	eap = os_malloc(len);
 	if (eap == NULL)
 		return NULL;
 
@@ -566,7 +564,7 @@ u8 *radius_msg_get_eap(struct radius_msg *msg, size_t *eap_len)
 		if (msg->attrs[i]->type == RADIUS_ATTR_EAP_MESSAGE) {
 			struct radius_attr_hdr *attr = msg->attrs[i];
 			int flen = attr->length - sizeof(*attr);
-			memcpy(pos, attr + 1, flen);
+			os_memcpy(pos, attr + 1, flen);
 			pos += flen;
 		}
 	}
@@ -602,22 +600,22 @@ int radius_msg_verify_msg_auth(struct radius_msg *msg, const u8 *secret,
 		return 1;
 	}
 
-	memcpy(orig, attr + 1, MD5_MAC_LEN);
-	memset(attr + 1, 0, MD5_MAC_LEN);
+	os_memcpy(orig, attr + 1, MD5_MAC_LEN);
+	os_memset(attr + 1, 0, MD5_MAC_LEN);
 	if (req_auth) {
-		memcpy(orig_authenticator, msg->hdr->authenticator,
-		       sizeof(orig_authenticator));
-		memcpy(msg->hdr->authenticator, req_auth,
-		       sizeof(msg->hdr->authenticator));
+		os_memcpy(orig_authenticator, msg->hdr->authenticator,
+			  sizeof(orig_authenticator));
+		os_memcpy(msg->hdr->authenticator, req_auth,
+			  sizeof(msg->hdr->authenticator));
 	}
 	hmac_md5(secret, secret_len, msg->buf, msg->buf_used, auth);
-	memcpy(attr + 1, orig, MD5_MAC_LEN);
+	os_memcpy(attr + 1, orig, MD5_MAC_LEN);
 	if (req_auth) {
-		memcpy(msg->hdr->authenticator, orig_authenticator,
-		       sizeof(orig_authenticator));
+		os_memcpy(msg->hdr->authenticator, orig_authenticator,
+			  sizeof(orig_authenticator));
 	}
 
-	if (memcmp(orig, auth, MD5_MAC_LEN) != 0) {
+	if (os_memcmp(orig, auth, MD5_MAC_LEN) != 0) {
 		printf("Invalid Message-Authenticator!\n");
 		return 1;
 	}
@@ -654,7 +652,7 @@ int radius_msg_verify(struct radius_msg *msg, const u8 *secret,
 	addr[3] = secret;
 	len[3] = secret_len;
 	md5_vector(4, addr, len, hash);
-	if (memcmp(hash, msg->hdr->authenticator, MD5_MAC_LEN) != 0) {
+	if (os_memcmp(hash, msg->hdr->authenticator, MD5_MAC_LEN) != 0) {
 		printf("Response Authenticator invalid!\n");
 		return 1;
 	}
@@ -714,7 +712,8 @@ void radius_msg_make_authenticator(struct radius_msg *msg,
 /* Get Vendor-specific RADIUS Attribute from a parsed RADIUS message.
  * Returns the Attribute payload and sets alen to indicate the length of the
  * payload if a vendor attribute with subtype is found, otherwise returns NULL.
- * The returned payload is allocated with malloc() and caller must free it.
+ * The returned payload is allocated with os_malloc() and caller must free it
+ * by calling os_free().
  */
 static u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
 				      u8 subtype, size_t *alen)
@@ -740,7 +739,7 @@ static u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
 
 		pos = (u8 *) (attr + 1);
 
-		memcpy(&vendor_id, pos, 4);
+		os_memcpy(&vendor_id, pos, 4);
 		pos += 4;
 		left -= 4;
 
@@ -761,10 +760,10 @@ static u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
 			}
 
 			len = vhdr->vendor_length - sizeof(*vhdr);
-			data = malloc(len);
+			data = os_malloc(len);
 			if (data == NULL)
 				return NULL;
-			memcpy(data, pos + sizeof(*vhdr), len);
+			os_memcpy(data, pos + sizeof(*vhdr), len);
 			if (alen)
 				*alen = len;
 			return data;
@@ -800,7 +799,7 @@ static u8 * decrypt_ms_key(const u8 *key, size_t len,
 	}
 
 	plen = left;
-	ppos = plain = malloc(plen);
+	ppos = plain = os_malloc(plen);
 	if (plain == NULL)
 		return NULL;
 
@@ -829,19 +828,19 @@ static u8 * decrypt_ms_key(const u8 *key, size_t len,
 
 	if (plain[0] > plen - 1) {
 		printf("Failed to decrypt MPPE key\n");
-		free(plain);
+		os_free(plain);
 		return NULL;
 	}
 
-	res = malloc(plain[0]);
+	res = os_malloc(plain[0]);
 	if (res == NULL) {
-		free(plain);
+		os_free(plain);
 		return NULL;
 	}
-	memcpy(res, plain + 1, plain[0]);
+	os_memcpy(res, plain + 1, plain[0]);
 	if (reslen)
 		*reslen = plain[0];
-	free(plain);
+	os_free(plain);
 	return res;
 }
 
@@ -863,9 +862,9 @@ static void encrypt_ms_key(const u8 *key, size_t key_len, u16 salt,
 	if (len & 0x0f) {
 		len = (len & 0xf0) + 16;
 	}
-	memset(ebuf, 0, len);
+	os_memset(ebuf, 0, len);
 	ebuf[0] = key_len;
-	memcpy(ebuf + 1, key, key_len);
+	os_memcpy(ebuf + 1, key, key_len);
 
 	*elen = len;
 
@@ -918,7 +917,7 @@ radius_msg_get_ms_keys(struct radius_msg *msg, struct radius_msg *sent_msg,
 					    sent_msg->hdr->authenticator,
 					    secret, secret_len,
 					    &keys->send_len);
-		free(key);
+		os_free(key);
 	}
 
 	key = radius_msg_get_vendor_attr(msg, RADIUS_VENDOR_ID_MICROSOFT,
@@ -929,7 +928,7 @@ radius_msg_get_ms_keys(struct radius_msg *msg, struct radius_msg *sent_msg,
 					    sent_msg->hdr->authenticator,
 					    secret, secret_len,
 					    &keys->recv_len);
-		free(key);
+		os_free(key);
 	}
 
 	return keys;
@@ -953,13 +952,14 @@ radius_msg_get_cisco_keys(struct radius_msg *msg, struct radius_msg *sent_msg,
 
 	key = radius_msg_get_vendor_attr(msg, RADIUS_VENDOR_ID_CISCO,
 					 RADIUS_CISCO_AV_PAIR, &keylen);
-	if (key && keylen == 51 && memcmp(key, "leap:session-key=", 17) == 0) {
+	if (key && keylen == 51 &&
+	    os_memcmp(key, "leap:session-key=", 17) == 0) {
 		keys->recv = decrypt_ms_key(key + 17, keylen - 17,
 					    sent_msg->hdr->authenticator,
 					    secret, secret_len,
 					    &keys->recv_len);
 	}
-	free(key);
+	os_free(key);
 
 	return keys;
 }
@@ -983,12 +983,12 @@ int radius_msg_add_mppe_keys(struct radius_msg *msg,
 	hlen = sizeof(vendor_id) + sizeof(*vhdr) + 2;
 
 	/* MS-MPPE-Send-Key */
-	buf = malloc(hlen + send_key_len + 16);
+	buf = os_malloc(hlen + send_key_len + 16);
 	if (buf == NULL) {
 		return 0;
 	}
 	pos = buf;
-	memcpy(pos, &vendor_id, sizeof(vendor_id));
+	os_memcpy(pos, &vendor_id, sizeof(vendor_id));
 	pos += sizeof(vendor_id);
 	vhdr = (struct radius_attr_vendor *) pos;
 	vhdr->vendor_type = RADIUS_VENDOR_ATTR_MS_MPPE_SEND_KEY;
@@ -1002,18 +1002,18 @@ int radius_msg_add_mppe_keys(struct radius_msg *msg,
 
 	attr = radius_msg_add_attr(msg, RADIUS_ATTR_VENDOR_SPECIFIC,
 				   buf, hlen + elen);
-	free(buf);
+	os_free(buf);
 	if (attr == NULL) {
 		return 0;
 	}
 
 	/* MS-MPPE-Recv-Key */
-	buf = malloc(hlen + send_key_len + 16);
+	buf = os_malloc(hlen + send_key_len + 16);
 	if (buf == NULL) {
 		return 0;
 	}
 	pos = buf;
-	memcpy(pos, &vendor_id, sizeof(vendor_id));
+	os_memcpy(pos, &vendor_id, sizeof(vendor_id));
 	pos += sizeof(vendor_id);
 	vhdr = (struct radius_attr_vendor *) pos;
 	vhdr->vendor_type = RADIUS_VENDOR_ATTR_MS_MPPE_RECV_KEY;
@@ -1027,7 +1027,7 @@ int radius_msg_add_mppe_keys(struct radius_msg *msg,
 
 	attr = radius_msg_add_attr(msg, RADIUS_ATTR_VENDOR_SPECIFIC,
 				   buf, hlen + elen);
-	free(buf);
+	os_free(buf);
 	if (attr == NULL) {
 		return 0;
 	}
@@ -1053,13 +1053,13 @@ radius_msg_add_attr_user_password(struct radius_msg *msg,
 	if (data_len > 128)
 		return NULL;
 
-	memcpy(buf, data, data_len);
+	os_memcpy(buf, data, data_len);
 	buf_len = data_len;
 
 	padlen = data_len % 16;
 	if (padlen) {
 		padlen = 16 - padlen;
-		memset(buf + data_len, 0, padlen);
+		os_memset(buf + data_len, 0, padlen);
 		buf_len += padlen;
 	}
 
@@ -1108,7 +1108,7 @@ int radius_msg_get_attr(struct radius_msg *msg, u8 type, u8 *buf, size_t len)
 
 	dlen = attr->length - sizeof(*attr);
 	if (buf)
-		memcpy(buf, (attr + 1), dlen > len ? len : dlen);
+		os_memcpy(buf, (attr + 1), dlen > len ? len : dlen);
 	return dlen;
 }
 
@@ -1174,7 +1174,7 @@ int radius_msg_get_vlanid(struct radius_msg *msg)
 	char buf[10];
 	size_t dlen;
 
-	memset(&tunnel, 0, sizeof(tunnel));
+	os_memset(&tunnel, 0, sizeof(tunnel));
 
 	for (i = 0; i < msg->attr_used; i++) {
 		attr = msg->attrs[i];
@@ -1208,7 +1208,7 @@ int radius_msg_get_vlanid(struct radius_msg *msg)
 			}
 			if (dlen >= sizeof(buf))
 				break;
-			memcpy(buf, data, dlen);
+			os_memcpy(buf, data, dlen);
 			buf[dlen] = '\0';
 			tun->tag_used++;
 			tun->vlanid = atoi(buf);

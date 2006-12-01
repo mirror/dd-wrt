@@ -24,9 +24,9 @@
 
 void eap_psk_key_setup(const u8 *psk, u8 *ak, u8 *kdk)
 {
-	memset(ak, 0, aes_block_size);
+	os_memset(ak, 0, aes_block_size);
 	aes_128_encrypt_block(psk, ak, ak);
-	memcpy(kdk, ak, aes_block_size);
+	os_memcpy(kdk, ak, aes_block_size);
 	ak[aes_block_size - 1] ^= 0x01;
 	kdk[aes_block_size - 1] ^= 0x02;
 	aes_128_encrypt_block(psk, ak, ak);
