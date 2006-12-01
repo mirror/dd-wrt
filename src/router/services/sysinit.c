@@ -128,6 +128,8 @@ start_modules (void)
   runStartup ("/etc/config", ".startup");
 #ifdef HAVE_RB500
   runStartup ("/usr/local/etc/config", ".startup");	//if available
+#elif HAVE_X86
+  runStartup ("/usr/local/etc/config", ".startup");	//if available
 #else
   runStartup ("/jffs/etc/config", ".startup");	//if available
   runStartup ("/mmc/etc/config", ".startup");	//if available
@@ -140,6 +142,8 @@ start_wanup (void)
 {
   runStartup ("/etc/config", ".wanup");
 #ifdef HAVE_RB500
+  runStartup ("/usr/local/etc/config", ".wanup");	//if available
+#elif HAVE_X86
   runStartup ("/usr/local/etc/config", ".wanup");	//if available
 #else
   runStartup ("/jffs/etc/config", ".wanup");	//if available
@@ -311,8 +315,8 @@ start_restore_defaults (void)
     {"lan_ifnames",
      "eth0 ath0",
      0},
-    {"wan_ifname", "atm0", 0},
-    {"wan_ifnames", "atm0", 0},
+    {"wan_ifname", "", 0},
+    {"wan_ifnames", "", 0},
     {0, 0, 0}
   };
 #elif HAVE_GATEWORX
