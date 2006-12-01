@@ -1,7 +1,7 @@
 #
 #	MatrixSSL example applications makefile
 #	Builds optimized by default, see comments below for debug.
-#	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved
+#	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved
 #
 
 CC 	= gcc
@@ -88,4 +88,4 @@ $(CLIENT_EXE):$(CLIENT_OBJS)
 #
 clean:
 	rm -f $(REF_EXE) $(REF_OBJS) \
-		$(CLIENT_EXE) $(CLIENT_OBJS)
+		$(CLIENT_EXE) $(CLIENT_OBJS) 

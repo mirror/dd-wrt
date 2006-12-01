@@ -1,11 +1,11 @@
 /*
  *	matrixSsl.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Secure Sockets Layer session management
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ static sslSessionEntry_t	sessionTable[SSL_SESSION_TABLE_SIZE];
 	lifetime of the application and initialize and clean up the library 
 	respectively.
 */
-int32 matrixSslOpen()
+int32 matrixSslOpen(void)
 {
 	if (matrixPkiOpen() < 0) {
 		matrixStrDebugMsg("PKI open failure\n", NULL);
@@ -69,7 +69,7 @@ int32 matrixSslOpen()
 	return 0;
 }
 
-void matrixSslClose()
+void matrixSslClose(void)
 {
 #ifdef USE_SERVER_SIDE_SSL
 	int32		i;
@@ -93,15 +93,17 @@ void matrixSslClose()
 /*
 	Wrappers around the RSA versions.  Necessary to keep API backwards compat
 */
+#ifdef USE_FILE_SYSTEM
 int32 matrixSslReadKeys(sslKeys_t **keys, char *certFile,
 						char *privFile, char *privPass, char *trustedCAFile)
 {
 	return matrixRsaReadKeys(keys, certFile, privFile, privPass, trustedCAFile);
 }
+#endif /* USE_FILE_SYSTEM */
 
-int32 matrixSslReadKeysMem(sslKeys_t **keys, char *certBuf,
-						int32 certLen, char *privBuf, int32 privLen,
-						char *trustedCABuf, int32 trustedCALen)
+int32 matrixSslReadKeysMem(sslKeys_t **keys, unsigned char *certBuf,
+						int32 certLen, unsigned char *privBuf, int32 privLen,
+						unsigned char *trustedCABuf, int32 trustedCALen)
 {
 	return matrixRsaReadKeysMem(keys, certBuf, certLen, privBuf, privLen,
 		trustedCABuf, trustedCALen);
@@ -111,6 +113,7 @@ void matrixSslFreeKeys(sslKeys_t *keys)
 {
 	matrixRsaFreeKeys(keys);
 }
+
 
 
 /******************************************************************************/
@@ -147,6 +150,12 @@ int32 matrixSslNewSession(ssl_t **ssl, sslKeys_t *keys, sslSessionId_t *session,
 		return -1;
 	}
 #endif
+	if (flags & SSL_FLAGS_CLIENT_AUTH) {
+		matrixStrDebugMsg("MatrixSSL lib not compiled with client " \
+			"authentication support\n", NULL);
+		return -1;
+	}
+
 	if (flags & SSL_FLAGS_SERVER) {
 		if (keys == NULL) {
 			matrixStrDebugMsg("NULL keys in  matrixSslNewSession\n", NULL);
@@ -175,6 +184,12 @@ int32 matrixSslNewSession(ssl_t **ssl, sslKeys_t *keys, sslSessionId_t *session,
 
 	if (flags & SSL_FLAGS_SERVER) {
 		lssl->flags |= SSL_FLAGS_SERVER;
+/*
+		Client auth can only be requested by server, not set by client
+*/
+		if (flags & SSL_FLAGS_CLIENT_AUTH) {
+			lssl->flags |= SSL_FLAGS_CLIENT_AUTH;
+		}
 		lssl->hsState = SSL_HS_CLIENT_HELLO;
 	} else {
 		lssl->majVer = SSL3_MAJ_VER;
@@ -235,6 +250,14 @@ void matrixSslDeleteSession(ssl_t *ssl)
 		ssl->sec.cert = NULL;
 	}
 #endif /* USE_CLIENT_SIDE_SSL */
+
+/*
+	Premaster could also be allocated if this DeleteSession is the result
+	of a failed handshake.  This test is fine since all frees will NULL pointer
+*/
+	if (ssl->sec.premaster) {
+		psFree(ssl->sec.premaster);
+	}
 /*
 	The cipher and mac contexts are inline in the ssl structure, so
 	clearing the structure clears those states as well.
@@ -518,6 +541,7 @@ int32 matrixRegisterSession(ssl_t *ssl)
 	sessionTable[i].accessTime = sessionTable[i].startTime;
 	sessionTable[i].majVer = ssl->majVer;
 	sessionTable[i].minVer = ssl->minVer;
+	sessionTable[i].flag = 0;
 
 	return i;
 }
@@ -542,6 +566,7 @@ int32 matrixClearSession(ssl_t *ssl, int32 remove)
 	}
 	sslLockMutex(&sessionTableLock);
 	sessionTable[i].inUse = 0;
+	sessionTable[i].flag = 0;
 /*
 	If this is a full removal, actually delete the entry rather than
 	just setting the inUse to 0.  Also need to clear any RESUME flag
@@ -641,6 +666,58 @@ int32 matrixUpdateSession(ssl_t *ssl)
 	memcpy(sessionTable[i].masterSecret, ssl->sec.masterSecret,
 		SSL_HS_MASTER_SIZE);
 	sessionTable[i].cipher = ssl->cipher;
+	sslUnlockMutex(&sessionTableLock);
+	return 0;
+}
+
+int32 matrixSslSetResumptionFlag(ssl_t *ssl, char flag)
+{
+	char	*id;
+	uint32	i;
+
+	if (!(ssl->flags & SSL_FLAGS_SERVER)) {
+		return -1;
+	}
+	if ((id = ssl->sessionId) == NULL) {
+		return -1;
+	}
+	i = (id[3] << 24) + (id[2] << 16) + (id[1] << 8) + id[0];
+	if (i < 0 || i >= SSL_SESSION_TABLE_SIZE) {
+		return -1;
+	}
+	sslLockMutex(&sessionTableLock);
+	sessionTable[i].inUse = ssl->flags & SSL_FLAGS_CLOSED ? 0 : 1;
+	if (ssl->flags & SSL_FLAGS_ERROR) {
+		sslUnlockMutex(&sessionTableLock);
+		return -1;
+	}
+	sessionTable[i].flag = flag;
+	sslUnlockMutex(&sessionTableLock);
+	return 0;
+}
+
+int32 matrixSslGetResumptionFlag(ssl_t *ssl, char *flag)
+{
+	char	*id;
+	uint32	i;
+
+	if (!(ssl->flags & SSL_FLAGS_SERVER)) {
+		return -1;
+	}
+	if ((id = ssl->sessionId) == NULL) {
+		return -1;
+	}
+	i = (id[3] << 24) + (id[2] << 16) + (id[1] << 8) + id[0];
+	if (i < 0 || i >= SSL_SESSION_TABLE_SIZE) {
+		return -1;
+	}
+	sslLockMutex(&sessionTableLock);
+	sessionTable[i].inUse = ssl->flags & SSL_FLAGS_CLOSED ? 0 : 1;
+	if (ssl->flags & SSL_FLAGS_ERROR) {
+		sslUnlockMutex(&sessionTableLock);
+		return -1;
+	}
+	*flag = sessionTable[i].flag;
 	sslUnlockMutex(&sessionTableLock);
 	return 0;
 }

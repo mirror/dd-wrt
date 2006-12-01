@@ -1,12 +1,12 @@
 /*
  *	httpClient.c
- *	Release $Name: MATRIXSSL_1_7_1C_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Simple example program for MatrixSSL
  *	Sends a HTTPS request and echos the response back to the sender.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -47,8 +47,9 @@
 
 static char CAfile[] = "CAcertSrv.pem";
 
+
 #define ITERATIONS	100 /* How many individual connections to make */
-#define REQUESTS	1  /* How many requests per each connection */
+#define REQUESTS	10  /* How many requests per each connection */
 #define REUSE		0  /* 0 if session resumption disabled */
 
 #define ENFORCE_CERT_VALIDATION 1 /* 0 to allow connection without validation */
@@ -96,6 +97,9 @@ int main(int argc, char **argv)
 	int					iterations, requests, connectAgain, status;
 	int					quit, rc, bytes, i, j, err;
 	time_t				t0, t1;
+#if REUSE
+	int					anonStatus;
+#endif
 #if VXWORKS
 	int					argc;
 	char				**argv;
@@ -270,6 +274,19 @@ readMore:
 #if REUSE
 		matrixSslFreeSessionId(sessionId);
 		matrixSslGetSessionId(conn->ssl, &sessionId);
+/*
+		This example shows how a user might want to limit a client to
+		resuming handshakes only with authenticated servers.  In this
+		example, the client will force any non-authenticated (anonymous)
+		server to go through a complete handshake each time.  This is
+		strictly an example of one policy decision an implementation 
+		might wish to make.
+*/
+		matrixSslGetAnonStatus(conn->ssl, &anonStatus);
+		if (anonStatus) {
+			matrixSslFreeSessionId(sessionId);
+			sessionId = NULL;
+		}
 #endif
 /*
 		Send a closure alert for clean shutdown of remote SSL connection
@@ -321,7 +338,6 @@ promptAndExit:
 */
 static int certChecker(sslCertInfo_t *cert, void *arg)
 {
-#if ENFORCE_CERT_VALIDATION
 	sslCertInfo_t	*next;
 /*
 	Make sure we are checking the last cert in the chain
@@ -330,11 +346,23 @@ static int certChecker(sslCertInfo_t *cert, void *arg)
 	while (next->next != NULL) {
 		next = next->next;
 	}
+#if ENFORCE_CERT_VALIDATION
+/*
+	This case passes the true RSA authentication status through
+*/
 	return next->verified;
 #else
-	return 1;
+/*
+	This case passes an authenticated server through, but flags a
+	non-authenticated server correctly.  The user can call the
+	matrixSslGetAnonStatus later to see the status of this connection.
+*/
+	if (next->verified != 1) {
+		return SSL_ALLOW_ANON_CONNECTION;
+	}
+	return next->verified;
 #endif /* ENFORCE_CERT_VALIDATION */
-}	
+}		
 
 /******************************************************************************/
 

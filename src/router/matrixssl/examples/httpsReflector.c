@@ -1,12 +1,12 @@
 /*
  *	httpReflector.c
- *	Release $Name: MATRIXSSL_1_7_1C_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Simple example program for MatrixSSL
  *	Accepts a HTTPS request and echos the response back to the sender.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -54,11 +54,17 @@ static const char responseHdr[] = "HTTP/1.0 200 OK\r\n"
 static const char quitString[] = "GET /quit";
 static const char againString[] = "GET /again";
 
+
+
+/******************************************************************************/
 /*
-	Callback that is registered to receive server certificate 
-	information for custom validation
+	Helper framework for testing matrixSslReadKeysMem
 */
-static int certChecker(sslCertInfo_t *cert, void *arg);
+#define USE_MEM_CERTS 0
+#if USE_MEM_CERTS
+#include <sys/stat.h>
+static int32 getFileBin(char *fileName, unsigned char **bin, int32 *binLen);
+#endif
 
 /******************************************************************************/
 /*
@@ -82,6 +88,10 @@ int main(int argc, char **argv)
 	unsigned char	*response, *c;
 	int				responseHdrLen, acceptAgain, flags;
 	int				bytes, status, quit, again, rc, err;
+#if USE_MEM_CERTS
+	unsigned char	*servBin, *servKeyBin, *caBin; 
+	int				servBinLen, caBinLen, servKeyBinLen;
+#endif
 
 	cp = NULL;
 /*
@@ -96,12 +106,30 @@ int main(int argc, char **argv)
 		fprintf(stderr, "matrixSslOpen failed, exiting...");
 	}
 
+#if USE_MEM_CERTS
+/*
+	Example of DER binary certs for matrixSslReadKeysMem
+*/
+	getFileBin("certSrv.der", &servBin, &servBinLen);
+	getFileBin("privkeySrv.der", &servKeyBin, &servKeyBinLen);
+	getFileBin("CACertCln.der", &caBin, &caBinLen);
+
+	matrixSslReadKeysMem(&keys, servBin, servBinLen,
+		servKeyBin, servKeyBinLen, caBin, caBinLen); 
+
+	free(servBin);
+	free(servKeyBin);
+	free(caBin);
+#else 
+/*
+	Standard PEM files
+*/
 	if (matrixSslReadKeys(&keys, certfile, keyfile, NULL, NULL) < 0)  {
 		fprintf(stderr, "Error reading or parsing %s or %s.\n", 
 			certfile, keyfile);
 		goto promptAndExit;
 	}
-
+#endif /* USE_MEM_CERTS */
 	fprintf(stdout, 
 		"Run httpsClient or type https://127.0.0.1:%d into your local Web browser.\n",
 		HTTPS_PORT);
@@ -122,6 +150,7 @@ int main(int argc, char **argv)
 	quit = 0;
 	again = 0;
 	flags = 0;
+
 	acceptAgain = 1;
 /*
 	Main connection loop
@@ -137,10 +166,11 @@ int main(int argc, char **argv)
 				fprintf(stdout, "Error accepting connection: %d\n", err);
 				continue;
 			}
-			if ((rc = sslAccept(&cp, fd, keys, certChecker, flags)) != 0) {
+			if ((rc = sslAccept(&cp, fd, keys, NULL, flags)) != 0) {
 				socketShutdown(fd);
 				continue;
 			}
+
 			flags = 0;
 			acceptAgain = 0;
 		}
@@ -259,17 +289,41 @@ promptAndExit:
 	return 0;
 }
 
-/******************************************************************************/
-/*
-	Stub for a user-level certificate validator.  Just using
-	the default validation value here.
-*/
-static int certChecker(sslCertInfo_t *cert, void *arg)
+
+
+#if USE_MEM_CERTS
+static int32 getFileBin(char *fileName, unsigned char **bin,
+				 int32 *binLen)
 {
-	return cert->verified;
-}	
+	FILE	*fp;
+	struct	stat	fstat;
+	size_t	tmp = 0;
+
+	*binLen = 0;
+	*bin = NULL;
+
+	if (fileName == NULL) {
+		return -1;
+	}
+	if ((stat(fileName, &fstat) != 0) || (fp = fopen(fileName, "rb")) == NULL) {
+		return -7; /* FILE_NOT_FOUND */
+	}
+
+	*bin = malloc(fstat.st_size);
+	if (*bin == NULL) {
+		return -8; /* SSL_MEM_ERROR */
+	}
+	while (((tmp = fread(*bin + *binLen, sizeof(char), 512, fp)) > 0) &&
+			(*binLen < fstat.st_size)) { 
+		*binLen += (int32)tmp;
+	}
+	fclose(fp);
+	return 0;
+}
+#endif
 
 /******************************************************************************/
+
 
 
 

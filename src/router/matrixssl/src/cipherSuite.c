@@ -1,13 +1,13 @@
 /*
  *	cipherSuite.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Wrappers for the various cipher suites.
  *	Contributors should add additional cipher suites here.
  *	Enable specific suites at compile time in matrixConfig.h
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -64,6 +64,8 @@ static int32 matrixCipher5Init(sslSec_t *sec, int32 type);
 #ifdef USE_SSL_RSA_WITH_3DES_EDE_CBC_SHA
 static int32 matrixCipherAInit(sslSec_t *sec, int32 type);
 #endif /* USE_SSL_RSA_WITH_3DES_EDE_CBC_SHA */
+
+
 
 
 static int32 nullInit(sslSec_t *sec, int32 type);
@@ -161,8 +163,8 @@ static sslCipherSpec_t	supportedCiphers[] = {
 		nullDecrypt, 
 		matrixRsaEncryptPub, 
 		matrixRsaDecryptPriv, 
-		md5GenerateMac, 
-		md5VerifyMac},
+		sha1GenerateMac, 
+		sha1VerifyMac},
 #endif /* USE_SSL_RSA_WITH_NULL_SHA */
 /*
 	The NULL Cipher suite must exist and be the last in this list
@@ -221,7 +223,7 @@ int32 sslGetCipherSpecList(unsigned char *c, int32 len)
 		if (end - c < 2) {
 			return -1;
 		}
-		*c = (unsigned char)((supportedCiphers[i].id & 0xFF00)) >> 8; c++;
+		*c = (unsigned char)((supportedCiphers[i].id & 0xFF00) >> 8); c++;
 		*c = (unsigned char)(supportedCiphers[i].id & 0xFF); c++;
 	}
 	i *= 2;
@@ -234,7 +236,7 @@ int32 sslGetCipherSpecList(unsigned char *c, int32 len)
 /*
 	Return the length of the cipher spec list, including initial length bytes
 */
-int32 sslGetCipherSpecListLen()
+int32 sslGetCipherSpecListLen(void)
 {
 	int32	i;
 
@@ -351,7 +353,6 @@ static int32 matrixCipherAInit(sslSec_t *sec, int32 type)
 }
 #endif /* USE_SSL_RSA_WITH_3DES_EDE_CBC_SHA */
 
-
 /******************************************************************************/
 /*
 	SSL_NULL_WITH_NULL_NULL cipher functions
@@ -397,8 +398,9 @@ static int32 nullEncryptPub(psPool_t *pool, sslRsaKey_t *key,
 	return inlen;
 }
 
-static int32 nullDecryptPriv(psPool_t *pool, sslRsaKey_t *key, unsigned char *in, int32 inlen,
-						   unsigned char *out, int32 outlen)
+static int32 nullDecryptPriv(psPool_t *pool, sslRsaKey_t *key,
+							unsigned char *in, int32 inlen,
+							unsigned char *out, int32 outlen)
 {
 	if (inlen <= outlen) {
 		matrixStrDebugMsg("Error: output buffer too small for NULL decrypt\n",
@@ -420,5 +422,6 @@ static int32 nullVerifyMac(void *ssl, unsigned char type, unsigned char *data,
 {
 	return 0;
 }
+
 
 /******************************************************************************/

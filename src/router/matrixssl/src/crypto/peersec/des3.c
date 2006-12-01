@@ -1,11 +1,11 @@
 /*
  *	des3.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	3DES block cipher implementation for low memory usage
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -253,7 +253,7 @@ int32 matrix3desInit(sslCipherContext_t *ctx, unsigned char *IV,
 /*
 	setup cipher
  */
-	if ((err = _des3_setup(key, keylen, 0, &ctx->des3)) != CRYPT_OK) {
+	if ((err = des3_setup(key, keylen, 0, &ctx->des3)) != CRYPT_OK) {
 		return -1;
 	}
 /*
@@ -295,7 +295,7 @@ int32 matrix3desEncrypt(sslCipherContext_t *ctx, unsigned char *pt,
 			tmp[x] = pt[x] ^ ctx->des3.IV[x];
 		}
 		/* encrypt */
-		_des3_ecb_encrypt(tmp, (unsigned char*)ct, &ctx->des3);
+		des3_ecb_encrypt(tmp, (unsigned char*)ct, &ctx->des3);
 
 		/* store IV [ciphertext] for a future block */
 		for (x = 0; x < ctx->des3.blocklen; x++) {
@@ -327,12 +327,6 @@ int32 matrix3desDecrypt(sslCipherContext_t *ctx, unsigned char *ct,
 		return -1;
 	}
 
-	if (ctx->des3.explicitIV) {
-		for (i = 0; i < ctx->des3.blocklen; i++ ) {
-			ctx->des3.IV[i] = *ct; ct++;
-			len--;
-		}
-	}
 	/* is blocklen valid? */
 	if (ctx->des3.blocklen < 0 || ctx->des3.blocklen > 
 		(int32)sizeof(ctx->des3.IV)) {
@@ -340,7 +334,7 @@ int32 matrix3desDecrypt(sslCipherContext_t *ctx, unsigned char *ct,
 	}
 	for (i = 0; i < len; i += ctx->des3.blocklen) {
 		/* decrypt the block from ct into tmp */
-		_des3_ecb_decrypt(ct, tmp, &ctx->des3);
+		des3_ecb_decrypt(ct, tmp, &ctx->des3);
 		/* xor IV against the plaintext of the previous step */
 		for (x = 0; x < ctx->des3.blocklen; x++) { 
 			/* copy CT in case ct == pt */
@@ -354,6 +348,20 @@ int32 matrix3desDecrypt(sslCipherContext_t *ctx, unsigned char *ct,
 		}
 		ct += ctx->des3.blocklen;
 		if (ctx->des3.explicitIV) {
+/*
+			An explict IV mode has an additional block of random data that
+			we dismiss here.  It is not part of the MAC.  The TLS 1.1 spec
+			isn't explicit about this, but it only makes sense since the
+			extra block is used to derive the IV for the remainder of the
+			message.  In theory (DTLS for example) the actual decrypted block
+			could have been received out of order and the first block would
+			not decrypt to the plaintext it originally was anyway.
+
+			It is easiest to simply remove the first block in this cipher
+			code here.  If we wait until we get back into matrixSslDecode
+			we have to deal with a bunch of sslBuf_t manipulations which is
+			ugly.
+*/
 			if (i != 0) {
 				pt += ctx->des3.blocklen;
 			}
@@ -575,7 +583,7 @@ static void desfunc(ulong32 *block, const ulong32 *keys)
 	9.		E0E0E0E0FlFlFlFl
 	10.		lFlFlFlF0E0E0E0E
 */
-int32 _des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds, 
+int32 des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds, 
 					  des3_CBC *skey)
 {
 	if (key == NULL || skey == NULL) {
@@ -601,7 +609,25 @@ int32 _des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds,
 	return CRYPT_OK;
 }
 
-void _des3_ecb_encrypt(const unsigned char *pt, unsigned char *ct, 
+int des_setup(const unsigned char *key, int keylen, int num_rounds,
+				des3_CBC *skey)
+{
+
+    if (num_rounds != 0 && num_rounds != 16) {
+        return CRYPT_INVALID_ROUNDS;
+    }
+
+    if (keylen != 8) {
+        return CRYPT_INVALID_KEYSIZE;
+    }
+
+    deskey(key, EN0, skey->key.ek[0]);
+    deskey(key, DE1, skey->key.dk[0]);
+
+    return CRYPT_OK;
+}
+
+void des3_ecb_encrypt(const unsigned char *pt, unsigned char *ct, 
 							 des3_CBC *key)
 {
 	ulong32 work[2];
@@ -615,7 +641,19 @@ void _des3_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
 	STORE32H(work[1],ct+4);
 }
 
-void _des3_ecb_decrypt(const unsigned char *ct, unsigned char *pt, 
+void des_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
+							des3_CBC *key)
+{
+    ulong32 work[2];
+
+    LOAD32H(work[0], pt+0);
+    LOAD32H(work[1], pt+4);
+    desfunc(work, key->key.ek[0]);
+    STORE32H(work[0],ct+0);
+    STORE32H(work[1],ct+4);
+}
+
+void des3_ecb_decrypt(const unsigned char *ct, unsigned char *pt, 
 							 des3_CBC *key)
 {
 	ulong32 work[2];
@@ -629,7 +667,18 @@ void _des3_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
 	STORE32H(work[1],pt+4);
 }
 
-int32 _des3_keysize(int32 *desired_keysize)
+void des_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
+							des3_CBC *key)
+{
+    ulong32 work[2];
+    LOAD32H(work[0], ct+0);
+    LOAD32H(work[1], ct+4);
+    desfunc(work, key->key.dk[0]);
+    STORE32H(work[0],pt+0);
+    STORE32H(work[1],pt+4);
+}
+
+int32 des3_keysize(int32 *desired_keysize)
 {
     if(*desired_keysize < 24) {
         return CRYPT_INVALID_KEYSIZE;
@@ -697,12 +746,40 @@ int32 matrixDes3Test()
 		key[x] = x;
 	}
 
-	if ((err = _des3_setup(key, 24, 0, &skey)) != CRYPT_OK) {
+	if ((err = des3_setup(key, 24, 0, &skey)) != CRYPT_OK) {
 		return err;
 	}
 
-	_des3_ecb_encrypt(pt, ct, &skey);
-	_des3_ecb_decrypt(ct, tmp, &skey);
+	des3_ecb_encrypt(pt, ct, &skey);
+	des3_ecb_decrypt(ct, tmp, &skey);
+
+	if (memcmp(pt, tmp, 8) != 0) {
+		return CRYPT_FAIL_TESTVECTOR;
+	}
+
+	return CRYPT_OK;
+}
+
+int32 matrixDesTest()
+{
+	unsigned char key[8], pt[8], ct[8], tmp[8];
+	des3_CBC skey;
+	int32 x, err;
+
+	for (x = 0; x < 8; x++) {
+		pt[x] = x;
+	}
+
+	for (x = 0; x < 8; x++) {
+		key[x] = x;
+	}
+
+	if ((err = des_setup(key, 8, 0, &skey)) != CRYPT_OK) {
+		return err;
+	}
+
+	des_ecb_encrypt(pt, ct, &skey);
+	des_ecb_decrypt(ct, tmp, &skey);
 
 	if (memcmp(pt, tmp, 8) != 0) {
 		return CRYPT_FAIL_TESTVECTOR;

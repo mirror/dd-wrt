@@ -232,9 +232,6 @@ del &quot;$(OutDir)\libmatrixssl.lib&quot;
 			</Filter>
 		</Filter>
 		<File
-			RelativePath="..\matrixCommon.h">
-		</File>
-		<File
 			RelativePath="..\matrixSsl.h">
 		</File>
 	</Files>

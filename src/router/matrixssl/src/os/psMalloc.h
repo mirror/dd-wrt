@@ -1,11 +1,11 @@
 /*
  *	psMalloc.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *	
  *	Header for psMalloc functions
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -58,7 +58,6 @@
 typedef int32 psPool_t;
 
 #endif /* _h_PS_MALLOC */
-
 
 
 
