@@ -99,7 +99,7 @@ static int bit_elv_init(void)
 		} else {
 			outb(0x0c,base+2);	/* SLCT auf low		*/
 			udelay(400);
-			if ( !(inb(base+1) && 0x10) ) {
+			if ( !(inb(base+1) & 0x10) ) {
 				outb(0x04,base+2);
 				DEBINIT(printk(KERN_DEBUG "i2c-elv.o: Select was high.\n"));
 				return -ENODEV;

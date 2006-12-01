@@ -84,6 +84,11 @@ int qdisc_restart(struct net_device *dev)
 	struct sk_buff *skb;
 
 	/* Dequeue packet */
+	if (!q) {
+		if (net_ratelimit())
+			printk(KERN_DEBUG "HELP ME! qdisc_restart called, but no Qdisc!\n");
+		return 0;
+	}
 	if ((skb = q->dequeue(q)) != NULL) {
 		if (spin_trylock(&dev->xmit_lock)) {
 			/* Remember that the driver is grabbed by us. */
