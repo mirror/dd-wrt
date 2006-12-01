@@ -1,5 +1,5 @@
 #
-# Character device configuration
+# I2C subsystem configuration
 #
 mainmenu_option next_comment
 comment 'I2C support'
