@@ -48,7 +48,7 @@ int eap_pax_kdf(u8 mac_id, const u8 *key, size_t key_len,
 	if (identifier == NULL || num_blocks >= 255)
 		return -1;
 
-	/* TODO: add support for EAP_PAX_MAC_AES_CBC_MAC_128 */
+	/* TODO: add support for EAP_PAX_HMAC_SHA256_128 */
 	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128)
 		return -1;
 
@@ -100,7 +100,7 @@ int eap_pax_mac(u8 mac_id, const u8 *key, size_t key_len,
 	size_t len[3];
 	size_t count;
 
-	/* TODO: add support for EAP_PAX_MAC_AES_CBC_MAC_128 */
+	/* TODO: add support for EAP_PAX_HMAC_SHA256_128 */
 	if (mac_id != EAP_PAX_MAC_HMAC_SHA1_128)
 		return -1;
 

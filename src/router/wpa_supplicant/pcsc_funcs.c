@@ -20,7 +20,6 @@
 #include <winscard.h>
 
 #include "common.h"
-#include "wpa_supplicant.h"
 #include "pcsc_funcs.h"
 
 
@@ -40,6 +39,9 @@
  *	P1 = ID of alg in card
  *	P2 = ID of secret key
  *   READ BINARY: B0 <offset high> <offset low> <len>
+ *   READ RECORD: B2 <record number> <mode> <len>
+ *	P2 (mode) = '02' (next record), '03' (previous record),
+ *		    '04' (absolute mode)
  *   VERIFY CHV: 20 00 <CHV number> 08
  *   CHANGE CHV: 24 00 <CHV number> 10
  *   DISABLE CHV: 26 00 01 08
@@ -53,12 +55,15 @@
 #define SIM_CMD_RUN_GSM_ALG		0xa0, 0x88, 0x00, 0x00, 0x10
 #define SIM_CMD_GET_RESPONSE		0xa0, 0xc0, 0x00, 0x00
 #define SIM_CMD_READ_BIN		0xa0, 0xb0, 0x00, 0x00
+#define SIM_CMD_READ_RECORD		0xa0, 0xb2, 0x00, 0x00
 #define SIM_CMD_VERIFY_CHV1		0xa0, 0x20, 0x00, 0x01, 0x08
 
 /* USIM commands */
 #define USIM_CLA			0x00
 #define USIM_CMD_RUN_UMTS_ALG		0x00, 0x88, 0x00, 0x81, 0x22
 #define USIM_CMD_GET_RESPONSE		0x00, 0xc0, 0x00, 0x00
+
+#define SIM_RECORD_MODE_ABSOLUTE 0x04
 
 #define USIM_FSP_TEMPL_TAG		0x62
 
@@ -220,10 +225,16 @@ static void mingw_unload_symbols(void)
 
 static int _scard_select_file(struct scard_data *scard, unsigned short file_id,
 			      unsigned char *buf, size_t *buf_len,
-			      sim_types sim_type, unsigned char *aid);
+			      sim_types sim_type, unsigned char *aid,
+			      size_t aidlen);
 static int scard_select_file(struct scard_data *scard, unsigned short file_id,
 			     unsigned char *buf, size_t *buf_len);
 static int scard_verify_pin(struct scard_data *scard, const char *pin);
+static int scard_get_record_len(struct scard_data *scard,
+				unsigned char recnum, unsigned char mode);
+static int scard_read_record(struct scard_data *scard,
+			     unsigned char *data, size_t len,
+			     unsigned char recnum, unsigned char mode);
 
 
 static int scard_parse_fsp_templ(unsigned char *buf, size_t buf_len,
@@ -302,11 +313,105 @@ static int scard_pin_needed(struct scard_data *scard,
 			return -1;
 		/* TODO: there could be more than one PS_DO entry because of
 		 * multiple PINs in key reference.. */
-		if (ps_do)
+		if (ps_do > 0 && (ps_do & 0x80))
 			return 1;
+		return 0;
 	}
 
 	return -1;
+}
+
+
+static int scard_get_aid(struct scard_data *scard, unsigned char *aid,
+			 size_t maxlen)
+{
+	int rlen, rec;
+	struct efdir {
+		unsigned char appl_template_tag; /* 0x61 */
+		unsigned char appl_template_len;
+		unsigned char appl_id_tag; /* 0x4f */
+		unsigned char aid_len;
+		unsigned char rid[5];
+		unsigned char appl_code[2]; /* 0x1002 for 3G USIM */
+	} *efdir;
+	unsigned char buf[100];
+	size_t blen;
+
+	efdir = (struct efdir *) buf;
+	blen = sizeof(buf);
+	if (scard_select_file(scard, SCARD_FILE_EF_DIR, buf, &blen)) {
+		wpa_printf(MSG_DEBUG, "SCARD: Failed to read EF_DIR");
+		return -1;
+	}
+	wpa_hexdump(MSG_DEBUG, "SCARD: EF_DIR select", buf, blen);
+
+	for (rec = 1; rec < 10; rec++) {
+		rlen = scard_get_record_len(scard, rec,
+					    SIM_RECORD_MODE_ABSOLUTE);
+		blen = sizeof(buf);
+		if (rlen > (int) blen) {
+			wpa_printf(MSG_DEBUG, "SCARD: Too long EF_DIR record");
+			return -1;
+		}
+		if (scard_read_record(scard, buf, rlen, rec,
+				      SIM_RECORD_MODE_ABSOLUTE) < 0) {
+			wpa_printf(MSG_DEBUG, "SCARD: Failed to read "
+				   "EF_DIR record %d", rec);
+			return -1;
+		}
+		wpa_hexdump(MSG_DEBUG, "SCARD: EF_DIR record", buf, rlen);
+
+		if (efdir->appl_template_tag != 0x61) {
+			wpa_printf(MSG_DEBUG, "SCARD: Unexpected application "
+				   "template tag 0x%x",
+				   efdir->appl_template_tag);
+			continue;
+		}
+
+		if (efdir->appl_template_len > rlen - 2) {
+			wpa_printf(MSG_DEBUG, "SCARD: Too long application "
+				   "template (len=%d rlen=%d)",
+				   efdir->appl_template_len, rlen);
+			continue;
+		}
+
+		if (efdir->appl_id_tag != 0x4f) {
+			wpa_printf(MSG_DEBUG, "SCARD: Unexpected application "
+				   "identifier tag 0x%x", efdir->appl_id_tag);
+			continue;
+		}
+
+		if (efdir->aid_len < 1 || efdir->aid_len > 16) {
+			wpa_printf(MSG_DEBUG, "SCARD: Invalid AID length %d",
+				   efdir->aid_len);
+			continue;
+		}
+
+		wpa_hexdump(MSG_DEBUG, "SCARD: AID from EF_DIR record",
+			    efdir->rid, efdir->aid_len);
+
+		if (efdir->appl_code[0] == 0x10 &&
+		    efdir->appl_code[1] == 0x02) {
+			wpa_printf(MSG_DEBUG, "SCARD: 3G USIM app found from "
+				   "EF_DIR record %d", rec);
+			break;
+		}
+	}
+
+	if (rec >= 10) {
+		wpa_printf(MSG_DEBUG, "SCARD: 3G USIM app not found "
+			   "from EF_DIR records");
+		return -1;
+	}
+
+	if (efdir->aid_len > maxlen) {
+		wpa_printf(MSG_DEBUG, "SCARD: Too long AID");
+		return -1;
+	}
+
+	os_memcpy(aid, efdir->rid, efdir->aid_len);
+
+	return efdir->aid_len;
 }
 
 
@@ -334,6 +439,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 	unsigned char buf[100];
 	size_t blen;
 	int transaction = 0;
+	int pin_needed;
 
 	wpa_printf(MSG_DEBUG, "SCARD: initializing smart card interface");
 	if (mingw_load_symbols())
@@ -357,9 +463,12 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 		goto failed;
 	}
 
+#ifdef UNICODE
+	len *= 2;
+#endif /* UNICODE */
 	readers = os_malloc(len);
 	if (readers == NULL) {
-		printf("malloc failed\n");
+		wpa_printf(MSG_INFO, "SCARD: malloc failed\n");
 		goto failed;
 	}
 
@@ -378,7 +487,11 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 	 * double NUL.
 	 * TODO: add support for selecting the reader; now just use the first
 	 * one.. */
+#ifdef UNICODE
+	wpa_printf(MSG_DEBUG, "SCARD: Selected reader='%S'", readers);
+#else /* UNICODE */
 	wpa_printf(MSG_DEBUG, "SCARD: Selected reader='%s'", readers);
+#endif /* UNICODE */
 
 	ret = SCardConnect(scard->ctx, readers, SCARD_SHARE_SHARED,
 			   SCARD_PROTOCOL_T0, &scard->card, &scard->protocol);
@@ -411,7 +524,7 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 	if (sim_type == SCARD_USIM_ONLY || sim_type == SCARD_TRY_BOTH) {
 		wpa_printf(MSG_DEBUG, "SCARD: verifying USIM support");
 		if (_scard_select_file(scard, SCARD_FILE_MF, buf, &blen,
-				       SCARD_USIM, NULL)) {
+				       SCARD_USIM, NULL, 0)) {
 			wpa_printf(MSG_DEBUG, "SCARD: USIM is not supported");
 			if (sim_type == SCARD_USIM_ONLY)
 				goto failed;
@@ -436,19 +549,39 @@ struct scard_data * scard_init(scard_sim_type sim_type)
 			goto failed;
 		}
 	} else {
-		/* Select based on AID = 3G RID */
+		unsigned char aid[32];
+		int aid_len;
+
+		aid_len = scard_get_aid(scard, aid, sizeof(aid));
+		if (aid_len < 0) {
+			wpa_printf(MSG_DEBUG, "SCARD: Failed to find AID for "
+				   "3G USIM app - try to use standard 3G RID");
+			os_memcpy(aid, "\xa0\x00\x00\x00\x87", 5);
+			aid_len = 5;
+		}
+		wpa_hexdump(MSG_DEBUG, "SCARD: 3G USIM AID", aid, aid_len);
+
+		/* Select based on AID = 3G RID from EF_DIR. This is usually
+		 * starting with A0 00 00 00 87. */
 		blen = sizeof(buf);
 		if (_scard_select_file(scard, 0, buf, &blen, scard->sim_type,
-				       (unsigned char *)
-				       "\xA0\x00\x00\x00\x87")) {
-			wpa_printf(MSG_DEBUG, "SCARD: Failed to read 3G RID "
-				   "AID");
+				       aid, aid_len)) {
+			wpa_printf(MSG_INFO, "SCARD: Failed to read 3G USIM "
+				   "app");
+			wpa_hexdump(MSG_INFO, "SCARD: 3G USIM AID",
+				    aid, aid_len);
 			goto failed;
 		}
 	}
 
 	/* Verify whether CHV1 (PIN1) is needed to access the card. */
-	if (scard_pin_needed(scard, buf, blen)) {
+	pin_needed = scard_pin_needed(scard, buf, blen);
+	if (pin_needed < 0) {
+		wpa_printf(MSG_DEBUG, "SCARD: Failed to determine whether PIN "
+			   "is needed");
+		goto failed;
+	}
+	if (pin_needed) {
 		scard->pin1_required = 1;
 		wpa_printf(MSG_DEBUG, "PIN1 needed for SIM access");
 	}
@@ -534,24 +667,24 @@ void scard_deinit(struct scard_data *scard)
 
 
 static long scard_transmit(struct scard_data *scard,
-			   unsigned char *send, size_t send_len,
-			   unsigned char *recv, size_t *recv_len)
+			   unsigned char *_send, size_t send_len,
+			   unsigned char *_recv, size_t *recv_len)
 {
 	long ret;
 	unsigned long rlen;
 
 	wpa_hexdump_key(MSG_DEBUG, "SCARD: scard_transmit: send",
-			send, send_len);
+			_send, send_len);
 	rlen = *recv_len;
 	ret = SCardTransmit(scard->card,
 			    scard->protocol == SCARD_PROTOCOL_T1 ?
 			    SCARD_PCI_T1 : SCARD_PCI_T0,
-			    send, (unsigned long) send_len,
-			    NULL, recv, &rlen);
+			    _send, (unsigned long) send_len,
+			    NULL, _recv, &rlen);
 	*recv_len = rlen;
 	if (ret == SCARD_S_SUCCESS) {
 		wpa_hexdump(MSG_DEBUG, "SCARD: scard_transmit: recv",
-			    recv, rlen);
+			    _recv, rlen);
 	} else {
 		wpa_printf(MSG_WARNING, "SCARD: SCardTransmit failed "
 			   "(err=0x%lx)", ret);
@@ -562,11 +695,12 @@ static long scard_transmit(struct scard_data *scard,
 
 static int _scard_select_file(struct scard_data *scard, unsigned short file_id,
 			      unsigned char *buf, size_t *buf_len,
-			      sim_types sim_type, unsigned char *aid)
+			      sim_types sim_type, unsigned char *aid,
+			      size_t aidlen)
 {
 	long ret;
 	unsigned char resp[3];
-	unsigned char cmd[10] = { SIM_CMD_SELECT };
+	unsigned char cmd[50] = { SIM_CMD_SELECT };
 	int cmdlen;
 	unsigned char get_resp[5] = { SIM_CMD_GET_RESPONSE };
 	size_t len, rlen;
@@ -579,10 +713,14 @@ static int _scard_select_file(struct scard_data *scard, unsigned short file_id,
 
 	wpa_printf(MSG_DEBUG, "SCARD: select file %04x", file_id);
 	if (aid) {
+		wpa_hexdump(MSG_DEBUG, "SCARD: select file by AID",
+			    aid, aidlen);
+		if (5 + aidlen > sizeof(cmd))
+			return -1;
 		cmd[2] = 0x04; /* Select by AID */
-		cmd[4] = 5; /* len */
-		os_memcpy(cmd + 5, aid, 5);
-		cmdlen = 10;
+		cmd[4] = aidlen; /* len */
+		os_memcpy(cmd + 5, aid, aidlen);
+		cmdlen = 5 + aidlen;
 	} else {
 		cmd[5] = file_id >> 8;
 		cmd[6] = file_id & 0xff;
@@ -640,7 +778,88 @@ static int scard_select_file(struct scard_data *scard, unsigned short file_id,
 			     unsigned char *buf, size_t *buf_len)
 {
 	return _scard_select_file(scard, file_id, buf, buf_len,
-				  scard->sim_type, NULL);
+				  scard->sim_type, NULL, 0);
+}
+
+
+static int scard_get_record_len(struct scard_data *scard, unsigned char recnum,
+				unsigned char mode)
+{
+	unsigned char buf[255];
+	unsigned char cmd[5] = { SIM_CMD_READ_RECORD /* , len */ };
+	size_t blen;
+	long ret;
+
+	if (scard->sim_type == SCARD_USIM)
+		cmd[0] = USIM_CLA;
+	cmd[2] = recnum;
+	cmd[3] = mode;
+	cmd[4] = sizeof(buf);
+
+	blen = sizeof(buf);
+	ret = scard_transmit(scard, cmd, sizeof(cmd), buf, &blen);
+	if (ret != SCARD_S_SUCCESS) {
+		wpa_printf(MSG_DEBUG, "SCARD: failed to determine file "
+			   "length for record %d", recnum);
+		return -1;
+	}
+
+	wpa_hexdump(MSG_DEBUG, "SCARD: file length determination response",
+		    buf, blen);
+
+	if (blen < 2 || buf[0] != 0x6c) {
+		wpa_printf(MSG_DEBUG, "SCARD: unexpected response to file "
+			   "length determination");
+		return -1;
+	}
+
+	return buf[1];
+}
+
+
+static int scard_read_record(struct scard_data *scard,
+			     unsigned char *data, size_t len,
+			     unsigned char recnum, unsigned char mode)
+{
+	unsigned char cmd[5] = { SIM_CMD_READ_RECORD /* , len */ };
+	size_t blen = len + 3;
+	unsigned char *buf;
+	long ret;
+
+	if (scard->sim_type == SCARD_USIM)
+		cmd[0] = USIM_CLA;
+	cmd[2] = recnum;
+	cmd[3] = mode;
+	cmd[4] = len;
+
+	buf = os_malloc(blen);
+	if (buf == NULL)
+		return -1;
+
+	ret = scard_transmit(scard, cmd, sizeof(cmd), buf, &blen);
+	if (ret != SCARD_S_SUCCESS) {
+		os_free(buf);
+		return -2;
+	}
+	if (blen != len + 2) {
+		wpa_printf(MSG_DEBUG, "SCARD: record read returned unexpected "
+			   "length %d (expected %d)", blen, len + 2);
+		os_free(buf);
+		return -3;
+	}
+
+	if (buf[len] != 0x90 || buf[len + 1] != 0x00) {
+		wpa_printf(MSG_DEBUG, "SCARD: record read returned unexpected "
+			   "status %02x %02x (expected 90 00)",
+			   buf[len], buf[len + 1]);
+		os_free(buf);
+		return -4;
+	}
+
+	os_memcpy(data, buf, len);
+	os_free(buf);
+
+	return 0;
 }
 
 
@@ -800,7 +1019,7 @@ int scard_get_imsi(struct scard_data *scard, char *imsi, size_t *len)
 /**
  * scard_gsm_auth - Run GSM authentication command on SIM card
  * @scard: Pointer to private data from scard_init()
- * @rand: 16-byte RAND value from HLR/AuC
+ * @_rand: 16-byte RAND value from HLR/AuC
  * @sres: 4-byte buffer for SRES
  * @kc: 8-byte buffer for Kc
  * Returns: 0 on success, -1 if SIM/USIM connection has not been initialized,
@@ -812,7 +1031,7 @@ int scard_get_imsi(struct scard_data *scard, char *imsi, size_t *len)
  * provided RAND value from HLR/AuC. If authentication command can be completed
  * successfully, SRES and Kc values will be written into sres and kc buffers.
  */
-int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
+int scard_gsm_auth(struct scard_data *scard, const unsigned char *_rand,
 		   unsigned char *sres, unsigned char *kc)
 {
 	unsigned char cmd[5 + 1 + 16] = { SIM_CMD_RUN_GSM_ALG };
@@ -825,17 +1044,17 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
 	if (scard == NULL)
 		return -1;
 
-	wpa_hexdump(MSG_DEBUG, "SCARD: GSM auth - RAND", rand, 16);
+	wpa_hexdump(MSG_DEBUG, "SCARD: GSM auth - RAND", _rand, 16);
 	if (scard->sim_type == SCARD_GSM_SIM) {
 		cmdlen = 5 + 16;
-		os_memcpy(cmd + 5, rand, 16);
+		os_memcpy(cmd + 5, _rand, 16);
 	} else {
 		cmdlen = 5 + 1 + 16;
 		cmd[0] = USIM_CLA;
 		cmd[3] = 0x80;
 		cmd[4] = 17;
 		cmd[5] = 16;
-		os_memcpy(cmd + 6, rand, 16);
+		os_memcpy(cmd + 6, _rand, 16);
 	}
 	len = sizeof(resp);
 	ret = scard_transmit(scard, cmd, cmdlen, resp, &len);
@@ -893,7 +1112,7 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
 /**
  * scard_umts_auth - Run UMTS authentication command on USIM card
  * @scard: Pointer to private data from scard_init()
- * @rand: 16-byte RAND value from HLR/AuC
+ * @_rand: 16-byte RAND value from HLR/AuC
  * @autn: 16-byte AUTN value from HLR/AuC
  * @res: 16-byte buffer for RES
  * @res_len: Variable that will be set to RES length
@@ -910,7 +1129,7 @@ int scard_gsm_auth(struct scard_data *scard, const unsigned char *rand,
  * synchronization failure, the received AUTS value will be written into auts
  * buffer. In this case, RES, IK, and CK are not valid.
  */
-int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
+int scard_umts_auth(struct scard_data *scard, const unsigned char *_rand,
 		    const unsigned char *autn,
 		    unsigned char *res, size_t *res_len,
 		    unsigned char *ik, unsigned char *ck, unsigned char *auts)
@@ -932,11 +1151,11 @@ int scard_umts_auth(struct scard_data *scard, const unsigned char *rand,
 		return -1;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "SCARD: UMTS auth - RAND", rand, AKA_RAND_LEN);
+	wpa_hexdump(MSG_DEBUG, "SCARD: UMTS auth - RAND", _rand, AKA_RAND_LEN);
 	wpa_hexdump(MSG_DEBUG, "SCARD: UMTS auth - AUTN", autn, AKA_AUTN_LEN);
 	cmdlen = 5 + 1 + AKA_RAND_LEN + 1 + AKA_AUTN_LEN;
 	cmd[5] = AKA_RAND_LEN;
-	os_memcpy(cmd + 6, rand, AKA_RAND_LEN);
+	os_memcpy(cmd + 6, _rand, AKA_RAND_LEN);
 	cmd[6 + AKA_RAND_LEN] = AKA_AUTN_LEN;
 	os_memcpy(cmd + 6 + AKA_RAND_LEN + 1, autn, AKA_AUTN_LEN);
 

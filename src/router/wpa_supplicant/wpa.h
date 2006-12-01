@@ -18,9 +18,12 @@
 #include "defs.h"
 #include "wpa_common.h"
 
+#ifndef BIT
 #define BIT(n) (1 << (n))
+#endif
 
 #define WPA_CAPABILITY_PREAUTH BIT(0)
+#define WPA_CAPABILITY_MGMT_FRAME_PROTECTION BIT(6)
 #define WPA_CAPABILITY_PEERKEY_ENABLED BIT(9)
 
 #define GENERIC_INFO_ELEM 0xdd
@@ -89,7 +92,8 @@ enum wpa_sm_conf_params {
 	WPA_PARAM_PROTO,
 	WPA_PARAM_PAIRWISE,
 	WPA_PARAM_GROUP,
-	WPA_PARAM_KEY_MGMT
+	WPA_PARAM_KEY_MGMT,
+	WPA_PARAM_MGMT_GROUP
 };
 
 struct wpa_ie_data {
@@ -100,6 +104,7 @@ struct wpa_ie_data {
 	int capabilities;
 	int num_pmkid;
 	const u8 *pmkid;
+	int mgmt_group_cipher;
 };
 
 #ifndef CONFIG_NO_WPA

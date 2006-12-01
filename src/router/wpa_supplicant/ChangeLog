@@ -1,6 +1,6 @@
 ChangeLog for wpa_supplicant
 
-????-??-?? - v0.5.6
+2006-11-24 - v0.5.6
 	* added experimental, integrated TLSv1 client implementation with the
 	  needed X.509/ASN.1/RSA/bignum processing (this can be enabled by
 	  setting CONFIG_TLS=internal and CONFIG_INTERNAL_LIBTOMMATH=y in
@@ -11,6 +11,30 @@ ChangeLog for wpa_supplicant
 	  of it was already required; TLSv1/X.509/ASN.1/RSA added about 25 kB)
 	* removed STAKey handshake since PeerKey handshake has replaced it in
 	  IEEE 802.11ma and there are no known deployments of STAKey
+	* updated EAP Generalized Pre-Shared Key (EAP-GPSK) to use the latest
+	  draft (draft-ietf-emu-eap-gpsk-01.txt)
+	* added preliminary implementation of IEEE 802.11w/D1.0 (management
+	  frame protection)
+	  (Note: this requires driver support to work properly.)
+	  (Note2: IEEE 802.11w is an unapproved draft and subject to change.)
+	* fixed Windows named pipes ctrl_iface to not stop listening for
+	  commands if client program opens a named pipe and closes it
+	  immediately without sending a command
+	* fixed USIM PIN status determination for the case that PIN is not
+	  needed (this allows EAP-AKA to be used with USIM cards that do not
+	  use PIN)
+	* added support for reading 3G USIM AID from EF_DIR to allow EAP-AKA to
+	  be used with cards that do not support file selection based on
+	  partial AID
+	* added support for matching the subjectAltName of the authentication
+	  server certificate against multiple name components (e.g.,
+	  altsubject_match="DNS:server.example.com;DNS:server2.example.com")
+	* fixed EAP-SIM/AKA key derivation for re-authentication case (only
+	  affects IEEE 802.1X with dynamic WEP keys)
+	* changed ctrl_iface network configuration 'get' operations to not
+	  return password/key material; if these fields are requested, "*"
+	  will be returned if the password/key is set, but the value of the
+	  parameter is not exposed
 
 2006-08-27 - v0.5.5
 	* added support for building Windows version with UNICODE defined

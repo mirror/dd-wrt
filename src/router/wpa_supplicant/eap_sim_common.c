@@ -1,6 +1,6 @@
 /*
  * EAP peer: EAP-SIM/AKA shared routines
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -77,10 +77,11 @@ void eap_aka_derive_mk(const u8 *identity, size_t identity_len,
 }
 
 
-int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk)
+int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk, u8 *emsk)
 {
-	u8 buf[120], *pos;
-	if (eap_sim_prf(mk, buf, 120) < 0) {
+	u8 buf[EAP_SIM_K_ENCR_LEN + EAP_SIM_K_AUT_LEN +
+	       EAP_SIM_KEYING_DATA_LEN + EAP_EMSK_LEN], *pos;
+	if (eap_sim_prf(mk, buf, sizeof(buf)) < 0) {
 		wpa_printf(MSG_ERROR, "EAP-SIM: Failed to derive keys");
 		return -1;
 	}
@@ -90,13 +91,17 @@ int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk)
 	os_memcpy(k_aut, pos, EAP_SIM_K_AUT_LEN);
 	pos += EAP_SIM_K_AUT_LEN;
 	os_memcpy(msk, pos, EAP_SIM_KEYING_DATA_LEN);
+	pos += EAP_SIM_KEYING_DATA_LEN;
+	os_memcpy(emsk, pos, EAP_EMSK_LEN);
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: K_encr",
 			k_encr, EAP_SIM_K_ENCR_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: K_aut",
-			k_aut, EAP_SIM_K_ENCR_LEN);
-	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: keying material",
+			k_aut, EAP_SIM_K_AUT_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: keying material (MSK)",
 			msk, EAP_SIM_KEYING_DATA_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-SIM: EMSK", emsk, EAP_EMSK_LEN);
+	os_memset(buf, 0, sizeof(buf));
 
 	return 0;
 }
@@ -104,9 +109,11 @@ int eap_sim_derive_keys(const u8 *mk, u8 *k_encr, u8 *k_aut, u8 *msk)
 
 int eap_sim_derive_keys_reauth(u16 _counter,
 			       const u8 *identity, size_t identity_len,
-			       const u8 *nonce_s, const u8 *mk, u8 *msk)
+			       const u8 *nonce_s, const u8 *mk, u8 *msk,
+			       u8 *emsk)
 {
 	u8 xkey[SHA1_MAC_LEN];
+	u8 buf[EAP_SIM_KEYING_DATA_LEN + EAP_EMSK_LEN + 32];
 	u8 counter[2];
 	const u8 *addr[4];
 	size_t len[4];
@@ -134,12 +141,16 @@ int eap_sim_derive_keys_reauth(u16 _counter,
 	sha1_vector(4, addr, len, xkey);
 	wpa_hexdump(MSG_DEBUG, "EAP-SIM: XKEY'", xkey, SHA1_MAC_LEN);
 
-	if (eap_sim_prf(xkey, msk, EAP_SIM_KEYING_DATA_LEN) < 0) {
+	if (eap_sim_prf(xkey, buf, sizeof(buf)) < 0) {
 		wpa_printf(MSG_ERROR, "EAP-SIM: Failed to derive keys");
 		return -1;
 	}
-	wpa_hexdump(MSG_DEBUG, "EAP-SIM: keying material",
+	os_memcpy(msk, buf, EAP_SIM_KEYING_DATA_LEN);
+	os_memcpy(emsk, buf + EAP_SIM_KEYING_DATA_LEN, EAP_EMSK_LEN);
+	wpa_hexdump(MSG_DEBUG, "EAP-SIM: keying material (MSK)",
 		    msk, EAP_SIM_KEYING_DATA_LEN);
+	wpa_hexdump(MSG_DEBUG, "EAP-SIM: EMSK", emsk, EAP_EMSK_LEN);
+	os_memset(buf, 0, sizeof(buf));
 
 	return 0;
 }

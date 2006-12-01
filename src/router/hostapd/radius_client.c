@@ -97,8 +97,8 @@ static int radius_client_init_auth(struct radius_client_data *radius);
 static void radius_client_msg_free(struct radius_msg_list *req)
 {
 	radius_msg_free(req->msg);
-	free(req->msg);
-	free(req);
+	os_free(req->msg);
+	os_free(req);
 }
 
 
@@ -122,9 +122,8 @@ int radius_client_register(struct radius_client_data *radius,
 		num = &radius->num_auth_handlers;
 	}
 
-	newh = (struct radius_rx_handler *)
-		realloc(*handlers,
-			(*num + 1) * sizeof(struct radius_rx_handler));
+	newh = os_realloc(*handlers,
+			  (*num + 1) * sizeof(struct radius_rx_handler));
 	if (newh == NULL)
 		return -1;
 
@@ -359,7 +358,7 @@ static void radius_client_list_add(struct radius_client_data *radius,
 		/* No point in adding entries to retransmit queue since event
 		 * loop has already been terminated. */
 		radius_msg_free(msg);
-		free(msg);
+		os_free(msg);
 		return;
 	}
 
@@ -367,12 +366,12 @@ static void radius_client_list_add(struct radius_client_data *radius,
 	if (entry == NULL) {
 		printf("Failed to add RADIUS packet into retransmit list\n");
 		radius_msg_free(msg);
-		free(msg);
+		os_free(msg);
 		return;
 	}
 
 	if (addr)
-		memcpy(entry->addr, addr, ETH_ALEN);
+		os_memcpy(entry->addr, addr, ETH_ALEN);
 	entry->msg = msg;
 	entry->msg_type = msg_type;
 	entry->shared_secret = shared_secret;
@@ -415,7 +414,7 @@ static void radius_client_list_del(struct radius_client_data *radius,
 	prev = NULL;
 	while (entry) {
 		if (entry->msg_type == msg_type &&
-		    memcmp(entry->addr, addr, ETH_ALEN) == 0) {
+		    os_memcmp(entry->addr, addr, ETH_ALEN) == 0) {
 			if (prev)
 				prev->next = entry->next;
 			else
@@ -599,7 +598,7 @@ static void radius_client_receive(int sock, void *eloop_ctx, void *sock_ctx)
 		switch (res) {
 		case RADIUS_RX_PROCESSED:
 			radius_msg_free(msg);
-			free(msg);
+			os_free(msg);
 			/* continue */
 		case RADIUS_RX_QUEUED:
 			radius_client_msg_free(req);
@@ -627,13 +626,13 @@ static void radius_client_receive(int sock, void *eloop_ctx, void *sock_ctx)
 
  fail:
 	radius_msg_free(msg);
-	free(msg);
+	os_free(msg);
 }
 
 
 u8 radius_client_get_id(struct radius_client_data *radius)
 {
-	struct radius_msg_list *entry, *prev, *remove;
+	struct radius_msg_list *entry, *prev, *_remove;
 	u8 id = radius->next_radius_identifier++;
 
 	/* remove entries with matching id from retransmit list to avoid
@@ -651,15 +650,15 @@ u8 radius_client_get_id(struct radius_client_data *radius)
 				prev->next = entry->next;
 			else
 				radius->msgs = entry->next;
-			remove = entry;
+			_remove = entry;
 		} else {
-			remove = NULL;
+			_remove = NULL;
 			prev = entry;
 		}
 		entry = entry->next;
 
-		if (remove)
-			radius_client_msg_free(remove);
+		if (_remove)
+			radius_client_msg_free(_remove);
 	}
 
 	return id;
@@ -742,8 +741,8 @@ radius_change_server(struct radius_client_data *radius,
 		       nserv->port);
 
 	if (!oserv || nserv->shared_secret_len != oserv->shared_secret_len ||
-	    memcmp(nserv->shared_secret, oserv->shared_secret,
-		   nserv->shared_secret_len) != 0) {
+	    os_memcmp(nserv->shared_secret, oserv->shared_secret,
+		      nserv->shared_secret_len) != 0) {
 		/* Pending RADIUS packets used different shared secret, so
 		 * they need to be modified. Update accounting message
 		 * authenticators here. Authentication messages are removed
@@ -778,7 +777,7 @@ radius_change_server(struct radius_client_data *radius,
 
 	switch (nserv->addr.af) {
 	case AF_INET:
-		memset(&serv, 0, sizeof(serv));
+		os_memset(&serv, 0, sizeof(serv));
 		serv.sin_family = AF_INET;
 		serv.sin_addr.s_addr = nserv->addr.u.v4.s_addr;
 		serv.sin_port = htons(nserv->port);
@@ -788,10 +787,10 @@ radius_change_server(struct radius_client_data *radius,
 		break;
 #ifdef CONFIG_IPV6
 	case AF_INET6:
-		memset(&serv6, 0, sizeof(serv6));
+		os_memset(&serv6, 0, sizeof(serv6));
 		serv6.sin6_family = AF_INET6;
-		memcpy(&serv6.sin6_addr, &nserv->addr.u.v6,
-		       sizeof(struct in6_addr));
+		os_memcpy(&serv6.sin6_addr, &nserv->addr.u.v6,
+			  sizeof(struct in6_addr));
 		serv6.sin6_port = htons(nserv->port);
 		addr = (struct sockaddr *) &serv6;
 		addrlen = sizeof(serv6);
@@ -978,9 +977,9 @@ void radius_client_deinit(struct radius_client_data *radius)
 	eloop_cancel_timeout(radius_retry_primary_timer, radius, NULL);
 
 	radius_client_flush(radius, 0);
-	free(radius->auth_handlers);
-	free(radius->acct_handlers);
-	free(radius);
+	os_free(radius->auth_handlers);
+	os_free(radius->acct_handlers);
+	os_free(radius);
 }
 
 
@@ -992,7 +991,7 @@ void radius_client_flush_auth(struct radius_client_data *radius, u8 *addr)
 	entry = radius->msgs;
 	while (entry) {
 		if (entry->msg_type == RADIUS_AUTH &&
-		    memcmp(entry->addr, addr, ETH_ALEN) == 0) {
+		    os_memcmp(entry->addr, addr, ETH_ALEN) == 0) {
 			hostapd_logger(radius->ctx, addr,
 				       HOSTAPD_MODULE_RADIUS,
 				       HOSTAPD_LEVEL_DEBUG,
@@ -1032,37 +1031,37 @@ static int radius_client_dump_auth_server(char *buf, size_t buflen,
 		}
 	}
 
-	return snprintf(buf, buflen,
-			"radiusAuthServerIndex=%d\n"
-			"radiusAuthServerAddress=%s\n"
-			"radiusAuthClientServerPortNumber=%d\n"
-			"radiusAuthClientRoundTripTime=%d\n"
-			"radiusAuthClientAccessRequests=%u\n"
-			"radiusAuthClientAccessRetransmissions=%u\n"
-			"radiusAuthClientAccessAccepts=%u\n"
-			"radiusAuthClientAccessRejects=%u\n"
-			"radiusAuthClientAccessChallenges=%u\n"
-			"radiusAuthClientMalformedAccessResponses=%u\n"
-			"radiusAuthClientBadAuthenticators=%u\n"
-			"radiusAuthClientPendingRequests=%u\n"
-			"radiusAuthClientTimeouts=%u\n"
-			"radiusAuthClientUnknownTypes=%u\n"
-			"radiusAuthClientPacketsDropped=%u\n",
-			serv->index,
-			hostapd_ip_txt(&serv->addr, abuf, sizeof(abuf)),
-			serv->port,
-			serv->round_trip_time,
-			serv->requests,
-			serv->retransmissions,
-			serv->access_accepts,
-			serv->access_rejects,
-			serv->access_challenges,
-			serv->malformed_responses,
-			serv->bad_authenticators,
-			pending,
-			serv->timeouts,
-			serv->unknown_types,
-			serv->packets_dropped);
+	return os_snprintf(buf, buflen,
+			   "radiusAuthServerIndex=%d\n"
+			   "radiusAuthServerAddress=%s\n"
+			   "radiusAuthClientServerPortNumber=%d\n"
+			   "radiusAuthClientRoundTripTime=%d\n"
+			   "radiusAuthClientAccessRequests=%u\n"
+			   "radiusAuthClientAccessRetransmissions=%u\n"
+			   "radiusAuthClientAccessAccepts=%u\n"
+			   "radiusAuthClientAccessRejects=%u\n"
+			   "radiusAuthClientAccessChallenges=%u\n"
+			   "radiusAuthClientMalformedAccessResponses=%u\n"
+			   "radiusAuthClientBadAuthenticators=%u\n"
+			   "radiusAuthClientPendingRequests=%u\n"
+			   "radiusAuthClientTimeouts=%u\n"
+			   "radiusAuthClientUnknownTypes=%u\n"
+			   "radiusAuthClientPacketsDropped=%u\n",
+			   serv->index,
+			   hostapd_ip_txt(&serv->addr, abuf, sizeof(abuf)),
+			   serv->port,
+			   serv->round_trip_time,
+			   serv->requests,
+			   serv->retransmissions,
+			   serv->access_accepts,
+			   serv->access_rejects,
+			   serv->access_challenges,
+			   serv->malformed_responses,
+			   serv->bad_authenticators,
+			   pending,
+			   serv->timeouts,
+			   serv->unknown_types,
+			   serv->packets_dropped);
 }
 
 
@@ -1082,33 +1081,33 @@ static int radius_client_dump_acct_server(char *buf, size_t buflen,
 		}
 	}
 
-	return snprintf(buf, buflen,
-			"radiusAccServerIndex=%d\n"
-			"radiusAccServerAddress=%s\n"
-			"radiusAccClientServerPortNumber=%d\n"
-			"radiusAccClientRoundTripTime=%d\n"
-			"radiusAccClientRequests=%u\n"
-			"radiusAccClientRetransmissions=%u\n"
-			"radiusAccClientResponses=%u\n"
-			"radiusAccClientMalformedResponses=%u\n"
-			"radiusAccClientBadAuthenticators=%u\n"
-			"radiusAccClientPendingRequests=%u\n"
-			"radiusAccClientTimeouts=%u\n"
-			"radiusAccClientUnknownTypes=%u\n"
-			"radiusAccClientPacketsDropped=%u\n",
-			serv->index,
-			hostapd_ip_txt(&serv->addr, abuf, sizeof(abuf)),
-			serv->port,
-			serv->round_trip_time,
-			serv->requests,
-			serv->retransmissions,
-			serv->responses,
-			serv->malformed_responses,
-			serv->bad_authenticators,
-			pending,
-			serv->timeouts,
-			serv->unknown_types,
-			serv->packets_dropped);
+	return os_snprintf(buf, buflen,
+			   "radiusAccServerIndex=%d\n"
+			   "radiusAccServerAddress=%s\n"
+			   "radiusAccClientServerPortNumber=%d\n"
+			   "radiusAccClientRoundTripTime=%d\n"
+			   "radiusAccClientRequests=%u\n"
+			   "radiusAccClientRetransmissions=%u\n"
+			   "radiusAccClientResponses=%u\n"
+			   "radiusAccClientMalformedResponses=%u\n"
+			   "radiusAccClientBadAuthenticators=%u\n"
+			   "radiusAccClientPendingRequests=%u\n"
+			   "radiusAccClientTimeouts=%u\n"
+			   "radiusAccClientUnknownTypes=%u\n"
+			   "radiusAccClientPacketsDropped=%u\n",
+			   serv->index,
+			   hostapd_ip_txt(&serv->addr, abuf, sizeof(abuf)),
+			   serv->port,
+			   serv->round_trip_time,
+			   serv->requests,
+			   serv->retransmissions,
+			   serv->responses,
+			   serv->malformed_responses,
+			   serv->bad_authenticators,
+			   pending,
+			   serv->timeouts,
+			   serv->unknown_types,
+			   serv->packets_dropped);
 }
 
 
@@ -1141,4 +1140,49 @@ int radius_client_get_mib(struct radius_client_data *radius, char *buf,
 	}
 
 	return count;
+}
+
+
+static int radius_servers_diff(struct hostapd_radius_server *nserv,
+			       struct hostapd_radius_server *oserv,
+			       int num)
+{
+	int i;
+
+	for (i = 0; i < num; i++) {
+		if (hostapd_ip_diff(&nserv[i].addr, &oserv[i].addr) ||
+		    nserv[i].port != oserv[i].port ||
+		    nserv[i].shared_secret_len != oserv[i].shared_secret_len ||
+		    memcmp(nserv[i].shared_secret, oserv[i].shared_secret,
+			   nserv[i].shared_secret_len) != 0)
+			return 1;
+	}
+
+	return 0;
+}
+
+
+struct radius_client_data *
+radius_client_reconfig(struct radius_client_data *old, void *ctx,
+		       struct hostapd_radius_servers *oldconf,
+		       struct hostapd_radius_servers *newconf)
+{
+	radius_client_flush(old, 0);
+
+	if (newconf->retry_primary_interval !=
+	    oldconf->retry_primary_interval ||
+	    newconf->num_auth_servers != oldconf->num_auth_servers ||
+	    newconf->num_acct_servers != oldconf->num_acct_servers ||
+	    radius_servers_diff(newconf->auth_servers, oldconf->auth_servers,
+				newconf->num_auth_servers) ||
+	    radius_servers_diff(newconf->acct_servers, oldconf->acct_servers,
+				newconf->num_acct_servers)) {
+		hostapd_logger(ctx, NULL, HOSTAPD_MODULE_RADIUS,
+			       HOSTAPD_LEVEL_DEBUG,
+			       "Reconfiguring RADIUS client");
+		radius_client_deinit(old);
+		return radius_client_init(ctx, newconf);
+	}
+
+	return old;
 }

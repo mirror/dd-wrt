@@ -183,7 +183,7 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len);
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len);
+int crypto_hash_finish(struct crypto_hash *ctx, u8 *hash, size_t *len);
 
 
 enum crypto_cipher_alg {
@@ -393,6 +393,8 @@ void crypto_global_deinit(void);
  * @power_len: Length of power integer in bytes
  * @modulus: Modulus integer (big endian byte array)
  * @modulus_len: Length of modulus integer in bytes
+ * @result: Buffer for the result
+ * @result_len: Result length (max buffer size on input, real len on output)
  * Returns: 0 on success, -1 on failure
  *
  * This function calculates result = base ^ power mod modulus. modules_len is

@@ -236,7 +236,7 @@ typedef struct NDIS_802_11_CAPABILITY {
 	ULONG Length;
 	ULONG Version;
 	ULONG NoOfPMKIDs;
-	ULONG NoOfAuthEncryptPairSupported;
+	ULONG NoOfAuthEncryptPairsSupported;
 	NDIS_802_11_AUTHENTICATION_ENCRYPTION
 		AuthenticationEncryptionSupported[1];
 } NDIS_802_11_CAPABILITY;
@@ -311,7 +311,7 @@ typedef struct NDIS_802_11_CAPABILITY {
 	ULONG Length;
 	ULONG Version;
 	ULONG NoOfPMKIDs;
-	ULONG NoOfAuthEncryptPairSupported;
+	ULONG NoOfAuthEncryptPairsSupported;
 	NDIS_802_11_AUTHENTICATION_ENCRYPTION
 		AuthenticationEncryptionSupported[1];
 } NDIS_802_11_CAPABILITY;
@@ -421,8 +421,6 @@ static int ndis_get_oid(struct wpa_driver_ndis_data *drv, unsigned int oid,
 #ifdef _WIN32_WCE
 	o->ptcDeviceName = drv->adapter_name;
 #endif /* _WIN32_WCE */
-	if (data)
-		os_memcpy(o->Data, data, len);
 	if (!DeviceIoControl(drv->ndisuio, IOCTL_NDISUIO_QUERY_OID_VALUE,
 			     o, sizeof(NDISUIO_QUERY_OID), o, buflen, &written,
 			     NULL)) {
@@ -798,6 +796,10 @@ static int wpa_driver_ndis_get_scan_results(void *priv,
 		results[i].ssid_len = bss->Ssid.SsidLength;
 		if (bss->Privacy)
 			results[i].caps |= IEEE80211_CAP_PRIVACY;
+		if (bss->InfrastructureMode == Ndis802_11IBSS)
+			results[i].caps |= IEEE80211_CAP_IBSS;
+		else if (bss->InfrastructureMode == Ndis802_11Infrastructure)
+			results[i].caps |= IEEE80211_CAP_ESS;
 		results[i].level = (int) bss->Rssi;
 		results[i].freq = bss->Configuration.DSConfig / 1000;
 		for (j = 0; j < sizeof(bss->SupportedRates); j++) {
@@ -909,7 +911,8 @@ static int wpa_driver_ndis_set_key(void *priv, wpa_alg alg, const u8 *addr,
 				      ETH_ALEN) == 0) {
 		/* Group Key */
 		pairwise = 0;
-		wpa_driver_ndis_get_bssid(drv, bssid);
+		if (wpa_driver_ndis_get_bssid(drv, bssid) < 0)
+			os_memset(bssid, 0xff, ETH_ALEN);
 	} else {
 		/* Pairwise Key */
 		pairwise = 1;
@@ -944,7 +947,7 @@ static int wpa_driver_ndis_set_key(void *priv, wpa_alg alg, const u8 *addr,
 	os_memcpy(nkey->BSSID, bssid, ETH_ALEN);
 	if (seq && seq_len) {
 		for (i = 0; i < seq_len; i++)
-			nkey->KeyRSC |= seq[i] << (i * 8);
+			nkey->KeyRSC |= (ULONGLONG) seq[i] << (i * 8);
 	}
 	if (alg == WPA_ALG_TKIP && key_len == 32) {
 		os_memcpy(nkey->KeyMaterial, key, 16);
@@ -1266,9 +1269,9 @@ static int wpa_driver_ndis_get_associnfo(struct wpa_driver_ndis_data *drv)
 		return -1;
 	}
 
-	wpa_hexdump(MSG_MSGDUMP, "NDIS: Request IEs", 
+	wpa_hexdump(MSG_MSGDUMP, "NDIS: Request IEs",
 		    buf + ai->OffsetRequestIEs, ai->RequestIELength);
-	wpa_hexdump(MSG_MSGDUMP, "NDIS: Response IEs", 
+	wpa_hexdump(MSG_MSGDUMP, "NDIS: Response IEs",
 		    buf + ai->OffsetResponseIEs, ai->ResponseIELength);
 
 	os_memset(&data, 0, sizeof(data));
@@ -1639,10 +1642,11 @@ static void wpa_driver_ndis_get_capability(struct wpa_driver_ndis_data *drv)
 	}
 	wpa_printf(MSG_DEBUG, "NDIS: Driver supports OID_802_11_CAPABILITY - "
 		   "NoOfPMKIDs %d NoOfAuthEncrPairs %d",
-		   (int) c->NoOfPMKIDs, (int) c->NoOfAuthEncryptPairSupported);
+		   (int) c->NoOfPMKIDs,
+		   (int) c->NoOfAuthEncryptPairsSupported);
 	drv->has_capability = 1;
 	drv->no_of_pmkid = c->NoOfPMKIDs;
-	for (i = 0; i < c->NoOfAuthEncryptPairSupported; i++) {
+	for (i = 0; i < c->NoOfAuthEncryptPairsSupported; i++) {
 		NDIS_802_11_AUTHENTICATION_ENCRYPTION *ae;
 		ae = &c->AuthenticationEncryptionSupported[i];
 		if ((char *) (ae + 1) > buf + len) {

@@ -37,7 +37,7 @@ struct ieee802_1x_hdr {
 #pragma pack(pop)
 #endif /* _MSC_VER */
 
-#define EAPOL_VERSION 1
+#define EAPOL_VERSION 2
 
 enum { IEEE802_1X_TYPE_EAP_PACKET = 0,
        IEEE802_1X_TYPE_EAPOL_START = 1,
@@ -48,5 +48,11 @@ enum { IEEE802_1X_TYPE_EAP_PACKET = 0,
 
 enum { EAPOL_KEY_TYPE_RC4 = 1, EAPOL_KEY_TYPE_RSN = 2,
        EAPOL_KEY_TYPE_WPA = 254 };
+
+#ifdef CONFIG_IEEE80211W
+#define WPA_DGTK_LEN 16
+#define WPA_DHV_LEN 16
+#define WPA_IGTK_LEN 16
+#endif /* CONFIG_IEEE80211W */
 
 #endif /* WPA_COMMON_H */

@@ -21,7 +21,7 @@
 int main(int argc, char *argv[])
 {
 	unsigned char password_hash[16];
-	int i;
+	size_t i;
 	char *password, buf[64], *pos;
 
 	if (argc > 1)
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 		password = buf;
 	}
 
-	nt_password_hash(password, strlen(password), password_hash);
+	nt_password_hash((u8 *) password, strlen(password), password_hash);
 	for (i = 0; i < sizeof(password_hash); i++)
 		printf("%02x", password_hash[i]);
 	printf("\n");

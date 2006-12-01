@@ -24,7 +24,8 @@
 typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 
 
-typedef enum { WPA_ALG_NONE, WPA_ALG_WEP, WPA_ALG_TKIP, WPA_ALG_CCMP } wpa_alg;
+typedef enum { WPA_ALG_NONE, WPA_ALG_WEP, WPA_ALG_TKIP, WPA_ALG_CCMP,
+	       WPA_ALG_IGTK, WPA_ALG_DHV } wpa_alg;
 typedef enum { CIPHER_NONE, CIPHER_WEP40, CIPHER_TKIP, CIPHER_CCMP,
 	       CIPHER_WEP104 } wpa_cipher;
 typedef enum { KEY_MGMT_802_1X, KEY_MGMT_PSK, KEY_MGMT_NONE,
@@ -135,6 +136,5 @@ typedef enum {
 
 #define MLME_SETPROTECTION_KEY_TYPE_GROUP 0
 #define MLME_SETPROTECTION_KEY_TYPE_PAIRWISE 1
-#define MLME_SETPROTECTION_KEY_TYPE_STAKEY 2
 
 #endif /* DEFS_H */

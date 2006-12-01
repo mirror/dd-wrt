@@ -35,7 +35,7 @@ void eap_sim_db_deinit(void *priv);
 
 int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 				size_t identity_len, int max_chal,
-				u8 *rand, u8 *kc, u8 *sres,
+				u8 *_rand, u8 *kc, u8 *sres,
 				void *cb_session_ctx);
 
 #define EAP_SIM_DB_FAILURE -1
@@ -74,13 +74,13 @@ eap_sim_db_get_reauth_entry(void *priv, const u8 *identity,
 void eap_sim_db_remove_reauth(void *priv, struct eap_sim_reauth *reauth);
 
 int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
-			    size_t identity_len, u8 *rand, u8 *autn, u8 *ik,
+			    size_t identity_len, u8 *_rand, u8 *autn, u8 *ik,
 			    u8 *ck, u8 *res, size_t *res_len,
 			    void *cb_session_ctx);
 
 int eap_sim_db_resynchronize(void *priv, const u8 *identity,
 			     size_t identity_len, const u8 *auts,
-			     const u8 *rand);
+			     const u8 *_rand);
 
 #else /* EAP_SIM */
 static inline void *

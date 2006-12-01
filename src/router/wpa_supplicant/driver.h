@@ -143,6 +143,15 @@ struct wpa_driver_associate_params {
 	 * wep_tx_keyidx - WEP TX key index for static WEP configuration
 	 */
 	int wep_tx_keyidx;
+
+	/**
+	 * mgmt_frame_protection - IEEE 802.11w management frame protection
+	 */
+	enum {
+		NO_MGMT_FRAME_PROTECTION,
+		MGMT_FRAME_PROTECTION_OPTIONAL,
+		MGMT_FRAME_PROTECTION_REQUIRED
+	} mgmt_frame_protection;
 };
 
 /**
@@ -291,10 +300,12 @@ struct wpa_driver_ops {
 	 * set_key - Configure encryption key
 	 * @priv: private driver interface data
 	 * @alg: encryption algorithm (%WPA_ALG_NONE, %WPA_ALG_WEP,
-	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP); %WPA_ALG_NONE clears the key.
+	 *	%WPA_ALG_TKIP, %WPA_ALG_CCMP, %WPA_ALG_IGTK, %WPA_ALG_DHV);
+	 *	%WPA_ALG_NONE clears the key.
 	 * @addr: address of the peer STA or ff:ff:ff:ff:ff:ff for
 	 *	broadcast/default keys
-	 * @key_idx: key index (0..3), usually 0 for unicast keys
+	 * @key_idx: key index (0..3), usually 0 for unicast keys; 0..4095 for
+	 *	IGTK
 	 * @set_tx: configure this key as the default Tx key (only used when
 	 *	driver does not support separate unicast/individual key
 	 * @seq: sequence number/packet number, seq_len octets, the next
@@ -302,11 +313,11 @@ struct wpa_driver_ops {
 	 *	for Rx keys (in most cases, this is only used with broadcast
 	 *	keys and set to zero for unicast keys)
 	 * @seq_len: length of the seq, depends on the algorithm:
-	 *	TKIP: 6 octets, CCMP: 6 octets
+	 *	TKIP: 6 octets, CCMP: 6 octets, IGTK: 6 octets
 	 * @key: key buffer; TKIP: 16-byte temporal key, 8-byte Tx Mic key,
 	 *	8-byte Rx Mic Key
 	 * @key_len: length of the key buffer in octets (WEP: 5 or 13,
-	 *	TKIP: 32, CCMP: 16)
+	 *	TKIP: 32, CCMP: 16, IGTK: 16, DHV: 16)
 	 *
 	 * Returns: 0 on success, -1 on failure
 	 *

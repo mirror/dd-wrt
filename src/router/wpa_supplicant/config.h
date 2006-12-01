@@ -284,6 +284,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid);
 int wpa_config_set(struct wpa_ssid *ssid, const char *var, const char *value,
 		   int line);
 char * wpa_config_get(struct wpa_ssid *ssid, const char *var);
+char * wpa_config_get_no_key(struct wpa_ssid *ssid, const char *var);
 void wpa_config_update_psk(struct wpa_ssid *ssid);
 int wpa_config_add_prio_network(struct wpa_config *config,
 				struct wpa_ssid *ssid);
@@ -296,6 +297,11 @@ void wpa_config_free_blob(struct wpa_config_blob *blob);
 int wpa_config_remove_blob(struct wpa_config *config, const char *name);
 struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 					   const char *driver_param);
+#ifndef CONFIG_NO_STDOUT_DEBUG
+void wpa_config_debug_dump_networks(struct wpa_config *config);
+#else /* CONFIG_NO_STDOUT_DEBUG */
+#define wpa_config_debug_dump_networks(c) do { } while (0)
+#endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
 /* Prototypes for backend specific functions from the selected config_*.c */

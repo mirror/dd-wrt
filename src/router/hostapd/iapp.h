@@ -22,6 +22,8 @@ struct iapp_data;
 void iapp_new_station(struct iapp_data *iapp, struct sta_info *sta);
 struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface);
 void iapp_deinit(struct iapp_data *iapp);
+int iapp_reconfig(struct hostapd_data *hapd, struct hostapd_config *oldconf,
+		  struct hostapd_bss_config *oldbss);
 
 #else /* CONFIG_IAPP */
 
@@ -38,6 +40,13 @@ static inline struct iapp_data * iapp_init(struct hostapd_data *hapd,
 
 static inline void iapp_deinit(struct iapp_data *iapp)
 {
+}
+
+static inline int
+iapp_reconfig(struct hostapd_data *hapd, struct hostapd_config *oldconf,
+	      struct hostapd_bss_config *oldbss)
+{
+	return 0;
 }
 
 #endif /* CONFIG_IAPP */

@@ -1,6 +1,6 @@
 /*
  * hostapd / RADIUS authentication server
- * Copyright (c) 2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2005-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -1006,7 +1006,7 @@ int radius_server_get_mib(struct radius_server_data *data, char *buf,
 
 	/* RFC 2619 - RADIUS Authentication Server MIB */
 
-	if (buflen == 0)
+	if (data == NULL || buflen == 0)
 		return 0;
 
 	pos = buf;

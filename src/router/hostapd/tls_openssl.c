@@ -246,7 +246,7 @@ static int cryptoapi_rsa_priv_enc(int flen, const unsigned char *from,
 	}
 
 	len = RSA_size(rsa);
-	buf = malloc(len);
+	buf = os_malloc(len);
 	if (buf == NULL) {
 		RSAerr(RSA_F_RSA_EAY_PRIVATE_ENCRYPT, ERR_R_MALLOC_FAILURE);
 		goto err;
@@ -262,7 +262,7 @@ static int cryptoapi_rsa_priv_enc(int flen, const unsigned char *from,
 	ret = len;
 
 err:
-	free(buf);
+	os_free(buf);
 	CryptDestroyHash(hash);
 
 	return ret;
@@ -285,14 +285,14 @@ static void cryptoapi_free_data(struct cryptoapi_rsa_data *priv)
 		CryptReleaseContext(priv->crypt_prov, 0);
 	if (priv->cert)
 		CertFreeCertificateContext(priv->cert);
-	free(priv);
+	os_free(priv);
 }
 
 
 static int cryptoapi_finish(RSA *rsa)
 {
 	cryptoapi_free_data((struct cryptoapi_rsa_data *) rsa->meth->app_data);
-	free((void *) rsa->meth);
+	os_free((void *) rsa->meth);
 	rsa->meth = NULL;
 	return 1;
 }
@@ -313,8 +313,7 @@ static const CERT_CONTEXT * cryptoapi_find_cert(const char *name, DWORD store)
 
 	if (strncmp(name, "cert://", 7) == 0) {
 		unsigned short wbuf[255];
-		MultiByteToWideChar(CP_ACP, 0, name + 7, -1,
-				    wbuf, sizeof(wbuf));
+		MultiByteToWideChar(CP_ACP, 0, name + 7, -1, wbuf, 255);
 		ret = CertFindCertificateInStore(cs, X509_ASN_ENCODING |
 						 PKCS_7_ASN_ENCODING,
 						 0, CERT_FIND_SUBJECT_STR,
@@ -325,8 +324,8 @@ static const CERT_CONTEXT * cryptoapi_find_cert(const char *name, DWORD store)
 		const char *hash = name + 7;
 		unsigned char *buf;
 
-		len = strlen(hash) / 2;
-		buf = malloc(len);
+		len = os_strlen(hash) / 2;
+		buf = os_malloc(len);
 		if (buf && hexstr2bin(hash, buf, len) == 0) {
 			blob.cbData = len;
 			blob.pbData = buf;
@@ -336,7 +335,7 @@ static const CERT_CONTEXT * cryptoapi_find_cert(const char *name, DWORD store)
 							 0, CERT_FIND_HASH,
 							 &blob, NULL);
 		}
-		free(buf);
+		os_free(buf);
 	}
 
 	CertCloseStore(cs, 0);
@@ -357,13 +356,13 @@ static int tls_cryptoapi_cert(SSL *ssl, const char *name)
 	     strncmp(name, "hash://", 7) != 0))
 		return -1;
 
-	priv = wpa_zalloc(sizeof(*priv));
-	rsa_meth = wpa_zalloc(sizeof(*rsa_meth));
+	priv = os_zalloc(sizeof(*priv));
+	rsa_meth = os_zalloc(sizeof(*rsa_meth));
 	if (priv == NULL || rsa_meth == NULL) {
 		wpa_printf(MSG_WARNING, "CryptoAPI: Failed to allocate memory "
 			   "for CryptoAPI RSA method");
-		free(priv);
-		free(rsa_meth);
+		os_free(priv);
+		os_free(rsa_meth);
 		return -1;
 	}
 
@@ -438,7 +437,7 @@ err:
 	if (rsa)
 		RSA_free(rsa);
 	else {
-		free(rsa_meth);
+		os_free(rsa_meth);
 		cryptoapi_free_data(priv);
 	}
 	return -1;
@@ -464,12 +463,12 @@ static int tls_cryptoapi_ca_cert(SSL_CTX *ssl_ctx, SSL *ssl, const char *name)
 
 	store = name + 13;
 #ifdef UNICODE
-	wstore = malloc((strlen(store) + 1) * sizeof(WCHAR));
+	wstore = os_malloc((os_strlen(store) + 1) * sizeof(WCHAR));
 	if (wstore == NULL)
 		return -1;
 	wsprintf(wstore, L"%S", store);
 	cs = CertOpenSystemStore(0, wstore);
-	free(wstore);
+	os_free(wstore);
 #else /* UNICODE */
 	cs = CertOpenSystemStore(0, store);
 #endif /* UNICODE */
@@ -870,14 +869,14 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 	SSL_CTX *ssl = ssl_ctx;
 	struct tls_connection *conn;
 
-	conn = wpa_zalloc(sizeof(*conn));
+	conn = os_zalloc(sizeof(*conn));
 	if (conn == NULL)
 		return NULL;
 	conn->ssl = SSL_new(ssl);
 	if (conn->ssl == NULL) {
 		tls_show_errors(MSG_INFO, __func__,
 				"Failed to initialize new SSL connection");
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -891,7 +890,7 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 		tls_show_errors(MSG_INFO, __func__,
 				"Failed to create a new BIO for ssl_in");
 		SSL_free(conn->ssl);
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -901,7 +900,7 @@ struct tls_connection * tls_connection_init(void *ssl_ctx)
 				"Failed to create a new BIO for ssl_out");
 		SSL_free(conn->ssl);
 		BIO_free(conn->ssl_in);
-		free(conn);
+		os_free(conn);
 		return NULL;
 	}
 
@@ -915,12 +914,12 @@ void tls_connection_deinit(void *ssl_ctx, struct tls_connection *conn)
 {
 	if (conn == NULL)
 		return;
-	free(conn->pre_shared_secret);
+	os_free(conn->pre_shared_secret);
 	SSL_free(conn->ssl);
 	tls_engine_deinit(conn);
-	free(conn->subject_match);
-	free(conn->altsubject_match);
-	free(conn);
+	os_free(conn->subject_match);
+	os_free(conn->altsubject_match);
+	os_free(conn);
 }
 
 
@@ -944,53 +943,68 @@ int tls_connection_shutdown(void *ssl_ctx, struct tls_connection *conn)
 }
 
 
-static int tls_match_altsubject(X509 *cert, const char *match)
+static int tls_match_altsubject_component(X509 *cert, int type,
+					  const char *value, size_t len)
 {
 	GENERAL_NAME *gen;
-	char *field, *tmp;
 	void *ext;
 	int i, found = 0;
-	size_t len;
 
 	ext = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
 
 	for (i = 0; ext && i < sk_GENERAL_NAME_num(ext); i++) {
 		gen = sk_GENERAL_NAME_value(ext, i);
-		switch (gen->type) {
-		case GEN_EMAIL:
-			field = "EMAIL";
-			break;
-		case GEN_DNS:
-			field = "DNS";
-			break;
-		case GEN_URI:
-			field = "URI";
-			break;
-		default:
-			field = NULL;
-			wpa_printf(MSG_DEBUG, "TLS: altSubjectName: "
-				   "unsupported type=%d", gen->type);
-			break;
-		}
-
-		if (!field)
+		if (gen->type != type)
 			continue;
-
-		wpa_printf(MSG_DEBUG, "TLS: altSubjectName: %s:%s",
-			   field, gen->d.ia5->data);
-		len = strlen(field) + 1 + strlen((char *) gen->d.ia5->data) +
-			1;
-		tmp = malloc(len);
-		if (tmp == NULL)
-			continue;
-		snprintf(tmp, len, "%s:%s", field, gen->d.ia5->data);
-		tmp[len - 1] = '\0';
-		if (strstr(tmp, match))
+		if (os_strlen((char *) gen->d.ia5->data) == len &&
+		    os_memcmp(value, gen->d.ia5->data, len) == 0)
 			found++;
-		free(tmp);
 	}
 
 	return found;
+}
+
+
+static int tls_match_altsubject(X509 *cert, const char *match)
+{
+	int type;
+	const char *pos, *end;
+	size_t len;
+
+	pos = match;
+	do {
+		if (os_strncmp(pos, "EMAIL:", 6) == 0) {
+			type = GEN_EMAIL;
+			pos += 6;
+		} else if (os_strncmp(pos, "DNS:", 4) == 0) {
+			type = GEN_DNS;
+			pos += 4;
+		} else if (os_strncmp(pos, "URI:", 4) == 0) {
+			type = GEN_URI;
+			pos += 4;
+		} else {
+			wpa_printf(MSG_INFO, "TLS: Invalid altSubjectName "
+				   "match '%s'", pos);
+			return 0;
+		}
+		end = os_strchr(pos, ';');
+		while (end) {
+			if (os_strncmp(end + 1, "EMAIL:", 6) == 0 ||
+			    os_strncmp(end + 1, "DNS:", 4) == 0 ||
+			    os_strncmp(end + 1, "URI:", 4) == 0)
+				break;
+			end = os_strchr(end + 1, ';');
+		}
+		if (end)
+			len = end - pos;
+		else
+			len = os_strlen(pos);
+		if (tls_match_altsubject_component(cert, type, pos, len) > 0)
+			return 1;
+		pos = end + 1;
+	} while (end);
+
+	return 0;
 }
 
 
@@ -1023,7 +1037,7 @@ static int tls_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)
 			   "preverify_ok=%d err=%d (%s) depth=%d buf='%s'",
 			   preverify_ok, err,
 			   X509_verify_cert_error_string(err), depth, buf);
-		if (depth == 0 && match && strstr(buf, match) == NULL) {
+		if (depth == 0 && match && os_strstr(buf, match) == NULL) {
 			wpa_printf(MSG_WARNING, "TLS: Subject '%s' did not "
 				   "match with '%s'", buf, match);
 			preverify_ok = 0;
@@ -1194,18 +1208,18 @@ static int tls_connection_set_subject_match(struct tls_connection *conn,
 					    const char *subject_match,
 					    const char *altsubject_match)
 {
-	free(conn->subject_match);
+	os_free(conn->subject_match);
 	conn->subject_match = NULL;
 	if (subject_match) {
-		conn->subject_match = strdup(subject_match);
+		conn->subject_match = os_strdup(subject_match);
 		if (conn->subject_match == NULL)
 			return -1;
 	}
 
-	free(conn->altsubject_match);
+	os_free(conn->altsubject_match);
 	conn->altsubject_match = NULL;
 	if (altsubject_match) {
-		conn->altsubject_match = strdup(altsubject_match);
+		conn->altsubject_match = os_strdup(altsubject_match);
 		if (conn->altsubject_match == NULL)
 			return -1;
 	}
@@ -1313,9 +1327,9 @@ static int tls_passwd_cb(char *buf, int size, int rwflag, void *password)
 	if (password == NULL) {
 		return 0;
 	}
-	strncpy(buf, (char *) password, size);
+	os_strncpy(buf, (char *) password, size);
 	buf[size - 1] = '\0';
-	return strlen(buf);
+	return os_strlen(buf);
 }
 
 
@@ -1485,7 +1499,7 @@ static int tls_connection_private_key(void *_ssl_ctx,
 		return 0;
 
 	if (private_key_passwd) {
-		passwd = strdup(private_key_passwd);
+		passwd = os_strdup(private_key_passwd);
 		if (passwd == NULL)
 			return -1;
 	} else
@@ -1595,13 +1609,13 @@ static int tls_connection_private_key(void *_ssl_ctx,
 
 	if (!ok) {
 		wpa_printf(MSG_INFO, "OpenSSL: Failed to load private key");
-		free(passwd);
+		os_free(passwd);
 		ERR_clear_error();
 		return -1;
 	}
 	ERR_clear_error();
 	SSL_CTX_set_default_passwd_cb(ssl_ctx, NULL);
-	free(passwd);
+	os_free(passwd);
 	
 	if (!SSL_check_private_key(conn->ssl)) {
 		tls_show_errors(MSG_INFO, __func__, "Private key failed "
@@ -1623,7 +1637,7 @@ static int tls_global_private_key(SSL_CTX *ssl_ctx, const char *private_key,
 		return 0;
 
 	if (private_key_passwd) {
-		passwd = strdup(private_key_passwd);
+		passwd = os_strdup(private_key_passwd);
 		if (passwd == NULL)
 			return -1;
 	} else
@@ -1641,11 +1655,11 @@ static int tls_global_private_key(SSL_CTX *ssl_ctx, const char *private_key,
 	    tls_read_pkcs12(ssl_ctx, NULL, private_key, passwd)) {
 		tls_show_errors(MSG_INFO, __func__,
 				"Failed to load private key");
-		free(passwd);
+		os_free(passwd);
 		ERR_clear_error();
 		return -1;
 	}
-	free(passwd);
+	os_free(passwd);
 	ERR_clear_error();
 	SSL_CTX_set_default_passwd_cb(ssl_ctx, NULL);
 	
@@ -1744,7 +1758,7 @@ int tls_connection_get_keys(void *ssl_ctx, struct tls_connection *conn,
 	if (ssl == NULL || ssl->s3 == NULL || ssl->session == NULL)
 		return -1;
 
-	memset(keys, 0, sizeof(*keys));
+	os_memset(keys, 0, sizeof(*keys));
 	keys->master_key = ssl->session->master_key;
 	keys->master_key_len = ssl->session->master_key_length;
 	keys->client_random = ssl->s3->client_random;
@@ -1805,7 +1819,7 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 	/* Get the TLS handshake data to be sent to the server */
 	res = BIO_ctrl_pending(conn->ssl_out);
 	wpa_printf(MSG_DEBUG, "SSL: %d bytes pending from ssl_out", res);
-	out_data = malloc(res == 0 ? 1 : res);
+	out_data = os_malloc(res == 0 ? 1 : res);
 	if (out_data == NULL) {
 		wpa_printf(MSG_DEBUG, "SSL: Failed to allocate memory for "
 			   "handshake output (%d bytes)", res);
@@ -1830,14 +1844,14 @@ u8 * tls_connection_handshake(void *ssl_ctx, struct tls_connection *conn,
 	*out_len = res;
 
 	if (SSL_is_init_finished(conn->ssl) && appl_data) {
-		*appl_data = malloc(in_len);
+		*appl_data = os_malloc(in_len);
 		if (*appl_data) {
 			res = SSL_read(conn->ssl, *appl_data, in_len);
 			if (res < 0) {
 				tls_show_errors(MSG_INFO, __func__,
 						"Failed to read possible "
 						"Application Data");
-				free(*appl_data);
+				os_free(*appl_data);
 				*appl_data = NULL;
 			} else {
 				*appl_data_len = res;
@@ -1876,7 +1890,7 @@ u8 * tls_connection_server_handshake(void *ssl_ctx,
 
 	res = BIO_ctrl_pending(conn->ssl_out);
 	wpa_printf(MSG_DEBUG, "SSL: %d bytes pending from ssl_out", res);
-	out_data = malloc(res == 0 ? 1 : res);
+	out_data = os_malloc(res == 0 ? 1 : res);
 	if (out_data == NULL) {
 		wpa_printf(MSG_DEBUG, "SSL: Failed to allocate memory for "
 			   "handshake output (%d bytes)", res);
@@ -1987,7 +2001,8 @@ static int tls_sess_sec_cb(SSL *s, void *secret, int *secret_len,
 	if (conn == NULL || conn->pre_shared_secret == 0)
 		return 0;
 
-	memcpy(secret, conn->pre_shared_secret, conn->pre_shared_secret_len);
+	os_memcpy(secret, conn->pre_shared_secret,
+		  conn->pre_shared_secret_len);
 	*secret_len = conn->pre_shared_secret_len;
 
 	return 1;
@@ -2000,14 +2015,14 @@ int tls_connection_set_master_key(void *ssl_ctx, struct tls_connection *conn,
 	if (conn == NULL || key_len > SSL_MAX_MASTER_KEY_LENGTH)
 		return -1;
 
-	free(conn->pre_shared_secret);
+	os_free(conn->pre_shared_secret);
 	conn->pre_shared_secret = NULL;
 	conn->pre_shared_secret_len = 0;
 
 	if (key) {
-		conn->pre_shared_secret = malloc(key_len);
+		conn->pre_shared_secret = os_malloc(key_len);
 		if (conn->pre_shared_secret) {
-			memcpy(conn->pre_shared_secret, key, key_len);
+			os_memcpy(conn->pre_shared_secret, key, key_len);
 			conn->pre_shared_secret_len = key_len;
 		}
 		if (SSL_set_session_secret_cb(conn->ssl, tls_sess_sec_cb,
@@ -2059,7 +2074,7 @@ int tls_connection_set_cipher_list(void *tls_ctx, struct tls_connection *conn,
 				   "cipher selection: %d", *c);
 			return -1;
 		}
-		ret = snprintf(pos, end - pos, ":%s", suite);
+		ret = os_snprintf(pos, end - pos, ":%s", suite);
 		if (ret < 0 || ret >= end - pos)
 			break;
 		pos += ret;
@@ -2090,7 +2105,7 @@ int tls_get_cipher(void *ssl_ctx, struct tls_connection *conn,
 	if (name == NULL)
 		return -1;
 
-	snprintf(buf, buflen, "%s", name);
+	os_snprintf(buf, buflen, "%s", name);
 	buf[buflen - 1] = '\0';
 	return 0;
 }

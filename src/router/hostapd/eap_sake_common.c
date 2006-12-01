@@ -167,7 +167,7 @@ int eap_sake_parse_attributes(const u8 *buf, size_t len,
 {
 	const u8 *pos = buf, *end = buf + len;
 
-	memset(attr, 0, sizeof(*attr));
+	os_memset(attr, 0, sizeof(*attr));
 	while (pos < end) {
 		if (end - pos < 2) {
 			wpa_printf(MSG_DEBUG, "EAP-SAKE: Too short attribute");
@@ -218,7 +218,7 @@ static void eap_sake_kdf(const u8 *key, size_t key_len, const char *label,
 	u8 counter = 1;
 	size_t pos, plen;
 	u8 hash[SHA1_MAC_LEN];
-	size_t label_len = strlen(label) + 1;
+	size_t label_len = os_strlen(label) + 1;
 	const unsigned char *addr[3];
 	size_t len[3];
 
@@ -241,7 +241,7 @@ static void eap_sake_kdf(const u8 *key, size_t key_len, const char *label,
 		} else {
 			hmac_sha1_vector(key, key_len, 4, addr, len,
 					 hash);
-			memcpy(&buf[pos], hash, plen);
+			os_memcpy(&buf[pos], hash, plen);
 			break;
 		}
 		counter++;
@@ -320,50 +320,52 @@ int eap_sake_compute_mic(const u8 *tek_auth,
 			 int peer, const u8 *eap, size_t eap_len,
 			 const u8 *mic_pos, u8 *mic)
 {
-	u8 rand[2 * EAP_SAKE_RAND_LEN];
+	u8 _rand[2 * EAP_SAKE_RAND_LEN];
 	u8 *tmp, *pos;
 	size_t tmplen;
 
 	tmplen = serverid_len + peerid_len + eap_len;
-	tmp = malloc(tmplen);
+	tmp = os_malloc(tmplen);
 	if (tmp == NULL)
 		return -1;
 	pos = tmp;
 	if (peer) {
 		if (peerid) {
-			memcpy(pos, peerid, peerid_len);
+			os_memcpy(pos, peerid, peerid_len);
 			pos += peerid_len;
 		}
 		if (serverid) {
-			memcpy(pos, serverid, serverid_len);
+			os_memcpy(pos, serverid, serverid_len);
 			pos += serverid_len;
 		}
 
-		memcpy(rand, rand_s, EAP_SAKE_RAND_LEN);
-		memcpy(rand + EAP_SAKE_RAND_LEN, rand_p, EAP_SAKE_RAND_LEN);
+		os_memcpy(_rand, rand_s, EAP_SAKE_RAND_LEN);
+		os_memcpy(_rand + EAP_SAKE_RAND_LEN, rand_p,
+			  EAP_SAKE_RAND_LEN);
 	} else {
 		if (serverid) {
-			memcpy(pos, serverid, serverid_len);
+			os_memcpy(pos, serverid, serverid_len);
 			pos += serverid_len;
 		}
 		if (peerid) {
-			memcpy(pos, peerid, peerid_len);
+			os_memcpy(pos, peerid, peerid_len);
 			pos += peerid_len;
 		}
 
-		memcpy(rand, rand_p, EAP_SAKE_RAND_LEN);
-		memcpy(rand + EAP_SAKE_RAND_LEN, rand_s, EAP_SAKE_RAND_LEN);
+		os_memcpy(_rand, rand_p, EAP_SAKE_RAND_LEN);
+		os_memcpy(_rand + EAP_SAKE_RAND_LEN, rand_s,
+			  EAP_SAKE_RAND_LEN);
 	}
 
-	memcpy(pos, eap, eap_len);
-	memset(pos + (mic_pos - eap), 0, EAP_SAKE_MIC_LEN);
+	os_memcpy(pos, eap, eap_len);
+	os_memset(pos + (mic_pos - eap), 0, EAP_SAKE_MIC_LEN);
 
 	eap_sake_kdf(tek_auth, EAP_SAKE_TEK_AUTH_LEN,
 		     peer ? "Peer MIC" : "Server MIC",
-		     rand, 2 * EAP_SAKE_RAND_LEN, tmp, tmplen,
+		     _rand, 2 * EAP_SAKE_RAND_LEN, tmp, tmplen,
 		     mic, EAP_SAKE_MIC_LEN);
 
-	free(tmp);
+	os_free(tmp);
 
 	return 0;
 }

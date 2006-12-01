@@ -258,29 +258,6 @@ union wpa_event_data {
 void wpa_supplicant_event(struct wpa_supplicant *wpa_s, wpa_event_type event,
 			  union wpa_event_data *data);
 
-#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
-/**
- * wpa_msg - Conditional printf for default target and ctrl_iface monitors
- * @wpa_s: pointer to wpa_supplicant data; this is the ctx variable registered
- *	with struct wpa_driver_ops::init()
- * @level: priority level (MSG_*) of the message
- * @fmt: printf format string, followed by optional arguments
- *
- * This function is used to print conditional debugging and error messages. The
- * output may be directed to stdout, stderr, and/or syslog based on
- * configuration. This function is like wpa_printf(), but it also sends the
- * same message to all attached ctrl_iface monitors.
- *
- * Note: New line '\n' is added to the end of the text when printing to stdout.
- */
-void wpa_msg(struct wpa_supplicant *wpa_s, int level, char *fmt, ...)
-PRINTF_FORMAT(3, 4);
-#else /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
-#define wpa_msg(args...) do { } while (0)
-#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
-
-const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len);
-
 /**
  * wpa_supplicant_rx_eapol - Deliver a received EAPOL frame to wpa_supplicant
  * @ctx: Context pointer (wpa_s)

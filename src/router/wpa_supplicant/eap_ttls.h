@@ -36,10 +36,10 @@ struct ttls_avp_vendor {
 
 #define AVP_PAD(start, pos) \
 do { \
-	int pad; \
-	pad = (4 - (((pos) - (start)) & 3)) & 3; \
-	os_memset((pos), 0, pad); \
-	pos += pad; \
+	int __pad; \
+	__pad = (4 - (((pos) - (start)) & 3)) & 3; \
+	os_memset((pos), 0, __pad); \
+	pos += __pad; \
 } while (0)
 
 

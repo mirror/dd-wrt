@@ -1351,11 +1351,11 @@ static void ieee80211_rx_mgmt_assoc_resp(struct wpa_supplicant *wpa_s,
 		rates_len = sizeof(rates);
 	os_memcpy(rates, elems.supp_rates, rates_len);
 	if (elems.ext_supp_rates) {
-		size_t len = elems.ext_supp_rates_len;
-		if (len > sizeof(rates) - rates_len)
-			len = sizeof(rates) - rates_len;
-		os_memcpy(rates + rates_len, elems.ext_supp_rates, len);
-		rates_len += len;
+		size_t _len = elems.ext_supp_rates_len;
+		if (_len > sizeof(rates) - rates_len)
+			_len = sizeof(rates) - rates_len;
+		os_memcpy(rates + rates_len, elems.ext_supp_rates, _len);
+		rates_len += _len;
 	}
 
 	if (wpa_drv_set_bssid(wpa_s, wpa_s->bssid) < 0) {

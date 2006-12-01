@@ -34,7 +34,6 @@
 #include "radius.h"
 #include "ieee802_11.h"
 #include "common.h"
-#include "hostap_common.h"
 
 struct bsd_driver_data {
 	struct driver_ops ops;			/* base class */
@@ -287,7 +286,7 @@ bsd_set_ieee8021x(const char *ifname, void *priv, int enabled)
 }
 
 static int
-bsd_set_privacy(void *priv, int enabled)
+bsd_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct bsd_driver_data *drv = priv;
 	struct hostapd_data *hapd = drv->hapd;
@@ -475,7 +474,7 @@ bsd_read_sta_driver_data(void *priv, struct hostap_sta_driver_data *data,
 }
 
 static int
-bsd_set_opt_ie(void *priv, const u8 *ie, size_t ie_len)
+bsd_set_opt_ie(const char *ifname, void *priv, const u8 *ie, size_t ie_len)
 {
 	/*
 	 * Do nothing; we setup parameters at startup that define the
@@ -512,6 +511,7 @@ bsd_sta_disassoc(void *priv, const u8 *addr, int reason_code)
 		"%s: addr=%s reason_code=%d\n",
 		__func__, ether_sprintf(addr), reason_code);
 
+	mlme.im_op = IEEE80211_MLME_DISASSOC;
 	mlme.im_reason = reason_code;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
 	return set80211var(priv, IEEE80211_IOC_MLME, &mlme, sizeof(mlme));
@@ -529,7 +529,7 @@ bsd_del_sta(struct bsd_driver_data *drv, u8 addr[IEEE80211_ADDR_LEN])
 
 	sta = ap_get_sta(hapd, addr);
 	if (sta != NULL) {
-		sta->flags &= ~WLAN_STA_ASSOC;
+		sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
 		if (conf->wpa)
 			wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
 		sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
@@ -591,7 +591,7 @@ bsd_new_sta(struct bsd_driver_data *drv, u8 addr[IEEE80211_ADDR_LEN])
 	 * kick the authenticator into action.
 	 */
 	new_assoc = (sta->flags & WLAN_STA_ASSOC) == 0;
-	sta->flags |= WLAN_STA_ASSOC;
+	sta->flags |= WLAN_STA_AUTH | WLAN_STA_ASSOC;
 	wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC);
 	hostapd_new_assoc_sta(hapd, sta, !new_assoc);
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 1);
@@ -698,7 +698,7 @@ bsd_wireless_event_deinit(void *priv)
 
 static int
 bsd_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
-	       int encrypt)
+	       int encrypt, const u8 *own_addr)
 {
 	struct bsd_driver_data *drv = priv;
 	unsigned char buf[3000];
@@ -724,7 +724,7 @@ bsd_send_eapol(void *priv, const u8 *addr, const u8 *data, size_t data_len,
 	}
 	eth = (struct l2_ethhdr *) bp;
 	memcpy(eth->h_dest, addr, ETH_ALEN);
-	memcpy(eth->h_source, drv->hapd->own_addr, ETH_ALEN);
+	memcpy(eth->h_source, own_addr, ETH_ALEN);
 	eth->h_proto = htons(ETH_P_EAPOL);
 	memcpy(eth+1, data, data_len);
 
@@ -756,7 +756,7 @@ handle_read(void *ctx, const u8 *src_addr, const u8 *buf, size_t len)
 }
 
 static int
-bsd_get_ssid(void *priv, u8 *buf, int len)
+bsd_get_ssid(const char *ifname, void *priv, u8 *buf, int len)
 {
 	struct bsd_driver_data *drv = priv;
 	struct hostapd_data *hapd = drv->hapd;
@@ -769,7 +769,7 @@ bsd_get_ssid(void *priv, u8 *buf, int len)
 }
 
 static int
-bsd_set_ssid(void *priv, const u8 *buf, int len)
+bsd_set_ssid(const char *ifname, void *priv, const u8 *buf, int len)
 {
 	struct bsd_driver_data *drv = priv;
 	struct hostapd_data *hapd = drv->hapd;

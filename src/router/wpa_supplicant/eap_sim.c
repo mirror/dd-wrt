@@ -16,7 +16,6 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "crypto.h"
 #include "pcsc_funcs.h"
@@ -36,6 +35,7 @@ struct eap_sim_data {
 	u8 k_aut[EAP_SIM_K_AUT_LEN];
 	u8 k_encr[EAP_SIM_K_ENCR_LEN];
 	u8 msk[EAP_SIM_KEYING_DATA_LEN];
+	u8 emsk[EAP_EMSK_LEN];
 	u8 rand[3][GSM_RAND_LEN];
 
 	int num_id_req, num_notification;
@@ -546,7 +546,8 @@ static u8 * eap_sim_process_challenge(struct eap_sm *sm,
 			  data->selected_version, data->ver_list,
 			  data->ver_list_len, data->num_chal,
 			  (const u8 *) data->kc, data->mk);
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
+			    data->emsk);
 	if (eap_sim_verify_mac(data->k_aut, (const u8 *) req, reqDataLen,
 			       attr->mac, data->nonce_mt,
 			       EAP_SIM_NONCE_MT_LEN)) {
@@ -768,7 +769,8 @@ static u8 * eap_sim_process_reauthentication(struct eap_sm *sm,
 
 	eap_sim_derive_keys_reauth(data->counter,
 				   data->reauth_id, data->reauth_id_len,
-				   data->nonce_s, data->mk, data->msk);
+				   data->nonce_s, data->mk, data->msk,
+				   data->emsk);
 	eap_sim_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	eap_sim_learn_ids(data, &eattr);
 
@@ -952,6 +954,25 @@ static u8 * eap_sim_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_sim_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_sim_data *data = priv;
+	u8 *key;
+
+	if (data->state != SUCCESS)
+		return NULL;
+
+	key = os_malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+	os_memcpy(key, data->emsk, EAP_EMSK_LEN);
+
+	return key;
+}
+
+
 int eap_peer_sim_register(void)
 {
 	struct eap_method *eap;
@@ -971,6 +992,7 @@ int eap_peer_sim_register(void)
 	eap->deinit_for_reauth = eap_sim_deinit_for_reauth;
 	eap->init_for_reauth = eap_sim_init_for_reauth;
 	eap->get_identity = eap_sim_get_identity;
+	eap->get_emsk = eap_sim_get_emsk;
 
 	ret = eap_peer_method_register(eap);
 	if (ret)

@@ -1,6 +1,10 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
+enum hostapd_driver_if_type {
+	HOSTAPD_IF_VLAN, HOSTAPD_IF_WDS
+};
+
 struct driver_ops {
 	const char *name;		/* as appears in the config file */
 
@@ -32,25 +36,29 @@ struct driver_ops {
 	 *
 	 * Configure privacy.
 	 */
-	int (*set_privacy)(void *priv, int enabled);
+	int (*set_privacy)(const char *ifname, void *priv, int enabled);
 
 	int (*set_encryption)(const char *ifname, void *priv, const char *alg,
 			      const u8 *addr, int idx,
 			      const u8 *key, size_t key_len, int txkey);
 	int (*get_seqnum)(const char *ifname, void *priv, const u8 *addr,
 			  int idx, u8 *seq);
+	int (*get_seqnum_igtk)(const char *ifname, void *priv, const u8 *addr,
+			       int idx, u8 *seq);
 	int (*flush)(void *priv);
-	int (*set_generic_elem)(void *priv, const u8 *elem, size_t elem_len);
+	int (*set_generic_elem)(const char *ifname, void *priv, const u8 *elem,
+				size_t elem_len);
 
 	int (*read_sta_data)(void *priv, struct hostap_sta_driver_data *data,
 			     const u8 *addr);
 	int (*send_eapol)(void *priv, const u8 *addr, const u8 *data,
-			  size_t data_len, int encrypt);
+			  size_t data_len, int encrypt, const u8 *own_addr);
 	int (*sta_deauth)(void *priv, const u8 *addr, int reason);
 	int (*sta_disassoc)(void *priv, const u8 *addr, int reason);
 	int (*sta_remove)(void *priv, const u8 *addr);
-	int (*get_ssid)(void *priv, u8 *buf, int len);
-	int (*set_ssid)(void *priv, const u8 *buf, int len);
+	int (*get_ssid)(const char *ifname, void *priv, u8 *buf, int len);
+	int (*set_ssid)(const char *ifname, void *priv, const u8 *buf,
+			int len);
 	int (*set_countermeasures)(void *priv, int enabled);
 	int (*send_mgmt_frame)(void *priv, const void *msg, size_t len,
 			       int flags);
@@ -77,11 +85,20 @@ struct driver_ops {
 				unsigned char power_level,
 				unsigned char antenna_max);
 	int (*set_regulatory_domain)(void *priv, unsigned int rd);
+	int (*set_country)(void *priv, const char *country);
+	int (*set_ieee80211d)(void *priv, int enabled);
 	int (*set_beacon)(const char *ifname, void *priv,
 			  u8 *head, size_t head_len,
 			  u8 *tail, size_t tail_len);
+
+	/* Configure internal bridge:
+	 * 0 = disabled, i.e., client separation is enabled (no bridging of
+	 *     packets between associated STAs
+	 * 1 = enabled, i.e., bridge packets between associated STAs (default)
+	 */
+	int (*set_internal_bridge)(void *priv, int value);
 	int (*set_beacon_int)(void *priv, int value);
-	int (*set_dtim_period)(void *priv, int value);
+	int (*set_dtim_period)(const char *ifname, void *priv, int value);
 	/* Configure broadcast SSID mode:
 	 * 0 = include SSID in Beacon frames and reply to Probe Request frames
 	 *     that use broadcast SSID
@@ -95,14 +112,35 @@ struct driver_ops {
 	int (*set_short_slot_time)(void *priv, int value);
 	int (*set_tx_queue_params)(void *priv, int queue, int aifs, int cw_min,
 				   int cw_max, int burst_time);
+	int (*bss_add)(void *priv, const char *ifname, const u8 *bssid);
+	int (*bss_remove)(void *priv, const char *ifname);
+	int (*valid_bss_mask)(void *priv, const u8 *addr, const u8 *mask);
 	int (*passive_scan)(void *priv, int now, int our_mode_only,
-			    int interval, int listen, int *channel,
+			    int interval, int _listen, int *channel,
 			    int *last_rx);
 	struct hostapd_hw_modes * (*get_hw_feature_data)(void *priv,
 							 u16 *num_modes,
 							 u16 *flags);
+	int (*if_add)(const char *iface, void *priv,
+		      enum hostapd_driver_if_type type, char *ifname,
+		      const u8 *addr);
+	int (*if_update)(void *priv, enum hostapd_driver_if_type type,
+			 char *ifname, const u8 *addr);
+	int (*if_remove)(void *priv, enum hostapd_driver_if_type type,
+			 const char *ifname, const u8 *addr);
 	int (*set_sta_vlan)(void *priv, const u8 *addr, const char *ifname,
 			    int vlan_id);
+	/**
+	 * commit - Optional commit changes handler
+	 * @priv: driver private data
+	 * Returns: 0 on success, -1 on failure
+	 *
+	 * This optional handler function can be registered if the driver
+	 * interface implementation needs to commit changes (e.g., by setting
+	 * network interface up) at the end of initial configuration. If set,
+	 * this handler will be called after initial setup has been completed.
+	 */
+	int (*commit)(void *priv);
 };
 
 static inline int
@@ -153,7 +191,8 @@ hostapd_set_privacy(struct hostapd_data *hapd, int enabled)
 {
 	if (hapd->driver == NULL || hapd->driver->set_privacy == NULL)
 		return 0;
-	return hapd->driver->set_privacy(hapd->driver, enabled);
+	return hapd->driver->set_privacy(hapd->conf->iface, hapd->driver,
+					 enabled);
 }
 
 static inline int
@@ -177,6 +216,16 @@ hostapd_get_seqnum(const char *ifname, struct hostapd_data *hapd,
 }
 
 static inline int
+hostapd_get_seqnum_igtk(const char *ifname, struct hostapd_data *hapd,
+			const u8 *addr, int idx, u8 *seq)
+{
+	if (hapd->driver == NULL || hapd->driver->get_seqnum_igtk == NULL)
+		return -1;
+	return hapd->driver->get_seqnum_igtk(ifname, hapd->driver, addr, idx,
+					     seq);
+}
+
+static inline int
 hostapd_flush(struct hostapd_data *hapd)
 {
 	if (hapd->driver == NULL || hapd->driver->flush == NULL)
@@ -190,7 +239,8 @@ hostapd_set_generic_elem(struct hostapd_data *hapd, const u8 *elem,
 {
 	if (hapd->driver == NULL || hapd->driver->set_generic_elem == NULL)
 		return 0;
-	return hapd->driver->set_generic_elem(hapd->driver, elem, elem_len);
+	return hapd->driver->set_generic_elem(hapd->conf->iface, hapd->driver,
+					      elem, elem_len);
 }
 
 static inline int
@@ -209,7 +259,7 @@ hostapd_send_eapol(struct hostapd_data *hapd, const u8 *addr, const u8 *data,
 	if (hapd->driver == NULL || hapd->driver->send_eapol == NULL)
 		return 0;
 	return hapd->driver->send_eapol(hapd->driver, addr, data, data_len,
-					encrypt);
+					encrypt, hapd->own_addr);
 }
 
 static inline int
@@ -241,7 +291,8 @@ hostapd_get_ssid(struct hostapd_data *hapd, u8 *buf, size_t len)
 {
 	if (hapd->driver == NULL || hapd->driver->get_ssid == NULL)
 		return 0;
-	return hapd->driver->get_ssid(hapd->driver, buf, len);
+	return hapd->driver->get_ssid(hapd->conf->iface, hapd->driver, buf,
+				      len);
 }
 
 static inline int
@@ -249,7 +300,8 @@ hostapd_set_ssid(struct hostapd_data *hapd, const u8 *buf, size_t len)
 {
 	if (hapd->driver == NULL || hapd->driver->set_ssid == NULL)
 		return 0;
-	return hapd->driver->set_ssid(hapd->driver, buf, len);
+	return hapd->driver->set_ssid(hapd->conf->iface, hapd->driver, buf,
+				      len);
 }
 
 static inline int
@@ -269,7 +321,7 @@ hostapd_set_assoc_ap(struct hostapd_data *hapd, const u8 *addr)
 	return hapd->driver->set_assoc_ap(hapd->driver, addr);
 }
 
-static inline int 
+static inline int
 hostapd_set_countermeasures(struct hostapd_data *hapd, int enabled)
 {
 	if (hapd->driver == NULL || hapd->driver->set_countermeasures == NULL)
@@ -393,6 +445,23 @@ hostapd_set_regulatory_domain(struct hostapd_data *hapd, unsigned int rd)
 	return hapd->driver->set_regulatory_domain(hapd->driver, rd);
 }
 
+static inline int
+hostapd_set_country(struct hostapd_data *hapd, const char *country)
+{
+	if (hapd->driver == NULL ||
+	    hapd->driver->set_country == NULL)
+		return 0;
+	return hapd->driver->set_country(hapd->driver, country);
+}
+
+static inline int
+hostapd_set_ieee80211d(struct hostapd_data *hapd, int enabled)
+{
+	if (hapd->driver == NULL ||
+	    hapd->driver->set_ieee80211d == NULL)
+		return 0;
+	return hapd->driver->set_ieee80211d(hapd->driver, enabled);
+}
 
 void driver_register(const char *name, const struct driver_ops *ops);
 void driver_unregister(const char *name);
@@ -418,6 +487,14 @@ hostapd_set_beacon(const char *ifname, struct hostapd_data *hapd,
 }
 
 static inline int
+hostapd_set_internal_bridge(struct hostapd_data *hapd, int value)
+{
+	if (hapd->driver == NULL || hapd->driver->set_internal_bridge == NULL)
+		return 0;
+	return hapd->driver->set_internal_bridge(hapd->driver, value);
+}
+
+static inline int
 hostapd_set_beacon_int(struct hostapd_data *hapd, int value)
 {
 	if (hapd->driver == NULL || hapd->driver->set_beacon_int == NULL)
@@ -430,7 +507,8 @@ hostapd_set_dtim_period(struct hostapd_data *hapd, int value)
 {
 	if (hapd->driver == NULL || hapd->driver->set_dtim_period == NULL)
 		return 0;
-	return hapd->driver->set_dtim_period(hapd->driver, value);
+	return hapd->driver->set_dtim_period(hapd->conf->iface, hapd->driver,
+					     value);
 }
 
 static inline int
@@ -485,14 +563,67 @@ hostapd_set_tx_queue_params(struct hostapd_data *hapd, int queue, int aifs,
 }
 
 static inline int
+hostapd_bss_add(struct hostapd_data *hapd, const char *ifname, const u8 *bssid)
+{
+	if (hapd->driver == NULL || hapd->driver->bss_add == NULL)
+		return 0;
+	return hapd->driver->bss_add(hapd->driver, ifname, bssid);
+}
+
+static inline int
+hostapd_bss_remove(struct hostapd_data *hapd, const char *ifname)
+{
+	if (hapd->driver == NULL || hapd->driver->bss_remove == NULL)
+		return 0;
+	return hapd->driver->bss_remove(hapd->driver, ifname);
+}
+
+static inline int
+hostapd_valid_bss_mask(struct hostapd_data *hapd, const u8 *addr,
+		       const u8 *mask)
+{
+	if (hapd->driver == NULL || hapd->driver->valid_bss_mask == NULL)
+		return 1;
+	return hapd->driver->valid_bss_mask(hapd->driver, addr, mask);
+}
+
+static inline int
+hostapd_if_add(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+	       char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_add == NULL)
+		return -1;
+	return hapd->driver->if_add(hapd->conf->iface, hapd->driver, type,
+				    ifname, addr);
+}
+
+static inline int
+hostapd_if_update(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+		  char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_update == NULL)
+		return -1;
+	return hapd->driver->if_update(hapd->driver, type, ifname, addr);
+}
+
+static inline int
+hostapd_if_remove(struct hostapd_data *hapd, enum hostapd_driver_if_type type,
+		  char *ifname, const u8 *addr)
+{
+	if (hapd->driver == NULL || hapd->driver->if_remove == NULL)
+		return -1;
+	return hapd->driver->if_remove(hapd->driver, type, ifname, addr);
+}
+
+static inline int
 hostapd_passive_scan(struct hostapd_data *hapd, int now, int our_mode_only,
-		     int interval, int listen, int *channel,
+		     int interval, int _listen, int *channel,
 		     int *last_rx)
 {
 	if (hapd->driver == NULL || hapd->driver->passive_scan == NULL)
 		return -1;
 	return hapd->driver->passive_scan(hapd->driver, now, our_mode_only,
-					  interval, listen, channel, last_rx);
+					  interval, _listen, channel, last_rx);
 }
 
 static inline struct hostapd_hw_modes *
@@ -512,6 +643,14 @@ hostapd_set_sta_vlan(const char *ifname, struct hostapd_data *hapd,
 	if (hapd->driver == NULL || hapd->driver->set_sta_vlan == NULL)
 		return 0;
 	return hapd->driver->set_sta_vlan(hapd->driver, addr, ifname, vlan_id);
+}
+
+static inline int
+hostapd_driver_commit(struct hostapd_data *hapd)
+{
+	if (hapd->driver == NULL || hapd->driver->commit == NULL)
+		return 0;
+	return hapd->driver->commit(hapd->driver);
 }
 
 #endif /* DRIVER_H */

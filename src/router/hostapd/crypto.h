@@ -183,7 +183,7 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len);
  * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
  * to implement this.
  */
-int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len);
+int crypto_hash_finish(struct crypto_hash *ctx, u8 *hash, size_t *len);
 
 
 enum crypto_cipher_alg {
@@ -252,12 +252,13 @@ void crypto_cipher_deinit(struct crypto_cipher *ctx);
 
 
 struct crypto_public_key;
+struct crypto_private_key;
 
 /**
  * crypto_public_key_import - Import an RSA public key
  * @key: Key buffer (DER encoded RSA public key)
  * @len: Key buffer length in bytes
- * Returns: Pointer to public key or %NULL on failure
+ * Returns: Pointer to the public key or %NULL on failure
  *
  * This function can just return %NULL if the crypto library supports X.509
  * parsing. In that case, crypto_public_key_from_cert() is used to import the
@@ -268,6 +269,19 @@ struct crypto_public_key;
  * to implement this.
  */
 struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len);
+
+/**
+ * crypto_private_key_import - Import an RSA private key
+ * @key: Key buffer (DER encoded RSA private key)
+ * @len: Key buffer length in bytes
+ * Returns: Pointer to the private key or %NULL on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+struct crypto_private_key * crypto_private_key_import(const u8 *key,
+						      size_t len);
 
 /**
  * crypto_public_key_from_cert - Import an RSA public key from a certificate
@@ -304,6 +318,23 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 					u8 *out, size_t *outlen);
 
 /**
+ * crypto_private_key_sign_pkcs1 - Sign with private key (PKCS #1)
+ * @key: Private key from crypto_private_key_import()
+ * @in: Plaintext buffer
+ * @inlen: Length of plaintext buffer in bytes
+ * @out: Output buffer for encrypted (signed) data
+ * @outlen: Length of output buffer in bytes; set to used length on success
+ * Returns: 0 on success, -1 on failure
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
+				  const u8 *in, size_t inlen,
+				  u8 *out, size_t *outlen);
+
+/**
  * crypto_public_key_free - Free public key
  * @key: Public key
  *
@@ -313,6 +344,28 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
  */
 void crypto_public_key_free(struct crypto_public_key *key);
 
+/**
+ * crypto_private_key_free - Free private key
+ * @key: Private key from crypto_private_key_import()
+ *
+ * This function is only used with internal TLSv1 implementation
+ * (CONFIG_TLS=internal). If that is not used, the crypto wrapper does not need
+ * to implement this.
+ */
+void crypto_private_key_free(struct crypto_private_key *key);
+
+/**
+ * crypto_public_key_decrypt_pkcs1 - Decrypt PKCS #1 signature
+ * @key: Public key
+ * @crypt: Encrypted signature data (using the private key)
+ * @crypt_len: Encrypted signature data length
+ * @plain: Buffer for plaintext (at least crypt_len bytes)
+ * @plain_len: Plaintext length (max buffer size on input, real len on output);
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
+				    const u8 *crypt, size_t crypt_len,
+				    u8 *plain, size_t *plain_len);
 
 /**
  * crypto_global_init - Initialize crypto wrapper
@@ -340,6 +393,8 @@ void crypto_global_deinit(void);
  * @power_len: Length of power integer in bytes
  * @modulus: Modulus integer (big endian byte array)
  * @modulus_len: Length of modulus integer in bytes
+ * @result: Buffer for the result
+ * @result_len: Result length (max buffer size on input, real len on output)
  * Returns: 0 on success, -1 on failure
  *
  * This function calculates result = base ^ power mod modulus. modules_len is

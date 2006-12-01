@@ -17,7 +17,6 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "tls.h"
 
@@ -125,10 +124,13 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 	os_free(data->key_data);
 	data->key_data = eap_tls_derive_key(sm, &data->ssl,
 					    "client EAP encryption",
-					    EAP_TLS_KEY_LEN);
+					    EAP_TLS_KEY_LEN + EAP_EMSK_LEN);
 	if (data->key_data) {
 		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived key",
 				data->key_data, EAP_TLS_KEY_LEN);
+		wpa_hexdump_key(MSG_DEBUG, "EAP-TLS: Derived EMSK",
+				data->key_data + EAP_TLS_KEY_LEN,
+				EAP_EMSK_LEN);
 	} else {
 		wpa_printf(MSG_INFO, "EAP-TLS: Failed to derive key");
 	}
@@ -240,6 +242,25 @@ static u8 * eap_tls_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_tls_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_tls_data *data = priv;
+	u8 *key;
+
+	if (data->key_data == NULL)
+		return NULL;
+
+	key = os_malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+	os_memcpy(key, data->key_data + EAP_TLS_KEY_LEN, EAP_EMSK_LEN);
+
+	return key;
+}
+
+
 int eap_peer_tls_register(void)
 {
 	struct eap_method *eap;
@@ -259,6 +280,7 @@ int eap_peer_tls_register(void)
 	eap->has_reauth_data = eap_tls_has_reauth_data;
 	eap->deinit_for_reauth = eap_tls_deinit_for_reauth;
 	eap->init_for_reauth = eap_tls_init_for_reauth;
+	eap->get_emsk = eap_tls_get_emsk;
 
 	ret = eap_peer_method_register(eap);
 	if (ret)
