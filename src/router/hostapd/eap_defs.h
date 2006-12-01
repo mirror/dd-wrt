@@ -55,14 +55,14 @@ typedef enum {
 	EAP_TYPE_MSCHAPV2 = 26 /* draft-kamath-pppext-eap-mschapv2-00.txt */,
 	EAP_TYPE_TLV = 33 /* draft-josefsson-pppext-eap-tls-eap-07.txt */,
 	EAP_TYPE_FAST = 43 /* draft-cam-winget-eap-fast-00.txt */,
-	EAP_TYPE_PAX = 46, /* draft-clancy-eap-pax-04.txt */
+	EAP_TYPE_PAX = 46, /* draft-clancy-eap-pax-11.txt */
 	EAP_TYPE_EXPANDED = 254 /* RFC 3748 */,
 	EAP_TYPE_PSK = 255 /* EXPERIMENTAL - type not yet allocated
 			    * draft-bersani-eap-psk-09 */,
 	EAP_TYPE_SAKE = 255 /* EXPERIMENTAL - type not yet allocated
 			     * draft-vanderveen-eap-sake-01 */,
 	EAP_TYPE_GPSK = 255 /* EXPERIMENTAL - type not yet allocated
-			     * draft-clancy-emu-eap-shared-secret-00.txt */
+			     * draft-ietf-emu-eap-gpsk-01.txt */
 } EapType;
 
 

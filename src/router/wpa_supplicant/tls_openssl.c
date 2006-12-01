@@ -313,8 +313,7 @@ static const CERT_CONTEXT * cryptoapi_find_cert(const char *name, DWORD store)
 
 	if (strncmp(name, "cert://", 7) == 0) {
 		unsigned short wbuf[255];
-		MultiByteToWideChar(CP_ACP, 0, name + 7, -1,
-				    wbuf, sizeof(wbuf));
+		MultiByteToWideChar(CP_ACP, 0, name + 7, -1, wbuf, 255);
 		ret = CertFindCertificateInStore(cs, X509_ASN_ENCODING |
 						 PKCS_7_ASN_ENCODING,
 						 0, CERT_FIND_SUBJECT_STR,
@@ -944,53 +943,68 @@ int tls_connection_shutdown(void *ssl_ctx, struct tls_connection *conn)
 }
 
 
-static int tls_match_altsubject(X509 *cert, const char *match)
+static int tls_match_altsubject_component(X509 *cert, int type,
+					  const char *value, size_t len)
 {
 	GENERAL_NAME *gen;
-	char *field, *tmp;
 	void *ext;
 	int i, found = 0;
-	size_t len;
 
 	ext = X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
 
 	for (i = 0; ext && i < sk_GENERAL_NAME_num(ext); i++) {
 		gen = sk_GENERAL_NAME_value(ext, i);
-		switch (gen->type) {
-		case GEN_EMAIL:
-			field = "EMAIL";
-			break;
-		case GEN_DNS:
-			field = "DNS";
-			break;
-		case GEN_URI:
-			field = "URI";
-			break;
-		default:
-			field = NULL;
-			wpa_printf(MSG_DEBUG, "TLS: altSubjectName: "
-				   "unsupported type=%d", gen->type);
-			break;
-		}
-
-		if (!field)
+		if (gen->type != type)
 			continue;
-
-		wpa_printf(MSG_DEBUG, "TLS: altSubjectName: %s:%s",
-			   field, gen->d.ia5->data);
-		len = os_strlen(field) + 1 +
-			os_strlen((char *) gen->d.ia5->data) + 1;
-		tmp = os_malloc(len);
-		if (tmp == NULL)
-			continue;
-		os_snprintf(tmp, len, "%s:%s", field, gen->d.ia5->data);
-		tmp[len - 1] = '\0';
-		if (os_strstr(tmp, match))
+		if (os_strlen((char *) gen->d.ia5->data) == len &&
+		    os_memcmp(value, gen->d.ia5->data, len) == 0)
 			found++;
-		os_free(tmp);
 	}
 
 	return found;
+}
+
+
+static int tls_match_altsubject(X509 *cert, const char *match)
+{
+	int type;
+	const char *pos, *end;
+	size_t len;
+
+	pos = match;
+	do {
+		if (os_strncmp(pos, "EMAIL:", 6) == 0) {
+			type = GEN_EMAIL;
+			pos += 6;
+		} else if (os_strncmp(pos, "DNS:", 4) == 0) {
+			type = GEN_DNS;
+			pos += 4;
+		} else if (os_strncmp(pos, "URI:", 4) == 0) {
+			type = GEN_URI;
+			pos += 4;
+		} else {
+			wpa_printf(MSG_INFO, "TLS: Invalid altSubjectName "
+				   "match '%s'", pos);
+			return 0;
+		}
+		end = os_strchr(pos, ';');
+		while (end) {
+			if (os_strncmp(end + 1, "EMAIL:", 6) == 0 ||
+			    os_strncmp(end + 1, "DNS:", 4) == 0 ||
+			    os_strncmp(end + 1, "URI:", 4) == 0)
+				break;
+			end = os_strchr(end + 1, ';');
+		}
+		if (end)
+			len = end - pos;
+		else
+			len = os_strlen(pos);
+		if (tls_match_altsubject_component(cert, type, pos, len) > 0)
+			return 1;
+		pos = end + 1;
+	} while (end);
+
+	return 0;
 }
 
 

@@ -51,6 +51,11 @@ struct ctrl_iface_priv {
 };
 
 
+static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
+					   int level, const char *buf,
+					   size_t len);
+
+
 static int wpa_supplicant_ctrl_iface_attach(struct ctrl_iface_priv *priv,
 					    struct sockaddr_in *from,
 					    socklen_t fromlen)
@@ -252,6 +257,16 @@ static void wpa_supplicant_ctrl_iface_receive(int sock, void *eloop_ctx,
 }
 
 
+static void wpa_supplicant_ctrl_iface_msg_cb(void *ctx, int level,
+					     const char *txt, size_t len)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	if (wpa_s == NULL || wpa_s->ctrl_iface == NULL)
+		return;
+	wpa_supplicant_ctrl_iface_send(wpa_s->ctrl_iface, level, txt, len);
+}
+
+
 struct ctrl_iface_priv *
 wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 {
@@ -285,6 +300,7 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 
 	eloop_register_read_sock(priv->sock, wpa_supplicant_ctrl_iface_receive,
 				 wpa_s, priv);
+	wpa_msg_register_cb(wpa_supplicant_ctrl_iface_msg_cb);
 
 	return priv;
 
@@ -326,8 +342,9 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 }
 
 
-void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
-				    const char *buf, size_t len)
+static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
+					   int level, const char *buf,
+					   size_t len)
 {
 	struct wpa_ctrl_dst *dst, *next;
 	char levelstr[10];

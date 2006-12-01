@@ -1,6 +1,6 @@
 /*
  * hostapd - Authenticator for IEEE 802.11i RSN pre-authentication
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -23,9 +23,12 @@
 #include "sta_info.h"
 #include "wpa_common.h"
 #include "eapol_sm.h"
-#include "hostap_common.h"
 #include "wpa.h"
+#include "preauth.h"
 
+#ifndef ETH_P_PREAUTH
+#define ETH_P_PREAUTH 0x88C7 /* IEEE 802.11i pre-authentication */
+#endif /* ETH_P_PREAUTH */
 
 static const int dot11RSNAConfigPMKLifetime = 43200;
 
@@ -205,12 +208,18 @@ void rsn_preauth_finished(struct hostapd_data *hapd, struct sta_info *sta,
 
 	key = ieee802_1x_get_key_crypt(sta->eapol_sm, &len);
 	if (success && key) {
-		if (wpa_auth_pmksa_add(sta->wpa_sm, key,
-				       dot11RSNAConfigPMKLifetime,
-				       sta->eapol_sm) == 0) {
+		if (wpa_auth_pmksa_add_preauth(hapd->wpa_auth, key, len,
+					       sta->addr,
+					       dot11RSNAConfigPMKLifetime,
+					       sta->eapol_sm) == 0) {
 			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
 				       HOSTAPD_LEVEL_DEBUG,
 				       "added PMKSA cache entry (pre-auth)");
+		} else {
+			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
+				       HOSTAPD_LEVEL_DEBUG,
+				       "failed to add PMKSA cache entry "
+				       "(pre-auth)");
 		}
 	}
 

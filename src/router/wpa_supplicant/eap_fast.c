@@ -17,7 +17,6 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "tls.h"
 #include "eap_tlv.h"
@@ -113,6 +112,7 @@ struct eap_fast_data {
 	int provisioning; /* doing PAC provisioning (not the normal auth) */
 
 	u8 key_data[EAP_FAST_KEY_LEN];
+	u8 emsk[EAP_EMSK_LEN];
 	int success;
 
 	struct eap_fast_pac *pac;
@@ -406,6 +406,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 			os_memcpy(pac->pac_key, key, EAP_FAST_PAC_KEY_LEN);
 			os_free(key);
 		} else if (pac && os_strcmp(buf, "PAC-Opaque") == 0) {
+			os_free(pac->pac_opaque);
 			pac->pac_opaque =
 				eap_fast_parse_hex(pos, &pac->pac_opaque_len);
 			if (pac->pac_opaque == NULL) {
@@ -416,6 +417,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				break;
 			}
 		} else if (pac && os_strcmp(buf, "A-ID") == 0) {
+			os_free(pac->a_id);
 			pac->a_id = eap_fast_parse_hex(pos, &pac->a_id_len);
 			if (pac->a_id == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: Invalid "
@@ -424,6 +426,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				break;
 			}
 		} else if (pac && os_strcmp(buf, "I-ID") == 0) {
+			os_free(pac->i_id);
 			pac->i_id = eap_fast_parse_hex(pos, &pac->i_id_len);
 			if (pac->i_id == NULL) {
 				wpa_printf(MSG_INFO, "EAP-FAST: Invalid "
@@ -432,6 +435,7 @@ static int eap_fast_load_pac(struct eap_sm *sm, struct eap_fast_data *data,
 				break;
 			}
 		} else if (pac && os_strcmp(buf, "A-ID-Info") == 0) {
+			os_free(pac->a_id_info);
 			pac->a_id_info =
 				eap_fast_parse_hex(pos, &pac->a_id_info_len);
 			if (pac->a_id_info == NULL) {
@@ -545,8 +549,10 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 	pac = data->pac;
 	while (pac) {
 		ret = os_snprintf(pos, buf + buf_len - pos, "START\n");
-		if (ret < 0 || ret >= buf + buf_len - pos)
+		if (ret < 0 || ret >= buf + buf_len - pos) {
+			os_free(buf);
 			return -1;
+		}
 		pos += ret;
 		eap_fast_write(&buf, &pos, &buf_len, "PAC-Key", pac->pac_key,
 			       EAP_FAST_PAC_KEY_LEN, 0);
@@ -560,18 +566,19 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 			       pac->i_id_len, 1);
 		eap_fast_write(&buf, &pos, &buf_len, "A-ID-Info",
 			       pac->a_id_info, pac->a_id_info_len, 1);
-		ret = os_snprintf(pos, buf + buf_len - pos, "END\n");
-		if (ret < 0 || ret >= buf + buf_len - pos)
-			return -1;
-		pos += ret;
-		count++;
-		pac = pac->next;
-
 		if (buf == NULL) {
 			wpa_printf(MSG_DEBUG, "EAP-FAST: No memory for PAC "
 				   "data");
 			return -1;
 		}
+		ret = os_snprintf(pos, buf + buf_len - pos, "END\n");
+		if (ret < 0 || ret >= buf + buf_len - pos) {
+			os_free(buf);
+			return -1;
+		}
+		pos += ret;
+		count++;
+		pac = pac->next;
 	}
 
 	if (os_strncmp(pac_file, "blob://", 7) == 0) {
@@ -586,7 +593,8 @@ static int eap_fast_save_pac(struct eap_sm *sm, struct eap_fast_data *data,
 		buf = NULL;
 		blob->name = os_strdup(pac_file + 7);
 		if (blob->name == NULL) {
-			wpa_config_free_blob(blob);
+			os_free(blob->data);
+			os_free(blob);
 			return -1;
 		}
 		eap_set_config_blob(sm, blob);
@@ -838,6 +846,11 @@ static int eap_fast_derive_msk(struct eap_fast_data *data)
 
 	wpa_hexdump_key(MSG_DEBUG, "EAP-FAST: Derived key (MSK)",
 			data->key_data, EAP_FAST_KEY_LEN);
+
+	sha1_t_prf(imck, 40, "Extended Session Key Generating Function",
+		   (u8 *) "", 0, data->emsk, EAP_EMSK_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-FAST: Derived key (EMSK)",
+			data->emsk, EAP_EMSK_LEN);
 
 	data->success = 1;
 
@@ -1204,7 +1217,7 @@ static u8 * eap_fast_tlv_eap_payload(u8 *buf, size_t *len)
 static u8 * eap_fast_process_crypto_binding(
 	struct eap_sm *sm, struct eap_fast_data *data,
 	struct eap_method_ret *ret,
-	struct eap_tlv_crypto_binding__tlv *bind, size_t bind_len,
+	struct eap_tlv_crypto_binding__tlv *_bind, size_t bind_len,
 	size_t *resp_len, int final)
 {
 	u8 *resp, *sks = NULL;
@@ -1216,20 +1229,20 @@ static u8 * eap_fast_process_crypto_binding(
 
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Crypto-Binding TLV: Version %d "
 		   "Received Version %d SubType %d",
-		   bind->version, bind->received_version, bind->subtype);
+		   _bind->version, _bind->received_version, _bind->subtype);
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: NONCE",
-		    bind->nonce, sizeof(bind->nonce));
+		    _bind->nonce, sizeof(_bind->nonce));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Compound MAC",
-		    bind->compound_mac, sizeof(bind->compound_mac));
+		    _bind->compound_mac, sizeof(_bind->compound_mac));
 
-	if (bind->version != EAP_FAST_VERSION ||
-	    bind->received_version != EAP_FAST_VERSION ||
-	    bind->subtype != EAP_TLV_CRYPTO_BINDING_SUBTYPE_REQUEST) {
+	if (_bind->version != EAP_FAST_VERSION ||
+	    _bind->received_version != EAP_FAST_VERSION ||
+	    _bind->subtype != EAP_TLV_CRYPTO_BINDING_SUBTYPE_REQUEST) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Invalid version/subtype in "
 			   "Crypto-Binding TLV: Version %d "
 			   "Received Version %d SubType %d",
-			   bind->version, bind->received_version,
-			   bind->subtype);
+			   _bind->version, _bind->received_version,
+			   _bind->subtype);
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
 					   resp_len);
 		return resp;
@@ -1289,21 +1302,21 @@ static u8 * eap_fast_process_crypto_binding(
 	cmk = imck + 40;
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-FAST: CMK", cmk, 20);
 
-	os_memcpy(cmac, bind->compound_mac, sizeof(cmac));
-	os_memset(bind->compound_mac, 0, sizeof(cmac));
+	os_memcpy(cmac, _bind->compound_mac, sizeof(cmac));
+	os_memset(_bind->compound_mac, 0, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Crypto-Binding TLV for Compound "
-		    "MAC calculation", (u8 *) bind, bind_len);
-	hmac_sha1(cmk, 20, (u8 *) bind, bind_len, bind->compound_mac);
-	res = os_memcmp(cmac, bind->compound_mac, sizeof(cmac));
+		    "MAC calculation", (u8 *) _bind, bind_len);
+	hmac_sha1(cmk, 20, (u8 *) _bind, bind_len, _bind->compound_mac);
+	res = os_memcmp(cmac, _bind->compound_mac, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Received Compound MAC",
 		    cmac, sizeof(cmac));
 	wpa_hexdump(MSG_MSGDUMP, "EAP-FAST: Calculated Compound MAC",
-		    bind->compound_mac, sizeof(cmac));
+		    _bind->compound_mac, sizeof(cmac));
 	if (res != 0) {
 		wpa_printf(MSG_INFO, "EAP-FAST: Compound MAC did not match");
 		resp = eap_fast_tlv_result(EAP_TLV_RESULT_FAILURE, 1,
 					   resp_len);
-		os_memcpy(bind->compound_mac, cmac, sizeof(cmac));
+		os_memcpy(_bind->compound_mac, cmac, sizeof(cmac));
 		return resp;
 	}
 
@@ -1336,10 +1349,10 @@ static u8 * eap_fast_process_crypto_binding(
 	rbind->length = host_to_be16(sizeof(*rbind) -
 				     sizeof(struct eap_tlv_hdr));
 	rbind->version = EAP_FAST_VERSION;
-	rbind->received_version = bind->version;
+	rbind->received_version = _bind->version;
 	rbind->subtype = EAP_TLV_CRYPTO_BINDING_SUBTYPE_RESPONSE;
-	os_memcpy(rbind->nonce, bind->nonce, sizeof(bind->nonce));
-	inc_byte_array(rbind->nonce, sizeof(bind->nonce));
+	os_memcpy(rbind->nonce, _bind->nonce, sizeof(_bind->nonce));
+	inc_byte_array(rbind->nonce, sizeof(rbind->nonce));
 	hmac_sha1(cmk, 20, (u8 *) rbind, sizeof(*rbind), rbind->compound_mac);
 
 	wpa_printf(MSG_DEBUG, "EAP-FAST: Reply Crypto-Binding TLV: Version %d "
@@ -1853,16 +1866,16 @@ static u8 * eap_fast_process(struct eap_sm *sm, void *priv,
 		} else if (data->current_pac) {
 			u8 *tlv;
 			size_t tlv_len, olen;
-			struct eap_tlv_hdr *hdr;
+			struct eap_tlv_hdr *ehdr;
 			olen = data->current_pac->pac_opaque_len;
-			tlv_len = sizeof(*hdr) + olen;
+			tlv_len = sizeof(*ehdr) + olen;
 			tlv = os_malloc(tlv_len);
 			if (tlv) {
-				hdr = (struct eap_tlv_hdr *) tlv;
-				hdr->tlv_type =
+				ehdr = (struct eap_tlv_hdr *) tlv;
+				ehdr->tlv_type =
 					host_to_be16(PAC_TYPE_PAC_OPAQUE);
-				hdr->length = host_to_be16(olen);
-				os_memcpy(hdr + 1,
+				ehdr->length = host_to_be16(olen);
+				os_memcpy(ehdr + 1,
 					  data->current_pac->pac_opaque, olen);
 			}
 			if (tlv == NULL ||
@@ -2023,6 +2036,25 @@ static u8 * eap_fast_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_fast_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_fast_data *data = priv;
+	u8 *key;
+
+	if (!data->success)
+		return NULL;
+
+	key = os_malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+	os_memcpy(key, data->emsk, EAP_EMSK_LEN);
+
+	return key;
+}
+
+
 int eap_peer_fast_register(void)
 {
 	struct eap_method *eap;
@@ -2044,6 +2076,7 @@ int eap_peer_fast_register(void)
 	eap->deinit_for_reauth = eap_fast_deinit_for_reauth;
 	eap->init_for_reauth = eap_fast_init_for_reauth;
 #endif
+	eap->get_emsk = eap_fast_get_emsk;
 
 	ret = eap_peer_method_register(eap);
 	if (ret)

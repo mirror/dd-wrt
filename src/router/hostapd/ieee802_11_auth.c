@@ -1,6 +1,6 @@
 /*
  * hostapd / IEEE 802.11 authentication (ACL)
- * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2003-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,7 +22,6 @@
 #include "radius.h"
 #include "radius_client.h"
 #include "eloop.h"
-#include "hostap_common.h"
 
 #define RADIUS_ACL_TIMEOUT 30
 
@@ -456,6 +455,17 @@ void hostapd_acl_deinit(struct hostapd_data *hapd)
 		query = query->next;
 		hostapd_acl_query_free(prev);
 	}
+}
+
+
+int hostapd_acl_reconfig(struct hostapd_data *hapd,
+			 struct hostapd_config *oldconf)
+{
+	if (!hapd->radius_client_reconfigured)
+		return 0;
+
+	hostapd_acl_deinit(hapd);
+	return hostapd_acl_init(hapd);
 }
 
 #endif /* CONFIG_NATIVE_WINDOWS */

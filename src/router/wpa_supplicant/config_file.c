@@ -19,13 +19,25 @@
 #include "includes.h"
 
 #include "common.h"
-#include "wpa.h"
-#include "wpa_supplicant.h"
 #include "config.h"
 #include "base64.h"
 #include "eap_methods.h"
 
 
+/**
+ * wpa_config_get_line - Read the next configuration file line
+ * @s: Buffer for the line
+ * @size: The buffer length
+ * @stream: File stream to read from
+ * @line: Pointer to a variable storing the file line number
+ * @_pos: Buffer for the pointer to the beginning of data on the text line or
+ * %NULL if not needed (returned value used instead)
+ * Returns: Pointer to the beginning of data on the text line or %NULL if no
+ * more text lines are available.
+ *
+ * This function reads the next non-empty line from the configuration file and
+ * removes comments. The returned string is guaranteed to be null-terminated.
+ */
 static char * wpa_config_get_line(char *s, int size, FILE *stream, int *line,
 				  char **_pos)
 {
@@ -36,14 +48,18 @@ static char * wpa_config_get_line(char *s, int size, FILE *stream, int *line,
 		s[size - 1] = '\0';
 		pos = s;
 
+		/* Skip white space from the beginning of line. */
 		while (*pos == ' ' || *pos == '\t' || *pos == '\r')
 			pos++;
-		if (*pos == '#' || *pos == '\n' || *pos == '\0' ||
-		    *pos == '\r')
+
+		/* Skip comment lines and empty lines */
+		if (*pos == '#' || *pos == '\n' || *pos == '\0')
 			continue;
 
-		/* Remove # comments unless they are within a double quoted
-		 * string. Remove trailing white space. */
+		/*
+		 * Remove # comments unless they are within a double quoted
+		 * string.
+		 */
 		sstart = os_strchr(pos, '"');
 		if (sstart)
 			sstart = os_strrchr(sstart + 1, '"');
@@ -54,11 +70,13 @@ static char * wpa_config_get_line(char *s, int size, FILE *stream, int *line,
 			*end-- = '\0';
 		else
 			end = pos + os_strlen(pos) - 1;
+
+		/* Remove trailing white space. */
 		while (end > pos &&
 		       (*end == '\n' || *end == ' ' || *end == '\t' ||
-			*end == '\r')) {
+			*end == '\r'))
 			*end-- = '\0';
-		}
+
 		if (*pos == '\0')
 			continue;
 
@@ -70,6 +88,39 @@ static char * wpa_config_get_line(char *s, int size, FILE *stream, int *line,
 	if (_pos)
 		*_pos = NULL;
 	return NULL;
+}
+
+
+static int wpa_config_validate_network(struct wpa_ssid *ssid, int line)
+{
+	int errors = 0;
+
+	if (ssid->passphrase) {
+		if (ssid->psk_set) {
+			wpa_printf(MSG_ERROR, "Line %d: both PSK and "
+				   "passphrase configured.", line);
+			errors++;
+		}
+		wpa_config_update_psk(ssid);
+	}
+
+	if ((ssid->key_mgmt & WPA_KEY_MGMT_PSK) && !ssid->psk_set) {
+		wpa_printf(MSG_ERROR, "Line %d: WPA-PSK accepted for key "
+			   "management, but no PSK configured.", line);
+		errors++;
+	}
+
+	if ((ssid->group_cipher & WPA_CIPHER_CCMP) &&
+	    !(ssid->pairwise_cipher & WPA_CIPHER_CCMP) &&
+	    !(ssid->pairwise_cipher & WPA_CIPHER_NONE)) {
+		/* Group cipher cannot be stronger than the pairwise cipher. */
+		wpa_printf(MSG_DEBUG, "Line %d: removed CCMP from group cipher"
+			   " list since it was not allowed for pairwise "
+			   "cipher", line);
+		ssid->group_cipher &= ~WPA_CIPHER_CCMP;
+	}
+
+	return errors;
 }
 
 
@@ -122,30 +173,7 @@ static struct wpa_ssid * wpa_config_read_network(FILE *f, int *line, int id)
 		errors++;
 	}
 
-	if (ssid->passphrase) {
-		if (ssid->psk_set) {
-			wpa_printf(MSG_ERROR, "Line %d: both PSK and "
-				   "passphrase configured.", *line);
-			errors++;
-		}
-		wpa_config_update_psk(ssid);
-	}
-
-	if ((ssid->key_mgmt & WPA_KEY_MGMT_PSK) && !ssid->psk_set) {
-		wpa_printf(MSG_ERROR, "Line %d: WPA-PSK accepted for key "
-			   "management, but no PSK configured.", *line);
-		errors++;
-	}
-
-	if ((ssid->group_cipher & WPA_CIPHER_CCMP) &&
-	    !(ssid->pairwise_cipher & WPA_CIPHER_CCMP) &&
-	    !(ssid->pairwise_cipher & WPA_CIPHER_NONE)) {
-		/* Group cipher cannot be stronger than the pairwise cipher. */
-		wpa_printf(MSG_DEBUG, "Line %d: removed CCMP from group cipher"
-			   " list since it was not allowed for pairwise "
-			   "cipher", *line);
-		ssid->group_cipher &= ~WPA_CIPHER_CCMP;
-	}
+	errors += wpa_config_validate_network(ssid, *line);
 
 	if (errors) {
 		wpa_config_free_ssid(ssid);
@@ -219,7 +247,7 @@ struct wpa_config * wpa_config_read(const char *name)
 	int errors = 0, line = 0;
 	struct wpa_ssid *ssid, *tail = NULL, *head = NULL;
 	struct wpa_config *config;
-	int id = 0, prio;
+	int id = 0;
 
 	config = wpa_config_alloc_empty(NULL, NULL);
 	if (config == NULL)
@@ -254,10 +282,10 @@ struct wpa_config * wpa_config_read(const char *name)
 				continue;
 			}
 		} else if (os_strncmp(pos, "blob-base64-", 12) == 0) {
-			char *name = pos + 12, *name_end;
+			char *bname = pos + 12, *name_end;
 			struct wpa_config_blob *blob;
 
-			name_end = os_strchr(name, '=');
+			name_end = os_strchr(bname, '=');
 			if (name_end == NULL) {
 				wpa_printf(MSG_ERROR, "Line %d: no blob name "
 					   "terminator", line);
@@ -266,10 +294,10 @@ struct wpa_config * wpa_config_read(const char *name)
 			}
 			*name_end = '\0';
 
-			blob = wpa_config_read_blob(f, &line, name);
+			blob = wpa_config_read_blob(f, &line, bname);
 			if (blob == NULL) {
 				wpa_printf(MSG_ERROR, "Line %d: failed to read"
-					   " blob %s", line, name);
+					   " blob %s", line, bname);
 				errors++;
 				continue;
 			}
@@ -373,17 +401,8 @@ struct wpa_config * wpa_config_read(const char *name)
 	fclose(f);
 
 	config->ssid = head;
-	for (prio = 0; prio < config->num_prio; prio++) {
-		ssid = config->pssid[prio];
-		wpa_printf(MSG_DEBUG, "Priority group %d",
-			   ssid->priority);
-		while (ssid) {
-			wpa_printf(MSG_DEBUG, "   id=%d ssid='%s'",
-				   ssid->id,
-				   wpa_ssid_txt(ssid->ssid, ssid->ssid_len));
-			ssid = ssid->pnext;
-		}
-	}
+	wpa_config_debug_dump_networks(config);
+
 	if (errors) {
 		wpa_config_free(config);
 		config = NULL;
@@ -566,6 +585,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	STR(nai);
 	STR(password);
 	STR(ca_cert);
+	STR(ca_path);
 	STR(client_cert);
 	STR(private_key);
 	STR(private_key_passwd);
@@ -573,6 +593,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	STR(subject_match);
 	STR(altsubject_match);
 	STR(ca_cert2);
+	STR(ca_path2);
 	STR(client_cert2);
 	STR(private_key2);
 	STR(private_key2_passwd);
@@ -601,6 +622,9 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT(proactive_key_caching);
 	INT(disabled);
 	INT(peerkey);
+#ifdef CONFIG_IEEE80211W
+	INT(ieee80211w);
+#endif /* CONFIG_IEEE80211W */
 	STR(id_str);
 
 #undef STR
@@ -623,22 +647,8 @@ static int wpa_config_write_blob(FILE *f, struct wpa_config_blob *blob)
 }
 
 
-int wpa_config_write(const char *name, struct wpa_config *config)
+static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 {
-	FILE *f;
-	struct wpa_ssid *ssid;
-	struct wpa_config_blob *blob;
-	int ret = 0;
-
-	wpa_printf(MSG_DEBUG, "Writing configuration file '%s'", name);
-
-
-	f = fopen(name, "w");
-	if (f == NULL) {
-		wpa_printf(MSG_DEBUG, "Failed to open '%s' for writing", name);
-		return -1;
-	}
-
 #ifdef CONFIG_CTRL_IFACE
 	if (config->ctrl_interface)
 		fprintf(f, "ctrl_interface=%s\n", config->ctrl_interface);
@@ -674,6 +684,25 @@ int wpa_config_write(const char *name, struct wpa_config *config)
 			config->dot11RSNAConfigSATimeout);
 	if (config->update_config)
 		fprintf(f, "update_config=%d\n", config->update_config);
+}
+
+
+int wpa_config_write(const char *name, struct wpa_config *config)
+{
+	FILE *f;
+	struct wpa_ssid *ssid;
+	struct wpa_config_blob *blob;
+	int ret = 0;
+
+	wpa_printf(MSG_DEBUG, "Writing configuration file '%s'", name);
+
+	f = fopen(name, "w");
+	if (f == NULL) {
+		wpa_printf(MSG_DEBUG, "Failed to open '%s' for writing", name);
+		return -1;
+	}
+
+	wpa_config_write_global(f, config);
 
 	for (ssid = config->ssid; ssid; ssid = ssid->next) {
 		fprintf(f, "\nnetwork={\n");

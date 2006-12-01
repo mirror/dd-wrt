@@ -292,6 +292,15 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_ssid *ssid,
 			break;
 		}
 
+#ifdef CONFIG_IEEE80211W
+		if (!(ie.capabilities & WPA_CAPABILITY_MGMT_FRAME_PROTECTION)
+		    && ssid->ieee80211w == IEEE80211W_REQUIRED) {
+			wpa_printf(MSG_DEBUG, "   skip RSN IE - no mgmt frame "
+				   "protection");
+			break;
+		}
+#endif /* CONFIG_IEEE80211W */
+
 		wpa_printf(MSG_DEBUG, "   selected based on RSN IE");
 		return 1;
 	}

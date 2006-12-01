@@ -860,6 +860,8 @@ void eapol_sm_step(struct eapol_sm *sm)
 		SM_STEP_RUN(SUPP_BE);
 		if (eap_sm_step(sm->eap))
 			sm->changed = TRUE;
+		if (!sm->changed)
+			break;
 	}
 
 	if (sm->changed) {

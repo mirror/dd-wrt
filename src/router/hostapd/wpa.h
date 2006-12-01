@@ -23,6 +23,7 @@
 #define PMKID_LEN 16
 
 #define WPA_CAPABILITY_PREAUTH BIT(0)
+#define WPA_CAPABILITY_MGMT_FRAME_PROTECTION BIT(6)
 #define WPA_CAPABILITY_PEERKEY_ENABLED BIT(9)
 
 struct wpa_eapol_key {
@@ -86,10 +87,16 @@ struct wpa_auth_config {
 	int wpa_strict_rekey;
 	int wpa_gmk_rekey;
 	int rsn_preauth;
-	int stakey;
 	int eapol_version;
 	int peerkey;
 	int wme_enabled;
+#ifdef CONFIG_IEEE80211W
+	enum {
+		WPA_NO_IEEE80211W = 0,
+		WPA_IEEE80211W_OPTIONAL = 1,
+		WPA_IEEE80211W_REQUIRED = 2
+	} ieee80211w;
+#endif /* CONFIG_IEEE80211W */
 };
 
 typedef enum {
@@ -113,9 +120,10 @@ struct wpa_auth_callbacks {
 	int (*get_eapol)(void *ctx, const u8 *addr, wpa_eapol_variable var);
 	const u8 * (*get_psk)(void *ctx, const u8 *addr, const u8 *prev_psk);
 	int (*get_pmk)(void *ctx, const u8 *addr, u8 *pmk, size_t *len);
-	int (*set_key)(void *ctx, const char *alg, const u8 *addr, int idx,
-		       u8 *key, size_t key_len);
+	int (*set_key)(void *ctx, int vlan_id, const char *alg, const u8 *addr,
+		       int idx, u8 *key, size_t key_len);
 	int (*get_seqnum)(void *ctx, const u8 *addr, int idx, u8 *seq);
+	int (*get_seqnum_igtk)(void *ctx, const u8 *addr, int idx, u8 *seq);
 	int (*send_eapol)(void *ctx, const u8 *addr, const u8 *data,
 			  size_t data_len, int encrypt);
 	int (*for_each_sta)(void *ctx, int (*cb)(struct wpa_state_machine *sm,
@@ -131,7 +139,8 @@ int wpa_reconfig(struct wpa_authenticator *wpa_auth,
 
 enum {
 	WPA_IE_OK, WPA_INVALID_IE, WPA_INVALID_GROUP, WPA_INVALID_PAIRWISE,
-	WPA_INVALID_AKMP, WPA_NOT_ENABLED, WPA_ALLOC_FAIL
+	WPA_INVALID_AKMP, WPA_NOT_ENABLED, WPA_ALLOC_FAIL,
+	WPA_MGMT_FRAME_PROTECTION_VIOLATION, WPA_INVALID_MGMT_GROUP_CIPHER
 };
 	
 int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
@@ -149,6 +158,7 @@ typedef enum {
 	WPA_AUTH, WPA_ASSOC, WPA_DISASSOC, WPA_DEAUTH, WPA_REAUTH,
 	WPA_REAUTH_EAPOL
 } wpa_event;
+void wpa_remove_ptk(struct wpa_state_machine *sm);
 void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event);
 void wpa_auth_sm_notify(struct wpa_state_machine *sm);
 void wpa_gtk_rekey(struct wpa_authenticator *wpa_auth);
@@ -167,5 +177,10 @@ const u8 * wpa_auth_get_wpa_ie(struct wpa_authenticator *wpa_auth,
 			       size_t *len);
 int wpa_auth_pmksa_add(struct wpa_state_machine *sm, const u8 *pmk,
 		       int session_timeout, struct eapol_state_machine *eapol);
+int wpa_auth_pmksa_add_preauth(struct wpa_authenticator *wpa_auth,
+			       const u8 *pmk, size_t len, const u8 *sta_addr,
+			       int session_timeout,
+			       struct eapol_state_machine *eapol);
+int wpa_auth_sta_set_vlan(struct wpa_state_machine *sm, int vlan_id);
 
 #endif /* WPA_H */

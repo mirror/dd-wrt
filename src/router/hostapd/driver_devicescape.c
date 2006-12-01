@@ -40,31 +40,7 @@
 #include <hostapd_ioctl.h>
 #include <net/d80211_common.h>
 #include <net/d80211_shared.h>
-
-
-/* from net/d80211.h */
-#define WLAN_FC_PVER		0x0003
-#define WLAN_FC_TODS		0x0100
-#define WLAN_FC_FROMDS		0x0200
-#define WLAN_FC_ISWEP		0x4000
-
-#define WLAN_FC_GET_TYPE(fc)	(((fc) & 0x000c) >> 2)
-#define WLAN_FC_GET_STYPE(fc)	(((fc) & 0x00f0) >> 4)
-
-#define WLAN_FC_TYPE_MGMT	0
-#define WLAN_FC_TYPE_CTRL	1
-#define WLAN_FC_TYPE_DATA	2
-
-#define WLAN_FC_STYPE_PROBE_REQ 4
-#define WLAN_FC_STYPE_BEACON		8
-#define WLAN_FC_STYPE_DISASSOC		10
-#define WLAN_FC_STYPE_DEAUTH		12
-
-#define WLAN_FC_STYPE_DATA		0
-#define WLAN_FC_STYPE_QOS_DATA		8
-
-/* from net/d80211_mgmt.h */
-#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA 7
+#include "mlme.h"
 
 
 struct i802_driver_data {
@@ -346,13 +322,14 @@ static int hostap_ioctl_get_prism2param(struct i802_driver_data *drv,
 }
 
 
-static int i802_set_ssid(void *priv, const u8 *buf, int len)
+static int i802_set_ssid(const char *ifname, void *priv, const u8 *buf,
+			 int len)
 {
 	struct i802_driver_data *drv = priv;
 	struct iwreq iwr;
 
 	memset(&iwr, 0, sizeof(iwr));
-	strncpy(iwr.ifr_name, drv->iface, IFNAMSIZ);
+	strncpy(iwr.ifr_name, ifname, IFNAMSIZ);
 	iwr.u.essid.flags = 1; /* SSID active */
 	iwr.u.essid.pointer = (caddr_t) buf;
 	iwr.u.essid.length = len;
@@ -582,7 +559,7 @@ static int i802_read_sta_data(void *priv, struct hostap_sta_driver_data *data,
 
 
 static int i802_send_eapol(void *priv, const u8 *addr, const u8 *data,
-			   size_t data_len, int encrypt)
+			   size_t data_len, int encrypt, const u8 *own_addr)
 {
 	struct i802_driver_data *drv = priv;
 	struct ieee80211_hdr *hdr;
@@ -617,8 +594,8 @@ static int i802_send_eapol(void *priv, const u8 *addr, const u8 *data,
 	}
 
 	memcpy(hdr->IEEE80211_DA_FROMDS, addr, ETH_ALEN);
-	memcpy(hdr->IEEE80211_BSSID_FROMDS, drv->hapd->own_addr, ETH_ALEN);
-	memcpy(hdr->IEEE80211_SA_FROMDS, drv->hapd->own_addr, ETH_ALEN);
+	memcpy(hdr->IEEE80211_BSSID_FROMDS, own_addr, ETH_ALEN);
+	memcpy(hdr->IEEE80211_SA_FROMDS, own_addr, ETH_ALEN);
 	pos = (u8 *) (hdr + 1);
 
 	if (qos) {
@@ -718,7 +695,8 @@ static int i802_sta_set_flags(void *priv, const u8 *addr,
 }
 
 
-static int i802_set_generic_elem(void *priv, const u8 *elem, size_t elem_len)
+static int i802_set_generic_elem(const char *ifname, void *priv,
+				 const u8 *elem, size_t elem_len)
 {
 	struct i802_driver_data *drv = priv;
 	struct prism2_hostapd_param *param;
@@ -736,7 +714,7 @@ static int i802_set_generic_elem(void *priv, const u8 *elem, size_t elem_len)
 	param->u.set_generic_info_elem.len = elem_len;
 	memcpy(param->u.set_generic_info_elem.data, elem, elem_len);
 
-	if (hostapd_ioctl(drv, param, blen)) {
+	if (hostapd_ioctl_iface(ifname, drv, param, blen)) {
 		printf("%s: Failed to set generic info element\n", drv->iface);
 		ret = -1;
 	}
@@ -821,6 +799,59 @@ static int i802_set_tx_queue_params(void *priv, int queue, int aifs,
 }
 
 
+static int i802_bss_add(void *priv, const char *ifname, const u8 *bssid)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = wpa_zalloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (param == NULL)
+		return -1;
+
+	param->cmd = PRISM2_HOSTAPD_ADD_IF;
+	param->u.if_info.type = HOSTAP_IF_BSS;
+	memcpy(param->u.if_info.data, bssid, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	if (hostapd_ioctl(drv, param,
+			  sizeof(struct prism2_hostapd_param) + ETH_ALEN)) {
+		printf("Could not add bss iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	free(param);
+
+	return 0;
+}
+
+
+static int i802_bss_remove(void *priv, const char *ifname)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+	int ret = 0;
+
+	param = wpa_zalloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (param == NULL)
+		return -1;
+
+	param->cmd = PRISM2_HOSTAPD_REMOVE_IF;
+	param->u.if_info.type = HOSTAP_IF_BSS;
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	if (hostapd_ioctl(drv, param,
+			  sizeof(struct prism2_hostapd_param) + ETH_ALEN)) {
+		printf("Could not remove iface: %s.\n", ifname);
+		ret = -1;
+	}
+
+	free(param);
+
+	return ret;
+}
+
+
 static int i802_set_beacon(const char *ifname, void *priv,
 			   u8 *head, size_t head_len,
 			   u8 *tail, size_t tail_len)
@@ -877,12 +908,21 @@ static int i802_set_ieee8021x(const char *ifname, void *priv, int enabled)
 }
 
 
-static int i802_set_privacy(void *priv, int enabled)
+static int i802_set_privacy(const char *ifname, void *priv, int enabled)
 {
 	struct i802_driver_data *drv = priv;
 
-	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_PRIVACY_INVOKED,
-					enabled);
+	return hostap_ioctl_prism2param_iface(ifname, drv,
+					      PRISM2_PARAM_PRIVACY_INVOKED,
+					      enabled);
+}
+
+
+static int i802_set_internal_bridge(void *priv, int value)
+{
+	struct i802_driver_data *drv = priv;
+	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_AP_BRIDGE_PACKETS,
+					value);
 }
 
 
@@ -893,10 +933,11 @@ static int i802_set_beacon_int(void *priv, int value)
 }
 
 
-static int i802_set_dtim_period(void *priv, int value)
+static int i802_set_dtim_period(const char *ifname, void *priv, int value)
 {
 	struct i802_driver_data *drv = priv;
-	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_DTIM_PERIOD, value);
+	return hostap_ioctl_prism2param_iface(ifname, drv,
+					      PRISM2_PARAM_DTIM_PERIOD, value);
 }
 
 
@@ -937,6 +978,113 @@ static int i802_set_short_slot_time(void *priv, int value)
 	struct i802_driver_data *drv = priv;
 	return hostap_ioctl_prism2param(drv, PRISM2_PARAM_SHORT_SLOT_TIME,
 					value);
+}
+
+
+static int i802_if_type(enum hostapd_driver_if_type type)
+{
+	switch (type) {
+	case HOSTAPD_IF_VLAN:
+		return HOSTAP_IF_VLAN;
+	case HOSTAPD_IF_WDS:
+		return HOSTAP_IF_WDS;
+	}
+	return -1;
+}
+
+
+static int i802_if_add(const char *iface, void *priv,
+		       enum hostapd_driver_if_type type, char *ifname,
+		       const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_ADD_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	/* FIX: should the size have + ETH_ALEN ? */
+	if (hostapd_ioctl_iface(iface, drv, param,
+				sizeof(struct prism2_hostapd_param))) {
+		printf("Could not add iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	snprintf(ifname, IFNAMSIZ, "%s", param->u.if_info.name);
+	free(param);
+	return 0;
+}
+
+
+static int i802_if_update(void *priv, enum hostapd_driver_if_type type,
+			  char *ifname, const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_UPDATE_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+
+	/* FIX: should the size have + ETH_ALEN ? */
+	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
+		printf("Could not update iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	snprintf(ifname, IFNAMSIZ, "%s", param->u.if_info.name);
+	free(param);
+	return 0;
+}
+
+
+static int i802_if_remove(void *priv, enum hostapd_driver_if_type type,
+			  const char *ifname, const u8 *addr)
+{
+	struct i802_driver_data *drv = priv;
+	struct prism2_hostapd_param *param;
+
+	param = malloc(sizeof(struct prism2_hostapd_param) + ETH_ALEN);
+	if (!param)
+		return -1;
+	memset(param, 0, sizeof(param));
+
+	param->cmd = PRISM2_HOSTAPD_REMOVE_IF;
+	param->u.if_info.type = i802_if_type(type);
+	if (addr)
+		memcpy(param->u.if_info.data, addr, ETH_ALEN);
+	else
+		memset(param->u.if_info.data, 0, ETH_ALEN);
+	snprintf((char *) param->u.if_info.name, IFNAMSIZ, "%s", ifname);
+	if (hostapd_ioctl(drv, param, sizeof(struct prism2_hostapd_param))) {
+		printf("Could not remove iface: %s.\n", ifname);
+		free(param);
+		return -1;
+	}
+
+	free(param);
+	return 0;
 }
 
 
@@ -1195,7 +1343,7 @@ static void hostapd_michael_mic_failure(struct hostapd_data *hapd, u8 *buf,
 
 	hdr = (struct ieee80211_hdr *) buf;
 
-	/* TODO: mlme_michaelmicfailure_indication(hapd, hdr->addr2); */
+	mlme_michaelmicfailure_indication(hapd, hdr->addr2);
 }
 
 
@@ -1206,7 +1354,8 @@ static void handle_frame(struct hostapd_iface *iface, u8 *buf, size_t len,
 	u16 fc, type, stype;
 	size_t data_len = len;
 	struct hostapd_data *hapd = NULL;
-	int i, broadcast_bssid = 0;
+	int broadcast_bssid = 0;
+	size_t i;
 	u8 *bssid;
 	int msg_type = ntohl(fi->msg_type);
 	struct hostapd_frame_info hfi;
@@ -1876,6 +2025,7 @@ static const struct driver_ops devicescape_driver_ops = {
 	.set_channel_flag = i802_set_channel_flag,
 	.set_regulatory_domain = i802_set_regulatory_domain,
 	.set_beacon = i802_set_beacon,
+	.set_internal_bridge = i802_set_internal_bridge,
 	.set_beacon_int = i802_set_beacon_int,
 	.set_dtim_period = i802_set_dtim_period,
 	.set_broadcast_ssid = i802_set_broadcast_ssid,
@@ -1884,6 +2034,11 @@ static const struct driver_ops devicescape_driver_ops = {
 	.set_preamble = i802_set_preamble,
 	.set_short_slot_time = i802_set_short_slot_time,
 	.set_tx_queue_params = i802_set_tx_queue_params,
+	.bss_add = i802_bss_add,
+	.bss_remove = i802_bss_remove,
+	.if_add = i802_if_add,
+	.if_update = i802_if_update,
+	.if_remove = i802_if_remove,
 	.get_hw_feature_data = i802_get_hw_feature_data,
 	.set_sta_vlan = i802_set_sta_vlan,
 };

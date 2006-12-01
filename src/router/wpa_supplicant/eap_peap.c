@@ -17,7 +17,6 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "tls.h"
 #include "eap_tlv.h"
@@ -611,15 +610,15 @@ continue_req:
 	if (resp) {
 		u8 *resp_pos;
 		size_t resp_send_len;
-		int skip_change = 0;
+		int skip_change2 = 0;
 
 		wpa_hexdump_key(MSG_DEBUG, "EAP-PEAP: Encrypting Phase 2 data",
 				resp, resp_len);
 		/* PEAP version changes */
 		if (resp_len >= 5 && resp[0] == EAP_CODE_RESPONSE &&
 		    resp[4] == EAP_TYPE_TLV)
-			skip_change = 1;
-		if (data->peap_version == 0 && !skip_change) {
+			skip_change2 = 1;
+		if (data->peap_version == 0 && !skip_change2) {
 			resp_pos = resp + sizeof(struct eap_hdr);
 			resp_send_len = resp_len - sizeof(struct eap_hdr);
 		} else {

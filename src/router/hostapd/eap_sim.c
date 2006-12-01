@@ -29,6 +29,7 @@ struct eap_sim_data {
 	u8 k_aut[EAP_SIM_K_AUT_LEN];
 	u8 k_encr[EAP_SIM_K_ENCR_LEN];
 	u8 msk[EAP_SIM_KEYING_DATA_LEN];
+	u8 emsk[EAP_EMSK_LEN];
 	u8 kc[EAP_SIM_MAX_CHAL][EAP_SIM_KC_LEN];
 	u8 sres[EAP_SIM_MAX_CHAL][EAP_SIM_SRES_LEN];
 	u8 rand[EAP_SIM_MAX_CHAL][GSM_RAND_LEN];
@@ -221,10 +222,11 @@ static u8 * eap_sim_build_reauth(struct eap_sm *sm,
 	wpa_hexdump_key(MSG_MSGDUMP, "EAP-SIM: NONCE_S",
 			data->nonce_s, EAP_SIM_NONCE_S_LEN);
 
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
+			    data->emsk);
 	eap_sim_derive_keys_reauth(data->counter, sm->identity,
 				   sm->identity_len, data->nonce_s, data->mk,
-				   data->msk);
+				   data->msk, data->emsk);
 
 	msg = eap_sim_msg_init(EAP_CODE_REQUEST, id, EAP_TYPE_SIM,
 			       EAP_SIM_SUBTYPE_REAUTHENTICATION);
@@ -425,7 +427,8 @@ static void eap_sim_process_start(struct eap_sm *sm,
 	eap_sim_derive_mk(sm->identity, sm->identity_len, attr->nonce_mt,
 			  attr->selected_version, ver_list, sizeof(ver_list),
 			  data->num_chal, (const u8 *) data->kc, data->mk);
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
+			    data->emsk);
 
 	eap_sim_state(data, CHALLENGE);
 }
@@ -641,6 +644,23 @@ static u8 * eap_sim_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_sim_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_sim_data *data = priv;
+	u8 *key;
+
+	if (data->state != SUCCESS)
+		return NULL;
+
+	key = malloc(EAP_EMSK_LEN);
+	if (key == NULL)
+		return NULL;
+	memcpy(key, data->emsk, EAP_EMSK_LEN);
+	*len = EAP_EMSK_LEN;
+	return key;
+}
+
+
 static Boolean eap_sim_isSuccess(struct eap_sm *sm, void *priv)
 {
 	struct eap_sim_data *data = priv;
@@ -666,6 +686,7 @@ int eap_server_sim_register(void)
 	eap->isDone = eap_sim_isDone;
 	eap->getKey = eap_sim_getKey;
 	eap->isSuccess = eap_sim_isSuccess;
+	eap->get_emsk = eap_sim_get_emsk;
 
 	ret = eap_server_method_register(eap);
 	if (ret)

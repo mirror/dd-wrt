@@ -25,7 +25,6 @@
 
 #include "common.h"
 #include "eap_i.h"
-#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "tls.h"
 #include "crypto.h"
@@ -276,6 +275,7 @@ SM_STATE(EAP, GET_METHOD)
 
 nak:
 	os_free(sm->eapRespData);
+	sm->eapRespData = NULL;
 	sm->eapRespData = eap_sm_buildNak(sm, sm->reqId, &sm->eapRespDataLen);
 }
 
@@ -318,6 +318,7 @@ SM_STATE(EAP, METHOD)
 	ret.decision = sm->decision;
 	ret.allowNotifications = sm->allowNotifications;
 	os_free(sm->eapRespData);
+	sm->eapRespData = NULL;
 	sm->eapRespData = sm->m->process(sm, sm->eap_method_priv, &ret,
 					 eapReqData, eapReqDataLen,
 					 &sm->eapRespDataLen);
@@ -393,6 +394,7 @@ SM_STATE(EAP, IDENTITY)
 	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
 	eap_sm_processIdentity(sm, eapReqData);
 	os_free(sm->eapRespData);
+	sm->eapRespData = NULL;
 	sm->eapRespData = eap_sm_buildIdentity(sm, sm->reqId,
 					       &sm->eapRespDataLen, 0);
 }
@@ -410,6 +412,7 @@ SM_STATE(EAP, NOTIFICATION)
 	eapReqData = eapol_get_eapReqData(sm, &eapReqDataLen);
 	eap_sm_processNotify(sm, eapReqData);
 	os_free(sm->eapRespData);
+	sm->eapRespData = NULL;
 	sm->eapRespData = eap_sm_buildNotify(sm->reqId, &sm->eapRespDataLen);
 }
 

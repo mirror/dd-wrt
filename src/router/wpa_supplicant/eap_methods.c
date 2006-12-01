@@ -119,7 +119,7 @@ size_t eap_get_names(char *buf, size_t buflen)
 
 /**
  * eap_get_names_as_string_array - Get supported EAP methods as string array
- * @len: Buffer for returning the number of items in array, not including %NULL
+ * @num: Buffer for returning the number of items in array, not including %NULL
  * terminator. This parameter can be %NULL if the length is not needed.
  * Returns: A %NULL-terminated array of strings, or %NULL on error.
  *
@@ -132,7 +132,7 @@ char ** eap_get_names_as_string_array(size_t *num)
 	struct eap_method *m;
 	size_t array_len = 0;
 	char **array;
-	int i = 0;
+	int i = 0, j;
 
 	for (m = eap_methods; m; m = m->next)
 		array_len++;
@@ -141,8 +141,15 @@ char ** eap_get_names_as_string_array(size_t *num)
 	if (array == NULL)
 		return NULL;
 
-	for (m = eap_methods; m; m = m->next)
+	for (m = eap_methods; m; m = m->next) {
 		array[i++] = os_strdup(m->name);
+		if (array[i - 1] == NULL) {
+			for (j = 0; j < i; j++)
+				os_free(array[j]);
+			os_free(array);
+			return NULL;
+		}
+	}
 	array[i] = NULL;
 
 	if (num)
@@ -233,10 +240,9 @@ int eap_peer_method_unload(struct eap_method *method)
 	m = eap_methods;
 	prev = NULL;
 	while (m) {
-		if (m == method) {
-			prev = m;
+		if (m == method)
 			break;
-		}
+		prev = m;
 		m = m->next;
 	}
 
@@ -268,7 +274,7 @@ int eap_peer_method_unload(struct eap_method *method)
  * EAP_PEER_METHOD_INTERFACE_VERSION)
  * @vendor: EAP Vendor-ID (EAP_VENDOR_*) (0 = IETF)
  * @method: EAP type number (EAP_TYPE_*)
- * name: Name of the method (e.g., "TLS")
+ * @name: Name of the method (e.g., "TLS")
  * Returns: Allocated EAP method structure or %NULL on failure
  *
  * The returned structure should be freed with eap_peer_method_free() when it

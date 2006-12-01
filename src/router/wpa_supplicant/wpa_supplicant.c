@@ -113,33 +113,6 @@ extern int wpa_debug_timestamp;
 
 static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx);
 
-#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
-void wpa_msg(struct wpa_supplicant *wpa_s, int level, char *fmt, ...)
-{
-	va_list ap;
-	char *buf;
-	const int buflen = 2048;
-	int len;
-
-	buf = os_malloc(buflen);
-	if (buf == NULL) {
-		wpa_printf(MSG_ERROR, "wpa_msg: Failed to allocate message "
-			   "buffer");
-		return;
-	}
-	va_start(ap, fmt);
-	len = vsnprintf(buf, buflen, fmt, ap);
-	va_end(ap);
-	wpa_printf(level, "%s", buf);
-	if (wpa_s->ctrl_iface) {
-		wpa_supplicant_ctrl_iface_send(wpa_s->ctrl_iface, level,
-					       buf, len);
-	}
-	os_free(buf);
-}
-#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
-
-
 #if defined(IEEE8021X_EAPOL) || !defined(CONFIG_NO_WPA)
 static u8 * wpa_alloc_eapol(const struct wpa_supplicant *wpa_s, u8 type,
 			    const void *data, u16 data_len,
@@ -508,37 +481,6 @@ void wpa_blacklist_clear(struct wpa_supplicant *wpa_s)
 
 
 /**
- * wpa_ssid_txt - Convert SSID to a printable string
- * @ssid: SSID (32-octet string)
- * @ssid_len: Length of ssid in octets
- * Returns: Pointer to a printable string
- *
- * This function can be used to convert SSIDs into printable form. In most
- * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
- * does not limit the used character set, so anything could be used in an SSID.
- *
- * This function uses a static buffer, so only one call can be used at the
- * time, i.e., this is not re-entrant and the returned buffer must be used
- * before calling this again.
- */
-const char * wpa_ssid_txt(u8 *ssid, size_t ssid_len)
-{
-	static char ssid_txt[MAX_SSID_LEN + 1];
-	char *pos;
-
-	if (ssid_len > MAX_SSID_LEN)
-		ssid_len = MAX_SSID_LEN;
-	os_memcpy(ssid_txt, ssid, ssid_len);
-	ssid_txt[ssid_len] = '\0';
-	for (pos = ssid_txt; *pos != '\0'; pos++) {
-		if ((u8) *pos < 32 || (u8) *pos >= 127)
-			*pos = '_';
-	}
-	return ssid_txt;
-}
-
-
-/**
  * wpa_supplicant_req_scan - Schedule a scan for neighboring access points
  * @wpa_s: Pointer to wpa_supplicant data
  * @sec: Number of seconds after which to scan
@@ -697,6 +639,7 @@ void wpa_supplicant_set_non_wpa_policy(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_assoc_wpa_ie(wpa_s->wpa, NULL, 0);
 	wpa_s->pairwise_cipher = WPA_CIPHER_NONE;
 	wpa_s->group_cipher = WPA_CIPHER_NONE;
+	wpa_s->mgmt_group_cipher = 0;
 
 	for (i = 0; i < NUM_WEP_KEYS; i++) {
 		if (ssid->wep_key_len[i] > 5) {
@@ -714,6 +657,10 @@ void wpa_supplicant_set_non_wpa_policy(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_PAIRWISE,
 			 wpa_s->pairwise_cipher);
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_GROUP, wpa_s->group_cipher);
+#ifdef CONFIG_IEEE80211W
+	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_MGMT_GROUP,
+			 wpa_s->mgmt_group_cipher);
+#endif /* CONFIG_IEEE80211W */
 
 	pmksa_cache_clear_current(wpa_s->wpa);
 }
@@ -905,6 +852,7 @@ static void wpa_supplicant_clear_status(struct wpa_supplicant *wpa_s)
 {
 	wpa_s->pairwise_cipher = 0;
 	wpa_s->group_cipher = 0;
+	wpa_s->mgmt_group_cipher = 0;
 	wpa_s->key_mgmt = 0;
 	wpa_s->wpa_state = WPA_DISCONNECTED;
 }
@@ -949,7 +897,7 @@ int wpa_supplicant_reload_configuration(struct wpa_supplicant *wpa_s)
 	/*
 	 * TODO: should notify EAPOL SM about changes in opensc_engine_path,
 	 * pkcs11_engine_path, pkcs11_module_path.
-	 */ 
+	 */
 	eapol_sm_notify_config(wpa_s->eapol, NULL, NULL);
 	wpa_sm_set_config(wpa_s->wpa, NULL);
 	wpa_sm_set_fast_reauth(wpa_s->wpa, wpa_s->conf->fast_reauth);
@@ -1177,6 +1125,16 @@ static int wpa_supplicant_suites_from_ai(struct wpa_supplicant *wpa_s,
 		return -1;
 	}
 
+#ifdef CONFIG_IEEE80211W
+	if (!(ie->capabilities & WPA_CAPABILITY_MGMT_FRAME_PROTECTION) &&
+	    ssid->ieee80211w == IEEE80211W_REQUIRED) {
+		wpa_msg(wpa_s, MSG_INFO, "WPA: Driver associated with an AP "
+			"that does not support management frame protection - "
+			"reject");
+		return -1;
+	}
+#endif /* CONFIG_IEEE80211W */
+
 	return 0;
 }
 
@@ -1230,6 +1188,11 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 			ie.group_cipher = ssid->group_cipher;
 			ie.pairwise_cipher = ssid->pairwise_cipher;
 			ie.key_mgmt = ssid->key_mgmt;
+#ifdef CONFIG_IEEE80211W
+			ie.mgmt_group_cipher =
+				ssid->ieee80211w != NO_IEEE80211W ?
+				WPA_CIPHER_AES_128_CMAC : 0;
+#endif /* CONFIG_IEEE80211W */
 			wpa_printf(MSG_DEBUG, "WPA: Set cipher suites based "
 				   "on configuration");
 		} else
@@ -1239,6 +1202,12 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_printf(MSG_DEBUG, "WPA: Selected cipher suites: group %d "
 		   "pairwise %d key_mgmt %d proto %d",
 		   ie.group_cipher, ie.pairwise_cipher, ie.key_mgmt, proto);
+#ifdef CONFIG_IEEE80211W
+	if (ssid->ieee80211w) {
+		wpa_printf(MSG_DEBUG, "WPA: Selected mgmt group cipher %d",
+			   ie.mgmt_group_cipher);
+	}
+#endif /* CONFIG_IEEE80211W */
 
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_PROTO, proto);
 
@@ -1302,6 +1271,23 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_PAIRWISE,
 			 wpa_s->pairwise_cipher);
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_GROUP, wpa_s->group_cipher);
+
+#ifdef CONFIG_IEEE80211W
+	sel = ie.mgmt_group_cipher;
+	if (ssid->ieee80211w == NO_IEEE80211W ||
+	    !(ie.capabilities & WPA_CAPABILITY_MGMT_FRAME_PROTECTION))
+		sel = 0;
+	if (sel & WPA_CIPHER_AES_128_CMAC) {
+		wpa_s->mgmt_group_cipher = WPA_CIPHER_AES_128_CMAC;
+		wpa_msg(wpa_s, MSG_DEBUG, "WPA: using MGMT group cipher "
+			"AES-128-CMAC");
+	} else {
+		wpa_s->mgmt_group_cipher = 0;
+		wpa_msg(wpa_s, MSG_DEBUG, "WPA: not using MGMT group cipher");
+	}
+	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_MGMT_GROUP,
+			 wpa_s->mgmt_group_cipher);
+#endif /* CONFIG_IEEE80211W */
 
 	if (wpa_sm_set_assoc_wpa_ie_default(wpa_s->wpa, wpa_ie, wpa_ie_len)) {
 		wpa_printf(MSG_WARNING, "WPA: Failed to generate WPA IE.");
@@ -1480,6 +1466,20 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	}
 	params.wep_tx_keyidx = ssid->wep_tx_keyidx;
 
+#ifdef CONFIG_IEEE80211W
+	switch (ssid->ieee80211w) {
+	case NO_IEEE80211W:
+		params.mgmt_frame_protection = NO_MGMT_FRAME_PROTECTION;
+		break;
+	case IEEE80211W_OPTIONAL:
+		params.mgmt_frame_protection = MGMT_FRAME_PROTECTION_OPTIONAL;
+		break;
+	case IEEE80211W_REQUIRED:
+		params.mgmt_frame_protection = MGMT_FRAME_PROTECTION_REQUIRED;
+		break;
+	}
+#endif /* CONFIG_IEEE80211W */
+
 	if (wpa_s->use_client_mlme)
 		ret = ieee80211_sta_associate(wpa_s, &params);
 	else
@@ -1504,9 +1504,9 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 		/* Timeout for IEEE 802.11 authentication and association */
 		int timeout;
 		if (assoc_failed)
-			timeout = 15;
+			timeout = 5;
 		else if (wpa_s->conf->ap_scan == 1)
-			timeout = 15;
+			timeout = 10;
 		else
 			timeout = 60;
 		wpa_supplicant_req_auth_timeout(wpa_s, timeout, 0);
@@ -1515,13 +1515,13 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 	if (wep_keys_set && wpa_drv_get_capa(wpa_s, &capa) == 0 &&
 	    capa.flags & WPA_DRIVER_FLAGS_SET_KEYS_AFTER_ASSOC) {
 		/* Set static WEP keys again */
-		int i;
-		for (i = 0; i < NUM_WEP_KEYS; i++) {
-			if (ssid->wep_key_len[i]) {
+		int j;
+		for (j = 0; j < NUM_WEP_KEYS; j++) {
+			if (ssid->wep_key_len[j]) {
 				wpa_set_wep_key(wpa_s,
-						i == ssid->wep_tx_keyidx,
-						i, ssid->wep_key[i],
-						ssid->wep_key_len[i]);
+						j == ssid->wep_tx_keyidx,
+						j, ssid->wep_key[j],
+						ssid->wep_key_len[j]);
 			}
 		}
 	}
@@ -1664,7 +1664,14 @@ static int wpa_get_beacon_ie(struct wpa_supplicant *wpa_s)
 	}
 
 	for (i = 0; i < wpa_s->num_scan_results; i++) {
-		if (os_memcmp(results[i].bssid, wpa_s->bssid, ETH_ALEN) == 0) {
+		struct wpa_ssid *ssid = wpa_s->current_ssid;
+		if (os_memcmp(results[i].bssid, wpa_s->bssid, ETH_ALEN) != 0)
+			continue;
+		if (ssid == NULL ||
+		    ((results[i].ssid_len == ssid->ssid_len &&
+		      os_memcmp(results[i].ssid, ssid->ssid, ssid->ssid_len)
+		      == 0) ||
+		     ssid->ssid_len == 0)) {
 			curr = &results[i];
 			break;
 		}

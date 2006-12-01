@@ -58,8 +58,30 @@ struct hostapd_ssid {
 #define DYNAMIC_VLAN_OPTIONAL 1
 #define DYNAMIC_VLAN_REQUIRED 2
 	int dynamic_vlan;
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+	char *vlan_tagged_interface;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+	struct hostapd_wep_keys **dyn_vlan_keys;
+	size_t max_dyn_vlan_keys;
 };
 
+
+#define VLAN_ID_WILDCARD -1
+
+struct hostapd_vlan {
+	struct hostapd_vlan *next;
+	int vlan_id; /* VLAN ID or -1 (VLAN_ID_WILDCARD) for wildcard entry */
+	char ifname[IFNAMSIZ + 1];
+	int dynamic_vlan;
+#ifdef CONFIG_FULL_DYNAMIC_VLAN
+
+#define DVLAN_CLEAN_BR 	0x1
+#define DVLAN_CLEAN_VLAN	0x2
+#define DVLAN_CLEAN_VLAN_PORT	0x4
+#define DVLAN_CLEAN_WLAN_PORT	0x8
+	int clean;
+#endif /* CONFIG_FULL_DYNAMIC_VLAN */
+};
 
 #define PMK_LEN 32
 struct hostapd_wpa_psk {
@@ -128,6 +150,7 @@ struct hostapd_bss_config {
 #define HOSTAPD_MODULE_WPA BIT(3)
 #define HOSTAPD_MODULE_DRIVER BIT(4)
 #define HOSTAPD_MODULE_IAPP BIT(5)
+#define HOSTAPD_MODULE_MLME BIT(6)
 	unsigned int logger_syslog; /* module bitfield */
 	unsigned int logger_stdout; /* module bitfield */
 
@@ -138,6 +161,8 @@ struct hostapd_bss_config {
 	char *dump_log_name; /* file name for state dump (SIGUSR1) */
 
 	int max_num_sta; /* maximum number of STAs in station table */
+
+	int dtim_period;
 
 	int ieee802_1x; /* use IEEE 802.1X */
 	int eapol_version;
@@ -159,6 +184,7 @@ struct hostapd_bss_config {
 	size_t default_wep_key_len;
 	int individual_wep_key_len;
 	int wep_rekeying_period;
+	int broadcast_key_idx_min, broadcast_key_idx_max;
 	int eap_reauth_period;
 
 	int ieee802_11f; /* use IEEE 802.11f (IAPP) */
@@ -194,6 +220,14 @@ struct hostapd_bss_config {
 #define WPA_CIPHER_WEP104 BIT(2)
 #define WPA_CIPHER_TKIP BIT(3)
 #define WPA_CIPHER_CCMP BIT(4)
+#ifdef CONFIG_IEEE80211W
+#define WPA_CIPHER_AES_128_CMAC BIT(5)
+	enum {
+		NO_IEEE80211W = 0,
+		IEEE80211W_OPTIONAL = 1,
+		IEEE80211W_REQUIRED = 2
+	} ieee80211w;
+#endif /* CONFIG_IEEE80211W */
 	int wpa_pairwise;
 	int wpa_group;
 	int wpa_group_rekey;
@@ -201,7 +235,6 @@ struct hostapd_bss_config {
 	int wpa_gmk_rekey;
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
-	int stakey;
 	int peerkey;
 
 	char *ctrl_interface; /* directory for UNIX domain sockets */
@@ -229,6 +262,10 @@ struct hostapd_bss_config {
 	int ignore_broadcast_ssid;
 
 	int wme_enabled;
+
+	struct hostapd_vlan *vlan, *vlan_tail;
+
+	macaddr bssid;
 };
 
 
@@ -245,9 +282,12 @@ typedef enum {
  */
 struct hostapd_config {
 	struct hostapd_bss_config *bss, *last_bss;
+	struct hostapd_radius_servers *radius;
 	size_t num_bss;
 
 	u16 beacon_int;
+	int rts_threshold;
+	int fragm_threshold;
 	u8 send_probe_response;
 	u8 channel;
 	hostapd_hw_mode hw_mode; /* HOSTAPD_MODE_IEEE80211A, .. */
@@ -273,6 +313,16 @@ struct hostapd_config {
 	int ap_table_max_size;
 	int ap_table_expiration_time;
 
+	char country[3]; /* first two octets: country code as described in
+			  * ISO/IEC 3166-1. Third octet:
+			  * ' ' (ascii 32): all environments
+			  * 'O': Outdoor environemnt only
+			  * 'I': Indoor environment only
+			  */
+
+	int ieee80211d;
+	unsigned int ieee80211h; /* Enable/Disable 80211h */
+
 	struct hostapd_tx_queue_params tx_queue[NUM_TX_QUEUES];
 
 	/*
@@ -283,16 +333,28 @@ struct hostapd_config {
 	 * 3 = VO (voice)
 	 */
 	struct hostapd_wme_ac_params wme_ac_params[4];
+
+	enum {
+		INTERNAL_BRIDGE_DO_NOT_CONTROL = -1,
+		INTERNAL_BRIDGE_DISABLED = 0,
+		INTERNAL_BRIDGE_ENABLED = 1
+	} bridge_packets;
 };
 
 
+int hostapd_mac_comp(const void *a, const void *b);
+int hostapd_mac_comp_empty(const void *a);
 struct hostapd_config * hostapd_config_read(const char *fname);
 void hostapd_config_free(struct hostapd_config *conf);
 int hostapd_maclist_found(macaddr *list, int num_entries, const u8 *addr);
 int hostapd_rate_found(int *list, int rate);
+int hostapd_wep_key_cmp(struct hostapd_wep_keys *a,
+			struct hostapd_wep_keys *b);
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
+const char * hostapd_get_vlan_id_ifname(struct hostapd_vlan *vlan,
+					int vlan_id);
 const struct hostapd_eap_user *
 hostapd_get_eap_user(const struct hostapd_bss_config *conf, const u8 *identity,
 		     size_t identity_len, int phase2);
