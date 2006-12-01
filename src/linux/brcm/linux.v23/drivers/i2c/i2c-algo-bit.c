@@ -583,9 +583,8 @@ int i2c_bit_add_bus(struct i2c_adapter *adap)
 #ifdef MODULE
 	MOD_INC_USE_COUNT;
 #endif
-	i2c_add_adapter(adap);
 
-	return 0;
+	return i2c_add_adapter(adap);
 }
 
 

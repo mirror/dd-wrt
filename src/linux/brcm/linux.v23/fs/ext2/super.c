@@ -480,12 +480,8 @@ struct super_block * ext2_read_super (struct super_block * sb, void * data,
 	es = (struct ext2_super_block *) (((char *)bh->b_data) + offset);
 	sb->u.ext2_sb.s_es = es;
 	sb->s_magic = le16_to_cpu(es->s_magic);
-	if (sb->s_magic != EXT2_SUPER_MAGIC) {
-		if (!silent)
-			printk ("VFS: Can't find ext2 filesystem on dev %s.\n",
-				bdevname(dev));
-		goto failed_mount;
-	}
+	if (sb->s_magic != EXT2_SUPER_MAGIC)
+		goto cantfind_ext2;
 	if (le32_to_cpu(es->s_rev_level) == EXT2_GOOD_OLD_REV &&
 	    (EXT2_HAS_COMPAT_FEATURE(sb, ~0U) ||
 	     EXT2_HAS_RO_COMPAT_FEATURE(sb, ~0U) ||
@@ -561,16 +557,19 @@ struct super_block * ext2_read_super (struct super_block * sb, void * data,
 	}
 	sb->u.ext2_sb.s_frag_size = EXT2_MIN_FRAG_SIZE <<
 				   le32_to_cpu(es->s_log_frag_size);
-	if (sb->u.ext2_sb.s_frag_size)
-		sb->u.ext2_sb.s_frags_per_block = sb->s_blocksize /
-						  sb->u.ext2_sb.s_frag_size;
-	else
-		sb->s_magic = 0;
+	if (sb->u.ext2_sb.s_frag_size == 0)
+		goto cantfind_ext2;
+	sb->u.ext2_sb.s_frags_per_block = sb->s_blocksize /
+					  sb->u.ext2_sb.s_frag_size;
 	sb->u.ext2_sb.s_blocks_per_group = le32_to_cpu(es->s_blocks_per_group);
 	sb->u.ext2_sb.s_frags_per_group = le32_to_cpu(es->s_frags_per_group);
 	sb->u.ext2_sb.s_inodes_per_group = le32_to_cpu(es->s_inodes_per_group);
+	if (EXT2_INODE_SIZE(sb) == 0)
+		goto cantfind_ext2;
 	sb->u.ext2_sb.s_inodes_per_block = sb->s_blocksize /
 					   EXT2_INODE_SIZE(sb);
+	if (sb->u.ext2_sb.s_inodes_per_block == 0)
+		goto cantfind_ext2;
 	sb->u.ext2_sb.s_itb_per_group = sb->u.ext2_sb.s_inodes_per_group /
 				        sb->u.ext2_sb.s_inodes_per_block;
 	sb->u.ext2_sb.s_desc_per_block = sb->s_blocksize /
@@ -589,13 +588,10 @@ struct super_block * ext2_read_super (struct super_block * sb, void * data,
 		log2 (EXT2_ADDR_PER_BLOCK(sb));
 	sb->u.ext2_sb.s_desc_per_block_bits =
 		log2 (EXT2_DESC_PER_BLOCK(sb));
-	if (sb->s_magic != EXT2_SUPER_MAGIC) {
-		if (!silent)
-			printk ("VFS: Can't find an ext2 filesystem on dev "
-				"%s.\n",
-				bdevname(dev));
-		goto failed_mount;
-	}
+
+	if (sb->s_magic != EXT2_SUPER_MAGIC)
+		goto cantfind_ext2;
+
 	if (sb->s_blocksize != bh->b_size) {
 		if (!silent)
 			printk ("VFS: Unsupported blocksize on dev "
@@ -625,6 +621,8 @@ struct super_block * ext2_read_super (struct super_block * sb, void * data,
 		goto failed_mount;
 	}
 
+	if (EXT2_BLOCKS_PER_GROUP(sb) == 0)
+		goto cantfind_ext2;
 	sb->u.ext2_sb.s_groups_count = (le32_to_cpu(es->s_blocks_count) -
 				        le32_to_cpu(es->s_first_data_block) +
 				       EXT2_BLOCKS_PER_GROUP(sb) - 1) /
@@ -678,6 +676,11 @@ struct super_block * ext2_read_super (struct super_block * sb, void * data,
 	}
 	ext2_setup_super (sb, es, sb->s_flags & MS_RDONLY);
 	return sb;
+cantfind_ext2:
+	if (!silent)
+		printk ("VFS: Can't find ext2 filesystem on dev %s.\n",
+			bdevname(dev));
+	goto failed_mount;
 failed_mount2:
 	for (i = 0; i < db_count; i++)
 		brelse(sb->u.ext2_sb.s_group_desc[i]);
