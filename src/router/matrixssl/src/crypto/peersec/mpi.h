@@ -1,11 +1,11 @@
 /*	
  *	mpi.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	multiple-precision integer library
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -188,12 +188,12 @@ typedef struct  {
 /*
 	init a bignum
  */
-extern int32 _mp_init(psPool_t *pool, mp_int *a);
+extern int32 mp_init(psPool_t *pool, mp_int *a);
 
 /*
 	free a bignum
  */
-extern void _mp_clear(mp_int *a);
+extern void mp_clear(mp_int *a);
 
 /*
 	init a series of arguments
@@ -211,55 +211,57 @@ extern void _mp_clear_multi(mp_int *mp0, mp_int *mp1, mp_int *mp2, mp_int *mp3,
 /*
 	exchange two ints
  */
-extern void _mp_exch(mp_int *a, mp_int *b);
+extern void mp_exch(mp_int *a, mp_int *b);
 
 /*
 	shrink ram required for a bignum
  */
-extern int32 _mp_shrink(mp_int *a);
+extern int32 mp_shrink(mp_int *a);
 
 /*
 	grow an int32 to a given size
  */
-extern int32 _mp_grow(mp_int *a, int32 size);
+extern int32 mp_grow(mp_int *a, int32 size);
 
 /*
 	init to a given number of digits
  */
-extern int32 _mp_init_size(psPool_t *pool, mp_int *a, int32 size);
+extern int32 mp_init_size(psPool_t *pool, mp_int *a, int32 size);
 
 /******************************************************************************/
 /*
 	Basic Manipulations
  */
-#define _mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
-#define _mp_iseven(a) (((a)->used > 0 && (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
-#define _mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
+#define mp_iszero(a) (((a)->used == 0) ? MP_YES : MP_NO)
+#define mp_iseven(a) (((a)->used > 0 && (((a)->dp[0] & 1) == 0)) ? MP_YES : MP_NO)
+#define mp_isodd(a)  (((a)->used > 0 && (((a)->dp[0] & 1) == 1)) ? MP_YES : MP_NO)
 
+extern int32 mp_add_d (mp_int * a, mp_digit b, mp_int * c);
+extern int32 mp_sub_d (mp_int * a, mp_digit b, mp_int * c);
 /*
 	set to zero
  */
-extern void _mp_zero(mp_int *a);
+extern void mp_zero(mp_int *a);
 
 /*
 	set to a digit
  */
-extern void _mp_set(mp_int *a, mp_digit b);
+extern void mp_set(mp_int *a, mp_digit b);
 
 /*
 	copy, b = a
  */
-extern int32 _mp_copy(mp_int *a, mp_int *b);
+extern int32 mp_copy(mp_int *a, mp_int *b);
 
 /*
 	inits and copies, a = b
  */
-extern int32 _mp_init_copy(psPool_t *pool, mp_int *a, mp_int *b);
+extern int32 mp_init_copy(psPool_t *pool, mp_int *a, mp_int *b);
 
 /*
 	trim unused digits
  */
-extern void _mp_clamp(mp_int *a);
+extern void mp_clamp(mp_int *a);
 
 /******************************************************************************/
 /*
@@ -269,37 +271,37 @@ extern void _mp_clamp(mp_int *a);
 /*
 	right shift by "b" digits
  */
-extern void _mp_rshd(mp_int *a, int32 b);
+extern void mp_rshd(mp_int *a, int32 b);
 
 /*
 	left shift by "b" digits
  */
-extern int32 _mp_lshd(mp_int *a, int32 b);
+extern int32 mp_lshd(mp_int *a, int32 b);
 
 /*
 	c = a / 2**b
  */
-extern int32 _mp_div_2d(psPool_t *pool, mp_int *a, int32 b, mp_int *c, mp_int *d);
+extern int32 mp_div_2d(psPool_t *pool, mp_int *a, int32 b, mp_int *c, mp_int *d);
 
 /*
 	b = a/2
  */
-extern int32 _mp_div_2(mp_int *a, mp_int *b);
+extern int32 mp_div_2(mp_int *a, mp_int *b);
 
 /*
 	c = a * 2**b
  */
-extern int32 _mp_mul_2d(mp_int *a, int32 b, mp_int *c);
+extern int32 mp_mul_2d(mp_int *a, int32 b, mp_int *c);
 
 /*
 	c = a mod 2**d
  */
-extern int32 _mp_mod_2d(mp_int *a, int32 b, mp_int *c);
+extern int32 mp_mod_2d(mp_int *a, int32 b, mp_int *c);
 
 /*
 	computes a = 2**b
  */
-extern int32 _mp_2expt(mp_int *a, int32 b);
+extern int32 mp_2expt(mp_int *a, int32 b);
 
 /******************************************************************************/
 /*
@@ -309,47 +311,47 @@ extern int32 _mp_2expt(mp_int *a, int32 b);
 /*
 	b = |a|
  */
-extern int32 _mp_abs(mp_int *a, mp_int *b);
+extern int32 mp_abs(mp_int *a, mp_int *b);
 
 /*
 	compare a to b
  */
-extern int32 _mp_cmp(mp_int *a, mp_int *b);
+extern int32 mp_cmp(mp_int *a, mp_int *b);
 
 /*
 	compare |a| to |b|
  */
-extern int32 _mp_cmp_mag(mp_int *a, mp_int *b);
+extern int32 mp_cmp_mag(mp_int *a, mp_int *b);
 
 /*
 	c = a + b
  */
-extern int32 _mp_add(mp_int *a, mp_int *b, mp_int *c);
+extern int32 mp_add(mp_int *a, mp_int *b, mp_int *c);
 
 /*
 	c = a - b
  */
-extern int32 _mp_sub(mp_int *a, mp_int *b, mp_int *c);
+extern int32 mp_sub(mp_int *a, mp_int *b, mp_int *c);
 
 /*
 	c = a * b
 	b = a*a
  */
 /* STEVE - moved mp_mul out of SLOW case */
-extern int32 _mp_mul(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
+extern int32 mp_mul(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
 #ifdef USE_SMALL_WORD
-extern int32 _mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
+extern int32 mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
 #endif
 
 /*
 	a/b => cb + d == a
  */
-extern int32 _mp_div(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+extern int32 mp_div(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /*
 	c = a mod b, 0 <= c < b
  */
-extern int32 _mp_mod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
+extern int32 mp_mod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
 
 /******************************************************************************/
 /*
@@ -359,12 +361,12 @@ extern int32 _mp_mod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
 /*
 	compare against a single digit
  */
-extern int32 _mp_cmp_d(mp_int *a, mp_digit b);
+extern int32 mp_cmp_d(mp_int *a, mp_digit b);
 
 /*
 	c = a * b
  */
-extern int32 _mp_mul_d(mp_int *a, mp_digit b, mp_int *c);
+extern int32 mp_mul_d(mp_int *a, mp_digit b, mp_int *c);
 
 /******************************************************************************/
 /*
@@ -374,42 +376,43 @@ extern int32 _mp_mul_d(mp_int *a, mp_digit b, mp_int *c);
 /*
 	d = a + b (mod c)
  */
-extern int32 _mp_addmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+extern int32 mp_addmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /*
 	d = a * b (mod c)
  */
-extern int32 _mp_mulmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+extern int32 mp_mulmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /*
 	c = 1/a (mod b)
  */
 #ifdef USE_SMALL_WORD
-extern int32 _mp_invmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
+extern int32 mp_invmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
 #endif
 
 /*
 	setups the montgomery reduction
  */
-extern int32 _mp_montgomery_setup(mp_int *a, mp_digit *mp);
+extern int32 mp_montgomery_setup(mp_int *a, mp_digit *mp);
 
 /*
 	computes a = B**n mod b without division or multiplication useful for
 	normalizing numbers in a Montgomery system.
  */
-extern int32 _mp_montgomery_calc_normalization(mp_int *a, mp_int *b);
+extern int32 mp_montgomery_calc_normalization(mp_int *a, mp_int *b);
 
 /*
 	computes x/R == x (mod N) via Montgomery Reduction
  */
 #ifdef USE_SMALL_WORD
-extern int32 _mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
+extern int32 mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
 #endif
 
 /*
 	d = a**b (mod c)
  */
-extern int32 _mp_exptmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
+/* TODO - we never define this */
+extern int32 mp_exptmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int *d);
 
 /******************************************************************************/
 /*
@@ -419,61 +422,62 @@ extern int32 _mp_exptmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c, mp_int
 	is done at runtime.
 */
 #ifdef USE_SMALL_WORD
-extern int32 _s_mp_mul_digs(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c,
+extern int32 s_mp_mul_digs(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c,
 						   int32 digs);
-extern int32 _s_mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
+extern int32 s_mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
 #else
-#define _mp_montgomery_reduce _fast_mp_montgomery_reduce
-#define _mp_sqr	_fast_s_mp_sqr
+#define mp_montgomery_reduce fast_mp_montgomery_reduce
+#define mp_sqr	fast_s_mp_sqr
 #if STEVE
-#define _mp_mul(P, A, B, C) _fast_s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
+#define mp_mul(P, A, B, C) fast_s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
 #endif
-#define _s_mp_mul_digs	_fast_s_mp_mul_digs
-#define _mp_invmod	_fast_mp_invmod
+#define s_mp_mul_digs	fast_s_mp_mul_digs
+#define mp_invmod	fast_mp_invmod
 #endif
 
 /******************************************************************************/
 /*
 	radix conversion
  */
-extern int32 _mp_count_bits(mp_int *a);
+extern int32 mp_count_bits(mp_int *a);
 
-extern int32 _mp_unsigned_bin_size(mp_int *a);
-extern int32 _mp_read_unsigned_bin(mp_int *a, unsigned char *b, int32 c);
-extern int32 _mp_to_unsigned_bin(psPool_t *pool, mp_int *a, unsigned char *b);
+extern int32 mp_unsigned_bin_size(mp_int *a);
+extern int32 mp_read_unsigned_bin(mp_int *a, unsigned char *b, int32 c);
+extern int32 mp_to_unsigned_bin(psPool_t *pool, mp_int *a, unsigned char *b);
 
-extern int32 _mp_signed_bin_size(mp_int *a);
+extern int32 mp_signed_bin_size(mp_int *a);
 
 /*
 	lowlevel functions, do not call!
  */
 #if STEVE
 #ifdef USE_SMALL_WORD
-#define _s_mp_mul(P, A, B, C) _s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
+#define s_mp_mul(P, A, B, C) s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
 #else
-#define _s_mp_mul(P, A, B, C) sslAssert();
+#define s_mp_mul(P, A, B, C) sslAssert();
 #endif
 #endif /* STEVE */
 /* define this in all cases for now STEVE */
-#define _s_mp_mul(P, A, B, C) _s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
+#define s_mp_mul(P, A, B, C) s_mp_mul_digs(P, A, B, C, (A)->used + (B)->used + 1)
 
 
 /*
 	b = a*2
  */
-extern int32 _mp_mul_2(mp_int *a, mp_int *b);
+extern int32 mp_mul_2(mp_int *a, mp_int *b);
 
-extern int32 _s_mp_add(mp_int *a, mp_int *b, mp_int *c);
-extern int32 _s_mp_sub(mp_int *a, mp_int *b, mp_int *c);
+extern int32 s_mp_add(mp_int *a, mp_int *b, mp_int *c);
+extern int32 s_mp_sub(mp_int *a, mp_int *b, mp_int *c);
 
-extern int32 _fast_s_mp_mul_digs(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c,
+extern int32 fast_s_mp_mul_digs(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c,
 								int32 digs);
-extern int32 _fast_s_mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
+extern int32 fast_s_mp_sqr(psPool_t *pool, mp_int *a, mp_int *b);
 
-extern int32 _fast_mp_invmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
-extern int32 _fast_mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
+extern int32 fast_mp_invmod(psPool_t *pool, mp_int *a, mp_int *b, mp_int *c);
+extern int32 fast_mp_montgomery_reduce(mp_int *a, mp_int *m, mp_digit mp);
 
-extern void _bn_reverse(unsigned char *s, int32 len);
+extern void bn_reverse(unsigned char *s, int32 len);
+
 
 #ifdef __cplusplus
    }

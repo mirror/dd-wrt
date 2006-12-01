@@ -1,12 +1,12 @@
 /*
  *	matrixInternal.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Internal header file used for the MatrixSSL implementation.
  *	Only modifiers of the library should be intersted in this file
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -60,7 +60,6 @@ extern "C" {
 #define SSL_FLAGS_CLOSED		0x20
 #define SSL_FLAGS_NEED_ENCODE	0x40
 #define SSL_FLAGS_ERROR			0x80
-#define SSL_FLAGS_ANON_CIPHER	0x1000
 	
 #define SSL2_HEADER_LEN				2
 #define SSL3_HEADER_LEN				5
@@ -98,8 +97,8 @@ extern "C" {
 */
 #define SSL_ALERT_NONE					255	/* No error */
 
-#define SSL_HS_RANDOM_SIZE		32
-#define SSL_HS_PREMASTER_SIZE	48
+#define SSL_HS_RANDOM_SIZE			32
+#define SSL_HS_RSA_PREMASTER_SIZE	48
 
 #define SSL2_MAJ_VER	2
 #define SSL3_MAJ_VER	3
@@ -110,12 +109,12 @@ extern "C" {
 /*
 	SSL cipher suite values
 */
-#define SSL_NULL_WITH_NULL_NULL			0x0000
-#define SSL_RSA_WITH_NULL_MD5			0x0001
-#define SSL_RSA_WITH_NULL_SHA			0x0002
-#define SSL_RSA_WITH_RC4_128_MD5		0x0004
-#define SSL_RSA_WITH_RC4_128_SHA		0x0005
-#define SSL_RSA_WITH_3DES_EDE_CBC_SHA	0x000A
+#define SSL_NULL_WITH_NULL_NULL				0x0000
+#define SSL_RSA_WITH_NULL_MD5				0x0001
+#define SSL_RSA_WITH_NULL_SHA				0x0002
+#define SSL_RSA_WITH_RC4_128_MD5			0x0004
+#define SSL_RSA_WITH_RC4_128_SHA			0x0005
+#define SSL_RSA_WITH_3DES_EDE_CBC_SHA		0x000A
 
 /*
 	Maximum key block size for any defined cipher
@@ -153,8 +152,9 @@ typedef struct {
 typedef struct {
 	unsigned char	clientRandom[SSL_HS_RANDOM_SIZE];	/* From ClientHello */
 	unsigned char	serverRandom[SSL_HS_RANDOM_SIZE];	/* From ServerHello */
-	unsigned char	premaster[SSL_HS_PREMASTER_SIZE];	/* From ClientKeyExchange */
 	unsigned char	masterSecret[SSL_HS_MASTER_SIZE];
+	unsigned char	*premaster;							/* variable size */
+	int32			premasterSize;
 
 	unsigned char	keyBlock[SSL_MAX_KEY_BLOCK_SIZE];	/* Storage for the next six items */
 	unsigned char	*wMACptr;
@@ -179,7 +179,7 @@ typedef struct {
 	sslRsaCert_t	*cert;
 	int32 (*validateCert)(sslCertInfo_t *certInfo, void *arg);
 	void			*validateCertArg;
-	int32			certMatch;
+	int32				certMatch;
 #endif /* USE_CLIENT_SIDE_SSL */
 
 	sslMd5Context_t		msgHashMd5;
@@ -288,9 +288,10 @@ typedef struct {
 	sslCipherSpec_t	*cipher;
 	unsigned char	majVer;
 	unsigned char	minVer;
+	char			flag;
 	sslTime_t		startTime;
 	sslTime_t		accessTime;
-	int32				inUse;
+	int32			inUse;
 } sslSessionEntry_t;
 
 /******************************************************************************/
@@ -330,7 +331,7 @@ extern int32 matrixUpdateSession(ssl_t *ssl);
 	cipherSuite.c
 */
 extern sslCipherSpec_t *sslGetCipherSpec(int32 id);
-extern int32 sslGetCipherSpecListLen();
+extern int32 sslGetCipherSpecListLen(void);
 extern int32 sslGetCipherSpecList(unsigned char *c, int32 len);
 
 /******************************************************************************/
@@ -365,9 +366,6 @@ extern int32 ssl3HMACMd5(unsigned char *key, unsigned char *seq,
 #endif /* _h_MATRIXINTERNAL */
 
 /******************************************************************************/
-
-
-
 
 
 

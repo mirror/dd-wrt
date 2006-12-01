@@ -37,6 +37,8 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="copy ..\src\$(OutDir)\libmatrixssl.dll .\$(OutDir)
+copy certCln.pem $(OutDir)
+copy privkeyCln.pem $(OutDir)
 copy CAcertSrv.pem $(OutDir)
 "/>
 			<Tool
@@ -75,7 +77,9 @@ copy CAcertSrv.pem $(OutDir)
 			<Tool
 				Name="VCPostBuildEventTool"
 				CommandLine="copy ..\src\$(OutDir)\libmatrixssl.dll .\$(OutDir)
+copy certCln.pem $(OutDir)
 copy CAcertSrv.pem $(OutDir)
+copy privkeyCln.pem $(OutDir)
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>

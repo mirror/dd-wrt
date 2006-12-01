@@ -1,13 +1,13 @@
 /*
  *	osLayer.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *	
  *	Layered header for OS specific functions
  *	Contributors adding new OS support must implement all functions 
  *	externed below.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -54,8 +54,8 @@ extern "C" {
 /*
 	Functions defined at OS level
 */
-extern int32	sslOpenOsdep();
-extern int32	sslCloseOsdep();
+extern int32	sslOpenOsdep(void);
+extern int32	sslCloseOsdep(void);
 extern int32	sslGetEntropy(unsigned char *bytes, int32 size);
 
 /*
@@ -119,7 +119,7 @@ typedef struct {
 		long sec;
 		long usec;
 	} sslTime_t;
-#elif (defined(__i386__) || defined(RDTSC))
+#elif (defined(USE_RDTSCLL_TIME) || defined(RDTSC))
 typedef unsigned long long LARGE_INTEGER;
 typedef LARGE_INTEGER sslTime_t;
 #elif WINCE
@@ -161,8 +161,6 @@ extern int32		sslCompareTime(sslTime_t a, sslTime_t b);
 extern int32		sslDiffSecs(sslTime_t then, sslTime_t now);
 extern long		sslDiffMsecs(sslTime_t then, sslTime_t now);
 
-extern int32 osGetUTCTime(psPool_t *pool, int32 days, char **utcTime,
-						  int32 *len);
 
 /******************************************************************************/
 /*

@@ -1,11 +1,11 @@
 /*
  *	rsa.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	RSA crypto
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -47,7 +47,7 @@ static int32 sslPadRSA(unsigned char *in, int32 inlen, unsigned char *out,
 static int32 tim_mp_exptmod(psPool_t *pool, 
 						mp_int *c, mp_int *e, mp_int *d, mp_int *n, mp_int *m);
 #else
-#define tim_mp_exptmod(p, c, e, d, n, m) _mp_exptmod(p, c, d, n, m)
+#define tim_mp_exptmod(p, c, e, d, n, m) mp_exptmod(p, c, d, n, m)
 #endif
 
 /******************************************************************************/
@@ -88,7 +88,7 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 		matrixStrDebugMsg("ssl_rsa_crypt error: mp_init_multi\n", NULL);
 		goto error;
 	}
-	if (_mp_read_unsigned_bin(&tmp, (unsigned char *)in, (int32)inlen) != 
+	if (mp_read_unsigned_bin(&tmp, (unsigned char *)in, (int32)inlen) != 
 			MP_OKAY) {
 		matrixStrDebugMsg("ssl_rsa_crypt error: mp_read_unsigned_bin\n", NULL);
 		goto error; 
@@ -96,7 +96,7 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 /*
 	sanity check on the input
  */
-	if (_mp_cmp(&key->N, &tmp) == MP_LT) {
+	if (mp_cmp(&key->N, &tmp) == MP_LT) {
 		res = -1;
 		goto done;
 	}
@@ -112,19 +112,19 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 				matrixStrDebugMsg("decrypt error: mp_exptmod dQ, q\n", NULL);
 				goto error;
 			}
-			if (_mp_sub(&tmpa, &tmpb, &tmp) != MP_OKAY) {
+			if (mp_sub(&tmpa, &tmpb, &tmp) != MP_OKAY) {
 				matrixStrDebugMsg("decrypt error: sub tmpb, tmp\n", NULL);
 				goto error;
 			}
-			if (_mp_mulmod(pool, &tmp, &key->qP, &key->p, &tmp) != MP_OKAY) {
+			if (mp_mulmod(pool, &tmp, &key->qP, &key->p, &tmp) != MP_OKAY) {
 				matrixStrDebugMsg("decrypt error: mp_mulmod qP, p\n", NULL);
 				goto error;
 			}
-			if (_mp_mul(pool, &tmp, &key->q, &tmp) != MP_OKAY) {
+			if (mp_mul(pool, &tmp, &key->q, &tmp) != MP_OKAY) {
 				matrixStrDebugMsg("decrypt error: mp_mul q \n", NULL);
 				goto error;
 			}
-			if (_mp_add(&tmp, &tmpb, &tmp) != MP_OKAY) {
+			if (mp_add(&tmp, &tmpb, &tmp) != MP_OKAY) {
 				matrixStrDebugMsg("decrypt error: mp_add tmp \n", NULL);
 				goto error;
 			}
@@ -135,7 +135,7 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 			}
 		}
 	} else if (type == RSA_PUBLIC) {
-		if (_mp_exptmod(pool, &tmp, &key->e, &key->N, &tmp) != MP_OKAY) {
+		if (mp_exptmod(pool, &tmp, &key->e, &key->N, &tmp) != MP_OKAY) {
 			matrixStrDebugMsg("ssl_rsa_crypt error: mp_exptmod\n", NULL);
 			goto error;
 		}
@@ -146,7 +146,7 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 /*
 	read it back
  */
-	x = (unsigned long)_mp_unsigned_bin_size(&key->N);
+	x = (unsigned long)mp_unsigned_bin_size(&key->N);
 	if (x > *outlen) {
 		res = -1;
 		matrixStrDebugMsg("ssl_rsa_crypt error: mp_unsigned_bin_size\n", NULL);
@@ -165,7 +165,7 @@ static int32 ssl_rsa_crypt(psPool_t *pool,
 	convert it
  */
 	memset(out, 0x0, x);
-	if (_mp_to_unsigned_bin(pool, &tmp, out+(x-_mp_unsigned_bin_size(&tmp)))
+	if (mp_to_unsigned_bin(pool, &tmp, out+(x-mp_unsigned_bin_size(&tmp)))
 			!= MP_OKAY) {
 		matrixStrDebugMsg("ssl_rsa_crypt error: mp_to_unsigned_bin\n", NULL);
 		goto error;
@@ -209,7 +209,7 @@ static int32 sslPadRSA(unsigned char *in, int32 inlen, unsigned char *out,
 	c = out;
 	*c = 0x00;
 	c++;
-	*c = cryptType;
+	*c = (unsigned char)cryptType;
 	c++;
 	if (cryptType == RSA_PUBLIC) {
 		while (randomLen-- > 0) {
@@ -260,8 +260,8 @@ int32 matrixRsaEncryptPub(psPool_t *pool, sslRsaKey_t *key,
 	if (sslPadRSA(in, inlen, out, size, RSA_PRIVATE) < 0) {
 		return -1;
 	}
-	if (ssl_rsa_crypt(pool, out, size, out, &outlen, key, RSA_PUBLIC) < 0 ||
-			outlen != size) {
+	if (ssl_rsa_crypt(pool, out, size, out, (uint32*)&outlen, key,
+			RSA_PUBLIC) < 0 || outlen != size) {
 		return -1;
 	}
 	return size;
@@ -352,8 +352,8 @@ int32 matrixRsaDecryptPriv(psPool_t *pool, sslRsaKey_t *key,
 		return -1;
 	}
 	ptLen = inlen;
-	if (ssl_rsa_crypt(pool, in, inlen, in, &ptLen, key, RSA_PRIVATE) < 0 || 
-			ptLen != inlen) {
+	if (ssl_rsa_crypt(pool, in, inlen, in, (uint32*)&ptLen, key,
+			RSA_PRIVATE) < 0 || ptLen != inlen) {
 		return -1;
 	}
 	ptLen = sslUnpadRSA(in, inlen, out, outlen, RSA_PRIVATE);
@@ -361,7 +361,9 @@ int32 matrixRsaDecryptPriv(psPool_t *pool, sslRsaKey_t *key,
 	return ptLen;
 }
 
+/******************************************************************************/
 /*
+	Called by client as normal part of signature validation from server cert.
 	Called by the server if authenticating client in CertificateVerify
 */
 int32 matrixRsaDecryptPub(psPool_t *pool, sslRsaKey_t *key, 
@@ -374,8 +376,8 @@ int32 matrixRsaDecryptPub(psPool_t *pool, sslRsaKey_t *key,
 		return -1;
 	}
 	ptLen = inlen;
-	if (ssl_rsa_crypt(pool, in, inlen, in, &ptLen, key, RSA_PUBLIC) < 0 ||
-			ptLen != inlen) {
+	if (ssl_rsa_crypt(pool, in, inlen, in, (uint32*)&ptLen, key,
+			RSA_PUBLIC) < 0 || ptLen != inlen) {
 		return -1;
 	}
 	ptLen = sslUnpadRSA(in, inlen, out, outlen, RSA_PUBLIC);
@@ -395,7 +397,7 @@ static int32 tim_mp_exptmod(psPool_t *pool,
 /*
 	pick random r
  */
-	rlen = _mp_unsigned_bin_size(n);
+	rlen = mp_unsigned_bin_size(n);
 
 	rtmp = psMalloc(pool, rlen);
 	if (rtmp == NULL) {
@@ -411,37 +413,37 @@ static int32 tim_mp_exptmod(psPool_t *pool,
 /*
 	read in r
  */
-	if ((err = _mp_read_unsigned_bin(&r, rtmp, rlen)) != MP_OKAY) {
+	if ((err = mp_read_unsigned_bin(&r, rtmp, rlen)) != MP_OKAY) {
 		goto __ERR;
 	}
 /*
 	compute tmp = r^e
  */
-	if ((err = _mp_exptmod(pool, &r, e, n, &tmp)) != MP_OKAY) {
+	if ((err = mp_exptmod(pool, &r, e, n, &tmp)) != MP_OKAY) {
 		goto __ERR;
 	}
 /*
 	multiply C into the mix
  */
-	if ((err = _mp_mulmod(pool, c, &tmp, n, &tmp)) != MP_OKAY) {
+	if ((err = mp_mulmod(pool, c, &tmp, n, &tmp)) != MP_OKAY) {
 		goto __ERR;
 	}
 /*
 	raise to d
  */
-	if ((err = _mp_exptmod(pool, &tmp, d, n, &tmp)) != MP_OKAY) {
+	if ((err = mp_exptmod(pool, &tmp, d, n, &tmp)) != MP_OKAY) {
 		goto __ERR;
 	}
 /*
 	invert r and multiply
  */
-	if ((err = _mp_invmod(pool, &r, n, &tmp2)) != MP_OKAY) {
+	if ((err = mp_invmod(pool, &r, n, &tmp2)) != MP_OKAY) {
 		goto __ERR;
 	}
 /*
 	multiply and we are totally set
  */
-	if ((err = _mp_mulmod(pool, &tmp, &tmp2, n, m)) != MP_OKAY) {
+	if ((err = mp_mulmod(pool, &tmp, &tmp2, n, m)) != MP_OKAY) {
 		goto __ERR;
 	}
 

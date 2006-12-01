@@ -174,6 +174,25 @@ del &quot;$(OutDir)\libmatrixssl.lib&quot;
 				</Filter>
 			</Filter>
 			<Filter
+				Name="pki"
+				Filter="">
+				<File
+					RelativePath="pki\asn1.c">
+				</File>
+				<File
+					RelativePath="pki\matrixPki.h">
+				</File>
+				<File
+					RelativePath="pki\pkiInternal.h">
+				</File>
+				<File
+					RelativePath="pki\rsaPki.c">
+				</File>
+				<File
+					RelativePath="pki\x509.c">
+				</File>
+			</Filter>
+			<Filter
 				Name="os"
 				Filter="">
 				<File
@@ -211,25 +230,6 @@ del &quot;$(OutDir)\libmatrixssl.lib&quot;
 						RelativePath="os\win\win.c">
 					</File>
 				</Filter>
-			</Filter>
-			<Filter
-				Name="pki"
-				Filter="">
-				<File
-					RelativePath="pki\asn1.c">
-				</File>
-				<File
-					RelativePath="pki\matrixPki.h">
-				</File>
-				<File
-					RelativePath="pki\pkiInternal.h">
-				</File>
-				<File
-					RelativePath="pki\rsaPki.c">
-				</File>
-				<File
-					RelativePath="pki\x509.c">
-				</File>
 			</Filter>
 		</Filter>
 		<File

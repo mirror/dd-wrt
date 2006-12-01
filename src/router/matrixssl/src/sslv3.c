@@ -1,13 +1,13 @@
 /*
  *	sslv3.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	SSLv3.0 specific code per http://wp.netscape.com/eng/ssl3.
  *	Primarily dealing with secret generation, message authentication codes
  *	and handshake hashing.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -37,8 +37,8 @@
 /*
 	Constants used for key generation
 */
-static const unsigned char SENDER_CLIENT[4] = "CLNT";	/* 0x434C4E54 */
-static const unsigned char SENDER_SERVER[4] = "SRVR";	/* 0x53525652 */
+static const unsigned char SENDER_CLIENT[5] = "CLNT";	/* 0x434C4E54 */
+static const unsigned char SENDER_SERVER[5] = "SRVR";	/* 0x53525652 */
 
 static const unsigned char pad1[48]={
 	0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 0x36, 
@@ -109,18 +109,24 @@ int32 sslDeriveKeys(ssl_t *ssl)
 	for (i = 0; i < 3; i++) {
 		matrixSha1Init(&sha1Ctx);
 		matrixSha1Update(&sha1Ctx, salt[i], i + 1);
-		matrixSha1Update(&sha1Ctx, ssl->sec.premaster, SSL_HS_PREMASTER_SIZE);
+		matrixSha1Update(&sha1Ctx, ssl->sec.premaster, ssl->sec.premasterSize);
 		matrixSha1Update(&sha1Ctx, ssl->sec.clientRandom, SSL_HS_RANDOM_SIZE);
 		matrixSha1Update(&sha1Ctx, ssl->sec.serverRandom, SSL_HS_RANDOM_SIZE);
 		matrixSha1Final(&sha1Ctx, buf);
 		
 		matrixMd5Init(&md5Ctx);
-		matrixMd5Update(&md5Ctx, ssl->sec.premaster, SSL_HS_PREMASTER_SIZE);
+		matrixMd5Update(&md5Ctx, ssl->sec.premaster, ssl->sec.premasterSize);
 		matrixMd5Update(&md5Ctx, buf, SSL_SHA1_HASH_SIZE);
 		matrixMd5Final(&md5Ctx, tmp);
 		tmp += SSL_MD5_HASH_SIZE;
 	}
 	memset(buf, 0x0, SSL_MD5_HASH_SIZE + SSL_SHA1_HASH_SIZE);
+/*
+	premaster is now allocated for DH reasons.  Can free here
+*/
+	psFree(ssl->sec.premaster);
+	ssl->sec.premaster = NULL;
+	ssl->sec.premasterSize = 0;
 
 skipPremaster:
 	if (createKeyBlock(ssl, ssl->sec.clientRandom, ssl->sec.serverRandom, 
