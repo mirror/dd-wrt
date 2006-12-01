@@ -14,7 +14,7 @@ for 2.0.x, code cleanups, ...
 To compile this bttv version, you'll the new i2c stack.  Kernels
 newer than 2.3.34 have this already included.  If you have a older
 kernel, download it from:
-	http://www2.lm-sensors.nu/~lm78/download.html
+	http://www.lm-sensors.org/wiki/Download
 
 You'll need at least these config options for bttv:
 CONFIG_I2C=m

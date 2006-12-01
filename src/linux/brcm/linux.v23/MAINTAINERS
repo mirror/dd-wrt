@@ -820,8 +820,8 @@ S:	Maintained
 I2C SUBSYSTEM
 P:	Jean Delvare
 M:	khali@linux-fr.org
-L:	lm-sensors@lm-sensors.org
-W:	http://www.lm-sensors.nu/
+L:	i2c@lm-sensors.org
+W:	http://www.lm-sensors.org/
 S:	Maintained
 
 i386 BOOT CODE

@@ -477,8 +477,6 @@ int i2c_pcf_add_bus(struct i2c_adapter *adap)
 	MOD_INC_USE_COUNT;
 #endif
 
-	i2c_add_adapter(adap);
-
 	/* scan bus */
 	if (pcf_scan) {
 		printk(KERN_INFO " i2c-algo-pcf.o: scanning bus %s.\n",
@@ -502,7 +500,8 @@ int i2c_pcf_add_bus(struct i2c_adapter *adap)
 		}
 		printk("\n");
 	}
-	return 0;
+
+	return i2c_add_adapter(adap);
 }
 
 

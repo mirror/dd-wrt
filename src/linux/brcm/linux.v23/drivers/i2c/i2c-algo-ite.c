@@ -783,7 +783,6 @@ int i2c_iic_add_bus(struct i2c_adapter *adap)
 	MOD_INC_USE_COUNT;
 #endif
 
-	i2c_add_adapter(adap);
 	iic_init(iic_adap);
 
 	/* scan bus */
@@ -804,7 +803,8 @@ int i2c_iic_add_bus(struct i2c_adapter *adap)
 			udelay(iic_adap->udelay);
 		}
 	}
-	return 0;
+
+	return i2c_add_adapter(adap);
 }
 
 

@@ -1261,7 +1261,7 @@ static void ProcessELS_Request(CPQFCHBA * dev, TachFCHDR_GCMND * fchs)
 						// Terminate I/O with "retry" potential
 						cpqfcTSTerminateExchange(dev, &pLoggedInPort->ScsiNexus, PORTID_CHANGED);
 					} else {
-						printk(" Got 3 LOGOuts - terminating comm. with port_id %Xh\n", fchs->s_id && 0xFFFFFF);
+						printk(" Got 3 LOGOuts - terminating comm. with port_id %Xh\n", fchs->s_id & 0xFFFFFF);
 						GiveUpOnDevice = 1;
 					}
 				} else {
