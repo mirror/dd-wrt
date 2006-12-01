@@ -620,8 +620,30 @@ start_lan (void)
   char eabuf[32];
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
+#ifdef HAVE_RB500
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+      nvram_set ("wan_ifname", "eth0");
+      nvram_set ("wan_ifnames", "eth0");
+    }
+
+
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+#endif
+
 #ifdef HAVE_MAGICBOX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0");
@@ -648,7 +670,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_GATEWORX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
@@ -677,7 +699,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI

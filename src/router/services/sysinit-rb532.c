@@ -107,7 +107,7 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
-
+/*
   eval ("insmod", "md5");
   eval ("insmod", "aes");
   eval ("insmod", "blowfish");
@@ -116,7 +116,7 @@ start_sysinit (void)
   eval ("insmod", "michael_mic");
   eval ("insmod", "cast5");
   eval ("insmod", "crypto_null");
-
+*/
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "wlan");
 //  eval ("insmod", "ath_rate_sample");
@@ -139,10 +139,10 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 
 
-  eval ("insmod", "mii");
+/*  eval ("insmod", "mii");
   eval ("insmod", "korina");
   eval ("insmod", "via-rhine");
-  eval ("insmod", "ipv6");
+  eval ("insmod", "ipv6");*/
   /* Set a sane date */
   stime (&tm);
 
