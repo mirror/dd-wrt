@@ -100,7 +100,7 @@ CONFIG_IPTABLES=y
 #CONFIG_WLC=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
-obj-$(CONFIG_HTTPD) += httpd validate
+obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services
 #obj-$(CONFIG_LIBBCM) += libbcm
 obj-$(CONFIG_SHARED) += shared
@@ -485,18 +485,16 @@ libnet:
 	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
 
 
-httpd: clean_target nvram shared hsiab matrixssl www-install
+httpd: clean_target nvram shared matrixssl www-install
 	$(MAKE) -C httpd
 
 httpd-clean:
 	$(MAKE) -C httpd clean
 
 
-rc: netconf nvram shared hsiab libnet dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
+rc: netconf nvram shared libnet dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
 
 www www-%: eop-tunnel-install
-
-
 ifeq ($(KROMOGUI),y)
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 else
