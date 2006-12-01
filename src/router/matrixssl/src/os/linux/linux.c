@@ -1,13 +1,13 @@
 /*
  *	linux.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Linux compatibility layer
  *	Other UNIX like operating systems should also be able to use this
  *	implementation without change.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -39,7 +39,7 @@
 
 #include "../osLayer.h"
 
-#if defined(__i386__) || defined(RDTSC)
+#if defined(USE_RDTSCLL_TIME) || defined(RDTSC)
 #include <asm/timex.h>
 /*
 	As defined in asm/timex.h for x386:
@@ -50,7 +50,7 @@
 
 static sslTime_t	hiresStart; 	/* zero-time */
 static sslTime_t	hiresFreq; 		/* tics per second */
-#else /* __i386__ */
+#else /* USE_RDTSCLL_TIME */
 static uint32		prevTicks; 		/* Check wrap */
 static sslTime_t	elapsedTime; 	/* Last elapsed time */
 #endif
@@ -86,7 +86,7 @@ int32 sslOpenOsdep(void)
 /*
 	Initialize times
 */
-#if defined(__i386__) || defined(RDTSC)
+#if defined(USE_RDTSCLL_TIME) || defined(RDTSC)
 	if ((cpuInfo = fopen ("/proc/cpuinfo","r")) == NULL) {
 		matrixStrDebugMsg("Error opening /proc/cpuinfo\n", NULL);
 		return -2;
@@ -112,7 +112,7 @@ int32 sslOpenOsdep(void)
 		return -3;
 	}
 	rdtscll(hiresStart);
-#endif /* __i386__ */
+#endif /* USE_RDTSCLL_TIME */
 /*
 	FUTURE - Solaris doesn't support recursive mutexes!
 	We don't use them internally anyway, so this is not an issue,
@@ -252,7 +252,7 @@ void sslDestroyMutex(sslMutex_t *mutex)
 /*
 	Use a platform specific high resolution timer
 */
-#if defined(__i386__) || defined(RDTSC)
+#if defined(USE_RDTSCLL_TIME) || defined(RDTSC)
 
 int32 sslInitMsecs(sslTime_t *t)
 {
@@ -298,7 +298,7 @@ int32	sslCompareTime(sslTime_t a, sslTime_t b)
 	return 0;
 }
 
-#else /* __i386__ */
+#else /* USE_RDTSCLL_TIME */
 
 int32 sslInitMsecs(sslTime_t *timePtr)
 {
@@ -371,7 +371,7 @@ int32	sslCompareTime(sslTime_t a, sslTime_t b)
 	return 0;
 }
 
-#endif /* __i386__ */
+#endif /* USE_RDTSCLL_TIME */
 
 
 #endif /* LINUX */

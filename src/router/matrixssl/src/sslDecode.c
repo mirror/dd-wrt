@@ -1,11 +1,11 @@
 /*
  *	sslDecode.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Secure Sockets Layer message decoding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -306,7 +306,6 @@ decodeMore:
 		data from now on.
 */
 		if (ssl->hsState == SSL_HS_FINISHED) {
-
 			sslActivateReadCipher(ssl);
 		} else {
 			ssl->err = SSL_ALERT_UNEXPECTED_MESSAGE;
@@ -359,6 +358,9 @@ decodeMore:
 			in->start = c;
 			goto encodeResponse;
 		case SSL_ERROR:
+			if (ssl->err == SSL_ALERT_NONE) {
+				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
+			}
 			goto encodeResponse;
 		}
 		break;
@@ -409,6 +411,9 @@ decodeMore:
 				SSL_MAX_IGNORED_MESSAGE_COUNT);
 			goto encodeResponse;
 		}
+		if (ssl->ignoredMessageCount > 0) {
+			ssl->ignoredMessageCount--;
+		}
 		out->end = mac;
 		return SSL_PROCESS_DATA;
 	}
@@ -423,6 +428,7 @@ encodeResponse:
 /*
 	We decoded a record that needs a response, either a handshake response
 	or an alert if we've detected an error.  
+
 	SECURITY - Clear the decoded incoming record from outbuf before encoding
 	the response into outbuf.  rec.len could be invalid, clear the minimum 
 	of rec.len and remaining outbuf size
@@ -476,24 +482,20 @@ static int32 parseSSLHandshake(ssl_t *ssl, char *inbuf, int32 len)
 	unsigned char	*c;
 	unsigned char	*end;
 	unsigned char	hsType;
-	int32			hsLen, rc, anonCheck, parseLen = 0; 
+	int32			hsLen, rc, parseLen = 0; 
 	uint32			cipher = 0;
 	unsigned char	hsMsgHash[SSL_MD5_HASH_SIZE + SSL_SHA1_HASH_SIZE];
 
 #ifdef USE_SERVER_SIDE_SSL
 	unsigned char	*p;
-	int32				suiteLen, challengeLen, pubKeyLen, extLen;
+	int32			suiteLen, challengeLen, pubKeyLen, extLen;
 #endif /* USE_SERVER_SIDE_SSL */
 
 #ifdef USE_CLIENT_SIDE_SSL
-	int32				sessionIdLen, certMatch, certTypeLen;
-#endif /* USE_CLIENT_SIDE_SSL */
-
-#ifdef USE_CLIENT_SIDE_SSL
+	int32			sessionIdLen, certMatch, certTypeLen;
 	sslRsaCert_t	*cert, *currentCert, *subjectCert;
-	int32			valid, i, certLen, certChainLen;
+	int32			valid, i, certLen, certChainLen, anonCheck;
 #endif /* USE_CLIENT_SIDE_SSL */
-
 
 	rc = SSL_SUCCESS;
 	c = (unsigned char*)inbuf;
@@ -508,7 +510,8 @@ parseHandshake:
 	hsType = *c; c++;
 /*
 	hsType is the received handshake type and ssl->hsState is the expected
-	handshake type.  If it doesn't match, or not a rehandshake, error. 
+	handshake type.  If it doesn't match, there are some possible cases
+	that are not errors.  These are checked here. 
 */
 	if (hsType != ssl->hsState && 
 			(hsType != SSL_HS_CLIENT_HELLO || ssl->hsState != SSL_HS_DONE)) {
@@ -666,12 +669,9 @@ parseHandshake:
 					The id must be present in the lookup table
 					The requested version must match the original version
 					The cipher suite list must contain the original cipher suite
-
-				Do not allow session resumption if this server is requesting
-				client authentication.
 */
-				if (!(ssl->flags & SSL_FLAGS_CLIENT_AUTH) &&
-						matrixResumeSession(ssl) >= 0) {
+				if (matrixResumeSession(ssl) >= 0) {
+					ssl->flags &= ~SSL_FLAGS_CLIENT_AUTH;
 					ssl->flags |= SSL_FLAGS_RESUMED;
 				} else {
 					memset(ssl->sessionId, 0, SSL_MAX_SESSION_ID_SIZE);
@@ -742,6 +742,7 @@ parseHandshake:
 				ssl->err = SSL_ALERT_HANDSHAKE_FAILURE;
 				return SSL_ERROR;
 			}
+
 /*
 			Decode the compression parameters.  Always length one (first byte)
 			and value 0 (second byte).  There are no compression schemes defined
@@ -884,6 +885,7 @@ parseHandshake:
 			matrixStrDebugMsg("Invalid final client hello length\n", NULL);
 			return SSL_ERROR;
 		}
+
 /*
 		If we're resuming a handshake, then the next handshake message we
 		expect is the finished message.  Otherwise we do the full handshake.
@@ -903,7 +905,7 @@ parseHandshake:
 
 	case SSL_HS_CLIENT_KEY_EXCHANGE:
 /*
-		This message contains the premaster secret encrypted with the 
+		RSA: This message contains the premaster secret encrypted with the 
 		server's public key (from the Certificate).  The premaster
 		secret is 48 bytes of random data, but the message may be longer
 		than that because the 48 bytes are padded before encryption 
@@ -920,40 +922,49 @@ parseHandshake:
 		pubKeyLen = hsLen;
 
 
-		if (ssl->decryptPriv(ssl->hsPool, ssl->keys->cert.privKey, c, pubKeyLen,
-				ssl->sec.premaster, SSL_HS_PREMASTER_SIZE) != 
-				SSL_HS_PREMASTER_SIZE) {
-			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
-			matrixStrDebugMsg("Failed to decrypt premaster\n", NULL);
-			return SSL_ERROR;
-		}
-
 
 /*
-		The first two bytes of the decrypted message should be the client's 
-		requested version number (which may not be the same as the final 
-		negotiated version). The other 46 bytes - pure random!
-		SECURITY - 
-		Some SSL clients (Including Microsoft IE 6.0) incorrectly set the first
-		two bytes to the negotiated version rather than the requested version.
-		This is known in OpenSSL as the SSL_OP_TLS_ROLLBACK_BUG
-		We allow this to slide only if we don't support TLS, TLS was requested
-		and the negotiated versions match.
+			Now have a handshake pool to allocate the premaster storage
 */
-		if (*ssl->sec.premaster != ssl->reqMajVer) {
-			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
-			matrixStrDebugMsg("Incorrect version in ClientKeyExchange\n", NULL);
-			return SSL_ERROR;
-		}
-		if (*(ssl->sec.premaster + 1) != ssl->reqMinVer) {
-			if (ssl->reqMinVer < TLS_MIN_VER ||
-					*(ssl->sec.premaster + 1) != ssl->minVer) {
+			ssl->sec.premasterSize = SSL_HS_RSA_PREMASTER_SIZE;
+			ssl->sec.premaster = psMalloc(ssl->hsPool,
+				SSL_HS_RSA_PREMASTER_SIZE);
+
+			if (ssl->decryptPriv(ssl->hsPool, ssl->keys->cert.privKey, c,
+					pubKeyLen, ssl->sec.premaster, ssl->sec.premasterSize) != 
+					ssl->sec.premasterSize) {
+				ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+				matrixStrDebugMsg("Failed to decrypt premaster\n", NULL);
+				return SSL_ERROR;
+			}
+
+/*
+			The first two bytes of the decrypted message should be the client's 
+			requested version number (which may not be the same as the final 
+			negotiated version). The other 46 bytes - pure random!
+			SECURITY - 
+			Some SSL clients (Including Microsoft IE 6.0) incorrectly set the
+			first two bytes to the negotiated version rather than the requested
+			version.  This is known in OpenSSL as the SSL_OP_TLS_ROLLBACK_BUG
+			We allow this to slide only if we don't support TLS, TLS was
+			requested and the negotiated versions match.
+*/
+			if (*ssl->sec.premaster != ssl->reqMajVer) {
 				ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
 				matrixStrDebugMsg("Incorrect version in ClientKeyExchange\n",
 					NULL);
 				return SSL_ERROR;
 			}
-		}
+			if (*(ssl->sec.premaster + 1) != ssl->reqMinVer) {
+				if (ssl->reqMinVer < TLS_MIN_VER ||
+						*(ssl->sec.premaster + 1) != ssl->minVer) {
+					ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
+					matrixStrDebugMsg("Incorrect version in ClientKeyExchange\n",
+						NULL);
+					return SSL_ERROR;
+				}
+			}
+
 /*
 		Now that we've got the premaster secret, derive the various
 		symmetric keys using it and the client and server random values.
@@ -966,6 +977,8 @@ parseHandshake:
 
 		c += pubKeyLen;
 		ssl->hsState = SSL_HS_FINISHED;
+
+
 		break;
 #endif /* USE_SERVER_SIDE_SSL */
 
@@ -1131,6 +1144,7 @@ parseHandshake:
 		}
 		cipher = *c << 8; c++;
 		cipher += *c; c++;
+
 /*
 		A resumed session can only match the cipher originally 
 		negotiated. Otherwise, match the first cipher that we support
@@ -1149,6 +1163,7 @@ parseHandshake:
 				return SSL_ERROR;
 			}
 		}
+
 /*
 		Decode the compression parameters.  Always zero.
 		There are no compression schemes defined for SSLv3
@@ -1171,9 +1186,7 @@ parseHandshake:
 			ssl->hsState = SSL_HS_CERTIFICATE;
 		}
 		break;
-#endif /* USE_CLIENT_SIDE_SSL */
 
-#ifdef USE_CLIENT_SIDE_SSL
 	case SSL_HS_CERTIFICATE: 
 
 		if (end - c < 3) {
@@ -1197,6 +1210,17 @@ parseHandshake:
 			ssl->err = SSL_ALERT_ILLEGAL_PARAMETER;
 			matrixStrDebugMsg("Invalid Certificate message\n", NULL);
 			return SSL_ERROR;
+		}
+
+		if (!(ssl->flags & SSL_FLAGS_SERVER)) {
+/*
+			As a client, we are aware we are in an RSA authentication state
+			at this point.  And now that we have a handshake pool, storage
+			for the known premaster secret can be allocated.
+*/
+			ssl->sec.premasterSize = SSL_HS_RSA_PREMASTER_SIZE;
+			ssl->sec.premaster = psMalloc(ssl->hsPool,
+				SSL_HS_RSA_PREMASTER_SIZE);
 		}
 
 		i = 0;
@@ -1254,6 +1278,14 @@ parseHandshake:
 		if (subjectCert->valid < 0) {
 			matrixStrDebugMsg(
 				"Warning: Cert did not pass default validation checks\n", NULL);
+/*
+			If there is no user callback, fail on validation check because there
+			will be no intervention to give it a second look.
+*/
+			if (ssl->sec.validateCert == NULL) {
+				ssl->err = SSL_ALERT_BAD_CERTIFICATE;
+				return SSL_ERROR;
+			}
 		}
 /*
 		Call the user validation function with the entire cert chain.  The user
@@ -1288,9 +1320,7 @@ parseHandshake:
 			ssl->hsState = SSL_HS_SERVER_HELLO_DONE;
 		}
 		break;
-#endif /* USE_CLIENT_SIDE_SSL */
 
-#ifdef USE_CLIENT_SIDE_SSL
 	case SSL_HS_SERVER_HELLO_DONE: 
 		if (hsLen != 0) {
 			ssl->err = SSL_ALERT_BAD_CERTIFICATE;
@@ -1355,11 +1385,10 @@ parseHandshake:
 		break;
 #endif /* USE_CLIENT_SIDE_SSL */
 
-
-	case SSL_HS_SERVER_KEY_EXCHANGE: 
-		/* FUTURE - implement for Diffie or Ephemeral RSA */
+	case SSL_HS_SERVER_KEY_EXCHANGE:
 		ssl->err = SSL_ALERT_UNEXPECTED_MESSAGE;
 		return SSL_ERROR;
+
 	default:
 		ssl->err = SSL_ALERT_UNEXPECTED_MESSAGE;
 		return SSL_ERROR;

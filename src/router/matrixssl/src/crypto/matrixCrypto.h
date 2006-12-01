@@ -1,11 +1,11 @@
 /*
  *	matrixCrypto.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Public API set for matrixCrypto
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -72,7 +72,8 @@ MATRIXPUBLIC void generate3DESKey(unsigned char *pass, int32 passlen,
 */
 MATRIXPUBLIC int32 matrixHmacMd5(unsigned char *key, int32 keyLen, 
 							const unsigned char *buf, unsigned long len, 
-							unsigned char *hash);
+							unsigned char *hash, unsigned char *hmacKey,
+							int32 *hmacKeyLen);
 MATRIXPUBLIC void matrixHmacMd5Init(sslHmacContext_t *ctx, 
 								unsigned char *key, int32 keyLen);
 MATRIXPUBLIC void matrixHmacMd5Update(sslHmacContext_t *ctx, 
@@ -82,7 +83,8 @@ MATRIXPUBLIC int32 matrixHmacMd5Final(sslHmacContext_t *ctx,
 
 MATRIXPUBLIC int32 matrixHmacSha1(unsigned char *key, int32 keyLen, 
 							const unsigned char *buf, unsigned long len, 
-							unsigned char *hash);
+							unsigned char *hash, unsigned char *hmacKey,
+							int32 *hmacKeyLen);
 MATRIXPUBLIC void matrixHmacSha1Init(sslHmacContext_t *ctx, 
 								unsigned char *key, int32 keyLen);
 MATRIXPUBLIC void matrixHmacSha1Update(sslHmacContext_t *ctx, 
@@ -122,14 +124,6 @@ MATRIXPUBLIC int32 matrixMd2Final(sslMd2Context_t *ctx, unsigned char *hash);
 #endif /* USE_MD2 */
 
 
-#ifdef USE_AES
-MATRIXPUBLIC int32 matrixAesInit(sslCipherContext_t *ctx, unsigned char *IV,
-						 unsigned char *key, int32 keylen);
-MATRIXPUBLIC int32 matrixAesEncrypt(sslCipherContext_t *ctx, unsigned char *pt,
-							unsigned char *ct, int32 len);
-MATRIXPUBLIC int32 matrixAesDecrypt(sslCipherContext_t *ctx, unsigned char *ct,
-							unsigned char *pt, int32 len);
-#endif /* USE_AES */
 
 #ifdef USE_RSA
 MATRIXPUBLIC int32 matrixRsaEncryptPub(psPool_t *pool, sslRsaKey_t *key, 
@@ -143,6 +137,8 @@ MATRIXPUBLIC int32 matrixRsaDecryptPub(psPool_t *pool, sslRsaKey_t *key,
 							   unsigned char *out, int32 outlen);
 #endif /* USE_RSA */
 
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -150,4 +146,3 @@ MATRIXPUBLIC int32 matrixRsaDecryptPub(psPool_t *pool, sslRsaKey_t *key,
 #endif /* _h_MATRIX_CRYPTO */
 
 /******************************************************************************/
-

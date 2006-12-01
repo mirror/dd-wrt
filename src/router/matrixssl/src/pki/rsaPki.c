@@ -1,11 +1,11 @@
 /*
  *	rsaPki.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	RSA key and cert reading
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -32,12 +32,14 @@
 #include <vxWorks.h>
 #endif /* VXWORKS */
 
+#include "pkiInternal.h"
+
 #ifndef WINCE
+#ifdef USE_FILE_SYSTEM
 	#include <sys/stat.h>
 	#include <signal.h>
+#endif /* USE_FILE_SYSTEM */
 #endif /* WINCE */
-
-#include "pkiInternal.h"
 
 /*
 	For our purposes USE_RSA is used to indicate RSA private key handling.
@@ -71,7 +73,7 @@ static int32 psAsnParsePrivateKey(psPool_t *pool, unsigned char **pp,
 	lifetime of the application and initialize and clean up the library 
 	respectively.
 */
-int32 matrixPkiOpen()
+int32 matrixPkiOpen(void)
 {
 	if (sslOpenOsdep() < 0) {
 		matrixStrDebugMsg("Osdep open failure\n", NULL);
@@ -80,7 +82,7 @@ int32 matrixPkiOpen()
 	return 0;
 }
 
-void matrixPkiClose()
+void matrixPkiClose(void)
 {
 	sslCloseOsdep();
 }
@@ -130,10 +132,9 @@ int32 psGetFileBin(psPool_t *pool, char *fileName, unsigned char **bin,
  *	Function allocates key on success.  User must free.
  */
 int32 matrixRsaReadPrivKey(psPool_t *pool, char *fileName, char *password,
-						   char **keyMem, int32 *keyMemLen)
+						   unsigned char **keyMem, int32 *keyMemLen)
 {
-	char			*start, *end;
-	unsigned char	*keyBuf, *DERout;
+	unsigned char	*keyBuf, *DERout, *start, *end;
 	int32			keyBufLen, rc, DERlen, PEMlen = 0;
 #ifdef USE_3DES
 	sslCipherContext_t	ctx;
@@ -215,7 +216,7 @@ int32 matrixRsaReadPrivKey(psPool_t *pool, char *fileName, char *password,
 		return -8; /* SSL_MEM_ERROR */
 	}
 	DERlen = PEMlen;
-	if (ps_base64_decode((unsigned char*)start, PEMlen, DERout, &DERlen) != 0) {
+	if (ps_base64_decode(start, PEMlen, DERout, (uint32*)&DERlen) != 0) {
 		psFree(DERout);
 		psFree(keyBuf);
 		matrixStrDebugMsg("Unable to base64 decode private key\n", NULL);
@@ -310,18 +311,43 @@ int32 matrixRsaParsePrivKey(psPool_t *pool, unsigned char *keyBuf,
 
 /******************************************************************************/
 /*
+	Binary to struct helper for RSA public keys
+*/
+int32 matrixRsaParsePubKey(psPool_t *pool, unsigned char *keyBuf,
+							  int32 keyBufLen, sslRsaKey_t **key)
+{
+/*
+	Now have the DER stream to extract from in asnp
+ */
+	*key = psMalloc(pool, sizeof(sslRsaKey_t));
+	if (*key == NULL) {
+		return -8; /* SSL_MEM_ERROR */
+	}
+	memset(*key, 0x0, sizeof(sslRsaKey_t));
+
+	if (getPubKey(pool, &keyBuf, keyBufLen, *key) < 0) {
+		matrixRsaFreeKey(*key);
+		*key = NULL;
+		matrixStrDebugMsg("Unable to ASN parse public key\n", NULL);
+		return -1;
+	}
+	return 0;
+}
+
+/******************************************************************************/
+/*
  *	Free an RSA key.  mp_clear will zero the memory of each element and free it.
  */
 void matrixRsaFreeKey(sslRsaKey_t *key)
 {
-	_mp_clear(&(key->N));
-	_mp_clear(&(key->e));
-	_mp_clear(&(key->d));
-	_mp_clear(&(key->p));
-	_mp_clear(&(key->q));
-	_mp_clear(&(key->dP));
-	_mp_clear(&(key->dQ));
-	_mp_clear(&(key->qP));
+	mp_clear(&(key->N));
+	mp_clear(&(key->e));
+	mp_clear(&(key->d));
+	mp_clear(&(key->p));
+	mp_clear(&(key->q));
+	mp_clear(&(key->dP));
+	mp_clear(&(key->dQ));
+	mp_clear(&(key->qP));
 	psFree(key);
 }
 
@@ -383,37 +409,35 @@ static int32 psAsnParsePrivateKey(psPool_t *pool, unsigned char **pp,
 	seq = p;
 	if (getInteger(&p, (int32)(end - p), &version) < 0 || version != 0 ||
 		getBig(pool, &p, (int32)(end - p), &(key->N)) < 0 ||
+		mp_shrink(&key->N) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->e)) < 0 ||
+		mp_shrink(&key->e) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->d)) < 0 ||
+		mp_shrink(&key->d) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->p)) < 0 ||
+		mp_shrink(&key->p) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->q)) < 0 ||
+		mp_shrink(&key->q) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->dP)) < 0 ||
+		mp_shrink(&key->dP) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->dQ)) < 0 ||
+		mp_shrink(&key->dQ) != MP_OKAY ||
 		getBig(pool, &p, (int32)(end - p), &(key->qP)) < 0 ||
+		mp_shrink(&key->qP) != MP_OKAY ||
 		(int32)(p - seq) != seqlen) {
 		matrixStrDebugMsg("ASN key extract parse error\n", NULL);
 		return -1;
 	}
-	if (_mp_shrink(&key->e) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->d) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->N) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->p) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->q) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->dQ) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->dP) != MP_OKAY) { goto done; }
-	if (_mp_shrink(&key->qP) != MP_OKAY) { goto done; }
-
 /*
 	If we made it here, the key is ready for optimized decryption
 */
 	key->optimized = 1;
 
-done:
 	*pp = p;
 /*
 	Set the key length of the key
 */
-	key->size = _mp_unsigned_bin_size(&key->N);
+	key->size = mp_unsigned_bin_size(&key->N);
 	return 0;
 }
 
@@ -509,6 +533,7 @@ int32 getDNAttributes(psPool_t *pool, unsigned char **pp, int32 len,
 			case ASN_UTF8STRING:
 			case ASN_IA5STRING:
 			case ASN_T61STRING:
+			case ASN_BMPSTRING:
 				stringOut = psMalloc(pool, llen + 1);
 				if (stringOut == NULL) {
 					return -8; /* SSL_MEM_ERROR */
@@ -607,7 +632,7 @@ int32 getPubKey(psPool_t *pool, unsigned char **pp, int32 len,
 			getBig(pool, &p, seqLen, &pubKey->e) < 0) {
 		return -1;
 	}
-	pubKey->size = _mp_unsigned_bin_size(&pubKey->N);
+	pubKey->size = mp_unsigned_bin_size(&pubKey->N);
 
 	*pp = p;
 	return 0;

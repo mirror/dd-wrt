@@ -1,11 +1,11 @@
 /*
  *	pscrypto.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Internal definitions for PeerSec Networks MatrixSSL cryptography provider
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -215,9 +215,9 @@ typedef struct {
 } rc4_key;
 #endif /* USE_ARC4 */
 
-#ifdef USE_3DES
 #define SSL_DES3_KEY_LEN	24
 #define SSL_DES3_IV_LEN		8
+#ifdef USE_3DES
 
 typedef struct {
 	ulong32 ek[3][32], dk[3][32];
@@ -233,28 +233,23 @@ typedef struct {
 	int32					explicitIV; /* 1 if yes */
 } des3_CBC;
 
-extern int32 _des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds,
+extern int32 des3_setup(const unsigned char *key, int32 keylen, int32 num_rounds,
 		 des3_CBC *skey);
-extern void _des3_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
+extern void des3_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
 		 des3_CBC *key);
-extern void _des3_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
+extern void des3_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
 		 des3_CBC *key);
-extern int32 _des3_keysize(int32 *desired_keysize);
+extern int32 des3_keysize(int32 *desired_keysize);
+
+extern int32 des_setup(const unsigned char *key, int32 keylen, int32 num_rounds,
+		 des3_CBC *skey);
+extern void des_ecb_encrypt(const unsigned char *pt, unsigned char *ct,
+		 des3_CBC *key);
+extern void des_ecb_decrypt(const unsigned char *ct, unsigned char *pt,
+		 des3_CBC *key);
 
 #endif /* USE_3DES */
 
-#ifdef USE_AES
-typedef struct {
-	ulong32 eK[64], dK[64];
-	int32 Nr;
-} aes_key;
-
-typedef struct {
-	int32				blocklen;
-	unsigned char	IV[16];
-	aes_key			key;
-} aes_CBC;
-#endif /* USE_AES */
 
 typedef union {
 #ifdef USE_ARC4
@@ -263,10 +258,8 @@ typedef union {
 #ifdef USE_3DES
 	des3_CBC	des3;
 #endif
-#ifdef USE_AES
-	aes_CBC		aes;
-#endif
 } sslCipherContext_t;
+
 
 /*
 	Controls endianess and size of registers.  Leave uncommented to get

@@ -1,11 +1,11 @@
 /*
  *	socketLayer.c
- *	Release $Name: MATRIXSSL_1_7_1_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Sample SSL socket layer for MatrixSSL example exectuables
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -185,6 +185,7 @@ int sslAccept(sslConn_t **cpp, SOCKET fd, sslKeys_t *keys,
 		sslFreeConnection(&conn);
 		return -1;
 	}
+
 /*
 	MatrixSSL doesn't provide buffers for data internally.  Define them
 	here to support buffered reading and writing for non-blocking sockets.

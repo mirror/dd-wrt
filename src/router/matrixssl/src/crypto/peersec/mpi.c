@@ -1,11 +1,11 @@
 /*	
  *	mpi.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	multiple-precision integer library
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -32,7 +32,9 @@
 #include "../cryptoLayer.h"
 #include <stdarg.h>
 
-static int32 _mp_exptmod_fast (psPool_t *pool, mp_int * G, mp_int * X,
+#ifndef USE_MPI2
+
+static int32 mp_exptmod_fast (psPool_t *pool, mp_int * G, mp_int * X,
 				mp_int * P, mp_int * Y, int32 redmode);
 
 /******************************************************************************/
@@ -86,10 +88,20 @@ int32 _mp_init_multi(psPool_t *pool, mp_int *mp0, mp_int *mp1, mp_int *mp2,
 {
 	mp_err	res		= MP_OKAY;		/* Assume ok until proven otherwise */
 	int32		n		= 0;			/* Number of ok inits */
-	mp_int	*tempArray[9] = {mp0, mp1, mp2, mp3, mp4, mp5, mp6, mp7, NULL};
+	mp_int	*tempArray[9];
+	
+	tempArray[0] = mp0;
+	tempArray[1] = mp1;
+	tempArray[2] = mp2;
+	tempArray[3] = mp3;
+	tempArray[4] = mp4;
+	tempArray[5] = mp5;
+	tempArray[6] = mp6;
+	tempArray[7] = mp7;
+	tempArray[8] = NULL;
 
 	while (tempArray[n] != NULL) {
-		if (_mp_init(pool, tempArray[n]) != MP_OKAY) {
+		if (mp_init(pool, tempArray[n]) != MP_OKAY) {
 			res = MP_MEM;
 			break;
 		}
@@ -99,7 +111,7 @@ int32 _mp_init_multi(psPool_t *pool, mp_int *mp0, mp_int *mp1, mp_int *mp2,
 	if (res == MP_MEM) {
 		n = 0;
 		while (tempArray[n] != NULL) {
-			_mp_clear(tempArray[n]);
+			mp_clear(tempArray[n]);
 			n++;
 		}
 	}
@@ -109,7 +121,7 @@ int32 _mp_init_multi(psPool_t *pool, mp_int *mp0, mp_int *mp1, mp_int *mp2,
 /*
 	Reads a unsigned char array, assumes the msb is stored first [big endian]
  */
-int32 _mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
+int32 mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
 {
 	int32		res;
 
@@ -117,7 +129,7 @@ int32 _mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
 	Make sure there are at least two digits.
  */
 	if (a->alloc < 2) {
-		if ((res = _mp_grow(a, 2)) != MP_OKAY) {
+		if ((res = mp_grow(a, 2)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -125,13 +137,13 @@ int32 _mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
 /*
 	Zero the int32.
  */
-	_mp_zero (a);
+	mp_zero (a);
 
 /*
 	read the bytes in
  */
 	while (c-- > 0) {
-		if ((res = _mp_mul_2d (a, 8, a)) != MP_OKAY) {
+		if ((res = mp_mul_2d (a, 8, a)) != MP_OKAY) {
 			return res;
 		}
 
@@ -144,7 +156,7 @@ int32 _mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
 		a->used += 2;
 #endif /* MP_8BIT */
 	}
-	_mp_clamp (a);
+	mp_clamp (a);
 	return MP_OKAY;
 }
 
@@ -152,7 +164,7 @@ int32 _mp_read_unsigned_bin (mp_int * a, unsigned char *b, int32 c)
 /* 
 	Compare two ints (signed)
  */
-int32 _mp_cmp (mp_int * a, mp_int * b)
+int32 mp_cmp (mp_int * a, mp_int * b)
 {
 /*
 	compare based on sign
@@ -170,9 +182,9 @@ int32 _mp_cmp (mp_int * a, mp_int * b)
  */
 	if (a->sign == MP_NEG) {
 		/* if negative compare opposite direction */
-		return _mp_cmp_mag(b, a);
+		return mp_cmp_mag(b, a);
 	} else {
-		return _mp_cmp_mag(a, b);
+		return mp_cmp_mag(a, b);
 	}
 }
 
@@ -180,29 +192,29 @@ int32 _mp_cmp (mp_int * a, mp_int * b)
 /*
 	Store in unsigned [big endian] format.
 */
-int32 _mp_to_unsigned_bin(psPool_t *pool, mp_int * a, unsigned char *b)
+int32 mp_to_unsigned_bin(psPool_t *pool, mp_int * a, unsigned char *b)
 {
 	int32			x, res;
 	mp_int		t;
 
-	if ((res = _mp_init_copy(pool, &t, a)) != MP_OKAY) {
+	if ((res = mp_init_copy(pool, &t, a)) != MP_OKAY) {
 		return res;
 	}
 
 	x = 0;
-	while (_mp_iszero (&t) == 0) {
+	while (mp_iszero (&t) == 0) {
 #ifndef MP_8BIT
 		b[x++] = (unsigned char) (t.dp[0] & 255);
 #else
 		b[x++] = (unsigned char) (t.dp[0] | ((t.dp[1] & 0x01) << 7));
 #endif /* MP_8BIT */
-		if ((res = _mp_div_2d (pool, &t, 8, &t, NULL)) != MP_OKAY) {
-			_mp_clear (&t);
+		if ((res = mp_div_2d (pool, &t, 8, &t, NULL)) != MP_OKAY) {
+			mp_clear (&t);
 			return res;
 		}
 	}
-	_bn_reverse (b, x);
-	_mp_clear (&t);
+	bn_reverse (b, x);
+	mp_clear (&t);
 	return MP_OKAY;
 }
 
@@ -210,11 +222,20 @@ void _mp_clear_multi(mp_int *mp0, mp_int *mp1, mp_int *mp2, mp_int *mp3,
 				  mp_int *mp4, mp_int *mp5, mp_int *mp6, mp_int *mp7)
 {
 	int32		n		= 0;		/* Number of ok inits */
-
-	mp_int	*tempArray[9] = {mp0, mp1, mp2, mp3, mp4, mp5, mp6, mp7, NULL};
+	mp_int	*tempArray[9];
+	
+	tempArray[0] = mp0;
+	tempArray[1] = mp1;
+	tempArray[2] = mp2;
+	tempArray[3] = mp3;
+	tempArray[4] = mp4;
+	tempArray[5] = mp5;
+	tempArray[6] = mp6;
+	tempArray[7] = mp7;
+	tempArray[8] = NULL;
 
 	for (n = 0; tempArray[n] != NULL; n++) {
-		_mp_clear(tempArray[n]);
+		mp_clear(tempArray[n]);
 	}
 }
 
@@ -222,7 +243,7 @@ void _mp_clear_multi(mp_int *mp0, mp_int *mp1, mp_int *mp2, mp_int *mp3,
 /*
 	Init a new mp_int.
 */
-int32 _mp_init (psPool_t *pool, mp_int * a)
+int32 mp_init (psPool_t *pool, mp_int * a)
 {
 	int32		i;
 /*
@@ -254,7 +275,7 @@ int32 _mp_init (psPool_t *pool, mp_int * a)
 /*
 	clear one (frees).
  */
-void _mp_clear (mp_int * a)
+void mp_clear (mp_int * a)
 {
 	int32		i;
 /*
@@ -284,9 +305,9 @@ void _mp_clear (mp_int * a)
 /*
 	Get the size for an unsigned equivalent.
  */
-int32 _mp_unsigned_bin_size (mp_int * a)
+int32 mp_unsigned_bin_size (mp_int * a)
 {
-	int32		size = _mp_count_bits (a);
+	int32		size = mp_count_bits (a);
 
 	return	(size / 8 + ((size & 7) != 0 ? 1 : 0));
 }
@@ -299,7 +320,7 @@ int32 _mp_unsigned_bin_size (mp_int * a)
 	leading "used" digit will be non-zero. Typically very fast.  Also fixes 
 	the sign if there are no more leading digits
 */
-void _mp_clamp (mp_int * a)
+void mp_clamp (mp_int * a)
 {
 /*
 	decrease used while the most significant digit is zero.
@@ -320,7 +341,7 @@ void _mp_clamp (mp_int * a)
 /*
 	Shift left by a certain bit count.
  */
-int32 _mp_mul_2d (mp_int * a, int32 b, mp_int * c)
+int32 mp_mul_2d (mp_int * a, int32 b, mp_int * c)
 {
 	mp_digit	d;
 	int32			res;
@@ -329,13 +350,13 @@ int32 _mp_mul_2d (mp_int * a, int32 b, mp_int * c)
 	Copy
  */
 	if (a != c) {
-		if ((res = _mp_copy (a, c)) != MP_OKAY) {
+		if ((res = mp_copy (a, c)) != MP_OKAY) {
 			return res;
 		}
 	}
 
 	if (c->alloc < (int32)(c->used + b/DIGIT_BIT + 1)) {
-		if ((res = _mp_grow (c, c->used + b / DIGIT_BIT + 1)) != MP_OKAY) {
+		if ((res = mp_grow (c, c->used + b / DIGIT_BIT + 1)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -344,7 +365,7 @@ int32 _mp_mul_2d (mp_int * a, int32 b, mp_int * c)
 	Shift by as many digits in the bit count
  */
 	if (b >= (int32)DIGIT_BIT) {
-		if ((res = _mp_lshd (c, b / DIGIT_BIT)) != MP_OKAY) {
+		if ((res = mp_lshd (c, b / DIGIT_BIT)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -397,7 +418,7 @@ int32 _mp_mul_2d (mp_int * a, int32 b, mp_int * c)
 			c->dp[(c->used)++] = r;
 		}
 	}
-	_mp_clamp (c);
+	mp_clamp (c);
 	return MP_OKAY;
 }
 
@@ -405,7 +426,7 @@ int32 _mp_mul_2d (mp_int * a, int32 b, mp_int * c)
 /* 
 	Set to zero.
  */
-void _mp_zero (mp_int * a)
+void mp_zero (mp_int * a)
 {
 	int			n;
 	mp_digit	*tmp;
@@ -429,7 +450,7 @@ void _mp_zero (mp_int * a)
 /*
 	Compare maginitude of two ints (unsigned).
  */
-int32 _mp_cmp_mag (mp_int * a, mp_int * b)
+int32 mp_cmp_mag (mp_int * a, mp_int * b)
 {
 	int32			n;
 	mp_digit	*tmpa, *tmpb;
@@ -475,7 +496,7 @@ int32 _mp_cmp_mag (mp_int * a, mp_int * b)
 
 	Uses Montgomery or Diminished Radix reduction [whichever appropriate]
 */
-int32 _mp_exptmod(psPool_t *pool, mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
+int32 mp_exptmod(psPool_t *pool, mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 {
 
 /*
@@ -495,41 +516,41 @@ int32 _mp_exptmod(psPool_t *pool, mp_int * G, mp_int * X, mp_int * P, mp_int * Y
 /*
 		first compute 1/G mod P
  */
-		if ((err = _mp_init(pool, &tmpG)) != MP_OKAY) {
+		if ((err = mp_init(pool, &tmpG)) != MP_OKAY) {
 			return err;
 		}
-		if ((err = _mp_invmod(pool, G, P, &tmpG)) != MP_OKAY) {
-			_mp_clear(&tmpG);
+		if ((err = mp_invmod(pool, G, P, &tmpG)) != MP_OKAY) {
+			mp_clear(&tmpG);
 			return err;
 		}
 
 /*
 		now get |X|
  */
-		if ((err = _mp_init(pool, &tmpX)) != MP_OKAY) {
-			_mp_clear(&tmpG);
+		if ((err = mp_init(pool, &tmpX)) != MP_OKAY) {
+			mp_clear(&tmpG);
 			return err;
 		}
-		if ((err = _mp_abs(X, &tmpX)) != MP_OKAY) {
-			_mp_clear(&tmpG);
-			_mp_clear(&tmpX);
+		if ((err = mp_abs(X, &tmpX)) != MP_OKAY) {
+			mp_clear(&tmpG);
+			mp_clear(&tmpX);
 			return err;
 		}
 
 /*
 		and now compute (1/G)**|X| instead of G**X [X < 0]
  */
-		err = _mp_exptmod(pool, &tmpG, &tmpX, P, Y);
-		_mp_clear(&tmpG);
-		_mp_clear(&tmpX);
+		err = mp_exptmod(pool, &tmpG, &tmpX, P, Y);
+		mp_clear(&tmpG);
+		mp_clear(&tmpX);
 		return err;
 	}
 
 /*
 	if the modulus is odd or dr != 0 use the fast method
  */
-	if (_mp_isodd (P) == 1) {
-		return _mp_exptmod_fast (pool, G, X, P, Y, 0);
+	if (mp_isodd (P) == 1) {
+		return mp_exptmod_fast (pool, G, X, P, Y, 0);
 	} else {
 /*
 		no exptmod for evens
@@ -542,7 +563,7 @@ int32 _mp_exptmod(psPool_t *pool, mp_int * G, mp_int * X, mp_int * P, mp_int * Y
 /*
 	Call only from mp_exptmod to make sure this fast version qualifies
 */
-static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
+static int32 mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 				mp_int * P, mp_int * Y, int32 redmode)
 {
 	mp_int		M[TAB_SIZE], res;
@@ -560,7 +581,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 /*
 	find window size
  */
-	x = _mp_count_bits (X);
+	x = mp_count_bits (X);
 	if (x <= 7) {
 		winsize = 2;
 	} else if (x <= 36) {
@@ -587,7 +608,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 	init M array
 	init first cell
  */
-	if ((err = _mp_init(pool, &M[1])) != MP_OKAY) {
+	if ((err = mp_init(pool, &M[1])) != MP_OKAY) {
 		return err;
 	}
 
@@ -595,11 +616,11 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 	now init the second half of the array
  */
 	for (x = 1<<(winsize-1); x < (1 << winsize); x++) {
-		if ((err = _mp_init(pool, &M[x])) != MP_OKAY) {
+		if ((err = mp_init(pool, &M[x])) != MP_OKAY) {
 			for (y = 1<<(winsize-1); y < x; y++) {
-				_mp_clear(&M[y]);
+				mp_clear(&M[y]);
 			}
-			_mp_clear(&M[1]);
+			mp_clear(&M[1]);
 			return err;
 		}
 	}
@@ -608,7 +629,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 /*
 	now setup montgomery
  */
-	if ((err = _mp_montgomery_setup(P, &mp)) != MP_OKAY) {
+	if ((err = mp_montgomery_setup(P, &mp)) != MP_OKAY) {
 		goto LBL_M;
 	}
 
@@ -617,18 +638,18 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
  */
 	if (((P->used * 2 + 1) < MP_WARRAY) &&
 			P->used < (1 << ((CHAR_BIT * sizeof (mp_word)) - (2 * DIGIT_BIT)))) {
-		redux = _fast_mp_montgomery_reduce;
+		redux = fast_mp_montgomery_reduce;
 	} else {
 /*
 		use slower baseline Montgomery method
  */
-		redux = _mp_montgomery_reduce;
+		redux = mp_montgomery_reduce;
 	}
 
 /*
 	setup result
  */
-	if ((err = _mp_init(pool, &res)) != MP_OKAY) {
+	if ((err = mp_init(pool, &res)) != MP_OKAY) {
 		goto LBL_M;
 	}
 
@@ -640,14 +661,14 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 /*
 	now we need R mod m
  */
-	if ((err = _mp_montgomery_calc_normalization(&res, P)) != MP_OKAY) {
+	if ((err = mp_montgomery_calc_normalization(&res, P)) != MP_OKAY) {
 		goto LBL_RES;
 	}
 
 /*
 	now set M[1] to G * R mod m
  */
-	if ((err = _mp_mulmod(pool, G, &res, P, &M[1])) != MP_OKAY) {
+	if ((err = mp_mulmod(pool, G, &res, P, &M[1])) != MP_OKAY) {
 		goto LBL_RES;
 	}
 
@@ -655,12 +676,12 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 	compute the value at M[1<<(winsize-1)] by squaring
 	M[1] (winsize-1) times
 */
-	if ((err = _mp_copy(&M[1], &M[1 << (winsize - 1)])) != MP_OKAY) {
+	if ((err = mp_copy(&M[1], &M[1 << (winsize - 1)])) != MP_OKAY) {
 		goto LBL_RES;
 	}
 
 	for (x = 0; x < (winsize - 1); x++) {
-		if ((err = _mp_sqr(pool, &M[1 << (winsize - 1)],
+		if ((err = mp_sqr(pool, &M[1 << (winsize - 1)],
 				&M[1 << (winsize - 1)])) != MP_OKAY) {
 			goto LBL_RES;
 		}
@@ -673,7 +694,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 	create upper table
  */
 	for (x = (1 << (winsize - 1)) + 1; x < (1 << winsize); x++) {
-		if ((err = _mp_mul(pool, &M[x - 1], &M[1], &M[x])) != MP_OKAY) {
+		if ((err = mp_mul(pool, &M[x - 1], &M[1], &M[x])) != MP_OKAY) {
 			goto LBL_RES;
 		}
 		if ((err = redux(&M[x], P, mp)) != MP_OKAY) {
@@ -723,7 +744,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 		if the bit is zero and mode == 1 then we square
  */
 		if (mode == 1 && y == 0) {
-			if ((err = _mp_sqr (pool, &res, &res)) != MP_OKAY) {
+			if ((err = mp_sqr (pool, &res, &res)) != MP_OKAY) {
 				goto LBL_RES;
 			}
 			if ((err = redux (&res, P, mp)) != MP_OKAY) {
@@ -744,7 +765,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 			square first
  */
 			for (x = 0; x < winsize; x++) {
-				if ((err = _mp_sqr(pool, &res, &res)) != MP_OKAY) {
+				if ((err = mp_sqr(pool, &res, &res)) != MP_OKAY) {
 					goto LBL_RES;
 				}
 				if ((err = redux(&res, P, mp)) != MP_OKAY) {
@@ -753,7 +774,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 			}
 
 			/* then multiply */
-			if ((err = _mp_mul(pool, &res, &M[bitbuf], &res)) != MP_OKAY) {
+			if ((err = mp_mul(pool, &res, &M[bitbuf], &res)) != MP_OKAY) {
 				goto LBL_RES;
 			}
 			if ((err = redux(&res, P, mp)) != MP_OKAY) {
@@ -775,7 +796,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 	if (mode == 2 && bitcpy > 0) {
 		/* square then multiply if the bit is set */
 		for (x = 0; x < bitcpy; x++) {
-			if ((err = _mp_sqr(pool, &res, &res)) != MP_OKAY) {
+			if ((err = mp_sqr(pool, &res, &res)) != MP_OKAY) {
 				goto LBL_RES;
 			}
 			if ((err = redux(&res, P, mp)) != MP_OKAY) {
@@ -790,7 +811,7 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 /*
 				then multiply
  */
-				if ((err = _mp_mul(pool, &res, &M[1], &res)) != MP_OKAY) {
+				if ((err = mp_mul(pool, &res, &M[1], &res)) != MP_OKAY) {
 					goto LBL_RES;
 				}
 				if ((err = redux(&res, P, mp)) != MP_OKAY) {
@@ -813,13 +834,13 @@ static int32 _mp_exptmod_fast(psPool_t *pool, mp_int * G, mp_int * X,
 /*
 	swap res with Y
  */
-	_mp_exch(&res, Y);
+	mp_exch(&res, Y);
 	err = MP_OKAY;
-LBL_RES:_mp_clear(&res);
+LBL_RES:mp_clear(&res);
 LBL_M:
-	_mp_clear(&M[1]);
+	mp_clear(&M[1]);
 	for (x = 1<<(winsize-1); x < (1 << winsize); x++) {
-		_mp_clear(&M[x]);
+		mp_clear(&M[x]);
 	}
 	return err;
 }
@@ -828,7 +849,7 @@ LBL_M:
 /*
 	Grow as required
  */
-int32 _mp_grow (mp_int * a, int32 size)
+int32 mp_grow (mp_int * a, int32 size)
 {
 	int32			i;
 	mp_digit	*tmp;
@@ -879,7 +900,7 @@ int32 _mp_grow (mp_int * a, int32 size)
 
 	Simple function copies the input and fixes the sign to positive
 */
-int32 _mp_abs (mp_int * a, mp_int * b)
+int32 mp_abs (mp_int * a, mp_int * b)
 {
 	int32		res;
 
@@ -887,7 +908,7 @@ int32 _mp_abs (mp_int * a, mp_int * b)
 	copy a to b
  */
 	if (a != b) {
-		if ((res = _mp_copy (a, b)) != MP_OKAY) {
+		if ((res = mp_copy (a, b)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -904,21 +925,21 @@ int32 _mp_abs (mp_int * a, mp_int * b)
 /*
 	Creates "a" then copies b into it
  */
-int32 _mp_init_copy(psPool_t *pool, mp_int * a, mp_int * b)
+int32 mp_init_copy(psPool_t *pool, mp_int * a, mp_int * b)
 {
 	int32		res;
 
-	if ((res = _mp_init(pool, a)) != MP_OKAY) {
+	if ((res = mp_init(pool, a)) != MP_OKAY) {
 		return res;
 	}
-	return _mp_copy (b, a);
+	return mp_copy (b, a);
 }
 
 /******************************************************************************/
 /* 
 	Reverse an array, used for radix code
  */
-void _bn_reverse (unsigned char *s, int32 len)
+void bn_reverse (unsigned char *s, int32 len)
 {
 	int32				ix, iy;
 	unsigned char	t;
@@ -939,7 +960,7 @@ void _bn_reverse (unsigned char *s, int32 len)
 	Shift right by a certain bit count (store quotient in c, optional 
 	remainder in d)
  */
-int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
+int32 mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 {
 	mp_digit	D, r, rr;
 	int32			x, res;
@@ -949,14 +970,14 @@ int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 	If the shift count is <= 0 then we do no work
  */
 	if (b <= 0) {
-		res = _mp_copy (a, c);
+		res = mp_copy (a, c);
 		if (d != NULL) {
-			_mp_zero (d);
+			mp_zero (d);
 		}
 		return res;
 	}
 
-	if ((res = _mp_init(pool, &t)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t)) != MP_OKAY) {
 		return res;
 	}
 
@@ -964,15 +985,15 @@ int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 	Get the remainder
  */
 	if (d != NULL) {
-		if ((res = _mp_mod_2d (a, b, &t)) != MP_OKAY) {
-			_mp_clear (&t);
+		if ((res = mp_mod_2d (a, b, &t)) != MP_OKAY) {
+			mp_clear (&t);
 			return res;
 		}
 	}
 
 	/* copy */
-	if ((res = _mp_copy (a, c)) != MP_OKAY) {
-		_mp_clear (&t);
+	if ((res = mp_copy (a, c)) != MP_OKAY) {
+		mp_clear (&t);
 		return res;
 	}
 
@@ -980,7 +1001,7 @@ int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 	Shift by as many digits in the bit count
  */
 	if (b >= (int32)DIGIT_BIT) {
-		_mp_rshd (c, b / DIGIT_BIT);
+		mp_rshd (c, b / DIGIT_BIT);
 	}
 
 	/* shift any bit count < DIGIT_BIT */
@@ -1017,11 +1038,11 @@ int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 			r = rr;
 		}
 	}
-	_mp_clamp (c);
+	mp_clamp (c);
 	if (d != NULL) {
-		_mp_exch (&t, d);
+		mp_exch (&t, d);
 	}
-	_mp_clear (&t);
+	mp_clear (&t);
 	return MP_OKAY;
 }
 
@@ -1029,7 +1050,7 @@ int32 _mp_div_2d(psPool_t *pool, mp_int * a, int32 b, mp_int * c, mp_int * d)
 /*
 	copy, b = a
  */
-int32 _mp_copy (mp_int * a, mp_int * b)
+int32 mp_copy (mp_int * a, mp_int * b)
 {
 	int32		res, n;
 
@@ -1044,7 +1065,7 @@ int32 _mp_copy (mp_int * a, mp_int * b)
 	Grow dest
  */
 	if (b->alloc < a->used) {
-		if ((res = _mp_grow (b, a->used)) != MP_OKAY) {
+		if ((res = mp_grow (b, a->used)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -1085,7 +1106,7 @@ int32 _mp_copy (mp_int * a, mp_int * b)
 /*
 	Returns the number of bits in an int32
  */
-int32 _mp_count_bits (mp_int * a)
+int32 mp_count_bits (mp_int * a)
 {
 	int32			r;
 	mp_digit	q;
@@ -1117,7 +1138,7 @@ int32 _mp_count_bits (mp_int * a)
 /*
 	Shift left a certain amount of digits.
  */
-int32 _mp_lshd (mp_int * a, int32 b)
+int32 mp_lshd (mp_int * a, int32 b)
 {
 	int32		x, res;
 
@@ -1132,7 +1153,7 @@ int32 _mp_lshd (mp_int * a, int32 b)
 	Grow to fit the new digits.
  */
 	if (a->alloc < a->used + b) {
-		if ((res = _mp_grow (a, a->used + b)) != MP_OKAY) {
+		if ((res = mp_grow (a, a->used + b)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -1173,9 +1194,9 @@ int32 _mp_lshd (mp_int * a, int32 b)
 /*
 	Set to a digit.
  */
-void _mp_set (mp_int * a, mp_digit b)
+void mp_set (mp_int * a, mp_digit b)
 {
-	_mp_zero (a);
+	mp_zero (a);
 	a->dp[0] = b & MP_MASK;
 	a->used  = (a->dp[0] != 0) ? 1 : 0;
 }
@@ -1185,7 +1206,7 @@ void _mp_set (mp_int * a, mp_digit b)
 	Swap the elements of two integers, for cases where you can't simply swap 
 	the 	mp_int pointers around 
 */
-void _mp_exch (mp_int * a, mp_int * b)
+void mp_exch (mp_int * a, mp_int * b)
 {
 	mp_int		t;
 
@@ -1198,7 +1219,7 @@ void _mp_exch (mp_int * a, mp_int * b)
 /*
 	High level multiplication (handles sign)
  */
-int32 _mp_mul(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
+int32 mp_mul(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 {
 	int32			res, neg;
 	int32			digs = a->used + b->used + 1;
@@ -1212,9 +1233,9 @@ int32 _mp_mul(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 */
 	if ((digs < MP_WARRAY) && MIN(a->used, b->used) <= 
 			(1 << ((CHAR_BIT * sizeof (mp_word)) - (2 * DIGIT_BIT)))) {
-		res = _fast_s_mp_mul_digs(pool, a, b, c, digs);
+		res = fast_s_mp_mul_digs(pool, a, b, c, digs);
 	} else {
-		res = _s_mp_mul(pool, a, b, c);
+		res = s_mp_mul(pool, a, b, c);
 	}
 	c->sign = (c->used > 0) ? neg : MP_ZPOS;
 	return res;
@@ -1224,28 +1245,28 @@ int32 _mp_mul(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 /* 
 	c = a mod b, 0 <= c < b
  */
-int32 _mp_mod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
+int32 mp_mod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 {
 	mp_int		t;
 	int32			res;
 
-	if ((res = _mp_init(pool, &t)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t)) != MP_OKAY) {
 		return res;
 	}
 
-	if ((res = _mp_div (pool, a, b, NULL, &t)) != MP_OKAY) {
-		_mp_clear (&t);
+	if ((res = mp_div (pool, a, b, NULL, &t)) != MP_OKAY) {
+		mp_clear (&t);
 		return res;
 	}
 
 	if (t.sign != b->sign) {
-		res = _mp_add (b, &t, c);
+		res = mp_add (b, &t, c);
 	} else {
 		res = MP_OKAY;
-		_mp_exch (&t, c);
+		mp_exch (&t, c);
 	}
 
-	_mp_clear (&t);
+	mp_clear (&t);
 	return res;
 }
 
@@ -1256,21 +1277,21 @@ int32 _mp_mod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 	The method is slightly modified to shift B unconditionally upto just under
 	the leading bit of b.  This saves alot of multiple precision shifting.
 */
-int32 _mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
+int32 mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
 {
 	int32		x, bits, res;
 
 /*
 	How many bits of last digit does b use
  */
-	bits = _mp_count_bits (b) % DIGIT_BIT;
+	bits = mp_count_bits (b) % DIGIT_BIT;
 
 	if (b->used > 1) {
-		if ((res = _mp_2expt(a, (b->used - 1) * DIGIT_BIT + bits - 1)) != MP_OKAY) {
+		if ((res = mp_2expt(a, (b->used - 1) * DIGIT_BIT + bits - 1)) != MP_OKAY) {
 			return res;
 		}
 	} else {
-		_mp_set(a, 1);
+		mp_set(a, 1);
 		bits = 1;
 	}
 
@@ -1278,11 +1299,11 @@ int32 _mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
 	Now compute C = A * B mod b
  */
 	for (x = bits - 1; x < (int32)DIGIT_BIT; x++) {
-		if ((res = _mp_mul_2(a, a)) != MP_OKAY) {
+		if ((res = mp_mul_2(a, a)) != MP_OKAY) {
 			return res;
 		}
-		if (_mp_cmp_mag(a, b) != MP_LT) {
-			if ((res = _s_mp_sub(a, b, a)) != MP_OKAY) {
+		if (mp_cmp_mag(a, b) != MP_LT) {
+			if ((res = s_mp_sub(a, b, a)) != MP_OKAY) {
 				return res;
 			}
 		}
@@ -1295,21 +1316,21 @@ int32 _mp_montgomery_calc_normalization (mp_int * a, mp_int * b)
 /*
 	d = a * b (mod c)
  */
-int32 _mp_mulmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
+int32 mp_mulmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
 	int32		res;
 	mp_int		t;
 
-	if ((res = _mp_init(pool, &t)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t)) != MP_OKAY) {
 		return res;
 	}
 
-	if ((res = _mp_mul (pool, a, b, &t)) != MP_OKAY) {
-		_mp_clear (&t);
+	if ((res = mp_mul (pool, a, b, &t)) != MP_OKAY) {
+		mp_clear (&t);
 		return res;
 	}
-	res = _mp_mod (pool, &t, c, d);
-	_mp_clear (&t);
+	res = mp_mod (pool, &t, c, d);
+	mp_clear (&t);
 	return res;
 }
 
@@ -1318,7 +1339,7 @@ int32 _mp_mulmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 	Computes b = a*a
  */
 #ifdef USE_SMALL_WORD
-int32 _mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
+int32 mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 {
 	int32		res;
 
@@ -1327,9 +1348,9 @@ int32 _mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
  */
 	if ((a->used * 2 + 1) < MP_WARRAY && a->used < 
 			(1 << (sizeof(mp_word) * CHAR_BIT - 2*DIGIT_BIT - 1))) {
-		res = _fast_s_mp_sqr (pool, a, b);
+		res = fast_s_mp_sqr (pool, a, b);
 	} else {
-		res = _s_mp_sqr (pool, a, b);
+		res = s_mp_sqr (pool, a, b);
 	}
 	b->sign = MP_ZPOS;
 	return res;
@@ -1347,7 +1368,7 @@ int32 _mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 	Based on Algorithm 14.32 on pp.601 of HAC.
 */
 
-int32 _fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
+int32 fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 {
 	int32		ix, res, olduse;
 /*
@@ -1364,7 +1385,7 @@ int32 _fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 	Grow a as required
  */
 	if (x->alloc < n->used + 1) {
-		if ((res = _mp_grow(x, n->used + 1)) != MP_OKAY) {
+		if ((res = mp_grow(x, n->used + 1)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -1520,13 +1541,13 @@ int32 _fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 	Set the max used and clamp
  */
 	x->used = n->used + 1;
-	_mp_clamp(x);
+	mp_clamp(x);
 
 /*
 	if A >= m then A = A - m
  */
-	if (_mp_cmp_mag(x, n) != MP_LT) {
-		return _s_mp_sub(x, n, x);
+	if (mp_cmp_mag(x, n) != MP_LT) {
+		return s_mp_sub(x, n, x);
 	}
 	return MP_OKAY;
 }
@@ -1535,7 +1556,7 @@ int32 _fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 /*
 	High level addition (handles signs)
  */
-int32 _mp_add (mp_int * a, mp_int * b, mp_int * c)
+int32 mp_add (mp_int * a, mp_int * b, mp_int * c)
 {
 	int32		sa, sb, res;
 
@@ -1553,19 +1574,19 @@ int32 _mp_add (mp_int * a, mp_int * b, mp_int * c)
 		Both positive or both negative. Add their magnitudes, copy the sign.
  */
 		c->sign = sa;
-		res = _s_mp_add (a, b, c);
+		res = s_mp_add (a, b, c);
 	} else {
 /*
 		One positive, the other negative.  Subtract the one with the greater
 		magnitude from the one of the lesser magnitude.  The result gets the sign of
 		the one with the greater magnitude.
  */
-		if (_mp_cmp_mag (a, b) == MP_LT) {
+		if (mp_cmp_mag (a, b) == MP_LT) {
 			c->sign = sb;
-			res = _s_mp_sub (b, a, c);
+			res = s_mp_sub (b, a, c);
 		} else {
 			c->sign = sa;
-			res = _s_mp_sub (a, b, c);
+			res = s_mp_sub (a, b, c);
 		}
 	}
 	return res;
@@ -1575,7 +1596,7 @@ int32 _mp_add (mp_int * a, mp_int * b, mp_int * c)
 /*
 	Compare a digit.
  */
-int32 _mp_cmp_d (mp_int * a, mp_digit b)
+int32 mp_cmp_d (mp_int * a, mp_digit b)
 {
 /*
 	Compare based on sign
@@ -1607,7 +1628,7 @@ int32 _mp_cmp_d (mp_int * a, mp_digit b)
 /*
 	b = a/2
  */
-int32 _mp_div_2 (mp_int * a, mp_int * b)
+int32 mp_div_2 (mp_int * a, mp_int * b)
 {
 	int32		x, res, oldused;
 
@@ -1615,7 +1636,7 @@ int32 _mp_div_2 (mp_int * a, mp_int * b)
 	Copy
  */
 	if (b->alloc < a->used) {
-		if ((res = _mp_grow (b, a->used)) != MP_OKAY) {
+		if ((res = mp_grow (b, a->used)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -1664,7 +1685,7 @@ int32 _mp_div_2 (mp_int * a, mp_int * b)
 		}
 	}
 	b->sign = a->sign;
-	_mp_clamp (b);
+	mp_clamp (b);
 	return MP_OKAY;
 }
 
@@ -1673,7 +1694,7 @@ int32 _mp_div_2 (mp_int * a, mp_int * b)
 	Computes xR**-1 == x (mod N) via Montgomery Reduction
  */
 #ifdef USE_SMALL_WORD
-int32 _mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
+int32 mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 {
 	int32			ix, res, digs;
 	mp_digit	mu;
@@ -1687,14 +1708,14 @@ int32 _mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 	if ((digs < MP_WARRAY) && 
 		n->used < 
 		(1 << ((CHAR_BIT * sizeof (mp_word)) - (2 * DIGIT_BIT)))) {
-			return _fast_mp_montgomery_reduce (x, n, rho);
+			return fast_mp_montgomery_reduce (x, n, rho);
 		}
 
 /*
 		Grow the input as required.
  */
 		if (x->alloc < digs) {
-			if ((res = _mp_grow (x, digs)) != MP_OKAY) {
+			if ((res = mp_grow (x, digs)) != MP_OKAY) {
 				return res;
 			}
 		}
@@ -1765,12 +1786,12 @@ int32 _mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 		residue is unchanged.
 */
 		/* x = x/b**n.used */
-		_mp_clamp(x);
-		_mp_rshd (x, n->used);
+		mp_clamp(x);
+		mp_rshd (x, n->used);
 
 		/* if x >= n then x = x - n */
-		if (_mp_cmp_mag (x, n) != MP_LT) {
-			return _s_mp_sub (x, n, x);
+		if (mp_cmp_mag (x, n) != MP_LT) {
+			return s_mp_sub (x, n, x);
 		}
 
 		return MP_OKAY;
@@ -1781,7 +1802,7 @@ int32 _mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 /*
 	Setups the montgomery reduction stuff.
  */
-int32 _mp_montgomery_setup (mp_int * n, mp_digit * rho)
+int32 mp_montgomery_setup (mp_int * n, mp_digit * rho)
 {
 	mp_digit x, b;
 
@@ -1822,7 +1843,7 @@ int32 _mp_montgomery_setup (mp_int * n, mp_digit * rho)
 /*
 	High level subtraction (handles signs)
  */
-int32 _mp_sub (mp_int * a, mp_int * b, mp_int * c)
+int32 mp_sub (mp_int * a, mp_int * b, mp_int * c)
 {
 	int32		sa, sb, res;
 
@@ -1836,20 +1857,20 @@ int32 _mp_sub (mp_int * a, mp_int * b, mp_int * c)
 		the first number.
  */
 		c->sign = sa;
-		res = _s_mp_add (a, b, c);
+		res = s_mp_add (a, b, c);
 	} else {
 /*
 		Subtract a positive from a positive, OR subtract a negative 
 		from a negative. First, take the difference between their
 		magnitudes, then...
  */
-		if (_mp_cmp_mag (a, b) != MP_LT) {
+		if (mp_cmp_mag (a, b) != MP_LT) {
 /*
 			Copy the sign from the first
  */
 			c->sign = sa;
 			/* The first has a larger or equal magnitude */
-			res = _s_mp_sub (a, b, c);
+			res = s_mp_sub (a, b, c);
 		} else {
 /*
 			The result has the *opposite* sign from the first number.
@@ -1858,7 +1879,7 @@ int32 _mp_sub (mp_int * a, mp_int * b, mp_int * c)
 /*
 			The second has a larger magnitude 
  */
-			res = _s_mp_sub (b, a, c);
+			res = s_mp_sub (b, a, c);
 		}
 	}
 	return res;
@@ -1868,7 +1889,7 @@ int32 _mp_sub (mp_int * a, mp_int * b, mp_int * c)
 /*
 	calc a value mod 2**b
  */
-int32 _mp_mod_2d (mp_int * a, int32 b, mp_int * c)
+int32 mp_mod_2d (mp_int * a, int32 b, mp_int * c)
 {
 	int32		x, res;
 
@@ -1876,7 +1897,7 @@ int32 _mp_mod_2d (mp_int * a, int32 b, mp_int * c)
 	if b is <= 0 then zero the int32
  */
 	if (b <= 0) {
-		_mp_zero (c);
+		mp_zero (c);
 		return MP_OKAY;
 	}
 
@@ -1884,12 +1905,12 @@ int32 _mp_mod_2d (mp_int * a, int32 b, mp_int * c)
 	If the modulus is larger than the value than return
  */
 	if (b >=(int32) (a->used * DIGIT_BIT)) {
-		res = _mp_copy (a, c);
+		res = mp_copy (a, c);
 		return res;
 	}
 
 	/* copy */
-	if ((res = _mp_copy (a, c)) != MP_OKAY) {
+	if ((res = mp_copy (a, c)) != MP_OKAY) {
 		return res;
 	}
 
@@ -1904,7 +1925,7 @@ int32 _mp_mod_2d (mp_int * a, int32 b, mp_int * c)
  */
 	c->dp[b / DIGIT_BIT] &=
 		(mp_digit) ((((mp_digit) 1) << (((mp_digit) b) % DIGIT_BIT)) - ((mp_digit) 1));
-	_mp_clamp (c);
+	mp_clamp (c);
 	return MP_OKAY;
 }
 
@@ -1912,7 +1933,7 @@ int32 _mp_mod_2d (mp_int * a, int32 b, mp_int * c)
 /*
 	Shift right a certain amount of digits.
  */
-void _mp_rshd (mp_int * a, int32 b)
+void mp_rshd (mp_int * a, int32 b)
 {
 	int32		x;
 
@@ -1927,7 +1948,7 @@ void _mp_rshd (mp_int * a, int32 b)
 	If b > used then simply zero it and return.
 */
 	if (a->used <= b) {
-		_mp_zero (a);
+		mp_zero (a);
 		return;
 	}
 
@@ -1975,7 +1996,7 @@ void _mp_rshd (mp_int * a, int32 b)
 /* 
 	Low level subtraction (assumes |a| > |b|), HAC pp.595 Algorithm 14.9
  */
-int32 _s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
+int32 s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 {
 	int32		olduse, res, min, max;
 
@@ -1989,7 +2010,7 @@ int32 _s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 	init result
  */
 	if (c->alloc < max) {
-		if ((res = _mp_grow (c, max)) != MP_OKAY) {
+		if ((res = mp_grow (c, max)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -2049,7 +2070,7 @@ int32 _s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 		}
 	}
 
-	_mp_clamp (c);
+	mp_clamp (c);
 	return MP_OKAY;
 }
 /******************************************************************************/
@@ -2068,7 +2089,7 @@ int32 _s_mp_sub (mp_int * a, mp_int * b, mp_int * c)
 	treat these cases.
  */
 #ifdef MP_DIV_SMALL
-int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
+int32 mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
 	mp_int	ta, tb, tq, q;
 	int32		res, n, n2;
@@ -2076,21 +2097,21 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	is divisor zero ?
  */
-	if (_mp_iszero (b) == 1) {
+	if (mp_iszero (b) == 1) {
 		return MP_VAL;
 	}
 
 /*
 	if a < b then q=0, r = a
  */
-	if (_mp_cmp_mag (a, b) == MP_LT) {
+	if (mp_cmp_mag (a, b) == MP_LT) {
 		if (d != NULL) {
-			res = _mp_copy (a, d);
+			res = mp_copy (a, d);
 		} else {
 			res = MP_OKAY;
 		}
 		if (c != NULL) {
-			_mp_zero (c);
+			mp_zero (c);
 		}
 		return res;
 	}
@@ -2105,12 +2126,12 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	tq = 2^n,  tb == b*2^n
  */
-	_mp_set(&tq, 1);
-	n = _mp_count_bits(a) - _mp_count_bits(b);
-	if (((res = _mp_abs(a, &ta)) != MP_OKAY) ||
-			((res = _mp_abs(b, &tb)) != MP_OKAY) || 
-			((res = _mp_mul_2d(&tb, n, &tb)) != MP_OKAY) ||
-			((res = _mp_mul_2d(&tq, n, &tq)) != MP_OKAY)) {
+	mp_set(&tq, 1);
+	n = mp_count_bits(a) - mp_count_bits(b);
+	if (((res = mp_abs(a, &ta)) != MP_OKAY) ||
+			((res = mp_abs(b, &tb)) != MP_OKAY) || 
+			((res = mp_mul_2d(&tb, n, &tb)) != MP_OKAY) ||
+			((res = mp_mul_2d(&tq, n, &tq)) != MP_OKAY)) {
       goto __ERR;
 	}
 /* old
@@ -2122,14 +2143,14 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 	}
 */
 	while (n-- >= 0) {
-		if (_mp_cmp(&tb, &ta) != MP_GT) {
-			if (((res = _mp_sub(&ta, &tb, &ta)) != MP_OKAY) ||
-				((res = _mp_add(&q, &tq, &q)) != MP_OKAY)) {
+		if (mp_cmp(&tb, &ta) != MP_GT) {
+			if (((res = mp_sub(&ta, &tb, &ta)) != MP_OKAY) ||
+				((res = mp_add(&q, &tq, &q)) != MP_OKAY)) {
 					goto LBL_ERR;
 			}
 		}
-		if (((res = _mp_div_2d(pool, &tb, 1, &tb, NULL)) != MP_OKAY) ||
-			((res = _mp_div_2d(pool, &tq, 1, &tq, NULL)) != MP_OKAY)) {
+		if (((res = mp_div_2d(pool, &tb, 1, &tb, NULL)) != MP_OKAY) ||
+			((res = mp_div_2d(pool, &tq, 1, &tq, NULL)) != MP_OKAY)) {
 			goto LBL_ERR;
 		}
 	}
@@ -2140,12 +2161,12 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 	n  = a->sign;
 	n2 = (a->sign == b->sign ? MP_ZPOS : MP_NEG);
 	if (c != NULL) {
-		_mp_exch(c, &q);
-		c->sign  = (_mp_iszero(c) == MP_YES) ? MP_ZPOS : n2;
+		mp_exch(c, &q);
+		c->sign  = (mp_iszero(c) == MP_YES) ? MP_ZPOS : n2;
 	}
 	if (d != NULL) {
-		_mp_exch(d, &ta);
-		d->sign = (_mp_iszero(d) == MP_YES) ? MP_ZPOS : n;
+		mp_exch(d, &ta);
+		d->sign = (mp_iszero(d) == MP_YES) ? MP_ZPOS : n;
 	}
 LBL_ERR:
 	_mp_clear_multi(&ta, &tb, &tq, &q, NULL, NULL, NULL, NULL);
@@ -2153,7 +2174,7 @@ LBL_ERR:
 }
 #else /* MP_DIV_SMALL */
 
-int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
+int32 mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
 	mp_int		q, x, y, t1, t2;
 	int32		res, n, t, i, norm, neg;
@@ -2161,43 +2182,43 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	is divisor zero ?
  */
-	if (_mp_iszero(b) == 1) {
+	if (mp_iszero(b) == 1) {
 		return MP_VAL;
 	}
 
 /*
 	if a < b then q=0, r = a
  */
-	if (_mp_cmp_mag(a, b) == MP_LT) {
+	if (mp_cmp_mag(a, b) == MP_LT) {
 		if (d != NULL) {
-			res = _mp_copy(a, d);
+			res = mp_copy(a, d);
 		} else {
 			res = MP_OKAY;
 		}
 		if (c != NULL) {
-		_mp_zero(c);
+		mp_zero(c);
 		}
 		return res;
 	}
 
-	if ((res = _mp_init_size(pool, &q, a->used + 2)) != MP_OKAY) {
+	if ((res = mp_init_size(pool, &q, a->used + 2)) != MP_OKAY) {
 		return res;
 	}
 	q.used = a->used + 2;
 
-	if ((res = _mp_init(pool, &t1)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t1)) != MP_OKAY) {
 		goto LBL_Q;
 	}
 
-	if ((res = _mp_init(pool, &t2)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t2)) != MP_OKAY) {
 		goto LBL_T1;
 	}
 
-	if ((res = _mp_init_copy(pool, &x, a)) != MP_OKAY) {
+	if ((res = mp_init_copy(pool, &x, a)) != MP_OKAY) {
 		goto LBL_T2;
 	}
 
-	if ((res = _mp_init_copy(pool, &y, b)) != MP_OKAY) {
+	if ((res = mp_init_copy(pool, &y, b)) != MP_OKAY) {
 		goto LBL_X;
 	}
 
@@ -2210,13 +2231,13 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	normalize both x and y, ensure that y >= b/2, [b == 2**DIGIT_BIT]
  */
-	norm = _mp_count_bits(&y) % DIGIT_BIT;
+	norm = mp_count_bits(&y) % DIGIT_BIT;
 	if (norm < (int32)(DIGIT_BIT-1)) {
 		norm = (DIGIT_BIT-1) - norm;
-		if ((res = _mp_mul_2d(&x, norm, &x)) != MP_OKAY) {
+		if ((res = mp_mul_2d(&x, norm, &x)) != MP_OKAY) {
 			goto LBL_Y;
 		}
-		if ((res = _mp_mul_2d(&y, norm, &y)) != MP_OKAY) {
+		if ((res = mp_mul_2d(&y, norm, &y)) != MP_OKAY) {
 			goto LBL_Y;
 		}
 	} else {
@@ -2232,13 +2253,13 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	while (x >= y*b**n-t) do { q[n-t] += 1; x -= y*b**{n-t} }
  */
-	if ((res = _mp_lshd(&y, n - t)) != MP_OKAY) { /* y = y*b**{n-t} */
+	if ((res = mp_lshd(&y, n - t)) != MP_OKAY) { /* y = y*b**{n-t} */
 		goto LBL_Y;
 	}
 
-	while (_mp_cmp(&x, &y) != MP_LT) {
+	while (mp_cmp(&x, &y) != MP_LT) {
 		++(q.dp[n - t]);
-		if ((res = _mp_sub(&x, &y, &x)) != MP_OKAY) {
+		if ((res = mp_sub(&x, &y, &x)) != MP_OKAY) {
 		goto LBL_Y;
 		}
 	}
@@ -2246,7 +2267,7 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 	reset y by shifting it back down
  */
-	_mp_rshd(&y, n - t);
+	mp_rshd(&y, n - t);
 
 /*
 	step 3. for i from n down to (t + 1)
@@ -2286,11 +2307,11 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 /*
 			find left hand
  */
-			_mp_zero (&t1);
+			mp_zero (&t1);
 			t1.dp[0] = (t - 1 < 0) ? 0 : y.dp[t - 1];
 			t1.dp[1] = y.dp[t];
 			t1.used = 2;
-			if ((res = _mp_mul_d (&t1, q.dp[i - t - 1], &t1)) != MP_OKAY) {
+			if ((res = mp_mul_d (&t1, q.dp[i - t - 1], &t1)) != MP_OKAY) {
 				goto LBL_Y;
 			}
 
@@ -2301,20 +2322,20 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 			t2.dp[1] = (i - 1 < 0) ? 0 : x.dp[i - 1];
 			t2.dp[2] = x.dp[i];
 			t2.used = 3;
-		} while (_mp_cmp_mag(&t1, &t2) == MP_GT);
+		} while (mp_cmp_mag(&t1, &t2) == MP_GT);
 
 /*
 		step 3.3 x = x - q{i-t-1} * y * b**{i-t-1}
  */
-		if ((res = _mp_mul_d(&y, q.dp[i - t - 1], &t1)) != MP_OKAY) {
+		if ((res = mp_mul_d(&y, q.dp[i - t - 1], &t1)) != MP_OKAY) {
 			goto LBL_Y;
 		}
 
-		if ((res = _mp_lshd(&t1, i - t - 1)) != MP_OKAY) {
+		if ((res = mp_lshd(&t1, i - t - 1)) != MP_OKAY) {
 			goto LBL_Y;
 		}
 
-		if ((res = _mp_sub(&x, &t1, &x)) != MP_OKAY) {
+		if ((res = mp_sub(&x, &t1, &x)) != MP_OKAY) {
 			goto LBL_Y;
 		}
 
@@ -2322,13 +2343,13 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 	if x < 0 then { x = x + y*b**{i-t-1}; q{i-t-1} -= 1; }
  */
 		if (x.sign == MP_NEG) {
-			if ((res = _mp_copy(&y, &t1)) != MP_OKAY) {
+			if ((res = mp_copy(&y, &t1)) != MP_OKAY) {
 				goto LBL_Y;
 			}
-		if ((res = _mp_lshd (&t1, i - t - 1)) != MP_OKAY) {
+		if ((res = mp_lshd (&t1, i - t - 1)) != MP_OKAY) {
 			goto LBL_Y;
 		}
-		if ((res = _mp_add (&x, &t1, &x)) != MP_OKAY) {
+		if ((res = mp_add (&x, &t1, &x)) != MP_OKAY) {
 			goto LBL_Y;
 		}
 
@@ -2347,23 +2368,23 @@ int32 _mp_div(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 	x.sign = x.used == 0 ? MP_ZPOS : a->sign;
 
 	if (c != NULL) {
-		_mp_clamp(&q);
-		_mp_exch(&q, c);
+		mp_clamp(&q);
+		mp_exch(&q, c);
 		c->sign = neg;
 	}
 
 	if (d != NULL) {
-		_mp_div_2d(pool, &x, norm, &x, NULL);
-		_mp_exch(&x, d);
+		mp_div_2d(pool, &x, norm, &x, NULL);
+		mp_exch(&x, d);
 	}
 
 	res = MP_OKAY;
 
-LBL_Y:_mp_clear (&y);
-LBL_X:_mp_clear (&x);
-LBL_T2:_mp_clear (&t2);
-LBL_T1:_mp_clear (&t1);
-LBL_Q:_mp_clear (&q);
+LBL_Y:mp_clear (&y);
+LBL_X:mp_clear (&x);
+LBL_T2:mp_clear (&t2);
+LBL_T1:mp_clear (&t1);
+LBL_Q:mp_clear (&q);
 	return res;
 }
 #endif /* MP_DIV_SMALL */
@@ -2375,7 +2396,7 @@ LBL_Q:_mp_clear (&q);
 	of output are created.
  */
 #ifdef USE_SMALL_WORD
-int32 _s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, int32 digs)
+int32 s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, int32 digs)
 {
 	mp_int		t;
 	int32			res, pa, pb, ix, iy;
@@ -2389,10 +2410,10 @@ int32 _s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, int32 d
 	if (((digs) < MP_WARRAY) &&
 		MIN (a->used, b->used) < 
 		(1 << ((CHAR_BIT * sizeof (mp_word)) - (2 * DIGIT_BIT)))) {
-			return _fast_s_mp_mul_digs (pool, a, b, c, digs);
+			return fast_s_mp_mul_digs (pool, a, b, c, digs);
 		}
 
-		if ((res = _mp_init_size(pool, &t, digs)) != MP_OKAY) {
+		if ((res = mp_init_size(pool, &t, digs)) != MP_OKAY) {
 			return res;
 		}
 		t.used = digs;
@@ -2449,10 +2470,10 @@ int32 _s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, int32 d
 			}
 		}
 
-		_mp_clamp (&t);
-		_mp_exch (&t, c);
+		mp_clamp (&t);
+		mp_exch (&t, c);
 
-		_mp_clear (&t);
+		mp_clear (&t);
 		return MP_OKAY;
 }
 #endif /* USE_SMALL_WORD */
@@ -2473,7 +2494,7 @@ int32 _s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, int32 d
 	Based on Algorithm 14.12 on pp.595 of HAC.
 */
 
-int32 _fast_s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c,
+int32 fast_s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c,
 						  int32 digs)
 {
 	int32		olduse, res, pa, ix, iz, neg;
@@ -2486,7 +2507,7 @@ int32 _fast_s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c,
 	grow the destination as required
  */
 	if (c->alloc < digs) {
-		if ((res = _mp_grow(c, digs)) != MP_OKAY) {
+		if ((res = mp_grow(c, digs)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -2569,7 +2590,7 @@ int32 _fast_s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c,
 			*tmpc++ = 0;
 		}
 	}
-	_mp_clamp (c);
+	mp_clamp (c);
 	c->sign = (c->used > 0) ? neg : MP_ZPOS;
 	return MP_OKAY;
 }
@@ -2578,7 +2599,7 @@ int32 _fast_s_mp_mul_digs(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c,
 /*
 	b = a*2
  */
-int32 _mp_mul_2 (mp_int * a, mp_int * b)
+int32 mp_mul_2 (mp_int * a, mp_int * b)
 {
 	int32		x, res, oldused;
 
@@ -2586,7 +2607,7 @@ int32 _mp_mul_2 (mp_int * a, mp_int * b)
 	grow to accomodate result
  */
 	if (b->alloc < a->used + 1) {
-		if ((res = _mp_grow (b, a->used + 1)) != MP_OKAY) {
+		if ((res = mp_grow (b, a->used + 1)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -2651,7 +2672,7 @@ int32 _mp_mul_2 (mp_int * a, mp_int * b)
 /*
 	multiply by a digit
  */
-int32 _mp_mul_d(mp_int * a, mp_digit b, mp_int * c)
+int32 mp_mul_d(mp_int * a, mp_digit b, mp_int * c)
 {
 	mp_digit	u, *tmpa, *tmpc;
 	mp_word		r;
@@ -2661,7 +2682,7 @@ int32 _mp_mul_d(mp_int * a, mp_digit b, mp_int * c)
 	make sure c is big enough to hold a*b
  */
 	if (c->alloc < a->used + 1) {
-		if ((res = _mp_grow (c, a->used + 1)) != MP_OKAY) {
+		if ((res = mp_grow (c, a->used + 1)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -2722,7 +2743,7 @@ int32 _mp_mul_d(mp_int * a, mp_digit b, mp_int * c)
 
 	/* set used count */
 	c->used = a->used + 1;
-	_mp_clamp(c);
+	mp_clamp(c);
 
 	return MP_OKAY;
 }
@@ -2740,7 +2761,7 @@ int32 s_mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 	mp_digit	u, tmpx, *tmpt;
 
 	pa = a->used;
-	if ((res = _mp_init_size(pool, &t, 2*pa + 1)) != MP_OKAY) {
+	if ((res = mp_init_size(pool, &t, 2*pa + 1)) != MP_OKAY) {
 		return res;
 	}
 	
@@ -2805,9 +2826,9 @@ int32 s_mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 		}
 	}
 
-	_mp_clamp (&t);
-	_mp_exch (&t, b);
-	_mp_clear (&t);
+	mp_clamp (&t);
+	mp_exch (&t, b);
+	mp_clear (&t);
 	return MP_OKAY;
 }
 #endif /* USE_SMALL_WORD */
@@ -2830,7 +2851,7 @@ int32 s_mp_sqr (psPool_t *pool, mp_int * a, mp_int * b)
 
 	This is the 1.0 version, but no SSE stuff
 */
-int32 _fast_s_mp_sqr(psPool_t *pool, mp_int * a, mp_int * b)
+int32 fast_s_mp_sqr(psPool_t *pool, mp_int * a, mp_int * b)
 {
 	int32		olduse, res, pa, ix, iz;
 	mp_digit	W[MP_WARRAY], *tmpx;
@@ -2841,7 +2862,7 @@ int32 _fast_s_mp_sqr(psPool_t *pool, mp_int * a, mp_int * b)
  */
 	pa = a->used + a->used;
 	if (b->alloc < pa) {
-		if ((res = _mp_grow(b, pa)) != MP_OKAY) {
+		if ((res = mp_grow(b, pa)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -2935,7 +2956,7 @@ int32 _fast_s_mp_sqr(psPool_t *pool, mp_int * a, mp_int * b)
 			*tmpb++ = 0;
 		}
 	}
-	_mp_clamp(b);
+	mp_clamp(b);
 	return MP_OKAY;
 }
 
@@ -2946,19 +2967,19 @@ int32 _fast_s_mp_sqr(psPool_t *pool, mp_int * a, mp_int * b)
 	Simple algorithm which zeroes the int32, grows it then just sets one bit
 	as required.
  */
-int32 _mp_2expt (mp_int * a, int32 b)
+int32 mp_2expt (mp_int * a, int32 b)
 {
 	int32		res;
 
 /*
 	zero a as per default
  */
-	_mp_zero (a);
+	mp_zero (a);
 
 /*
 	grow a to accomodate the single bit
  */
-	if ((res = _mp_grow (a, b / DIGIT_BIT + 1)) != MP_OKAY) {
+	if ((res = mp_grow (a, b / DIGIT_BIT + 1)) != MP_OKAY) {
 		return res;
 	}
 
@@ -2979,7 +3000,7 @@ int32 _mp_2expt (mp_int * a, int32 b)
 /*
 	init an mp_init for a given size
  */
-int32 _mp_init_size(psPool_t *pool, mp_int * a, int32 size)
+int32 mp_init_size(psPool_t *pool, mp_int * a, int32 size)
 {
 	int		x;
 /*
@@ -3011,7 +3032,7 @@ int32 _mp_init_size(psPool_t *pool, mp_int * a, int32 size)
 /*
 	low level addition, based on HAC pp.594, Algorithm 14.7
  */
-int32 _s_mp_add (mp_int * a, mp_int * b, mp_int * c)
+int32 s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 {
 	mp_int		*x;
 	int32			olduse, res, min, max;
@@ -3032,7 +3053,7 @@ int32 _s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 
 	/* init result */
 	if (c->alloc < max + 1) {
-		if ((res = _mp_grow (c, max + 1)) != MP_OKAY) {
+		if ((res = mp_grow (c, max + 1)) != MP_OKAY) {
 			return res;
 		}
 	}
@@ -3105,7 +3126,7 @@ int32 _s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 		}
 	}
 
-	_mp_clamp (c);
+	mp_clamp (c);
 	return MP_OKAY;
 }
 
@@ -3113,9 +3134,9 @@ int32 _s_mp_add (mp_int * a, mp_int * b, mp_int * c)
 #ifdef USE_SMALL_WORD
 /*
 	FUTURE - this is never needed, SLOW or not, because RSA exponents are
-	always odd. 
+	always odd.
 */
-int32 _mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
+int32 mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 {
 	mp_int		x, y, u, v, A, B, C, D;
 	int32			res;
@@ -3123,15 +3144,15 @@ int32 _mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 /*
 	b cannot be negative
  */
-	if (b->sign == MP_NEG || _mp_iszero(b) == 1) {
+	if (b->sign == MP_NEG || mp_iszero(b) == 1) {
 		return MP_VAL;
 	}
 
 /*
 	if the modulus is odd we can use a faster routine instead
  */
-	if (_mp_isodd (b) == 1) {
-		return _fast_mp_invmod(pool, a, b, c);
+	if (mp_isodd (b) == 1) {
+		return fast_mp_invmod(pool, a, b, c);
 	}
 
 /*
@@ -3143,17 +3164,17 @@ int32 _mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 	}
 
 	/* x = a, y = b */
-	if ((res = _mp_copy(a, &x)) != MP_OKAY) {
+	if ((res = mp_copy(a, &x)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
-	if ((res = _mp_copy(b, &y)) != MP_OKAY) {
+	if ((res = mp_copy(b, &y)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
 
 /*
 	2. [modified] if x,y are both even then return an error!
  */
-	if (_mp_iseven(&x) == 1 && _mp_iseven (&y) == 1) {
+	if (mp_iseven(&x) == 1 && mp_iseven (&y) == 1) {
 		res = MP_VAL;
 		goto LBL_ERR;
 	}
@@ -3161,39 +3182,39 @@ int32 _mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 /*
 	3. u=x, v=y, A=1, B=0, C=0,D=1
  */
-	if ((res = _mp_copy(&x, &u)) != MP_OKAY) {
+	if ((res = mp_copy(&x, &u)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
-	if ((res = _mp_copy(&y, &v)) != MP_OKAY) {
+	if ((res = mp_copy(&y, &v)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
-	_mp_set (&A, 1);
-	_mp_set (&D, 1);
+	mp_set (&A, 1);
+	mp_set (&D, 1);
 
 top:
 /*
 	4.  while u is even do
  */
-	while (_mp_iseven(&u) == 1) {
+	while (mp_iseven(&u) == 1) {
 		/* 4.1 u = u/2 */
-		if ((res = _mp_div_2(&u, &u)) != MP_OKAY) {
+		if ((res = mp_div_2(&u, &u)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 		/* 4.2 if A or B is odd then */
-		if (_mp_isodd (&A) == 1 || _mp_isodd (&B) == 1) {
+		if (mp_isodd (&A) == 1 || mp_isodd (&B) == 1) {
 			/* A = (A+y)/2, B = (B-x)/2 */
-			if ((res = _mp_add(&A, &y, &A)) != MP_OKAY) {
+			if ((res = mp_add(&A, &y, &A)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
-			if ((res = _mp_sub(&B, &x, &B)) != MP_OKAY) {
+			if ((res = mp_sub(&B, &x, &B)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
 		}
 		/* A = A/2, B = B/2 */
-		if ((res = _mp_div_2(&A, &A)) != MP_OKAY) {
+		if ((res = mp_div_2(&A, &A)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
-		if ((res = _mp_div_2(&B, &B)) != MP_OKAY) {
+		if ((res = mp_div_2(&B, &B)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3201,26 +3222,26 @@ top:
 /*
 	5.  while v is even do
  */
-	while (_mp_iseven(&v) == 1) {
+	while (mp_iseven(&v) == 1) {
 		/* 5.1 v = v/2 */
-		if ((res = _mp_div_2(&v, &v)) != MP_OKAY) {
+		if ((res = mp_div_2(&v, &v)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 		/* 5.2 if C or D is odd then */
-		if (_mp_isodd(&C) == 1 || _mp_isodd (&D) == 1) {
+		if (mp_isodd(&C) == 1 || mp_isodd (&D) == 1) {
 			/* C = (C+y)/2, D = (D-x)/2 */
-			if ((res = _mp_add(&C, &y, &C)) != MP_OKAY) {
+			if ((res = mp_add(&C, &y, &C)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
-			if ((res = _mp_sub(&D, &x, &D)) != MP_OKAY) {
+			if ((res = mp_sub(&D, &x, &D)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
 		}
 		/* C = C/2, D = D/2 */
-		if ((res = _mp_div_2(&C, &C)) != MP_OKAY) {
+		if ((res = mp_div_2(&C, &C)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
-		if ((res = _mp_div_2(&D, &D)) != MP_OKAY) {
+		if ((res = mp_div_2(&D, &D)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3228,30 +3249,30 @@ top:
 /*
 	6.  if u >= v then
  */
-	if (_mp_cmp(&u, &v) != MP_LT) {
+	if (mp_cmp(&u, &v) != MP_LT) {
 		/* u = u - v, A = A - C, B = B - D */
-		if ((res = _mp_sub(&u, &v, &u)) != MP_OKAY) {
+		if ((res = mp_sub(&u, &v, &u)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&A, &C, &A)) != MP_OKAY) {
+		if ((res = mp_sub(&A, &C, &A)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&B, &D, &B)) != MP_OKAY) {
+		if ((res = mp_sub(&B, &D, &B)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 	} else {
 		/* v - v - u, C = C - A, D = D - B */
-		if ((res = _mp_sub(&v, &u, &v)) != MP_OKAY) {
+		if ((res = mp_sub(&v, &u, &v)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&C, &A, &C)) != MP_OKAY) {
+		if ((res = mp_sub(&C, &A, &C)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&D, &B, &D)) != MP_OKAY) {
+		if ((res = mp_sub(&D, &B, &D)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 	}
@@ -3259,7 +3280,7 @@ top:
 /*
 	if not zero goto step 4
  */
-	if (_mp_iszero(&u) == 0)
+	if (mp_iszero(&u) == 0)
 		goto top;
 
 /*
@@ -3269,7 +3290,7 @@ top:
 /*
 	if v != 1 then there is no inverse
  */
-	if (_mp_cmp_d(&v, 1) != MP_EQ) {
+	if (mp_cmp_d(&v, 1) != MP_EQ) {
 		res = MP_VAL;
 		goto LBL_ERR;
 	}
@@ -3277,8 +3298,8 @@ top:
 /*
 	if its too low
  */
-	while (_mp_cmp_d(&C, 0) == MP_LT) {
-		if ((res = _mp_add(&C, b, &C)) != MP_OKAY) {
+	while (mp_cmp_d(&C, 0) == MP_LT) {
+		if ((res = mp_add(&C, b, &C)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3286,8 +3307,8 @@ top:
 /*
 	too big
  */
-	while (_mp_cmp_mag(&C, b) != MP_LT) {
-		if ((res = _mp_sub(&C, b, &C)) != MP_OKAY) {
+	while (mp_cmp_mag(&C, b) != MP_LT) {
+		if ((res = mp_sub(&C, b, &C)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3295,7 +3316,7 @@ top:
 /*
 	C is now the inverse
  */
-	_mp_exch(&C, c);
+	mp_exch(&C, c);
 	res = MP_OKAY;
 LBL_ERR:_mp_clear_multi(&x, &y, &u, &v, &A, &B, &C, &D);
 	return res;
@@ -3311,7 +3332,7 @@ LBL_ERR:_mp_clear_multi(&x, &y, &u, &v, &A, &B, &C, &D);
  * Based on slow invmod except this is optimized for the case where b is 
  * odd as per HAC Note 14.64 on pp. 610
  */
-int32 _fast_mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
+int32 fast_mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 {
 	mp_int		x, y, u, v, B, D;
 	int32			res, neg;
@@ -3319,7 +3340,7 @@ int32 _fast_mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 /*
 	2. [modified] b must be odd
  */
-	if (_mp_iseven (b) == 1) {
+	if (mp_iseven (b) == 1) {
 		return MP_VAL;
 	}
 
@@ -3333,45 +3354,45 @@ int32 _fast_mp_invmod(psPool_t *pool, mp_int * a, mp_int * b, mp_int * c)
 /*
 	x == modulus, y == value to invert
  */
-	if ((res = _mp_copy(b, &x)) != MP_OKAY) {
+	if ((res = mp_copy(b, &x)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
 
 /*
 	we need y = |a|
  */
-	if ((res = _mp_mod(pool, a, b, &y)) != MP_OKAY) {
+	if ((res = mp_mod(pool, a, b, &y)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
 
 /*
 	3. u=x, v=y, A=1, B=0, C=0,D=1
  */
-	if ((res = _mp_copy(&x, &u)) != MP_OKAY) {
+	if ((res = mp_copy(&x, &u)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
-	if ((res = _mp_copy(&y, &v)) != MP_OKAY) {
+	if ((res = mp_copy(&y, &v)) != MP_OKAY) {
 		goto LBL_ERR;
 	}
-	_mp_set(&D, 1);
+	mp_set(&D, 1);
 
 top:
 /*
 	4.  while u is even do
 */
-	while (_mp_iseven(&u) == 1) {
+	while (mp_iseven(&u) == 1) {
 		/* 4.1 u = u/2 */
-		if ((res = _mp_div_2(&u, &u)) != MP_OKAY) {
+		if ((res = mp_div_2(&u, &u)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 		/* 4.2 if B is odd then */
-		if (_mp_isodd(&B) == 1) {
-			if ((res = _mp_sub(&B, &x, &B)) != MP_OKAY) {
+		if (mp_isodd(&B) == 1) {
+			if ((res = mp_sub(&B, &x, &B)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
 		}
 		/* B = B/2 */
-		if ((res = _mp_div_2(&B, &B)) != MP_OKAY) {
+		if ((res = mp_div_2(&B, &B)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3379,20 +3400,20 @@ top:
 /*
 	5.  while v is even do
  */
-	while (_mp_iseven(&v) == 1) {
+	while (mp_iseven(&v) == 1) {
 		/* 5.1 v = v/2 */
-		if ((res = _mp_div_2(&v, &v)) != MP_OKAY) {
+		if ((res = mp_div_2(&v, &v)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 		/* 5.2 if D is odd then */
-		if (_mp_isodd(&D) == 1) {
+		if (mp_isodd(&D) == 1) {
 			/* D = (D-x)/2 */
-			if ((res = _mp_sub(&D, &x, &D)) != MP_OKAY) {
+			if ((res = mp_sub(&D, &x, &D)) != MP_OKAY) {
 				goto LBL_ERR;
 			}
 		}
 		/* D = D/2 */
-		if ((res = _mp_div_2(&D, &D)) != MP_OKAY) {
+		if ((res = mp_div_2(&D, &D)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	}
@@ -3400,22 +3421,22 @@ top:
 /*
 	6.  if u >= v then
  */
-	if (_mp_cmp(&u, &v) != MP_LT) {
+	if (mp_cmp(&u, &v) != MP_LT) {
 		/* u = u - v, B = B - D */
-		if ((res = _mp_sub(&u, &v, &u)) != MP_OKAY) {
+		if ((res = mp_sub(&u, &v, &u)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&B, &D, &B)) != MP_OKAY) {
+		if ((res = mp_sub(&B, &D, &B)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 	} else {
 		/* v - v - u, D = D - B */
-		if ((res = _mp_sub(&v, &u, &v)) != MP_OKAY) {
+		if ((res = mp_sub(&v, &u, &v)) != MP_OKAY) {
 			goto LBL_ERR;
 		}
 
-		if ((res = _mp_sub(&D, &B, &D)) != MP_OKAY) {
+		if ((res = mp_sub(&D, &B, &D)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 	}
@@ -3423,7 +3444,7 @@ top:
 /*
 	if not zero goto step 4
  */
-	if (_mp_iszero(&u) == 0) {
+	if (mp_iszero(&u) == 0) {
 		goto top;
 	}
 
@@ -3434,7 +3455,7 @@ top:
 /*
 	if v != 1 then there is no inverse
  */
-	if (_mp_cmp_d(&v, 1) != MP_EQ) {
+	if (mp_cmp_d(&v, 1) != MP_EQ) {
 		res = MP_VAL;
 		goto LBL_ERR;
 	}
@@ -3444,11 +3465,11 @@ top:
  */
 	neg = a->sign;
 	while (D.sign == MP_NEG) {
-		if ((res = _mp_add(&D, b, &D)) != MP_OKAY) {
+		if ((res = mp_add(&D, b, &D)) != MP_OKAY) {
 		goto LBL_ERR;
 		}
 	}
-	_mp_exch(&D, c);
+	mp_exch(&D, c);
 	c->sign = neg;
 	res = MP_OKAY;
 
@@ -3460,21 +3481,21 @@ LBL_ERR:_mp_clear_multi(&x, &y, &u, &v, &B, &D, NULL, NULL);
 /*
 	d = a + b (mod c)
  */
-int32 _mp_addmod (psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
+int32 mp_addmod (psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d)
 {
 	int32			res;
 	mp_int		t;
 
-	if ((res = _mp_init(pool, &t)) != MP_OKAY) {
+	if ((res = mp_init(pool, &t)) != MP_OKAY) {
 		return res;
 	}
 
-	if ((res = _mp_add (a, b, &t)) != MP_OKAY) {
-		_mp_clear (&t);
+	if ((res = mp_add (a, b, &t)) != MP_OKAY) {
+		mp_clear (&t);
 		return res;
 	}
-	res = _mp_mod (pool, &t, c, d);
-	_mp_clear (&t);
+	res = mp_mod (pool, &t, c, d);
+	mp_clear (&t);
 	return res;
 }
 
@@ -3482,7 +3503,7 @@ int32 _mp_addmod (psPool_t *pool, mp_int * a, mp_int * b, mp_int * c, mp_int * d
 /*
 	shrink a bignum
  */
-int32 _mp_shrink (mp_int * a)
+int32 mp_shrink (mp_int * a)
 {
 	mp_digit *tmp;
 
@@ -3496,5 +3517,155 @@ int32 _mp_shrink (mp_int * a)
 	return MP_OKAY;
 }
 
+/* single digit subtraction */
+int32 mp_sub_d (mp_int * a, mp_digit b, mp_int * c)
+{
+	mp_digit *tmpa, *tmpc, mu;
+	int32       res, ix, oldused;
+
+	/* grow c as required */
+	if (c->alloc < a->used + 1) {
+		if ((res = mp_grow(c, a->used + 1)) != MP_OKAY) {
+			return res;
+		}
+	}
+
+	/* if a is negative just do an unsigned
+	* addition [with fudged signs]
+	*/
+	if (a->sign == MP_NEG) {
+		a->sign = MP_ZPOS;
+		res     = mp_add_d(a, b, c);
+		a->sign = c->sign = MP_NEG;
+		return res;
+	}
+
+	/* setup regs */
+	oldused = c->used;
+	tmpa    = a->dp;
+	tmpc    = c->dp;
+
+	/* if a <= b simply fix the single digit */
+	if ((a->used == 1 && a->dp[0] <= b) || a->used == 0) {
+		if (a->used == 1) {
+			*tmpc++ = b - *tmpa;
+		} else {
+			*tmpc++ = b;
+		}
+		ix      = 1;
+
+		/* negative/1digit */
+		c->sign = MP_NEG;
+		c->used = 1;
+	} else {
+		/* positive/size */
+		c->sign = MP_ZPOS;
+		c->used = a->used;
+
+		/* subtract first digit */
+		*tmpc    = *tmpa++ - b;
+		mu       = *tmpc >> (sizeof(mp_digit) * CHAR_BIT - 1);
+		*tmpc++ &= MP_MASK;
+
+		/* handle rest of the digits */
+		for (ix = 1; ix < a->used; ix++) {
+			*tmpc    = *tmpa++ - mu;
+			mu       = *tmpc >> (sizeof(mp_digit) * CHAR_BIT - 1);
+			*tmpc++ &= MP_MASK;
+		}
+	}
+
+	/* zero excess digits */
+	while (ix++ < oldused) {
+		*tmpc++ = 0;
+	}
+	mp_clamp(c);
+	return MP_OKAY;
+}
+
+/* single digit addition */
+int32 mp_add_d (mp_int * a, mp_digit b, mp_int * c)
+{
+	int32     res, ix, oldused;
+	mp_digit *tmpa, *tmpc, mu;
+
+	/* grow c as required */
+	if (c->alloc < a->used + 1) {
+		if ((res = mp_grow(c, a->used + 1)) != MP_OKAY) {
+			return res;
+		}
+	}
+
+	/* if a is negative and |a| >= b, call c = |a| - b */
+	if (a->sign == MP_NEG && (a->used > 1 || a->dp[0] >= b)) {
+		/* temporarily fix sign of a */
+		a->sign = MP_ZPOS;
+
+		/* c = |a| - b */
+		res = mp_sub_d(a, b, c);
+
+		/* fix sign  */
+		a->sign = c->sign = MP_NEG;
+		return res;
+	}
+
+	/* old number of used digits in c */
+	oldused = c->used;
+
+	/* sign always positive */
+	c->sign = MP_ZPOS;
+
+	/* source alias */
+	tmpa    = a->dp;
+
+	/* destination alias */
+	tmpc    = c->dp;
+
+	/* if a is positive */
+	if (a->sign == MP_ZPOS) {
+		/* add digit, after this we're propagating the carry */
+		*tmpc   = *tmpa++ + b;
+		mu      = *tmpc >> DIGIT_BIT;
+		*tmpc++ &= MP_MASK;
+
+		/* now handle rest of the digits */
+		for (ix = 1; ix < a->used; ix++) {
+			*tmpc   = *tmpa++ + mu;
+			mu      = *tmpc >> DIGIT_BIT;
+			*tmpc++ &= MP_MASK;
+		}
+		/* set final carry */
+		ix++;
+		*tmpc++  = mu;
+
+		/* setup size */
+		c->used = a->used + 1;
+	} else {
+		/* a was negative and |a| < b */
+		c->used  = 1;
+
+		/* the result is a single digit */
+		if (a->used == 1) {
+			*tmpc++  =  b - a->dp[0];
+		} else {
+			*tmpc++  =  b;
+		}
+
+		/* setup count so the clearing of oldused
+		* can fall through correctly
+		*/
+		ix       = 1;
+	}
+
+	/* now zero to oldused */
+	while (ix++ < oldused) {
+		*tmpc++ = 0;
+	}
+	mp_clamp(c);
+	return MP_OKAY;
+}
+
+
 /******************************************************************************/
 
+#endif /* USE_MPI2 */
