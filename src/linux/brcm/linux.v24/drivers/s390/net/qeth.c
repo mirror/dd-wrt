@@ -6097,7 +6097,7 @@ static void qeth_qdio_input_handler(int irq,unsigned int status,
 		}
 		sbalf15=(card->inbound_qdio_buffers[(first_element+count-1)&
 			 QDIO_MAX_BUFFERS_PER_Q].
-			 element[15].flags)&&0xff;
+			 element[15].flags)&0xff;
 		PRINT_STUPID("inbound qdio transfer error on irq 0x%04x. " \
 			     "qdio_error=0x%x (more than one: %c), " \
 			     "siga_error=0x%x (more than one: %c), " \

@@ -37,7 +37,7 @@ integrated than Algorithm and Adapter.
 For a given configuration, you will need a driver for your I2C bus (usually
 a separate Adapter and Algorithm driver), and drivers for your I2C devices
 (usually one driver for each device). There are no I2C device drivers
-in this package. See the lm_sensors project http://www.lm-sensors.nu
+in this package. See the lm_sensors project http://www.lm-sensors.org/
 for device drivers.
 
 
