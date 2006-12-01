@@ -1,11 +1,11 @@
 /*
  *	sslEncode.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	Secure Sockets Layer message encoding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -41,6 +41,7 @@ static int32 writeAlert(ssl_t *ssl, unsigned char level,
 static int32 writeRecordHeader(ssl_t *ssl, int32 type, int32 hsType, int32 *messageSize,
 						char *padLen, unsigned char **encryptStart,
 						unsigned char **end, unsigned char **c);
+
 static int32 encryptRecord(ssl_t *ssl, int32 type, int32 messageSize, int32 padLen, 
 						unsigned char *encryptStart, sslBuf_t *out,
 						unsigned char **c);
@@ -49,11 +50,11 @@ static int32 encryptRecord(ssl_t *ssl, int32 type, int32 messageSize, int32 padL
 static int32 writeClientKeyExchange(ssl_t *ssl, sslBuf_t *out);
 #endif /* USE_CLIENT_SIDE_SSL */
 
-
 #ifdef USE_SERVER_SIDE_SSL
 static int32 writeServerHello(ssl_t *ssl, sslBuf_t *out);
 static int32 writeServerHelloDone(ssl_t *ssl, sslBuf_t *out);
 #endif /* USE_SERVER_SIDE_SSL */
+
 
 static int32 sslWritePad(unsigned char *p, unsigned char padLen);
 static int32 secureWriteAdditions(ssl_t *ssl, int32 numRecs);
@@ -124,7 +125,9 @@ int32 sslEncodeResponse(ssl_t *ssl, sslBuf_t *out)
 	int32			totalCertLen, i;
 	sslLocalCert_t	*cert;
 #endif /* USE_SERVER_SIDE_SSL */
-
+#ifdef USE_CLIENT_SIDE_SSL
+	int32			ckeSize;
+#endif /* USE_CLIENT_SIDE_SSL */
 
 /*
 	We may be trying to encode an alert response if there is an error marked
@@ -151,33 +154,39 @@ int32 sslEncodeResponse(ssl_t *ssl, sslBuf_t *out)
 */
 #ifdef USE_SERVER_SIDE_SSL
 	case SSL_HS_CLIENT_KEY_EXCHANGE:
+
 /*
-		Determine total length of certs
+			Determine total length of certs
 */
-		totalCertLen = 0;
-		cert = &ssl->keys->cert;
-		for (i = 0; cert != NULL; i++) {
-			totalCertLen += cert->certLen;
-			cert = cert->next;
-		}
-		messageSize =
-			3 * ssl->recordHeadLen +
-			3 * ssl->hshakeHeadLen +
-			38 + SSL_MAX_SESSION_ID_SIZE +  /* server hello */
-			3 + (i * 3) + totalCertLen; /* certificate */
-		messageSize += secureWriteAdditions(ssl, 3);
+			totalCertLen = 0;
+			cert = &ssl->keys->cert;
+			for (i = 0; cert != NULL; i++) {
+				totalCertLen += cert->certLen;
+				cert = cert->next;
+			}
+			messageSize =
+				3 * ssl->recordHeadLen +
+				3 * ssl->hshakeHeadLen +
+				38 + SSL_MAX_SESSION_ID_SIZE +  /* server hello */
+				3 + (i * 3) + totalCertLen; /* certificate */
+			messageSize += secureWriteAdditions(ssl, 3);
+
 		
 		if ((out->buf + out->size) - out->end < messageSize) {
 			return SSL_FULL;
 		}
 		rc = writeServerHello(ssl, out);
+
 		if (rc == SSL_SUCCESS) {
 			rc = writeCertificate(ssl, out, 1);
 		}
+
+
 		if (rc == SSL_SUCCESS) {
 			rc = writeServerHelloDone(ssl, out);
 		}
 		break;
+
 #endif /* USE_SERVER_SIDE_SSL */
 
 /*
@@ -228,10 +237,11 @@ int32 sslEncodeResponse(ssl_t *ssl, sslBuf_t *out)
 #endif /* USE_SERVER_SIDE_SSL */
 #ifdef USE_CLIENT_SIDE_SSL
 		if (!(ssl->flags & SSL_FLAGS_SERVER)) {
-			if (ssl->sec.cert == NULL) {
-				ssl->flags |= SSL_FLAGS_ERROR;
-				return SSL_ERROR;
-			}
+				if (ssl->sec.cert == NULL) {
+					ssl->flags |= SSL_FLAGS_ERROR;
+					return SSL_ERROR;
+				}
+				ckeSize = ssl->sec.cert->publicKey.size;
 			messageSize = 0;
 /*
 			Client authentication requires the client to send a CERTIFICATE
@@ -272,8 +282,8 @@ int32 sslEncodeResponse(ssl_t *ssl, sslBuf_t *out)
 */
 			messageSize +=
 				3 * ssl->recordHeadLen +
-				2 * ssl->hshakeHeadLen +
-				ssl->sec.cert->publicKey.size + /* client key exchange */
+				2 * ssl->hshakeHeadLen + /* change cipher has no hsHead */
+				ckeSize + /* client key exchange */
 				1 + /* change cipher spec */
 				SSL_MD5_HASH_SIZE + SSL_SHA1_HASH_SIZE + /* SSLv3 finished */
 				SSL_MAX_MAC_SIZE + SSL_MAX_BLOCK_SIZE - 1;
@@ -362,7 +372,7 @@ int32 matrixSslEncodeClosureAlert(ssl_t *ssl, sslBuf_t *out)
 /*
 	If we've had a protocol error, don't allow further use of the session
 */
-	if (ssl->flags & SSL_FLAGS_ERROR || ssl->flags & SSL_FLAGS_CLOSED) {
+	if (ssl->flags & SSL_FLAGS_ERROR) {
 		return SSL_ERROR;
 	}
 	return writeAlert(ssl, SSL_ALERT_LEVEL_WARNING, SSL_ALERT_CLOSE_NOTIFY,
@@ -398,7 +408,6 @@ static int32 writeRecordHeader(ssl_t *ssl, int32 type, int32 hsType, int32 *mess
 		*messageSize += *padLen;
 	}
 
-
 	if (*end - *c < *messageSize) {
 /*
 		Callers other than sslEncodeResponse do not necessarily check for
@@ -409,7 +418,6 @@ static int32 writeRecordHeader(ssl_t *ssl, int32 type, int32 hsType, int32 *mess
 
 
 	*c += psWriteRecordInfo(ssl, type, *messageSize - ssl->recordHeadLen, *c);
-
 
 /*
 	All data written after this point is to be encrypted (if secure-write)
@@ -596,6 +604,7 @@ static int32 writeServerHelloDone(ssl_t *ssl, sslBuf_t *out)
 	return SSL_SUCCESS;
 }
 
+
 /******************************************************************************/
 /*
 	Server initiated rehandshake public API call.
@@ -700,7 +709,6 @@ static int32 writeCertificate(ssl_t *ssl, sslBuf_t *out, int32 notEmpty)
 			&end, &c)) < 0) {
 		return rc;
 	}
-
 
 /*
 	Write out the certs
@@ -874,7 +882,7 @@ int32 matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
 {
 	unsigned char	*c, *end, *encryptStart;
 	char			padLen;
-	int32			messageSize, rc, cipherLen;
+	int32			messageSize, rc, cipherLen, cookieLen;
 	time_t			t;
 
 	if (ssl->flags & SSL_FLAGS_ERROR || ssl->flags & SSL_FLAGS_CLOSED) {
@@ -887,6 +895,7 @@ int32 matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
 	}
 	sslInitHSHash(ssl);
 
+	cookieLen = 0;
 /*
 	If session resumption is being done on a rehandshake, make sure we are
 	sending	the same cipher	spec as the currently negotiated one. If no
@@ -898,6 +907,7 @@ int32 matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
 	} else {
 		ssl->flags &= ~SSL_FLAGS_RESUMED;
 	}
+
 /*
 	If a cipher is specified it is two bytes length and two bytes data. 
 */
@@ -917,13 +927,14 @@ int32 matrixSslEncodeClientHello(ssl_t *ssl, sslBuf_t *out,
 	Calculate the size of the message up front, and write header
 */
 	messageSize = ssl->recordHeadLen + ssl->hshakeHeadLen +
-		5 + SSL_HS_RANDOM_SIZE + ssl->sessionIdLen + cipherLen;
+		5 + SSL_HS_RANDOM_SIZE + ssl->sessionIdLen + cipherLen + cookieLen;
 	
 	if ((rc = writeRecordHeader(ssl, SSL_RECORD_TYPE_HANDSHAKE,
 			SSL_HS_CLIENT_HELLO, &messageSize, &padLen, &encryptStart,
 			&end, &c)) < 0) {
 		return rc;
 	}
+
 /*
 	First 4 bytes of the serverRandom are the unix time to prevent replay
 	attacks, the rest are random
@@ -1023,12 +1034,14 @@ static int32 writeClientKeyExchange(ssl_t *ssl, sslBuf_t *out)
 {
 	unsigned char	*c, *end, *encryptStart;
 	char			padLen;
-	int32				messageSize, keyLen, rc;
+	int32			messageSize, keyLen, explicitLen, rc;
 
 	c = out->end;
 	end = out->buf + out->size;
-	keyLen = ssl->sec.cert->publicKey.size;
+		keyLen = ssl->sec.cert->publicKey.size;
+
 	messageSize = ssl->recordHeadLen + ssl->hshakeHeadLen + keyLen;
+	explicitLen = 0;
 
 	if ((rc = writeRecordHeader(ssl, SSL_RECORD_TYPE_HANDSHAKE,
 			SSL_HS_CLIENT_KEY_EXCHANGE, &messageSize, &padLen,
@@ -1042,18 +1055,31 @@ static int32 writeClientKeyExchange(ssl_t *ssl, sslBuf_t *out)
 	These 48 bytes are padded to the current RSA key length and encrypted
 	with the RSA key.
 */
-	ssl->sec.premaster[0] = ssl->reqMajVer;
-	ssl->sec.premaster[1] = ssl->reqMinVer;
-	if (sslGetEntropy(ssl->sec.premaster + 2, SSL_HS_PREMASTER_SIZE - 2) < 0) {
-		matrixStrDebugMsg("Error gathering premaster entropy\n", NULL);
-		return SSL_ERROR;
+	if (explicitLen == 1) {
+/*
+		Add the two bytes of key length
+*/
+		*c = (keyLen & 0xFF00) >> 8; c++;
+		*c = (keyLen & 0xFF); c++;
 	}
-	sslActivatePublicCipher(ssl);
-	if (ssl->encryptPub(ssl->hsPool, &(ssl->sec.cert->publicKey), ssl->sec.premaster, 
-			SSL_HS_PREMASTER_SIZE, c, (int32)(end - c)) != keyLen) {
-		matrixStrDebugMsg("Error encrypting premaster\n", NULL);
-		return SSL_FULL;
-	}
+
+
+		ssl->sec.premaster[0] = ssl->reqMajVer;
+		ssl->sec.premaster[1] = ssl->reqMinVer;
+		if (sslGetEntropy(ssl->sec.premaster + 2,
+				SSL_HS_RSA_PREMASTER_SIZE - 2) < 0) {
+			matrixStrDebugMsg("Error gathering premaster entropy\n", NULL);
+			return SSL_ERROR;
+		}
+
+		sslActivatePublicCipher(ssl);
+		if (ssl->encryptPub(ssl->hsPool, &(ssl->sec.cert->publicKey),
+				ssl->sec.premaster, ssl->sec.premasterSize, c,
+				(int32)(end - c)) != keyLen) {
+			matrixStrDebugMsg("Error encrypting premaster\n", NULL);
+			return SSL_FULL;
+		}
+
 	c += keyLen;
 
 	if ((rc = encryptRecord(ssl, SSL_RECORD_TYPE_HANDSHAKE, messageSize,
@@ -1065,6 +1091,7 @@ static int32 writeClientKeyExchange(ssl_t *ssl, sslBuf_t *out)
 		matrixStrDebugMsg("Invalid ClientKeyExchange length\n", NULL);
 		return SSL_ERROR;
 	}
+
 /*
 	Now that we've got the premaster secret, derive the various symmetric
 	keys using it and the client and server random values

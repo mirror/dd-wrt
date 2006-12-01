@@ -1,11 +1,11 @@
 /*
  *	asn1.c
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *
  *	DER/BER coding
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -101,9 +101,9 @@ int32 getBig(psPool_t *pool, unsigned char **pp, int32 len, mp_int *big)
 		matrixStrDebugMsg("ASN getBig failed\n", NULL);
 		return -1;
 	}
-	_mp_init(pool, big);
-	if (_mp_read_unsigned_bin(big, p, vlen) != 0) {
-		_mp_clear(big);
+	mp_init(pool, big);
+	if (mp_read_unsigned_bin(big, p, vlen) != 0) {
+		mp_clear(big);
 		matrixStrDebugMsg("ASN getBig failed\n", NULL);
 		return -1;
 	}

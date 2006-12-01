@@ -1,6 +1,6 @@
 /*
  *	pkiInternal.h
- *	Release $Name: MATRIXSSL_1_7_3_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *	
  *	Public header file for MatrixSSL PKI extension
  *	Implementations interacting with the PKI portion of the
@@ -8,7 +8,7 @@
  *	used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -78,7 +78,9 @@ enum {
 	ASN_T61STRING,
 	ASN_IA5STRING = 22,
 	ASN_UTCTIME,
-	ASN_GENERALIZEDTIME
+	ASN_GENERALIZEDTIME,
+	ASN_GENERAL_STRING = 27,
+	ASN_BMPSTRING = 30
 };
 
 extern int32 getBig(psPool_t *pool, unsigned char **pp, int32 len, mp_int *big);
@@ -148,12 +150,13 @@ typedef struct {
 } extSubjectKeyId_t;
 
 typedef struct {
-	int32				keyLen;
+	int32			keyLen;
 	unsigned char	*keyId;
 	DNattributes_t	attribs;
-	int32			serialNumLen;
+	int32		serialNumLen;
 	unsigned char	*serialNum;
 } extAuthKeyId_t;
+
 /*
 	FUTURE:  add support for the other extensions
 */
@@ -211,8 +214,8 @@ typedef struct {
 	Helpers for inter-pki communications
 */
 extern int32 asnParseLength(unsigned char **p, int32 size, int32 *valLen);
-extern int32 psAsnConfirmSignature(char *sigHash, unsigned char *sigOut,
-								 int32 sigLen);
+extern int32 psAsnConfirmSignature(unsigned char *sigHash,
+									unsigned char *sigOut, int32 sigLen);
 extern int32 getDNAttributes(psPool_t *pool, unsigned char **pp, int32 len,
 						   DNattributes_t *attribs);
 extern int32 getPubKey(psPool_t *pool, unsigned char **pp, int32 len,
@@ -224,9 +227,9 @@ extern void psFreeDNStruct(DNattributes_t *dn);
 #ifdef USE_FILE_SYSTEM
 extern int32 psGetFileBin(psPool_t *pool, char *fileName, unsigned char **bin,
 				 int32 *binLen);
-extern int32 base64encodeAndWrite(psPool_t *pool, char *fileName, char *bin,
-							int32 binLen, int32 fileType, char *hexCipherIV,
-							int32 hexCipherIVLen);
+extern int32 base64encodeAndWrite(psPool_t *pool, char *fileName,
+							unsigned char *bin, int32 binLen, int32 fileType,
+							char *hexCipherIV, int32 hexCipherIVLen);
 #endif /* USE_FILE_SYSTEM */
 
 /*
@@ -239,6 +242,4 @@ extern int32 base64encodeAndWrite(psPool_t *pool, char *fileName, char *bin,
 #endif
 
 #endif /* _h_PSPKI_INTERNAL */
-
-
 

@@ -1,13 +1,13 @@
 /*
  *	matrixSsl.h
- *	Release $Name: MATRIXSSL_1_7_1C_OPEN $
+ *	Release $Name: MATRIXSSL_1_8_2_OPEN $
  *	
  *	Public header file for MatrixSSL
  *	Implementations interacting with the matrixssl library should
  *	only use the APIs and definitions used in this file.
  */
 /*
- *	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
+ *	Copyright (c) PeerSec Networks, 2002-2006. All Rights Reserved.
  *	The latest version of this code is available at http://www.matrixssl.org
  *
  *	This software is open source; you can redistribute it and/or modify
@@ -92,15 +92,16 @@ extern "C" {
 /*
  *	Public API set
  */
-MATRIXPUBLIC int	matrixSslOpen();
-MATRIXPUBLIC void	matrixSslClose();
+MATRIXPUBLIC int	matrixSslOpen(void);
+MATRIXPUBLIC void	matrixSslClose(void);
 
 MATRIXPUBLIC int	matrixSslReadKeys(sslKeys_t **keys, char *certFile,
 						char *privFile, char *privPass, char *trustedCAFile);
 
-MATRIXPUBLIC int	matrixSslReadKeysMem(sslKeys_t **keys, char *certBuf,
-						int certLen, char *privBuf, int privLen,
-						char *trustedCABuf, int trustedCALen);
+MATRIXPUBLIC int	matrixSslReadKeysMem(sslKeys_t **keys,
+						unsigned char *certBuf, int certLen,
+						unsigned char *privBuf, int privLen,
+						unsigned char *trustedCABuf, int trustedCALen);
 
 MATRIXPUBLIC void	matrixSslFreeKeys(sslKeys_t *keys);
 
@@ -141,6 +142,11 @@ MATRIXPUBLIC void	matrixSslFreeSessionId(sslSessionId_t *sessionId);
 */
 MATRIXPUBLIC int	matrixSslEncodeHelloRequest(ssl_t *ssl, sslBuf_t *out);
 
+MATRIXPUBLIC int matrixSslSetResumptionFlag(ssl_t *ssl, char flag);
+MATRIXPUBLIC int matrixSslGetResumptionFlag(ssl_t *ssl, char *flag);
+
+
+
 
 
 /******************************************************************************/
@@ -152,5 +158,4 @@ MATRIXPUBLIC int	matrixSslEncodeHelloRequest(ssl_t *ssl, sslBuf_t *out);
 #endif /* _h_MATRIXSSL */
 
 /******************************************************************************/
-
 
