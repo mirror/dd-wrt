@@ -140,7 +140,11 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
   len -= 6;
   if (!strcmp (sign, "DD-WRT"))
     {
-      wfread (&count, 2, 1, wp);
+      unsigned char b;
+      wfread (&b,1,1,wp);
+      count=b;
+      wfread (&b,1,1,wp);
+      count+=((unsigned int)b<<8);      
       len -= 2;
       int i;
       for (i = 0; i < count; i++)
@@ -153,7 +157,12 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  wfread (name, c, 1, wp);
 	  name[c] = 0;
 	  len -= (c + 1);
-	  wfread (&l, 2, 1, wp);
+
+    	  wfread (&b,1,1,wp);
+          l=b;
+          wfread (&b,1,1,wp);
+    	  l+=((unsigned int)b<<8);      
+
 	  char *value = (char *) malloc (l + 1);
 	  wfread (value, l, 1, wp);
 	  len -= (l + 2);
