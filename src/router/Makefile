@@ -522,7 +522,7 @@ bridge-install:
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config net-tools rflow dropbear dhcpforwarder bird
+busybox: busybox-config net-tools rflow dropbear dhcpforwarder bird libnet
 ifeq ($(CONFIG_DIST),"micro")
 #	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
 	cp busybox/.config_micro busybox/.config
