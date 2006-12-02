@@ -60,7 +60,6 @@
 						<li><a href="HHotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
 						<li><a href="HServices.asp"><% tran("bmenu.adminServices"); %></a></li>
 						<li><a href="HAlive.asp"><% tran("bmenu.adminAlive"); %></a></li>
-						<li><a href="HLog.asp"><% tran("bmenu.adminLog"); %></a></li>
 						<li><a href="HDiagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
 						<li><a href="HWol.asp"><% tran("bmenu.adminWol"); %></a></li>
 						<li><a href="HDefault.asp"><% tran("bmenu.adminFactory"); %></a></li>

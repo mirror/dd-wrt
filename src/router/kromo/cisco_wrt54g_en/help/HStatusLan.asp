@@ -25,7 +25,6 @@
 		<div class="also">
 			<h4><% tran("share.seealso"); %></h4>
 			<ul>
-				<li><a href="HLog.asp">Log</a></li>
 				<li><a href="HStatus.asp">Router Status</a></li>
 				<li><a href="HStatusWireless.asp">Wireless Status</a></li>
 			</ul>
