@@ -1,0 +1,14 @@
+
+	BCM43xx SPROM data modification tool
+	====================================
+
+About this software
+-------------------
+
+A tool for the convenient modification of the bcm43xx SPROM.
+This tool automatically adjusts the CRC after the modification.
+
+Requirements
+------------
+
+1)	C99 compatible compiler.
