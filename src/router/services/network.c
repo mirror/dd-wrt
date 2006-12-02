@@ -1566,7 +1566,6 @@ start_wan (int status)
   FILE *fp;
   char *wan_ifname = get_wan_face ();
   char *wan_proto = nvram_safe_get ("wan_proto");
-  int pppoe_flag = 0;
   int s;
   struct ifreq ifr;
 
@@ -1656,16 +1655,8 @@ start_wan (int status)
     return;
 #ifdef HAVE_PPPOE
   /* Check PPPoE version, RP or linksys */
-#if 0
-  int pppoe_rp;
-  if (!strcmp (nvram_safe_get ("pppoe_ver"), "1"))
-    pppoe_rp = 1;
-  else
-    pppoe_rp = 0;
-#else
-  int pppoe_rp = 1;
 #endif
-  if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+  if ((strcmp (wan_proto, "pppoe") == 0))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
   else
 #endif
@@ -1700,18 +1691,6 @@ start_wan (int status)
   else
     perror ("Write WAN mac fail : ");
 
-#ifdef HAVE_PPPOE
-  /* PPPOE MAC fix */
-#if 0
-  if (nvram_match ("ppp_demand", "1") && !pppoe_rp
-      && (strcmp (wan_proto, "pppoe") == 0))
-    {
-      char eabuf[32];
-      nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
-      pppoe_flag = 1;
-    }
-#endif
-#endif
 
 #endif
 
@@ -1720,7 +1699,7 @@ start_wan (int status)
 
   // Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
-  if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+  if ((strcmp (wan_proto, "pppoe") == 0))
     {
       if (nvram_invmatch ("pppoe_hw_iface_mtu", ""))
 	{
@@ -1771,7 +1750,7 @@ start_wan (int status)
 
   /* Configure WAN interface */
 #ifdef HAVE_PPPOE
-  if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+  if ((strcmp (wan_proto, "pppoe") == 0))
     {
       char username[80], passwd[80];
       char idletime[20], retry_num[20];
@@ -1998,19 +1977,6 @@ start_wan (int status)
     {
       start_dhcpc (wan_ifname);
     }
-#ifdef HAVE_PPPOE
-  else if (!pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
-    {
-
-      start_pppoe (PPPOE0);
-
-      if (nvram_invmatch ("ppp_demand", "1"))
-	{
-	  if (status != REDIAL)
-	    start_redial ();
-	}
-    }
-#endif
 #ifdef HAVE_PPTP
   else if (strcmp (wan_proto, "pptp") == 0)
     {
@@ -2042,7 +2008,6 @@ start_wan (int status)
 //  fprintf(stderr,"get wan addr of %s\n",wan_ifname);
   strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
-  if (pppoe_flag == 0)
     {
       if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
 	{
