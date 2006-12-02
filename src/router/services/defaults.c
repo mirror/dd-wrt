@@ -1515,7 +1515,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"rflow_ip", "0.0.0.0", 0},
   {"rflow_port", "2055", 0},
   {"rflow_if", "br0", 0},
-  {"pppoe_ver", "1", 0},
 #ifdef HAVE_PPPOERELAY
 #ifdef HAVE_DDLAN
   {"pppoerelay_enable", "1", 0},
