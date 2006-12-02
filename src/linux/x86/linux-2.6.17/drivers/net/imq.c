@@ -237,29 +237,19 @@ static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff **pskb,
 static int __init imq_init_hooks(void)
 {
        int err;
-//printk(KERN_INFO "register queu handler\n");
 
        err = nf_register_queue_handler(PF_INET, &nfqh);
        if (err > 0)
                goto err1;
-//printk(KERN_INFO "register ingress handler\n");
        if ((err = nf_register_hook(&imq_ingress_ipv4)))
                goto err2;
-//printk(KERN_INFO "register egress handler\n");
-
        if ((err = nf_register_hook(&imq_egress_ipv4)))
                goto err3;
-//printk(KERN_INFO "register PFNET6 handler\n");
-
 #if defined(CONFIG_IPV6) || defined (CONFIG_IPV6_MODULE)
        if ((err = nf_register_queue_handler(PF_INET6, &nfqh)))
                goto err4;
-//printk(KERN_INFO "register ingress6 handler\n");
-
        if ((err = nf_register_hook(&imq_ingress_ipv6)))
                goto err5;
-//printk(KERN_INFO "register egress6 handler\n");
-
        if ((err = nf_register_hook(&imq_egress_ipv6)))
                goto err6;
 #endif
