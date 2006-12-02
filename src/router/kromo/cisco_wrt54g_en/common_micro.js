@@ -616,10 +616,11 @@ function openAboutWindow() {
 }
 
 
-function openWindow(url, width, height) {
+function openWindow(url, width, height, title) {
+	if (!title) title=url.replace(/\.asp/, "");
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
-	var win = window.open(url, 'DDWRT_' + url.replace(/\.asp/, ""), 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	var win = window.open(url, 'DDWRT_' + title, 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
