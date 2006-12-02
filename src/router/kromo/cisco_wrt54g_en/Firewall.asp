@@ -38,8 +38,8 @@ function to_submit(F) {
 
 function setFirewall(val) {
 	setElementsActive("_block_proxy", "_block_ident", val == "on");
-	show_layer_ext(document.log.log_enable, 'idlog1', val == "on");
-	show_layer_ext(document.log.log_enable, 'idlog2', val == "on");
+	show_layer_ext(document.firewall.log_enable, 'idlog1', val == "on");
+	show_layer_ext(document.firewall.log_enable, 'idlog2', val == "on");
 }
 
 addEvent(window, "load", function() {
