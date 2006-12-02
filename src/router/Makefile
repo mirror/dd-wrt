@@ -494,7 +494,10 @@ httpd-clean:
 
 rc: netconf nvram shared
 
-www www-%: eop-tunnel-install
+www www-%: 
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	$(MAKE) -C eop-tunnel install INSTALLDIR=$(INSTALLDIR)/eop-tunnel
+endif
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 
 www-distclean www-clean:
