@@ -1477,16 +1477,16 @@ rflow-install:
 #
 
 %:
-	$(MAKE) -C $*
+	[ ! -d $* ] || $(MAKE) -C $* 
 
 %-distclean:
-	$(MAKE) -C $* clean
+	[ ! -d $* ] || $(MAKE) -C $* clean
 
 %-clean:
-	$(MAKE) -C $* clean
+	[ ! -d $* ] || $(MAKE) -C $* clean
 
 %-install:
-	$(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
+	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
 
 $(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
 
