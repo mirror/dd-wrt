@@ -1655,7 +1655,6 @@ start_wan (int status)
     return;
 #ifdef HAVE_PPPOE
   /* Check PPPoE version, RP or linksys */
-#endif
   if ((strcmp (wan_proto, "pppoe") == 0))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
   else
