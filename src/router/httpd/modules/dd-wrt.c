@@ -1655,7 +1655,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div><select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n",
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div>\n<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n",
 		 wl_channel);
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
@@ -1723,7 +1723,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	  websWrite (wp, "var wl0_channel = '%s';\n",
 		     nvram_safe_get (wl_channel));
 	  websWrite (wp, "var offset = %d;\n", chanlist[0]);
-	  websWrite (wp, "var buf = \"\";");
+	  websWrite (wp, "var buf = \"\";\n");
 	  websWrite (wp, "var freq = new Array(\"Auto\",");
 	  int i;
 	  for (i = 0; i < chancount; i++)
@@ -1739,17 +1739,13 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 		websWrite (wp, ",");
 	    }
 	  websWrite (wp, ");\n");
-	  websWrite (wp, "	for(i=0; i<=max_channel ; i++){\n");
-	  websWrite (wp,
-		     "		if(i == wl0_channel)	buf = \"selected\";\n");
-	  websWrite (wp,
-		     "		else			buf = \"\";\n");
-	  websWrite (wp, "		if(i==0)\n");
-	  websWrite (wp,
-		     "		 document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
-	  websWrite (wp, "		else\n");
-	  websWrite (wp,
-		     "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\"GHz</option>\");\n");
+	  websWrite (wp, "for(i=0; i<=max_channel ; i++) {\n");
+	  websWrite (wp, "	if(i == wl0_channel) buf = \"selected\";\n");
+	  websWrite (wp, "	else buf = \"\";\n");
+	  websWrite (wp, "	if (i==0)\n");
+	  websWrite (wp, "		document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
+	  websWrite (wp, "	else\n");
+	  websWrite (wp, "		document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\"GHz</option>\");\n");
 	  websWrite (wp, "}\n");
 	}
 #endif
