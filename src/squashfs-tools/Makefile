@@ -1,10 +1,9 @@
 INCLUDEDIR = .
 LZMAPATH = ./lzma/C/7zip/Compress/LZMA_Lib
 
-CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2
+CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2 -D_LZMA_PARAMS
 
 all: mksquashfs-lzma unsquashfs
-
 
 mksquashfs: mksquashfs.o read_fs.o sort.o
 	$(CC) mksquashfs.o read_fs.o sort.o -lz -o $@
