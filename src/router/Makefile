@@ -107,7 +107,7 @@ obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_WWW) += www
 obj-$(CONFIG_GLIBC) += lib.mipsel
 obj-$(CONFIG_UCLIBC) += lib.mipsel
-obj-$(CONFIG_BUSYBOX) += busybox net-tools
+obj-$(CONFIG_BUSYBOX) += busybox
 obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
@@ -492,7 +492,7 @@ httpd-clean:
 	$(MAKE) -C httpd clean
 
 
-rc: netconf nvram shared libnet dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
+rc: netconf nvram shared
 
 www www-%: eop-tunnel-install
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
@@ -519,7 +519,7 @@ bridge-install:
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config rc net-tools
+busybox: busybox-config net-tools rflow dropbear dhcpforwarder bird
 ifeq ($(CONFIG_DIST),"micro")
 #	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
 	cp busybox/.config_micro busybox/.config
