@@ -849,7 +849,9 @@ nat_postrouting (void)
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_XSCALE
 #ifndef HAVE_X86
+#ifndef HAVE_RB500
 	  system2 ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+#endif
 #endif
 #endif
 #endif
