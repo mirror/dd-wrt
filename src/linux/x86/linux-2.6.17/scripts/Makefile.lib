@@ -162,4 +162,9 @@ cmd_objcopy = $(OBJCOPY) $(OBJCOPYFLAGS) $(OBJCOPYFLAGS_$(@F)) $< $@
 quiet_cmd_gzip = GZIP    $@
 cmd_gzip = gzip -f -9 < $< > $@
 
+# LZMA
+#
+quiet_cmd_lzma = LZMA    $@
+cmd_lzma = lzma e $< $@ -lc7 -lp0 -pb0 2>/dev/null
+
 

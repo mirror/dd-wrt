@@ -11,7 +11,7 @@ static unsigned int imq_target(struct sk_buff **pskb,
                               const struct net_device *in,
                               const struct net_device *out,
                               unsigned int hooknum,
-	    		      const struct xt_target *target,
+                              const struct xt_target *target,
                               const void *targinfo,
                               void *userdata)
 {
@@ -24,7 +24,7 @@ static unsigned int imq_target(struct sk_buff **pskb,
 
 static int imq_checkentry(const char *tablename,
                          const void *e,
-			 const struct xt_target *target,
+                         const struct xt_target *target,
                          void *targinfo,
                          unsigned int targinfosize,
                          unsigned int hook_mask)
@@ -57,9 +57,9 @@ static int imq_checkentry(const char *tablename,
 static struct ipt_target ipt_imq_reg = {
        .name           = "IMQ",
        .target         = imq_target,
-       .targetsize     = sizeof(struct ipt_imq_info),
        .checkentry     = imq_checkentry,
-       .me             = THIS_MODULE
+       .me             = THIS_MODULE,
+       .targetsize     = sizeof(struct ipt_imq_info),
 };
 
 static int __init init(void)
