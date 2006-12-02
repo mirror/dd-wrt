@@ -3809,7 +3809,7 @@ char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","s
 							{"security","firwall","vpn","","","","","","","",""},
 							{"accrestriction","webaccess","","","","","","","","",""},
 							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","applicationsP2P","","",""},
-							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminLog","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup"},
+							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup",""},
 							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuBand","statuSysInfo","","",""}};
 
 int i,j;
