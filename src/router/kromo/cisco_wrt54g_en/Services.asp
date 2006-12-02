@@ -103,14 +103,13 @@ addEvent(window, "load", function() {
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
-			path_input = '';
-			a = '<% nvram_get("rstats_path"); %>';
-			switch (a) {
+			path_input = '<% nvram_get("rstats_path"); %>';
+			switch (path_input) {
 				case '':
 				case '*nvram':
 				case '/jffs/':
 				case '/tmp/smbshare/':
-				rstats_select = a;
+				rstats_select = path_input;
 				break;
 			}
 			document.setup.rstats_select.value=rstats_select;
