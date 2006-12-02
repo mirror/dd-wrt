@@ -289,11 +289,13 @@ start_single_service (void)
 #endif
       startstop ("firewall");
     }
+/*// moved to filters (Firewall web GUI)    
   else if (!strcmp (service, "logging"))
     {
       startstop ("firewall");
       startstop ("syslog");
     }
+*/
 /* Sveasoft addition */
   else if (!strcmp (service, "router"))
     {
@@ -429,6 +431,7 @@ start_single_service (void)
     {
       stop_service ("cron");
       startstop ("firewall");
+      startstop ("syslog");
       startstop ("wshaper");
       start_service ("cron");
       startstop ("igmp_proxy");
