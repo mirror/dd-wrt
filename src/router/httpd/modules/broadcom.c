@@ -4073,7 +4073,9 @@ if [ 0 -ne $? ]
 //	eval ("/usr/sbin/wiviz", ">/dev/null", "&", "killall", "-USR1", "wiviz"); //KISS	
 		
 	eval ("run_wiviz", "2");  //run wiviz as separate process and give it 2 seconds time to return data
-
+	sleep(1);
+	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");
+	
 	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
 	    {
 		while (fgets(buf, sizeof(buf), f))
