@@ -18,11 +18,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ * 07/10/06 - jc - Added LZMA encoding parameter specification (_LZMA_PARAMS)
+ *				   contact: jeremy@bitsum.com
+ *
  * mksquashfs.c
  */
 
 #define FALSE 0
 #define TRUE 1
+
+/* jc: Define to enable LZMA encoding parameters on command line */
+//#define _LZMA_PARAMS 
 
 #include <pwd.h>
 #include <grp.h>
@@ -80,7 +86,17 @@
 					fprintf(stderr, "FATAL ERROR:" s, ##args);\
 					EXIT_MKSQUASHFS();\
 				} while(0)
+			
 
+#ifdef _LZMA_PARAMS
+#include "./lzma/C/7zip/Compress/LZMA_Lib/lzmaext.h"					
+/* jc: be lame and use some globals.. this app is single threaded*/					
+int g_fb=-1;
+int g_lc=-1;
+int g_lp=-1;
+int g_pb=-1;				
+#endif
+				
 int delete = FALSE;
 long long total_compressed = 0, total_uncompressed = 0;
 int fd;
@@ -308,7 +324,11 @@ unsigned int mangle(char *d, char *s, int size, int block_size, int uncompressed
 	unsigned long c_byte = block_size << 1;
 	unsigned int res;
 
+#ifdef _LZMA_PARAMS
+	if(!uncompressed && (res = compress2_lzma((unsigned char *) d, &c_byte, (unsigned char *) s, size, 9, g_fb, g_lc, g_lp, g_pb)) != Z_OK) {
+#else	
 	if(!uncompressed && (res = compress2((unsigned char *) d, &c_byte, (unsigned char *) s, size, 9)) != Z_OK) {
+#endif		
 		if(res == Z_MEM_ERROR)
 			BAD_ERROR("zlib::compress failed, not enough memory\n");
 		else if(res == Z_BUF_ERROR)
@@ -1845,6 +1865,64 @@ int main(int argc, char *argv[])
 		} else if(strcmp(argv[i], "-no-duplicates") == 0)
 			duplicate_checking = FALSE;
 
+#ifdef _LZMA_PARAMS		
+		else if(strcmp(argv[i], "-lc") == 0)
+		{
+			if(++i == argc) 
+			{
+			    ERROR("%s: -lc missing or invalid value\n", argv[0]);
+			    exit(1);
+			}
+			g_lc = strtol(argv[i], NULL, 10);
+			if(g_lc<0 || g_lc>8)
+			{
+				ERROR("lc is out of bounds (0-8).\n");
+				exit(1);
+			}
+		}
+		else if(strcmp(argv[i], "-lp") == 0)
+		{
+			if(++i == argc) 
+			{
+			    ERROR("%s: -lp missing or invalid value\n", argv[0]);
+			    exit(1);
+			}
+			g_lp = strtol(argv[i], NULL, 10);
+			if(g_lp<0 || g_lp>4)
+			{
+				ERROR("lp is out of bounds (0-4).\n");
+				exit(1);				
+			}			
+		}
+		else if(strcmp(argv[i], "-pb") == 0)
+		{
+			if(++i == argc) 
+			{
+			    ERROR("%s: -pb missing or invalid value\n", argv[0]);
+			    exit(1);
+			}
+			g_pb = strtol(argv[i], NULL, 10);
+			if(g_pb<0 || g_pb>4)
+			{
+				ERROR("pb is out of bounds (0-4).\n");
+				exit(1);
+			}			
+		}		
+		else if(strcmp(argv[i], "-fb") == 0)
+		{
+			if(++i == argc) 
+			{
+			    ERROR("%s: -fb missing or invalid value\n", argv[0]);
+			    exit(1);
+			}
+			g_fb = strtol(argv[i], NULL, 10);
+			if(g_fb<5 || g_fb>273)
+			{
+				ERROR("fb is out of bounds (5-272).\n");
+				exit(1);
+			}
+		}
+#endif		
 		else if(strcmp(argv[i], "-no-fragments") == 0)
 			no_fragments = TRUE;
 
@@ -1979,6 +2057,12 @@ printOptions:
 			ERROR("\t\t\tfile or dir with priority per line.  Priority -32768 to\n");
 			ERROR("\t\t\t32767, default priority 0\n");
 			ERROR("-ef <exclude_file>\tlist of exclude dirs/files.  One per line\n");
+			#ifdef _LZMA_PARAMS
+			ERROR("-fb x\t\t\tset lzma fast bytes to x (5-272)\n");			
+			ERROR("-lc x\t\t\tset lzma literal context bits to x (0-8)\n");
+			ERROR("-lp x\t\t\tset lzma literal pos bits to x (0-4)\n");
+			ERROR("-pb x\t\t\tset lzma pos bits to x (0-4)\n");
+			#endif			
 			exit(1);
 		}
 	}

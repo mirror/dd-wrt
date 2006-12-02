@@ -19,6 +19,9 @@
  * Public License along with this library; if not, write to 
  * the Free Software Foundation, Inc., 59 Temple Place, 
  * Suite 330, Boston, MA 02111-1307 USA 
+ *
+ * 07/10/06 - jc - Added LZMA encoding parameter specification (_LZMA_PARAMS)
+ *				   contact: jeremy@bitsum.com
  */
 
 /*
@@ -27,9 +30,13 @@
 
 #include <zlib.h>
 
+/* jc: undef to kill compress2_lzma */
+#define _LZMA_PARAMS 
+
 #define ZLIB_LC 3
 #define ZLIB_LP 0
 #define ZLIB_PB 2
+#define ZLIB_FB 128 /* jc: add default fast bytes param */
 
 #ifdef WIN32
 #include <initguid.h>
@@ -180,6 +187,77 @@ protected:
 	UInt64 m_offset;
 };
 
+
+#ifdef _LZMA_PARAMS
+/* jc: new compress2 proxy that allows lzma param specification */
+extern "C" int compress2_lzma (Bytef *dest,   uLongf *destLen,
+                                  	const Bytef *source, uLong sourceLen,
+                                  	int level, int fb, int lc, int lp, int pb)
+{	
+	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
+	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
+	
+	COutMemoryStream *outStreamSpec = new COutMemoryStream(dest, *destLen);
+	CMyComPtr<ISequentialOutStream> outStream = outStreamSpec;
+	
+	NCompress::NLZMA::CEncoder *encoderSpec = 
+		new NCompress::NLZMA::CEncoder;
+	CMyComPtr<ICompressCoder> encoder = encoderSpec;
+	
+	PROPID propIDs[] = 
+	{
+		NCoderPropID::kDictionarySize,
+		NCoderPropID::kPosStateBits,
+		NCoderPropID::kLitContextBits,
+		NCoderPropID::kLitPosBits,
+		NCoderPropID::kAlgorithm,
+		NCoderPropID::kNumFastBytes,
+		NCoderPropID::kMatchFinder,
+		NCoderPropID::kEndMarker
+	};
+	const int kNumProps = sizeof(propIDs) / sizeof(propIDs[0]);
+	
+	if(pb<0) pb=ZLIB_PB;
+	if(lc<0) lc=ZLIB_LC;
+	if(lp<0) lp=ZLIB_LP;
+	if(fb<0) fb=ZLIB_FB;
+	PROPVARIANT properties[kNumProps];
+	for (int p = 0; p < 6; p++)
+		properties[p].vt = VT_UI4;
+	properties[0].ulVal = UInt32(1 << (level + 14));
+	properties[1].ulVal = UInt32(pb);
+	properties[2].ulVal = UInt32(lc); // for normal files
+	properties[3].ulVal = UInt32(lp); // for normal files
+	properties[4].ulVal = UInt32(2);       // todo
+	properties[5].ulVal = UInt32(fb); 
+	
+	properties[6].vt = VT_BSTR;
+	properties[6].bstrVal = (BSTR)(const wchar_t *)L"BT4";
+	
+	properties[7].vt = VT_BOOL;
+	properties[7].boolVal = VARIANT_TRUE;
+	
+	if (encoderSpec->SetCoderProperties(propIDs, properties, kNumProps) != S_OK)
+		return Z_MEM_ERROR; // should not happen
+	
+	HRESULT result = encoder->Code(inStream, outStream, 0, 0, 0);
+	if (result == E_OUTOFMEMORY)
+	{
+		return Z_MEM_ERROR;
+	}   
+	else if (result != S_OK)
+	{
+		return Z_BUF_ERROR;	// should not happen
+	}   
+	
+	UInt64 fileSize;
+	outStreamSpec->Seek(0, STREAM_SEEK_END, &fileSize);
+	*destLen = fileSize;
+	
+	return Z_OK;
+}
+#endif
+
 ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
                                   const Bytef *source, uLong sourceLen,
                                   int level))
@@ -215,7 +293,7 @@ ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
 	properties[2].ulVal = UInt32(ZLIB_LC); // for normal files
 	properties[3].ulVal = UInt32(ZLIB_LP); // for normal files
 	properties[4].ulVal = UInt32(2);
-	properties[5].ulVal = UInt32(128);
+	properties[5].ulVal = UInt32(ZLIB_FB);
 	
 	properties[6].vt = VT_BSTR;
 	properties[6].bstrVal = (BSTR)(const wchar_t *)L"BT4";
