@@ -4072,11 +4072,13 @@ if [ 0 -ne $? ]
 
 //	eval ("/usr/sbin/wiviz", ">/dev/null", "&", "killall", "-USR1", "wiviz"); //KISS	
 		
+	eval ("run_wiviz", "2");  //run wiviz as separate process and give it 2 seconds time to return data
+
 	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
 	    {
 		while (fgets(buf, sizeof(buf), f))
 		 {
-		websWrite (wp, "%s\n", buf);
+		websWrite (wp, "%s", buf);
 		}
 		fclose(f);
 	}
