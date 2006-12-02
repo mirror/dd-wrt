@@ -203,6 +203,7 @@ obj-$(CONFIG_RADIOOFF) += radiooff
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-y += sprom
 obj-y += stabridge
+obj-y += net-tools
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_SCDP) += scdp
