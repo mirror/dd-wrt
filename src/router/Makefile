@@ -492,7 +492,7 @@ httpd-clean:
 	$(MAKE) -C httpd clean
 
 
-rc: netconf nvram shared
+rc: netconf nvram shared libnet
 
 www www-%: 
 ifeq ($(CONFIG_EOP_TUNNEL),y)
