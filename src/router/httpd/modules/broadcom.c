@@ -2900,7 +2900,6 @@ struct apply_action apply_actions[] = {
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
 	{"Services", "services", 0, SERVICE_RESTART, NULL},
 	{"Alive", "alive", 0, SERVICE_RESTART, NULL},
-	{"Log", "logging", 0, SERVICE_RESTART, NULL},
   
   /* APP & GAMING */
 	{"Forward", "forward", 0, SERVICE_RESTART, NULL},
@@ -2916,7 +2915,7 @@ struct apply_action apply_actions[] = {
 	{"Firewall", "filters", 0, SERVICE_RESTART, NULL},
 	{"VPN", "filters", 0, SERVICE_RESTART, NULL},
   
-/* Obsolete ?
+/* Obsolete 
  * {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
  * {"Security", "", 1, RESTART, NULL},
  * {"System", "", 0, RESTART, NULL},
@@ -2925,6 +2924,7 @@ struct apply_action apply_actions[] = {
  * {"FilterMAC", "filters", 0, SERVICE_RESTART, NULL},
  * {"FilterPort", "filters", 0, SERVICE_RESTART, NULL},
  * {"Wireless", "wireless", 0, SERVICE_RESTART, NULL},
+ * {"Log", "logging", 0, SERVICE_RESTART, NULL}, //moved to Firewall 
  * 
  * {"QoS", "qos", 0, SERVICE_RESTART, NULL},  //gozilla does the save
  * 
@@ -3799,7 +3799,7 @@ char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan
 						{"Firewall.asp","VPN.asp","","","","","","","","",""},
 						{"Filters.asp","","","","","","","","","",""},
 						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","P2P.asp","","","",""},
-						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Log.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp",""},
+						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp","",""},
 						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Status_Bandwidth.asp","Info.htm","","","",""}};
 
 /* real name is bmenu.menuname[i][j] */
