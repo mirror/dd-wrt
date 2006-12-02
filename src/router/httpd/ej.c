@@ -397,7 +397,7 @@ do_ej (char *path, webs_t stream)	// jimmy, https, 8/4/2003
       len = 0;
       while (websRomPageIndex[i].path != NULL)
 	{
-fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
+//fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
 	  if (!strcmp (websRomPageIndex[i].path, path))
 	    {
 	      buffer = websRomPageIndex[i].page;
