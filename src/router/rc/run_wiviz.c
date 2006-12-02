@@ -7,7 +7,7 @@
 #include <shutils.h>
 
 int
-run_wiviz_main (int argc, char **argv)
+run_wiviz_main (void)
 {
   pid_t pid;
   pid = fork ();
@@ -20,8 +20,6 @@ run_wiviz_main (int argc, char **argv)
     case 0:
     	eval ("killall", "wiviz");
     	eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
-      	sleep(atoi(argv[1]));
-      	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");
       exit (0);
       break;
     default:
