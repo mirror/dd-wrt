@@ -663,15 +663,8 @@ function openAboutWindow() {
 }
 
 // Opens a new window in the center of the screen and closes it, if the parent window is unloaded
-function openWindow(url, width, height) {
-	var top = Math.floor((screen.availHeight - height - 10) / 2);
-	var left = Math.floor((screen.availWidth - width) / 2);
-	var win = window.open(url, 'DDWRT_' + url.replace(/\.asp/, ""), 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
-	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
-	win.focus();
-}
-
-function openWindowTitle(url, width, height, title) {
+function openWindow(url, width, height, title) {
+	if (!title) title=url.replace(/\.asp/, "");
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
 	var win = window.open(url, 'DDWRT_' + title, 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
