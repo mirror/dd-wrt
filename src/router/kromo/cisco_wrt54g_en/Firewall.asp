@@ -38,11 +38,15 @@ function to_submit(F) {
 
 function setFirewall(val) {
 	setElementsActive("_block_proxy", "_block_ident", val == "on");
+	show_layer_ext(document.log.log_enable, 'idlog1', val == "on");
+	show_layer_ext(document.log.log_enable, 'idlog2', val == "on");
 }
 
 addEvent(window, "load", function() {
 	setFirewall("<% nvram_get("filter"); %>");
 	//show_layer_ext(document.firewall.log_enable, 'idfilter', <% nvram_else_match("filter", "on", "on", "off"); %> == 'on');
+	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 });
 
 		//]]>
@@ -123,6 +127,67 @@ addEvent(window, "load", function() {
 										</div>
 									</fieldset><br />
 								</div>
+								
+								<h2><% tran("log.h2"); %></h2>
+							
+							<fieldset>
+								<legend><% tran("log.legend"); %></legend>
+								<div class="setting">
+									<div class="label">Log</div>
+									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
+								</div>
+							<div id="idlog1">
+								<div class="setting">
+									<div class="label"><% tran("log.lvl"); %></div>
+									<select name="log_level">
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected("log_level", "0", "js"); %> >" + share.low + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected("log_level", "1", "js"); %> >" + share.medium + "</option>");
+										document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %> >" + share.high + "</option>");
+										//]]>
+										</script>
+									</select>
+								</div>
+							</div>
+							</fieldset><br />
+							
+							<div id="idlog2">
+								<fieldset>
+									<legend><% tran("share.option"); %></legend>
+									<div class="setting">
+										<div class="label"><% tran("log.drop"); %></div>
+										<select name="log_dropped">
+											<option value="0" <% nvram_selected("log_dropped", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_dropped", "1"); %>>On</option>
+										</select>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("log.reject"); %></div>
+										<select name="log_rejected">
+											<option value="0" <% nvram_selected("log_rejected", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_rejected", "1"); %>>On</option>
+										</select>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("log.accept"); %></div>
+										<select name="log_accepted">
+											<option value="0" <% nvram_selected("log_accepted", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_accepted", "1"); %>>On</option>
+										</select>
+									</div>
+								</fieldset><br />
+
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600);\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600);\" />");
+									//]]>
+									</script>
+								</div><br />
+							</div>
 								
 								<div class="submitFooter">
 									<script type="text/javascript">

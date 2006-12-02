@@ -1,5 +1,7 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Site Survey</title>
+		<script type="text/javascript" src="js/wiviz.js"></script>
+		<link type="text/css" rel="stylesheet" href="style/wiviz.css" />
 		<script type="text/javascript">
 		//<![CDATA[
 
@@ -31,6 +33,72 @@ function do_join (F,SSID) {
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
 			<h2><% tran("survey.h2"); %></h2>
+			
+			<div class='floater'><% tran("share.statu"); %>:<span id="status" class="status">Monitoring</span>
+			<br/>
+			<input type="button" id="togglelisten" value="Stop monitoring" onclick="toggleListen()" />
+			<p>
+				<form name="channelform" action="/cgi-bin/wiviz-set.cgi" method="get" target="wivizGetFrame" />Channel setting:
+					<select id="channelsel" name="channelsel" onchange="channelSet()">
+						<option value='nochange' selected>No change</option>
+						<option value='hop'>Hopping</option>
+						<option>1</option>
+						<option>2</option>
+						<option>3</option>
+						<option>4</option>
+						<option>5</option>
+						<option>6</option>
+						<option>7</option>
+						<option>8</option>
+						<option>9</option>
+						<option>10</option>
+						<option>11</option>
+						<option>12</option>
+						<option>13</option>
+						<option>14</option>
+					</select>
+					<br/>
+					<span id="hopoptions" style="display: none">Time/channel: 
+						<select name="hopdwell">
+							<option value='500'>0.5 sec</option>
+							<option selected value='1000'>1 sec</option>
+							<option value='2000'>2 sec</option>
+							<option value='5000'>5 sec</option>
+						</select>
+						<br/>
+						Hop sequence: 
+						<select name="hopseq">
+							<option selected>1,3,6,8,11</option>
+							<option>1,3,6,8,11,14</option>
+							<option>1,6,11</option>
+							<option value='1,2,3,4,5,6,7,8,9,10,11'>1 to 11</option>
+							<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14'>1 to 14</option>
+						</select>
+						<br/>
+						<input type="submit" value="Set" />
+					</span>
+				</form>
+			</div>
+			
+			<center>
+				<div id="infodiv" class="main">
+					<table height="100%" width="100%">
+						<tr>
+							<td>
+								<span id="pips" style="position: relative"></span>
+								<span id="content" style="position: relative"></span>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</center>
+			<span id="debug" style="display: none"></span>
+			<iframe style="display:none" id="wivizGetFrame" name="wivizGetFrame" src="about:blank"></iframe>
+			<script type="text/javascript">scan_thread();</script>
+					
+			
+			
+<!--	
         	<table class="center table" cellspacing="5">
 				<tr>
 				   <th width="31%"><% tran("share.ssid"); %></th>
@@ -81,6 +149,7 @@ function do_join (F,SSID) {
 				//]]>
 				</script>
 			</div>
+-->
 		</form>
 	</body>
 </html>
