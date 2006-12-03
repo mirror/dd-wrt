@@ -37,9 +37,15 @@ function to_submit(F) {
 }
 
 function setFirewall(val) {
-	setElementsActive("_block_proxy", "_block_ident", val == "on");
-	show_layer_ext(document.firewall.log_enable, 'idlog1', val == "on");
-	show_layer_ext(document.firewall.log_enable, 'idlog2', val == "on");
+	setElementsActive("_block_proxy", "log_enable", val == "on");
+	
+	if (val != "on") {
+		document.firewall.log_enable[1].checked == true;
+		show_layer_ext(document.firewall.log_enable, 'idlog1', false);
+		show_layer_ext(document.firewall.log_enable, 'idlog2', false);
+	}
+	
+	
 }
 
 addEvent(window, "load", function() {
