@@ -662,48 +662,7 @@ diag_led_4704 (int type, int act)
 	  //cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
 	}
       break;
-    case DMZ:
-      brand = getRouterBrand ();
-      if (brand == ROUTER_WRTSL54GS)
-	{
-	  if (act == STOP_LED)
-	    {
-	      eval ("gpio", "enable", "0");
-	    }
-	  if (act == START_LED)
-	    {
-	      eval ("gpio", "disable", "0");
-	    }
-	}
-      break;
-#if 0
-    case DMZ:			// GPIO 7
-      if (act == STOP_LED)
-	{
-	  write_gpio ("/dev/gpio/out", out | 0x80);
-	  cprintf ("tallest:=====( DMZ STOP_LED !!)=====\n");
-	}
-      else if (act == START_LED)
-	{
-	  write_gpio ("/dev/gpio/out", out & 0x7f);
-	  cprintf ("tallest:=====( DMZ START_LED !!)=====\n");
-	}
-      break;
-    case WL:			// GPIO 0
-      write_gpio ("/dev/gpio/control", control & 0xfe);
-      write_gpio ("/dev/gpio/outen", outen | 0x01);
-      if (act == STOP_LED)
-	{
-	  write_gpio ("/dev/gpio/out", out | 0x01);
-	  //cprintf("tallest:=====( WL STOP_LED !!)=====\n");
-	}
-      else if (act == START_LED)
-	{
-	  write_gpio ("/dev/gpio/out", out & 0xfe);
-	  //cprintf("tallest:=====( WL START_LED !!)=====\n");
-	}
-      break;
-#endif
+    
     }
   return 1;
 #endif
@@ -770,17 +729,38 @@ C_led (int i)
 {
 //show_hw_type(check_hw_type());
 
-  if (check_hw_type () == BCM4702_CHIP)
+  if (getRouterBrand () == ROUTER_WRT54G1X || getRouterBrand () == ROUTER_LINKSYS_WRT55AG)
     return C_led_4702 (i);
-  else
+  else if (getRouterBrand () == ROUTER_WRT54G)
     return C_led_4712 (i);
 }
 
 int
 diag_led (int type, int act)
 {
-//show_hw_type(check_hw_type());
+int brand = getRouterBrand ();
 
+	if (brand == ROUTER_WRT54G))
+  		return diag_led_4712 (type, act);
+	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
+  		return diag_led_4702 (type, act);
+  	else if (brand == WRTSL54GS && type == DIAG)
+  		return diag_led_4704 (type, act);
+  	else
+  		{
+	  	if (type == DMZ)
+	  		{
+	  		if (act == START_LED)
+	  			return led_control (LED_DMZ, LED_ON);
+	  		if (act == STOP_LED)
+	  			return led_control (LED_DMZ, LED_OFF);
+	  		return 1;
+  			}
+  		else
+  			return 0:
+		}
+ 
+/*
   if (getRouterBrand () == ROUTER_BELKIN_F5D7230 ||	//fix for belkin DMZ=enable reboot problem (gpio 7)
       getRouterBrand () == ROUTER_BUFFALO_WBR2G54S ||	//same for wbr2g54
       getRouterBrand () == ROUTER_MICROSOFT_MN700)	//same for MN700
@@ -794,7 +774,7 @@ diag_led (int type, int act)
 	return diag_led_4704 (type, act);
       else
 	return diag_led_4712 (type, act);
-    }
+    } */
 }
   
 int
@@ -980,7 +960,7 @@ int aoss_gpio = 0x0f;
 		}
 	}
 
-
+	return 1;
 
 #endif
 }
