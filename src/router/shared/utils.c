@@ -742,7 +742,7 @@ diag_led (int type, int act)
 {
 int brand = getRouterBrand ();
 
-	if (brand == ROUTER_WRT54G))
+	if (brand == ROUTER_WRT54G)
   		return diag_led_4712 (type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
   		return diag_led_4702 (type, act);
