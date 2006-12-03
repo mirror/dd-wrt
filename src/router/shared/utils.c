@@ -855,11 +855,11 @@ int aoss_gpio = 0x0f;
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
 			diag_gpio = 0x13;
-			diag2_gpio = 0x14
+			diag2_gpio = 0x14;
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 			diag_gpio = 0x17;
-			bridge_led = 0x11;
+			bridge_gpio = 0x11;
 			aoss_gpio = 0x16;
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
@@ -917,10 +917,10 @@ int aoss_gpio = 0x0f;
 				use_gpio = power_gpio;
 			break;
 		case LED_DIAG:
-				use_gpio = power2_gpio;
+				use_gpio = diag_gpio;
 			break;
 		case LED_DIAG2:
-				use_gpio = diag_gpio;
+				use_gpio = diag2_gpio;
 			break;
 		case LED_DMZ:
 				use_gpio = dmz_gpio;
@@ -941,14 +941,14 @@ int aoss_gpio = 0x0f;
 				use_gpio = ses2_gpio;
 			break;
 		case LED_AOSS:
-				use_gpio = ses2_gpio;
+				use_gpio = aoss_gpio;
 			break;
 	} 
 
 	if ((use_gpio & 0x0f) != 0x0f)
 	{	
 		gpio_value = use_gpio & 0x0f;
-		sprintf (temp, "%s", gpio_value); 
+		sprintf (temp, "%d", gpio_value); 
 		switch (act)
 		{
 			case LED_ON:
