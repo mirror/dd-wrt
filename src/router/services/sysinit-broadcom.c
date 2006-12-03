@@ -259,7 +259,6 @@ start_sysinit (void)
     case ROUTER_SIEMENS:
     case ROUTER_BELKIN_F5D7230:
       setup_4712 ();
-      eval ("gpio", "disable", "5");	// power led on
       break;
 
     case ROUTER_RT210W:
@@ -270,7 +269,6 @@ start_sysinit (void)
 	{
 	  nvram_set ("et0macaddr", "00:16:E3:00:00:10");	//fix for missing cfe default = dead LAN ports.
 	}
-      eval ("gpio", "disable", "5");	// power led on
       break;
 
     case ROUTER_BRCM4702_GENERIC:
@@ -308,13 +306,9 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
       nvram_set ("wan_ifnames", "vlan1");
       nvram_set ("vlan1ports", "0 5");
-      eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
       eval ("gpio", "disable", "0");	//reset the reset button to 0
       break;
 
-    case ROUTER_MICROSOFT_MN700:
-      eval ("gpio", "enable", "6");	//MN700 power led on
-      break;
 
 #ifndef HAVE_MSSID
     case ROUTER_BUFFALO_WBR54G:
@@ -323,8 +317,6 @@ start_sysinit (void)
 #endif
 
     case ROUTER_BUFFALO_WBR2G54S:
-      eval ("gpio", "disable", "1");	//WBR2G54 diag led off
-      eval ("gpio", "disable", "6");	//AOSS led off
 #ifndef HAVE_MSSID
       nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
 #endif
@@ -335,8 +327,6 @@ start_sysinit (void)
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
-      eval ("gpio", "enable", "3");	//WLA2-G54C, WLA3-TX1-G54 diag led off
-      eval ("gpio", "enable", "4");
       break;
     }
 
@@ -347,6 +337,12 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
     }
+    
+    led_control (LED_POWER, LED_ON);
+    led_control (LED_DIAG, LED_OFF);
+    led_control (LED_DIAG2, LED_OFF);
+    led_control (LED_AOSS, LED_OFF);
+     
 
   /* ifnames */    
     strcpy (wanifname, nvram_safe_get ("wan_ifname"));
