@@ -177,9 +177,6 @@ extern int start_upnp (void);
 extern int stop_upnp (void);
 #endif
 
-extern int start_ntp (void);
-extern int stop_ntp (void);
-
 extern int start_pptp (int status);
 extern int stop_pptp (void);
 
