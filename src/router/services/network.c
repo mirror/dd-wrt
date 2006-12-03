@@ -2322,24 +2322,9 @@ start_wan_done (char *wan_ifname)
   runStartup ("/mmc/etc/config", ".ipup");
 #endif
   cprintf ("trigger gpio");
-  int brand = getRouterBrand ();
-  switch (brand)
-    {
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_WRT54G:
-    case ROUTER_WRT54G1X:
-      eval ("gpio", "disable", "3");
-      break;
-    case ROUTER_WRTSL54GS:
-      eval ("gpio", "disable", "7");
-      break;
-    case ROUTER_RT210W:
-    case ROUTER_BELKIN_F5D7230:
-      eval ("gpio", "disable", "0");
-      break;
-    default:
-      break;
-    }
+
+  led_control (LED_CONNECTED, LED_ON);
+
   cprintf ("done\n");
   char *wani = nvram_safe_get ("wan_iface");
   if (strlen (wani) == 0)
@@ -2429,23 +2414,9 @@ stop_wan (void)
 {
   char *wan_ifname = get_wan_face ();
   nvram_set ("wanup", "0");
-  int brand = getRouterBrand ();
-  switch (brand)
-    {
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_WRT54G:
-    case ROUTER_WRT54G1X:
-      eval ("gpio", "enable", "3");
-      break;
-    case ROUTER_WRTSL54GS:
-      eval ("gpio", "enable", "7");
-      break;
-    case ROUTER_RT210W:
-      eval ("gpio", "enable", "0");
-      break;
-    default:
-      break;
-    }
+  
+  led_control (LED_CONNECTED, LED_OFF);
+
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
 #ifdef HAVE_NEWMEDIA
   stop_openvpnserverwan ();
