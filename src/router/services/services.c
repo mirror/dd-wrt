@@ -50,6 +50,7 @@
 #include <mkfiles.h>
 #include <wlutils.h>
 #include <nvparse.h>
+#include <syslog.h>
 
 
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
