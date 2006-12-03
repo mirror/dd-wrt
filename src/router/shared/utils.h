@@ -191,8 +191,8 @@ extern struct detect_wans *detect_protocol (char *wan_face, char *lan_face,
 enum
 { WL = 0,
   DIAG = 1,
-  SES_LED1 = 2,
-  SES_LED2 = 3,
+//  SES_LED1 = 2,
+//  SES_LED2 = 3,
   SES_BUTTON = 4,
   DMZ = 7
 };
