@@ -210,14 +210,18 @@ check_ses_led_main (int argc, char **argv)
     {
 
       /* White led */
-      diag_led (SES_LED1, START_LED);
+      //diag_led (SES_LED1, START_LED);
+      led_control (LED_SES, LED_ON);
       usleep (1000000 * interval);
-      diag_led (SES_LED1, STOP_LED);
+      //diag_led (SES_LED1, STOP_LED);
+      led_control (LED_SES, LED_OFF);
 
       /* Orange led */
-      diag_led (SES_LED2, START_LED);
+      //diag_led (SES_LED2, START_LED);
+      led_control (LED_SES2, LED_ON);
       usleep (1000000 * interval);
-      diag_led (SES_LED2, STOP_LED);
+      //diag_led (SES_LED2, STOP_LED);
+      led_control (LED_SES2, LED_OFF);
     }
   return 0;
 }
