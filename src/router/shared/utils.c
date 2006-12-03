@@ -733,6 +733,8 @@ C_led (int i)
     return C_led_4702 (i);
   else if (getRouterBrand () == ROUTER_WRT54G)
     return C_led_4712 (i);
+  else
+  	return 0;
 }
 
 int
