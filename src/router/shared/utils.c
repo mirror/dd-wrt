@@ -629,7 +629,7 @@ diag_led_4704 (int type, int act)
   /* The router will crash, if we load the code into broadcom demo board. */
   return 1;
 #endif
-  int brand;
+  //int brand;
   control = read_gpio ("/dev/gpio/control");
   in = read_gpio ("/dev/gpio/in");
   out = read_gpio ("/dev/gpio/out");
@@ -746,7 +746,7 @@ int brand = getRouterBrand ();
   		return diag_led_4712 (type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
   		return diag_led_4702 (type, act);
-  	else if (brand == WRTSL54GS && type == DIAG)
+  	else if (brand == ROUTER_WRTSL54GS && type == DIAG)
   		return diag_led_4704 (type, act);
   	else
   		{
