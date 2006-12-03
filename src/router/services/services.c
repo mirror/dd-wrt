@@ -123,7 +123,9 @@ start_vpn_modules (void)
        || nvram_match ("ipsec_pass", "1")))
     {
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
+      syslog(LOG_INFO,"vpn modules : ip_conntrack_proto_gre successfully started\n");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
+      syslog(LOG_INFO,"vpn modules : ip_nat_proto_gre successfully started\n");
     }
 #endif
 #endif
@@ -132,7 +134,9 @@ start_vpn_modules (void)
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
+      syslog(LOG_INFO,"vpn modules : ip_conntrack_pptp successfully started\n");
       eval ("/sbin/insmod", "ip_nat_pptp");
+      syslog(LOG_INFO,"vpn modules : ip_nat_pptp successfully started\n");
     }
 }
 
@@ -145,17 +149,21 @@ stop_vpn_modules (void)
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_X86
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
+  syslog(LOG_INFO,"vpn modules : ip_nat_proto_gre successfully stopped\n");
 #endif
 #endif
 #endif
 #endif
   eval ("/sbin/rmmod", "ip_nat_pptp");
+  syslog(LOG_INFO,"vpn modules : ip_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
+  syslog(LOG_INFO,"vpn modules : ip_conntrack_pptp successfully stopped\n");
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_X86
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+  syslog(LOG_INFO,"vpn modules : ip_conntrack_proto_gre successfully stopped\n");
 #endif
 #endif
 #endif
@@ -339,6 +347,7 @@ start_pptpd (void)
     eval ("/usr/sbin/pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o",
 	  "/tmp/pptpd/options.pptpd");
 
+  syslog(LOG_INFO,"pptpd : pptp daemon successfully started\n");
   return ret;
 }
 
@@ -349,6 +358,7 @@ stop_pptpd (void)
 
   ret = killall ("pptpd", SIGKILL);
   killall ("bcrelay", SIGKILL);
+  syslog(LOG_INFO,"pptpd : pptp daemon successfully stopped\n");
   return ret;
 }
 #endif
@@ -466,95 +476,89 @@ start_dhcpfwd (void)
     }
 #ifdef HAVE_DHCPFORWARD
   FILE *fp;
-  if (nvram_match ("dhcpfwd_enable", "1"))
-    {
-      mkdir ("/tmp/dhcp-fwd", 0700);
-      mkdir ("/var/run/dhcp-fwd", 0700);
-      fp = fopen ("/tmp/dhcp-fwd/dhcp-fwd.conf", "wb");
-      fprintf (fp, "user		root\n");
-      fprintf (fp, "group		root\n");
-      fprintf (fp, "chroot		/var/run/dhcp-fwd\n");
-      fprintf (fp, "logfile		/tmp/dhcp-fwd.log\n");
-      fprintf (fp, "loglevel	1\n");
-      fprintf (fp, "pidfile		/var/run/dhcp-fwd.pid\n");
-      fprintf (fp, "ulimit core	0\n");
-      fprintf (fp, "ulimit stack	64K\n");
-      fprintf (fp, "ulimit data	32K\n");
-      fprintf (fp, "ulimit rss	200K\n");
-      fprintf (fp, "ulimit nproc	0\n");
-      fprintf (fp, "ulimit nofile	0\n");
-      fprintf (fp, "ulimit as	0\n");
-      fprintf (fp, "if	%s	true	false	true\n",
-	       nvram_safe_get ("lan_ifname"));
-
-      char *wan_proto = nvram_safe_get ("wan_proto");
-      char *wan_ifname = nvram_safe_get ("wan_ifname");
+  if (nvram_match ("dhcpfwd_enable", "1")) {
+  	mkdir ("/tmp/dhcp-fwd", 0700);
+  	mkdir ("/var/run/dhcp-fwd", 0700);
+  	fp = fopen ("/tmp/dhcp-fwd/dhcp-fwd.conf", "wb");
+  	fprintf (fp, "user		root\n");
+  	fprintf (fp, "group		root\n");
+  	fprintf (fp, "chroot		/var/run/dhcp-fwd\n");
+  	fprintf (fp, "logfile		/tmp/dhcp-fwd.log\n");
+  	fprintf (fp, "loglevel	1\n");
+  	fprintf (fp, "pidfile		/var/run/dhcp-fwd.pid\n");
+  	fprintf (fp, "ulimit core	0\n");
+  	fprintf (fp, "ulimit stack	64K\n");
+  	fprintf (fp, "ulimit data	32K\n");
+  	fprintf (fp, "ulimit rss	200K\n");
+  	fprintf (fp, "ulimit nproc	0\n");
+  	fprintf (fp, "ulimit nofile	0\n");
+  	fprintf (fp, "ulimit as	0\n");
+  	fprintf (fp, "if	%s	true	false	true\n", nvram_safe_get ("lan_ifname"));
+  	
+  	char *wan_proto = nvram_safe_get ("wan_proto");
+  	char *wan_ifname = nvram_safe_get ("wan_ifname");
 #ifdef HAVE_MADWIFI
-      if (nvram_match ("ath0_mode", "sta"))
+		if (nvram_match ("ath0_mode", "sta"))
 #else
-      if (nvram_match ("wl_mode", "sta"))
+    if (nvram_match ("wl_mode", "sta"))
 #endif
-	{
-	  wan_ifname = get_wdev ();	//returns eth1/eth2 for broadcom and ath0 for atheros
-	}
+		{
+			wan_ifname = get_wdev ();	//returns eth1/eth2 for broadcom and ath0 for atheros
+		}
 #ifdef HAVE_PPPOE
-      if (strcmp (wan_proto, "pppoe") == 0)
-	{
-	  fprintf (fp, "if	ppp0	false	true	true\n");
-
-	}
+		if (strcmp (wan_proto, "pppoe") == 0)
+		{
+			fprintf (fp, "if	ppp0	false	true	true\n");
+		}
 #else
-      if (0)
-	{
-	}
+    if (0)
+    {
+    }
 #endif
-      else if (strcmp (wan_proto, "dhcp") == 0
+		else if (strcmp (wan_proto, "dhcp") == 0
 	       || strcmp (wan_proto, "static") == 0)
-	{
-	  fprintf (fp, "if	%s	false	true	true\n",
-		   nvram_safe_get ("wan_ifname"));
-	}
+	  {
+	  	fprintf (fp, "if	%s	false	true	true\n", nvram_safe_get ("wan_ifname"));
+	  }
 #ifdef HAVE_PPTP
-      else if (strcmp (wan_proto, "pptp") == 0)
-	{
-	  fprintf (fp, "if	ppp0	false	true	true\n");
-	}
+    else if (strcmp (wan_proto, "pptp") == 0)
+    {
+    	fprintf (fp, "if	ppp0	false	true	true\n");
+    }
 #endif
 #ifdef HAVE_L2TP
-      else if (strcmp (wan_proto, "l2tp") == 0)
-	{
-	  fprintf (fp, "if	ppp0	false	true	true\n");
-	}
+		else if (strcmp (wan_proto, "l2tp") == 0)
+		{
+			fprintf (fp, "if	ppp0	false	true	true\n");
+		}
 #endif
 #ifdef HAVE_HEARTBEAT
-      else if (strcmp (wan_proto, "heartbeat") == 0)
-	{
-	  fprintf (fp, "if	ppp0	false	true	true\n");
-	}
-#endif
-      else
-	{
-	  fprintf (fp, "if	%s	false	true	true\n",
-		   nvram_safe_get ("wan_ifname"));
-	}
-
-      fprintf (fp, "name	%s	ws-c\n",
-	       nvram_safe_get ("lan_ifname"));
-      fprintf (fp, "server	ip	%s\n", nvram_safe_get ("dhcpfwd_ip"));
-      fclose (fp);
-      eval ("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
-      return 0;
+    else if (strcmp (wan_proto, "heartbeat") == 0)
+    {
+    	fprintf (fp, "if	ppp0	false	true	true\n");
     }
+#endif
+		else
+		{
+			fprintf (fp, "if	%s	false	true	true\n", nvram_safe_get ("wan_ifname"));
+		}
+		
+		fprintf (fp, "name	%s	ws-c\n", nvram_safe_get ("lan_ifname"));
+		fprintf (fp, "server	ip	%s\n", nvram_safe_get ("dhcpfwd_ip"));
+		fclose (fp);
+		eval ("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
+		syslog(LOG_INFO,"dhcpfwd : dhcp forwarder daemon successfully started\n");
+		return 0;
+	}
 #endif
 #ifdef HAVE_DHCPRELAY
   if (nvram_match ("dhcpfwd_enable", "1"))
-    {
-      eval ("dhcrelay", "-i", nvram_safe_get ("lan_ifname"),
-	    nvram_safe_get ("dhcpfwd_ip"));
-    }
+  {
+  	eval ("dhcrelay", "-i", nvram_safe_get ("lan_ifname"), nvram_safe_get ("dhcpfwd_ip"));
+  	syslog(LOG_INFO,"dhcrelay : dhcp relay successfully started\n");
+  }
 #endif
-  return 0;
-
+	return 0;
 }
 
 void
@@ -562,9 +566,11 @@ stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
   killall ("dhcpfwd", SIGTERM);	//kill also dhcp forwarder if available
+  syslog(LOG_INFO,"dhcpfwd : dhcp forwarder daemon successfully stopped\n");
 #endif
 #ifdef HAVE_DHCPRELAY
   killall ("dhcrelay", SIGTERM);
+  syslog(LOG_INFO,"dhcrelay : dhcp relay successfully stopped\n");
 #endif
 }
 
@@ -577,26 +583,26 @@ start_udhcpd (void)
   struct dns_lists *dns_list = NULL;
   int i = 0;
   if (nvram_match ("dhcpfwd_enable", "1"))
-    {
-      return 0;
-    }
+  {
+  	return 0;
+   }
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
   if (nvram_match ("wl_mode", "wet"))	//dont start any dhcp services in bridge mode
-    {
-      nvram_set ("lan_proto", "static");
-      return 0;
-    }
+  {
+  	nvram_set ("lan_proto", "static");
+  	return 0;
+  }
 #endif
 #endif
 
   if (nvram_match ("router_disable", "1")
       || nvram_invmatch ("lan_proto", "dhcp")
       || nvram_match ("dhcp_dnsmasq", "1"))
-    {
-      stop_udhcpd ();
-      return 0;
-    }
+  {
+    stop_udhcpd ();
+    return 0;
+  }
 
   /* Automatically adjust DHCP Start IP and num when LAN IP or netmask is changed */
   adjust_dhcp_range ();
@@ -614,31 +620,32 @@ start_udhcpd (void)
   usejffs = 0;
 
   if (nvram_match ("dhcpd_usejffs", "1"))
-    {
-      if (!(fp = fopen ("/jffs/udhcpd.leases", "a")))
-	{
-	  usejffs = 0;
-	}
-      else
-	{
-	  usejffs = 1;
-	}
-    }
+  {
+    if (!(fp = fopen ("/jffs/udhcpd.leases", "a")))
+		{
+	  	usejffs = 0;
+		}
+     else
+		{
+	  	usejffs = 1;
+		}
+  }
   if (!usejffs)
-    if (!(fp = fopen ("/tmp/udhcpd.leases", "a")))
-      {
-	perror ("/tmp/udhcpd.leases");
-	return errno;
-      }
-
+  {
+  	if (!(fp = fopen ("/tmp/udhcpd.leases", "a")))
+  	{
+  		perror ("/tmp/udhcpd.leases");
+  		return errno;
+  	}
+  }	
   fclose (fp);
 
   /* Write configuration file based on current information */
   if (!(fp = fopen ("/tmp/udhcpd.conf", "w")))
-    {
-      perror ("/tmp/udhcpd.conf");
-      return errno;
-    }
+  {
+    perror ("/tmp/udhcpd.conf");
+    return errno;
+  }
   fprintf (fp, "pidfile /var/run/udhcpd.pid\n");
   fprintf (fp, "start %d.%d.%d.%s\n",
 	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
@@ -678,15 +685,15 @@ start_udhcpd (void)
 
   // Wolf add - keep lease within reasonable timeframe
   if (atoi (nvram_safe_get ("dhcp_lease")) < 10)
-    {
-      nvram_set ("dhcp_lease", "10");
-      nvram_commit ();
-    }
+  {
+    nvram_set ("dhcp_lease", "10");
+    nvram_commit ();
+  }
   if (atoi (nvram_safe_get ("dhcp_lease")) > 5760)
-    {
-      nvram_set ("dhcp_lease", "5760");
-      nvram_commit ();
-    }
+  {
+    nvram_set ("dhcp_lease", "5760");
+    nvram_commit ();
+  }
 
   fprintf (fp, "option lease %d\n",
 	   atoi (nvram_safe_get ("dhcp_lease")) ?
@@ -695,62 +702,50 @@ start_udhcpd (void)
   dns_list = get_dns_list ();
 
   if (!dns_list || dns_list->num_servers == 0)
-    {
-
-      if (nvram_invmatch ("lan_ipaddr", ""))
-	fprintf (fp, "option dns %s\n", nvram_safe_get ("lan_ipaddr"));
-
-    }
+  {
+		if (nvram_invmatch ("lan_ipaddr", ""))
+			fprintf (fp, "option dns %s\n", nvram_safe_get ("lan_ipaddr"));
+	}
   else if (nvram_match ("local_dns", "1"))
-    {
-
-      if (dns_list
-	  && (nvram_invmatch ("lan_ipaddr", "")
+  {
+  	if (dns_list
+  			&& (nvram_invmatch ("lan_ipaddr", "")
 	      || strlen (dns_list->dns_server[0]) > 0
 	      || strlen (dns_list->dns_server[1]) > 0
 	      || strlen (dns_list->dns_server[2]) > 0))
-	{
-
-	  fprintf (fp, "option dns");
-
-	  if (nvram_invmatch ("lan_ipaddr", ""))
-	    fprintf (fp, " %s", nvram_safe_get ("lan_ipaddr"));
-
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[0]);
-
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[1]);
-
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[2]);
-
-	  fprintf (fp, "\n");
+		{
+			fprintf (fp, "option dns");
+			
+			if (nvram_invmatch ("lan_ipaddr", ""))
+				fprintf (fp, " %s", nvram_safe_get ("lan_ipaddr"));
+			if (strlen (dns_list->dns_server[0]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[0]);
+			if (strlen (dns_list->dns_server[1]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[1]);
+			if (strlen (dns_list->dns_server[2]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[2]);
+			
+			fprintf (fp, "\n");
+		}
 	}
-    }
   else
-    {
-
-      if (dns_list
-	  && (strlen (dns_list->dns_server[0]) > 0
+  {
+		if (dns_list
+				&& (strlen (dns_list->dns_server[0]) > 0
 	      || strlen (dns_list->dns_server[1]) > 0
 	      || strlen (dns_list->dns_server[2]) > 0))
-	{
-
-	  fprintf (fp, "option dns");
-
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[0]);
-
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[1]);
-
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[2]);
-
-	  fprintf (fp, "\n");
+		{
+			fprintf (fp, "option dns");
+			if (strlen (dns_list->dns_server[0]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[0]);
+			if (strlen (dns_list->dns_server[1]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[1]);
+			if (strlen (dns_list->dns_server[2]) > 0)
+	    	fprintf (fp, " %s", dns_list->dns_server[2]);
+			
+			fprintf (fp, "\n");
+		}
 	}
-    }
 
   if (dns_list)
     free (dns_list);
@@ -814,25 +809,15 @@ start_udhcpd (void)
 	}
       free (cp);
     }
-  //#dhcp-host=bert,192.168.0.70,infinite
 
-  //#dhcp-host=11:22:33:44:55:66,fred,192.168.0.60,45m
-
-
-/*	if (nvram_invmatch("dhcpd_statics", "")){
-		char *host_key = nvram_safe_get("dhcpd_statics");
-		i = 0;
-		do{
-			if(host_key[i] != 0x0D)
-				fprintf(fp, "%c", host_key[i]);
-		} while(host_key[++i]);
-	}*/
   fclose (fp);
   /* end Sveasoft addition */
 
   dns_to_resolv ();
 
   eval ("udhcpd", "/tmp/udhcpd.conf");
+  syslog(LOG_INFO,"udhcpd : udhcp daemon successfully started\n");
+  
 
   /* Dump static leases to udhcpd.leases so they can be read by dnsmasq */
   /* DD-WRT (belanger) : the dump database is now handled directly in udhcpd */
@@ -849,6 +834,7 @@ int
 stop_udhcpd (void)
 {
   softkill ("udhcpd");
+  syslog(LOG_INFO,"udhcpd : udhcp daemon successfully stopped\n");
   cprintf ("done\n");
   return 0;
 }
@@ -1024,11 +1010,7 @@ start_dnsmasq (void)
 	      }
 	    free (cp);
 	  }
-	//#dhcp-host=bert,192.168.0.70,infinite
-
-	//#dhcp-host=11:22:33:44:55:66,fred,192.168.0.60,45m
-
-      }
+   }
 
   /* Additional options */
   if (nvram_invmatch ("dnsmasq_options", ""))
@@ -1048,6 +1030,7 @@ start_dnsmasq (void)
 
   chmod ("/etc/lease_update.sh", 0700);
   ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
+  syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -1057,6 +1040,7 @@ int
 stop_dnsmasq (void)
 {
   int ret = softkill ("dnsmasq");
+  syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
   unlink ("/tmp/resolv.dnsmasq");
 
   cprintf ("done\n");
@@ -1069,6 +1053,7 @@ stop_dns_clear_resolv (void)
   FILE *fp_w;
   //int ret = killps("dnsmasq",NULL);
   int ret = killall ("dnsmasq", SIGTERM);
+  syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
 
   /* Save DNS to resolv.conf */
   if (!(fp_w = fopen (RESOLV_FILE, "w")))
@@ -1103,6 +1088,7 @@ start_httpd (void)
  		else
  		{
 	 		ret = eval ("httpd");
+	 		syslog(LOG_INFO,"httpd : http daemon successfully started\n");
  		}
       chdir ("/");
     }
@@ -1117,6 +1103,7 @@ start_httpd (void)
 
       chdir ("/www");
       ret = eval ("httpd", "-S");
+      syslog(LOG_INFO,"httpd : https daemon successfully started\n");
       chdir ("/");
     }
 #endif
@@ -1130,6 +1117,7 @@ stop_httpd (void)
 {
   //int ret = killps("httpd",NULL);
   int ret = killall ("httpd", SIGTERM);
+  syslog(LOG_INFO,"httpd : http daemon successfully stopped\n");
 
   unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
@@ -1160,6 +1148,7 @@ start_upnp (void)
 		  "-W", wan_ifname,
 		  "-I", nvram_safe_get ("upnp_ssdp_interval"),
 		  "-A", nvram_safe_get ("upnp_max_age"));
+		  syslog(LOG_INFO,"upnp : upnp daemon successfully started\n");
     }
 
   cprintf ("done\n");
@@ -1169,45 +1158,16 @@ start_upnp (void)
 int
 stop_upnp (void)
 {
-  //int ret = killps("upnp","-USR1");
-
   killall ("upnp", SIGUSR1);
-
-  //killps("upnp",NULL);
   killall ("upnp", SIGTERM);
+  syslog(LOG_INFO,"upnp : upnp daemon successfully stopped\n");
 
   cprintf ("done\n");
   return 0;
 }
 #endif
-/*int
-start_ses(void)
-{
-	if(nvram_match("wl_gmode", "-1"))
-		return 0;
 
-	if (nvram_match("ses_enable", "1")) {
-		eval("ses", "-f");
-	}
 
-	return 0;
-}
-
-int
-stop_ses(void)
-{
-	int ret = 0;
-
-	if(nvram_match("wl_gmode", "-1")) {
-		diag_led(SES_LED1,STOP_LED);
-		diag_led(SES_LED2,STOP_LED);
-	}
-
-	ret = eval("killall", "ses");
-
-	return ret;
-}
-*/
 static void
 convert_wds (void)
 {
@@ -1383,6 +1343,7 @@ void
 start_nas_lan (void)
 {
   start_nas ("lan", "wl0");
+  syslog(LOG_INFO,"NAS : NAS lan (wl0 interface) successfully started\n");
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
@@ -1391,6 +1352,7 @@ start_nas_lan (void)
     foreach (var, vifs, next)
     {
       start_nas ("lan", var);
+      syslog(LOG_INFO,"NAS : NAS lan (%s interface) successfully started\n", var);
     }
 #endif
 
@@ -1402,6 +1364,7 @@ void
 start_nas_wan (void)
 {
   start_nas ("wan", "wl0");
+  syslog(LOG_INFO,"NAS : NAS wan (wl0 interface) successfully started\n");
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
@@ -1410,6 +1373,7 @@ start_nas_wan (void)
     foreach (var, vifs, next)
     {
       start_nas ("wan", var);
+      syslog(LOG_INFO,"NAS : NAS wan (%s interface) successfully started\n", var);
     }
 #endif
 }
@@ -1580,6 +1544,7 @@ stop_nas (void)
   sleep (2);
   //killps("nas","-9");
   killall ("nas", SIGKILL);
+  syslog(LOG_INFO,"NAS : NAS successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1597,6 +1562,7 @@ start_sputnik (void)
     return 0;
 
   ret = eval ("sputnik");
+  syslog(LOG_INFO,"sputnik : sputnik daemon successfully started\n");
   cprintf ("done\n");
   return ret;
 }
@@ -1605,6 +1571,7 @@ int
 stop_sputnik (void)
 {
   int ret = killall ("sputnik", SIGTERM);
+  syslog(LOG_INFO,"sputnik : sputnik daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1626,12 +1593,11 @@ start_ntpc (void)
   if (strlen (servers))
     {
       char *nas_argv[] =
-	{ "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c", "2",
-	NULL
-      };
+	{ "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c", "2", NULL };
       pid_t pid;
 
       _eval (nas_argv, NULL, 0, &pid);
+      syslog(LOG_INFO,"ntpclient : ntp client successfully started\n");
     }
 
   cprintf ("done\n");
@@ -1641,8 +1607,8 @@ start_ntpc (void)
 int
 stop_ntpc (void)
 {
-  //int ret = killps("ntpclient",NULL);
   int ret = killall ("ntpclient", SIGTERM);
+  syslog(LOG_INFO,"ntpclient : ntp client successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1661,6 +1627,7 @@ start_resetbutton (void)
     return 0;
 
   ret = eval ("resetbutton");
+  syslog(LOG_INFO,"resetbutton : reset button daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -1671,8 +1638,8 @@ stop_resetbutton (void)
 {
   int ret = 0;
 
-  //ret = killps("resetbutton","-9");
   ret = killall ("resetbutton", SIGKILL);
+  syslog(LOG_INFO,"resetbutton : reset button daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1688,6 +1655,7 @@ start_iptqueue (void)
     return 0;
 
   ret = eval ("iptqueue");
+  syslog(LOG_INFO,"iptqueue successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -1698,9 +1666,9 @@ stop_iptqueue (void)
 {
   int ret = 0;
 
-  //ret = killps("iptqueue","-9");
   ret = killall ("iptqueue", SIGKILL);
-
+	syslog(LOG_INFO,"iptqueue successfully stopped\n");
+ 
   cprintf ("done\n");
   return ret;
 }
@@ -1726,7 +1694,7 @@ start_cron (void)
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   cprintf ("starting cron\n");
   ret = eval ("/usr/sbin/cron");
-
+	syslog(LOG_INFO,"cron : cron daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -1739,6 +1707,7 @@ stop_cron (void)
 
   //ret = killps("cron","-9");
   ret = killall ("cron", SIGKILL);
+  syslog(LOG_INFO,"cron : cron daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1754,9 +1723,15 @@ zebra_init (void)
       return 0;
     }
   else if (nvram_match ("wk_mode", "ospf"))
+  {
     return zebra_ospf_init ();
+    syslog(LOG_INFO,"zebra : zebra (ospf) successfully initiated\n");
+  }
   else if (nvram_match ("wk_mode", "router"))
+  {
     return zebra_ripd_init ();
+    syslog(LOG_INFO,"zebra : zebra (router) successfully initiated\n");
+  }
   else
     return 0;
 }
@@ -1990,7 +1965,7 @@ bird_init (void)
   FILE *fp;
   int ret1;
   /*
-     compatibitly for old nvram style (site needs to be enhanced)
+   * compatibitly for old nvram style (site needs to be enhanced)
    */
   if (nvram_match ("wk_mode", "gateway"))
     return 0;
@@ -2099,6 +2074,7 @@ bird_init (void)
       fclose (fp);
 
       ret1 = eval ("bird", "-c", "/tmp/bird/bird.conf");
+      syslog(LOG_INFO,"bird : bird daemon successfully started\n");
     }
   return 0;
 
@@ -2152,11 +2128,13 @@ stop_zebra (void)
     sleep (1);
 
   cprintf ("done\n");
+  syslog(LOG_INFO,"zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
   return ret1 | ret2 | ret3;
 
 #elif defined(HAVE_BIRD)
 
   ret1 = killall ("bird", SIGTERM);
+  syslog(LOG_INFO,"bird : bird daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret1;
@@ -2180,8 +2158,10 @@ start_syslog (void)
     ret1 = eval ("/sbin/syslogd", "-R", nvram_safe_get ("syslogd_rem_ip"));
   else
     ret1 = eval ("/sbin/syslogd", "-L");
-
+	
+	syslog(LOG_INFO,"syslogd : syslog daemon successfully started\n");
   ret2 = eval ("/sbin/klogd");
+  syslog(LOG_INFO,"klogd : klog daemon successfully started\n");
 
   return ret1 | ret2;
 }
@@ -2192,7 +2172,9 @@ stop_syslog (void)
   int ret;
 
   ret = killall ("klogd", SIGKILL);
+  syslog(LOG_INFO,"klogd : klog daemon successfully stopped\n");
   ret += killall ("syslogd", SIGKILL);
+  syslog(LOG_INFO,"syslogd : syslog daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2212,6 +2194,7 @@ start_redial (void)
   symlink ("/sbin/rc", "/tmp/ppp/redial");
 
   ret = _eval (redial_argv, NULL, 0, &pid);
+  syslog(LOG_INFO,"ppp_redial : redial process successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -2224,6 +2207,7 @@ stop_redial (void)
 
   //ret = killps("redial","-9");
   ret = killall ("redial", SIGKILL);
+  syslog(LOG_INFO,"ppp_redial : redial process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2268,6 +2252,7 @@ start_radvd (void)
   system2 ("sync");
 
   ret = eval ("/sbin/radvd");
+  syslog(LOG_INFO,"radvd : RADV daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -2280,6 +2265,7 @@ stop_radvd (void)
 
   //ret = killps("radvd",NULL);
   ret = killall ("radvd", SIGKILL);
+  syslog(LOG_INFO,"uradvd : RADV daemon successfully stopped\n");
 
   unlink ("/var/run/radvd.pid");
 
@@ -2297,6 +2283,7 @@ start_ipv6 (void)
     return 0;
 
   ret = eval ("insmod", "ipv6");
+  syslog(LOG_INFO,"ipv6 successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -2472,6 +2459,7 @@ start_chilli (void)
   ret = killall ("chilli", SIGTERM);
   ret = killall ("chilli", SIGKILL);
   ret = eval ("/usr/sbin/chilli", "-c", "/tmp/chilli.conf");
+  syslog(LOG_INFO,"chilli : chilli daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -2482,8 +2470,8 @@ stop_chilli (void)
 {
   int ret = 0;
 
-  //ret = killps("chilli","-9");
   ret = killall ("chilli", SIGKILL);
+  syslog(LOG_INFO,"chilli : chilli daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2497,12 +2485,11 @@ stop_pppoe (void)
   int ret;
 
   unlink ("/tmp/ppp/link");
-  //ret = killps("pppoecd",NULL);
-  //ret += killps("ip-up",NULL);
-  //ret += killps("ip-down",NULL);
+
   ret = killall ("pppoecd", SIGKILL);
   ret += killall ("ip-up", SIGKILL);
   ret += killall ("ip-down", SIGKILL);
+  syslog(LOG_INFO,"pppoe process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2537,8 +2524,8 @@ stop_dhcpc (void)
 {
   int ret = 0;
 
-  //ret += killps("udhcpc",NULL);
   ret += killall ("udhcpc", SIGTERM);
+  syslog(LOG_INFO,"udhcpc : udhcp client process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3266,7 +3253,10 @@ start_igmp_proxy (void)
   stop_igmp_proxy ();
 
   if (nvram_match ("block_multicast", "0"))
+  {
     ret = _eval (igmp_proxy_argv, NULL, 0, &pid);
+    syslog(LOG_INFO,"igmprt : multicast daemon successfully started\n");
+  }
 
   cprintf ("done\n");
   return ret;
@@ -3275,8 +3265,8 @@ start_igmp_proxy (void)
 int
 stop_igmp_proxy (void)
 {
-  //int ret = killps("igmprt","-9");
   int ret = killall ("igmprt", SIGKILL);
+  syslog(LOG_INFO,"igmprt : multicast daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3313,8 +3303,8 @@ start_splashd (void)
   fclose (fp);
   chmod ("/tmp/start_splashd.sh", 0700);
   system2 ("/tmp/start_splashd.sh&");
-  //ret = eval("sh", "/tmp/start_splashd.sh");
-
+	syslog(LOG_INFO,"splashd : splash daemon successfully started\n");
+	
   cprintf ("done\n");
   return ret;
 }
@@ -3325,6 +3315,7 @@ stop_splashd (void)
   int ret;
   //ret = killps("splashd",NULL);
   ret = killall ("splashd", SIGTERM);
+  syslog(LOG_INFO,"splashd : splash daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3350,6 +3341,7 @@ start_telnetd (void)
     return 0;
 
   ret = _eval (telnetd_argv, NULL, 0, &pid);
+  syslog(LOG_INFO,"telnetd : telnet daemon successfully started\n");
 
   cprintf ("done\n");
   return ret;
@@ -3360,8 +3352,8 @@ stop_telnetd (void)
 {
   int ret;
 
-  //ret = killps("telnetd","-9");
   ret = killall ("telnetd", SIGTERM);
+  syslog(LOG_INFO,"telnetd : telnet daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3372,6 +3364,7 @@ int
 stop_wland (void)
 {
   int ret = killall ("wland", SIGKILL);
+  syslog(LOG_INFO,"wland : WLAN daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3392,6 +3385,7 @@ start_wland (void)
 //          return 0;
 
   ret = _eval (wland_argv, NULL, 0, &pid);
+  syslog(LOG_INFO,"wland : WLAN daemon successfully started\n");
   cprintf ("done\n");
   return ret;
 }
@@ -3408,6 +3402,7 @@ start_process_monitor (void)
 
   char *argv[] = { "process_monitor", NULL };
   int ret = _eval (argv, NULL, 0, &pid);
+  syslog(LOG_INFO,"process_monitor successfully started\n");
 
   cprintf ("done");
 
@@ -3420,6 +3415,7 @@ stop_process_monitor (void)
   int ret;
 
   ret = killall ("process_monitor", SIGKILL);
+  syslog(LOG_INFO,"process_monitor successfully stopped\n");
 
   cprintf ("done\n");
 
@@ -3436,6 +3432,7 @@ start_radio_timer (void)
 
   char *argv[] = { "radio_timer", NULL };
   int ret = _eval (argv, NULL, 0, &pid);
+  syslog(LOG_INFO,"radio_timer : radio timer daemon successfully started\n");
 
   cprintf ("done");
 
@@ -3448,18 +3445,14 @@ stop_radio_timer (void)
   int ret;
 
   ret = killall ("radio_timer", SIGKILL);
+  syslog(LOG_INFO,"radio_timer : radio timer daemon successfully stopped\n");
 
   cprintf ("done\n");
 
   return ret;
 }
 
-int
-stop_ntp (void)
-{
-  killall ("ntpclient", SIGKILL);
-  return 0;
-}
+
 
 /* Trigger Connect On Demand */
 int
@@ -3510,8 +3503,8 @@ start_force_to_dial (void)
 void
 stop_rstats (void)
 {
-  syslog(LOG_INFO,"rstats daemon successfully stopped\n");
   killall ("rstats", SIGTERM);
+  syslog(LOG_INFO,"rstats daemon successfully stopped\n");
 }
 
 void
@@ -3569,6 +3562,7 @@ start_wifidog (void)
 
       fclose (fp);
       eval ("/usr/sbin/wifidog");
+      syslog(LOG_INFO,"wifidog successfully started\n");
     }
 }
 
@@ -3576,6 +3570,7 @@ void
 stop_wifidog (void)
 {
   killall ("wifidog", SIGKILL);
+  syslog(LOG_INFO,"wifidog successfully stopped\n");
 }
 
 #endif
@@ -3603,7 +3598,7 @@ start_hwmon (void)
   sprintf (buf, "/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
 	   TEMP_PREFIX);
   system2 (buf);
-
+  syslog(LOG_INFO,"hwmon successfully started\n");
 }
 
 
@@ -3613,25 +3608,26 @@ void
 start_pppoerelay (void)
 {
   killall ("pppoe-relay", SIGTERM);
-  if (nvram_match ("pppoerelay_enable", "1"))
-    {
+  if (nvram_match ("pppoerelay_enable", "1")) {
 #ifdef HAVE_MADWIFI
-      if (nvram_match ("ath0_mode", "sta"))
-	eval ("pppoe-relay", "-S", "ath0", "-C", "br0");
-      else
+		if (nvram_match ("ath0_mode", "sta"))
+			eval ("pppoe-relay", "-S", "ath0", "-C", "br0");
+		else
 #else
-      if (nvram_match ("wl_mode", "sta"))
-	eval ("pppoe-relay", "-S", "eth1", "-C", "br0");
-      else
+		if (nvram_match ("wl_mode", "sta"))
+			eval ("pppoe-relay", "-S", "eth1", "-C", "br0");
+		else
 #endif
-	eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C",
-	      "br0");
-    }
+			eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C", "br0");
+		
+		syslog(LOG_INFO,"pppoe-relay successfully started\n");
+	}
 }
 void
 stop_pppoerelay (void)
 {
   killall ("pppoe-relay", SIGTERM);
+  syslog(LOG_INFO,"pppoe-relay successfully stopped\n");
 }
 #endif
 
@@ -3654,7 +3650,6 @@ start_hotplug_usb (void)
   fprintf (stderr, "type %s\n", type != NULL ? type : "");
   fprintf (stderr, "devfs %s\n", devfs != NULL ? devfs : "");
   fprintf (stderr, "device %s\n", device != NULL ? device : "");
-
 
   return 0;
 }
@@ -3698,32 +3693,39 @@ int
 br_add_bridge (const char *brname)
 {
   return eval ("/usr/sbin/brctl", "addbr", brname);
+  syslog(LOG_INFO,"bridge added successfully\n");
 }
 
 int
 br_del_bridge (const char *brname)
 {
   return eval ("/usr/sbin/brctl", "delbr", brname);
+  syslog(LOG_INFO,"bridge deleted successfully\n");
 }
 
 int
 br_add_interface (const char *br, const char *dev)
 {
   return eval ("/usr/sbin/brctl", "addif", br, dev);
+  syslog(LOG_INFO,"interface added successfully\n");
 }
 
 int
 br_del_interface (const char *br, const char *dev)
 {
   return eval ("/usr/sbin/brctl", "delif", br, dev);
+  syslog(LOG_INFO,"interface deleted successfully\n");
 }
 
 int
 br_set_stp_state (const char *br, int stp_state)
 {
-  if (stp_state)
+  if (stp_state) {
     return eval ("/usr/sbin/brctl", "stp", br, "on");
-  else
+    syslog(LOG_INFO,"stp is set to on\n");
+  } else {
     return eval ("/usr/sbin/brctl", "stp", br, "off");
+    syslog(LOG_INFO,"stp is set to off\n");
+  }
 }
 #endif
