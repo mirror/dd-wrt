@@ -154,6 +154,9 @@ extern void set_host_domain_name (void);
 extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
 
+extern int led_control (int type, int act);
+enum { LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS };
+enum { LED_ON, LED_OFF, LED_FLASH };
 
 #ifdef CDEBUG
 extern int mcoreleft (void);
