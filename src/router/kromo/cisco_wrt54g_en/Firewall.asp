@@ -40,12 +40,8 @@ function setFirewall(val) {
 	setElementsActive("_block_proxy", "log_enable", val == "on");
 	
 	if (val != "on") {
-		document.firewall.log_enable[1].checked == true;
-		show_layer_ext(document.firewall.log_enable, 'idlog1', false);
-		show_layer_ext(document.firewall.log_enable, 'idlog2', false);
+		document.firewall.log_enable[1].click();
 	}
-	
-	
 }
 
 addEvent(window, "load", function() {
