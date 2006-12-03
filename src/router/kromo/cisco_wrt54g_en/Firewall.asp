@@ -37,7 +37,7 @@ function to_submit(F) {
 }
 
 function setFirewall(val) {
-	setElementsActive("_block_proxy", "log_enable", val == "on");
+	setElementsActive("_block_proxy", "log_level", val == "on");
 	
 	if (val != "on") {
 		document.firewall.log_enable[1].click();
