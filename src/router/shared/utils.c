@@ -796,6 +796,195 @@ diag_led (int type, int act)
 	return diag_led_4712 (type, act);
     }
 }
+  
+int
+led_control (int type, int act)
+/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS; 
+ * act: LED_ON, LED_OFF, LED_FLASH */
+{
+#ifdef HAVE_RB500
+  return 0;
+#elif HAVE_XSCALE
+  return 0;
+#elif HAVE_X86
+  return 0;
+#elif HAVE_MAGICBOX
+  return 0;
+#elif HAVE_GEMTEK
+ return 0;
+#else
+
+int use_gpio;
+int gpio_value;
+char temp[4];
+
+int	power_gpio = 0x0f;
+int	diag_gpio = 0x0f;
+int diag2_gpio = 0x0f;
+int	dmz_gpio = 0x0f;
+int	connected_gpio = 0x0f;
+int bridge_gpio = 0x0f;
+int vpn_gpio = 0x0f;
+int ses_gpio = 0x0f;
+int	ses2_gpio = 0x0f;
+int aoss_gpio = 0x0f;
+
+	switch (getRouterBrand ())  //gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
+    {
+	case ROUTER_WRT54G:
+			power_gpio = 0x01;
+			dmz_gpio = 0x17;
+			connected_gpio = 0x13;	//ses orange
+			ses_gpio = 0x12;		//ses white
+			ses2_gpio = 0x13;		//ses orange
+		break;
+	case ROUTER_WRT54G1X:
+			connected_gpio = 0x13;
+		break;
+	case ROUTER_LINKSYS_WRT55AG:
+			connected_gpio = 0x13;
+		break;
+	case ROUTER_ASUS:
+		break;
+	case ROUTER_BUFFALO_WBR54G:
+			diag_gpio = 0x17;
+		break;
+	case ROUTER_BUFFALO_WBR2G54S:
+			diag_gpio = 0x01;
+			aoss_gpio = 0x06;
+		break;
+	case ROUTER_BUFFALO_WLA2G54C:
+			diag_gpio = 0x13;
+			diag2_gpio = 0x14
+		break;
+	case ROUTER_BUFFALO_WHRG54S:
+			diag_gpio = 0x17;
+			bridge_led = 0x11;
+			aoss_gpio = 0x16;
+		break;
+	case ROUTER_BUFFALO_WZRRSG54:
+			diag_gpio = 0x17;
+			vpn_gpio = 0x11;
+			aoss_gpio = 0x16;
+		break;
+	case ROUTER_MOTOROLA_V1:
+		break;
+	case ROUTER_MOTOROLA:
+		break;
+	case ROUTER_RT210W:
+			power_gpio = 0x15;
+			connected_gpio = 0x10;
+		break;
+	case ROUTER_SIEMENS:
+			power_gpio = 0x15;
+		break;
+	case ROUTER_BRCM4702_GENERIC:
+		break;
+	case ROUTER_BELKIN_F5D7230:
+			power_gpio = 0x15;
+			connected_gpio = 0x10;
+		break;
+	case ROUTER_MICROSOFT_MN700:
+			power_gpio = 0x06;
+		break;
+	case ROUTER_BUFFALO_WLAG54C:
+		break;
+	case ROUTER_ASUS_WL500G_PRE:
+			power_gpio = 0x11;
+		break;
+	case ROUTER_WRTSL54GS:
+			power_gpio = 0x01;
+			dmz_gpio = 0x10;
+			connected_gpio = 0x17;	//ses orange
+			ses_gpio = 0x15;		//ses white
+			ses2_gpio = 0x17;		//ses orange	
+		break;
+	case ROUTER_WZRG300N:
+		break;
+	case ROUTER_WRT300N:
+		break;
+	case ROUTER_BUFFALO_WHRAM54G54:
+		break;
+	case ROUTER_WLI2_TX1_G54:
+		break;
+	case ROUTER_MOTOROLA_WE800G:
+		break;
+	}
+	
+	switch (type)
+	{
+		case LED_POWER:
+				use_gpio = power_gpio;
+			break;
+		case LED_DIAG:
+				use_gpio = power2_gpio;
+			break;
+		case LED_DIAG2:
+				use_gpio = diag_gpio;
+			break;
+		case LED_DMZ:
+				use_gpio = dmz_gpio;
+			break;
+		case LED_CONNECTED:
+				use_gpio = connected_gpio;
+			break;
+		case LED_BRIDGE:
+				use_gpio = bridge_gpio;
+			break;
+		case LED_VPN:
+				use_gpio = vpn_gpio;
+			break;
+		case LED_SES:
+				use_gpio = ses_gpio;
+			break;
+		case LED_SES2:
+				use_gpio = ses2_gpio;
+			break;
+		case LED_AOSS:
+				use_gpio = ses2_gpio;
+			break;
+	} 
+
+	if ((use_gpio & 0x0f) != 0x0f)
+	{	
+		gpio_value = use_gpio & 0x0f;
+		sprintf (temp, "%s", gpio_value); 
+		switch (act)
+		{
+			case LED_ON:
+				if ((use_gpio & 0x10) == 0x10)
+					eval ("gpio", "disable", temp);
+				else 
+					eval ("gpio", "enable", temp);
+				break;
+			case LED_OFF:
+				if ((use_gpio & 0x10) == 0x10)
+					eval ("gpio", "enable", temp);
+				else 
+					eval ("gpio", "disable", temp);
+				break;
+			case LED_FLASH:  //will lit the led for 1 sec.
+				if ((use_gpio & 0x10) == 0x10)
+					{
+					eval ("gpio", "disable", temp);
+					sleep (1);
+					eval ("gpio", "enable", temp);
+					}
+				else
+					{ 
+					eval ("gpio", "enable", temp);
+					sleep (1);
+					eval ("gpio", "disable", temp);
+					}
+				break;
+		}
+	}
+
+
+
+#endif
+}
+
 
 char *
 get_mac_from_ip (char *ip)
