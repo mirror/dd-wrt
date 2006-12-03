@@ -758,10 +758,9 @@ int brand = getRouterBrand ();
 	  			return led_control (LED_DMZ, LED_OFF);
 	  		return 1;
   			}
-  		else
-  			return 0:
 		}
- 
+	return 0;
+}
 /*
   if (getRouterBrand () == ROUTER_BELKIN_F5D7230 ||	//fix for belkin DMZ=enable reboot problem (gpio 7)
       getRouterBrand () == ROUTER_BUFFALO_WBR2G54S ||	//same for wbr2g54
@@ -776,8 +775,8 @@ int brand = getRouterBrand ();
 	return diag_led_4704 (type, act);
       else
 	return diag_led_4712 (type, act);
-    } */
-}
+    } 
+} */
   
 int
 led_control (int type, int act)
