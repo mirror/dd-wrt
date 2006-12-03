@@ -3509,6 +3509,7 @@ start_force_to_dial (void)
 void
 stop_rstats (void)
 {
+  syslog(LOG_INFO,"rstats daemon successfully stopped\n");
   killall ("rstats", SIGTERM);
 }
 
@@ -3528,6 +3529,7 @@ start_rstats (void)
       stop_rstats ();
       eval ("rstats");
     }
+   syslog(LOG_INFO,"rstats daemon successfully started\n");
 }
 
 #endif
