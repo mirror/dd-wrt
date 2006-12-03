@@ -324,20 +324,9 @@ period_check (int sig)
 		  printf ("resetbutton: factory default.\n");
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
-		  switch (brand)
-		    {
-		    case ROUTER_BUFFALO_WBR54G:
-		    case ROUTER_BUFFALO_WZRRSG54:
-		      eval ("gpio", "disable", "7");	//turn on DIAG led on some Buffalos
-		      break;
-		    case ROUTER_BUFFALO_WBR2G54S:
-		      eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
-		      break;
-		    case ROUTER_BUFFALO_WLA2G54C:
-		      eval ("gpio", "disable", "3");	//turn on red DIAG led on WLA2G54C / WLI3-TX1-G54
-		      eval ("gpio", "disable", "4");
-		      break;
-		    }
+
+		  led_control (LED_DIAG, LED_ON);
+		  led_control (LED_DIAG2, LED_ON);
 #endif
 #endif
 		  ACTION ("ACT_HW_RESTORE");
@@ -356,32 +345,25 @@ period_check (int sig)
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
-      runStartup ("/mmc/etc/config", ".sesbutton");	//if available
-      runStartup ("/tmp/etc/config", ".sesbutton");	//if available
+      runStartup ("/mmc/etc/config", ".sesbutton");		//if available
+      runStartup ("/tmp/etc/config", ".sesbutton");		//if available
+      
       if (ses_mode == 1)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "on");
 #endif
+		led_control (LED_SES, LED_OFF);		//enable orange led
+		led_control (LED_SES2, LED_ON);
+		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
+		
 	switch (brand)
 		{
-		case ROUTER_WRT54G: 	  //enable orange led
-			eval ("gpio", "enable", "2");
-	      	eval ("gpio", "disable", "3");
+		case ROUTER_WRT54G:
+		case ROUTER_WRTSL54GS: 
 			ses_mode = 2;
 	      	break;
-	    case ROUTER_WRTSL54GS:	  //enable orange led
-	    	eval ("gpio", "enable", "5");
-			eval ("gpio", "disable", "7");
-			ses_mode = 2;
-			break;
-		case ROUTER_BUFFALO_WBR2G54S: //blink AOSS led
-			eval ("gpio", "enable", "6");
-			sleep (1);
-			eval ("gpio", "disable", "6");
-			ses_mode = 0;
-			break;
 		default:
 			ses_mode = 0;
 		}
@@ -393,28 +375,12 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "off");
 #endif
-	switch (brand)
-		{
-		case ROUTER_WRT54G: 		//enable white led
-			eval ("gpio", "enable", "3");
-			eval ("gpio", "disable", "2");
-			ses_mode = 1;
-	      	break;
-	    case ROUTER_WRTSL54GS:		//enable white led
-			eval ("gpio", "enable", "7");
-			eval ("gpio", "disable", "5");
-			ses_mode = 1;
-			break;
-		case ROUTER_BUFFALO_WBR2G54S: //blink AOSS led
-			eval ("gpio", "enable", "6");
-			sleep (1);
-			eval ("gpio", "disable", "6");
-			ses_mode = 1;
-			break;
-		default:
-			ses_mode = 1;
-		}
+		led_control (LED_SES, LED_ON);		//enable white led
+		led_control (LED_SES2, LED_OFF);
+		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
 
+		ses_mode = 1;
+		
 	}
       else if (ses_mode == 2)
 	{
@@ -422,22 +388,12 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "on");
 #endif
-	switch (brand)
-		{
-		case ROUTER_WRT54G:
-			eval ("gpio", "disable", "3");
-			eval ("gpio", "disable", "2");
-			ses_mode = 3;
-	      	break;
-	    case ROUTER_WRTSL54GS:
-			eval ("gpio", "disable", "5");
-			eval ("gpio", "disable", "7");
-			ses_mode = 3;
-			break;
-		default:
-			ses_mode = 3;
-		}
 
+		led_control (LED_SES, LED_ON);		//both leds on
+		led_control (LED_SES2, LED_ON);
+
+		ses_mode = 3;
+		
 	}
       else if (ses_mode == 3)
 	{
@@ -445,21 +401,10 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "off");
 #endif
-	switch (brand)
-		{
-		case ROUTER_WRT54G:
-			eval ("gpio", "enable", "3");
-			eval ("gpio", "enable", "2");
-			ses_mode = 0;
-	      	break;
-	    case ROUTER_WRTSL54GS:
-			eval ("gpio", "enable", "5");
-			eval ("gpio", "enable", "7");
-			ses_mode = 0;
-			break;
-		default:
-			ses_mode = 0;
-		}
+		led_control (LED_SES, LED_OFF);		//both leds off
+		led_control (LED_SES2, LED_OFF);
+
+		ses_mode = 0;
 		
 	}
 
