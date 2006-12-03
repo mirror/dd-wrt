@@ -14,7 +14,7 @@
 #include <rc.h>
 #include <shutils.h>
 #include <syslog.h>
-
+#include <utils.h>
 
 int
 radio_timer_main (void)
@@ -94,8 +94,12 @@ radio_timer_main (void)
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
 		  eval ("wl", "radio", "off");
+			if (check_hw_type () == BCM4712_CHIP) /* Disable wireless will cause diag led blink, so we want to stop it. */
+				diag_led (DIAG, STOP_LED);
 #else
 		  eval ("wl", "radio", "off");
+			if (check_hw_type () == BCM4712_CHIP) /* Disable wireless will cause diag led blink, so we want to stop it. */
+				diag_led (DIAG, STOP_LED);
 #endif
 		  break;
 		}
