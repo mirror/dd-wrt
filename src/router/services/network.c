@@ -2111,14 +2111,12 @@ start_wan_redial (void)
 void
 start_wan_service (void)
 {
-  //stop_ntp();
   stop_process_monitor ();
   stop_ddns ();
   cprintf ("start process monitor\n");
   start_process_monitor ();
   sleep (5);
   cprintf ("start ddns\n");
-  //start_ntp();
   start_ddns ();
 }
 
@@ -2444,7 +2442,7 @@ stop_wan (void)
 #ifdef HAVE_SPUTNIK_APD
   stop_sputnik ();
 #endif
-  stop_ntp ();
+  stop_ntpc ();
   stop_redial ();
   nvram_set ("wan_get_dns", "");
 
