@@ -21,14 +21,14 @@ var idle_timeout = 20;
 var erase_timeout = 35;
 var skew_x = 0; skew_y = 0;
 var listening = 1;
-var wiviz_cgi_url = "/cgi-bin/wiviz-get.cgi";
+var wiviz_data_url = "Wiviz.live.asp";
 
 //What? You mean the POSIX thread API hasn't been ported to Javascript?  Bugger.
 function scan_thread() {
 	var loc = document.getElementById('wivizGetFrame').contentWindow.location;
 	if (!listening) return;
-	if (loc.href != wiviz_cgi_url) {
-		loc.replace(wiviz_cgi_url);
+	if (loc.href != wiviz_data_url) {
+		loc.replace(wiviz_data_url);
 	}
 	else {
 		loc.reload(true);
