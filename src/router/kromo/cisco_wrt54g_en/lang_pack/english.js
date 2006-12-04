@@ -157,7 +157,8 @@ share._168h="Every week";
 share.days="Days";
 share.standard="Standard";
 share.execscript="Excecute script";
-
+share.user="User";
+share.privatekey="Private Key";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -794,7 +795,8 @@ idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
-
+idx.portsetup="Port Setup";
+idx.wanport="WAN Port Assignment";
 
 
 //help container
@@ -1481,6 +1483,11 @@ wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
+
+var 80211x = new Object();
+80211x.xsuptype="XSupplicant Type";
+80211x.servercertif="Public Server Certificate";
+80211x.clientcertif="Client Certificate";
 
 //help container
 var hwpa = new Object();

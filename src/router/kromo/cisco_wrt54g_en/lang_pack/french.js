@@ -773,6 +773,8 @@ idx.summt_opt2="Premier Dim. Avril - Dernier Dim. Octobre";
 idx.summt_opt3="Dernier Dim. Mars - Dernier Dim. Octobre";
 idx.summt_opt4="Dernier Dim. Octobre - Dernier Dim. Mars";
 idx.summt_opt5="2ème Dim. Mars - Premier Dim. Novembre";
+idx.portsetup="Gestion du Port WAN";
+idx.wanport="Affectation du Port WAN";
 
 
 
@@ -1206,7 +1208,7 @@ status_router.legend5="Type de configuration";
 status_router.www_loginstatus="Statut de la connexion";
 status_router.leasetime="Renouvellement du bail dans";
 status_router.notavail="Indisponible";
-status_router.legend6="Espace Disponible";
+status_router.legend6="Partitions Disponibles";
 
 //help container
 
@@ -1418,6 +1420,11 @@ wpa.radius_port="Port du serveur RADIUS";
 wpa.radius_key="Clé RADIUS";
 wpa.algorithms="Cryptage WPA";
 wpa.shared_key="Clé WPA partagée";
+
+var 80211x = new Object();
+80211x.xsuptype="XSupplicant Type";
+80211x.servercertif="Certificat Public Serveur";
+80211x.clientcertif="Certificat Public Client";
 
 //help container
 
