@@ -195,9 +195,10 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 
       websWrite (wp,
 		 "  new Array(\"%s\", \"%d\", \"ap-channel-%d-ssid-%s-%s\"),\n",
-		 site_survey_lists[i].BSSID, site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
-		 site_survey_lists[i].RSSI,
+		 site_survey_lists[i].BSSID,
+		 site_survey_lists[i].RSSI, 
 		 site_survey_lists[i].channel,
+		 site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
 		 open);
 	
     }
@@ -206,6 +207,6 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 		}
 		fclose(f);
 
-	}
+	} 
 return;
 }
