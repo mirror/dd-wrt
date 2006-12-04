@@ -1421,10 +1421,10 @@ wpa.radius_key="Clé RADIUS";
 wpa.algorithms="Cryptage WPA";
 wpa.shared_key="Clé WPA partagée";
 
-var 80211x = new Object();
-80211x.xsuptype="XSupplicant Type";
-80211x.servercertif="Certificat Public Serveur";
-80211x.clientcertif="Certificat Public Client";
+var sec80211x = new Object();
+sec80211x.xsuptype="XSupplicant Type";
+sec80211x.servercertif="Certificat Public Serveur";
+sec80211x.clientcertif="Certificat Public Client";
 
 //help container
 
