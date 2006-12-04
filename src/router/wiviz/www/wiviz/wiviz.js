@@ -172,7 +172,7 @@ function repip() {
 			  y += 10;
 			  d = Math.sqrt(dx*dx+dy*dy);
 			  for (j = 0; j < d; j += 15) {
-			    nh += "<img src='"
+			    nh += "<img src=images/wiwiz/'"
 					  + ((hs.age < idle_timeout) ? "pip" : "pip-idle")
 					  + (stupid ? ".gif" : ".png")
 						+ "' class='pip' style='top:"
