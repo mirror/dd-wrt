@@ -146,7 +146,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  //for testing only
 {
-	
+/*	
 	FILE *f;
 	char buf[128];
 
@@ -161,10 +161,9 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 		 {
 			 if (!strncmp (buf, "new Array())", 12 ))
 			 {
-
+*/
 	
   int i;
-  char *rates = NULL;
 
       system2 ("site_survey");
 
@@ -183,16 +182,16 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
 
 	      websWrite (wp,
-	      "new Array(\'%s\',%d,\'ap-channel-%s-ssid-%s-%s\', 0),\n",
+	      "new Array(\'%s\', %d, \'ap-channel-%s-ssid-%s-%s\', 0),\n",
 	      site_survey_lists[i].BSSID, site_survey_lists[i].RSSI, site_survey_lists[i].channel,
 	      site_survey_lists[i].SSID, open);
 	
     }
-		}
-			websWrite (wp, "%s", buf);
-		}
-		fclose(f);
+//		}
+//			websWrite (wp, "%s", buf);
+//		}
+//		fclose(f);
 
-}
+//	}
 return;
 }
