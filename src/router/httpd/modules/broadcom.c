@@ -2889,11 +2889,11 @@ struct apply_action apply_actions[] = {
   
   /* WIRELESS */
 	{"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},			//Only for V23, since V24 it's a gozilla save
-	{"Wireless_Advanced", "wireless", 0, SERVICE_RESTART, NULL},
-	{"Wireless_MAC", "wireless", 0, SERVICE_RESTART, save_macmode},
+	{"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
+	{"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, save_macmode},
 	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
-	{"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
-	{"WL_WPATable", "wireless", 0, SERVICE_RESTART, NULL},
+	{"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
+	{"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
   
   /* MANAGEMENT */
 	{"Management", "management", 0, SYS_RESTART, NULL},
