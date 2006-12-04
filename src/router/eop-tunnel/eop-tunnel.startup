@@ -61,7 +61,7 @@ do
 		--tun-mtu 1500 \
 		${fragment} \
 		${mssfix} \
-		--ping 60 \
+		--ping 5 \
 		--persist-tun \
 		--remote $($nv get oet${i}_rem) \
 		--port 3500${id} \
