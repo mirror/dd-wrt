@@ -576,6 +576,49 @@ start_single_service (void)
 #endif
 
     }
+  else if (!strcmp (service, "wireless_2"))
+    {
+#ifndef HAVE_MADWIFI
+      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+#endif
+
+#ifndef HAVE_MADWIFI
+
+#ifdef HAVE_MSSID
+      stop_service ("guest_nas");
+#endif
+      stop_service ("nas");
+#endif
+#ifdef HAVE_MADWIFI
+      stop_service ("stabridge");
+#endif
+
+#ifndef HAVE_MSSID
+      if (nvram_match ("wl_akm", "wpa") ||
+	  nvram_match ("wl_akm", "psk") ||
+	  nvram_match ("wl_akm", "psk2") ||
+	  nvram_match ("wl_akm", "wpa2") ||
+	  nvram_match ("wl_akm", "psk psk2") ||
+	  nvram_match ("wl_akm", "wpa wpa2") ||
+	  nvram_match ("wl_akm", "radius"))
+	sleep (4);
+#endif
+#ifndef HAVE_MADWIFI
+      start_service ("wlconf");
+#endif
+
+#ifdef HAVE_MADWIFI
+      start_service ("stabridge");
+#endif
+#ifndef HAVE_MADWIFI
+      start_service ("nas_lan");
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
+      start_service ("nas_wan");
+#endif
+
+    }
   else if (!strcmp (service, "dhcp_release"))
     {
       char sigusr[] = "-XX";
