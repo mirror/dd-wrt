@@ -100,6 +100,7 @@ main (int argc, char **argv)
     }
   if (!handle)
     {
+      fprintf (stderr, "Failure PCAP, detail follows\n");
       fprintf (stderr, "Failure to open pcap!\nErr=%s\n", errbuf);
       return -1;
     }
