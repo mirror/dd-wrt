@@ -83,6 +83,7 @@ void
 ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
+  int j; //test
   char buf[10] = { 0 };
   char *rates = NULL;
   char *name;
