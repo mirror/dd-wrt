@@ -13,7 +13,7 @@
 				<dt>Firmware Version </dt>
 				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the System screen if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
 				<dt>Current Time</dt>
-				<dd>The current date and time are displayed here.</dd
+				<dd>The current date and time are displayed here.</dd>
 				<dt>MAC Address </dt>
 				<dd>The MAC Address of the Internet interface is displayed here.</dd>
 				<dt>Router Name</dt>
