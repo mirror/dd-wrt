@@ -142,3 +142,73 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
+void
+ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  //for testing only
+{
+	
+	FILE *f;
+	char buf[128];
+
+	eval ("run_wiviz");											// run wiviz as separate process 
+	sleep(2);													// give it 2 seconds for result
+	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
+	
+	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
+	    {
+		while (fgets(buf, sizeof(buf), f))
+		 {
+			 if (!strncmp (buf, "new Array())", 12 ))
+			 {
+
+	
+  int i;
+  char buf[10] = { 0 };
+  char *rates = NULL;
+  char *name;
+  name = websGetVar (wp, "hidden_scan", NULL);
+  if (name == NULL || strlen (name) == 0)
+    system2 ("site_survey");
+  else
+    {
+      sprintf (buf, "site_survey \"%s\"", name);
+      system2 (buf);
+    }
+
+  open_site_survey ();
+
+  for (i = 0; i < SITE_SURVEY_NUM; i++)
+    {
+
+
+      if (site_survey_lists[i].BSSID[0] == 0 ||
+	  site_survey_lists[i].channel == 0)
+	break;
+
+      if (site_survey_lists[i].rate_count == 4)
+	rates = "4(b)";
+      else if (site_survey_lists[i].rate_count == 12)
+	rates = "12(g)";
+      else
+	{
+	  rates = buf;
+	  snprintf (rates, 9, "%d", site_survey_lists[i].rate_count);
+	}
+
+      char *open =
+//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "-unenc-na" : "-enc-unknown";
+
+	      websWrite (wp,
+	      "new Array(\'%s\',\'%d\',\'ap-channel-%s-ssid-%s-%s\', 0),\n",
+	      site_survey_lists[i].BSSID, site_survey_lists[i].RSSI, site_survey_lists[i].channel,
+	      site_survey_lists[i].BSSID, open);
+	
+    }
+		}
+		else
+				websWrite (wp, "%s", buf);
+		}
+		fclose(f);
+  return;
+}
