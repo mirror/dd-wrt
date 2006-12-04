@@ -1724,7 +1724,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 		     nvram_safe_get (wl_channel));
 	  websWrite (wp, "var offset = %d;\n", chanlist[0]);
 	  websWrite (wp, "var buf = \"\";\n");
-	  websWrite (wp, "var freq = new Array(\"Auto\"%s", chancount ? "," : "");
+	  websWrite (wp, "var freq = new Array(\"Auto\");
 	  int i;
 	  for (i = 0; i < chancount; i++)
 	    {
@@ -1734,9 +1734,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      else
 		ofs = 5.000f;
 	      ofs += (float) (chanlist[i] * 0.005f);
-	      websWrite (wp, "\"%0.3f\"", ofs);
-	      if (i != chancount - 1)
-		websWrite (wp, ",");
+	      websWrite (wp, ",\"%0.3f\"", ofs);
 	    }
 	  websWrite (wp, ");\n");
 	  websWrite (wp, "for(i=0; i<=max_channel ; i++) {\n");
