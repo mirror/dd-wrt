@@ -37,25 +37,29 @@ void
 do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
 {
 #ifndef ANTI_FLASH
-  
-  if (upgrade_ret) {
-    do_ej ("Fail_u_s.asp", stream);
-  } else {
-    do_ej ("Success_u_s.asp", stream);
-  }
+
+  if (upgrade_ret)
+    {
+      do_ej ("Fail_u_s.asp", stream);
+    }
+  else
+    {
+      do_ej ("Success_u_s.asp", stream);
+    }
   websDone (stream, 200);
 
   /* Reboot if successful */
-  if (upgrade_ret == 0) {
-//  	sleep (10);
-  	sys_reboot ();
-  }
-  
+  if (upgrade_ret == 0)
+    {
+//      sleep (10);
+      sys_reboot ();
+    }
+
 #else
 
   do_ej ("Fail_u_s.asp", stream);
   websDone (stream, 200);
-  
+
 #endif
 }
 
@@ -268,7 +272,7 @@ void
 //do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, https, 8/6/2003
 {
-  killall("udhcpc",SIGKILL);
+  killall ("udhcpc", SIGKILL);
 
 #ifndef ANTI_FLASH
   char buf[1024];
@@ -277,67 +281,77 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
   upgrade_ret = EINVAL;
 
   /* Look for our part */
-  while (len > 0) {
-  	if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-  		return;
-  	
-  	len -= strlen (buf);
-  	if (!strncasecmp (buf, "Content-Disposition:", 20)) {
-  		if (strstr (buf, "name=\"erase\"")) {
-  			while (len > 0 && strcmp (buf, "\n") && strcmp (buf, "\r\n")) {
-  				if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-  					return;
-  				
-  				len -= strlen (buf);
-  			}
-  			if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-  				return;
+  while (len > 0)
+    {
+      if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+	return;
+
+      len -= strlen (buf);
+      if (!strncasecmp (buf, "Content-Disposition:", 20))
+	{
+	  if (strstr (buf, "name=\"erase\""))
+	    {
+	      while (len > 0 && strcmp (buf, "\n") && strcmp (buf, "\r\n"))
+		{
+		  if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+		    return;
+
+		  len -= strlen (buf);
+		}
+	      if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+		return;
 	      len -= strlen (buf);
 	      buf[1] = '\0';	// we only want the 1st digit
 	      nvram_set ("sv_restore_defaults", buf);
 	      nvram_commit ();
 	    }
-	    else if (strstr (buf, "name=\"file\""))	{		// upgrade image
-	    	type = 0;
+	  else if (strstr (buf, "name=\"file\""))
+	    {			// upgrade image
+	      type = 0;
 	      break;
 	    }
-	  }
 	}
+    }
 
   /* Skip boundary and headers */
-  while (len > 0) {
-  	if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-  		return;
-  	
-  	len -= strlen (buf);
-    if (!strcmp (buf, "\n") || !strcmp (buf, "\r\n"))
-     	break;
+  while (len > 0)
+    {
+      if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+	return;
+
+      len -= strlen (buf);
+      if (!strcmp (buf, "\n") || !strcmp (buf, "\r\n"))
+	break;
     }
-    
-    upgrade_ret = sys_upgrade (NULL, stream, &len, type);
-    
-    /* Restore factory original settings if told to.
-     * This will also cause a restore defaults on reboot
-     * of a Sveasoft firmware.
-     */
-    if (nvram_match ("sv_restore_defaults", "1")) {
-    	system2 ("/sbin/erase nvram");
+
+  upgrade_ret = sys_upgrade (NULL, stream, &len, type);
+
+  /* Restore factory original settings if told to.
+   * This will also cause a restore defaults on reboot
+   * of a Sveasoft firmware.
+   */
+  if (nvram_match ("sv_restore_defaults", "1"))
+    {
+      system2 ("/sbin/erase nvram");
     }
-    
-    /* Slurp anything remaining in the request */
-    
-    while (len--) {
+
+  /* Slurp anything remaining in the request */
+
+  while (len--)
+    {
 #ifdef HAVE_HTTPS
-			if (do_ssl) {
+      if (do_ssl)
+	{
 #ifdef HAVE_OPENSSL
-				BIO_gets ((BIO *) stream, buf, 1);
+	  BIO_gets ((BIO *) stream, buf, 1);
 #elif defined(HAVE_MATRIXSSL)
-				matrixssl_gets (stream, buf, 1);
+	  matrixssl_gets (stream, buf, 1);
 #endif
-			}
-			else {
-				(void) fgetc (stream);
-			}
+	}
+      else
+	{
+	  (void) fgetc (stream);
+	}
 #else
       (void) fgetc (stream);
 #endif

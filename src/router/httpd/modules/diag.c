@@ -93,29 +93,31 @@ ping_wol (webs_t wp)
   if (!wol_type || !strcmp (wol_type, ""))
     return ret;
 
-  if (!strcmp (wol_type, "update")) {
-  	char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
-  	if (!wol_hosts || !strcmp (wol_hosts, ""))
-  		return ret;
-  	
-		nvram_set ("wol_hosts", wol_hosts);
-		nvram_set ("wol_cmd", "");
-		return ret;
-	}
-	
-	char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
+  if (!strcmp (wol_type, "update"))
+    {
+      char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
+      if (!wol_hosts || !strcmp (wol_hosts, ""))
+	return ret;
+
+      nvram_set ("wol_hosts", wol_hosts);
+      nvram_set ("wol_cmd", "");
+      return ret;
+    }
+
+  char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
   char *manual_wol_network = websGetVar (wp, "manual_wol_network", NULL);
   char *manual_wol_port = websGetVar (wp, "manual_wol_port", NULL);
 
-  if (!strcmp (wol_type, "manual")) {
-  	nvram_set ("manual_wol_mac", manual_wol_mac);
-  	nvram_set ("manual_wol_network", manual_wol_network);
-  	nvram_set ("manual_wol_port", manual_wol_port);
-  }
+  if (!strcmp (wol_type, "manual"))
+    {
+      nvram_set ("manual_wol_mac", manual_wol_mac);
+      nvram_set ("manual_wol_network", manual_wol_network);
+      nvram_set ("manual_wol_port", manual_wol_port);
+    }
 
   char wol_cmd[256] = { 0 };
   snprintf (wol_cmd, sizeof (wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s",
-			manual_wol_network, manual_wol_port, manual_wol_mac);
+	    manual_wol_network, manual_wol_port, manual_wol_mac);
   nvram_set ("wol_cmd", wol_cmd);
 
   // use Wol.asp as a debugging console
@@ -129,7 +131,7 @@ ping_wol (webs_t wp)
 int
 diag_ping_stop (webs_t wp)
 {
-  return killall("ping",SIGKILL);
+  return killall ("ping", SIGKILL);
 }
 
 int
@@ -154,6 +156,7 @@ ping_onload (webs_t wp, char *arg)
 
   return ret;
 }
+
 /* OBSOLETE
 int
 diag_traceroute_start (webs_t wp)
@@ -208,31 +211,31 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
   char line[254];
   char newline[300];
   int i;
-  
+
 /* wait as long file size increases, but max. 10 s)*/
   int c, count1 = 0, count2 = -1, timeout = 0;
 
-	while ((count1 > count2) && (timeout < 5))
-	{
-		count2 = count1;
-		count1 = 0;
+  while ((count1 > count2) && (timeout < 5))
+    {
+      count2 = count1;
+      count1 = 0;
 
-		if ((fp = fopen (PING_TMP, "r")) != NULL)
-    	{
-		c = fgetc(fp);
-			while (c != EOF)
-			{
-				count1++;
-				c = fgetc(fp);
-			}
-		fclose (fp);
-		timeout++; 
- 		sleep (2);
-		} 
+      if ((fp = fopen (PING_TMP, "r")) != NULL)
+	{
+	  c = fgetc (fp);
+	  while (c != EOF)
+	    {
+	      count1++;
+	      c = fgetc (fp);
+	    }
+	  fclose (fp);
+	  timeout++;
+	  sleep (2);
 	}
+    }
 /* end waiting */
-	 
-   if ((fp = fopen (PING_TMP, "r")) != NULL)
+
+  if ((fp = fopen (PING_TMP, "r")) != NULL)
     {				// show result
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
@@ -258,12 +261,13 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
 	  count++;
 	}
-	fclose(fp);
+      fclose (fp);
     }
 
 
   return;
 }
+
 /* OBSOLETE
 void
 ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
