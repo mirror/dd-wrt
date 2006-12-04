@@ -83,7 +83,6 @@ void
 ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  int j; //test
   char buf[10] = { 0 };
   char *rates = NULL;
   char *name;
@@ -130,7 +129,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 */
       char *open =
 //	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
-/*	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
 
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
@@ -138,17 +137,8 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
-		 site_survey_lists[i].dtim_period, rates); */
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
+		 site_survey_lists[i].dtim_period, rates);
 
-			websWrite (wp,
-			"new Array(\'%s\', %d, \'ap-channel-%s-ssid-",
-			site_survey_lists[i].BSSID, site_survey_lists[i].RSSI, site_survey_lists[i].channel);
-		  
-			for (j = 0; j < strlen(site_survey_lists[i].SSID); j++)
-				websWrite (wp, "\\x%02X", *((char *) site_survey_lists[i].SSID + j) & 0xFF);
-			
-			websWrite (wp, "-%s\', 0),\n", open);
     }
 
   return;
@@ -191,7 +181,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 
        char *open =
 //	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
+/*	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
 
 			websWrite (wp,
 			"new Array(\'%s\', %d, \'ap-channel-%s-ssid-",
@@ -200,7 +190,16 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 			for (j = 0; j < strlen(site_survey_lists[i].SSID); j++)
 				websWrite (wp, "\\x%02X", *((char *) site_survey_lists[i].SSID + j) & 0xFF);
 			
-			websWrite (wp, "-%s\', 0),\n", open);
+			websWrite (wp, "-%s\', 0),\n", open); */
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
+
+      websWrite (wp,
+		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
+		 i ? ',' : ' ', site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
+		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
+		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
+		 site_survey_lists[i].beacon_period, open,
+		 site_survey_lists[i].dtim_period, rates);
 	
     }
 //		}
