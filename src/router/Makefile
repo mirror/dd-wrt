@@ -100,6 +100,8 @@ CONFIG_IPTABLES=y
 #CONFIG_WLC=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
+obj-$(CONFIG_LIBPCAP) += libpcap
+obj-$(CONFIG_WIVIZ) += wiviz
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services
 #obj-$(CONFIG_LIBBCM) += libbcm
@@ -112,7 +114,6 @@ obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
 obj-$(CONFIG_IPSEC) += ipsec
-obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_LIBNET) += libnet
 obj-$(CONFIG_TCPDUMP) += tcpdump
 obj-$(CONFIG_KISMETDRONE) += kismet
@@ -207,7 +208,6 @@ obj-y += net-tools
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_SCDP) += scdp
-obj-$(CONFIG_WIVIZ) += wiviz
 obj-y += ses
 
 
@@ -462,6 +462,7 @@ rp-l2tp-install:
 	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
 
 libpcap:
+	$(MAKE) -C libpcap_noring libpcap.a
 	$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.a
 
 libpcap-install:
@@ -498,6 +499,9 @@ rc: netconf nvram shared libnet
 www www-%: 
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	$(MAKE) -C eop-tunnel install INSTALLDIR=$(INSTALLDIR)/eop-tunnel
+endif
+ifeq ($(CONFIG_WIVIZ),y)
+	$(MAKE) -C wiviz install INSTALLDIR=$(INSTALLDIR)/wiviz
 endif
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 
