@@ -194,12 +194,12 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
 
       websWrite (wp,
-		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
+		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\"\n",
 		 i ? ',' : ' ', site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
-		 site_survey_lists[i].dtim_period, rates);
+		 site_survey_lists[i].dtim_period);
 	
     }
 //		}
