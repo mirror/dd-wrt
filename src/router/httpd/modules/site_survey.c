@@ -180,8 +180,8 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	break;
 
        char *open =
-//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
+//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes"; //open network?
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "enc-unknown" : "unenc-na";
 
 			websWrite (wp,
 			"  new Array(\'%s\', %d, \'ap-channel-%d-ssid-",
@@ -193,15 +193,6 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 			websWrite (wp, "-%s\', 0),\n", open); 
 
 
- /*     websWrite (wp,
-		 "  new Array(\'%s\', %d, \'ap-channel-%d-ssid-%s-%s\', 0),\n",
-		 site_survey_lists[i].BSSID,
-		 site_survey_lists[i].RSSI, 
-		 site_survey_lists[i].channel,
-		 site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
-		 open); */
-	
-    }
 		}
 			websWrite (wp, "%s", buf);
 		}
