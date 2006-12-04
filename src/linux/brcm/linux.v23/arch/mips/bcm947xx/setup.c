@@ -293,7 +293,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 #ifdef CONFIG_REGISTER
 	nvramidx=4;
 #endif
-	if (size==1024*1024*8) // fix for 8mb flashes
+/*	if (size==1024*1024*8) // fix for 8mb flashes
 	    {
 	bcm947xx_parts[nvramidx].offset = size - 0x20000;
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;
@@ -303,7 +303,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	bcm947xx_parts[nvramidx].offset = size - mtd->erasesize;
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset;        
 	    }
-	else
+	else*/
 	{
 	bcm947xx_parts[nvramidx].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize); // fix for some Intel 4mb flashes with blocksize=0x20000
 	bcm947xx_parts[nvramidx].size = size - bcm947xx_parts[nvramidx].offset; 
