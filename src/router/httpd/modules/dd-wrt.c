@@ -2691,7 +2691,7 @@ show_80211X (webs_t wp, char *prefix)
 	 * _8021xprv
 	 */
 	websWrite(wp,"<div class=\"setting\">\n");
-	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(80211x.xsuptype)</script></div>\n");
+	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
 	websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap()\" %s />Peap&nbsp;\n", prefix, nvram_prefix_match("8021xtype", prefix, "peap") ? "checked=\"checked\"" : "");
 	websWrite(wp,"<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls()\" %s />TLS&nbsp;\n", prefix, nvram_prefix_match("8021xtype", prefix, "tls") ? "checked=\"checked\"" : "");
 	websWrite(wp,"</div>\n");
@@ -2704,7 +2704,7 @@ show_80211X (webs_t wp, char *prefix)
 	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
 	websWrite(wp,"<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("peap8021xpasswd",prefix));
 	websWrite(wp,"<div class=\"setting\">\n");
-	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(80211x.servercertif)</script></div>\n");
+	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n");
 	websWrite(wp,"<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",prefix,prefix);
 	websWrite(wp,"var %s_peap8021xca = fix_cr( '%s' );\n",prefix,nvram_prefix_get("peap8021xca",prefix));
 	websWrite(wp,"document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",prefix,prefix);
@@ -2721,7 +2721,7 @@ show_80211X (webs_t wp, char *prefix)
 	websWrite(wp,"<input name=\"%s_tls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",prefix, nvram_prefix_get ("tls8021xpasswd",prefix));
 	
 	websWrite(wp,"<div class=\"setting\">\n");		
-	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(80211x.servercertif)</script></div>\n");
+	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n");
 	websWrite(wp,"<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",prefix,prefix);
 	websWrite(wp,"var %s_tls8021xca = fix_cr( '%s' );\n",prefix,nvram_prefix_get("tls8021xca",prefix));
 	websWrite(wp,"document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",prefix,prefix);
@@ -2730,7 +2730,7 @@ show_80211X (webs_t wp, char *prefix)
 	
 	
 	websWrite(wp,"<div class=\"setting\">\n");		
-	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(80211x.clientcertif)</script></div>\n");
+	websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.clientcertif)</script></div>\n");
 	websWrite(wp,"<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",prefix,prefix);
 	websWrite(wp,"var %s_tls8021xpem = fix_cr( '%s' );\n",prefix,nvram_prefix_get("tls8021xpem",prefix));
 	websWrite(wp,"document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n",prefix,prefix);
