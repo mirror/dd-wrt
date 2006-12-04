@@ -1421,7 +1421,6 @@ wpa.radius_key="Clé RADIUS";
 wpa.algorithms="Cryptage WPA";
 wpa.shared_key="Clé WPA partagée";
 
-var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Certificat Public Serveur";
 sec80211x.clientcertif="Certificat Public Client";
