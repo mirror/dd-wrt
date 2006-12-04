@@ -202,13 +202,13 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 // for debug only				
-							<fieldset>
-								<legend>Wiviz data</legend>
-								<div class="setting">
-									<div class="label"><% dump_wiviz_data(); %></div>
-									<span id="wiviz_data"></span>&nbsp;
-								</div>
-							</fieldset><br />
+//							<fieldset>
+//								<legend>Wiviz data</legend>
+//								<div class="setting">
+//									<div class="label"><% dump_wiviz_data(); %></div>
+//									<span id="wiviz_data"></span>&nbsp;
+//								</div>
+//							</fieldset><br />
 // end for debug only								
 								
 							
