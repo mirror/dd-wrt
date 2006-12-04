@@ -164,17 +164,9 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 
 	
   int i;
-  char bufa[10] = { 0 };
   char *rates = NULL;
-  char *name;
-  name = websGetVar (wp, "hidden_scan", NULL);
-  if (name == NULL || strlen (name) == 0)
-    system2 ("site_survey");
-  else
-    {
-      sprintf (bufa, "site_survey \"%s\"", name);
-      system2 (bufa);
-    }
+
+      system2 ("site_survey");
 
   open_site_survey ();
 
@@ -186,29 +178,18 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	  site_survey_lists[i].channel == 0)
 	break;
 
-      if (site_survey_lists[i].rate_count == 4)
-	rates = "4(b)";
-      else if (site_survey_lists[i].rate_count == 12)
-	rates = "12(g)";
-      else
-	{
-	  rates = bufa;
-	  snprintf (rates, 9, "%d", site_survey_lists[i].rate_count);
-	}
-
-      char *open =
+       char *open =
 //	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "-unenc-na" : "-enc-unknown";
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "unenc-na" : "enc-unknown";
 
 	      websWrite (wp,
 	      "new Array(\'%s\',%d,\'ap-channel-%s-ssid-%s-%s\', 0),\n",
 	      site_survey_lists[i].BSSID, site_survey_lists[i].RSSI, site_survey_lists[i].channel,
-	      site_survey_lists[i].BSSID, open);
+	      site_survey_lists[i].SSID, open);
 	
     }
 		}
-		else
-				websWrite (wp, "%s", buf);
+			websWrite (wp, "%s", buf);
 		}
 		fclose(f);
 
