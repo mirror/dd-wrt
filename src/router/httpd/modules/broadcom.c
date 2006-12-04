@@ -443,7 +443,8 @@ void
 ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
-  websWrite (wp, "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
+  websWrite (wp,
+	     "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
   websWrite (wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
 
   return;
@@ -494,10 +495,11 @@ prefix_ip_get (char *name, char *buf, int type)
 int
 sys_commit (void)
 {
-  if (nvram_match ("dhcpnvram", "1")) {
-  	killall("dnsmasq",SIGUSR2);					// update lease -- tofu
-  	sleep (1);
- 	}
+  if (nvram_match ("dhcpnvram", "1"))
+    {
+      killall ("dnsmasq", SIGUSR2);	// update lease -- tofu
+      sleep (1);
+    }
 
   //if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") )
   //      nvram_set("wan_ifname", "ppp0");
@@ -936,7 +938,7 @@ ej_haswifi (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  if (!haswifi())
+  if (!haswifi ())
     websWrite (wp, output);
 
   return;
@@ -998,10 +1000,10 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
       !strcmp (name, "SYSLOG_SUPPORT"))
     return;
 #ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp(value,"1"))
-    websWrite(wp,output);
+  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp (value, "1"))
+    websWrite (wp, output);
 #endif
-    
+
 /*
    struct support_list *v;
    for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
@@ -1051,8 +1053,8 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 #ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && strcmp(value,"1"))
-    websWrite(wp,output);
+  if (!strcmp (name, "MULTICAST_SUPPORT") && strcmp (value, "1"))
+    websWrite (wp, output);
 #endif
 /*
   struct support_list *v;
@@ -1071,7 +1073,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
     }
 */
   return;
-  
+
   //websWrite (wp, output);
 }
 
@@ -1111,10 +1113,10 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 #ifdef HAVE_MULTICAST
-  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp(value,"1"))
+  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp (value, "1"))
     {
-    websWrite(wp,output1);
-    return;
+      websWrite (wp, output1);
+      return;
     }
 #endif
 
@@ -1649,7 +1651,7 @@ validate_password (webs_t wp, char *value, struct variable *v)
 {
   if (strcmp (value, TMP_PASSWD) && valid_name (wp, value, v))
     {
-      nvram_set (v->name, zencrypt(value));
+      nvram_set (v->name, zencrypt (value));
 
       system2 ("/sbin/setpasswd");
     }
@@ -1745,7 +1747,7 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 	  || nvram_match ("sv_restore_defaults", "1"))
 	{
 
-	  if (getRouterBrand () != ROUTER_BUFFALO_WBR2G54S)	
+	  if (getRouterBrand () != ROUTER_BUFFALO_WBR2G54S)
 	    strcpy (ipaddr, "192.168.1.1");	// Default IP
 	  else
 	    strcpy (ipaddr, "192.168.11.1");	// Default IP 
@@ -1821,8 +1823,10 @@ int
 endswith (char *str, char *cmp)
 {
   int cmp_len, str_len, i;
-  if (cmp==NULL)return 0;
-  if (str==NULL)return 0;
+  if (cmp == NULL)
+    return 0;
+  if (str == NULL)
+    return 0;
   cmp_len = strlen (cmp);
   str_len = strlen (str);
   if (cmp_len > str_len)
@@ -2719,12 +2723,14 @@ struct gozila_action gozila_actions[] = {
   {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
   {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
   {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},
+  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
+   stop_ppp},
   {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
   {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
   {"FilterSummary", "delete", "filters", 1, REFRESH, summary_delete_policy},
   {"Routing", "del", "static_route_del", 1, REFRESH, delete_static_route},
-  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
+  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
+   delete_static_route},
 //  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
 //  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE
   {"WL_WPATable", "key_64", "", 1, REFRESH, generate_key_64},
@@ -2824,48 +2830,58 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	   submit_type);
   act = handle_gozila_action (submit_button, submit_type);
 
-  if (act) {
-  	fprintf (stderr,"name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
-  		act->name, act->type, act->service, act->sleep_time, act->action);
-  	nvram_set ("action_service", act->service);
-    sleep_time = act->sleep_time;
-    action = act->action;
-    if (act->go)
-    	ret = act->go (wp);
-	}
-  else {
-  	sleep_time = 0;
-  	action = REFRESH;
-  }
+  if (act)
+    {
+      fprintf (stderr,
+	       "name=[%s] type=[%s] service=[%s] sleep=[%d] action=[%d]\n",
+	       act->name, act->type, act->service, act->sleep_time,
+	       act->action);
+      nvram_set ("action_service", act->service);
+      sleep_time = act->sleep_time;
+      action = act->action;
+      if (act->go)
+	ret = act->go (wp);
+    }
+  else
+    {
+      sleep_time = 0;
+      action = REFRESH;
+    }
 
-  if (action == REFRESH) {
-    sleep (sleep_time);
-  }
-  else if (action == SERVICE_RESTART) {
-  	sys_commit ();
-  	service_restart ();
-    sleep (sleep_time);
-  }
-  else if (action == SYS_RESTART) {
-  	sys_commit ();
-    sys_restart ();
-  }
-  else if (action == RESTART) {
-  	sys_commit ();
-  	sys_restart ();
-  }
-  
-  if (my_next_page[0] != '\0') {
-  	sprintf (path, "%s", my_next_page);
-  }
-  else {
-  	next_page = websGetVar (wp, "next_page", NULL);
-  	if (next_page)
-	  	sprintf (path, "%s", next_page);
-	  else
-	  	sprintf (path, "%s.asp", submit_button);
-	}
-	
+  if (action == REFRESH)
+    {
+      sleep (sleep_time);
+    }
+  else if (action == SERVICE_RESTART)
+    {
+      sys_commit ();
+      service_restart ();
+      sleep (sleep_time);
+    }
+  else if (action == SYS_RESTART)
+    {
+      sys_commit ();
+      sys_restart ();
+    }
+  else if (action == RESTART)
+    {
+      sys_commit ();
+      sys_restart ();
+    }
+
+  if (my_next_page[0] != '\0')
+    {
+      sprintf (path, "%s", my_next_page);
+    }
+  else
+    {
+      next_page = websGetVar (wp, "next_page", NULL);
+      if (next_page)
+	sprintf (path, "%s", next_page);
+      else
+	sprintf (path, "%s.asp", submit_button);
+    }
+
   cprintf ("refresh to %s\n", path);
   do_ej (path, wp);		//refresh
   websDone (wp, 200);
@@ -2878,43 +2894,43 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 }
 
 struct apply_action apply_actions[] = {
-/* name, service, sleep_time, action, function_to_execute */	
-	
+/* name, service, sleep_time, action, function_to_execute */
+
   /* SETUP */
-	{"index", "index", 0, SERVICE_RESTART, NULL},
-	{"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
-	{"Routing", "routing", 0, SERVICE_RESTART, NULL},
-	{"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
+  {"index", "index", 0, SERVICE_RESTART, NULL},
+  {"DDNS", "ddns", 0, SERVICE_RESTART, ddns_save_value},
+  {"Routing", "routing", 0, SERVICE_RESTART, NULL},
+  {"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
   {"eop-tunnel", "eop", 0, SERVICE_RESTART, NULL},
-  
+
   /* WIRELESS */
-	{"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},			//Only for V23, since V24 it's a gozilla save
-	{"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
-	{"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, save_macmode},
-	{"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
-	{"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
-	{"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
-  
+  {"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},	//Only for V23, since V24 it's a gozilla save
+  {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
+  {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, save_macmode},
+  {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
+  {"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
+  {"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
+
   /* MANAGEMENT */
-	{"Management", "management", 0, SYS_RESTART, NULL},
-	{"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
-	{"Services", "services", 0, SERVICE_RESTART, NULL},
-	{"Alive", "alive", 0, SERVICE_RESTART, NULL},
-  
+  {"Management", "management", 0, SYS_RESTART, NULL},
+  {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
+  {"Services", "services", 0, SERVICE_RESTART, NULL},
+  {"Alive", "alive", 0, SERVICE_RESTART, NULL},
+
   /* APP & GAMING */
-	{"Forward", "forward", 0, SERVICE_RESTART, NULL},
-	{"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
-	{"Triggering", "filters", 0, SERVICE_RESTART, NULL},
-	{"DMZ", "filters", 0, SERVICE_RESTART, NULL},
-	{"Filters", "filters", 0, SERVICE_RESTART, NULL},
-	{"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
+  {"Forward", "forward", 0, SERVICE_RESTART, NULL},
+  {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
+  {"Triggering", "filters", 0, SERVICE_RESTART, NULL},
+  {"DMZ", "filters", 0, SERVICE_RESTART, NULL},
+  {"Filters", "filters", 0, SERVICE_RESTART, NULL},
+  {"FilterIPMAC", "filters", 0, SERVICE_RESTART, NULL},
 #ifdef HAVE_UPNP
-	{"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},
+  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},
 #endif
   /* SECURITY */
-	{"Firewall", "filters", 0, SERVICE_RESTART, NULL},
-	{"VPN", "filters", 0, SERVICE_RESTART, NULL},
-  
+  {"Firewall", "filters", 0, SERVICE_RESTART, NULL},
+  {"VPN", "filters", 0, SERVICE_RESTART, NULL},
+
 /* Obsolete 
  * {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL},
  * {"Security", "", 1, RESTART, NULL},
@@ -2940,12 +2956,14 @@ handle_apply_action (char *name)
   if (!name)
     return NULL;
 
-  for (v = apply_actions; v < &apply_actions[STRUCT_LEN (apply_actions)]; v++) {
-  	if (!strcmp (v->name, name)) {
-  		return v;
-  	}
-  }
-  
+  for (v = apply_actions; v < &apply_actions[STRUCT_LEN (apply_actions)]; v++)
+    {
+      if (!strcmp (v->name, name))
+	{
+	  return v;
+	}
+    }
+
   return NULL;
 }
 
@@ -3015,8 +3033,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<option value=\"udp\" ");
       port_forward_table (wp, "sel_udp", i);
       websWrite (wp, ">UDP</option>\n");
-      websWrite (wp,
-		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
+      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"both\\\" ");
       port_forward_table (wp, "sel_both", i);
       websWrite (wp, " >\" + share.both + \"</option>\");\n\
@@ -3086,8 +3103,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<option value=\"udp\" ");
       port_forward_spec (wp, "sel_udp", i);
       websWrite (wp, ">UDP</option>\n");
-      websWrite (wp,
-		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
+      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"both\\\" ");
       port_forward_spec (wp, "sel_both", i);
       websWrite (wp, " >\" + share.both + \"</option>\");\n\
@@ -3185,13 +3201,13 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
   while ((entry = readdir (directory)) != NULL)
     {
       sprintf (buf, "style/%s/style.css", entry->d_name);
-      if (getWebsFile(buf)==NULL)
-        {
-	sprintf (buf, "/www/style/%s/style.css", entry->d_name);
-        FILE *test = fopen (buf, "rb");
-        if (test == NULL)
+      if (getWebsFile (buf) == NULL)
+	{
+	  sprintf (buf, "/www/style/%s/style.css", entry->d_name);
+	  FILE *test = fopen (buf, "rb");
+	  if (test == NULL)
 	    continue;
-        fclose (test);
+	  fclose (test);
 	}
       websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
 		 nvram_match ("router_style",
@@ -3222,13 +3238,9 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
 	continue;
       strcpy (buf, entry->d_name);
       buf[strlen (buf) - 3] = 0;	//strip .js
-      websWrite (wp,
-		 "<script type=\"text/javascript\">\n//<![CDATA[\n\
+      websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 		 		document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n\
-		 		\n//]]>\n</script>\n",
-		 buf, nvram_match ("language",
-				   buf) ? "selected=\\\"selected\\\"" : "",
-		 buf);
+		 		\n//]]>\n</script>\n", buf, nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
     }
   closedir (directory);
   return;
@@ -3255,7 +3267,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, argv[0]))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej(buf, wp);
+		  do_ej (buf, wp);
 		}
 	    }
 	  else
@@ -3263,7 +3275,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (endswith (entry->d_name, ".webconfig"))
 		{
 		  sprintf (buf, "%s/%s", directories[idx], entry->d_name);
-		  do_ej(buf, wp);
+		  do_ej (buf, wp);
 		}
 	    }
 	}
@@ -3279,7 +3291,7 @@ do_shell_script (char *url, webs_t stream)
   char buf[256];
   sprintf (buf, "%s >/tmp/shellout.asp", url);
   system2 (buf);
-  do_ej("/tmp/shellout.asp", stream);
+  do_ej ("/tmp/shellout.asp", stream);
 }
 
 
@@ -3287,7 +3299,7 @@ static int
 apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	   char_t * url, char_t * path, char_t * query)
 {
-	int action = NOTHING;
+  int action = NOTHING;
   char *value;
   char *submit_button, *next_page;
   int sleep_time = 0;
@@ -3299,20 +3311,21 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   error_value = 0;
   ret_code = -1;
 
-	
+
 	/**********   get "change_action" and launch gozila_cgi if needed **********/
 
   value = websGetVar (wp, "change_action", "");
   cprintf ("get change_action = %s\n", value);
 
-  if (value && !strcmp (value, "gozila_cgi")) {
-  	cprintf ("start gozila_cgi");
-    gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
-    return 1;
-  }
-  
+  if (value && !strcmp (value, "gozila_cgi"))
+    {
+      cprintf ("start gozila_cgi");
+      gozila_cgi (wp, urlPrefix, webDir, arg, url, path, query);
+      return 1;
+    }
+
   /***************************************************************************/
-  
+
   if (!query)
     goto footer;
 
@@ -3322,102 +3335,110 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     browser_method = USE_LAN;
   else
     browser_method = USE_WAN;
-  
+
   /**********   get all webs var **********/
-  
+
   submit_button = websGetVar (wp, "submit_button", "");
   cprintf ("get submit_button = %s\n", submit_button);
-  
+
   need_commit = atoi (websGetVar (wp, "commit", "1"));
   cprintf ("get need_commit = %d\n", need_commit);
-  
+
   value = websGetVar (wp, "action", "");
   cprintf ("get action = %s\n", value);
-  
-  /**********   check action to do **********/
-  
-  /** Apply **/
-  if (!strcmp (value, "Apply")) {
-  	struct apply_action *act;
-    cprintf ("validate cgi");
-    validate_cgi (wp);
-    cprintf ("handle apply action\n");
-    act = handle_apply_action (submit_button);
-    cprintf ("done\n");
-    //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-    nvram_set ("is_default", "0");
-    nvram_set ("is_modified", "1");
 
-    if (act) {
-    	fprintf (stderr,"submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-    		act->name, act->service, act->sleep_time, act->action);
-    	if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
-    		nvram_set ("action_service", act->service);
-    	else
-    		nvram_set ("action_service", "");
-    	
-    	sleep_time = act->sleep_time;
-    	action = act->action;
-			
-			if (act->go)
-				ret_code = act->go (wp);
-    }
-    else {
-    	nvram_set ("action_service", "");
-    	sleep_time = 1;
-    	action = RESTART;
-    }
-    
-    if (need_commit) 
+  /**********   check action to do **********/
+
+  /** Apply **/
+  if (!strcmp (value, "Apply"))
     {
-      diag_led (DIAG, STOP_LED);
-      sys_commit ();
+      struct apply_action *act;
+      cprintf ("validate cgi");
+      validate_cgi (wp);
+      cprintf ("handle apply action\n");
+      act = handle_apply_action (submit_button);
+      cprintf ("done\n");
+      //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+      nvram_set ("is_default", "0");
+      nvram_set ("is_modified", "1");
+
+      if (act)
+	{
+	  fprintf (stderr,
+		   "submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
+		   act->name, act->service, act->sleep_time, act->action);
+	  if ((act->action == SYS_RESTART)
+	      || (act->action == SERVICE_RESTART))
+	    nvram_set ("action_service", act->service);
+	  else
+	    nvram_set ("action_service", "");
+
+	  sleep_time = act->sleep_time;
+	  action = act->action;
+
+	  if (act->go)
+	    ret_code = act->go (wp);
+	}
+      else
+	{
+	  nvram_set ("action_service", "");
+	  sleep_time = 1;
+	  action = RESTART;
+	}
+
+      if (need_commit)
+	{
+	  diag_led (DIAG, STOP_LED);
+	  sys_commit ();
+	}
     }
-  }
-  
+
   /** Restore defaults **/
-  else if (!strncmp (value, "Restore", 7)) {
-  	ACTION ("ACT_SW_RESTORE");
-    nvram_set ("sv_restore_defaults", "1");
-    killall("udhcpc",SIGKILL);
-    sys_commit ();
+  else if (!strncmp (value, "Restore", 7))
+    {
+      ACTION ("ACT_SW_RESTORE");
+      nvram_set ("sv_restore_defaults", "1");
+      killall ("udhcpc", SIGKILL);
+      sys_commit ();
 #ifdef HAVE_X86
-    eval ("mount","/usr/local","-o","remount,rw");
-    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
-    eval ("rm", "-f", "/etc/nvram/*");							// delete nvram database
-    eval ("mount","/usr/local","-o","remount,ro");
+      eval ("mount", "/usr/local", "-o", "remount,rw");
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+      eval ("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
-    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
-    eval ("rm", "-f", "/etc/nvram/*");							// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #elif HAVE_MAGICBOX
-    eval ("rm", "-f", "/tmp/nvram/*");							// delete nvram database
-    eval ("rm", "-f", "/tmp/nvram/.lock");					// delete nvram database
-    eval ("erase", "nvram");
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
 #else
-    eval ("erase", "nvram");
+      eval ("erase", "nvram");
 #endif
-    action = REBOOT;
-  }
-  
+      action = REBOOT;
+    }
+
   /** Reboot **/
-  else if (!strncmp (value, "Reboot", 6)) {
-    do_ej ("Reboot.asp", wp);
-    websDone (wp, 200);
- //   sleep (1);
-    sys_reboot ();
-    return 1;
-  }
-    
-  /** GUI Logout **/		// Experimental, not work yet ... 
-  else if (!strncmp (value, "Logout", 6)) {
-    do_ej ("Logout.asp", wp);
-    websDone (wp, 200);
-    do_logout();
-    return 1;
-  }
-  
+  else if (!strncmp (value, "Reboot", 6))
+    {
+      do_ej ("Reboot.asp", wp);
+      websDone (wp, 200);
+      //   sleep (1);
+      sys_reboot ();
+      return 1;
+    }
+
+  /** GUI Logout **/// Experimental, not work yet ... 
+  else if (!strncmp (value, "Logout", 6))
+    {
+      do_ej ("Logout.asp", wp);
+      websDone (wp, 200);
+      do_logout ();
+      return 1;
+    }
+
   /* DEBUG : Invalid action */
   else
     websDebugWrite (wp, "Invalid action %s<br />", value);
@@ -3431,38 +3452,42 @@ footer:
   if (need_reboot)
     action = REBOOT;
 
-  if (action != REBOOT) {
-  	if (!error_value) {
-  		if (my_next_page[0] != '\0')
-  			sprintf (path, "%s", my_next_page);
-  		else {
-  			next_page = websGetVar (wp, "next_page", NULL);
-  			if (next_page)
-  				sprintf (path, "%s", next_page);
-  			else
-  				sprintf (path, "%s.asp", submit_button);
-  		}
-  		
-  		cprintf ("refresh to %s\n", path);
- 		if (!strncmp(path,"WL_FilterTable",strlen("WL_FilterTable")))
-  		    do_filtertable (path, wp);	//refresh
-  		else
-		    do_ej (path, wp);	//refresh
-  		websDone (wp, 200);
-  	}
-  	else {
-  		do_ej ("Fail.asp", wp);
-  		websDone (wp, 200);
-  	}
-  }
+  if (action != REBOOT)
+    {
+      if (!error_value)
+	{
+	  if (my_next_page[0] != '\0')
+	    sprintf (path, "%s", my_next_page);
+	  else
+	    {
+	      next_page = websGetVar (wp, "next_page", NULL);
+	      if (next_page)
+		sprintf (path, "%s", next_page);
+	      else
+		sprintf (path, "%s.asp", submit_button);
+	    }
+
+	  cprintf ("refresh to %s\n", path);
+	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
+	    do_filtertable (path, wp);	//refresh
+	  else
+	    do_ej (path, wp);	//refresh
+	  websDone (wp, 200);
+	}
+      else
+	{
+	  do_ej ("Fail.asp", wp);
+	  websDone (wp, 200);
+	}
+    }
   else
-  {
-  	do_ej ("Reboot.asp", wp);
-  	websDone (wp, 200);
-//  	sleep (5);
-  	sys_reboot ();
-  	return 1;
-  }
+    {
+      do_ej ("Reboot.asp", wp);
+      websDone (wp, 200);
+//      sleep (5);
+      sys_reboot ();
+      return 1;
+    }
 
   nvram_set ("upnp_wan_proto", "");
   sleep (sleep_time);
@@ -3498,21 +3523,18 @@ initHandlers (void)
   websAspDefine ("localtime", ej_localtime);
   websAspDefine ("dumplog", ej_dumplog);
 #ifdef HAVE_SPUTNIK_APD
-		 websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
+  websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
 #endif
-		 websAspDefine ("dumpleases", ej_dumpleases);
-		 websAspDefine ("ppplink", ej_ppplink);
-		 websUrlHandlerDefine ("/Management.asp", NULL, 0, apply_cgi,
-				       0);
-		 websUrlHandlerDefine ("/internal.cgi", NULL, 0, internal_cgi,
-				       0);
-		 //DD-WRT addition start
-		 websUrlHandlerDefine ("/modules.cgi", NULL, 0, show_modules,
-				       0);
-		 //DD-WRT addition end
-		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");
-		 }
+  websAspDefine ("dumpleases", ej_dumpleases);
+  websAspDefine ("ppplink", ej_ppplink);
+  websUrlHandlerDefine ("/Management.asp", NULL, 0, apply_cgi, 0);
+  websUrlHandlerDefine ("/internal.cgi", NULL, 0, internal_cgi, 0);
+  //DD-WRT addition start
+  websUrlHandlerDefine ("/modules.cgi", NULL, 0, show_modules, 0);
+  //DD-WRT addition end
+  websSetPassword (nvram_safe_get ("http_passwd"));
+  websSetRealm ("DD-WRT Router OS Core");
+}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3741,27 +3763,27 @@ live_translate (char *tran)
   sprintf (buf, "/www/%s", lang);
   free (lang);
 
-  	strcpy (temp1, tran);
-	strcat (temp1, "=\"");
-  
-	fp = fopen (buf, "r");
-	
+  strcpy (temp1, tran);
+  strcat (temp1, "=\"");
 
-	while (fgets(temp, 256, fp) != NULL)
+  fp = fopen (buf, "r");
+
+
+  while (fgets (temp, 256, fp) != NULL)
+    {
+      if ((strstr (temp, temp1)) != NULL)
 	{
-		if ((strstr(temp, temp1)) != NULL)
-		{
-			temp2 = strtok(temp,"\"");
-			temp2 = strtok(NULL,"\"");
+	  temp2 = strtok (temp, "\"");
+	  temp2 = strtok (NULL, "\"");
 
-			fclose (fp);
-			return temp2;
-		}
+	  fclose (fp);
+	  return temp2;
 	}
+    }
 
-fclose (fp);
-return "Error";
-  
+  fclose (fp);
+  return "Error";
+
 }
 
 
@@ -3775,119 +3797,154 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-    
-int sipgate = nvram_match ("sipgate", "1");
+
+  int sipgate = nvram_match ("sipgate", "1");
 #ifdef HAVE_SPUTNIK_APD
-int sputnik = nvram_match ("apd_enable", "1");
+  int sputnik = nvram_match ("apd_enable", "1");
 #else
-int sputnik = 0;
+  int sputnik = 0;
 #endif
 #ifdef HAVE_NEWMEDIA
-int openvpn = nvram_match ("openvpn_enable", "1");
+  int openvpn = nvram_match ("openvpn_enable", "1");
 #else
-int openvpn = 0;
+  int openvpn = 0;
 #endif
-int auth = nvram_match ("status_auth", "1");
+  int auth = nvram_match ("status_auth", "1");
 #ifdef HAVE_NOWIFI
-int wifi=0;
+  int wifi = 0;
 #else
-int wifi=haswifi();
+  int wifi = haswifi ();
 #endif
-char menu[8][11][32] = {{"index.asp","DDNS.asp","WanMAC.asp","Routing.asp","Vlan.asp","eop-tunnel.asp","","","",""},
-						{"Wireless_Basic.asp","Wireless_radauth.asp","WL_WPATable.asp","Wireless_MAC.asp","Wireless_Advanced.asp","Wireless_WDS.asp","","","","",""},
-						{"Sipath.asp","cgi-bin-mf-phonebook.html","cgi-bin-mf-status.html","","","","","","","",""},
-						{"Firewall.asp","VPN.asp","","","","","","","","",""},
-						{"Filters.asp","","","","","","","","","",""},
-						{"Forward.asp","ForwardSpec.asp","Triggering.asp","UPnP.asp","DMZ.asp","QoS.asp","P2P.asp","","","",""},
-						{"Management.asp","Hotspot.asp","Services.asp","Alive.asp","Diagnostics.asp","Wol.asp","Factory_Defaults.asp","Upgrade.asp","config.asp","",""},
-						{"Status_Router.asp","Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp","Status_OpenVPN.asp","Status_Bandwidth.asp","Info.htm","","","",""}};
+  char menu[8][11][32] =
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
+       "eop-tunnel.asp", "", "", "", ""},
+  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
+   "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
+   "", "", ""},
+  {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
+   "", "", "", "", "", "", ""},
+  {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
+  {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
+  {"Forward.asp", "ForwardSpec.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp",
+   "QoS.asp", "P2P.asp", "", "", "", ""},
+  {"Management.asp", "Hotspot.asp", "Services.asp", "Alive.asp",
+   "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp",
+   "config.asp", "", ""},
+  {"Status_Router.asp", "Status_Lan.asp", "Status_Wireless.asp",
+   "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
+   "Info.htm", "", "", "", ""}
+  };
 
 /* real name is bmenu.menuname[i][j] */
-char menuname[8][11][32] = {{"setup","setupbasic","setupddns","setupmacclone","setuprouting","setupvlan","setupeop","","","",""},
-							{"wireless","wirelessBasic","wirelessRadius","wirelessSecurity","wirelessMac","wirelessAdvanced","wirelessWds","","","",""},
-							{"sipath","sipathoverview","sipathphone","sipathstatus","","","","","","",""},
-							{"security","firwall","vpn","","","","","","","",""},
-							{"accrestriction","webaccess","","","","","","","","",""},
-							{"applications","applicationsprforwarding","applicationspforwarding","applicationsptriggering","applicationsUpnp","applicationsDMZ","applicationsQoS","applicationsP2P","","",""},
-							{"admin","adminManagement","adminHotspot","adminServices","adminAlive","adminDiag","adminWol","adminFactory","adminUpgrade","adminBackup",""},
-							{"statu","statuRouter","statuLAN","statuWLAN","statuSputnik","statuVPN","statuBand","statuSysInfo","","",""}};
+  char menuname[8][11][32] =
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
+       "setupvlan", "setupeop", "", "", "", ""},
+  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
+   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
+  {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
+   "", "", ""},
+  {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
+  {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", ""},
+  {"applications", "applicationsprforwarding", "applicationspforwarding",
+   "applicationsptriggering", "applicationsUpnp", "applicationsDMZ",
+   "applicationsQoS", "applicationsP2P", "", "", ""},
+  {"admin", "adminManagement", "adminHotspot", "adminServices", "adminAlive",
+   "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup",
+   ""},
+  {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
+   "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
+  };
 
-int i,j;
+  int i, j;
 
-	websWrite (wp, "<div id=\"menu\">\n");
-	websWrite (wp, " <div id=\"menuMain\">\n");
-	websWrite (wp, "  <ul id=\"menuMainList\">\n");
+  websWrite (wp, "<div id=\"menu\">\n");
+  websWrite (wp, " <div id=\"menuMain\">\n");
+  websWrite (wp, "  <ul id=\"menuMainList\">\n");
 
-	  for (i=0; i<8; i++)
-		{
+  for (i = 0; i < 8; i++)
+    {
 #ifdef HAVE_MADWIFI
-		if (!wifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
-			i++;
+      if (!wifi && !strcmp (menu[i][0], "Wireless_Basic.asp"))
+	i++;
 #endif
-		if ((!sipgate) && (!strcmp(menu[i][0], "Sipath.asp")))  //jump over Sipath
-			i++;
-		if (!strcmp (menu[i][0], mainmenu))
-			{
-			websWrite (wp, "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n", menuname[i][0]);
-			websWrite (wp, "    <div id=\"menuSub\">\n");
-			websWrite (wp, "     <ul id=\"menuSubList\">\n");
-			
-			for (j=0; j<11; j++)
-				{
+      if ((!sipgate) && (!strcmp (menu[i][0], "Sipath.asp")))	//jump over Sipath
+	i++;
+      if (!strcmp (menu[i][0], mainmenu))
+	{
+	  websWrite (wp,
+		     "   <li class=\"current\"><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span>\n",
+		     menuname[i][0]);
+	  websWrite (wp, "    <div id=\"menuSub\">\n");
+	  websWrite (wp, "     <ul id=\"menuSubList\">\n");
+
+	  for (j = 0; j < 11; j++)
+	    {
 #ifdef HAVE_MADWIFI
-				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
-					j++;
-				if (!strcmp(menu[i][j], "Wireless_Advanced.asp"))
-					j++;
-//				if (!strcmp(menu[i][j], "Wireless_WDS.asp"))  // might work now
-//					j++;
-				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
-					j++;
+	      if (!strcmp (menu[i][j], "Wireless_radauth.asp"))
+		j++;
+	      if (!strcmp (menu[i][j], "Wireless_Advanced.asp"))
+		j++;
+//                              if (!strcmp(menu[i][j], "Wireless_WDS.asp"))  // might work now
+//                                      j++;
+	      if (!wifi && !strcmp (menu[i][j], "Status_Wireless.asp"))
+		j++;
 #endif
 #ifndef HAVE_EOP_TUNNEL
-				if (!strcmp(menu[i][j], "eop-tunnel.asp"))
-					j++;
+	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
+		j++;
 #endif
 #ifndef HAVE_CTORRENT
-				if (!strcmp(menu[i][j], "P2P.asp"))
-					j++;
+	      if (!strcmp (menu[i][j], "P2P.asp"))
+		j++;
 #endif
-				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))  //jump over Sputnik
-					j++;
-				if ((!openvpn) && !strcmp(menu[i][j], "Status_OpenVPN.asp"))  //jump over OpenVPN
-					j++;
-				if ((!auth) && !strcmp(menu[i][j], "Info.htm"))  //jump over Sys-Info
-					j++;
-					
-				if (!strcmp(menu[i][j], submenu) && (strlen(menu[i][j]) != 0))
-					{
-					websWrite (wp, "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n", menuname[i][j+1]);
-					}
-#ifdef HAVE_HTTPS  //until https will allow upgrade and backup
-				else if ((strlen(menu[i][j]) != 0) && (do_ssl) && ((!strcmp(menu[i][j], "Upgrade.asp") || (!strcmp(menu[i][j], "config.asp")))))
-					{
-					websWrite (wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
-					websWrite (wp, "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n", menuname[i][j+1]);
-					websWrite (wp, "      \n//]]>\n</script>\n");
-					}
-#endif
-				else if (strlen(menu[i][j]) != 0)
-					{
-				websWrite (wp, "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][j], menuname[i][j+1]);
-					}
-				}
-			websWrite (wp, "     </ul>\n");
-			websWrite (wp, "    </div>\n");
-			websWrite (wp, "    </li>\n");
-			}
-		else
-			{
-			websWrite (wp, "   <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n", menu[i][0], menuname[i][0]);
-			}
+	      if ((!sputnik) && !strcmp (menu[i][j], "Status_SputnikAPD.asp"))	//jump over Sputnik
+		j++;
+	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
+		j++;
+	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
+		j++;
+
+	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j]) != 0))
+		{
+		  websWrite (wp,
+			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n",
+			     menuname[i][j + 1]);
 		}
-		websWrite (wp, "  </ul>\n");
-		websWrite (wp, " </div>\n");
-		websWrite (wp, "</div>\n");
+#ifdef HAVE_HTTPS		//until https will allow upgrade and backup
+	      else if ((strlen (menu[i][j]) != 0) && (do_ssl)
+		       &&
+		       ((!strcmp (menu[i][j], "Upgrade.asp")
+			 || (!strcmp (menu[i][j], "config.asp")))))
+		{
+		  websWrite (wp,
+			     "      <script type=\"text/javascript\">\n//<![CDATA[\n");
+		  websWrite (wp,
+			     "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n",
+			     menuname[i][j + 1]);
+		  websWrite (wp, "      \n//]]>\n</script>\n");
+		}
+#endif
+	      else if (strlen (menu[i][j]) != 0)
+		{
+		  websWrite (wp,
+			     "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n",
+			     menu[i][j], menuname[i][j + 1]);
+		}
+	    }
+	  websWrite (wp, "     </ul>\n");
+	  websWrite (wp, "    </div>\n");
+	  websWrite (wp, "    </li>\n");
+	}
+      else
+	{
+	  websWrite (wp,
+		     "   <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n",
+		     menu[i][0], menuname[i][0]);
+	}
+    }
+  websWrite (wp, "  </ul>\n");
+  websWrite (wp, " </div>\n");
+  websWrite (wp, "</div>\n");
 
   return;
 }
@@ -3895,74 +3952,74 @@ int i,j;
 void
 ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-		char *style = nvram_get ("router_style");
-	
-			/*websWrite (wp,
-				"<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
-				live_translate("lang_charset.set"));
-			IE Problem ...*/ 
-			websWrite (wp,
-				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-			websWrite (wp, "<html>\n");
-			websWrite (wp, "\t<head>\n");
-			websWrite (wp,
-				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-				live_translate("lang_charset.set"));
-			if (nvram_invmatch ("dist_type", "micro"))
-			{
-				websWrite (wp,
-					"\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-				websWrite (wp,
-					"\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-			}
-			
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
-				style);
-			websWrite (wp,
-				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n",
-				style);
-				
+  char *style = nvram_get ("router_style");
+
+  /*websWrite (wp,
+     "<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
+     live_translate("lang_charset.set"));
+     IE Problem ... */
+  websWrite (wp,
+	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+  websWrite (wp, "<html>\n");
+  websWrite (wp, "\t<head>\n");
+  websWrite (wp,
+	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+	     live_translate ("lang_charset.set"));
+  if (nvram_invmatch ("dist_type", "micro"))
+    {
+      websWrite (wp,
+		 "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+      websWrite (wp,
+		 "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+    }
+
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
+	     style);
+  websWrite (wp,
+	     "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n",
+	     style);
+
 #ifdef HAVE_PWC
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
-			websWrite (wp,
-				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
-#endif		
-			
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
+  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
+#endif
+
 }
 
 void
 ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
-			websWrite (wp,
-				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-			websWrite (wp, "<html>\n");
-			websWrite (wp, "\t<head>\n");
-			websWrite (wp,
-				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-				live_translate("lang_charset.set"));
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
-			websWrite (wp,
-				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+  websWrite (wp,
+	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+  websWrite (wp, "<html>\n");
+  websWrite (wp, "\t<head>\n");
+  websWrite (wp,
+	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+	     live_translate ("lang_charset.set"));
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
 
 }
 
@@ -3970,30 +4027,43 @@ void
 ej_show_timeoptions (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
-char timediffs[37][8] = {"-12","-11","-10","-09.5","-09","-08","-07","-06","-05","-04","-03.5","-03","-02","-01","+00",
-								"+01","+02","+03","+03.5","+04","+05","+05.5","+05.75","+06","+06.5","+07","+08","+09","+09.5","+10","+10.5","+11","+11.5","+12","+12.75","+13","+14"};
+  char timediffs[37][8] =
+    { "-12", "-11", "-10", "-09.5", "-09", "-08", "-07", "-06", "-05", "-04",
+"-03.5", "-03", "-02", "-01", "+00",
+    "+01", "+02", "+03", "+03.5", "+04", "+05", "+05.5", "+05.75", "+06",
+      "+06.5", "+07", "+08", "+09", "+09.5", "+10", "+10.5", "+11", "+11.5",
+      "+12", "+12.75", "+13", "+14"
+  };
 
-char timezones[37][8] = {"-12:00","-11:00","-10:00","-09:30","-09:00","-08:00","-07:00","-06:00","-05:00","-04:00","-03:30","-03:00","-02:00","-01:00","",
-								"+01:00","+02:00","+03:00","+03:30","+04:00","+05:00","+05:30","+05:45","+06:00","+06:30","+07:00","+08:00","+09:00","+09:30","+10:00","+10:30","+11:00","+11:30","+12:00","+12:45","+13:00","+14:00"};
+  char timezones[37][8] =
+    { "-12:00", "-11:00", "-10:00", "-09:30", "-09:00", "-08:00", "-07:00",
+"-06:00", "-05:00", "-04:00", "-03:30", "-03:00", "-02:00", "-01:00", "",
+    "+01:00", "+02:00", "+03:00", "+03:30", "+04:00", "+05:00", "+05:30",
+      "+05:45", "+06:00", "+06:30", "+07:00", "+08:00", "+09:00", "+09:30",
+      "+10:00", "+10:30", "+11:00", "+11:30", "+12:00", "+12:45", "+13:00",
+      "+14:00"
+  };
 
-int i,j;
-char str[11];
+  int i, j;
+  char str[11];
 
-websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
-	for (i=0; i<37; i++)
+  for (i = 0; i < 37; i++)
+    {
+      for (j = 0; j < 5; j++)
 	{
-	  	for (j=0; j<5; j++)
-	  	{
-			sprintf (str, "%s 1 %d",  timediffs[i], j+1);
+	  sprintf (str, "%s 1 %d", timediffs[i], j + 1);
 
-			websWrite (wp,
-				"document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%d + \"</option>\");\n",
-				str, nvram_match ("time_zone", str) ? "selected=\\\"selected\\\"" : "", timezones[i], j+1);
-		 }
+	  websWrite (wp,
+		     "document.write(\"<option value=\\\"%s\\\" %s>UTC%s / \" + idx.summt_opt%d + \"</option>\");\n",
+		     str, nvram_match ("time_zone",
+				       str) ? "selected=\\\"selected\\\"" :
+		     "", timezones[i], j + 1);
 	}
-	
-	websWrite (wp, "//]]>\n</script>\n");
+    }
+
+  websWrite (wp, "//]]>\n</script>\n");
 }
 
 
@@ -4002,72 +4072,80 @@ websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 void
 ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-	char *wan_ipaddr;
+  char *wan_ipaddr;
   int wan_link = check_wan_link (0);
-  
+
   if (nvram_match ("wan_proto", "pptp"))
-  {
-  	wan_ipaddr = wan_link ? nvram_safe_get ("pptp_get_ip") : nvram_safe_get ("wan_ipaddr");
-  }
-	else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
-	{
-		wan_ipaddr = wan_link ? nvram_safe_get ("wan_ipaddr") : "0.0.0.0";
-	}
-	else if (nvram_match ("wan_proto", "l2tp"))
-	{
-		wan_ipaddr = wan_link ? nvram_safe_get ("l2tp_get_ip") : nvram_safe_get ("wan_ipaddr");
-	}
-	else
-	{
-		wan_ipaddr = nvram_safe_get ("wan_ipaddr");
-	}
-	
-	websWrite (wp, "<div id=\"statusInfo\">\n");
-	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
-	websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
+    {
+      wan_ipaddr =
+	wan_link ? nvram_safe_get ("pptp_get_ip") :
+	nvram_safe_get ("wan_ipaddr");
+    }
+  else if (!strcmp (nvram_safe_get ("wan_proto"), "pppoe"))
+    {
+      wan_ipaddr = wan_link ? nvram_safe_get ("wan_ipaddr") : "0.0.0.0";
+    }
+  else if (nvram_match ("wan_proto", "l2tp"))
+    {
+      wan_ipaddr =
+	wan_link ? nvram_safe_get ("l2tp_get_ip") :
+	nvram_safe_get ("wan_ipaddr");
+    }
+  else
+    {
+      wan_ipaddr = nvram_safe_get ("wan_ipaddr");
+    }
+
+  websWrite (wp, "<div id=\"statusInfo\">\n");
+  websWrite (wp,
+	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
-	ej_get_firmware_version(0,wp,argc,argv);
-	websWrite (wp, "</a>\");\n\
-				\n//]]>\n</script></div>\n"); 
-	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
-	ej_get_uptime(0,wp,argc,argv);
-	websWrite (wp, "</div>\n");
-	websWrite (wp, "<div class=\"info\">WAN");
-	
-	if (nvram_match ("wl_mode", "wet") || nvram_match("wan_proto", "disabled"))
-	{
-		websWrite (wp, ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
-	}
-	else 
-	{
-		websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
-	}
-//	websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">\n//<![CDATA[\n\
-//				document.write(\"<a href=\\\"javascript:lgout()\\\">\"+ share.logout + \"</a>\");\n\
-//				\n//]]>\n</script></div>\n"); 
-	websWrite (wp, "</div>\n");		
+  ej_get_firmware_version (0, wp, argc, argv);
+  websWrite (wp, "</a>\");\n\
+				\n//]]>\n</script></div>\n");
+  websWrite (wp,
+	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
+  ej_get_uptime (0, wp, argc, argv);
+  websWrite (wp, "</div>\n");
+  websWrite (wp, "<div class=\"info\">WAN");
+
+  if (nvram_match ("wl_mode", "wet") || nvram_match ("wan_proto", "disabled"))
+    {
+      websWrite (wp,
+		 ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
+    }
+  else
+    {
+      websWrite (wp, " IP: %s</div>\n", wan_ipaddr);
+    }
+//      websWrite (wp, "<div class=\"info\"><script type=\"text/javascript\">\n//<![CDATA[\n\
+//                              document.write(\"<a href=\\\"javascript:lgout()\\\">\"+ share.logout + \"</a>\");\n\
+//                              \n//]]>\n</script></div>\n"); 
+  websWrite (wp, "</div>\n");
 }
+
 #ifdef HAVE_WIVIZ
 void
 ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 {
-	FILE *f;
-	char buf[128];
+  FILE *f;
+  char buf[128];
 
-	eval ("run_wiviz");											// run wiviz as separate process 
-	sleep(2);													// give it 2 seconds for result
-	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
-	
-	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
-	    {
-		while (fgets(buf, sizeof(buf), f))
-		 {
-		websWrite (wp, "%s", buf);
-		}
-		fclose(f);
+  eval ("run_wiviz");		// run wiviz as separate process 
+  sleep (2);			// give it 2 seconds for result
+  eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
+
+  if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
+    {
+      while (fgets (buf, sizeof (buf), f))
+	{
+	  websWrite (wp, "%s", buf);
 	}
-	else
-		websWrite (wp, "Can't open file; wiviz not running?\n");	
+      fclose (f);
+    }
+  else
+    websWrite (wp, "Can't open file; wiviz not running?\n");
 }
 #endif
 static char no_cache[] =
@@ -4283,114 +4361,121 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
 #ifdef HAVE_CPUTEMP
 static void
-ej_get_cputemp(int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_cputemp (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_GATEWORX
 #define TEMP_MUL 100
-FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp_input","rb");
+  FILE *fp =
+    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp_input",
+	   "rb");
 #else
 #define TEMP_MUL 1000
-FILE *fp=fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input","rb");
+  FILE *fp = fopen ("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 
-if (fp==NULL)
+  if (fp == NULL)
     {
-    websWrite(wp,"N/A"); //no i2c lm75 found
-    return;
+      websWrite (wp, "N/A");	//no i2c lm75 found
+      return;
     }
-int temp;
-fscanf(fp,"%d",&temp);
-fclose(fp);
-int high=temp/TEMP_MUL;
-int low=(temp-(high*TEMP_MUL))/(TEMP_MUL/10);
-websWrite(wp,"%d.%d C",high,low); //no i2c lm75 found
+  int temp;
+  fscanf (fp, "%d", &temp);
+  fclose (fp);
+  int high = temp / TEMP_MUL;
+  int low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
+  websWrite (wp, "%d.%d C", high, low);	//no i2c lm75 found
 }
 
 
 static void
 ej_show_cpu_temperature (int eid, webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\">CPU Temperature</div>\n");
-websWrite(wp,"<span id=\"cpu_temp\"></span>&nbsp;\n");
-websWrite(wp,"</div>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">CPU Temperature</div>\n");
+  websWrite (wp, "<span id=\"cpu_temp\"></span>&nbsp;\n");
+  websWrite (wp, "</div>\n");
 }
 #endif
 
 
 #ifdef HAVE_VOLT
 static void
-ej_get_voltage(int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_voltage (int eid, webs_t wp, int argc, char_t ** argv)
 {
-FILE *fp=fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/volt","rb");
+  FILE *fp =
+    fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/volt", "rb");
 
-if (fp==NULL)
+  if (fp == NULL)
     {
-    websWrite(wp,"N/A"); //no i2c lm75 found
-    return;
+      websWrite (wp, "N/A");	//no i2c lm75 found
+      return;
     }
-int temp;
-fscanf(fp,"%d",&temp);
-fclose(fp);
+  int temp;
+  fscanf (fp, "%d", &temp);
+  fclose (fp);
 //temp*=564;
-int high=temp/1000;
-int low=(temp-(high*1000))/100;
-websWrite(wp,"%d.%d Volt",high,low); //no i2c lm75 found
+  int high = temp / 1000;
+  int low = (temp - (high * 1000)) / 100;
+  websWrite (wp, "%d.%d Volt", high, low);	//no i2c lm75 found
 }
 
 
 static void
 ej_show_voltage (int eid, webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\">Board Voltage</div>\n");
-websWrite(wp,"<span id=\"voltage\"></span>&nbsp;\n");
-websWrite(wp,"</div>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">Board Voltage</div>\n");
+  websWrite (wp, "<span id=\"voltage\"></span>&nbsp;\n");
+  websWrite (wp, "</div>\n");
 }
 #endif
 
 
 #ifdef HAVE_MSSID
 
-static void showencstatus(webs_t wp,char *prefix)
+static void
+showencstatus (webs_t wp, char *prefix)
 {
-char akm[64];
-char ssid[64];
-sprintf(akm,"%s_akm",prefix);
-sprintf(ssid,"%s_ssid",prefix);
-websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",prefix);
-websWrite(wp,"<script type=\"text/javascript\">");
-if (nvram_match(akm,"disabled"))
+  char akm[64];
+  char ssid[64];
+  sprintf (akm, "%s_akm", prefix);
+  sprintf (ssid, "%s_ssid", prefix);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",
+	     prefix);
+  websWrite (wp, "<script type=\"text/javascript\">");
+  if (nvram_match (akm, "disabled"))
     {
-    websWrite(wp,"Capture(share.disabled)");
-    websWrite(wp,"</script>");
-    return;
+      websWrite (wp, "Capture(share.disabled)");
+      websWrite (wp, "</script>");
+      return;
     }
-else
-    {	
-    websWrite(wp,"Capture(share.enabled)");
-    websWrite(wp,"</script>,&nbsp;");
+  else
+    {
+      websWrite (wp, "Capture(share.enabled)");
+      websWrite (wp, "</script>,&nbsp;");
     }
-if (nvram_match(akm,"psk"))
-    websWrite(wp,"WPA Pre-shared Key");
-if (nvram_match(akm,"wpa"))
-    websWrite(wp,"WPA RADIUS");
-if (nvram_match(akm,"psk2"))
-    websWrite(wp,"WPA2 Pre-shared Key");
-if (nvram_match(akm,"wpa2"))
-    websWrite(wp,"WPA2 RADIUS");
-if (nvram_match(akm,"psk psk2"))
-    websWrite(wp,"WPA2 Pre-shared Key Mixed");
-if (nvram_match(akm,"wpa wpa2"))
-    websWrite(wp,"WPA RADIUS Mixed");
-if (nvram_match(akm,"radius"))
-    websWrite(wp,"RADIUS");
-if (nvram_match(akm,"wep"))
-    websWrite(wp,"WEP");
-websWrite(wp,"\n</div>\n");
+  if (nvram_match (akm, "psk"))
+    websWrite (wp, "WPA Pre-shared Key");
+  if (nvram_match (akm, "wpa"))
+    websWrite (wp, "WPA RADIUS");
+  if (nvram_match (akm, "psk2"))
+    websWrite (wp, "WPA2 Pre-shared Key");
+  if (nvram_match (akm, "wpa2"))
+    websWrite (wp, "WPA2 RADIUS");
+  if (nvram_match (akm, "psk psk2"))
+    websWrite (wp, "WPA2 Pre-shared Key Mixed");
+  if (nvram_match (akm, "wpa wpa2"))
+    websWrite (wp, "WPA RADIUS Mixed");
+  if (nvram_match (akm, "radius"))
+    websWrite (wp, "RADIUS");
+  if (nvram_match (akm, "wep"))
+    websWrite (wp, "WEP");
+  websWrite (wp, "\n</div>\n");
 
 }
 
@@ -4398,9 +4483,9 @@ static void
 ej_get_txpower (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-websWrite(wp,"%s mW",nvram_safe_get("txpwr"));
+  websWrite (wp, "%s mW", nvram_safe_get ("txpwr"));
 #else
-websWrite(wp,"%s mW",nvram_safe_get("ath0_txpwr"));
+  websWrite (wp, "%s mW", nvram_safe_get ("ath0_txpwr"));
 #endif
 }
 
@@ -4408,99 +4493,100 @@ websWrite(wp,"%s mW",nvram_safe_get("ath0_txpwr"));
 static void
 ej_getencryptionstatus (int eid, webs_t wp, int argc, char_t ** argv)
 {
-char mode[64];
-char vifs[64];
+  char mode[64];
+  char vifs[64];
   char *next;
   char var[80];
 #ifndef HAVE_MADWIFI
-sprintf(mode,"%s","wl0");
-sprintf(vifs,"%s_vifs","wl0");
+  sprintf (mode, "%s", "wl0");
+  sprintf (vifs, "%s_vifs", "wl0");
 #else
-sprintf(mode,"%s","ath0");
-sprintf(vifs,"%s_vifs","wl0");
+  sprintf (mode, "%s", "ath0");
+  sprintf (vifs, "%s_vifs", "wl0");
 #endif
-showencstatus(wp,mode);
-  foreach (var, nvram_safe_get(vifs), next)
+  showencstatus (wp, mode);
+  foreach (var, nvram_safe_get (vifs), next)
   {
-  showencstatus(wp,var);
+    showencstatus (wp, var);
   }
 }
 static void
 ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
 {
-char mode[64];
+  char mode[64];
 #ifndef HAVE_MADWIFI
-sprintf(mode,"%s_mode","wl0");
+  sprintf (mode, "%s_mode", "wl0");
 #else
-sprintf(mode,"%s_mode","ath0");
+  sprintf (mode, "%s_mode", "ath0");
 #endif
-websWrite(wp,"<script type=\"text/javascript\">");
-if (nvram_match(mode,"wet") || nvram_match(mode,"sta") || nvram_match(mode,"infra") || nvram_match(mode,"apsta"))
-    websWrite(wp,"Capture(info.ap)");
-else
-    websWrite(wp,"Capture(status_wireless.legend3)");
-websWrite(wp,"</script>");
+  websWrite (wp, "<script type=\"text/javascript\">");
+  if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
+      || nvram_match (mode, "infra") || nvram_match (mode, "apsta"))
+    websWrite (wp, "Capture(info.ap)");
+  else
+    websWrite (wp, "Capture(status_wireless.legend3)");
+  websWrite (wp, "</script>");
 }
 #endif
 
 static void
 ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
-char mode[64];
+  char mode[64];
 #ifndef HAVE_MADWIFI
- #ifdef HAVE_MSSID
-sprintf(mode,"%s_mode","wl0");
- #else
-sprintf(mode,"%s_mode","wl");
- #endif
+#ifdef HAVE_MSSID
+  sprintf (mode, "%s_mode", "wl0");
 #else
-sprintf(mode,"%s_mode","ath0");
+  sprintf (mode, "%s_mode", "wl");
 #endif
-websWrite(wp,"<script type=\"text/javascript\">");
-if (nvram_match(mode,"wet"))
-    websWrite(wp,"Capture(wl_basic.clientBridge)");
-if (nvram_match(mode,"ap"))
-    websWrite(wp,"Capture(wl_basic.ap)");
-if (nvram_match(mode,"sta"))
-    websWrite(wp,"Capture(wl_basic.client)");
-if (nvram_match(mode,"infra"))
-    websWrite(wp,"Capture(wl_basic.adhoc)");
-if (nvram_match(mode,"apsta"))
-    websWrite(wp,"Capture(wl_basic.repeater)");
-if (nvram_match(mode,"wdssta"))
-    websWrite(wp,"Capture(wl_basic.wdssta)");
-if (nvram_match(mode,"wdsap"))
-    websWrite(wp,"Capture(wl_basic.wdsap)");
-websWrite(wp,"</script>&nbsp;\n");
+#else
+  sprintf (mode, "%s_mode", "ath0");
+#endif
+  websWrite (wp, "<script type=\"text/javascript\">");
+  if (nvram_match (mode, "wet"))
+    websWrite (wp, "Capture(wl_basic.clientBridge)");
+  if (nvram_match (mode, "ap"))
+    websWrite (wp, "Capture(wl_basic.ap)");
+  if (nvram_match (mode, "sta"))
+    websWrite (wp, "Capture(wl_basic.client)");
+  if (nvram_match (mode, "infra"))
+    websWrite (wp, "Capture(wl_basic.adhoc)");
+  if (nvram_match (mode, "apsta"))
+    websWrite (wp, "Capture(wl_basic.repeater)");
+  if (nvram_match (mode, "wdssta"))
+    websWrite (wp, "Capture(wl_basic.wdssta)");
+  if (nvram_match (mode, "wdsap"))
+    websWrite (wp, "Capture(wl_basic.wdsap)");
+  websWrite (wp, "</script>&nbsp;\n");
 }
 
 static void
 ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
-char mode[64];
+  char mode[64];
 #ifndef HAVE_MADWIFI
- #ifdef HAVE_MSSID
-sprintf(mode,"%s_net_mode","wl0");
- #else
-sprintf(mode,"%s_net_mode","wl");
- #endif
+#ifdef HAVE_MSSID
+  sprintf (mode, "%s_net_mode", "wl0");
 #else
-sprintf(mode,"%s_net_mode","ath0");
+  sprintf (mode, "%s_net_mode", "wl");
 #endif
-websWrite(wp,"<script type=\"text/javascript\">");
-if (nvram_match(mode,"disabled"))
-    websWrite(wp,"Capture(share.disabled)");
-if (nvram_match(mode,"mixed"))
-    websWrite(wp,"Capture(wl_basic.mixed)");
-if (nvram_match(mode,"g-only"))
-    websWrite(wp,"Capture(wl_basic.g)");
-if (nvram_match(mode,"b-only"))
-    websWrite(wp,"Capture(wl_basic.b)");
-if (nvram_match(mode,"n-only"))
-    websWrite(wp,"Capture(wl_basic.n)");
-if (nvram_match(mode,"a-only"))
-    websWrite(wp,"Capture(wl_basic.a)");
-websWrite(wp,"</script>&nbsp;\n");
+#else
+  sprintf (mode, "%s_net_mode", "ath0");
+#endif
+  websWrite (wp, "<script type=\"text/javascript\">");
+  if (nvram_match (mode, "disabled"))
+    websWrite (wp, "Capture(share.disabled)");
+  if (nvram_match (mode, "mixed"))
+    websWrite (wp, "Capture(wl_basic.mixed)");
+  if (nvram_match (mode, "g-only"))
+    websWrite (wp, "Capture(wl_basic.g)");
+  if (nvram_match (mode, "b-only"))
+    websWrite (wp, "Capture(wl_basic.b)");
+  if (nvram_match (mode, "n-only"))
+    websWrite (wp, "Capture(wl_basic.n)");
+  if (nvram_match (mode, "a-only"))
+    websWrite (wp, "Capture(wl_basic.a)");
+  websWrite (wp, "</script>&nbsp;\n");
 }
 
 
@@ -4510,40 +4596,43 @@ websWrite(wp,"</script>&nbsp;\n");
 static void
 ej_show_openvpn_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
+  websWrite (wp,
+	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
 
-system("/etc/openvpnstate.sh > /tmp/.temp");
-FILE *in = fopen("/tmp/.temp","r");
-while(!feof(in))
+  system ("/etc/openvpnstate.sh > /tmp/.temp");
+  FILE *in = fopen ("/tmp/.temp", "r");
+  while (!feof (in))
     {
-    int b = getc(in);
-    if (b!=EOF)
-	wfputc(b,wp);
+      int b = getc (in);
+      if (b != EOF)
+	wfputc (b, wp);
     }
-fclose(in);
-websWrite(wp,"</fieldset>");
-websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
-system("/etc/openvpnstatus.sh > /tmp/.temp");
-in = fopen("/tmp/.temp","r");
-while(!feof(in))
+  fclose (in);
+  websWrite (wp, "</fieldset>");
+  websWrite (wp,
+	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
+  system ("/etc/openvpnstatus.sh > /tmp/.temp");
+  in = fopen ("/tmp/.temp", "r");
+  while (!feof (in))
     {
-    int b = getc(in);
-    if (b!=EOF)
-	wfputc(b,wp);
+      int b = getc (in);
+      if (b != EOF)
+	wfputc (b, wp);
     }
-fclose(in);
-websWrite(wp,"</fieldset>");
-websWrite(wp,"<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
-system("/etc/openvpnlog.sh > /tmp/.temp");
-in = fopen("/tmp/.temp","r");
-while(!feof(in))
+  fclose (in);
+  websWrite (wp, "</fieldset>");
+  websWrite (wp,
+	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
+  system ("/etc/openvpnlog.sh > /tmp/.temp");
+  in = fopen ("/tmp/.temp", "r");
+  while (!feof (in))
     {
-    int b = getc(in);
-    if (b!=EOF)
-	wfputc(b,wp);
+      int b = getc (in);
+      if (b != EOF)
+	wfputc (b, wp);
     }
-fclose(in);
-websWrite(wp,"</fieldset>");
+  fclose (in);
+  websWrite (wp, "</fieldset>");
 
 }
 
@@ -4552,107 +4641,114 @@ websWrite(wp,"</fieldset>");
 static void
 ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
 {
-int radiooff = -1;
+  int radiooff = -1;
 
 #ifdef HAVE_MADWIFI
-		//????;  no idea how to check this
+  //????;  no idea how to check this
 #else
-wl_ioctl(get_wdev(), WLC_GET_RADIO, &radiooff, sizeof(int));
+  wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiooff, sizeof (int));
 
 #endif
 
-switch (radiooff)
-	{	
-	case 0:
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
-		break;
-	case 1: // software disabled
-	case 2: // hardware disabled
-	case 3: // both are disabled
-		websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
-		break;
-	case -1:
-		websWrite (wp, "%s", live_translate ("share.unknown"));
-		break;
-	}
+  switch (radiooff)
+    {
+    case 0:
+      websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
+      break;
+    case 1:			// software disabled
+    case 2:			// hardware disabled
+    case 3:			// both are disabled
+      websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
+      break;
+    case -1:
+      websWrite (wp, "%s", live_translate ("share.unknown"));
+      break;
+    }
 }
 
 static void
 ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	FILE *f;
-	FILE *host;
-	char buf[256];
-	char hostname[128];
-	char ip[16];
-	char fullip[18];
-	char mac[18];
-	int count = 0;
-	
-	if ((f = fopen("/proc/net/arp", "r")) != NULL)
-	 {
-		while (fgets(buf, sizeof(buf), f))
-		{
-			if (sscanf(buf, "%15s %*s %*s %17s %*s", ip, mac) != 2) continue;
-			if ((strlen(mac) != 17) || (strcmp(mac, "00:00:00:00:00:00") == 0)) continue;
-			if (strcmp(ip, nvram_get ("wan_gateway")) == 0) continue;  //skip WAN arp entry
+  FILE *f;
+  FILE *host;
+  char buf[256];
+  char hostname[128];
+  char ip[16];
+  char fullip[18];
+  char mac[18];
+  int count = 0;
+
+  if ((f = fopen ("/proc/net/arp", "r")) != NULL)
+    {
+      while (fgets (buf, sizeof (buf), f))
+	{
+	  if (sscanf (buf, "%15s %*s %*s %17s %*s", ip, mac) != 2)
+	    continue;
+	  if ((strlen (mac) != 17)
+	      || (strcmp (mac, "00:00:00:00:00:00") == 0))
+	    continue;
+	  if (strcmp (ip, nvram_get ("wan_gateway")) == 0)
+	    continue;		//skip WAN arp entry
 
 /* look into hosts file for hostnames  (static leases) */
-			strcpy (hostname, "*");
-				if ((host = fopen("/tmp/hosts", "r")) != NULL)
-				 {
-					while (fgets(buf, sizeof(buf), host))
-						{
-						sscanf (buf, "%15s %*s", fullip);
-						
-							if (strcmp(ip, fullip) == 0)
-							{
-							sscanf(buf, "%*15s %s", hostname);
-							}
-						}
-					fclose (host);
-				}
+	  strcpy (hostname, "*");
+	  if ((host = fopen ("/tmp/hosts", "r")) != NULL)
+	    {
+	      while (fgets (buf, sizeof (buf), host))
+		{
+		  sscanf (buf, "%15s %*s", fullip);
+
+		  if (strcmp (ip, fullip) == 0)
+		    {
+		      sscanf (buf, "%*15s %s", hostname);
+		    }
+		}
+	      fclose (host);
+	    }
 /* end hosts file lookup */
 
 /* check  for dnsmasq leases in /tmp/dnsmasq.leases and /jffs/ if hostname is still unknown */
 
-		if (!strcmp(hostname, "*") && nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("dhcpd_usenvram", "0"))
+	  if (!strcmp (hostname, "*") && nvram_match ("dhcp_dnsmasq", "1")
+	      && nvram_match ("dhcpd_usenvram", "0"))
+	    {
+	      if (!(host = fopen ("/tmp/dnsmasq.leases", "r")))
+		host = fopen ("/jffs/dnsmasq.leases", "r");
+
+	      if (host)
+		{
+
+		  while (fgets (buf, sizeof (buf), host))
+		    {
+		      sscanf (buf, "%*lu %*17s %15s %*s", fullip);
+
+		      if (strcmp (ip, fullip) == 0)
 			{
-			      if (!(host = fopen ("/tmp/dnsmasq.leases", "r")))
-					host = fopen ("/jffs/dnsmasq.leases", "r");
-
-      		if (host)	
-				 {
-
-					while (fgets(buf, sizeof(buf), host))
-						{
-						sscanf (buf, "%*lu %*17s %15s %*s", fullip);
-
-							if (strcmp(ip, fullip) == 0)
-							{
-							sscanf (buf, "%*lu %*17s %*15s %s", hostname);
-							}
-						}
-					fclose (host);
-				}
+			  sscanf (buf, "%*lu %*17s %*15s %s", hostname);
 			}
+		    }
+		  fclose (host);
+		}
+	    }
 /* end dnsmasq.leases check */
 
 /* check nvram for dnsmasq leases in nvram if hostname is still unknown */
 
-		if (!strcmp(hostname, "*") && nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("dhcpd_usenvram", "1"))
-			{
-			sprintf (buf, "dnsmasq_lease_%s", ip);
-			sscanf (nvram_safe_get (buf), "%*lu %*17s %*15s %s", hostname);
-			}
+	  if (!strcmp (hostname, "*") && nvram_match ("dhcp_dnsmasq", "1")
+	      && nvram_match ("dhcpd_usenvram", "1"))
+	    {
+	      sprintf (buf, "dnsmasq_lease_%s", ip);
+	      sscanf (nvram_safe_get (buf), "%*lu %*17s %*15s %s", hostname);
+	    }
 /* end nvram check */
-	
-	
-			websWrite (wp, "%c'%s','%s','%s'", (count ? ',' : ' '), hostname, ip, mac);
-			++count;
-		}
-		fclose(f);
+
+
+	  websWrite (wp, "%c'%s','%s','%s'", (count ? ',' : ' '), hostname,
+		     ip, mac);
+	  ++count;
 	}
+      fclose (f);
+    }
 }
 
 #ifdef HAVE_EOP_TUNNEL
@@ -4661,96 +4757,153 @@ static void
 ej_show_eop_tunnels (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
-int tun;
-char temp[32];
+  int tun;
+  char temp[32];
 
-	  for (tun=1; tun<11; tun++)
-		{
+  for (tun = 1; tun < 11; tun++)
+    {
 
-			websWrite (wp, "<fieldset>\n");
-			websWrite (wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n", tun);
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
-		sprintf (temp, "oet%d_en", tun);
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""), tun);
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div id=\"idoet%d\">\n", tun);
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
-			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
-		sprintf (temp, "oet%d_rem", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,eoip.remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,eoip.tunnelID)\" value=\"%d\" />\n", 
-						temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n");
-		sprintf (temp, "oet%d_id", tun);
-			websWrite (wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
-			websWrite (wp, "</div>\n");			
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.comp)</script></div>\n");
-		sprintf (temp, "oet%d_comp", tun);
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.passtos)</script></div>\n");
-		sprintf (temp, "oet%d_pt", tun);
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.frag)</script></div>\n");
-		sprintf (temp, "oet%d_fragment", tun);
-			websWrite (wp, "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,eoip.frag)\" value=\"%s\" />\n", temp, nvram_get(temp));
-			websWrite (wp, "</div>\n");			
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mssfix)</script></div>\n");
-		sprintf (temp, "oet%d_mssfix", tun);
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.shaper)</script></div>\n");
-		sprintf (temp, "oet%d_shaper", tun);
-			websWrite (wp, "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,eoip.shaper)\" value=\"%s\" />\n", temp, nvram_get(temp));
-			websWrite (wp, "</div>\n");	
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
-		sprintf (temp, "oet%d_bridged", tun);
-			websWrite (wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-						temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""), tun);
-			websWrite (wp," <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-						temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""), tun);
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div id=\"idbridged%d\">\n", tun);
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_ip\" value=\"0.0.0.0\"/>\n", tun);
-		sprintf (temp, "oet%d_ip", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />\n",
-				temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "<div class=\"setting\">\n");
-			websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-			websWrite (wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
-		sprintf (temp, "oet%d_netmask", tun);
-			websWrite (wp, "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />\n",
-				temp, get_single_ip (nvram_safe_get(temp), 0), temp, get_single_ip (nvram_safe_get(temp), 1), temp, get_single_ip (nvram_safe_get(temp), 2), temp, get_single_ip (nvram_safe_get(temp), 3));
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "</div>\n");
-			websWrite (wp, "</fieldset><br/>\n");
-	}
+      websWrite (wp, "<fieldset>\n");
+      websWrite (wp,
+		 "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %d</legend>\n",
+		 tun);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
+      sprintf (temp, "oet%d_en", tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""),
+		 tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""),
+		 tun);
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div id=\"idoet%d\">\n", tun);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
+      websWrite (wp,
+		 "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n",
+		 tun);
+      sprintf (temp, "oet%d_rem", tun);
+      websWrite (wp,
+		 "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,eoip.remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,eoip.tunnelID)\" value=\"%d\" />\n",
+		 temp, get_single_ip (nvram_safe_get (temp), 0), temp,
+		 get_single_ip (nvram_safe_get (temp), 1), temp,
+		 get_single_ip (nvram_safe_get (temp), 2), temp,
+		 get_single_ip (nvram_safe_get (temp), 3));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n");
+      sprintf (temp, "oet%d_id", tun);
+      websWrite (wp,
+		 "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
+		 temp, nvram_get (temp));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.comp)</script></div>\n");
+      sprintf (temp, "oet%d_comp", tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 temp,
+		 (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 temp,
+		 (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.passtos)</script></div>\n");
+      sprintf (temp, "oet%d_pt", tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 temp,
+		 (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 temp,
+		 (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.frag)</script></div>\n");
+      sprintf (temp, "oet%d_fragment", tun);
+      websWrite (wp,
+		 "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,eoip.frag)\" value=\"%s\" />\n",
+		 temp, nvram_get (temp));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mssfix)</script></div>\n");
+      sprintf (temp, "oet%d_mssfix", tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 temp,
+		 (nvram_match (temp, "1") ? "checked=\"checked\"" : ""));
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 temp,
+		 (nvram_match (temp, "0") ? "checked=\"checked\"" : ""));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.shaper)</script></div>\n");
+      sprintf (temp, "oet%d_shaper", tun);
+      websWrite (wp,
+		 "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,eoip.shaper)\" value=\"%s\" />\n",
+		 temp, nvram_get (temp));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
+      sprintf (temp, "oet%d_bridged", tun);
+      websWrite (wp,
+		 "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 temp, (nvram_match (temp, "1") ? "checked=\"checked\"" : ""),
+		 tun);
+      websWrite (wp,
+		 " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'isbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 temp, (nvram_match (temp, "0") ? "checked=\"checked\"" : ""),
+		 tun);
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div id=\"idbridged%d\">\n", tun);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+      websWrite (wp,
+		 "<input type=\"hidden\" name=\"oet%d_ip\" value=\"0.0.0.0\"/>\n",
+		 tun);
+      sprintf (temp, "oet%d_ip", tun);
+      websWrite (wp,
+		 "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />\n",
+		 temp, get_single_ip (nvram_safe_get (temp), 0), temp,
+		 get_single_ip (nvram_safe_get (temp), 1), temp,
+		 get_single_ip (nvram_safe_get (temp), 2), temp,
+		 get_single_ip (nvram_safe_get (temp), 3));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+      websWrite (wp,
+		 "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n",
+		 tun);
+      sprintf (temp, "oet%d_netmask", tun);
+      websWrite (wp,
+		 "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />\n",
+		 temp, get_single_ip (nvram_safe_get (temp), 0), temp,
+		 get_single_ip (nvram_safe_get (temp), 1), temp,
+		 get_single_ip (nvram_safe_get (temp), 2), temp,
+		 get_single_ip (nvram_safe_get (temp), 3));
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "</fieldset><br/>\n");
+    }
 }
 
 #endif
@@ -4988,10 +5141,10 @@ struct ej_handler ej_handlers[] = {
   {"tf_upnp", ej_tf_upnp},
 #endif
 //  {"charset", ej_charset},
-  {"do_menu", ej_do_menu},  //Eko
+  {"do_menu", ej_do_menu},	//Eko
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
-  {"show_timeoptions", ej_show_timeoptions}, //Eko
+  {"show_timeoptions", ej_show_timeoptions},	//Eko
   {"do_statusinfo", ej_do_statusinfo},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
@@ -5000,7 +5153,7 @@ struct ej_handler ej_handlers[] = {
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
 #ifdef HAVE_WIVIZ
-  {"dump_wiviz_data", ej_dump_wiviz_data}, //Eko, for testing only
+  {"dump_wiviz_data", ej_dump_wiviz_data},	//Eko, for testing only
 #endif
 #ifdef HAVE_EOP_TUNNEL
   {"show_eop_tunnels", ej_show_eop_tunnels},
@@ -5008,7 +5161,7 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_MSSID
   {"getwirelessstatus", ej_getwirelessstatus},
   {"getencryptionstatus", ej_getencryptionstatus},
-  {"get_txpower",ej_get_txpower},
+  {"get_txpower", ej_get_txpower},
 #endif
 #ifdef HAVE_CPUTEMP
   {"get_cputemp", ej_get_cputemp},
@@ -5022,14 +5175,14 @@ struct ej_handler ej_handlers[] = {
   {"getregcode", ej_getregcode},
 #endif
 #ifdef HAVE_RSTATS
-  {"bandwidth",ej_bandwidth},
+  {"bandwidth", ej_bandwidth},
 #endif
 #ifdef HAVE_PORTSETUP
-  {"portsetup",ej_portsetup},
+  {"portsetup", ej_portsetup},
 #endif
-  {"haswifi",ej_haswifi},
-  {"show_macfilter",ej_show_macfilter},
-  {"list_mac_layers",ej_list_mac_layers},
+  {"haswifi", ej_haswifi},
+  {"show_macfilter", ej_show_macfilter},
+  {"list_mac_layers", ej_list_mac_layers},
   {NULL, NULL}
 };
 #endif /* !WEBS */
@@ -5082,17 +5235,18 @@ tf_upnp (webs_t wp)
   char *v;
   char s[64];
 
-  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v)) {
-  	if (strcmp (v, "all") == 0)
-  	{
-  		nvram_set ("upnp_clear", "1");
-  	}
-  	else
-  	{
-  		sprintf (s, "forward_port%s", v);
-  		nvram_unset (s);
-  	}
-  }
+  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v))
+    {
+      if (strcmp (v, "all") == 0)
+	{
+	  nvram_set ("upnp_clear", "1");
+	}
+      else
+	{
+	  sprintf (s, "forward_port%s", v);
+	  nvram_unset (s);
+	}
+    }
   // firewall + upnp service is restarted after this
   return 0;
 }
@@ -5106,15 +5260,15 @@ ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
   char s[32];
 
   if (nvram_match ("upnp_enable", "1"))
-  {
-  	for (i = 0; i < 50; i++)
-  	{
-  		websWrite (wp, (i > 0) ? ",'" : "'");
-  		sprintf (s, "forward_port%d", i);
-  		tf_webWriteJS (wp, nvram_safe_get (s));
-  		websWrite (wp, "'");
-  	}
-  }
+    {
+      for (i = 0; i < 50; i++)
+	{
+	  websWrite (wp, (i > 0) ? ",'" : "'");
+	  sprintf (s, "forward_port%d", i);
+	  tf_webWriteJS (wp, nvram_safe_get (s));
+	  websWrite (wp, "'");
+	}
+    }
 
   return;
 }

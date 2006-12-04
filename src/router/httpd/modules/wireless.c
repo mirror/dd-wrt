@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																													    /* channel info structure *///from 11.9
+																																																																																																	/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -755,7 +755,7 @@ validate_d11b_rateset (webs_t wp, char *value, struct variable *v)
 #endif
 
 char *
-wl_filter_mac_get (char *ifname,char *type, int which)
+wl_filter_mac_get (char *ifname, char *type, int which)
 {
   static char word[50];
   char *wordlist, *next;
@@ -765,14 +765,14 @@ wl_filter_mac_get (char *ifname,char *type, int which)
     {
       //cprintf("%s(): wl_active_add_mac = 1\n",__FUNCTION__);
       char var[32];
-      sprintf(var,"%s_active_mac",ifname);
+      sprintf (var, "%s_active_mac", ifname);
       wordlist = nvram_safe_get (var);
     }
   else
     {
       //cprintf("%s(): wl_active_add_mac = 0\n",__FUNCTION__);
       char var[32];
-      sprintf(var,"%s_maclist",ifname);
+      sprintf (var, "%s_maclist", ifname);
       wordlist = nvram_safe_get (var);
     }
 
@@ -806,10 +806,10 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
   char *wordlist;
   unsigned char m[6];
   char *ifname = websGetVar (wp, "ifname", NULL);	//64 or 128
-  if (ifname==NULL)
+  if (ifname == NULL)
     return;
   char mlist[32];
-  sprintf(mlist,"%s_maclist",ifname);
+  sprintf (mlist, "%s_maclist", ifname);
   wordlist = nvram_safe_get (mlist);
   if (!wordlist)
     return;
@@ -820,7 +820,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
       char *mac = NULL;
       char mac1[20];
 
-      snprintf (filter_mac, sizeof (filter_mac), "%s%s%d",ifname, "_mac", i);
+      snprintf (filter_mac, sizeof (filter_mac), "%s%s%d", ifname, "_mac", i);
 
       mac = websGetVar (wp, filter_mac, NULL);
 
@@ -887,7 +887,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
   char *mac_mess = "MAC";
 
-  if (ejArgs (argc, argv, "%s %s", &type,&ifname) < 2)
+  if (ejArgs (argc, argv, "%s %s", &type, &ifname) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -904,14 +904,14 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  websWrite (wp,
 		     "<div>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		     mac_mess, item, box_len,ifname, item - 1,
-		     wl_filter_mac_get (ifname,"mac", item - 1));
+		     mac_mess, item, box_len, ifname, item - 1,
+		     wl_filter_mac_get (ifname, "mac", item - 1));
 
 	  websWrite (wp,
 		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,ifname,
-		     item + (WL_FILTER_MAC_NUM / 2) - 1,
-		     wl_filter_mac_get (ifname,"mac",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     ifname, item + (WL_FILTER_MAC_NUM / 2) - 1,
+		     wl_filter_mac_get (ifname, "mac",
 					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
@@ -927,14 +927,14 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  websWrite (wp,
 		     "<div/>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		     mac_mess, item, box_len, ifname,item - 1,
-		     wl_filter_mac_get (ifname,"mac", item - 1));
+		     mac_mess, item, box_len, ifname, item - 1,
+		     wl_filter_mac_get (ifname, "mac", item - 1));
 
 	  websWrite (wp,
 		     "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,ifname,
-		     item + (WL_FILTER_MAC_NUM / 2) - 1,
-		     wl_filter_mac_get (ifname,"mac",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     ifname, item + (WL_FILTER_MAC_NUM / 2) - 1,
+		     wl_filter_mac_get (ifname, "mac",
 					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
@@ -1008,7 +1008,7 @@ dhcp_lease_table_init (void)
       char hostname[256];
       char buf[512];
       char *p;
-      killall("dnsmasq",SIGUSR2);
+      killall ("dnsmasq", SIGUSR2);
       sleep (1);
 
       if ((fp_w = fopen (LEASES_NAME_IP, "w")) != NULL)
@@ -1038,7 +1038,7 @@ dhcp_lease_table_init (void)
       struct lease_t lease;
       struct in_addr addr;
       char mac[20] = "";
-      killall("udhcpd",SIGUSR1);
+      killall ("udhcpd", SIGUSR1);
       fp_w = fopen (LEASES_NAME_IP, "w");
 
       // Parse leases file 
@@ -1633,7 +1633,7 @@ ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
   int count = 0;
 
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system2 (cmd);			// get active wireless mac
+  system2 (cmd);		// get active wireless mac
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
     {
@@ -1703,25 +1703,25 @@ _8021xca
 _8021xpem
 _8021xprv
 */
-sprintf (n, "%s_8021xtype", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_tls8021xuser", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_tls8021xpasswd", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_tls8021xca", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_tls8021xpem", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_tls8021xprv", prefix);
-copytonv (wp, n);
+  sprintf (n, "%s_8021xtype", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_tls8021xuser", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_tls8021xpasswd", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_tls8021xca", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_tls8021xpem", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_tls8021xprv", prefix);
+  copytonv (wp, n);
 
-sprintf (n, "%s_peap8021xuser", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_peap8021xpasswd", prefix);
-copytonv (wp, n);
-sprintf (n, "%s_peap8021xca", prefix);
-copytonv (wp, n);
+  sprintf (n, "%s_peap8021xuser", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_peap8021xpasswd", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_peap8021xca", prefix);
+  copytonv (wp, n);
 
 
 #endif
@@ -1742,30 +1742,29 @@ copytonv (wp, n);
   sprintf (n, "%s_radius_key", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_key1", prefix);
-  char *key1 = websGetVar(wp,n,"");
-  
+  char *key1 = websGetVar (wp, n, "");
+
   copytonv (wp, n);
   sprintf (n, "%s_key2", prefix);
-  char *key2 = websGetVar(wp,n,"");
+  char *key2 = websGetVar (wp, n, "");
   copytonv (wp, n);
   sprintf (n, "%s_key3", prefix);
-  char *key3 = websGetVar(wp,n,"");
+  char *key3 = websGetVar (wp, n, "");
   copytonv (wp, n);
   sprintf (n, "%s_key4", prefix);
-  char *key4 = websGetVar(wp,n,"");
+  char *key4 = websGetVar (wp, n, "");
   copytonv (wp, n);
   sprintf (n, "%s_passphrase", prefix);
-  char *pass = websGetVar(wp,n,"");
+  char *pass = websGetVar (wp, n, "");
   copytonv (wp, n);
   sprintf (n, "%s_key", prefix);
-  char *tx = websGetVar(wp,n,"");
+  char *tx = websGetVar (wp, n, "");
   copytonv (wp, n);
   sprintf (n, "%s_wep_bit", prefix);
   copytonv (wp, n);
   char buf[128];
   snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", pass,
-		key1, key2, key3, key4,
-		tx);
+	    key1, key2, key3, key4, tx);
   sprintf (n, "%s_wep_buf", prefix);
   nvram_set (n, buf);
 
@@ -1853,7 +1852,8 @@ security_save (webs_t wp)
 #ifdef HAVE_MSSID
 
 void
-ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv, char *prefix)
+ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
+		     char *prefix)
 {
   char *type, *security_mode;
   char var[80];
@@ -1879,8 +1879,8 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv, char *prefix)
   else if (!strcmp (security_mode, "radius"))
     show_radius (wp, prefix);
   else if (!strcmp (security_mode, "wpa")
-	  || !strcmp (security_mode, "wpa2")
-		|| !strcmp (security_mode, "wpa wpa2"))
+	   || !strcmp (security_mode, "wpa2")
+	   || !strcmp (security_mode, "wpa wpa2"))
     show_wparadius (wp, prefix);
   else if (!strcmp (security_mode, "wep"))
     show_wep (wp, prefix);
@@ -2087,7 +2087,7 @@ convert_wl_gmode (char *value)
 #ifdef HAVE_MSSID
 	nvram_set ("wl_nmode", "-1");
 #endif
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
       }
     else if (!strcmp (value, "mixed"))
       {
@@ -2104,7 +2104,7 @@ convert_wl_gmode (char *value)
 #endif
 	nvram_set ("wl_frameburst", "on");
 	nvram_set ("wl_phytype", "g");
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
 
       }
 #ifdef HAVE_MSSID
@@ -2119,7 +2119,7 @@ convert_wl_gmode (char *value)
 #endif
 	nvram_set ("wl_frameburst", "on");
 	nvram_set ("wl_phytype", "g");
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
 
       }
 #endif
@@ -2131,7 +2131,7 @@ convert_wl_gmode (char *value)
 #endif
 	nvram_set ("wl_gmode", "2");
 	nvram_set ("wl_phytype", "g");
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
 
       }
     else if (!strcmp (value, "b-only"))
@@ -2145,18 +2145,18 @@ convert_wl_gmode (char *value)
 	nvram_set ("wl_rateset", "default");
 	nvram_set ("wl_frameburst", "on");
 	nvram_set ("wl_phytype", "g");
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
 
       }
 #ifdef HAVE_MSSID
     else if (!strcmp (value, "n-only"))
       {
-      
-        nvram_set("wl_net_mode", value);
-	nvram_set("wl_gmode", "1");
-	nvram_set("wl_nmode", "2");
-	nvram_set("wl_nreqd", "1");
-	nvram_set("wl_afterburner", "off");	// From 3.61.13.0
+
+	nvram_set ("wl_net_mode", value);
+	nvram_set ("wl_gmode", "1");
+	nvram_set ("wl_nmode", "2");
+	nvram_set ("wl_nreqd", "1");
+	nvram_set ("wl_afterburner", "off");	// From 3.61.13.0
 	nvram_set ("wl_phytype", "n");
       }
 #endif
@@ -2164,7 +2164,7 @@ convert_wl_gmode (char *value)
       {
 	nvram_set ("wl_net_mode", value);
 	nvram_set ("wl_phytype", "a");
-	nvram_set("wl_nreqd", "0");
+	nvram_set ("wl_nreqd", "0");
       }
 
 
