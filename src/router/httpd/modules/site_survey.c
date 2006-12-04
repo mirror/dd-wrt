@@ -128,12 +128,16 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 #define DOT11_CAP_CCK_OFDM			0x2000
 */
       char *open =
-//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") : live_translate ("share.yes");
+//      (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
+	(site_survey_lists[i].
+	 capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") :
+	live_translate ("share.yes");
 
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
-		 i ? ',' : ' ', site_survey_lists[i].SSID[0]==0?"hidden":site_survey_lists[i].SSID,
+		 i ? ',' : ' ',
+		 site_survey_lists[i].SSID[0] ==
+		 0 ? "hidden" : site_survey_lists[i].SSID,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
@@ -143,62 +147,70 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
 #ifdef HAVE_WIVIZ
 void
-ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  //for testing only
+ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//for testing only
 {
-	
-	FILE *f;
-	char buf[128];
 
-	eval ("run_wiviz");											// run wiviz as separate process 
-	sleep(2);													// give it 2 seconds for result
-	eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
-	
-	if ((f = fopen("/tmp/wiviz-pipe", "r")) != NULL)
-	    {
-		    
-		while (fgets(buf, sizeof(buf), f))
-		 {
-			 if (!strncmp (buf, "new Array())", 12 ))
-			 {
+  FILE *f;
+  char buf[128];
 
-	
-  int i;
-  int j;
+  eval ("run_wiviz");		// run wiviz as separate process 
+  sleep (2);			// give it 2 seconds for result
+  eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
 
-      system2 ("site_survey");
-
-  open_site_survey ();
-
-  for (i = 0; i < SITE_SURVEY_NUM; i++)
+  if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
     {
 
+      while (fgets (buf, sizeof (buf), f))
+	{
+	  if (!strncmp (buf, "new Array())", 12))
+	    {
 
-      if (site_survey_lists[i].BSSID[0] == 0 ||
-	  site_survey_lists[i].channel == 0)
-	break;
 
-       char *open =
-//	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes"; //open network?
-	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "enc-unknown" : "unenc-na";
+	      int i;
+	      int j;
 
-			websWrite (wp,
-			"  new Array(\'%s\', %d, \'ap-channel-%d-ssid-",
-			site_survey_lists[i].BSSID, site_survey_lists[i].RSSI, site_survey_lists[i].channel);
-		  
-			for (j = 0; j < strlen(site_survey_lists[i].SSID); j++)
-				websWrite (wp, "\\x%02X", *((char *) site_survey_lists[i].SSID + j) & 0xFF);
-			
-			websWrite (wp, "-%s\', 0),\n", open); 
+	      system2 ("site_survey");
+
+	      open_site_survey ();
+
+	      for (i = 0; i < SITE_SURVEY_NUM; i++)
+		{
+
+
+		  if (site_survey_lists[i].BSSID[0] == 0 ||
+		      site_survey_lists[i].channel == 0)
+		    break;
+
+		  char *open =
+//      (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes"; //open network?
+		    (site_survey_lists[i].
+		     capability & DOT11_CAP_PRIVACY) ? "enc-unknown" :
+		    "unenc-na";
+
+		  websWrite (wp,
+			     "  new Array(\'%s\', %d, \'ap-channel-%d-ssid-",
+			     site_survey_lists[i].BSSID,
+			     site_survey_lists[i].RSSI,
+			     site_survey_lists[i].channel);
+
+		  for (j = 0; j < strlen (site_survey_lists[i].SSID); j++)
+		    websWrite (wp, "\\x%02X",
+			       *((char *) site_survey_lists[i].SSID +
+				 j) & 0xFF);
+
+		  websWrite (wp, "-%s\', 0),\n", open);
 
 
 		}
-			websWrite (wp, "%s", buf);
-		}
-		fclose(f);
+	      websWrite (wp, "%s", buf);
+	    }
+	  fclose (f);
 
-	} 
-return;
+	}
+    }
+  return;
 }
 #endif
