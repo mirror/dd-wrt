@@ -2,7 +2,7 @@
 	<head>
 		<script type="text/javascript">
 		//<![CDATA[
-		<% dump_wiviz_data(); %>
+		<% ej_dump_wiviz_plus_site_survey(""); %>
 		//]]>
 		</script>
 	</head>
