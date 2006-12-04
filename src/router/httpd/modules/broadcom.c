@@ -4047,7 +4047,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 //				\n//]]>\n</script></div>\n"); 
 	websWrite (wp, "</div>\n");		
 }
-
+#ifdef HAVE_WIVIZ
 void
 ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 {
@@ -4069,7 +4069,7 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
 	else
 		websWrite (wp, "Can't open file; wiviz not running?\n");	
 }
-
+#endif
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
@@ -4908,7 +4908,9 @@ struct ej_handler ej_handlers[] = {
 /*	{ "per_port_option", ej_per_port_option}, */
   {"get_http_prefix", ej_get_http_prefix},
   {"dump_site_survey", ej_dump_site_survey},
+#ifdef HAVE_WIVIZ
   {"dump_wiviz_plus_site_survey", ej_dump_wiviz_plus_site_survey},
+#endif
   {"show_meminfo", ej_show_meminfo},
   {"get_mtu", ej_get_mtu},
   {"get_url", ej_get_url},
@@ -4997,7 +4999,9 @@ struct ej_handler ej_handlers[] = {
   {"getwirelessnetmode", ej_getwirelessnetmode},
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
+#ifdef HAVE_WIVIZ
   {"dump_wiviz_data", ej_dump_wiviz_data}, //Eko, for testing only
+#endif
 #ifdef HAVE_EOP_TUNNEL
   {"show_eop_tunnels", ej_show_eop_tunnels},
 #endif

@@ -143,7 +143,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
+#ifdef HAVE_WIVIZ
 void
 ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  //for testing only
 {
@@ -201,3 +201,4 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	} 
 return;
 }
+#endif
