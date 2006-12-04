@@ -125,6 +125,7 @@ ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", __TIME__);
 }
+
 #ifndef HAVE_SPECIALEDITION
 void
 ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)

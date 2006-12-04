@@ -1480,8 +1480,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		     i ==
-		     start_hour ? "selected=\"selected\" " : "", i);
+		     i == start_hour ? "selected=\"selected\" " : "", i);
 	}
     }
   else if (!strcmp (type, "start_min_1"))
@@ -1490,8 +1489,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i,
-		     i == start_min ? "selected=\"selected\" " : "",
-		     i);
+		     i == start_min ? "selected=\"selected\" " : "", i);
 	}
     }
   else if (!strcmp (type, "end_hour_24"))
@@ -1500,9 +1498,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		     i ==
-		     end_hour ? "selected=\"selected\" " : "",
-		     i);
+		     i == end_hour ? "selected=\"selected\" " : "", i);
 	}
     }
   else if (!strcmp (type, "end_min_1"))
@@ -1511,8 +1507,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i,
-		     i == end_min ? "selected=\"selected\" " : "",
-		     i);
+		     i == end_min ? "selected=\"selected\" " : "", i);
 	}
     }
 /*  else if (!strcmp (type, "start_hour_12"))
@@ -1693,9 +1688,8 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      snprintf (time_buf, sizeof (time_buf),
 			"%02d:%02d - %02d:%02d",
-			start_hour, start_min,
-			end_hour, end_min);
-		}
+			start_hour, start_min, end_hour, end_min);
+	    }
 	}
       websWrite (wp, " \
         <td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n\

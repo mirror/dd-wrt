@@ -205,12 +205,12 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 
 
 		}
-	      websWrite (wp, "%s", buf);
 	    }
-	  fclose (f);
-
+	  websWrite (wp, "%s", buf);
 	}
+      fclose (f);
     }
+
   return;
 }
 #endif
