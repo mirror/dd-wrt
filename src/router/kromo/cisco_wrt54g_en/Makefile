@@ -291,6 +291,9 @@ ifeq ($(CONFIG_MSSID),y)
 	cp Status_Wireless.asp.v24 $(INSTALLDIR)/www/Status_Wireless.asp
 	cp Status_Wireless.live.asp.v24 $(INSTALLDIR)/www/Status_Wireless.live.asp
 endif	
+ifeq ($(CONFIG_WIVIZ),y)
+	cp Site_Survey.wiviz $(INSTALLDIR)/www/Site_Survey.asp
+endif
 
 
 ifeq ($(CONFIG_NEWMEDIA),y)
