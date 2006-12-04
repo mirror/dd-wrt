@@ -1324,6 +1324,12 @@ wpa.algorithms="WPA-Algorithmus";
 wpa.shared_key="WPA Shared Key";
 wpa.rekeyInt="Rekey Interval";
 
+
+var sec80211x = new Object();
+sec80211x.xsuptype="XSupplicant Typ";
+sec80211x.servercertif="Public Server Zertifikat";
+sec80211x.clientcertif="Client Zertifikat";
+
 //help container
 
 hwpa.right1="Sicherheits-Modus:";
