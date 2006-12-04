@@ -1853,8 +1853,7 @@ security_save (webs_t wp)
 #ifdef HAVE_MSSID
 
 void
-ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
-		     char *prefix)
+ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv, char *prefix)
 {
   char *type, *security_mode;
   char var[80];
@@ -1873,33 +1872,22 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
       || !strcmp (security_mode, "psk2")
       || !strcmp (security_mode, "psk psk2"))
     show_preshared (wp, prefix);
-  //do_ej ("WPA_Preshared.asp", wp);
 #if UI_STYLE != CISCO
   else if (!strcmp (security_mode, "disabled"))
     show_preshared (wp, prefix);
-//    do_ej ("WPA_Preshared.asp", wp);
 #endif
   else if (!strcmp (security_mode, "radius"))
-    {
-      //do_ej ("Radius.asp", wp);
-      show_radius (wp, prefix);
-      //show_wep (wp, prefix);
-      //do_ej ("WEP.asp", wp);
-    }
+    show_radius (wp, prefix);
   else if (!strcmp (security_mode, "wpa")
-	   || !strcmp (security_mode, "wpa2")
-	   || !strcmp (security_mode, "wpa wpa2"))
+	  || !strcmp (security_mode, "wpa2")
+		|| !strcmp (security_mode, "wpa wpa2"))
     show_wparadius (wp, prefix);
-  //do_ej ("WPA_Radius.asp", wp);
-
   else if (!strcmp (security_mode, "wep"))
     show_wep (wp, prefix);
 #ifdef HAVE_MADWIFI
   else if (!strcmp (security_mode, "8021X"))
     show_80211X (wp, prefix);
 #endif
-
-  //do_ej ("WEP.asp", wp);
 
   return;
 }
