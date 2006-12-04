@@ -123,7 +123,7 @@ endif
 ifneq ($(CONFIG_RB500),y)
 OBJS += wland.o
 endif
-ifneq ($(CONFIG_WIVIZ),y)
+ifeq ($(CONFIG_WIVIZ),y)
 OBJS += run_wiviz.o
 CFLAGS += -DHAVE_WIVIZ
 endif
@@ -335,7 +335,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
+ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
+endif
 ifeq ($(CONFIG_ARP),y)
 	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox arp
 endif
