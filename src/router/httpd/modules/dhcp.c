@@ -1,4 +1,4 @@
-  
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -54,58 +54,58 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char *p;
       char *buff;
 
-  if (nvram_invmatch ("dhcpd_usenvram", "1"))
-    {
-      /* Parse leases file */
-      if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
-	fp = fopen ("/jffs/dnsmasq.leases", "r");
-
-      if (fp)
+      if (nvram_invmatch ("dhcpd_usenvram", "1"))
 	{
-	  while (fgets (buf, sizeof (buf), fp))
+	  /* Parse leases file */
+	  if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
+	    fp = fopen ("/jffs/dnsmasq.leases", "r");
+
+	  if (fp)
 	    {
-	      if (sscanf
-		  (buf, "%lu %17s %15s %255s", &expires, mac, ip,
-		   hostname) != 4)
-		continue;
-	      p = mac;
-	      while ((*p = toupper (*p)) != 0)
-		++p;
-	      if ((p = strrchr (ip, '.')) == NULL)
-		continue;
-	      if (nvram_match ("maskmac", "1") && macmask)
+	      while (fgets (buf, sizeof (buf), fp))
 		{
-		  mac[0] = 'x';
-		  mac[1] = 'x';
-		  mac[3] = 'x';
-		  mac[4] = 'x';
-		  mac[6] = 'x';
-		  mac[7] = 'x';
-		  mac[9] = 'x';
-		  mac[10] = 'x';
+		  if (sscanf
+		      (buf, "%lu %17s %15s %255s", &expires, mac, ip,
+		       hostname) != 4)
+		    continue;
+		  p = mac;
+		  while ((*p = toupper (*p)) != 0)
+		    ++p;
+		  if ((p = strrchr (ip, '.')) == NULL)
+		    continue;
+		  if (nvram_match ("maskmac", "1") && macmask)
+		    {
+		      mac[0] = 'x';
+		      mac[1] = 'x';
+		      mac[3] = 'x';
+		      mac[4] = 'x';
+		      mac[6] = 'x';
+		      mac[7] = 'x';
+		      mac[9] = 'x';
+		      mac[10] = 'x';
+		    }
+		  websWrite (wp, "%c'%s','%s','%s','%s','%s'",
+			     (count ? ',' : ' '),
+			     (hostname[0] ? hostname :
+			      live_translate ("share.unknown")), ip, mac,
+			     ((expires ==
+			       0) ? live_translate ("share.never") :
+			      dhcp_reltime (buf, expires)), p + 1);
+		  ++count;
 		}
-	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
-			 (count ? ',' : ' '),
-			 (hostname[0] ? hostname : live_translate ("share.unknown")),
-			 ip, mac,
-			 ((expires == 0) ? live_translate ("share.never") : dhcp_reltime (buf,
-								   expires)),
-			 p + 1);
-	      ++count;
+	      fclose (fp);
 	    }
-	  fclose (fp);
 	}
-    }
- else
-    {
-      for (i = 0; i < DHCP_MAX_COUNT; ++i)
+      else
 	{
+	  for (i = 0; i < DHCP_MAX_COUNT; ++i)
+	    {
 	      sprintf (buf, "dnsmasq_lease_%d.%d.%d.%d",
-	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
+		       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
+		       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
+		       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
 
-	      buff = nvram_safe_get(buf);
+	      buff = nvram_safe_get (buf);
 	      if (sscanf
 		  (buff, "%lu %17s %15s %255s", &expires, mac, ip,
 		   hostname) != 4)
@@ -128,15 +128,15 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
 			 (count ? ',' : ' '),
-			 (hostname[0] ? hostname : live_translate ("share.unknown")),
-			 ip, mac,
-			 ((expires == 0) ? live_translate ("share.never") : dhcp_reltime (buf,
-								   expires)),
-			 p + 1);
-              ++count;
-	  }
+			 (hostname[0] ? hostname :
+			  live_translate ("share.unknown")), ip, mac,
+			 ((expires ==
+			   0) ? live_translate ("share.never") :
+			  dhcp_reltime (buf, expires)), p + 1);
+	      ++count;
+	    }
+	}
     }
-  }
   else
     {
       struct lease_t lease;
@@ -145,7 +145,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char *ipaddr, mac[20] = "", expires_time[50] = "";
 
       /* Write out leases file from udhcpd */
-      killall("udhcpd",SIGUSR1);
+      killall ("udhcpd", SIGUSR1);
 
       /* Parse leases file */
       if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
@@ -266,7 +266,7 @@ delete_leases (webs_t wp)
   ip = websGetVar (wp, "ip_del", NULL);
   mac = websGetVar (wp, "mac_del", NULL);
 
-  snprintf (buf, sizeof(buf), "dhcp_release %s %s %s", iface, ip, mac);
+  snprintf (buf, sizeof (buf), "dhcp_release %s %s %s", iface, ip, mac);
   system2 (buf);
 
   return 0;
@@ -285,7 +285,7 @@ dhcp_renew (webs_t wp)
   int ret;
   char sigusr[] = "-XX";
 
-  ret = killall("udhcpc",SIGUSR1);
+  ret = killall ("udhcpc", SIGUSR1);
 
   return ret;
 }

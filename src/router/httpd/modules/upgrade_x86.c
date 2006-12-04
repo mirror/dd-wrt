@@ -32,27 +32,28 @@
 static int upgrade_ret;
 
 
-static int getdiscindex(void) //works only for squashfs 
+static int
+getdiscindex (void)		//works only for squashfs 
 {
-int i;
-for (i=0;i<10;i++)
+  int i;
+  for (i = 0; i < 10; i++)
     {
-    char dev[64];
-    sprintf(dev,"/dev/discs/disc%d/part2",i);
-    FILE *in=fopen(dev,"rb");
-    if (in==NULL)
-	continue; //no second partition or disc does not exist, skipping
-    char buf[4];
-    fread(buf,4,1,in);
-    if (buf[0]=='h' && buf[1]=='s' && buf[2]=='q' && buf[3]=='t')
+      char dev[64];
+      sprintf (dev, "/dev/discs/disc%d/part2", i);
+      FILE *in = fopen (dev, "rb");
+      if (in == NULL)
+	continue;		//no second partition or disc does not exist, skipping
+      char buf[4];
+      fread (buf, 4, 1, in);
+      if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
 	{
-	fclose(in); 
-	//filesystem detected
-	return i;
+	  fclose (in);
+	  //filesystem detected
+	  return i;
 	}
-    fclose(in);
+      fclose (in);
     }
-return -1;
+  return -1;
 }
 
 
@@ -75,7 +76,7 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
   if (upgrade_ret == 0)
     {
       sleep (4);
-      eval("umount","/usr/local");
+      eval ("umount", "/usr/local");
       sys_reboot ();
     }
 #else
@@ -88,7 +89,7 @@ int
 //sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6/2003
 {
-lcdmessage("System Upgrade");
+  lcdmessage ("System Upgrade");
 #ifndef ANTI_FLASH
   char upload_fifo[] = "/tmp/uploadXXXXXX";
   FILE *fifo = NULL;
@@ -182,14 +183,14 @@ lcdmessage("System Upgrade");
   linuxsize += getc (fifo) * 256 * 256;
   linuxsize += getc (fifo) * 256 * 256 * 256;
   char dev[64];
-  sprintf(dev,"of=/dev/discs/disc%d/disc",getdiscindex());
+  sprintf (dev, "of=/dev/discs/disc%d/disc", getdiscindex ());
 //  fprintf (stderr, "Write Linux %d to %s\n", linuxsize,dev);
   FILE *out = fopen ("/tmp/flash", "wb");
   for (i = 0; i < linuxsize; i++)
     putc (getc (fifo), out);
   fclose (out);
-  eval("dd","if=/tmp/flash",dev);
-  
+  eval ("dd", "if=/tmp/flash", dev);
+
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
   cprintf ("done\n");
@@ -220,7 +221,7 @@ void
 do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, https, 8/6/2003
 {
 
-  killall("udhcpc",SIGKILL);
+  killall ("udhcpc", SIGKILL);
 #ifndef ANTI_FLASH
   char buf[1024];
   int type = 0;
