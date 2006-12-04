@@ -1484,10 +1484,10 @@ wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
 
-var 80211x = new Object();
-80211x.xsuptype="XSupplicant Type";
-80211x.servercertif="Public Server Certificate";
-80211x.clientcertif="Client Certificate";
+var sec80211x = new Object();
+sec80211x.xsuptype="XSupplicant Type";
+sec80211x.servercertif="Public Server Certificate";
+sec80211x.clientcertif="Client Certificate";
 
 //help container
 var hwpa = new Object();
