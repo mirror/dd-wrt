@@ -25,17 +25,17 @@ remake:
 
 install:
 	install -d $(INSTALLDIR)/usr/sbin
-	install -d $(INSTALLDIR)/www
-	install -d $(INSTALLDIR)/www/style
-	install -d $(INSTALLDIR)/www/js
-	install -d $(INSTALLDIR)/www/images
-	install -d $(INSTALLDIR)/www/images/wiviz
+	install -d $(INSTALLDIR)/../www/www
+	install -d $(INSTALLDIR)/../www/www/style
+	install -d $(INSTALLDIR)/../www/www/js
+	install -d $(INSTALLDIR)/../www/www/images
+	install -d $(INSTALLDIR)/../www/www/images/wiviz
 	cp wiviz $(INSTALLDIR)/usr/sbin
-	cp www/wiviz/wiviz.css $(INSTALLDIR)/www/style/wiviz.css
-	cp www/wiviz/wiviz.js $(INSTALLDIR)/www/js/wiviz.js
-	cp www/wiviz/*.gif $(INSTALLDIR)/www/images/wiviz
-	cp www/wiviz/*.png $(INSTALLDIR)/www/images/wiviz
-	cp www/wiviz/*.asp $(INSTALLDIR)/www
+	cp www/wiviz/wiviz.css $(INSTALLDIR)/../www/www/style/wiviz.css
+	cp www/wiviz/wiviz.js $(INSTALLDIR)/../www/www/js/wiviz.js
+	cp www/wiviz/*.gif $(INSTALLDIR)/../www/www/images/wiviz
+	cp www/wiviz/*.png $(INSTALLDIR)/../www/www/images/wiviz
+	cp www/wiviz/*.asp $(INSTALLDIR)/../www/www
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
