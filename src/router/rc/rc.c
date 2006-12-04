@@ -834,8 +834,10 @@ main (int argc, char **argv)
     return process_monitor_main ();
   else if (strstr (base, "radio_timer"))
     return radio_timer_main ();
+#ifdef HAVE_WIVIZ
   else if (strstr (base, "run_wiviz"))
     return run_wiviz_main ();
+#endif
   else if (strstr (base, "restart_dns"))
     {
       stop_service ("dnsmasq");
