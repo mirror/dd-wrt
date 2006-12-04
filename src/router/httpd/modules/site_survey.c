@@ -164,7 +164,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 
 	
   int i;
-  char buf[10] = { 0 };
+  char bufa[10] = { 0 };
   char *rates = NULL;
   char *name;
   name = websGetVar (wp, "hidden_scan", NULL);
@@ -172,8 +172,8 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
     system2 ("site_survey");
   else
     {
-      sprintf (buf, "site_survey \"%s\"", name);
-      system2 (buf);
+      sprintf (bufa, "site_survey \"%s\"", name);
+      system2 (bufa);
     }
 
   open_site_survey ();
@@ -192,7 +192,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)  /
 	rates = "12(g)";
       else
 	{
-	  rates = buf;
+	  rates = bufa;
 	  snprintf (rates, 9, "%d", site_survey_lists[i].rate_count);
 	}
 
