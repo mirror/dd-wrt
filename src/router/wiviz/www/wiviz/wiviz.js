@@ -247,7 +247,7 @@ function declump() {
 
 function genHTML(hs) {
 	var nh = '';
-  nh += "<center><img class='icon' src='"
+  nh += "<center><img class='icon' src=images/wiviz/'"
 	a = hs.descarr;
 	if (a[0] == 'ap' || a[0] == 'adhoc') {
 	  if (a[0] == 'ap') {
