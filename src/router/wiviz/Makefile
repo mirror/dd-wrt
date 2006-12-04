@@ -35,6 +35,7 @@ install:
 	cp www/wiviz/wiviz.js $(INSTALLDIR)/www/js/wiviz.js
 	cp www/wiviz/*.gif $(INSTALLDIR)/www/images/wiviz
 	cp www/wiviz/*.png $(INSTALLDIR)/www/images/wiviz
+	cp www/wiviz/*.asp $(INSTALLDIR)/www
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
