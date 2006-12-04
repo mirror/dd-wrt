@@ -172,7 +172,7 @@ function repip() {
 			  y += 10;
 			  d = Math.sqrt(dx*dx+dy*dy);
 			  for (j = 0; j < d; j += 15) {
-			    nh += "<img src=images/wiviz/'"
+			    nh += "<img src='../images/wiviz/"
 					  + ((hs.age < idle_timeout) ? "pip" : "pip-idle")
 					  + (stupid ? ".gif" : ".png")
 						+ "' class='pip' style='top:"
@@ -247,7 +247,7 @@ function declump() {
 
 function genHTML(hs) {
 	var nh = '';
-  nh += "<center><img class='icon' src=images/wiviz/'"
+  nh += "<center><img class='icon' src='../images/wiviz/"
 	a = hs.descarr;
 	if (a[0] == 'ap' || a[0] == 'adhoc') {
 	  if (a[0] == 'ap') {
