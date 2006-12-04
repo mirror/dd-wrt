@@ -367,15 +367,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"0\" <% nvram_selected("txant", "0", "js"); %>>" + share.right + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"1\" <% nvram_selected("txant", "1", "js"); %>>" + share.left + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"3\" <% nvram_selected("txant", "3", "js"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
@@ -392,15 +384,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"0\" <% nvram_selected("wl_antdiv", "0", "js"); %>>" + share.right + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"1\" <% nvram_selected("wl_antdiv", "1", "js"); %>>" + share.left + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"3\" <% nvram_selected("wl_antdiv", "3", "js"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
@@ -417,10 +401,6 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"long\" <% nvram_selected("wl_plcphdr", "long", "js"); %>>" + wl_adv.lng + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.shrt + "</option>");
 										//]]>
 										</script>
@@ -460,15 +440,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"off\" <% nvram_selected("wl_afterburner", "off", "js"); %>>" + share.disable + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"on\" <% nvram_selected("wl_afterburner", "on", "js"); %>>" + share.enable + "</option>");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
@@ -510,10 +482,6 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true);\" />");
-										//]]>
-										</script>
-										<script type="text/javascript">
-										//<![CDATA[
 										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false);\" />");
 										//]]>
 										</script>
