@@ -623,6 +623,7 @@ contains (char *source, char *cmp)
   return 0;
 }
 
+static char *last_log_ip = NULL;
 static int registered = -1;
 #define LINE_LEN 10000
 static void
@@ -925,8 +926,12 @@ handle_request (void)
 			  return;
 			  //auth_fail = 1;
 			}
+			if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
+			  {
+			  last_log_ip=nvram_safe_get("http_client_ip");
 			  lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
 			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
+			  }
 		    }
 		}
 	      post = 0;
