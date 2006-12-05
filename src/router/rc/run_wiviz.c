@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <shutils.h>
+#include <utils.h>
 
 int
 run_wiviz_main (void)
@@ -18,7 +19,7 @@ run_wiviz_main (void)
       exit (1);
       break;
     case 0:
-    	eval ("killall", "wiviz");
+        killall("wiviz",SIGTERM);
     	eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
       exit (0);
       break;

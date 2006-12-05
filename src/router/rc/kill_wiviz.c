@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <shutils.h>
+#include <utils.h>
 
 int
 kill_wiviz_main (void)
@@ -19,7 +20,8 @@ kill_wiviz_main (void)
       break;
     case 0:
     	sleep (3);
-		eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
+	killall("wiviz",SIGUSR1);
+//		eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
       exit (0);
       break;
     default:
