@@ -8,20 +8,17 @@
 #include <pcicfg.h>
 
 #define ASSERT(n)
-/* Drivers use PKTFREESETCB to register a callback function when a packet is freed by OSL */
-typedef void (*pktfree_cb_fn_t)(void *ctx, void *pkt, uint16 status);
-
 
 /* Pkttag flag should be part of public information */
-struct osl_pubinfo {
+typedef struct {
 	bool pkttag;
 	uint pktalloced; /* Number of allocated packet buffers */
-	pktfree_cb_fn_t tx_fn;  /* Callback function for PKTFREE */
-	void *tx_ctx;		/* Context to the callback function */
-};
+	void *tx_fn;
+	void *tx_ctx;
+} osl_pubinfo_t;
 
 struct osl_info {
-	struct osl_pubinfo pub;
+	osl_pubinfo_t pub;
 	uint magic;
 	void *pdev;
 	uint malloced;

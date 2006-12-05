@@ -147,8 +147,8 @@ srom_write(uint bustype, void *curmap, osl_t *osh, uint byteoff, uint nbytes, ui
 		if (srom_read(bustype, curmap, osh, 0, crc_range, image))
 			return 1;
 		if (image[SROM4_SIGN] == SROM4_SIGNATURE) {
-			nw = SROM4_WORDS;
-			crc_range = nw * 2;
+			crc_range = SROM4_WORDS;
+			nw = crc_range / 2;
 			if (srom_read(bustype, curmap, osh, 0, crc_range, image))
 				return 1;
 		}
@@ -160,7 +160,7 @@ srom_write(uint bustype, void *curmap, osl_t *osh, uint byteoff, uint nbytes, ui
 	htol16_buf(image, crc_range);
 	crc = ~hndcrc8((uint8 *)image, crc_range - 1, CRC8_INIT_VALUE);
 	ltoh16_buf(image, crc_range);
-	image[nw - 1] = (crc << 8) | (image[nw - 1] & 0xff);
+	image[(crc_range / 2) - 1] = (crc << 8) | (image[(crc_range / 2) - 1] & 0xff);
 
 	if (BUSTYPE(bustype) == PCI_BUS) {
 		srom = (uint16*)((uchar*)curmap + PCI_BAR0_SPROM_OFFSET);
@@ -692,18 +692,17 @@ initvars_srom_pci(void *sbh, void *curmap, char **vars, uint *count)
 
 	err = sprom_read_pci(osh, (void*)((int8*)curmap + PCI_BAR0_SPROM_OFFSET), 0, b,
 	                     64, TRUE);
-	if (err == 0) {
+	if (b[SROM4_SIGN] == SROM4_SIGNATURE) {
+		/* sromrev >= 4, read more */
+		err = sprom_read_pci(osh, (void*)((int8*)curmap + PCI_BAR0_SPROM_OFFSET), 0, b,	SROM4_WORDS, TRUE);
+		sromrev = b[SROM4_WORDS - 1] & 0xff;
+	} else if (err == 0) {
 		/* srom is good and is rev < 4 */
 		/* top word of sprom contains version and crc8 */
 		sromrev = b[63] & 0xff;
 		/* bcm4401 sroms misprogrammed */
 		if (sromrev == 0x10)
 			sromrev = 1;
-	} else if (b[SROM4_SIGN] == SROM4_SIGNATURE) {
-		/* If sromrev >= 4, read more */
-		err = sprom_read_pci(osh, (void*)((int8*)curmap + PCI_BAR0_SPROM_OFFSET), 0, b,
-		                     SROM4_WORDS, TRUE);
-		sromrev = b[SROM4_WORDS - 1] & 0xff;
 	}
 
 	if (err) {
@@ -813,9 +812,8 @@ initvars_srom_pci(void *sbh, void *curmap, char **vars, uint *count)
 			vp++;
 		}
 		/* LED Powersave duty cycle (oncount >> 24) (offcount >> 8) */
-		w = b[SROM4_LEDDC];
-		if (w != 0xffff)
-		{
+		if (w != 0xffff) {
+			w = b[SROM4_LEDDC];
 			w32 = ((uint32)((unsigned char)(w >> 8) & 0xff) << 24) |  /* oncount */
 				((uint32)((unsigned char)(w & 0xff)) << 8); /* offcount */
 			vp += sprintf(vp, "leddc=%d", w32);

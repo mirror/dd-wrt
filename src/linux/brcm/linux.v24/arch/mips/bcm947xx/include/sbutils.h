@@ -131,9 +131,6 @@ extern uint32 sb_socram_size(sb_t *sbh);
 */
 extern int sb_devpath(sb_t *sbh, char *path, int size);
 
-extern void sb_war32414_forceHT(sb_t *sbh, bool forceHT);
-
-
 /* clkctl xtal what flags */
 #define	XTAL			0x1		/* primary crystal oscillator (2050) */
 #define	PLL			0x2		/* main chip pll */
@@ -146,6 +143,7 @@ extern void sb_war32414_forceHT(sb_t *sbh, bool forceHT);
 /* GPIO usage priorities */
 #define GPIO_DRV_PRIORITY	0		/* Driver */
 #define GPIO_APP_PRIORITY	1		/* Application */
+#define GPIO_HI_PRIORITY   2		/* Highest priority. Ignore GPIO reservation */
 
 /* device path */
 #define SB_DEVPATH_BUFSZ	16		/* min buffer size in bytes */
