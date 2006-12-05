@@ -38,7 +38,11 @@ function do_join (F,SSID) {
 			<br/>
 			<input type="button" id="togglelisten" value="Stop monitoring" onclick="toggleListen()" />
 			<p>
-				<form name="channelform" action="/cgi-bin/wiviz-set.cgi" method="get" target="wivizGetFrame" />Channel setting:
+				<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
+                  		<input type="hidden" name="action" value="Apply" />
+                  		<input type="hidden" name="change_action" value="gozila_cgi" />
+                  		<input type="hidden" name="submit_button" value="Site_Survey" />
+					Channel setting:
 					<select id="channelsel" name="channelsel" onchange="channelSet()">
 						<option value='nochange' selected>No change</option>
 						<option value='hop'>Hopping</option>
