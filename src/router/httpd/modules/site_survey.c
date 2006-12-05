@@ -213,4 +213,24 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 
   return;
 }
+
+int set_wiviz (webs_t wp)
+{
+char *channelsel=websGetVar(wp,"channelsel",NULL);
+char *hopdwell=websGetVar(wp,"hopdwell",NULL);
+char *hopseq=websGetVar(wp,"hopseq",NULL);
+FILE *fp = ("/tmp/wiviz-cfg","wb");
+if (channelsel)
+fprintf(fp,"channelsel=%s",channelsel);
+if (channelsel && hopdwell)
+fprintf(fp,"&");
+if (hopdwell)
+fprintf(fp,"hopdwell=%s",hopdwell);
+if ((channelsel || hopdwell) && hopseq)
+fprintf(fp,"&");
+if (hopseq)
+fprintf(fp,"hopseq=%s\n",hopseq);
+fclose(fp);
+killall(17,"wiviz");
+}
 #endif
