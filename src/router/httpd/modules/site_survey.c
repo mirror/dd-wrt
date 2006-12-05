@@ -156,9 +156,9 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
   FILE *f;
   char buf[128];
 
-  eval ("run_wiviz");		// run wiviz as separate process 
-  sleep (2);			// give it 2 seconds for result
-  eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
+  eval ("kill_wiviz");  //this waits 3 sec.
+  eval ("run_wiviz");
+
 
   if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
     {
