@@ -46,7 +46,6 @@ export BUILD := i386-pc-linux-gnu
 export HOSTCC := gcc
 
 # uClibc wrapper
-export ARCHITECTURE:=gateworx
 export ARCH:=$(PLATFORM)
 ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
@@ -238,6 +237,7 @@ obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_AIRCRACK) += aircrack-ng
 obj-$(CONFIG_BONDING) += ifenslave
 obj-y += stabridge
+obj-y += net-tools
 
 
 
@@ -1602,8 +1602,6 @@ net-tools:
 
 net-tools-install:
 	@true
-#	install -D net-tools/ifconfig $(INSTALLDIR)/net-tools/sbin/ifconfig
-#	install -D net-tools/arp $(INSTALLDIR)/net-tools/sbin/arp
 
 wireless-tools-clean:
 	make -C wireless-tools clean
