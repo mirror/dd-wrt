@@ -125,6 +125,7 @@ OBJS += wland.o
 endif
 ifeq ($(CONFIG_WIVIZ),y)
 OBJS += run_wiviz.o
+OBJS += kill_wiviz.o
 CFLAGS += -DHAVE_WIVIZ
 endif
 ifeq ($(CONFIG_OPENVPN),y)
@@ -337,6 +338,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
+	cd $(INSTALLDIR)/sbin && ln -sf rc kill_wiviz
 endif
 ifeq ($(CONFIG_ARP),y)
 	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox arp
