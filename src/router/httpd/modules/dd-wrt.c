@@ -2132,6 +2132,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_txantenna", prefix);
   copytonv (wp, n);
+  sprintf (n, "wifi_bonding");
+  copytonv (wp, n);
   sprintf (n, "%s_rxantenna", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_channelbw", prefix);
@@ -2347,11 +2349,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #endif
-
+  if (nvram_match("wifi_bonding","1") && !strcmp(prefix,"ath0"))
+{
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
 #endif
     {
+      if (nvram_match("ath0_mode","wdsap") || nvram_match("ath0_mode","wdssta")) 
+      showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 		 wl_mode);
@@ -2394,17 +2399,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     {
 
 
-      websWrite (wp,
-		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\">\n",
-		 wl_mode);
-      if (nvram_match ("wifi_bonding", "1"))
-	{
-	  strcpy (wl_mode, "ath0_mode");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "sta") ? "selected=\\\"selected\\\"" : "");
-	}
+      websWrite (wp,"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\">\n",wl_mode);
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
 		 nvram_match (wl_mode,
@@ -2421,6 +2416,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp, "</div>\n");
     }
 #endif
+}
 //writeless net mode
   show_netmode (wp, prefix);
   //turbo options
