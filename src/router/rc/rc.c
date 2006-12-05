@@ -837,8 +837,6 @@ main (int argc, char **argv)
 #ifdef HAVE_WIVIZ
   else if (strstr (base, "run_wiviz"))
     return run_wiviz_main ();
-  else if (strstr (base, "kill_wiviz"))
-    return kill_wiviz_main ();
 #endif
   else if (strstr (base, "restart_dns"))
     {
