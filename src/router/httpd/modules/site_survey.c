@@ -27,9 +27,11 @@ struct site_survey_list
   int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
+  unsigned char ENCINFO[32];    /* encryption info */
   uint rate_count;		/* # rates in this set */
   uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
+
 
 static int
 open_site_survey (void)
@@ -156,9 +158,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
   FILE *f;
   char buf[128];
 
-  eval ("kill_wiviz");  //this waits 3 sec.
   eval ("run_wiviz");
-
 
   if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
     {
