@@ -595,7 +595,7 @@ print_host (FILE * outf, wiviz_host * host)
     return;
   fprintf (outf, "'");
   fprint_mac (outf, host->mac, "'");
-  fprintf (outf, ", &%i, '", host->RSSI / 100);
+  fprintf (outf, ", -%i, '", host->RSSI / 100);
   switch (host->type)
     {
     case typeAP:
