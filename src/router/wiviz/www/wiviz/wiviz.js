@@ -114,7 +114,7 @@ function wiviz_callback(mhosts, cfgstring) {
     hs.mac = hs[0];
     hs.rssi = hs[1];
     hs.desc = hs[2];
-    hs.descarr = hs.desc.split(/-/)
+    hs.descarr = hs.desc.split(/&/)
     hs.age = hs[3];
 		hs.hash = mkhash(hs.mac);
     hs.mnem = generate_mnemonic(hs.hash)
@@ -157,7 +157,7 @@ function repip() {
 	  if (hs.length == 0) break;
     mac = hs[0];
     rssi = hs[1];
-    desc = hs[2].split(/-/);
+    desc = hs[2].split(/&/);
 		if (desc[0] == 'sta' && desc[1] == 'assoc') {
 			bss = desc[2];
 			hs.apmnem = generate_mnemonic(mkhash(bss));
