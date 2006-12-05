@@ -995,6 +995,13 @@ start_nvram (void)
 #endif
   }
 
+#ifdef HAVE_WIVIZ
+nvram_set("channelsel","nochange");
+nvram_set("hopdwell","1000");
+nvram_set("hopseq","1,3,6,8,11");
+#endif
+
+
   /* Let HW1.x users can communicate with WAP54G without setting to factory default */
 //      nvram_safe_set("wl_lazywds", "1");
 //  eval ("misc", "-t", "get_mac", "-w", "3");
