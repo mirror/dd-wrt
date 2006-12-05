@@ -210,6 +210,13 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 	}
       fclose (f);
     }
+    else    //dummy data - to prevent first time js error
+    {
+    	websWrite (wp, "top.hosts = new Array(\n");
+    	websWrite (wp, "new Array());\n");
+    	websWrite (wp, "var cfg_string = 'channel-6';\n");
+    	websWrite (wp, "top.wiviz_callback(top.hosts, cfg_string);\n");
+	}
 
   return;
 }
