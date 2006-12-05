@@ -128,9 +128,7 @@ ipdown_main (int argc, char **argv)
   if (check_action () != ACT_IDLE)
     return -1;
   stop_ddns ();
-#if 0
   stop_ntpc ();
-#endif
 
 
   unlink ("/tmp/ppp/link");
