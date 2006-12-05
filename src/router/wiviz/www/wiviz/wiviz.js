@@ -231,7 +231,7 @@ function declump() {
 			}
 	  }
 	}
-
+}
 
 function genHTML(hs) {
 	var nh = '';
