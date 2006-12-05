@@ -184,10 +184,9 @@ function repip() {
 	}
 	document.getElementById('pips').innerHTML = nh;
 }
-
 function declump() {
 	var c = 0;
-	var top = 30000,left = 30000,right = -30000,bottom = -30000;
+	var top = 150,bottom = -350,left = 550,right = -550;
 	for (i = 0; i < hosts.length; i++) {
  	  for (j = 0; j < hosts.length; j++) {
 	    if (i == j) continue;
@@ -198,18 +197,18 @@ function declump() {
 			x2 = parseInt(e2.style.left);
 			y1 = parseInt(e1.style.top);
 			y2 = parseInt(e2.style.top);
-			if (x1 < left) left = x1;
-			if (y1 < top) top = y1;
-			if (x1 > right) right = x1;
-			if (y1 > bottom) bottom = y1;
 			ox = x2;
 			oy = y2;
+			if (x2 > left) x2 = left;
+			if (x2 < right) x2 = right;
+			if (y2 > top) y2 = top;
+			if (y2 < bottom) y2 = bottom;
 			dist = Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2), 2));
 			if (dist == 0) {
-			    x2 += Math.random() * 5;
+				x2 += Math.random() * 5;
 				y2 += Math.random() * 5;
 				dist = 10;
-			}
+				}
 			if (dist < 100) {
 				cx = (x1-x2) * 5 / (dist / 3);
 				cy = (y1-y2) * 5 / (dist / 3);
@@ -218,9 +217,9 @@ function declump() {
 				}
 			if (hosts[j].apmnem == hosts[i].mnem
 					|| hosts[i].apmnem == hosts[j].mnem) {
-			  cx = (x1-x2) * 5 / (dist / 3);
-			  cy = (y1-y2) * 5 / (dist / 3);
-				if (dist > 150) {
+			 	if (dist > 150) {
+				  cx = (x1-x2) * 5 / (dist / 3);
+			  	  cy = (y1-y2) * 5 / (dist / 3);
 				  x2 += cx;
 				  y2 += cy;
 				}
@@ -232,18 +231,7 @@ function declump() {
 			}
 	  }
 	}
-	if (top < bottom && left < right) {
-	  document.getElementById('debug').innerHTML = left + "," + right + "," + top + "," +bottom;
-	  document.getElementById('content').style.left =
-		document.getElementById('pips').style.left =
-			 -(right - left) / 2 - left - 67;
-	  document.getElementById('content').style.top =
-	  document.getElementById('pips').style.top =
-			 -(bottom - top) / 2 - top - 25;
-	}
-	repip();
-	if (c) setTimeout("declump()", 100);
-}
+
 
 function genHTML(hs) {
 	var nh = '';
