@@ -19,8 +19,10 @@ run_wiviz_main (void)
       exit (1);
       break;
     case 0:
-        killall("wiviz",SIGTERM);
-    	eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
+        if (pidof("wiviz")>0)
+    	    killall("wiviz",SIGUSR1);
+	else
+    	    eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
       exit (0);
       break;
     default:
