@@ -154,6 +154,7 @@ extern void validate_wan_ipaddr (webs_t wp, char *value, struct variable *v);
 extern void validate_portsetup (webs_t wp, char *value, struct variable *v);
 extern int clone_mac (webs_t wp);
 extern int dhcpfwd (webs_t wp);
+extern int set_wiviz (webs_t wp);
 extern int wan_proto (webs_t wp);
 extern void ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
 
