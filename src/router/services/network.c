@@ -2442,9 +2442,7 @@ stop_wan (void)
 #ifdef HAVE_SPUTNIK_APD
   stop_sputnik ();
 #endif
-#if 0
   stop_ntpc ();
-#endif
   stop_redial ();
   nvram_set ("wan_get_dns", "");
 
