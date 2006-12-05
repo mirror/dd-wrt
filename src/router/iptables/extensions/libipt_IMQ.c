@@ -24,8 +24,7 @@ static struct option opts[] = {
 };
 
 /* Initialize the target. */
-static void
-init(struct ipt_entry_target *t, unsigned int *nfcache)
+static __attribute__((constructor)) void init(struct ipt_entry_target *t, unsigned int *nfcache)
 {
 	struct ipt_imq_info *mr = (struct ipt_imq_info*)t->data;
 
