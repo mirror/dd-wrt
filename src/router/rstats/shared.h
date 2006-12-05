@@ -61,17 +61,6 @@ extern int f_read_alloc_string(const char *path, char **buffer, int max);
 
 
 // led.c
-#define LED_WLAN			0
-#define LED_DIAG			1
-#define LED_WHITE			2
-#define LED_AMBER			3
-#define LED_DMZ				4
-#define LED_USB				5	// SL
-#define LED_MAX				5
-
-#define	LED_OFF				0
-#define	LED_ON				1
-#define LED_BLINK			2	// (USB only)
 
 //	extern int gpio_outen(unsigned long bits, unsigned long mask);
 //	extern unsigned long rgpio(unsigned long bits);
