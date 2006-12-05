@@ -1603,7 +1603,7 @@ start_ntpc (void)
   cprintf ("done\n");
   return 0;
 }
-
+#endif
 int
 stop_ntpc (void)
 {
@@ -1613,7 +1613,6 @@ stop_ntpc (void)
   cprintf ("done\n");
   return ret;
 }
-#endif
 
 
 /////////////////////////////////////////////////////
