@@ -214,7 +214,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
     {
     	websWrite (wp, "top.hosts = new Array(\n");
     	websWrite (wp, "new Array());\n");
-    	websWrite (wp, "var cfg_string = 'channel-6';\n");
+    	websWrite (wp, "var cfg_string = \'channel-6\';\n");
     	websWrite (wp, "top.wiviz_callback(top.hosts, cfg_string);\n");
 	}
 
