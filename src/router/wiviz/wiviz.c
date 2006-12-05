@@ -595,7 +595,7 @@ print_host (FILE * outf, wiviz_host * host)
     return;
   fprintf (outf, "'");
   fprint_mac (outf, host->mac, "'");
-  fprintf (outf, ", -%i, '", host->RSSI / 100);
+  fprintf (outf, ", &%i, '", host->RSSI / 100);
   switch (host->type)
     {
     case typeAP:
@@ -613,16 +613,16 @@ print_host (FILE * outf, wiviz_host * host)
       switch (host->staInfo->state)
 	{
 	case ssAssociated:
-	  fprintf (outf, "-assoc-");
+	  fprintf (outf, "&assoc&");
 	  fprint_mac (outf, host->staInfo->connectedBSSID, "");
 	  break;
 	case ssUnassociated:
-	  fprintf (outf, "-unassoc");
+	  fprintf (outf, "&unassoc");
 	}
     }
   if (host->type == typeAP || host->type == typeAdhocHub)
     {
-      fprintf (outf, "-channel-%i-ssid-", host->apInfo->channel & 0xFF);
+      fprintf (outf, "&channel&%i&ssid&", host->apInfo->channel & 0xFF);
       for (i = 0; i < host->apInfo->ssidlen; i++)
 	{
 	  fprintf (outf, "\\x%02X",
@@ -630,19 +630,19 @@ print_host (FILE * outf, wiviz_host * host)
 	} switch (host->apInfo->encryption)
 	{
 	case aetUnknown:
-	  fprintf (outf, "-?enc-?alg");
+	  fprintf (outf, "&?enc&?alg");
 	  break;
 	case aetUnencrypted:
-	  fprintf (outf, "-unenc-na");
+	  fprintf (outf, "&unenc&na");
 	  break;
 	case aetEncUnknown:
-	  fprintf (outf, "-enc-unknown");
+	  fprintf (outf, "&enc&unknown");
 	  break;
 	case aetEncWEP:
-	  fprintf (outf, "-enc-wep");
+	  fprintf (outf, "&enc&wep");
 	  break;
 	case aetEncWPA:
-	  fprintf (outf, "-enc-wpa");
+	  fprintf (outf, "&enc&wpa");
 	  break;
 	}
     }
