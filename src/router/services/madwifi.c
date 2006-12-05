@@ -495,6 +495,7 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   br_del_interface ("br0", dev);
+  br_del_interface ("br0", "bond0");
   sprintf (dev, "ath%d", count);
 //  fprintf (stderr, "deconfigure %s\n", dev);
 
@@ -1236,6 +1237,7 @@ configure_single (int count, int isbond)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
+if (nvram_match("wifi_bonding","0"))
       br_add_interface (nvram_safe_get ("lan_ifname"), dev);
 
 //      eval ("brctl", "addif", "br0", dev);
@@ -1291,6 +1293,7 @@ configure_single (int count, int isbond)
 	  if (nvram_match (bridged, "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match("wifi_bonding","0"))
 	      br_add_interface (nvram_safe_get ("lan_ifname"), var);
 	    }
 	  else
@@ -1428,8 +1431,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 	  sprintf (dev, "ath%d", i);
 	  eval ("ifenslave", "bond0", dev);
 	}
-
-
+      br_add_interface (nvram_safe_get ("lan_ifname"), "bond0");
     }
 #endif
 }
