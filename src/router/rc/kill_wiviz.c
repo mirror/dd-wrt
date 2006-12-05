@@ -19,7 +19,6 @@ kill_wiviz_main (void)
       exit (1);
       break;
     case 0:
-    	sleep (3);
 	killall("wiviz",SIGUSR1);
 //		eval ("killall", "-USR1", "wiviz", ">/dev/null", "2>&1");	// then kill it to get data
       exit (0);
