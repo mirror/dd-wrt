@@ -4147,8 +4147,13 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
 	}
       fclose (f);
     }
-  else
-    websWrite (wp, "Can't open file; wiviz not running?\n");
+    else    //dummy data - to prevent first time js error
+    {
+    	websWrite (wp, "top.hosts = new Array(\n");
+    	websWrite (wp, "new Array());\n");
+    	websWrite (wp, "var cfg_string = \'channel-6\';\n");
+    	websWrite (wp, "top.wiviz_callback(top.hosts, cfg_string);\n");
+	}
 }
 #endif
 static char no_cache[] =
