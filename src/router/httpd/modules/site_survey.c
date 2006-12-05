@@ -241,6 +241,6 @@ set_wiviz (webs_t wp)
       fprintf (fp, "hopseq=%s\n", hopseq);
     }
   fclose (fp);
-  killall (17, "wiviz");
+  killall ("wiviz",SIGUSR2);
 }
 #endif
