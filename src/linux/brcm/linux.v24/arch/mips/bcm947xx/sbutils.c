@@ -143,10 +143,9 @@ static uint32 sb_gpioreservation = 0;
 #define PCIE_PCIEREGS 		2		/* Access to pcie registers */
 
 /* force HT war check */
-#define FORCEHT_WAR32414(si)	\
-	((PCIE(si)) && (((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev == 1)) ||	\
-	((si->sb.chip == BCM4321_CHIP_ID) && (si->sb.chiprev <= 3))))
-
+#define FORCEHT_WAR32414(si)   \
+   ((PCIE(si)) && (((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev == 1)) ||  \
+   ((si->sb.chip == BCM4321_CHIP_ID) && (si->sb.chiprev <= 3))))
 
 /* GPIO Based LED powersave defines */
 #define DEFAULT_GPIO_ONTIME	10		/* Default: 10% on */
@@ -301,6 +300,23 @@ BCMINITFN(sb_kattach)(void)
 }
 #endif	/* !BCMBUSTYPE || (BCMBUSTYPE == SB_BUS) */
 
+void
+BCMINITFN(sb_war32414_forceHT)(sb_t *sbh, bool forceHT)
+{
+   sb_info_t *si;
+
+   si = SB_INFO(sbh);
+
+   
+   if (FORCEHT_WAR32414(si)) {
+       uint32 val = 0;
+       if (forceHT)
+           val = SYCC_HR;
+       sb_corereg((void*)si, SB_CC_IDX, OFFSETOF(chipcregs_t, system_clk_ctl),
+           SYCC_HR, val);
+   }
+}
+
 static sb_info_t  *
 BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
                        uint bustype, void *sdh, char **vars, uint *varsz)
@@ -341,7 +357,7 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 		si->memseg = TRUE;
 
 	/* kludge to enable the clock on the 4306 which lacks a slowclock */
-	if (BUSTYPE(si->sb.bustype) == PCI_BUS && !sb_ispcie(si))
+	if (BUSTYPE(si->sb.bustype) == PCI_BUS)
 		sb_clkctl_xtal(&si->sb, XTAL|PLL, ON);
 
 	if (BUSTYPE(si->sb.bustype) == PCI_BUS) {
@@ -483,32 +499,14 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 			w = DEFAULT_GPIOTIMERVAL;
 		sb_corereg(si, 0, OFFSETOF(chipcregs_t, gpiotimerval), ~0, w);
 	}
-
 	if (FORCEHT_WAR32414(si)) {
 		/* set proper clk setup delays before forcing HT */
- 		sb_clkctl_init((void *)si);
+		sb_clkctl_init((void *)si);
 		sb_war32414_forceHT((void *)si, 1);
 	}
 
 
 	return (si);
-}
-
-void
-BCMINITFN(sb_war32414_forceHT)(sb_t *sbh, bool forceHT)
-{
-	sb_info_t *si;
-
-	si = SB_INFO(sbh);
-
-
-	if (FORCEHT_WAR32414(si)) {
-		uint32 val = 0;
-		if (forceHT)
-			val = SYCC_HR;
-		sb_corereg((void*)si, SB_CC_IDX, OFFSETOF(chipcregs_t, system_clk_ctl),
-			SYCC_HR, val);
-	}
 }
 
 
@@ -820,7 +818,7 @@ sb_corereg(sb_info_t *si, uint coreidx, uint regoff, uint mask, uint val)
 #define read_pci_cfg_byte(a) \
 	(BYTE_VAL(OSL_PCI_READ_CONFIG(si->osh, DWORD_ALIGN(a), 4), a) & 0xff)
 
-#define read_pci_cfg_write(a) \
+#define read_pci_cfg_word(a) \
 	(WORD_VAL(OSL_PCI_READ_CONFIG(si->osh, DWORD_ALIGN(a), 4), a) & 0xffff)
 
 
@@ -3101,3 +3099,5 @@ done:
 	INTR_RESTORE(si, intr_val);
 	return memsize;
 }
+
+
