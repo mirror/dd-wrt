@@ -4135,7 +4135,6 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
   FILE *f;
   char buf[128];
 
-  eval ("kill_wiviz");  //this will wait 3 sec.
   eval ("run_wiviz");
 
 
