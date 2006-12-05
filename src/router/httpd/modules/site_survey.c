@@ -157,6 +157,8 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 
   FILE *f;
   char buf[128];
+  char mac[32]="";
+  char macs[2048]="";
 
   eval ("run_wiviz");
 
@@ -165,6 +167,14 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 
       while (fgets (buf, sizeof (buf), f))
 	{
+		if (!strncmp (buf, "  new Array", 11))
+		{
+	  		sscanf (buf , "  new Array(%18s", mac);
+	  		strcat (macs, mac);
+		}
+		
+		
+		
 	  if (!strncmp (buf, "new Array())", 12))
 	    {
 
@@ -189,7 +199,9 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 		    (site_survey_lists[i].
 		     capability & DOT11_CAP_PRIVACY) ? "enc&unknown" :
 		    "unenc&na";
-
+		    
+			if (!strstr(macs, site_survey_lists[i].BSSID))  //print only if not already on the list
+			{
 		  websWrite (wp,
 			     "  new Array(\'%s\', %d, \'ap&channel&%d&ssid&",
 			     site_survey_lists[i].BSSID,
@@ -202,7 +214,7 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
 				 j) & 0xFF);
 
 		  websWrite (wp, "&%s\', 0),\n", open);
-
+			{
 
 		}
 	    }
