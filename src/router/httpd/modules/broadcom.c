@@ -2759,6 +2759,9 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
 #endif
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
+#ifdef HAVE_WIVIZ
+  {"Site_Survey", "Set", "", 1, RESTART, set_wiviz},
+#endif
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
