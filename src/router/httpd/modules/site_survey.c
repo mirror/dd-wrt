@@ -220,7 +220,7 @@ set_wiviz (webs_t wp)
   char *channelsel = websGetVar (wp, "channelsel", NULL);
   char *hopdwell = websGetVar (wp, "hopdwell", NULL);
   char *hopseq = websGetVar (wp, "hopseq", NULL);
-  FILE *fp = ("/tmp/wiviz-cfg", "wb");
+  FILE *fp = fopen("/tmp/wiviz-cfg", "wb");
   if (channelsel)
     {
       fprintf (fp, "channelsel=%s", channelsel);
