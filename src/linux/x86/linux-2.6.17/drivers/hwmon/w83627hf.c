@@ -1065,6 +1065,7 @@ static int w83627hf_detect(struct i2c_adapter *adapter)
 		err = -ENOMEM;
 		goto ERROR1;
 	}
+	memleak_container(struct w83627hf_data, client);
 
 	new_client = &data->client;
 	i2c_set_clientdata(new_client, data);

@@ -346,6 +346,7 @@ int ext3_htree_store_dirent(struct file *dir_file, __u32 hash,
 	new_fn = kmalloc(len, GFP_KERNEL);
 	if (!new_fn)
 		return -ENOMEM;
+	memleak_padding(new_fn, 0, sizeof(struct fname));
 	memset(new_fn, 0, len);
 	new_fn->hash = hash;
 	new_fn->minor_hash = minor_hash;

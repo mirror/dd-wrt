@@ -89,6 +89,90 @@ config DEBUG_SLAB_LEAK
 	bool "Memory leak debugging"
 	depends on DEBUG_SLAB
 
+menuconfig DEBUG_MEMLEAK
+	bool "Kernel memory leak detector"
+	default n
+	depends on EXPERIMENTAL && DEBUG_SLAB
+	depends on !NUMA
+	select DEBUG_FS
+	help
+	  Say Y here if you want to enable the memory leak
+	  detector. The memory allocation/freeing is traced in a way
+	  similar to the Boehm's conservative garbage collector, the
+	  difference being that the orphan pointers are not freed but
+	  only shown in /sys/kernel/debug/memleak. Enabling this
+	  feature will introduce an overhead to memory allocations.
+
+	  In order to access the memleak file, debugfs needs to be
+	  mounted (usually at /sys/kernel/debug).
+
+config DEBUG_MEMLEAK_TRACE_LENGTH
+	int "KMemLeak stack trace length"
+	default 4
+	depends on DEBUG_MEMLEAK && FRAME_POINTER
+	help
+	  This option sets the length of the stack trace for the
+	  allocated pointers tracked by kmemleak.
+
+config DEBUG_MEMLEAK_PREINIT_POINTERS
+	int "KMemLeak pre-init actions buffer size"
+	default 512
+	depends on DEBUG_MEMLEAK
+	help
+	  This is the buffer for storing the memory allocation/freeing
+	  calls before kmemleak is fully initialized. Each element in
+	  the buffer takes 20 bytes on a 32 bit architecture. This
+	  buffer will be freed once the system initialization is
+	  completed.
+
+config DEBUG_MEMLEAK_SECONDARY_ALIASES
+	bool "Create secondary level pointer aliases"
+	default y
+	depends on DEBUG_MEMLEAK
+	help
+	  This option creates aliases for container_of(container_of(member))
+	  access to pointers. Disabling this option reduces the chances of
+	  false negatives but it can slightly increase the number of false
+	  positives.
+
+config DEBUG_MEMLEAK_TASK_STACKS
+	bool "Scan task kernel stacks"
+	default n
+	depends on DEBUG_MEMLEAK
+	help
+	  This option enables the scanning of the task kernel
+	  stacks. Note that this option can introduce a lot of false
+	  negatives because of the randomness of stacks content.
+
+config DEBUG_MEMLEAK_ORPHAN_FREEING
+	bool "Notify when freeing orphan pointers"
+	default n
+	depends on DEBUG_MEMLEAK
+	help
+	  This option enables the notification when pointers
+	  considered leaks are freed. The stack dump and the pointer
+	  information displayed allow an easier identification of
+	  false positives.
+
+config DEBUG_KEEP_INIT
+	bool "Do not free the __init functions"
+	default n
+	depends on DEBUG_MEMLEAK
+	help
+	  This option moves the __init functions out of the .init.text
+	  section and therefore they are no longer freed after the
+	  kernel initialization. It is useful for identifying memory
+	  leaks happening during the kernel or modules initialization.
+
+config DEBUG_MEMLEAK_TEST
+	tristate "Test the kernel memory leak detector"
+	default n
+	depends on DEBUG_MEMLEAK
+	help
+	  Say Y here to build the test harness for the kernel memory
+	  leak detector. At the moment, this option enables a module
+	  that explicitly leaks memory.
+
 config DEBUG_PREEMPT
 	bool "Debug preemptible kernel"
 	depends on DEBUG_KERNEL && PREEMPT
