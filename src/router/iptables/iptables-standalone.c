@@ -71,9 +71,13 @@ main(int argc, char *argv[])
 	if (ret)
 		ret = iptc_commit(&handle);
 
-	if (!ret)
+	if (!ret) {
 		fprintf(stderr, "iptables: %s\n",
 			iptc_strerror(errno));
+		if (errno == EAGAIN) {
+			exit(RESOURCE_PROBLEM);
+		}
+	}
 
 	exit(!ret);
 }

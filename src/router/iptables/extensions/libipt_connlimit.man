@@ -10,10 +10,10 @@ group hosts using mask
 Examples:
 .TP
 # allow 2 telnet connections per client host
-iptables -p tcp --syn --dport 23 -m connlimit --connlimit-above 2 -j REJECT
+iptables -A INPUT -p tcp --syn --dport 23 -m connlimit --connlimit-above 2 -j REJECT
 .TP
 # you can also match the other way around:
-iptables -p tcp --syn --dport 23 -m connlimit ! --connlimit-above 2 -j ACCEPT
+iptables -A INPUT -p tcp --syn --dport 23 -m connlimit ! --connlimit-above 2 -j ACCEPT
 .TP
 # limit the nr of parallel http requests to 16 per class C sized \
 network (24 bit netmask)

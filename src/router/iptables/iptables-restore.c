@@ -4,7 +4,7 @@
  *
  * This code is distributed under the terms of GNU GPL v2
  *
- * $Id: iptables-restore.c 3980 2005-06-12 15:54:15Z /C=DE/ST=Berlin/L=Berlin/O=Netfilter Project/OU=Development/CN=kaber/emailAddress=kaber@netfilter.org $
+ * $Id: iptables-restore.c 6460 2006-02-09 14:35:38Z /C=DE/ST=Berlin/L=Berlin/O=Netfilter Project/OU=Development/CN=laforge/emailAddress=laforge@netfilter.org $
  */
 
 #include <getopt.h>
@@ -71,7 +71,7 @@ iptc_handle_t create_handle(const char *tablename, const char* modprobe )
 	return handle;
 }
 
-int parse_counters(char *string, struct ipt_counters *ctr)
+static int parse_counters(char *string, struct ipt_counters *ctr)
 {
 	return (sscanf(string, "[%llu:%llu]", (unsigned long long *)&ctr->pcnt, (unsigned long long *)&ctr->bcnt) == 2);
 }
@@ -269,7 +269,10 @@ main(int argc, char *argv[])
 					char *ctrs;
 					ctrs = strtok(NULL, " \t\n");
 
-					parse_counters(ctrs, &count);
+					if (!ctrs || !parse_counters(ctrs, &count))
+						exit_error(PARAMETER_PROBLEM,
+							   "invalid policy counters "
+							   "for chain '%s'\n", chain);
 
 				} else {
 					memset(&count, 0, 

@@ -1,4 +1,4 @@
-/* Library which manipulates firewall rules.  Version $Revision: 4511 $ */
+/* Library which manipulates firewall rules.  Version $Revision: 6665 $ */
 
 /* Architecture of firewall rules is as follows:
  *
@@ -1519,6 +1519,14 @@ TC_DELETE_ENTRY(const IPT_CHAINLABEL chain,
 		DEBUGP("unable to map target of rule for chain `%s'\n", chain);
 		free(r);
 		return 0;
+	} else {
+		/* iptcc_map_target increment target chain references
+		 * since this is a fake rule only used for matching
+		 * the chain references count is decremented again. 
+		 */
+		if (r->type == IPTCC_R_JUMP
+		    && r->jump)
+			r->jump->references--;
 	}
 
 	list_for_each_entry(i, &c->rules, list) {
@@ -1647,6 +1655,9 @@ TC_ZERO_ENTRIES(const IPT_CHAINLABEL chain, TC_HANDLE_T *handle)
 		errno = ENOENT;
 		return 0;
 	}
+
+	if (c->counter_map.maptype == COUNTER_MAP_NORMAL_MAP)
+		c->counter_map.maptype = COUNTER_MAP_ZEROED;
 
 	list_for_each_entry(r, &c->rules, list) {
 		if (r->counter_map.maptype == COUNTER_MAP_NORMAL_MAP)
@@ -2096,10 +2107,8 @@ TC_COMMIT(TC_HANDLE_T *handle)
 
 	ret = setsockopt(sockfd, TC_IPPROTO, SO_SET_REPLACE, repl,
 			 sizeof(*repl) + repl->size);
-	if (ret < 0) {
-		errno = ret;
+	if (ret < 0)
 		goto out_free_newcounters;
-	}
 
 	/* Put counters back. */
 	strcpy(newcounters->name, (*handle)->info.name);
@@ -2190,10 +2199,8 @@ TC_COMMIT(TC_HANDLE_T *handle)
 
 	ret = setsockopt(sockfd, TC_IPPROTO, SO_SET_ADD_COUNTERS,
 			 newcounters, counterlen);
-	if (ret < 0) {
-		errno = ret;
+	if (ret < 0)
 		goto out_free_newcounters;
-	}
 
 	free(repl->counters);
 	free(repl);

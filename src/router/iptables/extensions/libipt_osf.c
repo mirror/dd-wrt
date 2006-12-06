@@ -126,6 +126,14 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 	const struct ipt_osf_info *info = (const struct ipt_osf_info*) match->data;
 
 	printf("--genre %s%s ", (info->invert) ? "! ": "", info->genre);
+       if (info->flags & IPT_OSF_SMART)
+               printf("--smart ");
+       if (info->flags & IPT_OSF_LOG)
+               printf("--log %d ", info->loglevel);
+       if (info->flags & IPT_OSF_NETLINK)
+               printf("--netlink ");
+       if (info->flags & IPT_OSF_CONNECTOR)
+               printf("--connector ");
 }
 
 
