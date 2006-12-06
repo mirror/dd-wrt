@@ -274,7 +274,8 @@ site_survey_main (int argc, char *argv[])
 
   wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
   if (oldap > 0)
-    wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
+    eval("wl","ap","0");
+
   if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
     {
       fprintf (stderr, "scan failed\n");
@@ -337,7 +338,7 @@ site_survey_main (int argc, char *argv[])
 
 endss:
   if (oldap > 0)
-    wl_ioctl (dev, WLC_SET_AP, &oldap, sizeof (oldap));
+    eval("wl","ap","1");
 
   C_led (0);
 #ifdef HAVE_MSSID
