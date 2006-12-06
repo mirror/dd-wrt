@@ -166,6 +166,7 @@ struct platform_device *platform_device_alloc(const char *name, unsigned int id)
 	struct platform_object *pa;
 
 	pa = kzalloc(sizeof(struct platform_object) + strlen(name), GFP_KERNEL);
+	memleak_padding(pa, 0, sizeof(struct platform_object));
 	if (pa) {
 		strcpy(pa->name, name);
 		pa->pdev.name = pa->name;

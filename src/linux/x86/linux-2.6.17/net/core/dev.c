@@ -3184,6 +3184,7 @@ struct net_device *alloc_netdev(int sizeof_priv, const char *name,
 	dev = (struct net_device *)
 		(((long)p + NETDEV_ALIGN_CONST) & ~NETDEV_ALIGN_CONST);
 	dev->padded = (char *)dev - (char *)p;
+	memleak_padding(p, dev->padded, sizeof(struct net_device));
 
 	if (sizeof_priv)
 		dev->priv = netdev_priv(dev);
