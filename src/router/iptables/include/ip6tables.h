@@ -8,11 +8,34 @@
 #define IP6T_LIB_DIR "/usr/local/lib/iptables"
 #endif
 
+#ifndef IPPROTO_SCTP
+#define IPPROTO_SCTP 132
+#endif
+#ifndef IPPROTO_DCCP
+#define IPPROTO_DCCP 33
+#endif
+
+#ifndef IP6T_SO_GET_REVISION_MATCH /* Old kernel source. */
+#define IP6T_SO_GET_REVISION_MATCH	68
+#define IP6T_SO_GET_REVISION_TARGET	69
+
+struct ip6t_get_revision
+{
+	char name[IP6T_FUNCTION_MAXNAMELEN-1];
+
+	u_int8_t revision;
+};
+#endif /* IP6T_SO_GET_REVISION_MATCH   Old kernel source */
+
 struct ip6tables_rule_match
 {
 	struct ip6tables_rule_match *next;
 
 	struct ip6tables_match *match;
+
+	/* Multiple matches of the same type: the ones before
+	   the current one are completed from parsing point of view */	
+	unsigned int completed;
 };
 
 /* Include file for additions: new matches and targets. */
@@ -21,6 +44,9 @@ struct ip6tables_match
 	struct ip6tables_match *next;
 
 	ip6t_chainlabel name;
+
+	/* Revision of match (0 by default). */
+	u_int8_t revision;
 
 	const char *version;
 
@@ -122,6 +148,8 @@ extern int line;
 extern void register_match6(struct ip6tables_match *me);
 extern void register_target6(struct ip6tables_target *me);
 
+extern int service_to_port(const char *name, const char *proto);
+extern u_int16_t parse_port(const char *port, const char *proto);
 extern int do_command6(int argc, char *argv[], char **table,
 		       ip6tc_handle_t *handle);
 /* Keeping track of external matches and targets: linked lists. */
@@ -144,5 +172,6 @@ extern int for_each_chain(int (*fn)(const ip6t_chainlabel, int, ip6tc_handle_t *
 extern int flush_entries(const ip6t_chainlabel chain, int verbose, ip6tc_handle_t *handle);
 extern int delete_chain(const ip6t_chainlabel chain, int verbose, ip6tc_handle_t *handle);
 extern int ip6tables_insmod(const char *modname, const char *modprobe);
+extern int load_ip6tables_ko(const char *modprobe);
 
 #endif /*_IP6TABLES_USER_H*/

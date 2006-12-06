@@ -143,6 +143,10 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 				   "Maximum prefix length %u for --log-prefix",
 				   (unsigned int)sizeof(loginfo->prefix) - 1);
 
+		if (strlen(optarg) == 0)
+			exit_error(PARAMETER_PROBLEM,
+				   "No prefix specified for --log-prefix");
+
 		if (strlen(optarg) != strlen(strtok(optarg, "\n")))
 			exit_error(PARAMETER_PROBLEM,
 				   "Newlines not allowed in --log-prefix");

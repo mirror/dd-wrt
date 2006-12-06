@@ -7,7 +7,7 @@
  * 	Rusty Russell <rusty@linuxcare.com.au>
  * This code is distributed under the terms of GNU GPL v2
  *
- * $Id: ip6tables-restore.c 3980 2005-06-12 15:54:15Z /C=DE/ST=Berlin/L=Berlin/O=Netfilter Project/OU=Development/CN=kaber/emailAddress=kaber@netfilter.org $
+ * $Id: ip6tables-restore.c 6460 2006-02-09 14:35:38Z /C=DE/ST=Berlin/L=Berlin/O=Netfilter Project/OU=Development/CN=laforge/emailAddress=laforge@netfilter.org $
  */
 
 #include <getopt.h>
@@ -266,7 +266,10 @@ int main(int argc, char *argv[])
 					char *ctrs;
 					ctrs = strtok(NULL, " \t\n");
 
-					parse_counters(ctrs, &count);
+					if (!ctrs || !parse_counters(ctrs, &count))
+						exit_error(PARAMETER_PROBLEM,
+							  "invalid policy counters "
+							  "for chain '%s'\n", chain);
 
 				} else {
 					memset(&count, 0, 
