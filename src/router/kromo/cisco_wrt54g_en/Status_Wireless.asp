@@ -231,6 +231,7 @@ addEvent(window, "unload", function() {
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"wiviz\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Wiviz_Survey.asp', 760, 700)"); %>\" />");
 								//]]>
 								</script>
 							</div><br />
