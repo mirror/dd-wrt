@@ -2349,14 +2349,18 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #endif
-  if (nvram_match("wifi_bonding","1") && !strcmp(prefix,"ath0"))
+#ifdef HAVE_MADWIFI
+if (nvram_match("wifi_bonding","1") && !strcmp(prefix,"ath0"))
+#endif
 {
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
 #endif
     {
+#ifdef HAVE_MADWIFI
       if (nvram_match("ath0_mode","wdsap") || nvram_match("ath0_mode","wdssta")) 
       showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
+#endif
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 		 wl_mode);
