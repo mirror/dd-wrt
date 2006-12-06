@@ -41,7 +41,7 @@ function do_join (F,SSID) {
 				<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
                   		<input type="hidden" name="action" value="Apply" />
                   		<input type="hidden" name="change_action" value="gozila_cgi" />
-                  		<input type="hidden" name="submit_button" value="Site_Survey" />
+                  		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
 	          		<input type="hidden" name="submit_type" value="Set" />
 					Channel setting:
 					<select id="channelsel" name="channelsel" onchange="channelSet()">
