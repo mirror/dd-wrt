@@ -2760,7 +2760,7 @@ struct gozila_action gozila_actions[] = {
 #endif
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
-  {"Site_Survey", "Set", "", 1, RESTART, set_wiviz},
+  {"Wiviz_Survey", "Set", "", 1, RESTART, set_wiviz},
 #endif
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
