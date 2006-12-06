@@ -1731,7 +1731,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 		     nvram_safe_get (wl_channel));
 	  websWrite (wp, "var offset = %d;\n", chanlist[0]);
 	  websWrite (wp, "var buf = \"\";\n");
-	  websWrite (wp, "var freq = new Array(\"Auto\");
+	  websWrite (wp, "var freq = new Array(\"Auto");
 	  int i;
 	  for (i = 0; i < chancount; i++)
 	    {
