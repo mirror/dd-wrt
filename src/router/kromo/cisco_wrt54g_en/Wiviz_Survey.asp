@@ -5,7 +5,7 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %>" + survey.titl;
+document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;
