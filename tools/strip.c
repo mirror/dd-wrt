@@ -42,7 +42,7 @@ main(int argc, char *argv[])
 				continue;
 			ptr=strstr(buf, "//");
 			
-			if (ptr!=NULL && !strstr(buf,"//-->")) 
+			if (ptr!=NULL && !strstr(buf,"//-->") && !strstr(buf,"//![CDATA") && !strstr(buf,"//]]")) 
 			{
 				if(!(buf!=ptr && *(ptr-1)==':'))
 				{
