@@ -177,9 +177,11 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 		{
 		  free (value);
 		  free (name);
+		  i++;
 		  goto again;
 		}
 	    }
+          fprintf(stderr,"%d of %d %s = %s\n",i,count,name,value);
 	  nvram_set (name, value);
 	  free (value);
 	  free (name);
