@@ -3,12 +3,13 @@
  *
  * Sam Johnston <samj@samj.net>
  */
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <iptables.h>
 
-#include <linux/netfilter_ipv4/ipt_quota.h>
+#include <linux/netfilter/xt_quota.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 
 static struct option opts[] = {
@@ -28,7 +29,7 @@ help(void)
 static void
 print(const struct ipt_ip *ip, const struct ipt_entry_match *match, int numeric)
 {
-        struct ipt_quota_info *q = (struct ipt_quota_info *) match->data;
+        struct xt_quota_info *q = (struct xt_quota_info *) match->data;
         printf("quota: %llu bytes", (unsigned long long) q->quota);
 }
 
@@ -36,7 +37,7 @@ print(const struct ipt_ip *ip, const struct ipt_entry_match *match, int numeric)
 static void
 save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 {
-        struct ipt_quota_info *q = (struct ipt_quota_info *) match->data;
+        struct xt_quota_info *q = (struct xt_quota_info *) match->data;
         printf("--quota %llu ", (unsigned long long) q->quota);
 }
 
@@ -62,7 +63,7 @@ parse(int c, char **argv, int invert, unsigned int *flags,
       const struct ipt_entry *entry,
       unsigned int *nfcache, struct ipt_entry_match **match)
 {
-        struct ipt_quota_info *info = (struct ipt_quota_info *) (*match)->data;
+        struct xt_quota_info *info = (struct xt_quota_info *) (*match)->data;
 
         switch (c) {
         case '1':
@@ -89,8 +90,8 @@ struct iptables_match quota = {
 	.next		= NULL,
 	.name		= "quota",
 	.version	= IPTABLES_VERSION,
-	.size		= IPT_ALIGN(sizeof (struct ipt_quota_info)),
-	.userspacesize	= IPT_ALIGN(sizeof (struct ipt_quota_info)),
+ 	.size		= IPT_ALIGN(sizeof (struct xt_quota_info)),
+ 	.userspacesize	= offsetof(struct xt_quota_info, quota),
 //	.help		= &help,
 	.parse		= &parse,
 	.final_check	= &final_check,

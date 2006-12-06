@@ -10,7 +10,7 @@ should be modified (and all future packets in this connection will
 also be mangled), and rules should cease being examined.  It takes one
 type of option:
 .TP
-.BR "--to-destination " "\fIipaddr\fP[-\fIipaddr\fP][:\fIport\fP-\fIport\fP]"
+.BR "--to-destination " "[\fIipaddr\fP][-\fIipaddr\fP][:\fIport\fP-\fIport\fP]"
 which can specify a single new destination IP address, an inclusive
 range of IP addresses, and optionally, a port range (which is only
 valid if the rule also specifies
@@ -18,7 +18,8 @@ valid if the rule also specifies
 or
 .BR "-p udp" ).
 If no port range is specified, then the destination port will never be
-modified.
+modified. If no IP address is specified then only the destination port
+will be modified.
 .RS
 .PP
 In Kernels up to 2.6.10 you can add several --to-destination options.  For

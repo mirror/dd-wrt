@@ -38,30 +38,6 @@ static struct option opts[] = {
 	{0}
 };
 
-static int
-service_to_port(const char *name)
-{
-	struct servent *service;
-
-	if ((service = getservbyname(name, "tcp")) != NULL)
-		return ntohs((unsigned short) service->s_port);
-
-	return -1;
-}
-
-static u_int16_t
-parse_tcp_port(const char *port)
-{
-	unsigned int portnum;
-
-	if (string_to_number(port, 0, 65535, &portnum) != -1 ||
-	    (portnum = service_to_port(port)) != -1)
-		return (u_int16_t)portnum;
-
-	exit_error(PARAMETER_PROBLEM,
-		   "invalid TCP port/service `%s' specified", port);
-}
-
 static void
 parse_tcp_ports(const char *portstring, u_int16_t *ports)
 {
@@ -70,13 +46,13 @@ parse_tcp_ports(const char *portstring, u_int16_t *ports)
 
 	buffer = strdup(portstring);
 	if ((cp = strchr(buffer, ':')) == NULL)
-		ports[0] = ports[1] = parse_tcp_port(buffer);
+		ports[0] = ports[1] = parse_port(buffer, "tcp");
 	else {
 		*cp = '\0';
 		cp++;
 
-		ports[0] = buffer[0] ? parse_tcp_port(buffer) : 0;
-		ports[1] = cp[0] ? parse_tcp_port(cp) : 0xFFFF;
+		ports[0] = buffer[0] ? parse_port(buffer, "tcp") : 0;
+		ports[1] = cp[0] ? parse_port(cp, "tcp") : 0xFFFF;
 
 		if (ports[0] > ports[1])
 			exit_error(PARAMETER_PROBLEM,

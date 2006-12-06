@@ -63,7 +63,7 @@ class_to_dscp(const char *name)
 }
 
 
-
+#if 0
 static const char *
 dscp_to_name(unsigned int dscp)
 {
@@ -78,5 +78,5 @@ dscp_to_name(unsigned int dscp)
 	exit_error(PARAMETER_PROBLEM,
 			"Invalid DSCP value `%d'\n", dscp);
 }
-
+#endif
 

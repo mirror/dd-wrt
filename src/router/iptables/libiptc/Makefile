@@ -2,7 +2,8 @@
 
 EXTRAS+=libiptc/libiptc.a
 
-DEVEL_LIBS+=libiptc/libiptc.a
+# libiptc is not a public interface and therefore not installed
+# DEVEL_LIBS+=libiptc/libiptc.a
 
 ifndef TOPLEVEL_INCLUDED
 local:

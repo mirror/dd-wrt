@@ -86,7 +86,7 @@ parse_to(char *arg, struct ip_nat_range *range)
 	range->min_ip = ip->s_addr;
 	if (slash) {
 		if (strchr(slash+1, '.')) {
-			ip = dotted_to_addr(slash+1);
+			ip = dotted_to_mask(slash+1);
 			if (!ip)
 				exit_error(PARAMETER_PROBLEM, "Bad netmask `%s'\n",
 					   slash+1);

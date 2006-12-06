@@ -62,6 +62,9 @@ parse_esp_spis(const char *spistring, u_int32_t *spis)
 
 		spis[0] = buffer[0] ? parse_esp_spi(buffer) : 0;
 		spis[1] = cp[0] ? parse_esp_spi(cp) : 0xFFFFFFFF;
+		if (spis[0] > spis[1])
+			exit_error(PARAMETER_PROBLEM,
+				   "Invalid ESP spi range: %s", spistring);
 	}
 	free(buffer);
 }

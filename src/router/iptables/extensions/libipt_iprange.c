@@ -73,7 +73,6 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 		check_inverse(optarg, &invert, &optind, 0);
 		if (invert) {
 			info->flags |= IPRANGE_SRC_INV;
-			printf("hoho\n");
 		}
 		parse_iprange(optarg, &info->src);		
 

@@ -11,6 +11,9 @@
 #ifndef IPPROTO_SCTP
 #define IPPROTO_SCTP 132
 #endif
+#ifndef IPPROTO_DCCP
+#define IPPROTO_DCCP 33
+#endif
 
 #ifndef IPT_SO_GET_REVISION_MATCH /* Old kernel source. */
 #define IPT_SO_GET_REVISION_MATCH	(IPT_BASE_CTL + 2)
@@ -29,6 +32,10 @@ struct iptables_rule_match
 	struct iptables_rule_match *next;
 
 	struct iptables_match *match;
+
+	/* Multiple matches of the same type: the ones before
+	   the current one are completed from parsing point of view */	
+	unsigned int completed;
 };
 
 /* Include file for additions: new matches and targets. */
@@ -144,7 +151,10 @@ extern int line;
 extern void register_match(struct iptables_match *me);
 extern void register_target(struct iptables_target *me);
 
+extern int service_to_port(const char *name, const char *proto);
+extern u_int16_t parse_port(const char *port, const char *proto);
 extern struct in_addr *dotted_to_addr(const char *dotted);
+extern struct in_addr *dotted_to_mask(const char *dotted);
 extern char *addr_to_dotted(const struct in_addr *addrp);
 extern char *addr_to_anyname(const struct in_addr *addr);
 extern char *mask_to_dotted(const struct in_addr *mask);
