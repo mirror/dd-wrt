@@ -39,38 +39,40 @@ span.status {
 	color: #FF0000;
 }
 img.icon {
-	width: 50px;
-	height: 50px;
+	width: 32px;
+	height: 32px;
 }
 img.pip {
-	width: 12px;
-	height: 12px;
+	width: 8px;
+	height: 8px;
 	position: absolute;
 	z-index: 1;
 }
 td {
 	vertical-align: middle;
-  text-align: center;
+  	text-align: center;
 }
 span.hostdesc {
-	font-size: 10pt;
+  	font-family:Tahoma, Arial, sans-serif;
+  	font-size:1em;
 }
 span.extrafo {
-	font-size: 10pt;
+  	font-family:Tahoma, Arial, sans-serif;
+  	font-size:1em;
 	visibility: hidden;
 }
 div.hostdiv {
 	position: absolute;
 	background-color: transparent;
 	text-align: center;
-	width: 150px;
+	width: 120px;
 	z-index: 2;
 }
 div.hostdiv_hov {
 	position: absolute;
 	background-color: #C0E0C0;
 	text-align: center;
-	width: 150px;
+	width: 120px;
 	z-index: 3;
 	border: 1px solid #000000;
 }
