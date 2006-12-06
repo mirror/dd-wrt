@@ -173,7 +173,15 @@ internal_getRouterBrand ()
       setRouter ("Asus WL-300g / WL-500g");
       return ROUTER_BRCM4702_GENERIC;
     }
-
+    
+  if (nvram_match ("boardnum", "44") &&
+      nvram_match ("boardtype", "bcm94710ap"))
+    {
+      cprintf ("router is Dell TrueMobile 2300\n");
+      setRouter ("Dell TrueMobile 2300");
+      return ROUTER_BRCM4702_GENERIC;
+    }
+    
   if (nvram_match ("boardnum", "100") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
