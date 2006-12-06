@@ -994,7 +994,6 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-
   if (!strcmp (name, "WL_STA_SUPPORT") ||
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
@@ -1045,6 +1044,12 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 	}
     }
 #endif
+#ifdef HAVE_WIVIZ
+      if (!strcmp (name, "WIVIZ_SUPPORT") && !strcmp(value, "1"))
+	{
+	  return;
+	}
+#endif
   if (!strcmp (name, "WL_STA_SUPPORT") ||
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
@@ -1072,6 +1077,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 	}
     }
 */
+	  websWrite(wp,output);
   return;
 
   //websWrite (wp, output);
