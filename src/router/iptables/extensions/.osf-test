@@ -1,3 +1,0 @@
-#!/bin/sh
-# True if osf is applied.
-[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_osf.h ] && echo osf

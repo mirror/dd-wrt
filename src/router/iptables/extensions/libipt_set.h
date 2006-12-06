@@ -37,7 +37,7 @@ parse_bindings(const char *optarg, struct ipt_set_info *info)
 	free(saved);
 }
 
-static int get_set_getsockopt(void *data, size_t * size)
+static int get_set_getsockopt(void *data, socklen_t * size)
 {
 	int sockfd = -1;
 	sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -51,7 +51,7 @@ static int get_set_getsockopt(void *data, size_t * size)
 static void get_set_byname(const char *setname, struct ipt_set_info *info)
 {
 	struct ip_set_req_get_set req;
-	int size = sizeof(struct ip_set_req_get_set);
+	socklen_t size = sizeof(struct ip_set_req_get_set);
 	int res;
 
 	req.op = IP_SET_OP_GET_BYNAME;
@@ -66,7 +66,7 @@ static void get_set_byname(const char *setname, struct ipt_set_info *info)
 	if (size != sizeof(struct ip_set_req_get_set))
 		exit_error(OTHER_PROBLEM,
 			   "Incorrect return size from kernel during ipset lookup, "
-			   "(want %d, got %d)\n",
+			   "(want %ld, got %ld)\n",
 			   sizeof(struct ip_set_req_get_set), size);
 	if (req.set.index == IP_SET_INVALID_ID)
 		exit_error(PARAMETER_PROBLEM,
@@ -78,7 +78,7 @@ static void get_set_byname(const char *setname, struct ipt_set_info *info)
 static void get_set_byid(char * setname, ip_set_id_t index)
 {
 	struct ip_set_req_get_set req;
-	int size = sizeof(struct ip_set_req_get_set);
+	socklen_t size = sizeof(struct ip_set_req_get_set);
 	int res;
 
 	req.op = IP_SET_OP_GET_BYINDEX;
@@ -92,7 +92,7 @@ static void get_set_byid(char * setname, ip_set_id_t index)
 	if (size != sizeof(struct ip_set_req_get_set))
 		exit_error(OTHER_PROBLEM,
 			   "Incorrect return size from kernel during ipset lookup, "
-			   "(want %d, got %d)\n",
+			   "(want %ld, got %ld)\n",
 			   sizeof(struct ip_set_req_get_set), size);
 	if (req.set.name[0] == '\0')
 		exit_error(PARAMETER_PROBLEM,

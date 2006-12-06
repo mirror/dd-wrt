@@ -12,10 +12,10 @@
 TOPLEVEL_INCLUDED=YES
 
 ifndef KERNEL_DIR
-KERNEL_DIR=/usr/src/linux
+KERNEL_DIR="/lib/modules/$(shell uname -r)/build"
 endif
-IPTABLES_VERSION:=1.3.5
-OLD_IPTABLES_VERSION:=1.3.4
+IPTABLES_VERSION:=1.3.7
+OLD_IPTABLES_VERSION:=1.3.6
 
 PREFIX:=/usr/local
 LIBDIR:=$(PREFIX)/lib
@@ -44,9 +44,9 @@ EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables $(DESTDIR)$(MANDIR)/man8/iptables.8
 
 # No longer experimental.
 ifneq ($(DO_MULTI), 1)
-EXTRAS+=iptables-restore
+EXTRAS+=iptables-save iptables-restore iptables-xml
 endif
-EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables-restore $(DESTDIR)$(MANDIR)/man8/iptables-restore.8 $(DESTDIR)$(MANDIR)/man8/iptables-save.8
+EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables-save $(DESTDIR)$(BINDIR)/iptables-restore $(DESTDIR)$(BINDIR)/iptables-xml $(DESTDIR)$(MANDIR)/man8/iptables-restore.8 $(DESTDIR)$(MANDIR)/man8/iptables-save.8
 
 ifeq ($(DO_IPV6), 1)
 EXTRAS+=ip6tables ip6tables.o ip6tables.8
@@ -63,7 +63,7 @@ ifeq ($(shell uname -m),sparc64)
 		# The kernel is 64-bit, even though userspace is 32.
 		CFLAGS+=-DIPT_MIN_ALIGN=8 -DKERNEL_64_USERSPACE_32
 	else
-		EXT_LDFLAGS=-m elf64_sparc
+		EXT_LDFLAGS+=-Wl,-m,elf64_sparc
 	endif
 endif
 
@@ -118,7 +118,7 @@ iptables.o: iptables.c
 	$(CC) $(CFLAGS) -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" -c -o $@ $<
 
 ifeq ($(DO_MULTI), 1)
-iptables: iptables-multi.c iptables-restore.c iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
+iptables: iptables-multi.c iptables-save.c iptables-restore.c iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
 	$(CC) $(CFLAGS) -DIPTABLES_MULTI -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 else
 iptables: iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
@@ -151,6 +151,19 @@ $(DESTDIR)$(BINDIR)/iptables-restore: iptables
 	ln -sf $< $@
 else
 $(DESTDIR)$(BINDIR)/iptables-restore: iptables-restore
+	@[ -d $(DESTDIR)$(BINDIR) ] || mkdir -p $(DESTDIR)$(BINDIR)
+	cp $< $@
+endif
+
+iptables-xml: iptables-xml.c #iptables.o # $(STATIC_LIBS) libiptc/libiptc.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+ifeq ($(DO_MULTI), 1)
+$(DESTDIR)$(BINDIR)/iptables-xml: iptables-xml
+	@[ -d $(DESTDIR)$(BINDIR) ] || mkdir -p $(DESTDIR)$(BINDIR)
+	ln -sf $< $@
+else
+$(DESTDIR)$(BINDIR)/iptables-xml: iptables-xml
 	@[ -d $(DESTDIR)$(BINDIR) ] || mkdir -p $(DESTDIR)$(BINDIR)
 	cp $< $@
 endif

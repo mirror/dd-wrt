@@ -125,7 +125,7 @@ static void print_ip(char *prefix, const struct in6_addr *ip, const struct in6_a
 	char buf[51];
 	int l = ipv6_prefix_length(mask);
 
-	if (!mask && !ip)
+	if (l == 0 && !invert)
 		return;
 
 	printf("%s %s%s",

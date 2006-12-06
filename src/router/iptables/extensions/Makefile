@@ -5,10 +5,15 @@
 # header files are present in the include/linux directory of this iptables
 # package (HW)
 #
-PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw
+PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw
 
 #PF_EXT_SLIB:=ah addrtype comment connlimit connmark conntrack dscp ecn esp hashlimit helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CLASSIFY CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NFQUEUE NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
 PF6_EXT_SLIB:=
+
+ifeq ($(DO_SELINUX), 1)
+PF_EXT_SE_SLIB:=SECMARK CONNSECMARK
+PF6_EXT_SE_SLIB:=SECMARK CONNSECMARK
+endif
 #eui64 hl icmpv6 length limit mac mark multiport owner physdev standard tcp udp HL LOG NFQUEUE MARK TRACE
 
 # Optionals
@@ -46,26 +51,34 @@ OPTIONALS+=$(patsubst %,IPv6:%,$(PF6_EXT_SLIB_OPTS))
 
 ifndef NO_SHARED_LIBS
 SHARED_LIBS+=$(foreach T,$(PF_EXT_SLIB),extensions/libipt_$(T).so)
+SHARED_SE_LIBS+=$(foreach T,$(PF_EXT_SE_SLIB),extensions/libipt_$(T).so)
 EXTRA_INSTALLS+=$(foreach T, $(PF_EXT_SLIB), $(DESTDIR)$(LIBDIR)/iptables/libipt_$(T).so)
+EXTRA_INSTALLS+=$(foreach T, $(PF_EXT_SE_SLIB), $(DESTDIR)$(LIBDIR)/iptables/libipt_$(T).so)
 
 ifeq ($(DO_IPV6), 1)
 SHARED_LIBS+=$(foreach T,$(PF6_EXT_SLIB),extensions/libip6t_$(T).so)
+SHARED_SE_LIBS+=$(foreach T,$(PF6_EXT_SE_SLIB),extensions/libip6t_$(T).so)
 EXTRA_INSTALLS+=$(foreach T, $(PF6_EXT_SLIB), $(DESTDIR)$(LIBDIR)/iptables/libip6t_$(T).so)
+EXTRA_INSTALLS+=$(foreach T, $(PF6_EXT_SE_SLIB), $(DESTDIR)$(LIBDIR)/iptables/libip6t_$(T).so)
 endif
 else 	# NO_SHARED_LIBS
 EXT_OBJS+=$(foreach T,$(PF_EXT_SLIB),extensions/libipt_$(T).o)
+EXT_OBJS+=$(foreach T,$(PF_EXT_SE_SLIB),extensions/libipt_$(T).o)
 EXT_FUNC+=$(foreach T,$(PF_EXT_SLIB),ipt_$(T))
+EXT_FUNC+=$(foreach T,$(PF_EXT_SE_SLIB),ipt_$(T))
 EXT_OBJS+= extensions/initext.o
 ifeq ($(DO_IPV6), 1)
 EXT6_OBJS+=$(foreach T,$(PF6_EXT_SLIB),extensions/libip6t_$(T).o)
+EXT6_OBJS+=$(foreach T,$(PF6_EXT_SE_SLIB),extensions/libip6t_$(T).o)
 EXT6_FUNC+=$(foreach T,$(PF6_EXT_SLIB),ip6t_$(T))
+EXT6_FUNC+=$(foreach T,$(PF6_EXT_SE_SLIB),ip6t_$(T))
 EXT6_OBJS+= extensions/initext6.o
 endif	# DO_IPV6
 endif	# NO_SHARED_LIBS
 
 ifndef TOPLEVEL_INCLUDED
 local:
-	cd .. && $(MAKE) $(SHARED_LIBS)
+	cd .. && $(MAKE) $(SHARED_LIBS) $(SHARED_SE_LIBS)
 endif
 
 ifdef NO_SHARED_LIBS
