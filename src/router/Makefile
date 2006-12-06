@@ -102,6 +102,7 @@ obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_WIVIZ) += wiviz
+obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services
 #obj-$(CONFIG_LIBBCM) += libbcm
@@ -206,7 +207,6 @@ obj-y += sprom
 obj-y += stabridge
 obj-y += net-tools
 obj-$(CONFIG_RSTATS) += rstats
-obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_SCDP) += scdp
 obj-y += ses
 
@@ -327,7 +327,9 @@ endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 ifneq ($(CONFIG_DIST),"micro")
+ifeq ($(CONFIG_IPV6),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
