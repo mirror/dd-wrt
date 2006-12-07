@@ -17,6 +17,7 @@
 #include "common.h"
 #include "eap_i.h"
 #include "eap_tls_common.h"
+#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "ms_funcs.h"
 #include "sha1.h"

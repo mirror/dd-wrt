@@ -170,9 +170,6 @@ static void pmksa_cache_from_eapol_data(struct rsn_pmksa_cache_entry *entry,
 
 	ieee802_1x_copy_radius_class(&entry->radius_class,
 				     &eapol->radius_class);
-
-	entry->eap_type_authsrv = eapol->eap_type_authsrv;
-	entry->vlan_id = eapol->sta->vlan_id;
 }
 
 
@@ -201,9 +198,6 @@ void pmksa_cache_to_eapol_data(struct rsn_pmksa_cache_entry *entry,
 		wpa_printf(MSG_DEBUG, "Copied %lu Class attribute(s) from "
 			   "PMKSA", (unsigned long) eapol->radius_class.count);
 	}
-
-	eapol->eap_type_authsrv = entry->eap_type_authsrv;
-	eapol->sta->vlan_id = entry->vlan_id;
 }
 
 

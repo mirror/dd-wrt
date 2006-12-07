@@ -1,5 +1,5 @@
 /*
- * hostapd / EAP-GPSK (draft-ietf-emu-eap-gpsk-01.txt) server
+ * hostapd / EAP-GPSK (draft-clancy-emu-eap-shared-secret-00.txt) server
  * Copyright (c) 2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,6 @@ struct eap_gpsk_data {
 	u8 rand_server[EAP_GPSK_RAND_LEN];
 	u8 rand_client[EAP_GPSK_RAND_LEN];
 	u8 msk[EAP_MSK_LEN];
-	u8 emsk[EAP_EMSK_LEN];
 	u8 sk[EAP_GPSK_MAX_SK_LEN];
 	size_t sk_len;
 	u8 pk[EAP_GPSK_MAX_PK_LEN];
@@ -382,7 +381,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 	}
 	pos += alen;
 
-	if (end - pos < (int) sizeof(*csuite)) {
+	if (end - pos < sizeof(*csuite)) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Too short message for "
 			   "CSuite_Sel");
 		eap_gpsk_state(data, FAILURE);
@@ -437,8 +436,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 				 data->rand_client, data->rand_server,
 				 data->id_client, data->id_client_len,
 				 data->id_server, data->id_server_len,
-				 data->msk, data->emsk,
-				 data->sk, &data->sk_len,
+				 data->msk, data->sk, &data->sk_len,
 				 data->pk, &data->pk_len) < 0) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Failed to derive keys");
 		eap_gpsk_state(data, FAILURE);
@@ -446,7 +444,7 @@ static void eap_gpsk_process_gpsk_2(struct eap_sm *sm,
 	}
 
 	miclen = eap_gpsk_mic_len(data->vendor, data->specifier);
-	if (end - pos < (int) miclen) {
+	if (end - pos < miclen) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Message too short for MIC "
 			   "(left=%d miclen=%d)", end - pos, miclen);
 		eap_gpsk_state(data, FAILURE);
@@ -513,7 +511,7 @@ static void eap_gpsk_process_gpsk_4(struct eap_sm *sm,
 	pos += alen;
 
 	miclen = eap_gpsk_mic_len(data->vendor, data->specifier);
-	if (end - pos < (int) miclen) {
+	if (end - pos < miclen) {
 		wpa_printf(MSG_DEBUG, "EAP-GPSK: Message too short for MIC "
 			   "(left=%d miclen=%d)", end - pos, miclen);
 		eap_gpsk_state(data, FAILURE);
@@ -594,24 +592,6 @@ static u8 * eap_gpsk_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
-static u8 * eap_gpsk_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
-{
-	struct eap_gpsk_data *data = priv;
-	u8 *key;
-
-	if (data->state != SUCCESS)
-		return NULL;
-
-	key = malloc(EAP_EMSK_LEN);
-	if (key == NULL)
-		return NULL;
-	memcpy(key, data->emsk, EAP_EMSK_LEN);
-	*len = EAP_EMSK_LEN;
-
-	return key;
-}
-
-
 static Boolean eap_gpsk_isSuccess(struct eap_sm *sm, void *priv)
 {
 	struct eap_gpsk_data *data = priv;
@@ -637,7 +617,6 @@ int eap_server_gpsk_register(void)
 	eap->isDone = eap_gpsk_isDone;
 	eap->getKey = eap_gpsk_getKey;
 	eap->isSuccess = eap_gpsk_isSuccess;
-	eap->get_emsk = eap_gpsk_get_emsk;
 
 	ret = eap_server_method_register(eap);
 	if (ret)

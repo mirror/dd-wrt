@@ -70,7 +70,7 @@ struct l2_packet_data {
 
 int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
 {
-	os_memcpy(addr, l2->own_addr, ETH_ALEN);
+	memcpy(addr, l2->own_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -88,16 +88,16 @@ int l2_packet_send(struct l2_packet_data *l2, const u8 *dst_addr, u16 proto,
 		ret = pcap_sendpacket(l2->pcap, buf, len);
 	} else {
 		size_t mlen = sizeof(*eth) + len;
-		eth = os_malloc(mlen);
+		eth = malloc(mlen);
 		if (eth == NULL)
 			return -1;
 
-		os_memcpy(eth->h_dest, dst_addr, ETH_ALEN);
-		os_memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
+		memcpy(eth->h_dest, dst_addr, ETH_ALEN);
+		memcpy(eth->h_source, l2->own_addr, ETH_ALEN);
 		eth->h_proto = htons(proto);
-		os_memcpy(eth + 1, buf, len);
+		memcpy(eth + 1, buf, len);
 		ret = pcap_sendpacket(l2->pcap, (u8 *) eth, mlen);
-		os_free(eth);
+		free(eth);
 	}
 
 	return ret;
@@ -178,13 +178,13 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 		fprintf(stderr, "ifname='%s'\n", l2->ifname);
 		return -1;
 	}
-	os_snprintf(pcap_filter, sizeof(pcap_filter),
-		    "not ether src " MACSTR " and "
-		    "( ether dst " MACSTR " or ether dst " MACSTR " ) and "
-		    "ether proto 0x%x",
-		    MAC2STR(l2->own_addr), /* do not receive own packets */
-		    MAC2STR(l2->own_addr), MAC2STR(pae_group_addr),
-		    protocol);
+	snprintf(pcap_filter, sizeof(pcap_filter),
+		 "not ether src " MACSTR " and "
+		 "( ether dst " MACSTR " or ether dst " MACSTR " ) and "
+		 "ether proto 0x%x",
+		 MAC2STR(l2->own_addr), /* do not receive own packets */
+		 MAC2STR(l2->own_addr), MAC2STR(pae_group_addr),
+		 protocol);
 	if (pcap_compile(l2->pcap, &pcap_fp, pcap_filter, 1, pcap_netp) < 0) {
 		fprintf(stderr, "pcap_compile: %s\n", pcap_geterr(l2->pcap));
 		return -1;
@@ -210,23 +210,23 @@ struct l2_packet_data * l2_packet_init(
 	struct l2_packet_data *l2;
 	DWORD thread_id;
 
-	l2 = os_zalloc(sizeof(struct l2_packet_data));
+	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	if (os_strncmp(ifname, "\\Device\\NPF_", 12) == 0)
-		os_strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	if (strncmp(ifname, "\\Device\\NPF_", 12) == 0)
+		strncpy(l2->ifname, ifname, sizeof(l2->ifname));
 	else
-		os_snprintf(l2->ifname, sizeof(l2->ifname), "\\Device\\NPF_%s",
-			    ifname);
+		snprintf(l2->ifname, sizeof(l2->ifname), "\\Device\\NPF_%s",
+			 ifname);
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;
 
 	if (own_addr)
-		os_memcpy(l2->own_addr, own_addr, ETH_ALEN);
+		memcpy(l2->own_addr, own_addr, ETH_ALEN);
 
 	if (l2_packet_init_libpcap(l2, protocol)) {
-		os_free(l2);
+		free(l2);
 		return NULL;
 	}
 
@@ -239,7 +239,7 @@ struct l2_packet_data * l2_packet_init(
 		CloseHandle(l2->rx_done);
 		CloseHandle(l2->rx_notify);
 		pcap_close(l2->pcap);
-		os_free(l2);
+		free(l2);
 		return NULL;
 	}
 
@@ -272,7 +272,7 @@ static void l2_packet_deinit_timeout(void *eloop_ctx, void *timeout_ctx)
 	CloseHandle(l2->rx_avail);
 	CloseHandle(l2->rx_done);
 	CloseHandle(l2->rx_notify);
-	os_free(l2);
+	free(l2);
 }
 
 
@@ -312,15 +312,15 @@ int l2_packet_get_ip_addr(struct l2_packet_data *l2, char *buf, size_t len)
 	}
 
 	for (dev = devs; dev && !found; dev = dev->next) {
-		if (os_strcmp(dev->name, l2->ifname) != 0)
+		if (strcmp(dev->name, l2->ifname) != 0)
 			continue;
 
 		addr = dev->addresses;
 		while (addr) {
 			saddr = (struct sockaddr_in *) addr->addr;
 			if (saddr && saddr->sin_family == AF_INET) {
-				os_snprintf(buf, len, "%s",
-					    inet_ntoa(saddr->sin_addr));
+				snprintf(buf, len, "%s",
+					 inet_ntoa(saddr->sin_addr));
 				found = 1;
 				break;
 			}

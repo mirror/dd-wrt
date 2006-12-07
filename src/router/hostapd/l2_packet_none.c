@@ -35,7 +35,7 @@ struct l2_packet_data {
 
 int l2_packet_get_own_addr(struct l2_packet_data *l2, u8 *addr)
 {
-	os_memcpy(addr, l2->own_addr, ETH_ALEN);
+	memcpy(addr, l2->own_addr, ETH_ALEN);
 	return 0;
 }
 
@@ -78,10 +78,10 @@ struct l2_packet_data * l2_packet_init(
 {
 	struct l2_packet_data *l2;
 
-	l2 = os_zalloc(sizeof(struct l2_packet_data));
+	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	os_strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	strncpy(l2->ifname, ifname, sizeof(l2->ifname));
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;
@@ -106,7 +106,7 @@ void l2_packet_deinit(struct l2_packet_data *l2)
 		/* TODO: close connection */
 	}
 		
-	os_free(l2);
+	free(l2);
 }
 
 

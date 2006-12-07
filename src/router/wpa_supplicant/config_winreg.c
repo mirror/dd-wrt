@@ -32,6 +32,8 @@
 #include "includes.h"
 
 #include "common.h"
+#include "wpa.h"
+#include "wpa_supplicant.h"
 #include "config.h"
 
 #ifndef WPA_KEY_ROOT
@@ -361,6 +363,8 @@ struct wpa_config * wpa_config_read(const char *name)
 	TCHAR buf[256];
 	int errors = 0;
 	struct wpa_config *config;
+	struct wpa_ssid *ssid;
+	int prio;
 	HKEY hk;
 	LONG ret;
 
@@ -392,7 +396,17 @@ struct wpa_config * wpa_config_read(const char *name)
 	if (wpa_config_read_blobs(config, hk))
 		errors++;
 
-	wpa_config_debug_dump_networks(config);
+	for (prio = 0; prio < config->num_prio; prio++) {
+		ssid = config->pssid[prio];
+		wpa_printf(MSG_DEBUG, "Priority group %d",
+			   ssid->priority);
+		while (ssid) {
+			wpa_printf(MSG_DEBUG, "   id=%d ssid='%s'",
+				   ssid->id,
+				   wpa_ssid_txt(ssid->ssid, ssid->ssid_len));
+			ssid = ssid->pnext;
+		}
+	}
 
 	RegCloseKey(hk);
 
@@ -744,7 +758,6 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	STR(nai);
 	STR(password);
 	STR(ca_cert);
-	STR(ca_path);
 	STR(client_cert);
 	STR(private_key);
 	STR(private_key_passwd);
@@ -752,7 +765,6 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	STR(subject_match);
 	STR(altsubject_match);
 	STR(ca_cert2);
-	STR(ca_path2);
 	STR(client_cert2);
 	STR(private_key2);
 	STR(private_key2_passwd);
@@ -781,9 +793,6 @@ static int wpa_config_write_network(HKEY hk, struct wpa_ssid *ssid, int id)
 	INT(proactive_key_caching);
 	INT(disabled);
 	INT(peerkey);
-#ifdef CONFIG_IEEE80211W
-	INT(ieee80211w);
-#endif /* CONFIG_IEEE80211W */
 	STR(id_str);
 
 #undef STR
