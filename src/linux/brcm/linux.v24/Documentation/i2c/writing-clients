@@ -28,14 +28,14 @@ static struct i2c_driver foo_driver = {
 	.name		= "Foo version 2.3 driver",
 	.id		= I2C_DRIVERID_FOO, /* from i2c-id.h, optional */
 	.flags		= I2C_DF_NOTIFY,
-	.attach_adapter	= &foo_attach_adapter,
-	.detach_client	= &foo_detach_client,
-	.command	= &foo_command, /* may be NULL */
-	.inc_use	= &foo_inc_use, /* May be NULL */
-	.dec_use	= &foo_dec_use, /* May be NULL */
+	.attach_adapter	= foo_attach_adapter,
+	.detach_client	= foo_detach_client,
+	.command	= foo_command, /* may be NULL */
+	.inc_use	= foo_inc_use, /* May be NULL */
+	.dec_use	= foo_dec_use, /* May be NULL */
 }
  
-The name can be chosen freely, and may be upto 40 characters long. Please
+The name can be chosen freely, and may be up to 31 characters long. Please
 use something descriptive here.
 
 If used, the id should be a unique ID. The range 0xf000 to 0xffff is
@@ -64,26 +64,27 @@ main reason why these call-backs were introduced).
 To increase or decrease the module usage count, you can use the
 MOD_{INC,DEC}_USE_COUNT macros. They must be called from the module
 which needs to get its usage count changed; that is why each driver
-module has to implement its own callback.
+module has to implement its own callback functions.
 
-  void foo_inc_use (struct i2c_client *client)
-  {
-  #ifdef MODULE
-    MOD_INC_USE_COUNT;
-  #endif
-  }
+static void foo_inc_use (struct i2c_client *client)
+{
+#ifdef MODULE
+	MOD_INC_USE_COUNT;
+#endif
+}
 
-  void foo_dec_use (struct i2c_client *client)
-  {
-  #ifdef MODULE
-    MOD_DEC_USE_COUNT;
-  #endif
-  }
+static void foo_dec_use (struct i2c_client *client)
+{
+#ifdef MODULE
+	MOD_DEC_USE_COUNT;
+#endif
+}
 
-Do not call these call-back functions directly; instead, use one of the
+Do not call these callback functions directly; instead, use the
 following functions defined in i2c.h:
-  void i2c_inc_use_client(struct i2c_client *);
-  void i2c_dec_use_client(struct i2c_client *);
+
+void i2c_inc_use_client(struct i2c_client *);
+void i2c_dec_use_client(struct i2c_client *);
 
 You should *not* increase the module count just because a device is
 detected and a client created. This would make it impossible to remove
@@ -302,7 +303,7 @@ Also used is a list of pointers to sensors_force_data structures:
      These are automatically translated to insmod variables of the form
      force_foo.
 
-So we have a generic insmod variabled `force', and chip-specific variables
+So we have a generic insmod variable `force', and chip-specific variables
 `force_CHIPNAME'.
 
 Fortunately, as a module writer, you just have to define the `normal' 

@@ -692,6 +692,7 @@ static ssize_t usblp_write(struct file *file, const char *buffer, size_t count, 
 		usblp->wcomplete = 0;
 		err = usb_submit_urb(usblp->writeurb);
 		if (err) {
+			usblp->wcomplete = 1;
 			if (err != -ENOMEM)
 				count = -EIO;
 			else

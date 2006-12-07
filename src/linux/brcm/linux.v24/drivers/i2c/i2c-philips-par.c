@@ -156,33 +156,31 @@ static void bit_lp_dec_use(struct i2c_adapter *adap)
  */
  
 static struct i2c_algo_bit_data bit_lp_data = {
-	NULL,
-	bit_lp_setsda,
-	bit_lp_setscl,
-	bit_lp_getsda,
-	bit_lp_getscl,
-	80, 80, 100,		/*	waits, timeout */
+	.setsda		= bit_lp_setsda,
+	.setscl		= bit_lp_setscl,
+	.getsda		= bit_lp_getsda,
+	.getscl		= bit_lp_getscl,
+	.udelay		= 80,
+	.mdelay		= 80,
+	.timeout	= HZ
 }; 
 
 static struct i2c_algo_bit_data bit_lp_data2 = {
-	NULL,
-	bit_lp_setsda2,
-	bit_lp_setscl2,
-	bit_lp_getsda2,
-	NULL,
-	80, 80, 100,		/*	waits, timeout */
+	.setsda		= bit_lp_setsda2,
+	.setscl		= bit_lp_setscl2,
+	.getsda		= bit_lp_getsda2,
+	.udelay		= 80,
+	.mdelay		= 80,
+	.timeout	= HZ
 }; 
 
 static struct i2c_adapter bit_lp_ops = {
-	"Philips Parallel port adapter",
-	I2C_HW_B_LP,
-	NULL,
-	NULL,
-	bit_lp_inc_use,
-	bit_lp_dec_use,
-	bit_lp_reg,
-
-	bit_lp_unreg,
+	.name		= "Philips Parallel port adapter",
+	.id		= I2C_HW_B_LP,
+	.inc_use	= bit_lp_inc_use,
+	.dec_use	= bit_lp_dec_use,
+	.client_register = bit_lp_reg,
+	.client_unregister = bit_lp_unreg,
 };
 
 static void i2c_parport_attach (struct parport *port)
