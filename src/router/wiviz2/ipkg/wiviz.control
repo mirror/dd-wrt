@@ -1,0 +1,5 @@
+Package: wiviz
+Priority: optional
+Section: net
+Description: Wireless network environment visualization tool.  http://devices.natetrue.com/wiviz2
+Maintainer: The OpenWrt Dev Team plus Nate True (openwrt-devel@openwrt.org, wiviz@natetrue.com)

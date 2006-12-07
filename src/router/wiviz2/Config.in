@@ -1,0 +1,6 @@
+config BR2_PACKAGE_ARPWATCH
+	tristate "wiviz - Wireless network environment visualization"
+	default m if CONFIG_DEVEL
+	help
+		http://wiviz.natetrue.com
+	  
