@@ -41,6 +41,7 @@ typedef struct sta_rssi {
   } sta_rssi_t;
 /* check this magic number */
 #define WLC_IOCTL_MAGIC		0x14e46c77
+#define WLC_IOCTL_VERSION	1
 
 #define WLC_GET_MAGIC				0
 #define WLC_GET_BSSID				23
@@ -55,6 +56,7 @@ typedef struct sta_rssi {
 #define WLC_SET_AP				118
 #define WLC_GET_RSSI				127
 #define WLC_GET_ASSOCLIST			159
+#define WLC_GET_VERSION				1
 
 
 int wl_ioctl(char *name, int cmd, void *buf, int len);

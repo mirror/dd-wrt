@@ -4,7 +4,7 @@
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
 include $(TOP)/.config
 
-LIBS=../libpcap_noring/libpcap.a -lshared -lnvram
+LIBS=../libpcap_noring/libpcap.a -lnvram -lshared
 
 CCOPTS=$(COPTS) 
 INCLUDE=../libpcap_noring
