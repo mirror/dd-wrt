@@ -6,7 +6,6 @@
 #include <net/if.h>
 
 #include "wl_access.h"
-
 int wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
