@@ -101,7 +101,7 @@ CONFIG_IPTABLES=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_LIBPCAP) += libpcap
-obj-$(CONFIG_WIVIZ) += wiviz
+obj-$(CONFIG_WIVIZ) += wiviz2
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_RC) += rc services
@@ -503,7 +503,7 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 	$(MAKE) -C eop-tunnel install INSTALLDIR=$(INSTALLDIR)/eop-tunnel
 endif
 ifeq ($(CONFIG_WIVIZ),y)
-	$(MAKE) -C wiviz install INSTALLDIR=$(INSTALLDIR)/wiviz
+	$(MAKE) -C wiviz2 install INSTALLDIR=$(INSTALLDIR)/wiviz2
 endif
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 
