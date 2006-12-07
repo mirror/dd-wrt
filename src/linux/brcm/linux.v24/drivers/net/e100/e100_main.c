@@ -3292,11 +3292,11 @@ e100_do_ethtool_ioctl(struct net_device *dev, struct ifreq *ifr)
 		if ((bdp->flags & IS_BACHELOR)
 		    && (bdp->params.b_params & PRM_FC)) {
 			epause.autoneg = 1;
-			if (bdp->flags && DF_LINK_FC_CAP) {
+			if (bdp->flags & DF_LINK_FC_CAP) {
 				epause.rx_pause = 1;
 				epause.tx_pause = 1;
 			}
-			if (bdp->flags && DF_LINK_FC_TX_ONLY)
+			if (bdp->flags & DF_LINK_FC_TX_ONLY)
 				epause.tx_pause = 1;
 		}
 		rc = copy_to_user(ifr->ifr_data, &epause, sizeof(epause))

@@ -199,24 +199,24 @@ static void pcf_isa_dec_use(struct i2c_adapter *adap)
  * This is only done when more than one hardware adapter is supported.
  */
 static struct i2c_algo_pcf_data pcf_isa_data = {
-	NULL,
-	pcf_isa_setbyte,
-	pcf_isa_getbyte,
-	pcf_isa_getown,
-	pcf_isa_getclock,
-	pcf_isa_waitforpin,
-	10, 10, 100,		/*	waits, timeout */
+	.setpcf		= pcf_isa_setbyte,
+	.getpcf		= pcf_isa_getbyte,
+	.getown		= pcf_isa_getown,
+	.getclock	= pcf_isa_getclock,
+	.waitforpin	= pcf_isa_waitforpin,
+	.udelay		= 10,
+	.mdelay		= 10,
+	.timeout	= HZ,
 };
 
 static struct i2c_adapter pcf_isa_ops = {
-	"PCF8584 ISA adapter",
-	I2C_HW_P_ELEK,
-	NULL,
-	&pcf_isa_data,
-	pcf_isa_inc_use,
-	pcf_isa_dec_use,
-	pcf_isa_reg,
-	pcf_isa_unreg,
+	.name		   = "PCF8584 ISA adapter",
+	.id		   = I2C_HW_P_ELEK,
+	.algo_data	   = &pcf_isa_data,
+	.inc_use	   = pcf_isa_inc_use,
+	.dec_use	   = pcf_isa_dec_use,
+	.client_register   = pcf_isa_reg,
+	.client_unregister = pcf_isa_unreg,
 };
 
 int __init i2c_pcfisa_init(void) 

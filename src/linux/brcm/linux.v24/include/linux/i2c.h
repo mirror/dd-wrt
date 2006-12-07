@@ -139,14 +139,14 @@ struct i2c_driver {
 	 */
 	int (*command)(struct i2c_client *client,unsigned int cmd, void *arg);
 	
-	/* These two are mainly used for bookkeeping & dynamic unloading of 
+	/* These two are used for bookkeeping & dynamic unloading of
 	 * kernel modules. inc_use tells the driver that a client is being  
 	 * used by another module & that it should increase its ref. counter.
 	 * dec_use is the inverse operation.
 	 * NB: Make sure you have no circular dependencies, or else you get a 
 	 * deadlock when trying to unload the modules.
-	* You should use the i2c_{inc,dec}_use_client functions instead of
-	* calling this function directly.
+	 * You should use the i2c_{inc,dec}_use_client functions instead of
+	 * calling this function directly.
 	 */
 	void (*inc_use)(struct i2c_client *client);
 	void (*dec_use)(struct i2c_client *client);
@@ -450,9 +450,6 @@ union i2c_smbus_data {
 
 #define I2C_FUNCS	0x0705	/* Get the adapter functionality */
 #define I2C_RDWR	0x0707	/* Combined R/W transfer (one stop only)*/
-#if 0
-#define I2C_ACK_TEST	0x0710	/* See if a slave is at a specific address */
-#endif
 
 #define I2C_SMBUS	0x0720	/* SMBus-level access */
 
