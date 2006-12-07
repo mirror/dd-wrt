@@ -1175,7 +1175,7 @@ int txCommit(tid_t tid,		/* transaction identifier */
 		jfs_ip = JFS_IP(ip);
 
 		if (test_and_clear_cflag(COMMIT_Syncdata, ip) &&
-		    ((tblk->flag && COMMIT_DELETE) == 0))
+		    ((tblk->flag & COMMIT_DELETE) == 0))
 			fsync_inode_data_buffers(ip);
 
 		/*
