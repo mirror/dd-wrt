@@ -31,11 +31,11 @@ install:
 	install -d $(INSTALLDIR)/../www/www/images
 	install -d $(INSTALLDIR)/../www/www/images/wiviz
 	cp wiviz $(INSTALLDIR)/usr/sbin
-	cp www/wiviz/wiviz.css $(INSTALLDIR)/../www/www/style/wiviz.css
-	cp www/wiviz/wiviz.js $(INSTALLDIR)/../www/www/js/wiviz.js
-	cp www/wiviz/*.gif $(INSTALLDIR)/../www/www/images/wiviz
-	cp www/wiviz/*.png $(INSTALLDIR)/../www/www/images/wiviz
-	cp www/wiviz/*.asp $(INSTALLDIR)/../www/www
+	cp www/wiviz2/wiviz2.css $(INSTALLDIR)/../www/www/style/wiviz2.css
+	cp www/wiviz2/wiviz2.js $(INSTALLDIR)/../www/www/js/wiviz2.js
+	cp www/wiviz2/*.gif $(INSTALLDIR)/../www/www/images/wiviz
+	cp www/wiviz2/*.png $(INSTALLDIR)/../www/www/images/wiviz
+#	cp www/wiviz2/*.asp $(INSTALLDIR)/../www/www
 
 clean:
 	rm -f *.o *.c~ *.h~ wiviz
