@@ -31,7 +31,7 @@
 			Monitoring<br>
 			Up for 10 minutes<br>
 			<center>Channel setting</center>
-			<form method='get' action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
+			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
 			        	<input type="hidden" name="action" value="Apply" />
                   		<input type="hidden" name="change_action" value="gozila_cgi" />
                   		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
