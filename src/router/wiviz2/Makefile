@@ -2,6 +2,8 @@
 # Supply your own C cross-compiler; I recommend the one from the OpenWRT buildroot
 # Also requires a libpcap to link with, use libpcap.a for static, .so for shared
 #CC=~/buildroot/staging_dir_mipsel/bin/mipsel-linux-gcc
+include $(TOP)/.config
+
 LIBS=../libpcap_noring/libpcap.a
 
 CCOPTS=$(COPTS) 
@@ -9,6 +11,12 @@ INCLUDE=../libpcap_noring
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
+ifeq ($(CONFIG_MSSID),y)
+CCOPTS	+= -I$(SRCBASE)/include.v24 
+else
+CCOPTS	+= -I$(SRCBASE)/include.v23 
+endif
+
 
 wiviz: ${OBJS}
 	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS}
