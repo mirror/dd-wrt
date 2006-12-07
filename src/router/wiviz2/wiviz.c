@@ -159,7 +159,7 @@ void writeJavascript() {
   FILE * outf;
   wiviz_host * h;
 
-  outf = fopen("/tmp/wiviz2-dump", "w");
+  outf = fopen("/tmp/wiviz-pipe", "w");
   if (!outf) {
     fprintf(stderr, "Failure to open output file\n");
     return;
@@ -189,8 +189,8 @@ void writeJavascript() {
     }
   fprintf(outf, ";\ntop.wiviz_callback(top.hosts, wiviz_cfg);\n");
   fprintf(outf, "function wiviz_callback(one, two) {\n");
-  fprintf(outf, "alert('This CGI is intended to run inside Wi-Viz.  You will now be redirected there.');\n");
-  fprintf(outf, "location.replace('/wiviz2/wiviz2.html');\n");
+  fprintf(outf, "alert('This asp is intended to run inside Wi-Viz.  You will now be redirected there.');\n");
+  fprintf(outf, "location.replace('Wiviz_Survey.asp');\n");
   fprintf(outf, "}");
   fclose(outf);
   }
