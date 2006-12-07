@@ -27,7 +27,7 @@ document.title = "<% nvram_get("router_name"); %>" + status_band.titl;
 							
 							<h2><% tran("status_band.h2"); %></h2>
 							
-<br /><br/>Still under developpement  ....<br /><br />
+<br /><br/>Still under development  ....<br /><br />
 						
 							<div class="submitFooter">
 								<script type="text/javascript">
