@@ -1,6 +1,5 @@
 //wl_access.h - functions for accessing broadcom crap
 
-#define WL_DEVICE "eth1"
 
 typedef unsigned int uint32;
 typedef unsigned char uchar;

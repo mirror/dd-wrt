@@ -25,7 +25,7 @@ void channelHopper(wiviz_cfg * cfg) {
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
     //Set the channel
     fprintf(stderr, "It sets the channel to %i\n", nc);
-    wl_ioctl(WL_DEVICE, WLC_SET_CHANNEL, &nc, 4);
+    wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4);
     //Sleep
     usleep(cfg->channelDwellTime * 1000);
     }
