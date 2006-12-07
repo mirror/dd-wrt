@@ -293,6 +293,7 @@ ifeq ($(CONFIG_MSSID),y)
 endif	
 ifneq ($(CONFIG_WIVIZ),y)
 	rm -f $(INSTALLDIR)/www/Wiviz_Survey.asp
+	rm -f $(INSTALLDIR)/www/Wiviz.live.asp
 endif
 
 
