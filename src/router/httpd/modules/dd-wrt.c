@@ -2350,7 +2350,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 #endif
 #ifdef HAVE_MADWIFI
-if (nvram_match("wifi_bonding","1") && !strcmp(prefix,"ath0"))
+if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 #endif
 {
 #ifdef HAVE_MADWIFI
