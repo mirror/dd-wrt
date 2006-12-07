@@ -81,21 +81,12 @@ static struct eloop_data eloop;
 
 int eloop_init(void *user_data)
 {
-	os_memset(&eloop, 0, sizeof(eloop));
+	memset(&eloop, 0, sizeof(eloop));
 	eloop.user_data = user_data;
 	eloop.num_handles = 1;
-	eloop.handles = os_malloc(eloop.num_handles *
-				  sizeof(eloop.handles[0]));
+	eloop.handles = malloc(eloop.num_handles * sizeof(eloop.handles[0]));
 	if (eloop.handles == NULL)
 		return -1;
-
-	eloop.term_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (eloop.term_event == NULL) {
-		printf("CreateEvent() failed: %d\n",
-		       (int) GetLastError());
-		os_free(eloop.handles);
-		return -1;
-	}
 
 	return 0;
 }
@@ -107,8 +98,8 @@ static int eloop_prepare_handles(void)
 
 	if (eloop.num_handles > eloop.reader_count + eloop.event_count + 8)
 		return 0;
-	n = os_realloc(eloop.handles,
-		       eloop.num_handles * 2 * sizeof(eloop.handles[0]));
+	n = realloc(eloop.handles,
+		    eloop.num_handles * 2 * sizeof(eloop.handles[0]));
 	if (n == NULL)
 		return -1;
 	eloop.handles = n;
@@ -137,8 +128,9 @@ int eloop_register_read_sock(int sock, eloop_sock_handler handler,
 		WSACloseEvent(event);
 		return -1;
 	}
-	tmp = os_realloc(eloop.readers,
-			 (eloop.reader_count + 1) * sizeof(struct eloop_sock));
+	tmp = (struct eloop_sock *)
+		realloc(eloop.readers,
+			(eloop.reader_count + 1) * sizeof(struct eloop_sock));
 	if (tmp == NULL) {
 		WSAEventSelect(sock, event, 0);
 		WSACloseEvent(event);
@@ -178,9 +170,9 @@ void eloop_unregister_read_sock(int sock)
 	WSACloseEvent(eloop.readers[i].event);
 
 	if (i != eloop.reader_count - 1) {
-		os_memmove(&eloop.readers[i], &eloop.readers[i + 1],
-			   (eloop.reader_count - i - 1) *
-			   sizeof(struct eloop_sock));
+		memmove(&eloop.readers[i], &eloop.readers[i + 1],
+			(eloop.reader_count - i - 1) *
+			sizeof(struct eloop_sock));
 	}
 	eloop.reader_count--;
 	eloop.reader_table_changed = 1;
@@ -200,8 +192,10 @@ int eloop_register_event(void *event, size_t event_size,
 	if (eloop_prepare_handles())
 		return -1;
 
-	tmp = os_realloc(eloop.events,
-			 (eloop.event_count + 1) * sizeof(struct eloop_event));
+	tmp = (struct eloop_event *)
+		realloc(eloop.events,
+			(eloop.event_count + 1) *
+			sizeof(struct eloop_event));
 	if (tmp == NULL)
 		return -1;
 
@@ -233,9 +227,9 @@ void eloop_unregister_event(void *event, size_t event_size)
 		return;
 
 	if (i != eloop.event_count - 1) {
-		os_memmove(&eloop.events[i], &eloop.events[i + 1],
-			   (eloop.event_count - i - 1) *
-			   sizeof(struct eloop_event));
+		memmove(&eloop.events[i], &eloop.events[i + 1],
+			(eloop.event_count - i - 1) *
+			sizeof(struct eloop_event));
 	}
 	eloop.event_count--;
 }
@@ -247,7 +241,7 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 {
 	struct eloop_timeout *timeout, *tmp, *prev;
 
-	timeout = os_malloc(sizeof(*timeout));
+	timeout = malloc(sizeof(*timeout));
 	if (timeout == NULL)
 		return -1;
 	os_get_time(&timeout->time);
@@ -308,7 +302,7 @@ int eloop_cancel_timeout(eloop_timeout_handler handler,
 				eloop.timeout = next;
 			else
 				prev->next = next;
-			os_free(timeout);
+			free(timeout);
 			removed++;
 		} else
 			prev = timeout;
@@ -372,9 +366,10 @@ int eloop_register_signal(int sig, eloop_signal_handler handler,
 {
 	struct eloop_signal *tmp;
 
-	tmp = os_realloc(eloop.signals,
-			 (eloop.signal_count + 1) *
-			 sizeof(struct eloop_signal));
+	tmp = (struct eloop_signal *)
+		realloc(eloop.signals,
+			(eloop.signal_count + 1) *
+			sizeof(struct eloop_signal));
 	if (tmp == NULL)
 		return -1;
 
@@ -411,6 +406,15 @@ static BOOL eloop_handle_console_ctrl(DWORD type)
 int eloop_register_signal_terminate(eloop_signal_handler handler,
 				    void *user_data)
 {
+	if (eloop.term_event == NULL) {
+		eloop.term_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if (eloop.term_event == NULL) {
+			printf("CreateEvent() failed: %d\n",
+			       (int) GetLastError());
+			return -1;
+		}
+	}
+
 #ifndef _WIN32_WCE
 	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE) eloop_handle_console_ctrl,
 				  TRUE) == 0) {
@@ -473,13 +477,8 @@ void eloop_run(void)
 			       (int) count, MAXIMUM_WAIT_OBJECTS);
 			count = MAXIMUM_WAIT_OBJECTS;
 		}
-#ifdef _WIN32_WCE
-		ret = WaitForMultipleObjects(count, eloop.handles, FALSE,
-					     timeout);
-#else /* _WIN32_WCE */
 		ret = WaitForMultipleObjectsEx(count, eloop.handles, FALSE,
 					       timeout, TRUE);
-#endif /* _WIN32_WCE */
 		err = GetLastError();
 
 		eloop_process_pending_signals();
@@ -494,7 +493,7 @@ void eloop_run(void)
 				eloop.timeout = eloop.timeout->next;
 				tmp->handler(tmp->eloop_data,
 					     tmp->user_data);
-				os_free(tmp);
+				free(tmp);
 			}
 
 		}
@@ -506,12 +505,7 @@ void eloop_run(void)
 			continue;
 		}
 
-#ifndef _WIN32_WCE
-		if (ret == WAIT_IO_COMPLETION)
-			continue;
-#endif /* _WIN32_WCE */
-
-		if (ret == WAIT_TIMEOUT)
+		if (ret == WAIT_TIMEOUT || ret == WAIT_IO_COMPLETION)
 			continue;
 
 		while (ret >= WAIT_OBJECT_0 &&
@@ -545,7 +539,6 @@ void eloop_run(void)
 void eloop_terminate(void)
 {
 	eloop.terminate = 1;
-	SetEvent(eloop.term_event);
 }
 
 
@@ -557,16 +550,14 @@ void eloop_destroy(void)
 	while (timeout != NULL) {
 		prev = timeout;
 		timeout = timeout->next;
-		os_free(prev);
+		free(prev);
 	}
-	os_free(eloop.readers);
-	os_free(eloop.signals);
+	free(eloop.readers);
+	free(eloop.signals);
 	if (eloop.term_event)
 		CloseHandle(eloop.term_event);
-	os_free(eloop.handles);
+	free(eloop.handles);
 	eloop.handles = NULL;
-	os_free(eloop.events);
-	eloop.events = NULL;
 }
 
 

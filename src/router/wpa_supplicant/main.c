@@ -234,7 +234,6 @@ int main(int argc, char *argv[])
 	if (global == NULL) {
 		printf("Failed to initialize wpa_supplicant\n");
 		exitcode = -1;
-		goto out;
 	}
 
 	for (i = 0; exitcode == 0 && i < iface_count; i++) {

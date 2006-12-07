@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "eap_i.h"
+#include "wpa_supplicant.h"
 #include "config_ssid.h"
 #include "md5.h"
 #include "aes_wrap.h"

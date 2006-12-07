@@ -71,7 +71,7 @@ static struct eloop_data eloop;
 
 int eloop_init(void *user_data)
 {
-	os_memset(&eloop, 0, sizeof(eloop));
+	memset(&eloop, 0, sizeof(eloop));
 	eloop.user_data = user_data;
 	return 0;
 }
@@ -87,8 +87,8 @@ static int eloop_sock_table_add_sock(struct eloop_sock_table *table,
 		return -1;
 
 	tmp = (struct eloop_sock *)
-		os_realloc(table->table,
-			   (table->count + 1) * sizeof(struct eloop_sock));
+		realloc(table->table,
+			(table->count + 1) * sizeof(struct eloop_sock));
 	if (tmp == NULL)
 		return -1;
 
@@ -121,9 +121,9 @@ static void eloop_sock_table_remove_sock(struct eloop_sock_table *table,
 	if (i == table->count)
 		return;
 	if (i != table->count - 1) {
-		os_memmove(&table->table[i], &table->table[i + 1],
-			   (table->count - i - 1) *
-			   sizeof(struct eloop_sock));
+		memmove(&table->table[i], &table->table[i + 1],
+			(table->count - i - 1) *
+			sizeof(struct eloop_sock));
 	}
 	table->count--;
 	table->changed = 1;
@@ -169,7 +169,7 @@ static void eloop_sock_table_dispatch(struct eloop_sock_table *table,
 static void eloop_sock_table_destroy(struct eloop_sock_table *table)
 {
 	if (table)
-		os_free(table->table);
+		free(table->table);
 }
 
 
@@ -229,7 +229,7 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 {
 	struct eloop_timeout *timeout, *tmp, *prev;
 
-	timeout = os_malloc(sizeof(*timeout));
+	timeout = malloc(sizeof(*timeout));
 	if (timeout == NULL)
 		return -1;
 	os_get_time(&timeout->time);
@@ -290,7 +290,7 @@ int eloop_cancel_timeout(eloop_timeout_handler handler,
 				eloop.timeout = next;
 			else
 				prev->next = next;
-			os_free(timeout);
+			free(timeout);
 			removed++;
 		} else
 			prev = timeout;
@@ -371,9 +371,9 @@ int eloop_register_signal(int sig, eloop_signal_handler handler,
 	struct eloop_signal *tmp;
 
 	tmp = (struct eloop_signal *)
-		os_realloc(eloop.signals,
-			   (eloop.signal_count + 1) *
-			   sizeof(struct eloop_signal));
+		realloc(eloop.signals,
+			(eloop.signal_count + 1) *
+			sizeof(struct eloop_signal));
 	if (tmp == NULL)
 		return -1;
 
@@ -417,9 +417,9 @@ void eloop_run(void)
 	struct timeval _tv;
 	struct os_time tv, now;
 
-	rfds = os_malloc(sizeof(*rfds));
-	wfds = os_malloc(sizeof(*wfds));
-	efds = os_malloc(sizeof(*efds));
+	rfds = malloc(sizeof(*rfds));
+	wfds = malloc(sizeof(*wfds));
+	efds = malloc(sizeof(*efds));
 	if (rfds == NULL || wfds == NULL || efds == NULL) {
 		printf("eloop_run - malloc failed\n");
 		goto out;
@@ -463,7 +463,7 @@ void eloop_run(void)
 				eloop.timeout = eloop.timeout->next;
 				tmp->handler(tmp->eloop_data,
 					     tmp->user_data);
-				os_free(tmp);
+				free(tmp);
 			}
 
 		}
@@ -477,9 +477,9 @@ void eloop_run(void)
 	}
 
 out:
-	os_free(rfds);
-	os_free(wfds);
-	os_free(efds);
+	free(rfds);
+	free(wfds);
+	free(efds);
 }
 
 
@@ -497,12 +497,12 @@ void eloop_destroy(void)
 	while (timeout != NULL) {
 		prev = timeout;
 		timeout = timeout->next;
-		os_free(prev);
+		free(prev);
 	}
 	eloop_sock_table_destroy(&eloop.readers);
 	eloop_sock_table_destroy(&eloop.writers);
 	eloop_sock_table_destroy(&eloop.exceptions);
-	os_free(eloop.signals);
+	free(eloop.signals);
 }
 
 

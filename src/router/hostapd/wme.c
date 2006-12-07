@@ -20,6 +20,7 @@
 #include "wme.h"
 #include "sta_info.h"
 #include "driver.h"
+#include "hostap_common.h"
 
 
 /* TODO: maintain separate sequence and fragment numbers for each AC

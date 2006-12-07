@@ -4,7 +4,7 @@ CFLAGS = $(COPTS) -MMD -Wall
 #endif
 
 # Include directories for CVS version
-CFLAGS += -I. -I../utils 
+CFLAGS += -I. -I../utils -I../hostapd
 
 ALL=wpa_supplicant wpa_passphrase wpa_cli dynamic_eap_methods
 
@@ -672,9 +672,6 @@ endif
 
 ifdef CONFIG_NO_STDOUT_DEBUG
 CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
-ifndef CONFIG_CTRL_IFACE
-CFLAGS += -DCONFIG_NO_WPA_MSG
-endif
 endif
 
 ifdef CONFIG_IPV6
@@ -684,11 +681,6 @@ endif
 
 ifdef CONFIG_PEERKEY
 CFLAGS += -DCONFIG_PEERKEY
-endif
-
-ifdef CONFIG_IEEE80211W
-CFLAGS += -DCONFIG_IEEE80211W
-NEED_SHA256=y
 endif
 
 ifndef CONFIG_NO_WPA

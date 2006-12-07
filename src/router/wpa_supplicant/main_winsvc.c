@@ -206,8 +206,7 @@ static int wpa_supplicant_thread(void)
 		name[namelen] = '\0';
 
 		wpa_printf(MSG_DEBUG, "interface %d: %s\n", (int) i, name);
-		if (read_interface(global, ihk, name) < 0)
-			exitcode = -1;
+		read_interface(global, ihk, name);
 	}
 
 	RegCloseKey(ihk);
@@ -328,6 +327,16 @@ static int unregister_service(void)
 static void WINAPI service_ctrl_handler(DWORD control_code)
 {
 	switch (control_code) {
+	case SERVICE_CONTROL_PAUSE:
+		printf("ServiceCtrlHandler: SERVICE_CONTROL_PAUSE\n");
+		/* TODO: pause? */
+		svc_status.dwCurrentState = SERVICE_PAUSED;
+		break;
+	case SERVICE_CONTROL_CONTINUE:
+		printf("ServiceCtrlHandler: SERVICE_CONTROL_CONTINUE\n");
+		/* TODO: continue? */
+		svc_status.dwCurrentState = SERVICE_RUNNING;
+		break;
 	case SERVICE_CONTROL_INTERROGATE:
 		break;
 	case SERVICE_CONTROL_SHUTDOWN:
@@ -381,12 +390,11 @@ static void WINAPI service_start(DWORD argc, LPTSTR *argv)
 		return;
 	}
 
-	if (svc_status.dwCurrentState == SERVICE_START_PENDING) {
-		svc_status.dwCurrentState = SERVICE_RUNNING;
-		svc_status.dwWaitHint = 0;
-		svc_status.dwControlsAccepted = SERVICE_ACCEPT_STOP |
-			SERVICE_ACCEPT_SHUTDOWN;
-	}
+	svc_status.dwCurrentState = SERVICE_RUNNING;
+	svc_status.dwWaitHint = 0;
+	svc_status.dwControlsAccepted = SERVICE_ACCEPT_STOP |
+		SERVICE_ACCEPT_PAUSE_CONTINUE |
+		SERVICE_ACCEPT_SHUTDOWN;
 
 	if (!SetServiceStatus(svc_status_handle, &svc_status)) {
 		printf("SetServiceStatus() failed: %d\n",

@@ -15,18 +15,11 @@
 #ifndef CONFIG_SSID_H
 #define CONFIG_SSID_H
 
-#ifndef BIT
-#define BIT(n) (1 << (n))
-#endif
-
 #define WPA_CIPHER_NONE BIT(0)
 #define WPA_CIPHER_WEP40 BIT(1)
 #define WPA_CIPHER_WEP104 BIT(2)
 #define WPA_CIPHER_TKIP BIT(3)
 #define WPA_CIPHER_CCMP BIT(4)
-#ifdef CONFIG_IEEE80211W
-#define WPA_CIPHER_AES_128_CMAC BIT(5)
-#endif /* CONFIG_IEEE80211W */
 
 #define WPA_KEY_MGMT_IEEE8021X BIT(0)
 #define WPA_KEY_MGMT_PSK BIT(1)
@@ -373,16 +366,14 @@ struct wpa_ssid {
 	/**
 	 * altsubject_match - Constraint for server certificate alt. subject
 	 *
-	 * Semicolon separated string of entries to be matched against the
-	 * alternative subject name of the authentication server certificate.
-	 * If this string is set, the server sertificate is only accepted if it
-	 * contains one of the entries in an alternative subject name
-	 * extension.
+	 * This substring is matched against the alternative subject name of
+	 * the authentication server certificate. If this string is set, the
+	 * server sertificate is only accepted if it contains this string in an
+	 * alternative subject name extension.
 	 *
 	 * altSubjectName string is in following format: TYPE:VALUE
 	 *
-	 * Example: EMAIL:server@example.com
-	 * Example: DNS:server.example.com;DNS:server2.example.com
+	 * Example: DNS:server.example.com
 	 *
 	 * Following types are supported: EMAIL, DNS, URI
 	 */
@@ -804,8 +795,6 @@ struct wpa_ssid {
 	 */
 	int peerkey;
 
-#ifdef IEEE8021X_EAPOL
-
 	/**
 	 * fragment_size - Maximum EAP fragment size in bytes (default 1398)
 	 *
@@ -817,8 +806,6 @@ struct wpa_ssid {
 	 */
 	int fragment_size;
 
-#endif /* IEEE8021X_EAPOL */
-
 	/**
 	 * id_str - Network identifier string for external scripts
 	 *
@@ -827,20 +814,6 @@ struct wpa_ssid {
 	 * environment variable for action scripts.
 	 */
 	char *id_str;
-
-#ifdef CONFIG_IEEE80211W
-	/**
-	 * ieee80211w - Whether management frame protection is enabled
-	 *
-	 * This value is used to configure policy for management frame
-	 * protection (IEEE 802.11w). 0 = disabled, 1 = optional, 2 = required.
-	 */
-	enum {
-		NO_IEEE80211W = 0,
-		IEEE80211W_OPTIONAL = 1,
-		IEEE80211W_REQUIRED = 2
-	} ieee80211w;
-#endif /* CONFIG_IEEE80211W */
 };
 
 int wpa_config_allowed_eap_method(struct wpa_ssid *ssid, int vendor,
