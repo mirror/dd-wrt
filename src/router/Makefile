@@ -203,7 +203,6 @@ obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_RADIOOFF) += radiooff
 obj-$(CONFIG_WIFIDOG) += wifidog
-obj-y += sprom
 obj-y += stabridge
 obj-y += net-tools
 obj-$(CONFIG_RSTATS) += rstats
