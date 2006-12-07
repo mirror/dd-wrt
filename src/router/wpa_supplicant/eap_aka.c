@@ -16,6 +16,7 @@
 
 #include "common.h"
 #include "eap_i.h"
+#include "wpa_supplicant.h"
 #include "crypto.h"
 #include "pcsc_funcs.h"
 #include "eap_sim_common.h"
@@ -29,7 +30,6 @@ struct eap_aka_data {
 	u8 k_aut[EAP_SIM_K_AUT_LEN];
 	u8 k_encr[EAP_SIM_K_ENCR_LEN];
 	u8 msk[EAP_SIM_KEYING_DATA_LEN];
-	u8 emsk[EAP_EMSK_LEN];
 	u8 rand[EAP_AKA_RAND_LEN], autn[EAP_AKA_AUTN_LEN];
 	u8 auts[EAP_AKA_AUTS_LEN];
 
@@ -471,8 +471,7 @@ static u8 * eap_aka_process_challenge(struct eap_sm *sm,
 			  "derivation", identity, identity_len);
 	eap_aka_derive_mk(identity, identity_len, data->ik, data->ck,
 			  data->mk);
-	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk,
-			    data->emsk);
+	eap_sim_derive_keys(data->mk, data->k_encr, data->k_aut, data->msk);
 	if (eap_sim_verify_mac(data->k_aut, (const u8 *) req, reqDataLen,
 			       attr->mac, (u8 *) "", 0)) {
 		wpa_printf(MSG_WARNING, "EAP-AKA: Challenge message "
@@ -693,8 +692,7 @@ static u8 * eap_aka_process_reauthentication(struct eap_sm *sm,
 
 	eap_sim_derive_keys_reauth(data->counter,
 				   data->reauth_id, data->reauth_id_len,
-				   data->nonce_s, data->mk, data->msk,
-				   data->emsk);
+				   data->nonce_s, data->mk, data->msk);
 	eap_aka_clear_identities(data, CLEAR_REAUTH_ID | CLEAR_EAP_ID);
 	eap_aka_learn_ids(data, &eattr);
 
@@ -872,25 +870,6 @@ static u8 * eap_aka_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
-static u8 * eap_aka_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
-{
-	struct eap_aka_data *data = priv;
-	u8 *key;
-
-	if (data->state != SUCCESS)
-		return NULL;
-
-	key = os_malloc(EAP_EMSK_LEN);
-	if (key == NULL)
-		return NULL;
-
-	*len = EAP_EMSK_LEN;
-	os_memcpy(key, data->emsk, EAP_EMSK_LEN);
-
-	return key;
-}
-
-
 int eap_peer_aka_register(void)
 {
 	struct eap_method *eap;
@@ -910,7 +889,6 @@ int eap_peer_aka_register(void)
 	eap->deinit_for_reauth = eap_aka_deinit_for_reauth;
 	eap->init_for_reauth = eap_aka_init_for_reauth;
 	eap->get_identity = eap_aka_get_identity;
-	eap->get_emsk = eap_aka_get_emsk;
 
 	ret = eap_peer_method_register(eap);
 	if (ret)

@@ -19,6 +19,8 @@
 #include "includes.h"
 
 #include "common.h"
+#include "wpa.h"
+#include "wpa_supplicant.h"
 #include "config.h"
 #include "base64.h"
 
