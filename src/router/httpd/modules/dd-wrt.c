@@ -2409,6 +2409,10 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 		 nvram_match (wl_mode,
 			      "ap") ? "selected=\\\"selected\\\"" : "");
       websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "infra") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
 		 nvram_match (wl_mode,
 			      "wdssta") ? "selected=\\\"selected\\\"" : "");
