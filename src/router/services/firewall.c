@@ -775,10 +775,12 @@ nat_postrouting (void)
   if (nvram_match ("wk_mode", "gateway"))
     {
 #ifdef SIP_ALG_SUPPORT
+if (strlen(wanface)>0)
       save2file
 	("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
 	 "--to-ports 5056-5071\n", wanface);
 #endif
+if (strlen(wanface)>0)
       save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 
       if (nvram_match ("loopback_enable", "1"))
@@ -857,7 +859,7 @@ nat_postrouting (void)
 #endif
 	}
     }
-  else if (nvram_match ("wl_br1_enable", "1"))
+  else if (strlen(wanface)>0) if (nvram_match ("wl_br1_enable", "1"))
     save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 }
 
