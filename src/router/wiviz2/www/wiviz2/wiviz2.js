@@ -38,7 +38,7 @@ var logodiv;
 var lastWvzUpdate = now - 4500;
 var lastInfoUpdate = now;
 var wvzFrame;
-var wvzLoc = "/cgi-bin/wiviz2-get.cgi";
+var wvzLoc = "Wiviz.live.asp";
 var hosts;
 var root;
 var globalRedraw = false;
@@ -318,7 +318,7 @@ function redraw() {
 	    if (!item.div) {
 			item.div = document.createElement('div');
 			item.div.className = 'div3d';
-			item.div.innerHTML = "<img class='sizeimage' src='ssid.png'>";
+			item.div.innerHTML = "<img class='sizeimage' src='images/wiviz/ssid.png'>";
 			mainarea.appendChild(item.div);
 			item.div.backref = item;
 	    }
@@ -603,7 +603,7 @@ function wiviz_callback(hosts, cfgobj) {
 			mainarea.appendChild(e.div);
 			el = document.createElement('img');
 			el.className = 'glow';
-			el.src = colors[Math.floor(Math.random() * numcolors)] + 'glow.png';
+			el.src = "images/wiviz/" + colors[Math.floor(Math.random() * numcolors)] + 'glow.png';
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.className = 'glow';
@@ -620,7 +620,7 @@ function wiviz_callback(hosts, cfgobj) {
 			}
 			el = document.createElement('img');
 			el.className = 'sizeimage';
-			el.src = h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
+			el.src = "/images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.style.width = '50px';
