@@ -20,8 +20,8 @@ extern int get_filesystem_list(char * buf);
 int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
-int root_devices=4;
-char * __initdata root_device_name[4]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2"};
+int root_devices=8;
+char * __initdata root_device_name[4]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2", "/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2"};
 static char __initdata saved_root_name[64];
 
 dev_t ROOT_DEV[4];
