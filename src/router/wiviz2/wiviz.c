@@ -67,16 +67,16 @@ int main(int argc, char * * argv) {
   cfg.channelHopSeqLen = 5;
   memcpy(cfg.channelHopSeq, defaultHopSeq, sizeof(defaultHopSeq));
 
-  wl_ioctl(WL_DEVICE, WLC_GET_MAGIC, &i, 4);
+  wl_ioctl(get_wdev(), WLC_GET_MAGIC, &i, 4);
 	if (i != WLC_IOCTL_MAGIC) {
-		fprintf(stderr, "Wireless magic not correct, not querying wl for info\n");
+		fprintf(stderr, "Wireless magic not correct, not querying wl for info %X!=%X\n",i,WLC_IOCTL_MAGIC);
 		cfg.readFromWl = 0;
 	}
 	else {
 	  cfg.readFromWl = 1;
-	  wl_ioctl(WL_DEVICE, WLC_GET_MONITOR, &oldMonitor, 4);
+	  wl_ioctl(get_wdev(), WLC_GET_MONITOR, &oldMonitor, 4);
 	  newMonitor = 1;
-	  wl_ioctl(WL_DEVICE, WLC_SET_MONITOR, &newMonitor, 4);
+	  wl_ioctl(get_wdev(), WLC_SET_MONITOR, &newMonitor, 4);
 	}
 
   reloadConfig();
@@ -118,7 +118,7 @@ int main(int argc, char * * argv) {
     }
 #endif
 
-  wl_ioctl(WL_DEVICE, WLC_SET_MONITOR, &oldMonitor, 4);
+  wl_ioctl(get_wdev(), WLC_SET_MONITOR, &oldMonitor, 4);
 
   close(s);
   return 0;
@@ -256,7 +256,7 @@ void reloadConfig() {
         else {
           cfg->curChannel = val;
           if (cfg->readFromWl) {
-            if (wl_ioctl(WL_DEVICE, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
+            if (wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
               fprintf(stderr, "Channel set to %i failed\n", cfg->curChannel);
               }
             }
@@ -565,32 +565,33 @@ void readWL(wiviz_cfg * cfg) {
 	wlc_ssid_t ssid; 
 	channel_info_t channel;
 	maclist_t * macs;
-  sta_rssi_t starssi;
+        sta_rssi_t starssi;
+	char *dev = get_wdev();
 	
-	get_mac(WL_DEVICE, mac);
+	get_mac(get_wdev(), mac);
 	printf("AP mac: ");
 	print_mac(mac, "\n");
 	if (!nonzeromac(mac)) return;
-	wl_ioctl(WL_DEVICE, WLC_GET_AP, &ap, 4);
+	wl_ioctl(get_wdev(), WLC_GET_AP, &ap, 4);
 	if (ap) {
 		host = gotHost(cfg, mac, typeAP);
     host->isSelf = 1;
-		wl_ioctl(WL_DEVICE, WLC_GET_BSSID, host->apInfo->bssid, 6);
-		wl_ioctl(WL_DEVICE, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
+		wl_ioctl(dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
+		wl_ioctl(dev, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
 		memcpy(host->apInfo->ssid, ssid.SSID, 32);
 		host->apInfo->ssidlen = ssid.SSID_len;
 		host->RSSI = 0;
-		wl_ioctl(WL_DEVICE, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t));
+		wl_ioctl(dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t));
 		host->apInfo->channel = channel.hw_channel;
 		macs = (maclist_t *) malloc(4 + MAX_STA_COUNT * sizeof(ether_addr_t));
 		macs->count = MAX_STA_COUNT;
-		if (wl_ioctl(WL_DEVICE, WLC_GET_ASSOCLIST, macs, 4 + MAX_STA_COUNT * sizeof(ether_addr_t)) > -1) {
+		if (wl_ioctl(dev, WLC_GET_ASSOCLIST, macs, 4 + MAX_STA_COUNT * sizeof(ether_addr_t)) > -1) {
 			for (i = 0; i < macs->count; i++) {
 			  sta = gotHost(cfg, (char *)&macs->ea[i], typeSta);
         memcpy(starssi.mac, &macs->ea[i], 6);
         starssi.RSSI = 3000;
         starssi.zero_ex_forty_one = 0x41;
-				if (wl_ioctl(WL_DEVICE, WLC_GET_RSSI, &starssi, 12) < 0) printf("rssifail\n");
+				if (wl_ioctl(dev, WLC_GET_RSSI, &starssi, 12) < 0) printf("rssifail\n");
 				sta->RSSI = -starssi.RSSI * 100;
 				sta->staInfo->state = ssAssociated;
 				memcpy(sta->staInfo->connectedBSSID, host->apInfo->bssid, 6);
@@ -601,14 +602,14 @@ void readWL(wiviz_cfg * cfg) {
 		host = gotHost(cfg, mac, typeSta);
     host->isSelf = 1;
 		host->RSSI = 0;
-		if (wl_ioctl(WL_DEVICE, WLC_GET_BSSID, &host->staInfo->connectedBSSID, 6) < 0) {
+		if (wl_ioctl(dev, WLC_GET_BSSID, &host->staInfo->connectedBSSID, 6) < 0) {
 		  host->staInfo->state = ssUnassociated;
 		}
 		else {
 		  host->staInfo->state = ssAssociated;
 		}
 	}
-  if (wl_ioctl(WL_DEVICE, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t)) >= 0) {
+  if (wl_ioctl(dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t)) >= 0) {
     cfg->curChannel = channel.hw_channel;
     fprintf(stderr, "Current channel is %i\n", cfg->curChannel);
     }
