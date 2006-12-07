@@ -27,10 +27,6 @@ CONFIG_OS=unix
 endif
 endif
 
-ifeq ($(CONFIG_OS), internal)
-CFLAGS += -DOS_NO_C_LIB_DEFINES
-endif
-
 ifdef CONFIG_NATIVE_WINDOWS
 CFLAGS += -DCONFIG_NATIVE_WINDOWS
 LIBS += -lws2_32
@@ -40,8 +36,7 @@ OBJS =	hostapd.o eloop.o ieee802_1x.o eapol_sm.o radius.o md5.o rc4.o md4.o \
 	common.o ieee802_11.o config.o ieee802_11_auth.o accounting.o \
 	sta_info.o radius_client.o sha1.o wpa.o aes_wrap.o ctrl_iface.o \
 	driver_conf.o os_$(CONFIG_OS).o preauth.o pmksa_cache.o beacon.o \
-	hw_features.o wme.o ap_list.o reconfig.o \
-	mlme.o vlan_init.o ieee802_11h.o
+	hw_features.o wme.o ap_list.o
 
 HOBJS=hlr_auc_gw.o common.o os_$(CONFIG_OS).o milenage.o aes_wrap.o
 
@@ -57,13 +52,12 @@ CFLAGS += -DCONFIG_RSN_PREAUTH
 CONFIG_L2_PACKET=y
 endif
 
-ifdef CONFIG_PEERKEY
-CFLAGS += -DCONFIG_PEERKEY
+ifdef CONFIG_STAKEY
+CFLAGS += -DCONFIG_STAKEY
 endif
 
-ifdef CONFIG_IEEE80211W
-CFLAGS += -DCONFIG_IEEE80211W
-NEED_SHA256=y
+ifdef CONFIG_PEERKEY
+CFLAGS += -DCONFIG_PEERKEY
 endif
 
 ifdef CONFIG_DRIVER_HOSTAP
@@ -314,12 +308,6 @@ ifdef CONFIG_IPV6
 CFLAGS += -DCONFIG_IPV6
 endif
 
-ifdef CONFIG_FULL_DYNAMIC_VLAN
-# define CONFIG_FULL_DYNAMIC_VLAN to have hostapd manipulate bridges
-# and vlan interfaces for the vlan feature.
-CFLAGS += -DCONFIG_FULL_DYNAMIC_VLAN
-endif
-
 ALL=hostapd hostapd_cli
 
 all: verify_config $(ALL)
@@ -402,10 +390,10 @@ LIBS_n += -lcrypto
 endif
 
 nt_password_hash: $(NOBJS)
-	$(CC) -o nt_password_hash $(NOBJS) $(LIBS_n)
+	$(CC) -o nt_password_hash $(NOBJS) $(LDFLAGS) $(LIBS_n)
 
 hlr_auc_gw: $(HOBJS)
-	$(CC) -o hlr_auc_gw $(HOBJS) $(LIBS_h)
+	$(CC) -o hlr_auc_gw $(HOBJS) $(LDFLAGS) $(LIBS_h)
 
 clean:
 	rm -f core *~ *.o hostapd hostapd_cli nt_password_hash hlr_auc_gw
@@ -435,7 +423,7 @@ clean-docs:
 TEST_SRC_MILENAGE = milenage.c aes_wrap.c common.c os_$(CONFIG_OS).c
 test-milenage: $(TEST_SRC_MILENAGE)
 	$(CC) -o test-milenage -Wall -Werror $(TEST_SRC_MILENAGE) \
-		-DTEST_MAIN_MILENAGE -I. -I../wpa_supplicant -DINTERNAL_AES
+		-DTEST_MAIN_MILENAGE -I. -I../wpa_supplicant
 	./test-milenage
 	rm test-milenage
 

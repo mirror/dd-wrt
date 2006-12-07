@@ -49,11 +49,6 @@ struct ctrl_iface_priv {
 };
 
 
-static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
-					   int level, const char *buf,
-					   size_t len);
-
-
 static int wpa_supplicant_ctrl_iface_attach(struct ctrl_iface_priv *priv,
 					    struct sockaddr_un *from,
 					    socklen_t fromlen)
@@ -237,16 +232,6 @@ static char * wpa_supplicant_ctrl_iface_path(struct wpa_supplicant *wpa_s)
 }
 
 
-static void wpa_supplicant_ctrl_iface_msg_cb(void *ctx, int level,
-					     const char *txt, size_t len)
-{
-	struct wpa_supplicant *wpa_s = ctx;
-	if (wpa_s == NULL || wpa_s->ctrl_iface == NULL)
-		return;
-	wpa_supplicant_ctrl_iface_send(wpa_s->ctrl_iface, level, txt, len);
-}
-
-
 struct ctrl_iface_priv *
 wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 {
@@ -337,8 +322,7 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 		goto fail;
 	os_strncpy(addr.sun_path, fname, sizeof(addr.sun_path));
 	if (bind(priv->sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		wpa_printf(MSG_DEBUG, "ctrl_iface bind(PF_UNIX) failed: %s",
-			   strerror(errno));
+		perror("bind(PF_UNIX)");
 		if (connect(priv->sock, (struct sockaddr *) &addr,
 			    sizeof(addr)) < 0) {
 			wpa_printf(MSG_DEBUG, "ctrl_iface exists, but does not"
@@ -382,7 +366,6 @@ wpa_supplicant_ctrl_iface_init(struct wpa_supplicant *wpa_s)
 
 	eloop_register_read_sock(priv->sock, wpa_supplicant_ctrl_iface_receive,
 				 wpa_s, priv);
-	wpa_msg_register_cb(wpa_supplicant_ctrl_iface_msg_cb);
 
 	os_free(buf);
 	return priv;
@@ -421,10 +404,9 @@ void wpa_supplicant_ctrl_iface_deinit(struct ctrl_iface_priv *priv)
 		close(priv->sock);
 		priv->sock = -1;
 		fname = wpa_supplicant_ctrl_iface_path(priv->wpa_s);
-		if (fname) {
+		if (fname)
 			unlink(fname);
-			os_free(fname);
-		}
+		os_free(fname);
 
 		buf = os_strdup(priv->wpa_s->conf->ctrl_interface);
 		if (buf == NULL)
@@ -462,18 +444,8 @@ free_dst:
 }
 
 
-/**
- * wpa_supplicant_ctrl_iface_send - Send a control interface packet to monitors
- * @priv: Pointer to private data from wpa_supplicant_ctrl_iface_init()
- * @level: Priority level of the message
- * @buf: Message data
- * @len: Message length
- *
- * Send a packet to all monitor programs attached to the control interface.
- */
-static void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv,
-					   int level, const char *buf,
-					   size_t len)
+void wpa_supplicant_ctrl_iface_send(struct ctrl_iface_priv *priv, int level,
+				    const char *buf, size_t len)
 {
 	struct wpa_ctrl_dst *dst, *next;
 	char levelstr[10];

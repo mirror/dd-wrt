@@ -295,7 +295,6 @@ struct wpa_supplicant {
 	int pairwise_cipher;
 	int group_cipher;
 	int key_mgmt;
-	int mgmt_group_cipher;
 
 	void *drv_priv; /* private data used by driver_ops */
 
