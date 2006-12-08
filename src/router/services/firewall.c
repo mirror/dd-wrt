@@ -775,13 +775,13 @@ nat_postrouting (void)
   if (nvram_match ("wk_mode", "gateway"))
     {
 #ifdef SIP_ALG_SUPPORT
-if (strlen(wanface)>0)
-      save2file
-	("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
-	 "--to-ports 5056-5071\n", wanface);
+      if (strlen (wanface) > 0)
+	save2file
+	  ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
+	   "--to-ports 5056-5071\n", wanface);
 #endif
-if (strlen(wanface)>0)
-      save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
+      if (strlen (wanface) > 0)
+	save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 
       if (nvram_match ("loopback_enable", "1"))
 	{
@@ -859,8 +859,9 @@ if (strlen(wanface)>0)
 #endif
 	}
     }
-  else if (strlen(wanface)>0) if (nvram_match ("wl_br1_enable", "1"))
-    save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
+  else if (strlen (wanface) > 0)
+    if (nvram_match ("wl_br1_enable", "1"))
+      save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 }
 
 static void
@@ -1789,6 +1790,45 @@ void
 filter_forward (void)
 {
 
+
+#ifdef HAVE_MSSID
+
+#ifdef HAVE_MADWIFI
+  int i;
+
+  char *next;
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+  for (i = 0; i < getdevicecount (); i++)
+    {
+      sprintf (wifivifs, "ath%d_vifs", i);
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+	  save2file ("-A INPUT -i %s -j ACCEPT\n", var);
+	  save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+	}
+    }
+#else
+  char *next;
+  char dev[16];
+  char var[80];
+  char wifivifs[16];
+
+  sprintf (wifivifs, "wl0_vifs");
+  char *vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      save2file ("-A INPUT -i %s -j ACCEPT\n", var);
+      save2file ("-A FORWARD -i %s -j ACCEPT\n", var);
+    }
+#endif
+
+
+#endif
   /* Accept the redirect, might be seen as INVALID, packets */
   save2file ("-A FORWARD -i %s -o %s -j ACCEPT\n", lanface, lanface);
 
