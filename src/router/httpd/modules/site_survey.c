@@ -260,6 +260,12 @@ set_wiviz (webs_t wp)
       fprintf (fp, "hopseq=%s\n", hopseq);
     }
   fclose (fp);
-  killall ("wiviz",SIGUSR2);
+  killall ("wiviz", SIGUSR2);
+}
+
+int
+stop_wiviz (webs_t wp)
+{
+  killall ("wiviz", SIGTERM);
 }
 #endif
