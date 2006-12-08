@@ -4139,7 +4139,7 @@ void
 ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 {
   FILE *f;
-  char buf[128];
+  char buf[256];
 
   eval ("run_wiviz");
 
