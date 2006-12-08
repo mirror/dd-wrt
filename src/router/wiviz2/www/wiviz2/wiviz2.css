@@ -19,7 +19,7 @@ div.expando {
 }
 div.slidingheader {
 	border: 1px solid black;
-	background-image: url(images/wiviz/slidingheader.gif);
+	background-image: url(../images/wiviz/slidingheader.gif);
 	background-repeat: repeat-x;
 	background-position: 0 0;
 	width: 100%;
