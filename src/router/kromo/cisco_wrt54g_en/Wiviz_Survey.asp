@@ -166,7 +166,7 @@
 	    </div>
 	</div>
 </div>
-<div class='poweredby'>By Nate True<br>Powered by OpenWrt</div>
+<div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
 <div class='debugger' id='debugger'></div>
 <iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
 <iframe class='wiviz' id='wivizSetFrame' name='wivizSetFrame' src='about:blank'></iframe>
