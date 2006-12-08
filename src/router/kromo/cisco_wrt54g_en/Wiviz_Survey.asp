@@ -1,10 +1,10 @@
 <html>
 <head>
 <title>Wi-viz 2.0: Wireless Network Visualization</title>
-<link rel='stylesheet' type='text/css' href='style/wiviz2.css'>
-<script language='Javascript1.2' src='js/wiviz2.js'></script>
+<link rel="stylesheet" type="text/css" href="style/wiviz2.css">
+<script type="text/javascript" src="js/wiviz2.js"></script>
 <!-- The proper way to deal with memory leaks -->
-<meta http-equiv='refresh' content='1800'>
+<meta http-equiv="refresh" content="1800">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
 </div>
 
 <div class='rightmenu'>
-	<div class='expando'>
+<!--	<div class='expando'>
 		<div class='slidingheader' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning options
 		</div>
@@ -61,6 +61,7 @@
 			</form>
 		</div>
 	</div>
+-->
 	<div class='expando'>
 		<div class='slidingheader' id='displayoptions' onClick='toggleExpando(this)'>
 			Display options
@@ -91,34 +92,35 @@
 			<i>Please select a host to view details.</i>
 			</span>
 			<span id='detail_network_actions' class='actionlist'>
-			<center>Network Actions</center>
-			<a class='action' href='javascript:ap_join(this)'>Join this network</a>
-			</span>
+<!--			<center>Network Actions</center>
+			<a class='action' href='javascript:ap_join(this)'>Join this network</a> 
+-->			</span>
 			<span id='detail_ap_actions' class='actionlist'>
-			<center>AP Actions</center>
+<!--			<center>AP Actions</center>
 			<a class='action' href='javascript:ap_wds(this)'>Join via WDS</a>
 			<a class='action' href='javascript:ap_copy(this)'>Copy this AP's settings</a>
-			</span>
+-->			</span>
 			<span id='detail_sta_actions' class='actionlist'>
-			<center>Foreign-client actions</center>
-			<a class='action' href='javascript:sta_spy(this)'>Spy on this client</a>
+<!--			<center>Foreign-client actions</center>
+			<a class='action' href='javascript:sta_spy(this)'>Spy on this client</a> 
 			<a class='action' href='javascript:sta_unblock(this)'>Unblock this MAC</a>
-			</span>
+-->			</span>
 			<span id='detail_sta_assoc_actions' class='actionlist'>
-			<center>Local-client actions</center>
+<!--			<center>Local-client actions</center>
 			<a class='action' href='javascript:sta_disassoc(this)'>Disconnect this client</a>
 			<a class='action' href='javascript:sta_block(this)'>Block this MAC</a>
 			<a class='action' href='javascript:sta_static(this)'>Set DHCP static IP</a>
-			</span>
+-->			</span>
 			<span id='detail_local_actions' class='actionlist'>
-			<center>OpenWRT actions</center>
+<!--			<center>OpenWRT actions</center>
 			<a class='action' href='/cgi-bin/webif.sh'>Web configuration</a>
 			<a class='action' href='javascript:ap_join_box(this)'>Join a network</a>
 			<a class='action' href='javascript:ap_setup(this)'>AP settings</a>
-			</span>
-		</div>
+-->			</span>
+		</div> 
+
 	</div>
-	<div class='expando' style='display:none'>
+<!--	<div class='expando' style='display:none'>
 		<div class='slidingheader' id='clientspy' onClick='toggleExpando(this)'>
 			Client spy
 		</div>
@@ -133,8 +135,8 @@
 			badger<br>
 			mushroom?
 		</div>
-	</div>
-	<div class='expando'>
+	</div> -->
+<!--	<div class='expando'>
 	    <div class='slidingheader' id='configuration' onClick='toggleExpando(this)'>
 			Local Configuration
 	    </div>
@@ -164,8 +166,8 @@
 	        <input type='submit' value='Apply changes' onclick="alert('Unimplemented')">
 	        </form>
 	    </div>
-	</div>
-</div>
+	</div> 
+</div> -->
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
 <div class='debugger' id='debugger'></div>
 <iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
