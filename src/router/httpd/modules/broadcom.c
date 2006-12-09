@@ -3447,13 +3447,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       do_logout ();
       return 1;
     }
-#ifdef HAVE_WIVIZ
-  else if (!strncmp (value, "Stop_Wiviz", 10))
-    {
-      killall ("wiviz" , SIGTERM);
-      return 1;
-    }
-#endif
+
     
   /* DEBUG : Invalid action */
   else
