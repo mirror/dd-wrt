@@ -86,6 +86,11 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
 
+#ifdef HAVE_WIVIZ
+  {"hopdwell", "1000", 0},
+  {"hopseq", "6", 0},
+#endif
+
 #ifdef HAVE_UPNP
 #ifdef HAVE_SKYTRON
   {"upnp_enable", "1", 0},	/* 0:Disable 1:Enable */
