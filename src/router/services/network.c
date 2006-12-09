@@ -1061,6 +1061,7 @@ start_lan (void)
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
 		br_add_interface (lan_ifname, name);
+		led_control (LED_BRIDGE, LED_ON);
 		//eval ("brctl", "addif", lan_ifname, name);
 /*
 				eval("wl", "ap", "0");			  //disable ap mode
