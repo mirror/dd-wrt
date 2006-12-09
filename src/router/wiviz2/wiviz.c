@@ -159,7 +159,7 @@ void writeJavascript() {
   FILE * outf;
   wiviz_host * h;
 
-  outf = fopen("/tmp/wiviz-pipe", "w");
+  outf = fopen("/tmp/wiviz2-dump", "w");
   if (!outf) {
     fprintf(stderr, "Failure to open output file\n");
     return;
