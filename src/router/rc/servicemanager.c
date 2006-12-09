@@ -26,9 +26,9 @@
 //#include <shutils.h>
 
 #define SERVICE_MODULE "/lib/services.so"
-//#define cprintf(fmt, args...)
+#define cprintf(fmt, args...)
 
-
+/*
 #define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
@@ -36,7 +36,7 @@
 		fclose(fp); \
 	} \
 } while (0)
-
+*/
 
 
 void *
