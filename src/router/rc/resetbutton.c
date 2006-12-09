@@ -288,11 +288,11 @@ period_check (int sig)
     case ROUTER_BUFFALO_WZRRSG54:
       sesgpio = 0x10;	//gpio 0, inversed
       break;
-    case ROUTER_ASUS_WL500G_PRE:
     case ROUTER_WRT54G:
       sesgpio = 0x14;	//gpio 4, inversed
       break;
     case ROUTER_BUFFALO_WBR2G54S:
+    case ROUTER_ASUS_WL500G_PRE:
       sesgpio = 0x04;	//gpio 4, normal
       break;
     default:
