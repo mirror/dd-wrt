@@ -5050,9 +5050,6 @@ struct ej_handler ej_handlers[] = {
 /*	{ "per_port_option", ej_per_port_option}, */
   {"get_http_prefix", ej_get_http_prefix},
   {"dump_site_survey", ej_dump_site_survey},
-#ifdef HAVE_WIVIZ
-  {"dump_wiviz_plus_site_survey", ej_dump_wiviz_plus_site_survey},
-#endif
   {"show_meminfo", ej_show_meminfo},
   {"get_mtu", ej_get_mtu},
   {"get_url", ej_get_url},
