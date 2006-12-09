@@ -1060,6 +1060,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MULTICAST
   if (!strcmp (name, "MULTICAST_SUPPORT") && strcmp (value, "1"))
     websWrite (wp, output);
+    return;
 #endif
 /*
   struct support_list *v;
