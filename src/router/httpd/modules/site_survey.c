@@ -160,6 +160,8 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
   char mac[32]="";
   char macs[2048]="";
 
+  killall ("autokill_wiviz", SIGTERM);
+  eval ("autokill_wiviz");
   eval ("run_wiviz");
 
   if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
