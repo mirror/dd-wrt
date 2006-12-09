@@ -1,12 +1,24 @@
-<html>
-<head>
-<title>Wi-viz 2.0: Wireless Network Visualization</title>
-<link rel="stylesheet" type="text/css" href="style/wiviz2.css">
-<script type="text/javascript" src="js/wiviz2.js"></script>
-<!-- The proper way to deal with memory leaks -->
-<meta http-equiv="refresh" content="1800">
-</head>
-<body>
+<% do_pagehead(); %>
+		<title><% nvram_get("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
+		<script type="text/javascript" src="js/wiviz2.js"></script>
+		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
+		<!-- The proper way to deal with memory leaks -->
+		<meta http-equiv="refresh" content="1800">
+		<script type="text/javascript">
+		//<![CDATA[
+
+document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
+
+function kill_wiviz() {
+	document.forms[0].action.value = "Stop_Wiviz";
+	document.forms[0].submit();
+}
+
+		//]]>
+		</script>
+	</head>
+
+<body onunload="javascript:kill_wiviz()">
 
 <img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.gif' height=75 width=207>
 
@@ -30,13 +42,13 @@
 			<center>Status</center>
 			Monitoring<br>
 			Up for 10 minutes<br>
-			<center>Channel setting</center>
+			<center>Channel setting</center> -->
 			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
 			        	<input type="hidden" name="action" value="Apply" />
                   		<input type="hidden" name="change_action" value="gozila_cgi" />
                   		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
 	          		<input type="hidden" name="submit_type" value="Set" />
-			<select name='hopseq' onChange='this.form.submit()'>
+<!--			<select name='hopseq' onChange='this.form.submit()'>
 				<option value='1' <% nvram_match("channelsel","1","selected"); %> >1</option>
 				<option value='2' <% nvram_match("channelsel","2","selected"); %> >2</option>
 				<option value='3' <% nvram_match("channelsel","3","selected"); %> >3</option>
@@ -57,9 +69,9 @@
 				<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14' <% nvram_match("channelsel","1,2,3,4,5,6,7,8,9,10,11,12,13,14","selected"); %> >1 to 14</option>
 			</select>
 			<input type='hidden' name='channelsel' value='hop'>
-			<input type='hidden' name='hopdwell' value='750'>
+			<input type='hidden' name='hopdwell' value='750'> -->
 			</form>
-		</div>
+<!--		</div>
 	</div>
 -->
 	<div class='expando'>
