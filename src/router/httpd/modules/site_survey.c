@@ -226,10 +226,12 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
     }
     else    //dummy data - to prevent first time js error
     {
-    	websWrite (wp, "top.hosts = new Array(\n");
-    	websWrite (wp, "new Array());\n");
-    	websWrite (wp, "var cfg_string = \'channel-6\';\n");
-    	websWrite (wp, "top.wiviz_callback(top.hosts, cfg_string);\n");
+    	websWrite (wp, "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
+    	websWrite (wp, "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
+     	websWrite (wp, "top.wiviz_callback(top.hosts, wiviz_cfg);\n");   	
+    	websWrite (wp, "function wiviz_callback(one, two) {\n");
+    	websWrite (wp, "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
+    	websWrite (wp, "location.replace('Wiviz_Survey.asp');\n}\n");
 	}
 
   return;
