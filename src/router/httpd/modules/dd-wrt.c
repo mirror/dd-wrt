@@ -2179,10 +2179,13 @@ save_prefix (webs_t wp, char *prefix)
     {
 
       sprintf (n, "%s_net_mode", prefix);
+      if (!nvram_match(n,websGetVar(wp,n,"")))
+      {
       copytonv (wp, n);
 //#ifndef HAVE_MADWIFI
       convert_wl_gmode (nvram_safe_get (n));
 //#endif
+      }
     }
   sprintf (n, "%s_nbw", prefix);
   copytonv (wp, n);
