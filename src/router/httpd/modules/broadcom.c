@@ -4142,6 +4142,8 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
   FILE *f;
   char buf[256];
 
+  killall ("autokill_wiviz", SIGTERM);
+  eval ("autokill_wiviz");
   eval ("run_wiviz");
 
 
