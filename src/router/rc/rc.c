@@ -204,6 +204,7 @@ main_loop (void)
     case ROUTER_MOTOROLA:
     case ROUTER_SIEMENS:
     case ROUTER_BELKIN_F5D7230:
+    case ROUTER_WRT350N:
       start_service ("config_vlan");
       break;
     default:

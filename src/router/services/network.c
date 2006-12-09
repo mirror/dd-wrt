@@ -1608,6 +1608,7 @@ start_wan (int status)
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_WRTSL54GS:
     case ROUTER_WRT300N:
+    case ROUTER_WRT350N:
     case ROUTER_WZRG300N:
     case ROUTER_MOTOROLA_V1:
     case ROUTER_RT210W:

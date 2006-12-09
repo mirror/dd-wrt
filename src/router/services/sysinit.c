@@ -377,6 +377,14 @@ start_restore_defaults (void)
     {"wan_ifnames", "vlan1", 0},
     {0, 0, 0}
   };
+
+  struct nvram_tuple wrt350vlan[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "vlan1 eth1 eth2 eth3", 0},
+    {"wan_ifname", "vlan2", 0},
+    {"wan_ifnames", "vlan2", 0},
+    {0, 0, 0}
+  };
 #endif
 
   struct nvram_tuple *linux_overrides;
@@ -459,6 +467,9 @@ start_restore_defaults (void)
       break;
     case ROUTER_ASUS:
       linux_overrides = vlan;
+      break;
+    case ROUTER_WRT350N:
+      linux_overrides = wrt350vlan;
       break;
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
@@ -1289,7 +1300,6 @@ check_cfe_nv (void)
 	ret += check_nv ("ag0", "0x02");
       else
 	ret += check_nv ("ag0", "255");
-
       if (check_hw_type () == BCM5325E_CHIP)
 	{
 	  /* Lower the DDR ram drive strength , the value will be stable for all boards
@@ -1316,6 +1326,9 @@ check_cfe_nv (void)
 #ifndef HAVE_MSSID
 	  ret += check_nv ("pa0maxpwr", "0x4e");
 #endif
+	}
+	else if(check_hw_type() == BCM4705_BCM5397_EWC_CHIP) {
+		// nothing to do
 	}
       else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
 	{
