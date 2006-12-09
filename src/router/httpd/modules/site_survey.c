@@ -151,75 +151,22 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_WIVIZ
-void
-ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//for testing only
-{
 
+void
+ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
+{
   FILE *f;
-  char buf[128];
-  char mac[32]="";
-  char macs[2048]="";
+  char buf[256];
 
   killall ("autokill_wiviz", SIGTERM);
   eval ("autokill_wiviz");
   eval ("run_wiviz");
 
-  if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
-    {
 
+  if ((f = fopen ("/tmp/wiviz2-dump", "r")) != NULL)
+    {
       while (fgets (buf, sizeof (buf), f))
 	{
-		if (!strncmp (buf, "  new Array", 11))
-		{
-	  		sscanf (buf , "  new Array(%18s", mac);
-	  		strcat (macs, mac);
-		}
-		
-		
-		
-	  if (!strncmp (buf, "new Array())", 12))
-	    {
-
-
-	      int i;
-	      int j;
-
-	      system2 ("site_survey");
-
-	      open_site_survey ();
-
-	      for (i = 0; i < SITE_SURVEY_NUM; i++)
-		{
-
-
-		  if (site_survey_lists[i].BSSID[0] == 0 ||
-		      site_survey_lists[i].channel == 0)
-		    break;
-
-		  char *open =
-//      (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes"; //open network?
-		    (site_survey_lists[i].
-		     capability & DOT11_CAP_PRIVACY) ? "enc&unknown" :
-		    "unenc&na";
-		    
-			if (!strstr(macs, site_survey_lists[i].BSSID))  //print only if not already on the list
-			{
-		  websWrite (wp,
-			     "  new Array(\'%s\', %d, \'ap&channel&%d&ssid&",
-			     site_survey_lists[i].BSSID,
-			     site_survey_lists[i].RSSI,
-			     site_survey_lists[i].channel);
-
-		  for (j = 0; j < strlen (site_survey_lists[i].SSID); j++)
-		    websWrite (wp, "\\x%02X",
-			       *((char *) site_survey_lists[i].SSID +
-				 j) & 0xFF);
-
-		  websWrite (wp, "&%s\', 0),\n", open);
-			}
-
-		}
-	    }
 	  websWrite (wp, "%s", buf);
 	}
       fclose (f);
@@ -233,36 +180,35 @@ ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv)	//
     	websWrite (wp, "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
     	websWrite (wp, "location.replace('Wiviz_Survey.asp');\n}\n");
 	}
-
-  return;
 }
+
 
 int
 set_wiviz (webs_t wp)
 {
-  char *channelsel = websGetVar (wp, "channelsel", NULL);
+//  char *channelsel = websGetVar (wp, "channelsel", NULL);
   char *hopdwell = websGetVar (wp, "hopdwell", NULL);
   char *hopseq = websGetVar (wp, "hopseq", NULL);
-  FILE *fp = fopen("/tmp/wiviz-cfg", "wb");
-  if (channelsel)
-    {
-      fprintf (fp, "channelsel=%s", channelsel);
-      nvram_set ("channelsel", channelsel);
-    }
-  if (channelsel && hopdwell)
-    fprintf (fp, "&");
-  if (hopdwell)
-    {
-      fprintf (fp, "hopdwell=%s", hopdwell);
+  FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
+//  if (channelsel)
+//    {
+      fprintf (fp, "channelsel=hop&");
+//      nvram_set ("channelsel", channelsel);
+//    }
+//  if (channelsel && hopdwell)
+//    fprintf (fp, "&");
+//  if (hopdwell)
+//    {
+      fprintf (fp, "hopdwell=%s&", hopdwell);
       nvram_set ("hopdwell", hopdwell);
-    }
-  if ((channelsel || hopdwell) && hopseq)
-    fprintf (fp, "&");
-  if (hopseq)
-    {
+//    }
+//  if ((channelsel || hopdwell) && hopseq)
+//    fprintf (fp, "&");
+//  if (hopseq)
+//    {
       nvram_set ("hopseq", hopseq);
       fprintf (fp, "hopseq=%s\n", hopseq);
-    }
+//    }
   fclose (fp);
   killall ("wiviz", SIGUSR2);
 }
