@@ -10,16 +10,11 @@
 
 document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 
-function kill_wiviz() {
-	document.forms[0].action.value = "Stop_Wiviz";
-	document.forms[0].submit();
-}
-
 		//]]>
 		</script>
 	</head>
 
-<body onunload="javascript:kill_wiviz()">
+<body>
 
 <img class='logo' id='logo' src='images/wiviz/wiviz2logo-smaller.gif' height=75 width=207>
 
