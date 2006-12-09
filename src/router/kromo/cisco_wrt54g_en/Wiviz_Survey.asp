@@ -30,46 +30,56 @@ document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 </div>
 
 <div class='rightmenu'>
-<!--	<div class='expando'>
+	<div class='expando'>
 		<div class='slidingheader' id='scanoptions' onClick='toggleExpando(this)'>
 			Scanning options
 		</div>
 		<div class='slidingbodyshow'>
 			<center>Status</center>
 			Monitoring<br>
-			Up for 10 minutes<br>
-			<center>Channel setting</center> -->
+			<center>Channel setting</center> 
 			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
 			        	<input type="hidden" name="action" value="Apply" />
                   		<input type="hidden" name="change_action" value="gozila_cgi" />
                   		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
-	          		<input type="hidden" name="submit_type" value="Set" />
-<!--			<select name='hopseq' onChange='this.form.submit()'>
-				<option value='1' <% nvram_match("channelsel","1","selected"); %> >1</option>
-				<option value='2' <% nvram_match("channelsel","2","selected"); %> >2</option>
-				<option value='3' <% nvram_match("channelsel","3","selected"); %> >3</option>
-				<option value='4' <% nvram_match("channelsel","4","selected"); %> >4</option>
-				<option value='5' <% nvram_match("channelsel","5","selected"); %> >5</option>
-				<option value='6' <% nvram_match("channelsel","6","selected"); %> >6</option>
-				<option value='7' <% nvram_match("channelsel","7","selected"); %> >7</option>
-				<option value='8' <% nvram_match("channelsel","8","selected"); %> >8</option>
-				<option value='9' <% nvram_match("channelsel","9","selected"); %> >9</option>
-				<option value='10' <% nvram_match("channelsel","10","selected"); %> >10</option>
-				<option value='11' <% nvram_match("channelsel","11","selected"); %> >11</option>
-				<option value='12' <% nvram_match("channelsel","12","selected"); %> >12</option>
-				<option value='13' <% nvram_match("channelsel","13","selected"); %> >13</option>
-				<option value='14' <% nvram_match("channelsel","14","selected"); %> >14</option>
-				<option value='1,6,11' <% nvram_match("channelsel","1,6,11","selected"); %> >1,6,11</option>
-				<option value='1,3,6,8,11' <% nvram_match("channelsel","1,3,6,8,11","selected"); %> >1,3,6,8,11</option>
-				<option value='1,2,3,4,5,6,7,8,9,10,11' <% nvram_match("channelsel","1,2,3,4,5,6,7,8,9,10,11","selected"); %> >1 to 11</option>
-				<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14' <% nvram_match("channelsel","1,2,3,4,5,6,7,8,9,10,11,12,13,14","selected"); %> >1 to 14</option>
+	          			<input type="hidden" name="submit_type" value="Set" />
+			<select name='hopseq' onChange='this.form.submit()'>
+				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
+				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
+				<option value='3' <% nvram_selected("hopseq","3"); %> >3</option>
+				<option value='4' <% nvram_selected("hopseq","4"); %> >4</option>
+				<option value='5' <% nvram_selected("hopseq","5"); %> >5</option>
+				<option value='6' <% nvram_selected("hopseq","6"); %> >6</option>
+				<option value='7' <% nvram_selected("hopseq","7"); %> >7</option>
+				<option value='8' <% nvram_selected("hopseq","8"); %> >8</option>
+				<option value='9' <% nvram_selected("hopseq","9"); %> >9</option>
+				<option value='10' <% nvram_selected("hopseq","10"); %> >10</option>
+				<option value='11' <% nvram_selected("hopseq","11"); %> >11</option>
+				<option value='12' <% nvram_selected("hopseq","12"); %> >12</option>
+				<option value='13' <% nvram_selected("hopseq","13"); %> >13</option>
+				<option value='14' <% nvram_selected("hopseq","14"); %> >14</option>
+				<option value='1,6,11' <% nvram_selected("hopseq","1,6,11"); %> >1,6,11</option>
+				<option value='1,3,6,8,11' <% nvram_selected("hopseq","1,3,6,8,11"); %> >1,3,6,8,11</option>
+				<option value='1,2,3,4,5,6,7,8,9,10,11' <% nvram_selected("hopseq","1,2,3,4,5,6,7,8,9,10,11"); %> >1 to 11</option>
+				<option value='1,2,3,4,5,6,7,8,9,10,11,12,13,14' <% nvram_selected("hopseq","1,2,3,4,5,6,7,8,9,10,11,12,13,14"); %> >1 to 14</option>
 			</select>
-			<input type='hidden' name='channelsel' value='hop'>
-			<input type='hidden' name='hopdwell' value='750'> -->
+			
+			<center>Hopdwell (ms)</center> 
+			<select name='hopdwell' onChange='this.form.submit()'>
+				<option value='7' <% nvram_selected("hopdwell","250"); %> >250</option>
+				<option value='1' <% nvram_selected("hopdwell","500"); %> >500</option>
+				<option value='2' <% nvram_selected("hopdwell","1000"); %> >1000</option>
+				<option value='3' <% nvram_selected("hopdwell","1500"); %> >1500</option>
+				<option value='4' <% nvram_selected("hopdwell","2000"); %> >2000</option>
+				<option value='5' <% nvram_selected("hopdwell","5000"); %> >5000</option>
+				<option value='6' <% nvram_selected("hopdwell","10000"); %> >10000</option>
+			</select>
+
+
 			</form>
-<!--		</div>
+		</div>
 	</div>
--->
+
 	<div class='expando'>
 		<div class='slidingheader' id='displayoptions' onClick='toggleExpando(this)'>
 			Display options
