@@ -2767,7 +2767,6 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
   {"Wiviz_Survey", "Set", "", 1, RESTART, set_wiviz},
-  {"Wiviz_Survey", "Stop", "", 0, NOTHING, stop_wiviz},
 #endif
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
@@ -3448,7 +3447,14 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       do_logout ();
       return 1;
     }
-
+#ifdef HAVE_WIVIZ
+  else if (!strncmp (value, "Stop_Wiviz", 10))
+    {
+      killall ("wiviz" , SIGTERM);
+      return 1;
+    }
+#endif
+    
   /* DEBUG : Invalid action */
   else
     websDebugWrite (wp, "Invalid action %s<br />", value);
