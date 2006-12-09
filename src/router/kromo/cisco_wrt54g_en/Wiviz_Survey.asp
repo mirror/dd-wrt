@@ -38,11 +38,12 @@ document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 			<center>Status</center>
 			Monitoring<br>
 			<center>Channel setting</center> 
-			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" target="wivizGetFrame" />
+			<form name="channelform" action="apply.cgi" method="<% get_http_method(); %>" />
 			        	<input type="hidden" name="action" value="Apply" />
                   		<input type="hidden" name="change_action" value="gozila_cgi" />
                   		<input type="hidden" name="submit_button" value="Wiviz_Survey" />
 	          			<input type="hidden" name="submit_type" value="Set" />
+	          			<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
 				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
 				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
@@ -66,13 +67,13 @@ document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 			
 			<center>Hopdwell (ms)</center> 
 			<select name='hopdwell' onChange='this.form.submit()'>
-				<option value='7' <% nvram_selected("hopdwell","250"); %> >250</option>
-				<option value='1' <% nvram_selected("hopdwell","500"); %> >500</option>
-				<option value='2' <% nvram_selected("hopdwell","1000"); %> >1000</option>
-				<option value='3' <% nvram_selected("hopdwell","1500"); %> >1500</option>
-				<option value='4' <% nvram_selected("hopdwell","2000"); %> >2000</option>
-				<option value='5' <% nvram_selected("hopdwell","5000"); %> >5000</option>
-				<option value='6' <% nvram_selected("hopdwell","10000"); %> >10000</option>
+				<option value='250' <% nvram_selected("hopdwell","250"); %> >250</option>
+				<option value='500' <% nvram_selected("hopdwell","500"); %> >500</option>
+				<option value='1000' <% nvram_selected("hopdwell","1000"); %> >1000</option>
+				<option value='1500' <% nvram_selected("hopdwell","1500"); %> >1500</option>
+				<option value='2000' <% nvram_selected("hopdwell","2000"); %> >2000</option>
+				<option value='5000' <% nvram_selected("hopdwell","5000"); %> >5000</option>
+				<option value='10000' <% nvram_selected("hopdwell","10000"); %> >10000</option>
 			</select>
 
 
