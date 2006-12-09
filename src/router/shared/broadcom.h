@@ -505,7 +505,6 @@ extern void ej_qos_sw_default (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_dump_wiviz_plus_site_survey (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_url (int eid, webs_t wp, int argc, char_t ** argv);
 #ifdef FBNFW
 extern void ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv);
