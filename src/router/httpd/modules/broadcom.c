@@ -4136,37 +4136,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp, "</div>\n");
 }
 
-#ifdef HAVE_WIVIZ
-void
-ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
-{
-  FILE *f;
-  char buf[256];
 
-  killall ("autokill_wiviz", SIGTERM);
-  eval ("autokill_wiviz");
-  eval ("run_wiviz");
-
-
-  if ((f = fopen ("/tmp/wiviz-pipe", "r")) != NULL)
-    {
-      while (fgets (buf, sizeof (buf), f))
-	{
-	  websWrite (wp, "%s", buf);
-	}
-      fclose (f);
-    }
-    else    //dummy data - to prevent first time js error
-    {
-    	websWrite (wp, "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
-    	websWrite (wp, "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
-     	websWrite (wp, "top.wiviz_callback(top.hosts, wiviz_cfg);\n");   	
-    	websWrite (wp, "function wiviz_callback(one, two) {\n");
-    	websWrite (wp, "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
-    	websWrite (wp, "location.replace('Wiviz_Survey.asp');\n}\n");
-	}
-}
-#endif
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
