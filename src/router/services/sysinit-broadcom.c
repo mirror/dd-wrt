@@ -119,6 +119,8 @@ enableAfterBurner (void)
   switch (brand)
     {
     case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_WRT300N:
+    case ROUTER_WRT350N:
     case ROUTER_MOTOROLA_V1:
     case ROUTER_BUFFALO_WZRRSG54:
       return;
@@ -238,7 +240,8 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
-
+  char *rname = getRouter();
+  fprintf(stderr,"Booting Device:%s\n",rname);   
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -293,6 +296,7 @@ start_sysinit (void)
 
     case ROUTER_WZRG300N:
     case ROUTER_WRT300N:
+    case ROUTER_WRT350N:
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
@@ -364,6 +368,9 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
+	    case ROUTER_WRT350N:
+	    modules = "diag bcm57xx wl";
+	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_MOTOROLA:
@@ -402,6 +409,9 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
+	    case ROUTER_WRT350N:
+	    modules = "diag bcm57xx wl";
+	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	      modules =

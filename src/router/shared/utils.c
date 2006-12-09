@@ -449,6 +449,14 @@ internal_getRouterBrand ()
     }
 
   if (nvram_match ("boardnum", "42") &&
+      nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "1"))
+    {
+      setRouter ("Linksys WRT-350N");
+      nvram_set ("wl0gpio0", "8");
+      return ROUTER_WRT350N;
+    }
+
+  if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
       setRouter ("Linksys WRT54G 1.x");
@@ -754,7 +762,7 @@ int brand = getRouterBrand ();
   		return diag_led_4712 (type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
   		return diag_led_4702 (type, act);
-  	else if (brand == ROUTER_WRTSL54GS && type == DIAG)
+  	else if (brand == ROUTER_WRTSL54GS || brand== ROUTER_WRT350N && type == DIAG)
   		return diag_led_4704 (type, act);
   	else
   		{
@@ -891,6 +899,8 @@ int aoss_gpio = 0x0f;
 	case ROUTER_WZRG300N:
 		break;
 	case ROUTER_WRT300N:
+		break;
+	case ROUTER_WRT350N:
 		break;
 	case ROUTER_BUFFALO_WHRAM54G54:
 		break;
@@ -1721,6 +1731,8 @@ check_hw_type (void)
     return BCM5325E_CHIP;
   else if (nvram_match ("boardtype", "0x042f") && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
+  else if (nvram_match("boardtype", "0x478"))
+    return BCM4705_BCM5397_EWC_CHIP;
   else if (nvram_match ("boardtype", "0x0467"))
     return BCM5352E_CHIP;
   else if (nvram_match ("boardtype", "0x0101") || nvram_match ("boardtype", "0x0446"))	//0x446 is wap54g v2
