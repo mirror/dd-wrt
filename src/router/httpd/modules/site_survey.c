@@ -263,9 +263,4 @@ set_wiviz (webs_t wp)
   killall ("wiviz", SIGUSR2);
 }
 
-int
-stop_wiviz (webs_t wp)
-{
-  killall ("wiviz", SIGTERM);
-}
 #endif
