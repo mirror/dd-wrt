@@ -135,7 +135,7 @@ int openMonitorSocket(char * dev) {
   memset(&ifr,0,sizeof(ifr));
   strcpy(ifr.ifr_name, dev);
   if(ioctl(s, SIOCGIFINDEX, &ifr) !=0) {
-    printf("ioctl IFINDEX failed!!!\n");
+    fprintf(stderr, "ioctl IFINDEX failed!!!\n");
     return -1;
     }
   close(s);
@@ -146,7 +146,7 @@ int openMonitorSocket(char * dev) {
   addr.sll_ifindex=ifr.ifr_ifindex;
   addr.sll_protocol=0;
   if (bind(s, (struct sockaddr *)&addr, sizeof(addr))<0) {
-    printf("bind failed!!! (%s)\n", dev);
+    fprintf(stderr, "bind failed!!! (%s)\n", dev);
     return -1;
     }
 
@@ -568,7 +568,7 @@ void readWL(wiviz_cfg * cfg) {
         sta_rssi_t starssi;
 		
 	get_mac(wl_dev, mac);
-	printf("AP mac: ");
+	fprintf(stderr, "AP mac: ");
 	print_mac(mac, "\n");
 	if (!nonzeromac(mac)) return;
 	wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
@@ -590,7 +590,7 @@ void readWL(wiviz_cfg * cfg) {
         memcpy(starssi.mac, &macs->ea[i], 6);
         starssi.RSSI = 3000;
         starssi.zero_ex_forty_one = 0x41;
-				if (wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0) printf("rssifail\n");
+				if (wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0) fprintf(stderr, "rssifail\n");
 				sta->RSSI = -starssi.RSSI * 100;
 				sta->staInfo->state = ssAssociated;
 				memcpy(sta->staInfo->connectedBSSID, host->apInfo->bssid, 6);
