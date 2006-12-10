@@ -7,6 +7,9 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <rc.h>
+
+
 
 int
 run_wiviz_main (void)
