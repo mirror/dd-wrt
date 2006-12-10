@@ -7,8 +7,6 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
-#include <rc.h>
-#include <broadcom.h>
 
 
 int
@@ -29,7 +27,7 @@ run_wiviz_main (void)
 		{	
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
 			fprintf (fp, "channelsel=hop&hopdwell=%s&hopseq=%s\n", 
-				nvram_sefe_get ("hopdwell"), nvram_safe_get ("hopseq"));
+				nvram_safe_get ("hopdwell"), nvram_safe_get ("hopseq"));
 			fclose (fp);
     	    eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
 	    }
