@@ -186,29 +186,21 @@ ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for tes
 int
 set_wiviz (webs_t wp)
 {
-//  char *channelsel = websGetVar (wp, "channelsel", NULL);
+
   char *hopdwell = websGetVar (wp, "hopdwell", NULL);
   char *hopseq = websGetVar (wp, "hopseq", NULL);
   FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
-//  if (channelsel)
-//    {
+
+	if (strstr (hopseq, ","))
       fprintf (fp, "channelsel=hop&");
-//      nvram_set ("channelsel", channelsel);
-//    }
-//  if (channelsel && hopdwell)
-//    fprintf (fp, "&");
-//  if (hopdwell)
-//    {
-      fprintf (fp, "hopdwell=%s&", hopdwell);
+    else
+      fprintf (fp, "channelsel=%s&", hopseq);
+    	
+      fprintf (fp, "hopdwell=%s&hopseq=%s\n", hopdwell, hopseq);
+
       nvram_set ("hopdwell", hopdwell);
-//    }
-//  if ((channelsel || hopdwell) && hopseq)
-//    fprintf (fp, "&");
-//  if (hopseq)
-//    {
       nvram_set ("hopseq", hopseq);
-      fprintf (fp, "hopseq=%s\n", hopseq);
-//    }
+ 
   fclose (fp);
   killall ("wiviz", SIGUSR2);
 }
