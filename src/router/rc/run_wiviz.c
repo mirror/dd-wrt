@@ -33,11 +33,11 @@ run_wiviz_main (void)
 
 			char *hopd = nvram_safe_get ("hopdwell");
 				if (!strlen (hopd)) 
-					nvram_set ("hopdwell", "1000"));
+					nvram_set ("hopdwell", "1000");
 					
 			char *hops = nvram_safe_get ("hopseq");
 				if (!strlen (hops)) 
-					nvram_set ("hopseq", channel));
+					nvram_set ("hopseq", channel);
 
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
 			fprintf (fp, "channelsel=hop&hopdwell=%s&hopseq=%s\n", 
