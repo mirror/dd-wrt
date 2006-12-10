@@ -31,12 +31,12 @@ run_wiviz_main (void)
 			char *channel = nvram_safe_get ("wl_channel");
 #endif
 
-			char *hopdwell = nvram_safe_get ("hopdwell");
-				if (!strlen (hopdwell)) 
+			char *hopd = nvram_safe_get ("hopdwell");
+				if (!strlen (hopd)) 
 					nvram_set ("hopdwell", "1000"));
 					
-			char *hopseq = nvram_safe_get ("hopseq");
-				if (!strlen (hopseq)) 
+			char *hops = nvram_safe_get ("hopseq");
+				if (!strlen (hops)) 
 					nvram_set ("hopseq", channel));
 
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
