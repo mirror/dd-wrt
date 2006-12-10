@@ -8,7 +8,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <rc.h>
-
+#include <broadcom.h>
 
 
 int
