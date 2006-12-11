@@ -201,7 +201,6 @@ function to_submit(F) {
 		}
  		eval("F.services_array"+index+".value += svc");
  	}
- 	F.Submit.value = sbutton.saving;
 	apply(F);
 }
 
