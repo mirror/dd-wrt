@@ -54,6 +54,8 @@
 #define MODEL_NAME	"OMNI"
 #elif HAVE_GGEW
 #define MODEL_NAME	"ggew-router"
+#elif HAVE_MAKSAT
+#define MODEL_NAME	"MAKSAT"
 #else
 #define MODEL_NAME	"DD-WRT"
 #endif
