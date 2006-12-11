@@ -44,6 +44,9 @@ ifeq ($(CONFIG_ISDN_PPP),y)
 endif
 
 #subdir-$(CONFIG_HND) += hnd
+ifdef CONFIG_BCM57XX
+subdir-$(CONFIG_BCM57XX) += bcm57xx
+endif
 subdir-$(CONFIG_ET) += et
 subdir-$(CONFIG_BRCMSWITCH) += switch
 subdir-$(CONFIG_ROBO) += robo
@@ -90,6 +93,9 @@ ifeq ($(CONFIG_ET),y)
 endif
 ifeq ($(CONFIG_WL),y)
   obj-y += wl/wl.o
+endif
+ifeq ($(CONFIG_BCM57XX),y)
+  obj-y += bcm57xx/bcm57xx.o
 endif
 
 obj-$(CONFIG_MACE) += mace.o

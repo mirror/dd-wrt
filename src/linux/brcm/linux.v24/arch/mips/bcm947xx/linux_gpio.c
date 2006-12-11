@@ -125,6 +125,8 @@ static struct file_operations gpio_fops = {
 	ioctl:		gpio_ioctl,
 	};
 
+extern int iswrt350n;
+
 static int __init
 gpio_init(void)
 {
@@ -143,15 +145,17 @@ gpio_init(void)
 
 // BrainSlayer: WRT350N detection
 
-char *boardnum = nvram_get("boardnum");
+/*char *boardnum = nvram_get("boardnum");
 char *boardtype = nvram_get("boardtype");
 char *cardbus = nvram_get("boardtype");
 //char *boardflags = nvram_get("boardflags");
 if (boardnum==NULL || strcmp(boardnum,"42"))return 0;
 if (boardtype==NULL || strcmp(boardtype,"0x478"))return 0;
 if (cardbus==NULL || strcmp(cardbus,"1"))return 0;
+*/
 
-
+if (iswrt350n)
+{
 	/* For WRT350N USB LED control */
 	sb_gpioreserve(gpio_sbh, 0x400, GPIO_HI_PRIORITY);
 	sb_gpioouten(gpio_sbh, 0x400, 0x400, GPIO_HI_PRIORITY);
@@ -164,6 +168,7 @@ if (cardbus==NULL || strcmp(cardbus,"1"))return 0;
 		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 	//}
+}
 	return 0;
 }
 
