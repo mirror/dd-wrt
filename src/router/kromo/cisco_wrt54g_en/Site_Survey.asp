@@ -35,7 +35,7 @@ function do_join (F,SSID) {
 				<tr>
 				   <th width="25%"><% tran("share.ssid"); %></th>
 				   <th width="7%">Mode</th>
-				   <th width="17%"><% tran("share.mac"); %></th>
+				   <th width="19%"><% tran("share.mac"); %></th>
 				   <th width="6%"><% tran("share.channel"); %></th>
 				   <th width="6%"><% tran("share.rssi"); %></th>
 				   <th width="6%"><% tran("share.noise"); %></th>
@@ -43,7 +43,7 @@ function do_join (F,SSID) {
 				   <th width="6%"><% tran("share.openn"); %></th>
 				   <th width="6%"><% tran("share.dtim"); %></th>
 				   <th width="6%"><% tran("share.rates"); %></th>
-				   <th width="9%"><% tran("survey.thjoin"); %></th>
+				   <th width="7%"><% tran("survey.thjoin"); %></th>
 				</tr>
 					<script type="text/javascript">
 					//<![CDATA[
@@ -59,7 +59,7 @@ function do_join (F,SSID) {
 						for (var i = 0; i < table.length; i = i + 10) {
 							document.write("<tr>");
 							document.write("<td>"+table[i]+"</td>");
-							document.write("<td align=\"right\">"+table[i+1]+"</td>");
+							document.write("<td align=\"left\">"+table[i+1]+"</td>");
 							document.write("<td align=\"left\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+2] + "')\" >"+table[i+2]+"</td>");
 							document.write("<td align=\"right\">"+table[i+3]+"</td>");
 							document.write("<td align=\"right\">"+table[i+4]+"</td>");
