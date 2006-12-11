@@ -355,10 +355,10 @@ int
 stop_pptpd (void)
 {
   int ret = 0;
-
+  if (pidof("pptpd") > 0)
+    syslog(LOG_INFO,"pptpd : pptp daemon successfully stopped\n");
   ret = killall ("pptpd", SIGKILL);
   killall ("bcrelay", SIGKILL);
-  syslog(LOG_INFO,"pptpd : pptp daemon successfully stopped\n");
   return ret;
 }
 #endif
@@ -565,12 +565,14 @@ void
 stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
+  if (pidof("dhcpfwd") > 0)
+	syslog(LOG_INFO,"dhcpfwd : dhcp forwarder daemon successfully stopped\n");
   killall ("dhcpfwd", SIGTERM);	//kill also dhcp forwarder if available
-  syslog(LOG_INFO,"dhcpfwd : dhcp forwarder daemon successfully stopped\n");
 #endif
 #ifdef HAVE_DHCPRELAY
+  if (pidof("dhcrelay") > 0)
+	syslog(LOG_INFO,"dhcrelay : dhcp relay successfully stopped\n");
   killall ("dhcrelay", SIGTERM);
-  syslog(LOG_INFO,"dhcrelay : dhcp relay successfully stopped\n");
 #endif
 }
 
@@ -833,8 +835,9 @@ start_udhcpd (void)
 int
 stop_udhcpd (void)
 {
+  if (pidof("udhcpd") > 0)
+	syslog(LOG_INFO,"udhcpd : udhcp daemon successfully stopped\n");
   softkill ("udhcpd");
-  syslog(LOG_INFO,"udhcpd : udhcp daemon successfully stopped\n");
   cprintf ("done\n");
   return 0;
 }
@@ -1039,8 +1042,9 @@ start_dnsmasq (void)
 int
 stop_dnsmasq (void)
 {
+  if (pidof("dnsmasq") > 0)
+    syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
   int ret = softkill ("dnsmasq");
-  syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
   unlink ("/tmp/resolv.dnsmasq");
 
   cprintf ("done\n");
@@ -1051,9 +1055,10 @@ int
 stop_dns_clear_resolv (void)
 {
   FILE *fp_w;
+  if (pidof("dnsmasq") > 0)
+    syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
   //int ret = killps("dnsmasq",NULL);
   int ret = killall ("dnsmasq", SIGTERM);
-  syslog(LOG_INFO,"dnsmasq : dnsmasq daemon successfully stopped\n");
 
   /* Save DNS to resolv.conf */
   if (!(fp_w = fopen (RESOLV_FILE, "w")))
@@ -1115,9 +1120,10 @@ start_httpd (void)
 int
 stop_httpd (void)
 {
+  if (pidof("httpd") > 0)
+    syslog(LOG_INFO,"httpd : http daemon successfully stopped\n");
   //int ret = killps("httpd",NULL);
   int ret = killall ("httpd", SIGTERM);
-  syslog(LOG_INFO,"httpd : http daemon successfully stopped\n");
 
   unlink ("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
@@ -1158,9 +1164,10 @@ start_upnp (void)
 int
 stop_upnp (void)
 {
+  if (pidof("upnp") > 0)
+    syslog(LOG_INFO,"upnp : upnp daemon successfully stopped\n");
   killall ("upnp", SIGUSR1);
   killall ("upnp", SIGTERM);
-  syslog(LOG_INFO,"upnp : upnp daemon successfully stopped\n");
 
   cprintf ("done\n");
   return 0;
@@ -1538,14 +1545,15 @@ start_nas (char *type, char *prefix)
 int
 stop_nas (void)
 {
+  if (pidof("nas") > 0)
+    syslog(LOG_INFO,"NAS : NAS daemon successfully stopped\n");
   /* NAS sometimes won't exit properly on a normal kill */
   //int ret = killps("nas",NULL);
   int ret = killall ("nas", SIGTERM);
   sleep (2);
   //killps("nas","-9");
   killall ("nas", SIGKILL);
-  syslog(LOG_INFO,"NAS : NAS successfully stopped\n");
-
+  
   cprintf ("done\n");
   return ret;
 }
@@ -1570,8 +1578,9 @@ start_sputnik (void)
 int
 stop_sputnik (void)
 {
+  if (pidof("sputnik") > 0)
+    syslog(LOG_INFO,"sputnik : sputnik daemon successfully stopped\n");
   int ret = killall ("sputnik", SIGTERM);
-  syslog(LOG_INFO,"sputnik : sputnik daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1607,8 +1616,9 @@ start_ntpc (void)
 int
 stop_ntpc (void)
 {
+  if (pidof("ntpclient") > 0)
+    syslog(LOG_INFO,"ntpclient : ntp client successfully stopped\n");
   int ret = killall ("ntpclient", SIGTERM);
-  syslog(LOG_INFO,"ntpclient : ntp client successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1636,9 +1646,9 @@ int
 stop_resetbutton (void)
 {
   int ret = 0;
-
+  if (pidof("resetbutton") > 0)
+    syslog(LOG_INFO,"resetbutton : resetbutton daemon successfully stopped\n");
   ret = killall ("resetbutton", SIGKILL);
-  syslog(LOG_INFO,"resetbutton : reset button daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -1664,9 +1674,9 @@ int
 stop_iptqueue (void)
 {
   int ret = 0;
-
+  if (pidof("iptqueue") > 0)
+    syslog(LOG_INFO,"iptqueue : iptqueue daemon successfully stopped\n");
   ret = killall ("iptqueue", SIGKILL);
-	syslog(LOG_INFO,"iptqueue successfully stopped\n");
  
   cprintf ("done\n");
   return ret;
@@ -1703,10 +1713,10 @@ int
 stop_cron (void)
 {
   int ret = 0;
-
+  if (pidof("cron") > 0)
+    syslog(LOG_INFO,"cron : cron daemon successfully stopped\n");
   //ret = killps("cron","-9");
   ret = killall ("cron", SIGKILL);
-  syslog(LOG_INFO,"cron : cron daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2114,7 +2124,8 @@ int
 stop_zebra (void)
 {
   int ret1;
-
+  if (pidof("zebra") > 0 || pidof("ripd") > 0 || pidof("ospfd") > 0)
+    syslog(LOG_INFO,"zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
 #ifdef HAVE_ZEBRA
   int ret2, ret3;
   ret1 = killall ("zebra", SIGTERM);
@@ -2127,13 +2138,12 @@ stop_zebra (void)
     sleep (1);
 
   cprintf ("done\n");
-  syslog(LOG_INFO,"zebra : zebra (ripd and ospfd) daemon successfully stopped\n");
   return ret1 | ret2 | ret3;
 
 #elif defined(HAVE_BIRD)
-
+  if (pidof("bird") > 0)
+    syslog(LOG_INFO,"bird : bird daemon successfully stopped\n");
   ret1 = killall ("bird", SIGTERM);
-  syslog(LOG_INFO,"bird : bird daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret1;
@@ -2169,11 +2179,12 @@ int
 stop_syslog (void)
 {
   int ret;
-
+  if (pidof("klogd") > 0)
+    syslog(LOG_INFO,"klogd : klog daemon successfully stopped\n");
   ret = killall ("klogd", SIGKILL);
-  syslog(LOG_INFO,"klogd : klog daemon successfully stopped\n");
+  if (pidof("syslogd") > 0)
+    syslog(LOG_INFO,"syslogd : syslog daemon successfully stopped\n");
   ret += killall ("syslogd", SIGKILL);
-  syslog(LOG_INFO,"syslogd : syslog daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2203,10 +2214,10 @@ int
 stop_redial (void)
 {
   int ret;
-
+  if (pidof("redial") > 0)
+    syslog(LOG_INFO,"ppp_redial : redial daemon successfully stopped\n");
   //ret = killps("redial","-9");
   ret = killall ("redial", SIGKILL);
-  syslog(LOG_INFO,"ppp_redial : redial process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2261,11 +2272,11 @@ int
 stop_radvd (void)
 {
   int ret = 0;
-
+  if (pidof("radvd") > 0)
+    syslog(LOG_INFO,"radvd : RADV daemon successfully stopped\n");
   //ret = killps("radvd",NULL);
   ret = killall ("radvd", SIGKILL);
-  syslog(LOG_INFO,"uradvd : RADV daemon successfully stopped\n");
-
+ 
   unlink ("/var/run/radvd.pid");
 
   cprintf ("done\n");
@@ -2468,9 +2479,9 @@ int
 stop_chilli (void)
 {
   int ret = 0;
-
+  if (pidof("chilli") > 0)
+    syslog(LOG_INFO,"chilli : chilli daemon successfully stopped\n");
   ret = killall ("chilli", SIGKILL);
-  syslog(LOG_INFO,"chilli : chilli daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -2522,9 +2533,9 @@ int
 stop_dhcpc (void)
 {
   int ret = 0;
-
+  if (pidof("udhcpc") > 0)
+    syslog(LOG_INFO,"udhcpc : udhcp client process successfully stopped\n");
   ret += killall ("udhcpc", SIGTERM);
-  syslog(LOG_INFO,"udhcpc : udhcp client process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3264,8 +3275,9 @@ start_igmp_proxy (void)
 int
 stop_igmp_proxy (void)
 {
+  if (pidof("igmprt") > 0)
+    syslog(LOG_INFO,"igmprt : multicast daemon successfully stopped\n");
   int ret = killall ("igmprt", SIGKILL);
-  syslog(LOG_INFO,"igmprt : multicast daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3312,9 +3324,10 @@ int
 stop_splashd (void)
 {
   int ret;
+  if (pidof("splashd") > 0)
+    syslog(LOG_INFO,"splashd : splash daemon successfully stopped\n");
   //ret = killps("splashd",NULL);
   ret = killall ("splashd", SIGTERM);
-  syslog(LOG_INFO,"splashd : splash daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3350,9 +3363,9 @@ int
 stop_telnetd (void)
 {
   int ret;
-
+  if (pidof("telnetd") > 0)
+    syslog(LOG_INFO,"telnetd : telnet daemon successfully stopped\n");
   ret = killall ("telnetd", SIGTERM);
-  syslog(LOG_INFO,"telnetd : telnet daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3362,8 +3375,9 @@ stop_telnetd (void)
 int
 stop_wland (void)
 {
+  if (pidof("wland") > 0)
+    syslog(LOG_INFO,"wland : WLAN daemon successfully stopped\n");
   int ret = killall ("wland", SIGKILL);
-  syslog(LOG_INFO,"wland : WLAN daemon successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
@@ -3412,9 +3426,9 @@ int
 stop_process_monitor (void)
 {
   int ret;
-
+  if (pidof("process_monitor") > 0)
+    syslog(LOG_INFO,"process_monitor successfully stopped\n");
   ret = killall ("process_monitor", SIGKILL);
-  syslog(LOG_INFO,"process_monitor successfully stopped\n");
 
   cprintf ("done\n");
 
@@ -3442,9 +3456,9 @@ int
 stop_radio_timer (void)
 {
   int ret;
-
+  if (pidof("radio_timer") > 0)
+    syslog(LOG_INFO,"radio_timer : radio timer daemon successfully stopped\n");
   ret = killall ("radio_timer", SIGKILL);
-  syslog(LOG_INFO,"radio_timer : radio timer daemon successfully stopped\n");
 
   cprintf ("done\n");
 
@@ -3502,8 +3516,9 @@ start_force_to_dial (void)
 void
 stop_rstats (void)
 {
+  if (pidof("rstats") > 0)
+    syslog(LOG_INFO,"rstats : rstats daemon successfully stopped\n");
   killall ("rstats", SIGTERM);
-  syslog(LOG_INFO,"rstats daemon successfully stopped\n");
 }
 
 void
@@ -3568,8 +3583,9 @@ start_wifidog (void)
 void
 stop_wifidog (void)
 {
+if (pidof("wifidog") > 0)
+    syslog(LOG_INFO,"wifidog successfully stopped\n");
   killall ("wifidog", SIGKILL);
-  syslog(LOG_INFO,"wifidog successfully stopped\n");
 }
 
 #endif
@@ -3625,8 +3641,9 @@ start_pppoerelay (void)
 void
 stop_pppoerelay (void)
 {
+  if (pidof("pppoe-relay") > 0)
+    syslog(LOG_INFO,"pppoe-relay successfully stopped\n");
   killall ("pppoe-relay", SIGTERM);
-  syslog(LOG_INFO,"pppoe-relay successfully stopped\n");
 }
 #endif
 
