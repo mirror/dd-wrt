@@ -239,12 +239,6 @@ uint osl_malloc_failed(osl_t *osh)
 	return (osh->failed);
 }
 
-#undef osl_delay
-void
-osl_delay(uint usec)
-{
-	OSL_DELAY(usec);
-}
 
 /* Clone a packet.
  * The pkttag contents are NOT cloned.

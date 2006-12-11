@@ -109,8 +109,8 @@ CFLAGS += $(call check_gcc, -funit-at-a-time,)
 # disable pointer signedness warnings in gcc 4.0
 CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
 
-#CFLAGS += -fno-delayed-branch
-#CFLAGS += $(call check_gcc, -fno-delayed-branch)
+CFLAGS += -fno-delayed-branch
+CFLAGS += $(call check_gcc, -fno-delayed-branch)
 
 
 

@@ -161,7 +161,7 @@ do_serial_add(serial_port *port)
 }
 
 #endif /* CONFIG_SERIAL */
-
+int iswrt350n=0;
 void __init
 brcm_setup(void)
 {
@@ -200,6 +200,15 @@ brcm_setup(void)
 			do_serial_add(&ports[i]);
 	}
 #endif
+iswrt350n=1;
+char *boardnum = nvram_get("boardnum");
+char *boardtype = nvram_get("boardtype");
+char *cardbus = nvram_get("boardtype");
+//char *boardflags = nvram_get("boardflags");
+if (boardnum==NULL || strcmp(boardnum,"42"))iswrt350n=0;
+if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
+if (cardbus==NULL || strcmp(cardbus,"1"))iswrt350n=0;
+
 
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
 	ide_ops = &std_ide_ops;

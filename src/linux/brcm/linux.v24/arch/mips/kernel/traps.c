@@ -248,7 +248,7 @@ asmlinkage void do_be(struct pt_regs *regs)
 	/*
 	 * Assume it would be too dangerous to continue ...
 	 */
-	printk(KERN_ALERT "%s bus error, epc == %08lx, ra == %08lx\n",
+	printk(KERN_EMERG "%s bus error, epc == %08lx, ra == %08lx\n",
 	       data ? "Data" : "Instruction",
 	       regs->cp0_epc, regs->regs[31]);
 	die_if_kernel("Oops", regs);

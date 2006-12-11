@@ -233,17 +233,17 @@ static int robo_probe(char *devname)
 	int i;
 	__u32 phyid;
 
-	printk("Probing device %s: ", devname);
+	printk(KERN_EMERG "Probing device %s: ", devname);
 	strcpy(ifr.ifr_name, devname);
 
 	if ((dev = dev_get_by_name(devname)) == NULL) {
-		printk("No such device\n");
+		printk(KERN_EMERG "No such device\n");
 		return 1;
 	}
 
 	info.cmd = ETHTOOL_GDRVINFO;
 	if (do_ioctl(SIOCETHTOOL, (void *) &info) < 0) {
-		printk("SIOCETHTOOL: not supported\n");
+		printk(KERN_EMERG "SIOCETHTOOL: not supported\n");
 		return 1;
 	}
 	
@@ -254,16 +254,17 @@ static int robo_probe(char *devname)
 		/* got phy address check for robo address */
 		struct mii_ioctl_data *mii = (struct mii_ioctl_data *) &ifr.ifr_data;
 		if (mii->phy_id != ROBO_PHY_ADDR) {
-			printk("Invalid phy address (%d)\n", mii->phy_id);
+			printk(KERN_EMERG "Invalid phy address (%d)\n", mii->phy_id);
 			return 1;
 		}
 	}
 
 	phyid = mdio_read(ROBO_PHY_ADDR, 0x2) | 
 		(mdio_read(ROBO_PHY_ADDR, 0x3) << 16);
+	printk(KERN_EMERG "phyid %d\n",phyid);
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
-		printk("No Robo switch in managed mode found\n");
+		printk(KERN_EMERG "No Robo switch in managed mode found\n");
 		return 1;
 	}
 	

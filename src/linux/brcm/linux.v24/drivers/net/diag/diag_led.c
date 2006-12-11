@@ -162,7 +162,7 @@ static int __init diag_init()
 {
 	char *buf;
 	u32 board_type;
-	sbh = sb_kattach();
+	sbh = sb_kattach(SB_OSH);
 	sb_gpiosetcore(sbh);
 
 	board_type = sb_boardtype(sbh);
