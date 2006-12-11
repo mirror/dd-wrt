@@ -763,7 +763,7 @@ int brand = getRouterBrand ();
   		return diag_led_4712 (type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
   		return diag_led_4702 (type, act);
-  	else if (brand == ROUTER_WRTSL54GS || brand== ROUTER_WRT350N && type == DIAG)
+  	else if ((brand == ROUTER_WRTSL54GS || brand== ROUTER_WRT350N) && type == DIAG)
   		return diag_led_4704 (type, act);
   	else
   		{
@@ -839,6 +839,11 @@ int aoss_gpio = 0x0f;
 	case ROUTER_WRT54G1X:
 			connected_gpio = 0x13;
 		break;
+	case ROUTER_WRT350N:
+			connected_gpio = 0x13;
+			power_gpio = 0x01;
+			ses2_gpio = 0x13;		//ses orange			
+		break;
 	case ROUTER_LINKSYS_WRT55AG:
 			connected_gpio = 0x13;
 		break;
@@ -900,8 +905,6 @@ int aoss_gpio = 0x0f;
 	case ROUTER_WZRG300N:
 		break;
 	case ROUTER_WRT300N:
-		break;
-	case ROUTER_WRT350N:
 		break;
 	case ROUTER_BUFFALO_WHRAM54G54:
 		break;
