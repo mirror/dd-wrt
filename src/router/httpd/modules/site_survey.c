@@ -134,12 +134,22 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 	(site_survey_lists[i].
 	 capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") :
 	live_translate ("share.yes");
-
+	
+	char *netmode;
+	long netmodecap = site_survey_lists[i].capability;
+	netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
+	if (netmodecap == DOT11_CAP_ESS)
+		netmode = "AP";
+	else if (netmodecap == DOT11_CAP_IBSS)
+		netmode = "AdHoc";
+	else
+		netmode = live_translate ("share.unknown");
+		
       websWrite (wp,
-		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
+		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
 		 i ? ',' : ' ',
 		 site_survey_lists[i].SSID[0] ==
-		 0 ? "hidden" : site_survey_lists[i].SSID,
+		 0 ? "hidden" : site_survey_lists[i].SSID, netmode,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
