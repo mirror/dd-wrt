@@ -327,8 +327,8 @@ site_survey_main (int argc, char *argv[])
   open_site_survey ();
   for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++)
     {
-      printf
-	("[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+     fprintf(stderr,
+	"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 	 i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
 	 site_survey_lists[i].channel, site_survey_lists[i].RSSI,
 	 site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period,
