@@ -1021,8 +1021,10 @@ wlconf(char *name)
 		}
 
 		/* band | BW | CTRL SB | Channel */
+		fprintf(stderr,"%X, %X, %X\n",nbw,nctrlsb,channel);
 		chanspec |= ((bandtype << WL_CHANSPEC_BAND_SHIFT) |
 		             (nbw | nctrlsb | channel));
+		fprintf(stderr,"spec %X\n",chanspec);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
@@ -1069,6 +1071,8 @@ wlconf(char *name)
 		strcat_r(prefix, "nmode", tmp);
 		if (nvram_match(tmp, "0"))
 			nmode = OFF;
+		if (nvram_match(tmp, "-1"))
+			nmode = AUTO;
 		if (nvram_match(tmp, "2"))
 			nmode = WL_NMODE_NONLY;
 		WL_IOVAR_SETINT(name, "nmode", (uint32)nmode);
@@ -1352,7 +1356,10 @@ wlconf(char *name)
 			if (phytype == PHY_TYPE_N) {
 				chanspec_t chanspec = wlconf_auto_chanspec(name);
 				if (chanspec != 0)
+					{
+					fprintf(stderr,"auto chanspec %X\n",chanspec);
 					WL_IOVAR_SETINT(name, "chanspec", chanspec);
+					}
 			}
 			else {
 				/* select a channel */
