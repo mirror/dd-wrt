@@ -245,3 +245,103 @@ hndcrc8(
 }
 
 
+/* parse a xx:xx:xx:xx:xx:xx format ethernet address */
+int
+bcm_ether_atoe(char *p, struct ether_addr *ea)
+{
+	int i = 0;
+
+	for (;;) {
+		ea->octet[i++] = (char) bcm_strtoul(p, &p, 16);
+		if (!*p++ || i == 6)
+			break;
+	}
+
+	return (i == 6);
+}
+
+int
+bcm_atoi(char *s)
+{
+	return (int)bcm_strtoul(s, NULL, 10);
+}
+#undef osl_delay
+void
+osl_delay(uint usec)
+{
+	OSL_DELAY(usec);
+}
+/* Search for token in comma separated token-string */
+static int
+findmatch(char *string, char *name)
+{
+	uint len;
+	char *c;
+
+	len = strlen(name);
+	/* CSTYLED */
+	while ((c = strchr(string, ',')) != NULL) {
+		if (len == (uint)(c - string) && !strncmp(string, name, len))
+			return 1;
+		string = c + 1;
+	}
+
+	return (!strcmp(string, name));
+}
+
+/* Return gpio pin number assigned to the named pin */
+/*
+* Variable should be in format:
+*
+*	gpio<N>=pin_name,pin_name
+*
+* This format allows multiple features to share the gpio with mutual
+* understanding.
+*
+* 'def_pin' is returned if a specific gpio is not defined for the requested functionality
+* and if def_pin is not used by others.
+*/
+uint
+getgpiopin(char *vars, char *pin_name, uint def_pin)
+{
+	char name[] = "gpioXXXX";
+	char *val;
+	uint pin;
+
+	/* Go thru all possibilities till a match in pin name */
+	for (pin = 0; pin < GPIO_NUMPINS; pin ++) {
+		sprintf(name, "gpio%d", pin);
+		val = getvar(vars, name);
+		if (val && findmatch(val, pin_name))
+			return pin;
+	}
+
+	if (def_pin != GPIO_PIN_NOTDEFINED) {
+		/* make sure the default pin is not used by someone else */
+		sprintf(name, "gpio%d", def_pin);
+		if (getvar(vars, name)) {
+			def_pin =  GPIO_PIN_NOTDEFINED;
+		}
+	}
+
+	return def_pin;
+}
+
+/* return pointer to location of substring 'needle' in 'haystack' */
+char*
+bcmstrstr(char *haystack, char *needle)
+{
+	int len, nlen;
+	int i;
+
+	if ((haystack == NULL) || (needle == NULL))
+		return (haystack);
+
+	nlen = strlen(needle);
+	len = strlen(haystack) - nlen + 1;
+
+	for (i = 0; i < len; i++)
+		if (bcmp(needle, &haystack[i], nlen) == 0)
+			return (&haystack[i]);
+	return (NULL);
+}
