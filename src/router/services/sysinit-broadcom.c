@@ -296,13 +296,16 @@ start_sysinit (void)
 
     case ROUTER_WZRG300N:
     case ROUTER_WRT300N:
-    case ROUTER_WRT350N:
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
       break;
-
+    case ROUTER_WRT350N:
+      nvram_set ("wan_ifname", "vlan2");
+      nvram_set ("wan_ifnames", "vlan2");
+      nvram_set ("pppoe_wan_ifname", "vlan2");
+    break;
     case ROUTER_ASUS_WL500G_PRE:
       nvram_set ("sdram_init", "0x0009");
       nvram_set ("lan_ifnames", "vlan0 eth2");
@@ -370,7 +373,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xx wl";
+	    modules = "diag bcm57xxlsys wl";
 	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
@@ -411,7 +414,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xx wl";
+	    modules = "diag bcm57xxlsys wl";
 	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
