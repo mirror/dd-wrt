@@ -51,7 +51,7 @@ typedef const struct sb_pub  sb_t;
 /* exported externs */
 extern sb_t *sb_attach(uint pcidev, osl_t *osh, void *regs, uint bustype,
                        void *sdh, char **vars, uint *varsz);
-extern sb_t *sb_kattach(void);
+extern sb_t *sb_kattach(osl_t *osl);
 extern void sb_detach(sb_t *sbh);
 extern uint sb_chip(sb_t *sbh);
 extern uint sb_chiprev(sb_t *sbh);

@@ -77,7 +77,7 @@ static uint sb_findcoreidx(sb_info_t *si, uint coreid, uint coreunit);
 static uint sb_pcidev2chip(uint pcidev);
 static uint sb_chip2numcores(uint chip);
 static bool sb_ispcie(sb_info_t *si);
-static bool sb_find_pci_capability(sb_info_t *si, uint8 req_cap_id, uchar *buf, uint32 *buflen);
+static uint8 sb_find_pci_capability(sb_info_t *si, uint8 req_cap_id, uchar *buf, uint32 *buflen);
 static int sb_pci_fixcfg(sb_info_t *si);
 
 /* routines to access mdio slave device registers */
@@ -266,9 +266,8 @@ static bool ksi_attached = FALSE;
 
 /* generic kernel variant of sb_attach() */
 sb_t *
-BCMINITFN(sb_kattach)(void)
+BCMINITFN(sb_kattach)(osl_t *osh)
 {
-	osl_t *osh = NULL;
 	uint32 *regs;
 
 	if (!ksi_attached) {
@@ -357,7 +356,7 @@ BCMINITFN(sb_doattach)(sb_info_t *si, uint devid, osl_t *osh, void *regs,
 		si->memseg = TRUE;
 
 	/* kludge to enable the clock on the 4306 which lacks a slowclock */
-	if (BUSTYPE(si->sb.bustype) == PCI_BUS)
+	if (BUSTYPE(si->sb.bustype) == PCI_BUS && !sb_ispcie(si))
 		sb_clkctl_xtal(&si->sb, XTAL|PLL, ON);
 
 	if (BUSTYPE(si->sb.bustype) == PCI_BUS) {
@@ -823,32 +822,32 @@ sb_corereg(sb_info_t *si, uint coreidx, uint regoff, uint mask, uint val)
 
 
 /* return TRUE if requested capability exists in the PCI config space */
-static bool
+/* return cap_offset if requested capability exists in the PCI config space */
+static uint8
 sb_find_pci_capability(sb_info_t *si, uint8 req_cap_id, uchar *buf, uint32 *buflen)
 {
 	uint8 cap_id;
-	uint8 cap_ptr;
+	uint8 cap_ptr = 0;
 	uint32 	bufsize;
 	uint8 byte_val;
 
 	if (BUSTYPE(si->sb.bustype) != PCI_BUS)
-		return FALSE;
+		goto end;
 
 	/* check for Header type 0 */
 	byte_val = read_pci_cfg_byte(PCI_CFG_HDR);
 	if ((byte_val & 0x7f) != PCI_HEADER_NORMAL)
-		return FALSE;
+		goto end;
 
 	/* check if the capability pointer field exists */
 	byte_val = read_pci_cfg_byte(PCI_CFG_STAT);
 	if (!(byte_val & PCI_CAPPTR_PRESENT))
-		return FALSE;
+		goto end;
 
 	cap_ptr = read_pci_cfg_byte(PCI_CFG_CAPPTR);
 	/* check if the capability pointer is 0x00 */
 	if (cap_ptr == 0x00)
-		return FALSE;
-
+		goto end;
 
 	/* loop thr'u the capability list and see if the pcie capabilty exists */
 
@@ -860,33 +859,41 @@ sb_find_pci_capability(sb_info_t *si, uint8 req_cap_id, uchar *buf, uint32 *bufl
 		cap_id = read_pci_cfg_byte(cap_ptr);
 	}
 	if (cap_id != req_cap_id) {
-		return FALSE;
+		goto end;
 	}
 	/* found the caller requested capability */
 	if ((buf != NULL) && (buflen != NULL)) {
+		uint8 cap_data;
+
 		bufsize = *buflen;
 		if (!bufsize) goto end;
 		*buflen = 0;
 		/* copy the cpability data excluding cap ID and next ptr */
-		cap_ptr += 2;
-		if ((bufsize + cap_ptr)  > SZPCR)
-			bufsize = SZPCR - cap_ptr;
+		cap_data = cap_ptr + 2;
+		if ((bufsize + cap_data)  > SZPCR)
+			bufsize = SZPCR - cap_data;
 		*buflen = bufsize;
 		while (bufsize--) {
-			*buf = read_pci_cfg_byte(cap_ptr);
-			cap_ptr++;
+			*buf = read_pci_cfg_byte(cap_data);
+			cap_data++;
 			buf++;
 		}
 	}
 end:
-	return TRUE;
+	return cap_ptr;
 }
 
-/* return TRUE if PCIE capability exists the pci config space */
-static inline bool
+/* return TRUE if PCIE capability exists in the pci config space */
+static bool
 sb_ispcie(sb_info_t *si)
 {
-	return (sb_find_pci_capability(si, PCI_CAP_PCIECAP_ID, NULL, NULL));
+	uint8 cap_ptr;
+
+	cap_ptr = sb_find_pci_capability(si, PCI_CAP_PCIECAP_ID, NULL, NULL);
+	if (!cap_ptr)
+	    return FALSE;
+
+	return TRUE;
 }
 
 /* scan the sb enumerated space to identify all cores */
@@ -951,6 +958,7 @@ BCMINITFN(sb_scan)(sb_info_t *si)
 		si->sb.buscorerev = pcierev;
 		si->sb.buscoreidx = pcieidx;
 	}
+	printk(KERN_EMERG "sbinfo: %d %d %d\n",si->sb.buscoretype,si->sb.buscorerev,si->sb.buscoreidx);
 
 	/*
 	 * Find the gpio "controlling core" type and index.
@@ -1139,7 +1147,7 @@ sb_setcore(sb_t *sbh, uint coreid, uint coreunit)
 
 /* return chip number */
 uint
-sb_chip(sb_t *sbh)
+BCMINITFN(sb_chip)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1149,7 +1157,7 @@ sb_chip(sb_t *sbh)
 
 /* return chip revision number */
 uint
-sb_chiprev(sb_t *sbh)
+BCMINITFN(sb_chiprev)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1159,7 +1167,7 @@ sb_chiprev(sb_t *sbh)
 
 /* return chip common revision number */
 uint
-sb_chipcrev(sb_t *sbh)
+BCMINITFN(sb_chipcrev)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1168,8 +1176,8 @@ sb_chipcrev(sb_t *sbh)
 }
 
 /* return chip package option */
-uint
-sb_chippkg(sb_t *sbh)
+uint 
+BCMINITFN(sb_chippkg)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1178,8 +1186,8 @@ sb_chippkg(sb_t *sbh)
 }
 
 /* return PCI core rev. */
-uint
-sb_pcirev(sb_t *sbh)
+uint 
+BCMINITFN(sb_pcirev)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1216,8 +1224,8 @@ BCMINITFN(sb_pcmciarev)(sb_t *sbh)
 }
 
 /* return board vendor id */
-uint
-sb_boardvendor(sb_t *sbh)
+uint 
+BCMINITFN(sb_boardvendor)(sb_t *sbh)
 {
 	sb_info_t *si;
 
@@ -1226,11 +1234,11 @@ sb_boardvendor(sb_t *sbh)
 }
 
 /* return boardtype */
-uint
-sb_boardtype(sb_t *sbh)
+uint 
+BCMINITFN(sb_boardtype)(sb_t *sbh)
 {
 	sb_info_t *si;
-	char *var;
+	const char *var;
 
 	si = SB_INFO(sbh);
 
@@ -1680,19 +1688,18 @@ BCMINITFN(sb_pci_setup)(sb_t *sbh, uint coremask)
 		}
 	}
 
-#ifdef PCIE_SUPPOER
 	/* PCIE workarounds */
 	if (PCIE(si)) {
 		if ((si->sb.buscorerev == 0) || (si->sb.buscorerev == 1)) {
-			reg_val = sb_pcie_readreg((void *)sbh, (void *)PCIE_PCIEREGS,
+			reg_val = sb_pcie_readreg((void *)(uintptr)sbh, (void *)PCIE_PCIEREGS,
 				PCIE_TLP_WORKAROUNDSREG);
 			reg_val |= 0x8;
-			sb_pcie_writereg((void *)sbh, (void *)PCIE_PCIEREGS,
+			sb_pcie_writereg((void *)(uintptr)sbh, (void *)PCIE_PCIEREGS,
 				PCIE_TLP_WORKAROUNDSREG, reg_val);
 		}
 
 		if (si->sb.buscorerev == 1) {
-			reg_val = sb_pcie_readreg((void *)sbh, (void *)PCIE_PCIEREGS,
+			reg_val = sb_pcie_readreg((void *)(uintptr)sbh, (void *)PCIE_PCIEREGS,
 				PCIE_DLLP_LCREG);
 			reg_val |= (0x40);
 			sb_pcie_writereg(sbh, (void *)PCIE_PCIEREGS, PCIE_DLLP_LCREG, reg_val);
@@ -1701,7 +1708,6 @@ BCMINITFN(sb_pci_setup)(sb_t *sbh, uint coremask)
 		if (si->sb.buscorerev == 0)
 			sb_war30841(si);
 	}
-#endif
 
 	/* switch back to previous core */
 	sb_setcoreidx(sbh, idx);
@@ -1958,10 +1964,11 @@ sb_gpiocontrol(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
-	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
+	if ((priority != GPIO_HI_PRIORITY) &&
+	    (BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
 		mask = priority ? (sb_gpioreservation & mask) :
 			((sb_gpioreservation | mask) & ~(sb_gpioreservation));
 		val &= mask;
@@ -1993,10 +2000,11 @@ sb_gpioouten(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
-	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
+	if ((priority != GPIO_HI_PRIORITY) &&
+	    (BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
 		mask = priority ? (sb_gpioreservation & mask) :
 			((sb_gpioreservation | mask) & ~(sb_gpioreservation));
 		val &= mask;
@@ -2029,7 +2037,7 @@ sb_gpioout(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
@@ -2063,7 +2071,7 @@ sb_gpioreserve(sb_t *sbh, uint32 gpio_bitmask, uint8 priority)
 
 	si = SB_INFO(sbh);
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* only cores on SB_BUS share GPIO's and only applcation users need to
 	 * reserve/release GPIO
@@ -2100,7 +2108,7 @@ sb_gpiorelease(sb_t *sbh, uint32 gpio_bitmask, uint8 priority)
 
 	si = SB_INFO(sbh);
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* only cores on SB_BUS share GPIO's and only applcation users need to
 	 * reserve/release GPIO
@@ -2162,7 +2170,8 @@ sb_gpiointpolarity(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
@@ -2199,7 +2208,7 @@ sb_gpiointmask(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
@@ -2518,7 +2527,7 @@ sb_clkctl_clk(sb_t *sbh, uint mode)
 		goto done;
 
 	/* PR32414WAR  "Force HT clock on" all the time, no dynamic clk ctl */
-	if ((si->sb.chip == BCM4311_CHIP_ID) && (si->sb.chiprev <= 1))
+	if (FORCEHT_WAR32414(si))
 		goto done;
 
 	cc = (chipcregs_t*) sb_setcore(sbh, SB_CC, 0);

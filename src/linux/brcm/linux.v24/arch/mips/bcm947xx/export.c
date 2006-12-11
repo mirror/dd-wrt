@@ -6,6 +6,7 @@
 
 _export(bcm947xx_sbh)
 
+_export(sb_base)
 _export(sb_attach)
 _export(sb_kattach)
 _export(sb_boardtype)
@@ -52,6 +53,7 @@ _export(sb_setcoreidx)
 _export(sb_war16165)
 _export(sb_war32414_forceHT)
 _export(sb_osh)
+_export(bcmstrstr)
 		
 _export(getvar)
 _export(getintvar)
@@ -59,7 +61,11 @@ _export(bcm_strtoul)
 _export(bcm_ctype)
 _export(bcm_toupper)
 _export(bcm_ether_ntoa)
+_export(bcm_ether_atoe)
+_export(bcm_atoi)
+_export(osl_delay)
 
+_export(getgpiopin)
 _export(nvram_get)
 _export(nvram_getall)
 _export(nvram_set)
