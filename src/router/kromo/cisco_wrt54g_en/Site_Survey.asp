@@ -56,11 +56,11 @@ function do_join (F,SSID) {
 						document.write("<tr><td colspan=\"11\" align=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
-						for (var i = 0; i < table.length; i = i + 9) {
+						for (var i = 0; i < table.length; i = i + 10) {
 							document.write("<tr>");
 							document.write("<td>"+table[i]+"</td>");
-							document.write("<td align=\"left\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+1] + "')\" >"+table[i+1]+"</td>");
-							document.write("<td align=\"right\">"+table[i+2]+"</td>");
+							document.write("<td align=\"right\">"+table[i+1]+"</td>");
+							document.write("<td align=\"left\" style=\"cursor:pointer; text-decoration:underline;\" title=\"OUI Search\" onclick=\"getOUIFromMAC('" + table[i+2] + "')\" >"+table[i+2]+"</td>");
 							document.write("<td align=\"right\">"+table[i+3]+"</td>");
 							document.write("<td align=\"right\">"+table[i+4]+"</td>");
 							document.write("<td align=\"right\">"+table[i+5]+"</td>");
