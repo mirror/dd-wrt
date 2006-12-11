@@ -117,7 +117,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_SUPERGERRY 0x1f0f
 
-#define ROUTER_WRT350N 0x200f
+#define ROUTER_WRT350N 0x2016
 
 #define NVROUTER "DD_BOARD"
 
