@@ -146,13 +146,13 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 		netmode = live_translate ("share.unknown");
 		
       websWrite (wp,
-		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
+		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 		 i ? ',' : ' ',
 		 site_survey_lists[i].SSID[0] ==
 		 0 ? "hidden" : site_survey_lists[i].SSID, netmode,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
-		 site_survey_lists[i].beacon_period, open,
+		 site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO,
 		 site_survey_lists[i].dtim_period, rates);
 
     }
