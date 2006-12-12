@@ -112,7 +112,8 @@ dump_bss_ie(uint8* cp, uint len)
 		if (wpa_ie(&wpaie, &parse, &parse_len))
 			break;
 	if (wpaie == NULL)
-		return "Unknown";
+//		return "Unknown";
+		return "WEP";  //Eko, testing...
 
 	if ((wpaie[6] | (wpaie[7] << 8)) != WPA_VERSION)
 		return "WPA-Unsupported";	/* WPA version unsupported */
