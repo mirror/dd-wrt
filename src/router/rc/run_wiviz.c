@@ -24,13 +24,14 @@ run_wiviz_main (void)
         if (pidof("wiviz") > 0)
     	    killall("wiviz", SIGUSR1);
 		else
-			{	
+			{
+			char *hopseq = nvram_safe_get ("hopseq");	
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
 				if (strstr (hopseq, ","))
       				fprintf (fp, "channelsel=hop&");
     			else
-      				fprintf (fp, "channelsel=%s&", nvram_safe_get ("hopseq"));
-			fprintf (fp, "hopdwell=%s&hopseq=%s\n", nvram_safe_get ("hopdwell"), nvram_safe_get ("hopseq"));
+      				fprintf (fp, "channelsel=%s&", hopseq);
+			fprintf (fp, "hopdwell=%s&hopseq=%s\n", nvram_safe_get ("hopdwell"), hopseq);
 			fclose (fp);
     	    eval ("/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1", "&");
 	    	}
