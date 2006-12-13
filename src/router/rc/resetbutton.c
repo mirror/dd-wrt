@@ -358,19 +358,20 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "on");
 #endif
-		led_control (LED_SES, LED_OFF);		//enable orange led
-		led_control (LED_SES2, LED_ON);
+//		led_control (LED_SES, LED_OFF);		
+//		led_control (LED_SES2, LED_ON);		//enable orange led
 		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
+		led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
 		
-	switch (brand)
-		{
-		case ROUTER_WRT54G:
-		case ROUTER_WRTSL54GS: 
-			ses_mode = 2;
-	      	break;
-		default:
+//	switch (brand)
+//		{
+//		case ROUTER_WRT54G:
+//		case ROUTER_WRTSL54GS: 
+//			ses_mode = 2;
+//	      	break;
+//		default:
 			ses_mode = 0;
-		}
+//		}
 	    
 	}
       else if (ses_mode == 0)
@@ -379,14 +380,15 @@ period_check (int sig)
 	  if (nvram_match ("radiooff_button", "1"))
 	    eval ("wl", "radio", "off");
 #endif
-		led_control (LED_SES, LED_ON);		//enable white led
-		led_control (LED_SES2, LED_OFF);
+//		led_control (LED_SES, LED_ON);		//enable white led
+//		led_control (LED_SES2, LED_OFF);
 		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
-
+		led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
+		
 		ses_mode = 1;
 		
 	}
-      else if (ses_mode == 2)
+/*      else if (ses_mode == 2)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
@@ -411,6 +413,7 @@ period_check (int sig)
 		ses_mode = 0;
 		
 	}
+*/
 
       /*
          char *led_argv[] = { "check_ses_led",
