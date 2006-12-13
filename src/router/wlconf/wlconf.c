@@ -726,12 +726,10 @@ wlconf(char *name)
 	/* wlX_mode settings: AP, STA, WET, BSS/IBSS, APSTA */
 	str = nvram_safe_get(strcat_r(prefix, "mode", tmp));
 	ap = (!strcmp(str, "") || !strcmp(str, "ap") || !strcmp(str, "mssid"));
-	apsta = (!strcmp(str, "apsta") ||
-	         ((!strcmp(str, "sta") || !strcmp(str, "wet")) &&
-	          bclist->count > 1));
+	apsta = (!strcmp(str, "apsta") || !strcmp(str, "apstawet") || ((!strcmp(str, "sta") || !strcmp(str, "wet")) && bclist->count > 1));
 	sta = (!strcmp(str, "sta") && bclist->count == 1);
 	wds = !strcmp(str, "wds");
-	wet = !strcmp(str, "wet");
+	wet = !strcmp(str, "wet") || !strcmp(str, "apstawet");
 
 	/* Set AP mode */
 	val = (ap || apsta || wds) ? 1 : 0;

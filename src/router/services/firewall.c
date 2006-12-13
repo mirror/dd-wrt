@@ -257,7 +257,8 @@ get_wan_face (void)
 #ifndef HAVE_MADWIFI
   else if (nvram_match ("wl0_mode", "sta")
 	   || nvram_match ("wl0_mode", "apsta")
-	   || nvram_match ("wl0_mode", "wet"))
+	   || nvram_match ("wl0_mode", "wet")
+	   || nvram_match ("wl0_mode", "apstawet"))
     {
       if (wl_probe ("eth2"))
 	strcpy (localwanface, "eth1");

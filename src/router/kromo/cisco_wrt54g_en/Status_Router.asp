@@ -235,7 +235,8 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							
-				<% nvram_match("wl_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
 							<h2><% tran("status_router.h22"); %></h2>
 							<fieldset>
 								<legend><% tran("status_router.legend5"); %></legend>
@@ -289,6 +290,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 				<% nvram_match("wl_mode", "wet", "-->"); %>
+				<% nvram_match("wl_mode", "apstawet", "-->"); %>
 							
 							<div class="submitFooter">
 								<script type="text/javascript">

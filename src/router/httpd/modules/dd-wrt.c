@@ -1425,7 +1425,9 @@ void
 ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  if (nvram_match ("wl_mode", "wet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
+  if (nvram_match ("wl0_mode", "wet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
+    return;
+  if (nvram_match ("wl0_mode", "apstawet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
     return;
   websWrite (wp,
 	     "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
@@ -1650,7 +1652,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
   sprintf (wl_mode, "%s_mode", prefix);
   char wl_net_mode[16];
   sprintf (wl_net_mode, "%s_net_mode", prefix);
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta")
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "apstawet")
       || nvram_match (wl_mode, "wdsap") || nvram_match (wl_mode, "infra"))
     {
       char wl_channel[16];
@@ -1892,7 +1894,7 @@ show_virtualssid (webs_t wp, char *prefix)
   if (vifs == NULL)
     return 0;
 #ifndef HAVE_MADWIFI
-  if (!nvram_match ("wl0_mode", "ap") && !nvram_match ("wl0_mode", "apsta"))
+  if (!nvram_match ("wl0_mode", "ap") && !nvram_match ("wl0_mode", "apsta") && !nvram_match ("wl0_mode", "apstawet"))
     return 0;
 #endif
   int count = 1;
@@ -2171,7 +2173,7 @@ save_prefix (webs_t wp, char *prefix)
       if (wl)
 	nvram_set ("wl_mode", wl);
 #ifndef HAVE_MADWIFI
-      if (strcmp (wl, "ap") && strcmp (wl, "apsta"))
+      if (strcmp (wl, "ap") && strcmp (wl, "apsta") && strcmp (wl, "apstawet"))
 	{
 	  nvram_set ("wl0_vifs", "");
 	}
@@ -2392,6 +2394,10 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
 		 nvram_match (wl_mode,
 			      "apsta") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "apstawet") ? "selected=\\\"selected\\\"" : "");
 #else
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
@@ -2516,7 +2522,7 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta")
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "apstawet")
       || nvram_match (wl_mode, "wdsap") || nvram_match (wl_mode, "infra"))
     {
 
@@ -3645,7 +3651,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       rssi = 0;
       noise = 0;
       // get rssi value
-      if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+      if (strcmp (mode, "ap") && strcmp (mode, "apsta") && strcmp (mode, "apstawet"))
 	snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
       else
 	snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
@@ -3749,7 +3755,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       rssi = 0;
       noise = 0;
       // get rssi value
-      if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+      if (strcmp (mode, "ap") && strcmp (mode, "apsta") && strcmp (mode, "apstawet"))
 	snprintf (cmd, sizeof (cmd), "wl -i %s rssi > %s", iface, RSSI_TMP);
       else
 	snprintf (cmd, sizeof (cmd), "wl -i %s rssi \"%s\" > %s", iface, mac,
@@ -3870,7 +3876,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
   mode = nvram_safe_get ("wl_mode");
 
-  if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+  if (strcmp (mode, "ap") && strcmp (mode, "apsta") && strcmp (mode, "apstawet"))
     return;
   unsigned char buf[WLC_IOCTL_MAXLEN];
   char *iface = get_wdev ();
