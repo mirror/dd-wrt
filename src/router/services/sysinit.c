@@ -1007,9 +1007,17 @@ start_nvram (void)
   }
 
 #ifdef HAVE_WIVIZ
-nvram_set("channelsel","nochange");
-nvram_set("hopdwell","1000");
-nvram_set("hopseq","1,3,6,8,11");
+	if (!strlen (nvram_safe_get("hopseq")) || !strlen (nvram_safe_get("hopdwell")))
+	{
+#ifdef HAVE_MSSID
+  		char *channel = nvram_safe_get ("wl0_channel");
+#else
+		char *channel = nvram_safe_get ("wl_channel");
+#endif
+
+		nvram_set ("hopdwell", "1000");
+		nvram_set ("hopseq", channel);
+	}
 #endif
 
 
