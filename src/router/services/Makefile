@@ -15,7 +15,7 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic
 
-OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o stabridge.o
+OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o
 
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio.o
@@ -41,6 +41,7 @@ CFLAGS += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
+OBJS += stabridge.o
 else
 OBJS += site_survey_broadcom.o
 endif

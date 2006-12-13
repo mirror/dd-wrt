@@ -267,7 +267,7 @@ svqos_iptables (void)
   if (wl0mode == NULL)
     wl0mode = "";
 
-  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet"))
+  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet") && strcmp (wl0mode, "apstawet"))
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");
@@ -680,7 +680,7 @@ stop_wshaper (void)
   char *wl0mode = nvram_get ("wl0_mode");
   if (wl0mode == NULL)
     wl0mode = "";
-  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet"))
+  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet") && strcmp (wl0mode, "apstawet") )
     {
       eval ("rmmod", "ebt_dnat");
       eval ("rmmod", "ebt_snat");

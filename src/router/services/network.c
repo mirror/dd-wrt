@@ -379,7 +379,7 @@ enable_dhcprelay (char *ifname)
 	snprintf (mode, sizeof (mode), "wl%d_mode", unit);
 
 	/* enable DHCP relay, there should be only one WET i/f */
-	if (nvram_match (mode, "wet"))
+	if (nvram_match (mode, "wet") || nvram_match (mode, "apstawet"))
 	  {
 	    uint32 ip;
 	    inet_aton (nvram_safe_get ("lan_ipaddr"), (struct in_addr *) &ip);
@@ -570,7 +570,7 @@ int
 isClient (void)
 {
 #ifndef HAVE_MADWIFI
-  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta"))
+  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
     return 1;
 #else
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "apsta"))
@@ -1064,23 +1064,15 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
 		br_add_interface (lan_ifname, name);
 		led_control (LED_BRIDGE, LED_ON);
-		//eval ("brctl", "addif", lan_ifname, name);
-/*
-				eval("wl", "ap", "0");			  //disable ap mode
-				wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
-				wlconf_up(name);
-				//eval("wlconf", name, "up");
-				ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
-				eval("wl", "ap", "0");			  //disable ap mode					
-				eval("wl", "wet", "1");			  //enable client mode
-				eval("wl", "join", nvram_get("wl_ssid")); //join network
-				
-				nvram_set("wan_proto","disabled"); //disable dhcp wan requests
-				nvram_set("lan_proto","static"); //disable dhcp server
-				
-				sleep(5); // waiting for nas
-				//eval("brctl", "addif", lan_ifname, name); //create bridge
-				*/
+#ifdef HAVE_MSSID
+		enable_dhcprelay (lan_ifname);
+#endif
+	      }
+	    if (nvram_match (wl_name, "apstawet"))
+	      {
+		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
+		br_add_interface (lan_ifname, name);
+		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
 #endif
@@ -1155,21 +1147,6 @@ start_lan (void)
 #endif
 	      }
 
-	    /*if (nvram_match(wl_name, "wet")) {
-	       eval("wl", "ap", "0");
-	       wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
-	       eval("wlconf", name, "up");
-	       ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
-	       eval("wl", "ap", "0");
-	       if (nvram_get("wl_ap_mac")==NULL || nvram_match("wl_ap_mac",""))
-	       eval("wl", "join", nvram_get("wl_ssid"));
-	       else
-	       {
-	       eval("wl", "macmode","1");
-	       eval("wl", "mac", nvram_get("wl_ap_mac"));
-	       eval("wl", "join", nvram_get("wl_ssid"));
-	       }
-	       } */
 	  }
 
       }
@@ -1627,7 +1604,7 @@ start_wan (int status)
       break;
     }
 #endif
-  if (nvram_match ("wl_mode", "wet"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
     {
       dns_to_resolv ();
       return;

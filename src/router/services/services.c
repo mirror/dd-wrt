@@ -469,7 +469,7 @@ write_nvram (char *name, char *nv)
 int
 start_dhcpfwd (void)
 {
-  if (nvram_match ("wl_mode", "wet"))	//dont start any dhcp services in bridge mode
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))	//dont start any dhcp services in bridge mode
     {
       nvram_set ("lan_proto", "static");
       return 0;
@@ -590,7 +590,7 @@ start_udhcpd (void)
    }
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
-  if (nvram_match ("wl_mode", "wet"))	//dont start any dhcp services in bridge mode
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))	//dont start any dhcp services in bridge mode
   {
   	nvram_set ("lan_proto", "static");
   	return 0;
@@ -922,7 +922,7 @@ start_dnsmasq (void)
     }
 
   /* DD-WRT use dnsmasq as DHCP replacement */
-  if (!nvram_match ("wl_mode", "wet"))
+  if (!nvram_match ("wl0_mode", "wet") && !nvram_match ("wl0_mode", "apstawet"))
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
