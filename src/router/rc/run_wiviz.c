@@ -25,20 +25,6 @@ run_wiviz_main (void)
     	    killall("wiviz", SIGUSR1);
 		else
 			{	
-#ifdef HAVE_MSSID
-  			char *channel = nvram_safe_get ("wl0_channel");
-#else
-			char *channel = nvram_safe_get ("wl_channel");
-#endif
-
-			char *hopdwell = nvram_safe_get ("hopdwell");
-				if (!strlen (hopdwell)) 
-					nvram_set ("hopdwell", "1000");
-					
-			char *hopseq = nvram_safe_get ("hopseq");
-				if (!strlen (hopseq)) 
-					nvram_set ("hopseq", channel);
-
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
 				if (strstr (hopseq, ","))
       				fprintf (fp, "channelsel=hop&");
