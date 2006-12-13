@@ -185,8 +185,15 @@ document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
 	        <input type='submit' value='Apply changes' onclick="alert('Unimplemented')">
 	        </form>
 	    </div>
-	</div> 
-</div> -->
+	</div> -->
+	
+		<div class='expando'>
+	    <div class='slidingheader' id='configuration' onClick="self.close()">
+			Close
+	    </div>
+	   </div>
+	
+</div> 
 <div class='poweredby'>By Nate True<br>Powered by DD-WRT</div>
 <div class='debugger' id='debugger'></div>
 <iframe class='wiviz' id='wivizGetFrame' src='about:blank'></iframe>
