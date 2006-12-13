@@ -578,6 +578,7 @@ start_single_service (void)
     }
   else if (!strcmp (service, "wireless_2"))
     {
+	  stop_service ("radio_timer");
 #ifndef HAVE_MADWIFI
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
@@ -617,7 +618,7 @@ start_single_service (void)
 #endif
       start_service ("nas_wan");
 #endif
-
+	  start_service ("radio_timer");
     }
   else if (!strcmp (service, "dhcp_release"))
     {
