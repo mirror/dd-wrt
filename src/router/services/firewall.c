@@ -1803,6 +1803,8 @@ filter_forward (void)
   for (i = 0; i < getdevicecount (); i++)
     {
       sprintf (wifivifs, "ath%d_vifs", i);
+      save2file ("-A INPUT -i ath%d -j ACCEPT\n",i);
+      save2file ("-A FORWARD -i ath%d -j ACCEPT\n",i);
       char *vifs = nvram_safe_get (wifivifs);
       if (vifs != NULL)
 	foreach (var, vifs, next)
@@ -1816,6 +1818,8 @@ filter_forward (void)
   char dev[16];
   char var[80];
   char wifivifs[16];
+      save2file ("-A INPUT -i %s -j ACCEPT\n",get_wdev());
+      save2file ("-A FORWARD -i %s -j ACCEPT\n"get_wdev());
 
   sprintf (wifivifs, "wl0_vifs");
   char *vifs = nvram_safe_get (wifivifs);

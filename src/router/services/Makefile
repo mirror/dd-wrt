@@ -24,6 +24,9 @@ endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
+ifeq ($(CONFIG_GW700),y)
+CFLAGS += -DHAVE_GW700
+endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
