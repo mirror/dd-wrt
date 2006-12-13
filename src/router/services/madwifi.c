@@ -1237,8 +1237,26 @@ configure_single (int count, int isbond)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
-if (nvram_match("wifi_bonding","0"))
-      br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+    if (nvram_match("wifi_bonding","0"))
+    {
+    	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", var);
+	  if (default_match (bridged, "1","1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match("wifi_bonding","0"))
+	      br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", dev);
+	      sprintf (mask, "%s_ipaddr", dev);
+	      ifconfig (dev, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
+    }
 
 //      eval ("brctl", "addif", "br0", dev);
     }
@@ -1290,7 +1308,7 @@ if (nvram_match("wifi_bonding","0"))
 	{
 	  char bridged[32];
 	  sprintf (bridged, "%s_bridged", var);
-	  if (nvram_match (bridged, "1"))
+	  if (default_match (bridged, "1","1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
 	      if (nvram_match("wifi_bonding","0"))
