@@ -4121,7 +4121,7 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"info\">WAN");
 
-  if (nvram_match ("wl_mode", "wet") || nvram_match ("wan_proto", "disabled"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet") || nvram_match ("wan_proto", "disabled"))
     {
       websWrite (wp,
 		 ": <script type=\"text/javascript\">Capture(share.disabled)</script></div>\n");
@@ -4510,7 +4510,7 @@ ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
-      || nvram_match (mode, "infra") || nvram_match (mode, "apsta"))
+      || nvram_match (mode, "infra") || nvram_match (mode, "apsta") || nvram_match (mode, "apstawet"))
     websWrite (wp, "Capture(info.ap)");
   else
     websWrite (wp, "Capture(status_wireless.legend3)");
@@ -4542,6 +4542,8 @@ ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "Capture(wl_basic.adhoc)");
   if (nvram_match (mode, "apsta"))
     websWrite (wp, "Capture(wl_basic.repeater)");
+  if (nvram_match (mode, "apstawet"))
+    websWrite (wp, "Capture(wl_basic.repeaterbridge)");
   if (nvram_match (mode, "wdssta"))
     websWrite (wp, "Capture(wl_basic.wdssta)");
   if (nvram_match (mode, "wdsap"))

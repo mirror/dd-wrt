@@ -41,7 +41,7 @@ function mtu_enable_disable(F,I) {
 }
 
 function valid_value(F) {
-	if (!('<% nvram_get("wl_mode"); %>' == 'wet')) {
+	if (!('<% nvram_get("wl0_mode"); %>' == 'wet') && !('<% nvram_get("wl0_mode"); %>' == 'apstawet')) {
 		if (F.now_proto.value == "pptp" || F.now_proto.value == "static") {
 			pptp_dhcp = "";
 	
@@ -286,14 +286,17 @@ function init() {
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
 								
-				<% nvram_invmatch("wl_mode", "wet", "<!--"); %>
+				<% nvram_invmatch("wl0_mode", "wet", "<!--"); %>
+				<% nvram_invmatch("wl0_mode", "apstawet", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<% tran("share.disabled"); %>
 								</div>
-				<% nvram_invmatch("wl_mode", "wet", "-->"); %>
+				<% nvram_invmatch("wl0_mode", "wet", "-->"); %>
+				<% nvram_invmatch("wl0_mode", "apstawet", "-->"); %>
 				
-				<% nvram_match("wl_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
+				<% nvram_match("wl0_mode", "wet", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
@@ -301,7 +304,8 @@ function init() {
 									</select>
 								</div>
 								<% show_index_setting(); %>
-				<% nvram_match("wl_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
 				
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
@@ -311,9 +315,11 @@ function init() {
 								</div>
 							</fieldset><br />
 				
-				<% nvram_match("wl_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
 							<% portsetup(); %>
-				<% nvram_match("wl_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
 							
 							<fieldset>
 								<legend><% tran("idx.optional"); %></legend>
@@ -322,7 +328,8 @@ function init() {
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
 								</div>
 			
-				<% nvram_match("wl_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "wet", "<!--"); %>
+				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_get("wan_hostname"); %>"/>
@@ -343,7 +350,8 @@ function init() {
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
-				<% nvram_match("wl_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "wet", "-->"); %>
+				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
 							</fieldset><br />
 							
 							<h2><% tran("idx.h23"); %></h2>
