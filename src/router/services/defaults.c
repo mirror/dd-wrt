@@ -142,6 +142,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_ipaddr", "192.168.10.1", 0},	/* LAN IP address */
 #elif HAVE_34TELECOM
   {"lan_ipaddr", "192.168.1.4", 0},	/* LAN IP address */
+#elif HAVE_GW700
+  {"lan_ipaddr", "192.168.108.1", 0},	/* LAN IP address */
 #else
   {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -162,7 +164,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_lease", "86400", 0},	/* LAN lease time in seconds */
 
   /* WAN H/W parameters */
+
   {"wan_ifname", "", 0},	/* WAN interface name */
+  {"wan_ifname2", "", 0},	/* WAN interface name (clone)*/
   {"wan_ifnames", "", 0},	/* WAN interface names */
   {"wan_hwname", "", 0},	/* WAN driver name (e.g. et1) */
   {"wan_hwaddr", "", 0},	/* WAN interface MAC address */
@@ -183,8 +187,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
   {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #elif HAVE_X86
+#ifdef HAVE_GW700
+  {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#else
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
-
+#endif
   {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
   {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
   {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
