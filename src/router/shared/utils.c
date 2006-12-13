@@ -1200,7 +1200,7 @@ get_wan_face (void)
     }
 #ifndef HAVE_MADWIFI
   else if (nvram_match ("wl0_mode", "sta")
-	   || nvram_match ("wl0_mode", "apsta")
+	   || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet")
 	   || nvram_match ("wl0_mode", "wet"))
     {
 
