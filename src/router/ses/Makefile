@@ -1,3 +1,5 @@
+clean:
+	@true
 ses:
 	@true
 all:
