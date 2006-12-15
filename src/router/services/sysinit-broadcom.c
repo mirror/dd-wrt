@@ -288,6 +288,7 @@ start_sysinit (void)
     case ROUTER_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
+    case ROUTER_WAP54G_V1:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
