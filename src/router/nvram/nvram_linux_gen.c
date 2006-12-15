@@ -465,8 +465,10 @@ nvram_commit (void)
   system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
   system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #else
+  system("mount /usr/local -o remount,rw");
   system ("cp /tmp/nvram/nvram.db /etc/nvram");
   system ("cp /tmp/nvram/offsets.db /etc/nvram");
+  system("mount /usr/local -o remount,ro");
 #endif
 
 //writedb ();
