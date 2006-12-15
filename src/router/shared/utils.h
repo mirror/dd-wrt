@@ -119,6 +119,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_WRT350N 0x2016
 
+//Linksys WAP54G v1
+#define ROUTER_WAP54G_V1 0x210f
+
 #define NVROUTER "DD_BOARD"
 
 
