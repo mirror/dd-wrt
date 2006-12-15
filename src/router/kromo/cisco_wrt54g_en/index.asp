@@ -285,15 +285,24 @@ function init() {
 
 							<fieldset>
 								<legend><% tran("idx.legend"); %></legend>
-								
-				<% nvram_invmatch("wl0_mode", "wet", "<!--"); %>
-				<% nvram_invmatch("wl0_mode", "apstawet", "<!--"); %>
+
+				<% nvram_match("wl0_mode", "ap", "<!--"); %>
+				<% nvram_match("wl0_mode", "sta", "<!--"); %>
+				<% nvram_match("wl0_mode", "infra", "<!--"); %>
+				<% nvram_match("wl0_mode", "apsta", "<!--"); %>
+				<% nvram_match("wl0_mode", "wdssta", "<!--"); %>
+				<% nvram_match("wl0_mode", "wdsap", "<!--"); %>
 								<div class="setting">
 							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<% tran("share.disabled"); %>
 								</div>
-				<% nvram_invmatch("wl0_mode", "wet", "-->"); %>
-				<% nvram_invmatch("wl0_mode", "apstawet", "-->"); %>
+				<% nvram_match("wl0_mode", "ap", "-->"); %>
+				<% nvram_match("wl0_mode", "sta", "-->"); %>
+				<% nvram_match("wl0_mode", "infra", "-->"); %>
+				<% nvram_match("wl0_mode", "apsta", "-->"); %>
+				<% nvram_match("wl0_mode", "wdssta", "-->"); %>	
+				<% nvram_match("wl0_mode", "wdsap", "-->"); %>
+
 				
 				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
 				<% nvram_match("wl0_mode", "wet", "<!--"); %>
