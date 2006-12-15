@@ -464,6 +464,14 @@ internal_getRouterBrand ()
       return ROUTER_WRT54G1X;
     }
 
+	if (nvram_match ("boardnum", "2\r") &&
+	    nvram_match ("boardtype", "bcm94710dev\r"))
+		{
+		cprintf ("router is Linksys wap54g v1\n");
+		setRouter ("Linksys WAP54G v1");
+		return ROUTER_WAP54G_V1;
+	    }
+	    
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
       cprintf ("router is Linksys WAP54G v2\n");
@@ -912,6 +920,8 @@ int aoss_gpio = 0x0f;
 		break;
 	case ROUTER_MOTOROLA_WE800G:
 		break;
+	case ROUTER_WAP54G_V1:
+		break
 	}
 	
 	switch (type)
@@ -1729,7 +1739,7 @@ check_hw_type (void)
 
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 
-  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap") || nvram_match ("boardtype", "bcm94710r4"))	//Eko 19.apr.06, 10.may.06
+  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap") || nvram_match ("boardtype", "bcm94710r4") || nvram_match ("boardtype", "bcm94710dev\r"))	//Eko 19.apr.06, 10.may.06
     return BCM4702_CHIP;
   else if (nvram_match ("boardtype", "0x0708") && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
