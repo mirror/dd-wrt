@@ -921,7 +921,7 @@ int aoss_gpio = 0x0f;
 	case ROUTER_MOTOROLA_WE800G:
 		break;
 	case ROUTER_WAP54G_V1:
-		break
+		break;
 	}
 	
 	switch (type)
