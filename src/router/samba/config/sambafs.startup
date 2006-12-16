@@ -11,7 +11,7 @@ if [ "$(nvram get samba_mount)" = "1" ]; then
     mkdir /tmp/smbshare
     chmod 777 /tmp/smbshare
     insmod cifs
-    mount -t cifs $SAMBA_SHARE /tmp/smbshare -o username="$SAMBA_USER",password="$SAMBA_PASSWORD"
+    mount -t cifs $SAMBA_SHARE /tmp/smbshare -o username="$SAMBA_USER",pass="$SAMBA_PASSWORD"
     if [ "$(nvram get samba_script)" != "" ]; then
 	exec "/tmp/smbshare/$SAMBA_SCRIPT"
     fi	
