@@ -21,7 +21,7 @@ extern int smb_proc_rmdir(struct dentry *dentry);
 extern int smb_proc_unlink(struct dentry *dentry);
 extern int smb_proc_flush(struct smb_sb_info *server, __u16 fileid);
 extern void smb_init_root_dirent(struct smb_sb_info *server, struct smb_fattr *fattr);
-extern void smb_decode_unix_basic(struct smb_fattr *fattr, char *p);
+extern void smb_decode_unix_basic(struct smb_fattr *fattr, struct smb_sb_info *server, char *p);
 extern int smb_proc_getattr(struct dentry *dir, struct smb_fattr *fattr);
 extern int smb_proc_setattr(struct dentry *dir, struct smb_fattr *fattr);
 extern int smb_proc_setattr_unix(struct dentry *dentry, struct iattr *attr, unsigned int major, unsigned int minor);

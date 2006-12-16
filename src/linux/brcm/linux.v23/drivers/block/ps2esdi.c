@@ -741,7 +741,7 @@ static void ps2esdi_geometry_int_handler(u_int int_ret_code)
 	drive_num = int_ret_code >> 5;
 	switch (int_ret_code & 0xf) {
 	case INT_CMD_COMPLETE:
-		for (i = ESDI_TIMEOUT; i & !(inb(ESDI_STATUS) & STATUS_STAT_AVAIL); i--);
+		for (i = ESDI_TIMEOUT; i && !(inb(ESDI_STATUS) & STATUS_STAT_AVAIL); i--);
 		if (!(inb(ESDI_STATUS) & STATUS_STAT_AVAIL)) {
 			printk("%s: timeout reading status word\n", DEVICE_NAME);
 			outb((int_ret_code & 0xe0) | ATT_EOI, ESDI_ATTN);
@@ -876,7 +876,7 @@ static void ps2esdi_normal_interrupt_handler(u_int int_ret_code)
 		break;
 
 	case INT_CMD_COMPLETE:
-		for (i = ESDI_TIMEOUT; i & !(inb(ESDI_STATUS) & STATUS_STAT_AVAIL); i--);
+		for (i = ESDI_TIMEOUT; i && !(inb(ESDI_STATUS) & STATUS_STAT_AVAIL); i--);
 		if (!(inb(ESDI_STATUS) & STATUS_STAT_AVAIL)) {
 			printk("%s: timeout reading status word\n", DEVICE_NAME);
 			outb((int_ret_code & 0xe0) | ATT_EOI, ESDI_ATTN);
