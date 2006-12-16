@@ -236,6 +236,7 @@ obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
 obj-$(CONFIG_AIRCRACK) += aircrack-ng
 obj-$(CONFIG_BONDING) += ifenslave
+obj-$(CONFIG_WIVIZ) += wiviz2
 obj-y += stabridge
 obj-y += net-tools
 
@@ -567,6 +568,7 @@ rp-l2tp-install:
 	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
 
 libpcap:
+	$(MAKE) -C libpcap_noring libpcap.a
 	$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.so
 
 libpcap-install:
@@ -862,20 +864,22 @@ radauth-clean:
 	$(MAKE) -C radauth clean
 	
 samba:
-	$(MAKE) -C samba/source bin/smbmnt
-	$(MAKE) -C samba/source bin/smbmount
+	@true
+#	$(MAKE) -C samba/source bin/smbmnt
+#	$(MAKE) -C samba/source bin/smbmount
 
 samba-install:
-	install -D samba/source/bin/smbmnt $(INSTALLDIR)/samba/usr/sbin/smbmnt
-	install -D samba/source/bin/smbmount $(INSTALLDIR)/samba/usr/sbin/smbmount
-	install -D samba/smb.conf $(INSTALLDIR)/samba/usr/lib/smb.conf
+#	install -D samba/source/bin/smbmnt $(INSTALLDIR)/samba/usr/sbin/smbmnt
+#	install -D samba/source/bin/smbmount $(INSTALLDIR)/samba/usr/sbin/smbmount
+#	install -D samba/smb.conf $(INSTALLDIR)/samba/usr/lib/smb.conf
 	install -D samba/config/sambafs.webconfig $(INSTALLDIR)/samba/etc/config/sambafs.webconfig
 	install -D samba/config/sambafs.startup $(INSTALLDIR)/samba/etc/config/sambafs.startup
 	install -D samba/config/sambafs.nvramconfig $(INSTALLDIR)/samba/etc/config/sambafs.nvramconfig
 
 
 samba-clean:
-	$(MAKE) -C samba/source clean
+	@true
+#	$(MAKE) -C samba/source clean
 
 mmc:
 	$(MAKE) -C mmc
@@ -1047,7 +1051,8 @@ ntpclient-install:
 
 # AhMan March 19 2005
 pppoe pppoe-%:
-	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/ppp
+	@true
+#	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/ppp
 
 ppp:
 	$(MAKE) -C rp-pppoe-3.5/src
@@ -1563,7 +1568,12 @@ sputnik-clean:
 
 sputnik-install:
 	mkdir -p $(INSTALLDIR)/sputnik/etc/config
-	cp -fpR sputnik/config/* $(INSTALLDIR)/sputnik/etc/config
+	cp -fpR sputnik/config/*.nvramconfig $(INSTALLDIR)/sputnik/etc/config
+ifeq ($(CONFIG_SPUTNIK_PRO),y)
+	cp -fpR sputnik/config/1sputnik.webhotspot_pro $(INSTALLDIR)/sputnik/etc/config/1sputnik.webhotspot
+else
+	cp -fpR sputnik/config/1sputnik.webhotspot $(INSTALLDIR)/sputnik/etc/config/1sputnik.webhotspot
+endif
 #	mkdir -p $(INSTALLDIR)/sputnik/www/images
 #	cp -fpR sputnik/images/* $(INSTALLDIR)/sputnik/www/images
 	install -D sputnik/$(ARCH)/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
@@ -1619,7 +1629,7 @@ wireless-tools-install:
 #	rm -rf $(INSTALLDIR)/wireless-tools/include
 
 olsrd-clean:
-	make -C olsrd OS=linux clean
+	make -C olsrd OS=linux uberclean
 
 olsrd:
 	make -C olsrd OS=linux
