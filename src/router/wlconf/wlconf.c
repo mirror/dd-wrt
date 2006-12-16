@@ -802,6 +802,11 @@ wlconf(char *name)
 		WL_BSSIOVAR_SETINT(name, "ap_isolate", bsscfg->idx, val);
 	}
 
+	/* Get current phy type */
+	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
+	snprintf(buf, sizeof(buf), "%s", WLCONF_PHYTYPE2STR(phytype));
+	nvram_set(strcat_r(prefix, "phytype", tmp), buf);
+
 	/* Set up the country code */
 	(void) strcat_r(prefix, "country_code", tmp);
 	
@@ -968,10 +973,6 @@ wlconf(char *name)
 	snprintf(buf, sizeof(buf), "%d", rev.corerev);
 	nvram_set(strcat_r(prefix, "corerev", tmp), buf);
 
-	/* Get current phy type */
-	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
-	snprintf(buf, sizeof(buf), "%s", WLCONF_PHYTYPE2STR(phytype));
-	nvram_set(strcat_r(prefix, "phytype", tmp), buf);
 
 	/* Set channel before setting gmode or rateset */
 	/* Manual Channel Selection - when channel # is not 0 */
