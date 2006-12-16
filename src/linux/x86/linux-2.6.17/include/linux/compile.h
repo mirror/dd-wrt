@@ -1,7 +1,7 @@
-/* This file is auto generated, version 37 */
+/* This file is auto generated, version 49 */
 #define UTS_MACHINE "i386"
-#define UTS_VERSION "#37 Mon Dec 11 02:59:38 CET 2006"
-#define LINUX_COMPILE_TIME "02:59:38"
+#define UTS_VERSION "#49 Thu Dec 14 20:34:11 CET 2006"
+#define LINUX_COMPILE_TIME "20:34:11"
 #define LINUX_COMPILE_BY "root"
 #define LINUX_COMPILE_HOST "linux"
 #define LINUX_COMPILE_DOMAIN "site"
