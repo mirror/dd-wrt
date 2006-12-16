@@ -804,10 +804,16 @@ wlconf(char *name)
 
 	/* Set up the country code */
 	(void) strcat_r(prefix, "country_code", tmp);
+	
 	if (nvram_match("wl0_phytype","a"))
 	    country="US";
 	else
 	    country="JP";
+	if (phytype == PHY_TYPE_N)
+	    {
+	    if (nvram_match("wl0_net_mode","n-only") || nvram_match("wl0_net_mode","mixed"))
+		country="DE";
+	    }
 	//country = nvram_get(tmp);
 	if (country) {
 		strncpy(country_code, country, sizeof(country_code));

@@ -518,7 +518,9 @@ struct nvram_tuple srouter_defaults[] = {
 
 
 #endif
+#ifdef HAVE_MSSID
   {"wl_country", "Japan", 0},	/* Country (default obtained from driver) */
+#endif
 #ifdef HAVE_NEWMEDIA
   {"wl_radio", "1", 0},		/* Enable (1) or disable (0) radio */
   {"wl_closed", "1", 0},	/* Closed (hidden) network */
