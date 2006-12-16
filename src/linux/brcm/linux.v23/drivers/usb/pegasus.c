@@ -147,6 +147,7 @@ static int get_registers(pegasus_t * pegasus, u16 indx, u16 size,
 	set_current_state(TASK_UNINTERRUPTIBLE);
 
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb))) {
+		set_current_state(TASK_RUNNING);
 		err("%s: BAD CTRLs %d", __FUNCTION__, ret);
 		goto out;
 	}
@@ -197,6 +198,7 @@ static int set_registers(pegasus_t * pegasus, u16 indx, u16 size,
 	set_current_state(TASK_UNINTERRUPTIBLE);
 
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb))) {
+		set_current_state(TASK_RUNNING);
 		err("%s: BAD CTRL %d", __FUNCTION__, ret);
 		goto out;
 	}
@@ -244,6 +246,7 @@ static int set_register(pegasus_t * pegasus, u16 indx, u8 data)
 	set_current_state(TASK_UNINTERRUPTIBLE);
 
 	if ((ret = usb_submit_urb(pegasus->ctrl_urb))) {
+		set_current_state(TASK_RUNNING);
 		err("%s: BAD CTRL %d", __FUNCTION__, ret);
 		goto out;
 	}

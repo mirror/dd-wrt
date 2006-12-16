@@ -29,23 +29,19 @@
 #include <linux/ctype.h>
 #include <linux/sysctl.h>
 #include <linux/proc_fs.h>
+#include <linux/init.h>
 #include <linux/ioport.h>
-#include <asm/uaccess.h>
-
 #include <linux/i2c.h>
 #include <linux/i2c-proc.h>
-
-#include <linux/init.h>
+#include <asm/uaccess.h>
 
 #ifndef THIS_MODULE
 #define THIS_MODULE NULL
 #endif
 
-static int i2c_create_name(char **name, const char *prefix,
-			       struct i2c_adapter *adapter, int addr);
-static int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
+static int i2c_parse_reals(int *nrels, char *buffer, int bufsize,
 			       long *results, int magnitude);
-static int i2c_write_reals(int nrels, void *buffer, int *bufsize,
+static int i2c_write_reals(int nrels, char *buffer, size_t *bufsize,
 			       long *results, int magnitude);
 static int i2c_proc_chips(ctl_table * ctl, int write,
 			      struct file *filp, void *buffer,
@@ -126,11 +122,9 @@ int i2c_create_name(char **name, const char *prefix,
    If any driver wants subdirectories within the newly created directory,
    this function must be updated! 
    controlling_mod is the controlling module. It should usually be
-   THIS_MODULE when calling. Note that this symbol is not defined in
-   kernels before 2.3.13; define it to NULL in that case. We will not use it
-   for anything older than 2.3.27 anyway. */
+   THIS_MODULE when calling. */
 int i2c_register_entry(struct i2c_client *client, const char *prefix,
-			   ctl_table * ctl_template,
+			   ctl_table *ctl_template,
 			   struct module *controlling_mod)
 {
 	int i, res, len, id;
@@ -456,7 +450,7 @@ int i2c_sysctl_real(ctl_table * table, int *name, int nlen,
    WARNING! This is tricky code. I have tested it, but there may still be
             hidden bugs in it, even leading to crashes and things!
 */
-int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
+static int i2c_parse_reals(int *nrels, char *buffer, int bufsize,
 			 long *results, int magnitude)
 {
 	int maxels, min, mag;
@@ -470,10 +464,10 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 
 		/* Skip spaces at the start */
 		while (bufsize && 
-		       !((ret=get_user(nextchar, (char *) buffer))) &&
+		       !((ret=get_user(nextchar, buffer))) &&
 		       isspace((int) nextchar)) {
 			bufsize--;
-			buffer = (char *) buffer + 1;
+			buffer++;
 		}
 
 		if (ret)
@@ -488,22 +482,22 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		mag = magnitude;
 
 		/* Check for a minus */
-		if (!((ret=get_user(nextchar, (char *) buffer)))
+		if (!((ret=get_user(nextchar, buffer)))
 		    && (nextchar == '-')) {
 			min = 1;
 			bufsize--;
-			buffer = (char *) buffer + 1;
+			buffer++;
 		}
 		if (ret)
 			return -EFAULT;
 
 		/* Digits before a decimal dot */
 		while (bufsize && 
-		       !((ret=get_user(nextchar, (char *) buffer))) &&
+		       !((ret=get_user(nextchar, buffer))) &&
 		       isdigit((int) nextchar)) {
 			res = res * 10 + nextchar - '0';
 			bufsize--;
-			buffer = (char *) buffer + 1;
+			buffer++;
 		}
 		if (ret)
 			return -EFAULT;
@@ -517,16 +511,16 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		if (bufsize && (nextchar == '.')) {
 			/* Skip the dot */
 			bufsize--;
-			buffer = (char *) buffer + 1;
+			buffer++;
 
 			/* Read digits while they are significant */
 			while (bufsize && (mag > 0) &&
-			       !((ret=get_user(nextchar, (char *) buffer))) &&
+			       !((ret=get_user(nextchar, buffer))) &&
 			       isdigit((int) nextchar)) {
 				res = res * 10 + nextchar - '0';
 				mag--;
 				bufsize--;
-				buffer = (char *) buffer + 1;
+				buffer++;
 			}
 			if (ret)
 				return -EFAULT;
@@ -539,10 +533,10 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 
 		/* Skip everything until we hit whitespace */
 		while (bufsize && 
-		       !((ret=get_user(nextchar, (char *) buffer))) &&
+		       !((ret=get_user(nextchar, buffer))) &&
 		       !isspace((int) nextchar)) {
 			bufsize--;
-			buffer = (char *) buffer + 1;
+			buffer++;
 		}
 		if (ret)
 			return -EFAULT;
@@ -557,7 +551,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 	return 0;
 }
 
-int i2c_write_reals(int nrels, void *buffer, int *bufsize,
+static int i2c_write_reals(int nrels, char *buffer, size_t *bufsize,
 			 long *results, int magnitude)
 {
 #define BUFLEN 20
@@ -571,10 +565,10 @@ int i2c_write_reals(int nrels, void *buffer, int *bufsize,
 		mag = magnitude;
 
 		if (nr != 0) {
-			if(put_user(' ', (char *) buffer))
+			if(put_user(' ', buffer))
 				return -EFAULT;
 			curbufsize++;
-			buffer = (char *) buffer + 1;
+			buffer++;
 		}
 
 		/* Fill BUF with the representation of the next string */
@@ -615,12 +609,12 @@ int i2c_write_reals(int nrels, void *buffer, int *bufsize,
 		if(copy_to_user(buffer, BUF, buflen))
 			return -EFAULT;
 		curbufsize += buflen;
-		buffer = (char *) buffer + buflen;
+		buffer += buflen;
 
 		nr++;
 	}
 	if (curbufsize < *bufsize) {
-		if(put_user('\n', (char *) buffer))
+		if(put_user('\n', buffer))
 			return -EFAULT;
 		curbufsize++;
 	}
