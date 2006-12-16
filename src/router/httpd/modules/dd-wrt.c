@@ -1947,8 +1947,9 @@ show_virtualssid (webs_t wp, char *prefix)
 #endif
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
-
-    showbridgesettings(wp,var);
+    sprintf(wl_mode,"%s_mode",prefix);
+    if (!nvram_match(wl_mode,"sta") && !nvram_match(wl_mode,"wdssta") && !nvram_match(wl_mode,"wet"))
+        showbridgesettings(wp,var);
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
