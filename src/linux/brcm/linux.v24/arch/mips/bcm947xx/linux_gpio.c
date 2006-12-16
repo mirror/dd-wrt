@@ -28,10 +28,20 @@
 
 /* handle to the sb */
 static sb_t *gpio_sbh = NULL;
+static devfs_handle_t gpio_dir;
+static struct {
+	char *name;
+	devfs_handle_t handle;
+} gpio_file[] = {
+	{ "in", NULL },
+	{ "out", NULL },
+	{ "outen", NULL },
+	{ "control", NULL }
+};
 
 /* major number assigned to the device and device handles */
 static int gpio_major;
-devfs_handle_t gpiodev_handle;
+//devfs_handle_t gpiodev_handle;
 
 static int gpio_init_flag = 0;
 static int __init gpio_init(void);
@@ -39,6 +49,8 @@ static int __init gpio_init(void);
 static int
 gpio_open(struct inode *inode, struct file * file)
 {
+	if (MINOR(inode->i_rdev) > ARRAYSIZE(gpio_file))
+		return -ENODEV;
 	MOD_INC_USE_COUNT;
 	return 0;
 }
@@ -48,6 +60,61 @@ gpio_release(struct inode *inode, struct file * file)
 {
 	MOD_DEC_USE_COUNT;
 	return 0;
+}
+
+static ssize_t
+gpio_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+{
+	u32 val;
+
+	switch (MINOR(file->f_dentry->d_inode->i_rdev)) {
+	case 0:
+		val = sb_gpioin(gpio_sbh);
+		break;
+	case 1:
+		val = sb_gpioout(gpio_sbh, 0, 0, GPIO_DRV_PRIORITY);
+		break;
+	case 2:
+		val = sb_gpioouten(gpio_sbh, 0, 0, GPIO_DRV_PRIORITY);
+		break;
+	case 3:
+		val = sb_gpiocontrol(gpio_sbh, 0, 0, GPIO_DRV_PRIORITY);
+		break;
+	default:
+		return -ENODEV;
+	}
+
+	if (put_user(val, (u32 *) buf))
+		return -EFAULT;
+
+	return sizeof(val);
+}
+
+static ssize_t
+gpio_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
+{
+	u32 val;
+
+	if (get_user(val, (u32 *) buf))
+		return -EFAULT;
+
+	switch (MINOR(file->f_dentry->d_inode->i_rdev)) {
+	case 0:
+		return -EACCES;
+	case 1:
+		sb_gpioout(gpio_sbh, ~0, val, GPIO_DRV_PRIORITY);
+		break;
+	case 2:
+		sb_gpioouten(gpio_sbh, ~0, val, GPIO_DRV_PRIORITY);
+		break;
+	case 3:
+		sb_gpiocontrol(gpio_sbh, ~0, val, GPIO_DRV_PRIORITY);
+		break;
+	default:
+		return -ENODEV;
+	}
+
+	return sizeof(val);
 }
 
 int gpio_kernel_api(unsigned int cmd, unsigned int mask, unsigned int val)
@@ -122,6 +189,8 @@ static struct file_operations gpio_fops = {
 	owner:		THIS_MODULE,
 	open:		gpio_open,
 	release:	gpio_release,
+	read:		gpio_read,
+	write:		gpio_write,
 	ioctl:		gpio_ioctl,
 	};
 
@@ -130,16 +199,28 @@ extern int iswrt350n;
 static int __init
 gpio_init(void)
 {
+int i;
 	if (!(gpio_sbh = sb_kattach(SB_OSH)))
 		return -ENODEV;
+	sb_gpiosetcore(gpio_sbh);
+
 
 	if ((gpio_major = devfs_register_chrdev(0, "gpio", &gpio_fops)) < 0)
 		return gpio_major;
 
-	gpiodev_handle = devfs_register(NULL, "gpio", DEVFS_FL_DEFAULT,
-	                                gpio_major, 0, S_IFCHR | S_IRUGO | S_IWUGO,
-	                                &gpio_fops, NULL);
-	printk(KERN_EMERG "WRT350N GPIO Init\n");
+	gpio_dir = devfs_mk_dir(NULL, "gpio", NULL);
+
+	for (i = 0; i < ARRAYSIZE(gpio_file); i++) {
+		gpio_file[i].handle = devfs_register(gpio_dir,
+						     gpio_file[i].name,
+						     DEVFS_FL_DEFAULT, gpio_major, i,
+						     S_IFCHR | S_IRUGO | S_IWUGO,
+						     &gpio_fops, NULL);
+	}
+
+//	gpiodev_handle = devfs_register(NULL, "gpio", DEVFS_FL_DEFAULT,
+//	                                gpio_major, 0, S_IFCHR | S_IRUGO | S_IWUGO,
+//	                                &gpio_fops, NULL);
 
 	gpio_init_flag = 1;
 
@@ -156,6 +237,7 @@ if (cardbus==NULL || strcmp(cardbus,"1"))return 0;
 
 if (iswrt350n)
 {
+	printk(KERN_EMERG "WRT350N GPIO Init\n");
 	/* For WRT350N USB LED control */
 	sb_gpioreserve(gpio_sbh, 0x400, GPIO_HI_PRIORITY);
 	sb_gpioouten(gpio_sbh, 0x400, 0x400, GPIO_HI_PRIORITY);
@@ -175,12 +257,19 @@ if (iswrt350n)
 static void __exit
 gpio_exit(void)
 {
-	if (gpiodev_handle != NULL)
-		devfs_unregister(gpiodev_handle);
-	gpiodev_handle = NULL;
+
+	int i;
+
+	for (i = 0; i < ARRAYSIZE(gpio_file); i++)
+		devfs_unregister(gpio_file[i].handle);
+	devfs_unregister(gpio_dir);
+
+//	if (gpiodev_handle != NULL)
+//		devfs_unregister(gpiodev_handle);
+//	gpiodev_handle = NULL;
 	devfs_unregister_chrdev(gpio_major, "gpio");
 	sb_detach(gpio_sbh);
-	gpio_init_flag = 0;
+//	gpio_init_flag = 0;
 }
 
 module_init(gpio_init);

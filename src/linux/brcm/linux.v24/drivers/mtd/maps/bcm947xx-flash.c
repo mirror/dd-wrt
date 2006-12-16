@@ -331,6 +331,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
+		return 0; //dont need to update jffs squashfs partition
 	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
 		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
 
@@ -341,7 +342,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		return 0;
 	}
 
-/*	if (trx.len != part->offset + part->size - off) {
+	if (trx.len != part->offset + part->size - off) {
 		trx.len = part->offset + part->size - off;
 	
 		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
@@ -370,7 +371,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		kfree(block);
 		printk("Done\n");
 	}
-	*/
+
 	return part->size;
 }
 

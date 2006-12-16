@@ -203,7 +203,7 @@ brcm_setup(void)
 iswrt350n=1;
 char *boardnum = nvram_get("boardnum");
 char *boardtype = nvram_get("boardtype");
-char *cardbus = nvram_get("boardtype");
+char *cardbus = nvram_get("cardbus");
 //char *boardflags = nvram_get("boardflags");
 if (boardnum==NULL || strcmp(boardnum,"42"))iswrt350n=0;
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
