@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
  * Linux kernel version: 2.6.17.14
- * Mon Dec 11 02:48:26 2006
+ * Sat Dec 16 12:31:48 2006
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_X86_32 1
@@ -1939,9 +1939,12 @@
 #define CONFIG_SUNRPC_GSS_MODULE 1
 #define CONFIG_RPCSEC_GSS_KRB5_MODULE 1
 #undef CONFIG_RPCSEC_GSS_SPKM3
-#define CONFIG_SMB_FS_MODULE 1
-#undef CONFIG_SMB_NLS_DEFAULT
-#undef CONFIG_CIFS
+#undef CONFIG_SMB_FS
+#define CONFIG_CIFS_MODULE 1
+#undef CONFIG_CIFS_STATS
+#define CONFIG_CIFS_XATTR 1
+#define CONFIG_CIFS_POSIX 1
+#undef CONFIG_CIFS_EXPERIMENTAL
 #undef CONFIG_NCP_FS
 #undef CONFIG_CODA_FS
 #undef CONFIG_AFS_FS
