@@ -1,6 +1,7 @@
 /*
-    sensors.h - Part of lm_sensors, Linux kernel modules for hardware
-                monitoring
+    i2c-proc.h - Part of the i2c package
+    was originally sensors.h - Part of lm_sensors, Linux kernel modules
+                               for hardware monitoring
     Copyright (c) 1998, 1999  Frodo Looijaard <frodol@dds.nl>
 
     This program is free software; you can redistribute it and/or modify
@@ -23,9 +24,6 @@
 
 #ifdef __KERNEL__
 
-/* Next two must be included before sysctl.h can be included, in 2.0 kernels */
-#include <linux/types.h>
-#include <linux/fs.h>
 #include <linux/sysctl.h>
 
 /* The type of callback functions used in sensors_{proc,sysctl}_real */
@@ -362,7 +360,7 @@ extern int i2c_detect(struct i2c_adapter *adapter,
 
 /* This macro is used to scale user-input to sensible values in almost all
    chip drivers. */
-extern inline int SENSORS_LIMIT(long value, long low, long high)
+static inline int SENSORS_LIMIT(long value, long low, long high)
 {
 	if (value < low)
 		return low;

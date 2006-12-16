@@ -39,16 +39,14 @@
 #ifdef CONFIG_DEVFS_FS
 #include <linux/devfs_fs_kernel.h>
 #endif
-
+#include <linux/init.h>
+#include <linux/i2c.h>
+#include <linux/i2c-dev.h>
+#include <asm/uaccess.h>
 
 /* If you want debugging uncomment: */
 /* #define DEBUG */
 
-#include <linux/init.h>
-#include <asm/uaccess.h>
-
-#include <linux/i2c.h>
-#include <linux/i2c-dev.h>
 
 #ifdef MODULE
 extern int init_module(void);
@@ -82,13 +80,13 @@ extern
 static int i2cdev_cleanup(void);
 
 static struct file_operations i2cdev_fops = {
-	owner:		THIS_MODULE,
-	llseek:		no_llseek,
-	read:		i2cdev_read,
-	write:		i2cdev_write,
-	ioctl:		i2cdev_ioctl,
-	open:		i2cdev_open,
-	release:	i2cdev_release,
+	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
+	.read		= i2cdev_read,
+	.write		= i2cdev_write,
+	.ioctl		= i2cdev_ioctl,
+	.open		= i2cdev_open,
+	.release	= i2cdev_release,
 };
 
 #define I2CDEV_ADAPS_MAX I2C_ADAP_MAX
@@ -99,24 +97,20 @@ static devfs_handle_t devfs_handle = NULL;
 #endif
 
 static struct i2c_driver i2cdev_driver = {
-	name:		"i2c-dev dummy driver",
-	id:		I2C_DRIVERID_I2CDEV,
-	flags:		I2C_DF_DUMMY,
-	attach_adapter:	i2cdev_attach_adapter,
-	detach_client:	i2cdev_detach_client,
-	command:	i2cdev_command,
-/*	inc_use:	NULL,
-	dec_use:	NULL, */
+	.name		= "i2c-dev dummy driver",
+	.id		= I2C_DRIVERID_I2CDEV,
+	.flags		= I2C_DF_DUMMY,
+	.attach_adapter	= i2cdev_attach_adapter,
+	.detach_client	= i2cdev_detach_client,
+	.command	= i2cdev_command,
 };
 
 static struct i2c_client i2cdev_client_template = {
-	name:		"I2C /dev entry",
-	id:		1,
-	flags:		0,
-	addr:		-1,
-/*	adapter:	NULL, */
-	driver:		&i2cdev_driver,
-/*	data:		NULL */
+	.name		= "I2C /dev entry",
+	.id		= 1,
+	.flags		= 0,
+	.addr		= -1,
+	.driver		= &i2cdev_driver,
 };
 
 static int i2cdev_initialized;
@@ -229,7 +223,7 @@ int i2cdev_ioctl (struct inode *inode, struct file *file, unsigned int cmd,
 				   sizeof(rdwr_arg)))
 			return -EFAULT;
 
-		/* Put an arbritrary limit on the number of messages that can
+		/* Put an arbitrary limit on the number of messages that can
 		 * be sent at once */
 		if (rdwr_arg.nmsgs > 42)
 			return -EINVAL;

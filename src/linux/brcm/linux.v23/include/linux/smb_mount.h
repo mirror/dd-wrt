@@ -37,6 +37,10 @@ struct smb_mount_data {
 #define SMB_MOUNT_OLDATTR	0x0002	/* Use core getattr (Win 95 speedup) */
 #define SMB_MOUNT_DIRATTR	0x0004	/* Use find_first for getattr */
 #define SMB_MOUNT_CASE		0x0008	/* Be case sensitive */
+#define SMB_MOUNT_UID		0x0020  /* Use user specified uid */
+#define SMB_MOUNT_GID		0x0040  /* Use user specified gid */
+#define SMB_MOUNT_FMODE		0x0080  /* Use user specified file mode */
+#define SMB_MOUNT_DMODE		0x0100  /* Use user specified dir mode */
 
 
 struct smb_mount_data_kernel {

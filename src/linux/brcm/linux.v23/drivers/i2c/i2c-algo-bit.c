@@ -367,10 +367,6 @@ static int sendbytes(struct i2c_adapter *i2c_adap,const char *buf, int count)
 			return (retval<0)? retval : -EFAULT;
 			        /* got a better one ?? */
 		}
-#if 0
-		/* from asm/delay.h */
-		__delay(adap->mdelay * (loops_per_sec / 1000) );
-#endif
 	}
 	return wrcount;
 }
@@ -384,7 +380,6 @@ static inline int readbytes(struct i2c_adapter *i2c_adap,char *buf,int count)
 
 	while (count > 0) {
 		inval = i2c_inb(i2c_adap);
-/*printk("%#02x ",inval); if ( ! (count % 16) ) printk("\n"); */
 		if (inval>=0) {
 			*temp = inval;
 			rdcount++;
@@ -528,14 +523,11 @@ static u32 bit_func(struct i2c_adapter *adap)
 /* -----exported algorithm data: -------------------------------------	*/
 
 static struct i2c_algorithm i2c_bit_algo = {
-	"Bit-shift algorithm",
-	I2C_ALGO_BIT,
-	bit_xfer,
-	NULL,
-	NULL,				/* slave_xmit		*/
-	NULL,				/* slave_recv		*/
-	algo_control,			/* ioctl		*/
-	bit_func,			/* functionality	*/
+	.name		= "Bit-shift algorithm",
+	.id		= I2C_ALGO_BIT,
+	.master_xfer	= bit_xfer,
+	.algo_control	= algo_control,
+	.functionality	= bit_func,
 };
 
 /* 
@@ -608,8 +600,6 @@ int __init i2c_algo_bit_init (void)
 	printk(KERN_INFO "i2c-algo-bit.o: i2c bit algorithm module\n");
 	return 0;
 }
-
-
 
 EXPORT_SYMBOL(i2c_bit_add_bus);
 EXPORT_SYMBOL(i2c_bit_del_bus);
