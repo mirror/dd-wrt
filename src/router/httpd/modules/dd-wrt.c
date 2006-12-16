@@ -1660,7 +1660,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
       char wl_wchannel[16];
       sprintf (wl_wchannel, "%s_wchannel", prefix);
       char wl_nbw[16];
-      sprintf (wl_wchannel, "%s_nbw", prefix);
+      sprintf (wl_nbw, "%s_nbw", prefix);
 
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
@@ -2539,6 +2539,9 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 		     nvram_match ("wl0_nbw",
 				  "0") ? "selected=\\\"selected\\\"" : "");
+	  websWrite (wp, "<option value=\"10\" %s>10 Mhz</option>",
+		     nvram_match ("wl0_nbw",
+				  "10") ? "selected=\\\"selected\\\"" : "");
 	  websWrite (wp, "<option value=\"20\" %s>20 Mhz</option>",
 		     nvram_match ("wl0_nbw",
 				  "20") ? "selected=\\\"selected\\\"" : "");
