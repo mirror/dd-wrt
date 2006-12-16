@@ -307,11 +307,16 @@ endif
 ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/wireless/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
+ifeq ($(CONFIG_MSSID),y)
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/bcm57xx/*
+	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 #endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
 ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
@@ -760,20 +765,22 @@ radauth-clean:
 	$(MAKE) -C radauth clean
 	
 samba:
-	$(MAKE) -C samba/source bin/smbmnt
-	$(MAKE) -C samba/source bin/smbmount
+	@true
+#	$(MAKE) -C samba/source bin/smbmnt
+#	$(MAKE) -C samba/source bin/smbmount
 
 samba-install:
-	install -D samba/source/bin/smbmnt $(INSTALLDIR)/samba/usr/sbin/smbmnt
-	install -D samba/source/bin/smbmount $(INSTALLDIR)/samba/usr/sbin/smbmount
-	install -D samba/smb.conf $(INSTALLDIR)/samba/usr/lib/smb.conf
+#	install -D samba/source/bin/smbmnt $(INSTALLDIR)/samba/usr/sbin/smbmnt
+#	install -D samba/source/bin/smbmount $(INSTALLDIR)/samba/usr/sbin/smbmount
+#	install -D samba/smb.conf $(INSTALLDIR)/samba/usr/lib/smb.conf
 	install -D samba/config/sambafs.webconfig $(INSTALLDIR)/samba/etc/config/sambafs.webconfig
 	install -D samba/config/sambafs.startup $(INSTALLDIR)/samba/etc/config/sambafs.startup
 	install -D samba/config/sambafs.nvramconfig $(INSTALLDIR)/samba/etc/config/sambafs.nvramconfig
 
 
 samba-clean:
-	$(MAKE) -C samba/source clean
+	@true
+#	$(MAKE) -C samba/source clean
 
 mmc:
 	$(MAKE) -C mmc
