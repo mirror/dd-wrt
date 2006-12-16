@@ -69,7 +69,7 @@ CONFIG_EBTABLES=y
 # CONFIG_RTPPROXY is not set
 # CONFIG_SER is not set
 # CONFIG_MMC is not set
-# CONFIG_SAMBA is not set
+# CONFIG_SAMBA=y
 # CONFIG_KAID is not set
 # CONFIG_ZEROIP is not set
 CONFIG_RADAUTH=y
