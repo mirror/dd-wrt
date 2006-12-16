@@ -172,7 +172,7 @@ authmac (unsigned char *mac)
 #endif
       strcat (collection, macstr);
       strcat (collection, " 1");
-      strcat (collection, " 3600 "); //time set to not configured
+      strcat (collection, " 1800 "); //time set to not configured
 #ifdef DEBUG
       printf ("collection %s\n", collection);
 #endif
