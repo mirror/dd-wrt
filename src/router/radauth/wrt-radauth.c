@@ -171,8 +171,8 @@ authmac (unsigned char *mac)
       printf ("mac2 %s\n", macstr);
 #endif
       strcat (collection, macstr);
-      strcat (collection, " 0");
-      strcat (collection, " -1 "); //time set to not configured
+      strcat (collection, " 1");
+      strcat (collection, " 3600 "); //time set to not configured
 #ifdef DEBUG
       printf ("collection %s\n", collection);
 #endif
