@@ -6,7 +6,7 @@ SAMBA_SCRIPT="$(nvram get samba_script)"
 
 echo /tmp/smbshare
 umount /tmp/smbshare
-rmmod smbfs
+rmmod cifs
 if [ "$(nvram get samba_mount)" = "1" ]; then     
     mkdir /tmp/smbshare
     chmod 777 /tmp/smbshare
