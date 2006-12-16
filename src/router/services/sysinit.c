@@ -946,8 +946,10 @@ start_nvram (void)
   /* added 2003-12-24 Sveasoft - force board to 14 channels by setting locale to Japan */
 //  nvram_set ("wl0_country_code", "JP");
 //  nvram_set ("wl0_country", "Japan");
+#ifndef HAVE_MSSID
   nvram_set ("wl0_country_code", "JP");
   nvram_set ("wl0_country", "Japan");
+#endif
   if (check_hw_type () == BCM5352E_CHIP)
     {
       nvram_set ("opo", "0x0008");
