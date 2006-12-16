@@ -1924,8 +1924,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
 	       var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
-#ifdef HAVE_MADWIFI
     char wl_mode[16];
+#ifdef HAVE_MADWIFI
     sprintf (wl_mode, "%s_mode", var);
     websWrite (wp,
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
