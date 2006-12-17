@@ -1060,8 +1060,9 @@ struct nvram_tuple srouter_defaults[] = {
 
   {"hb_server_ip", "", 0},	/* heartbeat auth server (IP Address) */
   {"hb_server_domain", "", 0},	/* heartbeat auth server (domain name) */
+//#ifdef HAVE_SAMBA
+  {"samba_mount", "0", 0},  //leave this in all versions, or will produce error on info or status_router pages; Eko
 #ifdef HAVE_SAMBA
-  {"samba_mount", "0", 0},
   {"samba_share", "//yourserverip/yourshare", 0},
   {"samba_user", "username/computer", 0},
   {"samba_password", "iwer573495u7340", 0},
