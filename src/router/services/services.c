@@ -2696,38 +2696,40 @@ start_pptp (int status)
 //      char *wan_hostname = nvram_safe_get ("wan_hostname");
       char *wan_ifname = nvram_safe_get ("wan_ifname");
 
+      nvram_set ("wan_get_dns", "");
 
       start_dhcpc (wan_ifname);
       int timeout;
 
-      for (timeout = 10; nvram_match ("wan_get_dns", "") && timeout > 0;
+      for (timeout = 60; nvram_match ("wan_get_dns", "") && timeout > 0;
 	   --timeout)
 	{			/* wait for info from dhcp server */
 	  sleep (1);
 	}
       stop_dhcpc ();		/* we don't need dhcp client anymore */
 
-      wan_ipaddr = nvram_safe_get ("wan_ipaddr");	/* store current (dhcp) wan parameters */
+/*    
+      //this stuff has already been configured in dhcpc->bound  
+      wan_ipaddr = nvram_safe_get ("wan_ipaddr");
       wan_netmask = nvram_safe_get ("wan_netmask");
       wan_gateway = nvram_safe_get ("wan_gateway");
       pptp_server_ip = nvram_safe_get ("pptp_server_ip");
 
-      while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);	/* Delete all wan routes */
+      while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);	
 
-      /* up wan interface */
+     
       for (timeout = 10;
 	   ifconfig (wan_ifname, IFUP, wan_ipaddr, wan_netmask)
 	   && timeout > 0; --timeout)
 	{
 	  sleep (1);
 	}
-      /* add route to pptp server */
       for (timeout = 10;
 	   route_add (wan_ifname, 0, pptp_server_ip, wan_gateway,
 		      "255.255.255.255") && timeout > 0; --timeout)
 	{
 	  sleep (1);
-	}
+	}*/
     }
   else
     {
