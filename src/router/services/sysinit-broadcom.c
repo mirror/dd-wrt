@@ -366,6 +366,9 @@ start_sysinit (void)
   uname (&name);
 
   enableAfterBurner ();
+#ifdef HAVE_MSSID
+  nvram_set("pa0maxpwr", "251"); //force pa0maxpwr to be 251
+#endif
 
   snprintf (buf, sizeof (buf), "/lib/modules/%s", name.release);
   if (stat ("/proc/modules", &tmp_stat) == 0 && stat (buf, &tmp_stat) == 0)
