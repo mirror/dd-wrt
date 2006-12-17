@@ -140,6 +140,23 @@ gpio_init(void)
 						     &gpio_fops, NULL);
 	}
 
+if (iswrt350n)
+{
+	printk(KERN_EMERG "WRT350N GPIO Init\n");
+	/* For WRT350N USB LED control */
+	sb_gpioreserve(gpio_sbh, 0x400, GPIO_HI_PRIORITY);
+	sb_gpioouten(gpio_sbh, 0x400, 0x400, GPIO_HI_PRIORITY);
+	sb_gpioreserve(gpio_sbh, 0x800, GPIO_HI_PRIORITY);
+	sb_gpioouten(gpio_sbh, 0x800, 0x800, GPIO_HI_PRIORITY);
+
+	//if (nvram_match("disabled_5397", "1")) {
+		printk("5397 switch GPIO-Reset \n");
+		sb_gpioreserve(gpio_sbh, 0x4, GPIO_HI_PRIORITY);
+		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
+		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
+	//}
+}
+
 	return 0;
 }
 
