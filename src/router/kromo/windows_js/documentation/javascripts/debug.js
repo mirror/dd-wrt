@@ -28,7 +28,7 @@ function showDebug(bShow) {
   date=new Date;
     date.setMonth(date.getMonth()+3);
     
-  debugWindow.setCookie(null, date);
+  //debugWindow.setCookie(null, date);
  }
  if( typeof bShow == 'undefined' || bShow)debugWindow.show()
 }
