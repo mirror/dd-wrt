@@ -1134,8 +1134,8 @@ service.ssh_password="Prijava z geslom";
 service.ssh_key="Poobla¹èeni kljuèi";
 
 //radiooff.webservices
-service.radiooff_legend="SES gumb";
-service.radiooff_srv="Uporabi SES za izkljuèitev radia";
+service.radiooff_legend="SES / AOSS / EZ-SETUP gumb";
+service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
 
 //hwmon.webservices
 service.hwmon_legend="Nadzor strojne opreme";
