@@ -4,6 +4,18 @@ Just copy windows.js in your javascript directory, and default.css + default dir
 See samples/index.html for more details and go on my web page : http://prototype-window.xilinus.com
 
 == Change log
+- 12/06/06  V 0.99
+            - remove addClass that automatically tries to include default.css
+            - add wired move/resize
+            - fix recenterAuto
+            - add show to WindowStore to be able to open a window the first time, wihtout any cookie (check samples/window_store/html)
+
+- 11/06/06  V 0.98
+            - new optional behavior for multi-level modal window.
+            - Two new add-ons (in window_ext.js file) 
+               + WindowStore to save open/close window status.
+               + WindowCloseKey to handle escape key (or any keys) to close windows/dialogs
+
 - 10/26/06  V 0.97
             - add recenterModal to constructor
             - setAjaxContent eval response request
