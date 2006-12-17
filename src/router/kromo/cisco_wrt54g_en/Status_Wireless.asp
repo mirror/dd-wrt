@@ -201,17 +201,6 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							
-// for debug only				
-//							<fieldset>
-//								<legend>Wiviz data</legend>
-//								<div class="setting">
-//									<div class="label"><% dump_wiviz_data(); %></div>
-//									<span id="wiviz_data"></span>&nbsp;
-//								</div>
-//							</fieldset><br />
-// end for debug only								
-								
-							
 							<div id="wds" style="display:none">
 								<fieldset>
 									<legend><% tran("status_wireless.wds"); %></legend>
