@@ -158,9 +158,14 @@ runStartup (char *folder, char *extension)
   DIR *directory;
   unsigned char *buf;
   buf = malloc (1024);
-  directory = opendir (folder);
-  if (directory == NULL)
+  if (buf==NULL)
     return;
+  directory = opendir (folder);
+  if (directory == NULL) 
+    {
+    free(buf); //memleak fix
+    return;
+    }
 //list all files in this directory 
   while ((entry = readdir (directory)) != NULL)
     {
