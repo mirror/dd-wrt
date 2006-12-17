@@ -156,6 +156,9 @@ share._48h="Vsaka 2 dneva";
 share._168h="Vsak teden";
 share.days="Dnevi";
 share.standard="Standard";
+share.execscript="Za¾eni script";
+share.user="Uporabnik";
+share.privatekey="Osebni kljuè";
 
 
 sbutton.save="Shrani nastavitve";
@@ -308,6 +311,11 @@ errmsg.err61="Nepravilna datoteka.";
 //Services.asp error messages
 errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 
+//Saving message
+errmsg.err100="Obdelujem...<br/>Prosimo poèakajte.";
+errmsg.err101="Obnavljam nastavitve...<br/>Prosimo poèakajte.";
+errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poèakajte.";
+
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
 bmenu.setup="Namestitev";
@@ -316,6 +324,7 @@ bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Kloniranje MAC naslova";
 bmenu.setuprouting="Napredno usmerjanje";
 bmenu.setupvlan="VLAN";
+bmenu.setupeop="EoIP tunel";
 
 bmenu.wireless="Brez¾ièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
@@ -673,6 +682,7 @@ hotspot.shat_srv2="Zero IP nastavitev omogoèena";
 
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnikov zastopnik";
+hotspot.sputnik_mode="Sputnik naèin";
 hotspot.sputnik_id="Sputnik stre¾nikov ID";
 hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
 hotspot.sputnik_express="Uporabi SputnikNet Express";
@@ -785,7 +795,8 @@ idx.summt_opt2="prva ned. apr. - zadnja ned. okt.";
 idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
 idx.summt_opt4="zadnja ned. okt. - zadnja ned. mar.";
 idx.summt_opt5="druga ned. mar. - prva ned. nov.";
-
+idx.portsetup="Nastavitev vrat";
+idx.wanport="Dodeltev WAN vrat";
 
 
 //help container
@@ -1137,6 +1148,12 @@ service.ssh_key="Poobla¹èeni kljuèi";
 service.radiooff_legend="SES / AOSS / EZ-SETUP gumb";
 service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
 
+//ses.webservices ====> might replace the above radiooff_button
+service.ses_legend="SES / AOSS / EZ-SETUP gumb";
+service.ses_srv="Akcija";
+service.ses_toggleradio="Vkljuèi/izkljuèi brezzièno";
+service.ses_script="Prirejeni skript";
+
 //hwmon.webservices
 service.hwmon_legend="Nadzor strojne opreme";
 service.hwmon_critemp="Kritièna temperatura (vkljuèi ventilator)";
@@ -1150,8 +1167,8 @@ service.rstats_time="Interval shranjevanja";
 service.rstats_usrdir="Uporabnikov imenik";
 
 
-
 // ******************************************* eop-tunnel.asp *******************************************//
+
 
 eoip.titl=" - EoIP Tunnel";
 eoip.tunnel="Tunnel";
@@ -1159,6 +1176,7 @@ eoip.legend="Ethernet Over IP tuneliranje";
 eoip.srv="EoIP tunel";
 eoip.remoteIP="Oddaljeni IP naslov";
 eoip.tunnelID="ID tunela";
+eoip.comp="Kompresija";
 eoip.passtos="TOS prehajanje";
 eoip.frag="fragment";
 eoip.mssfix="mssfix";
@@ -1194,6 +1212,7 @@ hstatus_lan.right4="To je usmerjalnikov IP naslov, kot je viden v va¹i lokalni m
 hstatus_lan.right6="To je maska podmre¾e, kadar jo usmerjalnik uporablja.";
 hstatus_lan.right8="Kadar uporabljate usmerjalnik kot DHCP stre¾nik, je to vidno tukaj.";
 hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally Unique Identifier of the network interface (IEEE Standards OUI baze podatkov).";
+
 
 // ******************************************* Status_Bandwidth.asp *******************************************//
 
@@ -1418,6 +1437,7 @@ wol.mac="MAC naslov(i)";
 wol.broadcast="Mre¾ni broadcast";
 wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
+
 wol.h22="Automatic Wake-On-LAN";
 wol.legend5="Wake-On-LAN";
 wol.srv="WOL";
@@ -1463,6 +1483,11 @@ wpa.radius_port="RADIUS vrata stre¾nika";
 wpa.radius_key="RADIUS kljuè";
 wpa.algorithms="WPA algoritm";
 wpa.shared_key="WPA deljeni kljuè";
+
+
+sec80211x.xsuptype="Tip XSupplicanta";
+sec80211x.servercertif="Certifikat javnega stre¾nika";
+sec80211x.clientcertif="Certifikat odjemalca";
 
 //help container
 
@@ -1552,10 +1577,11 @@ wl_basic.label6="Obmoèje obèutljivosti (ACK uèasenje)";
 wl_basic.ap="Dostopna toèka";
 wl_basic.client="Odjemalec";
 wl_basic.repeater="Prenosnik";
+wl_basic.repeaterbridge="Prenosnik-most";
 wl_basic.clientBridge="Odjemalec-most";
+wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Postaja";
 wl_basic.wdsap="WDS toèka";
-wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Me¹ano";
 wl_basic.b="Samo-B";
 wl_basic.a="Samo-A";
@@ -1584,7 +1610,7 @@ wl_basic.extchannel="Raz¹irjeni naèin kanalov";
 wl_basic.outband="Zunanji pas";
 wl_basic.channel_width="©irina kanalov";
 wl_basic.channel_wide="©iroki kanali";
-
+wl_basic.regulatory="Regulatorski";
 
 
 //help container
