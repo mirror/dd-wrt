@@ -102,11 +102,12 @@ runStartup (char *folder, char *extension)
 {
   struct dirent *entry;
   DIR *directory;
-  unsigned char *buf;
-  buf = malloc (1024);
+  unsigned char buf[128];
   directory = opendir (folder);
   if (directory == NULL)
+    {
     return;
+    }
 //list all files in this directory 
   while ((entry = readdir (directory)) != NULL)
     {
@@ -117,8 +118,7 @@ runStartup (char *folder, char *extension)
 	  system2 (buf);
 	}
     }
-  free (buf);
-  closedir (directory);
+  closedir (directory); 
 }
 
 /* SeG dd-wrt addition for module startup scripts */
