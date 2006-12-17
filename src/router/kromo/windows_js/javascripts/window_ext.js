@@ -1,5 +1,5 @@
 // Copyright (c) 2006 Sébastien Gruhier (http://xilinus.com, http://itseb.com)
-// YOU MUST INCLUDE windows.js BEFORE
+// YOU MUST INCLUDE window.js BEFORE
 //
 // Object to store hide/show windows status in a cookie
 // Just add at the end of your HTML file this javascript line: WindowStore.init()
@@ -36,6 +36,16 @@ WindowStore = {
 
     WindowStore._restoreWindows();
     WindowStore._saveCookie();
+  },
+  
+  show: function(win) {
+    eval("var cookie = " + WindowUtilities.getCookie(Windows.cookieName));
+    if (cookie != null) {
+      if (cookie[win.getId()])
+        win.show();
+    }
+    else
+      win.show();
   },
 
   // Function to store windows show/hide status in a cookie 
