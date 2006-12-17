@@ -335,10 +335,10 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 	size = res->end - res->start;
 	pci_read_config_dword(dev, where, &reg);
 	
-//	if (dev->bus->number == 1)
+	if (dev->bus->number == 1)
 		reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
-//	else
-//		reg = res->start;
+	else
+		reg = res->start;
 
 	pci_write_config_dword(dev, where, reg);
 }
