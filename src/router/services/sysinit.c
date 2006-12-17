@@ -1246,9 +1246,6 @@ static int
 check_cfe_nv (void)
 {
   int ret = 0;
-#ifdef HAVE_MSSID
-  ret += check_nv ("pa0maxpwr", "251");
-#endif
 //      ret += check_nv("boardtype", "0x0101");
 //      ret += check_nv("boardflags", "0x0188");
 //      ret += check_nv("boardflags", "0x0388");
