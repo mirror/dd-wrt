@@ -1964,7 +1964,7 @@ sb_gpiocontrol(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((priority != GPIO_HI_PRIORITY) &&
@@ -2000,7 +2000,7 @@ sb_gpioouten(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((priority != GPIO_HI_PRIORITY) &&
@@ -2037,7 +2037,7 @@ sb_gpioout(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
@@ -2071,7 +2071,7 @@ sb_gpioreserve(sb_t *sbh, uint32 gpio_bitmask, uint8 priority)
 
 	si = SB_INFO(sbh);
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* only cores on SB_BUS share GPIO's and only applcation users need to
 	 * reserve/release GPIO
@@ -2108,7 +2108,7 @@ sb_gpiorelease(sb_t *sbh, uint32 gpio_bitmask, uint8 priority)
 
 	si = SB_INFO(sbh);
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* only cores on SB_BUS share GPIO's and only applcation users need to
 	 * reserve/release GPIO
@@ -2171,7 +2171,7 @@ sb_gpiointpolarity(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	regoff = 0;
 
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
@@ -2208,7 +2208,7 @@ sb_gpiointmask(sb_t *sbh, uint32 mask, uint32 val, uint8 priority)
 	si = SB_INFO(sbh);
 	regoff = 0;
 
-	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
+//	priority = GPIO_DRV_PRIORITY; /* compatibility hack */
 
 	/* gpios could be shared on router platforms */
 	if ((BUSTYPE(si->sb.bustype) == SB_BUS) && (val || mask)) {
