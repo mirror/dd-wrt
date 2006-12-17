@@ -116,6 +116,7 @@ static struct file_operations gpio_fops = {
 	read:		gpio_read,
 	write:		gpio_write,
 };
+extern int iswrt350n;
 
 static int __init
 gpio_init(void)
