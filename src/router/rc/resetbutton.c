@@ -156,14 +156,10 @@ runStartup (char *folder, char *extension)
 {
   struct dirent *entry;
   DIR *directory;
-  unsigned char *buf;
-  buf = malloc (1024);
-  if (buf==NULL)
-    return;
+  unsigned char buf[128];
   directory = opendir (folder);
   if (directory == NULL) 
     {
-    free(buf); //memleak fix
     return;
     }
 //list all files in this directory 
@@ -176,7 +172,6 @@ runStartup (char *folder, char *extension)
 	  system (buf);
 	}
     }
-  free (buf);
   closedir (directory);
 }
 
