@@ -1151,7 +1151,7 @@ service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
 //ses.webservices ====> might replace the above radiooff_button
 service.ses_legend="SES / AOSS / EZ-SETUP gumb";
 service.ses_srv="Akcija";
-service.ses_toggleradio="Vkljuèi/izkljuèi brezzièno";
+service.ses_toggleradio="Vkljuèi/izkljuèi brez¾ièno";
 service.ses_script="Prirejeni skript";
 
 //hwmon.webservices
@@ -1161,7 +1161,7 @@ service.hwmon_hystemp="Histerezna temperatura (izkljuèi ventilator)";
 
 //rstat.webservices
 service.rstats_legend="Nadzor pasovne ¹irine";
-service.rstats_srv="rstats demon";
+service.rstats_srv="Rstats demon";
 service.rstats_path="Shrani podatke na";
 service.rstats_time="Interval shranjevanja";
 service.rstats_usrdir="Uporabnikov imenik";
@@ -1170,8 +1170,8 @@ service.rstats_usrdir="Uporabnikov imenik";
 // ******************************************* eop-tunnel.asp *******************************************//
 
 
-eoip.titl=" - EoIP Tunnel";
-eoip.tunnel="Tunnel";
+eoip.titl=" - EoIP tunel";
+eoip.tunnel="Tunel";
 eoip.legend="Ethernet Over IP tuneliranje";
 eoip.srv="EoIP tunel";
 eoip.remoteIP="Oddaljeni IP naslov";
