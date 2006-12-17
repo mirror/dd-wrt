@@ -88,6 +88,7 @@
 								  bottom:70, left:0, width:300, height:200, 
 								  resizable: true, url: "http://www.rubyonrails.com/", showEffectOptions: {duration:3}})
 	win2.show();
+	win2.setDestroyOnClose();
 
 	win3 = new Window('dialog3', {className: "spread", title: "Not Closable", 
 								  top:10, right:20, width:300, height:200, 
@@ -154,13 +155,15 @@
 		canClose: function(win) {
 			debug("You cannot close " + win.getId());
 			// return false, the window cannot be closed
-			return false;
+			return true;//false;
 		}		
 	}
 
 	// Set up a deleagte for win2 (the one with rubyonrails.org in it)
 	win2.setDelegate(myDelegate);
-	win2.setCookie("test");
+	date=new Date();
+  date.setMonth(date.getMonth()+3);
+	win2.setCookie("test", date);
 	
 	// Set up a windows observer, check ou debug window to get messages
 	var myObserver = {
