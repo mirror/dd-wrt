@@ -1120,7 +1120,7 @@ status_router.h22="Internet";
 status_router.legend5="Konfigurationstyp";
 status_router.www_loginstatus="Login-Status";
 status_router.leasetime="Verbleibende Lease Zeit";
-status_router.notavail="Nicht verfügbar";
+status_router.notavail="Nicht verf&#252;gbar";
 
 //help container
 
