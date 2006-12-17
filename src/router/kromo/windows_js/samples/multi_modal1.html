@@ -1,0 +1,39 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+<script>
+  var cssPath ="../themes/"
+</script>
+<!-- <link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link> -->
+<link href="../themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+<link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+
+<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+<script type="text/javascript" src="../javascripts/window.js"> </script>
+<script type="text/javascript" src="../javascripts/debug.js"> </script>
+<script type="text/javascript" src="../javascripts/effects.js"> </script>
+
+<style>
+.alphacube_buttons input    {
+  	width:40%;
+  }
+  
+</style>
+</head>
+
+<body>
+<div id="content">
+  <a href="#" onclick="top.openWindow('multi_modal2.html')"><span style="font-size:16px">Open another modal window</span></a>
+	Test select for IE <SELECT NAME="partnumber1">
+		<OPTION VALUE="1"> One
+		<OPTION VALUE="2"> Two
+		<OPTION VALUE="3"> Three
+		<OPTION VALUE="5"> Five
+		<OPTION VALUE="4"> Oooopppppppps I forgot four
+	</SELECT><br>
+	<input type="button" onclick="top.Windows.close(top.Windows.focusedWindow.getId())" value="Close">
+</div>
+</body>
+</html>

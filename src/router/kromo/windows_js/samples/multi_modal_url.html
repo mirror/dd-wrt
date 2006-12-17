@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+<script>
+  var cssPath ="../themes/"
+</script>
+<!-- <link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link> -->
+<link href="../themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
+<link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+
+<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+<script type="text/javascript" src="../javascripts/window.js"> </script>
+<script type="text/javascript" src="../javascripts/debug.js"> </script>
+<script type="text/javascript" src="../javascripts/effects.js"> </script>
+
+<style>
+.alphacube_buttons input    {
+  	width:40%;
+  }
+  
+</style>
+</head>
+
+<body>
+<a href="#" onclick="openWindow('multi_modal1.html')"><span style="font-size:16px">Open a modal window</span></a><br/>
+<input type="checkbox" checked="checked" value="1" onchange="Window.keepMultiModalWindow = ! this.checked" >Hide modal window when on new one is open
+
+<script type="text/javascript">
+  showDebug();
+  var index = 0;
+	function openWindow(url) {
+    win = new Window('win_' + index, {className: "alphacube", 
+	                                    title: "", 
+	                                    url: url, 
+	                                    parent: document.body, 
+	                                    width:375, 
+	                                    height:300,
+	                                    top:25,
+	                                    left:25});
+	  win.show(true);
+	  index++;
+  }
+
+  function closeAllModalWindows() {
+    Windows.closeAllModalWindows();
+    return true;
+  }
+	
+</script>
+
+</body>
+</html>
