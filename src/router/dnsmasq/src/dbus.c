@@ -282,8 +282,8 @@ char *dbus_init(struct daemon *daemon)
 }
  
 
-int set_dbus_listeners(struct daemon *daemon, int maxfd,
-		       fd_set *rset, fd_set *wset, fd_set *eset)
+void set_dbus_listeners(struct daemon *daemon, int *maxfdp,
+			fd_set *rset, fd_set *wset, fd_set *eset)
 {
   struct watch *w;
   
@@ -293,8 +293,7 @@ int set_dbus_listeners(struct daemon *daemon, int maxfd,
 	unsigned int flags = dbus_watch_get_flags(w->watch);
 	int fd = dbus_watch_get_fd(w->watch);
 	
-	if (fd > maxfd)
-	  maxfd = fd;
+	bump_maxfd(fd, maxfdp);
 	
 	if (flags & DBUS_WATCH_READABLE)
 	  FD_SET(fd, rset);
@@ -304,7 +303,6 @@ int set_dbus_listeners(struct daemon *daemon, int maxfd,
 	
 	FD_SET(fd, eset);
       }
-  return maxfd;
 }
 
 void check_dbus_listeners(struct daemon *daemon,
