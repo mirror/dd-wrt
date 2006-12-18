@@ -322,12 +322,7 @@ start_sysinit (void)
       break;
 
 
-#ifndef HAVE_MSSID
     case ROUTER_BUFFALO_WBR54G:
-      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
-      break;
-#endif
-
     case ROUTER_BUFFALO_WBR2G54S:
 #ifdef HAVE_MSSID
       nvram_set ("wl0gpio0", "8");		//Fix for wireless led polarity (v24 only)
