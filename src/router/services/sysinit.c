@@ -106,7 +106,7 @@ runStartup (char *folder, char *extension)
   directory = opendir (folder);
   if (directory == NULL)
     {
-    return;
+      return;
     }
 //list all files in this directory 
   while ((entry = readdir (directory)) != NULL)
@@ -118,7 +118,7 @@ runStartup (char *folder, char *extension)
 	  system2 (buf);
 	}
     }
-  closedir (directory); 
+  closedir (directory);
 }
 
 /* SeG dd-wrt addition for module startup scripts */
@@ -335,10 +335,12 @@ start_restore_defaults (void)
     {"lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10", 0},
 #else
 #ifdef HAVE_GW700
-    {"lan_ifnames","eth0 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath5 ath6 ath7 ath8",
+    {"lan_ifnames",
+     "eth0 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath5 ath6 ath7 ath8",
      0},
 #else
-    {"lan_ifnames","eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath5 ath6 ath7 ath8",
+    {"lan_ifnames",
+     "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath5 ath6 ath7 ath8",
      0},
 #endif
 #endif
@@ -446,21 +448,21 @@ start_restore_defaults (void)
 //      break;
 //    default:
 
-      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
-	{
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
 //      nvram_unset("sv_restore_defaults");
-	  restore_defaults = 1;
-	}
-      if (nvram_match ("product_name", "INSPECTION"))
-	{
-	  nvram_unset ("product_name");
-	  restore_defaults = 1;
-	}
-      if (nvram_get ("router_name") == NULL)
-	restore_defaults = 1;
+      restore_defaults = 1;
+    }
+  if (nvram_match ("product_name", "INSPECTION"))
+    {
+      nvram_unset ("product_name");
+      restore_defaults = 1;
+    }
+  if (nvram_get ("router_name") == NULL)
+    restore_defaults = 1;
 
-      if (restore_defaults)
-	cprintf ("Restoring defaults...");
+  if (restore_defaults)
+    cprintf ("Restoring defaults...");
 
 //    }
 
@@ -608,56 +610,75 @@ start_restore_defaults (void)
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
 #endif
-  if (!nvram_get ("vlan0hwname") || nvram_match ("vlan0hwname", ""))
-    nvram_set ("vlan0hwname", "et0");
-  if (!nvram_get ("vlan1hwname") || nvram_match ("vlan1hwname", ""))
-    nvram_set ("vlan1hwname", "et0");
-
-  if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
+  if (brand == ROUTER_WRT350N)
     {
-      switch (brand)
+
+      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
 	{
-	case ROUTER_MOTOROLA:
-	case ROUTER_ASUS_WL500G_PRE:
-	  nvram_set ("vlan0ports", "1 2 3 4 5*");
-	  break;
-	case ROUTER_LINKSYS_WRT55AG:
-	case ROUTER_MOTOROLA_V1:
-	case ROUTER_SIEMENS:
-	case ROUTER_BELKIN_F5D7230:
-	  nvram_set ("vlan0ports", "0 1 2 3 5*");
-	  break;
-	default:
-	  if (nvram_match ("bootnv_ver", "4")
-	      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
-	    nvram_set ("vlan0ports", "3 2 1 0 5*");
-	  else
-	    nvram_set ("vlan0ports", "1 2 3 4 5*");
-	  break;
+	  nvram_set ("vlan1ports", "1 2 3 4 8*");
+	}
+      if (nvram_invmatch ("fullswitch", "1"))
+	{
+	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	    {
+	      nvram_set ("vlan2ports", "0 8");
+	    }
 	}
     }
-  if (nvram_invmatch ("fullswitch", "1"))
+  else
     {
-      if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+      if (!nvram_get ("vlan0hwname") || nvram_match ("vlan0hwname", ""))
+	nvram_set ("vlan0hwname", "et0");
+      if (!nvram_get ("vlan1hwname") || nvram_match ("vlan1hwname", ""))
+	nvram_set ("vlan1hwname", "et0");
+
+      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
 	{
 	  switch (brand)
 	    {
 	    case ROUTER_MOTOROLA:
-	      nvram_set ("vlan1ports", "0 5u");
+	    case ROUTER_ASUS_WL500G_PRE:
+	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_SIEMENS:
 	    case ROUTER_BELKIN_F5D7230:
-	      nvram_set ("vlan1ports", "4 5");
+	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    default:
 	      if (nvram_match ("bootnv_ver", "4")
 		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
-		nvram_set ("vlan1ports", "4 5");
+		nvram_set ("vlan0ports", "3 2 1 0 5*");
 	      else
-		nvram_set ("vlan1ports", "0 5");
+		nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
+	    }
+	}
+
+      if (nvram_invmatch ("fullswitch", "1"))
+	{
+	  if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+	    {
+	      switch (brand)
+		{
+		case ROUTER_MOTOROLA:
+		  nvram_set ("vlan1ports", "0 5u");
+		  break;
+		case ROUTER_LINKSYS_WRT55AG:
+		case ROUTER_MOTOROLA_V1:
+		case ROUTER_SIEMENS:
+		case ROUTER_BELKIN_F5D7230:
+		  nvram_set ("vlan1ports", "4 5");
+		  break;
+		default:
+		  if (nvram_match ("bootnv_ver", "4")
+		      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+		    nvram_set ("vlan1ports", "4 5");
+		  else
+		    nvram_set ("vlan1ports", "0 5");
+		  break;
+		}
 	    }
 	}
     }
@@ -1019,17 +1040,18 @@ start_nvram (void)
   }
 
 #ifdef HAVE_WIVIZ
-	if (!strlen (nvram_safe_get("hopseq")) || !strlen (nvram_safe_get("hopdwell")))
-	{
+  if (!strlen (nvram_safe_get ("hopseq"))
+      || !strlen (nvram_safe_get ("hopdwell")))
+    {
 #ifdef HAVE_MSSID
-  		char *channel = nvram_safe_get ("wl0_channel");
+      char *channel = nvram_safe_get ("wl0_channel");
 #else
-		char *channel = nvram_safe_get ("wl_channel");
+      char *channel = nvram_safe_get ("wl_channel");
 #endif
 
-		nvram_set ("hopdwell", "1000");
-		nvram_set ("hopseq", channel);
-	}
+      nvram_set ("hopdwell", "1000");
+      nvram_set ("hopseq", channel);
+    }
 #endif
 
 
@@ -1344,8 +1366,9 @@ check_cfe_nv (void)
 	  ret += check_nv ("pa0maxpwr", "0x4e");
 #endif
 	}
-	else if(check_hw_type() == BCM4705_BCM5397_EWC_CHIP) {
-		// nothing to do
+      else if (check_hw_type () == BCM4705_BCM5397_EWC_CHIP)
+	{
+	  // nothing to do
 	}
       else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
 	{
