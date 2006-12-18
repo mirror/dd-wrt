@@ -311,7 +311,7 @@ start_sysinit (void)
     
     case ROUTER_ASUS_WL500G_PRE:
       nvram_set ("sdram_init", "0x0009");
-      nvram_set ("sdram_ncdl", "0x208");
+//      nvram_set ("sdram_ncdl", "0x208");
       nvram_set ("lan_ifnames", "vlan0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
