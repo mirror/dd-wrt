@@ -15,10 +15,10 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic
 
-OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o
+OBJS = services.c openvpn.c network.c firewall.c mssid.c wshaper.c ddns.c sysinit.c sysinit-$(ARCHITECTURE).c interface.c udhcpc.c ledcontrol.c mkfiles.c iptable.c defaults.c
 
 ifneq ($(CONFIG_XSCALE),y)
-OBJS += gpio.o
+OBJS += gpio.c
 endif
 
 ifeq ($(CONFIG_RSTATS),y)
@@ -40,10 +40,10 @@ ifeq ($(CONFIG_THOM),y)
 CFLAGS += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-OBJS += site_survey_madwifi.o
-OBJS += stabridge.o
+OBJS += site_survey_madwifi.c
+OBJS += stabridge.c
 else
-OBJS += site_survey_broadcom.o
+OBJS += site_survey_broadcom.c
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -78,8 +78,8 @@ CFLAGS += -DHAVE_KODATA
 endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
-OBJS += libbridge_if.o
-OBJS += libbridge_init.o
+OBJS += libbridge_if.c
+OBJS += libbridge_init.c
 
 endif
 ifeq ($(CONFIG_RADIOOFF),y)
@@ -96,7 +96,7 @@ CFLAGS += -DHAVE_NOWIFI
 endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
-OBJS += ppp.o
+OBJS += ppp.c
 endif
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS += -DHAVE_PPPOERELAY
@@ -108,11 +108,11 @@ endif
 
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
-OBJS += heartbeat.o
+OBJS += heartbeat.c
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-OBJS += madwifi.o
+OBJS += madwifi.c
 CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29
 
@@ -232,7 +232,7 @@ CFLAGS += -DBOOT_WAIT_ON
 endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
-OBJS += sshd.o
+OBJS += sshd.c
 CFLAGS += -DHAVE_SSHD
 endif
 
@@ -245,7 +245,7 @@ CFLAGS += -DHAVE_DHCPFWD
 endif
 ifeq ($(CONFIG_PPPD),y)
 CFLAGS += -DHAVE_PPPD
-OBJS += ppp.o
+OBJS += ppp.c
 endif
 
 ifeq ($(CONFIG_CHILLISPOT),y)
@@ -265,7 +265,7 @@ CFLAGS += -DHAVE_ZEBRA
 endif
 
 ifeq ($(CONFIG_WSHAPER),y)
-OBJS += wshaper.o
+OBJS += wshaper.c
 CFLAGS += -DHAVE_WSHAPER
 endif
 
@@ -275,12 +275,12 @@ endif
 
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
-OBJS += snmp.o
+OBJS += snmp.c
 endif
 
 ifeq ($(CONFIG_WOL),y)
 CFLAGS += -DHAVE_WOL
-OBJS += wol.o
+OBJS += wol.c
 endif
 
 ifeq ($(CONFIG_NOCAT),y)
@@ -334,7 +334,7 @@ install: all
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) --shared -o $@ $^ $(LDFLAGS)
+	$(CC) --shared $(CFLAGS) -o $@ $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
 	$(AR) arc -o  $@ $^

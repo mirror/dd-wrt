@@ -26,7 +26,7 @@ endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -fpic
 LDFLAGS += -L.
-OBJS := nvparse.o shutils.o wl.o wl_linux.o wl_macfuncs.o linux_timer.o utils.o nvports.o 
+OBJS := nvparse.c shutils.c wl.c wl_linux.c wl_macfuncs.c linux_timer.c utils.c nvports.c 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
@@ -38,7 +38,7 @@ ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += register.o
+OBJS += register.c
 endif
 
 ifeq ($(CONFIG_SILENCE),y)
@@ -259,7 +259,7 @@ clean:
 
 libshared.so: $(OBJS)
 #	$(CC) -shared -o $@ $(CFLAGS) $(OBJS) 
-	$(LD) -shared -o $@ $^ -L../nvram -lnvram
+	$(CC) -shared $(CFLAGS) -o $@ $^ -L../nvram -lnvram
 
 libshared.a: $(OBJS)
 	$(AR) arc -o  $@ $^
