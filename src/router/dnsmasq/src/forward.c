@@ -14,7 +14,6 @@
 
 static struct frec *frec_list = NULL;
 
-static struct frec *get_new_frec(struct daemon *daemon, time_t now);
 static struct frec *lookup_frec(unsigned short id);
 static struct frec *lookup_frec_by_sender(unsigned short id,
 					  union mysockaddr *addr,
@@ -232,7 +231,7 @@ static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *ud
       if (gotname)
 	flags = search_servers(daemon, now, &addrp, gotname, daemon->namebuff, &type, &domain);
       
-      if (!flags && !(forward = get_new_frec(daemon, now)))
+      if (!flags && !(forward = get_new_frec(daemon, now, NULL)))
 	/* table full - server failure. */
 	flags = F_NEG;
       
@@ -459,7 +458,6 @@ void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
 	   header->arcount = htons(0);
 	   if ((nn = resize_packet(header, (size_t)n, pheader, plen)))
 	     {
-	       forward->forwardall = 1;
 	       header->qr = 0;
 	       header->tc = 0;
 	       forward_query(daemon, -1, NULL, NULL, 0, header, nn, now, forward);
@@ -657,31 +655,6 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 		  header, (size_t)n, now, NULL);
 }
 
-static int read_write(int fd, unsigned char *packet, int size, int rw)
-{
-  ssize_t n, done;
-  
-  for (done = 0; done < size; done += n)
-    {
-    retry:
-      if (rw)
-	n = read(fd, &packet[done], (size_t)(size - done));
-      else
-	n = write(fd, &packet[done], (size_t)(size - done));
-
-      if (n == 0)
-	return 0;
-      else if (n == -1)
-	{
-	  if (errno == EINTR)
-	    goto retry;
-	  else
-	    return 0;
-	}
-    }
-  return 1;
-}
-  
 /* The daemon forks before calling this: it should deal with one connection,
    blocking as neccessary, and then return. Note, need to be a bit careful
    about resources for debug mode, when the fork is suppressed: that's
@@ -837,49 +810,10 @@ unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
     }
 }
 
-static struct frec *get_new_frec(struct daemon *daemon, time_t now)
+static struct frec *allocate_frec(time_t now)
 {
-  struct frec *f = frec_list, *oldest = NULL;
-  time_t oldtime = now;
-  int count = 0;
-  static time_t warntime = 0;
-
-  while (f)
-    {
-      if (f->new_id == 0)
-	{
-	  f->time = now;
-	  return f;
-	}
-
-      if (difftime(f->time, oldtime) <= 0)
-	{
-	  oldtime = f->time;
-	  oldest = f;
-	}
-
-      count++;
-      f = f->next;
-    }
+  struct frec *f;
   
-  /* can't find empty one, use oldest if there is one
-     and it's older than timeout */
-  if (oldest && difftime(now, oldtime)  > TIMEOUT)
-    { 
-      oldest->time = now;
-      return oldest;
-    }
-  
-  if (count > daemon->ftabsize)
-    { /* limit logging rate so syslog isn't DOSed either */
-      if (!warntime || difftime(now, warntime) > LOGRATE)
-	{
-	  warntime = now;
-	  syslog(LOG_WARNING, _("forwarding table overflow: check for server loops."));
-	}
-      return NULL;
-    }
-
   if ((f = (struct frec *)malloc(sizeof(struct frec))))
     {
       f->next = frec_list;
@@ -887,6 +821,61 @@ static struct frec *get_new_frec(struct daemon *daemon, time_t now)
       f->new_id = 0;
       frec_list = f;
     }
+
+  return f;
+}
+
+/* if wait==NULL return a free or older than TIMEOUT record.
+   else return *wait zero if one available, or *wait is delay to
+   when the oldest in-use record will expire. */
+struct frec *get_new_frec(struct daemon *daemon, time_t now, int *wait)
+{
+  struct frec *f, *oldest;
+  int count;
+  
+  if (wait)
+    *wait = 0;
+
+  for (f = frec_list, oldest = NULL, count = 0; f; f = f->next, count++)
+    if (f->new_id == 0)
+      {
+	f->time = now;
+	return f;
+      }
+    else if (!oldest || difftime(f->time, oldest->time) <= 0)
+      oldest = f;
+  
+  /* can't find empty one, use oldest if there is one
+     and it's older than timeout */
+  if (oldest && ((int)difftime(now, oldest->time)) >= TIMEOUT)
+    { 
+      /* keep stuff for twice timeout if we can by allocating a new
+	 record instead */
+      if (difftime(now, oldest->time) < 2*TIMEOUT && 
+	  count <= daemon->ftabsize &&
+	  (f = allocate_frec(now)))
+	return f;
+
+      if (!wait)
+	{
+	  oldest->new_id = 0;
+	  oldest->time = now;
+	}
+      return oldest;
+    }
+  
+  /* none available, calculate time 'till oldest record expires */
+  if (count > daemon->ftabsize)
+    {
+      if (oldest && wait)
+	*wait = oldest->time + (time_t)TIMEOUT - now;
+      return NULL;
+    }
+  
+  if (!(f = allocate_frec(now)) && wait)
+    /* wait one second on malloc failure */
+    *wait = 1;
+
   return f; /* OK if malloc fails and this is NULL */
 }
  

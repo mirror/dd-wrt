@@ -418,8 +418,11 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
 	  {
 	    if (lease_tmp->auth_name && !auth)
 	      return;
-	    lease_tmp->changed = 1; /* call script on change */
-	    new_name = lease_tmp->hostname;
+	    /* this shouldn't happen unless updates are very quick and the
+	       script very slow, we just avoid a memory leak if it does. */
+	    if (lease_tmp->old_hostname)
+	      free(lease_tmp->old_hostname);
+	    lease_tmp->old_hostname = lease_tmp->hostname;
 	    lease_tmp->hostname = NULL;
 	    if (lease_tmp->fqdn)
 	      {
@@ -441,7 +444,13 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
     }
 
   if (lease->hostname)
-    free(lease->hostname);
+    {
+      /* run script to say we lost our old name */
+      if (lease->old_hostname)
+	free(lease->old_hostname);
+      lease->old_hostname = lease->hostname;
+    }
+
   if (lease->fqdn)
     free(lease->fqdn);
   
@@ -454,121 +463,81 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
   lease->changed = 1; /* run script on change */
 }
 
-
-#ifndef NO_FORK
-static pid_t run_script(struct daemon *daemon, char *action, struct dhcp_lease *lease)
-{
-  if (daemon->lease_change_command)
-    {
-      char *addr = inet_ntoa(lease->addr);
-      char *com = strrchr(daemon->lease_change_command, '/');
-      char *p;
-      pid_t pid;
-      int i;
-
-      /* stringify MAC into dhcp_buff */
-      p = daemon->dhcp_buff;
-      if (lease->hwaddr_type != ARPHRD_ETHER || lease->hwaddr_len == 0) 
-	p += sprintf(p, "%.2x-", lease->hwaddr_type);
-      for (i = 0; i < lease->hwaddr_len; i++)
-	{
-	  p += sprintf(p, "%.2x", lease->hwaddr[i]);
-	  if (i != lease->hwaddr_len - 1)
-	    p += sprintf(p, ":");
-	}
-      
-      /* and CLID into namebuff */
-      p = daemon->namebuff;
-      if (lease->clid)
-	for (i = 0; i < lease->clid_len; i++)
-	  {
-	    p += sprintf(p, "%.2x", lease->clid[i]);
-	    if (i != lease->clid_len - 1) 
-	      p += sprintf(p, ":");
-	  }
-      
-      /* and expiry or length into dhcp_buff2 */
-#ifdef HAVE_BROKEN_RTC
-      sprintf(daemon->dhcp_buff2, "%u ", lease->length);
-#else
-      sprintf(daemon->dhcp_buff2, "%lu ", (unsigned long)lease->expires);
-#endif
-
-      pid = fork();
-      
-      if (pid == -1)
-	return 0; /* fork error */
-      else if (pid != 0)
-	return pid;
-      
-      if (lease->clid && lease->clid_len != 0)
-	setenv("DNSMASQ_CLIENT_ID", daemon->namebuff, 1);
-      else
-	unsetenv("DNSMASQ_CLIENT_ID");
-
-#ifdef HAVE_BROKEN_RTC
-      setenv("DNSMASQ_LEASE_LENGTH", daemon->dhcp_buff2, 1);
-      unsetenv("DNSMASQ_LEASE_EXPIRES");
-#else
-      setenv("DNSMASQ_LEASE_EXPIRES", daemon->dhcp_buff2, 1); 
-      unsetenv("DNSMASQ_LEASE_LENGTH");
-#endif
-
-      execl(daemon->lease_change_command, 
-	    com ? com+1 : daemon->lease_change_command,
-	    action, daemon->dhcp_buff, addr, lease->hostname, (char*)NULL);
-      
-      /* log socket should still be open, right? */
-      syslog(LOG_ERR, _("failed to execute %s: %m"), 
-	     daemon->lease_change_command);
-      _exit(0);	
-    }
-
-  return 0;
-}
-#endif
-
 /* deleted leases get transferred to the old_leases list.
    remove them here, after calling the lease change
-   script. Also run the lease change script on new leases */
-void lease_collect(struct daemon *daemon)
+   script. Also run the lease change script on new/modified leases.
+
+   Return zero if nothing to do. */
+int do_script_run(struct daemon *daemon)
 {
   struct dhcp_lease *lease;
 
-  while (old_leases)
+  if (old_leases)
     {
-      if (daemon->script_pid != 0)
-	return; /* busy */
-      
       lease = old_leases;
-      old_leases = lease->next;
-
-#ifndef NO_FORK
-      daemon->script_pid = run_script(daemon, "del", lease);
-#endif
-            
-      if (lease->hostname)
-	free(lease->hostname); 
-      if (lease->fqdn)
-	free(lease->fqdn);
-      if (lease->clid)
-	free(lease->clid);
-      free(lease);
+                  
+      /* If the lease still has an old_hostname, do the "old" action on that first */
+      if (lease->old_hostname)
+	{
+	  queue_script(daemon, ACTION_OLD_HOSTNAME, lease, lease->old_hostname);
+	  free(lease->old_hostname);
+	  lease->old_hostname = NULL;
+	  return 1;
+	}
+      else 
+	{
+	  queue_script(daemon, ACTION_DEL, lease, lease->hostname);
+	  old_leases = lease->next;
+	  
+	  if (lease->hostname)
+	    free(lease->hostname); 
+	  if (lease->fqdn)
+	    free(lease->fqdn);
+	  if (lease->clid)
+	    free(lease->clid);
+	  if (lease->vendorclass)
+	    free(lease->vendorclass);
+	  if (lease->userclass)
+	    free(lease->userclass);
+	  free(lease);
+	    
+	  return 1; 
+	}
     }
-
+  
+  /* make sure we announce the loss of a hostname before its new location. */
+  for (lease = leases; lease; lease = lease->next)
+    if (lease->old_hostname)
+      {	
+	queue_script(daemon, ACTION_OLD_HOSTNAME, lease, lease->old_hostname);
+	free(lease->old_hostname);
+	lease->old_hostname = NULL;
+	return 1;
+      }
+  
   for (lease = leases; lease; lease = lease->next)
     if (lease->new || lease->changed || 
 	(lease->aux_changed && (daemon->options & OPT_LEASE_RO)))
       {
-	if (daemon->script_pid != 0)
-	  return; /* busy */
-
-#ifndef NO_FORK
-	daemon->script_pid = run_script(daemon, lease->new ? "add" : "old", lease);
-#endif
-
+	queue_script(daemon, lease->new ? ACTION_ADD : ACTION_OLD, lease, lease->hostname);
 	lease->new = lease->changed = lease->aux_changed = 0;
+	
+	/* these are used for the "add" call, then junked, since they're not in the database */
+	if (lease->vendorclass)
+	  {
+	    free(lease->vendorclass);
+	    lease->vendorclass = NULL;
+	  }
+	if (lease->userclass)
+	  {
+	    free(lease->userclass);
+	    lease->userclass = NULL;
+	  }
+	
+	return 1;
       }
+
+  return 0; /* nothing to do */
 }
 	  
 

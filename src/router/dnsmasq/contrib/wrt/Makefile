@@ -1,4 +1,3 @@
-CFLAGS?= -O2
 
 all: dhcp_release.c
 	$(CC) $(CFLAGS) $(RPM_OPT_FLAGS) -Wall -W dhcp_release.c -o dhcp_release
