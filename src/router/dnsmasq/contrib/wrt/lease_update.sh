@@ -35,9 +35,6 @@ PREFIX=dnsmasq_lease_
 
 # Primary key is address.
 
-NVRAM=/usr/sbin/nvram
-PREFIX=dnsmasq_lease_
-
 if [ ${1} = init ] ; then
      ${NVRAM} show | sed -n -e "/^${PREFIX}.*/ s/^.*=//p"
 else

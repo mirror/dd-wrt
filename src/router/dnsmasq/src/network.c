@@ -403,6 +403,14 @@ void check_servers(struct daemon *daemon)
 	{
 	  port = prettyprint_addr(&new->addr, daemon->namebuff);
 
+	  /* 0.0.0.0 is nothing, the stack treats it like 127.0.0.1 */
+	  if (new->addr.sa.sa_family == AF_INET &&
+	      new->addr.in.sin_addr.s_addr == 0)
+	    {
+	      free(new);
+	      continue;
+	    }
+
 	  for (iface = daemon->interfaces; iface; iface = iface->next)
 	    if (sockaddr_isequal(&new->addr, &iface->addr))
 	      break;

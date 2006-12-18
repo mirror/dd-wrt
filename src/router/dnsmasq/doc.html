@@ -21,11 +21,11 @@ resource use and ease of configuration are important.
 Supported platforms include Linux (with glibc and uclibc), *BSD and
 Mac OS X.
 Dnsmasq is included in at least the following Linux distributions:
-Gentoo, Debian, Slackware, Suse, 
+Gentoo, Debian, Slackware, Suse, Fedora,
 Smoothwall, IP-Cop, floppyfw, Firebox, LEAF, Freesco, fli4l,
 CoyoteLinux, Endian Firewall and
-Clarkconnect. It is also available as a FreeBSD port and is used in
-Linksys wireless routers and the m0n0wall project.
+Clarkconnect. It is also available as FreeBSD, OpenBSD and NetBSD ports and is used in
+Linksys wireless routers (dd-wrt, openwrt and the stock firmware) and the m0n0wall project.
 <P>
 Dnsmasq provides the following features:
 <DIR>
@@ -74,7 +74,7 @@ upstream servers handling only those domains. This makes integration
 with private DNS systems easy.
 </LI>
 <LI>
-Dnsmasq supports MX records and can be configured to return MX records
+Dnsmasq supports MX and SRV records and can be configured to return MX records
 for any or all local machines.
 </LI>
 </DIR>
@@ -82,26 +82,10 @@ for any or all local machines.
 <H2>Download.</H2>
 
 <A HREF="http://www.thekelleys.org.uk/dnsmasq/"> Download</A> dnsmasq here. 
-The tarball includes this documentation, source, manpage and control files for building .rpms.
-There are also pre-built i386 .rpms, and a 
-<A HREF="CHANGELOG"> CHANGELOG</A>.
+The tarball includes this documentation, source, and manpage.
+There is also a <A HREF="CHANGELOG"> CHANGELOG</A>.
 Dnsmasq is part of the Debian distribution, it can be downloaded from 
 <A HREF="http://ftp.debian.org/debian/pool/main/d/dnsmasq/"> here</A> or installed using <TT>apt</TT>.
-
-
-<H2>Building rpms.</H2>
-Assuming you have the relevant tools installed, you can rebuild .rpms simply by running (as root)
-
-<PRE>
-rpmbuild -ta dnsmasq-xxx.tar.gz
-</PRE>
-
-Note for Suse users: you will need to re-compress the tar file as
-bzip2 before building using the commands
-<PRE>
-gunzip dnsmasq-xxx.tar.gz
-bzip2 dnsmasq-zzz.tar
-</PRE>
 
 <H2>Links.</H2>
 There is an article in German on dnsmasq at <A
