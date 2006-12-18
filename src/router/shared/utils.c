@@ -919,6 +919,7 @@ int aoss_gpio = 0x0f;
 	case ROUTER_WLI2_TX1_G54:
 		break;
 	case ROUTER_MOTOROLA_WE800G:
+			diag_gpio = 0x13;
 		break;
 	case ROUTER_WAP54G_V1:
 		break;
