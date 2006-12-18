@@ -30,7 +30,9 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 #endif
 
 ifneq ($(CONFIG_RB500),y)
+ifneq ($(CONFIG_X86),y)
 OBJS += mtd.c
+endif
 endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
