@@ -221,6 +221,7 @@ main_loop (void)
   system ("/etc/preinit");	//sets default values for ip_conntrack
 
 #ifndef HAVE_RB500
+#ifndef HAVE_X86
 #ifdef HAVE_REGISTER
   char *rwpart = "mtd5";
 #else
@@ -278,6 +279,7 @@ main_loop (void)
 	}
     }
 
+#endif
 #endif
 #ifdef HAVE_MMC
   if (nvram_match ("mmc_enable", "1"))
