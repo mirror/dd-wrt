@@ -251,14 +251,11 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("share.wireless"); %></legend>
-<% haswifi("-->"); %>
-<!--							<div class="setting">
+
+								<div class="setting">
 									<div class="label"><% tran("wl_basic.legend2"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
 								</div>
--->								
-<% haswifi("<!--"); %>
-
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
 									<% getwirelessmode(); %>&nbsp;
