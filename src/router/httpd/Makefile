@@ -39,7 +39,7 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 ifeq ($(CONFIG_SPECIALEDITION),y)
 CFLAGS += -DHAVE_SPECIALEDITION
-ADDOBJ = special.o
+ADDOBJ = special.c
 endif
 
 ifeq ($(CONFIG_ANTIFLASH),y)
