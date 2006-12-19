@@ -918,7 +918,19 @@ setupHostAP (char *prefix)
       sprintf (psk, "%s_radius_key", prefix);
       char *share = nvram_safe_get (psk);
       char exec[64];
-      sprintf (exec, "wrt-radauth %s %s %s %s 1 1 0 &", prefix, server, port,
+      char type[32];
+      sprintf (type, "%s_radmactype", prefix);
+      char *pragma="";
+      if (default_match(type,"0","0"))
+        pragma="-n1 ";
+      if (nvram_match(type,"1"))
+        pragma="-n2 ";
+      if (nvram_match(type,"2"))
+        pragma="-n3 ";
+      if (nvram_match(type,"3"))
+        pragma="";
+  
+      sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma,prefix, server, port,
 	       share);
       system2 (exec);
 
@@ -969,9 +981,15 @@ set_netmode (char *wif, char *dev)
   long tb =atol(nvram_safe_get(turbo));
   setsysctrl (wif, "turbo", tb);
   long regulatory =atol(nvram_safe_get("ath_regulatory"));
+  if (default_match ("ath_specialmode","1","0"))
+  {
+  setsysctrl (wif, "regulatory", 0);
+  setsysctrl (wif, "setregdomain",0x48);  
+  }
+  else{
   setsysctrl (wif, "regulatory", regulatory);
-  
-  
+  setsysctrl (wif, "setregdomain",0);  
+  }    
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta"))
