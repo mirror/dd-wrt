@@ -31,7 +31,7 @@ struct nvrams
 
 struct nvramdb
 {
-  int offsets['z'-'A'];
+  int offsets[('z'+1)-'A'];
   int nov;			//number of values;
   struct nvrams *values;
 };
@@ -112,7 +112,7 @@ writedb (void)
     return;
   int c = 0;
   int i;
-  for (i = 0; i < 'z'-'A'; i++)
+  for (i = 0; i < ('z'+1)-'A'; i++)
     values.offsets[i] = -1;
   for (i = 0; i < values.nov; i++)
     {
@@ -153,7 +153,7 @@ writedb (void)
     }
   fclose (in);
   in = fopen ("/tmp/nvram/offsets.db", "wb");
-  fwrite (values.offsets, ('z'-'A')*4, 1, in);
+  fwrite (values.offsets, (('z'+1)-'A')*4, 1, in);
   fclose (in);
 }
 
