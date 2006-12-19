@@ -1741,6 +1741,8 @@ _8021xprv
   copytonv (wp, n);
   sprintf (n, "%s_radius_key", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_radmactype", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_key1", prefix);
   char *key1 = websGetVar (wp, n, "");
 
