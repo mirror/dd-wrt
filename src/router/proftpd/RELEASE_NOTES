@@ -1,0 +1,214 @@
+                    1.3.0 Release Notes
+                  ------------------------
+
+This file contains a description of the major changes to ProFTPD for the
+1.3.0 release cycle, from the 1.3.0rc1 release to the 1.3.0-stable release.
+More information on these changes can be found in the NEWS and ChangeLog
+files.
+
+1.3.0rc2
+---------
+
+  + Bugfixes:
+
+    sean <infamous42md at hotpop.com> found two format string vulnerabilities,
+    one in mod_sql's SQLShowInfo directive, and one involving the 'ftpshut'
+    utility.  Both can be considered low risk, as they require active
+    involvement on the part of the site administrator in order to be
+    exploited:
+
+      Using 'ftpshut', the administrator has the ability to configure a
+      shutdown message, which will be displayed to connecting clients.  This
+      message can make use of several variables.  *If* a variable such as
+      %C (current working directory) is used in that shutdown message, and
+      an attacker is aware of this, the attacker can create a directory using
+      an FTP client, and give the directory a name such that the %C variable
+      discloses information that should not be available (i.e. contents of
+      data in nearby buffers).  To prevent this scenario, administrators
+      who use 'ftpshut' should avoid using the %C, %R, and %U variables.
+
+      If the configuration uses the SQLShowInfo directive provided by
+      mod_sql.  This directive can be used to add information from the SQL
+      tables to response messages sent to the client.  If misconfigured by the
+      site administrator (by using data from tables into which a user
+      can insert arbitrary strings), data pulled from the SQL tables could be
+      used in such a way as to attempt to use a malicious format string in
+      the returned message.  To prevent this, do not use SQLShowInfo.
+
+    Both vulnerabilities are fixed in this 1.3.0rc2 release.
+
+  + Module enhancements:
+
+     mod_ctrls_admin
+       New 'dns' control action, for setting UseReverseDNS configuration
+       at runtime.
+
+     mod_delay
+       Many improvements made to improve stability.
+
+     mod_sql_mysql
+       The mod_sql_mysql module now handles the old MySQL password format
+       more gracefully.  Starting with MySQL 4.1.1, the format for passwords
+       stored using the MySQL PASSWORD() function changed.  This format change
+       causes issues for sites that have passwords stored in the older format.
+       Sites that run mod_sql+mod_sql_mysql would see this as users being
+       unable to login.  Now, if compiled against MySQL 4.1.1 or later,
+       mod_sql_mysql will first check the password using the current MySQL
+       format; if that fails it will fall back to checking the old format.
+       Note that this only affects sites which have the "Backend" type in
+       their SQLAuthTypes directive.
+
+  + New documentation:
+
+     doc/howto/DNS.html
+     doc/howto/VirtualUsers.html
+
+
+1.3.0rc1
+---------
+  + New configuration directives:
+
+      MaxConnectionsPerHost
+        Similar to MaxClientsPerHost, the administrator can configure
+        the maximum number of connected clients from a single host at
+        one time.  Unlike MaxClientsPerHost, though, the
+        MaxConnectionsPerHost limit is evaluated prior to authentication,
+        i.e. before the client has sent any USER and PASS commands.
+
+      SQLBackend
+        mod_sql now supports a SQLBackend configuration directive, for
+        selecting the specific database backend module to use on a per-vhost
+        basis.  Previously, mod_sql could only be compiled with one
+        backend module at a time; the module has been enhanced to support
+        multiple backend modules.  Since multiple backends are now
+        possible, SQLBackend was added so that the administrator could
+        specify which to use.  If only one backend module is used,
+        e.g. mod_sql_mysql, then that backend is used by default, and
+        no SQLBackend directive is required.
+
+      SQLEngine
+        mod_sql supports a new SQLEngine directive.  This directive can
+        be used to configure mod_sql to only be used for authentication,
+        or only for logging, or for both.  It is also used to create
+        an <Anonymous> section that does not use mod_sql for lookups,
+        but still have mod_sql used for non-anonymous users.
+
+      UseSendfile
+        ProFTPD now automatically checks for sendfile support, and uses
+        it if present.  The UseSendfile directive can be used to configure
+        proftpd not to use the sendfile() function if necessary.
+
+        Note that if sendfile support is enabled, tools like ftpwho and
+        ftptop will not show the transfer rate for downloads.  These tools
+        work by reading the scoreboard, and the scoreboard is updated
+        periodically during uploads and downloads.  However, when
+        sendfile() is used, scoreboard does not have a chance to be updated.
+        This is only true for downloads; the tools will continue to
+        show the transfer rate for uploads.
+
+  + Enhanced configuration directives:
+
+      ExtendedLog
+        There is a new logging class, SEC (short for "SECURE").
+        This logging class captures RFC2228-related security FTP commands.
+
+      ListOptions
+        The -S list option, for listing files sorted by file size, has
+        been added.
+
+  + New command-line options:
+      The new -V and --settings command-line options display various
+      compile-time settings of the compiled proftpd binary.
+
+  + New configure options:
+
+      --enable-dso
+        This configure option enables DSO support in the compiled proftpd,
+        and causes the mod_dso module to be compiled in.  See the
+        README.DSO and doc/howto/DSO.html files for details.
+ 
+      --enable-facl
+        This configuration option enables support for POSIX ACLs, on
+        systems that support them, in the compiled proftpd.  See the
+        README.facl file for more information.
+
+  + New modules:
+
+      mod_delay
+        There is the possibility of a timing attack on proftpd, leading
+        to discovery of valid user names (Bug #2480).  This module was
+        added to mitigate this timing attack; see doc/modules/mod_delay.html
+        for more information.
+
+      mod_dso
+        This module handles the dynamic loading and unloading of shared
+        modules from the running proftpd server.  Note that this module
+        requires the --enable-dso configure option to be used when compiling
+        proftpd.  See README.DSO for more information on shared modules.
+        The doc/modules/mod_dso.html file contains documentation for this
+        module.
+
+      mod_facl
+        This module uses the FSIO API to provide checking of file
+        permissions that use POSIX ACLs.  The --enable-facl configure
+        option must be used when compiling proftpd for this module to
+        be used.  See the README.facl file for more information.
+
+      mod_load
+        This module provides the ability to deny a connection if the
+        system load is above a configurable limit; useful for imposing
+        resource restrictions.  The doc/contrib/mod_load.html file
+        contains documentation for this module.
+
+  + Enhanced modules:
+
+      mod_ldap
+        The mod_ldap module has been updated to version 2.8.15.
+
+      mod_quotatab
+        The mod_quotatab module now supports enforcing hard limits at
+        the filesystem level.  This means that if the quota limit is
+        a hard limit, and a client exceeds that limit, the upload
+        will fail.  Previously, the upload would succeed, but the file
+        would be automatically deleted.
+
+      mod_tls
+        The mod_tls module now supports the CCC FTP command, which can
+        be used by FTPS clients to secure data transfers with FTPS
+        servers in a firewalled environment.
+
+  + New Display variables:
+
+      %{total_bytes_in}
+      %{total_bytes_out}
+      %{total_bytes_xfer}
+      %{total_files_in}
+      %{total_files_out}
+      %{total_files_xfer}
+        These new Display variables use the new variable syntax;
+        see doc/howto/DisplayFiles.html for details.
+
+  + Deprecated configuration directives:
+
+      Bind
+        The Bind directive was causing too much confusion, and did not
+        do as many system administrators assumed it.  Rather than using
+        Bind to associate a server configuration with an IP address,
+        administrators would assume it was meant for making ProFTPD
+        bind to a single address.
+
+        Rather than having a configuration like this:
+
+          <VirtualHost host1.domain.com>
+            Bind host2.domain.com
+            ...
+          </VirtualHost>
+
+        The <VirtualHost> and DefaultAddress directives can now handle
+        multiple addresses, so that the above configuration becomes:
+
+          <VirtualHost host1.domain.com host2.domain.com>
+            ...
+          </VirtualHost>
+
+Last Updated: $Date: 2006/04/24 11:39:27 $

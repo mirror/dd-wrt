@@ -1,0 +1,267 @@
+<!-- $Id: TLS.html,v 1.1 2006/04/24 11:39:28 honor Exp $ -->
+<!-- $Source: /home/cvsroot/wrt350n/src/router/proftpd/doc/howto/TLS.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - SSL/TLS</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>SSL/TLS</b></h2></center>
+<hr>
+
+<b>NOTE</b>: This mini-howto is definitely incomplete.  Please contact me
+with suggestions, questions, requests, etc. for what you would like to see
+covered here.  Thanks!
+
+<p>
+<pre>
+  <a href="http://www.faqs.org/ftp/internet-drafts/draft-murray-auth-ftp-ssl-15.txt">http://www.faqs.org/ftp/internet-drafts/draft-murray-auth-ftp-ssl-15.txt</a>
+</pre>
+
+<p>
+Example <a href="http://www.castaglia.org/proftpd/modules/mod_tls.html"><code>mod_tls</code></a> configuration:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    TLSEngine on
+    TLSLog /var/ftpd/tls.log
+    TLSProtocol TLSv1
+
+    # Are clients required to use FTP over TLS when talking to this server?
+    TLSRequired off
+
+    # Server's certificate
+    TLSRSACertificateFile /etc/ftpd/server.cert.pem
+    TLSRSACertificateKeyFile /etc/ftpd/server.key.pem
+
+    # CA the server trusts
+    TLSCACertificateFile /etc/ftpd/root.cert.pem
+
+    # Authenticate clients that want to use FTP over TLS?
+    TLSVerifyClient off
+  &lt;/IfModule&gt;
+</pre>
+
+<p><a name="TLSDebugging"></a>
+<b>Debugging</b><br>
+<a href="http://www.rtfm.com/ssldump/"><code>ssldump</code></a>
+
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="TLSCertificates">
+<font color=red>Question</font>: How do I generate the certificate files used
+by <code>mod_tls</code>?<br>
+<font color=blue>Answer</font>: The <code>mod_tls</code> module uses the
+same certificate files as Apache's <code>mod_ssl</code>.  The
+<code>mod_ssl</code> documentation explains what the files are, how they
+are used, and how to generate your own:
+<pre>
+  <a href="http://www.modssl.org/docs/2.7/ssl_faq.html#ToC24">http://www.modssl.org/docs/2.7/ssl_faq.html</a>
+</pre>
+
+<p><a name="TLSClients">
+<font color=red>Question</font>: Where can I find a list of clients that
+support FTPS?<br>
+<font color=blue>Answer</font>: This page is a good FTPS resource:
+<pre>
+  <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html">http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html</a>
+</pre>
+including the list of FTPS <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html#client">clients</a>.  On a related note, there have been some
+reports that Debian's <code>ftp-ssl</code> client has a few bugs; using Peter
+Runestig's <code>ftp-tls</code> is known to work.
+
+<p>
+Note, though, that there are known issues with some FTPS clients:
+<pre>
+  <a href="http://www.runestig.com/osp.html#NOTE1">http://www.runestig.com/osp.html#NOTE1</a>
+</pre>
+
+<p><a name="TLSImplicit">
+<font color=red>Question</font>: How come <code>mod_tls</code> does not support
+&quot;implicit&quot; FTPS (<i>i.e.</i> automatically encrypting sessions on
+port 990)?<br>
+<font color=blue>Answer</font>: The short answer is because the Draft no longer
+specifies support for such a mode.  Here is a <a href="http://www.ford-hutchinson.com/~fh-1-pfh/ftps-ext.html#bad">description</a> of why the alternatives
+to the current mode (client-requested encryption using standard control
+channel) are &quot;bad&quot;.
+
+<p>
+The long answer is covered in Eric Rescorla's excellent book, <a href="http://www.rtfm.com/sslbook/">&quot;SSL and TLS&quot;</a>.  There tend to be two
+different strategies used when adding new features to a protocol: separate
+ports for protocol variants, or upward negotiation.  Port 443 for HTTPS is an
+example of the separate ports strategy.  The drawback to the separate ports
+approach is that there is a finite number of ports available, and so this
+approach does not scale well.  The benefit is that use of separate ports tends
+to require smaller changes to client and server code.  Upward negotiation
+is more flexible, but requires that the protocol support some sort of feature
+negotiation or extension discovery, allowing clients and servers to easily
+agree to negotiate &quot;upward&quot; into a secure channel.  The authors
+of the FTPS Draft felt that upward negotiation was the more appropriate of
+these two approaches for encrypting FTP channels.
+
+<p><a name="TLSPerUser">
+<font color=red>Question</font>: Can I require TLS on a per-user basis?<br>
+<font color=blue>Answer</font>: Prior to ProFTPD 1.2.10rc2, no.  The IETF
+Draft specifying FTP over TLS requires that the TLS handshake occur
+<i>before</i> the client sends the <code>USER</code> command.  This means that
+the server does not know the name of the user that the client will be using
+when the TLS session is established.  It is possible that the client's
+certificate, if one is even presented, may contain information the server may
+use to map that certificate to a user, but such mapping is not currently
+supported by <code>mod_tls</code>.  Note that this is also the reason the
+<code>TLSRequired</code> directive cannot appear in the
+<code>&lt;Anonymous&gt;</code> context: anonymous logins are based on the
+<code>USER</code> command.
+
+<p>
+However, in 1.2.10rc2, the <code>mod_tls</code> module was modified to allow
+such per-user TLS requirements.  To do this, the <code>AllowPerUser</code>
+parameter of the <code>TLSOptions</code> directive is used.  For example,
+the following example <code>mod_tls</code> configuration allows non-SSL
+anonymous sessions, but requires SSL/TLS for all other sessions:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    TLSEngine on
+    TLSRSACertificateFile ...
+    TLSCACertificateFile ...
+    TLSOptions AllowPerUser
+    TLSRequired on
+
+    &lt;Anonymous ~ftp&gt;
+      User ftp
+      Group ftp
+      UserAlias anonymous ftp
+
+      RequireValidShell off
+
+      # Note how TLSRequired is set to off here in the &lt;Anonymous&gt; context
+      TLSRequired off
+    &lt;/Anonymous&gt;
+  &lt;/IfModule&gt;
+</pre>
+The modification also allows <code>mod_ifsession</code>-based conditions, so
+that one can have settings like:
+<pre>
+  &lt;IfGroup trusted&gt;
+    TLSRequired off
+  &lt;/IfGroup&gt;
+</pre>
+However, there is a risk involved in using the <code>AllowPerUser</code>
+option: it causes <code>mod_tls</code> not to enforce <code>TLSRequired</code>
+until <i>after</i> the potentially sensitive USER and PASS commands have
+been sent by the client.  This allows clients, even when
+<code>TLSRequired on</code> or <code>TLSRequired ctrl</code> are in effect,
+to send the USER and PASS commands <i>unencrypted</i>.  Depending on your
+site's security needs, the ability to require SSL/TLS on a per-user basis
+may or may not be worth the ability to require SSL/TLS for the USER and PASS
+commands.
+
+<p><a name="TLSFXP">
+<font color=red>Question</font>: Why does <code>mod_tls</code> break FXP
+transfers?<br>
+<font color=blue>Answer</font>: The Draft specifying FTP over SSL explicitly
+omits site-to-site transfers.  A TLS session is established between the client
+and the server on the control channel and, to save on the expensive overhead of
+TLS handshake, that session is reused for encrypting traffic on the data
+channel.  In a site-to-site transfer, the client opens <i>two</i> control
+channels, one with each server, and then arranges for those servers to open a
+data channel between themselves.  However, since the servers have not
+established a TLS session between themselves, that opening of the data channel
+fails.
+
+<p>
+Note that the above happens only if the server requires that TLS be used on data
+connections (<i>e.g.</i> <code>TLSRequired</code> is either <em>on</em> or
+<em>data</em>), of if the client tells the server that the client will be
+using TLS on the data connections (<i>e.g.</i> when it sends the
+<code>AUTH</code> command with an argument of <code>TLS-P</code>).  Without
+these conditions, site-to-site transfers can occur normally, albeit unencrypted.
+Encrypted site-to-site transfers are not supported.
+
+<p><a name="TLSv2">
+<font color=red>Question</font>: How come <code>mod_tls</code> does not support
+SSLv2?<br>
+<font color=blue>Answer</font>: Various defects have been found in the SSLv2
+protocol.  Some legacy sites need to support SSLv2 for their HTTP traffic, in
+spite of its flaws.  Use of FTP over TLS is fairly new, however, and there is
+not much &quot;legacy&quot; in that regard; it was felt that, as
+<code>mod_tls</code> aims to provide strong cryptographic security, supporting
+a known bad protocol is a Bad Idea.
+
+<p><a name="TLSFirewall">
+<font color=red>Question</font>: Using <code>mod_tls</code>, FTP sessions
+through my firewall now no longer work.  What's going on?<br>
+<font color=blue>Answer</font>: The short answer is that FTPS and firewalls
+(and devices performing NAT) do not interact well.  The control connection
+happens on a well-known port, and has no issues; it is the data connection
+that poses problems for FTP-aware firewalls.  In a non-FTPS session, the
+firewall can inspect the FTP server's responses on the control connection to a
+client's <code>PASV</code> or <code>PORT</code> command, and thus know which
+on which ports/addresses the data connection will be established.  In an FTPS
+session, though, those control connection messages are encrypted (that is the
+point of using FTPS, right?), and so the FTP-aware firewall cannot peek.
+Hence, it cannot know which on which ports the data connection will be
+established.  For firewalls that are configured to always allow a certain
+range of ports (such as might be configured using the <code>PassivePorts</code>
+directive), FTPS should function without issue.
+
+<p>
+Unfortunately, this is a rather intractable--and known--issue.  Earlier
+versions of the Draft defining FTPS used to allow something known as
+&quot;implicit&quot; FTPS, by which a client could contact a well-known port
+(akin to port 443 for HTTPS; FTPS used port 990) and the server, simply
+because the client contacted that certain port, would automatically encrypt
+the session.  This approach has several drawbacks (the reason why it was
+removed from later versions of the Draft), but it <i>did</i> allow for simple
+TCP proxying.  There has been no replacement.
+
+<p><a name="TLSSlow">
+<font color=red>Question</font>: Sometimes my encrypted transfers are slow.
+Is there a way to speed them up?<br>
+<font color=blue>Answer</font>:  There have been reports that increasing the
+tunable buffer size (using the <code>--enable-buffer-size</code> option
+of the <code>configure</code> script) to 8192 increases transfer speeds, most
+notably on very high speed networks.  Increasing the buffer size does not
+appear to affect normal FTP transfers (in fact, it may benefit them as well,
+depending on the client).
+
+<p><a name="TLSDataProtection">
+<font color=red>Question</font>: I can login using FTPS, but I cannot see
+any directories.  Why not?<br>
+<font color=blue>Answer</font>: You have most likely configured
+<code>mod_tls</code> to require SSL/TLS protection for data transfers as
+well as control commands, by using:
+<pre>
+  TLSRequired on
+</pre>
+However, if your FTPS client does not expect to handle encrypted data
+transfers (and directory listings count as data transfers, as they are
+sent over a data channel), you may see your client appear to hang, waiting
+for data it can read.  Make sure your client is prepared to handle the
+security requirements you have configured on the server.
+
+<p>
+You may also see the following appear in the <code>TLSLog</code> on occasion:
+<pre>
+  PROT: unwilling to accept security parameter (C), declining
+</pre>
+The <code>PROT</code> FTP command is used to set the protection level to
+be used for data transfers.  Some clients send a <code>PROT</code> command
+with a security parameter of <code>C</code>, meaning &quot;Clear&quot;,
+which effectively tells the server not to protect data transfers.  The
+<code>mod_tls</code> module will refuse the <code>C</code> security parameter
+if, like above, there is &quot;TLSRequired on&quot in your
+<code>proftpd.conf</code>.  This case also indicates a disagreement between
+the client's security expectations and the security policy you have configured
+on the server.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2006/04/24 11:39:28 $</i><br>
+<hr>
+
+</body>
+</html>
