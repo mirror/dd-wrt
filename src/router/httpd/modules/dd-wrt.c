@@ -2694,6 +2694,18 @@ show_radius (webs_t wp, char *prefix)
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
 	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
+  websWrite (wp,"<div class=\"setting\">\n");
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label2)</script></div>\n");
+  websWrite (wp,"<select name=\"%s_radmactype\">\n",prefix);
+  websWrite (wp,"<option value=\"0\" %s >aabbcc-ddeeff</option>\n",nvram_prefix_match("radmactype",prefix,"0")?"selected":"");
+  websWrite (wp,"<option value=\"1\" %s >aabbccddeeff</option>\n",nvram_prefix_match("radmactype",prefix,"1")?"selected":"");
+  websWrite (wp,"<option value=\"2\" %s >aa:bb:cc:dd:ee:ff</option>\n",nvram_prefix_match("radmactype",prefix,"2")?"selected":"");
+  websWrite (wp,"<option value=\"3\" %s >aa-bb-cc-dd-ee-ff</option>\n",nvram_prefix_match("radmactype",prefix,"3")?"selected":"");
+  websWrite (wp,"</select>\n");
+  websWrite (wp,"</div>\n");
+
+
+
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n");
