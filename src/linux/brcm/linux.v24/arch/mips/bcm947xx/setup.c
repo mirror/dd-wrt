@@ -162,6 +162,7 @@ do_serial_add(serial_port *port)
 
 #endif /* CONFIG_SERIAL */
 int iswrt350n=0;
+EXPORT_SYMBOL (iswrt350n);
 void __init
 brcm_setup(void)
 {

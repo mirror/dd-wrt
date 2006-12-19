@@ -307,6 +307,9 @@ fi
 dep_tristate 'AMD 76x native power management (Experimental)' CONFIG_AMD_PM768 $CONFIG_PCI
 tristate '/dev/nvram support' CONFIG_NVRAM
 tristate 'Enhanced Real Time Clock Support' CONFIG_RTC
+if [ "$CONFIG_MIPS" = "y" ]; then
+   bool 'Mips RTC Support' CONFIG_MIPS_RTC
+fi
 if [ "$CONFIG_IA64" = "y" ]; then
    bool 'EFI Real Time Clock Services' CONFIG_EFI_RTC
 fi

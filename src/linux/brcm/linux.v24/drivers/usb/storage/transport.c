@@ -56,6 +56,7 @@
 #include <linux/slab.h>
 #include <linux/pci.h>
 #include "../hcd.h"
+#include "../../net/ctmisc/ext_io.h"
 
 /* These definitions mirror those in pci.h, so they can be used
  * interchangeably with their PCI_ counterparts */
@@ -432,6 +433,8 @@ int usb_stor_control_msg(struct us_data *us, unsigned int pipe,
 	kfree(dr);
   	return status;
 }
+extern int usb_led_flag;
+extern wait_queue_head_t usb_led_queue;
 
 /* This is our function to emulate usb_bulk_msg() but give us enough
  * access to make aborts/resets work
@@ -475,6 +478,8 @@ int usb_stor_bulk_msg(struct us_data *us, void *data, int pipe,
 
 	/* release the lock and return status */
 	up(&(us->current_urb_sem));
+	if (usb_led_flag == 1)
+		wake_up_interruptible_sync(&usb_led_queue);
 	return us->current_urb->status;
 }
 

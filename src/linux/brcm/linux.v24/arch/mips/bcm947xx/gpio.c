@@ -23,6 +23,7 @@
 #include <bcmutils.h>
 #include <sbutils.h>
 #include <bcmdevs.h>
+#include "../../../drivers/net/ctmisc/ext_io.h"
 
 static sb_t *gpio_sbh;
 static int gpio_major;
@@ -36,6 +37,8 @@ static struct {
 	{ "outen", NULL },
 	{ "control", NULL }
 };
+static int gpio_init_flag = 0;
+static int __init gpio_init(void);
 
 static int
 gpio_open(struct inode *inode, struct file * file)
@@ -81,6 +84,32 @@ gpio_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 
 	return sizeof(val);
 }
+int gpio_kernel_api(unsigned int cmd, unsigned int mask, unsigned int val)
+{
+
+	if (gpio_init_flag != 1) {
+		if (gpio_init() != 0)
+			return -EFAULT;
+	}
+	
+	switch (cmd) {
+		case 0:
+			sb_gpioout(gpio_sbh, mask, val, GPIO_HI_PRIORITY);
+			break;
+		case 1:
+			sb_gpioouten(gpio_sbh, mask, val, GPIO_HI_PRIORITY);
+			break;
+		case 3:
+			sb_gpioreserve(gpio_sbh, mask, GPIO_HI_PRIORITY);
+			break;
+		default:
+			printk("Unknown gpio_kenerl_api command\n");
+			break;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL (gpio_kernel_api);
 
 static ssize_t
 gpio_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
@@ -140,6 +169,7 @@ gpio_init(void)
 						     S_IFCHR | S_IRUGO | S_IWUGO,
 						     &gpio_fops, NULL);
 	}
+	gpio_init_flag = 1;
 
 if (iswrt350n)
 {
@@ -156,6 +186,9 @@ if (iswrt350n)
 		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 	//}
+		
+	USB_SET_LED(USB_DISCONNECT); //2005-02-24 by kanki for USB LED
+
 }
 
 	return 0;
