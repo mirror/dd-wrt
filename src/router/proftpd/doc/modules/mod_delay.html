@@ -1,0 +1,132 @@
+<!-- $Id: mod_delay.html,v 1.1 2006/04/24 11:39:28 honor Exp $ -->
+<!-- $Source: /home/cvsroot/wrt350n/src/router/proftpd/doc/modules/mod_delay.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD module mod_delay</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center>
+<h2><b>ProFTPD module <code>mod_delay</code></b></h2>
+</center>
+<hr><br>
+
+<p>
+The <code>mod_delay</code> module is designed to make a certain type of
+information leak, known as a &quot;timing attack&quot;, harder.
+
+<p>
+When <code>proftpd</code> processes the <code>USER</code> and <code>PASS</code>
+FTP commands from a client, it has to perform checks against configured
+ACLs, look up user and group information, etc.  These checks are not done
+if the given username is known to not exist for the server, in order to
+not tie up system resources needlessly.  However, this does mean that more
+work is done when handling &quot;good&quot; users than when handling
+&quot;bad&quot; users.  This difference can be detected in the time it takes
+for <code>proftpd</code> to send a response to the <code>USER</code> and
+<code>PASS</code> commands.  This means it is possible for an attacker
+to look for these statistical timing differences, and determine which
+users are &quot;good&quot; and which are &quot;bad&quot;.  From there,
+a determined attacker can focus their attention on the known good usernames.
+Note that the timings will vary depending on server load, number of
+users in the user base, type of storage of user data (<i>e.g.</i>
+LDAP directories, SQL tables, RADIUS servers, flat files, <i>etc</i>).
+
+<p>
+The <code>mod_delay</code> module attempts to prevent such timing differences
+by keeping track of the time taken to process the <code>USER</code> and
+<code>PASS</code> commands.  It does this for the most recent
+<code>USER</code> and <code>PASS</code> commands.  The timing data are
+stored in the module's <code>DelayTable</code>.  If the module detects
+that <code>proftpd</code> has not taken enough time to handle one of these
+commands, compared to its past response times, a small delay will be added
+to the response cycle.  The amount of delay is determined by the difference
+between the current time spent handling the command and the median time
+spent handling the same command in the past.
+
+<p>
+The most current version of <code>mod_delay</code> can be found in the
+ProFTPD source distribution:
+<pre>
+  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
+</pre>
+
+<h2>Thanks</h2>
+<p>
+<i>2004-10-18</i>: Thanks to Michael Renner for testing out various versions
+of the module as it was developed.
+
+<h2>Directives</h2>
+<ul>
+  <li><a href="#DelayEngine">DelayEngine</a>
+  <li><a href="#DelayTable">DelayTable</a>
+</ul>
+
+<hr>
+<h2><a name="DelayEngine">DelayEngine</a></h2>
+<strong>Syntax:</strong> DelayEngine <em>on|off</em><br>
+<strong>Default:</strong> DelayEngine on<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_delay<br>
+<strong>Compatibility:</strong> 1.2.10rc1 and later
+
+<p>
+The <code>DelayEngine</code> directive enables or disables the module's
+runtime delaying calculations.  If it is set to <em>off</em> this module
+does no delaying.  Use this directive to disable the module.
+
+<p>
+Example:
+<pre>
+  &lt;IfModule mod_delay.c&gt;
+    DelayEngine off
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+<h2><a name="DelayTable">DelayTable</a></h2>
+<strong>Syntax:</strong> DelayTable <em>path</em><br>
+<strong>Default:</strong> DelayTable var/proftpd/proftpd.delay<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_delay<br>
+<strong>Compatibility:</strong> 1.2.10rc1 and later
+
+<p>
+The <code>DelayTable</code> directive configures a <em>path</em> to a file
+that <code>mod_delay</code> uses for storing its timing data.  The given
+<em>path</em> must be an absolute path.  It is recommended that this file
+<b>not</b> be on an NFS mounted partition.
+
+<p>
+Note that timing data is kept across daemon stop/starts.  When new
+<code>&lt;VirtualHost&gt;</code>s are added to the configuration, though,
+<code>mod_delay</code> will detect that it does not have a suitable
+<code>DelayTable</code> for the new configuration, and will clear all
+stored data.
+
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_delay</code> module is compiled by default.
+
+<p>
+<hr><br>
+
+Author: <i>$Author: honor $</i><br>
+Last Updated: <i>$Date: 2006/04/24 11:39:28 $</i><br>
+
+<br><hr>
+
+<font size=2><b><i>
+&copy; Copyright 2004 TJ Saunders<br>
+ All Rights Reserved<br>
+</i></b></font>
+
+<hr><br>
+
+</body>
+</html>
+

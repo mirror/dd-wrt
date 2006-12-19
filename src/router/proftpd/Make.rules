@@ -1,0 +1,74 @@
+prefix=/tmp/proftpd
+exec_prefix=/tmp/proftpd
+bindir=${exec_prefix}/bin
+sbindir=${exec_prefix}/sbin
+sysconfdir=${prefix}/etc
+libexecdir=${exec_prefix}/libexec
+localstatedir=${prefix}/var
+rundir=${prefix}/var/proftpd
+mandir=${prefix}/man
+
+CC:=$(CC)
+PLATFORM=-DLINUX 
+LDFLAGS=-L$(top_srcdir)/lib  
+LIBEXECDIR=/tmp/proftpd/libexec
+LIBS= -lsupp -lcrypt  -Llib/libcap -lcap
+LIBTOOL=$(SHELL) $(top_builddir)/libtool
+CURSES_LIBS=
+
+INSTALL=/usr/bin/install -c
+INSTALL_USER=root
+INSTALL_GROUP=root
+INSTALL_BIN=$(INSTALL) -s -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_SBIN=$(INSTALL) -s -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_MAN=$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644
+
+RM=rm -f
+
+# Directory include paths.
+#
+INCLUDES=-I.. -I$(top_srcdir)/include 
+
+# Preprocessor compilation flags.
+#
+CPPFLAGS= -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+
+# Our compiler flags.
+#
+CFLAGS=-DBCMWPA2  -Wall
+DEFINES=$(PLATFORM)
+
+OBJS=main.o timers.o sets.o pool.o table.o regexp.o dirtree.o support.o \
+     netaddr.o inet.o child.o parser.o log.o xferlog.o bindings.o netacl.o \
+     class.o scoreboard.o help.o feat.o netio.o response.o ident.o data.o \
+     modules.o display.o auth.o fsio.o mkhome.o ctrls.o event.o var.o
+BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/table.o \
+           src/regexp.o src/dirtree.o src/support.o src/netaddr.o src/inet.o \
+           src/child.o src/parser.o src/log.o src/xferlog.o src/bindings.o \
+           src/netacl.o src/class.o src/scoreboard.o src/help.o src/feat.o \
+           src/netio.o src/response.o src/ident.o src/data.o src/modules.o \
+           src/display.o src/auth.o src/fsio.o src/mkhome.o src/ctrls.o \
+           src/event.o src/var.o
+
+SHARED_MODULE_DIRS=""
+SHARED_MODULE_OBJS=""
+BUILD_SHARED_MODULE_OBJS=
+
+STATIC_MODULE_DIRS=""
+STATIC_MODULE_OBJS=mod_core.o mod_xfer.o mod_auth_unix.o mod_auth_file.o mod_auth.o mod_ls.o mod_log.o mod_site.o mod_delay.o  mod_cap.o mod_site_misc.o
+BUILD_STATIC_MODULE_OBJS=modules/mod_core.o modules/mod_xfer.o modules/mod_auth_unix.o modules/mod_auth_file.o modules/mod_auth.o modules/mod_ls.o modules/mod_log.o modules/mod_site.o modules/mod_delay.o modules/mod_cap.o  modules/module_glue.o modules/mod_site_misc.o
+
+FTPCOUNT_OBJS=ftpcount.o scoreboard.o
+BUILD_FTPCOUNT_OBJS=utils/ftpcount.o utils/scoreboard.o
+
+FTPDCTL_OBJS=ftpdctl.o pool.o netaddr.o log.o ctrls.o
+BUILD_FTPDCTL_OBJS=src/ftpdctl.o src/pool.o src/netaddr.o src/log.o src/ctrls.o
+
+FTPSHUT_OBJS=ftpshut.o
+BUILD_FTPSHUT_OBJS=utils/ftpshut.o
+
+FTPTOP_OBJS=ftptop.o scoreboard.o
+BUILD_FTPTOP_OBJS=utils/ftptop.o utils/scoreboard.o
+
+FTPWHO_OBJS=ftpwho.o scoreboard.o misc.o
+BUILD_FTPWHO_OBJS=utils/ftpwho.o utils/scoreboard.o utils/misc.o
