@@ -473,6 +473,16 @@ start_sysinit (void)
 	cprintf ("done\n");
 #endif
       }
+      
+#ifdef HAVE_USB
+      modules = "usbcore usb-ohci usb-uhci ehci-hcd scsi_mod usb-storage ide-core ide-detect ide-disk ide-scsi cdrom ide-cd printer sd_mod sr_mod"
+      foreach (module, modules, next)
+      {
+      cprintf ("loading %s\n", module);
+      eval ("insmod", module);
+      }
+#endif
+      
     }
   /* Set a sane date */
   stime (&tm);
