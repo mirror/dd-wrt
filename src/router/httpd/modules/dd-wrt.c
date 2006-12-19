@@ -2125,8 +2125,12 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
-  sprintf (n, "%s_regdomain", prefix);
+#ifdef HAVE_MAKSAT
+  sprintf (n, "ath_specialmode");
   copytonv (wp, n);
+#endif
+//  sprintf (n, "%s_regdomain", prefix);
+///  copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_xr", prefix);
@@ -2351,6 +2355,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     {
       char *wl_regulatory = "ath_regulatory";
       showOption (wp, "wl_basic.regulatory", wl_regulatory);
+#ifdef HAVE_MAKSAT
+      char *wl_regdomain = "ath_specialmode";
+      showOption (wp, "wl_basic.specialmode", wl_regdomain);
+#endif      
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
