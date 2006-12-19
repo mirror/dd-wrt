@@ -1,0 +1,39 @@
+
+Classes
+-------
+
+In versions of ProFTPD prior to 1.2.10rc1, a proftpd.conf that used Classes
+might look like:
+
+  ...
+
+  Classes on
+  Class foo ip 127.0.0.1
+  Class foo regex *.evil.com
+  Class foo limit 10
+
+  ...
+ 
+The new Class code uses <Class> sections.  The above configuration would
+thus be:
+
+  <Class foo>
+    From 127.0.0.1
+    From *.evil.com
+  </Class>
+
+The Class and Classes configuration directives are deprecated.  The new
+<Class> sections do not support the old "limit" keyword.  Instead,
+a new MaxClientsPerClass configuration directive can be used:
+
+  MaxClientsPerClass foo 10
+
+There is no equivalent for the old "Class" directive.  The proftpd engine
+will always try to determine if the connecting client belongs to a defined
+class.  No class definitions means that classes will not be used.
+
+Classes can only be defined in the "server config" context, not on a <Global>
+or per-<VirtualHost> basis.  This is because the class for a client is
+determined as soon as the client connects to the server, before the server
+determines which <VirtualHost> the client is trying to reach.  Therefore,
+class definitions always apply to the entire server.

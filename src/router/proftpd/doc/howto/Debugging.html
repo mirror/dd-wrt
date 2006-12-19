@@ -1,0 +1,188 @@
+<!-- $Id: Debugging.html,v 1.1 2006/04/24 11:39:27 honor Exp $ -->
+<!-- $Source: /home/cvsroot/wrt350n/src/router/proftpd/doc/howto/Debugging.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Debugging</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b><i>Debugging Problems</i></b></h2></center>
+<hr>
+
+<p>
+Users of ProFTPD will often encounters problems.  It happens with all software,
+not just ProFTPD.  How, then, does the user track down the cause of the
+problem, and fix it?  This is the art of debugging.  When users post these
+problems are the mailing lists, it is extremely helpful to include the
+following bits of information to help find the answer.  Even better is when the
+user follows these steps and determines the solution for themselves.
+
+<p>
+<b>Know the Version</b><br>
+Various problems afflict various versions of the code, so when tracking down
+problems, it is good to know the version being used:
+<pre>
+  proftpd -vv
+</pre>
+It is possible that the problem you are encountering is due to some bug
+that may already be fixed in a more current version, fixed in the CVS
+repository, or has a bug report with an attached patch.  Searching
+<a href="http://bugs.proftpd.org">http://bugs.proftpd.org</a> will often
+yield useful information, depending on the keywords used in the search.
+
+<p>
+<b>Know the Modules</b><br>
+System administrators who compile and install the server from the souce
+code distribution will probably already know this, but administrators who
+install using RPMs or other package formats may not know the specifics of
+the contained pre-built binary.  To list the modules compiled into the
+server:
+<pre>
+  proftpd -l
+</pre>
+Knowing the modules helps to pinpoint the source of error messages (<i>e.g.</i>
+<code>mod_tls</code> and certificate files).
+
+<p>
+<b>Perform Configuration Check</b><br>
+When making changes to the configuration file, it is often helpful to make sure
+that your changes are valid.  The easiest way to do this is to do an
+informative syntax check:
+<pre>
+  proftpd -td5
+</pre>
+The <code>-t</code> option directs the server to only do a syntax check, to
+parse the configuration file but stop before actually starting its operations
+as a server.  The <code>-d5</code> will cause the server to display debugging
+messages during this testing of the configuration file.  Another useful
+command is:
+<pre>
+  proftpd -c <i>/path/to/new/config/file</i> -td5
+</pre>
+which lets you test the syntax of some new configuration file before it
+is put into production.
+
+If you are still having problems, and you have verified that your
+<code>proftpd.conf</code> is correct, the next step is see what debugging
+messages are generated during an FTP session, as described next.
+
+<p>
+<b>Collect Debug Information</b><br>
+<code>proftpd</code> has built-in debug information reporting capabilities -
+the trick is in enabling that reporting, and tracking down where it is sent.
+The easiest way to get the debugging information is to start the server from
+the command line using:
+<pre>
+  proftpd -nd6
+</pre>
+<b>Note</b>: make sure that no other <code>proftpd</code> instances are
+running before using this command, otherwise you will see:
+<pre>
+  Failed binding to 0.0.0.0, port 21: Address already in use
+</pre>
+This message means that some other program is already bound to the socket
+at that address/port.  This message will also appear if you attempt the
+debugging command with a <code>ServerType</code> of <code>inetd</code>; this
+is described below.
+
+<p>
+Once working, the above debugging command will display lots of information on
+the connected terminal's screen, both as the server starts up and during the
+servicing of any clients.  If clients are having trouble logging in or
+authenticating, the debug messages reported by the server when a client
+connects are much more useful than knowing the messages displayed by the
+client, as the client does not know <i>why</i> it cannot log in.  If asked to
+send debugging information to the mailing list, you can send the relevant
+snippets (if you know what the relevant debug messages are), or you can
+capture the debug output to a file:
+<pre>
+  proftpd -nd5 2>&1 >& /path/to/debug/file
+</pre>
+and send that file, compressed, along with your post.
+
+<p>
+The above method works if you have <code>ServerType standalone</code> in your
+configuration file.   If you run the server in <code>inetd</code> mode instead,
+and are unable or unwilling to make the changes necessary to run the server
+in <code>standalone</code> mode for the sake of debugging, then use of the
+<code>SystemLog</code> configuration directive is necessary for capturing the
+debug information.  Add this directive to your configuration file, and add
+<code>-d5</code> to your <code>/etc/inetd.conf</code>'s <code>ftp</code> line,
+or to the <code>server_args</code> tag in your <code>xinetd</code>
+configuration file for the server.  Be sure to restart
+<code>inetd/xinetd</code> so that your configuration changes will take effect.
+
+<p>
+Note that use of the <code>SystemLog</code> directive is not necessarily
+confined to <code>inetd</code> mode servers.  If you are interested in letting
+your <code>standalone</code> server run unattended and want to have that
+debugging information in the log file, use <code>SystemLog</code> and
+add <code>-d5</code> (or whatever your preferred debug level is) to the
+server startup script.
+
+<p>
+As of version 1.2.8rc1, ProFTPD supports a <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DebugLevel.html"><code>DebugLevel</code></a>
+configuration directive.  This lets you set a debugging level in your
+<code>proftpd.conf</code> file, without needing to edit <code>inetd.conf</code>
+or <code>xinetd</code> configuration file.
+
+<p>
+<b>Locate Log Files</b><br>
+A common response on the mailing lists to a posted question is: &quot;What
+do your server logs say?&quot;  Locating the server's log files can be
+troublesome, depending on your configuration.  If the
+<a href="http://www.proftpd.org/docs/directives/linked/config_ref_SystemLog.html"><code>SystemLog</code></a> configuration directive is in effect, you know exactly where
+the server's log file is.  If not, then by default the server uses
+<code>syslog</code> for logging.  The location of <code>syslog</code>'d log
+files is set in your system's <code>/etc/syslog.conf</code> file.  You may
+need to read your system's man pages for <code>syslog.conf</code> or
+<code>syslogd</code> to understand the format of that file.  Note that the
+server will log using a <code>syslog</code> facility of <code>daemon</code>
+(and level <code>debug</code> when debugging) for most of its messages; during
+authentication, messages are logged using the <code>authpriv</code> facility.
+
+<p>
+<b>Common Problems</b><br>
+One common question is: &quot;I changed the configuration file, but the new
+configuration is not being seen!&quot; The solution depends on your
+configured
+<a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerType.html"><code>ServerType</code></a>.  Almost certainly it will be <code>standalone</code>, as
+<code>inetd</code>-mode servers pick up configuration changes almost instantly
+(the server is started from the ground up for each connection).  For
+configuration changes to be seen by a <code>standalone</code> server, you need
+to either stop, then start the server (the hard way), or to send the
+<code>HUP</code> signal the the daemon process.
+
+<p>
+Another common question involves use of ProFTPD's <code>&lt;Limit&gt;</code>
+directive to restrict certain FTP commands.  These limits always function
+<b>in addition to</b> the normal filesystem permissions, <b>not</b> instead
+of them.  If having problems writing, deleting, or updating files, check
+your directory and file permissions first.
+
+<p>
+Once you have the debug output and various other information, and are still
+in need of help, search the FAQ, Userguide, and mailing list archives for
+material related to the problem.  If you're unable to find anything helpful
+in these sources, post your question to the appropriate mailing list.  Be
+sure to include the version used, your <code>proftpd.conf</code>, and possibly
+any debug information.
+
+<p>
+The following document describes how to ask good questions that are likely to
+be answered:
+<pre>
+  <a href="http://www.catb.org/~esr/faqs/smart-questions.html">http://www.catb.org/~esr/faqs/smart-questions.html</a>
+</pre>
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2006/04/24 11:39:27 $</i><br>
+<hr>
+
+<hr>
+</body>
+</html>

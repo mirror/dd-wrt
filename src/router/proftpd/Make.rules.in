@@ -1,0 +1,74 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+libexecdir=@libexecdir@
+localstatedir=@localstatedir@
+rundir=@localstatedir@/proftpd
+mandir=@mandir@
+
+CC=@CC@
+PLATFORM=@OSREL@ @OSTYPE@
+LDFLAGS=@LDFLAGS@ @LIBDIRS@
+LIBEXECDIR=@LIBEXECDIR@
+LIBS=@LIBRARIES@ @LIBS@
+LIBTOOL=@LIBTOOL@
+CURSES_LIBS=@CURSES_LIBS@
+
+INSTALL=@INSTALL@
+INSTALL_USER=@install_user@
+INSTALL_GROUP=@install_group@
+INSTALL_BIN=$(INSTALL) @INSTALL_STRIP@ -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_SBIN=$(INSTALL) @INSTALL_STRIP@ -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_MAN=$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644
+
+RM=rm -f
+
+# Directory include paths.
+#
+INCLUDES=-I.. -I$(top_srcdir)/include @INCLUDES@
+
+# Preprocessor compilation flags.
+#
+CPPFLAGS=@CPPFLAGS@ -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
+
+# Our compiler flags.
+#
+CFLAGS=@CFLAGS@
+DEFINES=$(PLATFORM)
+
+OBJS=main.o timers.o sets.o pool.o table.o regexp.o dirtree.o support.o \
+     netaddr.o inet.o child.o parser.o log.o xferlog.o bindings.o netacl.o \
+     class.o scoreboard.o help.o feat.o netio.o response.o ident.o data.o \
+     modules.o display.o auth.o fsio.o mkhome.o ctrls.o event.o var.o
+BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/table.o \
+           src/regexp.o src/dirtree.o src/support.o src/netaddr.o src/inet.o \
+           src/child.o src/parser.o src/log.o src/xferlog.o src/bindings.o \
+           src/netacl.o src/class.o src/scoreboard.o src/help.o src/feat.o \
+           src/netio.o src/response.o src/ident.o src/data.o src/modules.o \
+           src/display.o src/auth.o src/fsio.o src/mkhome.o src/ctrls.o \
+           src/event.o src/var.o
+
+SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
+SHARED_MODULE_OBJS=@SHARED_MODULE_OBJS@
+BUILD_SHARED_MODULE_OBJS=@BUILD_SHARED_MODULE_OBJS@
+
+STATIC_MODULE_DIRS=@STATIC_MODULE_DIRS@
+STATIC_MODULE_OBJS=@STATIC_MODULE_OBJS@
+BUILD_STATIC_MODULE_OBJS=@BUILD_STATIC_MODULE_OBJS@ modules/module_glue.o
+
+FTPCOUNT_OBJS=ftpcount.o scoreboard.o
+BUILD_FTPCOUNT_OBJS=utils/ftpcount.o utils/scoreboard.o
+
+FTPDCTL_OBJS=ftpdctl.o pool.o netaddr.o log.o ctrls.o
+BUILD_FTPDCTL_OBJS=src/ftpdctl.o src/pool.o src/netaddr.o src/log.o src/ctrls.o
+
+FTPSHUT_OBJS=ftpshut.o
+BUILD_FTPSHUT_OBJS=utils/ftpshut.o
+
+FTPTOP_OBJS=ftptop.o scoreboard.o
+BUILD_FTPTOP_OBJS=utils/ftptop.o utils/scoreboard.o
+
+FTPWHO_OBJS=ftpwho.o scoreboard.o misc.o
+BUILD_FTPWHO_OBJS=utils/ftpwho.o utils/scoreboard.o utils/misc.o
