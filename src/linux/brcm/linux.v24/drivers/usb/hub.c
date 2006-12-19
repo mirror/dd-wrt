@@ -23,12 +23,18 @@
 #endif
 #include <linux/usb.h>
 #include <linux/usbdevice_fs.h>
+#ifdef CONFIG_PROC_FS
+#include <linux/seq_file.h>
+#include <linux/proc_fs.h>
+#endif
 
 #include <asm/semaphore.h>
 #include <asm/uaccess.h>
 #include <asm/byteorder.h>
 
 #include "hub.h"
+#include "../net/ctmisc/ext_io.h"
+
 
 /* Wakes up khubd */
 static spinlock_t hub_event_lock = SPIN_LOCK_UNLOCKED;
@@ -40,6 +46,7 @@ static LIST_HEAD(hub_list);		/* List containing all of the hubs (for cleanup) */
 static DECLARE_WAIT_QUEUE_HEAD(khubd_wait);
 static pid_t khubd_pid = 0;			/* PID of khubd */
 static DECLARE_COMPLETION(khubd_exited);
+static int scan_done = 0;
 
 #ifdef	DEBUG
 static inline char *portspeed (int portstatus)
@@ -611,9 +618,10 @@ static int usb_hub_port_reset(struct usb_device *hub, int port,
 		delay = HUB_LONG_RESET_TIME;
 	}
 
-	err("Cannot enable port %i of hub %d, disabling port.",
-		port + 1, hub->devnum);
-	err("Maybe the USB cable is bad?");
+	//2005-01-21 by kanki for fixing usb loop issue (temporary solution from broadcom)
+	//err("Cannot enable port %i of hub %d, disabling port.",
+	//	port + 1, hub->devnum);
+	//err("Maybe the USB cable is bad?");
 
 	return -1;
 }
@@ -622,6 +630,7 @@ void usb_hub_port_disable(struct usb_device *hub, int port)
 {
 	int ret;
 
+	USB_SET_LED(USB_DISCONNECT); //2005-02-24 by kanki for USB LED
 	ret = usb_clear_port_feature(hub, port + 1, USB_PORT_FEAT_ENABLE);
 	if (ret)
 		err("cannot disable port %d of hub %d (err = %d)",
@@ -755,6 +764,8 @@ static void usb_hub_port_connect_change(struct usb_hub *hubstate, int port,
 		if (len == sizeof dev->devpath)
 			warn ("devpath size! usb/%03d/%03d path %s",
 				dev->bus->busnum, dev->devnum, dev->devpath);
+ 		USB_SET_LED(USB_CONNECT); //2005-02-24 by kanki for USB LED
+
 		info("new USB device %s-%s, assigned address %d",
 			dev->bus->bus_name, dev->devpath, dev->devnum);
 
@@ -917,7 +928,9 @@ static int usb_hub_thread(void *__hub)
 
 	/* Send me a signal to get me die (for debugging) */
 	do {
+		scan_done = 0;
 		usb_hub_events();
+		scan_done = 1;
 		wait_event_interruptible(khubd_wait, !list_empty(&hub_event_list)); 
 	} while (!signal_pending(current));
 
@@ -942,6 +955,83 @@ static struct usb_driver hub_driver = {
 	disconnect:	hub_disconnect,
 	id_table:	hub_id_table,
 };
+ #ifdef CONFIG_PROC_FS
+ static void *scan_done_start(struct seq_file *s, loff_t *ppos)
+ {
+ 	if (*ppos == 0)
+ 		return (void *)1;
+ 	else
+ 		return NULL;
+ }
+ 
+ static void *scan_done_next(struct seq_file *s, void *v, loff_t *pos)
+ {
+ 	++*pos;
+ 	return NULL;
+ }
+ 
+ static void scan_done_stop(struct seq_file *s, void *v)
+ {
+ }
+ 
+ static int scan_done_show(struct seq_file *s, void *v)
+ {
+ 	if (v == (void *)1) {
+ 		if (list_empty(&hub_event_list) && scan_done)
+ 			seq_puts(s, "1");
+ 		else
+ 			seq_puts(s, "0");
+ 	}
+ 	return 0;
+ }
+ 
+ static struct seq_operations scan_done_seq_ops = {
+ 	.start		= scan_done_start,
+ 	.next		= scan_done_next,
+ 	.stop		= scan_done_stop,
+ 	.show		= scan_done_show,
+ };
+ 
+ static int usb_scan_done_open(struct inode *inode, struct file *file)
+ {
+ 	return seq_open(file, &scan_done_seq_ops);
+ }
+ 
+ DECLARE_WAIT_QUEUE_HEAD (usb_led_queue);
+ DECLARE_WAIT_QUEUE_HEAD (usb_led_blink_queue);
+ spinlock_t usb_led_lock = SPIN_LOCK_UNLOCKED;
+ int usb_led_flag = 0;
+ 
+ static int usb_led_probe_task(void *x)
+{
+ 	unsigned long flags;
+ 	
+ 	daemonize();
+ 	reparent_to_init();
+ 
+ 	strcpy(current->comm, "USBLEDprobe");
+ 
+ 	do {
+ 		usb_led_flag = 1;
+ 		interruptible_sleep_on(&usb_led_queue);
+ 		usb_led_flag = 0;
+ 		USB_SET_LED(USB_DISCONNECT);
+ 		interruptible_sleep_on_timeout(&usb_led_blink_queue, 50);
+ 		USB_SET_LED(USB_CONNECT);
+ 		interruptible_sleep_on_timeout(&usb_led_blink_queue, 50);
+ 	} while (!signal_pending(current));
+ 
+ 	return 0;
+ }
+ 
+ static struct file_operations proc_usb_scan_done_operations = {
+ 	open:		usb_scan_done_open,
+ 	read:		seq_read,
+ 	llseek:		seq_lseek,
+ 	release:	seq_release,
+ };
+ #endif
+ 
 
 /*
  * This should be a separate module.
@@ -949,11 +1039,36 @@ static struct usb_driver hub_driver = {
 int usb_hub_init(void)
 {
 	pid_t pid;
+ #ifdef CONFIG_PROC_FS
+ 	struct proc_dir_entry *proc_usb;
+ 	struct proc_dir_entry *proc_usb_scan_done;
+ #endif
+ 	pid_t usb_probe_led_task_pid;
+ 
+ 	/* Michael, turn of USB LED while start up */
+ 	USB_SET_LED(USB_DISCONNECT);
 
 	if (usb_register(&hub_driver) < 0) {
 		err("Unable to register USB hub driver");
 		return -1;
 	}
+ #ifdef CONFIG_PROC_FS
+ 	proc_usb = proc_mkdir("usb", NULL);
+ 	if (proc_usb == NULL) {
+ 		printk(KERN_ERR "cannot init /proc/usb\n");
+ 		return -ENOMEM;
+ 	}
+ 	proc_usb_scan_done = create_proc_entry("scan_done", 0, proc_usb);
+ 	if (proc_usb == NULL) {
+ 		printk(KERN_ERR "cannot init /proc/usb/scan_done\n");
+ 		return -ENOMEM;
+ 	}
+ 	proc_usb_scan_done->proc_fops = &proc_usb_scan_done_operations;
+ #endif
+ 
+ 	usb_probe_led_task_pid = kernel_thread(usb_led_probe_task, NULL,
+ 		CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
+ 
 
 	pid = kernel_thread(usb_hub_thread, NULL,
 		CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
@@ -962,6 +1077,7 @@ int usb_hub_init(void)
 
 		return 0;
 	}
+
 
 	/* Fall through if kernel_thread failed */
 	usb_deregister(&hub_driver);
