@@ -1,0 +1,75 @@
+The support for IPv6 in ProFTPD is fairly new, and still under development.
+As such, it's very possible that there are bugs related to IPv6 functionality.
+In particular, here are some things that may be affected:
+
+  ServerType (IPv4/IPv6 inetd, xinetd)
+  AllowForeignAddress
+  PassivePorts
+  MasqueradeAddress (IPv6)
+  UseReverseDNS
+  SocketBindTight
+
+Please report any IPv6-related problems with the above to the bug tracking
+system as soon as possible, so that we may fix it:
+
+  http://bugs.proftpd.org
+
+To enable IPv6 functionality, you need to explicitly configure proftpd using
+the proper configure option:
+
+  ./configure --enable-ipv6 ...
+
+The functionality of the following configuration directives has been 
+changed slightly with the addition of IPv6 support:
+
+  DefaultAddress
+  MasqueradeAddress
+  <VirtualHost>
+
+These directives can take both IP address and DNS names as parameters.
+If given IP addresses, either IPv4 or IPv6, they work as one expects.  The
+case that is now different is when a DNS name is given as a parameter.
+
+It's possible for a DNS name to have multiple IP addresses, both A and AAAA
+records.  Thus DefaultAddress and <VirtualHost> will resolve a DNS name to its
+address(es); if multiple addresses are found, they will be added automatically.
+
+  <VirtualHost localhost>
+    ...
+  </VirtualHost>
+
+on an IPv6-enabled host, would be treated as:
+
+  <VirtualHost 127.0.0.1 ::1>
+    ...
+  </VirtualHost>
+
+NOTE: the MasqueradeAddress does _not_ resolve a DNS name to all possible
+addresses.  ProFTPD can only masquerade as one address, and so, if given a
+DNS name, MasqueradeAddress will masquerade using the first IP address returned
+by the DNS lookup.
+
+Known issues:
+
+  + system/platform dependencies (Linux version, BSD/KAME, etc)
+
+    o example: on Darwin (MacOSX), one must two define two different
+      vhosts, 0.0.0.0 and ::, in order to accept both IPv4 and IPv6
+      connections.  However, on Solaris, binding to an IPv6 address will
+      accept both IPv4 and IPv6 connections to that address.  Note that
+      this is only a problem if SocketBindTight is _not_ on, i.e. if
+      wildcard sockets are used.
+
+    o On BSD systems, the net.inet6.ip6.v6only sysctl affects how wildcard
+      sockets are bound with respect to IPv6.
+
+    o On Linux systems, the net.ipv6.bindv6only sysctl affects how wildcard
+      sockets are bound with respect to IPv6.
+
+    o Apache2 mentions the same problem here:
+       http://httpd.apache.org/docs-2.0/bind.html#ipv6
+
+    o Broken HP-UX 11i getaddrinfo() implementation.  To fix this, a
+      patch from HP-UX is needed.  The release notes for IPv6 on HP-UX 11i
+      can be found here:
+        http://docs.hp.com/hpux/onlinedocs/T1306-90004/T1306-90004.html
