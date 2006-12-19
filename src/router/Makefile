@@ -98,6 +98,7 @@ obj-y += libcrypto
 #
 CONFIG_IPTABLES=y
 #CONFIG_WLC=y
+obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_LIBPCAP) += libpcap
@@ -319,6 +320,9 @@ ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
+ifeq ($(CONFIG_DIST),"mini")
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/cifs*
+endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_MSSID),y)
@@ -333,6 +337,22 @@ endif
 ifneq ($(CONFIG_DIST),"micro")
 ifeq ($(CONFIG_IPV6),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
+endif
+ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_USB),y)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/pci/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/ide/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/host/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/host
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pci
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/storage
 endif
 endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
@@ -824,7 +844,18 @@ ser-clean:
 	$(MAKE) -C ser clean
 	rm -rf $(INSTALLDIR)/ser/*
 	rm -rf $(INSTALLDIR)/www/*
-			
+
+ctorrent-clean:
+	make -C ctorrent clean
+
+ctorrent:
+	cd ctorrent && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) LDFLAGS="../openssl/libcrypto.so -L../openssl" CFLAGS="$(COPTS) -L../openssl -I../openssl/include" CPPFLAGS="$(COPTS) -L../openssl -I../openssl/include"
+	make -C ctorrent
+
+ctorrent-install:
+	install -D ctorrent/ctorrent $(INSTALLDIR)/ctorrent/usr/sbin/ctorrent
+
+
 nocat:
 	cd glib && ./config.sh
 	make -C glib
