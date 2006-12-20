@@ -35,7 +35,7 @@ CPPFLAGS= -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
 
 # Our compiler flags.
 #
-CFLAGS=-DBCMWPA2  -Wall
+CFLAGS=$(COPTS) -DBCMWPA2  -Wall
 DEFINES=$(PLATFORM)
 
 OBJS=main.o timers.o sets.o pool.o table.o regexp.o dirtree.o support.o \
