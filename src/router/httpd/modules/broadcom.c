@@ -47,6 +47,7 @@
 //#endif
 #include <broadcom.h>
 #include <wlutils.h>
+#include <netdb.h>
 
 
 int gozila_action = 0;
@@ -4680,10 +4681,20 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (strcmp (ip, nvram_get ("wan_gateway")) == 0)
 	    continue;		//skip WAN arp entry
+	  strcpy (hostname, "*"); //set name to * 
 
+/* do nslookup */
+
+  struct servent *servp;
+  char buf1[256];
+  
+  getHostName (buf1, ip);
+  if (strcmp(buf1, "unknown"))
+  	strcpy (hostname, buf1);
+/* end nslookup */	  
+	  
 /* look into hosts file for hostnames  (static leases) */
-	  strcpy (hostname, "*");
-	  if ((host = fopen ("/tmp/hosts", "r")) != NULL)
+	  if ((host = fopen ("/tmp/hosts", "r")) != NULL && !strcmp (hostname, "*"))
 	    {
 	      while (fgets (buf, sizeof (buf), host))
 		{
