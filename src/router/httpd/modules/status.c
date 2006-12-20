@@ -14,6 +14,7 @@
 //#include <utils.h>
 //#endif
 #include <broadcom.h>
+#include <netdb.h>
 
 #define	STATUS_RETRY_COUNT	10
 #define STATUS_REFRESH_TIME1	5
@@ -172,6 +173,14 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websWrite (wp, "%s", wan_ipaddr);
     }
+  else if (!strcmp (type, "wan_nslookup"))
+  	{
+		struct servent *servp;
+		char buf1[256];
+   		getHostName (buf1, wan_ipaddr);
+  		if (strcmp(buf1, "unknown"))
+  			websWrite (wp, "&nbsp;(%s)", buf1);
+  	}
   else if (!strcmp (type, "wan_netmask"))
     websWrite (wp, "%s", wan_netmask);
   else if (!strcmp (type, "wan_gateway"))
