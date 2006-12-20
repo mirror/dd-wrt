@@ -524,7 +524,7 @@
 #define HAVE_STRINGS_H 1
 
 /* Define if you have the <stropts.h> header file.  */
-#define HAVE_STROPTS_H 1
+//#define HAVE_STROPTS_H 1
 
 /* Define if you have the <sys/acl.h> header file.  */
 /* #undef HAVE_SYS_ACL_H */
