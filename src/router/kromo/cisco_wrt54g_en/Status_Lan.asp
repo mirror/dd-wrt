@@ -54,12 +54,12 @@ function setARPTable() {
 	cleanTable(table);
 	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 3;
+		cell.colSpan = 4;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 3) {
+	for(var i = 0; i < val.length; i = i + 4) {
 	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
@@ -165,11 +165,12 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("status_lan.legend4"); %></legend>
-								<table class="table center" cellspacing="4" id="active_clients_table" summary="active clients in arp table">
+								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="50%"><% tran("share.hostname"); %></th>
-										<th width="25%"><% tran("share.ip"); %></th>
-										<th width="25%"><% tran("share.mac"); %></th>
+										<th width="45%"><% tran("share.hostname"); %></th>
+										<th width="20%"><% tran("share.ip"); %></th>
+										<th width="20%"><% tran("share.mac"); %></th>
+										<th width="15%">IP count</th>
 									</tr>
 								</table>
 							</fieldset><br />
