@@ -3868,7 +3868,7 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
   };
 
   int i, j;
-
+				websWrite (wp, "<script type=\"text/javascript\" src=\"snow.js\"></script>\n");  //Xmas time only
   websWrite (wp, "<div id=\"menu\">\n");
   websWrite (wp, " <div id=\"menuMain\">\n");
   websWrite (wp, "  <ul id=\"menuMainList\">\n");
