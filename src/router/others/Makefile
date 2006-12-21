@@ -23,11 +23,14 @@ ifdef CONFIG_SER
 else
 	install profile $(INSTALLDIR)/etc
 endif
+ifndef CONFIG_MAKSAT
 ifdef CONFIG_MSSID
 	install motd $(INSTALLDIR)/etc
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
 endif
+endif
+
 ifdef CONFIG_XSCALE
 	install convert $(INSTALLDIR)/etc
 	install kendin $(INSTALLDIR)/etc
