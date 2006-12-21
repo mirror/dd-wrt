@@ -4663,12 +4663,15 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *f;
   FILE *host;
+  FILE *conn;
   char buf[256];
   char hostname[128];
   char ip[16];
+  char ip2[20];
   char fullip[18];
   char mac[18];
   int count = 0;
+  int conn_count = 0;
 
   if ((f = fopen ("/proc/net/arp", "r")) != NULL)
     {
@@ -4683,6 +4686,22 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	    continue;		//skip WAN arp entry
 	  strcpy (hostname, "*"); //set name to * 
 
+/* count open connections per IP */
+	  if (conn = fopen ("/proc/net/ip_conntrack", "r"))
+	    {
+		  strcpy (ip2, ip);
+		  strcat (ip2, " ");
+		  
+	      while (fgets (buf, sizeof (buf), conn))
+			{
+				if (strstr (conn, ip2))
+		      		conn_count++;
+			}
+	      fclose (conn);
+	    }
+
+/* end count */
+	  
 /* do nslookup */
 
   struct servent *servp;
@@ -4700,7 +4719,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 		{
 		  sscanf (buf, "%15s %*s", fullip);
 
-		  if (strcmp (ip, fullip) == 0)
+		  if (!strcmp (ip, fullip))
 		    {
 		      sscanf (buf, "%*15s %s", hostname);
 		    }
@@ -4745,9 +4764,10 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 /* end nvram check */
 
 
-	  websWrite (wp, "%c'%s','%s','%s'", (count ? ',' : ' '), hostname,
-		     ip, mac);
+	  websWrite (wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname,
+		     ip, mac, conn_count);
 	  ++count;
+	  conn_count = 0;
 	}
       fclose (f);
     }
