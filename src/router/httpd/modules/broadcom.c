@@ -4694,7 +4694,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 		  
 	      while (fgets (buf, sizeof (buf), conn))
 			{
-				if (strstr (conn, ip2))
+				if (strstr (buf, ip2))
 		      		conn_count++;
 			}
 	      fclose (conn);
@@ -4764,8 +4764,8 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 /* end nvram check */
 
 
-	  websWrite (wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname,
-		     ip, mac, conn_count);
+	  websWrite (wp, "%c'%s','%d','%s','%s'", (count ? ',' : ' '), hostname,
+		     conn_count, ip,  mac);
 	  ++count;
 	  conn_count = 0;
 	}
