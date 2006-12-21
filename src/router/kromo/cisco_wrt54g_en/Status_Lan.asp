@@ -65,15 +65,15 @@ function setARPTable() {
 		row.style.height = "15px";
 		
 		row.insertCell(-1).innerHTML = val[i];
-		
 		row.insertCell(-1).innerHTML = val[i+1];
+		row.insertCell(-1).innerHTML = val[i+2];
 		
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
 		cellmac.style.textDecoration = "underline";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
-		cellmac.innerHTML = val[i+2];
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+3] + "') })");
+		cellmac.innerHTML = val[i+3];
 	}
 }
 
@@ -168,9 +168,9 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
 										<th width="45%"><% tran("share.hostname"); %></th>
+										<th width="15%">Conn. Count</th>
 										<th width="20%"><% tran("share.ip"); %></th>
 										<th width="20%"><% tran("share.mac"); %></th>
-										<th width="15%">IP count</th>
 									</tr>
 								</table>
 							</fieldset><br />
