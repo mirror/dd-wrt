@@ -286,7 +286,6 @@ start_sysinit (void)
       break;
 
     case ROUTER_WLI2_TX1_G54:
-    case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
       nvram_set ("lan_ifnames", "eth1 eth2");
@@ -294,6 +293,15 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
+      break;
+      
+    case ROUTER_MOTOROLA_WE800G:
+      nvram_set ("lan_ifnames", "eth1 eth2");
+      nvram_set ("wl0_ifname", "eth2");
+      nvram_set ("wan_ifname", "eth0");	//WAN to nonexist. iface.
+      nvram_set ("wan_ifnames", "eth0");
+      nvram_set ("port_swap", "1");
+      eval ("gpio", "disable", "7");
       break;
 
     case ROUTER_WZRG300N:
@@ -353,6 +361,7 @@ start_sysinit (void)
     led_control (LED_DIAG2, LED_OFF);
     led_control (LED_AOSS, LED_OFF);
     led_control (LED_BRIDGE, LED_OFF);
+    led_control (LED_WLAN, LED_OFF);
     
 
   /* ifnames */    
