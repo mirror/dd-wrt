@@ -78,6 +78,7 @@ radio_timer_main (void)
 		{
 		case 1:	//01 - turn radio on
 		  syslog (LOG_DEBUG, "Turning radio on\n");
+    	  led_control (LED_WLAN, LED_ON);
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
@@ -90,6 +91,7 @@ radio_timer_main (void)
 		case 2:	//10 - turn radio off
 
 		  syslog (LOG_DEBUG, "Turning radio off\n");
+		  led_control (LED_WLAN, LED_OFF);
 #ifdef HAVE_MADWIFI
 		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
