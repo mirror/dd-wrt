@@ -397,6 +397,13 @@ start_restore_defaults (void)
     {"wan_ifnames", "vlan2", 0},
     {0, 0, 0}
   };
+  
+  struct nvram_tuple generic_2[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "eth1 eth2", 0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
 #endif
 
   struct nvram_tuple *linux_overrides;
@@ -483,6 +490,12 @@ start_restore_defaults (void)
     case ROUTER_WRT350N:
       linux_overrides = wrt350vlan;
       break;
+    case ROUTER_WLI2_TX1_G54:
+    case ROUTER_MOTOROLA_WE800G:
+    case ROUTER_BUFFALO_WLAG54C:
+    case ROUTER_WAP54G_V1:
+      linux_overrides = generic_2;
+   	  break
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
