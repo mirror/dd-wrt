@@ -858,6 +858,7 @@ int vpn_gpio = 0x0f;
 int ses_gpio = 0x0f;
 int	ses2_gpio = 0x0f;
 int aoss_gpio = 0x0f;
+int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware!
 
 	switch (getRouterBrand ())  //gpio definitions here: 0xYZ, Y=0:normal, Y=1:inverted, Z:gpio number (f=disabled)
     {
@@ -909,6 +910,7 @@ int aoss_gpio = 0x0f;
 	case ROUTER_RT210W:
 			power_gpio = 0x15;
 			connected_gpio = 0x10;
+			wlan_gpio = 0x13;
 		break;
 	case ROUTER_SIEMENS:
 			power_gpio = 0x15;
@@ -944,6 +946,8 @@ int aoss_gpio = 0x0f;
 		break;
 	case ROUTER_MOTOROLA_WE800G:
 			diag_gpio = 0x13;
+			wlan_gpio = 0x11;
+			br1dge_gpio = 0x15;
 		break;
 	case ROUTER_WAP54G_V1:
 		break;
@@ -980,6 +984,9 @@ int aoss_gpio = 0x0f;
 			break;
 		case LED_AOSS:
 				use_gpio = aoss_gpio;
+			break;
+		case LED_WLAN
+				use_gpio = wlan_gpio;
 			break;
 	} 
 
