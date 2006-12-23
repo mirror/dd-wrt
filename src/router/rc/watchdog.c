@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-
+#include <utils.h>
+#include <wlutils.h>
 
 
 
@@ -18,6 +19,24 @@ watchdog (void)
     {
       write (fd, "\0", 1);
       fsync (fd);
+/* software wlan led control */      
+      int radiooff = -1;
+
+#ifdef HAVE_MADWIFI
+		//????;  no idea how to check this
+#else
+		wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiooff, sizeof (int));
+#endif
+
+  		switch (radiooff)
+    		{
+    		case 0:
+      			led_control (LED_WLAN, LED_ON);
+      			break;
+    		default:
+	  			led_control (LED_WLAN, LED_OFF);
+    		}
+/* end software wlan led control */        
       sleep (10);
     }
 }
