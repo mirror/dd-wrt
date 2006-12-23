@@ -404,6 +404,7 @@ start_restore_defaults (void)
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
+  };
 #endif
 
   struct nvram_tuple *linux_overrides;
@@ -495,7 +496,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
       linux_overrides = generic_2;
-   	  break
+   	  break;
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
