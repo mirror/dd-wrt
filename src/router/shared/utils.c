@@ -985,7 +985,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 		case LED_AOSS:
 				use_gpio = aoss_gpio;
 			break;
-		case LED_WLAN
+		case LED_WLAN:
 				use_gpio = wlan_gpio;
 			break;
 	} 
