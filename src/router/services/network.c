@@ -839,7 +839,10 @@ start_lan (void)
     }
   else
     {
-      strcpy (mac, nvram_safe_get ("et0macaddr"));
+	    if (nvram_match ("port_swap", "1"))
+	      strcpy (mac, nvram_safe_get ("et1macaddr"));
+		else			
+	      strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       MAC_ADD (mac);		// The wireless mac equal lan mac add 2
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -871,7 +874,10 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-      strcpy (mac, nvram_safe_get ("et0macaddr"));
+		if (nvram_match ("port_swap", "1"))
+	      strcpy (mac, nvram_safe_get ("et1macaddr"));
+		else			
+	      strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       nvram_set ("wan_hwaddr", mac);
     }
@@ -978,7 +984,10 @@ start_lan (void)
 	      }
 	    else
 	      {
-		strcpy (mac, nvram_safe_get ("et0macaddr"));
+		if (nvram_match ("port_swap", "1"))
+	      strcpy (mac, nvram_safe_get ("et1macaddr"));
+		else			
+	      strcpy (mac, nvram_safe_get ("et0macaddr"));
 		MAC_ADD (mac);
 		MAC_ADD (mac);	// The wireless mac equal lan mac add 2
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -1193,10 +1202,7 @@ start_lan (void)
 
 
   /* Get current LAN hardware address */
-#ifndef HAVE_MADWIFI
-      strcpy (mac, nvram_safe_get ("et0macaddr"));
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-#endif   
+ 
   strncpy (ifr.ifr_name, lan_ifname, IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -1660,7 +1666,10 @@ start_wan (int status)
   else
     {
       unsigned char mac[20];
-      strcpy (mac, nvram_safe_get ("et0macaddr"));
+		if (nvram_match ("port_swap", "1"))
+	      strcpy (mac, nvram_safe_get ("et1macaddr"));
+		else			
+	      strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);		// The wan mac equal lan mac add 1
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
