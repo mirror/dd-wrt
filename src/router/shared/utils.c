@@ -947,7 +947,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_MOTOROLA_WE800G:
 			diag_gpio = 0x13;
 			wlan_gpio = 0x11;
-			br1dge_gpio = 0x15;
+			bridge_gpio = 0x15;
 		break;
 	case ROUTER_WAP54G_V1:
 		break;
