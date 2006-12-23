@@ -427,6 +427,12 @@ internal_getRouterBrand ()
 		setRouter ("Buffalo WLI2-TX1-G54");
 		return ROUTER_WLI2_TX1_G54;
 	      }
+	    else if (nvram_match ("GemtekPmonVer", "10"))
+	      {
+		cprintf ("router is Linksys wap54g v1\n");
+		setRouter ("Linksys WAP54G v1");
+		return ROUTER_WAP54G_V1;
+		  }
 	    else
 	      {
 		cprintf ("router is linksys WRT55AG\n");
@@ -469,9 +475,25 @@ internal_getRouterBrand ()
 	if (nvram_match ("boardnum", "2\r") &&
 	    nvram_match ("boardtype", "bcm94710dev\r"))
 		{
-		cprintf ("router is Linksys wap54g v1\n");
-		setRouter ("Linksys WAP54G v1");
-		return ROUTER_WAP54G_V1;
+		if (!strlen (nvram_safe_get ("phyid_num")))
+		  {
+		    eval ("insmod", "switch-core");	//get phy type
+		    eval ("insmod", "switch-robo");
+		    eval ("rmmod", "switch-robo");
+		    eval ("rmmod", "switch-core");
+		  }
+		if (nvram_match ("phyid_num", "0x00000000"))
+		  {
+			cprintf ("router Motorola WE800G v1\n");
+		    setRouter ("Motorola WE800G v1");
+		    return ROUTER_MOTOROLA_WE800G;
+		  }
+		else		//phyid_num == 0xffffffff
+		  {
+		    cprintf ("router is Linksys wap54g v1\n");
+			setRouter ("Linksys WAP54G v1");
+			return ROUTER_WAP54G_V1;
+		  }	
 	    }
 	    
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
