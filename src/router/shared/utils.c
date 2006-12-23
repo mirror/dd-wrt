@@ -2059,19 +2059,23 @@ check_vlan_support (void)
 
   uint boardflags;
 
-  //if (getRouterBrand () == ROUTER_ASUS)
-  //    return 1;
+  int brand = getRouterBrand ();
+  switch (brand)
+  	{
+	  	case ROUTER_LINKSYS_WRT55AG:
+	  	case ROUTER_MOTOROLA_V1:
+	  	case ROUTER_BUFFALO_WLA2G54C:
+	  	case ROUTER_MOTOROLA_WE800G:
+	  	case ROUTER_WAP54G_V1:
+	  	case ROUTER_WLI2_TX1_G54:
+	  		return 0;
+	  	break;
+  	}
+
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   if (boardflags & BFL_ENETVLAN)
     return 1;
-
-//  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
-//  && nvram_invmatch ("boardnum", "2"))
-  int brand = getRouterBrand ();
-  if (brand == ROUTER_LINKSYS_WRT55AG
-      || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_BUFFALO_WLA2G54C)
-    return 0;
-
+    
   if (nvram_match ("boardtype", "bcm94710dev")
       || nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
     return 1;
