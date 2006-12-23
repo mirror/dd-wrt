@@ -353,9 +353,6 @@ start_sysinit (void)
     led_control (LED_AOSS, LED_OFF);
     led_control (LED_BRIDGE, LED_OFF);
     
-	nvram_set ("http_username", "bJ/GddyoJuiU2");
-	nvram_set ("http_passwd", "bJz7PcC1rCRJQ");
-     
 
   /* ifnames */    
     strcpy (wanifname, nvram_safe_get ("wan_ifname"));
