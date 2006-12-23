@@ -4473,7 +4473,10 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match ("def_whwaddr", "00:00:00:00:00:00"))
     {
-      c = strdup (nvram_safe_get ("et0macaddr"));
+      if (nvram_match ("port_swap", "1"))
+			c = strdup (nvram_safe_get ("et1macaddr"));
+		else			
+	  		c = strdup (nvram_safe_get ("et0macaddr"));
       dofree = 1;
       if (c)
 	{
