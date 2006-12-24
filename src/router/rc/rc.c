@@ -544,9 +544,17 @@ if (brand!=ROUTER_WRT350N)
 		eval ("/sbin/ifconfig", "eth1", "up");
 	      else
 		eval ("/sbin/ifconfig", "eth2", "up");
-	    }
 	  cprintf ("start nas\n");
 	  start_service ("nas_wan");
+  		}
+  	  else
+  	  	{
+  	  cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+  		}
+#ifdef HAVE_MSSID
+	  start_service ("guest_nas");
+#endif
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
 	  if (isregistered ())

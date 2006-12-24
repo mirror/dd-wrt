@@ -98,21 +98,7 @@ start_services (void)
   start_service ("httpd");
   start_service ("udhcpd");
   start_service ("dnsmasq");
-/* nas mode select*/
-  if (nvram_match ("wl_mode", "sta")
-      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
-    {
-	    // nas_wan will be started in rc.c
-    }
-  else
-    {
-      cprintf ("start nas lan\n");
-      start_service ("nas_lan");
-    }
-/*end nas mode select */
-#ifdef HAVE_MSSID
-  start_service ("guest_nas");
-#endif
+// NAS is started in rc.c
 #ifdef HAVE_BIRD
   start_service ("zebra");
 #endif
