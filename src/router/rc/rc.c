@@ -177,7 +177,7 @@ main_loop (void)
 if (brand!=ROUTER_WRT350N)
 {
   if (nvram_match ("fullswitch", "1")
-      && (nvram_invmatch ("wl_mode", "ap")
+      && (nvram_invmatch ("wl0_mode", "ap")
 	  || nvram_match ("wan_proto", "disabled")))
     {
       nvram_set ("vlan0ports", "0 1 2 3 4 5*");
@@ -194,7 +194,7 @@ if (brand!=ROUTER_WRT350N)
 }else
 {
  if (nvram_match ("fullswitch", "1")
-      && (nvram_invmatch ("wl_mode", "ap")
+      && (nvram_invmatch ("wl0_mode", "ap")
 	  || nvram_match ("wan_proto", "disabled")))
     {
       nvram_set ("vlan1ports", "0 1 2 3 4 8*");
@@ -535,9 +535,9 @@ if (brand!=ROUTER_WRT350N)
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
 	  cprintf ("ifconfig wl up\n");
-	  if (nvram_match ("wl_mode", "sta")
-	      || nvram_match ("wl_mode", "wet")
-	      || nvram_match ("wl_mode", "apsta"))
+	  if (nvram_match ("wl0_mode", "sta")
+	      || nvram_match ("wl0_mode", "wet")
+	      || nvram_match ("wl0_mode", "apsta"))
 	    {
 	      //fix for client mode
 	      if (wl_probe ("eth2"))
