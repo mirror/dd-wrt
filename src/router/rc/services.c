@@ -557,8 +557,8 @@ start_single_service (void)
       start_service ("guest_nas");
 #endif
 /* nas mode select*/
-  if (nvram_match ("wl_mode", "sta")
-      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apsta"))
     {
       cprintf ("start nas wan\n");
       start_service ("nas_wan");
@@ -612,8 +612,8 @@ start_single_service (void)
       start_service ("guest_nas");
 #endif
 /* nas mode select*/
-  if (nvram_match ("wl_mode", "sta")
-      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apsta"))
     {
       cprintf ("start nas wan\n");
       start_service ("nas_wan");
