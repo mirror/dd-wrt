@@ -400,7 +400,7 @@ start_single_service (void)
 #endif
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
 	  || nvram_match ("wl0_mode", "apsta"))
-	start_service ("nas_lan");
+	start_service ("nas_wan");
 
     }
 
@@ -568,11 +568,22 @@ start_single_service (void)
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
-      start_service ("nas_lan");
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
+/* nas mode select*/
+  if (nvram_match ("wl_mode", "sta")
+      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
+    {
+      cprintf ("start nas wan\n");
       start_service ("nas_wan");
+    }
+  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
+/*end nas mode select */
 #endif
 
     }
@@ -612,11 +623,22 @@ start_single_service (void)
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
-      start_service ("nas_lan");
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
+/* nas mode select*/
+  if (nvram_match ("wl_mode", "sta")
+      || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
+    {
+      cprintf ("start nas wan\n");
       start_service ("nas_wan");
+    }
+  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
+/*end nas mode select */
 #endif
 	  start_service ("radio_timer");
     }
