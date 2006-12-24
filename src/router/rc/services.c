@@ -102,8 +102,7 @@ start_services (void)
   if (nvram_match ("wl_mode", "sta")
       || nvram_match ("wl_mode", "wet") || nvram_match ("wl_mode", "apsta"))
     {
-      cprintf ("start nas wan\n");
-      start_service ("nas_wan");
+	    // nas_wan will be started in rc.c
     }
   else
     {
