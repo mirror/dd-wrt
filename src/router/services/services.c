@@ -2495,11 +2495,11 @@ stop_pppoe (void)
   int ret;
 
   unlink ("/tmp/ppp/link");
-
+  if (pidof("pppoecd") > 0)
+    syslog(LOG_INFO,"pppoe process successfully stopped\n");
   ret = killall ("pppoecd", SIGKILL);
   ret += killall ("ip-up", SIGKILL);
   ret += killall ("ip-down", SIGKILL);
-  syslog(LOG_INFO,"pppoe process successfully stopped\n");
 
   cprintf ("done\n");
   return ret;
