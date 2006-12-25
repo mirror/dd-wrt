@@ -251,7 +251,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.ip"); %></div>
-										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %><% nvram_status_get("wan_nslookup"); %></span>&nbsp;
+										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.subnet"); %></div>
