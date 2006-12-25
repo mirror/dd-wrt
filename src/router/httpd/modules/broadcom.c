@@ -2919,7 +2919,7 @@ struct apply_action apply_actions[] = {
   {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
   {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, save_macmode},
   {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
-  {"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
+  {"Wireless_WDS", "wireless", 0, SERVICE_RESTART, NULL},
   {"WL_WPATable", "wireless_2", 0, SERVICE_RESTART, NULL},
 
   /* MANAGEMENT */
