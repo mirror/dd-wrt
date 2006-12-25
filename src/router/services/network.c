@@ -1067,7 +1067,8 @@ start_lan (void)
 #endif
 	    snprintf (wl_name, sizeof (wl_name), "wl%d_mode", unit);
 	    /* Do not attach the main wl i/f if in wds or client/adhoc */
-
+	    
+		led_control (LED_BRIDGE, LED_OFF);
 	    if (nvram_match (wl_name, "wet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
