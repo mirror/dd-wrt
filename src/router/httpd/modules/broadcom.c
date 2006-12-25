@@ -4704,12 +4704,12 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	  
 /* do nslookup */
 
-  struct servent *servp;
-  char buf1[256];
-  
-  getHostName (buf1, ip);
-  if (strcmp(buf1, "unknown"))
-  	strcpy (hostname, buf1);
+//  struct servent *servp;
+//  char buf1[256];
+//  
+//  getHostName (buf1, ip);
+//  if (strcmp(buf1, "unknown"))
+//  	strcpy (hostname, buf1);
 /* end nslookup */	  
 	  
 /* look into hosts file for hostnames  (static leases) */
