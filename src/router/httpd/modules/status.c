@@ -173,17 +173,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websWrite (wp, "%s", wan_ipaddr);
     }
-  else if (!strcmp (type, "wan_nslookup"))
-  	{
-	  	if (nvram_invmatch ("wan_proto", "disabled") || nvram_invmatch ("wl0_mode", "wet"))
-	  	{
-		struct servent *servp;
-		char buf1[256];
-   		getHostName (buf1, wan_ipaddr);
-  		if (strcmp(buf1, "unknown"))
-  			websWrite (wp, "&nbsp;(%s)", buf1);
-		}
-  	}
   else if (!strcmp (type, "wan_netmask"))
     websWrite (wp, "%s", wan_netmask);
   else if (!strcmp (type, "wan_gateway"))
