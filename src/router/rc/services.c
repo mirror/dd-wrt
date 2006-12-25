@@ -589,7 +589,7 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
-
+      stop_service ("lan");
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
@@ -603,7 +603,7 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI
       start_service ("wlconf");
 #endif
-
+      start_service ("lan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
