@@ -485,6 +485,7 @@ start_sysinit (void)
       }
       
 #ifdef HAVE_USB
+//load usb driver. we will add samba server, ftp server and ctorrent support in future
       modules = "usbcore usb-ohci usb-uhci ehci-hcd scsi_mod usb-storage ide-core ide-detect ide-disk ide-scsi cdrom ide-cd printer sd_mod sr_mod"
       foreach (module, modules, next)
       {
