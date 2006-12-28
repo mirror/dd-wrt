@@ -40,7 +40,7 @@ ifeq ($(CONFIG_UCLIBC),y)
 export PLATFORM := $(PLATFORM)-uclibc
 endif
 
-export LINUXVER := 2.4.34-pre5
+export LINUXVER := 2.4.34
 ifeq ($(CONFIG_MSSID),y)
 export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v24
 else
@@ -98,8 +98,8 @@ obj-y += libcrypto
 #
 CONFIG_IPTABLES=y
 #CONFIG_WLC=y
-obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_OPENSSL) += openssl
+obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_NVRAM) += nvram
@@ -209,6 +209,8 @@ obj-y += net-tools
 obj-$(CONFIG_RSTATS) += rstats
 obj-$(CONFIG_SCDP) += scdp
 obj-y += ses
+obj-$(CONFIG_PRINTER_SERVER) += ippd
+obj-$(CONFIG_FTP) += proftpd
 
 
 
@@ -945,6 +947,19 @@ else
         # So that generic rule does not take precedence
 	@true
 endif
+
+
+proftpd:
+	$(MAKE) -C proftpd
+proftpd-install:
+	install -D proftpd/proftpd $(INSTALLDIR)/proftpd/usr/sbin/proftpd
+	$(STRIP) $(INSTALLDIR)/proftpd/usr/sbin/proftpd
+
+ippd:
+	$(MAKE) -C ippd
+ippd-install:
+	install -D ippd/ippd $(INSTALLDIR)/ippd/usr/sbin/ippd
+	$(STRIP) $(INSTALLDIR)/ippd/usr/sbin/ippd
 
 
 e2fsprogs:
