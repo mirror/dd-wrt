@@ -402,7 +402,8 @@ static inline size_t read_zero_pagealigned(char * buf, size_t size)
 			count = size;
 
 		zap_page_range(mm, addr, count);
-        	zeromap_page_range(addr, count, PAGE_COPY);
+        	if (zeromap_page_range(addr, count, PAGE_COPY))
+			break;
 
 		size -= count;
 		buf += count;
