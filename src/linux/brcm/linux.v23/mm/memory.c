@@ -750,7 +750,7 @@ int unlock_kiovec(int nr, struct kiobuf *iovec[])
 	return 0;
 }
 
-static inline void zeromap_pte_range(pte_t * pte, unsigned long address,
+static inline int zeromap_pte_range(pte_t * pte, unsigned long address,
                                      unsigned long size, pgprot_t prot)
 {
 	unsigned long end;
@@ -761,12 +761,13 @@ static inline void zeromap_pte_range(pte_t * pte, unsigned long address,
 		end = PMD_SIZE;
 	do {
 		pte_t zero_pte = pte_wrprotect(mk_pte(ZERO_PAGE(address), prot));
-		pte_t oldpage = ptep_get_and_clear(pte);
+		if (!pte_none(*pte))
+			return -EEXIST;
 		set_pte(pte, zero_pte);
-		forget_pte(oldpage);
 		address += PAGE_SIZE;
 		pte++;
 	} while (address && (address < end));
+	return 0;
 }
 
 static inline int zeromap_pmd_range(struct mm_struct *mm, pmd_t * pmd, unsigned long address,
@@ -782,7 +783,8 @@ static inline int zeromap_pmd_range(struct mm_struct *mm, pmd_t * pmd, unsigned 
 		pte_t * pte = pte_alloc(mm, pmd, address);
 		if (!pte)
 			return -ENOMEM;
-		zeromap_pte_range(pte, address, end - address, prot);
+		if (zeromap_pte_range(pte, address, end - address, prot))
+			return -EEXIST;
 		address = (address + PMD_SIZE) & PMD_MASK;
 		pmd++;
 	} while (address && (address < end));
