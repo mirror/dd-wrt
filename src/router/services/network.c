@@ -2316,7 +2316,19 @@ start_wan_done (char *wan_ifname)
   cprintf ("trigger gpio");
 
   led_control (LED_CONNECTED, LED_ON);
-  eval ("cat", "/proc/uptime>/tmp/.wanuptime");
+  
+  double sys_uptime;
+  FILE *up;
+  
+  	up = fopen ("/proc/uptime", "r");
+	fscanf (up, "%lf", &sys_uptime);
+	fclose (up);
+	
+	up = fopen ("/tmp/.wanuptime", "w");
+	fprintf (up, "%lf", sys_uptime);
+	fclose (up);
+	
+	
 
   cprintf ("done\n");
   char *wani = nvram_safe_get ("wan_iface");
