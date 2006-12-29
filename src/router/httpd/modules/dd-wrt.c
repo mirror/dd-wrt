@@ -3466,7 +3466,38 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 
 }
+void
+ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  double sys_uptime;
+  double uptime;
+  int days, minutes;
+  FILE *fp, *fp2;
+  
+  if (nvram_match ("wan_proto", "disabled")) return;
+  if (!(fp = fopen ("/tmp/.wanuptime", "r")))
+  	{
+		websWrite (wp, "%s", live_translate ("share.unknown");  	
+	  	return;
+	}
+  if (fscanf (fp, "%lf", &uptime) == 1)
+    {
+      fp2 = fopen ("/proc/uptime", "r");
+      fscanf (fp2, "%lf", &sys_uptime);
+      fclose (fp2);
+      
+      uptime = sys_uptime - uptime;
+      days = (int)uptime / (60 * 60 * 24);
+      if (days) websWrite (wp, "%d day%s, ", days, (days == 1 ? "" : "s"));
 
+      minutes = (int)uptime / 60;
+      websWrite (wp, "%d:%02d", (minutes / 60) % 24, minutes % 60);
+    }
+  fclose (fp);
+
+  return;
+
+}
 #ifndef HAVE_MADWIFI
 
 void
