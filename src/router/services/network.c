@@ -2316,6 +2316,7 @@ start_wan_done (char *wan_ifname)
   cprintf ("trigger gpio");
 
   led_control (LED_CONNECTED, LED_ON);
+  eval ("cat", "/proc/uptime>/tmp/.wanuptime");
 
   cprintf ("done\n");
   char *wani = nvram_safe_get ("wan_iface");
@@ -2408,6 +2409,7 @@ stop_wan (void)
   nvram_set ("wanup", "0");
   
   led_control (LED_CONNECTED, LED_OFF);
+  unlink ("/tmp/.wanuptime");
 
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
 #ifdef HAVE_NEWMEDIA
