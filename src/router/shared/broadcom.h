@@ -373,6 +373,7 @@ extern void ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv);
