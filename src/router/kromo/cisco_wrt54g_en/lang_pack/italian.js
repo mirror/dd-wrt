@@ -824,6 +824,7 @@ status_router.net_conntrack="Connessioni IP Attive";
 status_router.h22="Internet";
 status_router.legend5="Tipo Di Configurazione";
 status_router.www_loginstatus="Stato Login";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 

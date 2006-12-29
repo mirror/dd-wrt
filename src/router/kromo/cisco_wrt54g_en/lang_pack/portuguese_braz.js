@@ -1011,6 +1011,7 @@ status_router.net_conntrack="Conexões IPs Ativas";
 status_router.h22="Internet";
 status_router.legend5="Tipo de Configuração";
 status_router.www_loginstatus="Status do Login";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 

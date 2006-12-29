@@ -780,6 +780,7 @@ status_router.net_conntrack="Ilosc Aktywnych Polaczen IP";
 status_router.h22="Internet";
 status_router.legend5="Typ Konfiguracji";
 status_router.www_loginstatus="Login Status";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Pozostaly Czas Dzierzawy";
 status_router.notavail="Nie Dostepny";
 hstatus_router.right2="Tutaj podana jest nazwa routera, ktora mozna zdefiniowac w zakladce 'Ustawienia'.";
