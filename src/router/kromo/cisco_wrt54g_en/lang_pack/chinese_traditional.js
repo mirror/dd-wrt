@@ -1100,6 +1100,7 @@ status_router.net_conntrack="活動的IP連接數";
 status_router.h22="Internet";
 status_router.legend5="配置類型";
 status_router.www_loginstatus="登錄狀態";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 

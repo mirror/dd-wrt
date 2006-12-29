@@ -1119,6 +1119,7 @@ status_router.net_conntrack="Aktive IP-Verbindungen";
 status_router.h22="Internet";
 status_router.legend5="Konfigurationstyp";
 status_router.www_loginstatus="Login-Status";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Verbleibende Lease Zeit";
 status_router.notavail="Nicht verf&#252;gbar";
 
