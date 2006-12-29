@@ -1256,6 +1256,7 @@ status_router.net_conntrack="Active IP Connections";
 status_router.h22="Internet";
 status_router.legend5="Configuration Type";
 status_router.www_loginstatus="Login Status";
+status_router.wanuptime="Connection Uptime";
 status_router.leasetime="Remaining Lease Time";
 status_router.notavail="Not available";
 status_router.legend6="Space Usage";

@@ -249,6 +249,10 @@ addEvent(window, "unload", function() {
 										<div class="label"><% tran("status_router.www_loginstatus"); %></div>
 										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>');" /></span>
 									</div>
+									 <div class="setting">
+										<div class="label"><% tran("status_router.wanuptime"); %></div>
+										<span id="wan_uptime"><% get_wan_uptime(); %></span>&nbsp;
+									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.ip"); %></div>
 										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
