@@ -1256,6 +1256,7 @@ status_router.net_conntrack="Aktivne IP povezave";
 status_router.h22="Medmre¾je";
 status_router.legend5="Naèin povezave";
 status_router.www_loginstatus="Status prijave";
+status_router.wanuptime=" Trajanje povezave";
 status_router.leasetime="Preostali èas zakupa";
 status_router.notavail="Ni na voljo";
 status_router.legend6="Uporaba prostora";
