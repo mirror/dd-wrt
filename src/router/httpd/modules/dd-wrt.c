@@ -3477,7 +3477,7 @@ ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv)
   if (nvram_match ("wan_proto", "disabled")) return;
   if (!(fp = fopen ("/tmp/.wanuptime", "r")))
   	{
-		websWrite (wp, "%s", live_translate ("share.unknown"));  	
+		websWrite (wp, "%s", live_translate ("status_router.notavail"));  	
 	  	return;
 	}
   if (fscanf (fp, "%lf", &uptime) == 1)
