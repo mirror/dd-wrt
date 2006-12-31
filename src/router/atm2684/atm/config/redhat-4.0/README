@@ -1,0 +1,73 @@
+RedHat 4.0 sample configuration files
+=====================================
+
+Known restrictions
+------------------
+
+ - no support for manually configured ATMARP entries (SVC or PVC)
+ - no LANE (neither client nor server)
+ - no ANS
+
+
+Overview
+--------
+
+/etc/sysconfig/atm
+    Indicates if ATM is desired, which ATM components are used, and may
+    contain configuration options for system-wide resources (e.g. ilmid)
+
+/etc/rc.d/init.d/atm  (atm.init)
+    Is executed at system startup to initialize the ATM subsystem (e.g.
+    to start all the demons), and at system shutdown to remove the
+    demons it started.
+
+/etc/atmsigd.conf
+    ATM signaling demon configuration, see  man atmsigd.conf
+
+/etc/sysconfig/network-scripts/ifcfg-atm*
+    Per-interface configuration parameters. This file contains highly
+    site-specific data.
+
+/etc/sysconfig/network-scripts/ifup-atm
+    General interface bringup procedure. Creates the IP over ATM interface,
+    configures it, adds the route, and creates all the necessary ATMARP
+    information.
+
+In addition to the files listed above, files from atm/config/common need to
+be installed. See atm/config/common/README for details.
+
+
+Installation
+------------
+
+In order to use the configuraton scripts in this directory, you have to
+install ATM on Linux as follows:
+
+# cd wherever/atm    # top-level directory of the ATM distribution tree
+# INSTPREFIX=/usr/local make -e uninstall    # remove the old files
+# INSTPREFIX=/usr make -e install    # install everything under /usr
+
+Then copy the configuration files:
+
+# cd config
+# make redhat-4.0
+
+Finally, you may have to edit /etc/sysconfig/atm, /etc/atmsigd.conf,
+and /etc/hosts.atm
+
+If you're using IP over ATM, you _must_ change
+/etc/sysconfig/network-scripts/ifcfg-atm0 as follows:
+
+DEVICE		name of the interface (e.g. atm0, atm1, ...)
+IPADDR		IP address of the host on that ATM LIS
+NETMASK		network mask of that ATM LIS
+BROADCAST	broadcast address (not really used at the moment, but
+		must be configured to a sane value)
+ARPSRV		ATM address of the ATMARP server serving that LIS. May
+		be a symbolic name if /etc/hosts.atm is being used. Omit
+		this variable if the local machine is acting as the
+		ATMARP server of that LIS.
+ARPSRVQOS	optional; QOS of the ATMARP server VC
+ARPDEFQOS	optional; default QOS for IP over ATM VCs
+ONBOOT		must be set to "no" in order to bring up interfaces only
+		after the demons are running

@@ -1,0 +1,121 @@
+.TH SAP 7 "November 6, 1997" "Linux" "Miscellaneous"
+.SH NAME
+sap \- Service Access Point specification
+.SH DESCRIPTION
+The \fBtext2sap\fP and \fBsap2text\fP functions use the format described
+in this man page. Because all standard ATM tools on Linux use those
+functions to convert to or from the textual representation of SAP
+specifications, they expect them in the same format too.
+.P
+The SAP is divided into two parts: the \fIbroadband high layer information\fP
+(BHLI) and the \fIbroadband low layer information\fP (BLLI). A SAP can contain
+one, both, or none of them. In the latter case, the SAP is usually considered
+as a wildcard SAP, i.e. a SAP that is compatible with any other SAP.
+.P
+Each part begins with its name (\fBbhli\fP or \fBblli\fP), followed by a
+colon and a (non-empty) list of attributes, which are of the form
+\fIattribute\fP\fB=\fP\fIvalue\fP. Some attributes have sub-attributes,
+which follow them. Everything that isn't separated by a colon or an equal
+sign is separated by a comma.
+.P
+Values which are a number of bytes are specified as the corresponding
+sequence of pairs of hex digits. The sequence can be optionally prefixed
+with \fB0x\fP. Values with are integers in a given range can be specified
+in decimal (no prefix), octal (\fB0\fP prefix), and hexadecimal (\fB0x\fP
+prefix).
+.P
+The following, mutually exclusive attributes are allowed in the \fBbhli\fP
+part (see the corresponding ATM Forum and ITU documents for the semantics):
+.IP \fBiso=\fI1\-8\ bytes\fP
+ISO
+.IP \fBuser=\fI1\-8\ bytes\fP
+User-specific
+.IP \fBhlp=\fI4\ bytes\fP
+High layer profile.
+Note that this attribute only exists on UNI 3.0. \fBtext2sap\fP only
+recognizes it if your system is configured to accept UNI 3.0 message formats.
+.IP \fBoui=\fI3\ bytes\fB,id=\fI4\ bytes\fP
+Vendor-specific application identifier
+.P
+The structure of the \fBbhli\fP part is more complex. It distinguishes three
+layers, \fBl1\fP, \fBl2\fP, and \fBl3\fP, of which the first one is presently
+unsupported. For layer two, the following (mutually exclusive) possibilities
+exist:
+.IP \fBl2=iso1745\fP
+Basic mode ISO 1745
+.IP \fBl2=q291\fP
+ITU-T Q.291 (Rec. I.441)
+.IP \fBl2=lapb\fP
+Extended LAPB, half-duplex (Rec. T.71)
+.IP \fBl2=iso8802\fP
+LAN LLC (ISO/IEC 8802/2)
+.IP \fBl2=x75\fP
+ITU-T X.75, SLP
+.IP \fBl2=x25_ll\fP\ ...
+ITU-T X.25, link layer. This attribute and the following attributes through
+\fBl2=iso7776\fP can optionally be followed by one or more of the following
+sub-attributes: \fBmode=\fP\fImode\fP (mode of operation, either \fBnorm\fP or
+\fBext\fP), and \fBwindow=\fP\fIwindow size\fP (window size in k, 1\-127).
+.IP \fBl2=x25_ml\fP\ ...
+ITU-T X.25, multilink
+.IP \fBl2=hdlc_arm\fP\ ...
+HDLC ARM (ISO/IEC 4335)
+.IP \fBl2=hdlc_nrm\fP\ ...
+HDLC NRM (ISO/IEC 4335)
+.IP \fBl2=hdlc_abm\fP\ ...
+HDLC ABM (ISO/IEC 4335)
+.IP \fBl2=q992\fP\ ...
+ITU-T Q.922
+.IP \fBl2=iso7776\fP\ ...
+ISO 7776 DTE-DTE
+.IP \fBl2=user,info=\fIinformation\fP
+User-specified. \fIinformation\fP is an integer in the range 0 to 255.
+.P
+For layer three, the following (again, mutually exclusive) possibilities
+exist:
+.IP \fBl3=iso8473\fP
+ITU-T X.233 | ISO/IEC 8473
+.IP \fBl3=t70\fP
+ITU-T T.70 minimum network layer
+.IP \fBl3=h321\fP
+ITU-T Recommendation H.321
+.IP \fBl3=x25\fP\ ...
+ITU-T X.25, packet layer. This attribute and the following attributes through
+\fBl3=x223\fP can optionally be followed by one or more of the following
+sub-attributes: \fBmode=\fP\fImode\fP (see above), \fBsize=\fP\fIdefault packet
+size\fP (4\-12, corresponding to 16\-4096), \fBwindow=\fP\fIwindow size\fP
+(see above).
+.IP \fBl3=iso8208\fP\ ...
+ISO/IEC 8208
+.IP \fBl3=x223\fP\ ...
+ITU-T X.223 | ISO/IEC 8878
+.IP \fBl3=tr9577,ipi=\fP\fIidentifier\fP\ ...
+ISO/IEC TR 9577. \fIidentifier\fP is the initial protocol identifier in
+the range 0\-255. For SNAP (0x80), the keyword \fBsnap\fP can be used, and
+the following sub-attributes have to be specified: \fBoui=\fP\fI3 bytes\fP,
+and \fBpid=\fP\fI2 bytes\fP.
+.IP \fBl2=user,info=\fIinformation\fP
+User-specified, see above.
+.IP \fBl3=h310\fP\ ...
+ITU-T Recommendation H.310. The sub-attribute \fBterm=\fP\fItype\fP (terminal
+type, \fBrx\fP, \fBtx\fP, or \fBrxtx\fP) is recognized. If present, it
+enables the two additional sub-attributes \fBfw_mpx=\fP\fIcapability\fP
+(forward multiplexing capability, \fBts\fP, \fBts_fec\fP, \fBps\fP,
+\fBps_fec\fP, or \fBh221\fP) and \fBbw_mpx=\fP\fIcapability\fP. Both are
+optional.
+.P
+Note that commas must never follow colons or other commas. Also,
+whitespace is not allowed inside a SAP specification. SAP specifications
+are case-insensitive. On input, items must be written in exactly the order
+used in this document.
+.P
+.SH EXAMPLES
+.IP \fBblli:l2=iso8802\fP
+Classical IP over ATM (RFC1577)
+.IP \fBbhli:oui=0x0060D7,id=0x01000001,blli:l2=iso8802\fP
+Arequipa (RFC2170)
+.IP \fBblli:l3=tr9577,ipi=snap,oui=0x00A03E,pid=0x0002\fP
+LAN Emulation
+.SH AUTHOR
+Werner Almesberger, EPFL LRC <werner.almesberger@lrc.di.epfl.ch>
+.\"{{{}}}

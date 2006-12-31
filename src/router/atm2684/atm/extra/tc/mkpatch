@@ -1,0 +1,15 @@
+#!/bin/sh
+[ -d iproute2 ] || { echo iproute2/ is missing; exit; }
+>iproute2.patch
+for n in `awk '$1 !~ /^#/ {print$1}' <<EOF
+#--- iproute2 -----------------------------------------------------------------
+Config
+#--- iproute2/tc --------------------------------------------------------------
+tc/Makefile
+tc/q_atm.c
+  `; do
+  s=iproute2/$n.orig
+  d=iproute2/$n
+  if [ ! -f $s ]; then s=/dev/null; fi
+  diff -u $s $d >>iproute2.patch
+done

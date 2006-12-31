@@ -1,0 +1,19 @@
+ - handle repeated IEs
+ - q_assign should remove old value (i.e. zero destination)
+ - bit numbering is wrong; should be <size@high>
+ - should be library (well, need at least more flexible name selection)
+ - copies of adjacent fields should be merged
+ - copies of partial bytes should be byte-wide if rest is only zeroes
+ - should be able to have multiple selectors in one byte
+ - case/default needs better compile-time check
+ - parser shouldn't copy unnamed fields
+ - optimize
+ - code needs a lot of cleaning
+
+
+Restrictions
+------------
+ 
+ - there's only very limited error checking
+ - no support for arrays (repeated IEs)
+ - copy operations are not optimized

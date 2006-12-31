@@ -1,0 +1,21 @@
+ATM on Linux, release 0.78 (beta)         by Werner Almesberger, EPFL ICA
+============================================== Werner.Almesberger@epfl.ch
+
+This is experimental software. There are known bugs and certainly even
+many more yet unknown problems. Internal and external interfaces may
+still change every once in a while. Use at your own risk.
+
+This package contains a kernel patch for ATM protocol stacks and for ATM
+device drivers, source for demons, management and test tools, and some
+documentation.
+
+The kernel patch is relative to the 2.4.0-test3-pre4 kernel.
+
+Please see  http://icawww1.epfl.ch/linux-atm/info.html  for a list of
+features supported by ATM on Linux.
+
+For usage and installation instructions, please read the file USAGE or
+generate the LaTeX documentation in doc/ The README in that directory
+explains how.
+
+For known restrictions and bugs, please read the file BUGS.

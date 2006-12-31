@@ -1,0 +1,8 @@
+#
+# /etc/sysconfig/atm - general ATM setup
+#
+ATM=yes				# enable ATM support at all
+IPATM=yes			# Classical IP over ATM (using ATMARP)
+AREQUIPA=yes			# Application REQUested IP over ATM
+LANE=no				# LAN Emulation (client; doesn't work yet)
+# ILMIQOS="ubr:pcr=100kbps"	# optional: QOS to use on the ILMI VC

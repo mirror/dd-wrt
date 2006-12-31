@@ -1,0 +1,17 @@
+--- old/tcpdump-3.4/print-sunrpc.c	Fri Feb 19 17:02:17 1999
++++ new/tcpdump-3.4/print-sunrpc.c	Fri Feb 19 17:03:16 1999
+@@ -123,10 +123,14 @@ progstr(prog)
+ 
+ 	if (lastprog != 0 && prog == lastprog)
+ 		return (buf);
++#ifdef _RPC_NETDB_H
+ 	rp = getrpcbynumber(prog);
+ 	if (rp == NULL)
+ 		(void) sprintf(buf, "#%u", prog);
+ 	else
+ 		strcpy(buf, rp->r_name);
++#else
++	(void) sprintf(buf, "#%u", prog);
++#endif
+ 	return (buf);
+ }

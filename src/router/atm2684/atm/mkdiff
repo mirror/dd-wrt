@@ -1,0 +1,104 @@
+#!/bin/sh
+TMP=${TMPDIR:-/usr/tmp}
+ARCH=/home/almesber/l/arch
+KPATH=/usr/src:/home/almesber/k
+
+del_new=true
+if [ "$1" = -keep -o "$1" = --keep ]; then
+    del_new=false
+    shift
+fi
+if [ -z "$*" ]; then
+    if [ ! -r VERSION ]; then
+	echo "need ./VERSION for fully automated procedure" 1>&2
+	exit 1
+    fi
+    read version <VERSION || exit 1
+    second=$ARCH/atm-$version.tar.gz
+    first=$ARCH/`cd $ARCH; ls -t1 atm-*.tar.gz |
+      sed "/atm-$version\.tar\.gz/{n;q;};d" | tail -1`
+    if [ ! -r $first -o ! -r $second ]; then
+	echo "automatic detection didn't work" 1>&2
+	exit 1
+    fi
+else
+    if [ -r "$1" ] && echo $1 | grep ^/ >/dev/null 2>&1; then
+	first=$1
+    else
+	first=$ARCH/$1
+	if [ ! -r $first ]; then
+	    echo "$1: not found (also tried $first)" 1>&2
+	    exit 1
+	fi
+    fi
+    if [ -r "$2" ] && echo $2 | grep ^/ >/dev/null 2>&1; then
+	second=$2
+    else
+	second=`dirname $first`/$2
+	if [ ! -r $second ]; then
+	    echo "$2: not found (also tried $second)" 1>&2
+	    exit 1
+	fi
+    fi
+fi
+echo $first '->' $second
+cd $TMP || exit 1
+mkdir old new || exit 1
+cd old
+tar xfz $first || exit 1
+cd ../new
+tar xfz $second || exit 1
+cd ..
+for n in old new; do
+    cd $n
+    {
+	read version
+	read version
+	read preversion || true
+    } <atm/.kernel || exit 1
+    if [ -z "$preversion" ]; then
+	kernel=linux-$version.tar
+    else
+	kernel=linux-$version.tar
+	patch=$preversion
+    fi
+    for m in `echo $KPATH | tr : ' '`; do
+	if [ -r $m/$kernel.gz -o -r $m/$kernel.bz2 ]; then
+	    break
+	fi
+    done
+    if [ -r $m/$kernel.gz ]; then
+	tar xfz $m/$kernel.gz || exit 1
+    elif [ -r $m/$kernel.bz2 ]; then
+	bunzip2 < $m/$kernel.bz2 | tar xf - || exit 1
+    else
+	echo "no kernel $kernel ($version) found in $KPATH" 1>&2
+	exit 1
+    fi
+    if [ ! -z "$patch" ]; then
+	for m in `echo $KPATH | tr : ' '`; do
+	    if [ -r $m/$patch.gz -o -r $m/$patch.bz2 ]; then
+		break
+	    fi
+	done
+	if [ -r $m/$patch.gz ]; then
+	    zcat $m/$patch.gz | patch -p0 -s || exit 1
+	elif [ -r $m/$patch.bz2 ]; then
+	    bunzip2 < $m/$patch.bz2 | patch -p0 -s || exit 1
+	else
+	    echo "no patch $patch ($version) found in $KPATH" 1>&2
+	    exit 1
+	fi
+    fi
+    cd linux
+    patch -s -p1 <../atm/atm*.patch || exit 1
+    find . -name \*.orig -exec rm {} \;
+    cd ../..
+done
+base=`basename $second .tar.gz`
+diff -ur --new-file old/linux new/linux >$base.kernel-diff
+diff -ur --new-file old/atm new/atm >$base.dist-diff
+gzip -9 -f $base.kernel-diff || exit 1
+gzip -9 -f $base.dist-diff || exit 1
+rm -rf old
+if $del_new; then rm -rf new; fi

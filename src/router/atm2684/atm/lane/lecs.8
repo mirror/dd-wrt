@@ -1,0 +1,103 @@
+.TH LES 8 "Sep 11, 1996" "Linux" "Maintenance Commands"
+.SH NAME
+les, bus \- ATM LAN Emulation service demons
+.SH SYNOPSIS
+.B lecs
+.RB [ \-l\ \fIlisten_address\fP ]
+.RB [ \-f\ \fIconfiguration_file\fP ]
+.RB [ \-d\ ]
+.SH DESCRIPTION
+LE Service consists of three components: LAN Emulation Configuration 
+Server (\fBlecs\fP), LAN Emulation Server (
+\fBles(8)\fP) and Broadcast and Unknown Server (\fBbus(8)\fP).
+.PP
+\fBLecs\fP implements the distribution of LECs to different emulated 
+LANs. This is done by giving different LAN Emulation Server ATM addresses 
+to LECs. Distribution is based on \fBlecs\fP's configuration database 
+and information provided by the LE client. It is not required that a 
+\fBlecs\fP exists for all emulated LANs. It is possible to bypass this 
+configuration phase by directly telling ATM address of the \fBles(8)\fP to 
+the LEC.
+
+Configuration file example for \fBlecs\fP:
+.in +2m
+.nf
+# Our ATM address (should be included to differentiate us from 
+# e.g. LEC)
+# Must be before ELAN definitions
+470023000000030300010002010020ea000ae905
+
+# ELAN name is inside brackets.
+# Parameters below are for Ethernet type LE (Linux & almost all 
+# other LE clients)
+[tut-lane1]
+# Address of the LES
+LES:=470023000000030300010002010020ea000ae901
+# 802_3 or 802_5 (802_3 = Ethernet)
+Type:=802_3
+# 1515, 4544, 9234 or 18190 (1516= Ethernet)
+Max_Frame:=1516
+
+# ATM address for hosts that are guided to this ELAN. 
+# Wildcard is x or X.
+470023000000030300010002010020ea0005aax0
+470023000000030000010002010020ea0005bx00
+47.002300000003030001000201.00603E2FDX23.00
+470023000000030300010002010020ea000Xxx00
+DEFAULT
+# Another ELAN, which has empty name
+[asdf]
+# This directive sets this elan as the default i.e. it will be
+# included if LEC's configure request could not be matched to 
+# other ELANs
+#DEFAULT
+LES= 470023000000030300010002010020ea000ae902
+Type=Ethernet
+.DT
+.fi
+.in
+
+Rules for finding ELAN definitions using information provided in 
+LE_CONFIGURE_REQUEST and the configuration file are as follows:
+.PP
+
+.in +2m
+.nf
+1. Find an entry where ELAN-NAME matches exactly and an 
+   ATM address of the LEC is found in ELAN definition. 
+   These are to match exactly with the information given in 
+   LE_CONFIGURE_REQUEST. If ELAN-NAME is found, but ATM 
+   address doesn't match then reject with reason "Permission 
+   denied".
+2. Search for first ELAN which matches in type of emulated LAN, 
+   maximum frame size and ATM address of the LEC.
+3. If matching ELAN was not found, return default ELAN 
+   definitions.
+4. No match, so request is rejected with reason "No 
+   Configuration".
+.PP
+.DT
+.fi
+.in
+\fBSIGHUP\fP restarts the server.
+.SH OPTIONS
+.TP
+.IP \fB\-d\fP
+Reads the configuration file, dumps its contents and exits.
+.IP \fB\-l\ \fIlisten_address\fP
+Use the \fIlisten_address\fP to where wait connections.
+.IP \fB\-f\ \fIconfiguration_file\fP
+Use the specified configuration file instead of \fB.lecs_conf\fP.
+.SH FILES
+.PD 0
+.TP 25
+.B .lecs_conf
+configuration file
+.PD
+.SH BUGS
+Undocumented.
+.SH AUTHOR
+Marko Kiiskila, TUT <carnil@cs.tut.fi>
+.SH "SEE ALSO"
+les(8), atmsigd(8), zeppelin(8)
+.\"{{{}}}
