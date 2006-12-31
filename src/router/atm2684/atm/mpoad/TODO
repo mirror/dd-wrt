@@ -1,0 +1,11 @@
+Check that closing unused SVCs does not create synchronization problems
+
+Get configuration information from LECS
+
+MPOA spec, A.1.4, IP Options, check them
+
+Support more MPOA/NHRP CIE error codes
+
+Check CBR vs UBR SVCs before using them as return channel
+
+Decide what to do when a new MPS is detected

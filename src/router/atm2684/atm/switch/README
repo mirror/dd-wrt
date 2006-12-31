@@ -1,0 +1,7 @@
+Switch fabric control. The actual switch interfaces are in the following
+subdirectories:
+
+  debug/	a very simple debugging switch
+  tcp/		an ATMTCP switch, based on sw_debug
+
+See the README in the respective directory for further details.

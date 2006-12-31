@@ -1,0 +1,21 @@
+#!/bin/sh
+while true; do
+    pid=$$
+    export pid
+    rm -f /tmp/rlok$pid
+    (
+        if latex $*; then
+	    touch /tmp/rlok$pid
+	fi
+    ) | tee /tmp/rlso$pid
+    if [ ! -f /tmp/rlok$pid ]; then
+	rm -f /tmp/rlso$pid
+	exit 1
+    fi
+    if grep '^LaTeX Warning: Label(s) may' /tmp/rlso$pid >/dev/null; then :
+    else
+	rm -f /tmp/rlso$pid
+	exit 0
+    fi
+    echo "Re-running LaTeX"
+done

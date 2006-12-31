@@ -1,0 +1,8 @@
+Distribution-independent sample configuration files
+===================================================
+
+/etc/hosts.atm
+    Local list of ATM hosts. (Like /etc/hosts)
+
+/etc/e164_cc
+    List of E.164 (telephony) country codes.

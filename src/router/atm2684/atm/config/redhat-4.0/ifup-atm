@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# /etc/sysconfig/network-scripts/ifup-atm
+#
+. $1
+atmarp -c $DEVICE || exit 1
+ifconfig $DEVICE $IPADDR netmask $NETMASK up || exit 1
+route add -net $NETWORK netmask $NETMASK $DEVICE || exit 1
+[ -z "$ARPDEFQOS" ] || atmarp -q $NETWORK $ARPDEFQOS
+[ -z "$ARPSRV" ] || atmarp -s $NETWORK $ARPSRV arpsrv \
+  `[ -z "$ARPSRVQOS" ] || echo qos $ARPSRVQOS`

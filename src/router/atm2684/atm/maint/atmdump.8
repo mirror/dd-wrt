@@ -1,0 +1,49 @@
+.TH ATMDUMP 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmdump \- capture or generate ATM cells
+.SH SYNOPSIS
+.B atmdump
+.RB [ \-i ]
+.RB [
+.B \-t\ \fItype\fB
+.RB [ \-g\ \fIgfc\fB ]
+.RB [ \-c ]
+.RB ]
+.RB [\fIitf\fP.]\fIvpi\fP.\fIvci\fP
+.ad b
+.SH DESCRIPTION
+.B atmdump
+captures or generates single ATM cells ("AAL0"). When capturing cells, a
+time stamp, the cell header contents, and a hex dump of the cell payload
+are shown. When sending cells, the payload type, the generic flow control
+(GFC), and the cell loss priority (CLP) can be set.
+.P
+In both modes of operation, the interface number, the VPI, and the VCI
+have to be specified.
+.P
+When sending, \fBatmdump\fP expects the cell payload on standard input.
+If only less than 48 bytes can be read, the remaining space is padded
+with zero bytes.
+.SH OPTIONS
+.IP \fB\-i\fP
+displays timestamps as the interval since the last cell reception. By
+default, the absolute time is displayed. This options is ignored in
+transmit mode.
+.IP \fB\-t\ \fItype\fP
+selects transmit mode and specifies the payload type. A list of valid
+payload type numbers can be obtained by invoking
+.B atmdump
+without any arguments.
+.IP \fB\-g\ \fIgfc\fP
+specifies the value of the GFC field. \fIgfc\fP has to be in the range from
+0 to 15, default is zero.
+.IP \fB\-c\fP
+sets the cell loss priority flag, indicating low priority. By default, CLP
+is not set.
+.SH RESTRICTIONS
+Some device drivers may not pass OAM cells transparently.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmdiag(8), clip(8), sonetdiag(8)
+.\"{{{}}}

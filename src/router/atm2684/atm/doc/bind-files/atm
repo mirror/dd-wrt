@@ -1,0 +1,29 @@
+@	IN	SOA	obelix-atm.atm.	hostmaster.obelix-atm.atm. (
+			1999102201	; serial, YYYYMMDDnn
+			8H		; refresh, seconds
+			2H		; retry, seconds
+			1W		; expire, seconds
+			1D )		; minimum, seconds
+		NS	obelix-atm
+		MX	10 mail.my.domain.
+		TXT	"My organisation's ATM network"
+
+localhost	A	127.0.0.1
+atm.		A	192.168.27.72
+
+;
+;	Hosts on 192.168.27.0 CLIP network
+;
+
+obelix-atm	A	192.168.27.72
+pong-atm	A	192.168.27.96
+osteolito-atm	A	192.168.27.81
+
+
+;
+;	NSAPs - ATM addresses
+;
+
+obelix-atm	IN NSAP 47000580FFE1000000F20F400F0020480E306E00
+pong-atm	IN NSAP 47000580FFE1000000F21A2F5C0020480E042f00
+osteolito-atm	IN NSAP 47000580FFE1000000F21A2F5C002048089A9200

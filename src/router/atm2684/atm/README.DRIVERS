@@ -1,0 +1,9 @@
+If you're just looking for the device drivers: they're either
+already in the mainstream kernel (see below) or in atm.patch
+
+After applying that patch to the appropriate kernel source tree
+(see file USAGE for details), you'll find them in the directory
+drivers/atm
+
+Driver which haven't been integrated yet can be found on
+http://icawww1.epfl.ch/linux-atm/info.html

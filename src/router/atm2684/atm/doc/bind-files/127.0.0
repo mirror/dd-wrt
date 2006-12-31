@@ -1,0 +1,8 @@
+@		IN	SOA	ns.atm.	hostmaster.atm.	(
+				1999102501	; Serial
+				8H		; Refresh
+				2H		; Retry
+				1W		; Expire
+				1D )		; Minimum TTL
+			NS	ns.atm.
+1			PTR	localhost.

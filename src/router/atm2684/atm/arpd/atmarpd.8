@@ -1,0 +1,76 @@
+.TH ATMARPD 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmarpd \- ATMARP demon
+.SH SYNOPSIS
+.B atmarpd
+.RB [ \-b ]
+.RB [ \-d ]
+.RB [ \-D\ \fIdirectory\fP ]
+.RB [ \-l\ \fIlogfile\fP ]
+.RB [ \-m ]
+.RB [ \-n ]
+.br
+.B atmarpd
+.B \-V
+.SH DESCRIPTION
+\fBatmarpd\fP implements the ATMARP protocol as specified in RFC1577 and
+RFC1755. Address resolution requests are sent from the kernel (using a
+comparably simple protocol) to the ATMARP demon, which then performs
+the dialog with the network.
+.P
+\fBatmarpd\fP can operate as an ATMARP client and as an ATMARP server.
+If also supports the concurrent use of several IP over ATM interfaces.
+.P
+\fBatmarpd\fP is configured from the command line using the \fBatmarp\fP
+program. Unless debugging is enabled, the ATMARP table is written after
+every change to the file \fB/var/run/atmarpd.table\fP (or to a file with
+the same name in a different directory, if the \fB\-D\fP option is
+used).
+.P
+Note that \fBatmarpd\fP disables support for SVCs if signaling is not
+available at start time, i.e. if \fBatmsigd\fP is not running.
+.SH OPTIONS
+.IP \fB\-b\fP
+Run in background (i.e. in a forked child process) after initializing.
+.IP \fB\-d\fP
+Enables (lots of) debugging output. By default, \fBatmarpd\fP is comparably
+quiet.
+.IP \fB\-D\ \fIdump_dir\fP
+Changes the directory where \fBatmarpd\fP writes its table
+(\fBatmarpd.table\fP). By default, \fB/var/run\fP is used.
+.IP \fB\-l\ \fIlogfile\fP
+Write diagnostic messages to the specified file instead of to standard
+error. The special name \fBsyslog\fP is used to send diagnostics to the
+system logger.
+.IP \fB\-m\fP
+Enables merging of incoming calls if the address is known. 
+An incoming connection on which no InARP reply has been received yet, but
+which originates from an ATM address for which an ATMARP entry already
+exists, is automatically added to that entry. This assumes that there is a
+1:1 mapping between IP addresses and ATMARP addresses. By default, this
+assumption is not made, which frequently results in the setup of duplicate
+connections. Note that RFC1577 requires that an ATMARP server sends an InARP
+request on an incoming connection. Merging may therefore violate RFC1577 in
+this case.
+.IP \fB\-n\fP
+Prints addresses in numeric format only, i.e. no address to name translation
+is attempted.
+.IP \fB\-V\fP
+Prints the version number of \fBatmarpd\fP on standard output and exits.
+.SH FILES
+.PD 0
+.TP 25
+.B /var/run/atmarpd.table
+ATMARP table
+.TP 25
+.B /proc/atm/arp
+table of currently active IP over ATM VCs
+.PD
+.SH BUGS
+\fBatmarpd\fP removes ATMARP entries from the kernel table while refreshing
+them.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <werner.almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmarp(8), atmsigd(8)
+.\"{{{}}}
