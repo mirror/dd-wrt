@@ -69,7 +69,8 @@ start_sysinit (void)
 
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
+  eval ("/bin/tar", "-xzf", "/dev/mtdblock4", "-C", "/");
+ // eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -87,7 +88,26 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
-
+/* test -e /lib/modules/$KERNELVER/extra/profdrvdd.ko && insmod /lib/modules/$KERNELVER/extra/profdrvdd.ko
+ test -e /lib/modules/$KERNELVER/extra/atmapi.ko && insmod /lib/modules/$KERNELVER/extra/atmapi.ko
+ test -e /lib/modules/$KERNELVER/extra/atmbonding.ko && insmod /lib/modules/$KERNELVER/extra/atmbonding.ko
+ test -e /lib/modules/$KERNELVER/extra/atmbondingeth.ko && insmod /lib/modules/$KERNELVER/extra/atmbondingeth.ko
+ test -e /lib/modules/$KERNELVER/extra/adsldd.ko && insmod /lib/modules/$KERNELVER/extra/adsldd.ko
+ test -e /lib/modules/$KERNELVER/extra/blaa_dd.ko && insmod /lib/modules/$KERNELVER/extra/blaa_dd.ko
+ test -e /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko && insmod /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko
+ test -e /lib/modules/$KERNELVER/extra/bcmprocfs.ko && insmod /lib/modules/$KERNELVER/extra/bcmprocfs.ko
+ test -e /lib/modules/$KERNELVER/extra/bcm_enet.ko && insmod /lib/modules/$KERNELVER/extra/bcm_enet.ko
+ test -e /lib/modules/$KERNELVER/extra/bcm_usb.ko && insmod /lib/modules/$KERNELVER/extra/bcm_usb.ko
+ test -e /lib/modules/$KERNELVER/extra/wl.ko && insmod /lib/modules/$KERNELVER/extra/wl.ko
+ test -e /lib/modules/$KERNELVER/extra/dspdd.ko && insmod /lib/modules/$KERNELVER/extra/dspdd.ko
+ test -e /lib/modules/$KERNELVER/extra/endpointdd.ko && insmod /lib/modules/$KERNELVER/extra/endpointdd.ko
+*/
+ eval ("insmod","atmapi");
+ eval ("insmod","adsldd");
+ eval ("insmod","blaa_dd");
+ eval ("insmod","bcmprocfs");
+ eval ("insmod","bcm_enet");
+ 
 
   /* Modules */
   uname (&name);
@@ -102,7 +122,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 
 
-  eval ("insmod", "ipv6");
+ // eval ("insmod", "ipv6");
 
   /* Set a sane date */
   stime (&tm);
