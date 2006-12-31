@@ -2680,7 +2680,7 @@ start_hotplug_net (void)
 
   if (strncmp (interface, "wds", 3))
     return 0;
-
+  cprintf("action: %s\n",action);
   if (!strcmp (action, "register"))
     {
 #ifdef HAVE_MICRO
