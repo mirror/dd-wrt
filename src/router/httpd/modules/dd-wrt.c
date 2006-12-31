@@ -3491,7 +3491,7 @@ ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv)
       if (days) websWrite (wp, "%d day%s, ", days, (days == 1 ? "" : "s"));
 
       minutes = (int)uptime / 60;
-      websWrite (wp, "%d:%02d", (minutes / 60) % 24, minutes % 60);
+      websWrite (wp, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, (int)uptime % 60);
     }
   fclose (fp);
 
