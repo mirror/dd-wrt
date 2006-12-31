@@ -1,0 +1,15 @@
+@	IN	SOA	obelix-atm.atm.	hostmaster.obelix-atm.atm. (
+			1999102201	; serial, YYYYMMDDnn
+			8H		; refresh, seconds
+			2H		; retry, seconds
+			1W		; expire, seconds
+			1D )		; minimum, seconds
+		NS	obelix-atm.atm.
+
+;
+;	Hosts
+;
+
+72		PTR	obelix-atm.atm.
+96		PTR	pong-atm.atm.
+81		PTR	osteolito-atm.atm.

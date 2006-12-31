@@ -1,0 +1,8 @@
+The subdirectories of this directory contain sample configuration files
+for various Linux distribution. Please see the respective READMEs for
+details. The configuration files for a given distribution can be installed
+by issuing the command
+
+  make distribution_name
+
+from this directory.

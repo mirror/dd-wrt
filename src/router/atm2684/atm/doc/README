@@ -1,0 +1,26 @@
+Linux ATM, documentation
+========================
+
+In order to generate the document from the source, you need Perl 4 or Perl 5.
+
+If you also have LaTeX: In order to generate a DVI file for further
+processing, type
+
+  make dvi
+
+If you also have LaTeX and dvips: In order to generate PostScript outout,
+type
+
+  make ps
+
+In order to generate plain ASCII output, type
+
+  make ascii
+
+To clean up, type
+
+  make clean
+
+or
+
+  make spotless

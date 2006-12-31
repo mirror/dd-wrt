@@ -1,0 +1,12 @@
+#
+# /etc/sysconfig/network-scripts/ifcfg-atm*
+#
+DEVICE=atm0		# device name
+IPADDR=##MYIPADDR##	# hosts's IP address on the ATM LIS
+NETMASK=255.255.255.0	# netmask (e.g. EPFL uses 8 host bits)
+NETWORK=192.33.193.0	# network (e.g. EPFL's experimental ATM LIS)
+BROADCAST=192.33.193.255 # broadcast address (not really useful)
+ARPSRV=lrcsuns-a	# ATM address of ATMARP server; omit if local
+# ARPSRVQOS="ubr:max_pcr=100kbps"	# QOS of the ATMARP server VC
+# ARPDEFQOS="ubr:max_pcr=700kbps"	# default QOS for IP over ATM VCs
+ONBOOT=no		# needs to be loaded by ATM-specific procedure

@@ -1,0 +1,109 @@
+This is a little sample configuration with two terminals connected to a
+switch. All of the network elements are on the same host and atmtcp takes
+care of the the real kernel with multiple terminals on the same machine.
+At least not yet.)
+
+Note that no data transfer or such is possible yet. This is only
+signaling.
+
+
+This is the example setup:
+
+	  +-------+     +------+     +-------+
+	  |  isp  |     |switch|     |  isp  |
+	  |atmsigd|-----|      |-----|atmsigd|
+	  +-------+     +------+     +-------+
+
+
+Preparation (only once):
+
+  # atmtcp virtual 1 listen-bg 8412
+  # atmtcp virtual 2 connect localhost 8412 bg
+  # atmtcp virtual 3 listen-bg 8434
+  # atmtcp virtual 4 connect localhost 8434 bg
+  # atmaddr -a 1 +123
+
+Start the "network" (no privileges required):
+
+  % atmsigd -b 1.0.105 /tmp/1
+  % atmsigd -b -m switch 2.0.105 /tmp/2
+  % atmsigd -b -m switch 3.0.105 /tmp/3
+  % atmsigd -b 4.0.105 /tmp/4
+  % ./sw_debug -d
+  % isp /tmp/4 <4.isp
+  % isp /tmp/1 <1.isp
+
+
+In more detail:
+
+
+		 +------------------------------------------+
+                 |                ./sw_debug                |
+		 +------------------------------------------+
+		   |			                 |
+		 /tmp/2			               /tmp/3
+		   |			                 |
+  +----------------------------------+ +----------------------------------+
+  | atmsigd -m switch 2.0.105 /tmp/2 | | atmsigd -m switch 3.0.105 /tmp/3 |
+  +----------------------------------+ +----------------------------------+
+		   |			                 |
+		 itf 2			                 |
+	           |					 |
++--------------------------------------------+           |
+| atmtcp virtual 2 connect localhost 8412 bg |           |
++--------------------------------------------+           |
+|      atmtcp virtual 1 listen-bg 8412       |           |
++--------------------------------------------+         itf 3
+	           |					 |
+                 itf 1          +--------------------------------------------+
+                   |            |      atmtcp virtual 3 listen-bg 8434       |
+                   |            +--------------------------------------------+
+                   |            | atmtcp virtual 4 connect localhost 8434 bg |
+                   |            +--------------------------------------------+
+	           |					 |
+		   |				       itf 4
+		   |					 |
+       +------------------------+	     +------------------------+
+       | atmsigd 1.0.105 /tmp/1 |	     | atmsigd 4.0.105 /tmp/4 |
+       +------------------------+	     +------------------------+
+              |						       |
+	    /tmp/1					     /tmp/4
+	      |						       |
++-------------------+					 +-------------------+
+| isp /tmp/1 <1.isp |					 | isp /tmp/4 <4.isp |
++-------------------+					 +-------------------+
+
+
+You can use the script "demo" to run this setup. You need to build the switch
+library and the debug switch first:
+  cd ..; make
+  cd debug; make
+
+
+--- switch.conf --------------------------------------------------------------
+
+socket /tmp/2 {
+    itf 2 2.0.5
+    route +1
+}
+socket /tmp/3 {
+    itf 3 2.0.5
+    default
+}
+
+--- 1.isp --------------------------------------------------------------------
+
+send connect vcc=1 svc=+234 local=+123 qos=ubr,aal5
+receive okay vcc=1
+send close vcc=1
+receive close vcc=1
+
+--- 4.isp --------------------------------------------------------------------
+
+send listen vcc=1 svc=+234 qos=ubr,aal5
+receive okay vcc=1
+receive indicate listen_vcc=1
+send accept vcc=2 listen_vcc=1
+receive okay vcc=2
+receive close vcc=2
+send close vcc=2

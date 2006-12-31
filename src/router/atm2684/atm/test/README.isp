@@ -1,0 +1,61 @@
+No man page yet. "isp" is a tool for sending and receiving ISP messages,
+e.g. to test atmsigd. Although it can be used interactively, its poor
+error handling makes it more suitable for script use.
+
+Commands:
+
+  send msg_type [field=value|field=$var ...]
+  receive [msg_type [field=value|field=$var|$var=field ...]]
+  set $var=value
+  show
+  echo value
+  help
+
+where
+
+  msg_type: bind, connect, accept, reject, listen, okay, error, indicate,
+            close, itf_notify, modify, identify, terminate
+  field: vcc, listen_vcc, reply, pvc, local, qos, svc, sap
+
+Variable syntax is like in Perl, i.e. a variable is always prefixed by
+a dollar sign, even where it is not expanded. Fields and variables are
+typed. Fields with compatible input have the same type (e.g. "svc" and
+"local", and "vcc" and "listen_vcc"). The type of variables which are
+set with "set" is determined the first time they're used in a "send" or
+"receive" command.
+
+Fields which do not exist in a message cannot be accessed (see isp.c,
+types[] for all valid combinations). Unspecified fields are set to
+zero. isp does not enforce setting of mandatory fields (yet).
+
+"receive" accepts three types of arguments:
+
+  field=value	field must be equal to the value
+  field=$var	field must be equal to the content of the variable
+  $var=field	content of field is assigned to variable
+
+Values can contain pretty much any characters except for whitespace,
+and they must not begin with dollar, equal, or hash signs. ispl.l
+contains some hacks (e.g. {tail}) to make things work anyway. There is
+no way to include whitespace in a value, so things like  echo it works
+don't work (but echo ?$\=# does).
+
+Examples:
+
+  receive bind $VCC=vcc
+  send okay vcc=$VCC
+
+  set $SAP = blli:l3=tr9577,ipi=snap,oui=0x00A03E,pid=0x0002
+  send indicate listen_vcc=$VCC svc=+1007 qos=ubr:pcr=123kcps sap=$SAP
+
+isp normally pretty-prints all messages. This can be suppressed with
+-q.
+
+A hint for regression test development:
+
+  To test for pass, put  echo PASSED  after the command
+  To test for fail, put  echo PASSED  before and  echo FAILED  after
+  Check the last echo'ed string for PASSED (or nothing)
+
+The absence of conditional execution in isp's language is considered a
+feature.

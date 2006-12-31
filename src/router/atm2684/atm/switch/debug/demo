@@ -1,0 +1,57 @@
+#!/usr/bin/perl
+
+@cmd = ("xterm -fn 5x7 -geometry +25+400",
+	"xterm -fn 5x7 -geometry +25+200",
+	"xterm -fn 5x7 -geometry +450+200",
+	"xterm -fn 5x7 -geometry +450+400",
+	"xterm -fn 5x7 -geometry 132x24+110+0",
+	"xterm -fn 5x7 -geometry +475+600",
+	"xterm -fn 5x7 -geometry +0+600");
+
+open(IN,"README") || die "open README: $!";
+while (<IN>) {
+    if (/^---\s*(\S+)\s*/) {
+	if ($mode eq "F") {
+	    close OUT || die "close: $!";
+	}
+	open(OUT,">$1") || die "create $1: $!";
+	$mode = "F";
+	next;
+    }
+    if (/^Preparation/) {
+	$mode = "P";
+	next;
+    }
+    if (/^Start/) {
+	$mode = "S";
+	next;
+    }
+    if ($mode eq "P") {
+	chop;
+	$_ .= " &" if /-l/;
+	push(@do,$') if /^\s*#\s*/;
+	next;
+    }
+    if ($mode eq "S") {
+	chop;
+	next unless /^\s*%\s*/;
+	$c = $';
+	$c =~ s/-b/-d -l stderr/;
+	$c =~ s/isp/isp -v/;
+	$o = $c;
+	$c = "sh -c \"$c; sleep 300\"" if $c =~ /isp/;
+	push(@do,shift(@cmd)." -T '$o' -e $c &");
+	next;
+    }
+    if ($mode eq "F") {
+	print OUT $_ || die "write: $!";
+    }
+}
+if ($mode eq "F") {
+    close OUT || die "close: $!";
+}
+for (@do) {
+    print "$_\n";
+    system($_);
+    sleep(1);
+}

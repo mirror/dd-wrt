@@ -1,0 +1,177 @@
+.TH mpcd 8 "Nov 17, 1998" "Linux" "Maintenance Commands"
+.SH NAME
+mpcd \- ATM MPOA (Multi\-Protocol Over ATM) client daemon
+.SH SYNOPSIS
+.B mpcd
+.B [ -s
+.I Control ATM address
+.B ]
+.B [ -l
+.I Data ATM address
+.B ]
+.B [ -c
+.I MPS control ATM address
+.B ]
+.B [ -i
+.I Interface number
+.B ]
+.B [ -m
+.I MPS MAC address
+.B ]
+.B [ -L
+.I LEC address
+.B [ -n
+.I ELAN name
+.B ]
+.B [ -C
+.I LECS Address
+.B ]]
+.SH DESCRIPTION
+MPOA client
+.SM(MPC) is responsible for creating and receiving
+internetwork layer shortcuts. Using these shortcuts MPCs forward
+unicast internetwork layer packets effectively over ATM without need
+for routing protocols.
+.PP
+.SM MPC
+has two roles; ingress and egress. In ingress role
+.SM MPC
+detects flows destined outside it's own subnet and tries to establish
+shortcuts to those destinations. In egress role
+.SM MPC
+accepts shortcuts and packets arriving on those shortcuts. Maintaining
+shortcuts is done with the help of
+.SM MPOA
+server
+.SM(MPS).
+.PP
+Just as the Linux
+.SM LAN
+Emulation client,
+.SM MPOA
+client is also divided in two parts. The parts are kernel component
+and a daemon process. The daemon opens and receives data shortcuts and
+control connections with the kernel component. The kernel component
+tallies packets flowing out from the
+.SM LANE
+device and makes the decision if a packet should be forwarded using
+.SM LANE
+or
+.SM MPOA
+shortcuts.
+.PP
+If the daemon is killed with
+.B SIGHUP
+it will close all the open connections, purge ingress and egress cache
+entries, query
+.SM LECS
+if applicable and then restart itself.
+.PP
+Linux MPOA client only supports non-LLC-muxed shortcuts. The number of 
+supported MPOA clients is unlimited.
+.SH OPTIONS
+.IP "-s Control ATM address"
+Local ATM address this MPC uses for MPOA control connections.
+.IP "-l Data ATM address"
+Local ATM address from and to which MPOA shortcuts are established.
+.IP "-c MPS control ATM address"
+ATM address of MPS. Only needed if MPS can not advertise it by itself.
+.IP "-i Interface number"
+The interface number of LEC this MPC serves. E.g. 2 for "lec2".
+.IP "-m MPS MAC address"
+MAC address of default router where MPS recides. Only useful if the
+MPOA server fails to advertise itself.
+.IP "-L LEC address"
+Listen address of the
+.SM LANE
+client zeppelin. mpcd uses this address as its own
+.SM ATM
+address when it queries
+.SM LECS
+for
+.SM MPC
+configuration parameters. If this option is not present then mpcd
+.B will not
+use
+.SM LECS
+to query for configuration parameters. This option is normally the
+same as zeppelin's -l option.
+.IP "-n ELAN name"
+Name of the
+.SM ELAN
+for which mpcd asks for parameters when it connects to
+.SM LECS.
+If this option is not given,
+.SM LECS
+should respond with parameters belonging to the default
+.SM ELAN
+if one exists. This option is normally the same as zeppelin's -n
+option.
+.IP "-C LECS address"
+ATM address of
+.SM LECS
+mpcd asks for parameters. If this option is left empty and -L is
+given, mpcd uses ATM Forum assigned Well-Known
+.SM LECS
+address. This option is normally the same as zeppelin's -c option.
+.SH EXAMPLES
+This script snippet shows how to run LANE and MPOA. After UNI
+signalling and ILMI have been started LANE (zeppelin) and MPOA (mpcd)
+are started. The commented out line shows how to start mpcd so that it
+queries
+.SM LECS
+for
+.SM MPC
+parameters.
+.PP
+Arguments jaarli[1-3] are local ATM addresses listed in file
+.I /etc/hosts.atm.
+
+ATM=/usr/src/atm
+.br
+case "$1" in
+.br
+start)
+    cd $ATM
+    if [ -x sigd/atmsigd ] ; then
+.RS 
+        sigd/atmsigd -b 
+.RE
+    fi
+    if [ -x ilmid/ilmid ] ; then
+.RS 
+        ilmid/ilmid -b -x
+.RE
+    fi
+    if [ -x led/zeppelin ] ; then
+.RS 
+        led/zeppelin -2 -n sampo -i2 -l jaarli3 &
+        ifconfig lec2 10.10.10.208 \\
+.RS
+             netmask 255.255.255.192 \\
+             broadcast 10.10.10.255
+.RE
+        ifconfig lec2 up
+        route add default gw 10.10.10.193
+.RE
+    fi
+    if [ -x mpoad/mpcd ] ; then
+.RS 
+        mpoad/mpcd -i2 -s jaarli1 -l jaarli2 &
+        #mpoad/mpcd -i2 -s jaarli1 -l jaarli2 \\
+                    -L jaarli3 -n sampo & 
+.RE
+    fi              
+    ;;
+.br
+esac
+.br
+exit 0
+.SH BUGS
+Supports only Ethernet type of ELANs. Probably others too.
+.SH AUTHORS
+Heikki Vatiainen <hessu@cs.tut.fi>, Sampo Saaristo <s156953@cs.tut.fi>
+.SH "SEE ALSO"
+.BR zeppelin(8),
+.BR atmsigd(8)
+

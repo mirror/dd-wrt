@@ -1,0 +1,106 @@
+.TH zeppelin 8 "Nov 29, 1999" "Linux" "Maintenance Commands"
+.SH NAME
+zeppelin \- ATM LAN Emulation client demon (LED) Zeppelin
+.SH SYNOPSIS
+.B zeppelin
+.RB [ \-c\ \fILECS_address\fP\ |\ \-s\ \fILES_address\fP ]
+.RB [ \-e\ \fIesi\fP ]
+.RB [ \-n\ \fIVLAN_name\fP ]
+.RB [ \-m\ \fImesg_mask\fP ]
+.RB [ \-l\ \fIlisten_address\ | \ selector\fP ]
+.RB [ \-i\ \fIinterface_number\fP ]
+.RB [ \-I\ \fIphysical_interface_number\fP ]
+.RB [ \-t\ \fI1516|1580|4544|9234|18190\fP ]
+.RB [ \-1\ ]
+.RB [ \-2\ ]
+.RB [ \-p\ ]
+.RB [ \-F\ \fIlogfile\fP ]
+.RB [ \-f\ \fIFore_specific_name\fP ]
+.SH DESCRIPTION
+A LAN Emulation Client is an entity in an ATM endstation that performs 
+data forwarding, address resolution and other control functions. It 
+uses the LUNI interface when communicating with other components in 
+emulated LANs. It provides upper protocol layers a MAC like 
+interface similar to IEEE 802.3/Ethernet or IEEE 802.5/Token Ring LAN.
+.PP
+LAN Emulation client code is divided into two parts: user space 
+application LAN Emulation Demon called (LED) \fBzeppelin(8)\fP, and the 
+kernel component. \fBZeppelin\fP is responsible for control operations needed 
+in LAN Emulation clienthood. It forms the necessary VCCs and receives 
+all the LE control frames and acts accordingly. It also controls the 
+operation of the LEC kernel component.
+.PP
+Linux LEC supports only Ethernet type of emulated LAN.
+.PP
+\fBSIGHUP\fP causes restart of the LEC. All resources are 
+released and \fBzeppelin\fP is started. 
+.SH OPTIONS
+.IP \fB\-c\ \fILECS_address\fP
+ATM address of \fBlecs(8)\fP (Lan Emulation Configuration Server), if not
+set, Well-Known server address is used.
+.IP \fB\-s\ \fILES_address\fP
+ATM address of \fBles(8)\fP (Lan Emulation Server), can be used in
+bypassing configuration phase in joining emulated Lan i.e \fBlecs\fP address
+is not used. 
+.IP \fB\-e\ \fIesi\fP
+Mac address to use when communicating in Emulated LAN. E.g. 00:20:22:23:04:05 .
+.IP \fB\-n\ \fIVLAN_name\fP
+Name of the virtual LAN to which joining is requested.
+This is used in LE_CONFIGURE_REQUEST to LECS or
+LE_JOIN_RESPONSE to LES, if configuration phase is bypassed.
+.IP \fB\-m\ \fImesg_mask\fP
+Sometimes one wants to know more what is happening in LE
+daemon e.g. when nothing works. This is a hexadecimal long value
+setting global message mask. 0 = No messages, ffff = All messages.
+.IP \fB\-l\ \fIlisten_address\ |\ selector\fP
+Local ATM address that zeppelin uses as local binding point in
+signalling. Use this if you are running more than one client or
+a set of LE servers. The local ATM address can be specified by
+either giving the full ATM address or the desired selector byte.
+.IP \fB\-i\ \fIinterface_number\fP
+Linux LEC supports up to 40+8 network interfaces. The interface_number
+tells zeppelin to which of these to attach. Ethernet type network
+interfaces are numbered from "lec0" to "lec39" and Token Ring
+interfaces are from "lec40" to "lec47". These parameters are tweakable
+during the kernel compile, see <linux/atmlec.h>.
+.IP \fB\-I\ \fIphysical_interface_number\fP
+The physical interface this LANE client should bind to. If your host
+has multiple ATM network cards, you can use this option to choose
+which card this zeppelin will use.
+.IP \fB\-t\ \fIMTU\fP
+The MTU of ELAN to join. You need to also use \fBifconfig(8)\fP to
+set the MTU of the LANE interface.
+.IP \fB\-1\fP
+Run as LANEv1 client. This is the default.
+.IP \fB\-2\fP
+Run as LANEv2 client. This is required by MPOA.
+.IP \fB\-p\fP
+Enable proxy. When started with this option, it is possible to bridge
+packets between ATM and Ethernet. That is, you can use LANE interfaces
+with normal bridging. See the Bridging mini-Howto for more info.
+.IP \fB\-F\ \fIlogfile\fP
+Instead of writing debug messages to \fBstderr\fP, write the messages
+to the file \fBlogfile\fP. Use \fBsyslog\fP as the file name to use
+the \fBsyslog(3)\fP facility.
+.IP \fB\-f\ \fIFore\ specific\ name\fP
+The LANE servers on Fore ATM switches can display a special
+name if a client can supply one. This name shows with command
+\'conf lane les show advanced\'.
+.SH TOKEN RING CONSIDERATIONS
+A number of lec interfaces is reserved for Token Ring ELANs when the
+kernel is compiled with Token Ring (CONFIG_TR) support. See the
+discussion about interface_number command line option above. The Linux
+Token Ring LANE client does not support bridging between legacy Token
+Ring and ATM parts of the ELAN, so using the -p option is not
+recommended. Token Ring support has received less testing than its
+Ethernet counterpart.
+.SH BUGS
+John Bonham died 1980 and Led Zeppelin broke.
+.PP
+Please report any other bugs to Heikki Vatiainen <hessu@cs.tut.fi>
+.SH AUTHORS
+Marko Kiiskila, TUT <carnil@cs.tut.fi> and Heikki Vatiainen, TUT
+<hessu@cs.tut.fi>
+.SH "SEE ALSO"
+lecs(8), mpcd(8), atmsigd(8), les(8), qos(7)
+.\"{{{}}}

@@ -1,0 +1,143 @@
+#!/bin/sh
+[ -r ./VERSION ] || exit 1
+VERSION=`cat ./VERSION`
+#SRCDIR=$HOME/k/2117
+ARCHDIR=$HOME/l/arch
+[ -d $ARCHDIR ] || ARCHDIR=`pwd`
+#(
+#    cd $SRCDIR
+#    ./mkpatch
+#)
+# cp $SRCDIR/atm.patch .
+cd doc
+make usage.txt
+cd ../..
+tar cvf - \
+  atm/VERSION atm/README atm/README.DRIVERS atm/CREDITS atm/USAGE \
+    atm/CHANGES atm/BUGS \
+    atm/COPYING atm/COPYING.GPL atm/COPYING.LGPL \
+    atm/Makefile atm/Rules.make atm/mkdist atm/mkdiff atm/mkbindist \
+    atm/mkpatch atm/.kernel \
+  atm/doc/README atm/doc/usage.tex atm/doc/usage.txt atm/doc/url.sty \
+    atm/doc/Makefile atm/doc/rlatex atm/doc/t2a.pl atm/doc/README.CLP \
+    atm/doc/README.DNS atm/doc/bind-files/127.0.0 \
+    atm/doc/bind-files/192.168.27 atm/doc/bind-files/atm \
+    atm/doc/bind-files/atm-reverse atm/doc/bind-files/named.conf \
+    atm/doc/bind-files/resolv.conf \
+  atm/man/Makefile atm/man/qos.7 atm/man/sap.7 \
+  atm/sigd/README \
+    atm/sigd/Makefile atm/sigd/atmsigd.c atm/sigd/cfg.l \
+    atm/sigd/cfg.y atm/sigd/io.h atm/sigd/io.c \
+    atm/sigd/kernel.c atm/sigd/proto.h atm/sigd/proto.c \
+    atm/sigd/uni.c atm/sigd/timeout.c atm/sigd/timeout.h \
+    atm/sigd/sap.h atm/sigd/sap.c atm/sigd/trace.c \
+    atm/sigd/trace.h atm/sigd/policy.h atm/sigd/policy.c \
+    atm/sigd/mkmess.pl atm/sigd/atmsigd.8 atm/sigd/atmsigd.conf.4 \
+  atm/saal/Makefile atm/saal/saal.h atm/saal/saal.c atm/saal/sscf.h \
+    atm/saal/sscf.c atm/saal/sscop.h atm/saal/sscop.c atm/saal/queue.h \
+    atm/saal/queue.c atm/saal/pdu.h atm/saal/pdu.c \
+  atm/qgen/TODO atm/qgen/Makefile atm/qgen/mknl.pl atm/qgen/incl.pl \
+    atm/qgen/common.h atm/qgen/common.c atm/qgen/file.h atm/qgen/file.c \
+    atm/qgen/first.c atm/qgen/second.c atm/qgen/third.c atm/qgen/op.h \
+    atm/qgen/qgen.h atm/qgen/qgen.c atm/qgen/ql.l atm/qgen/ql.y \
+    atm/qgen/qlib.h atm/qgen/qlib.c atm/qgen/uni.h atm/qgen/qtest.c \
+    atm/qgen/msg.fmt \
+  atm/arpd/Makefile atm/arpd/arp.c atm/arpd/arp.h atm/arpd/atmarpd.c \
+    atm/arpd/atmarpd.h atm/arpd/io.c atm/arpd/io.h atm/arpd/itf.c \
+    atm/arpd/itf.h atm/arpd/table.c atm/arpd/table.h atm/arpd/atmarpd.8 \
+    atm/arpd/atmarp.c atm/arpd/atmarp.8 atm/arpd/atmarp.h \
+  atm/ilmid/COPYRIGHT atm/ilmid/Makefile \
+    atm/ilmid/rfc1155_smi.c atm/ilmid/rfc1155_smi.h \
+    atm/ilmid/rfc1157_snmp.c atm/ilmid/rfc1157_snmp.h \
+    atm/ilmid/mib.h atm/ilmid/mib.c atm/ilmid/util.h atm/ilmid/util.c \
+    atm/ilmid/message.h atm/ilmid/message.c atm/ilmid/ilmid.c \
+    atm/ilmid/sysgroup.h atm/ilmid/sysgroup.c atm/ilmid/io.h atm/ilmid/io.c \
+    atm/ilmid/atmf_uni.c atm/ilmid/atmf_uni.h \
+    atm/ilmid/asn1/README atm/ilmid/asn1/Makefile \
+    atm/ilmid/asn1/asn_bits.h atm/ilmid/asn1/asn_bits.c \
+    atm/ilmid/asn1/asn_config.h atm/ilmid/asn1/asn_incl.h \
+    atm/ilmid/asn1/asn_int.h atm/ilmid/asn1/asn_int.c \
+    atm/ilmid/asn1/asn_len.h atm/ilmid/asn1/asn_len.c \
+    atm/ilmid/asn1/asn_list.h atm/ilmid/asn1/asn_list.c \
+    atm/ilmid/asn1/asn_null.h atm/ilmid/asn1/asn_null.c \
+    atm/ilmid/asn1/asn_octs.h atm/ilmid/asn1/asn_octs.c \
+    atm/ilmid/asn1/asn_oid.h atm/ilmid/asn1/asn_oid.c \
+    atm/ilmid/asn1/asn_tag.h atm/ilmid/asn1/asn_tag.c \
+    atm/ilmid/asn1/exp_buf.h atm/ilmid/asn1/exp_buf.c \
+    atm/ilmid/asn1/nibble_alloc.c atm/ilmid/asn1/nibble_alloc.h \
+    atm/ilmid/asn1/min_buf.h atm/ilmid/asn1/sbuf.h \
+    atm/ilmid/asn1/print.h atm/ilmid/asn1/print.c \
+    atm/ilmid/asn1/str_stk.h atm/ilmid/asn1/str_stk.c \
+  atm/maint/Makefile atm/maint/atmaddr.c atm/maint/atmdiag.c \
+    atm/maint/atmdump.c atm/maint/atmtcp.c \
+    atm/maint/sonetdiag.c atm/maint/atmloop.c atm/maint/atmloop.8 \
+    atm/maint/atmaddr.8 atm/maint/atmdiag.8 atm/maint/atmdump.8 \
+    atm/maint/atmtcp.8 atm/maint/zntune.c atm/maint/enitune.c atm/maint/esi.c \
+    atm/maint/esi.8 \
+    atm/maint/saaldump.c atm/maint/README.nstune atm/maint/nstune.c \
+  atm/test/Makefile atm/test/aread.c atm/test/awrite.c atm/test/br.c \
+    atm/test/bw.c atm/test/ttcp.c atm/test/aping.c atm/test/window.c \
+    atm/test/align.c atm/test/isp.c atm/test/isp.h atm/test/ispl.l \
+    atm/test/ispl.y atm/test/mkerrnos.pl atm/test/README.isp \
+  atm/debug/Makefile atm/debug/ed.c atm/debug/peek.pl atm/debug/znth.c \
+    atm/debug/delay.c atm/debug/svctor.c atm/debug/dnstest.c \
+  atm/lib/Makefile atm/lib/atm2text.c atm/lib/atm.h atm/lib/text2atm.c \
+    atm/lib/atmequal.c atm/lib/sdu2cell.c atm/lib/atmsap.h \
+    atm/lib/atmd.h atm/lib/common.c atm/lib/diag.c \
+    atm/lib/kptr.c atm/lib/timer.c \
+    atm/lib/text2qos.c atm/lib/qos2text.c atm/lib/qosequal.c \
+    atm/lib/sap2text.c atm/lib/text2sap.c atm/lib/sapequal.c atm/lib/misc.c \
+    atm/lib/atmres.h atm/lib/ans.c atm/lib/rtf2e164_cc.pl \
+    atm/lib/stdint.h atm/lib/unix.c atm/lib/text2ip.c \
+  atm/led/COPYRIGHT.TUT atm/led/Makefile \
+    atm/led/address.c atm/led/address.h atm/led/conn.c atm/led/conn.h \
+    atm/led/display.c atm/led/display.h atm/led/frame_defs.h \
+    atm/led/frames.c atm/led/frames.h atm/led/join.c atm/led/join.h \
+    atm/led/kernel.c atm/led/kernel.h atm/led/lec.h atm/led/main.c \
+    atm/led/zeppelin.8 \
+  atm/lane/COPYRIGHT.TUT atm/lane/Makefile atm/lane/USAGE \
+    atm/lane/bus.8 atm/lane/lecs.8 atm/lane/les.8 \
+    atm/lane/atm.c \
+    atm/lane/atm.h atm/lane/atm_lecs.c atm/lane/atm_lecs.h \
+    atm/lane/connect.c atm/lane/connect.h atm/lane/connect_bus.c \
+    atm/lane/db.c atm/lane/db.h atm/lane/dump.c atm/lane/dump.h \
+    atm/lane/events.c atm/lane/events.h atm/lane/lane.c atm/lane/lane.h \
+    atm/lane/ldb.c atm/lane/ldb.h atm/lane/lecs.c atm/lane/lecs.h \
+    atm/lane/lecs_db.h atm/lane/lecs_db.l \
+    atm/lane/lecs_load.c atm/lane/lecs_load.h atm/lane/load.c atm/lane/load.h \
+    atm/lane/load_lex.h atm/lane/load_lex.l atm/lane/mem.c atm/lane/mem.h \
+    atm/lane/mem_lecs.c atm/lane/mem_lecs.h atm/lane/packet.c \
+    atm/lane/packet.h atm/lane/timers.h atm/lane/timers.c atm/lane/units.c \
+    atm/lane/units.h \
+  atm/mpoad/Makefile atm/mpoad/README.mpoa atm/mpoad/TODO atm/mpoad/CHANGELOG \
+    atm/mpoad/get_vars.c atm/mpoad/get_vars.h atm/mpoad/id_list.c \
+    atm/mpoad/io.c atm/mpoad/io.h atm/mpoad/k_interf.c atm/mpoad/k_interf.h \
+    atm/mpoad/main.c atm/mpoad/mpcd.8 atm/mpoad/p_factory.c \
+    atm/mpoad/p_recogn.c atm/mpoad/packets.h atm/mpoad/poll2select.c \
+    atm/mpoad/poll2select.h atm/mpoad/tag_list.c atm/mpoad/lecs.c \
+    atm/mpoad/lecs.h \
+  atm/switch/Makefile atm/switch/Rules.make atm/switch/cfg.l atm/switch/cfg.y \
+    atm/switch/fab.h atm/switch/proto.h atm/switch/proto.c atm/switch/relay.c \
+    atm/switch/route.h atm/switch/route.c atm/switch/sig.h atm/switch/sig.c \
+    atm/switch/dispatch.h atm/switch/dispatch.c atm/switch/control.c \
+    atm/switch/swc.h atm/switch/swc.c atm/switch/README \
+    atm/switch/debug/README atm/switch/debug/Makefile atm/switch/debug/debug.c \
+    atm/switch/debug/demo \
+    atm/switch/tcp/README atm/switch/tcp/Makefile atm/switch/tcp/mkfiles \
+    atm/switch/tcp/tcpsw.c \
+  atm/extra/extra.html atm/extra/Makefile \
+    atm/extra/tcpdump-3.4.patch atm/extra/tcpdump-3.4.patch.sunrpc \
+    atm/extra/bind-4.9.5-REL.patch atm/extra/hosts2ans.pl \
+    atm/extra/tc/README atm/extra/tc/mkpatch \
+  atm/config/README atm/config/Makefile \
+    atm/config/common/README atm/config/common/Makefile \
+    atm/config/common/hosts.atm atm/config/common/e164_cc \
+    atm/config/redhat-4.0/README atm/config/redhat-4.0/Makefile \
+    atm/config/redhat-4.0/atm atm/config/redhat-4.0/atm.init \
+    atm/config/redhat-4.0/atmsigd.conf atm/config/redhat-4.0/ifcfg-atm0 \
+    atm/config/redhat-4.0/ifup-atm \
+  atm/atm.patch \
+ |
+#  atm/atm-$VERSION-1.spec |
+  gzip -9 >$ARCHDIR/atm-$VERSION.tar.gz
+#atm/bind-4.9.4.T4B.ATM.patch

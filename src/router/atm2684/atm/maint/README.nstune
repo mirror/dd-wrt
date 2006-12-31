@@ -1,0 +1,77 @@
+[ Note: this is the original README. Since the patch is already included in
+        atm.patch, only the instructions at the end of this file apply. - WA ]
+
+README file for release 7 of the nicstar device driver by Rui Prior.
+
+
+* * Make sure you read carefully the Installation section before proceeding * *
+
+This is the 7th release of my nicstar device driver.
+The driver is meant to work with the atm patch 0.38 applied to the 2.1.105 kernel.
+It supports AAL0 and AAL5. Supported traffic classes are UBR and CBR.
+Please note that this is not meant to be a final release, but a preliminary version.
+The code isn't optimized, doesn't look very nice, and probably still has some bugs, but at least it doesn't seem to freeze or crash the kernel.
+Hope it is useful.
+NOTE: the code for extracting the MAC address from the EPROM was not written by me (I didn't want to reinvent the weel :-). It was taken from the frle-0.22 device driver for the 2.0 series of kernels. Please read the nicstarmac.copyright file for the copyright notice included in the frle-0.22 device driver.
+
+
+Contact:
+--------
+
+To send some feedback or bug reports, my e-mail address is rprior@inescn.pt
+My group's web page is at http://aramis.inescn.pt
+
+
+Installation:
+-------------
+
+To use the driver, first you have to apply the atm patch to the kernel sources.
+Read the USAGE file in the atm distribution to learn how to do it.
+Then create a directory, cd to that directory, and extract the files with
+
+   tar xvfz nicstar.tgz
+
+Now you have to go to the linux kernel source directory (usually /usr/src/linux) and apply the nicstar patch.
+
+   cd /usr/src/linux
+   patch -s -p1 < (nicstar_dir)/ns.patch
+
+where (nicstar_dir) is the directory where you extracted the files.
+Configure and compile the kernel the usual way, and you should have it working.
+
+To compile the nstune utility,
+
+   cd (nicstar_dir)
+   make
+
+
+If you compiled the driver as a module you can insert it with
+
+   insmod nicstar
+
+and when you don't need it anymore you can remove it with
+
+   rmmod nicstar
+
+
+
+Tuning:
+-------
+
+You can tune the buffer level watermarks by doing
+
+   nstune itf {s|l|h|i} min init max
+
+where:
+- itf is the atm interface number (most users only have one card, so this is 0.
+- s for small buffers, l for large buffers, h for huge buffers or i for iovec buffers.
+- min is the lower watermark, max the higher, and init is the initial level, and the level which is ideally sustained.
+
+For example: nstune 0 s 10 30 50
+
+If you want to set the actual buffer level, not the watermarks, use
+
+   nstune itf {s|l|h|i}
+
+which will set the corresponding buffer number to the init watermark level.
+Please note that small and large buffer numbers can't be decreased by using nstune.

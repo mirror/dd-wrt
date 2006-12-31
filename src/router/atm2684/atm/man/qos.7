@@ -1,0 +1,107 @@
+.TH QOS 7 "April 20, 2000" "Linux" "Miscellaneous"
+.SH NAME
+qos \- Quality of Service specification
+.SH DESCRIPTION
+The \fBtext2qos\fP and \fBqos2text\fP functions use the format described
+in this man page. Because all standard ATM tools on Linux use those
+functions to convert to or from the textual representation of QOS
+specifications, they expect them in the same format too.
+.P
+The most fundamental parameters are the \fItraffic class\fP and the
+\fIAAL (ATM Adaption Layer) type\fP. If the
+connection is bi-directional, both directions have the same traffic
+class and the same AAL type. The traffic class and the AAL type are the first
+elements (in any order) in a QOS specification. The traffic class is the only
+required element. If the AAL type is omitted, the application will provide a
+default value. The following traffic classes are recognized:
+.IP \fBubr\fP
+Unassigned Bit Rate
+.IP \fBcbr\fP
+Constant Bit Rate
+.IP \fBabr\fP
+Available Bit Rate
+.P
+The following AAL types are recognized:
+.IP \fBaal0\fP
+("raw ATM")
+.IP \fBaal5\fP
+.P
+If both, the traffic class and the AAL type are specified, they are separated
+by a comma.
+.P
+If more parameters are supplied, the traffic class and AAL type must be
+followed by a colon. Traffic parameters can be specified independently for
+the transmit and the receive direction. Their parameter lists are prefixed
+with \fBtx:\fP and \fBrx:\fP, respectively. If both parameter lists are
+present, the \fBtx:\fP list must precede the \fBrx:\fP list. If a
+parameter is equal for both directions, it can be placed in a common
+parameter list (without prefix). The general format is as follows:
+.P
+\fIclass_and_aal\fB:\fIcommon_list\fP,tx:\fIlist\fB,rx:\fIlist\fP
+.P
+Each list consists of elements specifying a parameter. Elements can
+appear in any order and they are separated with commas. The following
+elements are recognized:
+.IP \fBpcr=\fIrate\fP
+is a synonym for \fBmax_pcr=\fIrate\fP
+.IP \fBmax_pcr=\fIrate\fP
+The upper limit for the peak cell rate to assign. If omitted, any rate up
+to link speed may be chosen.
+.IP \fBmin_pcr=\fIrate\fP
+The lower limit for the peak cell rate to assign. If omitted, any rate above
+zero can be chosen.
+.IP \fBsdu=\fIsize\fP
+is a synonym for \fBmax_sdu=\fIsize\fP
+.IP \fBmax_sdu=\fIsize\fP
+The size of the largest packet that may be sent or received. If omitted,
+a context-dependent default value is used.
+.P
+Values are specified as follows:
+.IP \fIrate\fP
+The (decimal) rate, optionally followed by a unit. The unit may be prefixed
+with one of the multipliers \fBk\fP, \fBM\fP, or \fBG\fP, meaning 1'000,
+1'000'000, or 1'000'000'000, respectively. The units \fBcps\fP
+(cells per second) and \fBbps\fP (bits per second) are recognized. If
+multiplier and unit are omitted, cells per second are assumed. Note
+that the rate is always converted to cells per second, so rounding errors
+may occur when specifying the rate in bits per second. Rates measured in
+bits per second are considered to be user data rates, i.e. one cell
+corresponds to 384 bits. The rate can be a fractional value, e.g.
+\fB1.3Mbps\fP.  It is an error to specify only a
+multiplier without a unit. Link speed can be indicated by using the keyword
+\fBmax\fP as the rate.
+.IP \fIsize\fP
+The (decimal) number of bytes.
+.P
+The \fBtx:\fP or \fBrx:\fP lists may also just contain the single element
+\fBnone\fP, which indicates that the corresponding direction is not used.
+It is an error to specify \fBnone\fP for both direction.
+.P
+Note that commas must never follow colons or other commas. Also,
+whitespace is not allowed inside a QOS specification. QOS specifications
+are case-insensitive.
+.SH EXAMPLES
+Each of the following lines contains a valid QOS specification:
+.nf
+.sp
+  ubr
+  ubr:pcr=100kbps
+  cbr,aal0:pcr=64kbps
+  CBR:max_pcr=11Mbps,min_pcr=10mbps,sdu=8192
+  aal5,ubr:tx:none
+  cbr:tx:pcr=30000,rx:none
+.sp
+.fi
+The following specificiations are equivalent:
+.nf
+.sp
+  CBR,AAL5:PCR=48Mbps
+  cbr,aal5:max_pcr=125000
+  cbr,aal5:tx:pcr=125kcps,rx:pcr=125kcps
+.sp
+.fi
+.SH AUTHOR
+Werner Almesberger, EPFL LRC/ICA <werner.almesberger@epfl.ch>
+.\" .SH "SEE ALSO"
+.\" atmsigd(8), syslogd(8)
+.\"{{{}}}
