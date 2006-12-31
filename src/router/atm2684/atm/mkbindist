@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# mkbindist - Makes a binary distribution of the ATM on Linux utilities.
+#	      Note it _doesn't_ include kernel images or kernel patches.
+#	      The base directory is assumed to be /usr (not /usr/local)
+#
+mkdir bin
+INSTROOT=`pwd`/bin
+INSTPREFIX=$INSTROOT/usr
+export INSTROOT INSTPREFIX
+make -e install
+cd bin
+tar cvf - . | gzip -9 >../atm-`cat ../VERSION`-bin.tar.gz
+cd ..
+rm -rf bin

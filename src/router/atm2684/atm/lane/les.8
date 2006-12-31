@@ -1,0 +1,118 @@
+.TH LES 8 "Sep 11, 1996" "Linux" "Maintenance Commands"
+.SH NAME
+les, bus \- ATM LAN Emulation service demons
+.SH SYNOPSIS
+.B les
+.RB [ \-d\ \fImodule\fP ]
+.RB [ \-m\ \fImodule\fP ]
+.RB [ \-f\ \fIconfiguration_file\fP ]
+.PP
+.B bus
+.RB [ \-d\ \fImodule\fP ]
+.RB [ \-m\ \fImodule\fP ]
+.RB [ \-f\ \fIconfiguration_file\fP ]
+.SH DESCRIPTION
+LE Service consists of three components: LAN Emulation Configuration 
+Server (\fBlecs(8)\fP), LAN Emulation Server (\fBles\fP) and Broadcast 
+and Unknown Server (\fBbus\fP).
+.PP
+\fBLes\fP performs the control coordination function for the emulated LAN. 
+LE clients register MAC addresses and/or route descriptors they represent 
+to \fBles\fP, and later query it when they want to resolve MAC addresses/route 
+descriptors into ATM addresses. Other LE control messages which are to be 
+distributed to every client in ELAN are also sent to \fBles\fP. \fBLes\fP
+forwards these messages using Control Distribute VCC which it has set up 
+to every client in ELAN.
+.PP
+\fBBus\fP handles data sent by clients to broadcast and multicast 
+MAC addresses and some of the data directed to unicast addresses. LE 
+Client has a possibility to send data directed to some unicast address 
+to the \fBbus\fP before target's ATM address has been resolved and the Data 
+Direct VCC has been established.
+.PP
+Configuration file example for \fBles\fP and \fBbus\fP:
+.PP
+.in +2m
+.nf
+[main]
+memdebug=True
+debug=True
+[load]
+#memdebug=True
+#debug=True
+[conn]
+debug=True
+#S1, LE Server's ATM address
+#S1=:47:00:23:00:00:00:03:00:00:01:00:02:01:00:20:ea:00:05:aa:00
+S1=:47:00:23:00:00:00:03:03:00:01:00:02:01:00:20:ea:00:0a:e9:01
+#S2, LAN Type
+S2="802.3"
+#S3, Maximum Frame Size
+S3=1516
+#S4, Join Timeout, s
+S4=15
+#S5, Maximum Frame Age, s
+S5=6
+#S6, BUS Atm address
+S6=:47:00:23:00:00:00:03:03:00:01:00:02:01:00:20:ea:00:0a:e9:02 #viulu
+#S6=0,0,170
+#ELANNAME="asdf"
+
+.DT
+.fi
+.in
+The configuration file contains each modules name in brackets followed by 
+variable definitions for that module. The definitions are of form 
+.I variable=value, 
+where value can be either an integer, a truth value (True/False), a 
+string enclosed in double quotes 
+.I ("string") 
+or an ATM address in hexadecimal format. Variables that can be set are 
+the debug/memdebug for each module and variables S1-S6 as defined in 
+LE specification. 
+
+.nf
+S1=Address of the LES. This address is used in ATM 
+   signalling.
+S2=Type of the emulated LAN. Valid values is "802.3".
+S3=Maximum frame size. Valid value is 1516.
+S4=Join Timeout. Time in seconds which LES waits for 
+   LE_JOIN_REQUEST before tearing down a connection.
+S5=Maximum frame Age. Currently not used.
+S6=Address of the BUS. This address is used in ATM signalling.
+ELANNAME= Name of the emulated LAN
+.fi
+.PP
+\fBSIGHUP\fP causes restart of the server. All resources are 
+released and server is started. \fBSIGUSR1\fP causes the
+server to dump its internal state. \fBSIGUSR2\fP shuts
+down the server (hopefully) gracefully.
+.SH OPTIONS
+.TP
+.IP \fB\-d\ \fImodule\fP
+Set debugging messages on for a module. "All" sets debugging
+on for all modules.
+.IP \fB\-m\ \fImodule\fP
+Set memory debugging messages on for a module. "All" sets debugging
+on for all modules.
+.IP \fB\-f\ \fIconfiguration_file\fP
+Use the specified configuration file instead of \fB.lanevars\fP.
+.SH FILES
+.PD 0
+.TP 25
+.B .lanevars
+configuration file
+.PD
+.SH BUGS
+Servers don't establish point-to-multipoint connections to LE
+clients as the specification states, which means that some
+LE clients won't work with these servers.
+.PP
+Supports only IEEE 802.3 / Ethernet type of ELANs.
+.PP
+This manual page is confusing.
+.SH AUTHOR
+Marko Kiiskila, TUT <carnil@cs.tut.fi>
+.SH "SEE ALSO"
+lecs(8), atmsigd(8), zeppelin(8)
+.\"{{{}}}

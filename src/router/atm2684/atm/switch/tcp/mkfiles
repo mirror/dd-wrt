@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+open(IN,"README") || die "open README: $!";
+while (<IN>) {
+    if (/^---\s*(\S+)\s*/) {
+	if ($writing) {
+	    close OUT || die "close: $!";
+	    $writing = 0;
+	}
+	next if $1 eq "-";
+	open(OUT,">$1") || die "create $1: $!";
+	$writing = 1;
+	next;
+    }
+    print OUT $_ || die "write: $!" if $writing;
+}
+close OUT || die "close: $!" if $writing;
+for (@do) {
+    print "$_\n";
+    system($_);
+    sleep(1);
+}

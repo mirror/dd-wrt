@@ -1,0 +1,48 @@
+****************************
+*                          *
+* DNS access for linux-atm * (by Rui Prior)
+*                          *
+****************************
+
+This package is meant for using the NSAP mapping capability of standard DNS
+servers (bind-8.2) for the direct and reverse translation of private ATM
+addresses. It doesn't break compatibility with ANS service. In fact, the
+resolution functions try to use the ANS service first, and only if it fails
+DNS is attempted.
+
+
+INSTALLATION:
+-------------
+
+Install the bind package.
+
+I provide some examples of configuration files for you to modify as needed.
+These files assume you're currently in a domain named "my.domain" and are
+going to create a dummy domain named "atm". Your newly configured DNS server
+is going to act as a root server for this domain.
+The files are in subdirectory "bind-files".
+"named.conf" and "resolv.conf" should go in "/etc", and all other files should
+go in "/var/named/zone".
+"127.0.0" is for mapping localhost, and you may copy is as is.
+"192.168.27" is for reverse lookup of IP hosts on the ATM network (in my case,
+the network is the experimental 192.168.27.0).
+"atm" contains direct IP and NSAP mapping for hosts on the dummy domain "atm".
+"atm-reverse" contains reverse NSAP mapping. Please notice how the order of the
+nibbles is inverted, and each nibble is separated by one dot.
+
+After you install all the files, don't forget to do "ndc restart" in order to
+inform named of the updates. You should do this every time you modify the
+configuration files.
+
+After having all this installed (and, just in case, rebooting :-) you may test
+the setup using the provided test program. Go to the "debug" subdirectory
+and type "make dnstest". Now test the setup using "dnstest <host>", where
+<host> is one of the hosts in your bind configuration files.
+
+
+IMPORTANT NOTICE:
+-----------------
+
+I strongly advise you to keep the arpserver on "/etc/hosts.atm".
+
+

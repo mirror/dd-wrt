@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# /etc/rc.d/init.d/atm  -  Bring up/down ATM
+#
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ ! -f /etc/sysconfig/atm ]; then
+    exit 0
+fi
+
+. /etc/sysconfig/atm
+
+[ "$ATM" != yes ] && exit 0
+
+cd /etc/sysconfig/network-scripts
+
+case "$1" in
+    start)
+	echo -n "Starting ATM demons: "
+	daemon atmsigd -b -l syslog -D /var/tmp -t 20
+	daemon ilmid -b -l syslog `[ -z "$ILMIQOS" ] || echo -q $ILMIQOS`
+	[ "$IPATM" = yes ] && daemon atmarpd -b -l syslog -m
+	# launch LANE demon(s) ...
+	[ "$AREQUIPA" = yes ] && daemon arequipad -b -l syslog
+	echo
+	if [ "$LANE" = yes ]; then
+	    for n in ifcfg-lec[0-9]; do
+		./ifup $n
+	    done
+	fi
+	if [ "$IPATM" = yes ]; then
+	    for n in ifcfg-atm[0-9]; do
+		./ifup $n
+	    done
+	fi
+	if [ "$LANE" = yes ]; then
+	    for n in ifcfg-lec[0-9]; do
+		./ifup $n
+	    done
+	fi
+	touch /var/lock/subsys/atm
+	;;
+    stop)
+	if [ "$LANE" = yes ]; then
+	    for n in ifcfg-lec[0-9]; do
+		./ifdown $n
+	    done
+	fi
+	if [ "$IPATM" = yes ]; then
+	    for n in ifcfg-atm[0-9]; do
+		./ifdown $n
+	    done
+	fi
+	echo -n "Stopping ATM demons: "
+	if [ "$IPATM" = yes ]; then
+	    [ "$AREQUIPA" = yes ] && killproc arequipad
+	    killproc atmarpd
+	fi
+	killproc atmsigd	# kill ILMID later, so we don't get complaints
+	killproc ilmid
+	echo
+	rm -f /var/lock/subsys/network
+	;;
+    *)	echo "Usage: atm {start|stop}"
+	exit 1
+esac

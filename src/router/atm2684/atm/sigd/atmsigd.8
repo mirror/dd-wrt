@@ -1,0 +1,116 @@
+.TH ATMSIGD 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmsigd \- ATM signaling demon
+.SH SYNOPSIS
+.B atmsigd
+.RB [ \-b ]
+.RB [ \-c\ \fIconfig_file\fP ]
+.RB [ \-d ]
+.RB [ \-D\ \fIdump_dir\fP ]
+.RB [ \-l\ \fIlogfile\fP ]
+.RB [ \-m\ \fImode\fP ]
+.RB [ \-n ]
+.RB [ \-q\ \fIqos\fP ]
+.RB [ \-t\ \fItrace_length\fP ]
+.RB [ \-u\ \fIuni_version\fP ]
+.RB [ [\fIitf\fP.]\fIvpi\fP.\fIvci\fP
+.RB [ \fIinput\ output\fP ] ]
+.br
+.B atmsigd
+.B \-V
+.SH DESCRIPTION
+\fBatmsigd\fP implements the ATM UNI signaling protocol. Requests to
+establish, accept, or close ATM SVCs are sent from the kernel (using a
+comparably simple protocol) to the signaling demon, which then performs
+the dialog with the network.
+.P
+Note that \fBatmsigd\fP is not able to accept or establish connections
+until the local ATM address of the interface is configured by \fBilmid\fP
+or manually using \fBatmaddr\fP.
+.P
+The default signaling VC (interface 0, VPI 0, VCI 5) can be overridden on
+the command line by specifying a different PVC address.
+.P
+When overriding the default VC, optionally a pair of named pipes to use for
+communicating with the user of signaling can be specified. Normally, the
+kernel is the user of signaling and \fBatmsigd\fP opens a special socket for
+communication with it.
+.P
+If \fBatmsigd\fP is killed, all system calls requiring interaction with it
+will return with an error and set \fBerrno\fP to \fBEUNATCH\fP.
+.SH OPTIONS
+.IP \fB\-b\fP
+Run in background (i.e. in a forked child process) after initializing.
+.IP \fB\-c\ \fIconfig_file\fP
+Use the specified configuration file instead of \fB/etc/atmsigd.conf\fP
+If an option is specified in the configuration file and on the command
+line, the command line has priority.
+.IP \fB\-d\fP
+Enables (lots of) debugging output. By default, \fBatmsigd\fP is comparably
+quiet.
+.IP \fB\-D\ \fIdump_dir\fP
+Specifies the directory to which \fBatmsigd\fP will write status and trace
+dumps. If \fB\-D\fP is not specified, dumps are written to /var/tmp.
+.IP \fB\-l\ \fIlogfile\fP
+Write diagnostic messages to the specified file. The special name
+\fBsyslog\fP is used to send diagnostics to the system logger, \fBstderr\fP
+is used to send diagnostics to standard error. If \fB\-l\fP is absent, the
+setting in \fBatmsigd.conf\fP is used. If \fBatmsigd\fP doesn't specify a
+destination either, messages are written to standard error.
+.IP \fB\-m\ \fImode\fP
+Set the mode of operation. The following modes are available: \fBuser\fP for
+the user side (the default), \fBnetwork\fP for the network side (useful if you
+have two PCs but no switch), and \fBswitch\fP for operation with a signaling
+relay in a switch.
+.IP \fB\-n\fP
+Prints addresses in numeric format only, i.e. no address to name translation
+is attempted.
+.IP \fB\-q\ \fIqos\fP
+Configures the signaling VC to use the specified quality of service (see
+qos(7) for the syntax).
+By default, UBR at link speed is used on the signaling VC.
+.IP \fB\-t\ \fItrace_length\fP
+Sets the number of entries that should be kept in the trace buffer.
+\fB\-t 0\fP disables tracing. If \fB\-t\fP is not specified, \fBatmsigd\fP
+uses a default of 20 trace entries.
+.IP \fB\-u\ \fIuni_version\fP
+Sets the signaling mode. The following modes are supported: \fBuni30\fP for
+UNI 3.0, \fBuni31\fP for UNI 3.1, \fBuni31+uni30\fP for UNI 3.1 with 3.0
+compatibility, \fBuni40\fP for UNI 4.0, and \fBuni40+q.2963.1\fP for UNI 4.0
+with Q.2963.1 peak cell rate renegotiation.
+.IP \fB\-V\fP
+Prints the version number of \fBatmsigd\fP on standard output and exits.
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/atmsigd.conf
+default configuration file
+.TP 25
+.B /var/tmp/atmsigd.\fIpid\fB.status.\fIversion\fP
+default location of status dumps
+.TP 25
+.B /var/tmp/atmsigd.\fIpid\fB.trace.\fIversion\fP
+default location of signaling trace dumps
+.PD
+.SH DEBUGGING
+When receiving a \fBSIGUSR1\fP signal, \fBatmsigd\fP dumps the list of all
+internal socket descriptors. With \fBSIGUSR2\fP, it dumps the contents of
+the trace buffer. If a dump directory was set, dumps are written to files
+called \fBatmsigd.\fP\fIpid\fP\fB.status.\fP\fInumber\fP and
+\fBatmsigd.\fP\fIpid\fP\fB.trace.\fP\fInumber\fP, respectively, with
+\fInumber\fP
+starting at zero and being incremented for every dump. If no dump directory
+is set, dumps are written to standard error.
+.P
+Dumps are also generated whenever \fBatmsigd\fP detects a fatal error and
+terminates. No attempt is made to catch signals like \fBSIGSEGV\fP.
+.SH BUGS
+The generation of traces is a comparably slow
+process which may already take several seconds for only 100 trace entries.
+To generate a trace dump, \fBatmsigd\fP therefore forks a child process that
+runs in parallel to the signaling demon.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmaddr(8), atmsigd.conf(4), ilmid(8), qos(7)
+.\"{{{}}}

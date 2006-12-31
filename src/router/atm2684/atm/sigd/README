@@ -1,0 +1,25 @@
+This is a very early version of atmsigd that supports multiple signaling
+entities in the same process. Everything's still a bit buggy and ugly.
+
+To play with it, ...
+
+1) Generate ATM interfaces 1 and 2:
+  # atmtcp -b -i 1 -l
+  # atmtcp -b -i 2 -c localhost
+2) Create the following configuration file (name "config"):
+  entity 1.0.5 { mode user route +1 }
+  entity 2.0.5 { mode network default }
+3) Launch atmsigd:
+  # ./atmsigd.new -c config
+4) Add local addresses:
+  # atmaddr -a 1 +1
+  # atmaddr -a 2 +2
+5) Test it:
+  % ttcp_atm -r -a
+  % ttcp_atm -t -a +1
+
+Known bugs:
+ - wildcard bind removes wildcard
+ - selection of local address isn't consistent with signaling interface
+   selection
+ - everything else that's marked with @@@

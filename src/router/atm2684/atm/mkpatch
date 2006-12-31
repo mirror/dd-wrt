@@ -1,0 +1,131 @@
+#!/bin/sh
+[ -d ref ] || { echo ref/ is missing; exit; }
+[ -d work ] || { echo work/ is missing; exit; }
+>atm.patch
+for n in `awk '$1 !~ /^#/ {print$1}' <<EOF
+#--- . ------------------------------------------------------------------------
+CREDITS
+Makefile
+#--- Documentation ------------------------------------------------------------
+Documentation/Configure.help
+Documentation/atm.txt
+Documentation/networking/atm.txt
+Documentation/networking/fore200e.txt
+Documentation/networking/iphase.txt
+#--- arch/i386 ----------------------------------------------------------------
+arch/i386/config.in
+#--- arch/alpha ---------------------------------------------------------------
+arch/alpha/config.in
+#--- arch/ppc ---------------------------------------------------------------
+arch/ppc/config.in
+#--- arch/sparc ---------------------------------------------------------------
+arch/sparc/config.in
+#---- arch/sparc64 ------------------------------------------------------------
+arch/sparc64/config.in
+#---- arch/sparc64/kernel -----------------------------------------------------
+arch/sparc64/kernel/ioctl32.c
+#--- drivers/atm --------------------------------------------------------------
+drivers/atm/Config.in
+drivers/atm/Makefile
+drivers/atm/ambassador.c
+drivers/atm/ambassador.h
+drivers/atm/atmdev_init.c
+drivers/atm/atmsar11.data
+drivers/atm/atmsar11.regions
+drivers/atm/atmsar11.start
+drivers/atm/atmtcp.c
+drivers/atm/eni.c
+drivers/atm/eni.h
+drivers/atm/fore200e.c
+drivers/atm/fore200e.h
+drivers/atm/fore200e_firmware_copyright
+drivers/atm/fore200e_mkfirm.c
+drivers/atm/horizon.c
+drivers/atm/horizon.h
+drivers/atm/idt77105.c
+drivers/atm/idt77105.h
+drivers/atm/iphase.c
+drivers/atm/iphase.h
+drivers/atm/midway.h
+drivers/atm/nicstar.c
+drivers/atm/nicstar.h
+drivers/atm/nicstarmac.copyright
+drivers/atm/pca200e.data
+drivers/atm/pca200e_ecd.data
+drivers/atm/sba200e_ecd.data
+drivers/atm/suni.c
+drivers/atm/suni.h
+drivers/atm/tonga.h
+drivers/atm/uPD98401.h
+drivers/atm/uPD98402.c
+drivers/atm/uPD98402.h
+drivers/atm/zatm.c
+drivers/atm/zatm.h
+drivers/atm/zeprom.h
+#--- include/linux ------------------------------------------------------------
+include/linux/atm.h
+include/linux/atm_eni.h
+include/linux/atm_idt77105.h
+include/linux/atm_nicstar.h
+include/linux/atm_suni.h
+include/linux/atm_tcp.h
+include/linux/atm_zatm.h
+include/linux/atmapi.h
+include/linux/atmarp.h
+include/linux/atmclip.h
+include/linux/atmdev.h
+include/linux/atmioc.h
+include/linux/atmlec.h
+include/linux/atmmpc.h
+include/linux/atmsap.h
+include/linux/atmsvc.h
+include/linux/sonet.h
+include/linux/netdevice.h
+#--- include/net --------------------------------------------------------------
+include/net/atmclip.h
+#--- net ----------------------------------------------------------------------
+net/Config.in
+#--- net/bridge ---------------------------------------------------------------
+net/bridge/br.c
+#--- net/core -----------------------------------------------------------------
+net/core/dev.c
+#--- net/sched ----------------------------------------------------------------
+net/sched/sch_atm.c
+#--- net/atm ------------------------------------------------------------------
+net/atm/Makefile
+net/atm/addr.c
+net/atm/addr.h
+net/atm/atm_misc.c
+net/atm/clip.c
+net/atm/common.c
+net/atm/common.h
+net/atm/ipcommon.c
+net/atm/ipcommon.h
+net/atm/lane_mpoa_init.c
+net/atm/lec.c
+net/atm/lec.h
+net/atm/lec_arpc.h
+net/atm/mpc.c
+net/atm/mpc.h
+net/atm/mpoa_caches.c
+net/atm/mpoa_caches.h
+net/atm/mpoa_proc.c
+net/atm/proc.c
+net/atm/protocols.h
+net/atm/pvc.c
+net/atm/raw.c
+net/atm/resources.c
+net/atm/resources.h
+net/atm/signaling.c
+net/atm/signaling.h
+net/atm/svc.c
+net/atm/tunable.h
+  `; do
+  s=ref/$n
+  d=work/$n
+  if [ ! -f $s ]; then s=/dev/null; fi
+  rm=
+  if [ ! -f $d ]; then touch $d; rm=$d; fi
+  diff -u $s $d >>atm.patch
+  if [ ! -z "$rm" ]; then rm $rm; fi
+done

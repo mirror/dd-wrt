@@ -1,0 +1,15 @@
+@	IN	SOA	obelix-atm.atm.	rprior.obelix-atm.atm. (
+			1999102201	; serial, YYYYMMDDnn
+			8H		; refresh, seconds
+			2H		; retry, seconds
+			1W		; expire, seconds
+			1D )		; minimum, seconds
+		NS	obelix-atm.atm.
+
+;
+;	Hosts
+;
+
+0.0.E.6.0.3.E.0.8.4.0.2.0.0.F.0.0.4.F.0.2.F	IN PTR obelix-atm.atm.
+0.0.F.2.4.0.E.0.8.4.0.2.0.0.C.5.F.2.A.1.2.F	IN PTR pong-atm.atm.
+0.0.2.9.A.9.8.0.8.4.0.2.0.0.C.5.F.2.A.1.2.F	IN PTR osteolito-atm.atm.

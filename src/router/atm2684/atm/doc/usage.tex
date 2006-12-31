@@ -1,0 +1,1162 @@
+%%def%:=
+
+%:\begin{verbatim}
+%:Usage instructions  -  ATM on Linux, release 0.78
+%:-------------------------------------------------
+%:
+%:\end{verbatim}
+%%beginskip
+
+\documentclass[a4paper,11pt]{article}
+\usepackage{url}
+
+\def\meta#1{{\it #1\/}} % ... <blah> ...
+\def\path#1{{\tt #1}}   % ... /foo/bar ...
+\def\raw#1{{\tt #1}}    % ...  raw output  ...
+\def\craw#1{{\tt #1}}   % ...  raw output  ...
+\def\name#1{{\sf #1}}   % ... FooBar ...
+
+%%def\\meta{([^{}]*)}=<$1>
+%%def\\path{([^{}]*)}=$1
+%%def\\url{([^{}]*)}=~$1~
+%%def\\raw{([^{}]*)}=~$1~
+%%cmd\\craw{([^{}]*)}=((($x = $1) =~ tr/a-z/A-Z/), $x)
+%%def\\name{={
+%%def\\em=
+%%def\\footnotesize=
+
+\newenvironment{command}{\def\[{$\bigl[$}\def\]{$\bigr]$}\def\|{$\big\vert$}%
+  \parindent=-2em\advance\leftskip by -\parindent\vskip -\parskip~\par
+  \begingroup\tt\textfont0=\font}{%
+  ~\endgroup\par~\advance\hoffset by \parindent}
+%%def\\begin{command}=\\raw{$SI$SI$SI$SI
+%%def\\end{command}=$SO$SO$SO$SO}
+
+\parindent=0pt
+\parskip=4pt
+\tolerance=9000
+
+\title{ATM on Linux \\
+  User's guide \\
+  Release 0.78 (beta)}
+\author{Werner Almesberger \\
+  {\tt Werner.Almesberger@epfl.ch} \\
+  \\
+  Institute for computer Communications and Applications (ICA) \\
+  EPFL, CH-1015 Lausanne, Switzerland}
+ 
+\date{July 6, 2000}
+
+\begin{document}
+\maketitle
+{
+  \parskip=-1pt
+  \setcounter{tocdepth}{2}
+  \tableofcontents
+}
+
+%%endskip
+
+
+For updates of ATM on Linux, please check the Web page at
+\url{http://icawww1.epfl.ch/linux-atm/}
+
+%%beginskip
+\vskip1cm
+\centerline{\bf WARNING}
+%%endskip
+%:\begin{verbatim}
+%:         WARNING
+%:\end{verbatim}
+
+This is experimental software. There are known major bugs and certainly
+even many more yet unknown problems. Internal and external interfaces are
+far from being stable. In fact, they change daily. Use at your own risk.
+
+
+%------------------------------------------------------------------------------
+
+
+\section{Installation}
+
+In order to install this package, you need
+\begin{itemize}
+  \item the package itself
+    \url{ftp://icaftp.epfl.ch/pub/linux/atm/dist/atm-0.78.tar.gz}
+  \item the Linux kernel, version 2.4.0-test3-pre4, e.g. from
+    \url{ftp://ftp.kernel.org/pub/linux/kernel/v2.4/linux-2.4.0-test2.tar.bz2}
+    and
+    \url{ftp://ftp.kernel.org/pub/linux/kernel/testing/test3-pre4.bz2}
+  \item Perl, version 4 or 5
+  \item if you want memory debugging: MPR version 1.6, e.g. from
+    \url{ftp://sunsite.unc.edu/pub/Linux/devel/lang/c/mpr-1.6.tar.gz}
+\end{itemize}
+
+
+\subsection{The source tree}
+
+First, create a directory in which the \path{linux/} kernel source directory
+and the ATM on Linux distribution directory (\path{atm/}) should be created,
+and put all the files listed above there. Then extract the ATM on Linux
+distribution:
+
+\begin{verbatim}
+tar xfz atm-0.78.tar.gz
+\end{verbatim}
+
+and the kernel source:
+
+\begin{verbatim}
+tar xfI linux-2.4.0-test2.tar.bz2
+bzcat test3-pre4.bz2 | patch -p0 -s
+\end{verbatim}
+
+Finally, you can extract the ATM-related patches:
+
+\begin{verbatim}
+cd linux
+patch -s -p1 <../atm/atm.patch
+\end{verbatim}
+
+The distribution installs into the following directories:
+
+\begin{description}
+  \item[\path{atm/}] Documentation in ASCII format, kernel patch, top-level
+    \name{Makefile}, and distribution scripts
+  \item[\path{atm/sigd/}]  UNI 3.0, UNI 3.1, and UNI 4.0 signaling demon:
+    \name{atmsigd}
+  \item[\path{atm/saal/}] Signaling AAL library (SSCOP, SSCF, and SAAL)
+  \item[\path{atm/qgen/}] Q.2931-style message handling
+  \item[\path{atm/ilmid/}] ILMI address registration demon: \name{ilmid}
+  \item[\path{atm/maint/}] ATM maintenance programs: \name{atmaddr},
+    \name{atmdiag}, \name{atmdump}, \name{atmloop}, \name{atmtcp},
+    \name{enitune}, \name{esi}, \name{sonetdiag}, \name{saaldump}, and
+    \name{zntune}
+  \item[\path{atm/test/}] Test programs: \name{align}, \name{aping},
+    \name{aread}, \name{awrite}, \name{br}, \name{bw}, \name{isp},
+    \name{ttcp\_atm}, \name{window}
+  \item[\path{atm/arpd/}] ATMARP tools and demon: \name{atmarp}, \name{atmarpd}
+  \item[\path{atm/led/}] LAN Emulation demon: \name{zeppelin}
+  \item[\path{atm/lane/}] LAN Emulation servers: \name{bus}, \name{lecs},
+    \name{les}
+  \item[\path{atm/mpoad/}] Multi-Protocol Over ATM demon: \name{mpcd}
+  \item[\path{atm/debug/}] Debugging tools: \name{delay},
+    \name{ed}, \name{encopy}, \name{endump}, \name{svctor}, \name{zndump},
+    and \name{znth}
+  \item[\path{atm/lib/}] Libraries for applications and demons
+  \item[\path{atm/doc/}] Documentation in \LaTeX\ and conversion tools
+  \item[\path{atm/man/}] Miscellaneous man pages
+  \item[\path{atm/extra/}] Extra packages (\name{tc}, \name{tcpdump}, and
+    \name{ans})
+  \item[\path{atm/config/}] Configuration file examples
+  \item[\path{atm/switch/}] Switch fabric control (under construction)
+\end{description}
+
+
+\subsection{Kernel configuration}
+
+Now, change links (if necessary) and do the usual \raw{make config},
+\raw{make menuconfig}, or \raw{make xconfig}. First, enable
+\begin{verbatim}
+Prompt for development and/or incomplete code/drivers
+  (CONFIG_EXPERIMENTAL)
+\end{verbatim}
+
+You should find the following new options:
+
+\begin{verbatim}
+Asynchronous Transfer Mode (ATM, EXPERIMENTAL) (CONFIG_ATM)
+  Use "new" skb structure (CONFIG_ATM_SKB)
+  Classical IP over ATM (CONFIG_ATM_CLIP)
+    Do NOT send ICMP if no neighbour (CONFIG_ATM_CLIP_NO_ICMP)
+  LAN Emulation (LANE) support (CONFIG_ATM_LANE)
+    Multi-Protocol Over ATM (MPOA) support (CONFIG_ATM_MPOA)
+ATM over TCP (CONFIG_ATM_TCP)
+Efficient Networks ENI155P (CONFIG_ATM_ENI)
+  Enable extended debugging (CONFIG_ATM_ENI_DEBUG)
+  Fine-tune burst settings (CONFIG_ATM_ENI_TUNE_BURST)
+    Enable 16W TX bursts (discouraged) (CONFIG_ATM_ENI_BURST_TX_16W)
+    Enable 8W TX bursts (recommended) (CONFIG_ATM_ENI_BURST_TX_8W)
+    Enable 4W TX bursts (optional) (CONFIG_ATM_ENI_BURST_TX_4W)
+    Enable 2W TX bursts (optional) (CONFIG_ATM_ENI_BURST_TX_2W)
+    Enable 16W RX bursts (discouraged) (CONFIG_ATM_ENI_BURST_RX_16W)
+    Enable 8W RX bursts (discouraged) (CONFIG_ATM_ENI_BURST_RX_8W)
+    Enable 4W RX bursts (recommended) (CONFIG_ATM_ENI_BURST_RX_4W)
+    Enable 2W RX bursts (optional) (CONFIG_ATM_ENI_BURST_RX_2W)
+ZeitNet ZN1221/ZN1225 (CONFIG_ATM_ZATM)
+  Enable extended debugging (CONFIG_ATM_ZATM_DEBUG)
+  Enable usec resolution timestamps (CONFIG_ATM_ZATM_EXACT_TS)
+IDT 77201 (NICStAR) (CONFIG_ATM_NICSTAR)
+  Use suni PHY driver (155Mbps) (CONFIG_ATM_NICSTAR_USE_SUNI)
+  Use IDT77015 PHY driver (25Mbps) (CONFIG_ATM_NICSTAR_USE_IDT77105)
+Madge Ambassador (Collage PCI 155 Server) (CONFIG_ATM_AMBASSADOR)
+  Enable debugging messages (CONFIG_ATM_AMBASSADOR_DEBUG)
+Madge Horizon [Ultra] (Collage PCI 25 and Collage PCI 155 Client)
+  Enable debugging messages (CONFIG_ATM_HORIZON_DEBUG)
+Interphase ATM PCI x575/x525/x531 (CONFIG_ATM_IA)
+  Enable debugging messages (CONFIG_ATM_IA_DEBUG)
+\end{verbatim}
+%after ATM
+%  Enable single-copy (CONFIG_MMU_HACKS)
+%    Extended debugging for single-copy (CONFIG_MMU_HACKS_DEBUG)
+%after CLIP
+%  Application REQUested IP over ATM (CONFIG_AREQUIPA)
+%after usec
+%Rolfs TI TNETA1570 (CONFIG_ATM_TNETA1570)
+%  Enable extended debugging (CONFIG_ATM_TNETA1570_DEBUG)
+
+
+%The ``MMU hacks'' add single-copy support for raw AAL5 on adapters whose
+%driver supports this (currently only the ENI155p). Extended debugging should
+%only be enabled when tracing specific problems, because it slows down the
+%drivers, and it may introduce new race conditions.
+
+%The TNETA1570 driver is for a board developed by Rolf Fiedler at TU Chemnitz,
+%see also \url{ftp://ftp.infotech.tu-chemnitz.de/pub/linux-atm}.
+
+The burst settings of the ENI driver can be fine-tuned. This may be necessary
+if the default settings lead to buffer overruns in the PCI chipset. See the
+on-line help on \verb"CONFIG_ATM_ENI_TUNE_BURST" for a detailed discussion
+of the implications of changing the burst settings.
+
+Note that the file \path{drivers/atm/nicstar.h} contains a few configurable
+settings for the IDT 77201 driver.
+
+Some drivers can also be used with certain compatible cards. The latest
+information about compatible cards can be found at
+\url{http://icawww1.epfl.ch/linux-atm/info.html}
+
+Then build your kernel and reboot.
+
+
+\subsection{Driver messages}
+
+If you've configured the ENI155p-MF driver, you should see two lines like
+these:
+{\footnotesize
+\begin{verbatim}
+eni(itf 0): rev.0,base=0xff400000,irq=10,mem=512kB (00-20-EA-00-07-56)
+eni(itf 0): FPGA,MMF
+\end{verbatim}}
+(512kB for the -C version, 2048kB for the -S version.)
+
+If you've configured the ZN1221/ZN1225 driver, you will get something like
+{\footnotesize
+\begin{verbatim}
+zatm(itf 0): rev.3,base=0xf800,irq=11,mem=128kB,MMF (00-20-D4-10-2A-80)
+zatm(itf 0): uPD98401 0.5 at 30.024 MHz
+zatm(itf 0): 16 shapers, 32 pools, 2048 RX, 3958 VCs
+\end{verbatim}}
+Note that your board needs to be at least at revision level 3 if you want
+to use it in a Triton-based system.
+
+Note that if you've configured only the ATM over TCP driver, there are no
+messages at startup, because ATM over TCP devices are created later using
+the \name{atmtcp} command.
+
+
+\subsection{Memory debugging}
+
+If you want to enable debugging for options for memory allocations, you
+need to install MPR before compiling the ATM tools. Extract
+\path{mpr-1.6.tar.gz} into a directory at the same level as \path{linux}
+and \path{atm}. Then do:
+
+\begin{verbatim}
+cd mpr-1.6
+./configure x86-linux
+make
+install -c -m 0644 libmpr.a /usr/lib
+install -c -m 0755 mpr mprcc mprhi mprlk mprsz /usr/local/bin
+install -c -m 0755 mprfl mprnm mprpc mprdem mprmap /usr/local/bin
+\end{verbatim}
+
+Detection of some general mis-use of \raw{malloc} and \raw{free} is
+automatically performed if the program was compiled with MPR present.
+Tracing of allocations is enabled by setting \raw{MPRPC} and \raw{MPRFI}.
+See \path{mpr.doc} in the MPR distribution for details.
+
+Only little run-time overhead is incurred if memory debugging is included,
+but those environment variables are not set.
+
+
+\subsection{ATM tools}
+
+Now, as the final step, configure and build the ATM tools. Configuration is
+only necessary if your switch uses UNI 3.1 or 4.0, or if it has certain bugs.
+The configuration options are at the beginning of \path{atm/Rules.make}.
+
+Then, build the ATM tools with:
+
+\begin{verbatim}
+cd ../atm
+make depend
+make
+make install
+\end{verbatim}
+
+\verb"make install" will install executables in the directory
+\path{/usr/local/bin} and \path{/usr/local/sbin}, respectively.
+Libraries and header files are installed in
+\path{/usr/lib} and \path{/usr/include}, respectively. Man pages are
+installed in \path{/usr/local/man}.
+
+
+\subsection{Extra packages}
+
+Some programs are based on large packages that are already distributed
+outside of the ATM context. For such packages, only patches are contained
+in the ATM on Linux distribution. The complete packages can be obtained
+either from the original source (described in \path{atm/extra/extra.html})
+or from \url{ftp://icaftp.epfl.ch/pub/linux/atm/extra/}.
+
+The packages are automatically downloaded, patched, and built by running
+\raw{make \meta{package\_name}} in the \path{atm/extra/} directory
+(requires that the \name{Lynx} Web browser is installed).
+
+Currently, the following extra packages are available:
+\begin{description}
+  \item[\name{tcpdump}] dumps network traffic (enhanced for ATM)
+  \item[\name{ans}] ATM name server (based on \name{named} 4.9.5)
+\end{description}
+
+% Building \name{tcpdump} requires that \name{csh} is installed.
+Note that \name{text2atm} automatically uses ANS if available, so
+\name{ans} only needs to be installed on systems providing
+name server functionality or if ATM-aware maintenance tools
+(\name{nslookup}, etc.) are needed.
+
+A script \name{hosts2ans.pl} to convert a \path{/etc/hosts.atm} file to
+ANS zone files is provided in \path{atm/extra/}. Its use is described at
+the beginning of the file.
+
+
+%------------------------------------------------------------------------------
+
+
+\section{Device setup}
+
+This section describes device-specific configuration operations, and general
+diagnostic procedures at the ATM or SONET level. Please see the adapter
+documentation for details on hardware installation and diagnosis.
+
+
+\subsection{ATM over TCP setup}
+
+If you have no real ATM hardware, you can still exercise the API by using
+the ATM over TCP ``driver''. It emulates ATM devices which are directly
+wired to remote devices (i.e. there is no VPI/VCI swapping).
+
+To establish one (bidirectional) ``wire'', become root on both systems
+(or run both sides on the same system to create two connected ``interfaces'')
+and run the following command on one of them (let's call it ``a''):
+
+\begin{command}
+a\# atmtcp virtual listen
+\end{command}
+
+Then, on the other system (``b''), run
+
+\begin{command}
+b\# atmtcp virtual connect \meta{address\_of\_a}
+\end{command}
+
+Both \name{atmtcp}s will report on their progress and the kernel should
+display messages like
+
+\begin{verbatim}
+Link 0: virtual interface 2
+Link 1: incoming ATMTCP connection from 127.0.0.1
+\end{verbatim}
+
+and
+
+\begin{verbatim}
+Link 0: virtual interface 3
+Link 1: ATMTCP connection to localhost
+\end{verbatim}
+
+on the two systems. Note that \name{atmtcp} keeps running and that interrupting
+it breaks the virtual wire.
+
+Multiple ``wires'' can be attached to the same machine by specifying a
+port number (default is 2812). Note that no AAL processing is performed.
+It is therefore not possible to receive data using a different AAL (e.g.
+AAL0) than the one with which the data was sent.
+
+
+\subsection{ZN1221/ZN1225 tuning}
+
+The ZeitNet ZN1221 and ZN1225 adapters use pre-allocated pools of free
+memory buffers
+for receiving. Whenever a VC with a certain maximum SDU size is opened for
+receiving, the corresponding pool is filled with free buffers by the device
+driver. The adapter removes buffers while it receives data. When the number
+of remaining buffers falls below a certain threshold, the device driver
+replenishes the pool again.
+
+The lower and the upper limits for the number of free buffers, and the
+threshold for adapting to a new data offset (see below for details), can
+be set using the \name{zntune} program. Usage:
+
+\begin{command}
+zntune \[-l \meta{low\_water}\] \[-h \meta{high\_water}\]
+  \[-t \meta{threshold}\] \meta{itf} \[\meta{pool}\]
+\end{command}
+
+The changes are applied to all pools if no pool number is specified.
+Pool 2 stores 64 bytes packets, pool 3 stores 128 bytes packets, etc.
+Pools 0 and 1 are currently unused.
+
+The current settings and some usage statistics can be obtained by invoking
+\name{zntune} without specifying new parameters:
+
+\begin{command}
+zntune \[-z\] \meta{itf} \[\meta{pool}\]
+\end{command}
+
+The ``Size'' column shows the buffer size in Bytes.
+The ``Ref'' column shows the number of open VCs using that pool. The ``Alarm''
+column shows how many times the number of free buffers has fallen below the
+low-water mark since the counters were reset. Similarly, the ``Under'' column
+shows how many times an incoming PDU had to be discarded because the
+corresponding pool was empty.
+
+The columns ``Offs'', ``NxOf'', ``Count'' and ``Thres'' show the alignment
+adaption status. ``Offs'' is the offset of user data the driver currently
+expects in incoming PDUs. For single-copy, receive buffers are aligned
+accordingly so that data is received at page boundaries. ``NxOf'' is the
+user data offset of the most recently received PDU, where the offset differs
+from the currently assumed offset. ``Count'' is the number of PDUs that have
+been received in sequence with an offset of ``NxOf''. Finally, ``Thres'' is
+the threshold value ``Count'' has to reach for ``NxOf'' to become the new
+current offset.
+
+Use the \raw{-z} option to reset the ``Alarm'' and ``Under'' counters.
+
+
+\subsection{Files in \path{/proc/net/atm}}
+
+Some status information about the ATM subsystem can be obtained through files
+in \path{/proc/net/atm}. \path{/proc/net/atm/arp} contains information
+specific to Classical IP over ATM, see section \ref{clip}.
+
+\path{/proc/net/atm/devices} lists all active ATM devices. For each device,
+the interface number, the type label, the end system identifier (ESI), and
+statistics are shown. The statistics correspond to the ones available via
+\name{atmdiag}.
+
+Individual ATM devices may register entries of the form
+\raw{\meta{type}:\meta{number}} (e.g. \raw{eni:0}) which contain
+device-specific information.
+
+\path{/proc/net/atm/pvc} and \path{/proc/net/atm/svc} list all PVC and SVC
+sockets.
+For both types of sockets, the interface, VPI and VCI numbers are shown. For
+PVCs, this is followed by the AAL and the traffic class and the selected
+PCR for the receive and the transmit direction. For SVCs, the SVC state
+and the address of the remote party are shown. SVCs with the interface
+number 999 are used for special control purposes as indicated in the ``State''
+column.
+
+Furthermore, \path{/proc/net/atm/vc} shows buffer sizes and additional
+internal information for all ATM sockets.
+
+
+\subsection{ATM diagnostics}
+
+Various counters of the ATM device drivers can be queried with the
+\name{atmdiag}  program. See the corresponding man page for details.
+
+
+\subsection{SONET diagnostics}
+
+The SONET diagnostics tool can be used to monitor link performance
+and to simulate errors. In order to get current SONET statistics,
+run it with the ATM interface number as the argument, e.g.
+
+\begin{verbatim}
+% sonetdiag 0
+\end{verbatim}
+
+The counters can be reset with the \raw{-z} option:
+
+\begin{verbatim}
+# sonetdiag -z 0
+\end{verbatim}
+
+The following network failures can be simulated:\footnote{Some adapters
+may only support a subset of this.}
+
+\begin{description}
+  \item[\raw{sbip}] insert section errors (B1)
+  \item[\raw{lbip}] insert line errors (B2)
+  \item[\raw{pbip}] insert path errors (B3)
+  \item[\raw{frame}] force (RX) frame loss
+  \item[\raw{los}] insert loss of signal
+  \item[\raw{lais}] insert line alarm indication signal
+  \item[\raw{pais}] insert path alarm indication signal
+  \item[\raw{hcs}] insert header checksum errors
+\end{description}
+
+A failure is enabled by adding the corresponding keyword on the
+command line. The failure is cleared by prefixing the keyword with
+a minus sign, e.g.
+
+\begin{verbatim}
+a# sonetdiag -z 0 >/dev/null
+b# sonetdiag -z 0 >/dev/null
+a# sonetdiag 0 los
+a# sonetdiag 0 -los
+b# sonetdiag 0 | grep BIP
+Section BIP errors:      56200
+Line BIP errors:           342
+Path BIP errors:           152
+a# sonetdiag 0 | grep FEBE
+Line FEBE:                 342
+Path FEBE:                 152
+\end{verbatim}
+
+If any diagnostic error insertions are active, their keywords are
+shown when \name{sonetdiag} is used to obtain statistics. Note that some
+error insertions may be automatically switched off by the hardware.
+
+
+%------------------------------------------------------------------------------
+
+
+\section{Native ATM PVCs}
+
+PVCs can be used for machines that are either connected back to back or
+via a switch. In the latter case, the cell forwarding has to be manually
+set up at the switch.
+
+
+\subsection{Traffic tools}
+
+\name{aread}/\name{awrite} and \name{br}/\name{bw} are simple programs to
+access the ATM API. \name{awrite} sends the text string passed as its
+second argument in an AAL5 PDU. \name{aread} receives one AAL5 PDU and
+displays it in hex. Both programs also display the return values of the
+corresponding system calls and the current values of \name{errno}.
+
+\name{bw} either sends its standard input or a stream of blocks containing
+arbitrary data (if a number is passed as its fourth argument) in 8 kB
+AAL5 PDUs. \name{br} receives AAL5 PDUs and writes them to standard output.
+
+The first argument of \name{aread}, \name{awrite}, \name{br} and \name{bw}
+is always the PVC address,
+i.e. the ATM interface number, the VPI and the VCI number, with a dot
+between elements. The interface number can be omitted if it is zero.
+Example:
+
+\begin{verbatim}
+% awrite 1.0.42 hi
+\end{verbatim}
+
+Note that some adapters only support VPI == 0. Also, the VCI range may be
+limited, e.g 0 to 1023.
+The interface number can be obtained from the initialization
+message the driver printed during startup. \name{atm0} is interface 0,
+\name{atm1} is interface 1, etc. If the system is equipped with a real
+ATM adapter (e.g. not only \name{atmtcp}), that adapter is normally at
+\name{atm0}.
+
+\name{aping} receives and sends small AAL5 PDUs on a PVC. It expects that
+messages it sends are either echoed back or that a similar program on the
+other side generates a stream of messages. \name{aping} reports an error
+if no messages are received for too long. \name{aping} is invoked by
+specifying the PVC, like \name{aread}.
+
+For "real" tests, you should use the modified version of \name{ttcp} that
+comes with this package. The original is on
+\url{ftp://ftp.sgi.com/sgi/src/ttcp}. The following options have been added:
+
+\begin{description}
+  \item[\raw{-a}] use native ATM instead of UDP/TCP. The address must be in
+    the format \raw{$[$\meta{itf}.$]$\meta{vpi}.\meta{vci}} for PVCs, or a
+    valid ATM end system address for SVCs.
+  \item[\raw{-P \meta{num}}] use a CBR connection with a peak cell rate of
+    \meta{num} cells per second. Default is to use UBR.
+  \item[\raw{-C}] disable (UDP) checksums
+\end{description}
+
+Example:
+\begin{verbatim}
+%a ttcp_atm -r -a -s 0.90
+%b ttcp_atm -t -a -s 0.90
+\end{verbatim}
+
+
+\subsection{Direct cell access}
+
+On adapters where the device driver supports access to raw cells (``AAL0''),
+individual cells can be composed and received with the \name{atmdump} program.
+
+Man page: \name{atmdump.8}
+
+Example:
+{\footnotesize
+\begin{verbatim}
+a% sleep 10; date | ./atmdump -t 1 -c 0.51
+b% ./atmdump 0.51
+825079645.192480: VPI=0 VCI=51, GFC=0x0, CLP=1, Data SDU 1 (PTI 1)
+   46 72 69 20 46 65 62 20 32 33 20 31 32 3a 34 37 
+   3a 32 35 20 47 4d 54 20 31 39 39 36 0a 00 00 00 
+   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+\end{verbatim}}
+
+
+%------------------------------------------------------------------------------
+
+
+\section{Signaling}
+
+\subsection{ATM hosts file}
+\label{hosts}
+
+Because ATM addresses are inconvenient to use, most ATM tools also
+accept names instead of numeric addresses. The mapping between names and
+numbers is defined in the file \path{/etc/hosts.atm}. The structure of
+this file is similar to the \path{/etc/hosts} file:
+
+\meta{numeric\_address} \meta{name(s)}
+
+e.g.
+
+\begin{verbatim}
+47.0005.80FFE1000000F21A26D8.0020EA000EE0.00 pc2-a.fqdn pc2-a
+47.0005.80FFE1000000F21A26D8.0020D4102A80.00 pc3-a.fqdn pc3-a
+\end{verbatim}
+
+The numeric address can be specified in any of the formats described
+in \cite{api}. The numeric address(es) of a Linux system can be
+determined with the command \raw{atmaddr -n} (see also section \ref{atmaddr}).
+
+Many ATM tools also attempt to find the corresponding name when displaying
+an address. When translating from the numeric form to a name, the first
+applicable name in the file is used.
+
+In addition to ATM addresses for SVCs, also PVC addresses can be stored in
+\path{/etc/hosts.atm}. If different address types are stored under the
+same name, the first suitable one will be chosen, i.e. if an application
+explicitly requests only SVC addresses, any PVC addresses will be ignored.
+
+
+\subsection{ANS}
+
+If you have access to the ATM Name Service (ANS, e.g because you've installed
+the ANS extension), you can use it instead of or in addition to the hosts
+file by specifying the host that runs ANS in the \path{/etc/resolv.conf}
+file.
+
+For performing reverse lookups of E.164 addresses, the list of telephony
+country codes needs to be known. That list can be obtained from
+\url{http://www.itu.ch/itudoc/itu-t/lists/} the file has a name of the
+form \path{tf\_cc\_e\_*.rtf} The script \path{atm/lib/rtf2e164\_cc.pl} can
+be used to create the E.164 county codes table, e.g.
+
+\begin{verbatim}
+perl rtf2e164_cc.pl <tf_cc_e_13130.rtf >/etc/e164_cc
+\end{verbatim}
+
+
+\subsection{Signaling demon}
+
+Man pages: \name{atmsigd.8}, \name{atmsigd.conf.4}
+
+Note that \name{atmsigd}'s support for point-to-multipoint is very limited:
+only operation as a single leaf of a point-to-multipoint tree works.
+
+By default, \name{atmsigd} is configured to conform to UNI 3.0. It can be
+compiled for UNI 3.1 by changing the \raw{STANDARDS=} line at the beginning
+of \path{atm/Rules.make}, and running \raw{make clean; make} in
+\path{atm/qgen} and \path{atm/sigd} (in this order).
+
+Note that \name{atmsigd} is configured to be paranoid. If it detects unusual
+problems, it frequently terminates. This will (obviously) change in the
+future.
+
+\name{atmsigd} also looks for a configuration file at the location specified
+with the \raw{-c} option. The default location is \path{/etc/atmsigd.conf}.
+
+
+\subsection{ILMI demon}
+
+ILMI provides a mechanism for automatic address configuration. If there is
+no switch or if the switch doesn't support ILMI, the ATM addresses must
+be configured manually (see section \ref{atmaddr}). Note that the ILMI
+demon should not be used on interfaces where addresses are manually
+configured.
+
+The ILMI demon is started as follows:
+
+\begin{command}
+\# ilmid \[-b\] \[-d\] \[-i \meta{local\_ip}\] \[-l \meta{logfile}\]
+  \[-u \meta{uni\_version}\] \[-v\] \[-x\] \[\meta{itf}\]
+\end{command}
+
+\begin{description}
+  \item[\raw{-b}] background. Run in a forked child process after initializing.
+  \item[\raw{-d}] enables debugging output. By default, \name{ilmid} is very
+    quiet.
+  \item[\raw{-i \meta{local\_ip}}] IP address to tell switch when asked for one.
+    Can be in either dotted decimal or textual format. By default, \name{ilmid}
+    uses some heuristics to select a local IP address.
+  \item[\raw{-l \meta{logfile}}] write diagnostic messages to the specified
+    file instead of to standard error. The special name \raw{syslog} is
+    used to send diagnostics to the system logger.
+  \item[\raw{-q \meta{qos}}] configures the ILMI VC to use the specified
+    quality of service. By default, UBR at link speed is used on the ILMI VC.
+  \item[\raw{-u \meta{uni\_version}}] set UNI version. Possible values are
+    \raw{3.0}, \raw{3.1}, and \raw{4.0}. The dot can be omitted. The default
+    value depends on how \name{ilmid} was compiled. Typically, it is \raw{3.0}.
+  \item[\raw{-v}] enables extensive debugging output.
+  \item[\raw{-x}] disable inclusion of variable bindings in the
+    ColdstartTrap. Some switches (e.g. the LS100) only work if this option
+    is set.
+\end{description}
+
+If no interface number is specified, \name{ilmid} serves interface 0.
+You can check whether address registration was successful with the
+\name{atmaddr} command (see below).
+
+The agent supports only the address registration procedures specified
+in section 5.8 of the ATM Forum's UNI 3.1 specification.  These
+procedures involve the switch registering the network prefix on the
+host and the host registering the final ATM address back on the
+switch.  The host accomplishes this by appending an ESI (End System
+Identifier) and a null selector byte to the network prefix registered
+by the switch.  The ESI is the physical or MAC address of the ATM
+interface.
+
+
+\subsection{Manual address configuration}
+\label{atmaddr}
+
+If your switch doesn't support ILMI, you have to set the ATM address
+manually on the switch and on the PC(s). On the Linux side, make sure that
+\name{ilmid} doesn't interfere, then use the \name{atmaddr} command to set
+the address(es).
+
+Man pages: \name{atmaddr.8}
+
+Manual configuration of ATM addresses on the switch depends on the brand.
+On a Fore ASX-200, it can be done with the following command:
+
+\begin{command}
+conf nsap route new \meta{nsap\_addr} 152 \meta{port} \meta{vpi}
+\end{command}
+
+e.g.
+
+{\footnotesize
+\begin{verbatim}
+conf nsap route new 47000580ffe1000000f21510650020ea000ee000 152 1a2 0
+                    |<---- NSAP prefix ----->||<--ESI--->|^^
+                                                          SEL
+\end{verbatim}}
+
+The entire NSAP address always has to have a length of 40 digits.
+Note that you can also use addresses with a different prefix and an ESI
+that doesn't correspond to any ESI your adapters have. The value of the
+selector byte (SEL) is ignored.
+
+
+\subsection{Running two ATM NICs back-to-back}
+
+It is also possible to run with two ATM NICs connected back-to-back,
+and no switch in between\footnote{This section was written by
+Richard Jones \raw{rjones@imcl.com}. Comments should be directed to me as well
+as to Werner.}. This is great for simple test environments.
+
+First, if you're using UTP or STP-5, you need a suitable cable.  Our
+experience with standard 100Base-T back-to-back cables was not
+good. It appears that the pin-out they use is different. After some
+false starts, we found that the following cable works:
+
+\begin{verbatim}
+RJ45                            RJ45
+   1        ------------        7
+   2        ------------        8
+
+   7        ------------        1
+   8        ------------        2
+
+Pins 3, 4, 5, 6 unconnected.
+\end{verbatim}
+
+You can also make up a loopback cable with 1 -- 7 and 2 -- 8 connected for
+ultra-cheap setups.
+
+Here we have two machines called ``virgil'' and ``nestor''.
+Substitute your own names as necessary.
+
+One side of the ATM connection needs to use the network version of
+\name{atmsigd} and the other side should use the normal user version.
+So here on nestor we start \name{atmsigd} with:
+
+\begin{verbatim}
+atmsigd -b -m network
+\end{verbatim}
+
+and on virgil with:
+
+\begin{verbatim}
+atmsigd -b
+\end{verbatim}
+
+Without a switch, you won't be able to use ILMI. Instead, create a
+\path{/etc/hosts.atm} file containing two dummy addresses.
+Our ATM hosts file contains:
+
+\begin{verbatim}
+47.0005.80FFE1000000F21A26D8.0020EA000EE0.00    nestor-atm
+47.0005.80FFE1000000F21A26D8.0020D4102A80.00    virgil-atm
+\end{verbatim}
+
+These are completely spurious addresses, of course, but as long as you're
+not connected to a public or private ATM network, I don't think it matters.
+To set the address correctly in the driver, we use:
+
+\begin{verbatim}
+atmaddr -a virgil-atm
+\end{verbatim}
+
+on virgil, and:
+
+\begin{verbatim}
+atmaddr -a nestor-atm
+\end{verbatim}
+
+on nestor. Now start \name{atmarpd} on both machines
+in the normal way. Now you (should) have a working ATM set-up. To get
+IP over ATM working, just follow the instructions in
+section \ref{ipoveratm}.
+
+
+\subsection{Q.2931 message dumper}
+
+The Q.2931 message compiler also generates a pretty-printer for Q.2931
+messages. The executable is called \name{q.dump} is stored in the
+\path{qgen} directory. Note that it is not copied elsewhere by
+\raw{make install}
+
+\name{q.dump} expects a sequence of whitespace-separated hex bytes at standard
+input and outputs the message structure if the message can be parsed.
+
+Example:
+
+\begin{verbatim}
+% echo 09 03 80 00 05 5A 80 00 06 08 80 00 02 81 83 00 48 \
+  00 00 08 | ./q.dump
+_pdsc = 9 "Q.2931 user-network call/connection control message"
+_cr_len = 3
+call_ref = 8388613 (0x800005)
+msg_type = 0x5a "RELEASE COMPLETE"
+_ext = 1
+_flag = 0 "instruction field not significant"
+_action_ind = 0 "clear call"
+msg_len = 6 (0x6)
+  _ie_id = 0x08 "Cause"
+    _ext = 1
+    cause_cs = 0 "ITU-T standardized"
+    _flag = 0 "instruction field not significant"
+    _action_ind = 0 "clear call"
+    _ie_len = 2 (0x2)
+      _ext = 1
+      location = 1 "private network serving the local user"
+      _ext = 1
+      cause = 3 "no route to destination"
+\end{verbatim}
+
+
+%------------------------------------------------------------------------------
+
+
+\section{IP over ATM}
+\label{ipoveratm}
+
+IP over ATM is supported with Classical IP over ATM (CLIP, defined in
+RFC1577 \cite{RFC1577}), LAN Emulation (LANE, defined in~\cite{lanev1}
+and~\cite{lanev2}) and Multi-Protocol Over ATM (MPOA, client only,
+defined in~\cite{mpoav1}).
+
+
+\subsection{CLIP}
+\label{clip}
+
+A demon process is used to generate and answer ARP queries.
+The actual kernel part maintains a small lookup table only containing partial
+information.
+
+Man pages: \name{atmarpd.8}, \name{atmarp.8}
+
+\name{atmsigd} and \name{ilmid} must already be running when \name{atmarpd} is
+started. Use the \raw{-b} option to make sure they're properly synchronized,
+e.g.
+
+\begin{verbatim}
+#!/bin/sh
+atmsigd -b
+ilmid -b
+atmarpd -b
+...
+\end{verbatim}
+
+works, but
+
+\begin{verbatim}
+#!/bin/sh
+atmsigd &
+ilmid &
+atmarpd &
+...
+\end{verbatim}
+
+frequently doesn't (yet).
+
+The \name{atmarp} program is used to configure ATMARP. First, you have to
+start \name{atmsigd}, \name{ilmid}, and \name{atmarpd}, then create an IP
+interface and configure it:
+
+\begin{command}
+\# atmarp -c \meta{interface\_name}\\
+\# ifconfig atm0 \meta{local\_address} \meta{possibly\_more\_options} up\\
+\end{command}
+
+e.g.
+
+\begin{verbatim}
+# atmarp -c atm0
+# ifconfig atm0 10.0.0.3 up
+\end{verbatim}
+
+If only PVCs will be used, they can now be created with a command like
+
+\begin{verbatim}
+# atmarp -s 10.0.0.4 0.0.70
+\end{verbatim}
+
+NULL encapsulation is used if the \raw{null} keywords is specified.
+Note that ARP requires LLC/SNAP encapsulation. NULL encapsulation can
+therefore only be used for PVCs.
+
+When using SVCs, some additional configuration work may be necessary. If the
+machine is acting as the ATMARP server on that LIS, no additional
+configuration is required. Otherwise, the ATM address of the ATMARP
+server has to be configured. This is done by creating an entry for the
+network address with the option \raw{arpsrv} set, e.g.
+
+\begin{verbatim}
+# atmarp -s \
+  10.0.0.0 47.0005.80.ffe100.0000.f215.1065.0020EA000756.00 \
+  arpsrv
+\end{verbatim}
+
+Note that the ATMARP server currently has to be started and configured
+before any clients are configured.
+
+The kernel ATMARP table can be read via \path{/proc/net/atm/arp}. The table
+used by \name{atmarpd} is regularly printed on standard error if \name{atmarpd}
+is started with the \raw{-d} option. If \name{atmarpd} is invoked without
+\raw{-d}, the table is written to the file \path{atmarpd.table} in the dump
+directory (by default \path{/var/run}; can be changed with \raw{-D}), and
+it can be read with \raw{atmarp -a}.
+
+
+\subsection{LAN Emulation}
+\label{lane}
+
+Besides Classical IP over ATM, LAN Emulation (LANE) can be used to
+carry IP over ATM. LANE emulates the characteristics of legacy LAN
+technology, such as support for broadcasts. LANE server support is
+described in \path{atm/lane/USAGE}.
+
+Man pages: \name{bus.8}, \name{lecs.8}, \name{les.8}, and \name{zeppelin.8}
+
+If you plan to run more than one LANE clients, LANE service or LANE
+clients and LANE service, you need to specify different local ATM
+addresses for each demon. Since all the LANE demons use similar
+service access points (SAPs) they need different ATM addresses to
+differentiate between connections.
+
+Just as with CLIP, the LANE client consists of two parts: a demon
+process called \name{zeppelin} which takes care of the LANE protocol
+and kernel part which contains LANE ARP cache.
+
+\name{atmsigd} and \name{ilmid} must already be running when
+\name{zeppelin} is started. When \name{zeppelin} starts, the kernel
+creates a new interface which can then be configured:
+
+\begin{command}
+\# zeppelin \meta{possibly\_more\_options} \&\\
+\# ifconfig lec0 \meta{local\_address} \meta{possibly\_more\_options} up\\
+\end{command}
+
+In the example below, two LANE clients are started. The first client
+uses default interface \raw{lec0}, default listen address and tries to
+join the default ELAN. The other LANE client gets interface \raw{lec2}
+assigned to it, binds to local address \raw{mybox3}, tries to join
+ELAN called \raw{myelan} and will bridge packets between ELAN and
+Ethernet segments. Address \raw{mybox3} is defined in
+\path{/etc/hosts.atm}. Rest of the bridging can be configured
+by reading the Bridging mini-HOWTO.~\cite{bridge-howto}
+
+\begin{verbatim}
+# zeppelin &
+# ifconfig lec0 10.1.1.42 netmask 255.255.255.0 \
+                          broadcast 10.1.1.255 up
+#
+# zeppelin -i 2 -l mybox3 -n myelan -p &
+# ifconfig lec2 10.1.2.42 netmask 255.255.255.0 \
+                          broadcast 10.1.2.255 up
+\end{verbatim}
+
+By default, \name{zeppelin} uses interface \raw{lec0}, binds to local
+ATM address using selector byte value 0, tries to contact LECS using
+Well-Known LECS address, joins the default ELAN as defined by the
+LECS, accepts the MTU size as defined by the LES and will not act as
+an proxy LEC. These parameters can be tailored with command line
+options which are defined in \name{zeppelin.8}.
+
+\name{zeppelin} will automatically join any ELANs which use higher
+MTU than the default MTU of 1516 bytes. The MTU of the LANE
+interface will adjust itself according to the MTU of the current
+ELAN.
+
+The state of the LANE ARP cache entries can be monitored through
+\path{/proc/net/atm/lec}. For each entry the MAC and ATM addresses and status 
+is listed. If the entry has an active connection, the connection
+identifiers are also listed.
+
+The LANE service (\name{lecs.8}, \name{les.8} and \name{bus.8}) is
+configured using configuration files. The configuration file syntax is
+listed on the respective manual pages.
+
+A more detailed description of Linux LANE services is discussed in
+Marko Kiiskil\"a's Master's Thesis.~\cite{kiis}
+
+
+\subsection{MPOA}
+\label{mpoa}
+
+The Linux MPOA client continues the tradition of user space -- kernel
+divided ATM services. The demon process called \name{mpcd} processes
+MPOA control packets while the kernel holds MPOA ingress and egress
+caches and does the packet forwarding.
+
+Man page: \name{mpcd.8}
+
+\name{atmsigd} and \name{ilmid} must already be running when
+\name{mpcd} is started. Since MPOA detects IP layer flows from LANE
+traffic, you need to have \name{zeppelin} running before MPOA can
+function. However, the order in which \name{zeppelin} and \name{mpcd}
+is started is not fixed. You can kill any of the demons at your will
+and restart it later without need to restart the other demon. The
+easiest way to disable MPOA is to kill the running \name{mpcd}.
+
+Below is the example from Section~\ref{lane} which starts two LANE
+clients. The configuration has been augmented with two MPOA clients
+which the LANE clients will serve.
+
+\begin{verbatim}
+# zeppelin &
+# ifconfig lec0 10.1.1.42 netmask 255.255.255.0 \
+                          broadcast 10.1.1.255 up
+# mpcd -s mybox1 -l mybox2 &
+#
+# zeppelin -i 2 -l mybox3 -n myelan -p &
+# ifconfig lec2 10.1.2.42 netmask 255.255.255.0 \
+                          broadcast 10.1.2.255 up
+# mpcd -i 2 -s mybox4 -l mybox5 &
+\end{verbatim}
+
+The MPOA demon needs two different local ATM addresses which it uses
+when initiating and receiving data and control connections. The
+addresses can be the same as with e.g. \name{zeppelin} but must be
+different among other \name{mpcd} demons. By default, \name{mpcd} does
+not retrieve configuration information from the LECS. The necessary
+command line options and an example of using LECS are shown on the
+\name{mpcd} manual page.  The manual page also lists the rest of the
+available options.
+
+
+The contents of MPOA ingress and egress caches can be monitored
+through \path{/proc/net/atm/mpc} file.
+
+The Linux MPOA client also supports CBR traffic class for shortcuts
+SVCs instead of default UBR. The QoS specifications for future
+shortcuts can be set and modified using \path{/proc/net/atm/mpc}.
+
+\begin{verbatim}
+# echo add 130.230.54.146 tx=80000,1600 rx=tx > /proc/net/atm/mpc
+#             # generate enough traffic to trigger a shortcut
+# cat /proc/net/atm/mpc 
+QoS entries for shortcuts:
+IP address
+  TX:max_pcr pcr     min_pcr max_cdv max_sdu
+  RX:max_pcr pcr     min_pcr max_cdv max_sdu
+130.230.54.146  
+     80000   0       0       0       1600   
+     80000   0       0       0       1600   
+
+Interface 2:
+
+Ingress Entries:
+IP address      State     Holding time  Packets fwded  VPI VCI
+130.230.4.3     invalid   1160          0           
+130.230.54.146  resolved  542           151            0   109
+...
+\end{verbatim}
+
+The shortcut to IP address \raw{130.230.54.146} was established with
+the parameters shown above. There also exist patches which extend the
+flow detection to fully support layer 4 flows. The layer 4 flows are
+expressed as a 5 tuple (proto, local addr, local port, remote addr,
+remote port) and they identify application to application flows. If
+you are interested, see
+\url{ftp://sunsite.tut.fi/pub/Local/linux-atm/mpoa/} for the latest
+patch.
+
+\begin{thebibliography}{8}
+%  \bibitem{I361}ITU-T Recommendation I.361.
+%    {\em B-ISDN ATM layer specification},
+%    ITU, 1993.
+  \bibitem{api}Almesberger, Werner.
+    {\em Linux ATM API},
+    \url{ftp://icaftp.epfl.ch/pub/linux/atm/api/},
+    July 1996.
+%  \bibitem{RFC1483}Heinanen, Juha.
+%    {\em Multiprotocol Encapsulation over ATM Adaptation Layer 5},
+%    RFC1483, July 1993.
+  \bibitem{RFC1577}Laubach, Mark.
+    {\em Classical IP and ARP over ATM},
+    RFC1577, January 1994.
+%  \bibitem{RFC1755}RFC1755; Perez, Maryann; Liaw, Fong-Ching; Mankin, Allison;
+%    Hoffman, Eric; Grossman, Dan; Malis, Andrew.
+%    {\em ATM Signaling Support for IP over ATM},
+%    IETF, 1995.
+% reference RFC
+   \bibitem{bridge-howto}Cole, Christopher.
+     {\em Bridging mini-Howto},
+     \url{http://metalab.unc.edu/LDP/HOWTO/mini/Bridge.html},
+     September 1998.
+   \bibitem{kiis} Kiiskil\"a, Marko.
+     {\em Implementation of LAN Emulation Over ATM in Linux},
+     \url{ftp://sunsite.tut.fi/pub/Local/linux-atm/misc/},
+     October 1996.
+   \bibitem{lanev1} ATM Forum.
+     {\em LAN Emulation Over ATM -- Version 1.0},
+     February 1996.
+   \bibitem{lanev2} ATM Forum.
+     {\em LAN Emulation Over ATM -- Version 2 -- LUNI Specification},
+     July 1997.
+   \bibitem{mpoav1} ATM Forum.
+     {\em Multi-Protocol Over ATM -- Version 1.0},
+     July 1997.
+\end{thebibliography}
+
+%%beginskip
+\end{document}
+%%endskip

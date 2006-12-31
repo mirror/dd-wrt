@@ -1,0 +1,59 @@
+.TH ATMLOOP 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+atmloop \- get/set loopback mode of ATM interfaces
+.SH SYNOPSIS
+.ad l
+.B atmloop
+.B \-s
+.RB [ \-l\ \fIlevel\fP ]
+.RB [ \-r\ \fIlevel\fP ]
+.RB [ \fIitf\fP ]
+.br
+.B atmloop
+.RB [ \fIitf\fP ]
+.br
+.B atmloop
+.B \-q
+.RB [ \fIitf\fP ]
+.br
+.B atmloop
+.B \-V
+.ad b
+.SH DESCRIPTION
+.B atmloop
+sets or shows the current loopback settings of an ATM interface, and allows
+to query the loopback modes supported by the interface.
+.P
+Some ATM cards can be configured to echo data back to the driver (local
+loopback) or to the network (remote loopback). The echoing may be done at
+several different levels:
+.IP \fBaal\fP
+AAL PDUs
+.IP \fBatm\fP
+ATM cells
+.IP \fBdigital\fP
+bits sent to or received from the line interface
+.IP \fBanalog\fP
+the analog signal
+.P
+The levels supported by an interface can be queried with the \fB\-q\fP option.
+If invoked without options, \fBatmloop\fP displays the current loopback
+settings.
+.SH OPTIONS
+.IP \fB\-s\fP
+set loopback mode. Followed by either \fB\-l\fP or \fB\-r\fP, both
+options to set local and remote loopback at the same time (if supported by
+the driver), or none of them to turn off any loopback.
+.IP \fB\-l\ \fIlevel\fP
+enable local loopback.
+.IP \fB\-r\ \fIlevel\fP
+enable remote loopback.
+.IP \fB\-q\ \fIlevel\fP
+query loopback levels supported by the interface.
+.IP \fB\-V\fP
+print version number of \fBatmloop\fP on standard output and exit.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+atmdiag(8), sonetdiag(8)
+.\"{{{}}}

@@ -1,0 +1,38 @@
+.TH ESI 8 "April 26, 2000" "Linux" "Maintenance Commands"
+.SH NAME
+esi \- get or set the end system identifier (ESI)
+.SH SYNOPSIS
+.ad l
+.B esi 
+.RB [ \fIitf\fP ]
+.br
+.B esi
+.RB [ \-f ]\ \fIesi\fP\ [ \fIitf\fP ]
+.br
+.B esi
+.B \-V
+.ad b
+.SH DESCRIPTION
+.B esi
+is used to show or set the end system identifier (ESI, a unique six-byte
+number corresponding to the MAC address of LAN technologies like Ethernet)
+of an ATM interface. If the interface number \fIitf\fP is omitted, interface
+0 is used by default. The \fIesi\fP argument is a string of twelve hex digits.
+.P
+Only the ESI stored in the kernel is accessed; \fBesi\fP does not change the
+ESI stored on the NIC. If a non-zero ESI is already set on an interface, the
+\fB\-f\fP option has to be used to overwrite it.
+.P
+Note that ESI changes are not automatically propagated throughout the system,
+e.g. to \fBilmid\fP. \fBesi\fP should therefore be used early during system
+initialization.
+.SH OPTIONS
+.IP \fB\-f\fP
+force overwriting an existing ESI.
+.IP \fB\-V\fP
+print version number of \fBesi\fP on standard output and exit.
+.SH AUTHOR
+Werner Almesberger, EPFL ICA <Werner.Almesberger@epfl.ch>
+.SH "SEE ALSO"
+ilmid(8)
+.\"{{{}}}

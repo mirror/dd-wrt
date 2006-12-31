@@ -1,0 +1,3247 @@
+Version 0.77 to 0.78 (7-JUL-2000)
+====================
+
+Bug fixes
+---------
+
+ - skb_migrate wasn't protected against functions accessing the list via
+   skb->list
+ - removal of MOD_xxx races in FORE 200E and atmtcp (by Jeff Garzik)
+ - CONFIG_ATM_NICSTAR_USE_IDT77105 set NEED_SUNI_MX instead of
+   NEED_IDT77105_MX (fix from mainstream)
+ - ambassador.c: changed string concatenation and offset calculation breaking
+   compilation with gcc 2.96 (by Jakub Jelinek)
+ - nicstar.c: various locking fixes for SMP (by Rui Prior)
+ - LANE vs. bridging build conflict solved (from mainstream)
+ - %%u instead of %u in mpc.c
+ - fixed formatting of /proc/net/atm/svc
+ - /proc/net/atm/clip always added + after public address, not only if followed
+   by private address
+ - atmsigd now returns EINVAL if attempting to change max_sdu
+ - atm_change_qos now calls adjust_to for additional parameter checking
+ - sendmsg now returns error if size > max_sdu (reported by Alan Kennington)
+ - removed explicit defaults in Config.in (by Christoph Hellwig)
+ - Fore200E: removed #ifdef MODULE
+ - ipcommon.c didn't export skb_migrate to modules (by Mitchell Blank)
+ - ENI: /proc/net/atm/eni:* claimed backlog was in bytes instead of packets
+ - br, bw, window: changed variables receiving possibly negative return values
+   from size_t to ssize_t (reported by Alan Kennington)
+ - LANE: fixed stray errors on lack of ATM address, ATM address change, or ESI
+   change (by Heikki Vatiainen)
+ - LANE: could loop forwever when trying to connect to LECS (by Heikki
+   Vatiainen)
+
+New features
+------------
+
+ - upgraded to the 2.4.0-test3-pre4 kernel
+
+Other changes
+-------------
+
+ - as_reject now returns the errno value in msg->reply
+ - removed save_qos hack in svc_change_qos
+ - atmsigd: sap_encode now always includes both max_sdu fields, even if one
+   contains the null value for some reason (by Mohsen Souissi)
+ - PCI updates for Ambassador, FORE 200E, Horizon, Iphase, nicstar, ENI, and
+   ZATM (by Jeff Garzik)
+ - removal of unnecessary #ifdef MODULE for nicstar, idt77105, and FORE 200E
+   (by Jeff Garzik)
+ - generalized skb_migrate to append to an arbitrary sk_buff list
+ - iphase.c: timer initialization cleanup (from mainstream)
+ - clip: dev->name initialization change (from mainstream)
+ - idt77105: cleaned up timer initialization
+ - clip.c: some general cleanup
+ - removed redundant return in clip.c (by Heikki Vatiainen)
+ - changed atm_change_qos to static
+ - fore200e.c: re-enabled anti-unloading code
+ - lec.c: now drops packets on overrun instead of growing infinite queue (by
+   Heikki Vatiainen)
+ - COPYING still mentioned the old led code with partial DEC copyright
+   (reported by Chris Pimlott)
+ - Horizon: removed const warning by casting to (hrz_flags *)
+ - Iphase: tried to print unsigned long with %x when errors are enabled
+ - ENI: eni_send tries to use do_tx instead of tasklet_schedule to reduce delay
+ - ENI: removed eni_dev->backlog_len (information is already in backlog->qlen)
+ - changed the kernel source tree references from .gz to .bz2 compression
+ - changed mkdiff to allow more flexible selection of additional patch
+
+
+Version 0.76 to 0.77 (29-APR-2000)
+====================
+
+Bug fixes
+---------
+
+ - atmaddr.8, atmarp.8, atmdump.8, atmloop.8, esi.8 didn't print all options
+   in bold
+ - atmsigd crashed if an interface had more than one local ATM address
+ - atmarpd continued to use VCs after closing if they were closed because
+   ATMARP_SETENTRY failed (reported by Joseph Gooch)
+
+New features
+------------
+
+ - upgraded to the 2.3.99-pre6 kernel
+
+Other changes
+-------------
+
+ - CLIP now uses NETDEV_GOING_DOWN instead of NETDEV_DOWN; also avoids
+   "clip_device_event: unknown event 9" warning
+ - added ubr:pcr example to qos(7)
+ - added -V option to atmaddr, atmarp, atmarpd, atmloop, atmsigd, atmtcp, esi,
+   ilmid
+ - sock->sk->sleep now points to vcc->sleep (by Alexander Viro)
+ - CLIP: ATMARP server now reponds to query for local IP address (suggested by
+   Joseph Gooch)
+ - updated t2a.pl
+
+
+Version 0.75 to 0.76 (13-APR-2000)
+====================
+
+Bug fixes
+---------
+
+ - ttcp_atm declared port as "short" instead of "unsigned short", yielding
+   confusing diagnostic output
+
+New features
+------------
+
+ - upgraded to the 2.3.99-pre5 kernel
+
+Other changes
+-------------
+
+ - eliminated eni_send-tasklet synchronization
+ - PCA200: merged unconditional #inclusion of linux/pci.h from pre5
+
+
+Version 0.74 to 0.75 (7-APR-2000)
+====================
+
+Bug fixes
+---------
+
+ - ENI: moved send operation into tasklet to correct synchronization (reported
+   by Heikki Vatiainen)
+ - MPOA: possible deadlock fix (by Heikki Vatiainen)
+ - atm_vcc_flags_t was too small on PPC, causing an overlap with vcc->family
+   (fixed by Chas Williams)
+ - CLIP: needs spin_lock_irqsave instead of only spin_lock (by Rui Prior)
+ - CLIP: clip_push may be called from an interrupt, so the kfree_skb has to
+   become dev_kfree_skb_any (by Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - removed INCLUDES from atm/ilmid/asn1/Makefile (suggested by Jean Marc
+   Lacroix)
+ - atm/maint/Makefile no longer special-cases atmdiag.c (suggested by Jean Marc
+   Lacroix)
+
+
+Version 0.73 to 0.74 (2-APR-2000)
+====================
+
+Bug fixes
+---------
+
+ - atm_poll tried to sleep on two wait queues, which is no longer possible.
+   Removed vcc->wsleep to solve this. (Reported by Joseph Gooch)
+ - lec.c:lec_arp_clear_vccs changed the VCC flags of the wrong VCC, fortunately
+   only in commented-out code
+ - major revision of MPOA ingress and egress cache locking (Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - removed last remnants of bogus bridging lock from lane_mpoa_init.c
+   (reported by Heikki Vatiainen)
+ - removed last traces of TNET1570A driver
+ - atmdev_init still knew about ENI, but ENI now uses new-style initialization
+ - improved Fore 200E configuration to catch useless settings already at
+   configuration time (by Christophe Lizzi)
+
+
+Version 0.72 to 0.73 (29-MAR-2000)
+====================
+
+Bug fixes
+---------
+
+ - ambassador.c and horizon.c had module loading races (fixed by Giuliano
+   Procida)
+ - fore200e: one set_bit was accidently converted to clear_bit, preventing VCs
+   from being opened (fixed by Christophe Lizzi)
+
+Other changes
+-------------
+
+ - fore200e: moved interrupt handler work to tasklet (by Christophe Lizzi)
+ - fore200e: fixed SBUS DMA direction flags (by Christophe Lizzi)
+ - fore200e: the compile no longer fails when the driver is compiled without
+   any hardware support (and displays a warning; by Christophe Lizzi)
+ - oops, atm/README was lagging behind a few versions
+
+
+Version 0.71 to 0.72 (25-MAR-2000)
+====================
+
+Bug fixes
+---------
+
+ - fore200e.h and lec.h didn't #include <linux/config.h> (fixed by David S.
+   Miller ?)
+ - atmloop.c always assumed -q to be present
+
+New features
+------------
+
+ - upgraded to the 2.3.99-pre3 kernel
+
+Other changes
+-------------
+
+ - kernel patch still included wd.c hack (reported by David S. Miller)
+ - removed bogus initialization of skb->rx_dev (spotted by Alexey Kuznetsov)
+ - removed bogus lane_bridge_hook_lock (by Heikki Vatiainen)
+ - added sparc64 support for ATM_QUERYLOOP (by Christophe Lizzi)
+ - minor Fore driver cleanup (by Christophe Lizzi)
+ - eni.c: moved interrupt handler work to tasklet
+
+
+Version 0.70 to 0.71 (21-MAR-2000)
+====================
+
+Bug fixes
+---------
+
+ - eni.c: fixed potential SMP deadlock on tx_wait
+ - clip.c and lec.c didn't initialize skb->rx_dev
+ - net/atm/svc.c:svc_connect left wait entry in queue on return in some cases
+ - idiot bug in skb_migrate caused weird crashes
+ - atmloop usage erroneously claimed -s was optional
+
+New features
+------------
+
+ - upgraded to the 2.3.99-pre2 kernel
+ - added atmloop.8 man page
+ - added enqueuing result NET_XMIT_BYPASS for qdiscs that send packets on a
+   path without dequeue (e.g. sch_atm)
+
+Other changes
+-------------
+
+ - ambassador.c: removed warnings when compiling with CONFIG_SMP (by Giuliano
+   Procida)
+ - changed drivers/atm target from atm.a to atm.o, to make initcalls work
+ - converted eni.c to use pci_register_driver and initcall
+ - cleaned up #ifdef hell in net/atm/signaling.c:sigd_put_skb
+
+
+Version 0.69 to 0.70 (20-MAR-2000)
+====================
+
+Bug fixes
+---------
+
+ - LEC compilation as a module still left it in the kernel
+
+Other changes
+-------------
+
+ - moved LANE-bridging interface code from lec.c to lane_mpoa_init.c (by
+   Heikki Vatiainen)
+ - made SONET and ATM statistics counters atomic to avoid cli() when reading
+   (not updated: similar mechanism in idt77105.c and private shadow statistics
+   of ambassador.c)
+ - changed access to VCC and device flags (ATM_VF_* and ATM_DF_*) to bit set
+   operations
+ - changed flag types to structs to fail compilation of old code
+ - changed last argument of atm_dev_register to a pointer to a bit set for
+   easier migration
+ - net/atm/*.c: eliminated all sleep_on and cli (except in lec.c)
+ - ditto for eni.c and suni.c
+ - corrected indentation of some "permanent" debugging code in zatm.c
+ - made skb_migrate partially atomic, obsoleting yet another cli() in clip.c
+
+
+Version 0.68 to 0.69 (19-MAR-2000)
+====================
+
+Bug fixes
+---------
+
+ - ambassador.c: corrected location of initial PLX window for use on Alpha (by
+   Giuliano Procida)
+ - zeppelin: fixed address initialization (found by Christophe Lizzi)
+ - atmsigd.conf man page erroneously described the option "q.2963.1" as
+   "q2963_1"
+ - LANE didn't compile when bridging was enabled (fixed by Heikki Vatiainen;
+   note that bridging also needs an update which is being merged via the
+   mainstream kernel)
+
+New features
+------------
+
+ - atmsigd: added command-line option -u to set the UNI mode
+ - added ioctl ATM_QUERYLOOP to determine supported loopback modes
+ - added atmloop(8) option -q
+
+Other changes
+-------------
+
+ - added CREDITS entry of Giuliano Procida
+ - various cosmetic changes to horizon.c (by Giuliano Procida)
+ - ambassador.c: various bits of cleanup (by Giuliano Procida)
+ - added -S <tos> option to ttcp_atm to set the IPv4 TOS byte (this is not
+   really related to ATM)
+ - changed loopback mode values to a bit set
+ - idt77105_ioctl: returned sizeof(int) instead of 0 on ATM_GETLOOP
+ - added phy_ops->stop to suni.c and uPD98402_stop, cleaned up suni.c in the
+   process
+ - removed (very obsolete) mmuio.o from net/atm/Makefile
+
+
+Version 0.67 to 0.68 (28-FEB-2000)
+====================
+
+Bug fixes
+---------
+
+ - removed potential dev_kfree_skb(NULL) from *_send of eni.c, zatm.c, iphase.c
+ - eni.c, zatm.c, iphase.c sometimes returned PCI error codes instead of errno
+   codes
+ - arpd/io.c could try to de-reference entry->addr with addr == NULL (fixed by
+   Thomas Dietz)
+ - LANE copied more than dev->addr_len address bytes (fixed by Heikki
+   Vatiainen)
+ - sch_atm didn't remove filters on destroy
+ - fixed typo in esi.c error message
+ - esi.8 claimed to be the man page of atmarp, and it wasn't installed
+ - added checking for VPI/VCI when sending AAL0 cells (by Mitchell Blank)
+ - atmtcp allowed sending on receive-only VCs
+ - various ioctl permission checks were missing (fixed by Mitchell Blank)
+ - fore200e.c and horizon.c didn't always free skbs on send error (fixed by
+   Mitchell Blank)
+ - included an ugly hack to fix the wd.c driver that was broken around 2.3.47
+   (not related to ATM at all...)
+
+New features
+------------
+
+ - upgraded to the 2.3.48 kernel
+ - added device-independent SAR/PHY loopback setting interface (with many good
+   ideas from Greg Banks and Mitchell Blank), and removed old loopback ioctls
+ - new utility atmloop to set loopback mode
+ - added "stop" to atmphy_ops (requested by Mitchell Blank)
+
+Other changes
+-------------
+
+ - mkdiff can now also use pre-release kernels
+ - changed *kfree_skb to dev_kfree_skb_{irq,any} in eni.c, zatm.c, and raw.c,
+   where necessary (with help from Heikki Vatiainen)
+ - changed {dev_,}kfree_skb to dev_kfree_skb_any in ambassador.c, horizon.c,
+   iphase.c, and nicstar.c (needs further cleanup)
+ - softnet updates for LANE (by Heikki Vatiainen)
+ - fixed firmeware license of Fore 200E driver and general 0.46/0.47 updates
+   (Christophe Lizzi)
+ - more CREDITS file additions
+ - softnet updates for sch_atm
+ - softnet updates for CLIP (also cleaned up flow control for > 1 VCC/itf;
+   reported by Alexey Kuznetsov)
+ - updated documentation for iproute2-2.2.4-now-ss000225 and streamlined the
+   build procedure
+ - PCI DMA updates for ENI driver
+ - changed the default install location of executables and man pages from
+   /usr/local to /usr
+ - make install no longer installs align, aping, br, bw, delay, isp, svctor,
+   sw_debug, sw_tcp, swc, and window
+ - eni.c: made highly controversial aal5 = ... line more readable
+ - moved /proc/atm to /proc/net/atm
+ - added vcc->send function to allow for AAL-specific processing (may be set
+   to dev->ops->send)
+ - atm_do_connect_dev now calls bind_vcc before AAL initialization to make
+   vcc->dev available
+ - change_qos no longer allows changing of AAL or traffic class (by Mitchell
+   Blank)
+ - changes for new loopback support to fore200e driver and sparc64 code (by
+   Christophe Lizzi)
+
+
+Version 0.66 to 0.67 (2-FEB-2000)
+====================
+
+New features
+------------
+
+ - upgraded to 2.3.42
+ - added sunimode utility to set SUNI loopback mode (by Christophe Lizzi)
+
+Other changes
+-------------
+
+ - removed unused variable warning in net/sched/sch_atm.c
+ - changed ENI_SETMULT from ATMIOC_SARPRV+1 to ATMIOC_SARPRV+7
+ - changed atmarpd's complaint about VCC-less non-ATMARP-server entries from
+   DIAG_ERROR to DIAG_INFO (the condition is okay for an ATMARP server)
+
+
+Version 0.65 to 0.66 (31-JAN-2000)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd crashed on reception of as_accept, etc., because of inverted NULL
+   pointer test (reported by Kevin Vargo, Rui Prior, fixed by Julian Cable)
+ - fixed various SPARC build problems (by Christophe Lizzi)
+ - atmsigd insisted that calling party number is local in switch mode
+ - debug switch didn't initialize any ports
+ - net/atm/signaling.c:sigd_enq didn't properly zero the message, yielding
+   kernel pointers partially containing junk
+ - accept(2) didn't copy local ATM address to VCC descriptor (reported by
+   Pedro Brandao)
+ - ilmid/io.c didn't compile on SPARC (reported by Christophe Lizzi)
+ - usage.txt didn't define the %: macro, leaving garbage in usage.txt
+
+New features
+------------
+
+ - upgraded to 2.3.41
+ - Fore 200E driver now also works for SBA-200E (by Christophe Lizzi)
+
+Other changes
+-------------
+
+ - added various CREDITS entries
+ - changed TIOC{IN,OUT}Q to SIOC{IN,OUT}Q (no user space rebuild required;
+   the values are identical)
+ - added script atm/switch/tcp/mkfiles for automatic extraction of
+   configuration files
+ - atmsigd called ATM_GETLINKRATE "ATM_GETLINERATE" in complaints
+ - atmsigd tried to obtain link speed in switch mode, although it's not used
+ - Ambassador NIC: various files still had the wrong copyright/licensing text
+   (patch by Giuliano Procida)
+
+
+Version 0.64 to 0.65 (21-JAN-2000)
+====================
+
+Bug fixes
+---------
+
+ - fixed 32/64 bit %p formatting problem in /proc/atm/vc
+ - atmtcp: fixed RX/TX statistics (by Jens Axboe) 
+ - sparc64-specific ioctl 32/64 bit marshalling fixes (by Christophe Lizzi,
+   with further improvements by Jens Axboe)
+ - zeppelin -l option handling (reported by Mike Prudence, fixed by Heikki
+   Vatiainen)
+ - mkpatch didn't include drivers/atm/eni.h
+ - updated eni.h (tx->backlog_len was missing)
+ - fixed various uint32_t build problems of user space tools by including
+   atm.h before anything other ATM headers (first reported by Rashmi Dravid)
+ - "natmtcp virtual" didn't parse the command line properly
+ - natmtcp's TCP link changed VPI/VCI to 0.0 on close
+ - CLIP: fixed crash after sending ARP (reported by Rui Prior)
+
+New features
+------------
+
+ - upgraded to 2.3.40 (with help from Jens Axboe)
+ - added sparc64 changes for ENI driver (by Heikki Vatiainen)
+ - added the Fore PCA-200E(/SBA-200E) driver (by Uwe Dannowski and Christophe
+   Lizzi)
+ - added the Interphase ATM PCI (i)Chip (x575, x525, x531, etc.) driver (by
+   Monalisa Agrawal and Peter Wang)
+ - added ABR fields to struct atm_trafprm (by Peter Wang)
+ - nicstar driver now supports setting of the CLP bit (by Rui Prior)
+ - added ENI_SETMULT ioctl and enitune utility to change ENI buffer size
+   multipliers at run time
+
+Other changes
+-------------
+
+ - atmsigd: changed default UNI version from 3.0 to dynamic (which defaults
+   to 3.0)
+ - atmtcp: removed ugly ../../net/atm/protocols.h include 
+ - ioctls now internally return -ENOIOCTLCMD if ioctl command number is not
+   recognized
+ - removed ATM_CREATE_LEAF ioctl (wasn't used and suggested the wrong design
+   approach anyway)
+ - updated README.DRIVERS
+ - natmtcp now uses port 2812 (assigned by IANA)
+ - moved Documentation/atm.txt to Documentation/networking
+ - improved atm_kptr_int_t for non-Sparc architectures (by Christophe Lizzi)
+ - removed two compiler warnings from nicstar.c
+ - some minor nicstar cleanup (by Rui Prior)
+ - added "vbr" and "abr" to text2qos/qos2text ("vbr" not used for anything
+   right now)
+ - natmtcp: added commands "create", "remove", "switch", corresponding to
+   options -p, -r, and -s of atmtcp
+ - natmtcp: added link type "print" (write PDU content to stdout)
+ - natmtcp: now uses atm_kptr_int_t for VCC kernel pointer instead of unsigned
+   long
+ - added apologetic man page for natmtcp
+ - renamed natmtcp to atmtcp and removed the old atmtcp
+ - changed some user-space code to avoid patronizing "ambiguous `else'"
+   warnings from egcs, adding as few ugly redundant curly braces as possible
+ - fixed some other compiler warnings
+ - kernel part: trimmed operations structure initializers which consisted
+   mainly of NULL pointers
+ - kernel pointers sent as opaque references to user space are now of type
+   atm_kptr_t. Added support functions kptr_eq and kptr_print. (With help from
+   Richard Johnson and Mitchell Blank)
+ - removed various "overriding commands" warnings in user-space build process
+ - mkdist now creates arcvie in current directory if ~/l/arch doesn't exist
+ - make clean && make  now works also if dependencies are present (make clean
+   used to remove sigd/q.out.h, which the dependencies required)
+ - atmtcp uses command bg instead of -b for backgrounding. Also, listen-bg
+   listens and backgrounds before calling accept.
+
+
+Version 0.63 to 0.64 (1-DEC-1999)
+====================
+
+Bug fixes
+---------
+
+ - atmapi.h logic was still wrong (fixed by Christophe Lizzi)
+ - LANE: fixed BUS filtering and net/atm/lec.c cleanup (by Heikki Vatiainen)
+ - arpd/io.c assumed that diag() preserves errno
+ - atmarpd didn't include QOS in output if getsockopt failed
+
+New features
+------------
+
+ - /proc/atm/eni:* now also shows transmit queue and backlog length
+ - added option "sndbuf" to atmarp
+ - added option "sndbuf" to tc ... atm ...
+ - /proc/atm/vc lists internal details for all VCs (flags, buffers, etc.);
+   added ATM_VF2TXT_MAP to atmdev.h to allow translation of flag values
+
+Other changes
+-------------
+
+ - ATM now uses sk->sndbuf/rvcbuf instead of atm_vcc->tx_quota/rx_quota
+ - removed rx_quota hack from zatm.c
+ - removed net/atm/tunable.h
+ - CLIP and sch_atm now only send packets if the VC's send queue allows them to
+ - implemented correct "requeue" function in sch_atm 
+ - updated zeppelin(8) man page (Heikki Vatiainen)
+ - atmarp:  atmarp -q qos_spec  usage is obsolete; use atmarp -q qos qos_spec
+   instead
+ - /proc/atm/svc now prints "N/A@xxxxxxxx" instead of "Unassigned", with the
+   address of the descriptor in xxxxxxxx
+ - removed all traces of CONFIG_MMU_HACKS
+ - obsoleted ATM_SETSC (single-copy control)
+
+
+Version 0.62 to 0.63 (22-NOV-1999)
+====================
+
+Bug fixes
+---------
+
+ - horizon.c: cleared weird rate_lock/rates_lock patch conflict
+ - saaldump output formatting was completely wrecked; added option -q for
+   "quiet" output (no Q.2931 printing)
+ - fixed LANE Ethernet interface MTU mapping (patch by Rob Scott)
+ - atmsigd incorrectly rejected CONNECTION AVAILABLE (Q.2963.1)
+ - SVC address was wrong in /proc/atm/arp if using private and public part
+ - RESTART ACKNOWLEDGE was not sent with the correct global call reference
+   value (reported by Peter Ryan)
+ - zatm: usec timestamps need 64 division of x86, so this option must be
+   unavailable on other architectures (reported by Matti Aarnio)
+ - nicstar: added "fix3" and "fix4" (by Rui Prior)
+ - LANE: non-proxy didn't filter packets coming from BUS (fix by Marko Kiiskila
+   and Heikki Vatiainen)
+
+New features
+------------
+
+ - upgraded to kernel version 2.3.28
+ - atmtcp now reports VC open/close and generates timestamps (Note: the
+   protocol used between the kernel and the atmtcp utility has changed)
+ - new utility "natmtcp" which combines the ATMTCP protocol, ATMTCP ("virtual")
+   interfaces, "real" ATM interfaces, and log files (experimental)
+ - added ILMI 4.0 MIB variables atmfPortMyIdentifier and atmfMySystemIdentifier
+   (by Thomas Seidel)
+ - zeppelin: new command line option -I to select interface, allowing the use
+   of LANE with multiple physical interfaces (by Heikki Vatiainen)
+ - UltraSparc (sparc64) support (by Christophe Lizzi)
+ - nicstar: added IDT77105 PHY support (by Greg Banks)
+ - added utility loop25 to control ForeRunner LE loopback mode (by Greg Banks)
+ - added support for DNS lookup of NSAP addresses (by Rui Prior)
+ - added utility debug/dnstest (by Rui Prior)
+
+Other changes
+-------------
+
+ - net/atm/tunable.h cleanup
+ - removed SO_BCTXOPT, SO_BCRXOPT, and struct atm_buffconst
+ - removed obsolete field "next" from struct atm_blli
+ - changed potentially unaligned 32 bit accesses in SAAL to use read_netl
+   (spotted by Christophe Lizzi)
+ - added __attribute__ ((aligned(8))) to many structures containing structures
+   which are shared by kernel and user space to enfore uniform packing on
+   sparc64 (with help from Christophe Lizzi)
+ - changed  unsigned long  to  unsigned int  at API for compatibility with
+   architecture where  sizeof(long)  differs between user and kernel space
+   (e.g.  sparc64; suggested by Christophe Lizzi)
+ - changed struct atmsvc_msg.{vcc,listen_vcc} from  unsigned long  to new type
+   atm_kptr_int_t; changed atmsigd accordingly (NB: debugging output may strip
+   upper bits)
+ - changed various casts pointer->int to pointer->long->int (where the pointer
+   does indeed only contain an int, e.g. in ioctl) for Alpha (reported by
+   Matti Aarnio)
+ - nicstar: changes card->membase from u32 to unsigned long
+ - added  __attribute__ ((unused))  to mpc.c and mpoa_caches.c to remove
+   warnings about variables used only for debugging
+ - drivers/atm/Config.in: changed  ! "$foo" = "x"  to  "$foo" != "x"
+
+
+Version 0.61 to 0.62 (27-AUG-1999)
+====================
+
+Bug fixes
+---------
+
+ - lib/diag.c:set_logfile didn't set log_to_initialized (reported by Lars
+   Burgstahler)
+ - sch_atm did not use classifiers attached to the x:0 class (reported by Lars
+   Burgstahler)
+ - net/atm/atm_misc.c EXPORT'ed atm_return, which is an inline function (fixed
+   by Mitchell Blank)
+ - work-around for SO_LEVEL range problems (by Mitchell Blank)
+ - nicstar oops fix (by Rui Prior and John Brosnan)
+ - nicstar should now work also as non-module (by Rui Prior)
+ - nicstar fix for chip bug showing up on 64-bit CPCI bus systems (by Jay
+   Talbott)
+ - cleared confusion about inclusion of suni.o when building both nicstar and
+   ENI
+ - suni.c now always exports suni_init
+ - various fixes and cleanups in the Madge drivers (by Giuliano Procida)
+ - fixed new set of atm_pdu2truesize problems by introducing atm_alloc_charge
+   which handles the allocation too (problem report and work-around by Alexey
+   Kuznetsov)
+ - getsockname on unbound PVC socket caused an oops
+ - LANE: Token Ring source route bridge support fix (by Heikki Vatiainen)
+
+New features
+------------
+
+ - upgraded to kernel version 2.3.15 (mainly by Alexey Kuznetsov and Mitchell
+   Blank)
+ - new socket option SO_ATMPVC to retrieve the "PVC" address (PVC & SVC) (based
+   on a patch by Jay Talbott)
+ - zeppelin -l now also accepts only the selector byte (by Robert Slaski)
+
+Other changes
+-------------
+
+ - removed obsolete drivers/atm/nicstar.c.old_skb
+ - removed all references to Arequipa (obsolete)
+ - SO_BCTXOPT/SO_BCRXOPT are now obsolete, given that the final verdict on page
+   flipping has been spoken in linux-kernel
+ - interface statistics are now counted in  struct net_device_stats  instead of
+   struct enet_statistics (by Mitchell Blank)
+ - added pointer to mailing list to Documentation/atm.txt
+ - Documentation/Configure.help now points to Documentation/atm.txt instead of
+   directly to the Web page.
+ - usage.tex: clarified the consequences of interrupting atmtcp
+ - changed the highly misleading "atmarpd:ITF: no such interface" message to
+   DIAG_DEBUG
+
+
+Version 0.60 to 0.61 (11-JUN-1999)
+====================
+
+Bug fixes
+---------
+
+ - nicstar: driver sometimes crashed when starting for 25 Mbps cards (Rui
+   Prior)
+ - Zeitnet driver: uPD98402.c wasn't compiled with -DEXPORT_SYMTAB when
+   building as a module
+ - net/atm/raw.c didn't export atm_init_aal5, so ATMTCP didn't load as a module
+ - atmtcp could still be accessed after loading and then unloading, yielding an
+   Oops
+
+Other changes
+-------------
+
+ - PPC configuration now also includes ATM (Jay Talbott)
+ - lots of cleanup in the Madge drivers (Giuliano Procida)
+ - tamed down a bit the tone in README
+
+
+Version 0.59 to 0.60 (3-JUN-1999)
+====================
+
+New features
+------------
+
+ - upgraded to kernel version 2.3.3 (main change is slightly different wait
+   queue handling; affects all drivers)
+
+Other changes
+-------------
+
+ - mkdiff script now takes .bz2 kernel if no .gz can be found
+ - made a few changes to the Madge drivers to reduce the number of warnings
+
+
+Version 0.58 to 0.59 (3-JUN-1999)
+====================
+
+New features
+------------
+
+ - upgrade to kernel version 2.2.9
+ - zeppelin now adjusts MTU when joining ELAN (Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - adjusted tr interface name limit to 8 characters (down from a wasteful 9)
+
+
+Version 0.57 to 0.58 (3-JUN-1999)
+====================
+
+Bug fixes
+---------
+
+ - ENI drivers sometimes directly dereferenced pointers instead of using readl/
+   writel (fixed by Mitchell Blank)
+ - nicstar driver no longer uses floating point (fixed by Rui Prior)
+ - nicstar driver may have refused CBR VC in some cases even with enough
+   bandwidth available (fixed by Rui Prior)
+ - usage.tex failed to build (fixed by Bill Brooks)
+ - zeppelin got byte order in BLLI wrong (reported by Chas Williams; fixed by
+   Mitchell Blank and Heikki Vatiainen)
+ - zeppelin did not work when the host had multiple ATM addresses (reported by
+   Benoit Steiner; fixed by Heikki Vatiainen)
+ - zeppelin incorrectly parsed -i command line option (reported by Benoit
+   Steiner; fixed by Heikki Vatiainen)
+ - atm_connect_vcc and /proc/atm/pvc report AAL0 now properly (reported by Zhu
+   Qun Ying and Uwe Dannowski)
+
+New features
+------------
+
+ - nicstar driver now support SONET diagnostics (by Rui Prior)
+ - nicstar driver now works on PowerPC (by Jay Talbott)
+ - LANE now also supports Token Ring (Heikki Vatiainen, with testing by
+   Holger Smolinski)
+
+Other changes
+-------------
+
+ - major non-i386 architecture and other cleanup in ENI driver (by Mitchell
+   Blank)
+ - number of lec devices is 40+8 (lec0-lec39 are Ethernet and lec40-lec47 are
+   Token Ring; Heikki Vatiainen)
+ - lec.c and mpc.c now use atm_force_charge (Heikki Vatiainen)
+ - net/802/tr.c limited interface names to 4 characters (fixed by Heikki
+   Vatiainen)
+ - zeppelin man page updated (Heikki Vatiainen)
+ - "zeppelin.new" is now "zeppelin", the old "zeppelin" is gone
+ - set "atm_connect" printk to KERN_DEBUG
+ - removed ATM_SAAL from include/linux/atm.h (there never was any support for
+   SAAL in the kernel)
+
+
+Version 0.56 to 0.57 (18-MAY-1999)
+====================
+
+Bug fixes
+---------
+
+ - atmarpd complained "invalid control msg type" when changing interface
+   characteristics (reported by Soo-Khim Ho)
+ - sch_atm didn't compile without CLIP (reported by Zhu Qun Ying)
+ - LANE & MPOA: plugged a few memory leaks after failure to atm_charge (Heikki
+   Vatiainen)
+ - mpcd could not be killed if MPS's address was not known (fixed by Heikki
+   Vatiainen)
+ - nicstar: fixed the sleeping in interrupt issue (Rui Prior)
+
+New features
+------------
+
+ - drivers for the Madge "Ambassador" and "Horizon [Ultra]" NICs, also known
+   as Collage PCI 155 Server, 25, and 155 Client (by Giuliano Procida)
+
+Other changes
+-------------
+
+ - MPOA code cleanup and debugging printks are now conditional (Heikki
+   Vatiainen)
+ - removed both led/USAGE files
+ - removed the old atmsigd (was in atm/sig.old/)
+ - nicstar driver now works around TSQ bug on older chips (77201) (by Rui
+   Prior, with the detective work by Jay Talbott)
+
+
+Version 0.55 to 0.56 (22-APR-1999)
+====================
+
+Bug fixes
+---------
+
+ - atm/doc/Makefile assumed . to be included in PATH when invoking rlatex
+   (fix by Heikki Vatiainen)
+ - usage.txt leaked Arequipa configuration examples (fix by Heikki Vatiainen)
+ - plugged a small memory leak in led.new which occurred when using the LANE
+   client as a proxy (Heikki Vatiainen)
+ - atmarpd crashed when printing ATMARP table entries with flag 0x8000 set
+   (reported by Vinay Kulkarni)
+ - CLIP interfaces now follow netmask changes
+ - Nicstar: 25.6 Mbps cell rate corrected (by Rui Prior)
+ - atm_equal could loop forever when comparing NSAP-encoded E.164 addresses
+   (reported by Valley Zhizhkun)
+ - [AP]F_ATM[PS]VC definitions in lib/atm.h conflicted with glibc 2.1
+   (reported by Heikki Vatiainen and Jens Vagelpohl)
+ - changed a few  non-int main  to  int main  (reported by Heikki Vatiainen)
+ - changed lib/diag.c work with glibc 2.1, where stderr is no longer a constant
+   (based on a patch by Heikki Vatiainen, also reported by Giuliano Procida)
+ - make clean didn't remove qgen/q.test.c, qgen/qd.out.h, qgen/qd.test.c,
+   sigd/q.out.h and sigd.old/q.out.h (reported by Giuliano Procida)
+ - optional headers were installed even with system headers present if
+   INSTROOT was different from / (reported by Giuliano Procida)
+ - lib/stdint.h was used even on systems that had a "real" stdlib.h (based on a
+   patch by Heikki Vatiainen, also reported by Giuliano Procida)
+ - renamed net/atm/misc.c to atm_misc.c to avoid name clash with
+   drivers/char/misc.c on include/linux/modules/misc.* (reported by Borek
+   Lupomesky)
+  
+New features
+------------
+
+ - new ioctl ATM_GETLINKRATE to query link rate of an interface (suggested by
+   Vitaly Lavrov)
+ - new atmsigd.conf option  io max_rate  to specify rate to signal if
+   application requests the "maximum"
+ - added decription of CONFIG_ATM_LANE and CONFIG_ATM_MPOA to the kernel
+   configuration help (Heikki Vatiainen)
+ - added description of LANE to usage.tex (Heikki Vatiainen)
+ - new function atm_force_charge to unconditionally add data to a receive
+   buffer
+
+Other changes
+-------------
+
+ - atmsigd now determines maximum link rate by querying interfaces (suggested
+   by Vitaly Lavrov)
+ - moved local address registry from a global table to VPCI structures
+ - changed unknown net device notification severity from KERN_ERR to
+   KERN_WARNING
+ - atmarpd now overwrites old atmarpd.table on startup (it used to keep it
+   until the first configuration change)
+ - shutdown(2) of native ATM VCs now returns 0 instead of -EOPNOTSUPP
+   (suggested by Mitchell Blank)
+ - Nicstar: IRQ sharing is now allowed (by Rui Prior)
+ - Nicstar: default maximum number of cards is now 4 (by Rui Prior)
+ - Nicstar: when compiled as a module, the driver may no longer be removed
+   while in use (by Rui Prior)
+ - Nicstar: loss of cells is no longer reported as a plain CRC error (by Rui
+   Prior)
+ - atmsigd now always clears the endpoint reference flag if in UNI 3.0 mode
+   (based on a patch by Heikki Vatiainen)
+
+
+Version 0.54 to 0.55 (1-MAR-1999)
+====================
+
+Bug fixes
+---------
+
+ - SELECT_TOP_PCR didn't take intro account the "pcr" field, causing SVC with
+   QoS pcr=xxx to be set up at link speed
+ - qos_equal didn't detect differences in the "pcr" fields
+ - sch_atm only accepted parent == root or absent (reported by John Loughney)
+ - sch_atm:atm_tc_put accessed flow structure after kfree'ing it
+ - sch_atm:atm_tc_change didn't put excess traffic class if class creation
+   failed
+ - sch_atm:atm_tc_dump_class didn't return class ID in tcm->tcm_handle
+ - sch_atm:atm_tc_delete refused to delete classes because it expected
+   ref == 1, but ref == 2 (reported by John Loughney)
+
+
+Version 0.53 to 0.54 (19-FEB-1999)
+====================
+
+Bug fixes
+---------
+
+ - led.new: fixed build problem and warning (Heikki Vatiainen)
+ - fixed LANE arp cache timeouts (Heikki Vatiainen)
+ - ilmid -i option fell through into -l, causing logging to go into a file
+   named after the local address
+ - flipping the highest bit of ep_ref made it negative which was erroneously
+   interpreted to mean "absent" (reported by Giuliano Procida and Chas
+   Williams)
+ - ilmid used the result of AsnOidCompare inconsistently, causing network
+   prefix registration to fail with some switches (based on a patch by Giuliano
+   Procida)
+
+New features
+------------
+
+ - tc:q_atm: new option "clip" to select Classical IP processing of inbound
+   traffic
+ - new sch_atm class attribute TCA_ATM_STATE to retrieve VC state
+
+Other changes
+-------------
+
+ - led.new: improved handling of LANE flush protocol (Heikki Vatiainen)
+ - copied USAGE from led/ to led.new/
+ - added description of ilmid options -i and -u to USAGE (Heikki Vatiainen)
+ - ilmid -u now also works without -DDYNAMIC_UNI (all values but the default
+   are refused)
+ - tcpdump patch updated to tcpdump version 3.4 (Heikki Vatiainen)
+ - updated "tc" patch to iproute2 version 2.1.99-now-ss990203
+
+
+Version 0.52 to 0.53 (9-FEB-1999)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd: selecting the UNI version via compile-time options didn't yield
+   the desired result in some cases (reported by Vinay Kulkarni and others)
+ - ATM VCCs now use struct sock, as required by protocol-independent layer
+   starting with recent 2.1 kernels (by Mitchell Blank)
+ - led fixes: htons/htonl bugs in LANEv2 code, one duplicate close() removed
+   (by Heikki Vatiainen)
+
+New features
+------------
+
+ - upgraded to the 2.2.1 kernel (by Mitchell Blank)
+ - LANE: added bridging support (by Heikki Vatiainen)
+ - complete rewrite of led (in led.new), which is now leaner and no longer
+   contains code (c) Digital (by Heikki Vatiainen)
+ - added macros for local AESA format and group addresses, and support in
+   atm2text (by Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - ENI: buffer sizes are now limited to MID_MAX_BUF_SIZE even if max_sdu >
+   MID_MAX_BUF_SIZE/3 (reported by Andrew Lunn)
+ - plenty of NICStAR changes (Rui Prior and Mitchell Blank)
+ - LANE interface to upper layer looks more like Ethernet, so adding bridge and
+   802.1Q support is easier, and tcpdump does not need any extra patches (by
+   Heikki Vatiainen)
+
+
+Version 0.51 to 0.52 (5-DEC-1998)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd crashed when receiving STATUS ENQUIRY for call in Null state
+   (reported by Heikki Vatiainen)
+ - outbound endpoint reference didin't have the 16th bit toggled (fixed by
+   Andrew Lunn)
+ - lec.c: fixed a bug in kernel which could cause kernel part to deadlock when
+   signalling was not started successfully (by Heikki Vatiainen)
+ - MPOA: bug fixes and other changes, see atm/mpoa/CHANGELOG (by Heikki
+   Vatiainen)
+
+New features
+------------
+
+ - LANE: both kernel & daemon: support for ELANs which have MTUs greater than
+   1516 (by Eric H. Kinzie)
+ - MPOA: can now ask LECS for configuratino information (by Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - zeppelin.8: updated (Heikki Vatiainen)
+
+
+Version 0.50 to 0.51 (6-NOV-1998)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd: typo prevented kernel.c from compiling with UNI30 disabled (fix by
+   Andrew Lunn and Uwe Dannowski)
+ - option -u crashed ilmid (reported by Michael Wolf)
+
+Other changes
+-------------
+
+ - bearer capability is now set to "CBR" for CBR (suggested by Heikki
+   Vatiainen)
+
+
+Version 0.49 to 0.50 (3-NOV-1998)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd didn't compile for -DUNI31 -DALLOW_UNI30 (fixed by Richard Gooch)
+ - atmsigd crashed on as_bind and also had problems with as_connect after
+   as_bind (reported by Heiko Krupp, Heikki Vatiainen, and many others)
+
+Other changes
+-------------
+
+ - atmsigd now enables tracing by default (use  -t 0  to turn it off)
+ - added "terminate" message to test/isp
+ - mpoad defaults to UBR if service category is absent (by Heikki Vatiainen)
+ - LANE now avoids blocking intact connections when other connections have
+   problems by queuing packets independently per destination while waiting for
+   a connection (by Heikki Vatiainen)
+
+
+Version 0.48 to 0.49 (1-NOV-1998)
+====================
+
+Bug fixes
+---------
+
+ - q_atm.c passed TCA_ATM_EXCESS even if zero, while the kernel expected it
+   to be absent in this case (changed q_atm.c)
+ - q_atm: tc class show  didn't separate fields properly with blanks
+ - removed double inclusion of atm/config from mkdist
+
+New features
+------------
+
+ - upgraded to the 2.1.126 kernel
+
+Other changes
+-------------
+
+ - "new" atmsigd is now the default (atm/sigd got renamed to atm/sigd.old,
+   atm/sigd.new to atm/sigd)
+ - updated extra/tc/README
+
+
+Version 0.47 to 0.48 (30-OCT-1998)
+====================
+
+Bug fixes
+---------
+
+ - ilmid didn't recognize the -u option
+ - ATM_GETCIRANGE copied wrong amount of data (fix by Heikki Vatiainen)
+ - sch_atm didn't compile without policing enabled (reported by Calin Poenaru)
+ - BHLI octets: qgen/msg.fmt allowed nine instead of eight bytes for ISO and
+   user specified, include/linux/atmsap.h:ATM_MAX_HLI was 7 instead of 8 (by
+   Damian Gilmurray and Paisit Thamsakorn)
+ - MPOA: bug fixes and other changes, see atm/mpoa/CHANGELOG (by Heikki
+   Vatiainen)
+
+New features
+------------
+
+ - ilmid: new option -i to set local IP address (suggested by Andrew May)
+ - ilmid now also supports the MIB variables atmfAtmLayerMaxVpiBits and
+   atmfAtmLayerMaxVciBits (based on a patch by Uwe Dannowski)
+
+Other changes
+-------------
+
+ - ilmid: search for local IP address didn't consider LANE interfaces (lec*)
+ - consolidated most of the various calls to gethostbyname and friends into
+   text2ip (libatmd)
+ - corrected some glitches in net/sched/sch_atm.c (untested)
+ - removed debug/encopy, debug/endump, and debug/zndump from the distribution.
+   They were almost useless and caused problems with  make depend
+ - SYMFILES in qgen/Makefile now determines location of atmsap.h at run time to
+   avoid problems when kernel headers are not in /usr/include/linux (reported
+   by Uwe Dannowski)
+
+
+Version 0.46 to 0.47 (6-OCT-1998)
+====================
+
+Bug fixes
+---------
+
+ - qgen didn't build for all UNI versions (fixed by Richard Gooch)
+
+New features
+------------
+
+ - ilmid: new option -u to set UNI version (3.0, 3.1, or 4.0). Only available
+   if compiled with -DDYNAMIC_UNI.
+
+Other changes
+-------------
+
+ - ilmid: getIpAddr: improved robustness and added debugging output
+
+
+Version 0.45 to 0.46 (5-OCT-1998)
+====================
+
+Bug fixes
+---------
+
+ - ENI and ZATM driver used to read IRQ directly from PCI configuration,
+   bypassing any fixups (reported by Richard Gooch)
+ - atmsigd.new: removed "Known bug" memory leak (when tracing)
+ - led/lec_ctrl.c: signalling bug fixed, max_sdu now has correct value instead
+   of 1 (by Heikki Vatiainen, reported by Josh Baratz <jbaratz@lucentctc.com>
+   and Wolfgang Platzer <wplatzer@iaik.tu-graz.ac.at>)
+ - lots of MPOA bug fixes and other changes, see atm/mpoa/CHANGELOG (by Heikki
+   Vatiainen)
+ - atmsigd reported "Q.2931.1" when configured to support Q.2963.1
+
+New features
+------------
+
+ - atmsigd.new now supports run-time configuration of the signaling protocol
+   version (via atmsigd.conf)
+
+Other changes
+-------------
+
+ - added 16W bursts to ENI burst size configuration (NB: 16W may actually be
+   *slower* than 8W)
+ - lec_ctrl.c: zeppelin now uses LE_REGISTER protocol when TLVs are associated
+   with client's MAC address (by Heikki Vatiainen)
+
+
+Version 0.44 to 0.45 (1-OCT-1998)
+====================
+
+Bug fixes
+---------
+
+ - ENI driver didn't do four-word bursts on RX for sizes < 8 words
+ - arequipad, atmarpd, bus, lecs, les, mpcd, sw_*, and zeppelin silently
+   ignored extra command-line arguments instead of complaining
+
+New features
+------------
+
+ - ENI: added configuration options to fine-tune burst sizes (in reponse to
+   incompatibility found by Dave Airlie)
+
+Other changes
+-------------
+
+ - changed the way how ATM-specific data is stored in skbs. Tentatively updated
+   the the stack, including drivers. Use CONFIG_ATM_SKB to enable the new-style
+   skbs.
+ - Rules.make no longer discards the previous value of LDLIBS
+ - sw_tcp now only establishes bi-directional VCs if both directions are really
+   requested in the QoS structure
+ - moved manual switch control from sw_tcp to the generic switch code; "tcpswc"
+   is now called "swc", the corresponding switch.conf clause is now
+   'control <path>' instead of 'option control "<path>"'
+
+
+Version 0.43 to 0.44 (24-SEP-1998)
+====================
+
+Bug fixes
+---------
+
+ - CONNECT messages no longer contain the AAL type IE if EP ref is present and
+   non-zero (reported by Heikki Vatiainen)
+ - SSCOP: added mode for partial compatibility with Q.SAAL1 (to get rid of
+   warnings reported by Heikki Vatiainen and of interoperability problems with
+   Virata switches reported by Damian Gilmurray)
+ - ilmid now returns a valid response for atmfMyIpNmAddress (by Uwe Dannowski)
+ - configuration on-line help for CLIP didn't work because tag was different
+   from configuration variable
+ - atmsigd crashed when adding multiple local addresses on an interface
+   (reported by Heiko Krupp)
+ - atmaddr.8 said "ATMARP" in the header (reported by Hans Einsiedler)
+ - net/atm/misc.c didn't include linux/config.h and linux/module.h, causing
+   symbols to be missing when rebuilding the kernel after enabling modules
+   (reported by Thomas Parvais)
+
+New features
+------------
+
+ - new maintenance utility tcpswc to control sw_tcp "switches" (description at
+   the end of switch/tcp/README)
+ - added support for setting the CLP bit (untested; see doc/README.CLP)
+ - added support for policing to the ATM qdisc (untested; see extra/tc/README)
+ - ilmid: added support for atmfAtmLayerUniVersion (by Uwe Dannowski)
+
+Other changes
+-------------
+
+ - updated the NICStAR driver to version 008b (by Rui Prior)
+ - new switch fabric function fab_option to pass configuration options
+ - atm2text now also supports unspecified and wildcard components in PVC
+   addresses
+ - added configuration option CONFIG_ATM_CLIP_NO_ICMP to discard packets for
+   which no ATMARP entry exists silently instead of sending an ICMP (this is an
+   ugly hack-around for the revalidation problem reported by Gerald Hanusch)
+ - various minor documentation updates
+ - atmarpd now sends InARP requests when active VC setup completes in order to
+   tell the peer our IP address(es)
+
+
+Version 0.42 to 0.43 (21-AUG-1998)
+====================
+
+Bug fixes
+---------
+
+ - trying to use atmtcp when compiled as a module with the module not loaded
+   crashed the kernel
+
+New features
+------------
+
+ - upgraded to the 2.1.117 kernel
+ - included NICStAR driver by Rui Prior at INESC (this driver also includes
+   parts of an earlier driver written by Matt Welsh, then enhanced by R. D.
+   Rechenmacher and Jawaid Bazyar)
+ - new atmsigd with support for multiple signaling entities (experimental)
+
+Other changes
+-------------
+
+ - removed register dumping code from suni.c (leaked out into the distribution)
+
+
+Version 0.41 to 0.42 (19-AUG-1998)
+====================
+
+Bug fixes
+---------
+
+ - atm.patch was out of sync again :-(
+
+
+Version 0.40 to 0.41 (19-AUG-1998)
+====================
+
+Bug fixes
+---------
+
+ - 0.40 contained an older atm.patch than the one that was supposed to go with
+   it (some changes to sch_atm and MPOA were missing)
+ - kernel didn't build with LANE enabled and MPOA disabled (fix by Mitchell
+   Blank Jr)
+
+New features
+------------
+
+ - MPOA now also supports CBR SVCs (by Heikki Vatiainen and Sampo Saaristo)
+
+Other changes
+-------------
+
+ - atmtcp may work as a module (untested)
+ - kernel code now uses capabilities instead of suser()
+ - removed obsolete recycle_buffer code
+ - distribution now also includes mkpatch, the script that's used to create
+   atm.patch
+
+
+Version 0.39 to 0.40 (13-AUG-1998)
+====================
+
+Bug fixes
+---------
+
+ - ilmid defined the value of "invalid" as 0 instead of 2 (fix by Timo
+   Parnanen)
+ - bash-2 doesn't like  for n in $(SUBDIR); ...  if SUBDIR is undefined (fix
+   by Heikki Vatiainen)
+ - LANE still cleared ATM_VF_RELEASED instead of calling atm_async_release_vcc,
+   which apparently led to stray kernel crashes in signaling (found with a lot
+   of help from John McPherson)
+ - ATM qdisc now properly re-allocates skb memory to grow headers, if necessary
+ - atm/switch/Makefile didn't build SUBDIRS
+ - atmarpd sent garbage ATM addresses in InARP responses over PVCs (reported by
+   Stefan Keller-Tuberg)
+
+New features
+------------
+
+ - MPOA (Multi-Protocol Over ATM) client support written by Heikki Vatiainen
+   and Sampo Saaristo
+ - LANE client (zeppelin) now also supports LANE2 (by Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - accept() now also returns on ATM_VF_CLOSE
+ - ATM qdisc now uses the same data format on rtnetlink as other qdiscs; new
+   option for user-provided headers
+ - atm/switch can now use "external" routing (e.g. provided by the fab control)
+
+
+Version 0.38 to 0.39 (4-AUG-1998)
+====================
+
+Bug fixes
+---------
+
+ - added missing #include <atm.h> in tcpsw.c (fixed by Heikki Vatiainen)
+ - atmsigd allowed both sides to initiate PCR modification; Q.2963.1 only
+   allows the connection owner (i.e. the caller) to do this
+ - atmarpd no longer tries to use incoming SVCs with zero backward bandwidth
+   for ATMARP
+ - ENI and ZATM drivers didn't invoke vcc->pop on dev->ops->send failure
+ - make install  didn't probe correctly for presence of /usr/include/stdint.h
+   (needed on GLIBC 1 systems)
+ - net/atm/resources.c didn't export bind_vcc to modules (fix by Oliver
+   Frommel)
+ - net/arpd/atmarp didn't build without  make depend  (reported by Stefano
+   Giacometti)
+ - clip_mkip zeroed vcc->rx_inuse and didn't take into account that clip_push
+   calls atm_return, which subtracts from vcc->rx_inuse too
+ - fixed typos in qgen/uni.h (and msg.fmt) for causes 38, 41, and 43
+ - atmsigd wrote exit trace to stderr when it had a dump directory and vice
+   versa
+ - documentation still claimed that atmtcp yields messages at boot time
+
+New features
+------------
+
+ - added flow to ATM VCC mapping queuing discipline (experimental)
+ - module for setting up ATM PVC/SVC mappings with "tc" in extra/tc (see
+   extra/tc/README)
+ - atmarpd: new request type art_query to request resolution without VC setup
+ - atmarp: new undocumented option -Q to test art_query
+ - added ATMTCP interfaces that survive disconnects (persistent; new atmtcp(8)
+   options -p and -r; new ioctls ATMTCP_CREATE and ATMTCP_REMOVE)
+
+Other changes
+-------------
+
+ - zeppelin didn't explicitly set the AAL type for outbound connections (by
+   Heikki Vatiainen)
+ - CLIP also allows SVCs to have no idle timeout at all (timeout = 0)
+ - moved SUNI private ioctls (SUNI_GETLOOP and SUNI_SETLOOP) from
+   drivers/atm/suni.h to include/linux/atm_suni.h
+ - atmarpd now shows QoS information for VCs where it differs from the default
+   or where no default is applicable
+ - removed the file atm/WARNING, which gave an overly pessimistic perspective
+   of the state of things
+ - switch: fab_op now returns the cause value plus (optionally) a pointer to
+   diagnostics in the callback instead of a simple okay/not okay indication
+ - updated and corrected the atmtcp man page
+ - further cleanup of the build procedure
+ - README now mainly refers to http://lrcwww.epfl.ch/linux-atm/info.html
+ - updated and trimmed BUGS
+ - added a note to CREDITS indicating its obsolescence
+
+
+Version 0.37 to 0.38 (25-JUN-1998)
+====================
+
+Bug fixes
+---------
+
+ - fixed the remaining few #include <linux/atm.h>
+ - invoking fcntl() or socketpair() on an ATM socket caused an "Oops" (reported
+   by Jonathan Chan)
+ - CLIP PVCs caused an "Oops" when cat'ing /proc/atm/pvc (reported by Marko
+   Kiiskila and Robert Olsson)
+ - atm/qgen/default.nl wasn't removed after build failure
+ - debugging switch (sw_debug) did not stop operations after the first error
+ - svc_accept returned apparent success instead of -EAGAIN, usually leading to
+   a later -ENOTCONN
+ - ttcp.c didn't initialize port_name, leading to erratic behaviour when making
+   slight changes to the build process
+ - atm_pdu2truesize diverged from alloc_skb, leading to sudden failure of VCs
+   or of ATMARP (reported by Robert Olsson)
+ - corrected use of '~' when applied to unsigned longs representing memory
+   addresses in aread, ENI, and ZATM (reported by Wai-Sun Chia)
+ - atmtcp and LANE didn't use bind_vcc when setting up control VCs
+ - atmtcp got ENOMEM/EBUSY wrong when failing to create an interface
+ - sig level <level> in atmsigd.conf didn't affect UNI diagnostics
+
+New features
+------------
+
+ - upgraded to the 2.1.105 kernel
+ - added ATMTCP "switch" in atm/switch/tcp
+ - atmtcp: new mode -s to connect to an ATMTCP "switch"
+ - atmtcp: new option -d for debugging output
+ - added -b option (the usual "background") to switch/relay.c
+
+Other changes
+-------------
+
+ - changed "PDU" to "SDU" in the atmtcp(8) man page
+ - atmarpd now includes the interface netmask in ATMARP table dumps
+ - added ATM devices also to the Alpha architecture, because at least ATMTCP
+   works (by Wai-Sun Chia)
+ - added the removal of -Wmissing-prototypes to the 0.37 changes
+ - removed -Wcast-align from Rules.make because of a conflict with
+   /usr/include/socketbits.h of glibc 2 on Alphas (reported by Wai-Sun Chia)
+ - atmsigd.conf.4: documented that  debug log stderr  works too
+ - sap_equal now also allows wildcard matches for BHLI (with SXE_COMPATIBLE)
+ - atmsigd now uses  -m <mode>  instead of -N and -A
+ - atmsigd.conf now uses  sig mode <mode>  instead of  sig net
+
+
+Version 0.36 to 0.37 (6-JUN-1998)
+====================
+
+Bug fixes
+---------
+
+ - lib/atm.h defined AF_ATMPVC to 20, but the correct value is 8. Likewise,
+   AF_ATMSVC should be 20, not 21. (Reported by Luke Diamand)
+ - fixed bad ASN encoding in ilmid (by Vesa-Matti Puro)
+ - make install and make instdirs didn't stop on error
+
+New features
+------------
+
+ - upgraded to the 2.1.104 kernel
+ - included a script to demonstrate the debug switch (see switch/debug/README)
+
+Other changes
+-------------
+
+ - moved definitions not used by the kernel from linux/atmarp.h to atmarp.h
+ - removed linux/atm_stdint.h (linux/types.h has now caught up)
+ - changed ENI and ZATM driver to use new PCI interface
+ - net/atm/clip.c no longer uses ether_setup (suggested by Alexey Kuznetsov)
+ - more header file cleanup (main change: applications should now
+   #include <atm.h> instead of #include <linux/atm.h>)
+ - removed -Wmissing-prototypes from Rules.make because of a conflict with
+   include/linux/byteorder/swab.h
+
+
+Version 0.35 to 0.36 (23-APR-1998)
+====================
+
+Bug fixes
+---------
+
+ - changed the numeric values of PF/AF_ATMPVC/SVC and SOL_ATM/AAL to avoid
+   conflicts with other allocations. This breaks binary compatibility with
+   ATM programs compiled under older kernels
+ - RESTART ACK was sent with the wrong class when acknowledging the restart of
+   the indicated virtual channel (fix by Mohsen Souissi)
+ - RELEASE was retransmitted forever (to avoid having to perform a RESTART),
+   although it's sufficient to retransmit once and then drop the connection
+ - esi.c checked the kernel version code without including linux/version.h
+ - CLIP changes magically fixed hangs on SICGIFCONF (reported by Wayne Salamon)
+ - atmsigd usually didn't set pvc.sap_family in ISP messages
+
+New features
+------------
+
+ - added build-time option -DTHOMFLEX to send RESTART when SAAL comes up, which
+   works around a bug in some Thomson Thomflex 5000 switches (by Mohsen
+   Souissi)
+ - atmtcp: new option "-i itf" to request a specific interface number
+ - the "debug switch" (switch/debug/sw_debug) is now capable of successfully
+   signaling a UNI 3.x call (see switch/debug/README for details)
+
+Other changes
+-------------
+
+ - atm_equal can now also compare PVC addresses. The argument type has
+   therefore been changed from struct sockaddr_atmsvc * to struct sockaddr *
+ - moved driver-private data from skb->atm.* into skb->cb
+ - complete redesign of communication between atmarp(8) and atmarpd(8) (now
+   uses a UNIX domain socket; suggested by Alexey Kuznetsov)
+ - atmarp -a now also produces correct output if atmarpd is running with -d
+ - removed clip(8)
+ - moved atmarp(8) from atm/ip into atm/arpd, removed atm/ip
+ - /proc/atm/svc shows listening sockets again
+ - cleaned up a few cases where diag(...,DIAG_FATAL,...) was followed by an
+   "else" or a "return".
+ - atmsigd now uses Unix domain sockets (instead of named pipes) to communicate
+   with non-kernel ISP users (updated test/isp too)
+ - net/atm/resources.c:atm_dev_register can now be asked to assign a specific
+   interface number (-1 yields the old behaviour)
+
+
+Version 0.34 to 0.35 (27-MAR-1998)
+====================
+
+Bug fixes
+---------
+
+ - ilmid compared memcmp results with -1,1, which fails under optimization
+   (fixed by Damian Gilmurray)
+ - various fixes and cleanup in how CLIP interacts with the neighbour cache
+   (spotted by Alexey Kuznetsov)
+ - Rules.make complained about missing "optprocess" command on some occasions
+
+New features
+------------
+
+ - upgraded to the 2.1.90 kernel
+ - added some components for ATM switch control (not properly integrated yet,
+   so they don't do anything useful at the moment; written by Roman Pletka)
+
+Other changes
+-------------
+
+ - eliminated various compiler warnings when compiling with glibc2
+ - removed clip_hard_header (suggested by Alexey Kuznetsov)
+
+
+Version 0.33 to 0.34 (13-MAR-1998)
+====================
+
+Bug fixes
+---------
+
+ - eni.c didn't include config.h (fix by Pete Wyckoff)
+ - (yet another) VCC list handling bug (fixed by Heikki Vatiainen)
+ - kernel also applied idle timeout to CLIP PVCs
+ - make clean  didn't remove test/errnos.inc
+ - atmsigd errored as_connect and as_accept with as_close instead of as_error
+ - eni: bandwidth was sometimes reserved for UBR VCs
+ - eni: checking of bandwidth changes was broken
+ - eni: error handling after failed bw change checks destroyed the free list
+ - test/errnos.inc sometimes wasn't generated because of mtime granularity (fix
+   by Brian Armstrong and Corinne Rosier)
+ - fixed use of return code of get/put_user and copy_from/to_user
+ - kernel: fixed a few minor race conditions
+ - ATM_GETADDR left address list locked on fault
+ - maximum length of high layer information was 7 bytes instead of 8 for ISO
+   and User Specific high layer information (reported by Damian Gilmurray)
+ - some tools didn't include errno.h although they use errno or Exxx
+ - atmsigd usually accessed deallocated memory when writing traces, which
+   sometimes led to crashes (reported by Heikki Vatiainen)
+ - indentation of the first two lines of UNI signaling messages in traces was
+   missing
+ - LANE: duplicate data direct connections to entities where we already
+   have a connection are now forbidden. LES and BUS can now co-reside.
+   (Reported by Jean-Francois Moine, fixed by Heikki Vatiainen)
+ - LANE: plugged a file descriptor leak (by Heikki Vatiainen)
+ - atmsigd.conf.4 incorrectly stated that diagnostics must have a higher
+   priority than the specified level to get printed (they're also printed if
+   their priority is equal to that level)
+ - zatm driver didn't virt_to_bus the back pointer of TX rings, leading to
+   crash after sending the 32nd PDU of a VCC (reported by Ajay Bakre)
+ - zatm_feedback sometimes returned with interrupts disabled
+ - ENI driver didn't treat requests for UBR at link speed as "unlimited" and
+   allocated one shaper for each such VCC
+ - atm_async_release_vcc now has its own flag ATM_VF_CLOSE. Overloading
+   ATM_VF_RELEASED caused hung SVCs under some conditions.
+ - atmsigd sometimes released listening sockets before kernel completed its
+   cleanup, yielding warnings and zombies
+ - atmsigd accessed already deallocated data structures when handling
+   unparseable signaling messages
+
+
+New features
+------------
+
+ - upgraded to the 2.1.79 kernel
+ - CLIP now handles NETDEV_CHANGE (proposed by Pete Wyckoff; untested)
+ - various minor signaling changes for operation as switch control
+ - new device operation proc_read: device drivers can now register in /proc
+   (e.g. /proc/atm/eni:0)
+ - added some more BHLI definitions to include/atmsap.h, including draft
+   mapping of well-known TCP/UDP port numbers
+ - added support for TIOCOUTQ/TIOCINQ on native ATM
+ - new library function sap_equal
+ - added convenience function atmpvc_addr_in_use to linux/atm.h
+ - major overhaul of "isp", which is now a good tool for signaling regression
+   tests. See atm/test/README.isp
+ - LANE can now be compiled as a kernel module (by Heikki Vatiainen)
+ - new tool debug/svctor.c to torture signaling by setting up and releasing
+   lots of SVCs (see the source for details)
+
+Other changes
+-------------
+
+ - cleaned up the copying terms: libraries are now covered by LGPL instead of
+   GPL and qgen doesn't "taint" the code it generates
+ - atmarpd: IP addresses are now __u32 instead of unsigned long
+ - atmarpd: changed printf("... %08x ...",(unsigned long) ptr) to %p ...",ptr
+ - /proc support now allocates inode numbers dynamically
+ - added comment to clarify motivation for useless buffer alignment in aread.c
+   (reported by Jeon Jong Hwan)
+ - suni.c and uPD98402.c: SONET_GETSTATZ no longer clears the statistics if the
+   copy faults
+ - ilmid should now work on any interface (patch by Heikki Vatiainen)
+ - changed all __uNN of tools to uintNN_t for glibc2-compatibility
+ - added stdint.h to lib for compatibility with future versions of glibc2
+ - various other evil hacks in tools to make things compile with glibc2
+ - the NIC debugging programs ed, encopy, endump, zndump, and znth are no
+   longer built and installed by default
+ - for compatibility with POSIX 1003.1g, accept now returns ECONNABORTED
+   instead of ECONNREFUSED if connection is already gone (proposed by Heikki
+   Vatiainen)
+ - listening sockets now return instantly if the signaling demon dies
+ - various minor LANE updates to track API changes (by Heikki Vatiainen)
+ - SUNI now also warns if signal is missing at initialization time
+ - zatm: added work-around for unfair buffer space accounting
+ - clarified some of atmarpd's diagnostics
+ - documentation updates
+
+
+Version 0.32 to 0.33 (19-NOV-1997)
+====================
+
+Bug fixes
+---------
+
+ - SSCOP did poll sequence number comparisons in the (data) sequence number
+   space, typically leading to periodic SSCOP restarts (reported by Heikki
+   Vatiainen)
+ - atmsigd now releases calls on receipt of STATUS with call state 0 (reported
+   by Heikki Vatiainen)
+ - qgen tried to print the names of unnamed groups (fix by Simon Leinen)
+ - make clean  in qgen left all the .c and .h files produced by qgen
+ - minor fixes to signaling message format description (qgen/msg.fmt,
+   previously qgen/uni*)
+ - /usr/include/atm.h was calling itself "atmlib" (found by Leena Chandran)
+ - atmsigd: the address format of the calling party number was used to
+   determine the format of the called party number in a SETUP message
+ - added some semicolons to Rules.make for bash 2.0 compatibility (by Tan Chang
+   Hu and Rolf Kunisch)
+ - select/poll indicated an exception when a non-blocking connect terminated.
+   Now it indicates writability, and an error only if the connect failed.
+ - LES/BUS can now co-exist at the same address (by Heikki Vatiainen)
+ - fixed race condition between asynchronous release (e.g. on ATMARP idle timer
+   expiration) and signaling demon response
+ - fixed a typo "[itf]." instead of "[itf.]" in atmsigd.conf.8
+ - "ATM drivers" kernel configuration section is no longer a top-level menu
+   item but it's now under "Network devices"
+ - sigd_close forgot to purge VCs not connected to devices (e.g. closing ones),
+   so they hung
+ - the list of unconnected VCs was sometimes garbled
+ - atmsigd printed null string for as_itf_notify message name when debugging
+ - Arequipa: check_aq_vcc also accepted VCs that were already released by
+   signaling
+ - ATM_VF_PARTIAL and ATM_VF_BOUND had the same value
+ - atmaddr still used old calling convention of ATM_GETNAMES
+ - the atmarpd man page referred to atmarpd as "atmsigd"
+ - various atmtcp bug fixes
+ - atm_recvmsg sometimes returned with interrupts disabled (reported by Pete
+   Wyckoff)
+ - fixed ttcp_atm dependencies (.depend contains dependencies for "ttcp.o")
+ - UNI message format: "more" was missing for def_pck_size
+ - eni/suni didn't compile as modules (fixed by Pete Wyckoff and Ladislav
+   Lhotka)
+ - further net/atm/Makefile cleanup
+ - arequipa_close always left the socket with arequipa_expect enabled. Now it
+   returns it to the previous state.
+ - ENI driver was leaking buffer memory on failure of set_tx
+ - atmarpd didn't print symbolic names of "new" flags (ATF_ARPSRV, etc.)
+ - ATM ARP server didn't make client entries public (reported by Tom Mahieu)
+ - drivers/atm/Config.in had extra "endmenu" (fixed by Ladislav Lhotka)
+ - atmarpd got confused when receiving InARP reply without source ATM address
+ - atmsigd sometimes didn't stop timers if Q.2963.1 wasn't enabled
+ - when rejecting a call, the kernel freed the VCC twice
+
+New features
+------------
+
+ - merged source tree (except Arequipa, single-copy, and various NIC drivers)
+   with 2.1.65-Linus tree
+ - qgen can now handle repeated information elements
+ - added ATM_SETESI[F] ioctl and esi utility (boards without a real ESI in ROM
+   should now set the default ESI to 0x000000000000)
+ - new socket option SO_ATMSAP along with struct atm_sap (using a fixed-size
+   BLLI array instead of the linked list in struct sockaddr_atmsvc)
+ - added Q.2963.1 PCR modification in signaling and the ENI driver
+ - aread: new option -c to print received data as characters (similar to od -c)
+ - new tool test/align to test handling of mis-alignment in NIC drivers
+ - atmsigd now supports policy restrictions for incoming/outgoing calls (see
+   atmsigd.conf.4, "policy")
+ - atmsigd can now also use a pair of named pipes (or, actually, any named
+   object in the file system) for communicating with the user of signaling
+   (normally the kernel)
+ - new tool called "isp" (for "Internal Signaling Protocol") to talk ISP with
+   atmsigd over named pipes
+ - new functions sap2text and text2sap to converts SAPs to/from textual
+   representation, and a sap(7) man page
+ - new traffic parameter field "pcr" to indicate the desired PCR. min_pcr and
+   max_pcr can the be used to indicate the acceptable range.
+ - new function atm_pcr_goal to help drivers to interpret traffic parameters
+
+Other changes
+-------------
+
+ - removed some more obsolete CLIP-related ioctls
+ - qgen: simplified generation of engines with a prefix other than "q" or "qd"
+ - ENI and ZATM drivers now use shareable interrupts
+ - cleaned up some 32bit-isms in ENI driver
+ - cleaned up several 32bit-isms in SSCOP (reported by Tan Chang Hu)
+ - SSCOP: work-arounds for buggy ntohl prototype in some early versions of
+   glibc (reported by Tan Chang Hu, further explored by David S. Miller and
+   Richard Henderson)
+ - started updating the ZATM driver for 2.1 (still crashes under load)
+ - added missing 2.1 pieces in ENI's SUNI driver
+ - added __initfunc and __initdata where appropriate
+ - tools tree now compiles under 0.31 (2.0.25 kernel) and 0.33 (2.1.55 kernel)
+ - gratuitous improvement of identifier tree allocation in qgen
+ - the interface number is now optional for sonetdiag (like for atmdiag)
+ - started implementing the kernel side of point-to-multipoint signaling
+   support
+ - /proc/atm/arp now displays "resolving" or "expired" (with the number of
+   times the entry is referenced) instead of "incomplete".
+ - moved ATM_MAX_BLLI from linux/atm.h to linux/atmsap.h
+ - changed ttcp_atm to use SO_ATMSAP (if available) to set BHLI
+   Note: ttcp_atm previously didn't use a BHLI, so old and new versions of
+   ttcp_atm don't interoperate.
+ - updated all other programs using SAPs too, except for LANE
+ - ENI: failure to allocate a traffic shaper now yields EBUSY instead of EAGAIN
+ - instead of just complaining, the ENI driver now handles all kinds of
+   mis-alignment in the TX path properly
+ - re-implemented send and receive side of Arequipa
+ - merged qgen/uni3x and qgen/uni40 into msg.fmt
+ - added missing Q.2931/UNI 4.0 items to qgen/q2931.h and msg.fmt
+ - also added BLLI L3 H.310 codepoint with related encodings
+ - various file name and identifier changes to give a more appropriate name
+   (e.g. "uni" or "call") to something that's never been Q.2931
+ - added library dependencies
+ - atmsigd produces more readable and usually more comprehensive debugging
+   output
+ - atmsigd.conf.4 now mentions that -d is the debugging output addict's choice
+ - all programs accepting -l syslog now also accept -l stderr. (This is useful
+   for atmsigd if atmsigd.conf sets logging to something else.)
+ - atmsigd now issues ATM_GETADDR ioctls on the signaling socket, not on the
+   kernel socket
+ - WARNING: text2qos: "pcr" is no longer a synonym for "max_pcr" !
+ - text2qos now refuses min_pcr=max
+ - device driver interface: removed vcc->peek; device drivers now choose their
+   own allocation strategy (change motivated by bug report from Furquan Ansari)
+ - drive driver interface: new helper functions atm_charge/atm_return to handle
+   buffer space allocation
+ - device driver interface: vcc->push no longer allocates buffer space. This is
+   now done by the driver, via atm_charge
+ - updated eni, zatm, and atmtcp to use the new mechanism
+ - zero padding in eni driver failed due to mis-alignment on some systems
+   (fixed by Pete Wyckoff)
+ - various compiler warnings removed (by Pete Wyckoff)
+ - removed support for pre-AREQUIPA_WORK mechanism
+ - arequipa close mechanism cleanup
+ - further cleaned up QOS parameter checking
+ - new ISP message as_identify for parallel call processing (not supported yet)
+ - zatm: renamed  struct zatm_thist  to  struct zatm_t_hist  after wondering
+   myself what on earth "this t" could be ...
+ - doc/Makefile now invokes dvips with -o
+
+
+Version 0.31 to 0.32 (10-JUL-1997)
+====================
+
+Bug fixes
+---------
+
+ - manipulation of local ATM addresses didn't check for permission
+
+New features
+------------
+
+ - ilmid now supports the system group and a couple of ILMI MIB objects (by
+   Scott Shumate)
+ - device and VCC allocation is now dynamic
+ - E.164 addressing support and corrections to address coding in uni3x/uni40
+   (by S. A.  Wright, T. C. Jepsen, and Z. Zhang)
+ - support for device de-allocation via per-device operation dev_close
+
+Other changes
+-------------
+
+ - upgrade to kernel version 2.1.37
+ - ENI driver cleanup (uses readl/writel, skb_put, etc.)
+ - socket option handling has changed: optval is now void * (to improve
+   compile-time type checking) and optlen is int (not int *) in getsockopt
+ - socket option "names" now encode the level and the size (based on an idea of
+   Elwyn Davies)
+ - cleaned up some of the #includes in net/atm/proc.c
+ - total rewrite of ATMTCP (now the data forwarding is done in user space,
+   which makes things slower but a lot more flexible)
+ - separated PDU parsing and printing from SSCOP state machine
+ - new per-device operation dev_close to shut down devices
+ - changed a few DIAG_WARNs to DIAG_INFO in ilmid
+
+Removed features
+----------------
+
+ - polled ATM devices are no longer supported
+ - CLIP is gone (use ATMARP instead)
+ - Arequipa and LANE don't work yet (will come back later)
+
+
+Version 0.30 to 0.31 (22-APR-1997)
+====================
+
+Bug fixes
+---------
+
+ - atmarpd even refused IP address changes by the ATMARP server, which
+   typically led to the creation of one extra SVC
+ - ATMARP timeouts were computed at the wrong place (found by Gerald Hanusch)
+ - aqtest's usage didn't mention the -v option
+ - some tools used 0x%p instead of %p (which is fine in the kernel, by the way)
+ - skb_migrate didn't update skb->list
+ - zeppelin: incurred spurious core dumps on unsuccessful attempts to connect
+   to LANE servers, ESI parsing from command line seg faulted, obtaining ESI
+   from NIC left an ATM socket hanging, man page didn't describe all options
+   (by Marko Kiiskila and Heikki Vatiainen)
+
+Other changes
+-------------
+
+ - arequipa_close now only returns after the Arequipa connection has been
+   successfully closed. This allows applications to reliably close and
+   re-create Arequipa SVCs, e.g. to change the traffic parameters.
+ - the arequipad operations 3rd party close and synchronization are now handled
+   inside the kernel and survive arequipad restarts
+
+
+Version 0.29 to 0.30 (10-APR-1997)
+====================
+
+Bug fixes
+---------
+
+ - atmtcp didn't use vcc->push and therefore got the buffer usage accounting
+   wrong (fix by Gerald Hanusch)
+ - when closing a VC, the ENI driver didn't wait until all TX data has really
+   left the board, which created a close/open race (found by Richard Jones)
+ - SSCOP sometimes omitted the last element in a STAT PDU (fix - even with
+   optimization vs. Q.2110 - by Ngo Bach Long)
+ - atmarpd allowed ARP information to change permanent entries (found by Gerald
+   Hanusch)
+ - atmsigd's get_pvc used the maximum SDU size, thereby wasting buffer space
+   very quickly, which led to signaling problems (reported by Richard Jones and
+   Rik Wade)
+ - oops, the BUGS file was always one version number ahead
+ - ATMARP had a race between packets sent by the remote station and the
+   ATMARP_MKIP ioctl. This caused the dreaded "unknown hw protocol 0xaaaa"
+   error. (Finally fixed thanks to a dump provided by Patrick Flynn)
+ - Arequipa had the same race for AREQUIPA_INCOMING. This probably caused the
+   occasional "loss" (they were actually kept in vcc->recvq until the
+   connection was closed) of the first packet(s).
+
+
+Version 0.28 to 0.29 (4-APR-1997)
+====================
+
+Bug fixes
+---------
+
+ - saal/sscop.c: NORMALIZE macro was weird and broken (fix by Ngo Bach Long)
+ - InARP queries didn't contain the target ATM address, even if it is known,
+   which stretches the allowances RFC1577 makes for violating RFC1293 (found
+   by Juha Heinanen)
+ - tcp_conn_request: Arequipa modification to MTU size calculation used wrong
+   socket (fix by Gerald Hanusch)
+ - kernel ATMARP table handling had some obscure races
+ - temporary work-around: added A2T_LOCAL when using A2T_NAME in atmsigd and
+   atmarpd. Before, systems using ANS where the name server is reached via (IP
+   over) ATM exhibited truly bizarre failure patterns when refreshing ATMARP
+   entries. (With a lot of help from Juha Heinanen)
+ - ditto for arequipad, although the effects were less dramatic
+ - atmarpd: if not using -m, incoming connections for which a valid entry
+   already existed (e.g. due to manual configuration) were not entered in the
+   kernel ATMARP table until after the entry timed out for the first time (by
+   Gerald Hanusch)
+ - skb data areas are now aligned using skb_reserve instead of directly
+   tampering with skb->data (and forgetting skb->tail in the process ...)
+   (found by Uwe Dannowski)
+
+New features
+------------
+
+ - atmarpd is now automatically notified of IP over ATM interfaces already
+   existing at startup. This greatly simplifies the atmarpd restart ritual.
+   (All ATMARP table entries and the default QoS are still lost, though.)
+
+Other changes
+-------------
+
+ - cleaned up some weird and partially dead code in arpd/arp.c (found by
+   Gerald Hanusch)
+ - removed superfluous continue in arp.c:atmarp_setentry
+ - device-driver specific declarations now reside in
+   /usr/include/linux/atm_<drv_name>.h, so that disgusting hacks like
+   #include "/usr/src/linux/..." can be avoided (based on proposal by Uwe
+   Dannowski)
+ - updated the list of supported NICs in README and the on-line help
+ - arpd/atmarpd.8: documented that atmarpd -m may violate RFC1577 in subtle
+   ways (pointed out by Gerald Hanusch)
+ - updated MPR usage description to version 1.5 and removed mpr.patch
+ - removed MEM_DEBUG from the build process (MPR 1.5 initializes itself
+   automatically)
+
+
+Version 0.27 to 0.28 (27-MAR-1997)
+====================
+
+Bug fixes
+---------
+
+ - atmarpd restarted timers on as_valid -> as_valid transitions, illegally
+   delayed necessary refreshes (reported by Juha Heinanen)
+ - SSCOP cleared POLL timer on IDLE timer expiry (fix by Ngo Bach Long)
+ - atmsigd didn't initialize "now" soon enough, causing an unnecessary
+   retransmission of the first BGN PDU (by Ngo Bach Long)
+ - atmsigd responded to RELEASE COMPLETE in ss_rel_ind with a STATUS instead of
+   entering ss_wait_close (by Steve Pope)
+
+New features
+------------
+
+ - new tool aqpvc to declare incoming Arequipa traffic on a PVC to the system
+   (caveat: removing such a PVC can turn out to be surprisingly difficult)
+
+Other changes
+-------------
+
+ - removed some useless code in atmarpd's handling of VC disconnects
+ - removed unused signaling state ss_hold (equivalent to ss_wait_rel)
+
+
+Version 0.26 to 0.27 (11-MAR-1997)
+====================
+
+Bug fixes
+---------
+
+ - oops, forgot to include atm/lib/rtf2e164_cc.pl in the distribution
+ - atmsigd's VCI allocation in -N mode was too simplistic and failed after some
+   signaling activity (reported by Richard Jones)
+ - atm_connect was rejecting ATM_{VPI,VCI}_ANY
+ - aq_prev in the list of Arequipa connections wasn't set properly, leading to
+   random crashes when using Arequipa (found and fixed by Richard Jones, after
+   weeks of tearing his hair out)
+ - arequipa_close didn't remove the Arequipa route, which kept the upper layer
+   protocol connection alive for a rather long time (reported by Richard Jones)
+
+New features
+------------
+
+ - ilmid enhancements: vastly improved retry mechanism, workaround for a bug in
+   the ATML Virata switch, -v option for very detailed debug output (Scott
+   Shumate)
+ - atmsigd now also accepts the signaling VC as a command line argument
+ - qos2text appended colon to traffic type even if nothing else followed
+ - new program debug/aqtest to test Arequipa (based on work by Mehdi Tazi)
+
+Other changes
+-------------
+
+ - added a few missing NULLs to struct atmdev_ops initialization in various
+   drivers (this change does not alter any semantics)
+ - changed  printk ...%lx... (unsigned long) ptr  to  ...%p... ptr at many
+   places
+ - removed atm/lib/rtf2cc.pl and atm/lib/cc.inc (they were only used by an
+   interim version of cc_len)
+ - atmarp's usage no longer contains lines longer than 80 characters
+ - added get_logfile() and get_verbosity() to libatm (for ilmid, by Scott
+   Shumate)
+ - select() consumed CPU time unnecessarily if testing for one direction while
+   there's a lot of activity in the other direction (e.g. atmarpd wasted cycles
+   in select() for each outbound packet while waiting for ARP messages)
+ - the value of ATM_AAL0 has changed (from zero to 13), so all programs using
+   AAL0 need to be recompiled
+ - MAX_ATM_QOS_LEN has changed, so most programs using qos2text need to be
+   recompiled
+ - the AAL can now also be set along with the QoS parameters. This approach
+   should be used instead of specifying it in the socket() call.
+ - if no AAL is specified, the kernel now defaults to AAL5 (was AAL0)
+ - updated most demons, tools, and library functions to set the AAL along with
+   the QoS parameters
+   
+
+Version 0.25 to 0.26 (29-JAN-1997)
+====================
+
+Bug fixes
+---------
+
+ - ATMARP VCCs could stay around forever even after timing out, because the
+   process was not woken up.
+ - the ATMARP "fix" in 0.25 introduced an infinite loop. Fixed that one too.
+ - bit 8 in octets 6 and 7 of BLLI ("ext") were set to 1 instead of 0 when
+   using ATM_L2_USER/ATM_L3_USER (reported by ukl2@rz.uni-karlsruhe.de)
+ - qlib added silly offset (which fortunately happened to be zero most of the
+   time) to dumps of large fields (fixed by Jean-Francois Moine)
+ - IP over ATM restricted MTU changes to valid Ethernet MTU sizes
+ - LANE: fixed two bugs that crashed zeppelin when the connection to the
+   servers failed (by Marko Kiiskila)
+
+New features
+------------
+
+ - lib/ans.c now properly computes the length of the country prefix of E.164
+   addresses for reverse lookups (needs file /etc/e164_cc, see USAGE)
+ - if the new -m option is set, atmarpd now merges incoming calls into the
+   ATMARP table if the ATM address is known (see atmarpd.8 for details)
+ - included an RPM spec file (this is still very experimental)
+ - NICStAR driver now also works with IP over ATM (by Stuart Daniel)
+ - usage.txt: added description of how to run ATM NICs back-to-back (by Richard
+   Jones)
+
+Other changes
+-------------
+
+ - signaling traces now also include SAAL up/down transitions
+ - qgen no longer (unnecessarily) depends on libatm.a
+ - started work on letting qgen handle items that appear at more than one
+   place, e.g. repeated IEs (after an idea by Jean-Francois Moine)
+ - did some cleanup and added comments to qlib.[ch]
+ - added -m option to atmarp in config/redhat-4.0/atm.init
+ - added new make target "filenames" to generate a list of all the files which
+   are installed
+ - config/redhat-4.0 now contains an example hosts.atm file and also a Makefile
+   for more convenient installation
+ - atmsigd now reads atmsigd.conf before parsing the command-line options,
+   thereby allowing values set in the file to be superseeded
+ - atmsigd now also logs the internal reference and the caller's address on
+   calls establishment
+ - ilmid: very dirty hack to give switches some time to process ILMI cold start
+   (by Joseph Evans)
+
+
+Version 0.24 to 0.25 (20-DEC-1996)
+====================
+
+Bug fixes
+---------
+
+ - net/atm/atmarp.c:idle_timer_check only expired every other entry (reported
+   by Marko Kiiskila)
+
+New features
+------------
+
+ - LANE now also supports IPX (SNAP and 802.3; by Marko Kiiskila)
+ - NICStAR driver now supports VPI != 0 and has configurable settings in
+   nicstar.h (by Stuart Daniel)
+
+Other changes
+-------------
+
+ - ENI: TX DMA scratch are is now stored per device. This should allow multiple
+   NICs to coexist.
+
+
+Version 0.23 to 0.24 (29-NOV-1996)
+====================
+
+Bug fixes
+---------
+
+ - atm/test/window.c was missing in 0.23
+ - atm/debug/delay didn't build unless atm/lib headers were already installed
+   in /usr/include
+ - atm/debug/znth had undefined return value
+ - SSCOP: fixed typo (that could probably kill the SSCOP connection in case of
+   a retransmission); fix by Olivier Bonaventure
+ - corrected unnecessarily large buffer allocation in zatm.c:pool_index (by
+   Jonathan Larmour)
+ - hosts2ans.pl generated reverse addresses for the domain "ATM.INT" instead of
+   "ATMA.INT"
+ - atmarpd "forgot" any pre-set QOS when receiving new ARP information for the
+   respective entry (reported by Gerald Hanusch)
+ - window scale didn't scale the window sent in the SYNACK packet (reported by
+   Juan-Antonio Ibanez)
+ - LANE: better connection failure handling in zeppelin (by Marko Kiiskila)
+ - LEC kernel timer wasn't restarted when restarting zeppelin (found by Gerald
+   Hanusch, fixed by Marko Kiiskila)
+ - LANE: le_flush_request was sent too early when establishing connection (by
+   Marko Kiiskila)
+ - zeppelin stopped operation (unwantedly) in random cases when LANE servers
+   were down (by Marko Kiiskila)
+ - LANE: non-blocking connections, VCC and LE ARP timeouts, and TLV fields in
+   LE_CONFIG_RESPONSE fixed (by Marko Kiiskila)
+
+New features
+------------
+
+ - atm2text now also uses ANS
+ - signaling traces now also contain error reports from qgen
+ - added new build-time configuration option "CISCO" (in atm/Rules.make) to
+   work around a bug in Cisco's point-to-multipoint signaling
+ - included example configuration files for RedHat 4.0 (see
+   atm/config/redhat-4.0/README)
+
+Other changes
+-------------
+
+ - local variable "link" in atm/debug/delay.c:loop was shadowing "link" system
+   call
+ - cleaned up various Makefiles
+ - qgen: bytes left in qet_space are now more meaningful
+ - named (ANS) now also starts even if atmsigd is not running and retries to
+   create the ATM socket in 15 minute intervals until is succeeds (by Marko
+   Kiiskila)
+ - LANE: (too) short le_flush_responses (Cisco 7010, sw ??.??) are now handled
+   (by Marko Kiiskila)
+
+
+Version 0.22 to 0.23 (16-NOV-1996)
+====================
+
+Bug fixes
+---------
+
+ - fixed stupid typos in atm/lib/atmres.h and an unnecessary dependency on
+   libresolv.a in atm/lib/Makefile (reported by Gerald Hanusch)
+ - fixed warning about implicit declaration of function bigphysarea_init in
+   init/main.c
+ - I think I fixed the SSCOP VR(MR) problems that were first reported by
+   Edouard Lamboray in '95, then by Heinz Schuerch, and that finally led to a
+   total SSCOP breakdown (in 0.22) reported by Gerald Hanusch
+
+New features
+------------
+
+ - integrated the IDT 77201 (NICStAR) driver by Matt Welsh and Stuart Daniel
+   <stuartd@eecs.umich.edu>. Note that this driver currently only supports
+   native ATM.
+ - new throughput and latency benchmark test/window (by Matt Welsh)
+
+Other changes
+-------------
+
+ - upgrade to kernel version 2.0.25
+ - changed drivers/atm/eni.c:do_tx:dma to static in order to reduce kernel
+   stack use (by 480 bytes). Note that this hack may crash systems with more
+   than one ENI adapter.
+ - qlib now also complains if changing a field without a fixed list of values
+ - made a few changes to the native ATM data delivery path to handle some
+   strangeness required by the IDT driver
+
+
+Version 0.21 to 0.22 (13-NOV-1996)
+====================
+
+Bug fixes
+---------
+
+ - (dummy) depend target was missing in atm/man (reported by Bernd Wolf)
+ - net/atm/arequipa.c:make_aq_vcc didn't set ATM_VF_AQINUSE, thereby allowing
+   race conditions to slip through
+ - fixed a few potential race conditions when activating Arequipa
+ - text2qos didn't complain if unit was omitted after multiplier, allowing
+   misleading settings like pcr=50M (that's 19.2 Gbps)
+ - SSCOP: took wrong branch if POLL_AFTER_RETRANSMISSION was enabled (fix by
+   Jonathan Larmour)
+ - SSCOP: rel_ind for ENDAK and BGREJ PDU in sscop_inconn was sent with "user"
+   = 1 (must be 0 for "Source := SSCOP")
+ - initialize_vr_mr now initializes vr_mr to a constant value (instead of
+   garbage plus constant value)
+ - atm_recvmsg now ignores msg->msg_name, as it should by POSIX 1003.1g (fix by
+   Mike Wooten)
+ - atm_sendmsg now fails with EISCONN instead of with EINVAL if msg->msg_name
+   is set, as it should by POSIX 1003.1g (reported by Mike Wooten)
+ - atm_recvmsg and atm_sendmsg now return ENOTCONN if not connected and
+   EOPNOTSUP if flags are passed, as they should by POSIX 1003.1g
+ - the QOS zeppelin uses for its connections can now be set with the option -q
+ - atmarpd didn't include the QOS in PVC entries, so atmarp -a complained about
+   them
+
+New features
+------------
+
+ - kernel changes to support tcpdump with LANE (by Marko Kiiskila)
+ - patch for tcpdump 3.0.4 (installed as tcpdump_atm) to support Classical IP
+   and LANE (by Marko Kiiskila)
+ - patch for BIND 4.9.5 to support ANS (ATM Name Service) functionality (by
+   Marko Kiiskila)
+ - added hierarchy extra/ for packages for which only patches are contained in
+   the ATM on Linux distribution
+ - enhanced text2atm to use ANS if local lookups fail (atm2text will be updated
+   later)
+ - wrote script extra/hosts2ans.pl to convert hosts.atm file to ANS zone files
+
+Other changes
+-------------
+
+ - changed ATM_VF_AQINUSE to ATM_VF_AQDANG and changed aq_list membership to
+   be for dangling VCs only
+ - added the new command-line options to ttcp_atm's online help (finally !)
+ - atm_sendmsg now returns error codes from the driver's send function
+   (suggested by Jonathan Larmour)
+ - text2qos now performs a syntax check if NULL is passed in the qos argument
+ - various minor LANE cleanup (Marko Kiiskila)
+ - upgraded to the latest version of t2a.pl
+ - {A2T,T2A}_REMOTE is obsolete; instead, {A2T,T2A}_LOCAL should be used if
+   ANS lookups are _not_ desired
+
+
+Version 0.20 to 0.21 (18-OCT-1996)
+====================
+
+Bug fixes
+---------
+
+ - net/atm/common.c:atm_connect didn't refuse traffic_class == ATM_NONE in both
+   directions
+ - include/linux/atmsvc.h:SELECT_TOP_PCR didn't default to ATM_MAX_PCR if
+   min_pcr == 0 && max_pcr == 0
+ - debug/delay swallowed one-byte packets
+ - oops, forgot man/Makefile, so qos.7 wasn't installed
+ - atmarpd left max_sdu at zero for automatically generated entries
+ - atmarpd now only uses the default QOS if the traffic type is set in neither
+   direction
+ - signaling: if the listen queue was full, new connections were rejected with
+   as_close instead of as_reject, thereby upsetting atmsigd
+ - svc_accept didn't adjust the listen queue quota when rejecting incoming
+   connection requests
+ - fixed a few bad font selections in atmsigd(8)
+
+New features
+------------
+
+ - included the window scale patch by Randy Scott <scottr@belle.bork.com> and
+   Robert Hill <rhill@tisl.ukans.edu>
+ - -q option for ilmid to set the QOS (like in atmsigd)
+ - new script mkbindist to install the utilities into a tar.gz file
+
+Other changes
+-------------
+
+ - debug/delay now prints the usage if invoked without arguments
+ - removed the pretentious usec resolution for delays in debug/delay
+ - removed the UBR semantics change warning
+ - qos.7: clarified that bps are the user data rate
+ - arequipa_attach_unchecked now also adjusts the upper layer MTU (which can
+   violate RFC1122, but I'll tackle that later)
+ - text2qos now also accepts fractional values, e.g. 9.6kbps
+
+
+Version 0.19 to 0.20 (14-OCT-1996)
+====================
+
+Bug fixes
+---------
+
+ - fixed a few typos and errors in the 0.18 to 0.19 change log
+ - signaling traces only included hl_type bytes instead of hl_length
+   bytes
+ - TNET1570 driver: various fixes (DMA allocation, seg ring overflow,
+   timeouts, etc.) (Christian Paetz)
+ - TNET1570 driver: removed most compiler warnings (Christian Paetz)
+ - listen() on an arequipa_preset() socket and arequipa_preset() on a listening
+   socket now both return EPROTO
+ - oops, forgot to enable the "rm" in  make uninstall
+ - kernel didn't set interface number field in act_create messages to atmarpd
+
+New features
+------------
+
+ - added ioctl ATM_SETSC to enable or disable RX and TX single-copy per VC
+ - new device driver operation change_qos (not yet implemented)
+ - TNET1570 driver supports DEC Alphas and 64 bit PCI transfer (for CIA PCI
+   chipsets) (Christian Paetz)
+ - TNET1570 driver also supports the UniNET1570 board (Christian Paetz)
+ - new functions text2qos and qos2text to convert between textual and binary
+   QOS specifications (the format is described in  man qos)
+ - atmarp -q ip_addr qos  sets the default QOS to use for all VCs created for
+   that IP interface
+ - new utility debug/delay to use machine as AAL5-level delay line
+
+Other changes
+-------------
+
+ - NLPIDs and vendor-specific application identifiers are now collected in
+   the new file /usr/include/atmsap.h
+ - SO_ATMQOS now attempts to change the QOS settings when invoked on an active
+   connection
+ - included Matt Welsh's bigphysarea patch (this isn't related to ATM, but it
+   keeps my development source tree simpler)
+ - arequipa_preset now initializes max_sdu to RFC1626_MTU+RFC1483LLC_LEN if
+   zero
+ - atmarp: new option  qos <spec>  to set the QOS parameters (uses text2qos)
+   Use of  pcr <pcr>  is deprecated.
+ - ttcp_atm's -P option now also accepts a QOS specification string. (use of
+   -P <number>  is deprecated.
+ - atmsigd: new option  -q <qos> and configuration clause  io qos <qos>  to
+   set the QOS of the signaling VC. Use of  -P <pcr>  or  io pcr <pcr>  is
+   deprecated.
+ - removed the backward compatibility  #define class traffic_class  in
+   linux/atm.h
+ - removed obsolete keywords from atmsigd.conf language
+ - atmarp -a now also includes QOS parameters
+ - UBR now respects txtp.max_pcr if set
+ - new rules for the use of [rt]xtp.traffic_class: both fields must be either
+   equal or zero, e.g. ATM_CBR in TX and ATM_UBR in RX no longer works
+ - doc/usage.tex now points to the man pages instead of repeating their content
+
+
+Version 0.18 to 0.19 (27-SEP-1996)
+====================
+
+Bug fixes
+---------
+
+ - sscop.c:data_sd had a comparison inversed, so generation of USTAT PDUs was
+   wrong in some cases (by Juhana Rasanen)
+ - sigd_enq: accessed vcc->qos without checking for vcc == NULL, causing an
+   "Oops" in atmaddr
+ - svc_accept: generated a general protection fault when atmsigd was killed
+   while a process was waiting for new incoming connections
+ - atmaddr didn't zero the address structure before calling text2atm
+ - LANE: fixed usage of kernel timers and LE_ARP_REQUESTs should now get sent
+   until the entry expires or a response is received (by Marko Kiiskila)
+ - less compiler warnings from LANE servers (Marko Kiiskila)
+ - SSCOP: fixed SDU size in AA-RETRIEVE.indication (reported by Heinz Schuerch)
+ - NULL encapsulation for ATMARP works now (reported by Gerald Hanusch)
+ - fixed stray EINVAL from get{sock,peer}name on PVCs (reported by Gerald
+   Hanusch)
+ - clip now sets max_sdu to RFC1626_MTU+RFC1483LLC_LEN when using LLC/SNAP
+   encapsulation
+ - if parsing of a Q.2931 message fails, atmsigd now aborts the call instead of
+   (stupidly) trying to process the incomplete and probably inconsistent data
+ - SUNI driver didn't properly mask out unused highest bits of some statistics
+   counters, thereby yielding absurdly high values
+ - zatm: changed timing of RX channel closing, so the dreaded "can't close RX
+   channel" message should be history
+ - fixed race between Arequipa attachment due to packet reception and closing
+   of the Arequipa VC
+ - local address validity check (for ATM_???ADDR) was all wrong (reported by
+   David Simpson)
+ - message dumper ignored fatal errors if debugging was not enabled
+
+New features
+------------
+
+ - man pages for lecs, les, bus, and zeppelin (Marko Kiiskila)
+ - configuration file name for les and bus can be defined (Marko Kiiskila)
+ - zatm: new kernel configuration option CONFIG_ATM_ZATM_EXACT_TS now supports
+   reception timestamps with microsecond resolution (the accuracy is only in
+   the ms range, though)
+ - new utility znth (ZeitNet Timer History) to monitor timer synchronization
+ - LANE now supports up to 4 LEC network interfaces (Marko Kiiskila)
+ - the Q.2931 message parser now recovers nicely from IE errors, logs the
+   event, and continues parsing. The higher layers of the signaling stack
+   don't use this information yet, though.
+
+Other changes
+-------------
+
+ - Arequipa's BHLI now uses a "vendor-specific application identifier" under
+   the EPFL OUI
+ - moved buffer/queue handling from lib/libatmd to saal/, because it is rather
+   SSCOP-specific anyway
+ - atm_release_vcc now complains if rx_inuse != 0 when closing (if this ever
+   happens, it may point out dangerous races with upper layer protocols)
+ - SO_ATMQOS now issues a warning when using UBR with {min,max}_pcr != 0
+ - max_sdu is now set by atmarpd to MTU+RFC1483LLC_LEN (atmarp could still
+   override this, if necessary)
+ - atmdump: new option -i to display the arrival interval instead of the
+   absolute time. Also changed the time format to be more readable.
+ - updated the kernel configuration documentation to indicate that the SMC
+   ATM Power155 adapters are compatible with the Efficient ENI-155
+ - atmarpd now deletes the old table file (containing stale information) if
+   invoked with -d (debug)
+
+
+Version 0.17 to 0.18 (9-SEP-1996)
+====================
+
+Bug fixes
+---------
+
+ - atmsigd didn't respond to SETUP followed by RELEASE with a RELEASE COMPLETE
+ - atmsigd now implements incoming call rejection (as_indicate -> as_close)
+ - kernel now opens the VC before sending the as_accept. This a) allows to
+   check if the parameters are acceptable, and b) avoids a race condition
+   between the sender and the local VC open procedure, which frequently led to
+   loss of the beginning of the first PDU sent on a new connection.
+ - qdump: _q_parse used the wrong length when dumping variable-length fields,
+   yielding a fatal internal error
+ - clip didn't set rxtp.max_sdu
+ - svc_accept didn't set ATM_VF_HASQOS, so getsockopt SO_ATMQOS didn't work
+   (by Marko Kiiskila)
+ - ttcp_atm calculated Mbps as 2^20 bits/sec instead of 10^6, thereby making
+   all results come out approximately 5% too low (by Fraz Ahmad)
+ - added $(LDLIBS) to linking of lane/lecs (by Lawrence MacIntyre)
+ - interface number allocation in clip and atmarp did not check for collision
+   with the respective other name space
+ - atmarp's -c option didn't work when omitting the "atm" in the interface name
+
+New features
+------------
+
+ - new man page: arequipad.8
+
+Other changes
+-------------
+
+ - simplified the internal signaling protocol by adding the as_reject message
+   (sent by kernel in response to as_indicate; not acknowledged by demon)
+ - packets received from Arequipa are no longer forwarded to other hosts
+ - further ilmid improvements to use RSTADDR less frequently (by Gerald
+   Hanusch; with a slight modification)
+
+
+Version 0.16 to 0.17 (2-SEP-1996)
+====================
+
+Bug fixes
+---------
+
+ - lib/diag.c didn't fflush when logging to a file
+ - arequipad didn't accept the -l option
+ - qgen: possible weird crashes because second.c:find_required accessed
+   value->tag even if vt_id
+ - qgen: fixed wrong PC indication in one error message in _q_parse
+ - make spotless didn't know about new $(*PGMS) targets
+ - atmsigd: fixed memory leak when sending messages to the kernel
+ - atmarpd: fixed memory leak when sending messages to the network
+ - atmsigd: didn't send final as_close when kernel closed connection
+   immediately after requesting it (as_connect)
+ - several minor corrections
+
+New features
+------------
+
+ - added make target "uninstall" to remove all files installed by
+   make install
+ - atmsigd has two new options: -D dump_dir to set the dump directory and
+   -t trace_length to set the length of the trace buffer
+ - wrote a few man pages: atmarp.8, atmarpd.8, atmsigd.8, atmsigd.conf.4
+ - added automatic support for memory debugging if MPR is installed (and
+   included a patch to make MPR 1.1 work with ELF). atmarpd and atmsigd
+   currently use this feature.
+
+Other changes
+-------------
+
+ - changed "class" to "traffic_class" everywhere
+ - make install  is now implemented in a more elegant way
+ - q.dump is now much better at finding symbolic names for numbers
+ - q.dump no longer prints zero-length fields
+ - qgen no longer includes constructor "microcode" in dumper
+ - atmarp now gives more informative error messages on ioctl failure
+ - removed obsolete ioctls SIOCGIFATMADDR and SIOCSIFATMADDR
+ - added hack to allow ilmid to be less hostile to locally configured addresses
+   (by Gerald Hanusch; with slight modifications)
+ - atmarpd now automatically sets ATF_PERM of PVC entries with NULL
+   encapsulation
+
+
+Version 0.15 to 0.16 (29-AUG-1996)
+====================
+
+Bug fixes
+---------
+
+ - fixed an "unterminated character constant" warning by CPP in qgen/uni3x
+ - atm/sigd/q2931.c always tried to read the Cause IE of RELEASE COMPLETE
+   messages even if it wasn't included
+ - LANE: fixed buffer allocation and VCC timeouts (Marko Kiiskila)
+ - LANE: when connecting directly to LES, name of the ELAN was not set
+   properly (discoverd by Gerald Hanusch; fixed by Marko Kiiskila)
+ - LANE, ATMARP, signaling: control sockets didn't account for messages sent
+   back from demons (fixed by Marko Kiiskila)
+ - permanent ATMARP entries for SVCs were ignored if no ATMARP server was
+   configured (reported by Gerald Hanusch)
+ - atmarp option "temp" mis-spelled as "term" (fixed by Gerald Hanusch)
+ - forgot to undo experimental rcvbuf/sndbuf change to unsigned long
+ - make modules didn't generate ATM modules
+ - atmtcp_attach_hook wasn't defined when compiling ATMTCP as a module
+ - ATM patch set dev->ip_atm to ether_arp in net/ppp.c and net/eql.c, so they
+   failed to work as modules
+
+New features
+------------
+
+ - added LANE servers (LECS, LES, and BUS) by Marko Kiiskila
+ - Rules.make: new variable INSTROOT for easier cross-installation
+ - atmsigd: added option -P to set the maximum PCR used on the signaling VC
+ - atmarp: added option "pcr <value>" (proposed by Gerald Hanusch)
+ - added the usual  -l <logfile>  option to arequipad
+
+Other changes
+-------------
+
+ - upgrade to kernel version 2.0.14
+ - SVCs can now be bound with any SEL value
+ - messages of size > quota can be sent if the send buffer is empty
+ - ilmid no longer empties the address list when refreshing the NSAP address
+   (by Gerald Hanusch)
+ - LANE client should now survive network reset (e.g. restart) gracefully
+   (Marko Kiiskila)
+ - LANE: major cleanup of zeppelin code (Marko Kiiskila)
+ - improved loadable module support for eni and zatm (i.e. loading works now)
+ - the message dumper can now be linked to programs that also use the
+   compilation/parsing functions
+
+
+Version 0.14 to 0.15 (31-JUL-1996)
+====================
+
+Bug fixes
+---------
+
+ - zatm: fixed traffic shaper settings for UBR (with a little help from Joern
+   Wohlrab)
+ - atmsigd compilation didn't use the same UNI version configuration as qgen
+ - field "class" in struct atm_traform broke compilation of ATM applications
+   written in C++, so it has been renamed to "traffic_class" (reported by
+   Furquan Ansari)
+ - AAL parameters IE wasn't included in CONNECT, which violated RFC1755
+   (discovered by Robert Olsson)
+ - zatm: removed broken sanity check for in-sequence skb delivery on RX
+ - clip didn't have clip_open function, so SIOCSIFFLAGS on the interface failed
+   with ENODEV
+ - single-copy compiles again
+ - zatm: driver doesn't pretend any longer to support single-copy (but
+   single-copy will come back later)
+ - QOS IE was sent with the wrong coding standard when using UNI 3.1 (with help
+   from Fraz Ahmad)
+ - zatm: forgot to remove some debugging code (around ZATM_TUNE)
+ - qlib.c didn't zero the length array, leading to (rare) "not enough space"
+   errors from QMSG (actually, the "break" mechanism seems to be flaky - will
+   have to check)
+ - fixed Arequipa race condition when the upper layer protocol and signaling
+   decided to close the SVC at the same time
+ - alloc_tx used to return NULL in out of memory conditions, thereby possibly
+   hanging atm_sendmsg
+
+New features
+------------
+
+ - ttcp_atm now also accepts names with -p
+ - (finally !) added send/receive buffer limits and cleaned up the use of
+   vcc->[rt]x_{inuse,quota}
+ - added mkdiff script for automatic generation of diffs
+ - Arequipa now works for PVCs too (but arequipad is now required for any
+   use of Arequipa, not only for incoming connections)
+
+Other changes
+-------------
+
+ - atm/atm-<version>.patch is now called atm/atm.patch (to make the diffs more
+   useful)
+ - the maximum SDU size is now checked in net/atm/common.c:adjust_tp
+ - text2atm/atm2text now accepts/generates E.164 addresses with a leading +
+   sign, as required by ANS (atm95-1532)
+ - internal signaling protocol: added message as_error to un-overload as_close
+ - internal signaling protocol: split as_establish into as_connect and
+   as_accept
+ - internal signaling prococol: as_close.reply no longer contains positive
+   numbers
+ - internal signaling prococol: as_bind now also carries the AAL type
+ - atmsigd: now also checks the AAL type in as_bind messages
+ - kernel signaling: a few minor changes
+ - STANDARDS (i.e. UNI version) configuration option has been moved from
+   atm/qgen/Makefile to atm/Rules.make
+ - atmsigd's startup message now gives more useful indication of which UNI
+   version(s) it supports
+ - signaling no longer uses sa[sp]_[rt]xtp, so ...
+ - sa[sp]_[rt]xtp is gone
+ - removed atm/sigd/svc.c from the distribution. We now have many other tools
+   for testing SVCs, so it's superfluous.
+ - atmarpd: revalidation is now less frequent (use -DFREQUENT_REVAL for
+   the faster timeout)
+ - ioctl CLIP_PVC now returns the number of the new interface and clip prints
+   its name to standard output (like atmarp -c)
+ - clip now issues the CLIP_PVC ioctl after binding, which avoids wasting
+   interface numbers on failed setup attempts
+ - atmsigd -d now sets the debug level for qgen and SSCOP to DIAG_INFO, and
+   doesn't set q_dump
+ - zatm: added protection against I > M
+ - atm_peek_aal5 now only aligns to page boundaries for pdu_size >= PAGE_SIZE
+ - eni driver now spits out CRC error messages at most every other second
+ - zatm driver now repeats RX error messages at most every other second
+ - ttcp_atm now sleeps for a second after setting up an SVC, because the
+   switch seems to lag behind (need to examine this further)
+ - moved SAAL from sigd/ to saal/ (for sharing with UNI 4.0 signaling)
+ - Arequipa sockets are now closed via arequipad instead of via atmsigd (new
+   ioctls AREQUIPA_CTRL and AREQUIPA_CLS3RD)
+ - various minor changes
+
+
+Version 0.13 to 0.14 (19-JUL-1996)
+====================
+
+Bug fixes
+---------
+
+ - LANE: reaction to LE_ARP_RESPONSE's wasn't always correct
+ - LANE: compiler warnings fixed
+ - LANE: comparing ATM addresses in checking whether connection is formed was
+   wrong
+ - zntune didn't divide by 1024 when displaying the "k"
+ - .depend wasn't deleted by make spotless
+ - ATM_GETSTAT and ATM_GETSTATZ used wrong argument type for coding ioctl
+   number. WARNING: programs using ATM_GETSTAT{,Z} need to be recompiled.
+ - requests to set up SVCs with ATM_NONE in both directions are now caught by
+   svc_connect (used to yield an invalid SETUP message)
+ - signaling: fixed connection identifier setting when acting as network side
+   (fix by Elwyn B Davies)
+ - ATMARP server ARP entries were undeletable
+ - atmarp showed wrong argument in error message when given an invalid ATM
+   address
+ - zatm: do_tx left interrupts turned off when returning with RING_BUSY
+ - LANE ARP hash table handling bugs fixed
+ - atmarp: act_create is now only sent on interface creation
+ - atmarp: act_down is now only sent once per transition
+ - demon control SVCs are no longer closed when atmsigd dies (new VCC flag
+   ATM_VF_META)
+ - netdevice notifier is now properly unregistered when atmarpd goes down
+   (not doing so caused endless loop in kernel on atmarpd restart)
+ - sigd_enq{_atomic} never calls schedule()
+ - atmsigd no longer "forgets" to bring up ARP server SVC before sending an
+   InARP
+ - atmarpd no longer dies with "timer in state 3" when the ARP server becomes
+   unreachable
+ - atm/atmarp.c: clip_create() now refuses creation of already existing
+   interface
+ - Documentation/Configure.help gave an obsolete URL for CONFIG_AREQUIPA
+   and doc/usage.tex also mentioned the old file name
+ - Arequipa didn't work in the outbound direction for TCP, because
+   net/ipv4/tcp.c was missing in the kernel patch
+ - drivers/atm/eni.c:foo raced with initialization of eni_boards if the
+   board lost the signal _immediately_ after being initialized
+ - atmarpd: fixed a few uninitialized entry->timer pointers (discovered by
+   Gerald Hanusch)
+ - atmarpd: arps entry should no longer get stuck in as_resolv
+
+New features
+------------
+
+ - compiles on SparcLinux too (but only atmtcp works)
+
+Other changes
+-------------
+
+ - upgrade to kernel version 2.0.0
+ - BHLI matching changed: SAPs without BHLI are now incompatible with calls
+   that specify a BHLI
+ - LANE: interface stays up when zeppelin dies -> possibility for
+   wrapper script around zeppelin
+ - LANE: LUNI interoperability test (ATM Forum/96-0805) is now followed
+   in setting ELAN name in LE_CONFIG_RESPONSE and LE_JOIN_RESPONSE,
+   there is also a delay of 1 second before sending LE_CONFIG_REQUEST and
+   LE_JOIN_REQUEST. This allows 'slow' LE servers to catch up.
+ - LANE: no longer uses sa[sp]_[rt]xtp
+ - LANE: now adjusts better to ATM address changes
+ - zeppelin: new option -m to select debugging output
+ - updated aping, aread, awrite, br, bw, atmdump, ilmid, atmarp, clip, atmarpd,
+   and zeppelin to use setsockopt SO_ATMQOS
+ - added option -x for ilmid to disable variable bindings (caused
+   interoperability problems with certain switches, e.g. the LS100)
+ - changed SO_CIRANGE into a pair of ioctls
+ - changed return value of fetch() (passed to atm_vcc->peek) from unsigned long
+   to __u32
+ - atmarp now accepts  arpsrv  option also for -d
+ - zatm driver can now also read ESIs of rev. 10 boards (with help from Nikos
+   Anerousis)
+ - awrite: fixed txtp.max_sdu calculation in awrite (was using uninitialized
+   variable "offset")
+ - atmarpd: IP interface removal now has the desired effect (used to do
+   nothing)
+ - atmarpd: now reports and ignores unexpected interface transitions
+ - added sigd_enq_atomic for atomic sigd_enq (so that non-Arequipa SVCs can
+   still use the "safe" but non-atomic version)
+ - made SIOCGIF* failures in atmarpd non-fatal (itf.c:itf_up was handling them
+   anyway)
+ - moved Arequipa-specific code from net/atm/clip.c to net/atm/arequipa.c, and
+   put code common to CLIP, Arequipa, and - to a lesser extent - ATMARP into
+   net/atm/ipcommon.[ch]
+ - Arequipa can now be complied without CLIP
+ - various minor documentation changes
+ - moved ATM device initialization from net/atm/pvc.c to drivers/block/genhd.c,
+   where most other devices are initialized too
+ - preparation for new binary locations: tools build process now knows about
+   four types of programs: for booting, for system use, for users, and for
+   internal use during build
+ - make install  now hides the  for  loops
+ - non-user binaries are now installed in /usr/local/sbin
+ - struct atm_iobuf.buffer is now of type void * (was int*). Also,
+   ATM_GETNAMES now returns the length in bytes in that field.
+
+
+Version 0.12 to 0.13 (7-JUN-1996)
+====================
+
+Bug fixes
+---------
+
+ - BHLI type used the ATM_HL_* values (which are off by one) in qgen/uni3x
+ - atmarpd ended up in a tight select-accept loop if atmsigd went away
+ - removed sleep in ZATM's do_tx (so it works with IP over ATM again)
+
+New features
+------------
+
+ - added experimental support for Application requested IP over ATM (Arequipa),
+   prototyped by Jean-Michel Pittet
+ - new traffic class ATM_ANYCLASS to accept incoming SVCs without looking at
+   the traffic parameters
+ - added (untested) support for SO_BCTXOPT/SO_BCRXOPT
+
+Other changes
+-------------
+
+ - SVCs used to listen are now marked as "LISTEN" in /proc/atm/svc
+ - added option -Q <atm_addr> to ttcp_atm to support AREQUIPA
+ - cleaned up the FILE macro and removed atm_dir in net/atm/proc.c
+
+
+Version 0.11 to 0.12 (3-JUN-1996)
+====================
+
+Bug fixes
+---------
+
+ - atm/lib/Makefile: had to comment out PGMS=test
+ - distribution didn't include atm/doc/usage.txt
+ - patch didn't include arch/i386/config.in
+ - return 0;  was missing at the end of net/atm/mmuio.c:mmu_step
+ - atm/ilmid didn't install into INSTBIN; also made some other Makefile
+   changes
+ - read() returned garbage instead of error when network drops connections
+ - POLL_AFTER_RETRANSMISSION in SSCOP didn't even compile
+ - SVCs: bind to wildcard addresses should now work even if no local address
+   is known yet
+ - make clean  in atm/qgen left some dirt
+ - ATM drivers didn't free skbs when detecting an error in TX direction
+ - SIOCMKCLIP was in the wrong #ifdef, so CLIP had to be enabled to make
+   ATMARP usable
+ - signaling didn't respond properly to messages with non-existent call
+   reference
+
+New features
+------------
+
+ - merged in LAN Emulation client support written by Marko Kiiskila
+ - new socket option SO_ATMQOS at SOL_ATM to set/get QOS parameters
+
+Other changes
+-------------
+
+ - t2a.pl now also works with Perl 5.001
+ - changed the TX side of the ZATM driver to use a ring instead of a list in
+   order to improve stability and throughput (needs some more testing)
+
+
+Version 0.10 to 0.11 (21-MAY-1996)
+====================
+
+Bug fixes
+---------
+
+ - README.DRIVERS still referenced INSTALL (it's now in USAGE)
+ - sap_decode didn't clear BLLI part of address structure
+ - trying to connect to NULL address fails locally instead of yielding an
+   invalid SETUP message
+ - bind now properly sets the local address
+ - SVC getname now returns the traffic parameters
+ - oops, zatm open_tx didn't return PCR
+ - awrite printed errors for connect() as "bind: ..."
+ - atmsigd no longer generates dummy call references (0x7fffff)
+ - atmtcp: changed a few kfree_skb to dev_kfree_skb, which should make it
+   work better (does anybody care to try ?)
+ - some more dev_kfree_skb fixed for control messages from or to demons (led
+   to some minor memory leaks)
+ - various major fixes for CBR SVCs
+ - RELEASE was signaled for SVCs before all data was sent
+ - single copy tried to access mem_map with user space addresses, leading to
+   crashes or worse
+ - zatm: sleep_on was racing with TX completion in close_tx, leading to hangs
+ - zatm: now fails attempts to open AAL0 VCs (used to accept them and to
+   crash later)
+ - BHLI encoding/decoding was broken in several ways
+
+New features
+------------
+
+ - hacked in primitive leaf-only p2m support (based on an idea by Marko
+   Kiiskil{)
+ - the socket layer, and the zatm, eni, and atmtcp drivers now support
+   two-phase connect
+ - PVCs now respect max_pcr (SVCs can't for now)
+ - lib/diag.c can now also log to a file or to syslog, and atmarpd, atmsigd,
+   and ilmid now have a -l option to use that
+ - new option  -c config_file  for atmsigd
+ - zatm and atmtcp now also support timestamps (but zatm timestamps can be
+   improved a lot by using the timestamps the uPD98401 generates)
+ - Classical IP over ATM support is now configurable
+ - added on-line help texts for configuration
+ - added atm/test/aping, a round-trip tester for PVCs
+ - added "flags" field to struct atm_dev and to atm_dev_register, on request
+   by Bureau 13
+
+Other changes
+-------------
+
+ - past versions of the BUGS list aren't included in the distribution anymore
+   because I didn't update them anyway
+ - invalid connect() calls now return an error instead of panicing atmsigd
+ - text2atm no longer clobbers sas_addr.{blli,bhli}
+ - greatly simplified zatm traffic shaper settings calculation (and it's
+   better than before too)
+ - atmsigd: diagnostics class "sig" (in atmsigd.conf) now also includes "SAP"
+ - DPRINTK now uses GNU-specific #define foo(bar...)
+ - signaling: PCR is now also indicated (0) for directions in which ATM_NONE
+   is requested, which is probably "cleaner" (for CBR)
+ - added logging priorities to most printks
+ - the default location for atmsigd.conf changed from . to /etc
+ - ipv4/af_inet.c: atmtcp_attach_hook is now only included when using ATM over
+   TCP
+ - configuration options for extended driver debugging, (old) CLIP, and
+   ATM over TCP are turned off by default
+
+
+Version 0.9 to 0.10 (21-MAR-1996)
+===================
+
+Bug fixes
+---------
+
+ - zatm: deallocated UBR shaper when closing UBR VC, which the other UBR VCs
+   didn't really appreciate
+ - fixed nasty memory leak for native ATM (spotted by Rolf Fiedler)
+
+New features
+------------
+
+ - added Rolf Fiedler's driver for his adapter based on the TI TNETA1570
+ - single-copy is back again !
+
+Other changes
+-------------
+
+ - eni buffers are now slightly (50%) bigger, allowing for more effective
+   overlapped operations
+ - documented zntune
+
+
+Version 0.8 to 0.9 (14-MAR-1996)
+==================
+
+Bug fixes
+---------
+
+ - oops, accidently removed ZN1221 from drivers/pci/pci.c (so /proc/pci
+   reported it as "unknown")
+ - sigd didn't poll for the default interface on startup
+ - atmarpd didn't initialize timer field in newly allocated table entries,
+   which led to crashes
+ - removed a few stray debugging printks in net/atm/svc.c:svc_bind
+ - ATMARP tried to send queued packet before adding new table entry, so the
+   packet was always discarded
+ - sigd/sap.c: didn't allow to use different traffic classes for fwd and bwd
+   direction
+ - atm2text accepted SVC addresses of all zeroes
+ - atmsigd didn't refresh its local address list properly after ilmid restart
+ - net/atm/common.c: returned positive error codes (-vcc->reply) instead of
+   negative ones
+ - forgot to include maint/zntune.c in the distribution
+
+New features
+------------
+
+ - sigd/svc now accepts ATM addresses in all formats supported by text2atm
+
+Other changes
+-------------
+
+ - upgraded to kernel version 1.3.73
+ - the called party number must now match the local address (if bound)
+ - renamed ttcp.atm to ttcp_atm
+ - all executables are now explicitly linked (so make works even without
+   dependencies)
+
+
+Version 0.7 to 0.8 (12-MAR-1996)
+==================
+
+Bug fixes
+---------
+
+ - fixed stray segmentation violation in arpd/arp.c:learn
+ - fixed coding standard of the QoS IE if using UNI 3.0 (and made coding
+   standard variable)
+ - made coding standard variable for Cause IE
+ - SSCOP didn't properly set N(MR)
+ - list elements in STAT PDUs had host byte order
+ - SSCF didn't call sscop_estab_resp on restart (AA-EST.ind in 1/1)
+ - signaling didn't handle SAPs with >= 2 BLLI IEs properly
+ - uni3x: iso_hli and user_hli were confined to 7 bytes, but UNI allows up to 8
+ - q_read choked on non-variable-length fields
+ - qgen sometimes didn't read all IEs of a signaling message
+ - fixed usage line of test/bw
+ - qgen no longer complains about missing required fields after a break
+ - fixed compiler warning in zntune.c
+ - fixed ATMARP table additions (caused GPF when flushing ATMARP entry at
+   the end of the table and possibly other problems)
+ - qgen: q_put or'ed data instead of overwriting it, which caused problems
+   only on surprisingly few occasions
+
+New features
+------------
+
+ - atm2text and text2atm now also do name lookups via a /etc/hosts.atm file
+ - atmaddr, atmarpd, and atmsigd now pretty-print addresses using name
+   translation (unless invoked with -n)
+ - atmarpd now dumps its table into /var/run/atmarpd.table and atmarp -a
+   reads it from there
+ - started modularizing the ENI and ZATM drivers
+ - ilmid and atmsigd now support multiple interfaces (untested)
+
+Other changes
+-------------
+
+ - the documentation is now available in LaTeX and in ASCII
+ - rewrote most of the SAP handling code (now everything is in sigd/sap.c)
+ - proto.c:lookup_sap now picks wildcard SAP last
+ - signaling always includes SSCS type = 0 in SETUP messages (for LANE)
+ - changed the message format for the the kernel-demon signaling protocol
+ - qgen is now a bit more tolerant when being fed with bad data
+ - qgen now assumes that q_report(Q_FATAL,...) doesn't return
+ - marked sigd/test.c as obsolete
+ - svc_accept failing in atm_connect no longer returns success
+ - atmsigd -n is now atmsigd -N
+ - qgen now puts the PC in q.out.c and qd.out.c at the beginning of the code
+   line and not on a line by itself
+
+
+Version 0.6 to 0.7 (2-FEB-1996)
+==================
+
+Bug fixes
+---------
+
+ - removed TTL setting ioctl (1234) used for something entirely unrelated to
+   ATM, oops
+ - changed kfree_skb in atm_pop_raw to dev_kfree_skb (this fixes the socket
+   "leak")
+ - more unusual configurations (no PCI, no IP, no /proc) should compile now
+ - atm_equal didn't recognize wildcards in embedded E.164 addresses
+ - fixed net/atm/proc.c:svc_addr (too many bugs to mention)
+ - atmarpd didn't check for ARP traffic on inbound connections
+ - atmarpd didn't properly merge incoming connections with existing entries
+ - various other ATMARP fixes
+ - free list was too short in ENI driver for worst case fragmentation on
+   2 MB boards
+ - signaling didn't set ISO/IEC TR9577 IPI and NLPID correctly in active open
+ - getname looked at *sockaddr_len, which is uninitialized (need to fix this
+   later in the common socket code)
+ - SSCOP generated incorrect error code ("1" instead of "B") for BGN PDU
+   problems
+
+New features
+------------
+
+ - new ioctls ATM_GETADDR, ATM_RSTADDR, ATM_ADDADDR, and ATM_DELADDR to
+   manage local ATM addresses
+ - signaling now handles incoming RESTART, SAAL failure, and SAAL
+   re-establishment
+ - ATMARP now times out idle connection; ATMARP_MKIP ioctl takes a timeout
+   argument
+ - ATMARP (kernel) now queues one skb per pending ARP request and limits the
+   rate of requests for the same address (default 2 req/min)
+ - atmsigd now prints cause values when receiving a RELEASE or a RELEASE
+   COMPLETE and returns more informative error codes
+ - atmarpd falls back to PVC-only operation if signaling is unavailable at
+   startup
+ - kernel can now assign next free number on IP interface creation (atmarp
+   prints the interface name)
+ - qgen -D generates a Q.2931 message dumper (see USAGE for details)
+ - qgen now checks for proper use of repetition indicator (but doesn't
+   support repeated IEs yet)
+ - protocols and device drivers can now use their own memory allocator in the
+   TX direction by changing vcc->alloc_tx
+
+Other changes
+-------------
+
+ - upgraded to kernel version 1.3.53
+ - build process now uses Perl
+ - ATM ioctls writing back data now always return the size of the data
+   structure written
+ - struct atmif_sioc now has a length field (recompile all atmarpd, ilmid,
+   debug/ed, and everything in maint)
+ - PHY driver no longer has to check validity (permissions and access) for
+   "standard" ioctls
+ - signaling should now also work on an interface > 0 (but there's still only
+   one interface using signaling per host)
+ - make install  now adds /usr/include/atm.h and /usr/include/atmd.h
+ - atmarpd now also displays if SVC has been opened actively or passively
+ - atmaddr(8) now uses new ioctls and has different command-line syntax
+   and even has a man page
+ - example IP addresses in USAGE now conform to RFC1597
+ - diagnostics now also include the application name (optional)
+
+
+Version 0.5 to 0.6 (21-DEC-1995)
+==================
+
+Bug fixes
+---------
+
+ - ARP ioctls stopped working for most non-ATM devices, oops
+ - ATMTCP driver counted lack of memory as rx_err instead of rx_drop
+ - select on driver using polling may have hung
+ - atmarp man page and usage didn't indicate that the interface number is
+   optional
+ - restricted atmarpd and signaling control, and SIOCSIFATMADDR to the super
+   user
+ - atmtcp: fixed handling of VPI/VCI <= 0 for setsockopt(SO_CIRANGE)
+ - eni and zn driver had static UBR shaper pointer, making it difficult to have
+   more than one such device per system
+ - eni driver initialization didn't work properly in systems with ASIC Tonga
+ - suni.[ch]: confused MC (Master Config) and MCT (Master ConTrol) registers
+ - (SVC) accept now returns PVC -EAGAIN as -EBUSY because the operation cannot
+   be retried
+ - qgen: fixed several bugs in case handling (and made defaults work for
+   parsing)
+ - svc_dup passed PF_ATMSVC instead of AAL to svc_create
+ - plugged a few skb leaks in svc_accept
+ - text2atm didn't properly NUL-terminate E.164 addresses
+
+New features
+------------
+
+ - ZN1221 driver works partially for AAL5 (still hangs after a few dozen MB)
+   (also wrote maint/zntune to monitor/adjust free buffer pools)
+ - ENI driver now supports new Tonga ASIC boards
+ - added Scott Shumate's ILMI demon (for automatic address registration)
+ - text2atm: added wildcard support for SVCs (syntax: addr/bits)
+ - new library function atm_equal to compare SVC addresses
+ - new ioctl ATM_GETTYPE to obtain interface type name
+ - new ioctl ATM_GETESI to obtain ESI (parallels /proc/atm/devices)
+ - new ioctls SONET_SETFRAMING, SONET_GETFRAMING, and SONET_GETFRSENSE to
+   handle SONET vs. SDH framing
+ - added socket option SO_AALTYPE (SOL_AAL) to query AAL type (getsockopt
+   only)
+ - signaling demon is now notified on address changes (new message
+   as_itf_notify)
+
+Other changes
+-------------
+
+ - known bugs are now listed in a file called BUGS
+ - all utility programs (aread, awrite, atmdump, br, bw, clip, ttcp) now use
+   the notation [itf.]vpi.vci for PVCs (was  itf vpi vci , except for ttcp,
+   where it was only  vpi vci  (no itf))
+ - all ioctl values have changed
+   Note: most programs have to be recompiled because of this
+ - sigd and arpd now register their control sockets via ioctls
+ - (old) clip now creates interfaces with an ioctl
+ - text2atm now returns the wildcard length, i.e. a non-zero return value
+   no longer implies failure
+ - push_oam now returns an int (was void)
+ - push_oam now has several flags (in a bit set) instead of the immed
+   argument
+ - the peek function must now update the statistics if it rejects a packet
+ - (ATM device) close is now only invoked after a successful open
+ - the SUNI_GETLOOP ioctl now has an int * argument (was unsigned long *)
+ - uPD98402 driver no longer tries to detect return of the signal (didn't
+   work anyway - would have to sample section errors)
+ - ATMARP no longer supports mixed PVC/SVC entries (I'm sure this will be
+   missed a lot :-)
+ - ATMARP no longer supports "IP address discovery" via InARP for PVCs
+   (maybe later)
+ - specifying an invalid AAL now yields EPROTOTYPE
+ - specifying an invalid address family (connect, bind) now yields EAFNOSUPPORT
+ - make install  now also installs libraries (in /usr/lib)
+ - improved many header file comments
+ - re-arranged some comments to simplify automated document generation
+ - added copyright statement
+ - UNI 3.0 IE fields are now always recognized (but we shouldn't generate them)
+ - UNI 3.0 wants octet 5a when using BCOB-X, so we'll set it to twice "No
+   indication"
+ - aread, awrite, br, bw, ttcp, atmsigd, and atmdump now set max_sdu
+ - aread and awrite no longer print strerror(errno) on success
+
+
+Version 0.4 to 0.5 (26-OCT-1995)
+==================
+
+Bug fixes
+---------
+
+ - now only root can open a CLIP socket (thereby creating an IP interface)
+ - now only root can issue CLIP_NULENCAP and CLIP_LLCENCAP ioctls
+ - atmdump: forgot  default  in getopt switch
+ - eni driver: called misc_int on every interrupt
+ - Q.2931 message description: various fixes and improvements
+ - linux/atm.h: ATM_*_UNSPEC used the same value as ATM_*_ANY, oops !
+ - SSCOP is now more careful about not accessing the descriptor if it might
+   possibly have been deleted
+ - typo in SSCF leading to wrong response to AA-RECOVER.indication
+ - SSCOP now correctly copies N(PS) from POLL to STAT PDUs
+ - SSCF now discards data when not ready instead of issuing a fatal error
+ - AAL initialization failure no longer leaks memory
+ - closing an SVC without VCC no longer yields a GPF
+
+New features
+------------
+
+ - ZN1221 driver is starting to work
+ - new, ARP-based mechanism for IP over ATM (with atmarpd, atmarp, etc.)
+ - /proc/atm/pvc now displays more information for CLIP PVCs (after a patch
+   by Raghavan Menon)
+ - added max_pcr to struct atm_trafprm (also fixed a few comments in atm.h)
+   Note: all programs using sockaddr_atm* will have to be recompiled.
+ - qgen now handles value lists in named selections
+ - signaling now supports bhli/blli, plus various other minor extensions
+ - new ioctls to set/get local ATM address
+ - added library with address to/from text conversion functions
+ - finally implemented getname()
+
+Other changes
+-------------
+
+ - eni driver: avoided potential generation of superfluous code if extended
+   debugging is disabled
+ - eni driver: detects new boards using ASIC PCI chip (doesn't support them
+   yet, though)
+ - qgen: semicolon is now comment character and no longer used to terminate
+   clauses
+ - qgen: replaced term "item" with "field"
+ - linux/include/atmsap.h: removed obsolete comment "protocol cannot be fully
+   encoded in current structure". Also re-arranged some comments to simplify
+   automated document generation.
+ - saal,sscf,sscop: callbacks don't pass the pointer to the descriptor of the
+   calling protocol anymore
+ - SSCOP no longer prints a number for non-'V' errors
+ - improved handling of STATUS messages
+ - select now indicates ready for writing if max_sdu packet can be enqueued
+   without blocking
+ - select can now also be used to check status of non-blocking connect
+ - moved some common demon functions from sigd into a common demon library
+
+
+Version 0.3 to 0.4 (27-SEP-1995)
+==================
+
+Bug fixes
+---------
+
+ - various minor documentation fixes
+ - clip.c:atm_push_clip now updates statistics before forwarding the skb to
+   the upper layer (which may free and overwrite the skb)
+
+New features
+------------
+
+ - added partial UNI 3.x signaling
+ - added various adapter debugging programs to the distribution
+ - new config option CONFIG_ATM_ENI_DEBUG to enable extended debugging
+   in eni driver
+
+Other changes
+-------------
+
+ - upgraded to kernel version 1.3.24
+ - changed the distribution directory structure (programs are now in maint/,
+   test/, ip/, debug/, and sigd/, see INSTALL)
+ - ATM interfaces are no longer named, only numbered. This affects the
+   ATM_GETNAMES ioctl, all ioctls using struct atmif_sioc, the usage of atmdiag
+   and sonetdiag, and various diagnostic kernel messages.
+ - ATM socket state is now recorded in field "flags" (this also replaces the
+   SVC fields "released", "registered", and "state")
+ - added #ifdef __KERNEL__ to some header files
+ - added "int immed" argument to send_oam
+ - some minor modifications to the distribution process (mkdist)
+ - removed devmap.c
+ - SVC sockets no longer hang if the signaling demon dies
+
+
+Version 0.2 to 0.3 (8-SEP-1995)
+==================
+
+Bug fixes
+---------
+
+ - select(2) didn't work (was sleeping on sock->wait instead of
+   &ATM_SD(sock)->sleep)
+ - ENI driver did allow binding to VPI/VCI already in use
+ - ENI driver now properly handles PDUs with CRC errors
+ - ENI driver had race condition when discarding PDUs causing new PDUs to be
+   shifted in adapter memory by one word (which confused the driver quite a
+   bit)
+ - ENI driver now enables VC _after_ setting all pointers (caused crashes if
+   data was already coming in while opening VC)
+ - various bugs fixes related to SVC sockets
+ - fixed GPF (in kernel) when running atmdiag without arguments
+ - atmdiag now left-adjusts interface names
+ - fixed ttcp.atm crash when not specifying vpi.vci
+ - clip_xmit now checks for NULL vcc (e.g. after failure to connect)
+
+New features
+------------
+
+ - zatm driver now reads ESI correctly
+ - blocking svc_connect is now interruptible
+ - atmdump now also displays the numeric PTI value of incoming cells
+ - added RX/TX buffer quotas (default is 64 kB)
+ - added OAM hooks to device driver interface (but there's no OAM support yet)
+
+Other changes
+-------------
+
+ - ENI driver now checks ID field of reassembly buffer descriptors
+ - ENI driver now uses vremap
+ - ENI driver now prints more useful physical layer type information (e.g.
+   "MMF" and "UTP" instead of "UTOPIA")
+ - some redesign of the protocol used for signaling between kernel and demon
+ - disabled "Grr, servicing VCC twice" message in ENI driver
+ - device drivers now have to adapt AAL0 cell header byte order
+ - some cleanup in common.c:atm_getsockopt
+ - device drivers are now required to use the peek function; protocols now
+   must provide it
+
+
+Version 0.1 to 0.2 (15-AUG-1995)
+==================
+
+Bug fixes
+---------
+
+ - VCC family field is now correctly set to protocol family in
+   common.c:atm_create (was pvc.c:pvc_create). With protocol set to zero,
+   this created all types of strange problems, because the family field
+   is used to indicate whether an VCC slot is busy/free.
+ - fixed race condition in common.c:atm_read (reader might have blocked
+   even if data is ready)
+ - fixed dereferencing of uninitialized skb->dev pointer in
+   clip.c:atm_push_clip
+ - SIOCSIFATMTCP now refuses to attach the same socket twice
+ - zatm.c: fixed setting of the VPI/VCI mask
+ - USAGE said ttcp uses -B for the bandwidth, but it's -P
+ - mkdist didn't include man pages
+
+New features
+------------
+
+ - added some /proc/atm functionality
+ - added support for ATM_{VPI,VCI}_ANY
+ - SIOCSIFATMTCP now returns the interface number and atmtcp(8) prints it
+ - wrote atmtcp man page
+ - added kernel part of SVC support
+
+Other changes
+-------------
+
+ - common.c: only root is now allowed to bind to reserved VCIs
+ - Classical IP interfaces are now removed by downing by ifconfig; clip(8)
+   returns immediately
+ - PVC-connect for non-existing device now returns ENODEV instead of EINVAL
+ - new field (type) in struct atm_dev to indicate device type
+ - moved getsockopt(SO_CIRANGE) to common.c (removed atmtcp's own version)
+ - added ci_range to struct atm_dev (and removed it from atmtcp's private
+   structure)
+ - added code to read the ESI to zatm.c (but that code doesn't seem to work
+   yet)
