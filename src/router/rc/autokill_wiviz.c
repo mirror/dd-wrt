@@ -21,6 +21,8 @@ autokill_wiviz_main (void)
     case 0:
         	sleep (10);
     	    killall("wiviz", SIGTERM);
+    	    unlink ("/tmp/wiviz2-cfg");
+    	    unlink ("/tmp/wiviz2-dump");
 	      exit (0);
       break;
     default:
