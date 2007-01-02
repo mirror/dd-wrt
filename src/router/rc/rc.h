@@ -315,6 +315,12 @@ extern int listen_main (int argc, char **argv);
 extern int ddns_success_main (int argc, char **argv);
 extern int process_monitor_main (void);
 extern int radio_timer_main (void);
+extern int wol_main (int argc, char **argv);
+extern int sendudp_main (int argc, char *argv[]);
+extern int autokill_wiviz_main (void);
+extern int run_wiviz_main (void);
+extern int watchdog_main (int argc, char *argv[]);
+extern int event_main (int argc, char **argv);
 void cfe_default (void);
 //extern int nvram_restore(const char *path, char *mtd);
 
