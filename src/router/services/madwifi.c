@@ -604,41 +604,6 @@ getMaxPower (char *ifname)
   fscanf (in, "%s %s %d", buf, buf2, &max);
   fclose (in);
   return max;
-
-
-
-/*
-
-  struct iwreq wrq;
-  struct iw_range range;
-  int dbm;
-  int mwatt;
-  int k;
-  int skfd;
-  if ((skfd = iw_sockets_open ()) < 0)
-    {
-      perror ("socket");
-      return -1;
-    }
-  int maxwatt = 0;
-  iw_get_range_info (skfd, ifname, &range);
-  for (k = 0; k < range.num_txpower; k++)
-    {
-      if (range.txpower_capa & IW_TXPOW_MWATT)
-	{
-	  dbm = iw_mwatt2dbm (range.txpower[k]);
-	  mwatt = range.txpower[k];
-	}
-      else
-	{
-	  dbm = range.txpower[k];
-	  mwatt = iw_dbm2mwatt (range.txpower[k]);
-	}
-      if (mwatt > maxwatt)
-	maxwatt = mwatt;
-    }
-  iw_sockets_close (skfd);
-*/
 }
 
 /*
@@ -984,7 +949,7 @@ set_netmode (char *wif, char *dev)
   if (default_match ("ath_specialmode","1","0"))
   {
   setsysctrl (wif, "regulatory", 0);
-  setsysctrl (wif, "setregdomain",0x48);  
+  setsysctrl (wif, "setregdomain",0x49);  
   }
   else{
   setsysctrl (wif, "regulatory", regulatory);
@@ -1363,13 +1328,13 @@ configure_single (int count, int isbond)
 
   int newpower = atoi (default_get (power, "28"));
 //limit power if needed
-  if (newpower > maxpower)
+/*  if (newpower > maxpower)
     {
       newpower = maxpower;
       char powerset[32];
       sprintf (powerset, "%d", newpower);
       nvram_set (power, powerset);
-    }
+    }*/
   cprintf ("new power limit %d\n", newpower);
   sprintf (var, "%dmW", newpower);
   eval ("iwconfig", dev, "txpower", var);
