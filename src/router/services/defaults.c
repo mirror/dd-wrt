@@ -489,12 +489,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"ath0.2_ssid", "", 0},	/* Service set ID (network name) */
   {"ath0.3_ssid", "", 0},	/* Service set ID (network name) */
+  {"ath0_bridged", "1", 0},	/* Service set ID (network name) */  
   {"ath0.1_bridged", "1", 0},	/* Service set ID (network name) */
   {"ath0.2_bridged", "1", 0},	/* Service set ID (network name) */
   {"ath0.3_bridged", "1", 0},	/* Service set ID (network name) */
+  {"ath0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.1_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.2_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.3_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"ath0_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"ath0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
@@ -504,12 +507,15 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
   {"wl0.3_ssid", "", 0},	/* Service set ID (network name) */
+  {"wl0_bridged", "1", 0},	/* Service set ID (network name) */
   {"wl0.1_bridged", "1", 0},	/* Service set ID (network name) */
   {"wl0.2_bridged", "1", 0},	/* Service set ID (network name) */
   {"wl0.3_bridged", "1", 0},	/* Service set ID (network name) */
+  {"wl0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.1_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.2_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.3_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
