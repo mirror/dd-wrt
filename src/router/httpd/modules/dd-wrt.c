@@ -2141,6 +2141,8 @@ save_prefix (webs_t wp, char *prefix)
 //  copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_preamble", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_txantenna", prefix);
   copytonv (wp, n);
   sprintf (n, "wifi_bonding");
@@ -2480,6 +2482,7 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
   char wl_rxantenna[16];
   char wl_txantenna[16];
   char wl_width[16];
+  char wl_preamble[16];
   char wl_xr[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
@@ -2488,9 +2491,11 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
   sprintf (wl_width, "%s_channelbw", prefix);
+  sprintf (wl_preamble, "%s_preamble", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
 
   showOption (wp, "wl_basic.turbo", wl_turbo);
+  showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 //  showOption (wp, "wl_basic.outband", wl_outdoor);
