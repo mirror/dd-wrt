@@ -2899,6 +2899,6 @@ start_wds_check (void)
 
   //system ("/usr/sbin/brctl stp br0 off");
 
-  return 0;
+  return;
 }
 #endif
