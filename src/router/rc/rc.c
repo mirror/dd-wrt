@@ -889,7 +889,7 @@ main (int argc, char **argv)
     start_service ("mkfiles");
 #ifdef HAVE_WOL
   else if (strstr (base, "wol"))
-    wol_main ();
+    return wol_main (argc, argv);
 #endif
   else if (strstr (base, "sendudp"))
     return sendudp_main (argc, argv);
@@ -905,5 +905,5 @@ main (int argc, char **argv)
     return watchdog_main (argc, argv);
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
-
+return 1;
 }
