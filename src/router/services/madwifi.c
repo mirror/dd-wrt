@@ -1224,9 +1224,9 @@ configure_single (int count, int isbond)
   sprintf(preamble,"%s_preamble",dev);
   if (default_match(preamble,"1",0))
     {
-    iwpriv("iwpriv",dev,"shpreamble","1");
+    eval("iwpriv",dev,"shpreamble","1");
     }else
-    iwpriv("iwpriv",dev,"shpreamble","0");
+    eval("iwpriv",dev,"shpreamble","0");
 
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
