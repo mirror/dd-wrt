@@ -370,6 +370,7 @@ int
 softkill (char *name)
 {
   killall (name, SIGKILL);
+  return 0;
 }
 
 
