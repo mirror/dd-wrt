@@ -3649,8 +3649,22 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
+      char mac[16];
+      strcpy(mac,ieee80211_ntoa (si->isi_macaddr));
+      	  if (nvram_match ("maskmac", "1"))
+	    {
+	      mac[0] = 'x';
+	      mac[1] = 'x';
+	      mac[3] = 'x';
+	      mac[4] = 'x';
+	      mac[6] = 'x';
+	      mac[7] = 'x';
+	      mac[9] = 'x';
+	      mac[10] = 'x';
+	    }
+
       websWrite (wp, "'%s','%s','%d','%d','%d'",
-		 ieee80211_ntoa (si->isi_macaddr), ifname,
+		 mac, ifname,
 		 rssi2dbm (si->isi_rssi), si->isi_noise,
 		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
 
