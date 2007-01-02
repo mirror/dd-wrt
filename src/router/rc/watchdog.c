@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <utils.h>
 #include <wlutils.h>
-
+#include <errno.h>
 
 
 static void
@@ -53,7 +53,8 @@ watchdog_main (int argc, char *argv[])
   switch (fork ())
     {
     case -1:
-      exit (0);
+      perror ("fork failed");
+      exit (1);
       break;
     case 0:
       /* child process */
