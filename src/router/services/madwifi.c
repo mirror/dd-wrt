@@ -1204,6 +1204,8 @@ configure_single (int count, int isbond)
     eval ("iwpriv", dev, "wds", "1");
 
 
+      
+  
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
@@ -1217,6 +1219,15 @@ configure_single (int count, int isbond)
   else
     setupSupplicant (dev);
 //@todo ifup
+
+  char preamble[32];
+  sprintf(preamble,"%s_preamble",dev);
+  if (default_match(preamble,"1",0))
+    {
+    iwpriv("iwpriv",dev,"shpreamble","1");
+    }else
+    iwpriv("iwpriv",dev,"shpreamble","0");
+
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
