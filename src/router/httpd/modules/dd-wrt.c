@@ -2305,6 +2305,28 @@ websWrite(wp,"</script>\n");
 
 
 #ifdef HAVE_MSSID
+#ifdef HAVE_MADWIFI
+
+static int
+getMaxPower (char *ifname)
+{
+  char buf[32];
+  sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
+	   ifname);
+  system2 (buf);
+  FILE *in = fopen ("/tmp/.power", "rb");
+  if (in == NULL)
+    return 1000;
+  char buf2[16];
+  int max;
+  fscanf (in, "%s %s %d", buf, buf2, &max);
+  fclose (in);
+  return max;
+}
+
+
+#endif
+
 
 void
 ej_show_wireless_single (webs_t wp, char *prefix)
@@ -2325,7 +2347,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
   char power[16];
-  char maxpower[16];
+ // char maxpower[16];
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
@@ -2350,7 +2372,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
-  sprintf (maxpower, "%s_maxpower", prefix);
+//  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
       char *wl_regulatory = "ath_regulatory";
@@ -2362,8 +2384,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> mW (Max: %s)\n",
-	     power, nvram_safe_get (power), nvram_safe_get (maxpower));
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> mW (Max: %d)\n",
+	     power, nvram_safe_get (power), getMaxPower(prefix));
   websWrite (wp, "</div>\n");
 
 #endif
