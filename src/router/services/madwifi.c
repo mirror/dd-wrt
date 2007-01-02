@@ -1222,7 +1222,7 @@ configure_single (int count, int isbond)
 
   char preamble[32];
   sprintf(preamble,"%s_preamble",dev);
-  if (default_match(preamble,"1",0))
+  if (default_match(preamble,"1","0"))
     {
     eval("iwpriv",dev,"shpreamble","1");
     }else
