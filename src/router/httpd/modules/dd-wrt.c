@@ -2358,7 +2358,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MAKSAT
       char *wl_regdomain = "ath_specialmode";
       showOption (wp, "wl_basic.specialmode", wl_regdomain);
-#endif      
+#endif
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
