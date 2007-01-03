@@ -3911,6 +3911,10 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "P2P.asp"))
 		j++;
 #endif
+#ifdef HAVE_MICRO
+	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
+		j++;
+#endif
 	      if ((!sputnik) && !strcmp (menu[i][j], "Status_SputnikAPD.asp"))	//jump over Sputnik
 		j++;
 	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
