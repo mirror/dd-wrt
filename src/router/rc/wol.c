@@ -9,7 +9,7 @@
 #include <shutils.h>
 //#include <snmp.h>
 #include <signal.h>
-#include <utils.h>
+
 
 #define WOL_INTERVAL 15
 
