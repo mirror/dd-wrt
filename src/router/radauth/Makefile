@@ -7,15 +7,15 @@ WRT_BUILDROOT=/opt/
 
 
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS=$(COPTS) -I. -I../shared -I../services -I../../include.v24
+CFLAGS=-Os -fomit-frame-pointer -I. -I../shared -I../services -I../../include.v24
 else
-CFLAGS=$(COPTS) -Wall -I. -I../shared -I../services -I../../include.v23
+CFLAGS=-Os -fomit-frame-pointer -Wall -I. -I../shared -I../services -I../../include.v23
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
   CFLAGS += -DHAVE_MADWIFI -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
 endif
-#CFLAGS += -DDEBUG -DNEED_PRINTF
+CFLAGS += -DDEBUG -DNEED_PRINTF
 
 all: wrt-radauth radius-client macupd
 
