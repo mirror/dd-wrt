@@ -5440,63 +5440,6 @@ ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 
-
-/* BEGIN  Added by Botho 21.April.06 */
-void
-ej_js_include (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char *lang = nvram_get ("language");
-
-  do_file ("common.js", wp);
-  do_file ("lang_pack/english.js", wp);
-
-  if (lang != NULL)
-    {
-      char l[60];
-      sprintf (l, "lang_pack/%s.js", lang);
-      do_file (l, wp);
-    }
-
-  return;
-}
-extern websRomPageIndexType websRomPageIndex[];
-
-void
-ej_css_include (int eid, webs_t wp, int argc, char_t ** argv)
-{
-
-  char *style = nvram_get ("router_style");
-
-  do_file ("style/common.css", wp);
-
-  if (style == NULL || strlen (style) == 0)
-    do_file ("style/elegant/style.css", wp);
-  else
-    {
-
-      char l[60];
-      char filename[60];
-      sprintf (l, "style/%s", style);
-      int i = 0;
-      while (websRomPageIndex[i].path != NULL)
-	{
-	  if (!strncmp (websRomPageIndex[i].path, l, strlen (l)))
-	    {
-	      websWrite (wp, "\n/* %s */\n\n", websRomPageIndex[i].path);
-	      do_file (websRomPageIndex[i].path, wp);
-	      break;
-	    }
-	  i++;
-	}
-
-    }
-
-  return;
-
-}
-
-/* END  Added by Botho 21.April.06 */
-
 /* BEGIN  Added by Botho 10.May.06 */
 void
 ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)

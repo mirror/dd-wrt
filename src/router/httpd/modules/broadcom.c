@@ -4689,7 +4689,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	  strcpy (hostname, "*"); //set name to *
 
 /* count open connections per IP */
-	  if (conn = fopen ("/proc/net/ip_conntrack", "r"))
+	  if ((conn = fopen ("/proc/net/ip_conntrack", "r")) != NULL)
 	    {
 		  strcpy (ip2, ip);
 		  strcat (ip2, " ");
@@ -5149,9 +5149,7 @@ struct ej_handler ej_handlers[] = {
   {"get_clkfreq", ej_get_clkfreq},
   {"dumpmeminfo", ej_dumpmeminfo},
 
-/* Added by Botho 21.April.06 */
-  {"js_include", ej_js_include},
-  {"css_include", ej_css_include},
+
 /* Added by Botho 10.May.06 */
   {"show_wan_to_switch", ej_show_wan_to_switch},
   {"statfs", ej_statfs},
