@@ -332,8 +332,6 @@ extern int ping_onload (webs_t wp, char *arg);
 //extern int traceroute_onload (webs_t wp, char *arg);
 
 /* Added by Botho 21.April.06 */
-extern void ej_js_include (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_css_include (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_logout(void);
 extern void ej_statfs (int eid, webs_t wp, int argc, char_t ** argv);
 
