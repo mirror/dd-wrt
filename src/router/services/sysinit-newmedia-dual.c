@@ -74,7 +74,7 @@ start_sysinit (void)
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+//  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
   cprintf ("sysinit() var\n");
 
   /* /var */

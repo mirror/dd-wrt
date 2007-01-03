@@ -1639,8 +1639,7 @@ start_wan (int status)
 	    }
 */
 #endif
-
-  cprintf ("%s %s\n", wan_ifname, wan_proto);
+//fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
@@ -1656,6 +1655,7 @@ start_wan (int status)
   memset (ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
   ifconfig (wan_ifname, 0, NULL, NULL);
+//fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
@@ -1686,9 +1686,11 @@ start_wan (int status)
 
 
 #endif
+//fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   /* Set MTU */
   init_mtu (wan_proto);		// add by honor 2002/12/27
+//fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   // Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
