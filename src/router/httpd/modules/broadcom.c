@@ -3822,10 +3822,12 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
   int openvpn = 0;
 #endif
   int auth = nvram_match ("status_auth", "1");
+#ifdef HAVE_MADWIFI
 #ifdef HAVE_NOWIFI
   int wifi = 0;
 #else
   int wifi = haswifi ();
+#endif
 #endif
   char menu[8][11][32] =
     { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
@@ -4114,8 +4116,8 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
   ej_get_firmware_version (0, wp, argc, argv);
-  websWrite (wp, "</a>\");\n\
-				\n//]]>\n</script></div>\n");
+  websWrite (wp, "</a>\");\n");
+  websWrite (wp,"//]]>\n</script></div>\n");
   websWrite (wp,
 	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
   ej_get_uptime (0, wp, argc, argv);
@@ -4684,7 +4686,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (strcmp (ip, nvram_get ("wan_gateway")) == 0)
 	    continue;		//skip WAN arp entry
-	  strcpy (hostname, "*"); //set name to * 
+	  strcpy (hostname, "*"); //set name to *
 
 /* count open connections per IP */
 	  if (conn = fopen ("/proc/net/ip_conntrack", "r"))

@@ -1349,7 +1349,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
-    return 0;
+    return;
   sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
@@ -3830,7 +3830,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return;
+      return 0;
     }
 
   unlink (RSSI_TMP);
@@ -5979,5 +5979,6 @@ save_macmode (webs_t wp)
     }
 
 #endif
+  return 1;
 
 }
