@@ -46,7 +46,7 @@
 #define REPLY_MESSAGE	0x12
 
 #define MACLENGTH	13
-#define DEBUG
+//#define DEBUG
 
 void
 md5_calc (unsigned char *output, unsigned char *input, unsigned int inlen)
@@ -92,7 +92,9 @@ radius (char *host, short port, char *user, char *password, char *radsecret)
   static unsigned char id = 1;
   static unsigned char seeded = 0;
   int i;
-
+#ifdef DEBUG
+printf("checking host %s port %d user %s password %s radsecret %s\n",host,port,user,password,radsecret);
+#endif
   sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock < 0)
     {
@@ -235,10 +237,16 @@ radius (char *host, short port, char *user, char *password, char *radsecret)
 
   tv.tv_sec = 10;
   tv.tv_usec = 0;
-
+//waiting for response
   do
     {
+      #ifdef DEBUG
+      printf("select for response\n");
+      #endif
       ret = select (sock + 1, &rfds, NULL, NULL, &tv);
+      #ifdef DEBUG
+      printf("done, returns %d\n",ret);
+      #endif
       if (ret < 0)
 	{
 	  perror ("select");
@@ -247,6 +255,7 @@ radius (char *host, short port, char *user, char *password, char *radsecret)
       if (ret == 0)
 	{
 	  /* Timeout, no packet received. Reject! */
+	  close(sock);
 	  return -10;		//ret=2; // try again
 
 	}
@@ -255,8 +264,13 @@ radius (char *host, short port, char *user, char *password, char *radsecret)
 	  ret =
 	    recvfrom (sock, &buf, sizeof (buf), 0,
 		      (struct sockaddr *) &from_addr, &from_len);
+//	    recvfrom (sock, &buf, sizeof (buf) - 1, 0,
+//		      (struct sockaddr *) &from_addr, sizeof(from_addr));
 	  if (ret < 3)
 	    {
+      #ifdef DEBUG
+      printf("invalid packet %d\n",ret);
+      #endif
 	      /* Completely invalid packet */
 	      ret = -1;
 	      continue;
@@ -350,6 +364,9 @@ radius (char *host, short port, char *user, char *password, char *radsecret)
 		pos += attrlength;
 	      }
 	  }
+      #ifdef DEBUG
+      printf("auth returns %d\n",buf[0]);
+      #endif
 
 	  if (buf[0] == 0x2)
 	    {

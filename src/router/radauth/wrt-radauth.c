@@ -373,7 +373,6 @@ main (int argc, char **argv)
 #ifdef DEBUG
       printf ("count %d\n", num);
 #endif
-
       unauthenticated_users = 0;	//reset count for unauthenticated users
 
       /* Look at the associated STAs */
@@ -442,28 +441,54 @@ main (int argc, char **argv)
 	  if (currsta == NULL)
 	    {
 	      /* Alloc mem for new STA */
+	      #ifdef DEBUG
+	      printf("alloc new sta\n");
+	      #endif
 	      currsta = malloc (sizeof (struct sta));
 	      if (currsta == NULL)
 		{
 		  perror ("malloc");
 		  exit (1);
 		}
-
+	     #ifdef DEBUG
+	     printf("check if first is null\n");
+	     #endif
 	      if (first == NULL)
 		{
+		#ifdef DEBUG
+		printf("first is null\n");
+		#endif
 		  first = currsta;
 		}
 	      else
 		{
+		#ifdef DEBUG
+		printf("first is not null\n");
+		#endif
 		  prev->next = currsta;
 		}
 
 	      currsta->next = NULL;
 	      currsta->changed = 1;
 
+		#ifdef DEBUG
+		printf("copy new mac\n");
+		#endif
 	      memcpy (currsta->mac, pos, 6);
+#ifdef DEBUG
+	if (currsta!=NULL)
+			  printf
+			    ("checking STA %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x\n",
+			     currsta->mac[0], currsta->mac[1],
+			     currsta->mac[2], currsta->mac[3],
+			     currsta->mac[4], currsta->mac[5]);
+#endif
 	      currsta->lastseen = step;
 	      int response = authmac (currsta->mac);
+	      	#ifdef DEBUG
+		printf("response of authmac %d",response);
+		#endif
+
 	      if (response == -10 && override == 1)
 		currsta->accepted = 1;
 	      else if (response == 1)
