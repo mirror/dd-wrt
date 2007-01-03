@@ -14,7 +14,7 @@
 include $(TOP)/.config
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-CFLAGS	+= -s $(COPTS)
+CFLAGS	+= -s $(COPTS) -fpic
 
 all: upnp
 

@@ -31,7 +31,7 @@ struct nvrams
 
 struct nvramdb
 {
-  int offsets[('z'+1)-'A'];
+  int offsets[('z' + 1) - 'A'];
   int nov;			//number of values;
   struct nvrams *values;
 };
@@ -112,7 +112,7 @@ writedb (void)
     return;
   int c = 0;
   int i;
-  for (i = 0; i < ('z'+1)-'A'; i++)
+  for (i = 0; i < ('z' + 1) - 'A'; i++)
     values.offsets[i] = -1;
   for (i = 0; i < values.nov; i++)
     {
@@ -128,32 +128,32 @@ writedb (void)
 	{
 	  //take a look in our offset table
 	  int a;
-	  if (values.offsets[values.values[i].name[0]-'A'] == -1)
-	    values.offsets[values.values[i].name[0]-'A'] = ftell (in);
+	  if (values.offsets[values.values[i].name[0] - 'A'] == -1)
+	    values.offsets[values.values[i].name[0] - 'A'] = ftell (in);
 	  int len = strlen (values.values[i].name);
 	  int fulllen = len + strlen (values.values[i].value) + 3;
 	  putc (fulllen >> 8, in);
 	  putc (fulllen & 255, in);
 
 	  putc (len, in);
-	  
-	  
-	  fwrite(values.values[i].name,len,1,in);
 
-//	  for (a = 0; a < len; a++)
-//	    putc (values.values[i].name[a], in);
+
+	  fwrite (values.values[i].name, len, 1, in);
+
+//        for (a = 0; a < len; a++)
+//          putc (values.values[i].name[a], in);
 
 	  len = strlen (values.values[i].value);
 	  putc (len >> 8, in);
 	  putc (len & 255, in);
-	  fwrite(values.values[i].value,len,1,in);
-	 // for (a = 0; a < len; a++)
-	//    putc (values.values[i].value[a], in);
+	  fwrite (values.values[i].value, len, 1, in);
+	  // for (a = 0; a < len; a++)
+	  //    putc (values.values[i].value[a], in);
 	}
     }
   fclose (in);
   in = fopen ("/tmp/nvram/offsets.db", "wb");
-  fwrite (values.offsets, (('z'+1)-'A')*4, 1, in);
+  fwrite (values.offsets, (('z' + 1) - 'A') * 4, 1, in);
   fclose (in);
 }
 
@@ -180,12 +180,12 @@ readdb (void)
       int len = getc (in);
       values.values[i].name = (char *) malloc (len + 1);
       int a;
-      fread(values.values[i].name,len,1,in);	
+      fread (values.values[i].name, len, 1, in);
       values.values[i].name[len] = 0;
       len = getc (in) << 8;
       len += getc (in);
       values.values[i].value = (char *) malloc (len + 1);
-      fread(values.values[i].value,len,1,in);      
+      fread (values.values[i].value, len, 1, in);
       values.values[i].value[len] = 0;
     }
   fclose (in);
@@ -205,7 +205,7 @@ closedb (void)
   if (values.values)
     free (values.values);
   values.nov = -1;
-  isni=0;
+  isni = 0;
 }
 
 static char cache[512];
@@ -228,19 +228,19 @@ nvram_get (const char *name)
       cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
-  setvbuf(in,&cache[0],_IOFBF,4);
+  setvbuf (in, &cache[0], _IOFBF, 4);
   /*
-  fread (values.offsets, ('z'-'A')*4, 1, in);
-  fclose (in);
-  if (name[0]<'A' || name[0]>'z')
-    {
+     fread (values.offsets, ('z'-'A')*4, 1, in);
+     fclose (in);
+     if (name[0]<'A' || name[0]>'z')
+     {
      return NULL;
-    }
-  int offset = values.offsets[name[0]-'A'];
-  */
+     }
+     int offset = values.offsets[name[0]-'A'];
+   */
   int offset;
-  fseek(in,(name[0]-'A')*4,SEEK_SET);
-  fread(&offset,4,1,in);
+  fseek (in, (name[0] - 'A') * 4, SEEK_SET);
+  fread (&offset, 4, 1, in);
   fclose (in);
   if (offset == -1)
     {
@@ -255,7 +255,7 @@ nvram_get (const char *name)
       cprintf ("nvram_get NULL (offsets)\n");
       return NULL;
     }
-  setvbuf(in,&cache[0],_IOFBF,32);
+  setvbuf (in, &cache[0], _IOFBF, 32);
   fseek (in, offset, SEEK_SET);
 
 begin:;
@@ -274,7 +274,7 @@ begin:;
       if (namelen != len)
 	{
 	  offset += fullen + 2;
-	  fseek (in, fullen-1, SEEK_CUR);
+	  fseek (in, fullen - 1, SEEK_CUR);
 	  goto begin;
 	}
       if (getc (in) != name[0])
@@ -288,7 +288,7 @@ begin:;
 	  {
 //          cprintf("not equal, continue\n");
 	    offset += fullen + 2;
-	    fseek (in, fullen-(i+2), SEEK_CUR);
+	    fseek (in, fullen - (i + 2), SEEK_CUR);
 	    goto begin;
 	  }
       fullen = getc (in);
@@ -298,8 +298,8 @@ begin:;
       fullen += getc (in);
       cprintf ("size of value = %d\n", fullen);
       //char *value = malloc (fullen + 1);
-      fread(&value[offset],fullen,1,in);
-      value[offset+fullen] = 0;
+      fread (&value[offset], fullen, 1, in);
+      value[offset + fullen] = 0;
       fclose (in);
       unlock ();
       cprintf ("nvram_get done %s\n", value);
@@ -362,10 +362,11 @@ _nvram_set (const char *name, const char *value)
 {
   cprintf ("nvram_set %s %s\n", name, value);
 
-  if (name[0]<'A' || name[0]>'z')
+  if (name[0] < 'A' || name[0] > 'z')
     {
-     fprintf(stderr,"nvram parameter %s starts with a illegal character\n",name);
-     return NULL;
+      fprintf (stderr, "nvram parameter %s starts with a illegal character\n",
+	       name);
+      return NULL;
     }
 
   readdb ();
@@ -410,17 +411,17 @@ nvram_set (const char *name, const char *value)
 {
   lock ();
 #ifdef HAVE_NOWIFI
-    if (!strcmp(name,"ip_conntrack_max") && value!=NULL)
-	{	
-	int val=atoi(value);
-	if (val>4096) 
-	    {
-	    int ret = _nvram_set (name, "4096");
-	    unlock();
-	    return ret;
-	    }
-	
+  if (!strcmp (name, "ip_conntrack_max") && value != NULL)
+    {
+      int val = atoi (value);
+      if (val > 4096)
+	{
+	  int ret = _nvram_set (name, "4096");
+	  unlock ();
+	  return ret;
 	}
+
+    }
 #endif
 
   cprintf ("set nvram %s to %s\n", name, value);
@@ -459,16 +460,18 @@ nvram_commit (void)
 {
   lock ();
 #ifdef HAVE_MAGICBOX
-  system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+  system
+    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
   system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #elif HAVE_GATEWORX
-  system ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+  system
+    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
   system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #else
-  system("mount /usr/local -o remount,rw");
+  system ("mount /usr/local -o remount,rw");
   system ("cp /tmp/nvram/nvram.db /etc/nvram");
   system ("cp /tmp/nvram/offsets.db /etc/nvram");
-  system("mount /usr/local -o remount,ro");
+  system ("mount /usr/local -o remount,ro");
 #endif
 
 //writedb ();
