@@ -2312,9 +2312,8 @@ websWrite(wp,"</script>\n");
 static int
 getMaxPower (char *ifname)
 {
-  char buf[32];
-  sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
-	   ifname);
+  char buf[128];
+  sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",ifname);
   system2 (buf);
   FILE *in = fopen ("/tmp/.power", "rb");
   if (in == NULL)
