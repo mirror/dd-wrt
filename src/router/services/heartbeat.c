@@ -35,6 +35,7 @@
 #include <rc.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
+#include <utils.h>
 
 
 #define DEBUG_HEARTBEAT
