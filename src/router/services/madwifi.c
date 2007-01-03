@@ -592,7 +592,7 @@ default_match (char *var, char *match, char *def)
 static int
 getMaxPower (char *ifname)
 {
-  char buf[32];
+  char buf[128];
   sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
 	   ifname);
   system2 (buf);
