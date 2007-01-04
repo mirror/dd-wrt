@@ -509,7 +509,7 @@ internal_getRouterBrand ()
       if (!strncmp (cfe, "MotoWR", 6))
 	{
 	  cprintf ("router is motorola\n");
-	  setRouter ("Motorola WR850G v2");
+	  setRouter ("Motorola WR850G v2/v3");
 	  return ROUTER_MOTOROLA;
 	}
     }
@@ -906,6 +906,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_MOTOROLA_V1:
 		break;
 	case ROUTER_MOTOROLA:
+			power_gpio = 0x01;
 		break;
 	case ROUTER_RT210W:
 			power_gpio = 0x15;
