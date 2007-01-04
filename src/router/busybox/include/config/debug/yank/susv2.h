@@ -1,1 +1,0 @@
-#define CONFIG_DEBUG_YANK_SUSv2 1

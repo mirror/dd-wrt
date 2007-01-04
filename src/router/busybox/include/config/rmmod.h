@@ -1,1 +1,0 @@
-#define CONFIG_RMMOD 1

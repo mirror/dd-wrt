@@ -1,1 +1,0 @@
-#define CONFIG_HAVE_DOT_CONFIG 1

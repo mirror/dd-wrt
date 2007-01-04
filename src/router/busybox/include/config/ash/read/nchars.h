@@ -1,1 +1,0 @@
-#undef CONFIG_ASH_READ_NCHARS
