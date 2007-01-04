@@ -346,7 +346,7 @@ CONFIG_LOGIN=y
 # CONFIG_E2FSCK is not set
 # CONFIG_FSCK is not set
 # CONFIG_LSATTR is not set
-CONFIG_MKE2FS=y
+# CONFIG_MKE2FS is not set
 # CONFIG_TUNE2FS is not set
 # CONFIG_E2LABEL is not set
 # CONFIG_FINDFS is not set
