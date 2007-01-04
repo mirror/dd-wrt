@@ -119,7 +119,8 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 	} else {
 		len = 0;
 	}
-
+	
+	kfree(page);
 	return len;
 }
 
