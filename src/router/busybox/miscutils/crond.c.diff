@@ -1,0 +1,372 @@
+diff -urN busybox-1.2.2/miscutils/crond.c busybox/miscutils/crond.c
+--- busybox-1.2.2/miscutils/crond.c	2006-07-01 00:42:09.000000000 +0200
++++ busybox/miscutils/crond.c	2006-06-25 15:34:49.000000000 +0200
+@@ -1,18 +1,19 @@
+-/* vi: set sw=4 ts=4: */
+ /*
+  * crond -d[#] -c <crondir> -f -b
+  *
+  * run as root, but NOT setuid root
+  *
+  * Copyright 1994 Matthew Dillon (dillon@apollo.west.oic.com)
+- * Vladimir Oleynik <dzo@simtreas.ru> (C) 2002
++ * May be distributed under the GNU General Public License
+  *
+- * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
++ * Vladimir Oleynik <dzo@simtreas.ru> (C) 2002 to be used in busybox
+  */
+ 
+ #define VERSION "2.3.2"
+ 
+-#include "busybox.h"
++#undef FEATURE_DEBUG_OPT
++
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
+@@ -30,6 +31,8 @@
+ #include <sys/stat.h>
+ #include <sys/resource.h>
+ 
++#include "busybox.h"
++
+ #define arysize(ary)    (sizeof(ary)/sizeof((ary)[0]))
+ 
+ #ifndef CRONTABS
+@@ -79,11 +82,11 @@
+ 
+ #define DaemonUid 0
+ 
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ static short DebugOpt;
+ #endif
+ 
+-static short LogLevel = 8;
++static short LogLevel = 99;
+ static const char *LogFile;
+ static const char *CDir = CRONTABS;
+ 
+@@ -97,7 +100,7 @@
+ 
+ static void RunJob(const char *user, CronLine * line);
+ 
+-#if ENABLE_FEATURE_CROND_CALL_SENDMAIL
++#ifdef CONFIG_FEATURE_CROND_CALL_SENDMAIL
+ static void EndJob(const char *user, CronLine * line);
+ #else
+ #define EndJob(user, line)  line->cl_Pid = 0
+@@ -121,7 +124,7 @@
+ 	fmt = ctl + 1;
+ 	if (level >= LogLevel) {
+ 
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 		if (DebugOpt) {
+ 			vfprintf(stderr, fmt, va);
+ 		} else
+@@ -133,7 +136,7 @@
+ 			if (logfd >= 0) {
+ 				vdprintf(logfd, fmt, va);
+ 				close(logfd);
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 			} else {
+ 				bb_perror_msg("Can't open log file");
+ #endif
+@@ -151,7 +154,7 @@
+ 	unsigned long opt;
+ 	char *lopt, *Lopt, *copt;
+ 
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 	char *dopt;
+ 
+ 	bb_opt_complementally = "f-b:b-f:S-L:L-S:d-l";
+@@ -161,11 +164,11 @@
+ 
+ 	opterr = 0;			/* disable getopt 'errors' message. */
+ 	opt = bb_getopt_ulflags(ac, av, "l:L:fbSc:"
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 							"d:"
+ #endif
+ 							, &lopt, &Lopt, &copt
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 							, &dopt
+ #endif
+ 		);
+@@ -182,7 +185,7 @@
+ 			CDir = copt;
+ 		}
+ 	}
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 	if (opt & 64) {
+ 		DebugOpt = atoi(dopt);
+ 		LogLevel = 0;
+@@ -193,7 +196,9 @@
+ 	 * change directory
+ 	 */
+ 
+-	bb_xchdir(CDir);
++	if (chdir(CDir) != 0) {
++		bb_perror_msg_and_die("%s", CDir);
++	}
+ 	signal(SIGHUP, SIG_IGN);	/* hmm.. but, if kill -HUP original
+ 								 * version - his died. ;(
+ 								 */
+@@ -204,12 +209,14 @@
+ 	 */
+ 
+ 	if (!(opt & 4)) {
+-#ifdef BB_NOMMU
++#if defined(__uClinux__)
+ 		/* reexec for vfork() do continue parent */
+ 		vfork_daemon_rexec(1, 0, ac, av, "-f");
+-#else
+-		bb_xdaemon(1, 0);
+-#endif
++#else							/* uClinux */
++		if (daemon(1, 0) < 0) {
++			bb_perror_msg_and_die("daemon");
++		}
++#endif							/* uClinux */
+ 	}
+ 
+ 	(void) startlogger();	/* need if syslog mode selected */
+@@ -228,7 +235,7 @@
+ 		time_t t1 = time(NULL);
+ 		time_t t2;
+ 		long dt;
+-		int rescan = 60;
++		int rescan = 2;
+ 		short sleep_time = 60;
+ 
+ 		for (;;) {
+@@ -255,11 +262,11 @@
+ 			 */
+ 
+ 			if (--rescan == 0) {
+-				rescan = 60;
++				rescan = 2;
+ 				SynchronizeDir();
+ 			}
+ 			CheckUpdates();
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 			if (DebugOpt)
+ 				crondlog("\005Wakeup dt=%d\n", dt);
+ #endif
+@@ -279,9 +286,24 @@
+ 			}
+ 		}
+ 	}
+-	bb_fflush_stdout_and_exit(EXIT_SUCCESS); /* not reached */
++	/* not reached */
+ }
+ 
++#if defined(FEATURE_DEBUG_OPT) || defined(CONFIG_FEATURE_CROND_CALL_SENDMAIL)
++/*
++    write to temp file..
++*/
++static void fdprintf(int fd, const char *ctl, ...)
++{
++	va_list va;
++
++	va_start(va, ctl);
++	vdprintf(fd, ctl, va);
++	va_end(va);
++}
++#endif
++
++
+ static int ChangeUser(const char *user)
+ {
+ 	struct passwd *pas;
+@@ -295,7 +317,7 @@
+ 		crondlog("\011failed to get uid for %s", user);
+ 		return (-1);
+ 	}
+-	setenv("USER", pas->pw_name, 1);
++	setenv("USER", "root", 1);
+ 	setenv("HOME", pas->pw_dir, 1);
+ 	setenv("SHELL", DEFAULT_SHELL, 1);
+ 
+@@ -322,7 +344,7 @@
+ 	if (LogFile == 0) {
+ 		openlog(bb_applet_name, LOG_CONS | LOG_PID, LOG_CRON);
+ 	}
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 	else {				/* test logfile */
+ 		int logfd;
+ 
+@@ -494,7 +516,7 @@
+ 	while (*ptr == ' ' || *ptr == '\t' || *ptr == '\n') {
+ 		++ptr;
+ 	}
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 	if (DebugOpt) {
+ 		int i;
+ 
+@@ -560,7 +582,7 @@
+ 				CronFile *file = calloc(1, sizeof(CronFile));
+ 				CronLine **pline;
+ 
+-				file->cf_User = strdup(fileName);
++				file->cf_User = "root";
+ 				pline = &file->cf_LineBase;
+ 
+ 				while (fgets(buf, sizeof(buf), fi) != NULL && --maxLines) {
+@@ -576,7 +598,7 @@
+ 					}
+ 					memset(&line, 0, sizeof(line));
+ 
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 					if (DebugOpt) {
+ 						crondlog("\111User %s Entry %s\n", fileName, buf);
+ 					}
+@@ -588,7 +610,6 @@
+ 					ptr = ParseField(file->cf_User, line.cl_Days, 32, 0, NULL, ptr);
+ 					ptr = ParseField(file->cf_User, line.cl_Mons, 12, -1, MonAry, ptr);
+ 					ptr = ParseField(file->cf_User, line.cl_Dow, 7, 0, DowAry, ptr);
+-
+ 					/* check failure */
+ 					if (ptr == NULL) {
+ 						continue;
+@@ -607,7 +628,7 @@
+ 					/* copy command */
+ 					(*pline)->cl_Shell = strdup(ptr);
+ 
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 					if (DebugOpt) {
+ 						crondlog("\111    Command %s\n", ptr);
+ 					}
+@@ -691,6 +712,30 @@
+ 			crondlog("\311Unable to open current dir!\n");
+ 		}
+ 	}
++	if (chdir("/tmp/cron.d") < 0) {
++		crondlog("\311unable to find %s\n", "/tmp/cron.d");
++	}
++
++	{
++		DIR *dir = opendir(".");
++		struct dirent *den;
++
++		if (dir) {
++			while ((den = readdir(dir))) {
++				if (strchr(den->d_name, '.') != NULL) {
++					continue;
++				}
++//				if (getpwnam(den->d_name)) {
++					SynchronizeFile(den->d_name);
++//				} else {
++//					crondlog("\007ignoring %s\n", den->d_name);
++//				}
++			}
++			closedir(dir);
++		} else {
++			crondlog("\311Unable to open current dir!\n");
++		}
++	}
+ }
+ 
+ 
+@@ -759,21 +804,21 @@
+ 			CronLine *line;
+ 
+ 			for (file = FileBase; file; file = file->cf_Next) {
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 				if (DebugOpt)
+ 					crondlog("\005FILE %s:\n", file->cf_User);
+ #endif
+ 				if (file->cf_Deleted)
+ 					continue;
+ 				for (line = file->cf_LineBase; line; line = line->cl_Next) {
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 					if (DebugOpt)
+ 						crondlog("\005    LINE %s\n", line->cl_Shell);
+ #endif
+ 					if (line->cl_Mins[tp->tm_min] && line->cl_Hrs[tp->tm_hour] &&
+ 						(line->cl_Days[tp->tm_mday] || line->cl_Dow[tp->tm_wday])
+ 						&& line->cl_Mons[tp->tm_mon]) {
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 						if (DebugOpt) {
+ 							crondlog("\005    JobToDo: %d %s\n",
+ 								line->cl_Pid, line->cl_Shell);
+@@ -862,7 +907,7 @@
+ }
+ 
+ 
+-#if ENABLE_FEATURE_CROND_CALL_SENDMAIL
++#ifdef CONFIG_FEATURE_CROND_CALL_SENDMAIL
+ static void
+ ForkJob(const char *user, CronLine * line, int mailFd,
+ 		const char *prog, const char *cmd, const char *arg, const char *mailf)
+@@ -879,7 +924,7 @@
+ 		if (ChangeUser(user) < 0) {
+ 			exit(0);
+ 		}
+-#if ENABLE_DEBUG_CROND_OPTION
++#ifdef FEATURE_DEBUG_OPT
+ 		if (DebugOpt) {
+ 			crondlog("\005Child Running %s\n", prog);
+ 		}
+@@ -1001,31 +1046,21 @@
+ static void RunJob(const char *user, CronLine * line)
+ {
+ 	/* Fork as the user in question and run program */
+-	pid_t pid = fork();
+-
+-	if (pid == 0) {
+-		/* CHILD */
+-
+-		/* Change running state to the user in question */
+-
+-		if (ChangeUser(user) < 0) {
+-			exit(0);
+-		}
+-#if ENABLE_DEBUG_CROND_OPTION
+-		if (DebugOpt) {
+-			crondlog("\005Child Running %s\n", DEFAULT_SHELL);
+-		}
+-#endif
+-
+-		execl(DEFAULT_SHELL, DEFAULT_SHELL, "-c", line->cl_Shell, NULL);
+-		crondlog("\024unable to exec, user %s cmd %s -c %s\n", user,
+-				 DEFAULT_SHELL, line->cl_Shell);
+-		exit(0);
+-	} else if (pid < 0) {
+-		/* FORK FAILED */
+-		crondlog("\024couldn't fork, user %s\n", user);
+-		pid = 0;
++int i;
++int len = strlen(line->cl_Shell);
++if (len>63)len=63;
++char *temp = NULL; 
++for (i=0;i<63;i++)
++    {
++    if (line->cl_Shell[i]==' ')
++	{
++	temp=&line->cl_Shell[i+1];
++	break;
+ 	}
+-	line->cl_Pid = pid;
++    }
++if (temp==NULL)
++    return;
++    
++system(temp);		
+ }
+-#endif /* ENABLE_FEATURE_CROND_CALL_SENDMAIL */
++#endif							/* CONFIG_FEATURE_CROND_CALL_SENDMAIL */

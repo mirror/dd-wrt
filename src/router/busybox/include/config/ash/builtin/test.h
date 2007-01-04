@@ -1,0 +1,1 @@
+#define CONFIG_ASH_BUILTIN_TEST 1
