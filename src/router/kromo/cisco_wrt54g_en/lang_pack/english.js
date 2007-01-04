@@ -943,8 +943,8 @@ management.clock_support="Not Supported";
 management.mmc_legend="MMC/SD Card Support";
 management.mmc_srv="MMC Device";
 
-management.samba_legend="Samba FS Automount";
-management.samba_srv="SMB Filesystem";
+management.samba_legend="CIFS Automount";
+management.samba_srv="Common Internet File System";
 management.samba_share="Share";
 management.samba_stscript="Startscript";
 

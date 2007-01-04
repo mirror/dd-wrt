@@ -943,8 +943,8 @@ management.clock_support="Ni podprto";
 management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
 
-management.samba_legend="Samba FS avtomatski priklop";
-management.samba_srv="SMB datoteèni sistem";
+management.samba_legend="CIFS avtomatski priklop";
+management.samba_srv="CIFS datoteèni sistem";
 management.samba_share="Skupni imenik";
 management.samba_stscript="Zaèetni skript";
 
