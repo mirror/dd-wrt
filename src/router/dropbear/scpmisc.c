@@ -89,7 +89,7 @@ xfree(void *ptr)
 	}
 	free(ptr);
 }
-
+/*
 char *
 xstrdup(const char *str)
 {
@@ -101,7 +101,7 @@ xstrdup(const char *str)
 	strncpy(cp, str, len);
 	return cp;
 }
-
+*/
 char *
 cleanhostname(char *host)
 {
