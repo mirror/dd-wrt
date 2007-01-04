@@ -1,1 +1,0 @@
-#undef CONFIG_FEATURE_VI_DOT_CMD

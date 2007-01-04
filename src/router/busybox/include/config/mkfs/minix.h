@@ -1,1 +1,0 @@
-#undef CONFIG_MKFS_MINIX

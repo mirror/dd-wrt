@@ -1,1 +1,0 @@
-#define CONFIG_BUILD_AT_ONCE 1
