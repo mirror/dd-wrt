@@ -1,0 +1,1 @@
+#define CONFIG_FEATURE_VI_COLON 1

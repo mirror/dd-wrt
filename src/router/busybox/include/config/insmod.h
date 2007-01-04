@@ -1,0 +1,1 @@
+#define CONFIG_INSMOD 1
