@@ -1,0 +1,1 @@
+#define CONFIG_NC_EXTRA 1

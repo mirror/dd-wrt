@@ -1,0 +1,1 @@
+#define SKIP_FEATURE_IFCONFIG_SLIP(...)
