@@ -1,1 +1,0 @@
-#undef CONFIG_NC_SERVER

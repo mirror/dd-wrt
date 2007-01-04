@@ -1,1 +1,0 @@
-#undef CONFIG_FEATURE_TFTP_GET
