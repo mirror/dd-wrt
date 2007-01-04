@@ -1,2 +1,0 @@
-test x"`date -u`" = x"`busybox date -u`"
-
