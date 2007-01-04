@@ -98,19 +98,6 @@ radio_timer_main (void)
 #else
 		  eval ("wl", "radio", "off");
 #endif
-#ifndef HAVE_MADWIFI
-  /* Disable wireless will cause diag led blink, so we want to stop it. */
-  if ((check_hw_type() == BCM4712_CHIP) || (check_hw_type() == BCM5325E_CHIP))
-    {
-      diag_led (DIAG, STOP_LED);
-      /* Light or go out the DMZ led even if there is no wan ip. */
-      if (nvram_invmatch ("dmz_ipaddr", "")
-	  && nvram_invmatch ("dmz_ipaddr", "0"))
-	diag_led (DMZ, START_LED);
-      else
-	diag_led (DMZ, STOP_LED);
-    }
-#endif
 		  break;
 		}
 	      needchange = 0;
