@@ -242,3 +242,4 @@ void xsetuid(uid_t uid)
 	if (setuid(uid)) bb_error_msg_and_die("setuid");
 }
 #endif
+
