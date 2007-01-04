@@ -1,1 +1,1 @@
-#define CONFIG_DF 1
+#undef CONFIG_DF

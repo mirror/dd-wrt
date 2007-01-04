@@ -1,1 +1,1 @@
-#define CONFIG_MOUNT 1
+#undef CONFIG_MOUNT

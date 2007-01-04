@@ -1,1 +1,1 @@
-#define CONFIG_FDISK 1
+#undef CONFIG_FDISK

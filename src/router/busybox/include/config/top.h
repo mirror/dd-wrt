@@ -1,1 +1,1 @@
-#define CONFIG_TOP 1
+#undef CONFIG_TOP

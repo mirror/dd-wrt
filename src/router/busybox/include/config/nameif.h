@@ -1,1 +1,1 @@
-#define CONFIG_NAMEIF 1
+#undef CONFIG_NAMEIF

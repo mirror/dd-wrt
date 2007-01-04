@@ -1,1 +1,1 @@
-#define CONFIG_WATCH 1
+#undef CONFIG_WATCH
