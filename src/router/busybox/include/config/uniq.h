@@ -1,1 +1,1 @@
-#define CONFIG_UNIQ 1
+#undef CONFIG_UNIQ

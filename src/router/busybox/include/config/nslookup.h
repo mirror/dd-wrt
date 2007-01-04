@@ -1,1 +1,1 @@
-#define CONFIG_NSLOOKUP 1
+#undef CONFIG_NSLOOKUP

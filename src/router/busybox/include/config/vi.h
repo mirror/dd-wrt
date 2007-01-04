@@ -1,1 +1,1 @@
-#define CONFIG_VI 1
+#undef CONFIG_VI

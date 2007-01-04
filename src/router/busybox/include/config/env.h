@@ -1,1 +1,1 @@
-#define CONFIG_ENV 1
+#undef CONFIG_ENV

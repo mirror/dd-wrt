@@ -431,7 +431,7 @@ static const char *unpack_usage_messages(void)
 #else
 #define unpack_usage_messages() usage_messages
 #endif /* ENABLE_FEATURE_COMPRESS_USAGE */
-
+#ifndef HAVE_NOMESSAGE
 void bb_show_usage(void)
 {
 	if (ENABLE_SHOW_USAGE) {
@@ -451,7 +451,7 @@ void bb_show_usage(void)
 
 	exit(xfunc_error_retval);
 }
-
+#endif
 static int applet_name_compare(const void *name, const void *vapplet)
 {
 	const struct BB_applet *applet = vapplet;

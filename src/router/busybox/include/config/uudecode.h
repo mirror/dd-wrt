@@ -1,1 +1,1 @@
-#define CONFIG_UUDECODE 1
+#undef CONFIG_UUDECODE

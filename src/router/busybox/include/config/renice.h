@@ -1,1 +1,1 @@
-#define CONFIG_RENICE 1
+#undef CONFIG_RENICE

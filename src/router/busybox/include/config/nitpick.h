@@ -1,1 +1,1 @@
-#define CONFIG_NITPICK 1
+#undef CONFIG_NITPICK

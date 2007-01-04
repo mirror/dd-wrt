@@ -1,1 +1,1 @@
-#define CONFIG_EXPR 1
+#undef CONFIG_EXPR

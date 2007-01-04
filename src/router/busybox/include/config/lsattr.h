@@ -1,1 +1,1 @@
-#define CONFIG_LSATTR 1
+#undef CONFIG_LSATTR

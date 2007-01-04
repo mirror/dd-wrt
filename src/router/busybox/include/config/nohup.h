@@ -1,1 +1,1 @@
-#define CONFIG_NOHUP 1
+#undef CONFIG_NOHUP

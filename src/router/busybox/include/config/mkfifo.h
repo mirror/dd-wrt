@@ -1,1 +1,1 @@
-#define CONFIG_MKFIFO 1
+#undef CONFIG_MKFIFO
