@@ -1412,9 +1412,9 @@ static int prism2_ioctl_siwretry(struct net_device *dev,
 	/* what could be done, if firmware would support this.. */
 
 	if (rrq->flags & IW_RETRY_LIMIT) {
-		if (rrq->flags & IW_RETRY_LONG)
+		if (rrq->flags & IW_RETRY_MAX)
 			HFA384X_RID_LONGRETRYLIMIT = rrq->value;
-		else if (rrq->flags & IW_RETRY_SHORT)
+		else if (rrq->flags & IW_RETRY_MIN)
 			HFA384X_RID_SHORTRETRYLIMIT = rrq->value;
 		else {
 			HFA384X_RID_LONGRETRYLIMIT = rrq->value;
@@ -1468,14 +1468,14 @@ static int prism2_ioctl_giwretry(struct net_device *dev,
 				rrq->value = le16_to_cpu(altretry);
 			else
 				rrq->value = local->manual_retry_count;
-		} else if ((rrq->flags & IW_RETRY_LONG)) {
-			rrq->flags = IW_RETRY_LIMIT | IW_RETRY_LONG;
+		} else if ((rrq->flags & IW_RETRY_MAX)) {
+			rrq->flags = IW_RETRY_LIMIT | IW_RETRY_MAX;
 			rrq->value = longretry;
 		} else {
 			rrq->flags = IW_RETRY_LIMIT;
 			rrq->value = shortretry;
 			if (shortretry != longretry)
-				rrq->flags |= IW_RETRY_SHORT;
+				rrq->flags |= IW_RETRY_MIN;
 		}
 	}
 	return 0;
@@ -3908,7 +3908,7 @@ static void prism2_get_drvinfo(struct net_device *dev,
 		 local->sta_fw_ver & 0xff);
 }
 
-const struct ethtool_ops prism2_ethtool_ops = {
+struct ethtool_ops prism2_ethtool_ops = {
 	.get_drvinfo = prism2_get_drvinfo
 };
 
