@@ -35,7 +35,16 @@ watchdog (void)
 		if (radiostate == 0)
 			led_control (LED_WLAN, LED_ON);
 		else
+			{
 			led_control (LED_WLAN, LED_OFF);
+#ifndef HAVE_MADWIFI
+  /* Disable wireless will cause diag led blink, so we want to stop it. */
+		if ((check_hw_type() == BCM4712_CHIP) || (check_hw_type() == BCM5325E_CHIP))
+    	{
+      	diag_led (DIAG, STOP_LED);
+    	}
+#endif
+			}
 			
 		oldstate = radiostate;
 		}
