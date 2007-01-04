@@ -350,7 +350,8 @@ start_sysinit (void)
 #ifdef HAVE_MSSID
     case ROUTER_WRT54G:
       nvram_set ("wl0gpio0", "136");		//Fix for wireless led olways on (v24 only)
-#else
+      break;
+#endif
     }
 
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
