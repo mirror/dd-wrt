@@ -1,1 +1,1 @@
-#define CONFIG_CUT 1
+#undef CONFIG_CUT

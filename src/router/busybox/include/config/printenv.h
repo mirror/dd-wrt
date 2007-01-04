@@ -1,1 +1,1 @@
-#define CONFIG_PRINTENV 1
+#undef CONFIG_PRINTENV

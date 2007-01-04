@@ -1,1 +1,1 @@
-#define CONFIG_SYNC 1
+#undef CONFIG_SYNC

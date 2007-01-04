@@ -1,1 +1,1 @@
-#define CONFIG_LESS 1
+#undef CONFIG_LESS

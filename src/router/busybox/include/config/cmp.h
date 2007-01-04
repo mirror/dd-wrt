@@ -1,1 +1,1 @@
-#define CONFIG_CMP 1
+#undef CONFIG_CMP

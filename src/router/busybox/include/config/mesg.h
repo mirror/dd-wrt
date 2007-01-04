@@ -1,1 +1,1 @@
-#define CONFIG_MESG 1
+#undef CONFIG_MESG
