@@ -1,0 +1,1 @@
+#define CONFIG_SHA1SUM 1
