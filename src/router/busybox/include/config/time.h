@@ -1,1 +1,1 @@
-#define CONFIG_TIME 1
+#undef CONFIG_TIME

@@ -1,1 +1,1 @@
-#define CONFIG_TTY 1
+#undef CONFIG_TTY

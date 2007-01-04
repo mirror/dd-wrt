@@ -1,1 +1,1 @@
-#define CONFIG_DIRNAME 1
+#undef CONFIG_DIRNAME

@@ -1,1 +1,1 @@
-#define CONFIG_STRINGS 1
+#undef CONFIG_STRINGS

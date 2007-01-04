@@ -1,1 +1,1 @@
-#define CONFIG_TELNET 1
+#undef CONFIG_TELNET

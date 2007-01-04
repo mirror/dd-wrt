@@ -1,1 +1,1 @@
-#define CONFIG_YES 1
+#undef CONFIG_YES

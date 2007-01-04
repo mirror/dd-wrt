@@ -1,1 +1,1 @@
-#define CONFIG_HWCLOCK 1
+#undef CONFIG_HWCLOCK

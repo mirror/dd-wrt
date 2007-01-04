@@ -1,1 +1,1 @@
-#define CONFIG_TRUE 1
+#undef CONFIG_TRUE

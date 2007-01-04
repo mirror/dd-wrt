@@ -1,1 +1,1 @@
-#define CONFIG_STTY 1
+#undef CONFIG_STTY

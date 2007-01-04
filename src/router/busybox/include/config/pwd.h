@@ -1,1 +1,1 @@
-#define CONFIG_PWD 1
+#undef CONFIG_PWD

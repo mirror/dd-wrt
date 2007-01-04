@@ -1,1 +1,1 @@
-#define CONFIG_RESIZE 1
+#undef CONFIG_RESIZE

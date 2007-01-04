@@ -1,1 +1,1 @@
-#define CONFIG_FSCK 1
+#undef CONFIG_FSCK

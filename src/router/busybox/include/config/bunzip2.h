@@ -1,1 +1,1 @@
-#define CONFIG_BUNZIP2 1
+#undef CONFIG_BUNZIP2
