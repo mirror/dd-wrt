@@ -13,7 +13,7 @@
 
 /* Dump firewall log */
 void
-ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dumplog (webs_t wp, int argc, char_t ** argv)
 {
   char buf[LOG_BUF], *line, *next, *s;
   int len;

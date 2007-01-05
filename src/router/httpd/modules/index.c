@@ -11,7 +11,7 @@ int clone_wan_mac;
 int lan_ip_changed;
 
 void
-ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_index_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
@@ -195,14 +195,14 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
 }
 #endif
 void
-ej_get_wl_max_channel (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wl_max_channel (webs_t wp, int argc, char_t ** argv)
 {
 
   websWrite (wp, "%s", WL_MAX_CHANNEL);
 }
 
 void
-ej_get_wl_domain (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wl_domain (webs_t wp, int argc, char_t ** argv)
 {
 
 #if COUNTRY == EUROPE
@@ -225,7 +225,7 @@ clone_mac (webs_t wp)
 }
 
 void
-ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clone_mac ( webs_t wp, int argc, char_t ** argv)
 {
   char *c;
   int mac, which;

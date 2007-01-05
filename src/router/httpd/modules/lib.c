@@ -109,7 +109,7 @@ httpd_filter_name (char *old_name, char *new_name, size_t size, int type)
 }
 
 void
-ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv)
+ej_compile_date (webs_t wp, int argc, char_t ** argv)
 {
   char year[4], mon[3], day[2];
   char string[20];
@@ -121,14 +121,14 @@ ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv)
+ej_compile_time (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", __TIME__);
 }
 
 #ifndef HAVE_SPECIALEDITION
 void
-ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_firmware_version ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
 	     nvram_safe_get ("dist_type"));
@@ -136,33 +136,33 @@ ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 void
-ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_firmware_title ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "Wireless-G Broadband Router");
 }
 
 #include <revision.h>
 void
-ej_get_firmware_svnrev (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_firmware_svnrev ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", SVN_REVISION);
 }
 
 void
-ej_get_web_page_name (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_web_page_name ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s.asp", websGetVar (wp, "submit_button", "index"));
 }
 
 void
-ej_get_model_name (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_model_name ( webs_t wp, int argc, char_t ** argv)
 {
   //return websWrite(wp,"%s",MODEL_NAME);
   websWrite (wp, "%s", nvram_safe_get ("router_name"));
 }
 
 void
-ej_get_url (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_url ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
@@ -176,7 +176,7 @@ ej_get_url (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_logo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_logo ( webs_t wp, int argc, char_t ** argv)
 {
   return;
 }
