@@ -39,9 +39,9 @@ srcdir = .
 # You shouldn't need to edit anything below here.
 #
 
-CC = /opt/openwrt401/bin/mipsel-linux-uclibc-gcc
+#CC = /opt/openwrt401/bin/mipsel-linux-uclibc-gcc
 PROG = tcpdump
-CCOPT = -Os -mips32 -mtune=mips32 -pipe -I../libpcap
+CCOPT = $(COPTS) -I../libpcap_noring
 INCLS = -I.  -I$(srcdir)/missing
 DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
 
@@ -49,7 +49,7 @@ DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
 CFLAGS = $(CCOPT) $(DEFS) $(INCLS)
 
 # Standard LDFLAGS
-LDFLAGS = -L../libpcap
+LDFLAGS = -L../libpcap_noring
 
 # Standard LIBS
 LIBS = -lpcap 
