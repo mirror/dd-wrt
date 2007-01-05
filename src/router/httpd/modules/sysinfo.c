@@ -144,7 +144,7 @@ show_other_info (webs_t wp)
 }
 
 void
-ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_sysinfo (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
@@ -164,7 +164,7 @@ ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
 
 // for Setup Wizard and others test
 void
-ej_show_miscinfo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_miscinfo ( webs_t wp, int argc, char_t ** argv)
 {
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.

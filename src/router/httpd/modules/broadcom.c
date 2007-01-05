@@ -75,7 +75,7 @@ int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 #ifdef HAVE_UPNP
 static int tf_upnp (webs_t wp);
-static void ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
+static void ej_tf_upnp (webs_t wp, int argc, char_t ** argv);
 #endif
 
 /* Example:
@@ -413,7 +413,7 @@ struct onload onloads[] = {
 };
 
 void
-ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
+ej_onload (  webs_t wp, int argc, char_t ** argv)
 {
   char *type, *arg;
   int ret = 0;
@@ -441,7 +441,7 @@ ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
  * The will force the page to be refreshed when visited.
  */
 void
-ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
+ej_no_cache (  webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
   websWrite (wp,
@@ -458,7 +458,7 @@ ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
  * <% prefix_ip_get("lan_ipaddr",1); %> produces "192.168.1."
  */
 void
-ej_prefix_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_prefix_ip_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int type;
@@ -555,7 +555,7 @@ reltime (unsigned int seconds)
  * <% nvram_get("lan_ipaddr"); %> produces "192.168.1.1"
  */
 static void
-ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
@@ -599,7 +599,7 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_nvram_real_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_real_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
@@ -622,7 +622,7 @@ ej_nvram_real_get (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_selget("lan_ipaddr"); %> produces "192.168.1.2"
  */
 static void
-ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_selget (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
 
@@ -660,7 +660,7 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_mac_get("wan_mac"); %> produces "00-11-22-33-44-55"
  */
 static void
-ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_mac_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
   char *mac;
@@ -698,7 +698,7 @@ ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_gozila_get("wan_proto"); %> produces "static"
  */
 static void
-ej_nvram_gozila_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_gozila_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *type;
 
@@ -713,7 +713,7 @@ ej_nvram_gozila_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_webs_get (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value;
 
@@ -737,7 +737,7 @@ ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
  * <% get_single_ip("lan_ipaddr","1"); %> produces "168"
  */
 static void
-ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_single_ip (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
   int which;
@@ -770,7 +770,7 @@ ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
  * <% get_single_mac("wan_mac","1"); %> produces "11"
  */
 static void
-ej_get_single_mac (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_single_mac (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
   int which;
@@ -825,7 +825,7 @@ nvram_selmatch (webs_t wp, char *name, char *match)
 }
 
 void
-ej_nvram_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_selmatch (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
 
@@ -843,7 +843,7 @@ ej_nvram_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_else_selmatch (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output1, *output2;
   char *type;
@@ -886,7 +886,7 @@ ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
  */
 static void
-ej_nvram_else_match (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_else_match (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output1, *output2;
 
@@ -912,7 +912,7 @@ ej_nvram_else_match (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_match("wan_proto", "static", "selected"); %> does not produce
  */
 static void
-ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_match (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
 
@@ -929,7 +929,7 @@ ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_haswifi (int eid, webs_t wp, int argc, char_t ** argv)
+ej_haswifi (  webs_t wp, int argc, char_t ** argv)
 {
   char *output;
 
@@ -952,7 +952,7 @@ ej_haswifi (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_invmatch("wan_proto", "static", "disabled"); %> produces "disabled"
  */
 static void
-ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_invmatch (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *invmatch, *output;
 
@@ -975,7 +975,7 @@ ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * <% support_match("HEARTBEAT_SUPPORT", "1", "selected"); %> produces "selected"
  */
 static void
-ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
+ej_support_match (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
 
@@ -1027,7 +1027,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
  * <% support_invmatch("HEARTBEAT_SUPPORT", "1", "-->"); %> produces "-->"
  */
 static void
-ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
 
@@ -1046,8 +1046,9 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
     }
 #endif
 #ifdef HAVE_WIVIZ
-      if (!strcmp (name, "WIVIZ_SUPPORT") && !strcmp(value, "1"))
+      if (!strcmp (name, "WIVIZ_SUPPORT") && strcmp(value, "1"))
 	{
+	 websWrite (wp, output);
 	  return;
 	}
 #endif
@@ -1079,7 +1080,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 	}
     }
 */
-	  websWrite(wp,output);
+//	  websWrite(wp,output);
   return;
 
   //websWrite (wp, output);
@@ -1091,7 +1092,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * <% support_elsematch("HEARTBEAT_SUPPORT", "1", "black", "red"); %> procude "black"
  */
 static void
-ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_support_elsematch (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output1, *output2;
 
@@ -1143,7 +1144,7 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
+ej_scroll (  webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int y;
@@ -1168,7 +1169,7 @@ ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_list("filter_mac", 100); %> produces ""
  */
 static void
-ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_list (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int which;
@@ -1195,7 +1196,7 @@ ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
  * <% get_dns_ip("wan_dns", "2", "3"); %> produces "1"
  */
 void
-ej_get_dns_ip (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_dns_ip (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int count, which;
@@ -1709,7 +1710,7 @@ validate_hwaddrs (webs_t wp, char *value, struct variable *v)
 }
 
 void
-ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_http_prefix (  webs_t wp, int argc, char_t ** argv)
 {
   char http[10];
   char ipaddr[20];
@@ -1785,7 +1786,7 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_mtu (  webs_t wp, int argc, char_t ** argv)
 {
   struct mtu_lists *mtu_list;
   char *type;
@@ -2992,7 +2993,7 @@ getFileLen (FILE * in)
 #define FWSHOW1(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
 static void
-ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_forward (  webs_t wp, int argc, char_t ** argv)
 //ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 //        char_t *url, char_t *path, char_t *query)
 {
@@ -3066,7 +3067,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_forward_spec (  webs_t wp, int argc, char_t ** argv)
 //ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 //        char_t *url, char_t *path, char_t *query)
 {
@@ -3142,7 +3143,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_triggering (  webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *count;
@@ -3202,7 +3203,7 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
 
 //SEG DD-WRT addition
 static void
-ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_styles (  webs_t wp, int argc, char_t ** argv)
 {
 //<option value="blue" <% nvram_selected("router_style", "blue"); %>>Blue</option>
   DIR *directory;
@@ -3230,7 +3231,7 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_languages (  webs_t wp, int argc, char_t ** argv)
 {
   DIR *directory;
   char buf[256];
@@ -3258,7 +3259,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_modules (  webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
   struct dirent *entry;
@@ -3733,7 +3734,7 @@ do_apply_cgi (char *url, webs_t stream)
 
 
 void
-ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_http_method (  webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", "post");
 }
@@ -3800,7 +3801,7 @@ live_translate (char *tran)
 
 
 void
-ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
+ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 {
   char *mainmenu, *submenu;
 
@@ -3968,7 +3969,7 @@ ej_do_menu (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
+ej_do_pagehead (  webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *style = nvram_get ("router_style");
 
@@ -4020,7 +4021,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 }
 
 void
-ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
+ej_do_hpagehead (  webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
   websWrite (wp,
@@ -4042,7 +4043,7 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 }
 
 void
-ej_show_timeoptions (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
+ej_show_timeoptions (  webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
   char timediffs[37][8] =
@@ -4088,7 +4089,7 @@ ej_show_timeoptions (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 
 
 void
-ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
+ej_do_statusinfo (  webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *wan_ipaddr;
   int wan_link = check_wan_link (0);
@@ -4119,12 +4120,12 @@ ej_do_statusinfo (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.firmware)</script>: ");
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n\
 				document.write(\"<a title=\\\"\" + share.about + \"\\\" href=\\\"javascript:openAboutWindow()\\\">");
-  ej_get_firmware_version (0, wp, argc, argv);
+  ej_get_firmware_version (wp, argc, argv);
   websWrite (wp, "</a>\");\n");
   websWrite (wp,"//]]>\n</script></div>\n");
   websWrite (wp,
 	     "<div class=\"info\"><script type=\"text/javascript\">Capture(share.time)</script>: ");
-  ej_get_uptime (0, wp, argc, argv);
+  ej_get_uptime (wp, argc, argv);
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"info\">WAN");
 
@@ -4265,7 +4266,7 @@ struct mime_handler mime_handlers[] = {
  * <% nvram_selected("wan_proto", "static"); %> does not produce
  */
 static void
-ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_selected (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
   int args;
@@ -4291,7 +4292,7 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
+ej_getrebootflags (  webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_RB500
   websWrite (wp, "1");
@@ -4307,7 +4308,7 @@ ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_tran (int eid, webs_t wp, int argc, char_t ** argv)
+ej_tran (  webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int args;
@@ -4327,7 +4328,7 @@ ej_tran (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_checked("wan_proto", "static"); %> does not produce
  */
 static void
-ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_checked (  webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
   int args;
@@ -4360,7 +4361,7 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_CPUTEMP
 static void
-ej_get_cputemp (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_cputemp (  webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_GATEWORX
 #define TEMP_MUL 100
@@ -4387,7 +4388,7 @@ ej_get_cputemp (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_show_cpu_temperature (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_cpu_temperature (  webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">CPU Temperature</div>\n");
@@ -4399,7 +4400,7 @@ ej_show_cpu_temperature (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_VOLT
 static void
-ej_get_voltage (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_voltage (  webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp =
     fopen ("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/volt", "rb");
@@ -4420,7 +4421,7 @@ ej_get_voltage (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_show_voltage (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_voltage (  webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Board Voltage</div>\n");
@@ -4476,7 +4477,7 @@ showencstatus (webs_t wp, char *prefix)
 }
 
 static void
-ej_get_txpower (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_txpower (  webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   websWrite (wp, "%s mW", nvram_safe_get ("txpwr"));
@@ -4487,7 +4488,7 @@ ej_get_txpower (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_getencryptionstatus (int eid, webs_t wp, int argc, char_t ** argv)
+ej_getencryptionstatus (  webs_t wp, int argc, char_t ** argv)
 {
   char mode[64];
   char vifs[64];
@@ -4507,7 +4508,7 @@ ej_getencryptionstatus (int eid, webs_t wp, int argc, char_t ** argv)
   }
 }
 static void
-ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
+ej_getwirelessstatus (  webs_t wp, int argc, char_t ** argv)
 {
   char mode[64];
 #ifndef HAVE_MADWIFI
@@ -4526,7 +4527,7 @@ ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 static void
-ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
+ej_getwirelessmode (  webs_t wp, int argc, char_t ** argv)
 {
   char mode[64];
 #ifndef HAVE_MADWIFI
@@ -4559,7 +4560,7 @@ ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
+ej_getwirelessnetmode (  webs_t wp, int argc, char_t ** argv)
 {
   char mode[64];
 #ifndef HAVE_MADWIFI
@@ -4592,7 +4593,7 @@ ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 static void
-ej_show_openvpn_status (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_openvpn_status (  webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.state)</script></legend>\n");
@@ -4637,7 +4638,7 @@ ej_show_openvpn_status (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 static void
-ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_radio_state (  webs_t wp, int argc, char_t ** argv)
 {
   int radiooff = -1;
 
@@ -4665,7 +4666,7 @@ ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
-ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
 {
   FILE *f;
   FILE *host;
@@ -4782,7 +4783,7 @@ ej_dumparptable (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_EOP_TUNNEL
 
 static void
-ej_show_eop_tunnels (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_eop_tunnels (  webs_t wp, int argc, char_t ** argv)
 {
 
   int tun;
@@ -5278,7 +5279,7 @@ tf_upnp (webs_t wp)
 //      <% tf_upnp(); %>
 //      returns all "forward_port#" nvram entries containing upnp port forwardings
 static void
-ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
+ej_tf_upnp (  webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char s[32];

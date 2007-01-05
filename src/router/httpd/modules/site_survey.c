@@ -53,7 +53,7 @@ open_site_survey (void)
 #ifdef FBNFW
 
 void
-ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
+ej_list_fbn (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   system2 ("site_survey");
@@ -82,7 +82,7 @@ ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
 
 #endif
 void
-ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dump_site_survey ( webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char buf[10] = { 0 };
@@ -163,7 +163,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_WIVIZ
 
 void
-ej_dump_wiviz_data (int eid, webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
+ej_dump_wiviz_data ( webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 {
   FILE *f;
   char buf[256];
