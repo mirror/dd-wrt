@@ -864,17 +864,13 @@ radauth-clean:
 	$(MAKE) -C radauth clean
 	
 samba:
-	@true
-#	$(MAKE) -C samba/source bin/smbmnt
-#	$(MAKE) -C samba/source bin/smbmount
+	$(ARCH)-linux-uclibc-gcc $(COPTS) -DNEED_PRINTF -o samba/cifs/mount.cifs samba/cifs/mount.cifs.c
 
 samba-install:
-#	install -D samba/source/bin/smbmnt $(INSTALLDIR)/samba/usr/sbin/smbmnt
-#	install -D samba/source/bin/smbmount $(INSTALLDIR)/samba/usr/sbin/smbmount
-#	install -D samba/smb.conf $(INSTALLDIR)/samba/usr/lib/smb.conf
 	install -D samba/config/sambafs.webconfig $(INSTALLDIR)/samba/etc/config/sambafs.webconfig
 	install -D samba/config/sambafs.startup $(INSTALLDIR)/samba/etc/config/sambafs.startup
 	install -D samba/config/sambafs.nvramconfig $(INSTALLDIR)/samba/etc/config/sambafs.nvramconfig
+	install -D samba/cifs/mount.cifs $(INSTALLDIR)/samba/bin/mount.cifs
 
 
 samba-clean:
