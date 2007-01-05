@@ -81,6 +81,7 @@ share.beacon="beacon";
 share.openn="Open";
 share.dtim="dtim";
 share.rates="Rate";
+share.rate="Rate";
 share.low="Low";
 share.medium="Medium";
 share.high="High";
