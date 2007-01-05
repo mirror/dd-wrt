@@ -3662,8 +3662,8 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 	      mac[10] = 'x';
 	    }
 
-      websWrite (wp, "'%s','%s','%d','%d','%d'",
-		 mac, ifname,
+      websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
+		 mac, ifname,(si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2,
 		 rssi2dbm (si->isi_rssi), si->isi_noise,
 		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
 
@@ -3911,7 +3911,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 	  if (ref)
 	    noise = atoi (ref);
 	}
-      websWrite (wp, "'%s','%s','%d','%d','%d'", mac, iface, rssi, noise,
+      websWrite (wp, "'%s','%s','N/A','%d','%d','%d'", mac, iface, rssi, noise,
 		 rssi - noise);
     }
   unlink (RSSI_TMP);
