@@ -31,7 +31,8 @@ function setWirelessTable() {
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
-		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = val[i + 5];
+		setMeterBar(row.insertCell(-1), (val[i + 3] == "0" ? 0 : parseInt(val[i + 3]) * 1.24 + 116), "");
 	}
 }
 
@@ -198,7 +199,8 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="wds_table" summary="wds clients table">
 										<tr>
 											<th width="20%"><% tran("share.mac"); %></th>
-											<th width="31%"><% tran("share.descr"); %></th>
+											<th width="26%"><% tran("share.descr"); %></th>
+											<th width="8%"><% tran("share.rate"); %></th>
 											<th width="8%"><% tran("share.signal"); %></th>
 											<th width="8%"><% tran("share.noise"); %></th>
 											<th width="8%">SNR</th>
