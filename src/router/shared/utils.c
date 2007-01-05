@@ -179,7 +179,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Dell TrueMobile 2300\n");
       setRouter ("Dell TrueMobile 2300");
-      return ROUTER_BRCM4702_GENERIC;
+      return DELL_TRUEMOBILE_2300;
     }
     
   if (nvram_match ("boardnum", "100") &&
@@ -951,6 +951,10 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			bridge_gpio = 0x15;
 		break;
 	case ROUTER_WAP54G_V1:
+		break;
+	case DELL_TRUEMOBILE_2300:
+	        power_gpio = 0x17;
+	        wlan_gpio = 0x16;
 		break;
 	}
 	
