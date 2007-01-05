@@ -108,7 +108,7 @@ call (char *func, webs_t stream)	//jimmy, https, 8/4/2003
     {
       //if (strncmp(handler->pattern, func, strlen(handler->pattern)) == 0)
       if (strcmp (handler->pattern, func) == 0)
-	handler->output (0, stream, argc, argv);
+	handler->output (stream, argc, argv);
     }
 }
 

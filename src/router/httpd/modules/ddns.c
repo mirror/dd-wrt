@@ -11,7 +11,7 @@
 #include <broadcom.h>
 
 void
-ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_ddns_status (webs_t wp, int argc, char_t ** argv)
 {
   char buff[512];
   FILE *fp;

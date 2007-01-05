@@ -12,7 +12,7 @@
 
 /* Dump route in <tr><td>IP</td><td>MASK</td><td>GW</td><td>Hop Count</td><td>interface</td></tr> format */
 void
-ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
 {
   int count = 0;
   char *format;

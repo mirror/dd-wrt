@@ -24,7 +24,7 @@ int retry_count = -1;
 int refresh_time = STATUS_REFRESH_TIME2;
 
 void
-ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_status_setting ( webs_t wp, int argc, char_t ** argv)
 {
 
   do_ej ("Status_Router1.asp", wp);
@@ -34,7 +34,7 @@ ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv)
 
 /* Report time in RFC-822 format */
 void
-ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
+ej_localtime ( webs_t wp, int argc, char_t ** argv)
 {
   time_t tm;
 
@@ -48,7 +48,7 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dhcp_remaining_time ( webs_t wp, int argc, char_t ** argv)
 {
   // tofu12
 
@@ -76,7 +76,7 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_nvram_status_get ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   char *wan_ipaddr, *wan_netmask, *wan_gateway;
@@ -209,7 +209,7 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_status ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   char *wan_proto = nvram_safe_get ("wan_proto");
@@ -281,7 +281,7 @@ ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_wan_domain ( webs_t wp, int argc, char_t ** argv)
 {
   char *wan_domain;
 
@@ -295,7 +295,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_wl_mac (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_wl_mac ( webs_t wp, int argc, char_t ** argv)
 {
   char *wl_mac;
 
@@ -369,7 +369,7 @@ ej_link(int eid, webs_t wp, int argc, char_t **argv)
 */
 
 void
-ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_meminfo ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   char line[254];
