@@ -216,6 +216,8 @@ eval("insmod","crypto_null");
     eval ("insmod", "r8169");
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
+  if (detect ("DFE-690TXD"))		// Realtek 8139 Adapter (various notebooks) 
+    eval ("insmod", "8139too");
   else if (detect ("SMC2-1211TX"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
 
