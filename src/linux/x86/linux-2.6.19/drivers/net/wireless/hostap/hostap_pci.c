@@ -4,7 +4,7 @@
  * driver patches from Reyk Floeter <reyk@vantronix.net> and
  * Andy Warner <andyw@pobox.com> */
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/if.h>
@@ -338,8 +338,7 @@ static int prism2_pci_probe(struct pci_dev *pdev,
 
 	pci_set_drvdata(pdev, dev);
 
-	if (request_irq(dev->irq, prism2_interrupt, SA_SHIRQ, dev->name,
-			dev)) {
+	if (request_irq(dev->irq, prism2_interrupt, SA_SHIRQ, dev->name,dev)) {
 		printk(KERN_WARNING "%s: request_irq failed\n", dev->name);
 		goto fail;
 	} else
