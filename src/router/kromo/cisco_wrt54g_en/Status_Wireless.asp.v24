@@ -183,8 +183,9 @@ addEvent(window, "unload", function() {
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="6" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="46%"><% tran("share.mac"); %></th>
+										<th width="38%"><% tran("share.mac"); %></th>
 										<th width="8%"><% tran("share.intrface"); %></th>
+										<th width="8%"><% tran("share.rate"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>
@@ -198,9 +199,8 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table center" cellspacing="6" id="wds_table" summary="wds clients table">
 										<tr>
-											<th width="20%"><% tran("share.mac"); %></th>
+											<th width="26%"><% tran("share.mac"); %></th>
 											<th width="26%"><% tran("share.descr"); %></th>
-											<th width="8%"><% tran("share.rate"); %></th>
 											<th width="8%"><% tran("share.signal"); %></th>
 											<th width="8%"><% tran("share.noise"); %></th>
 											<th width="8%">SNR</th>
