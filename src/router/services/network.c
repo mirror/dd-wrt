@@ -1602,6 +1602,7 @@ start_wan (int status)
     case ROUTER_MOTOROLA_V1:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
+    case DELL_TRUEMOBILE_2300:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth1";
       break;
