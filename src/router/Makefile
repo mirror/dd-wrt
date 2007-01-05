@@ -787,7 +787,7 @@ radauth-clean:
 	$(MAKE) -C radauth clean
 	
 samba:
-	$(ARCH)-linux-uclibc-gcc $(COPTS) -o samba/cifs/mount.cifs samba/cifs/mount.cifs.c
+	$(ARCH)-linux-uclibc-gcc $(COPTS) -DNEED_PRINTF -o samba/cifs/mount.cifs samba/cifs/mount.cifs.c
 #	$(MAKE) -C samba/source bin/smbmnt
 #	$(MAKE) -C samba/source bin/smbmount
 
