@@ -122,6 +122,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Linksys WAP54G v1
 #define ROUTER_WAP54G_V1 0x210f
 
+//Dell TrueMobile 2300
+#define DELL_TRUEMOBILE_2300 0x2200
+
 #define NVROUTER "DD_BOARD"
 
 
