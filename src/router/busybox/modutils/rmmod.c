@@ -87,7 +87,7 @@ int rmmod_main(int argc, char **argv)
 		}
 
 		if (syscall(__NR_delete_module, ENABLE_FEATURE_2_6_MODULES ? bb_common_bufsiz1 : argv[n], flags)) {
-			bb_perror_msg("%s", argv[n]);
+			//bb_perror_msg("%s", argv[n]);
 			ret = EXIT_FAILURE;
 		}
 	}
