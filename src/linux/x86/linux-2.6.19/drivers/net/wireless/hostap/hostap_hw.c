@@ -30,7 +30,7 @@
  */
 
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 #include <asm/delay.h>
 #include <asm/uaccess.h>
@@ -2620,7 +2620,7 @@ static void prism2_check_magic(local_info_t *local)
 
 
 /* Called only from hardware IRQ */
-static irqreturn_t prism2_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+static irqreturn_t prism2_interrupt(int irq, void *dev_id)
 {
 	struct net_device *dev = (struct net_device *) dev_id;
 	struct hostap_interface *iface;
