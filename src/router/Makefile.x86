@@ -56,7 +56,7 @@ ifeq ($(ARCH),mips)
 export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
 endif
 ifeq ($(ARCH),i386)
-export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.17
+export LINUXDIR := $(SRCBASE)/linux/x86/linux-2.6.19
 endif
 ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
@@ -65,8 +65,8 @@ ifeq ($(ARCH),mipsel)
 export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
 endif
 
-
-export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
+#export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 
 #ifeq ($(PLATFORM),mipsel)
 #export CROSS_COMPILE := mipsel-linux-
