@@ -16,7 +16,7 @@
  * <% static_route("lan", 0); %> produces "selected" if nvram_match("lan_ifname", "br0")
  */
 void
-ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
+ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *arg;
   int which, count;
@@ -327,7 +327,7 @@ write_nvram:
 }
 
 void
-ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
+ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 {
   int i, page;
   int which;

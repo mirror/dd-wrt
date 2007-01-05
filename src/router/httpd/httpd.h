@@ -136,6 +136,7 @@ extern char *getWebsFile(char *path);
 extern int getWebsFileLen(char *path);
 
 extern void do_ej(char *path, webs_t stream);
+extern char *zencrypt (char *passwd);
 
 extern void do_filtertable(char *path, webs_t stream);
 extern void do_ej_buffer(char *buffer, webs_t stream);
@@ -146,7 +147,7 @@ void Initnvramtab (void);
 
 struct ej_handler {
 	char *pattern;
-	void (*output)(int eid, webs_t wp, int argc, char_t **argv);
+	void (*output)(webs_t wp, int argc, char_t **argv);
 };
 extern struct ej_handler ej_handlers[];
 

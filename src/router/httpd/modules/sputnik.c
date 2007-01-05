@@ -16,7 +16,7 @@
 #include <support.h>
 
 void
-ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
+ej_sputnik_apd_status ( webs_t wp, int argc, char_t ** argv)
 {
   char *key;
   FILE *fh;

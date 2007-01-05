@@ -491,7 +491,7 @@ filter_dport_get (char *type, int which)
 }
 
 void
-ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_dport_get ( webs_t wp, int argc, char_t ** argv)
 {
   int which;
   char *type;
@@ -575,7 +575,7 @@ filter_port_get (char *type, int which)
 }
 
 void
-ej_filter_port_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_port_get ( webs_t wp, int argc, char_t ** argv)
 {
   int which;
   char *type;
@@ -632,7 +632,7 @@ filter_mac_get (int which)
 
 
 void
-ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_ip_get (webs_t wp, int argc, char_t ** argv)
 {
   int which;
   char *type;
@@ -653,7 +653,7 @@ ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_mac_get (webs_t wp, int argc, char_t ** argv)
 {
   int which;
   D ("ej filter mac get");
@@ -1172,7 +1172,7 @@ validate_catchall (webs_t wp, char *value, struct variable *v)
 
 
 void
-ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_policy_select ( webs_t wp, int argc, char_t ** argv)
 {
   int i;
   D ("ej policy select");
@@ -1199,7 +1199,7 @@ ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_policy_get ( webs_t wp, int argc, char_t ** argv)
 {
 
   char *type, *part;
@@ -1395,7 +1395,7 @@ filter_tod_init (int which)
 }
 
 void
-ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_tod_get ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int i;
@@ -1581,7 +1581,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
  *	    keywd0, keywd1, keywd2, keywd3, keywd4, keywd5, ....
  */
 void
-ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_web_get ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int which;
@@ -1625,7 +1625,7 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_summary_show ( webs_t wp, int argc, char_t ** argv)
 {
   int i;
 #if LANGUAGE == JAPANESE
@@ -1702,7 +1702,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_init ( webs_t wp, int argc, char_t ** argv)
 {
   char *f_id = websGetVar (wp, "f_id", NULL);
   D ("ej_filter-init");
@@ -1715,7 +1715,7 @@ ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_filter_port_services_get ( webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int which;

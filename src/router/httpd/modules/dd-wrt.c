@@ -1,7 +1,7 @@
 /*
  * dd-wrt.c
  *
- * Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@blueline-ag.de>
+ * Copyright (C) 2005 - 2007 Sebastian Gottschall <sebastian.gottschall@blueline-ag.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,7 +50,7 @@ static unsigned int newclocks[9] =
 
 
 void
-ej_show_clocks (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
   int tab = getcpurev ();
   unsigned int *c;
@@ -73,7 +73,7 @@ ej_show_clocks (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_routing (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"gateway\\\" %s >\" + share.gateway + \"</option>\");\n//]]>\n</script>\n",
@@ -102,7 +102,7 @@ ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_connectiontype (webs_t wp, int argc, char_t ** argv)
 {
 
   websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -146,7 +146,7 @@ ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_infopage (webs_t wp, int argc, char_t ** argv)
 {
 /*
 #ifdef HAVE_NEWMEDIA
@@ -167,7 +167,7 @@ websWrite(wp,"</dl>\n");
 
 
 void
-ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dumpmeminfo (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fcpu = fopen ("/proc/meminfo", "r");
   if (fcpu == NULL)
@@ -192,7 +192,7 @@ rept:;
 
 #ifdef HAVE_RB500
 void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
@@ -229,7 +229,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 
 #elif HAVE_XSCALE
 void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
@@ -264,7 +264,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 }
 #elif HAVE_X86
 void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
@@ -303,7 +303,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 }
 #elif HAVE_MAGICBOX
 void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
@@ -341,7 +341,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
 {
   char *clk = nvram_get ("clkfreq");
   if (clk == NULL)
@@ -363,7 +363,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 void
-ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_cpuinfo ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fcpu = fopen ("/proc/cpuinfo", "r");
   if (fcpu == NULL)
@@ -429,7 +429,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_wds_subnet ( webs_t wp, int argc, char_t ** argv)
 {
   int index = -1;
   if (ejArgs (argc, argv, "%d", &index) < 1)
@@ -452,7 +452,7 @@ ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_SKYTRON
 void
-ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wireless2 ( webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, noise = 0;
   FILE *fp, *fp2;
@@ -689,7 +689,7 @@ trigger_add (webs_t wp)
 }
 
 void
-ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_paypal ( webs_t wp, int argc, char_t ** argv)
 {
 #ifndef CONFIG_BRANDING
   websWrite (wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a>");
@@ -785,7 +785,7 @@ raduser_add (webs_t wp)
 }
 
 void
-ej_show_iradius_check (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_iradius_check ( webs_t wp, int argc, char_t ** argv)
 {
   char *sln = nvram_safe_get ("iradius_count");
   if (sln == NULL || strlen (sln) == 0)
@@ -810,7 +810,7 @@ ej_show_iradius_check (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 void
-ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_iradius ( webs_t wp, int argc, char_t ** argv)
 {
   char *sln = nvram_safe_get ("iradius_count");
   if (sln == NULL || strlen (sln) == 0)
@@ -987,7 +987,7 @@ user_add (webs_t wp)
 }
 
 void
-ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_userlist ( webs_t wp, int argc, char_t ** argv)
 {
   char *sln = nvram_safe_get ("fon_usernames");
   if (sln == NULL || strlen (sln) == 0)
@@ -1104,7 +1104,7 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
 }
 
 void
-ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_staticleases ( webs_t wp, int argc, char_t ** argv)
 {
   int i;
 //cprintf("get static leasenum");
@@ -1145,7 +1145,7 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_show_control (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_control ( webs_t wp, int argc, char_t ** argv)
 {
 #ifdef CONFIG_BRANDING
   websWrite (wp, "Control Panel");
@@ -1158,14 +1158,14 @@ ej_show_control (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_AQOS
 void
-ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_default_level ( webs_t wp, int argc, char_t ** argv)
 {
   return;
 }
 
 #else
 void
-ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_default_level ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
@@ -1212,7 +1212,7 @@ selmatch (char *var, char *is, char *ret)
 }
 
 void
-ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_security ( webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
@@ -1245,7 +1245,7 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
 	     selmatch ("security_mode", "wep", "selected=\"selected\""));
   websWrite (wp, "</div>\n");
-  ej_show_wpa_setting (eid, wp, argc, argv);
+  ej_show_wpa_setting ( wp, argc, argv);
   return;
 }
 #else
@@ -1282,7 +1282,7 @@ selmatch (char *var, char *is, char *ret)
 }
 
 static void
-show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
+show_security_prefix ( webs_t wp, int argc, char_t ** argv,
 		      char *prefix)
 {
   char var[80];
@@ -1332,12 +1332,12 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
   websWrite (wp, "</select></div>\n");
   rep (prefix, 'X', '.');
   cprintf ("ej show wpa\n");
-  ej_show_wpa_setting (eid, wp, argc, argv, prefix);
+  ej_show_wpa_setting ( wp, argc, argv, prefix);
 
 }
 
 static void
-ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
+ej_show_security_single (webs_t wp, int argc, char_t ** argv,
 			 char *prefix)
 {
   char *next;
@@ -1356,7 +1356,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
-  show_security_prefix (eid, wp, argc, argv, prefix);
+  show_security_prefix (wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
   foreach (var, vifs, next)
   {
@@ -1368,17 +1368,17 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
 	       "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [%s]</legend>\n",
 	       var, nvram_get (ssid));
     rep (var, '.', 'X');
-    show_security_prefix (eid, wp, argc, argv, var);
+    show_security_prefix (wp, argc, argv, var);
     websWrite (wp, "</fieldset>\n");
   }
 
 }
 
 void
-ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_security (webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  return ej_show_security_single (eid, wp, argc, argv, "wl0");
+  return ej_show_security_single (wp, argc, argv, "wl0");
 #else
   int c = getdevicecount ();
   int i;
@@ -1386,7 +1386,7 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
     {
       char buf[16];
       sprintf (buf, "ath%d", i);
-      ej_show_security_single (eid, wp, argc, argv, buf);
+      ej_show_security_single (wp, argc, argv, buf);
     }
   return;
 #endif
@@ -1422,7 +1422,7 @@ wan_proto (webs_t wp)
 
 
 void
-ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_dhcpd_settings ( webs_t wp, int argc, char_t ** argv)
 {
   int i;
   if (nvram_match ("wl0_mode", "wet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
@@ -2267,7 +2267,7 @@ wireless_save (webs_t wp)
 }
 
 void
-ej_showad (int eid, webs_t wp, int argc, char_t ** argv)
+ej_showad ( webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_FON
 #ifndef CONFIG_BRANDING
@@ -2635,7 +2635,7 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 }
 
 void
-ej_show_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_wireless ( webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
   int c = getdevicecount ();
@@ -3194,7 +3194,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 }
 
 void
-ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wds_mac ( webs_t wp, int argc, char_t ** argv)
 {
   int mac = -1, wds_idx = -1, mac_idx = -1;
   char *c, wds_var[32] = "";
@@ -3228,7 +3228,7 @@ ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wds_ip ( webs_t wp, int argc, char_t ** argv)
 {
   int ip = -1, wds_idx = -1, ip_idx = -1;
   char *c, wds_var[32] = "";
@@ -3262,7 +3262,7 @@ ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wds_netmask ( webs_t wp, int argc, char_t ** argv)
 {
   int nm = -1, wds_idx = -1, nm_idx = -1;
   char *c, wds_var[32] = "";
@@ -3297,7 +3297,7 @@ ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wds_gw ( webs_t wp, int argc, char_t ** argv)
 {
   int gw = -1, wds_idx = -1, gw_idx = -1;
   char *c, wds_var[32] = "";
@@ -3331,7 +3331,7 @@ ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_br1_ip ( webs_t wp, int argc, char_t ** argv)
 {
   int ip = -1, ip_idx = -1;
   char *c;
@@ -3360,7 +3360,7 @@ ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_br1_netmask ( webs_t wp, int argc, char_t ** argv)
 {
   int nm = -1, nm_idx = -1;
   char *c;
@@ -3392,7 +3392,7 @@ ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_currate ( webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
   int rate = 0;
@@ -3425,7 +3425,7 @@ extern double wifi_getrate (char *ifname);
 #define GIGA	1e9
 
 void
-ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_currate ( webs_t wp, int argc, char_t ** argv)
 {
   double rate = wifi_getrate ("ath0");
   char scale;
@@ -3462,7 +3462,7 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 
 #define UPTIME_TMP	"/tmp/.uptime"
 void
-ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_uptime ( webs_t wp, int argc, char_t ** argv)
 {
   char uptime[200] = { 0 }, cmd[200] =
   {
@@ -3493,7 +3493,7 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 void
-ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wan_uptime ( webs_t wp, int argc, char_t ** argv)
 {
   double sys_uptime;
   double uptime;
@@ -3527,7 +3527,7 @@ ej_get_wan_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
 
 void
-ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_curchannel ( webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
   channel_info_t ci;
@@ -3553,7 +3553,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 #else
 
 void
-ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_curchannel ( webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
   int channel = wifi_getchannel ("ath0");
@@ -3604,7 +3604,7 @@ rssi2dbm (u_int rssi)
 }
 
 int
-ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
+ej_active_wireless_if ( webs_t wp, int argc, char_t ** argv,
 		       char *ifname, int cnt)
 {
 //  unsigned char buf[24 * 1024];
@@ -3679,7 +3679,7 @@ extern char *getiflist (void);
 
 
 void
-ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 {
   int c = getdevicecount ();
   char devs[32];
@@ -3689,7 +3689,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
     {
       sprintf (devs, "ath%d", i);
 //fprintf(stderr,"show ifname %s\n",devs);
-      cnt = ej_active_wireless_if (eid, wp, argc, argv, devs, cnt);
+      cnt = ej_active_wireless_if ( wp, argc, argv, devs, cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
@@ -3698,7 +3698,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	foreach (var, vifs, next)
 	{
 //    fprintf(stderr,"show ifname %s\n",var);
-	  cnt = ej_active_wireless_if (eid, wp, argc, argv, var, cnt);
+	  cnt = ej_active_wireless_if ( wp, argc, argv, var, cnt);
 	}
     }
 }
@@ -3712,7 +3712,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_MSSID
 void
-ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, noise = 0;
   FILE *fp2;
@@ -3815,7 +3815,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 }
 #else
 int
-ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
+ej_active_wireless_if ( webs_t wp, int argc, char_t ** argv,
 		       char *iface, char *visible, int cnt)
 {
   int rssi = 0, noise = 0;
@@ -3920,10 +3920,10 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 }
 
 void
-ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 {
   int cnt = 0;
-  cnt = ej_active_wireless_if (eid, wp, argc, argv, get_wdev (), "wl0", cnt);
+  cnt = ej_active_wireless_if ( wp, argc, argv, get_wdev (), "wl0", cnt);
   char *next;
   char var[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
@@ -3932,7 +3932,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 
   foreach (var, vifs, next)
   {
-    cnt = ej_active_wireless_if (eid, wp, argc, argv, var, var, cnt);
+    cnt = ej_active_wireless_if ( wp, argc, argv, var, var, cnt);
   }
 }
 
@@ -3946,7 +3946,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 #define WDS_CMD			"wl wds"
 
 void
-ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wds ( webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   int rssi = 0, i;
@@ -4047,7 +4047,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_wdsp2p ( webs_t wp, int argc, char_t ** argv)
 {
   int index = -1, ip[4] = { 0, 0, 0, 0 }, netmask[4] =
   {
@@ -4150,7 +4150,7 @@ get_filter_services (void)
 }
 
 void
-ej_get_services_options (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_services_options ( webs_t wp, int argc, char_t ** argv)
 {
   char word[1024], *next, *services;
   char delim[] = "<&nbsp;>";
@@ -4527,7 +4527,7 @@ qos_save (webs_t wp)
 }
 
 void
-ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_clone_wmac ( webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_RB500
   return 0;
@@ -4579,7 +4579,7 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
 
 // Note that there is no VLAN #16.  It's just a convieniant way of denoting a "Tagged" port
 void
-ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
+ej_port_vlan_table ( webs_t wp, int argc, char_t ** argv)
 {
   /*
      vlans[x][y] where
@@ -4951,7 +4951,7 @@ port_vlan_table_save (webs_t wp)
 
 
 void
-ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_qossvcs2 ( webs_t wp, int argc, char_t ** argv)
 {
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
   char name[32], type[32], data[32], level[32];
@@ -5009,7 +5009,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifndef HAVE_AQOS
 void
-ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_qosips2 ( webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32];
@@ -5067,7 +5067,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 }
 #else
 void
-ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_qosips2 ( webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32];
@@ -5121,7 +5121,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_AQOS
 void
-ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_qosmacs2 ( webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32];
@@ -5181,7 +5181,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
 #else
 void
-ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
+ej_get_qosmacs2 ( webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32];
@@ -5237,7 +5237,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
 /* Added by Botho 03.April.06 */
 void
-ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dumpip_conntrack ( webs_t wp, int argc, char_t ** argv)
 {
   int ip_count = 0;
   FILE *fp;
@@ -5323,7 +5323,7 @@ string_search (char *string, char *search)
 
 
 void
-ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
+ej_ip_conntrack_table ( webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   int ip_count = 1;
@@ -5417,7 +5417,7 @@ ej_ip_conntrack_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
+ej_gethostnamebyip ( webs_t wp, int argc, char_t ** argv)
 {
   char buf[200];
   char *argument;
@@ -5441,7 +5441,7 @@ ej_gethostnamebyip (int eid, webs_t wp, int argc, char_t ** argv)
 
 /* BEGIN  Added by Botho 10.May.06 */
 void
-ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_wan_to_switch ( webs_t wp, int argc, char_t ** argv)
 {
   if (nvram_match ("wan_proto", "disabled") || !nvram_match ("wl_mode", "ap"))	//WAN disabled OR Wirelles is not AP
     {
@@ -5460,7 +5460,7 @@ ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
 #define PROC_DEV "/proc/net/dev"
 
 void
-ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv)
+ej_wl_packet_get ( webs_t wp, int argc, char_t ** argv)
 {
   char line[256];
   FILE *fp;
@@ -5552,7 +5552,7 @@ do_logout (void)		//static functions are not exportable, additionally this is no
 
 
 void
-ej_statfs (int eid, webs_t wp, int argc, char_t ** argv)
+ej_statfs ( webs_t wp, int argc, char_t ** argv)
 {
   struct statfs sizefs;
 
@@ -5579,7 +5579,7 @@ ej_statfs (int eid, webs_t wp, int argc, char_t ** argv)
 */
 
 void
-ej_bandwidth (int eid, webs_t wp, int argc, char_t ** argv)
+ej_bandwidth ( webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int sig;
@@ -5615,7 +5615,7 @@ ej_bandwidth (int eid, webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_PORTSETUP
 void
-ej_portsetup (int eid, webs_t wp, int argc, char_t ** argv)
+ej_portsetup ( webs_t wp, int argc, char_t ** argv)
 {
   char ssid[64];
   char *next;
@@ -5775,7 +5775,7 @@ show_macfilter_if (webs_t wp, char *ifname)
 }
 
 void
-ej_list_mac_layers (int eid, webs_t wp, int argc, char_t ** argv)
+ej_list_mac_layers ( webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   websWrite (wp,
@@ -5824,7 +5824,7 @@ ej_list_mac_layers (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 }
 void
-ej_show_macfilter (int eid, webs_t wp, int argc, char_t ** argv)
+ej_show_macfilter ( webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   show_macfilter_if (wp, "wl");

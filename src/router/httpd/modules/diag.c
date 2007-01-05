@@ -204,7 +204,7 @@ traceroute_onload (webs_t wp, char *arg)
 END OBSOLETE */
 
 void
-ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dump_ping_log (webs_t wp, int argc, char_t ** argv)
 {
   int count = 0;
   FILE *fp;

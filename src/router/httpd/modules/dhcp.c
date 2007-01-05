@@ -31,7 +31,7 @@ dhcp_reltime (char *buf, time_t t)
 /*dump in array: hostname,mac,ip,expires
 read leases from leasefile as: expires mac ip hostname */
 void
-ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
+ej_dumpleases (webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   unsigned long expires;

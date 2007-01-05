@@ -662,7 +662,7 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
  */
 
 void
-ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
+ej_port_trigger_table (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
   int which;
