@@ -284,7 +284,13 @@ start_sysinit (void)
 	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
 	}
       break;
-
+      
+    case DELL_TRUEMOBILE_2300:
+    	setup_4712();
+    	nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
+        nvram_set ("wan_ifnames", "eth1");   
+      break;
+                                               
     case ROUTER_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
