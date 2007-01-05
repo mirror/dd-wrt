@@ -186,7 +186,6 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  free (value);
 	  free (name);
 	}
-      nvram_commit ();
       restore_ret = 0;
     }
   else if (!strcmp (sign, "XX-WRT"))
@@ -220,7 +219,6 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  free (value);
 	  free (name);
 	}
-      nvram_commit ();
       restore_ret = 0;
     }
   else
@@ -258,6 +256,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 		     zencrypt (nvram_safe_get ("newhttp_username")));
 	}
     }
+  nvram_commit ();
 
   chdir ("/www");
 }
