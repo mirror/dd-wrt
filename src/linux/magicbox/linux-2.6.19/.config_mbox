@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.19.1
-# Wed Jan  3 03:31:43 2007
+# Sat Jan  6 06:59:29 2007
 #
 CONFIG_MMU=y
 CONFIG_GENERIC_HARDIRQS=y
@@ -244,12 +244,12 @@ CONFIG_TCP_CONG_SCALABLE=y
 # CONFIG_TCP_CONG_LP is not set
 # CONFIG_TCP_CONG_VENO is not set
 # CONFIG_DEFAULT_BIC is not set
-CONFIG_DEFAULT_CUBIC=y
+# CONFIG_DEFAULT_CUBIC is not set
 # CONFIG_DEFAULT_HTCP is not set
 # CONFIG_DEFAULT_VEGAS is not set
-# CONFIG_DEFAULT_WESTWOOD is not set
+CONFIG_DEFAULT_WESTWOOD=y
 # CONFIG_DEFAULT_RENO is not set
-CONFIG_DEFAULT_TCP_CONG="cubic"
+CONFIG_DEFAULT_TCP_CONG="westwood"
 
 #
 # IP: Virtual Server Configuration
@@ -624,6 +624,7 @@ CONFIG_BLK_DEV_IDE=y
 # Please see Documentation/ide.txt for help/info on IDE drives
 #
 # CONFIG_BLK_DEV_IDE_SATA is not set
+# CONFIG_BLK_DEV_MAGICBOX_PROTOTYPE is not set
 CONFIG_BLK_DEV_IDEDISK=y
 # CONFIG_IDEDISK_MULTI_MODE is not set
 # CONFIG_BLK_DEV_IDECD is not set
@@ -1165,18 +1166,7 @@ CONFIG_RAMFS=y
 # CONFIG_BFS_FS is not set
 # CONFIG_EFS_FS is not set
 # CONFIG_JFFS_FS is not set
-CONFIG_JFFS2_FS=y
-CONFIG_JFFS2_FS_DEBUG=0
-CONFIG_JFFS2_FS_WRITEBUFFER=y
-# CONFIG_JFFS2_SUMMARY is not set
-# CONFIG_JFFS2_FS_XATTR is not set
-CONFIG_JFFS2_COMPRESSION_OPTIONS=y
-CONFIG_JFFS2_ZLIB=y
-# CONFIG_JFFS2_RTIME is not set
-# CONFIG_JFFS2_RUBIN is not set
-# CONFIG_JFFS2_CMODE_NONE is not set
-# CONFIG_JFFS2_CMODE_PRIORITY is not set
-CONFIG_JFFS2_CMODE_SIZE=y
+# CONFIG_JFFS2_FS is not set
 # CONFIG_CRAMFS is not set
 # CONFIG_VXFS_FS is not set
 # CONFIG_HPFS_FS is not set

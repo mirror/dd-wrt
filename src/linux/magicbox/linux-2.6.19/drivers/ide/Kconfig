@@ -117,6 +117,17 @@ config BLK_DEV_IDE_SATA
 
 	  If unsure, say N.
 
+config BLK_DEV_MAGICBOX_PROTOTYPE
+	bool "Compile driver for prototype boards"
+	depends on BLK_DEV_MAGICBOX_IDE
+	help
+	  Compile driver for first revision of MagicBox 2.0 boards
+	  (wiring changes).
+
+	  If unsure, say N.
+
+
+
 config BLK_DEV_HD_IDE
 	bool "Use old disk-only driver on primary interface"
 	depends on (X86 || SH_MPC1211)
