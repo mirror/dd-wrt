@@ -158,7 +158,7 @@ static struct mtd_partition bcm947xx_parts[] = {
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
-	{ name: "ddwrt", offset: 0, size: 0, },
+	{ name: "OpenWrt", offset: 0, size: 0, },
 	{ name: NULL, },
 };
 
@@ -331,7 +331,6 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
-		return 0; //dont need to update jffs squashfs partition
 	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
 		printk(KERN_INFO "%s: Filesystem type: jffs2\n", mtd->name);
 
@@ -343,8 +342,10 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	}
 
 	if (trx.len != part->offset + part->size - off) {
+		/* Update the trx offsets and length */
 		trx.len = part->offset + part->size - off;
 	
+		/* Update the trx crc32 */
 		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
 			if (MTD_READ(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
 				return 0;
@@ -352,6 +353,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		}
 		trx.crc32 = crc;
 
+		/* read first eraseblock from the trx */
 		trx2 = block = kmalloc(mtd->erasesize, GFP_KERNEL);
 		if (MTD_READ(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
 			printk("Error accessing the first trx eraseblock\n");
@@ -362,7 +364,8 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		printk("old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
 		printk("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
 
-		memcpy(block, &trx, sizeof(trx));  //will break jffs support in dd-wrt
+		/* Write updated trx header to the flash */
+		memcpy(block, &trx, sizeof(trx));
 		if (mtd->unlock)
 			mtd->unlock(mtd, off, mtd->erasesize);
 		erase_write(mtd, off, mtd->erasesize, block);
@@ -371,7 +374,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		kfree(block);
 		printk("Done\n");
 	}
-
+	
 	return part->size;
 }
 
@@ -380,7 +383,8 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int cfe_size;
 
-	cfe_size = find_cfe_size(mtd,size);
+	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
+		return NULL;
 
 	/* boot loader */
 	bcm947xx_parts[0].offset = 0;
