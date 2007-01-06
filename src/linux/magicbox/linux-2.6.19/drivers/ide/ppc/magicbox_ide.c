@@ -122,13 +122,20 @@ void __init ide_magicbox_init(void)
 
 	/* Turn on PerWE instead of PCIsomething */
 	mtdcr(DCRN_CPC0_PCI_BASE, mfdcr(DCRN_CPC0_PCI_BASE) | (0x80000000L >> 27));
-	
+
+#ifdef CONFIG_BLK_DEV_MAGICBOX_PROTOTYPE
 	/* PerCS2 (CF's CS0): base 0xff100000, 16-bit, rw */
 	mtdcr(DCRN_EBC_BASE, 0x02);
 	mtdcr(DCRN_EBC_BASE + 1, 0xff11a000);
 	mtdcr(DCRN_EBC_BASE, 0x12);
 	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
-
+#else
+	/* PerCS0 (CF's CS0): base 0xff100000, 16-bit, rw */
+	mtdcr(DCRN_EBC_BASE, 0);
+	mtdcr(DCRN_EBC_BASE + 1, 0xff11a000);
+	mtdcr(DCRN_EBC_BASE, 0x10);
+	mtdcr(DCRN_EBC_BASE + 1, 0x080bd800);
+#endif
 	/* PerCS1 (CF's CS1): base 0xff200000, 16-bit, rw */
 	mtdcr(DCRN_EBC_BASE, 0x01);
 	mtdcr(DCRN_EBC_BASE + 1, 0xff21a000);
