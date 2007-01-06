@@ -320,12 +320,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<% nvram_match("dist_type", "vpn", "<!--"); %>
 								<div class="setting">
-									<div class="label">Samba Mount</div>
+									<div class="label"><% tran("management.samba_legend"); %></div>
 									<% nvram_match("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "vpn", "-->"); %>
 								<div class="setting">
-									<div class="label">Sputnik Agent</div>
+									<div class="label"><% tran("bmenu.statuSputnik"); %></div>
 									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "micro", "-->"); %>
@@ -373,7 +373,7 @@ addEvent(window, "unload", function() {
 							
 								<% nvram_match("dist_type", "vpn", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("management.samba_legend"); %></div>
+										<div class="label">CIFS</div>
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/tmp/smbshare", "samba"); %>
@@ -384,7 +384,7 @@ addEvent(window, "unload", function() {
 								<% nvram_match("dist_type", "vpn", "-->"); %>
 								
 								<div class="setting">
-									<div class="label"><% tran("management.jffs_legend"); %></div>
+									<div class="label">JFFS2</div>
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/jffs", "my_jffs"); %>
