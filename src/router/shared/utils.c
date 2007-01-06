@@ -161,7 +161,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "mn700") &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
-      cprintf ("router is Microsoft mn700\n");
+      cprintf ("router is Microsoft MN-700\n");
       setRouter ("Microsoft MN-700");
       return ROUTER_MICROSOFT_MN700;
     }
@@ -186,7 +186,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is buffalo\n");
-      setRouter ("Buffalo WLA-G54C / WLI-TX1-G54");
+      setRouter ("Buffalo WLA-G54C");
       return ROUTER_BUFFALO_WLAG54C;
     }
 /*
@@ -204,7 +204,7 @@ internal_getRouterBrand ()
       nvram_match ("boardnum", "45"))
     {
       cprintf ("router is asus\n");
-      setRouter ("Asus WL500G-Deluxe");
+      setRouter ("Asus WL-500g Deluxe");
       return ROUTER_ASUS;
     }
 
@@ -324,7 +324,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "45") &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
     {
-      cprintf ("router is Asus WL-500g premium\n");
+      cprintf ("router is Asus WL-500g Premium\n");
       setRouter ("Asus WL-500g Premium");
       return ROUTER_ASUS_WL500G_PRE;
     }
@@ -452,7 +452,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
-      setRouter ("Linksys WRT-300N v1");
+      setRouter ("Linksys WRT300N v1");
       nvram_set ("wl0gpio0", "8");
       return ROUTER_WRT300N;
     }
@@ -460,7 +460,7 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "1"))
     {
-      setRouter ("Linksys WRT-350N");
+      setRouter ("Linksys WRT350N");
       nvram_set ("wl0gpio0", "8");
       return ROUTER_WRT350N;
     }
@@ -829,7 +829,7 @@ int brand = getRouterBrand ();
   
 int
 led_control (int type, int act)
-/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS; 
+/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLANmtd
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
 #ifdef HAVE_RB500
