@@ -216,7 +216,7 @@ netsnmp_udp_transport(struct sockaddr_in *addr, int local)
         netsnmp_transport_free(t);
         return NULL;
     }
-#ifdef  SO_BSDCOMPAT
+#ifdef  0 //SO_BSDCOMPAT
     /*
      * Patch for Linux.  Without this, UDP packets that fail get an ICMP
      * response.  Linux turns the failed ICMP response into an error message
