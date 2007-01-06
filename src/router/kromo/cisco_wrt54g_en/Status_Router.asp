@@ -198,7 +198,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_router.legend6"); %></legend>
 				<% nvram_match("dist_type", "vpn", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("management.samba_legend"); %></div>
+										<div class="label">CIFS</div>
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/tmp/smbshare", "samba"); %>
@@ -208,7 +208,7 @@ addEvent(window, "unload", function() {
 									</div>
 				<% nvram_match("dist_type", "vpn", "-->"); %>
 								<div class="setting">
-									<div class="label"><% tran("management.jffs_legend"); %></div>
+									<div class="label">JFFS2</div>
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/jffs", "my_jffs"); %>
