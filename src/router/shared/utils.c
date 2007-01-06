@@ -829,7 +829,7 @@ int brand = getRouterBrand ();
   
 int
 led_control (int type, int act)
-/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLANmtd
+/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
 #ifdef HAVE_RB500
@@ -844,7 +844,7 @@ led_control (int type, int act)
  return 0;
 #else
 
-int use_gpio;
+int use_gpio = 0x0f;
 int gpio_value;
 char temp[4];
 
