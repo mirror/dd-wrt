@@ -216,18 +216,6 @@ netsnmp_udp_transport(struct sockaddr_in *addr, int local)
         netsnmp_transport_free(t);
         return NULL;
     }
-#ifdef  0 //SO_BSDCOMPAT
-    /*
-     * Patch for Linux.  Without this, UDP packets that fail get an ICMP
-     * response.  Linux turns the failed ICMP response into an error message
-     * and return value, unlike all other OS's.  
-     */
-    {
-        int             one = 1;
-        setsockopt(t->sock, SOL_SOCKET, SO_BSDCOMPAT, (void *) &one,
-                   sizeof(one));
-    }
-#endif                          /*SO_BSDCOMPAT */
     /*
      * SO_REUSEADDR will allow multiple apps to open the same port at
      * the same time. Only the last one to open the socket will get
