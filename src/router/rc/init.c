@@ -35,7 +35,7 @@
 
 #define loop_forever() do { sleep(1); } while (1)
 #define SHELL "/bin/login"
-#define	_PATH_CONSOLE	"/dev/tts/0"
+#define	_PATH_CONSOLE	"/dev/console"
 
 static void
 set_term (int fd)
