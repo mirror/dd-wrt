@@ -39,6 +39,13 @@ endif
 ifdef CONFIG_SNMP
 	install wl_snmpd.sh $(INSTALLDIR)/etc/wl_snmpd.sh
 endif
+
+ifdef CONFIG_NCURSES
+	install -d $(INSTALLDIR)/etc/terminfo
+	cp -r terminfo $(INSTALLDIR)/etc/
+endif
+
+
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
 	install protocols $(INSTALLDIR)/etc
@@ -58,7 +65,7 @@ endif
 ifndef CONFIG_GATEWORX
 	ln -sf /usr/local/nvram $(INSTALLDIR)/etc/nvram	
 else
-	mkdir $(INSTALLDIR)/etc/nvram
+	mkdir -p $(INSTALLDIR)/etc/nvram
 endif
 clean:
 
