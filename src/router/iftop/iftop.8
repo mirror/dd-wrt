@@ -1,0 +1,314 @@
+.TH IFTOP 8
+.\"
+.\" iftop.8:
+.\" Manual page for iftop.
+.\"
+.\" $Id: iftop.8,v 1.25 2005/12/25 11:50:21 pdw Exp $
+.\"
+
+.SH NAME
+iftop - display bandwidth usage on an interface by host
+
+.SH SYNOPSIS
+\fBiftop\fP \fB-h\fP |
+[\fB-nNpbBP\fP] [\fB-i\fP \fIinterface\fP] [\fB-f\fP \fIfilter code\fP] [\fB-F\fP \fInet\fP/\fImask\fP]
+
+.SH DESCRIPTION
+\fBiftop\fP listens to network traffic on a named \fIinterface\fP, or on the
+first interface it can find which looks like an external interface if none is
+specified, and displays a table of current bandwidth usage by pairs of hosts.
+\fBiftop\fP must be run with sufficient permissions to monitor all network
+traffic on the \fIinterface\fP; see \fBpcap\fP(3) for more information, but on
+most systems this means that it must be run as root.
+
+By default, \fBiftop\fP will look up the hostnames associated with addresses it
+finds in packets. This can cause substantial traffic of itself, and may result
+in a confusing display. You may wish to suppress display of DNS traffic by
+using filter code such as \fBnot port domain\fP, or switch it off entirely,
+by using the \fB-n\fP option or by pressing \fBR\fP when the program is running.
+
+By default, \fBiftop\fP counts all IP packets that pass through the filter, and
+the direction of the packet is determined according to the direction the packet
+is moving across the interface.  Using the \fB-F\fP option it is possible to
+get \fBiftop\fP to show packets entering and leaving a given network.  For
+example, \fBiftop -F 10.0.0.0/255.0.0.0\fP will analyse packets flowing in and
+out of the 10.* network.
+
+Some other filter ideas:
+.TP
+\fBnot ether host ff:ff:ff:ff:ff:ff\fP
+Ignore ethernet broadcast packets.
+.TP
+\fBport http and not host \fP\fIwebcache.example.com\fP
+Count web traffic only, unless it is being directed through a local web cache.
+.TP
+\fBicmp\fP
+How much bandwith are users wasting trying to figure out why the network is
+slow?
+
+.SH OPTIONS
+
+.TP
+\fB-h\fP
+Print a summary of usage.
+.TP
+\fB-n\fP
+Don't do hostname lookups. 
+.TP
+\fB-N\fP
+Do not resolve port number to service names
+.TP
+\fB-p\fP
+Run in promiscuous mode, so that traffic which does not pass directly through
+the specified interface is also counted.
+.TP
+\fB-P\fP
+Turn on port display.
+.TP
+\fB-b\fP
+Don't display bar graphs of traffic. 
+.TP
+\fB-B\fP
+Display bandwidth rates in bytes/sec rather than bits/sec.
+.TP
+\fB-i\fP \fIinterface\fP
+Listen to packets on \fIinterface\fP.
+.TP
+\fB-f\fP \fIfilter code\fP
+Use \fIfilter code\fP to select the packets to count. Only IP packets are ever
+counted, so the specified code is evaluated as \fB(\fP\fIfilter code\fP\fB) and ip\fP.
+.TP
+\fB-F\fP \fInet\fP/\fImask\fP
+Specifies a network for traffic analysis.  If specified, iftop will only
+include packets flowing in to or out of the given network, and packet direction
+is determined relative to the network boundary, rather than to the interface.
+You may specify \fImask\fP as a dotted quad, such as /255.255.255.0, or as a
+single number specifying the number of bits set in the netmask, such as /24.
+.TP
+\fB-c\fP \fIconfig file\fP
+Specifies an alternate config file.  If not specified, iftop will use
+\fB~/.iftoprc\fP if it exists.  See below for a description of config files
+
+.SH DISPLAY
+
+When running, \fBiftop\fP uses the whole screen to display network usage. At
+the top of the display is a logarithmic scale for the bar graph which gives a
+visual indication of traffic.
+
+The main part of the display lists, for each pair of hosts, the rate at which
+data has been sent and received over the preceding 2, 10 and 40 second
+intervals. The direction of data flow is indicated by arrows, <= and =>. For
+instance,
+.nf
+
+foo.example.com  =>  bar.example.com      1Kb  500b   100b
+                 <=                       2Mb    2Mb    2Mb
+
+.Sp
+.fi
+shows, on the first line, traffic from \fBfoo.example.com\fP to
+\fBbar.example.com\fP; in the preceding 2 seconds, this averaged 1Kbit/s,
+around half that amount over the preceding 10s, and a fifth of that over the
+whole of the last 40s. During each of those intervals, the data sent in the
+other direction was about 2Mbit/s. On the actual display, part of each line
+is inverted to give a visual indication of the 10s average of traffic.
+You might expect to see something like this where host \fBfoo\fP is making
+repeated HTTP requests to \fBbar\fP, which is sending data back which saturates
+a 2Mbit/s link.
+
+By default, the pairs of hosts responsible for the most traffic (10 second
+average) are displayed at the top of the list.
+
+At the bottom of the display, various totals are shown, including peak traffic
+over the last 40s, total traffic transferred (after filtering), and total
+transfer rates averaged over 2s, 10s and 40s.
+
+.SH SOURCE / DEST AGGREGATION
+
+By pressing \fBs\fP or \fBd\fP while \fBiftop\fP is running, all traffic
+for each source or destination will be aggregated together.  This is most
+useful when \fBiftop\fP is run in promiscuous mode, or is run on a gateway
+machine.
+
+.SH PORT DISPLAY
+
+\fBS\fP or \fBD\fP toggle the display of source and destination ports
+respectively. \fBp\fP will toggle port display on/off.
+
+.SH DISPLAY TYPE
+
+\fBt\fP cycles through the four line display modes; the default 2-line display,
+with sent and received traffic on separate lines, and 3 1-line displays, with
+sent, received, or total traffic shown.
+
+.SH DISPLAY ORDER
+
+By default, the display is ordered according to the 10s average (2nd column).
+By pressing \fB1\fP, \fB2\fP or \fB3\fP it is possible to sort by the 1st, 2nd
+or 3rd column.   By pressing \fB<\fP or \fB>\fP the display will be sorted by
+source or destination hostname respectively.
+
+.SH DISPLAY FILTERING
+
+\fBl\fP allows you to enter a POSIX extended regular expression that will be
+used to filter hostnames shown in the display.  This is a good way to quickly
+limit what is shown on the display.  Note that this happens at a much later
+stage than filter code, and does not affect what is actually captured.  Display
+filters DO NOT affect the totals at the bottom of the screen.
+
+.SH PAUSE DISPLAY / FREEZE ORDER
+
+\fBP\fP will pause the current display.
+
+\fBo\fP will freeze the current screen order.  This has the side effect that
+traffic between hosts not shown on the screen at the time will not be shown at
+all, although it will be included in the totals at the bottom of the screen.
+
+.SH SCROLL DISPLAY
+
+\fBj\fP and \fBk\fP will scroll the display of hosts.  This feature is most
+useful when the display order is frozen (see above).
+
+.SH FILTER CODE
+
+\fBf\fP allows you to edit the filter code whilst iftop running.  This
+can lead to some unexpected behaviour.
+
+.SH CONFIG FILE
+
+iftop can read its configuration from a config file.  If the \fB-c\fP option is
+not specified, iftop will attempt to read its configuration from
+\fB~/.iftoprc\fP, if it exists.  Any command line options specified will
+override settings in the config file.
+
+The config file consists of one configuration directive per line.  Each
+directive is a name value pair, for example:
+.nf
+
+interface: eth0
+
+.Sp
+.fi
+sets the network interface.  The following config directives are supported:
+
+.TP
+\fBinterface:\fP \fIif\fP
+Sets the network interface to \fIif\fP.
+.TP
+\fBdns-resolution:\fP \fI(yes|no)\fP
+Controls reverse lookup of IP addresses.
+.TP
+\fBport-resolution:\fP \fI(yes|no)\fP
+Controls conversion of port numbers to service names.
+.TP
+\fBfilter-code:\fP \fIbpf\fP
+Sets the filter code to \fIbpf\fP.
+.TP
+\fBshow-bars:\fP \fI(yes|no)\fP
+Controls display of bar graphs.
+.TP
+\fBpromiscuous:\fP \fI(yes|no)\fP
+Puts the interface into promiscuous mode.
+.TP
+\fBport-display:\fP \fI(off|source-only|destination-only|on)\fP
+Controls display of port numbers.
+.TP
+\fBhide-source:\fP \fI(yes|no)\fP
+Hides source host names.
+.TP
+\fBhide-destination:\fP \fI(yes|no)\fP
+Hides destination host names.
+.TP
+\fBuse-bytes:\fP \fI(yes|no)\fP
+Use bytes for bandwidth display, rather than bits.
+.TP
+\fBsort:\fP \fI(2s|10s|40s|source|destination)\fP
+Sets which column is used to sort the display.
+.TP
+\fBline-display:\fP \fI(two-line|one-line-both|one-line-sent|one-line-received)\fP
+Controls the appearance of each item in the display.
+.TP
+\fBshow-totals:\fP \fI(yes|no)\fP
+Shows cummulative total for each item.
+.TP
+\fBlog-scale:\fP \fI(yes|no)\fP
+Use a logarithmic scale for bar graphs.
+.TP
+\fBmax-bandwidth:\fP \fIbw\fP
+Fixes the maximum for the bar graph scale to \fIbw\fP, e.g. "10M"
+.TP
+\fBnet-filter:\fP \fInet/mask\fP
+Defines an IP network boundary for determining packet direction.
+.TP
+\fBscreen-filter:\fP \fIregexp\fP
+Sets a regular expression to filter screen output.
+
+.SH QUIRKS (aka they're features, not bugs)
+
+There are some circumstances in which iftop may not do what you expect.  In
+most cases what it is doing is logical, and we believe it is correct behaviour,
+although I'm happy to hear reasoned arguments for alternative behaviour.
+
+\fBTotals don't add up\fP
+
+There are several reasons why the totals may not appear to add up.  The
+most obvious is having a screen filter in effect, or screen ordering
+frozen.  In this case some captured information is not being shown to
+you, but is included in the totals.
+
+A more subtle explanation comes about when running in promiscuous mode
+without specifying a \fB-F\fP option.  In this case there is no easy way
+to assign the direction of traffic between two third parties.  For the purposes
+of the main display this is done in an arbitrary fashion (by ordering of IP
+addresses), but for the sake of totals all traffic between other hosts is
+accounted as incoming, because that's what it is from the point of view of your
+interface.  The \fB-F\fP option allows you to specify an arbitrary network
+boundary, and to show traffic flowing across it.
+
+\fBPeak totals don't add up\fP
+
+Again, this is a feature.  The peak sent and peak received didn't necessarily
+happen at the same time.  The peak total is the maximum of sent plus received
+in each captured time division.
+
+\fBChanging the filter code doesn't seem to work\fP
+
+Give it time.  Changing the filter code affects what is captured from
+the time that you entered it, but most of what is on the display is
+based on some fraction of the last 40s window of capturing.  After
+changing the filter there may be entries on the display that are
+disallowed by the current filter for up to 40s.  DISPLAY FILTERING has
+immediate effect and does not affect what is captured.
+
+.SH FILES
+
+.TP
+\fB~/.iftoprc\fP
+Configuration file for iftop.
+
+.SH SEE ALSO
+.BR tcpdump (8),
+.BR pcap (3),
+.BR driftnet (1).
+
+.SH AUTHOR
+Paul Warren <pdw@ex-parrot.com>
+
+.SH VERSION
+$Id: iftop.8,v 1.25 2005/12/25 11:50:21 pdw Exp $
+
+.SH COPYING
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
