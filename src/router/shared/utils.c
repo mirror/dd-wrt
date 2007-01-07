@@ -513,6 +513,13 @@ internal_getRouterBrand ()
 	  return ROUTER_MOTOROLA;
 	}
     }
+    
+  if (nvram_match ("boardtype", "bcm94710ap"))
+    {
+      cprintf ("router is Buffalo old 4710\n");
+      setRouter ("Buffalo WBR-B11");
+      return ROUTER_BRCM4702_GENERIC;
+    }
 
   setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
