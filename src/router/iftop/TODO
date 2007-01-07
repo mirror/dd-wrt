@@ -1,0 +1,23 @@
+Things to do for iftop
+$Id: TODO,v 1.26 2003/10/20 21:41:53 pdw Exp $
+
+* Add configurable offset for DLT_RAW
+
+* IP types other than v4?
+
+* Write config file
+
+* Show several and peaks? Colours?
+
+* Single keypress firewalling of troublesome connections, a la top(1)'s K
+  to kill?
+
+* Configurable refresh rates.
+
+* Specify max link, then show %age capacity.
+
+* Count obscured connections.
+
+* Startup warnings cause pause.
+
+* Re-merge spec file

@@ -1,0 +1,23 @@
+Installation instructions for iftop
+$Id: INSTALL,v 1.3 2002/11/04 12:54:16 chris Exp $
+
+
+iftop is now autoconf/automake-enabled. You should be able to build it on
+common platforms by typing `./configure && make'.
+
+There is one gotcha, however, which is that some systems, such as FreeBSD,
+lack a working implementation of the gethostbyaddr_r(3) C library function. On
+such systems, you may want to use the --with-resolver=ares configure option to
+build a version of iftop which uses the ARES asynchronous DNS library for name
+resolution. An alternative is to use --with-resolver=netdb_1thread, which will
+make iftop run only one name resolution thread. This is not recommended.
+
+On some systems (notably Red Hat Linux) the libpcap header files are installed
+under /usr/include/pcap; on these systems, you should manually specify this
+when running configure, like this:
+
+    $ CPPFLAGS=-I/usr/include/pcap ./configure
+
+
+For historical interest, the old iftop makefile is included in Makefile.OLD.
+
