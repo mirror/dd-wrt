@@ -1,0 +1,136 @@
+#
+# Makefile:
+# Makefile for iftop.
+#
+# $Id: Makefile.OLD,v 1.1 2002/11/04 12:29:06 chris Exp $
+#
+
+VERSION = 0.11pre1
+
+# C compiler to use.
+#CC = gcc
+
+# Give the location of pcap.h here:
+CFLAGS += -I/usr/include/pcap -g
+# CFLAGS += -I/usr/pkg/include
+# CFLAGS += -pg -a
+
+# Give the location of libpcap here if it's not in one of the standard
+# directories:
+# LDFLAGS += -L/usr/local/lib
+# LDFLAGS += -pg -a
+
+# Do you want to use curses or ncurses? Probably ncurses, unless curses
+# is ncurses on your machine.
+CURSES = ncurses
+#CURSES = curses
+
+#
+# Name resolution. Sensible systems have gethostbyaddr_r, which is reentrant
+# and can be called from several threads of a multithreaded program. Other
+# systems don't, or their implementations don't work ([cough] FreeBSD). For
+# these you can use gethostbyaddr (not recommended, since then only one thread
+# can resolve a name at once), libresolv (not recommended and may not work
+# depending on which header files you have), or ares, an asynchronous DNS
+# resolution library from
+#   ftp://athena-dist.mit.edu/pub/ATHENA/ares/
+# For systems without a working gethostbyaddr_r, this is recommended.
+#
+# Leave exactly one of these uncommented, or comment all of them out if you
+# don't care about name resolution at all.
+#
+CFLAGS += -DUSE_GETHOSTBYADDR_R
+#CFLAGS += -DUSE_GETHOSTBYADDR
+#CFLAGS += -DUSE_LIBRESOLV
+#CFLAGS += -DUSE_ARES
+
+#
+# On some machines, gethostbyaddr_r returns int; on others, struct hostent*.
+# Comment out this line if you are using one of the latter.
+#
+#CFLAGS += -DGETHOSTBYADD_R_RETURNS_INT
+
+#
+# Uncomment if you are using libresolv.
+#
+#LDLIBS += -lresolv # or /usr/lib/libresolv.a on Linux?
+
+#
+# Uncomment if you are using ares.
+#
+#LDLIBS += -lares 
+# ... and uncomment these if your libares is in an unusual place.
+#CFLAGS += -I/software/include
+#LDFLAGS += -L/software/lib
+
+#
+# Solaris needs a library to make sockets go and lacks inet_aton.
+#
+LDLIBS += -lsocket -lnsl
+CFLAGS += -DFAKE_INET_ATON
+
+# PREFIX specifies the base directory for the installation.
+PREFIX = /usr/local
+#PREFIX = /software
+
+# BINDIR is where the binary lives relative to PREFIX (no leading /).
+BINDIR = sbin
+
+# MANDIR is where the manual page goes.
+MANDIR = man
+#MANDIR = share/man     # FHS-ish
+
+# You shouldn't need to change anything below this point.
+CFLAGS  += -g -Wall "-DIFTOP_VERSION=\"$(VERSION)\""
+LDFLAGS += -g #-pthread
+LDLIBS += -lpcap -l$(CURSES) -lm -lpthread
+
+SRCS = iftop.c addr_hash.c hash.c ns_hash.c resolver.c ui.c util.c sorted_list.c\
+       options.c serv_hash.c threadprof.c edline.c screenfilter.c
+HDRS = addr_hash.h hash.h iftop.h ns_hash.h resolver.h sorted_list.h ui.h options.h sll.h\
+       serv_hash.h threadprof.h ether.h ip.h tcp.h screenfilter.h token.h llc.h \
+       extract.h ethertype.h
+TXTS = README CHANGES INSTALL TODO iftop.8 COPYING
+SPECFILE = iftop.spec iftop.spec.in
+
+OBJS = $(SRCS:.c=.o)
+
+iftop: $(OBJS) Makefile
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS) 
+
+integers.h: integers
+	./integers
+
+install: iftop
+	install -D iftop   $(PREFIX)/$(BINDIR)/iftop
+	install -D iftop.8 $(PREFIX)/$(MANDIR)/man8/iftop.8
+
+uninstall:
+	rm -f $(PREFIX)/$(BINDIR)/iftop $(PREFIX)/$(MANDIR)/man8/iftop.8
+
+%.o: %.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f *~ *.o core iftop iftop.spec
+
+tarball: depend $(SRCS) $(HDRS) $(TXTS) $(SPECFILE)
+	mkdir iftop-$(VERSION)
+	set -e ; for i in Makefile depend $(SRCS) $(HDRS) $(TXTS) $(SPECFILE) ; do cp $$i iftop-$(VERSION)/$$i ; done
+	tar cvf - iftop-$(VERSION) | gzip --best > iftop-$(VERSION).tar.gz
+	rm -rf iftop-$(VERSION)
+
+tags :
+	etags *.c *.h
+
+depend: $(SRCS)
+	$(CPP) $(CFLAGS)  -MM $(SRCS) > depend
+
+nodepend:
+	rm -f depend
+
+iftop.spec: iftop.spec.in Makefile
+	sed 's/__VERSION__/$(VERSION)/' < iftop.spec.in > iftop.spec
+  
+        
+include depend
