@@ -32,6 +32,9 @@ vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
 UTILS += showmac gpio
 endif
+ifeq ($(CONFIG_MADWIFI),y)
+UTILS += wl_atheros
+endif
 
 ifeq ($(ARCHITECTURE),newmedia)
 all:
