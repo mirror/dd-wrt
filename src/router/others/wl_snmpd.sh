@@ -63,7 +63,7 @@ do
     getnext)
       read REQ
       let REFRESH=$(date +%s)-$LASTREFRESH
-      if test "x$REQ" = "x${place}.3.54.1.3.32.1.1" && test $REFRESH -gt 10
+      if test "x$REQ" = "x${place}" && test $REFRESH -gt 10
       then
         LASTREFRESH=$(date +%s)
         refresh
