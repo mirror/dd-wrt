@@ -37,11 +37,24 @@ static int portnum;
 const char bash0[] = "rm -f /tmp/rssiclients.lst";
 const char bash1[] =
   "echo rssi client list by macupd-DD-WRT >/tmp/rssiclients.lst";
+#ifdef HAVE_MADWIFI
+const char bash2[] =
+  "for mac in $(wl_atheros assoclist | awk '{print$2}')\ndo\nsignal=$(wl_atheros rssi $mac | awk {'print$3'})\necho -e rssi 0 0 $mac +$signal+ wlan>>/tmp/rssiclients.lst\ndone\n";
+const char bash3[] =
+  "for mac in $(wl_atheros wds | awk '{print$2}')\ndo\nsignal=$(wl_atheros rssi $mac | awk {'print$3'})\necho -e rssi 0 0 $mac +$signal+ wds>>/tmp/rssiclients.lst\ndone\n";
+#else  
+#ifdef NEW_RSSI
+const char bash2[] =
+  "for mac in $(wl assoclist | awk '{print$2}')\ndo\nsignal=$(wl rssi $mac | awk {'print$1'})\necho -e rssi 0 0 $mac +$signal+ wlan>>/tmp/rssiclients.lst\ndone\n";
+const char bash3[] =
+  "for mac in $(wl wds | awk '{print$2}')\ndo\nsignal=$(wl rssi $mac | awk {'print$1'})\necho -e rssi 0 0 $mac +$signal+ wds>>/tmp/rssiclients.lst\ndone\n";
+#else
 const char bash2[] =
   "for mac in $(wl assoclist | awk '{print$2}')\ndo\nsignal=$(wl rssi $mac | awk {'print$3'})\necho -e rssi 0 0 $mac +$signal+ wlan>>/tmp/rssiclients.lst\ndone\n";
 const char bash3[] =
   "for mac in $(wl wds | awk '{print$2}')\ndo\nsignal=$(wl rssi $mac | awk {'print$3'})\necho -e rssi 0 0 $mac +$signal+ wds>>/tmp/rssiclients.lst\ndone\n";
-
+#endif
+#endif
 
 static int
 indexOf (char *haystack, char needle)

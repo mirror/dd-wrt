@@ -7,7 +7,7 @@ WRT_BUILDROOT=/opt/
 
 
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS=-Os -fomit-frame-pointer -I. -I../shared -I../services -I../../include.v24
+CFLAGS=-Os -fomit-frame-pointer -I. -I../shared -I../services -I../../include.v24 -DNEW_RSSI
 else
 CFLAGS=-Os -fomit-frame-pointer -Wall -I. -I../shared -I../services -I../../include.v23
 endif
