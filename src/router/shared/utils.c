@@ -961,7 +961,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 		break;
 	case DELL_TRUEMOBILE_2300:
 	        power_gpio = 0x17;
-	        wlan_gpio = 0x16;
+	       // wlan_gpio = 0x16;
 		break;
 	}
 	
