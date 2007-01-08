@@ -3404,17 +3404,11 @@ ej_get_currate ( webs_t wp, int argc, char_t ** argv)
 
   wl_ioctl (dev, WLC_GET_RATE, &rate, sizeof (rate));
 
-  if (rate > 0)
-    {
-      if (rate == 11)
-	websWrite (wp, "5.5 Mbps");
-      else
-	websWrite (wp, "%d Mbps", rate / 2);
-    }
-  else
-    //websWrite (wp, "unknown");
-    websWrite (wp, "%s", live_translate ("share.unknown"));
-
+	if (rate > 0)
+		websWrite (wp, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
+	else
+		websWrite (wp, "%s", live_translate ("share.unknown"));
+		
   return;
 
 }
