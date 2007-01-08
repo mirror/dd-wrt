@@ -37,7 +37,11 @@ ifdef CONFIG_XSCALE
 	cp firmware/* $(INSTALLDIR)/usr/lib/firmware
 endif
 ifdef CONFIG_SNMP
+ifndef CONFIG_MADWIFI
 	install wl_snmpd.sh $(INSTALLDIR)/etc/wl_snmpd.sh
+else
+	install wl_snmpd_ath.sh $(INSTALLDIR)/etc/wl_snmpd.sh
+endif
 endif
 
 ifdef CONFIG_NCURSES
