@@ -26,7 +26,7 @@ endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -fpic
 LDFLAGS += -L.
-OBJS := nvparse.c shutils.c wl.c wl_linux.c wl_macfuncs.c linux_timer.c utils.c nvports.c 
+OBJS := nvparse.o shutils.o wl.o wl_linux.o wl_macfuncs.o linux_timer.o utils.o nvports.o 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
@@ -38,7 +38,7 @@ ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += register.c
+OBJS += register.o
 endif
 
 ifeq ($(CONFIG_SILENCE),y)
