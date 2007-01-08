@@ -1,0 +1,270 @@
+The following is a list of files and features that are going to be
+removed in the kernel source tree.  Every entry should contain what
+exactly is going away, why it is happening, and who is going to be doing
+the work.  When the feature is removed from the kernel, it should also
+be removed from this file.
+
+---------------------------
+
+What:	/sys/devices/.../power/state
+	dev->power.power_state
+	dpm_runtime_{suspend,resume)()
+When:	July 2007
+Why:	Broken design for runtime control over driver power states, confusing
+	driver-internal runtime power management with:  mechanisms to support
+	system-wide sleep state transitions; event codes that distinguish
+	different phases of swsusp "sleep" transitions; and userspace policy
+	inputs.  This framework was never widely used, and most attempts to
+	use it were broken.  Drivers should instead be exposing domain-specific
+	interfaces either to kernel or to userspace.
+Who:	Pavel Machek <pavel@suse.cz>
+
+---------------------------
+
+What:	RAW driver (CONFIG_RAW_DRIVER)
+When:	December 2005
+Why:	declared obsolete since kernel 2.6.3
+	O_DIRECT can be used instead
+Who:	Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:	raw1394: requests of type RAW1394_REQ_ISO_SEND, RAW1394_REQ_ISO_LISTEN
+When:	November 2006
+Why:	Deprecated in favour of the new ioctl-based rawiso interface, which is
+	more efficient.  You should really be using libraw1394 for raw1394
+	access anyway.
+Who:	Jody McIntyre <scjody@modernduck.com>
+
+---------------------------
+
+What:	Video4Linux API 1 ioctls and video_decoder.h from Video devices.
+When:	December 2006
+Why:	V4L1 AP1 was replaced by V4L2 API. during migration from 2.4 to 2.6
+	series. The old API have lots of drawbacks and don't provide enough
+	means to work with all video and audio standards. The newer API is
+	already available on the main drivers and should be used instead.
+	Newer drivers should use v4l_compat_translate_ioctl function to handle
+	old calls, replacing to newer ones.
+	Decoder iocts are using internally to allow video drivers to
+	communicate with video decoders. This should also be improved to allow
+	V4L2 calls being translated into compatible internal ioctls.
+Who:	Mauro Carvalho Chehab <mchehab@brturbo.com.br>
+
+---------------------------
+
+What:	PCMCIA control ioctl (needed for pcmcia-cs [cardmgr, cardctl])
+When:	November 2005
+Files:	drivers/pcmcia/: pcmcia_ioctl.c
+Why:	With the 16-bit PCMCIA subsystem now behaving (almost) like a
+	normal hotpluggable bus, and with it using the default kernel
+	infrastructure (hotplug, driver core, sysfs) keeping the PCMCIA
+	control ioctl needed by cardmgr and cardctl from pcmcia-cs is
+	unnecessary, and makes further cleanups and integration of the
+	PCMCIA subsystem into the Linux kernel device driver model more
+	difficult. The features provided by cardmgr and cardctl are either
+	handled by the kernel itself now or are available in the new
+	pcmciautils package available at
+	http://kernel.org/pub/linux/utils/kernel/pcmcia/
+Who:	Dominik Brodowski <linux@brodo.de>
+
+---------------------------
+
+What:	ip_queue and ip6_queue (old ipv4-only and ipv6-only netfilter queue)
+When:	December 2005
+Why:	This interface has been obsoleted by the new layer3-independent
+	"nfnetlink_queue".  The Kernel interface is compatible, so the old
+	ip[6]tables "QUEUE" targets still work and will transparently handle
+	all packets into nfnetlink queue number 0.  Userspace users will have
+	to link against API-compatible library on top of libnfnetlink_queue 
+	instead of the current 'libipq'.
+Who:	Harald Welte <laforge@netfilter.org>
+
+---------------------------
+
+What:	remove EXPORT_SYMBOL(kernel_thread)
+When:	August 2006
+Files:	arch/*/kernel/*_ksyms.c
+Why:	kernel_thread is a low-level implementation detail.  Drivers should
+        use the <linux/kthread.h> API instead which shields them from
+	implementation details and provides a higherlevel interface that
+	prevents bugs and code duplication
+Who:	Christoph Hellwig <hch@lst.de>
+
+---------------------------
+
+What:	CONFIG_FORCED_INLINING
+When:	June 2006
+Why:	Config option is there to see if gcc is good enough. (in january
+        2006). If it is, the behavior should just be the default. If it's not,
+	the option should just go away entirely.
+Who:    Arjan van de Ven
+
+---------------------------
+
+What:   eepro100 network driver
+When:   January 2007
+Why:    replaced by the e100 driver
+Who:    Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:  drivers depending on OSS_OBSOLETE_DRIVER
+When:  options in 2.6.20, code in 2.6.22
+Why:   OSS drivers with ALSA replacements
+Who:   Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:	pci_module_init(driver)
+When:	January 2007
+Why:	Is replaced by pci_register_driver(pci_driver).
+Who:	Richard Knutsson <ricknu-0@student.ltu.se> and Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	Usage of invalid timevals in setitimer
+When:	March 2007
+Why:	POSIX requires to validate timevals in the setitimer call. This
+	was never done by Linux. The invalid (e.g. negative timevals) were
+	silently converted to more or less random timeouts and intervals.
+	Until the removal a per boot limited number of warnings is printed
+	and the timevals are sanitized.
+
+Who:	Thomas Gleixner <tglx@linutronix.de>
+
+---------------------------
+
+What:	I2C interface of the it87 driver
+When:	January 2007
+Why:	The ISA interface is faster and should be always available. The I2C
+	probing is also known to cause trouble in at least one case (see
+	bug #5889.)
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	Unused EXPORT_SYMBOL/EXPORT_SYMBOL_GPL exports
+	(temporary transition config option provided until then)
+	The transition config option will also be removed at the same time.
+When:	before 2.6.19
+Why:	Unused symbols are both increasing the size of the kernel binary
+	and are often a sign of "wrong API"
+Who:	Arjan van de Ven <arjan@linux.intel.com>
+
+---------------------------
+
+What:	mount/umount uevents
+When:	February 2007
+Why:	These events are not correct, and do not properly let userspace know
+	when a file system has been mounted or unmounted.  Userspace should
+	poll the /proc/mounts file instead to detect this properly.
+Who:	Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	USB driver API moves to EXPORT_SYMBOL_GPL
+When:	February 2008
+Files:	include/linux/usb.h, drivers/usb/core/driver.c
+Why:	The USB subsystem has changed a lot over time, and it has been
+	possible to create userspace USB drivers using usbfs/libusb/gadgetfs
+	that operate as fast as the USB bus allows.  Because of this, the USB
+	subsystem will not be allowing closed source kernel drivers to
+	register with it, after this grace period is over.  If anyone needs
+	any help in converting their closed source drivers over to use the
+	userspace filesystems, please contact the
+	linux-usb-devel@lists.sourceforge.net mailing list, and the developers
+	there will be glad to help you out.
+Who:	Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	find_trylock_page
+When:	January 2007
+Why:	The interface no longer has any callers left in the kernel. It
+	is an odd interface (compared with other find_*_page functions), in
+	that it does not take a refcount to the page, only the page lock.
+	It should be replaced with find_get_page or find_lock_page if possible.
+	This feature removal can be reevaluated if users of the interface
+	cannot cleanly use something else.
+Who:	Nick Piggin <npiggin@suse.de>
+
+---------------------------
+
+What:	Interrupt only SA_* flags
+When:	Januar 2007
+Why:	The interrupt related SA_* flags are replaced by IRQF_* to move them
+	out of the signal namespace.
+
+Who:	Thomas Gleixner <tglx@linutronix.de>
+
+---------------------------
+
+What:	i2c-ite and i2c-algo-ite drivers
+When:	September 2006
+Why:	These drivers never compiled since they were added to the kernel
+	tree 5 years ago. This feature removal can be reevaluated if
+	someone shows interest in the drivers, fixes them and takes over
+	maintenance.
+	http://marc.theaimsgroup.com/?l=linux-mips&m=115040510817448
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	Bridge netfilter deferred IPv4/IPv6 output hook calling
+When:	January 2007
+Why:	The deferred output hooks are a layering violation causing unusual
+	and broken behaviour on bridge devices. Examples of things they
+	break include QoS classifation using the MARK or CLASSIFY targets,
+	the IPsec policy match and connection tracking with VLANs on a
+	bridge. Their only use is to enable bridge output port filtering
+	within iptables with the physdev match, which can also be done by
+	combining iptables and ebtables using netfilter marks. Until it
+	will get removed the hook deferral is disabled by default and is
+	only enabled when needed.
+
+Who:	Patrick McHardy <kaber@trash.net>
+
+---------------------------
+
+What:	frame diverter
+When:	November 2006
+Why:	The frame diverter is included in most distribution kernels, but is
+	broken. It does not correctly handle many things:
+	- IPV6
+	- non-linear skb's
+	- network device RCU on removal
+	- input frames not correctly checked for protocol errors
+	It also adds allocation overhead even if not enabled.
+	It is not clear if anyone is still using it.
+Who:	Stephen Hemminger <shemminger@osdl.org>
+
+---------------------------
+
+
+What:	PHYSDEVPATH, PHYSDEVBUS, PHYSDEVDRIVER in the uevent environment
+When:	October 2008
+Why:	The stacking of class devices makes these values misleading and
+	inconsistent.
+	Class devices should not carry any of these properties, and bus
+	devices have SUBSYTEM and DRIVER as a replacement.
+Who:	Kay Sievers <kay.sievers@suse.de>
+
+---------------------------
+
+What:	i2c-isa
+When:	December 2006
+Why:	i2c-isa is a non-sense and doesn't fit in the device driver
+	model. Drivers relying on it are better implemented as platform
+	drivers.
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	ftape
+When:	2.6.20
+Why:	Orphaned for ages.  SMP bugs long unfixed.  Few users left
+	in the world.
+Who:	Jeff Garzik <jeff@garzik.org>
+
+---------------------------
