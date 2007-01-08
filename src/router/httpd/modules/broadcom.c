@@ -4638,7 +4638,38 @@ ej_show_openvpn_status (  webs_t wp, int argc, char_t ** argv)
 #endif
 
 static void
-ej_get_radio_state (  webs_t wp, int argc, char_t ** argv)
+ej_isnot_afterburner_cap (webs_t wp, int argc, char_t ** argv)
+{
+
+FILE *fp;
+char buf[256];
+char *name;
+
+  if (ejArgs (argc, argv, "%s", &name) != 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#ifdef HAVE_MADWIFI
+		websWrite (wp, "%s", name);
+#else
+    eval ("cat", "wl", "cap", ">", "/tmp/.abcap");
+	
+	if ((fp = fopen ("/tmp/.abcap", "r")) != NULL)
+		{
+		fgets (buf, sizeof (buf), fp);
+		if (!strstr (buf, "afterburner")
+			{
+			websWrite (wp, "%s", name);
+			}
+		fclose(fp);
+		unlink("/tmp/.abcap");
+		}
+#endif
+}
+
+static void
+ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
 {
   int radiooff = -1;
 
@@ -5175,6 +5206,7 @@ struct ej_handler ej_handlers[] = {
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
   {"getwirelessnetmode", ej_getwirelessnetmode},
+  {"isnot_afterburner_cap", ej_isnot_afterburner_cap},
   {"get_radio_state", ej_get_radio_state},
   {"dumparptable", ej_dumparptable},
 #ifdef HAVE_WIVIZ
