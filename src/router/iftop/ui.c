@@ -534,7 +534,7 @@ void analyse_data() {
 
 }
 
-void sprint_host(char * line, struct in_addr* addr, unsigned int port, unsigned int protocol, int L) {
+void sprint_host(char * line, struct in_addr* naddr, unsigned int port, unsigned int protocol, int L) {
     char hostname[HOSTNAME_LENGTH];
     char service[HOSTNAME_LENGTH];
     char* s_name;
@@ -545,14 +545,35 @@ void sprint_host(char * line, struct in_addr* addr, unsigned int port, unsigned 
 
     ip_service skey;
     int left;
-    if(addr->s_addr == 0) {
+#if __BYTE_ORDER == __BIG_ENDIAN
+struct in_addr addr;
+memcpy(&addr,naddr,sizeof(struct in_addr));
+unsigned char *swap = &addr;
+unsigned char a;
+
+a=swap[2];
+swap[2]=swap[0];
+swap[0]=a;
+
+a=swap[1];
+swap[1]=swap[3];
+swap[3]=a;
+
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+struct in_addr addr;
+memcpy(&addr,naddr,sizeof(in_addr));
+#else
+#error "Could not determine the system's endianness"
+#endif
+    if(addr.s_addr == 0) {
         sprintf(hostname, " * ");
     }
+    
     else {
         if (options.dnsresolution)
-            resolve(addr, hostname, L);
+            resolve(&addr, hostname, L);
         else
-            strcpy(hostname, inet_ntoa(*addr));
+            strcpy(hostname, inet_ntoa(*(&addr)));
     }
     left = strlen(hostname);
 
