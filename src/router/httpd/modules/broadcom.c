@@ -4658,7 +4658,7 @@ char *name;
 	if ((fp = fopen ("/tmp/.abcap", "r")) != NULL)
 		{
 		fgets (buf, sizeof (buf), fp);
-		if (!strstr (buf, "afterburner")
+		if (!strstr (buf, "afterburner"))
 			{
 			websWrite (wp, "%s", name);
 			}
