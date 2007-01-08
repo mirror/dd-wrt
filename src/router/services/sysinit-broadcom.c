@@ -120,16 +120,17 @@ loadWlModule (void)  //get boardflags, set afterburner bit, load wl, unset after
     {
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
-		eval("insmod", "wl");
+		eval("insmod", "wl"); //load module
       return;
       break;
     default:
-      if (nvram_get ("boardflags") == NULL)
-	return;
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
-      
-      if (!(boardflags & BFL_AFTERBURNER))
+      if (boardflags == 0 || boardflags & BFL_AFTERBURNER)
+      	{
+      	eval("insmod", "wl");  //load module
+  		}
+  	  else
 		{
 		char bf[16];
       	sprintf (bf, "0x0%X", boardflags);
@@ -141,6 +142,7 @@ loadWlModule (void)  //get boardflags, set afterburner bit, load wl, unset after
 		eval("insmod", "wl");  //load module
 		nvram_set ("boardflags", bf);  //set back to original
 		}
+	  	  
     }
 return;
 }
