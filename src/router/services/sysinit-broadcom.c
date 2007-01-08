@@ -111,6 +111,43 @@ check_brcm_cpu_type (void)
 }
 
 static void
+loadWlModule (void)  //get boardflags, set afterburner bit, load wl, unset afterburner bit
+{
+
+  int boardflags;
+  int brand = getRouterBrand ();
+  switch (brand)
+    {
+    case ROUTER_WRT300N:
+    case ROUTER_WRT350N:
+		eval("insmod", "wl");
+      return;
+      break;
+    default:
+      if (nvram_get ("boardflags") == NULL)
+	return;
+      boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+      fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
+      
+      if (!(boardflags & BFL_AFTERBURNER))
+		{
+		char bf[16];
+      	sprintf (bf, "0x0%X", boardflags);
+	  	boardflags |= BFL_AFTERBURNER;
+	  	fprintf (stderr, "enable Afterburner, boardflags are 0x0%X\n", boardflags);
+	  	char ab[16];
+	  	sprintf (ab, "0x0%X", boardflags);
+	  	nvram_set ("boardflags", ab);  //set boardflags with AfterBurner bit on
+		eval("insmod", "wl");  //load module
+		nvram_set ("boardflags", bf);  //set back to original
+		}
+    }
+return;
+}
+
+
+/*
+static void
 enableAfterBurner (void)
 {
 
@@ -141,7 +178,7 @@ enableAfterBurner (void)
 	}
     }
 }
-
+*/
 char wanifname[8], wlifname[8];
 #define BCM4712_CPUTYPE "0x4712"
 
@@ -384,7 +421,7 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 
-  enableAfterBurner ();
+//  enableAfterBurner ();
 #ifdef HAVE_MSSID
   nvram_set("pa0maxpwr", "251"); //force pa0maxpwr to be 251
 #endif
@@ -400,7 +437,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xxlsys wl";
+	    modules = "diag bcm57xxlsys";
 	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
@@ -409,7 +446,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-adm";
+		"diag switch-core switch-adm";
 
 	      break;
 	    case ROUTER_WRT54G1X:
@@ -420,7 +457,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl";
+		"diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -432,7 +469,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-robo";
+		"diag switch-core switch-robo";
 	      break;
 	    }
 	}
@@ -441,14 +478,14 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xxlsys wl";
+	    modules = "diag bcm57xxlsys";
 	    break;    
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-adm";
+		"diag switch-core switch-adm";
 
 	      break;
 	    case ROUTER_ASUS:
@@ -456,7 +493,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl";
+		"diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -465,19 +502,19 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl";
+		"diag";
 	      break;
 	    default:
 	      if (check_vlan_support ())
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag wl switch-core switch-robo";
+		  "diag switch-core switch-robo";
 	      else
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag wl";
+		  "diag";
 	      break;
 	    }
 	}
@@ -495,6 +532,8 @@ start_sysinit (void)
 	cprintf ("done\n");
 #endif
       }
+      
+   loadWlModule();
       
 #ifdef HAVE_USB
 //load usb driver. we will add samba server, ftp server and ctorrent support in future
