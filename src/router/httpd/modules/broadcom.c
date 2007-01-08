@@ -4653,7 +4653,7 @@ char *name;
 #ifdef HAVE_MADWIFI
 		websWrite (wp, "%s", name);
 #else
-    eval ("cat", "wl", "cap", ">", "/tmp/.abcap");
+    eval ("wl", "cap", ">", "/tmp/.abcap");
 	
 	if ((fp = fopen ("/tmp/.abcap", "r")) != NULL)
 		{
@@ -4665,6 +4665,8 @@ char *name;
 		fclose(fp);
 		unlink("/tmp/.abcap");
 		}
+	else
+		websWrite (wp, "%s", name);
 #endif
 }
 
