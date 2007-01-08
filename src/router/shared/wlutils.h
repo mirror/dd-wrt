@@ -57,7 +57,7 @@ extern int wl_probe (char *name);
 int getchannels (unsigned int *list);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
-int getNoise(char *name);
+int getNoise(char *ifname,unsigned char *name);
 /*
  * Set/Get named variable.
  * @param	name	interface name
