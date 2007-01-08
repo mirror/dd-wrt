@@ -456,6 +456,7 @@ start_sysinit (void)
 	    case ROUTER_SIEMENS:
 	    case ROUTER_WLI2_TX1_G54:
 	    case ROUTER_BELKIN_F5D7230:
+	    case DELL_TRUEMOBILE_2300:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
@@ -492,6 +493,7 @@ start_sysinit (void)
 	      break;
 	    case ROUTER_ASUS:
 	    case ROUTER_BELKIN_F5D7230:
+	    case DELL_TRUEMOBILE_2300:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
