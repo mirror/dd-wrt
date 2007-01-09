@@ -561,7 +561,7 @@ swap[3]=a;
 
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
 struct in_addr addr;
-memcpy(&addr,naddr,sizeof(in_addr));
+memcpy(&addr,naddr,sizeof(struct in_addr));
 #else
 #error "Could not determine the system's endianness"
 #endif
