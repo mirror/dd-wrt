@@ -1,0 +1,100 @@
+.TH "ATHDEBUG" "8" "February 2006" "" ""
+.SH "NAME"
+\fBathdebug\fP \- control the debug output from the madwifi device subsystem
+.SH "SYNOPSIS"
+.B athdebug
+[-i device] +/\- bitmap
+.SH "DESCRIPTION"
+Set and clear debug bitmaps for the madwifi ath device subsystem. Each argument
+is a bitmap or its alias. If a bitmap alias is used then it must be prefixed by 
+either "-" to clear or "+" to set the corresponding bitmap.
+.PP
+All debugging output can be enabled with the 0xffffffff bitmap, while 0x0
+disables all debug output.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-?
+Display usage and list all debug flags.
+.TP
+.B \-i device
+The madwifi device to apply the settings to. If no interface is specified, 
+\fBathdebug\fP defaults to wifi0.
+.TP
+.B +/\- bitmap
+Set (+) or clear (-) a debug flag.
+.PP
+.SH "BITMAP ALIASES"
+.BI xmit
+\- transmit of packets, just before they go out to the HW
+.br
+.BI xmit_desc
+\- transmit descriptors
+.br
+.BI recv
+\- received packets, directly from the HW
+.br
+.BI recv_desc
+\- recv descriptors
+.br
+.BI rate
+\- rate control modules
+.br
+.BI reset
+\- reset processing and inititalization
+.br
+.BI mode
+\- mode initialization and changes
+.br
+.BI beacon
+\- beacon handling
+.br
+.BI watchdog
+\- watchdog timeout
+.br
+.BI intr
+\- interrupt processing
+.br
+.BI xmit_proc
+\- processing of transmit descriptors
+.br
+.BI recv_proc
+\- processing of receive descriptors
+.br
+.BI beacon_proc
+\- beacon processing
+.br
+.BI calibrate
+\- periodic re-calibration
+.br
+.BI keycache
+\- key cache management
+.br
+.BI state
+\- 802.11 state transitions
+.br
+.BI node
+\- node management
+.BI ff
+\- fast frame handling
+.br
+.BI fatal
+fatal errors
+.br
+.PP
+.SH "EXAMPLES"
+.TP
+.B athdebug \-i wifi1 0xffffffff
+Enable all debug bitmaps on wifi1.
+.TP
+.B athdebug +rate
+Enable rate debug bitmap on wifi0.
+.TP
+.B athdebug \-rate
+Clear rate bitmap on wifi0.
+.PP
+.SH "SEE ALSO"
+\fB80211debug\fP(8), \fBhttp://madwifi.org/wiki/DevDocs/AthDebug\fP
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond.

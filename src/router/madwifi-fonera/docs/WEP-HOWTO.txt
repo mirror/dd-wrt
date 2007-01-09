@@ -1,0 +1,72 @@
+
+        Wired Equivalent Privacy (WEP) Security for madwifi
+
+=========================================================================
+
+This document details the commands currently used to configure
+a station or AP to use WEP security.
+
+WEP is known to have vulnerabilities that make it a less attractive
+for networks with stringent security requirements. However, wide
+deployment and relative ease-of-use make it a simple way to add
+link layer encryption between stations (STAs) and access points
+(APs).
+
+The WEP modes most commonly available on 802.11 implementations
+are:
+
+    1) WEP 40/64 bit key, open 802.11 authentication
+    2) WEP 104/128 bit key,  open 802.11 authentication
+    3) WEP 40/64 bit key, shared key 802.11 authentication
+    4) WEP 104/128 bit key, shared key 802.11 authentication
+
+
+The commands used to configure an Atheros interface (in this case,
+'ath0') are the standard Linux wireless tools (iwconfig, iwpriv
+and ifconfig).
+
+To configure the madwifi to use WEP encryption, simply add an
+encryption key to the interface using iwconfig. To configure the
+driver to use 802.11 shared key authentication, iwpriv is used
+to change the protocol authentication mode.
+
+    iwpriv ath0 authmode 1		# open authentication
+    iwpriv ath0 authmode 2		# shared key authentication
+    iwpriv ath0 authmode 3		# 802.1x authentication
+
+These sets of commands work for a station in each of the 4
+cases above.
+
+    1) iwconfig ath0 essid <yourAPssid> key 0123-4567-89
+
+    2) iwconfig ath0 essid <yourAPssid> key 0123-4567-8901-2345-6789-0123-4567-8901
+
+    3) iwconfig ath0 essid <yourAPssid> key 0123-4567-89
+       iwpriv ath0 authmode 2
+
+    4) iwconfig ath0 essid <yourAPssid> key 0123-4567-8901-2345-6789-0123-4567-8901
+       iwpriv ath0 authmode 2
+
+If you want the driver to perform as an AP, you can add 'mode
+master' to the iwconfig line.
+
+The interface MUST be brought UP for the driver to associate
+with the AP (or an AP to accept new stations). This is achieved
+using ifconfig
+
+     ifconfig ath0 X.X.X.X up
+
+
+Known Problems
+==============
+
+Switching 802.11 authentication modes after entering a WEP key
+AND after entering a new authmode sometimes erases the key from
+the driver configuration. e.g. issuing
+
+     iwpriv ath0 authmode 1
+
+after following steps 3 or 4 clears the WEP key.
+
+
+Happy privacy :)
