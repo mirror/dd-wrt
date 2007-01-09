@@ -1,4 +1,0 @@
-#!/bin/sh
-[ -z "$IPKG_INSTROOT" ] || exit 0
-. /etc/functions.sh
-load_modules 50-madwifi
