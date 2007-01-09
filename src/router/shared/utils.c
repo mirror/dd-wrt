@@ -498,8 +498,18 @@ internal_getRouterBrand ()
 	    
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
+	  char *cfe = nvram_safe_get ("cfe_version");
+	  if (strstr(cfe, "iewsonic"))
+	  	{
+		cprintf ("router is Viewsonic WAPBR-100\n");
+		nvram_set ("wl0gpio0", "2");  //fix for wireless led
+      	setRouter ("Viewsonic WAPBR-100");
+	  	}
+	  else
+	  	{
       cprintf ("router is Linksys WAP54G v2\n");
       setRouter ("Linksys WAP54G v2");
+  		}
       return ROUTER_WRT54G;
     }
 
