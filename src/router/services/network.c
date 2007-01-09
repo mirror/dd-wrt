@@ -669,6 +669,28 @@ start_lan (void)
   strncpy (ifr.ifr_name, "eth1", IFNAMSIZ);
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
+#ifdef HAVE_FONERA
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth0 ath0");
+      nvram_set ("wan_ifname", "");
+      nvram_set ("wan_ifnames", "");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "ath0");
+      nvram_set ("wan_ifname", "eth0");
+      nvram_set ("wan_ifnames", "eth0");
+    }
+
+
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  strcpy (mac, nvram_safe_get ("et0macaddr"));
+#endif
 #ifdef HAVE_GATEWORX
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
     {
@@ -918,12 +940,14 @@ start_lan (void)
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_FONERA
 #ifndef HAVE_X86
 	if (!strcmp (name, "eth2"))
 	  {
 	    strcpy (realname, "ath0");
 	  }
 	else
+#endif
 #endif
 #endif
 #endif
@@ -1219,6 +1243,9 @@ start_lan (void)
 #ifdef HAVE_MAGICBOX
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
+#ifdef HAVE_FONERA
+      nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
+#endif
     }
 #ifdef HAVE_RB500
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
@@ -1245,6 +1272,14 @@ start_lan (void)
     }
 #endif
 #ifdef HAVE_MAGICBOX
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
+#ifdef HAVE_FONERA
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -1366,6 +1401,9 @@ start_lan (void)
 #define HAVE_RB500
 #endif
 #ifdef HAVE_MAGICBOX
+#define HAVE_RB500
+#endif
+#ifdef HAVE_FONERA
 #define HAVE_RB500
 #endif
 #ifndef HAVE_RB500
@@ -1577,6 +1615,10 @@ start_wan (int status)
     nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
 #endif
 #elif HAVE_MAGICBOX
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#elif HAVE_FONERA
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";

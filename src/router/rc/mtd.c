@@ -179,6 +179,11 @@ mtd_write (const char *path, const char *mtd)
   trx.len = STORE32_LE (trx.len);
   trx.crc32 = STORE32_LE (trx.crc32);
 #endif
+#ifdef HAVE_FONERA
+  trx.magic = STORE32_LE (trx.magic);
+  trx.len = STORE32_LE (trx.len);
+  trx.crc32 = STORE32_LE (trx.crc32);
+#endif
 #ifdef HAVE_XSCALE
   trx.magic = STORE32_LE (trx.magic);
   trx.len = STORE32_LE (trx.len);

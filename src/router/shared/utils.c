@@ -148,6 +148,9 @@ internal_getRouterBrand ()
 #elif HAVE_MAGICBOX
   setRouter ("MagicBox");
   return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_FONERA
+  setRouter ("Fonera");
+  return ROUTER_BOARD_FONERA;
 #else
   char *et0;
   if (nvram_match ("boardnum", "42") &&
@@ -563,6 +566,8 @@ diag_led_4702 (int type, int act)
   return 0;
 #elif HAVE_XSCALE
   return 0;
+#elif HAVE_FONERA
+  return 0;
 #elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
@@ -600,6 +605,8 @@ C_led_4702 (int i)
 #elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
+  return 0;
+#elif HAVE_FONERA
   return 0;
 #else
   FILE *fp;
@@ -686,6 +693,8 @@ diag_led_4704 (int type, int act)
   return 0;
 #elif HAVE_MAGICBOX
   return 0;
+#elif HAVE_FONERA
+  return 0;
 #elif HAVE_GEMTEK
  return 0;
 #else
@@ -743,6 +752,8 @@ diag_led_4712 (int type, int act)
 #elif HAVE_XSCALE
   return 0;
 #elif HAVE_GEMTEK
+  return 0;
+#elif HAVE_FONERA
   return 0;
 #elif HAVE_X86
   return 0;
@@ -856,6 +867,8 @@ led_control (int type, int act)
 #elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
+  return 0;
+#elif HAVE_FONERA
   return 0;
 #elif HAVE_GEMTEK
  return 0;
@@ -2103,6 +2116,8 @@ check_vlan_support (void)
 #elif HAVE_XSCALE		// dues support vlans, but not yet implemented
   return 0;
 #elif HAVE_X86			// dues support vlans, but not yet implemented
+  return 0;
+#elif HAVE_FONERA			// dues support vlans, but not yet implemented
   return 0;
 #elif HAVE_MAGICBOX		// dues support vlans, but not yet implemented
   return 0;
