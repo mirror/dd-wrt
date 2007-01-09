@@ -125,6 +125,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Dell TrueMobile 2300 (4702 cpu, mini pci radio)
 #define DELL_TRUEMOBILE_2300 0x2210
 
+#define ROUTER_BOARD_FONERA 0x240f
+
 #define NVROUTER "DD_BOARD"
 
 

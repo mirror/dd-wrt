@@ -124,6 +124,9 @@ CFLAGS += -DHAVE_MAGICBOX
 CFLAGS += -DHAVE_CPUTEMP
 
 endif
+ifeq ($(CONFIG_FONERA),y)
+CFLAGS += -DHAVE_FONERA
+endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += wland.c

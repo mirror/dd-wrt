@@ -82,6 +82,8 @@ start_stabridge (void)
       filterarp ("eth0");
       filterarp ("eth1");
       filterarp ("eth2");
+#elif HAVE_FONERA
+      filterarp ("eth0");
 #elif HAVE_X86
       filterarp ("eth0");
       filterarp ("eth1");
@@ -119,6 +121,8 @@ start_stabridge (void)
 #ifdef HAVE_MAGICBOX
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
+#elif HAVE_FONERA
+      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0");
 #elif HAVE_GATEWORX
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "ixp0",
 	    "ixp1");
