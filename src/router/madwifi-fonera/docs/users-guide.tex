@@ -1,0 +1,2417 @@
+\documentclass[10pt,fullpage]{article}
+\usepackage{pslatex}
+\newcommand{\mytt}[1]{{\texttt{#1}}}
+\newcommand{\bv}{\begin{verse}}
+\newcommand{\ev}{\end{verse}}
+\newcommand{\cmd}[1]{{\texttt{myprompt\# #1}}}
+\newcommand{\argdesc}[4]{\begin{description}
+\itemsep -6pt
+\item \textit{Number of Input Arguments:} #1
+\item \textit{Number of Returned Arguments:} #2
+\item \textit{Default Value:} #3
+\item \textit{Resets State Machine After Command:} #4
+\end{description}
+}
+\newcommand{\clicmd}[1]{{\textbf{\texttt{#1}}}}
+\newcommand{\cliparam}[1]{{\texttt{#1}}}
+\newcommand{\clival}[1]{{\emph{#1}}}
+\newcommand{\clidemo}[1]{{\texttt{wlan[0,0]-> #1}}}
+\newcommand{\clidemonobss}[1]{{\texttt{wlan0-> #1}}}
+
+\textwidth 6.5in
+\evensidemargin -0.25in
+\oddsidemargin -0.25in
+\topmargin 0in
+\textheight 9in
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{2}
+\usepackage{color}
+\definecolor{light}{gray}{.75}
+\newenvironment{example}{\begin{quote}\textbf{\textit{Example}:}}{\end{quote}}
+\begin{document}
+\title{Madwifi/Atheros Wireless Linux Driver Users Guide}
+\author{Protocols Group}
+\maketitle
+\tableofcontents
+\section{Configuring MadWifi using Wireless Extensions}
+This section describes the configuration of the Atheros wireless
+driver using the Wireless Extension Tools.
+
+\subsection{Using \mytt{iwconfig}}
+The generic \mytt{iwconfig} tool is used to set parameters which
+common across most drivers.  For a detailed description of
+\mytt{iwconfig}, please use \mytt{man iwconfig}.  In this Section, we
+will describe the use of iwconfig in the Madwifi driver.  The formats
+of the \mytt{iwconfig} command is:
+\bv
+\begin{tabular}{lll}
+\mytt{iwconfig} & --help & \\
+\mytt{iwconfig} & --version & \\
+\mytt{iwconfig} & [\textit{interface}] & \\
+\mytt{iwconfig} & \textit{interface} & [\mytt{essid X}] [\mytt{freq
+  F}] [\mytt{channel C}] [\mytt{sens S}] [\mytt{ap A}] [\mytt{rate R}]
+\\
+& & [\mytt{rts RT}] [\mytt{frag FT}] [\mytt{txpower T}] [\mytt{enc E}] [\mytt{key K}] [\mytt{retry R}]\\
+\end{tabular}
+\ev
+
+The first form of the \mytt{iwconfig} command gives a brief help
+message. The second form of the \mytt{iwconfig} command returns the
+current version of \mytt{iwconfig} along with the version of the
+wireless extensions with which it was built.
+
+In the third form of the \mytt{iwconfig} command, the current wireless
+status of the \textit{interface} is returned.  If no
+\textit{interface} is specified, the current wireless status of every
+network interface is returned.  Non-wireless devices will not return
+any wireless status.
+
+The last form of the \mytt{iwconfig} command allows the user to change
+any of the optional parameters. Only the parameters which you wish to
+change need to be specified.  Unspecified parameters will not be
+modified.  Each parameter is described below.
+
+\subsubsection{\mytt{essid} - ESSID or Network Name}
+Set the ESSID (also known as network name) to the given value.  In
+station mode, the driver will attempt to join the network with the same
+ESSID.  In AP mode, the driver will use the parameter as the ESSID.
+\begin{example}
+  The following command sets the ssid to ``Atheros Wireless
+  Network'' on \mytt{ath0}:
+  \bv
+  \cmd{iwconfig ath0 essid "Atheros Wireless Network"}\\
+  \ev
+\end{example}
+
+\subsubsection{\mytt{freq}/\mytt{channel} - RF Frequency or Channel}
+Set the frequency or channel of the device to the given value.  Values
+below 1000 are interpreted as channel numbers.  Values above 1000 are
+interpreted as frequency measured in Hz.  For frequency values, the
+suffix \mytt{k}, \mytt{M}, or \mytt{G} can be appended to the value to
+specify kilohertz, Megahertz, and Gigahertz, so that \mytt{2.412G},
+\mytt{2412M}, and \mytt{2412000000} refer to the same frequency. 
+Setting the channel to a specific value will override the private
+\mytt{mode} control described in Section~\ref{sec:iwprivs}.
+\begin{example}
+  The following command sets the operating frequency to 5.2GHz:
+  \bv
+  \cmd{iwconfig ath0 freq 5.2G}
+  \ev
+  Either of the following commands set device to operate on channel
+  11:
+  \bv
+  \cmd{iwconfig ath0 freq 11}\\
+  \cmd{iwconfig ath0 channel 11}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{sens} - Sensitivity Threshold}
+Set the sensitivity threshold to the given value.  This is the lowest
+signal strength at which the packets are received.  Currently, this
+threshold is not implemented and any returned value is meaningless.
+
+\subsubsection{\mytt{ap} - Use a Specific AP}
+Specify which AP the device should associate with.  The supplied value
+should be the MAC address of the desired AP or any of the keywords
+\clival{any}, \clival{auto}, or \clival{off}.
+\begin{example}
+  The following command instructs the \mytt{ath0} device to associate
+  with the AP that has MAC address 00:03:7f:03:a0:0d.
+  \bv
+  \cmd{iwconfig ath0 ap 00:03:7f:03:a0:0d}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{rate} - Set the Data Transmit Rate}
+Set the bit rate for transmitted packets.  The value is specified in
+bits per second and the values can be suffixed by \mytt{k}, \mytt{M}, or
+\mytt{G} for kilobits, megabits, and gigabits respectively.  The value
+\mytt{auto} is also valid and causes the device to use the bit rate
+selected by the rate control module.  It's also possible to supply the
+bit rate followed by \mytt{auto}, in which case the driver will
+automatically select from the bit rates not exceeding that rate.
+\begin{example}
+  The following commands sets the maximum bit rate to 36Mbs.  Thus,
+  the driver will automatically select the best rate less than or
+  equal to 36Mbs.
+  \bv
+  \cmd{iwconfig ath0 rate 36M auto}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{rts} - Set the RTS/CTS Threshold}
+Set the minimum packet size for which the device sends an RTS using the
+RTS/CTS handshake.  The parameter is the threshold in bytes or the
+\clival{off} keyword.  If it's set to \clival{off} or the maximum packet
+size, RTS/CTS will be disabled.
+\begin{example}
+  The following command sets the minimum packet size to use the
+  RTS/CTS handshake to 40.
+  \bv
+  \cmd{iwconfig ath0 rts 40}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{frag} - Set the Fragmentation Threshold}
+Set the maximum fragment size.  The parameter is either the threshold in
+bytes, or the \clival{off} keyword, which disables fragmentation.
+\begin{example}
+  The following command sets \mytt{ath0} to fragment all packets to at
+  most 512 bytes.
+  \bv 
+  \cmd{iwconfig ath0 frag 512}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{key/enc} - Manipulate WEP Encryption Keys and Mode}
+This parameter is used to manipulate the WEP key and authentication
+mode.  It can be used to set the key, change the key, select the active
+key, enable and disable WEP, and set the authentication mode.  The
+driver can store up to 4 keys.  Each instance of the \mytt{key} command
+manipulates only one key.  Thus, to change all 4 keys, 4 separate
+commands must be used.
+
+The key value can be specified as is in the hexadecimal form.  If an
+ASCII string is used for the key value, prepend ``\mytt{s:}'' to the
+key.  To change a key other than the current key, prepend
+``[\mytt{index}]'' to the key value, where \mytt{index} is the number of
+the key you wish to change.  To select which key is active, use
+``[\mytt{index}]'' without supplying any keys, where \mytt{index} is the
+desired key number.   Including the keywords \mytt{open} or
+\mytt{restricted} changes the authentication mode between open
+authentication and restricted authentication.  Use the \mytt{off}
+keyword to disable WEP.
+\begin{example}
+  The following command sets the default key to be key 3:
+  \bv
+  \cmd{iwconfig ath0 key [3]}
+  \ev
+  The following command sets the default key to be the hex key
+  0xDEAD-BEEF-AA:
+  \bv
+  \cmd{iwconfig ath0 key DEAD-BEEF-AA}
+  \ev
+  The following command sets key 2 to the ASCII phrase ``password''
+  and sets the authentication type to open:
+  \bv
+  \cmd{iwconfig ath0 key [2] s:password open}
+  \ev
+  The following command disables WEP:
+  \bv
+  \cmd{iwconfig ath0 key off}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{txpower} - Set Transmit Power}
+Set the transmit power for data packets.  Bare numbers are interpreted
+as values in dBm.  If the number is followed by \clival{mW}, the value
+is interpreted in milliwatts.  The value can also be \clival{auto} for
+automatic power control and \clival{off} for disabling the radio
+transmission.
+\begin{example}
+  The following command sets all data packets to transmit at either 30
+  dBm or the maximum allowed in the current regulatory domain:
+  \bv
+  \cmd{iwconfig ath0 txpower 30}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{retry} - Set Retry Limit}
+This parameter sets the maximum number of retries used in the software
+retry algorithm.  Currently, the driver does not implement software
+retry, thus this parameter is meaningless.
+
+\subsection{Using \mytt{wlanconfig}}
+\label{sec:wlanconfig}
+The current MadWifi driver supports multiple APs and concurrent
+AP/Station mode operation on the same device.  The devices are
+restricted to using the same underlying hardware, thus are limited to
+coexisting on the same channel and using the same physical layer
+features.  Each instance of an AP or station is called a Virtual AP
+(or VAP). Each VAP can be in either AP mode, station mode, ``special''
+station mode, and monitor mode.  Every VAP has an associated
+underlying base device, which is created when the driver is loaded.
+
+Creating and destroying VAPs are done through the \mytt{wlanconfig}
+tool found in the MadWifi tools directory.  Running the
+\mytt{wlanconfig} utility with no arguments returns a brief help
+line.  The format of the \mytt{wlanconfig} command takes two forms:
+\bv
+\mytt{wlanconfig} \clival{VAP} \mytt{create wlandev}
+\clival{Base Device} \mytt{wlanmode} \clival{mode}
+[\mytt{bssid}$\|$\mytt{-bssid}] [\mytt{nosbeacon}]\\
+\mytt{wlanconfig} \clival{VAP} \mytt{destroy}
+\ev
+Every Linux network device consists of a prefix followed by a number
+indicating the device number of the network device.  For instance, the
+ethernet devices are named \mytt{eth0}, \mytt{eth1}, \mytt{eth2},
+etc.  Each VAP which is created is also registered as a Linux network
+device.  The value \clival{VAP} can be either a prefix name of the Linux
+network device, or it can be the entire device name.  For instance,
+specifying \clival{VAP} as \mytt{ath} lets the Linux kernel add the
+network device as the next device with the prefix \mytt{ath}.  Thus,
+the Linux kernel appends the proper number to the end to form the full
+device name, e.g., \mytt{ath1} if \mytt{ath0} already exists.
+However, the full device name can also be specified.  For instance,
+\clival{VAP} can also be \mytt{ath2}.  In this case, the network
+device \mytt{ath2} is registered, regardless of whether \mytt{ath1}
+exists.
+
+The \clival{Base Device} is the underlying wireless network device
+name created when the driver is loaded.  The MadWifi driver creates
+\mytt{wifi0}, \mytt{wifi1}, etc.\ as the underlying devices.  By
+specifying the \clival{Base Device}, the VAP is created with the
+\clival{Base Device} as the parent device.
+
+The \clival{mode} is the operating mode of the VAP.  The operating
+mode of the VAP cannot be changed once it is created.  In special
+cases, the operating
+mode of the VAP can be different from the operating mode of the
+underlying parent device.  The first VAP which is \emph{created} sets
+the operating mode of the underlying device.  If the first VAP is
+deleted and a new VAP is created with a different operating mode than
+the original VAP, then the operating mode of the underlying device is
+changed to the new operating mode.  The valid operating modes and
+their descriptions are given in Table~\ref{tab:wlanOpMode}.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Mode & Description \\ \hline
+    Auto &  Auto select operating mode \\
+    Managed & Station mode for infrastructure networks\\
+    Master & AP mode \\
+    Monitor & Passive monitor (promiscuous) mode \\ \hline
+  \end{tabular}
+  \caption{\mytt{wlanconfig} Operating Modes}
+  \label{tab:wlanOpMode}
+\end{table}
+
+Only one station VAP can exist on a device.  If the station VAP is the
+first VAP created, then no other VAPs are allowed to be created. If
+the first VAP created is in AP (Master) mode, then one station VAP is
+allowed to be created.  In this case, other AP VAPs can also be
+created after the station VAP.  When AP and station VAPs coexist, the
+\mytt{nosbeacon} flag must be used when creating the station.  This
+flag disables the use of hardware beacon timers for station mode
+operation.  This is necessary because concurrent AP and station
+operation implies the station should not modify the TSF clock for the
+APs.
+
+Creating multiple VAPs typically implies that the MAC address of each
+VAP is different.  However, if the \mytt{-bssid} flag is used, then
+the MAC address of the underlying wireless device is cloned for the
+VAP being created.
+
+To destroy a VAP, the \mytt{wlanconfig} command is used with the
+\mytt{destroy} parameter.  In this case, the full device name must be
+used, i.e.\ you must specify the entire name, not just the device
+prefix.
+
+\begin{example}
+  If we wish to use the system as a station only, we would create a
+  single station VAP once the driver is loaded.  The following
+  command creates a single station VAP named \mytt{ath0} on device
+  \mytt{wifi0}:
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode sta}
+  \ev
+  Note that no other VAPs can be created since the we are assuming
+  this is the first VAP created on \mytt{wifi0}.  Since this is the
+  first VAP created, we only need to specify \mytt{ath}, not
+  \mytt{ath0}.  However, the following command would also be correct:
+  \bv
+  \cmd{wlanconfig ath0 create wlandev wifi0 wlanmode sta}
+  \ev
+  The MAC address of the station VAP is the same as the underlying
+  device's MAC address since it is the first VAP created.
+\end{example}
+\begin{example}
+  Now, we wish to create two AP VAPs on device \mytt{wifi0}.  The first
+  device will have a cloned MAC address taken from the underlying
+  device. The second VAP will have a ``virtual'' MAC address formed
+  from the underlying device's MAC address.  The first VAP will be
+  \mytt{ath0} and the second device will be \mytt{ath2}.
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \cmd{wlanconfig ath2 create wlandev wifi0 wlanmode ap}
+  \ev
+\end{example}
+\begin{example}
+  Now, we wish to create two AP VAPs on device \mytt{wifi0}.  Both
+  devices will have the same MAC address cloned from the underlying
+  device.  The first VAP will be \mytt{ath0} and the second VAP will
+  be \mytt{ath1}.
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap -bssid}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap -bssid}
+  \ev
+\end{example}
+\begin{example}
+  Now, we wish to create two AP VAPs and one station VAP.  The AP VAPs
+  will be \mytt{ath0} and \mytt{ath2} and the station VAP will be
+  \mytt{ath1}.
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode sta nosbeacon}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}
+  \ev
+\end{example}
+\begin{example}
+  Now, we wish to destroy a VAP (regardless of its operating mode).
+  We assume that there is a VAP named \mytt{ath0}, and it's the one
+  we wish to destroy.
+  \bv
+  \cmd{wlanconfig ath0 destroy}
+  \ev
+\end{example}
+
+\subsection{Private (Driver Specific) Driver Commands}
+\label{sec:iwprivs}
+The following is a list of the private commands which are accessible
+using \mytt{iwpriv}.  The general syntax of \mytt{iwpriv} is
+\bv
+\mytt{iwpriv} \textit{device} [\textit{command}]
+[\textit{parameters}].
+\ev
+The entire list of \mytt{iwpriv} commands can be found by running
+\mytt{iwpriv} to a device without any command.  The resulting list of
+commands has several columns.  The number of parameters allowed for
+each command is listed.  Parameters are classified as either ``set''
+or ``get'' parameters.  ``Set'' parameters are parameters which the
+user supplies to the driver.  ``Get'' parameters are parameters which
+the driver returns to the user.
+
+\subsubsection{\mytt{setoptie} - Set Optional Information Element}
+\argdesc{1}{0}{??}{??}
+This command takes a 256 byte input parameter which specifies?
+
+\subsubsection{\mytt{getoptie} - Get Optional Information Element}
+\argdesc{0}{1}{N/A}{??}
+This command gets the optional information element.  The information
+element is returned as 256 bytes.
+
+\subsubsection{\mytt{mode} - Set Wireless Mode}
+\argdesc{1}{0}{auto}{Yes}
+This command sets the wireless mode, i.e. the frequency band and the
+protocol used.  The mode can be specified either by name or by number. 
+The allowed mode names and corresponding numbers are given in
+Table~\ref{tab:mode}.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|l|} \hline
+    Mode & Number & Description \\ \hline
+    auto & 0 & Auto select operating mode \\
+    11a & 1 & 802.11a (5GHz) mode (54Mbps) \\
+    11b & 2 & 802.11b (2.4GHz) mode (11Mbps) \\
+    11g & 3 & 802.11g (2.4GHz) mode with 802.11b compatibility (54Mbps) \\
+    fh & 4 & 802.11 frequency hopping mode \\
+    11adt/111at & 5 & 802.11a (5GHz) dynamic turbo mode \\
+    11gdt/11gt & 6 & 802.11g (2GHz) dynamic turbo mode (108Mbps) \\
+    11ast & 7 & 802.11a (5GHz) static turbo mode \\ \hline
+  \end{tabular}
+  \caption{802.11 Operating Modes}
+  \label{tab:mode}
+\end{table}
+\begin{example}
+  Either of the following two commands will set the wireless operating
+  mode on a device named \mytt{ath0} to use 802.11a dynamic turbo:
+  \bv
+  \cmd{iwpriv ath0 mode 11a}
+  \ev
+  or
+  \bv
+  \cmd{iwpriv ath0 mode 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_mode} - Get Wireless Mode}
+\argdesc{0}{1}{N/A}{No}
+This command returns the wireless mode of VAP.  The returned values
+correspond to the modes given in Table~\ref{tab:mode}.
+\begin{example}
+  The following command retrieves the wireless mode of a device named
+  \mytt{ath0} which we will assume is operating in the 802.11g mode:
+  \bv
+  \cmd{iwpriv ath0 get\_mode}\\
+  \mytt{ath0\hspace{32pt}get\_mode:11g}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{hide\_ssid} - Enable/Disable Hiding of the 802.11 SSID}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables and disables the ability to hide the 802.11 SSID
+in the beacon if the VAP is in AP mode.  To enable hiding of the SSID,
+a value of 1 is passed into the driver. To disable hiding of the SSID,
+a value of 0 is passed into the driver.
+\begin{example}
+  The following command enables hiding the 802.11 SSID on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 hide\_ssid 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_hide\_ssid} - Get Status of 802.11 SSID
+  Hiding Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether the driver is currently hiding the 802.11
+SSID in beacons.  A value of 1 indicates that the VAP is hiding the
+802.11 SSID.  A value of 0 indicates the VAP is not hiding the 802.11
+SSID.
+\begin{example}
+  The following command retrieves whether \mytt{ath0} is hiding the
+  802.11 SSID in its beacon:
+  \bv
+  \cmd{iwpriv ath0 get\_hide\_ssid}\\
+  \mytt{ath0\hspace{32pt}get\_hide\_ssid:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{protmode} - Enable/Disable 802.11g Protection Mode}
+\argdesc{1}{0}{Enabled}{Yes}
+This command enables and disables the 802.11g protection mode.  To
+enable 802.11g protection, a value of 1 is passed into the driver. To
+disable 802.11g protection, a value of 0 is passed into the driver.
+\begin{example}
+  The following command disables 802.11g protection on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 protmode 0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_protmode} - Get Status of 802.11g Protection
+  Mode}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether the driver is currently using 802.11g
+protection mode. A value of 1 indicates that the VAP is using 802.11g
+protection.  A value of 0 indicates the VAP is not using 802.11g
+protection.
+\begin{example}
+  The following command retrieves whether \mytt{ath0} is using 802.11g
+  protection mode:
+  \bv
+  \cmd{iwpriv ath0 get\_protmode}\\
+  \mytt{ath0\hspace{32pt}get\_protmode:1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{inact\_init} - Set Inactivity Period for INIT
+  State}
+\argdesc{1}{0}{30 secs}{No}
+This commands sets the inactivity period for when the net80211 state
+machine is in the INIT (initialization) state.  The argument passed
+into the driver is the desired inactivity period in seconds.
+\begin{example}
+  The following command sets the inactivity period for the INIT state
+  on \mytt{ath0} to 90 seconds:
+  \bv
+  \cmd{iwpriv ath0 inact\_init 90}\\
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_inact\_init} - Get Inactivity Period for INIT
+  State}
+\argdesc{0}{1}{N/A}{No}
+This commands gets the inactivity period for when the net80211 state
+machine is in the INIT (initialization) state.
+\begin{example}
+  The following command gets the inactivity period for the INIT state
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_inact\_init}\\
+  \mytt{ath0\hspace{32pt}get\_inact\_init:30}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{inact\_auth} - Set Inactivity Period for AUTH
+  State}
+\argdesc{1}{0}{180 secs}{No}
+This commands sets the inactivity period for when the net80211 state
+machine is in the AUTH (authorization) state.  The argument passed
+into the driver is the desired inactivity period in seconds.
+\begin{example}
+  The following command sets the inactivity period for the AUTH state
+  on \mytt{ath0} to 90 seconds:
+  \bv
+  \cmd{iwpriv ath0 inact\_auth 90}\\
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_inact\_auth} - Get Inactivity Period for AUTH
+  State}
+\argdesc{0}{1}{N/A}{No}
+This commands gets the inactivity period for when the net80211 state
+machine is in the AUTH (authorization) state.
+\begin{example}
+  The following command gets the inactivity period for the AUTH state
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_inact\_auth}\\
+  \mytt{ath0\hspace{32pt}get\_inact\_auth:180}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{inact} - Set Inactivity Period for RUN
+  State}
+\argdesc{1}{0}{300 secs}{No}
+This commands sets the inactivity period for when the net80211 state
+machine is in the RUN (running) state.  The argument passed into the
+driver is the desired inactivity period in seconds.
+\begin{example}
+  The following command sets the inactivity period for the RUN state
+  on \mytt{ath0} to 90 seconds:
+  \bv
+  \cmd{iwpriv ath0 inact 90}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_inact} - Get Inactivity Period for RUN
+  State}
+\argdesc{0}{1}{N/A}{No}
+This commands gets the inactivity period for when the net80211 state
+machine is in the RUN (running) state.
+\begin{example}
+  The following command gets the inactivity period for the RUN state
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_inact}\\
+  \mytt{ath0\hspace{32pt}get\_inact:300}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{dtim\_period} - Set DTIM Period}
+\argdesc{1}{0}{N/A}{Yes}
+This command sets the beacon DTIM period.  The argument passed to the
+driver is the desired DTIM period in ms.
+\begin{example}
+  The following command sets the DTIM period to 2 ms on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 dtim\_period 2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_dtim\_period} - Get Beacon DTIM Period}
+\argdesc{0}{1}{N/A}{No}
+This command gets the current beacon DTIM in ms.
+\begin{example}
+  The following command gets the DTIM period on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_dtim\_period}\\
+  \mytt{ath0\hspace{32pt}get\_dtim\_period:1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{bintval} - Set Beacon Interval Value}
+\argdesc{1}{0}{N/A}{Yes}
+This command sets the beacon interval.  The argument passed to the
+driver is the desired beacon interval in ms.
+\begin{example}
+  The following command sets the beacon interval to 25 ms on
+  \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 bintval 25}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_bintval} - Get Beacon Interval Value}
+\argdesc{0}{1}{N/A}{No}
+This command gets the current beacon interval in ms.
+\begin{example}
+  The following command gets the beacon interval on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_bintval}\\
+  \mytt{ath0\hspace{32pt}get\_bintval:100}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{doth} - 802.11h Support Enable/Disable}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables and disables the 802.11h support.  To enable the
+support, a value of 1 is passed into the driver. To disable 802.11h
+support, a value of 0 is passed into the driver.
+\begin{example}
+  The following command enables 802.11h on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 doth 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_doth} - Get 802.11h Support Status}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether 802.11h support is enabled or disabled in
+the driver.
+\begin{example}
+  The following command retrieves the 802.11h status on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_doth}\\
+  \mytt{ath0\hspace{32pt}get\_doth:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{doth\_reassoc} - Generate a Reassociation Request}
+\argdesc{1}{0}{N/A}{No}
+This command instructs the driver to generate a Reassociation request.
+A single input parameter is needed but ignored.
+\begin{example}
+  Either of the following commands generates a reassociation request
+  on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 doth\_reassoc 1}
+  \ev
+  or
+  \bv
+  \cmd{iwpriv ath0 doth\_reassoc 0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{doth\_pwrtgt} - Set Maximum Desired Power for
+  Transmission}
+\argdesc{1}{0}{N/A}{No}
+This command sets the desired maximum power on the current channel.
+The minimum of this desired value and the regulatory maximum is used
+as the true transmission power.  The single argument passed into the
+driver is the desired power level in 0.5 dBm steps.
+\begin{example}
+  To set the desired power level on the current channel to be 13 dBm,
+  the following command is used:
+  \bv
+  \cmd{iwpriv ath0 doth\_pwrtgt 26}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{wpa} - Enable/Disable WPA/WPA2 Support}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables or disables WPA or WPA2 support.  A single
+argument is passed to the driver indicating which encryption protocols
+is to be supported.  Table~\ref{tab:wpa} lists the arguments and the
+encryption protocols supported.
+\begin{table}
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Argument & Protocol Supported \\ \hline
+    0 & No WPA \\
+    1 & WPA Supported \\
+    2 & WPA2 Supported \\
+    3 & Both WPA and WPA2 supported \\ \hline
+  \end{tabular}
+  \caption{WPA/WPA2 Support Arguments}
+  \label{tab:wpa}
+\end{table}
+\begin{example}
+  To enable both WPA and WPA2, the following command is used:
+  \bv
+  \cmd{iwpriv ath0 wpa 3}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{mcastcipher} - Set Group Key Length}
+\argdesc{1}{0}{N/A}{No}
+This command sets the group key (multicast) key length.  This command is
+used mainly by \mytt{hostapd}.  See the \mytt{driver\_madwifi.c} file
+in \mytt{hostapd} for details on the use of this command.
+
+\subsubsection{\mytt{get\_mcastcipher} - Get Group Key Length}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current group key length.  This command is
+used mainly by \mytt{hostapd}.
+
+\subsubsection{\mytt{mcastcipher} - Set Group Key Cipher}
+\argdesc{1}{0}{N/A}{No}
+This command sets the group key (multicast) cipher.  This command is
+used mainly by \mytt{hostapd}.  See the \mytt{driver\_madwifi.c} file
+in \mytt{hostapd} for details on the use of this command.
+
+\subsubsection{\mytt{get\_mcastcipher} - Get Group Key Cipher}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current group key cipher.  This command is
+used mainly by \mytt{hostapd}.
+
+\subsubsection{\mytt{ucastciphers} - Set Pairwise Unicast Key Ciphers}
+\argdesc{1}{0}{N/A}{No}
+This command sets the pairwise unicast key cipher.  Each bit position
+indicates a supported WPA pairwise cipher.  The bitmask and
+definitions are defined in \mytt{hostapd}. This command is used mainly
+by \mytt{hostapd}.  See the \mytt{driver\_madwifi.c} file in
+\mytt{hostapd} for details on the use of this command.
+
+\subsubsection{\mytt{get\_ucastciphers} - Get Pairwise Unicast Key Ciphers}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current pairwise unicast key ciphers.   This
+command is used mainly by \mytt{hostapd}.
+
+\subsubsection{\mytt{ucastcipher} - Set Unicast Cipher}
+\argdesc{1}{0}{N/A}{No}
+This command sets the unicast key cipher.  Currently not used.
+
+\subsubsection{\mytt{get\_ucastcipher} - Get Current Unicast cipher}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current unicast key cipher. Currently not
+used.
+
+\subsubsection{\mytt{ucastkeylen} - Set Unicast Key Length}
+\argdesc{1}{0}{13}{No}
+This command sets the length of the unicast key. A single parameter is
+supplied which is the desired length of the unicast key.  The desired
+length must be a positive number less than 16.  Currently not used.
+\begin{example}
+  To set the unicast key length on \mytt{ath0} to 10, the following
+  command is used:
+  \bv
+  \cmd{iwpriv ath0 ucastkeylen 10}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_ucastkeylen} - Get Current Unicast Key Length}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current unicast key length.  Currently not
+used.
+\begin{example}
+  The following command returns the current unicast key length being
+  used on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 get\_ucastkeylen}\\
+  \mytt{ath0\hspace{32pt}get\_ucastkeylen:13}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{keymgtalgs} - Select Key Management Algorithm}
+\argdesc{1}{0}{3}{Yes if WPA/WPA2 is enabled}
+This command selects the key management algorithm used.  A single
+parameter is passed into the driver indicating which algorithm to use.
+Table~\ref{tab:keymgtalgs} lists the parameter value and the
+corresponding algorithm.  This command is used by \mytt{hostapd}
+and \mytt{wpa\_supplicant}.
+\begin{table}
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Parameter & Algorithm \\ \hline
+    0 & No WPA Algorithm\\
+    1 & WEP Algorithm \\
+    2 & WPA TKIP Algorithm \\
+    3 & WPA CCMP Algorithm \\ \hline
+  \end{tabular}
+  \caption{Key Management Algorithms}
+  \label{tab:keymgtalgs}
+\end{table}
+\begin{example}
+  To set the key management algorithm to ??? on \mytt{ath0}, the
+  following command is used:
+  \bv
+  \cmd{iwpriv ath0 keymgtalgs 2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_keymgtalgs} - Get Current Key Management Algorithm}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current key management algorithm.  The value
+returned corresponds to the key management algorithm as dictated by
+Table~\ref{tab:keymgtalgs}.
+\begin{example}
+  The following command returns the current key management algorithm
+  being used on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 get\_keymgtalgs}\\
+  \mytt{ath0\hspace{32pt}get\_keymgtalgs:3}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{rsncaps} - Set ???}
+\argdesc{1}{0}{??}{Yes if WPA/WPA2 is enabled}
+This commands sets ???.
+\begin{example}
+  The following command sets the ??? of \mytt{ath0} to XX:
+  \bv
+  \cmd{iwpriv ath0 rsncaps XX}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_rsncaps} - Get Current ???}
+\argdesc{0}{1}{N/A}{No}
+This command returns the current value of ???.
+\begin{example}
+  The following command returns the current value of ??? on
+  \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 get\_rsncaps}\\
+  \mytt{ath0\hspace{32pt}get\_rsncaps:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{hostroaming} - Set Roaming Mode}
+\argdesc{1}{0}{Auto}{No}
+This command sets the roaming mode which is effectively who controls
+the operation (state transitions) of the 802.11 state machine when
+running as a station.  Stations are either controlled by the driver
+(typically when management frames are processed by the hardware), the
+host (auto/normal operation of the 802.11 layer), or explicitly
+through ioctl requests when applications such as
+\mytt{wpa\_supplicant} want control. A single argument is passed to
+the driver indicating the desired roaming mode.
+Table~\ref{tab:roaming} lists the arguments and corresponding roaming
+modes.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|l|} \hline
+    Argument & Roaming Mode & Description \\ \hline
+    0 & Device & Driver/hardware control \\
+    1 & Auto & 802.11 layer control \\
+    2 & Manual & ioctl/application control \\ \hline
+  \end{tabular}
+  \caption{Roaming Mode Arguments}
+  \label{tab:roaming}
+\end{table}
+\begin{example}
+  The following command sets the roaming mode to Auto on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 hostroaming 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_hostroaming} - Get Roaming Mode}
+\argdesc{0}{1}{N/A}{No}
+This command returns the roaming mode of the device.  The returned
+value corresponds to the modes given in Table~\ref{tab:roaming}.
+\begin{example}
+  The following command returns the roaming mode of \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_hostroaming}\\
+  \mytt{ath0\hspace{32pt}get\_hostroaming:1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{privacy} - Enable/Disable Privacy}
+\argdesc{1}{0}{Disabled}{No}
+This command enables or disables privacy on the device.  Passing a
+value of 1 enables privacy. Passing a value of 0 disables privacy.
+\begin{example}
+  The following command enables privacy on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 privacy 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_privacy} - Get Privacy Status}
+\argdesc{0}{1}{N/A}{No}
+This command returns the privacy status on the device.  A value of 1
+indicates privacy is enabled. A value of 0 indicates privacy is
+disabled.
+\begin{example}
+  The following command returns the privacy status on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_privacy}\\
+  \mytt{ath0\hspace{32pt}get\_privacy:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{dropunencrypted} - Enable/Disable Dropping of
+  Unencrypted non-PAE frames}
+\argdesc{1}{0}{Disabled}{No}
+This command enables or disables dropping of unencrypted non-PAE
+frames received.  Passing a value of 1 enables dropping of unencrypted
+non-PAE frames.  Passing a value of 0 disables dropping of unencrypted
+non-PAE frames.
+\begin{example}
+  The following command enables dropping of unencrypted non-PAE frames
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 dropunencrypted 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_dropunencry} - Get Status of Dropping of
+  Unencrypted non-PAE frames}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether the device is dropping unencrypted
+non-PAE frames.  A value of 1 indicates that unencrypted non-PAE
+frames are being dropped.  A value of 0 indicates that unencrypted
+non-PAE frames are not being dropped.
+\begin{example}
+  The following command returns whether \mytt{ath0} is dropping
+  unencrypted non-PAE frames:
+  \bv
+  \cmd{iwpriv ath0 get\_dropunencry}\\
+  \mytt{ath0\hspace{32pt}get\_dropunencry:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_wpa} - Get WPA/WPA2 Support}
+\argdesc{0}{1}{N/A}{No}
+This command gets the current status of WPA/WPA2 support in the driver.
+\begin{example}
+  The following command retrieves the status of WPA/WPA2 support in
+  the driver:
+  \bv
+  \cmd{iwpriv ath0 get\_wpa}\\
+  \mytt{ath0\hspace{32pt}get\_wpa:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{countermeasures} - Enable/Disable WPA/WPA2 Countermeasures}
+\argdesc{1}{0}{Disabled}{No}
+This command enables or disables WPA/WPA2 countermeasures.  Passing a
+value of 1 enables countermeasures if WPA or WPA2 are enabled.
+Passing a value of 0 disables countermeasures.
+\begin{example}
+  The following command enables WPA/WPA2 countermeasures in the driver:
+  \bv
+  \cmd{iwpriv ath0 countermeasures 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_countermeas} - Get Status of WPA/WPA2 Countermeasures}
+\argdesc{1}{0}{Disabled}{No}
+This command returns the status of WPA/WPA2 countermeasure support.
+A value of 1 indicates WPA/WPA2 countermeasures are enabled.
+A value of 0 indicates WPA/WPA2 countermeasures are disabled.
+\begin{example}
+  The following command retrieves the status of WPA/WPA2
+  countermeasures in the driver:
+  \bv
+  \cmd{iwpriv ath0 get\_countermeas}\\
+  \mytt{ath0\hspace{32pt}get\_countermeas:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_driver\_caps} - Get Driver Capabilities}
+\argdesc{0}{1}{N/A}{No}
+This command gets the current driver capabilities.  The bitmask of
+capabilities can be found in the file \mytt{net80211/ieee80211\_var.h}.
+\begin{example}
+  The following command retrieves the capabilities of the driver
+  \bv
+  \cmd{iwpriv ath0 get\_driver\_caps}\\
+  \mytt{ath0\hspace{32pt}get\_driver\_caps:126018575}
+\ev
+\end{example}
+
+\subsubsection{\mytt{addmac} - Add MAC address to ACL list}
+\argdesc{1}{0}{N/A}{No}
+This command takes a single argument which is the MAC address to be
+added to the ACL list.
+\begin{example}
+  The following command adds the MAC address 00:03:7F:03:A0:0C to the
+  ACL list.
+  \bv
+  \cmd{iwpriv ath0 add\_mac 00:03:7f:03:a0:0c}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{delmac} - Delete MAC address to ACL list}
+\argdesc{1}{0}{N/A}{No}
+This command takes a single argument which is the MAC address to be
+deleted from the ACL list.
+\begin{example}
+  The following command deletes the MAC address 00:03:7F:03:A0:0C from
+  the ACL list.
+  \bv
+  \cmd{iwpriv ath0 del\_mac 00:03:7F:03:A0:0C}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{maccmd} - Set or Modify the MAC/ACL Handling}
+\argdesc{1}{0}{N/A}{No}
+This command takes a single argument which describes the action one
+wishes to take on the MAC/ACL list.  MAC addresses can be
+added/deleted from the ACL list using the \mytt{addmac} and
+\mytt{delmac} commands.  Table~\ref{tab:maccmd} gives the commands and
+their associated actions.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Argument & Action \\ \hline
+    0 & No ACL checking is performed \\
+    1 & Only allow ACLs in the ACL list \\
+    2 & Only deny ACLs in the ACL list \\
+    3 & Flush the ACL database \\
+    4 & Remove the ACL policy \\ \hline
+  \end{tabular}
+  \caption{ACL Commands}
+  \label{tab:maccmd}
+\end{table}
+\begin{example}
+  The following command denies traffic to all MAC addresses in the ACL
+  list on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 maccmd 2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{kickmac} - Disassociate an associated station}
+\argdesc{1}{0}{N/A}{No}
+This command takes a single argument which is the MAC address of a 
+currently associated client. The client is immediately sent a disassociate
+frame (with an unspecified reason). There is nothing to prevent the
+client from immediately reassociating. If you are wishing to permanently
+remove a client from the access point you will need to also make use of the 
+\mytt{maccmd}, \mytt{addmac} and \mytt{delmac} commands to configure the 
+appropriate ACL entries.
+\begin{example}
+  The following command immediately disassociates the client with MAC
+  address 00:03:7f:03:42:3f.
+  \bv
+  \cmd{iwpriv ath0 kickmac 00:03:7f:03:42:3f}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{wmm} - WMM Support Enable/Disable}
+\argdesc{1}{0}{Enabled}{Yes}
+This command enables or disables WMM support. Passing a value of 1 to
+the driver enables WMM. Passing a value of 0 to the driver disables
+WMM.  By default, WMM is enabled.
+\begin{example}
+  The following command disables WMM support on \mytt{ath0}.
+  \bv
+  \cmd{iwpriv ath0 wmm 0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_wmm} - Get WMM Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether WMM support is enabled or disabled in the
+driver.
+\begin{example}
+  The following command retrieves the status of WMM support in the
+  driver:
+  \bv
+  \cmd{iwpriv ath0 get\_wmm}\\
+  \mytt{ath0\hspace{32pt}get\_wmm:1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{cwmin} - WMM $\mathrm{CW}_{\mathrm{min}}$ Parameter}
+\argdesc{3}{0}{Varies}{No}
+This command sets the $\mathrm{CW}_{\mathrm{min}}$ WMM parameter for
+either the AP or station parameter set.  A description of the AP and
+station parameter set and their default values can be found in the WMM
+standard.  The \mytt{cwmin} command must be followed by 3 values.  The
+first value is the access class (AC) number as defined in
+Table~\ref{tab:acvalues} taken from the WMM standard.  The second
+value indicates whether the $\mathrm{CW}_{\mathrm{min}}$ value is
+intended for the AP or station parameter set.  A value of 0 indicates
+the $\mathrm{CW}_{\mathrm{min}}$ is for the AP parameter set.  A value
+of 1 indicates the $\mathrm{CW}_{\mathrm{min}}$ is for the station
+parameter set.  The third value is the actual value of the
+$\mathrm{CW}_{\mathrm{min}}$ in units as described in the WMM
+standard.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|c|l|} \hline
+    AC Number & Access Class Description \\ \hline
+    0 & BE - Best Effort \\
+    1 & BK - Background \\
+    2 & VI - Video \\
+    3 & VO - Voice \\ \hline
+  \end{tabular}
+  \caption{Access class (AC) Values}
+  \label{tab:acvalues}
+\end{table}
+\begin{example}
+  The following command sets the $\mathrm{CW}_{\mathrm{min}}$ in the
+  station parameter set for the VO AC to 2.
+  \bv
+  \cmd{iwpriv ath0 cwmin 3 1 2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_cwmin} - Get WMM $\mathrm{CW}_{\mathrm{min}}$ Parameter}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the $\mathrm{CW}_{\mathrm{min}}$ WMM parameter
+for either the AP or station parameter set.  The \mytt{get\_cwmin}
+command must be followed by 2 values.  The first value is the access
+class (AC) number as defined in Table~\ref{tab:acvalues}.  The second
+value indicates whether to retrieve the value from the AP or station
+parameter set.  A value of 0 indicates the
+$\mathrm{CW}_{\mathrm{min}}$ is from the AP parameter set.  A value of
+1 indicates the $\mathrm{CW}_{\mathrm{min}}$ is from the station
+parameter set.
+\begin{example}
+  The following command gets the $\mathrm{CW}_{\mathrm{min}}$ in the
+  AP parameter set for the VI AC.
+  \bv
+  \cmd{iwpriv ath0 get\_cwmin 2 0}\\
+  \mytt{ath0\hspace{32pt}get\_cwmax:4}
+\ev
+\end{example}
+
+\subsubsection{\mytt{cwmax} - WMM $\mathrm{CW}_{\mathrm{max}}$ Parameter}
+\argdesc{3}{0}{Varies}{No}
+This command sets the $\mathrm{CW}_{\mathrm{max}}$ WMM parameter for
+either the AP or station parameter set.  The \mytt{cwmax} command must
+be followed by 3 values.  The first value is the access class (AC)
+number as defined in Table~\ref{tab:acvalues}.  The second value
+indicates whether the $\mathrm{CW}_{\mathrm{max}}$ value is intended
+for the AP or station parameter set.  A value of 0 indicates the
+$\mathrm{CW}_{\mathrm{max}}$ is for the AP parameter set.  A value of
+1 indicates the $\mathrm{CW}_{\mathrm{max}}$ is for the station
+parameter set.  The third value is the actual value of the
+$\mathrm{CW}_{\mathrm{max}}$ in units as described in the WMM
+standard.
+\begin{example}
+The following command sets the $\mathrm{CW}_{\mathrm{max}}$ in the
+AP parameter set for the BK AC to 5.
+\bv
+\cmd{iwpriv ath0 cwmax 1 0 5}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_cwmax} - Get WMM $\mathrm{CW}_{\mathrm{max}}$ Parameter}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the $\mathrm{CW}_{\mathrm{max}}$ WMM parameter
+for either the AP or station parameter set. The \mytt{get\_cwmax}
+command must be followed by 2 values.  The first value is the access
+class (AC) number as defined in Table~\ref{tab:acvalues}.  The second
+value indicates whether to retrieve the value from the AP or Station
+parameter set. A value of 0 indicates the $\mathrm{CW}_{\mathrm{max}}$
+is from the AP parameter set.  A value of 1 indicates the
+$\mathrm{CW}_{\mathrm{max}}$ is from the station parameter set.
+\begin{example}
+  The following command gets the $\mathrm{CW}_{\mathrm{max}}$ in the
+  station parameter set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 get\_cwmax 0 1}\\
+  \mytt{ath0\hspace{32pt}get\_cwmax:10}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{txoplimit} - WMM TxOp Limit Parameter}
+\argdesc{3}{0}{Varies}{No}
+This command sets the TxOp limit WMM parameter for either the AP or
+station parameter set.  The \mytt{txoplimit} command must be followed
+by 3 values.  The first value is the access class (AC) number as
+defined in Table~\ref{tab:acvalues}.  The second value indicates
+whether the TxOp limit is intended for the AP or station parameter
+set.  A value of 0 indicates the TxOp limit is for the AP parameter
+set.  A value of 1 indicates the TxOp limit is for the station
+parameter set.  The third value is the actual value of the TxOp limit
+in units as described in the WMM standard.
+\begin{example}
+  The following command sets the TxOp limit in the AP parameter set
+  for the BE AC to 1024.
+  \bv
+  \cmd{iwpriv ath0 txoplimit 0 0 1024}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_txoplimit} - Get WMM TxOp Limit Parameter}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the TxOp Limit WMM parameter for either the AP
+or station parameter set. The \mytt{get\_txoplimit} command must be
+followed by 2 values.  The first value is the access class (AC) number
+as defined in Table~\ref{tab:acvalues}.  The second value indicates
+whether to retrieve the value from the AP or station parameter set. A
+value of 0 indicates the TxOp limit is from the AP parameter set.  A
+value of 1 indicates the TxOp limit is from the station parameter set.
+\begin{example}
+  The following command gets the TxOp limit in the station parameter
+  set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 get\_txoplimit 0 1}\\
+  \mytt{ath0\hspace{32pt}get\_txoplimit:2048}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{aifs} - WMM AIFS Parameter}
+\argdesc{3}{0}{Varies}{No}
+This command sets the AIFS WMM parameter for either the AP or station
+parameter set.  The \mytt{aifs} command must be followed by 3 values.
+The first value is the access class (AC) number as defined in
+Table~\ref{tab:acvalues}.  The second value indicates whether the AIFS
+is intended for the AP or station parameter set.  A value of 0
+indicates the AIFS is for the AP parameter set.  A value of 1
+indicates the AIFS is for the station parameter set.  The third value
+is the actual AIFS value in units as described in the WMM standard.
+\begin{example}
+  The following command sets the AIFS value in the AP parameter set
+  for the BE AC to 3.
+  \bv
+  \cmd{iwpriv ath0 aifs 0 0 3}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_aifs} - Get WMM AIFS Parameter}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the AIFS WMM parameter for either the AP
+or station parameter set. The \mytt{get\_aifs} command must be
+followed by 2 values.  The first value is the access class (AC) number
+as defined in Table~\ref{tab:acvalues}.  The second value indicates
+whether to retrieve the value from the AP or station parameter set. A
+value of 0 indicates the AIFS value is from the AP parameter set.  A
+value of 1 indicates the AIFS value is from the station parameter set.
+\begin{example}
+  The following command gets the AIFS value in the station parameter
+  set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 get\_aifs 0 1}\\
+  \mytt{ath0\hspace{32pt}get\_aifs:2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{acm} - WMM ACM Bit Value}
+\argdesc{3}{0}{Varies}{No}
+This command sets the ACM bit value in the WMM parameters for the
+station parameter set.  The \mytt{acm} command must be followed by 3
+values.  The first value is the access class (AC) number as defined in
+Table~\ref{tab:acvalues}.  The second value indicates the ACM bit
+value is intended for the station parameter set.  Thus, the second
+value should always be 1.  The third value is the desired ACM bit
+value (either 0 or 1).
+\begin{example}
+  The following command sets the ACM bit to 1 in the station parameter
+  set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 acm 0 1 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_acm} - Get WMM ACM Bit Value}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the ACM bit value in the current station WMM
+parameter set.  The \mytt{get\_acm} command must be followed by 2
+values.  The first value is the access class (AC) number as defined in
+Table~\ref{tab:acvalues}.  The second value indicates the ACM value is
+from the station parameter set, thus the second value should be 1.
+\begin{example}
+  The following command gets the ACM bit value in the station
+  parameter set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 get\_acm 0 1}\\
+  \mytt{ath0\hspace{32pt}get\_acm:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{noackpolicy} - WMM NoAck Policy Bit Value}
+\argdesc{3}{0}{Varies}{No}
+This command sets the NoAck Policy bit value in the WMM parameters for
+the AP parameter set.  The \mytt{noackpolicy} command must be followed
+by 3 values.  The first value is the access class (AC) number as
+defined in Table~\ref{tab:acvalues}.  The second value indicates the
+NoAck policy bit value is intended for the AP parameter set.  Thus,
+the second value should always be 0.  The third value is the desired
+NoAck Policy bit value (either 0 or 1).
+\begin{example}
+  The following command sets the NoAck Policy bit to 1 in the AP
+  parameter set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 noackpolicy 0 1 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_noackpolicy} - Get WMM NoAck Policy Bit Value}
+\argdesc{2}{1}{N/A}{No}
+This command retrieves the NoAck Policy bit value in the current AP
+WMM parameter set.  The \mytt{get\_noackpolicy} command must be
+followed by 2 values.  The first value is the access class (AC) number
+as defined in Table~\ref{tab:acvalues}.  The second value indicates
+the NoAck policy value is from the AP parameter set, thus the second
+value should be 0.
+\begin{example}
+  The following command gets the NoAck Policy bit value in the AP
+  parameter set for the BE AC.
+  \bv
+  \cmd{iwpriv ath0 get\_noackpolicy 0 1}\\
+  \mytt{ath0\hspace{32pt}get\_noackpolicy:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{ff} - Atheros Fast Frame Support Enable/Disable}
+\argdesc{1}{0}{Enabled}{No}
+This command enables or disables Atheros Fast Frame support. Passing a
+value of 1 to the driver enables fast frames. Passing a value of 0 to
+the driver disables fast frames.  By default, fast frames is enabled
+\emph{if} the hardware supports fast frames.
+\begin{example}
+The following command disables Atheros Fast Frame support on
+\mytt{ath0}.
+\bv
+\cmd{iwpriv ath0 ff 0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_ff} - Get Atheros Fast Frame Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether Atheros Fast Frame support is enabled or
+disabled in the driver.
+\begin{example}
+The following command retrieves the status of Atheros Fast Frame
+support in the driver:
+\bv
+\cmd{iwpriv ath0 get\_ff}\\
+\mytt{ath0\hspace{32pt}get\_ff:1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{xr} - Atheros XR Support Enable/Disable}
+\argdesc{1}{0}{Disabled}{No}
+This command enables or disables Atheros XR support in the driver.
+Passing a value of 1 to the driver enables XR support. Passing a value
+of 0 to the driver disables XR support.
+\begin{example}
+The following command enables Atheros XR support in the driver:
+\bv
+\cmd{iwpriv ath0 xr 1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_xr} - Get Atheros XR Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether Atheros XR support is enabled or disabled
+in the driver.
+\begin{example}
+The following command retrieves the status of Atheros XR support in
+the driver:
+\bv
+\cmd{iwpriv ath0 get\_xr}\\
+\mytt{ath0\hspace{32pt}get\_xr:1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{burst} - Atheros SuperA/G Bursting Support
+  Enable/Disable}
+\argdesc{1}{0}{Enabled}{No}
+This command enables or disables Atheros SuperA/G bursting support in the driver.
+Passing a value of 1 to the driver enables SuperG bursting. Passing a value
+of 0 to the driver disables SuperA/G bursting.
+\begin{example}
+The following command disables Atheros SuperA/G bursting in the driver:
+\bv
+\cmd{iwpriv ath0 burst 0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_burst} - Get Atheros SuperA/G Bursting
+  Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether Atheros SuperA/G bursting support is enabled or disabled
+in the driver.
+\begin{example}
+The following command retrieves the status of Atheros SuperA/G bursting support in
+the driver:
+\bv
+\cmd{iwpriv ath0 get\_burst}\\
+\mytt{ath0\hspace{32pt}get\_burst:1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{ar} - Atheros SuperA/G Adaptive Radio (AR) Support Enable/Disable}
+\argdesc{1}{0}{Enabled}{No}
+This command enables or disables Atheros SuperA/G Adaptive Radio
+(AR)support in the driver.  Passing a value of 1 to the driver enables
+AR. Passing a value of 0 to the driver disables AR.
+\begin{example}
+The following command disables Atheros SuperA/G AR in the driver:
+\bv
+\cmd{iwpriv ath0 ar 0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_ar} - Get Atheros SuperA/G Adaptive Radio
+  (AR) Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether Atheros SuperA/G AR support is enabled or disabled
+in the driver.
+\begin{example}
+The following command retrieves the status of Atheros SuperA/G AR support in
+the driver:
+\bv
+\cmd{iwpriv ath0 get\_ar}\\
+\mytt{ath0\hspace{32pt}get\_ar:1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{compression} - Atheros SuperA/G Compression Support Enable/Disable}
+\argdesc{1}{0}{Disabled}{No}
+This command enables or disables Atheros SuperA/G compression in the
+driver.  Passing a value of 1 to the driver enables hardware
+compression. Passing a value of 0 to the driver disables hardware
+compression.
+\begin{example}
+The following command disables Atheros SuperA/G hardware compression in the driver:
+\bv
+\cmd{iwpriv ath0 compression 0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_compression} - Get Atheros SuperA/G Compression Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether Atheros SuperA/G hardware compression support is enabled or disabled
+in the driver.
+\begin{example}
+The following command retrieves the status of Atheros SuperA/G
+hardware compression support in the driver:
+\bv
+\cmd{iwpriv ath0 get\_compression}\\
+\mytt{ath0\hspace{32pt}get\_compression:0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{abolt} - Set ABOLT value}
+\argdesc{1}{0}{Varies}{Yes}
+This command sets the abolt value used to control the Atheros
+proprietary features.  This is a bitmask where each bit position
+corresponds to a feature.  Setting the bit to 1 enables the feature if
+hardware is capable.  Setting the bit to 0 disables the feature.  The
+bitmask is described in Table~\ref{tab:abolt}
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|c|c|} \hline
+    Bit Position & Feature \\ \hline
+    1 & Static Turbo G (disabled) \\
+    2 & Dynamic turbo \\
+    3 & Compression \\
+    4 & Fast Frames \\
+    5 & Bursting \\
+    6 & WMM based cwmin/cwmax/burst tuning \\
+    7 & XR \\
+    8 & AR \\ \hline
+  \end{tabular}
+  \caption{Abolt Bit Position Definitions}
+  \label{tab:abolt}
+\end{table}
+
+\subsubsection{\mytt{pureg} - Use Only 802.11g Data Rates (no legacy 802.11b
+  support) Enable/Disable}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables or disables 802.11g only operation (no legacy
+802.11b rates are supported).  Passing a value of 1 to the driver
+enables 802.11g rates only operation (rates below 6Mbps are disabled).
+Passing a value of 0 to the driver disables 802.11g only operation and
+allows legacy 802.11b rates to be supported.
+\begin{example}
+The following command enables 802.11g rates only operation.  Thus, no
+rates below 6Mbps will be supported.
+\bv
+\cmd{iwpriv ath0 pureg 0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_pureg} - Get Status of 802.11g Only Data Rates Support}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether the driver is using only 802.11g rates
+(no rates below 6Mbps).
+\begin{example}
+The following command returns whether the driver supports 802.11g
+rates only.
+\bv
+\cmd{iwpriv ath0 get\_pureg}\\
+\mytt{ath0\hspace{32pt}get\_pureg:0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{wds} - Enable/Disable 4 Address (WDS) Parsing}
+\argdesc{1}{0}{N/A}{No}
+This command enables or disables 4 address parsing on the device.  For
+Stations, enabling 4 address parsing results in the station passing up
+\emph{any} packet received in a 4 address from to the network layer.
+Also, any unicast packet not destined for the AP which is passed to
+the station by the network layer will be sent in 4 address mode.  For
+APs, enabling 4 address parsing will result in the AP forwarding
+packets to any MAC address from which it has received a 4 address
+packet.  Passing a value of 1 will enable 4 address parsing.  Passing
+a value of 0 will disable 4 address parsing.
+\begin{example}
+The following command enables 4 address parsing on \mytt{ath0}:
+\bv
+\cmd{iwpriv ath0 wds 1}
+\ev
+\end{example}
+
+\subsubsection{\mytt{get\_wds} - Get Status of 4 Address (WDS) Parsing}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether 4 address parsing is enabled or disabled
+in the driver.  A value of 1 indicates that 4 address parsing is
+enabled. A value of 0 indicates that 4 address parsing is disabled.
+\begin{example}
+The following command returns the stats of address parsing on \mytt{ath0}:
+\bv
+\cmd{iwpriv ath0 get\_wds}\\
+\mytt{ath0\hspace{32pt}get\_wds:0}
+\ev
+\end{example}
+
+\subsubsection{\mytt{countryie} - Enable Country IE in Beacon Enable/Disable}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables and disables generation of country IE in beacon and probe
+response.  To enable the support, a value of 1 is passed into the driver. 
+To disable, a value of 0 is passed into the driver.
+\begin{example}
+  The following command enables country ie in beacon  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 countryie 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_countryie} - Get Country IE Status}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether country IE is enabled or disabled in
+the driver.
+\begin{example}
+  The following command retrieves the country IE status on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_countryie}\\
+  \mytt{ath0\hspace{32pt}get\_countryie:0}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{coverageclass} - Set Coverage Class for AP}
+\argdesc{1}{0}{0}{Yes}
+This commands sets the coverage class for AP. Coverage class determines the
+air propagation time used in BSS operation. The coverageclass value can be 
+between 0 to 31. The coverageclass value is sent by AP via country IE
+element in beacon.
+\begin{example}
+  The following command sets the coverage class to 12.
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 coverageclass 12}\\
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_coveragecls} - Get Coverage Class Value}
+\argdesc{0}{1}{N/A}{No}
+This commands gets current coverage class value.
+\begin{example}
+  The following command gets coverageclass value
+  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_coveragecls}\\
+  \mytt{ath0\hspace{32pt}get\_coveragecls:12}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{regclass} - Enable Regulatory class ids to be used in country 
+IE in Beacon. Enable/Disable}
+\argdesc{1}{0}{Disabled}{Yes}
+This command enables advertising regclass ids in country IE in beacon instead of 
+regular channel triplet (chan no/no.of channels/max transmit power). If set 
+country does not have any regclass ids defined, it reverts back to regular triplet. 
+The option needs to be enabled when using coverageclass. To enable the support, a value 
+of 1 is passed into the driver.  To disable, a value of 0 is passed into the driver.
+\begin{example}
+  The following command enables country ie in beacon  on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 regclass 1}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{get\_regclass} - Get Regulatory Class ID Status}
+\argdesc{0}{1}{N/A}{No}
+This command returns whether regulatory class ids are getting advertised in country 
+IE in beacon.
+\begin{example}
+  The following command retrieves the country IE status on \mytt{ath0}:
+  \bv
+  \cmd{iwpriv ath0 get\_regclass}\\
+  \mytt{ath0\hspace{32pt}get\_regclass:0}
+  \ev
+\end{example}
+
+\section{Configuring AP using CLI}
+This section describes the configuration of Atheros Linux AP using CLI command sets.
+
+\subsection{CLI commands}
+This section lists all the supported CLI commands.  Throughout this
+document, CLI commands will be denoted using bold, computer font as in
+\clicmd{command}.  Parameters to the command will be denoted by
+non-bold computer font as in \cliparam{parameter}.  Any values which
+are needed by the parameters will be denoted using italic Times font
+as in \clival{value}.
+
+\subsubsection{Switching the WLAN and BSS}
+\bv
+\clicmd{config} \cliparam{wlan} \clival{wlan\_index} \cliparam{bss}
+\clival{bss\_index}\\
+\clicmd{config} \cliparam{wlan} \clival{wlan\_index}\\
+\clicmd{config} \cliparam{bss} \clival{bss\_index}\\
+\ev
+
+Use \clicmd{config} command to switch current WLAN (radio) or virtual BSS. 
+Except for the command \clicmd{commit}, all other CLI commands are only effective on the
+current WLAN or BSS.
+
+The shell prompt reflects the current WLAN and BSS in the following form.
+\bv
+\mytt{wlan[wlan\_index,bss\_index] ->} 
+\ev
+or
+\bv
+\mytt{wlan[wlan\_index] -> }
+\ev
+If only one index is in the prompt, it could be either that there is no BSS
+created for this WLAN, or there is no BSS currently selected. To select a BSS
+within the same WLAN, use \mytt{config bss bss\_index}.
+
+\subsubsection{Reading the AP Configuration}
+\bv
+\clicmd{get} [\cliparam{parameter}]
+\ev
+Use \clicmd{get} command to display the current AP configurations.
+For description of each available parameter, please refer to section
+~\ref{sec:param}. 
+
+\subsubsection{Modifying the AP Configuration}
+\bv
+\clicmd{set} \cliparam{parameter} [\clival{value}]
+\ev
+Use \clicmd{set} command to modify the current AP configuration.
+For description of each available parameter, please refer to section
+~\ref{sec:param}.
+
+\subsubsection{Adding a BSS}
+\bv
+\clicmd{add} $<$\cliparam{bss}$|$\cliparam{sta}$>$ [\clival{bss\_index}]
+\ev
+where \clival{bss\_index} is a value from 0-3.
+
+Use the \clicmd{add} command to add a new virtual BSS (\cliparam{bss}) or
+a wireless client (\cliparam{sta}) to the current WLAN. 
+If the \clival{bss\_index} is not specified, the new BSS will created
+using the first available index.
+
+The maximum number of BSS's is 4. 
+
+\subsubsection{Deleting a BSS}
+\bv
+\clicmd{del} \cliparam{bss} \clival{bss\_index}\\
+\clicmd{del} \cliparam{bss} \clival{all}
+\ev
+in which, \clival{bss\_index} is a value from 0-3.
+
+Use the \clicmd{del} command to delete a virtual BSS.
+The\clival{bss\_index} must be specified to indicate which BSS to
+delete.  If the BSS value \clival{all} is specified, all the BSS's on
+the current WLAN will be deleted.
+
+\subsubsection{Saving the AP Configuration}
+\bv
+\clicmd{commit}
+\ev
+Use \clicmd{commit} to save the current AP configuration. 
+The saved configuration will take effect on the next AP reboot.
+
+\subsubsection{Getting Help}
+\bv
+\clicmd{help} \cliparam{command}
+\ev
+Use \clicmd{help} to display the usage of each command.  For the get
+and set commands, the supported configuration parameters are
+displayed.
+
+\subsubsection{The ap\_service Script}
+\bv
+\clicmd{ap\_service} $<$\clival{start}$|$\clival{stop}$|$\clival{restart}$>$
+\ev
+The \clicmd{ap\_service} script is used to start, stop and restart the
+Linux AP service without rebooting the entire AP. Besides configuring
+WLAN using CLI commands, it's also responsible for configuring
+network functions such as bridging and VLAN.
+It's located in directory /etc/wlan.
+
+\begin{example}
+  In system startup script (by default /etc/rc.d/rcS), \clicmd{ap\_service}
+  can be used to start the AP service.
+  \bv
+  \mytt{/etc/wlan/ap\_service start}
+  \ev
+\end{example}
+
+\begin{example}
+  After using \clicmd{commit} to save the configurations, instead of rebooting
+  the entire AP, \clicmd{ap\_service} can be used to restart just the AP service.
+  \bv
+  \clidemo{commit}\\
+  \clidemo{. /etc/wlan/ap\_service restart}
+  \ev
+\end{example}
+
+\subsection{AP Configuration Parameters}
+\label{sec:param}
+This section describes the available AP configuration parameters.  All
+parameters will be saved by the \clicmd{commit} command and take
+effect upon next AP reboot.
+
+\subsubsection{ACL List}
+\bv
+\clicmd{get} \cliparam{acl}\\
+\clicmd{set} \cliparam{acl} \clival{acl\_mode}\\
+\clicmd{add} \cliparam{acl} \clival{mac\_address}\\
+\clicmd{del} \cliparam{acl} \clival{mac\_address}
+\ev
+The supported ACL modes and their actions are listed in Table ~\ref{tab:acl}.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    ACL Mode & Actions \\ \hline
+    Open & No ACL checking is performed \\
+    Allow & Only allow ACLs in the ACL list \\
+    Deny & Only deny ACLs in the ACL list \\
+    Flush & Flush the ACL database \\
+    Disable & Remove the ACL policy \\ \hline
+  \end{tabular}
+  \caption{Supported ACL Modes}
+  \label{tab:acl}
+\end{table}
+
+\begin{example}
+  Set ACL mode to allow, and add one MAC address to the ACL list.
+  \bv
+  \clidemo{set acl allow}\\
+  \clidemo{add acl 00:03:7f:03:42:3f}
+  \ev
+\end{example}
+
+The command \mytt{get acl} will display the current ACL mode and the
+MAC addresses in the list.
+
+\subsubsection{Authentication Type}
+\bv
+\clicmd{get} \cliparam{authentication}\\
+\clicmd{set} \cliparam{authentication} \clival{authmode}
+\ev
+The supported authentication types are listed in Table ~\ref{tab:auth}.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Authentication Type & Description \\ \hline
+    open & Open-System authentication type \\
+    shared & Shared-Key authentication type \\
+    auto & Allow Open-System or Shared Key for authentication type \\
+    802.1x & 802.1x authentication type \\
+    WPA  & WPAv1 authentication type \\
+    WPA-PSK & WPAv1-PSK authentication type \\
+    WPA2 & WPAv2 authentication type \\
+    WPA2-PSK & WPAv2-PSK authentication type \\
+    WPA-AUTO & Allow WPAv1 or WPAv2 for authentication type \\
+    WPA-AUTO-PSK & Allow WPAv1-PSK or WPAv2-PSK for authentication type \\ \hline
+  \end{tabular}
+  \caption{Supported Authentication Types}
+  \label{tab:auth}
+\end{table}
+
+\subsubsection{Auto Channel Select}
+\bv
+\clicmd{get} \cliparam{autochannelselect}\\
+\clicmd{set} \cliparam{autochannelselect} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+If \cliparam{autochannelselect} is enabled, AP will scan and select the best channel
+available. If it's disabled, a channel must be explicitly set by the user.
+
+\subsubsection{Radio Channel}
+\bv
+\clicmd{get} \cliparam{channel}\\
+\clicmd{set} \cliparam{channel} $<$\clival{IEEE channel}$|$\clival{Frequency}$>$
+\ev
+If \cliparam{autochannelselect} is enabled, \mytt{get channel} will display 
+\mytt{Auto}. Otherwise, \mytt{get channel} will display the current channel or frequency, 
+depending on the value user previously set.
+
+The command \mytt{set channel} can accept both channel numbers and frequency values.
+When channel is explicitly set, \cliparam{autochannelselect} is automatically turned off.
+
+\subsubsection{Cipher Suite}
+\bv
+\clicmd{get} \cliparam{cipher}\\
+\clicmd{set} \cliparam{cipher} \clival{cipher\_suite}
+\ev
+The supported \clival{cipher\_suite}s are
+\clival{Auto}, \clival{WEP}, \clival{TKIP} and \clival{AES}.
+
+\subsubsection{Display Configuration}
+\bv
+\clicmd{get} \cliparam{config}
+\ev
+This command will display the all the AP configurations.
+
+\subsubsection{Country Code}
+\bv
+\clicmd{get} \cliparam{countrycode}\\
+\clicmd{set} \cliparam{countrycode} \clival{CC}
+\ev
+The \clival{CC} is the two-letter abbreviation of a country.
+
+\subsubsection{Enable/Disable Encryption}
+\bv
+\clicmd{get} \cliparam{encryption}\\
+\clicmd{set} \cliparam{encryption} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Unless \cliparam{encryption} is enabled, all the security settings (authentication,
+cipher, key, and etc.) will not take any effect.
+
+\subsubsection{Restore Default Configuration}
+\bv
+\clicmd{set} \cliparam{factory}
+\ev
+This command will restore AP to the default factory settings.
+
+\subsubsection{Group Key Update Interval}
+\bv
+\clicmd{get} \cliparam{groupkeyupdate}\\
+\clicmd{set} \cliparam{groupkeyupdate} \clival{interval}
+\ev
+The \clival{interval} is in seconds. This parameter is valid only when 
+\mytt{authentication} is one of WPA, WPA-PSK, WPA2, WPA2-PSK, WPA-AUTO and WPA-AUTO-PSK.
+
+\subsubsection{IP Address and Subnet Mask}
+\bv
+\clicmd{set} \cliparam{ipaddr} \clival{ip\_address}\\
+\clicmd{set} \cliparam{ipmask} \clival{ip\_mask}
+\ev
+These two commands set the IP address and subnet mask of the AP.
+
+\subsubsection{Static WEP Key}
+\bv
+\clicmd{set} \cliparam{key} $<$\clival{1}-\clival{4}$>$
+$<$\clival{40}$|$\clival{104}$|$\clival{124}$>$ \clival{key\_material}\\
+\clicmd{set} \cliparam{key} $<$\clival{1}-\clival{4}$>$ \clival{default}
+\ev
+In which, $<$\clival{1}-\clival{4}$>$ is the valid key index and
+$<$\clival{40}$|$\clival{104}$|$\clival{124}$>$ is the valid key length.
+Before setting the default key, user must set the key at the index
+first. For example, \mytt{set key 1 40 1234567890}
+must precede \mytt{set key 1 default}.
+
+The \mytt{set key} command is only valid when AP is using static WEP, i.e.,
+\cliparam{authentication} is either open or shared.
+
+\subsubsection{Operating Mode}
+\bv
+\clicmd{get} \cliparam{opmode}\\
+\clicmd{set} \cliparam{opmode} \clival{mode}
+\ev
+The supported modes are listed in Table ~\ref{tab:opmode}.
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Operation Mode & Description \\ \hline
+    AP & Operating as Wireless Access Point \\
+    STA & Operating as Wireless Client \\ \hline
+  \end{tabular}
+  \caption{Supported Operation Mode}
+  \label{tab:opmode}
+\end{table}
+
+\subsubsection{Set WPA Passphrase}
+\bv
+\clicmd{set} \cliparam{passphrase}\\
+$<$\clival{ascii\_passphrase}$|$\clival{hex\_key}$>$
+\ev
+The \mytt{set passphrase} command is only valid when \cliparam{authentication} is 
+WPA-PSK, WPA2-PSK, or WPA-AUTO-PSK. The passphrase could be either an ASCII passphrase
+of length from 8 to 63 characters, or a 256-bit key in hexadecimal form.
+
+\subsubsection{Set Power}
+\bv
+\clicmd{set} \cliparam{power} \clival{value}\\
+\clicmd{set} \cliparam{power} $<$\clival{full}$|$\clival{min}$>$
+\ev
+This commands set the Tx Power of the current radio. The tx power can be set to a specific 
+\clival{value} in dB, or to the maximum or minimum by \clival{full} or \clival{min}.
+
+\subsubsection{Port VLAN ID}
+\bv
+\clicmd{get} \cliparam{pvid}\\
+\clicmd{set} \cliparam{pvid} \clival{vlan\_id}
+\ev
+This command set the default port VLAN Id. When \cliparam{vlan} is enable but \cliparam{pvid}
+is not set for a BSS. This BSS will be added to the guest VLAN. Traffic from guest VLAN will
+be propagated to distribution system untagged.
+
+\subsubsection{RADIUS Server Configuration}
+\bv
+\clicmd{get} \cliparam{radiusname}\\
+\clicmd{set} \cliparam{radiusname} \clival{radius\_ip}\\
+\clicmd{get} \cliparam{radiusport}\\
+\clicmd{set} \cliparam{radiusport} \clival{port}\\
+\clicmd{set} \cliparam{radiussecret} \clival{secret}
+\ev
+These commands are used to specify the RADIUS server tow which the AP
+is talking.  The parameters \cliparam{radiusname} and
+\cliparam{radiusport} are used to specify the IP address and port
+number of the RADIUS server.  The parameter \cliparam{radiussecret} is
+used to specify the shared secret between AP and RADIUS server.
+
+\subsubsection{Data Rate}
+\bv
+\clicmd{get} \cliparam{rate}\\
+\clicmd{set} \cliparam{rate} \clival{value}\\
+\clicmd{set} \cliparam{rate} \clival{best}
+\ev
+To display or set the data rate, in MB/sec. When \clival{best} is specified, 
+it's up to the AP to select the best data rate.
+
+\subsubsection{Repeater}
+\label{sec:cli-repeater}
+\bv
+\clicmd{get} \cliparam{repeater}\\
+\clicmd{set} \cliparam{repeater} $<$\clival{Enable}$|$\clival{Disable}$>$\\
+\clicmd{set} \cliparam{repeater} \clival{ssid} \clival{ssid-text}\\
+\clicmd{set} \cliparam{repeater} \clival{remote-ssid} \clival{ssid-text}\\
+\clicmd{set} \cliparam{repeater} \clival{param} \clival{value}\\
+\ev
+The command \mytt{set repeater enable} works as follows: it first deletes
+all the old VAPs on this WLAN, then creates a STA VAP and an AP VAP.
+The \cliparam{wds} mode is enabled implicitly on the STA VAP.
+
+To let the STA VAP associate to the remote AP, use the command
+\mytt{set repeater remote-ssid}. To set the SSID of repeater itself,
+use command \mytt{set repeater ssid} instead.
+
+For other parameters, you can use command \mytt{set repeater param value},
+in which \cliparam{param} and \clival{value} are exactly the same as in
+a normal CLI command. But with \cliparam{repeater} before them, every
+parameter is actually set twice, once on STA, once on AP.
+
+The command \mytt{set repeater disable} will just delete all VAPs.
+
+For an example of how to set up a Linux repeater, 
+please refer to section ~\ref{sec:cli-repeater-example}
+
+\subsubsection{The Service Set ID}
+\bv
+\clicmd{get} \cliparam{ssid}\\
+\clicmd{set} \cliparam{ssid} \clival{ssid-text}
+\ev
+The \clival{ssid-text} can be no longer than 32 characters.
+
+\subsubsection{Association Table}
+\bv
+\clicmd{get} \cliparam{sta}
+\ev
+This command will display the association table.
+
+\subsubsection{Enable/Disable VLAN}
+\bv
+\clicmd{get} \cliparam{vlan}\\
+\clicmd{set} \cliparam{vlan} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Enable or disable \cliparam{vlan}.
+
+\subsubsection{WLAN State}
+\bv
+\clicmd{get} \cliparam{wlanstate}\\
+\clicmd{set} \cliparam{wlanstate} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Enable or disable a BSS. Note \cliparam{wlanstate} indicates whether a BSS will be
+up or down on the NEXT reboot, not the current status! To make \cliparam{wlanstate}
+take effect, a reboot is still required.
+
+\subsubsection{Wireless Modes}
+\bv
+\clicmd{get} \cliparam{wirelessmode}\\
+\clicmd{set} \cliparam{wirelessmode} \clival{mode}
+\ev
+The valid wireless modes are listed in Table ~\ref{tab:wmode}.
+auto, 11a, 11b, 11g, turbo dynamic (11a with
+dynamic turbo), turbo static (11a with static turbo) and 108g dynamic (11g
+with dynamic turbo).
+\begin{table}[h*]
+  \centering
+  \begin{tabular}{|l|l|} \hline
+    Wireless Mode & Description \\ \hline
+    auto & Auto select wireless mode \\
+    11a & 802.11a wireless mode (5GHz, 54Mbps) \\
+    11b & 802.11b wireless mode (2.4GHz, 11Mbps) \\
+    11g & 802.11g wireless mode (2.4GHz, 54Mbps) with 802.11b compatibility \\
+    turbo dynamic & 802.11a Dynamic Turbo mode (5GHz, 108Mbps) \\
+    turbo static & 802.11a Static Turbo mode (5GHz, 108Mbps) \\
+    108g dynamic & 802.11g Dynamic Turbo mode (2.4GHz, 108Mbps) \\ \hline
+  \end{tabular}
+  \caption{Supported Wireless Modes}
+  \label{tab:wmode}
+\end{table}
+
+\subsubsection{Enable/Disable WMM}
+\bv
+\clicmd{get} \cliparam{wmm}\\
+\clicmd{set} \cliparam{wmm} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Turn on and off WMM.
+
+\subsubsection{Enable/Disable WDS}
+\bv
+\clicmd{get} \cliparam{wds}\\
+\clicmd{set} \cliparam{wds} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Turn on and off WDS. For AP acting as a Linux repeater or remote AP,
+\cliparam{WDS} must be set.
+
+\subsubsection{Coverage Class}
+\bv
+\clicmd{get} \cliparam{coverageclass}\\
+\clicmd{set} \cliparam{coverageclass} \clival{value}
+\ev
+Set the coverage class.
+
+\subsubsection{Enable/Disable XR}
+\bv
+\clicmd{get} \cliparam{xr}\\
+\clicmd{set} \cliparam{xr} $<$\clival{Enable}$|$\clival{Disable}$>$
+\ev
+Turn on and off XR.
+
+\section{Common Configuration Examples using Wireless Extensions}
+In this section, we present common configurations for both AP and
+stations supported by the MadWifi driver.  We assume the driver and
+all necessary modules have already been loaded.  The underlying
+wireless device is assumed to be \mytt{wifi0} unless otherwise noted.
+The ethernet device is assumed to be \mytt{eth0}.
+
+
+\subsection{Single AP on a Preselected Channel}
+In this section, we give an example on how to configure a single
+MadWifi AP in 802.11a on channel 36 with ESSID "Atheros Wireless
+Network". The desired IP address for the AP is 192.168.0.20.
+\begin{example}
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath0}\\
+  \cmd{iwconfig ath0 essid "Atheros Wireless Network" channel 36}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{ifconfig br0 192.168.0.20 up}
+\end{example}
+
+\subsubsection{Single AP with \mytt{hostapd} on an Automatically Chosen
+  Channel}
+In this example, we configure a single MadWifi AP in 802.11g using the
+auto channel select.  The AP will use WPA-PSK via \mytt{hostapd}.
+The user space program \mytt{hostapd} requires a configuration
+file.  The AP will have an IP address of 192.168.0.20.
+
+\begin{example}
+  The configuration file (named \mytt{/etc/hostapd.conf}) is shown
+  below.
+  \bv
+  \mytt{interface=ath0}
+  \mytt{bridge=br0}\\
+  \mytt{driver=madwifi}\\
+  \mytt{logger\_syslog=0}\\
+  \mytt{logger\_syslog\_level=0}\\
+  \mytt{logger\_stdout=0}\\
+  \mytt{logger\_stdout\_level=0}\\
+  \mytt{debug=0}\\
+  \mytt{eapol\_key\_index\_workaround=0}\\
+  \mytt{dump\_file=/tmp/hostapd.dump.0.0}\\
+  \mytt{ssid="Atheros Wireless Network"}\\
+  \mytt{wpa=1}\\
+  \mytt{wpa\_passphrase=mypassphrase}\\
+  \mytt{wpa\_key\_mgmt=WPA-PSK}\\
+  \mytt{wpa\_pairwise=TKIP CCMP}\\
+  \mytt{wpa\_group\_rekey=600}
+  \ev
+  Now, the following commands will create the AP.
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath0}\\
+  \cmd{iwconfig ath0 essid "Atheros Wireless Network"}\\
+  \cmd{iwpriv ath0 mode 11g}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{ifconfig br0 192.168.0.20 up}\\
+  \cmd{hostapd -dd /etc/hostapd.conf}
+  \ev
+\end{example}
+
+\subsubsection{WPA-PSK Station Using \mytt{wpa\_supplicant}}
+In this example, we will configure the driver to be a station
+attempting to associate with the WPA-PSK AP in the example above.  The
+station will have an IP address of 192.168.0.100.
+\begin{example}
+  The user space program \mytt{wpa\_supplicant} requires a
+  configuration file.  The file used in this example is shown below
+  and named \mytt{/tmp/my\_psk.conf}.
+  \bv
+  \mytt{network=\{}\\
+  \mytt{\hspace{30pt}ssid="Atheros Wireless Network"}\\
+  \mytt{\hspace{30pt}scan\_ssid=1}\\
+  \mytt{\hspace{30pt}key\_mgmt=WPA-PSK}\\
+  \mytt{\hspace{30pt}psk="mypassphrase"}\\
+  \mytt{\}}
+  \ev
+  Now, the following commands will create the station which will scan
+  for the AP with an SSID of \mytt{Atheros Wireless Network}.
+  \bv
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode sta}\\
+  \mytt{ath0}\\
+  \cmd{iwconfig ath0 essid "Atheros Wireless Network"}\\
+  \cmd{ifconfig ath0 192.168.0.100 up}\\
+  \cmd{wpa\_supplicant -iath0 -c /tmp/my\_psk.conf -d}
+  \ev
+\end{example}
+
+\subsection{Three APs on a Preselected Channel}
+In this section, we give an example on how to configure a three
+MadWifi APs in 802.11a on channel 36 with ESSIDs
+\mytt{"Atheros\_AP1"}, \mytt{"Atheros\_AP2"}, and
+\mytt{"Atheros\_AP3"}. All three APs are bridged together.  The
+desired IP address for the AP is 192.168.0.20.
+
+\begin{example}
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath0}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath1}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath2}\\
+  \cmd{iwconfig ath0 essid "Atheros\_AP1" channel 36}\\
+  \cmd{iwconfig ath1 essid "Atheros\_AP2"}\\
+  \cmd{iwconfig ath2 essid "Atheros\_AP3"}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\
+  \cmd{brctl addif ath1}\\
+  \cmd{brctl addif ath2}\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig ath1 up}\\
+  \cmd{ifconfig ath2 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{ifconfig br0 192.168.0.20 up}
+\end{example}
+
+\subsection{Single Wireless Device AP Repeater}
+In this section, we give an example on how to configure MadWifi as a
+repeater operating with a single wireless device (e.g., \mytt{wifi0}).
+We assume there is an existing AP with an SSID of
+\mytt{Atheros\_Base\_AP}.  We wish to ``repeat'' this AP using our
+device.  To do this, we will create two VAPs.  The first VAP will be
+an AP VAP which will serve all the clients in our range.  The second
+VAP will be a station VAP used to association with the existing AP
+named \mytt{Atheros\_Base\_AP}.  In order to have both a station and
+AP VAP coexist on one base device (e.g., \mytt{wifi0}), the AP VAP
+must be created first followed by the station VAP with the
+\mytt{nosbeacon} option selected for the station VAP.  However, the
+\emph{station} VAP must be brought up first and allowed to associate
+since it will choose the channel of the existing AP
+(\mytt{Atheros\_Base\_AP}).
+
+In this example, our AP will \emph{not} be able to ``receive'' IP traffic
+because no IP address will be assigned to the bridge device.  However,
+by assigning an IP address, the AP can also receive traffic (using 3
+address frames).  To support the 4 address frame format needed for
+repeating, the \mytt{wds} option must be enabled.  It is assumed the
+existing AP understands how to handle 4 address frames.
+\begin{example}
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath0}\\
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode sta nosbeacon}\\
+  \mytt{ath1}\\
+  \cmd{iwconfig ath0 essid "Atheros\_Base\_AP"}\\
+  \cmd{iwconfig ath1 essid "Atheros\_Base\_AP"}\\
+  \cmd{iwpriv ath0 wds 1}\\
+  \cmd{iwpriv ath1 wds 1}\\
+  \cmd{ifconfig ath1 up}\\
+  Now, wait for association.\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\
+  \cmd{brctl addif ath1}\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig br0 up}
+\end{example}
+
+\subsection{Dual Wireless Device AP Repeater}
+In this section, we give an example on how to configure MadWifi as a
+``repeater'' operating with dual wireless devices (e.g., \mytt{wifi0}
+and \mytt{wifi1}).  We assume there
+is an existing AP with an SSID of \mytt{Atheros\_Base\_AP} in the
+802.11a band.  We wish to ``repeat''
+this AP using our device but will use a different SSID
+(\mytt{Atheros\_Repeater\_AP}) for
+distribution in our coverage area.  Furthermore, the local
+distribution will be in the 802.11g band, not the 802.11a band.
+Thus, we are assuming that wireless device \mytt{wifi0} is capable of
+operating in the 802.11a band, and \mytt{wifi1} is capable of
+operating in the 802.11b band.  
+
+To do this, we will create two VAPs.  The VAP associated with
+\mytt{wifi0} will be a station VAP and the VAP associated with
+\mytt{wifi1} will be the AP VAP.  Note, the order of creation does not
+matter now since the VAPs are on different wireless devices.  The AP
+VAP must serve all the clients in our range and forward their traffic
+to the base AP via 4 address format.  
+
+In this example, our AP will also be able to ``receive'' IP traffic
+and will have the IP address of 192.168.0.20.
+\begin{example}
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode sta}\\
+  \mytt{ath0}\\
+  \cmd{wlanconfig ath create wlandev wifi1 wlanmode ap}\\
+  \mytt{ath1}\\
+  \cmd{iwconfig ath0 essid "Atheros\_Base\_AP"}\\
+  \cmd{iwconfig ath1 essid "Atheros\_Repeater\_AP"}\\
+  \cmd{iwpriv ath0 wds 1}\\
+  \cmd{iwpriv ath1 wds 1}\\
+  \cmd{ifconfig ath1 up}\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\
+  \cmd{brctl addif ath1}\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig br0 192.168.0.20 up}
+\end{example}
+
+\subsection{Base AP Which Understands WDS (4 Address) Frames}
+In this section, we give an example of how to configure MadWifi to be
+a base AP which handles 4 address 802.11 frames.  The AP will use Auto
+channel selection in the 802.11a band and will have an ssid of
+\mytt{Atheros\_Base\_AP}. The AP will have an IP address of
+192.168.0.20.  The underlying wireless device is assumed to be
+\mytt{wifi0}.
+\begin{example}
+  \cmd{wlanconfig ath create wlandev wifi0 wlanmode ap}\\
+  \mytt{ath0}\\
+  \cmd{iwconfig ath0 essid "Atheros\_Base\_AP"}\\
+  \cmd{iwpriv ath0 wds 1}\\
+  \cmd{ifconfig ath0 up}\\
+  \cmd{ifconfig eth0 up}\\
+  \cmd{brctl addbr br0}\\
+  \cmd{brctl addif br0 eth0}\\
+  \cmd{brctl addif ath0}\\
+  \cmd{brctl setfd br0 1}\\
+  \cmd{ifconfig br0 192.168.0.20 up}
+\end{example}
+
+\section{CLI Configuration Examples}
+In this section, we present some special AP configurations. We assume
+CLI is used and underlying WLAN to be 0 unless otherwise noted. The
+ethernet device is assumed to be \mytt{eth0}.
+
+\subsection{Linux Repeater}
+\label{sec:cli-repeater-example}
+In this section, we give an example how to configure the Linux AP as
+a wireless repeater. Shared-key authentication and static WEP are
+used in this example.
+
+To setup and test repeater, we must have two Linux APs, one as the
+remote AP, one as the repeater.
+
+\subsubsection{Configuring Remote AP}
+The remote AP should be set up as usual, but with \cliparam{wds} mode
+enabled.
+\begin{example}
+  Set up remote AP with \cliparam{wds} enabled, and with shared-key
+authentication.
+  \bv
+  \clidemo{set ssid remote-ap-ssid}\\
+  \clidemo{set wds enabled}\\
+  \clidemo{set encryption enable}\\
+  \clidemo{set authentication shared}\\
+  \clidemo{set key 1 40 1234567890}\\
+  \clidemo{set key 1 default}\\
+  \clidemo{commit}\\
+  \clidemo{.  /etc/wlan/ap\_service restart        \# or just reboot}
+  \ev
+\end{example}
+
+\subsubsection{Configuring Repeater}
+Use the \mytt{set repeater} command set. For a detailed explanation
+of this command, please refer to section \ref{sec:cli-repeater}.
+\begin{example}
+  \bv
+  \clidemo{set repeater enable}\\
+  \clidemo{set repeater remote-ap-ssid}\\
+  \clidemo{set repeater ssid repeater-ssid}\\
+  \clidemo{set repeater encryption enable}\\
+  \clidemo{set repeater authentication shared}\\
+  \clidemo{set repeater key 1 40 1234567890}\\
+  \clidemo{set repeater key 1 default}\\
+  \clidemo{commit}\\
+  \clidemo{.  /etc/wlan/ap\_service restart        \# or just reboot}
+  \ev
+\end{example}
+
+Some additional repeater configurations can't be set by using CLI alone. 
+
+\begin{example}
+If repeater and remote AP are on the same wired LAN,
+you probably don't want to have \mytt{eth0} in your repeater bridge.
+In this case, you can do:
+  \bv
+  \clidemo{brctl delif br0 eth0}
+  \ev
+\end{example}
+
+\begin{example}
+If you want to test multicast (you don't have to anything if only
+testing broadcast), you need to enable \mytt{ALLMULTI} flag on STA.
+  \bv
+  \clidemo{config bss 0}\\
+  \clidemo{ifconfig `get interface` allmulti}
+  \ev
+\end{example}
+
+\subsection{Linux P2P/P2MP Bridge}
+Currently there is no specific mode called ``WBR''. The P2P or P2MP bridge
+is configured using standard STA and AP, partly leveraging Linux native
+bridging facilities. The basic idea is to set up on AP as root
+AP, and set up other APs as STA or ``wireless client mode''. The let every
+AP in client mode associate to root AP. The WLAN driver will make forwarding
+decisions on the wireless media, and Linux native bridging layer will
+make forwarding decisions on the ethernet side.
+
+\subsubsection{Configuring the Root AP}
+The remote AP should be set up as usual, but with \cliparam{wds} mode
+enabled.
+\begin{example}
+  Set up remote AP with \cliparam{wds} enabled, and with shared-key
+authentication.
+  \bv
+  \clidemo{set ssid root-ap-ssid}\\
+  \clidemo{set wds enabled}\\
+  \clidemo{commit}\\
+  \clidemo{.  /etc/wlan/ap\_service restart        \# or just reboot}
+  \ev
+\end{example}
+
+\subsubsection{Configuring Wireless Client}
+A wireless client is just a STA VAP with \cliparam{wds} enabled.
+\begin{example}
+  \bv
+  \clidemo{del bss all}\\
+  \clidemonobss{add sta}\\
+  \clidemonobss{config bss 0}\\
+  \clidemo{set ssid root-ap-ssid}\\
+  \clidemo{set wds enable}\\
+  \clidemo{commit}\\
+  \clidemo{.  /etc/wlan/ap\_service restart        \# or just reboot}
+  \ev
+\end{example}
+
+Some additional configurations on the wireless client can't be set 
+by using CLI alone. 
+
+\begin{example}
+If you want to test multicast (you don't have to anything if only
+testing broadcast), you need to enable \mytt{ALLMULTI} flag on the
+wireless client.
+  \bv
+  \clidemo{config bss 0}\\
+  \clidemo{ifconfig `get interface` allmulti}
+  \ev
+\end{example}
+
+After wireless client is up, use \mytt{get sta} command to check for 
+association. Once it's associated, the P2P bridge is up and running.
+
+To configure P2MP, just set up another wireless client and repeat
+the example above.
+
+
+
+\end{document}
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
+% LocalWords:  MadWifi iwconfig GHz
