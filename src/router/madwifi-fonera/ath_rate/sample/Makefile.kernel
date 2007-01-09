@@ -1,0 +1,33 @@
+#
+# Makefile for John Bicket's SampleRate control algorithm.
+#
+# $Id: //depot/sw/linuxsrc/src/802_11/madwifi/madwifi/ath_rate/sample/Makefile.kernel#1 $
+#
+
+src ?= .
+srctree ?= .
+
+include $(srctree)/$(src)/../../BuildCaps.inc
+
+HAL=	$(srctree)/$(src)/../../hal
+ATH=	$(srctree)/$(src)/../../ath
+WLAN=	$(srctree)/$(src)/../../net80211
+COMPAT=	$(srctree)/$(src)/../../include
+
+INCS=	-include $(COMPAT)/compat.h -I$(COMPAT)
+EXTRA_CFLAGS+=	$(INCS) -I$(HAL) -I$(HAL)/linux -I$(ATH) -I$(WLAN) -I$(src)/../..
+
+ifdef LINUX26
+obj-$(CONFIG_ATHEROS) += ath_rate_sample.o
+ath_rate_sample-objs	:= sample.o
+endif
+
+ifdef LINUX24
+obj-$(CONFIG_ATHEROS) := sample.o
+
+export-objs	:= sample.o
+list-multi	:= ath_rate_sample.o
+
+O_TARGET	:= ath_rate.o
+include $(TOPDIR)/Rules.make
+endif

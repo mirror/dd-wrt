@@ -1,0 +1,10 @@
+Package: kmod-madwifi
+Version: 2.6.19.1+0.9.2.1-atheros-1
+Depends: kernel (=2.6.19.1-atheros-1), wireless-tools
+Source: package/madwifi
+Section: kernel
+Priority: optional
+Maintainer: OpenWrt Developers Team <openwrt-devel@openwrt.org>
+Architecture: mips
+Description: Driver for Atheros wireless chipsets
+ This package contains a driver for Atheros 802.11a/b/g chipsets.

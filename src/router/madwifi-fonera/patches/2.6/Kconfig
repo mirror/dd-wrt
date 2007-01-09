@@ -1,0 +1,56 @@
+
+comment "Atheros 802.11(a/b/g) PCI/Cardbus support"
+
+config ATHEROS
+	tristate "Atheros PCI/Cardbus cards"
+	depends on PCI && NET_RADIO
+	select NET80211
+       ---help---
+	  Say Y here if you intend to attach an Atheros Cardbus or PCI
+	  wireless Ethernet networking card to your computer.  This
+	  driver support the standard Linux Wireless Extensions.
+
+	  You will also very likely also need the Wireless Tools in order to
+	  configure your card and that /etc/pcmcia/wireless.opts works:
+	  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called ath_pci.  If unsure, say N.
+
+choice
+	prompt "Atheros: Transmission Rate Control Algorithm"
+	depends on ATHEROS
+	default ATHEROS_RATE_SAMPLE
+	help
+	  Rate control algorithms determine how the transmission rate is
+	  selected based on the quality of the connection.
+
+config ATHEROS_RATE_SAMPLE
+	bool "Sample"
+	help
+	  SampleRate chooses the bitrate it predicts will provide the
+	  most throughput based on estimates of the expected per-packet
+	  transmission time for each bitrate. SampleRate periodically
+	  sends packets at bitrates other than the current one to
+	  estimate when another bitrate will provide better performance.
+	  SampleRate switches to another bitrate when its estimated
+	  per-packet transmission time becomes smaller than the current
+	  bitrate's. SampleRate reduces the number of bitrates it must
+	  sample by eliminating those that could not perform better than
+	  the one currently being used. SampleRate also stops probing at
+	  a bitrate if it experiences several successive losses.
+
+config ATHEROS_RATE_ONOE
+	bool "Onoe"
+	help
+	  Use Atsushi Onoe's rate control algorithm.
+
+config ATHEROS_RATE_AMRR
+	bool "AMRR"
+	help
+	  Adaptive Multi Rate Retry control algorithm.
+
+endchoice
+
+config NET80211
+	tristate
