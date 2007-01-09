@@ -79,6 +79,9 @@ endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
 endif
+ifeq ($(CONFIG_FONERA),y)
+  CFLAGS += -DHAVE_FONERA
+endif
 
 ifeq ($(CONFIG_CHILLILOCAL),y)
   CFLAGS += -DHAVE_CHILLILOCAL

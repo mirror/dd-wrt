@@ -33,6 +33,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
+ifeq ($(CONFIG_FONERA),y)
+CFLAGS += -DHAVE_FONERA
+endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
@@ -55,6 +58,10 @@ libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
 ifeq ($(ARCH),armeb)
+libnvram.so: nvram_linux_gen.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+endif
+ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
