@@ -407,13 +407,6 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth2");
     }
     
-    led_control (LED_POWER, LED_ON);
-    led_control (LED_DIAG, LED_OFF);
-    led_control (LED_DIAG2, LED_OFF);
-    led_control (LED_AOSS, LED_OFF);
-    led_control (LED_BRIDGE, LED_OFF);
-    led_control (LED_WLAN, LED_OFF);
-    
 
   /* ifnames */    
     strcpy (wanifname, nvram_safe_get ("wan_ifname"));
@@ -556,7 +549,16 @@ start_sysinit (void)
       powerled_ctrl (0);
       led_ctrl (0);		// turn LED2 off
     }
-
+    
+    led_control (LED_POWER, LED_ON);
+    led_control (LED_DIAG, LED_OFF);
+    led_control (LED_DIAG2, LED_OFF);
+    led_control (LED_AOSS, LED_OFF);
+    led_control (LED_BRIDGE, LED_OFF);
+    led_control (LED_WLAN, LED_OFF); 
+    
+       
+  cprintf ("done\n");  
   return 0;
-  cprintf ("done\n");
+  
 }
