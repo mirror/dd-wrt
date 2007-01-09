@@ -50,8 +50,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Motorola WR850G v1 (4702 cpu)
 #define ROUTER_MOTOROLA_V1 0x0a0f
 
-// Motorola WR850G v2
-#define ROUTER_MOTOROLA 0x0b0f
+// Motorola WR850G v2/v3 (4712 cpu, ADM6996 switch)
+#define ROUTER_MOTOROLA 0x0b15
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
