@@ -363,6 +363,12 @@ config IP_NF_MATCH_LAYER7_DEBUG
 	help
 	  Say Y to get lots of debugging output.
 
+config IP_NF_MATCH_IPP2P
+	tristate "IPP2P"
+	depends on IP_NF_IPTABLES
+	help
+	  Module for matching traffic of various Peer-to-Peer applications
+
 # `filter', generic and specific targets
 config IP_NF_FILTER
 	tristate "Packet filtering"
