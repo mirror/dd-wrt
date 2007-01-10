@@ -23,7 +23,6 @@ radio_timer_main (void)
   long radiotime;		//4 byte int number (24 bits from gui + 1 bit for midnight)
   int firsttime, needchange;
   int gentime;			//general-time holds year or hour or minute
-  char *end_ptr;
 
   needchange = 1;
   firsttime = 1;
@@ -50,7 +49,7 @@ radio_timer_main (void)
 
 	  gentime = currtime->tm_hour;	//gentime = hour
 
-	  radiotime = strtol (nvram_get ("radio0_on_time"), &end_ptr, 2);	//convert binary string to long int
+	  radiotime = strtol (nvram_get ("radio0_on_time"), NULL, 2);	//convert binary string to long int
 	  radiotime += ((radiotime & 1) << 24);	//duplicate 23-24h bit to the start to take care of midnight
 	  radiotime = (radiotime >> (24 - gentime - 1)) & 3;	//get pattern only (last two bits)
 
