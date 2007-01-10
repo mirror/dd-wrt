@@ -257,9 +257,10 @@ internal_getRouterBrand ()
 
 
   if (boardnum == 42 && nvram_match ("boardtype", "0x042f"))
-  	uint melco_id = strtoul (nvram_safe_get ("melco_id"), NULL, 0);
     {
-      if (nvram_match ("product_name", "WZR-RS-G54")
+  	uint melco_id = strtoul (nvram_safe_get ("melco_id"), NULL, 0);
+  	
+  	if (nvram_match ("product_name", "WZR-RS-G54")
 	  || melco_id == 30083)
 	{
 	  cprintf ("router is Buffalo WZR-RS-G54\n");
@@ -1030,8 +1031,8 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	{	
 		gpio_value = use_gpio & 0x0f;
 		sprintf (val, "%d", gpio_value); 
-		sprintf (enable, "%s", (use_gpio & 0x10) == 0 ? "enable", "disable");
-		sprintf (disable, "%s", (use_gpio & 0x10) == 0 ? "disable", "enable");	
+		sprintf (enable, "%s", (use_gpio & 0x10) == 0 ? "enable" : "disable");
+		sprintf (disable, "%s", (use_gpio & 0x10) == 0 ? "disable" : "enable");	
 			
 		switch (act)
 		{
@@ -1797,7 +1798,7 @@ check_hw_type (void)
   uint boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   uint btype = strtoul (boardtype, NULL, 0);
   
-  if (!strncmp (boardtype, "bcm94710", 8)
+  if (!strncmp (boardtype, "bcm94710", 8))
     return BCM4702_CHIP;
   else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
