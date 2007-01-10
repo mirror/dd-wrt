@@ -65,10 +65,8 @@ static struct resource msc_io_resource = {
 };
 
 extern struct pci_ops bonito64_pci_ops;
-extern struct pci_ops bcm63xx_pci_ops;
 extern struct pci_ops gt64120_pci_ops;
 extern struct pci_ops msc_pci_ops;
-extern struct pci_ops bcm63xx_pci_ops;
 
 static struct pci_controller bonito64_controller = {
 	.pci_ops	= &bonito64_pci_ops,

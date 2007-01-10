@@ -602,25 +602,6 @@ static void __init decode_configs(struct cpuinfo_mips *c)
 		return;
 }
 
-static inline void cpu_probe_broadcom(struct cpuinfo_mips *c)
-{
-       decode_configs(c);
-       switch (c->processor_id & 0xff00) {
-       case PRID_IMP_BCM6338:
-               c->cputype = CPU_BCM6338;
-               break;
-       case PRID_IMP_BCM6345:
-               c->cputype = CPU_BCM6345;
-               break;
-       case PRID_IMP_BCM6348:
-               c->cputype = CPU_BCM6348;
-               break;
-       default:
-               c->cputype = CPU_UNKNOWN;
-               break;
-       }
-}
-
 static inline void cpu_probe_mips(struct cpuinfo_mips *c)
 {
 	decode_configs(c);
@@ -755,9 +736,6 @@ __init void cpu_probe(void)
 	case PRID_COMP_LEGACY:
 		cpu_probe_legacy(c);
 		break;
-        case PRID_COMP_BROADCOM:
-                cpu_probe_broadcom(c);
-                break;
 	case PRID_COMP_MIPS:
 		cpu_probe_mips(c);
 		break;

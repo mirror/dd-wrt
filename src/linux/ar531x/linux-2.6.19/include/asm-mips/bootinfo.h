@@ -216,10 +216,6 @@
  * Valid machtype for group BRCM
  */
 #define MACH_GROUP_BRCM        23	/* Broadcom boards              */
-#define MACH_BCM96338		0
-#define MACH_BCM96345		1
-#define MACH_BCM96348		2
-#define MACH_BCM963XX       	0
 
 
 /*

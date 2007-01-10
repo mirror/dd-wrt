@@ -120,7 +120,7 @@ extern void softirq_init(void);
 /* Untouched command line (eg. for /proc) saved by arch-specific code. */
 char saved_command_line[COMMAND_LINE_SIZE];
 
-//static char *execute_command;
+static char *execute_command;
 static char *ramdisk_execute_command;
 
 /* Setup configured maximum number of CPUs to activate */
@@ -307,7 +307,7 @@ static int __init init_setup(char *str)
 {
 	unsigned int i;
 
-//	execute_command = str;
+	execute_command = str;
 	/*
 	 * In case LILO is going to boot us with default command line,
 	 * it prepends "auto" before the whole cmdline which makes
@@ -784,11 +784,11 @@ static int init(void * unused)
 	 * The Bourne shell can be used instead of init if we are 
 	 * trying to recover a really broken machine.
 	 */
-//	if (execute_command) {
-//		run_init_process(execute_command);
-//		printk(KERN_WARNING "Failed to execute %s.  Attempting "
-//					"defaults...\n", execute_command);
-//	}
+	if (execute_command) {
+		run_init_process(execute_command);
+		printk(KERN_WARNING "Failed to execute %s.  Attempting "
+					"defaults...\n", execute_command);
+	}
 	run_init_process("/sbin/init");
 	run_init_process("/etc/init");
 	run_init_process("/bin/init");
