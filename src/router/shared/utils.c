@@ -505,15 +505,15 @@ internal_getRouterBrand ()
 	  if (strstr(cfe, "iewsonic"))
 	  	{
 		cprintf ("router is Viewsonic WAPBR-100\n");
-		nvram_set ("wl0gpio0", "2");  //fix for wireless led
       	setRouter ("Viewsonic WAPBR-100");
+      	return ROUTER_VIEWSONIC_WAPBR_100;
 	  	}
 	  else
 	  	{
       cprintf ("router is Linksys WAP54G v2\n");
       setRouter ("Linksys WAP54G v2");
+      return ROUTER_WAP54G_V2;
   		}
-      return ROUTER_WRT54G;
     }
 
   if (nvram_invmatch ("CFEver", ""))
@@ -982,6 +982,10 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			bridge_gpio = 0x15;
 		break;
 	case ROUTER_WAP54G_V1:
+		break;
+	case ROUTER_WAP54G_V2:
+		break;
+	case ROUTER_VIEWSONIC_WAPBR_100:
 		break;
 	case DELL_TRUEMOBILE_2300:
 	        power_gpio = 0x17;
