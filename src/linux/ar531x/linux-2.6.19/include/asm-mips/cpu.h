@@ -106,9 +106,6 @@
 /* These are the PRID's for when 23:16 == PRID_COMP_BROADCOM
  */
 
-#define PRID_IMP_BCM6338       	0x9000
-#define PRID_IMP_BCM6345       	0x8000
-#define PRID_IMP_BCM6348       	0x9100
 
 /*
  * Definitions for 7:0 on legacy processors
@@ -207,10 +204,7 @@
 #define CPU_SB1A		62
 #define CPU_74K			63
 #define CPU_R14000		64
-#define CPU_BCM6338             65
-#define CPU_BCM6345             66
-#define CPU_BCM6348             67
-#define CPU_LAST		67
+#define CPU_LAST		64
 
 /*
  * ISA Level encodings

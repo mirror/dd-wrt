@@ -852,12 +852,6 @@ static void __init probe_pcache(void)
 		if (!(config & MIPS_CONF_M))
 			panic("Don't know how to probe P-caches on this cpu.");
 
-		if (c->cputype == CPU_BCM6338 || c->cputype == CPU_BCM6345 || c->cputype == CPU_BCM6348)
-		{
-			printk("brcm mips: enabling icache and dcache...\n");
-			/* Enable caches */
-			write_c0_diag(read_c0_diag() | 0xC0000000);
-		}
 
 		/*
 		 * So we seem to be a MIPS32 or MIPS64 CPU
