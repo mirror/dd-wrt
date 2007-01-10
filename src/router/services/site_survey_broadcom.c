@@ -48,196 +48,221 @@ struct site_survey_list
   int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
-  unsigned char ENCINFO[32];    /* encryption info */
+  unsigned char ENCINFO[32];	/* encryption info */
   uint rate_count;		/* # rates in this set */
   uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
 
 
-static bool wpa_ie(uint8 **wpaie, uint8 **tlvs, uint *tlvs_len)
+static bool
+wpa_ie (uint8 ** wpaie, uint8 ** tlvs, uint * tlvs_len)
 {
-	uint8 *ie = *wpaie;
-	if ((ie[1] >= 6) && !memcmp(&ie[2], WPA_OUI "\x01", 4)) {
-		return TRUE;
-	}
-	ie += ie[1] + 2;
-	*tlvs_len -= (int)(ie - *tlvs);
-	*tlvs = ie;
+  uint8 *ie = *wpaie;
+  if ((ie[1] >= 6) && !memcmp (&ie[2], WPA_OUI "\x01", 4))
+    {
+      return TRUE;
+    }
+  ie += ie[1] + 2;
+  *tlvs_len -= (int) (ie - *tlvs);
+  *tlvs = ie;
 
-	return FALSE;
+  return FALSE;
 }
 
-static uint8 *parse_tlvs(uint8 *tlv_buf, int buflen, uint key)
+static uint8 *
+parse_tlvs (uint8 * tlv_buf, int buflen, uint key)
 {
-	uint8 *cp;
-	int totlen;
+  uint8 *cp;
+  int totlen;
 
-	cp = tlv_buf;
-	totlen = buflen;
+  cp = tlv_buf;
+  totlen = buflen;
 
-	/* find tagged parameter */
-	while (totlen >= 2) {
-		uint tag;
-		int len;
+  /* find tagged parameter */
+  while (totlen >= 2)
+    {
+      uint tag;
+      int len;
 
-		tag = *cp;
-		len = *(cp +1);
+      tag = *cp;
+      len = *(cp + 1);
 
-		/* validate remaining totlen */
-		if ((tag == key) && (totlen >= (len + 2)))
-			return (cp);
+      /* validate remaining totlen */
+      if ((tag == key) && (totlen >= (len + 2)))
+	return (cp);
 
-		cp += (len + 2);
-		totlen -= (len + 2);
-	}
+      cp += (len + 2);
+      totlen -= (len + 2);
+    }
 
-	return NULL;
+  return NULL;
 }
 
 static char *
-dump_bss_ie(uint8* cp, uint len)
+dump_bss_ie (uint8 * cp, uint len)
 {
-	uint8 *wpaie;
-	int i;
-	int n;
-	int offset;
-	uint8 *parse = cp;
-	uint parse_len = len;
-	uint16 capabilities;
-	int unicast_count = 0;
-	uint8 oui[3];
-	uint8 idx = 0;
+  uint8 *wpaie;
+  int i;
+  int n;
+  int offset;
+  uint8 *parse = cp;
+  uint parse_len = len;
+  uint16 capabilities;
+  int unicast_count = 0;
+  uint8 oui[3];
+  uint8 idx = 0;
 
-	while ((wpaie = parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
-		if (wpa_ie(&wpaie, &parse, &parse_len))
-			break;
-	if (wpaie == NULL)
-//		return "Unknown";
-		return "WEP";  //Eko, testing...
+  while ((wpaie = parse_tlvs (parse, parse_len, DOT11_MNG_WPA_ID)))
+    if (wpa_ie (&wpaie, &parse, &parse_len))
+      break;
+  if (wpaie == NULL)
+//              return "Unknown";
+    return "WEP";		//Eko, testing...
 
-	if ((wpaie[6] | (wpaie[7] << 8)) != WPA_VERSION)
-		return "WPA-Unsupported";	/* WPA version unsupported */
+  if ((wpaie[6] | (wpaie[7] << 8)) != WPA_VERSION)
+    return "WPA-Unsupported";	/* WPA version unsupported */
 
-	//We got WPA
-	char sum[64]={0};
-	/* Check for multicast suite */
-	if (wpaie[1] >= 10) {
-		if (!memcmp(&wpaie[8], WPA_OUI, 3)) {
-			switch (wpaie[11]) {
-			case WPA_CIPHER_NONE:
-				strcat(sum,"MULTINONE ");
-				break;
-			case WPA_CIPHER_WEP_40:
-				strcat(sum,"MULTIWEP64 ");
-				break;
-			case WPA_CIPHER_WEP_104:
-				
-				strcat(sum,"MULTIWEP128 ");
-				break;
-			case WPA_CIPHER_TKIP:
-				strcat(sum,"MULTITKIP ");
-				break;
-			case WPA_CIPHER_AES_OCB:
-				strcat(sum,"MULTIAESOCB ");
-				break;
-			case WPA_CIPHER_AES_CCM:
-				strcat(sum,"MULTIAESCCMP ");
-				break;
-			default:	/* unknown WPA cipher */
-				strcat(sum,"MULTIWPAUNKOWN ");
-				break;
-			}
-		}
+  //We got WPA
+  char sum[64] = { 0 };
+  /* Check for multicast suite */
+  if (wpaie[1] >= 10)
+    {
+      if (!memcmp (&wpaie[8], WPA_OUI, 3))
+	{
+	  switch (wpaie[11])
+	    {
+	    case WPA_CIPHER_NONE:
+	      strcat (sum, "MULTINONE ");
+	      break;
+	    case WPA_CIPHER_WEP_40:
+	      strcat (sum, "MULTIWEP64 ");
+	      break;
+	    case WPA_CIPHER_WEP_104:
+
+	      strcat (sum, "MULTIWEP128 ");
+	      break;
+	    case WPA_CIPHER_TKIP:
+	      strcat (sum, "MULTITKIP ");
+	      break;
+	    case WPA_CIPHER_AES_OCB:
+	      strcat (sum, "MULTIAESOCB ");
+	      break;
+	    case WPA_CIPHER_AES_CCM:
+	      strcat (sum, "MULTIAESCCMP ");
+	      break;
+	    default:		/* unknown WPA cipher */
+	      strcat (sum, "MULTIWPAUNKOWN ");
+	      break;
+	    }
 	}
+    }
 
-	/* Check for unicast suite(s) */
-	if (wpaie[1] >= 12) {
-		unicast_count = (wpaie[12] | (wpaie[13] << 8));
-		for (i = 0; i < unicast_count; i++) {
+  /* Check for unicast suite(s) */
+  if (wpaie[1] >= 12)
+    {
+      unicast_count = (wpaie[12] | (wpaie[13] << 8));
+      for (i = 0; i < unicast_count; i++)
+	{
 
-			if (wpaie[1] < (12 + (i * 4) + 4))
-				break;
+	  if (wpaie[1] < (12 + (i * 4) + 4))
+	    break;
 
-			memcpy(oui, &wpaie[2 + 12 + (i * 4)], 3);
-			idx = wpaie[2 + 12 + (i * 4) + 3];
+	  memcpy (oui, &wpaie[2 + 12 + (i * 4)], 3);
+	  idx = wpaie[2 + 12 + (i * 4) + 3];
 
-			if (!memcmp(oui, WPA_OUI, 3)) {
-				switch (idx) {
-				case WPA_CIPHER_NONE:
-					break;
-				case WPA_CIPHER_WEP_40:
-					strcat(sum,"WEP64 ");
-					break;
-				case WPA_CIPHER_WEP_104:
-					strcat(sum,"WEP128 ");
-					break;
-				case WPA_CIPHER_TKIP:
-					strcat(sum,"TKIP ");
-					break;
-				case WPA_CIPHER_AES_OCB:
-					strcat(sum,"AESOCB ");
-					break;
-				case WPA_CIPHER_AES_CCM:
-					strcat(sum,"AESCCMP ");
-					break;
-				default:
-					break;
-				}
-			}
-			else {
-					strcat(sum,"UNICHIPHERWPAUNKNOWN ");
-			}
+	  if (!memcmp (oui, WPA_OUI, 3))
+	    {
+	      switch (idx)
+		{
+		case WPA_CIPHER_NONE:
+		  break;
+		case WPA_CIPHER_WEP_40:
+		  strcat (sum, "WEP64 ");
+		  break;
+		case WPA_CIPHER_WEP_104:
+		  strcat (sum, "WEP128 ");
+		  break;
+		case WPA_CIPHER_TKIP:
+		  strcat (sum, "TKIP ");
+		  break;
+		case WPA_CIPHER_AES_OCB:
+		  strcat (sum, "AESOCB ");
+		  break;
+		case WPA_CIPHER_AES_CCM:
+		  strcat (sum, "AESCCMP ");
+		  break;
+		default:
+		  break;
 		}
+	    }
+	  else
+	    {
+	      strcat (sum, "UNICHIPHERWPAUNKNOWN ");
+	    }
 	}
-	/* Authentication Key Management */
-	/* Fixed 8, Group 4 , 2 + min one Unicast 4 - 2 bytes of VerID and Len */
-	if (wpaie[1] >= 16) {
-	        offset = 8 + 4 + 2 + (unicast_count * 4);
-		n = wpaie[offset] + (wpaie[offset + 1] << 8);
-		if (wpaie[1] < (offset + (n * 4))) {
-			return sum;
-		}
-		for (i = 0; i < n; i++) {
-
-			memcpy(oui, &wpaie[offset + 2 + (i * 4)], 3);
-			idx = wpaie[offset + 2 + (i * 4) + 3];
-
-			if (!memcmp(oui, WPA_OUI, 3)) {
-				switch (idx) {
-				case RSN_AKM_NONE:
-					strcat(sum,"WPA-NONE");
-					break;
-				case RSN_AKM_UNSPECIFIED:
-					strcat(sum,"WPA");
-					break;
-				case RSN_AKM_PSK:
-					strcat(sum,"WPA-PSK");
-					break;
-				default:
-					strcat(sum,"WPA-Unknown");
-					break;
-				}
-			}
-			else {
-					strcat(sum,"WPA-Unknown");
-			}
-		}
+    }
+  /* Authentication Key Management */
+  /* Fixed 8, Group 4 , 2 + min one Unicast 4 - 2 bytes of VerID and Len */
+  if (wpaie[1] >= 16)
+    {
+      offset = 8 + 4 + 2 + (unicast_count * 4);
+      n = wpaie[offset] + (wpaie[offset + 1] << 8);
+      if (wpaie[1] < (offset + (n * 4)))
+	{
+	  return sum;
 	}
-return sum;
+      for (i = 0; i < n; i++)
+	{
+
+	  memcpy (oui, &wpaie[offset + 2 + (i * 4)], 3);
+	  idx = wpaie[offset + 2 + (i * 4) + 3];
+
+	  if (!memcmp (oui, WPA_OUI, 3))
+	    {
+	      switch (idx)
+		{
+		case RSN_AKM_NONE:
+		  strcat (sum, "WPA-NONE");
+		  break;
+		case RSN_AKM_UNSPECIFIED:
+		  strcat (sum, "WPA");
+		  break;
+		case RSN_AKM_PSK:
+		  strcat (sum, "WPA-PSK");
+		  break;
+		default:
+		  strcat (sum, "WPA-Unknown");
+		  break;
+		}
+	    }
+	  else
+	    {
+	      strcat (sum, "WPA-Unknown");
+	    }
+	}
+    }
+  return sum;
 }
 
-static char *getEncInfo(wl_bss_info_t *bi)
+static char *
+getEncInfo (wl_bss_info_t * bi)
 {
-	if (bi->capability & DOT11_CAP_PRIVACY)
-	{
-	if (bi->ie_length)
+  if (bi->capability & DOT11_CAP_PRIVACY)
+    {
+      if (bi->ie_length)
 #ifdef HAVE_MSSID
-		return dump_bss_ie((uint8 *)(((uint8 *)bi) + bi->ie_offset), bi->ie_length);
+	return dump_bss_ie ((uint8 *) (((uint8 *) bi) + bi->ie_offset),
+			    bi->ie_length);
 #else
-		return dump_bss_ie((uint8 *)(((uint8 *)bi) + sizeof(wl_bss_info_t)), bi->ie_length);
+	return
+	  dump_bss_ie ((uint8 *) (((uint8 *) bi) + sizeof (wl_bss_info_t)),
+		       bi->ie_length);
 #endif
-	else return "WEP";
-	}else return "Open";
+      else
+	return "WEP";
+    }
+  else
+    return "Open";
 }
 
 int
@@ -275,7 +300,7 @@ site_survey_main (int argc, char *argv[])
 #ifndef HAVE_MSSID
   wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
   if (oldap > 0)
-    eval("wl","ap","0");
+    eval ("wl", "ap", "0");
 #endif
   if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
     {
@@ -320,7 +345,7 @@ site_survey_main (int argc, char *argv[])
       site_survey_lists[i].capability = bss_info->capability;
       site_survey_lists[i].rate_count = bss_info->rateset.count;
       site_survey_lists[i].dtim_period = bss_info->dtim_period;
-      strcpy(site_survey_lists[i].ENCINFO,getEncInfo(bss_info));
+      strcpy (site_survey_lists[i].ENCINFO, getEncInfo (bss_info));
 
       bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
     }
@@ -328,19 +353,21 @@ site_survey_main (int argc, char *argv[])
   open_site_survey ();
   for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++)
     {
-     fprintf(stderr,
-	"[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
-	 i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
-	 site_survey_lists[i].channel, site_survey_lists[i].RSSI,
-	 site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period,
-	 site_survey_lists[i].capability, site_survey_lists[i].dtim_period,
-	 site_survey_lists[i].rate_count,site_survey_lists[i].ENCINFO);
+      fprintf (stderr,
+	       "[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+	       i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
+	       site_survey_lists[i].channel, site_survey_lists[i].RSSI,
+	       site_survey_lists[i].phy_noise,
+	       site_survey_lists[i].beacon_period,
+	       site_survey_lists[i].capability,
+	       site_survey_lists[i].dtim_period,
+	       site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
     }
 
 endss:
 #ifndef HAVE_MSSID
   if (oldap > 0)
-    eval("wl","ap","1");
+    eval ("wl", "ap", "1");
 #endif
 
   C_led (0);

@@ -111,7 +111,7 @@ check_brcm_cpu_type (void)
 }
 
 static void
-loadWlModule (void)  //get boardflags, set afterburner bit, load wl, unset afterburner bit
+loadWlModule (void)		//get boardflags, set afterburner bit, load wl, unset afterburner bit
 {
 
   int boardflags;
@@ -120,31 +120,32 @@ loadWlModule (void)  //get boardflags, set afterburner bit, load wl, unset after
     {
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
-		eval("insmod", "wl"); //load module
+      eval ("insmod", "wl");	//load module
       return;
       break;
     default:
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
       if (boardflags == 0 || boardflags & BFL_AFTERBURNER)
-      	{
-      	eval("insmod", "wl");  //load module
-  		}
-  	  else
-		{
-		char bf[16];
-      	sprintf (bf, "0x0%X", boardflags);
-	  	boardflags |= BFL_AFTERBURNER;
-	  	fprintf (stderr, "enable Afterburner, boardflags are 0x0%X\n", boardflags);
-	  	char ab[16];
-	  	sprintf (ab, "0x0%X", boardflags);
-	  	nvram_set ("boardflags", ab);  //set boardflags with AfterBurner bit on
-		eval("insmod", "wl");  //load module
-		nvram_set ("boardflags", bf);  //set back to original
-		}
-	  	  
+	{
+	  eval ("insmod", "wl");	//load module
+	}
+      else
+	{
+	  char bf[16];
+	  sprintf (bf, "0x0%X", boardflags);
+	  boardflags |= BFL_AFTERBURNER;
+	  fprintf (stderr, "enable Afterburner, boardflags are 0x0%X\n",
+		   boardflags);
+	  char ab[16];
+	  sprintf (ab, "0x0%X", boardflags);
+	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
+	  eval ("insmod", "wl");	//load module
+	  nvram_set ("boardflags", bf);	//set back to original
+	}
+
     }
-return;
+  return;
 }
 
 
@@ -279,8 +280,8 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
-  char *rname = getRouter();
-  fprintf(stderr,"Booting Device:%s\n",rname);   
+  char *rname = getRouter ();
+  fprintf (stderr, "Booting Device:%s\n", rname);
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
@@ -323,13 +324,13 @@ start_sysinit (void)
 	  nvram_set ("et0macaddr", "00:0C:6E:00:00:10");	//fix for missing cfe default = dead LAN ports.
 	}
       break;
-      
+
     case DELL_TRUEMOBILE_2300:
-    	setup_4712();
-    	nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
-        nvram_set ("wan_ifnames", "eth1");   
+      setup_4712 ();
+      nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
+      nvram_set ("wan_ifnames", "eth1");
       break;
-                                               
+
     case ROUTER_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
@@ -339,7 +340,7 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth0");
       nvram_set ("port_swap", "1");
       break;
-      
+
     case ROUTER_MOTOROLA_WE800G:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
@@ -356,13 +357,13 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
       break;
-      
+
     case ROUTER_WRT350N:
       nvram_set ("wan_ifname", "vlan2");
       nvram_set ("wan_ifnames", "vlan2");
       nvram_set ("pppoe_wan_ifname", "vlan2");
-    break;
-    
+      break;
+
     case ROUTER_ASUS_WL500G_PRE:
       nvram_set ("sdram_init", "0x0009");
 //      nvram_set ("sdram_ncdl", "0x208");
@@ -379,9 +380,9 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WBR2G54S:
 #ifdef HAVE_MSSID
-      nvram_set ("wl0gpio0", "8");		//Fix for wireless led polarity (v24 only)
+      nvram_set ("wl0gpio0", "8");	//Fix for wireless led polarity (v24 only)
 #else
-	  nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
+      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
 #endif
       break;
 
@@ -391,10 +392,10 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
       break;
-      
+
 #ifdef HAVE_MSSID
     case ROUTER_WRT54G:
-      nvram_set ("wl0gpio0", "136");		//Fix for wireless led olways on (v24 only)
+      nvram_set ("wl0gpio0", "136");	//Fix for wireless led olways on (v24 only)
       break;
 #endif
     }
@@ -406,19 +407,19 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
     }
-    
 
-  /* ifnames */    
-    strcpy (wanifname, nvram_safe_get ("wan_ifname"));
-    strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
-    
-    
+
+  /* ifnames */
+  strcpy (wanifname, nvram_safe_get ("wan_ifname"));
+  strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
+
+
   /* Modules */
   uname (&name);
 
 //  enableAfterBurner ();
 #ifdef HAVE_MSSID
-  nvram_set("pa0maxpwr", "251"); //force pa0maxpwr to be 251
+  nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
 #endif
 
   snprintf (buf, sizeof (buf), "/lib/modules/%s", name.release);
@@ -432,8 +433,8 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xxlsys";
-	    break;    
+	      modules = "diag bcm57xxlsys";
+	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_MOTOROLA:
@@ -451,8 +452,7 @@ start_sysinit (void)
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") :
-		"diag";
+				"") ? nvram_safe_get ("ct_modules") : "diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -473,8 +473,8 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_WRT350N:
-	    modules = "diag bcm57xxlsys";
-	    break;    
+	      modules = "diag bcm57xxlsys";
+	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	      modules =
@@ -487,8 +487,7 @@ start_sysinit (void)
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") :
-		"diag";
+				"") ? nvram_safe_get ("ct_modules") : "diag";
 	      eval ("insmod", "switch-core");
 	      if (eval ("insmod", "switch-robo"))
 		eval ("insmod", "switch-adm");
@@ -496,8 +495,7 @@ start_sysinit (void)
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      modules =
 		nvram_invmatch ("ct_modules",
-				"") ? nvram_safe_get ("ct_modules") :
-		"diag";
+				"") ? nvram_safe_get ("ct_modules") : "diag";
 	      break;
 	    default:
 	      if (check_vlan_support ())
@@ -527,19 +525,20 @@ start_sysinit (void)
 	cprintf ("done\n");
 #endif
       }
-      
-   loadWlModule();
-      
+
+      loadWlModule ();
+
 #ifdef HAVE_USB
 //load usb driver. we will add samba server, ftp server and ctorrent support in future
-      modules = "usbcore usb-ohci usb-uhci ehci-hcd scsi_mod usb-storage ide-core ide-detect ide-disk ide-scsi cdrom ide-cd printer sd_mod sr_mod"
-      foreach (module, modules, next)
+      modules =
+	"usbcore usb-ohci usb-uhci ehci-hcd scsi_mod usb-storage ide-core ide-detect ide-disk ide-scsi cdrom ide-cd printer sd_mod sr_mod"
+	foreach (module, modules, next)
       {
-      cprintf ("loading %s\n", module);
-      eval ("insmod", module);
+	cprintf ("loading %s\n", module);
+	eval ("insmod", module);
       }
 #endif
-      
+
     }
   /* Set a sane date */
   stime (&tm);
@@ -549,16 +548,16 @@ start_sysinit (void)
       powerled_ctrl (0);
       led_ctrl (0);		// turn LED2 off
     }
-    
-    led_control (LED_POWER, LED_ON);
-    led_control (LED_DIAG, LED_OFF);
-    led_control (LED_DIAG2, LED_OFF);
-    led_control (LED_AOSS, LED_OFF);
-    led_control (LED_BRIDGE, LED_OFF);
-    led_control (LED_WLAN, LED_OFF); 
-    
-       
-  cprintf ("done\n");  
+
+  led_control (LED_POWER, LED_ON);
+  led_control (LED_DIAG, LED_OFF);
+  led_control (LED_DIAG2, LED_OFF);
+  led_control (LED_AOSS, LED_OFF);
+  led_control (LED_BRIDGE, LED_OFF);
+  led_control (LED_WLAN, LED_OFF);
+
+
+  cprintf ("done\n");
   return 0;
-  
+
 }

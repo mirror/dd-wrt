@@ -336,6 +336,41 @@ ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "unknown");
   return;
 }
+#elif HAVE_FONERA
+void
+ej_get_clkfreq ( webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 4)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
 
 #else
 
@@ -1803,6 +1838,7 @@ show_netmode (webs_t wp, char *prefix)
 		 nvram_match (wl_net_mode,
 			      "n-only") ? "selected=\\\"selected\\\"" : "");
     }
+#ifndef HAVE_FONERA
 #ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_phytypes", "ga") || nvram_match ("wl0_phytypes", "a"))
 #endif
@@ -1810,6 +1846,7 @@ show_netmode (webs_t wp, char *prefix)
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n//]]>\n</script>\n",
 	       nvram_match (wl_net_mode,
 			    "a-only") ? "selected=\\\"selected\\\"" : "");
+#endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 }
@@ -2376,11 +2413,13 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
+#ifndef HAVE_FONERA
       char *wl_regulatory = "ath_regulatory";
       showOption (wp, "wl_basic.regulatory", wl_regulatory);
 #ifdef HAVE_MAKSAT
       char *wl_regdomain = "ath_specialmode";
       showOption (wp, "wl_basic.specialmode", wl_regdomain);
+#endif
 #endif
     }
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2492,13 +2531,15 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
   sprintf (wl_width, "%s_channelbw", prefix);
   sprintf (wl_preamble, "%s_preamble", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
-
+#ifndef HAVE_FONERA
   showOption (wp, "wl_basic.turbo", wl_turbo);
+#endif
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 //  showOption (wp, "wl_basic.outband", wl_outdoor);
   showOption (wp, "wl_basic.diversity", wl_diversity);
+#ifndef HAVE_FONERA
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
@@ -2513,6 +2554,7 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 	     nvram_match (wl_width, "5") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
+#endif
 
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",

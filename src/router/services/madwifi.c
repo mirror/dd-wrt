@@ -792,7 +792,7 @@ setupHostAP (char *prefix)
       sprintf (key, "%s_key", prefix);
       sprintf (bul, "[%s]", nvram_safe_get (key));
       eval ("iwconfig", prefix, "key", bul);
-    //  eval ("iwpriv", prefix, "authmode", "2");
+      //  eval ("iwpriv", prefix, "authmode", "2");
     }
   else
     if (nvram_match (akm, "psk") ||
@@ -885,18 +885,18 @@ setupHostAP (char *prefix)
       char exec[64];
       char type[32];
       sprintf (type, "%s_radmactype", prefix);
-      char *pragma="";
-      if (default_match(type,"0","0"))
-        pragma="-n1 ";
-      if (nvram_match(type,"1"))
-        pragma="-n2 ";
-      if (nvram_match(type,"2"))
-        pragma="-n3 ";
-      if (nvram_match(type,"3"))
-        pragma="";
-  
-      sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma,prefix, server, port,
-	       share);
+      char *pragma = "";
+      if (default_match (type, "0", "0"))
+	pragma = "-n1 ";
+      if (nvram_match (type, "1"))
+	pragma = "-n2 ";
+      if (nvram_match (type, "2"))
+	pragma = "-n3 ";
+      if (nvram_match (type, "3"))
+	pragma = "";
+
+      sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma, prefix,
+	       server, port, share);
       system2 (exec);
 
 //    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
@@ -943,18 +943,21 @@ set_netmode (char *wif, char *dev)
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", dev, "mode", "1");
   }
-  long tb =atol(nvram_safe_get(turbo));
+#ifndef HAVE_FONERA
+  long tb = atol (nvram_safe_get (turbo));
   setsysctrl (wif, "turbo", tb);
-  long regulatory =atol(nvram_safe_get("ath_regulatory"));
-  if (default_match ("ath_specialmode","1","0"))
-  {
-  setsysctrl (wif, "regulatory", 0);
-  setsysctrl (wif, "setregdomain",0x49);  
-  }
-  else{
-  setsysctrl (wif, "regulatory", regulatory);
-  setsysctrl (wif, "setregdomain",0);  
-  }    
+  long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+  if (default_match ("ath_specialmode", "1", "0"))
+    {
+      setsysctrl (wif, "regulatory", 0);
+      setsysctrl (wif, "setregdomain", 0x49);
+    }
+  else
+    {
+      setsysctrl (wif, "regulatory", regulatory);
+      setsysctrl (wif, "setregdomain", 0);
+    }
+#endif
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta"))
@@ -977,13 +980,14 @@ set_netmode (char *wif, char *dev)
 	    }
 	}
 
-
+#ifndef HAVE_FONERA
       char *wid = nvram_get (bw);
       int width = 20;
       if (wid)
 	width = atoi (wid);
       char buf[64];
       setsysctrl (wif, "channelbw", (long) width);
+#endif
     }
 }
 
@@ -995,11 +999,11 @@ setMacFilter (char *iface)
   set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
 
   char nvvar[32];
-  sprintf(nvvar,"%s_macmode",iface);
+  sprintf (nvvar, "%s_macmode", iface);
   if (!nvram_match (nvvar, "disabled"))
     {
       char nvlist[32];
-      sprintf(nvlist,"%s_maclist",iface);
+      sprintf (nvlist, "%s_maclist", iface);
 
       foreach (var, nvram_safe_get (nvlist), next)
       {
@@ -1204,8 +1208,8 @@ configure_single (int count, int isbond)
     eval ("iwpriv", dev, "wds", "1");
 
 
-      
-  
+
+
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
@@ -1221,25 +1225,26 @@ configure_single (int count, int isbond)
 //@todo ifup
 
   char preamble[32];
-  sprintf(preamble,"%s_preamble",dev);
-  if (default_match(preamble,"1","0"))
+  sprintf (preamble, "%s_preamble", dev);
+  if (default_match (preamble, "1", "0"))
     {
-    eval("iwpriv",dev,"shpreamble","1");
-    }else
-    eval("iwpriv",dev,"shpreamble","0");
+      eval ("iwpriv", dev, "shpreamble", "1");
+    }
+  else
+    eval ("iwpriv", dev, "shpreamble", "0");
 
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
-    if (nvram_match("wifi_bonding","0"))
-    {
-    	  char bridged[32];
+      if (nvram_match ("wifi_bonding", "0"))
+	{
+	  char bridged[32];
 	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1","1"))
+	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match("wifi_bonding","0"))
-	      br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
 	    }
 	  else
 	    {
@@ -1250,7 +1255,7 @@ configure_single (int count, int isbond)
 	      ifconfig (dev, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
-    }
+	}
 
 //      eval ("brctl", "addif", "br0", dev);
     }
@@ -1302,11 +1307,11 @@ configure_single (int count, int isbond)
 	{
 	  char bridged[32];
 	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1","1"))
+	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match("wifi_bonding","0"))
-	      br_add_interface (nvram_safe_get ("lan_ifname"), var);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), var);
 	    }
 	  else
 	    {
@@ -1322,7 +1327,7 @@ configure_single (int count, int isbond)
 	}
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
-       setMacFilter (var);
+      setMacFilter (var);
       cnt++;
     }
 
@@ -1418,7 +1423,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #endif
 	{
 #ifdef HAVE_BONDING
-	  configure_single (i, nvram_match ("wifi_bonding","1")?1:0);
+	  configure_single (i, nvram_match ("wifi_bonding", "1") ? 1 : 0);
 #else
 	  configure_single (i, 0);
 #endif
@@ -1433,7 +1438,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #ifdef HAVE_BONDING
   eval ("ifconfig", "bond0", "down");
   eval ("rmmod", "bonding");
-  if (nvram_match ("wifi_bonding","1"))
+  if (nvram_match ("wifi_bonding", "1"))
     {
       eval ("insmod", "bonding");
       eval ("ifconfig", "bond0", "0.0.0.0", "up");

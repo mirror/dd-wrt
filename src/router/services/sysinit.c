@@ -312,7 +312,7 @@ start_restore_defaults (void)
 #elif HAVE_GEMTEK
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames","eth1 ath0",0},
+    {"lan_ifnames", "eth1 ath0", 0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
@@ -404,7 +404,7 @@ start_restore_defaults (void)
     {"wan_ifnames", "vlan2", 0},
     {0, 0, 0}
   };
-  
+
   struct nvram_tuple generic_2[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "eth1 eth2", 0},
@@ -510,7 +510,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
       linux_overrides = generic_2;
-   	  break;
+      break;
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
