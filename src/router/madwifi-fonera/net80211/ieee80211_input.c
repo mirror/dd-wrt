@@ -3249,7 +3249,8 @@ ieee80211_recv_mgmt(struct ieee80211_node *ni, struct sk_buff *skb,
 		 * XXX may need different/additional driver callbacks?
 		 */
 		if (IEEE80211_IS_CHAN_A(ic->ic_curchan) ||
-		    (ni->ni_capinfo & IEEE80211_CAPINFO_SHORT_PREAMBLE)) {
+		    ((ni->ni_capinfo & IEEE80211_CAPINFO_SHORT_PREAMBLE) &&
+		    (ic->ic_caps & IEEE80211_C_SHPREAMBLE))) {
 			ic->ic_flags |= IEEE80211_F_SHPREAMBLE;
 			ic->ic_flags &= ~IEEE80211_F_USEBARKER;
 		} else {
@@ -3274,7 +3275,8 @@ ieee80211_recv_mgmt(struct ieee80211_node *ni, struct sk_buff *skb,
 		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_ASSOC, wh->i_addr2,
 			"%sassoc success: %s preamble, %s slot time%s%s%s%s%s%s%s",
 			ISREASSOC(subtype) ? "re" : "",
-		 	ic->ic_flags&IEEE80211_F_SHPREAMBLE ? "short" : "long",
+		 	(ic->ic_flags&IEEE80211_F_SHPREAMBLE) &&
+			(ni->ni_capinfo & IEEE80211_CAPINFO_SHORT_PREAMBLE) ? "short" : "long",
 			ic->ic_flags&IEEE80211_F_SHSLOT ? "short" : "long",
 			ic->ic_flags&IEEE80211_F_USEPROT ? ", protection" : "",
 			ni->ni_flags & IEEE80211_NODE_QOS ? ", QoS" : "",

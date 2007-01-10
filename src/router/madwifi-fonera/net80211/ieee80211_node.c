@@ -1838,7 +1838,8 @@ ieee80211_node_join(struct ieee80211_node *ni, int resp)
 		"%s%s%s%s%s%s%s",
 		newassoc ? "" : "re",
 		IEEE80211_NODE_AID(ni),
-		ic->ic_flags & IEEE80211_F_SHPREAMBLE ? "short" : "long",
+		(ic->ic_flags & IEEE80211_F_SHPREAMBLE) &&
+		(ni->ni_capinfo & IEEE80211_CAPINFO_SHORT_PREAMBLE) ? "short" : "long",
 		ic->ic_flags & IEEE80211_F_SHSLOT ? "short" : "long",
 		ic->ic_flags & IEEE80211_F_USEPROT ? ", protection" : "",
 		ni->ni_flags & IEEE80211_NODE_QOS ? ", QoS" : "",
