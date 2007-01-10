@@ -95,7 +95,7 @@ start_sysinit (void)
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 //  system ("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  mount ("debugfs", "/sys/kernel/debug","debugfs",MS_MGC_VAL, NULL);
+  mount ("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
   cprintf ("sysinit() tmp\n");
 
   /* /tmp */
@@ -216,7 +216,7 @@ eval("insmod","crypto_null");
     eval ("insmod", "r8169");
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
-  if (detect ("DFE-690TXD"))		// Realtek 8139 Adapter (various notebooks) 
+  if (detect ("DFE-690TXD"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
   else if (detect ("SMC2-1211TX"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
