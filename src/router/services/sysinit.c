@@ -625,7 +625,7 @@ start_restore_defaults (void)
       }
   }
 #ifndef HAVE_FON
-  if (restore_defaults)		//fix for belkin std ip
+  if (restore_defaults)
     {
       if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	{
@@ -635,7 +635,7 @@ start_restore_defaults (void)
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
 #else
-  if (restore_defaults)		//fix for belkin std ip
+  if (restore_defaults)
     {
       nvram_set ("lan_ipaddr", "192.168.10.1");
     }
