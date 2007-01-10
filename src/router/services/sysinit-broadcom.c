@@ -373,7 +373,9 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "vlan1");
       nvram_set ("pppoe_wan_ifname", "vlan1");
       nvram_set ("vlan1ports", "0 5");
-      eval ("gpio", "disable", "0");	//reset the reset button to 0
+#ifdef HAVE_MSSID
+      nvram_set ("wl0gpio0", "136");	//Fix for wireless led always on (v24 only)
+#endif
       break;
 
 
