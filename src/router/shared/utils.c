@@ -153,7 +153,10 @@ internal_getRouterBrand ()
   return ROUTER_BOARD_FONERA;
 #else
   char *et0;
-  if (nvram_match ("boardnum", "42") &&
+  
+  uint boardnum = strtoul (nvram_safe_get ("boardnum"), NULL, 0);
+  
+  if (boardnum == 42 &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is buffalo\n");
@@ -177,7 +180,7 @@ internal_getRouterBrand ()
       return ROUTER_BRCM4702_GENERIC;
     }
     
-  if (nvram_match ("boardnum", "44") &&
+  if (boardnum == 44 &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Dell TrueMobile 2300\n");
@@ -185,26 +188,16 @@ internal_getRouterBrand ()
       return DELL_TRUEMOBILE_2300;
     }
     
-  if (nvram_match ("boardnum", "100") &&
+  if (boardnum == 100 &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is buffalo\n");
       setRouter ("Buffalo WLA-G54C");
       return ROUTER_BUFFALO_WLAG54C;
     }
-/*
-  if (nvram_match ("product_name", "Product_name") &&
-      nvram_match ("boardrev", "0x10") &&
-      nvram_match ("boardtype", "0x0101") && nvram_match ("boardnum", "00"))
-    {
-      cprintf ("router is buffalo WLA2");
-      setRouter ("Buffalo WLA2-G54L");
-      return ROUTER_BUFFALO_WLA2G54L;
-    }
-*/
 
-  if (nvram_match ("boardtype", "bcm95365r") &&
-      nvram_match ("boardnum", "45"))
+  if (boardnum == 45 &&
+  	  nvram_match ("boardtype", "bcm95365r"))
     {
       cprintf ("router is asus\n");
       setRouter ("Asus WL-500g Deluxe");
@@ -219,7 +212,7 @@ internal_getRouterBrand ()
       return ROUTER_BUFFALO_WBR2G54S;
     }
 
-  if (nvram_match ("boardnum", "2") &&
+  if (boardnum == 2 &&
       nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is buffalo wla2-g54c\n");
@@ -263,24 +256,25 @@ internal_getRouterBrand ()
     }
 
 
-  if (nvram_match ("boardnum", "42") && nvram_match ("boardtype", "0x042f"))
+  if (boardnum == 42 && nvram_match ("boardtype", "0x042f"))
+  	uint melco_id = strtoul (nvram_safe_get ("melco_id"), NULL, 0);
     {
       if (nvram_match ("product_name", "WZR-RS-G54")
-	  || nvram_match ("melco_id", "30083"))
+	  || melco_id == 30083)
 	{
 	  cprintf ("router is Buffalo WZR-RS-G54\n");
 	  setRouter ("Buffalo WZR-RS-G54");
 	  return ROUTER_BUFFALO_WZRRSG54;
 	}
       if (nvram_match ("product_name", "WZR-HP-G54")
-      || nvram_match ("melco_id", "30026"))
+      || melco_id == 30026)
 	{
 	  cprintf ("router is Buffalo WZR-HP-G54\n");
 	  setRouter ("Buffalo WZR-HP-G54");
 	  return ROUTER_BUFFALO_WZRRSG54;
 	}
       if (nvram_match ("product_name", "WZR-G54")
-	  || nvram_match ("melco_id", "30061"))
+	  || melco_id == 30061)
 	{
 	  cprintf ("router is Buffalo WZR-G54\n");
 	  setRouter ("Buffalo WZR-G54");
@@ -294,28 +288,28 @@ internal_getRouterBrand ()
 	}
       if (nvram_match ("product_name", "WHR3-AG54")
 	  || nvram_match ("product_name", "WHR3-B11")
-	  || nvram_match ("melco_id", "29130"))
+	  || melco_id == 29130)
 	{
 	  cprintf ("router is Buffalo WHR3-AG54\n");
 	  setRouter ("Buffalo WHR3-AG54");
 	  return ROUTER_BUFFALO_WZRRSG54;
 	}
       if (nvram_match ("product_name", "WVR-G54-NF")
-	  || nvram_match ("melco_id", "28100"))
+	  || melco_id == 28100)
 	{
 	  cprintf ("router is Buffalo WVR-G54-NF\n");
 	  setRouter ("Buffalo WVR-G54-NF");
 	  return ROUTER_BUFFALO_WZRRSG54;
 	}
-      if (nvram_match ("melco_id", "29115")
-	  || atol (nvram_get ("melco_id")) > 0)
+      if (melco_id > 0)  //e.g. 29115
 	{
 	  cprintf ("router is Buffalo WZR series\n");
 	  setRouter ("Buffalo WZR series");
 	  return ROUTER_BUFFALO_WZRRSG54;
 	}
     }
-  if (nvram_match ("boardnum", "42") &&
+    
+  if (boardnum == 42 &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
 //      nvram_match ("boardflags","0x0018"))
     {
@@ -324,7 +318,7 @@ internal_getRouterBrand ()
       return ROUTER_WRTSL54GS;
     }
 
-  if (nvram_match ("boardnum", "45") &&
+  if (boardnum == 45 &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is Asus WL-500g Premium\n");
@@ -337,7 +331,7 @@ internal_getRouterBrand ()
     et0 = nvram_safe_get ("et0macaddr");
     if (et0 != NULL)
       {
-	if (nvram_match ("boardnum", "100") &&
+	if (boardnum == 100 &&
 	    nvram_match ("boardtype", "bcm94710r4"))
 	  {
 	    if (startswith (et0, "00:11:50"))
@@ -446,13 +440,13 @@ internal_getRouterBrand ()
       }
   }
 
-  if (nvram_match ("boardnum", "20060330") &&
+  if (boardnum == 20060330 &&
       nvram_match ("boardtype", "0x0472"))
     {
       setRouter ("Buffalo WZR-G300N");
       return ROUTER_WZRG300N;
     }
-  if (nvram_match ("boardnum", "42") &&
+  if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
       setRouter ("Linksys WRT300N v1");
@@ -460,7 +454,7 @@ internal_getRouterBrand ()
       return ROUTER_WRT300N;
     }
 
-  if (nvram_match ("boardnum", "42") &&
+  if (boardnum == 42 &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "1"))
     {
       setRouter ("Linksys WRT350N");
@@ -468,7 +462,7 @@ internal_getRouterBrand ()
       return ROUTER_WRT350N;
     }
 
-  if (nvram_match ("boardnum", "42") &&
+  if (boardnum == 42 &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
       setRouter ("Linksys WRT54G 1.x");
@@ -499,7 +493,7 @@ internal_getRouterBrand ()
 		  }	
 	    }
 	    
-  if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
+  if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
     {
 	  char *cfe = nvram_safe_get ("cfe_version");
 	  if (strstr(cfe, "iewsonic"))
@@ -876,7 +870,9 @@ led_control (int type, int act)
 
 int use_gpio = 0x0f;
 int gpio_value;
-char temp[4];
+char val[4];
+char enable[16];
+char disable[16];
 
 int	power_gpio = 0x0f;
 int	diag_gpio = 0x0f;
@@ -1033,34 +1029,22 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	if ((use_gpio & 0x0f) != 0x0f)
 	{	
 		gpio_value = use_gpio & 0x0f;
-		sprintf (temp, "%d", gpio_value); 
+		sprintf (val, "%d", gpio_value); 
+		sprintf (enable, "%s", (use_gpio & 0x10) == 0 ? "enable", "disable");
+		sprintf (disable, "%s", (use_gpio & 0x10) == 0 ? "disable", "enable");	
+			
 		switch (act)
 		{
 			case LED_ON:
-				if ((use_gpio & 0x10) == 0x10)
-					eval ("gpio", "disable", temp);
-				else 
-					eval ("gpio", "enable", temp);
+					eval ("gpio", enable, val);
 				break;
 			case LED_OFF:
-				if ((use_gpio & 0x10) == 0x10)
-					eval ("gpio", "enable", temp);
-				else 
-					eval ("gpio", "disable", temp);
+					eval ("gpio", disable, val);
 				break;
 			case LED_FLASH:  //will lit the led for 1 sec.
-				if ((use_gpio & 0x10) == 0x10)
-					{
-					eval ("gpio", "disable", temp);
+					eval ("gpio", enable, val);
 					sleep (1);
-					eval ("gpio", "enable", temp);
-					}
-				else
-					{ 
-					eval ("gpio", "enable", temp);
-					sleep (1);
-					eval ("gpio", "disable", temp);
-					}
+					eval ("gpio", disable, val);
 				break;
 		}
 	}
@@ -1787,43 +1771,45 @@ check_now_boot (void)
 void
 show_hw_type (int type)
 {
+	cprintf ("The chipset is ");
   if (type == BCM4702_CHIP)
-    cprintf ("The chipset is BCM4702\n");
+    cprintf ("BCM4702\n");
   else if (type == BCM5325E_CHIP)
-    cprintf ("The chipset is BCM4712L + BCM5325E\n");
+    cprintf ("BCM4712L + BCM5325E\n");
   else if (type == BCM4704_BCM5325F_CHIP)
-    cprintf ("The chipset is BCM4704 + BCM5325F\n");
+    cprintf ("BCM4704 + BCM5325F\n");
   else if (type == BCM5352E_CHIP)
-    cprintf ("The chipset is BCM5352E\n");
+    cprintf ("BCM5352E\n");
   else if (type == BCM4712_CHIP)
-    cprintf ("The chipset is BCM4712 + ADMtek\n");
+    cprintf ("BCM4712 + ADMtek\n");
   else if (type == BCM4704_BCM5325F_EWC_CHIP)
-    cprintf ("The chipset is BCM4704 + BCM5325F for EWC\n");
+    cprintf ("BCM4704 + BCM5325F for EWC\n");
   else
-    cprintf ("The chipset is not defined\n");
+    cprintf ("not defined\n");
 
 }
 
 int
 check_hw_type (void)
 {
-  uint boardflags;
 
-  boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-
-  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap") || nvram_match ("boardtype", "bcm94710r4") || nvram_match ("boardtype", "bcm94710dev\r"))	//Eko 19.apr.06, 10.may.06
+  char *boardtype = nvram_safe_get ("boardtype");
+  uint boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+  uint btype = strtoul (boardtype, NULL, 0);
+  
+  if (!strncmp (boardtype, "bcm94710", 8)
     return BCM4702_CHIP;
-  else if (nvram_match ("boardtype", "0x0708") && !(boardflags & BFL_ENETADM))
+  else if (btype == 0x0708 && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
-  else if (nvram_match ("boardtype", "0x042f") && !(boardflags & BFL_ENETADM))
+  else if (btype == 0x042f && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_CHIP;
-  else if (nvram_match("boardtype", "0x478"))
+  else if (btype == 0x478)
     return BCM4705_BCM5397_EWC_CHIP;
-  else if (nvram_match ("boardtype", "0x0467"))
+  else if (btype == 0x0467)
     return BCM5352E_CHIP;
-  else if (nvram_match ("boardtype", "0x0101") || nvram_match ("boardtype", "0x0446"))	//0x446 is wap54g v2
+  else if (btype == 0x0101 || btype == 0x0446)	//0x446 is wap54g v2
     return BCM4712_CHIP;
-  else if (nvram_match ("boardtype", "0x0472") && !(boardflags & BFL_ENETADM))
+  else if (btype == 0x0472 && !(boardflags & BFL_ENETADM))
     return BCM4704_BCM5325F_EWC_CHIP;
   else
     return NO_DEFINE_CHIP;
@@ -2128,8 +2114,6 @@ check_vlan_support (void)
 #else
 
 
-  uint boardflags;
-
   int brand = getRouterBrand ();
   switch (brand)
   	{
@@ -2143,7 +2127,7 @@ check_vlan_support (void)
 	  	break;
   	}
 
-  boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+  uint boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   if (boardflags & BFL_ENETVLAN)
     return 1;
     
