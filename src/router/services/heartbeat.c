@@ -196,9 +196,8 @@ hb_connect_main (int argc, char **argv)
   start_wan_done (get_wan_face ());
 
   snprintf (buf, sizeof (buf),
-	    "iptables -I INPUT -i %d -p udp -s %s -d %s --dport %s -j %s",
-	    get_wan_face (), argv[3], nvram_safe_get ("wan_ipaddr"), argv[1],
-	    "ACCEPT");
+	    "iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT",
+	    get_wan_face (), argv[3], nvram_safe_get ("wan_ipaddr"), argv[1]);
 
   MY_LOG (LOG_INFO, "Adding firewall [%s]\n", buf);
 
