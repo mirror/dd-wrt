@@ -122,10 +122,16 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Linksys WAP54G v1
 #define ROUTER_WAP54G_V1 0x210f
 
-//Dell TrueMobile 2300 (4702 cpu, mini pci radio)
-#define DELL_TRUEMOBILE_2300 0x2210
+//Linksys WAP54G v2
+#define ROUTER_WAP54G_V2 0x220f
 
-#define ROUTER_BOARD_FONERA 0x240f
+//ViewSonic WAPBR-100
+#define ROUTER_VIEWSONIC_WAPBR_100 0x2317
+
+//Dell TrueMobile 2300 (4702 cpu, mini pci radio)
+#define DELL_TRUEMOBILE_2300 0x2410
+
+#define ROUTER_BOARD_FONERA 0x250f
 
 #define NVROUTER "DD_BOARD"
 
