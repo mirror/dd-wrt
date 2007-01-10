@@ -30,6 +30,7 @@
 #include <shutils.h>
 #include <wlioctl.h>
 #include <wlutils.h>
+#include <utils.h>
 
 #define sys_restart() kill(1, SIGHUP)
 #define SITE_SURVEY_DB	"/tmp/site_survey"

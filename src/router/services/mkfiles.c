@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <shutils.h>
 
 #define HOME_DIR	"/tmp/root"
 #define PASSWD_DIR	"/tmp/etc"
