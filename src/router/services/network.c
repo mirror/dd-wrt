@@ -38,6 +38,31 @@ typedef u_int64_t u64;
 typedef u_int32_t u32;
 typedef u_int16_t u16;
 typedef u_int8_t u8;
+
+typedef u_int64_t __u64;
+typedef u_int32_t __u32;
+typedef u_int16_t __u16;
+typedef u_int8_t __u8;
+#include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <error.h>
+#include <time.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/reboot.h>
+#include <sys/sysinfo.h>
+
+#include <string.h>
+#include <linux/version.h>
+
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 //#include <libbridge.h>
