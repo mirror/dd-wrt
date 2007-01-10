@@ -213,6 +213,8 @@ set_wiviz (webs_t wp)
  
   fclose (fp);
   killall ("wiviz", SIGUSR2);
+  
+return 1;
 }
 
 #endif
