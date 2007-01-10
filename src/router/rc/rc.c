@@ -465,18 +465,6 @@ if (brand!=ROUTER_WRT350N)
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand & 0x000f) != 0x000f)
-/*	  
-	  	  if ((brand == ROUTER_WRT54G) ||
-	      (brand == ROUTER_WRT54G1X) ||
-	      (brand == ROUTER_WRTSL54GS) ||
-	      (brand == ROUTER_LINKSYS_WRT55AG) ||
-	      (brand == ROUTER_ASUS) ||
-	      (brand == ROUTER_BUFFALO_WBR54G) ||
-	      (brand == ROUTER_BUFFALO_WHRG54S) ||
-	      (brand == ROUTER_MOTOROLA_V1) ||
-	      (brand == ROUTER_BOARD_500) ||
-	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
-	      (brand == ROUTER_BUFFALO_WBR2G54S))  */
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -505,18 +493,6 @@ if (brand!=ROUTER_WRT350N)
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
 	  if ((brand & 0x000f) != 0x000f)
-/*
-	  if ((brand == ROUTER_WRT54G) ||
-	      (brand == ROUTER_WRT54G1X) ||
-	      (brand == ROUTER_WRTSL54GS) ||
-	      (brand == ROUTER_LINKSYS_WRT55AG) ||
-	      (brand == ROUTER_ASUS) ||
-	      (brand == ROUTER_BUFFALO_WBR54G) ||
-	      (brand == ROUTER_BUFFALO_WHRG54S) ||
-	      (brand == ROUTER_MOTOROLA_V1) ||
-	      (brand == ROUTER_BOARD_500) ||
-	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
-	      (brand == ROUTER_BUFFALO_WBR2G54S))  */
 	    {
 	      start_service ("resetbutton");
 	    }
@@ -810,28 +786,7 @@ main (int argc, char **argv)
 		   "Your router model doesnt support the resetbutton!\n");
 	  return 0;
 	}
-/*	  	
-      int brand = getRouterBrand ();
-//      fprintf(stderr,"brand = %d\n",brand);
-      switch (brand)
-	{
-	case ROUTER_WRT54G:
-	case ROUTER_WRT54G1X:
-	case ROUTER_WRTSL54GS:
-	case ROUTER_LINKSYS_WRT55AG:
-	case ROUTER_ASUS:
-	case ROUTER_BUFFALO_WBR54G:
-	case ROUTER_BUFFALO_WHRG54S:
-	case ROUTER_MOTOROLA_V1:
-	case ROUTER_BUFFALO_WBR2G54S:
-	case ROUTER_BUFFALO_WZRRSG54:
-	  return resetbutton_main (argc, argv);
-	default:
-	  fprintf (stderr,
-		   "Your router model doesnt support the resetbutton!\n");
-	  return 0;
-	}
-*/
+
 #endif
     }
 #ifndef HAVE_MADWIFI
