@@ -40,7 +40,7 @@ void __init prom_init(void)
 	memsize <<= 3;
     add_memory_region(0, memsize, BOOT_MEM_RAM);
 
-    strcpy(arcs_cmdline, "console=ttyS0,9600 rootfstype=squashfs,jffs2");
+    strcpy(arcs_cmdline, "console=ttyS0,115200 root=/dev/mtdblock1 rootfstype=squashfs noinitrd");
 }
 
 void __init prom_free_prom_memory(void)

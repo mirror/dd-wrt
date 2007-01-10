@@ -8,10 +8,6 @@ obj-y		+= cpu-probe.o branch.o entry.o genex.o irq.o process.o \
 		   ptrace.o reset.o semaphore.o setup.o signal.o syscall.o \
 		   time.o topology.o traps.o unaligned.o
 
-CFLAGS_syscall.o		:= -O1
-CFLAGS_signal.o			:= -O1
-CFLAGS_signal32.o		:= -O1
-
 binfmt_irix-objs	:= irixelf.o irixinv.o irixioctl.o irixsig.o	\
 			   irix5sys.o sysirix.o
 

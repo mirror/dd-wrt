@@ -11,6 +11,7 @@
 
 #include <linux/compiler.h>
 #include <linux/types.h>
+#include <asm/war.h>
 #include <asm/bug.h>
 #include <asm/byteorder.h>		/* sigh ... */
 #include <asm/cpu-features.h>
