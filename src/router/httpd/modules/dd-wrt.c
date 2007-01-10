@@ -3618,7 +3618,7 @@ ej_get_curchannel ( webs_t wp, int argc, char_t ** argv)
 #include <err.h>
 
 
-#include <linux/wireless.h>
+#include "wireless_copy.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
