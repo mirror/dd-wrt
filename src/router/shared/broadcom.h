@@ -525,3 +525,9 @@ void get_broadcast (char *ipaddr, char *netmask);
 int route_manip (int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add (char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del (char *name, int metric, char *dst, char *gateway, char *genmask);
+
+extern void show_preshared (webs_t wp, char *prefix);
+extern void show_radius (webs_t wp, char *prefix);
+extern void show_wparadius (webs_t wp, char *prefix);
+extern void show_wep (webs_t wp, char *prefix);
+extern char *get_wep_value (char *type, char *_bit, char *prefix);
