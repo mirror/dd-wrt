@@ -387,7 +387,9 @@ start_sysinit (void)
       break;
 
     case ROUTER_BUFFALO_WLA2G54C:
-      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C interfaces
+    case ROUTER_WAP54G_V2:
+    case ROUTER_VIEWSONIC_WAPBR_100:
+      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for interfaces
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
@@ -395,17 +397,10 @@ start_sysinit (void)
 
 #ifdef HAVE_MSSID
     case ROUTER_WRT54G:
-      nvram_set ("wl0gpio0", "136");	//Fix for wireless led olways on (v24 only)
+      nvram_set ("wl0gpio0", "136");	//Fix for wireless led always on (v24 only)
       break;
 #endif
-    }
 
-  if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
-    {
-      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54Gv2 interfaces
-      nvram_set ("wl0_ifname", "eth1");
-      nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
-      nvram_set ("wan_ifnames", "eth2");
     }
 
 
