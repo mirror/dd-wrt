@@ -65,7 +65,7 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
     {
       char clock[16];
       sprintf (clock, "%d", c[i]);
-      websWrite (wp, "<option value=\"%d\" %s >%d Mhz</option>\n", c[i],
+      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
 		 nvram_match ("overclocking",
 			      clock) ? "selected=\"selected\"" : "", c[i]);
 
@@ -1722,7 +1722,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 
 	      sprintf (cn, "%d", chan[i].channel);
 	      websWrite (wp,
-			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %dMhz</option>\");\n",
+			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
 			 cn, nvram_match (wl_channel,
 					  cn) ? "selected=\\\"selected\\\"" :
 			 "", cn, chan[i].freq);
@@ -1748,12 +1748,12 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	    sel = "selected";
 
 	  websWrite (wp,
-		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\"GHz</option>\");\n",
+		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		     ch - 2, sel, ch - 2, ch - 2);
 	  if (nvram_match ("wl0_nctrlsb", "upper"))
 	    sel = "selected";
 	  websWrite (wp,
-		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\"GHz</option>\");\n",
+		     " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		     ch + 2, sel, ch + 2, ch + 2);
 
 	}
@@ -1789,7 +1789,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 		 "		document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
       websWrite (wp, "	else\n");
       websWrite (wp,
-		 "		document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\"GHz</option>\");\n");
+		 "		document.write(\"<option value=\"+i+\" \"+buf+\">\"+(i+offset-1)+\" - \"+freq[i]+\" GHz</option>\");\n");
       websWrite (wp, "}\n");
     }
 #endif
@@ -2616,13 +2616,13 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 		     nvram_match ("wl0_nbw",
 				  "0") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp, "<option value=\"10\" %s>10 Mhz</option>",
+	  websWrite (wp, "<option value=\"10\" %s>10 MHz</option>",
 		     nvram_match ("wl0_nbw",
 				  "10") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp, "<option value=\"20\" %s>20 Mhz</option>",
+	  websWrite (wp, "<option value=\"20\" %s>20 MHz</option>",
 		     nvram_match ("wl0_nbw",
 				  "20") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp, "<option value=\"40\" %s>40 Mhz</option>",
+	  websWrite (wp, "<option value=\"40\" %s>40 MHz</option>",
 		     nvram_match ("wl0_nbw",
 				  "40") ? "selected=\\\"selected\\\"" : "");
 	  websWrite (wp, "</select>\n");
