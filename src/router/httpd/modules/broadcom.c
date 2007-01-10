@@ -4788,11 +4788,11 @@ ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
 
 		  while (fgets (buf, sizeof (buf), host))
 		    {
-		      sscanf (buf, "%*lu %*s %15s %*s", fullip);
+		      sscanf (buf, "%*s %*s %15s %*s", fullip);
 
 		      if (strcmp (ip, fullip) == 0)
 			{
-			  sscanf (buf, "%*lu %*s %*s %s", hostname);
+			  sscanf (buf, "%*s %*s %*s %s", hostname);
 			}
 		    }
 		  fclose (host);
@@ -4806,7 +4806,7 @@ ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
 	      && nvram_match ("dhcpd_usenvram", "1"))
 	    {
 	      sprintf (buf, "dnsmasq_lease_%s", ip);
-	      sscanf (nvram_safe_get (buf), "%*lu %*s %*s %s", hostname);
+	      sscanf (nvram_safe_get (buf), "%*s %*s %*s %s", hostname);
 	    }
 /* end nvram check */
 
