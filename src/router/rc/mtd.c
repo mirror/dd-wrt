@@ -12,22 +12,38 @@
  * $Id: mtd.c,v 1.3 2005/11/30 11:54:21 seg Exp $
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <limits.h>
-#include <sys/sysmacros.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <time.h>
 #include <sys/ioctl.h>
-#include <sys/sysinfo.h>
+#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/reboot.h>
+#include <sys/sysinfo.h>
 
+#include <string.h>
+#include <linux/version.h>
+
+#if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
+#define IS_KERNEL26 1
+#else
+#define IS_KERNEL26 0
+#endif
+
+#if IS_KERNEL26
+#include <linux/mtd/mtd-abi.h>
+#else
 #include <linux/mtd/mtd.h>
+#endif
+
 
 #include <trxhdr.h>
 #include <crc.h>
@@ -88,8 +104,8 @@ int
 mtd_erase (const char *mtd)
 {
   int mtd_fd;
-  mtd_info_t mtd_info;
-  erase_info_t erase_info;
+  struct mtd_info_user mtd_info;
+  struct erase_info_user erase_info;
   /*char *et0;
      char *et1;
 
@@ -150,8 +166,8 @@ int
 mtd_write (const char *path, const char *mtd)
 {
   int mtd_fd = -1;
-  mtd_info_t mtd_info;
-  erase_info_t erase_info;
+  struct mtd_info_user mtd_info;
+  struct erase_info_user erase_info;
 
   struct sysinfo info;
   struct trx_header trx;
@@ -336,8 +352,8 @@ int
 mtd_unlock (const char *mtd)
 {
   int mtd_fd;
-  mtd_info_t mtd_info;
-  erase_info_t lock_info;
+  struct mtd_info_user mtd_info;
+  struct erase_info_user lock_info;
 
   /* Open MTD device */
   if ((mtd_fd = mtd_open (mtd, O_RDWR)) < 0)

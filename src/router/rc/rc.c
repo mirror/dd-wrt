@@ -140,11 +140,14 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
-
+  cprintf("console init\n");
   if (console_init ())
     noconsole = 1;
+  cprintf("init lcd\n");
   initlcd ();
+  cprintf("first message\n");
   lcdmessage ("System Start");
+  cprintf("start service\n");
   start_service ("sysinit");
 
   /* Setup signal handlers */
