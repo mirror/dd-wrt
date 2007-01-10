@@ -168,7 +168,7 @@ struct nvram_tuple srouter_defaults[] = {
   /* WAN H/W parameters */
 
   {"wan_ifname", "", 0},	/* WAN interface name */
-  {"wan_ifname2", "", 0},	/* WAN interface name (clone)*/
+  {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
   {"wan_ifnames", "", 0},	/* WAN interface names */
   {"wan_hwname", "", 0},	/* WAN driver name (e.g. et1) */
   {"wan_hwaddr", "", 0},	/* WAN interface MAC address */
@@ -219,7 +219,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wan_lease", "86400", 0},	/* WAN lease time in seconds */
   {"static_route", "", 0},	/* Static routes (ipaddr:netmask:gateway:metric:ifname ...) */
   {"static_route_name", "", 0},	/* Static routes name ($NAME:name) */
-  
+
   {"ses_enable", "1", 0},	/* enable ses */
   {"ses_event", "2", 0},	/* initial ses event */
   {"ses_button", "0", 0},	/* Affect custom actions to SES Button - 0-3: nothing, reboot, enable/disable wireless, custom script */
@@ -483,13 +483,13 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MSSID
 
 #ifdef HAVE_MADWIFI
-  {"ath_regulatory","1",0},
+  {"ath_regulatory", "1", 0},
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"ath0.2_ssid", "", 0},	/* Service set ID (network name) */
   {"ath0.3_ssid", "", 0},	/* Service set ID (network name) */
-  {"ath0_bridged", "1", 0},	/* Service set ID (network name) */  
+  {"ath0_bridged", "1", 0},	/* Service set ID (network name) */
   {"ath0.1_bridged", "1", 0},	/* Service set ID (network name) */
   {"ath0.2_bridged", "1", 0},	/* Service set ID (network name) */
   {"ath0.3_bridged", "1", 0},	/* Service set ID (network name) */
@@ -1071,7 +1071,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"hb_server_ip", "", 0},	/* heartbeat auth server (IP Address) */
   {"hb_server_domain", "", 0},	/* heartbeat auth server (domain name) */
 //#ifdef HAVE_SAMBA
-  {"samba_mount", "0", 0},  //leave this in all versions, or will produce error on info or status_router pages; Eko
+  {"samba_mount", "0", 0},	//leave this in all versions, or will produce error on info or status_router pages; Eko
 #ifdef HAVE_SAMBA
   {"samba_share", "//yourserverip/yourshare", 0},
   {"samba_user", "username/computer", 0},

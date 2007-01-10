@@ -465,6 +465,12 @@ flush_interfaces (void)
 #elif HAVE_X86
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_MAGICBOX
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0 eth1",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_FONERA
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #else
   snprintf (all_ifnames, 255, "%s %s %s", "ixp0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
