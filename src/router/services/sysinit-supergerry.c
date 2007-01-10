@@ -70,7 +70,7 @@ start_sysinit (void)
   unlink ("/tmp/nvram/.lock");
   eval ("mkdir", "/tmp/nvram");
   eval ("/bin/tar", "-xzf", "/dev/mtdblock4", "-C", "/");
- // eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
+  // eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
   cprintf ("sysinit() var\n");
 
   /* /var */
@@ -102,12 +102,12 @@ start_sysinit (void)
  test -e /lib/modules/$KERNELVER/extra/dspdd.ko && insmod /lib/modules/$KERNELVER/extra/dspdd.ko
  test -e /lib/modules/$KERNELVER/extra/endpointdd.ko && insmod /lib/modules/$KERNELVER/extra/endpointdd.ko
 */
- eval ("insmod","atmapi");
- eval ("insmod","adsldd");
- eval ("insmod","blaa_dd");
- eval ("insmod","bcmprocfs");
- eval ("insmod","bcm_enet");
- 
+  eval ("insmod", "atmapi");
+  eval ("insmod", "adsldd");
+  eval ("insmod", "blaa_dd");
+  eval ("insmod", "bcmprocfs");
+  eval ("insmod", "bcm_enet");
+
 
   /* Modules */
   uname (&name);
@@ -122,7 +122,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 
 
- // eval ("insmod", "ipv6");
+  // eval ("insmod", "ipv6");
 
   /* Set a sane date */
   stime (&tm);

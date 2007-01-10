@@ -570,7 +570,8 @@ int
 isClient (void)
 {
 #ifndef HAVE_MADWIFI
-  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
+  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
     return 1;
 #else
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "apsta"))
@@ -621,17 +622,20 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_RB500
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
+      nvram_set ("lan_ifnames",
+		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5");
       nvram_set ("wan_ifname", "eth0");
       nvram_set ("wan_ifnames", "eth0");
     }
@@ -643,7 +647,8 @@ start_lan (void)
 #endif
 
 #ifdef HAVE_MAGICBOX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0");
@@ -670,7 +675,8 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
@@ -692,7 +698,8 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
@@ -721,7 +728,8 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta") || nvram_match ("ath0_mode", "wet"))
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
@@ -760,12 +768,15 @@ start_lan (void)
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
-      nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
+      nvram_set ("lan_ifnames",
+		 "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
       if (nvram_match ("wifi_bonding", "1"))
-	nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
       else
-	nvram_set ("lan_ifnames","eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
+	nvram_set ("lan_ifnames",
+		   "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
 #endif
       if (nvram_get ("wan_ifname2") != NULL)
 	{
@@ -778,7 +789,7 @@ start_lan (void)
 #ifdef HAVE_GW700
 	  nvram_set ("wan_ifname", "eth1");
 	  nvram_set ("wan_ifnames", "eth1");
-#else	
+#else
 	  nvram_set ("wan_ifname", "eth0");
 	  nvram_set ("wan_ifnames", "eth0");
 #endif
@@ -861,10 +872,10 @@ start_lan (void)
     }
   else
     {
-	    if (nvram_match ("port_swap", "1"))
-	      strcpy (mac, nvram_safe_get ("et1macaddr"));
-		else			
-	      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      if (nvram_match ("port_swap", "1"))
+	strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+	strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       MAC_ADD (mac);		// The wireless mac equal lan mac add 2
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -896,10 +907,10 @@ start_lan (void)
   if (nvram_match ("wl_mode", "sta"))
     {
       unsigned char mac[20];
-		if (nvram_match ("port_swap", "1"))
-	      strcpy (mac, nvram_safe_get ("et1macaddr"));
-		else			
-	      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      if (nvram_match ("port_swap", "1"))
+	strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+	strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       nvram_set ("wan_hwaddr", mac);
     }
@@ -1009,9 +1020,9 @@ start_lan (void)
 	    else
 	      {
 		if (nvram_match ("port_swap", "1"))
-	      strcpy (mac, nvram_safe_get ("et1macaddr"));
-		else			
-	      strcpy (mac, nvram_safe_get ("et0macaddr"));
+		  strcpy (mac, nvram_safe_get ("et1macaddr"));
+		else
+		  strcpy (mac, nvram_safe_get ("et0macaddr"));
 		MAC_ADD (mac);
 		MAC_ADD (mac);	// The wireless mac equal lan mac add 2
 		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
@@ -1091,8 +1102,8 @@ start_lan (void)
 #endif
 	    snprintf (wl_name, sizeof (wl_name), "wl%d_mode", unit);
 	    /* Do not attach the main wl i/f if in wds or client/adhoc */
-	    
-		led_control (LED_BRIDGE, LED_OFF);
+
+	    led_control (LED_BRIDGE, LED_OFF);
 	    if (nvram_match (wl_name, "wet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
@@ -1227,7 +1238,7 @@ start_lan (void)
 
 
   /* Get current LAN hardware address */
- 
+
   strncpy (ifr.ifr_name, lan_ifname, IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -1710,10 +1721,10 @@ start_wan (int status)
   else
     {
       unsigned char mac[20];
-		if (nvram_match ("port_swap", "1"))
-	      strcpy (mac, nvram_safe_get ("et1macaddr"));
-		else			
-	      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      if (nvram_match ("port_swap", "1"))
+	strcpy (mac, nvram_safe_get ("et1macaddr"));
+      else
+	strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);		// The wan mac equal lan mac add 1
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
@@ -2046,16 +2057,15 @@ start_wan (int status)
 //  fprintf(stderr,"get wan addr of %s\n",wan_ifname);
   strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
-    {
-      if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
-	{
-	  char eabuf[32];
-	  nvram_set ("wan_hwaddr",
-		     ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  {
+    if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+      {
+	char eabuf[32];
+	nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
 //        fprintf(stderr,"write wan addr %s\n",nvram_safe_get("wan_hwaddr"));
-	}
+      }
 
-    }
+  }
 
   close (s);
 
@@ -2361,19 +2371,19 @@ start_wan_done (char *wan_ifname)
   cprintf ("trigger gpio");
 
   led_control (LED_CONNECTED, LED_ON);
-  
+
   double sys_uptime;
   FILE *up;
-  
-  	up = fopen ("/proc/uptime", "r");
-	fscanf (up, "%lf", &sys_uptime);
-	fclose (up);
-	
-	up = fopen ("/tmp/.wanuptime", "w");
-	fprintf (up, "%lf", sys_uptime);
-	fclose (up);
-	
-	
+
+  up = fopen ("/proc/uptime", "r");
+  fscanf (up, "%lf", &sys_uptime);
+  fclose (up);
+
+  up = fopen ("/tmp/.wanuptime", "w");
+  fprintf (up, "%lf", sys_uptime);
+  fclose (up);
+
+
 
   cprintf ("done\n");
   char *wani = nvram_safe_get ("wan_iface");
@@ -2464,7 +2474,7 @@ stop_wan (void)
 {
   char *wan_ifname = get_wan_face ();
   nvram_set ("wanup", "0");
-  
+
   led_control (LED_CONNECTED, LED_OFF);
   unlink ("/tmp/.wanuptime");
 
@@ -2725,7 +2735,7 @@ start_hotplug_net (void)
 
   if (strncmp (interface, "wds", 3))
     return 0;
-  cprintf("action: %s\n",action);
+  cprintf ("action: %s\n", action);
   if (!strcmp (action, "register"))
     {
 #ifdef HAVE_MICRO
