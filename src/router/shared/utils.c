@@ -526,7 +526,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Buffalo old 4710\n");
       setRouter ("Buffalo WBR-B11");
-      return ROUTER_BRCM4702_GENERIC;
+      return ROUTER_BUFFALO_WBR54G:;
     }
 
   setRouter ("Linksys WRT54G/GL/GS");
