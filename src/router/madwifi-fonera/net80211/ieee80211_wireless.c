@@ -2280,6 +2280,18 @@ ieee80211_ioctl_setparam(struct net_device *dev, struct iw_request_info *info,
 			ic->ic_flags &= ~IEEE80211_F_DOTH;
 		retv = ENETRESET;	/* XXX: need something this drastic? */
 		break;
+	case IEEE80211_PARAM_SHPREAMBLE:
+		if (value) {
+			ic->ic_caps |= IEEE80211_C_SHPREAMBLE;
+			ic->ic_flags |= IEEE80211_F_SHPREAMBLE;
+			ic->ic_flags &= ~IEEE80211_F_USEBARKER;
+		} else {
+			ic->ic_caps &= ~IEEE80211_C_SHPREAMBLE;
+			ic->ic_flags &= ~IEEE80211_F_SHPREAMBLE;
+			ic->ic_flags |= IEEE80211_F_USEBARKER;
+		}	
+		retv = ENETRESET;	/* requires restart */
+		break;
 	case IEEE80211_PARAM_PWRTARGET:
 		ic->ic_curchanmaxpwr = value;
 		break;
@@ -2675,6 +2687,9 @@ ieee80211_ioctl_getparam(struct net_device *dev, struct iw_request_info *info,
 		break;
 	case IEEE80211_PARAM_DOTH:
 		param[0] = (ic->ic_flags & IEEE80211_F_DOTH) != 0;
+		break;
+	case IEEE80211_PARAM_SHPREAMBLE:
+		param[0] = (ic->ic_caps & IEEE80211_C_SHPREAMBLE) != 0;
 		break;
 	case IEEE80211_PARAM_PWRTARGET:
 		param[0] = ic->ic_curchanmaxpwr;
@@ -4791,6 +4806,10 @@ static const struct iw_priv_args ieee80211_priv_args[] = {
 	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "dropunenceapol" },
 	{ IEEE80211_PARAM_DROPUNENC_EAPOL,
 	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_dropunencea" },
+	{ IEEE80211_PARAM_SHPREAMBLE,
+	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "shpreamble" },
+	{ IEEE80211_PARAM_SHPREAMBLE,
+	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_shpreamble" },
 	/*
 	 * NB: these should be roamrssi* etc, but iwpriv usurps all
 	 *     strings that start with roam!
