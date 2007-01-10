@@ -17,12 +17,10 @@
 char *
 dhcp_reltime (char *buf, time_t t)
 {
-  int days;
-  int min;
   if (t < 0)
     t = 0;
-  days = t / 86400;
-  min = t / 60;
+  int days = t / 86400;
+  int min = t / 60;
   sprintf (buf, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"),
 	   ((min / 60) % 24), (min % 60), (int) (t % 60));
   return buf;
@@ -141,7 +139,6 @@ ej_dumpleases (webs_t wp, int argc, char_t ** argv)
     {
       struct lease_t lease;
       struct in_addr addr;
-      char sigusr1[] = "-XX";
       char *ipaddr, mac[20] = "", expires_time[50] = "";
 
       /* Write out leases file from udhcpd */
@@ -282,10 +279,8 @@ dhcp_check (webs_t wp, char *value, struct variable *v)
 int
 dhcp_renew (webs_t wp)
 {
-  int ret;
-  char sigusr[] = "-XX";
 
-  ret = killall ("udhcpc", SIGUSR1);
+	int ret = killall ("udhcpc", SIGUSR1);
 
   return ret;
 }
@@ -293,7 +288,6 @@ dhcp_renew (webs_t wp)
 int
 dhcp_release (webs_t wp)
 {
-  int ret = 0;
 
   nvram_set ("wan_ipaddr", "0.0.0.0");
   nvram_set ("wan_netmask", "0.0.0.0");
@@ -304,5 +298,5 @@ dhcp_release (webs_t wp)
   unlink ("/tmp/get_lease_time");
   unlink ("/tmp/lease_time");
 
-  return ret;
+  return 0;
 }
