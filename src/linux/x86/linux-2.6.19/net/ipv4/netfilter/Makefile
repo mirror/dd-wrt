@@ -112,3 +112,7 @@ nf_conntrack_ipv4-objs  :=  nf_conntrack_l3proto_ipv4.o nf_conntrack_proto_icmp.
 
 # l3 independent conntrack
 obj-$(CONFIG_NF_CONNTRACK_IPV4) += nf_conntrack_ipv4.o
+
+#obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack_rtsp.o
+#obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
+
