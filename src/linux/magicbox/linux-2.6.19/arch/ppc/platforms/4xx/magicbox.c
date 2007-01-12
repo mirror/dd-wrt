@@ -235,77 +235,9 @@ void __init
 magicbox_setup_arch(void)
 {
 
-	/* Mask to apply to ebc0_bncr register as per 405ep_um.pdf, page 97.
-	 * 
-	 * This is endian-mess, I mean -- it's fscked probably exactly here 
-	 */
-	printk("reseting CF Card IDE\n");
-	//reset_ide(1);
-	//reset_ide(0);
-	printk("done CF Card IDE\n");
-					
-
-//#define CFG_EBC_PB3AP		0x010053C0  /* BWT=2,WBN=1,WBF=1,TH=1,RE=1,SOR=1,BEM=1 */
-//#define CFG_EBC_PB3CR		0xF011A000  /* BAS=0xF01,BS=1MB,BU=R/W,BW=16bit */
-
-  	u32 ebc0_b1cr_mask = 0xec01a000; //0xfffb10ce;
-  	u32 ebc0_b2cr_mask = 0xec11a000; //0xfffb11ce;
-	u32 ebc0_bnap_mask = 0x010053C0; //
-//	u32 ebc0_bnap_mask = 0x081bb41f;//0xf14bb180;
-	u32 reg;
-
 	ppc4xx_setup_arch();
 	ibm_ocp_set_emac(0, 1);
 	magicbox_early_serial_map();
-	
-
-	/* Program BnCR, BnAP according to some TOSHIBA-CF sample application
-	   note. */
-	printk("magicbox: init\n");
-
-	printk("Interrupt enable:   0x%x\n", mfdcr(0x0c2));
-	printk("Interrupt polarity: 0x%x\n", mfdcr(0x0c4));
-
-	printk("enabling ext irq0\n");
-	reg = mfdcr(0x0c2) | (1<<7);
-	mtdcr(0x0c2, reg);
-
-	printk("setting ext irq0 polarity to high\n");
-	reg = mfdcr(0x0c4) | (1<<7);
-	mtdcr(0xc4, reg);
-
-	printk("Interrupt enable:   0x%x\n", mfdcr(0xc2));
-	printk("Interrupt polarity: 0x%x\n", mfdcr(0xc4));
-
-	printk("magicbox: compact-flash init\n");
-	
-#define EBC0_CFGADDR 0x12
-#define EBC0_CFGDATA 0x13
-#define EBC0_B1CR    0x01
-#define EBC0_B2CR    0x02
-#define EBC0_B1AP    0x11
-#define EBC0_B2AP    0x12
-
-//	mtdcr(EBC0_CFGADDR, EBC0_B1CR);
-//	reg = mfdcr(EBC0_CFGDATA);
-	mtdcr(EBC0_CFGADDR, EBC0_B1CR);
-	mtdcr(EBC0_CFGDATA, ebc0_b1cr_mask);
-
-//	mtdcr(EBC0_CFGADDR, EBC0_B2CR);
-//	reg = mfdcr(EBC0_CFGDATA);
-	mtdcr(EBC0_CFGADDR, EBC0_B2CR);
-	mtdcr(EBC0_CFGDATA, ebc0_b2cr_mask);
-
-//	mtdcr(EBC0_CFGADDR, EBC0_B1AP);
-//	reg = mfdcr(EBC0_CFGDATA);
-	mtdcr(EBC0_CFGADDR, EBC0_B1AP);
-	mtdcr(EBC0_CFGDATA, ebc0_bnap_mask);
-
-//	mtdcr(EBC0_CFGADDR, EBC0_B2AP);
-//	reg = mfdcr(EBC0_CFGDATA);
-	mtdcr(EBC0_CFGADDR, EBC0_B2AP);
-	mtdcr(EBC0_CFGDATA, ebc0_bnap_mask);
-
 
 	/* Identify the system */
 	printk("MagicBox port (C) 2005 Karol Lewandowski <kl@jasmine.eu.org>\n");

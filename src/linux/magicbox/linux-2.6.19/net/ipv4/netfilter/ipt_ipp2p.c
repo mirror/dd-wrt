@@ -831,7 +831,9 @@ checkentry(const char *tablename,
            const struct ipt_ip *ip,
 #endif
 	   void *matchinfo,
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,18)
 	   unsigned int matchsize,
+#endif
 	   unsigned int hook_mask)
 {
         /* Must specify -p tcp */
