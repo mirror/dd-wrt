@@ -308,6 +308,26 @@ do_ap_check (void)
   return 0;
 }
 
+int
+checkbssid (void)
+{
+  struct ether_addr bssid;
+  wl_bss_info_t *bi;
+  char buf[sizeof(wl_bss_info_t)+64];
+  if ((WL_IOCTL (get_wdev(), WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
+    {
+      *(uint32 *) buf = WLC_IOCTL_MAXLEN;
+      if ((WL_IOCTL (get_wdev(), WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) < 0)
+	return 0;
+      bi = (wl_bss_info_t *) (buf + 4);
+      int i;
+      for (i = 0; i < 6; i++)
+	if (bi->BSSID.octet[i] != 0)
+	  return 1;
+    }
+  return 0;
+}
+
 /* for Client/Wet mode */
 /* be nice to rewrite this to use sta_info_t if we had proper Broadcom API specs */
 static int
@@ -326,7 +346,7 @@ do_client_check (void)
 
   buf[len] = 0;
 
-  if (len > 0 && strstr (buf, "Not associated."))
+  if ((len > 0 && strstr (buf, "Not associated.")) || checkbssid()==0)
     {
 #ifdef HAVE_DDLAN
 
