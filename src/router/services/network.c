@@ -1484,8 +1484,6 @@ start_lan (void)
 	}
     }
 
-#endif
-#ifdef HAVE_XSCALE
 #undef HAVE_RB500
 #endif
   /* Sveasoft - set default IP gateway defined */
@@ -1522,7 +1520,7 @@ start_lan (void)
 	diag_led (DMZ, STOP_LED);
     }
 
-#ifndef HAVE_RB500
+#ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
     {
