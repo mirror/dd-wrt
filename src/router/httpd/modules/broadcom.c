@@ -3959,7 +3959,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
 		
-	      if (!strcmp (menu[i][j], submenu) && (!strlen (menu[i][j])))
+	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j])))
 		{
 		  websWrite (wp,
 			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n",
@@ -3979,7 +3979,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		  websWrite (wp, "      \n//]]>\n</script>\n");
 		}
 #endif
-	      else if (!strlen (menu[i][j]))
+	      else if (strlen (menu[i][j]))
 		{
 		  websWrite (wp,
 			     "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n",
