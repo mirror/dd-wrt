@@ -116,7 +116,12 @@ OBJS += heartbeat.c
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
+ifeq ($(CONFIG_FONERA),y)
+CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+else
 CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+endif
+
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.c
 OBJS += ../wireless-tools/libiw.so.29
