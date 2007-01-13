@@ -114,35 +114,38 @@ static void
 loadWlModule (void)		//get boardflags, set afterburner bit, load wl, unset afterburner bit
 {
 
-  int boardflags;
   int brand = getRouterBrand ();
   switch (brand)
     {
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
       eval ("insmod", "wl");	//load module
-      return;
       break;
     default:
-      boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-      fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
-      if (boardflags == 0 || boardflags & BFL_AFTERBURNER)
-	{
-	  eval ("insmod", "wl");	//load module
-	}
-      else
-	{
-	  char bf[16];
-	  sprintf (bf, "0x0%X", boardflags);
-	  boardflags |= BFL_AFTERBURNER;
-	  fprintf (stderr, "enable Afterburner, boardflags are 0x0%X\n",
-		   boardflags);
-	  char ab[16];
-	  sprintf (ab, "0x0%X", boardflags);
-	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
-	  eval ("insmod", "wl");	//load module
-	  nvram_set ("boardflags", bf);	//set back to original
-	}
+      int boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+      fprintf (stderr, "boardflags are 0x%04X\n", boardflags);
+      if (boardflags == 0)   //we can try anyway
+      	{
+	    nvram_set ("boardflags", "0x0200");  
+	    eval ("insmod", "wl");	//load module
+	    nvram_unset ("boardflags");
+     	} 
+      else if (boardflags & BFL_AFTERBURNER)  //ab flag already set
+		{
+	  	eval ("insmod", "wl");	//load module
+		}
+      else  //ab flag not set
+		{
+	  	char bf[16];
+	  	sprintf (bf, "0x%04X", boardflags);
+	  	boardflags |= BFL_AFTERBURNER;
+	  	fprintf (stderr, "enable Afterburner, boardflags are 0x%04X\n", boardflags);
+	  	char ab[16];
+	  	sprintf (ab, "0x%04X", boardflags);
+	  	nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
+	  	eval ("insmod", "wl");	//load module
+	  	nvram_set ("boardflags", bf);	//set back to original
+		}
 
     }
   return;
