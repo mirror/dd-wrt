@@ -114,6 +114,7 @@ static void
 loadWlModule (void)		//get boardflags, set afterburner bit, load wl, unset afterburner bit
 {
 
+  int boardflags;
   int brand = getRouterBrand ();
   switch (brand)
     {
@@ -122,7 +123,7 @@ loadWlModule (void)		//get boardflags, set afterburner bit, load wl, unset after
       eval ("insmod", "wl");	//load module
       break;
     default:
-      int boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
+      boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x%04X\n", boardflags);
       if (boardflags == 0)   //we can try anyway
       	{
