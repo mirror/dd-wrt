@@ -434,7 +434,7 @@ addEvent(window, "load", function() {
 									//]]>
 									</script></span>
 								</div>
-								<% isnot_afterburner_cap("<!--"); %>
+								<% support_invmatch("WL_AFTERBURNER","1","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label16"); %></div>
 									<select name="wl_afterburner">
@@ -452,7 +452,7 @@ addEvent(window, "load", function() {
 									//]]>
 									</script></span>
 								</div>
-								<% isnot_afterburner_cap("-->"); %>
+								<% support_invmatch("WL_AFTERBURNER","1","-->"); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label17"); %></div>
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><% tran("share.enable"); %>&nbsp;
