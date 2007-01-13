@@ -48,6 +48,7 @@
 #include <broadcom.h>
 #include <wlutils.h>
 #include <netdb.h>
+#include <utils.h>
 
 
 int gozila_action = 0;
@@ -3844,6 +3845,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
     }
 
   int sipgate = nvram_match ("sipgate", "1");
+  int vlan_supp = check_vlan_support ();
 #ifdef HAVE_SPUTNIK_APD
   int sputnik = nvram_match ("apd_enable", "1");
 #else
@@ -3954,7 +3956,9 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
-
+	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
+		j++;
+		
 	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j]) != 0))
 		{
 		  websWrite (wp,
