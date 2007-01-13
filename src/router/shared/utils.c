@@ -2104,13 +2104,13 @@ check_vlan_support (void)
 {
 #ifdef HAVE_RB500
   return 0;
-#elif HAVE_XSCALE		// dues support vlans, but not yet implemented
+#elif HAVE_XSCALE		// does support vlans, but not yet implemented
   return 0;
-#elif HAVE_X86			// dues support vlans, but not yet implemented
+#elif HAVE_X86			// does support vlans, but not yet implemented
   return 0;
-#elif HAVE_FONERA			// dues support vlans, but not yet implemented
+#elif HAVE_FONERA			// does support vlans, but not yet implemented
   return 0;
-#elif HAVE_MAGICBOX		// dues support vlans, but not yet implemented
+#elif HAVE_MAGICBOX		// does support vlans, but not yet implemented
   return 0;
 #else
 
@@ -2120,10 +2120,12 @@ check_vlan_support (void)
   	{
 	  	case ROUTER_LINKSYS_WRT55AG:
 	  	case ROUTER_MOTOROLA_V1:
+	  	case ROUTER_BUFFALO_WLAG54C:
 	  	case ROUTER_BUFFALO_WLA2G54C:
 	  	case ROUTER_MOTOROLA_WE800G:
 	  	case ROUTER_WAP54G_V1:
 	  	case ROUTER_WLI2_TX1_G54:
+	  	case ROUTER_BRCM4702_GENERIC:
 	  		return 0;
 	  	break;
   	}
