@@ -701,7 +701,7 @@ start_lan (void)
 #endif
 #ifdef HAVE_FONERA
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet"))
+      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
