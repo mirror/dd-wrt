@@ -3938,6 +3938,8 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 	      if (!wifi && !strcmp (menu[i][j], "Status_Wireless.asp"))
 		j++;
 #endif
+	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
+		j++;
 #ifndef HAVE_EOP_TUNNEL
 	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
 		j++;
@@ -3946,20 +3948,18 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 	      if (!strcmp (menu[i][j], "P2P.asp"))
 		j++;
 #endif
-#ifdef HAVE_MICRO
-	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
-		j++;
-#endif
 	      if ((!sputnik) && !strcmp (menu[i][j], "Status_SputnikAPD.asp"))	//jump over Sputnik
 		j++;
 	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
 		j++;
+#ifdef HAVE_MICRO
+	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
+		j++;
+#endif
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
-	      if ((!vlan_supp) && !strcmp (menu[i][j], "Vlan.asp"))	//jump over VLANs if vlan not supported
-		j++;
 		
-	      if (!strcmp (menu[i][j], submenu) && (strlen (menu[i][j]) != 0))
+	      if (!strcmp (menu[i][j], submenu) && (!strlen (menu[i][j])))
 		{
 		  websWrite (wp,
 			     "      <li><span><script type=\"text/javascript\">Capture(bmenu.%s)</script></span></li>\n",
@@ -3979,7 +3979,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		  websWrite (wp, "      \n//]]>\n</script>\n");
 		}
 #endif
-	      else if (strlen (menu[i][j]) != 0)
+	      else if (!strlen (menu[i][j]))
 		{
 		  websWrite (wp,
 			     "      <li><a href=\"%s\"><script type=\"text/javascript\">Capture(bmenu.%s)</script></a></li>\n",
