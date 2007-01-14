@@ -418,8 +418,6 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth2");
       break;
 
-#endif
-
     }
 
 
