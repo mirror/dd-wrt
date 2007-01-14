@@ -239,6 +239,8 @@ struct ieee80211com {
 	void (*ic_scan_end)(struct ieee80211com *);
 	void (*ic_set_channel)(struct ieee80211com *);
 
+	int16_t (*ic_getchannelnoise)(struct ieee80211com *,struct ieee80211_channel *);
+
 	/* u-apsd support */
 	void (*ic_uapsd_flush)(struct ieee80211_node *);
 

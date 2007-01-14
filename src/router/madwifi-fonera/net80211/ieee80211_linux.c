@@ -330,7 +330,7 @@ proc_read_nodes(struct ieee80211vap *vap, char *buf, int space)
         char *p = buf;
         struct ieee80211_node *ni;
         struct ieee80211_node_table *nt = (struct ieee80211_node_table *) &vap->iv_ic->ic_sta;
-
+        int8_t noise;
         //IEEE80211_NODE_LOCK(nt);                                                                               
         TAILQ_FOREACH(ni, &nt->nt_node, ni_list) {
                 /* Assume each node needs 500 bytes */
@@ -343,6 +343,10 @@ proc_read_nodes(struct ieee80211vap *vap, char *buf, int space)
 			jiffies_to_timespec(jiffies - ni->ni_last_rx, &t);
 			p += sprintf(p, "macaddr: <%s>\n", ether_sprintf(ni->ni_macaddr));
 			p += sprintf(p, " rssi %d\n", ni->ni_rssi);
+			noise = -95;
+			if (ni->ni_ic->ic_getchannelnoise)
+			    noise = (int8_t) ni->ni_ic->ic_getchannelnoise(ni->ni_ic,ni->ni_chan);
+			p += sprintf(p, " noise %d\n", noise);
 			
 			p += sprintf(p, " last_rx %ld.%06ld\n", 
 				     t.tv_sec, t.tv_nsec / 1000);
