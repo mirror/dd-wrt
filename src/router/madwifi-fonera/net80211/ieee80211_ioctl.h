@@ -306,6 +306,7 @@ struct ieee80211req_sta_info {
 	u_int16_t isi_state;		/* state flags */
 	u_int8_t isi_authmode;		/* authentication algorithm */
 	u_int8_t isi_rssi;
+	int32_t isi_noise;
 	u_int16_t isi_capinfo;		/* capabilities */
 	u_int8_t isi_athflags;		/* Atheros capabilities */
 	u_int8_t isi_erp;		/* ERP element */

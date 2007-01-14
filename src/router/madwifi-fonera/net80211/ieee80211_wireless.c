@@ -90,6 +90,14 @@
 	(IW_QUAL_QUAL_INVALID | IW_QUAL_LEVEL_INVALID | IW_QUAL_NOISE_INVALID)
 #endif
 
+static inline int16_t getnoise(struct ieee80211com *ic, struct ieee80211_channel *chan)
+{
+	if (ic->ic_getchannelnoise)
+		return (int8_t) ic->ic_getchannelnoise(ic, chan);
+
+	return -95;
+}
+
 /*
  * Units are in db above the noise floor. That means the
  * rssi values reported in the tx/rx descriptors in the
@@ -107,14 +115,15 @@
  *     drivers for compatibility
  */
 static void
-set_quality(struct iw_quality *iq, u_int rssi)
+set_quality(struct iw_quality *iq, u_int rssi, int noise)
 {
+	int abs;
 	iq->qual = rssi;
 	/* NB: max is 94 because noise is hardcoded to 161 */
-	if (iq->qual > 94)
-		iq->qual = 94;
-
-	iq->noise = 161;		/* -95dBm */
+	abs = (-noise)-1;
+	if (iq->qual > abs )
+		iq->qual = abs;
+	iq->noise = 256 + noise;	
 	iq->level = iq->noise + iq->qual;
 	iq->updated = IW_QUAL_ALL_UPDATED;
 }
@@ -158,7 +167,7 @@ ieee80211_iw_getstats(struct net_device *dev)
 	struct ieee80211vap *vap = dev->priv;
 	struct iw_statistics *is = &vap->iv_iwstats;
 
-	set_quality(&is->qual, ieee80211_getrssi(vap->iv_ic));
+	set_quality(&is->qual, ieee80211_getrssi(vap->iv_ic), getnoise(vap->iv_ic, vap->iv_ic->ic_curchan));
 	is->status = vap->iv_state;
 	is->discard.nwid = vap->iv_stats.is_rx_wrongbss +
 		vap->iv_stats.is_rx_ssidmismatch;
@@ -932,6 +941,8 @@ ieee80211_ioctl_giwrange(struct net_device *dev, struct iw_request_info *info,
 	u_int8_t reported[IEEE80211_CHAN_BYTES];	/* XXX stack usage? */
 	int i, r;
 	int step = 0;
+	int noise;
+	int curnoise;
 
 	data->length = sizeof(struct iw_range);
 	memset(range, 0, sizeof(struct iw_range));
@@ -990,7 +1001,19 @@ ieee80211_ioctl_giwrange(struct net_device *dev, struct iw_request_info *info,
 	}
 
 	/* Max quality is max field value minus noise floor */
-	range->max_qual.qual  = 0xff - 161;
+	noise = -95;
+	curnoise = 0;
+	if (ic->ic_getchannelnoise)
+	{
+		for (i = 0; i < ic->ic_nchans; i++) {
+			struct ieee80211_channel *c = &ic->ic_channels[i];
+			noise = (int8_t) ic->ic_getchannelnoise(ic, c);
+			if (noise < curnoise)
+				curnoise = noise;
+		}
+		noise = curnoise;
+	}
+	range->max_qual.qual = -noise;
 
 	/*
 	 * In order to use dBm measurements, 'level' must be lower
@@ -1124,10 +1147,11 @@ ieee80211_ioctl_getspy(struct net_device *dev, struct iw_request_info *info,
 		ni = ieee80211_find_node(nt, &vap->iv_spy.mac[i * IEEE80211_ADDR_LEN]);
 		/* TODO: free node ? */
 		/* check we are associated w/ this vap */
-		if (ni && (ni->ni_vap == vap))
-			set_quality(&spy_stat[i], ni->ni_rssi);
-		else 
+		if (ni && (ni->ni_vap == vap)) {
+			set_quality(&spy_stat[i], ni->ni_rssi, getnoise(ni->ni_ic, ni->ni_chan));
+		} else {
 			spy_stat[i].updated = IW_QUAL_ALL_INVALID;
+		}
 	}
 
 	/* copy results to userspace */
@@ -1176,13 +1200,15 @@ ieee80211_ioctl_getthrspy(struct net_device *dev, struct iw_request_info *info,
 	struct iw_point *data, char *extra)
 {
 	struct ieee80211vap *vap = dev->priv;
-	struct iw_thrspy *threshold;	
+	struct iw_thrspy *threshold;
+	int noise;
 	
 	threshold = (struct iw_thrspy *) extra;
+	noise = getnoise(vap->iv_ic, vap->iv_ic->ic_curchan);
 
 	/* set threshold values */
-	set_quality(&(threshold->low), vap->iv_spy.thr_low);
-	set_quality(&(threshold->high), vap->iv_spy.thr_high);
+	set_quality(&(threshold->low), vap->iv_spy.thr_low, noise);
+	set_quality(&(threshold->high), vap->iv_spy.thr_high, noise);
 
 	/* copy results to userspace */
 	data->length = 1;
@@ -1448,15 +1474,18 @@ waplist_cb(void *arg, const struct ieee80211_scan_entry *se)
 {
 	struct waplistreq *req = arg;
 	int i = req->i;
-
+	
 	if (i >= IW_MAX_AP)
 		return;
+	
 	req->addr[i].sa_family = ARPHRD_ETHER;
+
 	if (req->vap->iv_opmode == IEEE80211_M_HOSTAP)
 		IEEE80211_ADDR_COPY(req->addr[i].sa_data, se->se_macaddr);
 	else
 		IEEE80211_ADDR_COPY(req->addr[i].sa_data, se->se_bssid);
-	set_quality(&req->qual[i], se->se_rssi);
+
+	set_quality(&req->qual[i], se->se_rssi, getnoise(req->vap->iv_ic,se->se_chan));
 	req->i = i + 1;
 }
 
@@ -1632,7 +1661,9 @@ giwscan_cb(void *arg, const struct ieee80211_scan_entry *se)
 
 	memset(&iwe, 0, sizeof(iwe));
 	iwe.cmd = IWEVQUAL;
-	set_quality(&iwe.u.qual, se->se_rssi);
+
+	set_quality(&iwe.u.qual, se->se_rssi, getnoise(req->vap->iv_ic, se->se_chan));
+
 	current_ev = iwe_stream_add_event(current_ev,
 		end_buf, &iwe, IW_EV_QUAL_LEN);
 
@@ -3680,6 +3711,7 @@ get_sta_info(void *arg, struct ieee80211_node *ni)
 	si->isi_state = ni->ni_flags;
 	si->isi_authmode = ni->ni_authmode;
 	si->isi_rssi = ic->ic_node_getrssi(ni);
+    si->isi_noise = getnoise(ic, ni->ni_chan);
 	si->isi_capinfo = ni->ni_capinfo;
 	si->isi_athflags = ni->ni_ath_flags;
 	si->isi_erp = ni->ni_erp;
