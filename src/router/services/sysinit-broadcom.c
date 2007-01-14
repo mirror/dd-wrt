@@ -111,11 +111,46 @@ check_brcm_cpu_type (void)
 }
 
 static void
-loadWlModule (void)		//get boardflags, set afterburner bit, load wl, unset afterburner bit
+loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, load wl, unset afterburner bit
 {
 
+int brand = getRouterBrand ();
+	
+#ifdef HAVE_MSSID //v24
+
+  nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
+
+	switch (brand)
+	{
+		case ROUTER_ASUS_WL500G_PRE:
+		case ROUTER_WRT54G:
+		case ROUTER_MOTOROLA:
+			nvram_set ("wl0gpio0", "136");
+			break;
+		case ROUTER_BUFFALO_WBR54G:
+    	case ROUTER_BUFFALO_WBR2G54S:
+    	case ROUTER_WRT300N:
+    	case ROUTER_WRT350N:
+    		nvram_set ("wl0gpio0", "8");
+			break;
+	}
+#else	//v23
+
+	switch (brand)
+	{
+		case ROUTER_BUFFALO_WZRRSG54:
+		case ROUTER_BUFFALO_WBR54G:
+    	case ROUTER_BUFFALO_WBR2G54S:
+			nvram_set ("wl0gpio0", "130");
+			break;
+    	case ROUTER_MOTOROLA:
+    		nvram_set ("wl0gpio0", "2");
+			break;
+	}
+#endif
+
   int boardflags;
-  int brand = getRouterBrand ();
+
   switch (brand)
     {
     case ROUTER_WRT300N:
@@ -291,15 +326,10 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
-      eval ("gpio", "disable", "4");	//maybe fix for reset button not working
-#ifndef HAVE_MSSID
-      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
-#endif
       break;
 
     case ROUTER_MOTOROLA:
       nvram_set ("cpu_type", "BCM4712");
-//      nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
       setup_4712 ();
       break;
 
@@ -377,19 +407,6 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "vlan1");
       nvram_set ("pppoe_wan_ifname", "vlan1");
       nvram_set ("vlan1ports", "0 5");
-#ifdef HAVE_MSSID
-      nvram_set ("wl0gpio0", "136");	//Fix for wireless led always on (v24 only)
-#endif
-      break;
-
-
-    case ROUTER_BUFFALO_WBR54G:
-    case ROUTER_BUFFALO_WBR2G54S:
-#ifdef HAVE_MSSID
-      nvram_set ("wl0gpio0", "8");	//Fix for wireless led polarity (v24 only)
-#else
-      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
-#endif
       break;
 
     case ROUTER_BUFFALO_WLA2G54C:
@@ -401,10 +418,6 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth2");
       break;
 
-#ifdef HAVE_MSSID
-    case ROUTER_WRT54G:
-      nvram_set ("wl0gpio0", "136");	//Fix for wireless led always on (v24 only)
-      break;
 #endif
 
     }
@@ -418,10 +431,6 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 
-//  enableAfterBurner ();
-#ifdef HAVE_MSSID
-  nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
-#endif
 
   snprintf (buf, sizeof (buf), "/lib/modules/%s", name.release);
   if (stat ("/proc/modules", &tmp_stat) == 0 && stat (buf, &tmp_stat) == 0)
