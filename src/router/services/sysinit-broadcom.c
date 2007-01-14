@@ -299,7 +299,7 @@ start_sysinit (void)
 
     case ROUTER_MOTOROLA:
       nvram_set ("cpu_type", "BCM4712");
-      nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
+//      nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
       setup_4712 ();
       break;
 
