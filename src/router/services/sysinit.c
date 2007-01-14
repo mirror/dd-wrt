@@ -1304,42 +1304,16 @@ static int
 check_cfe_nv (void)
 {
   int ret = 0;
-//      ret += check_nv("boardtype", "0x0101");
-//      ret += check_nv("boardflags", "0x0188");
-//      ret += check_nv("boardflags", "0x0388");
 
-//      ret += check_nv("boardrev", "0x10");
-//      ret += check_nv("boardflags2", "0");
-//      ret += check_nv("sromrev", "2");
   switch (getRouterBrand ())
     {
 
     case ROUTER_ASUS:
       ret += check_nv ("wl0_ifname", "eth1");
-      //check_nv ("wl0_hwaddr", nvram_safe_get ("et0macaddr")); //fixing missing wireless mac
-      //nvram_commit ();
       return 0;
       break;
-    case ROUTER_SIEMENS:
-//      check_nv("wl0_hwaddr",nvram_safe_get("wan_hwaddr"));
-//      ret += check_nv("lan_ifname","br0");
-//      ret += check_nv("lan_hwnames","et0 il0 wl0 wl1");
-//      ret += check_nv("lan_ifnames","vlan0 eth1");
-//      ret += check_nv("wan_hwname","et1");
-//      ret += check_nv("wan_ifname","vlan1");
-//      ret += check_nv("pppoe_ifname","vlan1");
-      break;
-    case ROUTER_BELKIN_F5D7230:
-// nothing for now
-      break;
-    case ROUTER_MOTOROLA:
-//      ret += check_nv ("wl0gpio0", "2");	//fix for wlan led, Eko
-      break;
     case ROUTER_BUFFALO_WBR54G:
-    case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_BUFFALO_WZRRSG54:
-//    case ROUTER_MICROSOFT_MN700:
-
       ret += check_nv ("lan_hwnames", "et0 wl0");
       ret += check_nv ("lan_ifnames", "eth0 eth2");
       ret += check_nv ("wan_hwname", "et1");
@@ -1432,55 +1406,6 @@ check_cfe_nv (void)
       ret += check_nv ("cctl", "0");
       ret += check_nv ("ccode", "0");
       break;
-/* Router_Belkin not used
-    case ROUTER_BELKIN:
-      ret += check_nv ("aa0", "3");
-      if (check_hw_type () == BCM5352E_CHIP)
-	ret += check_nv ("ag0", "0x02");
-      else
-	ret += check_nv ("ag0", "255");
-
-      if (check_hw_type () == BCM5325E_CHIP)
-	{
-
-	  ret += check_nv ("sdram_init", "0x010b");
-	  ret += check_nv ("sdram_config", "0x0062");
-	  ret += check_nv ("clkfreq", "216");
-	  if (ret)
-	    {
-	      nvram_set ("sdram_ncdl", "0x0");
-
-	    }
-	  ret += check_nv ("pa0itssit", "62");
-	  ret += check_nv ("pa0b0", "0x15eb");
-	  ret += check_nv ("pa0b1", "0xfa82");
-	  ret += check_nv ("pa0b2", "0xfe66");
-#ifndef HAVE_MSSID
-	  ret += check_nv ("pa0maxpwr", "0x4e");
-#endif
-	}
-      else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
-	{
-	  //nothing to do
-	}
-      else
-	{
-	  ret += check_nv ("pa0itssit", "62");
-	  ret += check_nv ("pa0b0", "0x1136");
-	  ret += check_nv ("pa0b1", "0xfb93");
-	  ret += check_nv ("pa0b2", "0xfea5");
-#ifndef HAVE_MSSID
-	  ret += check_nv ("pa0maxpwr", "60");
-#endif
-	}
-      ret += check_nv ("wl0gpio2", "0");
-      ret += check_nv ("wl0gpio3", "0");
-
-      ret += check_nv ("cctl", "0");
-      ret += check_nv ("ccode", "0");
-
-      break;
-*/
 
     }
   if (ret)
