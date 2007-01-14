@@ -1333,7 +1333,7 @@ check_cfe_nv (void)
 // nothing for now
       break;
     case ROUTER_MOTOROLA:
-      ret += check_nv ("wl0gpio0", "2");	//fix for wlan led, Eko
+//      ret += check_nv ("wl0gpio0", "2");	//fix for wlan led, Eko
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WLAG54C:
