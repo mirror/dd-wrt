@@ -112,8 +112,8 @@ install: $(ALL)
 		install $$i $(DESTDIR)$(BINDIR)/$$i; \
 		$(STRIP) $(DESTDIR)$(BINDIR)/$$i; \
 	done
-	install -d $(DESTDIR)$(MANDIR)/man8
-	install -m 0644 man/*.8 $(DESTDIR)$(MANDIR)/man8
+#	install -d $(DESTDIR)$(MANDIR)/man8
+#	install -m 0644 man/*.8 $(DESTDIR)$(MANDIR)/man8
 
 uninstall:
 	for i in $(ALL); do \

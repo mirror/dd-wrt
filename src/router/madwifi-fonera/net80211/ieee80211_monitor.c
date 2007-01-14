@@ -282,7 +282,10 @@ ieee80211_input_monitor(struct ieee80211com *ic, struct sk_buff *skb,
 			ph->noise.did = DIDmsg_lnxind_wlansniffrm_noise;
 			ph->noise.status = 0;
 			ph->noise.len = 4;
-			ph->noise.data = -95;
+			if (ic->ic_getchannelnoise)
+				ph->noise.data = (int32_t) ic->ic_getchannelnoise(ic,ic->ic_curchan);
+			else
+				ph->noise.data = -95;
 			
 			ph->signal.did = DIDmsg_lnxind_wlansniffrm_signal;
 			ph->signal.status = 0;
