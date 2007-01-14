@@ -191,6 +191,7 @@ static __inline void ath_tx_txqaddbuf(struct ath_softc *, struct ieee80211_node 
 static void ath_stoprecv(struct ath_softc *);
 static int ath_startrecv(struct ath_softc *);
 static void ath_flushrecv(struct ath_softc *);
+static int16_t ath_getchannelnoise(struct ieee80211com *ic,struct ieee80211_channel *);
 static void ath_chan_change(struct ath_softc *, struct ieee80211_channel *);
 static void ath_calibrate(unsigned long);
 static int ath_newstate(struct ieee80211vap *, enum ieee80211_state, int);
@@ -848,6 +849,7 @@ ath_attach(u_int16_t devid, struct net_device *dev, HAL_BUS_TAG tag)
 	ic->ic_scan_start = ath_scan_start;
 	ic->ic_scan_end = ath_scan_end;
 	ic->ic_set_channel = ath_set_channel;
+	ic->ic_getchannelnoise = ath_getchannelnoise;
 
 	ic->ic_set_coverageclass = ath_set_coverageclass;
 	ic->ic_mhz2ieee = ath_mhz2ieee;
@@ -7536,6 +7538,35 @@ ath_chan_change(struct ath_softc *sc, struct ieee80211_channel *chan)
 }
 
 /*
+ * Get the current channel noise
+ */
+
+static int16_t
+ath_getchannelnoise(struct ieee80211com *ic,struct ieee80211_channel *chan)
+{
+	struct net_device *dev = ic->ic_dev;
+	struct ath_softc *sc = dev->priv;
+	struct ath_hal *ah = sc->sc_ah;
+	HAL_CHANNEL hchan;
+
+	hchan.channel = chan->ic_freq;
+	hchan.channelFlags = ath_chan2flags(chan);
+	
+	KASSERT(hchan.channel != 0,
+		("bogus channel %u/0x%x", hchan.channel, hchan.channelFlags));
+
+	DPRINTF(sc, ATH_DEBUG_RESET, "%s: %u (%u MHz) -> %u (%u MHz)\n",
+		__func__, ath_hal_mhz2ieee(ah, sc->sc_curchan.channel,
+		sc->sc_curchan.channelFlags), sc->sc_curchan.channel,
+		ath_hal_mhz2ieee(ah, hchan.channel, hchan.channelFlags),
+		hchan.channel);
+
+	ath_hal_process_noisefloor(ah);
+
+	return ah->ah_getChanNoise(ah, &hchan);
+}
+
+/*
  * Set/change channels.  If the channel is really being changed,
  * it's done by reseting the chip.  To accomplish this we must
  * first cleanup any pending DMA, then restart stuff after a la
@@ -7756,7 +7787,7 @@ ath_scan_end(struct ieee80211com *ic)
 	rfilt = ath_calcrxfilter(sc);
 	ath_hal_setrxfilter(ah, rfilt);
 	ath_hal_setassocid(ah, sc->sc_curbssid, sc->sc_curaid);
-
+	
 	DPRINTF(sc, ATH_DEBUG_STATE, "%s: RX filter 0x%x bssid %s aid 0x%x\n",
 		 __func__, rfilt, ether_sprintf(sc->sc_curbssid),
 		 sc->sc_curaid);
