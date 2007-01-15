@@ -59,19 +59,18 @@ ap1394_hdr_print(register const u_char *bp, u_int length)
 	register const struct firewire_header *fp;
 	fp = (const struct firewire_header *)bp;
 
-	(void)printf("%s > %s",
-		     linkaddr_string(fp->firewire_dhost, FIREWIRE_EUI64_LEN),
-		     linkaddr_string(fp->firewire_shost, FIREWIRE_EUI64_LEN));
+	
+	printf("%s > %s",linkaddr_string(fp->firewire_dhost, FIREWIRE_EUI64_LEN),linkaddr_string(fp->firewire_shost, FIREWIRE_EUI64_LEN));
 
 	if (!qflag) {
-		(void)printf(", ethertype %s (0x%04x)",
+		printf(", ethertype %s (0x%04x)",
 			       tok2str(ethertype_values,"Unknown", ntohs(fp->firewire_type)),
                                ntohs(fp->firewire_type));	      
         } else {
-                (void)printf(", %s", tok2str(ethertype_values,"Unknown Ethertype (0x%04x)", ntohs(fp->firewire_type)));  
+                printf(", %s", tok2str(ethertype_values,"Unknown Ethertype (0x%04x)", ntohs(fp->firewire_type)));  
         }
 
-	(void)printf(", length %u: ", length);
+	printf(", length %u: ", length);
 }
 
 /*
