@@ -672,10 +672,10 @@ start_restore_defaults (void)
 	{
 	  switch (brand)
 	    {
-	    case ROUTER_MOTOROLA:
 	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
+	    case ROUTER_MOTOROLA:
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_SIEMENS:
@@ -699,8 +699,6 @@ start_restore_defaults (void)
 	      switch (brand)
 		{
 		case ROUTER_MOTOROLA:
-		  nvram_set ("vlan1ports", "0 5u");
-		  break;
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_MOTOROLA_V1:
 		case ROUTER_SIEMENS:
