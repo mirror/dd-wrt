@@ -41,7 +41,7 @@ srcdir = .
 
 #CC = /opt/openwrt401/bin/mipsel-linux-uclibc-gcc
 PROG = tcpdump
-CCOPT = $(COPTS) -I../libpcap_noring
+CCOPT = $(COPTS) -DNEED_PRINTF -I../libpcap_noring
 INCLS = -I.  -I$(srcdir)/missing
 DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
 
