@@ -60,7 +60,7 @@
 
 #include <linux/version.h>
 #include <linux/linkage.h>
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 #include <asm/assembler.h>
 #else
