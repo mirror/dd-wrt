@@ -501,8 +501,8 @@ deconfigure_single (int count)
 
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
-  char *vifs = nvram_safe_get (wifivifs);
-  if (vifs != NULL)
+  char vifs[128];
+  sprintf(vifs,"%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9",dev,dev,dev,dev,dev,dev,dev,dev,dev);
     foreach (var, vifs, next)
     {
       if (ifexists (var))
