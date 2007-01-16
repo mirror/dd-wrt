@@ -50,10 +50,6 @@
 #include <netdb.h>
 #include <utils.h>
 
-#ifndef HAVE_MADWIFI
-#include <wlutils.h>
-#endif
-
 
 int gozila_action = 0;
 int error_value = 0;
@@ -1074,13 +1070,14 @@ ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
     	else
 			{
 				foreach(cap, caps, next)
-       	 		{
-              	 if (!strcmp(cap, "afterburner"))
+       	 			{
+              	 	if (!strcmp(cap, "afterburner"))
 						afterburner = 1;
-       			} 
+       				} 
+       				
+       			if (!afterburner)
+				websWrite (wp, output);	
 			}
-		if (!afterburner)
-			websWrite (wp, output);
 #endif
 		return;
 		}
