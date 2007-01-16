@@ -24,7 +24,7 @@ CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s -fpic
+CFLAGS	+= -fpic
 LDFLAGS += -L.
 OBJS := nvparse.o shutils.o wl.o wl_linux.o wl_macfuncs.o linux_timer.o utils.o nvports.o 
 #defaults.o
@@ -251,8 +251,6 @@ else
 	install -d $(INSTALLDIR)/usr/lib
 	install -m 755 libshared.so $(INSTALLDIR)/usr/lib
 endif
-#	install defaults.bin $(INSTALLDIR)/etc
-	$(STRIP) $(INSTALLDIR)/lib/libshared.so
 
 clean:
 	rm -f *.o *.so
