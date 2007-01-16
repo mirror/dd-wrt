@@ -33,7 +33,7 @@ struct dhcp_tag_t {
   uint8_t t:8;
   uint8_t l:8;
   uint8_t v[DHCP_TAG_VLEN];
-};
+} __attribute__((packed));
 
 
 /* Option constants */
@@ -85,7 +85,7 @@ struct dhcp_ethhdr_t
   uint8_t  dst[DHCP_ETH_ALEN];
   uint8_t  src[DHCP_ETH_ALEN];
   uint16_t prot;
-};
+} __attribute__((packed));
 
 #include <endian.h>
 
@@ -115,7 +115,7 @@ struct dhcp_iphdr_t {
   uint16_t check;
   uint32_t saddr;
   uint32_t daddr;
-};
+} __attribute__((packed));
 
 
 #define DHCP_IP_PLEN 1500 /* IP Payload length */
@@ -134,7 +134,7 @@ struct dhcp_udphdr_t {
   uint16_t dst;
   uint16_t len;
   uint16_t check;
-};
+} __attribute__((packed));
 
 struct dhcp_tcphdr_t {
   uint16_t src;
@@ -145,7 +145,7 @@ struct dhcp_tcphdr_t {
   uint8_t win;
   uint16_t check;
   uint8_t options[1]; /* TODO */
-};
+} __attribute__((packed));
 
 
 /* Length constants for DHCP packet */
@@ -305,7 +305,7 @@ struct dhcp_eapol_tag_t {
   uint8_t t:8;
   uint8_t l:8;
   uint8_t v[DHCP_EAPOL_TAG_VLEN];
-};
+} __attribute__((packed));
 
 
 struct dhcp_dot1xhdr_t {
