@@ -50,6 +50,10 @@
 #include <netdb.h>
 #include <utils.h>
 
+#ifndef HAVE_MADWIFI
+#include <wlutils.h>
+#endif
+
 
 int gozila_action = 0;
 int error_value = 0;
@@ -1056,27 +1060,27 @@ ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
 	  if (!strcmp (name, "WL_AFTERBURNER") && !strcmp(value, "1"))
 		{
 
-		FILE *fp;
-		char buf[256];
-
 #ifdef HAVE_MADWIFI
 		websWrite (wp, output);
 #else
-    eval ("wl", "cap", ">", "/tmp/.abcap");
-	
-	if ((fp = fopen ("/tmp/.abcap", "r")) != NULL)
-		{
-		fgets (buf, sizeof (buf), fp);
-		if (!strstr (buf, "afterburner"))
+		int afterburner = 0;
+		char cap[WLC_IOCTL_SMLEN];
+		char caps[WLC_IOCTL_SMLEN];
+		char *name = nvram_safe_get ("wl0_ifname");
+		
+		if (wl_iovar_get(name, "cap", (void *)caps, WLC_IOCTL_SMLEN))
+        	websWrite (wp, output);
+    	else
 			{
-			websWrite (wp, output);
+				foreach(cap, caps, next)
+       	 		{
+              	 if (!strcmp(cap, "afterburner"))
+						afterburner = 1;
+       			} 
 			}
-		fclose(fp);
-		unlink("/tmp/.abcap");
-		}
-	else
-		websWrite (wp, output);
-#endif
+		if (!afterburner)
+			websWrite (wp, output);
+
 		return;
 		}
 
