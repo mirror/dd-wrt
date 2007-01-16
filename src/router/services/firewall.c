@@ -2113,6 +2113,15 @@ filter_table (void)
     ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j DROP\n"
      "-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface, FLOOD_RATE);
 #endif
+#ifdef HAVE_CHILLI
+  /* DD-WRT BrainSlayer CHILLI Security Fix */
+  if (nvram_match ("chilli_enable", "1"))
+    {
+      save2file ("-A FORWARD -i br0 -j DROP\n");
+      save2file ("-A FORWARD -o br0 -j DROP\n");
+    }
+  /* DD-WRT end */
+#endif
 
   save2file ("COMMIT\n");
 }
@@ -2578,16 +2587,6 @@ start_firewall (void)
   /* Create file for iptables-restore */
   DEBUG ("start firewall()........4\n");
   create_restore_file ();
-#ifdef HAVE_CHILLI
-  /* DD-WRT BrainSlayer CHILLI Security Fix */
-  if (nvram_match ("chilli_enable", "1"))
-    {
-      save2file ("-A FORWARD -i br0 -j DROP\n");
-      save2file ("-A FORWARD -o br0 -j DROP\n");
-      save2file ("COMMIT\n");
-    }
-  /* DD-WRT end */
-#endif
 
 #ifndef DEVELOPE_ENV
   /* Insert the rules into kernel */
