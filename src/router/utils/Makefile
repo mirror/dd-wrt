@@ -20,11 +20,11 @@ include $(TOP)/.config
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
 UTILS := mtd
 ifneq ($(CONFIG_DIST),"micro")
-UTILS += epi_ttcp sbsrom
+UTILS += epi_ttcp
 endif
 
 CFLAGS += -s $(COPTS) -I../shared -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe -I$(LINUXDIR)
-LDFLAGS += -L../nvram -L../shared -lnvram -lshared
+LDFLAGS += -L../nvram -L../shared -lshared -lnvram
 vpath %.c $(SRCBASE)/tools/misc
 
 
@@ -59,16 +59,14 @@ ifeq ($(ARCH),armeb)
 	install jffs2root $(INSTALLDIR)/sbin	
 else
 
-ifneq ($(CONFIG_RB500),y)
-ifneq ($(CONFIG_MAGICBOX),y)
-ifneq ($(CONFIG_X86),y)
+ifneq ($(CONFIG_MADWIFI),y)
+
 ifeq ($(CONFIG_MSSID),y)
 	install wl $(INSTALLDIR)/usr/sbin
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
 endif
-endif
-endif
+
 endif
 	@true
 endif

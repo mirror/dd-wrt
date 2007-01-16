@@ -237,7 +237,6 @@ obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_PHP) += php5
 obj-$(CONFIG_WIFIDOG) += wifidog
-obj-y += hwmon
 obj-$(CONFIG_RSTATS) += rstats
 
 
@@ -302,7 +301,7 @@ optimize-lib:
 #	../../tools/optimize_lib.sh openssl/ libssl.so.0.9.8 libssl.a libssl_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libssl.so.0.9.8
 #	../../tools/optimize_lib.sh openssl/ libcrypto.so.0.9.8 libcrypto.a libcrypto_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libcrypto.so.0.9.8
 #	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
-#	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
@@ -344,9 +343,9 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.magicbox lib.$(ARCH)-install
+	$(MAKE) -f Makefile.ar531x lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
-	$(MAKE) -f Makefile.magicbox optimize-lib
+	$(MAKE) -f Makefile.ar531x optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
@@ -659,7 +658,7 @@ ifeq ($(ARCH),mipsel)
 endif
 ifeq ($(ARCH),mips)
 ifeq ($(ARCHITECTURE),fonera)
-	cp busybox/.config_powerpc busybox/.config
+	cp busybox/.config_fonera busybox/.config
 else
 	cp busybox/.config_3com busybox/.config
 endif
@@ -1046,7 +1045,7 @@ ntpclient-install:
 
 # AhMan March 19 2005
 pppoe pppoe-%:
-	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/ppp
+	@true
 
 ppp:
 	$(MAKE) -C rp-pppoe-3.5/src
@@ -1209,6 +1208,7 @@ endif
 
 pppd-clean pppd-distclean: pppd-symlinks
 	$(MAKE) -C pppd.new/pppd clean
+	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe clean
 
 pppd-install:
 	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
