@@ -182,6 +182,34 @@ PPPOEConnectDevice(void)
 }
 
 static void
+PPPOESendConfig(int mtu,
+		u_int32_t asyncmap,
+		int pcomp,
+		int accomp)
+{
+    int sock;
+    struct ifreq ifr;
+
+    if (mtu > MAX_PPPOE_MTU) {
+	warn("Couldn't increase MTU to %d", mtu);
+	mtu = MAX_PPPOE_MTU;
+    }
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock < 0) {
+	error("Couldn't create IP socket: %m");
+	return;
+    }
+    strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+    info("set mtu rp-pppoe to %s (%d)\n",ifname,mtu);
+    ifr.ifr_mtu = mtu;
+    if (ioctl(sock, SIOCSIFMTU, &ifr) < 0) {
+	error("Couldn't set interface MTU to %d: %m", mtu);
+	return;
+    }
+    (void) close (sock);
+}
+
+static void
 PPPOERecvConfig(int mru,
 		u_int32_t asyncmap,
 		int pcomp,
@@ -413,7 +441,7 @@ struct channel pppoe_channel = {
     disconnect: &PPPOEDisconnectDevice,
     establish_ppp: &generic_establish_ppp,
     disestablish_ppp: &generic_disestablish_ppp,
-    send_config: NULL,
+    send_config: &PPPOESendConfig,
     recv_config: &PPPOERecvConfig,
     close: NULL,
     cleanup: NULL

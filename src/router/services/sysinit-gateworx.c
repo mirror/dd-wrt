@@ -57,7 +57,7 @@ start_sysinit (void)
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  system2 ("/etc/convert");
+//  system2 ("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
   cprintf ("sysinit() tmp\n");
 

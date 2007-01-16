@@ -1770,7 +1770,7 @@ start_wan (int status)
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   // Set our Interface to the right MTU
-#ifdef HAVE_PPPOE
+/*#ifdef HAVE_PPPOE
   if ((strcmp (wan_proto, "pppoe") == 0))
     {
       if (nvram_invmatch ("pppoe_hw_iface_mtu", ""))
@@ -1782,9 +1782,9 @@ start_wan (int status)
 	}
     }
   else
-#endif
+#endif*/
     ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
-
+  fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
   ioctl (s, SIOCSIFMTU, &ifr);
 
   if (nvram_match ("router_disable", "1")
