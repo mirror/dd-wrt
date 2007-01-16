@@ -2438,18 +2438,20 @@ get_network (char *ipaddr, char *netmask)
 void
 get_broadcast (char *ipaddr, char *netmask)
 {
-  int ip[4], mask[4];
-
+  int ip2[4], mask2[4];
+  unsigned char ip[4],mask[4];
   if (!ipaddr || !netmask)
     return;
 
-  sscanf (ipaddr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
-  sscanf (netmask, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3]);
-
-  ip[0] = (ip[0] & mask[0]) | !mask[0];
-  ip[1] = (ip[1] & mask[1]) | !mask[1];
-  ip[2] = (ip[2] & mask[2]) | !mask[2];
-  ip[3] = (ip[3] & mask[3]) | !mask[3];
+  sscanf (ipaddr, "%d.%d.%d.%d", &ip2[0], &ip2[1], &ip2[2], &ip2[3]);
+  sscanf (netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2], &mask2[3]);
+  int i=0;
+  for (i=0;i<4;i++)
+    {
+    ip[i]=ip2[i];
+    mask[i]=mask2[i];
+    ip[i] = (ip[i] & mask[i]) | !mask[i];
+    }
 
   sprintf (ipaddr, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #ifdef WDS_DEBUG
