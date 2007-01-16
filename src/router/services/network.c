@@ -1720,9 +1720,9 @@ start_wan (int status)
 
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
-#ifdef HAVE_PPPOE
   /* Check PPPoE version, RP or linksys */
-  if ((strcmp (wan_proto, "pppoe") == 0))
+#ifdef HAVE_PPPOE
+  if (nvram_match("wan_proto", "pppoe"))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
   else
 #endif
@@ -1771,7 +1771,7 @@ start_wan (int status)
 
   // Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
-  if ((strcmp (wan_proto, "pppoe") == 0))
+  if (nvram_match("wan_proto", "pppoe"))
     {
 	ifr.ifr_mtu = 1500;	// default ethernet frame size
     }
