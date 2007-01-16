@@ -1122,6 +1122,27 @@ configure_single (int count, int isbond)
 	}
 //      sleep (1);
     }
+
+
+//create original primary interface
+  m = default_get (wl, "ap");
+  cprintf ("mode %s\n", m);
+  if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
+    {
+      if (vif)
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta",
+	      "nosbeacon");
+      else
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
+
+    }
+  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
+  else
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
+
+
+
 //create wds interface(s)
   int s;
   for (s = 1; s <= 10; s++)
@@ -1149,23 +1170,6 @@ configure_single (int count, int isbond)
       }
     }
 
-
-//create original primary interface
-  m = default_get (wl, "ap");
-  cprintf ("mode %s\n", m);
-  if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
-    {
-      if (vif)
-	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta",
-	      "nosbeacon");
-      else
-	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
-
-    }
-  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
-  else
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
 
 
   cprintf ("detect maxpower\n");
