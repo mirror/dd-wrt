@@ -1165,7 +1165,7 @@ configure_single (int count, int isbond)
       if (hwaddr!=NULL)
       {
         eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "wds");
-        eval ("iwpriv", dev, "wds_add", var);
+        eval ("iwpriv", dev, "wds_add", hwaddr);
         eval ("iwpriv", dev, "wds", "1");
       }
     }
