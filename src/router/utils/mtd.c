@@ -40,7 +40,7 @@
 #include <sys/reboot.h>
 #include <string.h>
 #include <linux/version.h>
-/*
+
 #if KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE
 #define IS_KERNEL26 1
 #else
@@ -48,10 +48,10 @@
 #endif
 
 #if IS_KERNEL26
-#include <mtd/mtd-user.h>
-#else*/
+#include <linux/mtd/mtd-abi.h>
+#else
 #include <linux/mtd/mtd.h>
-//#endif
+#endif
 
 
 #define TRX_MAGIC       0x30524448      /* "HDR0" */
