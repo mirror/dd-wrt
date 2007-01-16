@@ -1159,7 +1159,7 @@ netif_set_mtu(int unit, int mtu)
     memset (&ifr, '\0', sizeof (ifr));
     strlcpy(ifr.ifr_name, ifname, sizeof (ifr.ifr_name));
     ifr.ifr_mtu = mtu;
-
+    info("set mtu ppp to %s (%d)\n",ifname,mtu);
     if (ifunit >= 0 && ioctl(sock_fd, SIOCSIFMTU, (caddr_t) &ifr) < 0)
 	error("ioctl(SIOCSIFMTU): %m (line %d)", __LINE__);
 }
