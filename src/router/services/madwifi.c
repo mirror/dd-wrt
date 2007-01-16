@@ -1122,24 +1122,31 @@ configure_single (int count, int isbond)
 	}
 //      sleep (1);
     }
-//create wds interface
+//create wds interface(s)
   int s;
   for (s = 1; s <= 10; s++)
     {
       char wdsvarname[32] = { 0 };
       char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
       char *dev;
+      char *hwaddr;
 
       sprintf (wdsvarname, "wl_wds%d_enable", s);
       sprintf (wdsdevname, "wl_wds%d_if", s);
+      sprintf (wdsmacname, "wl_wds%d_hwaddr", s);
       dev = nvram_safe_get (wdsdevname);
       if (strlen (dev) == 0)
 	continue;
       if (nvram_match (wdsvarname, "0"))
 	continue;
-      eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "wds");
-      eval ("iwpriv", dev, "wds_add", var);
-      eval ("iwpriv", dev, "wds", 1);
+      hwaddr=nvram_get(wdsmacname);
+      if (hwaddr!=NULL)
+      {
+        eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "wds");
+        eval ("iwpriv", dev, "wds_add", var);
+        eval ("iwpriv", dev, "wds", "1");
+      }
     }
 
 
