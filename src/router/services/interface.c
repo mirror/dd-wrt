@@ -45,7 +45,11 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
   int s;
   struct ifreq ifr;
   struct in_addr in_addr, in_netmask, in_broadaddr;
-
+  if (!ifexists (name))
+    {
+      cprintf ("interface %s does not exists, ignoring\n", name);
+      return -1;
+    }
   cprintf ("ifconfig(): name=[%s] flags=[%s] addr=[%s] netmask=[%s]\n", name,
 	   flags == IFUP ? "IFUP" : "0", addr, netmask);
 
@@ -93,7 +97,9 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
 
 err:
   close (s);
+#ifndef HAVE_SILENCE
   perror (name);
+#endif
   return errno;
 }
 

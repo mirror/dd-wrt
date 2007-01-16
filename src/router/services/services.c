@@ -1625,7 +1625,8 @@ start_ntpc (void)
     {
       char *nas_argv[] =
 	{ "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c", "2",
-NULL };
+	NULL
+      };
       pid_t pid;
 
       _eval (nas_argv, NULL, 0, &pid);
@@ -3722,11 +3723,13 @@ brctl_main (int argc, char **argv)
   br_init ();
   if (!strcmp (argv[1], "addif"))
     {
-      br_add_interface (argv[2], argv[3]);
+      if (ifexists (argv[3]))
+	br_add_interface (argv[2], argv[3]);
     }
   if (!strcmp (argv[1], "delif"))
     {
-      br_del_interface (argv[2], argv[3]);
+      if (ifexists (argv[3]))
+	br_del_interface (argv[2], argv[3]);
     }
   if (!strcmp (argv[1], "addbr"))
     {
@@ -3734,6 +3737,8 @@ brctl_main (int argc, char **argv)
     }
   if (!strcmp (argv[1], "delbr"))
     {
+      if (!ifexists (argv[2]))
+	return -1;
       br_del_bridge (argv[2]);
     }
   br_shutdown ();
@@ -3749,6 +3754,8 @@ br_add_bridge (const char *brname)
 int
 br_del_bridge (const char *brname)
 {
+  if (!ifexists (brname))
+    return -1;
   return eval ("/usr/sbin/brctl", "delbr", brname);
   syslog (LOG_INFO, "bridge deleted successfully\n");
 }
@@ -3756,6 +3763,8 @@ br_del_bridge (const char *brname)
 int
 br_add_interface (const char *br, const char *dev)
 {
+  if (!ifexists (dev))
+    return -1;
   return eval ("/usr/sbin/brctl", "addif", br, dev);
   syslog (LOG_INFO, "interface added successfully\n");
 }
@@ -3763,6 +3772,8 @@ br_add_interface (const char *br, const char *dev)
 int
 br_del_interface (const char *br, const char *dev)
 {
+  if (!ifexists (dev))
+    return -1;
   return eval ("/usr/sbin/brctl", "delif", br, dev);
   syslog (LOG_INFO, "interface deleted successfully\n");
 }
@@ -3770,6 +3781,8 @@ br_del_interface (const char *br, const char *dev)
 int
 br_set_stp_state (const char *br, int stp_state)
 {
+  if (!ifexists (br))
+    return -1;
   if (stp_state)
     {
       return eval ("/usr/sbin/brctl", "stp", br, "on");
