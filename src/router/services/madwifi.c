@@ -494,9 +494,9 @@ deconfigure_single (int count)
   char var[80];
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
+  sprintf (dev, "ath%d", count);
   br_del_interface ("br0", dev);
   br_del_interface ("br0", "bond0");
-  sprintf (dev, "ath%d", count);
 //  fprintf (stderr, "deconfigure %s\n", dev);
 
   eval ("wlanconfig", dev, "destroy");
