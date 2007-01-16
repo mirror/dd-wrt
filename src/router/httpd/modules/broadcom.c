@@ -1067,6 +1067,7 @@ ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
 		char cap[WLC_IOCTL_SMLEN];
 		char caps[WLC_IOCTL_SMLEN];
 		char *name = nvram_safe_get ("wl0_ifname");
+		char *next;
 		
 		if (wl_iovar_get(name, "cap", (void *)caps, WLC_IOCTL_SMLEN))
         	websWrite (wp, output);
