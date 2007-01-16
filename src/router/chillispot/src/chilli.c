@@ -3317,10 +3317,10 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, void *pack, unsigned len) {
     printf("cb_dhcp_data_ind. Packet received. DHCP authstate: %d\n", 
 	   conn->authstate);*/
 
-  if (iph->src != conn->hisip.s_addr) {
+/*  if (iph->src != conn->hisip.s_addr) {
     if (options.debug) printf("Received packet with spoofed source!!!\n");
     return 0;
-  }
+  }*/
 
   if (!appconn) {
     sys_err(LOG_ERR, __FILE__, __LINE__, 0,
