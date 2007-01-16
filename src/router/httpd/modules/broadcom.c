@@ -1081,7 +1081,7 @@ ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
 			}
 		if (!afterburner)
 			websWrite (wp, output);
-
+#endif
 		return;
 		}
 
