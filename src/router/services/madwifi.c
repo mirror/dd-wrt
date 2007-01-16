@@ -1161,13 +1161,14 @@ configure_single (int count, int isbond)
 	continue;
       if (nvram_match (wdsvarname, "0"))
 	continue;
-      hwaddr=nvram_get(wdsmacname);
-      if (hwaddr!=NULL)
-      {
-        eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "wds");
-        eval ("iwpriv", dev, "wds_add", hwaddr);
-        eval ("iwpriv", dev, "wds", "1");
-      }
+      hwaddr = nvram_get (wdsmacname);
+      if (hwaddr != NULL)
+	{
+	  eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode",
+		"wds");
+	  eval ("iwpriv", dev, "wds_add", hwaddr);
+	  eval ("iwpriv", dev, "wds", "1");
+	}
     }
 
 
