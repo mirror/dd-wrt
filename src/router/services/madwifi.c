@@ -499,20 +499,27 @@ deconfigure_single (int count)
   br_del_interface ("br0", "bond0");
 //  fprintf (stderr, "deconfigure %s\n", dev);
 
-  eval ("wlanconfig", dev, "destroy");
+  if (ifexists (dev))
+    eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      eval ("wlanconfig", var, "destroy");
+      if (ifexists (var))
+	{
+	  eval ("wlanconfig", var, "destroy");
+	}
     }
 
   int s;
   for (s = 1; s <= 10; s++)
     {
       sprintf (dev, "wds0.%d", s);
-      br_del_interface ("br0", dev);
-      eval ("wlanconfig", dev, "destroy");
+      if (ifexists (dev))
+	{
+	  br_del_interface ("br0", dev);
+	  eval ("wlanconfig", dev, "destroy");
+	}
     }
 
 }
