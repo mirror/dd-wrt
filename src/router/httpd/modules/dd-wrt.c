@@ -2671,7 +2671,9 @@ if (nvram_match("wifi_bonding","0") || !strcmp(prefix,"ath0"))
 	     "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
-  showbridgesettings(wp,prefix);
+
+    if (!nvram_match(wl_mode,"sta") && !nvram_match(wl_mode,"wdssta") && !nvram_match(wl_mode,"wet"))
+        showbridgesettings(wp,prefix);
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
   show_virtualssid (wp, prefix);
@@ -3738,6 +3740,30 @@ ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 	  cnt = ej_active_wireless_if ( wp, argc, argv, var, cnt);
 	}
     }
+//show wds links
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
+      char *dev;
+      char *hwaddr;
+      char var[80];
+      sprintf (wdsvarname, "wl_wds%d_enable", s);
+      sprintf (wdsdevname, "wl_wds%d_if", s);
+      sprintf (wdsmacname, "wl_wds%d_hwaddr", s);
+      dev = nvram_safe_get (wdsdevname);
+      if (strlen (dev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+      sprintf(var,"wds0.%d",s);
+      cnt = ej_active_wireless_if ( wp, argc, argv, var, cnt);
+    }
+    
+    
+    
 }
 
 #else
