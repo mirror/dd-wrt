@@ -986,6 +986,7 @@ set_netmode (char *wif, char *dev)
 	      eval ("iwpriv", dev, "xr", "0");
 	    }
 	}
+    eval("iwpriv",dev,"wmm","0");
 
 #ifndef HAVE_FONERA
       char *wid = nvram_get (bw);
