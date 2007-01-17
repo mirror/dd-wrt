@@ -628,7 +628,7 @@ EXPORT_SYMBOL(ieee80211_sta_join1_tasklet);
 
 int
 ieee80211_sta_join(struct ieee80211vap *vap,
-	const struct ieee80211_scan_entry *se)
+	struct ieee80211_scan_entry *se)
 {
 	struct ieee80211com *ic = vap->iv_ic;
 	struct ieee80211_node *ni;

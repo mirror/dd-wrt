@@ -53,7 +53,7 @@ struct ap_state {
 	int as_maxrssi[IEEE80211_CHAN_MAX];
 	struct IEEE80211_TQ_STRUCT as_actiontq;	/* tasklet for "action" */
 	struct ieee80211_scan_entry as_selbss;	/* selected bss for action tasklet */
-	int (*as_action)(struct ieee80211vap *, const struct ieee80211_scan_entry *);
+	int (*as_action)(struct ieee80211vap *, struct ieee80211_scan_entry *);
 };
 
 static int ap_flush(struct ieee80211_scan_state *);
@@ -269,7 +269,7 @@ ap_add(struct ieee80211_scan_state *ss, const struct ieee80211_scanparams *sp,
  */
 static int
 ap_end(struct ieee80211_scan_state *ss, struct ieee80211vap *vap,
-       int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *),
+       int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *),
        u_int32_t flags)
 {
 	struct ap_state *as = ss->ss_priv;
@@ -394,7 +394,7 @@ ap_assoc_fail(struct ieee80211_scan_state *ss,
  */
 static int
 ap_default_action(struct ieee80211vap *vap,
-	const struct ieee80211_scan_entry *se)
+	struct ieee80211_scan_entry *se)
 {
 	ieee80211_create_ibss(vap, se->se_chan);
 	return 1;

@@ -119,6 +119,11 @@ typedef spinlock_t ieee80211com_lock_t;
 #define IEEE80211_VAPS_LOCK_ASSERT(_ic)
 #endif
 
+/*
+ * Beacon locking definitions; piggyback on com lock.
+ */
+#define	IEEE80211_BEACON_LOCK(_ic)	   IEEE80211_LOCK_IRQ(_ic)
+#define	IEEE80211_BEACON_UNLOCK(_ic)	   IEEE80211_UNLOCK_IRQ(_ic)
 
 /*
  * Node locking definitions.

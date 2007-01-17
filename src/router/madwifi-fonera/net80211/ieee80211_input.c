@@ -1152,8 +1152,9 @@ ieee80211_deliver_data(struct ieee80211_node *ni, struct sk_buff *skb)
 		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
 			/* attach vlan tag */
 			vlan_hwaccel_receive_skb(skb, vap->iv_vlgrp, ni->ni_vlan);
-		} else
-			netif_rx(skb);
+		} else {
+			netif_receive_skb(skb);
+		}
 		dev->last_rx = jiffies;
 	}
 }

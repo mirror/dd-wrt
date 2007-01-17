@@ -219,7 +219,7 @@ void ieee80211_create_ibss(struct ieee80211vap *, struct ieee80211_channel *);
 void ieee80211_reset_bss(struct ieee80211vap *);
 int ieee80211_ibss_merge(struct ieee80211_node *);
 struct ieee80211_scan_entry;
-int ieee80211_sta_join(struct ieee80211vap *, const struct ieee80211_scan_entry *);
+int ieee80211_sta_join(struct ieee80211vap *, struct ieee80211_scan_entry *);
 void ieee80211_sta_join1_tasklet(IEEE80211_TQUEUE_ARG);
 void ieee80211_sta_leave(struct ieee80211_node *);
 

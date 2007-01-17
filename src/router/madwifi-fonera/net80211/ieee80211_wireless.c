@@ -1470,10 +1470,11 @@ struct waplistreq {	/* XXX: not the right place for declaration? */
 };
 
 static void
-waplist_cb(void *arg, const struct ieee80211_scan_entry *se)
+waplist_cb(void *arg, struct ieee80211_scan_entry *se)
 {
 	struct waplistreq *req = arg;
 	int i = req->i;
+	int noise;
 	
 	if (i >= IW_MAX_AP)
 		return;
@@ -1484,8 +1485,12 @@ waplist_cb(void *arg, const struct ieee80211_scan_entry *se)
 		IEEE80211_ADDR_COPY(req->addr[i].sa_data, se->se_macaddr);
 	else
 		IEEE80211_ADDR_COPY(req->addr[i].sa_data, se->se_bssid);
+	noise = -95;
+	if (req->vap->iv_ic->ic_getchannelnoise)
+		noise = (int8_t) req->vap->iv_ic->ic_getchannelnoise(req->vap->iv_ic,se->se_chan);
 
-	set_quality(&req->qual[i], se->se_rssi, getnoise(req->vap->iv_ic,se->se_chan));
+	se->se_noise=noise;
+	set_quality(&req->qual[i], se->se_rssi, noise);
 	req->i = i + 1;
 }
 
@@ -1600,12 +1605,13 @@ struct iwscanreq {		/* XXX: right place for this declaration? */
 };
 
 static void
-giwscan_cb(void *arg, const struct ieee80211_scan_entry *se)
+giwscan_cb(void *arg, struct ieee80211_scan_entry *se)
 {
 	struct iwscanreq *req = arg;
 	struct ieee80211vap *vap = req->vap;
 	char *current_ev = req->current_ev;
 	char *end_buf = req->end_buf;
+	int noise;
 #if WIRELESS_EXT > 14
 #define MAX_IE_LENGTH 64 * 2 + 30
 	char buf[MAX_IE_LENGTH];
@@ -1661,8 +1667,11 @@ giwscan_cb(void *arg, const struct ieee80211_scan_entry *se)
 
 	memset(&iwe, 0, sizeof(iwe));
 	iwe.cmd = IWEVQUAL;
-
-	set_quality(&iwe.u.qual, se->se_rssi, getnoise(req->vap->iv_ic, se->se_chan));
+	noise = -95;
+	if (req->vap->iv_ic->ic_getchannelnoise)
+		noise = (int8_t) vap->iv_ic->ic_getchannelnoise(req->vap->iv_ic,se->se_chan);
+	se->se_noise=noise;
+	set_quality(&iwe.u.qual, se->se_rssi, noise);
 
 	current_ev = iwe_stream_add_event(current_ev,
 		end_buf, &iwe, IW_EV_QUAL_LEN);
@@ -3021,14 +3030,14 @@ struct scanlookup {		/* XXX: right place for declaration? */
 	const u_int8_t *mac;
 	int esslen;
 	const u_int8_t *essid;
-	const struct ieee80211_scan_entry *se;
+	struct ieee80211_scan_entry *se;
 };
 
 /*
  * Match mac address and any ssid.
  */
 static void
-mlmelookup(void *arg, const struct ieee80211_scan_entry *se)
+mlmelookup(void *arg, struct ieee80211_scan_entry *se)
 {
 	struct scanlookup *look = arg;
 
@@ -3529,7 +3538,7 @@ struct scanreq {			/* XXX: right place for declaration? */
 };
 
 static size_t
-scan_space(const struct ieee80211_scan_entry *se, int *ielen)
+scan_space(struct ieee80211_scan_entry *se, int *ielen)
 {
 	*ielen = 0;
 	if (se->se_rsn_ie != NULL)
@@ -3545,7 +3554,7 @@ scan_space(const struct ieee80211_scan_entry *se, int *ielen)
 }
 
 static void
-get_scan_space(void *arg, const struct ieee80211_scan_entry *se)
+get_scan_space(void *arg, struct ieee80211_scan_entry *se)
 {
 	struct scanreq *req = arg;
 	int ielen;
@@ -3554,7 +3563,7 @@ get_scan_space(void *arg, const struct ieee80211_scan_entry *se)
 }
 
 static void
-get_scan_result(void *arg, const struct ieee80211_scan_entry *se)
+get_scan_result(void *arg, struct ieee80211_scan_entry *se)
 {
 	struct scanreq *req = arg;
 	struct ieee80211req_scan_result *sr;
@@ -3574,6 +3583,7 @@ get_scan_result(void *arg, const struct ieee80211_scan_entry *se)
 	sr->isr_freq = se->se_chan->ic_freq;
 	sr->isr_flags = se->se_chan->ic_flags;
 	sr->isr_rssi = se->se_rssi;
+	sr->isr_noise = se->se_noise;
 	sr->isr_intval = se->se_intval;
 	sr->isr_capinfo = se->se_capinfo;
 	sr->isr_erp = se->se_erp;
