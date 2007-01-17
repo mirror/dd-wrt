@@ -23,7 +23,7 @@ JFFS2_BBC_KERNEL_OBJS := $(JFFS2_BBC_KERNEL_OBJS-y)
 JFFS2_BBC_MKFS_OBJS   = jffs2_bbc_mkfs.o jffs2_bbc_framework.o jffs2_bbc_armlib_comp.o jffs2_bbc_lzo_comp.o\
                         jffs2_bbc_lzss_comp.o jffs2_bbc_lzari_comp.o jffs2_bbc_lzhd_comp.o
 
-COMPR_OBJS	:= compr.o compr_rubin.o compr_rtime.o pushpull.o \
+COMPR_OBJS	:= compr.o compr_rtime.o pushpull.o \
 			compr_zlib.o
 JFFS2_OBJS	:= dir.o file.o ioctl.o nodelist.o malloc.o \
 	$(JFFS2_BBC_KERNEL_OBJS) \
