@@ -4489,13 +4489,12 @@ showencstatus (webs_t wp, char *prefix)
     {
       websWrite (wp, "Capture(share.disabled)");
       websWrite (wp, "</script>");
-      return;
     }
   else
     {
       websWrite (wp, "Capture(share.enabled)");
       websWrite (wp, "</script>,&nbsp;");
-    }
+
   if (nvram_match (akm, "psk"))
     websWrite (wp, "WPA Pre-shared Key");
   if (nvram_match (akm, "wpa"))
@@ -4512,8 +4511,10 @@ showencstatus (webs_t wp, char *prefix)
     websWrite (wp, "RADIUS");
   if (nvram_match (akm, "wep"))
     websWrite (wp, "WEP");
+	} 
+	
   websWrite (wp, "\n</div>\n");
-
+return;
 }
 
 static void
