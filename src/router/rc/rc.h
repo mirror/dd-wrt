@@ -274,6 +274,8 @@ extern void depend_vpn_modules (void);
 
 extern int start_service (char *name);
 extern int stop_service (char *name);
+extern void *start_service_nofree (char *name,void *handle);
+extern void *stop_service_nofree (char *name,void *handle);
 extern void startstop (char *name);
 
 extern int zebra_ospf_init (void);
