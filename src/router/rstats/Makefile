@@ -1,7 +1,7 @@
 include $(TOP)/.config
 
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
-CFLAGS	+= $(COPTS)
+CFLAGS	+= $(COPTS) -fpic
 LDFLAGS += -L../nvram -L../shared -lnvram -lshared
 
 OBJS := rstats.o base64.o files.o misc.o process.o

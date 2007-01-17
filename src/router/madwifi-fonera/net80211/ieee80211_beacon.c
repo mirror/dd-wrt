@@ -289,7 +289,7 @@ ieee80211_beacon_update(struct ieee80211_node *ni,
 	int len_changed = 0;
 	u_int16_t capinfo;
 
-	IEEE80211_LOCK(ic);
+	IEEE80211_BEACON_LOCK(ic);
 
 	if ((ic->ic_flags & IEEE80211_F_DOTH) &&
 	    (vap->iv_flags & IEEE80211_F_CHANSWITCH) &&
@@ -524,7 +524,7 @@ ieee80211_beacon_update(struct ieee80211_node *ni,
 	    IEEE80211_IS_CHAN_TURBO(ic->ic_curchan))
 		ieee80211_add_athAdvCap(bo->bo_ath_caps, vap->iv_bss->ni_ath_flags,
 			vap->iv_bss->ni_ath_defkeyindex);
-	IEEE80211_UNLOCK(ic);
+	IEEE80211_BEACON_UNLOCK(ic);
 
 	return len_changed;
 }

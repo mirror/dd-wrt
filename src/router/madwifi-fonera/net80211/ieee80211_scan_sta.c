@@ -105,7 +105,7 @@ struct sta_table {
 	int st_newscan;
 	struct IEEE80211_TQ_STRUCT st_actiontq;	/* tasklet for "action" */
 	struct ieee80211_scan_entry st_selbss;	/* selected bss for action tasklet */
-	int (*st_action)(struct ieee80211vap *, const struct ieee80211_scan_entry *);
+	int (*st_action)(struct ieee80211vap *, struct ieee80211_scan_entry *);
 };
 
 static void sta_flush_table(struct sta_table *);
@@ -161,9 +161,9 @@ sta_flush(struct ieee80211_scan_state *ss)
 {
 	struct sta_table *st = ss->ss_priv;
 
-	spin_lock(&st->st_lock);
+	spin_lock_bh(&st->st_lock);
 	sta_flush_table(st);
-	spin_unlock(&st->st_lock);
+	spin_unlock_bh(&st->st_lock);
 	ss->ss_last = 0;
 	return 0;
 }
@@ -213,7 +213,7 @@ sta_add(struct ieee80211_scan_state *ss, const struct ieee80211_scanparams *sp,
 	int hash;
 
 	hash = STA_HASH(macaddr);
-	spin_lock(&st->st_lock);  
+	spin_lock_bh(&st->st_lock);  
 	LIST_FOREACH(se, &st->st_hash[hash], se_hash)
 		if (IEEE80211_ADDR_EQ(se->base.se_macaddr, macaddr) &&
 		    sp->ssid[1] == se->base.se_ssid[1] && 
@@ -223,7 +223,7 @@ sta_add(struct ieee80211_scan_state *ss, const struct ieee80211_scanparams *sp,
 	MALLOC(se, struct sta_entry *, sizeof(struct sta_entry),
 		M_80211_SCAN, M_NOWAIT | M_ZERO);
 	if (se == NULL) {
-		spin_unlock(&st->st_lock);
+		spin_unlock_bh(&st->st_lock);
 		return 0;
 	}
 	se->se_scangen = st->st_scangen-1;
@@ -254,6 +254,10 @@ found:
 		se->se_avgrssi = RSSI_IN(rssi);
 	else					/* avg w/ previous samples */
 		RSSI_LPF(se->se_avgrssi, rssi);
+	int noise = -95;
+//	if (ic->ic_getchannelnoise)
+//		noise = (int8_t) ic->ic_getchannelnoise(vap->iv_ic,se->base.se_chan);
+        se->base.se_noise=noise;
 	se->base.se_rssi = RSSI_GET(se->se_avgrssi);
 	ise->se_rstamp = rstamp;
 	memcpy(ise->se_tstamp.data, sp->tstamp, sizeof(ise->se_tstamp));
@@ -285,7 +289,7 @@ found:
 	se->se_seen = 1;
 	se->se_notseen = 0;
 
-	spin_unlock(&st->st_lock);
+	spin_unlock_bh(&st->st_lock);
 
 	/*
 	 * If looking for a quick choice and nothing's
@@ -570,7 +574,7 @@ sta_cancel(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 }
 
 static u_int8_t
-maxrate(const struct ieee80211_scan_entry *se)
+maxrate(struct ieee80211_scan_entry *se)
 {
 	u_int8_t max, r;
 	int i;
@@ -638,7 +642,7 @@ sta_compare(const struct sta_entry *a, const struct sta_entry *b)
  * Check rate set suitability and return the best supported rate.
  */
 static int
-check_rate(struct ieee80211vap *vap, const struct ieee80211_scan_entry *se)
+check_rate(struct ieee80211vap *vap, struct ieee80211_scan_entry *se)
 {
 #define	RV(v)	((v) & IEEE80211_RATE_VAL)
 	struct ieee80211com *ic = vap->iv_ic;
@@ -711,7 +715,7 @@ match_bss(struct ieee80211vap *vap,
 	const struct ieee80211_scan_state *ss, const struct sta_entry *se0)
 {
 	struct ieee80211com *ic = vap->iv_ic;
-	const struct ieee80211_scan_entry *se = &se0->base;
+	struct ieee80211_scan_entry *se = &se0->base;
         u_int8_t rate;
         int fail;
 
@@ -851,7 +855,7 @@ select_bss(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
  */
 static int
 sta_pick_bss(struct ieee80211_scan_state *ss, struct ieee80211vap *vap,
-	int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *),
+	int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *),
 	u_int32_t flags)
 {
 	struct sta_table *st = ss->ss_priv;
@@ -1003,6 +1007,11 @@ sta_roam_check(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 		 * XXX deauth current ap
 		 */
 		if (curRate < roamRate || curRssi < roamRssi) {
+		        int noise = -95;
+//			if (vap->iv_ic->ic_getchannelnoise)
+//			    noise = (int8_t) ic->ic_getchannelnoise(vap->iv_ic,se->base.se_chan);
+    			se->base.se_noise=noise;
+			se->base.se_rssi = curRssi;
 			se->base.se_rssi = curRssi;
 			selbs = select_bss(ss, vap);
 			if (selbs != NULL && selbs != se)
@@ -1060,7 +1069,7 @@ sta_iterate(struct ieee80211_scan_state *ss,
 	struct sta_entry *se;
 	u_int gen;
 
-	spin_lock(&st->st_scanlock);
+	spin_lock_bh(&st->st_scanlock);
 	gen = st->st_scangen++;
 restart:
 	spin_lock(&st->st_lock);
@@ -1076,7 +1085,7 @@ restart:
 	}
 	spin_unlock(&st->st_lock);
 
-	spin_unlock(&st->st_scanlock);
+	spin_unlock_bh(&st->st_scanlock);
 }
 
 static void
@@ -1223,7 +1232,7 @@ adhoc_pick_channel(struct ieee80211_scan_state *ss)
 	bestchan = NULL;
 	bestrssi = -1;
 
-	spin_lock(&st->st_lock);
+	spin_lock_bh(&st->st_lock);
 	for (i = 0; i < ss->ss_last; i++) {
 		c = ss->ss_chans[i];
 		maxrssi = 0;
@@ -1236,7 +1245,7 @@ adhoc_pick_channel(struct ieee80211_scan_state *ss)
 		if (bestchan == NULL || maxrssi < bestrssi)
 			bestchan = c;
 	}
-	spin_unlock(&st->st_lock);
+	spin_unlock_bh(&st->st_lock);
 
 	return bestchan;
 }
@@ -1247,7 +1256,7 @@ adhoc_pick_channel(struct ieee80211_scan_state *ss)
  */
 static int
 adhoc_pick_bss(struct ieee80211_scan_state *ss, struct ieee80211vap *vap,
-	int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *),
+	int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *),
 	u_int32_t flags)
 {
 	struct sta_table *st = ss->ss_priv;
@@ -1354,7 +1363,7 @@ adhoc_age(struct ieee80211_scan_state *ss)
  */
 static int
 adhoc_default_action(struct ieee80211vap *vap,
-	const struct ieee80211_scan_entry *se)
+	struct ieee80211_scan_entry *se)
 {
 	u_int8_t zeroMacAddr[IEEE80211_ADDR_LEN];
 

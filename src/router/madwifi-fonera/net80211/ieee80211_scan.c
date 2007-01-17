@@ -444,7 +444,7 @@ EXPORT_SYMBOL(ieee80211_start_scan);
 int
 ieee80211_check_scan(struct ieee80211vap *vap, int flags, u_int duration,
 	u_int nssid, const struct ieee80211_scan_ssid ssids[],
-	int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *))
+	int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *))
 {
 	struct ieee80211com *ic = vap->iv_ic;
 	struct ieee80211_scan_state *ss = ic->ic_scan;
@@ -954,7 +954,7 @@ ieee80211_scan_flush(struct ieee80211com *ic)
  */
 int
 ieee80211_scan_dfs_action(struct ieee80211vap *vap,
-			  const struct ieee80211_scan_entry *se)
+			  struct ieee80211_scan_entry *se)
 {
 	struct ieee80211com *ic = vap->iv_ic;
 	struct net_device *dev = ic->ic_dev;
