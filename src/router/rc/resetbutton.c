@@ -254,7 +254,6 @@ period_check (int sig)
   val = getbuttonstate ();
 #elif HAVE_FONERA
   val = getbuttonstate ();
-  fprintf(stderr,"atheros button state %d\n",val);
 #else
 
   if ((fp = fopen (GPIO_FILE, "r")))
