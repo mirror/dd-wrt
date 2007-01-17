@@ -86,7 +86,7 @@ apply(F, errmsg.err102);
 								<p><% tran("upgrad.mess1"); %></p><br/>
 								<div align="center"><script type="text/javascript">
 								//<![CDATA[
-								var bar1 = createBar(500,15,100,15,50,"process_aborted(this.form)");
+								var bar1 = createBar(500,15,100,15,200,"process_aborted(this.form)");
 								bar1.togglePause();
 								//]]>
 								</script></div><br />
