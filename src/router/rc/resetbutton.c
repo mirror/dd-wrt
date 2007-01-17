@@ -113,9 +113,23 @@ getbuttonstate ()
   return (*REG (page, GPIO0_IR) & GPIO_BUTTON) == 0;
 
 }
+#endif
+#ifdef HAVE_FONERA
 
+int
+getbuttonstate ()
+{
+FILE *in;
+int ret;
+in=fopen("/proc/gpio/6_in","rb");
+if (in==NULL)return 0;
+fscanf(in,"%d",&ret);
+fclose(in);
+return ret;
+}
 
 #endif
+
 
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
@@ -238,6 +252,9 @@ period_check (int sig)
 
 #ifdef HAVE_MAGICBOX
   val = getbuttonstate ();
+#elif HAVE_FONERA
+  val = getbuttonstate ();
+  fprintf(stderr,"atheros button state %d\n",val);
 #else
 
   if ((fp = fopen (GPIO_FILE, "r")))
@@ -260,6 +277,8 @@ period_check (int sig)
 #ifdef HAVE_XSCALE
   state = val;
 #elif HAVE_MAGICBOX
+  state = val;
+#elif HAVE_FONERA
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -328,9 +347,11 @@ period_check (int sig)
 		  printf ("resetbutton: factory default.\n");
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_FONERA
 
 		  led_control (LED_DIAG, LED_ON);
 		  led_control (LED_DIAG2, LED_ON);
+#endif
 #endif
 #endif
 		  ACTION ("ACT_HW_RESTORE");
@@ -344,6 +365,7 @@ period_check (int sig)
     }
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
+#ifndef HAVE_FONERA
 
   else if ((sesgpio != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
@@ -431,6 +453,7 @@ period_check (int sig)
          _eval(led_argv, NULL, 0, &pid); */
 
     }
+#endif
 #endif
 #endif
   else
