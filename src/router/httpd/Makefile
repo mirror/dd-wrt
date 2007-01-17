@@ -216,7 +216,12 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h
+
+ifeq ($(CONFIG_FONERA),y)
+CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h
+else
+CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h
+endif
   OBJS += ../wireless-tools/libiw.so.29
 endif
 
