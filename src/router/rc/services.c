@@ -77,78 +77,79 @@ del_routes (char *route)
 int
 start_services (void)
 {
+void *handle=NULL;
 #ifdef HAVE_SER
   nvram_set ("sipgate", "1");
 #else
   nvram_set ("sipgate", "0");
 #endif
 #ifdef HAVE_CPUTEMP
-  start_service ("hwmon");
+  handle=start_service_nofree ("hwmon",handle);
 #endif
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    start_service ("telnetd");
+    handle=start_service_nofree ("telnetd",handle);
 #endif
-  start_service ("syslog");
+  handle=start_service_nofree ("syslog",handle);
 #ifdef HAVE_TFTP
-  start_service ("tftpd");
+  handle=start_service_nofree ("tftpd",handle);
 #endif
-  start_service ("httpd");
-  start_service ("udhcpd");
-  start_service ("dnsmasq");
+  handle=start_service_nofree ("httpd",handle);
+  handle=start_service_nofree ("udhcpd",handle);
+  handle=start_service_nofree ("dnsmasq",handle);
 // NAS is started in rc.c
 #ifdef HAVE_BIRD
-  start_service ("zebra");
+  handle=start_service_nofree ("zebra",handle);
 #endif
-  start_service ("wland");
-  start_service ("wshaper");
-  start_service ("cron");
-  start_service ("radio_timer");
+  handle=start_service_nofree ("wland",handle);
+  handle=start_service_nofree ("wshaper",handle);
+  handle=start_service_nofree ("cron",handle);
+  handle=start_service_nofree ("radio_timer",handle);
 
 #ifdef HAVE_PPTPD
-  start_service ("pptpd");
+  handle=start_service_nofree ("pptpd",handle);
 #endif
 
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    start_service ("sshd");
+    handle=start_service_nofree ("sshd",handle);
 #endif
 
 #ifdef HAVE_RADVD
-  start_service ("radvd");
+  handle=start_service_nofree ("radvd",handle);
 #endif
 
 #ifdef HAVE_SNMP
-  start_service ("snmp");
+  handle=start_service_nofree ("snmp",handle);
 #endif
 
 #ifdef HAVE_WOL
-  start_service ("wol");
+  handle=start_service_nofree ("wol",handle);
 #endif
 
 #ifdef HAVE_NOCAT
-  start_service ("splashd");
+  handle=start_service_nofree ("splashd",handle);
 #endif
 
 #ifdef HAVE_UPNP
-  start_service ("upnp");
+  handle=start_service_nofree ("upnp",handle);
 #endif
 
 #ifdef HAVE_NEWMEDIA
-  start_service ("openvpnserversys");
+  handle=start_service_nofree ("openvpnserversys",handle);
 #endif
 #ifdef HAVE_RSTATS
-  start_service ("rstats");
+  handle=start_service_nofree ("rstats",handle);
 #endif
 #ifdef HAVE_PPPOERELAY
-  start_service ("pppoerelay");
+  handle=start_service_nofree ("pppoerelay",handle);
 #endif
 
-
+  dlclose(handle);
 
   cprintf ("done\n");
   return 0;
@@ -157,74 +158,75 @@ start_services (void)
 int
 stop_services (void)
 {
+  void *handle=NULL;
   //stop_ses();
 #ifdef HAVE_PPPOERELAY
-  stop_service ("pppoerelay");
+  handle=stop_service_nofree ("pppoerelay",handle);
 #endif
 #ifdef HAVE_RSTATS
-  stop_service ("rstats");
+  handle=stop_service_nofree ("rstats",handle);
 #endif
-  stop_service ("nas");
+  handle=stop_service_nofree ("nas",handle);
 #ifdef HAVE_UPNP
-  stop_service ("upnp");
+  handle=stop_service_nofree ("upnp",handle);
 #endif
-  stop_service ("udhcpd");
-  stop_service ("dns_clear_resolv");
-  stop_service ("cron");
-  stop_service ("radio_timer");
+  handle=stop_service_nofree ("udhcpd",handle);
+  handle=stop_service_nofree ("dns_clear_resolv",handle);
+  handle=stop_service_nofree ("cron",handle);
+  handle=stop_service_nofree ("radio_timer",handle);
 
 #ifdef HAVE_TFTP
-  stop_service ("tftpd");
+  handle=stop_service_nofree ("tftpd",handle);
 #endif
-  stop_service ("syslog");
+  handle=stop_service_nofree ("syslog",handle);
 #ifdef HAVE_BIRD
-  stop_service ("zebra");
+  handle=stop_service_nofree ("zebra",handle);
 #endif
-  stop_service ("wland");
+  handle=stop_service_nofree ("wland",handle);
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    stop_service ("telnetd");
+    handle=stop_service_nofree ("telnetd",handle);
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    stop_service ("sshd");
+    handle=stop_service_nofree ("sshd",handle);
 #endif
 
 #ifdef HAVE_RADVD
-  stop_service ("radvd");
+  handle=stop_service_nofree ("radvd",handle);
 #endif
 
 #ifdef HAVE_WIFIDOG
-  stop_service ("wifidog");
+  handle=stop_service_nofree ("wifidog",handle);
 #endif
 
 #ifdef HAVE_CHILLI
-  stop_service ("chilli");
+  handle=stop_service_nofree ("chilli",handle);
 #endif
 
 #ifdef HAVE_SNMP
-  stop_service ("snmp");
+  handle=stop_service_nofree ("snmp",handle);
 #endif
 
 #ifdef HAVE_WOL
-  stop_service ("wol");
+  handle=stop_service_nofree ("wol",handle);
 #endif
-  stop_service ("wshaper");
+  handle=stop_service_nofree ("wshaper",handle);
 
 #ifdef HAVE_PPTPD
-  stop_service ("pptpd");
+  handle=stop_service_nofree ("pptpd",handle);
 #endif
 #ifdef HAVE_NOCAT
-  stop_service ("splashd");
+  handle=stop_service_nofree ("splashd",handle);
 #endif
 #ifdef HAVE_NEWMEDIA
-  stop_service ("openvpnserversys");
+  handle=stop_service_nofree ("openvpnserversys",handle);
 #endif
-
+dlclose(handle);
 // end Sveasoft additions
 //stop_eou();
 
