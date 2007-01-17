@@ -96,6 +96,45 @@ start_service (char *name)
   cprintf ("start_sevice done()\n");
 }
 
+
+void *
+start_service_nofree (char *name,void *handle)
+{
+//  lcdmessaged("Starting Service",name);
+  cprintf ("start_service_nofree\n");
+  char service[64];
+  sprintf (service, "/etc/config/%s", name);
+  FILE *ck = fopen (service, "rb");
+  if (ck != NULL)
+    {
+      fclose (ck);
+      cprintf ("found shell based service %s\n", service);
+      system (service);
+      return NULL;
+    }
+  if (!handle)
+    handle = load_service (name);
+  if (handle == NULL)
+    {
+      return NULL;
+    }
+  void (*fptr) (void);
+  sprintf (service, "start_%s", name);
+  cprintf ("resolving %s\n", service);
+  fptr = (void (*)(void)) dlsym (handle, service);
+  if (fptr)
+    (*fptr) ();
+  else
+    fprintf (stderr, "function %s not found \n", service);
+  return handle;
+  cprintf ("start_sevice_nofree done()\n");
+}
+
+
+
+
+
+
 int
 start_servicep (char *name, char *param)
 {
@@ -192,11 +231,37 @@ stop_service (char *name)
   return 0;
 }
 
+void *
+stop_service_nofree (char *name,void *handle)
+{
+  //lcdmessaged("Stopping Service",name);
+  cprintf ("stop service()\n");
+  if (!handle)
+    handle = load_service (name);
+  if (handle == NULL)
+    {
+      return NULL;
+    }
+  void (*fptr) (void);
+  char service[64];
+  sprintf (service, "stop_%s", name);
+  cprintf ("resolving %s\n", service);
+  fptr = (void (*)(void)) dlsym (handle, service);
+  if (fptr)
+    (*fptr) ();
+  else
+    fprintf (stderr, "function %s not found \n", service);
+  cprintf ("stop_service done()\n");
+
+  return handle;
+}
 
 void
 startstop (char *name)
 {
+ void *handle=NULL;
   cprintf ("stop and start service\n");
-  stop_service (name);
-  start_service (name);
+  handle=stop_service_nofree (name,handle);
+  handle=start_service_nofree (name,handle);
+  dlclose(handle);
 }
