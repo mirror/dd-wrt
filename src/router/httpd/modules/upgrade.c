@@ -81,13 +81,21 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   {
     write_argv[0] = "write";
     write_argv[1] = upload_fifo;
+#ifdef HAVE_FONERA
+    write_argv[2] = "rootfs";
+#else
     write_argv[2] = "linux";
+#endif
     write_argv[3] = NULL;
   }
+#ifdef HAVE_FONERA
+  if (url)
+    return eval ("write", url, "rootfs");
 
+#else
   if (url)
     return eval ("write", url, "linux");
-
+#endif
   //diag_led(DIAG, START_LED);  // blink the diag led
   C_led (1);
 #ifdef HAVE_HTTPS
