@@ -1071,8 +1071,6 @@ configure_single (int count, int isbond)
   sprintf (wif, "wifi%d", count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
-  sprintf (ssid, "ath%d_ssid", count);
-  sprintf (broadcast, "ath%d_closed", count);
   sprintf (power, "ath%d_txpwr", count);
   sprintf (sens, "ath%d_distance", count);
   sprintf (diversity, "ath%d_diversity", count);
@@ -1223,10 +1221,64 @@ configure_single (int count, int isbond)
   setsysctrl (wif, "rxantenna", rx);
   setsysctrl (wif, "txantenna", tx);
 
+//setup vif interfaces first
+
+  vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      sprintf (net, "%s_net_mode", var);
+      if (nvram_match (net, "disabled"))
+	continue;
+      sprintf (ssid, "%s_ssid", var);
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+
+      eval ("iwconfig", var, "essid", default_get (ssid, "default"));
+      cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
+      sprintf (broadcast, "%s_closed", var);
+      eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+      if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
+	eval ("iwpriv", dev, "wds", "1");
+      cprintf ("setup encryption");
+      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+	setupHostAP (var);
+      else
+	setupSupplicant (var);
+
+      eval ("ifconfig", var, "0.0.0.0", "up");
+      if (strcmp (m, "sta") && strcmp (m, "infra"))
+	{
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", var);
+	  if (default_match (bridged, "1", "1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), var);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", var);
+	      sprintf (mask, "%s_ipaddr", var);
+	      ifconfig (var, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
+	}
+      setMacFilter (var);
+      cnt++;
+    }
+
+
+
   if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
     eval ("iwpriv", dev, "wds", "1");
 
 
+  sprintf (ssid, "ath%d_ssid", count);
+  sprintf (broadcast, "ath%d_closed", count);
 
 
   memset (var, 0, 80);
@@ -1235,6 +1287,7 @@ configure_single (int count, int isbond)
   eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
+  m = default_get (wl, "ap");
 
   cprintf ("setup encryption");
   if (strcmp (m, "sta") && strcmp (m, "wdssta"))
@@ -1275,79 +1328,11 @@ configure_single (int count, int isbond)
 			nvram_safe_get (mask));
 	    }
 	}
-
-//      eval ("brctl", "addif", "br0", dev);
     }
   else
     {
       cprintf ("set ssid\n");
       eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
-    }
-  vifs = nvram_safe_get (wifivifs);
-  if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      sprintf (net, "%s_net_mode", var);
-      if (nvram_match (net, "disabled"))
-	continue;
-      sprintf (ssid, "%s_ssid", var);
-//      sprintf (channel, "%s_channel", var);
-      sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
-
-//      if (strcmp (m, "sta"))
-//      {
-//        eval ("iwconfig", var, "channel", default_get (channel, "6"));
-//      }
-      //  fprintf (stderr, "set ssid for %s\n", var);
-      eval ("iwconfig", var, "essid", default_get (ssid, "default"));
-      cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
-      //  fprintf (stderr, "set broadcast for %s\n", var);
-      sprintf (broadcast, "%s_closed", var);
-      eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
-
-      if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
-	eval ("iwpriv", dev, "wds", "1");
-
-      // net mode
-//      set_netmode (var);
-
-//      fprintf (stderr, "encryption %s\n", var);
-
-      cprintf ("setup encryption");
-      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-	setupHostAP (var);
-      else
-	setupSupplicant (var);
-
-      eval ("ifconfig", var, "0.0.0.0", "up");
-      //ifconfig (var, IFUP, "0.0.0.0", NULL);
-      if (strcmp (m, "sta") && strcmp (m, "infra"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), var);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", var);
-	      sprintf (mask, "%s_ipaddr", var);
-	      ifconfig (var, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-
-	  //  eval ("brctl", "addif", "br0", var);
-	}
-      //add to bridge
-//                  eval ("brctl", "addif", lan_ifname, var);
-      setMacFilter (var);
-      cnt++;
     }
 
   int maxpower = getMaxPower (dev);

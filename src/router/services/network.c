@@ -2744,6 +2744,10 @@ notify_nas(char *type, char *ifname, char *action)
 int
 start_hotplug_net (void)
 {
+#ifdef HAVE_MADWIFI
+return 0;
+#endif
+
 //      char *lan_ifname = nvram_safe_get("lan_ifname");
   char *interface, *action;
 
