@@ -136,7 +136,7 @@ int jffs2_decompress(unsigned char comprtype, unsigned char *cdata_in,
 #endif
 		break;
 	case JFFS2_COMPR_DYNRUBIN:
-#if 1 /* Phase this one out */
+#if 0 /* Phase this one out -- done: phased out*/
 		dynrubin_decompress(cdata_in, data_out, cdatalen, datalen);
 #else
 		printk(KERN_WARNING "JFFS2: Dynrubin compression encountered but support not compiled in!\n");
