@@ -91,11 +91,11 @@ int ieee80211_start_scan(struct ieee80211vap *, int, u_int, u_int,
 	const struct ieee80211_scan_ssid ssids[]);
 int ieee80211_check_scan(struct ieee80211vap *, int, u_int, u_int,
 	const struct ieee80211_scan_ssid ssids[],
-	int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *));
+	int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *));
 int ieee80211_bg_scan(struct ieee80211vap *);
 void ieee80211_cancel_scan(struct ieee80211vap *);
 
-int ieee80211_scan_dfs_action(struct ieee80211vap *, const struct ieee80211_scan_entry *);
+int ieee80211_scan_dfs_action(struct ieee80211vap *, struct ieee80211_scan_entry *);
 
 struct ieee80211_scanparams;
 void ieee80211_add_scan(struct ieee80211vap *, const struct ieee80211_scanparams *,
@@ -113,7 +113,7 @@ void ieee80211_scan_assoc_fail(struct ieee80211com *,
 void ieee80211_scan_flush(struct ieee80211com *);
 
 struct ieee80211_scan_entry;
-typedef void ieee80211_scan_iter_func(void *, const struct ieee80211_scan_entry *);
+typedef void ieee80211_scan_iter_func(void *, struct ieee80211_scan_entry *);
 void ieee80211_scan_iterate(struct ieee80211com *, ieee80211_scan_iter_func, void *);
 
 /*
@@ -168,6 +168,7 @@ struct ieee80211_scan_entry {
 	u_int8_t se_fhindex;		/* FH only */
 	u_int8_t se_erp;			/* ERP from beacon/probe resp */
 	int8_t se_rssi;			/* avg'd recv ssi */
+	int8_t se_noise;			/* avg'd recv ssi */
 	u_int8_t se_dtimperiod;		/* DTIM period */
 	u_int8_t *se_wpa_ie;		/* captured WPA ie */
 	u_int8_t *se_rsn_ie;		/* captured RSN ie */
@@ -189,7 +190,7 @@ struct ieee80211_scanner {
 	int (*scan_restart)(struct ieee80211_scan_state *, struct ieee80211vap *);
 	int (*scan_cancel)(struct ieee80211_scan_state *, struct ieee80211vap *);
 	int (*scan_end)(struct ieee80211_scan_state *, struct ieee80211vap *,
-		int (*action)(struct ieee80211vap *, const struct ieee80211_scan_entry *),
+		int (*action)(struct ieee80211vap *, struct ieee80211_scan_entry *),
 		u_int32_t);
 	int (*scan_flush)(struct ieee80211_scan_state *);
 	/* add an entry to the cache */
@@ -209,7 +210,7 @@ struct ieee80211_scanner {
 		ieee80211_scan_iter_func *, void *);
 	/* default action to take when found scan match */
 	int (*scan_default)(struct ieee80211vap *,
-		const struct ieee80211_scan_entry *);
+		struct ieee80211_scan_entry *);
 };
 const struct ieee80211_scanner *ieee80211_scanner_get(enum ieee80211_opmode,
 	int);

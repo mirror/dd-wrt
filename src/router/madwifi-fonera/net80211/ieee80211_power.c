@@ -110,13 +110,13 @@ ieee80211_node_saveq_drain(struct ieee80211_node *ni)
 	struct sk_buff *skb;
 	int qlen;
 
-	IEEE80211_NODE_SAVEQ_LOCK(ni);
+ 	IEEE80211_NODE_SAVEQ_LOCK_IRQ(ni);
 	qlen = skb_queue_len(&ni->ni_savedq);
 	while ((skb = __skb_dequeue(&ni->ni_savedq)) != NULL) {
 		ieee80211_free_node(ni);
 		dev_kfree_skb_any(skb);
 	}
-	IEEE80211_NODE_SAVEQ_UNLOCK(ni);
+ 	IEEE80211_NODE_SAVEQ_UNLOCK_IRQ(ni);
 
 	return qlen;
 }
@@ -143,7 +143,7 @@ ieee80211_node_saveq_age(struct ieee80211_node *ni)
 #endif
 		struct sk_buff *skb;
 
-		IEEE80211_NODE_SAVEQ_LOCK(ni);
+		IEEE80211_NODE_SAVEQ_LOCK_IRQ(ni);
 		while ((skb = skb_peek(&ni->ni_savedq)) != NULL &&
 		     M_AGE_GET(skb) < IEEE80211_INACT_WAIT) {
 			IEEE80211_NOTE(vap, IEEE80211_MSG_POWER, ni,
@@ -155,7 +155,7 @@ ieee80211_node_saveq_age(struct ieee80211_node *ni)
 		}
 		if (skb != NULL)
 			M_AGE_SUB(skb, IEEE80211_INACT_WAIT);
-		IEEE80211_NODE_SAVEQ_UNLOCK(ni);
+		IEEE80211_NODE_SAVEQ_UNLOCK_IRQ(ni);
 
 		IEEE80211_NOTE(vap, IEEE80211_MSG_POWER, ni,
 			"discard %u frames for age", discard);
@@ -181,7 +181,7 @@ ieee80211_set_tim(struct ieee80211_node *ni, int set)
 	KASSERT(aid < vap->iv_max_aid,
 		("bogus aid %u, max %u", aid, vap->iv_max_aid));
 
-	IEEE80211_LOCK(ni->ni_ic);
+	IEEE80211_BEACON_LOCK(ni->ni_ic);
 	if (set != (isset(vap->iv_tim_bitmap, aid) != 0)) {
 		if (set) {
 			setbit(vap->iv_tim_bitmap, aid);
@@ -192,7 +192,7 @@ ieee80211_set_tim(struct ieee80211_node *ni, int set)
 		}
 		vap->iv_flags |= IEEE80211_F_TIMUPDATE;
 	}
-	IEEE80211_UNLOCK(ni->ni_ic);
+	IEEE80211_BEACON_UNLOCK(ni->ni_ic);
 }
 
 /*
@@ -293,9 +293,9 @@ ieee80211_node_pwrsave(struct ieee80211_node *ni, int enable)
 		struct sk_buff *skb;
 		int qlen;
 
-		IEEE80211_NODE_SAVEQ_LOCK(ni);
+		IEEE80211_NODE_SAVEQ_LOCK_IRQ(ni);
 		IEEE80211_NODE_SAVEQ_DEQUEUE(ni, skb, qlen);
-		IEEE80211_NODE_SAVEQ_UNLOCK(ni);
+		IEEE80211_NODE_SAVEQ_UNLOCK_IRQ(ni);
 		if (skb == NULL)
 			break;
 		/* 
@@ -357,9 +357,9 @@ ieee80211_sta_pwrsave(struct ieee80211vap *vap, int enable)
 			for (;;) {
 				struct sk_buff *skb;
 
-				IEEE80211_NODE_SAVEQ_LOCK(ni);
+				IEEE80211_NODE_SAVEQ_LOCK_IRQ(ni);
 				skb = __skb_dequeue(&ni->ni_savedq);
-				IEEE80211_NODE_SAVEQ_UNLOCK(ni);
+				IEEE80211_NODE_SAVEQ_UNLOCK_IRQ(ni);
 				if (skb == NULL)
 					break;
 				ieee80211_parent_queue_xmit(skb);

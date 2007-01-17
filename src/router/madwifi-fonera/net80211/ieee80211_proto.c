@@ -628,9 +628,9 @@ ieee80211_wme_initparams(struct ieee80211vap *vap)
 {
 	struct ieee80211com *ic = vap->iv_ic;
 
-	IEEE80211_LOCK(ic);
+	IEEE80211_BEACON_LOCK(ic);
 	ieee80211_wme_initparams_locked(vap);
-	IEEE80211_UNLOCK(ic);
+	IEEE80211_BEACON_UNLOCK(ic);
 }
 
 void
@@ -913,9 +913,9 @@ ieee80211_wme_updateparams(struct ieee80211vap *vap)
 	struct ieee80211com *ic = vap->iv_ic;
 
 	if (ic->ic_caps & IEEE80211_C_WME) {
-		IEEE80211_LOCK(ic);
+		IEEE80211_BEACON_LOCK(ic);
 		ieee80211_wme_updateparams_locked(vap);
-		IEEE80211_UNLOCK(ic);
+		IEEE80211_BEACON_UNLOCK(ic);
 	}
 }
 
@@ -1228,9 +1228,9 @@ ieee80211_new_state(struct ieee80211vap *vap, enum ieee80211_state nstate, int a
 	int rc;
 
 	/* grab the lock so that only one vap can go through transistion at any time */
-	IEEE80211_VAPS_LOCK_BH(ic);
+	IEEE80211_VAPS_LOCK_IRQ(ic);
 	rc = vap->iv_newstate(vap, nstate, arg);
-	IEEE80211_VAPS_UNLOCK_BH(ic);
+	IEEE80211_VAPS_UNLOCK_IRQ(ic);
 	return rc;
 }
 

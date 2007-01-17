@@ -572,7 +572,6 @@ struct ath_softc {
 	struct ath_buf *sc_rxbufcur;		/* current rx buffer */
 	u_int32_t *sc_rxlink;			/* link ptr in last RX desc */
 	spinlock_t sc_rxbuflock; 
-	struct ATH_TQ_STRUCT sc_rxtq;		/* rx intr tasklet */
 	struct ATH_TQ_STRUCT sc_rxorntq;	/* rxorn intr tasklet */
 	u_int8_t sc_defant;			/* current default antenna */
 	u_int8_t sc_rxotherant;			/* rx's on non-default antenna*/
@@ -585,6 +584,7 @@ struct ath_softc {
 	u_int sc_txintrperiod;			/* tx interrupt batching */
 	struct ath_txq sc_txq[HAL_NUM_TX_QUEUES];
 	struct ath_txq *sc_ac2q[WME_NUM_AC];	/* WME AC -> h/w qnum */ 
+	HAL_INT sc_isr;				/* unmasked ISR state */
 	struct ATH_TQ_STRUCT sc_txtq;		/* tx intr tasklet */
 	u_int8_t sc_grppoll_str[GRPPOLL_RATE_STR_LEN];  
 	struct ath_descdma sc_bdma;		/* beacon descriptors */
@@ -674,6 +674,8 @@ typedef void (*ath_callback) (struct ath_softc *);
 #define	ATH_RXBUF_UNLOCK_IRQ_EARLY(_sc)		\
 	spin_unlock_irqrestore(&(_sc)->sc_rxbuflock, __rxbuflockflags);
 
+#define ATH_DISABLE_INTR		local_irq_disable
+#define ATH_ENABLE_INTR 		local_irq_enable
 
 /* Protects the device from concurrent accesses */
 #define	ATH_LOCK_INIT(_sc)		init_MUTEX(&(_sc)->sc_lock)

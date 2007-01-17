@@ -6,7 +6,7 @@ export ATH_CAP_SUPERG_FF=1
 endif
 
 ifndef ATH_CAP_DYNTURBO
-export ATH_CAP_DYNTURBO=1
+export ATH_CAP_DYNTURBO=0
 endif
 
 ifndef ATH_CAP_SUPERG_COMP
