@@ -818,12 +818,12 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
     {
       char filter_mac[] = "ath10.99_macXXX";
       char *mac = NULL;
-      char mac1[20];
+      unsigned int mac1[20];
 
       snprintf (filter_mac, sizeof (filter_mac), "%s%s%d", ifname, "_mac", i);
 
       mac = websGetVar (wp, filter_mac, NULL);
-
+//      fprintf(stderr, "mactable %s_mac%d returns %s\n",ifname,i,mac);
 
       if (!mac || !strcmp (mac, "0") || !strcmp (mac, ""))
 	{
@@ -833,17 +833,17 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 
       if (strlen (mac) == 12)
 	{
-	  sscanf (mac, "%02X%02X%02X%02X%02X%02X", (uint *) & m[0],
-		  (uint *) & m[1], (uint *) & m[2], (uint *) & m[3],
-		  (uint *) & m[4], (uint *) & m[5]);
+	  sscanf (mac, "%02X%02X%02X%02X%02X%02X", & m[0],
+		  & m[1], & m[2], & m[3],
+		   & m[4], & m[5]);
 	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
 		   m[3], m[4], m[5]);
 	}
       else if (strlen (mac) == 17)
 	{
-	  sscanf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", (uint *) & m[0],
-		  (uint *) & m[1], (uint *) & m[2], (uint *) & m[3],
-		  (uint *) & m[4], (uint *) & m[5]);
+	  sscanf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", & m[0],
+		  & m[1], & m[2], & m[3],
+		  & m[4], & m[5]);
 	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
 		   m[3], m[4], m[5]);
 	}
@@ -851,6 +851,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 	{
 	  mac1[0] = 0;
 	}
+//      fprintf(stderr, "saving %s\n",mac1);
 
       if (!valid_hwaddr (wp, mac1, v))
 	{
