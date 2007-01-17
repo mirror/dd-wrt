@@ -804,7 +804,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 
   char buf[19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE] = "", *cur = buf;
   char *wordlist;
-  unsigned char m[6];
+  unsigned int m[6];
   char *ifname = websGetVar (wp, "ifname", NULL);	//64 or 128
   if (ifname == NULL)
     return;
@@ -818,7 +818,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
     {
       char filter_mac[] = "ath10.99_macXXX";
       char *mac = NULL;
-      unsigned int mac1[20];
+      char mac1[20];
 
       snprintf (filter_mac, sizeof (filter_mac), "%s%s%d", ifname, "_mac", i);
 
@@ -851,7 +851,6 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 	{
 	  mac1[0] = 0;
 	}
-//      fprintf(stderr, "saving %s\n",mac1);
 
       if (!valid_hwaddr (wp, mac1, v))
 	{
