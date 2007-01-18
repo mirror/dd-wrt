@@ -149,7 +149,13 @@ void __init serial_setup(void)
 	s.uartclk = AR5315_UART_CLOCK_RATE;
 	s.irq = AR531X_MISC_IRQ_UART0;
 	s.regshift = 2;
+#if CONFIG_AR531X_COBRA
 	s.mapbase = KSEG1ADDR(AR5315_UART0);
+//	s.iomem_base = (u8 *)AR5315_UART0;
+#else
+	s.mapbase = KSEG1ADDR(AR531X_UART0);
+//	s.iomem_base = (u8 *)AR531X_UART0;
+#endif
 	s.membase = (void __iomem *)s.mapbase;
 
 	early_serial_setup(&s);
@@ -175,13 +181,21 @@ ar531x_time_init(void)
 
 void __init plat_mem_setup(void)
 {
-	unsigned int config = read_c0_config();
 
 	/* Clear any lingering AHB errors */
+#if CONFIG_AR531X_COBRA
+	unsigned int config = read_c0_config();
 	write_c0_config(config & ~0x3);
 	sysRegWrite(AR5315_AHB_ERR0,AHB_ERROR_DET);
 	sysRegRead(AR5315_AHB_ERR1);
 	sysRegWrite(AR5315_WDC, WDC_IGNORE_EXPIRATION);
+#else
+	sysRegRead(AR531X_PROCADDR);
+	sysRegRead(AR531X_DMAADDR);
+
+	sysRegWrite(AR531X_WD_CTRL, AR531X_WD_CTRL_IGNORE_EXPIRATION);
+#endif
+
 
 	/* Disable data watchpoints */
 	write_c0_watchlo0(0);

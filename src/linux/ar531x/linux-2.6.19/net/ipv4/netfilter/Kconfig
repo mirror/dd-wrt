@@ -203,6 +203,17 @@ config IP_NF_H323
 	  If you want to compile it as a module, say 'M' here and read
 	  Documentation/modules.txt.  If unsure, say 'N'.
 
+config IP_NF_RTSP
+	tristate "RTSP protocol support"
+	depends on IP_NF_CONNTRACK
+	help
+	  Support the RTSP protocol.  This allows UDP transports to be setup
+	  properly, including RTP and RDT.
+
+	  If you want to compile it as a module, say M here and read
+	  <file:Documentation/modules.txt>.  If unsure, say `Y'.
+
+
 config IP_NF_SIP
 	tristate "SIP protocol support (EXPERIMENTAL)"
 	depends on IP_NF_CONNTRACK && EXPERIMENTAL
@@ -494,23 +505,6 @@ config IP_NF_TARGET_REDIRECT
 
 	  To compile it as a module, choose M here.  If unsure, say N.
 
-config IP_NF_TARGET_ROUTE
-        tristate  'ROUTE target support'
-        depends on IP_NF_MANGLE
-        help
-          This option adds a `ROUTE' target, which enables you to setup unusual
-          routes. For example, the ROUTE lets you route a received packet through
-          an interface or towards a host, even if the regular destination of the
-          packet is the router itself. The ROUTE target is also able to change the
-          incoming interface of a packet.
-
-          The target can be or not a final target. It has to be used inside the
-          mangle table.
-
-          If you want to compile it as a module, say M here and read
-          Documentation/modules.txt.  The module will be called ipt_ROUTE.o.
-          If unsure, say `N'.
-
 config IP_NF_TARGET_NETMAP
 	tristate "NETMAP target support"
 	depends on IP_NF_NAT
@@ -583,6 +577,12 @@ config IP_NF_NAT_H323
 	depends on IP_NF_IPTABLES!=n && IP_NF_CONNTRACK!=n && IP_NF_NAT!=n
 	default IP_NF_NAT if IP_NF_H323=y
 	default m if IP_NF_H323=m
+
+ config IP_NF_NAT_RTSP
+ 	tristate
+ 	depends on IP_NF_IPTABLES!=n && IP_NF_CONNTRACK!=n && IP_NF_NAT!=n
+ 	default IP_NF_NAT if IP_NF_RTSP=y
+ 	default m if IP_NF_RTSP=m
 
 config IP_NF_NAT_SIP
 	tristate
@@ -691,105 +691,6 @@ config IP_NF_ARP_MANGLE
 	  Allows altering the ARP packet payload: source and destination
 	  hardware and network addresses.
 
-config IP_NF_SET
-	tristate "IP set support"
-	depends on INET && NETFILTER
-	help
-	  This option adds IP set support to the kernel.
-	  In order to define and use sets, you need the userspace utility
-	  ipset(8).
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_MAX
-	int "Maximum number of IP sets"
-	default 256
-	range 2 65534
-	depends on IP_NF_SET
-	help
-	  You can define here default value of the maximum number
-	  of IP sets for the kernel.
-
-	  The value can be overriden by the 'max_sets' module
-	  parameter of the 'ip_set' module.
-
-config IP_NF_SET_HASHSIZE
-	int "Hash size for bindings of IP sets"
-	default 1024
-	depends on IP_NF_SET
-	help
-	  You can define here default value of the hash size for
-	  bindings of IP sets.
-
-	  The value can be overriden by the 'hash_size' module
-	  parameter of the 'ip_set' module.
-
-config IP_NF_SET_IPMAP
-	tristate "ipmap set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the ipmap set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_MACIPMAP
-	tristate "macipmap set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the macipmap set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_PORTMAP
-	tristate "portmap set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the portmap set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_IPHASH
-	tristate "iphash set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the iphash set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_NETHASH
-	tristate "nethash set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the nethash set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_SET_IPTREE
-	tristate "iptree set support"
-	depends on IP_NF_SET
-	help
-	  This option adds the iptree set type support.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_MATCH_SET
-	tristate "set match support"
-	depends on IP_NF_SET
-	help
-	  Set matching matches against given IP sets.
-	  You need the ipset utility to create and set up the sets.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_TARGET_SET
-	tristate "SET target support"
-	depends on IP_NF_SET
-	help
-	  The SET target makes possible to add/delete entries
-	  in IP sets.
-	  You need the ipset utility to create and set up the sets.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
 
 config IP_NF_MATCH_WEBSTR
         tristate "Webstr match support (EXPERIMENTAL)"
