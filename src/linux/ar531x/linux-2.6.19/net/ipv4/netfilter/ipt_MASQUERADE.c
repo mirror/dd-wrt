@@ -85,30 +85,12 @@ masquerade_target(struct sk_buff **pskb,
 		return NF_ACCEPT;
 
 	mr = targinfo;
-
-	{
-		struct flowi fl = { .nl_u = { .ip4_u =
-					      { .daddr = (*pskb)->nh.iph->daddr,
-						.tos = (RT_TOS((*pskb)->nh.iph->tos) |
-							RTO_CONN),
-						.gw = ((struct rtable *) (*pskb)->dst)->rt_gateway,
-#ifdef CONFIG_IP_ROUTE_FWMARK
-						.fwmark = (*pskb)->nfmark
-#endif
-					      } },
-				    .oif = out->ifindex };
-		if (ip_route_output_key(&rt, &fl) != 0) {
-			/* Funky routing can do this. */
-			if (net_ratelimit())
-				printk("MASQUERADE:"
-				       " No route: Rusty's brain broke!\n");
-			return NF_DROP;
-		}
+	rt = (struct rtable *)(*pskb)->dst;
+	newsrc = inet_select_addr(out, rt->rt_gateway, RT_SCOPE_UNIVERSE);
+	if (!newsrc) {
+		printk("MASQUERADE: %s ate my IP address\n", out->name);
+		return NF_DROP;
 	}
-
-	newsrc = rt->rt_src;
-	DEBUGP("newsrc = %u.%u.%u.%u\n", NIPQUAD(newsrc));
-	ip_rt_put(rt);
 
 	write_lock_bh(&masq_lock);
 	ct->nat.masq_index = out->ifindex;

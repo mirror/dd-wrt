@@ -325,14 +325,6 @@ static struct nf_hook_ops ip_nat_ops[] = {
 		.hooknum	= NF_IP_LOCAL_OUT,
 		.priority	= NF_IP_PRI_NAT_DST,
 	},
-	/* Before routing, route before mangling */
-	{
-		.hook		= ip_nat_route_input,
-		.owner		= THIS_MODULE,
-		.pf		= PF_INET,
-		.hooknum	= NF_IP_PRE_ROUTING,
-		.priority	= NF_IP_PRI_LAST-1,
-	},
 	/* After packet filtering, change source */
 	{
 		.hook		= ip_nat_fn,

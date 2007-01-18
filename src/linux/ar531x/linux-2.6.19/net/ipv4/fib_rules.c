@@ -89,11 +89,6 @@ u32 fib_rules_tclass(struct fib_result *res)
 }
 #endif
 
-int fib_result_table(struct fib_result *res)
-{
-	return res->r->table;
-}
-
 int fib_lookup(struct flowi *flp, struct fib_result *res)
 {
 	struct fib_lookup_arg arg = {
@@ -145,8 +140,7 @@ errout:
 void fib_select_default(const struct flowi *flp, struct fib_result *res)
 {
 	if (res->r && res->r->action == FR_ACT_TO_TBL &&
-	    ((FIB_RES_GW(*res) && FIB_RES_NH(*res).nh_scope == RT_SCOPE_LINK) ||
-	      FIB_RES_NH(*res).nh_scope == RT_SCOPE_HOST)) {
+	    FIB_RES_GW(*res) && FIB_RES_NH(*res).nh_scope == RT_SCOPE_LINK) {
 		struct fib_table *tb;
 		if ((tb = fib_get_table(res->r->table)) != NULL)
 			tb->tb_select_default(tb, flp, res);

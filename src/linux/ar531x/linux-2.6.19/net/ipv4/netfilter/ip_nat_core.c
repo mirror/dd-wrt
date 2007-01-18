@@ -573,53 +573,6 @@ EXPORT_SYMBOL_GPL(ip_nat_port_nfattr_to_range);
 EXPORT_SYMBOL_GPL(ip_nat_port_range_to_nfattr);
 #endif
 
-unsigned int
-ip_nat_route_input(unsigned int hooknum,
-		struct sk_buff **pskb,
-		const struct net_device *in,
-		const struct net_device *out,
-		int (*okfn)(struct sk_buff *))
-{
-	struct sk_buff *skb = *pskb;
-	struct iphdr *iph;
-	struct ip_conntrack *conn;
-	enum ip_conntrack_info ctinfo;
-	enum ip_conntrack_dir dir;
-	unsigned long statusbit;
-	u32 saddr;
-
-	if (!(conn = ip_conntrack_get(skb, &ctinfo)))
-		return NF_ACCEPT;
-
-	if (!(conn->status & IPS_NAT_DONE_MASK))
-		return NF_ACCEPT;
-	dir = CTINFO2DIR(ctinfo);
-	statusbit = IPS_SRC_NAT;
-	if (dir == IP_CT_DIR_REPLY)
-		statusbit ^= IPS_NAT_MASK;
-	if (!(conn->status & statusbit))
-		return NF_ACCEPT;
-
-	if (skb->dst)
-		return NF_ACCEPT;
-
-	if (skb->len < sizeof(struct iphdr))
-		return NF_ACCEPT;
-
-	/* use daddr in other direction as masquerade address (lsrc) */
-	iph = skb->nh.iph;
-	saddr = conn->tuplehash[!dir].tuple.dst.ip;
-	if (saddr == iph->saddr)
-		return NF_ACCEPT;
-
-	if (ip_route_input_lookup(skb, iph->daddr, iph->saddr, iph->tos,
-	    skb->dev, saddr))
-		return NF_DROP;
-
-	return NF_ACCEPT;
-}
-EXPORT_SYMBOL_GPL(ip_nat_route_input);
-
 static int __init ip_nat_init(void)
 {
 	size_t i;
