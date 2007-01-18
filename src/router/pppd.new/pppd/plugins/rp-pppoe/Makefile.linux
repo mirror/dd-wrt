@@ -26,6 +26,8 @@ VERSION=3.3
 
 COPTS=-O2 -g
 CFLAGS=$(COPTS) -I../../../include/linux
+#CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
+
 all: rp-pppoe.so pppoe-discovery
 
 pppoe-discovery: libplugin.a pppoe-discovery.o
