@@ -31,6 +31,17 @@
 #define AR5315_RAM2             0xc0000000      /* ram alias */
 #define AR5315_RAM3             0xe0000000      /* ram alias */
 
+#define AR531X_WLAN0            0x18000000
+#define AR531X_WLAN1            0x18500000
+#define AR531X_ENET0            0x18100000
+#define AR531X_ENET1            0x18200000
+#define AR531X_SDRAMCTL         0x18300000
+#define AR531X_FLASHCTL         0x18400000
+#define AR531X_APBBASE		0x1c000000
+#define AR531X_FLASH            0x1e000000
+#define AR531X_UART0            0xbc000003      /* UART MMR */
+
+
 /*
  * Reset Register
  */

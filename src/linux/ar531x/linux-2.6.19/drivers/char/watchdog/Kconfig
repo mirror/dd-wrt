@@ -47,6 +47,11 @@ comment "Watchdog Device Drivers"
 
 # Architecture Independent
 
+config AR531X_WATCHDOG
+	tristate "AR531X watchdog"
+	depends on WATCHDOG
+	
+
 config SOFT_WATCHDOG
 	tristate "Software watchdog"
 	depends on WATCHDOG

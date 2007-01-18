@@ -275,37 +275,29 @@ out:
 	return err;
 }
 
+static int fn_hash_last_dflt=-1;
+
 static void
 fn_hash_select_default(struct fib_table *tb, const struct flowi *flp, struct fib_result *res)
 {
-	int order, last_idx, last_dflt, last_nhsel;
-	struct fib_alias *first_fa = NULL;
-	struct hlist_head *head;
+	int order, last_idx;
 	struct hlist_node *node;
 	struct fib_node *f;
 	struct fib_info *fi = NULL;
 	struct fib_info *last_resort;
 	struct fn_hash *t = (struct fn_hash*)tb->tb_data;
-	struct fn_zone *fz = t->fn_zones[res->prefixlen];
-	u32 k;
+	struct fn_zone *fz = t->fn_zones[0];
 
 	if (fz == NULL)
 		return;
 
-	k = fz_key(flp->fl4_dst, fz);
-	last_dflt = -2;
-	last_nhsel = 0;
 	last_idx = -1;
 	last_resort = NULL;
 	order = -1;
 
 	read_lock(&fib_hash_lock);
-	head = &fz->fz_hash[fn_hash(k, fz)];
-	hlist_for_each_entry(f, node, head, fn_hash) {
+	hlist_for_each_entry(f, node, &fz->fz_hash[0], fn_hash) {
 		struct fib_alias *fa;
-
-		if (f->fn_key != k)
-			continue;
 
 		list_for_each_entry(fa, &f->fn_alias, fa_list) {
 			struct fib_info *next_fi = fa->fa_info;
@@ -314,52 +306,41 @@ fn_hash_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
 			    fa->fa_type != RTN_UNICAST)
 				continue;
 
-			if (fa->fa_tos &&
-			    fa->fa_tos != flp->fl4_tos)
-				continue;
 			if (next_fi->fib_priority > res->fi->fib_priority)
 				break;
+			if (!next_fi->fib_nh[0].nh_gw ||
+			    next_fi->fib_nh[0].nh_scope != RT_SCOPE_LINK)
+				continue;
 			fa->fa_state |= FA_S_ACCESSED;
 
-			if (!first_fa) {
-				last_dflt = fa->fa_last_dflt;
-				first_fa = fa;
-			}
-			if (fi && !fib_detect_death(fi, order, &last_resort,
-				&last_idx, &last_dflt, &last_nhsel, flp)) {
+			if (fi == NULL) {
+				if (next_fi != res->fi)
+					break;
+			} else if (!fib_detect_death(fi, order, &last_resort,
+						     &last_idx, &fn_hash_last_dflt)) {
 				if (res->fi)
 					fib_info_put(res->fi);
 				res->fi = fi;
 				atomic_inc(&fi->fib_clntref);
-				first_fa->fa_last_dflt = order;
+				fn_hash_last_dflt = order;
 				goto out;
 			}
 			fi = next_fi;
 			order++;
 		}
-		break;
 	}
 
 	if (order <= 0 || fi == NULL) {
-		if (fi && fi->fib_nhs > 1 &&
-		    fib_detect_death(fi, order, &last_resort, &last_idx,
-			&last_dflt, &last_nhsel, flp) &&
-		    last_resort == fi) {
-			read_lock_bh(&fib_nhflags_lock);
-			fi->fib_nh[last_nhsel].nh_flags &= ~RTNH_F_SUSPECT;
-			read_unlock_bh(&fib_nhflags_lock);
-		}
-		if (first_fa) first_fa->fa_last_dflt = -1;
+		fn_hash_last_dflt = -1;
 		goto out;
 	}
 
-	if (!fib_detect_death(fi, order, &last_resort, &last_idx,
-			      &last_dflt, &last_nhsel, flp)) {
+	if (!fib_detect_death(fi, order, &last_resort, &last_idx, &fn_hash_last_dflt)) {
 		if (res->fi)
 			fib_info_put(res->fi);
 		res->fi = fi;
 		atomic_inc(&fi->fib_clntref);
-		first_fa->fa_last_dflt = order;
+		fn_hash_last_dflt = order;
 		goto out;
 	}
 
@@ -369,11 +350,8 @@ fn_hash_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
 		res->fi = last_resort;
 		if (last_resort)
 			atomic_inc(&last_resort->fib_clntref);
-		read_lock_bh(&fib_nhflags_lock);
-		last_resort->fib_nh[last_nhsel].nh_flags &= ~RTNH_F_SUSPECT;
-		read_unlock_bh(&fib_nhflags_lock);
-		first_fa->fa_last_dflt = last_idx;
 	}
+	fn_hash_last_dflt = last_idx;
 out:
 	read_unlock(&fib_hash_lock);
 }
@@ -469,7 +447,6 @@ static int fn_hash_insert(struct fib_table *tb, struct fib_config *cfg)
 			write_lock_bh(&fib_hash_lock);
 			fi_drop = fa->fa_info;
 			fa->fa_info = fi;
-			fa->fa_last_dflt = -1;
 			fa->fa_type = cfg->fc_type;
 			fa->fa_scope = cfg->fc_scope;
 			state = fa->fa_state;
@@ -529,7 +506,6 @@ static int fn_hash_insert(struct fib_table *tb, struct fib_config *cfg)
 	new_fa->fa_type = cfg->fc_type;
 	new_fa->fa_scope = cfg->fc_scope;
 	new_fa->fa_state = 0;
-	new_fa->fa_last_dflt = -1;
 
 	/*
 	 * Insert new entry to the list.

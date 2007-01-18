@@ -63,13 +63,6 @@ struct ip_nat_info
 
 struct ip_conntrack;
 
-/* Call input routing for SNAT-ed traffic */
-extern unsigned int ip_nat_route_input(unsigned int hooknum,
-				       struct sk_buff **pskb,
-				       const struct net_device *in,
-				       const struct net_device *out,
-				       int (*okfn)(struct sk_buff *));
-
 /* Set up the info structure to map into this range. */
 extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
 				      const struct ip_nat_range *range,

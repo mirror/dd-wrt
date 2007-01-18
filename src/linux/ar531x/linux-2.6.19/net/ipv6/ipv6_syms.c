@@ -11,7 +11,6 @@ EXPORT_SYMBOL(icmpv6_send);
 EXPORT_SYMBOL(icmpv6_statistics);
 EXPORT_SYMBOL(icmpv6_err_convert);
 EXPORT_SYMBOL(ndisc_mc_map);
-EXPORT_SYMBOL(nd_tbl);
 EXPORT_SYMBOL(register_inet6addr_notifier);
 EXPORT_SYMBOL(unregister_inet6addr_notifier);
 EXPORT_SYMBOL(ip6_route_output);

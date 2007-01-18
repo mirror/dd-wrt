@@ -19,8 +19,6 @@ struct flowi {
 			__be32			daddr;
 			__be32			saddr;
 			__u32			fwmark;
-			__u32			lsrc;
-			__u32			gw;
 			__u8			tos;
 			__u8			scope;
 		} ip4_u;
@@ -50,8 +48,6 @@ struct flowi {
 #define fl4_dst		nl_u.ip4_u.daddr
 #define fl4_src		nl_u.ip4_u.saddr
 #define fl4_fwmark	nl_u.ip4_u.fwmark
-#define fl4_lsrc	nl_u.ip4_u.lsrc
-#define fl4_gw		nl_u.ip4_u.gw
 #define fl4_tos		nl_u.ip4_u.tos
 #define fl4_scope	nl_u.ip4_u.scope
 

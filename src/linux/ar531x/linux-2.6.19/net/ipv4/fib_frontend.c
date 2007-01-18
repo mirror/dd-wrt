@@ -58,8 +58,6 @@ struct fib_table *ip_fib_main_table;
 #define FIB_TABLE_HASHSZ 1
 static struct hlist_head fib_table_hash[FIB_TABLE_HASHSZ];
 
-#define FIB_RES_TABLE(r) (RT_TABLE_MAIN)
-
 #else
 
 #define FIB_TABLE_HASHSZ 256
@@ -102,9 +100,6 @@ struct fib_table *fib_get_table(u32 id)
 	rcu_read_unlock();
 	return NULL;
 }
-
-#define FIB_RES_TABLE(r) (fib_result_table(r))
-
 #endif /* CONFIG_IP_MULTIPLE_TABLES */
 
 static void fib_flush(void)
@@ -195,9 +190,6 @@ int fib_validate_source(__be32 src, __be32 dst, u8 tos, int oif,
 					.tos = tos } },
 			    .iif = oif };
 	struct fib_result res;
-	int table;
-	unsigned char prefixlen;
-	unsigned char scope;
 	int no_addr, rpf;
 	int ret;
 
@@ -219,35 +211,31 @@ int fib_validate_source(__be32 src, __be32 dst, u8 tos, int oif,
 		goto e_inval_res;
 	*spec_dst = FIB_RES_PREFSRC(res);
 	fib_combine_itag(itag, &res);
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+	if (FIB_RES_DEV(res) == dev || res.fi->fib_nhs > 1)
+#else
 	if (FIB_RES_DEV(res) == dev)
+#endif
 	{
 		ret = FIB_RES_NH(res).nh_scope >= RT_SCOPE_HOST;
 		fib_res_put(&res);
 		return ret;
 	}
-	table = FIB_RES_TABLE(&res);
-	prefixlen = res.prefixlen;
-	scope = res.scope;
 	fib_res_put(&res);
 	if (no_addr)
 		goto last_resort;
+	if (rpf)
+		goto e_inval;
 	fl.oif = dev->ifindex;
 
 	ret = 0;
 	if (fib_lookup(&fl, &res) == 0) {
-		if (res.type == RTN_UNICAST &&
-		    ((table == FIB_RES_TABLE(&res) &&
-		      res.prefixlen >= prefixlen && res.scope >= scope) ||
-		     !rpf)) {
+		if (res.type == RTN_UNICAST) {
 			*spec_dst = FIB_RES_PREFSRC(res);
 			ret = FIB_RES_NH(res).nh_scope >= RT_SCOPE_HOST;
-			fib_res_put(&res);
-			return ret;
 		}
 		fib_res_put(&res);
 	}
-	if (rpf)
-		goto e_inval;
 	return ret;
 
 last_resort:
@@ -848,7 +836,9 @@ static int fib_inetaddr_event(struct notifier_block *this, unsigned long event, 
 	switch (event) {
 	case NETDEV_UP:
 		fib_add_ifaddr(ifa);
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
 		fib_sync_up(ifa->ifa_dev->dev);
+#endif
 		rt_cache_flush(-1);
 		break;
 	case NETDEV_DOWN:
@@ -884,7 +874,9 @@ static int fib_netdev_event(struct notifier_block *this, unsigned long event, vo
 		for_ifa(in_dev) {
 			fib_add_ifaddr(ifa);
 		} endfor_ifa(in_dev);
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
 		fib_sync_up(dev);
+#endif
 		rt_cache_flush(-1);
 		break;
 	case NETDEV_DOWN:

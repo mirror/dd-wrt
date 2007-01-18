@@ -9,7 +9,6 @@ struct fib_alias {
 	struct list_head	fa_list;
 	struct rcu_head rcu;
 	struct fib_info		*fa_info;
-	int			fa_last_dflt;
 	u8			fa_tos;
 	u8			fa_type;
 	u8			fa_scope;
@@ -36,7 +35,6 @@ extern struct fib_alias *fib_find_alias(struct list_head *fah,
 					u8 tos, u32 prio);
 extern int fib_detect_death(struct fib_info *fi, int order,
 			    struct fib_info **last_resort,
-			    int *last_idx, int *dflt, int *last_nhsel,
-			    const struct flowi *flp);
+			    int *last_idx, int *dflt);
 
 #endif /* _FIB_LOOKUP_H */
