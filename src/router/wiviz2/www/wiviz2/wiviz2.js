@@ -189,7 +189,7 @@ function Expando(e, onlyOpen, onlyClose) {
 		if (newsx) {
 			shrinkingExpando = newsx;
 		    shrinkingExpando.className = 'slidingbody';
-		  shrinkingExpando.style.height = shrinkingExpando.scrollHeight;
+		  shrinkingExpando.style.height = shrinkingExpando.scrollHeight + "px";
 			movePropertyTo("shrinkingExpando.style.height",
 			        1, "px", 0.5, 1, false, true);
 		}
@@ -339,8 +339,8 @@ function redraw() {
 			if (prefs.scale) {
 			    w = Math.round(z * camera.zoom + 15);
 			    if (!isNaN(w) && w > 0) {
-			    	mg.style.height = w * (item.scale ? item.scale : 1);
-			    	mg.style.width = w * (item.scale ? item.scale : 1);
+			    	mg.style.height = w * (item.scale ? item.scale : 1) + "px";
+			    	mg.style.width = w * (item.scale ? item.scale : 1) + "px";
 				//	document.getElementById('debugger').innerHTML = w;
 			    }
 			}
@@ -359,8 +359,8 @@ function redraw() {
 		        gl.style.display = 'none';
 		    }
 		}
-		if (!isNaN(x)) item.div.style.left = x - (item.div.clientWidth / 2);
-		if (!isNaN(y)) item.div.style.top = y - item.div.clientHeight / 2;
+		if (!isNaN(x)) item.div.style.left = x - (item.div.clientWidth / 2) + "px";
+		if (!isNaN(y)) item.div.style.top = y - item.div.clientHeight / 2 + "px";
 		item.div.style.display = 'block';
 		if (z < 1) z = 1;
 		if (z > 100) z = 100;
@@ -607,8 +607,8 @@ function wiviz_callback(hosts, cfgobj) {
 			if (IEfix) {
 				var ne = document.createElement('a');
 				ne.className = 'glow';
-				ne.style.width = '50px';
-				ne.style.height = '50px';
+				ne.style.width = "50px";
+				ne.style.height = "50px";
 			    ne.style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader"
 				 + "(src=\'" + el.src + "\', sizingMethod='scale')";
 				ne.setAttribute("href", "javascript:centerObj(document.getElementById('"
@@ -623,8 +623,8 @@ function wiviz_callback(hosts, cfgobj) {
 			el.src = "images/wiviz/" + h.type + (h.encrypted == 'yes' ? "-enc" : "") + ".png";
 			if (IEfix) {
 				var ne = document.createElement('a');
-				ne.style.width = '50px';
-				ne.style.height = '50px';
+				ne.style.width = "50px";
+				ne.style.height = "50px";
 				ne.className = 'sizeimage';
 				ne.setAttribute("href", "javascript:centerObj(document.getElementById('"
 					+ e.hostinfo.mac + "'))");
