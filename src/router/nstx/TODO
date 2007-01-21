@@ -1,0 +1,13 @@
+# -*- outline -*-
+
+* General
+** Security audit
+
+* Minor feature enhancements
+** Support for binding to a specific IP address
+** Support for using a device other than tap0
+** NSTX should not run as root
+
+* Major feature enhancements
+** Concurrent connection handling
+*** Authentication?
