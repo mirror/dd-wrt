@@ -1,0 +1,39 @@
+	NSTX Release V1.0 (first public release)
+
+The full text of out legal notices is contained in the file called COPYING,
+included with this distribution.
+
+NSTX works only for linux at the moment. Ports to *BSD are underway.
+
+You need to have the ethertap-dev up and running on both sides of the tunnel.
+Configure e.g. 192.168.0.1 on one ethertap and 192.168.0.2 on the other end.
+Then create a netroute for 192.168.0.0/24 through the ethertap (on both sides).
+Client and server both assume, that the ethertap-sevice is /dev/tap0.
+
+Then start the server on one end:
+./nstxd tun.yomama.com
+
+and the client on the other end:
+./nstxcd tun.yomama.com 125.23.53.12
+
+125.23.53.12 has to be a DNS-server which can be reached by the client-side.
+The server *must* run on a server where an NS-record for tun.yomama.com points
+to. So if the server has the IP 1.2.3.4 there must exist an entry in the
+zonefile of yomama.com: tun	IN NS	1.2.3.4
+
+Now it should be possible to ping 192.168.0.2 from 192.168.0.1 and the other
+way round:
+
+Note: the flow is optimized from client to server. server to client too works
+      fine, but it's not as good
+
+Note: The timing of the client is optimized for an 64k-line at the moment.
+      Without modifications you shouldn't get more than 4 kb/sec even on
+      faster lines
+
+Have fun ;)
+
+Frodo & Skyp
+
+Florian Heinz <sky@sysv.de>
+Julien Oster <frodo@sysv.de>
