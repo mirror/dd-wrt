@@ -20,7 +20,7 @@ nstxcd: $(NSTXCD_OBJS)
 	
 install:
 	install -d $(INSTALLDIR)/usr/sbin
-	install $(PROGS) $(INSTALLDIR)/usr/sbin/nstxcd
+	install $(PROGS) $(INSTALLDIR)/usr/sbin
 
 clean:
 	rm -f *.o $(PROGS) Makefile.bak *~
