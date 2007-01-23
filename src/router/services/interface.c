@@ -56,15 +56,19 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
   /* Open a raw socket to the kernel */
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     goto err;
+  cprintf ("ifconfig(): socket opened\n");
 
   /* Set interface name */
   strncpy (ifr.ifr_name, name, IFNAMSIZ);
-
+  cprintf ("ifconfig(): set interface name\n");
+if (flags)
+{
   /* Set interface flags */
   ifr.ifr_flags = flags;
   if (ioctl (s, SIOCSIFFLAGS, &ifr) < 0)
     goto err;
-
+}
+  cprintf ("ifconfig(): interface flags configured\n");
   /* Set IP address */
   if (addr)
     {
@@ -74,6 +78,7 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
       if (ioctl (s, SIOCSIFADDR, &ifr) < 0)
 	goto err;
     }
+  cprintf ("ifconfi() ip configured\n");
 
   /* Set IP netmask and broadcast */
   if (addr && netmask)
@@ -91,11 +96,14 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
       if (ioctl (s, SIOCSIFBRDADDR, &ifr) < 0)
 	goto err;
     }
+  cprintf ("ifconfi() mask configured\n");
 
   close (s);
+  cprintf ("ifconfig() done()\n");
   return 0;
 
 err:
+  cprintf ("ifconfig() done with error\n");
   close (s);
 #ifndef HAVE_SILENCE
   perror (name);
