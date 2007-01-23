@@ -1863,12 +1863,12 @@ char ssid[32];
     rep (vvar, '.', 'X');
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
-	       vvar, var, nvram_match (ssid,
-				       "0") ? "checked=\"checked\"" : "");
+	       vvar, var, nvram_default_match (ssid,
+				       "0") ? "checked=\"checked\"" : "","1");
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
-	       vvar, var, nvram_match (ssid,
-				       "1") ? "checked=\"checked\"" : "");
+	       vvar, var, nvram_default_match (ssid,
+				       "1") ? "checked=\"checked\"" : "","1");
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnetvifs\">\n", vvar);
@@ -3700,12 +3700,19 @@ ej_active_wireless_if ( webs_t wp, int argc, char_t ** argv,
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-
+if (si->isi_rates)
+{
       websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
 		 mac, ifname,(si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2,
 		 rssi2dbm (si->isi_rssi), si->isi_noise,
 		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
-
+}else
+{
+      websWrite (wp, "'%s','%s','N/A','%d','%d','%d'",
+		 mac, ifname,
+		 rssi2dbm (si->isi_rssi), si->isi_noise,
+		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
+}
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
@@ -3732,7 +3739,7 @@ ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
-      char *vifs = nvram_safe_get (vif);
+      char *vifs = nvram_get (vif);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
@@ -3754,16 +3761,13 @@ ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
       sprintf (wdsdevname, "wl_wds%d_if", s);
       sprintf (wdsmacname, "wl_wds%d_hwaddr", s);
       dev = nvram_safe_get (wdsdevname);
-      if (strlen (dev) == 0)
+      if (dev==NULL || strlen (dev) == 0)
 	continue;
       if (nvram_match (wdsvarname, "0"))
 	continue;
       sprintf(var,"wds0.%d",s);
       cnt = ej_active_wireless_if ( wp, argc, argv, var, cnt);
     }
-    
-    
-    
 }
 
 #else
