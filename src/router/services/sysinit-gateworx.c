@@ -151,7 +151,7 @@ eval("insmod","crypto_null");
   eval ("ifconfig", "wifi5", "up");
 
 
-  eval ("insmod", "ipv6");
+  //eval ("insmod", "ipv6");
 
   eval ("insmod", "ad7418");	// temp / voltage sensor
 /*

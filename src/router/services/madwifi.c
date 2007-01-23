@@ -1312,7 +1312,7 @@ configure_single (int count, int isbond)
       if (nvram_match ("wifi_bonding", "0"))
 	{
 	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", var);
+	  sprintf (bridged, "%s_bridged", dev);
 	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);

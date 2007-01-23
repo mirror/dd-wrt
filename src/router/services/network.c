@@ -612,7 +612,7 @@ start_wlconf (void)
   wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
 
-#ifdef HAVE_PORTSETUP
+//#ifdef HAVE_PORTSETUP
 
 static void
 do_portsetup (char *lan, char *ifname)
@@ -620,7 +620,7 @@ do_portsetup (char *lan, char *ifname)
   char var[64];
   char var2[64];
   sprintf (var, "%s_bridged", ifname);
-  if (nvram_match (var, "1"))
+  if (nvram_default_match (var, "1","1"))
     {
       br_add_interface (lan, ifname);
     }
@@ -634,7 +634,7 @@ do_portsetup (char *lan, char *ifname)
 
 }
 
-#endif
+//#endif
 
 
 void
@@ -1106,11 +1106,11 @@ start_lan (void)
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
 	  {
-#ifdef HAVE_PORTSETUP
+//#ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
-#else
-	    br_add_interface (lan_ifname, name);
-#endif
+//#else
+//	    br_add_interface (lan_ifname, name);
+//#endif
 	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
 	else

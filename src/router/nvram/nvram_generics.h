@@ -135,3 +135,13 @@ void nvram_safe_set(const char *name, char *value)
 if(!nvram_get(name) || strcmp(nvram_get(name), value))
 	nvram_set(name, value); 
 }
+int nvram_default_match (char *var, char *match, char *def)
+{
+  char *v = nvram_get (var);
+  if (v == NULL || strlen (v) == 0)
+    {
+      nvram_set (var, def);
+      nvram_commit ();
+    }
+  return nvram_match (var, match);
+}
