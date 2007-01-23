@@ -1,3 +1,23 @@
+2007 01 14
+Added cimd and chikka.  Added chikka data to testing suite.  Tweaks to testing
+suite.
+
+2007 01 13
+Updated test suite for new pattern format.
+
+Marked skypeout as an overmatch.
+
+2007 01 08
+Slightly improved performance of bittorrent pattern.  Fixed comment in 
+msn-filetransfer.  Added userspace pattern format lines to smtp and x11.
+The testing suite does NOT yet understand this format.
+
+2007 01 04
+Renamed testing to unset.
+
+2007 01 03
+Added radmin.
+
 2006 12 12
 Fixed some bugs in the testing programs.  Made rtf and skypeout valid 
 for both henry and gnu.
