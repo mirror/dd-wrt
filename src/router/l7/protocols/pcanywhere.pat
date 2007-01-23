@@ -1,3 +1,2 @@
-
 pcanywhere
 ^(nq|st)$
