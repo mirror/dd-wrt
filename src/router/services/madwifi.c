@@ -1235,7 +1235,7 @@ configure_single (int count, int isbond)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
-      eval ("iwconfig", var, "essid", default_get (ssid, "default"));
+      eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt"));
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
@@ -1285,7 +1285,7 @@ configure_single (int count, int isbond)
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
-  eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
+  eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
   m = default_get (wl, "ap");
@@ -1333,7 +1333,7 @@ configure_single (int count, int isbond)
   else
     {
       cprintf ("set ssid\n");
-      eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
+      eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
     }
 
   int maxpower = getMaxPower (dev);
