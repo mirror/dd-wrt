@@ -1863,12 +1863,11 @@ char ssid[32];
     rep (vvar, '.', 'X');
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
-	       vvar, var, nvram_default_match (ssid,
-				       "0") ? "checked=\"checked\"" : "","1");
+	       vvar, var, nvram_default_match (ssid,"0","1") ? "checked=\"checked\"" : "");
     websWrite (wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
 	       vvar, var, nvram_default_match (ssid,
-				       "1") ? "checked=\"checked\"" : "","1");
+				       "1","1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnetvifs\">\n", vvar);
