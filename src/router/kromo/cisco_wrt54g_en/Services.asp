@@ -27,27 +27,19 @@ function verify_unique_static_ip(F){
 
 function checked(F) {
 	if (F._openvpn_certtype) {
-		if (F._openvpn_certtype.checked == true) {
-			F.openvpn_certtype.value = 1;
-		} else {
-			F.openvpn_certtype.value = 0;
-		}
+		(F._openvpn_certtype.checked == true) ?	F.openvpn_certtype.value = 1 : F.openvpn_certtype.value = 0;
 	}
 	
 	if (F._dhcpd_usejffs) {
-		if (F._dhcpd_usejffs.checked == true) {
-			F.dhcpd_usejffs.value = 1;
-		} else {
-			F.dhcpd_usejffs.value = 0;
-		}
+		(F._dhcpd_usejffs.checked == true) ? F.dhcpd_usejffs.value = 1 : F.dhcpd_usejffs.value = 0;
 	}
 
 	if (F._dhcpd_usenvram) {
-		if (F._dhcpd_usenvram.checked == true) {
-			F.dhcpd_usenvram.value = 1;
-		} else {
-			F.dhcpd_usenvram.value = 0;
-		}
+		(F._dhcpd_usenvram.checked == true) ? F.dhcpd_usenvram.value = 1 : F.dhcpd_usenvram.value = 0;
+	}
+	
+	if (F._nstx_log) {
+		(F._nstx_log.checked == true) ? F.nstx_log.value = 1 : F.nstx_log.value = 0;
 	}
 }
 
@@ -98,6 +90,8 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvram_else_match("nstx_ipenable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvram_else_match("nstxd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.oet1_bridged, 'idbridged', <% nvram_else_match("oet1_bridged", "1", "0", "1"); %> == 1);
 		

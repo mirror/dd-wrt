@@ -1167,6 +1167,11 @@ service.rstats_path="Save Bandwidth Data to";
 service.rstats_time="Saving Interval";
 service.rstats_usrdir="User Directory";
 
+//nstx.webservices
+service.nstx_legend="IP over DNS Tunneling";
+service.nstx_srv="nstx Daemon";
+service.nstx_ipenable="Bind to this IP only";
+service.nstx_log="Switch on debug messages";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
