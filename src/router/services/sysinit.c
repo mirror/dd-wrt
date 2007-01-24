@@ -1089,14 +1089,6 @@ start_nvram (void)
 #endif
 
 
-  /* Let HW1.x users can communicate with WAP54G without setting to factory default */
-//      nvram_safe_set("wl_lazywds", "1");
-//  eval ("misc", "-t", "get_mac", "-w", "3");
-//  eval ("misc", "-t", "get_eou", "-w", "2");
-//  eval ("misc", "-t", "get_sn", "-w", "3");
-
-//  eval ("misc", "-t", "get_flash_type", "-w", "1");
-
   return 0;
 }
 

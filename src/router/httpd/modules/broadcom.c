@@ -2925,7 +2925,12 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     }
 
   cprintf ("refresh to %s\n", path);
-  do_ej (path, wp);		//refresh
+	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
+	    do_filtertable (path, wp);	//refresh
+	  else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
+	    do_wds (path, wp);	//refresh
+	  else
+	    do_ej (path, wp);	//refresh
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
@@ -3518,6 +3523,8 @@ footer:
 	  cprintf ("refresh to %s\n", path);
 	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
 	    do_filtertable (path, wp);	//refresh
+	  else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
+	    do_wds (path, wp);	//refresh
 	  else
 	    do_ej (path, wp);	//refresh
 	  websDone (wp, 200);
@@ -3867,11 +3874,8 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
   char menu[8][11][32] =
-    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
-       "eop-tunnel.asp", "", "", "", ""},
-  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp",
-   "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
-   "", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","eop-tunnel.asp", "", "", "", ""},
+  {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
   {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
    "", "", "", "", "", "", ""},
   {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
@@ -3888,10 +3892,8 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 
 /* real name is bmenu.menuname[i][j] */
   char menuname[8][11][32] =
-    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting",
-       "setupvlan", "setupeop", "", "", "", ""},
-  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity",
-   "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "setupeop", "", "", "", ""},
+  {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
   {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
    "", "", ""},
   {"security", "firwall", "vpn", "", "", "", "", "", "", "", ""},
@@ -3905,6 +3907,17 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
   {"statu", "statuRouter", "statuLAN", "statuWLAN", "statuSputnik",
    "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
   };
+  
+#ifdef HAVE_MADWIFI
+    //fill up WDS
+    int ifcount=getifcount("wifi");
+    int a;
+    for (a=0;a<ifcount;a++)
+    {
+	sprintf(&menu[1][a+5][0],"Wireless_WDS-ath%d.asp",a);
+	sprintf(&menuname[1][a+6][0],"wirelessWds%d",a);
+    }
+#endif  
 
   int i, j;
 
@@ -3935,8 +3948,6 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if (!strcmp (menu[i][j], "Wireless_Advanced.asp"))
 		j++;
-//                              if (!strcmp(menu[i][j], "Wireless_WDS.asp"))  // might work now
-//                                      j++;
 	      if (!wifi && !strcmp (menu[i][j], "Status_Wireless.asp"))
 		j++;
 #endif
@@ -4214,7 +4225,10 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
+#ifdef HAVE_MADWIFI
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
+#endif
+  {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
