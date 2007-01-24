@@ -173,7 +173,7 @@ addEvent(window, "unload", function() {
 										<th width="20%"><% tran("share.ip"); %></th>
 										<th width="20%"><% tran("share.mac"); %></th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
-										<th width="20%"><% tran("status_lan.conratio"); %></th>
+										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvram_get('ip_conntrack_max'); %>]</th>
 									</tr>
 								</table>
 							</fieldset><br />
