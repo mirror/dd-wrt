@@ -145,6 +145,9 @@ void *handle=NULL;
 #ifdef HAVE_RSTATS
   handle=start_service_nofree ("rstats",handle);
 #endif
+#ifdef HAVE_NSTX
+  handle=start_service_nofree ("nstxd",handle);
+#endif
 #ifdef HAVE_PPPOERELAY
   handle=start_service_nofree ("pppoerelay",handle);
 #endif
@@ -165,6 +168,9 @@ stop_services (void)
 #endif
 #ifdef HAVE_RSTATS
   handle=stop_service_nofree ("rstats",handle);
+#endif
+#ifdef HAVE_NSTX
+  handle=stop_service_nofree ("nstxd",handle);
 #endif
   handle=stop_service_nofree ("nas",handle);
 #ifdef HAVE_UPNP
@@ -317,6 +323,9 @@ start_single_service (void)
       startstop ("syslog");
 #ifdef HAVE_RSTATS
       startstop ("rstats");
+#endif
+#ifdef HAVE_NSTX
+      startstop ("nstxd");
 #endif
       startstop ("dnsmasq");
       startstop ("udhcpd");
