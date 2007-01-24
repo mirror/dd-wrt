@@ -3835,6 +3835,7 @@ ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 	}
     }
 //show wds links
+/*
   int s;
   for (s = 1; s <= 10; s++)
     {
@@ -3854,7 +3855,7 @@ ej_active_wireless ( webs_t wp, int argc, char_t ** argv)
 	continue;
       sprintf(var,"wds0.%d",s);
       cnt = ej_active_wireless_if ( wp, argc, argv, var, cnt);
-    }
+    }*/
 }
 
 #else
