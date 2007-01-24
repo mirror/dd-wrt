@@ -514,7 +514,7 @@ deconfigure_single (int count)
   int s;
   for (s = 1; s <= 10; s++)
     {
-      sprintf (dev, "wds0.%d", s);
+      sprintf (dev, "wdsath%d.%d", count,s);
       if (ifexists (dev))
 	{
 	  br_del_interface ("br0", dev);
@@ -1156,24 +1156,24 @@ configure_single (int count, int isbond)
       char wdsvarname[32] = { 0 };
       char wdsdevname[32] = { 0 };
       char wdsmacname[32] = { 0 };
-      char *dev;
+      char *wdsdev;
       char *hwaddr;
 
-      sprintf (wdsvarname, "wl_wds%d_enable", s);
-      sprintf (wdsdevname, "wl_wds%d_if", s);
-      sprintf (wdsmacname, "wl_wds%d_hwaddr", s);
-      dev = nvram_safe_get (wdsdevname);
-      if (strlen (dev) == 0)
+      sprintf (wdsvarname, "%s_wds%d_enable", dev,s);
+      sprintf (wdsdevname, "%s_wds%d_if", dev,s);
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev,s);
+      wdsdev = nvram_safe_get (wdsdevname);
+      if (strlen (wdsdev) == 0)
 	continue;
       if (nvram_match (wdsvarname, "0"))
 	continue;
       hwaddr = nvram_get (wdsmacname);
       if (hwaddr != NULL)
 	{
-	  eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode",
+	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
 		"wds");
-	  eval ("iwpriv", dev, "wds_add", hwaddr);
-	  eval ("iwpriv", dev, "wds", "1");
+	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
+	  eval ("iwpriv", wdsdev, "wds", "1");
 	}
     }
 

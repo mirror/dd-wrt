@@ -468,15 +468,27 @@ void
 ej_show_wds_subnet ( webs_t wp, int argc, char_t ** argv)
 {
   int index = -1;
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %s", &index,&interface) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-  if (nvram_invmatch ("wl_br1_enable", "1"))
+#endif
+char br1[32];
+sprintf(br1,"%s_br1_enable",interface);
+  if (nvram_invmatch (br1, "1"))
     return;
   char buf[16];
-  sprintf (buf, "wl_wds%d_enable", index);
+  sprintf (buf, "%s_wds%d_enable", interface,index);
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"2\\\" %s >\" + wds.subnet + \"</option>\");\n//]]>\n</script>\n",
 	     nvram_selmatch (wp, buf,
@@ -3046,6 +3058,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 
   char *val = NULL;
   char wds[32] = "";
+  char wds1[32] = "";
   char wdsif_var[32] = "";
   char enabled_var[32];
   char hwaddr_var[32] = "";
@@ -3058,10 +3071,18 @@ validate_wds (webs_t wp, char *value, struct variable *v)
   char desc[48] = "";
   char wds_if[32] = { 0 };
   char wds_list[199] = "";
-
-
-  nvram_set ("wl0_wds", "");
-  snprintf (wds, 31, "wl_br1");
+#ifdef HAVE_MADWIFI
+  char *interface = websGetVar(wp,"interface",NULL);
+  if (interface==NULL)
+    return;
+#else
+  char *interface="wl";
+#endif
+  
+  char wl0wds[32];
+  sprintf(wl0wds,"%s_wds",interface);
+  nvram_set (wl0wds, "");
+  snprintf (wds, 31, "%s_br1",interface);
   snprintf (enabled_var, 31, "%s_enable", wds);
   cprintf ("wds_validate\n");
   /* validate separate br1 bridge params */
@@ -3110,7 +3131,9 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (netmask_var, 31, "%s_%s", wds, "netmask");
 
       nvram_set (enabled_var, "1");
+      snprintf (ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
       nvram_set (ipaddr_var, ipaddr);
+      snprintf (netmask_var, 31, "%s_%s%d", wds, "netmask", i);
       nvram_set (netmask_var, netmask);
     }
   else
@@ -3121,7 +3144,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
     {
       memset (hwaddr, 0, sizeof (hwaddr));
       memset (desc, 0, sizeof (desc));
-      snprintf (wds, 31, "wl_wds%d", h);
+      snprintf (wds, 31, "%s_wds%d", interface,h);
       snprintf (enabled_var, 31, "%s_enable", wds);
 
       for (i = 0; i < 6; i++)
@@ -3151,6 +3174,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       if (val)
 	{
 	  strcat (desc, val);
+          snprintf (desc_var, 31, "%s_%s", wds, "desc");
 	  nvram_set (desc_var, desc);
 	}
 
@@ -3158,7 +3182,10 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (desc_var, 31, "%s_%s", wds, "ospf");
       val = websGetVar (wp, desc_var, "");
       if (val)
+        {
+        snprintf (desc_var, 31, "%s_%s", wds, "ospf");
 	nvram_set (desc_var, val);
+	}
       /* </lonewolf> */
 
       if (strcmp (hwaddr, "00:00:00:00:00:00")
@@ -3222,7 +3249,9 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (wdsif_var, 31, "%s_if", wds);
       if (!nvram_match (enabled_var, "0"))
 	{
-#ifdef HAVE_MSSID
+#ifdef HAVE_MADWIFI
+	  snprintf (wds_if, 31, "wds%s.%d", interface,(devcount++));
+#elif HAVE_MSSID
 	  snprintf (wds_if, 31, "wds0.%d", (devcount++));
 #else
 	  snprintf (wds_if, 31, "wds0.491%d", 50 + (devcount++));
@@ -3234,7 +3263,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 
     }
 
-  nvram_set ("wl0_wds", wds_list);
+  nvram_set (wl0wds, wds_list);
 }
 
 void
@@ -3242,20 +3271,28 @@ ej_get_wds_mac ( webs_t wp, int argc, char_t ** argv)
 {
   int mac = -1, wds_idx = -1, mac_idx = -1;
   char *c, wds_var[32] = "";
-
-
+  
+#ifdef HAVE_MADWIFI
+  char *interface;
+  if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &mac_idx,&interface) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+  char *interface="wl";
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &mac_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-
+#endif
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (mac_idx < 0 || mac_idx > 5)
     return;
 
-  snprintf (wds_var, 31, "wl_wds%d_hwaddr", wds_idx);
+  snprintf (wds_var, 31, "%s_wds%d_hwaddr", interface,wds_idx);
 
   c = nvram_safe_get (wds_var);
 
@@ -3278,18 +3315,27 @@ ej_get_wds_ip ( webs_t wp, int argc, char_t ** argv)
   char *c, wds_var[32] = "";
 
 
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &ip_idx,&interface) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-
+#endif
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (ip_idx < 0 || ip_idx > 3)
     return;
 
-  snprintf (wds_var, 31, "wl_wds%d_ipaddr", wds_idx);
+  snprintf (wds_var, 31, "%s_wds%d_ipaddr", interface,wds_idx);
 
   c = nvram_safe_get (wds_var);
 
@@ -3312,18 +3358,28 @@ ej_get_wds_netmask ( webs_t wp, int argc, char_t ** argv)
   char *c, wds_var[32] = "";
 
 
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &nm_idx,&interface) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   else if (wds_idx < 1 || wds_idx > 6)
     return;
   else if (nm_idx < 0 || nm_idx > 3)
     return;
 
-  snprintf (wds_var, 31, "wl_wds%d_netmask", wds_idx);
+  snprintf (wds_var, 31, "%s_wds%d_netmask", interface,wds_idx);
 
   c = nvram_safe_get (wds_var);
 
@@ -3347,18 +3403,29 @@ ej_get_wds_gw ( webs_t wp, int argc, char_t ** argv)
   char *c, wds_var[32] = "";
 
 
+
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %d %s", &wds_idx, &gw_idx,&interface) < 3)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
     return;
   else if (gw_idx < 0 || gw_idx > 3)
     return;
 
-  snprintf (wds_var, 31, "wl_wds%d_gw", wds_idx);
+  snprintf (wds_var, 31, "%s_wds%d_gw", interface,wds_idx);
 
   c = nvram_safe_get (wds_var);
 
@@ -3380,16 +3447,26 @@ ej_get_br1_ip ( webs_t wp, int argc, char_t ** argv)
   int ip = -1, ip_idx = -1;
   char *c;
 
-
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %s", &ip_idx,&interface) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d", &ip_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   else if (ip_idx < 0 || ip_idx > 3)
     return;
-
-  c = nvram_safe_get ("wl_br1_ipaddr");
+char br1[32];
+sprintf(br1,"%s_br1_ipaddr",interface);
+  c = nvram_safe_get (br1);
 
   if (c)
     {
@@ -3410,15 +3487,26 @@ ej_get_br1_netmask ( webs_t wp, int argc, char_t ** argv)
   char *c;
 
 
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %s", &nm_idx,&interface) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#else
+char *interface="wl";
   if (ejArgs (argc, argv, "%d", &nm_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
   else if (nm_idx < 0 || nm_idx > 3)
     return;
-
-  c = nvram_safe_get ("wl_br1_netmask");
+  char nms[32];
+  sprintf(nms,"%s_br1_netmask",interface);
+  c = nvram_safe_get (nms);
 
   if (c)
     {
@@ -4119,30 +4207,41 @@ ej_get_wdsp2p ( webs_t wp, int argc, char_t ** argv)
   {
   0, 0, 0, 0};
   char nvramvar[32] = { 0 };
-
-  if (ejArgs (argc, argv, "%d", &index) < 1)
+#ifdef HAVE_MADWIFI
+char *interface;
+  if (ejArgs (argc, argv, "%d %s", &index,&interface) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#else
+char *interface="wl";
+  if (ejArgs (argc, argv, "%d", &index) < 2)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+#endif
+char wlwds[32];
+sprintf(wlwds,"%s_wds1_enable",interface);
   if (nvram_selmatch (wp, "wk_mode", "ospf") &&
       nvram_selmatch (wp, "expert_mode", "1") &&
-      nvram_selmatch (wp, "wl_wds1_enable", "1"))
+      nvram_selmatch (wp, wlwds, "1"))
     {
       char buf[16];
-      sprintf (buf, "wl_wds%d_ospf", index);
+      sprintf (buf, "%s_wds%d_ospf", interface,index);
       websWrite (wp,
 		 "<input name=\"%s\" size=\"2\" maxlength=\"5\" value=\"%s\" />\n",
 		 buf, nvram_safe_get (buf));
     }
 
-  snprintf (nvramvar, 31, "wl_wds%d_ipaddr", index);
+  snprintf (nvramvar, 31, "%s_wds%d_ipaddr", interface,index);
   sscanf (nvram_safe_get (nvramvar), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
 	  &ip[3]);
-  snprintf (nvramvar, 31, "wl_wds%d_netmask", index);
+  snprintf (nvramvar, 31, "%s_wds%d_netmask", interface,index);
   sscanf (nvram_safe_get (nvramvar), "%d.%d.%d.%d", &netmask[0], &netmask[1],
 	  &netmask[2], &netmask[3]);
-  snprintf (nvramvar, 31, "wl_wds%d_enable", index);
+  snprintf (nvramvar, 31, "%s_wds%d_enable", interface,index);
 
   // set netmask to a suggested default if blank
   if (netmask[0] == 0 &&
@@ -4170,6 +4269,21 @@ ej_get_wdsp2p ( webs_t wp, int argc, char_t ** argv)
 	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
+/*
+      websWrite (wp, "\
+	<div class=\"setting\">\n\
+	          <input type=\"hidden\" name=\"%s_wds%d_ipaddr\" value=\"4\">\n\
+	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n\
+	          <input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_wds%d_ipaddr3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
+       </div>\n", interface,index, interface,index, ip[0], interface,index, ip[1], interface,index, ip[2], interface,index, ip[3], interface,index);
+
+      websWrite (wp, "\
+       	  <div class=\"setting\">\n\
+       	  <div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n\
+	  <input type=\"hidden\" name=\"%s_wds%d_netmask\" value=\"4\">\n\
+	  <input name=\"%s_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>.<input name=\"%s_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n\
+          </div>\n", interface,index, interface,index, netmask[0], interface,index, netmask[1], interface,index, netmask[2], interface,index, netmask[3]);
+*/
     }
 
   return;
@@ -4181,16 +4295,21 @@ save_wds (webs_t wp)
 {
   char *wds_enable_val, wds_enable_var[32] = { 0 };
   int h = 0;
-
+#ifdef HAVE_MADWIFI
+char *interface=websGetVar(wp,"interface",NULL);
+#else
+char *interface="wl";
+#endif
   for (h = 1; h <= MAX_WDS_DEVS; h++)
     {
-      sprintf (wds_enable_var, "wl_wds%d_enable", h);
+      sprintf (wds_enable_var, "%s_wds%d_enable", interface,h);
       wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
       nvram_set (wds_enable_var, wds_enable_val);
     }
+      sprintf (wds_enable_var, "%s_br1_enable", interface,h);
 
-  wds_enable_val = websGetVar (wp, "wl_br1_enable", NULL);
-  nvram_set ("wl_br1_enable", wds_enable_val);
+  wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
+  nvram_set (wds_enable_var, wds_enable_val);
 
   return;
 
@@ -5919,6 +6038,8 @@ ej_show_macfilter ( webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+
+
 //and now the tricky part (more dirty as dirty)
 void
 do_filtertable (char *path, webs_t stream)
@@ -5930,6 +6051,36 @@ do_filtertable (char *path, webs_t stream)
   char *webfile = getWebsFile ("WL_FilterTable.asp");
   char temp[4096];
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
+  do_ej_buffer (temp, stream);
+}
+
+void
+do_wds (char *path, webs_t stream)
+{
+  char *temp2 = &path[indexof (path, '-') + 1];
+  char ifname[16];
+  strcpy (ifname, temp2);
+  ifname[indexof (ifname, '.')] = 0;
+  char *webfile = getWebsFile ("Wireless_WDS.asp");
+  char temp[32768];
+  int ai=0;
+  int i=0;
+  for (i=0;i<strlen(webfile);i++)
+    {
+	if (webfile[i]=='%')
+	    {
+	    i++;
+	    if (webfile[i]=='%')
+		temp[ai++]='%';
+	    else if (webfile[i]=='s')
+		{
+		strcpy(&temp[ai],ifname);
+		ai+=strlen(ifname);
+		}
+	    else temp[ai++]=webfile[i];
+	    }
+	    else temp[ai++]=webfile[i];
+    }
   do_ej_buffer (temp, stream);
 }
 

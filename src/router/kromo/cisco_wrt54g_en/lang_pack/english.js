@@ -334,6 +334,10 @@ bmenu.wirelessSecurity="Wireless Security";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessWds="WDS";
+bmenu.wirelessWds0="ATH0-WDS";
+bmenu.wirelessWds1="ATH1-WDS";
+bmenu.wirelessWds2="ATH2-WDS";
+bmenu.wirelessWds3="ATH3-WDS";
 
 bmenu.security="Security";
 bmenu.firwall="Firewall";

@@ -624,7 +624,14 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wet|infra) */
 #endif
 #endif
+#ifdef HAVE_MADWIFI
+  {"ath0_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
+  {"ath1_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
+  {"ath2_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
+  {"ath3_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
+#else
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
+#endif
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
   {"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
 #ifdef HAVE_MSSID
