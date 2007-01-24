@@ -211,6 +211,7 @@ obj-$(CONFIG_SCDP) += scdp
 obj-y += ses
 obj-$(CONFIG_PRINTER_SERVER) += ippd
 obj-$(CONFIG_FTP) += proftpd
+obj-$(CONFIG_NSTX) += nstx
 
 
 
