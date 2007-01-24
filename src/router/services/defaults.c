@@ -1772,6 +1772,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"rstats_stime", "48", 0},
   {"rstats_data", "", 0},
 #endif
+#ifdef HAVE_NSTX
+  {"nstxd_enable", "0", 0},
+  {"nstx_ipenable", "0", 0},
+  {"nstx_ip", "0.0.0.0", 0},
+  {"nstx_log", "0", 0},
+#endif
 #ifdef HAVE_PORTSETUP
   {"eth0_bridged", "1", 0},	/* Service set ID (network name) */
   {"eth0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
