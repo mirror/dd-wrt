@@ -4813,8 +4813,7 @@ ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
 /* end nvram check */
 
 
-	  websWrite (wp, "%c'%s','%d','%s','%s'", (count ? ',' : ' '), hostname,
-		     conn_count, ip,  mac);
+	  websWrite (wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname, ip, mac, conn_count);
 	  ++count;
 	  conn_count = 0;
 	}
