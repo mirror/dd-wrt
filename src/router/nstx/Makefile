@@ -20,7 +20,9 @@ nstxcd: $(NSTXCD_OBJS)
 	
 install:
 	install -d $(INSTALLDIR)/usr/sbin
+	install -d $(INSTALLDIR)/etc/config
 	install $(PROGS) $(INSTALLDIR)/usr/sbin
+	install nstx.nvramconfig nstx.webservices $(INSTALLDIR)/etc/config
 
 clean:
 	rm -f *.o $(PROGS) Makefile.bak *~
