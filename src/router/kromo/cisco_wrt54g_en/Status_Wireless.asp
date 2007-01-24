@@ -190,7 +190,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
 								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
-								<table class="table center" cellspacing="6" id="wireless_table" summary="wireless clients table">
+								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
 										<th width="54%"><% tran("share.mac"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>

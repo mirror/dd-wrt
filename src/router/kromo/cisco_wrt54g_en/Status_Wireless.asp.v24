@@ -181,7 +181,7 @@ addEvent(window, "unload", function() {
 							<h2><% tran("status_wireless.h22"); %></h2>
 							<fieldset>
 								<legend><% getwirelessstatus(); %></legend>
-								<table class="table center" cellspacing="6" id="wireless_table" summary="wireless clients table">
+								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
 										<th width="38%"><% tran("share.mac"); %></th>
 										<th width="8%"><% tran("share.intrface"); %></th>
