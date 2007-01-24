@@ -3575,7 +3575,27 @@ start_rstats (void)
 
 #endif
 
+#ifdef HAVE_NSTX
 
+stop_nstxd (void)
+{
+  if (pidof ("nstxd") > 0)
+    syslog (LOG_INFO, "nstxd : nstx daemon successfully stopped\n");
+  killall ("nstxd", SIGTERM);
+}
+
+void
+start_nstxd (void)
+{
+  if (nvram_match ("nstxd_enable", "1"))
+    {
+      stop_nstxd ();
+      eval ("nstxd");
+    }
+  syslog (LOG_INFO, "nstxd daemon successfully started\n");
+}
+
+#endif
 
 #ifdef HAVE_WIFIDOG
 //unfinished. do not use
