@@ -234,7 +234,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
       *total -= count;
       safe_fwrite (buf, 1, count, fifo);
       //safe_fwrite(buf, 1, size, fifo);
-      cprintf (".");
+      fprintf (stderr,".");
       i++;
     }
   fclose (fifo);

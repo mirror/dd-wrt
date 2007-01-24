@@ -1329,7 +1329,28 @@ start_lan (void)
 	   nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("lan_netmask"));
 
   /* Sveasoft - create separate WDS subnet bridge if enabled */
-  if (nvram_match ("wl_br1_enable", "1"))
+#ifdef HAVE_MADWIFI
+int cnt = getifcount("wifi");
+int c;
+for (c=0;c<cnt;c++)
+#endif
+{
+#ifdef HAVE_MADWIFI
+char br1enable[32];
+char br1ipaddr[32];
+char br1netmask[32];
+sprintf(br1enable,"ath%d_br1_enable",c);
+sprintf(br1ipaddr,"ath%d_br1_ipaddr",c);
+sprintf(br1netmask,"ath%d_br1_netmask",c);
+#else
+char *br1enable="wl_br1_enable";
+char *br1ipaddr="wl_br1_ipaddr";
+char *br1netmask="wl_br1_netmask";
+#endif
+if (nvram_get(br1enable)==NULL)nvram_set(br1enable,"0");
+if (nvram_get(br1ipaddr)==NULL)nvram_set(br1ipaddr,"0.0.0.0");
+if (nvram_get(br1netmask)==NULL)nvram_set(br1netmask,"255.255.255.0");
+  if (nvram_match (br1enable, "1"))
     {
       ifconfig ("br1", 0, 0, 0);
 
@@ -1356,12 +1377,10 @@ start_lan (void)
 	br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
 
       /* Bring up and configure br1 interface */
-      if (nvram_invmatch ("wl_br1_ipaddr", "0.0.0.0"))
+      if (nvram_invmatch (br1ipaddr, "0.0.0.0"))
 	{
-	  ifconfig ("br1", IFUP, nvram_safe_get ("wl_br1_ipaddr"),
-		    nvram_safe_get ("wl_br1_netmask"));
-	  //eval ("ifconfig", "br1", nvram_safe_get ("wl_br1_ipaddr"),
-//              "netmask", nvram_safe_get ("wl_br1_netmask"), "up");
+	  ifconfig ("br1", IFUP, nvram_safe_get (br1ipaddr),
+		    nvram_safe_get (br1netmask));
 
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
@@ -1370,11 +1389,6 @@ start_lan (void)
 	    br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
 
 
-//                      system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o br0 -j MASQUERADE");
-//                      if(nvram_invmatch("wan_proto", "disable") && check_vlan_support())
-//                              system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o vlan1 -j MASQUERADE");
-//                      else if(nvram_invmatch("wan_proto", "disable"))
-//                              system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o eth1 -j MASQUERADE");
 	  sleep (2);
 #ifndef HAVE_MADWIFI
 	  notify_nas ("lan", "br1", "up");
@@ -1382,20 +1396,32 @@ start_lan (void)
 	}
 
     }
-
+}
   /* Sveasoft - Bring up and configure wds interfaces */
   /* logic - if separate ip defined bring it up */
   /*         else if flagged for br1 and br1 is enabled add to br1 */
   /*         else add it to the br0 bridge */
+#ifdef HAVE_MADWIFI
+for (c=0;c<cnt;c++)
+#endif
+{
 
   for (s = 1; s <= MAX_WDS_DEVS; s++)
     {
       char wdsvarname[32] = { 0 };
       char wdsdevname[32] = { 0 };
       char *dev;
-
+#ifdef HAVE_MADWIFI
+      char br1enable[32];
+      sprintf (wdsvarname, "ath%d_wds%d_enable",c, s);
+      sprintf (wdsdevname, "ath%d_wds%d_if",c, s);
+      sprintf(br1enable,"ath%d_br1_enable",c);
+      if (nvram_get(wdsvarname)==NULL)nvram_set(wdsvarname,"0");
+#else
       sprintf (wdsvarname, "wl_wds%d_enable", s);
       sprintf (wdsdevname, "wl_wds%d_if", s);
+      char *br1enable="wl_br1_enable";
+#endif
       dev = nvram_safe_get (wdsdevname);
       if (strlen (dev) == 0)
 	continue;
@@ -1407,32 +1433,33 @@ start_lan (void)
 	  char wdsip[32] = { 0 };
 	  char wdsbc[32] = { 0 };
 	  char wdsnm[32] = { 0 };
-
+#ifdef HAVE_MADWIFI
+	  snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c,s);
+	  snprintf (wdsnm, 31, "ath%d_wds%d_netmask",c,s);
+#else
 	  snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
 	  snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
+#endif
 
 	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
 	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
 	  eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast", wdsbc,
 		"netmask", nvram_safe_get (wdsnm), "up");
 	}
-      else if (nvram_match (wdsvarname, "2")
-	       && nvram_match ("wl_br1_enable", "1"))
+      else if (nvram_match (wdsvarname, "2") && nvram_match (br1enable, "1"))
 	{
 	  eval ("ifconfig", dev, "up");
 	  sleep (1);
 	  br_add_interface ("br1", dev);
-	  //eval ("brctl", "addif", "br1", dev);
 	}
       else if (nvram_match (wdsvarname, "3"))
 	{
 	  ifconfig (dev, IFUP, 0, 0);
-	  //eval ("ifconfig", dev, "up");
 	  sleep (1);
 	  br_add_interface ("br0", dev);
-	  //eval ("brctl", "addif", "br0", dev);
 	}
     }
+}
 #ifdef HAVE_XSCALE
 #define HAVE_RB500
 #endif
@@ -2767,9 +2794,9 @@ return 0;
       sleep (2);
 
       /* Bridge WDS interfaces if lazywds active */
+
       if (!strncmp (interface, "wds", 3) && nvram_match ("wl_lazywds", "1"))
 	br_add_interface ("br0", interface);	//eval ("brctl", "addif", "br0", interface);
-
       /* Notify NAS of adding the interface */
       sleep (5);
 #ifndef HAVE_MADWIFI

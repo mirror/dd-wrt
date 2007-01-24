@@ -126,8 +126,9 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
   int sig;
 //  char buf[254] = "";
 //#ifndef HAVE_SILENCE
-/*
+
 int i = 0;
+/*
   fprintf (stderr,"executing from %s ", path);
   while (argv[i] != NULL)
     {

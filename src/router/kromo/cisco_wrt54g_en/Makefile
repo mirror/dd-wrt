@@ -205,6 +205,9 @@ ifeq ($(CONFIG_THOM),y)
 	cp -f thom/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
+ifneq ($(CONFIG_MADWIFI),y)
+	cp Wireless_WDS.v23 $(INSTALLDIR)/www/Wireless_WDS.asp
+endif
 ifneq ($(CONFIG_MSSID),y)
 	cp WEP.v23 $(INSTALLDIR)/www/WEP.asp
 	cp WL_WPATable.v23 $(INSTALLDIR)/www/WL_WPATable.asp

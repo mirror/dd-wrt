@@ -855,8 +855,6 @@ led_control (int type, int act)
 {
 #ifdef HAVE_RB500
   return 0;
-#elif HAVE_XSCALE
-  return 0;
 #elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
@@ -1024,30 +1022,50 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 				use_gpio = wlan_gpio;
 			break;
 	} 
-
+#ifndef HAVE_XSCALE
 	if ((use_gpio & 0x0f) != 0x0f)
 	{	
 		gpio_value = use_gpio & 0x0f;
 		sprintf (val, "%d", gpio_value); 
 		sprintf (enable, "%s", (use_gpio & 0x10) == 0 ? "enable" : "disable");
 		sprintf (disable, "%s", (use_gpio & 0x10) == 0 ? "disable" : "enable");	
-			
+#endif	
 		switch (act)
 		{
 			case LED_ON:
+			#ifdef HAVE_XSCALE
+			    if (type==LED_CONNECTED)
+				eval("gpio","-w","3","0");
+			#else
 					eval ("gpio", enable, val);
+			#endif
 				break;
 			case LED_OFF:
+			#ifdef HAVE_XSCALE
+			    if (type==LED_CONNECTED)
+				eval("gpio","-w","3","1");
+			#else
 					eval ("gpio", disable, val);
+			#endif
 				break;
 			case LED_FLASH:  //will lit the led for 1 sec.
+			#ifdef HAVE_XSCALE
+			    if (type==LED_CONNECTED)
+			    {
+				eval("gpio","-w","3","0");
+				sleep(1);
+				eval("gpio","-w","3","1");
+			    }
+			#else
 					eval ("gpio", enable, val);
 					sleep (1);
 					eval ("gpio", disable, val);
+			#endif
 				break;
 		}
+#ifndef HAVE_XSCALE
 	}
-
+#endif
 	return 1;
 
 #endif

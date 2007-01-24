@@ -430,7 +430,7 @@ if (brand!=ROUTER_WRT350N)
 
 	  cprintf ("RESTART\n");
 #ifndef HAVE_MSSID
-
+#ifndef HAVE_MADWIFI
 	  if (nvram_match ("wl_akm", "wpa") ||
 	      nvram_match ("wl_akm", "psk") ||
 	      nvram_match ("wl_akm", "radius") ||
@@ -445,6 +445,7 @@ if (brand!=ROUTER_WRT350N)
 
 	    }
 #endif
+#endif
 	  /* Fall through */
 	case STOP:
 	  lcdmessage ("STOPPING SERVICES");
@@ -456,10 +457,10 @@ if (brand!=ROUTER_WRT350N)
 	  setenv ("LD_LIBRARY_PATH",
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
-	  cprintf ("STOP WAN\n");
-	  stop_service ("wan");
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
+	  cprintf ("STOP WAN\n");
+	  stop_service ("wan");
 	  cprintf ("STOP LAN\n");
 #ifdef HAVE_MADWIFI
 	  stop_service ("stabridge");
