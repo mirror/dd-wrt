@@ -1135,6 +1135,11 @@ service.rstats_path="Emplacement des données";
 service.rstats_time="Intervalle des sauvegardes";
 service.rstats_usrdir="Répertoire utilisateur";
 
+//nstx.webservices
+service.nstx_legend="Tunnel DNS";
+service.nstx_srv="Démon nstx";
+service.nstx_ipenable="Limiter à une seul IP";
+service.nstx_log="Activer Debug";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
