@@ -60,20 +60,19 @@ function setARPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
-	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
-		
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i+1];
-		row.insertCell(-1).innerHTML = val[i+2];
-		
 		var cellmac = row.insertCell(-1);
 		cellmac.title = share.oui;
 		cellmac.style.cursor = "pointer";
 		cellmac.style.textDecoration = "underline";
-		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+3] + "') })");
-		cellmac.innerHTML = val[i+3];
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
+		cellmac.innerHTML = val[i+2];
+		row.insertCell(-1).innerHTML = val[i+3];
+		
+		setMeterBar(row.insertCell(-1), parseInt(val[i+3])/<% nvram_get("ip_conntrack_max"); %>*100, "");
 	}
 }
 
@@ -167,10 +166,11 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="45%"><% tran("share.hostname"); %></th>
-										<th width="15%">Conn. Count</th>
+										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="20%"><% tran("share.ip"); %></th>
 										<th width="20%"><% tran("share.mac"); %></th>
+										<th width="15%">Conn. Count</th>
+										<th width="20%"></th>
 									</tr>
 								</table>
 							</fieldset><br />
