@@ -1169,7 +1169,7 @@ status_lan.legend2="Statut DHCP";
 status_lan.legend3="Clients DHCP";
 status_lan.legend4="Clients Connectés";
 status_lan.concount="Connections";
-status_lan.conratio="Ratio [<% nvram_get('ip_conntrack_max'); %>]";
+status_lan.conratio="Ratio";
 
 //help container
 
