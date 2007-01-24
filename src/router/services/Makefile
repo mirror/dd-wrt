@@ -25,6 +25,10 @@ ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
 
+ifeq ($(CONFIG_NSTX),y)
+CFLAGS += -DHAVE_NSTX
+endif
+
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
