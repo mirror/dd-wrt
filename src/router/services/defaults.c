@@ -1952,6 +1952,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"oet10_bridged", "1", 0},
 #endif
   {"wifi_bonding", "0", 0},
+#ifdef HAVE_RADLOCAL
+  {"iradius_enable", "0", 0},
+#endif
   {0, 0, 0}
 };
 

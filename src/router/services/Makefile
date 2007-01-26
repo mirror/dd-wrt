@@ -77,6 +77,9 @@ endif
 ifeq ($(CONFIG_BONDING),y)
 CFLAGS += -DHAVE_BONDING
 endif
+ifeq ($(CONFIG_RADLOCAL),y)
+CFLAGS += -DHAVE_RADLOCAL
+endif
 ifeq ($(CONFIG_GEMTEK),y)
 CFLAGS += -DHAVE_GEMTEK
 endif
