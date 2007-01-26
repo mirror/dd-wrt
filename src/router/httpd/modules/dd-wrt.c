@@ -1271,20 +1271,20 @@ ej_show_security (webs_t wp, int argc, char_t ** argv)
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
 	     selmatch ("security_mode", "disabled",
 		       "selected=\\\"selected\\\""));
-  websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
+  websWrite (wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
 	     selmatch ("security_mode", "psk", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	     selmatch ("security_mode", "wpa", "selected=\"selected\""));
   if (!nvram_match ("wl0_mode", "wet") && nvram_match ("wl_wds1_enable", "0") && nvram_match ("wl_wds2_enable", "0") && nvram_match ("wl_wds3_enable", "0") && nvram_match ("wl_wds4_enable", "0") && nvram_match ("wl_wds5_enable", "0") && nvram_match ("wl_wds6_enable", "0") && nvram_match ("wl_wds7_enable", "0") && nvram_match ("wl_wds8_enable", "0") && nvram_match ("wl_wds9_enable", "0") && nvram_match ("wl_wds10_enable", "0"))	//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
     {
       websWrite (wp,
-		 "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
+		 "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 		 selmatch ("security_mode", "psk2", "selected"));
       websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		 selmatch ("security_mode", "wpa2", "selected=\"selected\""));
     }
   websWrite (wp,
-	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
+	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	     selmatch ("security_mode", "psk psk2", "selected"));
   websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch ("security_mode", "wpa wpa2", "selected=\"selected\""));
@@ -1348,17 +1348,17 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
 	     selmatch (var, "disabled", "selected=\\\"selected\\\""));
-  websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
+  websWrite (wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
 	     selmatch (var, "psk", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	     selmatch (var, "wpa", "selected=\"selected\""));
   websWrite (wp,
-	     "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
+	     "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
 	     selmatch (var, "psk2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 	     selmatch (var, "wpa2", "selected=\"selected\""));
   websWrite (wp,
-	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
+	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	     selmatch (var, "psk psk2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch (var, "wpa wpa2", "selected=\"selected\""));

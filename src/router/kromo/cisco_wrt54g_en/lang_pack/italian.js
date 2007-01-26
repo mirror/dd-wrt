@@ -968,7 +968,7 @@ wpa.radius_key="Chiave RADIUS";
 wpa.algorithms="Algoritmi WPA";
 wpa.shared_key="Chiave Condivisa WPA";
 
-hwpa.right2="Puoi scegliere tra Disabilitato, WEP, WPA a Chiave Pre-Condivisa, WPA RADIUS, o RADIUS. Tutti i dispositivi sulla tua rete devono adottare le stesse modalità di sicurezza.";
+hwpa.right2="Puoi scegliere tra Disabilitato, WEP, WPA a Chiave Pre-Condivisa, WPA Enterprise, o RADIUS. Tutti i dispositivi sulla tua rete devono adottare le stesse modalità di sicurezza.";
 
 wl_filter.titl=" - Elenco Filtri Degli Indirizzi MAC";
 wl_filter.h2="Elenco Filtri Degli Indirizzi MAC";
