@@ -160,12 +160,12 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("share.encrypt"); %></div>
 									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enabled)</script>,&nbsp;"); %>
-									<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
-									<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
-									<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
-									<% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %>
-									<% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %>
-									<% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %>
+									<% nvram_match("security_mode", "psk", "WPA Personal"); %>
+									<% nvram_match("security_mode", "wpa", "WPA Enterprise"); %>
+									<% nvram_match("security_mode", "psk2", "WPA2 Personal Only"); %>
+									<% nvram_match("security_mode", "wpa2", "WPA2 Enterprise Only"); %>
+									<% nvram_match("security_mode", "psk psk2", "WPA2 Personal Mixed"); %>
+									<% nvram_match("security_mode", "wpa wpa2", "WPA2 Enterprise Mixed"); %>
 									<% nvram_match("security_mode", "radius", "RADIUS"); %>
 									<% nvram_match("security_mode", "wep", "WEP"); %>&nbsp;
 								</div>

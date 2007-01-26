@@ -1195,7 +1195,7 @@ wpa.radius_key="Chave RADIUS";
 wpa.algorithms="Algoritimos WPA";
 wpa.shared_key="Chave Compartilhada WPA";
 
-hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA RADIUS</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
+hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA Enterprise</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//

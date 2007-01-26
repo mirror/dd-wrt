@@ -1306,7 +1306,7 @@ wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Modus";
 wpa.legend="Draadloze Encryptie";
 wpa.auth_mode="Netwerk Authenticatie";
-wpa.psk="WPA Pre-Shared Key";
+wpa.psk="WPA Personal Key";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
@@ -1321,7 +1321,7 @@ wpa.rekeyInt="rekey interval";
 //help container
 
 hwpa.right1="Veligheids Modus:";
-hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Pre-Shared Key, WPA RADIUS, of RADIUS. Alle apparaten in uw newerk moeten de geselecteerde beveiligingmodus gebruiken.";
+hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Personal Key, WPA RADIUS, of Enterprise. Alle apparaten in uw newerk moeten de geselecteerde beveiligingmodus gebruiken.";
 
 
 
