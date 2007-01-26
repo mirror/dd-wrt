@@ -1,0 +1,234 @@
+
+UAC Module
+
+Ramona-Elena Modroiu
+
+   Voice System
+
+Edited by
+
+Ramona-Elena Modroiu
+
+   Copyright © 2005 Voice Sistem
+     _________________________________________________________
+
+   Table of Contents
+   1. User's Guide
+
+        1.1. Overview
+        1.2. Dependencies
+
+              1.2.1. OpenSER Modules
+              1.2.2. External Libraries or Applications
+
+        1.3. Exported Parameters
+
+              1.3.1. rr_store_param (string)
+              1.3.2. from_restore_mode (string)
+              1.3.3. credential (string)
+
+        1.4. Exported Functions
+
+              1.4.1. uac_replace_from(display,uri)
+              1.4.2. uac_replace_from(uri)
+              1.4.3. uac_restore_from()
+              1.4.4. uac_auth()
+
+   2. Developer's Guide
+   3. Frequently Asked Questions
+
+   List of Examples
+   1-1. Set rr_store_param parameter
+   1-2. Set from_restore_mode parameter
+   1-3. Set credential parameter
+   1-4. uac_replace_from usage
+   1-5. uac_replace_from usage
+   1-6. uac_restore_from usage
+   1-7. uac_auth usage
+     _________________________________________________________
+
+Chapter 1. User's Guide
+
+1.1. Overview
+
+   UAC (User Agent Client) module provides some basic UAC
+   functionalities like FROM header manipulation (anonymization)
+   or client authentication.
+
+   Known limitations in this version:
+
+     * authentication does not support qop;
+     * CSeq not increased during authentication - the response
+       may be rejected.
+     _________________________________________________________
+
+1.2. Dependencies
+
+1.2.1. OpenSER Modules
+
+   The following modules must be loaded before this module:
+
+     * TM - Transaction Module
+     * RR - Record-Route Module, but only if restore mode for
+       FROM URI is set to "auto".
+     _________________________________________________________
+
+1.2.2. External Libraries or Applications
+
+   The following libraries or applications must be installed
+   before running OpenSER with this module loaded:
+
+     * None
+     _________________________________________________________
+
+1.3. Exported Parameters
+
+1.3.1. rr_store_param (string)
+
+   Name of Record-Route header parameter that will be used to
+   store (encoded) the original FROM URI.
+
+   This parameter is optional, it's default value being "vsf". 
+
+   Example 1-1. Set rr_store_param parameter
+...
+modparam("uac","rr_store_param","my_param")
+...
+     _________________________________________________________
+
+1.3.2. from_restore_mode (string)
+
+   There are 3 mode of restoring the original FROM URI:
+
+     * "none" - no information about original URI is stored;
+       restoretion is not possible.
+     * "manual" - all following replies will be restored, but not
+       also the sequential requests - this must be manually
+       updated based on original URI.
+     * "auto" - all sequential requests and replies will be
+       automatically updated based on stored original URI.
+
+   This parameter is optional, it's default value being "auto". 
+
+   Example 1-2. Set from_restore_mode parameter 
+...
+modparam("uac","from_restore_mode","none")
+...
+     _________________________________________________________
+
+1.3.3. credential (string)
+
+   Contains a multiple definition of credentials used to perform
+   authentication.
+
+   This parameter is required if UAC authentication is used. 
+
+   Example 1-3. Set credential parameter
+...
+modparam("uac","credential","username:domain:password")
+...
+     _________________________________________________________
+
+1.4. Exported Functions
+
+1.4.1. uac_replace_from(display,uri)
+
+   Replace in FROM header the display name and the URI part.
+
+   display and URI parameters can include pseudo-variables.
+
+   This function can be used from REQUEST_ROUTE.
+
+   Example 1-4. uac_replace_from usage
+...
+# replace both display and uri
+uac_replace_from("$avp(s:display)","$avp(s:uri)");
+# replace only display and do not touch uri
+uac_replace_from("batman","");
+# remove display and replace uri
+uac_replace_from("","sip:robin@gotham.org");
+# remove display and do not touch uri
+uac_replace_from("","");
+...
+     _________________________________________________________
+
+1.4.2. uac_replace_from(uri)
+
+   Replace in FROM header the the URI part without altering the
+   display name.
+
+   URI parameter can include pseudo-variables.
+
+   This function can be used from REQUEST_ROUTE.
+
+   Example 1-5. uac_replace_from usage
+...
+uac_replace_from("sip:batman@gotham.org");
+...
+     _________________________________________________________
+
+1.4.3. uac_restore_from()
+
+   This function will check if the FROM URI was modified and will
+   use the information stored in header parameter to restore the
+   original FROM URI value.
+
+   This function can be used from REQUEST_ROUTE.
+
+   Example 1-6. uac_restore_from usage
+...
+uac_restore_from();
+...
+     _________________________________________________________
+
+1.4.4. uac_auth()
+
+   This function can be called only from failure route and will
+   build the authentication response header and insert it into
+   the request without sending anything.
+
+   This function can be used from FAILURE_ROUTE.
+
+   Example 1-7. uac_auth usage
+...
+uac_auth();
+...
+     _________________________________________________________
+
+Chapter 2. Developer's Guide
+
+   The module does not provide any API to use in other OpenSER
+   modules.
+     _________________________________________________________
+
+Chapter 3. Frequently Asked Questions
+
+   3.1. Where can I find more about OpenSER?
+   3.2. Where can I post a question about this module?
+   3.3. How can I report a bug?
+
+   3.1. Where can I find more about OpenSER?
+
+   Take a look at http://openser.org/.
+
+   3.2. Where can I post a question about this module?
+
+   First at all check if your question was already answered on
+   one of our mailing lists:
+
+     * User Mailing List -
+       http://openser.org/cgi-bin/mailman/listinfo/users
+     * Developer Mailing List -
+       http://openser.org/cgi-bin/mailman/listinfo/devel
+
+   E-mails regarding any stable version should be sent to
+   <users@openser.org> and e-mail regarding development versions
+   or CVS snapshots should be send to <devel@openser.org>.
+
+   If you want to keep the mail private, send it to
+   <team@openser.org>.
+
+   3.3. How can I report a bug?
+
+   Please follow the guidelines provided at:
+   http://openser.org/bugs
