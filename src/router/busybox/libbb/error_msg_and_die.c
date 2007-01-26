@@ -14,14 +14,14 @@
 #include "libbb.h"
 
 int die_sleep;
-#ifndef HAVE_NOMESSAGE
-
 void sleep_and_die(void)
 {
 	if (die_sleep)
 		sleep(die_sleep);
 	exit(xfunc_error_retval);
 }
+#ifndef HAVE_NOMESSAGE
+
 
 void bb_error_msg_and_die(const char *s, ...)
 {
