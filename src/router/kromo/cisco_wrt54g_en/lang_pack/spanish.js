@@ -1317,7 +1317,7 @@ wpa.rekeyInt="Intervalo Rotacion Clave";
 //help container
 
 hwpa.right1="Modo de Seguridad:";
-hwpa.right2="Deberías escoger entre Desactivar, WEP, Clave WPA Pre-Compartida, WPA RADIUS, o RADIUS. Todos los dispositivos de tu red deben usar el mismo modo de seguridad.";
+hwpa.right2="Deberías escoger entre Desactivar, WEP, Clave WPA Pre-Compartida, WPA Enterprise, o RADIUS. Todos los dispositivos de tu red deben usar el mismo modo de seguridad.";
 
 
 

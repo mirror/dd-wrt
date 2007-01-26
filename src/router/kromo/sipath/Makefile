@@ -27,6 +27,8 @@ endif
 all:
 
 install:
+	install -d $(INSTALLDIR)/usr/lib/webif
+	-cp -a *.awk $(INSTALLDIR)/usr/lib/webif
 	-cp -a *.asp $(INSTALLDIR)/www
 	-cp -a *.css $(INSTALLDIR)/www/
 	-cp -a *.sed $(INSTALLDIR)/www/
