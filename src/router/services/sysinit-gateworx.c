@@ -174,7 +174,7 @@ Configure mac addresses by reading data from eeprom
   stime (&tm);
 
   eval ("mknod", "/dev/gpio", "c", "127", "0");
-  eval ("mknod", "/dev/rtc", "c", "253", "0");
+  eval ("mknod", "/dev/rtc", "c", "254", "0");
   eval ("hwclock", "-s");
   return 0;
   cprintf ("done\n");
