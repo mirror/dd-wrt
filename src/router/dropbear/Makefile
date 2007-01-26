@@ -63,13 +63,13 @@ exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
 
-CC=powerpc-linux-uclibc-gcc
-LD=powerpc-linux-uclibc-ld
-AR=powerpc-linux-uclibc-ar
-RANLIB=powerpc-linux-uclibc-ranlib
-STRIP=powerpc-linux-uclibc-strip
+CC=armeb-linux-uclibc-gcc
+LD=armeb-linux-uclibc-ld
+AR=armeb-linux-uclibc-ar
+RANLIB=armeb-linux-uclibc-ranlib
+STRIP=armeb-linux-uclibc-strip
 INSTALL=install
-CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib -Os -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align -L../zlib
+CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -L../zlib
 LIBS=$(LTC) $(LTM) -lutil -lz  -lcrypt
 LDFLAGS=-L../zlib
 
@@ -165,7 +165,7 @@ scp: $(SCPOBJS)  $(HEADERS) Makefile
 # multi-binary compilation.
 MULTIOBJS=
 ifeq ($(MULTI),1)
-	MULTIOBJS=dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
+	MULTIOBJS=$(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
 	CFLAGS+=$(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
 endif
 
