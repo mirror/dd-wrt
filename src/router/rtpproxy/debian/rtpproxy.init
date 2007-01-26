@@ -11,15 +11,17 @@
 #
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/sbin/rtpproxy
+DAEMON=/usr/bin/rtpproxy
 NAME=rtpproxy
 DESC=rtpproxy
 
 test -x $DAEMON || exit 0
 
+MYNAME=`basename $0`
+MYCFG="/etc/default/${MYNAME}"
 # Include rtpproxy defaults if available
-if [ -f /etc/default/rtpproxy ] ; then
-	. /etc/default/rtpproxy
+if [ -f ${MYCFG} ] ; then
+	. ${MYCFG}
 fi
 
 set -e

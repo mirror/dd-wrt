@@ -23,15 +23,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_record.h,v 1.1 2005/03/06 19:03:52 sobomax Exp $
+ * $Id: rtpp_record.h,v 1.2 2006/01/29 09:11:43 sobomax Exp $
  *
  */
 
 #ifndef _RTPP_RECORD_H_
 #define _RTPP_RECORD_H_
 
-#include "rtpp_session.h"
 #include "rtpp_util.h"
+
+struct rtpp_session;
 
 /* Function prototypes */
 void *ropen(struct rtpp_session *, const char *, const char *, int);

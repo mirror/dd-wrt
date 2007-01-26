@@ -92,6 +92,12 @@ rtp_server_get(struct rtp_server *rp)
 	ticks_per_frame = 30;
 	break;
 
+    case RTP_GSM:
+	/* 20 ms per 13 kbps GSM frame */
+	bytes_per_frame = 33;
+	ticks_per_frame = 20;
+	break;
+
     default:
 	return RTPS_ERROR;
     }
