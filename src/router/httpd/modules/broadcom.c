@@ -4512,15 +4512,15 @@ showencstatus (webs_t wp, char *prefix)
   if (nvram_match (akm, "psk"))
     websWrite (wp, "WPA Pre-shared Key");
   if (nvram_match (akm, "wpa"))
-    websWrite (wp, "WPA RADIUS");
+    websWrite (wp, "WPA Enterprise");
   if (nvram_match (akm, "psk2"))
     websWrite (wp, "WPA2 Pre-shared Key");
   if (nvram_match (akm, "wpa2"))
-    websWrite (wp, "WPA2 RADIUS");
+    websWrite (wp, "WPA2 Enterprise");
   if (nvram_match (akm, "psk psk2"))
     websWrite (wp, "WPA2 Pre-shared Key Mixed");
   if (nvram_match (akm, "wpa wpa2"))
-    websWrite (wp, "WPA RADIUS Mixed");
+    websWrite (wp, "WPA Enterprise Mixed");
   if (nvram_match (akm, "radius"))
     websWrite (wp, "RADIUS");
   if (nvram_match (akm, "wep"))

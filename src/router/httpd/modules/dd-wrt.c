@@ -1273,20 +1273,20 @@ ej_show_security (webs_t wp, int argc, char_t ** argv)
 		       "selected=\\\"selected\\\""));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch ("security_mode", "psk", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
+  websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	     selmatch ("security_mode", "wpa", "selected=\"selected\""));
   if (!nvram_match ("wl0_mode", "wet") && nvram_match ("wl_wds1_enable", "0") && nvram_match ("wl_wds2_enable", "0") && nvram_match ("wl_wds3_enable", "0") && nvram_match ("wl_wds4_enable", "0") && nvram_match ("wl_wds5_enable", "0") && nvram_match ("wl_wds6_enable", "0") && nvram_match ("wl_wds7_enable", "0") && nvram_match ("wl_wds8_enable", "0") && nvram_match ("wl_wds9_enable", "0") && nvram_match ("wl_wds10_enable", "0"))	//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
     {
       websWrite (wp,
 		 "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
 		 selmatch ("security_mode", "psk2", "selected"));
-      websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
+      websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		 selmatch ("security_mode", "wpa2", "selected=\"selected\""));
     }
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
 	     selmatch ("security_mode", "psk psk2", "selected"));
-  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
+  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch ("security_mode", "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch ("security_mode", "radius", "selected=\"selected\""));
@@ -1350,17 +1350,17 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
 	     selmatch (var, "disabled", "selected=\\\"selected\\\""));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch (var, "psk", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
+  websWrite (wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	     selmatch (var, "wpa", "selected=\"selected\""));
   websWrite (wp,
 	     "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
 	     selmatch (var, "psk2", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
+  websWrite (wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 	     selmatch (var, "wpa2", "selected=\"selected\""));
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
 	     selmatch (var, "psk psk2", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
+  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch (var, "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch (var, "radius", "selected=\"selected\""));
@@ -2780,7 +2780,7 @@ show_preshared (webs_t wp, char *prefix)
 }
 
 void
-show_radius (webs_t wp, char *prefix)
+show_radius (webs_t wp, char *prefix,int showmacformat)
 {
   char var[80];
   cprintf ("show radius\n");
@@ -2805,6 +2805,8 @@ show_radius (webs_t wp, char *prefix)
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
 	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
+if (showmacformat)
+{
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label2)</script></div>\n");
@@ -2823,7 +2825,7 @@ show_radius (webs_t wp, char *prefix)
 				 "3") ? "selected" : "");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
-
+}
 
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2979,7 +2981,7 @@ show_wparadius (webs_t wp, char *prefix)
   websWrite (wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n",
 	     selmatch (var, "tkip+aes", "selected=\"selected\""));
   websWrite (wp, "</select></div>\n");
-  show_radius (wp, prefix);
+  show_radius (wp, prefix,0);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
