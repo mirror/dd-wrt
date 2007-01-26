@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -z "$(nvram get sip_port)" ]; then
+    nvram set sip_port=5060
+    nvram set need_commit=1
+fi

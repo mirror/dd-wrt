@@ -1,0 +1,114 @@
+#!/bin/sh
+#
+# $Id: sr,v 1.6 2003/05/27 23:11:48 jiri Exp $
+#
+#
+# 3w-xxxx:      Starts the sip_router process
+#
+# Version:      @(#) /etc/rc.d/init.d/3w-xxxx
+#
+# chkconfig: 2345 20 80
+# description: controls execution of SIP router
+# processname: sr
+# config: /etc/ser/iptel.cfg
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# we use a ser symlink -- that allows us to have a different name
+# in process table so that killalls does not start other sers
+# run from somewhere else
+
+BINNAME=sr
+HM=/home/srouter
+SERDIR=$HM/sip_router
+ETC=/tmp/ser/iptel.cfg
+PIDFILE=/var/run/sr.pid
+NOTIFY=sr@iptel.org
+USR=510
+GRP=510
+
+MONIT=/usr/local/bin/monit
+MONITRC=/usr/local/etc/monitrc
+
+RETVAL=0
+
+BIN=$HM/bin/$BINNAME
+MYDIR=$HM/core
+CORE=$MYDIR/core
+TMP=/tmp/srcore.$$
+
+ser_start() {
+	if [ -r $BIN -a -r $CORE ] ; then
+		echo "before startup ser core found on `date` at $HOSTNAME" > $TMP
+		echo "----------------------------------" >> $TMP
+		DATE=`date "+%Y-%m-%d--%H-%M"`
+		NEWCORE=$MYDIR/core.$DATE
+		mv $CORE $NEWCORE
+		echo core stored in $NEWCORE >> $TMP
+		gdb $BIN $NEWCORE -x test/bt.gdb -batch >> $TMP
+		chmod a+r $NEWCORE
+		cd $SERDIR; tar czf $MYDIR/ser.$DATE.tgz .
+		mail -s "ser core found" $NOTIFY < $TMP
+		rm -f $TMP
+	fi
+	cd $MYDIR
+	#ulimit -c 1000000
+	echo "Starting SIP router: "
+	$BIN -f $ETC -w $MYDIR -P $PIDFILE
+	RETVAL=$?
+	echo
+}
+
+ser_stop() {
+	echo "Stopping SIP router: "
+	killproc $BINNAME
+	RETVAL=$?
+	echo
+}
+
+monit_start() {
+   echo "Command Monit to start Ser..."
+   ${MONIT} -c ${MONITRC} start ser
+   RETVAL=$?
+   echo
+}
+
+monit_stop() {
+   echo "Command Monit to stop Ser..."
+   ${MONIT} -c ${MONITRC} stop ser
+   RETVAL=$?
+   echo
+}
+
+# See how we were called.
+case "$1" in
+  serstart)
+	ser_start
+	;;
+  serstop)
+    ser_stop
+	;;
+  serrestart)
+	ser_stop
+	echo
+	ser_start
+	;;
+  start)
+    monit_start
+	;;
+  stop)
+    monit_stop
+	;;
+  restart)
+	monit_stop
+	sleep 1
+	monit_start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $RETVAL
+
