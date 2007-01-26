@@ -4225,9 +4225,9 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-#ifdef HAVE_MADWIFI
+//#ifdef HAVE_MADWIFI
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
-#endif
+//#endif
   {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},

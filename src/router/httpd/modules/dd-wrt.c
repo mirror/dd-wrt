@@ -3775,17 +3775,21 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   struct iwreq iwr;
   if (!ifexists (ifname))
     return cnt;
+//  fprintf(stderr,"open socket\n");
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
       return cnt;
     }
-  (void) memset (&iwr, 0, sizeof (iwr));
+ // fprintf(stderr,"memset for %s\n",ifname);
+  (void) memset (&iwr, 0, sizeof (struct iwreq));
+ // fprintf(stderr,"strcpy %s\n",ifname);
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   unsigned char *buf = (unsigned char *) malloc (24 * 1024);
   iwr.u.data.pointer = (void *) buf;
   iwr.u.data.length = 24 * 1024;
+ // fprintf(stderr,"getstainfo %s\n",ifname);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
@@ -3811,7 +3815,8 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
       if (cnt)
 	websWrite (wp, ",");
       cnt++;
-      char mac[16];
+      char mac[32];
+ // fprintf(stderr,"copy mac %s\n",ifname);
       strcpy (mac, ieee80211_ntoa (si->isi_macaddr));
       if (nvram_match ("maskmac", "1"))
 	{
@@ -3839,11 +3844,15 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 		     rssi2dbm (si->isi_rssi), si->isi_noise,
 		     rssi2dbm (si->isi_rssi) - (si->isi_noise));
 	}
+  //fprintf(stderr,"increase pointer %s\n",ifname);
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-  close (s);
+  //fprintf(stderr,"close socket %s\n",ifname);
   free (buf);
+  //fprintf(stderr,"return %s\n",ifname);
+  close (s);
+ // fprintf(stderr,"free buffer %s\n",ifname);
 
   return cnt;
 }
@@ -3859,20 +3868,26 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   int cnt = 0;
   for (i = 0; i < c; i++)
     {
+//fprintf(stderr,"try to assign new ifname for %d\n",i);
       sprintf (devs, "ath%d", i);
 //fprintf(stderr,"show ifname %s\n",devs);
       cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt);
+//    fprintf(stderr,"returned with %d\n",cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
       char var[80], *next;
       char *vifs = nvram_get (vif);
+//    fprintf(stderr,"wifs are %s\n",vifs);
       if (vifs != NULL)
 	foreach (var, vifs, next)
 	{
 //    fprintf(stderr,"show ifname %s\n",var);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt);
+//    fprintf(stderr,"returned with %d, c=%d, i=%d\n",cnt,i,c);
 	}
     }
+    
+//fprintf(stderr,"show wds links\n");
 //show wds links
   for (i = 0; i < c; i++)
     {
@@ -3886,15 +3901,21 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	  char *dev;
 	  char *hwaddr;
 	  char var[80];
+//fprintf(stderr,"assign var\n");
 	  sprintf (wdsvarname, "ath%d_wds%d_enable", i, s);
+//fprintf(stderr,"assign dev\n");
 	  sprintf (wdsdevname, "ath%d_wds%d_if", i, s);
+//fprintf(stderr,"assign mac\n");
 	  sprintf (wdsmacname, "ath%d_wds%d_hwaddr", i, s);
+//fprintf(stderr,"get nv\n");
 	  dev = nvram_safe_get (wdsdevname);
+  //fprintf(stderr,"devname %s\n",dev);
 	  if (dev == NULL || strlen (dev) == 0)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
 	  sprintf (var, "wdsath%d.%d", i, s);
+  //fprintf(stderr,"var %s\n",var);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt);
 	}
     }
