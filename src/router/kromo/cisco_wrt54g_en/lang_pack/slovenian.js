@@ -1492,7 +1492,7 @@ sec80211x.clientcertif="Certifikat odjemalca";
 
 //help container
 
-hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA predhodno deljeni kljuè, WPA RADIUS, or RADIUS. Vse naprave na va¹i mre¾i morajo uporabljanti isti naèin.";
+hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA predhodno deljeni kljuè, WPA Enterprise, or RADIUS. Vse naprave na va¹i mre¾i morajo uporabljanti isti naèin.";
 
 
 

@@ -1313,7 +1313,7 @@ wpa.h2="WLAN-Sicherheit";
 wpa.secmode="Sicherheitsmodus";
 wpa.legend="WLAN-Verschlüsselung";
 wpa.auth_mode="Netzwerk-Authentifikation";
-wpa.psk="WPA Pre-Shared Key";
+wpa.psk="WPA Personal Key";
 wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
@@ -1333,7 +1333,7 @@ sec80211x.clientcertif="Client Zertifikat";
 //help container
 
 hwpa.right1="Sicherheits-Modus:";
-hwpa.right2="Hier können Sie zwischen deaktiviert, WEP, WPA Pre-Shared Key, WPA RADIUS, oder RADIUS wählen. Alle Geräte in Ihrem Netzwerk müssen den selben Modus verwenden.";
+hwpa.right2="Hier können Sie zwischen deaktiviert, WEP, WPA Personal Key, WPA Enterprise, oder RADIUS wählen. Alle Geräte in Ihrem Netzwerk müssen den selben Modus verwenden.";
 
 
 
