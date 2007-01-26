@@ -6111,20 +6111,25 @@ do_wds (char *path, webs_t stream)
   char temp[32768];
   int ai = 0;
   int i = 0;
-  for (i = 0; i < strlen (webfile); i++)
+  int weblen=strlen(webfile);
+  for (i = 0; i < weblen; i++)
     {
       if (webfile[i] == '%')
 	{
 	  i++;
-	  if (webfile[i] == '%')
+	  switch(webfile[i])
+	  {
+	  case '%':
 	    temp[ai++] = '%';
-	  else if (webfile[i] == 's')
-	    {
+	  break;
+	  case 's':	  
 	      strcpy (&temp[ai], ifname);
 	      ai += strlen (ifname);
-	    }
-	  else
+	  break;
+	  default:
 	    temp[ai++] = webfile[i];
+	  break;
+	  }
 	}
       else
 	temp[ai++] = webfile[i];
