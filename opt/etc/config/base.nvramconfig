@@ -1,5 +1,5 @@
  "lan_ipaddr" "LAN IP Address" "LANIPADDR"  "lan" "FALSE" "0"
- "fullswitch" "use fifth wan port" "REBOOT" "TRUE" "0"
+ "fullswitch" "use fifth wan port" "NULL" "TRUE" "0"
  "lan_stp" "LAN STP Broadcasts" "CHOICE" "2" "0" "1" "FALSE" "0"
  "router_name"  "Router Name"  "NAME"  "255"  "TRUE" "0"  
  "wan_hostname" "WAN Host Name"  "NAME"  "255"  "TRUE" "3"   
