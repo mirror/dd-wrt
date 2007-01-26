@@ -23,7 +23,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtp.h,v 1.1 2005/03/06 19:03:52 sobomax Exp $
+ * $Id: rtp.h,v 1.2 2006/08/11 21:55:44 sobomax Exp $
  *
  */
 
@@ -37,6 +37,7 @@
  */
 typedef enum {
     RTP_PCMU = 0,
+    RTP_GSM = 3,
     RTP_G723 = 4,
     RTP_PCMA = 8,
     RTP_CN = 13,

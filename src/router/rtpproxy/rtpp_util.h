@@ -23,7 +23,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_util.h,v 1.2 2005/07/10 18:11:43 sobomax Exp $
+ * $Id: rtpp_util.h,v 1.3 2006/04/12 23:29:10 sobomax Exp $
  *
  */
 
@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 
 #define	addr2port(sa)	ntohs(satosin(sa)->sin_port)
 

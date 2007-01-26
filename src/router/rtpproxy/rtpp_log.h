@@ -23,7 +23,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_log.h,v 1.2 2005/03/28 16:43:19 sobomax Exp $
+ * $Id: rtpp_log.h,v 1.3 2006/04/12 03:10:12 sobomax Exp $
  *
  */
 
@@ -33,18 +33,30 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include "rtpp_defines.h"
+
+#define	RTPP_LOG_DBUG	0
+#define	RTPP_LOG_INFO	1
+#define	RTPP_LOG_WARN	2
+#define	RTPP_LOG_ERR	3
+#define	RTPP_LOG_CRIT	4
+
 #define	rtpp_log_t	int
 
 #define	rtpp_log_open(app, call_id, flag) (0)
-#define	rtpp_log_write(level, handle, format, args...)		\
-	do {							\
-		fprintf(stderr, format, ## args);		\
-		fprintf(stderr, "\n");				\
+#define	rtpp_log_write(level, handle, format, args...)			\
+	do {								\
+		if (level >= LOG_LEVEL) {				\
+			fprintf(stderr, format, ## args);		\
+			fprintf(stderr, "\n");				\
+		}							\
 	} while (0);
-#define	rtpp_log_ewrite(level, handle, format, args...)		\
-	do {							\
-		fprintf(stderr, format, ## args);       	\
-		fprintf(stderr, ": %s\n", strerror(errno));	\
+#define	rtpp_log_ewrite(level, handle, format, args...)			\
+	do {								\
+		if (level >= LOG_LEVEL) {				\
+			fprintf(stderr, format, ## args);		\
+			fprintf(stderr, ": %s\n", strerror(errno));	\
+		}							\
 	} while (0);
 #define	rtpp_log_close(handle) while (0) {}
 
