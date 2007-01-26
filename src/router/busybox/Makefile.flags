@@ -1,0 +1,89 @@
+# ==========================================================================
+# Build system
+# ==========================================================================
+ifndef top_builddir
+top_builddir=$(CURDIR)
+endif
+
+include $(top_builddir)/../.config
+
+BB_VER = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+
+# -std=gnu99 needed for [U]LLONG_MAX on some systems
+
+CPPFLAGS += \
+	-std=gnu99 \
+	-Iinclude -Ilibbb \
+	$(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include) -I$(srctree)/libbb \
+	-include include/autoconf.h \
+	-D_GNU_SOURCE -DNDEBUG \
+	$(if $(CONFIG_LFS),-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64) \
+	-D"BB_VER=KBUILD_STR($(BB_VER))" -DBB_BT=AUTOCONF_TIMESTAMP
+
+CFLAGS += \
+	 -Wstrict-prototypes -Wshadow -Wall -Wundef \
+	-funsigned-char -fno-builtin-strlen -finline-limit=0 -static-libgcc \
+	-Os -falign-functions=1 -falign-jumps=1 -falign-loops=1 \
+	-fomit-frame-pointer -ffunction-sections -fdata-sections
+
+ifeq ($(CONFIG_DEBUG),y)
+CFLAGS += -g
+endif
+
+ifeq ($(CONFIG_STATIC),y)
+LDFLAGS += -static
+endif
+
+ 
+LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -L../libnet/lib  
+#LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
+#ifeq ($(CONFIG_ARP),y)
+#LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
+#CFLAGS += -DHAVE_ARP
+#endif
+ifeq ($(CONFIG_DROPBEAR_SSHD),y)
+#OBJS += sshd.o
+CFLAGS += -DHAVE_SSHD
+LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
+#LDFLAGS += -Wl,--gc-sections
+endif
+ifeq ($(CONFIG_RFLOW),y)
+CFLAGS += -DHAVE_RFLOW
+LIBRARIES += ../rflow/rflow.a 
+LDFLAGS += -lpthread
+endif
+ifeq ($(CONFIG_DHCPFORWARD),y)
+CFLAGS += -DHAVE_DHCPFWD
+LIBRARIES += ../dhcpforwarder/dhcpfwd.a
+LDFLAGS += -lpthread
+endif
+ifeq ($(CONFIG_NOMESSAGE),y)
+CFLAGS += -DHAVE_NOMESSAGE
+endif
+ifeq ($(CONFIG_BIRD),y)
+CFLAGS += -DHAVE_BIRD
+LIBRARIES += ../bird/bird.a
+LIBRARIES += ../bird/obj/lib/birdlib.a
+endif
+ifeq ($(CONFIG_BRANDING),y)
+CFLAGS += -DHAVE_BRANDING
+endif
+ 
+#LDFLAGS += ../wireless-tools/libiw.so.29
+
+#ifeq ($(CONFIG_HTTPD),y)
+#CFLAGS += -DHAVE_DDWRTHTTPD
+#LIBRARIES += ../httpd/httpd.a
+#endif
+
+#ifeq ($(CONFIG_MATRIXSSL),y)
+#LIBRARIES += ../matrixssl/src/libmatrixsslstatic.a -lpthread
+#CFLAGS += -I$(TOP)/matrixssl
+#LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
+#CFLAGS += -DHAVE_MATRIXSSL
+#CFLAGS += -DHAVE_HTTPS
+#OBJS += matrixssl_xface.o
+#endif
+ 
+CFLAGS += -DNEED_PRINTF
+CFLAGS += $(COPTS)
