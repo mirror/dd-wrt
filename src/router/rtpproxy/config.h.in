@@ -8,6 +8,12 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Define if you have libg729 library installed */
+#undef ENABLE_G729
+
+/* Define if you have libgsm library installed */
+#undef ENABLE_GSM
+
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
@@ -24,8 +30,14 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
+/* Define to 1 if you have the <g729_encoder.h> header file. */
+#undef HAVE_G729_ENCODER_H
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the <gsm.h> header file. */
+#undef HAVE_GSM_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
