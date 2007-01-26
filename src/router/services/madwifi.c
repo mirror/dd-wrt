@@ -846,7 +846,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
 //        else
 //          fprintf (fp, "macaddr_acl=2\n");
-
+	  fprintf (fp, "ieee8021x=1\n");
 //        fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 //        fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
 	  fprintf (fp, "own_ip_addr=%s\n", nvram_safe_get ("lan_ipaddr"));
