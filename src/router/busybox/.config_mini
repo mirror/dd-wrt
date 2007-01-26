@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
-# Linux kernel version: 1.3.1
-# Thu Jan  4 16:43:51 2007
+# Busybox version: 1.4.0
+# Fri Jan 26 23:24:44 2007
 #
 CONFIG_HAVE_DOT_CONFIG=y
 
@@ -51,7 +51,7 @@ CONFIG_BUILD_AT_ONCE=y
 # CONFIG_NO_DEBUG_LIB is not set
 # CONFIG_DMALLOC is not set
 # CONFIG_EFENCE is not set
-CONFIG_DEBUG_YANK_SUSv2=y
+# CONFIG_INCLUDE_SUSv2 is not set
 
 #
 # Installation Options
@@ -289,6 +289,7 @@ CONFIG_FEATURE_VI_SETOPTS=y
 CONFIG_FEATURE_VI_SET=y
 CONFIG_FEATURE_VI_WIN_RESIZE=y
 CONFIG_FEATURE_VI_OPTIMIZE_CURSOR=y
+# CONFIG_FEATURE_ALLOW_EXEC is not set
 
 #
 # Finding Utilities
@@ -343,8 +344,10 @@ CONFIG_LOGIN=y
 # CONFIG_LOGIN_SCRIPTS is not set
 # CONFIG_FEATURE_SECURETTY is not set
 # CONFIG_PASSWD is not set
+# CONFIG_FEATURE_PASSWD_WEAK_CHECK is not set
 # CONFIG_SU is not set
-# CONFIG_SU_SYSLOG is not set
+# CONFIG_FEATURE_SU_SYSLOG is not set
+# CONFIG_FEATURE_SU_CHECKS_SHELLS is not set
 # CONFIG_SULOGIN is not set
 # CONFIG_VLOCK is not set
 
@@ -459,6 +462,7 @@ CONFIG_FEATURE_DEVFS=y
 # CONFIG_EJECT is not set
 # CONFIG_LAST is not set
 CONFIG_LESS=y
+CONFIG_FEATURE_LESS_MAXLINES=9999999
 # CONFIG_FEATURE_LESS_BRACKETS is not set
 CONFIG_FEATURE_LESS_FLAGS=y
 # CONFIG_FEATURE_LESS_FLAGCS is not set
@@ -492,6 +496,7 @@ CONFIG_TIME=y
 # Networking Utilities
 #
 # CONFIG_FEATURE_IPV6 is not set
+CONFIG_ARP=y
 # CONFIG_ARPING is not set
 # CONFIG_DNSD is not set
 # CONFIG_ETHER_WAKE is not set
