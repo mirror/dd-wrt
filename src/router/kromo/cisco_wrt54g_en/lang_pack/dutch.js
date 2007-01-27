@@ -1306,7 +1306,6 @@ wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Modus";
 wpa.legend="Draadloze Encryptie";
 wpa.auth_mode="Netwerk Authenticatie";
-wpa.psk="WPA Personal Key";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";

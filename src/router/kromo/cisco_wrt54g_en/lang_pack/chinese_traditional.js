@@ -1298,7 +1298,6 @@ wpa.titl=" - 無線安全";
 wpa.h2="無線安全";
 wpa.legend="無線加密";
 wpa.auth_mode="網路鑒權";
-wpa.psk="WPA預共用秘鑰";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA組重新獲取秘鑰間隔";
