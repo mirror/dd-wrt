@@ -1302,7 +1302,6 @@ wpa.titl=" - Seguridad Wi-Fi";
 wpa.h2="Seguridad Wi-Fi";
 wpa.legend="Encriptación Inalámbrica";
 wpa.auth_mode="Autenticación de red";
-wpa.psk="Clave WPA Pre-Compartida";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Intervalo Rotación Clave WPA";
