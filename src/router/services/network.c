@@ -724,7 +724,7 @@ start_lan (void)
 #endif
 #ifdef HAVE_GATEWORX
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet"))
+      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
@@ -734,9 +734,9 @@ start_lan (void)
   else
     {
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "ixp1 ath0 ath1 ath2 ath3");
-      nvram_set ("wan_ifname", "ixp0");
-      nvram_set ("wan_ifnames", "ixp0");
+      nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+      nvram_set ("wan_ifname", "ixp1");
+      nvram_set ("wan_ifnames", "ixp1");
     }
   strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -1666,15 +1666,9 @@ start_wan (int status)
 #else
 
 #ifdef HAVE_XSCALE
-#ifdef HAVE_GATEWORX
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "ixp0";
-#else
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
-#endif
 #elif HAVE_MAGICBOX
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
