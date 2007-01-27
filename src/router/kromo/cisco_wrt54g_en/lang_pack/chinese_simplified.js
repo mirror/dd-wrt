@@ -1306,7 +1306,6 @@ wpa.titl=" - 无线安全";
 wpa.h2="无线安全";
 wpa.legend="无线加密";
 wpa.auth_mode="网络鉴权";
-wpa.psk="WPA预共享秘钥";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA组重新获取秘钥间隔";

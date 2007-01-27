@@ -1313,7 +1313,6 @@ wpa.h2="WLAN-Sicherheit";
 wpa.secmode="Sicherheitsmodus";
 wpa.legend="WLAN-Verschlüsselung";
 wpa.auth_mode="Netzwerk-Authentifikation";
-wpa.psk="WPA Personal Key";
 wpa.wpa="WPA";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
