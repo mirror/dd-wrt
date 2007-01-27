@@ -4424,7 +4424,11 @@ ej_get_cputemp (  webs_t wp, int argc, char_t ** argv)
 	   "rb");
 #else
 #define TEMP_MUL 1000
+#ifdef HAVE_X86
+  FILE *fp = fopen ("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+#else
   FILE *fp = fopen ("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
+#endif
 #endif
 
   if (fp == NULL)
