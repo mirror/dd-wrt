@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 19.avg.2006				//
+//				Slovenian translation DD-WRT by Eko, last revision: 27.jan.2007				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -1478,7 +1478,7 @@ wpa.auth_mode="Mre¾no overovljenje";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA interval izmenjave kljuèev";
-wpa.rekey="Interval izmenjave kljuèev (v sekundaj)";
+wpa.rekey="Interval izmenjave kljuèev (v sekundah)";
 wpa.radius_ipaddr="RADIUS naslov stre¾nika";
 wpa.radius_port="RADIUS vrata stre¾nika";
 wpa.radius_key="RADIUS kljuè";
@@ -1492,7 +1492,7 @@ sec80211x.clientcertif="Certifikat odjemalca";
 
 //help container
 
-hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA predhodno deljeni kljuè, WPA Enterprise, or RADIUS. Vse naprave na va¹i mre¾i morajo uporabljanti isti naèin.";
+hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA osebni kljuè, WPA Enterprise ali RADIUS. Vse naprave v va¹i mre¾i morajo uporabljanti isti naèin.";
 
 
 
