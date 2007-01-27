@@ -320,10 +320,10 @@ start_restore_defaults (void)
 #elif HAVE_GATEWORX
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3",
+    {"lan_ifnames", "ixp0 ath0 ath1 ath2 ath3",
      0},
-    {"wan_ifname", "ixp0", 0},
-    {"wan_ifnames", "ixp0", 0},
+    {"wan_ifname", "ixp1", 0},
+    {"wan_ifnames", "ixp1", 0},
     {0, 0, 0}
   };
 #elif HAVE_X86
