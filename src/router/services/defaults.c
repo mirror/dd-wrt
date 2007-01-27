@@ -194,18 +194,18 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #endif
-  {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
-  {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
-  {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
-  {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
+#elif HAVE_MAGICBOX
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_XSCALE
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #else
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 
+#endif
   {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
   {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
   {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
   {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
-#endif
 
   {"wan_wins", "0.0.0.0", 0},	/* x.x.x.x x.x.x.x ... */
 
