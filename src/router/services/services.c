@@ -3649,7 +3649,11 @@ stop_wifidog (void)
 #define TEMP_PREFIX "temp"
 #define TEMP_MUL 100
 #else
+#ifdef HAVE_X86
+#define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
+#else
 #define TEMP_PATH "/sys/devices/platform/i2c-0/0-0048"
+#endif
 #define TEMP_PREFIX "temp1"
 #define TEMP_MUL 1000
 #endif
