@@ -18,12 +18,12 @@
 #include <wlutils.h>
 #include <cyutils.h>
 /*
-#define DEV_MFR   	"Broadcom"
-#define DEV_MFR_URL     "http://www.broadcom.com/"
-#define DEV_MODEL_DESCRIPTION  "Residential Gateway Device"
-#define DEV_MODEL  "Wireless Base Station"
-#define DEV_MODEL_NO  "MN-500"
-#define DEV_MODEL_URL     "http://www.broadcom.com/"
+#define DEV_MFR					"Broadcom"
+#define DEV_MFR_URL     		"http://www.broadcom.com/"
+#define DEV_MODEL_DESCRIPTION	"Residential Gateway Device"
+#define DEV_MODEL				"Wireless Base Station"
+#define DEV_MODEL_NO			"MN-500"
+#define DEV_MODEL_URL			"http://www.broadcom.com/"
 */
 
 extern PService init_service(PServiceTemplate svctmpl, PDevice pdev);
@@ -169,7 +169,8 @@ void device_xml(PDevice pdev, UFILE *up)
 			"</specVersion>\r\n"
 			);
 
-		if (winmnp) uprintf(up, "<URLBase>http://%s:5431</URLBase>\r\n", myip);	// tofu
+		if (winmnp) uprintf(up, "<URLBase>http%s://%s:5431</URLBase>\r\n",
+			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
     }
 
     if (pdev->friendlyname) friendlyname = pdev->friendlyname;
@@ -187,9 +188,10 @@ void device_xml(PDevice pdev, UFILE *up)
 	uprintf(up, "<UDN>%s</UDN>\r\n", pdev->udn);
 
 	if ((winmnp) && (ISROOT(pdev))) {
-		uprintf(up, "<presentationURL>http://%s/UPnP.asp</presentationURL>\r\n", myip);		// the "invoke" url -- tofu
+		uprintf(up, "<presentationURL>http%s://%s/UPnP.asp</presentationURL>\r\n",
+			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
 	}
-//		uprintf(up, "<UPC>01234-56789</UPC>\r\n");
+
 
     // generate XML for any services in this device.
     device_servicelist(pdev, up);
@@ -296,6 +298,3 @@ PDevice device_iterator(PDevice pdev)
 
     return nextdev;
 }
-
-
-
