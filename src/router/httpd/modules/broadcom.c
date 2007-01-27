@@ -2927,8 +2927,10 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("refresh to %s\n", path);
 	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
 	    do_filtertable (path, wp);	//refresh
+#ifdef HAVE_MADWIFI
 	  else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
 	    do_wds (path, wp);	//refresh
+#endif
 	  else
 	    do_ej (path, wp);	//refresh
   websDone (wp, 200);
@@ -3523,8 +3525,10 @@ footer:
 	  cprintf ("refresh to %s\n", path);
 	  if (!strncmp (path, "WL_FilterTable", strlen ("WL_FilterTable")))
 	    do_filtertable (path, wp);	//refresh
+#ifdef HAVE_MADWIFI
 	  else if (!strncmp (path, "Wireless_WDS", strlen ("Wireless_WDS")))
 	    do_wds (path, wp);	//refresh
+#endif
 	  else
 	    do_ej (path, wp);	//refresh
 	  websDone (wp, 200);
@@ -4225,10 +4229,11 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-//#ifdef HAVE_MADWIFI
   {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
 //#endif
+#ifdef HAVE_MADWIFI
   {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth},
+#endif
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
