@@ -4,6 +4,15 @@ Just copy windows.js in your javascript directory, and default.css + default dir
 See samples/index.html for more details and go on my web page : http://prototype-window.xilinus.com
 
 == Change log
+- 01/14/07  V 1.00
+            - add changeClassName to change look and feel dynamically.
+            - add constraint move. Constraint can be on a div or document.
+            - full top and bottom bar are use to move window.
+            - fixed computation of window width or height.
+            - add setURL/getURL/refresh and setHTMLContent. Content can be change dynamically. 
+            - add tooltip.js add on. It's an add-on to add dynamically tooltips on a webpage (see samples/tooltips/tooltip.html)
+              Thanks to Jonathan Modell of  2moromedia.com.
+            
 - 12/06/06  V 0.99
             - remove addClass that automatically tries to include default.css
             - add wired move/resize
