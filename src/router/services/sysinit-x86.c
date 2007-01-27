@@ -314,9 +314,18 @@ eval("insmod","crypto_null");
 
   eval ("insmod", "ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
+#ifdef HAVE_CPUTEMP
+  eval ("insmod", "nsc_gpio");
+  eval ("insmod", "scx200_gpio");
+  eval ("insmod", "scx200_i2c");
+  eval ("insmod", "scx200_acb");
+  eval ("insmod", "lm77");
+#endif
+
+
   nvram_set ("wl0_ifname", "ath0");
   /* Set a sane date */
   stime (&tm);
-  return 0;
   cprintf ("done\n");
+  return 0;
 }
