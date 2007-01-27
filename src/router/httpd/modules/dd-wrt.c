@@ -6119,6 +6119,7 @@ do_filtertable (char *path, webs_t stream)
   ifname[indexof (ifname, '.')] = 0;
   char *webfile = getWebsFile ("WL_FilterTable.asp");
   char temp[4096];
+  memset(temp,0,4096);
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
   do_ej_buffer (temp, stream);
 }
@@ -6132,6 +6133,7 @@ do_wds (char *path, webs_t stream)
   ifname[indexof (ifname, '.')] = 0;
   char *webfile = getWebsFile ("Wireless_WDS.asp");
   char temp[32768];
+  memset(temp,0,32768);
   int ai = 0;
   int i = 0;
   int weblen=strlen(webfile);
