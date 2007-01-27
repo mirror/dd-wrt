@@ -126,13 +126,18 @@ var Application =  {
 	  $$(".windows").each(function(element){html += "- <a href='#" + element.title + "'>" + element.title + "</a><br/>"});
 	  html += "</ul></td>";
 		  
+	  // Windows
+	  html += "<td>Windows Add-ons <ul>";
+	  $$(".addons").each(function(element){html += "- <a href='#" + element.title + "'>" + element.title + "</a><br/>"});
+	  html += "</ul></td>";
+		  
 	  html += "</tr></table>"
 	  div.innerHTML = html;
 	},
-	
+
 	insertNavigation: function(selected) {
 	  document.write('\
-	  <h1><a href="http://prototype-window.xilinus.com"><img border=0 src="logo.gif"/></a></h1>\
+	  <h1><a href="http://prototype-window.xilinus.com"><img border=0 src="pwc.gif"/></a></h1>\
     <div class="navigation">\
       <ul>\
         <li><a id="menu_documentation" href="documentation.html">Documentation</a></li>\

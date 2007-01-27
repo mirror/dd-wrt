@@ -104,7 +104,7 @@
     </div>
     
     <div class="function window" title="setContent"><a name="setContent"></a>
-      <p class="title"><span class="function">setContent(id, autoresize, autoposition)</span> Sets window content using an existing element (does not work woth url/iframe)</p>
+      <p class="title"><span class="function">setContent(id, autoresize, autoposition)</span> Sets window content using an existing element (does not work with url/iframe)</p>
       <p class="parameter">
         <span class="field">id</span>
         <span class="explanation">Element id to insert in the window</span>
@@ -118,6 +118,31 @@
         <span class="explanation">Sets the current window position to the specified input element</span>
       </p>
     </div>
+    
+    <div class="function window" title="setHTMLContent"><a name="setHTMLContent"></a>
+      <p class="title"><span class="function">setHTMLContent(html)</span> Sets window HTML content.</p>
+      <p class="parameter">
+        <span class="field">html</span>
+        <span class="explanation">HTML code</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="setURL"><a name="setURL"></a>
+      <p class="title"><span class="function">setURL(url)</span> Sets window content using an URL.</p>
+      <p class="parameter">
+        <span class="field">url</span>
+        <span class="explanation">URL for content (content will be shown using an iframe)</span>
+      </p>
+    </div>
+    
+    <div class="function window" title="getURL"><a name="getURL"></a>
+      <p class="title"><span class="function">getURL()</span> Returns window URL content. Returns nil if content is not an url.</p>
+    </div>
+    
+    <div class="function window" title="refresh"><a name="refresh"></a>
+      <p class="title"><span class="function">refresh()</span> Refreshes window URL content.s</p>
+    </div>
+    
     
     <div class="function window" title="setAjaxContent"><a name="setAjaxContent"></a>
       <p class="title"><span class="function">setAjaxContent(url, options, showCentered, showModal)</span> Sets window content using an Ajax request. The request must return HTML code. See script.aculo.us <a href="http://wiki.script.aculo.us/scriptaculous/show/Ajax.Request">Ajax.request </a>documentation for details. When the response is received, the window is shown.</p>
@@ -401,15 +426,30 @@
     </div>
     
     <div class="function addons" title="WindowCloseKey.init"><a name="WindowCloseKey.init"></a>
-      <p class="title"><span class="function">WindowCloseKey.init(keyCode)</span> Handlea key to close windows or dialogs. Just add WindowsStore.init() at the end of you HTML file.  </p>
+      <p class="title"><span class="function">WindowCloseKey.init(keyCode)</span> Handle key to close windows or dialogs. Just add WindowsStore.init() at the end of you HTML file.  </p>
       <p class="parameter">
         <span class="field">keyCode</span>
         <span class="explanation">Key used to close windows  (default: <em>Event.KEY_ESC</em>)</span>
       </p>
     </div>
-    
+    <div class="function addons" title="TooltipManager"><a name="TooltipManager"></a>
+      <p class="title"><span class="function">TooltipManager</span> Singleton to handle tooltips using PWC.  </p>
+      <p class="parameter">
+        <span class="explanation">Tooltips are not "regular" tooltips that show/hide on specific areas. Those tooltips are PWC windows that keeps alive in you move the mouse over it.
+          Like this, you can have forms, links are anything you want in your tooltips.<br/><br/>
+          Tooltips content can be set by giving a html element already present in the page (usually hidden), by ajax using an url or by url.
+          It works in two modes:
+          <li>An unobtrusive mode using specific class name. In this mode only HTML and Ajax content are supported</li>
+          <li>Regular mode by adding tooltip using javascript code.</li>
+          <br/>
+          Check sample code in samples/tooltips/tooltip.html to see how it works.
+        </span>
+      </p>
+    </div>
     
   </div>
+  <br/>
+  <br/>
 </body>
 </html>
 
