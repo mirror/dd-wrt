@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=koi8-r">
+<TITLE>ОШИБКА: Запрошенный URL не может быть доставлен</TITLE>
+<STYLE type="text/css"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}PRE{font-family:sans-serif}--></STYLE>
+</HEAD><BODY>
+<H1>ОШИБКА:</H1>
+<H2>Запрошенный URL не может быть доставлен</H2>
+<HR noshade size="1px">
+<P>
+Данный URL не может быть доставлен:
+<A HREF="%U">%U</A>
+<P>
+Squid послал следущую FTP-команду:
+<blockquote><strong><pre>%f</pre></strong></blockquote>
+и получил ответ:
+<blockquote><strong><pre>%F</pre></strong></blockquote>
+<blockquote><strong><pre>%g</pre></strong></blockquote>
+<P>
+Это может быть следствием запроса FTP URL с абсолютным путем (что не соответствует
+RFC 1738).  Если это является причиной ошибки, тогда файл может находится по 
+URL <A HREF="%B">%B</A>.
+</P>
+

@@ -1,0 +1,27 @@
+<HTML><HEAD>
+<TITLE>ERROR: La direcci&oacute;n solicitada no puede ser obtenida</TITLE>
+</HEAD><BODY>
+<H1>ERROR</H1>
+<H2>La direcci&oacute;n solicitada no puede ser obtenida</H2>
+<HR>
+<P>
+Mientras se descargaba la direcci&oacute;n:
+<A HREF="%U">%U</A>
+<P>
+Se encontr&oacute; el siguiente error:
+<UL>
+<LI>
+<STRONG>
+La direcci&oacute;n solicitada es demasiado larga.
+</STRONG>
+<P>
+Si est&aacute; haciendo una petici&oacute;n POST o PUT, el cuerpo (lo
+que est&aacute; intentando subir) es demasiado grande. Si est&aacute;
+haciendo una petici&oacute;n GET, entonces el cuerpo de la respuesta
+(que est&aacute; tratando de bajar) es demasiado grande. Estos
+l&iacute;mites fueron establecidos por el Proveedor de Servicios de
+Internet que opera este cach&eacute;. Por favor, contacte con &eacute;l
+directamente si cree que esto es un error.
+</UL>
+<P>
+Su administrador del cach&eacute; es <A HREF="mailto:%w">%w</A>.
