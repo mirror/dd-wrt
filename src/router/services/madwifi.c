@@ -1200,10 +1200,6 @@ configure_single (int count, int isbond)
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
-/*  foreach (var, nvram_safe_get ("wl0_wds"), next)
-  {
-    eval ("iwpriv", "ath0", "wds_add", var);
-  }*/
 
   char macaddr[32];
   getMacAddr (dev, macaddr);
@@ -1335,6 +1331,19 @@ configure_single (int count, int isbond)
       cprintf ("set ssid\n");
       eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
     }
+
+  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+    {
+      cprintf ("set channel\n");
+      char *ch = default_get (channel, "0");
+      if (strcmp (ch, "0") == 0)
+	{
+//      eval ("iwconfig", dev, "channel", "auto");
+	}
+      else
+	eval ("iwconfig", dev, "channel", ch);
+    }
+
 
   int maxpower = getMaxPower (dev);
   if (maxpower == -1)
