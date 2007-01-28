@@ -17,7 +17,7 @@ function forward_remove_submit(F) {
 
 function to_submit(F) {
 	F.change_action.value = "";
-	F.submit_button.value = "";
+	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
