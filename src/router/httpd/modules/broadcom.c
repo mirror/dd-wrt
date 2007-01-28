@@ -1882,7 +1882,8 @@ char *
 toUP (char *a)
 {
   int i;
-  for (i = 0; i < strlen (a); i++)
+  int slen=strlen(a);
+  for (i = 0; i < slen; i++)
     {
       if (a[i] > 'a' - 1 && a[i] < 'z' + 1)
 	a[i] -= 'a' + 'A';
@@ -2633,52 +2634,19 @@ validate_cgi (webs_t wp)
 {
   char *value;
   int i;
-//int count=0;
-//int argcount=0;
-//struct variable *var;
-//FILE *out;
-/*
-Initnvramtab();
-while(variables[count]!=NULL)
-{
-fprintf(out,"%s %s %d %d ARGS:",variables[count]->name,variables[count]->longname,variables[count]->nullok,variables[count]->ezc_flags);
-argcount=0;
-var=variables[count];
-if (var->argv!=NULL)
- {
- while (var->argv[argcount]!=NULL)
-    {
-    fprintf(out,"%s;",var->argv[argcount]);
-    argcount++;
-    }
-    fprintf(out,"\n");
- }
-count++;
-}
-
-fclose(out);
-*/
-//out=fopen("/tmp/dump.nv","wb");
-//fprintf(out,"getting array_size\n");
-//fflush(out);
 #ifdef HAVE_MACBIND
   if (!nvram_match ("et0macaddr", MACBRAND))
     return;
 #endif
-  for (i = 0; i < variables_arraysize (); i++)
+int alen=variables_arraysize();
+  for (i = 0; i < alen; i++)
     {
       if (variables[i] == NULL)
 	return;
-//              fprintf(out,"getting websgetvar %s\n",variables[i]->name);
-//              fflush(out);
-      cprintf ("get %s\n", variables[i]->name);
       value = websGetVar (wp, variables[i]->name, NULL);
       if (!value)
 	continue;
-      cprintf ("validate %s\n", value);
 
-//              fprintf(out,"name: %s value: %s\n",variables[i]->name,value);
-//              fflush(out);
       if ((!*value && variables[i]->nullok)
 	  || (!variables[i]->validate && !variables[i]->validate2))
 	nvram_set (variables[i]->name, value);
@@ -2686,28 +2654,16 @@ fclose(out);
 	{
 	  if (variables[i]->validate)
 	    {
-	      cprintf (" use primary validator \n");
 	      variables[i]->validate (wp, value, variables[i]);
 	    }
 	  else
 	    {
-	      cprintf (" use secondary validator \n");
 	      variables[i]->validate2 (wp);
 	    }
 	}
-      cprintf ("done()");
 
-
-
-//      if ((!*value && variables[i]->nullok) || !variables[i]->validate)
-//      nvram_set (variables[i]->name, value);
-//      else
-//      variables[i]->validate (wp, value, variables[i]);
-//              fprintf(out,"okay\n");
-//              fflush(out);
     }
   cprintf ("all vars validated\n");
-//    fclose(out);
 }
 
 

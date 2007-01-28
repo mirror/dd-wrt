@@ -669,8 +669,10 @@ macro_rem (char *a, char *nv)
 	  buffer = nvram_safe_get (nv);
 	  if (buffer != NULL)
 	    {
-	      b = malloc (strlen (buffer) + 1);
-	      for (i = 0; i < strlen (buffer); i++)
+	      int slen=strlen(buffer);
+	      b = malloc (slen + 1);
+	      
+	      for (i = 0; i < slen; i++)
 		{
 		  if (buffer[i] == ' ')
 		    cnt++;
@@ -1234,7 +1236,8 @@ void
 rep (char *in, char from, char to)
 {
   int i;
-  for (i = 0; i < strlen (in); i++)
+  int slen=strlen(in);
+  for (i = 0; i < slen; i++)
     if (in[i] == from)
       in[i] = to;
 
@@ -2124,8 +2127,8 @@ remove_vifs_single (char *prefix)
   char copy[128];
   strcpy (copy, vifs);
   int i;
-
-  for (i = 0; i < strlen (copy); i++)
+  int slen=strlen(copy);
+  for (i = 0; i < slen; i++)
     {
       if (copy[i] == 0x20)
 	o = i;
@@ -4532,7 +4535,8 @@ qos_add_svc (webs_t wp)
 
   if (strcmp (protocol, "l7") == 0)
     {
-      for (i = 0; i < strlen (add_svc); i++)
+      int slen=strlen(add_svc);
+      for (i = 0; i < slen; i++)
 	add_svc[i] = tolower (add_svc[i]);
     }
 
@@ -4693,7 +4697,8 @@ qos_save (webs_t wp)
 
       if (strcmp (protocol, "l7") == 0)
 	{
-	  for (j = 0; j < strlen (name); j++)
+	int slen=strlen(name);
+	  for (j = 0; j < slen; j++)
 	    name[j] = tolower (name[j]);
 	}
 
@@ -5565,7 +5570,8 @@ string_search (char *string, char *search)
     {
       return (0);		// this can't match
     }
-  for (i = 0; i < strlen (string) - searchLen; i++)
+  int slen=strlen(string);
+  for (i = 0; i < slen - searchLen; i++)
     {				//+1 removed. 
       if (!strncasecmp ((char *) &string[i], search, searchLen))
 	{
