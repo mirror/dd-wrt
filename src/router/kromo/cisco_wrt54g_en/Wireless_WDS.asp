@@ -58,7 +58,7 @@ addEvent(window, "load", function() {
          <div id="content">
             <div id="header">
                <div id="logo"><h1><%% show_control(); %%></h1></div>
-               <%% do_menu("Wireless_Basic.asp","Wireless_WDS.asp"); %%>
+               <%% do_menu("Wireless_Basic.asp","Wireless_WDS-%s.asp"); %%>
             </div>
             <div id="main">
                <div id="contents">
