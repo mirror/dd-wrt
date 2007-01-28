@@ -91,9 +91,12 @@ startswith (char *source, char *cmp)
     return 0;
   if (source == NULL)
     return 0;
-  if (strlen (cmp) > strlen (source))
+  int slen=strlen(source);
+  int clen=strlen(cmp);
+  if (clen > slen)
     return 0;
-  for (i = 0; i < strlen (cmp); i++)
+  
+  for (i = 0; i < clen; i++)
     if (source[i] != cmp[i])
       return 0;
   return 1;
