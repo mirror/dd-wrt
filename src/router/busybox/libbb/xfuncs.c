@@ -81,13 +81,14 @@ char * xstrndup(const char *s, int n)
 	t = (char*) s;
 	while (m) {
 		if (!*t) break;
-		m--; t++;
+		m--;
+		t++;
 	}
-	n = n - m;
+	n -= m;
 	t = xmalloc(n + 1);
 	t[n] = '\0';
 
-	return memcpy(t,s,n);
+	return memcpy(t, s, n);
 }
 
 // Die if we can't open a file and return a FILE * to it.
@@ -183,14 +184,17 @@ pid_t spawn(char **argv)
 	/* Why static? */
 	static int failed;
 	pid_t pid;
-	void *app = ENABLE_FEATURE_SH_STANDALONE_SHELL ? find_applet_by_name(argv[0]) : 0;
+	char *prog;
 
 	// Be nice to nommu machines.
 	failed = 0;
 	pid = vfork();
 	if (pid < 0) return pid;
 	if (!pid) {
-		execvp(app ? CONFIG_BUSYBOX_EXEC_PATH : *argv, argv);
+		prog = argv[0];
+		if (ENABLE_FEATURE_EXEC_PREFER_APPLETS && find_applet_by_name(prog))
+			prog = CONFIG_BUSYBOX_EXEC_PATH;
+		execvp(prog, argv);
 
 		// We're sharing a stack with blocked parent, let parent know we failed
 		// and then exit to unblock parent (but don't run atexit() stuff, which
@@ -339,8 +343,8 @@ char *bin2hex(char *p, const char *cp, int count)
 	while (count) {
 		unsigned char c = *cp++;
 		/* put lowercase hex digits */
-		*p++ = 0x10 | bb_hexdigits_upcase[c >> 4];
-		*p++ = 0x10 | bb_hexdigits_upcase[c & 0xf];
+		*p++ = 0x20 | bb_hexdigits_upcase[c >> 4];
+		*p++ = 0x20 | bb_hexdigits_upcase[c & 0xf];
 		count--;
 	}
 	return p;
@@ -514,7 +518,7 @@ void bb_sanitize_stdio_maybe_daemonize(int daemonize)
 	int fd;
 	/* Mega-paranoid */
 	fd = xopen(bb_dev_null, O_RDWR);
-	while (fd < 2)
+	while ((unsigned)fd < 2)
 		fd = dup(fd); /* have 0,1,2 open at least to /dev/null */
 	if (daemonize) {
 		pid_t pid = fork();
@@ -564,7 +568,7 @@ void xlisten(int s, int backlog)
 }
 
 // xstat() - a stat() which dies on failure with meaningful error message
-void xstat(char *name, struct stat *stat_buf)
+void xstat(const char *name, struct stat *stat_buf)
 {
 	if (stat(name, stat_buf))
 		bb_perror_msg_and_die("can't stat '%s'", name);
@@ -572,7 +576,7 @@ void xstat(char *name, struct stat *stat_buf)
 
 /* It is perfectly ok to pass in a NULL for either width or for
  * height, in which case that value will not be set.  */
-int get_terminal_width_height(int fd, int *width, int *height)
+int get_terminal_width_height(const int fd, int *width, int *height)
 {
 	struct winsize win = { 0, 0, 0, 0 };
 	int ret = ioctl(fd, TIOCGWINSZ, &win);
