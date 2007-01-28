@@ -1260,7 +1260,10 @@ start_lan (void)
   /* Bring up and configure LAN interface */
   ifconfig (lan_ifname, IFUP, nvram_safe_get ("lan_ipaddr"),
 	    nvram_safe_get ("lan_netmask"));
-
+//add fallback ip
+char staticlan[32];
+sprintf(staticlan,"%s:1",lan_ifname);
+  ifconfig (lan_ifname, IFUP, "169.254.255.1","255.255.255.0");
 
   /* Get current LAN hardware address */
 
