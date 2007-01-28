@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+<TITLE>CHYBA: Pozadovany dokument je nedostupny</TITLE>
+<STYLE type="text/css"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}PRE{font-family:sans-serif}--></STYLE>
+</HEAD><BODY>
+<H1>CHYBA</H1>
+<H2>Požadovaný dokument je nedostupný</H2>
+<HR noshade size="1px">
+<P>
+Pri pokuse o prístup k:
+<A HREF="%U">%U</A>
+<P>
+došlo k nasledovnej chybe:
+<UL>
+<LI>
+<STRONG>
+The request or reply is too large.
+</STRONG>
+</UL>
+
+<P>
+Ak odosielate POST alebo PUT požiadavku, tak telo Vašej požiadavky
+(tá vec, ktorú sa snažíte odoslať na server) je priveľké. Ak odosielate GET
+požiadavku, tak telo odpovede (to, čo sa snažíte prevziať zo servera) je
+priveľké. Tieto obmedzenia boli stanovené Internet Service Providerom ktorý
+prevádzkuje túto cache. Kontaktujte ho prosím priamo ak si myslíte, že toto
+obmedzenie je chybné.
+</P>
+
+<P>Vaším cache administrátorom je <A HREF="mailto:%w">%w</A>.</P>
