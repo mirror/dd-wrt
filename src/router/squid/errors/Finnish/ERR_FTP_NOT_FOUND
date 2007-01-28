@@ -1,0 +1,22 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>VIRHE: Pyydetty&auml; osoitetta ei voitu hakea</TITLE>
+<STYLE type="text/css"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}PRE{font-family:sans-serif}--></STYLE>
+</HEAD><BODY>
+<H1>VIRHE</H1>
+<H2>Pyydetty&auml; osoitetta ei voitu hakea</H2>
+<HR noshade size="1px">
+<P>
+Osoitetta <A HREF="%U">%U</A> ei voitu hakea.
+<P>
+Squid l&auml;hetti seuraavan FTP-komennon:
+<blockquote><strong><pre>%f</pre></strong></blockquote>
+ja sai seuraavan vastauksen:
+<blockquote><strong><pre>%F</pre></strong></blockquote>
+<blockquote><strong><pre>%g</pre></strong></blockquote>
+<P>
+T&auml;m&auml;n saattaa aiheuttaa FTP-osoite, jossa on absoluutinen
+polku (mik&auml; ei ole RFC:n 1738 mukaista). Jos syyn&auml; on t&auml;m&auml;,
+niin tiedosto l&ouml;ytyy osoitteesta <A HREF="%B">%B</A>.
+<P>V&auml;lityspalvelintasi yll&auml;pit&auml;&auml; <A HREF="mailto:%w">%w</A>.
+

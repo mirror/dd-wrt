@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<TITLE>VIRHE: Pyydetty&auml; osoitetta ei voitu hakea</TITLE>
+<STYLE type="text/css"><!--BODY{background-color:#ffffff;font-family:verdana,sans-serif}PRE{font-family:sans-serif}--></STYLE>
+</HEAD><BODY>
+<H1>VIRHE</H1>
+<H2>Pyydetty&auml; osoitetta ei voitu hakea</H2>
+<HR noshade size="1px">
+<P>
+Yritett&auml;ess&auml; hakea osoitetta:
+<A HREF="%U">%U</A>
+<P>
+Tapahtui seuraava virhe:
+<UL>
+<LI>
+<STRONG>
+Joko pyynt&ouml; tai vastaus on liian iso.
+</STRONG>
+<P>
+Jos l&auml;het&auml;t POST- tai PUT-pyynt&ouml;&auml;, niin pyynt&ouml;si runko
+(se tavara, jota yrit&auml;t l&auml;hett&auml;&auml;) on liian iso. Jos olet
+tekem&auml;ss&auml; GET-pyynt&ouml;&auml;, niin vastauksen runko (se, mit&auml; yrit&auml;t
+ladata) on liian iso. N&auml;m&auml; rajoitukset on asettanut
+Internet-palvelusi tarjoaja, joka yll&auml;pit&auml;&auml; t&auml;t&auml; v&auml;lityspalvelinta.
+Ota yhteytt&auml; heihin, jos rajoitus on sinusta virheellinen.
+</UL>
+<P>V&auml;lityspalvelintasi yll&auml;pit&auml;&auml; <A HREF="mailto:%w">%w</A>.
