@@ -502,19 +502,20 @@ deconfigure_single (int count)
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
   char vifs[128];
-  sprintf(vifs,"%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9",dev,dev,dev,dev,dev,dev,dev,dev,dev);
-    foreach (var, vifs, next)
-    {
-      if (ifexists (var))
-	{
-	  eval ("wlanconfig", var, "destroy");
-	}
-    }
+  sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
+	   dev, dev, dev, dev, dev, dev, dev);
+  foreach (var, vifs, next)
+  {
+    if (ifexists (var))
+      {
+	eval ("wlanconfig", var, "destroy");
+      }
+  }
 
   int s;
   for (s = 1; s <= 10; s++)
     {
-      sprintf (dev, "wdsath%d.%d", count,s);
+      sprintf (dev, "wdsath%d.%d", count, s);
       if (ifexists (dev))
 	{
 	  br_del_interface ("br0", dev);
@@ -852,7 +853,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "own_ip_addr=%s\n", nvram_safe_get ("lan_ipaddr"));
 	  fprintf (fp, "eap_server=0\n");
 	  fprintf (fp, "auth_algs=1\n");
-          fprintf (fp, "radius_retry_primary_interval=60\n");
+	  fprintf (fp, "radius_retry_primary_interval=60\n");
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
 
@@ -986,7 +987,7 @@ set_netmode (char *wif, char *dev)
 	      eval ("iwpriv", dev, "xr", "0");
 	    }
 	}
-    eval("iwpriv",dev,"wmm","0");
+      eval ("iwpriv", dev, "wmm", "0");
 
 #ifndef HAVE_FONERA
       char *wid = nvram_get (bw);
@@ -1159,9 +1160,9 @@ configure_single (int count, int isbond)
       char *wdsdev;
       char *hwaddr;
 
-      sprintf (wdsvarname, "%s_wds%d_enable", dev,s);
-      sprintf (wdsdevname, "%s_wds%d_if", dev,s);
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev,s);
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
+      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
       wdsdev = nvram_safe_get (wdsdevname);
       if (strlen (wdsdev) == 0)
 	continue;
@@ -1186,9 +1187,6 @@ configure_single (int count, int isbond)
   //confige net mode
 
 
-  set_netmode (wif, dev);
-
-
   if (strcmp (m, "sta") && strcmp (m, "wdssta"))
     {
       cprintf ("set channel\n");
@@ -1198,8 +1196,11 @@ configure_single (int count, int isbond)
 //      eval ("iwconfig", dev, "channel", "auto");
 	}
       else
-	eval ("iwconfig", dev, "channel", ch);
+	eval ("iwconfig", dev, "channel", "0");
     }
+  set_netmode (wif, dev);
+
+
 
   char macaddr[32];
   getMacAddr (dev, macaddr);
@@ -1243,27 +1244,6 @@ configure_single (int count, int isbond)
       else
 	setupSupplicant (var);
 
-      eval ("ifconfig", var, "0.0.0.0", "up");
-      if (strcmp (m, "sta") && strcmp (m, "infra"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), var);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", var);
-	      sprintf (mask, "%s_ipaddr", var);
-	      ifconfig (var, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-	}
       setMacFilter (var);
       cnt++;
     }
@@ -1302,31 +1282,7 @@ configure_single (int count, int isbond)
   else
     eval ("iwpriv", dev, "shpreamble", "0");
 
-  eval ("ifconfig", dev, "0.0.0.0", "up");
-  if (strcmp (m, "sta") && strcmp (m, "infra"))
-    {
-      if (nvram_match ("wifi_bonding", "0"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", dev);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", dev);
-	      sprintf (mask, "%s_ipaddr", dev);
-	      ifconfig (dev, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-	}
-    }
-  else
+  if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0)
     {
       cprintf ("set ssid\n");
       eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
@@ -1357,20 +1313,69 @@ configure_single (int count, int isbond)
   cprintf ("adjust power\n");
 
   int newpower = atoi (default_get (power, "28"));
-//limit power if needed
-/*  if (newpower > maxpower)
-    {
-      newpower = maxpower;
-      char powerset[32];
-      sprintf (powerset, "%d", newpower);
-      nvram_set (power, powerset);
-    }*/
   cprintf ("new power limit %d\n", newpower);
   sprintf (var, "%dmW", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
   setMacFilter (dev);
   cprintf ("done()\n");
+//netconfig
+  eval ("ifconfig", dev, "0.0.0.0", "up");
+
+  if (strcmp (m, "sta") && strcmp (m, "infra"))
+    {
+      if (nvram_match ("wifi_bonding", "0"))
+	{
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", dev);
+	  if (default_match (bridged, "1", "1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", dev);
+	      sprintf (mask, "%s_ipaddr", dev);
+	      ifconfig (dev, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
+	}
+    }
+// vif netconfig
+  vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+
+      eval ("ifconfig", var, "0.0.0.0", "up");
+      if (strcmp (m, "sta") && strcmp (m, "infra"))
+	{
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", var);
+	  if (default_match (bridged, "1", "1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), var);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", var);
+	      sprintf (mask, "%s_ipaddr", var);
+	      ifconfig (var, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
+	}
+    }
+
 }
 
 void
