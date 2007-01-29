@@ -17,7 +17,7 @@
 
 //#include <linux/ixp425-gpio.h>
 
-#include <include/asm-arm/hardware.h>
+#include <include/asm/hardware.h>
 #include <include/asm-arm/arch-ixp4xx/ixp4xx-regs.h>
 
 #define IXP4XX_GPIO_OUT 		0x1
