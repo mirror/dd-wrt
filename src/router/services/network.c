@@ -1262,8 +1262,8 @@ start_lan (void)
 	    nvram_safe_get ("lan_netmask"));
 //add fallback ip
 char staticlan[32];
-sprintf(staticlan,"%s:1",lan_ifname);
-  ifconfig (lan_ifname, IFUP, "169.254.255.1","255.255.255.0");
+sprintf(staticlan,"%s:0",lan_ifname);
+  eval("ifconfig",staticlan,"169.254.255.1","netmask","255.255.255.0");
 
   /* Get current LAN hardware address */
 
