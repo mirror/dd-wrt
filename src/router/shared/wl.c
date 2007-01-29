@@ -585,11 +585,15 @@ getassoclist (char *ifname, unsigned char *list)
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
+    {
+    close(s);
     return -1;
+    }
   int cnt = 0;
   cp = buf;
   unsigned char *l = (unsigned char *) list;
   uint *count = (uint *) list;
+  count[0]=0;
   l += 4;
   do
     {
