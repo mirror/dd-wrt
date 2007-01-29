@@ -1232,6 +1232,7 @@ configure_single (int count, int isbond)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
+      eval ("iwpriv",var,"bgscan","0");
       eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt"));
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
@@ -1264,6 +1265,7 @@ configure_single (int count, int isbond)
   eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
+  eval ("iwpriv",dev,"bgscan","0");
   m = default_get (wl, "ap");
 
   cprintf ("setup encryption");
