@@ -363,11 +363,15 @@ main (int argc, char **argv)
 #ifdef DEBUG
       puts ("get assoc list");
 #endif
-      getassoclist (iface, buf);
+      int cnt=getassoclist (iface, buf);
+	
 #ifdef DEBUG
       puts ("done()");
 #endif
       pos = buf;
+      if (cnt==-1)
+	num=0;
+      else
       memcpy (&num, pos, 4);	/* TODO: This really is struct maclist */
       pos += 4;
 #ifdef DEBUG
