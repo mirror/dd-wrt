@@ -30,17 +30,20 @@ vpath %.c $(SRCBASE)/tools/misc
 
 vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
-UTILS += showmac gpio
+UTILS += showmac
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
+endif
+ifeq ($(CONFIG_XSCALE),y)
+UTILS += gpio
 endif
 
 ifeq ($(ARCHITECTURE),newmedia)
 all:
 	$(CC) -o mtd -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
 	$(CC) -o epi_ttcp -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
-	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
+#	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
 all: $(UTILS)
 endif
@@ -56,7 +59,7 @@ install: all
 #	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
 ifeq ($(ARCH),armeb)
 	install -d $(INSTALLDIR)/sbin
-	install jffs2root $(INSTALLDIR)/sbin	
+#	install jffs2root $(INSTALLDIR)/sbin	
 else
 
 ifneq ($(CONFIG_MADWIFI),y)
