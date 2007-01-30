@@ -3780,21 +3780,17 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
   struct iwreq iwr;
   if (!ifexists (ifname))
     return cnt;
-//  fprintf(stderr,"open socket\n");
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
       return cnt;
     }
- // fprintf(stderr,"memset for %s\n",ifname);
   (void) memset (&iwr, 0, sizeof (struct iwreq));
- // fprintf(stderr,"strcpy %s\n",ifname);
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   unsigned char *buf = (unsigned char *) malloc (24 * 1024);
   iwr.u.data.pointer = (void *) buf;
   iwr.u.data.length = 24 * 1024;
- // fprintf(stderr,"getstainfo %s\n",ifname);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
@@ -3821,7 +3817,6 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	websWrite (wp, ",");
       cnt++;
       char mac[32];
- // fprintf(stderr,"copy mac %s\n",ifname);
       strcpy (mac, ieee80211_ntoa (si->isi_macaddr));
       if (nvram_match ("maskmac", "1"))
 	{
@@ -3849,15 +3844,12 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 		     rssi2dbm (si->isi_rssi), si->isi_noise,
 		     rssi2dbm (si->isi_rssi) - (si->isi_noise));
 	}
-  //fprintf(stderr,"increase pointer %s\n",ifname);
-      cp += si->isi_len, len -= si->isi_len;
+      cp += si->isi_len;
+      len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-  //fprintf(stderr,"close socket %s\n",ifname);
   free (buf);
-  //fprintf(stderr,"return %s\n",ifname);
   close (s);
- // fprintf(stderr,"free buffer %s\n",ifname);
 
   return cnt;
 }
