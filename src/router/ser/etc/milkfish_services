@@ -1,0 +1,442 @@
+#!/bin/sh
+# The Milkfish Router Services
+# Author: fronce@users.berlios.de
+# Website: milkfish.org
+# License: GPL
+# Date: 061216
+
+. /usr/lib/milkfish_functions.sh
+
+mf_printhelp () {
+    mf_feedback "Usage: milkfish_services <service> [<action> [ <argument1> [ <argument2> ] ] ]"
+    echo "Valid <service> options are:"
+    echo " "
+    echo "audit          : Auditing service for measuring the availability and uptime"
+    echo "fwtest         : Firewall test utility performing a quick portscan"
+    echo "homesip        : Dynamic SIP service routing personal FQDN calls to the WAN IP address"
+    echo "simple         : Send an instant SIP/SIMPLE message - arguments: destination-sip:uri:port message"
+    echo "sipdb          : Local SIP user database management services"    
+    #echo "dyndns         : Dynamic DNS service updating your DDNS service with the WAN IP address"
+    echo "pppoe-reconnect: Checks whether a PPPoE reconnect is necessary and performs one if so"
+    echo "status         : Check for registration status and service activation at milkfish.org"
+    echo "start          : Activates the Milkfish Services (starts a background process)"
+    echo "                 All enabled services will be updated automatically"
+    echo "stop           : Stop the Milkfish Services (ends all background processes)"
+    echo "                 All enabled services will NOT be updated automatically"
+    echo "help           : Show this manual"
+    echo " "
+    echo "Valid <action> options for the audit service are:"
+    echo " "
+    echo "router         : Manually updates the router audit once"
+    echo "openser        : Manually updates the $SERNAME audit once (if $SERNAME is running)"
+    echo "results        : Download and display the actual audit results for this router"
+    echo "activate       : Activate the Audit Service at milkfish.org"
+    echo "deactivate     : Deactivate the Audit Service at milkfish.org"
+    echo " "
+    echo "Valid <action> options for the sipdb service are:"
+    echo " "
+    echo "store          : Stores the volatile SIP user database to flash memory"
+    echo "restore        : Restores SIP user database from flash memory"
+    echo "flush          : Flushes the volatile SIP user database (not the persistent one)"
+    echo "adduser        : Adds a user to the volatile SIP user database - arguments: username password"
+    echo "rmuser         : Removes a user from the volatile SIP user database - argument: username"
+    echo "addalias       : Adds an alias to the volatile SIP user database - arguments: alias uri"
+    echo "rmalias        : Removes an alias from the volatile SIP user database - argument: alias"
+    echo "rmlocation     : Removes an active location from the volatile SIP user database - argument: location"
+    echo "                 Locations are associated to every active account, this means"
+    echo "                 also to UAs only using the Outbound Proxy feature."
+    echo " "
+    echo "Security Note  : Install the curl packages to enable SSL secured services"
+    echo " "
+}
+
+SERNAME="OpenSER"
+OPENSERPIDFILE=/var/run/openser.pid
+RTPPROXYPIDFILE=/var/run/rtpproxy.pid
+TIMESTAMPFILE=/var/log/ip-up.log
+RUNDIR=/var/run
+BASENAME=$(basename $0)
+LOGGER=$(which logger)
+
+##################################################
+
+AUDITSWITCH=$(mf_load_setting milkfish_audit)
+DYNSIPSWITCH=$(mf_load_setting milkfish_dynsip)
+PPPTIME=$(mf_load_setting milkfish_ppptime)
+USERNAME=$(mf_load_setting milkfish_username)
+PASSWORD=$(mf_load_setting milkfish_password)
+ROUTERID=$(mf_load_setting milkfish_routerid)
+DOMAIN=$USERNAME.homesip.net
+DYNSIPIP="something"
+#
+
+DDNSUSERNM=$(mf_load_setting ddns_username)
+DDNSPASSWD=$(mf_load_setting ddns_passwd)
+DDNSHOSTNM=$(mf_load_setting ddns_hostname)
+DDNSSERVER=$(mf_load_setting ddns_server)
+DDNSSWITCH=$(mf_load_setting ddns_enable)
+DDNSDCACHE=$DYNSIPIP 
+#DDNSDCACHE=$(nslookup $DDNSHOSTNM|sed s/[^0-9.]//g|tail -n1)
+
+
+case $1 in
+    h)
+	mf_printhelp
+	exit 0
+      ;;
+    -h)
+	mf_printhelp
+	exit 0
+      ;;
+    -help)
+	mf_printhelp
+	exit 0
+      ;;
+    --help)          
+	mf_printhelp
+	exit 0
+      ;;
+    help)
+	mf_printhelp
+	exit 0
+      ;;
+    rw)
+	[ -e "$2" ] && mf_rw $2 && mf_feedback "Copying $2 to $2..."
+	exit 0
+      ;;
+    reboot)
+	mf_reboot
+	exit 0
+      ;;
+    status)
+	mf_settings_check milkfish_username $USERNAME
+	mf_settings_check milkfish_password $PASSWORD
+	mf_services_status
+	exit 0
+      ;;
+    simple)
+	CHECK2=${2:-NULL}
+	if [ $CHECK2 = "NULL" ] ; then
+	    mf_printhelp
+	    echo "ERROR: $CHECK2 is not a valid destination for service $1 - aborting"
+	    exit 1
+	fi
+	mf_feedback "Sending SIMPLE message to $2 ..."
+	mf_simple $2 $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15 $16
+	exit 0
+      ;;
+    sipdb)
+        case $2 in
+        store)
+	    mf_sipdb_store
+	    exit 0
+	  ;;
+	restore)
+	    mf_sipdb_restore
+	    exit 0
+	  ;;
+	flush)
+	    mf_sipdb_flush
+	    exit 0
+	  ;;
+	adduser)
+	    CHECK3=${3:-NULL}
+	    if [ $CHECK3 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK3 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    CHECK4=${4:-NULL}
+	    if [ $CHECK4 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK4 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    mf_feedback "Trying to add user $3 with password $4 to user database..."
+	    mf_sipdb_adduser $3 $4
+	    exit 0
+	  ;;
+	rmuser)
+	    CHECK3=${3:-NULL}
+	    if [ $CHECK3 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK3 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    mf_feedback "Trying to remove user $3 from user database..."
+	    mf_sipdb_rmuser $3
+	    exit 0
+	  ;;
+	addalias)
+	    CHECK3=${3:-NULL}
+	    if [ $CHECK3 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK3 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    CHECK4=${4:-NULL}
+	    if [ $CHECK4 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK4 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    mf_feedback "Trying to add alias $3 for the uri $4 to user database..."
+	    mf_sipdb_addalias $3 sip\\:$4
+	    exit 0
+	  ;;
+	rmalias)
+	    CHECK3=${3:-NULL}
+	    if [ $CHECK3 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK3 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    mf_feedback "Trying to remove alias $3 from user database..."
+	    mf_sipdb_rmalias $3
+	    exit 0
+	  ;;
+	rmlocation)
+	    CHECK3=${3:-NULL}
+	    if [ $CHECK3 = "NULL" ] ; then
+		mf_printhelp
+		echo "ERROR: $CHECK3 is not a valid argument for action $2 of service $1 - aborting"
+		exit 1
+	    fi
+	    mf_feedback "Trying to remove location $3 from user database..."
+	    mf_sipdb_rmlocation $3
+	    exit 0
+	  ;;
+	*)
+	 CHECK=${2:-NULL}
+	 mf_printhelp
+	 echo "ERROR: $CHECK is not a valid action for service $1 - aborting"
+	 exit 1
+	  ;;
+	esac
+	exit 0
+      ;;    
+    imdb)
+        case $2 in
+	store)
+	    mf_imdb_store
+	    exit 0
+	  ;;
+	*)
+	 CHECK=${2:-NULL}
+	 mf_printhelp
+	 echo "ERROR: $CHECK is not a valid action for service $1 - aborting"
+	 exit 1
+	  ;;
+	esac
+	exit 0
+      ;;    
+    openserctl)
+	CHECK=${2:-NULL}
+	if [ $CHECK = "NULL" ] ; then
+	    mf_feedback "ERROR: $CHECK is not a valid action for service $1 - aborting"
+	    exit 1
+	fi
+	milkfish_services audit openser
+	mf_openserctl $2
+	exit 0
+      ;;
+    backup)
+	mf_backup
+	exit 0
+      ;;
+    audit)
+	mf_settings_check milkfish_username $USERNAME
+	mf_settings_check milkfish_password $PASSWORD
+	mf_switch_check milkfish_audit ${AUDITSWITCH:-off} Audit ${3:-doexit}
+        case $2 in
+	activate)
+	    mf_audit_activate
+	    exit 0
+	 ;;
+	deactivate)
+	    mf_audit_deactivate
+	    exit 0
+	 ;;
+        router)
+        if [ $(which curl) ] ; then
+	    mf_routeraudit_curl $3
+        else 
+    	    mf_routeraudit_wget $3
+        fi
+        exit 0
+         ;;
+        openser)
+          if [ $(which curl) ] ; then
+            mf_seraudit_curl
+          else
+            mf_seraudit_wget
+          fi 
+         exit 0
+         ;;
+	results)
+	  #mf_feedback "ERROR: Not implemented yet."
+	  mf_audit_results
+	  exit 0
+	 ;;
+	*)
+	 CHECK=${2:-NULL}
+	 mf_feedback "ERROR: $CHECK is not a valid action for service $1 - aborting"
+	 exit 1
+	 ;;
+	esac
+	;;
+    fwtest)
+	if [ $(which curl) ] ; then
+	    mf_fwtest_curl
+	else
+	    mf_fwtest_wget
+	fi
+	exit 0
+	;;
+    homesip)
+	mf_settings_check milkfish_username $USERNAME
+	mf_settings_check milkfish_password $PASSWORD
+	mf_switch_check milkfish_dynsip ${DYNSIPSWITCH:-off} Homesip doexit
+	mf_dynsip_update verbose
+	exit 0
+	;;
+    dyndns)
+	mf_settings_check milkfish_username $USERNAME
+	mf_settings_check milkfish_password $PASSWORD
+	mf_switch_check ddns_enable ${DDNSSWITCH:-off} DDNS doexit
+	mf_feedback "ERROR: Not implemented yet."
+	exit 0
+	#mf_ddns_wget
+	;;
+    pppoe-reconnect)
+	mf_ppptime
+	exit 0
+	;;
+    stop)
+        mf_feedback "Stopping..."
+	[ -e "$RUNDIR/mf_services.lock" ] && echo "NOTE: Removing lockfile..." && rm $RUNDIR/mf_services.lock
+        kill -TERM $(ps | grep milkfish_services | grep -v "grep milkfish_services" | awk '{print $1}')
+        exit 0
+	;;
+    start)
+	if [ -e "$RUNDIR/mf_services.lock" ]; then
+	  mf_feedback "NOTE: Lockfile found - Services seem to be running already. Aborting."
+	  exit 1
+	else
+	  touch $RUNDIR/mf_services.lock
+	fi
+	mf_printdaemon
+	;;
+    *)
+#        AUDITPRCS=$(ps | grep milkfish_services | wc -l | awk '{print $1}' )
+#        if [ $AUDITPRCS -gt 4 ]; then
+#	  mf_printhelp
+#	  #mf_feedback "NOTE: Running as daemon"
+#	  echo "NOTE: Running as daemon"
+#	  exit 1
+#	fi
+#	if [ -e "$RUNDIR/mf_services.lock" ]; then
+#	  mf_printhelp
+#	  mf_feedback "NOTE: Lockfile found - Services seem to be running already. Aborting."
+#	  exit 1
+#	else
+#	  touch $RUNDIR/mf_services.lock
+#	fi
+	mf_printhelp
+#	mf_printdaemon
+	exit 0
+	;;
+esac
+
+mf_settings_check milkfish_username $USERNAME
+mf_settings_check milkfish_password $PASSWORD
+#mf_settings_check milkfish_ $USERNAME
+
+
+#exit
+DLOOPS=0
+ALOOPS=1
+PLOOPS=3
+[ "$DYNSIPSWITCH" = "on" ] && DYNSIPIP=$(nslookup $DOMAIN|sed s/[^0-9.]//g|tail -n1)
+while :; do
+  {
+# Audit Section
+    if [ $ALOOPS -le 0 ]; then
+	AUDITSWITCH=$(mf_load_setting milkfish_audit)
+        if [ $AUDITSWITCH = "on" ] ; then
+            if [ $(which curl) ] ; then
+		mf_logging "Auditing router via https"
+                ALOOPS=$(mf_routeraudit_curl silent | awk '{print $9}');
+		if [ "$ALOOPS" != "badauth" ] ; then
+    		    if [ $ALOOPS ] ; then
+    	    		AUDITPRCS=$(mf_ser_procs)
+			if [ $AUDITPRCS -gt 4 ]; then
+			    mf_logging "Auditing SER via https"
+			    mf_seraudit_curl >> /dev/null;
+			fi
+		    fi
+		else
+		    mf_save_setting milkfish_audit=off
+		fi
+	    else
+		mf_logging "Auditing router via http"
+        	ALOOPS=$(mf_routeraudit_wget silent | awk '{print $9}');
+		#echo "$ALOOPS 1"
+		if [ "$ALOOPS" != "badauth" ] ; then
+	    	    if [ "$ALOOPS" ] ; then
+			AUDITPRCS=$(mf_ser_procs)
+			if [ $AUDITPRCS -gt 4 ] ; then
+			    mf_logging "Auditing SER via http"
+			    mf_seraudit_wget >> /dev/null;
+			fi
+		    fi
+		else
+		    mf_save_setting milkfish_audit=off
+		fi
+    	    fi    
+	fi
+	if [ "$ALOOPS" != "badauth" ] ; then
+	    if [ -z $ALOOPS ]; then
+		ALOOPS=5
+	    else
+		if [ $ALOOPS -lt 1 ]; then
+		    ALOOPS=5
+		fi
+	    fi
+	else
+	    ALOOPS=5
+	fi
+    else
+	let "ALOOPS--"
+    fi
+    
+# Homesip Section    
+    if [ $DLOOPS -le 0 ]; then
+	DYNSIPSWITCH=$(mf_load_setting milkfish_dynsip)
+        if [ $DYNSIPSWITCH = "on" ] ; then
+	    mf_dynsip_update >> /dev/null
+	fi
+	DLOOPS=5
+    else
+	let "DLOOPS--"
+    fi
+
+# PPPoE Section    
+    if [ $PLOOPS -le 0 ]; then
+	mf_logging "PPPoE reconnect check"
+	mf_ppptime >> /dev/null
+	PLOOPS=50
+    else
+	let "PLOOPS--"
+    fi
+
+# Looptime Unit Section
+    sleep 60
+  }
+#  while [ $LOOPS -gt 0 ]; do
+#  {
+#   let "LOOPS--"
+#   trap "exit 2" 0
+#  }
+#  done;  
+done &

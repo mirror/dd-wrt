@@ -1,0 +1,8 @@
+#!/bin/sh
+# The Milkfish Services 
+# Author: budrus@users.berlios.de
+# Website: milkfish.berlios.de
+# License: GPL
+
+$(which milkfish_services) start
+
