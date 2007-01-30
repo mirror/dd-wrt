@@ -211,7 +211,8 @@ struct rtpp_head;
 struct rtpp_node;
 
 static int nat_uac_test_f(struct sip_msg* msg, char* str1, char* str2);
-static int fix_nated_contact_f(struct sip_msg *, char *, char *);
+static int fix_nated_contact0_f(struct sip_msg *, char *, char *);
+static int fix_nated_contact1_f(struct sip_msg *, char *, char *);
 static int fix_nated_sdp_f(struct sip_msg *, char *, char *);
 static int extract_mediaip(str *, str *, int *, char *);
 static int extract_mediaport(str *, str *);
@@ -297,7 +298,8 @@ static struct rtpp_head rtpp_list;
 static int rtpp_node_count = 0;
 
 static cmd_export_t cmds[] = {
-	{"fix_nated_contact",  fix_nated_contact_f,    0, 0,             REQUEST_ROUTE | ONREPLY_ROUTE | BRANCH_ROUTE},
+	{"fix_nated_contact", fix_nated_contact0_f,   0, 0,             REQUEST_ROUTE | ONREPLY_ROUTE | BRANCH_ROUTE},
+	{"fix_nated_contact", fix_nated_contact1_f,   1, 0,             REQUEST_ROUTE | ONREPLY_ROUTE | BRANCH_ROUTE},
 	{"fix_nated_sdp",      fix_nated_sdp_f,        1, fixup_str2int, REQUEST_ROUTE | ONREPLY_ROUTE | FAILURE_ROUTE | BRANCH_ROUTE},
 	{"unforce_rtp_proxy",  unforce_rtp_proxy_f,    0, 0,             REQUEST_ROUTE | ONREPLY_ROUTE | FAILURE_ROUTE | BRANCH_ROUTE},
 	{"force_rtp_proxy",    force_rtp_proxy0_f,     0, 0,             REQUEST_ROUTE | ONREPLY_ROUTE | FAILURE_ROUTE | BRANCH_ROUTE},
@@ -676,7 +678,7 @@ get_contact_uri(struct sip_msg* _m, struct sip_uri *uri, contact_t** _c)
  * of the packet.
  */
 static int
-fix_nated_contact_f(struct sip_msg* msg, char* str1, char* str2)
+fix_nated_contact1_f(struct sip_msg* msg, char* str1, char* str2)
 {
 	int offset, len, len1;
 	char *cp, *buf, temp[2];
@@ -684,6 +686,7 @@ fix_nated_contact_f(struct sip_msg* msg, char* str1, char* str2)
 	struct lump *anchor;
 	struct sip_uri uri;
 	str hostport;
+        unsigned short prt;  //milkfished nathelper
 
 	if (get_contact_uri(msg, &uri, &c) == -1)
 		return -1;
@@ -701,8 +704,18 @@ fix_nated_contact_f(struct sip_msg* msg, char* str1, char* str2)
 	hostport = uri.host;
 	if (uri.port.len > 0)
 		hostport.len = uri.port.s + uri.port.len - uri.host.s;
-
-	cp = ip_addr2a(&msg->rcv.src_ip);
+        //milkfished nathelper
+        if (*str1 == '\0')
+        {
+                cp = ip_addr2a(&msg->rcv.src_ip);
+                prt =  msg->rcv.src_port; 
+        }
+        else
+        {
+                cp = str1;
+                prt = 5060;
+        }
+        //milkfished nathelper
 	len = c->uri.len + strlen(cp) + 6 /* :port */ - hostport.len + 1;
 	buf = pkg_malloc(len);
 	if (buf == NULL) {
@@ -712,7 +725,7 @@ fix_nated_contact_f(struct sip_msg* msg, char* str1, char* str2)
 	temp[0] = hostport.s[0];
 	temp[1] = c->uri.s[c->uri.len];
 	c->uri.s[c->uri.len] = hostport.s[0] = '\0';
-	len1 = snprintf(buf, len, "%s%s:%d%s", c->uri.s, cp, msg->rcv.src_port,
+	len1 = snprintf(buf, len, "%s%s:%d%s", c->uri.s, cp, prt,
 	    hostport.s + hostport.len);
 	if (len1 < len)
 		len = len1;
@@ -726,6 +739,14 @@ fix_nated_contact_f(struct sip_msg* msg, char* str1, char* str2)
 	c->uri.len = len;
 
 	return 1;
+}
+
+static int
+fix_nated_contact0_f(struct sip_msg* msg, char* str1, char* str2)
+{
+	char arg[1] = {'\0'};
+
+	return fix_nated_contact1_f(msg, arg, NULL);
 }
 
 inline static int
@@ -1943,7 +1964,7 @@ force_rtp_proxy2_f(struct sip_msg* msg, char* str1, char* str2)
 			}
 		} /* Iterate medias in session */
 	} /* Iterate sessions */
-
+/* MILKFISH: no insertion of nortpproxy:yes as sometimes second rtpproxy in the internet is needed
 	if (proxied == 0) {
 		cp = pkg_malloc(ANORTPPROXY_LEN * sizeof(char));
 		if (cp == NULL) {
@@ -1963,7 +1984,7 @@ force_rtp_proxy2_f(struct sip_msg* msg, char* str1, char* str2)
 			return -1;
 		}
 	}
-
+*/
 	return 1;
 }
 
