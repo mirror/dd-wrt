@@ -1,0 +1,66 @@
+#!/bin/sh
+# The Milkfish Environment SIP Control
+# Author: budrus@users.berlios.de
+# Website: milkfish.berlios.de
+# License: GPL
+
+WAN=$(nvram get wan_ifname)
+LAN=$(nvram get lan_ifname)
+
+case "$1" in
+  start)
+        echo "Starting Milkfish SIP Environment"
+        # firewall configuration
+        iptables -t nat -A prerouting_rule -i $WAN -p udp --dport 5060 -j ACCEPT
+	iptables        -A input_rule      -i $WAN -p udp --dport 5060 -j ACCEPT
+        #Start OPENSER via openserctl if wan interface is configured with static ip (wan_proto!=pppoe)
+        if [ ! $(nvram get wan_proto) = pppoe ] ; then
+	  /usr/bin/rtpproxy -l $(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}')/$(ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')
+          /bin/sed "s/fix_nated_contact(\"*[0-9.]*\"*/fix_nated_contact(\"$(ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')\"/g" /etc/openser/milkfish_openser.cfg > /var/openser/milkfish_openser.cfg.tmp          
+          /bin/sed "s/listen=udp:\w*:5060 #lan/listen=udp:$LAN:5060 #lan/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+          /bin/sed "s/listen=udp:\w*:5060 #wan/listen=udp:$WAN:5060 #wan/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg.tmp
+          /bin/sed "s/listen=tcp:\w*:5061/listen=tcp:$WAN:5061/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+	  /bin/sed "s/(src_ip==[0-9./]*)/(src_ip==$(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}')\/$(ifconfig $LAN|awk 'sub("Mask:","") {print $4}'))/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg.tmp
+          MASK=$(ifconfig $LAN|awk 'sub("Mask:","") {print $4}')
+          if [ "$MASK" = 255.0.0.0 ]; then
+              NET=$(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1 -d.)
+          elif [ "$MASK" = 255.255.0.0 ]; then
+              NET=$(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1-2 -d.)
+          elif [ "$MASK" = 255.255.255.0 ]; then
+              NET=$(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}' | cut -f1-3 -d.)
+          fi
+          NET=$(echo $NET | /bin/sed "s/[.]/.0*/g")
+          NET=0*$NET
+          /bin/sed "s/sip:(.+)@[0-9.*]*/sip:(.+)@$NET/g" /var/openser/milkfish_openser.cfg.tmp > /var/openser/milkfish_openser.cfg.tmp2
+          if [ $(nvram get milkfish_fromswitch) = on ] ; then
+              /bin/sed "s/2@[a-zA-Z0-9.]*/2@$(nvram get milkfish_fromdomain)/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg
+          else 
+              /bin/sed "s/2@[a-zA-Z0-9.]*/2@$(ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')/g" /var/openser/milkfish_openser.cfg.tmp2 > /var/openser/milkfish_openser.cfg
+          fi
+          rm /var/openser/milkfish_openser.cfg.tmp
+          rm /var/openser/milkfish_openser.cfg.tmp2
+          sleep 3
+          /usr/sbin/openserctl start
+        fi
+        ;;
+   stop)
+        echo "Stopping Milkfish SIP Environment"
+        if [ -e /var/run/rtpproxy.pid ]; then
+          killall rtpproxy
+        fi
+        /usr/sbin/openserctl stop
+        ;; 
+   restart)
+        echo "Restarting Milkfish SIP Environment"
+        if [ -e /var/run/rtpproxy.pid ]; then
+          killall rtpproxy
+        fi
+        sleep 3
+	/usr/bin/rtpproxy -l $(ifconfig $LAN|awk 'sub("inet addr:","") {print $1}')/$(ifconfig $WAN|awk 'sub("inet addr:","") {print $1}')
+        /usr/sbin/openserctl restart        
+        ;;
+    *)
+  
+esac
+
+exit 0
