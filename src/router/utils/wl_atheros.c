@@ -6,7 +6,8 @@
 void
 showinterface (char *ifname)
 {
-  char buf[8192];
+  char *buf=malloc(8192);
+  memset(buf,0,8192);
   int cnt = getassoclist (ifname, buf);
   int count;
   memcpy (&count, buf, 4);
@@ -20,6 +21,7 @@ showinterface (char *ifname)
 	       p[pos + 5]);
       pos += 6;
     }
+ free(buf);
 
 
 }
