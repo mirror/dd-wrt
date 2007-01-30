@@ -226,7 +226,8 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardrev", "0x13") && nvram_match ("boardtype", "0x467"))
     {
-      if (nvram_match ("boardflags", "0x1658"))
+      if (nvram_match ("boardflags", "0x1658") ||
+      	nvram_match ("boardflags", "0x2658"))  //maybe the amp is on, it's hp anyway ???
 	{
 	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
 	  setRouter ("Buffalo WLI-TX4-G54HP");
