@@ -81,7 +81,11 @@ Inter-|   Receive                                                |  Transmit
 	  while (line[ifl] != ':')
 	    ifl++;
 	  line[ifl] = 0;	/* interface */
+#ifdef HAVE_MADWIFI
+	  if (strstr (line, "wifi0"))
+#else
 	  if (strstr (line, nvram_safe_get ("wl0_ifname")))
+#endif
 	    {
 	      sscanf (line + ifl + 1,
 		      "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
