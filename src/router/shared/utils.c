@@ -226,7 +226,13 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardrev", "0x13") && nvram_match ("boardtype", "0x467"))
     {
-      if (nvram_match ("boardflags", "0x2758")
+      if (nvram_match ("boardflags", "0x1658"))
+	{
+	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
+	  setRouter ("Buffalo WLI-TX4-G54HP");
+	  return ROUTER_BUFFALO_WHRG54S;
+  	}
+	  if (nvram_match ("boardflags", "0x2758")
 	  && !nvram_match ("buffalo_hp", "1"))
 	{
 	  cprintf ("router is Buffalo WHR-G54S\n");
