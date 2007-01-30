@@ -27,7 +27,8 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-#include <net/ethernet.h>
+#include <wlutils.h>
+//#include <net/ethernet.h>
 
 #include <unistd.h>
 #include <ctype.h>
@@ -39,13 +40,6 @@
 #endif
 
 #define WAIT	300		/* Seconds until a STA expires */
-
-
-struct maclist
-{
-  uint count;			/* number of MAC addresses */
-  struct ether_addr ea[1];	/* variable length array of MAC addresses */
-};
 
 struct sta
 {
@@ -226,7 +220,8 @@ int
 main (int argc, char **argv)
 {
   int num, i;
-  unsigned char buf[WLC_IOCTL_MAXLEN];	/* Buffer for wireless-ioctls MAC lists */
+  unsigned char *buf;	/* Buffer for wireless-ioctls MAC lists */
+  buf=malloc(WLC_IOCTL_MAXLEN);
   unsigned char *pos;
   char *iface;
   char *maxun;
@@ -359,20 +354,20 @@ main (int argc, char **argv)
       statechange = 0;
 
       /* Query card for currently associated STAs */
-      memset (buf, 0, sizeof (buf));
 #ifdef DEBUG
       puts ("get assoc list");
 #endif
+      memset(&buf[0],0,WLC_IOCTL_MAXLEN);
       int cnt=getassoclist (iface, buf);
-	
 #ifdef DEBUG
-      puts ("done()");
+      printf ("count %d\n", cnt);
+	
 #endif
       pos = buf;
       if (cnt==-1)
 	num=0;
-      else
-      memcpy (&num, pos, 4);	/* TODO: This really is struct maclist */
+      else num = cnt;
+//      memcpy (&num, pos, 4);	/* TODO: This really is struct maclist */
       pos += 4;
 #ifdef DEBUG
       printf ("count %d\n", num);
@@ -654,7 +649,7 @@ main (int argc, char **argv)
 
       /* Immediately continue after a statechange */
       if (!statechange)
-	sleep (1);
+	sleep (10);
 
     }
 
