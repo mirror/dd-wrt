@@ -472,7 +472,8 @@ rssi2dbm (u_int rssi)
 int
 getRssi (char *ifname, unsigned char *mac)
 {
-  unsigned char buf[24 * 1024];
+  unsigned char *buf=malloc(24*1024);
+  memset(buf,0,1024*24);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
@@ -481,15 +482,17 @@ getRssi (char *ifname, unsigned char *mac)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      free(buf);
       return -1;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = sizeof (buf);
+  iwr.u.data.length = 1024*24;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
+      free(buf);
       return -1;
     }
   len = iwr.u.data.length;
@@ -497,6 +500,8 @@ getRssi (char *ifname, unsigned char *mac)
     return -1;
   int cnt = 0;
   cp = buf;
+  char maccmp[6];
+  memset(maccmp,0,6);
   do
     {
       struct ieee80211req_sta_info *si;
@@ -504,12 +509,17 @@ getRssi (char *ifname, unsigned char *mac)
       if (!memcmp(&si->isi_macaddr[0],mac,6))
         {
 	close(s);
+        free(buf);
 	return rssi2dbm (si->isi_rssi);
 	}
-      cp += si->isi_len, len -= si->isi_len;
+      if (!memcmp(&si->isi_macaddr[0],mac,6))
+        break;
+      cp += si->isi_len;
+      len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
+  free(buf);
   return 0;
 }
 
@@ -517,7 +527,8 @@ getRssi (char *ifname, unsigned char *mac)
 int
 getNoise (char *ifname, unsigned char *mac)
 {
-  unsigned char buf[24 * 1024];
+  unsigned char *buf=malloc(24*1024);
+  memset(buf,0,24*1024);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
@@ -526,15 +537,17 @@ getNoise (char *ifname, unsigned char *mac)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      free(buf);
       return -1;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = sizeof (buf);
+  iwr.u.data.length = 24*1024;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
+      free(buf);
       return -1;
     }
   len = iwr.u.data.length;
@@ -542,6 +555,8 @@ getNoise (char *ifname, unsigned char *mac)
     return -1;
   int cnt = 0;
   cp = buf;
+  char maccmp[6];
+  memset(maccmp,0,6);
   do
     {
       struct ieee80211req_sta_info *si;
@@ -549,12 +564,17 @@ getNoise (char *ifname, unsigned char *mac)
       if (!memcmp(&si->isi_macaddr[0],mac,6))
         {
 	close(s);
+      free(buf);
 	return si->isi_noise;
 	}
-      cp += si->isi_len, len -= si->isi_len;
+      if (!memcmp(&si->isi_macaddr[0],mac,6))
+        break;
+      cp += si->isi_len;
+      len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
+      free(buf);
   return 0;
 }
 
@@ -563,7 +583,9 @@ getNoise (char *ifname, unsigned char *mac)
 int
 getassoclist (char *ifname, unsigned char *list)
 {
-  unsigned char buf[24 * 1024];
+  unsigned char *buf;
+  buf=malloc(24*1024);
+  memset(buf,0,1024*24);
   unsigned char *cp;
   int len;
   struct iwreq iwr;
@@ -572,27 +594,30 @@ getassoclist (char *ifname, unsigned char *list)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      free(buf);
       return -1;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
   iwr.u.data.pointer = (void *) buf;
-  iwr.u.data.length = sizeof (buf);
+  iwr.u.data.length = 1024*24;
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
       close (s);
+      free(buf);
       return -1;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
     close(s);
+    free(buf);
     return -1;
     }
   int cnt = 0;
   cp = buf;
   unsigned char *l = (unsigned char *) list;
-  uint *count = (uint *) list;
+  unsigned int *count = (unsigned int *) list;
   count[0]=0;
   l += 4;
   do
@@ -600,12 +625,16 @@ getassoclist (char *ifname, unsigned char *list)
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;
       memcpy (l, &si->isi_macaddr[0], 6);
+      if (l[0]==0 && l[1]==0 && l[2]==0 && l[3]==0 && l[4]==0 && l[5]==0)
+        break;
       l += 6;
       count[0]++;
-      cp += si->isi_len, len -= si->isi_len;
+      cp += si->isi_len;
+      len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
   close (s);
+  free(buf);
   return count[0];
 }
 
