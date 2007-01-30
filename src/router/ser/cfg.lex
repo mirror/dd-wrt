@@ -85,6 +85,10 @@
 	static char* addstr(struct str_buf *, char*, int);
 	static void count();
 
+	int yywrap(void)
+	{
+		return 1;
+	}
 
 %}
 
