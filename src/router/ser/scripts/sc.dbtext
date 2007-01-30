@@ -23,12 +23,12 @@ if [ -f ~/.openscdbtextrc ]; then
 fi
 
 ### version fo this script
-VERSION='1.1 - $Revision: 1.2 $'
+VERSION='1.1 - $Revision: 1.6 $'
 
 ##### ----------------------------------------------- #####
 ### SQL config
 if [ -z $DBTEXT_PATH ]; then
-	DBTEXT_PATH="/usr/local/etc/openser/dbtext"
+	DBTEXT_PATH="/var/openser/dbtext"
 	export DBTEXT_PATH
 fi
 
@@ -58,6 +58,11 @@ fi
 if [ -z "$ACL_GROUPS" ] ; then
 	ACL_GROUPS="local ld int voicemail free-pstn"
 fi
+
+if [ -z "$SIP_DOMAIN" ] ; then
+       SIP_DOMAIN=$(nvram get sip_domain)
+fi
+
 
 ##### ----------------------------------------------- #####
 #### table names
@@ -208,7 +213,7 @@ parameter usage:
 
            * control and diagnostics *
  dbtext [dbtext_path] ... create the needed dbtext files (default 
-                          location is /usr/local/etc/ser/dbtext)
+                          location is /var/openser/dbtext)
 
            * Database Selection *
  
@@ -247,7 +252,7 @@ set_user() {
 	fi
 
 	if [ -z "$SERDOMAIN" ] ; then
-		echo -e "\nDomain unknown: use usernames with domain or set default domain in SIP_DOMAIN\n"
+		echo -e "\nDomain unknown: use usernames with domain or set default domain in SIP_DOMAIN (with 'nvram set sip_domain=YOUR_SIP_DOMAIN')\n"
 		exit 1
 	fi
 }
@@ -388,8 +393,13 @@ acl() {
 				set_user $2
 				is_user 
 				if [ $? -ne 0 ] ; then
-					echo -e "\nnon-existent user\n"
-					exit 1;
+					echo -e "\nNon-existent user. Still proceeding? [Y|N] " > /dev/stderr
+					read answer
+					if [ "$answer" = "y" -o "$answer" = "Y" ] ; then
+						echo -e "\nProceeding with non-local user\n"
+					else
+						exit 1
+					fi
 				fi
 				EGREP_COND="^$SERUSER:$SERDOMAIN:"
 			elif [ $# -ne 1 ] ; then
@@ -412,8 +422,13 @@ acl() {
 			set_user $2
 			is_user 
 			if [ $? -ne 0 ] ; then
-				echo -e "\nnon-existent user\n"
-				exit 1
+				echo -e "\nNon-existent user. Still proceeding? [Y|N] " > /dev/stderr
+				read answer
+				if [ "$answer" = "y" -o "$answer" = "Y" ] ; then
+					echo -e "\nProceeding with non-local user\n"
+				else
+					exit 1
+				fi
 			fi
 			shift 2
 			while [ $# -gt 0 ] ; do
@@ -470,7 +485,7 @@ acl() {
 is_user() {
 	CNT=`cat $SUB_FILE | $EGREP :$SERUSER:$SERDOMAIN: | wc -w`
 	
-	if [ "0$CNT" -eq 0 ] ; then
+	if [ "$CNT" -eq 0 ] ; then
 		false
 	else
 		true
@@ -650,7 +665,7 @@ case $1 in
 	dbtext)
 		
 		if [ $# -eq 1 ] ; then
-			DBTEXT_PATH="/usr/local/etc/openser/dbtext"
+			DBTEXT_PATH="/var/openser/dbtext"
 		elif [ $# -eq 2 ]; then
 			DBTEXT_PATH=$2
 		else 
@@ -669,19 +684,47 @@ case $1 in
 		mkdir -p $DBTEXT_PATH
 		echo -e "Creating DBText files in $DBTEXT_PATH\n"
 		#Subscriber file
-		echo "phplib_id(str) username(str) domain(str) password(str) first_name(str,null) last_name(str,null) phone(str,null) email_address(str) datetime_created(int) datetime_modified(int) confirmation(str,null) flag(str,null) sendnotification(str,null) greeting(str,null) ha1(str) ha1b(str) allow_find(str) timezone(str,null) rpid(str,null) domn(int,null) uuid(str,null)" > $SUB_FILE
+		echo "phplib_id(str) username(str) domain(str) password(str) first_name(str,null) last_name(str,null) phone(str,null) email_address(str) datetime_created(int,null) datetime_modified(int,null) confirmation(str,null) flag(str,null) sendnotification(str,null) greeting(str,null) ha1(str) ha1b(str) allow_find(str) timezone(str,null) rpid(str,null) domn(int,null) uuid(str,null)" > $SUB_FILE
 		#Location file
-		echo "username(str) domain(str,null) contact(str,null) received(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(int,null) replicate(int,null) state(int,null) flags(int) user_agent(str)" > $UL_FILE
+		echo "username(str) domain(str,null) contact(str,null) received(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(int,null) replicate(int,null) state(int,null) flags(int) user_agent(str) socket(str)" > $UL_FILE
 		#Aliases file
-		echo "username(str) domain(str,null) contact(str,null) received(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(int,null) replicate(int,null) state(int,null) flags(int) user_agent(str)" > $ALS_FILE
+		echo "username(str) domain(str,null) contact(str,null) received(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(int,null) replicate(int,null) state(int,null) flags(int) user_agent(str) socket(str)" > $ALS_FILE
 		#Uri file
 		echo "username(str) domain(str) uri_user(str) last_modified(int)" > $URI_FILE
 		#Group/ACL file
 		echo "username(str) domain(str) grp(str) last_modified(int)" > $ACL_FILE
 		#Version file
 		echo "table_name(str) table_version(int)" > $VER_FILE
+		echo "subscriber:5" >> $VER_FILE
+		echo "reserved:1" >> $VER_FILE
+		echo "phonebook:1" >> $VER_FILE
+		echo "pending:4" >> $VER_FILE
+		echo "missed_calls:2" >> $VER_FILE
+		echo "location:1001" >> $VER_FILE
+		echo "aliases:1001" >> $VER_FILE
+		echo "grp:2" >> $VER_FILE
+		echo "event:1" >> $VER_FILE
+		echo "active_sessions:1" >> $VER_FILE
+		echo "acc:2" >> $VER_FILE
+		echo "config:1" >> $VER_FILE
+		echo "silo:3" >> $VER_FILE
+		echo "realm:1" >> $VER_FILE
+		echo "domain:1" >> $VER_FILE
+		echo "uri:1" >> $VER_FILE
+		echo "server_monitoring:1" >> $VER_FILE
+		echo "server_monitoring_agg:1" >> $VER_FILE
+		echo "trusted:1" >> $VER_FILE
+		echo "usr_preferences:2" >> $VER_FILE
+		echo "usr_preferences_types:1" >> $VER_FILE
+		echo "admin_privileges:1" >> $VER_FILE
+		echo "calls_forwarding:1" >> $VER_FILE
+		echo "speed_dial:2" >> $VER_FILE
+		echo "dbaliases:1" >> $VER_FILE
+		echo "gw:3" >> $VER_FILE
+		echo "gw_grp:1" >> $VER_FILE
+		echo "lcr:1" >> $VER_FILE
 		
-		echo -e "DBText files created.\n\nRemeber to set the SER_DB and DBTEXT_PATH variables (read usage)\n"
+		echo -e "DBText files created.\n\nRemeber to set the DBTEXT_PATH variable (read usage)\n"
 		;;
 	
 	version)
