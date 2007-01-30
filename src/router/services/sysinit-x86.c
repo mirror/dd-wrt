@@ -256,7 +256,9 @@ eval("insmod","crypto_null");
     eval ("insmod", "sk98lin");
   else if (detect ("SK-98"))
     eval ("insmod", "sk98lin");
-  else if (detect ("Marvell Yukon"))
+  else if (detect ("3c940"))
+    eval ("insmod", "sk98lin");
+  else if (detect ("Marvell"))
     eval ("insmod", "sk98lin");
 
 
@@ -275,12 +277,20 @@ eval("insmod","crypto_null");
     eval ("insmod", "3c59x");
   else if (detect ("3c556"))	// 3Com
     eval ("insmod", "3c59x");
+  else if (detect ("ScSOHO100"))	// 3Com
+    eval ("insmod", "3c59x");
+  else if (detect ("Hurricane"))	// 3Com
+    eval ("insmod", "3c59x");
 
   if (detect ("LNE100TX"))	// liteon / linksys
     eval ("insmod", "tulip");
   else if (detect ("FasterNet"))
     eval ("insmod", "tulip");
   else if (detect ("ADMtek NC100"))
+    eval ("insmod", "tulip");
+  else if (detect ("910-A1"))
+    eval ("insmod", "tulip");
+  else if (detect ("tulip"))
     eval ("insmod", "tulip");
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
