@@ -238,7 +238,7 @@ obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_PHP) += php5
 obj-$(CONFIG_WIFIDOG) += wifidog
 obj-$(CONFIG_RSTATS) += rstats
-
+obj-$(CONFIG_NSTX) += nstx
 
 obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
 obj-install := $(foreach obj,$(obj-y),$(obj)-install)
@@ -439,11 +439,9 @@ endif
 	cp $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bak 
 	mips-linux-uclibc-objcopy -O binary -g $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/vmlinux.bin
 	lzma e $(ARCH)-uclibc/vmlinux.bin $(ARCH)-uclibc/vmlinux.lzma
-	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=65536 conv=sync
-	
-
-
-	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin $(ARCH)-uclibc/vmlinux.bin.l7 $(ARCH)-uclibc/root.fs
+	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.bin.l7 bs=131072 conv=sync
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.aligned bs=2883584 conv=sync
+	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin $(ARCH)-uclibc/root.aligned $(ARCH)-uclibc/vmlinux.bin.l7 
 #	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt.bin
 #	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/dd-wrt.jffs2 $(ARCH)-uclibc/dd-wrt-jffs.bin
 #	bcmImageBuilder --output $(PLATFORMDIR)/dd-wrt.img --chip 6348 --board "96348GW-10" --blocksize 64 --cfefile cfe6348.bin --rootfsfile $(PLATFORMDIR)/root.fs --kernelfile $(PLATFORMDIR)/vmlinux.lz
@@ -1546,7 +1544,7 @@ madwifi-clean:
 madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	make -C madwifi-fonera/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
-	make -C madwifi-fonera KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
+	make -C madwifi-fonera/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install
 else
 madwifi:
 	make -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
