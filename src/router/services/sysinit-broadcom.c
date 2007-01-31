@@ -412,6 +412,7 @@ start_sysinit (void)
     case ROUTER_BUFFALO_WLA2G54C:
     case ROUTER_WAP54G_V2:
     case ROUTER_VIEWSONIC_WAPBR_100:
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for interfaces
       nvram_set ("wl0_ifname", "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
