@@ -231,7 +231,7 @@ internal_getRouterBrand ()
 	{
 	  cprintf ("router is Buffalo WLI-TX4-G54HP\n");
 	  setRouter ("Buffalo WLI-TX4-G54HP");
-	  return ROUTER_BUFFALO_WHRG54S;
+	  return ROUTER_BUFFALO_WLI_TX4_G54HP;
   	}
 	  if (nvram_match ("boardflags", "0x2758")
 	  && !nvram_match ("buffalo_hp", "1"))
@@ -927,6 +927,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			diag2_gpio = 0x14;
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
+	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 			diag_gpio = 0x17;
 			bridge_gpio = 0x11;
 			aoss_gpio = 0x16;
