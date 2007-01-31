@@ -1268,12 +1268,6 @@ configure_single (int count, int isbond)
   eval ("iwpriv",dev,"bgscan","0");
   m = default_get (wl, "ap");
 
-  cprintf ("setup encryption");
-  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-    setupHostAP (dev);
-  else
-    setupSupplicant (dev);
-//@todo ifup
 
   char preamble[32];
   sprintf (preamble, "%s_preamble", dev);
@@ -1321,6 +1315,13 @@ configure_single (int count, int isbond)
 
   setMacFilter (dev);
   cprintf ("done()\n");
+
+  cprintf ("setup encryption");
+  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+    setupHostAP (dev);
+  else
+    setupSupplicant (dev);
+//@todo ifup
 //netconfig
   eval ("ifconfig", dev, "0.0.0.0", "up");
 
