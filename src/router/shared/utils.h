@@ -40,7 +40,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
 #define ROUTER_BUFFALO_WLA2G54C 0x0712  //gpio 2 is AOSS button, let it acts as reset for now.
 
-// Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0), WHR-HP-G54 (fccid: Buffalo FDI-09101577-0) and WLI-TX4-G54HP
+// Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
 #define ROUTER_BUFFALO_HP_WHRG54S 0x0804	//no differences between these models. so we leave it
 
@@ -132,6 +132,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define DELL_TRUEMOBILE_2300 0x2410
 
 #define ROUTER_BOARD_FONERA 0x250f
+
+//Buffalo WLI_TX4_G54HP bridge
+#define ROUTER_BUFFALO_WLI_TX4_G54HP 0x2604
 
 #define NVROUTER "DD_BOARD"
 
