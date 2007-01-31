@@ -304,6 +304,7 @@ period_check (int sig)
     {
     case ROUTER_BUFFALO_WHRG54S:	
     case ROUTER_BUFFALO_WZRRSG54:
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
       sesgpio = 0x10;	//gpio 0, inversed
       break;
     case ROUTER_WRT54G:
