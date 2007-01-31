@@ -1260,10 +1260,20 @@ start_lan (void)
   /* Bring up and configure LAN interface */
   ifconfig (lan_ifname, IFUP, nvram_safe_get ("lan_ipaddr"),
 	    nvram_safe_get ("lan_netmask"));
+
+#ifdef HAVE_FONERA
+  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
+    {
+#endif
 //add fallback ip
 char staticlan[32];
 sprintf(staticlan,"%s:0",lan_ifname);
   eval("ifconfig",staticlan,"169.254.255.1","netmask","255.255.255.0");
+
+#ifdef HAVE_FONERA
+    }
+#endif
 
   /* Get current LAN hardware address */
 
@@ -1715,12 +1725,13 @@ start_wan (int status)
       break;
     }
 #endif
+#ifndef HAVE_MADWIFI
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apstawet"))
     {
       dns_to_resolv ();
       return;
     }
-
+#endif
   if (isClient ())
     {
       pppoe_wan_ifname = get_wdev ();
@@ -1756,6 +1767,16 @@ start_wan (int status)
   memset (ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
   ifconfig (wan_ifname, 0, NULL, NULL);
+#ifdef HAVE_FONERA
+  if (!nvram_match ("ath0_mode", "sta") && !nvram_match ("ath0_mode", "wdssta")
+      && !nvram_match ("ath0_mode", "wet") && !nvram_match("wan_proto","disabled"))
+    {
+    char staticlan[32];
+    sprintf(staticlan,"%s:0",wan_ifname);
+    eval("ifconfig",staticlan,"169.254.255.1","netmask","255.255.255.0");
+    }
+#endif
+
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
   if (nvram_match ("mac_clone_enable", "1") &&
