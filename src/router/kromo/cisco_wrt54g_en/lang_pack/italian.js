@@ -1,9 +1,5 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
-//				Italian translation DD-WRT V23 SP1 by CoffeEbuyer 06/2006					//													//
-//////////////////////////////////////////////////////////////////////////////////////////////
 
 lang_charset.set="iso-8859-1";
-
 share.firmware="Firmware";
 share.time="Ora";
 share.interipaddr="Indirizzo IP Internet";
@@ -99,8 +95,8 @@ share.port_range="Intervallo Porta";
 share.priority="Priorità";
 share.gateway="Gateway";
 share.intrface="Interfaccia";
-share.pintrface="Physical Interface";
-share.vintrface="Virtual Interfaces";
+share.pintrface="Interfaccia Fisica";
+share.vintrface="Interfacce Virtuali";
 share.router="Router";
 share.static_lease="Assegnamento Statico";
 share.srvip="Server IP";
@@ -124,15 +120,14 @@ share.styl="Stile";
 share.err="errore";
 share.errs="errori";
 share.meters="metri";
-share.full="Full";
-share.half="Half";
-share.quarter="Quarter";
-share.seealso="See also";
-share.never="never";
-share.unknown="Unknown";
-share.expired="expired";
+share.full="Pieno";
+share.half="A Metà";
+share.quarter="Un Quarto";
+share.seealso="Vedi oltre";
+share.never="mai";
+share.unknown="Sconosciuto";
+share.expired="scaduto";
 share.standard="Standard";
-
 sbutton.save="Salva Impostazioni";
 sbutton.saving="Salvato";
 sbutton.cmd="In Esecuzione";
@@ -177,7 +172,6 @@ sbutton.survey="Ricerca Sito";
 sbutton.upgrading="In Aggiornamento";
 sbutton.upgrade="Aggiornamento";
 sbutton.preview="Anteprima";
-
 errmsg.err0="Devi inserire un nome utente.";
 errmsg.err1="Devi inserire un nome router.";
 errmsg.err2="Fuori Intervallo, modifica l'indirizzo IP o il numero degli utenti.";
@@ -241,7 +235,6 @@ errmsg.err59="Non disponibile! Abilita la rete wireless.";
 errmsg.err60="seleziona il file per l'aggiornamento.";
 errmsg.err61="File immagine errato.";
 errmsg.err62=" è già definito come assegnamento statico.";
-
 bmenu.setup="Setup";
 bmenu.setupbasic="Setup base";
 bmenu.setupddns="DDNS";
@@ -289,7 +282,6 @@ bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
-
 alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Riavvio Pianificazione";
@@ -302,10 +294,8 @@ alive.legend3="Connessione Proxy/Watchdog";
 alive.sevr3="Abilita Proxy Watchdog";
 alive.IP2="Indirizzo IP del Proxy";
 alive.port="Porta Proxy";
-
 halive.right2="Scegli quando riavviare il router. Cron deve essere abilitato dalla finestra Gestione.";
 halive.right4="Sono permessi massimo tre IP separati da uno <em>SPAZIO</em>.<BR/>Il formato degli IP è xxx.xxx.xxx.xxx.";
-
 config.titl=" - Backup & Ripristino";
 config.h2="Backup Configurazione";
 config.legend="Backup Impostazioni";
@@ -315,10 +305,8 @@ config.legend2="Ripristino Impostazioni";
 config.mess2="Seleziona il file da ripristinare";
 config.mess3="A T T E N Z I O N E";
 config.mess4="Carica solo i file salvati usando questo firmware e dallo stesso modello di router.<br />Non caricare file che non siano non creati per mezzo di questa interfaccia!";
-
 hconfig.right2="Devi salvare la configurazione corrente in caso di necessità di resettare il router alle impostazioni di fabbrica.<br /><br />Clicca sul pulsante <em>Backup</em> per salvare la configurazione corrente.";
 hconfig.right4="Clicca sul pulsante <em>Sfoglia...</em> per scegliere tra i file di configurazione attualmente salvati sul PC.<br /><br />Clicca sul pulsante <em>" + sbutton.restore + "</em> per sovrascrivere la configurazione corrente con quella del file.";
-
 ddns.titl=" - DNS Dinamioco"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
@@ -329,7 +317,6 @@ ddns.dynamic="Dinamico";
 ddns.custom="Personalizzato";
 ddns.wildcard="Wildcard";
 ddns.statu="Stato DDNS";
-
 ddnsm.all_closed="Il server DDNS attualmente inaccessibile";
 ddnsm.all_resolving="Sto risolvendo il nome di dominio";
 ddnsm.all_errresolv="Risoluzione del nome di dominio fallita";
@@ -337,41 +324,32 @@ ddnsm.all_connecting="In connessione al server";
 ddnsm.all_connectfail="Connessione al server fallita";
 ddnsm.all_disabled="La funzione DDNS non è abilitata";
 ddnsm.all_noip="Nessuna connessione ad Internet";
-
 hddns.right2="Il DDNS ti permette l'accesso alla rete usando i nomi di dominio invece degli indirizzi IP. Il servizio gestisce il cambio IP e aggiorna le informazioni del tuo dominio dinamicamente. Devi registrarti al servizio atraverso DynDNS.org, TZO.com o ZoneEdit.com.";
-
 diag.titl=" - Diagnostica";
 diag.h2="Diagnostica";
 diag.legend="Shell dei comandi";
 diag.cmd="Comandi";
 diag.startup="Avvio";
 diag.firewall="Firewall";
-
 hdiag.right2="Puoi eseguire linee di comando attraverso l'interfaccia web. Riempi l'area di testo col comando e clicca su <em>" + sbutton.runcmd + "</em>  per confermare.";
-
 dmz.titl=" - DMZ";
 dmz.h2="Zona Demilitarizata (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Usa DMZ";
 dmz.host="Indirizzo IP dell'host DMZ";
-
 hdmz.right2="Abilitando questa opzione esporrai l'host specificato a internet. Tutte le sue porte saranno accessibili da internet.";
-
 factdef.titl=" - Default Di Fabbrica";
 factdef.h2="Default Di Fabbrica";
 factdef.legend="Resetta le impostazioni del router";
 factdef.restore="Ripristina al default di fabbrica";
 factdef.mess1="Attenzione! Se clicchi OK, il dispositivo sarà resettato alle impostazioni di fabbrica e tutte le impostazioni precedenti saranno cancellate.";
-
 hfactdef.right1="Questo resetterà tutte le impostazioni a quelle di fabbrica. Tutte le tue impostazioni saranno perse.";
-
 filterIP.titl=" - Lista dei PC";
 filterIP.h2="Lista dei PC";
 filterIP.h3="Inserisci l'indirizzo MAC dei PC in questo formato: xx:xx:xx:xx:xx:xx";
 filterIP.h32="Inserisci l'indirizzo IP dei PC";
 filterIP.h33="Inserisci l'intervallo IP dei PC";
 filterIP.ip_range="Intervallo IP";
-
 filter.titl=" - Restizioni D'Accesso";
 filter.h2="Accesso A Internet";
 filter.legend="Politica D'Accesso";
@@ -390,7 +368,6 @@ filter.legend5="Blocca i siti web mediante Parola Chiave";
 filter.mess1="Cancella la politica?";
 filter.mess2="Devi almeno selezionare un giorno.";
 filter.mess3="L'ora finale deve essere maggiore di quella iniziale.";
-
 hfilter.right2="Puoi definire fino a 10 politiche d'accesso. Clicca su <em>" + sbutton.del + "</em> per cancellare una politica o <em>" + sbutton.summary + "</em> per vederne un riepilogo.";
 hfilter.right4="Abilita o disabilita una politica.";
 hfilter.right6="Devi assegnare un nome alla politica.";
@@ -399,12 +376,10 @@ hfilter.right10="inserisci l'ora del giorno in cui vuoi applicare la tua politic
 hfilter.right12="Puoi scegliere di bloccare l'accesso ad alcuni servizi. Clicca su <em>" + sbutton.filterSer + "</em> per modificare queste impostazioni.";
 hfilter.right14="Puoi bloccare l'accesso a certi siti web inserendo il loro URL.";
 hfilter.right16="Puoi bloccare l'accesso a certi siti web inserendo le parole chiavi contenute nelle loro pagine web.";
-
 filterSum.titl=" - Riepilogo Restrizioni D'Accesso";
 filterSum.h2="Riepilogo Politica Internet";
 filterSum.polnum="No.";
 filterSum.polday="Ora del Giorno";
-
 firewall.titl=" - Firewall";
 firewall.h2="Sicurezza";
 firewall.legend="Protezione Firewall";
@@ -419,25 +394,19 @@ firewall.ping="Blocco Richieste Anonime Internet";
 firewall.muticast="Filtro Multicast";
 filter.nat="Filtro Redirezioni Internet NAT";
 filter.port113="Filtro IDENT (Porta 113)";
-
 hfirewall.right2="Abilita or disabilita il firewall SPI.";
-
 prforward.titl=" - Intervallo Del Forwarding Delle Porte";
 prforward.h2="Intervallo Del Forwarding Delle Porte";
 prforward.legend="Forwards";
 prforward.app="Applicazione";
-
 hprforward.right2="Alcune applicazioni possono richiedere l'apertura di specifiche porte per il loro corretto funzionamento. Esempi di queste applicazioni includono i server e certi giochi online. Così quando la richiesta di una certa porta viene da internet, il router inoltrerà i dati al computer specificato. Per cio che riguarda la sicurezza, è desiderabile limitare il forwarding solo alle porte in uso, e appena finito deselezionare la casella <em>" + share.enable +"</em>.";
-
 pforward.titl=" - Forwarding Delle Porte";
 pforward.h2="Forwarding Delle Porte";
 pforward.legend="Forward";
 pforward.app="Applicazione";
 pforward.from="Dalla Porta";
 pforward.to="Alla Porta";
-
 hpforward.right2="Alcune applicazioni possono richiedere l'apertura di specifiche porte per il loro corretto funzionamento. Esempi di queste applicazioni includono i server e certi giochi online. Quando una richiesta di una certa porta viene da internet, il router inoltrerà i dati al computer specificato. Per cio che riguarda la sicurezza, è desiderabile limitare il forwarding solo alle porte in uso, e deselezionare la casella <em>Abilita</em> appena finito.";
-
 hotspot.titl=" - Hotspot";
 hotspot.h2="Portale Dell'Hotspot";
 hotspot.legend="Chillispot";
@@ -486,29 +455,22 @@ hotspot.sputnik_id="ID Del Server Sputnik";
 hotspot.sputnik_instant="Usa Setup Rapido Di Sputnik";
 hotspot.sputnik_express="Usa SputnikNet Express";
 hotspot.sputnik_about="Informazioni Su Sputnik";
-
 info.titl=" - Informazioni";
 info.h2="Informazioni Di Sistema";
 info.wlanmac="Wireless MAC";
 info.srv="Servizi";
 info.ap="Access Point";
-
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Strategia Di Connessione";
 idx_h.max_idle="Connessione Su Richiesta: Max Tempo Morto";
 idx_h.alive="Keep Alive: Intervallo Per Il Redial";
-
 idx_l.srv="Server L2TP";
-
 idx_pppoe.use_rp="Usa RP PPPoE";
-
 idx_pptp.srv="Usa DHCP";
 idx_pptp.wan_ip="Indirizzo IP Internet";
 idx_pptp.gateway="Gateway (Server PPTP)";
 idx_pptp.encrypt="PPTP Crittografato";
-
 idx_static.dns="DNS Statico";
-
 idx.titl=" - Setup";
 idx.h2="Setup Internet";
 idx.h22="Setup Wireless";
@@ -543,7 +505,6 @@ idx.summt_opt2="first Sun Apr - last Sun Oct";
 idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
-
 hidx.right2="Queste impostazioni sono comunemente usate dagli operatori via Cavo.";
 hidx.right4="Inserisci il nome host fornito dall' ISP.";
 hidx.right6="Inserisci il nome di dominio fornito dall' ISP.";
@@ -553,21 +514,17 @@ hidx.right12="Permette al router di gestire i tuoi indirizzi IP.";
 hidx.right14="L'indirizzo col quale preferisci partire.";
 hidx.right16="Puoi limitare il numero d'indirizzi assegnati dal tuo router.";
 hidx.right18="Scegli il tuo fuso orario ed il periodo estivo (DST). Il router può usare l'ora locale o quella UTC.";
-
 join.titl=" - Collegamento";
 join.mess1="Collegato con successo alla seguente rete come client: ";
-
 log_in.titl=" - Tabella Di Log In Ingresso";
 log_in.h2="Tabella Di Log In Ingresso";
 log_in.th_ip="IP Sorgente";
 log_in.th_port="Numero Della Porta Destinazione";
-
 log_out.titl=" - Tabella Di Log In Uscita";
 log_out.h2="Tabella Di Log In Uscita";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="URL/IP Di Destinazione";
 log_out.th_port="Servizio/Numero Di Porta";
-
 log.titl=" - Log";
 log.h2="Gestione Log";
 log.legend="Log";
@@ -575,7 +532,6 @@ log.lvl="Livello Log";
 log.drop="Scartati";
 log.reject="Riggettati";
 log.accept="Accettati";
-
 management.titl=" - Amministrazione";
 management.h2="Gestione Router";
 management.psswd_legend="Password Del Router";
@@ -633,7 +589,6 @@ management.lang_spanish="spanish";
 management.lang_swedish="swedish";
 management.lang_polish="polish";
 management.lang_japanese="japanese";
-
 management.net_legend="Impostazioni Filtro IP (modificale per il P2P)";
 management.net_port="Max Porte";
 management.net_tcptimeout="TCP Timeout (in secondi)";
@@ -651,13 +606,10 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="Porta SIP";
 management.SIPatH_domain="Dominio SIP";
 management.gui_style="Stile della GUI del Router";
-
 hmanagement.right1="Auto-Refresh:";
 hmanagement.right2="Modifica l'intervallo di auto-refresh per la GUI Web. 0 disabilita completamente questa caratteristica.";
-
 portserv.titl=" - Porte Dei Servizi";
 portserv.h2="Porte Dei Servizi";
-
 qos.titl=" - Quality of Service";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="Impostazioni QoS";
@@ -679,7 +631,6 @@ qos.legend4="Priorità MAC";
 qos.legend5="Priorità Della Porta Ethernet";
 qos.legend6="Livello di default per la banda";
 qos.bandwith="Banda in Kbits";
-
 hqos.right1="Uplink:";
 hqos.right2="Impostalo al max all'80%-95% del tuo limite totale di upload.";
 hqos.right3="Downlink:";
@@ -688,11 +639,9 @@ hqos.right6="Puoi contollare il tasso di dati relativamente all'applicazione che
 hqos.right8="Puoi specificare la priorità per tutto il traffico generato da un dato Indirizzo IP o un intervallo di IP.";
 hqos.right10="Puoi specificare la priorità per tutto il traffico generato da un dispositivo sulla tua rete usando il Nome Dispositivo, specificando la priorità ed inserendo il suo MAC.";
 hqos.right12="Puoi controllare il tasso di dati relativamente alla porta fisica della LAN alla quale il dispositico è connesso. Puoi assegnare le priorità relativamente ai quei dispositivi connessi alle porte LAN da 1 a 4.";
-
 routetbl.titl=" - Tabella Di Routing";
 routetbl.h2="Lista delle righe della Tabella Di Routing";
 routetbl.th1="IP Della LAN Di Destinazione";
-
 route.titl=" - Routing";
 route.h2="Routing Avanzato";
 route.mod="Modalità Operativa";
@@ -706,17 +655,14 @@ route.static_legend="Routing Statico";
 route.static_setno="Seleziona numero set";
 route.static_name="Nome Instradamento";
 route.static_ip="IP Della LAN di Destinazione";
-
 hroute.right2="Se il router è direttamente connesso a internet, seleziona la modalità <em>Gateway</em>. Se è ptresente un altro router sulla tua rete, seleziona la modalità <em>Router</em>.";
 hroute.right4="Questo è l'unico numero d'instradamento, puoi impostare fino a 20 instradamenti.";
 hroute.right6="Inserisci il nome che vorresti assegnare a questo instradamento.";
 hroute.right8="Questo è l'host remoto al quale vorresti assegnare la route statica.";
 hroute.right10="Determina l'host e la porzione di rete.";
-
 survey.titl=" - Ricerca Sito";
 survey.h2="Reti Wireless Vicine";
 survey.thjoin="Collega Al Sito";
-
 service.titl=" - Servizi";
 service.h2="Gestione Servizi";
 service.kaid_legend="XBOX Kaid";
@@ -780,11 +726,9 @@ service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Password di Login";
 service.ssh_key="Chiavi autorizzate";
-
 sipath.titl=" - Anteprima SiPath";
 sipath.phone_titl=" - Rubrica";
 sipath.status_titl=" - Stato";
-
 status_lan.titl=" - Stato della LAN";
 status_lan.h2="Rete Locale";
 status_lan.legend="Stato della LAN";
@@ -792,13 +736,11 @@ status_lan.h22="Dynamic Host Configuration Protocol";
 status_lan.legend2="DHCP Stato";
 status_lan.legend3="DHCP Clients";
 status_lan.legend4="Active Clients";
-
 hstatus_lan.right2="E' l'indirizzo MAC del router, com'è visto sulla tua rete locale Ethernet.";
 hstatus_lan.right4="Mostra l'indirizzo IP del router, come appare sulla tua rete locale Ethernet.";
 hstatus_lan.right6="Quando il router sta usando una Subnet Mask, è visualizzata qui.";
 hstatus_lan.right8="Se astai usando il server DHCP del router, sarà visualizzato qui.";
 hstatus_lan.right10="Cliccando su un qualsiasi indirizzo MAC, otterrai l' Organizationally Unique Identifier dell'interfaccia di rete (effettua la ricerca nel database standard IEEE).";
-
 status_router.titl=" - Sato Del Router";
 status_router.h2="Informazioni Router";
 status_router.legend="Sistema";
@@ -824,10 +766,9 @@ status_router.net_conntrack="Connessioni IP Attive";
 status_router.h22="Internet";
 status_router.legend5="Tipo Di Configurazione";
 status_router.www_loginstatus="Stato Login";
-status_router.wanuptime="Connection Uptime";
-status_router.leasetime="Remaining Lease Time";
-status_router.notavail="Not available";
-
+status_router.wanuptime="Uptime Della Connessione";
+status_router.leasetime="Lease Time Residuo";
+status_router.notavail="Non disponibile";
 hstatus_router.right2="E' il nome del router inserito nella finestra <i>Setup</i>.";
 hstatus_router.right4="E' l'indirizzo MAC del router, come è visto dal tuo ISP.";
 hstatus_router.right6="E' il firmware corrente del router.";
@@ -835,18 +776,15 @@ hstatus_router.right8="E' l'ora ricevutadal server NTP specificato nella finestr
 hstatus_router.right10="Misura da quanto tempo il router è stato avviato.";
 hstatus_router.right12="Composto da tre numeri che rappresentano il carico del sistema durante l'ultimo minuto, ultimi 5 min e ultimi 15 min.";
 hstatus_router.right14="Mostra le informazioni richieste dal tuo ISP per la connessione a internet. Le informazioni sono state inserite dalla finestra di Setup. Puoi <em>Connettere</em> o <em>Disconnettere</em> cliccando sul pulsante.";
-
 status_sputnik.titl=" - Stato Dello Sputnik Agent";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Gestito Da";
 status_sputnik.license="Licenza SCC No.";
-
 hstatus_sputnik.right1="Stato Dello Sputnik Agent";
 hstatus_sputnik.right2="La schermata mostra lo stato del processo dello Sputnik Agent.";
 hstatus_sputnik.right4="Il centro di controllo dello Sputnik al quale questo access point è connesso.";
 hstatus_sputnik.right6="Lo stato corrent dell' Agent.";
 hstatus_sputnik.right8="Il numero di licenza del tuo centro di controllo Sputnik.";
-
 status_wireless.titl=" - Stato Wireless";
 status_wireless.h2="Wireless";
 status_wireless.legend="Stato Wireless";
@@ -859,25 +797,20 @@ status_wireless.h22="Nodi Wireless";
 status_wireless.legend3="Clients";
 status_wireless.signal_qual="Qualità Del Segnale";
 status_wireless.wds="Nodi WDS";
-
 hstatus_wireless.right2="E' l'indirizzo MAC del router, com'è visto sulla tua rete locale wireless.";
 hstatus_wireless.right4="Come selezionato dalla finestra del Wireless, mostrerà la modalità wireless usata dalla rete (Mista, Solo-G, Solo-B o Disabilitato).";
-
 status_openvpn.titl=" - OpenVPN Status";
-
 trforward.titl=" - Triggering Delle Porte";
 trforward.h2="Triggering Delle Porte";
 trforward.legend="Forward";
 trforward.trrange="Intervallo Delle Porte Trigger";
 trforward.fwdrange="Intervallo Delle Porte Forward";
 trforward.app="Applicazione";
-
 htrforward.right2="Inserisci il nome dell'applicazione trigger.";
 htrforward.right4="Per ogni applicazione, elenca l'intervallo delle porte cui fare il trigger. Controlla nella documentazione dell'applicazione per il numero di porta necessario.";
 htrforward.right6="Per ogni applicazione, elenca l'intervallo delle porte cui fare il forward. Controlla nella documentazione dell'applicazione per il numero di porta necessario.";
 htrforward.right8="Inserisci il numero di porta iniziale per l'intervallo Trigger e Forward.";
 htrforward.right10="Inserisci il numero di porta finale per l'intervallo Trigger e Forward.";
-
 upgrad.titl=" - Aggiornamento Firmware";
 upgrad.h2="Gestione Firmware";
 upgrad.legend="Aggiornamento Firmware";
@@ -887,9 +820,7 @@ upgrad.resetOn="Impostazioni Di Default";
 upgrad.file="Seleziona un file per l'aggiornamento";
 upgrad.warning="A T T E N Z I O N E";
 upgrad.mess1="L'aggiornamento del firmware può durare alcuni minuti.<br />Non interrompere l'alimentazione e non premere il pulsante di reset!";
-
 hupgrad.right2="Clicca sul pulsante <em>Sfoglia...</em> per selezionare il file da caricare nel router.<br /><br /> Clicca sul pulsante <em>Aggiorna</em> per avviare il processo di aggiornamento. L'aggiornamento non deve essere interrotto.";
-
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forward";
@@ -899,19 +830,15 @@ upnp.clear="Pulisci le porte forward all'avvio";
 upnp.url="Invia la presentazione dell' URL";
 upnp.msg1="Clicca per cancellare la riga";
 upnp.msg2="Cancella tutte le righe?";
-
 hupnp.right2="Click su cestino può cancellare una sola riga.";
 hupnp.right4="Permette alle applicazioni di abilitare automaticamente il forwarding delle porte.";
-
 vpn.titl=" - VPN";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
 vpn.pptp="PPTP Passthrough";
 vpn.l2tp="L2TP Passthrough";
-
 hvpn.right1="Puoi scegliere di abilitare IPSec, PPTP e/o L2TP passthrough per permettere ai tuoi dispositivi di rete di comunicare via VPN.";
-
 vlan.titl=" - Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -920,10 +847,8 @@ vlan.tagged="Etichettata";
 vlan.negociate="Auto-Negoziazione";
 vlan.aggregation="Aggregazione del Link <br>sulle Porte 3 & 4";
 vlan.trunk="Trunk";
-
 wep.defkey="Chiave Di Trasmissione di Default";
 wep.passphrase="Parola D'Ordine";
-
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Host Disponibili";
@@ -935,24 +860,19 @@ wol.mac="Indirizzo/i MAC";
 wol.broadcast="Broadcast di rete";
 wol.udp="Porta UDP";
 wol.msg1="Clicca per rimuovere un host WOL";
-
-wol.h22="Automatic Wake-On-LAN";
+wol.h22="Wake-On-LAN Automatico";
 wol.legend5="Wake-On-LAN";
 wol.srv="WOL";
 wol.pass="SecureOn Password";
-
 hwol.right2="Questa pagina permette di fare il <em>Wake Up</em> degli host sulla tua rete locale (cioè connessi localmente al tuo router).";
 hwol.right4="Gli indirizzi MAC sono inseriti nel formato xx:xx:xx:xx:xx:xx (cioè 01:23:45:67:89:AB)";
 hwol.right6="E' l'indirizzo IP di broadcast tipico per la rete locale, ma potrebbe essere un indirizzo remoto se host obiettivo non è connesso alla rete locale del router."
-
 wanmac.titl=" - Indirizzo MAC Clonato";
 wanmac.h2="Indirizzo MAC Clonato";
 wanmac.legend="MAC Clonato";
 wanmac.wan="Clona MAC della WAN";
 wanmac.wlan="Clona MAC della Wireless";
-
 hwanmac.right2="Alcuni ISP potrebbero richiedere la registrazione del tuo MAC. Se non vuoi registrare nuovamente il MAC, puoi far clonare al router il MAC già registrato col tuo ISP.";
-
 wpa.titl=" - Sicurezza Wireless";
 wpa.h2="Sicurezza Wireless";
 wpa.secmode="Modalità Sicura";
@@ -967,19 +887,15 @@ wpa.radius_port="Porta Del Server RADIUS";
 wpa.radius_key="Chiave RADIUS";
 wpa.algorithms="Algoritmi WPA";
 wpa.shared_key="Chiave Condivisa WPA";
-
 hwpa.right2="Puoi scegliere tra Disabilitato, WEP, WPA a Chiave Pre-Condivisa, WPA Enterprise, o RADIUS. Tutti i dispositivi sulla tua rete devono adottare le stesse modalità di sicurezza.";
-
 wl_filter.titl=" - Elenco Filtri Degli Indirizzi MAC";
 wl_filter.h2="Elenco Filtri Degli Indirizzi MAC";
 wl_filter.h3="Inserisci l'indirizzo MAC in questo formato&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
-
 wl_active.titl=" - Elenco MAC Dei Client Wireless Attivi";
 wl_active.h2="Elenco MAC Dei Client Wireless Attivi";
 wl_active.h3="Abilita Filtri MAC";
 wl_active.active="PC Attivi";
 wl_active.inactive="PC Inattivi";
-
 wds.titl=" - WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="Impostazioni WDS";
@@ -991,7 +907,6 @@ wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Subnet";
 wds.legend2="Opzioni Extra";
-
 radius.titl=" - Radius";
 radius.h2="Servizio Autenticazione Remota Utente";
 radius.legend="Radius";
@@ -1003,7 +918,6 @@ radius.label5="Max Utenti Non Autenticati";
 radius.label6="Formato Della Password";
 radius.label7="RADIUS Secret Condiviso";
 radius.label8="Sovrascrivi Radius se il server non è disponibile";
-
 wl_mac.titl=" - Filtro MAC";
 wl_mac.h2="Filtro Dei MAC Wireless";
 wl_mac.legend="Filtro dei MAC";
@@ -1011,7 +925,6 @@ wl_mac.label="Usa il Filtro";
 wl_mac.label2="Modalità Filtro";
 wl_mac.deny="Impedisci ai PC in elenco l'accesso alla rete wireless";
 wl_mac.allow="Permetti ai soli PC in elenco l'accesso alla rete wireless";
-
 wl_basic.titl=" - Wireless";
 wl_basic.h2="Wireless";
 wl_basic.legend="Impostazioni Base";
@@ -1028,16 +941,14 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mista";
 wl_basic.b="Solo-B";
 wl_basic.g="Solo-G";
-wl_basic.legend2="Radio Time Restrictions";
+wl_basic.legend2="Limitazioni Di Tempo Radio";
 wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
-
+wl_basic.radiotimer="Programmazione Radio";
+wl_basic.radio_on="Radio Acceso";
+wl_basic.radio_off="Radio Spento";
 hwl_basic.right2="Se vuoi escludere i client modalità G, scegli la modalità <em>Solo-B</em>. Se vuoi disabilitare l'accesso wireless, Scegli <em>Disabilita</em>.";
 hwl_basic.right3="Intervallo Di Sensibilità: ";
 hwl_basic.right4="Modifica la teporizzazione dell ACK. 0 lo disabilita completamente.";
-
 wl_adv.titl=" - Impostazioni Avanzate Wireless";
 wl_adv.h2="Impostazioni Avanzate Wireless";
 wl_adv.legend="Impostazioni Avanzate";
@@ -1075,12 +986,9 @@ wl_adv.row3="Video";
 wl_adv.row4="Voce";
 wl_adv.table2="Parametri EDCA STA (Client verso AP)";
 wl_adv.lng="Lungo"; 					wl_adv.shrt="Corto"; 				
-
 hwl_adv.right2="Puoi scegliere tra Auto o Chiave Condivisa. L'autenticazione via chiave condivisa è più sicura, ma tutti i dispositivi sulla tua rete devono supportare l'autenticazione a Chiave Condivisa.";
-
 fail.mess1="Valore inserito non valido. Riprova.";
 fail.mess2="Aggiornamento Fallito.";
-
 success.saved="Impostazioni salvate.";
 success.restore="Impostazioni ripristinate.<br/>Adesso l'unità sta operando un riavvio. Si prega di attendere...";
 success.upgrade="Aggiornamento avvenuto con successo.<br/>Adesso l'unità sta operando un riavvio. Si prega di attendere...";
@@ -1090,10 +998,8 @@ success.alert_reset="Tutte le impostazioni di configurazione sono state ripristi
 success.alert1="Si prega di controllare quanto segue prima di riconnettersi:";
 success.alert2="Se hai modificato l'indirizzo IP del router, nota che devi rinnovare gli indirizzi del/dei client della rete.";
 success.alert3="Se sei connesso via WLAN, connettiti alla rete e poi clicca su <em>Continua</em>.";
-
 dhcp.titl=" - DHCP Tabella IP Attiva";
 dhcp.h2="DHCP Tabella IP Attiva";
 dhcp.server="DHCP Server Indirizzo IP :";
 dhcp.tclient="Nome Host Client";
-
 donate.mb="Puoi fare offerte tramite Moneybookers sull'account mb@dd-wrt.com";
