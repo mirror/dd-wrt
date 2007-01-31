@@ -8644,7 +8644,7 @@ ath_update_txpow(struct ath_softc *sc)
 	 */
 	(void)ath_hal_getmaxtxpow(ah, &txpowlimit);
 	ath_hal_settxpowlimit(ah, maxtxpowlimit);
-	(void)ath_hal_getmaxtxpow(ah, &maxtxpowlimit);
+	(void)ath_hal_gettxpowlimit(ah, &maxtxpowlimit);
 	ic->ic_txpowlimit = maxtxpowlimit;
 	ath_hal_settxpowlimit(ah, txpowlimit);
  	
