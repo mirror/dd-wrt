@@ -1,5 +1,25 @@
 /*
-*/
+ * nvram_linux_gen.c
+ *
+ * Copyright (C) 2005 - 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ * NVRAM Emulation Library for platforms who cannot support nvram based settings in any way
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,21 +154,12 @@ writedb (void)
 	  int fulllen = len + strlen (values.values[i].value) + 3;
 	  putc (fulllen >> 8, in);
 	  putc (fulllen & 255, in);
-
 	  putc (len, in);
-
-
 	  fwrite (values.values[i].name, len, 1, in);
-
-//        for (a = 0; a < len; a++)
-//          putc (values.values[i].name[a], in);
-
 	  len = strlen (values.values[i].value);
 	  putc (len >> 8, in);
 	  putc (len & 255, in);
 	  fwrite (values.values[i].value, len, 1, in);
-	  // for (a = 0; a < len; a++)
-	  //    putc (values.values[i].value[a], in);
 	}
     }
   fclose (in);
@@ -229,15 +240,6 @@ nvram_get (const char *name)
       return NULL;
     }
   setvbuf (in, &cache[0], _IOFBF, 4);
-  /*
-     fread (values.offsets, ('z'-'A')*4, 1, in);
-     fclose (in);
-     if (name[0]<'A' || name[0]>'z')
-     {
-     return NULL;
-     }
-     int offset = values.offsets[name[0]-'A'];
-   */
   int offset;
   fseek (in, (name[0] - 'A') * 4, SEEK_SET);
   fread (&offset, 4, 1, in);
@@ -266,11 +268,9 @@ begin:;
 	break;
       fullen = fullen << 8;
       fullen += getc (in);
-      //  cprintf("size of array = %d\n",fullen);
       int namelen = getc (in);
       if (namelen == EOF)
 	break;
-      //  cprintf("size of name = %d\n",namelen);
       if (namelen != len)
 	{
 	  offset += fullen + 2;
@@ -286,7 +286,6 @@ begin:;
       for (i = 1; i < namelen; i++)
 	if (getc (in) != name[i])
 	  {
-//          cprintf("not equal, continue\n");
 	    offset += fullen + 2;
 	    fseek (in, fullen - (i + 2), SEEK_CUR);
 	    goto begin;
@@ -296,14 +295,10 @@ begin:;
 	break;
       fullen = fullen << 8;
       fullen += getc (in);
-      cprintf ("size of value = %d\n", fullen);
-      //char *value = malloc (fullen + 1);
       fread (&value[offset], fullen, 1, in);
       value[offset + fullen] = 0;
       fclose (in);
       unlock ();
-      cprintf ("nvram_get done %s\n", value);
-
       return &value[offset];
     }
   fclose (in);
@@ -311,28 +306,6 @@ begin:;
   cprintf ("nvram_get NULL (eof)\n");
 
   return NULL;
-/*
-
-
-  readdb ();
-  for (i = 0; i < values.nov; i++)
-    {
-      if (!strcmp (values.values[i].name, name))
-        {
-	char *value;
-	if (values.values[i].value)
-	    value=strdup(values.values[i].value);
-	closedb();
-	unlock();
-	cprintf("nvram_get %s done\n",value);
-	return value;
-	}
-    }
-  closedb ();
-  unlock();
-cprintf("nvram_get done\n");
-  return NULL;
-*/
 }
 
 int
@@ -455,6 +428,9 @@ nvram_unset (const char *name)
   return 0;
 }
 
+/*
+ * write back the changes to flash memory or filesystem (platform depending)
+ */
 int
 nvram_commit (void)
 {
@@ -477,9 +453,6 @@ nvram_commit (void)
   system ("cp /tmp/nvram/offsets.db /etc/nvram");
   system ("mount /usr/local -o remount,ro");
 #endif
-
-//writedb ();
-//closedb ();
   unlock ();
   return 0;
 }
