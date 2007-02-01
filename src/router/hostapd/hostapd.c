@@ -1213,7 +1213,7 @@ int main(int argc, char *argv[])
 		perror("daemon");
 		goto out;
 	}
-	sleep(5);
+	sleep(15);
 #ifndef CONFIG_NATIVE_WINDOWS
 	openlog("hostapd", 0, LOG_DAEMON);
 #endif /* CONFIG_NATIVE_WINDOWS */
