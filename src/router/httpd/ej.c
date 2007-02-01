@@ -46,11 +46,11 @@ unqstrstr (char *haystack, char *needle)
 {
   char *cur;
   int q;
-
+  int needlelen = strlen(needle);
   for (cur = haystack, q = 0;
        cur < &haystack[strlen (haystack)] && !(!q
 					       && !strncmp (needle, cur,
-							    strlen (needle)));
+							    needlelen));
        cur++)
     {
       if (*cur == '"')
@@ -63,7 +63,7 @@ static char *
 get_arg (char *args, char **next)
 {
   char *arg, *end;
-
+  
   /* Parse out arg, ... */
   if (!(end = uqstrchr (args, ',')))
     {

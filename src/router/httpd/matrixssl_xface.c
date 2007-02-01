@@ -219,7 +219,6 @@ int
 matrixssl_puts (FILE * fp, unsigned char *buf)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
-
   if (NULL == pbuf || NULL == buf || strlen (buf) <= 0)
     return -1;
 
