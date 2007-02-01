@@ -93,6 +93,8 @@ struct nvram_convert nvram_converts[] = {
   {WL ("nmcsidx"), WL0 ("nmcsidx"), ""},
   {WL ("nstf"), WL0 ("nstf"), ""},
   {WL ("nmode_protection"), WL0 ("nmode_protection"), ""},
+  {WL ("nreqd"), WL0 ("nreqd"), ""},
+  {WL ("vlan_prio_mode"), WL0 ("vlan_prio_mode"), ""},
   {WL ("amsdu"), WL0 ("amsdu"), ""},
   {WL ("ampdu"), WL0 ("ampdu"), ""},
   {WL ("nmode"), WL0 ("nmode"), ""},
