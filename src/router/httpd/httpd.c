@@ -604,22 +604,22 @@ contains (char *source, char *cmp)
 {
   if (cmp == NULL || source == NULL)
     return 0;
-  if (strlen (source) < strlen (cmp))
+  int slen=strlen(source);
+  int clen=strlen(cmp);
+  if (slen < clen)
     return 0;
   int i;
-  // fprintf(stderr,"contains %s %s\n",source,cmp);
-  for (i = 0; i < strlen (source) - strlen (cmp); i++)
+  
+  for (i = 0; i < slen - clen; i++)
     {
       int a;
       int r = 0;
-      for (a = 0; a < strlen (cmp); a++)
+      for (a = 0; a < clen; a++)
 	if (source[i + a] != cmp[a])
 	  r++;
-//      fprintf(stderr,"result %d\n",r);
       if (!r)
 	return 1;
     }
-  //fprintf(stderr,"no match\n");
   return 0;
 }
 
