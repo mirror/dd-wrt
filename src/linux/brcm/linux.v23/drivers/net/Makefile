@@ -48,9 +48,9 @@ subdir-$(CONFIG_ET) += et
 subdir-$(CONFIG_BRCMSWITCH) += switch
 subdir-$(CONFIG_ROBO) += robo
 subdir-$(CONFIG_WL) += wl
-ifdef CONFIG_LED	#added by Jerry Lee
-subdir-$(CONFIG_LED) += led
-endif
+#ifdef CONFIG_LED	#added by Jerry Lee
+#subdir-$(CONFIG_LED) += led
+#endif
 
 subdir-$(CONFIG_NET_PCMCIA) += pcmcia
 subdir-$(CONFIG_NET_WIRELESS) += wireless
