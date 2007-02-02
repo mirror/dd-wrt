@@ -464,12 +464,6 @@ start_restore_defaults (void)
 #else
   int brand = getRouterBrand ();
 
-//  switch (brand)
-//    {
-//    case ROUTER_BUFFALO_WLA2G54L:
-//      break;
-//    default:
-
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
     {
 //      nvram_unset("sv_restore_defaults");
