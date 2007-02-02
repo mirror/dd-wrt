@@ -2236,8 +2236,6 @@ void
 start_wan_done (char *wan_ifname)
 {
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
-  if (getRouterBrand () == ROUTER_SIEMENS)
-    led_ctrl (1);		// turn LED2 on
 
   if (nvram_match ("wan_proto", "l2tp"))
     {

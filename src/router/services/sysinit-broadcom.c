@@ -337,8 +337,7 @@ start_sysinit (void)
       setup_4712 ();
       break;
 
-    case ROUTER_SIEMENS:
-    case ROUTER_BELKIN_F5D7230:
+    case ROUTER_RT480W:
       setup_4712 ();
       break;
 
@@ -460,9 +459,8 @@ start_sysinit (void)
 	      break;
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
-	    case ROUTER_SIEMENS:
+	    case ROUTER_RT480W:
 	    case ROUTER_WLI2_TX1_G54:
-	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "diag";
@@ -497,7 +495,6 @@ start_sysinit (void)
 
 	      break;
 	    case ROUTER_ASUS:
-	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "diag";
@@ -555,12 +552,6 @@ start_sysinit (void)
     }
   /* Set a sane date */
   stime (&tm);
-  if (brand == ROUTER_SIEMENS)
-    {
-      eval ("insmod", "led.o");	// Jerry Lee
-      powerled_ctrl (0);
-      led_ctrl (0);		// turn LED2 off
-    }
 
   led_control (LED_POWER, LED_ON);
   led_control (LED_DIAG, LED_OFF);

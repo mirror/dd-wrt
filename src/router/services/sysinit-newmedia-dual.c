@@ -144,12 +144,6 @@ start_sysinit (void)
 //  load_drivers(); //load madwifi drivers
   /* Set a sane date */
   stime (&tm);
-  if (brand == ROUTER_SIEMENS)
-    {
-      eval ("insmod", "led.o");	// Jerry Lee
-      powerled_ctrl (0);
-      led_ctrl (0);		// turn LED2 off
-    }
 
   return 0;
   cprintf ("done\n");
