@@ -160,13 +160,13 @@ internal_getRouterBrand ()
   switch(data->phy_id)
   {
   case 0x4011:
-	  setRouter ("Avila Gateworks GW2348-2");
+	  setRouter ("Avila GW2348-2");
   break;    
   case 0x4006:
-	  setRouter ("Avila Gateworks GW2348-4");
+	  setRouter ("Avila GW2348-4");
   break;
   default:
-	  setRouter ("Avila Gateworks GW2347");
+	  setRouter ("Avila GW2347");
   break;  
   }
   return ROUTER_BOARD_GATEWORX;
