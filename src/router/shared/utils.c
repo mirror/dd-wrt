@@ -264,13 +264,13 @@ internal_getRouterBrand ()
 	  nvram_set ("boardflags", "0x2758");
 	  nvram_set ("buffalo_hp", "1");
 	  setRouter ("Buffalo WHR-HP-G54");
-	  return ROUTER_BUFFALO_HP_WHRG54S;
+	  return ROUTER_BUFFALO_WHRG54S;
 	}
       if (nvram_match ("buffalo_hp", "1"))
 	{
 	  cprintf ("router is Buffalo WHR-HP-G54\n");
 	  setRouter ("Buffalo WHR-HP-G54");
-	  return ROUTER_BUFFALO_HP_WHRG54S;
+	  return ROUTER_BUFFALO_WHRG54S;
 	}
     }
 

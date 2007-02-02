@@ -35,14 +35,12 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // Buffalo WBR2-G54 / WLA2-G54 (4712 + ADM6996 switch, fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
 #define ROUTER_BUFFALO_WBR2G54S 0x0607
-#define ROUTER_BUFFALO_WLA2G54L 0x0607	//should work like a WBR2
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
 #define ROUTER_BUFFALO_WLA2G54C 0x0712  //gpio 2 is AOSS button, let it acts as reset for now.
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
-#define ROUTER_BUFFALO_HP_WHRG54S 0x0804	//no differences between these models. so we leave it
 
 // Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), WHR3-AG54, WVR-G54-NF, WHR2-A54G54
 #define ROUTER_BUFFALO_WZRRSG54 0x0904
@@ -66,9 +64,6 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_XSCALE 0x0e01
-
-// ??? 
-//#define ROUTER_BELKIN 0x0f0f
 
 // Generic BRCM 4702 boards: Asus WL300g, WL500g
 #define ROUTER_BRCM4702_GENERIC 0x0f0f
@@ -101,6 +96,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 //Magicbox PowerPC board
 #define ROUTER_BOARD_MAGICBOX 0x1801
+
 //Magicbox PowerPC board 2.0
 //#define ROUTER_BOARD_MAGICBOX20 0x1901
 
@@ -117,6 +113,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_SUPERGERRY 0x1f0f
 
+//Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Q87-WRT350N)
 #define ROUTER_WRT350N 0x2016
 
 //Linksys WAP54G v1
