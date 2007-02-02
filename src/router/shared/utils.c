@@ -396,14 +396,14 @@ internal_getRouterBrand ()
 	      {
 		cprintf ("router is Belkin F5D7230-4 v1444\n");
 		setRouter ("Belkin F5D7230-4 v1444");
-		return ROUTER_BELKIN_F5D7230;
+		return ROUTER_RT480W;
 	      }
 	    if (startswith (et0, "00:01:E3") ||
 		startswith (et0, "00:01:e3") || startswith (et0, "00:90:96"))
 	      {
 		cprintf ("router is Siemens / Askey\n");
 		setRouter ("Siemens SE505 v2");
-		return ROUTER_SIEMENS;
+		return ROUTER_RT480W;
 	      }
 	  }
 
@@ -858,22 +858,6 @@ int brand = getRouterBrand ();
 		}
 	return 0;
 }
-/*
-  if (getRouterBrand () == ROUTER_BELKIN_F5D7230 ||	//fix for belkin DMZ=enable reboot problem (gpio 7)
-      getRouterBrand () == ROUTER_BUFFALO_WBR2G54S ||	//same for wbr2g54
-      getRouterBrand () == ROUTER_MICROSOFT_MN700)	//same for MN700
-    return 0;
-  else
-    {
-      if (check_hw_type () == BCM4702_CHIP)
-	return diag_led_4702 (type, act);
-      else if (check_hw_type () == BCM4704_BCM5325F_CHIP
-	       || check_hw_type () == BCM4704_BCM5325F_EWC_CHIP)
-	return diag_led_4704 (type, act);
-      else
-	return diag_led_4712 (type, act);
-    } 
-} */
   
 int
 led_control (int type, int act)
@@ -965,12 +949,9 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			connected_gpio = 0x10;
 			wlan_gpio = 0x13;
 		break;
-	case ROUTER_SIEMENS:
-			power_gpio = 0x15;
-		break;
 	case ROUTER_BRCM4702_GENERIC:
 		break;
-	case ROUTER_BELKIN_F5D7230:
+	case ROUTER_RT480W:
 			power_gpio = 0x15;
 			connected_gpio = 0x10;
 		break;
