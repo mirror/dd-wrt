@@ -156,8 +156,19 @@ internal_getRouterBrand ()
   data = (struct mii_ioctl_data*)&iwr.ifr_data;
   ioctl (s, SIOCGMIIPHY, &iwr);
   close(s);
-  fprintf(stderr,"phy id %d\n",data->phy_id);  
-  setRouter ("Avila Gateworks");
+  fprintf(stderr,"phy id %d\n",data->phy_id);
+  switch(data->phy_id)
+  {
+  case 0x4011:
+	  setRouter ("Avila Gateworks GW2348-2");
+  break;    
+  case 0x4006:
+	  setRouter ("Avila Gateworks GW2348-4");
+  break;
+  default:
+	  setRouter ("Avila Gateworks GW2347");
+  break;  
+  }
   return ROUTER_BOARD_GATEWORX;
 #elif HAVE_X86
   setRouter ("Generic X86");
