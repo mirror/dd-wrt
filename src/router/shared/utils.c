@@ -205,7 +205,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Dell TrueMobile 2300\n");
       setRouter ("Dell TrueMobile 2300");
-      return DELL_TRUEMOBILE_2300;
+      return ROUTER_DELL_TRUEMOBILE_2300;
     }
     
   if (boardnum == 100 &&
@@ -450,7 +450,7 @@ internal_getRouterBrand ()
 	      {
 		cprintf ("router is Buffalo WLI2-TX1-G54\n");
 		setRouter ("Buffalo WLI2-TX1-G54");
-		return ROUTER_WLI2_TX1_G54;
+		return ROUTER_BUFFALO_WLI2_TX1_G54;
 	      }
 	    else if (nvram_match ("GemtekPmonVer", "10"))
 	      {
@@ -472,7 +472,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x0472"))
     {
       setRouter ("Buffalo WZR-G300N");
-      return ROUTER_WZRG300N;
+      return ROUTER_BUFFALO_WZRG300N;
     }
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
@@ -970,13 +970,13 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			ses_gpio = 0x15;		//ses white
 			ses2_gpio = 0x17;		//ses orange	
 		break;
-	case ROUTER_WZRG300N:
+	case ROUTER_BUFFALO_WZRG300N:
 		break;
 	case ROUTER_WRT300N:
 		break;
 	case ROUTER_BUFFALO_WHRAM54G54:
 		break;
-	case ROUTER_WLI2_TX1_G54:
+	case ROUTER_BUFFALO_WLI2_TX1_G54:
 		break;
 	case ROUTER_MOTOROLA_WE800G:
 			diag_gpio = 0x13;
@@ -989,7 +989,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 		break;
 	case ROUTER_VIEWSONIC_WAPBR_100:
 		break;
-	case DELL_TRUEMOBILE_2300:
+	case ROUTER_DELL_TRUEMOBILE_2300:
 	        power_gpio = 0x17;
 	        wlan_gpio = 0x16;
 		break;
@@ -2149,7 +2149,8 @@ check_vlan_support (void)
 	  	case ROUTER_BUFFALO_WLA2G54C:
 	  	case ROUTER_MOTOROLA_WE800G:
 	  	case ROUTER_WAP54G_V1:
-	  	case ROUTER_WLI2_TX1_G54:
+	  	case ROUTER_BUFFALO_WLI2_TX1_G54:
+	  	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 	  	case ROUTER_BRCM4702_GENERIC:
 	  		return 0;
 	  	break;

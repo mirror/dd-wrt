@@ -85,7 +85,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 
 //Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
-#define ROUTER_WZRG300N 0x1504
+#define ROUTER_BUFFALO_WZRG300N 0x1504
 
 //Linksys WRT300N v1 (4704 cpu + BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
@@ -101,7 +101,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //#define ROUTER_BOARD_MAGICBOX20 0x1901
 
 //Buffalo WLI2-TX1-G54 Access point (4702 cpu, no switch)
-#define ROUTER_WLI2_TX1_G54 0x1a10
+#define ROUTER_BUFFALO_WLI2_TX1_G54 0x1a10
 
 // NMN A/B/G Router Protoype (266 Mhz Xscale, four minipci)
 #define ROUTER_BOARD_GATEWORX 0x1b0f
@@ -126,7 +126,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_VIEWSONIC_WAPBR_100 0x2317
 
 //Dell TrueMobile 2300 (4702 cpu, mini pci radio)
-#define DELL_TRUEMOBILE_2300 0x2410
+#define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
 #define ROUTER_BOARD_FONERA 0x250f
 
