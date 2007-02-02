@@ -1708,15 +1708,15 @@ start_wan (int status)
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_WRTSL54GS:
     case ROUTER_WRT300N:
-    case ROUTER_WZRG300N:
+    case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_MOTOROLA_V1:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
-    case DELL_TRUEMOBILE_2300:
+    case ROUTER_DELL_TRUEMOBILE_2300:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth1";
       break;
-    case ROUTER_WLI2_TX1_G54:
+    case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
