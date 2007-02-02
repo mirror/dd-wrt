@@ -1025,7 +1025,7 @@ static void rng_timer_tick(unsigned long n)
 static int __init wlcompat_init()
 {
 	int found = 0, i;
-	char devname[4] = "wl0";
+	char devname[4] = "eth1";
 	bss_force = 0;
 	
 	while (!found && (dev = dev_get_by_name(devname))) {
@@ -1040,8 +1040,9 @@ static int __init wlcompat_init()
 	}
 		
 
-	old_ioctl = dev->do_ioctl;
-	dev->do_ioctl = new_ioctl;
+//	old_ioctl = dev->do_ioctl;
+//	dev->do_ioctl = new_ioctl;
+	dev->do_ioctl = wl_iw_ioctl;
 	dev->wireless_handlers = (struct iw_handler_def *)&wlcompat_handler_def;
 	dev->get_wireless_stats = wlcompat_get_wireless_stats;
 
