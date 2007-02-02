@@ -19,7 +19,7 @@ obj-y		:= wl_apsta_mimo.o
 obj-y		+= bcmutils.o hnddma.o linux_osl.o
 
 obj-m		:= $(O_TARGET)
-
+export-objs	:= bcmutils.o
 #wl_mod.o: wl_apsta.o
 #	sed -e 's,eth%d,wl%d\x00,g' < $< > $@
 

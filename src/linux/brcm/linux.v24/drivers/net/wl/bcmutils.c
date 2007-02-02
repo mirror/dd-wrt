@@ -870,4 +870,9 @@ bcm_bitcount(uint8 *bitmap, uint length)
 	}
 	return bitcount;
 }
+#define _export(n) \
+		void n(void); \
+		EXPORT_SYMBOL(n);
 
+_export(wlc_channel2freq)
+_export(wlc_freq2channel)
