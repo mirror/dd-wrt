@@ -15,7 +15,7 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic
 
-OBJS = services.c openvpn.c network.c firewall.c mssid.c wshaper.c ddns.c sysinit.c sysinit-$(ARCHITECTURE).c interface.c udhcpc.c ledcontrol.c mkfiles.c iptable.c defaults.c
+OBJS = services.c openvpn.c network.c firewall.c mssid.c wshaper.c ddns.c sysinit.c sysinit-$(ARCHITECTURE).c interface.c udhcpc.c mkfiles.c iptable.c defaults.c
 
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio.c
