@@ -230,8 +230,7 @@ if (brand!=ROUTER_WRT350N)
     {
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
-    case ROUTER_SIEMENS:
-    case ROUTER_BELKIN_F5D7230:
+    case ROUTER_RT480W:
     case ROUTER_WRT350N:
       start_service ("config_vlan");
       break;
@@ -344,10 +343,7 @@ if (brand!=ROUTER_WRT350N)
 
   sethostname (hostname, strlen (hostname));
   stop_service ("httpd");
-  if (brand == ROUTER_SIEMENS)
-    {
-      start_service ("powerled_ctrl_1");
-    }
+
 //create loginprompt
   FILE *fp = fopen ("/tmp/loginprompt", "wb");
 
