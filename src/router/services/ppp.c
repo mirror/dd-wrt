@@ -197,8 +197,6 @@ ipdown_main (int argc, char **argv)
       killall ("listen", SIGKILL);
       eval ("listen", nvram_safe_get ("lan_ifname"));
     }
-  if (getRouterBrand () == ROUTER_SIEMENS)
-    led_ctrl (0);
 
   return 1;
 }
