@@ -362,13 +362,13 @@ start_sysinit (void)
 	}
       break;
 
-    case DELL_TRUEMOBILE_2300:
+    case ROUTER_DELL_TRUEMOBILE_2300:
       setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for WAN problem.
       nvram_set ("wan_ifnames", "eth1");
       break;
 
-    case ROUTER_WLI2_TX1_G54:
+    case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
       nvram_set ("lan_ifnames", "eth1 eth2");
@@ -387,7 +387,7 @@ start_sysinit (void)
       eval ("gpio", "disable", "7");
       break;
 
-    case ROUTER_WZRG300N:
+    case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_WRT300N:
     case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
@@ -460,7 +460,7 @@ start_sysinit (void)
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_RT480W:
-	    case ROUTER_WLI2_TX1_G54:
+	    case ROUTER_BUFFALO_WLI2_TX1_G54:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "diag";
