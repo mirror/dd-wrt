@@ -127,7 +127,10 @@ getRouter ()
   return n != NULL ? n : "Unknown Model";
 }
 
+#ifdef HAVE_GATEWORKS
 
+#include <linux/mii.h>
+#endif
 
 int
 internal_getRouterBrand ()
@@ -140,8 +143,8 @@ internal_getRouterBrand ()
   setRouter ("SuperGerry");
   return ROUTER_SUPERGERRY;
 #elif HAVE_GATEWORX
-  struct mii_ioctl_data data;
-  struct iwreq iwr;
+  struct mii_ioctl_data *data;
+  struct ifreq iwr;
   int s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
@@ -150,10 +153,10 @@ internal_getRouterBrand ()
       return ROUTER_BOARD_GATEWORX;
     }
   (void) strncpy (iwr.ifr_name, "ixp1", sizeof ("ixp1"));
-  iwr.u.data.pointer = (void *) &data;
-  iwr.u.data.length = sizeof(struct mii_ioctl_data);
+  data = (struct mii_ioctl_data*)&iwr.ifr_data;
   ioctl (s, SIOCGMIIPHY, &iwr);
-  fprintf(stderr,"phy id %d\n",data.phy_id);  
+  close(s);
+  fprintf(stderr,"phy id %d\n",data->phy_id);  
   setRouter ("Avila Gateworks");
   return ROUTER_BOARD_GATEWORX;
 #elif HAVE_X86
