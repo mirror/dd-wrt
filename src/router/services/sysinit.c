@@ -505,10 +505,9 @@ start_restore_defaults (void)
     case ROUTER_WAP54G_V1:
       linux_overrides = generic_2;
       break;
-    case ROUTER_SIEMENS:
+    case ROUTER_RT480W:
     case ROUTER_RT210W:
     case ROUTER_BRCM4702_GENERIC:
-    case ROUTER_BELKIN_F5D7230:
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
 	{
@@ -672,8 +671,7 @@ start_restore_defaults (void)
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
-	    case ROUTER_SIEMENS:
-	    case ROUTER_BELKIN_F5D7230:
+	    case ROUTER_RT480W:
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    default:
@@ -695,8 +693,7 @@ start_restore_defaults (void)
 		case ROUTER_MOTOROLA:
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_MOTOROLA_V1:
-		case ROUTER_SIEMENS:
-		case ROUTER_BELKIN_F5D7230:
+		case ROUTER_RT480W:
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
 		default:
