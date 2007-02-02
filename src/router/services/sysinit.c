@@ -488,7 +488,7 @@ start_restore_defaults (void)
   switch (brand)
     {
     case ROUTER_WRTSL54GS:
-    case ROUTER_WZRG300N:
+    case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_WRT300N:
     case ROUTER_BUFFALO_WZRRSG54:
       linux_overrides = generic;
@@ -499,7 +499,7 @@ start_restore_defaults (void)
     case ROUTER_WRT350N:
       linux_overrides = wrt350vlan;
       break;
-    case ROUTER_WLI2_TX1_G54:
+    case ROUTER_BUFFALO_WLI2_TX1_G54:
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
