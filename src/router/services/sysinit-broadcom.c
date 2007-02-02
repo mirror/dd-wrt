@@ -133,6 +133,10 @@ int brand = getRouterBrand ();
     	case ROUTER_WRT350N:
     		nvram_set ("wl0gpio0", "8");
 			break;
+		case ROUTER_BUFFALO_WHRG54S:
+		case ROUTER_BUFFALO_WLI_TX4_G54HP:
+    		nvram_set ("wl0gpio2", "136");
+			break;
 	}
 #else	//v23
 
