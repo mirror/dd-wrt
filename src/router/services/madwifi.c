@@ -951,21 +951,6 @@ set_netmode (char *wif, char *dev)
     if (!strcmp (netmode, "a-only"))
       eval ("iwpriv", dev, "mode", "1");
   }
-#ifndef HAVE_FONERA
-  long tb = atol (nvram_safe_get (turbo));
-  setsysctrl (wif, "turbo", tb);
-  long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-  if (default_match ("ath_specialmode", "1", "0"))
-    {
-      setsysctrl (wif, "regulatory", 0);
-      setsysctrl (wif, "setregdomain", 0x49);
-    }
-  else
-    {
-      setsysctrl (wif, "regulatory", regulatory);
-      setsysctrl (wif, "setregdomain", 0);
-    }
-#endif
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta"))
@@ -1068,9 +1053,26 @@ configure_single (int count, int isbond)
   char rxantenna[16];
   char txantenna[16];
   char athmac[16];
-  sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
-  sprintf (dev, "ath%d", count);
+  char turbo[16];
   sprintf (wif, "wifi%d", count);
+  sprintf (turbo, "%s_turbo", dev);
+  sprintf (dev, "ath%d", count);
+#ifndef HAVE_FONERA
+  long tb = atol (nvram_safe_get (turbo));
+  setsysctrl (wif, "turbo", tb);
+  long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+  if (default_match ("ath_specialmode", "1", "0"))
+    {
+      setsysctrl (wif, "regulatory", 0);
+      setsysctrl (wif, "setregdomain", 0x49);
+    }
+  else
+    {
+      setsysctrl (wif, "regulatory", regulatory);
+      setsysctrl (wif, "setregdomain", 0);
+    }
+#endif
+  sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (power, "ath%d_txpwr", count);
