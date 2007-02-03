@@ -511,9 +511,17 @@ if (brand!=ROUTER_WRT350N)
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
 	  cprintf ("ifconfig wl up\n");
-	  if (nvram_match ("wl0_mode", "sta")
-	      || nvram_match ("wl0_mode", "wet")
-	      || nvram_match ("wl0_mode", "apsta"))
+  char mode[64];
+#ifdef HAVE_MSSID
+  sprintf (mode, "%s_mode", "wl0");
+#else
+  sprintf (mode, "%s_mode", "wl");
+#endif
+
+	  if (nvram_match (mode, "sta")
+	      || nvram_match (mode, "wet")
+	      || nvram_match (mode, "apsta")
+	      || nvram_match (mode, "apstawet"))
 	    {
 	      //fix for client mode
 	      if (wl_probe ("eth2"))
