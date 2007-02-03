@@ -300,9 +300,9 @@ endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/build
 	mv $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/$(LINUXVER)
-endif
+#ifneq ($(CONFIG_DIST),"micro")
+#	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+#endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 #ifeq ($(CONFIG_MSSID),y)
 #	cp ../wl/wl/wl_v24.o $(TARGETDIR)/lib/modules/2.4.33-rc1/wl.o
