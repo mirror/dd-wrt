@@ -344,37 +344,26 @@ start_dhcpc (char *wan_ifname)
   pid_t pid;
   char *wan_hostname = nvram_get ("wan_hostname");
   char *vendorclass = nvram_get ("dhcpc_vendorclass");
+  char *requestip = nvram_get ("dhcp_requestip");
   symlink ("/sbin/rc", "/tmp/udhcpc");
 
   nvram_set ("wan_get_dns", "");
   killall ("udhcpc", SIGTERM);
-  if (vendorclass != NULL && strlen (vendorclass) > 0)
-    {
-      char *dhcp_argv[] = { "udhcpc",
+
+        char *dhcp_argv[] = { "udhcpc",
 	"-i", wan_ifname,
 	"-p", "/var/run/udhcpc.pid",
 	"-s", "/tmp/udhcpc",
-	"-V", vendorclass,
+	vendorclass && *vendorclass ? "-V" : NULL,
+	vendorclass && *vendorclass ? vendorclass : NULL,
+	requestip && *requestip ? "-r" : NULL,
+	requestip && *requestip ? requestip : NULL,
 	wan_hostname && *wan_hostname ? "-H" : NULL,
 	wan_hostname && *wan_hostname ? wan_hostname : NULL,
 	NULL
       };
-      _eval (dhcp_argv, NULL, 0, &pid);
-
-    }
-  else
-    {
-      char *dhcp_argv[] = { "udhcpc",
-	"-i", wan_ifname,
-	"-p", "/var/run/udhcpc.pid",
-	"-s", "/tmp/udhcpc",
-	wan_hostname && *wan_hostname ? "-H" : NULL,
-	wan_hostname && *wan_hostname ? wan_hostname : NULL,
-	NULL
-      };
-      _eval (dhcp_argv, NULL, 0, &pid);
-    }
-
+      _eval (dhcp_argv, NULL, 0, &pid);  
+  
 }
 
 #ifdef HAVE_MSSID
