@@ -957,6 +957,7 @@ service.kaid_mac="Konsole-Macs: (muß mit einem ; enden)";
 //DHCPd
 service.dhcp_legend="DHCP-Client";
 service.dhcp_vendor="Setze Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP-Server";
 service.dhcp_srv="DHCP-Daemon";
 service.dhcp_jffs2="Nutze JFFS2 für Clientzuweisungs-DB)";

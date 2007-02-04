@@ -677,6 +677,7 @@ service.kaid_srv="Start kaid";
 service.kaid_mac="MAC-i konsoli: (musi konczyc;)";
 service.dhcp_legend="Klient DHCP";
 service.dhcp_vendor="Umieszczany vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP serwer";
 service.dhcp_srv="DHCP demon";
 service.dhcp_jffs2="Uzywaj JFFS2 dla dzierzawy klienta DB";
