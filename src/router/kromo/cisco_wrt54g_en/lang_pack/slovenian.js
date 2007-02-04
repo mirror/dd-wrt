@@ -314,7 +314,7 @@ errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 //Saving message
 errmsg.err100="Obdelujem...<br/>Prosimo poèakajte.";
 errmsg.err101="Obnavljam nastavitve...<br/>Prosimo poèakajte.";
-errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poèakajte.";
+errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo poèakajte";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
