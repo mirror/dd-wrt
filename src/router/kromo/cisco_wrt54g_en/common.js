@@ -809,11 +809,28 @@ function StatusUpdate(_url, _frequency) {
 }
 
 // Gray all form when submitting
-function apply(form, text) {
-    if(!text) text=errmsg.err100;
+function apply(form, text, delay) {
+    if(!text)
+    	text=errmsg.err100;
+
     Dialog.info(text, {windowParameters: {className: "ddwrt", width:250, height:100}, showProgress: true});
     setTimeout(function(){form.submit();}, 2000);
+    
+    if(delay) {
+    	setTimeout(infoTimeout(), 1000)
+    }
 }
+
+function infoTimeout() {
+	delay--;
+	if (delay > 0) {
+		Dialog.setInfoMessage(text+" "+delay+"s ...");
+		setTimeout(infoTimeout, 1000);
+	}
+	else
+		Dialog.setInfoMessage(text);
+}
+
 
 // Class for sending a request using ajax
 // This is work in progress, plz do not use yet.
