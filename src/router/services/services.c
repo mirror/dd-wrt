@@ -1242,12 +1242,13 @@ convert_wds (void)
 int
 start_guest_nas (void)
 {
-  char *unbridged_interfaces;
+		
+/*  char *unbridged_interfaces;
   char *next;
   char name[IFNAMSIZ], lan[IFNAMSIZ];
   int index;
 
-/*	unbridged_interfaces = nvram_get("unbridged_ifnames");
+	unbridged_interfaces = nvram_get("unbridged_ifnames");
 	
 	if (unbridged_interfaces)
 		foreach(name,unbridged_interfaces,next){
@@ -1396,13 +1397,25 @@ start_nas_wan (void)
 #ifdef HAVE_MSSID
   char *next;
   char var[80];
+  char vif[16];
   char *vifs = nvram_safe_get ("wl0_vifs");
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      start_nas ("wan", var);
-      syslog (LOG_INFO, "NAS : NAS wan (%s interface) successfully started\n",
-	      var);
+	  sprintf (vif, "%s_mode", var);
+	  if (nvram_match (vif, "sta")
+	      || nvram_match (vif, "wet")
+	      || nvram_match (vif, "apsta")
+	      || nvram_match (vif, "apstawet"))
+	    {
+      	start_nas ("wan", var);
+      	syslog (LOG_INFO, "NAS : NAS wan (%s interface) successfully started\n", var);
+  		}
+  	  else
+	  	{
+      	start_nas ("lan", var);
+      	syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n", var);
+  		}
     }
 #endif
 }
