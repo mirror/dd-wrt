@@ -825,7 +825,7 @@ function infoTimeout(text, delay) {
 	delay--;
 	if (delay > 0) {
 		Dialog.setInfoMessage(text+" "+delay+"s ...");
-		setTimeout(infoTimeout, 1000);
+		setTimeout(function(){infoTimeout(text, delay);}, 1000);
 	}
 	else {
 		Dialog.setInfoMessage(text);
