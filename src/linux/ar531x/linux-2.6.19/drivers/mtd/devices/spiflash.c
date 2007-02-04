@@ -37,6 +37,7 @@
 #include <linux/slab.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/platform_device.h>
 #include <linux/squashfs_fs.h>
 #include <linux/root_dev.h>
 #include <asm/delay.h>
@@ -64,10 +65,9 @@ static __u32 spiflash_regread32(int reg);
 static void spiflash_regwrite32(int reg, __u32 data);
 static __u32 spiflash_sendcmd (int op);
 
-static void __init spidata_init(void);
 int __init spiflash_init (void);
 void __exit spiflash_exit (void);
-static int spiflash_probe (void);
+static int spiflash_probe_chip (void);
 static int spiflash_erase (struct mtd_info *mtd,struct erase_info *instr);
 static int spiflash_read (struct mtd_info *mtd, loff_t from,size_t len,size_t *retlen,u_char *buf);
 static int spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u_char *buf);
@@ -194,17 +194,11 @@ spiflash_sendcmd (int op)
  * and flashconfig_tbl array index for success.
  */
 static int 
-spiflash_probe (void)
+spiflash_probe_chip (void)
 {
 	__u32 sig;
    	int flash_size;
-
-	if (!spidata)
-		spidata_init();
 	
-	if (!spidata) /* init failed */
-		return 0;
-
    	/* Read the signature on the flash device */
    	sig = spiflash_sendcmd(SPI_RD_SIG);
 
@@ -394,32 +388,13 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
    	return (0);
 }
 
-static void __init spidata_init(void)
-{
-	if (spidata)
-		return;
-			
-   	spidata = kmalloc(sizeof(struct spiflash_data), GFP_KERNEL);
-	spin_lock_init(&spidata->mutex);
-
-  	if (!spidata)
-		return;
-
-	spidata->spiflash_mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
-	
-	if (!spidata->spiflash_mmraddr) {
-  		printk (KERN_WARNING "%s: Failed to map flash device\n", module_name);
-		kfree(spidata);
-		spidata = NULL;
-	}
-}
 
 #ifdef CONFIG_MTD_PARTITIONS
 static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
 #endif
 
-int __init 
-spiflash_init (void)
+
+static int spiflash_probe(struct platform_device *pdev)
 {
    	int result = -1, i, j;
 	u32 len;
@@ -431,11 +406,14 @@ spiflash_init (void)
 	struct squashfs_super_block *sb;
 	u32 config_start;
 
-	spidata_init();
-
-  	if (!spidata)
-		return (-ENXIO);
+	spidata->spiflash_mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
 	
+	if (!spidata->spiflash_mmraddr) {
+  		printk (KERN_WARNING "%s: Failed to map flash device\n", module_name);
+		kfree(spidata);
+		spidata = NULL;
+	}
+
    	mtd = kzalloc(sizeof(struct mtd_info), GFP_KERNEL);
    	if (!mtd) {
 		kfree(spidata);
@@ -444,7 +422,7 @@ spiflash_init (void)
 	
    	printk ("MTD driver for SPI flash.\n");
    	printk ("%s: Probing for Serial flash ...\n", module_name);
-   	if (!(index = spiflash_probe ())) {
+   	if (!(index = spiflash_probe_chip())) {
     	printk (KERN_WARNING "%s: Found no serial flash device\n", module_name);
 		kfree(mtd);
 		kfree(spidata);
@@ -516,11 +494,12 @@ spiflash_init (void)
 			part->size -= mtd->erasesize;
 			config_start = part->offset + part->size;
 
-			/*while ((mtd->read(mtd, part->offset, mtd->erasesize, &len, buf) == 0) &&
+			while ((mtd->read(mtd, part->offset, mtd->erasesize, &len, buf) == 0) &&
 					(len == mtd->erasesize) &&
 					(*((u32 *) buf) == SQUASHFS_MAGIC) &&
 					(sb->bytes_used > 0)) {
 					
+				/* this is squashfs, allocate another partition starting from the end of filesystem data */
 				memcpy(&mtd_parts[j + 1], part, sizeof(struct mtd_partition));
 			
 				len = (u32) sb->bytes_used;
@@ -539,7 +518,7 @@ spiflash_init (void)
 
 				part->name = kmalloc(10, GFP_KERNEL);
 				sprintf(part->name, "rootfs%d", j - i);
-			}*/
+			}
 		}
 		if (!strcmp(part->name, "RedBoot config")) {
 			/* add anoterh partition for the board config data */
@@ -575,14 +554,37 @@ spiflash_init (void)
    	return (result);
 }
 
+static int spiflash_remove (struct platform_device *pdev)
+{
+	del_mtd_partitions (spidata->mtd);
+	kfree(spidata->mtd);
+
+	return 0;
+}
+
+struct platform_driver spiflash_driver = {
+	.driver.name = "spiflash",
+	.probe = spiflash_probe,
+	.remove = spiflash_remove,
+};
+
+int __init 
+spiflash_init (void)
+{
+   	spidata = kmalloc(sizeof(struct spiflash_data), GFP_KERNEL);
+  	if (!spidata)
+		return (-ENXIO);
+
+	spin_lock_init(&spidata->mutex);
+	platform_driver_register(&spiflash_driver);
+
+	return 0;
+}
+
 void __exit 
 spiflash_exit (void)
 {
-    	if (spidata && spidata->parsed_parts) {
-        	del_mtd_partitions (spidata->mtd);
-		kfree(spidata->mtd);
-		kfree(spidata);
-    	}
+	kfree(spidata);
 }
 
 module_init (spiflash_init);

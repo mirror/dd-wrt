@@ -271,12 +271,12 @@ load-$(CONFIG_MIPS_MTX1)	+= 0xffffffff80100000
 libs-$(CONFIG_MIPS_XXS1500)	+= arch/mips/au1000/xxs1500/
 load-$(CONFIG_MIPS_XXS1500)	+= 0xffffffff80100000
 
-#
 # Atheros AR5312/AR2312 WiSoC
 #
-core-$(CONFIG_AR531X)     += arch/mips/ar531x/
-cflags-$(CONFIG_AR531X)   += -Iinclude/asm-mips/mach-atheros
-load-$(CONFIG_AR531X)     += 0xffffffff80041000
+core-$(CONFIG_ATHEROS)		+= arch/mips/atheros/
+cflags-$(CONFIG_ATHEROS)	+= -Iinclude/asm-mips/mach-atheros
+load-$(CONFIG_ATHEROS)		+= 0xffffffff80041000
+
 
 #
 # Cobalt Server
