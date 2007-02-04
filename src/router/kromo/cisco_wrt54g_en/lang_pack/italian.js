@@ -673,6 +673,7 @@ service.kaid_srv="Avvio Kaid";
 service.kaid_mac="MAC Per Le Console: (ogni MAC seguito da <b>;<b>)";
 service.dhcp_legend="Client DHCP";
 service.dhcp_vendor="Imposta Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="Server DHCP";
 service.dhcp_srv="Demone DHCP";
 service.dhcp_jffs2="Usa JFFS2 per il rilascio DB al client";

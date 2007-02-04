@@ -1037,6 +1037,7 @@ service.kaid_mac="Console Macs: (must end with;)";
 //DHCPd
 service.dhcp_legend="Client DHCP";
 service.dhcp_vendor="Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="Serveur DHCP";
 service.dhcp_srv="Daemon DHCP";
 service.dhcp_jffs2="Stocker les baux en JFFS2";
