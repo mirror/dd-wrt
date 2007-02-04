@@ -511,24 +511,18 @@ if (brand!=ROUTER_WRT350N)
 	  cprintf ("set led release wan control\n");
 	  SET_LED (RELEASE_WAN_CONTROL);
 	  cprintf ("ifconfig wl up\n");
-  char mode[64];
-#ifdef HAVE_MSSID
-  sprintf (mode, "%s_mode", "wl0");
-#else
-  sprintf (mode, "%s_mode", "wl");
-#endif
 
-	  if (nvram_match (mode, "sta")
-	      || nvram_match (mode, "wet")
-	      || nvram_match (mode, "apsta")
-	      || nvram_match (mode, "apstawet"))
+	  if (nvram_match ("wl0_mode", "sta")
+	      || nvram_match ("wl0_mode", "wet")
+	      || nvram_match ("wl0_mode", "apsta")
+	      || nvram_match ("wl0_mode", "apstawet"))
 	    {
 	      //fix for client mode
 	      if (wl_probe ("eth2"))
 		eval ("/sbin/ifconfig", "eth1", "up");
 	      else
 		eval ("/sbin/ifconfig", "eth2", "up");
-	  cprintf ("start nas\n");
+	  cprintf ("start nas wan\n");
 	  start_service ("nas_wan");
   		}
   	  else
@@ -537,6 +531,7 @@ if (brand!=ROUTER_WRT350N)
       start_service ("nas_lan");
   		}
 #ifdef HAVE_MSSID
+	  cprintf ("start guest nas\n");
 	  start_service ("guest_nas");
 #endif
 	  cprintf ("create rc file\n");
