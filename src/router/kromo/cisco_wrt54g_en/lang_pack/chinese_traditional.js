@@ -968,6 +968,7 @@ service.kaid_mac="控制臺Macs: (必須以 ; 結束)";
 //DHCPd
 service.dhcp_legend="DHCP用戶端";
 service.dhcp_vendor="設置Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP伺服器";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="使用JFFS2作為用戶端租約資料庫";

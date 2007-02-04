@@ -974,6 +974,7 @@ service.kaid_mac="控制台Macs: (必须以 ; 结束)";
 //DHCPd
 service.dhcp_legend="DHCP客户端";
 service.dhcp_vendor="设置Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP服务器";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="使用JFFS2作为客户端租约数据库";
