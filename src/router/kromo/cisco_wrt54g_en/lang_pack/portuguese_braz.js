@@ -902,6 +902,7 @@ service.kaid_srv="Iniciar Kaid";
 service.kaid_mac="Console Macs: (deve terminar com um ;)";
 service.dhcp_legend="Cliente DHCP";
 service.dhcp_vendor="Ajustar Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="Servidor DHCP";
 service.dhcp_srv="Daemon DHCP";
 service.dhcp_jffs2="Usar JFFS2 para o BD de Concessão";

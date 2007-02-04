@@ -1068,6 +1068,7 @@ service.kaid_mac="MAC konzole: (konèati se mora z ;)";
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";
 service.dhcp_vendor="Nastavitev Vendorclass";
+service.dhcp_reqip="Zahtevaj IP";
 service.dhcp_legend2="DHCP stre¾nik";
 service.dhcp_srv="DHCP demon";
 service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";

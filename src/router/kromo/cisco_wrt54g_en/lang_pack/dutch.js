@@ -970,6 +970,7 @@ service.kaid_mac="Console Macs: (moet eindigen  met;)";
 //DHCPd
 service.dhcp_legend="DHCP Client";
 service.dhcp_vendor="Kies Vendorclass";
+service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP Server";
 service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="Gebruik JFFS2 voor de client lease DB";
