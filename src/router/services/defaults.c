@@ -1734,6 +1734,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"apd_enable", "0", 0},
 #endif
 
+  {"upgrade_delay", "300", 0},
+
 #ifdef HAVE_WIFIDOG
   {"wd_enable", "0", 0},
   {"wd_gwid", "default", 0},
