@@ -184,7 +184,7 @@ sbutton.add_wol="Ajouter l\'hôte";
 sbutton.manual_wol="Réveil manuel";
 sbutton.summary="Récapitulatif";
 sbutton.filterIP="Liste des Ordinateurs";
-sbutton.filterMac="Liste de filtrage MAC";
+sbutton.filterMac="Liste des Adresses MAC";
 sbutton.filterSer="Ajouter/Editer un Service";
 sbutton.reboot="Redémarrer";
 sbutton.help="Aide";
@@ -919,8 +919,8 @@ management.clock_support="Non supporté";
 management.mmc_legend="Support de carte MMC/SD";
 management.mmc_srv="Dispositif MMC";
 
-management.samba_legend="Système de fichier Samba";
-management.samba_srv="Système de fichier Samba";
+management.samba_legend="Système de fichier CIFS";
+management.samba_srv="Système de fichier CIFS";
 management.samba_share="Partage";
 management.samba_stscript="Script de démarrage";
 
@@ -1037,7 +1037,7 @@ service.kaid_mac="Console Macs: (must end with;)";
 //DHCPd
 service.dhcp_legend="Client DHCP";
 service.dhcp_vendor="Vendorclass";
-service.dhcp_reqip="Request IP";
+service.dhcp_reqip="Adresse IP à demander";
 service.dhcp_legend2="Serveur DHCP";
 service.dhcp_srv="Daemon DHCP";
 service.dhcp_jffs2="Stocker les baux en JFFS2";
