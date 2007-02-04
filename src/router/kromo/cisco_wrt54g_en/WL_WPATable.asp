@@ -140,11 +140,18 @@ function ValidateKey(key, bit, index) {
 function enable_idpeap() {
 	show_layer_ext(this, 'idtls', false)
 	show_layer_ext(this, 'idpeap', true)
+	show_layer_ext(this, 'idleap', false)
+}
+function enable_idleap() {
+	show_layer_ext(this, 'idtls', false)
+	show_layer_ext(this, 'idpeap', false)
+	show_layer_ext(this, 'idleap', true)
 }
 
 function enable_idtls() {
 	show_layer_ext(this, 'idtls', true)
 	show_layer_ext(this, 'idpeap', false)
+	show_layer_ext(this, 'idleap', false)
 }
 
 addEvent(window, "load", function() {
@@ -155,6 +162,7 @@ addEvent(window, "load", function() {
 		}
 show_layer_ext(document.wpa.ath0_8021xtype, 'idpeap', <% nvram_else_match("ath0_8021xtype", "peap", "1", "0"); %> == 1);
 show_layer_ext(document.wpa.ath0_8021xtype, 'idtls', <% nvram_else_match("ath0_8021xtype", "tls", "1", "0"); %> == 1);
+show_layer_ext(document.wpa.ath0_8021xtype, 'idleap', <% nvram_else_match("ath0_8021xtype", "leap", "1", "0"); %> == 1);
 
 });
 

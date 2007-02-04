@@ -716,9 +716,9 @@ setupSupplicant (char *prefix)
       sprintf (psk, "%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
       fprintf (fp, "\tscan_ssid=1\n");
-      fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
       if (nvram_prefix_match ("8021xtype", prefix, "tls"))
 	{
+          fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
 	  fprintf (fp, "\teap=TLS\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
 		   nvram_prefix_get ("tls8021xuser", prefix));
@@ -741,10 +741,10 @@ setupSupplicant (char *prefix)
 		   nvram_prefix_get ("tls8021xpasswd", prefix));
 	  fprintf (fp, "\teapol_flags=3\n");
 	}
-
       if (nvram_prefix_match ("8021xtype", prefix, "peap"))
 	{
-	  fprintf (fp, "\teap=PEAP\n");
+	  fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
+    	  fprintf (fp, "\teap=PEAP\n");
 	  fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
 		   nvram_prefix_get ("peap8021xuser", prefix));
@@ -756,6 +756,25 @@ setupSupplicant (char *prefix)
 	  sprintf (ath, "%s_peap8021xca", prefix);
 	  write_nvram (psk, ath);
 	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+	}
+      if (nvram_prefix_match ("8021xtype", prefix, "leap"))
+	{
+          fprintf (fp, "\tkey_mgmt=WPA-EAP\n");
+	  fprintf (fp, "\teap=LEAP\n");
+	  fprintf (fp, "\tauth_alg=LEAP\n");
+	  fprintf (fp, "\tproto=WPA RSN\n");
+	  fprintf (fp, "\tpairwise=CCMP TKIP\n");
+	  fprintf (fp, "\tgroup=CCMP TKIP\n");
+	  fprintf (fp, "\tidentity=\"%s\"\n",
+		   nvram_prefix_get ("peap8021xuser", prefix));
+	  fprintf (fp, "\tpassword=\"%s\"\n",
+		   nvram_prefix_get ("peap8021xpasswd", prefix));
+//	  sprintf (psk, "/tmp/%s", prefix);
+//	  mkdir (psk);
+//	  sprintf (psk, "/tmp/%s/ca.pem", prefix);
+//	  sprintf (ath, "%s_peap8021xca", prefix);
+//	  write_nvram (psk, ath);
+//	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
 	}
       fprintf (fp, "}\n");
       fclose (fp);
