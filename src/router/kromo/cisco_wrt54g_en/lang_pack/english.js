@@ -315,7 +315,7 @@ errmsg.err62=" is already defined as a static lease.";
 //Saving message
 errmsg.err100="Processing...<br/>Please, wait.";
 errmsg.err101="Restoring configuration file...<br/>Please, wait.";
-errmsg.err102="Upgrading firmware...<br/>Please, wait.";
+errmsg.err102="Upgrading firmware...<br/>Please, wait";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
