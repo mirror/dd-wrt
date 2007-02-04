@@ -5,6 +5,10 @@
 		<div class="label"><% tran("service.dhcp_vendor"); %></div>
 		<input maxlength="79" size="20" name="dhcpc_vendorclass" value="<% nvram_get("dhcpc_vendorclass"); %>" />
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("service.dhcp_reqip"); %></div>
+		<input maxlength="79" size="20" name="dhcpc_reqip" value="<% nvram_get("dhcpc_requestip"); %>" />
+	</div>
 </fieldset><br />
 
 <fieldset>
