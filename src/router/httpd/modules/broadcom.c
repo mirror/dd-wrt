@@ -4510,16 +4510,14 @@ ej_get_txpower (  webs_t wp, int argc, char_t ** argv)
 static void
 ej_getencryptionstatus (  webs_t wp, int argc, char_t ** argv)
 {
-  char mode[64];
-  char vifs[64];
   char *next;
   char var[80];
 #ifndef HAVE_MADWIFI
-  sprintf (mode, "%s", "wl0");
-  sprintf (vifs, "%s_vifs", "wl0");
+  char *mode = "wl0";
+  char *vifs = "wl0_vifs";
 #else
-  sprintf (mode, "%s", "ath0");
-  sprintf (vifs, "%s_vifs", "wl0");
+  char *mode = "ath0";
+  char *vifs = "wl0_vifs";
 #endif
   showencstatus (wp, mode);
   foreach (var, nvram_safe_get (vifs), next)
@@ -4530,11 +4528,10 @@ ej_getencryptionstatus (  webs_t wp, int argc, char_t ** argv)
 static void
 ej_getwirelessstatus (  webs_t wp, int argc, char_t ** argv)
 {
-  char mode[64];
 #ifndef HAVE_MADWIFI
-  sprintf (mode, "%s_mode", "wl0");
+  char *mode = "wl0_mode";
 #else
-  sprintf (mode, "%s_mode", "ath0");
+  char *mode = "ath0_mode";
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet") || nvram_match (mode, "sta")
@@ -4549,15 +4546,10 @@ ej_getwirelessstatus (  webs_t wp, int argc, char_t ** argv)
 static void
 ej_getwirelessmode (  webs_t wp, int argc, char_t ** argv)
 {
-  char mode[64];
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
-  sprintf (mode, "%s_mode", "wl0");
+  char *mode = "wl0_mode";
 #else
-  sprintf (mode, "%s_mode", "wl");
-#endif
-#else
-  sprintf (mode, "%s_mode", "ath0");
+  char *mode = "ath0_mode";
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "wet"))
@@ -4582,15 +4574,10 @@ ej_getwirelessmode (  webs_t wp, int argc, char_t ** argv)
 static void
 ej_getwirelessnetmode (  webs_t wp, int argc, char_t ** argv)
 {
-  char mode[64];
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
-  sprintf (mode, "%s_net_mode", "wl0");
+  char *mode = "wl0_net_mode";
 #else
-  sprintf (mode, "%s_net_mode", "wl");
-#endif
-#else
-  sprintf (mode, "%s_net_mode", "ath0");
+  char *mode = "ath0_net_mode";
 #endif
   websWrite (wp, "<script type=\"text/javascript\">");
   if (nvram_match (mode, "disabled"))
@@ -4675,13 +4662,11 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
     case 0:
       websWrite (wp, "%s", live_translate ("wl_basic.radio_on"));
       break;
-    case 1:			// software disabled
-    case 2:			// hardware disabled
-    case 3:			// both are disabled
-      websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
-      break;
     case -1:
       websWrite (wp, "%s", live_translate ("share.unknown"));
+      break;
+    default:  // 1: software disabled, 2: hardware disabled, 3: both are disabled
+      websWrite (wp, "%s", live_translate ("wl_basic.radio_off"));
       break;
     }
 }
