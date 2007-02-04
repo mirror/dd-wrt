@@ -494,12 +494,11 @@ static int spiflash_probe(struct platform_device *pdev)
 			part->size -= mtd->erasesize;
 			config_start = part->offset + part->size;
 
-			while ((mtd->read(mtd, part->offset, mtd->erasesize, &len, buf) == 0) &&
+/*			while ((mtd->read(mtd, part->offset, mtd->erasesize, &len, buf) == 0) &&
 					(len == mtd->erasesize) &&
 					(*((u32 *) buf) == SQUASHFS_MAGIC) &&
 					(sb->bytes_used > 0)) {
 					
-				/* this is squashfs, allocate another partition starting from the end of filesystem data */
 				memcpy(&mtd_parts[j + 1], part, sizeof(struct mtd_partition));
 			
 				len = (u32) sb->bytes_used;
@@ -518,7 +517,7 @@ static int spiflash_probe(struct platform_device *pdev)
 
 				part->name = kmalloc(10, GFP_KERNEL);
 				sprintf(part->name, "rootfs%d", j - i);
-			}
+			}*/
 		}
 		if (!strcmp(part->name, "RedBoot config")) {
 			/* add anoterh partition for the board config data */
