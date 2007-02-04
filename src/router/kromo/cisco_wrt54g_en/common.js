@@ -817,7 +817,7 @@ function apply(form, text, delay) {
     setTimeout(function(){form.submit();}, 2000);
     
     if(delay) {
-    	setTimeout(infoTimeout(text, delay), 1000);
+    	setTimeout(function(){infoTimeout(text, delay);}, 1000);
     }
 }
 
