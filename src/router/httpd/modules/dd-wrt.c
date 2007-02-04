@@ -2863,6 +2863,17 @@ show_80211X (webs_t wp, char *prefix)
    * _8021xpem
    * _8021xprv
    */
+/*
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
+  websWrite (wp, "<select name=\"%s_8021xtype\" onchange=\"change_80211x(this.form.security_mode.selectedIndex,this.form)\">\n", prefix);
+  websWrite (wp, "<option value=\"peap\" onclick=\"enable_idpeap()\" %s >Peap</option>\n",nvram_prefix_match ("8021xtype", prefix,"peap") ? "selected" : "");
+  websWrite (wp, "<option value=\"leap\" onclick=\"enable_idleap()\" %s >Leap</option>\n",nvram_prefix_match ("8021xtype", prefix,"leap") ? "selected" : "");
+  websWrite (wp, "<option value=\"tls\" onclick=\"enable_idtls()\" %s >TLS</option>\n",nvram_prefix_match ("8021xtype", prefix,"tls") ? "selected" : "");
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+*/
+
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
@@ -2872,10 +2883,19 @@ show_80211X (webs_t wp, char *prefix)
 					 "peap") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
+	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"leap\" onclick=\"enable_idleap()\" %s />Leap&nbsp;\n",
+	     prefix, nvram_prefix_match ("8021xtype", prefix,
+					 "leap") ? "checked=\"checked\"" :
+	     "");
+  websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls()\" %s />TLS&nbsp;\n",
 	     prefix, nvram_prefix_match ("8021xtype", prefix,
 					 "tls") ? "checked=\"checked\"" : "");
   websWrite (wp, "</div>\n");
+
+
+
+
   //peap authentication
   websWrite (wp, "<div id=\"idpeap\">\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2904,6 +2924,23 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp, "//]]>\n</script>\n");
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
+  //leap authentication
+  websWrite (wp, "<div id=\"idleap\">\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n");
+  websWrite (wp,
+	     "<input name=\"%s_peap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	     prefix, nvram_prefix_get ("peap8021xuser", prefix));
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n");
+  websWrite (wp,
+	     "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	     prefix, nvram_prefix_get ("peap8021xpasswd", prefix));
+  websWrite (wp, "</div>\n");
+
+
   //tls authentication
   websWrite (wp, "<div id=\"idtls\">\n");
   websWrite (wp, "<div class=\"setting\">\n");
