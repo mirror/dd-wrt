@@ -3093,7 +3093,6 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 
   char *val = NULL;
   char wds[32] = "";
-  char wds1[32] = "";
   char wdsif_var[32] = "";
   char enabled_var[32];
   char hwaddr_var[32] = "";
@@ -4370,7 +4369,7 @@ save_wds (webs_t wp)
       wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
       nvram_set (wds_enable_var, wds_enable_val);
     }
-  sprintf (wds_enable_var, "%s_br1_enable", interface, h);
+  sprintf (wds_enable_var, "%s_br1_enable", interface);
 
   wds_enable_val = websGetVar (wp, wds_enable_var, NULL);
   nvram_set (wds_enable_var, wds_enable_val);
