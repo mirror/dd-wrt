@@ -145,16 +145,13 @@ config BASLER_EXCITE_PROTOTYPE
 	  note that a kernel built with this option selected will not be
 	  able to run on normal units.
 
-config AR531X
-	bool 'Atheros AR531x/AR231x WiSoC (EXPERIMENTAL)'
+config ATHEROS
+	bool "Atheros SoC support (EXPERIMENTAL)"
 	depends on EXPERIMENTAL
 	select DMA_NONCOHERENT
 	select IRQ_CPU
 	select SYS_HAS_CPU_MIPS32_R1
 	select HAVE_STD_PC_SERIAL_PORT
-	select AR531X_COBRA
-	select AR5315
-	select AP51
 	select SYS_SUPPORTS_BIG_ENDIAN
 	select SYS_SUPPORTS_32BIT_KERNEL
 
@@ -779,6 +776,7 @@ config TOSHIBA_RBTX4938
 
 endchoice
 
+source "arch/mips/atheros/Kconfig"
 source "arch/mips/ddb5xxx/Kconfig"
 source "arch/mips/gt64120/ev64120/Kconfig"
 source "arch/mips/jazz/Kconfig"
@@ -876,19 +874,7 @@ config MIPS_NILE4
 
 config MIPS_DISABLE_OBSOLETE_IDE
 	bool
-
-config AR531X_COBRA
-	bool
-
-config AR5315
-	bool
-
-config AR5317
-	bool
-
-config AP51
-	bool
-
+	
 #
 # Endianess selection.  Suffiently obscure so many users don't know what to
 # answer,so we try hard to limit the available choices.  Also the use of a

@@ -217,19 +217,13 @@
  */
 #define MACH_GROUP_BRCM        23	/* Broadcom boards              */
 
-
 /*
- * Valid machtype for group AR531X
+ * Valid machtype for group ATHEROS
  */
-#define MACH_GROUP_AR531X      23
-#define MACH_ATHEROS_UNUSED     0
-#define MACH_ATHEROS_AP30       1       /* AP30 */
-#define MACH_ATHEROS_AP33       2       /* AP33 */
-#define MACH_ATHEROS_AP38       3       /* AP38 */
-#define MACH_ATHEROS_AP43       4       /* AP43 */
-#define MACH_ATHEROS_AP48       5       /* AP48 */
-#define MACH_ATHEROS_PB32       6       /* PB32 */
-#define MACH_ATHEROS_AP51       7       /* AP51 */
+#define MACH_GROUP_ATHEROS	26
+#define MACH_ATHEROS_AR5312	0	/* Atheros AR5312, AR2312/3/4	*/
+#define MACH_ATHEROS_AR5315	1	/* Atheros AR2315/6/7/8		*/
+
 
 #define CL_SIZE			COMMAND_LINE_SIZE
 
