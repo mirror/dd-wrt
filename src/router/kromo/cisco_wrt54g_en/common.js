@@ -817,18 +817,19 @@ function apply(form, text, delay) {
     setTimeout(function(){form.submit();}, 2000);
     
     if(delay) {
-    	setTimeout(infoTimeout(), 1000)
+    	setTimeout(infoTimeout(text, delay), 1000);
     }
 }
 
-function infoTimeout() {
+function infoTimeout(text, delay) {
 	delay--;
 	if (delay > 0) {
 		Dialog.setInfoMessage(text+" "+delay+"s ...");
 		setTimeout(infoTimeout, 1000);
 	}
-	else
+	else {
 		Dialog.setInfoMessage(text);
+	}
 }
 
 
