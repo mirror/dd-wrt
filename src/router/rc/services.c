@@ -368,7 +368,7 @@ start_single_service (void)
   else if (!strcmp (service, "management"))
     {
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
-	  || nvram_match ("wl0_mode", "apsta"))
+	  || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
 	stop_service ("nas");
 #ifdef HAVE_BIRD
       stop_service ("zebra");
@@ -395,7 +395,7 @@ start_single_service (void)
       startstop ("wol");
 #endif
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
-	  || nvram_match ("wl0_mode", "apsta"))
+	  || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
 	start_service ("nas_wan");
 
     }
@@ -565,17 +565,19 @@ start_single_service (void)
 #endif
 #ifndef HAVE_MADWIFI
 /* nas mode select*/
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apsta"))
-    {
-      cprintf ("start nas wan\n");
-      start_service ("nas_wan");
-    }
-  else
-    {
-      cprintf ("start nas lan\n");
+	  if (nvram_match ("wl0_mode", "sta")
+	      || nvram_match ("wl0_mode", "wet")
+	      || nvram_match ("wl0_mode", "apsta")
+	      || nvram_match ("wl0_mode", "apstawet"))
+	    {
+	  cprintf ("start nas wan\n");
+	  start_service ("nas_wan");
+  		}
+  	  else
+  	  	{
+  	  cprintf ("start nas lan\n");
       start_service ("nas_lan");
-    }
+  		}
 /*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
@@ -620,17 +622,19 @@ start_single_service (void)
 #endif
 #ifndef HAVE_MADWIFI
 /* nas mode select*/
-  if (nvram_match ("wl0_mode", "sta")
-      || nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "apsta"))
-    {
-      cprintf ("start nas wan\n");
-      start_service ("nas_wan");
-    }
-  else
-    {
-      cprintf ("start nas lan\n");
+	  if (nvram_match ("wl0_mode", "sta")
+	      || nvram_match ("wl0_mode", "wet")
+	      || nvram_match ("wl0_mode", "apsta")
+	      || nvram_match ("wl0_mode", "apstawet"))
+	    {
+	  cprintf ("start nas wan\n");
+	  start_service ("nas_wan");
+  		}
+  	  else
+  	  	{
+  	  cprintf ("start nas lan\n");
       start_service ("nas_lan");
-    }
+  		}
 /*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
