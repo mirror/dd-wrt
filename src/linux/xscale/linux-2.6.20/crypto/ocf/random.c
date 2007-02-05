@@ -46,6 +46,7 @@
 #include <linux/unistd.h>
 #include <linux/poll.h>
 #include <linux/random.h>
+#include <linux/file.h>
 #include <cryptodev.h>
 
 #ifdef FIPS_TEST_RNG

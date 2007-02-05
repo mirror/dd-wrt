@@ -501,6 +501,7 @@ typedef struct {
 
     /* used to control the message output */
     UINT32 devFlags;
+    struct net_device *ndev;
 } priv_data_t;
 
 /* Collection of boolean PHY configuration parameters */
@@ -1903,12 +1904,11 @@ restart_poll:
  * IX_ETH_DB_MAINTENANCE_TIME jiffies
  */
 
-static void maintenance_timer_task(void *data);
+static void maintenance_timer_task(struct work_struct *data);
 
 /* task spawned by timer interrupt for EthDB maintenance */
 #if IS_KERNEL26
-static DECLARE_WORK(ethdb_maintenance_work, maintenance_timer_task, NULL);
-
+static DECLARE_DELAYED_WORK(ethdb_maintenance_work, maintenance_timer_task);	
 #else
 static struct tq_struct taskqueue_maintenance = {
         routine:maintenance_timer_task
@@ -1942,7 +1942,7 @@ static void maintenance_timer_clear(void)
 #endif
 }
 
-static void maintenance_timer_task(void *data)
+static void maintenance_timer_task(struct work_struct *data)
 {
     down(maintenance_mutex);
     ixEthDBDatabaseMaintenance();
@@ -2795,14 +2795,10 @@ static int do_dev_stop(struct net_device *dev)
 }
 
 static void
-dev_tx_timeout_task(void *dev_id)
+dev_tx_timeout_task(struct work_struct *work)
 {
-    struct net_device *dev = (struct net_device *)dev_id;
-#if IS_KERNEL26
-    priv_data_t *priv = netdev_priv(dev);
-#else
-    priv_data_t *priv = dev->priv;
-#endif
+    priv_data_t *priv = container_of(work, priv_data_t, timeout_work);
+    struct net_device *dev = priv->ndev;
 
     P_WARN("%s: Tx Timeout for port %d\n", dev->name, priv->port_id);
 
@@ -4194,8 +4190,8 @@ static int __devinit dev_eth_probe(struct net_device *ndev)
     /* create timeout queue to handle transmission timeout */
     priv->timeout_workq = create_singlethread_workqueue(MODULE_NAME);
     BUG_ON(!priv->timeout_workq);
-
-    INIT_WORK(&priv->timeout_work, dev_tx_timeout_task, (void *)ndev);
+    priv->ndev=ndev;
+    INIT_WORK(&priv->timeout_work, dev_tx_timeout_task);
 #else
     /* create timeout queue to handle transmission timeout */
     priv->taskqueue_timeout.routine = dev_tx_timeout_task;
