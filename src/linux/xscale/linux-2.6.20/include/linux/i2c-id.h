@@ -157,6 +157,7 @@
 #define I2C_DRIVERID_FSCHER 1046
 #define I2C_DRIVERID_W83L785TS 1047
 #define I2C_DRIVERID_OV7670 1048	/* Omnivision 7670 camera */
+#define I2C_DRIVERID_AD7418 1051
 
 /*
  * ---- Adapter types ----------------------------------------------------

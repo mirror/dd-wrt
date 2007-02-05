@@ -287,8 +287,8 @@ ixp_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 		cri = cri->cri_next;
 	}
 
-	INIT_WORK(&ixp->ixp_pending_work, ixp_process_pending, ixp);
-	INIT_WORK(&ixp->ixp_registration_work, ixp_registration, ixp);
+	INIT_WORK(&ixp->ixp_pending_work, ixp_process_pending);
+	INIT_WORK(&ixp->ixp_registration_work, ixp_registration);
 
 	return 0;
 }
