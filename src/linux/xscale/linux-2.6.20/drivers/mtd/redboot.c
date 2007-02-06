@@ -237,6 +237,8 @@ static int parse_redboot_partitions(struct mtd_info *master,
 		fl = fl->next;
 		kfree(tmp_fl);
 	}
+//BrainSlayer: extend zImage partition to include both, kernel and filesystem in one image
+	parts[1].size+=parts[2].size;
 	ret = nrparts;
 	*pparts = parts;
  out:
