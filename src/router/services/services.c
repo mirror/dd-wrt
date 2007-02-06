@@ -115,8 +115,9 @@ addHost (char *host, char *ip)
 void
 start_vpn_modules (void)
 {
-#ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
+
+#ifndef HAVE_RB500
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_X86
@@ -134,7 +135,6 @@ start_vpn_modules (void)
 #endif
 #endif
 #endif
-#endif
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
@@ -143,14 +143,31 @@ start_vpn_modules (void)
       eval ("/sbin/insmod", "ip_nat_pptp");
       syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully started\n");
     }
+#else
+  if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
+       || nvram_match ("ipsec_pass", "1")))
+    {
+      eval ("/sbin/insmod", "nf_conntrack_proto_gre");
+      syslog (LOG_INFO,
+	      "vpn modules : nf_conntrack_proto_gre successfully started\n");
+    }
+  if (nvram_match ("pptp_pass", "1"))
+    {
+      eval ("/sbin/insmod", "nf_conntrack_pptp");
+      syslog (LOG_INFO,
+	      "vpn modules : nf_conntrack_pptp successfully started\n");
+    }
+
+#endif
 }
 
 
 void
 stop_vpn_modules (void)
 {
-#ifndef HAVE_RB500
+
 #ifndef HAVE_XSCALE
+#ifndef HAVE_RB500
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_X86
@@ -160,13 +177,11 @@ stop_vpn_modules (void)
 #endif
 #endif
 #endif
-#endif
   eval ("/sbin/rmmod", "ip_nat_pptp");
   syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
 #ifndef HAVE_RB500
-#ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_X86
@@ -177,7 +192,14 @@ stop_vpn_modules (void)
 #endif
 #endif
 #endif
+#else
+  eval ("/sbin/rmmod", "nf_conntrack_pptp");
+  syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
+  eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
+  syslog (LOG_INFO,
+	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
 #endif
+
 }
 
 #ifdef HAVE_PPTPD
