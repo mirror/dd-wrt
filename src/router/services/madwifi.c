@@ -451,6 +451,7 @@ setsysctrl (const char *dev, const char *control, u_long value)
 
   snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
 	    dev, control);
+	    
   system2 (buffer);
   /* fd = fopen (buffer, "w");
      if (fd != NULL)
@@ -1077,6 +1078,8 @@ configure_single (int count, int isbond)
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
 #ifndef HAVE_FONERA
+if (count==0)
+{
   long tb = atol (nvram_safe_get (turbo));
   setsysctrl (wif, "turbo", tb);
   long regulatory = atol (nvram_safe_get ("ath_regulatory"));
@@ -1090,6 +1093,7 @@ configure_single (int count, int isbond)
       setsysctrl (wif, "regulatory", regulatory);
       setsysctrl (wif, "setregdomain", 0);
     }
+}
 #endif
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
