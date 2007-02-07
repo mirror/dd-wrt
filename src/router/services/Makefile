@@ -126,7 +126,11 @@ ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 else
+ifeq ($(CONFIG_WHRAG108),y)
+CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+else
 CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+endif
 endif
 
 ifneq ($(CONFIG_NOWIFI),y)
@@ -174,6 +178,9 @@ CFLAGS += -DHAVE_CPUTEMP
 endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
+endif
+ifeq ($(CONFIG_WHRAG108),y)
+CFLAGS += -DHAVE_WHRAG108
 endif
 
 ifeq ($(CONFIG_GATEWORX),y)

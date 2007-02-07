@@ -1077,6 +1077,7 @@ configure_single (int count, int isbond)
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
 #ifndef HAVE_FONERA
+#ifndef HAVE_WHRAG108
 if (count==0)
 {
   long tb = atol (nvram_safe_get (turbo));
@@ -1093,6 +1094,7 @@ if (count==0)
       setsysctrl (wif, "setregdomain", 0);
     }
 }
+#endif
 #endif
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);

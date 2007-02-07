@@ -375,8 +375,15 @@ start_restore_defaults (void)
 #elif HAVE_FONERA
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "ath0",
-     0},
+    {"lan_ifnames", "ath0",0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
+  };
+#elif HAVE_WHRAG108
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames", "eth1 ath0 ath1",0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
@@ -452,6 +459,13 @@ start_restore_defaults (void)
       restore_defaults = 1;
     }
 #elif HAVE_FONERA
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
+#elif HAVE_WHRAG108
   linux_overrides = generic;
   int brand = getRouterBrand ();
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
@@ -585,6 +599,14 @@ start_restore_defaults (void)
     }
 #endif
 #ifdef HAVE_FONERA
+  if (restore_defaults)
+    {
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+    }
+#endif
+#ifdef HAVE_WHRAG108
   if (restore_defaults)
     {
       eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database

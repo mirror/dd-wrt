@@ -113,6 +113,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_X86
+#ifndef HAVE_WHRAG108
 
   system2 ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
   system2 ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
@@ -138,6 +139,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #endif
 #endif
 #endif
+#endif
 }
 
 int
@@ -146,6 +148,7 @@ svqos_set_ports (void)
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
+#ifndef HAVE_WHRAG108
 #ifndef HAVE_X86
   int loop = 1;
   char cmd[255] = { 0 }, nvram_var[32] =
@@ -179,6 +182,7 @@ svqos_set_ports (void)
 		atoi (level) / 10 - 1, loop);
       system2 (cmd);
     }
+#endif
 #endif
 #endif
 #endif
@@ -668,6 +672,10 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_FONERA
   ret = eval (script_name, "stop", "XX", "eth0");
+  ret = eval (script_name, "stop", "XX", "ath0");
+#elif HAVE_WHRAG108
+  ret = eval (script_name, "stop", "XX", "eth0");
+  ret = eval (script_name, "stop", "XX", "eth1");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_X86
   ret = eval (script_name, "stop", "XX", "eth0");
