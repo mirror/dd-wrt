@@ -108,15 +108,6 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 
-/*eval("insmod","md5");
-eval("insmod","aes");
-eval("insmod","blowfish");
-eval("insmod","deflate");
-eval("insmod","des");
-eval("insmod","michael_mic");
-eval("insmod","cast5");
-eval("insmod","crypto_null");
-*/
 
 //system("/etc/kendin");
   eval ("insmod", "ixp400th");
@@ -128,20 +119,8 @@ eval("insmod","crypto_null");
   eval ("insmod", "ixp4xx", "init_crypto=0");
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
 
-//  eval ("insmod", "ath_hal");
-//  eval ("insmod", "wlan");
-//  eval ("insmod", "ath_rate_sample");
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
-/*
-  eval ("insmod", "wlan_acl");
-  eval ("insmod", "wlan_ccmp");
-  eval ("insmod", "wlan_tkip");
-  eval ("insmod", "wlan_wep");
-  eval ("insmod", "wlan_xauth");
-  eval ("insmod", "wlan_scan_ap");
-  eval ("insmod", "wlan_scan_sta");
-*/
 
   eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
