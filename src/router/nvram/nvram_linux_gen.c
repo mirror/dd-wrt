@@ -447,6 +447,10 @@ nvram_commit (void)
   system
     ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
   system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
+#elif HAVE_WHRAG108
+  system
+    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+  system ("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #else
   system ("mount /usr/local -o remount,rw");
   system ("cp /tmp/nvram/nvram.db /etc/nvram");
