@@ -182,6 +182,9 @@ internal_getRouterBrand ()
 #elif HAVE_FONERA
   setRouter ("Fonera");
   return ROUTER_BOARD_FONERA;
+#elif HAVE_WHRAG108
+  setRouter ("Buffalo WHR-HP-AG108");
+  return ROUTER_BOARD_WHRAG108;
 #else
   char *et0;
   
@@ -599,6 +602,8 @@ diag_led_4702 (int type, int act)
   return 0;
 #elif HAVE_FONERA
   return 0;
+#elif HAVE_WHRAG108
+  return 0;
 #elif HAVE_X86
   return 0;
 #elif HAVE_MAGICBOX
@@ -638,6 +643,8 @@ C_led_4702 (int i)
 #elif HAVE_MAGICBOX
   return 0;
 #elif HAVE_FONERA
+  return 0;
+#elif HAVE_WHRAG108
   return 0;
 #else
   FILE *fp;
@@ -726,6 +733,8 @@ diag_led_4704 (int type, int act)
   return 0;
 #elif HAVE_FONERA
   return 0;
+#elif HAVE_WHRAG108
+  return 0;
 #elif HAVE_GEMTEK
  return 0;
 #else
@@ -785,6 +794,8 @@ diag_led_4712 (int type, int act)
 #elif HAVE_GEMTEK
   return 0;
 #elif HAVE_FONERA
+  return 0;
+#elif HAVE_WHRAG108
   return 0;
 #elif HAVE_X86
   return 0;
@@ -882,6 +893,8 @@ led_control (int type, int act)
 #elif HAVE_MAGICBOX
   return 0;
 #elif HAVE_FONERA
+  return 0;
+#elif HAVE_WHRAG108
   return 0;
 #elif HAVE_GEMTEK
  return 0;
@@ -2145,6 +2158,8 @@ check_vlan_support (void)
 #elif HAVE_X86			// does support vlans, but not yet implemented
   return 0;
 #elif HAVE_FONERA			// does support vlans, but not yet implemented
+  return 0;
+#elif HAVE_WHRAG108			// does support vlans, but not yet implemented
   return 0;
 #elif HAVE_MAGICBOX		// does support vlans, but not yet implemented
   return 0;
