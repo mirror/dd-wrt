@@ -851,10 +851,12 @@ nat_postrouting (void)
 		     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
+#ifndef HAVE_WHRAG108
 #ifndef HAVE_XSCALE
 #ifndef HAVE_X86
 #ifndef HAVE_RB500
 	  system2 ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
+#endif
 #endif
 #endif
 #endif
@@ -2655,6 +2657,15 @@ start_firewall (void)
   else
     perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
 #elif HAVE_FONERA
+  if ((fp =
+       fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
+    {
+      fprintf (fp, "%d", 65);
+      fclose (fp);
+    }
+  else
+    perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
+#elif HAVE_WHRAG108
   if ((fp =
        fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
     {

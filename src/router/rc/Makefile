@@ -130,6 +130,9 @@ endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_WHRAG108),y)
+CFLAGS += -DHAVE_WHRAG108
+endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += wland.c
