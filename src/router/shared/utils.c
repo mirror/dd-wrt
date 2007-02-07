@@ -963,6 +963,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			aoss_gpio = 0x16;
 		break;
 	case ROUTER_MOTOROLA_V1:
+			diag_gpio = 0x13;
 		break;
 	case ROUTER_MOTOROLA:
 			power_gpio = 0x01;
