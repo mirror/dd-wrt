@@ -46,7 +46,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WZRRSG54 0x0904
 
 // Motorola WR850G v1 (4702 cpu)
-#define ROUTER_MOTOROLA_V1 0x0a0f
+#define ROUTER_MOTOROLA_V1 0x0a10
 
 // Motorola WR850G v2/v3 (4712 cpu, ADM6996 switch)
 #define ROUTER_MOTOROLA 0x0b15
@@ -128,9 +128,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Dell TrueMobile 2300 (4702 cpu, mini pci radio)
 #define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
-#define ROUTER_BOARD_FONERA 0x2501
-
-#define ROUTER_BOARD_WHRAG108 0x260f
+#define ROUTER_BOARD_FONERA 0x250f
 
 
 #define NVROUTER "DD_BOARD"
