@@ -569,7 +569,7 @@ ieee80211_mhz2ieee (u_int freq)
 
 
 
-
+static int need_commit=0;
 
 char *
 default_get (char *var, char *def)
@@ -578,8 +578,7 @@ default_get (char *var, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-
-      nvram_commit ();
+      need_commit=1;
     }
   return nvram_safe_get (var);
 }
@@ -591,7 +590,7 @@ default_match (char *var, char *match, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      nvram_commit ();
+      need_commit=1;
     }
   return nvram_match (var, match);
 }
@@ -1498,5 +1497,10 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       br_add_interface (nvram_safe_get ("lan_ifname"), "bond0");
     }
 #endif
+if (need_commit)
+    {
+    nvram_commit();
+    need_commit=0;
+    }
 }
 #endif
