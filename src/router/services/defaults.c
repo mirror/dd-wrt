@@ -975,6 +975,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_FONERA
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_WHRAG108
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_X86
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #else
@@ -1250,6 +1252,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_enable", "1", 0},
 #elif HAVE_FONERA
   {"sshd_enable", "1", 0},
+#elif HAVE_WHRAG108
+  {"sshd_enable", "1", 0},
 #elif HAVE_X86
   {"sshd_enable", "1", 0},
 #else
@@ -1263,6 +1267,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MAGICBOX
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_FONERA
+  {"remote_mgt_ssh", "1", 0},
+#elif HAVE_WHRAG108
   {"remote_mgt_ssh", "1", 0},
 #elif HAVE_X86
   {"remote_mgt_ssh", "1", 0},
@@ -1543,6 +1549,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"ip_conntrack_max", "32768", 0},
 #elif HAVE_FONERA
   {"ip_conntrack_max", "4096", 0},
+#elif HAVE_WHRAG108
+  {"ip_conntrack_max", "16384", 0},
 #else
   {"ip_conntrack_max", "512", 0},
 #endif

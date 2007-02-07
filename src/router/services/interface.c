@@ -260,6 +260,8 @@ start_setup_vlans (void)
   return 0;
 #elif HAVE_FONERA
   return 0;
+#elif HAVE_WHRAG108
+  return 0;
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
 
@@ -483,6 +485,9 @@ flush_interfaces (void)
   snprintf (all_ifnames, 255, "%s %s %s", "eth0 eth1",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_FONERA
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_WHRAG108
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #else
