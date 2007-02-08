@@ -64,6 +64,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 	if (!buf)
 		return -ENOMEM;
 
+restart:
 	if ( directory < 0 )
 		offset = master->size + directory*master->erasesize;
 	else
@@ -72,8 +73,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
 	       master->name, offset);
 
-	ret = master->read(master, offset,
-			   master->erasesize, &retlen, (void *)buf);
+	ret = master->read(master, offset,master->erasesize, &retlen, (void *)buf);
 
 	if (ret)
 		goto out;
@@ -85,7 +85,7 @@ static int parse_redboot_partitions(struct mtd_info *master,
 
 	numslots = (master->erasesize / sizeof(struct fis_image_desc));
 	for (i = 0; i < numslots; i++) {
-		if (!memcmp(buf[i].name, "FIS directory", 14)) {
+		if (buf[i].name!=NULL && !memcmp(buf[i].name, "FIS directory", 14)) {
 			/* This is apparently the FIS directory entry for the
 			 * FIS directory itself.  The FIS directory size is
 			 * one erase block; if the buf[i].size field is
@@ -122,13 +122,20 @@ static int parse_redboot_partitions(struct mtd_info *master,
 				}
 			}
 			break;
-		} else {
-			/* re-calculate of real numslots */
-			numslots = buf[i].size / sizeof(struct fis_image_desc);
-		}
+		} 
+		//else { BrainSlayer:  these code lines are bogus and just stupid, if a directory is not found it will create a bogus numslots here which will result in a scan till nullpointer
+		//	/* re-calculate of real numslots */
+		//	numslots = buf[i].size / sizeof(struct fis_image_desc);
+		//}
 	}
 	if (i == numslots) {
 		/* Didn't find it */
+		if (offset + master->erasesize < master->size) {
+			/* not at the end of the flash yet, maybe next block :) */
+			directory++;
+//		printk(KERN_NOTICE "Searching next dir on %d\n",directory);
+			goto restart;
+		}
 		printk(KERN_NOTICE "No RedBoot partition table detected in %s\n",
 		       master->name);
 		ret = 0;
