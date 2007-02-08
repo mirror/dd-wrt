@@ -114,8 +114,7 @@ getbuttonstate ()
 
 }
 #endif
-#ifdef HAVE_FONERA
-
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
 int
 getbuttonstate ()
 {
@@ -127,7 +126,6 @@ fscanf(in,"%d",&ret);
 fclose(in);
 return ret;
 }
-
 #endif
 
 
@@ -250,10 +248,8 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
-#ifdef HAVE_MAGICBOX
-  val = getbuttonstate ();
-#elif HAVE_FONERA
-  val = getbuttonstate ();
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) 
+  val = getbuttonstate();
 #else
 
   if ((fp = fopen (GPIO_FILE, "r")))
@@ -273,11 +269,7 @@ period_check (int sig)
   int gpio = 0;
 
   int state = 0;
-#ifdef HAVE_XSCALE
-  state = val;
-#elif HAVE_MAGICBOX
-  state = val;
-#elif HAVE_FONERA
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -345,14 +337,9 @@ period_check (int sig)
 	      if ((brand & 0x000f) != 0x000f)
 		{
 		  printf ("resetbutton: factory default.\n");
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
-
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
 		  led_control (LED_DIAG, LED_ON);
 		  led_control (LED_DIAG2, LED_ON);
-#endif
-#endif
 #endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
@@ -363,9 +350,7 @@ period_check (int sig)
 	    }
 	}
     }
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
 
   else if ((sesgpio != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
@@ -453,8 +438,6 @@ period_check (int sig)
          _eval(led_argv, NULL, 0, &pid); */
 
     }
-#endif
-#endif
 #endif
   else
     {
