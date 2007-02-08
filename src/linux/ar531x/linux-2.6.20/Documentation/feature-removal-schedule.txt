@@ -1,0 +1,327 @@
+The following is a list of files and features that are going to be
+removed in the kernel source tree.  Every entry should contain what
+exactly is going away, why it is happening, and who is going to be doing
+the work.  When the feature is removed from the kernel, it should also
+be removed from this file.
+
+---------------------------
+
+What:	/sys/devices/.../power/state
+	dev->power.power_state
+	dpm_runtime_{suspend,resume)()
+When:	July 2007
+Why:	Broken design for runtime control over driver power states, confusing
+	driver-internal runtime power management with:  mechanisms to support
+	system-wide sleep state transitions; event codes that distinguish
+	different phases of swsusp "sleep" transitions; and userspace policy
+	inputs.  This framework was never widely used, and most attempts to
+	use it were broken.  Drivers should instead be exposing domain-specific
+	interfaces either to kernel or to userspace.
+Who:	Pavel Machek <pavel@suse.cz>
+
+---------------------------
+
+What:	RAW driver (CONFIG_RAW_DRIVER)
+When:	December 2005
+Why:	declared obsolete since kernel 2.6.3
+	O_DIRECT can be used instead
+Who:	Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:	raw1394: requests of type RAW1394_REQ_ISO_SEND, RAW1394_REQ_ISO_LISTEN
+When:	June 2007
+Why:	Deprecated in favour of the more efficient and robust rawiso interface.
+	Affected are applications which use the deprecated part of libraw1394
+	(raw1394_iso_write, raw1394_start_iso_write, raw1394_start_iso_rcv,
+	raw1394_stop_iso_rcv) or bypass	libraw1394.
+Who:	Dan Dennedy <dan@dennedy.org>, Stefan Richter <stefanr@s5r6.in-berlin.de>
+
+---------------------------
+
+What:	dv1394 driver (CONFIG_IEEE1394_DV1394)
+When:	June 2007
+Why:	Replaced by raw1394 + userspace libraries, notably libiec61883.  This
+	shift of application support has been indicated on www.linux1394.org
+	and developers' mailinglists for quite some time.  Major applications
+	have been converted, with the exception of ffmpeg and hence xine.
+	Piped output of dvgrab2 is a partial equivalent to dv1394.
+Who:	Dan Dennedy <dan@dennedy.org>, Stefan Richter <stefanr@s5r6.in-berlin.de>
+
+---------------------------
+
+What:	ieee1394 core's unused exports (CONFIG_IEEE1394_EXPORT_FULL_API)
+When:	January 2007
+Why:	There are no projects known to use these exported symbols, except
+	dfg1394 (uses one symbol whose functionality is core-internal now).
+Who:	Stefan Richter <stefanr@s5r6.in-berlin.de>
+
+---------------------------
+
+What:	ieee1394's *_oui sysfs attributes (CONFIG_IEEE1394_OUI_DB)
+When:	January 2007
+Files:	drivers/ieee1394/: oui.db, oui2c.sh
+Why:	big size, little value
+Who:	Stefan Richter <stefanr@s5r6.in-berlin.de>
+
+---------------------------
+
+What:	Video4Linux API 1 ioctls and video_decoder.h from Video devices.
+When:	December 2006
+Why:	V4L1 AP1 was replaced by V4L2 API. during migration from 2.4 to 2.6
+	series. The old API have lots of drawbacks and don't provide enough
+	means to work with all video and audio standards. The newer API is
+	already available on the main drivers and should be used instead.
+	Newer drivers should use v4l_compat_translate_ioctl function to handle
+	old calls, replacing to newer ones.
+	Decoder iocts are using internally to allow video drivers to
+	communicate with video decoders. This should also be improved to allow
+	V4L2 calls being translated into compatible internal ioctls.
+Who:	Mauro Carvalho Chehab <mchehab@brturbo.com.br>
+
+---------------------------
+
+What:	PCMCIA control ioctl (needed for pcmcia-cs [cardmgr, cardctl])
+When:	November 2005
+Files:	drivers/pcmcia/: pcmcia_ioctl.c
+Why:	With the 16-bit PCMCIA subsystem now behaving (almost) like a
+	normal hotpluggable bus, and with it using the default kernel
+	infrastructure (hotplug, driver core, sysfs) keeping the PCMCIA
+	control ioctl needed by cardmgr and cardctl from pcmcia-cs is
+	unnecessary, and makes further cleanups and integration of the
+	PCMCIA subsystem into the Linux kernel device driver model more
+	difficult. The features provided by cardmgr and cardctl are either
+	handled by the kernel itself now or are available in the new
+	pcmciautils package available at
+	http://kernel.org/pub/linux/utils/kernel/pcmcia/
+Who:	Dominik Brodowski <linux@brodo.de>
+
+---------------------------
+
+What:	remove EXPORT_SYMBOL(kernel_thread)
+When:	August 2006
+Files:	arch/*/kernel/*_ksyms.c
+Why:	kernel_thread is a low-level implementation detail.  Drivers should
+        use the <linux/kthread.h> API instead which shields them from
+	implementation details and provides a higherlevel interface that
+	prevents bugs and code duplication
+Who:	Christoph Hellwig <hch@lst.de>
+
+---------------------------
+
+What:	CONFIG_FORCED_INLINING
+When:	June 2006
+Why:	Config option is there to see if gcc is good enough. (in january
+        2006). If it is, the behavior should just be the default. If it's not,
+	the option should just go away entirely.
+Who:    Arjan van de Ven
+
+---------------------------
+
+What:   eepro100 network driver
+When:   January 2007
+Why:    replaced by the e100 driver
+Who:    Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:  drivers depending on OSS_OBSOLETE_DRIVER
+When:  options in 2.6.20, code in 2.6.22
+Why:   OSS drivers with ALSA replacements
+Who:   Adrian Bunk <bunk@stusta.de>
+
+---------------------------
+
+What:	pci_module_init(driver)
+When:	January 2007
+Why:	Is replaced by pci_register_driver(pci_driver).
+Who:	Richard Knutsson <ricknu-0@student.ltu.se> and Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	Usage of invalid timevals in setitimer
+When:	March 2007
+Why:	POSIX requires to validate timevals in the setitimer call. This
+	was never done by Linux. The invalid (e.g. negative timevals) were
+	silently converted to more or less random timeouts and intervals.
+	Until the removal a per boot limited number of warnings is printed
+	and the timevals are sanitized.
+
+Who:	Thomas Gleixner <tglx@linutronix.de>
+
+---------------------------
+
+What:	Unused EXPORT_SYMBOL/EXPORT_SYMBOL_GPL exports
+	(temporary transition config option provided until then)
+	The transition config option will also be removed at the same time.
+When:	before 2.6.19
+Why:	Unused symbols are both increasing the size of the kernel binary
+	and are often a sign of "wrong API"
+Who:	Arjan van de Ven <arjan@linux.intel.com>
+
+---------------------------
+
+What:	mount/umount uevents
+When:	February 2007
+Why:	These events are not correct, and do not properly let userspace know
+	when a file system has been mounted or unmounted.  Userspace should
+	poll the /proc/mounts file instead to detect this properly.
+Who:	Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	USB driver API moves to EXPORT_SYMBOL_GPL
+When:	February 2008
+Files:	include/linux/usb.h, drivers/usb/core/driver.c
+Why:	The USB subsystem has changed a lot over time, and it has been
+	possible to create userspace USB drivers using usbfs/libusb/gadgetfs
+	that operate as fast as the USB bus allows.  Because of this, the USB
+	subsystem will not be allowing closed source kernel drivers to
+	register with it, after this grace period is over.  If anyone needs
+	any help in converting their closed source drivers over to use the
+	userspace filesystems, please contact the
+	linux-usb-devel@lists.sourceforge.net mailing list, and the developers
+	there will be glad to help you out.
+Who:	Greg Kroah-Hartman <gregkh@suse.de>
+
+---------------------------
+
+What:	find_trylock_page
+When:	January 2007
+Why:	The interface no longer has any callers left in the kernel. It
+	is an odd interface (compared with other find_*_page functions), in
+	that it does not take a refcount to the page, only the page lock.
+	It should be replaced with find_get_page or find_lock_page if possible.
+	This feature removal can be reevaluated if users of the interface
+	cannot cleanly use something else.
+Who:	Nick Piggin <npiggin@suse.de>
+
+---------------------------
+
+What:	Interrupt only SA_* flags
+When:	Januar 2007
+Why:	The interrupt related SA_* flags are replaced by IRQF_* to move them
+	out of the signal namespace.
+
+Who:	Thomas Gleixner <tglx@linutronix.de>
+
+---------------------------
+
+What:	PHYSDEVPATH, PHYSDEVBUS, PHYSDEVDRIVER in the uevent environment
+When:	October 2008
+Why:	The stacking of class devices makes these values misleading and
+	inconsistent.
+	Class devices should not carry any of these properties, and bus
+	devices have SUBSYTEM and DRIVER as a replacement.
+Who:	Kay Sievers <kay.sievers@suse.de>
+
+---------------------------
+
+What:	i2c-isa
+When:	December 2006
+Why:	i2c-isa is a non-sense and doesn't fit in the device driver
+	model. Drivers relying on it are better implemented as platform
+	drivers.
+Who:	Jean Delvare <khali@linux-fr.org>
+
+---------------------------
+
+What:	i2c_adapter.dev
+	i2c_adapter.list
+When:	July 2007
+Why:	Superfluous, given i2c_adapter.class_dev:
+	  * The "dev" was a stand-in for the physical device node that legacy
+	    drivers would not have; but now it's almost always present.  Any
+	    remaining legacy drivers must upgrade (they now trigger warnings).
+	  * The "list" duplicates class device children.
+	The delay in removing this is so upgraded lm_sensors and libsensors
+	can get deployed.  (Removal causes minor changes in the sysfs layout,
+	notably the location of the adapter type name and parenting the i2c
+	client hardware directly from their controller.)
+Who:	Jean Delvare <khali@linux-fr.org>,
+	David Brownell <dbrownell@users.sourceforge.net>
+
+---------------------------
+
+What:	IPv4 only connection tracking/NAT/helpers
+When:	2.6.22
+Why:	The new layer 3 independant connection tracking replaces the old
+	IPv4 only version. After some stabilization of the new code the
+	old one will be removed.
+Who:	Patrick McHardy <kaber@trash.net>
+
+---------------------------
+
+What:	ACPI hooks (X86_SPEEDSTEP_CENTRINO_ACPI) in speedstep-centrino driver
+When:	December 2006
+Why:	Speedstep-centrino driver with ACPI hooks and acpi-cpufreq driver are
+	functionally very much similar. They talk to ACPI in same way. Only
+	difference between them is the way they do frequency transitions.
+	One uses MSRs and the other one uses IO ports. Functionaliy of
+	speedstep_centrino with ACPI hooks is now merged into acpi-cpufreq.
+	That means one common driver will support all Intel Enhanced Speedstep
+	capable CPUs. That means less confusion over name of
+	speedstep-centrino driver (with that driver supposed to be used on
+	non-centrino platforms). That means less duplication of code and
+	less maintenance effort and no possibility of these two drivers
+	going out of sync.
+	Current users of speedstep_centrino with ACPI hooks are requested to
+	switch over to acpi-cpufreq driver. speedstep-centrino will continue
+	to work using older non-ACPI static table based scheme even after this
+	date.
+
+Who:	Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>
+
+---------------------------
+
+What:	ACPI hotkey driver (CONFIG_ACPI_HOTKEY)
+When:	2.6.21
+Why:	hotkey.c was an attempt to consolidate multiple drivers that use
+	ACPI to implement hotkeys.  However, hotkeys are not documented
+	in the ACPI specification, so the drivers used undocumented
+	vendor-specific hooks and turned out to be more different than
+	the same.
+
+	Further, the keys and the features supplied by each platform
+	are different, so there will always be a need for
+	platform-specific drivers.
+
+	So the new plan is to delete hotkey.c and instead, work on the
+	platform specific drivers to try to make them look the same
+	to the user when they supply the same features.
+
+	hotkey.c has always depended on CONFIG_EXPERIMENTAL
+
+Who:	Len Brown <len.brown@intel.com>
+
+---------------------------
+
+What:	/sys/firmware/acpi/namespace
+When:	2.6.21
+Why:	The ACPI namespace is effectively the symbol list for
+	the BIOS.  The device names are completely arbitrary
+	and have no place being exposed to user-space.
+
+	For those interested in the BIOS ACPI namespace,
+	the BIOS can be extracted and disassembled with acpidump
+	and iasl as documented in the pmtools package here:
+	http://ftp.kernel.org/pub/linux/kernel/people/lenb/acpi/utils
+
+Who:	Len Brown <len.brown@intel.com>
+
+---------------------------
+
+What:	/proc/acpi/button
+When:	August 2007
+Why:	/proc/acpi/button has been replaced by events to the input layer
+	since 2.6.20.
+Who:	Len Brown <len.brown@intel.com>
+
+---------------------------
+
+What:	JFFS (version 1)
+When:	2.6.21
+Why:	Unmaintained for years, superceded by JFFS2 for years.
+Who:	Jeff Garzik <jeff@garzik.org>
+
+---------------------------
