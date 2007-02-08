@@ -121,6 +121,7 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 {
 	struct sysinfo i;
 	int len;
+//	struct page_state ps;
 	unsigned long inactive;
 	unsigned long active;
 	unsigned long free;
@@ -129,12 +130,15 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 	struct vmalloc_info vmi;
 	long cached;
 
+//	get_page_state(&ps);
 	get_zone_counts(&active, &inactive, &free);
 
 /*
  * display in kilobytes.
  */
 #define K(x) ((x) << (PAGE_SHIFT - 10))
+#define B(x) ((unsigned long long)(x) << PAGE_SHIFT)
+
 	si_meminfo(&i);
 	si_swapinfo(&i);
 	committed = atomic_read(&vm_committed_space);
@@ -147,69 +151,81 @@ static int meminfo_read_proc(char *page, char **start, off_t off,
 		cached = 0;
 
 	get_vmalloc_info(&vmi);
+	len = sprintf(page, "        total:    used:    free:  shared: buffers:  cached:\n"
+		"Mem:  %8Lu %8Lu %8Lu %8Lu %8Lu %8Lu\n"
+		"Swap: %8Lu %8Lu %8Lu\n",
+		B(i.totalram), B(i.totalram-i.freeram), B(i.freeram),
+		B(i.sharedram), B(i.bufferram),
+		B(cached), B(i.totalswap),
+		B(i.totalswap-i.freeswap), B(i.freeswap));
 
 	/*
 	 * Tagged format, for easy grepping and expansion.
 	 */
-	len = sprintf(page,
+/*		"MemTotal:     %8lu kB\n"
+		"MemFree:      %8lu kB\n"
+		"MemShared:    %8lu kB\n"
+		"Buffers:      %8lu kB\n"
+		"Cached:       %8lu kB\n"
+		"SwapCached:   %8lu kB\n"
+		"Active:       %8u kB\n"
+		"Inactive:     %8u kB\n"
+		"HighTotal:    %8lu kB\n"
+		"HighFree:     %8lu kB\n"
+		"LowTotal:     %8lu kB\n"
+		"LowFree:      %8lu kB\n"
+		"SwapTotal:    %8lu kB\n"
+		"SwapFree:     %8lu kB\n",
+*/	len += sprintf(page+len,
 		"MemTotal:     %8lu kB\n"
 		"MemFree:      %8lu kB\n"
+		"MemShared:    %8lu kB\n"
 		"Buffers:      %8lu kB\n"
 		"Cached:       %8lu kB\n"
 		"SwapCached:   %8lu kB\n"
 		"Active:       %8lu kB\n"
 		"Inactive:     %8lu kB\n"
-#ifdef CONFIG_HIGHMEM
 		"HighTotal:    %8lu kB\n"
 		"HighFree:     %8lu kB\n"
 		"LowTotal:     %8lu kB\n"
 		"LowFree:      %8lu kB\n"
-#endif
 		"SwapTotal:    %8lu kB\n"
 		"SwapFree:     %8lu kB\n"
 		"Dirty:        %8lu kB\n"
 		"Writeback:    %8lu kB\n"
-		"AnonPages:    %8lu kB\n"
 		"Mapped:       %8lu kB\n"
 		"Slab:         %8lu kB\n"
-		"SReclaimable: %8lu kB\n"
-		"SUnreclaim:   %8lu kB\n"
-		"PageTables:   %8lu kB\n"
-		"NFS_Unstable: %8lu kB\n"
-		"Bounce:       %8lu kB\n"
 		"CommitLimit:  %8lu kB\n"
 		"Committed_AS: %8lu kB\n"
+		"PageTables:   %8lu kB\n"
 		"VmallocTotal: %8lu kB\n"
 		"VmallocUsed:  %8lu kB\n"
 		"VmallocChunk: %8lu kB\n",
 		K(i.totalram),
 		K(i.freeram),
+		K(i.sharedram),
 		K(i.bufferram),
 		K(cached),
 		K(total_swapcache_pages),
 		K(active),
 		K(inactive),
-#ifdef CONFIG_HIGHMEM
 		K(i.totalhigh),
 		K(i.freehigh),
 		K(i.totalram-i.totalhigh),
 		K(i.freeram-i.freehigh),
-#endif
 		K(i.totalswap),
 		K(i.freeswap),
-		K(global_page_state(NR_FILE_DIRTY)),
-		K(global_page_state(NR_WRITEBACK)),
-		K(global_page_state(NR_ANON_PAGES)),
-		K(global_page_state(NR_FILE_MAPPED)),
-		K(global_page_state(NR_SLAB_RECLAIMABLE) +
-				global_page_state(NR_SLAB_UNRECLAIMABLE)),
-		K(global_page_state(NR_SLAB_RECLAIMABLE)),
-		K(global_page_state(NR_SLAB_UNRECLAIMABLE)),
-		K(global_page_state(NR_PAGETABLE)),
-		K(global_page_state(NR_UNSTABLE_NFS)),
-		K(global_page_state(NR_BOUNCE)),
+		global_page_state(NR_FILE_DIRTY),
+		global_page_state(NR_WRITEBACK),
+		global_page_state(NR_FILE_MAPPED),
+		global_page_state(NR_SLAB_RECLAIMABLE),
+//		0,//K(ps.nr_dirty),
+//		0,//K(ps.nr_writeback),
+//		0,//K(ps.nr_mapped),
+//		0,//K(ps.nr_slab),
 		K(allowed),
 		K(committed),
+		global_page_state(NR_FILE_PAGES),
 		(unsigned long)VMALLOC_TOTAL >> 10,
 		vmi.used >> 10,
 		vmi.largest_chunk >> 10
