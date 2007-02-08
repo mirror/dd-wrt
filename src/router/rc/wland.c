@@ -313,7 +313,7 @@ checkbssid (void)
 {
   struct ether_addr bssid;
   wl_bss_info_t *bi;
-  char buf[sizeof(wl_bss_info_t)+64];
+  char buf[WLC_IOCTL_MAXLEN];
   if ((WL_IOCTL (get_wdev(), WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
     {
       *(uint32 *) buf = WLC_IOCTL_MAXLEN;
