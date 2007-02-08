@@ -169,15 +169,6 @@ stop_vpn_modules (void)
 #ifndef HAVE_FONERA
 #ifndef HAVE_WHRAG108
 #ifndef HAVE_X86*/
-  eval ("/sbin/rmmod", "ip_nat_proto_gre");
-  syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
-  eval ("/sbin/rmmod", "ip_nat_pptp");
-  syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
-  eval ("/sbin/rmmod", "ip_conntrack_pptp");
-  syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
-  eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
-  syslog (LOG_INFO,
-	  "vpn modules : ip_conntrack_proto_gre successfully stopped\n");
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
