@@ -45,7 +45,7 @@
 #include "spiflash.h"
 
 /* debugging */
-/* #define SPIFLASH_DEBUG */
+//#define SPIFLASH_DEBUG 1
 
 #ifndef __BIG_ENDIAN
 #error This driver currently only works with big endian CPU.
