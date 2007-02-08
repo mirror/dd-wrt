@@ -115,13 +115,28 @@ addHost (char *host, char *ip)
 void
 start_vpn_modules (void)
 {
-#ifndef HAVE_XSCALE
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+  if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
+       || nvram_match ("ipsec_pass", "1")))
+    {
+      eval ("/sbin/insmod", "nf_conntrack_proto_gre");
+      syslog (LOG_INFO,
+	      "vpn modules : nf_conntrack_proto_gre successfully started\n");
+      eval ("/sbin/insmod", "nf_nat_proto_gre");
+      syslog (LOG_INFO,
+	      "vpn modules : nf_nat_proto_gre successfully started\n");
+    }
+    
+  if (nvram_match ("pptp_pass", "1"))
+    {
+      eval ("/sbin/insmod", "nf_conntrack_pptp");
+      syslog (LOG_INFO,
+	      "vpn modules : nf_conntrack_pptp successfully started\n");
+      eval ("/sbin/insmod", "nf_nat_pptp");
+      syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully started\n");
+    }
 
-#ifndef HAVE_RB500
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_X86
+#else
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1")))
     {
@@ -132,11 +147,6 @@ start_vpn_modules (void)
       syslog (LOG_INFO,
 	      "vpn modules : ip_nat_proto_gre successfully started\n");
     }
-#endif
-#endif
-#endif
-#endif
-#endif
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
@@ -145,21 +155,6 @@ start_vpn_modules (void)
       eval ("/sbin/insmod", "ip_nat_pptp");
       syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully started\n");
     }
-#else
-  if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
-       || nvram_match ("ipsec_pass", "1")))
-    {
-      eval ("/sbin/insmod", "nf_conntrack_proto_gre");
-      syslog (LOG_INFO,
-	      "vpn modules : nf_conntrack_proto_gre successfully started\n");
-    }
-  if (nvram_match ("pptp_pass", "1"))
-    {
-      eval ("/sbin/insmod", "nf_conntrack_pptp");
-      syslog (LOG_INFO,
-	      "vpn modules : nf_conntrack_pptp successfully started\n");
-    }
-
 #endif
 }
 
@@ -167,45 +162,44 @@ start_vpn_modules (void)
 void
 stop_vpn_modules (void)
 {
-
+/*
 #ifndef HAVE_XSCALE
 #ifndef HAVE_RB500
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
 #ifndef HAVE_WHRAG108
-#ifndef HAVE_X86
+#ifndef HAVE_X86*/
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
-#endif
-#endif
-#endif
-#endif
-#endif
   eval ("/sbin/rmmod", "ip_nat_pptp");
   syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
-#ifndef HAVE_RB500
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_X86
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
   syslog (LOG_INFO,
 	  "vpn modules : ip_conntrack_proto_gre successfully stopped\n");
-#endif
-#endif
-#endif
-#endif
-#endif
-#else
+#if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
+  syslog (LOG_INFO,"vpn modules : nf_conntrack_proto_gre successfully stopped\n");
+  eval ("/sbin/rmmod", "nf_nat_proto_gre");
+  syslog (LOG_INFO, "vpn modules : nf_nat_proto_gre successfully stopped\n");
+  eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
   syslog (LOG_INFO,
 	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
-#endif
+#else
+  eval ("/sbin/rmmod", "ip_nat_proto_gre");
+  syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
+  eval ("/sbin/rmmod", "ip_nat_pptp");
+  syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
+  eval ("/sbin/rmmod", "ip_conntrack_pptp");
+  syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
+  eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+  syslog (LOG_INFO,
+	  "vpn modules : ip_conntrack_proto_gre successfully stopped\n");
 
+#endif
 }
 
 #ifdef HAVE_PPTPD

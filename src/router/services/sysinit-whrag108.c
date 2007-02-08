@@ -91,7 +91,9 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
+ 
 /* network drivers */
+  eval ("insmod", "ar2313");
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
