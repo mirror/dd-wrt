@@ -53,7 +53,7 @@ gpio_proc_read (char *buf, char **start, off_t offset,
 		int len, int *eof, void *data)
 {
   u32 reg = 0;
-  if (!strcmp (get_system_type (), "Atheros AR5315"))
+  if (!strcmp (get_system_type (), "Atheros AR5315\n"))
     {
       if ((unsigned int) data & GPIO_IN)
 	reg = sysRegRead (AR5315_GPIO_DI);
@@ -91,7 +91,7 @@ gpio_proc_info_read (char *buf, char **start, off_t offset,
 		     int len, int *eof, void *data)
 {
   *eof = 1;
-  if (!strcmp (get_system_type (), "Atheros AR5315"))
+  if (!strcmp (get_system_type (), "Atheros AR5315\n"))
     {
       return (sprintf
 	      (buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
@@ -129,7 +129,7 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
   //printk (KERN_NOTICE "you wrote \"%c\" to GPIO %i\n",procfs_buffer[0], ((int)data) & 0xff );
 
   //printk (KERN_NOTICE "GPIO PROCID %#08X\n",(int) data );
-  if (!strcmp (get_system_type (), "Atheros AR5315"))
+  if (!strcmp (get_system_type (), "Atheros AR5315\n"))
     {
 
       if ((unsigned int) data & GPIO_IN)
@@ -159,7 +159,7 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
 
   //printk (KERN_NOTICE ".. and after write %#08X \n",reg);
 
-  if (!strcmp (get_system_type (), "Atheros AR5315"))
+  if (!strcmp (get_system_type (), "Atheros AR5315\n"))
     {
       if ((unsigned int) data & GPIO_IN)
 	{
@@ -204,11 +204,10 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
 static __init int
 register_proc (void)
 {
-  printk (KERN_EMERG "register GPIO driver\n");
   unsigned char i, flag = 0;
   char proc_name[16];
   int gpiocount = 0;
-  if (!strcmp (get_system_type (), "Atheros AR5315"))
+  if (!strcmp (get_system_type (), "Atheros AR5315\n"))
     {
       gpiocount = 22;
     }
