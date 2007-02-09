@@ -38,14 +38,85 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
 
 char wanifname[8], wlifname[8];
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
 
+//highly experimental
 
+void setRegister(int socket, short reg, short value)
+{
+  struct mii_ioctl_data data;
+  struct ifreq iwr;
+  iwr.ifr_data = &data;
+  (void) strncpy (iwr.ifr_name, "eth0", sizeof ("eth0"));
+  data.reg_num = reg;
+  data.val_in = value;
+ ioctl (socket, SIOCSMIIREG, &iwr);
+
+}
+void setupSwitch(void)
+{
+  int s = socket (AF_INET, SOCK_DGRAM, 0);
+  if (s < 0)
+    {
+      return;
+    }
+  
+//Enable 8021Q (80) and IGMP snooping (40)
+  setRegister(s,0x05,0xa0);
+//vlan1: valid,5,2,1 port fid=1 vid=1 
+  setRegister(s,0x76,0x33);
+  setRegister(s,0x76,0x10);
+  setRegister(s,0x76,0x01);
+//write (04) and trigger address 0
+  setRegister(s,0x6E,0x04);
+  setRegister(s,0x6E,0x00);
+//vlan2: valid,5,4,3 port fid=2 vid=2 
+  setRegister(s,0x76,0x3C);
+  setRegister(s,0x76,0x20);
+  setRegister(s,0x76,0x02);
+//write (04) and trigger address 0
+  setRegister(s,0x6E,0x04);
+  setRegister(s,0x6E,0x01);
+//config port 1,2 to VLAN id 1
+  setRegister(s,0x14,0x01);
+  setRegister(s,0x24,0x01);
+//config port 1,2 to filter vid 1
+  setRegister(s,0x12,0x46);
+  setRegister(s,0x22,0x46);
+//config port 3,4 to VLAN id 2
+  setRegister(s,0x34,0x02);
+  setRegister(s,0x44,0x02);
+//config port 3,4 to filter vid 2
+  setRegister(s,0x32,0x46);
+  setRegister(s,0x42,0x46);    
+//for IGMP, disenable special tagging
+  setRegister(s,0x0b,0x01);
+//enable vlan tag insertion por 5
+  setRegister(s,0x50,0x04);
+  setRegister(s,0x52,0x06);
+//remove it from all others
+  setRegister(s,0x10,0x02);
+  setRegister(s,0x20,0x02);
+  setRegister(s,0x30,0x02);
+  setRegister(s,0x40,0x02);
+//switch enable
+  setRegister(s,0x01,0x01);
+  close(s);
+
+}
 
 int
 start_sysinit (void)
