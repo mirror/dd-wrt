@@ -114,43 +114,43 @@ static void
 loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, load wl, unset afterburner bit
 {
 
-int brand = getRouterBrand ();
-	
-#ifdef HAVE_MSSID //v24
+  int brand = getRouterBrand ();
+
+#ifdef HAVE_MSSID		//v24
 
   nvram_set ("pa0maxpwr", "251");	//force pa0maxpwr to be 251
 
-	switch (brand)
-	{
-		case ROUTER_ASUS_WL500G_PRE:
-		case ROUTER_WRT54G:
-		case ROUTER_MOTOROLA:
-			nvram_set ("wl0gpio0", "136");
-			break;
-		case ROUTER_BUFFALO_WBR54G:
-    	case ROUTER_BUFFALO_WBR2G54S:
-    	case ROUTER_WRT300N:
-    	case ROUTER_WRT350N:
-    		nvram_set ("wl0gpio0", "8");
-			break;
-		case ROUTER_BUFFALO_WHRG54S:
-		case ROUTER_BUFFALO_WLI_TX4_G54HP:
-    		nvram_set ("wl0gpio2", "136");
-			break;
-	}
-#else	//v23
+  switch (brand)
+    {
+    case ROUTER_ASUS_WL500G_PRE:
+    case ROUTER_WRT54G:
+    case ROUTER_MOTOROLA:
+      nvram_set ("wl0gpio0", "136");
+      break;
+    case ROUTER_BUFFALO_WBR54G:
+    case ROUTER_BUFFALO_WBR2G54S:
+    case ROUTER_WRT300N:
+    case ROUTER_WRT350N:
+      nvram_set ("wl0gpio0", "8");
+      break;
+    case ROUTER_BUFFALO_WHRG54S:
+    case ROUTER_BUFFALO_WLI_TX4_G54HP:
+      nvram_set ("wl0gpio2", "136");
+      break;
+    }
+#else //v23
 
-	switch (brand)
-	{
-		case ROUTER_BUFFALO_WZRRSG54:
-		case ROUTER_BUFFALO_WBR54G:
-    	case ROUTER_BUFFALO_WBR2G54S:
-			nvram_set ("wl0gpio0", "130");
-			break;
-    	case ROUTER_MOTOROLA:
-    		nvram_set ("wl0gpio0", "2");
-			break;
-	}
+  switch (brand)
+    {
+    case ROUTER_BUFFALO_WZRRSG54:
+    case ROUTER_BUFFALO_WBR54G:
+    case ROUTER_BUFFALO_WBR2G54S:
+      nvram_set ("wl0gpio0", "130");
+      break;
+    case ROUTER_MOTOROLA:
+      nvram_set ("wl0gpio0", "2");
+      break;
+    }
 #endif
 
   int boardflags;
@@ -164,28 +164,29 @@ int brand = getRouterBrand ();
     default:
       boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
       fprintf (stderr, "boardflags are 0x%04X\n", boardflags);
-      if (boardflags == 0)   //we can try anyway
-      	{
-	    nvram_set ("boardflags", "0x0200");  
-	    eval ("insmod", "wl");	//load module
-	    nvram_unset ("boardflags");
-     	} 
-      else if (boardflags & BFL_AFTERBURNER)  //ab flag already set
-		{
-	  	eval ("insmod", "wl");	//load module
-		}
-      else  //ab flag not set
-		{
-	  	char bf[16];
-	  	sprintf (bf, "0x%04X", boardflags);
-	  	boardflags |= BFL_AFTERBURNER;
-	  	fprintf (stderr, "enable Afterburner, boardflags are 0x%04X\n", boardflags);
-	  	char ab[16];
-	  	sprintf (ab, "0x%04X", boardflags);
-	  	nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
-	  	eval ("insmod", "wl");	//load module
-	  	nvram_set ("boardflags", bf);	//set back to original
-		}
+      if (boardflags == 0)	//we can try anyway
+	{
+	  nvram_set ("boardflags", "0x0200");
+	  eval ("insmod", "wl");	//load module
+	  nvram_unset ("boardflags");
+	}
+      else if (boardflags & BFL_AFTERBURNER)	//ab flag already set
+	{
+	  eval ("insmod", "wl");	//load module
+	}
+      else			//ab flag not set
+	{
+	  char bf[16];
+	  sprintf (bf, "0x%04X", boardflags);
+	  boardflags |= BFL_AFTERBURNER;
+	  fprintf (stderr, "enable Afterburner, boardflags are 0x%04X\n",
+		   boardflags);
+	  char ab[16];
+	  sprintf (ab, "0x%04X", boardflags);
+	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
+	  eval ("insmod", "wl");	//load module
+	  nvram_set ("boardflags", bf);	//set back to original
+	}
 
     }
   return;
