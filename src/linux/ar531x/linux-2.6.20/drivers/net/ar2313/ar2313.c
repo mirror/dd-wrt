@@ -1489,14 +1489,14 @@ static int ar2313_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	case SIOCGMIIREG:		/* Read MII PHY register. */
 	case SIOCDEVPRIVATE+1:	/* for binary compat, remove in 2.5 */
 	    data->val_out = armiiread(data->phy_id & 0x1f, 
-	                              data->reg_num & 0x1f);
+	                              data->reg_num);
 	    return 0;
 	case SIOCSMIIREG:		/* Write MII PHY register. */
 	case SIOCDEVPRIVATE+2:	/* for binary compat, remove in 2.5 */
 	    if (!capable(CAP_NET_ADMIN))
 	        return -EPERM;
 	    armiiwrite(data->phy_id & 0x1f, 
-	               data->reg_num & 0x1f, data->val_in);
+	               data->reg_num, data->val_in);
 	    return 0;
 
 	case SIOCSIFHWADDR:
