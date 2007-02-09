@@ -372,6 +372,7 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
+      eval ("wl","disassoc");
 #ifndef HAVE_MSSID
       eval ("wl", "join", nvram_safe_get ("wl_ssid"));
 #else
