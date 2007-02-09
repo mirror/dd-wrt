@@ -129,6 +129,11 @@
 #endif
 	.endm
 
+
+	j kernel_entry
+	nop
+
+
 	/*
 	 * Reserved space for exception handlers.
 	 * Necessary for machines which link their kernels at KSEG0.
