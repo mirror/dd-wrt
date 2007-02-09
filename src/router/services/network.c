@@ -984,24 +984,12 @@ start_lan (void)
 	  continue;
 	if (!ifexists (name))
 	  continue;
-#ifdef HAVE_MADWIFI
-#ifndef HAVE_RB500
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_X86
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
 	if (!strcmp (name, "eth2"))
 	  {
 	    strcpy (realname, "ath0");
 	  }
 	else
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
 #endif
 	  strcpy (realname, name);
 
