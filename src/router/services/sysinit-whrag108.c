@@ -165,6 +165,11 @@ start_sysinit (void)
  
 /* network drivers */
   eval ("insmod", "ar2313");
+  setupSwitch();
+  eval ("ifconfig", "eth0", "0.0.0.0", "up");
+  eval ("vconfig", "add", "eth0", "1");
+  eval ("vconfig", "add", "eth0", "2");
+
   eval ("insmod", "ath_ahb","autocreate=none");
 
   eval ("ifconfig", "wifi0", "up");
