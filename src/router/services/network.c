@@ -350,20 +350,20 @@ start_dhcpc (char *wan_ifname)
   nvram_set ("wan_get_dns", "");
   killall ("udhcpc", SIGTERM);
 
-        char *dhcp_argv[] = { "udhcpc",
-	"-i", wan_ifname,
-	"-p", "/var/run/udhcpc.pid",
-	"-s", "/tmp/udhcpc",
-	vendorclass && *vendorclass ? "-V" : NULL,
-	vendorclass && *vendorclass ? vendorclass : NULL,
-	requestip && *requestip ? "-r" : NULL,
-	requestip && *requestip ? requestip : NULL,
-	wan_hostname && *wan_hostname ? "-H" : NULL,
-	wan_hostname && *wan_hostname ? wan_hostname : NULL,
-	NULL
-      };
-      _eval (dhcp_argv, NULL, 0, &pid);  
-  
+  char *dhcp_argv[] = { "udhcpc",
+    "-i", wan_ifname,
+    "-p", "/var/run/udhcpc.pid",
+    "-s", "/tmp/udhcpc",
+    vendorclass && *vendorclass ? "-V" : NULL,
+    vendorclass && *vendorclass ? vendorclass : NULL,
+    requestip && *requestip ? "-r" : NULL,
+    requestip && *requestip ? requestip : NULL,
+    wan_hostname && *wan_hostname ? "-H" : NULL,
+    wan_hostname && *wan_hostname ? wan_hostname : NULL,
+    NULL
+  };
+  _eval (dhcp_argv, NULL, 0, &pid);
+
 }
 
 #ifdef HAVE_MSSID
@@ -609,7 +609,7 @@ do_portsetup (char *lan, char *ifname)
   char var[64];
   char var2[64];
   sprintf (var, "%s_bridged", ifname);
-  if (nvram_default_match (var, "1","1"))
+  if (nvram_default_match (var, "1", "1"))
     {
       br_add_interface (lan, ifname);
     }
@@ -637,7 +637,8 @@ start_lan (void)
     return;
 #ifdef HAVE_RB500
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")  || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames",
@@ -662,7 +663,8 @@ start_lan (void)
 
 #ifdef HAVE_MAGICBOX
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")  || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 eth1 ath0");
@@ -690,7 +692,8 @@ start_lan (void)
 #endif
 #ifdef HAVE_FONERA
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0 ath0");
@@ -713,7 +716,8 @@ start_lan (void)
 #endif
 #ifdef HAVE_WHRAG108
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "eth0.1 eth0.2 ath0 ath1");
@@ -736,7 +740,8 @@ start_lan (void)
 #endif
 #ifdef HAVE_GATEWORX
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
       nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
@@ -1111,7 +1116,7 @@ start_lan (void)
 //#ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
 //#else
-//	    br_add_interface (lan_ifname, name);
+//          br_add_interface (lan_ifname, name);
 //#endif
 	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
@@ -1265,13 +1270,15 @@ start_lan (void)
 
 #ifdef HAVE_FONERA
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet") || nvram_match("wan_proto","disabled"))
+      || nvram_match ("ath0_mode", "wet")
+      || nvram_match ("wan_proto", "disabled"))
     {
 #endif
 //add fallback ip
-char staticlan[32];
-sprintf(staticlan,"%s:0",lan_ifname);
-  eval("ifconfig",staticlan,"169.254.255.1","netmask","255.255.255.0");
+      char staticlan[32];
+      sprintf (staticlan, "%s:0", lan_ifname);
+      eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
+	    "255.255.255.0");
 
 #ifdef HAVE_FONERA
     }
@@ -1356,57 +1363,49 @@ sprintf(staticlan,"%s:0",lan_ifname);
 
   /* Sveasoft - create separate WDS subnet bridge if enabled */
 #ifdef HAVE_MADWIFI
-int cnt = getifcount("wifi");
-int c;
-for (c=0;c<cnt;c++)
+  int cnt = getifcount ("wifi");
+  int c;
+  for (c = 0; c < cnt; c++)
 #endif
-{
-#ifdef HAVE_MADWIFI
-char br1enable[32];
-char br1ipaddr[32];
-char br1netmask[32];
-sprintf(br1enable,"ath%d_br1_enable",c);
-sprintf(br1ipaddr,"ath%d_br1_ipaddr",c);
-sprintf(br1netmask,"ath%d_br1_netmask",c);
-#else
-char *br1enable="wl_br1_enable";
-char *br1ipaddr="wl_br1_ipaddr";
-char *br1netmask="wl_br1_netmask";
-#endif
-if (nvram_get(br1enable)==NULL)nvram_set(br1enable,"0");
-if (nvram_get(br1ipaddr)==NULL)nvram_set(br1ipaddr,"0.0.0.0");
-if (nvram_get(br1netmask)==NULL)nvram_set(br1netmask,"255.255.255.0");
-  if (nvram_match (br1enable, "1"))
     {
-      ifconfig ("br1", 0, 0, 0);
+#ifdef HAVE_MADWIFI
+      char br1enable[32];
+      char br1ipaddr[32];
+      char br1netmask[32];
+      sprintf (br1enable, "ath%d_br1_enable", c);
+      sprintf (br1ipaddr, "ath%d_br1_ipaddr", c);
+      sprintf (br1netmask, "ath%d_br1_netmask", c);
+#else
+      char *br1enable = "wl_br1_enable";
+      char *br1ipaddr = "wl_br1_ipaddr";
+      char *br1netmask = "wl_br1_netmask";
+#endif
+      if (nvram_get (br1enable) == NULL)
+	nvram_set (br1enable, "0");
+      if (nvram_get (br1ipaddr) == NULL)
+	nvram_set (br1ipaddr, "0.0.0.0");
+      if (nvram_get (br1netmask) == NULL)
+	nvram_set (br1netmask, "255.255.255.0");
+      if (nvram_match (br1enable, "1"))
+	{
+	  ifconfig ("br1", 0, 0, 0);
 
-      //  eval ("ifconfig", "br1", "down");
-      br_del_bridge ("br1");
-      br_add_bridge ("br1");
+	  //  eval ("ifconfig", "br1", "down");
+	  br_del_bridge ("br1");
+	  br_add_bridge ("br1");
 
 #ifdef HAVE_MICRO
-      struct timeval tv;
-      tv.tv_sec = 0;
-      tv.tv_usec = 0;
-      br_set_bridge_forward_delay (lan_ifname, &tv);
+	  struct timeval tv;
+	  tv.tv_sec = 0;
+	  tv.tv_usec = 0;
+	  br_set_bridge_forward_delay (lan_ifname, &tv);
 #else
-      eval ("brctl", "setfd", lan_ifname, "0");
+	  eval ("brctl", "setfd", lan_ifname, "0");
 #endif
 
-      //eval ("brctl", "delbr", "br1");
-      //eval ("brctl", "addbr", "br1");
-      //eval ("brctl", "setfd", "br1", "0");
-
-      if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-	br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
-      else
-	br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
-
-      /* Bring up and configure br1 interface */
-      if (nvram_invmatch (br1ipaddr, "0.0.0.0"))
-	{
-	  ifconfig ("br1", IFUP, nvram_safe_get (br1ipaddr),
-		    nvram_safe_get (br1netmask));
+	  //eval ("brctl", "delbr", "br1");
+	  //eval ("brctl", "addbr", "br1");
+	  //eval ("brctl", "setfd", "br1", "0");
 
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
@@ -1414,78 +1413,92 @@ if (nvram_get(br1netmask)==NULL)nvram_set(br1netmask,"255.255.255.0");
 	  else
 	    br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
 
+	  /* Bring up and configure br1 interface */
+	  if (nvram_invmatch (br1ipaddr, "0.0.0.0"))
+	    {
+	      ifconfig ("br1", IFUP, nvram_safe_get (br1ipaddr),
+			nvram_safe_get (br1netmask));
 
-	  sleep (2);
+	      if (nvram_match ("router_disable", "1")
+		  || nvram_match ("lan_stp", "0"))
+		br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
+	      else
+		br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
+
+
+	      sleep (2);
 #ifndef HAVE_MADWIFI
-	  notify_nas ("lan", "br1", "up");
+	      notify_nas ("lan", "br1", "up");
 #endif
-	}
+	    }
 
+	}
     }
-}
   /* Sveasoft - Bring up and configure wds interfaces */
   /* logic - if separate ip defined bring it up */
   /*         else if flagged for br1 and br1 is enabled add to br1 */
   /*         else add it to the br0 bridge */
 #ifdef HAVE_MADWIFI
-for (c=0;c<cnt;c++)
+  for (c = 0; c < cnt; c++)
 #endif
-{
-
-  for (s = 1; s <= MAX_WDS_DEVS; s++)
     {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char *dev;
-#ifdef HAVE_MADWIFI
-      char br1enable[32];
-      sprintf (wdsvarname, "ath%d_wds%d_enable",c, s);
-      sprintf (wdsdevname, "ath%d_wds%d_if",c, s);
-      sprintf(br1enable,"ath%d_br1_enable",c);
-      if (nvram_get(wdsvarname)==NULL)nvram_set(wdsvarname,"0");
-#else
-      sprintf (wdsvarname, "wl_wds%d_enable", s);
-      sprintf (wdsdevname, "wl_wds%d_if", s);
-      char *br1enable="wl_br1_enable";
-#endif
-      dev = nvram_safe_get (wdsdevname);
-      if (strlen (dev) == 0)
-	continue;
-      ifconfig (dev, 0, 0, 0);
 
-      //  eval ("ifconfig", dev, "down");
-      if (nvram_match (wdsvarname, "1"))
+      for (s = 1; s <= MAX_WDS_DEVS; s++)
 	{
-	  char wdsip[32] = { 0 };
-	  char wdsbc[32] = { 0 };
-	  char wdsnm[32] = { 0 };
+	  char wdsvarname[32] = { 0 };
+	  char wdsdevname[32] = { 0 };
+	  char *dev;
 #ifdef HAVE_MADWIFI
-	  snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c,s);
-	  snprintf (wdsnm, 31, "ath%d_wds%d_netmask",c,s);
+	  char br1enable[32];
+	  sprintf (wdsvarname, "ath%d_wds%d_enable", c, s);
+	  sprintf (wdsdevname, "ath%d_wds%d_if", c, s);
+	  sprintf (br1enable, "ath%d_br1_enable", c);
+	  if (nvram_get (wdsvarname) == NULL)
+	    nvram_set (wdsvarname, "0");
 #else
-	  snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
-	  snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
+	  sprintf (wdsvarname, "wl_wds%d_enable", s);
+	  sprintf (wdsdevname, "wl_wds%d_if", s);
+	  char *br1enable = "wl_br1_enable";
+#endif
+	  dev = nvram_safe_get (wdsdevname);
+	  if (strlen (dev) == 0)
+	    continue;
+	  ifconfig (dev, 0, 0, 0);
+
+	  //  eval ("ifconfig", dev, "down");
+	  if (nvram_match (wdsvarname, "1"))
+	    {
+	      char wdsip[32] = { 0 };
+	      char wdsbc[32] = { 0 };
+	      char wdsnm[32] = { 0 };
+#ifdef HAVE_MADWIFI
+	      snprintf (wdsip, 31, "ath%d_wds%d_ipaddr", c, s);
+	      snprintf (wdsnm, 31, "ath%d_wds%d_netmask", c, s);
+#else
+	      snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
+	      snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
 #endif
 
-	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
-	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
-	  eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast", wdsbc,
-		"netmask", nvram_safe_get (wdsnm), "up");
-	}
-      else if (nvram_match (wdsvarname, "2") && nvram_match (br1enable, "1"))
-	{
-	  eval ("ifconfig", dev, "up");
-	  sleep (1);
-	  br_add_interface ("br1", dev);
-	}
-      else if (nvram_match (wdsvarname, "3"))
-	{
-	  ifconfig (dev, IFUP, 0, 0);
-	  sleep (1);
-	  br_add_interface ("br0", dev);
+	      snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
+	      get_broadcast (wdsbc, nvram_safe_get (wdsnm));
+	      eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast",
+		    wdsbc, "netmask", nvram_safe_get (wdsnm), "up");
+	    }
+	  else if (nvram_match (wdsvarname, "2")
+		   && nvram_match (br1enable, "1"))
+	    {
+	      eval ("ifconfig", dev, "up");
+	      sleep (1);
+	      br_add_interface ("br1", dev);
+	    }
+	  else if (nvram_match (wdsvarname, "3"))
+	    {
+	      ifconfig (dev, IFUP, 0, 0);
+	      sleep (1);
+	      br_add_interface ("br0", dev);
+	    }
 	}
     }
-}
 #ifdef HAVE_XSCALE
 #define HAVE_RB500
 #endif
@@ -1777,7 +1790,7 @@ start_wan (int status)
     return;
   /* Check PPPoE version, RP or linksys */
 #ifdef HAVE_PPPOE
-  if (nvram_match("wan_proto", "pppoe"))
+  if (nvram_match ("wan_proto", "pppoe"))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
   else
 #endif
@@ -1788,12 +1801,15 @@ start_wan (int status)
 
   ifconfig (wan_ifname, 0, NULL, NULL);
 #ifdef HAVE_FONERA
-  if (!nvram_match ("ath0_mode", "sta") && !nvram_match ("ath0_mode", "wdssta")
-      && !nvram_match ("ath0_mode", "wet") && !nvram_match("wan_proto","disabled"))
+  if (!nvram_match ("ath0_mode", "sta")
+      && !nvram_match ("ath0_mode", "wdssta")
+      && !nvram_match ("ath0_mode", "wet")
+      && !nvram_match ("wan_proto", "disabled"))
     {
-    char staticlan[32];
-    sprintf(staticlan,"%s:0",wan_ifname);
-    eval("ifconfig",staticlan,"169.254.255.1","netmask","255.255.255.0");
+      char staticlan[32];
+      sprintf (staticlan, "%s:0", wan_ifname);
+      eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
+	    "255.255.255.0");
     }
 #endif
 
@@ -1836,14 +1852,14 @@ start_wan (int status)
 
   // Set our Interface to the right MTU
 #ifdef HAVE_PPPOE
-  if (nvram_match("wan_proto", "pppoe"))
+  if (nvram_match ("wan_proto", "pppoe"))
     {
-	ifr.ifr_mtu = 1500;	// default ethernet frame size
+      ifr.ifr_mtu = 1500;	// default ethernet frame size
     }
   else
 #endif
     ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
- // fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
+  // fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
   ioctl (s, SIOCSIFMTU, &ifr);
 
   if (nvram_match ("router_disable", "1")
@@ -2546,6 +2562,9 @@ start_wan_done (char *wan_ifname)
 #ifdef HAVE_MICRO
   br_shutdown ();
 #endif
+#ifdef HAVE_MADWIFI
+  start_hostapdwan ();
+#endif
 
 }
 
@@ -2808,7 +2827,7 @@ int
 start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
-return 0;
+  return 0;
 #endif
 
 //      char *lan_ifname = nvram_safe_get("lan_ifname");

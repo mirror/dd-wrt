@@ -451,7 +451,7 @@ setsysctrl (const char *dev, const char *control, u_long value)
 
   snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
 	    dev, control);
-	    
+
   system2 (buffer);
   /* fd = fopen (buffer, "w");
      if (fd != NULL)
@@ -569,7 +569,7 @@ ieee80211_mhz2ieee (u_int freq)
 
 
 
-static int need_commit=0;
+static int need_commit = 0;
 
 char *
 default_get (char *var, char *def)
@@ -578,7 +578,7 @@ default_get (char *var, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      need_commit=1;
+      need_commit = 1;
     }
   return nvram_safe_get (var);
 }
@@ -590,7 +590,7 @@ default_match (char *var, char *match, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      need_commit=1;
+      need_commit = 1;
     }
   return nvram_match (var, match);
 }
@@ -718,7 +718,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "\tscan_ssid=1\n");
       if (nvram_prefix_match ("8021xtype", prefix, "tls"))
 	{
-          fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
+	  fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
 	  fprintf (fp, "\teap=TLS\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
 		   nvram_prefix_get ("tls8021xuser", prefix));
@@ -744,7 +744,7 @@ setupSupplicant (char *prefix)
       if (nvram_prefix_match ("8021xtype", prefix, "peap"))
 	{
 	  fprintf (fp, "\tkey_mgmt=IEEE8021X\n");
-    	  fprintf (fp, "\teap=PEAP\n");
+	  fprintf (fp, "\teap=PEAP\n");
 	  fprintf (fp, "\tphase2=\"auth=MSCHAPV2\"\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
 		   nvram_prefix_get ("peap8021xuser", prefix));
@@ -759,7 +759,7 @@ setupSupplicant (char *prefix)
 	}
       if (nvram_prefix_match ("8021xtype", prefix, "leap"))
 	{
-          fprintf (fp, "\tkey_mgmt=WPA-EAP\n");
+	  fprintf (fp, "\tkey_mgmt=WPA-EAP\n");
 	  fprintf (fp, "\teap=LEAP\n");
 	  fprintf (fp, "\tauth_alg=LEAP\n");
 	  fprintf (fp, "\tproto=WPA RSN\n");
@@ -769,12 +769,12 @@ setupSupplicant (char *prefix)
 		   nvram_prefix_get ("peap8021xuser", prefix));
 	  fprintf (fp, "\tpassword=\"%s\"\n",
 		   nvram_prefix_get ("peap8021xpasswd", prefix));
-//	  sprintf (psk, "/tmp/%s", prefix);
-//	  mkdir (psk);
-//	  sprintf (psk, "/tmp/%s/ca.pem", prefix);
-//	  sprintf (ath, "%s_peap8021xca", prefix);
-//	  write_nvram (psk, ath);
-//	  fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
+//        sprintf (psk, "/tmp/%s", prefix);
+//        mkdir (psk);
+//        sprintf (psk, "/tmp/%s/ca.pem", prefix);
+//        sprintf (ath, "%s_peap8021xca", prefix);
+//        write_nvram (psk, ath);
+//        fprintf (fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix);
 	}
       fprintf (fp, "}\n");
       fclose (fp);
@@ -793,12 +793,49 @@ setupSupplicant (char *prefix)
 
 
 }
+
 void
-setupHostAP (char *prefix)
+start_hostapdwan (void)
+{
+  char ath[32];
+  char wifivifs[16];
+  char *next;
+  char var[80];
+  int c = getdevicecount ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (ath, "ath%d", i);
+      setupHostAP (ath, 1);
+      sprintf (wifivifs, "ath%d_vifs", i);
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+	  setupHostAP (var, 1);
+	}
+    }
+
+}
+void
+setupHostAP (char *prefix, int iswan)
 {
   char psk[32];
   char akm[16];
   sprintf (akm, "%s_akm", prefix);
+  if (nvram_match (akm, "wpa") || nvram_match (akm, "wpa2")
+      || nvram_match (akm, "wpa wpa2") || nvram_match (akm, "radius"))
+    {
+      if (iswan == 0)
+	return;
+    }
+  if (nvram_match (akm, "psk") ||
+      nvram_match (akm, "psk2") ||
+      nvram_match (akm, "psk psk2") || nvram_match (akm, "wep"))
+    {
+      if (iswan == 1)
+	return;
+    }
 //wep key support
   if (nvram_match (akm, "wep"))
     {
@@ -1076,22 +1113,22 @@ configure_single (int count, int isbond)
   sprintf (wif, "wifi%d", count);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
-if (count==0)
-{
-  long tb = atol (nvram_safe_get (turbo));
-  setsysctrl (wif, "turbo", tb);
-  long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-  if (default_match ("ath_specialmode", "1", "0"))
+  if (count == 0)
     {
-      setsysctrl (wif, "regulatory", 0);
-      setsysctrl (wif, "setregdomain", 0x49);
+      long tb = atol (nvram_safe_get (turbo));
+      setsysctrl (wif, "turbo", tb);
+      long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+      if (default_match ("ath_specialmode", "1", "0"))
+	{
+	  setsysctrl (wif, "regulatory", 0);
+	  setsysctrl (wif, "setregdomain", 0x49);
+	}
+      else
+	{
+	  setsysctrl (wif, "regulatory", regulatory);
+	  setsysctrl (wif, "setregdomain", 0);
+	}
     }
-  else
-    {
-      setsysctrl (wif, "regulatory", regulatory);
-      setsysctrl (wif, "setregdomain", 0);
-    }
-}
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
@@ -1122,10 +1159,13 @@ if (count==0)
       //create device
       if (strlen (mode) > 0)
 	{
-	  if (!strcmp (m, "wet") || !strcmp (m, "sta") || !strcmp (m, "wdssta"))
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode","sta", "nosbeacon");
+	  if (!strcmp (m, "wet") || !strcmp (m, "sta")
+	      || !strcmp (m, "wdssta"))
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
+		  "sta", "nosbeacon");
 	  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode","ap");
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
+		  "ap");
 	  else
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "adhoc");
@@ -1148,7 +1188,8 @@ if (count==0)
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
       if (vif)
-	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta","nosbeacon");
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta",
+	      "nosbeacon");
       else
 	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
@@ -1242,7 +1283,7 @@ if (count==0)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
-      eval ("iwpriv",var,"bgscan","0");
+      eval ("iwpriv", var, "bgscan", "0");
       eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt"));
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
@@ -1251,7 +1292,7 @@ if (count==0)
 	eval ("iwpriv", dev, "wds", "1");
       cprintf ("setup encryption");
       if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-	setupHostAP (var);
+	setupHostAP (var, 0);
       else
 	setupSupplicant (var);
 
@@ -1275,7 +1316,7 @@ if (count==0)
   eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
-  eval ("iwpriv",dev,"bgscan","0");
+  eval ("iwpriv", dev, "bgscan", "0");
   m = default_get (wl, "ap");
 
 
@@ -1328,7 +1369,7 @@ if (count==0)
 
   cprintf ("setup encryption");
   if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-    setupHostAP (dev);
+    setupHostAP (dev, 0);
   else
     setupSupplicant (dev);
 //@todo ifup
@@ -1483,10 +1524,10 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       br_add_interface (nvram_safe_get ("lan_ifname"), "bond0");
     }
 #endif
-if (need_commit)
+  if (need_commit)
     {
-    nvram_commit();
-    need_commit=0;
+      nvram_commit ();
+      need_commit = 0;
     }
 }
 #endif

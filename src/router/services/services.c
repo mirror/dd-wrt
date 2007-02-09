@@ -126,7 +126,7 @@ start_vpn_modules (void)
       syslog (LOG_INFO,
 	      "vpn modules : nf_nat_proto_gre successfully started\n");
     }
-    
+
   if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "nf_conntrack_pptp");
@@ -173,7 +173,8 @@ stop_vpn_modules (void)
   eval ("/sbin/rmmod", "nf_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
-  syslog (LOG_INFO,"vpn modules : nf_conntrack_proto_gre successfully stopped\n");
+  syslog (LOG_INFO,
+	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
   eval ("/sbin/rmmod", "nf_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : nf_nat_proto_gre successfully stopped\n");
   eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
@@ -1255,7 +1256,7 @@ convert_wds (void)
 int
 start_guest_nas (void)
 {
-		
+
 /*  char *unbridged_interfaces;
   char *next;
   char name[IFNAMSIZ], lan[IFNAMSIZ];
@@ -1415,20 +1416,21 @@ start_nas_wan (void)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-	  sprintf (vif, "%s_mode", var);
-	  if (nvram_match (vif, "sta")
-	      || nvram_match (vif, "wet")
-	      || nvram_match (vif, "apsta")
-	      || nvram_match (vif, "apstawet"))
-	    {
-      	start_nas ("wan", var);
-      	syslog (LOG_INFO, "NAS : NAS wan (%s interface) successfully started\n", var);
-  		}
-  	  else
-	  	{
-      	start_nas ("lan", var);
-      	syslog (LOG_INFO, "NAS : NAS lan (%s interface) successfully started\n", var);
-  		}
+      sprintf (vif, "%s_mode", var);
+      if (nvram_match (vif, "sta")
+	  || nvram_match (vif, "wet")
+	  || nvram_match (vif, "apsta") || nvram_match (vif, "apstawet"))
+	{
+	  start_nas ("wan", var);
+	  syslog (LOG_INFO,
+		  "NAS : NAS wan (%s interface) successfully started\n", var);
+	}
+      else
+	{
+	  start_nas ("lan", var);
+	  syslog (LOG_INFO,
+		  "NAS : NAS lan (%s interface) successfully started\n", var);
+	}
     }
 #endif
 }

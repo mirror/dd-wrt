@@ -121,18 +121,18 @@ start_sysinit (void)
 
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
-if (ifexists("wifi0"))
-  eval ("ifconfig", "wifi0", "up");
-if (ifexists("wifi1"))
-  eval ("ifconfig", "wifi1", "up");
-if (ifexists("wifi2"))
-  eval ("ifconfig", "wifi2", "up");
-if (ifexists("wifi3"))
-  eval ("ifconfig", "wifi3", "up");
-if (ifexists("wifi4"))
-  eval ("ifconfig", "wifi4", "up");
-if (ifexists("wifi5"))
-  eval ("ifconfig", "wifi5", "up");
+  if (ifexists ("wifi0"))
+    eval ("ifconfig", "wifi0", "up");
+  if (ifexists ("wifi1"))
+    eval ("ifconfig", "wifi1", "up");
+  if (ifexists ("wifi2"))
+    eval ("ifconfig", "wifi2", "up");
+  if (ifexists ("wifi3"))
+    eval ("ifconfig", "wifi3", "up");
+  if (ifexists ("wifi4"))
+    eval ("ifconfig", "wifi4", "up");
+  if (ifexists ("wifi5"))
+    eval ("ifconfig", "wifi5", "up");
 
 
   //eval ("insmod", "ipv6");
