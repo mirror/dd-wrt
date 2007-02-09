@@ -596,7 +596,7 @@ getRouterBrand ()
 int
 diag_led_4702 (int type, int act)
 {
-#if !defined(HAVE_GEMTEK) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
   return 0;
 #else
   if (act == START_LED)
@@ -624,7 +624,7 @@ diag_led_4702 (int type, int act)
 int
 C_led_4702 (int i)
 {
-#if !defined(HAVE_GEMTEK) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
   return 0;
 #else
   FILE *fp;
@@ -703,7 +703,7 @@ static char hw_error = 0;
 int
 diag_led_4704 (int type, int act)
 {
-#if !defined(HAVE_GEMTEK) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
  return 0;
 #else
   unsigned int control, in, outen, out;
@@ -755,7 +755,7 @@ int
 diag_led_4712 (int type, int act)
 {
   unsigned int control, in, outen, out, ctr_mask, out_mask;
-#if !defined(HAVE_GEMTEK) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
   return 0;
 #else
 
@@ -842,8 +842,8 @@ led_control (int type, int act)
 /* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
-#if !defined(HAVE_RB500) && !defined(HAVE_GEMTEK) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
-return 0;
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
+	return 0;
 #else
 
 int use_gpio = 0x0f;
@@ -1013,34 +1013,34 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 		switch (act)
 		{
 			case LED_ON:
-			#ifdef HAVE_XSCALE
+#ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
 				eval("gpio","-w","3","0");
-			#else
+#else
 					eval ("gpio", enable, val);
-			#endif
+#endif
 				break;
 			case LED_OFF:
-			#ifdef HAVE_XSCALE
+#ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
 				eval("gpio","-w","3","1");
-			#else
+#else
 					eval ("gpio", disable, val);
-			#endif
+#endif
 				break;
 			case LED_FLASH:  //will lit the led for 1 sec.
-			#ifdef HAVE_XSCALE
+#ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
 			    {
 				eval("gpio","-w","3","0");
 				sleep(1);
 				eval("gpio","-w","3","1");
 			    }
-			#else
+#else
 					eval ("gpio", enable, val);
 					sleep (1);
 					eval ("gpio", disable, val);
-			#endif
+#endif
 				break;
 		}
 #ifndef HAVE_XSCALE
@@ -2098,8 +2098,8 @@ first_time (void)
 int
 check_vlan_support (void)
 {
-#if !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X88)
-return 0;
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X88)
+	return 0;
 #else
 
 
