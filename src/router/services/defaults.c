@@ -1680,7 +1680,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"static_leases", "", 0},
   {"static_leasenum", "0", 0},
   {"dhcpc_vendorclass", "", 0},	//vendor class id for client (optional)
-  {"dhcpc_requestip", "", 0}, //request ip (optional)
+  {"dhcpc_requestip", "", 0},	//request ip (optional)
   {"maskmac", "1", 0},
   {"fullswitch", "0", 0},
 #ifdef HAVE_OPENVPN
