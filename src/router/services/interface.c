@@ -61,13 +61,13 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
   /* Set interface name */
   strncpy (ifr.ifr_name, name, IFNAMSIZ);
   cprintf ("ifconfig(): set interface name\n");
-if (flags)
-{
-  /* Set interface flags */
-  ifr.ifr_flags = flags;
-  if (ioctl (s, SIOCSIFFLAGS, &ifr) < 0)
-    goto err;
-}
+  if (flags)
+    {
+      /* Set interface flags */
+      ifr.ifr_flags = flags;
+      if (ioctl (s, SIOCSIFFLAGS, &ifr) < 0)
+	goto err;
+    }
   cprintf ("ifconfig(): interface flags configured\n");
   /* Set IP address */
   if (addr)
