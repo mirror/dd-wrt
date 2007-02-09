@@ -1121,25 +1121,15 @@ if (count==0)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      //create device
-//      sprintf (net, "%s_net_mode", var);
-//      if (nvram_match (net, "disabled"))
-//      continue;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
       //create device
       if (strlen (mode) > 0)
 	{
-//        char newmode[16];
-//        strcpy (newmode, var);
-//        newmode[strlen (newmode) - 1] = 0;
-	  if (!strcmp (m, "wet") || !strcmp (m, "sta")
-	      || !strcmp (m, "wdssta"))
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
-		  "sta", "nosbeacon");
+	  if (!strcmp (m, "wet") || !strcmp (m, "sta") || !strcmp (m, "wdssta"))
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode","sta", "nosbeacon");
 	  else if (!strcmp (m, "ap") || !strcmp (m, "wdsap"))
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
-		  "ap");
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode","ap");
 	  else
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "adhoc");
@@ -1153,7 +1143,6 @@ if (count==0)
 	  nvram_set (vathmac, vmacaddr);
 
 	}
-//      sleep (1);
     }
 
 
@@ -1163,8 +1152,7 @@ if (count==0)
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
       if (vif)
-	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta",
-	      "nosbeacon");
+	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta","nosbeacon");
       else
 	eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
 
