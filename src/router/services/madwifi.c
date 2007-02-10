@@ -935,11 +935,11 @@ setupHostAP (char *prefix, int iswan)
 	pragma = "-n3 ";
       if (nvram_match (type, "3"))
 	pragma = "";
-
+      sleep(1); //some delay is usefull
       sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma, prefix,
 	       server, port, share);
       system2 (exec);
-
+   	
 //    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
 
 
