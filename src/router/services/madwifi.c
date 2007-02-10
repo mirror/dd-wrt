@@ -795,29 +795,6 @@ setupSupplicant (char *prefix)
 }
 
 void
-start_hostapdwan (void)
-{
-  char ath[32];
-  char wifivifs[16];
-  char *next;
-  char var[80];
-  int c = getdevicecount ();
-  int i;
-  for (i = 0; i < c; i++)
-    {
-      sprintf (ath, "ath%d", i);
-      setupHostAP (ath, 1);
-      sprintf (wifivifs, "ath%d_vifs", i);
-      char *vifs = nvram_safe_get (wifivifs);
-      if (vifs != NULL)
-	foreach (var, vifs, next)
-	{
-	  setupHostAP (var, 1);
-	}
-    }
-
-}
-void
 setupHostAP (char *prefix, int iswan)
 {
   char psk[32];
@@ -973,6 +950,29 @@ setupHostAP (char *prefix, int iswan)
 //      eval ("iwpriv", prefix, "authmode", "0");
     }
 
+
+}
+void
+start_hostapdwan (void)
+{
+  char ath[32];
+  char wifivifs[16];
+  char *next;
+  char var[80];
+  int c = getdevicecount ();
+  int i;
+  for (i = 0; i < c; i++)
+    {
+      sprintf (ath, "ath%d", i);
+      setupHostAP (ath, 1);
+      sprintf (wifivifs, "ath%d_vifs", i);
+      char *vifs = nvram_safe_get (wifivifs);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+	  setupHostAP (var, 1);
+	}
+    }
 
 }
 
