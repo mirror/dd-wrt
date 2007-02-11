@@ -1,0 +1,41 @@
+#!/bin/sh -f
+
+PATH=$path:/bin:/usr/bin:/usr/ucb
+
+PLACE=".1.3.6.1.4.1.2021.255"
+REQ="$2"
+
+if [ "$1" = "-s" ]; then
+  echo $* >> /tmp/passtest.log
+  exit 0
+fi
+
+if [ "$1" = "-n" ]; then
+  case "$REQ" in
+    $PLACE)      RET=$PLACE.1 ;;
+    $PLACE.1)    RET=$PLACE.2.1 ;;
+    $PLACE.2.1)  RET=$PLACE.2.2 ;;
+    $PLACE.2.2)	 RET=$PLACE.3 ;;
+    $PLACE.3)    RET=$PLACE.4 ;;
+    $PLACE.4)    RET=$PLACE.5 ;;
+    $PLACE.5)    RET=$PLACE.6 ;;
+    *)         	 exit 0 ;;
+  esac
+else
+  case "$REQ" in
+    $PLACE)    exit 0 ;;
+    *)         RET=$REQ ;;
+  esac
+fi
+
+echo "$RET"
+case "$RET" in
+  $PLACE.1) echo "string"; echo "life the universe and everything"; exit 0 ;;
+  $PLACE.2.1) echo "integer"; echo "42"; exit 0 ;;
+  $PLACE.2.2) echo "objectid"; echo ".1.3.6.1.4.42.42.42"; exit 0 ;;
+  $PLACE.3) echo "timeticks"; echo "363136200"; exit 0 ;;
+  $PLACE.4) echo "ipaddress"; echo "127.0.0.1" ;;
+  $PLACE.5) echo "counter"; echo "42"; exit 0 ;;
+  $PLACE.6) echo "gauge"; echo "42"; exit 0 ;;
+  *) echo "string"; echo "ack... $RET $REQ"; exit 0 ;;
+esac

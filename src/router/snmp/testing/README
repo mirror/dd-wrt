@@ -1,0 +1,21 @@
+The RUNTESTS script is the wrapper around all the tests.  To run the
+tests, simply run "./RUNTESTS".  The important arguments for RUNTESTS
+accepts (from ./RUNTESTS -h):
+
+Usage: RUNTESTS [-a] [-S SLEEPTIME] [-h] [-i] [-v] [-V] [-s]
+       [-T TESTNUMS] [-D bindir] [-S seconds] [-P <udp|tcp|udp6|tcp6|unix>]"
+
+  -a        run all tests.
+  -T NUMS   run particular tests (command separated list of numbers)
+  -i        run interactively
+  -v        be verbose
+  -V        be very verbose
+  -S TIME   TIME should be used as the timeout when waiting for a
+            response from the agent.
+  -A FLAGS  Extra flags to pass to the agent.
+  -t FLAGS  Extra flags to pass to the trapd.
+  -s        Don't erase the runtime data directory for successful tests
+  -XM       Don't set MIBDIRS environment unless absolutely necessary
+  -x        Turn on SH output debugging for tests.
+  -P TRANS  Specify on which transport domain to run the tests. Default is udp.
+            udp,tcp,udp6,tcp6,unix are available.

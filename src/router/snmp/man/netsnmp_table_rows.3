@@ -1,0 +1,95 @@
+.TH "table_rows" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+table_rows \- Routines for working with the rows of a table.  
+
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_first\fP (void *table)"
+.br
+.RI "\fIRetrieve the first row of the table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_get\fP (void *table, void *row)"
+.br
+.RI "\fIRetrieve the given row from the table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_next\fP (void *table, void *row)"
+.br
+.RI "\fIRetrieve the following row from the table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_get_byidx\fP (void *table, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.RI "\fIRetrieve the row with the specified index values. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_next_byidx\fP (void *table, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.RI "\fIRetrieve the next row after the specified index values. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_get_byoid\fP (void *table, oid *instance, size_t len)"
+.br
+.RI "\fIRetrieve the row with the specified instance OIDs. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_row_next_byoid\fP (void *table, oid *instance, size_t len)"
+.br
+.RI "\fIRetrieve the next row after the specified instance OIDs. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_generic_row_count\fP (void *table)"
+.br
+.RI "\fIReport the number of rows in the table. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Routines for working with the rows of a table. 
+.PP
+.SH "Function Documentation"
+.PP 
+.SS "int netsnmp_generic_row_count (void * table)"
+.PP
+Report the number of rows in the table. 
+.PP
+Definition at line 282 of file table_generic.c.
+.SS "void* netsnmp_generic_row_first (void * table)"
+.PP
+Retrieve the first row of the table. 
+.PP
+Definition at line 228 of file table_generic.c.
+.SS "void* netsnmp_generic_row_get (void * table, void * row)"
+.PP
+Retrieve the given row from the table. 
+.PP
+This could either be the same data pointer, passed in, or a separate row structure sharing the same index values (or NULL).
+.PP
+This routine also provides a means to tell whether a given row is present in the table. 
+.PP
+Definition at line 240 of file table_generic.c.
+.SS "void* netsnmp_generic_row_get_byidx (void * table, \fBnetsnmp_variable_list\fP * indexes)"
+.PP
+Retrieve the row with the specified index values. 
+.PP
+Definition at line 255 of file table_generic.c.
+.SS "void* netsnmp_generic_row_get_byoid (void * table, oid * instance, size_t len)"
+.PP
+Retrieve the row with the specified instance OIDs. 
+.PP
+Definition at line 270 of file table_generic.c.
+.SS "void* netsnmp_generic_row_next (void * table, void * row)"
+.PP
+Retrieve the following row from the table. 
+.PP
+If the specified row is not present, this routine should return the entry next after the position this row would have occupied. 
+.PP
+Definition at line 249 of file table_generic.c.
+.SS "void* netsnmp_generic_row_next_byidx (void * table, \fBnetsnmp_variable_list\fP * indexes)"
+.PP
+Retrieve the next row after the specified index values. 
+.PP
+Definition at line 262 of file table_generic.c.
+.SS "void* netsnmp_generic_row_next_byoid (void * table, oid * instance, size_t len)"
+.PP
+Retrieve the next row after the specified instance OIDs. 
+.PP
+Definition at line 276 of file table_generic.c.
