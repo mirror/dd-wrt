@@ -287,6 +287,8 @@ if_type_from_name(const char *pcch)
     static match_if lmatch_if[] = {
         {24, "lo"},
         {6, "eth"},
+        {6, "ixp"},
+        {6, "ath"},
         {9, "tr"},
         {23, "ppp"},
         {28, "sl"},
@@ -1424,7 +1426,7 @@ static int      saveIndex = 0;
 */
 unsigned int getIfSpeed(int fd, struct ifreq ifr)
 {
-#ifdef linux
+#if 0 //temp fix for atheros interfaces (BrainSlayer)
     /** temporary expose internal until this module can be re-written */
     extern unsigned int
         netsnmp_linux_interface_get_if_speed(int fd, const char *name);
@@ -1549,7 +1551,9 @@ Interface_Scan_Init(void)
     while (fgets(line, sizeof(line), devin)) {
         struct ifnet   *nnew;
         char           *stats, *ifstart = line;
-
+	if (strstr(line,"No statistics available."))
+	    continue;
+	    
         if (line[strlen(line) - 1] == '\n')
             line[strlen(line) - 1] = '\0';
 

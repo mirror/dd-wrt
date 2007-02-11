@@ -19,7 +19,7 @@
  */
 
 #define DEVICE_COUNT 9
-static char* devices[] = { "ppp" , "eth" , "tap" , "tun" , "br", "wlan" , "tunl", "lo", "teql" };
+static char* devices[] = { "ppp" , "eth" , "ixp","ath","tap" , "tun" , "br", "wlan" , "tunl", "lo", "teql" };
 
 typedef struct xstats xstats;
 struct xstats {
