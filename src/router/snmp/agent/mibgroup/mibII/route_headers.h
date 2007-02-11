@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #endif
 
-#include <net/if_dl.h>
+//#include <net/if_dl.h>
 #if HAVE_SYS_STREAM_H
 #include <sys/stream.h>
 #endif
