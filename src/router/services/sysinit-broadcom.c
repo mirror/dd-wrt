@@ -449,7 +449,6 @@ start_sysinit (void)
 	      modules = "diag bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
-	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_BUFFALO_WBR2G54S:
 	      modules =
@@ -488,7 +487,6 @@ start_sysinit (void)
 	      modules = "diag bcm57xxlsys";
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
-	    case ROUTER_MOTOROLA_V1:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
