@@ -34,6 +34,7 @@
 #include <rc.h>
 #include <stdarg.h>
 #include <dirent.h>
+#include <syslog.h>
 
 
 
@@ -337,6 +338,7 @@ period_check (int sig)
 	      if ((brand & 0x000f) != 0x000f)
 		{
 		  printf ("resetbutton: factory default.\n");
+		  syslog (LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
 		  led_control (LED_DIAG, LED_ON);
 		  led_control (LED_DIAG2, LED_ON);
@@ -363,8 +365,12 @@ period_check (int sig)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
+	  {
 	    eval ("wl", "radio", "on");
+	    syslog (LOG_DEBUG, "SES /AOSS /EZ-setup button: turning radio on\n");
+      }
 #endif
+
 //		led_control (LED_SES, LED_OFF);		
 //		led_control (LED_SES2, LED_ON);		//enable orange led
 		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
@@ -385,7 +391,10 @@ period_check (int sig)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
+	  {
 	    eval ("wl", "radio", "off");
+	    syslog (LOG_DEBUG, "SES /AOSS /EZ-setup button: turning radio off\n");
+      }
 #endif
 //		led_control (LED_SES, LED_ON);		//enable white led
 //		led_control (LED_SES2, LED_OFF);
