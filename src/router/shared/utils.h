@@ -45,10 +45,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), WHR3-AG54, WVR-G54-NF, WHR2-A54G54
 #define ROUTER_BUFFALO_WZRRSG54 0x0904
 
-// Motorola WR850G v1 (4702 cpu)
+// Motorola WR850G v1 (4702 cpu, fccid Motorola ACQWR850G) 
 #define ROUTER_MOTOROLA_V1 0x0a10
 
-// Motorola WR850G v2/v3 (4712 cpu, ADM6996 switch)
+// Motorola WR850G v2/v3 (4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
 #define ROUTER_MOTOROLA 0x0b15
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
@@ -106,7 +106,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, four minipci)
 #define ROUTER_BOARD_GATEWORX 0x1b0f
 
-//Motorola WE800G (4702 cpu, no switch, minipci radio)
+//Motorola WE800G v1 (4702 cpu, no switch, minipci radio, fccid: Motorola ACQWE800G, F2NWE800G)
 #define ROUTER_MOTOROLA_WE800G 0x1c10
 
 #define ROUTER_BOARD_X86 0x1e0f
@@ -116,20 +116,22 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Q87-WRT350N)
 #define ROUTER_WRT350N 0x2016
 
-//Linksys WAP54G v1
+//Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
 #define ROUTER_WAP54G_V1 0x210f
 
-//Linksys WAP54G v2
+//Linksys WAP54G v2 (4712 cpu, no switch, fccid: Linksys Q87-WAP54GV2)
 #define ROUTER_WAP54G_V2 0x220f
 
-//ViewSonic WAPBR-100
+//ViewSonic WAPBR-100 (4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
 #define ROUTER_VIEWSONIC_WAPBR_100 0x2317
 
-//Dell TrueMobile 2300 (4702 cpu, mini pci radio)
+//Dell TrueMobile 2300 (4702 cpu, ADM6996 switch, mini pci radio, fccid: Gemtek MXF-R921212G)
 #define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
+//Fonera (Atheros SoC, no switch, fccid: Accton HED-FON2100)
 #define ROUTER_BOARD_FONERA 0x2501
 
+//Buffalo WHR-HP-AG108 (Atheros A+G, Kendin KS8895XA switch, fccid: Buffalo FDI-09101540-0)
 #define ROUTER_BOARD_WHRAG108 0x2601
 
 
