@@ -1,5 +1,0 @@
-TYPEMAP
-netsnmp_trapd_registration *			T_PTROBJ
-Netsnmp_Trap_Handler				T_PTROBJ
-netsnmp_trapd_handler *				T_PTROBJ
-oid *						T_PTROBJ
