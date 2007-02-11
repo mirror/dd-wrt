@@ -238,6 +238,7 @@ clean: $(obj-clean)
 	rm -f .config.old .config.cmd
 	rm -rf $(INSTALLDIR)
 	rm -rf $(TARGETDIR)
+	rm -f $(ARCH)-uclibc/*
 	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
 
 clean_target:
@@ -681,7 +682,8 @@ endif
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	cd snmp && . ./conf.sh
+	cd snmp && rm -f config.cache
+	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=little --with-cflags="$(COPTS)" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
 	$(MAKE) -C snmp 
 else
 	@true
@@ -741,6 +743,7 @@ dhcpforwarder-clean:
 	$(MAKE) -C dhcpforwarder clean
 
 rtpproxy:
+	cd rtpproxy && ./configure --host=$(ARCH)-uclibc-linux
 	$(MAKE) -C rtpproxy
 
 rtpproxy-install:
@@ -818,27 +821,47 @@ mmc-clean:
 	$(MAKE) -C mmc clean
 ser:
 
-	$(MAKE) -C ser modules all ARCH=mipsel CFLAGS="$(COPTS)" extra_defs="-DUSE_PTHREAD_MUTEX "
+	$(MAKE) -C ser modules all utils/gen_ha1/gen_ha1 ARCH=mipsel CFLAGS="$(COPTS)" extra_defs="-DUSE_PTHREAD_MUTEX "
 
 
 ser-install:
 #	$(MAKE) -C ser install ARCH=mipsel CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32" BASEDIR=$(INSTALLDIR)
 	
-	install -D ser/ser $(INSTALLDIR)/ser/usr/sbin/ser
-	mkdir -p $(INSTALLDIR)/ser/usr/lib/ser/modules
+	install -D ser/openser $(INSTALLDIR)/ser/usr/sbin/openser
+	mkdir -p $(INSTALLDIR)/ser/usr/lib/openser/modules
 	mkdir -p $(INSTALLDIR)/ser/etc/config 
 	cp -a ser/etc/config/* $(INSTALLDIR)/ser/etc/config/
-	cp -a $(SER_MODULE_FILES) $(INSTALLDIR)/ser/usr/lib/ser/modules/
+	cp -a $(SER_MODULE_FILES) $(INSTALLDIR)/ser/usr/lib/openser/modules/
 	install -D ser/scripts/sc $(INSTALLDIR)/ser/usr/sbin/serctl
-	mkdir -p $(INSTALLDIR)/ser/etc/ser
-	install -D ser/etc/ser.cfg $(INSTALLDIR)/ser/etc/ser/ser.cfg
-	install -D ser/etc/version $(INSTALLDIR)/ser/etc/ser/version
-	install -D ser/etc/subscriber $(INSTALLDIR)/ser/etc/ser/subscriber
-	install -D ser/etc/location $(INSTALLDIR)/ser/etc/ser/location
-	install -D ser/etc/aliases $(INSTALLDIR)/ser/etc/ser/aliases
-	install -D ser/etc/S78sipath $(INSTALLDIR)/ser/etc/init.d/S78sipath
+	mkdir -p $(INSTALLDIR)/ser/etc/openser
+	install -D ser/etc/milkfish_openser.cfg $(INSTALLDIR)/ser/etc/openser/milkfish_openser.cfg
+
+	install -d -m0755 $(INSTALLDIR)/ser/etc/openser/dbtext
+	install -m0644 ser/etc/openser/dbtext/aliases $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/aliases.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/grp $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/grp.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/location $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/location.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/subscriber $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/subscriber.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/uri $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/uri.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/version $(INSTALLDIR)/ser/etc/openser/dbtext/
 	install -D ser/etc/ip-up $(INSTALLDIR)/ser/etc/ppp/ip-up
-	mv $(INSTALLDIR)/ser/usr/lib/ser/modules/nathelper.so $(INSTALLDIR)/ser/usr/lib/ser/modules/inner_nathelper.so
+	install -d -m0755 $(INSTALLDIR)/ser/etc/init.d
+	install -m0755 ser/etc/S37mf_services $(INSTALLDIR)/ser/etc/init.d/
+	install -m0755 ser/etc/S38milkfish_sip_ini $(INSTALLDIR)/ser/etc/init.d/
+	install -m0755 ser/etc/S78milkfish_sip $(INSTALLDIR)/ser/etc/init.d/
+	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
+	install -m0755 ser/etc/milkfish_services $(INSTALLDIR)/ser/usr/sbin/
+	install -d -m0755 $(INSTALLDIR)/ser/usr/lib
+	install -m0644 ser/etc/milkfish_functions.sh $(INSTALLDIR)/ser/usr/lib/		
+	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
+	install -m0755 ser/etc/mf_sip_tracer.sh $(INSTALLDIR)/ser/usr/sbin/
+
+
+	mv $(INSTALLDIR)/ser/usr/lib/openser/modules/nathelper.so $(INSTALLDIR)/ser/usr/lib/openser/modules/milkfish_nathelper.so
 
 
 
