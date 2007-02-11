@@ -1,0 +1,260 @@
+.TH "Store and retrieve data referenced by an OID." 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Store and retrieve data referenced by an OID. \- This is essentially a way of storing data associated with a given OID.  
+
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBnetsnmp_oid_stash_node\fP * \fBnetsnmp_oid_stash_create_sized_node\fP (size_t mysize)"
+.br
+.RI "\fICreate an netsnmp_oid_stash node. \fP"
+.ti -1c
+.RI "NETSNMP_INLINE \fBnetsnmp_oid_stash_node\fP * \fBnetsnmp_oid_stash_create_node\fP (void)"
+.br
+.RI "\fICreates a netsnmp_oid_stash_node. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_oid_stash_add_data\fP (\fBnetsnmp_oid_stash_node\fP **root, oid *lookup, size_t lookup_len, void *mydata)"
+.br
+.RI "\fIadds data to the stash at a given oid. \fP"
+.ti -1c
+.RI "\fBnetsnmp_oid_stash_node\fP * \fBnetsnmp_oid_stash_get_node\fP (\fBnetsnmp_oid_stash_node\fP *root, oid *lookup, size_t lookup_len)"
+.br
+.RI "\fIreturns a node associated with a given OID. \fP"
+.ti -1c
+.RI "\fBnetsnmp_oid_stash_node\fP * \fBnetsnmp_oid_stash_getnext_node\fP (\fBnetsnmp_oid_stash_node\fP *root, oid *lookup, size_t lookup_len)"
+.br
+.RI "\fIreturns the next node associated with a given OID. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_oid_stash_get_data\fP (\fBnetsnmp_oid_stash_node\fP *root, oid *lookup, size_t lookup_len)"
+.br
+.RI "\fIreturns a data pointer associated with a given OID. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_oid_stash_store_all\fP (int majorID, int minorID, void *serverarg, void *clientarg)"
+.br
+.RI "\fIa wrapper around netsnmp_oid_stash_store for use with a \fBsnmp_alarm\fP. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_oid_stash_store\fP (\fBnetsnmp_oid_stash_node\fP *root, const char *tokenname, NetSNMPStashDump *dumpfn, oid *curoid, size_t curoid_len)"
+.br
+.RI "\fIstores data in a starsh tree to peristent storage. \fP"
+.ti -1c
+.RI "void \fBoid_stash_dump\fP (\fBnetsnmp_oid_stash_node\fP *root, char *prefix)"
+.br
+.RI "\fIFor debugging: dump the netsnmp_oid_stash tree to stdout. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_oid_stash_free\fP (\fBnetsnmp_oid_stash_node\fP **root, NetSNMPStashFreeNode *freefn)"
+.br
+.RI "\fIFrees the contents of a netsnmp_oid_stash tree. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_oid_stash_no_free\fP (void *bogus)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This is essentially a way of storing data associated with a given OID. 
+.PP
+It stores a bunch of data pointers within a memory tree that allows fairly efficient lookups with a heavily populated tree. 
+.SH "Function Documentation"
+.PP 
+.SS "int netsnmp_oid_stash_add_data (\fBnetsnmp_oid_stash_node\fP ** root, oid * lookup, size_t lookup_len, void * mydata)"
+.PP
+adds data to the stash at a given oid. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP the top of the stash tree 
+.br
+\fIlookup\fP the oid index to store the data at. 
+.br
+\fIlookup_len\fP the length of the lookup oid. 
+.br
+\fImydata\fP the data to store
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+SNMPERR_SUCCESS on success, SNMPERR_GENERR if data is already there, SNMPERR_MALLOC on malloc failures or if arguments passed in with NULL values. 
+.RE
+.PP
+
+.PP
+Definition at line 83 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, netsnmp_oid_stash_create_node(), NULL, netsnmp_oid_stash_node_s::parent, and netsnmp_oid_stash_node_s::value.
+.PP
+Referenced by netsnmp_stash_to_next_helper(), and netsnmp_table_data_set_helper_handler().
+.SS "NETSNMP_INLINE \fBnetsnmp_oid_stash_node\fP* netsnmp_oid_stash_create_node (void)"
+.PP
+Creates a netsnmp_oid_stash_node. 
+.PP
+Assumes you want the default OID_STASH_CHILDREN_SIZE hash size for the node. 
+.PP
+\fBReturns:\fP
+.RS 4
+NULL on error, otherwise the newly allocated node 
+.RE
+.PP
+
+.PP
+Definition at line 66 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_create_sized_node().
+.PP
+Referenced by netsnmp_oid_stash_add_data().
+.SS "\fBnetsnmp_oid_stash_node\fP* netsnmp_oid_stash_create_sized_node (size_t mysize)"
+.PP
+Create an netsnmp_oid_stash node. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fImysize\fP the size of the child pointer array
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+NULL on error, otherwise the newly allocated node 
+.RE
+.PP
+
+.PP
+Definition at line 46 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, NULL, and SNMP_MALLOC_TYPEDEF.
+.PP
+Referenced by netsnmp_oid_stash_create_node().
+.SS "void netsnmp_oid_stash_free (\fBnetsnmp_oid_stash_node\fP ** root, NetSNMPStashFreeNode * freefn)"
+.PP
+Frees the contents of a netsnmp_oid_stash tree. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP the top of the tree (or branch to be freed) 
+.br
+\fIfreefn\fP The function to be called on each data (void *) pointer. If left NULL the system free() function will be called 
+.RE
+.PP
+
+.PP
+Definition at line 401 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, and netsnmp_oid_stash_node_s::thedata.
+.PP
+Referenced by _netsnmp_stash_cache_free().
+.SS "void* netsnmp_oid_stash_get_data (\fBnetsnmp_oid_stash_node\fP * root, oid * lookup, size_t lookup_len)"
+.PP
+returns a data pointer associated with a given OID. 
+.PP
+This is equivelent to netsnmp_oid_stash_get_node, but returns only the data not the entire node.
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP the top of the stash 
+.br
+\fIlookup\fP the oid to search for 
+.br
+\fIlookup_len\fP the length of the search oid. 
+.RE
+.PP
+
+.PP
+Definition at line 282 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_get_node(), NULL, and netsnmp_oid_stash_node_s::thedata.
+.PP
+Referenced by netsnmp_stash_cache_helper(), and netsnmp_table_data_set_helper_handler().
+.SS "\fBnetsnmp_oid_stash_node\fP* netsnmp_oid_stash_get_node (\fBnetsnmp_oid_stash_node\fP * root, oid * lookup, size_t lookup_len)"
+.PP
+returns a node associated with a given OID. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP the top of the stash tree 
+.br
+\fIlookup\fP the oid to look up a node for. 
+.br
+\fIlookup_len\fP the length of the lookup oid 
+.RE
+.PP
+
+.PP
+Definition at line 154 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, and NULL.
+.PP
+Referenced by netsnmp_oid_stash_get_data().
+.SS "\fBnetsnmp_oid_stash_node\fP* netsnmp_oid_stash_getnext_node (\fBnetsnmp_oid_stash_node\fP * root, oid * lookup, size_t lookup_len)"
+.PP
+returns the next node associated with a given OID. 
+.PP
+INCOMPLETE. This is equivelent to a GETNEXT operation. 
+.PP
+Definition at line 191 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, and NULL.
+.SS "void netsnmp_oid_stash_store (\fBnetsnmp_oid_stash_node\fP * root, const char * tokenname, NetSNMPStashDump * dumpfn, oid * curoid, size_t curoid_len)"
+.PP
+stores data in a starsh tree to peristent storage. 
+.PP
+This function can be called to save all data in a stash tree to Net-SNMP's percent storage. Make sure you register a parsing function with the read_config system to re-incorperate your saved data into future trees.
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP the top of the stash to store. 
+.br
+\fItokenname\fP the file token name to save in (passing 'snmpd' will save things into snmpd.conf). 
+.br
+\fIdumpfn\fP A function which can dump the data stored at a particular node into a char buffer. 
+.br
+\fIcuroid\fP must be a pointer to a OID array of length MAX_OID_LEN. 
+.br
+\fIcuroid_len\fP must be 0 for the top level call. 
+.RE
+.PP
+
+.PP
+Definition at line 334 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, netsnmp_ds_get_string(), netsnmp_oid_stash_store(), netsnmp_oid_stash_node_s::next_sibling, read_config_save_objid(), read_config_store(), SNMP_MAXBUF, netsnmp_oid_stash_node_s::thedata, and netsnmp_oid_stash_node_s::value.
+.PP
+Referenced by netsnmp_oid_stash_store(), and netsnmp_oid_stash_store_all().
+.SS "int netsnmp_oid_stash_store_all (int majorID, int minorID, void * serverarg, void * clientarg)"
+.PP
+a wrapper around netsnmp_oid_stash_store for use with a \fBsnmp_alarm\fP. 
+.PP
+when calling \fBsnmp_alarm\fP, you can list this as a callback. The clientarg should be a pointer to a netsnmp_oid_stash_save_info pointer. It can also be called directly, of course. The last argument (clientarg) is the only one that is used. The rest are ignored by the function. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fImajorID\fP 
+.br
+\fIminorID\fP 
+.br
+\fIserverarg\fP 
+.br
+\fIclientarg\fP A pointer to a netsnmp_oid_stash_save_info structure. 
+.RE
+.PP
+
+.PP
+Definition at line 304 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_save_info_s::dumpfn, netsnmp_oid_stash_store(), netsnmp_oid_stash_save_info_s::root, and netsnmp_oid_stash_save_info_s::token.
+.SS "void oid_stash_dump (\fBnetsnmp_oid_stash_node\fP * root, char * prefix)"
+.PP
+For debugging: dump the netsnmp_oid_stash tree to stdout. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIroot\fP The top of the tree 
+.br
+\fIprefix\fP a character string prefix printed to the beginning of each line. 
+.RE
+.PP
+
+.PP
+Definition at line 374 of file oid_stash.c.
+.PP
+References netsnmp_oid_stash_node_s::children, netsnmp_oid_stash_node_s::children_size, netsnmp_oid_stash_node_s::next_sibling, netsnmp_oid_stash_node_s::thedata, and netsnmp_oid_stash_node_s::value.

@@ -1,0 +1,49 @@
+.TH "netsnmp_agent_request_info_s" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+netsnmp_agent_request_info_s \- The agent transaction request structure.  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <snmp_agent.h>\fP
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "int \fBmode\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_agent_session_s\fP * \fBasp\fP"
+.br
+.RI "\fIpdu contains authinfo, eg \fP"
+.ti -1c
+.RI "\fBnetsnmp_data_list\fP * \fBagent_data\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The agent transaction request structure. 
+.PP
+\fBExamples: \fP
+.in +1c
+.PP
+\fBdelayed_instance.c\fP.
+.PP
+Definition at line 158 of file snmp_agent.h.
+.SH "Field Documentation"
+.PP 
+.SS "struct \fBnetsnmp_agent_session_s\fP* \fBnetsnmp_agent_request_info_s::asp\fP"
+.PP
+pdu contains authinfo, eg 
+.PP
+Definition at line 162 of file snmp_agent.h.
+.PP
+Referenced by handle_var_requests(), and netsnmp_create_delegated_cache().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.
