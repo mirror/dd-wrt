@@ -692,7 +692,6 @@ start_restore_defaults (void)
 	      break;
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_LINKSYS_WRT55AG:
-	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_RT480W:
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
@@ -714,7 +713,6 @@ start_restore_defaults (void)
 		{
 		case ROUTER_MOTOROLA:
 		case ROUTER_LINKSYS_WRT55AG:
-		case ROUTER_MOTOROLA_V1:
 		case ROUTER_RT480W:
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
@@ -737,7 +735,7 @@ start_restore_defaults (void)
 	}*/
 
   if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
-      || brand == ROUTER_LINKSYS_WRT55AG || brand == ROUTER_MOTOROLA_V1)
+      || brand == ROUTER_LINKSYS_WRT55AG)
     {
       if (!nvram_get ("aa0"))
 	nvram_set ("aa0", "3");
