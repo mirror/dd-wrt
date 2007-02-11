@@ -1,0 +1,225 @@
+PROGNAME=
+CFG=
+OUTDIR=
+INTDIR=
+
+!IF "$(OS)" == "Windows_NT"
+NULL=
+!ELSE 
+NULL=nul
+!ENDIF 
+
+!IF  "$(CFG)" == "release"
+
+ALL : "..\lib\$(OUTDIR)\netsnmpagent.lib"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\agent_handler.obj"
+	-@erase "$(INTDIR)\agent_index.obj"
+	-@erase "$(INTDIR)\agent_read_config.obj"
+	-@erase "$(INTDIR)\agent_registry.obj"
+	-@erase "$(INTDIR)\agent_trap.obj"
+	-@erase "$(INTDIR)\snmp_agent.obj"
+	-@erase "$(INTDIR)\snmp_vars.obj"
+	-@erase "$(INTDIR)\vc??.idb"
+	-@erase "$(INTDIR)\$(PROGNAME).pch"
+	-@erase "..\lib\$(OUTDIR)\netsnmpagent.lib"
+
+"..\lib\$(OUTDIR)" :
+    if not exist "..\lib\$(OUTDIR)/$(NULL)" mkdir "..\lib\$(OUTDIR)"
+
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /I "..\..\agent" /I "..\..\agent\mibgroup" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\libagent.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(INTDIR)\libagent.bsc" 
+BSC32_SBRS= \
+	
+LIB32=link.exe -lib
+LIB32_FLAGS=/nologo /out:"..\lib\$(OUTDIR)\netsnmpagent.lib" 
+LIB32_OBJS= \
+	"$(INTDIR)\agent_handler.obj" \
+	"$(INTDIR)\agent_index.obj" \
+	"$(INTDIR)\agent_read_config.obj" \
+	"$(INTDIR)\agent_registry.obj" \
+	"$(INTDIR)\agent_trap.obj" \
+	"$(INTDIR)\snmp_agent.obj" \
+	"$(INTDIR)\snmp_vars.obj"
+
+"..\lib\$(OUTDIR)\netsnmpagent.lib" : "..\lib\$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
+    $(LIB32) @<<
+  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
+<<
+
+!ELSEIF  "$(CFG)" == "debug"
+
+ALL : "..\lib\$(OUTDIR)\netsnmpagent.lib"
+
+
+CLEAN :
+	-@erase "$(INTDIR)\agent_handler.obj"
+	-@erase "$(INTDIR)\agent_index.obj"
+	-@erase "$(INTDIR)\agent_read_config.obj"
+	-@erase "$(INTDIR)\agent_registry.obj"
+	-@erase "$(INTDIR)\agent_trap.obj"
+	-@erase "$(INTDIR)\snmp_agent.obj"
+	-@erase "$(INTDIR)\snmp_vars.obj"
+	-@erase "$(INTDIR)\vc??.idb"
+	-@erase "$(INTDIR)\vc??.pdb"
+	-@erase "$(INTDIR)\$(PROGNAME).pch"
+	-@erase "..\lib\$(OUTDIR)\netsnmpagent.lib"
+
+"..\lib\$(OUTDIR)" :
+    if not exist "..\lib\$(OUTDIR)/$(NULL)" mkdir "..\lib\$(OUTDIR)"
+
+"$(INTDIR)" :
+    if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
+
+CPP=cl.exe
+CPP_PROJ=/nologo /MDd /W3 /Gm /GX /Zi /Od /I "." /I ".." /I "..\..\snmplib" /I "..\.." /I "..\..\include" /I "..\..\agent" /I "..\..\agent\mibgroup" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"$(INTDIR)\libagent.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+
+.c{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.obj::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.c{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cpp{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+.cxx{$(INTDIR)}.sbr::
+   $(CPP) @<<
+   $(CPP_PROJ) $< 
+<<
+
+RSC=rc.exe
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(INTDIR)\libagent.bsc" 
+BSC32_SBRS= \
+	
+LIB32=link.exe -lib
+LIB32_FLAGS=/nologo /out:"..\lib\$(OUTDIR)\netsnmpagent.lib" 
+LIB32_OBJS= \
+	"$(INTDIR)\agent_handler.obj" \
+	"$(INTDIR)\agent_index.obj" \
+	"$(INTDIR)\agent_read_config.obj" \
+	"$(INTDIR)\agent_registry.obj" \
+	"$(INTDIR)\agent_trap.obj" \
+	"$(INTDIR)\snmp_agent.obj" \
+	"$(INTDIR)\snmp_vars.obj"
+
+"..\lib\$(OUTDIR)\netsnmpagent.lib" : "..\lib\$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
+    $(LIB32) @<<
+  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
+<<
+
+!ENDIF 
+
+
+!IF "$(NO_EXTERNAL_DEPS)" != "1"
+!IF EXISTS("libagent.dep")
+!INCLUDE "libagent.dep"
+!ELSE 
+!MESSAGE Warning: cannot find "libagent.dep"
+!ENDIF 
+!ENDIF 
+
+
+!IF "$(CFG)" == "release" || "$(CFG)" == "debug"
+SOURCE=..\..\agent\agent_handler.c
+
+"$(INTDIR)\agent_handler.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\agent_index.c
+
+"$(INTDIR)\agent_index.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\agent_read_config.c
+
+"$(INTDIR)\agent_read_config.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\agent_registry.c
+
+"$(INTDIR)\agent_registry.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\agent_trap.c
+
+"$(INTDIR)\agent_trap.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\snmp_agent.c
+
+"$(INTDIR)\snmp_agent.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\agent\snmp_vars.c
+
+"$(INTDIR)\snmp_vars.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+
+!ENDIF 
+
+

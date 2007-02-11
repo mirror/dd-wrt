@@ -1,0 +1,55 @@
+.TH "netsnmp_data_list_s" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+netsnmp_data_list_s \- used to iterate through lists of data  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <data_list.h>\fP
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBnetsnmp_data_list_s\fP * \fBnext\fP"
+.br
+.ti -1c
+.RI "char * \fBname\fP"
+.br
+.ti -1c
+.RI "void * \fBdata\fP"
+.br
+.RI "\fIThe pointer to the data passed on. \fP"
+.ti -1c
+.RI "Netsnmp_Free_List_Data * \fBfree_func\fP"
+.br
+.RI "\fImust know how to free netsnmp_data_list->data \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+used to iterate through lists of data 
+.PP
+Definition at line 41 of file data_list.h.
+.SH "Field Documentation"
+.PP 
+.SS "void* \fBnetsnmp_data_list_s::data\fP"
+.PP
+The pointer to the data passed on. 
+.PP
+Definition at line 45 of file data_list.h.
+.PP
+Referenced by netsnmp_create_data_list(), netsnmp_free_list_data(), and netsnmp_save_all_data().
+.SS "Netsnmp_Free_List_Data* \fBnetsnmp_data_list_s::free_func\fP"
+.PP
+must know how to free netsnmp_data_list->data 
+.PP
+Definition at line 47 of file data_list.h.
+.PP
+Referenced by netsnmp_create_data_list(), and netsnmp_free_list_data().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.

@@ -1,0 +1,161 @@
+#
+# Makefile for snmpget, snmpwalk, snmpbulkwalk, snmptest, snmptranslate,
+# snmptrapd, snmptable, snmpset, snmpgetnext, and other utilities.
+#
+
+top_builddir=..
+
+# use GNU vpath, if available, to only set a path for source and headers
+# VPATH will pick up objects too, which is bad if you are sharing a
+# source dir...
+@GNU_vpath@ %.h $(srcdir)
+@GNU_vpath@ %.c $(srcdir)
+# fallback to regular VPATH for non-gnu...
+@NON_GNU_VPATH@ $(srcdir)
+
+#
+# Things to install
+#
+
+INSTALLBINPROGS	= snmpget$(EXEEXT) 			\
+		snmpgetnext$(EXEEXT) 			\
+		snmpset$(EXEEXT) 			\
+		snmpusm$(EXEEXT)			\
+		snmpwalk$(EXEEXT) 			\
+		snmpbulkwalk$(EXEEXT) 			\
+		snmptable$(EXEEXT)			\
+		snmptrap$(EXEEXT) 			\
+		snmpbulkget$(EXEEXT)			\
+		snmptranslate$(EXEEXT) 			\
+		snmpstatus$(EXEEXT) 			\
+		snmpdelta$(EXEEXT) 			\
+		snmptest$(EXEEXT)			\
+		encode_keychange$(EXEEXT) 		\
+		snmpdf$(EXEEXT) 			\
+		snmpvacm$(EXEEXT)
+
+INSTALLSBINPROGS = snmptrapd$(EXEEXT)
+
+INSTALLLIBS     = libnetsnmptrapd.$(LIB_EXTENSION)$(LIB_VERSION)
+
+SUBDIRS		= snmpnetstat
+
+#
+# build variables.
+#
+
+# USELIBS/USEAGENTLIBS are for dependencies
+USELIBS		= ../snmplib/libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION) 
+USEAGENTLIBS	= ../agent/libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION) ../agent/libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION) ../agent/helpers/libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION) $(USELIBS)
+
+#
+# link path in src dir
+LOCAL_LIBS	= -L../snmplib -L../agent -L../agent/helpers
+LIBS		= $(USELIBS) @LIBS@
+PERLLDOPTS      = @PERLLDOPTS@
+
+#
+# hack for compiling trapd when agent is disabled
+TRAPDWITHAGENT  = $(USETRAPLIBS) @AGENTLIBS@
+TRAPDWITHOUTAGENT = $(LIBS)
+
+# these will be set by configure to one of the above 2 lines
+TRAPLIBS	= @TRAPLIBS@ @WRAPLIBS@ $(PERLLDOPTS)
+USETRAPLIBS	= @USETRAPLIBS@
+
+CPPFLAGS	= $(TOP_INCLUDES) -I. $(AGENT_INCLUDES) $(HELPER_INCLUDES) \
+		  $(MIBGROUP_INCLUDES)  $(SNMPLIB_INCLUDES) @CPPFLAGS@
+
+OSUFFIX		= lo
+TRAPD_OBJECTS   = snmptrapd.$(OSUFFIX) @other_trapd_objects@
+LIBTRAPD_OBJS   = snmptrapd_handlers.o  snmptrapd_log.o \
+		  snmptrapd_auth.o
+LLIBTRAPD_OBJS  = snmptrapd_handlers.lo snmptrapd_log.lo \
+		  snmptrapd_auth.lo
+OBJS  = *.o
+LOBJS = *.lo
+
+all: standardall
+
+OTHERINSTALL=snmpinforminstall snmptrapdperlinstall
+OTHERUNINSTALL=snmpinformuninstall snmptrapdperluninstall
+
+#
+# build rules
+#
+snmpwalk$(EXEEXT):    snmpwalk.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpwalk.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpbulkwalk$(EXEEXT):    snmpbulkwalk.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpbulkwalk.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpbulkget$(EXEEXT):    snmpbulkget.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpbulkget.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmptranslate$(EXEEXT):    snmptranslate.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmptranslate.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpstatus$(EXEEXT):    snmpstatus.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpstatus.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpget$(EXEEXT):    snmpget.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpget.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpdelta$(EXEEXT):    snmpdelta.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpdelta.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmptable$(EXEEXT):    snmptable.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmptable.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmptest$(EXEEXT):    snmptest.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmptest.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmptrapd$(EXEEXT):    $(TRAPD_OBJECTS) $(USETRAPLIBS) $(INSTALLLIBS)
+	$(LINK) -o $@ $(TRAPD_OBJECTS) $(INSTALLLIBS) $(LOCAL_LIBS) ${LDFLAGS} ${TRAPLIBS}
+
+snmptrap$(EXEEXT):    snmptrap.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmptrap.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpinform$(EXEEXT): snmptrap$(EXEEXT)
+	rm -f snmpinform
+	$(LN_S) snmptrap$(EXEEXT) snmpinform$(EXEEXT)
+
+snmpset$(EXEEXT):    snmpset.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpset.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpusm$(EXEEXT):    snmpusm.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpusm.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpvacm$(EXEEXT):    snmpvacm.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpvacm.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpgetnext$(EXEEXT):    snmpgetnext.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpgetnext.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+encode_keychange$(EXEEXT):    encode_keychange.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ encode_keychange.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+snmpdf$(EXEEXT):    snmpdf.$(OSUFFIX) $(USELIBS)
+	$(LINK) -o $@ snmpdf.$(OSUFFIX) $(LOCAL_LIBS) ${LDFLAGS} ${LIBS} 
+
+libnetsnmptrapd.$(LIB_EXTENSION)$(LIB_VERSION): $(LLIBTRAPD_OBJS)
+	$(LIB_LD_CMD) libnetsnmptrapd.$(LIB_EXTENSION)$(LIB_VERSION) ${LLIBTRAPD_OBJS}  $(LIB_LD_LIBS)
+	$(RANLIB) libnetsnmptrapd.$(LIB_EXTENSION)$(LIB_VERSION)
+
+snmpinforminstall:
+	rm -f $(INSTALL_PREFIX)$(bindir)/snmpinform$(EXEEXT)
+	$(LN_S) snmptrap$(EXEEXT) $(INSTALL_PREFIX)$(bindir)/snmpinform$(EXEEXT)
+
+snmpinformuninstall:
+	rm -f $(INSTALL_PREFIX)$(bindir)/snmpinform$(EXEEXT)
+
+snmptrapdperlinstall: installdirs
+	  @$(INSTALL) $(srcdir)/snmp_perl_trapd.pl $(INSTALL_PREFIX)$(snmplibdir)/snmp_perl_trapd.pl
+	  @echo "install:  installed snmp_perl_trapd.pl in $(INSTALL_PREFIX)$(snmplibdir)"
+
+snmptrapdperluninstall: installdirs
+	  @rm -f $(INSTALL_PREFIX)$(snmplibdir)/snmp_perl_trapd.pl
+	  @echo "removed snmp_perl_trapd.pl from $(INSTALL_PREFIX)$(snmplibdir)"
+
+installdirs:
+	@$(SHELL) $(srcdir)/../mkinstalldirs $(INSTALL_PREFIX)$(snmplibdir)
