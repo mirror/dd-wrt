@@ -509,7 +509,7 @@ getRssi (char *ifname, unsigned char *mac)
       if (!memcmp(&si->isi_macaddr[0],mac,6))
         {
 	close(s);
-	int rssi = rssi2dbm (si->isi_rssi)
+	int rssi = rssi2dbm (si->isi_rssi);
         free(buf);
 	return rssi;
 	}
