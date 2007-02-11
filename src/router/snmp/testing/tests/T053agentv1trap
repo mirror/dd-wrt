@@ -1,0 +1,33 @@
+#!/bin/sh
+
+. ../eval_tools.sh
+
+HEADER snmpv1 traps are sent by snmpd API
+
+SKIPIFNOT USING_EXAMPLES_EXAMPLE_MODULE
+
+#
+# Begin test
+#
+
+# standard V1 configuration: testcomunnity
+. ./Sv3config
+CONFIGAGENT trapsink localhost public $SNMP_SNMPTRAPD_PORT
+
+CONFIGTRAPD authcommunity log public
+CONFIGTRAPD agentxsocket /dev/null
+
+STARTTRAPD
+
+AGENT_FLAGS="$AGENT_FLAGS -Dexample,header_generic,add_trap"
+STARTAGENT
+
+CAPTURE "snmpset -On $SNMP_FLAGS $AUTHTESTARGS $SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPD_PORT UCD-SNMP-MIB::ucdavis.254.7.0 i 1"
+
+STOPAGENT
+
+STOPTRAPD
+
+CHECKTRAPD "Enterprise Specific Trap (99)"
+
+FINISHED

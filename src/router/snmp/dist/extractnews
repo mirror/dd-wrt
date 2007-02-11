@@ -1,0 +1,122 @@
+#!/usr/bin/perl
+
+use strict;
+use Text::Wrap;
+my %output;
+my $text;
+my %stash;
+
+use Getopt::Long;
+
+my %opts = (
+	    c => 'CHANGES.new',
+	    n => 'NEWS.new',
+	   );
+
+LocalGetOptions(\%opts,
+		['s|start-regexp=s','A regexp to look for in files to start converting at'],
+		['e|end-regexp=s','A regexp to look for in files to end converting at'],
+		"",
+		['c|changes-file=s','A file to save CHANGES entries to'],
+		['n|news-file=s','A file to save NEWS entries to'],
+		"",
+		['GUI:otherargs_text','Input files to parse'],
+	       );
+
+foreach my $argv (@ARGV) {
+    open(I, $argv);
+    if ($opts{'s'}) {
+	while (<I>) {
+	    last if (/$opts{'s'}/o);
+	}
+    }
+
+    while (<I>) {
+	my ($file, $component, $patbug, $nums, $text);
+
+	last if ($opts{'e'} && /$opts{e}/o);
+
+	# don't use this:
+	#   FILE: BUGS: 123,456: text
+	($file, $patbug, $nums, $text) = 
+	  /(NEWS|CHANGES):\s*-*\s*\[*(BUG|PATCH)(?:ES|S|):*\s*([\d,\s*]*)\]*:*\s*-*\s*(.*)/;
+
+	# or this:
+	#   FILE: component - text
+	($file, $component, $text) = 
+	  /(NEWS|CHANGES):\s*(\w+)\s*-+\s*(.*)/ if (!$file);
+
+	# what you should use:
+	#   FILE: component: text
+	#      or
+	#   FILE: component: BUGS: 123,456: text
+	#
+	#      or
+	#   FILE: component: PATCH: 123,456: from someone text
+	#   FILE: component: PATCH: 123,456: from "someone long" text
+	($file, $component, $patbug, $nums, $text) = 
+	  /(NEWS|CHANGES):\s*([^:]+):\s*-*\s*\[*(BUG|PATCH)*(?:ES|S|):*\s*([\d,\s*]*)\]*:*\s*-*\s*(?:from ["'][^"]+["']|from \w+|):*\s*(.*)/ if (!$file);
+
+	# component left out
+	# FILE: [BUGS: 123,456]: text
+	($file, $patbug, $nums, $text) = 
+	  /(NEWS|CHANGES):\s*\[*(BUG|PATCH)*(?:ES|S|):*\s*([\d,\s*]*)\]*:*\s*-*\s*(.*)/ if (!$file);
+	
+	next if (!$file);
+	
+	next if (exists($stash{$text}));
+	$stash{$text} = 1;
+	
+	$component = "unspecified" if (!$component);
+	if ($patbug) {
+	    $text = wrap("      - ","        ","[$patbug $nums]: $text") . "\n";
+	} else {
+	    $text = wrap("      - ","        ","$text") . "\n";
+	}
+	
+	push @{$output{$opts{'c'}}{$component}}, $text;
+	push @{$output{$opts{'n'}}{$component}}, $text if ($file eq 'NEWS');
+    }
+}
+
+
+
+# save the news and changes to appropriate files
+foreach my $f ($opts{'c'}, $opts{'n'}) {
+    open(O,">$f");
+    foreach my $cat (keys(%{$output{$f}})) {
+	print O "    $cat:\n";
+	print O @{$output{$f}{$cat}};
+	print O "\n";
+    }
+    close(O);
+}
+
+#######################################################################
+# getopt long gui portability code
+#
+sub LocalGetOptions {
+    if (eval {require Getopt::GUI::Long;}) {
+	import Getopt::GUI::Long;
+	Getopt::GUI::Long::Configure(qw(display_help no_ignore_case));
+	return GetOptions(@_);
+    } else {
+	require Getopt::Long;
+	Getopt::Long::Configure(qw(auto_help no_ignore_case));
+	import Getopt::Long;
+    }
+    GetOptions(LocalOptionsMap(@_));
+}
+
+sub LocalOptionsMap {
+    my ($st, $cb, @opts) = ((ref($_[0]) eq 'HASH')
+			    ? (1, 1, $_[0]) : (0, 2));
+    for (my $i = $st; $i <= $#_; $i += $cb) {
+	if ($_[$i]) {
+	    next if (ref($_[$i]) eq 'ARRAY' && $_[$i][0] =~ /^GUI:/);
+	    push @opts, ((ref($_[$i]) eq 'ARRAY') ? $_[$i][0] : $_[$i]);
+	    push @opts, $_[$i+1] if ($cb == 2);
+	}
+    }
+    return @opts;
+}

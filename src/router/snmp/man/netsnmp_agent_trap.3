@@ -1,0 +1,338 @@
+.TH "Trap generation routines for mib modules to use" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+Trap generation routines for mib modules to use \- 
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBtrap_sink\fP"
+.br
+.in -1c
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBSNMPV2_TRAPS_PREFIX\fP   SNMP_OID_SNMPMODULES,1,1,5"
+.br
+.ti -1c
+.RI "#define \fBSNMPV2_TRAP_OBJS_PREFIX\fP   SNMP_OID_SNMPMODULES,1,1,4"
+.br
+.ti -1c
+.RI "#define \fBSNMPV2_COMM_OBJS_PREFIX\fP   SNMP_OID_SNMPMODULES,18,1"
+.br
+.ti -1c
+.RI "#define \fBSNMP_AUTHENTICATED_TRAPS_ENABLED\fP   1"
+.br
+.ti -1c
+.RI "#define \fBSNMP_AUTHENTICATED_TRAPS_DISABLED\fP   2"
+.br
+.ti -1c
+.RI "#define \fBMAX_ARGS\fP   128"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBinit_traps\fP (void)"
+.br
+.ti -1c
+.RI "int \fBadd_trap_session\fP (\fBnetsnmp_session\fP *ss, int pdutype, int confirm, int version)"
+.br
+.ti -1c
+.RI "int \fBremove_trap_session\fP (\fBnetsnmp_session\fP *ss)"
+.br
+.ti -1c
+.RI "int \fBcreate_trap_session\fP (char *sink, u_short sinkport, char *com, int version, int pdutype)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_free_trapsinks\fP (void)"
+.br
+.ti -1c
+.RI "\fBnetsnmp_pdu\fP * \fBconvert_v2pdu_to_v1\fP (\fBnetsnmp_pdu\fP *template_v2pdu)"
+.br
+.ti -1c
+.RI "\fBnetsnmp_pdu\fP * \fBconvert_v1pdu_to_v2\fP (\fBnetsnmp_pdu\fP *template_v1pdu)"
+.br
+.ti -1c
+.RI "int \fBnetsnmp_send_traps\fP (int trap, int specific, oid *enterprise, int enterprise_length, \fBnetsnmp_variable_list\fP *vars, char *context, int flags)"
+.br
+.RI "\fIThis function allows you to make a distinction between generic traps from different classes of equipment. \fP"
+.ti -1c
+.RI "void \fBsend_enterprise_trap_vars\fP (int trap, int specific, oid *enterprise, int enterprise_length, \fBnetsnmp_variable_list\fP *vars)"
+.br
+.ti -1c
+.RI "int \fBhandle_inform_response\fP (int op, \fBnetsnmp_session\fP *session, int reqid, \fBnetsnmp_pdu\fP *pdu, void *magic)"
+.br
+.RI "\fICaptures responses or the lack there of from INFORMs that were sent 1) a response is received from an INFORM 2) one isn't received and the retries/timeouts have failed. \fP"
+.ti -1c
+.RI "void \fBsend_trap_to_sess\fP (\fBnetsnmp_session\fP *sess, \fBnetsnmp_pdu\fP *template_pdu)"
+.br
+.ti -1c
+.RI "void \fBsend_trap_vars\fP (int trap, int specific, \fBnetsnmp_variable_list\fP *vars)"
+.br
+.ti -1c
+.RI "void \fBsend_easy_trap\fP (int trap, int specific)"
+.br
+.RI "\fISends an SNMPv1 trap (or the SNMPv2 equivalent) to the list of configured trap destinations (or 'sinks'), using the provided values for the generic trap type and specific trap value. \fP"
+.ti -1c
+.RI "void \fBsend_v2trap\fP (\fBnetsnmp_variable_list\fP *vars)"
+.br
+.RI "\fIUses the supplied list of variable bindings to form an SNMPv2 trap, which is sent to SNMPv2-capable sinks on the configured list. \fP"
+.ti -1c
+.RI "void \fBsend_trap_pdu\fP (\fBnetsnmp_pdu\fP *pdu)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_authtrap\fP (const char *token, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_trapsink\fP (const char *token, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_trap2sink\fP (const char *word, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_informsink\fP (const char *word, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_trapsess\fP (const char *word, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_parse_config_trapcommunity\fP (const char *word, char *cptr)"
+.br
+.ti -1c
+.RI "void \fBsnmpd_free_trapcommunity\fP (void)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBtrap_sink\fP * \fBsinks\fP = NULL"
+.br
+.ti -1c
+.RI "timeval \fBstarttime\fP"
+.br
+.ti -1c
+.RI "oid \fBobjid_enterprisetrap\fP [] = { NETSNMP_NOTIFICATION_MIB }"
+.br
+.ti -1c
+.RI "oid \fBtrap_version_id\fP [] = { NETSNMP_SYSTEM_MIB }"
+.br
+.ti -1c
+.RI "int \fBenterprisetrap_len\fP"
+.br
+.ti -1c
+.RI "int \fBtrap_version_id_len\fP"
+.br
+.ti -1c
+.RI "oid \fBtrap_prefix\fP [] = { SNMPV2_TRAPS_PREFIX }"
+.br
+.ti -1c
+.RI "oid \fBcold_start_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 1 }"
+.br
+.ti -1c
+.RI "oid \fBwarm_start_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 2 }"
+.br
+.ti -1c
+.RI "oid \fBlink_down_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 3 }"
+.br
+.ti -1c
+.RI "oid \fBlink_up_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 4 }"
+.br
+.ti -1c
+.RI "oid \fBauth_fail_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 5 }"
+.br
+.ti -1c
+.RI "oid \fBegp_xxx_oid\fP [] = { SNMPV2_TRAPS_PREFIX, 99 }"
+.br
+.ti -1c
+.RI "oid \fBsnmptrap_oid\fP [] = { SNMPV2_TRAP_OBJS_PREFIX, 1, 0 }"
+.br
+.ti -1c
+.RI "oid \fBsnmptrapenterprise_oid\fP []"
+.br
+.ti -1c
+.RI "oid \fBsysuptime_oid\fP [] = { SNMP_OID_MIB2, 1, 3, 0 }"
+.br
+.ti -1c
+.RI "size_t \fBsnmptrap_oid_len\fP"
+.br
+.ti -1c
+.RI "size_t \fBsnmptrapenterprise_oid_len\fP"
+.br
+.ti -1c
+.RI "size_t \fBsysuptime_oid_len\fP"
+.br
+.ti -1c
+.RI "oid \fBagentaddr_oid\fP [] = { SNMPV2_COMM_OBJS_PREFIX, 3, 0 }"
+.br
+.ti -1c
+.RI "size_t \fBagentaddr_oid_len\fP"
+.br
+.ti -1c
+.RI "oid \fBcommunity_oid\fP [] = { SNMPV2_COMM_OBJS_PREFIX, 4, 0 }"
+.br
+.ti -1c
+.RI "size_t \fBcommunity_oid_len\fP"
+.br
+.ti -1c
+.RI "char * \fBsnmp_trapcommunity\fP = NULL"
+.br
+.ti -1c
+.RI "int \fBsnmp_enableauthentraps\fP = SNMP_AUTHENTICATED_TRAPS_DISABLED"
+.br
+.ti -1c
+.RI "int \fBsnmp_enableauthentrapsset\fP = 0"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int handle_inform_response (int op, \fBnetsnmp_session\fP * session, int reqid, \fBnetsnmp_pdu\fP * pdu, void * magic)"
+.PP
+Captures responses or the lack there of from INFORMs that were sent 1) a response is received from an INFORM 2) one isn't received and the retries/timeouts have failed. 
+.PP
+Definition at line 823 of file agent_trap.c.
+.PP
+References snmp_increment_statistic().
+.PP
+Referenced by send_trap_to_sess().
+.SS "int netsnmp_send_traps (int trap, int specific, oid * enterprise, int enterprise_length, \fBnetsnmp_variable_list\fP * vars, char * context, int flags)"
+.PP
+This function allows you to make a distinction between generic traps from different classes of equipment. 
+.PP
+For example, you may want to handle a SNMP_TRAP_LINKDOWN trap for a particular device in a different manner to a generic system SNMP_TRAP_LINKDOWN trap.
+.PP
+\fBParameters:\fP
+.RS 4
+\fItrap\fP is the generic trap type. The trap types are:
+.IP "\(bu" 2
+SNMP_TRAP_COLDSTART: cold start
+.IP "\(bu" 2
+SNMP_TRAP_WARMSTART: warm start
+.IP "\(bu" 2
+SNMP_TRAP_LINKDOWN: link down
+.IP "\(bu" 2
+SNMP_TRAP_LINKUP: link up
+.IP "\(bu" 2
+SNMP_TRAP_AUTHFAIL: authentication failure
+.IP "\(bu" 2
+SNMP_TRAP_EGPNEIGHBORLOSS: egp neighbor loss
+.IP "\(bu" 2
+SNMP_TRAP_ENTERPRISESPECIFIC: enterprise specific
+.PP
+.br
+\fIspecific\fP is the specific trap value.
+.br
+\fIenterprise\fP is an enterprise oid in which you want to send specifc traps from.
+.br
+\fIenterprise_length\fP is the length of the enterprise oid, use macro, OID_LENGTH, to compute length.
+.br
+\fIvars\fP is used to supply list of variable bindings to form an SNMPv2 trap.
+.br
+\fIcontext\fP currently unused
+.br
+\fIflags\fP currently unused
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+void
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsend_easy_trap\fP 
+.PP
+\fBsend_v2trap\fP 
+.RE
+.PP
+
+.PP
+Definition at line 606 of file agent_trap.c.
+.PP
+References snmp_pdu::agent_addr, convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), snmp_pdu::enterprise, snmp_pdu::enterprise_length, find_varbind_in_list(), snmp_pdu::flags, variable_list::name, variable_list::name_length, netsnmp_get_agent_uptime(), trap_sink::next, variable_list::next_variable, NULL, netsnmp_vardata::objid, send_trap_to_sess(), trap_sink::sesp, sinks, SNMP_AUTHENTICATED_TRAPS_DISABLED, snmp_clone_mem(), snmp_clone_varbind(), snmp_enableauthentraps, snmp_free_pdu(), snmp_free_varbind(), snmp_log(), snmp_oid_compare(), snmp_pdu_create(), snmp_varlist_add_variable(), snmptrap_oid, snmptrap_oid_len, snmptrapenterprise_oid, snmptrapenterprise_oid_len, snmp_pdu::specific_type, sysuptime_oid, sysuptime_oid_len, snmp_pdu::time, trap_prefix, snmp_pdu::trap_type, variable_list::val, snmp_pdu::variables, and trap_sink::version.
+.PP
+Referenced by send_enterprise_trap_vars().
+.SS "void send_easy_trap (int trap, int specific)"
+.PP
+Sends an SNMPv1 trap (or the SNMPv2 equivalent) to the list of configured trap destinations (or 'sinks'), using the provided values for the generic trap type and specific trap value. 
+.PP
+This function eventually calls send_enterprise_trap_vars. If the trap type is not set to SNMP_TRAP_ENTERPRISESPECIFIC the enterprise and enterprise_length paramater is set to the pre defined NETSNMP_SYSTEM_MIB oid and length respectively. If the trap type is set to SNMP_TRAP_ENTERPRISESPECIFIC the enterprise and enterprise_length parameters are set to the pre-defined NETSNMP_NOTIFICATION_MIB oid and length respectively.
+.PP
+\fBParameters:\fP
+.RS 4
+\fItrap\fP is the generic trap type.
+.br
+\fIspecific\fP is the specific trap value.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+void
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsend_enterprise_trap_vars\fP 
+.PP
+\fBsend_v2trap\fP 
+.RE
+.PP
+
+.PP
+Definition at line 937 of file agent_trap.c.
+.PP
+References NULL, and send_trap_vars().
+.PP
+Referenced by handle_snmp_packet().
+.SS "void send_v2trap (\fBnetsnmp_variable_list\fP * vars)"
+.PP
+Uses the supplied list of variable bindings to form an SNMPv2 trap, which is sent to SNMPv2-capable sinks on the configured list. 
+.PP
+An equivalent INFORM is sent to the configured list of inform sinks. Sinks that can only handle SNMPv1 traps are skipped.
+.PP
+This function eventually calls send_enterprise_trap_vars. If the trap type is not set to SNMP_TRAP_ENTERPRISESPECIFIC the enterprise and enterprise_length paramater is set to the pre defined NETSNMP_SYSTEM_MIB oid and length respectively. If the trap type is set to SNMP_TRAP_ENTERPRISESPECIFIC the enterprise and enterprise_length parameters are set to the pre-defined NETSNMP_NOTIFICATION_MIB oid and length respectively.
+.PP
+\fBParameters:\fP
+.RS 4
+\fIvars\fP is used to supply list of variable bindings to form an SNMPv2 trap.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+void
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsend_easy_trap\fP 
+.PP
+\fBsend_enterprise_trap_vars\fP 
+.RE
+.PP
+
+.PP
+\fBExamples: \fP
+.in +1c
+\fBnotification.c\fP.
+.PP
+Definition at line 966 of file agent_trap.c.
+.PP
+References send_trap_vars().
+.SH "Variable Documentation"
+.PP 
+.SS "oid \fBsnmptrapenterprise_oid\fP[]"
+.PP
+\fBInitial value:\fP
+.PP
+.nf
+
+    { SNMPV2_TRAP_OBJS_PREFIX, 3, 0 }
+.fi
+.PP
+Definition at line 98 of file agent_trap.c.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), init_traps(), and netsnmp_send_traps().

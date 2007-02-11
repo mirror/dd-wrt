@@ -1,0 +1,72 @@
+.TH "netsnmp_mib_handler_s" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+netsnmp_mib_handler_s \- the mib handler structure to be registered  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <agent_handler.h>\fP
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "char * \fBhandler_name\fP"
+.br
+.ti -1c
+.RI "void * \fBmyvoid\fP"
+.br
+.RI "\fIfor handler's internal use \fP"
+.ti -1c
+.RI "int \fBflags\fP"
+.br
+.RI "\fIfor agent_handler's internal use \fP"
+.ti -1c
+.RI "int(* \fBaccess_method\fP )(struct \fBnetsnmp_mib_handler_s\fP *, struct \fBnetsnmp_handler_registration_s\fP *, struct \fBnetsnmp_agent_request_info_s\fP *, struct \fBnetsnmp_request_info_s\fP *)"
+.br
+.RI "\fI_clone_handler in \fBagent_handler.c\fP. \fP"
+.ti -1c
+.RI "\fBnetsnmp_mib_handler_s\fP * \fBnext\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_mib_handler_s\fP * \fBprev\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+the mib handler structure to be registered 
+.PP
+\fBExamples: \fP
+.in +1c
+.PP
+\fBdelayed_instance.c\fP.
+.PP
+Definition at line 48 of file agent_handler.h.
+.SH "Field Documentation"
+.PP 
+.SS "int(* \fBnetsnmp_mib_handler_s::access_method\fP)(struct \fBnetsnmp_mib_handler_s\fP *, struct \fBnetsnmp_handler_registration_s\fP *, struct \fBnetsnmp_agent_request_info_s\fP *, struct \fBnetsnmp_request_info_s\fP *)"
+.PP
+_clone_handler in \fBagent_handler.c\fP. 
+.PP
+Referenced by netsnmp_call_handler(), netsnmp_create_handler(), netsnmp_find_table_array_handler(), netsnmp_instance_counter32_handler(), netsnmp_instance_int_handler(), netsnmp_instance_long_handler(), netsnmp_instance_num_file_handler(), netsnmp_instance_uint_handler(), and netsnmp_instance_ulong_handler().
+.SS "int \fBnetsnmp_mib_handler_s::flags\fP"
+.PP
+for agent_handler's internal use 
+.PP
+Definition at line 53 of file agent_handler.h.
+.PP
+Referenced by netsnmp_baby_steps_access_multiplexer_get(), netsnmp_bulk_to_next_helper(), netsnmp_cache_handler_get(), netsnmp_cache_helper_handler(), netsnmp_container_table_handler_get(), netsnmp_get_bulk_to_next_handler(), netsnmp_get_read_only_handler(), netsnmp_get_stash_to_next_handler(), netsnmp_get_table_data_handler(), netsnmp_get_table_data_set_handler(), netsnmp_get_tdata_handler(), netsnmp_get_watched_spinlock_handler(), netsnmp_get_watched_timestamp_handler(), netsnmp_get_watcher_handler(), netsnmp_register_handler(), netsnmp_register_instance(), netsnmp_stash_to_next_helper(), netsnmp_table_row_handler_get(), and netsnmp_watched_timestamp_handler().
+.SS "void* \fBnetsnmp_mib_handler_s::myvoid\fP"
+.PP
+for handler's internal use 
+.PP
+Definition at line 51 of file agent_handler.h.
+.PP
+Referenced by _netsnmp_tdata_helper_handler(), netsnmp_baby_steps_access_multiplexer_get(), netsnmp_baby_steps_handler_get(), netsnmp_cache_handler_get(), netsnmp_cache_helper_handler(), netsnmp_container_table_handler_get(), netsnmp_debug_helper(), netsnmp_find_handler_data_by_name(), netsnmp_get_cache_handler(), netsnmp_get_mode_end_call_handler(), netsnmp_get_multiplexer_handler(), netsnmp_get_row_merge_handler(), netsnmp_get_scalar_group_handler(), netsnmp_get_table_data_handler(), netsnmp_get_table_data_set_handler(), netsnmp_get_table_handler(), netsnmp_get_table_iterator_handler(), netsnmp_get_tdata_handler(), netsnmp_get_timed_bare_stash_cache_handler(), netsnmp_handler_dup(), netsnmp_instance_counter32_handler(), netsnmp_instance_int_handler(), netsnmp_instance_long_handler(), netsnmp_instance_num_file_handler(), netsnmp_instance_uint_handler(), netsnmp_instance_ulong_handler(), netsnmp_mode_end_call_helper(), netsnmp_multiplexer_helper_handler(), netsnmp_old_api_helper(), netsnmp_register_old_api(), netsnmp_register_watched_instance(), netsnmp_register_watched_scalar(), netsnmp_register_watched_spinlock(), netsnmp_row_merge_helper_handler(), netsnmp_scalar_group_helper_handler(), netsnmp_table_container_register(), netsnmp_table_data_helper_handler(), netsnmp_table_data_set_helper_handler(), netsnmp_table_iterator_helper_handler(), netsnmp_table_row_handler_get(), netsnmp_watched_spinlock_handler(), netsnmp_watched_timestamp_handler(), netsnmp_watched_timestamp_register(), netsnmp_watcher_helper_handler(), table_helper_handler(), and unregister_mibs_by_session().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.
