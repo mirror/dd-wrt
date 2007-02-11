@@ -1,0 +1,115 @@
+.TH "scalar" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+scalar \- Process scalars easily.  
+
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBnetsnmp_mib_handler\fP * \fBnetsnmp_get_scalar_handler\fP (void)"
+.br
+.RI "\fICreates a scalar handler calling netsnmp_create_handler with a handler name defaulted to 'scalar' and access method, netsnmp_scalar_helper_handler. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_register_scalar\fP (\fBnetsnmp_handler_registration\fP *reginfo)"
+.br
+.RI "\fIThis function registers a scalar helper handler. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_register_read_only_scalar\fP (\fBnetsnmp_handler_registration\fP *reginfo)"
+.br
+.RI "\fIThis function registers a read only scalar helper handler. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_scalar_helper_handler\fP (\fBnetsnmp_mib_handler\fP *handler, \fBnetsnmp_handler_registration\fP *reginfo, \fBnetsnmp_agent_request_info\fP *reqinfo, \fBnetsnmp_request_info\fP *requests)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Process scalars easily. 
+.PP
+.SH "Function Documentation"
+.PP 
+.SS "\fBnetsnmp_mib_handler\fP* netsnmp_get_scalar_handler (void)"
+.PP
+Creates a scalar handler calling netsnmp_create_handler with a handler name defaulted to 'scalar' and access method, netsnmp_scalar_helper_handler. 
+.PP
+\fBReturns:\fP
+.RS 4
+Returns a pointer to a netsnmp_mib_handler struct which contains the handler's name and the access method
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBnetsnmp_get_scalar_handler\fP 
+.PP
+\fBnetsnmp_register_scalar\fP 
+.RE
+.PP
+
+.PP
+Definition at line 46 of file scalar.c.
+.PP
+References netsnmp_create_handler(), and netsnmp_scalar_helper_handler().
+.PP
+Referenced by netsnmp_register_read_only_scalar(), netsnmp_register_scalar(), and netsnmp_register_scalar_group().
+.SS "int netsnmp_register_read_only_scalar (\fBnetsnmp_handler_registration\fP * reginfo)"
+.PP
+This function registers a read only scalar helper handler. 
+.PP
+This function is very similar to netsnmp_register_scalar the only addition is that the 'read_only' handler is injected into the handler chain prior to injecting the serialize handler and registering reginfo.
+.PP
+\fBParameters:\fP
+.RS 4
+\fIreginfo\fP a handler registration structure which could get created using netsnmp_create_handler_registration. Used to register a read only scalar helper handler.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+MIB_REGISTERED_OK is returned if the registration was a success. Failures are MIB_REGISTRATION_FAILURE and MIB_DUPLICATE_REGISTRATION.
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBnetsnmp_register_scalar\fP 
+.PP
+\fBnetsnmp_get_scalar_handler\fP 
+.RE
+.PP
+
+.PP
+Definition at line 109 of file scalar.c.
+.PP
+References netsnmp_get_instance_handler(), netsnmp_get_read_only_handler(), netsnmp_get_scalar_handler(), netsnmp_inject_handler(), netsnmp_register_serialize(), netsnmp_handler_registration_s::rootoid, and netsnmp_handler_registration_s::rootoid_len.
+.SS "int netsnmp_register_scalar (\fBnetsnmp_handler_registration\fP * reginfo)"
+.PP
+This function registers a scalar helper handler. 
+.PP
+The registered OID, reginfo->rootoid, space is extended for the instance subid using realloc() but the reginfo->rootoid_len length is not extended just yet. .This function subsequently injects the instance, scalar, and serialize helper handlers before actually registering reginfo.
+.PP
+Each handler is injected/pushed to the top of the handler chain list and will be processed last in first out, LIFO.
+.PP
+\fBParameters:\fP
+.RS 4
+\fIreginfo\fP a handler registration structure which could get created using netsnmp_create_handler_registration. Used to register a scalar helper handler.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+MIB_REGISTERED_OK is returned if the registration was a success. Failures are MIB_REGISTRATION_FAILURE and MIB_DUPLICATE_REGISTRATION.
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBnetsnmp_register_read_only_scalar\fP 
+.PP
+\fBnetsnmp_get_scalar_handler\fP 
+.RE
+.PP
+
+.PP
+Definition at line 74 of file scalar.c.
+.PP
+References netsnmp_get_instance_handler(), netsnmp_get_scalar_handler(), netsnmp_inject_handler(), netsnmp_register_serialize(), netsnmp_handler_registration_s::rootoid, and netsnmp_handler_registration_s::rootoid_len.
+.PP
+Referenced by netsnmp_register_watched_scalar(), and netsnmp_watched_timestamp_register().

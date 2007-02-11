@@ -1,0 +1,77 @@
+.TH "iterator_info_s" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+iterator_info_s \- Holds iterator information containing functions which should be called by the iterator_handler to loop over your data set and sort it in a SNMP specific manner.  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBnetsnmp_container\fP \fBc\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Loop_Key\fP * \fBget_first\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Loop_Key\fP * \fBget_next\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Loop_Data\fP * \fBget_data\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Data\fP * \fBfree_user_ctx\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Ctx\fP * \fBinit_loop_ctx\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Ctx\fP * \fBcleanup_loop_ctx\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Ctx_Dup\fP * \fBsave_pos\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Data\fP * \fBrelease_data\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Data\fP * \fBinsert_data\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Data\fP * \fBremove_data\fP"
+.br
+.ti -1c
+.RI "\fBNetsnmp_Iterator_Op\fP * \fBget_size\fP"
+.br
+.ti -1c
+.RI "int \fBsorted\fP"
+.br
+.ti -1c
+.RI "void * \fBuser_ctx\fP"
+.br
+.RI "\fIThis can be used by client handlers to store any information they need. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Holds iterator information containing functions which should be called by the iterator_handler to loop over your data set and sort it in a SNMP specific manner. 
+
+The iterator_info typedef can be used instead of directly calling this struct if you would prefer. 
+.PP
+Definition at line 43 of file container_iterator.c.
+.SH "Field Documentation"
+.PP 
+.SS "void* \fBiterator_info_s::user_ctx\fP"
+.PP
+This can be used by client handlers to store any information they need. 
+.PP
+Definition at line 73 of file container_iterator.c.
+.PP
+Referenced by netsnmp_container_iterator_get().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.

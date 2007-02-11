@@ -1,0 +1,46 @@
+#!/bin/bash
+#
+# $Id: cvsshow,v 1.1 2002/08/01 18:51:44 rstory Exp $
+#
+export CVS_RSH=ssh
+TAG=
+
+if [ $# -eq 0 ]; then
+	DIR=.
+else
+	if [ $# -ne 1 ]; then
+		echo "usage: $0 <working directory>"
+		exit
+	fi
+	DIR=$1
+fi
+
+if [ ! -d $DIR ]; then
+	echo "no such directory '$DIR'"
+	exit
+fi
+
+if [ ! -d $DIR/CVS ]; then
+	echo "'$DIR' has no CVS directory!"
+	exit
+fi
+
+if [ ! -f $DIR/CVS/Repository ]; then
+	echo "'$DIR' has no CVS/Repository!"
+	exit
+fi
+
+if [ ! -f $DIR/CVS/Root ]; then
+	echo "'$DIR' has no CVS/Root!"
+	exit
+fi
+
+if [ -f $DIR/CVS/Tag ]; then
+	TAG="-r `cat $DIR/CVS/Tag | cut -c 2-`"
+fi
+
+REP="`cat $DIR/CVS/Repository`"
+ROOT="`cat $DIR/CVS/Root`"
+
+echo "Directory $DIR is rooted at $ROOT, $TAG $REP..."
+echo "update with cvs -z3 -d $ROOT -q co $TAG -d $DIR $REP"
