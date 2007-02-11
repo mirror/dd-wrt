@@ -1,0 +1,126 @@
+.TH "table_maintenance" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+table_maintenance \- Routines for maintaining the contents of a table.  
+
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void * \fBnetsnmp_generic_create_table\fP (const char *name, int flags)"
+.br
+.RI "\fICreate a structure to represent the table. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_generic_delete_table\fP (void *table)"
+.br
+.RI "\fIRelease the structure representing a table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_create_row\fP (void)"
+.br
+.RI "\fICreate a new row structure suitable for this style of table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_clone_row\fP (void *row)"
+.br
+.RI "\fICreate a new copy of the specified row. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_generic_copy_row\fP (void *dst_row, void *src_row)"
+.br
+.RI "\fICopy the contents of one row into another. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_generic_delete_row\fP (void *row)"
+.br
+.RI "\fIDelete a row data structure. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_generic_add_row\fP (void *table, void *row)"
+.br
+.RI "\fIAdd a row to the table. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_generic_replace_row\fP (void *table, void *old_row, void *new_row)"
+.br
+.RI "\fIReplace one row with another in the table. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_generic_remove_row\fP (void *table, void *row)"
+.br
+.RI "\fIRemove a row from the table. \fP"
+.ti -1c
+.RI "void \fBnetsnmp_generic_remove_delete_row\fP (void *table, void *row)"
+.br
+.RI "\fIRemove and delete a row from the table. \fP"
+.in -1c
+.SH "Detailed Description"
+.PP 
+Routines for maintaining the contents of a table. 
+.PP
+This would typically be part of implementing an SNMP MIB, but could potentially also be used for a standalone table.
+.PP
+This section of the generic API is primarily relevant to table helpers where the representation of the table is constructed and maintained within the helper itself. 'External' tables will typically look after such aspects directly, although this section of the abstract API framework could also help direct the design of such table-specific implementations. 
+.SH "Function Documentation"
+.PP 
+.SS "int netsnmp_generic_add_row (void * table, void * row)"
+.PP
+Add a row to the table. 
+.PP
+Definition at line 104 of file table_generic.c.
+.SS "void* netsnmp_generic_clone_row (void * row)"
+.PP
+Create a new copy of the specified row. 
+.PP
+Definition at line 82 of file table_generic.c.
+.SS "int netsnmp_generic_copy_row (void * dst_row, void * src_row)"
+.PP
+Copy the contents of one row into another. 
+.PP
+The destination row structure should be created before this routine is called. 
+.PP
+Definition at line 90 of file table_generic.c.
+.SS "void* netsnmp_generic_create_row (void)"
+.PP
+Create a new row structure suitable for this style of table. 
+.PP
+Note that this would typically be a 'standalone' row, and would not automatically be inserted into an actual table. 
+.PP
+Definition at line 76 of file table_generic.c.
+.SS "void* netsnmp_generic_create_table (const char * name, int flags)"
+.PP
+Create a structure to represent the table. 
+.PP
+This could be as simple as the head of a linked list, or a more complex container structure. The 'name' field would typically be used to distinguish between several tables implemented using the same table helper. The 'flags' field would be used to control various (helper-specific) aspects of table behaviour.
+.PP
+The table structure returned should typically be regarded as an opaque, private structure. All operations on the content of the table should ideally use the appropriate routines from this API. 
+.PP
+Definition at line 60 of file table_generic.c.
+.SS "void netsnmp_generic_delete_row (void * row)"
+.PP
+Delete a row data structure. 
+.PP
+The row should be removed from any relevant table(s) before this routine is called. 
+.PP
+Definition at line 98 of file table_generic.c.
+.SS "void netsnmp_generic_delete_table (void * table)"
+.PP
+Release the structure representing a table. 
+.PP
+Any rows still contained within the table should also be removed and deleted. 
+.PP
+Definition at line 68 of file table_generic.c.
+.SS "void netsnmp_generic_remove_delete_row (void * table, void * row)"
+.PP
+Remove and delete a row from the table. 
+.PP
+Definition at line 127 of file table_generic.c.
+.SS "void* netsnmp_generic_remove_row (void * table, void * row)"
+.PP
+Remove a row from the table. 
+.PP
+The data structure for the row should not be released, and would be the return value of this routine. 
+.PP
+Definition at line 121 of file table_generic.c.
+.SS "int netsnmp_generic_replace_row (void * table, void * old_row, void * new_row)"
+.PP
+Replace one row with another in the table. 
+.PP
+This will typically (but not necessarily) involve two rows sharing the same index information (e.g. to implement update/restore-style SET behaviour). 
+.PP
+Definition at line 113 of file table_generic.c.

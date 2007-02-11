@@ -1,0 +1,48 @@
+#!/bin/sh
+
+. ../eval_tools.sh
+
+TRAPHANDLE_LOGFILE=${SNMP_TMPDIR}/traphandle.log
+
+# "inline" trap handler
+if [ "x$2" = "xtraphandle" ]; then
+  cat - >>$TRAPHANDLE_LOGFILE
+  exit 0
+fi
+
+HEADER snmptrapd traphandle: launching external shell script
+
+SKIPIF DISABLE_SNMPV2C
+
+#
+# Begin test
+#
+
+snmp_version=v2c
+TESTCOMMUNITY=testcommunity
+
+CONFIGTRAPD [snmp] persistentDir $SNMP_TMP_PERSISTENTDIR
+CONFIGTRAPD authcommunity execute $TESTCOMMUNITY
+CONFIGTRAPD doNotLogTraps true
+CONFIGTRAPD traphandle default $0 $1 traphandle
+CONFIGTRAPD agentxsocket /dev/null
+
+STARTTRAPD
+
+## 1) test notification handler
+
+CAPTURE "snmptrap -d -Ci -t $SNMP_SLEEP -$snmp_version -c $TESTCOMMUNITY $SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPTRAPD_PORT 0 .1.3.6.1.6.3.1.1.5.1 system.sysContact.0 s handled_inform_$snmp_version"
+DELAY
+CHECKORDIE "handled_inform_$snmp_version" $TRAPHANDLE_LOGFILE 
+
+## 2) persistency: reconfigure (SIGHUP), re-test
+
+HUPTRAPD
+CAPTURE "snmptrap -d -Ci -t $SNMP_SLEEP -$snmp_version -c $TESTCOMMUNITY $SNMP_TRANSPORT_SPEC:$SNMP_TEST_DEST$SNMP_SNMPTRAPD_PORT 0 .1.3.6.1.6.3.1.1.5.1 system.sysContact.0 s handled_inform2_$snmp_version"
+DELAY
+CHECKORDIE "handled_inform2_$snmp_version" $TRAPHANDLE_LOGFILE
+
+## stop
+STOPTRAPD
+
+FINISHED
