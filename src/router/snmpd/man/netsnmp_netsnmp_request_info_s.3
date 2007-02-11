@@ -1,0 +1,124 @@
+.TH "netsnmp_request_info_s" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+netsnmp_request_info_s \- The netsnmp request info structure.  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <snmp_agent.h>\fP
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "\fBnetsnmp_variable_list\fP * \fBrequestvb\fP"
+.br
+.RI "\fIvariable bindings \fP"
+.ti -1c
+.RI "\fBnetsnmp_data_list\fP * \fBparent_data\fP"
+.br
+.RI "\fIcan be used to pass information on a per-request basis from a helper to the later handlers \fP"
+.ti -1c
+.RI "\fBnetsnmp_agent_request_info_s\fP * \fBagent_req_info\fP"
+.br
+.ti -1c
+.RI "oid * \fBrange_end\fP"
+.br
+.RI "\fIdon't free, reference to (struct tree)->end \fP"
+.ti -1c
+.RI "size_t \fBrange_end_len\fP"
+.br
+.ti -1c
+.RI "int \fBdelegated\fP"
+.br
+.ti -1c
+.RI "int \fBprocessed\fP"
+.br
+.ti -1c
+.RI "int \fBinclusive\fP"
+.br
+.ti -1c
+.RI "int \fBstatus\fP"
+.br
+.ti -1c
+.RI "int \fBindex\fP"
+.br
+.RI "\fIindex in original pdu \fP"
+.ti -1c
+.RI "int \fBrepeat\fP"
+.br
+.RI "\fIget-bulk \fP"
+.ti -1c
+.RI "int \fBorig_repeat\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_variable_list\fP * \fBrequestvb_start\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_request_info_s\fP * \fBnext\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_request_info_s\fP * \fBprev\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_subtree_s\fP * \fBsubtree\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The netsnmp request info structure. 
+.PP
+\fBExamples: \fP
+.in +1c
+.PP
+\fBdelayed_instance.c\fP.
+.PP
+Definition at line 54 of file snmp_agent.h.
+.SH "Field Documentation"
+.PP 
+.SS "int \fBnetsnmp_request_info_s::index\fP"
+.PP
+index in original pdu 
+.PP
+Definition at line 84 of file snmp_agent.h.
+.PP
+Referenced by check_getnext_results(), debug_print_requests(), netsnmp_add_varbind_to_cache(), and netsnmp_check_requests_status().
+.SS "\fBnetsnmp_data_list\fP* \fBnetsnmp_request_info_s::parent_data\fP"
+.PP
+can be used to pass information on a per-request basis from a helper to the later handlers 
+.PP
+Definition at line 64 of file snmp_agent.h.
+.PP
+Referenced by debug_print_requests(), netsnmp_add_varbind_to_cache(), netsnmp_free_request_data_set(), netsnmp_free_request_data_sets(), netsnmp_request_add_list_data(), netsnmp_request_get_list_data(), netsnmp_request_remove_list_data(), and netsnmp_stash_to_next_helper().
+.SS "oid* \fBnetsnmp_request_info_s::range_end\fP"
+.PP
+don't free, reference to (struct tree)->end 
+.PP
+Definition at line 72 of file snmp_agent.h.
+.PP
+Referenced by netsnmp_add_varbind_to_cache(), and netsnmp_bulk_to_next_fix_requests().
+.SS "int \fBnetsnmp_request_info_s::repeat\fP"
+.PP
+get-bulk 
+.PP
+Definition at line 87 of file snmp_agent.h.
+.PP
+Referenced by check_acm(), and netsnmp_bulk_to_next_fix_requests().
+.SS "\fBnetsnmp_variable_list\fP* \fBnetsnmp_request_info_s::requestvb\fP"
+.PP
+variable bindings 
+.PP
+\fBExamples: \fP
+.in +1c
+\fBdelayed_instance.c\fP.
+.PP
+Definition at line 58 of file snmp_agent.h.
+.PP
+Referenced by _request_set_error(), check_acm(), check_getnext_results(), debug_print_requests(), netsnmp_add_varbind_to_cache(), netsnmp_bulk_to_next_fix_requests(), netsnmp_bulk_to_next_helper(), netsnmp_check_getnext_reply(), netsnmp_instance_counter32_handler(), netsnmp_instance_helper_handler(), netsnmp_instance_int_handler(), netsnmp_instance_long_handler(), netsnmp_instance_num_file_handler(), netsnmp_instance_uint_handler(), netsnmp_instance_ulong_handler(), netsnmp_old_api_helper(), netsnmp_reassign_requests(), netsnmp_row_merge_helper_handler(), netsnmp_scalar_group_helper_handler(), netsnmp_scalar_helper_handler(), netsnmp_stash_cache_helper(), netsnmp_stash_to_next_helper(), netsnmp_table_build_oid(), netsnmp_table_build_oid_from_index(), netsnmp_table_build_result(), netsnmp_table_data_build_result(), netsnmp_table_data_set_helper_handler(), netsnmp_watched_spinlock_handler(), netsnmp_watched_timestamp_handler(), netsnmp_watcher_helper_handler(), and table_helper_handler().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.

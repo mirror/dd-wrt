@@ -1,0 +1,347 @@
+.TH "snmp_pdu" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+snmp_pdu \- The snmp protocol data unit.  
+
+.PP
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <snmp_api.h>\fP
+.PP
+.SS "Data Fields"
+
+.in +1c
+.ti -1c
+.RI "long \fBversion\fP"
+.br
+.RI "\fIsnmp version \fP"
+.ti -1c
+.RI "int \fBcommand\fP"
+.br
+.RI "\fIType of this PDU. \fP"
+.ti -1c
+.RI "long \fBreqid\fP"
+.br
+.RI "\fIRequest id - note: not incremented on retries. \fP"
+.ti -1c
+.RI "long \fBmsgid\fP"
+.br
+.RI "\fIMessage id for V3 messages note: incremented for each retry. \fP"
+.ti -1c
+.RI "long \fBtransid\fP"
+.br
+.RI "\fIUnique ID for incoming transactions. \fP"
+.ti -1c
+.RI "long \fBsessid\fP"
+.br
+.RI "\fISession id for AgentX messages. \fP"
+.ti -1c
+.RI "long \fBerrstat\fP"
+.br
+.RI "\fIError status (non_repeaters in GetBulk). \fP"
+.ti -1c
+.RI "long \fBerrindex\fP"
+.br
+.RI "\fIError index (max_repetitions in GetBulk). \fP"
+.ti -1c
+.RI "u_long \fBtime\fP"
+.br
+.RI "\fIUptime. \fP"
+.ti -1c
+.RI "u_long \fBflags\fP"
+.br
+.ti -1c
+.RI "int \fBsecurityModel\fP"
+.br
+.ti -1c
+.RI "int \fBsecurityLevel\fP"
+.br
+.RI "\fInoAuthNoPriv, authNoPriv, authPriv \fP"
+.ti -1c
+.RI "int \fBmsgParseModel\fP"
+.br
+.ti -1c
+.RI "void * \fBtransport_data\fP"
+.br
+.RI "\fITransport-specific opaque data. \fP"
+.ti -1c
+.RI "int \fBtransport_data_length\fP"
+.br
+.ti -1c
+.RI "const oid * \fBtDomain\fP"
+.br
+.RI "\fIThe actual transport domain. \fP"
+.ti -1c
+.RI "size_t \fBtDomainLen\fP"
+.br
+.ti -1c
+.RI "\fBnetsnmp_variable_list\fP * \fBvariables\fP"
+.br
+.ti -1c
+.RI "u_char * \fBcommunity\fP"
+.br
+.RI "\fIcommunity for outgoing requests. \fP"
+.ti -1c
+.RI "size_t \fBcommunity_len\fP"
+.br
+.RI "\fIlength of community name. \fP"
+.ti -1c
+.RI "oid * \fBenterprise\fP"
+.br
+.RI "\fISystem OID. \fP"
+.ti -1c
+.RI "size_t \fBenterprise_length\fP"
+.br
+.ti -1c
+.RI "long \fBtrap_type\fP"
+.br
+.RI "\fItrap type \fP"
+.ti -1c
+.RI "long \fBspecific_type\fP"
+.br
+.RI "\fIspecific type \fP"
+.ti -1c
+.RI "unsigned char \fBagent_addr\fP [4]"
+.br
+.RI "\fIThis is ONLY used for v1 TRAPs. \fP"
+.ti -1c
+.RI "u_char * \fBcontextEngineID\fP"
+.br
+.RI "\fIcontext snmpEngineID \fP"
+.ti -1c
+.RI "size_t \fBcontextEngineIDLen\fP"
+.br
+.RI "\fILength of contextEngineID. \fP"
+.ti -1c
+.RI "char * \fBcontextName\fP"
+.br
+.RI "\fIauthoritative contextName \fP"
+.ti -1c
+.RI "size_t \fBcontextNameLen\fP"
+.br
+.RI "\fILength of contextName. \fP"
+.ti -1c
+.RI "u_char * \fBsecurityEngineID\fP"
+.br
+.RI "\fIauthoritative snmpEngineID for security \fP"
+.ti -1c
+.RI "size_t \fBsecurityEngineIDLen\fP"
+.br
+.RI "\fILength of securityEngineID. \fP"
+.ti -1c
+.RI "char * \fBsecurityName\fP"
+.br
+.RI "\fIon behalf of this principal \fP"
+.ti -1c
+.RI "size_t \fBsecurityNameLen\fP"
+.br
+.RI "\fILength of securityName. \fP"
+.ti -1c
+.RI "int \fBpriority\fP"
+.br
+.ti -1c
+.RI "int \fBrange_subid\fP"
+.br
+.ti -1c
+.RI "void * \fBsecurityStateRef\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+The snmp protocol data unit. 
+.PP
+Definition at line 75 of file snmp_api.h.
+.SH "Field Documentation"
+.PP 
+.SS "unsigned char \fBsnmp_pdu::agent_addr\fP[4]"
+.PP
+This is ONLY used for v1 TRAPs. 
+.PP
+Definition at line 142 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), netsnmp_send_traps(), snmp_pdu_build(), and snmp_pdu_parse().
+.SS "int \fBsnmp_pdu::command\fP"
+.PP
+Type of this PDU. 
+.PP
+Definition at line 83 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), handle_pdu(), handle_snmp_packet(), netsnmp_add_varbind_to_cache(), netsnmp_agent_check_parse(), netsnmp_create_subtree_cache(), netsnmp_handle_request(), netsnmp_wrap_up_request(), save_set_cache(), send_trap_to_sess(), snmp_fix_pdu(), snmp_pdu_build(), snmp_pdu_create(), snmp_pdu_parse(), snmpv3_make_report(), and snmpv3_scopedPDU_parse().
+.SS "u_char* \fBsnmp_pdu::community\fP"
+.PP
+community for outgoing requests. 
+.PP
+Definition at line 127 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), and snmp_free_pdu().
+.SS "size_t \fBsnmp_pdu::community_len\fP"
+.PP
+length of community name. 
+.PP
+Definition at line 129 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2().
+.SS "u_char* \fBsnmp_pdu::contextEngineID\fP"
+.PP
+context snmpEngineID 
+.PP
+Definition at line 148 of file snmp_api.h.
+.PP
+Referenced by snmp_free_pdu(), snmpv3_make_report(), snmpv3_parse(), and snmpv3_scopedPDU_parse().
+.SS "size_t \fBsnmp_pdu::contextEngineIDLen\fP"
+.PP
+Length of contextEngineID. 
+.PP
+Definition at line 150 of file snmp_api.h.
+.PP
+Referenced by snmpv3_make_report(), snmpv3_parse(), and snmpv3_scopedPDU_parse().
+.SS "char* \fBsnmp_pdu::contextName\fP"
+.PP
+authoritative contextName 
+.PP
+Definition at line 152 of file snmp_api.h.
+.PP
+Referenced by snmp_free_pdu(), snmpv3_make_report(), and snmpv3_scopedPDU_parse().
+.SS "size_t \fBsnmp_pdu::contextNameLen\fP"
+.PP
+Length of contextName. 
+.PP
+Definition at line 154 of file snmp_api.h.
+.PP
+Referenced by snmp_pdu_create(), snmpv3_make_report(), and snmpv3_scopedPDU_parse().
+.SS "oid* \fBsnmp_pdu::enterprise\fP"
+.PP
+System OID. 
+.PP
+Definition at line 135 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), netsnmp_send_traps(), snmp_free_pdu(), snmp_pdu_build(), and snmp_pdu_parse().
+.SS "long \fBsnmp_pdu::errindex\fP"
+.PP
+Error index (max_repetitions in GetBulk). 
+.PP
+Definition at line 95 of file snmp_api.h.
+.PP
+Referenced by _reorder_getbulk(), netsnmp_agent_check_parse(), netsnmp_create_subtree_cache(), netsnmp_wrap_up_request(), snmp_fix_pdu(), snmp_pdu_build(), snmp_pdu_create(), snmp_pdu_parse(), and snmpv3_make_report().
+.SS "long \fBsnmp_pdu::errstat\fP"
+.PP
+Error status (non_repeaters in GetBulk). 
+.PP
+Definition at line 93 of file snmp_api.h.
+.PP
+Referenced by _reorder_getbulk(), handle_snmp_packet(), netsnmp_agent_check_parse(), netsnmp_create_subtree_cache(), netsnmp_wrap_up_request(), snmp_fix_pdu(), snmp_pdu_build(), snmp_pdu_create(), snmp_pdu_parse(), and snmpv3_make_report().
+.SS "long \fBsnmp_pdu::msgid\fP"
+.PP
+Message id for V3 messages note: incremented for each retry. 
+.PP
+Definition at line 87 of file snmp_api.h.
+.PP
+Referenced by snmp_fix_pdu(), snmp_pdu_create(), and snmpv3_parse().
+.SS "long \fBsnmp_pdu::reqid\fP"
+.PP
+Request id - note: not incremented on retries. 
+.PP
+Definition at line 85 of file snmp_api.h.
+.PP
+Referenced by snmp_fix_pdu(), snmp_pdu_build(), snmp_pdu_create(), and snmp_pdu_parse().
+.SS "u_char* \fBsnmp_pdu::securityEngineID\fP"
+.PP
+authoritative snmpEngineID for security 
+.PP
+Definition at line 156 of file snmp_api.h.
+.PP
+Referenced by snmp_free_pdu(), snmpv3_make_report(), snmpv3_packet_build(), snmpv3_parse(), and snmpv3_scopedPDU_parse().
+.SS "size_t \fBsnmp_pdu::securityEngineIDLen\fP"
+.PP
+Length of securityEngineID. 
+.PP
+Definition at line 158 of file snmp_api.h.
+.PP
+Referenced by snmpv3_make_report(), snmpv3_packet_build(), snmpv3_parse(), and snmpv3_scopedPDU_parse().
+.SS "int \fBsnmp_pdu::securityLevel\fP"
+.PP
+noAuthNoPriv, authNoPriv, authPriv 
+.PP
+Definition at line 102 of file snmp_api.h.
+.PP
+Referenced by snmpv3_make_report(), snmpv3_packet_build(), and snmpv3_parse().
+.SS "char* \fBsnmp_pdu::securityName\fP"
+.PP
+on behalf of this principal 
+.PP
+Definition at line 160 of file snmp_api.h.
+.PP
+Referenced by snmp_free_pdu(), snmpv3_packet_build(), and snmpv3_parse().
+.SS "size_t \fBsnmp_pdu::securityNameLen\fP"
+.PP
+Length of securityName. 
+.PP
+Definition at line 162 of file snmp_api.h.
+.PP
+Referenced by snmp_pdu_create(), snmpv3_packet_build(), and snmpv3_parse().
+.SS "long \fBsnmp_pdu::sessid\fP"
+.PP
+Session id for AgentX messages. 
+.PP
+Definition at line 91 of file snmp_api.h.
+.PP
+Referenced by send_trap_to_sess().
+.SS "long \fBsnmp_pdu::specific_type\fP"
+.PP
+specific type 
+.PP
+Definition at line 140 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), netsnmp_send_traps(), snmp_pdu_build(), and snmp_pdu_parse().
+.SS "const oid* \fBsnmp_pdu::tDomain\fP"
+.PP
+The actual transport domain. 
+.PP
+This SHOULD NOT BE FREE()D. 
+.PP
+Definition at line 117 of file snmp_api.h.
+.PP
+Referenced by snmp_create_sess_pdu().
+.SS "u_long \fBsnmp_pdu::time\fP"
+.PP
+Uptime. 
+.PP
+Definition at line 97 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), netsnmp_send_traps(), snmp_pdu_build(), snmp_pdu_create(), and snmp_pdu_parse().
+.SS "long \fBsnmp_pdu::transid\fP"
+.PP
+Unique ID for incoming transactions. 
+.PP
+Definition at line 89 of file snmp_api.h.
+.PP
+Referenced by check_delayed_request(), get_set_cache(), netsnmp_create_delegated_cache(), and save_set_cache().
+.SS "void* \fBsnmp_pdu::transport_data\fP"
+.PP
+Transport-specific opaque data. 
+.PP
+This replaces the IP-centric address field. 
+.PP
+Definition at line 110 of file snmp_api.h.
+.PP
+Referenced by snmp_create_sess_pdu(), snmp_free_pdu(), and snmp_pdu_create().
+.SS "long \fBsnmp_pdu::trap_type\fP"
+.PP
+trap type 
+.PP
+Definition at line 138 of file snmp_api.h.
+.PP
+Referenced by convert_v1pdu_to_v2(), convert_v2pdu_to_v1(), netsnmp_send_traps(), snmp_pdu_build(), and snmp_pdu_parse().
+.SS "long \fBsnmp_pdu::version\fP"
+.PP
+snmp version 
+.PP
+Definition at line 81 of file snmp_api.h.
+.PP
+Referenced by check_access(), handle_snmp_packet(), in_a_view(), netsnmp_acm_check_subtree(), netsnmp_wrap_up_request(), send_trap_to_sess(), snmp_pdu_create(), and snmpv3_parse().
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for net-snmp from the source code.

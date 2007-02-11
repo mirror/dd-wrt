@@ -1,0 +1,64 @@
+Some notes for the AIX port
+===========================
+
+1. Known problems
+-----------------
+
+There are the following known problems on AIX:
+
+1) Shared libraries / embedded perl
+
+Building net-snmp on AIX with shared libraries is known to either make the
+applications not start at all or segfault. The workaround is to disable shared
+libraries as well as embedded perl (which requires shared libraries):
+
+   ./configure --disable-shared --disable-embedded-perl
+
+
+2) "grep: capacity exceeded" or "sed: Command line is too long" during configure
+
+The version of "grep" shipped with AIX versions up to (and including) 5.1
+has a known limitation of only supporting a maximum of 2048 characters per line.
+This may cause a significant number of "grep: capacity exceeded" errors during
+configure which breaks the build. See bug 1367794 for details. The fix is to 
+either install GNU grep (and have it in PATH before the AIX grep) or to upgrade
+to AIX 5.2 or later.
+
+There's a similar issue with AIX /usr/bin/sed up to at least AIX 5.3 that 
+causes a significant number of "sed: Command line is too long." errors during
+configure. The fix is to install GNU sed.
+
+3) nlist errors with 64-bit kernels
+
+Accessing certain MIB objects on AIX 5.x machines running a 64-bit kernel will
+trigger nlist errors. Starting from net-snmp 5.4, you can avoid those by using
+
+   ./configure --without-kmem-usage ...
+  
+
+4) IPv6
+
+Starting with net-snmp 5.4 you can enable the UDPIPv6 and TCPIPv6 transports 
+on AIX 5.x. There's no support for the IPv6 MIBs, though, so you'll have to 
+configure like this:
+
+  ./configure --disable-shared --disable-embedded-perl --enable-ipv6 \
+              --with-out-mib-modules="mibII/ipv6"
+
+
+2. Patches
+----------
+
+You may want to have a look for existing AIX patches in our patches tracker
+(http://www.net-snmp.org/patches/). If you can offer patches yourself to 
+improve the AIX support, please submit them there.
+
+
+3. Feedback
+-----------
+
+Please also see README and PORTING.
+
+If you have questions, additional insights or (even better) patches regarding
+net-snmp on AIX, please refer to the net-snmp mailing lists (see
+http://www.net-snmp.org/lists).

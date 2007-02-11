@@ -1,0 +1,392 @@
+#!/bin/sh
+#
+# RUNTESTS [-h]...
+#
+# RETURNS:	Number of failed tests.
+#
+# CALLS: eval_oneprogram.sh [-h][-lk] <program>
+#
+#
+
+#
+# Suggested improvement(s):
+#	Run a given test against a running agent.
+#
+# Variables:  (* = exported)
+#  *SNMP_BASEDIR:  	  the source base directory for tests
+#  *SNMP_UPDIR:  	  directory above where the test binaries live (-D option)
+#  *SNMP_PATH	## yes, PATH is already setup
+#  *SNMP_VERBOSE	## 0=silent, 1=warnings, 2=more
+
+# Usage mess.  (No, it works.)
+#
+
+usage() { 
+    cat << BLIK
+
+Usage: `basename $0` [-a] [-S SLEEPTIME] [-h] [-i] [-v] [-V] [-s] [-XM]
+       [-T TESTNUMS] [-D bindir] [-S seconds] [-P <udp|tcp|udp6|tcp6|unix>]
+
+  -a        run all tests.
+  -T NUMS   run particular tests (command separated list of numbers)
+  -i        run interactively
+  -v        be verbose
+  -V        be very verbose
+  -S TIME   TIME should be used as the timeout when waiting for a
+            response from the agent.
+  -A FLAGS  Extra flags to pass to the agent.
+  -t FLAGS  Extra flags to pass to the trapd.
+  -s        Don't erase the runtime data directory for successful tests
+  -XM       Don't set MIBDIRS environment unless absolutely necessary
+  -x        Turn on SH output debugging for tests.
+  -P TRANS  Specify on which transport domain to run the tests.Default is udp.
+  -p prefix Specify test case prefix. Options are [T|V]. Default is T
+
+BLIK
+    exit 0
+}
+
+trap "exit 1;" 1 2 3 9 13 15 17
+
+SNMP_BASEDIR=`dirname $0`
+SNMP_PREFER_NEAR_MIBS=1	## prefer MIB files found in source hierarchy
+export SNMP_PREFER_NEAR_MIBS
+SNMP_TEST_PREFIX=${SNMP_TEST_PREFIX:=T}
+export SNMP_TEST_PREFIX
+
+### Check for the configuration script.
+##if [ ! -s "${SNMP_BASEDIR}/TESTCONF.sh"  ] ; then 
+##  echo "No TESTCONF.sh in \"$SNMP_BASEDIR\" ; exiting"
+##  exit 0
+##fi
+
+ORIGDIR=`pwd`		## this script may be invoked with relative path
+SNMP_UPDIR=..		## building from the source tree
+interactive=no
+SNMP_VERBOSE=${SNMP_VERBOSE:=0}
+SNMP_SLEEP=${SNMP_SLEEP:=1} 	## default seconds to sleep
+SH_DEBUG=0
+
+while [ -n "$1" ]; do
+    case "$1" in
+	-h)
+	    usage
+	    exit
+	    ;;
+
+	-i)
+	    interactive="yes"
+	    ;;
+	-v)
+	    SNMP_VERBOSE=1
+	    ;;
+	-V)
+	    SNMP_VERBOSE=2
+	    ;;
+	-s)
+	    SNMP_SAVE_TMPDIR="yes"
+	    export SNMP_SAVE_TMPDIR
+	    ;;
+	-D)
+	    shift
+	    SNMP_UPDIR="$1"
+	    ;;
+	-p)
+	    shift
+	    SNMP_TEST_PREFIX="$1"
+	    ;;
+	-P)
+		shift
+		SNMP_TRANSPORT_SPEC="$1"
+		export SNMP_TRANSPORT_SPEC
+		if [ "x$SNMP_TRANSPORT_SPEC" = "xunix" ];then
+			SNMP_SNMPD_PORT="/var/tmp/unixsnmpd"
+			SNMP_SNMPTRAPD_PORT="/var/tmp/unixsnmptrapd"
+			SNMP_TEST_DEST=""
+			export SNMP_SNMPD_PORT
+			export SNMP_SNMPTRAPD_PORT
+			export SNMP_TEST_DEST
+		fi
+		;;
+	-T)
+	    shift
+	    test_nums=`echo $1 | sed 's/,/ /g'`
+	    ;;
+	-a)
+	    test_nums="all"
+	    ;;
+
+	-A)
+	    shift
+	    AGENT_FLAGS="$1"
+	    export AGENT_FLAGS
+	    ;;
+	-S)
+	    shift
+	    SNMP_SLEEP="$1"
+	    ;;
+	-t)
+	    shift
+	    TRAPD_FLAGS="$1"
+	    export TRAPD_FLAGS
+	    ;;
+
+	-x)
+	    SH_DEBUG=1
+	    ;;
+
+	-XM)
+	    SNMP_PREFER_NEAR_MIBS=0
+	    ;;
+
+    esac
+
+    shift
+done
+
+export SNMP_SLEEP
+
+# Make sure MinGW / MSYS users have the kill.exe program to stop the agent and snmptrapd
+if [ "x$OSTYPE" = "xmsys" ]; then
+  kill_command=`which kill.exe`
+  if [ "x$kill_command" = "x" ]; then
+    echo Could not find kill.exe.  Aborting tests
+    echo Kill.exe is available from the Support Tools package availble on the
+    echo Windows 2000 CDROM under SUPPORT\\TOOLS.
+    exit
+  fi
+fi
+
+# Find executables in source first, then build, then existing PATH.
+## Add to PATH if a binary is found.
+
+cd $SNMP_UPDIR
+SNMP_UPDIR=`pwd`
+bf=snmpget
+if [ -x "$bf" ] ; then
+   PATH=$SNMP_UPDIR:$PATH
+else
+  for dd in apps bin ; do
+   bf=$dd/snmpget
+   if [ -x "$bf" ] ; then
+      PATH=$SNMP_UPDIR/$dd:$PATH
+      break
+   fi
+  done
+fi
+for dd in agent bin sbin ; do
+   bf=$dd/snmpd
+   if [ -x "$bf" ] ; then
+      PATH=$SNMP_UPDIR/$dd:$PATH
+      break
+   fi
+done
+
+bf=include/net-snmp/net-snmp-config.h
+if [ ! -s "$bf" ] ; then
+   echo "No \"$bf\" in $SNMP_UPDIR . Some tests will be skipped"
+fi
+unset bf
+
+# Run from the test scripts directory.
+cd $ORIGDIR ; cd ${SNMP_BASEDIR}
+SNMP_BASEDIR=`pwd`
+
+# Setup for the next test run.
+rm -f core tests/core
+
+PATH=${SNMP_BASEDIR}:$PATH
+SNMP_PATH=yes
+
+export PATH
+export SNMP_BASEDIR
+export SNMP_PATH
+export SNMP_UPDIR
+export SNMP_VERBOSE
+
+WHICH=which
+$WHICH $0 > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+    WHICH=type
+fi
+
+for needed in snmpd snmpget snmpgetnext; do
+    $WHICH $needed > /dev/null 2>&1
+    if [ $? -ne 0  ] ; then 
+        echo "No $needed found. Exiting"
+        exit 1
+    fi
+done
+
+#
+# Distinguished expectations.
+#
+if [ $SNMP_VERBOSE -gt 0 ]; then
+    echo ${SNMP_UPDIR}/testing
+    echo path is $PATH
+    echo top of build is $SNMP_UPDIR
+    echo source testing is $SNMP_BASEDIR
+    $WHICH snmpusm
+fi
+
+#
+# Source the testing configuration file
+#
+
+. TESTCONF.sh
+
+# Hack: the above created a directory, now we have to nuke it and
+# forget about it...  All for the convenience of the test writer.
+rm -fR $SNMP_TMPDIR
+unset SNMP_TMPDIR
+export SNMP_TMPDIR
+
+if [ "x$SNMP_PREFER_NEAR_MIBS" = "x0" ]; then
+    # try the compiled MIBDIRS directory first.
+    # if MIB files are not found, fallback to the source base
+
+    snmptranslate -On -IR sysDescr > /dev/null 2>&1
+    if [ $? -ne 0 ] ; then
+        if [ "x$MIBDIRS" = "x" ]; then
+    	MIBDIRS=${SNMP_BASEDIR}/../mibs
+    	export MIBDIRS
+        fi
+    fi
+    snmptranslate -On -IR sysDescr > /dev/null 2>&1
+    if [ $? -ne 0 ] ; then
+        echo "Could not resolve sysDescr in $MIBDIRS. Exiting"
+        exit 1
+    fi
+fi ## SNMP_PREFER_NEAR_MIBS
+
+#
+# Switch to the testing directory, for ease of the client test packages.
+#
+cd ./tests
+
+#------------------------------------ -o- 
+# Globals.
+#
+PROGRAM=
+ARGUMENTS="$*"
+
+TMPFILE=$SNMP_TMPDIR/eval_suite.sh$$
+
+testname=
+
+success_count=0
+failed_count=0
+
+if [ "x$do_tests" = "x" ]; then
+    #
+    # List the tests in question
+    #
+    num=0
+    for testfile in $SNMP_TEST_PREFIX*; do
+	case $testfile in
+	    # Skip backup files, and the like.
+	    *~)     ;;
+	    *.bak)  ;;
+	    *.orig) ;;
+	    *.rej)  ;;
+
+	    # Do the rest
+	    *)
+		num=`expr $num + 1`
+		if [ "x$interactive" != "xyes" -a "x$test_nums" = "x" ]; then
+		    eval_onescript.sh $testfile $num "yes"
+		fi
+		all_tests="$all_tests $num"
+		all_files="$all_files $testfile"
+		;;
+	esac
+    done
+
+    #
+    # TODO: allow user to interactively pick the list of tests to run.
+    #
+
+    if [ "x$interactive" != "xyes" ]; then
+	if [ "x$test_nums" = "x" ]; then
+	    ECHO "Enter test numbers [all]: "
+	    read inp
+	else
+	    if [ "x$test_nums" = "xall" ]; then
+		inp=""
+	    else
+		inp="$test_nums"
+	    fi
+	fi
+	if [ "x$inp" = "x" ]; then
+	    do_tests="$all_files"
+	else
+	    a=1
+	    set $all_files
+	    while [ $a -le $num ]; do
+		if echo " $inp " | grep " $a " > /dev/null; then
+		    do_tests="$do_tests $1"
+		    if [ "x$test_nums" = "x" ] ; then
+			test_nums=$a
+		    fi
+		fi
+		shift
+		a=`expr $a + 1`
+	    done
+	fi
+    fi
+
+    #echo Starting: Running tests $do_tests
+fi
+
+#
+# Run the tests
+#
+if [ "x$test_nums" = "xall" -o "x$test_nums" = "x" ] ; then
+    num=1
+else
+    num="$test_nums"
+fi
+cntr=0
+for testfile in $do_tests; do
+    dothisone="yes"
+    id_x=0
+    for itest in $inp; do
+        if [ "$cntr" = "$id_x" ] ; then
+            num="$itest"
+        fi
+    id_x=`expr $id_x + 1`
+    done
+    if [ "x$interactive" = "xyes" ]; then
+
+        if [ $SH_DEBUG = 1 ] ; then
+	    sh -x "${SNMP_BASEDIR}/eval_onescript.sh" $testfile $num "yes"
+	else
+	    eval_onescript.sh $testfile $num "yes"
+	fi
+
+	ECHO "  Run test #$num (y/n) [y]? "
+	read inp2
+	if [ "x$inp2" = "xn" ]; then
+	    dothisone=no
+	fi
+    fi
+  
+    if [ "x$dothisone" = "xyes" ]; then
+        if [ $SH_DEBUG = 1 ] ; then
+	    sh -x "${SNMP_BASEDIR}/eval_onescript.sh" $testfile $num "no"
+	else
+	    eval_onescript.sh $testfile $num "no"
+	fi
+	if [ $? = 0 ]; then
+	    success_count=`expr $success_count + 1`
+	else
+	    failed_count=`expr $failed_count + 1`
+	fi
+    fi
+    num=`expr $num + 1`
+    cntr=`expr $cntr + 1`
+done
+
+echo Summary: $success_count / `expr $failed_count + $success_count` succeeded.
+
+exit $failed_count
