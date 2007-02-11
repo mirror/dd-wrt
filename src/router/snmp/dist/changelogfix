@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+
+# merely messes with the output of cvs2cl to clean it up a touch.  It is
+# certainly nothing fancy or well written.
+
+while(<>) {
+    s/^\t/   /;
+    if (/^[0-9]/) {
+	if ($yes == 1) {
+	    $stuff =~ s/\n   :/:/;
+	    $stuff =~ s/ :/:/g;
+	    print $stuff;
+	}
+	$yes = 0;
+	$stuff = "";
+    }
+    $yes = 1 if (s/ *\([15]\.[^\)]*\)//g);
+    $stuff .= $_;
+}

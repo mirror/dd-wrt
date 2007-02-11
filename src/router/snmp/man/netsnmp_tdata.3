@@ -1,0 +1,365 @@
+.TH "tdata" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+tdata \- Implement a table with datamatted storage.  
+
+.PP
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fB_netsnmp_tdata_generate_index_oid\fP (\fBnetsnmp_tdata_row\fP *row)"
+.br
+.ti -1c
+.RI "\fBnetsnmp_tdata\fP * \fBnetsnmp_tdata_create_table\fP (const char *name, long flags)"
+.br
+.RI "\fIcreates and returns a 'tdata' table data structure \fP"
+.ti -1c
+.RI "void \fBnetsnmp_tdata_delete_table\fP (\fBnetsnmp_tdata\fP *table)"
+.br
+.RI "\fIcreates and returns a 'tdata' table data structure \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_create_row\fP (void)"
+.br
+.RI "\fIcreates and returns a pointer to new row data structure \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_clone_row\fP (\fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIclones a 'tdata' row. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_tdata_copy_row\fP (\fBnetsnmp_tdata_row\fP *dst_row, \fBnetsnmp_tdata_row\fP *src_row)"
+.br
+.RI "\fIcopy the contents of a 'tdata' row. \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_tdata_delete_row\fP (\fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIdeletes the memory used by the specified row returns the table-specific entry data (that it doesn't know how to delete) \fP"
+.ti -1c
+.RI "int \fBnetsnmp_tdata_add_row\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIAdds a row to the given table (stored in proper lexographical order). \fP"
+.ti -1c
+.RI "void \fBnetsnmp_tdata_replace_row\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *origrow, \fBnetsnmp_tdata_row\fP *newrow)"
+.br
+.RI "\fIswaps out origrow with newrow. \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_remove_row\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIremoves a row from the given table and returns it (no free's called) \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_tdata_remove_and_delete_row\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIremoves and frees a row of the given table and returns the table-specific entry data \fP"
+.ti -1c
+.RI "\fBnetsnmp_mib_handler\fP * \fBnetsnmp_get_tdata_handler\fP (\fBnetsnmp_tdata\fP *table)"
+.br
+.RI "\fICreates a tdata handler and returns it. \fP"
+.ti -1c
+.RI "int \fB_netsnmp_tdata_helper_handler\fP (\fBnetsnmp_mib_handler\fP *handler, \fBnetsnmp_handler_registration\fP *reginfo, \fBnetsnmp_agent_request_info\fP *reqinfo, \fBnetsnmp_request_info\fP *requests)"
+.br
+.ti -1c
+.RI "int \fBnetsnmp_tdata_register\fP (\fBnetsnmp_handler_registration\fP *reginfo, \fBnetsnmp_tdata\fP *table, \fBnetsnmp_table_registration_info\fP *table_info)"
+.br
+.RI "\fIregisters a tdata-based MIB table \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata\fP * \fBnetsnmp_tdata_extract_table\fP (\fBnetsnmp_request_info\fP *request)"
+.br
+.RI "\fIextracts the tdata table from the request structure \fP"
+.ti -1c
+.RI "\fBnetsnmp_container\fP * \fBnetsnmp_tdata_extract_container\fP (\fBnetsnmp_request_info\fP *request)"
+.br
+.RI "\fIextracts the tdata container from the request structure \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_extract_row\fP (\fBnetsnmp_request_info\fP *request)"
+.br
+.RI "\fIextracts the tdata row being accessed from the request structure \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_tdata_extract_entry\fP (\fBnetsnmp_request_info\fP *request)"
+.br
+.RI "\fIextracts the (table-specific) entry being accessed from the request structure \fP"
+.ti -1c
+.RI "NETSNMP_INLINE void \fBnetsnmp_insert_tdata_row\fP (\fBnetsnmp_request_info\fP *request, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIinserts a newly created tdata row into a request \fP"
+.ti -1c
+.RI "void * \fBnetsnmp_tdata_row_entry\fP (\fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIreturns the (table-specific) entry data for a given row \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_first\fP (\fBnetsnmp_tdata\fP *table)"
+.br
+.RI "\fIreturns the first row in the table \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_get\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIfinds a row in the 'tdata' table given another row \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_next\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_tdata_row\fP *row)"
+.br
+.RI "\fIreturns the next row in the table \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_get_byidx\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.RI "\fIfinds a row in the 'tdata' table given the index values \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_get_byoid\fP (\fBnetsnmp_tdata\fP *table, oid *searchfor, size_t searchfor_len)"
+.br
+.RI "\fIfinds a row in the 'tdata' table given the index OID \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_next_byidx\fP (\fBnetsnmp_tdata\fP *table, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.RI "\fIfinds the lexically next row in the 'tdata' table given the index values \fP"
+.ti -1c
+.RI "\fBnetsnmp_tdata_row\fP * \fBnetsnmp_tdata_row_next_byoid\fP (\fBnetsnmp_tdata\fP *table, oid *searchfor, size_t searchfor_len)"
+.br
+.RI "\fIfinds the lexically next row in the 'tdata' table given the index OID \fP"
+.ti -1c
+.RI "int \fBnetsnmp_tdata_row_count\fP (\fBnetsnmp_tdata\fP *table)"
+.br
+.ti -1c
+.RI "int \fBnetsnmp_tdata_compare_idx\fP (\fBnetsnmp_tdata_row\fP *row, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.RI "\fIcompare a row with the given index values \fP"
+.ti -1c
+.RI "int \fBnetsnmp_tdata_compare_oid\fP (\fBnetsnmp_tdata_row\fP *row, oid *compareto, size_t compareto_len)"
+.br
+.RI "\fIcompare a row with the given index OID \fP"
+.ti -1c
+.RI "int \fBnetsnmp_tdata_compare_subtree_idx\fP (\fBnetsnmp_tdata_row\fP *row, \fBnetsnmp_variable_list\fP *indexes)"
+.br
+.ti -1c
+.RI "int \fBnetsnmp_tdata_compare_subtree_oid\fP (\fBnetsnmp_tdata_row\fP *row, oid *compareto, size_t compareto_len)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBNetsnmp_Node_Handler\fP \fB_netsnmp_tdata_helper_handler\fP"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Implement a table with datamatted storage. 
+.PP
+This helper helps you implement a table where all the rows are expected to be stored within the agent itself and not in some external storage location. It can be used to store a list of rows, where a row consists of the indexes to the table and a generic data pointer. You can then implement a subhandler which is passed the exact row definition and data it must return data for or accept data for. Complex GETNEXT handling is greatly simplified in this case. 
+.SH "Function Documentation"
+.PP 
+.SS "\fBnetsnmp_mib_handler\fP* netsnmp_get_tdata_handler (\fBnetsnmp_tdata\fP * table)"
+.PP
+Creates a tdata handler and returns it. 
+.PP
+Definition at line 284 of file table_tdata.c.
+.PP
+References _netsnmp_tdata_helper_handler, netsnmp_mib_handler_s::flags, MIB_HANDLER_AUTO_NEXT, netsnmp_mib_handler_s::myvoid, netsnmp_create_handler(), NULL, and snmp_log().
+.PP
+Referenced by netsnmp_tdata_register().
+.SS "NETSNMP_INLINE void netsnmp_insert_tdata_row (\fBnetsnmp_request_info\fP * request, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+inserts a newly created tdata row into a request 
+.PP
+Definition at line 399 of file table_tdata.c.
+.PP
+References netsnmp_container_table_row_insert().
+.SS "int netsnmp_tdata_add_row (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+Adds a row to the given table (stored in proper lexographical order). 
+.PP
+returns SNMPERR_SUCCESS on successful addition. or SNMPERR_GENERR on failure (E.G., indexes already existed) 
+.PP
+Definition at line 186 of file table_tdata.c.
+.PP
+References _netsnmp_tdata_generate_index_oid(), netsnmp_tdata_s::container, netsnmp_tdata_s::flags, netsnmp_tdata_row_s::indexes, netsnmp_tdata_s::name, NULL, netsnmp_tdata_row_s::oid_index, netsnmp_index_s::oids, snmp_free_varbind(), and snmp_log().
+.PP
+Referenced by netsnmp_tdata_replace_row().
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_clone_row (\fBnetsnmp_tdata_row\fP * row)"
+.PP
+clones a 'tdata' row. 
+.PP
+DOES NOT CLONE THE TABLE-SPECIFIC ENTRY DATA. 
+.PP
+Definition at line 92 of file table_tdata.c.
+.PP
+References memdup(), NULL, snmp_clone_varbind(), SNMP_FREE, and snmp_free_varbind().
+.SS "int netsnmp_tdata_compare_idx (\fBnetsnmp_tdata_row\fP * row, \fBnetsnmp_variable_list\fP * indexes)"
+.PP
+compare a row with the given index values 
+.PP
+Definition at line 518 of file table_tdata.c.
+.PP
+References build_oid_noalloc(), netsnmp_tdata_compare_oid(), and NULL.
+.SS "int netsnmp_tdata_compare_oid (\fBnetsnmp_tdata_row\fP * row, oid * compareto, size_t compareto_len)"
+.PP
+compare a row with the given index OID 
+.PP
+Definition at line 531 of file table_tdata.c.
+.PP
+References netsnmp_index_s::len, netsnmp_index_s::oids, and snmp_oid_compare().
+.PP
+Referenced by netsnmp_tdata_compare_idx().
+.SS "int netsnmp_tdata_copy_row (\fBnetsnmp_tdata_row\fP * dst_row, \fBnetsnmp_tdata_row\fP * src_row)"
+.PP
+copy the contents of a 'tdata' row. 
+.PP
+DOES NOT COPY THE TABLE-SPECIFIC ENTRY DATA. 
+.PP
+Definition at line 129 of file table_tdata.c.
+.PP
+References memdup(), and snmp_clone_varbind().
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_create_row (void)"
+.PP
+creates and returns a pointer to new row data structure 
+.PP
+Definition at line 84 of file table_tdata.c.
+.PP
+References SNMP_MALLOC_TYPEDEF.
+.SS "\fBnetsnmp_tdata\fP* netsnmp_tdata_create_table (const char * name, long flags)"
+.PP
+creates and returns a 'tdata' table data structure 
+.PP
+Definition at line 54 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_tdata_s::name, NULL, and SNMP_MALLOC_TYPEDEF.
+.SS "void* netsnmp_tdata_delete_row (\fBnetsnmp_tdata_row\fP * row)"
+.PP
+deletes the memory used by the specified row returns the table-specific entry data (that it doesn't know how to delete) 
+.PP
+Definition at line 157 of file table_tdata.c.
+.PP
+References netsnmp_tdata_row_s::data, netsnmp_tdata_row_s::indexes, NULL, netsnmp_tdata_row_s::oid_index, netsnmp_index_s::oids, SNMP_FREE, and snmp_free_varbind().
+.PP
+Referenced by netsnmp_tdata_remove_and_delete_row().
+.SS "void netsnmp_tdata_delete_table (\fBnetsnmp_tdata\fP * table)"
+.PP
+creates and returns a 'tdata' table data structure 
+.PP
+Definition at line 68 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_tdata_s::name, and SNMP_FREE.
+.SS "\fBnetsnmp_container\fP* netsnmp_tdata_extract_container (\fBnetsnmp_request_info\fP * request)"
+.PP
+extracts the tdata container from the request structure 
+.PP
+Definition at line 370 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_request_get_list_data(), and NULL.
+.SS "void* netsnmp_tdata_extract_entry (\fBnetsnmp_request_info\fP * request)"
+.PP
+extracts the (table-specific) entry being accessed from the request structure 
+.PP
+Definition at line 387 of file table_tdata.c.
+.PP
+References netsnmp_tdata_row_s::data, netsnmp_tdata_extract_row(), and NULL.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_extract_row (\fBnetsnmp_request_info\fP * request)"
+.PP
+extracts the tdata row being accessed from the request structure 
+.PP
+Definition at line 379 of file table_tdata.c.
+.PP
+References netsnmp_container_table_row_extract().
+.PP
+Referenced by netsnmp_tdata_extract_entry().
+.SS "\fBnetsnmp_tdata\fP* netsnmp_tdata_extract_table (\fBnetsnmp_request_info\fP * request)"
+.PP
+extracts the tdata table from the request structure 
+.PP
+Definition at line 362 of file table_tdata.c.
+.PP
+References netsnmp_request_get_list_data().
+.SS "int netsnmp_tdata_register (\fBnetsnmp_handler_registration\fP * reginfo, \fBnetsnmp_tdata\fP * table, \fBnetsnmp_table_registration_info\fP * table_info)"
+.PP
+registers a tdata-based MIB table 
+.PP
+Definition at line 351 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_container_table_register(), netsnmp_get_tdata_handler(), and netsnmp_inject_handler().
+.SS "void* netsnmp_tdata_remove_and_delete_row (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+removes and frees a row of the given table and returns the table-specific entry data 
+.PP
+returns the void * pointer on successful deletion. or NULL on failure (bad arguments) 
+.PP
+Definition at line 260 of file table_tdata.c.
+.PP
+References netsnmp_tdata_delete_row(), netsnmp_tdata_remove_row(), and NULL.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_remove_row (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+removes a row from the given table and returns it (no free's called) 
+.PP
+returns the row pointer itself on successful removing. or NULL on failure (bad arguments) 
+.PP
+Definition at line 242 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, and NULL.
+.PP
+Referenced by netsnmp_tdata_remove_and_delete_row(), and netsnmp_tdata_replace_row().
+.SS "void netsnmp_tdata_replace_row (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * origrow, \fBnetsnmp_tdata_row\fP * newrow)"
+.PP
+swaps out origrow with newrow. 
+.PP
+This does *not* delete/free anything! 
+.PP
+Definition at line 227 of file table_tdata.c.
+.PP
+References netsnmp_tdata_add_row(), and netsnmp_tdata_remove_row().
+.SS "void* netsnmp_tdata_row_entry (\fBnetsnmp_tdata_row\fP * row)"
+.PP
+returns the (table-specific) entry data for a given row 
+.PP
+Definition at line 414 of file table_tdata.c.
+.PP
+References netsnmp_tdata_row_s::data, and NULL.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_first (\fBnetsnmp_tdata\fP * table)"
+.PP
+returns the first row in the table 
+.PP
+Definition at line 424 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_get (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+finds a row in the 'tdata' table given another row 
+.PP
+Definition at line 431 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_get_byidx (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_variable_list\fP * indexes)"
+.PP
+finds a row in the 'tdata' table given the index values 
+.PP
+Definition at line 447 of file table_tdata.c.
+.PP
+References build_oid_noalloc(), netsnmp_tdata_row_get_byoid(), and NULL.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_get_byoid (\fBnetsnmp_tdata\fP * table, oid * searchfor, size_t searchfor_len)"
+.PP
+finds a row in the 'tdata' table given the index OID 
+.PP
+Definition at line 460 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_index_s::len, NULL, and netsnmp_index_s::oids.
+.PP
+Referenced by netsnmp_tdata_row_get_byidx().
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_next (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_tdata_row\fP * row)"
+.PP
+returns the next row in the table 
+.PP
+Definition at line 439 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_next_byidx (\fBnetsnmp_tdata\fP * table, \fBnetsnmp_variable_list\fP * indexes)"
+.PP
+finds the lexically next row in the 'tdata' table given the index values 
+.PP
+Definition at line 475 of file table_tdata.c.
+.PP
+References build_oid_noalloc(), netsnmp_tdata_row_next_byoid(), and NULL.
+.SS "\fBnetsnmp_tdata_row\fP* netsnmp_tdata_row_next_byoid (\fBnetsnmp_tdata\fP * table, oid * searchfor, size_t searchfor_len)"
+.PP
+finds the lexically next row in the 'tdata' table given the index OID 
+.PP
+Definition at line 489 of file table_tdata.c.
+.PP
+References netsnmp_tdata_s::container, netsnmp_index_s::len, NULL, and netsnmp_index_s::oids.
+.PP
+Referenced by netsnmp_tdata_row_next_byidx().

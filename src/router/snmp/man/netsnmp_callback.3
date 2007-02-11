@@ -1,0 +1,219 @@
+.TH "A generic callback mechanism" 3 "24 Nov 2006" "Version 5.4" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+A generic callback mechanism \- 
+.SS "Defines"
+
+.in +1c
+.ti -1c
+.RI "#define \fBCALLBACK_NAME_LOGGING\fP   1"
+.br
+.ti -1c
+.RI "#define \fBLOCK_PER_CALLBACK_SUBID\fP   1"
+.br
+.ti -1c
+.RI "#define \fBCALLBACK_LOCK\fP(maj, min)   ++_locks[major][minor]"
+.br
+.ti -1c
+.RI "#define \fBCALLBACK_UNLOCK\fP(maj, min)   --_locks[major][minor]"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "NETSNMP_STATIC_INLINE int \fB_callback_lock\fP (int major, int minor, const char *warn, int assert)"
+.br
+.ti -1c
+.RI "NETSNMP_STATIC_INLINE void \fB_callback_unlock\fP (int major, int minor)"
+.br
+.ti -1c
+.RI "void \fBinit_callbacks\fP (void)"
+.br
+.ti -1c
+.RI "int \fBsnmp_register_callback\fP (int major, int minor, SNMPCallback *new_callback, void *arg)"
+.br
+.RI "\fIThis function registers a generic callback function. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_register_callback\fP (int major, int minor, SNMPCallback *new_callback, void *arg, int priority)"
+.br
+.ti -1c
+.RI "int \fBsnmp_call_callbacks\fP (int major, int minor, void *caller_arg)"
+.br
+.RI "\fIThis function calls the callback function for each registered callback of type major and minor. \fP"
+.ti -1c
+.RI "int \fBsnmp_count_callbacks\fP (int major, int minor)"
+.br
+.ti -1c
+.RI "int \fBsnmp_callback_available\fP (int major, int minor)"
+.br
+.ti -1c
+.RI "int \fBsnmp_unregister_callback\fP (int major, int minor, SNMPCallback *target, void *arg, int matchargs)"
+.br
+.RI "\fIThis function unregisters a specified callback function given a major and minor type. \fP"
+.ti -1c
+.RI "int \fBnetsnmp_callback_clear_client_arg\fP (void *ptr, int i, int j)"
+.br
+.RI "\fIfind and clear client args that match ptr \fP"
+.ti -1c
+.RI "void \fBclear_callback\fP (void)"
+.br
+.ti -1c
+.RI "\fBsnmp_gen_callback\fP * \fBsnmp_callback_list\fP (int major, int minor)"
+.br
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int netsnmp_callback_clear_client_arg (void * ptr, int i, int j)"
+.PP
+find and clear client args that match ptr 
+.PP
+\fBParameters:\fP
+.RS 4
+\fIptr\fP pointer to search for 
+.br
+\fIi\fP callback id to start at 
+.br
+\fIj\fP callback subid to start at 
+.RE
+.PP
+
+.PP
+Definition at line 456 of file callback.c.
+.PP
+References NULL, snmp_gen_callback::sc_callback, and snmp_gen_callback::sc_client_arg.
+.PP
+Referenced by clear_callback().
+.SS "int snmp_call_callbacks (int major, int minor, void * caller_arg)"
+.PP
+This function calls the callback function for each registered callback of type major and minor. 
+.PP
+\fBParameters:\fP
+.RS 4
+\fImajor\fP is the SNMP callback major type used
+.br
+\fIminor\fP is the SNMP callback minor type used
+.br
+\fIcaller_arg\fP is a void pointer which is sent in as the callback's serverarg parameter, if needed.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Returns SNMPERR_GENERR if major is >= MAX_CALLBACK_IDS or minor is >= MAX_CALLBACK_SUBIDS, otherwise SNMPERR_SUCCESS is returned.
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsnmp_register_callback\fP 
+.PP
+\fBsnmp_unregister_callback\fP 
+.RE
+.PP
+
+.PP
+Definition at line 280 of file callback.c.
+.PP
+References _callback_lock(), init_callbacks(), snmp_gen_callback::next, NULL, snmp_gen_callback::sc_callback, and snmp_gen_callback::sc_client_arg.
+.PP
+Referenced by add_trap_session(), check_access(), in_a_view(), log_handler_callback(), netsnmp_acm_check_subtree(), read_configs(), read_premib_configs(), snmp_shutdown(), and snmp_store().
+.SS "int snmp_register_callback (int major, int minor, SNMPCallback * new_callback, void * arg)"
+.PP
+This function registers a generic callback function. 
+.PP
+The major and minor values are used to set the new_callback function into a global static multi-dimensional array of type struct \fBsnmp_gen_callback\fP. The function makes sure to append this callback function at the end of the link list, snmp_gen_callback->next.
+.PP
+\fBParameters:\fP
+.RS 4
+\fImajor\fP is the SNMP callback major type used
+.IP "\(bu" 2
+SNMP_CALLBACK_LIBRARY
+.PP
+.RE
+.PP
+.IP "\(bu" 2
+SNMP_CALLBACK_APPLICATION
+.PP
+.PP
+\fBParameters:\fP
+.RS 4
+\fIminor\fP is the SNMP callback minor type used
+.IP "\(bu" 2
+SNMP_CALLBACK_POST_READ_CONFIG
+.IP "\(bu" 2
+SNMP_CALLBACK_STORE_DATA
+.IP "\(bu" 2
+SNMP_CALLBACK_SHUTDOWN
+.IP "\(bu" 2
+SNMP_CALLBACK_POST_PREMIB_READ_CONFIG
+.IP "\(bu" 2
+SNMP_CALLBACK_LOGGING
+.IP "\(bu" 2
+SNMP_CALLBACK_SESSION_INIT
+.PP
+.br
+\fInew_callback\fP is the callback function that is registered.
+.br
+\fIarg\fP when not NULL is a void pointer used whenever new_callback function is exercised.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Returns SNMPERR_GENERR if major is >= MAX_CALLBACK_IDS or minor is >= MAX_CALLBACK_SUBIDS or a \fBsnmp_gen_callback\fP pointer could not be allocated, otherwise SNMPERR_SUCCESS is returned.
+.IP "\(bu" 2
+#define MAX_CALLBACK_IDS 2
+.IP "\(bu" 2
+#define MAX_CALLBACK_SUBIDS 16
+.PP
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsnmp_call_callbacks\fP 
+.PP
+\fBsnmp_unregister_callback\fP 
+.RE
+.PP
+
+.PP
+Definition at line 212 of file callback.c.
+.PP
+References netsnmp_register_callback().
+.PP
+Referenced by init_snmp_alarm(), netsnmp_init_handler_conf(), and netsnmp_register_save_list().
+.SS "int snmp_unregister_callback (int major, int minor, SNMPCallback * target, void * arg, int matchargs)"
+.PP
+This function unregisters a specified callback function given a major and minor type. 
+.PP
+Note: no bound checking on major and minor.
+.PP
+\fBParameters:\fP
+.RS 4
+\fImajor\fP is the SNMP callback major type used
+.br
+\fIminor\fP is the SNMP callback minor type used
+.br
+\fItarget\fP is the callback function that will be unregistered.
+.br
+\fIarg\fP is a void pointer used for comparison against the registered callback's sc_client_arg variable.
+.br
+\fImatchargs\fP is an integer used to bypass the comparison of arg and the callback's sc_client_arg variable only when matchargs is set to 0.
+.RE
+.PP
+\fBReturns:\fP
+.RS 4
+Returns the number of callbacks that were unregistered.
+.RE
+.PP
+\fBSee also:\fP
+.RS 4
+\fBsnmp_register_callback\fP 
+.PP
+\fBsnmp_call_callbacks\fP
+.RE
+.PP
+set cleanup flag? 
+.PP
+Definition at line 400 of file callback.c.
+.PP
+References _callback_lock(), _callback_unlock(), init_callbacks(), snmp_gen_callback::next, NULL, snmp_gen_callback::sc_callback, snmp_gen_callback::sc_client_arg, and SNMP_FREE.
