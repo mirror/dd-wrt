@@ -1,0 +1,14 @@
+diff -urN linux-2.6.19.old/arch/mips/kernel/head.S linux-2.6.19.dev/arch/mips/kernel/head.S
+--- linux-2.6.19.old/arch/mips/kernel/head.S	2006-11-29 22:57:37.000000000 +0100
++++ linux-2.6.19.dev/arch/mips/kernel/head.S	2006-12-14 03:13:33.000000000 +0100
+@@ -129,6 +129,10 @@
+ #endif
+ 	.endm
+ 
++
++	j kernel_entry
++	nop
++
+ 	/*
+ 	 * Reserved space for exception handlers.
+ 	 * Necessary for machines which link their kernels at KSEG0.
