@@ -41,13 +41,13 @@ static struct platform_device *ar5312_devs[5];
 
 static struct resource ar5312_eth0_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth0_membase",
 		.flags = IORESOURCE_MEM,
 		.start = KSEG1ADDR(AR531X_ENET0),
 		.end = KSEG1ADDR(AR531X_ENET0 + 0x2000),
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth0_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR531X_IRQ_ENET0_INTRS,
 		.end = AR531X_IRQ_ENET0_INTRS,
@@ -57,13 +57,13 @@ static struct resource ar5312_eth0_res[] = {
 
 static struct resource ar5312_eth1_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth1_membase",
 		.flags = IORESOURCE_MEM,
 		.start = KSEG1ADDR(AR531X_ENET1),
 		.end = KSEG1ADDR(AR531X_ENET1 + 0x2000),
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth1_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR531X_IRQ_ENET1_INTRS,
 		.end = AR531X_IRQ_ENET1_INTRS,
@@ -90,14 +90,14 @@ static struct ar531x_eth ar5312_eth1_data = {
 static struct platform_device ar5312_eth[] = {
 	{
 		.id = 0,
-		.name = "ar531x-eth",
+		.name = "ar531x-eth0",
 		.dev.platform_data = &ar5312_eth0_data,
 		.resource = ar5312_eth0_res,
 		.num_resources = ARRAY_SIZE(ar5312_eth0_res)
 	},
 	{
 		.id = 1,
-		.name = "ar531x-eth",
+		.name = "ar531x-eth1",
 		.dev.platform_data = &ar5312_eth1_data,
 		.resource = ar5312_eth1_res,
 		.num_resources = ARRAY_SIZE(ar5312_eth1_res)
