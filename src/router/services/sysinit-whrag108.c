@@ -87,24 +87,25 @@ void setupSwitch(void)
     {
       return;
     }
+//  setRegister(s,0x02,0xa0);
   
 //Enable 8021Q (80) and IGMP snooping (40)
-  setRegister(s,0x05,0xa0);
+  //setRegister(s,0x05,0xa0);
 //vlan1: valid,5,2,1 port fid=1 vid=1 
-  setRegister(s,0x76,0x21);
-  setRegister(s,0x77,0x10);
-  setRegister(s,0x78,0x01);
+ // setRegister(s,0x76,0x21);
+ // setRegister(s,0x77,0x10);
+ // setRegister(s,0x78,0x01);
 //write (04) and trigger address 0
-  setRegister(s,0x6E,0x04);
-  setRegister(s,0x6F,0x00);
+ // setRegister(s,0x6E,0x04);
+ // setRegister(s,0x6F,0x00);
 //vlan2: valid,5,4,3 port fid=2 vid=2 
-  setRegister(s,0x76,0x3E);
-  setRegister(s,0x77,0x20);
-  setRegister(s,0x78,0x02);
+ // setRegister(s,0x76,0x3E);
+ // setRegister(s,0x77,0x20);
+ // setRegister(s,0x78,0x02);
 
 //write (04) and trigger address 0
-  setRegister(s,0x6E,0x04);
-  setRegister(s,0x6F,0x01);
+//  setRegister(s,0x6E,0x04);
+//  setRegister(s,0x6F,0x01);
   
 //config port 1,2 to VLAN id 1
   setRegister(s,0x14,0x01);
@@ -123,7 +124,7 @@ void setupSwitch(void)
   setRegister(s,0x52,0x46);    
 
 //for IGMP, disenable special tagging
-  setRegister(s,0x0b,0x01);
+//  setRegister(s,0x0b,0x01);
 //enable vlan tag insertion por 5
 //  setRegister(s,0x50,0x04);
 //  setRegister(s,0x52,0x06);
