@@ -192,6 +192,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	struct resource *res;
 	int version_disp;
 	char name[64] ;
+
 	if (probed)
 	    return -ENODEV;
 	probed++;
@@ -212,7 +213,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	sp->dev = dev;
 	cfg = pdev->dev.platform_data;
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "eth_membase");
+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "eth0_membase");
 	if (!res)
 		return -ENODEV;
 	
@@ -224,7 +225,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 	ar_int_phy_mask = cfg->reset_phy;
 	sp->phy = cfg->phy;
 
-	dev->irq = platform_get_irq_byname(pdev, "eth_irq");
+	dev->irq = platform_get_irq_byname(pdev, "eth0_irq");
 
 	spin_lock_init(&sp->lock);
 
@@ -259,7 +260,7 @@ int __init ar2313_probe(struct platform_device *pdev)
 
 #if 0
 	request_region(PHYSADDR(ar_eth_base), ETHERNET_SIZE*ETHERNET_MACS,
-	               "AR2313ENET");
+	               "AR2313ENET0");
 #endif
 
 	sp->eth_regs = ioremap_nocache(PHYSADDR(ar_eth_base), sizeof(*sp->eth_regs));
@@ -1530,7 +1531,7 @@ armiiread(short phy, short reg)
   ethernet->mii_addr = ((reg << MII_ADDR_REG_SHIFT) |
 	                    (phy << MII_ADDR_PHY_SHIFT));
   while (ethernet->mii_addr & MII_ADDR_BUSY);
-  return (ethernet->mii_data >> MII_DATA_SHIFT);
+  return ethernet->mii_data & 0xffff;
 }
 
 static void
@@ -1539,10 +1540,10 @@ armiiwrite(short phy, short reg, short data)
   volatile ETHERNET_STRUCT * ethernet;
 
   ethernet = (volatile ETHERNET_STRUCT *)(ar_eth_base); /* always MAC 0 */
-  while (ethernet->mii_addr & MII_ADDR_BUSY);
-  ethernet->mii_data = data << MII_DATA_SHIFT;
+  ethernet->mii_data = data;// << MII_DATA_SHIFT;
   ethernet->mii_addr = ((reg << MII_ADDR_REG_SHIFT) |
 	                    (phy << MII_ADDR_PHY_SHIFT) |
 	                    MII_ADDR_WRITE);
+  while (ethernet->mii_addr & MII_ADDR_BUSY);
 }
 

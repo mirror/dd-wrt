@@ -218,3 +218,4 @@ obj-$(CONFIG_NETCONSOLE) += netconsole.o
 
 obj-$(CONFIG_FS_ENET) += fs_enet/
 obj-$(CONFIG_AR2313) += ar2313/
+obj-$(CONFIG_AR2313) += ar2313_2/
