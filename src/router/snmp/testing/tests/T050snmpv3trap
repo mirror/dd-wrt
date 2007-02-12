@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. ../eval_tools.sh
+
+HEADER SNMPv3 traps received and sent by tools
+
+#
+# Begin test
+#
+
+CONFIGTRAPD createUser -e 0x001122 testuser MD5 TESTPASSPHRASE
+
+STARTTRAPD
+
+CAPTURE "snmptrap -e 0x001122 -d -v 3 -u testuser -a MD5 -A TESTPASSPHRASE -l anp udp:localhost:$SNMP_SNMPTRAPD_PORT 0 .1.3.6.1.6.3.1.1.5.1 system.sysContact.0 s blah"
+
+STOPTRAPD
+
+CHECKTRAPD "coldStart"
+
+FINISHED

@@ -1,0 +1,337 @@
+#!/bin/sh
+
+# this shell script is designed to merely dump the configuration
+# information about how the net-snmp package was compiled.  The
+# information is particularily useful for applications that need to
+# link against the net-snmp libraries and hence must know about any
+# other libraries that must be linked in as well.
+
+NSC_BASE_AGENT_LIBS="-lnetsnmpagent -lnetsnmpmibs -lnetsnmphelpers -lnetsnmp"
+
+if test "x$1" = "x"; then
+  usage="yes"
+else
+  exec_prefix=@exec_prefix@
+  prefix=@exec_prefix@
+  case $1 in
+    --debug-tokens)
+      echo "find NET-SNMP-SOURCE-DIR -name \"*.c\" -print | xargs grep DEBUGMSGT | grep \\\" | cut -f 2 -d\\\" | sort -u"
+      ;;
+    --indent-options)
+      echo "indent -orig -nbc -bap -nut -nfca `(cd NET-SNMP-INCLUDE-DIR; perl -n -e 'print "-T $1 " if (/}\s*(netsnmp_\w+)\s*;/);' */*.h)`"
+      ;;
+    --configure-options)
+      echo @CONFIGURE_OPTIONS@
+      ;;
+    --snmpd-module-list)
+      echo @MODULE_LIST@
+      ;;
+    --base-cflags)
+      echo @CFLAGS@ @CPPFLAGS@ -I@includedir@
+      ;;
+    --cflags)
+      echo @CFLAGS@ @DEVFLAGS@ @CPPFLAGS@ -I. -I@includedir@
+      ;;
+    --agent-libs)
+      # use this one == --netsnmp-agent-libs + --external-libs
+      echo @LDFLAGS@ -L@libdir@ $NSC_BASE_AGENT_LIBS @AGENTLIBS@ @WRAPLIBS@
+      ;;
+    --libs)
+      # use this one == --netsnmp-libs + --external-libs
+      echo @LDFLAGS@ -L@libdir@ -lnetsnmp @LIBS@
+      ;;
+    --external-libs)
+      echo @LDFLAGS@ @LIBS@
+      ;;
+    --external-agent-libs)
+      echo @LDFLAGS@ @AGENTLIBS@ @WRAPLIBS@
+      ;;
+    --netsnmp-libs)
+      echo -L@libdir@ -lnetsnmp
+      ;;
+    --netsnmp-agent-libs)
+      echo -L@libdir@ $NSC_BASE_AGENT_LIBS
+      ;;
+    --version)
+      echo @VERSION@
+      ;;
+    --help)
+      usage="yes"
+      ;;
+    --prefix)
+      echo @prefix@
+      ;;
+    --exec-prefix)
+      echo @exec_prefix@
+      ;;
+    --create-snmpv3-user)
+      if @PSCMD@ | egrep ' snmpd *$' > /dev/null 2>&1 ; then
+         echo "Apparently at least one snmpd demon is already running."
+         echo "You must stop them in order to use this command."
+         exit 1
+      fi
+
+      Aalgorithm="MD5"
+      Xalgorithm="DES"
+      token=rwuser
+      shift
+      arg=$1
+      shift
+      while test "x$done" = "x" -a "x$arg" != "x" ; do
+	case $arg in
+	    -A)
+		Aalgorithm=$1
+		shift
+		;;
+	    -X)
+		Xalgorithm=$1
+		shift
+		;;
+	    -a)
+		apassphrase=$1
+		shift
+		;;
+	    -x)
+		xpassphrase=$1
+		shift
+		;;
+	    -ro)
+	        token="rouser"
+		;;
+ 	    -*)
+		echo "unknown suboption to --create-snmpv3-user: $arg"
+		exit 1
+		;;
+	    *)
+	        done=1
+		;;
+	esac
+	if test "x$done" = "x" ; then
+          arg=$1
+          shift
+	fi
+      done
+      
+      user=$arg
+      if test "x$user" = "x" ; then
+          prompt=yes
+	  echo "Enter a SNMPv3 user name to create: "
+	  read user
+      fi
+      if test "x$user" = "x" ; then
+          echo "You must specify a user name"
+	  exit 1
+      fi
+
+      if test "x$apassphrase" = "x" ; then
+          prompt=yes
+	  echo "Enter authentication pass-phrase: "
+	  read apassphrase
+      else
+	  shift
+      fi
+      if test "x$apassphrase" = "x" ; then
+          echo "You must specify an authentication pass-phrase"
+	  exit 1
+      fi
+
+      if test "x$prompt" = "xyes" -a "x$xpassphrase" = "x" ; then
+	  echo "Enter encryption pass-phrase: "
+	  echo "  [press return to reuse the authentication pass-phrase]"
+	  read xpassphrase
+      fi
+
+      outfile="@PERSISTENT_DIRECTORY@/snmpd.conf"
+      line="createUser $user $Aalgorithm \"$apassphrase\" $Xalgorithm $xpassphrase"
+      echo "adding the following line to $outfile:"
+      echo "  " $line
+      echo $line >> $outfile
+
+      outfile="@datadir@/snmp/snmpd.conf"
+      line="$token $user"
+      echo "adding the following line to $outfile:"
+      echo "  " $line
+      echo $line >> $outfile
+      ;;
+
+    --compile-subagent)
+      shift
+      outname=$1
+      shift
+      if test $1 = "--norm" ; then
+        norm=1
+	shift
+      fi
+      if test $1 = "--cflags" ; then
+        shift
+	cflags=$1
+	echo "setting extra cflags: $cflags"
+	shift
+      fi
+      if test $1 = "--ldflags" ; then
+        shift
+	ldflags=$1
+	echo "setting extra ldflags: $ldflags"
+	shift
+      fi
+      tmpfile=netsnmptmp.$$.c
+      if test -f $tmpfile; then
+	echo "Ack.  Can't create $tmpfile: already exists"
+	exit 1
+      fi
+      echo "generating the tmporary code file: $tmpfile"
+      rm -f $tmp
+      cat > $tmpfile <<EOF
+/* generated from net-snmp-config */
+#include <net-snmp/net-snmp-config.h>
+#ifdef HAVE_SIGNAL_H
+#include <signal.h>
+#endif /* HAVE_SIGNAL_H */
+#include <net-snmp/net-snmp-includes.h>
+#include <net-snmp/agent/net-snmp-agent-includes.h>
+EOF
+
+    # add include files
+    while test "$1" != ""; do
+      cfiles="$cfiles $1"
+      name=`basename $1 | sed 's/\.[co]$/.h/'`
+      if test -f $name.h; then
+        if grep "init_$name" $name; then
+          echo "  #include\"$name\"" >> $tmpfile
+        fi
+      fi
+      shift
+    done
+
+      cat >> $tmpfile <<EOF
+static int keep_running;
+
+RETSIGTYPE
+stop_server(int a) {
+    keep_running = 0;
+}
+
+int
+main (int argc, char **argv) {
+  /* print log errors to stderr */
+  snmp_enable_stderrlog();
+ /* we are a subagent */
+  netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
+
+  /* initialize the agent library */
+  init_agent("$outname");
+
+  /* initialize your mib code here */
+EOF
+
+    # add init routines
+    for i in $cfiles ; do
+      name=`basename $i | sed 's/\.[co]$//'`
+      echo checking for init_$name in $i
+      if grep "init_$name" $i ; then
+        echo "  init_${name}();" >> $tmpfile
+      fi
+      shift
+    done
+
+    # finish file
+    cat >> $tmpfile <<EOF
+
+  /* ustMain will be used to read ustMain.conf files. */
+  init_snmp("$outname");
+
+  /* In case we recevie a request to stop (kill -TERM or kill -INT) */
+  keep_running = 1;
+#ifdef SIGTERM
+  signal(SIGTERM, stop_server);
+#endif
+#ifdef SIGINT
+  signal(SIGINT, stop_server);
+#endif
+
+  /* main loop here... */
+  while(keep_running) {
+    agent_check_and_process(1);
+  }
+
+  /* at shutdown time */
+  snmp_shutdown("$outname");
+  exit(0);
+}
+
+EOF
+      if test "$?" != 0 -o ! -f "$tmpfile" ; then
+        echo "Ack.  Can't create $tmpfile."
+	exit 1
+      fi
+      prefix=@prefix@
+      cmd="@CC@ $cflags @CFLAGS@ @DEVFLAGS@ -I. -I@includedir@ -o $outname $tmpfile $cfiles @LDFLAGS@ -L@exec_prefix@/lib -lnetsnmpagent -lnetsnmphelpers -lnetsnmpmibs -lnetsnmp @AGENTLIBS@ $ldflags"
+      echo "running: $cmd"
+      `$cmd`
+      if test "x$norm" != "x1" ; then
+        echo "removing the tmporary code file: $tmpfile"
+        rm -f $tmpfile
+      else
+        echo "leaving the tmporary code file: $tmpfile"
+      fi
+      if test -f $outname ; then
+        echo "subagent program $outname created"
+      fi
+      ;;
+
+    *)
+      echo "unknown option $1"
+      usage="yes"
+      ;;
+  esac
+fi
+
+if test "x$usage" = "xyes"; then
+  echo ""
+  echo "Usage:"
+  echo "  net-snmp-config [--cflags] [--agent-libs] [--libs] [--version]"
+  echo "                  ... [see below for complete flag list]"
+  echo ""
+  echo "    --version         displays the net-snmp version number"
+  echo "    --indent-options  displays the indent options from the Coding Style"
+  echo "    --debug-tokens    displays a example command line to search to source"
+  echo "                      code for a list of available debug tokens"
+  echo ""
+  echo "  SNMP Setup commands:"
+  echo ""
+  echo "    --create-snmpv3-user [-ro] [-a authpass] [-x privpass] [-X DES]"
+  echo "                         [-A MD5|SHA] [username]"
+  echo ""
+  echo "  These options produce the various compilation flags needed when"
+  echo "  building external SNMP applications:"
+  echo ""
+  echo "    --base-cflags     lists additional compilation flags needed"
+  echo "                      for external applications (excludes -I. and"
+  echo "                      extra developer warning flags, if any)"
+  echo "    --cflags          lists additional compilation flags needed"
+  echo "    --libs            lists libraries needed for building applications"
+  echo "    --agent-libs      lists libraries needed for building subagents"
+  echo ""
+  echo "    --netsnmp-libs        lists netsnmp specific libraries"
+  echo "    --external-libs       lists libraries needed by netsnmp libs"
+  echo "    --netsnmp-agent-libs  lists netsnmp specific agent libraries"
+  echo "    --external-agent-libs lists libraries needed by netsnmp libs"
+  echo ""
+  echo "  Automatted subagent building (produces an OUTPUTNAME binary file):"
+  echo "  [this feature has not been tested very well yet.  use at your risk.]"
+  echo ""
+  echo "    --compile-subagent OUTPUTNAME [--norm] [--cflags flags]"
+  echo "                                  [--ldflags flags] mibmodule1.c [...]]"
+  echo ""
+  echo "         --norm           leave the generated .c file around to read."
+  echo "         --cflags flags   extra cflags to use (e.g. -I...)."
+  echo "         --ldflags flags  extra ld flags to use (e.g. -L... -l...)."
+  echo ""
+  echo "  Details on how the net-nsmp package was compiled:"
+  echo ""
+  echo "    --configure-options   Display original configure arguments"
+  echo "    --snmpd-module-list   Display the modules compiled into the agent"
+  echo "    --prefix              Display the installation prefix"
+  echo ""
+  exit
+fi  

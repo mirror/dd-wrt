@@ -1,0 +1,92 @@
+
+README testing/
+===============
+
+All tests may be run using the following:
+
+	% eval_suite.sh -l
+
+This runs all the registered tests and reports whether they passed, or not.
+Some information is given about the nature of test failures (if they occur).
+
+
+Tests need to be written so that the string "FAILED" is associated with
+failed sections, and "SUCCESS" with proper closure of a section or
+function.  The number of SUCCESSes to check for during evaluation is
+given in the eval_testlist file.
+
+If a test has no FAILEDs and and the proper number of SUCCESSes, it is
+considered to have PASSED.  If a test has any FAILEDs or does not achieve
+the proper number of SUCCESSes, some diagnostic info it output to help
+determine what happened.
+
+The test templates for C and Bourne Shell code are T.c and T.sh.  They
+provide an example of how a test should be instrumented to fit into this
+scheme.
+
+
+See also the help output of:
+
+	% eval_suite.sh -h
+	% eval_oneprogram.sh -h
+
+For a description of the format of "eval_testlist" and what one gets by
+running with the verbose switches set.
+
+
+
+		#		#		#		#
+
+
+FILE LISTING
+============
+
+Test suite control scripts
+--------------------------
+eval_oneprogram.sh	Runs a single program taken from eval_testlist.
+
+eval_suite.sh		Runs all programs in evel_testlist and verifies
+				the number of SUCCESSes and FAILUREs
+				for each to judge the health of the test.
+
+eval_testlist		List of current tests.  ADD NEW TESTS HERE.
+
+
+
+C tests
+-------
+etimetest.c		Test of LCD EngineID and Time List.
+keymanagetest.c		Test for key management functions.
+misctest.c		Miscellaneous tests: currently, dump_snmpEngineID().
+scapitest.c		Test for SCAPI functions.
+
+
+
+Script tests
+------------
+test_keychange.sh	Test KeyChange TC against a gold standard.
+test_kul.sh		Test other key manipulation functions against
+				gold standard.
+
+
+
+Data files  ("Gold standards")
+------------------------------
+	Data files for pre-existing tests.
+	Syntax of the name is: "data.<test_sub_name>-<modifier_for_each_part>"
+
+data.keychange-md5
+data.keychange-sha1
+data.keychange-sha1-des
+data.kul-md5
+data.kul-sha1		
+
+
+
+Test templates and tools environment
+------------------------------------
+test_tools.sh		Standard environment to include in script tests.
+T.c
+T.sh			Templates for future C and sh tests.
+
+

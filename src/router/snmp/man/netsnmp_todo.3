@@ -1,0 +1,13 @@
+.TH "todo" 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+todo \- Todo List
+.IP "Global \fBcheck_acm\fP(netsnmp_agent_session *asp, u_char type) " 1c
+ make this be more intelligent about ranges. Right now we merely take the highest level commonality of a registration range and use that. At times we might be able to be smarter about checking the range itself as opposed to the node above where the range exists, but I doubt this will come up all that frequently.
+.PP
+.IP "Global \fBnetsnmp_table_get_or_create_row_stash\fP(netsnmp_agent_request_info *reqinfo, const u_char *storage_name) " 1c
+ This function will likely change to add free pointer functions.
+.PP
+.IP "Global \fBnetsnmp_register_auto_data_table\fP(netsnmp_table_data_set *table_set, char *registration_name) " 1c
+ create a properly free'ing registeration pointer for the datalist, and get the datalist freed at shutdown.  
