@@ -88,7 +88,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 #endif
     write_argv[3] = NULL;
   }
-#ifdef HAVE_FONERA
+#if defined(HAVE_FONERA) || defined(WHRAG108)
   if (url)
     return eval ("write", url, "rootfs");
 

@@ -85,8 +85,8 @@ start_stabridge (void)
 #elif HAVE_FONERA
       filterarp ("eth0");
 #elif HAVE_WHRAG108
-      filterarp ("eth0.1");
-      filterarp ("eth0.2");
+      filterarp ("eth0");
+      filterarp ("eth1");
 #elif HAVE_X86
       filterarp ("eth0");
       filterarp ("eth1");
@@ -127,7 +127,7 @@ start_stabridge (void)
 #elif HAVE_FONERA
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0");
 #elif HAVE_WHRAG108
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0.1","eth0.2");
+      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0","eth1");
 #elif HAVE_GATEWORX
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "ixp0",
 	    "ixp1");
