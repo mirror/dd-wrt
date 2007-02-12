@@ -674,8 +674,8 @@ stop_wshaper (void)
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_WHRAG108
-  ret = eval (script_name, "stop", "XX", "eth0.1");
-  ret = eval (script_name, "stop", "XX", "eth0.2");
+  ret = eval (script_name, "stop", "XX", "eth0");
+  ret = eval (script_name, "stop", "XX", "eth1");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_X86
   ret = eval (script_name, "stop", "XX", "eth0");
