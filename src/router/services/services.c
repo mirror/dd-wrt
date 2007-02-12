@@ -3607,6 +3607,7 @@ start_rstats (void)
 
 #ifdef HAVE_NSTX
 
+void
 stop_nstxd (void)
 {
   if (pidof ("nstxd") > 0)
@@ -3801,8 +3802,8 @@ brctl_main (int argc, char **argv)
 int
 br_add_bridge (const char *brname)
 {
-  return eval ("/usr/sbin/brctl", "addbr", brname);
   syslog (LOG_INFO, "bridge added successfully\n");
+  return eval ("/usr/sbin/brctl", "addbr", brname);
 }
 
 int
@@ -3810,8 +3811,8 @@ br_del_bridge (const char *brname)
 {
   if (!ifexists (brname))
     return -1;
-  return eval ("/usr/sbin/brctl", "delbr", brname);
   syslog (LOG_INFO, "bridge deleted successfully\n");
+  return eval ("/usr/sbin/brctl", "delbr", brname);
 }
 
 int
@@ -3819,8 +3820,8 @@ br_add_interface (const char *br, const char *dev)
 {
   if (!ifexists (dev))
     return -1;
-  return eval ("/usr/sbin/brctl", "addif", br, dev);
   syslog (LOG_INFO, "interface added successfully\n");
+  return eval ("/usr/sbin/brctl", "addif", br, dev);
 }
 
 int
@@ -3828,8 +3829,8 @@ br_del_interface (const char *br, const char *dev)
 {
   if (!ifexists (dev))
     return -1;
-  return eval ("/usr/sbin/brctl", "delif", br, dev);
   syslog (LOG_INFO, "interface deleted successfully\n");
+  return eval ("/usr/sbin/brctl", "delif", br, dev);
 }
 
 int
@@ -3839,13 +3840,13 @@ br_set_stp_state (const char *br, int stp_state)
     return -1;
   if (stp_state)
     {
-      return eval ("/usr/sbin/brctl", "stp", br, "on");
       syslog (LOG_INFO, "stp is set to on\n");
+      return eval ("/usr/sbin/brctl", "stp", br, "on");
     }
   else
     {
-      return eval ("/usr/sbin/brctl", "stp", br, "off");
       syslog (LOG_INFO, "stp is set to off\n");
+      return eval ("/usr/sbin/brctl", "stp", br, "off");
     }
 }
 #endif
