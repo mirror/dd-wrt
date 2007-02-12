@@ -480,7 +480,7 @@ flush_interfaces (void)
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_WHRAG108
-  snprintf (all_ifnames, 255, "%s %s %s", "eth0.1",
+  snprintf (all_ifnames, 255, "%s %s %s", "eth1",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #else
   snprintf (all_ifnames, 255, "%s %s %s", "ixp0",

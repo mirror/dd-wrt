@@ -720,16 +720,16 @@ start_lan (void)
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "eth0.1 eth0.2 ath0 ath1");
+      nvram_set ("lan_ifnames", "eth0 eth1 ath0 ath1");
       nvram_set ("wan_ifname", "");
       nvram_set ("wan_ifnames", "");
     }
   else
     {
       nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "eth0.2 ath0 ath1");
-      nvram_set ("wan_ifname", "eth0.1");
-      nvram_set ("wan_ifnames", "eth0.1");
+      nvram_set ("lan_ifnames", "eth0 ath0 ath1");
+      nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wan_ifnames", "eth1");
     }
 
 
@@ -1722,7 +1722,7 @@ start_wan (int status)
 #elif HAVE_WHRAG108
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0.1";
+    nvram_safe_get ("pppoe_wan_ifname") : "eth1";
 #elif HAVE_X86
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
