@@ -1087,6 +1087,34 @@ setMacFilter (char *iface)
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
+static void adjust_regulatory(int count)
+{
+  char dev[10];
+  char wif[10];
+  char turbo[16];
+  sprintf (wif, "wifi%d", count);
+  sprintf (turbo, "%s_turbo", dev);
+  sprintf (dev, "ath%d", count);
+//  if (count == 0)
+    {
+      long tb = atol (nvram_safe_get (turbo));
+      setsysctrl (wif, "turbo", tb);
+      long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+      if (default_match ("ath_specialmode", "1", "0"))
+	{
+	  setsysctrl (wif, "regulatory", 0);
+	  setsysctrl (wif, "setregdomain", 0x49);
+	}
+      else
+	{
+	  setsysctrl (wif, "regulatory", regulatory);
+	  setsysctrl (wif, "setregdomain", 0);
+	}
+    }
+
+
+}
+
 static void
 configure_single (int count, int isbond)
 {
@@ -1113,22 +1141,6 @@ configure_single (int count, int isbond)
   sprintf (wif, "wifi%d", count);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
-//  if (count == 0)
-    {
-      long tb = atol (nvram_safe_get (turbo));
-      setsysctrl (wif, "turbo", tb);
-      long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-      if (default_match ("ath_specialmode", "1", "0"))
-	{
-	  setsysctrl (wif, "regulatory", 0);
-	  setsysctrl (wif, "setregdomain", 0x49);
-	}
-      else
-	{
-	  setsysctrl (wif, "regulatory", regulatory);
-	  setsysctrl (wif, "setregdomain", 0);
-	}
-    }
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
@@ -1465,6 +1477,9 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
   int i;
   int changed = 0;
 
+  for (i = 0; i < c; i++)
+    adjust_regulatory(i);
+    
   for (i = 0; i < c; i++)
     {
 #ifdef REGDOMAIN_OVERRIDE
