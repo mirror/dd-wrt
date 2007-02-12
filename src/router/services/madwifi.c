@@ -1113,7 +1113,7 @@ configure_single (int count, int isbond)
   sprintf (wif, "wifi%d", count);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
-  if (count == 0)
+//  if (count == 0)
     {
       long tb = atol (nvram_safe_get (turbo));
       setsysctrl (wif, "turbo", tb);
