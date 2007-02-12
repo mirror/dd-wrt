@@ -1,0 +1,235 @@
+NET-SNMP-AGENT-MIB DEFINITIONS ::= BEGIN
+
+--
+-- Defines control and monitoring structures for the Net-SNMP agent.
+--
+
+IMPORTS
+    netSnmpObjects, netSnmpModuleIDs, netSnmpNotifications, netSnmpGroups
+	FROM NET-SNMP-MIB
+
+    OBJECT-TYPE, NOTIFICATION-TYPE, MODULE-IDENTITY, Integer32
+        FROM SNMPv2-SMI
+
+    OBJECT-GROUP, NOTIFICATION-GROUP
+	FROM SNMPv2-CONF
+
+    DisplayString FROM SNMPv2-TC;
+
+
+netSnmpAgentMIB MODULE-IDENTITY
+    LAST-UPDATED "200202090000Z"
+    ORGANIZATION "www.net-snmp.org"
+    CONTACT-INFO    
+	 "postal:   Wes Hardaker
+                    P.O. Box 382
+                    Davis CA  95617
+
+          email:    net-snmp-coders@lists.sourceforge.net"
+    DESCRIPTION
+	 "Defines control and monitoring structures for the Net-SNMP agent."
+    REVISION     "200202090000Z"
+    DESCRIPTION
+	"First revision."
+    ::= { netSnmpModuleIDs 2 }
+
+
+nsVersion              OBJECT IDENTIFIER ::= {netSnmpObjects 1}
+nsMibRegistry          OBJECT IDENTIFIER ::= {netSnmpObjects 2}
+nsExtensions           OBJECT IDENTIFIER ::= {netSnmpObjects 3}
+nsDLMod                OBJECT IDENTIFIER ::= {netSnmpObjects 4}
+nsCache                OBJECT IDENTIFIER ::= {netSnmpObjects 5}
+nsErrorHistory         OBJECT IDENTIFIER ::= {netSnmpObjects 6}
+nsConfiguration        OBJECT IDENTIFIER ::= {netSnmpObjects 7}
+nsTransactions         OBJECT IDENTIFIER ::= {netSnmpObjects 8}
+
+--
+--  Monitoring outstanding "transactions"
+--    (i.e. requests sent to AgentX subagents, or proxied agents)
+--
+
+nsTransactionTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF NsTransactionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"Lists currently outstanding transactions in the net-snmp agent.
+	 This includes requests to AgentX subagents, or proxied SNMP agents."
+    ::= { nsTransactions 1 }
+
+nsTransactionEntry OBJECT-TYPE
+    SYNTAX      NsTransactionEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A row describing a given transaction."
+    INDEX   { nsTransactionID }
+    ::= {nsTransactionTable 1 }
+
+NsTransactionEntry ::= SEQUENCE {
+    nsTransactionID   INTEGER,
+    nsTransactionMode Integer32
+}
+
+nsTransactionID OBJECT-TYPE
+    SYNTAX      INTEGER (0..4294967295)
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The internal identifier for a given transaction."
+    ::= { nsTransactionEntry 1 }
+
+nsTransactionMode OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+	"The mode number for the current operation being performed."
+    ::= { nsTransactionEntry 2 }
+
+
+--
+--  Monitoring the MIB modules currently registered in the agent
+--    (an updated version of UCD-SNMP-MIB::mrTable)
+--
+
+nsModuleTable OBJECT-TYPE
+    SYNTAX	SEQUENCE OF NsModuleEntry
+    MAX-ACCESS	not-accessible
+    STATUS	current
+    DESCRIPTION
+	"A table displaying all the oid's registered by mib modules in
+	 the agent.  Since the agent is modular in nature, this lists
+	 each module's OID it is responsible for and the name of the module"
+    ::= { nsMibRegistry 1 }
+
+nsModuleEntry OBJECT-TYPE
+    SYNTAX	NsModuleEntry
+    MAX-ACCESS	not-accessible
+    STATUS	current
+    DESCRIPTION
+        "An entry containing a registered mib oid."
+    INDEX       { nsmContextName, nsmRegistrationPoint, 
+                  nsmRegistrationPriority }
+    ::= { nsModuleTable 1 }
+
+NsModuleEntry ::= SEQUENCE {
+    nsmContextName          OCTET STRING,
+    nsmRegistrationPoint    OBJECT IDENTIFIER,
+    nsmRegistrationPriority INTEGER,
+    nsModuleName	    DisplayString,
+    nsModuleModes           BITS,
+    nsModuleTimeout         Integer32
+}
+
+nsmContextName OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The context name the module is registered under."
+    ::= { nsModuleEntry 1 }
+
+nsmRegistrationPoint OBJECT-TYPE
+    SYNTAX	OBJECT IDENTIFIER
+    MAX-ACCESS	not-accessible
+    STATUS	current
+    DESCRIPTION
+	"The registry OID of a mib module."
+    ::= { nsModuleEntry  2 }
+
+nsmRegistrationPriority OBJECT-TYPE
+    SYNTAX	INTEGER
+    MAX-ACCESS	not-accessible
+    STATUS	current
+    DESCRIPTION
+	"The priority of the registered mib module."
+    ::= { nsModuleEntry  3 }
+
+nsModuleName OBJECT-TYPE
+    SYNTAX	DisplayString
+    MAX-ACCESS	read-only
+    STATUS	current
+    DESCRIPTION
+	"The module name that registered this OID."
+    ::= { nsModuleEntry  4 }
+
+nsModuleModes OBJECT-TYPE
+    SYNTAX	BITS { getAndGetNext(0), set(1), getBulk(2) }
+    MAX-ACCESS	read-only
+    STATUS	current
+    DESCRIPTION
+	"The modes that the particular lower level handler can cope
+  	 with directly."
+    ::= { nsModuleEntry  5 }
+
+nsModuleTimeout OBJECT-TYPE
+    SYNTAX	Integer32
+    MAX-ACCESS	read-only
+    STATUS	current
+    DESCRIPTION
+	"The registered timeout.  This is only meaningful for handlers
+	 that expect to return results at a later date (subagents,
+	 etc)"
+    ::= { nsModuleEntry  6 }
+
+
+--
+--  Notifications relating to the basic operation of the agent
+--
+
+nsNotifyStart        NOTIFICATION-TYPE
+    STATUS	current
+    DESCRIPTION
+	"An indication that the agent has started running."
+    ::= { netSnmpNotifications 1 }
+    
+nsNotifyShutdown     NOTIFICATION-TYPE
+    STATUS current
+    DESCRIPTION
+	"An indication that the agent is in the process of being shut down."
+    ::= { netSnmpNotifications 2 }
+
+nsNotifyRestart      NOTIFICATION-TYPE
+    STATUS	current
+    DESCRIPTION
+	"An indication that the agent has been restarted.
+	 This does not imply anything about whether the configuration has
+	 changed or not (unlike the standard coldStart or warmStart traps)"
+    ::= { netSnmpNotifications 3 }
+    
+
+--
+-- Conformance-related definitions
+--
+
+nsModuleGroup  OBJECT-GROUP
+    OBJECTS {
+        nsmContextName, nsmRegistrationPoint, nsmRegistrationPriority,
+        nsModuleName, nsModuleModes, nsModuleTimeout
+    }
+    STATUS	current
+    DESCRIPTION
+	"The objects relating to the list of MIB modules registered
+	 with the Net-SNMP agent."
+    ::= { netSnmpGroups 2 }
+
+nsTransctionGroup  OBJECT-GROUP
+    OBJECTS {
+        nsTransactionID, nsTransactionMode
+    }
+    STATUS	current
+    DESCRIPTION
+	"The objects relating to transaction monitoring in the Net-SNMP agent."
+    ::= { netSnmpGroups 8 }
+
+nsAgentNotifyGroup NOTIFICATION-GROUP
+    NOTIFICATIONS { nsNotifyStart, nsNotifyShutdown, nsNotifyRestart }
+    STATUS	current
+    DESCRIPTION
+	"The notifications relating to the basic operation of the Net-SNMP agent."
+    ::= { netSnmpGroups 9 }
+
+    
+
+END

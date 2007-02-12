@@ -1,0 +1,135 @@
+#
+# Makefile for snmpd
+#
+
+top_builddir	= ..
+
+#
+# what to install
+#
+SUBDIRS=helpers mibgroup
+
+INSTALLSBINPROGS= snmpd$(EXEEXT)
+INSTALLLIBS	= libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION) \
+		libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION)
+
+INCLUDESUBDIR=agent
+INCLUDESUBDIRHEADERS=agent_read_config.h \
+	agent_registry.h \
+	agent_index.h \
+	agent_trap.h \
+	auto_nlist.h \
+	ds_agent.h \
+	snmp_agent.h \
+	snmp_vars.h \
+	var_struct.h \
+	agent_handler.h \
+	net-snmp-agent-includes.h \
+	agent_callbacks.h
+
+INSTALLBUILTSUBDIRHEADERS=../include/net-snmp/agent/mib_module_config.h \
+			mibgroup/mib_module_includes.h
+INSTALLBUILTSUBDIR=agent
+
+OTHERINSTALL=@EMBEDPERLINSTALL@
+
+# XXX: need to install these  They're really UCD specific, however.
+BROKEINSTALL= \
+	mib_modules.h \
+	mibgroup/struct.h \
+	mibgroup/util_funcs.h \
+	mibgroup/mibincl.h \
+	mibgroup/header_complex.h
+
+INSTALLUCDHEADERS= \
+	agent_index.h	\
+	agent_read_config.h \
+	agent_registry.h \
+	agent_trap.h	\
+	auto_nlist.h	\
+	ds_agent.h	\
+	header_complex.h \
+	mibincl.h	\
+	snmp_agent.h	\
+	ucd-snmp-includes.h	\
+	ucd-snmp-agent-includes.h \
+	util_funcs.h	\
+	var_struct.h
+
+#
+# how to build it info
+#
+USELIBS		= ../snmplib/libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
+HELPERLIB	= helpers/libnetsnmphelpers.$(LIB_EXTENSION)$(LIB_VERSION)
+LOCAL_LIBS	= 
+LIBS		= ../snmplib/libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION) @AGENTLIBS@
+WRAPLIBS	= @WRAPLIBS@
+OUR_AGENT_LIBS	= $(INSTALLLIBS) $(HELPERLIB) $(WRAPLIBS) $(LIBS) @DLLIBS@
+CPPFLAGS	= -I../include -I$(top_srcdir)/include \
+		  -I.. -I$(srcdir)/.. -I$(srcdir)/../snmplib \
+		  -I$(srcdir) -I. -I$(srcdir)/mibgroup -Imibgroup @CPPFLAGS@
+
+#
+# Objects
+#
+
+# libnetsnmpmib objects.
+LMIBOBJS	= @mibgroup_list_lo@ mib_modules.lo auto_nlist.lo
+MIBOBJS		= @mibgroup_list_o@ mib_modules.o auto_nlist.o
+
+# libnetsnmpagent objects
+LIBAGENTOBJS=snmp_agent.o snmp_vars.o agent_read_config.o agent_registry.o \
+	agent_index.o agent_trap.o kernel.o  agent_handler.o \
+	@OTHERAGENTLIBOBJS@
+LLIBAGENTOBJS=snmp_agent.lo snmp_vars.lo agent_read_config.lo agent_registry.lo\
+	agent_index.lo agent_trap.lo kernel.lo agent_handler.lo \
+	@OTHERAGENTLIBLOBJS@
+
+# The agent objects.
+AGENTOBJS=snmpd.o
+LAGENTOBJS=snmpd.lo
+
+#
+# Define OBJS and LOBJS for clean target (just this directory)
+#
+OBJS		= $(LIBAGENTOBJS)  $(AGENTOBJS)  mib_modules.o  auto_nlist.o
+LOBJS		= $(LLIBAGENTOBJS) $(LAGENTOBJS) mib_modules.lo auto_nlist.lo
+
+
+all: standardall
+
+#
+# build stuff targets
+#
+getkstat: getkstat.o
+	$(CC) $(CFLAGS) -o $@ $? $(LOCAL_LIBS) $(LIBS)
+
+getkstat.o: mibgroup/kernel_sunos5.c
+	$(CC) $(CFLAGS) -o $@ -D_GETKSTAT_TEST -DDODEBUG -c $? 
+
+getmibstat: getmibstat.o
+	$(CC) $(CFLAGS) -o $@ $? $(LOCAL_LIBS) $(LIBS)
+
+getmibstat.o: mibgroup/kernel_sunos5.c
+	$(CC) $(CFLAGS) -o $@ -D_GETMIBSTAT_TEST -DDODEBUG -c $? 
+
+snmpd$(EXEEXT):	${LAGENTOBJS} $(USELIBS) $(HELPERLIB) $(LIBTARG) ${INSTALLLIBS}
+	$(LINK) $(CFLAGS) -o $@ ${LAGENTOBJS} $(LOCAL_LIBS) ${LDFLAGS} ${OUR_AGENT_LIBS}
+
+
+libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION):    ${LLIBAGENTOBJS} libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION)
+	$(LIB_LD_CMD) libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION) ${LLIBAGENTOBJS}  $(LIB_LD_LIBS)
+	$(RANLIB) libnetsnmpagent.$(LIB_EXTENSION)$(LIB_VERSION)
+
+libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION):    ${LMIBOBJS}
+	$(LIB_LD_CMD) libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION) ${LMIBOBJS}  $(LIB_LD_LIBS)
+	$(RANLIB) libnetsnmpmibs.$(LIB_EXTENSION)$(LIB_VERSION)
+
+embedperlinstall:
+	  @$(SHELL) $(srcdir)/../mkinstalldirs $(snmplibdir)
+	  @$(INSTALL) $(srcdir)/snmp_perl.pl $(snmplibdir)/snmp_perl.pl
+	  @echo "install:  installed $$i in $(snmplibdir)"
+
+snmp_vars.lo: @module_list_h@
+read_config.lo: @module_list_h@
+mib_modules.lo: mibgroup/mib_module_inits.h

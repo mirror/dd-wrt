@@ -1,0 +1,6 @@
+.TH "table_iterator: The table iterator helper is designed to simplify the task of writing a table handler for the net-snmp agent when the data being accessed is not in an oid sorted form and must be accessed externally." 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+table_iterator: The table iterator helper is designed to simplify the task of writing a table handler for the net-snmp agent when the data being accessed is not in an oid sorted form and must be accessed externally. \- Functionally, it is a specialized version of the more generic table helper but easies the burden of GETNEXT processing by manually looping through all the data indexes retrieved through function calls which should be supplied by the module that wishes help. 
+More...The module the table_iterator helps should, afterwards, never be called for the case of 'MODE_GETNEXT' and only for the GET and SET related modes instead. 

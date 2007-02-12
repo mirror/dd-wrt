@@ -1,0 +1,263 @@
+.TH "table_data: Helps you implement a table with datamatted storage." 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+table_data: Helps you implement a table with datamatted storage. \- This helper helps you implement a table where all the indexes are expected to be stored within the agent itself and not in some external storage location. 
+More...
+.SS "Modules"
+
+.in +1c
+.ti -1c
+.RI "\fBtable_dataset: Helps you implement a table with automatted storage.\fP"
+.br
+.RI "\fIThis handler helps you implement a table where all the data is expected to be stored within the agent itself and not in some external storage location.\fP"
+.PP
+
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBnetsnmp_table_data_generate_index_oid\fP (netsnmp_table_row *row)"
+.br
+.RI "\fIgenerates the index portion of an table oid from a varlist.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_table_data_add_row\fP (netsnmp_table_data *table, netsnmp_table_row *row)"
+.br
+.RI "\fIAdds a row of data to a given table (stored in proper lexographical order).\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_table_data_remove_row\fP (netsnmp_table_data *table, netsnmp_table_row *row)"
+.br
+.RI "\fIremoves a row of data to a given table and returns it (no free's called)\fP"
+.ti -1c
+.RI "void * \fBnetsnmp_table_data_delete_row\fP (netsnmp_table_row *row)"
+.br
+.RI "\fIdeletes a row's memory.\fP"
+.ti -1c
+.RI "void * \fBnetsnmp_table_data_remove_and_delete_row\fP (netsnmp_table_data *table, netsnmp_table_row *row)"
+.br
+.RI "\fIremoves and frees a row of data to a given table and returns the void *\fP"
+.ti -1c
+.RI "NETSNMP_INLINE void \fBnetsnmp_table_data_replace_row\fP (netsnmp_table_data *table, netsnmp_table_row *origrow, netsnmp_table_row *newrow)"
+.br
+.RI "\fIswaps out origrow with newrow.\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_table_data_get\fP (netsnmp_table_data *table, netsnmp_variable_list *indexes)"
+.br
+.RI "\fIfinds the data in 'datalist' stored at 'indexes'\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_table_data_get_from_oid\fP (netsnmp_table_data *table, oid *searchfor, size_t searchfor_len)"
+.br
+.RI "\fIfinds the data in 'datalist' stored at the searchfor oid\fP"
+.ti -1c
+.RI "netsnmp_mib_handler * \fBnetsnmp_get_table_data_handler\fP (netsnmp_table_data *table)"
+.br
+.RI "\fICreates a table_data handler and returns it.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_register_table_data\fP (netsnmp_handler_registration *reginfo, netsnmp_table_data *table, netsnmp_table_registration_info *table_info)"
+.br
+.RI "\fIregisters a handler as a data table.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_register_read_only_table_data\fP (netsnmp_handler_registration *reginfo, netsnmp_table_data *table, netsnmp_table_registration_info *table_info)"
+.br
+.RI "\fIregisters a handler as a read-only data table If table_info != NULL, it registers it as a normal table too.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_table_data_helper_handler\fP (netsnmp_mib_handler *handler, netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *requests)"
+.br
+.RI "\fIThe helper handler that takes care of passing a specific row of data down to the lower handler(s).\fP"
+.ti -1c
+.RI "netsnmp_table_data * \fBnetsnmp_create_table_data\fP (const char *name)"
+.br
+.RI "\fIcreates and returns a pointer to table data set\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_create_table_data_row\fP (void)"
+.br
+.RI "\fIcreates and returns a pointer to table data set\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_extract_table_row\fP (netsnmp_request_info *request)"
+.br
+.RI "\fIextracts the row being accessed passed from the table_data helper\fP"
+.ti -1c
+.RI "void * \fBnetsnmp_extract_table_row_data\fP (netsnmp_request_info *request)"
+.br
+.RI "\fIextracts the data from the row being accessed passed from the table_data helper\fP"
+.ti -1c
+.RI "int \fBnetsnmp_table_data_build_result\fP (netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *request, netsnmp_table_row *row, int column, u_char type, u_char *result_data, size_t result_data_len)"
+.br
+.RI "\fIbuilds a result given a row, a varbind to set and the data\fP"
+.ti -1c
+.RI "netsnmp_table_row * \fBnetsnmp_table_data_clone_row\fP (netsnmp_table_row *row)"
+.br
+.RI "\fIclones a data row.\fP"
+.in -1c
+.SH "DETAILED DESCRIPTION"
+.PP 
+This helper helps you implement a table where all the indexes are expected to be stored within the agent itself and not in some external storage location.
+.PP
+It can be used to store a list of rows, where a row consists of the indexes to the table and a generic data pointer. You can then implement a subhandler which is passed the exact row definition and data it must return data for or accept data for. Complex GETNEXT handling is greatly simplified in this case. 
+.SH "FUNCTION DOCUMENTATION"
+.PP 
+.SS "netsnmp_table_data* netsnmp_create_table_data (const char * name)"
+.PP
+creates and returns a pointer to table data set
+.PP
+Definition at line 525 of file table_data.c.
+.PP
+Referenced by netsnmp_create_table_data_set().
+.SS "netsnmp_table_row* netsnmp_create_table_data_row (void)"
+.PP
+creates and returns a pointer to table data set
+.PP
+\fBExamples: \fP
+.in +1c
+\fBdata_set.c\fP.
+.PP
+Definition at line 535 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_set_create_row_from_defaults().
+.SS "netsnmp_table_row* netsnmp_extract_table_row (netsnmp_request_info * request)"
+.PP
+extracts the row being accessed passed from the table_data helper
+.PP
+Definition at line 543 of file table_data.c.
+.PP
+References netsnmp_request_get_list_data().
+.PP
+Referenced by netsnmp_extract_table_row_data(), and netsnmp_table_data_set_helper_handler().
+.SS "void* netsnmp_extract_table_row_data (netsnmp_request_info * request)"
+.PP
+extracts the data from the row being accessed passed from the table_data helper
+.PP
+Definition at line 552 of file table_data.c.
+.PP
+References netsnmp_extract_table_row().
+.PP
+Referenced by netsnmp_extract_table_data_set_column().
+.SS "netsnmp_mib_handler* netsnmp_get_table_data_handler (netsnmp_table_data * table)"
+.PP
+Creates a table_data handler and returns it.
+.PP
+Definition at line 236 of file table_data.c.
+.PP
+References netsnmp_create_handler(), and netsnmp_table_data_helper_handler().
+.PP
+Referenced by netsnmp_register_table_data().
+.SS "int netsnmp_register_read_only_table_data (netsnmp_handler_registration * reginfo, netsnmp_table_data * table, netsnmp_table_registration_info * table_info)"
+.PP
+registers a handler as a read-only data table If table_info != NULL, it registers it as a normal table too.
+.PP
+Definition at line 269 of file table_data.c.
+.PP
+References netsnmp_get_read_only_handler(), netsnmp_inject_handler(), and netsnmp_register_table_data().
+.SS "int netsnmp_register_table_data (netsnmp_handler_registration * reginfo, netsnmp_table_data * table, netsnmp_table_registration_info * table_info)"
+.PP
+registers a handler as a data table.
+.PP
+If table_info != NULL, it registers it as a normal table too. 
+.PP
+Definition at line 258 of file table_data.c.
+.PP
+References netsnmp_get_table_data_handler(), netsnmp_inject_handler(), and netsnmp_register_table().
+.PP
+Referenced by netsnmp_register_read_only_table_data(), and netsnmp_register_table_data_set().
+.SS "int netsnmp_table_data_add_row (netsnmp_table_data * table, netsnmp_table_row * row)"
+.PP
+Adds a row of data to a given table (stored in proper lexographical order).
+.PP
+returns SNMPERR_SUCCESS on successful addition. or SNMPERR_GENERR on failure (E.G., indexes already existed) 
+.PP
+Definition at line 51 of file table_data.c.
+.PP
+References netsnmp_table_data_generate_index_oid(), and snmp_oid_compare().
+.PP
+Referenced by netsnmp_table_data_replace_row(), and netsnmp_table_dataset_add_row().
+.SS "int netsnmp_table_data_build_result (netsnmp_handler_registration * reginfo, netsnmp_agent_request_info * reqinfo, netsnmp_request_info * request, netsnmp_table_row * row, int column, u_char type, u_char * result_data, size_t result_data_len)"
+.PP
+builds a result given a row, a varbind to set and the data
+.PP
+Definition at line 564 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_helper_handler(), and netsnmp_table_data_set_helper_handler().
+.SS "netsnmp_table_row* netsnmp_table_data_clone_row (netsnmp_table_row * row)"
+.PP
+clones a data row.
+.PP
+DOES NOT CLONE THE CONTAINED DATA. 
+.PP
+Definition at line 598 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_set_clone_row().
+.SS "void* netsnmp_table_data_delete_row (netsnmp_table_row * row)"
+.PP
+deletes a row's memory.
+.PP
+returns the void data that it doesn't know how to delete. 
+.PP
+Definition at line 150 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_remove_and_delete_row(), and netsnmp_table_dataset_delete_row().
+.SS "void netsnmp_table_data_generate_index_oid (netsnmp_table_row * row)"
+.PP
+generates the index portion of an table oid from a varlist.
+.PP
+Definition at line 39 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_add_row().
+.SS "netsnmp_table_row* netsnmp_table_data_get (netsnmp_table_data * table, netsnmp_variable_list * indexes)"
+.PP
+finds the data in 'datalist' stored at 'indexes'
+.PP
+Definition at line 204 of file table_data.c.
+.PP
+References netsnmp_table_data_get_from_oid().
+.SS "netsnmp_table_row* netsnmp_table_data_get_from_oid (netsnmp_table_data * table, oid * searchfor, size_t searchfor_len)"
+.PP
+finds the data in 'datalist' stored at the searchfor oid
+.PP
+Definition at line 218 of file table_data.c.
+.PP
+References snmp_oid_compare().
+.PP
+Referenced by netsnmp_table_data_get(), and netsnmp_table_data_helper_handler().
+.SS "int netsnmp_table_data_helper_handler (netsnmp_mib_handler * handler, netsnmp_handler_registration * reginfo, netsnmp_agent_request_info * reqinfo, netsnmp_request_info * requests)"
+.PP
+The helper handler that takes care of passing a specific row of data down to the lower handler(s).
+.PP
+It sets request->processed if the request should not be handled. 
+.PP
+Definition at line 285 of file table_data.c.
+.PP
+References netsnmp_call_next_handler(), netsnmp_extract_table_info(), netsnmp_find_table_registration_info(), netsnmp_request_add_list_data(), netsnmp_table_data_build_result(), netsnmp_table_data_get_from_oid(), and snmp_oid_compare().
+.PP
+Referenced by netsnmp_get_table_data_handler().
+.SS "void* netsnmp_table_data_remove_and_delete_row (netsnmp_table_data * table, netsnmp_table_row * row)"
+.PP
+removes and frees a row of data to a given table and returns the void *
+.PP
+returns the void * data on successful deletion. or NULL on failure (bad arguments) 
+.PP
+Definition at line 179 of file table_data.c.
+.PP
+References netsnmp_table_data_delete_row(), and netsnmp_table_data_remove_row().
+.PP
+Referenced by netsnmp_table_dataset_remove_and_delete_row(), and netsnmp_table_dataset_remove_row().
+.SS "netsnmp_table_row* netsnmp_table_data_remove_row (netsnmp_table_data * table, netsnmp_table_row * row)"
+.PP
+removes a row of data to a given table and returns it (no free's called)
+.PP
+returns the row pointer itself on successful removing. or NULL on failure (bad arguments) 
+.PP
+Definition at line 130 of file table_data.c.
+.PP
+Referenced by netsnmp_table_data_remove_and_delete_row(), and netsnmp_table_data_replace_row().
+.SS "NETSNMP_INLINE void netsnmp_table_data_replace_row (netsnmp_table_data * table, netsnmp_table_row * origrow, netsnmp_table_row * newrow)"
+.PP
+swaps out origrow with newrow.
+.PP
+This does *not* delete/free anything! 
+.PP
+Definition at line 194 of file table_data.c.
+.PP
+References netsnmp_table_data_add_row(), and netsnmp_table_data_remove_row().
+.PP
+Referenced by netsnmp_table_dataset_replace_row().

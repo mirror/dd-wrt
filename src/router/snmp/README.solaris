@@ -1,0 +1,214 @@
+README.solaris
+
+The following is a brief explanation of how to compile net-snmp
+to work successfully on Sun Solaris 2.6, 2.7, and 8 machines.  This
+should also work for Solaris 9.
+
+First off, you need to disable Sun's SNMP daemons.
+
+cd /etc/rc3.d
+./S76snmpd stop
+./S88dmi stop
+mv S76snmpd s76snmpd  (lowercase s disables the script)
+mv S77dmi s77dmi
+
+You will need to have installed the development libraries.  If
+you have installed the FORTE C compiler, these are included.
+They are also installed if you have done a "full" or "full plus OEM" install.
+
+To confirm, type:
+
+which ld
+
+It should return
+
+/usr/ccs/bin/ld
+
+If they are not present, they can be installed from the distribution cd.  If this
+is not available, you may want to try downloading the binutils from http://www.sunfreeware.com.
+
+You will also need to install a working compiler if you aren't using Sun's.
+Download gcc from http://www.sunfreeware.com.  Version 2.95.3 works well
+but the 3.0 stream should work as well.
+
+You will also need a proper "make", which can also be downloaded from http://www.sunfreeware.com.
+It installs in /usr/local/bin.
+
+Because of this, you need to modify your path so it includes at least the following directories
+in this order
+
+/usr/bin:/usr/sbin:/usr/local/bin:/usr/ccs/bin:/usr/ucb
+
+Use the following configure calling sequence.
+
+./configure --with-mib-modules="host disman/event-mib ucd-snmp/diskio smux agentx mibII/mta_sendmail" 
+
+If you wish to have perl functionality, see my long note below.
+
+Then do the following:
+
+make
+make install
+
+snmpconf -g basic_setup  (choose a community string besides "public")
+
+/usr/local/sbin/snmpd
+
+snmpwalk -v 2c -m ALL -t 100 -c community_string localhost .1.3
+
+This should return pages of information about your system.
+
+Eventually you will need to make a new startup script for snmpd in /etc/rc3.d.
+
+Addition notes below are from a variety of sources concerning
+various technical matters.
+
+------------------------------------------------------
+
+Solaris has a limitation on the number of file descriptors (255)
+available in stdio, so that fopen() fails if more than
+255 file descriptors (sockets) are open. This prevents mibs from 
+being loaded after 250 sockets are open, since parse.c uses stdio.
+
+SEan <burke_sp@pacbell.net> investigated this problem, and had this
+report on using the SFIO package to solve this problem.
+
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+The SFIO package ( http://www.research.att.com/sw/tools/sfio/ ) 
+is a buffered streams IO package that is much more more sophisticated 
+than stdio, but it does support stdio API's for backward compatibility,
+and that's the aspect that is important here.
+
+To compile with SFIO, we simply add -I/usr/local/sfio/include to the
+$CPPFLAGS before compiling net-snmp. This causes SFIO's stdio.h to
+preempt Solaris stdio, mapping calls like fopen() and fprintf() to
+the SFIO implementations. This produces a libnetsnmp that does not
+have the fopen() limitation. Any application that links to this 
+libnetsnmp must also be linked to libsfio. 
+
+Here are the two caveats:
+
+1. libsfio exports the functions 'getc' and 'putc', for reasons that
+are not clear. These are the only symbols it exports that conflict
+with stdio. While getc and putc are traditionally macros, Solaris
+makes them functions in multithreaded code (compiled with -mt,
+-pthread, or -D_REENTRANT). If your native stdio code links to the
+libsfio versions, a crash will result.
+
+There are two solutions to this problem. You may remove getc and putc 
+from libsfio, since SFIO defines getc and putc as macros, by doing:
+
+	ar d libsfio.a getc.o
+	ar d libsfio.a putc.o
+
+or link to SFIO's stdio compatibility library, libstdio, ahead of
+libsfio. This library wraps all of the native stdio calls with 
+versions that are safe for native or sfio streams, in case you
+need to share streams between SFIO and native stdio codes.
+
+2. libsfio provides 64-bit offsets in fseek(), ftell(). This is
+a good thing, since SFIO is intened to avoid needless limitations,
+but it means that SFIO's stdio.h defines off_t to be a 64-bit offset. 
+Net-SNMP uses readdir(), which returns a struct dirent containing 
+a 32-bit off_t, so the code compiled for SFIO doesn't access 
+struct dirent's correctly.
+
+There are two solutions to this problem, as well. The first is to
+include <dirent.h> at the start of SFIO's stdio.h. Since SFIO 
+defines a macro substitution for off_t, this leaves struct dirent's 
+definition unchanged.
+
+An alternative, which I haven't verified, is to define _FILE_OFFSET_BITS
+to be 64 when compiling libnetsnmp. According to what I see in Solaris's 
+/usr/include/sys/feature_tests.h, you can select a 64-bit off_t at 
+compile time with this setting, which should make readdir()'s off_t 
+compatible with SFIO's ftell(), fseek().
+ [[ We have received reports that this approach does not in fact work ]]
+
+Finally, thanks to Phong Vo and AT&T Labs for a fast, robust and
+portable package that solves this headache very neatly.
+
+-SEan <burke_sp@pacbell.net>
+
+------------------------------------------------------------
+
+Solaris 8 ships with a version of PERL compiled using sun's cc.  
+
+This causes a problem when attempting to compile net-snmp with the
+new PERL functionality ie.
+
+./configure --with-mib-modules="host disman/event-mib ucd-snmp/diskio smux agentx mibII/mta_sendmail" --enable-shared --enable-embedded-perl
+
+because during the PERL section of the compile, it attempts to do so using the methodology used to
+compile the original PERL, not what you're currently using.  This can be discovered by typing
+
+perl -V
+
+and it says (among other things)
+
+  Compiler:
+    cc='cc'
+
+and you don't have the full version of Sun's C compiler on your system, it's going to break.
+
+If you have downloaded the PERL on www.sunfreeware.com, it is compiled with some extra flags
+that cause the net-snmp compile to break.  Given that the PERL provided with Solaris 8 (5.005_03)
+is rather stale, upgrading may be to your advantage.
+
+Download the current stable release of PERL
+
+http://www.cpan.org/src/stable.tar.gz and gunzip and untar.  
+
+When doing the PERL ./Configure, accept most of the defaults, except
+for the following:
+
+Use which C compiler? [cc]  gcc
+
+(it tends to default to cc even if not installed)
+
+Any additional gcc flags? [-fno-strict-aliasing -I/usr/local/include]
+
+(if there are any additional flags, especially relating to 64 offsets, remove these)
+
+What command should be used to create dynamic libraries? [cc] gcc
+
+Any special flags to pass to gcc to create a dynamically loaded library?
+[-G -L/usr/local/lib]
+
+(There shouldn't be anything extra here (see above))
+
+Any special flags to pass to gcc to use dynamic linking? [none] 
+
+(There shouldn't be anything extra here either (see above))
+
+What is your domain name? [.foo.com] 
+
+(it may guess wrong)
+
+What pager is used on your system? [/bin/less] /usr/bin/more
+
+(It wants less even if it's not installed)
+
+It will prompt you for make depend, then do:
+
+make
+make test
+make install
+perl -V
+
+if everything looks all right, do the net-snmp ./configure (don't forget to make clean if necessary)
+
+ -- Bruce Shaw <Bruce.Shaw@gov.ab.ca>
+
+------------------------------------------------------------
+
+The version of sed in /usr/ucb on Solaris 2.5.1 and 2.6 can't
+cope with the size of the subsitution strings used in config.status.
+
+Putting /usr/bin ahead of /usr/ucb in the search path fixes this.
+
+/usr/xpg4/bin/sed is seen to segfault under Solaris 8 when running configure.
+Putting /usr/bin ahead of /usr/xpg4/bin fixes this.
+Thanks to zach dot metzinger at removeme microtune dot com.
+
