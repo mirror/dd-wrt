@@ -1,0 +1,13 @@
+DIFFS
+Makefile
+mib_module_dot_conf.h
+mib_module_includes.h
+mib_module_inits.h
+mib_module_loads.h
+mib_module_shutdown.h
+testconfig.c
+testconfig.h
+xxx.c
+xxx.h
+.libs
+*.lo

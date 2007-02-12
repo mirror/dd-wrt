@@ -1,0 +1,333 @@
+#!/bin/sh
+#
+# RUNTESTS [-h]...
+#
+# RETURNS:	Number of failed tests.
+#
+# CALLS: eval_oneprogram.sh [-h][-lk] <program>
+#
+# SOURCES: TESTCONF.sh
+#
+#
+
+								USAGE_LONG='
+#
+# HOW TO ENTER A NEW TEST
+#
+# Copy the template file (T2.sh) XXX to the tests directory, and have
+# the file begin with a 'T'.  All files in the tests directory
+# begining with a 'T' are assumed to be a test.  See the file for
+# further instructions
+#
+# HOW TESTS ARE RUN AND EVALUATED
+#
+# ...
+# 
+'
+
+#
+# Suggested improvement(s):
+#	Run a given test against a running agent.
+#	Display errors
+#	interactively pick tests to run.
+#	options arguments to pick tests to run.
+#
+#
+# Variables:  (* = exported)
+#  *SNMP_BASEDIR:  	  the source base directory for tests
+#  *SNMP_UPDIR:  	  directory above where the test binaries live (-D option)
+#  *SNMP_PATH	## yes, PATH is already setup
+#  *SNMP_VERBOSE	## 0=silent, 1=warnings, 2=more
+
+# Usage mess.  (No, it works.)
+#
+USAGE="Usage: `basename $0` [-h] [-i] [-v] [-V] [-s] [-T TESTNUMS] [-D bindir] [-S seconds]"
+
+usage() { 
+    echo; 
+    echo $USAGE;
+    #cat <<BLIK | sed 's/^#//' | sed '1d' | $PAGER
+    #$USAGE_LONG
+    #BLIK
+    exit 0
+}
+
+trap "exit 1;" 1 2 3 9 13 15 17
+
+SNMP_BASEDIR=`dirname $0`
+
+### Check for the configuration script.
+##if [ ! -s "${SNMP_BASEDIR}/TESTCONF.sh"  ] ; then 
+##  echo "No TESTCONF.sh in \"$SNMP_BASEDIR\" ; exiting"
+##  exit 0
+##fi
+
+ORIGDIR=`pwd`		## this script may be invoked with relative path
+SNMP_UPDIR=..		## building from the source tree
+interactive=no
+SNMP_VERBOSE=0
+SNMP_SLEEP=${SNMP_SLEEP:=1}	## default seconds to sleep
+SH_DEBUG=0
+
+while [ -n "$1" ]; do
+    case "$1" in
+	-h)
+	    usage
+	    exit
+	    ;;
+
+	-i)
+	    interactive="yes"
+	    ;;
+	-v)
+	    SNMP_VERBOSE=1
+	    ;;
+	-V)
+	    SNMP_VERBOSE=2
+	    ;;
+	-s)
+	    SNMP_SAVE_TMPDIR="yes"
+	    export SNMP_SAVE_TMPDIR
+	    ;;
+	-D)
+	    shift
+	    SNMP_UPDIR="$1"
+	    ;;
+	-T)
+	    shift
+	    test_nums=`echo $1 | sed 's/,/ /g'`
+	    ;;
+	-a)
+	    test_nums="all"
+	    ;;
+
+	-A)
+	    shift
+	    AGENT_FLAGS="$1"
+	    export AGENT_FLAGS
+	    ;;
+	-S)
+	    shift
+	    SNMP_SLEEP="$1"
+	    ;;
+
+	-x)
+	    SH_DEBUG=1
+	    ;;
+
+    esac
+
+    shift
+done
+
+export SNMP_SLEEP
+
+# Find executables in source first, then build, then existing PATH.
+## Add to PATH if a binary is found.
+
+cd $SNMP_UPDIR
+SNMP_UPDIR=`pwd`
+bf=snmpget
+if [ -f "$bf" ] ; then
+   PATH=$SNMP_UPDIR:$PATH
+else
+   bf=apps/snmpget
+   if [ -f "$bf" ] ; then
+      PATH=$SNMP_UPDIR/apps:$PATH
+   fi
+fi
+bf=agent/snmpd
+if [ -f "$bf" ] ; then
+   PATH=$SNMP_UPDIR/agent:$PATH
+fi
+
+bf=include/net-snmp/net-snmp-config.h
+if [ ! -s "$bf" ] ; then
+   echo "No \"$bf\" in $SNMP_UPDIR . Some tests will be skipped"
+fi
+unset bf
+
+# Run from the test scripts directory.
+cd $ORIGDIR ; cd ${SNMP_BASEDIR}
+SNMP_BASEDIR=`pwd`
+
+# Setup for the next test run.
+rm -f core tests/core
+
+PATH=${SNMP_BASEDIR}:$PATH
+SNMP_PATH=yes
+
+export PATH
+export SNMP_BASEDIR
+export SNMP_PATH
+export SNMP_UPDIR
+export SNMP_VERBOSE
+
+WHICH=which
+$WHICH $0 > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+    WHICH=type
+fi
+
+for needed in snmpd snmpget snmpgetnext; do
+    $WHICH $needed > /dev/null 2>&1
+    if [ $? -ne 0  ] ; then 
+        echo "No $needed found. Exiting"
+        exit 1
+    fi
+done
+
+#
+# Distinguished expectations.
+#
+if [ $SNMP_VERBOSE -gt 0 ]; then
+    echo ${SNMP_UPDIR}/testing
+    echo path is $PATH
+    echo top of build is $SNMP_UPDIR
+    echo source testing is $SNMP_BASEDIR
+    $WHICH snmpusm
+fi
+
+#
+# Source the testing configuration file
+#
+
+. TESTCONF.sh
+
+# Hack: the above created a directory, now we have to nuke it and
+# forget about it...  All for the convenience of the test writer.
+rmdir $SNMP_TMPDIR
+unset SNMP_TMPDIR
+export SNMP_TMPDIR
+
+#
+# Switch to the testing directory, for ease of the client test packages.
+#
+cd ./tests
+
+#------------------------------------ -o- 
+# Globals.
+#
+PROGRAM=
+ARGUMENTS="$*"
+
+TMPFILE=$SNMP_TMPDIR/eval_suite.sh$$
+
+testname=
+
+success_count=0
+failed_count=0
+
+if [ "x$do_tests" = "x" ]; then
+    #
+    # List the tests in question
+    #
+    num=0
+    for testfile in T*; do
+	case $testfile in
+	    # Skip backup files, and the like.
+	    *~)     ;;
+	    *.bak)  ;;
+	    *.orig) ;;
+	    *.rej)  ;;
+
+	    # Do the rest
+	    *)
+		num=`expr $num + 1`
+		if [ "x$interactive" != "xyes" -a "x$test_nums" = "x" ]; then
+		    eval_onescript.sh $testfile $num "yes"
+		fi
+		all_tests="$all_tests $num"
+		all_files="$all_files $testfile"
+		;;
+	esac
+    done
+
+    #
+    # TODO: allow user to interactively pick the list of tests to run.
+    #
+
+    if [ "x$interactive" != "xyes" ]; then
+	if [ "x$test_nums" = "x" ]; then
+	    ECHO "Enter test numbers [all]: "
+	    read inp
+	else
+	    if [ "x$test_nums" = "xall" ]; then
+		inp=""
+	    else
+		inp="$test_nums"
+	    fi
+	fi
+	if [ "x$inp" = "x" ]; then
+	    do_tests="$all_files"
+	else
+	    a=1
+	    set $all_files
+	    while [ $a -le $num ]; do
+		if echo " $inp " | grep " $a " > /dev/null; then
+		    do_tests="$do_tests $1"
+		    if [ "x$test_nums" = "x" ] ; then
+			test_nums=$a
+		    fi
+		fi
+		shift
+		a=`expr $a + 1`
+	    done
+	fi
+    fi
+
+    #echo Starting: Running tests $do_tests
+fi
+
+#
+# Run the tests
+#
+if [ "x$test_nums" = "xall" -o "x$test_nums" = "x" ] ; then
+    num=1
+else
+    num="$test_nums"
+fi
+cntr=0
+for testfile in $do_tests; do
+    dothisone="yes"
+    id_x=0
+    for itest in $inp; do
+        if [ "$cntr" = "$id_x" ] ; then
+            num="$itest"
+        fi
+    id_x=`expr $id_x + 1`
+    done
+    if [ "x$interactive" = "xyes" ]; then
+
+        if [ $SH_DEBUG = 1 ] ; then
+	    sh -x eval_onescript.sh $testfile $num "yes"
+	else
+	    eval_onescript.sh $testfile $num "yes"
+	fi
+
+	ECHO "  Run test #$num (y/n) [y]? "
+	read inp2
+	if [ "x$inp2" = "xn" ]; then
+	    dothisone=no
+	fi
+    fi
+  
+    if [ "x$dothisone" = "xyes" ]; then
+        if [ $SH_DEBUG = 1 ] ; then
+	    sh -x eval_onescript.sh $testfile $num "no"
+	else
+	    eval_onescript.sh $testfile $num "no"
+	fi
+	if [ $? = 0 ]; then
+	    success_count=`expr $success_count + 1`
+	else
+	    failed_count=`expr $failed_count + 1`
+	fi
+    fi
+    num=`expr $num + 1`
+    cntr=`expr $cntr + 1`
+done
+
+echo Summary: $success_count / `expr $failed_count + $success_count` succeeded.
+
+exit $failed_count
