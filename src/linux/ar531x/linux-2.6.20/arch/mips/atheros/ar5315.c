@@ -36,13 +36,13 @@
 
 static struct resource ar5315_eth_res[] = {
 	{
-		.name = "eth_membase",
+		.name = "eth0_membase",
 		.flags = IORESOURCE_MEM,
 		.start = AR5315_ENET0,
 		.end = AR5315_ENET0 + 0x2000,
 	},
 	{
-		.name = "eth_irq",
+		.name = "eth0_irq",
 		.flags = IORESOURCE_IRQ,
 		.start = AR531X_IRQ_ENET0_INTRS,
 		.end = AR531X_IRQ_ENET0_INTRS,
@@ -59,7 +59,7 @@ static struct ar531x_eth ar5315_eth_data = {
 
 static struct platform_device ar5315_eth = {
 	.id = 0,
-	.name = "ar531x-eth",
+	.name = "ar531x-eth0",
 	.dev.platform_data = &ar5315_eth_data,
 	.resource = ar5315_eth_res,
 	.num_resources = ARRAY_SIZE(ar5315_eth_res)
