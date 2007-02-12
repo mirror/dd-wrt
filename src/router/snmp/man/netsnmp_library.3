@@ -1,0 +1,217 @@
+.TH "The Net-SNMP library" 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+The Net-SNMP library \- 
+.SS "Modules"
+
+.in +1c
+.ti -1c
+.RI "\fBmib parsing and datatype manipulation routines.\fP"
+.br
+.in -1c
+.SS "Data Structures"
+
+.in +1c
+.ti -1c
+.RI "struct \fBsession_list\fP"
+.br
+.ti -1c
+.RI "struct \fBsnmp_internal_session\fP"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBsnmp_oid_compare\fP (const oid *in_name1, size_t len1, const oid *in_name2, size_t len2)"
+.br
+.RI "\fIlexicographical compare two object identifiers.\fP"
+.ti -1c
+.RI "int \fBsnmp_oidtree_compare\fP (const oid *in_name1, size_t len1, const oid *in_name2, size_t len2)"
+.br
+.RI "\fICompares 2 OIDs to determine if they are equal up until the shortest length.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_oid_equals\fP (const oid *in_name1, size_t len1, const oid *in_name2, size_t len2)"
+.br
+.RI "\fICompares 2 OIDs to determine if they are exactly equal.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_oid_is_subtree\fP (const oid *in_name1, size_t len1, const oid *in_name2, size_t len2)"
+.br
+.RI "\fIIdentical to netsnmp_oid_equals, except only the length up to len1 is compared.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_oid_find_prefix\fP (const oid *in_name1, size_t len1, const oid *in_name2, size_t len2)"
+.br
+.RI "\fIGiven two OIDs, determine the common prefix to them both.\fP"
+.in -1c
+.SH "DEFINE DOCUMENTATION"
+.PP 
+.SS "#define DEBUGPRINTPDUTYPE(token, type)"
+.PP
+\fBValue:\fP
+.PP
+.nf
+switch(type) { \
+      case SNMP_MSG_GET: \
+        DEBUGDUMPSECTION(token, 'PDU-GET'); \
+        break; \
+      case SNMP_MSG_GETNEXT: \
+        DEBUGDUMPSECTION(token, 'PDU-GETNEXT'); \
+        break; \
+      case SNMP_MSG_RESPONSE: \
+        DEBUGDUMPSECTION(token, 'PDU-RESPONSE'); \
+        break; \
+      case SNMP_MSG_SET: \
+        DEBUGDUMPSECTION(token, 'PDU-SET'); \
+        break; \
+      case SNMP_MSG_GETBULK: \
+        DEBUGDUMPSECTION(token, 'PDU-GETBULK'); \
+        break; \
+      case SNMP_MSG_INFORM: \
+        DEBUGDUMPSECTION(token, 'PDU-INFORM'); \
+        break; \
+      case SNMP_MSG_TRAP2: \
+        DEBUGDUMPSECTION(token, 'PDU-TRAP2'); \
+        break; \
+      case SNMP_MSG_REPORT: \
+        DEBUGDUMPSECTION(token, 'PDU-REPORT'); \
+        break; \
+      default: \
+        DEBUGDUMPSECTION(token, 'PDU-UNKNOWN'); \
+        break; \
+    }
+.fi
+.PP
+Definition at line 364 of file snmp_api.c.
+.SS "#define timercmp(tvp, uvp, cmp)"
+.PP
+\fBValue:\fP
+.PP
+.nf
+\
+        ((tvp)->tv_sec cmp (uvp)->tv_sec || \
+        ((tvp)->tv_sec == (uvp)->tv_sec && \
+          \
+        (tvp)->tv_usec cmp (uvp)->tv_usec))
+.fi
+.PP
+Definition at line 135 of file snmp_api.c.
+.SH "FUNCTION DOCUMENTATION"
+.PP 
+.SS "int netsnmp_oid_equals (const oid * in_name1, size_t len1, const oid * in_name2, size_t len2)"
+.PP
+Compares 2 OIDs to determine if they are exactly equal.
+.PP
+This should be faster than doing a snmp_oid_compare for different length OIDs, since the length is checked first and if != returns immediately. Might be very slighly faster if lengths are ==. 
+.PP
+\fBParameters: \fP
+.in +1c
+.TP
+\fB\fIin_name1\fP\fP
+A pointer to the first oid. 
+.TP
+\fB\fIlen1\fP\fP
+length of the first OID (in segments, not bytes) 
+.TP
+\fB\fIin_name2\fP\fP
+A pointer to the second oid. 
+.TP
+\fB\fIlen2\fP\fP
+length of the second OID (in segments, not bytes) 
+.PP
+\fBReturns: \fP
+.in +1c
+0 if they are equal, 1 if they are not. 
+.PP
+Definition at line 6044 of file snmp_api.c.
+.PP
+Referenced by netsnmp_old_api_helper().
+.SS "int netsnmp_oid_find_prefix (const oid * in_name1, size_t len1, const oid * in_name2, size_t len2)"
+.PP
+Given two OIDs, determine the common prefix to them both.
+.PP
+\fBParameters: \fP
+.in +1c
+.TP
+\fB\fIin_name1\fP\fP
+A pointer to the first oid. 
+.TP
+\fB\fIlen1\fP\fP
+Length of the first oid. 
+.TP
+\fB\fIin_name2\fP\fP
+A pointer to the second oid. 
+.TP
+\fB\fIlen2\fP\fP
+Length of the second oid. 
+.PP
+\fBReturns: \fP
+.in +1c
+length of largest common index of commonality. 1 = first, 0 if none * or -1 on error. 
+.PP
+Definition at line 6100 of file snmp_api.c.
+.SS "int netsnmp_oid_is_subtree (const oid * in_name1, size_t len1, const oid * in_name2, size_t len2)"
+.PP
+Identical to netsnmp_oid_equals, except only the length up to len1 is compared.
+.PP
+Functionally, this determines if in_name2 is equal or a subtree of in_name1 
+.PP
+\fBParameters: \fP
+.in +1c
+.TP
+\fB\fIin_name1\fP\fP
+A pointer to the first oid. 
+.TP
+\fB\fIlen1\fP\fP
+length of the first OID (in segments, not bytes) 
+.TP
+\fB\fIin_name2\fP\fP
+A pointer to the second oid. 
+.TP
+\fB\fIlen2\fP\fP
+length of the second OID (in segments, not bytes) 
+.PP
+\fBReturns: \fP
+.in +1c
+0 if one is a common prefix of the other. 
+.PP
+Definition at line 6080 of file snmp_api.c.
+.SS "int snmp_oid_compare (const oid * in_name1, size_t len1, const oid * in_name2, size_t len2)"
+.PP
+lexicographical compare two object identifiers.
+.PP
+Caution: this method is called often by command responder applications (ie, agent).
+.PP
+\fBReturns: \fP
+.in +1c
+-1 if name1 < name2, 0 if name1 = name2, 1 if name1 > name2 
+.PP
+Definition at line 5976 of file snmp_api.c.
+.PP
+Referenced by netsnmp_check_getnext_reply(), netsnmp_table_data_add_row(), netsnmp_table_data_get_from_oid(), netsnmp_table_data_helper_handler(), snmp_oidtree_compare(), and table_helper_handler().
+.SS "int snmp_oidtree_compare (const oid * in_name1, size_t len1, const oid * in_name2, size_t len2)"
+.PP
+Compares 2 OIDs to determine if they are equal up until the shortest length.
+.PP
+\fBParameters: \fP
+.in +1c
+.TP
+\fB\fIin_name1\fP\fP
+A pointer to the first oid. 
+.TP
+\fB\fIlen1\fP\fP
+length of the first OID (in segments, not bytes) 
+.TP
+\fB\fIin_name2\fP\fP
+A pointer to the second oid. 
+.TP
+\fB\fIlen2\fP\fP
+length of the second OID (in segments, not bytes) 
+.PP
+\fBReturns: \fP
+.in +1c
+0 if they are equal, 1 if in_name1 is > in_name2, or -1 if <. 
+.PP
+Definition at line 6025 of file snmp_api.c.
+.PP
+References snmp_oid_compare().

@@ -1,0 +1,164 @@
+# Portions of this file are subject to the following copyright.  See
+# the Net-SNMP's COPYING file for more details and other copyrights
+# that may apply:
+#
+# Copyright © 2003 Sun Microsystems, Inc. All rights reserved.
+# Use is subject to license terms specified in the COPYING file
+# distributed with the Net-SNMP package.
+#
+
+#
+# Makefile for snmplib
+#
+
+top_builddir=..
+
+#
+# Things to install
+#
+
+# headers
+INSTALLHEADERS=\
+	net-snmp-includes.h \
+	config_api.h  \
+	mib_api.h     \
+	output_api.h  \
+	pdu_api.h     \
+	session_api.h \
+	snmpv3_api.h  \
+	varbind_api.h \
+	types.h       \
+	utilities.h   \
+	version.h     \
+	definitions.h
+
+INCLUDESUBDIR=library
+INCLUDESUBDIRHEADERS=README \
+	asn1.h \
+	callback.h \
+	container.h \
+	container_binary_array.h \
+	factory.h \
+	data_list.h \
+	default_store.h \
+	int64.h \
+	keytools.h \
+	mib.h \
+	md5.h \
+	parse.h \
+	read_config.h \
+	scapi.h \
+	snmp.h \
+	snmp_alarm.h \
+	snmp_api.h \
+	snmp_assert.h \
+	snmp_client.h \
+	snmp_debug.h \
+	snmp_impl.h \
+	snmp_logging.h \
+	snmp_parse_args.h \
+	snmp-tc.h \
+	snmpv3.h \
+	system.h \
+	tools.h \
+	transform_oids.h \
+	winservice.h \
+        cmu_compat.h \
+        getopt.h \
+        lcd_time.h \
+        mt_support.h \
+        oid_stash.h \
+        snmp_enum.h \
+        snmp_locking.h \
+        snmp_secmod.h \
+        ucd_compat.h \
+        vacm.h \
+	check_varbind.h \
+	snmp_transport.h \
+	@transport_hdr_list@ \
+	@security_hdr_list@
+
+INSTALLBUILTSUBDIRHEADERS=../include/net-snmp/library/snmpv3-security-includes.h
+INSTALLBUILTSUBDIR=library
+
+
+INSTALLUCDHEADERS= asn1.h \
+	callback.h	\
+	default_store.h	\
+	int64.h		\
+	keytools.h	\
+	mib.h		\
+	parse.h		\
+	read_config.h	\
+	scapi.h		\
+	snmp_alarm.h	\
+	snmp_api.h	\
+	snmp_client.h	\
+	snmp_debug.h	\
+	snmp.h		\
+	snmp_impl.h	\
+	snmp_logging.h	\
+	snmp_parse_args.h \
+	snmp-tc.h	\
+	snmpusm.h	\
+	snmpv3.h	\
+	snmp_vars.h	\
+	struct.h	\
+	system.h	\
+	tools.h		\
+	transform_oids.h
+
+# libraries
+INSTALLLIBS=libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
+INSTALLUCDLIBS=libsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
+
+#
+# Things to build
+#
+CSRCS=	snmp_client.c mib.c parse.c snmp_api.c snmp.c 		\
+	snmp_auth.c asn1.c md5.c snmp_parse_args.c		\
+	system.c vacm.c int64.c read_config.c 			\
+	snmp_debug.c tools.c  snmp_logging.c			\
+	snmpv3.c lcd_time.c keytools.c		                \
+	scapi.c callback.c default_store.c snmp_alarm.c		\
+	data_list.c oid_stash.c 				\
+	mt_support.c snmp_enum.c snmp-tc.c 			\
+	snprintf.c strlcpy.c strtol.c strtoul.c			\
+	snmp_transport.c                                        \
+	@transport_src_list@ \
+	snmp_secmod.c snmp_version.c                            \
+	@security_src_list@ \
+	check_varbind.c container.c container_binary_array.c	\
+	cmu_compat.c ucd_compat.c
+
+OBJS=	$(CSRCS:.c=.o)
+
+LOBJS=	$(CSRCS:.c=.lo)
+
+# just in case someone wants to remove libtool, change this to OBJS.
+TOBJS=$(LOBJS)
+
+CPPFLAGS = -I$(top_srcdir)/include -I../include \
+	-I. -I.. -I$(srcdir) -I$(srcdir)/.. @CPPFLAGS@
+
+all: standardall
+
+# how to build the libraries.
+libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION):    ${TOBJS}
+	$(LIB_LD_CMD) libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION) ${TOBJS}
+	$(RANLIB) libnetsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
+
+libsnmp.$(LIB_EXTENSION)$(LIB_VERSION):    ${TOBJS}
+	$(LIB_LD_CMD) libsnmp.$(LIB_EXTENSION)$(LIB_VERSION) ${TOBJS}
+	$(RANLIB) libsnmp.$(LIB_EXTENSION)$(LIB_VERSION)
+
+#
+# internal test objects
+#
+parse:  mib.o parse.c
+	$(CC) $(CFLAGS) -DTEST parse.c -o parse \
+		`$(top_srcdir)/net-snmp-config --libs`
+
+test_binary_array: test_binary_array.c
+	$(CC) $(CFLAGS) test_binary_array.c  -o $@ \
+		`$(top_srcdir)/net-snmp-config --libs`

@@ -1,0 +1,118 @@
+#!/bin/bash
+#
+# $Id: nsb-nightly,v 1.1.2.1 2004/06/20 21:54:35 nikki Exp $
+# Author: Robert Story <rstory@freesnmp.com>
+#
+########################################################################
+########################################################################
+
+usage()
+{
+   echo "Usage: $0  [optional params] VERSION"
+   echo ""
+   echo " optional params: [-x] [-s SRCD] [-b BUILDD] [-i INSTALLD]"
+   echo "                  [-h host] [-p path]"
+   echo " VERSION    : relase number (eg 5.0.3)"
+   echo " -s SRCDIR  : soure directory [$HOME/src/net-snmp-VERSION]"
+   echo " -b BUILDD  : build directory [$HOME/build/]"
+   echo "              NOTE-platform will be appended to build directory"
+   echo " -i INSTALLD: install directory [$HOME/build/\$PLATFORM/usr/local]"
+   echo ""
+   echo " -x : configure extra features for pre-release testing"
+   echo ""
+   echo " -h : host to upload results to"
+   echo " -p : path to upload results to"
+   exit 1
+}
+
+#set -x
+
+#
+# find nsb-platform based on te path to this script
+#
+EXE_PATH=${0%nsb-nightly}
+EXE_PATH=${EXE_PATH%/}
+if [ -f $EXE_PATH/nsb-functions ];then
+   source $EXE_PATH/nsb-functions
+elif [ -f $HOME/bin/nsb-functions ]; then
+   source $HOME/bin/nsb-functions
+   EXE_PATH=$HOME/bin
+elif [ -f nsb-functions ];then
+   source nsb-functions
+   EXE_APTH=$PWD
+else
+   echo "Cannot find nsb-functions in $EXE_PATH, $HOME/bin or $PWD"
+   exit 1
+fi
+
+if [ -f $HOME/.nsb-nightly ];then
+   source $HOME/.nsb-nightly
+fi
+
+########################################################################
+########################################################################
+
+# -c -d
+PARMS="$PARMS -r"
+NIGHTLY_VERBOSE=0
+
+while getopts b:i:s:xh:p:v opt
+do
+    case "$opt" in
+      b)  NSB_BUILD_DIR=$OPTARG;;
+      i)  PARMS="-i $OPTARG $PARMS";;
+      s)  NSB_SRC_DIR=$OPTARG;;
+      h)  PARMS="-h $OPTARG $PARMS";;
+      p)  PARMS="-p $OPTARG $PARMS";;
+      x)  PARMS="-x $PARMS";;
+      v)  NIGHTLY_VERBOSE=1;;
+      \?)# unknown flag
+        usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
+
+if [ $# -ne 1 ]; then
+   echo "expecting 1 argument, got $# ($@)"
+   usage
+fi
+
+VERSION=$1
+
+nsb-default-paths
+
+PARMS="$PARMS -b $NSB_BUILD_DIR -s $NSB_SRC_DIR"
+
+# do this AFTER setting params... so we use same
+# dir that nsb-package will use
+if [ $NSB_SRC_DIR != $NSB_BUILD_DIR ];then
+   NSB_BUILD_DIR=$NSB_BUILD_DIR/$VERSION-`nsb-sysname`
+fi
+
+########################################################################
+########################################################################
+echo "Start: `date`"
+echo "Running nsb-package $PARMS $VERSION"
+if [ $NIGHTLY_VERBOSE = 1 ]; then
+    $EXE_PATH/nsb-package $PARMS $VERSION
+else
+    $EXE_PATH/nsb-package $PARMS $VERSION > /dev/null
+fi
+RC=$?
+if [ ! -z $NSB_SCP_HOST ]; then
+   nsb-upload $NSB_BUILD_DIR $NSB_SCP_HOST:$NSB_SCP_DEST/$VERSION-`nsb-sysname`
+fi
+echo "Finish: `date`"
+echo -n "Result: "
+case $RC in
+    0)  echo "Success!"
+        nsb-prompt "press enter to remove $NSB_BUILD_DIR"
+        if [ "x$NSB_BUILD_DIR" = "/" ]; then
+            nsb-abort "Not running rm -fR from /"
+        fi
+        /bin/rm -fR $NSB_BUILD_DIR > /dev/null 2>&1
+        ;;
+    *) echo "Error!";;
+esac
+
+exit $RC
