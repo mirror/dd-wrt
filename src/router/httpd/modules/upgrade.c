@@ -81,7 +81,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   {
     write_argv[0] = "write";
     write_argv[1] = upload_fifo;
-#ifdef HAVE_FONERA
+#if defined(HAVE_FONERA) || defined(WHRAG108)
     write_argv[2] = "rootfs";
 #else
     write_argv[2] = "linux";
