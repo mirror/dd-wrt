@@ -1613,6 +1613,8 @@ wl_basic.outband="Zunanji pas";
 wl_basic.channel_width="©irina kanalov";
 wl_basic.channel_wide="©iroki kanali";
 wl_basic.regulatory="Regulatorski";
+wl_basic.specialmode="2.3 Ghz naèin";
+wl_basic.wifi_bonding="Wifi vezanje";
 
 
 //help container
