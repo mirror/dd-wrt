@@ -368,6 +368,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 #endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
+	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
