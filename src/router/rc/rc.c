@@ -853,6 +853,8 @@ main (int argc, char **argv)
     return sendudp_main (argc, argv);
   else if (strstr (base, "event"))
     return event_main (argc, argv);
+  else if (strstr (base, "switch"))
+    return start_main ("switch",argc, argv);
   else if (strstr (base, "check_ses_led"))
     return check_ses_led_main (argc, argv);
 #ifdef HAVE_MICRO
