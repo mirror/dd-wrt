@@ -361,6 +361,7 @@ start_dhcpc (char *wan_ifname)
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
   };
+    _eval (dhcp_argv, NULL, 0, &pid);
   }
   else if ((requestip != NULL && strlen (requestip) > 0) && !strlen (vendorclass))
   {
@@ -373,6 +374,7 @@ start_dhcpc (char *wan_ifname)
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
   };
+    _eval (dhcp_argv, NULL, 0, &pid);
   }
   else if ((vendorclass != NULL && strlen (vendorclass) > 0) && (requestip != NULL && strlen (requestip) > 0))
   {
@@ -386,6 +388,7 @@ start_dhcpc (char *wan_ifname)
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
   };
+    _eval (dhcp_argv, NULL, 0, &pid);
   }
   else
   {
@@ -397,9 +400,8 @@ start_dhcpc (char *wan_ifname)
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
   };
+    _eval (dhcp_argv, NULL, 0, &pid);
   }
-  
-  _eval (dhcp_argv, NULL, 0, &pid);
 
 }
 
