@@ -3650,7 +3650,22 @@ start_wifidog (void)
       fprintf (fp, "HTTPPort %s\n", nvram_safe_get ("wd_httpport"));
       fprintf (fp, "Path %s\n", nvram_safe_get ("wd_path"));
       fprintf (fp, "}\n");
-
+      fprintf (fp, "FirewallRuleSet validating-users {\n");      
+      fprintf (fp, "FirewallRule allow to 0.0.0.0/0\n");
+      fprintf (fp, "}\n");      
+      fprintf (fp, "FirewallRuleSet known-users {\n");      
+      fprintf (fp, "FirewallRule allow to 0.0.0.0/0\n");
+      fprintf (fp, "}\n");      
+      fprintf (fp, "FirewallRuleSet unknown-users {\n");        
+      fprintf (fp, "FirewallRule allow udp port 53\n");
+      fprintf (fp, "FirewallRule allow tcp port 53\n");
+      fprintf (fp, "FirewallRule allow udp port 67\n");
+      fprintf (fp, "FirewallRule allow tcp port 67\n");                      
+      fprintf (fp, "}\n");
+      fprintf (fp, "FirewallRuleSet locked-users {\n");        
+      fprintf (fp, "FirewallRule block to 0.0.0.0/0\n");      
+      fprintf (fp, "}\n");                    
+     
       fclose (fp);
       eval ("/usr/sbin/wifidog");
       syslog (LOG_INFO, "wifidog successfully started\n");
