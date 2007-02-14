@@ -782,6 +782,7 @@ management.boot_srv="Beim Booten warten";
 
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
+management.cron_jobs="Zusätzliche Cron Jobs";
 
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
