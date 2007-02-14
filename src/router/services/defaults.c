@@ -1136,6 +1136,7 @@ struct nvram_tuple srouter_defaults[] = {
 #else
   {"cron_enable", "1", 0},
 #endif
+  {"cron_jobs", "", 0},
   {"dhcpd_options", "", 0},
   {"dhcpd_usenvram", "0", 0},
   {"local_dns", "0", 0},
