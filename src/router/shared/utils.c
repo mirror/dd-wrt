@@ -2533,6 +2533,7 @@ getifcount (const char *ifprefix)
   pclose (in);
   return count;*/
 char *iflist=malloc(256);
+memset(iflist,0,256);
 int c=getIfList(iflist,ifprefix);
 free(iflist);
 return c;
@@ -2544,6 +2545,8 @@ while(1)
     {
     int c = getc(in);
     if (c==EOF)
+	return;
+    if (c==0x0)
 	return;
     if (c==0xa)
 	return;
@@ -2562,8 +2565,16 @@ int count=0;
 while (1)
     {
     int c = getc(in);
-    if (c==0)
+    if (c==EOF)
 	{
+	if (count)
+	buffer[strlen(buffer)-1]=0; //fixup last space
+	fclose(in);
+	return count;	
+	}
+    if (c==0)	
+	{
+	if (count)
 	buffer[strlen(buffer)-1]=0; //fixup last space
 	fclose(in);
 	return count;
@@ -2576,11 +2587,12 @@ while (1)
 	int skip=0;
 	if (ifprefix)
 	    {
-	    if (!strncmp(ifname,ifprefix,strlen(ifprefix)))
+	    if (strncmp(ifname,ifprefix,strlen(ifprefix)))
 		{
 		skip=1;
 		}
-	    }
+	    }else
+	{    
 	if (!strncmp(ifname,"wifi",4))
 	    skip=1;
 	if (!strncmp(ifname,"imq",3))
@@ -2589,12 +2601,22 @@ while (1)
 	    skip=1;
 	if (!strncmp(ifname,"teql",4))
 	    skip=1;
+	if (!strncmp(ifname,"gre",3))
+	    skip=1;
+	if (!strncmp(ifname,"ppp",3))
+	    skip=1;
+	if (!strncmp(ifname,"tun",3))
+	    skip=1;
+	if (!strncmp(ifname,"tap",3))
+	    skip=1;
+	}
 	if (!skip)
 	{    
 	strcat(buffer,ifname);
 	strcat(buffer," ");
 	count++;
 	}
+	skip=0;
 	ifcount=0;
 	memset(ifname,0,32);    
 	skipline(in);
