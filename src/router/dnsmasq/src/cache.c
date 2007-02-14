@@ -720,10 +720,11 @@ static int read_hostsfile(char *filename, int opts, char *buff, char *domain_suf
      while ((token = strtok(NULL, " \t\n\r")) && (*token != '#'))
        {
 	 struct crec *cache;
+	 int fqdn = !!strchr(token, '.'); 
 	 if (canonicalise(token))
 	   {
 	     /* If set, add a version of the name with a default domain appended */
-	     if ((opts & OPT_EXPAND) && domain_suffix && !strchr(token, '.') && 
+	     if ((opts & OPT_EXPAND) && domain_suffix && !fqdn && 
 		 (cache = malloc(sizeof(struct crec) + 
 				 strlen(token)+2+strlen(domain_suffix)-SMALLDNAME)))
 	       {
