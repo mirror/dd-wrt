@@ -345,7 +345,7 @@ start_dhcpc (char *wan_ifname)
   pid_t pid;
   char *wan_hostname = nvram_get ("wan_hostname");
   char *vendorclass = nvram_get ("dhcpc_vendorclass");
-  char *requestip = nvram_get ("dhcp_requestip");
+  char *requestip = nvram_get ("dhcpc_requestip");
   symlink ("/sbin/rc", "/tmp/udhcpc");
 
   nvram_set ("wan_get_dns", "");
