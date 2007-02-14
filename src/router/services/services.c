@@ -1733,6 +1733,7 @@ int
 start_cron (void)
 {
   int ret = 0;
+  int i;
   struct stat buf;
 
   // Sveasoft 2003-12-15 only start if enabled
@@ -1748,6 +1749,25 @@ start_cron (void)
   mkdir ("/tmp/cron.d", 0700);
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
+  
+  /* Additional options */
+    FILE *fp;
+
+  if (nvram_invmatch ("cron_jobs", ""))
+    {
+	  fp = fopen ("/tmp/crontabs", "w");
+      char *cron_job = nvram_safe_get ("cron_jobs");
+      i = 0;
+      do
+	{
+	  if (host_key[i] != 0x0D)
+	    fprintf (fp, "%c", cron_job[i]);
+	}
+      while (cron_job[++i]);
+      
+      fclose (fp);
+    }
+  
   cprintf ("starting cron\n");
   ret = eval ("/usr/sbin/cron");
   syslog (LOG_INFO, "cron : cron daemon successfully started\n");
