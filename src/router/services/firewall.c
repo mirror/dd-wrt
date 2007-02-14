@@ -172,7 +172,7 @@ nvram_get (const char *name)
       //"filter_mac",   "",
       "lan_ifname", "eth0",
       "log_level", "0",
-      "remote_upgrade", "",
+      //"remote_upgrade", "",
       "wk_mode", "gateway",
       "block_wan", "1", "wan_proto", "dhcp", "mtu_enable", "0",
       //"pptp_pass", "",
@@ -741,12 +741,14 @@ nat_prerouting (void)
   /* ICMP packets are always redirected to INPUT chains */
   save2file ("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n",
 	     wanaddr, nvram_safe_get ("lan_ipaddr"));
-
+	     
+#ifdef HAVE_TFTP
   /* Enable remote upgrade */
   if (nvram_match ("remote_upgrade", "1"))
     save2file ("-A PREROUTING -p udp -m udp -d %s --dport %d "
 	       "-j DNAT --to-destination %s\n", wanaddr, TFTP_PORT,
 	       nvram_safe_get ("lan_ipaddr"));
+#endif
 
   /* Initiate suspense string for  parse_port_forward() */
   suspense = malloc (1);
@@ -1760,10 +1762,12 @@ filter_input (void)
   save2file ("-A INPUT -p igmp -j %s\n",
 	     nvram_match ("block_multicast", "1") ? log_drop : TARG_PASS);
 
+#ifdef HAVE_TFTP	     
   /* Remote Upgrade */
   if (nvram_match ("remote_upgrade", "1"))
     save2file ("-A INPUT -p udp -m udp --dport %d -j %s\n", TFTP_PORT,
 	       TARG_PASS);
+#endif
 
   /* Ident request backs by telnet or IRC server */
   if (nvram_match ("block_ident", "0"))
