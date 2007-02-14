@@ -360,7 +360,7 @@ start_dhcpc (char *wan_ifname)
   						NULL, NULL, 
   						NULL}; 
   
-  int i = 8;
+  int i = 7;
   
    if (vendorclass != NULL && strlen (vendorclass) > 0) 
    {
