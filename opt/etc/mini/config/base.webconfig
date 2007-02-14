@@ -99,6 +99,16 @@
 			<input class="spaceradio" type="radio" value="1" name="cron_enable" <% nvram_checked("cron_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="cron_enable" <% nvram_checked("cron_enable","0"); %> /><% tran("share.disable"); %>
 		</div>
+		<div class="setting" id="idcron">
+				<div class="label"><script type="text/javascript">Capture(management.cron_jobs)</script></div>
+					<textarea cols="60" rows="4" id="cron_jobs" name="cron_jobs"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+						var cron_jobs = fix_cr( '<% nvram_get("cron_jobs"); %>' );
+						document.getElementById("cron_jobs").value = cron_jobs;
+					//]]>
+					</script>
+		</div>
 	</fieldset><br />
 	
 	<fieldset>
