@@ -338,11 +338,11 @@ wlc_noack (int value)
 #ifndef HAVE_MADWIFI
 static int notify_nas (char *type, char *ifname, char *action);
 #endif
+
 void
 start_dhcpc (char *wan_ifname)
 {
   pid_t pid;
-  char *dhcp_argv[] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
   char *wan_hostname = nvram_get ("wan_hostname");
   char *vendorclass = nvram_get ("dhcpc_vendorclass");
   char *requestip = nvram_get ("dhcp_requestip");
