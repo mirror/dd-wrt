@@ -612,7 +612,7 @@ isClient (void)
       || nvram_match ("wl0_mode", "apstawet"))
     return 1;
 #else
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "apsta"))
+  if (getSTA())
     return 1;
 #endif
   return 0;
@@ -660,7 +660,7 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_RB500
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -686,7 +686,7 @@ start_lan (void)
 #endif
 
 #ifdef HAVE_MAGICBOX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -715,7 +715,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -739,7 +739,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_WHRAG108
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -763,7 +763,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -794,7 +794,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");
