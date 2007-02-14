@@ -374,7 +374,7 @@ start_dhcpc (char *wan_ifname)
     NULL
   };
   }
-  else if ((vendoclass != NULL && strlen (vendorclass) > 0) && (requestip != NULL && strlen (requestip) > 0))
+  else if ((vendorclass != NULL && strlen (vendorclass) > 0) && (requestip != NULL && strlen (requestip) > 0))
   {
   char *dhcp_argv[] = { "udhcpc",
     "-i", wan_ifname,
@@ -396,6 +396,7 @@ start_dhcpc (char *wan_ifname)
     wan_hostname && *wan_hostname ? "-H" : NULL,
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
+  };
   }
   
   _eval (dhcp_argv, NULL, 0, &pid);
