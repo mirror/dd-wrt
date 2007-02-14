@@ -363,6 +363,7 @@ extern char *psname(int pid, char *buffer, int maxlen);
 extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
+extern int getIfList(char *buffer,char *ifprefix);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix,char *buffer);
 
