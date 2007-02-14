@@ -611,6 +611,7 @@ management.boot_legend="?????";
 management.boot_srv="?????";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
+management.cron_jobs="Additional Cron Jobs";
 management.loop_legend="??????";
 management.loop_srv="??????";
 management.wifi_legend="802.1x";
