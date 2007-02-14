@@ -1760,7 +1760,7 @@ start_cron (void)
       i = 0;
       do
 	{
-	  if (host_key[i] != 0x0D)
+	  if (cron_job[i] != 0x0D)
 	    fprintf (fp, "%c", cron_job[i]);
 	}
       while (cron_job[++i]);
