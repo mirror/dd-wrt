@@ -2522,7 +2522,7 @@ ifexists (const char *ifname)
 int
 getifcount (const char *ifprefix)
 {
-  char devcall[128];
+/*  char devcall[128];
 
   sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l", ifprefix);
   FILE *in = popen (devcall, "rb");
@@ -2531,8 +2531,77 @@ getifcount (const char *ifprefix)
   int count;
   fscanf (in, "%d", &count);
   pclose (in);
-  return count;
+  return count;*/
+char *iflist=malloc(256);
+int c=getIfList(iflist,ifprefix);
+free(iflist);
+return c;
+}
 
+static void skipline(FILE *in)
+{
+while(1)
+    {
+    int c = getc(in);
+    if (c==EOF)
+	return;
+    if (c==0xa)
+	return;
+    }
+}
+//returns a physical interfacelist filtered by ifprefix. if ifprefix is NULL, all valid interfaces will be returned
+int getIfList(char *buffer,char *ifprefix)
+{
+FILE *in=fopen("/proc/net/dev","rb");
+char ifname[32];
+//skip the first 2 lines
+skipline(in);
+skipline(in);
+int ifcount=0;
+int count=0;
+while (1)
+    {
+    int c = getc(in);
+    if (c==0)
+	{
+	buffer[strlen(buffer)-1]=0; //fixup last space
+	fclose(in);
+	return count;
+	}
+    if (c==0x20)
+	continue;
+    if (c==':')
+	{
+	ifname[ifcount++]=0;
+	int skip=0;
+	if (ifprefix)
+	    {
+	    if (!strncmp(ifname,ifprefix,strlen(ifprefix)))
+		{
+		skip=1;
+		}
+	    }
+	if (!strncmp(ifname,"wifi",4))
+	    skip=1;
+	if (!strncmp(ifname,"imq",3))
+	    skip=1;
+	if (!strncmp(ifname,"lo",2))
+	    skip=1;
+	if (!strncmp(ifname,"teql",4))
+	    skip=1;
+	if (!skip)
+	{    
+	strcat(buffer,ifname);
+	strcat(buffer," ");
+	count++;
+	}
+	ifcount=0;
+	memset(ifname,0,32);    
+	skipline(in);
+	continue;
+	}
+    ifname[ifcount++]=c;
+    }
 }
 
 int
