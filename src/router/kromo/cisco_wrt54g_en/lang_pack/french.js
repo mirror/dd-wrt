@@ -862,6 +862,7 @@ management.boot_srv="Boot Wait";
 
 management.cron_legend="Crontab";
 management.cron_srvd="Cron";
+management.cron_jobs="Jobs additionnels";
 
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
