@@ -560,6 +560,7 @@ management.boot_legend="Boot wait";
 management.boot_srv="Boot wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
+management.cron_jobs="Additional Cron Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
