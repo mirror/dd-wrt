@@ -518,7 +518,7 @@ start_dhcpfwd (void)
       char *wan_proto = nvram_safe_get ("wan_proto");
       char *wan_ifname = nvram_safe_get ("wan_ifname");
 #ifdef HAVE_MADWIFI
-      if (nvram_match ("ath0_mode", "sta"))
+      if (getSTA())
 #else
       if (nvram_match ("wl_mode", "sta"))
 #endif
