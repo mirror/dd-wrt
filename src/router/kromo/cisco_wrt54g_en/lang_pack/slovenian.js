@@ -886,6 +886,7 @@ management.boot_srv="Zagonska pavza";
 
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
+management.cron_jobs="Dodatna opravila";
 
 management.loop_legend="Povratna zanka";
 management.loop_srv="Povratna zanka";

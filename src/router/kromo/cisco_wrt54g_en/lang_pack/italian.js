@@ -556,6 +556,7 @@ management.boot_legend="Attesa Boot";
 management.boot_srv="Attesa Boot";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
+management.cron_jobs="Additional Cron Jobs";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
