@@ -2471,7 +2471,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
-#ifndef HAVE_FONERA
+#if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
       char *wl_regulatory = "ath_regulatory";
       showOption (wp, "wl_basic.regulatory", wl_regulatory);
 #ifdef HAVE_MAKSAT
@@ -2491,9 +2491,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   if (nvram_match ("wifi_bonding", "0") || !strcmp (prefix, "ath0"))
 #endif
     {
-#ifdef HAVE_MADWIFI
-      if (!strcmp (prefix, "ath0"))	//show client only on first interface
-#endif
+//#ifdef HAVE_MADWIFI
+//      if (!strcmp (prefix, "ath0"))	//show client only on first interface
+//#endif
 	{
 #ifdef HAVE_MADWIFI
 	  if (nvram_match ("ath0_mode", "wdsap")
@@ -2546,7 +2546,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	  websWrite (wp, "</select>\n");
 	  websWrite (wp, "</div>\n");
 	}
-#ifdef HAVE_MADWIFI
+/*#ifdef HAVE_MADWIFI
       else
 	{
 
@@ -2576,7 +2576,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	  websWrite (wp, "</select>\n");
 	  websWrite (wp, "</div>\n");
 	}
-#endif
+#endif*/
     }
 //writeless net mode
   show_netmode (wp, prefix);

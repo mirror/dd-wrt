@@ -1276,12 +1276,12 @@ get_wan_face (void)
 
     }
 #else
-  else if (nvram_match ("ath0_mode", "sta"))
+  else if (getSTA())
     {
 if (nvram_match("wifi_bonding","1"))
       strcpy (localwanface, "bond0");
 else
-      strcpy (localwanface, "ath0");
+      strcpy (localwanface, getSTA());
     }
 #endif
   else
@@ -2509,6 +2509,27 @@ int
 route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 {
   return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
+}
+#endif
+
+
+#ifdef HAVE_MADWIFI
+static char *stalist[]={"ath0","ath1","ath2","ath3","ath4","ath5","ath6","ath8","ath9"};
+char *getSTA(void)
+{
+int c = getifcount("wifi");
+int i;
+for (i=0;i<c;i++)
+    {
+    char mode[32];
+    sprintf(mode,"ath%d_mode",i);
+    if (nvram_match(mode,"sta"))
+	{
+	return stalist[i];
+	}
+    
+    }
+return NULL;
 }
 #endif
 
