@@ -350,18 +350,54 @@ start_dhcpc (char *wan_ifname)
   nvram_set ("wan_get_dns", "");
   killall ("udhcpc", SIGTERM);
 
+  if ((vendorclass != NULL && strlen (vendorclass) > 0) && !strlen (requestip))
+  {  
   char *dhcp_argv[] = { "udhcpc",
     "-i", wan_ifname,
     "-p", "/var/run/udhcpc.pid",
     "-s", "/tmp/udhcpc",
-    vendorclass && *vendorclass ? "-V" : NULL,
-    vendorclass && *vendorclass ? vendorclass : NULL,
-    requestip && *requestip ? "-r" : NULL,
-    requestip && *requestip ? requestip : NULL,
+    "-V", vendorclass,
     wan_hostname && *wan_hostname ? "-H" : NULL,
     wan_hostname && *wan_hostname ? wan_hostname : NULL,
     NULL
   };
+  }
+  else if ((requestip != NULL && strlen (requestip) > 0) && !strlen (vendorclass))
+  {
+  char *dhcp_argv[] = { "udhcpc",
+    "-i", wan_ifname,
+    "-p", "/var/run/udhcpc.pid",
+    "-s", "/tmp/udhcpc",
+    "-r", requestip,
+    wan_hostname && *wan_hostname ? "-H" : NULL,
+    wan_hostname && *wan_hostname ? wan_hostname : NULL,
+    NULL
+  };
+  }
+  else if ((vendoclass != NULL && strlen (vendorclass) > 0) && (requestip != NULL && strlen (requestip) > 0))
+  {
+  char *dhcp_argv[] = { "udhcpc",
+    "-i", wan_ifname,
+    "-p", "/var/run/udhcpc.pid",
+    "-s", "/tmp/udhcpc",
+    "-V", vendorclass,
+    "-r", requestip,
+    wan_hostname && *wan_hostname ? "-H" : NULL,
+    wan_hostname && *wan_hostname ? wan_hostname : NULL,
+    NULL
+  };
+  }
+  else
+  {
+  char *dhcp_argv[] = { "udhcpc",
+    "-i", wan_ifname,
+    "-p", "/var/run/udhcpc.pid",
+    "-s", "/tmp/udhcpc",
+    wan_hostname && *wan_hostname ? "-H" : NULL,
+    wan_hostname && *wan_hostname ? wan_hostname : NULL,
+    NULL
+  }
+  
   _eval (dhcp_argv, NULL, 0, &pid);
 
 }
