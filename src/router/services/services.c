@@ -1751,11 +1751,12 @@ start_cron (void)
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   
   /* Additional options */
-    FILE *fp;
+	FILE *fp;
+  	unlink ("/tmp/cron.d/cron_jobs");
 
-  if (nvram_invmatch ("cron_jobs", ""))
+	if (nvram_invmatch ("cron_jobs", ""))
     {
-	  fp = fopen ("/tmp/crontabs", "w");
+	  fp = fopen ("/tmp/cron.d/cron_jobs", "w");
       char *cron_job = nvram_safe_get ("cron_jobs");
       i = 0;
       do
@@ -3868,12 +3869,12 @@ br_set_stp_state (const char *br, int stp_state)
     return -1;
   if (stp_state)
     {
-      syslog (LOG_INFO, "stp is set to on\n");
+//      syslog (LOG_INFO, "stp is set to on\n");
       return eval ("/usr/sbin/brctl", "stp", br, "on");
     }
   else
     {
-      syslog (LOG_INFO, "stp is set to off\n");
+//      syslog (LOG_INFO, "stp is set to off\n");
       return eval ("/usr/sbin/brctl", "stp", br, "off");
     }
 }
