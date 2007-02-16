@@ -163,20 +163,18 @@ void
 stop_vpn_modules (void)
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
-  eval ("/sbin/rmmod", "nf_conntrack_pptp");
+      eval ("/sbin/rmmod", "nf_nat_pptp");
+  syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully stopped\n");
+      eval ("/sbin/rmmod", "nf_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
-  eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
-  syslog (LOG_INFO,
-	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
-  eval ("/sbin/rmmod", "nf_nat_proto_gre");
+      eval ("/sbin/rmmod", "nf_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : nf_nat_proto_gre successfully stopped\n");
-  eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
-  syslog (LOG_INFO,
-	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
+      eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
+  syslog (LOG_INFO, "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
 #else
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
-  eval ("/sbin/rmmod", "ip_nat_pptp");
+  eval ("/sbin/rmmod", "ip_nat_pptp");  
   syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
