@@ -32,6 +32,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_VLANTAGGING),y)
+CFLAGS += -DHAVE_VLANTAGGING
+endif
 ifeq ($(CONFIG_GW700),y)
 CFLAGS += -DHAVE_GW700
 endif
