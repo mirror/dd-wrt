@@ -77,82 +77,82 @@ del_routes (char *route)
 int
 start_services (void)
 {
-void *handle=NULL;
+  void *handle = NULL;
 #ifdef HAVE_SER
   nvram_set ("sipgate", "1");
 #else
   nvram_set ("sipgate", "0");
 #endif
 #ifdef HAVE_CPUTEMP
-  handle=start_service_nofree ("hwmon",handle);
+  handle = start_service_nofree ("hwmon", handle);
 #endif
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    handle=start_service_nofree ("telnetd",handle);
+    handle = start_service_nofree ("telnetd", handle);
 #endif
-  handle=start_service_nofree ("syslog",handle);
+  handle = start_service_nofree ("syslog", handle);
 #ifdef HAVE_TFTP
-  handle=start_service_nofree ("tftpd",handle);
+  handle = start_service_nofree ("tftpd", handle);
 #endif
-  handle=start_service_nofree ("httpd",handle);
-  handle=start_service_nofree ("udhcpd",handle);
-  handle=start_service_nofree ("dnsmasq",handle);
+  handle = start_service_nofree ("httpd", handle);
+  handle = start_service_nofree ("udhcpd", handle);
+  handle = start_service_nofree ("dnsmasq", handle);
 // NAS is started in rc.c
 #ifdef HAVE_BIRD
-  handle=start_service_nofree ("zebra",handle);
+  handle = start_service_nofree ("zebra", handle);
 #endif
-  handle=start_service_nofree ("wland",handle);
-  handle=start_service_nofree ("wshaper",handle);
-  handle=start_service_nofree ("cron",handle);
-  handle=start_service_nofree ("radio_timer",handle);
+  handle = start_service_nofree ("wland", handle);
+  handle = start_service_nofree ("wshaper", handle);
+  handle = start_service_nofree ("cron", handle);
+  handle = start_service_nofree ("radio_timer", handle);
 
 #ifdef HAVE_PPTPD
-  handle=start_service_nofree ("pptpd",handle);
+  handle = start_service_nofree ("pptpd", handle);
 #endif
 
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    handle=start_service_nofree ("sshd",handle);
+    handle = start_service_nofree ("sshd", handle);
 #endif
 
 #ifdef HAVE_RADVD
-  handle=start_service_nofree ("radvd",handle);
+  handle = start_service_nofree ("radvd", handle);
 #endif
 
 #ifdef HAVE_SNMP
-  handle=start_service_nofree ("snmp",handle);
+  handle = start_service_nofree ("snmp", handle);
 #endif
 
 #ifdef HAVE_WOL
-  handle=start_service_nofree ("wol",handle);
+  handle = start_service_nofree ("wol", handle);
 #endif
 
 #ifdef HAVE_NOCAT
-  handle=start_service_nofree ("splashd",handle);
+  handle = start_service_nofree ("splashd", handle);
 #endif
 
 #ifdef HAVE_UPNP
-  handle=start_service_nofree ("upnp",handle);
+  handle = start_service_nofree ("upnp", handle);
 #endif
 
 #ifdef HAVE_NEWMEDIA
-  handle=start_service_nofree ("openvpnserversys",handle);
+  handle = start_service_nofree ("openvpnserversys", handle);
 #endif
 #ifdef HAVE_RSTATS
-  handle=start_service_nofree ("rstats",handle);
+  handle = start_service_nofree ("rstats", handle);
 #endif
 #ifdef HAVE_NSTX
-  handle=start_service_nofree ("nstxd",handle);
+  handle = start_service_nofree ("nstxd", handle);
 #endif
 #ifdef HAVE_PPPOERELAY
-  handle=start_service_nofree ("pppoerelay",handle);
+  handle = start_service_nofree ("pppoerelay", handle);
 #endif
 
-  dlclose(handle);
+  dlclose (handle);
 
   cprintf ("done\n");
   return 0;
@@ -161,78 +161,78 @@ void *handle=NULL;
 int
 stop_services (void)
 {
-  void *handle=NULL;
+  void *handle = NULL;
   //stop_ses();
 #ifdef HAVE_PPPOERELAY
-  handle=stop_service_nofree ("pppoerelay",handle);
+  handle = stop_service_nofree ("pppoerelay", handle);
 #endif
 #ifdef HAVE_RSTATS
-  handle=stop_service_nofree ("rstats",handle);
+  handle = stop_service_nofree ("rstats", handle);
 #endif
 #ifdef HAVE_NSTX
-  handle=stop_service_nofree ("nstxd",handle);
+  handle = stop_service_nofree ("nstxd", handle);
 #endif
-  handle=stop_service_nofree ("nas",handle);
+  handle = stop_service_nofree ("nas", handle);
 #ifdef HAVE_UPNP
-  handle=stop_service_nofree ("upnp",handle);
+  handle = stop_service_nofree ("upnp", handle);
 #endif
-  handle=stop_service_nofree ("udhcpd",handle);
-  handle=stop_service_nofree ("dns_clear_resolv",handle);
-  handle=stop_service_nofree ("cron",handle);
-  handle=stop_service_nofree ("radio_timer",handle);
+  handle = stop_service_nofree ("udhcpd", handle);
+  handle = stop_service_nofree ("dns_clear_resolv", handle);
+  handle = stop_service_nofree ("cron", handle);
+  handle = stop_service_nofree ("radio_timer", handle);
 
 #ifdef HAVE_TFTP
-  handle=stop_service_nofree ("tftpd",handle);
+  handle = stop_service_nofree ("tftpd", handle);
 #endif
-  handle=stop_service_nofree ("syslog",handle);
+  handle = stop_service_nofree ("syslog", handle);
 #ifdef HAVE_BIRD
-  handle=stop_service_nofree ("zebra",handle);
+  handle = stop_service_nofree ("zebra", handle);
 #endif
-  handle=stop_service_nofree ("wland",handle);
+  handle = stop_service_nofree ("wland", handle);
 #ifdef HAVE_TELNET
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    handle=stop_service_nofree ("telnetd",handle);
+    handle = stop_service_nofree ("telnetd", handle);
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
   if (isregistered ())
 #endif
-    handle=stop_service_nofree ("sshd",handle);
+    handle = stop_service_nofree ("sshd", handle);
 #endif
 
 #ifdef HAVE_RADVD
-  handle=stop_service_nofree ("radvd",handle);
+  handle = stop_service_nofree ("radvd", handle);
 #endif
 
 #ifdef HAVE_WIFIDOG
-  handle=stop_service_nofree ("wifidog",handle);
+  handle = stop_service_nofree ("wifidog", handle);
 #endif
 
 #ifdef HAVE_CHILLI
-  handle=stop_service_nofree ("chilli",handle);
+  handle = stop_service_nofree ("chilli", handle);
 #endif
 
 #ifdef HAVE_SNMP
-  handle=stop_service_nofree ("snmp",handle);
+  handle = stop_service_nofree ("snmp", handle);
 #endif
 
 #ifdef HAVE_WOL
-  handle=stop_service_nofree ("wol",handle);
+  handle = stop_service_nofree ("wol", handle);
 #endif
-  handle=stop_service_nofree ("wshaper",handle);
+  handle = stop_service_nofree ("wshaper", handle);
 
 #ifdef HAVE_PPTPD
-  handle=stop_service_nofree ("pptpd",handle);
+  handle = stop_service_nofree ("pptpd", handle);
 #endif
 #ifdef HAVE_NOCAT
-  handle=stop_service_nofree ("splashd",handle);
+  handle = stop_service_nofree ("splashd", handle);
 #endif
 #ifdef HAVE_NEWMEDIA
-  handle=stop_service_nofree ("openvpnserversys",handle);
+  handle = stop_service_nofree ("openvpnserversys", handle);
 #endif
-dlclose(handle);
+  dlclose (handle);
 // end Sveasoft additions
 //stop_eou();
 
@@ -269,8 +269,16 @@ start_single_service (void)
       stop_service ("stabridge");
 #endif
       stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      stop_service ("bridging");
+      stop_service ("vlantagging");
+#endif
       stop_service ("wan");
       start_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      start_service ("vlantagging");
+      start_service ("bridging");
+#endif
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
@@ -281,7 +289,7 @@ start_single_service (void)
       startstop ("zebra");
 #endif
       startstop ("firewall");
-      startstop ("httpd"); //httpd will not accept connection anymore on wan/lan ip changes changes
+      startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
     }
 /*// moved to filters (Firewall web GUI)    
   else if (!strcmp (service, "logging"))
@@ -369,7 +377,8 @@ start_single_service (void)
   else if (!strcmp (service, "management"))
     {
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
-	  || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
 	stop_service ("nas");
 #ifdef HAVE_BIRD
       stop_service ("zebra");
@@ -396,7 +405,8 @@ start_single_service (void)
       startstop ("wol");
 #endif
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
-	  || nvram_match ("wl0_mode", "apsta") || nvram_match ("wl0_mode", "apstawet"))
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
 	start_service ("nas_wan");
 
     }
@@ -411,8 +421,16 @@ start_single_service (void)
       stop_service ("stabridge");
 #endif
       stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      stop_service ("bridging");
+      stop_service ("vlantagging");
+#endif
       stop_service ("wan");
       start_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      start_service ("bridging");
+      start_service ("vlantagging");
+#endif
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
@@ -436,12 +454,12 @@ start_single_service (void)
   else if (!strcmp (service, "routing"))
     {
 #ifdef HAVE_BIRD
-    stop_service("zebra");
+      stop_service ("zebra");
 #endif
-    startstop("firewall");
+      startstop ("firewall");
 #ifdef HAVE_BIRD
-    start_service("zebra");
-#endif    
+      start_service ("zebra");
+#endif
     }
   else if (!strcmp (service, "alive"))
     {
@@ -546,6 +564,10 @@ start_single_service (void)
 #endif
       stop_service ("wan");
       stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      stop_service ("bridging");
+      stop_service ("vlantagging");
+#endif
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
@@ -560,36 +582,40 @@ start_single_service (void)
       start_service ("wlconf");
 #endif
       start_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      start_service ("vlantagging");
+      start_service ("bridging");
+#endif
       start_service ("wan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
 /* nas mode select*/
-	  if (nvram_match ("wl0_mode", "sta")
-	      || nvram_match ("wl0_mode", "wet")
-	      || nvram_match ("wl0_mode", "apsta")
-	      || nvram_match ("wl0_mode", "apstawet"))
-	    {
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "wet")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	{
 	  cprintf ("start nas wan\n");
 	  start_service ("nas_wan");
-  		}
-  	  else
-  	  	{
-  	  cprintf ("start nas lan\n");
-      start_service ("nas_lan");
-  		}
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_service ("nas_lan");
+	}
 /*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
 #endif
-      startstop ("httpd"); //httpd will not accept connection anymore on wan/lan ip changes changes
+      startstop ("httpd");	//httpd will not accept connection anymore on wan/lan ip changes changes
 
     }
   else if (!strcmp (service, "wireless_2"))
     {
-	  stop_service ("radio_timer");
+      stop_service ("radio_timer");
 #ifndef HAVE_MADWIFI
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 #endif
@@ -605,6 +631,10 @@ start_single_service (void)
       stop_service ("stabridge");
 #endif
       stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      stop_service ("bridging");
+      stop_service ("vlantagging");
+#endif
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
@@ -619,30 +649,34 @@ start_single_service (void)
       start_service ("wlconf");
 #endif
       start_service ("lan");
+#ifdef HAVE_VLANTAGGING
+      start_service ("vlantagging");
+      start_service ("bridging");
+#endif
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif
 #ifndef HAVE_MADWIFI
 /* nas mode select*/
-	  if (nvram_match ("wl0_mode", "sta")
-	      || nvram_match ("wl0_mode", "wet")
-	      || nvram_match ("wl0_mode", "apsta")
-	      || nvram_match ("wl0_mode", "apstawet"))
-	    {
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "wet")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	{
 	  cprintf ("start nas wan\n");
 	  start_service ("nas_wan");
-  		}
-  	  else
-  	  	{
-  	  cprintf ("start nas lan\n");
-      start_service ("nas_lan");
-  		}
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_service ("nas_lan");
+	}
 /*end nas mode select */
 #ifdef HAVE_MSSID
       start_service ("guest_nas");
 #endif
 #endif
-	  start_service ("radio_timer");
+      start_service ("radio_timer");
     }
   else if (!strcmp (service, "dhcp_release"))
     {

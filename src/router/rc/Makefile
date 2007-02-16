@@ -43,6 +43,9 @@ endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
+ifeq ($(CONFIG_VLANTAGGING),y)
+CFLAGS += -DHAVE_VLANTAGGING
+endif
 ifeq ($(CONFIG_NSTX),y)
 CFLAGS += -DHAVE_NSTX
 endif
