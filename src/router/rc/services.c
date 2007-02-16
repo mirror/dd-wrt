@@ -281,6 +281,7 @@ start_single_service (void)
       startstop ("zebra");
 #endif
       startstop ("firewall");
+      startstop ("httpd"); //httpd will not accept connection anymore on wan/lan ip changes changes
     }
 /*// moved to filters (Firewall web GUI)    
   else if (!strcmp (service, "logging"))
@@ -583,6 +584,7 @@ start_single_service (void)
       start_service ("guest_nas");
 #endif
 #endif
+      startstop ("httpd"); //httpd will not accept connection anymore on wan/lan ip changes changes
 
     }
   else if (!strcmp (service, "wireless_2"))
