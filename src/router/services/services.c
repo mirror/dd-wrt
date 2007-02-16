@@ -163,18 +163,19 @@ void
 stop_vpn_modules (void)
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
-      eval ("/sbin/rmmod", "nf_nat_pptp");
+  eval ("/sbin/rmmod", "nf_nat_pptp");
   syslog (LOG_INFO, "vpn modules : nf_nat_pptp successfully stopped\n");
-      eval ("/sbin/rmmod", "nf_conntrack_pptp");
+  eval ("/sbin/rmmod", "nf_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : nf_conntrack_pptp successfully stopped\n");
-      eval ("/sbin/rmmod", "nf_nat_proto_gre");
+  eval ("/sbin/rmmod", "nf_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : nf_nat_proto_gre successfully stopped\n");
-      eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
-  syslog (LOG_INFO, "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
+  eval ("/sbin/rmmod", "nf_conntrack_proto_gre");
+  syslog (LOG_INFO,
+	  "vpn modules : nf_conntrack_proto_gre successfully stopped\n");
 #else
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
   syslog (LOG_INFO, "vpn modules : ip_nat_proto_gre successfully stopped\n");
-  eval ("/sbin/rmmod", "ip_nat_pptp");  
+  eval ("/sbin/rmmod", "ip_nat_pptp");
   syslog (LOG_INFO, "vpn modules : ip_nat_pptp successfully stopped\n");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   syslog (LOG_INFO, "vpn modules : ip_conntrack_pptp successfully stopped\n");
@@ -516,7 +517,7 @@ start_dhcpfwd (void)
       char *wan_proto = nvram_safe_get ("wan_proto");
       char *wan_ifname = nvram_safe_get ("wan_ifname");
 #ifdef HAVE_MADWIFI
-      if (getSTA())
+      if (getSTA ())
 #else
       if (nvram_match ("wl_mode", "sta"))
 #endif
@@ -1747,14 +1748,14 @@ start_cron (void)
   mkdir ("/tmp/cron.d", 0700);
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
-  
-  /* Additional options */
-	FILE *fp;
-  	unlink ("/tmp/cron.d/cron_jobs");
 
-	if (nvram_invmatch ("cron_jobs", ""))
+  /* Additional options */
+  FILE *fp;
+  unlink ("/tmp/cron.d/cron_jobs");
+
+  if (nvram_invmatch ("cron_jobs", ""))
     {
-	  fp = fopen ("/tmp/cron.d/cron_jobs", "w");
+      fp = fopen ("/tmp/cron.d/cron_jobs", "w");
       char *cron_job = nvram_safe_get ("cron_jobs");
       i = 0;
       do
@@ -1763,10 +1764,10 @@ start_cron (void)
 	    fprintf (fp, "%c", cron_job[i]);
 	}
       while (cron_job[++i]);
-      
+
       fclose (fp);
     }
-  
+
   cprintf ("starting cron\n");
   ret = eval ("/usr/sbin/cron");
   syslog (LOG_INFO, "cron : cron daemon successfully started\n");
@@ -3669,22 +3670,22 @@ start_wifidog (void)
       fprintf (fp, "HTTPPort %s\n", nvram_safe_get ("wd_httpport"));
       fprintf (fp, "Path %s\n", nvram_safe_get ("wd_path"));
       fprintf (fp, "}\n");
-      fprintf (fp, "FirewallRuleSet validating-users {\n");      
+      fprintf (fp, "FirewallRuleSet validating-users {\n");
       fprintf (fp, "FirewallRule allow to 0.0.0.0/0\n");
-      fprintf (fp, "}\n");      
-      fprintf (fp, "FirewallRuleSet known-users {\n");      
+      fprintf (fp, "}\n");
+      fprintf (fp, "FirewallRuleSet known-users {\n");
       fprintf (fp, "FirewallRule allow to 0.0.0.0/0\n");
-      fprintf (fp, "}\n");      
-      fprintf (fp, "FirewallRuleSet unknown-users {\n");        
+      fprintf (fp, "}\n");
+      fprintf (fp, "FirewallRuleSet unknown-users {\n");
       fprintf (fp, "FirewallRule allow udp port 53\n");
       fprintf (fp, "FirewallRule allow tcp port 53\n");
       fprintf (fp, "FirewallRule allow udp port 67\n");
-      fprintf (fp, "FirewallRule allow tcp port 67\n");                      
+      fprintf (fp, "FirewallRule allow tcp port 67\n");
       fprintf (fp, "}\n");
-      fprintf (fp, "FirewallRuleSet locked-users {\n");        
-      fprintf (fp, "FirewallRule block to 0.0.0.0/0\n");      
-      fprintf (fp, "}\n");                    
-     
+      fprintf (fp, "FirewallRuleSet locked-users {\n");
+      fprintf (fp, "FirewallRule block to 0.0.0.0/0\n");
+      fprintf (fp, "}\n");
+
       fclose (fp);
       eval ("/usr/sbin/wifidog");
       syslog (LOG_INFO, "wifidog successfully started\n");
@@ -3876,4 +3877,100 @@ br_set_stp_state (const char *br, int stp_state)
       return eval ("/usr/sbin/brctl", "stp", br, "off");
     }
 }
+#endif
+
+
+#ifdef HAVE_VLANTAGGING
+void
+start_vlantagging (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("vlan_tags");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("vconfig", "add", port, tag);
+  }
+}
+
+void
+stop_vlantagging (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("vlan_tags");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    char vlan_name[32];
+    sprintf (vlan_name, "%s.%s", port, tag);
+    eval ("vconfig", "rem", vlan_name);
+  }
+}
+
+void
+start_bridging (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bridges");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("brctl", "addbr", port);
+    if (!strcmp (tag, "1"))
+      eval ("brctl", "stp", "port", "on");
+    else
+      eval ("brctl", "stp", "port", "off");
+  }
+  
+ wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("brctl", "addif", port,tag);
+  }
+}
+
+void
+stop_bridging (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+ wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("brctl", "delif", port,tag);
+  }
+  wordlist = nvram_safe_get ("vlan_tags");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("brctl", "delbr", port);
+  }
+}
+
+
+
+
 #endif
