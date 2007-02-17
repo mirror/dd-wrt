@@ -127,7 +127,8 @@ start_stabridge (void)
 #elif HAVE_FONERA
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0");
 #elif HAVE_WHRAG108
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0","eth1");
+      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
+	    "eth1");
 #elif HAVE_GATEWORX
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "ixp0",
 	    "ixp1");
