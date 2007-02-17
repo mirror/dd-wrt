@@ -586,7 +586,14 @@ start_restore_defaults (void)
 	}
     }
 #endif
-#ifdef HAVE_XSCALE
+#ifdef HAVE_GATEWORX
+  if (restore_defaults)
+    {
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+    }
+#elif HAVE_XSCALE
   if (restore_defaults)
     eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #endif
