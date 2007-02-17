@@ -795,60 +795,61 @@ nat_postrouting (void)
 	{
 	  //added for logic test
 	  char *loopmask = "";
+	  char *nmask = nvram_get ("lan_netmask");
 	  //for class C subnets
-	  if (nvram_match ("lan_netmask", "255.255.255.0"))
+	  if (!strcmp (nmask, "255.255.255.0"))
 	    loopmask = "0/24";
-	  else if (nvram_match ("lan_netmask", "255.255.255.128"))
+	  else if (!strcmp (nmask, "255.255.255.128"))
 	    loopmask = "0/25";
-	  else if (nvram_match ("lan_netmask", "255.255.255.192"))
+	  else if (!strcmp (nmask, "255.255.255.192"))
 	    loopmask = "0/26";
-	  else if (nvram_match ("lan_netmask", "255.255.255.224"))
+	  else if (!strcmp (nmask, "255.255.255.224"))
 	    loopmask = "0/27";
-	  else if (nvram_match ("lan_netmask", "255.255.255.240"))
+	  else if (!strcmp (nmask, "255.255.255.240"))
 	    loopmask = "0/28";
-	  else if (nvram_match ("lan_netmask", "255.255.255.248"))
+	  else if (!strcmp (nmask, "255.255.255.248"))
 	    loopmask = "0/29";
-	  else if (nvram_match ("lan_netmask", "255.255.255.252"))
+	  else if (!strcmp (nmask, "255.255.255.252"))
 	    loopmask = "0/30";
-//          else if (nvram_match ("lan_netmask", "255.255.255.254"))
+//          else if (!strcmp (nmask, "255.255.255.254"))
 //            loopmask = "0/31";
-	  else if (nvram_match ("lan_netmask", "255.255.255.255"))
+	  else if (!strcmp (nmask, "255.255.255.255"))
 	    loopmask = "0/32";
 
 	  //for class B subnets
-	  else if (nvram_match ("lan_netmask", "255.255.0.0"))
+	  else if (!strcmp (nmask, "255.255.0.0"))
 	    loopmask = "0/16";
-	  else if (nvram_match ("lan_netmask", "255.255.128.0"))
+	  else if (!strcmp (nmask, "255.255.128.0"))
 	    loopmask = "0/17";
-	  else if (nvram_match ("lan_netmask", "255.255.192.0"))
+	  else if (!strcmp (nmask, "255.255.192.0"))
 	    loopmask = "0/18";
-	  else if (nvram_match ("lan_netmask", "255.255.224.0"))
+	  else if (!strcmp (nmask, "255.255.224.0"))
 	    loopmask = "0/19";
-	  else if (nvram_match ("lan_netmask", "255.255.240.0"))
+	  else if (!strcmp (nmask, "255.255.240.0"))
 	    loopmask = "0/20";
-	  else if (nvram_match ("lan_netmask", "255.255.248.0"))
+	  else if (!strcmp (nmask, "255.255.248.0"))
 	    loopmask = "0/21";
-	  else if (nvram_match ("lan_netmask", "255.255.252.0"))
+	  else if (!strcmp (nmask, "255.255.252.0"))
 	    loopmask = "0/22";
-	  else if (nvram_match ("lan_netmask", "255.255.254.0"))
+	  else if (!strcmp (nmask, "255.255.254.0"))
 	    loopmask = "0/23";
 
 	  //for class A subnets
-	  else if (nvram_match ("lan_netmask", "255.0.0.0"))
+	  else if (!strcmp (nmask, "255.0.0.0"))
 	    loopmask = "0/8";
-	  else if (nvram_match ("lan_netmask", "255.128.0.0"))
+	  else if (!strcmp (nmask, "255.128.0.0"))
 	    loopmask = "0/9";
-	  else if (nvram_match ("lan_netmask", "255.192.0.0"))
+	  else if (!strcmp (nmask, "255.192.0.0"))
 	    loopmask = "0/10";
-	  else if (nvram_match ("lan_netmask", "255.224.0.0"))
+	  else if (!strcmp (nmask, "255.224.0.0"))
 	    loopmask = "0/11";
-	  else if (nvram_match ("lan_netmask", "255.240.0.0"))
+	  else if (!strcmp (nmask, "255.240.0.0"))
 	    loopmask = "0/12";
-	  else if (nvram_match ("lan_netmask", "255.248.0.0"))
+	  else if (!strcmp (nmask, "255.248.0.0"))
 	    loopmask = "0/13";
-	  else if (nvram_match ("lan_netmask", "255.252.0.0"))
+	  else if (!strcmp (nmask, "255.252.0.0"))
 	    loopmask = "0/14";
-	  else if (nvram_match ("lan_netmask", "255.254.0.0"))
+	  else if (!strcmp (nmask, "255.254.0.0"))
 	    loopmask = "0/15";
 
 	  save2file
