@@ -375,7 +375,7 @@ start_restore_defaults (void)
 #elif HAVE_FONERA
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "ath0",0},
+    {"lan_ifnames", "ath0", 0},
     {"wan_ifname", "eth0", 0},
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
@@ -383,7 +383,7 @@ start_restore_defaults (void)
 #elif HAVE_WHRAG108
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "eth0 ath0 ath1",0},
+    {"lan_ifnames", "eth0 ath0 ath1", 0},
     {"wan_ifname", "eth1", 0},
     {"wan_ifnames", "eth1", 0},
     {0, 0, 0}
