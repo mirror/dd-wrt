@@ -351,43 +351,44 @@ start_dhcpc (char *wan_ifname)
   nvram_set ("wan_get_dns", "");
   killall ("udhcpc", SIGTERM);
 
-  char *dhcp_argv[] = {"udhcpc", 
-  						"-i", wan_ifname, 
-  						"-p", "/var/run/udhcpc.pid", 
-  						"-s", "/tmp/udhcpc", 
-  						NULL, NULL, 
-  						NULL, NULL, 
-  						NULL, NULL, 
-  						NULL}; 
-  
-  int i = 7;
-  
-   if (vendorclass != NULL && strlen (vendorclass) > 0) 
-   {
-  	dhcp_argv[i] = "-V";
-  	i++;
-  	dhcp_argv[i] = vendorclass;
-  	i++;
-   }
-   
-   if (requestip != NULL && strlen (requestip) > 0) 
-   {
-  	dhcp_argv[i] = "-r";
-  	i++;
-  	dhcp_argv[i] = requestip;
-  	i++;
-   }
+  char *dhcp_argv[] = { "udhcpc",
+    "-i", wan_ifname,
+    "-p", "/var/run/udhcpc.pid",
+    "-s", "/tmp/udhcpc",
+    NULL, NULL,
+    NULL, NULL,
+    NULL, NULL,
+    NULL
+  };
 
-   if (wan_hostname != NULL && strlen (wan_hostname) > 0) 
-   {
-  	dhcp_argv[i] = "-H";
-  	i++;
-  	dhcp_argv[i] = wan_hostname;
-  	i++;
-   }   
-   
-   _eval (dhcp_argv, NULL, 0, &pid);
-   
+  int i = 7;
+
+  if (vendorclass != NULL && strlen (vendorclass) > 0)
+    {
+      dhcp_argv[i] = "-V";
+      i++;
+      dhcp_argv[i] = vendorclass;
+      i++;
+    }
+
+  if (requestip != NULL && strlen (requestip) > 0)
+    {
+      dhcp_argv[i] = "-r";
+      i++;
+      dhcp_argv[i] = requestip;
+      i++;
+    }
+
+  if (wan_hostname != NULL && strlen (wan_hostname) > 0)
+    {
+      dhcp_argv[i] = "-H";
+      i++;
+      dhcp_argv[i] = wan_hostname;
+      i++;
+    }
+
+  _eval (dhcp_argv, NULL, 0, &pid);
+
 }
 
 #ifdef HAVE_MSSID
@@ -612,7 +613,7 @@ isClient (void)
       || nvram_match ("wl0_mode", "apstawet"))
     return 1;
 #else
-  if (getSTA())
+  if (getSTA ())
     return 1;
 #endif
   return 0;
@@ -660,7 +661,7 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_RB500
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -686,7 +687,7 @@ start_lan (void)
 #endif
 
 #ifdef HAVE_MAGICBOX
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -715,7 +716,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -739,7 +740,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_WHRAG108
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
@@ -763,21 +764,41 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
-      nvram_set ("wan_ifname", "");
-      nvram_set ("wan_ifnames", "");
+      if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
+      else
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
     }
   else
     {
-      nvram_set ("lan_ifname", "br0");
-      nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
-      nvram_set ("wan_ifname", "ixp1");
-      nvram_set ("wan_ifnames", "ixp1");
+      if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "ixp0");
+	  nvram_set ("wan_ifnames", "ixp0");
+	}
+      else
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "ixp1");
+	  nvram_set ("wan_ifnames", "ixp1");
+	}
     }
   strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
   ioctl (s, SIOCGIFHWADDR, &ifr);
@@ -794,7 +815,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (getSTA() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet"))
     {
       nvram_set ("lan_ifname", "br0");

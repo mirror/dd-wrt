@@ -45,10 +45,8 @@
 
 #define NORMAL_INTERVAL		1	/* second */
 #define URGENT_INTERVAL		100 * 1000	/* microsecond */
-						/* 1/10 second */
-#ifdef HAVE_XSCALE
-#define GPIO_FILE		"/proc/sys/reset"
-#else
+
+#ifndef HAVE_GATEWORX						/* 1/10 second */
 #define GPIO_FILE		"/dev/gpio/in"
 #endif
 #if 0
@@ -115,6 +113,7 @@ getbuttonstate ()
 
 }
 #endif
+
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
 int
 getbuttonstate ()
@@ -126,6 +125,66 @@ if (in==NULL)return 0;
 fscanf(in,"%d",&ret);
 fclose(in);
 return ret;
+}
+#endif
+#if defined(HAVE_GATEWORX)
+
+#define u8 unsigned char
+#define u32 unsigned long 
+
+//#include <linux/ixp425-gpio.h>
+
+#include <include/asm/hardware.h>
+#include <include/asm-arm/arch-ixp4xx/ixp4xx-regs.h>
+
+#define IXP4XX_GPIO_OUT 		0x1
+#define IXP4XX_GPIO_IN  		0x2
+
+struct gpio_bit {
+  unsigned char bit;
+  unsigned char state;
+};
+
+
+
+char *filename = "/dev/gpio"; 
+
+
+int read_bit(int bit) {
+  int file;
+  struct gpio_bit _bit;
+
+  /* open device */
+  if ( (file = open(filename, O_RDONLY)) == -1) {
+    /* ERROR HANDLING; you can check errno to see what went wrong */
+    return 1;
+  }
+
+  /* Config pin as input */
+  _bit.bit = bit;
+  _bit.state = IXP4XX_GPIO_IN;
+  if ( ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+    /* ERROR HANDLING; you can check errno to see what went wrong */
+    return 1;
+  }
+
+  /* Read data */
+  _bit.bit = bit;
+  if ( ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+    /* ERROR HANDLING; you can check errno to see what went wrong */
+    return 1;
+  }
+
+  close(file);
+  return _bit.state;
+}
+
+int
+getbuttonstate ()
+{
+FILE *in;
+int ret = read_bit(4);
+return ret==0?1:0;
 }
 #endif
 
@@ -249,10 +308,9 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) 
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) 
   val = getbuttonstate();
 #else
-
   if ((fp = fopen (GPIO_FILE, "r")))
     {
 #ifdef HAVE_XSCALE
@@ -270,7 +328,7 @@ period_check (int sig)
   int gpio = 0;
 
   int state = 0;
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX)
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
@@ -339,7 +397,7 @@ period_check (int sig)
 		{
 		  printf ("resetbutton: factory default.\n");
 		  syslog (LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX)
 		  led_control (LED_DIAG, LED_ON);
 		  led_control (LED_DIAG2, LED_ON);
 #endif
@@ -352,7 +410,7 @@ period_check (int sig)
 	    }
 	}
     }
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX)
 
   else if ((sesgpio != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {

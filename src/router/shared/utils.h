@@ -104,7 +104,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLI2_TX1_G54 0x1a10
 
 // NMN A/B/G Router Protoype (266 Mhz Xscale, four minipci)
-#define ROUTER_BOARD_GATEWORX 0x1b0f
+#define ROUTER_BOARD_GATEWORX 0x1b04
 
 //Motorola WE800G v1 (4702 cpu, no switch, minipci radio, fccid: Motorola ACQWE800G, F2NWE800G)
 #define ROUTER_MOTOROLA_WE800G 0x1c10
@@ -133,6 +133,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 //Buffalo WHR-HP-AG108 (Atheros A+G, Kendin KS8895XA switch, fccid: Buffalo FDI-09101540-0)
 #define ROUTER_BOARD_WHRAG108 0x2601
+
+// swapped phy definition 
+#define ROUTER_BOARD_GATEWORX_SWAP 0x270f
 
 
 #define NVROUTER "DD_BOARD"

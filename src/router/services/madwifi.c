@@ -935,11 +935,11 @@ setupHostAP (char *prefix, int iswan)
 	pragma = "-n3 ";
       if (nvram_match (type, "3"))
 	pragma = "";
-      sleep(1); //some delay is usefull
+      sleep (1);		//some delay is usefull
       sprintf (exec, "wrt-radauth %s%s %s %s %s 1 1 0 &", pragma, prefix,
 	       server, port, share);
       system2 (exec);
-   	
+
 //    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
 
 
@@ -1087,7 +1087,8 @@ setMacFilter (char *iface)
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-static void adjust_regulatory(int count)
+static void
+adjust_regulatory (int count)
 {
   char dev[10];
   char wif[10];
@@ -1096,21 +1097,21 @@ static void adjust_regulatory(int count)
   sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
 //  if (count == 0)
-    {
-      long tb = atol (nvram_safe_get (turbo));
-      setsysctrl (wif, "turbo", tb);
-      long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-      if (default_match ("ath_specialmode", "1", "0"))
-	{
-	  setsysctrl (wif, "regulatory", 0);
-	  setsysctrl (wif, "setregdomain", 0x49);
-	}
-      else
-	{
-	  setsysctrl (wif, "regulatory", regulatory);
-	  setsysctrl (wif, "setregdomain", 0);
-	}
-    }
+  {
+    long tb = atol (nvram_safe_get (turbo));
+    setsysctrl (wif, "turbo", tb);
+    long regulatory = atol (nvram_safe_get ("ath_regulatory"));
+    if (default_match ("ath_specialmode", "1", "0"))
+      {
+	setsysctrl (wif, "regulatory", 0);
+	setsysctrl (wif, "setregdomain", 0x49);
+      }
+    else
+      {
+	setsysctrl (wif, "regulatory", regulatory);
+	setsysctrl (wif, "setregdomain", 0);
+      }
+  }
 
 
 }
@@ -1478,8 +1479,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
   int changed = 0;
 
   for (i = 0; i < c; i++)
-    adjust_regulatory(i);
-    
+    adjust_regulatory (i);
+
   for (i = 0; i < c; i++)
     {
 #ifdef REGDOMAIN_OVERRIDE
