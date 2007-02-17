@@ -1,5 +1,5 @@
 <% do_hpagehead(); %>
-		<title><% tran("share.help"); %> - <% tran("bmenu.firwall"); %></title>
+		<title>Help - Firewall</title>
 	</head>
 	<body>
 		<div id="header">
@@ -7,7 +7,7 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();">Close</a></div>
 		</div>
 		<div id="content">
-			<h2>Firewall</h2>
+			<h2><% tran("bmenu.firwall"); %></h2>
 			<dl>
 				
 				<dt><% tran("firewall.proxy"); %></dt>
