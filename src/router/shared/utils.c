@@ -127,10 +127,7 @@ getRouter ()
   return n != NULL ? n : "Unknown Model";
 }
 
-#ifdef HAVE_GATEWORKS
 
-#include <linux/mii.h>
-#endif
 
 int
 internal_getRouterBrand ()
@@ -154,22 +151,34 @@ internal_getRouterBrand ()
     }
   (void) strncpy (iwr.ifr_name, "ixp1", sizeof ("ixp1"));
   data = (struct mii_ioctl_data*)&iwr.ifr_data;
-  ioctl (s, SIOCGMIIPHY, &iwr);
+  data->phy_id=1;
+#define IX_ETH_ACC_MII_PHY_ID1_REG  0x2	/* PHY identifier 1 Register */
+#define IX_ETH_ACC_MII_PHY_ID2_REG  0x3	/* PHY identifier 2 Register */
+  data->reg_num=IX_ETH_ACC_MII_PHY_ID1_REG;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  data->phy_id=1;
+  data->reg_num=IX_ETH_ACC_MII_PHY_ID1_REG;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  int reg1 = data->val_out;  
+  data->phy_id=1;
+  data->reg_num=IX_ETH_ACC_MII_PHY_ID2_REG;
+  ioctl (s, SIOCGMIIREG, &iwr);
+  int reg2 = data->val_out;  
   close(s);
-  fprintf(stderr,"phy id %d\n",data->phy_id);
-  switch(data->phy_id)
-  {
-  case 0x4011:
-	  setRouter ("Avila GW2348-2");
-  break;    
-  case 0x4006:
-	  setRouter ("Avila GW2348-4");
-  break;
-  default:
+  fprintf(stderr,"phy id %X:%X\n",reg1,reg2);
+if (reg1==0x2000 && reg2==0x5c90)
+    {
 	  setRouter ("Avila GW2347");
-  break;  
-  }
-  return ROUTER_BOARD_GATEWORX;
+      return ROUTER_BOARD_GATEWORX_SWAP;
+    }else
+if (reg1=0x13 && reg2==0x7a11)
+    {
+      setRouter ("Avila GW2348-4/2");
+      return ROUTER_BOARD_GATEWORX;
+    }else{
+      setRouter ("Unknown");
+      return ROUTER_BOARD_GATEWORX;
+    }
 #elif HAVE_X86
   setRouter ("Generic X86");
   return ROUTER_BOARD_GATEWORX;
@@ -202,7 +211,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Microsoft MN-700\n");
-      setRouter ("Microsoft MN-700");
+          setRouter ("Microsoft MN-700");
       return ROUTER_MICROSOFT_MN700;
     }
 
