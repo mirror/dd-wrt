@@ -3892,8 +3892,13 @@ start_vlantagging (void)
     char *port = word;
     char *tag = strsep (&port, ">");
     if (!tag || !port)
+      {
       break;
-    eval ("vconfig", "add", port, tag);
+      }
+    eval ("vconfig", "add", tag, port);
+    char vlan_name[32];
+    sprintf (vlan_name, "%s.%s", tag, port);
+    eval ("ifconfig", vlan_name,"0.0.0.0","up");
   }
 }
 
@@ -3910,7 +3915,7 @@ stop_vlantagging (void)
     if (!tag || !port)
       break;
     char vlan_name[32];
-    sprintf (vlan_name, "%s.%s", port, tag);
+    sprintf (vlan_name, "%s.%s", tag, port);
     eval ("vconfig", "rem", vlan_name);
   }
 }
@@ -3927,11 +3932,12 @@ start_bridging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
-    eval ("brctl", "addbr", port);
-    if (!strcmp (tag, "1"))
+    eval ("brctl", "addbr", tag);
+    if (!strcmp (port, "1"))
       eval ("brctl", "stp", "port", "on");
     else
       eval ("brctl", "stp", "port", "off");
+    eval ("ifconfig", tag,"0.0.0.0","up");
   }
   
  wordlist = nvram_safe_get ("bridgesif");
@@ -3941,7 +3947,7 @@ start_bridging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
-    eval ("brctl", "addif", port,tag);
+    eval ("brctl", "addif", tag,port);
   }
 }
 
@@ -3957,7 +3963,7 @@ stop_bridging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
-    eval ("brctl", "delif", port,tag);
+    eval ("brctl", "delif", tag,port);
   }
   wordlist = nvram_safe_get ("vlan_tags");
   foreach (word, wordlist, next)
@@ -3966,7 +3972,7 @@ stop_bridging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
-    eval ("brctl", "delbr", port);
+    eval ("brctl", "delbr", tag);
   }
 }
 
