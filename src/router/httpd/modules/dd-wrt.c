@@ -2496,6 +2496,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //#endif
 	{
 #ifdef HAVE_MADWIFI
+      if (!strcmp (prefix, "ath0"))	//show client only on first interface
 	  if (nvram_match ("ath0_mode", "wdsap")
 	      || nvram_match ("ath0_mode", "wdssta"))
 	    showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
