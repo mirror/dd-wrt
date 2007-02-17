@@ -1449,6 +1449,13 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+  eval("rmmod","ath_ahb");
+  eval("insmod","ath_ahb");
+#else
+  eval("rmmod","ath_pci");
+  eval("insmod","ath_ahb");
+#endif
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
 /*
