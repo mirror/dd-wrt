@@ -784,12 +784,10 @@ nat_postrouting (void)
 
   if (nvram_match ("wk_mode", "gateway"))
     {
-#ifdef SIP_ALG_SUPPORT
       if (strlen (wanface) > 0)
 	save2file
 	  ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
 	   "--to-ports 5056-5071\n", wanface);
-#endif
       if (strlen (wanface) > 0)
 	save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 
@@ -1697,13 +1695,15 @@ filter_input (void)
 
   /* Routing protocol, RIP, accept */
   /* lonewolf mods for multiple VLANs / interfaces */
+if (!nvram_match("wan_proto","disabled"))
+  {    
   if (nvram_invmatch ("dr_wan_rx", "0"))
     save2file ("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT,
 	       TARG_PASS);
   else
     save2file ("-A INPUT -p udp -i %s --dport %d -j DROP\n", wanface,
 	       RIP_PORT);
-
+   }
   if (nvram_invmatch ("dr_lan_rx", "0"))
     save2file ("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT,
 	       TARG_PASS);
