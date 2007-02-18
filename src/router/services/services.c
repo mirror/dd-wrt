@@ -518,12 +518,15 @@ start_dhcpfwd (void)
       char *wan_ifname = nvram_safe_get ("wan_ifname");
 #ifdef HAVE_MADWIFI
       if (getSTA ())
+	{
+	  wan_ifname = getSTA ();	//returns eth1/eth2 for broadcom and ath0 for atheros
+	}
 #else
       if (nvram_match ("wl_mode", "sta"))
-#endif
 	{
 	  wan_ifname = get_wdev ();	//returns eth1/eth2 for broadcom and ath0 for atheros
 	}
+#endif
 #ifdef HAVE_PPPOE
       if (strcmp (wan_proto, "pppoe") == 0)
 	{
@@ -2906,7 +2909,11 @@ start_pppoe (int pppoe_num)
   char *wan_ifname = nvram_safe_get ("wan_ifname");
   if (isClient ())
     {
+#ifdef HAVE_MADWIFI
+      wan_ifname = getSTA ();
+#else
       wan_ifname = get_wdev ();
+#endif
     }
 
   pid_t pid;
