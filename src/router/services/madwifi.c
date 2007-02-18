@@ -698,7 +698,7 @@ setupSupplicant (char *prefix)
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
-	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+	eval ("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
     }
   else if (nvram_match (akm, "8021X"))
     {
@@ -781,9 +781,9 @@ setupSupplicant (char *prefix)
       sprintf (psk, "-i%s", prefix);
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
-	      "-Dmadwifi", psk, "-c", fstr);
+	      "-Dwext", psk, "-c", fstr);
       else
-	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+	eval ("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
     }
   else
     {
@@ -1303,12 +1303,6 @@ configure_single (int count, int isbond)
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", dev, "wds", "1");
-      cprintf ("setup encryption");
-      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-	setupHostAP (var, 0);
-      else
-	setupSupplicant (var);
-
       setMacFilter (var);
       cnt++;
     }
@@ -1381,10 +1375,6 @@ configure_single (int count, int isbond)
   cprintf ("done()\n");
 
   cprintf ("setup encryption");
-  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
-    setupHostAP (dev, 0);
-  else
-    setupSupplicant (dev);
 //@todo ifup
 //netconfig
   eval ("ifconfig", dev, "0.0.0.0", "up");
@@ -1442,19 +1432,40 @@ configure_single (int count, int isbond)
 	    }
 	}
     }
+  //setup encryption
+  m = default_get (wl, "ap");
+
+  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+    setupHostAP (dev, 0);
+  else
+    setupSupplicant (dev);
+  vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+	setupHostAP (var, 0);
+      else
+	setupSupplicant (var);
+
+    }
+
 
 }
+
 
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
-  eval("rmmod","ath_ahb");
-  eval("insmod","ath_ahb");
+  eval ("rmmod", "ath_ahb");
+  eval ("insmod", "ath_ahb");
 #else
-  eval("rmmod","ath_pci");
-  eval("insmod","ath_pci");
+  eval ("rmmod", "ath_pci");
+  eval ("insmod", "ath_pci");
 #endif
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
@@ -1554,3 +1565,19 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
     }
 }
 #endif
+
+
+//test functions only
+
+void
+start_deconfigurewifi (void)
+{
+  deconfigure_wifi ();
+}
+
+
+void
+start_configurewifi (void)
+{
+  configure_wifi ();
+}

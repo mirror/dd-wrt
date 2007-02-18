@@ -1755,6 +1755,7 @@ if (!nvram_match("wan_proto","disabled"))
 #endif
 
   /* ICMP request from WAN interface */
+  if (!nvram_match("wan_proto","disabled"))
   save2file ("-A INPUT -i %s -p icmp -j %s\n", wanface,
 	     nvram_match ("block_wan", "1") ? log_drop : TARG_PASS);
 
