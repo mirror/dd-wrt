@@ -698,7 +698,7 @@ setupSupplicant (char *prefix)
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
-	eval ("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
+	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
   else if (nvram_match (akm, "8021X"))
     {
@@ -781,9 +781,9 @@ setupSupplicant (char *prefix)
       sprintf (psk, "-i%s", prefix);
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
-	      "-Dwext", psk, "-c", fstr);
+	      "-Dmadwifi", psk, "-c", fstr);
       else
-	eval ("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
+	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
     }
   else
     {
@@ -1460,13 +1460,6 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
-#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
-  eval ("rmmod", "ath_ahb");
-  eval ("insmod", "ath_ahb");
-#else
-  eval ("rmmod", "ath_pci");
-  eval ("insmod", "ath_pci");
-#endif
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
 /*
