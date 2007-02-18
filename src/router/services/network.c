@@ -1812,7 +1812,7 @@ start_wan (int status)
 #endif
   if (isClient ())
     {
-      pppoe_wan_ifname = get_wdev ();
+      pppoe_wan_ifname = getSTA();
     }
 
 /*	if (strcmp(wan_proto,"pppoe"))
