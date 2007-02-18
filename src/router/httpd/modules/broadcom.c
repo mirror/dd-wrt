@@ -4685,6 +4685,7 @@ ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
   char ip2[20];
   char fullip[18];
   char mac[18];
+  char landev[16];
   int count = 0;
   int conn_count = 0;
 
@@ -4692,13 +4693,13 @@ ej_dumparptable (  webs_t wp, int argc, char_t ** argv)
     {
       while (fgets (buf, sizeof (buf), f))
 	{
-	  if (sscanf (buf, "%15s %*s %*s %17s %*s", ip, mac) != 2)
+	  if (sscanf (buf, "%15s %*s %*s %17s %*s %s", ip, mac, landev) != 3)
 	    continue;
 	  if ((strlen (mac) != 17)
 	      || (strcmp (mac, "00:00:00:00:00:00") == 0))
 	    continue;
-	  if (strcmp (ip, nvram_get ("wan_gateway")) == 0)
-	    continue;		//skip WAN arp entry
+	  if (strcmp (landev, nvram_get ("lan_ifname")) != 0)
+	    continue;		//skip all but LAN arp entries
 	  strcpy (hostname, "*"); //set name to *
 
 /* count open connections per IP */
