@@ -1432,7 +1432,6 @@ configure_single (int count, int isbond)
 	    }
 	}
     }
-  int s;
   for (s = 1; s <= 10; s++)
     {
       char wdsvarname[32] = { 0 };
