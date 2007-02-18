@@ -1809,12 +1809,17 @@ start_wan (int status)
       dns_to_resolv ();
       return;
     }
-#endif
+  if (isClient ())
+    {
+      pppoe_wan_ifname = get_wdev();
+    }
+
+#else
   if (isClient ())
     {
       pppoe_wan_ifname = getSTA();
     }
-
+#endif
 /*	if (strcmp(wan_proto,"pppoe"))
 	    {
 	    eval("insmod","slhc");	    
