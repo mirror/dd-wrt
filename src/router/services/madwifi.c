@@ -1454,7 +1454,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
   eval("insmod","ath_ahb");
 #else
   eval("rmmod","ath_pci");
-  eval("insmod","ath_ahb");
+  eval("insmod","ath_pci");
 #endif
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
