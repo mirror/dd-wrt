@@ -512,7 +512,6 @@ deconfigure_single (int count)
 	eval ("ifconfig", var, "down");
       }
   }
-  int s;
   for (s = 1; s <= 10; s++)
     {
       sprintf (dev, "wdsath%d.%d", count, s);
