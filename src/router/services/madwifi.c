@@ -502,6 +502,7 @@ deconfigure_single (int count)
   br_del_interface ("br0", "bond0");
   if (ifexists(dev))
   eval("ifconfig",dev,"down");
+  char vifs[128];
   sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 	   dev, dev, dev, dev, dev, dev, dev);
   foreach (var, vifs, next)
@@ -524,9 +525,6 @@ deconfigure_single (int count)
 
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
-  char vifs[128];
-  sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
-	   dev, dev, dev, dev, dev, dev, dev);
   foreach (var, vifs, next)
   {
     if (ifexists (var))
