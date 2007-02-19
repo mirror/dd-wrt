@@ -496,9 +496,31 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
+  if (ifexists(dev))
   br_del_interface ("br0", dev);
+  if (ifexists("bond0"))
   br_del_interface ("br0", "bond0");
-//  fprintf (stderr, "deconfigure %s\n", dev);
+  if (ifexists(dev))
+  eval("ifconfig",dev,"down");
+  sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
+	   dev, dev, dev, dev, dev, dev, dev);
+  foreach (var, vifs, next)
+  {
+    if (ifexists (var))
+      {
+	eval ("ifconfig", var, "down");
+      }
+  }
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      sprintf (dev, "wdsath%d.%d", count, s);
+      if (ifexists (dev))
+	{
+	  br_del_interface ("br0", dev);
+	  eval("ifconfig","dev","down");
+	}
+    }
 
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
@@ -1377,6 +1399,7 @@ configure_single (int count, int isbond)
   cprintf ("setup encryption");
 //@todo ifup
 //netconfig
+  eval ("ifconfig", "dev","mtu","1500");    
   eval ("ifconfig", dev, "0.0.0.0", "up");
 
   if (strcmp (m, "sta") && strcmp (m, "infra"))
@@ -1387,7 +1410,8 @@ configure_single (int count, int isbond)
 	  sprintf (bridged, "%s_bridged", dev);
 	  if (default_match (bridged, "1", "1"))
 	    {
-	      ifconfig (var, IFUP, NULL, NULL);
+	      eval ("ifconfig", "dev","mtu","1500");    
+	      ifconfig (dev, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
 		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
 	    }
@@ -1397,6 +1421,7 @@ configure_single (int count, int isbond)
 	      char mask[32];
 	      sprintf (ip, "%s_ipaddr", dev);
 	      sprintf (mask, "%s_ipaddr", dev);
+	      eval ("ifconfig", "dev","mtu","1500");    
 	      ifconfig (dev, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
@@ -1417,6 +1442,7 @@ configure_single (int count, int isbond)
 	  sprintf (bridged, "%s_bridged", var);
 	  if (default_match (bridged, "1", "1"))
 	    {
+	      eval ("ifconfig", var,"mtu","1500");    
 	      ifconfig (var, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
 		br_add_interface (nvram_safe_get ("lan_ifname"), var);
@@ -1427,6 +1453,7 @@ configure_single (int count, int isbond)
 	      char mask[32];
 	      sprintf (ip, "%s_ipaddr", var);
 	      sprintf (mask, "%s_ipaddr", var);
+	      eval ("ifconfig", var,"mtu","1500");    
 	      ifconfig (var, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
