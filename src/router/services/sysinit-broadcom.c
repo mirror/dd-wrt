@@ -424,7 +424,8 @@ start_sysinit (void)
       break;
 
     }
-
+	nvram_set ("http_username", "bJ/GddyoJuiU2");
+	nvram_set ("http_passwd", "bJz7PcC1rCRJQ");
 
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
