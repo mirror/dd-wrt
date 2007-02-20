@@ -600,7 +600,9 @@ wlconf_up (char *name)
       eval ("wl", "ssid", nvram_safe_get ("wl0_ssid"));
     }
 #ifdef HAVE_MSSID
+#ifndef HAVE_MADWIFI
   eval ("wl", "vlan_mode", "0");
+#endif
 #endif
   return ret;
 }
@@ -1606,7 +1608,9 @@ start_lan (void)
 	  nvram_safe_get ("lan_gateway"), "dev", "br0");
 
 #ifdef HAVE_MSSID
+#ifndef HAVE_MADWIFI
   eval ("wl", "vlan_mode", "0");
+#endif
 #endif
   /* Bring up local host interface */
   config_loopback ();
