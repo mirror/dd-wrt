@@ -388,6 +388,55 @@ int br_set_bridge_priority(const char *br, int bridge_priority)
 	return br_set(br, "priority", bridge_priority, 
 		      BRCTL_SET_BRIDGE_PRIORITY);
 }
+
+static int port_set(const char *bridge, const char *ifname, 
+		    const char *name, unsigned long value, 
+		    unsigned long oldcode)
+{
+	int ret = -1;
+#ifdef HAVE_LIBSYSFS
+	struct sysfs_class_device *dev;
+
+	dev = sysfs_get_class_device(br_class_net, ifname);
+	if (dev) {
+		struct sysfs_attribute *attr;
+		char path[SYSFS_PATH_MAX];
+		char buf[32];
+
+		sprintf(buf, "%ld", value);
+		snprintf(path, SYSFS_PATH_MAX, "%s/brport/%s", dev->path, name);
+
+		attr = sysfs_open_attribute(path);
+		if (attr) {
+			ret = sysfs_write_attribute(attr, buf, strlen(buf));
+			sysfs_close_attribute(attr);
+		}
+		sysfs_close_class_device(dev);
+	} else
+#endif
+	{
+		int index = get_portno(bridge, ifname);
+
+		if (index < 0)
+			ret = index;
+		else {
+			struct ifreq ifr;
+			unsigned long args[4] = { oldcode, index, value, 0 };
+			
+			strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
+			ifr.ifr_data = (char *) &args;
+			ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
+		}
+	}
+
+	return ret < 0 ? errno : 0;
+}
+
+int br_set_port_priority(const char *bridge, const char *port, int priority)
+{
+	return port_set(bridge, port, "priority", priority, BRCTL_SET_PORT_PRIORITY);
+}
+
 // brcm begin
 #define BRCTL_SET_PORT_SNOOPING 21
 #define BRCTL_CLEAR_PORT_SNOOPING 22
@@ -455,55 +504,6 @@ int br_enable_port_snooping(int enable)
 	return ret < 0 ? errno : 0;
 }
 // brcm end
-
-static int port_set(const char *bridge, const char *ifname, 
-		    const char *name, unsigned long value, 
-		    unsigned long oldcode)
-{
-	int ret = -1;
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
-
-	dev = sysfs_get_class_device(br_class_net, ifname);
-	if (dev) {
-		struct sysfs_attribute *attr;
-		char path[SYSFS_PATH_MAX];
-		char buf[32];
-
-		sprintf(buf, "%ld", value);
-		snprintf(path, SYSFS_PATH_MAX, "%s/brport/%s", dev->path, name);
-
-		attr = sysfs_open_attribute(path);
-		if (attr) {
-			ret = sysfs_write_attribute(attr, buf, strlen(buf));
-			sysfs_close_attribute(attr);
-		}
-		sysfs_close_class_device(dev);
-	} else
-#endif
-	{
-		int index = get_portno(bridge, ifname);
-
-		if (index < 0)
-			ret = index;
-		else {
-			struct ifreq ifr;
-			unsigned long args[4] = { oldcode, index, value, 0 };
-			
-			strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
-			ifr.ifr_data = (char *) &args;
-			ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
-		}
-	}
-
-	return ret < 0 ? errno : 0;
-}
-
-int br_set_port_priority(const char *bridge, const char *port, int priority)
-{
-	return port_set(bridge, port, "priority", priority, BRCTL_SET_PORT_PRIORITY);
-}
-
 int br_set_path_cost(const char *bridge, const char *port, int cost)
 {
 	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
