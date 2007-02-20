@@ -96,7 +96,7 @@ start_sysinit (void)
   eval ("insmod", "ath_ahb", "autocreate=none");
   eval ("ifconfig", "wifi0", "up");
 
-  eval ("insmod", "ipv6");
+//  eval ("insmod", "ipv6");
 
   /* Set a sane date */
   stime (&tm);
