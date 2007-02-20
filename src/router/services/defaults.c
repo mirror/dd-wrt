@@ -1251,8 +1251,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"sshd_enable", "1", 0},
 #elif HAVE_MAGICBOX
   {"sshd_enable", "1", 0},
-#elif HAVE_FONERA
-  {"sshd_enable", "1", 0},
 #elif HAVE_WHRAG108
   {"sshd_enable", "1", 0},
 #elif HAVE_X86

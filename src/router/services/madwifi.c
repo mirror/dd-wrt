@@ -519,7 +519,7 @@ deconfigure_single (int count)
       if (ifexists (dev))
 	{
 	  br_del_interface ("br0", dev);
-	  eval("ifconfig","dev","down");
+	  eval("ifconfig",dev,"down");
 	}
     }
 
@@ -1396,66 +1396,7 @@ configure_single (int count, int isbond)
   cprintf ("setup encryption");
 //@todo ifup
 //netconfig
-  eval ("ifconfig", "dev","mtu","1500");    
-  eval ("ifconfig", dev, "0.0.0.0", "up");
 
-  if (strcmp (m, "sta") && strcmp (m, "infra"))
-    {
-      if (nvram_match ("wifi_bonding", "0"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", dev);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      eval ("ifconfig", "dev","mtu","1500");    
-	      ifconfig (dev, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", dev);
-	      sprintf (mask, "%s_ipaddr", dev);
-	      eval ("ifconfig", "dev","mtu","1500");    
-	      ifconfig (dev, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-	}
-    }
-// vif netconfig
-  vifs = nvram_safe_get (wifivifs);
-  if (vifs != NULL)
-    foreach (var, vifs, next)
-    {
-      sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
-
-      eval ("ifconfig", var, "0.0.0.0", "up");
-      if (strcmp (m, "sta") && strcmp (m, "infra"))
-	{
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", var);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      eval ("ifconfig", var,"mtu","1500");    
-	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), var);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", var);
-	      sprintf (mask, "%s_ipaddr", var);
-	      eval ("ifconfig", var,"mtu","1500");    
-	      ifconfig (var, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
-	}
-    }
   for (s = 1; s <= 10; s++)
     {
       char wdsvarname[32] = { 0 };
@@ -1476,6 +1417,64 @@ configure_single (int count, int isbond)
       if (hwaddr != NULL)
 	{
 	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
+	}
+    }
+
+
+
+  eval ("ifconfig", dev, "0.0.0.0", "up");
+
+  if (strcmp (m, "sta") && strcmp (m, "infra"))
+    {
+      if (nvram_match ("wifi_bonding", "0"))
+	{
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", dev);
+	  if (default_match (bridged, "1", "1"))
+	    {
+	      ifconfig (dev, IFUP, NULL, NULL);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", dev);
+	      sprintf (mask, "%s_ipaddr", dev);
+	      ifconfig (dev, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
+	}
+    }
+// vif netconfig
+  vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+
+      eval ("ifconfig", var, "0.0.0.0", "up");
+      if (strcmp (m, "sta") && strcmp (m, "infra"))
+	{
+	  char bridged[32];
+	  sprintf (bridged, "%s_bridged", var);
+	  if (default_match (bridged, "1", "1"))
+	    {
+	      ifconfig (var, IFUP, NULL, NULL);
+	      if (nvram_match ("wifi_bonding", "0"))
+		br_add_interface (nvram_safe_get ("lan_ifname"), var);
+	    }
+	  else
+	    {
+	      char ip[32];
+	      char mask[32];
+	      sprintf (ip, "%s_ipaddr", var);
+	      sprintf (mask, "%s_ipaddr", var);
+	      ifconfig (var, IFUP, nvram_safe_get (ip),
+			nvram_safe_get (mask));
+	    }
 	}
     }
   //setup encryption
@@ -1506,6 +1505,23 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   deconfigure_wifi ();
+int s;
+for (s=0;s<10;s++)
+{
+char wif[32];
+sprintf(wif,"wifi%d",s);
+if (ifexists(wif));
+eval("ifconfig",wif,"down");
+}
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+eval("rmmod","ath_ahb");
+eval("insmod","ath_ahb");
+#else
+eval("rmmod","ath_pci");
+eval("insmod","ath_pci");
+#endif
+
+
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
 /*
