@@ -1506,7 +1506,7 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
 deconfigure_wifi ();
-int s;
+/*int s;
 int existed=0;
 for (s=0;s<10;s++)
 {
@@ -1532,7 +1532,7 @@ sprintf(wif,"wifi%d",s);
 if (ifexists(wif))
     eval("ifconfig",wif,"up");
 }
-
+*/
 
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
