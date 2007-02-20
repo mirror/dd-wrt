@@ -156,6 +156,13 @@ nvram_getall (char *buf, int count)
   return (ret == count) ? 0 : ret;
 }
 
+void nvram_open(void) // dummy
+{
+}
+void nvram_close(void) //dummy
+{
+}
+
 static int
 _nvram_set (const char *name, const char *value)
 {
@@ -221,6 +228,11 @@ nvram_set (const char *name, const char *value)
 //unlock();
   return ret;
 }
+int nvram_immed_set (const char *name, const char *value)
+{
+return nvram_set(name,value);
+}
+
 
 int
 nvram_unset (const char *name)
