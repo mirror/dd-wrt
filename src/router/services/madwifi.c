@@ -525,6 +525,7 @@ deconfigure_single (int count)
   sprintf (dev, "ath%d", count);
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
+
   foreach (var, vifs, next)
   {
     if (ifexists (var))
@@ -1506,26 +1507,30 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 {
 deconfigure_wifi ();
 int s;
+int existed=0;
 for (s=0;s<10;s++)
 {
 char wif[32];
 sprintf(wif,"wifi%d",s);
-if (ifexists(wif));
-eval("ifconfig",wif,"down");
+if (ifexists(wif))
+    {
+    eval("ifconfig",wif,"down");
+    existed=1;
+    }
 }
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
 eval("rmmod","ath_ahb");
-eval("insmod","ath_ahb");
+eval ("insmod", "ath_ahb", "autocreate=none");
 #else
 eval("rmmod","ath_pci");
-eval("insmod","ath_pci");
+eval ("insmod", "ath_pci", "autocreate=none");
 #endif
 for (s=0;s<10;s++)
 {
 char wif[32];
 sprintf(wif,"wifi%d",s);
-if (ifexists(wif));
-eval("ifconfig",wif,"up");
+if (ifexists(wif))
+    eval("ifconfig",wif,"up");
 }
 
 
