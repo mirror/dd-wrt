@@ -274,6 +274,61 @@ static int br_cmd_setportprio(int argc, char *const* argv)
 
 	return err != 0;
 }
+// brcm begin
+static int br_cmd_setportsnooping(char** argv)
+{
+	int err;
+
+	err = br_set_port_snooping(argv[1], argv[2], argv[3]);
+	if (err)
+		fprintf(stderr, "set port snooping failed: %s\n",
+			strerror(errno));
+
+	return err != 0;
+}
+
+static int br_cmd_clearportsnooping(char** argv)
+{
+	int err;
+
+	err = br_clear_port_snooping(argv[1], argv[2], argv[3]);
+	if (err)
+		fprintf(stderr, "clear port snooping failed: %s\n",
+			strerror(errno));
+
+	return err != 0;
+}
+
+static int br_cmd_showportsnooping(char** argv)
+{
+	int err;
+
+	err = br_show_port_snooping(argv[1]);
+	if (err)
+		fprintf(stderr, "show port snooping failed: %s\n",
+			strerror(errno));
+
+	return err != 0;
+}
+
+static int br_cmd_enableportsnooping(char** argv)
+{
+	int err;
+	int enable;
+
+	if (sscanf(argv[1], "%i", &enable) != 1) {
+		fprintf(stderr, "bad value\n");
+		return 1;
+	}
+
+	err = br_enable_port_snooping(enable);
+	if (err)
+		fprintf(stderr, "enable port snooping failed: %s\n",
+			strerror(errno));
+
+	return err != 0;
+}
+// brcm end
 
 static int br_cmd_stp(int argc, char *const* argv)
 {
@@ -411,6 +466,16 @@ static const struct command commands[] = {
 	  "<bridge> <port> <cost>\tset path cost" },
 	{ 3, "setportprio", br_cmd_setportprio,
 	  "<bridge> <port> <prio>\tset port priority" },
+// brcm begin
+	{ 3, "setportsnooping", br_cmd_setportsnooping,
+	  "<bridge> <port> <addr>\tset port snooping" },
+	{ 3, "clearportsnooping", br_cmd_clearportsnooping,
+	  "<bridge> <port> <addr>\tclear port snooping" },
+	{ 1, "showportsnooping", br_cmd_showportsnooping,
+	  "<bridge>\tshow port snooping" },
+	{ 1, "enableportsnooping", br_cmd_enableportsnooping,
+	  "<enable>\t\tenable port snooping" },
+// brcm end
 	{ 0, "show", br_cmd_show, "\t\t\tshow a list of bridges" },
 	{ 1, "showmacs", br_cmd_showmacs, 
 	  "<bridge>\t\tshow a list of mac addrs"},
