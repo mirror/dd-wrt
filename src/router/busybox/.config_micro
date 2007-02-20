@@ -171,7 +171,7 @@ CONFIG_MKDIR=y
 # CONFIG_MV is not set
 # CONFIG_FEATURE_MV_LONG_OPTIONS is not set
 # CONFIG_NICE is not set
-# CONFIG_NOHUP is not set
+CONFIG_NOHUP=y
 # CONFIG_OD is not set
 # CONFIG_PRINTENV is not set
 # CONFIG_PRINTF is not set
