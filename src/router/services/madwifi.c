@@ -1113,8 +1113,8 @@ adjust_regulatory (int count)
   char wif[10];
   char turbo[16];
   sprintf (wif, "wifi%d", count);
-  sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
+  sprintf (turbo, "%s_turbo", dev);
 //  if (count == 0)
   {
     long tb = atol (nvram_safe_get (turbo));
