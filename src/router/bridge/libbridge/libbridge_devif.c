@@ -388,6 +388,73 @@ int br_set_bridge_priority(const char *br, int bridge_priority)
 	return br_set(br, "priority", bridge_priority, 
 		      BRCTL_SET_BRIDGE_PRIORITY);
 }
+// brcm begin
+#define BRCTL_SET_PORT_SNOOPING 21
+#define BRCTL_CLEAR_PORT_SNOOPING 22
+#define BRCTL_ENABLE_SNOOPING 23
+#define BRCTL_SHOW_SNOOPING 24
+
+int br_set_port_snooping(const char *br, const char *port, const char *addr)
+{
+	unsigned int iaddr[6];
+	unsigned char dest[6];
+	int i = 0;
+	
+	sscanf(addr, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
+	for (i=0; i < 6; i++)
+	    dest[i] = iaddr[i];
+	sscanf(addr+13, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
+	for (i=0; i < 6; i++)
+	    dest[i+6] = iaddr[i];
+	return port_set(br, port, "port_snooping", dest, BRCTL_SET_PORT_SNOOPING);
+}
+
+int br_clear_port_snooping(const char *br, const char *port, const char *addr)
+{
+	unsigned int iaddr[6];
+	unsigned char dest[6];
+	int i = 0;
+	
+	sscanf(addr, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
+	for (i=0; i < 6; i++)
+	    dest[i] = iaddr[i];
+	sscanf(addr+13, "%02x%02x%02x%02x%02x%02x", iaddr, iaddr+1, iaddr+2, iaddr+3, iaddr+4, iaddr+5);
+	for (i=0; i < 6; i++)
+	    dest[i+6] = iaddr[i];
+	return port_set(br, port, "port_snooping", dest, BRCTL_CLEAR_PORT_SNOOPING);
+}
+
+int br_show_port_snooping(const char *brname)
+{
+	int ret;
+
+	{
+		char _br[IFNAMSIZ];
+		unsigned long arg[3] 
+			= { BRCTL_SHOW_SNOOPING, (unsigned long) _br };
+
+		strncpy(_br, brname, IFNAMSIZ);
+		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
+	} 
+
+	return ret < 0 ? errno : 0;
+}
+
+int br_enable_port_snooping(int enable)
+{
+	int ret;
+
+	{
+		unsigned long arg[3] 
+			= { BRCTL_ENABLE_SNOOPING, 0, 0};
+
+		arg[1] = enable;
+		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
+	} 
+
+	return ret < 0 ? errno : 0;
+}
+// brcm end
 
 static int port_set(const char *bridge, const char *ifname, 
 		    const char *name, unsigned long value, 
