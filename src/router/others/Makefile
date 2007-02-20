@@ -60,6 +60,7 @@ else
 endif
 	install network.overrides $(INSTALLDIR)/etc
 	install init.d/rcS $(INSTALLDIR)/etc/init.d
+	install init.d/S01dummy $(INSTALLDIR)/etc/init.d
 #install nvram/nvram $(INSTALLDIR)/etc/nvram
 	ln -sf /tmp/resolv.conf $(INSTALLDIR)/etc/resolv.conf
 	ln -sf /tmp/hosts $(INSTALLDIR)/etc/hosts
