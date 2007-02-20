@@ -522,7 +522,7 @@ deconfigure_single (int count)
 	  eval("ifconfig",dev,"down");
 	}
     }
-
+  sprintf (dev, "ath%d", count);
   if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
   foreach (var, vifs, next)
@@ -1504,7 +1504,7 @@ configure_single (int count, int isbond)
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
-  deconfigure_wifi ();
+deconfigure_wifi ();
 int s;
 for (s=0;s<10;s++)
 {
