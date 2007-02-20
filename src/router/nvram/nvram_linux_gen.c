@@ -330,8 +330,21 @@ nvram_getall (char *b, int count)
   return 0;
 }
 
-static int
-_nvram_set (const char *name, const char *value)
+
+void nvram_open(void)
+{
+lock();
+  readdb ();
+}
+
+void nvram_close(void)
+{
+  writedb ();
+  closedb ();
+unlock();
+}
+
+int nvram_immed_set (const char *name, const char *value)
 {
   cprintf ("nvram_set %s %s\n", name, value);
 
@@ -342,7 +355,6 @@ _nvram_set (const char *name, const char *value)
       return NULL;
     }
 
-  readdb ();
   int i;
   for (i = 0; i < values.nov; i++)
     {
@@ -372,8 +384,6 @@ _nvram_set (const char *name, const char *value)
       values.values[values.nov].value = strdup (value);
       values.nov++;
     }
-  writedb ();
-  closedb ();
   cprintf ("nvram_set done()\n");
 
   return 0;
@@ -382,14 +392,14 @@ _nvram_set (const char *name, const char *value)
 int
 nvram_set (const char *name, const char *value)
 {
-  lock ();
+nvram_open();
 #ifdef HAVE_NOWIFI
   if (!strcmp (name, "ip_conntrack_max") && value != NULL)
     {
       int val = atoi (value);
       if (val > 4096)
 	{
-	  int ret = _nvram_set (name, "4096");
+	  int ret = nvram_immed_set (name, "4096");
 	  unlock ();
 	  return ret;
 	}
@@ -402,19 +412,19 @@ nvram_set (const char *name, const char *value)
   struct nvram_convert *v;
   int ret;
 
-  ret = _nvram_set (name, value);
+  ret = nvram_immed_set (name, value);
 
   for (v = nvram_converts; v->name; v++)
     {
       if (!strcmp (v->name, name))
 	{
 	  if (strcmp (v->wl0_name, ""))
-	    _nvram_set (v->wl0_name, value);
+	    nvram_immed_set (v->wl0_name, value);
 	  if (strcmp (v->d11g_name, ""))
-	    _nvram_set (v->d11g_name, value);
+	    nvram_immed_set (v->d11g_name, value);
 	}
     }
-  unlock ();
+nvram_close();
   cprintf ("nvram_set done\n");
   return ret;
 }
@@ -423,7 +433,7 @@ int
 nvram_unset (const char *name)
 {
   lock ();
-  _nvram_set (name, NULL);
+  nvram_immed_set (name, NULL);
   unlock ();
   return 0;
 }

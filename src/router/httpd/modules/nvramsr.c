@@ -133,13 +133,17 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
       if (!strcmp (buf, "\n") || !strcmp (buf, "\r\n"))
 	break;
     }
-
+#if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86)
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+#endif
   // fprintf (stderr, "file write");
   unsigned short count;
   wfread (sign, 6, 1, wp);
   len -= 6;
   if (!strcmp (sign, "DD-WRT"))
     {
+nvram_open();
       unsigned char b;
       wfread (&b, 1, 1, wp);
       count = b;
@@ -147,6 +151,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
       count += ((unsigned int) b << 8);
       len -= 2;
       int i;
+      int skip;
       for (i = 0; i < count; i++)
 	{
 	again:;
@@ -171,55 +176,25 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  if (!strcmp (name, "nvram_ver"))
 	    nvram_ver = value;
 	  int a = 0;
+	  skip=0;
 	  while (filter[a] != NULL)
 	    {
 	      if (!strcmp (name, filter[a++]))
 		{
-		  free (value);
-		  free (name);
-		  i++;
-		  goto again;
+		  skip=1;
 		}
 	    }
-          fprintf(stderr,"%d of %d %s = %s\n",i,count,name,value);
-	  nvram_set (name, value);
+	  
+    //      fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
+	  if (!skip)
+	  {
+	  nvram_immed_set (name, value);
+	  }
 	  free (value);
 	  free (name);
 	}
       restore_ret = 0;
-    }
-  else if (!strcmp (sign, "XX-WRT"))
-    {
-      wfread (&count, 2, 1, wp);
-      len -= 2;
-      int i;
-      for (i = 0; i < count; i++)
-	{
-	  unsigned short l = 0;
-	  unsigned char c = 0;
-	  wfread (&c, 1, 1, wp);
-	  char *name = (char *) malloc (c + 1);
-	  wfread (name, c, 1, wp);
-	  int a;
-	  for (a = 0; a < c; a++)
-	    name[a] ^= 37;
-	  name[c] = 0;
-	  len -= (c + 1);
-	  wfread (&l, 2, 1, wp);
-	  char *value = (char *) malloc (l + 1);
-	  wfread (value, l, 1, wp);
-	  for (a = 0; a < l; a++)
-	    value[a] ^= 37;
-	  len -= (l + 2);
-	  value[l] = 0;
-	  //cprintf("setting %s to %s\n",name,value);
-	  if (!strcmp (name, "nvram_ver"))
-	    nvram_ver = value;
-	  nvram_set (name, value);
-	  free (value);
-	  free (name);
-	}
-      restore_ret = 0;
+      nvram_close();
     }
   else
     {
