@@ -84,6 +84,11 @@ extern int nvram_match(char *name, char *match);
  
 extern int nvram_invmatch(char *name, char *invmatch);
 
+extern void nvram_open(void);
+
+extern void nvram_close(void);
+
+extern int nvram_immed_set(const char *name, const char *value);
 
 extern void nvram_store_collection(char *name,char *buf);
 
