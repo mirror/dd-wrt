@@ -1520,6 +1520,13 @@ eval("insmod","ath_ahb");
 eval("rmmod","ath_pci");
 eval("insmod","ath_pci");
 #endif
+for (s=0;s<10;s++)
+{
+char wif[32];
+sprintf(wif,"wifi%d",s);
+if (ifexists(wif));
+eval("ifconfig",wif,"up");
+}
 
 
   //bridge the virtual interfaces too
