@@ -152,7 +152,7 @@ nvram_open();
       len -= 2;
       int i;
       int skip;
-      for (i = 0; i < count; i++)
+      for (i = 0; i < count && len>0; i++)
 	{
 	again:;
 	  unsigned short l = 0;
@@ -185,7 +185,7 @@ nvram_open();
 		}
 	    }
 	  
-    //      fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
+          fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
 	  if (!skip)
 	  {
 	  nvram_immed_set (name, value);
@@ -280,7 +280,11 @@ nv_file_out (char *path, webs_t wp)
   int i;
   for (i = 0; i < NVRAM_SPACE; i++)
     {
-      if (buf[i] == '=')
+      if (i>0 && buf[i] == 0 && buf[i-1]==0)
+        {
+	break;
+	}
+      if (buf[i] == 0)
 	backupcount++;
     }
   wfwrite (sign, 6, 1, wp);
