@@ -3323,21 +3323,7 @@ start_igmp_proxy (void)
   int ret = 0;
   pid_t pid;
 
-  char *igmp_proxy_argv[] = { "igmprt",
-#ifndef HAVE_X86
-#ifndef HAVE_XSCALE
-#ifndef HAVE_MAGICBOX
-#ifndef HAVE_FONERA
-#ifndef HAVE_WHRAG108
-#ifndef HAVE_RB500
-    "-f",
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-    "-i", get_wan_face (),
+  char *igmp_proxy_argv[] = { "igmprt",get_wan_face (),
     NULL
   };
 
