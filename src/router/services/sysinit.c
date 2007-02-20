@@ -458,6 +458,13 @@ start_restore_defaults (void)
     {
       restore_defaults = 1;
     }
+#elif HAVE_GATEWORX
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+    {
+      restore_defaults = 1;
+    }
 #elif HAVE_FONERA
   linux_overrides = generic;
   int brand = getRouterBrand ();
@@ -622,7 +629,6 @@ start_restore_defaults (void)
     }
 #endif
   int nvcnt = 0;
-
 //  if (!nvram_match("default_init","1"))
   {
     for (t = srouter_defaults; t->name; t++)
