@@ -103,6 +103,14 @@ extern int br_set_stp_state(const char *br, int stp_state);
 extern int br_set_bridge_priority(const char *br, int bridge_priority);
 extern int br_set_port_priority(const char *br, const char *p, 
 				int port_priority);
+// brcm begin
+extern int br_set_port_snooping(const char *br, const char *p, 
+				const char *addr);
+extern int br_clear_port_snooping(const char *br, const char *p, 
+				const char *addr);
+extern int br_show_port_snooping(const char *br) ;
+extern int br_enable_port_snooping(int enable) ;
+// brcm end
 extern int br_set_path_cost(const char *br, const char *p, 
 			    int path_cost);
 extern int br_read_fdb(const char *br, struct fdb_entry *fdbs, 
