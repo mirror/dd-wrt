@@ -185,7 +185,7 @@ nvram_open();
 		}
 	    }
 	  
-          fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
+//          fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
 	  if (!skip)
 	  {
 	  nvram_immed_set (name, value);
