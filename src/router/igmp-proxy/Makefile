@@ -18,7 +18,7 @@ all: igmp-proxy
 OBJECTS = igmp_proxy.o listlib.o
 
 igmp-proxy: $(OBJECTS)
-		$(CC) $(CFLAGS) $(OBJECTS) -o igmprt2
+	if test -e "brcm/Makefile"; then make -C brcm; else $(CC) $(CFLAGS) $(OBJECTS) -o igmprt2; fi
 
 igmp_proxy.o: igmp_proxy.c
 	$(CC) $(CFLAGS) -c igmp_proxy.c
@@ -27,4 +27,8 @@ listlib.o: listlib.c
 	$(CC) $(CFLAGS) -c listlib.c
 
 clean:
-	rm -rf $(OBJECTS)
+	if test -e "brcm/Makefile"; then make -C brcm clean; else rm -rf $(OBJECTS); fi
+	
+
+install:
+	if test -e "brcm/Makefile"; then install -D brcm/igmprt-$(ARCH) $(INSTALLDIR)/usr/sbin/igmprt; else install -D igmprt2 $(INSTALLDIR)/usr/sbin/igmprt; fi
