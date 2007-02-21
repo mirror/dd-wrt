@@ -497,6 +497,14 @@ if (reg1=0x13 && reg2==0x7a11)
       setRouter ("Buffalo WZR-G300N");
       return ROUTER_BUFFALO_WZRG300N;
     }
+    
+  if (boardnum == 8 &&
+      nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
+    {
+      setRouter ("Netgear WNR834B");
+      return ROUTER_NETGEAR_WNR834B;
+    }
+    
   if (boardnum == 42 &&
       nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1"))
     {
@@ -972,6 +980,8 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	        power_gpio = 0x17;
 	        wlan_gpio = 0x16;
+		break;
+	case ROUTER_NETGEAR_WNR834B:
 		break;
 	}
 	
