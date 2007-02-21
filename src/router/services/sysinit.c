@@ -512,6 +512,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_WRT300N:
     case ROUTER_BUFFALO_WZRRSG54:
+    case ROUTER_NETGEAR_WNR834B:
       linux_overrides = generic;
       break;
     case ROUTER_ASUS:
