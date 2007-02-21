@@ -103,7 +103,7 @@ process_monitor_main (void)
       struct timeval tnow;
       gettimeofday (&tnow, NULL);
 
-      if (tnow.tv_sec ) > 240)
+      if (tnow.tv_sec  > 240)
 		{
 	  	stop_service ("resetbutton");
 		}

@@ -463,9 +463,12 @@ if (brand!=ROUTER_WRT350N)
 #endif
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridging");
-	  stop_service ("vlantagging");
 #endif
 	  stop_service ("lan");
+#ifdef HAVE_VLANTAGGING
+	  stop_service ("bridgesif");
+	  stop_service ("vlantagging");
+#endif
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand & 0x000f) != 0x000f)
@@ -503,10 +506,13 @@ if (brand!=ROUTER_WRT350N)
 #endif
 	  start_service ("setup_vlans");
 #ifdef HAVE_VLANTAGGING
-	  start_service ("vlantagging");
 	  start_service ("bridging");
 #endif
 	  start_service ("lan");
+#ifdef HAVE_VLANTAGGING
+	  start_service ("vlantagging");
+	  start_service ("bridgesif");
+#endif
 #ifdef HAVE_MADWIFI
 	  start_service ("stabridge");
 #endif
