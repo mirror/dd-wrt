@@ -31,6 +31,10 @@
 
 #define BR_VERSION	"2.2"
 
+#define TIMER_CHECK_TIMEOUT 10
+#define QUERY_TIMEOUT 130
+//#define QUERY_TIMEOUT 60
+
 typedef struct bridge_id bridge_id;
 typedef struct mac_addr mac_addr;
 typedef __u16 port_id;
@@ -44,6 +48,17 @@ struct bridge_id
 struct mac_addr
 {
 	unsigned char	addr[6];
+};
+
+struct net_bridge_mc_fdb_entry
+{
+	struct net_bridge_port		*dst;
+	mac_addr			addr;
+	mac_addr			host;
+	unsigned char			is_local;
+	unsigned char			is_static;
+	unsigned long			tstamp;
+	struct list_head 		list;
 };
 
 struct net_bridge_fdb_entry
@@ -77,6 +92,7 @@ struct net_bridge_port
 	bridge_id			designated_bridge;
 	u32				path_cost;
 	u32				designated_cost;
+	int		 		dirty;
 
 	struct timer_list		forward_delay_timer;
 	struct timer_list		hold_timer;
@@ -96,6 +112,12 @@ struct net_bridge
 	struct hlist_head		hash[BR_HASH_SIZE];
 	struct list_head		age_list;
 	unsigned long			feature_mask;
+
+	struct list_head		mc_list;
+	struct timer_list 		igmp_timer;
+	int		 		proxy;
+	spinlock_t			mcl_lock;
+	int		 		start_timer;
 
 	/* STP */
 	bridge_id			designated_root;
@@ -186,6 +208,18 @@ extern void br_features_recompute(struct net_bridge *br);
 /* br_input.c */
 extern int br_handle_frame_finish(struct sk_buff *skb);
 extern int br_handle_frame(struct net_bridge_port *p, struct sk_buff **pskb);
+
+extern int snooping;
+extern void query_timeout(unsigned long ptr);
+extern int mc_forward(struct net_bridge *br, struct sk_buff *skb, const unsigned char *dest,int forward, int clone);
+extern void dolist(struct net_bridge *br);
+extern int br_mc_fdb_update(struct net_bridge *br, struct net_bridge_port *prt, const unsigned char *dest, unsigned char *host);
+extern struct net_bridge_mc_fdb_entry *br_mc_fdb_get(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest, unsigned char *host);
+extern int br_mc_fdb_add(struct net_bridge *br, struct net_bridge_port *prt, const unsigned char *dest, unsigned char *host);
+extern void br_mc_fdb_cleanup(struct net_bridge *br);
+extern void br_mc_fdb_remove_grp(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest);
+extern int br_mc_fdb_remove(struct net_bridge *br, struct net_bridge_port *prt, unsigned char *dest, unsigned char *host);
+extern void addr_debug(unsigned char *dest);
 
 /* br_ioctl.c */
 extern int br_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd);
