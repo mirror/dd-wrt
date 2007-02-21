@@ -3908,6 +3908,7 @@ stop_vlantagging (void)
       break;
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
+    if (ifexists(vlan_name))
     eval ("vconfig", "rem", vlan_name);
   }
 }
@@ -3926,9 +3927,9 @@ start_bridging (void)
       break;
     eval ("brctl", "addbr", tag);
     if (!strcmp (port, "1"))
-      eval ("brctl", "stp", "on");
+      br_set_stp_state(tag,1);
     else
-      eval ("brctl", "stp", "off");
+      br_set_stp_state(tag,0);
     eval ("ifconfig", tag,"0.0.0.0","up");
   }
   
@@ -3972,16 +3973,21 @@ stop_bridging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
+    if (ifexists(port))
     eval ("brctl", "delif", tag,port);
   }
-  wordlist = nvram_safe_get ("vlan_tags");
+  wordlist = nvram_safe_get ("bridges");
   foreach (word, wordlist, next)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       break;
+    if (ifexists(tag))
+    {
+    eval ("ifconfig",tag,"down");
     eval ("brctl", "delbr", tag);
+    }
   }
 }
 

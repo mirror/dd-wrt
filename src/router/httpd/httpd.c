@@ -1644,5 +1644,6 @@ check_cipher (void)
 char *
 websGetVar (webs_t wp, char *var, char *d)
 {
-  return get_cgi (var) ? : d;
+char *ret = get_cgi (var) ? : d;
+return ret;
 }
