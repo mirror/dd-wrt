@@ -895,13 +895,13 @@ crypto_getreq(int num)
 	struct cryptodesc *crd;
 	struct cryptop *crp;
 
-	crp = kmem_cache_alloc(cryptop_zone, SLAB_ATOMIC);
+	crp = kmem_cache_alloc(cryptop_zone, GFP_ATOMIC);
 	if (crp != NULL) {
 		memset(crp, 0, sizeof(*crp));
 		INIT_LIST_HEAD(&crp->crp_list);
 		init_waitqueue_head(&crp->crp_waitq);
 		while (num--) {
-			crd = kmem_cache_alloc(cryptodesc_zone, SLAB_ATOMIC);
+			crd = kmem_cache_alloc(cryptodesc_zone, GFP_ATOMIC);
 			if (crd == NULL) {
 				crypto_freereq(crp);
 				return NULL;

@@ -102,6 +102,8 @@
  *
  * <hr>
  */
+PUBLIC UINT32 *ixEthMiiGetPhyIDs(void);
+
 PUBLIC IX_STATUS ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount);
 
 /**

@@ -46,14 +46,11 @@ void __exit br_fdb_fini(void)
  */
 static __inline__ unsigned long hold_time(const struct net_bridge *br)
 {
-//#if defined(CONFIG_MIPS_BRCM)
     /* We use forward_delay=0. If code unchanged, every entry in fdb will expire immidately */
     /* and every packet flood the local network for a period of bridge_max_age afterboot up */
     /* So we decoulpe this timer from forward_delay. */
 	return br->topology_change ? (15*HZ) : br->ageing_time;
-//#else
-	return br->topology_change ? br->forward_delay : br->ageing_time;
-//#endif
+	//return br->topology_change ? br->forward_delay : br->ageing_time;
 }
 
 static __inline__ int has_expired(const struct net_bridge *br,
@@ -84,14 +81,14 @@ void dolist(struct net_bridge *br)
 	if (!br)
 	    return;
 
-	printk("bridge	device	group			source			timeout\n");
+	printk(KERN_EMERG "bridge	device	group			source			timeout\n");
 	list_for_each_rcu(lh, &br->mc_list) {
 	    dst = (struct net_bridge_mc_fdb_entry *) list_entry(lh, struct net_bridge_mc_fdb_entry, list);
-	    printk("%s	%s  	", br->dev->name, dst->dst->dev->name);
+	    printk(KERN_EMERG "%s	%s  	", br->dev->name, dst->dst->dev->name);
 	    addr_debug((unsigned char *) &dst->addr);
-	    printk("	");
+	    printk(KERN_EMERG "	");
 	    addr_debug((unsigned char *) &dst->host);
-	    printk("	%d\n", (int) (dst->tstamp - jiffies)/HZ);
+	    printk(KERN_EMERG "	%d\n", (int) (dst->tstamp - jiffies)/HZ);
 	}
 }
 

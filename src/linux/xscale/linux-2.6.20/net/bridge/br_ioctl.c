@@ -318,7 +318,6 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	{
 		struct net_bridge_port *p;
 		int ret = 0;
-
 		if (!capable(CAP_NET_ADMIN))
 			return -EPERM;
 
@@ -427,7 +426,6 @@ static int old_deviceless(void __user *uarg)
 	{
 		char buf[IFNAMSIZ];
 		struct net_device *dev;
-
 		if (!capable(CAP_NET_ADMIN))
 			return -EPERM;
 
@@ -485,19 +483,19 @@ int br_ioctl_deviceless_stub(unsigned int cmd, void __user *uarg)
 	{
 		char buf[IFNAMSIZ];
 		struct net_device *dev;
-
+	
 		if (!capable(CAP_NET_ADMIN))
 			return -EPERM;
-
+	
 		if (copy_from_user(buf, uarg, IFNAMSIZ))
 			return -EFAULT;
 
 		buf[IFNAMSIZ-1] = 0;
-		
+			
 		dev = __dev_get_by_name(buf);
 		if (dev == NULL) 
 		    return -ENXIO; 	/* Could not find device */
-		dolist(netdev_priv(dev));
+			dolist(netdev_priv(dev));
 		
 		return 0;
 	}

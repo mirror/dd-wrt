@@ -62,7 +62,7 @@
 
 #define		VERSION_CODE(ver,rel,seq)	((ver << 16) | (rel << 8) | seq)
 
-#define		NPREAL_VERSION			"1.12 (2/23/2006)"
+#define		NPREAL_VERSION			"1.12.9 (11/17/2006)"
 
 #if (LINUX_VERSION_CODE < VERSION_CODE(2,1,0))
 
@@ -121,7 +121,7 @@ int	MXDebugLevel = MX_DEBUG_ERROR;
 
 # if (LINUX_VERSION_CODE > VERSION_CODE(2,1,11))
 MODULE_AUTHOR("Moxa Tech.,www.moxa.com.tw");
-MODULE_DESCRIPTION("MOXA Async/NPort Server Family Real Tty Driver");
+MODULE_DESCRIPTION("MOXA Async/NPort Server Family Real TTY Driver");
 # if (LINUX_VERSION_CODE < VERSION_CODE(2,6,6))
 MODULE_PARM(ttymajor,        "i");
 MODULE_PARM(calloutmajor,    "i");
@@ -130,6 +130,7 @@ MODULE_PARM(verbose,        "i");
 module_param(ttymajor, int, 0);
 module_param(calloutmajor, int, 0);
 module_param(verbose, int, 0644);
+MODULE_VERSION(NPREAL_VERSION);
 # endif
 # if (LINUX_VERSION_CODE > VERSION_CODE(2,4,0))
 #ifdef MODULE_LICENSE
@@ -660,7 +661,9 @@ npreal_init(void)
 	DRV_VAR_P(magic) = TTY_DRIVER_MAGIC;
 	DRV_VAR_P(name) = "ttyr";
 #if (LINUX_VERSION_CODE >= VERSION_CODE(2,6,0))
+#if (LINUX_VERSION_CODE < VERSION_CODE(2,6,18))
 	DRV_VAR_P(devfs_name) = "tts/r";
+#endif
 #endif
 	DRV_VAR_P(major) = ttymajor;
 	DRV_VAR_P(minor_start) = 0;
@@ -669,7 +672,11 @@ npreal_init(void)
 	DRV_VAR_P(subtype) = SERIAL_TYPE_NORMAL;
 	DRV_VAR_P(init_termios) = tty_std_termios;
 	DRV_VAR_P(init_termios.c_cflag) = B9600|CS8|CREAD|HUPCL|CLOCAL;
+#if (LINUX_VERSION_CODE < VERSION_CODE(2,6,18))
 	DRV_VAR_P(flags) = TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS;
+#else
+	DRV_VAR_P(flags) = TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
+#endif
 	
 #if (LINUX_VERSION_CODE >= VERSION_CODE(2,6,0))
 	tty_set_operations(DRV_VAR, &mpvar_ops);
@@ -2833,6 +2840,20 @@ static int npreal_set_modem_info(struct npreal_struct * info, unsigned int cmd,
 }
 #endif
 
+#if (LINUX_VERSION_CODE > VERSION_CODE(2,6,14))
+static void tty_buffer_free(struct tty_struct *tty, struct tty_buffer *b)
+{
+	/* Dumb strategy for now - should keep some stats */
+/* 	printk("Flip dispose %p\n", b); */
+	if(b->size >= 512)
+		kfree(b);
+	else {
+		b->next = tty->buf.free;
+		tty->buf.free = b;
+	}
+}
+#endif
+
 /*
  * This routine is called out of the software interrupt to flush data
  * from the flip buffer to the line discipline.
@@ -2841,18 +2862,32 @@ static void npreal_flush_to_ldisc(void *private_)
 {
 	struct npreal_struct *	info = (struct npreal_struct *)private_;
 	struct tty_struct *	tty;
+	int		count;
+	
+#if (LINUX_VERSION_CODE > VERSION_CODE(2,6,14))
+	struct tty_ldisc *disc;
+	struct tty_buffer *tbuf, *head;
+	unsigned long 	flags;
+	unsigned char	*fp;
+	char		*cp;
+#else
 	unsigned char	*cp;
 	char		*fp;
-	int		count;
-
+#endif
 	if (!info)
 		goto done;
-
-       	down(&info->rx_semaphore);
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))
+    down(&info->rx_semaphore);
+#endif
 	tty = info->tty;
+#if (LINUX_VERSION_CODE > VERSION_CODE(2,6,14))	
+	disc = tty_ldisc_ref(tty);
+	if (disc == NULL)	/*  !TTY_LDISC */
+		return;
+#endif
 	if ( tty && (info->flags & ASYNC_INITIALIZED))  {
-
-			if (tty->flip.buf_num) {
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))	
+		if (tty->flip.buf_num) {
 			cp = tty->flip.char_buf + TTY_FLIPBUF_SIZE;
 			fp = tty->flip.flag_buf + TTY_FLIPBUF_SIZE;
 			tty->flip.buf_num = 0;
@@ -2870,8 +2905,62 @@ static void npreal_flush_to_ldisc(void *private_)
 		tty->flip.count = 0;
 		tty->ldisc.receive_buf(tty, cp, fp, count);
 		//DBGPRINT(MX_DEBUG_TRACE, "flush %d bytes\n", count);
+#else
+/*		spin_lock_irqsave(&tty->buf.lock, flags);
+		while((tbuf = tty->buf.head) != NULL) {
+			while ((count = tbuf->commit - tbuf->read) != 0) {
+				cp = tbuf->char_buf_ptr + tbuf->read;
+				fp = tbuf->flag_buf_ptr + tbuf->read;
+				tbuf->read += count;
+				spin_unlock_irqrestore(&tty->buf.lock, flags);
+				disc->receive_buf(tty, cp, fp, count);
+				spin_lock_irqsave(&tty->buf.lock, flags);
+			}
+			if (tbuf->active)
+				break;
+			tty->buf.head = tbuf->next;
+			if (tty->buf.head == NULL)
+				tty->buf.tail = NULL;
+			tty_buffer_free(tty, tbuf);
+		}
+		spin_unlock_irqrestore(&tty->buf.lock, flags);
+*/
+		spin_lock_irqsave(&tty->buf.lock, flags);
+		head = tty->buf.head;
+		if (head != NULL) {
+			tty->buf.head = NULL;
+			for (;;) {
+				count = head->commit - head->read;
+				if (!count) {
+					if (head->next == NULL)
+						break;
+					tbuf = head;
+					head = head->next;
+					tty_buffer_free(tty, tbuf);
+					continue;
+				}
+				if (!tty->receive_room) {
+					schedule_delayed_work(&tty->buf.work, 1);
+					break;
+				}
+				if (count > tty->receive_room)
+					count = tty->receive_room;
+				cp = head->char_buf_ptr + head->read;
+				fp = head->flag_buf_ptr + head->read;
+				head->read += count;
+				spin_unlock_irqrestore(&tty->buf.lock, flags);
+				disc->receive_buf(tty, cp, fp, count);
+				spin_lock_irqsave(&tty->buf.lock, flags);
+			}
+			tty->buf.head = head;
+		}
+		spin_unlock_irqrestore(&tty->buf.lock, flags);
+		tty_ldisc_deref(disc);
+#endif
 	}
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))
   	up(&info->rx_semaphore);
+#endif
 
 done: ;
 #if (LINUX_VERSION_CODE < VERSION_CODE(2,6,0))
@@ -3526,6 +3615,11 @@ npreal_net_write (
 	 *  Get the node pointer, and quit if it doesn't exist.
 	 */
 	
+	if( !buf ) {
+		rtn = count; /* throw it away*/
+		goto done;
+	}
+		
 	if( !nd ) {
 		rtn = count; /* throw it away*/
 		goto done;
@@ -3561,7 +3655,11 @@ npreal_net_write (
 	}
 
 /*  The receive buffer will overrun,as the TTY_THRESHOLD_THROTTLE is 128*/
-	if ((cnt = MIN(count,TTY_FLIPBUF_SIZE-tty->flip.count )) <= 0) {
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))
+	if ((cnt = MIN(count,TTY_FLIPBUF_SIZE-tty->flip.count)) <= 0) {
+#else
+	if((cnt = tty_buffer_request_room(tty, count)) <= 0){
+#endif
 		/*
 		* Doing throttle here,because that it will spent times
 		* for upper layer driver to throttle and the application 
@@ -3608,12 +3706,17 @@ npreal_net_write (
 			goto done;
 		}
 	}
-
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))
 	if(copy_from_user( tty->flip.char_buf_ptr, buf,cnt )){
+#else
+	if((count = tty_insert_flip_string(tty, (unsigned char *)buf, cnt))){
+		tty_flip_buffer_push(tty);
+#endif
 		rtn = count; /* throw it away*/
         	up(&info->rx_semaphore);
 		goto done;
 	}
+#if (LINUX_VERSION_CODE <= VERSION_CODE(2,6,14))
 //	DBGPRINT(MX_DEBUG_TRACE, "write %d bytes (1st tty->flip.char_buf_ptr=0x%02X)\n", cnt, (unsigned char)(((char*)(tty->flip.char_buf_ptr))[0]));
 	tty->flip.count += cnt;
 	rtn = cnt;
@@ -3624,6 +3727,7 @@ npreal_net_write (
 #endif
 	memset(tty->flip.flag_buf_ptr,TTY_NORMAL,cnt);
 	tty->flip.flag_buf_ptr += cnt;
+#endif
        	up(&info->rx_semaphore);
        	MXQ_TASK(&info->process_flip_tqueue);
 
