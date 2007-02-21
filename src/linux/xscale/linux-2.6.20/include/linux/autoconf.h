@@ -1,9 +1,10 @@
 /*
  * Automatically generated C config: don't edit
  * Linux kernel version: 2.6.20
- * Tue Feb  6 18:26:14 2007
+ * Sat Feb 17 03:58:33 2007
  */
 #define AUTOCONF_INCLUDED
+#define CONFIG_BONDING_MODULE 1
 #define CONFIG_TCP_CONG_ADVANCED 1
 #define CONFIG_TCP_CONG_SCALABLE 1
 #define CONFIG_NF_CT_ACCT 1
