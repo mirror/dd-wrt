@@ -188,6 +188,7 @@ extern int add_bridgeif (webs_t wp);
 extern int del_bridge (webs_t wp);
 extern int del_vlan (webs_t wp);
 extern int del_bridgeif (webs_t wp);
+extern int save_networking (webs_t wp);
 extern void ej_show_status_setting (  webs_t wp, int argc, char_t ** argv);
 extern void ej_dumpip_conntrack (  webs_t wp, int argc, char_t ** argv);
 extern void ej_ip_conntrack_table (  webs_t wp, int argc, char_t ** argv);
