@@ -1677,10 +1677,6 @@ start_resetbutton (void)
 {
   int ret = 0;
 
-  // Sveasoft 2003-12-15 only start if enabled
-  if (!nvram_invmatch ("resetbutton_enable", "0"))
-    return 0;
-
   ret = eval ("resetbutton");
   syslog (LOG_INFO,
 	  "resetbutton : reset button daemon successfully started\n");
