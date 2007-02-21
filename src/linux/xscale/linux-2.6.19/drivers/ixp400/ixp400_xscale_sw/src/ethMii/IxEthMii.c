@@ -71,6 +71,11 @@ PRIVATE UINT32 ixEthMiiPhyId[IXP400_ETH_ACC_MII_MAX_ADDR];
  *
  */
 
+PUBLIC UINT32 *ixEthMiiGetPhyIDs(void)
+{
+    return &ixEthMiiPhyId[0];
+}
+
 PUBLIC IX_STATUS
 ixEthMiiPhyScan(BOOL phyPresent[], UINT32 maxPhyCount)
 {

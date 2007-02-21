@@ -53,6 +53,7 @@
 #include <linux/module.h>
 #include "IxEthMii.h"
 
+EXPORT_SYMBOL(ixEthMiiGetPhyIDs);
 EXPORT_SYMBOL(ixEthMiiPhyScan);
 EXPORT_SYMBOL(ixEthMiiPhyReset);
 EXPORT_SYMBOL(ixEthMiiPhyConfig);
