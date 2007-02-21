@@ -153,6 +153,34 @@ start_services (void)
 #endif
 
   dlclose (handle);
+  
+/* dirty fix starts here: WDS does not connect from cold boot; we try to restart NAS */
+#ifndef HAVE_MADWIFI
+#ifdef HAVE_MSSID
+      stop_service ("guest_nas");
+#endif
+      stop_service ("nas");
+#endif
+/* nas mode select*/
+      if (nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "wet")
+	  || nvram_match ("wl0_mode", "apsta")
+	  || nvram_match ("wl0_mode", "apstawet"))
+	{
+	  cprintf ("start nas wan\n");
+	  start_service ("nas_wan");
+	}
+      else
+	{
+	  cprintf ("start nas lan\n");
+	  start_service ("nas_lan");
+	}
+/*end nas mode select */
+#ifdef HAVE_MSSID
+      start_service ("guest_nas");
+#endif
+#endif
+/* fix ends here */
 
   cprintf ("done\n");
   return 0;
