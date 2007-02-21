@@ -1589,7 +1589,8 @@ start_nas (char *type, char *prefix)
 int
 stop_nas (void)
 {
-  if (pidof ("nas") > 0)
+  while (pidof ("nas") > 0)
+  {
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
   /* NAS sometimes won't exit properly on a normal kill */
   //int ret = killps("nas",NULL);
@@ -1597,7 +1598,7 @@ stop_nas (void)
   sleep (2);
   //killps("nas","-9");
   killall ("nas", SIGKILL);
-
+  }
   cprintf ("done\n");
   return ret;
 }
