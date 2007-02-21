@@ -6,6 +6,8 @@
 document.title = "<% nvram_get("router_name"); %> - Networking";
 
 function to_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "save_networking";
 	F.save_button.value = sbutton.saving;
 	apply(F);
 }
@@ -80,6 +82,8 @@ function init() {
 							<fieldset>
 							   <legend>Create Bridge</legend>
 							   <% show_bridgenames(); %>
+							</fieldset>
+							<fieldset>
 							   <legend>Assign to Bridge</legend>
 							   <% show_bridgeifnames(); %>
 							</fieldset>
@@ -98,7 +102,7 @@ function init() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<br />
-						<!-- <a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HVlan.asp');"><% tran("share.more"); %></a> -->
+						<!-- <a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HNetworking.asp');"><% tran("share.more"); %></a> -->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
