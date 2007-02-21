@@ -852,7 +852,7 @@ main ()
 }
 EOF
 
-${CC-cc} dummy.c -o dummy 2>/dev/null && ./dummy && rm dummy.c dummy && exit 0
+gcc dummy.c -o dummy 2>/dev/null && ./dummy && rm dummy.c dummy && exit 0
 rm -f dummy.c dummy
 
 # Apollos put the system type in the environment.
