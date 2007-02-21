@@ -66,11 +66,8 @@ process_monitor_main (void)
 
 /* init ntp timer */
 #ifdef HAVE_SNMP
-	if (nvram_match ("snmpd_enable", "1"))
-		{
 		struct timeval now;
       	gettimeofday (&now, NULL);
-  		}
 #endif
       if (do_ntp () != 0)
 	{
