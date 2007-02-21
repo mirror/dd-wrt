@@ -481,8 +481,10 @@ int br_show_port_snooping(const char *brname)
 		char _br[IFNAMSIZ];
 		unsigned long arg[3] 
 			= { BRCTL_SHOW_SNOOPING, (unsigned long) _br };
+		fprintf(stderr,"bridge %s\n",brname);
 
 		strncpy(_br, brname, IFNAMSIZ);
+		fprintf(stderr,"ioctl\n");
 		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
 	} 
 
