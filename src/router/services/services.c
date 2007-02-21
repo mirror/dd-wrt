@@ -626,8 +626,7 @@ start_udhcpd (void)
 #endif
 #endif
 
-  if (nvram_match ("router_disable", "1")
-      || nvram_invmatch ("lan_proto", "dhcp")
+  if (nvram_invmatch ("lan_proto", "dhcp")
       || nvram_match ("dhcp_dnsmasq", "1"))
     {
       stop_udhcpd ();
@@ -3927,9 +3926,9 @@ start_bridging (void)
       break;
     eval ("brctl", "addbr", tag);
     if (!strcmp (port, "1"))
-      eval ("brctl", "stp", "port", "on");
+      eval ("brctl", "stp", "on");
     else
-      eval ("brctl", "stp", "port", "off");
+      eval ("brctl", "stp", "off");
     eval ("ifconfig", tag,"0.0.0.0","up");
   }
   
@@ -3942,6 +3941,23 @@ start_bridging (void)
       break;
     eval ("brctl", "addif", tag,port);
   }
+}
+
+char *getBridge(char *ifname)
+{
+ static char word[256];
+  char *next, *wordlist;
+ wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    if (!strcmp(port,ifname))
+	return tag;
+  }
+return nvram_safe_get("lan_ifname"); 
 }
 
 void
@@ -3972,4 +3988,9 @@ stop_bridging (void)
 
 
 
+#else
+char *getBridge(char *ifname)
+{
+return nvram_safe_get("lan_ifname");
+}
 #endif

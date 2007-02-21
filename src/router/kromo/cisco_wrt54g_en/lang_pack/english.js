@@ -326,6 +326,7 @@ bmenu.setupmacclone="MAC Address Clone";
 bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
+bmenu.networking="Networking";
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Basic Settings";
