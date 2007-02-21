@@ -136,6 +136,9 @@ function submit_manual_wol(F) {
 	F.wol_type.value = "manual";
 	apply(F);
 }
+function to_submit(F) {
+    submit_manual_wol(F);
+}
 
 function valid(F) {
 	if(F.manual_wol_mac.value == ""){
