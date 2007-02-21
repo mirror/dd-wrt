@@ -715,7 +715,7 @@ setupSupplicant (char *prefix)
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
-	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
+	eval ("wpa_supplicant", "-b", getBridge(prefix), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
 	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
@@ -799,7 +799,9 @@ setupSupplicant (char *prefix)
       fprintf (fp, "}\n");
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
-      if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
+      char bvar[32];
+      sprintf (bvar, "%s_bridged", prefix);
+      if (nvram_match(bvar,"1") && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -867,7 +869,11 @@ setupHostAP (char *prefix, int iswan)
       FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
       //sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
-      fprintf (fp, "bridge=%s\n", nvram_safe_get ("lan_ifname"));
+      char bvar[32];
+      sprintf (bvar, "%s_bridged", prefix);
+      if (nvram_match(bvar,"1"))
+        fprintf (fp, "bridge=%s\n", getBridge(prefix));
+      
       fprintf (fp, "driver=madwifi\n");
       fprintf (fp, "logger_syslog=-1\n");
       fprintf (fp, "logger_syslog_level=2\n");
@@ -1435,7 +1441,7 @@ configure_single (int count, int isbond)
 	    {
 	      ifconfig (dev, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), dev);
+		br_add_interface (getBridge(dev), dev);
 	    }
 	  else
 	    {
@@ -1465,7 +1471,7 @@ configure_single (int count, int isbond)
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (nvram_safe_get ("lan_ifname"), var);
+		br_add_interface (getBridge(var), var);
 	    }
 	  else
 	    {
@@ -1622,7 +1628,7 @@ if (ifexists(wif))
 	  sprintf (dev, "ath%d", i);
 	  eval ("ifenslave", "bond0", dev);
 	}
-      br_add_interface (nvram_safe_get ("lan_ifname"), "bond0");
+      br_add_interface (getBridge("bond0"), "bond0");
     }
 #endif
   if (need_commit)

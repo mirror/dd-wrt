@@ -2753,6 +2753,14 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "add_vifs", "", 1, REFRESH, add_vifs},
   {"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
 #endif
+#ifdef HAVE_VLANTAGGING
+  {"Networking", "add_vlan", "", 1, REFRESH, add_vlan},
+  {"Networking", "add_bridge", "", 1, REFRESH, add_bridge},
+  {"Networking", "add_bridgeif", "", 1, REFRESH, add_bridgeif},
+  {"Networking", "del_vlan", "", 1, REFRESH, del_vlan},
+  {"Networking", "del_bridge", "", 1, REFRESH, del_bridge},
+  {"Networking", "del_bridgeif", "", 1, REFRESH, del_bridgeif},
+#endif
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
   {"Wiviz_Survey", "Set", "", 0, REFRESH, set_wiviz},
@@ -3834,7 +3842,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
   char menu[8][11][32] =
-    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","eop-tunnel.asp", "", "", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","eop-tunnel.asp", "Networking.asp", "", "", ""},
   {"Wireless_Basic.asp", "Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "","", "", ""},
   {"Sipath.asp", "cgi-bin-mf-phonebook.html", "cgi-bin-mf-status.html", "",
    "", "", "", "", "", "", ""},
@@ -3852,7 +3860,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 
 /* real name is bmenu.menuname[i][j] */
   char menuname[8][11][32] =
-    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "setupeop", "", "", "", ""},
+    { {"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting","setupvlan", "setupeop", "networking", "", "", ""},
   {"wireless", "wirelessBasic", "wirelessRadius", "wirelessSecurity","wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", "", ""},
   {"sipath", "sipathoverview", "sipathphone", "sipathstatus", "", "", "", "",
    "", "", ""},
@@ -3915,6 +3923,10 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		j++;
 #ifndef HAVE_EOP_TUNNEL
 	      if (!strcmp (menu[i][j], "eop-tunnel.asp"))
+		j++;
+#endif
+#ifndef HAVE_VLANTAGGING
+	      if (!strcmp (menu[i][j], "Networking.asp"))
 		j++;
 #endif
 #ifndef HAVE_CTORRENT
@@ -5216,6 +5228,11 @@ struct ej_handler ej_handlers[] = {
   {"haswifi", ej_haswifi},
   {"show_macfilter", ej_show_macfilter},
   {"list_mac_layers", ej_list_mac_layers},
+#ifdef HAVE_VLANTAGGING
+  {"show_vlantagging",ej_show_vlantagging},
+  {"show_bridgenames",ej_show_bridgenames},
+  {"show_bridgeifnames",ej_show_bridgeifnames},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */
