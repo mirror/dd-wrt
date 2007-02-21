@@ -544,7 +544,6 @@ resetbutton_main (int argc, char *argv[])
 
     {
       puts ("sorry, your unit does not support resetbutton feature\n");
-      nvram_set ("resetbutton_enable", "0");
       return 0;
     }
 #ifdef HAVE_MAGICBOX
