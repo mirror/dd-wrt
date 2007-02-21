@@ -277,6 +277,10 @@ ifneq ($(MPPPOE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/Status_mpppoe.asp
 endif
 
+ifneq ($(CONFIG_VLANTAGGING),y)
+	rm -f $(INSTALLDIR)/www/Networking.asp
+endif
+
 ifneq ($(BACKUP_RESTORE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/Backup_Restore.asp
 endif
