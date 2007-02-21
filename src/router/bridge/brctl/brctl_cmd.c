@@ -275,7 +275,7 @@ static int br_cmd_setportprio(int argc, char *const* argv)
 	return err != 0;
 }
 // brcm begin
-static int br_cmd_setportsnooping(char** argv)
+static int br_cmd_setportsnooping(int argc, char *const* argv)
 {
 	int err;
 
@@ -287,7 +287,7 @@ static int br_cmd_setportsnooping(char** argv)
 	return err != 0;
 }
 
-static int br_cmd_clearportsnooping(char** argv)
+static int br_cmd_clearportsnooping(int argc, char *const* argv)
 {
 	int err;
 
@@ -299,9 +299,10 @@ static int br_cmd_clearportsnooping(char** argv)
 	return err != 0;
 }
 
-static int br_cmd_showportsnooping(char** argv)
+static int br_cmd_showportsnooping(int argc, char *const* argv)
 {
 	int err;
+	fprintf(stderr,"show port snooping");
 
 	err = br_show_port_snooping(argv[1]);
 	if (err)
@@ -311,7 +312,7 @@ static int br_cmd_showportsnooping(char** argv)
 	return err != 0;
 }
 
-static int br_cmd_enableportsnooping(char** argv)
+static int br_cmd_enableportsnooping(int argc, char *const* argv)
 {
 	int err;
 	int enable;
