@@ -68,7 +68,7 @@ static void __exit br_deinit(void)
 	rcu_assign_pointer(br_stp_sap->rcv_func, NULL);
 
 	br_netlink_fini();
-	br_netfilter_fini();
+//	br_netfilter_fini();
 	unregister_netdevice_notifier(&br_device_notifier);
 	brioctl_set(NULL);
 
