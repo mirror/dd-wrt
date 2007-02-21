@@ -461,11 +461,11 @@ if (brand!=ROUTER_WRT350N)
 #ifdef HAVE_MADWIFI
 	  stop_service ("stabridge");
 #endif
-	  stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridging");
 	  stop_service ("vlantagging");
 #endif
+	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand & 0x000f) != 0x000f)
@@ -502,11 +502,11 @@ if (brand!=ROUTER_WRT350N)
 	    }
 #endif
 	  start_service ("setup_vlans");
-	  start_service ("lan");
 #ifdef HAVE_VLANTAGGING
 	  start_service ("vlantagging");
 	  start_service ("bridging");
 #endif
+	  start_service ("lan");
 #ifdef HAVE_MADWIFI
 	  start_service ("stabridge");
 #endif
