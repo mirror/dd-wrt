@@ -98,6 +98,17 @@ process_monitor_main (void)
 	}
 #endif
 
+  if (!nvram_invmatch ("resetbutton_enable", "0") && pidof ("resetbutton") > 0)  //get user a chance to use resetbutton for first 4 min even if disabled
+  	{
+      struct timeval tnow;
+      gettimeofday (&tnow, NULL);
+
+      if (tnow.tv_sec ) > 240)
+		{
+	  	stop_service ("resetbutton");
+		}
+	}
+
       syslog (LOG_DEBUG, "We need to re-update after %d seconds\n",
 	      NTP_M_TIMER);
 
