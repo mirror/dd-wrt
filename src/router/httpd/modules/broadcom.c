@@ -2760,6 +2760,7 @@ struct gozila_action gozila_actions[] = {
   {"Networking", "del_vlan", "", 1, REFRESH, del_vlan},
   {"Networking", "del_bridge", "", 1, REFRESH, del_bridge},
   {"Networking", "del_bridgeif", "", 1, REFRESH, del_bridgeif},
+  {"Networking", "save_networking", "", 1, REFRESH, save_networking},
 #endif
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
@@ -2846,7 +2847,9 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       sleep_time = act->sleep_time;
       action = act->action;
       if (act->go)
+        {
 	ret = act->go (wp);
+	}
     }
   else
     {
