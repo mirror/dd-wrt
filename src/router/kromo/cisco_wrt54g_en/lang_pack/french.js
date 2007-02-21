@@ -323,6 +323,7 @@ bmenu.setupmacclone="Adresse MAC dupliquée";
 bmenu.setuprouting="Routage avancé";
 bmenu.setupvlan="LAN Virtuel";
 bmenu.setupeop="Tunnel EoIP";
+bmenu.networking="Réseau";
 
 bmenu.wireless="Sans fil";
 bmenu.wirelessBasic="Paramètres de base";
