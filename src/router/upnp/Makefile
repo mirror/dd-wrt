@@ -15,6 +15,9 @@ include $(TOP)/.config
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
 CFLAGS	+= -s $(COPTS) -fpic
+ifeq ($(CONFIG_GATEWORX),y)
+CFLAGS += -DHAVE_GATEWORX
+endif
 
 all: upnp
 
