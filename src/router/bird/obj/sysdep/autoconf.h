@@ -20,8 +20,18 @@
 #define INTEGER_32 int
 
 /* CPU endianity */
+#include <endian.h>
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN  /* nbd fix for swapped version and length field */
 #define CPU_LITTLE_ENDIAN 1
-/* #undef CPU_BIG_ENDIAN */
+#define _LITTLE_ENDIAN 1
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define CPU_BIG_ENDIAN 1
+#define _BIG_ENDIAN 1
+#else
+#error "cannot detect endianess"
+#endif
+
 
 /* Usual alignment for structures */
 #define CPU_STRUCT_ALIGN 8
