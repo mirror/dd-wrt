@@ -1589,6 +1589,8 @@ start_nas (char *type, char *prefix)
 int
 stop_nas (void)
 {
+  int ret = 0;
+  
   while (pidof ("nas") > 0)
   {
     syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
