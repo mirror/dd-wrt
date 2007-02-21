@@ -295,17 +295,17 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
-      stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
       stop_service ("vlantagging");
 #endif
+      stop_service ("lan");
       stop_service ("wan");
-      start_service ("lan");
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridging");
 #endif
+      start_service ("lan");
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
@@ -447,17 +447,17 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
-      stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
       stop_service ("vlantagging");
 #endif
+      stop_service ("lan");
       stop_service ("wan");
-      start_service ("lan");
 #ifdef HAVE_VLANTAGGING
       start_service ("bridging");
       start_service ("vlantagging");
 #endif
+      start_service ("lan");
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
@@ -590,11 +590,11 @@ start_single_service (void)
       stop_service ("stabridge");
 #endif
       stop_service ("wan");
-      stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
       stop_service ("vlantagging");
 #endif
+      stop_service ("lan");
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
@@ -608,11 +608,11 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI
       start_service ("wlconf");
 #endif
-      start_service ("lan");
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridging");
 #endif
+      start_service ("lan");
       start_service ("wan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
@@ -657,11 +657,11 @@ start_single_service (void)
 #ifdef HAVE_MADWIFI
       stop_service ("stabridge");
 #endif
-      stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
       stop_service ("vlantagging");
 #endif
+      stop_service ("lan");
 #ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
@@ -675,11 +675,11 @@ start_single_service (void)
 #ifndef HAVE_MADWIFI
       start_service ("wlconf");
 #endif
-      start_service ("lan");
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridging");
 #endif
+      start_service ("lan");
 #ifdef HAVE_MADWIFI
       start_service ("stabridge");
 #endif

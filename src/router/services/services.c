@@ -3912,6 +3912,21 @@ stop_vlantagging (void)
     eval ("vconfig", "rem", vlan_name);
   }
 }
+void start_bridgesif(void)
+{
+  static char word[256];
+  char *next, *wordlist;
+ wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    eval ("brctl", "addif", tag,port);
+  }
+
+}
 
 void
 start_bridging (void)
@@ -3932,16 +3947,7 @@ start_bridging (void)
       br_set_stp_state(tag,0);
     eval ("ifconfig", tag,"0.0.0.0","up");
   }
-  
- wordlist = nvram_safe_get ("bridgesif");
-  foreach (word, wordlist, next)
-  {
-    char *port = word;
-    char *tag = strsep (&port, ">");
-    if (!tag || !port)
-      break;
-    eval ("brctl", "addif", tag,port);
-  }
+start_bridgesif();  
 }
 
 char *getBridge(char *ifname)
@@ -3961,12 +3967,11 @@ char *getBridge(char *ifname)
 return nvram_safe_get("lan_ifname"); 
 }
 
-void
-stop_bridging (void)
+void stop_bridgesif(void)
 {
   static char word[256];
   char *next, *wordlist;
- wordlist = nvram_safe_get ("bridgesif");
+  wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
   {
     char *port = word;
@@ -3976,6 +3981,14 @@ stop_bridging (void)
     if (ifexists(port))
     eval ("brctl", "delif", tag,port);
   }
+}
+
+void
+stop_bridging (void)
+{
+  stop_bridgesif();
+  static char word[256];
+  char *next, *wordlist;
   wordlist = nvram_safe_get ("bridges");
   foreach (word, wordlist, next)
   {
@@ -3990,8 +4003,6 @@ stop_bridging (void)
     }
   }
 }
-
-
 
 
 #else
