@@ -160,7 +160,6 @@ start_services (void)
       stop_service ("guest_nas");
 #endif
       stop_service ("nas");
-#endif
 /* nas mode select*/
       if (nvram_match ("wl0_mode", "sta")
 	  || nvram_match ("wl0_mode", "wet")
