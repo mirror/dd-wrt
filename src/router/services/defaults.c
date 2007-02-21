@@ -109,7 +109,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"console_loglevel", "1", 0},	/* Kernel panics only */
 
   /* Big switches */
-  {"router_disable", "0", 0},	/* lan_proto=static lan_stp=0 wan_proto=disabled */
+//  {"router_disable", "0", 0},	/* lan_proto=static lan_stp=0 wan_proto=disabled */
   {"fw_disable", "0", 0},	/* Disable firewall (allow new connections from the WAN) */
 
   /* TCP/IP parameters */

@@ -638,7 +638,7 @@ do_portsetup (char *lan, char *ifname)
   sprintf (var, "%s_bridged", ifname);
   if (nvram_default_match (var, "1", "1"))
     {
-      br_add_interface (lan, ifname);
+      br_add_interface (getBridge(ifname), ifname);
     }
   else
     {
@@ -1081,7 +1081,7 @@ start_lan (void)
 #ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
 #else
-	    br_add_interface (lan_ifname, name);
+	    br_add_interface (getBridge(name), name);
 #endif
 	  }
 	else
@@ -1186,7 +1186,7 @@ start_lan (void)
 	    if (nvram_match (wl_name, "wet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
-		br_add_interface (lan_ifname, name);
+		br_add_interface (getBridge(name), name);
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
@@ -1195,7 +1195,7 @@ start_lan (void)
 	    if (nvram_match (wl_name, "apstawet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
-		br_add_interface (lan_ifname, name);
+		br_add_interface (getBridge(name), name);
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
@@ -1205,7 +1205,7 @@ start_lan (void)
 	    if (nvram_match (wl_name, "ap"))
 	      {
 
-		br_add_interface (lan_ifname, name);	//eval ("brctl", "addif", lan_ifname, name);
+		br_add_interface (getBridge(name), name);	//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
 		do_mssid (lan_ifname);
 #endif
@@ -1454,8 +1454,7 @@ start_lan (void)
 	  //eval ("brctl", "addbr", "br1");
 	  //eval ("brctl", "setfd", "br1", "0");
 
-	  if (nvram_match ("router_disable", "1")
-	      || nvram_match ("lan_stp", "0"))
+	  if (nvram_match ("lan_stp", "0"))
 	    br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
 	  else
 	    br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
@@ -1466,8 +1465,7 @@ start_lan (void)
 	      ifconfig ("br1", IFUP, nvram_safe_get (br1ipaddr),
 			nvram_safe_get (br1netmask));
 
-	      if (nvram_match ("router_disable", "1")
-		  || nvram_match ("lan_stp", "0"))
+	      if (nvram_match ("lan_stp", "0"))
 		br_set_stp_state ("br1", 0);	//eval ("brctl", "stp", "br1", "off");
 	      else
 		br_set_stp_state ("br1", 1);	//eval ("brctl", "stp", "br1", "off");
@@ -1648,7 +1646,7 @@ start_lan (void)
     }
 #endif
 #endif
-  if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
+  if (nvram_match ("lan_stp", "0"))
     br_set_stp_state ("br0", 0);
   else
     br_set_stp_state ("br0", 1);
@@ -1916,8 +1914,7 @@ start_wan (int status)
   // fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
   ioctl (s, SIOCSIFMTU, &ifr);
 
-  if (nvram_match ("router_disable", "1")
-      || strcmp (wan_proto, "disabled") == 0)
+  if (strcmp (wan_proto, "disabled") == 0)
     {
       start_wan_done (wan_ifname);
       return;
@@ -2269,7 +2266,7 @@ start_wan (int status)
     }
 #endif
   cprintf ("disable stp if needed\n");
-  if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
+  if (nvram_match ("lan_stp", "0"))
     {
 #ifdef HAVE_MICRO
       br_init ();
@@ -2508,8 +2505,6 @@ start_wan_done (char *wan_ifname)
       SET_LED (GET_IP_ERROR);
     }
 
-  //if (nvram_match("router_disable", "1") || nvram_match("lan_stp", "0"))
-  //      system("/usr/sbin/brctl stp br0 off");
   cprintf ("running custom DD-WRT ipup scripts\n");
   runStartup ("/etc/config", ".ipup");
 #ifdef HAVE_RB500
@@ -2688,7 +2683,7 @@ stop_wan (void)
       br_init ();
 #endif
 
-      br_add_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
+      br_add_interface (getBridge(get_wdev()), get_wdev ());
 #ifdef HAVE_MICRO
       br_shutdown ();
 #endif
@@ -2911,7 +2906,7 @@ start_hotplug_net (void)
 #ifndef HAVE_MADWIFI
       notify_nas ("lan", interface, "up");
 #endif
-      if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
+      if (nvram_match ("lan_stp", "0"))
 	br_set_stp_state ("br0", 0);	//system ("/usr/sbin/brctl stp br0 off");
       else
 	br_set_stp_state ("br0", 1);	//system ("/usr/sbin/brctl stp br0 off");
@@ -3084,7 +3079,7 @@ start_wds_check (void)
 
     }
 
-  if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
+  if (nvram_match ("lan_stp", "0"))
     {
 #ifdef HAVE_MICRO
       br_init ();
