@@ -3857,7 +3857,7 @@ br_set_stp_state (const char *br, int stp_state)
 {
   if (!ifexists (br))
     return -1;
-  if (stp_state)
+  if (stp_state==1)
     {
 //      syslog (LOG_INFO, "stp is set to on\n");
       return eval ("/usr/sbin/brctl", "stp", br, "on");
@@ -3913,6 +3913,10 @@ stop_vlantagging (void)
 }
 void start_bridgesif(void)
 {
+if (nvram_match("lan_stp","0"))
+    eval("brctl","stp","br0","off");
+else
+    eval("brctl","stp","br0","on");
   static char word[256];
   char *next, *wordlist;
  wordlist = nvram_safe_get ("bridgesif");
@@ -3920,9 +3924,13 @@ void start_bridgesif(void)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
     if (!tag || !port)
       break;
     eval ("brctl", "addif", tag,port);
+    if (prio)
+	eval("brctl","setportprio",tag,port,prio);
   }
 
 }
@@ -3937,6 +3945,8 @@ start_bridging (void)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
     if (!tag || !port)
       break;
     eval ("brctl", "addbr", tag);
@@ -3944,9 +3954,10 @@ start_bridging (void)
       br_set_stp_state(tag,1);
     else
       br_set_stp_state(tag,0);
+    if (prio)
+	eval("brctl","setbridgeprio",tag,prio);
     eval ("ifconfig", tag,"0.0.0.0","up");
   }
-start_bridgesif();  
 }
 
 char *getBridge(char *ifname)
@@ -3958,6 +3969,8 @@ char *getBridge(char *ifname)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
     if (!tag || !port)
       break;
     if (!strcmp(port,ifname))
@@ -3975,6 +3988,8 @@ void stop_bridgesif(void)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
     if (!tag || !port)
       break;
     if (ifexists(port))
@@ -3985,7 +4000,6 @@ void stop_bridgesif(void)
 void
 stop_bridging (void)
 {
-  stop_bridgesif();
   static char word[256];
   char *next, *wordlist;
   wordlist = nvram_safe_get ("bridges");
@@ -3993,6 +4007,8 @@ stop_bridging (void)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
     if (!tag || !port)
       break;
     if (ifexists(tag))

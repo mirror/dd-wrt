@@ -1076,7 +1076,7 @@ setMacFilter (char *iface)
 
   char nvvar[32];
   sprintf (nvvar, "%s_macmode", iface);
-  if (!nvram_match (nvvar, "disabled"))
+  if (nvram_match (nvvar, "deny"))
     {
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
@@ -1095,19 +1095,25 @@ setMacFilter (char *iface)
 	  }
       }
     }
+  if (nvram_match (nvvar, "allow"))
+    {
+      char nvlist[32];
+      sprintf (nvlist, "%s_maclist", iface);
 
-
-  /* Set the MAC list mode */
-  if (nvram_match (nvvar, "deny"))
-    set80211param (iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_DENY);
-  else if (nvram_match (nvvar, "allow"))
-    set80211param (iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_ALLOW);
-  else
-    set80211param (iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_OPEN);
-
+      foreach (var, nvram_safe_get (nvlist), next)
+      {
+	char ea[ETHER_ADDR_LEN];
+	if (ether_atoe (var, ea))
+	  {
+	    struct ieee80211req_mlme mlme;
+	    mlme.im_op = IEEE80211_MLME_AUTHORIZE;
+	    mlme.im_reason = 0;
+	    memcpy (mlme.im_macaddr, ea, IEEE80211_ADDR_LEN);
+	    do80211priv (iface, IEEE80211_IOCTL_SETMLME, &mlme,
+			 sizeof (mlme));
+	  }
+      }
+    }
 
 }
 
