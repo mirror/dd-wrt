@@ -8,7 +8,7 @@ PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS  = -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\"
 STATIC		= -static
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../ -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" -Os -pipe -funit-at-a-time -mtune=mips32 -mips32
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../ -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" -Os -pipe -funit-at-a-time -mtune=mips32 -mips32 -DNEED_PRINTF
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT -static
@@ -22,24 +22,24 @@ DISTHOST	= root@adm.zbit.pt:/var/www/html/www.zbit.pt/xbox/
 CXXFLAGS	+= $(CFLAGS)
 PWD			= /home/luis/devel/Kai/kaid
 
-PCAP		= ../../libpcap/pcap.o \
-../../libpcap/inet.o \
-../../libpcap/gencode.o \
-../../libpcap/savefile.o \
-../../libpcap/bpf_filter.o \
-../../libpcap/optimize.o \
-../../libpcap/nametoaddr.o \
-../../libpcap/etherent.o \
-../../libpcap/grammar.o \
-../../libpcap/scanner.o
+PCAP		= ../../libpcap_noring/pcap.o \
+../../libpcap_noring/inet.o \
+../../libpcap_noring/gencode.o \
+../../libpcap_noring/savefile.o \
+../../libpcap_noring/bpf_filter.o \
+../../libpcap_noring/optimize.o \
+../../libpcap_noring/nametoaddr.o \
+../../libpcap_noring/etherent.o \
+../../libpcap_noring/grammar.o \
+../../libpcap_noring/scanner.o
 
 ifdef BSD
-PCAP	+= ../../libpcap/pcap-bpf.o
+PCAP	+= ../../libpcap_noring/pcap-bpf.o
 else
-PCAP	+= ../../libpcap/pcap-linux.o
+PCAP	+= ../../libpcap_noring/pcap-linux.o
 endif
 
-PCAP		+= ../../libpcap/fad-gifc.o
+PCAP		+= ../../libpcap_noring/fad-gifc.o
 PRE_CFLAGS	+= -DOPENWRT
 
 # Uneeded obj, cutting down size for OPENWRT static bin
