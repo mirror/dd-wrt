@@ -3,7 +3,7 @@
 #
 #
 VERSION		= 7.0.0.7
-ARCH		= mips
+#ARCH		= 
 PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS  = -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\"
@@ -12,11 +12,11 @@ CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT -static
-CFLAGS		+= -I/opt/3.3.6/mipsel-linux-uclibc/include/c++
+#CFLAGS		+= -I/opt/3.3.6/mipsel-linux-uclibc/include/c++
 
-CC		= mipsel-linux-gcc
-CXX		= mipsel-linux-g++
-STRIP		= mipsel-linux-strip
+CC		= $(ARCH)-linux-gcc
+CXX		= $(ARCH)-linux-g++
+STRIP		= $(ARCH)-linux-strip
 DISTHOST	= root@adm.zbit.pt:/var/www/html/www.zbit.pt/xbox/
 
 CXXFLAGS	+= $(CFLAGS)
@@ -121,7 +121,7 @@ kaid: ${OBJS}
 endif
 	@echo -n "Linking... "
 	@echo -e "CFLAGS = $(CFLAGS)"
-	${CXX} ${CFLAGS} ${LDFLAGS} -o $@ ${OBJS} ${PCAP} ${PTCC} ${SOCC} ${LIBS}
+	${CXX} ${CFLAGS} ${LDFLAGS} -o ../$@ ${OBJS} ${PCAP} ${PTCC} ${SOCC} ${LIBS}
 	@echo "Done!"
 
 GENDEPS=${CXX} ${CXXFLAGS} -MM -o $@ $<
