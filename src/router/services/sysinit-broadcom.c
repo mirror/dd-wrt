@@ -131,6 +131,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WBR2G54S:
     case ROUTER_WRT300N:
     case ROUTER_WRT350N:
+    case ROUTER_NETGEAR_WNR834B:
       nvram_set ("wl0gpio0", "8");
       break;
     case ROUTER_BUFFALO_WHRG54S:
