@@ -201,21 +201,16 @@ security_disable (char *iface)
 void
 set_maclist (char *iface, char *buf)
 {
-  struct ieee80211req_mlme mlme;
+  struct sockaddr sa;
   struct maclist *maclist = (struct maclist *) buf;
 
   if (maclist->count == 0)
     security_disable (iface);
-//      if (authorized)
-//              mlme.im_op = IEEE80211_MLME_AUTHORIZE;
-//      else
   uint i;
   for (i = 0; i < maclist->count; i++)
     {
-      mlme.im_op = IEEE80211_MLME_UNAUTHORIZE;
-      mlme.im_reason = 0;
-      memcpy (mlme.im_macaddr, &maclist->ea[i], IEEE80211_ADDR_LEN);
-      do80211priv (iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof (mlme));
+      memcpy (sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN);
+      do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof (sa));
     }
 }
 void
