@@ -77,7 +77,8 @@ function init() {
 							<fieldset>
 							   <legend>Tagging</legend>
 							   <% show_vlantagging(); %>
-							</fieldset>
+							</fieldset><br />
+
 							<h2>Bridging</h2>
 							<fieldset>
 							   <legend>Create Bridge</legend>
@@ -86,8 +87,8 @@ function init() {
 							<fieldset>
 							   <legend>Assign to Bridge</legend>
 							   <% show_bridgeifnames(); %>
-							</fieldset>
-  							 <br/>
+							</fieldset><br />
+
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
