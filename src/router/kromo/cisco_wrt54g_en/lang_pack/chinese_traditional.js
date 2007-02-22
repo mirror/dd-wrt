@@ -289,6 +289,8 @@ bmenu.setupddns="DDNS（動態DNS）";
 bmenu.setupmacclone="MAC地址克隆";
 bmenu.setuprouting="高級路由";
 bmenu.setupvlan="VLANs";
+bmenu.setupeop="EoIP Tunnel";
+bmenu.networking="Networking";
 
 bmenu.wireless="無線";
 bmenu.wirelessBasic="基本設置";

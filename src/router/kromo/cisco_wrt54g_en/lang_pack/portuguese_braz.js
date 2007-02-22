@@ -294,6 +294,8 @@ bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Clone de Endereço MAC";
 bmenu.setuprouting="Roteamento Avançado";
 bmenu.setupvlan="VLANs";
+bmenu.setupeop="EoIP Tunnel";
+bmenu.networking="Networking";
 
 bmenu.wireless="Wireless";
 bmenu.wirelessBasic="Configurações Básicas";

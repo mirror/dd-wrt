@@ -291,6 +291,8 @@ bmenu.setupddns="DDNS";
 bmenu.setupmacclone="MAC Adres Clone";
 bmenu.setuprouting="Geavanceerde Routing";
 bmenu.setupvlan="VLANs";
+bmenu.setupeop="EoIP Tunnel";
+bmenu.networking="Networking";
 
 bmenu.wireless="Draadloos";
 bmenu.wirelessBasic="Basis Instellingen";

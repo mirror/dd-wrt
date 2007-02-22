@@ -1507,7 +1507,7 @@ sec80211x.clientcertif="Client Certificate";
 
 //help container
 var hwpa = new Object();
-hwpa.right2="You may choose from Disable, WEP, WPA Personal Key, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode.";
+hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode.";
 
 
 
