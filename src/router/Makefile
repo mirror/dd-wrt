@@ -370,6 +370,7 @@ endif
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
 ifeq ($(CONFIG_KAID),y)
+	make -C kaid/src
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
@@ -1399,9 +1400,6 @@ igmp-proxy-clean:
 
 igmp-proxy:
 	make -C igmp-proxy
-
-igmp-proxy-install:
-	install -D igmp-proxy/igmprt $(INSTALLDIR)/igmp-proxy/usr/sbin/igmprt
 
 
 
