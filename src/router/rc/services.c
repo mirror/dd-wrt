@@ -391,6 +391,9 @@ start_single_service (void)
 #ifdef HAVE_RFLOW
       eval ("/etc/config/rflow.startup");
 #endif
+#ifdef HAVE_KAID
+      eval ("/etc/config/kaid.startup");
+#endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
       if (isregistered ())
