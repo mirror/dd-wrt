@@ -325,6 +325,7 @@ bmenu.setupmacclone="Kloniranje MAC naslova";
 bmenu.setuprouting="Napredno usmerjanje";
 bmenu.setupvlan="VLAN";
 bmenu.setupeop="EoIP tunel";
+bmenu.networking="Omre¾enje";
 
 bmenu.wireless="Brez¾ièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
@@ -387,10 +388,10 @@ alive.h2="Ohrani ¾ivo";
 alive.legend="Razpored ponovnega zagona";
 alive.sevr1="Razpored ponovnega zagona";
 alive.hour="Ob nastavljenem èasu";
-alive.legend2="WDS/Stra¾ni mehanizem";
+alive.legend2="WDS/stra¾ni mehanizem";
 alive.sevr2="Omogoèi stra¾ni mehanizem";
 alive.IP="IP naslovi";
-alive.legend3="Proksi/Stra¾ni mehanizem";
+alive.legend3="Proksi/stra¾ni mehanizem";
 alive.sevr3="Omogoèi proksi stra¾ni mehanizem";
 alive.IP2="Proksi IP naslov";
 alive.port="Proksi vrata";
@@ -719,7 +720,7 @@ info.ap="Dostopna toèka";
 // ******************************************* index_heartbeat.asp *******************************************//
 
 
-idx_h.srv="Heart Beat stre¾nik";
+idx_h.srv="HeartBeat stre¾nik";
 idx_h.con_strgy="Strategija povezovanja";
 idx_h.max_idle="Pove¾i po potrebi: najveèji nedejavni èas";
 idx_h.alive="Ohrani zvezo: èas ponovnega klicanja";
@@ -796,7 +797,7 @@ idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
 idx.summt_opt4="zadnja ned. okt. - zadnja ned. mar.";
 idx.summt_opt5="druga ned. mar. - prva ned. nov.";
 idx.portsetup="Nastavitev vrat";
-idx.wanport="Dodeltev WAN vrat";
+idx.wanport="Dodelitev WAN vrat";
 
 
 //help container
@@ -1494,7 +1495,7 @@ sec80211x.clientcertif="Certifikat odjemalca";
 
 //help container
 
-hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA osebni kljuè, WPA Enterprise ali RADIUS. Vse naprave v va¹i mre¾i morajo uporabljanti isti naèin.";
+hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA Personal, WPA Enterprise ali RADIUS. Vse naprave v va¹i mre¾i morajo uporabljanti isti naèin.";
 
 
 
