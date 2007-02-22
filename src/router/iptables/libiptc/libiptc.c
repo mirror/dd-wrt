@@ -2270,7 +2270,7 @@ TC_STRERROR(int err)
 	    { NULL, ENOPROTOOPT, "iptables who? (do you need to insmod?)" },
 	    { NULL, ENOSYS, "Will be implemented real soon.  I promise ;)" },
 	    { NULL, ENOMEM, "Memory allocation problem" },
-	    { NULL, ENOENT, "No chain/target/match by that name" },
+	    { NULL, ENOENT, "" },
 	  };
 
 	for (i = 0; i < sizeof(table)/sizeof(struct table_struct); i++) {
