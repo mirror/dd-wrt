@@ -75,11 +75,11 @@ OPENWRT     = /opt/3.3.4
 ifeq ($(PLATFORM), linux)
 ifneq ($(strip $(OPENWRT)),)
 PRE_CFLAGS  += -DOPENWRT
-CFLAGS      += -I$(OPENWRT)/mipsel-linux-uclibc/include/c++ -I$(OPENWRT)/mipsel-linux-uclibc/include -I../pthreadcc/src -Os -pipe -funit-at-a-time -mtune=mips32 -mips32
-CXX         = $(OPENWRT)/bin/mipsel-linux-g++
-CC          = $(OPENWRT)/bin/mipsel-linux-g++
-LD	    = $(OPENWRT)/bin/mipsel-linux-g++
-LDFLAGS    = -L../pthreadcc/src -lpthreadcc -shared
+CFLAGS      += -I../pthreadcc/src $(COPTS) -DNEED_PRINTF
+CXX         = $(ARCH)-linux-g++
+CC          = $(ARCH)-linux-g++
+LD	    = $(ARCH)-linux-g++
+LDFLAGS    = -L../pthreadcc -lpthreadcc -shared
 else
 CC         = g++
 CFLAGS     = -I$/usr/include -I../pthreadcc/src -Wall -O2 -fPIC

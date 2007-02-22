@@ -8,7 +8,7 @@ PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS  = -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\"
 STATIC		= -static
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../ -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" -Os -pipe -funit-at-a-time -mtune=mips32 -mips32 -DNEED_PRINTF
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../ -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT -static
@@ -100,7 +100,7 @@ ifaddrlist.o
 #.deps/OSXTimerThread.d \
 #.deps/ifaddrlist.d
 
-all: kaid
+all: socketcc pthreadcc kaid
 
 ifeq ($(strip $(PLATFORM)),freebsd)
 libpcap:
@@ -117,7 +117,13 @@ install:
 
 kaid: libpcap pthreadcc socketcc ${OBJS}
 else
-kaid: ${OBJS}
+pthreadcc:
+	${MAKE} -C pthreadcc all
+
+socketcc:
+	${MAKE} -C socketcc all
+
+kaid: socketcc pthreadcc ${OBJS}
 endif
 	@echo -n "Linking... "
 	@echo -e "CFLAGS = $(CFLAGS)"
