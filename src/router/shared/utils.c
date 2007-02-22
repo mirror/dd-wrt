@@ -181,7 +181,7 @@ if (reg1=0x13 && reg2==0x7a11)
     }
 #elif HAVE_X86
   setRouter ("Generic X86");
-  return ROUTER_BOARD_GATEWORX;
+  return ROUTER_BOARD_X86;
 #elif HAVE_XSCALE
   setRouter ("NewMedia Dual A/B/G");
   return ROUTER_BOARD_XSCALE;
