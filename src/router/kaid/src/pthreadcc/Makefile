@@ -74,11 +74,11 @@ OPENWRT     = /opt/3.3.4
 ifeq ($(PLATFORM), linux)
 ifneq ($(strip $(OPENWRT)),)
 PRE_CFLAGS  += -DOPENWRT
-CFLAGS      += -I$(OPENWRT)/mipsel-linux-uclibc/include/c++ -I$(OPENWRT)/mipsel-linux-uclibc/include-Os -pipe -funit-at-a-time -mtune=mips32 -mips32
-CXX         = $(OPENWRT)/bin/mipsel-linux-g++
-CC			= $(OPENWRT)/bin/mipsel-linux-gcc
+CFLAGS      += $(COPTS) -DNEED_PRINTF
+CXX         = $(ARCH)-linux-g++
+CC			= $(ARCH)-linux-gcc
 LDFLAGS		= -lpthread -shared
-LD			= $(OPENWRT)/bin/mipsel-linux-ld
+LD			= $(ARCH)-linux-ld
 else
 CC         = gcc
 CFLAGS     = -I$/usr/include -Wall -O2 -fPIC
@@ -86,8 +86,8 @@ LD         = gcc
 LDFLAGS    = -lpthread -shared -Wl,-soname,$(LIB_SONAME)
 endif
 LIB_NAME   = libpthreadcc.so
-LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
-LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
+LIB_SONAME = $(LIB_NAME)
+LIB_TARGET = $(LIB_SONAME)
 CMD_DYLINK = /sbin/ldconfig $(LIB_DIR)
 CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
 endif
