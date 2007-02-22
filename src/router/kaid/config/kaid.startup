@@ -11,7 +11,7 @@ if [ -z "$(nvram get kaid_devs)" ]; then
 fi
 if [ "$(nvram get kaid_enable)" = "1" ]; then
     cp /etc/kaid/kaid.conf /tmp/kaid.conf
-    DEVS="ConsoleMacs = $(nvram get kaid_devs)"
+    DEVS="LocalDevices = $(nvram get kaid_devs)"
     echo $DEVS >> /tmp/kaid.conf
     if [ "$(nvram get jffs_enable)" = "1" ]; then
 	echo ConfigCache = /jffs/kaiSystemConfig.txt >> /tmp/kaid.conf
