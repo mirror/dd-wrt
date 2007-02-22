@@ -1708,19 +1708,23 @@ fprintf(stderr,"got in\n");
   memset(buffer,0,1024);
   for (i=0;i<bridgescount;i++)
     {
-    char *ifname,*tag;
+    char *ifname,*tag,*prio;
     char var[32];
     sprintf(var,"bridgename%d",i);
     ifname=websGetVar(wp,var,NULL);
     if (!ifname)return;
     sprintf(var,"bridgestp%d",i);
     tag=websGetVar(wp,var,NULL);
+    sprintf(var,"bridgeprio%d",i);
+    prio=websGetVar(wp,var,NULL);
     strcat(buffer,ifname);
     strcat(buffer,">");
     if (!strcmp(tag,"On"))
     strcat(buffer,"1");
     else
     strcat(buffer,"0");
+    strcat(buffer,">");
+    strcat(buffer,prio);
     if (i<bridgescount-1)
     strcat(buffer," ");    
     }
@@ -1729,16 +1733,20 @@ fprintf(stderr,"got in\n");
   memset(buffer,0,1024);
   for (i=0;i<bridgesifcount;i++)
     {
-    char *ifname,*tag;
+    char *ifname,*tag,*prio;
     char var[32];
     sprintf(var,"bridge%d",i);
     ifname=websGetVar(wp,var,NULL);
     if (!ifname)return;
     sprintf(var,"bridgeif%d",i);
     tag=websGetVar(wp,var,NULL);
+    sprintf(var,"bridgeifprio%d",i);
+    prio=websGetVar(wp,var,NULL);
     strcat(buffer,ifname);
     strcat(buffer,">");
     strcat(buffer,tag);
+    strcat(buffer,">");
+    strcat(buffer,prio);
     if (i<bridgesifcount-1)
     strcat(buffer," ");    
     }
@@ -1927,6 +1935,8 @@ getIfList(buffer,NULL);
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
     char vlan_name[32];
@@ -1937,6 +1947,10 @@ getIfList(buffer,NULL);
     websWrite(wp,"&nbsp;STP&nbsp;");
     sprintf(vlan_name,"bridgestp%d",count);
     showOptions(wp,vlan_name,"On Off",port);
+    websWrite(wp,"&nbsp;Prio&nbsp;");
+    sprintf(vlan_name,"bridgeprio%d",count);
+    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,prio!=NULL?prio:"");
+    
     websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",count);
     websWrite(wp,"</div>\n");
     count++;    
@@ -1953,6 +1967,9 @@ getIfList(buffer,NULL);
     websWrite(wp,"&nbsp;STP&nbsp;");
     sprintf(vlan_name,"bridgestp%d",i);
     showOptions(wp,vlan_name,"On Off","");
+    websWrite(wp,"&nbsp;Prio&nbsp;");
+    sprintf(vlan_name,"bridgeprio%d",i);
+    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,"");
     websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
     websWrite(wp,"</div>\n");  
     totalcount++;
@@ -2037,6 +2054,8 @@ getIfList(bufferif,NULL);
   {
     char *port = word;
     char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
     char vlan_name[32];
@@ -2047,6 +2066,9 @@ getIfList(bufferif,NULL);
     websWrite(wp,"&nbsp;Interface&nbsp;");
     sprintf(vlan_name,"bridgeif%d",count);
     showOptions(wp,vlan_name,bufferif,port);
+    websWrite(wp,"&nbsp;Prio&nbsp;");
+    sprintf(vlan_name,"bridgeifprio%d",count);
+    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,prio!=NULL?prio:"");
     websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",count);
     websWrite(wp,"</div>\n");
     count++;    
@@ -2063,6 +2085,9 @@ getIfList(bufferif,NULL);
     websWrite(wp,"&nbsp;Interface&nbsp;");
     sprintf(vlan_name,"bridgeif%d",i);
     showOptions(wp,vlan_name,bufferif,"");
+    websWrite(wp,"&nbsp;Prio&nbsp;");
+    sprintf(vlan_name,"bridgeifprio%d",i);
+    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,"");
     websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
     websWrite(wp,"</div>\n");
     totalcount++;
