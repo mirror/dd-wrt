@@ -1269,6 +1269,7 @@ configure_single (int count, int isbond)
 	{
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
 		"wds");
+//	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
 	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
 	  eval ("iwpriv", wdsdev, "wds", "1");
 	}
