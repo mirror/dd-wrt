@@ -2739,49 +2739,49 @@ struct gozila_action gozila_actions[] = {
   /* Siafu addition */
   {"Ping", "wol", "", 1, REFRESH, ping_wol},
   /* Sveasoft addition */
-  {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
+  {"Wireless_WDS", "save", "", 5, REFRESH, save_wds},
   {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
   {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
-  {"QoS", "add_svc", "", 1, REFRESH, qos_add_svc},
-  {"QoS", "add_ip", "", 1, REFRESH, qos_add_ip},
-  {"QoS", "add_mac", "", 1, REFRESH, qos_add_mac},
+  {"QoS", "add_svc", "", 0, REFRESH, qos_add_svc},
+  {"QoS", "add_ip", "", 0, REFRESH, qos_add_ip},
+  {"QoS", "add_mac", "", 0, REFRESH, qos_add_mac},
   {"QoS", "save", "filters", 1, SYS_RESTART, qos_save},
   /* end Sveasoft addition */
-  {"Forward", "add_forward", "", 1, REFRESH, forward_add},
-  {"Forward", "remove_forward", "", 1, REFRESH, forward_remove},
+  {"Forward", "add_forward", "", 0, REFRESH, forward_add},
+  {"Forward", "remove_forward", "", 0, REFRESH, forward_remove},
 #ifdef HAVE_MSSID
-  {"Wireless_Basic", "add_vifs", "", 1, REFRESH, add_vifs},
-  {"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
+  {"Wireless_Basic", "add_vifs", "", 0, REFRESH, add_vifs},
+  {"Wireless_Basic", "remove_vifs", "", 0, REFRESH, remove_vifs},
 #endif
 #ifdef HAVE_VLANTAGGING
-  {"Networking", "add_vlan", "", 1, REFRESH, add_vlan},
-  {"Networking", "add_bridge", "", 1, REFRESH, add_bridge},
-  {"Networking", "add_bridgeif", "", 1, REFRESH, add_bridgeif},
-  {"Networking", "del_vlan", "", 1, REFRESH, del_vlan},
-  {"Networking", "del_bridge", "", 1, REFRESH, del_bridge},
-  {"Networking", "del_bridgeif", "", 1, REFRESH, del_bridgeif},
-  {"Networking", "save_networking", "", 1, REFRESH, save_networking},
+  {"Networking", "add_vlan", "", 0, REFRESH, add_vlan},
+  {"Networking", "add_bridge", "",0, REFRESH, add_bridge},
+  {"Networking", "add_bridgeif", "", 0, REFRESH, add_bridgeif},
+  {"Networking", "del_vlan", "", 0, REFRESH, del_vlan},
+  {"Networking", "del_bridge", "", 0, REFRESH, del_bridge},
+  {"Networking", "del_bridgeif", "", 0, REFRESH, del_bridgeif},
+  {"Networking", "save_networking", "", 5, REFRESH, save_networking},
 #endif
-  {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
+  {"Wireless_Basic", "save", "", 5, RESTART, wireless_save},
 #ifdef HAVE_WIVIZ
   {"Wiviz_Survey", "Set", "", 0, REFRESH, set_wiviz},
 #endif
 #ifdef HAVE_REGISTER
   {"Register", "activate", "", 1, RESTART, reg_validate},
 #endif
-  {"Services", "add_lease", "", 1, REFRESH, lease_add},
-  {"Services", "remove_lease", "", 1, REFRESH, lease_remove},
+  {"Services", "add_lease", "", 0, REFRESH, lease_add},
+  {"Services", "remove_lease", "", 0, REFRESH, lease_remove},
 #ifdef HAVE_CHILLILOCAL
-  {"Hotspot", "add_user", "", 1, REFRESH, user_add},
-  {"Hotspot", "remove_user", "", 1, REFRESH, user_remove},
+  {"Hotspot", "add_user", "", 0, REFRESH, user_add},
+  {"Hotspot", "remove_user", "", 0, REFRESH, user_remove},
 #endif
 #ifdef HAVE_RADLOCAL
-  {"Hotspot", "add_iradius", "", 1, REFRESH, raduser_add},
+  {"Hotspot", "add_iradius", "", 0, REFRESH, raduser_add},
 #endif
-  {"ForwardSpec", "add_forward_spec", "", 1, REFRESH, forwardspec_add},
-  {"ForwardSpec", "remove_forward_spec", "", 1, REFRESH, forwardspec_remove},
-  {"Triggering", "add_trigger", "", 1, REFRESH, trigger_add},
-  {"Triggering", "remove_trigger", "", 1, REFRESH, trigger_remove},
+  {"ForwardSpec", "add_forward_spec", "", 0, REFRESH, forwardspec_add},
+  {"ForwardSpec", "remove_forward_spec", "", 0, REFRESH, forwardspec_remove},
+  {"Triggering", "add_trigger", "", 0, REFRESH, trigger_add},
+  {"Triggering", "remove_trigger", "", 0, REFRESH, trigger_remove},
   {"Port_Services", "save_services", "filters", 2, SYS_RESTART,
    save_services_port},
   {"QOSPort_Services", "save_qosservices", "filters", 2, SYS_RESTART,
