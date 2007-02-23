@@ -2142,7 +2142,6 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
 
 */
 
-#ifdef REGDOMAIN_OVERRIDE
 
 struct regdomain
 {
@@ -2151,23 +2150,14 @@ struct regdomain
 };
 
 static struct regdomain regdomains[] = {
-  {"UNDEFINED", 0x00},
-  {"USA1 (FCC)", 0x10},		//FCC
-  {"USA2", 0x3A},
-  {"DOC", 0x20},
-  {"ETSI", 0x30},
-  {"SPAIN", 0x31},
-  {"FRANCE", 0x32},
-  {"JAPAN", 0x40},
-  {"WORLD0", 0x60},
-  {"WORLD1", 0x61},
-  {"WORLD2", 0x62},
-  {"WORLD3", 0x63},
-  {"WORLD4", 0x64},
-  {"WORLD5", 0x65},
+  {"USA1 (FCC)", 840},		//FCC
+  {"SPAIN", 724},
+  {"GERMANY", 276},
+  {"FRANCE", 250},
+  {"ITALY", 380},
+  {"JAPAN", 392},
   {NULL, 0}
 };
-#endif
 
 #endif
 
@@ -2892,7 +2882,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
 
-#ifdef REGDOMAIN_OVERRIDE
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div><select name=\"%s\">\n",
 	     wl_regdomain);
@@ -2909,7 +2898,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
-#endif
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
 //  sprintf (maxpower, "%s_maxpower", prefix);
@@ -3029,7 +3017,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   char wl_turbo[16];
 //  char wl_xchanmode[16];
-//  char wl_outdoor[16];
+  char wl_outdoor[16];
   char wl_diversity[16];
   char wl_rxantenna[16];
   char wl_txantenna[16];
@@ -3038,7 +3026,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_xr[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
-//  sprintf (wl_outdoor, "%s_outdoor", prefix);
+  sprintf (wl_outdoor, "%s_outdoor", prefix);
   sprintf (wl_diversity, "%s_diversity", prefix);
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
@@ -3051,7 +3039,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-//  showOption (wp, "wl_basic.outband", wl_outdoor);
+  showOption (wp, "wl_basic.outband", wl_outdoor);
   showOption (wp, "wl_basic.diversity", wl_diversity);
 #ifndef HAVE_FONERA
   websWrite (wp,
