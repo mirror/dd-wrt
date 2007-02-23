@@ -325,11 +325,11 @@ eval("insmod","crypto_null");
   eval ("insmod", "ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
 #ifdef HAVE_CPUTEMP
-  eval ("insmod", "nsc_gpio");
-  eval ("insmod", "scx200_gpio");
-  eval ("insmod", "scx200_i2c");
-  eval ("insmod", "scx200_acb");
-  eval ("insmod", "lm77");
+//  eval ("insmod", "nsc_gpio");
+//  eval ("insmod", "scx200_gpio");
+//  eval ("insmod", "scx200_i2c");
+//  eval ("insmod", "scx200_acb");
+//  eval ("insmod", "lm77");
 #endif
 
 

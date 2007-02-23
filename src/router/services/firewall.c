@@ -785,9 +785,9 @@ nat_postrouting (void)
   if (nvram_match ("wk_mode", "gateway"))
     {
       if (strlen (wanface) > 0)
-	save2file
-	  ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
-	   "--to-ports 5056-5071\n", wanface);
+//	save2file
+//	  ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
+//	   "--to-ports 5056-5071\n", wanface);
       if (strlen (wanface) > 0)
 	save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 
