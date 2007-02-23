@@ -48,13 +48,7 @@ main(int argc, char *argv[])
 	int ret;
 	char *table = "filter";
 	iptc_handle_t handle = NULL;
-//    int i;
-//    for (i=0;i<argc;i++)
-//    {
-//    cprintf("%s ",argv[i]);
-//    }
-//    cprintf("\n");
-//	puts("executing iptables");
+    int i;
 	program_name = "iptables";
 	program_version = IPTABLES_VERSION;
 
@@ -72,8 +66,13 @@ main(int argc, char *argv[])
 		ret = iptc_commit(&handle);
 
 	if (!ret) {
-		fprintf(stderr, "iptables: %s\n",
-			iptc_strerror(errno));
+//		fprintf(stderr, "iptables: %s\n",
+//			iptc_strerror(errno));
+//		fprintf(stderr,"arguments:");
+//		int i;
+//		for (i=1;i<argc;i++)
+//		fprintf(stderr,"%s",argv[i]);
+//		fprintf(stderr,"\n");
 		if (errno == EAGAIN) {
 			exit(RESOURCE_PROBLEM);
 		}
