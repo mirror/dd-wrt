@@ -984,6 +984,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_NETGEAR_WNR834B:
 			power_gpio = 0x14;
 			diag_gpio = 0x15;
+			wlan_gpio = 0x16;
 		break;
 	}
 	

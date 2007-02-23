@@ -136,7 +136,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_GATEWORX_SWAP 0x270f
 
 //Netgear WNR834B (4704 cpu + BCM5325 switch, fccid: ?)
-#define ROUTER_NETGEAR_WNR834B 0x280f
+#define ROUTER_NETGEAR_WNR834B 0x2817
 
 
 
