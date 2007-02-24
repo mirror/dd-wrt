@@ -1149,8 +1149,8 @@ adjust_regulatory (int count)
 	char country[32];
 	sprintf(country,"%s_regdomain",dev);
 	setsysctrl (wif, "regulatory",1);
-	setsysctrl (wif, "setregdomain",getRegDomain(nvram_safe_get(country)));
-	setsysctrl (wif, "countrycode",getCountryCode(nvram_safe_get(country)));
+	setsysctrl (wif, "setregdomain",getRegDomain(default_get(country,"UNITED_STATES")));
+	setsysctrl (wif, "countrycode",getCountry(default_get(country,"UNITED_STATES")));
 	sprintf(country,"%s_outdoor",dev);
 	setsysctrl (wif, "outdoor",atoi(nvram_safe_get(country)));
 	}
