@@ -61,8 +61,10 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
   else if (tab == 8)
     c = newclocks;
   else
+  	{
     websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
     return;
+	}	
     
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
   websWrite (wp, "<select name=\"overclocking\">\n");
