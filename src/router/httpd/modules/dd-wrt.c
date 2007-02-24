@@ -71,7 +71,7 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
     {
       char clock[16];
       sprintf (clock, "%d", c[i]);
-      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n</select>\n", c[i],
+      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
 		 nvram_match ("overclocking",
 			      clock) ? "selected=\"selected\"" : "", c[i]);
 
