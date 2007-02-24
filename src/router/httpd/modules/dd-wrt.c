@@ -2656,16 +2656,16 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "ath_specialmode");
   copytonv (wp, n);
 #endif
-//  sprintf (n, "%s_regdomain", prefix);
-///  copytonv (wp, n);
+  sprintf (n, "%s_regdomain", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_xr", prefix);
   copytonv (wp, n);
 //  sprintf (n, "%s_xchanmode", prefix);
 //  copytonv (wp, n);
-//  sprintf (n, "%s_outdoor", prefix);
-//  copytonv (wp, n);
+  sprintf (n, "%s_outdoor", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_preamble", prefix);
@@ -2883,10 +2883,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_regdomain, "%s_regdomain", prefix);
 
   websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div><select name=\"%s\">\n",
-	     wl_regdomain);
-  int domcount = 0;
-  while (regdomains[domcount].name != NULL)
+	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
+  char *list=getCountryList();
+  showOptions(wp,wl_regdomain,list,nvram_safe_get(wl_regdomain));
+  websWrite (wp, "</div>\n");
+/*  while (regdomains[domcount].name != NULL)
     {
       char domcode[16];
       sprintf (domcode, "%d", regdomains[domcount].code);
@@ -2897,7 +2898,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       domcount++;
     }
   websWrite (wp, "</select>\n");
-  websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>\n");*/
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
 //  sprintf (maxpower, "%s_maxpower", prefix);
