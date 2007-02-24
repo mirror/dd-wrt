@@ -18,7 +18,7 @@
 #include <typedefs.h>
 #include <wlioctl.h>
 #ifndef WLC_IOCTL_SMLEN
-#define	WLC_IOCTL_SMLEN		256		/* "small" length ioctl buffer required */
+#define	WLC_IOCTL_SMLEN		256	/* "small" length ioctl buffer required */
 #endif
 #ifndef BCME_BUFTOOSHORT
 #define BCME_BUFTOOSHORT		-14	/* Buffer too short */
@@ -57,7 +57,15 @@ extern int wl_probe (char *name);
 int getchannels (unsigned int *list);
 int getassoclist (char *name, unsigned char *list);
 int getwdslist (char *name, unsigned char *list);
-int getNoise(char *ifname,unsigned char *name);
+int getNoise (char *ifname, unsigned char *name);
+
+#ifdef HAVE_MADWIFI
+unsigned int getRegDomain (const char *country);
+unsigned int getCountry (const char *country);
+char *getCountryList (void);
+
+
+#endif
 /*
  * Set/Get named variable.
  * @param	name	interface name
@@ -78,8 +86,8 @@ extern int wl_get_int (char *name, char *var, int *val);
  * @param	len	length of buf
  * @return	>= 0 if successful or < 0 otherwise
  */
-#define DEV_TYPE_LEN 3	/* Length for dev type 'et'/'wl' */
-extern int wl_get_dev_type(char *name, void *buf, int len);
+#define DEV_TYPE_LEN 3		/* Length for dev type 'et'/'wl' */
+extern int wl_get_dev_type (char *name, void *buf, int len);
 
 
 /*

@@ -117,6 +117,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
+OBJS += countrycode/countrycode_$(ARCH).o
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)

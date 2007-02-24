@@ -37,7 +37,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WBR2G54S 0x0607
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
-#define ROUTER_BUFFALO_WLA2G54C 0x0712  //gpio 2 is AOSS button, let it acts as reset for now.
+#define ROUTER_BUFFALO_WLA2G54C 0x0712	//gpio 2 is AOSS button, let it acts as reset for now.
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
@@ -53,7 +53,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
-#define ROUTER_RT210W 0x0c0f 
+#define ROUTER_RT210W 0x0c0f
 
 // RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
 // Siemens se505 v2, Belkin F5D7230-4 v1444 (2MB flash, fccid: Belkin K7S-F5D72304)
@@ -143,8 +143,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define NVROUTER "DD_BOARD"
 
 
-extern char *getSTA(void);
-extern int getcpurev(void);
+extern char *getSTA (void);
+extern int getcpurev (void);
 extern int check_vlan_support (void);
 extern int startswith (char *source, char *cmp);
 extern int getRouterBrand (void);
@@ -179,8 +179,11 @@ extern void encode (char *buf, int len);
 extern void decode (char *buf, int len);
 
 extern int led_control (int type, int act);
-enum { LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN };
-enum { LED_ON, LED_OFF, LED_FLASH };
+enum
+{ LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
+    LED_SES, LED_SES2, LED_AOSS, LED_WLAN };
+enum
+{ LED_ON, LED_OFF, LED_FLASH };
 
 #ifdef CDEBUG
 extern int mcoreleft (void);
@@ -188,9 +191,10 @@ extern int coreleft (void);
 static void
 cdebug (char *function)
 {
- // FILE *in = fopen ("/tmp/console.log", "a");
-  fprintf (stderr, "free ram in %s = %d (malloc %d)\n", function, coreleft (),mcoreleft ());
- // fclose (in);
+  // FILE *in = fopen ("/tmp/console.log", "a");
+  fprintf (stderr, "free ram in %s = %d (malloc %d)\n", function, coreleft (),
+	   mcoreleft ());
+  // fclose (in);
 }
 
 #else
@@ -241,9 +245,11 @@ typedef enum
 enum
 { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
-enum { BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM4704_BCM5325F_CHIP, 
-       BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP, 
-       BCM4705_BCM5397_EWC_CHIP, NO_DEFINE_CHIP };
+enum
+{ BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM4704_BCM5325F_CHIP,
+  BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP,
+  BCM4705_BCM5397_EWC_CHIP, NO_DEFINE_CHIP
+};
 
 enum
 { FIRST, SECOND };
@@ -295,7 +301,7 @@ struct detect_wans
 #define PPP_PSEUDO_GW	"10.112.112.112"
 
 #define PING_TMP	"/tmp/ping.log"
-//#define TRACEROUTE_TMP	"/tmp/traceroute.log"
+//#define TRACEROUTE_TMP        "/tmp/traceroute.log"
 #define MAX_BUF_LEN	254
 
 #define RESOLV_FILE	"/tmp/resolv.conf"
@@ -342,9 +348,9 @@ struct detect_wans
 }
 
 #ifdef HAVE_X86
-void lcdmessage(char *message);
-void initlcd(void);
-void lcdmessaged(char *dual,char *message);
+void lcdmessage (char *message);
+void initlcd (void);
+void lcdmessaged (char *dual, char *message);
 #else
 #define initlcd()
 #define lcdmessage(a)
@@ -365,13 +371,13 @@ int route_add (char *name, int metric, char *dst, char *gateway,
 	       char *genmask);
 int route_del (char *name, int metric, char *dst, char *gateway,
 	       char *genmask);
-extern char *psname(int pid, char *buffer, int maxlen);
-extern int pidof(const char *name);
-extern int killall(const char *name, int sig);
-extern int getifcount(const char *ifprefix);
-extern int getIfList(char *buffer,char *ifprefix);
-extern int ifexists(const char *ifname);
-extern void getinterfacelist(const char *ifprefix,char *buffer);
+extern char *psname (int pid, char *buffer, int maxlen);
+extern int pidof (const char *name);
+extern int killall (const char *name, int sig);
+extern int getifcount (const char *ifprefix);
+extern int getIfList (char *buffer, char *ifprefix);
+extern int ifexists (const char *ifname);
+extern void getinterfacelist (const char *ifprefix, char *buffer);
 
 #define MAX_WDS_DEVS 10
 #endif

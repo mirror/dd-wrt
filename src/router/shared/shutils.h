@@ -97,7 +97,7 @@ extern int safe_fwrite (const void *ptr, size_t size, size_t nmemb,
 extern int ether_atoe (const char *a, unsigned char *e);
 
 
-int indexof(char *str,char c);
+int indexof (char *str, char c);
 /*
  * Convert Ethernet address binary data to string representation
  * @param	e	binary data
@@ -112,7 +112,7 @@ extern int osifname_to_nvifname (const char *osifname, char *nvifname_buf,
 				 int nvifname_buf_len);
 
 
-extern int system2(char *command);
+extern int system2 (char *command);
 
 /*
  * Concatenate two strings together into a caller supplied buffer
