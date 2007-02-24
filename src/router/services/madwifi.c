@@ -1140,8 +1140,20 @@ adjust_regulatory (int count)
       }
     else
       {
+        if (regulatory==0)
+	{
 	setsysctrl (wif, "regulatory", regulatory);
 	setsysctrl (wif, "setregdomain", 0);
+	}else
+	{
+	char country[32];
+	sprintf(country,"%s_regdomain",dev);
+	setsysctrl (wif, "regulatory",1);
+	setsysctrl (wif, "setregdomain",getRegDomain(nvram_safe_get(country)));
+	setsysctrl (wif, "countrycode",getCountryCode(nvram_safe_get(country)));
+	sprintf(country,"%s_outdoor",dev);
+	setsysctrl (wif, "outdoor",atoi(nvram_safe_get(country)));
+	}
       }
   }
 
