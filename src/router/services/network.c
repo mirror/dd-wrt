@@ -2613,7 +2613,9 @@ start_wan_done (char *wan_ifname)
   br_shutdown ();
 #endif
 #ifdef HAVE_MADWIFI
+#ifndef HAVE_NOWIFI
   start_hostapdwan ();
+#endif
 #endif
 
 }
