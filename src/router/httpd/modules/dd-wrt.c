@@ -3040,7 +3040,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "wl_basic.preamble", wl_preamble);
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
+#ifndef HAVE_FONERA
   showOption (wp, "wl_basic.outband", wl_outdoor);
+#endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
 #ifndef HAVE_FONERA
   websWrite (wp,
