@@ -85,32 +85,24 @@ process_monitor_main (void)
 	  timer_settime (ntp1_id, 0, &t4, NULL);
 	}
 
-#ifdef HAVE_SNMP
-	if (nvram_match ("snmpd_enable", "1"))
-	{
+
       struct timeval then;
       gettimeofday (&then, NULL);
-
-      if (abs (now.tv_sec - then.tv_sec) > 100000000)
+      
+#ifdef HAVE_SNMP
+      if ((abs (now.tv_sec - then.tv_sec) > 100000000) && nvram_match ("snmpd_enable", "1"))
 		{
 	  	stop_service ("snmp");
 	  	syslog (LOG_DEBUG, "Restarting snmpd\n");
 	  	sleep (2);
 	  	start_service ("snmp");
 		}
-	}
 #endif
-
-  if (nvram_match ("resetbutton_enable", "0") && pidof ("resetbutton") > 0)  //give user a chance to use resetbutton for first 4 min even if disabled and time is not synched
-  	{
-      struct timeval tnow;
-      gettimeofday (&tnow, NULL);
-
-      if (tnow.tv_sec > 240)
-		{
+//give user a chance to use resetbutton for first 4 min even if disabled and time is not synched
+	if (then.tv_sec > 240 && nvram_match ("resetbutton_enable", "0") && pidof ("resetbutton") > 0)
+  		{
 	  	stop_service ("resetbutton");
 		}
-	}
 
       syslog (LOG_DEBUG, "We need to re-update after %d seconds\n",
 	      NTP_M_TIMER);
