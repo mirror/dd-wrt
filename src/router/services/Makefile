@@ -15,10 +15,10 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) -fpic
 
-OBJS = services.c openvpn.c network.c firewall.c mssid.c wshaper.c ddns.c sysinit.c sysinit-$(ARCHITECTURE).c interface.c udhcpc.c mkfiles.c iptable.c defaults.c
+OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o
 
 ifneq ($(CONFIG_XSCALE),y)
-OBJS += gpio.c
+OBJS += gpio.o
 endif
 
 ifeq ($(CONFIG_RSTATS),y)
@@ -51,10 +51,10 @@ ifeq ($(CONFIG_THOM),y)
 CFLAGS += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-OBJS += site_survey_madwifi.c
-OBJS += stabridge.c
+OBJS += site_survey_madwifi.o
+OBJS += stabridge.o
 else
-OBJS += site_survey_broadcom.c
+OBJS += site_survey_broadcom.o
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -92,8 +92,8 @@ CFLAGS += -DHAVE_KODATA
 endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
-OBJS += libbridge_if.c
-OBJS += libbridge_init.c
+OBJS += libbridge_if.o
+OBJS += libbridge_init.o
 
 endif
 ifeq ($(CONFIG_RADIOOFF),y)
@@ -110,7 +110,7 @@ CFLAGS += -DHAVE_NOWIFI
 endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
-OBJS += ppp.c
+OBJS += ppp.o
 endif
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS += -DHAVE_PPPOERELAY
@@ -122,7 +122,7 @@ endif
 
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
-OBJS += heartbeat.c
+OBJS += heartbeat.o
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -137,7 +137,7 @@ endif
 endif
 
 ifneq ($(CONFIG_NOWIFI),y)
-OBJS += madwifi.c
+OBJS += madwifi.o
 OBJS += ../wireless-tools/libiw.so.29
 endif
 endif
@@ -265,7 +265,7 @@ CFLAGS += -DBOOT_WAIT_ON
 endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
-OBJS += sshd.c
+OBJS += sshd.o
 CFLAGS += -DHAVE_SSHD
 endif
 
@@ -278,7 +278,7 @@ CFLAGS += -DHAVE_DHCPFWD
 endif
 ifeq ($(CONFIG_PPPD),y)
 CFLAGS += -DHAVE_PPPD
-OBJS += ppp.c
+OBJS += ppp.o
 endif
 
 ifeq ($(CONFIG_CHILLISPOT),y)
@@ -298,7 +298,7 @@ CFLAGS += -DHAVE_ZEBRA
 endif
 
 ifeq ($(CONFIG_WSHAPER),y)
-OBJS += wshaper.c
+OBJS += wshaper.o
 CFLAGS += -DHAVE_WSHAPER
 endif
 
@@ -308,12 +308,12 @@ endif
 
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
-OBJS += snmp.c
+OBJS += snmp.o
 endif
 
 ifeq ($(CONFIG_WOL),y)
 CFLAGS += -DHAVE_WOL
-OBJS += wol.c
+OBJS += wol.o
 endif
 
 ifeq ($(CONFIG_NOCAT),y)
