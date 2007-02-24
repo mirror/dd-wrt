@@ -1281,7 +1281,7 @@ configure_single (int count, int isbond)
 	{
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
 		"wds");
-	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
+//	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
 	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
 	  eval ("iwpriv", wdsdev, "wds", "1");
 	}
@@ -1483,7 +1483,7 @@ configure_single (int count, int isbond)
 	}
     }
 
-/*  for (s = 1; s <= 10; s++)
+  for (s = 1; s <= 10; s++)
     {
       char wdsvarname[32] = { 0 };
       char wdsdevname[32] = { 0 };
@@ -1504,7 +1504,7 @@ configure_single (int count, int isbond)
 	{
 	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
 	}
-    }*/
+    }
   //setup encryption
   m = default_get (wl, "ap");
 
