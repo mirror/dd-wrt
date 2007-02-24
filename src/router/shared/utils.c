@@ -54,7 +54,7 @@ getcpurev (void)
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
     {
-      return 0;
+      return -1;
     }
   int cnt = 0;
   int b = 0;
@@ -72,15 +72,19 @@ getcpurev (void)
 	    cpurev[i] = getc (fp);
 	  cpurev[i] = 0;
 	  fclose (fp);
+	  if (!strcmp (cpurev, "BCM4710 V0.0"))  //old 125 MHz
+	    return 0;
+	  if (!strcmp (cpurev, "BCM3302 V0.6"))  //4704
+	    return 6;	  
 	  if (!strcmp (cpurev, "BCM3302 V0.7"))
 	    return 7;
 	  if (!strcmp (cpurev, "BCM3302 V0.8"))
 	    return 8;
-	  return 0;
+	  return -1;
 	}
     }
   fclose (fp);
-  return 0;
+  return -1;
 }
 
 int
