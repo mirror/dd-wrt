@@ -55,22 +55,28 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
   int tab = getcpurev ();
   unsigned int *c;
+    
   if (tab == 7)
     c = oldclocks;
   else if (tab == 8)
     c = newclocks;
   else
+    websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
     return;
+    
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
+  websWrite (wp, "<select name=\"overclocking\">\n");
   int i;
   for (i = 0; i < 9; i++)
     {
       char clock[16];
       sprintf (clock, "%d", c[i]);
-      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i],
+      websWrite (wp, "<option value=\"%d\" %s >%d MHz</option>\n</select>\n", c[i],
 		 nvram_match ("overclocking",
 			      clock) ? "selected=\"selected\"" : "", c[i]);
 
     }
+    websWrite (wp, "</select>\n</div>\n");
 }
 
 void
