@@ -704,9 +704,9 @@ macro_rem (char *a, char *nv)
 	  buffer = nvram_safe_get (nv);
 	  if (buffer != NULL)
 	    {
-	      int slen=strlen(buffer);
+	      int slen = strlen (buffer);
 	      b = malloc (slen + 1);
-	      
+
 	      for (i = 0; i < slen; i++)
 		{
 		  if (buffer[i] == ' ')
@@ -1271,7 +1271,7 @@ void
 rep (char *in, char from, char to)
 {
   int i;
-  int slen=strlen(in);
+  int slen = strlen (in);
   for (i = 0; i < slen; i++)
     if (in[i] == from)
       in[i] = to;
@@ -1324,7 +1324,8 @@ ej_show_security (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	     selmatch ("security_mode", "psk psk2", "selected"));
-  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
+  websWrite (wp,
+	     "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch ("security_mode", "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch ("security_mode", "radius", "selected=\"selected\""));
@@ -1398,7 +1399,8 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix)
   websWrite (wp,
 	     "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	     selmatch (var, "psk psk2", "selected=\"selected\""));
-  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
+  websWrite (wp,
+	     "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
 	     selmatch (var, "wpa wpa2", "selected=\"selected\""));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch (var, "radius", "selected=\"selected\""));
@@ -1663,170 +1665,186 @@ showOption (webs_t wp, char *propname, char *nvname)
 
 
 static void
-showOptions (webs_t wp, char *propname,char *names,char *select)
+showOptions (webs_t wp, char *propname, char *names, char *select)
 {
-char *next;
-char var[80];
-  websWrite (wp,"<select name=\"%s\">\n",propname);
-foreach (var, names, next)
+  char *next;
+  char var[80];
+  websWrite (wp, "<select name=\"%s\">\n", propname);
+  foreach (var, names, next)
   {
-  websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n//]]>\n</script>\n",var,!strcmp(var,select)? "selected=\\\"selected\\\"" : "",var);
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n//]]>\n</script>\n",
+	       var, !strcmp (var, select) ? "selected=\\\"selected\\\"" : "",
+	       var);
   }
-  websWrite (wp,"</select>\n");
+  websWrite (wp, "</select>\n");
 }
 
 #ifdef HAVE_VLANTAGGING
 
 
-int save_networking(webs_t wp)
+int
+save_networking (webs_t wp)
 {
-  int vlancount=atoi(nvram_safe_get("vlan_tagcount"));
-  int bridgescount=atoi(nvram_safe_get("bridges_count"));
-  int bridgesifcount=atoi(nvram_safe_get("bridgesif_count"));
+  int vlancount = atoi (nvram_safe_get ("vlan_tagcount"));
+  int bridgescount = atoi (nvram_safe_get ("bridges_count"));
+  int bridgesifcount = atoi (nvram_safe_get ("bridgesif_count"));
   int i;
-fprintf(stderr,"got in\n");
+  fprintf (stderr, "got in\n");
   //save vlan stuff
   char buffer[1024];
-  memset(buffer,0,1024);
-  for (i=0;i<vlancount;i++)
+  memset (buffer, 0, 1024);
+  for (i = 0; i < vlancount; i++)
     {
-    char *ifname,*tag;
-    char var[32];
-    sprintf(var,"vlanifname%d",i);
-    ifname=websGetVar(wp,var,NULL);
-    if (!ifname)return;
-    sprintf(var,"vlantag%d",i);
-    tag=websGetVar(wp,var,NULL);
-    if (!tag)return;
-    strcat(buffer,ifname);
-    strcat(buffer,">");
-    strcat(buffer,tag);
-    if (i<vlancount-1)
-    strcat(buffer," ");    
+      char *ifname, *tag;
+      char var[32];
+      sprintf (var, "vlanifname%d", i);
+      ifname = websGetVar (wp, var, NULL);
+      if (!ifname)
+	return;
+      sprintf (var, "vlantag%d", i);
+      tag = websGetVar (wp, var, NULL);
+      if (!tag)
+	return;
+      strcat (buffer, ifname);
+      strcat (buffer, ">");
+      strcat (buffer, tag);
+      if (i < vlancount - 1)
+	strcat (buffer, " ");
     }
-  nvram_set("vlan_tags",buffer);
+  nvram_set ("vlan_tags", buffer);
 // save bridges
-  memset(buffer,0,1024);
-  for (i=0;i<bridgescount;i++)
+  memset (buffer, 0, 1024);
+  for (i = 0; i < bridgescount; i++)
     {
-    char *ifname,*tag,*prio;
-    char var[32];
-    sprintf(var,"bridgename%d",i);
-    ifname=websGetVar(wp,var,NULL);
-    if (!ifname)return;
-    sprintf(var,"bridgestp%d",i);
-    tag=websGetVar(wp,var,NULL);
-    if (!tag)return;
-    sprintf(var,"bridgeprio%d",i);
-    prio=websGetVar(wp,var,NULL);
-    if (!prio)return;
-    strcat(buffer,ifname);
-    strcat(buffer,">");
-    if (!strcmp(tag,"On"))
-    strcat(buffer,"1");
-    else
-    strcat(buffer,"0");
-    strcat(buffer,">");
-    strcat(buffer,prio);
-    if (i<bridgescount-1)
-    strcat(buffer," ");    
+      char *ifname, *tag, *prio;
+      char var[32];
+      sprintf (var, "bridgename%d", i);
+      ifname = websGetVar (wp, var, NULL);
+      if (!ifname)
+	return;
+      sprintf (var, "bridgestp%d", i);
+      tag = websGetVar (wp, var, NULL);
+      if (!tag)
+	return;
+      sprintf (var, "bridgeprio%d", i);
+      prio = websGetVar (wp, var, NULL);
+      if (!prio)
+	return;
+      strcat (buffer, ifname);
+      strcat (buffer, ">");
+      if (!strcmp (tag, "On"))
+	strcat (buffer, "1");
+      else
+	strcat (buffer, "0");
+      strcat (buffer, ">");
+      strcat (buffer, prio);
+      if (i < bridgescount - 1)
+	strcat (buffer, " ");
     }
-  nvram_set("bridges",buffer);
+  nvram_set ("bridges", buffer);
 // save bridge assignment
-  memset(buffer,0,1024);
-  for (i=0;i<bridgesifcount;i++)
+  memset (buffer, 0, 1024);
+  for (i = 0; i < bridgesifcount; i++)
     {
-    char *ifname,*tag,*prio;
-    char var[32];
-    sprintf(var,"bridge%d",i);
-    ifname=websGetVar(wp,var,NULL);
-    if (!ifname)return;
-    sprintf(var,"bridgeif%d",i);
-    tag=websGetVar(wp,var,NULL);
-    if (!tag)return;
-    sprintf(var,"bridgeifprio%d",i);
-    prio=websGetVar(wp,var,NULL);
-    if (!prio)return;
-    strcat(buffer,ifname);
-    strcat(buffer,">");
-    strcat(buffer,tag);
-    strcat(buffer,">");
-    strcat(buffer,prio);
-    if (i<bridgesifcount-1)
-    strcat(buffer," ");    
+      char *ifname, *tag, *prio;
+      char var[32];
+      sprintf (var, "bridge%d", i);
+      ifname = websGetVar (wp, var, NULL);
+      if (!ifname)
+	return;
+      sprintf (var, "bridgeif%d", i);
+      tag = websGetVar (wp, var, NULL);
+      if (!tag)
+	return;
+      sprintf (var, "bridgeifprio%d", i);
+      prio = websGetVar (wp, var, NULL);
+      if (!prio)
+	return;
+      strcat (buffer, ifname);
+      strcat (buffer, ">");
+      strcat (buffer, tag);
+      strcat (buffer, ">");
+      strcat (buffer, prio);
+      if (i < bridgesifcount - 1)
+	strcat (buffer, " ");
     }
-nvram_set("bridgesif",buffer);
-nvram_commit();
-nvram_set("action_service","index");
-service_restart();
+  nvram_set ("bridgesif", buffer);
+  nvram_commit ();
+  nvram_set ("action_service", "index");
+  service_restart ();
 }
 
-int add_vlan(webs_t wp)
+int
+add_vlan (webs_t wp)
 {
-static char word[256];
-char *next, *wordlist;
-  int count=0;
-  int realcount=atoi(nvram_safe_get("vlan_tagcount"));
-  if (realcount==0)
-  {
-  wordlist = nvram_safe_get ("vlan_tags");
-  foreach (word, wordlist, next)
-  {
-  count++;
-  }
-  realcount=count;
-  }
+  static char word[256];
+  char *next, *wordlist;
+  int count = 0;
+  int realcount = atoi (nvram_safe_get ("vlan_tagcount"));
+  if (realcount == 0)
+    {
+      wordlist = nvram_safe_get ("vlan_tags");
+      foreach (word, wordlist, next)
+      {
+	count++;
+      }
+      realcount = count;
+    }
   realcount++;
   char var[32];
-  sprintf(var,"%d",realcount);
-  nvram_set("vlan_tagcount",var);
-  nvram_commit();
+  sprintf (var, "%d", realcount);
+  nvram_set ("vlan_tagcount", var);
+  nvram_commit ();
   return 0;
 }
-int del_vlan(webs_t wp)
+
+int
+del_vlan (webs_t wp)
 {
-static char word[256];
-int realcount=0;
-char *next, *wordlist,*newwordlist;
-char *val = websGetVar (wp, "del_value", NULL);
-if (val==NULL)
+  static char word[256];
+  int realcount = 0;
+  char *next, *wordlist, *newwordlist;
+  char *val = websGetVar (wp, "del_value", NULL);
+  if (val == NULL)
     return 0;
-int todel=atoi(val);
-wordlist = nvram_safe_get ("vlan_tags");
-newwordlist=(char*)malloc(strlen(wordlist));
-memset(newwordlist,0,strlen(wordlist));
-int count=0;
+  int todel = atoi (val);
+  wordlist = nvram_safe_get ("vlan_tags");
+  newwordlist = (char *) malloc (strlen (wordlist));
+  memset (newwordlist, 0, strlen (wordlist));
+  int count = 0;
   foreach (word, wordlist, next)
   {
-  if (count!=todel)
-    {
-    strcat(newwordlist,word);
-    strcat(newwordlist," ");
-    }
+    if (count != todel)
+      {
+	strcat (newwordlist, word);
+	strcat (newwordlist, " ");
+      }
     count++;
   }
 
-char var[32];
-realcount=atoi(nvram_safe_get("vlan_tagcount"))-1;
-sprintf(var,"%d",realcount);
-nvram_set("vlan_tagcount",var);
-nvram_set("vlan_tags",newwordlist);
-nvram_commit();
-free(newwordlist);
- 
-return 0;
+  char var[32];
+  realcount = atoi (nvram_safe_get ("vlan_tagcount")) - 1;
+  sprintf (var, "%d", realcount);
+  nvram_set ("vlan_tagcount", var);
+  nvram_set ("vlan_tags", newwordlist);
+  nvram_commit ();
+  free (newwordlist);
+
+  return 0;
 }
+
 void
 ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
 {
-char buffer[256];
-int count=0;
-static char word[256];
-char *next, *wordlist;
-memset(buffer,0,256);
-getIfList(buffer,NULL);
-int totalcount=0;
-  int realcount=atoi(nvram_safe_get("vlan_tagcount"));
+  char buffer[256];
+  int count = 0;
+  static char word[256];
+  char *next, *wordlist;
+  memset (buffer, 0, 256);
+  getIfList (buffer, NULL);
+  int totalcount = 0;
+  int realcount = atoi (nvram_safe_get ("vlan_tagcount"));
   wordlist = nvram_safe_get ("vlan_tags");
   foreach (word, wordlist, next)
   {
@@ -1836,105 +1854,117 @@ int totalcount=0;
       break;
     char vlan_name[32];
 //    sprintf (vlan_name, "%s.%s", tag, port);
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">VLAN%d Interface</div>\n",count);
-    sprintf(vlan_name,"vlanifname%d",count);
-    showOptions(wp,vlan_name,buffer,tag);
-    sprintf(vlan_name,"vlantag%d",count);
-    websWrite(wp,"&nbsp;Tag Number&nbsp;");
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,port);    
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",count);
-    websWrite(wp,"</div>\n");
-    count++;    
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">VLAN%d Interface</div>\n", count);
+    sprintf (vlan_name, "vlanifname%d", count);
+    showOptions (wp, vlan_name, buffer, tag);
+    sprintf (vlan_name, "vlantag%d", count);
+    websWrite (wp, "&nbsp;Tag Number&nbsp;");
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+	       vlan_name, port);
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       count);
+    websWrite (wp, "</div>\n");
+    count++;
   }
-  totalcount=count;
+  totalcount = count;
   int i;
-  for (i=count;i<realcount;i++)
-  {
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">VLAN%d Interface</div>\n",i);
-    char vlan_name[32];
-    sprintf(vlan_name,"vlanifname%d",i);
-    showOptions(wp,vlan_name,buffer,"");
-    sprintf(vlan_name,"vlantag%d",i);
-    websWrite(wp,"&nbsp;Tag Number&nbsp;");
-    websWrite(wp,"<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",vlan_name);    
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
-    websWrite(wp,"</div>\n");
-    totalcount++;  
-  }
+  for (i = count; i < realcount; i++)
+    {
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">VLAN%d Interface</div>\n", i);
+      char vlan_name[32];
+      sprintf (vlan_name, "vlanifname%d", i);
+      showOptions (wp, vlan_name, buffer, "");
+      sprintf (vlan_name, "vlantag%d", i);
+      websWrite (wp, "&nbsp;Tag Number&nbsp;");
+      websWrite (wp,
+		 "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n",
+		 vlan_name);
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		 i);
+      websWrite (wp, "</div>\n");
+      totalcount++;
+    }
   char var[32];
-  sprintf(var,"%d",totalcount);
-  nvram_set("vlan_tagcount",var);
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+  sprintf (var, "%d", totalcount);
+  nvram_set ("vlan_tagcount", var);
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vlan_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 }
 
-int del_bridge(webs_t wp)
+int
+del_bridge (webs_t wp)
 {
-static char word[256];
-int realcount=0;
-char *next, *wordlist,*newwordlist;
-char *val = websGetVar (wp, "del_value", NULL);
-if (val==NULL)
+  static char word[256];
+  int realcount = 0;
+  char *next, *wordlist, *newwordlist;
+  char *val = websGetVar (wp, "del_value", NULL);
+  if (val == NULL)
     return 0;
-int todel=atoi(val);
-wordlist = nvram_safe_get ("bridges");
-newwordlist=(char*)malloc(strlen(wordlist));
-memset(newwordlist,0,strlen(wordlist));
-int count=0;
+  int todel = atoi (val);
+  wordlist = nvram_safe_get ("bridges");
+  newwordlist = (char *) malloc (strlen (wordlist));
+  memset (newwordlist, 0, strlen (wordlist));
+  int count = 0;
   foreach (word, wordlist, next)
   {
-  if (count!=todel)
-    {
-    strcat(newwordlist,word);
-    strcat(newwordlist," ");
-    }
+    if (count != todel)
+      {
+	strcat (newwordlist, word);
+	strcat (newwordlist, " ");
+      }
     count++;
   }
 
-realcount=atoi(nvram_safe_get("bridges_count"))-1;
-char var[32];
-sprintf(var,"%d",realcount);
-nvram_set("bridges_count",var);
-nvram_set("bridges",newwordlist);
-nvram_commit();
-free(newwordlist);
- 
-return 0;
+  realcount = atoi (nvram_safe_get ("bridges_count")) - 1;
+  char var[32];
+  sprintf (var, "%d", realcount);
+  nvram_set ("bridges_count", var);
+  nvram_set ("bridges", newwordlist);
+  nvram_commit ();
+  free (newwordlist);
+
+  return 0;
 }
-int add_bridge(webs_t wp)
+
+int
+add_bridge (webs_t wp)
 {
-static char word[256];
-char *next, *wordlist;
-  int count=0;
-  int realcount=atoi(nvram_safe_get("bridges_count"));
-  if (realcount==0)
-  {
-  wordlist = nvram_safe_get ("bridges");
-  foreach (word, wordlist, next)
-  {
-  count++;
-  }
-  realcount=count;
-  }
+  static char word[256];
+  char *next, *wordlist;
+  int count = 0;
+  int realcount = atoi (nvram_safe_get ("bridges_count"));
+  if (realcount == 0)
+    {
+      wordlist = nvram_safe_get ("bridges");
+      foreach (word, wordlist, next)
+      {
+	count++;
+      }
+      realcount = count;
+    }
   realcount++;
   char var[32];
-  sprintf(var,"%d",realcount);
-  nvram_set("bridges_count",var);
-  nvram_commit();
+  sprintf (var, "%d", realcount);
+  nvram_set ("bridges_count", var);
+  nvram_commit ();
   return 0;
 }
 
 void
 ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
 {
-char buffer[256];
-int count=0;
-static char word[256];
-char *next, *wordlist;
-memset(buffer,0,256);
-getIfList(buffer,NULL);
-  int realcount=atoi(nvram_safe_get("bridges_count"));
+  char buffer[256];
+  int count = 0;
+  static char word[256];
+  char *next, *wordlist;
+  memset (buffer, 0, 256);
+  getIfList (buffer, NULL);
+  int realcount = atoi (nvram_safe_get ("bridges_count"));
   wordlist = nvram_safe_get ("bridges");
   foreach (word, wordlist, next)
   {
@@ -1945,115 +1975,131 @@ getIfList(buffer,NULL);
     if (!tag || !port)
       break;
     char vlan_name[32];
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">Bridge %d</div>\n",count);
-    sprintf(vlan_name,"bridgename%d",count);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,tag);
-    websWrite(wp,"&nbsp;STP&nbsp;");
-    sprintf(vlan_name,"bridgestp%d",count);
-    showOptions(wp,vlan_name,"On Off",port);
-    websWrite(wp,"&nbsp;Prio&nbsp;");
-    sprintf(vlan_name,"bridgeprio%d",count);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,prio!=NULL?prio:"");
-    
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",count);
-    websWrite(wp,"</div>\n");
-    count++;    
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">Bridge %d</div>\n", count);
+    sprintf (vlan_name, "bridgename%d", count);
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+	       vlan_name, tag);
+    websWrite (wp, "&nbsp;STP&nbsp;");
+    sprintf (vlan_name, "bridgestp%d", count);
+    showOptions (wp, vlan_name, "On Off", port);
+    websWrite (wp, "&nbsp;Prio&nbsp;");
+    sprintf (vlan_name, "bridgeprio%d", count);
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+	       vlan_name, prio != NULL ? prio : "");
+
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       count);
+    websWrite (wp, "</div>\n");
+    count++;
   }
   int i;
-  int totalcount=count;
-  for (i=count;i<realcount;i++)
-  {
-    char vlan_name[32];
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">Bridge %d</div>\n",i);
-    sprintf(vlan_name,"bridgename%d",i);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" />\n",vlan_name);
-    websWrite(wp,"&nbsp;STP&nbsp;");
-    sprintf(vlan_name,"bridgestp%d",i);
-    showOptions(wp,vlan_name,"On Off","");
-    websWrite(wp,"&nbsp;Prio&nbsp;");
-    sprintf(vlan_name,"bridgeprio%d",i);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,"");
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
-    websWrite(wp,"</div>\n");  
-    totalcount++;
-  }
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+  int totalcount = count;
+  for (i = count; i < realcount; i++)
+    {
+      char vlan_name[32];
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">Bridge %d</div>\n", i);
+      sprintf (vlan_name, "bridgename%d", i);
+      websWrite (wp, "<input class=\"num\" name=\"%s\"size=\"5\" />\n",
+		 vlan_name);
+      websWrite (wp, "&nbsp;STP&nbsp;");
+      sprintf (vlan_name, "bridgestp%d", i);
+      showOptions (wp, vlan_name, "On Off", "");
+      websWrite (wp, "&nbsp;Prio&nbsp;");
+      sprintf (vlan_name, "bridgeprio%d", i);
+      websWrite (wp,
+		 "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+		 vlan_name, "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		 i);
+      websWrite (wp, "</div>\n");
+      totalcount++;
+    }
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
   char var[32];
-  sprintf(var,"%d",totalcount);
-  nvram_set("bridges_count",var);
+  sprintf (var, "%d", totalcount);
+  nvram_set ("bridges_count", var);
 }
 
-int del_bridgeif(webs_t wp)
+int
+del_bridgeif (webs_t wp)
 {
-static char word[256];
-int realcount=0;
-char *next, *wordlist,*newwordlist;
-char *val = websGetVar (wp, "del_value", NULL);
-if (val==NULL)
+  static char word[256];
+  int realcount = 0;
+  char *next, *wordlist, *newwordlist;
+  char *val = websGetVar (wp, "del_value", NULL);
+  if (val == NULL)
     return 0;
-int todel=atoi(val);
-wordlist = nvram_safe_get ("bridgesif_count");
-newwordlist=(char*)malloc(strlen(wordlist));
-memset(newwordlist,0,strlen(wordlist));
-int count=0;
+  int todel = atoi (val);
+  wordlist = nvram_safe_get ("bridgesif_count");
+  newwordlist = (char *) malloc (strlen (wordlist));
+  memset (newwordlist, 0, strlen (wordlist));
+  int count = 0;
   foreach (word, wordlist, next)
   {
-  if (count!=todel)
-    {
-    strcat(newwordlist,word);
-    strcat(newwordlist," ");
-    }
+    if (count != todel)
+      {
+	strcat (newwordlist, word);
+	strcat (newwordlist, " ");
+      }
     count++;
   }
 
-char var[32];
-realcount=atoi(nvram_safe_get("bridgesif_count"))-1;
-sprintf(var,"%d",realcount);
-nvram_set("bridgesif_count",var);
-nvram_set("bridgesif",newwordlist);
-nvram_commit();
-free(newwordlist);
- 
-return 0;
+  char var[32];
+  realcount = atoi (nvram_safe_get ("bridgesif_count")) - 1;
+  sprintf (var, "%d", realcount);
+  nvram_set ("bridgesif_count", var);
+  nvram_set ("bridgesif", newwordlist);
+  nvram_commit ();
+  free (newwordlist);
+
+  return 0;
 }
-int add_bridgeif(webs_t wp)
+
+int
+add_bridgeif (webs_t wp)
 {
 
-static char word[256];
-char *next, *wordlist;
-  int count=0;
-  int realcount=atoi(nvram_safe_get("bridgesif_count"));
-  if (realcount==0)
-  {
-  wordlist = nvram_safe_get ("bridgesif");
-  foreach (word, wordlist, next)
-  {
-  count++;
-  }
-  realcount=count;
-  }
+  static char word[256];
+  char *next, *wordlist;
+  int count = 0;
+  int realcount = atoi (nvram_safe_get ("bridgesif_count"));
+  if (realcount == 0)
+    {
+      wordlist = nvram_safe_get ("bridgesif");
+      foreach (word, wordlist, next)
+      {
+	count++;
+      }
+      realcount = count;
+    }
   realcount++;
   char var[32];
-  sprintf(var,"%d",realcount);
-  nvram_set("bridgesif_count",var);
-  nvram_commit();
-return 0;
+  sprintf (var, "%d", realcount);
+  nvram_set ("bridgesif_count", var);
+  nvram_commit ();
+  return 0;
 }
+
 void
 ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 {
-char buffer[256];
-char bufferif[256];
-int count=0;
-static char word[256];
-char *next, *wordlist;
-memset(buffer,0,256);
-memset(bufferif,0,256);
-getIfList(buffer,"br");
-getIfList(bufferif,NULL);
-  int realcount=atoi(nvram_safe_get("bridgesif_count"));
+  char buffer[256];
+  char bufferif[256];
+  int count = 0;
+  static char word[256];
+  char *next, *wordlist;
+  memset (buffer, 0, 256);
+  memset (bufferif, 0, 256);
+  getIfList (buffer, "br");
+  getIfList (bufferif, NULL);
+  int realcount = atoi (nvram_safe_get ("bridgesif_count"));
   wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
   {
@@ -2064,43 +2110,52 @@ getIfList(bufferif,NULL);
     if (!tag || !port)
       break;
     char vlan_name[32];
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">Assignment %d</div>\n",count);
-    sprintf(vlan_name,"bridge%d",count);
-    showOptions(wp,vlan_name,buffer,tag);
-    websWrite(wp,"&nbsp;Interface&nbsp;");
-    sprintf(vlan_name,"bridgeif%d",count);
-    showOptions(wp,vlan_name,bufferif,port);
-    websWrite(wp,"&nbsp;Prio&nbsp;");
-    sprintf(vlan_name,"bridgeifprio%d",count);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,prio!=NULL?prio:"");
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",count);
-    websWrite(wp,"</div>\n");
-    count++;    
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">Assignment %d</div>\n", count);
+    sprintf (vlan_name, "bridge%d", count);
+    showOptions (wp, vlan_name, buffer, tag);
+    websWrite (wp, "&nbsp;Interface&nbsp;");
+    sprintf (vlan_name, "bridgeif%d", count);
+    showOptions (wp, vlan_name, bufferif, port);
+    websWrite (wp, "&nbsp;Prio&nbsp;");
+    sprintf (vlan_name, "bridgeifprio%d", count);
+    websWrite (wp,
+	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+	       vlan_name, prio != NULL ? prio : "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       count);
+    websWrite (wp, "</div>\n");
+    count++;
   }
   int i;
   int totalcount = count;
-  for (i=count;i<realcount;i++)
-  {
-    char vlan_name[32];
-    websWrite(wp,"<div class=\"setting\">\n");
-    websWrite(wp,"<div class=\"label\">Assignment %d</div>\n",i);
-    sprintf(vlan_name,"bridge%d",i);
-    showOptions(wp,vlan_name,buffer,"");
-    websWrite(wp,"&nbsp;Interface&nbsp;");
-    sprintf(vlan_name,"bridgeif%d",i);
-    showOptions(wp,vlan_name,bufferif,"");
-    websWrite(wp,"&nbsp;Prio&nbsp;");
-    sprintf(vlan_name,"bridgeifprio%d",i);
-    websWrite(wp,"<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",vlan_name,"");
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",i);
-    websWrite(wp,"</div>\n");
-    totalcount++;
-  }
-    websWrite (wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridgeif_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+  for (i = count; i < realcount; i++)
+    {
+      char vlan_name[32];
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">Assignment %d</div>\n", i);
+      sprintf (vlan_name, "bridge%d", i);
+      showOptions (wp, vlan_name, buffer, "");
+      websWrite (wp, "&nbsp;Interface&nbsp;");
+      sprintf (vlan_name, "bridgeif%d", i);
+      showOptions (wp, vlan_name, bufferif, "");
+      websWrite (wp, "&nbsp;Prio&nbsp;");
+      sprintf (vlan_name, "bridgeifprio%d", i);
+      websWrite (wp,
+		 "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+		 vlan_name, "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		 i);
+      websWrite (wp, "</div>\n");
+      totalcount++;
+    }
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridgeif_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
   char var[32];
-  sprintf(var,"%d",totalcount);
-  nvram_set("bridgesif_count",var);
+  sprintf (var, "%d", totalcount);
+  nvram_set ("bridgesif_count", var);
 }
 
 
@@ -2128,38 +2183,6 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
 
 #ifdef HAVE_MSSID
 
-#ifdef HAVE_MADWIFI
-
-
-/*
-0x10 (FCC)
-0x20 (DOC)
-0x30 (ETSI)
-0x31 (Spain)
-0x32 (France)
-0x40 (MKK-Japan)
-0xFF (debug)
-
-*/
-
-
-struct regdomain
-{
-  char *name;
-  int code;
-};
-
-static struct regdomain regdomains[] = {
-  {"USA1 (FCC)", 840},		//FCC
-  {"SPAIN", 724},
-  {"GERMANY", 276},
-  {"FRANCE", 250},
-  {"ITALY", 380},
-  {"JAPAN", 392},
-  {NULL, 0}
-};
-
-#endif
 
 
 
@@ -2596,7 +2619,7 @@ remove_vifs_single (char *prefix)
   char copy[128];
   strcpy (copy, vifs);
   int i;
-  int slen=strlen(copy);
+  int slen = strlen (copy);
   for (i = 0; i < slen; i++)
     {
       if (copy[i] == 0x20)
@@ -2884,8 +2907,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
-  char *list=getCountryList();
-  showOptions(wp,wl_regdomain,list,nvram_safe_get(wl_regdomain));
+  char *list = getCountryList ();
+  showOptions (wp, wl_regdomain, list, nvram_safe_get (wl_regdomain));
   websWrite (wp, "</div>\n");
 /*  while (regdomains[domcount].name != NULL)
     {
@@ -2925,61 +2948,57 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
     {
 //#ifdef HAVE_MADWIFI
-//      if (!strcmp (prefix, "ath0"))	//show client only on first interface
+//      if (!strcmp (prefix, "ath0"))   //show client only on first interface
 //#endif
-	{
+      {
 #ifdef HAVE_MADWIFI
-      if (!strcmp (prefix, "ath0"))	//show client only on first interface
+	if (!strcmp (prefix, "ath0"))	//show client only on first interface
 	  if (nvram_match ("ath0_mode", "wdsap")
 	      || nvram_match ("ath0_mode", "wdssta"))
 	    showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
-	  websWrite (wp,
-		     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
-		     wl_mode);
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "ap") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "sta") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "infra") ? "selected=\\\"selected\\\"" :
-		     "");
+	websWrite (wp,
+		   "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
+		   wl_mode);
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"ap") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"sta") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "wet") ? "selected=\\\"selected\\\"" : "");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "apsta") ? "selected=\\\"selected\\\"" :
-		     "");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "apstawet") ? "selected=\\\"selected\\\"" :
-		     "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"wet") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"apsta") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"apstawet") ? "selected=\\\"selected\\\"" :
+		   "");
 #else
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "wdssta") ? "selected=\\\"selected\\\"" :
-		     "");
-	  websWrite (wp,
-		     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n//]]>\n</script>\n",
-		     nvram_match (wl_mode,
-				  "wdsap") ? "selected=\\\"selected\\\"" :
-		     "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"wdssta") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"wdsap") ? "selected=\\\"selected\\\"" : "");
 #endif
-	  websWrite (wp, "</select>\n");
-	  websWrite (wp, "</div>\n");
-	}
+	websWrite (wp, "</select>\n");
+	websWrite (wp, "</div>\n");
+      }
 /*#ifdef HAVE_MADWIFI
       else
 	{
@@ -3254,7 +3273,7 @@ show_preshared (webs_t wp, char *prefix)
 }
 
 void
-show_radius (webs_t wp, char *prefix,int showmacformat)
+show_radius (webs_t wp, char *prefix, int showmacformat)
 {
   char var[80];
   cprintf ("show radius\n");
@@ -3279,27 +3298,27 @@ show_radius (webs_t wp, char *prefix,int showmacformat)
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
 	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
-if (showmacformat)
-{
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label2)</script></div>\n");
-  websWrite (wp, "<select name=\"%s_radmactype\">\n", prefix);
-  websWrite (wp, "<option value=\"0\" %s >aabbcc-ddeeff</option>\n",
-	     nvram_prefix_match ("radmactype", prefix,
-				 "0") ? "selected" : "");
-  websWrite (wp, "<option value=\"1\" %s >aabbccddeeff</option>\n",
-	     nvram_prefix_match ("radmactype", prefix,
-				 "1") ? "selected" : "");
-  websWrite (wp, "<option value=\"2\" %s >aa:bb:cc:dd:ee:ff</option>\n",
-	     nvram_prefix_match ("radmactype", prefix,
-				 "2") ? "selected" : "");
-  websWrite (wp, "<option value=\"3\" %s >aa-bb-cc-dd-ee-ff</option>\n",
-	     nvram_prefix_match ("radmactype", prefix,
-				 "3") ? "selected" : "");
-  websWrite (wp, "</select>\n");
-  websWrite (wp, "</div>\n");
-}
+  if (showmacformat)
+    {
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label2)</script></div>\n");
+      websWrite (wp, "<select name=\"%s_radmactype\">\n", prefix);
+      websWrite (wp, "<option value=\"0\" %s >aabbcc-ddeeff</option>\n",
+		 nvram_prefix_match ("radmactype", prefix,
+				     "0") ? "selected" : "");
+      websWrite (wp, "<option value=\"1\" %s >aabbccddeeff</option>\n",
+		 nvram_prefix_match ("radmactype", prefix,
+				     "1") ? "selected" : "");
+      websWrite (wp, "<option value=\"2\" %s >aa:bb:cc:dd:ee:ff</option>\n",
+		 nvram_prefix_match ("radmactype", prefix,
+				     "2") ? "selected" : "");
+      websWrite (wp, "<option value=\"3\" %s >aa-bb-cc-dd-ee-ff</option>\n",
+		 nvram_prefix_match ("radmactype", prefix,
+				     "3") ? "selected" : "");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+    }
 
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -3492,7 +3511,7 @@ show_wparadius (webs_t wp, char *prefix)
   websWrite (wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n",
 	     selmatch (var, "tkip+aes", "selected=\"selected\""));
   websWrite (wp, "</select></div>\n");
-  show_radius (wp, prefix,0);
+  show_radius (wp, prefix, 0);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
@@ -4390,7 +4409,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 //    fprintf(stderr,"returned with %d, c=%d, i=%d\n",cnt,i,c);
 	}
     }
-    
+
 //fprintf(stderr,"show wds links\n");
 //show wds links
   for (i = 0; i < c; i++)
@@ -4413,13 +4432,13 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	  sprintf (wdsmacname, "ath%d_wds%d_hwaddr", i, s);
 //fprintf(stderr,"get nv\n");
 	  dev = nvram_safe_get (wdsdevname);
-  //fprintf(stderr,"devname %s\n",dev);
+	  //fprintf(stderr,"devname %s\n",dev);
 	  if (dev == NULL || strlen (dev) == 0)
 	    continue;
 	  if (nvram_match (wdsvarname, "0"))
 	    continue;
 	  sprintf (var, "wdsath%d.%d", i, s);
-  //fprintf(stderr,"var %s\n",var);
+	  //fprintf(stderr,"var %s\n",var);
 	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt);
 	}
     }
@@ -5034,7 +5053,7 @@ qos_add_svc (webs_t wp)
 
   if (strcmp (protocol, "l7") == 0)
     {
-      int slen=strlen(add_svc);
+      int slen = strlen (add_svc);
       for (i = 0; i < slen; i++)
 	add_svc[i] = tolower (add_svc[i]);
     }
@@ -5196,7 +5215,7 @@ qos_save (webs_t wp)
 
       if (strcmp (protocol, "l7") == 0)
 	{
-	int slen=strlen(name);
+	  int slen = strlen (name);
 	  for (j = 0; j < slen; j++)
 	    name[j] = tolower (name[j]);
 	}
@@ -6069,7 +6088,7 @@ string_search (char *string, char *search)
     {
       return (0);		// this can't match
     }
-  int slen=strlen(string);
+  int slen = strlen (string);
   for (i = 0; i < slen - searchLen; i++)
     {				//+1 removed. 
       if (!strncasecmp ((char *) &string[i], search, searchLen))
@@ -6624,7 +6643,7 @@ do_filtertable (char *path, webs_t stream)
   ifname[indexof (ifname, '.')] = 0;
   char *webfile = getWebsFile ("WL_FilterTable.asp");
   char temp[4096];
-  memset(temp,0,4096);
+  memset (temp, 0, 4096);
   sprintf (temp, webfile, ifname, ifname, ifname, ifname);
   do_ej_buffer (temp, stream);
 }
@@ -6638,28 +6657,28 @@ do_wds (char *path, webs_t stream)
   ifname[indexof (ifname, '.')] = 0;
   char *webfile = getWebsFile ("Wireless_WDS.asp");
   char temp[32768];
-  memset(temp,0,32768);
+  memset (temp, 0, 32768);
   int ai = 0;
   int i = 0;
-  int weblen=strlen(webfile);
+  int weblen = strlen (webfile);
   for (i = 0; i < weblen; i++)
     {
       if (webfile[i] == '%')
 	{
 	  i++;
-	  switch(webfile[i])
-	  {
-	  case '%':
-	    temp[ai++] = '%';
-	  break;
-	  case 's':	  
+	  switch (webfile[i])
+	    {
+	    case '%':
+	      temp[ai++] = '%';
+	      break;
+	    case 's':
 	      strcpy (&temp[ai], ifname);
 	      ai += strlen (ifname);
-	  break;
-	  default:
-	    temp[ai++] = webfile[i];
-	  break;
-	  }
+	      break;
+	    default:
+	      temp[ai++] = webfile[i];
+	      break;
+	    }
 	}
       else
 	temp[ai++] = webfile[i];
