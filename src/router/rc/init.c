@@ -180,6 +180,7 @@ shutdown_system (void)
 
   /* Blink led before reboot */
   diag_led (DIAG, START_LED);
+  led_control (LED_DIAG, LED_ON);
 
   cprintf ("Sending SIGTERM to all processes\n");
   kill (-1, SIGTERM);
