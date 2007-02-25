@@ -1615,6 +1615,7 @@ wl_basic.h2_v24="Wireless Physical Interface";
 wl_basic.h2_vi="Virtual Interfaces";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
+wl_basic.AntGain="Antenna Gain";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primary";
 wl_basic.secondary="Secondary";

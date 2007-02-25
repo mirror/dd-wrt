@@ -17,6 +17,7 @@ CFLAGS  += $(COPTS) -fpic
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o
 
+
 ifneq ($(CONFIG_XSCALE),y)
 OBJS += gpio.o
 endif
