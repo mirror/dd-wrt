@@ -1125,9 +1125,11 @@ adjust_regulatory (int count)
   char dev[10];
   char wif[10];
   char turbo[16];
+  char gain[32];
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
+  sprintf (gain, "%s_antgain",dev);
 //  if (count == 0)
   {
     long tb = atol (nvram_safe_get (turbo));
@@ -1146,6 +1148,7 @@ adjust_regulatory (int count)
 	setsysctrl (wif, "setregdomain", 0);
 	setsysctrl (wif, "outdoor",0);
 	setsysctrl (wif, "countrycode",0);
+	setsysctrl (wif, "antennagain",0);
 	}else
 	{
 	char country[32];
@@ -1155,6 +1158,7 @@ adjust_regulatory (int count)
 	setsysctrl (wif, "countrycode",getCountry(default_get(country,"UNITED_STATES")));
 	sprintf(country,"%s_outdoor",dev);
 	setsysctrl (wif, "outdoor",atoi(nvram_safe_get(country)));
+	setsysctrl (wif, "antennagain",atoi(default_get(gain,"6")));
 	}
       }
   }
