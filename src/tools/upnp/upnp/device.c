@@ -195,11 +195,11 @@ void device_xml(PDevice pdev, UFILE *up)
 
     // generate XML for any subdevices in this device.
     device_devicelist(pdev, up);
-	
-    if ((winmnp) && (ISROOT(pdev))) {
-		uprintf(up, "<presentationURL>/UPnP.asp</presentationURL>\r\n"); //Botho : add https support
+    
+	if ((winmnp) && (ISROOT(pdev))) {
+		uprintf(up, "<presentationURL>http%s://%s/UPnP.asp</presentationURL>\r\n",
+			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
 	}
-	
     uprintf(up, "</device>\r\n");
 
     if (ISROOT(pdev)) {
