@@ -2679,7 +2679,7 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_distance", prefix);
   copytonv (wp, n);
 #ifdef HAVE_MADWIFI
-  sprintf (n, "%s_txpwr", prefix);
+  sprintf (n, "%s_txpwrdbm", prefix);
   copytonv (wp, n);
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
@@ -2931,7 +2931,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");*/
 //power adjustment
-  sprintf (power, "%s_txpwr", prefix);
+  sprintf (power, "%s_txpwrdbm", prefix);
 //  sprintf (maxpower, "%s_maxpower", prefix);
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
@@ -2946,8 +2946,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> mW (Max: %d)\n",
-	     power, nvram_safe_get (power), getMaxPower (prefix));
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBm\n",
+	     power, nvram_safe_get (power));
+  websWrite (wp, "</div>\n");
+  sprintf (power, "%s_antgain", prefix);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
+	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
 
 #endif

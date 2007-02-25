@@ -1189,7 +1189,7 @@ configure_single (int count, int isbond)
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
-  sprintf (power, "ath%d_txpwr", count);
+  sprintf (power, "ath%d_txpwrdbm", count);
   sprintf (sens, "ath%d_distance", count);
   sprintf (diversity, "ath%d_diversity", count);
   sprintf (txantenna, "ath%d_txantenna", count);
@@ -1400,20 +1400,20 @@ configure_single (int count, int isbond)
     }
 
 
-  int maxpower = getMaxPower (dev);
-  if (maxpower == -1)
-    maxpower = 28;
-  sprintf (maxp, "%d", maxpower);	//set maximum power 
-  char max_power[32];
-  sprintf (max_power, "%s_maxpower", dev);
-  cprintf ("maxpower configured to %s\n", maxp);
-  nvram_set (max_power, maxp);
+//  int maxpower = getMaxPower (dev);
+//  if (maxpower == -1)
+//    maxpower = 28;
+//  sprintf (maxp, "%d", maxpower);	//set maximum power 
+//  char max_power[32];
+//  sprintf (max_power, "%s_maxpower", dev);
+//  cprintf ("maxpower configured to %s\n", maxp);
+//  nvram_set (max_power, maxp);
 
   cprintf ("adjust power\n");
 
-  int newpower = atoi (default_get (power, "28"));
+  int newpower = atoi (default_get (power, "16"));
   cprintf ("new power limit %d\n", newpower);
-  sprintf (var, "%dmW", newpower);
+  sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
   setMacFilter (dev);
