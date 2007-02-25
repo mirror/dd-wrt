@@ -496,12 +496,12 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
-  if (ifexists(dev))
-  br_del_interface ("br0", dev);
-  if (ifexists("bond0"))
-  br_del_interface ("br0", "bond0");
-  if (ifexists(dev))
-  eval("ifconfig",dev,"down");
+  if (ifexists (dev))
+    br_del_interface ("br0", dev);
+  if (ifexists ("bond0"))
+    br_del_interface ("br0", "bond0");
+  if (ifexists (dev))
+    eval ("ifconfig", dev, "down");
   char vifs[128];
   sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 	   dev, dev, dev, dev, dev, dev, dev);
@@ -519,7 +519,7 @@ deconfigure_single (int count)
       if (ifexists (dev))
 	{
 	  br_del_interface ("br0", dev);
-	  eval("ifconfig",dev,"down");
+	  eval ("ifconfig", dev, "down");
 	}
     }
   sprintf (dev, "ath%d", count);
@@ -715,7 +715,7 @@ setupSupplicant (char *prefix)
       fclose (fp);
       sprintf (psk, "-i%s", prefix);
       if (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet"))
-	eval ("wpa_supplicant", "-b", getBridge(prefix), "-B",
+	eval ("wpa_supplicant", "-b", getBridge (prefix), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
 	eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
@@ -801,7 +801,8 @@ setupSupplicant (char *prefix)
       sprintf (psk, "-i%s", prefix);
       char bvar[32];
       sprintf (bvar, "%s_bridged", prefix);
-      if (nvram_match(bvar,"1") && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
+      if (nvram_match (bvar, "1")
+	  && (nvram_match (wmode, "wdssta") || nvram_match (wmode, "wet")))
 	eval ("wpa_supplicant", "-b", nvram_safe_get ("lan_ifname"), "-B",
 	      "-Dmadwifi", psk, "-c", fstr);
       else
@@ -871,9 +872,9 @@ setupHostAP (char *prefix, int iswan)
       //sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
       char bvar[32];
       sprintf (bvar, "%s_bridged", prefix);
-      if (nvram_match(bvar,"1"))
-        fprintf (fp, "bridge=%s\n", getBridge(prefix));
-      
+      if (nvram_match (bvar, "1"))
+	fprintf (fp, "bridge=%s\n", getBridge (prefix));
+
       fprintf (fp, "driver=madwifi\n");
       fprintf (fp, "logger_syslog=-1\n");
       fprintf (fp, "logger_syslog_level=2\n");
@@ -1126,10 +1127,16 @@ adjust_regulatory (int count)
   char wif[10];
   char turbo[16];
   char gain[32];
+  char country[32];
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
-  sprintf (gain, "%s_antgain",dev);
+  sprintf (gain, "%s_antgain", dev);
+  sprintf (country, "%s_regdomain", dev);
+  default_get (country, "UNITED_STATES");
+  sprintf (country, "%s_outdoor", dev);
+  default_get (country, "0");
+  default_get (gain, "6");
 //  if (count == 0)
   {
     long tb = atol (nvram_safe_get (turbo));
@@ -1142,24 +1149,27 @@ adjust_regulatory (int count)
       }
     else
       {
-        if (regulatory==0)
-	{
-	setsysctrl (wif, "regulatory", regulatory);
-	setsysctrl (wif, "setregdomain", 0);
-	setsysctrl (wif, "outdoor",0);
-	setsysctrl (wif, "countrycode",0);
-	setsysctrl (wif, "antennagain",0);
-	}else
-	{
-	char country[32];
-	sprintf(country,"%s_regdomain",dev);
-	setsysctrl (wif, "regulatory",1);
-	setsysctrl (wif, "setregdomain",getRegDomain(default_get(country,"UNITED_STATES")));
-	setsysctrl (wif, "countrycode",getCountry(default_get(country,"UNITED_STATES")));
-	sprintf(country,"%s_outdoor",dev);
-	setsysctrl (wif, "outdoor",atoi(nvram_safe_get(country)));
-	setsysctrl (wif, "antennagain",atoi(default_get(gain,"6")));
-	}
+	if (regulatory == 0)
+	  {
+	    setsysctrl (wif, "regulatory", regulatory);
+	    setsysctrl (wif, "setregdomain", 0);
+	    setsysctrl (wif, "outdoor", 0);
+	    setsysctrl (wif, "countrycode", 0);
+	    setsysctrl (wif, "antennagain", 0);
+	  }
+	else
+	  {
+	    sprintf (country, "%s_regdomain", dev);
+	    setsysctrl (wif, "regulatory", 1);
+	    setsysctrl (wif, "setregdomain",
+			getRegDomain (default_get
+				      (country, "UNITED_STATES")));
+	    setsysctrl (wif, "countrycode",
+			getCountry (default_get (country, "UNITED_STATES")));
+	    sprintf (country, "%s_outdoor", dev);
+	    setsysctrl (wif, "outdoor", atoi (default_get (country, "0")));
+	    setsysctrl (wif, "antennagain", atoi (default_get (gain, "6")));
+	  }
       }
   }
 
@@ -1287,7 +1297,7 @@ configure_single (int count, int isbond)
 	{
 	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
 		"wds");
-//	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
+//        eval ("ifconfig",wdsdev,"0.0.0.0","up");
 	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
 	  eval ("iwpriv", wdsdev, "wds", "1");
 	}
@@ -1409,7 +1419,7 @@ configure_single (int count, int isbond)
 //  int maxpower = getMaxPower (dev);
 //  if (maxpower == -1)
 //    maxpower = 28;
-//  sprintf (maxp, "%d", maxpower);	//set maximum power 
+//  sprintf (maxp, "%d", maxpower);     //set maximum power 
 //  char max_power[32];
 //  sprintf (max_power, "%s_maxpower", dev);
 //  cprintf ("maxpower configured to %s\n", maxp);
@@ -1444,7 +1454,7 @@ configure_single (int count, int isbond)
 	    {
 	      ifconfig (dev, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (getBridge(dev), dev);
+		br_add_interface (getBridge (dev), dev);
 	    }
 	  else
 	    {
@@ -1475,7 +1485,7 @@ configure_single (int count, int isbond)
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
 	      if (nvram_match ("wifi_bonding", "0"))
-		br_add_interface (getBridge(var), var);
+		br_add_interface (getBridge (var), var);
 	    }
 	  else
 	    {
@@ -1508,7 +1518,7 @@ configure_single (int count, int isbond)
       hwaddr = nvram_get (wdsmacname);
       if (hwaddr != NULL)
 	{
-	  eval ("ifconfig",wdsdev,"0.0.0.0","up");
+	  eval ("ifconfig", wdsdev, "0.0.0.0", "up");
 	}
     }
   //setup encryption
@@ -1538,7 +1548,7 @@ configure_single (int count, int isbond)
 void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
-deconfigure_wifi ();
+  deconfigure_wifi ();
 /*int s;
 int existed=0;
 for (s=0;s<10;s++)
@@ -1655,7 +1665,7 @@ if (ifexists(wif))
 	  sprintf (dev, "ath%d", i);
 	  eval ("ifenslave", "bond0", dev);
 	}
-      br_add_interface (getBridge("bond0"), "bond0");
+      br_add_interface (getBridge ("bond0"), "bond0");
     }
 #endif
   if (need_commit)
