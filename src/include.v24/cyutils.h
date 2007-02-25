@@ -79,7 +79,7 @@ struct boot_header {
   #define DEV_FRIENDLY_NAME	MODEL_NAME
   #define DEV_MFR		"NewMedia-NET GmbH"
   #define DEV_MFR_URL		URL
-  #define DEV_MODEL_DESCRIPTION	"Internet Access Server"
+  #define DEV_MODEL_DESCRIPTION	"Internet Gateway Device"
   #define DEV_MODEL		MODEL_NAME
   #define DEV_MODEL_NO		CYBERTAN_VERSION
   #define DEV_MODEL_URL		URL
