@@ -1183,7 +1183,7 @@ start_lan (void)
 	    /* Do not attach the main wl i/f if in wds or client/adhoc */
 
 	    led_control (LED_BRIDGE, LED_OFF);
-	    if (nvram_match (wl_name, "wet"))
+	    if (nvram_match (wl_name, "wet") || nvram_match (wl_name, "apstawet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
 		br_add_interface (getBridge(name), name);
@@ -1192,15 +1192,7 @@ start_lan (void)
 		enable_dhcprelay (lan_ifname);
 #endif
 	      }
-	    if (nvram_match (wl_name, "apstawet"))
-	      {
-		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
-		br_add_interface (getBridge(name), name);
-		led_control (LED_BRIDGE, LED_ON);
-#ifdef HAVE_MSSID
-		enable_dhcprelay (lan_ifname);
-#endif
-	      }
+
 
 	    if (nvram_match (wl_name, "ap"))
 	      {
