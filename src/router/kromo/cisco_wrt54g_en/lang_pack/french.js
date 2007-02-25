@@ -1538,6 +1538,7 @@ wl_basic.h2_v24="Interface Sans fil";
 wl_basic.h2_vi="Interfaces Virtuelles";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
+wl_basic.AntGain="Gain Antenne";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primaire";
 wl_basic.secondary="Secondaire";
