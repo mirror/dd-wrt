@@ -618,7 +618,7 @@ static void process_allxml( UFILE *up, char *fname )
 	pdev = NULL;
 	forall_devices(pdev) {
 	    forall_services(pdev, psvc) {
-		uprintf(unull, "<servicedesc>:%d/dynsvc/%s.xml</servicedesc>\r\n", HTTP_PORT, psvc->template->name); 
+		uprintf(unull, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n", psvc->template->name); 
 		service_xml(psvc, unull);
 	    }
 	}
@@ -654,7 +654,7 @@ static void process_allxml( UFILE *up, char *fname )
     pdev = NULL;
     forall_devices(pdev) {
 	forall_services(pdev, psvc) {
-	    uprintf(up, "<servicedesc>:%d/dynsvc/%s.xml</servicedesc>\r\n", HTTP_PORT, psvc->template->name); 
+	    uprintf(up, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n", psvc->template->name); 
 	    service_xml(psvc, up);
 	}
     }
