@@ -187,7 +187,7 @@ void device_xml(PDevice pdev, UFILE *up)
 	uprintf(up, "  <modelName>%s</modelName>\r\n", devicename);
 	uprintf(up, "  <modelNumber>" DEV_MODEL_NO "</modelNumber>\r\n"
 				"  <modelURL>" DEV_MODEL_URL "</modelURL>\r\n"
-				"  <serialNumber>how obtain that ?</serialNumber>\r\n");
+				"  <serialNumber>Not Available</serialNumber>\r\n");
 	uprintf(up, "  <UDN>%s</UDN>\r\n", pdev->udn);
 
     // generate XML for any services in this device.
@@ -197,7 +197,7 @@ void device_xml(PDevice pdev, UFILE *up)
     device_devicelist(pdev, up);
 	
     if ((winmnp) && (ISROOT(pdev))) {
-		uprintf(up, "<presentationURL>/UPnP.asp</presentationURL>\r\n",
+		uprintf(up, "<presentationURL>http%s://%s/UPnP.asp</presentationURL>\r\n",
 			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
 	}
 	
