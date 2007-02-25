@@ -645,7 +645,6 @@ do_portsetup (char *lan, char *ifname)
       sprintf (var, "%s_ipaddr", ifname);
       sprintf (var2, "%s_netmask", ifname);
       ifconfig (ifname, IFUP, nvram_safe_get (var), nvram_safe_get (var2));
-
     }
 
 }
