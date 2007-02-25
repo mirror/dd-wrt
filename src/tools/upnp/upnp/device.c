@@ -171,8 +171,8 @@ void device_xml(PDevice pdev, UFILE *up)
 			" </specVersion>\r\n"
 			);
 
-		if (winmnp) uprintf(up, " <URLBase>http%s://%s</URLBase>\r\n",
-			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
+		if (winmnp) uprintf(up, " <URLBase>http%s://%s:%d</URLBase>\r\n",
+			nvram_match("https_enable", "1") ? "s" : "", myip, HTTP_PORT); //Botho : add https support
     }
 
     if (pdev->friendlyname) friendlyname = pdev->friendlyname;
@@ -231,7 +231,7 @@ void device_servicelist(PDevice pdev, UFILE *up)
     if (pdev->services) {
 	uprintf(up, "  <serviceList>\r\n");
 	forall_services(pdev, psvc) {
-	    snprintf(svcurl, sizeof(svcurl), ":%d/%s/%s", HTTP_PORT, pdev->udn, psvc->template->name);
+	    snprintf(svcurl, sizeof(svcurl), "/%s/%s", pdev->udn, psvc->template->name);
 
 	    uprintf(up, "  <service>\r\n");
 	    uprintf(up, "   <serviceType>urn:%s:service:%s</serviceType>\r\n", 
@@ -251,9 +251,9 @@ void device_servicelist(PDevice pdev, UFILE *up)
 		uprintf(up, "   <serviceId>urn:upnp-org:serviceId:%s%d</serviceId>\r\n", 
 			psvc->template->name, psvc->instance);
 	    }
-	    uprintf(up, "   <SCPDURL>:%d/dynsvc/%s.xml</SCPDURL>\r\n", HTTP_PORT, psvc->template->name);
-	    uprintf(up, "   <controlURL>:%d/%s/%s</controlURL>\r\n", HTTP_PORT, pdev->udn, psvc->template->name);
-	    uprintf(up, "   <eventSubURL>:%d/%s/%s</eventSubURL>\r\n", HTTP_PORT, pdev->udn, psvc->template->name);
+	    uprintf(up, "   <SCPDURL>/dynsvc/%s.xml</SCPDURL>\r\n", psvc->template->name);
+	    uprintf(up, "   <controlURL>/%s/%s</controlURL>\r\n", pdev->udn, psvc->template->name);
+	    uprintf(up, "   <eventSubURL>/%s/%s</eventSubURL>\r\n", pdev->udn, psvc->template->name);
 	    uprintf(up, "   </service>\r\n");
 	}
 	uprintf(up, "  </serviceList>\r\n");
