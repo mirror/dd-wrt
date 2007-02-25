@@ -1461,7 +1461,7 @@ configure_single (int count, int isbond)
 	      char ip[32];
 	      char mask[32];
 	      sprintf (ip, "%s_ipaddr", dev);
-	      sprintf (mask, "%s_ipaddr", dev);
+	      sprintf (mask, "%s_netmask", dev);
 	      ifconfig (dev, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
@@ -1492,7 +1492,7 @@ configure_single (int count, int isbond)
 	      char ip[32];
 	      char mask[32];
 	      sprintf (ip, "%s_ipaddr", var);
-	      sprintf (mask, "%s_ipaddr", var);
+	      sprintf (mask, "%s_netmask", var);
 	      ifconfig (var, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
