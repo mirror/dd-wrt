@@ -1144,6 +1144,8 @@ adjust_regulatory (int count)
 	{
 	setsysctrl (wif, "regulatory", regulatory);
 	setsysctrl (wif, "setregdomain", 0);
+	setsysctrl (wif, "outdoor",0);
+	setsysctrl (wif, "countrycode",0);
 	}else
 	{
 	char country[32];
