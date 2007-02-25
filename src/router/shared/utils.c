@@ -867,6 +867,12 @@ led_control (int type, int act)
 	return 0;
 #else
 
+#ifdef HAVE_GATEWORX
+int board = getRouterBrand();
+char *gpio = "3";
+if (board = ROUTER_BOARD_GATEWORX_SWAP)
+    gpio = "4";
+#endif
 int use_gpio = 0x0f;
 int gpio_value;
 char val[4];
@@ -1041,7 +1047,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			case LED_ON:
 #ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
-				eval("gpio","-w","3","0");
+				eval("gpio","-w",gpio,"0");
 #else
 					eval ("gpio", enable, val);
 #endif
@@ -1049,7 +1055,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			case LED_OFF:
 #ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
-				eval("gpio","-w","3","1");
+				eval("gpio","-w",gpio,"1");
 #else
 					eval ("gpio", disable, val);
 #endif
@@ -1058,9 +1064,9 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 #ifdef HAVE_XSCALE
 			    if (type==LED_CONNECTED)
 			    {
-				eval("gpio","-w","3","0");
+				eval("gpio","-w",gpio,"0");
 				sleep(1);
-				eval("gpio","-w","3","1");
+				eval("gpio","-w",gpio,"1");
 			    }
 #else
 					eval ("gpio", enable, val);
