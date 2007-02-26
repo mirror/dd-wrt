@@ -2681,6 +2681,8 @@ save_prefix (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   sprintf (n, "%s_txpwrdbm", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_antgain", prefix);
+  copytonv (wp, n);
   sprintf (n, "ath_regulatory");
   copytonv (wp, n);
 #ifdef HAVE_MAKSAT
