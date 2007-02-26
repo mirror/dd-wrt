@@ -188,16 +188,17 @@ eval("insmod","crypto_null");
   if (detect ("BCM44"))		//Broadcom 
     eval ("insmod", "b44");
 
-  if (detect ("8255"))	//intel 100 mbit 
-    eval ("insmod", "eepro100");    
+    
   if (detect ("EtherExpress PRO/100"))	//intel 100 mbit 
-    eval ("insmod", "e100");
-  else if (detect ("Ethernet Pro 100"))	//intel 100 mbit 
     eval ("insmod", "e100");
   else if (detect ("PRO/100"))	//intel 100 mbit
     eval ("insmod", "e100");
   else if (detect ("8280"))	//intel 100 mbit 
     eval ("insmod", "e100");
+  else if (detect ("Ethernet Pro 100"))	//intel 100 mbit 
+    eval ("insmod", "e100");
+  else if (detect ("8255"))	//intel 100 mbit 
+    eval ("insmod", "eepro100");
 
 
   if (detect ("PRO/1000"))	//Intel Gigabit 
