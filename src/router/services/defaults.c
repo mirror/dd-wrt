@@ -977,6 +977,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_WHRAG108
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_RB500
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_X86
   {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #else
