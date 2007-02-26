@@ -149,7 +149,7 @@ main_loop (void)
   lcdmessage ("System Start");
   cprintf("start service\n");
   start_service ("sysinit");
-
+  cprintf("setup signals\n");
   /* Setup signal handlers */
   signal_init ();
   signal (SIGHUP, rc_signal);
@@ -166,6 +166,7 @@ main_loop (void)
 
   if (!noconsole)
     ddrun_shell (1, 0);
+  cprintf("setup nvram\n");
 
   start_service ("nvram");
 
