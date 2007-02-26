@@ -215,8 +215,8 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 
   // Let below files loaded to memory
   // To avoid the successful screen is blank after web upgrade.
-  system2 ("cat /www/Success_u_s.asp > /dev/null");
-  system2 ("cat /www/Fail_u_s.asp > /dev/null");
+//  system2 ("cat /www/Success_u_s.asp > /dev/null");
+//  system2 ("cat /www/Fail_u_s.asp > /dev/null");
 
   /* Look for our part */
   while (len > 0)
