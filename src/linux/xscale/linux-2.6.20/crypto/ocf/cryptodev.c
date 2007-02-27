@@ -1,8 +1,8 @@
 /*	$OpenBSD: cryptodev.c,v 1.52 2002/06/19 07:22:46 deraadt Exp $	*/
 
 /*-
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
  * Copyright (c) 2001 Theo de Raadt
@@ -37,7 +37,9 @@
 __FBSDID("$FreeBSD: src/sys/opencrypto/cryptodev.c,v 1.25 2005/02/27 22:10:25 phk Exp $");
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/types.h>
 #include <linux/time.h>
 #include <linux/delay.h>
@@ -60,8 +62,6 @@ __FBSDID("$FreeBSD: src/sys/opencrypto/cryptodev.c,v 1.25 2005/02/27 22:10:25 ph
 #include <uio.h>
 
 static int debug = 0;
-#include <linux/moduleparam.h>
-
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
@@ -125,6 +125,8 @@ static	int cryptodev_key(struct crypt_kop *);
 static int cryptodev_cb(void *);
 static int cryptodev_open(struct inode *inode, struct file *filp);
 
+static int errno;
+static inline _syscall1(int,dup,int,fd);
 
 static int
 cryptodev_op(struct csession *cse, struct crypt_op *cop)
@@ -559,30 +561,24 @@ cryptodev_ioctl(
 	u_int64_t sid;
 	u_int32_t ses;
 	int feat, fd, error = 0;
-	struct file *newfp;
+	mm_segment_t fs;
 
 	dprintk("%s()\n", __FUNCTION__);
 
 	switch (cmd) {
 
-	case CRIOGET:
-
+	case CRIOGET: {
 		dprintk("%s(CRIOGET)\n", __FUNCTION__);
-
-		fd = get_unused_fd();
-		if (fd < 0)
-			return fd;
-
-		mntget(filp->f_vfsmnt);
-		newfp = dentry_open(filp->f_dentry, filp->f_vfsmnt, filp->f_flags);
-		if (!newfp) {
-			put_unused_fd(fd);
-			return -ENFILE;
-		}
-
-		fd_install(fd, newfp);
+		fs = get_fs();
+		set_fs(get_ds());
+		for (fd = 0; fd < files_fdtable(current->files)->max_fds; fd++)
+			if (files_fdtable(current->files)->fd[fd] == filp)
+				break;
+		fd = dup(fd);
+		set_fs(fs);
 		put_user(fd, (int *) arg);
-		return 0;
+		return fd == -1 ? -errno : 0;
+		}
 
 	case CIOCGSESSION:
 		dprintk("%s(CIOCGSESSION)\n", __FUNCTION__);
@@ -590,7 +586,11 @@ cryptodev_ioctl(
 		memset(&cria, 0, sizeof(cria));
 		memset(&info, 0, sizeof(info));
 
-		copy_from_user(&sop, (void*)arg, sizeof(sop));
+		if(copy_from_user(&sop, (void*)arg, sizeof(sop))) {
+		  dprintk("%s(CIOCGSESSION) - bad copy\n", __FUNCTION__);
+		  error = EFAULT;
+		  goto bail;
+		}
 
 		switch (sop.cipher) {
 		case 0:
@@ -771,7 +771,11 @@ bail:
 		break;
 	case CIOCCRYPT:
 		dprintk("%s(CIOCCRYPT)\n", __FUNCTION__);
-		copy_from_user(&cop, (void*)arg, sizeof(cop));
+		if(copy_from_user(&cop, (void*)arg, sizeof(cop))) {
+		  dprintk("%s(CIOCCRYPT) - bad copy\n", __FUNCTION__);
+		  error = EFAULT;
+		  goto bail;
+		}
 		cse = csefind(fcr, cop.ses);
 		if (cse == NULL) {
 			error = EINVAL;
@@ -779,19 +783,32 @@ bail:
 			break;
 		}
 		error = cryptodev_op(cse, &cop);
-		copy_to_user((void*)arg, &cop, sizeof(cop));
+		if(copy_to_user((void*)arg, &cop, sizeof(cop))) {
+		  dprintk("%s(CIOCCRYPT) - bad return copy\n", __FUNCTION__);
+		  error = EFAULT;
+		  goto bail;
+		}
 		break;
 	case CIOCKEY:
 		dprintk("%s(CIOCKEY)\n", __FUNCTION__);
-		copy_from_user(&kop, (void*)arg, sizeof(kop));
+		if(copy_from_user(&kop, (void*)arg, sizeof(kop))) {
+		  dprintk("%s(CIOCKEY) - bad copy\n", __FUNCTION__);
+		  error = EFAULT;
+		  goto bail;
+		}
 		error = cryptodev_key(&kop);
-		copy_to_user((void*)arg, &kop, sizeof(kop));
+		if(copy_to_user((void*)arg, &kop, sizeof(kop))) {
+		  dprintk("%s(CIOCGKEY) - bad return copy\n", __FUNCTION__);
+		  error = EFAULT;
+		  goto bail;
+		}
 		break;
 	case CIOCASYMFEAT:
 		dprintk("%s(CIOCASYMFEAT)\n", __FUNCTION__);
 		error = crypto_getfeat(&feat);
-		if (!error)
-			copy_to_user((void*)arg, &feat, sizeof(feat));
+		if (!error) {
+		  error = copy_to_user((void*)arg, &feat, sizeof(feat));
+		}
 		break;
 	default:
 		dprintk("%s(unknown ioctl 0x%x)\n", __FUNCTION__, cmd);
@@ -884,5 +901,5 @@ module_init(cryptodev_init);
 module_exit(cryptodev_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
 MODULE_DESCRIPTION("Cryptodev (user interface to OCF)");

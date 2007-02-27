@@ -8,8 +8,8 @@
  * with the BSD cryptodev,  we need to keep this around.  Perhaps this can
  * be moved back into the linux/uio.h
  *
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
  *

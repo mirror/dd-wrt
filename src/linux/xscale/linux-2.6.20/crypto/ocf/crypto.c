@@ -1,7 +1,7 @@
 /*  $OpenBSD: crypto.c,v 1.38 2002/06/11 11:14:29 beck Exp $    */
 /*
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
  * The author of this code is Angelos D. Keromytis (angelos@cis.upenn.edu)
@@ -27,7 +27,9 @@ __FBSDID("$FreeBSD: src/sys/opencrypto/crypto.c,v 1.16 2005/01/07 02:29:16 imp E
  */
 
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -113,11 +115,10 @@ static spinlock_t crypto_ret_q_lock;
 				spin_unlock_irqrestore(&crypto_ret_q_lock, r_flags); \
 			 })
 
-static kmem_cache_t *cryptop_zone;
-static kmem_cache_t *cryptodesc_zone;
+static struct kmem_cache *cryptop_zone;
+static struct kmem_cache *cryptodesc_zone;
 
 static int debug = 0;
-#include <linux/moduleparam.h>
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
@@ -135,7 +136,7 @@ MODULE_PARM_DESC(debug,
 
 static atomic_t crypto_q_cnt;
 static int crypto_q_max = 1000;
-module_param(crypto_q_max, int,0);
+module_param(crypto_q_max, int, 0);
 MODULE_PARM_DESC(crypto_q_max,
 		"Maximum number of outstanding crypto requests");
 
@@ -146,19 +147,17 @@ int *crypto_debug = &debug;
 EXPORT_SYMBOL(crypto_debug);
 
 static int crypto_verbose = 0;
-
-module_param(crypto_verbose, int , 0);
+module_param(crypto_verbose, int, 0);
 MODULE_PARM_DESC(crypto_verbose,
 	   "Enable verbose crypto startup");
 
-int	crypto_userasymcrypto = 1;	/* userland may do asym crypto reqs */
-module_param(crypto_userasymcrypto, int , 0);
+static int	crypto_userasymcrypto = 1;	/* userland may do asym crypto reqs */
+module_param(crypto_userasymcrypto, int, 0);
 MODULE_PARM_DESC(crypto_userasymcrypto,
 	   "Enable/disable user-mode access to asymmetric crypto support");
 
-int	crypto_devallowsoft = 0;	/* only use hardware crypto for asym */
-module_param(crypto_devallowsoft, int , 0);
-
+static int	crypto_devallowsoft = 0;	/* only use hardware crypto for asym */
+module_param(crypto_devallowsoft, int, 0);
 MODULE_PARM_DESC(crypto_devallowsoft,
 	   "Enable/disable use of software asym crypto support");
 
@@ -249,6 +248,14 @@ crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard)
 			 * XXX about here.
 			 */
 
+			/*
+			 * up the number of sessions before we unlock so that this
+			 * cap does not go away while we are busy,  we unlock so that
+			 * newsession may sleep (for whatever reason, alloc etc).
+			 */
+			cap->cc_sessions++;
+			CRYPTO_DRIVER_UNLOCK();
+
 			/* Call the driver initialization routine. */
 			lid = hid;		/* Pass the driver ID. */
 			err = (*cap->cc_newsession)(cap->cc_arg, &lid, cri);
@@ -258,11 +265,15 @@ crypto_newsession(u_int64_t *sid, struct cryptoini *cri, int hard)
 				(*sid) = ((cap->cc_flags & 0xff) << 24) | hid;
 				(*sid) <<= 32;
 				(*sid) |= (lid & 0xffffffff);
-				cap->cc_sessions++;
-			} else
+			} else {
 				dprintk("%s,%d: %s - newsession returned %d\n",
 						__FILE__, __LINE__, __FUNCTION__, err);
-			break;
+				cap->cc_sessions--;
+				if ((cap->cc_flags & CRYPTOCAP_F_CLEANUP) &&
+						cap->cc_sessions == 0)
+					memset(cap, 0, sizeof(struct cryptocap));
+			}
+			return err;
 		}
 	}
 done:
@@ -369,8 +380,8 @@ crypto_get_driverid(u_int32_t flags)
 
 		memcpy(newdrv, crypto_drivers,
 				crypto_drivers_num * sizeof(struct cryptocap));
-		memset(&crypto_drivers[crypto_drivers_num], 0,
-				2 * crypto_drivers_num * sizeof(struct cryptocap));
+		memset(&newdrv[crypto_drivers_num], 0,
+				crypto_drivers_num * sizeof(struct cryptocap));
 
 		crypto_drivers_num *= 2;
 
@@ -607,7 +618,7 @@ crypto_unblock(u_int32_t driverid, int what)
 	unsigned long q_flags;
 
 	dprintk("%s()\n", __FUNCTION__);
-	CRYPTO_Q_LOCK();
+	CRYPTO_Q_LOCK(); //DAVIDM should this be a driver lock
 	cap = crypto_checkdriver(driverid);
 	if (cap != NULL) {
 		needwakeup = 0;
@@ -624,7 +635,7 @@ crypto_unblock(u_int32_t driverid, int what)
 		err = 0;
 	} else
 		err = EINVAL;
-	CRYPTO_Q_UNLOCK();
+	CRYPTO_Q_UNLOCK(); //DAVIDM should this be a driver lock
 
 	return err;
 }
@@ -665,6 +676,7 @@ crypto_dispatch(struct cryptop *crp)
 		 * driver unless the driver is currently blocked.
 		 */
 		if (cap && !cap->cc_qblocked) {
+			crypto_drivers[hid].cc_qblocked = 1;
 			CRYPTO_Q_UNLOCK();
 			result = crypto_invoke(crp, 0);
 			CRYPTO_Q_LOCK();
@@ -678,11 +690,11 @@ crypto_dispatch(struct cryptop *crp)
 				 * order is preserved but this can place them
 				 * behind batch'd ops.
 				 */
-				crypto_drivers[hid].cc_qblocked = 1;
 				list_add_tail(&crp->crp_list, &crp_q);
 				cryptostats.cs_blocks++;
 				result = 0;
-			}
+			} else
+				crypto_drivers[hid].cc_qblocked = 0;
 		} else {
 			/*
 			 * The driver is blocked, just queue the op until
@@ -729,6 +741,7 @@ crypto_kdispatch(struct cryptkop *krp)
 	CRYPTO_Q_LOCK();
 	cap = crypto_checkdriver(krp->krp_hid);
 	if (cap && !cap->cc_kqblocked) {
+		crypto_drivers[krp->krp_hid].cc_kqblocked = 1;
 		CRYPTO_Q_UNLOCK();
 		result = crypto_kinvoke(krp, 0);
 		CRYPTO_Q_LOCK();
@@ -742,10 +755,10 @@ crypto_kdispatch(struct cryptkop *krp)
 			 * at the front.  This should be ok; putting
 			 * it at the end does not work.
 			 */
-			crypto_drivers[krp->krp_hid].cc_kqblocked = 1;
 			list_add_tail(&krp->krp_list, &crp_kq);
 			cryptostats.cs_kblocks++;
-		}
+		} else
+			crypto_drivers[krp->krp_hid].cc_kqblocked = 0;
 	} else {
 		/*
 		 * The driver is blocked, just queue the op until
@@ -1094,6 +1107,7 @@ crypto_proc(void *arg)
 		}
 		if (submit != NULL) {
 			list_del(&submit->crp_list);
+			crypto_drivers[CRYPTO_SESID2HID(submit->crp_sid)].cc_qblocked = 1;
 			CRYPTO_Q_UNLOCK();
 			result = crypto_invoke(submit, hint);
 			CRYPTO_Q_LOCK();
@@ -1108,10 +1122,10 @@ crypto_proc(void *arg)
 				 * it at the end does not work.
 				 */
 				/* XXX validate sid again? */
-				crypto_drivers[CRYPTO_SESID2HID(submit->crp_sid)].cc_qblocked = 1;
 				list_add(&submit->crp_list, &crp_q);
 				cryptostats.cs_blocks++;
-			}
+			} else
+				crypto_drivers[CRYPTO_SESID2HID(submit->crp_sid)].cc_qblocked=0;
 		}
 
 		/* As above, but for key ops */
@@ -1130,6 +1144,7 @@ crypto_proc(void *arg)
 		}
 		if (krp != NULL) {
 			list_del(&krp->krp_list);
+			crypto_drivers[krp->krp_hid].cc_kqblocked = 1;
 			CRYPTO_Q_UNLOCK();
 			result = crypto_kinvoke(krp, 0);
 			CRYPTO_Q_LOCK();
@@ -1144,10 +1159,10 @@ crypto_proc(void *arg)
 				 * it at the end does not work.
 				 */
 				/* XXX validate sid again? */
-				crypto_drivers[krp->krp_hid].cc_kqblocked = 1;
 				list_add(&krp->krp_list, &crp_kq);
 				cryptostats.cs_kblocks++;
-			}
+			} else
+				crypto_drivers[krp->krp_hid].cc_kqblocked = 0;
 		}
 
 		if (submit == NULL && krp == NULL) {
@@ -1398,5 +1413,5 @@ module_init(crypto_init);
 module_exit(crypto_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
 MODULE_DESCRIPTION("OCF (OpenBSD Cryptographic Framework)");

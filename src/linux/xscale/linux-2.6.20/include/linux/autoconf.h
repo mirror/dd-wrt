@@ -1,7 +1,7 @@
 /*
  * Automatically generated C config: don't edit
  * Linux kernel version: 2.6.20
- * Sat Feb 17 03:58:33 2007
+ * Tue Feb 27 02:15:39 2007
  */
 #define AUTOCONF_INCLUDED
 #define CONFIG_BONDING_MODULE 1

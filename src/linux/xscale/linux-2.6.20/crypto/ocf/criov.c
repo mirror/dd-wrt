@@ -1,8 +1,8 @@
 /*      $OpenBSD: criov.c,v 1.9 2002/01/29 15:48:29 jason Exp $	*/
 
 /*
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
  * Copyright (c) 1999 Theo de Raadt
@@ -33,7 +33,9 @@
 __FBSDID("$FreeBSD: src/sys/opencrypto/criov.c,v 1.3 2005/01/07 02:29:16 imp Exp $");
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/slab.h>

@@ -254,6 +254,7 @@ struct hifn_operand {
 	union {
 		struct sk_buff *skb;
 		struct uio *io;
+		unsigned char *buf;
 	} u;
 	void		*map;
 	bus_size_t	mapsize;
@@ -285,6 +286,7 @@ struct hifn_command {
 #define	src_mapsize	src.mapsize
 #define	src_segs	src.segs
 #define	src_nsegs	src.nsegs
+#define	src_buf		src.u.buf
 
 #define	dst_skb		dst.u.skb
 #define	dst_io		dst.u.io
@@ -292,6 +294,7 @@ struct hifn_command {
 #define	dst_mapsize	dst.mapsize
 #define	dst_segs	dst.segs
 #define	dst_nsegs	dst.nsegs
+#define	dst_buf		dst.u.buf
 
 /*
  *  Return values for hifn_crypto()

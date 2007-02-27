@@ -2,8 +2,8 @@
 /*	$OpenBSD: cryptodev.h,v 1.31 2002/06/11 11:14:29 beck Exp $	*/
 
 /*-
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
  * The author of this code is Angelos D. Keromytis (angelos@cis.upenn.edu)
@@ -377,10 +377,6 @@ extern	int crypto_getfeat(int *);
 extern	void crypto_freereq(struct cryptop *crp);
 extern	struct cryptop *crypto_getreq(int num);
 
-extern	int crypto_usercrypto;		/* userland may do crypto requests */
-extern	int crypto_userasymcrypto;	/* userland may do asym crypto reqs */
-extern	int crypto_devallowsoft;	/* only use hardware crypto */
-
 /*
  * random number support,  crypto_unregister_all will unregister
  */
@@ -438,12 +434,19 @@ extern	struct iovec *cuio_getptr(struct uio *uio, int loc, int *off);
 
 #define flush_scheduled_work()	run_task_queue(&tq_immediate)
 
-
 #else
 #define ocf_iomem_t	void __iomem *
 
 #include <linux/workqueue.h>
 
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#define files_fdtable(files)	(files)
+#endif
+
+#ifdef MODULE_PARM
+#define	module_param(a,b,c)		MODULE_PARM(a,"i")
 #endif
 
 #endif /* __KERNEL__ */

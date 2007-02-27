@@ -17,6 +17,7 @@ obj-$(CONFIG_OCF_SAFE)       += $(obj-base)safe/safe.o
 obj-$(CONFIG_OCF_HIFN)       += $(obj-base)hifn/hifn7751.o
 obj-$(CONFIG_OCF_IXP4XX)     += $(obj-base)ixp4xx/ixp4xx.o
 obj-$(CONFIG_OCF_TALITOS)    += $(obj-base)talitos/talitos.o
+obj-$(CONFIG_OCF_OCFNULL)    += $(obj-base)ocfnull/ocfnull.o
 
 obj-$(CONFIG_OCF_BENCH)      += $(obj-base)ocf-bench.o
 
@@ -43,9 +44,6 @@ EXTRA_CFLAGS += -I$(my_inc_base)/.
 ifdef CONFIG_IXP400_LIB
 IX_XSCALE_SW := drivers/ixp400/ixp400_xscale_sw
 OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
-
-#IX_XSCALE_SW = $(ROOTDIR)/modules/ixp425/ixp400-2.0/ixp400_xscale_sw
-#OSAL_DIR     = $(ROOTDIR)/modules/ixp425/ixp400-2.0/ixp_osal
 
 IXP_CFLAGS = \
 	-I$(ROOTDIR)/. \
@@ -85,7 +83,11 @@ ifndef IXPDIR
 IXPDIR = ixp-version-is-not-supported
 endif
 
+ifeq ($(CONFIG_MACH_IXDP465),y)
+IXP_CFLAGS += -D__ixp46X
+else
 IXP_CFLAGS += -D__ixp42X
+endif
 
 CFLAGS_ixp4xx/ixp4xx.o += $(IXP_CFLAGS)
 CFLAGS_ixp4xx.o += $(IXP_CFLAGS)
