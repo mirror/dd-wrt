@@ -53,6 +53,12 @@ config OCF_TALITOS
 	help
 	  OCF driver for Freescale's security engine (SEC/talitos).
 
+config OCF_OCFNULL
+	tristate "ocfnull (fake crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for measuring ipsec overheads (does no crypto)
+
 config OCF_BENCH
 	tristate "ocf-bench (HW crypto in-kernel benchmark)"
 	depends on OCF_OCF

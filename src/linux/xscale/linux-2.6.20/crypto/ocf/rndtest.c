@@ -1,8 +1,8 @@
 /*	$OpenBSD$	*/
 
 /*
- * OCF/Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * OCF/Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  * The license and original author are listed below.
  *
  * Copyright (c) 2002 Jason L. Wright (jason@thought.net)
@@ -35,7 +35,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <linux/string.h>

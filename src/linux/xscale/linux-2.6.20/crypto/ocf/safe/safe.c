@@ -1,6 +1,6 @@
 /*-
- * Linux port done by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 David McCullough <dmccullough@cyberguard.com>
+ * Linux port done by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2006 David McCullough
  * The license and original author are listed below.
  *
  * Copyright (c) 2003 Sam Leffler, Errno Consulting
@@ -31,7 +31,9 @@
 __FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.8 2005/03/01 08:58:04 imp Exp $");
  */
 
+#ifndef AUTOCONF_INCLUDED
 #include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -142,15 +144,15 @@ u_int8_t hmac_opad_buffer[64] = {
 struct safe_stats safestats;
 
 static	int debug = 0;
-MODULE_PARM(debug, "i");
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Enable debug");
 
 #ifndef SAFE_NO_RNG
 static	int safe_rngbufsize = 8;		/* 32 bytes each read  */
-MODULE_PARM(safe_rngbufsize, "i");
+module_param(safe_rngbufsize, int, 0);
 MODULE_PARM_DESC(safe_rngbufsize, "RNG polling buffer size (32-bit words)");
 static	int safe_rngmaxalarm = 8;		/* max alarms before reset */
-MODULE_PARM(safe_rngmaxalarm, "i");
+module_param(safe_rngmaxalarm, int, 0);
 MODULE_PARM_DESC(safe_rngmaxalarm, "RNG max alarms before reset");
 #endif /* SAFE_NO_RNG */
 
@@ -318,7 +320,11 @@ skb_copy_bits_back(struct sk_buff *skb, int offset, caddr_t cp, int len)
  * SafeXcel Interrupt routine
  */
 static irqreturn_t
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+safe_intr(int irq, void *arg)
+#else
 safe_intr(int irq, void *arg, struct pt_regs *regs)
+#endif
 {
 	struct safe_softc *sc = arg;
 	int stat;
@@ -2306,5 +2312,5 @@ module_init(safe_init);
 module_exit(safe_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
 MODULE_DESCRIPTION("OCF driver for safenet PCI crypto devices");

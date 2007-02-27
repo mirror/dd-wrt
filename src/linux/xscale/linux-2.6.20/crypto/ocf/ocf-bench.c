@@ -1,9 +1,38 @@
 /*
- * benchmark in kernel crypto speed
+ * A loadable module that benchmarks the OCF crypto speed from kernel space.
+ *
+ * Copyright (C) 2004-2006 David McCullough <david_mccullough@au.securecomputing.com>
+ *
+ * LICENSE TERMS
+ *
+ * The free distribution and use of this software in both source and binary
+ * form is allowed (with or without changes) provided that:
+ *
+ *   1. distributions of this source code include the above copyright
+ *      notice, this list of conditions and the following disclaimer;
+ *
+ *   2. distributions in binary form include the above copyright
+ *      notice, this list of conditions and the following disclaimer
+ *      in the documentation and/or other associated materials;
+ *
+ *   3. the copyright holder's name is not used to endorse products
+ *      built using this software without specific written permission.
+ *
+ * ALTERNATIVELY, provided that this notice is retained in full, this product
+ * may be distributed under the terms of the GNU General Public License (GPL),
+ * in which case the provisions of the GPL apply INSTEAD OF those given above.
+ *
+ * DISCLAIMER
+ *
+ * This software is provided 'as is' with no explicit or implied warranties
+ * in respect of its properties, including, but not limited to, correctness
+ * and/or fitness for purpose.
  */
 
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -15,7 +44,7 @@
 #include <linux/interrupt.h>
 #include <cryptodev.h>
 
-#if 1
+#ifdef I_HAVE_AN_XSCALE_WITH_INTEL_SDK
 #define BENCH_IXP_ACCESS_LIB 1
 #endif
 #ifdef BENCH_IXP_ACCESS_LIB
@@ -39,19 +68,19 @@
  * the number of simultaneously active requests
  */
 static int request_q_len = 20;
-MODULE_PARM(request_q_len, "i");
+module_param(request_q_len, int, 0);
 MODULE_PARM_DESC(request_q_len, "Number of outstanding requests");
 /*
  * how many requests we want to have processed
  */
 static int request_num = 1024;
-MODULE_PARM(request_num, "i");
+module_param(request_num, int, 0);
 MODULE_PARM_DESC(request_num, "run for at least this many requests");
 /*
  * the size of each request
  */
 static int request_size = 1500;
-MODULE_PARM(request_size, "i");
+module_param(request_size, int, 0);
 MODULE_PARM_DESC(request_size, "size of each request");
 
 /*
@@ -115,10 +144,12 @@ ocf_cb(struct cryptop *crp)
 {
 	request_t *r = (request_t *) crp->crp_opaque;
 
+	if (crp->crp_etype)
+		printk("Error in OCF processing: %d\n", crp->crp_etype);
+	total++;
 	crypto_freereq(crp);
 	crp = NULL;
 
-	total++;
 	if (total > request_num) {
 		outstanding--;
 		return 0;
@@ -142,8 +173,8 @@ ocf_request(void *arg)
 		return;
 	}
 
-	crda = crp->crp_desc;
-	crde = crda->crd_next;
+	crde = crp->crp_desc;
+	crda = crde->crd_next;
 
 	crda->crd_skip = 0;
 	crda->crd_flags = 0;
@@ -314,6 +345,7 @@ ocfbench_init(void)
 			printk("malloc failed\n");
 			return -EINVAL;
 		}
+		memset(requests[i].buffer, '0' + i, request_size + 128);
 	}
 
 	/*
@@ -368,5 +400,5 @@ module_init(ocfbench_init);
 module_exit(ocfbench_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
 MODULE_DESCRIPTION("Benchmark various in-kernel crypto speeds");

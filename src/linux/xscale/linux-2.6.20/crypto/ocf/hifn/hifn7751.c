@@ -46,7 +46,9 @@ __FBSDID("$FreeBSD: src/sys/dev/hifn/hifn7751.c,v 1.32 2005/01/19 17:03:35 sam E
 /*
  * Driver for various Hifn encryption processors.
  */
+#ifndef AUTOCONF_INCLUDED
 #include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -117,15 +119,20 @@ static	struct hifn_stats hifnstats;
 
 #define	hifn_debug debug
 static	int debug = 0;
-MODULE_PARM(debug, "i");
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Enable debug");
 
 static	int hifn_maxbatch = 1;
-MODULE_PARM(hifn_maxbatch, "i");
+module_param(hifn_maxbatch, int, 0);
 MODULE_PARM_DESC(hifn_maxbatch, "max ops to batch w/o interrupt");
 
+#ifdef MODULE_PARM
 static	char *hifn_pllconfig = NULL;
 MODULE_PARM(hifn_pllconfig, "s");
+#else
+static char hifn_pllconfig[32];
+module_param_array(hifn_pllconfig, charp, NULL, 0);
+#endif
 MODULE_PARM_DESC(hifn_pllconfig, "PLL config, ie., pci66, ext33, ...");
 
 /*
@@ -145,7 +152,11 @@ static	int hifn_sramsize(struct hifn_softc *);
 static	int hifn_dramsize(struct hifn_softc *);
 static	int hifn_ramtype(struct hifn_softc *);
 static	void hifn_sessions(struct hifn_softc *);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+static irqreturn_t hifn_intr(int irq, void *arg);
+#else
 static irqreturn_t hifn_intr(int irq, void *arg, struct pt_regs *regs);
+#endif
 static	u_int hifn_write_command(struct hifn_command *, u_int8_t *);
 static	u_int32_t hifn_next_signature(u_int32_t a, u_int cnt);
 static	int hifn_newsession(void *, u_int32_t *, struct cryptoini *);
@@ -249,6 +260,27 @@ pci_map_skb(struct hifn_softc *sc,struct hifn_operand *buf,struct sk_buff *skb)
 	return(0);
 }
 
+/*
+ * map in a given contiguous buffer
+ */
+
+static int
+pci_map_buf(struct hifn_softc *sc,struct hifn_operand *buf, void *b, int len)
+{
+	DPRINTF("%s()\n", __FUNCTION__);
+
+	buf->mapsize = 0;
+	buf->segs[0].ds_addr = pci_map_single(sc->sc_dev,
+			b, len, PCI_DMA_BIDIRECTIONAL);
+	buf->segs[0].ds_len = len;
+	buf->mapsize += buf->segs[0].ds_len;
+	buf->nsegs = 1;
+
+	/* identify this buffer by the first segment */
+	buf->map = (void *) buf->segs[0].ds_addr;
+	return(0);
+}
+
 #if 0 /* not needed at this time */
 static void
 pci_sync_iov(struct hifn_softc *sc, struct hifn_operand *buf)
@@ -311,7 +343,6 @@ hifn_partname(struct hifn_softc *sc)
 		case PCI_PRODUCT_HIFN_6500:	return "Hifn 6500";
 		case PCI_PRODUCT_HIFN_7751:	return "Hifn 7751";
 		case PCI_PRODUCT_HIFN_7811:	return "Hifn 7811";
-		case PCI_PRODUCT_HIFN_7855:	return "Hifn 7855";
 		case PCI_PRODUCT_HIFN_7951:	return "Hifn 7951";
 		case PCI_PRODUCT_HIFN_7955:	return "Hifn 7955";
 		case PCI_PRODUCT_HIFN_7956:	return "Hifn 7956";
@@ -468,13 +499,6 @@ hifn_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	if (pci_get_vendor(dev) == PCI_VENDOR_HIFN &&
 	    pci_get_device(dev) == PCI_PRODUCT_HIFN_7811)
 		sc->sc_flags |= HIFN_IS_7811 | HIFN_HAS_RNG;
-
-	/*
-	 * The 7855 has AES,  not sure what else is needed yet
-	 */
-	if (pci_get_vendor(dev) == PCI_VENDOR_HIFN &&
-	    pci_get_device(dev) == PCI_PRODUCT_HIFN_7855)
-		sc->sc_flags |= HIFN_HAS_AES;
 
 	/*
 	 * The 795x parts support AES.
@@ -1748,8 +1772,11 @@ hifn_crypto(
 			goto err_srcmap1;
 		}
 	} else {
-		err = EINVAL;
-		goto err_srcmap1;
+		if (pci_map_buf(sc, &cmd->src, cmd->src_buf, crp->crp_ilen)) {
+			hifnstats.hst_nomem_load++;
+			err = ENOMEM;
+			goto err_srcmap1;
+		}
 	}
 
 	if (hifn_dmamap_aligned(&cmd->src)) {
@@ -1757,6 +1784,7 @@ hifn_crypto(
 		cmd->dst = cmd->src;
 	} else {
 		if (crp->crp_flags & CRYPTO_F_IOV) {
+			DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 			err = EINVAL;
 			goto err_srcmap;
 		} else if (crp->crp_flags & CRYPTO_F_SKBUF) {
@@ -1843,6 +1871,12 @@ hifn_crypto(
 			err = EINVAL;
 			goto err_srcmap;
 #endif
+		} else {
+			device_printf(sc->sc_dev,
+					"%s,%d: unaligned contig buffers not implemented\n",
+					__FILE__, __LINE__);
+			err = EINVAL;
+			goto err_srcmap;
 		}
 	}
 
@@ -1855,6 +1889,12 @@ hifn_crypto(
 			}
 		} else if (crp->crp_flags & CRYPTO_F_IOV) {
 			if (pci_map_uio(sc, &cmd->dst, cmd->dst_io)) {
+				hifnstats.hst_nomem_load++;
+				err = ENOMEM;
+				goto err_dstmap1;
+			}
+		} else {
+			if (pci_map_buf(sc, &cmd->dst, cmd->dst_buf, crp->crp_ilen)) {
 				hifnstats.hst_nomem_load++;
 				err = ENOMEM;
 				goto err_dstmap1;
@@ -2077,7 +2117,11 @@ hifn_tick(unsigned long arg)
 }
 
 static irqreturn_t
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+hifn_intr(int irq, void *arg)
+#else
 hifn_intr(int irq, void *arg, struct pt_regs *regs)
+#endif
 {
 	struct hifn_softc *sc = arg;
 	struct hifn_dma *dma;
@@ -2247,8 +2291,10 @@ hifn_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 	DPRINTF("%s()\n", __FUNCTION__);
 
 	KASSERT(sc != NULL, ("hifn_newsession: null softc"));
-	if (sidp == NULL || cri == NULL || sc == NULL)
+	if (sidp == NULL || cri == NULL || sc == NULL) {
+		DPRINTF("%s,%d: %s - EINVAL\n", __FILE__, __LINE__, __FUNCTION__);
 		return (EINVAL);
+	}
 
 	if (sc->sc_sessions == NULL) {
 		ses = sc->sc_sessions = (struct hifn_session *)kmalloc(sizeof(*ses),
@@ -2288,8 +2334,10 @@ hifn_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 		case CRYPTO_SHA1:
 		case CRYPTO_MD5_HMAC:
 		case CRYPTO_SHA1_HMAC:
-			if (mac)
+			if (mac) {
+				DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 				return (EINVAL);
+			}
 			mac = 1;
 			break;
 		case CRYPTO_DES_CBC:
@@ -2301,16 +2349,21 @@ hifn_newsession(void *arg, u_int32_t *sidp, struct cryptoini *cri)
 					HIFN_AES_IV_LENGTH : HIFN_IV_LENGTH);
 			/*FALLTHROUGH*/
 		case CRYPTO_ARC4:
-			if (cry)
+			if (cry) {
+				DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 				return (EINVAL);
+			}
 			cry = 1;
 			break;
 		default:
+			DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 			return (EINVAL);
 		}
 	}
-	if (mac == 0 && cry == 0)
+	if (mac == 0 && cry == 0) {
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		return (EINVAL);
+	}
 
 	*sidp = HIFN_SID(sc->sc_num, sesn);
 
@@ -2332,12 +2385,16 @@ hifn_freesession(void *arg, u_int64_t tid)
 	DPRINTF("%s()\n", __FUNCTION__);
 
 	KASSERT(sc != NULL, ("hifn_freesession: null softc"));
-	if (sc == NULL)
+	if (sc == NULL) {
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		return (EINVAL);
+	}
 
 	session = HIFN_SESSION(sid);
-	if (session >= sc->sc_nsessions)
+	if (session >= sc->sc_nsessions) {
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		return (EINVAL);
+	}
 
 	bzero(&sc->sc_sessions[session], sizeof(sc->sc_sessions[session]));
 	return (0);
@@ -2355,11 +2412,13 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 
 	if (crp == NULL || crp->crp_callback == NULL) {
 		hifnstats.hst_invalid++;
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		return (EINVAL);
 	}
 	session = HIFN_SESSION(crp->crp_sid);
 
 	if (sc == NULL || session >= sc->sc_nsessions) {
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		err = EINVAL;
 		goto errout;
 	}
@@ -2379,12 +2438,13 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 		cmd->src_io = (struct uio *)crp->crp_buf;
 		cmd->dst_io = (struct uio *)crp->crp_buf;
 	} else {
-		err = EINVAL;
-		goto errout;	/* XXX we don't handle contiguous buffers! */
+		cmd->src_buf = crp->crp_buf;
+		cmd->dst_buf = crp->crp_buf;
 	}
 
 	crd1 = crp->crp_desc;
 	if (crd1 == NULL) {
+		DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 		err = EINVAL;
 		goto errout;
 	}
@@ -2406,6 +2466,7 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 			maccrd = NULL;
 			enccrd = crd1;
 		} else {
+			DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 			err = EINVAL;
 			goto errout;
 		}
@@ -2437,6 +2498,7 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 			/*
 			 * We cannot order the 7751 as requested
 			 */
+			DPRINTF("%s,%d: %s %d,%d,%d - EINVAL\n",__FILE__,__LINE__,__FUNCTION__, crd1->crd_alg, crd2->crd_alg, crd1->crd_flags & CRD_F_ENCRYPT);
 			err = EINVAL;
 			goto errout;
 		}
@@ -2465,6 +2527,7 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 			    HIFN_CRYPT_CMD_NEW_IV;
 			break;
 		default:
+			DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 			err = EINVAL;
 			goto errout;
 		}
@@ -2487,6 +2550,8 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 						cuio_copyback(cmd->src_io,
 						    enccrd->crd_inject,
 						    ivlen, cmd->iv);
+					else
+						bcopy(cmd->iv, cmd->src_buf+enccrd->crd_inject, ivlen);
 				}
 			} else {
 				if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
@@ -2497,6 +2562,8 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 				else if (crp->crp_flags & CRYPTO_F_IOV)
 					cuio_copydata(cmd->src_io,
 					    enccrd->crd_inject, ivlen, cmd->iv);
+				else
+					bcopy(cmd->src_buf + enccrd->crd_inject, cmd->iv, ivlen);
 			}
 		}
 
@@ -2522,6 +2589,7 @@ hifn_process(void *arg, struct cryptop *crp, int hint)
 				cmd->cry_masks |= HIFN_CRYPT_CMD_KSZ_256;
 				break;
 			default:
+				DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
 				err = EINVAL;
 				goto errout;
 			}
@@ -2732,6 +2800,10 @@ hifn_callback(struct hifn_softc *sc, struct hifn_command *cmd, u_int8_t *macbuf)
 			cuio_copyback((struct uio *)crp->crp_buf,
 			    cmd->src_mapsize - cmd->sloplen,
 			    cmd->sloplen, (caddr_t)&dma->slop[cmd->slopidx]);
+		else
+			bcopy((char *) &dma->slop[cmd->slopidx],
+					cmd->src_buf + (cmd->src_mapsize - cmd->sloplen),
+					cmd->sloplen);
 	}
 
 	i = dma->dstk; u = dma->dstu;
@@ -2773,6 +2845,9 @@ hifn_callback(struct hifn_softc *sc, struct hifn_command *cmd, u_int8_t *macbuf)
 				cuio_copydata((struct uio *)crp->crp_buf,
 				    crd->crd_skip + crd->crd_len - ivlen, ivlen,
 				    cmd->softc->sc_sessions[cmd->session_num].hs_iv);
+			} else {
+				bcopy(cmd->src_buf + (crd->crd_skip + crd->crd_len - ivlen),
+						cmd->softc->sc_sessions[cmd->session_num].hs_iv, ivlen);
 			}
 			break;
 		}
@@ -2853,8 +2928,6 @@ static struct pci_device_id hifn_pci_tbl[] = {
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
 	{ PCI_VENDOR_HIFN, PCI_PRODUCT_HIFN_7811,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
-	{ PCI_VENDOR_HIFN, PCI_PRODUCT_HIFN_7855,
-	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
 	/*
 	 * Other vendors share this PCI ID as well, such as
 	 * http://www.powercrypt.com, and obviously they also
@@ -2888,5 +2961,5 @@ module_init(hifn_init);
 module_exit(hifn_exit);
 
 MODULE_LICENSE("BSD");
-MODULE_AUTHOR("David McCullough <dmccullough@cyberguard.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@au.securecomputing.com>");
 MODULE_DESCRIPTION("OCF driver for hifn PCI crypto devices");
