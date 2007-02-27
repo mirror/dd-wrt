@@ -83,7 +83,7 @@ void OPENSSL_add_all_algorithms_noconf(void)
 	OpenSSL_add_all_ciphers();
 	OpenSSL_add_all_digests();
 #ifndef OPENSSL_NO_ENGINE
-# if defined(__OpenBSD__) || defined(__FreeBSD__)
+# if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__)
 	ENGINE_setup_bsd_cryptodev();
 # endif
 #endif
