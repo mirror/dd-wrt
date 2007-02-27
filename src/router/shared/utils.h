@@ -74,7 +74,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
 #define ROUTER_MICROSOFT_MN700 0x1117
 
-// Buffalo WLA-G54C == WLI-TX1-G54 (4702 cpu - no switch)
+// Buffalo WLA-G54C == WLI-TX1-G54 (4702 cpu - no switch), (fccid: QDS-BRCM1005)
 #define ROUTER_BUFFALO_WLAG54C 0x1210
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
