@@ -870,7 +870,7 @@ led_control (int type, int act)
 #ifdef HAVE_GATEWORX
 int board = getRouterBrand();
 char *gpio = "3";
-if (board = ROUTER_BOARD_GATEWORX_SWAP)
+if (board == ROUTER_BOARD_GATEWORX_SWAP)
     gpio = "4";
 #endif
 int use_gpio = 0x0f;
