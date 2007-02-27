@@ -338,6 +338,7 @@ eval("insmod","crypto_null");
 
 
   nvram_set ("wl0_ifname", "ath0");
+  eval ("mknod", "/dev/crypto", "c", "10", "70");
   /* Set a sane date */
   stime (&tm);
   cprintf ("done\n");
