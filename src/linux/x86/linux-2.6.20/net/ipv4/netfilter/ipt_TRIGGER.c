@@ -64,12 +64,13 @@ struct ipt_trigger {
 
 LIST_HEAD(trigger_list);
 //DECLARE_LOCK(ip_trigger_lock);
+DEFINE_RWLOCK(ip_conntrack_lock);
 
 static void trigger_refresh(struct ipt_trigger *trig, unsigned long extra_jiffies)
 {
     DEBUGP("%s: \n", __FUNCTION__);
     IP_NF_ASSERT(trig);
-    WRITE_LOCK(&ip_conntrack_lock);
+    write_lock_bh(&ip_conntrack_lock);
 
     /* Need del_timer for race avoidance (may already be dying). */
     if (del_timer(&trig->timeout)) {
@@ -77,7 +78,7 @@ static void trigger_refresh(struct ipt_trigger *trig, unsigned long extra_jiffie
 	add_timer(&trig->timeout);
     }
 
-    WRITE_UNLOCK(&ip_conntrack_lock);
+    write_unlock_bh(&ip_conntrack_lock);
 }
 
 static void __del_trigger(struct ipt_trigger *trig)
@@ -96,9 +97,9 @@ static void trigger_timeout(unsigned long ul_trig)
     struct ipt_trigger *trig= (void *) ul_trig;
 
     DEBUGP("trigger list %p timed out\n", trig);
-    WRITE_LOCK(&ip_conntrack_lock);
+    write_lock_bh(&ip_conntrack_lock);
     __del_trigger(trig);
-    WRITE_UNLOCK(&ip_conntrack_lock);
+    write_unlock_bh(&ip_conntrack_lock);
 }
 
 static unsigned int
@@ -107,12 +108,12 @@ add_new_trigger(struct ipt_trigger *trig)
     struct ipt_trigger *new;
 
     DEBUGP("!!!!!!!!!!!! %s !!!!!!!!!!!\n", __FUNCTION__);
-    WRITE_LOCK(&ip_conntrack_lock);
+    write_lock_bh(&ip_conntrack_lock);
     new = (struct ipt_trigger *)
 	kmalloc(sizeof(struct ipt_trigger), GFP_ATOMIC);
 
     if (!new) {
-	WRITE_UNLOCK(&ip_conntrack_lock);
+	write_unlock_bh(&ip_conntrack_lock);
 	DEBUGP("%s: OOM allocating trigger list\n", __FUNCTION__);
 	return -ENOMEM;
     }
@@ -130,7 +131,7 @@ add_new_trigger(struct ipt_trigger *trig)
     new->timeout.expires = jiffies + (TRIGGER_TIMEOUT * HZ);
     add_timer(&new->timeout);
 	    
-    WRITE_UNLOCK(&ip_conntrack_lock);
+    write_unlock_bh(&ip_conntrack_lock);
 
     return 0;
 }
