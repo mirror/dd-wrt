@@ -319,6 +319,79 @@ static SIGRETTYPE sig_done(int sig)
 #define START	0
 #define STOP	1
 
+#ifdef __linux__
+/*
+ * record CPU usage as well
+ */
+
+static int do_cpu = 0;
+
+struct cpu_stat {
+	unsigned int	user;
+	unsigned int	nice;
+	unsigned int	system;
+	unsigned int	idle;
+	unsigned int	total;
+};
+
+static unsigned int cpu_usage[ALGOR_NUM][SIZE_NUM];
+static unsigned int rsa_cpu_usage[RSA_NUM][2];
+static unsigned int dsa_cpu_usage[DSA_NUM][2];
+static struct cpu_stat cpu_start, cpu_finish;
+
+static void
+get_cpu(int s)
+{
+	FILE *fp = NULL;
+	unsigned char	buf[80];
+	struct cpu_stat *st = s == START ? &cpu_start : &cpu_finish;
+
+	memset(st, 0, sizeof(*st));
+
+	if (fp == NULL)
+		fp = fopen("/proc/stat", "r");
+	if (!fp)
+		return;
+	if (fseek(fp, 0, SEEK_SET) == -1) {
+		fclose(fp);
+		return;
+	}
+	fscanf(fp, "%s %d %d %d %d", &buf[0], &st->user, &st->nice,
+		&st->system, &st->idle);
+	st->total = st->user + st->nice + st->system + st->idle;
+	fclose(fp);
+}
+
+static unsigned int
+calc_cpu()
+{
+	unsigned int total, res;
+
+	total  = cpu_finish.total - cpu_start.total;
+	if (total <= 0)
+		return 0;
+#if 1 // busy
+	res   = ((cpu_finish.system + cpu_finish.user + cpu_finish.nice) -
+			 (cpu_start.system + cpu_start.user + cpu_start.nice)) *
+			 100 / total;
+#endif
+#if 0 // system
+	res   = (cpu_finish.system - cpu_start.system) * 100 / total;
+#endif
+#if 0 // user
+	res   = (cpu_finish.user   - cpu_start.user)   * 100 / total;
+#endif
+#if 0 // nice
+	res   = (cpu_finish.nice   - cpu_start.nice)   * 100 / total;
+#endif
+#if 0 // idle
+	res   = (cpu_finish.idle   - cpu_start.idle)   * 100 / total;
+#endif
+	return(res);
+}
+
+#endif
+
 #if defined(OPENSSL_SYS_NETWARE)
 
    /* for NetWare the best we can do is use clock() which returns the
@@ -348,6 +421,11 @@ static double Time_F(int s)
 static double Time_F(int s)
 	{
 	double ret;
+
+#ifdef __linux__
+	if (do_cpu)
+		get_cpu(s);
+#endif
 
 #ifdef USE_TOD
 	if(usertime)
@@ -799,6 +877,14 @@ int MAIN(int argc, char **argv)
 			j--;	/* Otherwise, -elapsed gets confused with
 				   an algorithm. */
 			}
+#ifdef __linux__
+		else if	((argc > 0) && (strcmp(*argv,"-cpu") == 0))
+			{
+			do_cpu = 1;
+			j--;	/* Otherwise, -cpu gets confused with
+				   an algorithm. */
+			}
+#endif
 		else if	((argc > 0) && (strcmp(*argv,"-evp") == 0))
 			{
 			argc--;
@@ -1189,17 +1275,15 @@ int MAIN(int argc, char **argv)
 #ifdef HAVE_FORK
 			BIO_printf(bio_err,"-multi n        run n benchmarks in parallel.\n");
 #endif
+#ifdef __linux__
+			BIO_printf(bio_err,"-cpu            calculate cpu utilisation.\n");
+#endif
 			goto end;
 			}
 		argc--;
 		argv++;
 		j++;
 		}
-
-#ifdef HAVE_FORK
-	if(multi && do_multi(multi))
-		goto show_res;
-#endif
 
 	if (j == 0)
 		{
@@ -1510,6 +1594,11 @@ int MAIN(int argc, char **argv)
 #define COUNT(d) (count)
 	signal(SIGALRM,sig_done);
 #endif /* SIGALRM */
+
+#ifdef HAVE_FORK /* DM */
+	if(multi && do_multi(multi))
+		goto show_res;
+#endif
 
 #ifndef OPENSSL_NO_MD2
 	if (doit[D_MD2])
@@ -1838,8 +1927,6 @@ int MAIN(int argc, char **argv)
 				/* -O3 -fschedule-insns messes up an
 				 * optimization here!  names[D_EVP]
 				 * somehow becomes NULL */
-				print_message(names[D_EVP],save_count,
-					lengths[j]);
 
 				EVP_CIPHER_CTX_init(&ctx);
 				if(decrypt)
@@ -1847,6 +1934,9 @@ int MAIN(int argc, char **argv)
 				else
 					EVP_EncryptInit_ex(&ctx,evp_cipher,NULL,key16,iv);
 				EVP_CIPHER_CTX_set_padding(&ctx, 0);
+
+				print_message(names[D_EVP],save_count,
+					lengths[j]);
 
 				Time_F(START);
 				if(decrypt)
@@ -1912,6 +2002,8 @@ int MAIN(int argc, char **argv)
 					}
 				}
 			d=Time_F(STOP);
+			if (do_cpu)
+				rsa_cpu_usage[j][0] = calc_cpu();
 			BIO_printf(bio_err,mr ? "+R1:%ld:%d:%.2f\n"
 				   : "%ld %d bit private RSA's in %.2fs\n",
 				   count,rsa_bits[j],d);
@@ -1947,6 +2039,8 @@ int MAIN(int argc, char **argv)
 					}
 				}
 			d=Time_F(STOP);
+			if (do_cpu)
+				rsa_cpu_usage[j][1] = calc_cpu();
 			BIO_printf(bio_err,mr ? "+R2:%ld:%d:%.2f\n"
 				   : "%ld %d bit public RSA's in %.2fs\n",
 				   count,rsa_bits[j],d);
@@ -2006,6 +2100,8 @@ int MAIN(int argc, char **argv)
 					}
 				}
 			d=Time_F(STOP);
+			if (do_cpu)
+				dsa_cpu_usage[j][0] = calc_cpu();
 			BIO_printf(bio_err,mr ? "+R3:%ld:%d:%.2f\n"
 				   : "%ld %d bit DSA signs in %.2fs\n",
 				   count,dsa_bits[j],d);
@@ -2041,6 +2137,8 @@ int MAIN(int argc, char **argv)
 					}
 				}
 			d=Time_F(STOP);
+			if (do_cpu)
+				dsa_cpu_usage[j][1] = calc_cpu();
 			BIO_printf(bio_err,mr ? "+R4:%ld:%d:%.2f\n"
 				   : "%ld %d bit DSA verify in %.2fs\n",
 				   count,dsa_bits[j],d);
@@ -2335,14 +2433,23 @@ show_res:
 			fprintf(stdout,"The 'numbers' are in 1000s of bytes per second processed.\n"); 
 			fprintf(stdout,"type        ");
 			}
-		for (j=0;  j<SIZE_NUM; j++)
+		for (j=0;  j<SIZE_NUM; j++) {
 			fprintf(stdout,mr ? ":%d" : "%7d bytes",lengths[j]);
+			if (do_cpu && !mr)
+				fprintf(stdout, " /cpu");
+		}
 		fprintf(stdout,"\n");
 		}
 
 	for (k=0; k<ALGOR_NUM; k++)
 		{
 		if (!doit[k]) continue;
+		if (k == D_EVP) {
+			if (evp_cipher)
+				names[D_EVP]=OBJ_nid2ln(evp_cipher->nid);
+			else
+				names[D_EVP]=OBJ_nid2ln(evp_md->type);
+		}
 		if(mr)
 			fprintf(stdout,"+F:%d:%s",k,names[k]);
 		else
@@ -2353,6 +2460,8 @@ show_res:
 				fprintf(stdout," %11.2fk",results[k][j]/1e3);
 			else
 				fprintf(stdout,mr ? ":%.2f" : " %11.2f ",results[k][j]);
+			if (do_cpu)
+				fprintf(stdout, mr ? "/%d" : "/%%%-3d", cpu_usage[k][j]);
 			}
 		fprintf(stdout,"\n");
 		}
@@ -2367,13 +2476,18 @@ show_res:
 			j=0;
 			}
 		if(mr)
-			fprintf(stdout,"+F2:%u:%u:%f:%f\n",
-				k,rsa_bits[k],rsa_results[k][0],
-				rsa_results[k][1]);
+			fprintf(stdout,"+F2:%u:%u:%f", k,rsa_bits[k],rsa_results[k][0]);
 		else
-			fprintf(stdout,"rsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
-				rsa_bits[k],rsa_results[k][0],rsa_results[k][1],
-				1.0/rsa_results[k][0],1.0/rsa_results[k][1]);
+			fprintf(stdout,"rsa %4u bits %8.6fs",rsa_bits[k],rsa_results[k][0]);
+		if (do_cpu)
+			fprintf(stdout, mr ? "/%d": "/%%%-3d", rsa_cpu_usage[k][0]);
+		fprintf(stdout, mr ? ":%f" : " %8.6fs", rsa_results[k][1]);
+		if (do_cpu)
+			fprintf(stdout, mr ? "/%d": "/%%%-3d", rsa_cpu_usage[k][1]);
+		if(!mr)
+			fprintf(stdout, " %8.1f %8.1f",
+					1.0/rsa_results[k][0],1.0/rsa_results[k][1]);
+		fprintf(stdout, "\n");
 		}
 #endif
 #ifndef OPENSSL_NO_DSA
@@ -2387,12 +2501,18 @@ show_res:
 			j=0;
 			}
 		if(mr)
-			fprintf(stdout,"+F3:%u:%u:%f:%f\n",
-				k,dsa_bits[k],dsa_results[k][0],dsa_results[k][1]);
+			fprintf(stdout,"+F3:%u:%u:%f", k,dsa_bits[k],dsa_results[k][0]);
 		else
-			fprintf(stdout,"dsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
-				dsa_bits[k],dsa_results[k][0],dsa_results[k][1],
-				1.0/dsa_results[k][0],1.0/dsa_results[k][1]);
+			fprintf(stdout,"dsa %4u bits %8.6fs",dsa_bits[k],dsa_results[k][0]);
+		if (do_cpu)
+			fprintf(stdout, mr ? "/%d": "/%%%-3d", dsa_cpu_usage[k][0]);
+		fprintf(stdout, mr ? ":%f" : " %8.6fs", dsa_results[k][1]);
+		if (do_cpu)
+			fprintf(stdout, mr ? "/%d": "/%%%-3d", dsa_cpu_usage[k][1]);
+		if(!mr)
+			fprintf(stdout, " %8.1f %8.1f",
+					1.0/dsa_results[k][0],1.0/dsa_results[k][1]);
+		fprintf(stdout, "\n");
 		}
 #endif
 #ifndef OPENSSL_NO_ECDSA
@@ -2517,8 +2637,10 @@ static void pkey_print_message(const char *str, const char *str2, long num,
 
 static void print_result(int alg,int run_no,int count,double time_used)
 	{
-	BIO_printf(bio_err,mr ? "+R:%d:%s:%f\n"
-		   : "%d %s's in %.2fs\n",count,names[alg],time_used);
+	if (do_cpu)
+	    cpu_usage[alg][run_no] = calc_cpu();
+	BIO_printf(bio_err,mr ? "+R:%ld:%s:%f\n"
+		   : "%ld %s's in %.2fs\n",count,names[alg],time_used);
 	results[alg][run_no]=((double)count)/time_used*lengths[run_no];
 	}
 
@@ -2611,29 +2733,11 @@ static int do_multi(int multi)
 				p=buf+3;
 				alg=atoi(sstrsep(&p,sep));
 				sstrsep(&p,sep);
-				for(j=0 ; j < SIZE_NUM ; ++j)
+				for(j=0 ; j < SIZE_NUM ; ++j) {
+					if (do_cpu && strchr(p, '/'))
+						cpu_usage[alg][j] = atoi(strchr(p, '/') + 1);
 					results[alg][j]+=atof(sstrsep(&p,sep));
 				}
-			else if(!strncmp(buf,"+F2:",4))
-				{
-				int k;
-				double d;
-				
-				p=buf+4;
-				k=atoi(sstrsep(&p,sep));
-				sstrsep(&p,sep);
-
-				d=atof(sstrsep(&p,sep));
-				if(n)
-					rsa_results[k][0]=1/(1/rsa_results[k][0]+1/d);
-				else
-					rsa_results[k][0]=d;
-
-				d=atof(sstrsep(&p,sep));
-				if(n)
-					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
-				else
-					rsa_results[k][1]=d;
 				}
 			else if(!strncmp(buf,"+F2:",4))
 				{
@@ -2644,12 +2748,18 @@ static int do_multi(int multi)
 				k=atoi(sstrsep(&p,sep));
 				sstrsep(&p,sep);
 
+				/* before we move the token along */
+				if (do_cpu && strchr(p, '/'))
+					rsa_cpu_usage[k][0] = atoi(strchr(p, '/') + 1);
 				d=atof(sstrsep(&p,sep));
 				if(n)
 					rsa_results[k][0]=1/(1/rsa_results[k][0]+1/d);
 				else
 					rsa_results[k][0]=d;
 
+				/* before we move the token along */
+				if (do_cpu && strchr(p, '/'))
+					rsa_cpu_usage[k][1] = atoi(strchr(p, '/') + 1);
 				d=atof(sstrsep(&p,sep));
 				if(n)
 					rsa_results[k][1]=1/(1/rsa_results[k][1]+1/d);
@@ -2665,12 +2775,18 @@ static int do_multi(int multi)
 				k=atoi(sstrsep(&p,sep));
 				sstrsep(&p,sep);
 
+				/* before we move the token along */
+				if (do_cpu && strchr(p, '/'))
+					dsa_cpu_usage[k][0] = atoi(strchr(p, '/') + 1);
 				d=atof(sstrsep(&p,sep));
 				if(n)
 					dsa_results[k][0]=1/(1/dsa_results[k][0]+1/d);
 				else
 					dsa_results[k][0]=d;
 
+				/* before we move the token along */
+				if (do_cpu && strchr(p, '/'))
+					dsa_cpu_usage[k][1] = atoi(strchr(p, '/') + 1);
 				d=atof(sstrsep(&p,sep));
 				if(n)
 					dsa_results[k][1]=1/(1/dsa_results[k][1]+1/d);
