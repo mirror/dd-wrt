@@ -921,17 +921,17 @@ handle_request (void)
 		      if (!auth_check (auth_realm, authorization))
 			{
 			  send_authenticate (auth_realm);
-			  syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
-			  lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
+//			  syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
+//			  lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
 			  return;
 			  //auth_fail = 1;
 			}
-			if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
-			  {
-			  last_log_ip=nvram_safe_get("http_client_ip");
-			  lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
-			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
-			  }
+//			if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
+//			  {
+//			  last_log_ip=nvram_safe_get("http_client_ip");
+//			  lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
+//			  syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
+//			  }
 		    }
 		}
 	      post = 0;
