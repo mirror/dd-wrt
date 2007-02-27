@@ -5,8 +5,8 @@
  *
  * This should be fast and callable from timers/interrupts
  *
- * This code written by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Written by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
  *
@@ -34,7 +34,9 @@
  * and/or fitness for purpose.
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -46,7 +48,6 @@
 #include <linux/unistd.h>
 #include <linux/poll.h>
 #include <linux/random.h>
-#include <linux/file.h>
 #include <cryptodev.h>
 
 #ifdef FIPS_TEST_RNG
@@ -78,7 +79,7 @@ static int random_proc(void *arg);
 static pid_t		randomproc = (pid_t) -1;
 static spinlock_t	random_lock;
 
-int errno;
+static int errno;
 static inline _syscall3(int,open,const char *,file,int, flags, int, mode);
 static inline _syscall3(int,ioctl,int,fd,unsigned int,cmd,unsigned long,arg);
 static inline _syscall3(int,poll,struct pollfd *,pollfds,unsigned int,nfds,long,timeout);
@@ -140,9 +141,9 @@ crypto_rregister(
 	rops->driverid    = driverid;
 	rops->read_random = read_random;
 	rops->arg = arg;
-	list_add_tail(&rops->random_list, &random_ops);
 
 	spin_lock_irqsave(&random_lock, flags);
+	list_add_tail(&rops->random_list, &random_ops);
 	if (!started) {
 		randomproc = kernel_thread(random_proc, NULL, CLONE_FS|CLONE_FILES);
 		if (randomproc < 0) {
@@ -174,11 +175,8 @@ crypto_runregister_all(u_int32_t driverid)
 	}
 
 	spin_lock_irqsave(&random_lock, flags);
-	if (list_empty(&random_ops) && started) {
+	if (list_empty(&random_ops) && started)
 		kill_proc(randomproc, SIGKILL, 1);
-		randomproc = (pid_t) -1;
-		started = 0;
-	}
 	spin_unlock_irqrestore(&random_lock, flags);
 	return(0);
 }
@@ -203,6 +201,7 @@ random_proc(void *arg)
 	sprintf(current->comm, "random");
 #else
 	daemonize("random");
+	allow_signal(SIGKILL);
 #endif
 
 	(void) get_fs();
@@ -222,6 +221,20 @@ random_proc(void *arg)
 		static int			bufcnt  = 0;
 		struct random_op	*rops, *tmp;
 
+		if (signal_pending(current)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+			spin_lock_irq(&current->sigmask_lock);
+#endif
+			flush_signals(current);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+			spin_unlock_irq(&current->sigmask_lock);
+#endif
+			spin_lock_irq(&random_lock);
+			if (list_empty(&random_ops))
+				goto exit_locked;
+			spin_unlock_irq(&random_lock);
+		}
+
 		/*
 		 * if we have a certified buffer,  we can send some data
 		 * to /dev/random and move along
@@ -236,6 +249,9 @@ random_proc(void *arg)
 			pfd.revents = 0;
 
 			if (poll(&pfd, 1, -1) == -1) {
+				if (errno == EINTR)
+					continue;
+
 				printk("crypto: poll failed: %d\n", errno);
 				break;
 			}
@@ -246,7 +262,7 @@ random_proc(void *arg)
 			bufcnt = 0;
 		}
 
-		while (bufcnt < NUM_INT) {
+		while (bufcnt < NUM_INT && !signal_pending(current)) {
 			list_for_each_entry_safe(rops, tmp, &random_ops, random_list) {
 				n = (*rops->read_random)(rops->arg, &buf[2+bufcnt],
 						NUM_INT - bufcnt);
@@ -268,17 +284,13 @@ random_proc(void *arg)
 			bufcnt = 0;
 		}
 #endif
-
-		if (signal_pending(current)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-			spin_lock_irq(&current->sigmask_lock);
-#endif
-			flush_signals(current);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-			spin_unlock_irq(&current->sigmask_lock);
-#endif
-		}
 	}
+
+	spin_lock_irq(&random_lock);
+exit_locked:
+	randomproc = (pid_t) -1;
+	started = 0;
+	spin_unlock_irq(&random_lock);
 
 	return 0;
 }

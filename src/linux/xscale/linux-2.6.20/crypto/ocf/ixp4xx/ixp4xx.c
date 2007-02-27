@@ -1,10 +1,10 @@
 /*
  * An OCF module that uses Intels IXP CryptACC API to do the crypto.
  * This driver requires the IXP400 Access Library that is available
- * from Intel in order to operate.
+ * from Intel in order to operate (or compile).
  *
- * This code written by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Written by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
  *
@@ -32,7 +32,9 @@
  * and/or fitness for purpose.
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -124,11 +126,9 @@ static int ixp_process(void *, struct cryptop *, int);
 static int ixp_newsession(void *, u_int32_t *, struct cryptoini *);
 static int ixp_freesession(void *, u_int64_t);
 
-static kmem_cache_t *qcache;
+static struct kmem_cache *qcache;
 
 static int debug = 0;
-#include <linux/moduleparam.h>
-
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Enable debug");
 
@@ -136,8 +136,8 @@ static int init_crypto = 1;
 module_param(init_crypto, int, 0);
 MODULE_PARM_DESC(init_crypto, "Call ixCryptoAccInit (default is 1)");
 
-static void ixp_process_pending(void *arg);
-static void ixp_registration(void *arg);
+static void ixp_process_pending(struct work_struct *);
+static void ixp_registration(struct work_struct *);
 
 /*
  * Generate a new software session.
@@ -446,12 +446,12 @@ done:
  */
 
 static void
-ixp_process_pending(void *arg)
+ixp_process_pending(struct work_struct *work)
 {
-	struct ixp_data *ixp = arg;
+        struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_pending_work);
 	struct ixp_q *q = NULL;
 
-	dprintk("%s(%p)\n", __FUNCTION__, arg);
+	dprintk("%s(%p)\n", __FUNCTION__, ixp);
 
 	if (!ixp)
 		return;
@@ -580,9 +580,9 @@ ixp_perform_cb(
  */
 
 static void
-ixp_registration(void *arg)
+ixp_registration(struct work_struct *work)
 {
-	struct ixp_data *ixp = arg;
+        struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_registration_work);
 	struct ixp_q *q = NULL;
 	IX_MBUF *pri = NULL, *sec = NULL;
 	int status;
@@ -783,7 +783,6 @@ ixp_process(void *arg, struct cryptop *crp, int hint)
 done:
 	if (q)
 		kmem_cache_free(qcache, q);
-	crp->crp_etype = ENOENT;
 	crypto_done(crp);
 	return 0;
 }

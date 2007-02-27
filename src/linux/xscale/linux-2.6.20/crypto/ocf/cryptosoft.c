@@ -3,11 +3,9 @@
  * original cryptosoft for BSD by Angelos D. Keromytis (angelos@cis.upenn.edu)
  * but is mostly unrecognisable,
  *
- * This code written by David McCullough <dmccullough@cyberguard.com>
- * Copyright (C) 2004-2005 David McCullough <dmccullough@cyberguard.com>
- * All rights reserved.
- *
- * Copyright (C) 2004-2005 Intel Corporation.  All Rights Reserved.
+ * Written by David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2006 David McCullough <david_mccullough@au.securecomputing.com>
+ * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
  *
@@ -36,7 +34,9 @@
  * ---------------------------------------------------------------------------
  */
 
-#include <linux/autoconf.h>
+#ifndef AUTOCONF_INCLUDED
+#include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/list.h>
@@ -69,8 +69,8 @@ struct swcr_data {
 	union {
 		struct {
 			char sw_key[HMAC_BLOCK_LEN];
-			int  sw_klen;
-			int  sw_authlen;
+			unsigned int  sw_klen;
+			unsigned int  sw_authlen;
 		} hmac;
 	} u;
 	struct swcr_data	*sw_next;
@@ -85,8 +85,6 @@ static	int swcr_newsession(void *, u_int32_t *, struct cryptoini *);
 static	int swcr_freesession(void *, u_int64_t);
 
 static int debug = 0;
-#include <linux/moduleparam.h>
-
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
@@ -217,22 +215,22 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 
 #if defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE)
 		case CRYPTO_MD5_HMAC:
-			algo = "md5";
+			algo = "hmac(md5)";
 			sw_type = SW_TYPE_HMAC;
 			(*swd)->u.hmac.sw_authlen = 12;
 			break;
 		case CRYPTO_SHA1_HMAC:
-			algo = "sha1";
+			algo = "hmac(sha1)";
 			sw_type = SW_TYPE_HMAC;
 			(*swd)->u.hmac.sw_authlen = 12;
 			break;
 		case CRYPTO_SHA2_HMAC:
 			if (cri->cri_klen == 256)
-				algo = "sha256";
+				algo = "hmac(sha256)";
 			else if (cri->cri_klen == 384)
-				algo = "sha384";
+				algo = "hmac(sha384)";
 			else if (cri->cri_klen == 512)
-				algo = "sha512";
+				algo = "hmac(sha512)";
 			sw_type = SW_TYPE_HMAC;
 			break;
 		case CRYPTO_NULL_HMAC:
@@ -281,7 +279,7 @@ swcr_newsession(void *arg, u_int32_t *sid, struct cryptoini *cri)
 
 		(*swd)->sw_tfm = crypto_alloc_tfm(algo, mode);
 		if (!(*swd)->sw_tfm) {
-			printk("cryptosoft: crypto_alloc_tfm failed(%s,0x%x)\n",algo,mode);
+			dprintk("cryptosoft: crypto_alloc_tfm failed(%s,0x%x)\n",algo,mode);
 			swcr_freesession(NULL, i);
 			return EINVAL;
 		}
@@ -362,7 +360,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 	int type;
 #define SCATTERLIST_MAX 16
 	struct scatterlist sg[SCATTERLIST_MAX];
-	int sg_num, sg_len, alen, skip;
+	int sg_num, sg_len, skip;
 	struct sk_buff *skb = NULL;
 	struct uio *uiop = NULL;
 
@@ -515,9 +513,10 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 		case SW_TYPE_CIPHER: {
 			unsigned char iv[64/*FIXME*/];
 			unsigned char *ivp = iv;
-			int ivsize = crypto_tfm_alg_ivsize(sw->sw_tfm);
+			int ivsize =
+			   	crypto_blkcipher_ivsize(crypto_blkcipher_cast(sw->sw_tfm));
 
-			if (sg_len < crypto_tfm_alg_blocksize(sw->sw_tfm)) {
+			if (sg_len < crypto_blkcipher_blocksize(crypto_blkcipher_cast(sw->sw_tfm))) {
 				crp->crp_etype = EINVAL;
 				dprintk("%s,%d: EINVAL len %d < %d\n", __FILE__, __LINE__,
 						sg_len, crypto_tfm_alg_blocksize(sw->sw_tfm));
@@ -530,7 +529,28 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 				goto done;
 			}
 
+			if (crd->crd_flags & CRD_F_KEY_EXPLICIT) {
+				int i, error;
+
+				if (debug) {
+					dprintk("%s key:", __FUNCTION__);
+					for (i = 0; i < (crd->crd_klen + 7) / 8; i++)
+						dprintk("%s0x%x", (i % 8) ? " " : "\n    ",
+								crd->crd_key[i]);
+					dprintk("\n");
+				}
+				error = crypto_blkcipher_setkey(crypto_blkcipher_cast(sw->sw_tfm), crd->crd_key, (crd->crd_klen + 7) / 8);
+				if (error) {
+					dprintk("cryptosoft: setkey failed %d (crt_flags=0x%x)\n",
+							error, sw->sw_tfm->crt_flags);
+					crp->crp_etype = -error;
+				}
+			}
+
 			if (crd->crd_flags & CRD_F_ENCRYPT) { /* encrypt */
+				struct blkcipher_desc desc;
+				memset(&desc, 0, sizeof(desc));
+				desc.tfm = crypto_blkcipher_cast(sw->sw_tfm);
 
 				if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 					ivp = crd->crd_iv;
@@ -548,9 +568,13 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 					else if (type == CRYPTO_BUF_IOV)
 						cuio_copyback(uiop,crd->crd_inject,ivsize,(caddr_t)ivp);
 				}
-				crypto_cipher_encrypt_iv(sw->sw_tfm, sg, sg, sg_len, ivp);
+				crypto_blkcipher_set_iv(crypto_blkcipher_cast(sw->sw_tfm), ivp, ivsize);
+				crypto_blkcipher_encrypt(&desc, sg, sg, sg_len);
 
 			} else { /*decrypt */
+				struct blkcipher_desc desc;
+				memset(&desc, 0, sizeof(desc));
+				desc.tfm = crypto_blkcipher_cast(sw->sw_tfm);
 
 				if (crd->crd_flags & CRD_F_IV_EXPLICIT) {
 					ivp = crd->crd_iv;
@@ -562,7 +586,8 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 					else if (type == CRYPTO_BUF_IOV)
 						cuio_copydata(uiop,crd->crd_inject,ivsize,(caddr_t)ivp);
 				}
-				crypto_cipher_decrypt_iv(sw->sw_tfm, sg, sg, sg_len, ivp);
+				crypto_blkcipher_set_iv(crypto_blkcipher_cast(sw->sw_tfm), ivp, ivsize);
+				crypto_blkcipher_decrypt_iv(&desc, sg, sg, sg_len);
 			}
 			} break;
 		case SW_TYPE_HMAC:
@@ -570,6 +595,7 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 #if defined(CONFIG_CRYPTO_HMAC) || defined(CONFIG_CRYPTO_HMAC_MODULE)
 			{
 			char result[AALG_MAX_RESULT_LEN];
+			int alen;
 			/*
 			 * if the authlen is set,  use it,  otherwise use the
 			 * digest size.
@@ -590,10 +616,19 @@ swcr_process(void *arg, struct cryptop *crp, int hint)
 				goto done;
 			}
 			memset(result, 0, sizeof(result));
-			if (sw->sw_type == SW_TYPE_HMAC)
+			if (sw->sw_type == SW_TYPE_HMAC) {
+#if 1
+				struct hash_desc desc;
+				memset(&desc, 0, sizeof(desc));
+				desc.tfm = crypto_hash_cast(sw->sw_tfm);
+				crypto_hash_setkey(crypto_hash_cast(sw->sw_tfm),
+					   	sw->u.hmac.sw_key, sw->u.hmac.sw_klen);
+				crypto_hash_digest(&desc, sg, sg_num, result);
+#else
 				crypto_hmac(sw->sw_tfm, sw->u.hmac.sw_key, &sw->u.hmac.sw_klen,
 						sg, sg_num, result);
-			else /* SW_TYPE_HASH */
+#endif
+			} else /* SW_TYPE_HASH */
 				crypto_digest_digest(sw->sw_tfm, sg, sg_num, result);
 
 			if (type == CRYPTO_BUF_CONTIG) {

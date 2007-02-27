@@ -107,7 +107,9 @@
  * o add statistics
  */
 
+#ifndef AUTOCONF_INCLUDED
 #include <linux/config.h>
+#endif
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -158,7 +160,7 @@ static int talitos_probe(struct platform_device *pdev);
 static int talitos_remove(struct platform_device *pdev);
 
 static int debug = 0;
-MODULE_PARM(debug, "i");
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Enable debug");
 
 static inline void talitos_write(volatile unsigned *addr, u32 val)
@@ -565,13 +567,6 @@ talitos_process(void *arg, struct cryptop *crp, int hint)
 	td = &sc->sc_chnfifo[chsel][i].cf_desc;
 	sc->sc_chnfifo[chsel][i].cf_crp = crp;
 
-	/* 
-	 * ensure correct descriptor formation by
-	 * avoiding inadvertently setting "optional" entries
-	 * e.g. not using "optional" dptr2 for MD/HMAC processing
-	 */
-	memset(td, 0, sizeof(*td));
-
 	crd1 = crp->crp_desc;
 	if (crd1 == NULL) {
 		err = EINVAL;
@@ -934,8 +929,14 @@ static void talitos_errorprocessing(struct talitos_softc *sc)
 				continue; /* free entry */
 			/* either way, notify ocf */
 			crypto_done(sc->sc_chnfifo[i][j].cf_crp);
-			/* and tag it available again */
-			sc->sc_chnfifo[i][j].cf_desc.hdr = 0;
+			/* and tag it available again
+			 *
+			 * memset to ensure correct descriptor formation by
+			 * avoiding inadvertently setting "optional" entries
+			 * e.g. not using "optional" dptr2 MD/HMAC processing
+			 */
+			memset(&sc->sc_chnfifo[i][j].cf_desc,
+				0, sizeof(struct talitos_desc));
 		}
 		spin_unlock_irqrestore(&sc->sc_chnfifolock[i], flags);
 	}
@@ -967,8 +968,14 @@ static void talitos_doneprocessing(struct talitos_softc *sc)
 				== TALITOS_HDR_DONE_BITS) {
 				/* notify ocf */
 				crypto_done(sc->sc_chnfifo[i][j].cf_crp);
-				/* and tag it available again */
-				sc->sc_chnfifo[i][j].cf_desc.hdr = 0;
+				/* and tag it available again
+				 *
+				 * memset to ensure correct descriptor formation by
+				 * avoiding inadvertently setting "optional" entries
+				 * e.g. not using "optional" dptr2 MD/HMAC processing
+				 */
+				memset(&sc->sc_chnfifo[i][j].cf_desc,
+					0, sizeof(struct talitos_desc));
 			}
 		}
 		spin_unlock_irqrestore(&sc->sc_chnfifolock[i], flags);
@@ -977,7 +984,11 @@ static void talitos_doneprocessing(struct talitos_softc *sc)
 }
 
 static irqreturn_t
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+talitos_intr(int irq, void *arg)
+#else
 talitos_intr(int irq, void *arg, struct pt_regs *regs)
+#endif
 {
 	struct talitos_softc *sc = arg;
 	u_int32_t v, v_hi;
