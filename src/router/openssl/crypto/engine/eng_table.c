@@ -151,8 +151,6 @@ int engine_table_register(ENGINE_TABLE **table, ENGINE_CLEANUP_CB *cleanup,
 		/* if 'setdefault', this ENGINE goes to the head of the list */
 		if(!sk_ENGINE_push(fnd->sk, e))
 			goto end;
-		/* "touch" this ENGINE_PILE */
-		fnd->uptodate = 1;
 		if(setdefault)
 			{
 			if(!engine_unlocked_init(e))
@@ -164,6 +162,8 @@ int engine_table_register(ENGINE_TABLE **table, ENGINE_CLEANUP_CB *cleanup,
 			if(fnd->funct)
 				engine_unlocked_finish(fnd->funct, 0);
 			fnd->funct = e;
+			/* "touch" this ENGINE_PILE */
+			fnd->uptodate = 1;
 			}
 		nids++;
 		}
@@ -179,13 +179,13 @@ static void int_unregister_cb(ENGINE_PILE *pile, ENGINE *e)
 	while((n = sk_ENGINE_find(pile->sk, e)) >= 0)
 		{
 		sk_ENGINE_delete(pile->sk, n);
-		/* "touch" this ENGINE_CIPHER */
-		pile->uptodate = 1;
 		}
 	if(pile->funct == e)
 		{
 		engine_unlocked_finish(e, 0);
 		pile->funct = NULL;
+		/* "touch" this ENGINE_CIPHER */
+		pile->uptodate = 0;
 		}
 	}
 static IMPLEMENT_LHASH_DOALL_ARG_FN(int_unregister_cb,ENGINE_PILE *,ENGINE *)

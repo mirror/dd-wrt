@@ -99,7 +99,7 @@ void ENGINE_load_builtin_engines(void)
 	ENGINE_load_padlock();
 #endif
 #endif
-#if defined(__OpenBSD__) || defined(__FreeBSD__)
+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__)
 	ENGINE_load_cryptodev();
 #endif
 #if !defined(OPENSSL_NO_GMP) && !defined(OPENSSL_NO_HW_GMP)
@@ -108,7 +108,7 @@ void ENGINE_load_builtin_engines(void)
 #endif
 	}
 
-#if defined(__OpenBSD__) || defined(__FreeBSD__)
+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__)
 void ENGINE_setup_bsd_cryptodev(void) {
 	static int bsd_cryptodev_default_loaded = 0;
 	if (!bsd_cryptodev_default_loaded) {
