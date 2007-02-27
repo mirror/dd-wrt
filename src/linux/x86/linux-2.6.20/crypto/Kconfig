@@ -465,6 +465,8 @@ config CRYPTO_TEST
 	help
 	  Quick & dirty crypto test module.
 
+source "crypto/ocf/Kconfig"
+
 source "drivers/crypto/Kconfig"
 
 endif	# if CRYPTO
