@@ -1079,6 +1079,7 @@ setMacFilter (char *iface)
   sprintf (nvvar, "%s_macmode", iface);
   if (nvram_match (nvvar, "deny"))
     {
+      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1087,17 +1088,16 @@ setMacFilter (char *iface)
 	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
-	    struct ieee80211req_mlme mlme;
-	    mlme.im_op = IEEE80211_MLME_UNAUTHORIZE;
-	    mlme.im_reason = 0;
-	    memcpy (mlme.im_macaddr, ea, IEEE80211_ADDR_LEN);
-	    do80211priv (iface, IEEE80211_IOCTL_SETMLME, &mlme,
-			 sizeof (mlme));
+	    struct sockaddr sa;
+	    memcpy (sa.sa_data, ea, IEEE80211_ADDR_LEN);
+	    do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa,
+			 sizeof (struct sockaddr));
 	  }
       }
     }
   if (nvram_match (nvvar, "allow"))
     {
+      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1106,12 +1106,10 @@ setMacFilter (char *iface)
 	char ea[ETHER_ADDR_LEN];
 	if (ether_atoe (var, ea))
 	  {
-	    struct ieee80211req_mlme mlme;
-	    mlme.im_op = IEEE80211_MLME_AUTHORIZE;
-	    mlme.im_reason = 0;
-	    memcpy (mlme.im_macaddr, ea, IEEE80211_ADDR_LEN);
-	    do80211priv (iface, IEEE80211_IOCTL_SETMLME, &mlme,
-			 sizeof (mlme));
+	    struct sockaddr sa;
+	    memcpy (sa.sa_data, ea, IEEE80211_ADDR_LEN);
+	    do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa,
+			 sizeof (struct sockaddr));
 	  }
       }
     }
