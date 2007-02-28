@@ -135,8 +135,12 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x270f
 
+
 //Netgear WNR834B (4704 cpu + BCM5325 switch, fccid: ?)
 #define ROUTER_NETGEAR_WNR834B 0x2817
+
+// swapped phy definition and kendin switch
+#define ROUTER_BOARD_GATEWORX_GW2345 0x290f
 
 
 
