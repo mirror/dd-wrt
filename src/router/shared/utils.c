@@ -179,6 +179,11 @@ if (reg1=0x13 && reg2==0x7a11)
     {
       setRouter ("Avila GW2348-4/2");
       return ROUTER_BOARD_GATEWORX;
+    }else
+if (reg1=0x22 && reg2==0x1450)  //kendin switch 
+    {
+      setRouter ("Avila GW2345");
+      return ROUTER_BOARD_GATEWORX_GW2345;
     }else{
       setRouter ("Unknown");
       return ROUTER_BOARD_GATEWORX;
