@@ -148,6 +148,7 @@ start_sysinit (void)
   eval ("insmod", "ipv6");*/
   /* Set a sane date */
   stime (&tm);
+  nvram_set("use_crypto","0");
 
   cprintf ("done\n");
   return 0;
