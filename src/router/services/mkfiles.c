@@ -137,7 +137,7 @@ start_mkfiles (void)
       return errno;
     }
 #ifdef HAVE_REGISTER
-  if (isregistered ())
+//  if (isregistered ())
 #endif
     {
       fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",

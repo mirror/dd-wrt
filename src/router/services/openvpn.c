@@ -59,6 +59,11 @@ start_openvpnserver (void)
   fclose (fp);
   chmod ("/tmp/openvpn/route-up.sh", 0700);
   chmod ("/tmp/openvpn/route-down.sh", 0700);
+if (nvram_match("use_crypto","1"))
+  eval ("openvpn", "--config", "/tmp/openvpn/openvpn.conf", "--route-up",
+	"/tmp/openvpn/route-up.sh", "--down", "/tmp/openvpn/route-down.sh",
+	"--daemon","--engine","cryptodev");
+else
   eval ("openvpn", "--config", "/tmp/openvpn/openvpn.conf", "--route-up",
 	"/tmp/openvpn/route-up.sh", "--down", "/tmp/openvpn/route-down.sh",
 	"--daemon");
@@ -175,6 +180,11 @@ start_openvpn (void)
   write_nvram ("/tmp/openvpn/ca.crt", "openvpn_ca");
   write_nvram ("/tmp/openvpn/client.crt", "openvpn_client");
   write_nvram ("/tmp/openvpn/client.key", "openvpn_key");
+if (nvram_match("use_crypto","1"))
+  eval ("openvpn", "--config", "/tmp/openvpn/openvpn.conf", "--route-up",
+	"/tmp/openvpn/route-up.sh", "--down", "/tmp/openvpn/route-down.sh",
+	"--daemon","--engine","cryptodev");
+else
   eval ("openvpn", "--config", "/tmp/openvpn/openvpn.conf", "--route-up",
 	"/tmp/openvpn/route-up.sh", "--down", "/tmp/openvpn/route-down.sh",
 	"--daemon");
