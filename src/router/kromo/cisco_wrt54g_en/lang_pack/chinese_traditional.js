@@ -966,7 +966,7 @@ service.h2="服務管理";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="開啟Kaid";
-service.kaid_mac="控制臺Macs: (必須以 ; 結束)";
+service.kaid_locdevnum="Number of Local Devices";
 
 //DHCPd
 service.dhcp_legend="DHCP用戶端";
