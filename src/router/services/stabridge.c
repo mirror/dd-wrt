@@ -45,10 +45,7 @@
 static void
 filterarp (char *ifname)
 {
-  eval ("ebtables", "-t", "broute", "-A", "BROUTING", "-p", "ARP", "-i",
-	ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"),
-	"--arp-ip-dst", "!", nvram_safe_get ("lan_ipaddr"), "-j", "DROP");
-
+  eval ("ebtables", "-t", "broute", "-p", "ARP", "-i",ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"), "-j", "DROP");
 }
 
 void
@@ -114,9 +111,7 @@ start_stabridge (void)
 #endif
 char hwaddr[16];
 sprintf(hwaddr,"%s_hwaddr",getWET());
-      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",
-	    getWET(), "-j", "snat", "--to-src",
-	    nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
+      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",getWET(), "-j", "snat", "--to-src",nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
 		"\t-w <devname>\t- Use wireless device name. Default is ath0 if no in configuration found\n"
