@@ -7,7 +7,7 @@
 		<input class="spaceradio" type="radio" value="0" name="kaid_enable" <% nvram_selmatch("kaid_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idkaid', false)" /><% tran("share.disable"); %>
 	</div>
 	<div class="setting" id="idkaid">
-		<div class="label"><tran("service.kaid_locdevnum"); %></div>
+		<div class="label"><% tran("service.kaid_locdevnum"); %></div>
 		<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" />
 	</div>
 </fieldset><br/>
