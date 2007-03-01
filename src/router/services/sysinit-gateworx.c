@@ -46,6 +46,19 @@
 #include <shutils.h>
 #include <utils.h>
 
+static int
+detect (char *devicename)
+{
+  char devcall[128];
+  int res;
+  sprintf (devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename);
+//system(devcall);
+  FILE *in = popen (devcall, "rb");
+  fscanf (in, "%d", &res);
+  fclose (in);
+  return res > 0 ? 1 : 0;
+}
+
 
 int
 start_sysinit (void)
