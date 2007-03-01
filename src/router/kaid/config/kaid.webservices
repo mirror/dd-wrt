@@ -8,6 +8,6 @@
 	</div>
 	<div class="setting" id="idkaid">
 		<div class="label"><% tran("service.kaid_locdevnum"); %></div>
-		<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" />
+		<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" onblur="valid_range(this,0,99,service.kaid_locdevnum)" />
 	</div>
 </fieldset><br/>
