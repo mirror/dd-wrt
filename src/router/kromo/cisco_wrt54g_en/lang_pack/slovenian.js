@@ -1065,7 +1065,7 @@ service.h2="Upravljanje storitev";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Zaèni Kaid";
-service.kaid_mac="MAC konzole: (konèati se mora z ;)";
+service.kaid_locdevnum="©tevilo lokalnih naprav";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";

@@ -1034,7 +1034,7 @@ service.h2="Gestion des Services";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Démarrer Kaid";
-service.kaid_mac="Console Macs: (must end with;)";
+service.kaid_locdevnum="Number of Local Devices";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";

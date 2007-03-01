@@ -968,7 +968,7 @@ service.h2="Diensten Beheer";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Start Kaid";
-service.kaid_mac="Console Macs: (moet eindigen  met;)";
+service.kaid_locdevnum="Number of Local Devices";
 
 //DHCPd
 service.dhcp_legend="DHCP Client";
