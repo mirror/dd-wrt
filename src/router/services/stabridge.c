@@ -164,7 +164,7 @@ void
 stop_stabridge (void)
 {
 #ifdef HAVE_MADWIFI
-  if (nvram_match (getWET(), "wet"))
+  if (getWET())
 #else
   if (nvram_match ("wl0_mode", "wet"))
 #endif
