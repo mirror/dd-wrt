@@ -247,9 +247,6 @@
 /* Define to 1 if `ss_family' is member of `struct sockaddr_storage'. */
 #define HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY 1
 
-/* Define to 1 if `__family' is member of `struct sockadd_storage'. */
-/* #undef HAVE_STRUCT_SOCKADD_STORAGE___FAMILY */
-
 /* Define to 1 if `ut_addr' is member of `struct utmpx'. */
 /* #undef HAVE_STRUCT_UTMPX_UT_ADDR */
 
@@ -387,6 +384,12 @@
 
 /* Use /dev/ptmx */
 /* #undef USE_DEV_PTMX */
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#define _FILE_OFFSET_BITS 64
+
+/* Define for large files, on AIX-style hosts. */
+/* #undef _LARGE_FILES */
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
