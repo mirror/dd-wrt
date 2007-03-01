@@ -2584,6 +2584,17 @@ for (i=0;i<c;i++)
     }
 return NULL;
 }
+#else
+char *getSTA()
+{
+return NULL;
+}
+
+char *getWET()
+{
+return NULL;
+}
+
 #endif
 
 
