@@ -112,8 +112,8 @@ start_stabridge (void)
       filterarp (firstlanif);
 #endif
       eval("brctl","stp",nvram_safe_get("lan_ifname"),"off");
-char hwaddr[16];
-sprintf(hwaddr,"%s_hwaddr",getWET());
+      char hwaddr[16];
+      sprintf(hwaddr,"%s_hwaddr",getWET());
       eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",getWET(), "-j", "snat", "--to-src",nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
@@ -136,9 +136,17 @@ sprintf(hwaddr,"%s_hwaddr",getWET());
       eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
 #elif HAVE_X86
-      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
-	    "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7", "eth8",
-	    "eth9", "eth10");
+char commandline[256];
+sprintf(commandline,"stabridge -d -w %s -b br0 -e",getWET());
+int i;
+for (i=0;i<10;i++)
+    {
+    char eth[32];
+    sprintf(eth,"eth%d",i);
+    if (ifexists(eth))
+	sprintf(commandline,"%s %s",commandline,eth);
+    }
+    system(commandline);
 #else //Broadcom
       eval ("stabridge", "-d", "-w", nvram_safe_get ("wl0_ifname"), "-b",
 	    "br0", "-e", firstlanif);
