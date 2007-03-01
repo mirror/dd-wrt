@@ -2504,7 +2504,7 @@ show_virtualssid (webs_t wp, char *prefix)
 #endif
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
-    sprintf (wl_mode, "%s_mode", prefix);
+    sprintf (wl_mode, "%s_mode", var);
     if (!nvram_match (wl_mode, "sta") && !nvram_match (wl_mode, "wdssta")
 	&& !nvram_match (wl_mode, "wet"))
       showbridgesettings (wp, var);
@@ -2988,11 +2988,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
 		   nvram_match (wl_mode,
 				"infra") ? "selected=\\\"selected\\\"" : "");
-#ifndef HAVE_MADWIFI
 	websWrite (wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
 		   nvram_match (wl_mode,
 				"wet") ? "selected=\\\"selected\\\"" : "");
+#ifndef HAVE_MADWIFI
 	websWrite (wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
 		   nvram_match (wl_mode,
