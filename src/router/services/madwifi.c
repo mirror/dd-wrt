@@ -1356,7 +1356,11 @@ configure_single (int count, int isbond)
       m = default_get (mode, "ap");
 
       eval ("iwpriv", var, "bgscan", "0");
-      eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt"));
+#ifdef HAVE_MAKSAT
+      eval ("iwconfig", var, "essid", default_get (ssid, "maksat_vap"));
+#else
+      eval ("iwconfig", var, "essid", default_get (ssid, "dd-wrt_vap"));
+#endif
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
@@ -1379,7 +1383,11 @@ configure_single (int count, int isbond)
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
-  eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+#ifdef HAVE_MAKSAT
+      eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+#else
+      eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+#endif
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
   eval ("iwpriv", dev, "bgscan", "0");
@@ -1398,7 +1406,11 @@ configure_single (int count, int isbond)
   if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0 || strcmp (m, "wet") == 0 || strcmp (m, "wdssta") == 0)
     {
       cprintf ("set ssid\n");
+#ifdef HAVE_MAKSAT
+      eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+#else
       eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+#endif
     }
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
