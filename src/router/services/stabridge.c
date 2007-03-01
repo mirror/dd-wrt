@@ -111,7 +111,7 @@ start_stabridge (void)
 
       filterarp (firstlanif);
 #endif
-      eval("brctl",nvram_safe_get("lan_ifname"),"stp","off");
+      eval("brctl","stp",nvram_safe_get("lan_ifname"),"off");
 char hwaddr[16];
 sprintf(hwaddr,"%s_hwaddr",getWET());
       eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",getWET(), "-j", "snat", "--to-src",nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
