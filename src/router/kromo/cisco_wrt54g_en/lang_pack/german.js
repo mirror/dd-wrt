@@ -108,7 +108,7 @@ share.static_lease="Statische Zuweisungen";
 share.srvip="Server-IP";
 share.localdns="Lokaler DNS";
 share.minutes="Minuten";
-share.oui="OUI Search";
+share.oui="OUI Suche";
 share.sttic="Statisch";
 share.connecting="Verbinden";
 share.connect="Verbinden";
@@ -125,14 +125,14 @@ share.dhcp="DHCP";
 share.styl="Aussehen";
 share.err="Fehler";
 share.errs="Fehler";
-share.meters="meters";
+share.meters="Meter";
 share.full="Full";
 share.half="Half";
 share.quarter="Quarter";
-share.seealso="See also";
-share.never="never";
+share.seealso="Siehe auch";
+share.never="niemals";
 share.unknown="Unbekannt";
-share.expired="expired";
+share.expired="abgelaufen";
 share.standard="Standard";
 
 
@@ -297,7 +297,7 @@ bmenu.setupmacclone="MAC-Adresse klonen";
 bmenu.setuprouting="Erweitertes Routing";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
-bmenu.networking="Networking";
+bmenu.networking="Netzwerke";
 
 bmenu.wireless="WLAN";
 bmenu.wirelessBasic="Basis-Einstellungen";
@@ -955,7 +955,7 @@ service.h2="Service-Management";
 //kaid
 service.kaid_legend="XBOX-Kaid";
 service.kaid_srv="Start Kaid";
-service.kaid_locdevnum="Number of Local Devices";
+service.kaid_locdevnum="Anzahl Lokaler Geräte";
 
 //DHCPd
 service.dhcp_legend="DHCP-Client";
