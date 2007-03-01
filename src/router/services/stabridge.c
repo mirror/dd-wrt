@@ -139,13 +139,17 @@ start_stabridge (void)
 char commandline[256];
 sprintf(commandline,"stabridge -d -w %s -b br0 -e",getWET());
 int i;
-for (i=0;i<10;i++)
-    {
-    char eth[32];
-    sprintf(eth,"eth%d",i);
-    if (ifexists(eth))
-	sprintf(commandline,"%s %s",commandline,eth);
-    }
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("lan_ifnames");
+  foreach (word, wordlist, next)
+  {
+  if (strncmp(word,"ath",3))
+  {
+      if (ifexists(word))
+	sprintf(commandline,"%s %s",commandline,word);
+  }
+  }
     system(commandline);
 #else //Broadcom
       eval ("stabridge", "-d", "-w", nvram_safe_get ("wl0_ifname"), "-b",

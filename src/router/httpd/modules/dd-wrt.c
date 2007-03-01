@@ -2989,13 +2989,13 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		   nvram_match (wl_mode,
 				"sta") ? "selected=\\\"selected\\\"" : "");
 	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"infra") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
 		   nvram_match (wl_mode,
 				"wet") ? "selected=\\\"selected\\\"" : "");
+	websWrite (wp,
+		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
+		   nvram_match (wl_mode,
+				"infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
 	websWrite (wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
