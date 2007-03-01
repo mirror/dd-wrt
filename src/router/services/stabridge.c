@@ -45,7 +45,9 @@
 static void
 filterarp (char *ifname)
 {
-  eval ("ebtables", "-t", "broute", "-p", "ARP", "-i",ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"), "-j", "DROP");
+//        ebtables     -t    broute -A BROUTING -p ARP -i <first ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
+
+  eval ("ebtables", "-t", "broute","-A","BROUTING","-p", "ARP", "-i",ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"),"--arp-ip-dst","!",nvram_safe_get("lan_ipaddr"), "-j", "DROP");
 }
 
 void
@@ -109,6 +111,7 @@ start_stabridge (void)
 
       filterarp (firstlanif);
 #endif
+      eval("brctl",nvram_safe_get("lan_ifname"),"stp","off");
 char hwaddr[16];
 sprintf(hwaddr,"%s_hwaddr",getWET());
       eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",getWET(), "-j", "snat", "--to-src",nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
