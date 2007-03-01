@@ -32,6 +32,7 @@
 svr_runopts svr_opts; /* GLOBAL */
 
 static void printhelp(const char * progname);
+static void addportandaddress(char* spec);
 
 static void printhelp(const char * progname) {
 
@@ -70,8 +71,12 @@ static void printhelp(const char * progname) {
 					"-k		Disable remote port forwarding\n"
 					"-a		Allow connections to forwarded ports from any host\n"
 #endif
-					"-p port		Listen on specified tcp port, up to %d can be specified\n"
-					"		(default %s if none specified)\n"
+					"-p [address:]port\n"
+					"		Listen on specified tcp port (and optionally address),\n"
+					"		up to %d can be specified\n"
+					"		(default port is %s if none specified)\n"
+					"-P PidFile	Create pid file PidFile\n"
+					"		(default %s)\n"
 #ifdef INETD_MODE
 					"-i		Start for inetd\n"
 #endif
@@ -85,13 +90,14 @@ static void printhelp(const char * progname) {
 #ifdef DROPBEAR_RSA
 					RSA_PRIV_FILENAME,
 #endif
-					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT);
+					DROPBEAR_MAX_PORTS, DROPBEAR_DEFPORT, DROPBEAR_PIDFILE);
 }
 
 void svr_getopts(int argc, char ** argv) {
 
 	unsigned int i;
 	char ** next = 0;
+	int nextisport = 0;
 
 	/* see printhelp() for options */
 	svr_opts.rsakeyfile = NULL;
@@ -105,6 +111,7 @@ void svr_getopts(int argc, char ** argv) {
 	svr_opts.inetdmode = 0;
 	svr_opts.portcount = 0;
 	svr_opts.hostkey = NULL;
+	svr_opts.pidfile = DROPBEAR_PIDFILE;
 #ifdef ENABLE_SVR_LOCALTCPFWD
 	svr_opts.nolocaltcp = 0;
 #endif
@@ -126,6 +133,12 @@ void svr_getopts(int argc, char ** argv) {
 #endif
 
 	for (i = 1; i < (unsigned int)argc; i++) {
+		if (nextisport) {
+			addportandaddress(argv[i]);
+			nextisport = 0;
+			continue;
+		}
+	  
 		if (next) {
 			*next = argv[i];
 			if (*next == NULL) {
@@ -177,13 +190,10 @@ void svr_getopts(int argc, char ** argv) {
 					break;
 #endif
 				case 'p':
-					if (svr_opts.portcount < DROPBEAR_MAX_PORTS) {
-						svr_opts.ports[svr_opts.portcount] = NULL;
-						next = &svr_opts.ports[svr_opts.portcount];
-						/* Note: if it doesn't actually get set, we'll
-						 * decrement it after the loop */
-						svr_opts.portcount++;
-					}
+				  nextisport = 1;
+				  break;
+				case 'P':
+					next = &svr_opts.pidfile;
 					break;
 #ifdef DO_MOTD
 				/* motd is displayed by default, -m turns it off */
@@ -223,15 +233,10 @@ void svr_getopts(int argc, char ** argv) {
 	/* Set up listening ports */
 	if (svr_opts.portcount == 0) {
 		svr_opts.ports[0] = m_strdup(DROPBEAR_DEFPORT);
+		svr_opts.addresses[0] = m_strdup(DROPBEAR_DEFADDRESS);
 		svr_opts.portcount = 1;
-	} else {
-		/* we may have been given a -p option but no argument to go with
-		 * it */
-		if (svr_opts.ports[svr_opts.portcount-1] == NULL) {
-			svr_opts.portcount--;
-		}
 	}
-
+        
 	if (svr_opts.dsskeyfile == NULL) {
 		svr_opts.dsskeyfile = DSS_PRIV_FILENAME;
 	}
@@ -259,6 +264,42 @@ void svr_getopts(int argc, char ** argv) {
 		buf_setpos(svr_opts.banner, 0);
 	}
 
+}
+
+static void addportandaddress(char* spec) {
+
+	char *myspec = NULL;
+
+	if (svr_opts.portcount < DROPBEAR_MAX_PORTS) {
+
+		/* We don't free it, it becomes part of the runopt state */
+		myspec = m_strdup(spec);
+
+		/* search for ':', that separates address and port */
+		svr_opts.ports[svr_opts.portcount] = strchr(myspec, ':');
+
+		if (svr_opts.ports[svr_opts.portcount] == NULL) {
+			/* no ':' -> the whole string specifies just a port */
+			svr_opts.ports[svr_opts.portcount] = myspec;
+		} else {
+			/* Split the address/port */
+			svr_opts.ports[svr_opts.portcount][0] = '\0'; 
+			svr_opts.ports[svr_opts.portcount]++;
+			svr_opts.addresses[svr_opts.portcount] = myspec;
+		}
+
+		if (svr_opts.addresses[svr_opts.portcount] == NULL) {
+			/* no address given -> fill in the default address */
+			svr_opts.addresses[svr_opts.portcount] = m_strdup(DROPBEAR_DEFADDRESS);
+		}
+
+		if (svr_opts.ports[svr_opts.portcount][0] == '\0') {
+			/* empty port -> exit */
+			dropbear_exit("Bad port");
+		}
+
+		svr_opts.portcount++;
+	}
 }
 
 static void disablekey(int type, const char* filename) {
