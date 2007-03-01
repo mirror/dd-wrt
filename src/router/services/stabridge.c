@@ -56,7 +56,7 @@ start_stabridge (void)
 {
 
 #ifdef HAVE_MADWIFI
-  if (nvram_match ("ath0_mode", "wet"))
+  if (getWET())
 #else
   if (nvram_match ("wl0_mode", "wet"))
 #endif
@@ -112,9 +112,11 @@ start_stabridge (void)
 
       filterarp (firstlanif);
 #endif
+char hwaddr[16];
+sprintf(hwaddr,"%s_hwaddr",getWET());
       eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",
-	    nvram_safe_get ("wl0_ifname"), "-j", "snat", "--to-src",
-	    nvram_safe_get ("wl0_hwaddr"), "--snat-target", "ACCEPT");
+	    getWET(), "-j", "snat", "--to-src",
+	    nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
 		"\t-w <devname>\t- Use wireless device name. Default is ath0 if no in configuration found\n"
@@ -122,21 +124,21 @@ start_stabridge (void)
 		"\t-e <devname(s)>\t- Use ethernet device(s) name(s) separated by space. Default is eth0 if no in configuration found\n",
 */
 #ifdef HAVE_MAGICBOX
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
 #elif HAVE_FONERA
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0");
 #elif HAVE_WHRAG108
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
 	    "eth1");
 #elif HAVE_GATEWORX
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "ixp0",
+      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "ixp0",
 	    "ixp1");
 #elif HAVE_RB500
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
 #elif HAVE_X86
-      eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2", "eth3", "eth4", "eth5", "eth6", "eth7", "eth8",
 	    "eth9", "eth10");
 #else //Broadcom
@@ -152,7 +154,7 @@ void
 stop_stabridge (void)
 {
 #ifdef HAVE_MADWIFI
-  if (nvram_match ("ath0_mode", "wet"))
+  if (nvram_match (getWET(), "wet"))
 #else
   if (nvram_match ("wl0_mode", "wet"))
 #endif

@@ -1036,7 +1036,7 @@ set_netmode (char *wif, char *dev)
   }
   if (default_match (turbo, "1", "0"))
     {
-      if (nvram_match (mode, "sta"))
+      if (nvram_match (mode, "sta") || nvram_match(mode,"wet"))
 	eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
@@ -1310,7 +1310,7 @@ configure_single (int count, int isbond)
   //confige net mode
 
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp(m,"wet"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
@@ -1395,13 +1395,13 @@ configure_single (int count, int isbond)
   else
     eval ("iwpriv", dev, "shpreamble", "0");
 
-  if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0)
+  if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0 || strcmp (m, "wet") == 0 || strcmp (m, "wdssta") == 0)
     {
       cprintf ("set ssid\n");
       eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
     }
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
@@ -1522,7 +1522,7 @@ configure_single (int count, int isbond)
   //setup encryption
   m = default_get (wl, "ap");
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     setupHostAP (dev, 0);
   else
     setupSupplicant (dev);
@@ -1532,7 +1532,7 @@ configure_single (int count, int isbond)
     {
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
-      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
+      if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	setupHostAP (var, 0);
       else
 	setupSupplicant (var);

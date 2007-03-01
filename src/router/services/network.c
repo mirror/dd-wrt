@@ -662,8 +662,7 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_RB500
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -688,8 +687,7 @@ start_lan (void)
 #endif
 
 #ifdef HAVE_MAGICBOX
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -717,8 +715,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -741,8 +738,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_WHRAG108
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -765,8 +761,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet")
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
@@ -831,8 +826,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (getSTA () || nvram_match ("ath0_mode", "wdssta")
-      || nvram_match ("ath0_mode", "wet"))
+  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI

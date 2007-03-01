@@ -148,6 +148,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 
 extern char *getSTA (void);
+extern char *getWET (void);
 extern int getcpurev (void);
 extern int check_vlan_support (void);
 extern int startswith (char *source, char *cmp);

@@ -2568,6 +2568,22 @@ for (i=0;i<c;i++)
     }
 return NULL;
 }
+char *getWET(void)
+{
+int c = getifcount("wifi");
+int i;
+for (i=0;i<c;i++)
+    {
+    char mode[32];
+    sprintf(mode,"ath%d_mode",i);
+    if (nvram_match(mode,"wet"))
+	{
+	return stalist[i];
+	}
+    
+    }
+return NULL;
+}
 #endif
 
 
