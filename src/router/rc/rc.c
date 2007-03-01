@@ -514,6 +514,9 @@ if (brand!=ROUTER_WRT350N)
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
 #endif
+#ifdef HAVE_REGISTER
+	  start_service ("mkfiles");
+#endif
 #ifdef HAVE_MADWIFI
 	  start_service ("stabridge");
 #endif
