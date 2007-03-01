@@ -537,6 +537,10 @@ start_dhcpfwd (void)
 	{
 	}
 #endif
+      if (getWET ())
+	{
+	//nothing
+	}
       else if (strcmp (wan_proto, "dhcp") == 0
 	       || strcmp (wan_proto, "static") == 0)
 	{
