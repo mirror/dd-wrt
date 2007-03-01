@@ -2583,7 +2583,11 @@ add_vifs_single (char *prefix, int device)
   sprintf (v2, "%s_ap_isolate", v);
   nvram_set (v2, "0");
   sprintf (v2, "%s_ssid", v);
-  nvram_set (v2, "default");
+#ifdef HAVE_MAKSAT
+  nvram_set (v2, "maksat_vap");
+#else
+  nvram_set (v2, "dd-wrt_vap");
+#endif
   sprintf (v2, "%s_vifs", prefix);
   nvram_set (v2, n);
   sprintf (v2, "%s_bridged", v);
