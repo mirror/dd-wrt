@@ -167,6 +167,16 @@ Configure mac addresses by reading data from eeprom
 	   buf[9], buf[10], buf[11]);
   eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
+  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+    {
+    eval("insmod","spi-algo-bit");
+    eval("insmod","spi-ipx4xx");
+    eval("insmod","ks8995m");
+    eval("gpio","-w","1","0");
+    eval("gpio","-w","1","1"); // reset switch
+    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
+    }
+
 
   /* Set a sane date */
   stime (&tm);
