@@ -800,9 +800,9 @@ start_lan (void)
       if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  nvram_set ("lan_ifnames", "ixp1 ath0 ath1 ath2 ath3");
-	  nvram_set ("wan_ifname", "ixp0");
-	  nvram_set ("wan_ifnames", "ixp0");
+	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "ixp1");
+	  nvram_set ("wan_ifnames", "ixp1");
 	}else
 	{
 	  nvram_set ("lan_ifname", "br0");
