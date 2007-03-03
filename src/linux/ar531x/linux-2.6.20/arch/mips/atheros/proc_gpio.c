@@ -237,7 +237,7 @@ register_proc (void)
       if (i / gpiocount == 2)
 	{
 	  flag = GPIO_DIR;
-	  sprintf (proc_name, "%i_dir", i % cpiocount);
+	  sprintf (proc_name, "%i_dir", i % gpiocount);
 	}
 
       proc_gpio = create_proc_entry (proc_name, S_IRUGO, gpio_dir);
