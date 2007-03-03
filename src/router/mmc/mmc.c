@@ -47,7 +47,6 @@ static int hd_hardsectsizes[1<<6];
 static int hd_maxsect[1<<6];
 static struct hd_struct hd[1<<6];
 
-static struct timer_list mmc_timer;
 static int mmc_media_detect = 0;
 static int mmc_media_changed = 1;
 
@@ -57,11 +56,11 @@ static unsigned char port_state = 0x00;
 static volatile uint32 *gpioaddr_input = (uint32 *)0xb8000060;
 static volatile uint32 *gpioaddr_output = (uint32 *)0xb8000064;
 static volatile uint32 *gpioaddr_enable = (uint32 *)0xb8000068;
-static volatile uint32 *gpioaddr_control = (uint32 *)0xb800006c;
+//static volatile uint32 *gpioaddr_control = (uint32 *)0xb800006c;
 
 static unsigned char ps_di, ps_di_clk, ps_clk;
-const unsigned char NOT_DI_NOT_CLK = (~SD_DI) & (~SD_CLK);
-const unsigned char DI_CLK = SD_DI | SD_CLK;
+#define NOT_DI_NOT_CLK ((~SD_DI) & (~SD_CLK))
+#define DI_CLK (SD_DI | SD_CLK)
 
 static inline void mmc_spi_cs_low(void)
 {
@@ -81,7 +80,7 @@ static inline void mmc_spi_cs_high(void)
   *gpioaddr_output = port_state;
 }
 
-static inline void mmc_spi_io_ff_v() {
+static inline void mmc_spi_io_ff_v(void) {
     const unsigned char l_ps_di = ps_di;
     const unsigned char l_ps_di_clk = ps_di_clk;
     volatile uint32* l_gpioaddr_output = gpioaddr_output;
@@ -96,7 +95,7 @@ static inline void mmc_spi_io_ff_v() {
     *l_gpioaddr_output = l_ps_di; *l_gpioaddr_output = l_ps_di_clk;
 }
 
-static inline unsigned char mmc_spi_io_ff() {
+static inline unsigned char mmc_spi_io_ff(void) {
     const unsigned char l_ps_di = ps_di;
     const unsigned char l_ps_di_clk = ps_di_clk;
     volatile uint32* l_gpioaddr_output = gpioaddr_output;
@@ -382,7 +381,6 @@ static void mmc_request(request_queue_t *q)
     unsigned int mmc_address;
     unsigned char *buffer_address;
     int nr_sectors;
-    int i;
     int cmd;
     int rc, code;
     
@@ -460,7 +458,6 @@ static void mmc_request(request_queue_t *q)
 
 static int mmc_open(struct inode *inode, struct file *filp)
 {
-    int device;
     (void)filp;
     
     if (mmc_media_detect == 0) return -ENODEV;
@@ -698,6 +695,7 @@ static int mmc_hardware_init(void)
   return 0;
 }
 
+#if 0
 static int mmc_check_media_change(kdev_t dev)
 {
     (void)dev;
@@ -708,7 +706,7 @@ static int mmc_check_media_change(kdev_t dev)
     }
     else return 0;
 }
-
+#endif
 static struct block_device_operations mmc_bdops = 
 {
     open: mmc_open,
@@ -832,9 +830,6 @@ static void mmc_check_media(void)
         }
     }
 
-    /* del_timer(&mmc_timer);
-    mmc_timer.expires = jiffies + 10*HZ;
-    add_timer(&mmc_timer); */
 }
 
 static int __init mmc_driver_init(void)
@@ -857,10 +852,6 @@ static int __init mmc_driver_init(void)
 
     mmc_check_media();
 
-    /*init_timer(&mmc_timer);
-    mmc_timer.expires = jiffies + HZ;
-    mmc_timer.function = (void *)mmc_check_media;
-    add_timer(&mmc_timer);*/
 
     return 0;
 }
@@ -868,7 +859,6 @@ static int __init mmc_driver_init(void)
 static void __exit mmc_driver_exit(void)
 {
     int i;
-    /*del_timer(&mmc_timer);*/
 
     for (i = 0; i < (1 << 6); i++)
         fsync_dev(MKDEV(MAJOR_NR, i));
