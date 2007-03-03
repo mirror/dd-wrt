@@ -1183,12 +1183,16 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
 	}
       strcat (leases, mac);
       free (mac);
-      strcat (leases, "=");
       snprintf (lease_hostname, 31, "lease%d_hostname", i);
-      strcat (leases, websGetVar (wp, lease_hostname, ""));
-      strcat (leases, "=");
+      char *hostname = websGetVar (wp, lease_hostname, NULL);
       snprintf (lease_ip, 31, "lease%d_ip", i);
-      strcat (leases, websGetVar (wp, lease_ip, ""));
+      char *ip = websGetVar (wp, lease_ip, "");
+      if (hostname == NULL || strlen(hostname)==0 || ip==NULL || strlen(ip)==0)
+        break;
+      strcat (leases, "=");
+      strcat (leases, hostname);
+      strcat (leases, "=");
+      strcat (leases, ip);
       strcat (leases, " ");
     }
   nvram_set ("static_leases", leases);
