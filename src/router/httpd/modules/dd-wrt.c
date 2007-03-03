@@ -1173,7 +1173,9 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
   for (i = 0; i < leasenum; i++)
     {
       snprintf (lease_hwaddr, 31, "lease%d_hwaddr", i);
-      hwaddr = websGetVar (wp, lease_hwaddr, "");
+      hwaddr = websGetVar (wp, lease_hwaddr, NULL);
+      if (hwaddr==NULL)
+        break;
       char *mac = buildmac (hwaddr);
       if (mac == NULL)
 	{
