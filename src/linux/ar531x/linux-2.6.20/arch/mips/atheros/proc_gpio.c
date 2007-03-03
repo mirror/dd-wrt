@@ -232,12 +232,12 @@ register_proc (void)
       if (i / gpiocount == 1)
 	{
 	  flag = GPIO_OUT;
-	  sprintf (proc_name, "%i_out", i % 7);
+	  sprintf (proc_name, "%i_out", i % gpiocount);
 	}
       if (i / gpiocount == 2)
 	{
 	  flag = GPIO_DIR;
-	  sprintf (proc_name, "%i_dir", i % 7);
+	  sprintf (proc_name, "%i_dir", i % cpiocount);
 	}
 
       proc_gpio = create_proc_entry (proc_name, S_IRUGO, gpio_dir);
