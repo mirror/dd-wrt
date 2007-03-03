@@ -1,2 +1,4 @@
  "kaid_enable" "XBOX Kaid Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "kaid_devs" "Number of Local Devices" "NULL" "TRUE" "0"
+ "kaid_user" "User" "NULL" "TRUE" "0"
+ "kaid_pass" "Password" "PASSWORD" "TRUE" "0"
