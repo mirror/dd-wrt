@@ -9,5 +9,9 @@
 	<div class="setting" id="idkaid">
 		<div class="label"><% tran("service.kaid_locdevnum"); %></div>
 		<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" onblur="valid_range(this,0,99,service.kaid_locdevnum)" />
+		<div class="label">Username</div>
+		<input value="<% nvram_get("kaid_user"); %>" name="kaid_user" size="20" maxlength="20" />
+		<div class="label">Password</div>
+		<input value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
 	</div>
 </fieldset><br/>
