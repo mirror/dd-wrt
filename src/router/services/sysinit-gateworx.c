@@ -82,6 +82,9 @@ start_sysinit (void)
   eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
  */
   eval ("mkdir", "/tmp/www");
+  eval ("mknod", "/dev/gpio", "c", "127", "0");
+  eval ("mknod", "/dev/rtc", "c", "254", "0");
+  eval ("mknod", "/dev/crypto", "c", "10", "70");
 
   eval ("mount", "-o", "remount,rw", "/");
 
@@ -119,6 +122,7 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 
+
   if (detect ("82541"))	// Intel Gigabit
     eval ("insmod", "e1000");
 
@@ -127,11 +131,26 @@ start_sysinit (void)
   eval ("insmod", "ixp400th");
   eval ("insmod", "ixp400");
   system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+//  eval ("insmod", "ixp400_eth");
+//  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
+    {
+//    eval("insmod","spi-algo-bit");
+//    eval("insmod","spi-ixp4xx");
+//    eval("insmod","ks8995m");
+//    eval("gpio","-w","1","0");
+//    eval("gpio","-w","1","1"); // reset switch
+//    sleep(1);
+//    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
+//  eval ("ifconfig", "ixp1", "0.0.0.0", "down");
+//  eval ("ifconfig", "ixp0", "0.0.0.0", "down");
+ // eval ("rmmod", "ixp400_eth");
   eval ("insmod", "ixp400_eth");
+  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+ // eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+    }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
   eval ("insmod", "ixp4xx", "init_crypto=0");
-  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
 
   eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
 
@@ -167,23 +186,11 @@ Configure mac addresses by reading data from eeprom
 	   buf[9], buf[10], buf[11]);
   eval ("ifconfig", "ixp1", "hw", "ether", mac);
 
-  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
-    {
-    eval("insmod","spi-algo-bit");
-    eval("insmod","spi-ipx4xx");
-    eval("insmod","ks8995m");
-    eval("gpio","-w","1","0");
-    eval("gpio","-w","1","1"); // reset switch
-    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
-    }
 
 
   /* Set a sane date */
   stime (&tm);
 
-  eval ("mknod", "/dev/gpio", "c", "127", "0");
-  eval ("mknod", "/dev/rtc", "c", "254", "0");
-  eval ("mknod", "/dev/crypto", "c", "10", "70");
   eval ("hwclock", "-s");
   nvram_set("use_crypto","0");
   cprintf ("done\n");
