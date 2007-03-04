@@ -958,6 +958,7 @@ start_lan (void)
   /* you gotta bring it down before you can set its MAC */
   cprintf ("configure wl_face\n");
   ifconfig (wl_face, 0, 0, 0);
+#ifndef HAVE_MADWIFI
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
@@ -965,7 +966,6 @@ start_lan (void)
     {
       ether_atoe (nvram_safe_get ("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
 
-#ifndef HAVE_MADWIFI
     }
   else
     {
@@ -990,16 +990,6 @@ start_lan (void)
   else
     cprintf ("Write wireless mac successfully\n");
 
-#else
-
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
-
-      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-	perror ("Write wireless mac fail : ");
-      else
-	cprintf ("Write wireless mac successfully\n");
-    }
 #endif
   if (nvram_match ("wl_mode", "sta"))
     {
@@ -1281,6 +1271,21 @@ start_lan (void)
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
   configure_wifi ();
+
+  if (nvram_match ("mac_clone_enable", "1") &&
+      nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
+      nvram_invmatch ("def_whwaddr", ""))
+    {
+      ether_atoe (nvram_safe_get ("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
+
+      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+	perror ("Write wireless mac fail : ");
+      else
+	cprintf ("Write wireless mac successfully\n");
+    }
+
 #endif
 #endif
   lan_ifname = strdup (nvram_safe_get ("lan_ifname"));
