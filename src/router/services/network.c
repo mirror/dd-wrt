@@ -1044,7 +1044,7 @@ start_lan (void)
 	  continue;
 	if (!ifexists (name))
 	  continue;
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86)
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86)
 	if (!strcmp (name, "eth2"))
 	  {
 	    strcpy (realname, "ath0");
