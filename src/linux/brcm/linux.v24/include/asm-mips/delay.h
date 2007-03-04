@@ -16,6 +16,30 @@
 
 extern unsigned long loops_per_jiffy;
 
+static inline void __delay(unsigned long loops)
+{
+	if (sizeof(long) == 4)
+		__asm__ __volatile__ (
+		"	.set	noreorder				\n"
+		"	.align	3					\n"
+		"1:	bnez	%0, 1b					\n"
+		"	subu	%0, 1					\n"
+		"	.set	reorder					\n"
+		: "=r" (loops)
+		: "0" (loops));
+	else if (sizeof(long) == 8)
+		__asm__ __volatile__ (
+		"	.set	noreorder				\n"
+		"	.align	3					\n"
+		"1:	bnez	%0, 1b					\n"
+		"	dsubu	%0, 1					\n"
+		"	.set	reorder					\n"
+		: "=r" (loops)
+		: "0" (loops));
+}
+
+
+/*
 static __inline__ void __delay(unsigned long loops)
 {
 	__asm__ __volatile__ (
@@ -26,7 +50,7 @@ static __inline__ void __delay(unsigned long loops)
 		:"=r" (loops)
 		:"0" (loops));
 }
-
+*/
 /*
  * Division by multiplication: you don't have to worry about
  * loss of precision.
@@ -62,11 +86,23 @@ static __inline__ void __ndelay(unsigned long nsecs, unsigned long lpj)
 	 */
 	nsecs *= (unsigned long) (((0x8000000000000000ULL / (500000000 / HZ)) +
 	                           0x80000000ULL) >> 32);
-	__asm__("multu\t%2,%3"
+	if (sizeof(long) == 4)
+		__asm__("multu\t%2, %3"
 		: "=h" (nsecs), "=l" (lo)
 		: "r" (nsecs), "r" (lpj)
 		: GCC_REG_ACCUM);
+	else if (sizeof(long) == 8)
+		__asm__("dmultu\t%2, %3"
+		: "=h" (nsecs), "=l" (lo)
+		: "r" (nsecs), "r" (lpj)
+		: GCC_REG_ACCUM);
+
 	__delay(nsecs);
+//	__asm__("multu\t%2,%3"
+//		: "=h" (nsecs), "=l" (lo)
+//		: "r" (nsecs), "r" (lpj)
+//		: GCC_REG_ACCUM);
+//	__delay(nsecs);
 }
 
 #ifdef CONFIG_SMP
