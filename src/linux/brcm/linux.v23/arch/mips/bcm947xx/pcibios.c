@@ -157,6 +157,7 @@ pcibios_setup(char *str)
 
 static u32 pci_iobase = 0x100;
 static u32 pci_membase = SB_PCI_DMA;
+static u32 pcmcia_membase = 0x40004000;
 
 void __init
 pcibios_fixup_bus(struct pci_bus *b)
@@ -188,7 +189,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 			/* Fix up resource bases */
 			for (pos = 0; pos < 6; pos++) {
 				res = &d->resource[pos];
-				base = (res->flags & IORESOURCE_IO) ? &pci_iobase : &pci_membase;
+				base = (res->flags & IORESOURCE_IO) ? &pci_iobase : ((b->number == 2) ? &pcmcia_membase : &pci_membase);
 				if (res->end) {
 					size = res->end - res->start + 1;
  					if (*base & (size - 1))
@@ -308,7 +309,12 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 	where = PCI_BASE_ADDRESS_0 + (resource * 4);
 	size = res->end - res->start;
 	pci_read_config_dword(dev, where, &reg);
-	reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
+	
+	if (dev->bus->number == 1)
+		reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
+	else
+		reg = res->start;
+
 	pci_write_config_dword(dev, where, reg);
 }
 
