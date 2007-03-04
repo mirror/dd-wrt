@@ -40,14 +40,6 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-char *
-get_wdev ()
-{
-  if (check_hw_type () == BCM4702_CHIP)
-    return "eth2";
-  else
-    return "eth1";
-}
 
 /*
 static void join(char *ss)
