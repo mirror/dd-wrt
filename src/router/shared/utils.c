@@ -1304,12 +1304,7 @@ get_wan_face (void)
 	   || nvram_match ("wl0_mode", "wet"))
     {
 
-      if (check_hw_type () == BCM4702_CHIP
-	  || check_hw_type () == BCM4704_BCM5325F_CHIP
-	  || check_hw_type () == BCM4704_BCM5325F_EWC_CHIP)
-	strcpy (localwanface, "eth2");
-      else
-	strcpy (localwanface, "eth1");
+	strcpy (localwanface, get_wdev());
 
     }
 #else

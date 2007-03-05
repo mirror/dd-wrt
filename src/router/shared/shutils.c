@@ -133,9 +133,9 @@ int i = 0;
     {
       fprintf (stderr,"%s ", argv[i++]);
     }
-  fprintf (stderr,"\n");
+  fprintf (stderr,"\n");*/
 //#endif
-*/
+
   switch (pid = fork ())
     {
     case -1:			/* error */

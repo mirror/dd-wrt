@@ -31,6 +31,7 @@ set_maclist (char *iface, char *buf)
 {
   wl_ioctl (iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN);
 }
+
 void
 security_disable (char *iface)
 {
@@ -38,6 +39,7 @@ security_disable (char *iface)
   val = WLC_MACMODE_DISABLED;
   wl_ioctl (iface, WLC_SET_MACMODE, &val, sizeof (val));
 }
+
 void
 security_deny (char *iface)
 {
@@ -45,6 +47,7 @@ security_deny (char *iface)
   val = WLC_MACMODE_DENY;
   wl_ioctl (iface, WLC_SET_MACMODE, &val, sizeof (val));
 }
+
 void
 security_allow (char *iface)
 {
@@ -52,6 +55,7 @@ security_allow (char *iface)
   val = WLC_MACMODE_ALLOW;
   wl_ioctl (iface, WLC_SET_MACMODE, &val, sizeof (val));
 }
+
 void
 kick_mac (char *iface, char *mac)
 {
@@ -198,6 +202,7 @@ security_disable (char *iface)
   set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_OPEN);
 
 }
+
 void
 set_maclist (char *iface, char *buf)
 {
@@ -221,14 +226,17 @@ security_deny (char *iface)
 #endif
   set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
 }
+
 void
 security_allow (char *iface)
 {
 #ifdef DEBUG
   printf ("Policy Deny\n");
 #endif
-  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
+  set80211param (iface, IEEE80211_PARAM_MACCMD,
+		 IEEE80211_MACCMD_POLICY_ALLOW);
 }
+
 void
 kick_mac (char *iface, char *mac)
 {

@@ -50,6 +50,7 @@ extern int waitfor (int fd, int timeout);
  * @param	ppid	NULL to wait for child termination or pointer to pid
  * @return	return value of executed command or errno
  */
+ 
 extern int _eval (char *const argv[], char *path, int timeout, pid_t * ppid);
 
 /* 
@@ -157,6 +158,7 @@ strcat_r (const char *s1, const char *s2, char *buf)
 #define cprintf(fmt, args...) do { \
 	FILE *fp = fopen("/dev/console", "w"); \
 	if (fp) { \
+		fprintf(fp,"%s:",__func__); \
 		fprintf(fp, fmt, ## args); \
 		fclose(fp); \
 	} \
