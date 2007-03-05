@@ -1328,6 +1328,8 @@ start_lan (void)
       || nvram_match ("wan_proto", "disabled"))
     {
 #endif
+      
+      eval ("ifconfig","eth0:0","down");
 //add fallback ip
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask","255.255.255.0");
 
@@ -1866,8 +1868,9 @@ start_wan (int status)
       && !nvram_match ("ath0_mode", "wet")
       && !nvram_match ("wan_proto", "disabled"))
     {
+      eval ("ifconfig","br0:0","down");
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.255.0");
+	    "255.255.255.0");	
     }else
       eval ("ifconfig", staticlan, "0.0.0.0","down");
 #endif
