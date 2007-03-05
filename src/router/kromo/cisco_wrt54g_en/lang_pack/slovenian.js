@@ -299,7 +299,7 @@ errmsg.err56="Vrednost vrat je izven obmoèja [0 - 65535]";
 errmsg.err57="Zbri¹em vnos ?";
 
 // Status_Lan.asp error messages
-errmsg.err58="Kliknite za brisane zakupa";
+errmsg.err58="Kliknite za brisanje zakupa";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
@@ -430,7 +430,7 @@ ddns.titl=" - Dinamièni DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS servis";
-ddns.emailaddr="email naslov";
+ddns.emailaddr="Email naslov";
 ddns.typ="Tip";
 ddns.dynamic="Dinamièni";
 ddns.custom="Prirejen";
@@ -555,7 +555,7 @@ hfilter.right16="Zaprete lahko doloèena spleti¹èa tako, da vnesete kljuèno besed
 // ******************************************* FilterSummary.asp *******************************************//
 
 
-filterSum.titl=" - Povtetek omejitev dostopa";
+filterSum.titl=" - Povzetek omejitev dostopa";
 filterSum.h2="Povzetek smernic dostopa do medmre¾ja";
 filterSum.polnum="©t.";
 filterSum.polday="Èas dneva";
@@ -638,8 +638,8 @@ hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
 hotspot.nowifibridge="Loèi WiFi od LAN mosta";
-hotspot.pserver="Glavni Radius Server IP/DNS";
-hotspot.bserver="Nadomestni Radius Server IP/DNS";
+hotspot.pserver="IP/DNS glavnega Radius stre¾nika";
+hotspot.bserver="IP/DNS Nnadomestnega Radius stre¾nika";
 hotspot.dns="DNS IP";
 hotspot.url="Preusmerjeni URL";
 hotspot.dhcp="DHCP vmesnik";
@@ -790,7 +790,7 @@ idx.dhcp_maxusers="Najveèje ¹t. DHCP uporabnikov";
 idx.dhcp_lease="Odjemalèev èas zakupa";
 idx.dhcp_dnsmasq="Uporabi DNSMasq za DHCP";
 idx.dns_dnsmasq="Uporabi DNSMasq za DNS";
-idx.auth_dnsmasq="DHCP-Avtoritativno";
+idx.auth_dnsmasq="DHCP-avtoritativno";
 idx.summt_opt1="brez";
 idx.summt_opt2="prva ned. apr. - zadnja ned. okt.";
 idx.summt_opt3="zadnja ned. mar. - zadnja ned. okt.";
@@ -981,8 +981,8 @@ qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
 qos.srv="Za¾eni QoS";
 qos.type="Paketni naèrt";
-qos.uplink="Hitrost prenosa od vas (kbps)";
-qos.dnlink="Hitrost prenosa k vam (kbps)";
+qos.uplink="Hitrost prenosa od vas (Kbit/s)";
+qos.dnlink="Hitrost prenosa k vam (Kbit/s)";
 qos.gaming="Optimiziraj za igre";
 qos.legend2="Prioriteta storitev";
 qos.prio_x="Exempt";
@@ -991,12 +991,12 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Prioriteta maske omre¾ja";
 qos.ipmask="IP/maska";
-qos.maxrate_b="Maks. Kbits";
+qos.maxrate_b="Maks. Kbit/s";
 qos.maxrate_o="Najveèja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne ¹irine";
-qos.bandwith="Pasovna ¹irina v Kbits";
+qos.bandwith="Pasovna ¹irina v Kbit/s";
 
 //help container
 
@@ -1040,7 +1040,7 @@ route.static_ip="Ciljni LAN IP";
 //help container
 
 hroute.right2="Èe usmerjalnik gosti va¹o povezavo v medmere¾je, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
-hroute.right4="To je edinstvena ¹tevilka, doloèite lahko do 20 smeri.";
+hroute.right4="To je edinstvena ¹tevilka; doloèite lahko do 20 smeri.";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
 hroute.right8="To je oddaljeni gostitelj do katerage doloèate statièno smer.";
 hroute.right10="Doloèi gostitelja in mre¾o.";
@@ -1077,7 +1077,7 @@ service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";
 service.dhcp_nvramlease="Uporabi NVRAM za bazo zakupov";
 service.dhcp_domain="Uporabljena domena";
 service.dhcp_landomain="LAN domena";
-service.dhcp_option="Dodatne DHCPd opcije";
+service.dhcp_option="Dodatne DHCPd mo¾nosti";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokalni DNS";
@@ -1130,7 +1130,7 @@ service.snmp_write="RW skupnost";
 //openvpn.webservices
 service.vpn_legend="OpenVPN odjemalec";
 service.vpn_srv="Zaèni OpenVPN";
-service.vpn_ipname="Stre¾nikov IP/Ime";
+service.vpn_ipname="Stre¾nikov IP/ime";
 service.vpn_mtu="TUN MTU nastavitev";
 service.vpn_mru="TUN MTU dodatno";
 service.vpn_mss="TCP MSS";
@@ -1320,7 +1320,7 @@ status_wireless.wds="WDS vozli¹èa";
 //help container
 
 hstatus_wireless.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni brez¾ièni mre¾i..";
-hstatus_wireless.right4="Tu je prikazan brez¾ièni naèin, kot je izbran v zavihku Brez¾ièno (Me¹ano, Samo-G, Samo-B ali Onemogoèeno) used by the network.";
+hstatus_wireless.right4="Tu je prikazan uporabljeni brez¾ièni naèin, kot je izbran v zavihku Brez¾ièno (Me¹ano, Samo-G, Samo-B ali Onemogoèeno).";
 
 
 
@@ -1601,7 +1601,7 @@ wl_basic.radio_off="Radio je izklju&#269;en";
 wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
-wl_basic.TXpower="TX moè";
+wl_basic.TXpower="Oddajna (TX) moè";
 wl_basic.AntGain="Jaèanje antene";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prvi";
