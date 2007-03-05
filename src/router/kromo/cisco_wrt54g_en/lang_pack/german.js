@@ -971,7 +971,7 @@ service.dhcp_option="Zusätzliche DHCPD-Optionen";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokaler DNS";
-service.dnsmasq_opt="Zusätzliche DNS-Optionen";
+service.dnsmasq_opt="Zusätzliche DNSMasq-Optionen";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
