@@ -1431,10 +1431,10 @@ wl_adv.label="鉴权类型";
 wl_adv.label2="基本速率";
 wl_adv.label3="传输速率";
 wl_adv.label4="CTS保护模式";
-wl_adv.label5="桢突发";
+wl_adv.label5="帧突发";
 wl_adv.label6="信标间隙";
 wl_adv.label7="DTIM间隙";
-wl_adv.label8="碎片阈值";
+wl_adv.label8="分片阈值";
 wl_adv.label9="RTS阈值";
 wl_adv.label10="最大关联的客户端数";
 wl_adv.label11="AP独立";
@@ -1455,11 +1455,11 @@ wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
 wl_adv.col6="管理员强制";
 wl_adv.row1="背景";
-wl_adv.row2="最大努力";
+wl_adv.row2="尽力服务";
 wl_adv.row3="视频";
 wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
-wl_adv.lng="厂"; 					//************* don't use .long ! *************
+wl_adv.lng="长"; 					//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
