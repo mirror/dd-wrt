@@ -1423,7 +1423,7 @@ wl_adv.label="鑒權類型";
 wl_adv.label2="基本速率";
 wl_adv.label3="傳輸速率";
 wl_adv.label4="CTS保護模式";
-wl_adv.label5="楨突發";
+wl_adv.label5="幀突發";
 wl_adv.label6="信標間隙";
 wl_adv.label7="DTIM間隙";
 wl_adv.label8="碎片閾值";
@@ -1451,7 +1451,7 @@ wl_adv.row2="最大努力";
 wl_adv.row3="視頻";
 wl_adv.row4="語音";
 wl_adv.table2="EDCA STA參數（用戶端到AP）";
-wl_adv.lng="廠"; 					//************* don't use .long ! *************
+wl_adv.lng="長"; 					//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
