@@ -1050,7 +1050,7 @@ service.dhcp_option="Paramètres complémentaires DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="DNS Local";
-service.dnsmasq_opt="Options DNS";
+service.dnsmasq_opt="Options DNSMasq";
 
 //pptp.webservices
 service.pptp_legend="PPTP";

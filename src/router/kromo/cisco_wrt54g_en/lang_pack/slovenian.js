@@ -1081,7 +1081,7 @@ service.dhcp_option="Dodatne DHCPd opcije";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokalni DNS";
-service.dnsmasq_opt="Dodatne DNS mo¾nosti";
+service.dnsmasq_opt="Dodatne DNSMAsq mo¾nosti";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1602,6 +1602,7 @@ wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
 wl_basic.h2_vi="Navidezni vmesniki";
 wl_basic.regdom="Regulatorska domena";
 wl_basic.TXpower="TX moè";
+wl_basic.AntGain="Jaèanje antene";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prvi";
 wl_basic.secondary="Drugi";
@@ -1623,7 +1624,7 @@ wl_basic.wifi_bonding="Wifi vezanje";
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
-hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
+hwl_basic.right4="Prilagodi ACK uèasenje. 0 (niè) popolnoma onemogoèi ACK uèasenje.";
 
 
 
