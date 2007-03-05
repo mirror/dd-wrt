@@ -3742,7 +3742,7 @@ start_pppoerelay (void)
       else
 #else
       if (nvram_match ("wl_mode", "sta"))
-	eval ("pppoe-relay", "-S", "eth1", "-C", "br0");
+	eval ("pppoe-relay", "-S", get_wdev(), "-C", "br0");
       else
 #endif
 	eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C",
