@@ -359,6 +359,9 @@ ifeq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/storage
 endif
 endif
+ifeq ($(CONFIG_PCMCIA),y)
+	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/pcmcia/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+endif
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/pcmcia
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/netfilter
