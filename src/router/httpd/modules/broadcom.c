@@ -4519,7 +4519,7 @@ ej_get_txpower (  webs_t wp, int argc, char_t ** argv)
 #ifndef HAVE_MADWIFI
   websWrite (wp, "%s mW", nvram_safe_get ("txpwr"));
 #else
-  websWrite (wp, "%s mW", nvram_safe_get ("ath0_txpwr"));
+  websWrite (wp, "%s dBm", nvram_safe_get ("ath0_txpwrdbm"));
 #endif
 }
 
