@@ -1,4 +1,4 @@
-//#define CDEBUG 1
+7//#define CDEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -377,7 +377,12 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
       setRouter ("Linksys WRTSL54GS");
       return ROUTER_WRTSL54GS;
     }
-
+  if (boardnum == 42 && nvram_match("boardtype","0x0101") && nvram_match("boardrev","0x10"))
+    {
+      cprintf ("router is Linksys WRT54G3G\n");
+      setRouter ("Linksys WRT54G3G");
+      return ROUTER_WRT54G3G;
+    }
   if (boardnum == 45 &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
     {
@@ -843,7 +848,7 @@ diag_led (int type, int act)
 {
 int brand = getRouterBrand ();
 
-	if (brand == ROUTER_WRT54G)
+	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G)
   		return diag_led_4712 (type, act);
 	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
   		return diag_led_4702 (type, act);
@@ -966,6 +971,7 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_ASUS_WL500G_PRE:
 			power_gpio = 0x11;
 		break;
+	case ROUTER_WRT54G3G:
 	case ROUTER_WRTSL54GS:
 			power_gpio = 0x01;
 			dmz_gpio = 0x10;

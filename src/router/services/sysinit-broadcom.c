@@ -508,6 +508,19 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "diag";
 	      break;
+	    case ROUTER_WRT54G3G:
+	      if (check_vlan_support ())
+		modules =
+		  nvram_invmatch ("ct_modules",
+				  "") ? nvram_safe_get ("ct_modules") :
+		  "diag switch-core switch-robo pcmcia_core yenta_socket ds";
+	      else
+		modules =
+		  nvram_invmatch ("ct_modules",
+				  "") ? nvram_safe_get ("ct_modules") :
+		  "diag pcmcia_core yenta_socket ds";
+	      break;
+	    
 	    default:
 	      if (check_vlan_support ())
 		modules =
