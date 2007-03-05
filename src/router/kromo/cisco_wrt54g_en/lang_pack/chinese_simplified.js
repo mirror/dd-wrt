@@ -987,7 +987,7 @@ service.dhcp_option="附加的DHCPd选项";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="本地DNS";
-service.dnsmasq_opt="附加的DNS选项";
+service.dnsmasq_opt="附加的DNSMasq选项";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
