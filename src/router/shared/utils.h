@@ -142,6 +142,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition and kendin switch
 #define ROUTER_BOARD_GATEWORX_GW2345 0x290f
 
+// Linksys WRT54G3G  
+#define ROUTER_WRT54G3G 0x3016
+
 
 
 #define NVROUTER "DD_BOARD"
