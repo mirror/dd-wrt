@@ -98,7 +98,7 @@ vt_ar5211_eeprom_read (unsigned char *mem,
   while (timeout > 0)
     {
       usleep (1);
-      status = VT_WLAN_IN32 (AR5211_EEPROM_STATUS);
+67      status = VT_WLAN_IN32 (AR5211_EEPROM_STATUS);
       if (status & AR5211_EEPROM_STAT_RDDONE)
 	{
 	  if (status & AR5211_EEPROM_STAT_RDERR)
