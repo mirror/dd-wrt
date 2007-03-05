@@ -983,7 +983,7 @@ service.dhcp_option="Opciones DHCPd Adicionales";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="DNS Local";
-service.dnsmasq_opt="Opciones Adicionales DNS";
+service.dnsmasq_opt="Opciones Adicionales DNSMasq";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
