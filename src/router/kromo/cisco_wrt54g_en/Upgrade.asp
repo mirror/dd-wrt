@@ -60,6 +60,10 @@ function upgrade(F,id) {
 							<fieldset>
 								<legend><% tran("upgrad.legend"); %></legend>
 								<div class="setting">
+									<div class="label"><% tran("upgrad.file"); %></div>
+									<input type="file" name="file" size="40"/>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("upgrad.info1"); %></div>
 									<select name="erase">
 										<script type="text/javascript">
@@ -69,10 +73,6 @@ function upgrade(F,id) {
 										//]]>
 										</script>
 									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("upgrad.file"); %></div>
-									<input type="file" name="file" size="40"/>
 								</div>
 							</fieldset><br />
 							
