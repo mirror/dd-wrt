@@ -1125,7 +1125,7 @@ adjust_regulatory (int count)
   char wif[10];
   char turbo[16];
   char gain[32];
-  char country[32];
+  char country[64];
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
@@ -1189,17 +1189,17 @@ configure_single (int count, int isbond)
   char net[16];
   char wifivifs[16];
   char broadcast[16];
-  char power[16];
-  char sens[16];
+  char power[32];
+  char sens[32];
   char basedev[16];
-  char diversity[16];
-  char rxantenna[16];
-  char txantenna[16];
+  char diversity[32];
+  char rxantenna[32];
+  char txantenna[32];
   char athmac[16];
   char turbo[16];
   sprintf (wif, "wifi%d", count);
-  sprintf (turbo, "%s_turbo", dev);
   sprintf (dev, "ath%d", count);
+  sprintf (turbo, "%s_turbo", dev);
   sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
   sprintf (wl, "ath%d_mode", isbond ? 0 : count);
   sprintf (channel, "ath%d_channel", count);
@@ -1217,6 +1217,36 @@ configure_single (int count, int isbond)
     return;
   if (!count)
     strcpy (iflist, dev);
+
+//create wds interface(s)
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char wdsmacname[32] = { 0 };
+      char *wdsdev;
+      char *hwaddr;
+
+      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
+      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
+      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
+      wdsdev = nvram_safe_get (wdsdevname);
+      if (strlen (wdsdev) == 0)
+	continue;
+      if (nvram_match (wdsvarname, "0"))
+	continue;
+      hwaddr = nvram_get (wdsmacname);
+      if (hwaddr != NULL)
+	{
+	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
+		"wds");
+//        eval ("ifconfig",wdsdev,"0.0.0.0","up");
+	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
+	  eval ("iwpriv", wdsdev, "wds", "1");
+	}
+    }
+
 
 
   char *m;
@@ -1271,35 +1301,6 @@ configure_single (int count, int isbond)
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "adhoc");
 
 
-
-//create wds interface(s)
-  int s;
-  for (s = 1; s <= 10; s++)
-    {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char wdsmacname[32] = { 0 };
-      char *wdsdev;
-      char *hwaddr;
-
-      sprintf (wdsvarname, "%s_wds%d_enable", dev, s);
-      sprintf (wdsdevname, "%s_wds%d_if", dev, s);
-      sprintf (wdsmacname, "%s_wds%d_hwaddr", dev, s);
-      wdsdev = nvram_safe_get (wdsdevname);
-      if (strlen (wdsdev) == 0)
-	continue;
-      if (nvram_match (wdsvarname, "0"))
-	continue;
-      hwaddr = nvram_get (wdsmacname);
-      if (hwaddr != NULL)
-	{
-	  eval ("wlanconfig", wdsdev, "create", "wlandev", wif, "wlanmode",
-		"wds");
-//        eval ("ifconfig",wdsdev,"0.0.0.0","up");
-	  eval ("iwpriv", wdsdev, "wds_add", hwaddr);
-	  eval ("iwpriv", wdsdev, "wds", "1");
-	}
-    }
 
 
 
@@ -1438,7 +1439,7 @@ configure_single (int count, int isbond)
   cprintf ("adjust power\n");
 
   int newpower = atoi (default_get (power, "16"));
-  cprintf ("new power limit %d\n", newpower);
+  fprintf (stderr,"new power limit %d\n", newpower);
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
