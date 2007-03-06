@@ -1484,10 +1484,7 @@ start_nas (char *type, char *prefix)
 
 	if (!strcmp (prefix, "wl0"))
 	  {
-	    if (wl_probe ("eth2"))	// identify wireless interface
-	      iface = "eth1";
-	    else
-	      iface = "eth2";
+	      iface = get_wdev();
 	  }
 	else
 	  {
@@ -2426,10 +2423,7 @@ start_chilli (void)
 	fprintf (fp, "dhcpif ath1\n");
 #else
 #ifndef HAVE_MSSID
-      if (wl_probe ("eth2"))
-	fprintf (fp, "dhcpif eth1\n");
-      else
-	fprintf (fp, "dhcpif eth2\n");
+	fprintf (fp, "dhcpif %s\n", get_wdev());
 #else
       if (nvram_match ("wl0_mode", "apsta"))
 	{
@@ -2437,10 +2431,7 @@ start_chilli (void)
 	}
       else
 	{
-	  if (wl_probe ("eth2"))
-	    fprintf (fp, "dhcpif eth1\n");
-	  else
-	    fprintf (fp, "dhcpif eth2\n");
+	    fprintf (fp, "dhcpif %s\n", get_wdev());
 	}
 #endif
 #endif
