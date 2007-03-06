@@ -158,22 +158,34 @@ addEvent(window, "load", function() {
 									<div class="setting">
 										<div class="label"><% tran("log.drop"); %></div>
 										<select name="log_dropped">
-											<option value="0" <% nvram_selected("log_dropped", "0"); %>>Off</option>
-											<option value="1" <% nvram_selected("log_dropped", "1"); %>>On</option>
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected("log_dropped", "0", "js"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected("log_dropped", "1", "js"); %> >" + share.enable + "</option>");
+										//]]>
+										</script>
 										</select>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("log.reject"); %></div>
 										<select name="log_rejected">
-											<option value="0" <% nvram_selected("log_rejected", "0"); %>>Off</option>
-											<option value="1" <% nvram_selected("log_rejected", "1"); %>>On</option>
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected("log_rejected", "0", "js"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected("log_rejected", "1", "js"); %> >" + share.enable + "</option>");
+										//]]>
+										</script>
 										</select>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("log.accept"); %></div>
 										<select name="log_accepted">
-											<option value="0" <% nvram_selected("log_accepted", "0"); %>>Off</option>
-											<option value="1" <% nvram_selected("log_accepted", "1"); %>>On</option>
+										<script type="text/javascript">
+										//<![CDATA[
+										document.write("<option value=\"0\" <% nvram_selected("log_accepted", "0", "js"); %> >" + share.disable + "</option>");
+										document.write("<option value=\"1\" <% nvram_selected("log_accepted", "1", "js"); %> >" + share.enable + "</option>");
+										//]]>
+										</script>
 										</select>
 									</div>
 								</fieldset><br />

@@ -31,7 +31,7 @@ share.ip="IP naslov";
 share.mac="MAC naslov";
 share.none="Nobeden";
 share.none2="niè";
-share.both="Oboje";
+share.both="Oba";
 share.del="Izbri¹i";
 share.remove="Odstrani";
 share.descr="Opis";
@@ -154,7 +154,7 @@ share._12h="Vsakih 12 ur";
 share._24h="Vsak dan";
 share._48h="Vsaka 2 dneva";
 share._168h="Vsak teden";
-share.days="Dnevi";
+share.days="Dni";
 share.standard="Standard";
 share.execscript="Za¾eni script";
 share.user="Uporabnik";
@@ -419,7 +419,7 @@ config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usme
 //help container
 
 hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjalnik ponastaviti na tovarni¹ko privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
-hconfig.right4="Kliknite gumb <em>Prebrskaj...</em> za iskanje varnostne kopije, ki je trenutno na va¹em PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
+hconfig.right4="Kliknite gumb <em>Browse... (Prebrskaj...)</em> za iskanje varnostne kopije, ki je trenutno na va¹em PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
 
 
 
@@ -961,7 +961,7 @@ management.gui_style="Stil usmerjalnikovega uporabni¹kega vmesnika";
 //help container
 
 hmanagement.right1="Samodejno osve¾evanje:";
-hmanagement.right2="Nastavite interval samodejnega osve¾evanja. 0 popolnoma onemogoèi samodejno osve¾evanje.";
+hmanagement.right2="Nastavite interval samodejnega osve¾evanja. 0 (niè) popolnoma onemogoèi samodejno osve¾evanje.";
 
 
 
@@ -1007,7 +1007,7 @@ hqos.right4="Nastavite na 80%-100% (maks.) va¹e skupne hitrosti prenosa k vam.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno ¹irino.";
 hqos.right8="Doloèite lahko prioriteto za ves promet z doloèenega IPja ali obsega IPjev.";
 hqos.right10="Doloèite lahko hitrost za ves promet z doloèene naprave na va¹i mre¾i tako, da doloèite ime naprave, doloèite prioriteto in vnesete MAC naslov.";
-hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na kateri fi¾ièni port je va¹a naprava prikljuèena. Doloèite lahko prioriteto za naprave prikljuèene na LAN vrata 1 do 4";
+hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na katera fi¾ièna vrata je va¹a naprava prikljuèena. Doloèite lahko prioriteto za naprave prikljuèene na LAN vrata 1 do 4";
 
 
 
@@ -1081,7 +1081,7 @@ service.dhcp_option="Dodatne DHCPd mo¾nosti";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokalni DNS";
-service.dnsmasq_opt="Dodatne DNSMAsq mo¾nosti";
+service.dnsmasq_opt="Dodatne DNSMasq mo¾nosti";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1100,7 +1100,7 @@ service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP odjemalec";
-service.pptpd_option="PPTP opcije odjemalca";
+service.pptpd_option="PPTP mo¾nosti odjemalca";
 service.pptpd_ipdns="Stre¾nikov IP ali ime DNS";
 service.pptpd_subnet="Oddaljena podmre¾a";
 service.pptpd_subnetmask="Oddaljena maska podmre¾e";
@@ -1169,6 +1169,11 @@ service.rstats_path="Shrani podatke na";
 service.rstats_time="Interval shranjevanja";
 service.rstats_usrdir="Uporabnikov imenik";
 
+//nstx.webservices
+service.nstx_legend="IP preko DNS tuneliranje";
+service.nstx_srv="nstx demon";
+service.nstx_ipenable="Ve¾i samo na ta IP";
+service.nstx_log="Sporoèila za razhro¹èevanje";
 
 // ******************************************* eop-tunnel.asp *******************************************//
 
@@ -1360,13 +1365,13 @@ upgrad.legend="Posodabljanje strojne programske opreme";
 upgrad.info1="Po posodobitvi ponastavi na";
 upgrad.resetOff="Brez ponastavitve";
 upgrad.resetOn="Privzete nastavitve";
-upgrad.file="Prosimo, da izberete datoteko za posodobitev";
+upgrad.file="Izberite datoteko za posodobitev";
 upgrad.warning="O P O Z O R I L O";
-upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
+upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izkljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
 
 //help container
 
-hupgrad.right2="Kliknite na gumb <em>Prebrskaj...</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za zaèetek posodabljanja. Posodobitve ne smete prekiniti.";
+hupgrad.right2="Kliknite na gumb <em>Browse... (Prebrskaj...)</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za zaèetek posodabljanja. Posodobitve ne smete prekiniti.";
 
 
 
