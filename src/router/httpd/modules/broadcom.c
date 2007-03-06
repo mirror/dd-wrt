@@ -4592,7 +4592,11 @@ static void
 ej_getwirelessnetmode (  webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
+#ifndef HAVE_MSSID
+  char *mode = "wl_net_mode";
+#else
   char *mode = "wl0_net_mode";
+#endif
 #else
   char *mode = "ath0_net_mode";
 #endif
