@@ -155,7 +155,7 @@ share._12h="Vsakih 12 ur";
 share._24h="Vsak dan";
 share._48h="Vsaka 2 dneva";
 share._168h="Vsak teden";
-share.days="Dni";
+share.days="dni";
 share.standard="Standard";
 share.execscript="Za¾eni script";
 share.user="Uporabnik";
@@ -1217,8 +1217,8 @@ status_lan.h22="DHCP - Protokol za dinamicènego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 status_lan.legend4="Aktivni odjemalci";
-status_lan.concount="@t. zvez";
-status_lan.conratio="Razmerje";
+status_lan.concount="©t. zvez";
+status_lan.conratio="Dele¾";
 
 //help container
 
