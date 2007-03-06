@@ -81,6 +81,7 @@ share.beacon="beacon";
 share.openn="Odprto";
 share.dtim="dtim";
 share.rates="Hitrost";
+share.rate="Hitrost";
 share.low="Nizek";
 share.medium="Srednji";
 share.high="Visok";
@@ -334,6 +335,10 @@ bmenu.wirelessSecurity="Brez¾ièna za¹èita";
 bmenu.wirelessMac="Filter MAC";
 bmenu.wirelessAdvanced="Napredne nastavitve";
 bmenu.wirelessWds="WDS";
+bmenu.wirelessWds0="ATH0-WDS";
+bmenu.wirelessWds1="ATH1-WDS";
+bmenu.wirelessWds2="ATH2-WDS";
+bmenu.wirelessWds3="ATH3-WDS";
 
 bmenu.security="Za¹èita";
 bmenu.firwall="Po¾arni zid";
@@ -1212,6 +1217,8 @@ status_lan.h22="DHCP - Protokol za dinamicènego konfiguracijo gostitelja";
 status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 status_lan.legend4="Aktivni odjemalci";
+status_lan.concount="@t. zvez";
+status_lan.conratio="Razmerje";
 
 //help container
 
@@ -1537,7 +1544,7 @@ wds.lazy_default="Privzeto: onemogoèi";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Podmre¾a";
-wds.legend2="Dodatne opcije";
+wds.legend2="Dodatne mo¾nosti";
 
 
 
@@ -1592,6 +1599,7 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Postaja";
 wl_basic.wdsap="WDS toèka";
 wl_basic.mixed="Me¹ano";
+wl_basic.preamble="Kratka preambula";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
 wl_basic.g="Samo G";
@@ -1623,7 +1631,6 @@ wl_basic.channel_wide="©iroki kanali";
 wl_basic.regulatory="Regulatorski";
 wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
-
 
 //help container
 
