@@ -259,10 +259,7 @@ get_wan_face (void)
 	   || nvram_match ("wl0_mode", "wet")
 	   || nvram_match ("wl0_mode", "apstawet"))
     {
-      if (wl_probe ("eth2"))
-	strcpy (localwanface, "eth1");
-      else
-	strcpy (localwanface, "eth2");
+	strcpy (localwanface, get_wdev());
     }
 #else
   else if (nvram_match ("ath0_mode", "sta"))
