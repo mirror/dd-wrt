@@ -60,6 +60,63 @@ detect (char *devicename)
 }
 
 
+void checkupdate(void)
+{
+int res,res2=0;
+FILE *in=popen("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l","rb");
+fscanf (in, "%d", &res);
+fclose (in);
+if (res==0)
+{
+in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l","rb");
+fscanf (in, "%d", &res2);
+fclose (in);
+}
+if (res==0 && res2==2)//redboot update is needed
+    {
+    in=popen("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l","rb");
+    fscanf (in, "%d", &res);
+    fclose (in);
+    if (res==1)res2=64;
+    in=popen("/bin/dmesg|/bin/grep \"Memory: 32MB\"|wc -l","rb");
+    fscanf (in, "%d", &res);
+    fclose (in);
+    if (res==1)res2=32;
+    in=popen("/bin/dmesg|/bin/grep \"Memory: 128MB\"|wc -l","rb");
+    fscanf (in, "%d", &res);
+    fclose (in);
+    if (res==1)res2=128;
+    in=popen("/bin/dmesg|/bin/grep \"Memory: 256MB\"|wc -l","rb");
+    fscanf (in, "%d", &res);
+    fclose (in);
+    if (res==1)res2=256;
+    fprintf(stderr,"updating redboot %d MB\n",res2);
+    switch(res2)
+    {
+    case 32:
+	eval("cp","/usr/lib/firmware/rb-32.bin","/tmp");
+	eval("mtd","-r","-f","write","/tmp/rb-32.bin","RedBoot");
+    break;
+    case 64:
+	eval("cp","/usr/lib/firmware/rb-64.bin","/tmp");
+	eval("mtd","-r","-f","write","/tmp/rb-64.bin","RedBoot");
+    break;
+    case 128:
+	eval("cp","/usr/lib/firmware/rb-128.bin","/tmp");
+	eval("mtd","-r","-f","write","/tmp/rb-128.bin","RedBoot");
+    break;
+    case 256:
+	eval("cp","/usr/lib/firmware/rb-256.bin","/tmp");
+	eval("mtd","-r","-f","write","/tmp/rb-256.bin","RedBoot");
+    break;
+    default:
+    fprintf(stderr,"no valid image found\n");
+    break;
+    }
+    }
+}
+
+
 int
 start_sysinit (void)
 {
@@ -121,7 +178,7 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
-
+  checkupdate();
 
   if (detect ("82541"))	// Intel Gigabit
     eval ("insmod", "e1000");
