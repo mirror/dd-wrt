@@ -536,10 +536,7 @@ if (brand!=ROUTER_WRT350N)
 	      || nvram_match ("wl0_mode", "apstawet"))
 	    {
 	      //fix for client mode
-	      if (wl_probe ("eth2"))
-		eval ("/sbin/ifconfig", "eth1", "up");
-	      else
-		eval ("/sbin/ifconfig", "eth2", "up");
+		eval ("/sbin/ifconfig", get_wdev(), "up");
   		}
   		
 	  cprintf ("create rc file\n");
