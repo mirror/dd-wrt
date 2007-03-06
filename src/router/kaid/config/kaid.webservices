@@ -6,12 +6,18 @@
 		<input class="spaceradio" type="radio" value="1" name="kaid_enable" <% nvram_selmatch("kaid_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idkaid', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="kaid_enable" <% nvram_selmatch("kaid_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idkaid', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting" id="idkaid">
-		<div class="label"><% tran("service.kaid_locdevnum"); %></div>
-		<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" onblur="valid_range(this,0,99,service.kaid_locdevnum)" />
-		<div class="label"><% tran("share.usrname"); %></div>
-		<input value="<% nvram_get("kaid_user"); %>" name="kaid_user" size="20" maxlength="20" />
-		<div class="label"><% tran("share.passwd"); %></div>
-		<input value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
+	<div id="idkaid">
+		<div class="setting">
+			<div class="label"><% tran("service.kaid_locdevnum"); %></div>
+			<input class="num" value="<% nvram_get("kaid_devs"); %>" name="kaid_devs" size="3" maxlength="3" onblur="valid_range(this,0,99,service.kaid_locdevnum)" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.usrname"); %></div>
+			<input value="<% nvram_get("kaid_user"); %>" name="kaid_user" size="20" maxlength="20" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.passwd"); %></div>
+			<input value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
+		</div>
 	</div>
 </fieldset><br/>
