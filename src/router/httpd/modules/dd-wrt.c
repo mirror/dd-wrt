@@ -4113,15 +4113,9 @@ ej_get_br1_netmask (webs_t wp, int argc, char_t ** argv)
 void
 ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
-  char *dev = NULL;
   int rate = 0;
 
-  if (wl_probe ("eth2"))
-    dev = "eth1";
-  else
-    dev = "eth2";
-
-  wl_ioctl (dev, WLC_GET_RATE, &rate, sizeof (rate));
+  wl_ioctl (get_wdev(), WLC_GET_RATE, &rate, sizeof (rate));
 
   if (rate > 0)
     websWrite (wp, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
@@ -4247,16 +4241,10 @@ ej_get_wan_uptime (webs_t wp, int argc, char_t ** argv)
 void
 ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
 {
-  char *dev = NULL;
   channel_info_t ci;
 
-  if (wl_probe ("eth2"))
-    dev = "eth1";
-  else
-    dev = "eth2";
-
   ci.target_channel = 0;
-  wl_ioctl (dev, WLC_GET_CHANNEL, &ci, sizeof (ci));
+  wl_ioctl (get_wdev(), WLC_GET_CHANNEL, &ci, sizeof (ci));
   if (ci.target_channel > 0)
     {
       websWrite (wp, "%d", ci.target_channel);
