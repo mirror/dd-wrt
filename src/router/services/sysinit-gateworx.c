@@ -180,8 +180,12 @@ start_sysinit (void)
   uname (&name);
   checkupdate();
 
+  nvram_set("intel_eth","0");
   if (detect ("82541"))	// Intel Gigabit
+    {
+    nvram_set("intel_eth","1");
     eval ("insmod", "e1000");
+    }
 
 
 //system("/etc/kendin");
