@@ -67,12 +67,18 @@ FILE *in=popen("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l","rb");
 fscanf (in, "%d", &res);
 fclose (in);
 if (res==0)
-{
-in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l","rb");
-fscanf (in, "%d", &res2);
-fclose (in);
-}
-if (res==0 && res2==2)//redboot update is needed
+    {
+    in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l","rb");
+    fscanf (in, "%d", &res2);
+    fclose (in);
+    }
+if (res==1)
+    {
+    in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.03|wc -l","rb");
+    fscanf (in, "%d", &res2);
+    fclose (in);  
+    }
+if (res2==2)//redboot update is needed
     {
     in=popen("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l","rb");
     fscanf (in, "%d", &res);
@@ -94,19 +100,19 @@ if (res==0 && res2==2)//redboot update is needed
     switch(res2)
     {
     case 32:
-	eval("cp","/usr/lib/firmware/rb-32.bin","/tmp");
+	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
 	eval("mtd","-r","-f","write","/tmp/rb-32.bin","RedBoot");
     break;
     case 64:
-	eval("cp","/usr/lib/firmware/rb-64.bin","/tmp");
+	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
 	eval("mtd","-r","-f","write","/tmp/rb-64.bin","RedBoot");
     break;
     case 128:
-	eval("cp","/usr/lib/firmware/rb-128.bin","/tmp");
+	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
 	eval("mtd","-r","-f","write","/tmp/rb-128.bin","RedBoot");
     break;
     case 256:
-	eval("cp","/usr/lib/firmware/rb-256.bin","/tmp");
+	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
 	eval("mtd","-r","-f","write","/tmp/rb-256.bin","RedBoot");
     break;
     default:

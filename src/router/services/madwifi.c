@@ -1079,7 +1079,7 @@ setMacFilter (char *iface)
   sprintf (nvvar, "%s_macmode", iface);
   if (nvram_match (nvvar, "deny"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
+      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1097,7 +1097,7 @@ setMacFilter (char *iface)
     }
   if (nvram_match (nvvar, "allow"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
+      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
