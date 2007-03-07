@@ -3944,6 +3944,11 @@ start_bridging (void)
     strsep(&prio,">");
     if (!tag || !port)
       break;
+    char ipaddr[32];
+    sprintf(ipaddr,"%s_ipaddr",tag);
+    char netmask[32];
+    sprintf(netmask,"%s_netmask",tag);
+
     eval ("brctl", "addbr", tag);
     if (!strcmp (port, "1"))
       br_set_stp_state(tag,1);
@@ -3951,7 +3956,11 @@ start_bridging (void)
       br_set_stp_state(tag,0);
     if (prio)
 	eval("brctl","setbridgeprio",tag,prio);
-    eval ("ifconfig", tag,"0.0.0.0","up");
+    if (!nvram_match(ipaddr,"0.0.0.0") && !nvram_match(netmask,"0.0.0.0"))
+	{
+	eval("ifconfig",tag,nvram_safe_get(ipaddr),"netmask",nvram_safe_get(netmask),"up");
+	}else
+	eval ("ifconfig", tag,"0.0.0.0","up");
   }
 }
 
