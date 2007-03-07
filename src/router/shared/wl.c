@@ -468,6 +468,16 @@ rssi2dbm (u_int rssi)
 {
   return rssi - 95;
 }
+static const char *
+ieee80211_ntoa (const uint8_t mac[IEEE80211_ADDR_LEN])
+{
+  static char a[18];
+  int i;
+
+  i = snprintf (a, sizeof (a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return (i < 17 ? NULL : a);
+}
 
 int
 getRssi (char *ifname, unsigned char *mac)
@@ -483,7 +493,7 @@ getRssi (char *ifname, unsigned char *mac)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
       free(buf);
-      return -1;
+      return 0;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
@@ -493,11 +503,12 @@ getRssi (char *ifname, unsigned char *mac)
     {
       close (s);
       free(buf);
-      return -1;
+      fprintf (stderr, "stainfo error\n");
+      return 0;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
-    return -1;
+    return 0;
   int cnt = 0;
   cp = buf;
   char maccmp[6];
@@ -506,7 +517,7 @@ getRssi (char *ifname, unsigned char *mac)
     {
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;
-      if (!memcmp(&si->isi_macaddr[0],mac,6))
+        if (!memcmp(&si->isi_macaddr[0],mac,6))
         {
 	close(s);
 	int rssi = rssi2dbm (si->isi_rssi);
@@ -539,7 +550,7 @@ getNoise (char *ifname, unsigned char *mac)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
       free(buf);
-      return -1;
+      return 0;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
@@ -549,7 +560,7 @@ getNoise (char *ifname, unsigned char *mac)
     {
       close (s);
       free(buf);
-      return -1;
+      return 0;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
@@ -566,7 +577,7 @@ getNoise (char *ifname, unsigned char *mac)
         {
 	close(s);
 	int noise = si->isi_noise;
-      free(buf);
+        free(buf);
 	return noise;
 	}
       if (!memcmp(&si->isi_macaddr[0],mac,6))

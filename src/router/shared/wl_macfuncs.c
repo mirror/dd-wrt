@@ -73,7 +73,7 @@ kick_mac (char *iface, char *mac)
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
-
+#include <stdio.h>
 
 /* Atheros */
 
@@ -202,6 +202,16 @@ security_disable (char *iface)
   set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_OPEN);
 
 }
+static const char *
+ieee80211_ntoa (const unsigned char mac[IEEE80211_ADDR_LEN])
+{
+  static char a[18];
+  int i;
+
+  i = snprintf (a, sizeof (a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return (i < 17 ? NULL : a);
+}
 
 void
 set_maclist (char *iface, char *buf)
@@ -215,6 +225,7 @@ set_maclist (char *iface, char *buf)
   for (i = 0; i < maclist->count; i++)
     {
       memcpy (sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN);
+      fprintf(stderr,"maclist add %s\n",ieee80211_ntoa(&maclist->ea[i]));
       do80211priv (iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof (sa));
     }
 }
@@ -224,7 +235,8 @@ security_deny (char *iface)
 #ifdef DEBUG
   printf ("Policy Deny\n");
 #endif
-  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
+//  fprintf(stderr,"maclist deny\n");
+  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
 }
 
 void
@@ -233,8 +245,9 @@ security_allow (char *iface)
 #ifdef DEBUG
   printf ("Policy Deny\n");
 #endif
+//  fprintf(stderr,"maclist allow\n");
   set80211param (iface, IEEE80211_PARAM_MACCMD,
-		 IEEE80211_MACCMD_POLICY_ALLOW);
+		 IEEE80211_MACCMD_POLICY_DENY);
 }
 
 void
