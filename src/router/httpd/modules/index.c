@@ -149,7 +149,11 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   char var[64];
   char eths[256];
   memset (eths, 0, 256);
+#ifdef HAVE_XSCALE
+  getinterfacelist ("ixp", eths);
+#else
   getinterfacelist ("eth", eths);
+#endif
   foreach (var, eths, next)
   {
     char val[64];
