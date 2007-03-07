@@ -604,8 +604,8 @@ main (int argc, char **argv)
 	      unsigned char mac[6];
 
 
-	      set_maclist (iface, buf);	//set maclist to deny
 	      security_deny (iface);	//deny macs
+	      set_maclist (iface, buf);	//set maclist to deny
 
 	      ea = maclist->ea;
 	      for (i = 0; i < maclist->count; i++)
