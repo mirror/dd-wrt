@@ -49,7 +49,50 @@ static unsigned int oldclocks[9] =
 static unsigned int newclocks[9] =
   { 183, 187, 198, 200, 216, 225, 233, 237, 250 };
 
+void show_ipnetmask(webs_t wp,char *var)
+{
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 
+    char ip[32];
+    sprintf (ip, "%s_ipaddr", var);
+    char *ipv = nvram_safe_get (ip);
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 0));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 1));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 2));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
+	       var, get_single_ip (ipv, 3));
+    websWrite (wp, "</div>\n");
+
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+    sprintf (ip, "%s_netmask", var);
+    ipv = nvram_safe_get (ip);
+
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 0));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 1));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 2));
+    websWrite (wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
+	       var, get_single_ip (ipv, 3));
+    websWrite (wp, "</div>\n");
+
+}
 void
 ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
@@ -1733,6 +1776,11 @@ save_networking (webs_t wp)
     {
       char *ifname, *tag, *prio;
       char var[32];
+      char ipaddr[32];
+      char netmask[32];
+      char n[32];
+      memset(ipaddr,0,32);
+      memset(netmask,0,32);
       sprintf (var, "bridgename%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
@@ -1745,6 +1793,14 @@ save_networking (webs_t wp)
       prio = websGetVar (wp, var, NULL);
       if (!prio)
 	return;
+	
+      sprintf (n, "%s_ipaddr", ifname);
+      if (get_merge_ipaddr (wp, n, ipaddr))
+	nvram_set(n,ipaddr);      
+      sprintf (n, "%s_netmask", ifname);
+      if (get_merge_ipaddr (wp, n, netmask))
+        nvram_set(n,netmask);
+       
       strcat (buffer, ifname);
       strcat (buffer, ">");
       if (!strcmp (tag, "On"))
@@ -1784,7 +1840,11 @@ save_networking (webs_t wp)
 	strcat (buffer, " ");
     }
   nvram_set ("bridgesif", buffer);
+#ifdef HAVE_PORTSETUP
+  validate_portsetup(wp,NULL,NULL);
+#endif
   nvram_commit ();
+
   nvram_set ("action_service", "index");
   service_restart ();
 }
@@ -2003,11 +2063,11 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
     websWrite (wp,
 	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 	       vlan_name, prio != NULL ? prio : "");
-
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 	       count);
     websWrite (wp, "</div>\n");
+    show_ipnetmask(wp,tag);
     count++;
   }
   int i;
@@ -6416,14 +6476,22 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   char *next;
   char var[64];
   char eths[256];
+#ifdef HAVE_XSCALE
+  if (getifcount ("ixp") == 1)
+    return;
+#else
   if (getifcount ("eth") == 1)
     return;
-
+#endif
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
   memset (eths, 0, 256);
+#ifdef HAVE_XSCALE
+  getinterfacelist ("ixp", eths);
+#else
   getinterfacelist ("eth", eths);
+#endif
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
   websWrite (wp, "<select name=\"wan_ifname\">\n");
@@ -6456,46 +6524,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnet\">\n", var);
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-    char ip[32];
-    sprintf (ip, "%s_ipaddr", var);
-    char *ipv = nvram_safe_get (ip);
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 0));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 1));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 2));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
-	       var, get_single_ip (ipv, 3));
-    websWrite (wp, "</div>\n");
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-    sprintf (ip, "%s_netmask", var);
-    ipv = nvram_safe_get (ip);
-
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 0));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 1));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 2));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 3));
-    websWrite (wp, "</div>\n");
-    websWrite (wp, "</div>\n");
-
+    show_ipnetmask(wp,var);
+    websWrite (wp,"</div>\n");
     websWrite (wp, "<script>\n//<![CDATA[\n ");
     websWrite (wp,
 	       "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n",
