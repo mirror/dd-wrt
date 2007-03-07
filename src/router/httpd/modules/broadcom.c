@@ -3826,6 +3826,7 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 
   int sipgate = nvram_match ("sipgate", "1");
   int vlan_supp = check_vlan_support ();
+  int micro = nvram_match ("dist_type", "micro");
 #ifdef HAVE_SPUTNIK_APD
   int sputnik = nvram_match ("apd_enable", "1");
 #else
@@ -3940,10 +3941,8 @@ ej_do_menu (  webs_t wp, int argc, char_t ** argv)
 		j++;
 	      if ((!openvpn) && !strcmp (menu[i][j], "Status_OpenVPN.asp"))	//jump over OpenVPN
 		j++;
-#ifdef HAVE_MICRO
-	      if (!strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
+	      if ((micro) && !strcmp (menu[i][j], "Status_Bandwidth.asp"))	//jump over bandtwidth in micro build
 		j++;
-#endif
 	      if ((!auth) && !strcmp (menu[i][j], "Info.htm"))	//jump over Sys-Info
 		j++;
 		
