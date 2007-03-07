@@ -92,8 +92,7 @@ void read_bit(int bit) {
     fprintf(stderr, "Error: ioctl failed: %s (%d)\n", strerror(errno), errno);
     exit(1);
   }
-    
-  fprintf(stderr,"Bit %d=%d\n", _bit.bit, _bit.state);
+    fprintf(stderr,"Bit %d=%d\n", _bit.bit, _bit.state);
 
   close(file);
 }
