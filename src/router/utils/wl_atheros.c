@@ -85,7 +85,7 @@ main (int argc, char *argv[])
 		{
 		  char interface[32];
 		  sprintf (interface, "ath%d", c);
-		      if (rssi==-1)
+		  if (rssi<1)
 		        rssi = getRssi(interface, rmac);
 		  char vif[32];
 		  sprintf (vif, "%s_vifs", interface);
@@ -95,7 +95,7 @@ main (int argc, char *argv[])
 		    {
 		      foreach (var, vifs, next)
 		      {
-		      if (rssi==-1)
+		      if (rssi<1)
 		        rssi = getRssi(var, rmac);
 		      else break;
 		      }
@@ -120,7 +120,7 @@ main (int argc, char *argv[])
 		{
 		  char interface[32];
 		  sprintf (interface, "ath%d", c);
-		      if (rssi==-1)
+		      if (rssi<1)
 		        rssi = getNoise(interface, rmac);
 		  char vif[32];
 		  sprintf (vif, "%s_vifs", interface);
@@ -130,7 +130,7 @@ main (int argc, char *argv[])
 		    {
 		      foreach (var, vifs, next)
 		      {
-		      if (rssi==-1)
+		      if (rssi<1)
 		        rssi = getNoise(var, rmac);
 		      else break;
 		      }
