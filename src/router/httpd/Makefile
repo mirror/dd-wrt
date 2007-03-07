@@ -50,6 +50,9 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DHAVE_MICRO
+endif
 ifeq ($(CONFIG_WIVIZ),y)
 CFLAGS += -DHAVE_WIVIZ
 endif
