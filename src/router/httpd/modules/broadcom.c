@@ -1046,7 +1046,7 @@ ej_support_invmatch (  webs_t wp, int argc, char_t ** argv)
 	}
     }
 #endif
-#ifdef HAVE_WIVIZ
+#ifndef HAVE_WIVIZ
       if (!strcmp (name, "WIVIZ_SUPPORT") && strcmp(value, "1"))
 	{
 	 websWrite (wp, output);
