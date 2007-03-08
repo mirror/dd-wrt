@@ -48,42 +48,42 @@ function choose_disable(dis_object) {
 function check_action(I,N) {
 	if(ns4){									//ie.  will not need and will have question in "select"
 		if(N == 0){
-			if(EN_DIS == 1) 
+			if(EN_DIS == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 1){
-			if(EN_DIS1 == 1) 
+			if(EN_DIS1 == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 2){
-			if(EN_DIS2 == 1) 
+			if(EN_DIS2 == 1)
 				I.focus();
-			else 
+			else
 				I.blur();
 		} else if(N == 3){
-			if(EN_DIS3 == 1) 
+			if(EN_DIS3 == 1)
 				I.focus();
 			else
 				I.blur();
 		}
-			
+
 	}
 }
 
 function check_action1(I,T,N) {
 	if(ns4){									//ie.  will not need and will have question in "select"
 		if(N == 0){
-			if(EN_DIS == 1) 
+			if(EN_DIS == 1)
 				I.focus();
-			else 
+			else
 				I.value = I.defaultChecked;
 		}
 		if(N == 1){
-			if(EN_DIS1 == 1) 
+			if(EN_DIS1 == 1)
 				I.focus();
-			else 
+			else
 				I.value = I.defaultChecked;
 		}
 	}
@@ -96,12 +96,12 @@ function valid_range(I,start,end,M) {
 	M1 = unescape(M);
 	isdigit(I,M1);
 
-	d = parseInt(I.value, 10);	
-	if ( !(d<=end && d>=start) ) {		
+	d = parseInt(I.value, 10);
+	if ( !(d<=end && d>=start) ) {
 //		alert(M1 +" value is out of range ["+ start + " - " + end +"]");
 		alert(M1 + errmsg.err14 + start + " - " + end +"].");
-		I.value = I.defaultValue;		
-	} else 
+		I.value = I.defaultValue;
+	} else
 		I.value = d;	// strip 0
 
 }
@@ -126,7 +126,7 @@ function valid_macs_list(I) {
 	var macs = I.value.split(" ");
 	var ret = true;
 	var good_macs = "";
-	
+
 	while (macs.length > 0) {
 		var mac = new Object;
 		mac.value = macs.shift();
@@ -157,51 +157,51 @@ function valid_mac(I,T) {
 	m1 =parseInt(I.value.charAt(0), 16);
 	m2 =parseInt(I.value.charAt(1), 16);
 	if( isNaN(m1) || isNaN(m2) ) {
-//		alert("The WAN MAC Address is out of range [00 - ff].");	
+//		alert("The WAN MAC Address is out of range [00 - ff].");
 		alert(errmsg.err15);
 		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
-	if(T == 0) {                                                                       
-		if((m2 & 1) == 1){                               
+	if(T == 0) {
+		if((m2 & 1) == 1){
 //			alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 			alert(errmsg.err16);
-			I.value = I.defaultValue;                       
-		}                                                       
-	}                       
+			I.value = I.defaultValue;
+		}
+	}
 }
-function valid_macs_12(I){	
-	var m,m3;	
+function valid_macs_12(I){
+	var m,m3;
 	if(I.value == "")
 		return true;
 	else if(I.value.length==12){
-		for(i=0;i<12;i++){			
-			m=parseInt(I.value.charAt(i), 16);			
-			if( isNaN(m) )				
-				break;		
-		}		
+		for(i=0;i<12;i++){
+			m=parseInt(I.value.charAt(i), 16);
+			if( isNaN(m) )
+				break;
+		}
 		if( i!=12 ){
 //			alert("The MAC Address is not correct.");
 			alert(errmsg.err17);
-			I.value = I.defaultValue;		
-		}	
-	} else {		
+			I.value = I.defaultValue;
+		}
+	} else {
 //		alert("The MAC Address length is not correct.");
 		alert(errmsg.err18);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FFFFFFFFFFFF"){
 //		alert("The MAC Address cannot be the broadcast address.");
 		alert(errmsg.err19);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
-	if((m3 & 1) == 1){                               
+	if((m3 & 1) == 1){
 //		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 		alert(errmsg.err16);
-		I.value = I.defaultValue;                       
-	}                                                      
+		I.value = I.defaultValue;
+	}
 }
 
 function valid_macs_17(I)
@@ -218,7 +218,7 @@ function valid_macs_17(I)
 	if (m.length != 6) {
 //		alert("Invalid MAC address format");
 		alert(errmsg.err21);
-		I.value = I.defaultValue;		
+		I.value = I.defaultValue;
 		return false;
 	}
 	var idx = oldmac.indexOf(':');
@@ -230,7 +230,7 @@ function valid_macs_17(I)
 			if (len < 1 || len > 2) {
 //				alert ("The WAN MAC Address is not correct.");
 				alert(errmsg.err22);
-				I.value = I.defaultValue;		
+				I.value = I.defaultValue;
 				return false;
 			}
 			for(iln = 0; iln < len; iln++) {
@@ -240,24 +240,24 @@ function valid_macs_17(I)
 				} else {
 //					alert ("Invalid hex value " + nameVal + " found in MAC address " + oldmac);
 					alert (errmsg.err23 + nameVal + errmsg.err24 + oldmac + ".");
-					I.value = I.defaultValue;		
+					I.value = I.defaultValue;
 					return false;
 				}
-			}	
+			}
 		}
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FF:FF:FF:FF:FF:FF"){
 //		alert("The MAC Address cannot be the broadcast address.");
 		alert(errmsg.err19);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 	m3 = I.value.charAt(1);
-	if((m3 & 1) == 1){                               
+	if((m3 & 1) == 1){
 //		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 		alert(errmsg.err16);
-		I.value = I.defaultValue;                       
-	}                                                       
+		I.value = I.defaultValue;
+	}
 	return true;
 }
 
@@ -280,7 +280,7 @@ function check_space(I,M1){
 		if(ch == ' ') {
 //			alert(M +" is not allowed to contain a space.");
 			alert(M+errmsg.err34);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -288,23 +288,23 @@ function check_space(I,M1){
 	return true;
 }
 
-function valid_key(I,l){	
-	var m;	
-	if(I.value.length==l*2)	{		
-		for(i=0;i<l*2;i++) {			 
+function valid_key(I,l){
+	var m;
+	if(I.value.length==l*2)	{
+		for(i=0;i<l*2;i++) {
 			m=parseInt(I.value.charAt(i), 16);
-			if( isNaN(m) )				
-				break;		
-		}		
-		if( i!=l*2 ){		
-//			alert("The key value is not correct.");	
+			if( isNaN(m) )
+				break;
+		}
+		if( i!=l*2 ){
+//			alert("The key value is not correct.");
 			alert(errmsg.err25);
-			I.value = I.defaultValue;		
-		}	
-	} else{		
+			I.value = I.defaultValue;
+		}
+	} else{
 //		alert("The key length is not correct");
 		alert(errmsg.err26);
-		I.value = I.defaultValue;	
+		I.value = I.defaultValue;
 	}
 }
 
@@ -375,7 +375,7 @@ function isdigit(I,M) {
 		if(ch < '0' || ch > '9') {
 //			alert(M +" have illegal characters, must be [ 0 - 9 ].");
 			alert(M+errmsg.err28);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -389,7 +389,7 @@ function isascii(I,M) {
 		if(ch < ' ' || ch > '~'){
 //			alert(M +" have illegal ascii code.");
 			alert(M+errmsg.err29);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -401,11 +401,11 @@ function isxdigit(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i).toLowerCase();
 		if(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
-				
+
 		} else {
 //			alert(M +" have illegal hexadecimal digits.");
 			alert(M+errmsg.err30);
-			I.value = I.defaultValue;	
+			I.value = I.defaultValue;
 			return false;
 		}
 	}
@@ -452,7 +452,7 @@ function valid_ip(F,N,M1,flag){
 
 function valid_ip_str(I, M){
 	if(I.value == "" || I.value == " ") return true;
-	
+
 	var m = new Array(4);
 	var ip_str = I.value.split(".");
 
@@ -465,7 +465,7 @@ function valid_ip_str(I, M){
 			return false;
 		}
 	}
-	
+
 	if(m[0] == 127 || m[0] == 224){
 //		alert(M+" value is illegal.");
 		alert(M+errmsg.err31);
@@ -487,7 +487,7 @@ function valid_ip_gw(F,I,N,G) {
 	var IP = new Array(4);
 	var NM = new Array(4);
 	var GW = new Array(4);
-	
+
 	for(i=0;i<4;i++)
 		IP[i] = eval(I+"_"+i).value
 	for(i=0;i<4;i++)
@@ -507,7 +507,7 @@ function valid_ip_gw(F,I,N,G) {
 		alert(errmsg.err33);
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -560,65 +560,57 @@ var w3c=(document.getElementById)?true:false;
 var ie=(document.all)?true:false;
 var N=-1;
 
-function createBar(w,h,speed,blocks,count,action) {
-	if(ie||w3c){
-		var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
-		t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
-		for(i=0;i<blocks;i++){
-			t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; '
-			t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
-			t+='"></span>';
-		}
-		
-		t+='</span></div>';
-		document.write(t);
-		var bA=(ie)?document.all['blocks'+N]:document.getElementById('blocks'+N);
-		bA.bar=(ie)?document.all['_xpbar'+N]:document.getElementById('_xpbar'+N);
-		bA.blocks=blocks;
-		bA.N=N;
-		bA.w=w;
-		bA.h=h;
-		bA.speed=speed;
-		bA.ctr=0;
-		bA.count=count;
-		bA.action=action;
-		bA.togglePause=togglePause;
-		
-		bA.showBar=function(){
-			this.bar.style.visibility="visible";
-		}
-		
-		bA.hideBar=function(){
-			this.bar.style.visibility="hidden";
-		}
-		
-		bA.tid=setInterval('startBar('+N+')',speed);
-		
-		return bA;
-	}
+function createBar(w,h,speed,blocks,count,action){
+if(ie||w3c){
+var t='<div class="progressbar" id="_xpbar'+(++N)+'" style="width:'+w+'px; height:'+h+'px;">';
+t+='<span class="progressbarblock" id="blocks'+N+'" style="left:-'+(h*2+1)+'px;">';
+for(i=0;i<blocks;i++){
+t+='<span class="progressbarblock" style="left:-'+((h*i)+i)+'px; width:'+h+'px; height:'+h+'px; '
+t+=(ie)?'filter:alpha(opacity='+(100-i*(100/blocks))+')':'-Moz-opacity:'+((100-i*(100/blocks))/100);
+t+='"></span>';
 }
+t+='</span></div>';
+document.write(t);
+var bA=(ie)?document.all['blocks'+N]:document.getElementById('blocks'+N);
+bA.bar=(ie)?document.all['_xpbar'+N]:document.getElementById('_xpbar'+N);
+bA.blocks=blocks;
+bA.N=N;
+bA.w=w;
+bA.h=h;
+bA.speed=speed;
+bA.ctr=0;
+bA.count=count;
+bA.action=action;
+bA.togglePause=togglePause;
+bA.showBar=function(){
+this.bar.style.visibility="visible";
+}
+bA.hideBar=function(){
+this.bar.style.visibility="hidden";
+}
+bA.tid=setInterval('startBar('+N+')',speed);
+return bA;
+}}
 
 function startBar(bn){
-	var t=(ie)?document.all['blocks'+bn]:document.getElementById('blocks'+bn);
-	if(parseInt(t.style.left)+t.h+1-(t.blocks*t.h+t.blocks)>t.w){
-		t.style.left=-(t.h*2+1)+'px';
-		t.ctr++;
-		if(t.ctr>=t.count){
-			eval(t.action);
-			t.ctr=0;
-		}
-	}
-	else t.style.left=(parseInt(t.style.left)+t.h+1)+'px';
+var t=(ie)?document.all['blocks'+bn]:document.getElementById('blocks'+bn);
+if(parseInt(t.style.left)+t.h+1-(t.blocks*t.h+t.blocks)>t.w){
+t.style.left=-(t.h*2+1)+'px';
+t.ctr++;
+if(t.ctr>=t.count){
+eval(t.action);
+t.ctr=0;
+}}else t.style.left=(parseInt(t.style.left)+t.h+1)+'px';
 }
 
 function togglePause(){
-	if(this.tid==0){
-		this.tid=setInterval('startBar('+this.N+')',this.speed);
-	}else{
-		clearInterval(this.tid);
-		this.tid=0;
-	}
-}
+if(this.tid==0){
+this.tid=setInterval('startBar('+this.N+')',this.speed);
+}else{
+clearInterval(this.tid);
+this.tid=0;
+}}
+
 // END xp_progressbar
 
 // 03/03/06 : Botho - Change style of the element in param
@@ -630,8 +622,8 @@ function change_style(id, newClass) {
 // 14/03/06 : Botho - New way for translation. (Linksys one)
 function Capture(obj)
 {
-	document.write(obj);	
-}	
+	document.write(obj);
+}
 
 
 function defined(val) {
@@ -757,7 +749,7 @@ function StatusUpdate(_url, _frequency) {
 	var me = this;
 	var callbacks = new Object();
 	var updates = new Object();
-	
+
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
 		if(document.getElementsByName("refresh_button")) {
@@ -767,14 +759,14 @@ function StatusUpdate(_url, _frequency) {
 		}
 		timer = setTimeout(me.doUpdate, frequency);
 	}
-	
+
 	this.stop = function() {
 		clearTimeout(timer);
-		if(document.getElementsByName("refresh_button")) 
+		if(document.getElementsByName("refresh_button"))
 			document.getElementsByName("refresh_button")[0].disabled = false;
 		request = null;
 	}
-	
+
 	this.onUpdate = function(id, func) {
 		callbacks[id] = func;
 	}
@@ -789,7 +781,7 @@ function StatusUpdate(_url, _frequency) {
 			var activeCallbacks = new Array();
 			var regex = /\{(\w+)::([^\}]*)\}/g;
 			while(result = regex.exec(request.responseText)) {
-				var key = result[1]; 
+				var key = result[1];
 				var value = result[2];
 				if(defined(updates[key]) && updates[key] == value) continue;
 				updates[key] = value;
@@ -801,7 +793,7 @@ function StatusUpdate(_url, _frequency) {
 		}
 		request.send("");
 	}
-	
+
 	this.forceUpdate = function() {
 		this.stop();
 		this.doUpdate();
@@ -815,7 +807,7 @@ function apply(form, text, delay) {
 
     Dialog.info(text, {windowParameters: {className: "ddwrt", width:250, height:100}, showProgress: true});
     setTimeout(function(){form.submit();}, 2000);
-    
+
     if(delay) {
     	setTimeout(function(){infoTimeout(text, delay);}, 1000);
     }
@@ -832,14 +824,13 @@ function infoTimeout(text, delay) {
 	}
 }
 
-
 // Class for sending a request using ajax
 // This is work in progress, plz do not use yet.
 /* function Request(_url) {
 	var url = _url;
 	var values = new Array();
 	var callback = new Array();
-	
+
 	this.addAllElements = function() {
 		for(var i = 0; i < document.forms[0].elements.length; i++)
 			this.addElement(document.forms[0].elements[i].name);
@@ -849,12 +840,12 @@ function infoTimeout(text, delay) {
 		if(!document.forms[0].elements[name]) return;
 		this.addValue(name, document.forms[0].elements[name].value);
 	}
-	
+
 	this.addValue = function(name, value) {
 		if(name.match(/[^\w]/)) return;
 		values.push(name + "=" + encodeURIComponent(value));
 	}
-	
+
 	this.onRequest = function(func) {
 		callback.push(func);
 	}
@@ -879,7 +870,7 @@ function infoTimeout(text, delay) {
 
 // Botho 06/04/2006 : Function to resolve OUI names
 function getOUIFromMAC(mac) {
-	
+
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = 700
@@ -895,13 +886,13 @@ function getOUIFromMAC(mac) {
 
 /* Added by Botho 25.April.06 */
 /* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
-/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */ 
+/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */
 function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
 	var coef = 1.1;									// +10% to be on a safe side if many services need to be restarted, Eko
-	
+
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
 		coef = 1.5;
 	}
@@ -911,7 +902,7 @@ function getTimeOut(clk, rest_default, flags) {
 	if (flags==2) {
 		coef = coef * 1.8;
 	}
-	
+
 	this.wait_time = coef * wait_time * (125 / clk);
 	this.scroll_count = this.wait_time / 5 - 3;
 
@@ -923,7 +914,7 @@ function setElementMask(id, state) {
 
 	var OldInput = document.getElementById(id);
 	if(!OldInput) return;
-	
+
 	var val = OldInput.value;
 	var val_maxlength = OldInput.maxlength;
 	var val_size = OldInput.size;
@@ -942,11 +933,11 @@ function setElementMask(id, state) {
 		newInput.setAttribute('type', 'text');
 	else
 		newInput.setAttribute('type', 'password');
-	
+
 	parent.removeChild(OldInput);
 	parent.insertBefore(newInput, sibling);
 	newInput.focus();
-	
+
 }
 
 var windo = {
@@ -955,7 +946,7 @@ var windo = {
 			return {height: window.innerHeight, width: window.innerWidth};
 		else if (document.documentElement && document.documentElement.clientHeight)
 			return {height: document.documentElement.clientHeight, width: document.documentElement.clientWidth};
-		
+
 		return {Height: document.body.clientHeight,	width: document.body.clientWidth};
 	}
 
@@ -1018,10 +1009,10 @@ function DisplayDiv(current,evt,h,w,text)
 {
 	var height = h;
 	var width = w;
-	
+
 	text = text.replace(/&lt;/gi,'<');
 	text = text.replace(/&gt;/gi,'>');
-	
+
 	if(document.all) {
 		if(document.readyState == 'complete') {
 			document.all.bulle.innerHTML = '<table class="bulle" cellspacing="0"><tr><td class="bulle">' + text + '</td></tr></table>';
@@ -1065,9 +1056,3 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(clo)
 		document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
 }
-
-
-
-
-
-
