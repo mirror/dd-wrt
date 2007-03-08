@@ -9,6 +9,7 @@
     <script type="text/javascript" src="../javascripts/prototype.js"> </script> 
   	<script type="text/javascript" src="../javascripts/effects.js"> </script>
   	<script type="text/javascript" src="../javascripts/window.js"> </script>
+  	<script type="text/javascript" src="../javascripts/window_effects.js"> </script>
   	<script type="text/javascript" src="../javascripts/debug.js"> </script>
   	
   	<link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
@@ -38,6 +39,7 @@
   </head>
   <script>
     var contentWin;
+    
   </script>
   <body onload="">
     <script>Application.insertNavigation('samples')</script>
@@ -54,7 +56,7 @@ You can open <a href="#" onclick="showDebug();"> the debug window </a> if you wa
         
         <div class="listing" style="display:none" id="open_window1_codediv">
           <xmp id="open_window1" class="listing" >
-var win = new Window(Application.getNewId(), {className: "dialog",  width:350, height:400, zIndex: 100, resizable: true, title: "Sample window", showEffect:Effect.BlindDown, hideEffect: Effect.SwitchOff, draggable:true, wiredDrag: true})
+var win = new Window({className: "dialog",  width:350, height:400, zIndex: 100, resizable: true, title: "Sample window", showEffect:Effect.BlindDown, hideEffect: Effect.SwitchOff, draggable:true, wiredDrag: true})
 
 win.getContent().innerHTML= "<div style='padding:10px'> Lorem ipsum dolor sit amet, consectetur adipiscing elit, set eiusmod tempor incidunt et labore et dolore magna aliquam. Ut enim ad minim veniam, quis nostrud exerc. Irure dolor in reprehend incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse molestaie cillum. Tia non ob ea soluad incom dereud facilis est er expedit distinct. Nam liber te conscient to factor tum poen legum odioque civiuda et tam. \
 At vver eos et accusam dignissum qui blandit est praesent. Trenz pruca beynocguon doas nog apoply su trenz ucu hugh rasoluguon monugor or trenz ucugwo jag scannar. Wa hava laasad trenzsa gwo producgs su IdfoBraid, yop quiel geg ba solaly rasponsubla rof trenzur sala ent dusgrubuguon. Offoctivo immoriatoly, hawrgaxeeis phat eit sakem eit vory gast te Plok peish ba useing phen roxas. Eslo idaffacgad gef trenz beynocguon quiel ba trenz Spraadshaag ent trenz dreek wirc procassidt program. Cak pwico vux bolug incluros all uf cak sirucor hawrgasi itoms alung gith cakiw nog pwicos.\
@@ -73,9 +75,9 @@ win.showCenter();
         
         <div class="listing" style="display:none" id="open_window2_codediv">
           <xmp id="open_window2" class="listing">
-var win = new Window(Application.getNewId(), {className: "spread", title: "Ruby on Rails", 
-                                              top:70, left:100, width:300, height:200, 
-                                              resizable: true, url: "http://www.rubyonrails.org/", showEffectOptions: {duration:3}})
+var win = new Window({className: "spread", title: "Ruby on Rails", 
+                      top:70, left:100, width:300, height:200, 
+                      url: "http://www.rubyonrails.org/", showEffectOptions: {duration:1.5}})
 win.show();                                            
           </xmp>        
           <script>Application.addEditButton('open_window2')</script>
@@ -98,13 +100,11 @@ win.show();
         <div class="listing" style="display:none" id="open_window3_codediv">
           <xmp id="open_window3" class="listing">
 if (contentWin != null) {
-	Dialog.alert("Close the window 'Test' before opening it again!", {windowParameters:{ width:200, height:130}}); 
+  Dialog.alert("Close the window 'Test' before opening it again!",{width:200, height:130}); 
 }
 else {
-  contentWin = new Window('content_win', {resizable: false, hideEffect:Element.hide, showEffect:Element.show, minWidth: 10})
+  contentWin = new Window({maximizable: false, resizable: false, hideEffect:Element.hide, showEffect:Element.show, minWidth: 10, destroyOnClose: true})
   contentWin.setContent('test_content', true, true)
-  contentWin.toFront();
-  contentWin.setDestroyOnClose();
   contentWin.show();	
 
   // Set up a windows observer, check ou debug window to get messages
@@ -134,7 +134,7 @@ else {
         <div class="listing" style="display:none" id="open_alert_codediv">
           <xmp id="open_alert" class="listing">
 Dialog.alert("Test of alert panel, check out debug window after closing it", 
-             {windowParameters: {width:300, height:100}, okLabel: "close", 
+             {width:300, height:100, okLabel: "close", 
               ok:function(win) {debug("validate alert panel"); return true;}});
           </xmp>        
           <script>Application.addEditButton('open_alert')</script>
@@ -162,7 +162,7 @@ Dialog.alert("Test of alert panel, check out debug window after closing it",
         <div class="listing" style="display:none" id="open_confirm_codediv">        
           <xmp id="open_confirm">
 Dialog.confirm("Test of confirm panel, check out debug window after closing it.", 
-              {windowParameters: {width:300}, okLabel: "close", 
+               {width:300, okLabel: "close", 
                buttonClass: "myButtonClass",
                id: "myDialogId",
                cancel:function(win) {debug("cancel confirm panel")},
@@ -183,7 +183,7 @@ Dialog.confirm("Test of confirm panel, check out debug window after closing it."
 var timeout;
 function openInfoDialog() {
   Dialog.info("Test of info panel, it will close <br>in 3s ...",
-               {windowParameters: {width:250, height:100}, showProgress: true});
+               {width:250, height:100, showProgress: true});
   timeout=3;
   setTimeout(infoTimeout, 1000)
 }
@@ -231,9 +231,9 @@ openInfoDialog();
 
         <div class="listing" style="display:none" id="open_login_codediv">        
           <xmp id="open_login">
-Dialog.confirm($('login').innerHTML, {windowParameters: {className:"alphacube", width:400}, 
+Dialog.confirm($('login').innerHTML, {className:"alphacube", width:400, 
                                       okLabel: "login", cancelLabel: "cancel",
-                                      ok:function(win){
+                                      onOk:function(win){
                                         $('login_error_msg').innerHTML='Login or password inccorect';
                                         $('login_error_msg').show(); 
                                         Windows.focusedWindow.updateHeight();
@@ -250,11 +250,21 @@ Dialog.confirm($('login').innerHTML, {windowParameters: {className:"alphacube", 
 
         <div class="listing" style="display:none" id="open_ajax_dialog_codediv">        
           <xmp id="ajax_dialog">Dialog.alert({url: "info_panel.html", options: {method: 'get'}}, 
-            {windowParameters: {className: "alphacube", width:540}, okLabel: "Close"});</xmp>
+            {className: "alphacube", width:540, okLabel: "Close"});</xmp>
           <script>Application.addEditButton('open_ajax_dialog')</script>
         </div>
-        
+        <h2>
+        9. Samples included in the distrib
+        </h2>
+        <ul>
+          <li><a href="current/samples/constraint.html">Constraint</a>: Constraint move/resize inside a div, insiade a page event by settings top/bottom/left/right margins.</li>
+          <li><a href="current/samples/multi_modal.html">Multi Modal</a>: Open three modal windows one by one. You can keep them visible or hidden one by one.</li>
+          <li><a href="current/samples/window_store.html">Window Store add-on</a>: Save in cookies windows location but also open/close status.</li>
+          <li><a href="current/samples/window_key.html">Window Key add-on</a>: Set a key to close dialog (escape key by default)</li>
+          <li><a href="current/samples/tooltips/tooltip.html">Tooltip add-on</a>: Use PWC to create tooltips. Tooltips will stay visible if you move your mouse over. You can add forms or links inside. Tooltip content can be HTML, Ajax or an URL.</li>
+        </ul>
     </div>
+    
    </div>   
   </body>
 </html>

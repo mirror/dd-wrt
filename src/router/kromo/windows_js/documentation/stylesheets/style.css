@@ -263,8 +263,12 @@ h2.intro_message {
 }
 ul.intro_message {
   text-align:left;
-  padding:0, 10px;
+  margin:10px;
+}
+ul.intro_message li {
+  padding:0;
   margin:0;
+  font-size:14px;
 }
 h3.intro_message {
   font-size:12px;
@@ -285,7 +289,7 @@ h4.intro_message {
 
 span.intro_message {
   text-align:left;
-  font-size:16px;
+  font-size:18px;
 }
 xmp.intro {
   padding:5px;

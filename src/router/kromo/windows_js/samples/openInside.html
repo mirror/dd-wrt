@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<title>Test</title>
+
+	<script type="text/javascript" src="../javascripts/prototype.js"> </script>
+	<script type="text/javascript" src="../javascripts/window.js"> </script>
+	<script type="text/javascript" src="../javascripts/debug.js"> </script>
+	<script type="text/javascript" src="../javascripts/effects.js"> </script>
+
+	<link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
+	<link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
+	<title>Test</title>
+  <style>
+  #master_content {
+    position:relative;
+    overflow:hidden;
+  }  
+  a {
+    color:#333;
+    font-size: 16px;
+  }
+  </style>
+  
+</head>
+<body>
+  <div id="content" style="display:none">
+    <a href="#" onclick="insideWindow()">open a window inside this window</a><br/></br/>
+    <a href="#" onclick="outsideWindow()">open a window outside this window</a>
+  </div>
+
+  <script>
+  function openPopup(){
+    var master = new Window("master", {className: "alphacube", width:350, height:400,title:"Master Window"});
+    master.setContent("content");
+    master.setDestroyOnClose();
+    master.showCenter();
+  }
+  
+  function insideWindow() {
+    var win = new Window("win1", {className: "alphacube", top:40, left:0, width:200, height:100,title:"Inside Window",
+                          maximizable: false, minimizable: false, parent: Windows.getWindow("master").getContent()});
+    win.setDestroyOnClose();
+    win.show();
+  }
+  
+  function outsideWindow() {
+    var win = new Window("win2", {className: "alphacube", top:40, left:0, width:200, height:100, title:"Outside Window",
+                          maximizable: false, minimizable: false});
+    win.setDestroyOnClose();
+    win.show();
+  }
+  
+ openPopup();
+ 
+  </script>
+</body>
+</html>

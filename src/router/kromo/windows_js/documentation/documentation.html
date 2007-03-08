@@ -32,6 +32,7 @@
       <p class="title"><span class="function">Window.keepMultiModalWindow</span> Constant for multi modal window behavior.<br><br>
       By default (<strong>Window.keepMultiModalWindow=false</strong>), a new modal window will hide the previous one. if <strong>Window.keepMultiModalWindow=true</strong>, a new modal window will move the previous one under the overlay. </p>
     </div>
+    <br style='clear:both'/>
     <div class="function window" title="initialize"><a name="initialize"></a>
       <p class="title"><span class="function">initialize(id, options)</span> Window constructor used when creating new window (new Window(id, options))</p>
       <!--       
@@ -50,6 +51,7 @@
           Hash map of window options, here is the key list:
           <table>
             <tr><th>Key</th>   <th>Default</th> <th>Description </th></tr>
+            <tr><td class="key">id</td>                   <td class="default">generated</td> <td class="detail">window DOM id. Must be unique </td></tr>
             <tr><td class="key">className</td>            <td class="default">dialog</td> <td class="detail">Class name prefix </td></tr>
             <tr><td class="key">title</td>                <td class="default">none</td>   <td class="detail">Window's title </td></tr>
             <tr><td class="key">url</td>                  <td class="default">none</td>   <td class="detail">URL of window content (use an iframe)</td></tr>
@@ -72,36 +74,44 @@
             <tr><td  class="key">onload</td>              <td class="default">none</td>       <td class="detail">Onload function of the main window div or iframe</td></tr>
             <tr><td  class="key">opacity</td>             <td class="default">1</td>       <td class="detail">Window opacity </td></tr>
             <tr><td  class="key">recenterAuto</td>       <td class="default">true</td>       <td class="detail">Recenter modal window when browser size has changed</td></tr>
+            <tr><td  class="key">gridX</td>              <td class="default">1</td>         <td class="detail">Move and resize will snap on a grid</td></tr>
+            <tr><td  class="key">gridY</td>              <td class="default">1</td>         <td class="detail">Move and resize will snap on a grid</td></tr>
+            <tr><td  class="key">recenterAuto</td>       <td class="default">true</td>       <td class="detail">Recenter modal window when browser size has changed</td></tr>
             <tr><td  class="key">wiredDrag</td>           <td class="default">false</td>       <td class="detail">Move/Resize will be done with a wired frame (customizable in CSS, class <strong>&lt;className&gt;_wired_frame</strong>. Look in alphacube.css for an example) </td></tr>
+            <tr><td  class="key">destroyOnClose</td>             <td class="default">false</td>       <td class="detail">Destroy window when closing window. By default, the window is just hidden</td></tr>
+            
+            <tr><td  class="key">all callbacks</td>       <td class="default">none</td>       <td class="detail">All callback used in observer. Callbacks override observer callbacks:<br/>
+              <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
+              </td></tr>
           </table>
         </span>
       </p>
     </div>
-
+    <br style='clear:both'/>
 
     <div class="function window" title="destroy"><a name="destroy"></a>
       <p class="title"><span class="function">destroy()</span> Window destructor</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="getId"><a name="getId"></a>
       <p class="title"><span class="function">getId()</span> Returns current window id</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setDestroyOnClose"><a name="setDestroyOnClose"></a>
       <p class="title"><span class="function">setDestroyOnClose()</span> The window will be destroy by clicking on close button instead of being hidden</p>
     </div>
+    <br style='clear:both'/>
     
-    <div class="function window" title="setDelegate"><a name="setDelegate"></a>
-      <p class="title"><span class="function">setDelegate(delegate)</span> Sets window delegate</p>
+    <div class="function window" title="setCloseCallback"><a name="setCloseCallback"></a>
+      <p class="title"><span class="function">setCloseCallback(function)</span> Sets close callback function</p>
       <p class="parameter">
-        <span class="field">delegate</span>
-        <span class="explanation">Window delegate, should have canClose(window) function</span>
+        <span class="field">function</span>
+        <span class="explanation">Close callback function, return true if the window can be closed, else return false</span>
       </p>
     </div>
-
-    <div class="function window" title="getDelegate"><a name="getDelegate"></a>
-      <p class="title"><span class="function">getDelegate()</span> Returns current window delegate</p>
-    </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setContent"><a name="setContent"></a>
       <p class="title"><span class="function">setContent(id, autoresize, autoposition)</span> Sets window content using an existing element (does not work with url/iframe)</p>
@@ -118,6 +128,7 @@
         <span class="explanation">Sets the current window position to the specified input element</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setHTMLContent"><a name="setHTMLContent"></a>
       <p class="title"><span class="function">setHTMLContent(html)</span> Sets window HTML content.</p>
@@ -126,6 +137,7 @@
         <span class="explanation">HTML code</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setURL"><a name="setURL"></a>
       <p class="title"><span class="function">setURL(url)</span> Sets window content using an URL.</p>
@@ -134,14 +146,17 @@
         <span class="explanation">URL for content (content will be shown using an iframe)</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="getURL"><a name="getURL"></a>
       <p class="title"><span class="function">getURL()</span> Returns window URL content. Returns nil if content is not an url.</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="refresh"><a name="refresh"></a>
       <p class="title"><span class="function">refresh()</span> Refreshes window URL content.s</p>
     </div>
+    <br style='clear:both'/>
     
     
     <div class="function window" title="setAjaxContent"><a name="setAjaxContent"></a>
@@ -163,6 +178,7 @@
         <span class="explanation">Displays window in modal mode when response is received</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     
     
@@ -170,6 +186,7 @@
     <div class="function window" title="getContent"><a name="getContent"></a>
       <p class="title"><span class="function">getContent()</span> Returns current window content (a div or an iframe)</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setCookie"><a name="setCookie"></a>
       <p class="title"><span class="function">setCookie(name, expires, path, domain, secure)</span> Sets cookie informations to store window size and position</p>
@@ -182,6 +199,7 @@
         <span class="explanation">Cookie attributes</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setLocation"><a name="setLocation"></a>
       <p class="title"><span class="function">setLocation(top, left)</span> Sets window top-left position</p>
@@ -194,6 +212,7 @@
         <span class="explanation">Bottom position in pixels</span>
       </p>
     </div>
+    <br style='clear:both'/>
  
     <div class="function window" title="getSize"><a name="getSize"></a>
       <p class="title"><span class="function">getSize()</span> Gets window content size. Return an hash with width and height as keys</p>
@@ -209,18 +228,22 @@
         <span class="explanation">Height in pixels</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="updateWidth"><a name="updateWidth"></a>
       <p class="title"><span class="function">updateWidth()</span> Recompute window width, useful when you change window content and do not want scrolling</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="updateHeight"><a name="updateHeight"></a>
       <p class="title"><span class="function">updateHeight()</span> Recompute window height, useful when you change window content and do not want scrolling</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="toFront"><a name="toFront"></a>
       <p class="title"><span class="function">toFront()</span> Brings current window in front of all others</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="show"><a name="show"></a>
       <p class="title"><span class="function">show(modal)</span> Shows window at its current position</p>
@@ -229,6 +252,7 @@
         <span class="explanation">Modal mode</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="showCenter"><a name="showCenter"></a>
       <p class="title"><span class="function">showCenter(modal, top, left)</span> Shows window in page's center. You can set top (or left) if you want to center only left (or top) value</p>
@@ -239,22 +263,27 @@
         <span class="explanation">Modal mode</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="minimize"><a name="minimize"></a>
       <p class="title"><span class="function">minimize()</span> Minimizes the window, only top bar will be displayed</p>
     </div>
+    <br style='clear:both'/>
 
     <div class="function window" title="maximize"><a name="maximize"></a>
       <p class="title"><span class="function">maximize()</span> Maximizes the window, the window will fit the viewable area of the page</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="isMinimized"><a name="isMinimized"></a>
       <p class="title"><span class="function">isMinimized()</span> Returns true if the window is minimized</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="isMaximized"><a name="isMaximized"></a>
       <p class="title"><span class="function">isMaximized()</span> Returns true if the window is maximized</p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setOpacity"><a name="setOpacity"></a>
       <p class="title"><span class="function">setOpacity(opacity)</span> Sets window opacity</p>
@@ -263,6 +292,7 @@
         <span class="explanation">Float value between 0 and 1</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setZIndex"><a name="setZIndex"></a>
       <p class="title"><span class="function">setZIndex(zindex)</span> Sets window zindex</p>
@@ -271,6 +301,7 @@
         <span class="explanation">Int value</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setTitle"><a name="setTitle"></a>
       <p class="title"><span class="function">setTitle(title)</span> Sets window title</p>
@@ -279,6 +310,7 @@
         <span class="explanation">Window title (can be null)</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function window" title="setStatusBar"><a name="setStatusBar"></a>
       <p class="title"><span class="function">setStatusBar(element)</span> Sets window status bar</p>
@@ -287,6 +319,7 @@
         <span class="explanation">Can be HTML code or an element</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
   	
     <h2> Dialog module</h2>
@@ -311,14 +344,15 @@
             <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
             <tr><td class="key">okLabel</td>            <td class="default">Ok</td> <td class="detail">Ok button label </td></tr>
             <tr><td class="key">cancelLabel</td>        <td class="default">Cancel</td> <td class="detail">Cancel button label </td></tr>
-            <tr><td class="key">ok</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
-            <tr><td class="key">cancel</td>        <td class="default">none</td> <td class="detail">Cancel callback function called on ok button </td></tr>
+            <tr><td class="key">onOk</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
+            <tr><td class="key">onCancel</td>        <td class="default">none</td> <td class="detail">Cancel callback function called on ok button </td></tr>
             <tr><td class="key">buttonClass</td>        <td class="default">none</td> <td class="detail">Ok/Cancel button css class name </td></tr>
-            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+            <tr><td class="key">All window parameters</td>        <td class="default">none</td> <td class="detail">Add all window constructor options  </td></tr>
           </table>
         </span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function dialogmodule" title="alert"><a name="alert"></a>
       <p class="title"><span class="function">alert(content, options)</span> Opens a modal alert with one button (ok for example)</p>
@@ -338,13 +372,14 @@
             <tr><td class="key">top</td>            <td class="default">null</td> <td class="detail">Top position </td></tr>
             <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
             <tr><td class="key">okLabel</td>            <td class="default">Ok</td> <td class="detail">Ok button label </td></tr>
-            <tr><td class="key">okCallback</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
+            <tr><td class="key">onOk</td>            <td class="default">none</td> <td class="detail">Ok callback function called on ok button</td></tr>
             <tr><td class="key">buttonClass</td>        <td class="default">none</td> <td class="detail">Ok/Cancel button css class name </td></tr>
-            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+            <tr><td class="key">All window parameters</td>        <td class="default">none</td> <td class="detail">Add all window constructor options  </td></tr>
           </table>
         </span>
       </p>
     </div>
+    <br style='clear:both'/>
 
     <div class="function dialogmodule" title="info"><a name="info"></a>
       <p class="title"><span class="function">info(content, options)</span> Opens a modal info panel without any button. It can have a progress image (Used to display submit waiting message for example)</p>
@@ -364,11 +399,12 @@
             <tr><td class="key">top</td>            <td class="default">null</td> <td class="detail">Top position </td></tr>
             <tr><td class="key">left</td>            <td class="default">null</td> <td class="detail">Left position </td></tr>
             <tr><td class="key">showProgress</td>            <td class="default">false</td> <td class="detail">Add a progress image (info found in the css file) </td></tr>
-            <tr><td class="key">windowParameters (hash map)</td>        <td class="default">none</td> <td class="detail">Window constructor options  </td></tr>
+            <tr><td class="key">All window parameters</td>        <td class="default">none</td> <td class="detail">Add all window constructor options  </td></tr>
           </table>
         </span>
       </p>
     </div>
+    <br style='clear:both'/>
 
     <div class="function dialogmodule" title="setInfoMessage"><a name="setInfoMessage"></a>
       <p class="title"><span class="function">setInfoMessage(message)</span> Sets info message (Used to display waiting information like 32% done for example)</p>
@@ -377,6 +413,7 @@
         <span class="explanation">New info message</span>
       </p>
     </div>
+    <br style='clear:both'/>
 
     <div class="function dialogmodule" title="closeInfo"><a name="closeInfo"></a>
       <p class="title"><span class="function">closeInfo()</span> Closes the current modal dialog</p>
@@ -386,13 +423,30 @@
     <h2> Windows</h2>
     Windows factory. Handles created windows, and windows  observers<br/><br/>
 
+    <div class="function windows" title="overlayShowEffectOptions"><a name="overlayShowEffectOptions"></a>
+      <p class="title"><span class="function">overlayShowEffectOptions</span> Overlay show effect options. <br/> <br/>
+        By default it's <em>{duration: 0.5}</em>. If you set it to null, no effects will be applied
+      </p>
+    </div>
+    <br style='clear:both'/>
+    
+    <div class="function windows" title="overlayHideEffectOptions"><a name="overlayHideEffectOptions"></a>
+      <p class="title"><span class="function">overlayHideEffectOptions</span> Overlay hide effect options. <br/> <br/>
+        By default it's <em>{duration: 0.5}</em>. If you set it to null, no effects will be applied.
+      </p>
+    </div>
+    <br style='clear:both'/>
+    
     <div class="function windows" title="addObserver"><a name="addObserver"></a>
-      <p class="title"><span class="function">addObserver(observer)</span> Registers a new windows observer. Should be able to respond to onStartResize(), onEndResize(), onStartMove(), onEndMove(), onClose(), onDestroy(), onMaximize(), onMinimize(), onFocus(), onHide(), onShow() functions</p>
+      <p class="title"><span class="function">addObserver(observer)</span> Registers a new windows observer. Should be able to respond to <br/>
+        <em>onDestroy onStartResize onStartMove onResize onMove onEndResize onEndMove onFocus onBeforeShow onShow onHide onMinimize onMaximize onClose</em>
+      </p>
       <p class="parameter">
         <span class="field">observer</span>
         <span class="explanation">Observer object</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function windows" title="removeObserver"><a name="removeObserver"></a>
       <p class="title"><span class="function">removeObserver(observer)</span> Unregisters a windows observer. </p>
@@ -401,14 +455,17 @@
         <span class="explanation">Observer object</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function windows" title="closeAll"><a name="closeAll"></a>
       <p class="title"><span class="function">closeAll()</span> Closes all closeable windows. </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function windows" title="getFocusedWindow"><a name="getFocusedWindow"></a>
       <p class="title"><span class="function">getFocusedWindow()</span> Returns the last focused window. </p>
     </div>
+    <br style='clear:both'/>
     
     
     <h2> Add-ons</h2>
@@ -424,6 +481,7 @@
         <span class="explanation">Cookie expiration date (default: <em>In 3 years!!</em>)</span>
       </p>
     </div>
+    <br style='clear:both'/>
     
     <div class="function addons" title="WindowCloseKey.init"><a name="WindowCloseKey.init"></a>
       <p class="title"><span class="function">WindowCloseKey.init(keyCode)</span> Handle key to close windows or dialogs. Just add WindowsStore.init() at the end of you HTML file.  </p>
@@ -432,6 +490,7 @@
         <span class="explanation">Key used to close windows  (default: <em>Event.KEY_ESC</em>)</span>
       </p>
     </div>
+    <br style='clear:both'/>
     <div class="function addons" title="TooltipManager"><a name="TooltipManager"></a>
       <p class="title"><span class="function">TooltipManager</span> Singleton to handle tooltips using PWC.  </p>
       <p class="parameter">
@@ -446,6 +505,7 @@
         </span>
       </p>
     </div>
+    <br style='clear:both'/>
     
   </div>
   <br/>
