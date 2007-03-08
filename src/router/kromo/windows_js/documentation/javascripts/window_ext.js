@@ -5,15 +5,14 @@
 // Just add at the end of your HTML file this javascript line: WindowStore.init()
 WindowStore = {
   doSetCookie: false,
-  cookieName: "__window_store__",
-  expired: null,
+  cookieName:  "__window_store__",
+  expired:     null,
   
   // Init function with two optional parameters
   // - cookieName (default = __window_store__)
   // - expiration date (default 3 years from now)
   init: function(cookieName, expired) {
-    if (!cookieName)
-      WindowStore.cookieName = cookieName;
+    WindowStore.cookieName = cookieName || WindowStore.cookieName
 
     if (! expired) {
       var today = new Date();
@@ -23,11 +22,20 @@ WindowStore = {
     else
       WindowStore.expired = expired;
 
+    Windows.windows.each(function(win) {
+      win.setCookie(win.getId(), WindowStore.expired);
+    });
+
     // Create observer on show/hide events
     var myObserver = {
     	onShow: function(eventName, win) {
     	  WindowStore._saveCookie();
     	},
+    	
+    	onClose: function(eventName, win) {
+    	  WindowStore._saveCookie();
+  	  },
+  	  
     	onHide: function(eventName, win) {
     	  WindowStore._saveCookie();
     	}
@@ -39,7 +47,7 @@ WindowStore = {
   },
   
   show: function(win) {
-    eval("var cookie = " + WindowUtilities.getCookie(Windows.cookieName));
+    eval("var cookie = " + WindowUtilities.getCookie(WindowStore.cookieName));
     if (cookie != null) {
       if (cookie[win.getId()])
         win.show();
@@ -66,7 +74,7 @@ WindowStore = {
 
   // Function to restore windows show/hide status from a cookie if exists
   _restoreWindows: function() {
-    eval("var cookie = " + WindowUtilities.getCookie(Windows.cookieName));
+    eval("var cookie = " + WindowUtilities.getCookie(WindowStore.cookieName));
     if (cookie != null) {
       doSetCookie = false;
       Windows.windows.each(function(win) {

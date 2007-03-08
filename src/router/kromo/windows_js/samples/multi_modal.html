@@ -7,13 +7,13 @@
   var cssPath ="../themes/"
 </script>
 <link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link> 
-<link href="../themes/alert.css" rel="stylesheet" type="text/css" >	 </link>
 <link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
 
 <script type="text/javascript" src="../javascripts/prototype.js"> </script>
-<script type="text/javascript" src="../javascripts/window.js"> </script>
-<script type="text/javascript" src="../javascripts/debug.js"> </script>
 <script type="text/javascript" src="../javascripts/effects.js"> </script>
+<script type="text/javascript" src="../javascripts/window.js"> </script>
+<script type="text/javascript" src="../javascripts/window_effects.js"> </script>
+<script type="text/javascript" src="../javascripts/debug.js"> </script>
 
 <style>
 .alphacube_buttons input    {
@@ -64,33 +64,20 @@
 
 <script type="text/javascript">
   var win = null;
-  showDebug();
-	function openWindow() {
-	  if (win == null) {
-	    win = new Window('google2', {className: "alphacube", 
-		                               title: "", 
-		                               parent: document.body, 
-		                               width:375, 
-		                               height:30,
-		                               top:25,
-		                               left:25});
-  	  win.getContent().innerHTML="coucou";
-	  }
-	  win.show();
-  }
+  var index = 1;
 	function openDialog(id) {
-	  Dialog.alert($(id).innerHTML, {windowParameters: {className: "alphacube",  width:250}})
+	  Dialog.alert($(id).innerHTML, {className: "alphacube",  width:250, id: "d" + index})
+	  index++;
   }
   
   function lastDialog(id) {
-	  Dialog.confirm($(id).innerHTML, {windowParameters: {className: "alphacube",  width:250}, okLabel: "Close All", ok: closeAllModalWindows})
+	  Dialog.confirm($(id).innerHTML, {className: "alphacube",  width:250, okLabel: "Close All", ok: closeAllModalWindows})
   }
   
   function closeAllModalWindows() {
     Windows.closeAllModalWindows();
     return true;
   }
-	
 </script>
 
 </body>
