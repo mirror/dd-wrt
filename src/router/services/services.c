@@ -3869,6 +3869,12 @@ br_set_stp_state (const char *br, int stp_state)
 void
 start_bonding (void)
 {
+char mode[64];
+char count[64];
+sprintf(mode,"mode=%s",nvram_default_get("bonding_type","balance-rr"));
+sprintf(count,"max_bonds=%s",nvram_default_get("bonding_number","1"));
+eval("insmod","bonding",mode,count);
+
   static char word[256];
   char *next, *wordlist;
   wordlist = nvram_safe_get ("bondings");
@@ -3880,29 +3886,21 @@ start_bonding (void)
       {
       break;
       }
-    eval ("vconfig", "add", tag, port);
-    char vlan_name[32];
-    sprintf (vlan_name, "%s.%s", tag, port);
-//    eval ("ifconfig", vlan_name,"0.0.0.0","up");
+    eval("ifconfig",tag,"0.0.0.0","up");
+    eval("ifenslave",tag,port);
   }
 }
 void
 stop_bonding (void)
 {
-  static char word[256];
-  char *next, *wordlist;
-  wordlist = nvram_safe_get ("bondings");
-  foreach (word, wordlist, next)
-  {
-    char *port = word;
-    char *tag = strsep (&port, ">");
-    if (!tag || !port)
-      break;
-    char vlan_name[32];
-    sprintf (vlan_name, "%s.%s", tag, port);
-//    if (ifexists(vlan_name))
-//    eval ("vconfig", "rem", vlan_name);
-  }
+int i;
+for (i=0;i<10;i++)
+    {
+    char bond[32];
+    sprintf(bond,"bond%d",i);
+    eval("ifconfig",bond,"down");
+    }
+eval("rmmod","bonding");
 }
 
 
