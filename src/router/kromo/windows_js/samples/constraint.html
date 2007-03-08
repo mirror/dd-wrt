@@ -1,46 +1,53 @@
-<html><head>
+<html>
+  <head>
 
-  <link href="../themes/default.css" rel="stylesheet" type="text/css" >	 </link>
-  <link href="../themes/alphacube.css" rel="stylesheet" type="text/css" >	 </link>
-  <link href="../themes/mac_os_x.css" rel="stylesheet" type="text/css" >	 </link>
+  <link href="../themes/default.css" rel="stylesheet" type="text/css"/>	
+  <link href="../themes/alphacube.css" rel="stylesheet" type="text/css"/>
 
   <script type="text/javascript" src="../javascripts/prototype.js"> </script>
-  <script type="text/javascript" src="../javascripts/window.js"> </script>
   <script type="text/javascript" src="../javascripts/effects.js"> </script>
+  <script type="text/javascript" src="../javascripts/window.js"> </script>
+  <script type="text/javascript" src="../javascripts/window_effects.js"> </script>
   <script type="text/javascript" src="../javascripts/debug.js"> </script>
 
 <script type="text/javascript"> 
 function win1()
 {
-  var win = new Window('window_id_1', {className: "dialog", title: "Sample", width:200, height:150, parent:$('container')}); 
-  win.getContent().innerHTML = "<h1>Constraint inside  a div !!</h1>"; 
+  var win = new Window({className: "alphacube", title: "Sample", width:250, height:150, top:0, left: 1, parent:$('container')}); 
+  win.getContent().innerHTML = "<h1>Constraint inside  a div !!</h1>constraint: {left:10, right:20}"; 
 
   win.setDestroyOnClose(); 
-  win.showCenter();
-  win.setConstraint(true, {left:0, right:0})
+  win.show();
+  win.setConstraint(true, {left:10, right:20})
+  win.toFront();
 }
 
 function win2()
 {
-  var win = new Window('window_id_2', {className: "dialog", title: "Sample", width:200, height:150}); 
-  win.getContent().innerHTML = "<h1>Constraint inside  page !!</h1>"; 
+  var win = new Window({className: "alphacube", title: "Sample", width:200, height:150}); 
+  win.getContent().innerHTML = "<h1>Constraint inside page !!</h1>constraint: {top: 30, bottom:10}"; 
 
   win.setDestroyOnClose(); 
   win.showCenter();
-  win.setConstraint(true, {left:0, right:0})
+  win.setConstraint(true, {left:0, right:0, top: 30, bottom:10})
+  win.toFront();
 }
 
 function win3()
 {
-  var win = new Window('window_id_3', {className: "mac_os_x", title: "Sample", width:200, height:150}); 
-  win.getContent().innerHTML = "<h1>No Constraint</h1>"; 
+  var win = new Window({className: "alphacube", title: "Sample", width:250, height:150, wiredDrag: true}); 
+  win.getContent().innerHTML = "<h1>No Constraint</h1>Wired mode"; 
   win.setDestroyOnClose(); 
-  win.setLocation(0, 0);
+  win.setLocation(10, 500);
   win.show();
+  win.toFront();
 }
 
 </script>
 <style>
+body {
+  background: #FFCA7A;
+}
 #border {
   position:absolute;
   top:10px;
@@ -57,6 +64,8 @@ function win3()
   width:500px;
   height:500px;
   overflow:hidden;
+  background:#71BAB8;
+  z-index:0;
 }  
 </style>
 </head>

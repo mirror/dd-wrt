@@ -104,6 +104,9 @@
 	font-size: 10px;
 	background:#FFF;
 }
+.mac_os_x_s .status_bar {
+  padding-bottom:24px;
+}
 
 /* FOR IE */
 * html .mac_os_x_nw {

@@ -4,6 +4,31 @@ Just copy windows.js in your javascript directory, and default.css + default dir
 See samples/index.html for more details and go on my web page : http://prototype-window.xilinus.com
 
 == Change log
+- 02/27/07  V 1.2
+            - Added: gridX and gridY constructor's options to snap move and resize 
+            - Added: Effect on modal overlay (fade/appear) only if effects.js in included.
+              You can change effect options (Windows.overlayShowEffectOptions and Windows.overlayHideEffectOptions).
+              
+            - Fixed: Multimodal mode.
+            - Fixed: Works on WebKit.
+              
+            - Beta: effects on minimize and maximize. You need to include window_effects.js to have them.
+            
+- 02/17/07  V 1.1
+            - Constructor has been simplified, now you can just do win = new Window(). By default id is automatically generated and can be passed as options
+              win = new Window({id: "my_id", width: 100, height: 100}) 
+              Backward compatibility with old constructor win = new Window("my_id", {width: 100, height: 100}) 
+            - Observer event can be passed as window option:   win = new Window({onClose: function() {alert('close')}}) 
+            - parent option can be id or element
+            - delegate has been removed (not really usefull) and0 setCloseCallback has been addedinstead. (It could be also passed as a constructor's option closeCallback: your_callcabck)
+              your_callcabck must return true to be able to close the window
+            - add onMove event
+            - fix constraint for minimized window
+            - destroyOnClose could be passed as constructor's option:  win = new Window({destroyOnClose: true}) 
+            - constraint works for maximized windows
+            - Dialog ok and cancel parameters has been renamed to onOk and onCancel for coherence (ok and cancel still works)
+            - Update to Prototype 1.5 and script.aculo.us 1.7
+
 - 01/14/07  V 1.00
             - add changeClassName to change look and feel dynamically.
             - add constraint move. Constraint can be on a div or document.
