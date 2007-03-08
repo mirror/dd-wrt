@@ -98,6 +98,9 @@ TooltipManager = {
   _showTooltip: function(element) {
     if (this.element == element)
       return;
+    // Get original element
+    while (element && (!element.tooltipElement && !element.ajaxInfo && !element.url)) 
+      element = element.parentNode;
     this.element = element;
     
     TooltipManager.showTimer = null;
@@ -132,8 +135,7 @@ TooltipManager = {
         else
           p = "id=" + element.ajaxId;
       }
-
-      element.ajaxInfo.options.parameters = p;
+      element.ajaxInfo.options.parameters = p || "";
       this.tooltipWindow.setHTMLContent("");
       this.tooltipWindow.setAjaxContent(element.ajaxInfo.url, element.ajaxInfo.options);
       element.ajaxInfo.options.parameters = saveParam;    
@@ -151,8 +153,10 @@ TooltipManager = {
     else
       this.tooltipWindow.setHTMLContent(element.tooltipElement.innerHTML);
 
-    if (!element.ajaxInfo) 
+    if (!element.ajaxInfo) {
       this.tooltipWindow.show();
+      this.tooltipWindow.toFront();
+    }
   },
   
   _hideTooltip: function(element) {
