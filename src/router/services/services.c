@@ -3865,7 +3865,50 @@ br_set_stp_state (const char *br, int stp_state)
 }
 #endif
 
+#ifdef HAVE_BONDING
+void
+start_bonding (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bondings");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      {
+      break;
+      }
+    eval ("vconfig", "add", tag, port);
+    char vlan_name[32];
+    sprintf (vlan_name, "%s.%s", tag, port);
+//    eval ("ifconfig", vlan_name,"0.0.0.0","up");
+  }
+}
+void
+stop_bonding (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bondings");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    char vlan_name[32];
+    sprintf (vlan_name, "%s.%s", tag, port);
+//    if (ifexists(vlan_name))
+//    eval ("vconfig", "rem", vlan_name);
+  }
+}
 
+
+
+
+#endif
 #ifdef HAVE_VLANTAGGING
 void
 start_vlantagging (void)
