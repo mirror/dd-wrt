@@ -3898,7 +3898,8 @@ for (i=0;i<10;i++)
     {
     char bond[32];
     sprintf(bond,"bond%d",i);
-    eval("ifconfig",bond,"down");
+    if (ifexits(bond)
+	eval("ifconfig",bond,"down");
     }
 eval("rmmod","bonding");
 }
