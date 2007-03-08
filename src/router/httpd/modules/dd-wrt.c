@@ -1746,8 +1746,10 @@ save_networking (webs_t wp)
   int vlancount = atoi (nvram_safe_get ("vlan_tagcount"));
   int bridgescount = atoi (nvram_safe_get ("bridges_count"));
   int bridgesifcount = atoi (nvram_safe_get ("bridgesif_count"));
+#ifdef HAVE_BONDING
+  int bondcount = atoi (nvram_safe_get ("bonding_count"));
+#endif
   int i;
-  fprintf (stderr, "got in\n");
   //save vlan stuff
   char buffer[1024];
   memset (buffer, 0, 1024);
@@ -1770,8 +1772,39 @@ save_networking (webs_t wp)
 	strcat (buffer, " ");
     }
   nvram_set ("vlan_tags", buffer);
-// save bridges
+// save bonds
   memset (buffer, 0, 1024);
+#ifdef HAVE_BONDING
+  char *bondingnumber = websGetVar(wp,"bonding_number",NULL);
+  if (bondingnumber)
+    nvram_set("bonding_number",bondingnumber);
+  char *bondingtype = websGetVar(wp,"bonding_type",NULL);
+  if (bondingtype)
+    nvram_set("bonding_type",bondingtype);
+  for (i = 0; i < bondcount; i++)
+    {
+      char *ifname, *tag;
+      char var[32];
+      sprintf (var, "bondingifname%d", i);
+      ifname = websGetVar (wp, var, NULL);
+      if (!ifname)
+	return;
+      sprintf (var, "bondingattach%d", i);
+      tag = websGetVar (wp, var, NULL);
+      if (!tag)
+	return;
+      strcat (buffer, ifname);
+      strcat (buffer, ">");
+      strcat (buffer, tag);
+      if (i < bondcount - 1)
+	strcat (buffer, " ");
+    }
+  nvram_set ("bondings", buffer);
+  memset (buffer, 0, 1024);
+#endif
+
+// save bridges
+
   for (i = 0; i < bridgescount; i++)
     {
       char *ifname, *tag, *prio;
@@ -1908,6 +1941,143 @@ del_vlan (webs_t wp)
   return 0;
 }
 
+#ifdef HAVE_BONDING
+int
+add_bond (webs_t wp)
+{
+  static char word[256];
+  char *next, *wordlist;
+  int count = 0;
+  int realcount = atoi (nvram_safe_get ("bonding_count"));
+  if (realcount == 0)
+    {
+      wordlist = nvram_safe_get ("bondings");
+      foreach (word, wordlist, next)
+      {
+	count++;
+      }
+      realcount = count;
+    }
+  realcount++;
+  char var[32];
+  sprintf (var, "%d", realcount);
+  nvram_set ("bonding_count", var);
+  nvram_commit ();
+  return 0;
+}
+
+
+int
+del_bond (webs_t wp)
+{
+  static char word[256];
+  int realcount = 0;
+  char *next, *wordlist, *newwordlist;
+  char *val = websGetVar (wp, "del_value", NULL);
+  if (val == NULL)
+    return 0;
+  int todel = atoi (val);
+  wordlist = nvram_safe_get ("bondings");
+  newwordlist = (char *) malloc (strlen (wordlist));
+  memset (newwordlist, 0, strlen (wordlist));
+  int count = 0;
+  foreach (word, wordlist, next)
+  {
+    if (count != todel)
+      {
+	strcat (newwordlist, word);
+	strcat (newwordlist, " ");
+      }
+    count++;
+  }
+
+  char var[32];
+  realcount = atoi (nvram_safe_get ("bonding_count")) - 1;
+  sprintf (var, "%d", realcount);
+  nvram_set ("bonding_count", var);
+  nvram_set ("bondings", newwordlist);
+  nvram_commit ();
+  free (newwordlist);
+
+  return 0;
+}
+
+
+
+
+void
+ej_show_bondings (webs_t wp, int argc, char_t ** argv)
+{
+  char buffer[256];
+  char bondnames[256];
+  int count = 0;
+  static char word[256];
+  char *next, *wordlist;
+  memset (buffer, 0, 256);
+  memset (bondnames, 0, 256);
+websWrite (wp, "<div class=\"setting\">\n");
+websWrite (wp, "<div class=\"label\">Bonding Type</div>\n", count);
+showOptions(wp,"bonding_type","balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",nvram_default_get("bonding_type","balance-rr"));
+websWrite (wp,"&nbsp;Number of Bondings&nbsp;");
+websWrite (wp,"<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n",nvram_default_get("bonding_number","1"));
+websWrite (wp,"</div>\n");
+
+  getIfList (buffer, NULL);
+int i;
+for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
+    {
+    sprintf(bondnames,"%s bond%d",bondnames,i);
+    }
+  int totalcount = 0;
+  int realcount = atoi (nvram_default_get ("bonding_count","0"));
+  wordlist = nvram_safe_get ("bondings");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    if (!tag || !port)
+      break;
+    char vlan_name[32];
+//    sprintf (vlan_name, "%s.%s", tag, port);
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">Bonding %d Interface</div>\n", count);
+    websWrite (wp, "&nbsp;Bond&nbsp;");
+    sprintf (vlan_name, "bondingifname%d", count);
+    showOptions (wp, vlan_name, bondnames, tag);
+    sprintf (vlan_name, "bondingattach%d", count);
+    websWrite (wp, "&nbsp;Slave&nbsp;");
+    showOptions (wp, vlan_name, buffer, port);
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       count);
+    websWrite (wp, "</div>\n");
+    count++;
+  }
+  totalcount = count;
+  for (i = count; i < realcount; i++)
+    {
+      char vlan_name[32];
+    websWrite (wp, "<div class=\"setting\">\n");
+    websWrite (wp, "<div class=\"label\">Bonding %d Interface</div>\n", i);
+    websWrite (wp, "&nbsp;Bond&nbsp;");
+    sprintf (vlan_name, "bondingifname%d", i);
+    showOptions (wp, vlan_name, bondnames, "");
+    sprintf (vlan_name, "bondingattach%d", i);
+    websWrite (wp, "&nbsp;Slave&nbsp;");
+    showOptions (wp, vlan_name, buffer, "");
+    websWrite (wp,
+	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+	       i);
+      websWrite (wp, "</div>\n");
+      totalcount++;
+    }
+  char var[32];
+  sprintf (var, "%d", totalcount);
+  nvram_set ("bonding_count", var);
+  websWrite (wp,
+	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+}
+#endif
 void
 ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
 {
@@ -2775,8 +2945,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_txantenna", prefix);
   copytonv (wp, n);
-  sprintf (n, "wifi_bonding");
-  copytonv (wp, n);
+//  sprintf (n, "wifi_bonding");
+//  copytonv (wp, n);
   sprintf (n, "%s_rxantenna", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_channelbw", prefix);
@@ -3030,7 +3200,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 #endif
 #ifdef HAVE_MADWIFI
-  if (nvram_match ("wifi_bonding", "0") || !strcmp (prefix, "ath0"))
+  if (!strcmp (prefix, "ath0"))
 #endif
     {
 //#ifdef HAVE_MADWIFI
@@ -3038,10 +3208,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //#endif
       {
 #ifdef HAVE_MADWIFI
-	if (!strcmp (prefix, "ath0"))	//show client only on first interface
-	  if (nvram_match ("ath0_mode", "wdsap")
-	      || nvram_match ("ath0_mode", "wdssta"))
-	    showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
+//	if (!strcmp (prefix, "ath0"))	//show client only on first interface
+//	  if (nvram_match ("ath0_mode", "wdsap")
+//	      || nvram_match ("ath0_mode", "wdssta"))
+//	    showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
 	websWrite (wp,
 		   "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
