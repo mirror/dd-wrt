@@ -543,9 +543,25 @@ deconfigure_single (int count)
 	  eval ("wlanconfig", dev, "destroy");
 	}
     }
-
+disable_apisolation();
 }
 
+void enable_apisolation(void)
+{
+eval ("insmod", "ebtables");
+eval ("insmod", "ebtable_nat");
+eval ("insmod", "ebtable_filter");
+eval ("insmod", "ebt_arp");
+eval("ebtables","-t","madwifi","-A","FORWARD","-p","arp","-j","DROP");
+}
+void disable_apisolation(void)
+{
+eval("ebtables","-t","madwifi","-F");
+eval ("insmod", "ebt_arp");
+eval ("insmod", "ebtable_filter");
+eval ("insmod", "ebtable_nat");
+eval ("insmod", "ebtables");
+}
 
 
 void
@@ -1616,7 +1632,8 @@ if (ifexists(wif))
   int c = getdevicecount ();
   int i;
   int changed = 0;
-
+  if (nvram_match("ap_isolation","1"))
+    enable_apisolation();
   for (i = 0; i < c; i++)
     adjust_regulatory (i);
 

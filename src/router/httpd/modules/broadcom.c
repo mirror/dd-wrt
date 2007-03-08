@@ -2753,6 +2753,10 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "add_vifs", "", 0, REFRESH, add_vifs},
   {"Wireless_Basic", "remove_vifs", "", 0, REFRESH, remove_vifs},
 #endif
+#ifdef HAVE_BONDING
+  {"Networking", "add_bond", "", 0, REFRESH, add_bond},
+  {"Networking", "del_bond", "", 0, REFRESH, del_bond},
+#endif
 #ifdef HAVE_VLANTAGGING
   {"Networking", "add_vlan", "", 0, REFRESH, add_vlan},
   {"Networking", "add_bridge", "",0, REFRESH, add_bridge},
@@ -5239,6 +5243,9 @@ struct ej_handler ej_handlers[] = {
   {"show_vlantagging",ej_show_vlantagging},
   {"show_bridgenames",ej_show_bridgenames},
   {"show_bridgeifnames",ej_show_bridgeifnames},
+#endif
+#ifdef HAVE_BONDING
+  {"show_bondings",ej_show_bondings},
 #endif
   {NULL, NULL}
 };
