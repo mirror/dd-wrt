@@ -259,7 +259,7 @@ get_wan_face (void)
 	   || nvram_match ("wl0_mode", "wet")
 	   || nvram_match ("wl0_mode", "apstawet"))
     {
-	strcpy (localwanface, get_wdev());
+      strcpy (localwanface, get_wdev ());
     }
 #else
   else if (nvram_match ("ath0_mode", "sta"))
@@ -782,9 +782,9 @@ nat_postrouting (void)
   if (nvram_match ("wk_mode", "gateway"))
     {
 //      if (strlen (wanface) > 0)
-//	save2file
-//	  ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
-//	   "--to-ports 5056-5071\n", wanface);
+//      save2file
+//        ("-A POSTROUTING -p udp -m udp -o %s --sport 5060:5070 -j MASQUERADE "
+//         "--to-ports 5056-5071\n", wanface);
       if (strlen (wanface) > 0)
 	save2file ("-A POSTROUTING -o %s -j MASQUERADE\n", wanface);
 
@@ -1662,8 +1662,10 @@ parse_trigger_out (char *wordlist)
       }
   }
 }
+
 #ifdef HAVE_VLANTAGGING
-static void add_bridges(char *chain,int forward)
+static void
+add_bridges (char *chain, int forward)
 {
   static char word[256];
   char *next, *wordlist;
@@ -1673,22 +1675,24 @@ static void add_bridges(char *chain,int forward)
     char *port = word;
     char *tag = strsep (&port, ">");
     char *prio = port;
-    strsep(&prio,">");
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
     char ipaddr[32];
-    sprintf(ipaddr,"%s_ipaddr",tag);
+    sprintf (ipaddr, "%s_ipaddr", tag);
     char netmask[32];
-    sprintf(netmask,"%s_netmask",tag);
+    sprintf (netmask, "%s_netmask", tag);
 
-    if (!nvram_match(ipaddr,"0.0.0.0") && !nvram_match(netmask,"0.0.0.0"))
-	{
-	eval("ifconfig",tag,nvram_safe_get(ipaddr),"netmask",nvram_safe_get(netmask),"up");
-        if (forward)
-    	    save2file ("-A FORWARD -i %s -o %s -j ACCEPT\n", tag,get_wan_face ());
-	 else
-	    save2file ("-A %s -i %s -j ACCEPT\n",chain,tag);
-	}
+    if (!nvram_match (ipaddr, "0.0.0.0") && !nvram_match (netmask, "0.0.0.0"))
+      {
+	eval ("ifconfig", tag, nvram_safe_get (ipaddr), "netmask",
+	      nvram_safe_get (netmask), "up");
+	if (forward)
+	  save2file ("-A FORWARD -i %s -o %s -j ACCEPT\n", tag,
+		     get_wan_face ());
+	else
+	  save2file ("-A %s -i %s -j ACCEPT\n", chain, tag);
+      }
   }
 
 
@@ -1725,15 +1729,15 @@ filter_input (void)
 
   /* Routing protocol, RIP, accept */
   /* lonewolf mods for multiple VLANs / interfaces */
-if (!nvram_match("wan_proto","disabled"))
-  {    
-  if (nvram_invmatch ("dr_wan_rx", "0"))
-    save2file ("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT,
-	       TARG_PASS);
-  else
-    save2file ("-A INPUT -p udp -i %s --dport %d -j DROP\n", wanface,
-	       RIP_PORT);
-   }
+  if (!nvram_match ("wan_proto", "disabled"))
+    {
+      if (nvram_invmatch ("dr_wan_rx", "0"))
+	save2file ("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface,
+		   RIP_PORT, TARG_PASS);
+      else
+	save2file ("-A INPUT -p udp -i %s --dport %d -j DROP\n", wanface,
+		   RIP_PORT);
+    }
   if (nvram_invmatch ("dr_lan_rx", "0"))
     save2file ("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT,
 	       TARG_PASS);
@@ -1764,7 +1768,7 @@ if (!nvram_match("wan_proto","disabled"))
       && nvram_invmatch ("wl_br1_nat", "2"))
     save2file ("-A INPUT -i br1 -j ACCEPT\n");
 #ifdef HAVE_VLANTAGGING
-    add_bridges("INPUT",0);
+  add_bridges ("INPUT", 0);
 #endif
   /* Remote Web GUI Management
    * Use interface name, destination address, and port to make sure
@@ -1786,9 +1790,9 @@ if (!nvram_match("wan_proto","disabled"))
 #endif
 
   /* ICMP request from WAN interface */
-  if (!nvram_match("wan_proto","disabled"))
-  save2file ("-A INPUT -i %s -p icmp -j %s\n", wanface,
-	     nvram_match ("block_wan", "1") ? log_drop : TARG_PASS);
+  if (!nvram_match ("wan_proto", "disabled"))
+    save2file ("-A INPUT -i %s -p icmp -j %s\n", wanface,
+	       nvram_match ("block_wan", "1") ? log_drop : TARG_PASS);
 
   /* IGMP query from WAN interface */
   save2file ("-A INPUT -p igmp -j %s\n",
@@ -1833,7 +1837,7 @@ filter_output (void)
       && nvram_invmatch ("wl_br1_nat", "2"))
     save2file ("-A OUTPUT -o br1 -j ACCEPT\n");
 #ifdef HAVE_VLANTAGGING
-    add_bridges("OUTPUT",0);
+  add_bridges ("OUTPUT", 0);
 #endif
 }
 
@@ -1953,7 +1957,7 @@ filter_forward (void)
       save2file ("-A FORWARD -i br1 -o %s -j ACCEPT\n", get_wan_face ());
 
     }
-    add_bridges("FORWARD",1);
+  add_bridges ("FORWARD", 1);
   stop_vpn_modules ();
 //  unload_vpn_modules ();
 
