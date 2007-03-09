@@ -3898,7 +3898,7 @@ for (i=0;i<10;i++)
     {
     char bond[32];
     sprintf(bond,"bond%d",i);
-    if (ifexits(bond))
+    if (ifexists(bond))
 	eval("ifconfig",bond,"down");
     }
 eval("rmmod","bonding");
