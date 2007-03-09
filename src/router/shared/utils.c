@@ -592,8 +592,10 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	}
     }
     
-  if (boardnum == 44 &&
-      nvram_match ("boardtype", "0x0101"))
+  if (nvram_match ("boardnum", "44") &&
+      nvram_match ("boardtype", "0x0101")
+      || nvram_match ("boardnum", "44\r") &&
+      nvram_match ("boardtype", "0x0101\r"))
     {
       cprintf ("router is Dell TrueMobile 2300 v2\n");
       setRouter ("Dell TrueMobile 2300 v2");
