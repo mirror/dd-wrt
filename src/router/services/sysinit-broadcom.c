@@ -454,6 +454,7 @@ start_sysinit (void)
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_BUFFALO_WBR2G54S:
+	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
