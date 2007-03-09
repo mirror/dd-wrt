@@ -148,9 +148,12 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   char *next;
   char var[64];
   char eths[256];
+  char eths2[256];
   memset (eths, 0, 256);
 #ifdef HAVE_XSCALE
   getinterfacelist ("ixp", eths);
+  getinterfacelist ("eth", eths2);
+  sprintf(eths,"%s %s\n",eths,eths2);
 #else
   getinterfacelist ("eth", eths);
 #endif
@@ -176,25 +179,7 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
   next = websGetVar (wp, "wan_ifname", NULL);
   if (next)
     {
-      nvram_set ("wan_ifname", next);
       nvram_set ("wan_ifname2", next);
-      nvram_set ("wan_ifnames", next);
-      memset (eths, 0, 256);
-      int i;
-      for (i = 0; i < 10; i++)
-	{
-	  sprintf (var, "eth%d", i);
-	  if (nvram_match ("wan_ifname", next))
-	    continue;
-	  if (i > 0)
-	    strcat (eths, " ");
-	  strcat (eths, var);
-	}
-#ifndef HAVE_NOWIFI
-      strcat (eths, " ath0 ath1 ath2 ath3");
-#endif
-      nvram_set ("lan_ifnames", eths);
-
     }
 }
 #endif
