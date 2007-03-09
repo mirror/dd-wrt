@@ -6723,6 +6723,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
   websWrite (wp, "<select name=\"wan_ifname\">\n");
+  websWrite (wp, "<option value=\"\" %s >Disabled</option>\n",
+	       nvram_match ("wan_ifname", "") ? "selected=\"selected\"" : "");
   foreach (var, eths, next)
   {
     websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", var,
