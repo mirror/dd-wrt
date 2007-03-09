@@ -2350,6 +2350,13 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   getIfList (bufferif2, "ixp");
   sprintf(bufferif,"%s %s",bufferif,bufferif2);
 #endif
+  memset (bufferif2, 0, 256);
+  getIfList (bufferif2, "br");
+  foreach (word, bufferif2, next)
+  {
+  if (contains(word,'.'))
+  sprintf(bufferif,"%s %s",bufferif,word);
+  }
 int i;
 #ifdef HAVE_MADWIFI
 int c = getifcount("wifi");

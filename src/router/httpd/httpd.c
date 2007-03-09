@@ -600,7 +600,7 @@ check_connect_type (void)
   }
 }*/
 int
-contains (char *source, char *cmp)
+containsstring (char *source, char *cmp)
 {
   if (cmp == NULL || source == NULL)
     return 0;
@@ -811,7 +811,7 @@ handle_request (void)
     }
 
 #endif
-  if (contains (file, "cgi-bin"))
+  if (containsstring (file, "cgi-bin"))
     {
 
       do_auth (auth_userid, auth_passwd, auth_realm);
