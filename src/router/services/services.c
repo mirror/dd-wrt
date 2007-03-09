@@ -3898,7 +3898,7 @@ for (i=0;i<10;i++)
     {
     char bond[32];
     sprintf(bond,"bond%d",i);
-    if (ifexits(bond)
+    if (ifexits(bond))
 	eval("ifconfig",bond,"down");
     }
 eval("rmmod","bonding");
@@ -3965,9 +3965,12 @@ else
     strsep(&prio,">");
     if (!tag || !port)
       break;
+    if (strncmp(tag,"EOP",3))
+    {
     eval ("brctl", "addif", tag,port);
     if (prio)
 	eval("brctl","setportprio",tag,port,prio);
+    }
   }
 
 }
@@ -4024,6 +4027,24 @@ char *getBridge(char *ifname)
   }
 return nvram_safe_get("lan_ifname"); 
 }
+char *getBridgePrio(char *ifname)
+{
+ static char word[256];
+  char *next, *wordlist;
+ wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep(&prio,">");
+    if (!tag || !port)
+      break;
+    if (!strcmp(port,ifname))
+	return port;
+  }
+return nvram_safe_get("lan_ifname"); 
+}
 
 void stop_bridgesif(void)
 {
@@ -4071,4 +4092,31 @@ char *getBridge(char *ifname)
 {
 return nvram_safe_get("lan_ifname");
 }
+char *getBridgePrio(char *ifname)
+{
+return "0";
+}
 #endif
+
+int getbridge_main(int argc,char *argv[])
+{
+if (argc<2)
+    {
+    fprintf(stderr,"syntax: getbridge [ifname]\n");
+    return -1;
+    }
+char bridge=getBridge(argv[1]);
+fprintf("%s\n",bridge);
+return 0;
+}
+int getbridgeprio_main(int argc,char *argv[])
+{
+if (argc<2)
+    {
+    fprintf(stderr,"syntax: getbridgeprio [ifname]\n");
+    return -1;
+    }
+char bridge=getBridgePrio(argv[1]);
+fprintf("%s\n",bridge);
+return 0;
+}

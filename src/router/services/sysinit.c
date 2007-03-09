@@ -322,6 +322,7 @@ start_restore_defaults (void)
     {"lan_ifname", "br0", 0},
     {"lan_ifnames", "ixp0 ath0 ath1 ath2 ath3",
      0},
+    {"wan_ifname2", "ixp1", 0},
     {"wan_ifname", "ixp1", 0},
     {"wan_ifnames", "ixp1", 0},
     {0, 0, 0}
