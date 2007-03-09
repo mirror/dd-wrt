@@ -4105,8 +4105,8 @@ if (argc<2)
     fprintf(stderr,"syntax: getbridge [ifname]\n");
     return -1;
     }
-char bridge=getBridge(argv[1]);
-fprintf("%s\n",bridge);
+char *bridge=getBridge(argv[1]);
+fprintf(stdout,"%s\n",bridge);
 return 0;
 }
 int getbridgeprio_main(int argc,char *argv[])
@@ -4116,7 +4116,7 @@ if (argc<2)
     fprintf(stderr,"syntax: getbridgeprio [ifname]\n");
     return -1;
     }
-char bridge=getBridgePrio(argv[1]);
-fprintf("%s\n",bridge);
+char *bridge=getBridgePrio(argv[1]);
+fprintf(stdout,"%s\n",bridge);
 return 0;
 }
