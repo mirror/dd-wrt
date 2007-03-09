@@ -1381,6 +1381,10 @@ configure_single (int count, int isbond)
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+      char isolate[32];
+      sprintf(isolate,"%s_ap_isolate",var);
+      if (nvram_match(isolate,"1"))
+      eval ("iwpriv", var, "ap_bridge","0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", dev, "wds", "1");
       setMacFilter (var);
@@ -1391,6 +1395,10 @@ configure_single (int count, int isbond)
 
   if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
     eval ("iwpriv", dev, "wds", "1");
+      char isolate[32];
+      sprintf(isolate,"%s_ap_isolate",dev);
+      if (nvram_match(isolate,"1"))
+      eval ("iwpriv", dev, "ap_bridge","0");
 
 
   sprintf (ssid, "ath%d_ssid", count);
