@@ -2414,7 +2414,7 @@ for (i=1;i<11;i++)
     websWrite (wp, "&nbsp;Prio&nbsp;");
     sprintf (vlan_name, "bridgeifprio%d", count);
     websWrite (wp,
-	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+	       "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n",
 	       vlan_name, prio != NULL ? prio : "128");
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -6700,8 +6700,9 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   char *next;
   char var[64];
   char eths[256];
+  char eths2[256];
 #ifdef HAVE_XSCALE
-  if (getifcount ("ixp") == 1)
+  if (getifcount ("ixp") == 1 && getifcount ("eth") == 0)
     return;
 #else
   if (getifcount ("eth") == 1)
@@ -6711,8 +6712,11 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
   memset (eths, 0, 256);
+  memset (eths2, 0, 256);
 #ifdef HAVE_XSCALE
+  getinterfacelist ("eth", eths2);
   getinterfacelist ("ixp", eths);
+  sprintf(eths,"%s %s",eths,eths2);
 #else
   getinterfacelist ("eth", eths);
 #endif

@@ -60,65 +60,71 @@ detect (char *devicename)
 }
 
 
-void checkupdate(void)
+void
+checkupdate (void)
 {
-int res,res2=0;
-FILE *in=popen("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l","rb");
-fscanf (in, "%d", &res);
-fclose (in);
-if (res==0)
+  int res, res2 = 0;
+  FILE *in =
+    popen ("/bin/cat /dev/mtdblock/0|/bin/grep NewMedia|wc -l", "rb");
+  fscanf (in, "%d", &res);
+  fclose (in);
+  if (res == 0)
     {
-    in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l","rb");
-    fscanf (in, "%d", &res2);
-    fclose (in);
+      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.02|wc -l", "rb");
+      fscanf (in, "%d", &res2);
+      fclose (in);
     }
-if (res==1)
+  if (res == 1)
     {
-    in=popen("/bin/cat /dev/mtdblock/0|/bin/grep 2.03|wc -l","rb");
-    fscanf (in, "%d", &res2);
-    fclose (in);  
+      in = popen ("/bin/cat /dev/mtdblock/0|/bin/grep 2.03|wc -l", "rb");
+      fscanf (in, "%d", &res2);
+      fclose (in);
     }
-if (res2==2)//redboot update is needed
+  if (res2 == 2)		//redboot update is needed
     {
-    in=popen("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l","rb");
-    fscanf (in, "%d", &res);
-    fclose (in);
-    if (res==1)res2=64;
-    in=popen("/bin/dmesg|/bin/grep \"Memory: 32MB\"|wc -l","rb");
-    fscanf (in, "%d", &res);
-    fclose (in);
-    if (res==1)res2=32;
-    in=popen("/bin/dmesg|/bin/grep \"Memory: 128MB\"|wc -l","rb");
-    fscanf (in, "%d", &res);
-    fclose (in);
-    if (res==1)res2=128;
-    in=popen("/bin/dmesg|/bin/grep \"Memory: 256MB\"|wc -l","rb");
-    fscanf (in, "%d", &res);
-    fclose (in);
-    if (res==1)res2=256;
-    fprintf(stderr,"updating redboot %d MB\n",res2);
-    switch(res2)
-    {
-    case 32:
-	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
-	eval("mtd","-r","-f","write","/tmp/rb-32.bin","RedBoot");
-    break;
-    case 64:
-	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
-	eval("mtd","-r","-f","write","/tmp/rb-64.bin","RedBoot");
-    break;
-    case 128:
-	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
-	eval("mtd","-r","-f","write","/tmp/rb-128.bin","RedBoot");
-    break;
-    case 256:
-	eval("tar","-xaf","/usr/lib/firmware/redboot.tg7","-C","/tmp");
-	eval("mtd","-r","-f","write","/tmp/rb-256.bin","RedBoot");
-    break;
-    default:
-    fprintf(stderr,"no valid image found\n");
-    break;
-    }
+      in = popen ("/bin/dmesg|/bin/grep \"Memory: 64MB\"|wc -l", "rb");
+      fscanf (in, "%d", &res);
+      fclose (in);
+      if (res == 1)
+	res2 = 64;
+      in = popen ("/bin/dmesg|/bin/grep \"Memory: 32MB\"|wc -l", "rb");
+      fscanf (in, "%d", &res);
+      fclose (in);
+      if (res == 1)
+	res2 = 32;
+      in = popen ("/bin/dmesg|/bin/grep \"Memory: 128MB\"|wc -l", "rb");
+      fscanf (in, "%d", &res);
+      fclose (in);
+      if (res == 1)
+	res2 = 128;
+      in = popen ("/bin/dmesg|/bin/grep \"Memory: 256MB\"|wc -l", "rb");
+      fscanf (in, "%d", &res);
+      fclose (in);
+      if (res == 1)
+	res2 = 256;
+      fprintf (stderr, "updating redboot %d MB\n", res2);
+      switch (res2)
+	{
+	case 32:
+	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-32.bin", "RedBoot");
+	  break;
+	case 64:
+	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-64.bin", "RedBoot");
+	  break;
+	case 128:
+	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-128.bin", "RedBoot");
+	  break;
+	case 256:
+	  eval ("tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C", "/tmp");
+	  eval ("mtd", "-r", "-f", "write", "/tmp/rb-256.bin", "RedBoot");
+	  break;
+	default:
+	  fprintf (stderr, "no valid image found\n");
+	  break;
+	}
     }
 }
 
@@ -184,13 +190,13 @@ start_sysinit (void)
 
   /* Modules */
   uname (&name);
-  checkupdate();
+  checkupdate ();
 
-  nvram_set("intel_eth","0");
-  if (detect ("82541"))	// Intel Gigabit
+  nvram_set ("intel_eth", "0");
+  if (detect ("82541"))		// Intel Gigabit
     {
-    nvram_set("intel_eth","1");
-    eval ("insmod", "e1000");
+      nvram_set ("intel_eth", "1");
+      eval ("insmod", "e1000");
     }
 
 
@@ -200,7 +206,7 @@ start_sysinit (void)
   system2 ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 //  eval ("insmod", "ixp400_eth");
 //  if (getRouterBrand()==ROUTER_BOARD_GATEWORX_GW2345) //lets load the spi drivers for this switch
-    {
+  {
 //    eval("insmod","spi-algo-bit");
 //    eval("insmod","spi-ixp4xx");
 //    eval("insmod","ks8995m");
@@ -210,11 +216,11 @@ start_sysinit (void)
 //    system("echo R01=01 > /proc/driver/KS8995M"); // enable switch 
 //  eval ("ifconfig", "ixp1", "0.0.0.0", "down");
 //  eval ("ifconfig", "ixp0", "0.0.0.0", "down");
- // eval ("rmmod", "ixp400_eth");
-  eval ("insmod", "ixp400_eth");
-  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
- // eval ("ifconfig", "ixp1", "0.0.0.0", "up");
-    }
+    // eval ("rmmod", "ixp400_eth");
+    eval ("insmod", "ixp400_eth");
+    eval ("ifconfig", "ixp0", "0.0.0.0", "up");
+    // eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+  }
   eval ("insmod", "ocf");
   eval ("insmod", "cryptodev");
   eval ("insmod", "ixp4xx", "init_crypto=0");
@@ -259,7 +265,7 @@ Configure mac addresses by reading data from eeprom
   stime (&tm);
 
   eval ("hwclock", "-s");
-  nvram_set("use_crypto","0");
+  nvram_set ("use_crypto", "0");
   cprintf ("done\n");
   return 0;
 }

@@ -692,7 +692,7 @@ stop_wshaper (void)
   char *wl0mode = nvram_get ("wl0_mode");
   if (wl0mode == NULL)
     wl0mode = "";
-  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet") && getWET()==NULL
+  if (strcmp (dev, "br0") && strcmp (wl0mode, "wet") && getWET () == NULL
       && strcmp (wl0mode, "apstawet"))
     {
       eval ("rmmod", "ebt_dnat");

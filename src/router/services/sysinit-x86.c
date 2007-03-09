@@ -188,7 +188,7 @@ eval("insmod","crypto_null");
   if (detect ("BCM44"))		//Broadcom 
     eval ("insmod", "b44");
 
-    
+
   if (detect ("EtherExpress PRO/100"))	//intel 100 mbit 
     eval ("insmod", "e100");
   else if (detect ("PRO/100"))	//intel 100 mbit
@@ -293,9 +293,9 @@ eval("insmod","crypto_null");
     eval ("insmod", "tulip");
   else if (detect ("tulip"))
     eval ("insmod", "tulip");
-    
+
   if (detect ("SiS900"))	// Sis 900
-    eval ("insmod", "sis900"); 
+    eval ("insmod", "sis900");
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
@@ -335,15 +335,16 @@ eval("insmod","crypto_null");
 //  eval ("insmod", "scx200_acb");
 //  eval ("insmod", "lm77");
 #endif
-  if (detect("SafeXcel-1141"))
-     {
-     eval ("insmod", "ocf");
-     eval ("insmod", "cryptodev");
-     eval ("insmod", "safe");
-     nvram_set("use_crypto","1");
-     }else
-     nvram_set("use_crypto","0");
-     
+  if (detect ("SafeXcel-1141"))
+    {
+      eval ("insmod", "ocf");
+      eval ("insmod", "cryptodev");
+      eval ("insmod", "safe");
+      nvram_set ("use_crypto", "1");
+    }
+  else
+    nvram_set ("use_crypto", "0");
+
 
   nvram_set ("wl0_ifname", "ath0");
   eval ("mknod", "/dev/crypto", "c", "10", "70");

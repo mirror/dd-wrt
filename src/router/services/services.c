@@ -539,7 +539,7 @@ start_dhcpfwd (void)
 #endif
       if (getWET ())
 	{
-	//nothing
+	  //nothing
 	}
       else if (strcmp (wan_proto, "dhcp") == 0
 	       || strcmp (wan_proto, "static") == 0)
@@ -1484,7 +1484,7 @@ start_nas (char *type, char *prefix)
 
 	if (!strcmp (prefix, "wl0"))
 	  {
-	      iface = get_wdev();
+	    iface = get_wdev ();
 	  }
 	else
 	  {
@@ -1591,17 +1591,17 @@ int
 stop_nas (void)
 {
   int ret = 0;
-  
+
   while (pidof ("nas") > 0)
-  {
-    syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
-  /* NAS sometimes won't exit properly on a normal kill */
-  //int ret = killps("nas",NULL);
-  int ret = killall ("nas", SIGTERM);
-  sleep (2);
-  //killps("nas","-9");
-  killall ("nas", SIGKILL);
-  }
+    {
+      syslog (LOG_INFO, "NAS : NAS daemon successfully stopped\n");
+      /* NAS sometimes won't exit properly on a normal kill */
+      //int ret = killps("nas",NULL);
+      int ret = killall ("nas", SIGTERM);
+      sleep (2);
+      //killps("nas","-9");
+      killall ("nas", SIGKILL);
+    }
   cprintf ("done\n");
   return ret;
 }
@@ -2423,7 +2423,7 @@ start_chilli (void)
 	fprintf (fp, "dhcpif ath1\n");
 #else
 #ifndef HAVE_MSSID
-	fprintf (fp, "dhcpif %s\n", get_wdev());
+      fprintf (fp, "dhcpif %s\n", get_wdev ());
 #else
       if (nvram_match ("wl0_mode", "apsta"))
 	{
@@ -2431,7 +2431,7 @@ start_chilli (void)
 	}
       else
 	{
-	    fprintf (fp, "dhcpif %s\n", get_wdev());
+	  fprintf (fp, "dhcpif %s\n", get_wdev ());
 	}
 #endif
 #endif
@@ -3316,7 +3316,7 @@ start_igmp_proxy (void)
   int ret = 0;
   pid_t pid;
 
-  char *igmp_proxy_argv[] = { "igmprt",get_wan_face (),
+  char *igmp_proxy_argv[] = { "igmprt", get_wan_face (),
     NULL
   };
 
@@ -3729,11 +3729,11 @@ start_pppoerelay (void)
     {
 #ifdef HAVE_MADWIFI
       if (nvram_match ("ath0_mode", "sta"))
-	eval ("pppoe-relay", "-S", getSTA(), "-C", "br0");
+	eval ("pppoe-relay", "-S", getSTA (), "-C", "br0");
       else
 #else
       if (nvram_match ("wl_mode", "sta"))
-	eval ("pppoe-relay", "-S", get_wdev(), "-C", "br0");
+	eval ("pppoe-relay", "-S", get_wdev (), "-C", "br0");
       else
 #endif
 	eval ("pppoe-relay", "-S", nvram_safe_get ("wan_ifname"), "-C",
@@ -3852,7 +3852,7 @@ br_set_stp_state (const char *br, int stp_state)
 {
   if (!ifexists (br))
     return -1;
-  if (stp_state==1)
+  if (stp_state == 1)
     {
 //      syslog (LOG_INFO, "stp is set to on\n");
       return eval ("/usr/sbin/brctl", "stp", br, "on");
@@ -3869,11 +3869,11 @@ br_set_stp_state (const char *br, int stp_state)
 void
 start_bonding (void)
 {
-char mode[64];
-char count[64];
-sprintf(mode,"mode=%s",nvram_default_get("bonding_type","balance-rr"));
-sprintf(count,"max_bonds=%s",nvram_default_get("bonding_number","1"));
-eval("insmod","bonding",mode,count);
+  char mode[64];
+  char count[64];
+  sprintf (mode, "mode=%s", nvram_default_get ("bonding_type", "balance-rr"));
+  sprintf (count, "max_bonds=%s", nvram_default_get ("bonding_number", "1"));
+  eval ("insmod", "bonding", mode, count);
 
   static char word[256];
   char *next, *wordlist;
@@ -3884,24 +3884,24 @@ eval("insmod","bonding",mode,count);
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       {
-      break;
+	break;
       }
-    eval("ifconfig",tag,"0.0.0.0","up");
-    eval("ifenslave",tag,port);
+    eval ("ifconfig", tag, "0.0.0.0", "up");
+    eval ("ifenslave", tag, port);
   }
 }
 void
 stop_bonding (void)
 {
-int i;
-for (i=0;i<10;i++)
+  int i;
+  for (i = 0; i < 10; i++)
     {
-    char bond[32];
-    sprintf(bond,"bond%d",i);
-    if (ifexists(bond))
-	eval("ifconfig",bond,"down");
+      char bond[32];
+      sprintf (bond, "bond%d", i);
+      if (ifexists (bond))
+	eval ("ifconfig", bond, "down");
     }
-eval("rmmod","bonding");
+  eval ("rmmod", "bonding");
 }
 
 
@@ -3921,12 +3921,12 @@ start_vlantagging (void)
     char *tag = strsep (&port, ">");
     if (!tag || !port)
       {
-      break;
+	break;
       }
     eval ("vconfig", "add", tag, port);
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
-    eval ("ifconfig", vlan_name,"0.0.0.0","up");
+    eval ("ifconfig", vlan_name, "0.0.0.0", "up");
   }
 }
 
@@ -3944,33 +3944,34 @@ stop_vlantagging (void)
       break;
     char vlan_name[32];
     sprintf (vlan_name, "%s.%s", tag, port);
-    if (ifexists(vlan_name))
-    eval ("vconfig", "rem", vlan_name);
+    if (ifexists (vlan_name))
+      eval ("vconfig", "rem", vlan_name);
   }
 }
-void start_bridgesif(void)
+void
+start_bridgesif (void)
 {
-if (nvram_match("lan_stp","0"))
-    eval("brctl","stp","br0","off");
-else
-    eval("brctl","stp","br0","on");
+  if (nvram_match ("lan_stp", "0"))
+    eval ("brctl", "stp", "br0", "off");
+  else
+    eval ("brctl", "stp", "br0", "on");
   static char word[256];
   char *next, *wordlist;
- wordlist = nvram_safe_get ("bridgesif");
+  wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
   {
     char *port = word;
     char *tag = strsep (&port, ">");
     char *prio = port;
-    strsep(&prio,">");
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
-    if (strncmp(tag,"EOP",3))
-    {
-    eval ("brctl", "addif", tag,port);
-    if (prio)
-	eval("brctl","setportprio",tag,port,prio);
-    }
+    if (strncmp (tag, "EOP", 3))
+      {
+	eval ("brctl", "addif", tag, port);
+	if (prio)
+	  eval ("brctl", "setportprio", tag, port, prio);
+      }
   }
 
 }
@@ -3986,67 +3987,33 @@ start_bridging (void)
     char *port = word;
     char *tag = strsep (&port, ">");
     char *prio = port;
-    strsep(&prio,">");
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
     char ipaddr[32];
-    sprintf(ipaddr,"%s_ipaddr",tag);
+    sprintf (ipaddr, "%s_ipaddr", tag);
     char netmask[32];
-    sprintf(netmask,"%s_netmask",tag);
+    sprintf (netmask, "%s_netmask", tag);
 
     eval ("brctl", "addbr", tag);
     if (!strcmp (port, "1"))
-      br_set_stp_state(tag,1);
+      br_set_stp_state (tag, 1);
     else
-      br_set_stp_state(tag,0);
+      br_set_stp_state (tag, 0);
     if (prio)
-	eval("brctl","setbridgeprio",tag,prio);
-    if (!nvram_match(ipaddr,"0.0.0.0") && !nvram_match(netmask,"0.0.0.0"))
-	{
-	eval("ifconfig",tag,nvram_safe_get(ipaddr),"netmask",nvram_safe_get(netmask),"up");
-	}else
-	eval ("ifconfig", tag,"0.0.0.0","up");
+      eval ("brctl", "setbridgeprio", tag, prio);
+    if (!nvram_match (ipaddr, "0.0.0.0") && !nvram_match (netmask, "0.0.0.0"))
+      {
+	eval ("ifconfig", tag, nvram_safe_get (ipaddr), "netmask",
+	      nvram_safe_get (netmask), "up");
+      }
+    else
+      eval ("ifconfig", tag, "0.0.0.0", "up");
   }
 }
 
-char *getBridge(char *ifname)
-{
- static char word[256];
-  char *next, *wordlist;
- wordlist = nvram_safe_get ("bridgesif");
-  foreach (word, wordlist, next)
-  {
-    char *port = word;
-    char *tag = strsep (&port, ">");
-    char *prio = port;
-    strsep(&prio,">");
-    if (!tag || !port)
-      break;
-    if (!strcmp(port,ifname))
-	return tag;
-  }
-return nvram_safe_get("lan_ifname"); 
-}
-char *getBridgePrio(char *ifname)
-{
- static char word[256];
-  char *next, *wordlist;
- wordlist = nvram_safe_get ("bridgesif");
-  foreach (word, wordlist, next)
-  {
-    char *port = word;
-    char *tag = strsep (&port, ">");
-    char *prio = port;
-    strsep(&prio,">");
-    if (!tag || !port)
-      break;
-    if (!strcmp(port,ifname))
-	return port;
-  }
-return "0"; 
-}
-
-void stop_bridgesif(void)
+char *
+getBridge (char *ifname)
 {
   static char word[256];
   char *next, *wordlist;
@@ -4056,11 +4023,51 @@ void stop_bridgesif(void)
     char *port = word;
     char *tag = strsep (&port, ">");
     char *prio = port;
-    strsep(&prio,">");
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
-    if (ifexists(port))
-    eval ("brctl", "delif", tag,port);
+    if (!strcmp (port, ifname))
+      return tag;
+  }
+  return nvram_safe_get ("lan_ifname");
+}
+
+char *
+getBridgePrio (char *ifname)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep (&prio, ">");
+    if (!tag || !port)
+      break;
+    if (!strcmp (port, ifname))
+      return port;
+  }
+  return "0";
+}
+
+void
+stop_bridgesif (void)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep (&prio, ">");
+    if (!tag || !port)
+      break;
+    if (ifexists (port))
+      eval ("brctl", "delif", tag, port);
   }
 }
 
@@ -4075,48 +4082,54 @@ stop_bridging (void)
     char *port = word;
     char *tag = strsep (&port, ">");
     char *prio = port;
-    strsep(&prio,">");
+    strsep (&prio, ">");
     if (!tag || !port)
       break;
-    if (ifexists(tag))
-    {
-    eval ("ifconfig",tag,"down");
-    eval ("brctl", "delbr", tag);
-    }
+    if (ifexists (tag))
+      {
+	eval ("ifconfig", tag, "down");
+	eval ("brctl", "delbr", tag);
+      }
   }
 }
 
 
 #else
-char *getBridge(char *ifname)
+char *
+getBridge (char *ifname)
 {
-return nvram_safe_get("lan_ifname");
+  return nvram_safe_get ("lan_ifname");
 }
-char *getBridgePrio(char *ifname)
+
+char *
+getBridgePrio (char *ifname)
 {
-return "0";
+  return "0";
 }
 #endif
 
-int getbridge_main(int argc,char *argv[])
+int
+getbridge_main (int argc, char *argv[])
 {
-if (argc<2)
+  if (argc < 2)
     {
-    fprintf(stderr,"syntax: getbridge [ifname]\n");
-    return -1;
+      fprintf (stderr, "syntax: getbridge [ifname]\n");
+      return -1;
     }
-char *bridge=getBridge(argv[1]);
-fprintf(stdout,"%s\n",bridge);
-return 0;
+  char *bridge = getBridge (argv[1]);
+  fprintf (stdout, "%s\n", bridge);
+  return 0;
 }
-int getbridgeprio_main(int argc,char *argv[])
+
+int
+getbridgeprio_main (int argc, char *argv[])
 {
-if (argc<2)
+  if (argc < 2)
     {
-    fprintf(stderr,"syntax: getbridgeprio [ifname]\n");
-    return -1;
+      fprintf (stderr, "syntax: getbridgeprio [ifname]\n");
+      return -1;
     }
-char *bridge=getBridgePrio(argv[1]);
-fprintf(stdout,"%s\n",bridge);
-return 0;
+  char *bridge = getBridgePrio (argv[1]);
+  fprintf (stdout, "%s\n", bridge);
+  return 0;
 }
