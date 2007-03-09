@@ -1,0 +1,419 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>RedBoot Commands and Examples</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="PREVIOUS"
+TITLE="Configuring the RedBoot Environment"
+HREF="configuring-the-redboot-environment.html"><LINK
+REL="NEXT"
+TITLE="RedBoot Editing Commands"
+HREF="redboot-editing-commands.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="configuring-the-redboot-environment.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="redboot-editing-commands.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="REDBOOT-COMMANDS-AND-EXAMPLES"
+></A
+>Chapter 2. RedBoot Commands and Examples</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="redboot-commands-and-examples.html#AEN328"
+>Introduction</A
+></DT
+><DT
+><A
+HREF="redboot-editing-commands.html"
+>RedBoot Editing Commands</A
+></DT
+><DT
+><A
+HREF="common-commands.html"
+>Common Commands</A
+></DT
+><DT
+><A
+HREF="flash-image-system.html"
+>Flash Image System (FIS)</A
+></DT
+><DT
+><A
+HREF="persistent-state-flash.html"
+>Persistent State Flash-based Configuration and Control</A
+></DT
+><DT
+><A
+HREF="executing-programs.html"
+>Executing Programs from RedBoot</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN328"
+>Introduction</A
+></H1
+><P
+>RedBoot provides three basic classes of commands:    <P
+></P
+><UL
+><LI
+><P
+>Program loading and execution</P
+></LI
+><LI
+><P
+>Flash image and configuration management</P
+></LI
+><LI
+><P
+>Miscellaneous commands</P
+></LI
+></UL
+>Given the extensible and configurable nature of eCos and RedBoot,
+there may be extended or enhanced sets of commands available.</P
+><P
+>The basic format for commands is:    <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; COMMAND [-S] [-s val]operand</PRE
+></TD
+></TR
+></TABLE
+>Commands may require additional information beyond the basic
+command name. In most cases this additional information is optional, with
+suitable default values provided if they are not present. The type of information
+required affects how it is specified:   <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> [-S]</PRE
+></TD
+></TR
+></TABLE
+>An
+optional switch. If this switch is present, then some particular action will
+take place. For example in the command        
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis init -f</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>     the -f switch indicates to perform a full file system
+initialization. <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+> [-s val]</PRE
+></TD
+></TR
+></TABLE
+>An optional switch
+which requires an associated value. For example the command:        <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>load -b 0x00100000 data_file</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>specifies downloading
+a file (via TFTP) into memory, relocating it to location 0x00100000. <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>operand</PRE
+></TD
+></TR
+></TABLE
+>This format is used in a case where a command has
+one operand which must always be present (no -s is required since it is always
+implied). For example the command        
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go 0x10044</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>specifies executing the code starting at location 0x10044.</P
+><P
+>The list of available commands, and their syntax, can be obtained by
+typing <B
+CLASS="COMMAND"
+>help</B
+> at the command line:    <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>help</KBD
+>
+Manage aliases kept in FLASH memory
+      alias name [value]
+Set/Query the system console baud rate
+      baud [-b &lt;rate&#62;]
+Manage machine caches
+      cache [ON | OFF]
+Display/switch console channel
+      channel [-1|&lt;channel number&#62;]
+Display disk partitions
+      disks
+Set/Query DNS server IP address
+      dns [IP]
+Display (hex dump) a range of memory
+      dump -b &lt;location&#62; [-l &lt;length&#62;] [-s]
+Manage flash images
+      fis {cmds}
+Manage configuration kept in FLASH memory
+      fconfig [-i] [-l] [-n] [-f] [-d] | [-d] nickname [value]
+Execute code at a location
+      go [-w &lt;timeout&#62;] [entry]
+Help about help?
+      help [&lt;topic&#62;]
+Set/change IP addresses
+      ip_address [-l &lt;local_ip_address&#62;] [-h &lt;server_address&#62;]
+Load a file
+      load [-r] [-v] [-d] [-c &lt;channel&#62;] [-h &lt;host&#62;] [-m {TFTP | xyzMODEM | disk}]
+      [-b &lt;base_address&#62;] &lt;file_name&#62;
+Network connectivity test
+      ping [-v] [-n &lt;count&#62;] [-t &lt;timeout&#62;] [-i &lt;IP_addr]
+      -h &lt;host&#62;
+Reset the system
+      reset
+Display RedBoot version information
+      version
+Display (hex dump) a range of memory
+      x -b &lt;location&#62; [-l &lt;length&#62;] [-s]</PRE
+></TD
+></TR
+></TABLE
+>Commands can be abbreviated to their shortest
+unique string. Thus in the list above, <B
+CLASS="COMMAND"
+>d,du,dum</B
+>
+and dump are all valid for the dump command. The <B
+CLASS="COMMAND"
+>fconfig</B
+>
+command can be abbreviated <B
+CLASS="COMMAND"
+>fc</B
+>, but 
+<B
+CLASS="COMMAND"
+>f</B
+> would be ambiguous with <B
+CLASS="COMMAND"
+>fis</B
+>.</P
+><P
+>There is one additional, special command. When RedBoot detects '$' or '+'
+(unless escaped via '\') in a command, it switches to GDB protocol mode. At this
+point, the eCos GDB stubs take over, allowing connections from a GDB host.
+The only way to get back to RedBoot from GDB mode is to restart the platform.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>Multiple commands may be entered on a single line, separated by the semi-colon &#8220;;&#8221; character.</P
+></BLOCKQUOTE
+></DIV
+><P
+>The standard RedBoot command set is structured around the bootstrap
+environment. These commands are designed to be simple to use and remember,
+while still providing sufficient power and flexibility to be useful. No attempt
+has been made to render RedBoot as the end-all product. As such, things such
+as the debug environment are left to other modules, such as GDB stubs, which
+are typically included in RedBoot. </P
+><P
+>The command set may be also be extended on a platform basis. </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="configuring-the-redboot-environment.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="redboot-editing-commands.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Configuring the RedBoot Environment</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>RedBoot Editing Commands</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

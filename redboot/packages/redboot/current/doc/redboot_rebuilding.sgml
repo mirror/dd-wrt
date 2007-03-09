@@ -1,0 +1,374 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     redboot_rebuilding.sgml                                     -->
+<!--                                                                 -->
+<!--     RedBoot Documentation                                       -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<chapter id="Rebuilding-Redboot">
+<title>Rebuilding RedBoot</title>
+<sect1>
+<title>Introduction</title>
+<para><indexterm><primary>rebuilding RedBoot</primary></indexterm><indexterm>
+<primary>RedBoot</primary><secondary>rebuilding</secondary></indexterm>
+RedBoot is built as an application on top of eCos. The makefile rules
+for building RedBoot are part of the eCos CDL package, so it's
+possible to build eCos from the <application>Configuration
+Tool</application>, as well as from the command line using
+<application>ecosconfig</application>.</para>
+
+<para>Building RedBoot requires only a few steps: selecting the
+platform and the RedBoot template, importing a platform specific
+configuration file, and finally starting the build.</para>
+
+<para>The platform specific configuration file makes sure the settings
+are correct for building RedBoot on the given platform. Each platform
+should provide at least two of these configuration files:
+<filename>redboot_RAM.ecm</filename> for a RAM mode RedBoot
+configuration and <filename>redboot_ROM.ecm</filename> or
+<filename>redboot_ROMRAM.ecm</filename> for a ROM or ROMRAM mode
+RedBoot configuration. There may be additional
+configuration files according to the requirements of the particular
+platform.</para>
+
+<para>The RedBoot build process results in a number of files in the
+install <filename class="directory">bin</filename> directory. The ELF
+file <filename>redboot.elf</filename> is the pricipal
+result. Depending on the platform CDL, there will also be generated
+versions of RedBoot in other file formats, such as
+<filename>redboot.bin</filename> (binary format, good when doing an
+update of a primary RedBoot image, see <xref
+linkend="update-primary-image">), <filename>redboot.srec</filename>
+(Motorola S-record format, good when downloading a RAM mode image for
+execution), and <filename>redboot.img</filename> (stripped ELF format,
+good when downloading a RAM mode image for execution, smaller than the
+.srec file). Some platforms may provide additional file formats and
+also relocate some of these files to a
+particular address making them more suitable for downloading using a
+different boot monitor or flash programming tools.</para>
+
+<para>The platform specific information in <xref
+linkend="Installation-and-Testing"> should be consulted, as there may
+be other special instructions required to build RedBoot for particular
+platforms.</para>
+
+<sect2>
+<title>Rebuilding RedBoot using <application>ecosconfig</application></title>
+
+<para>To rebuild RedBoot using the
+<application>ecosconfig</application> tool, create a temporary
+directory for building RedBoot, name it according to the desired
+configuration of RedBoot, here RAM:
+<screen>
+$ <userinput>mkdir /tmp/redboot_RAM</userinput>
+$ <userinput>cd /tmp/redboot_RAM</userinput>
+</screen>
+</para>
+
+<para>Create the build tree according to the chosen platform, here
+using the Hitachi Solution Engine 7751 board as
+an example:
+<note><para>It is assumed that the environment variable
+ECOS_REPOSITORY points to the eCos/RedBoot source tree.</para></note>
+<screen>
+$ <userinput>ecosconfig new se7751 redboot</userinput>
+U CYGPKG_HAL_SH_7750, new inferred value 0
+U CYGPKG_HAL_SH_7751, new inferred value 1
+U CYGHWR_HAL_SH_IRQ_USE_IRQLVL, new inferred value 1
+U CYGSEM_HAL_USE_ROM_MONITOR, new inferred value 0
+U CYGDBG_HAL_COMMON_CONTEXT_SAVE_MINIMUM, new inferred value 0
+U CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS, new inferred value 1
+U CYGFUN_LIBC_STRING_BSD_FUNCS, new inferred value 0
+U CYGPKG_NS_DNS_BUILD, new inferred value 0
+</screen>
+Replace the platform name ("se7751") with the appropriate name for the
+chosen platform.
+</para>
+
+<para>Then import the appropriate platform RedBoot configuration file,
+here for RAM configuration:
+<screen>
+$ <userinput>ecosconfig import <filename>${ECOS_REPOSITORY}/hal/sh/se7751/<replaceable>VERSION</replaceable>/misc/redboot_RAM.ecm</filename></userinput>
+$ <userinput>ecosconfig tree</userinput>
+</screen>
+Replace architecture ("sh"), platform ("se7751") and version
+("<replaceable>VERSION</replaceable>") with those appropriate for the
+chosen platform and the version number of its HAL package. Also
+replace the configuration name ("redboot_RAM.ecm") with that of the
+appropriate configuration file.
+</para>
+
+<para>RedBoot can now be built:
+<screen>
+$ <userinput>make</userinput>
+</screen>
+</para>
+
+<para>The resulting RedBoot files will be in the associated
+install directory, in this example, <filename
+class="directory">./install/bin</filename>.</para>
+
+<para>In <xref linkend="Installation-and-Testing"> each platform's
+details are described in the form of shell variables. Using those,
+the steps to build RedBoot are:
+<programlisting>
+export REDBOOT_CFG=redboot_ROM
+export VERSION=<replaceable>VERSION</replaceable>
+mkdir /tmp/${REDBOOT_CFG}
+cd /tmp/${REDBOOT_CFG}
+ecosconfig new ${TARGET} redboot
+ecosconfig import ${ECOS_REPOSITORY}/hal/${ARCH_DIR}/${PLATFORM_DIR}/${VERSION}/misc/${REDBOOT_CFG}.ecm
+ecosconfig tree
+make
+</programlisting>
+To build for another configuration, simply change the
+<replaceable>REDBOOT_CFG</replaceable> definition accordingly. Also
+make sure the <replaceable>VERSION</replaceable> variable matches the
+version of the platform package.
+</para>
+</sect2>
+
+
+<sect2>
+<title>Rebuilding RedBoot from the <application>Configuration Tool</application></title>
+
+<para>To rebuild RedBoot from the <application>Configuration
+Tool</application>, open the template window (<guimenuitem>Build->Templates</guimenuitem>) and
+select the appropriate Hardware target and in Packages select
+"redboot". Then press OK. Depending on the platform, a number of
+conflicts may need to be resolved before the build can be started;
+select "Continue".</para>
+
+<para>Import the desired RedBoot configuration file from the platform HAL
+(<guimenuitem>File->Import...</guimenuitem>).  Depending on the platform, a number of
+conflicts may need to be resolved before the build can be started;
+select "Continue". For example, if the platform selected is Hitachi
+SE7751 board and the RAM configuration RedBoot should be built, import
+the file
+<filename>hal/sh/se7751/<replaceable>VERSION</replaceable>/misc/redboot_RAM.ecm</filename>.</para>
+
+<para>Save the configuration somewhere suitable with enough disk space
+for building RedBoot (<guimenuitem>File->Save...</guimenuitem>). Choose the name according to
+the RedBoot configuration, for example
+<filename>redboot_RAM.ecc</filename>.</para>
+
+<para>Then start the build (<guimenuitem>Build->Library</guimenuitem>) and wait for it to
+complete. The resulting RedBoot files will be in the associated
+install directory, for the example this would be <filename
+class="directory">redboot_RAM_install/bin</filename>.</para>
+
+<para>As noted above, each platform's details are described in <xref
+linkend="Installation-and-Testing">. Use the information provided in
+the shell variables to find the configuration file - the path to it is
+<filename>${ECOS_REPOSITORY}/hal/${ARCH_DIR}/${PLATFORM_DIR}/${VERSION}/misc/${REDBOOT_CFG}.ecm</filename>,
+where <replaceable>ECOS_REPOSITORY</replaceable> points to the
+eCos/RedBoot sources, <replaceable>VERSION</replaceable> is the
+version of the package (usually "current") and
+<replaceable>REDBOOT_CFG</replaceable> is the desired configuration,
+e.g. redboot_RAM.
+</para>
+</sect2></sect1></chapter>
+
+<chapter id="Updating-Redboot">
+<title>Updating RedBoot</title>
+<sect1>
+<title>Introduction</title>
+<para><indexterm><primary>updating
+RedBoot</primary></indexterm><indexterm>
+<primary>RedBoot</primary><secondary>updating</secondary></indexterm>RedBoot
+normally resides in an EPROM or, more common these days, a flash 
+on the board. In the former case, updating RedBoot necessitates
+physically removing the part and
+reprogramming a new RedBoot image into it using prommer hardware. In
+the latter case, it is often possible to update RedBoot in situ using
+Redboot's flash management commands.</para>
+
+<para>The process of updating RedBoot in situ is documented in this
+section. For this process, it is assumed that the target is connected
+to a host system and that there is a serial connection giving access
+to the RedBoot CLI. For platforms with a ROMRAM mode RedBoot, skip to
+<xref linkend="update-primary-image">.</para>
+
+<note><para>The addresses and sizes included in the below are examples
+only, and will differ from those you will see. This is normal and
+should not cause concern.</para></note>
+
+<sect2 id="different-version-from-RAM">
+<title>Load and start a RedBoot RAM instance</title>
+<para>There are a number of choices here. The basic case is where a RAM
+mode image has been stored in the FIS (flash Image System). To load and
+execute this image, use the commands: <screen>
+RedBoot> <userinput>fis load RedBoot[RAM]</userinput>
+RedBoot> <userinput>go</userinput></screen>
+If this image is not available, or does not work,
+then an alternate RAM mode image must be loaded:
+<screen>
+RedBoot> <userinput>load redboot_RAM.img</userinput>
+Entry point: 0x060213c0, address range: 0x06020000-0x060369c8                   
+RedBoot> <userinput>go</userinput>
+</screen>
+
+<note><para>This command loads the RedBoot image using the TFTP
+protocol via a network connection. Other methods of loading are
+available, refer to the <command><link
+linkend="download-command">load</link</command> command for more
+details. </para></note>
+
+<note><para>If you expect to be doing this more than once, it is a
+good idea to program the RAM mode image into the flash. You do this
+using the <command>fis create</command> command after having
+downloaded the RAM mode image, but before you start it.</para>
+<para>Some platforms support locking (write protecting) certain regions of
+the flash, while others do not. If your platform does not support
+locking, simply ignore the <command>fis unlock</command> and
+<command>fis lock</command> steps (the commands will not be
+recognized by RedBoot).</para>
+<para>
+<screen>
+RedBoot> <userinput>fis unlock RedBoot[RAM]</userinput>
+  ... Unlock from 0x00000000-0x00020000: ..
+RedBoot> <userinput>fis create RedBoot[RAM]</userinput>
+An image named 'RedBoot[RAM]' exists - continue (y/n)? <userinput>y</userinput>
+* CAUTION * about to program 'RedBoot[RAM]'
+            at 0x00020000..0x000369c7 from 0x06020000 - continue (y/n)?<userinput>y</userinput>
+... Erase from 0x00020000-0x00040000: ..                                        
+... Program from 0x06020000-0x060369c8 at 0x00020000: ..                        
+... Erase from 0x00070000-0x00080000: .                                         
+... Program from 0x0606f000-0x0607f000 at 0x00070000: .                         
+RedBoot> <userinput>fis lock RedBoot[RAM]</userinput>
+  ... Lock from 0x00000000-0x00020000: ..
+</screen>
+</para></note>
+</para>
+</sect2>
+
+<sect2 id="update-primary-image">
+<title>Update the primary RedBoot flash image</title> <para>An
+instance of RedBoot should now be running on the target from RAM. This
+can be verified by looking for the mode identifier in the banner. It
+should be either [RAM] or [ROMRAM].</para>
+
+<para>If this is the first time RedBoot is running on the board or if
+the flash contents has been damaged, initialize the FIS directory:
+<screen>RedBoot> <userinput>fis init -f</userinput>
+About to initialize [format] FLASH image system - continue (y/n)? <userinput>y</userinput>
+*** Initialize FLASH Image System
+... Erase from 0x00020000-0x00070000: .....
+... Erase from 0x00080000-0x00080000:
+... Erase from 0x00070000-0x00080000: .
+... Program from 0x0606f000-0x0607f000 at 0x00070000: .
+</screen>
+</para>
+
+<para>It is important to understand that the presence of a correctly
+initialized FIS directory allows RedBoot to automatically determine
+the flash parameters. Additionally, executing the steps below as
+stated without loading other data or using other flash commands (than
+possibly <command>fis list</command>) allows RedBoot to automatically
+determine the image location and size parameters. This greatly reduces
+the risk of potential critical mistakes due to typographical errors. It is
+still always possible to explicitly specify parameters, and indeed
+override these, but it is not advised.</para>
+
+<note><para>If the new RedBoot image has grown beyond the slot in
+flash reserved for it, it is necessary to change the RedBoot
+configuration option CYGBLD_REDBOOT_MIN_IMAGE_SIZE so the FIS is
+created with adequate space reserved for RedBoot images. In this case,
+it is necessary to re-initialize the FIS directory as described above,
+using a RAM mode RedBoot compiled with the updated
+configuration.</para></note>
+
+<para>Using the <command>load</command> command, download the
+new flash based image from the host, relocating the image to RAM::
+<screen>RedBoot> <userinput>load -r -b %{FREEMEMLO} redboot_ROM.bin</userinput>
+Raw file loaded 0x06046800-0x06062fe8, assumed entry at 0x06046800
+</screen>
+
+<note><para>This command loads the RedBoot image using the TFTP
+protocol via a network connection. Other methods of loading are
+available, refer to the <xref linkend="download-command"> command for
+more details. </para></note>
+
+<note><para>Note that the binary version of the image is being
+downloaded. This is to ensure that the memory after the image is
+loaded should match the contents of the file on the host. Loading SREC
+or ELF versions of the image does not guarantee this since these
+formats may contain holes, leaving bytes in these holes in an unknown
+state after the load, and thus causing a likely cksum difference. It
+is possible to use these, but then the step verifying the cksum below
+may fail.</para></note>
+</para>
+
+<para>Once the image is loaded into RAM, it should be checksummed,
+thus verifying that the image on the target is indeed the image
+intended to be loaded, and that no corruption of the image has
+happened. This is done using the <xref linkend="cksum-command">
+command:
+<screen>RedBoot> <userinput>cksum</userinput>
+Computing cksum for area 0x06046800-0x06062fe8                                  
+POSIX cksum = 2535322412 116712 (0x971df32c 0x0001c7e8)                         
+</screen>
+Compare the numbers with those for the binary version of the image on
+the host. If they do not match, try downloading the image again.</para>
+
+
+<para>Assuming the cksum matches, the next step is programming the
+image into flash using the FIS commands.</para>
+
+<para>Some platforms support locking (write protecting) certain
+regions of the flash, while others do not. If your platform does not
+support locking, simply ignore the <command>fis unlock</command> and
+<command>fis lock</command> steps (the commands will not be recognized
+by RedBoot).</para>
+
+<screen>RedBoot> <userinput>fis unlock RedBoot</userinput>
+  ... Unlock from 0x00000000-0x00020000: ..
+RedBoot> <userinput>fis create RedBoot</userinput>
+An image named 'RedBoot' exists - continue (y/n)? <userinput>y</userinput>
+* CAUTION * about to program 'RedBoot'
+            at 0x00000000..0x0001c7e7 from 0x06046800 - continue (y/n)? <userinput>y</userinput>
+... Erase from 0x00000000-0x00020000: ..
+... Program from 0x06046800-0x06062fe8 at 0x00000000: ..
+... Erase from 0x00070000-0x00080000: .
+... Program from 0x0606f000-0x0607f000 at 0x00070000: .
+RedBoot> <userinput>fis lock RedBoot</userinput>
+  ... Lock from 0x00000000-0x00020000: ..
+</screen>
+
+</sect2>
+<sect2>
+<title>Reboot; run the new RedBoot image</title>
+<para>Once the image has been successfully written into the flash, simply
+reset the target and the new version of RedBoot should be running. </para>
+<para>When installing RedBoot for the first time, or after updating to
+a newer RedBoot with different configuration keys, it is necessary to
+update the configuration directory in the flash using the
+<command>fconfig</command> command. See <xref
+linkend="Persistent-State-Flash">.
+</para>
+
+</sect2></sect1></chapter>

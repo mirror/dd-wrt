@@ -1,0 +1,570 @@
+package CYGPKG_HAL {
+        alias		{ "eCos common HAL" hal hal_common }
+	directory	hal/common
+	script		hal.cdl
+	description "
+The eCos HAL package provide a porting layer for higher-level parts of
+the system such as the kernel and the C library. Each installation
+should have HAL packages for one or more architectures, and for each
+architecture there may be one or more supported platforms. It is
+necessary to select one target architecture and one platform for that
+architecture. There are also a number of configuration options that
+are common to all HAL packages."
+}
+
+package CYGPKG_INFRA {
+	alias 		{ Infrastructure infra }
+	directory	infra
+	script		infra.cdl
+        description "
+Common types and useful macros.
+Tracing and assertion facilities.
+Package startup options." 
+}
+
+package CYGPKG_IO {
+	alias 		{ "I/O sub-system" io }
+	directory	io/common
+	script		io.cdl
+        description "
+           The eCos system is supplied with a number of different
+           device drivers.  This package contains the basic I/O system
+           support which is the basis for all drivers."
+}
+
+package CYGPKG_IO_FLASH {
+	alias 		{ "Generic FLASH memory support" flash }
+	directory	io/flash
+	script		io_flash.cdl
+        description "
+           This package contains generic support for FLASH memory."
+}
+
+package CYGPKG_DEVS_FLASH_STRATA {
+	alias 		{ "Generic FLASH memory support for Intel StrataFLASH" strata }
+	directory	devs/flash/intel/strata
+	script		flash_strata.cdl
+	hardware
+        description "
+           This package contains generic hardware support for Intel
+	   StrataFLASH memory devices."
+}
+
+package CYGPKG_DEVS_FLASH_IXDP425 {
+	alias 		{ "FLASH memory support for IXDP425" flash_ixdp425 }
+	directory	devs/flash/arm/ixdp425
+	script		flash_ixdp425.cdl
+	hardware
+        description "
+           This package contains hardware support for FLASH memory
+	   on the IXDP425 platform."
+}
+
+package CYGPKG_DEVS_FLASH_IXDPG425 {
+	alias 		{ "FLASH memory support for IXDPG425" flash_ixdpg425 }
+	directory	devs/flash/arm/ixdpg425
+	script		flash_ixdpg425.cdl
+	hardware
+        description "
+           This package contains hardware support for FLASH memory
+	   on the IXDPG425 Network Gateway."
+}
+
+package CYGPKG_DEVS_FLASH_IXDP465 {
+	alias 		{ "FLASH memory support for IXDP465" flash_ixdp465 }
+	directory	devs/flash/arm/ixdp465
+	script		flash_ixdp465.cdl
+	hardware
+        description "
+           This package contains hardware support for FLASH memory
+	   on the IXDP465 platform."
+}
+
+package CYGPKG_DEVS_FLASH_GRG {
+	alias 		{ "FLASH memory support for GRG" flash_grg }
+	directory	devs/flash/arm/grg
+	script		flash_grg.cdl
+	hardware
+        description "
+           This package contains hardware support for FLASH memory
+	   on the Intel Generic Residential Gateway platform."
+}
+
+package CYGPKG_IO_ETH_DRIVERS {
+	alias 		{ "Common ethernet support" net_drivers eth_drivers CYGPKG_NET_ETH_DRIVERS }
+	directory	io/eth
+	script		eth_drivers.cdl
+        description     "Platform independent ethernet support."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_I82559 {
+	alias 		{ "Intel 82559 ethernet driver"
+			   devs_eth_intel_i82559 i82559_eth_driver }
+	hardware
+	directory	devs/eth/intel/i82559
+	script		intel_i82559_eth_drivers.cdl
+        description     "Ethernet driver for Intel 82559 NIC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_IXDP425_I82559 {
+	alias 		{ "IXDP425 (PCI) / Intel 82559 ethernet driver"
+			   devs_eth_arm_ixdp425_i82559 }
+	hardware
+	directory	devs/eth/arm/ixdp425/i82559
+	script		ixdp425_i82559_eth_driver.cdl
+        description     "Ethernet driver for IXDP425 with Intel 82559 PCI NIC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_IXDP465_I82559 {
+	alias 		{ "IXDP465 (PCI) / Intel 82559 ethernet driver"
+			   devs_eth_arm_ixdp465_i82559 }
+	hardware
+	directory	devs/eth/arm/ixdp465/i82559
+	script		ixdp465_i82559_eth_driver.cdl
+        description     "Ethernet driver for IXDP465 with Intel 82559 PCI NIC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_GRG_I82559 {
+	alias 		{ "GRG / Intel 82559 ethernet driver"
+			   devs_eth_arm_grg_i82559 }
+	hardware
+	directory	devs/eth/arm/grg/i82559
+	script		grg_i82559_eth_driver.cdl
+        description     "Ethernet driver for GRG with Intel 82559 PCI NIC."
+}
+
+package CYGPKG_IO_PCI {
+	alias		{ "PCI configuration library" io_pci }
+	directory	io/pci
+	script		io_pci.cdl
+	hardware
+        description "
+           This package contains the PCI configuration library."
+}
+
+package CYGPKG_MEMALLOC {
+        alias           { "Dynamic memory allocation" memalloc malloc }
+        directory       services/memalloc/common
+        script          memalloc.cdl
+        description "
+This package provides memory allocator infrastructure required for
+dynamic memory allocators, including the ISO standard malloc
+interface. It also contains some sample implementations."
+}
+
+package CYGPKG_COMPRESS_ZLIB {
+        alias           { "Zlib compress/decompress" zlib_compress compress_zlib zlib }
+        directory       services/compress/zlib
+        script          compress_zlib.cdl
+        description "
+This package provides zlib compression and decompression support."
+}
+
+package CYGPKG_CRC {
+        alias           { "CRC support" crc }
+        directory       services/crc
+        script          crc.cdl
+        description "
+This package provides support for CRC functions, including the 
+POSIX 1003 defined CRC algorithm."
+}
+
+package CYGPKG_ISOINFRA {
+        alias           { "ISO C and POSIX infrastructure" isoinfra }
+        directory       isoinfra
+        script          isoinfra.cdl
+        description "
+eCos supports implementations of ISO C libraries and POSIX implementations.
+This package provides infrastructure used by all such implementations."
+}
+
+package CYGPKG_LIBC {
+	alias		{ "C library" libc clib clibrary }
+	directory	language/c/libc/common
+	script		libc.cdl
+        description  "
+The packages under this package enable compatibility with the ISO C
+standard - ISO/IEC 9899:1990. This allows the user application to use
+well known standard C library functions, and in eCos starts a thread
+to invoke the user function main(). This package is a top-level placeholder
+to contain the implementations."
+}
+
+package CYGPKG_LIBC_STRING {
+	alias		{ "ISO C library string functions" libc_string }
+	directory	language/c/libc/string
+	script		string.cdl
+        description  "
+This package provides string functions specified by the ISO C standard
+- ISO/IEC 9899:1990."
+}
+
+package CYGPKG_REDBOOT {
+    alias           { "RedBoot, the Red Hat bootstrap" cygmon }
+    directory       redboot
+    script          redboot.cdl
+    description     "
+        This package creates the RedBoot \[stand-alone bootstrap & debug monitor\]
+        using eCos as the underlying board support mechanism."
+}
+
+package CYGPKG_HAL_ARM {
+	alias		{ "ARM common HAL" hal_arm arm_hal arm_arch_hal }
+	directory	hal/arm/arch
+	script		hal_arm.cdl
+	hardware
+	description "
+The ARM architecture HAL package provides generic support for this
+processor architecture. It is also necessary to select a specific
+target platform HAL package."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_CORE {
+	alias		{ "Intel XScale Core" hal_arm_xscale_core }
+	directory	hal/arm/xscale/cores
+	script		hal_arm_xscale_core.cdl
+	hardware
+        description "
+        The XScale core HAL package provides the support needed to run eCos
+        on all Intel XScale based systems."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_IXP425 {
+	alias		{ "Intel XScale IXP425 Network Processor" hal_arm_xscale_ixp425 }
+	directory	hal/arm/xscale/ixp425
+	script		hal_arm_xscale_ixp425.cdl
+	hardware
+        description "
+        The XScale IXP425 HAL package provides the support needed to run
+        eCos on Intel XScale IXP425 network processor based systems."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_IXDP425 {
+	alias		{ "Intel XScale IXDP425 Network Processor eval board" hal_arm_xscale_ixdp425 }
+	directory	hal/arm/xscale/ixdp425
+	script		hal_arm_xscale_ixdp425.cdl
+	hardware
+        description "
+        The IXDP425 HAL package provides the support needed to run
+        eCos on an Intel XScale IXDP425 network processor evaluation board."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_IXDP465 {
+	alias		{ "Intel XScale IXDP465 Network Processor eval board" hal_arm_xscale_ixdp465 }
+	directory	hal/arm/xscale/ixdp465
+	script		hal_arm_xscale_ixdp465.cdl
+	hardware
+        description "
+        The IXDP465 HAL package provides the support needed to run
+        eCos on an Intel XScale IXDP465 network processor evaluation board."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_IXDPG425 {
+	alias		{ "Intel IXDPG425 Network Gateway Reference Platform" hal_arm_xscale_ixdpg425 }
+	directory	hal/arm/xscale/ixdpg425
+	script		hal_arm_xscale_ixdpg425.cdl
+	hardware
+        description "
+        The IXDPG425 HAL package provides the support needed to run
+        eCos on an Intel IXDPG425 network gateway reference platform."
+}
+
+package CYGPKG_HAL_ARM_XSCALE_GRG {
+	alias		{ "Intel XScale Generic Residential Gateway" hal_arm_xscale_grg }
+	directory	hal/arm/xscale/grg
+	script		hal_arm_xscale_grg.cdl
+	hardware
+        description "
+        The GRG HAL package provides the support needed to run eCos on an
+        Intel Generic Residential Gateway evaluation board."
+}
+
+target ixdp425 {
+	alias { "IXDP425 board" ixdp425 }
+	packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+	           CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDP425
+		   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+		   CYGPKG_DEVS_ETH_ARM_IXDP425_I82559
+                   CYGPKG_DEVS_FLASH_STRATA
+		   CYGPKG_DEVS_FLASH_IXDP425
+        }
+        description "
+        The ixdp425 target provides the packages needed to run
+        eCos on an Intel network processor evaluation board."
+}
+
+target ixdpg425 {
+	alias { "IXDPG425 board" ixdpg425 }
+	packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+	           CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDPG425
+		   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_FLASH_STRATA
+		   CYGPKG_DEVS_FLASH_IXDPG425
+        }
+        description "
+        The ixdpg425 target provides the packages needed to run
+        eCos on an Intel IXDPG425 network gateway referece platform."
+}
+
+target grg {
+	alias { "Generic Residential Gateway" grg }
+	packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+	           CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_GRG
+		   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+                   CYGPKG_DEVS_ETH_ARM_GRG_I82559
+                   CYGPKG_DEVS_FLASH_STRATA
+		   CYGPKG_DEVS_FLASH_GRG
+        }
+        description "
+        The grg target provides the packages needed to run
+        eCos on an Intel Generic Residential Gateway board."
+}
+
+target ixdp465 {
+	alias { "IXDP465 board" ixdp465 }
+	packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+	           CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDP465
+		   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+		   CYGPKG_DEVS_ETH_ARM_IXDP465_I82559
+                   CYGPKG_DEVS_FLASH_STRATA
+		   CYGPKG_DEVS_FLASH_IXDP465
+        }
+        description "
+        The ixdp465 target provides the packages needed to run
+        eCos on an Intel network processor evaluation board."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE {
+        alias           { "Intel NPE ethernet driver"
+                           devs_eth_intel_npe npe_eth_driver intel_npe }
+        hardware
+        directory       devs/eth/intel/npe/common
+        script          intel_npe_eth_drivers.cdl
+        description     "Ethernet driver for Intel Network Processor Engine."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_ETHACC {
+        alias           { "Intel NPE library ethAcc module"
+                           devs_eth_intel_npe_ethacc npe_ethacc }
+        hardware
+        directory       devs/eth/intel/npe/ethAcc
+        script          intel_npe_ethacc.cdl
+        description     "Access component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_ETHDB {
+        alias           { "Intel NPE library ethDB module"
+                           devs_eth_intel_npe_ethdb npe_ethdb }
+        hardware
+        directory       devs/eth/intel/npe/ethDB
+        script          intel_npe_ethdb.cdl
+        description     "Database component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_NPEDL {
+        alias           { "Intel NPE library npeDl module"
+                           devs_eth_intel_npe_npedl npe_npedl }
+        hardware
+        directory       devs/eth/intel/npe/npeDl
+        script          intel_npe_npedl.cdl
+        description     "Download component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_NPEMH {
+        alias           { "Intel NPE library npeMh module"
+                           devs_eth_intel_npe_npemh npe_npemh }
+        hardware
+        directory       devs/eth/intel/npe/npeMh
+        script          intel_npe_npemh.cdl
+        description     "Message handling component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_ETHMII {
+        alias           { "Intel NPE library ethMii module"
+                           devs_eth_intel_npe_ethmii npe_ethmii }
+        hardware
+        directory       devs/eth/intel/npe/ethMii
+        script          intel_npe_ethmii.cdl
+        description     "MII component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_QMGR {
+        alias           { "Intel NPE library qmgr module"
+                           devs_eth_intel_npe_qmgr npe_qmgr }
+        hardware
+        directory       devs/eth/intel/npe/qmgr
+        script          intel_npe_qmgr.cdl
+        description     "Queue manager component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_OSSERVICES {
+        alias           { "Intel NPE library osServices module"
+                           devs_eth_intel_npe_osservices npe_osservices }
+        hardware
+        directory       devs/eth/intel/npe/osServices
+        script          intel_npe_osservices.cdl
+        description     "OS Services component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_INTEL_NPE_FEATURECTRL {
+        alias           { "Intel NPE library feature control module"
+                           devs_eth_intel_npe_featurectrl npe_featurectrl }
+        hardware
+        directory       devs/eth/intel/npe/featureCtrl
+        script          intel_npe_featurectrl.cdl
+        description     "Feature control component for Intel NPE library."
+}
+
+package CYGPKG_DEVS_ETH_ARM_IXDP465_NPE {
+	alias 		{ "IXDP465 / NPE ethernet driver"
+			   devs_eth_arm_ixdp465_npe ixdp465_npe }
+	hardware
+	directory	devs/eth/arm/ixdp465/npe
+	script		ixdp465_npe_eth_driver.cdl
+        description     "Ethernet driver for IXDP465 with builtin NPE MAC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_IXDP425_NPE {
+	alias 		{ "IXDP425 / NPE ethernet driver"
+			   devs_eth_arm_ixdp425_npe ixdp425_npe }
+	hardware
+	directory	devs/eth/arm/ixdp425/npe
+	script		ixdp425_npe_eth_driver.cdl
+        description     "Ethernet driver for IXDP425 with builtin NPE MAC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_IXDPG425_NPE {
+	alias 		{ "IXDPG425 / NPE ethernet driver"
+			   devs_eth_arm_ixdpg425_npe ixdpg425_npe }
+	hardware
+	directory	devs/eth/arm/ixdpg425/npe
+	script		ixdpg425_npe_eth_driver.cdl
+        description     "Ethernet driver for IXDPG425 with builtin NPE MAC."
+}
+
+package CYGPKG_DEVS_ETH_ARM_GRG_NPE {
+	alias 		{ "GRG / NPE ethernet driver"
+			   devs_eth_arm_grg_npe grg_npe }
+	hardware
+	directory	devs/eth/arm/grg/npe
+	script		grg_npe_eth_driver.cdl
+        description     "Ethernet driver for GRG builtin NPE MAC."
+}
+
+target ixdp465_npe {
+        alias { "IXDP465 with NPE ethernet" ixdp465npe }
+        packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+                   CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDP465
+                   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+                   CYGPKG_DEVS_ETH_ARM_IXDP465_I82559
+                   CYGPKG_DEVS_ETH_INTEL_NPE
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHACC
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHDB
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHMII
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEDL
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEMH
+                   CYGPKG_DEVS_ETH_INTEL_NPE_OSSERVICES
+                   CYGPKG_DEVS_ETH_INTEL_NPE_QMGR
+                   CYGPKG_DEVS_ETH_INTEL_NPE_FEATURECTRL
+                   CYGPKG_DEVS_ETH_ARM_IXDP465_NPE
+                   CYGPKG_DEVS_FLASH_STRATA
+                   CYGPKG_DEVS_FLASH_IXDP465
+        }
+        description "
+        The ixdp465 target provides the packages needed to run
+        eCos on an Intel network processor evaluation board."
+}
+
+target ixdp425_npe {
+        alias { "IXDP425 with NPE ethernet" ixdp425npe }
+        packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+                   CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDP425
+                   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+                   CYGPKG_DEVS_ETH_ARM_IXDP425_I82559
+                   CYGPKG_DEVS_ETH_INTEL_NPE
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHACC
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHDB
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHMII
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEDL
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEMH
+                   CYGPKG_DEVS_ETH_INTEL_NPE_OSSERVICES
+                   CYGPKG_DEVS_ETH_INTEL_NPE_QMGR
+                   CYGPKG_DEVS_ETH_INTEL_NPE_FEATURECTRL
+                   CYGPKG_DEVS_ETH_ARM_IXDP425_NPE
+                   CYGPKG_DEVS_FLASH_STRATA
+                   CYGPKG_DEVS_FLASH_IXDP425
+        }
+        description "
+        The ixdp425 target provides the packages needed to run
+        eCos on an Intel network processor evaluation board."
+}
+
+target grg_npe {
+        alias { "grg with NPE ethernet" grgnpe }
+        packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+                   CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_GRG
+                   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_I82559
+                   CYGPKG_DEVS_ETH_ARM_GRG_I82559
+                   CYGPKG_DEVS_ETH_INTEL_NPE
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHACC
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHDB
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHMII
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEDL
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEMH
+                   CYGPKG_DEVS_ETH_INTEL_NPE_OSSERVICES
+                   CYGPKG_DEVS_ETH_INTEL_NPE_QMGR
+                   CYGPKG_DEVS_ETH_INTEL_NPE_FEATURECTRL
+                   CYGPKG_DEVS_ETH_ARM_GRG_NPE
+                   CYGPKG_DEVS_FLASH_STRATA
+                   CYGPKG_DEVS_FLASH_GRG
+        }
+        description "
+        The grg target provides the packages needed to run
+        eCos on an Intel Generic Residential Gateway board."
+}
+
+target ixdpg425_npe {
+        alias { "IXDPG425 with NPE ethernet" ixdpg425npe }
+        packages { CYGPKG_HAL_ARM
+                   CYGPKG_HAL_ARM_XSCALE_CORE
+                   CYGPKG_HAL_ARM_XSCALE_IXP425
+                   CYGPKG_HAL_ARM_XSCALE_IXDPG425
+                   CYGPKG_IO_PCI
+                   CYGPKG_DEVS_ETH_INTEL_NPE
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHACC
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHDB
+                   CYGPKG_DEVS_ETH_INTEL_NPE_ETHMII
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEDL
+                   CYGPKG_DEVS_ETH_INTEL_NPE_NPEMH
+                   CYGPKG_DEVS_ETH_INTEL_NPE_OSSERVICES
+                   CYGPKG_DEVS_ETH_INTEL_NPE_QMGR
+                   CYGPKG_DEVS_ETH_INTEL_NPE_FEATURECTRL
+                   CYGPKG_DEVS_ETH_ARM_IXDPG425_NPE
+                   CYGPKG_DEVS_FLASH_STRATA
+                   CYGPKG_DEVS_FLASH_IXDPG425
+        }
+        description "
+        The ixdpg425 target provides the packages needed to run
+        eCos on an Intel IXDPG425 network gateway referece platform."
+}
+

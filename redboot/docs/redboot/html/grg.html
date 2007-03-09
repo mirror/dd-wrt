@@ -1,0 +1,465 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Intel Xscale Generic Residential Gateway</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="Installation and Testing"
+HREF="installation-and-testing.html"><LINK
+REL="PREVIOUS"
+TITLE="Intel Xscale IXDP425 Network Processor Evaluation Board"
+HREF="ixdp425.html"><LINK
+REL="NEXT"
+TITLE="Intel IXDPG425 Network Gateway Reference Platform"
+HREF="ixdpg425.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="ixdp425.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 5. Installation and Testing</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="ixdpg425.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="GRG"
+>Intel Xscale Generic Residential Gateway</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1346"
+>Overview</A
+></H2
+><P
+>RedBoot supports
+the console UART, a PCI based i82559 ethernet card
+, and both NPE ethernet ports
+ for communication and downloads. The default serial port settings
+are 115200,8,N,1. RedBoot also supports flash management for the 16MiB
+onboard flash. </P
+><P
+>The following RedBoot configurations are supported:
+
+      <DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><A
+NAME="AEN1356"
+></A
+><TABLE
+BORDER="1"
+FRAME="border"
+RULES="all"
+CLASS="CALSTABLE"
+><COL><COL><COL><COL><THEAD
+><TR
+><TH
+>Configuration</TH
+><TH
+>Mode</TH
+><TH
+>Description</TH
+><TH
+>File</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+>ROM</TD
+><TD
+>[ROM]</TD
+><TD
+>RedBoot running from flash boot sector.</TD
+><TD
+>redboot_ROM.ecm</TD
+></TR
+><TR
+><TD
+>RAM</TD
+><TD
+>[RAM]</TD
+><TD
+>RedBoot running from RAM with RedBoot in the flash boot sector.</TD
+><TD
+>redboot_RAM.ecm</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1375"
+>Initial Installation Method</A
+></H2
+><P
+>The GRG flash is socketed, so initial installation may be done using
+an appropriate device programmer. JTAG based flash programming may also be
+used. In either case, the ROM mode RedBoot is programmed into the boot flash
+at address 0x00000000.</P
+><P
+>After booting the initial installation of RedBoot, this warning may
+be printed: <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>flash configuration checksum error or invalid key</PRE
+></TD
+></TR
+></TABLE
+>This is normal, and indicates that the flash should be configured
+for use by RedBoot. Even if this message is not seen, it is recommended that
+the <B
+CLASS="COMMAND"
+>fconfig</B
+> be run to initialize the flash configuration
+area. See <A
+HREF="persistent-state-flash.html"
+>the Section called <I
+>Persistent State Flash-based Configuration and Control</I
+> in Chapter 2</A
+> for more
+details.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1382"
+>Rebuilding RedBoot</A
+></H2
+><P
+>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<A
+HREF="rebuilding-redboot.html"
+>Chapter 3</A
+>:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>export TARGET=grg
+export ARCH_DIR=arm
+export PLATFORM_DIR=xscale/grg</PRE
+></TD
+></TR
+></TABLE
+>
+Optionally, <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>export TARGET=grg_npe</PRE
+></TD
+></TR
+></TABLE
+>
+could be used to include NPE ethernet support.</P
+><P
+>The names of configuration files are listed above with the
+description of the associated modes.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1389"
+>Interrupts</A
+></H2
+><P
+>RedBoot uses an interrupt vector table which is located at address 0x8004.
+Entries in this table are pointers to functions with this protoype::      <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>int irq_handler( unsigned vector, unsigned data )</PRE
+></TD
+></TR
+></TABLE
+>On the GRG
+board, the vector argument is one of many interrupts defined in <SAMP
+CLASS="COMPUTEROUTPUT"
+>hal/arm/xscale/bulverde/current/include/hal_var_ints.h:</SAMP
+>:   <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>#define CYGNUM_HAL_INTERRUPT_NPEA         0
+#define CYGNUM_HAL_INTERRUPT_NPEB         1
+#define CYGNUM_HAL_INTERRUPT_NPEC         2
+#define CYGNUM_HAL_INTERRUPT_QM1          3
+#define CYGNUM_HAL_INTERRUPT_QM2          4
+#define CYGNUM_HAL_INTERRUPT_TIMER0       5
+#define CYGNUM_HAL_INTERRUPT_GPIO0        6
+#define CYGNUM_HAL_INTERRUPT_GPIO1        7
+#define CYGNUM_HAL_INTERRUPT_PCI_INT      8
+#define CYGNUM_HAL_INTERRUPT_PCI_DMA1     9
+#define CYGNUM_HAL_INTERRUPT_PCI_DMA2     10
+#define CYGNUM_HAL_INTERRUPT_TIMER1       11
+#define CYGNUM_HAL_INTERRUPT_USB          12
+#define CYGNUM_HAL_INTERRUPT_UART2        13
+#define CYGNUM_HAL_INTERRUPT_TIMESTAMP    14
+#define CYGNUM_HAL_INTERRUPT_UART1        15
+#define CYGNUM_HAL_INTERRUPT_WDOG         16
+#define CYGNUM_HAL_INTERRUPT_AHB_PMU      17
+#define CYGNUM_HAL_INTERRUPT_XSCALE_PMU   18
+#define CYGNUM_HAL_INTERRUPT_GPIO2        19
+#define CYGNUM_HAL_INTERRUPT_GPIO3        20
+#define CYGNUM_HAL_INTERRUPT_GPIO4        21
+#define CYGNUM_HAL_INTERRUPT_GPIO5        22
+#define CYGNUM_HAL_INTERRUPT_GPIO6        23
+#define CYGNUM_HAL_INTERRUPT_GPIO7        24
+#define CYGNUM_HAL_INTERRUPT_GPIO8        25
+#define CYGNUM_HAL_INTERRUPT_GPIO9        26
+#define CYGNUM_HAL_INTERRUPT_GPIO10       27
+#define CYGNUM_HAL_INTERRUPT_GPIO11       28           
+#define CYGNUM_HAL_INTERRUPT_GPIO12       29
+#define CYGNUM_HAL_INTERRUPT_SW_INT1      30
+#define CYGNUM_HAL_INTERRUPT_SW_INT2      31</PRE
+></TD
+></TR
+></TABLE
+>
+The data passed to the ISR is pulled from a data table <SAMP
+CLASS="COMPUTEROUTPUT"
+>(hal_interrupt_data)</SAMP
+> which immediately follows the interrupt vector table. With
+32 interrupts, the data table starts at address 0x8084.   </P
+><P
+>An application may create a normal C function with the above prototype
+to be an ISR. Just poke its address into the table at the correct index and
+enable the interrupt at its source. The return value of the ISR is ignored
+by RedBoot.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1397"
+>Memory Maps</A
+></H2
+><P
+>The RAM based page table is located at RAM start + 0x4000.
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>The virtual memory maps in this section use a C, B, and X column to indicate
+the caching policy for the region..</P
+></BLOCKQUOTE
+></DIV
+></P
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>X C B  Description
+- - -  ---------------------------------------------
+0 0 0  Uncached/Unbuffered
+0 0 1  Uncached/Buffered
+0 1 0  Cached/Buffered    Write Through, Read Allocate
+0 1 1  Cached/Buffered    Write Back, Read Allocate
+1 0 0  Invalid -- not used
+1 0 1  Uncached/Buffered  No write buffer coalescing
+1 1 0  Mini DCache - Policy set by Aux Ctl Register
+1 1 1  Cached/Buffered    Write Back, Read/Write Allocate
+
+Virtual Address   Physical Address  XCB  Size (MiB) Description
+---------------   ----------------  ---  ---------  -----------
+   0x00000000       0x00000000      010      32     SDRAM (cached)
+   0x10000000       0x00000000      010      32     SDRAM (alias)
+   0x20000000       0x00000000      000      32     SDRAM (uncached)
+   0x48000000       0x48000000      000      64     PCI Data
+   0x50000000       0x50000000      010      16     Flash (CS0)
+   0x51000000       0x51000000      000     112     CS1 - CS7
+   0x60000000       0x60000000      000      64     Queue Manager
+   0xC0000000       0xC0000000      000       1     PCI Controller
+   0xC4000000       0xC4000000      000       1     Exp. Bus Config
+   0xC8000000       0xC8000000      000       1     Misc CPU IO
+   0xCC000000       0xCC000000      000       1     SDRAM Config&#13;</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1405"
+>Platform Resource Usage</A
+></H2
+><P
+>The IXP425 programmable OStimer0 is used for timeout support
+for networking and XModem file transfers.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="ixdp425.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="ixdpg425.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Intel Xscale IXDP425 Network Processor Evaluation Board</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="installation-and-testing.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Intel IXDPG425 Network Gateway Reference Platform</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
