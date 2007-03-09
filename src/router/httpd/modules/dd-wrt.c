@@ -2339,14 +2339,31 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 {
   char buffer[256];
   char bufferif[512];
+  char bufferif2[256];
   int count = 0;
   static char word[256];
   char *next, *wordlist;
   memset (buffer, 0, 256);
-  memset (bufferif, 0, 256);
+  memset (bufferif, 0, 512);
+  memset (bufferif2, 0, 256);
   getIfList (buffer, "br");
-  getIfList (bufferif, NULL);
+  getIfList (bufferif, "eth");
+#ifdef HAVE_GATEWORX
+  getIfList (bufferif2, "ixp");
+  sprintf(bufferif,"%s %s",bufferif,bufferif2);
+#endif
 int i;
+#ifdef HAVE_MADWIFI
+int c = getifcount("wifi");
+for (i=0;i<c;i++)
+    {
+    sprintf(bufferif,"%s ath%d",bufferif,i);
+    char vifs[32];
+    sprintf(vifs,"ath%d_vifs",i);
+    sprintf(bufferif,"%s %s",bufferif,nvram_safe_get(vifs));
+    }
+#endif
+
 #ifdef HAVE_EOP_TUNNEL
 for (i=1;i<11;i++)
     {
