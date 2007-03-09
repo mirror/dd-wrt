@@ -123,27 +123,29 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //ViewSonic WAPBR-100 (4712 cpu, no switch, fccid: Viewsonic GSS-VS10407)
 #define ROUTER_VIEWSONIC_WAPBR_100 0x2317
 
-//Dell TrueMobile 2300 (4702 cpu, ADM6996 switch, mini pci radio, fccid: Gemtek MXF-R921212G)
+//Dell TrueMobile 2300 (4702 cpu, mini pci radio)
 #define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
+//Dell TrueMobile 2300 v2 (4712 cpu, ADM6996 switch, fccid: Gemtek MXF-R921212G)
+#define ROUTER_DELL_TRUEMOBILE_2300_V2 0x250f
+
 //Fonera (Atheros SoC, no switch, fccid: Accton HED-FON2100)
-#define ROUTER_BOARD_FONERA 0x2501
+#define ROUTER_BOARD_FONERA 0x2601
 
 //Buffalo WHR-HP-AG108 (Atheros A+G, Kendin KS8895XA switch, fccid: Buffalo FDI-09101540-0)
-#define ROUTER_BOARD_WHRAG108 0x2601
+#define ROUTER_BOARD_WHRAG108 0x2701
 
 // swapped phy definition 
-#define ROUTER_BOARD_GATEWORX_SWAP 0x270f
-
+#define ROUTER_BOARD_GATEWORX_SWAP 0x280f
 
 //Netgear WNR834B (4704 cpu + BCM5325 switch, fccid: ?)
-#define ROUTER_NETGEAR_WNR834B 0x2817
+#define ROUTER_NETGEAR_WNR834B 0x2917
 
 // swapped phy definition and kendin switch
-#define ROUTER_BOARD_GATEWORX_GW2345 0x290f
+#define ROUTER_BOARD_GATEWORX_GW2345 0x2a0f
 
 // Linksys WRT54G3G  
-#define ROUTER_WRT54G3G 0x3016
+#define ROUTER_WRT54G3G 0x2b16
 
 
 
