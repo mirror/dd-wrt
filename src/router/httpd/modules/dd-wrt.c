@@ -1826,7 +1826,9 @@ save_networking (webs_t wp)
       sprintf (var, "bridgeprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
-	return;
+	prio="0";
+      if (strlen(prio)==0)
+        prio="0";
 	
       sprintf (n, "%s_ipaddr", ifname);
       if (get_merge_ipaddr (wp, n, ipaddr))
@@ -1864,7 +1866,9 @@ save_networking (webs_t wp)
       sprintf (var, "bridgeifprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
-	return;
+	prio="0";
+      if (strlen(prio)==0)
+        prio="0";
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -2236,7 +2240,7 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
     sprintf (vlan_name, "bridgeprio%d", count);
     websWrite (wp,
 	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-	       vlan_name, prio != NULL ? prio : "");
+	       vlan_name, prio != NULL ? prio : "0");
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 	       count);
@@ -2411,7 +2415,7 @@ for (i=1;i<11;i++)
     sprintf (vlan_name, "bridgeifprio%d", count);
     websWrite (wp,
 	       "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-	       vlan_name, prio != NULL ? prio : "");
+	       vlan_name, prio != NULL ? prio : "0");
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 	       count);
