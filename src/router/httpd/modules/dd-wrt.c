@@ -41,6 +41,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utils.h>
+#include <bcmnvram.h>
 
 
 
