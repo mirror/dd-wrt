@@ -233,6 +233,13 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
     }
     
   if (boardnum == 44 &&
+      nvram_match ("boardtype", "0x0101"))
+    {
+      cprintf ("router is Dell TrueMobile 2300 v2\n");
+      setRouter ("Dell TrueMobile 2300 v2");
+      return ROUTER_DELL_TRUEMOBILE_2300_V2;
+    }
+  if (boardnum == 44 &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Dell TrueMobile 2300\n");
@@ -1001,6 +1008,8 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	        power_gpio = 0x17;
 	        wlan_gpio = 0x16;
+		break;
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:
 		break;
 	case ROUTER_NETGEAR_WNR834B:
 			power_gpio = 0x14;
