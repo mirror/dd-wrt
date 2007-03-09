@@ -233,13 +233,6 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
     }
     
   if (boardnum == 44 &&
-      nvram_match ("boardtype", "0x0101"))
-    {
-      cprintf ("router is Dell TrueMobile 2300 v2\n");
-      setRouter ("Dell TrueMobile 2300 v2");
-      return ROUTER_DELL_TRUEMOBILE_2300_V2;
-    }
-  if (boardnum == 44 &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Dell TrueMobile 2300\n");
@@ -599,6 +592,14 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	}
     }
     
+  if (boardnum == 44 &&
+      nvram_match ("boardtype", "0x0101"))
+    {
+      cprintf ("router is Dell TrueMobile 2300 v2\n");
+      setRouter ("Dell TrueMobile 2300 v2");
+      return ROUTER_DELL_TRUEMOBILE_2300_V2;
+    }
+        
   if (nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Buffalo old 4710\n");
