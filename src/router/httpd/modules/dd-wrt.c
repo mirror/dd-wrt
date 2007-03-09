@@ -3338,6 +3338,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_width[16];
   char wl_preamble[16];
   char wl_xr[16];
+  char wl_isolate[32];
   sprintf (wl_turbo, "%s_turbo", prefix);
 //  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
@@ -3410,6 +3411,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
+#endif
+#ifdef HAVE_MADWIFI
+    sprintf (wl_isolate, "%s_ap_isolate", prefix);
+    showOption (wp, "wl_adv.label11", wl_isolate);
 #endif
 
   websWrite (wp, "<div class=\"setting\">\n");
