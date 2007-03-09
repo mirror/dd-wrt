@@ -27,6 +27,11 @@ function bridgeif_add_submit(F) {
 	F.submit_type.value = "add_bridgeif";
 	F.submit();
 }
+function bond_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_bond";
+	F.submit();
+}
 
 function vlan_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
@@ -43,6 +48,12 @@ function bridge_del_submit(F,I) {
 function bridgeif_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_bridgeif";
+	F.del_value.value=I;
+	F.submit();
+}
+function bond_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_bond";
 	F.del_value.value=I;
 	F.submit();
 }
@@ -88,7 +99,9 @@ function init() {
 							   <legend>Assign to Bridge</legend>
 							   <% show_bridgeifnames(); %>
 							</fieldset><br />
-
+							<% show_bondings(); %>
+							<% portsetup(); %>
+		
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
