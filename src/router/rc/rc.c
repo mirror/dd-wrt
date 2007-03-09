@@ -233,6 +233,7 @@ if (brand!=ROUTER_WRT350N)
     case ROUTER_MOTOROLA:
     case ROUTER_RT480W:
     case ROUTER_WRT350N:
+    case ROUTER_DELL_TRUEMOBILE_2300_V2:
       start_service ("config_vlan");
       break;
     default:
