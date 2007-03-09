@@ -1,0 +1,109 @@
+#===============================================================================
+#
+#    default.exp
+#
+#    Support for host-side testing
+#
+#===============================================================================
+######COPYRIGHTBEGIN####
+#                                                                          
+# ----------------------------------------------------------------------------
+# Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+#
+# This file is part of the eCos host tools.
+#
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ----------------------------------------------------------------------------
+#                                                                          
+######COPYRIGHTEND####
+#===============================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):	bartv
+# Contributors:	bartv
+# Date:		1999-01-06
+#
+#####DESCRIPTIONEND####
+#===============================================================================
+#
+
+# The host-side libcdl tests will only run on the hosts, i.e.
+# only native testing is possible.
+if { [isnative] != 1 } {
+    perror "Only native testing is supported."
+    exit 1
+}
+
+# Most of the test harness lives in a file hosttest.exp. This is part
+# of the host-side infrastructure.
+
+set filename [file join $::srcdir "../../infra/hosttest.exp"]
+set status [ catch { source $filename } message]
+if { $status != 0 } {
+    perror "Unexpected error while reading in the support script $filename\n$message"
+    exit 1
+}
+
+# Now that the hosttest.exp utilities are available it is possible to do
+# a bit more initialization. In particular it is possible to read in the
+# build tree's Makefile and look for definitions of CC, CXX, and any
+# other information from the Makefile that may prove useful.
+hosttest_initialize
+
+# There are standard routines ${tool}_start, ${tool}_load, ${tool}_exit
+# and ${tool}_version which test harnesses should normally implement.
+# In practice runtest only invokes ${tool}_exit and ${tool}_version
+# directly, the rest may or may not be invoked from inside the individual
+# test scripts.
+#
+# ${tool}_version is relatively straightforward. The master version
+# number is maintained in the configure.in script and is exported to
+# the build tree's Makefile. There is a hosttest routine which does the
+# hard work because getting the information is common to all host
+# packages. The _version routine itself cannot be made completely generic
+# because the first output is package-specific.
+
+proc ${tool}_version { } {
+
+    set status   [ catch { hosttest_extract_version } message]
+    if { $status != 0 } {
+	perror $message
+	return
+    }
+    clone_output "[file join $::objdir libcdl.a] $message"
+}
+
+# ${tool}_start does not serve any useful purpose when it comes to
+# testing libcdl.a - there is no tool which can be started up.
+# Therefore none of the individual test scripts will invoke this
+# routine.
+
+proc ${tool}_start { } {
+    perror "CDL is a library, not a tool, and cannot be started."
+}
+
+# ${tool}_load is used to load a test case into the tool. The exact
+# meaning is not applicable. However it makes sense to have this
+# routine provide an alias for hosttest_run_simple_test which provides
+# all the libraries etc. that are going to be needed.
+
+proc ${tool}_load { program { args ""} } {
+    hosttest_run_simple_test $program {} [list] [list] [list "cdl"] $args
+}
+
+# ${tool}_exit does not serve any useful purpose here.
+proc ${tool}_exit { } {
+}

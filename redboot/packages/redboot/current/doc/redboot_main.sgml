@@ -1,0 +1,119 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
+
+<!-- Begin Document Specific Declarations -->
+<!ENTITY ui "&micro;ITRON">
+<!ENTITY versiondir CDATA "v2_0">
+<!ENTITY version CDATA "2.0">
+<!ENTITY lt SDATA "[lt    ]">
+<!ENTITY redboot-sgml SYSTEM "redboot.sgml">
+<!ENTITY redboot-cmds-sgml SYSTEM "redboot_cmds.sgml">
+<!ENTITY redboot-rebuilding-sgml SYSTEM "redboot_rebuilding.sgml">
+<!ENTITY redboot-installing-sgml SYSTEM "redboot_installing.sgml">
+<!-- End Document Specific Declarations -->
+]>
+
+<BOOK ID="REDBOOT-GUIDE">
+  <bookinfo>
+    <TITLE>RedBoot User's Guide</TITLE>
+
+    <copyright>
+      <year>1998</year>
+      <year>1999</year>
+      <year>2000</year>
+      <year>2001</year>
+      <year>2002</year>
+      <year>2003</year>
+      <year>2004</year>
+      <holder>Red Hat, Inc.</holder>
+      <holder>John Dallaway (eCosCentric)</holder>
+      <holder>Nick Garnett (eCosCentric)</holder>
+      <holder>Jonathan Larmour (eCosCentric)</holder>
+      <holder>Andrew Lunn (Ascom)</holder>
+      <holder>Gary Thomas (MLB Associates)</holder>
+      <holder>Bart Veer (eCosCentric)</holder>
+    </copyright>
+
+    <legalnotice>
+	<title>Documentation licensing terms</title>
+<para>This material may be distributed only subject to the terms
+and conditions set forth in the Open Publication License, v1.0
+or later (the latest version is presently available at
+<ulink url="http://www.opencontent.org/openpub/">http://www.opencontent.org/openpub/</ulink>).
+</para>
+<para>
+Distribution of substantively modified versions of this
+document is prohibited without the explicit permission of the
+copyright holder.</para>
+<para>
+Distribution of the work or derivative of the work in any
+standard (paper) book form is prohibited unless prior
+permission is obtained from the copyright holder.
+</para>
+    </legalnotice>
+    <legalnotice>
+      <title>Trademarks</title>
+<para>Altera&reg; and Excalibur&trade; are trademarks of Altera Corporation.</para>
+<para>AMD&reg; is a registered trademark of Advanced Micro Devices, Inc.</para>
+<para>ARM&reg;, StrongARM&reg;, Thumb&reg;, ARM7&trade;, ARM9&trade;  is a registered trademark of Advanced RISC Machines, Ltd.</para>
+<para>Cirrus Logic&reg; and Maverick&trade; are registered trademarks of Cirrus Logic, Inc.</para>
+<para>Cogent&trade; is a trademark of Cogent Computer Systems, Inc.</para>
+<para>Compaq&reg; is a registered trademark of the Compaq Computer Corporation.</para>
+<para>Fujitsu&reg; is a registered trademark of Fujitsu Limited.</para>
+<para>IBM&reg;, and PowerPC&trade; are trademarks of International Business Machines Corporation.</para>
+<para>IDT&reg; is a registered trademark of Integrated Device Technology Inc.</para>
+<para>Intel&reg;, i386&trade;, Pentium&reg;, StrataFlash&reg; and XScale&trade; are trademarks of Intel Corporation.</para>
+<para>Intrinsyc&reg; and Cerf&trade; are trademarks of Intrinsyc Software, Inc.</para>
+<para>Linux&reg; is a registered trademark of Linus Torvalds. </para>
+<para>Matsushita&trade; and Panasonic&reg; are trademarks of the Matsushita Electric Industrial Corporation.</para>
+<para>Microsoft&reg;, Windows&reg;, Windows NT&reg; and Windows XP&reg; are registered trademarks of Microsoft Corporation, Inc. </para>
+<para>MIPS&reg;, MIPS32&trade; MIPS64&trade;, 4K&trade, 5K&trade; Atlas&trade; and Malta&trade; are trademarks of MIPS Technologies, Inc.</para>
+<para>Motorola&reg;, ColdFire&reg; is a trademark of Motorola, Inc.</para>
+<para>NEC&reg; V800&trade;, V850&trade;, V850/SA1&trade;, V850/SB1&trade;, VR4300&trade;, and VRC4375&trade; are trademarks of NEC Corporation.</para>
+<para>PMC-Sierra&reg; RM7000&trade; and Ocelot&trade; are trademarks of PMC-Sierra Incorporated. </para>
+<para>Red Hat, eCos&trade;, RedBoot&trade;, GNUPro&reg;, and Insight&trade; are trademarks of Red Hat, Inc. </para>
+<para>Samsung&reg; and CalmRISC&trade; are trademarks or registered trademarks of Samsung, Inc. </para>
+<para>Sharp&reg; is a registered trademark of Sharp Electronics Corp.</para>
+<para>SPARC&reg; is a registered trademark of SPARC International, Inc., and is used under license by Sun Microsystems, Inc. </para>
+<para>Sun Microsystems&reg; and Solaris&reg; are registered trademarks of Sun Microsystems, Inc. </para>
+<para>SuperH&trade; and Renesas&trade; are trademarks owned by Renesas Technology Corp.</para>
+<para>Texas Instruments&reg;, OMAP&trade; and Innovator&trade; are trademarks of Texas Instruments Incorporated.</para>
+<para>Toshiba&reg; is a registered trademark of the Toshiba Corporation.</para>
+<para>UNIX&reg; is a registered trademark of The Open Group. </para>
+<para>All other brand and product names, trademarks, and copyrights are the
+property of their respective owners. </para>
+      </legalnotice>
+      <legalnotice>
+<title>Warranty</title>
+<para>eCos and RedBoot are open source software, covered by a
+modified version of the <ulink url="http://www.gnu.org/copyleft/gpl.html">GNU
+General Public Licence</ulink>,
+and you are welcome to change it and/or distribute copies of it under certain
+conditions. See <ulink
+url="http://ecos.sourceware.org/license-overview.html">http://ecos.sourceware.org/license-overview.html
+</ulink> for more information about the license.</para>
+<para>eCos and RedBoot software have NO WARRANTY. </para>
+<para>Because this software is licensed free of charge, there are no warranties
+for it, to the extent permitted by applicable law. Except when otherwise stated
+in writing, the copyright holders and/or other parties provide the software
+&ldquo;as is&rdquo; without warranty of any kind, either expressed or implied,
+including, but not limited to, the implied warranties of merchantability and
+fitness for a particular purpose. The entire risk as to the quality and performance
+of the software is with you. Should the software prove defective, you assume
+the cost of all necessary servicing, repair or correction.</para>
+<para> In no event, unless required by applicable law or agreed to in writing,
+will any copyright holder, or any other party who may modify and/or redistribute
+the program as permitted above, be liable to you for damages, including any
+general, special, incidental or consequential damages arising out of the use
+or inability to use the program (including but not limited to loss of data
+or data being rendered inaccurate or losses sustained by you or third parties
+or a failure of the program to operate with any other programs), even if such
+holder or other party has been advised of the possibility of such damages.
+</para>
+      </legalnotice>
+  </bookinfo>
+<toc id="redboot-toc"></toc>
+&redboot-sgml;
+&redboot-cmds-sgml;
+&redboot-rebuilding-sgml;
+&redboot-installing-sgml;
+</book>

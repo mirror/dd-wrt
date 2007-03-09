@@ -1,0 +1,771 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Flash Image System (FIS)</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="PREVIOUS"
+TITLE="Common Commands"
+HREF="common-commands.html"><LINK
+REL="NEXT"
+TITLE="Persistent State Flash-based Configuration and Control"
+HREF="persistent-state-flash.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="common-commands.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. RedBoot Commands and Examples</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="persistent-state-flash.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="FLASH-IMAGE-SYSTEM"
+>Flash Image System (FIS)</A
+></H1
+><P
+>If the platform
+has flash memory, RedBoot can use this for image storage. Executable images,
+as well as data, can be stored in flash in a simple file store. The <B
+CLASS="COMMAND"
+>fis</B
+> command is used to manipulate and maintain flash images.</P
+><P
+>The available <B
+CLASS="COMMAND"
+>fis</B
+> commands are:  </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis init [-f]</DT
+><DD
+><P
+>This command is used to initialize the flash Image System (FIS). It
+should only be executed once, when RedBoot is first installed on the hardware.
+Subsequent executions will cause loss of data in the flash (previously saved
+images will no longer be accessible). </P
+><P
+>If the <SAMP
+CLASS="COMPUTEROUTPUT"
+>-f</SAMP
+> option is specified, all
+blocks of flash memory will be erased as part of this process.</P
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis init -f</KBD
+>
+About to initialize [format] flash image system - are you sure (y/n)? n</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis [-c] [-d] list</DT
+><DD
+><P
+>This command lists the images currently available in the FIS. Certain
+images used by RedBoot have fixed names. Other images can be manipulated by
+the user. </P
+><P
+>If the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>-c</I
+></SPAN
+> option is specified, the image checksum
+is displayed instead of the <SAMP
+CLASS="COMPUTEROUTPUT"
+>Mem Addr</SAMP
+> field.
+  </P
+><P
+>If the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>-d</I
+></SPAN
+> option is specified, the image
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>datalength</SAMP
+> is displayed instead of the
+length [amount of flash used]. The <SAMP
+CLASS="COMPUTEROUTPUT"
+>datalength</SAMP
+>
+is the length of data within the allocated flash image actually being
+used for data.
+  </P
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis list</KBD
+>
+Name           flash addr  Mem addr   Length   Entry point
+RedBoot        0xA0000000  0xA0000000 0x020000 0x80000000
+RedBoot[backup]0xA0020000  0x8C010000 0x010000 0x8C010000
+RedBoot config 0xA0FC0000  0xA0FC0000 0x020000 0x00000000
+FIS directory  0xA0FE0000  0xA0FE0000 0x020000 0x00000000
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis list -c</KBD
+>
+Name           flash addr  Checksum   Length   Entry point
+RedBoot        0xA0000000  0x34C94A57 0x020000 0x80000000
+RedBoot[backup]0xA0020000  0x00000000 0x010000 0x8C010000
+RedBoot config 0xA0FC0000  0x00000000 0x020000 0x00000000
+RedBoot config 0xA0FE0000  0x00000000 0x020000 0x00000000</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis free</DT
+><DD
+><P
+>This command shows which areas of the flash memory are currently not
+in use. In use means that the block contains non-erased contents. Since it
+is possible to force an image to be loaded at a particular flash location,
+this command can be used to check whether that location is in use by any other
+image. </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>There is currently no cross-checking between actual flash contents and
+the image directory, which mans that there could be a segment of flash which
+is not erased that does not correspond to a named image, or vice-versa.</P
+></BLOCKQUOTE
+></DIV
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis free</KBD
+>
+        0xA0040000 .. 0xA07C0000
+        0xA0840000 .. 0xA0FC0000</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis create -b &lt;mem_base&#62; -l &lt;length&#62; [-f &lt;flash_addr&#62;]
+[-e &lt;entry_point&#62;]  [-r &lt;ram_addr&#62;] [-s &lt;data_length&#62;] [-n] &lt;name&#62;</DT
+><DD
+><P
+>This command creates an image in the FIS directory. The data for the
+image must exist in RAM memory before the copy. Typically, you would use the
+RedBoot <B
+CLASS="COMMAND"
+>load</B
+> command to load an image into
+RAM and then the <B
+CLASS="COMMAND"
+>fis create</B
+> command to write
+it to flash.  </P
+></DD
+></DL
+></DIV
+><H1
+CLASS="BRIDGEHEAD"
+><A
+NAME="AEN744"
+></A
+>Arguments</H1
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><A
+NAME="AEN745"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="72"
+TITLE="COL1"><COL
+WIDTH="2*"
+TITLE="COL2"><TBODY
+><TR
+><TD
+>name</TD
+><TD
+>The name of the file, as shown
+in the FIS directory.</TD
+></TR
+><TR
+><TD
+>-b</TD
+><TD
+>The location in RAM used to obtain
+the image. This is a required option.</TD
+></TR
+><TR
+><TD
+>-l</TD
+><TD
+>The length of the image. If the
+image already exists, then the length is inferred from when the image was
+previously created. If specified, and the image exists, it must match the
+original value.</TD
+></TR
+><TR
+><TD
+>-f</TD
+><TD
+>The location in flash for the
+image, which will be inferred for extant images if not specified. If this
+is not provided, the first freeVblock which is large enough will be used.
+See <B
+CLASS="COMMAND"
+>fis free</B
+>.</TD
+></TR
+><TR
+><TD
+>-e</TD
+><TD
+>The execution entry address. This
+is used if the starting address for an image is not known, or needs to be
+overridden.</TD
+></TR
+><TR
+><TD
+>-r</TD
+><TD
+>The location in RAM when the image
+is loaded via<B
+CLASS="COMMAND"
+> fis load</B
+>. This only needs to
+be specified for images which will eventually loaded via <B
+CLASS="COMMAND"
+>fis load</B
+>. Fixed images, such as RedBoot itself, will not
+need this.</TD
+></TR
+><TR
+><TD
+> -s</TD
+><TD
+>The length of the actual data
+to be written to flash. If not present then the image length (-1) value is
+assumed. If the value given by -s is less than -1, the remainder of the image
+in flash will be left in an erased state. Note that by using this option it
+is possible to create a completely empty flash image, for example to reserve
+space for use by applications other than RedBoot.</TD
+></TR
+><TR
+><TD
+>-n</TD
+><TD
+>If -n is specified, then only
+the FIS directory is updated, and no data is copied from RAM to flash. This
+feature can be used to recreate the FIS entry if it has been destroyed.</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis create RedBoot -f 0xa0000000 -b 0x8c400000 -l 0x20000</KBD
+>
+An image named &#8216;RedBoot&#8217; exists - are you sure (y/n)? n
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis create junk -b 0x8c400000 -l 0x20000</KBD
+>
+... Erase from 0xa0040000-0xa0060000: .
+... Program from 0x8c400000-0x8c420000 at 0xa0040000: .
+... Erase from 0xa0fe0000-0xa1000000: .
+... Program from 0x8c7d0000-0x8c7f0000 at 0xa0fe0000: .</PRE
+></TD
+></TR
+></TABLE
+>If
+you are loading an existing file, then the fis create command will provide
+some values automatically, such as the flash address and flash length.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis load [-b &lt;memory load address&#62;] [-c] [-d] name</DT
+><DD
+><P
+>This command is used to transfer an image from flash memory to RAM.</P
+><P
+>Once loaded, it may be executed using the go command. If -b is specified,
+then the image is copied from flash to the specified address in RAM. If -b
+is not specified, the image is copied from flash to the load address given
+when the image was created. </P
+></DD
+></DL
+></DIV
+><H1
+CLASS="BRIDGEHEAD"
+><A
+NAME="AEN787"
+></A
+>Arguments</H1
+><P
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><A
+NAME="AEN789"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="72"
+TITLE="COL1"><COL
+WIDTH="2*"
+TITLE="COL2"><TBODY
+><TR
+><TD
+>name</TD
+><TD
+>The name of the file, as shown
+in the FIS directory</TD
+></TR
+><TR
+><TD
+>-b</TD
+><TD
+>Specify the location in memory
+to which the file should be loaded. Executable images normally load at the
+location to which the file was linked. This option allows the file to be loaded
+to a specific memory location, possibly overriding any assumed location.</TD
+></TR
+><TR
+><TD
+>-c</TD
+><TD
+>Compute and print the checksum
+of the image data after it has been loaded into memory.</TD
+></TR
+><TR
+><TD
+>-d</TD
+><TD
+>Decompress gzipped image while
+copying it from flash to RAM.</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></P
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis load RedBoot[backup]</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go</KBD
+></PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis delete name</DT
+><DD
+><P
+>This command removes an image from the FIS. The flash memory will be
+erased as part of the execution of this command, as well as removal of the
+name from the FIS directory.</P
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis list</KBD
+>
+Name              flash addr   Mem addr    Length    Entry point
+RedBoot          0xA0000000   0xA0000000  0x020000  0x80000000
+RedBoot[backup]  0xA0020000   0x8C010000  0x020000  0x8C010000
+RedBoot config   0xA0FC0000   0xA0FC0000  0x020000  0x00000000
+FIS directory    0xA0FE0000   0xA0FE0000  0x020000  0x00000000
+junk             0xA0040000   0x8C400000  0x020000  0x80000000
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis delete junk</KBD
+>
+Delete image &#8216;junk&#8217; - are you sure (y/n)? y
+... Erase from 0xa0040000-0xa0060000: .
+... Erase from 0xa0fe0000-0xa1000000: .
+... Program from 0x8c7d0000-0x8c7f0000 at 0xa0fe0000: .</PRE
+></TD
+></TR
+></TABLE
+>
+ </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>Certain images are reserved by RedBoot and cannot be deleted.
+RedBoot will issue a warning if this is attempted.</P
+></BLOCKQUOTE
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis lock -f &lt;flash_addr&#62; -l &lt;length&#62;</DT
+><DD
+><P
+>This command is used to write-protect (lock) a portion of flash memory,
+to prevent accidental overwriting of images. In order to make make any modifications
+to the flash, a matching unlock command must be issued. This command is optional
+and will only be provided on hardware which can support write-protection of
+the flash space.  </P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>Depending on the system, attempting to write to write-protected flash
+may generate errors or warnings, or be benignly quiet.  </P
+></BLOCKQUOTE
+></DIV
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis lock -f 0xa0040000 -l 0x20000</KBD
+>
+... Lock from 0xa0040000-0xa0060000: .</PRE
+></TD
+></TR
+></TABLE
+>
+ </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis unlock -f &lt;flash_addr&#62; -l &lt;length&#62;</DT
+><DD
+><P
+>This command is used to unlock a portion of flash memory forcibly, allowing
+it to be updated. It must be issued for regions which have been locked before
+the FIS can reuse those portions of flash.</P
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis unlock -f 0xa0040000 -l 0x20000</KBD
+>
+... Unlock from 0xa0040000-0xa0060000: .</PRE
+></TD
+></TR
+></TABLE
+>
+ </P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis erase -f &lt;flash_addr&#62; -l &lt;length&#62;</DT
+><DD
+><P
+>This command is used to erase a portion of flash memory forcibly. There
+is no cross-checking to ensure that the area being erased does not correspond
+to a loaded image.</P
+></DD
+></DL
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis erase -f 0xa0040000 -l 0x20000</KBD
+>
+... Erase from 0xa0040000-0xa0060000: .</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>fis write -b &lt;location&#62; -l &lt;length&#62; -f &lt;flash
+addr&#62;</DT
+><DD
+><P
+>Writes data from RAM at &lt;location&#62; to flash.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="common-commands.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="persistent-state-flash.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Common Commands</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Persistent State Flash-based Configuration and Control</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,277 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Getting Started with RedBoot</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="PREVIOUS"
+TITLE="How to Contact Red Hat"
+HREF="contacting-redhat.html"><LINK
+REL="NEXT"
+TITLE="Installing RedBoot"
+HREF="installing-redboot.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="contacting-redhat.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="installing-redboot.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="GETTING-STARTED-WITH-REDBOOT"
+></A
+>Chapter 1. Getting Started with RedBoot</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="getting-started-with-redboot.html#REDBOOT-ON-THE-WEB"
+>More information about RedBoot on the web</A
+></DT
+><DT
+><A
+HREF="installing-redboot.html"
+>Installing RedBoot</A
+></DT
+><DT
+><A
+HREF="user-interface.html"
+>User Interface</A
+></DT
+><DT
+><A
+HREF="configuring-the-redboot-environment.html"
+>Configuring the RedBoot Environment</A
+></DT
+></DL
+></DIV
+><P
+>RedBoot&#8482; is an acronym for "Red Hat Embedded Debug and Bootstrap",
+and is the standard embedded system debug/bootstrap environment from Red Hat,
+replacing the previous generation of debug firmware: CygMon and GDB
+stubs. It provides a complete bootstrap environment for a range of embedded
+operating systems, such as embedded Linux and eCos&#8482;, and includes facilities
+such as network downloading and debugging. It also provides a simple flash
+file system for boot images.</P
+><P
+>RedBoot provides a wide set of tools for downloading and executing programs
+on embedded target systems, as well as tools for manipulating the target system's
+environment. It can be used for both product development (debug support) and
+for end product deployment (flash and network booting).</P
+><P
+>Here are some highlights of RedBoot&#8217;s capabilities:  </P
+><P
+></P
+><UL
+><LI
+><P
+>Boot scripting support</P
+></LI
+><LI
+><P
+>Simple command line interface for RedBoot configuration and
+management, accessible via serial (terminal) or Ethernet (telnet) </P
+></LI
+><LI
+><P
+>Integrated GDB stubs for connection to a host-based debugger
+via serial or ethernet. (Ethernet connectivity is limited to local network
+only)</P
+></LI
+><LI
+><P
+>Attribute Configuration - user control of aspects such as
+system time and date (if applicable), default Flash image to boot from, default
+failsafe image, static IP address, etc.</P
+></LI
+><LI
+><P
+>Configurable and extensible, specifically adapted to the target
+environment </P
+></LI
+><LI
+><P
+>Network bootstrap support including setup and download, via
+BOOTP, DHCP and TFTP</P
+></LI
+><LI
+><P
+>X/YModem support for image download via serial</P
+></LI
+><LI
+><P
+>Power On Self Test</P
+></LI
+></UL
+><P
+>Although RedBoot is derived from Red Hat eCos, it may be used as a generalized
+system debug and bootstrap control software for any embedded system and any
+operating system. For example, with appropriate additions, RedBoot could replace
+the commonly used BIOS of PC (and certain other) architectures. Red Hat is
+currently installing RedBoot on all embedded platforms as a standard practice,
+and RedBoot is now generally included as part of all Red Hat Embedded Linux
+and eCos ports. Users who specifically wish to use RedBoot with the eCos operating
+system should refer to the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Getting Started with eCos</I
+></SPAN
+>
+document, which provides information about the portability and extendability
+of RedBoot in an eCos environment.</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="REDBOOT-ON-THE-WEB"
+>More information about RedBoot on the web</A
+></H1
+><P
+>Information about the RedBoot product, including information about
+details of porting,
+customization, training and technical support services from Red Hat, is
+available from the
+<A
+HREF="http://www.redhat.com/embedded/technologies/redboot/"
+TARGET="_top"
+>RedBoot
+Product web site</A
+>. </P
+><P
+>The <A
+HREF="http://sources.redhat.com/redboot/"
+TARGET="_top"
+>RedBoot Net
+Distribution web site</A
+> contains downloadable sources and documentation
+for all publically released targets, including the latest features and updates.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="contacting-redhat.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="installing-redboot.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>How to Contact Red Hat</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Installing RedBoot</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

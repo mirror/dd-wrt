@@ -1,0 +1,308 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Executing Programs from RedBoot</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="PREVIOUS"
+TITLE="Persistent State Flash-based Configuration and Control"
+HREF="persistent-state-flash.html"><LINK
+REL="NEXT"
+TITLE="Rebuilding RedBoot"
+HREF="rebuilding-redboot.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="persistent-state-flash.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. RedBoot Commands and Examples</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="rebuilding-redboot.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="EXECUTING-PROGRAMS"
+>Executing Programs from RedBoot</A
+></H1
+><P
+>Once
+an image has been loaded into memory, either via the <B
+CLASS="COMMAND"
+>load</B
+> command or the <B
+CLASS="COMMAND"
+>fis load</B
+>
+command, execution may be transfered to that image.</P
+><P
+>  <DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>The image is assumed to be a stand-alone entity, as RedBoot gives the
+entire platform over to it. Typical examples would be an eCos application
+or a Linux kernel.</P
+></BLOCKQUOTE
+></DIV
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>go - Execute a program</DT
+><DD
+><P
+>The format of the <B
+CLASS="COMMAND"
+>go</B
+> command is:
+ <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go</KBD
+> [-w time] [-c] [-n] [location]</PRE
+></TD
+></TR
+></TABLE
+>Execution
+will begin at <SAMP
+CLASS="COMPUTEROUTPUT"
+>location</SAMP
+> if specified. Otherwise,
+the entry point of the last image loaded will be used. </P
+><P
+>The <SAMP
+CLASS="COMPUTEROUTPUT"
+>-w</SAMP
+> option gives the user <SAMP
+CLASS="COMPUTEROUTPUT"
+>time</SAMP
+> seconds before execution begins. The execution may be
+aborted by typing <SPAN
+CLASS="GUIBUTTON"
+>Ctrl+C</SPAN
+> on the console. This mode
+would typically be used in startup scripts.</P
+><P
+>The <SAMP
+CLASS="COMPUTEROUTPUT"
+>-c</SAMP
+> option is used to allow execution
+with caches enabled. Normally, the <B
+CLASS="COMMAND"
+>go</B
+> command will disable
+caches before execution.</P
+><P
+>The <SAMP
+CLASS="COMPUTEROUTPUT"
+>-n</SAMP
+> option is only available when
+RedBoot supports a network device. It causes the network interface to be
+disabled before execution begins.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>exec - Execute a Linux kernel image</DT
+><DD
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>This command is not available for all platforms. Its availability is
+indicated in specific platform information in Chapter 5.</P
+></BLOCKQUOTE
+></DIV
+><H1
+CLASS="BRIDGEHEAD"
+><A
+NAME="AEN988"
+></A
+>Arguments</H1
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>[-w timeout]
+[-b &lt;load addr&#62; [-l &lt;length]]
+[-r &lt;ramdisk addr&#62;
+[-s &lt;ramdisk length&#62;]]
+[-c "kernel command line"] [&lt;entry_point&#62;]</PRE
+></TD
+></TR
+></TABLE
+><P
+>This command is used to execute a non-eCos application, typically a
+Linux kernel. Additional information may be passed to the kernel at startup
+time. This command is quite special (and unique from the 'go' command) in
+that the program being executed may expect certain environmental setups, for
+example that the MMU is turned off, etc. </P
+><P
+>The Linux kernel expects to have been loaded to a particular memory
+location (0xC0008000 in the case of the SA1110). Since this memory is  used
+by RedBoot internally, it is not possible to load the kernel to that location
+directly. Thus the requirement for the "-b" option which tells the command
+where the kernel has been loaded. When the exec command runs, the image will
+be relocated to the appropriate location before being started. The "-r" and
+"-s" options are used to pass information to the kernel about where a statically
+loaded ramdisk (initrd) is located.</P
+><P
+>The "-c" option can be used to pass textual "command line" information
+to the kernel.  If the command line data contains any puncuation (spaces,
+etc), then it must be quoted using the double-quote character '"'. If the
+quote character is required, it should be written as '\"'.</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="persistent-state-flash.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="rebuilding-redboot.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Persistent State Flash-based Configuration and Control</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Rebuilding RedBoot</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

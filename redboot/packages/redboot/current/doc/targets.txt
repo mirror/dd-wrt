@@ -1,0 +1,38 @@
+RedBoot Targets
+===============
+
+Public:
+=======
+
+Cyclone IQ80310
+Intel SA1100 (Brutus)
+Intel StrongArm EBSA 285
+Intel SA1100 Multimedia Board
+Intel SA1110 (Assabet)
+MIPS Atlas Board with CoreLV 4Kc and CoreLV 5Kc
+MIPS Malta Board with CoreLV 4Kc and CoreLV 5Kc
+PMC-Sierra MIPS RM7000 Ocelot
+Motorola PowerPC MBX
+Analogue & Micro PowerPC 860T
+ARM Evaluator7T (e7t) board with ARM7TDMI
+ARM ARM7 PID, Dev7 and Dev9
+Compaq iPAQ PocketPC
+Cirrus Logic EP72xx (EDB7211, EDB7212)
+Bright Star Engineering commEngine and nanoEngine
+x86 Based PC
+Samsung CalmRISC16 Core Evaluation Board
+Samsung CalmRISC32 Core Evaluation Board 
+Hitachi Solution Engine 77X9 (SE77X9)
+Hitachi Solution Engine 7751 (SE7751)
+Hitachi HS7729PCI
+Cirrus Logic SEB9312 (EP93xx)
+Atmel AT91 Evaluation Board (EB40)
+Matsushita MN103E010 (AM33/2.0) ASB2305 Board
+Altera Excalibur ARM9 (excalibur_arm9)
+
+Not public:
+===========
+
+Ascom Laki
+Ascom PLC2
+Intel IQ80321

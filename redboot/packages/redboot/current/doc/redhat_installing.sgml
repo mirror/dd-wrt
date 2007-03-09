@@ -1,0 +1,954 @@
+<!-- %redact keep onlyif cl_ep93xx -->
+<?Pub _newpage>
+<sect1 id="seb9312">
+<title>ARM/ARM9 Cirrus Logic SEB9312 (EP93xx) (aka SEB9213) </title>
+<sect2>
+<title>Overview</title>
+<para><indexterm><primary>Cirrus Logic SEB9312 (EP93xx)</primary>
+<secondary>installing and testing</secondary></indexterm><indexterm><primary>
+installing and testing</primary><secondary>Cirrus Logic SEB9312 (EP93xx)
+</secondary></indexterm>RedBoot supports the serial port labelled
+'modem inteface' on the board and
+the ethernet port. The default serial port settings are 38400,8,N,1. RedBoot
+also supports flash management on the SEB9312.</para>
+
+<para>The following RedBoot configurations are supported:
+
+      <informaltable frame="all">
+	<tgroup cols="4" colsep="1" rowsep="1" align="left">
+	  <thead>
+	    <row>
+	      <entry>Configuration</entry>
+	      <entry>Mode</entry>
+	      <entry>Description</entry>
+	      <entry>File</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>ROMRAM</entry>
+	      <entry>[ROMRAM]</entry>
+	      <entry>RedBoot running from RAM, but contained in the
+	      board's flash boot sector.</entry>
+	      <entry>redboot_ROMRAM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>RAM</entry>
+	      <entry>[RAM]</entry>
+	      <entry>RedBoot running from RAM with RedBoot in the
+	      flash boot sector.</entry>
+	      <entry>redboot_RAM.ecm</entry>
+	    </row>
+</tbody>
+</tgroup>
+</informaltable>
+</para>
+
+<para>
+<note> <title>NOTE</title>
+<para> The cache is currently disabled as this feature does not seem to work
+properly with the beta silicon; it interacts badly with flash management
+activities and network usage.
+</para>
+</note>
+</para>
+
+</sect2>
+
+<sect2>
+<title>Initial Installation Method </title>
+<para>A Windows or Linux utility is used to program flash using the
+'modem interface' serial port via on-chip programming firmware.
+See board documentation for details on
+in situ flash programming. </para>
+</sect2>
+<sect2>
+<title>Special RedBoot Commands </title>
+<para>No special commands.</para>
+<para>One special <command>fconfig</command> option is
+provided to control the ethernet station address (ESA or 'MAC address').
+<screen>
+RedBoot> <userinput>fconfig -l</userinput>
+....
+Local IP address: 10.16.19.10 
+Default server IP address: 10.16.19.66 
+Network hardware address [MAC]: 0x00:0x12:0x34:0x56:0x78:0xAB 
+...
+RedBoot> <userinput>fconfig ep93xx_esa</userinput>
+ep93xx_esa: 0x00:0x12:0x34:0x56:0x78:0xAB 
+</screen>
+</para>
+</sect2>
+<sect2>
+<title>Memory Maps </title>
+<para>The MMU page tables are located at the end of DRAM. <note><title>NOTE
+</title>
+<para>The virtual memory maps in this section use a C and B column to indicate
+whether or not the region is cached (C) or buffered (B).</para>
+</note><programlisting>Physical Address Range     Description
+-----------------------    ----------------------------------
+0x00000000 - 0x01ffffff    DRAM
+0x24000000 - 0x247fffff    Flash
+0x28000000 - 0x280fffff    SRAM
+0x80000000 - 0x8fffffff    I/O registers
+
+Virtual Address Range    C B  Description
+-----------------------  - -  ----------------------------------
+0x00000000 - 0x01ffffff  Y Y  DRAM
+0x24000000 - 0x247fffff  Y Y  Flash
+0x28000000 - 0x2800ffff  Y Y  On-chip SRAM
+0x80000000 - 0x8fffffff  N N  I/O registers
+0xC0000000 - 0xC1ffffff  N N  Non-cachable access to DRAM
+
+</programlisting></para>
+
+</sect2>
+<sect2>
+<title>Rebuilding RedBoot</title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=seb9312
+export ARCH_DIR=arm
+export PLATFORM_DIR=arm9/ep93xx
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+
+</sect2>
+</sect1>
+
+<!-- %redact end cl_ep93xx -->
+
+
+<!-- %redact keep onlyif ascom -->
+<?Pub _newpage>
+<sect1 id="plc2">
+<title>ARM/StrongARM(SA1110) ASCOM/ACN PLC2 Board </title>
+<sect2>
+<title>Overview</title>
+<para>RedBoot supports the board serial ports attached to UART1 and UART3.
+Both channels are used for the RedBoot prompt et al, and you can connect using
+GDB to either.</para>
+<para>The default serial port settings are 38400,8,N,1.</para>
+
+<para>The following RedBoot configurations are supported:
+
+      <informaltable frame="all">
+	<tgroup cols="4" colsep="1" rowsep="1" align="left">
+	  <thead>
+	    <row>
+	      <entry>Configuration</entry>
+	      <entry>Mode</entry>
+	      <entry>Description</entry>
+	      <entry>File</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>ROM</entry>
+	      <entry>[ROM]</entry>
+	      <entry>RedBoot running from the board's flash boot
+	      sector.</entry>
+	      <entry>redboot_ROM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>POST</entry>
+	      <entry>[ROM]</entry>
+	      <entry>RedBoot running at address 0x40000 in flash, for
+	      cooperation with customer POST code.</entry>
+	      <entry>redboot_POST.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>RAM</entry>
+	      <entry>[RAM]</entry>
+	      <entry>RedBoot running from RAM with RedBoot in the
+	      flash boot sector.</entry>
+	      <entry>redboot_RAM.ecm</entry>
+	    </row>
+</tbody>
+</tgroup>
+</informaltable>
+</para>
+</sect2>
+
+<sect2>
+<title>Initial Installation Method </title>
+<para>A Linux utility <application>Jflash</application> is used to
+program FLASH over a parallel port
+driven JTAG interface. A special hardware box from ACN is required. After
+that, RedBoot can be managed and upgraded in the usual manner using its own
+flash management commands in the usual manner; <command>fis
+init</command> will fill in appropriate defaults for the flash
+addresses concerned.
+</para>
+</sect2>
+<sect2>
+<title>Special RedBoot Commands </title>
+<para>None.</para>
+</sect2>
+<sect2>
+<title>Memory Maps </title>
+<para>The first level page table is located at physical address 0xc0004000.
+No second level tables are used.<note><title>NOTE</title>
+<para>The virtual memory maps in this section use a C and B column to indicate
+whether or not the region is cached (C) or buffered (B).</para>
+</note><programlisting>Physical Address Range     Description
+-----------------------    ----------------------------------
+0x00000000 - 0x007fffff    8Mb flash (nCS0)
+0x18000000 - 0x180fffff    Altera FPGA and X-Bus (nCS3)
+0x20000000 - 0x2fffffff    PCMCIA slot 0 - LAN91C96 Ethernet
+0x80000000 - 0xbfffffff    SA-1110 Internal Registers
+0xc0000000 - 0xc7ffffff    DRAM Bank 0
+0xc8000000 - 0xcfffffff    DRAM Bank 1
+0xe0000000 - 0xe7ffffff    Cache Clean
+
+
+Virtual Address Range    C B  Description
+-----------------------  - -  ----------------------------------
+0x00000000 - 0x001fffff  Y Y  DRAM - 8Mb to 32Mb
+0x18000000 - 0x180fffff  N N  Altera FPGA and X-Bus (nCS3)
+0x20000000 - 0x2fffffff  N N  PCMCIA slot 0 - LAN91C96 Ethernet
+0x50000000 - 0x507fffff  Y Y  8Mb flash (nCS0)
+0x80000000 - 0xbfffffff  N N  SA-1110 Internal Registers
+0xc0000000 - 0xc0ffffff  N Y  DRAM Bank 0:8 or 16Mb
+0xc8000000 - 0xc8ffffff  N Y  DRAM Bank 1:8 or 16Mb or absent
+0xe0000000 - 0xe7ffffff  Y Y  Cache Clean
+</programlisting>
+</para>
+<para>SDRAM can be any of<literallayout> 1 x 8Mb = 8Mb     2 x 8Mb = 16Mb
+ 1 x 16Mb = 16Mb   2 x 16Mb = 32Mb</literallayout>
+All are programmed the same way in the memory controller. Startup code
+detects which is fitted and programs the memory map accordingly. If the device(s)
+is 8Mb, then there are gaps in the physical memory map, because a high order
+address bit is not connected. The gaps are the higher 2Mb out of every 4Mb.
+</para>
+<para>The SA11x0 OS timer is used as a polled timer to provide timeout support
+within RedBoot.</para>
+</sect2>
+
+<sect2>
+<title>Rebuilding RedBoot</title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=plc2
+export ARCH_DIR=arm
+export PLATFORM_DIR=sa11x0/plc2
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+
+</sect2>
+</sect1>
+<!-- %redact end ascom -->
+
+
+<!-- %redact keep onlyif symbol2800 -->
+<?Pub _newpage>
+<sect1 id="symbol2800">
+<title>ARM/StrongARM(SA11X0) Symbol PPT2800 Series Portable Pen Terminal</title>
+<indexterm><primary>Symbol PPT2800 Series Portable Pen Terminal</primary>
+<secondary>installing and testing</secondary></indexterm><indexterm>
+<primary>installing and testing</primary><secondary>Symbol PPT2800 Series
+Portable Pen Terminal</secondary></indexterm>
+<sect2>
+<title>Overview</title>
+<para>RedBoot supports the serial port via cradle or cable. The LCD will
+display a splash screen, but cannot be used for the console.</para>
+<para>The default serial port settings are 115200,8,N,1. RedBoot runs from
+and supports flash management for the system flash region. </para>
+
+<para>The following RedBoot configurations are supported:
+
+      <informaltable frame="all">
+	<tgroup cols="4" colsep="1" rowsep="1" align="left">
+	  <thead>
+	    <row>
+	      <entry>Configuration</entry>
+	      <entry>Mode</entry>
+	      <entry>Description</entry>
+	      <entry>File</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>ROM</entry>
+	      <entry>[ROM]</entry>
+	      <entry>RedBoot running from the board's flash boot
+	      sector.</entry>
+	      <entry>redboot_ROM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>RAM</entry>
+	      <entry>[RAM]</entry>
+	      <entry>RedBoot running from RAM with RedBoot in the
+	      flash boot sector.</entry>
+	      <entry>redboot_RAM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>SymbolIPL</entry>
+	      <entry>[SymbolIPL]</entry>
+	      <entry>RedBoot running from the board's flash, as a
+	      secondary boot monitor, started by the IPL.</entry>
+	      <entry>redboot_SymbolIPL.ecm</entry>
+	    </row>
+</tbody>
+</tgroup>
+</informaltable>
+</para>
+</sect2>
+<sect2>
+<title>Initial Installation</title>
+<para>
+The SymbolIPL mode RedBoot SHEX image
+(<filename>redboot_SymbolIPL.shex</filename>) is downloaded as a
+normal operating system image, to reside in the 'OS partition' of the system
+flash and be started by the IPL. The ROM mode RedBoot will replace the IPL in
+the system flash boot sector.
+</para>
+<sect3>
+<title>Installing RedBoot on the PPT2800 using the IPL</title>
+<para>
+The Windows/CE environment originally shipped with the PPT2800 contains a hidden
+mini-loader, referred to as the "IPL".  This loader can be started by holding
+down the App1 and App4 buttons while resetting the unit or when powering on.
+At this point, a menu will appear on the LCD screen. To replace the IPL 
+with RedBoot select a baud rate, then select
+'IPL' as the partition to download. Then send the ROM mode RedBoot
+SHEX image (<filename>redboot_ROM.shex</filename>)
+to the serial port of the device. A progress meter should be displayed on
+the LCD, followed by instructions to perform a hard reset. Do this, and
+RedBoot should start.</para>
+
+<para>Once RedBoot has started, you should see a splash screen appear
+on the LCD and on the serial port.</para>
+</sect3>
+<sect3>
+<title>Restoring the IPL</title> 
+<warning><title>WARNING</title>
+<para>After restoring the IPL from its original Symbol HEX file, it is
+extremely important to ensure that the entire flash device is unprotected.
+RedBoot locks the flash chips to guard against accidental erasure or 
+modification, but the IPL cannot unlock them. This can lead to a 
+non-functional unit.</para></warning>
+
+<para>To replace RedBoot with the IPL, first load the IPL image into
+RAM with the following command:
+<screen>
+RedBoot> <userinput>load -b %{FREEMEMLO} -m ymodem</userinput>
+</screen>
+Send the ipl.hex file and then program it into flash using the
+<command>fis write</command> command:
+<screen>
+RedBoot> <userinput>fis write -b %{FREEMEMLO} -f 0x50000000 -l 0x80000</userinput>
+</screen>
+Next, ensure the system flash is entirely unprotected:
+<screen>
+RedBoot> <userinput>fis unlock -f 0x50000000 -l 0x02000000</userinput>
+</screen>
+After this command completes, it is safe to reset the unit using the
+<command>reset</command> command or a hard reset.
+</para>
+</sect3></sect2>
+<sect2>
+<title>Additional commands</title>
+<para>The <command>exec</command> command which allows the loading
+and execution of Linux kernels,
+is supported for this board (see <xref linkend="executing-programs">). The <command>
+exec</command> parameters used for the Symbol PPT2800 are:</para>
+<variablelist><varlistentry>
+<term>-b <replaceable>&lt;addr></replaceable></term>
+<listitem><para>Location Linux kernel was loaded to</para></listitem></varlistentry>
+<varlistentry><term>
+-l <replaceable>&lt;len></replaceable></term>
+<listitem><para>Length of kernel</para></listitem></varlistentry>
+<varlistentry><term>
+-c <replaceable>"params"</replaceable></term>
+<listitem><para>Parameters passed to kernel</para></listitem></varlistentry>
+<varlistentry><term>-r <replaceable>&lt;addr></replaceable></term>
+<listitem><para>'initrd' ramdisk location</para></listitem></varlistentry>
+<varlistentry><term>-s <replaceable>&lt;len></replaceable></term>
+<listitem><para>Length of initrd ramdisk</para></listitem></varlistentry>
+</variablelist>
+<para>Linux kernels for the Symbol PPT2800 differ from normal ARM kernels 
+in that they are configured to decompress directly from flash. Rather than loading the zImage into RAM and then executing it, RedBoot executes it directly from the flash. It is normal to place the Linux kernel zImage in flash at virtual address 0x50080000, and to pass the corresponding physical address 0x80000 to the RedBoot <command>exec</command> command, as follows:
+<screen>
+RedBoot> <userinput>exec -c "console=ttySA0,115200 root=/dev/mtdblock3" 0x80000</userinput>
+Using base address 0x00000000 and length 0x00000000
+Uncompressing Linux........................................... done, booting the kernel.
+</screen>
+</para>
+
+</sect2>
+<sect2>
+<title>Memory Maps</title>
+<para>RedBoot sets up the following memory map on the PPT2800:   The first level
+page table is located at physical address 0xC0004000.  No second level tables
+are used.   <note><title>NOTE</title>
+<para>The virtual memory maps in this section use a C and B column to indicate
+whether or not the region is cached (C) or buffered (B).</para>
+</note> <programlisting>Physical Address Range     Description
+-----------------------    ----------------------------------
+0x00000000 - 0x01ffffff    32MB FLASH (nCS0) [organized as below]
+  0x000000 - 0x0003ffff      RedBoot
+ 0x1f80000 - 0x01fbffff      Fconfig data
+ 0x1fc0000 - 0x01ffffff      FIS directory
+0x10000000 - 0x10ffffff    PPT2800 EGPIO register
+0x80000000 - 0xbfffffff    SA-1110 Internal Registers
+0xc0000000 - 0xc1ffffff    DRAM Bank 0 - 32MB SDRAM
+0xe0000000 - 0xe7ffffff    Cache Clean
+
+
+Virtual Address Range    C B  Description
+-----------------------  - -  ----------------------------------
+0x00000000 - 0x01ffffff  Y Y  DRAM - 32MB
+0x10000000 - 0x10ffffff  N N  PPT2800 EGPIO register
+0x50000000 - 0x51ffffff  Y Y  32MB FLASH (nCS0)
+0x80000000 - 0xbfffffff  N N  SA-1110 Internal Registers
+0xc0000000 - 0xc1ffffff  N Y  DRAM Bank 0: 32MB
+0xe0000000 - 0xe7ffffff  Y Y  Cache Clean   </programlisting> </para>
+</sect2>
+<sect2>
+<title>Rebuilding RedBoot</title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=symbol2800
+export ARCH_DIR=arm
+export PLATFORM_DIR=sa11x0/symbol2800
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+
+</sect2></sect1>
+
+<!-- %redact end symbol2800 -->
+
+
+<!-- %redact keep onlyif xscale -->
+<?Pub _newpage>
+<sect1 id="Mainstone">
+<title>ARM/Xscale Intel Mainstone</title>
+<sect2>
+<title>Overview</title>
+<para><indexterm><primary>Intel Mainstone</primary><secondary>installing and
+testing</secondary></indexterm><indexterm><primary>installing and testing
+</primary><secondary>Intel Mainstone</secondary></indexterm>RedBoot supports
+the FFUART on the CPU card and the built-in ethernet port for communication
+and downloads. The default serial port settings are 115200,8,N,1. RedBoot
+also supports flash management for the 32MB boot flash on the CPU card.</para>
+
+<para>The following RedBoot configurations are supported:
+
+      <informaltable frame="all">
+	<tgroup cols="4" colsep="1" rowsep="1" align="left">
+	  <thead>
+	    <row>
+	      <entry>Configuration</entry>
+	      <entry>Mode</entry>
+	      <entry>Description</entry>
+	      <entry>File</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>ROM</entry>
+	      <entry>[ROM]</entry>
+	      <entry>RedBoot running from the CPU daughtercard flash boot
+	      sector.</entry>
+	      <entry>redboot_ROM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>RAM</entry>
+	      <entry>[RAM]</entry>
+	      <entry>RedBoot running from RAM with RedBoot in the
+	      flash boot sector.</entry>
+	      <entry>redboot_RAM.ecm</entry>
+	    </row>
+</tbody>
+</tgroup>
+</informaltable>
+</para>
+
+</sect2>
+<sect2>
+<title>Initial Installation Method</title>
+<para>The board manufacturer provides a Windows application which is capable of
+programming the flash over JATG interface using the PC parallel port. This
+application is necessary for initial installations of RedBoot. Please see the
+board manual for more information on using this utility. In general, the process
+involves programming the ROM mode RedBoot image to flash address 0x00000000.
+</para>
+
+<para>After booting the initial installation of RedBoot, this warning may
+be printed: <screen>flash configuration checksum error or invalid key
+</screen>This is normal, and indicates that the flash must be configured
+for use by RedBoot. Even if the above message is not printed, it may be a
+good idea to reinitialize the flash anyway. Do this with the <command>
+fis</command> command: <screen>RedBoot> <userinput>fis init</userinput>
+About to initialize [format] FLASH image system - continue (y/n)? <userinput>y</userinput>
+*** Initialize FLASH Image System
+    Warning: device contents not erased, some blocks may not be usable
+    ... Unlock from 0xf1fc0000-0xf2000000: .
+    ... Erase from 0xf1fc0000-0xf2000000: .
+    ... Program from 0x03fbf000-0x03fff000 at 0xf1fc0000: .
+    ... Lock from 0xf1fc0000-0xf2000000: .
+</screen></para></sect2>
+<sect2>
+<title>Switch Settings</title>
+<para>The Mainstone board is configurable through a number of switches and jumpers.
+RedBoot makes some assumptions about board configuration and attention must be paid to
+these assumptions for reliable RedBoot operation. Specifically, SW1 and SW2 on the
+Mainstone main board should be in the dot position.
+</para>
+</sect2>
+<sect2>
+<title>LED Codes</title>
+<para>RedBoot uses the 8 digit LED display to indicate status during board
+initialization. Possible codes are:</para>
+
+<literallayout width=72>
+LED     Actions
+-------------------------------------------------------------
+  	Power-On/Reset
+        Set the CPSR
+        Enable coprocessor access
+        Drain write and fill buffer
+        Setup GPIO lines
+        Setup PBIU chip selects
+25000FFF
+        Delay 200usec
+24000FFF
+        Initialize MSCx registers
+        Initialize MECR, MCMEM0, MCMEM1, MCATT0, MCATT1, MCIO0, MCIO1
+24100FFF
+        Initialize MDREFR
+24200FFF
+        Initialize SXCNFG
+24300FFF
+        Initialize MDCNFG
+24400FFF
+        Trigger SDRAM refresh cycles
+24500FFF
+        Enable SDRAM partitions
+24600FFF
+        Enable SDRAM auto-powerdown
+25800FFF
+        Setup clocks
+25820FFF
+        Frequency change
+25830FFF
+        Setup page table
+25830FFF
+        Setup domain permissions
+25840FFF
+        Turn on MMU
+25850FFF
+        Enable D-Cache
+00000000
+        Start up the eCos kernel or RedBoot
+</literallayout>
+</sect2>
+<sect2>
+<title>Rebuilding RedBoot </title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=mainstone
+export ARCH_DIR=arm
+export PLATFORM_DIR=xscale/mainstone
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+</sect2>
+
+<sect2>
+<title>Interrupts</title>
+<para>RedBoot uses an interrupt vector table which is located at address 0x8004.
+Entries in this table are pointers to functions with this protoype::      <programlisting>
+int irq_handler( unsigned vector, unsigned data )</programlisting>On the Mainstone
+board, the vector argument is one of many interrupts defined in <computeroutput>
+hal/arm/xscale/bulverde/current/include/hal_var_ints.h:</computeroutput>:   <programlisting>
+#define CYGNUM_HAL_INTERRUPT_SSP3          0
+#define CYGNUM_HAL_INTERRUPT_MSL           1
+#define CYGNUM_HAL_INTERRUPT_USB_HOST2     2
+#define CYGNUM_HAL_INTERRUPT_USB_HOST1     3
+#define CYGNUM_HAL_INTERRUPT_KEYPAD        4
+#define CYGNUM_HAL_INTERRUPT_MEMSTICK      5
+#define CYGNUM_HAL_INTERRUPT_POWER_I2C     6
+#define CYGNUM_HAL_INTERRUPT_TIMERX        7
+#define CYGNUM_HAL_INTERRUPT_GPIO0         8
+#define CYGNUM_HAL_INTERRUPT_GPIO1         9
+#define CYGNUM_HAL_INTERRUPT_GPIO2_120     10
+#define CYGNUM_HAL_INTERRUPT_USB_CLIENT    11
+#define CYGNUM_HAL_INTERRUPT_CORE_PMU      12
+#define CYGNUM_HAL_INTERRUPT_I2S           13
+#define CYGNUM_HAL_INTERRUPT_AC97          14
+#define CYGNUM_HAL_INTERRUPT_USIM          15
+#define CYGNUM_HAL_INTERRUPT_SSP2          16
+#define CYGNUM_HAL_INTERRUPT_LCD           17
+#define CYGNUM_HAL_INTERRUPT_I2C           18
+#define CYGNUM_HAL_INTERRUPT_ICP           19
+#define CYGNUM_HAL_INTERRUPT_STUART        20
+#define CYGNUM_HAL_INTERRUPT_BTUART        21
+#define CYGNUM_HAL_INTERRUPT_FFUART        22
+#define CYGNUM_HAL_INTERRUPT_FLASH         23
+#define CYGNUM_HAL_INTERRUPT_SSP1          24
+#define CYGNUM_HAL_INTERRUPT_DMA           25
+#define CYGNUM_HAL_INTERRUPT_TIMER0        26
+#define CYGNUM_HAL_INTERRUPT_TIMER1        27
+#define CYGNUM_HAL_INTERRUPT_TIMER2        28
+#define CYGNUM_HAL_INTERRUPT_TIMER3        29
+#define CYGNUM_HAL_INTERRUPT_HZ            30
+#define CYGNUM_HAL_INTERRUPT_ALARM         31
+#define NOT_USED_32                        32
+#define NOT_USED_33                        33
+#define CYGNUM_HAL_INTERRUPT_GPIO2         34
+...
+#define CYGNUM_HAL_INTERRUPT_GPIO120       152
+#define CYGNUM_HAL_INTERRUPT_MMC_CARD      153
+#define CYGNUM_HAL_INTERRUPT_USIM_CARD     154
+#define CYGNUM_HAL_INTERRUPT_USB_CABLE     155
+#define CYGNUM_HAL_INTERRUPT_ETHERNET      156
+#define CYGNUM_HAL_INTERRUPT_AC97_CODEC    157
+#define CYGNUM_HAL_INTERRUPT_PEN           158
+#define CYGNUM_HAL_INTERRUPT_MS_INSERT     159
+#define CYGNUM_HAL_INTERRUPT_EXBRD         160
+#define CYGNUM_HAL_INTERRUPT_RSVD8         161
+#define CYGNUM_HAL_INTERRUPT_PCMCIA0_CARD  162
+#define CYGNUM_HAL_INTERRUPT_PCMCIA0_STAT  163
+#define CYGNUM_HAL_INTERRUPT_PCMCIA0       164
+#define CYGNUM_HAL_INTERRUPT_RSVD12        165
+#define CYGNUM_HAL_INTERRUPT_PCMCIA1_CARD  166
+#define CYGNUM_HAL_INTERRUPT_PCMCIA1_STAT  167
+#define CYGNUM_HAL_INTERRUPT_PCMCIA1       168
+</programlisting>
+The data passed to the ISR is pulled from a data table <computeroutput>(hal_interrupt_data)
+</computeroutput> which immediately follows the interrupt vector table. With
+169 interrupts, the data table starts at address 0x82a8.   </para>
+<para>An application may create a normal C function with the above prototype
+to be an ISR. Just poke its address into the table at the correct index and
+enable the interrupt at its source. The return value of the ISR is ignored
+by RedBoot.</para>
+</sect2>
+<sect2>
+<title>Memory Maps</title>
+<para>The RAM based page table is located at RAM start + 0x4000.
+<note><title>NOTE</title>
+<para>The virtual memory maps in this section use a C, B, and X column to indicate
+the caching policy for the region..</para>
+</note></para>
+<para><programlisting>
+X C B  Description
+- - -  ---------------------------------------------
+0 0 0  Uncached/Unbuffered
+0 0 1  Uncached/Buffered
+0 1 0  Cached/Buffered    Write Through, Read Allocate
+0 1 1  Cached/Buffered    Write Back, Read Allocate
+1 0 0  Invalid -- not used
+1 0 1  Uncached/Buffered  No write buffer coalescing
+1 1 0  Mini DCache - Policy set by Aux Ctl Register
+1 1 1  Cached/Buffered    Write Back, Read/Write Allocate
+
+Physical Address Range     Description
+-----------------------    ----------------------------------
+0x00000000 - 0x03ffffff    Boot flash          (nCS0)
+0x04000000 - 0x07ffffff    Application flash   (nCS1)
+0x08000000 - 0x080fffff    Baseboard registers (nCS2)
+0x0a000000 - 0x0a1fffff    SRAM                (nCS2)
+0x10000000 - 0x100fffff    Ethernet            (nCS4)
+0x20000000 - 0x2fffffff    PCMCIA/CF Slot 0
+0x30000000 - 0x3fffffff    PCMCIA/CF Slot 1
+0x40000000 - 0x43ffffff    CPU memory-mapped registers
+0x44000000 - 0x47ffffff    LCD memory-mapped registers
+0x48000000 - 0x4bffffff    Memory controller registers
+0x4c000000 - 0x4fffffff    USB host
+0xa0000000 - 0xa3ffffff    SDRAM bank 0       (nSDCS0)
+0xa4000000 - 0xa7ffffff    SDRAM bank 1       (nSDCS0)
+
+ Virtual Address Map     X C B  Description
+-----------------------  - - -  ----------------------------------
+0x00000000 - 0x07ffffff  1 1 1  SDRAM
+0x08000000 - 0x080fffff  0 0 0  Baseboard registers (nCS2)
+0x0a000000 - 0x0a1fffff  1 1 1  SRAM                (nCS2)
+0x10000000 - 0x100fffff  0 0 0  Ethernet            (nCS4)
+0x20000000 - 0x2fffffff  0 0 0  PCMCIA/CF Slot 0
+0x30000000 - 0x3fffffff  0 0 0  PCMCIA/CF Slot 1
+0x40000000 - 0x43ffffff  0 0 0  CPU memory-mapped registers
+0x44000000 - 0x47ffffff  0 0 0  LCD memory-mapped registers
+0x48000000 - 0x4bffffff  0 0 0  Memory controller registers
+0x4c000000 - 0x4fffffff  0 0 0  USB host
+0xa0000000 - 0xa7ffffff  0 0 0  Uncached SDRAM alias
+0xa8000000 - 0xa80fffff  1 1 1  D-cache flush region (no phys mem)
+0xf0000000 - 0xf3ffffff  0 1 0  Boot flash          (nCS0)
+0xf4000000 - 0xf7ffffff  0 1 0  Application flash   (nCS1)
+
+</programlisting></para>
+</sect2>
+<sect2>
+<title>Platform Resource Usage</title>
+<para>The Bulverde programmable OStimer0 is used for timeout support
+for networking and XModem file transfers.</para>
+</sect2></sect1>
+<!-- %redact end xscale -->
+
+
+<!-- %redact keep onlyif serhub1 -->
+<?Pub _newpage>
+<sect1 id="serhub1">
+<title>SuperH/SH2(SH7615) Comtrol SerHub1</title>
+<sect2>
+<title>Overview</title>
+<para><indexterm><primary>Comtrol SH SerHub1</primary><secondary>installing
+and testing</secondary></indexterm><indexterm><primary>installing and testing
+</primary><secondary>Comtrol SH SerHub1</secondary></indexterm>
+
+RedBoot uses both the COM1 (SCIF1, RS232/422/485) and COM2
+(SCIF2, IrDA) serial ports. The default serial port settings are
+38400,8,N,1 for COM1 and 9600,8,N,1 for COM2.  Ethernet is also supported
+using the RJ45 connector. </para> <para>Management of onboard
+flash is also supported.</para>
+
+<para>The following RedBoot configurations are supported:
+
+      <informaltable frame="all">
+	<tgroup cols="4" colsep="1" rowsep="1" align="left">
+	  <thead>
+	    <row>
+	      <entry>Configuration</entry>
+	      <entry>Mode</entry>
+	      <entry>Description</entry>
+	      <entry>File</entry>
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>ROM</entry>
+	      <entry>[ROM]</entry>
+	      <entry>RedBoot running from the board's flash boot
+	      sector.</entry>
+	      <entry>redboot_ROM.ecm</entry>
+	    </row>
+	    <row>
+	      <entry>RAM</entry>
+	      <entry>[RAM]</entry>
+	      <entry>RedBoot running from RAM with RedBoot in the
+	      flash boot sector.</entry>
+	      <entry>redboot_RAM.ecm</entry>
+	    </row>
+</tbody>
+</tgroup>
+</informaltable>
+</para>
+
+</sect2>
+<sect2>
+<title>Initial Installation Method </title>
+<para>For bootstrapping RedBoot into the 29LV400 flash, it is
+necessary to set jumper J3 (SWAP), causing the mapping of the 29LV400
+to appear at 0x00040000 while the two 37VF010 parts appear at
+0x00000000. In order for the RedBoot flash code to handle the
+miss-aligned location of the 29LV400 part, the option
+CYGSEM_DEVS_FLASH_SH_SERHUB1_HALF must be set. Such a configuration of
+RedBoot is called either RAM/half or ROM/half, depending on whether it
+is configured to run from RAM or flash (ROM).</para>
+
+<para>To install RedBoot into the 29LV400 part (or write any other
+data to that part), run a "half"-configured version of RedBoot. This can
+be done in one of two ways:
+<itemizedlist><listitem><para>Program a ROM/half version of RedBoot into the
+	      37VF010 parts.</para>
+	    </listitem>
+<listitem><para>Program the Comtrol monitor into the 37VF010 parts and use
+	      it to download a RAM/half version of RedBoot:
+<screen>
+&gt; <userinput>dl</userinput></screen>
+in a shell on the host computer, now copy the RAM/half
+version of RedBoot to the serial port:
+<screen>
+$ <userinput>cat <filename>redboot_RAM_half.srec</filename> &gt; /dev/ttyS0</userinput></screen>
+After downloading completes and the propt returns, start RedBoot by issuing
+the command <screen>
+&gt; <userinput>go 060213C0</userinput></screen> (the address may change - it
+can be found at the last line of the
+<filename>redboot_RAM_half.srec</filename> file).</para>
+<note><title>NOTE</title>
+<para>The RAM/half configuration of RedBoot uses the same baud rate as
+the Comtrol monitor (9600 baud) to avoid confusing the terminal
+emulator when RedBoot starts up.</para>
+		</note>
+	    </listitem>
+	  </itemizedlist>
+</para>
+<para>Both "half"-configured RedBoot images should show this line when
+probing for the flash part:
+<screen>
+FLASH: 0x00040000 - 0x000c0000, 8 blocks of 0x00010000 bytes each.              
+</screen></para>
+
+<para>When the RedBoot prompt appears, download the ROM
+mode (non-half) configuration of RedBoot and program it into the flash:
+<screen>
+RedBoot&gt; <userinput>lo -m y -b %{FREEMEMLO}</userinput></screen>
+Now send the file <filename>redboot_ROM.srec</filename> using the
+terminal emulator's Y-modem upload function, and you should eventually
+see the prompt again:<screen>
+Address offset = 0x06048000
+Entry point: 0x000013c0, address range: 0x00000000-0x00017e30
+xyzModem - CRC mode, 2201(SOH)/0(STX)/0(CAN) packets, 3 retries
+RedBoot>
+</screen></para>
+
+<para>Now write the RedBoot image into the 29LV400
+flash:<screen>
+RedBoot> <userinput>fi write -f 0x00040000 -b %{FREEMEMLO} -l 0x00020000</userinput>
+* CAUTION * about to program FLASH
+            at 0x00040000..0x0005ffff from 0x06048000 - continue (y/n)? <userinput>y</userinput>
+... Erase from 0x00040000-0x00060000: ..
+... Program from 0x06048000-0x06068000 at 0x00040000: ..
+RedBoot>
+</screen></para>
+</sect2>
+
+<sect2>
+<title>Special RedBoot Commands </title>
+<para>The <command>sm</command> command allows the serial transceiver
+mode of COM1 to be changed to one of RS232, RS422, or
+RS485. The board always starts up using the RS232 mode.</para>
+<para>If a permanent change to one of the other modes is required, use
+the script feature to change the mode after a timeout:<screen>
+RedBoot> <userinput>fconfig</userinput>
+Run script at boot: <userinput>true</userinput>
+Boot script:
+Enter script, terminate with empty line
+>> <userinput>sm 422</userinput>
+>>
+Boot script timeout (1000ms resolution): <userinput>1</userinput>
+Use BOOTP for network configuration: true
+Console baud rate: 38400
+DNS server IP address:
+GDB connection port: 9000
+Force console for special debug messages: false
+Network debug at boot time: false
+Update RedBoot non-volatile configuration - continue (y/n)? <userinput>y</userinput>
+... Erase from 0x00060000-0x00061000: .
+... Program from 0x0606e000-0x0606f000 at 0x00060000: .
+RedBoot>
+</screen></para>
+
+<para>When resetting the board, it will print out the RedBoot banner
+ using the RS232 mode and then change to the selected mode (here
+ RS422) after a 1-second delay. This means it is always possible to
+ recover the board from a wrong configuration by connecting it to a
+ standard PC serial connection.</para>
+</sect2>
+<sect2>
+<title>Memory Maps </title>
+<para>RedBoot sets up the following memory map on the board.<programlisting>
+Physical Address Range  Description
+----------------------- -----------
+0x00000000 - 0x0007ffff Flash (29LV400)
+0x06000000 - 0x0607ffff SRAM
+</programlisting></para>
+</sect2>
+<sect2>
+<title>Ethernet Driver</title>
+<para>The ethernet driver uses a hardwired ESA which can, at present,
+only be changed in CDL.</para>
+</sect2>
+<sect2>
+<title>Rebuilding RedBoot</title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=serhub1
+export ARCH_DIR=sh
+export PLATFORM_DIR=serhub1
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+
+</sect2>
+</sect1>
+<!-- %redact end serhub1 -->
+
+
+<!-- %redact keep onlyif apsh2f2a -->
+<?Pub _newpage>
+<sect1 id="apsh2f2a">
+<title>SuperH/SH2(SH7044) Alpha Project AP-SH2F-2A</title>
+<sect2>
+<title>Overview</title>
+<para><indexterm><primary>Alpha Project SH AP-SH2F-2A</primary><secondary>installing
+and testing</secondary></indexterm><indexterm><primary>installing and testing
+</primary><secondary>Alpha Project SH AP-SH2F-2A</secondary></indexterm>
+
+RedBoot uses the SCI1 serial port. The default serial port settings are
+38400,8,N,1.</para>
+
+<para>Management of on-core flash is not supported. RedBoot is
+available only in ROM mode, which must be programmed into
+the flash using the Windows programming application.</para>
+</sect2>
+<sect2>
+<title>Initial Installation Method </title>
+<para>For bootstrapping RedBoot into the on-core flash, turn off the
+board and set switch SS1 to OFF-ON-OFF-ON-ON-ON. Then turn back on the
+power and program the RedBoot srec image using the Windows programming
+application. Turn off the board again and set switch SS1 to
+OFF-OFF-OFF-ON-OFF-ON. Finally, turn on the power again. You should
+see the RedBoot banner written out on the serial port.
+</para>
+</sect2>
+
+<sect2>
+<title>Memory Maps </title>
+<para>RedBoot sets up the following memory map on the board.<programlisting>
+Physical Address Range  Description
+----------------------- -----------
+0x00000000 - 0x0003ffff On-core flash
+0x00400000 - 0x0043ffff SRAM
+</programlisting></para>
+</sect2>
+<sect2>
+<title>Rebuilding RedBoot</title>
+
+<para>These shell variables provide the platform-specific information
+needed for building RedBoot according to the procedure described in
+<xref linkend="Rebuilding-Redboot">:
+<programlisting>
+export TARGET=apsh2f2a
+export ARCH_DIR=sh
+export PLATFORM_DIR=apsh2f2a
+</programlisting>
+</para>
+
+<para>The names of configuration files are listed above with the
+description of the associated modes.</para>
+
+</sect2>
+</sect1>
+<!-- %redact end apsh2f2a -->
+
+

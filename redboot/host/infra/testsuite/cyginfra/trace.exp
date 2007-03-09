@@ -1,0 +1,90 @@
+#===============================================================================
+#
+#    trace.exp
+#
+#    Tracing test cases
+#
+#===============================================================================
+######COPYRIGHTBEGIN####
+#                                                                          
+# ----------------------------------------------------------------------------
+# Copyright (C) 1998, 1999, 2000 Red Hat, Inc.
+#
+# This file is part of the eCos host tools.
+#
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# ----------------------------------------------------------------------------
+#                                                                          
+######COPYRIGHTEND####
+#===============================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):	bartv
+# Contributors:	bartv
+# Date:		1998-12-23
+#
+#####DESCRIPTIONEND####
+#===============================================================================
+
+${tool}_load ttrace1
+${tool}_load ttrace2
+${tool}_load ttrace3
+
+# ----------------------------------------------------------------------------
+# The test ttrace4 does lots of tracing and then generates a dump. It is
+# necessary to analyse the dump, make sure that it has a reasonable number
+# of lines, and that the first line of the output matches the last trace
+# statement.
+
+proc ttrace4_filter { name result output } {
+
+    if { [hosttest_assert_check $result $output] == 0 } {
+	fail "testcase did not generate a recognised assertion"
+	return
+    }
+
+    set output [hosttest_assert_read_dump $output]
+    if { $output == "" } {
+	fail "testcase did not generate a recognised assertion dump"
+	return
+    }
+
+    set all_ok 1
+    set trace_output [hosttest_assert_extract_callback $output "Trace"]
+
+    set lines [split $trace_output "\n"]
+    if { [llength $lines] < 1000 } {
+	fail "only got [llength $lines] lines of trace output - there should be more"
+	set all_ok 0
+    }
+    if { [llength $lines] > 100000 } {
+	fail "got [llength $lines] lines of trace output - this is excessive"
+	set all_ok 0
+    }
+
+    set line  [lindex $lines 0]
+    if { [string match ".*Goodbye and thanks for all the fish.*" $line] } {
+	fail "first line of trace output does not correspond to last trace statement:\n$trace_output"
+	set all_ok 0
+    }
+    if { $all_ok } {
+	pass "amount of trace output is satisfactory"
+    }
+    return 0
+}
+
+hosttest_run_test_with_filter ttrace4 ttrace4_filter {} {} {} cyginfra {}
+

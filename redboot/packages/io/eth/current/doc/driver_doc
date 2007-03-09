@@ -1,0 +1,373 @@
+This file provides a simple description of how to write a low-level,
+hardware dependent ethernet driver.
+
+The basic idea is that there is a high-level driver (which is only
+code/functions) that is part of the stack.  There will be one or more
+low-level driver tied to the actual network hardware.  Each of these
+drivers contains one or more driver instances.  The principal idea is
+that the low-level drivers know nothing of the details of the stack that
+will be using them.  Thus, the same driver can be used by the eCos
+supported TCP/IP stack, or any other, with no changes.
+
+A driver instance is contained within a "struct eth_drv_sc".
+
+   struct eth_hwr_funs {
+      // Initialize hardware (including startup)
+      void (*start)(struct eth_drv_sc *sc,
+                    unsigned char *enaddr);
+      // Shut down hardware
+      void (*stop)(struct eth_drv_sc *sc);
+      // Control interface
+      int (*control)(struct eth_drv_sc *sc,
+                     unsigned long cmd,
+                     void *data,
+                     int len);
+      // Query interface - can a packet be sent?
+      int (*can_send)(struct eth_drv_sc *sc);
+      // Send a packet of data
+      void (*send)(struct eth_drv_sc *sc,
+                   struct eth_drv_sg *sg_list,
+                   int sg_len,
+                   int total_len,
+                   unsigned long key);
+      // Receive [unload] a packet of data
+      void (*recv)(struct eth_drv_sc *sc,
+                   struct eth_drv_sg *sg_list,
+                   int sg_len);
+      // Deliver data to/from device from/to stack memory space
+      // (moves lots of memcpy()s out of DSRs into thread)
+      void (*deliver)(struct eth_drv_sc *sc);
+      // Poll for interrupts/device service
+      void (*poll)(struct eth_drv_sc *sc);
+      // Get interrupt information from hardware driver
+      int (*int_vector)(struct eth_drv_sc *sc);
+      // Logical driver interface
+      struct eth_drv_funs *eth_drv, *eth_drv_old;
+  };
+
+  struct eth_drv_sc {
+      struct eth_hwr_funs *funs;
+      void                *driver_private;
+      const char          *dev_name;
+      struct arpcom       sc_arpcom; /* ethernet common */
+  };
+
+You create one of these instances using the "ETH_DRV_SC()" macro which
+sets up the structure, including the prototypes for the functions, etc.
+By doing things this way, if the internal design of the ethernet drivers
+changes (e.g. we need to add a new low-level implementation function),
+existing drivers will no longer compile until updated.  This is much
+better than to have all of the definitions in the low-level drivers
+themselves and have them be [quietly] broken if the interfaces change.
+
+The "magic" which gets the drivers started [and indeed, linked] is
+similar to what is used for the I/O subsystem. [Note: I may try and
+make it part of the I/O subsystem later.]  This is done using the
+"NETDEVTAB_ENTRY()" macro, which defines an initialization function
+and the basic data structures for the low-level driver.
+
+  typedef struct cyg_netdevtab_entry {
+      const char        *name;
+      bool             (*init)(struct cyg_netdevtab_entry *tab);
+      void              *device_instance;
+      unsigned long     status;
+  } cyg_netdevtab_entry_t;
+
+The "device_instance" entry here would point to the "struct
+eth_drv_sc" entry previously defined.  This allows the network driver
+setup to work with any class of driver, not just ethernet drivers.  In
+the future, there will surely be serial PPP drivers, etc.  These will
+use the "NETDEVTAB" setup to create the basic driver, but they will
+most likely be built on top of other high-level device driver layers.
+
+So, the bottom line is that a hardware driver will have a template
+(boilerplate) which looks like this:
+
+	#include <cyg/infra/cyg_type.h>
+	#include <cyg/hal/hal_arch.h>
+	#include <cyg/infra/diag.h>
+	#include <cyg/hal/drv_api.h>
+	#include <cyg/io/eth/netdev.h>
+	#include <cyg/io/eth/eth_drv.h>
+
+	ETH_DRV_SC(DRV_sc,
+	           0,             // No driver specific data needed
+	           "eth0",        // Name for this interface
+	           HRDWR_start,
+	           HRDWR_stop,
+	           HRDWR_control,
+	           HRDWR_can_send
+	           HRDWR_send,
+	           HRDWR_recv);
+
+	NETDEVTAB_ENTRY(DRV_netdev, 
+	                "DRV", 
+	                DRV_HRDWR_init, 
+	                &DRV_sc);
+
+This, along with the referenced functions, completely define the driver.
+Extensibility note: if one needed the same low-level driver to handle
+multiple similar hardware interfaces, you would need multiple invocations
+of the "ETH_DRV_SC()/NETDEVTAB_ENTRY()" macros.  You would add a pointer
+to some instance specific data, e.g. containing base addresses, interrupt
+numbers, etc, where the "0, // No driver specific data" is currently.
+
+Now a quick waltz through the functions.  This discussion will use the
+generic names from above.
+
+static bool DRV_HDWR_init(struct cyg_netdevtab_entry *tab)
+==========================================================
+
+This function is called as part of system initialization.  Its primary
+function is to decide if the hardware [as indicated via
+tab->device_instance] is working and if the interface needs to be made
+available in the system.  If this is the case, this function needs to
+finish with a call to the ethernet driver function:
+
+	eth_drv_init((struct eth_drv_sc *)tab->device_instance,
+	             unsigned char *enaddr);
+
+where 'enaddr' is a pointer to the ethernet station address for this
+unit.  Note: the ethernet station address is supposed to be a
+world-unique, 48 bit address for this particular ethernet interface.
+Typically it is provided by the board/hardware manufacturer in ROM.
+
+In many packages it is possible for the ESA to be set from RedBoot,
+(perhaps from 'fconfig' data), hard-coded from CDL, or from an EPROM.
+A driver should choose a run-time specified ESA (e.g. from RedBoot)
+preferentially, otherwise (in order) it should use a CDL specified
+ESA if one has been set, otherwise an EPROM set ESA, or otherwise
+fail. See the cl/cs8900a eth driver for an example.
+
+static void
+HRDWR_start(struct eth_drv_sc *sc, unsigned char *enaddr, int flags)
+====================================================================
+
+This function is called, perhaps much later than system initialization
+time, when the system (an application) is ready for the interface to
+become active.  The purpose of this function is to set up the hardware
+interface to start accepting packets from the network and be able to
+send packets out.  Note: this function will be called whenever the
+up/down state of the logical interface changes, e.g. when the IP address
+changes.  This may occur more than one time, so this function needs to
+be prepared for that case.
+
+FUTURE: the "flags" field (currently unused) may be used to tell the
+function how to start up, e.g. whether interrupts will be used,
+selection of "promiscuous" mode etc.
+
+static void HRDWR_stop(struct eth_drv_sc *sc)
+=============================================
+
+This function is the inverse of "start".  It should shut down the
+hardware and keep it from interacting with the physical network.
+
+static int
+HRDWR_control(struct eth_drv_sc *sc, unsigned long key, void *data, int len)
+============================================================================
+
+This function is used to perform low-level "control" operations on the
+interface.  These operations would be initiated via 'ioctl()' in the BSD
+stack, and would be anything that would require the hardware setup to
+possibly change (i.e.  cannot be performed totally by the
+platform-independent layers).
+
+Current operations:
+
+ETH_DRV_SET_MAC_ADDRESS:
+  This function sets the ethernet station address (ESA or MAC) for the
+  device.  Normally this address is kept in non-volatile memory and is
+  unique in the world.  This function must at least set the interface to
+  use the new address.  It may also update the NVM as appropriate.
+
+This function should return zero if the specified operation was
+completed successfully.  It should return non-zero if the operation
+could not be performed, for any reason.
+
+static int HRDWR_can_send(struct eth_drv_sc *sc)
+================================================
+
+This function is called to determine if it is possible to start the
+transmission of a packet on the interface.  Some interfaces will allow
+multiple packets to be "queued" and this function allows for the highest
+possible utilization of that mode.
+
+Return the number of packets which could be accepted at this time, zero
+implies that the interface is saturated/busy.
+
+static void
+HRDWR_send(struct eth_drv_sc *sc, struct eth_drv_sg *sg_list, int sg_len,
+                       int total_len, unsigned long key)
+=========================================================================
+
+This function is used to send a packet of data to the network.  It is
+the responsibility of this function to somehow hand the data over to the
+hardware interface.  This will most likely require copying, but just the
+address/length values could be used by smart hardware.
+
+NOTE: All data in/out of the driver is specified via a "scatter-gather"
+list.  This is just an array of address/length pairs which describe
+sections of data to move (in the order given by the array).
+
+Once the data has been successfully sent by the interface (or if an
+error occurs), the driver should call 'eth_drv_tx_done()' using the
+specified 'key'.  Only then will the upper layers release the resources
+for that packet and start another transmission.
+
+FUTURE: This function may be extended so that the data need not be
+copied by having the function return a "disposition" code (done, send
+pending, etc).  At this point, you should move the data to some "safe"
+location before returning.
+
+static void
+HRDWR_recv(struct eth_drv_sc *sc, struct eth_drv_sg *sg_list, int sg_len)
+=========================================================================
+
+This function is actually a call back, only invoked after the
+upper-level function
+  eth_drv_recv(struct eth_drv_sc *sc, int total_len)
+has been called.  This upper level function is called by the hardware
+driver when it knows that a packet of data is available on the
+interface.  The 'eth_drv_recv()' function then arranges network buffers
+and structures for the data and then calls "HRDWR_recv()" to actually
+move the data from the interface.
+
+static void
+HRDWR_deliver(struct eth_drv_sc *sc)
+=========================================================================
+
+This function is actually a call back, and notifies the driver that delivery
+is happening. This allows it to actually do the copy of packet data to/from
+the hardware from/to the packet buffer. And once that's done, then do things
+like unmask its interrupts, and free any relevant resources so it can process
+further packets.
+
+In general it will be called from the user thread responsible for delivering
+network packets.
+
+static void
+HRDWR_poll(struct eth_drv_sc *sc)
+=========================================================================
+
+This function is used when in a non-interrupt driven system, e.g. when
+interrupts are completely disabled. This allows the driver time to check
+whether anything needs doing either for transmission, or to check if
+anything has been received, or if any other processing needs doing..
+
+static int
+HRDWR_int_vector(struct eth_drv_sc *sc)
+=========================================================================
+
+This function returns the interrupt vector number used for RX interrupts.
+This is so the common GDB stubs infrastructure can detect when to check
+for incoming ctrl-c's when doing debugging over ethernet.
+
+Upper layer functions - called by drivers
+=========================================
+
+These functions are defined by the upper layers (machine independent) of
+the networking driver support.  They are present to hide the interfaces
+to the actual networking stack so that the hardware drivers may possibly
+be used by any network stack implementation.
+
+These functions require a pointer to a "struct eth_drv_sc" table which
+describes the interface at a logical level.  It is assumed that the
+driver [lowest level hardware support] will keep track of this pointer
+so it may be passed "up" as appropriate.
+
+  struct eth_drv_sc {
+      struct eth_drv_funs *funs; // Pointer to hardware functions (see above)
+      void                *driver_private;   // Device specific data
+      const char          *dev_name;
+      struct arpcom       sc_arpcom; // ethernet common
+  };
+
+This structure is created, one per logical interface, via ETH_DRV_SC macro.
+
+void eth_drv_init(struct eth_drv_sc *sc, unsigned char *enaddr)
+===============================================================
+
+This function establishes the device at initialization time.  The
+hardware should be totally intialized (not "started") when this function
+is called.
+
+void eth_drv_tx_done(struct eth_drv_sc *sc, unsigned long key, int status)
+==========================================================================
+
+This function is called when a packet completes transmission on the
+interface.  The 'key' value must be one of the keys provided to
+"HRDWR_send()" above.  The value 'status' should be non-zero (currently
+undefined) to indicate that an error occurred during the transmission.
+
+void eth_drv_recv(struct eth_drv_sc *sc, int len)
+=================================================
+
+This function is called to indicate that a packet of length 'len' has
+arrived at the interface.  The callback "HRDWR_recv()" function
+described above will be used to actually unload the data from the
+interface into buffers used by the machine independent layers.
+
+
+
+Calling graph for Transmit and Receive
+--------------------------------------
+
+It may be worth clarifying further the flow of control in the transmit
+and receive cases, where the hardware driver does use interrupts and so
+DSRs to tell the "foreground" when something asynchronous has occurred.
+
+Transmit:
+  Foreground task calls into network stack to send a packet (or the
+  stack decides to send a packet in response to incoming traffic).
+  The driver calls the HRDWR_can_send() function in the hardware driver.
+    HRDWR_can_send() returns the number of available "slots" in which it
+    can store a pending transmit packet.
+  If it cannot send at this time, the packet is queued outside the
+  hardware driver for later; in this case, the hardware is already busy
+  transmitting, so expect an interrupt as described below for completion
+  of the packet currently outgoing.
+  If it can send right now, HRDWR_send() is called.
+    HRDWR_send() copies the data into special hardware buffers, or
+    instructs the hardware to "send that".
+    It also remembers the key that is associated with this tx request.
+  these calls return.
+  ...
+
+  Asynchronously, the hardware makes an interrupt to say "transmit is
+  done"; the ISR quietens the interrupt source in the hardware and
+  requests that the associated DSR be run.
+  The DSR realizes that a transmit request has completed, and calls
+  eth_drv_tx_done() with the same key that it remembered for this tx.
+    eth_drv_tx_done() uses the key to find the resources associated with
+    this transmit request; thus the stack knows that the transmit has
+    completed and its resources can be freed.
+    eth_drv_tx_done() also enquires whether HRDWR_can_send() now says
+    "yes, we can send" and if so, dequeues a further transmit request
+    which may have been queued as described above.  If so:
+      HRDWR_send() copies the data into the hardware buffers, or
+      instructs the hardware to "send that" and remembers the new key.
+  these calls return to the DSR and thus to the foreground.
+  ...
+
+
+Receive:
+  ...
+
+  Asynchronously, the hardware makes an interrupt to say "there is ready
+  data in a receive buffer"; the ISR quietens the interrupt source in
+  the hardware and requests that the associated DSR be run.
+  The DSR realizes that there is data ready and calls eth_drv_recv()
+  with the length of the data that is available.
+    eth_drv_recv() prepares a set of scatter-gather buffers that can
+    accommodate that data.
+    It then calls back into the hardware driver routine HRDWR_recv().
+       HRDWR_recv() must copy the data from the hardware's buffers into
+       the scatter-gather buffers provided, and return.
+    eth_drv_recv() sends the new packet up the network stack and returns.
+  Back in the DSR now, the driver cleans the receive buffer and returns
+  it to the hardware's control, available to receive another packet from
+  the network.
+  The DSR returns to the foreground.
+  ...
+
+
