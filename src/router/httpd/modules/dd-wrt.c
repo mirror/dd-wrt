@@ -2015,6 +2015,8 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   char *next, *wordlist;
   memset (buffer, 0, 256);
   memset (bondnames, 0, 256);
+websWrite(wp,"<fieldset>\n");
+websWrite(wp,"<legend>Bonding</legend>\n");
 websWrite (wp, "<div class=\"setting\">\n");
 websWrite (wp, "<div class=\"label\">Bonding Type</div>\n", count);
 showOptions(wp,"bonding_type","balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",nvram_default_get("bonding_type","balance-rr"));
@@ -2076,6 +2078,7 @@ for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
   nvram_set ("bonding_count", var);
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+websWrite(wp,"</fieldset> <br />\n");
 }
 #endif
 void

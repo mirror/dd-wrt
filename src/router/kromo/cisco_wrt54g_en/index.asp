@@ -324,11 +324,6 @@ function init() {
 								</div>
 							</fieldset><br />
 				
-				<% nvram_match("wl0_mode", "wet", "<!--"); %>
-				<% nvram_match("wl0_mode", "apstawet", "<!--"); %>
-							<% portsetup(); %>
-				<% nvram_match("wl0_mode", "wet", "-->"); %>
-				<% nvram_match("wl0_mode", "apstawet", "-->"); %>
 							
 							<fieldset>
 								<legend><% tran("idx.optional"); %></legend>
