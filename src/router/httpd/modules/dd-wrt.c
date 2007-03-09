@@ -2091,7 +2091,7 @@ ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
   memset (buffer, 0, 256);
   getIfList (buffer, NULL);
   int totalcount = 0;
-  int realcount = atoi (nvram_safe_get ("vlan_tagcount"));
+  int realcount = atoi (nvram_default_get ("vlan_tagcount","0"));
   wordlist = nvram_safe_get ("vlan_tags");
   foreach (word, wordlist, next)
   {
@@ -2211,7 +2211,7 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
   char *next, *wordlist;
   memset (buffer, 0, 256);
   getIfList (buffer, NULL);
-  int realcount = atoi (nvram_safe_get ("bridges_count"));
+  int realcount = atoi (nvram_default_get ("bridges_count","0"));
   wordlist = nvram_safe_get ("bridges");
   foreach (word, wordlist, next)
   {
@@ -2255,12 +2255,12 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
 		 vlan_name);
       websWrite (wp, "&nbsp;STP&nbsp;");
       sprintf (vlan_name, "bridgestp%d", i);
-      showOptions (wp, vlan_name, "On Off", "");
+      showOptions (wp, vlan_name, "On Off", "On");
       websWrite (wp, "&nbsp;Prio&nbsp;");
       sprintf (vlan_name, "bridgeprio%d", i);
       websWrite (wp,
 		 "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-		 vlan_name, "");
+		 vlan_name, "0");
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		 i);
@@ -2346,7 +2346,7 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   memset (bufferif, 0, 256);
   getIfList (buffer, "br");
   getIfList (bufferif, NULL);
-  int realcount = atoi (nvram_safe_get ("bridgesif_count"));
+  int realcount = atoi (nvram_default_get ("bridgesif_count","0"));
   wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
   {
@@ -2391,7 +2391,7 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
       sprintf (vlan_name, "bridgeifprio%d", i);
       websWrite (wp,
 		 "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
-		 vlan_name, "");
+		 vlan_name, "0");
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		 i);
