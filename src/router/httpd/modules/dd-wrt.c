@@ -2020,7 +2020,7 @@ websWrite(wp,"<legend>Bonding</legend>\n");
 websWrite (wp, "<div class=\"setting\">\n");
 websWrite (wp, "<div class=\"label\">Bonding Type</div>\n", count);
 showOptions(wp,"bonding_type","balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",nvram_default_get("bonding_type","balance-rr"));
-websWrite (wp,"&nbsp;Number of Bondings&nbsp;");
+websWrite (wp,"&nbsp;Bonding Interfaces&nbsp;");
 websWrite (wp,"<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n",nvram_default_get("bonding_number","1"));
 websWrite (wp,"</div>\n");
 
@@ -2042,7 +2042,7 @@ for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
     char vlan_name[32];
 //    sprintf (vlan_name, "%s.%s", tag, port);
     websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp, "<div class=\"label\">Bonding %d Interface</div>\n", count);
+    websWrite (wp, "<div class=\"label\">Bonding %d Assignment</div>\n", count);
     websWrite (wp, "&nbsp;Bond&nbsp;");
     sprintf (vlan_name, "bondingifname%d", count);
     showOptions (wp, vlan_name, bondnames, tag);
