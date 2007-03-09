@@ -2338,16 +2338,13 @@ add_bridgeif (webs_t wp)
 void
 ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 {
-  char buffer[256];
   char bufferif[512];
   char bufferif2[256];
   int count = 0;
   static char word[256];
   char *next, *wordlist;
-  memset (buffer, 0, 256);
   memset (bufferif, 0, 512);
   memset (bufferif2, 0, 256);
-  getIfList (buffer, "br");
   getIfList (bufferif, "eth");
 #ifdef HAVE_GATEWORX
   getIfList (bufferif2, "ixp");
@@ -2380,6 +2377,11 @@ for (i=1;i<11;i++)
 	}
     }
 #endif
+  char buffer[256];
+  memset (buffer, 0, 256);
+  getIfList (buffer, "br");
+
+
   int realcount = atoi (nvram_default_get ("bridgesif_count","0"));
   wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
