@@ -22,6 +22,10 @@
 #define CYBERTAN_VERSION	"MiuraBasic v23"
 #elif HAVE_FON
 #define CYBERTAN_VERSION	"FON powered by DD-WRT v23 (" BUILD_DATE ")"
+#elif HAVE_MAKSAT
+#define CYBERTAN_VERSION	"MAKSAT 1.5 (" BUILD_DATE ")"
+#elif HAVE_GATEWORX
+#define CYBERTAN_VERSION	"DD-WRT v24 RC (" BUILD_DATE ")"
 #else
 #define CYBERTAN_VERSION	"DD-WRT v24 Beta (" BUILD_DATE ")"
 #endif
