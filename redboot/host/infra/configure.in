@@ -1,0 +1,164 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl ====================================================================
+dnl
+dnl     configure.in
+dnl
+dnl     Host side implementation of the eCos infrastructure.
+dnl
+dnl ====================================================================
+dnl ####ECOSHOSTGPLCOPYRIGHTBEGIN####
+dnl ----------------------------------------------------------------------------
+dnl Copyright (C) 2002 Bart Veer    
+dnl Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+dnl
+dnl This file is part of the eCos host tools.
+dnl
+dnl This program is free software; you can redistribute it and/or modify it 
+dnl under the terms of the GNU General Public License as published by the Free 
+dnl Software Foundation; either version 2 of the License, or (at your option) 
+dnl any later version.
+dnl 
+dnl This program is distributed in the hope that it will be useful, but WITHOUT 
+dnl ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+dnl FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+dnl more details.
+dnl 
+dnl You should have received a copy of the GNU General Public License along with
+dnl this program; if not, write to the Free Software Foundation, Inc., 
+dnl 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+dnl
+dnl ----------------------------------------------------------------------------
+dnl ####ECOSHOSTGPLCOPYRIGHTEND####
+dnl ====================================================================
+dnl#####DESCRIPTIONBEGIN####
+dnl
+dnl Author(s):	bartv
+dnl Contact(s):	bartv
+dnl Date:	1998/07/13
+dnl Version:	0.01
+dnl
+dnl####DESCRIPTIONEND####
+dnl ====================================================================
+
+dnl No infrastructure is complete without assertions.
+AC_INIT(assert.cxx)
+
+dnl Pick up the support files from the top-level acsupport directory.
+AC_CONFIG_AUX_DIR(../../acsupport)
+
+ECOS_CHECK_BUILD_ne_SRC
+
+dnl Other standard options.
+AC_CANONICAL_HOST
+
+dnl This package is called cyginfra, partly for historical reasons
+dnl and partly to avoid reorganizing the testsuite subdirectory.
+dnl The generated header file may get #include'd indirectly by other
+dnl packages, so it is not a good idea to define package and version.
+AM_INIT_AUTOMAKE(cyginfra, 0.1,0)
+ECOS_SUBST_VERSION(CYGNUM_INFRA_VERSION)
+AM_MAINTAINER_MODE
+
+dnl The package contains a library implemented in C++. It has to be
+dnl buildable under NT. Only a static version of the library is
+dnl of interest at the moment.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_RANLIB
+AC_OBJEXT
+AC_EXEEXT
+ECOS_PROG_MSVC
+ECOS_PROG_STANDARD_COMPILER_FLAGS
+
+dnl Work out the endianness. The standard macro for this is used
+dnl even though it will give warnings at autoconf time.
+AC_C_BIGENDIAN
+
+dnl Work out a suitable datatype for 64 bit arithmetic.
+ECOS_TYPE_64bit
+
+dnl Check the sizes of the pointer and long data types, so that
+dnl CYG_ADDRWORD can be defined correctly.
+AC_CHECK_SIZEOF(int *)
+AC_CHECK_SIZEOF(long)
+
+dnl See whether or not the compiler provides __PRETTY_FUNCTION__
+ECOS_C_PRETTY_FUNCTION
+
+dnl What function should be used to create a temporary file?
+dnl tmpnam() is deprecated for security reasons.
+AC_CHECK_FUNCS(mkstemp)
+
+dnl --------------------------------------------------------------------
+dnl User-settable options. Currently these are handled via --enable
+dnl command line options, in the absence of an accepted and more rational
+dnl alternative.
+
+AC_ARG_ENABLE(tracebufsize,[  --enable-tracebufsize=X size of the trace buffer],[
+    if test "$enableval" = "no" -o "$enableval" = "yes"; then
+        AC_MSG_ERROR("--enable-tracebufsize should be given a suitable value")
+    else
+        AC_DEFINE_UNQUOTED(CYGNUM_INFRA_TRACE_VECTOR_SIZE,$enableval)
+    fi
+])
+
+dnl --------------------------------------------------------------------
+dnl Directory structures.
+dnl
+dnl The purpose of this infrastructure implementation is to provide a way
+dnl of giving host code access to the same set of assertions and tracing
+dnl facilities as are available on the target side. The implementations
+dnl of these facilities has to be rather different, for example the host
+dnl side has to worry about running in both command-line and GUI tools,
+dnl not to mention supporting different languages such as Tcl as well
+dnl as C and C++.
+dnl
+dnl After a successful build there should be a library libcyginfra.a
+dnl which can be linked with the application code and which can get
+dnl installed. In addition there will be a set of header files.
+dnl
+dnl The infrastructure exports four main header files:
+dnl
+dnl    cyg/infra/cyg_type.h	data types, useful macros, and a
+dnl				few compiler-related odds and ends
+dnl
+dnl    cyg/infra/cyg_ass.h      lots of lovely assertion macros
+dnl
+dnl    cyg/infra/cyg_trac.h     lots of lovely trace macros
+dnl
+dnl    cyg/infra/testcase.h     routines for use in testcases
+dnl
+dnl These header files are shared between host and target side, to make
+dnl sure that a consistent set of macros is used between the two. There
+dnl are a number of host-specific extensions in the header files as
+dnl well.
+dnl
+dnl The header files rely on a number of other header files:
+dnl
+dnl    pkgconf/infra.h
+dnl    cyg/hal/basetype.h
+dnl    
+dnl Obviously cyg/hal/basetype.h cannot be shared between host and target,
+dnl instead it has to depend on autoconf information.
+dnl
+dnl Sharing pkgconf/infra.h between host and target is slightly more feasible,
+dnl especially if we get the configuration tool to a point where it can
+dnl be used for both host and target. However for now this would create a
+dnl bit of confusion because two configuration systems would be in use, and
+dnl it seems better to stick with just autoconf for now. Therefore
+dnl pkgconf/infra.h #include's the file generated by autoconf and
+dnl generates the appropriate #define's (it is not a good idea to have
+dnl autoconf generate pkgconf/infra.h directly, autoconf is slightly too
+dnl eager to do substitutions).
+dnl
+dnl The configuration header file that is normally generated is
+dnl config.h. It is more in keeping with eCos conventions to have
+dnl a different header file hostinfra.h instead. This can
+dnl achieved using the appropriate AM_CONFIG_HEADER macro.
+dnl
+dnl Making the copies of cyg_type.h etc. is the responsibility of
+dnl Makefile.am, configure is responsible only for the makefile and for
+dnl hostinfra.h.
+
+AM_CONFIG_HEADER(hostinfra.h:config.h.in)
+AC_OUTPUT(Makefile:Makefile.in testsuite/Makefile:testsuite/Makefile.in)

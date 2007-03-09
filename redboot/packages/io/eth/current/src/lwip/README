@@ -1,0 +1,10 @@
+An EPK of lwip is available from http://humans.iv.ro/jani which has the most
+up-to-date package (at least until it all gets integrated).
+
+It has just been tested on another ARM similar to the EB40 with CS89000
+and it works there too (that board has 128K of RAM).
+
+Alternatively, lw.diff is the diff against the lwip-0.5.3 tree. It contains
+eCos support + an eCos project sample based on unixsim. Look at
+lwip-0.5.3/proj/ecos to see how to use it. Modify the Makefile to suit
+your needs and to reflect your eCos project dir.

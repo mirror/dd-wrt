@@ -1,0 +1,20 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
+
+#undef CYGNUM_INFRA_VERSION
+#undef cyg_halint64
+#undef cyg_halcount64
+#undef CYGDBG_INFRA_DEBUG_FUNCTION_PSEUDOMACRO
+#undef CYGNUM_INFRA_TRACE_VECTOR_SIZE
+
+/* The number of bytes in a int *.  */
+#undef SIZEOF_INT_P
+
+/* The number of bytes in a long.  */
+#undef SIZEOF_LONG
+
+/* Define if you have the mkstemp function.  */
+#undef HAVE_MKSTEMP

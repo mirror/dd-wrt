@@ -1,0 +1,655 @@
+# Makefile.in generated automatically by automake 1.4-p5 from Makefile.am
+
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+#######ECOSHOSTGPLCOPYRIGHTBEGIN####
+# Copyright (C) 2002 Bart Veer
+# Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+#
+# This file is part of the eCos host tools.
+#
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#######ECOSHOSTGPLCOPYRIGHTEND####
+#######DESCRIPTIONBEGIN####
+######DESCRIPTIONEND####
+
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+
+DESTDIR =
+
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+
+top_builddir = .
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ $(AM_INSTALL_PROGRAM_FLAGS)
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+transform = @program_transform_name@
+
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
+CC = @CC@
+CXX = @CXX@
+ECOS_REPOSITORY = @ECOS_REPOSITORY@
+EXEEXT = @EXEEXT@
+MAINT = @MAINT@
+MAKEINFO = @MAKEINFO@
+MSVC_SRCDIR = @MSVC_SRCDIR@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+PACKAGE_DIR = @PACKAGE_DIR@
+PACKAGE_INSTALL = @PACKAGE_INSTALL@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+ecos_CFLAGS = @ecos_CFLAGS@
+ecos_CXXFLAGS = @ecos_CXXFLAGS@
+ecos_INCLUDES = @ecos_INCLUDES@
+ecos_LDADD = @ecos_LDADD@
+ecos_LIBS = @ecos_LIBS@
+ecos_infra_libdir = @ecos_infra_libdir@
+ecos_libcdl_incdir = @ecos_libcdl_incdir@
+ecos_libcdl_libdir = @ecos_libcdl_libdir@
+ecos_tk_includes = @ecos_tk_includes@
+ecos_tk_libs = @ecos_tk_libs@
+
+AUTOMAKE_OPTIONS = 1.3 foreign
+SUBDIRS = testsuite
+
+INCLUDES = @ecos_INCLUDES@
+LIBS = @ecos_LIBS@ @ecos_LDADD@
+AM_CFLAGS = @ecos_CFLAGS@
+AM_CXXFLAGS = @ecos_CXXFLAGS@
+ecos_infra_incdir = @ecos_infra_incdir@
+
+include_HEADERS = cdlcore.hxx cdl.hxx
+
+sources := interp.cxx	    \
+           expr.cxx         \
+           func.cxx	    \
+           refer.cxx        \
+           cdlmisc.cxx      \
+           conflict.cxx     \
+           property.cxx     \
+           parse.cxx        \
+           base.cxx         \
+           value.cxx        \
+           build.cxx	    \
+           dialog.cxx       \
+           wizard.cxx       \
+           interface.cxx    \
+           transact.cxx     \
+           infer.cxx        \
+           database.cxx     \
+           config.cxx       \
+           package.cxx      \
+           component.cxx    \
+           option.cxx
+
+
+noinst_LIBRARIES = libcdl.a
+libcdl_a_SOURCES = $(sources)
+
+infra_headers := $(ecos_infra_incdir)/cyg/infra/cyg_ass.h  \
+                 $(ecos_infra_incdir)/cyg/infra/cyg_trac.h \
+                 $(ecos_infra_incdir)/pkgconf/infra.h      \
+                 $(ecos_infra_incdir)/pkgconf/hostinfra.h  \
+                 $(ecos_infra_incdir)/cyg/infra/cyg_type.h
+
+
+cdlcore_headers := cdlconfig.h cdlcore.hxx
+cdl_headers := $(cdlcore_headers) cdl.hxx
+ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+mkinstalldirs = $(SHELL) $(top_srcdir)/../../acsupport/mkinstalldirs
+CONFIG_HEADER = cdlconfig.h
+CONFIG_CLEAN_FILES = 
+LIBRARIES =  $(noinst_LIBRARIES)
+
+
+DEFS = @DEFS@ -I. -I$(srcdir) -I.
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+libcdl_a_LIBADD = 
+libcdl_a_OBJECTS =  interp.$(OBJEXT) expr.$(OBJEXT) func.$(OBJEXT) \
+refer.$(OBJEXT) cdlmisc.$(OBJEXT) conflict.$(OBJEXT) property.$(OBJEXT) \
+parse.$(OBJEXT) base.$(OBJEXT) value.$(OBJEXT) build.$(OBJEXT) \
+dialog.$(OBJEXT) wizard.$(OBJEXT) interface.$(OBJEXT) \
+transact.$(OBJEXT) infer.$(OBJEXT) database.$(OBJEXT) config.$(OBJEXT) \
+package.$(OBJEXT) component.$(OBJEXT) option.$(OBJEXT)
+AR = ar
+CXXFLAGS = @CXXFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
+HEADERS =  $(include_HEADERS)
+
+DIST_COMMON =  ./stamp-h.in ChangeLog Makefile.am Makefile.in TODO \
+acconfig.h acinclude.m4 aclocal.m4 config.h.in configure configure.in
+
+
+DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
+
+TAR = gtar
+GZIP_ENV = --best
+DEP_FILES =  .deps/base.P .deps/build.P .deps/cdlmisc.P \
+.deps/component.P .deps/config.P .deps/conflict.P .deps/database.P \
+.deps/dialog.P .deps/expr.P .deps/func.P .deps/infer.P \
+.deps/interface.P .deps/interp.P .deps/option.P .deps/package.P \
+.deps/parse.P .deps/property.P .deps/refer.P .deps/transact.P \
+.deps/value.P .deps/wizard.P
+SOURCES = $(libcdl_a_SOURCES)
+OBJECTS = $(libcdl_a_OBJECTS)
+
+all: all-redirect
+.SUFFIXES:
+.SUFFIXES: .S .c .cxx .o .obj .s
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign Makefile
+
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ configure.in  acinclude.m4
+	cd $(srcdir) && $(ACLOCAL)
+
+config.status: $(srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
+	$(SHELL) ./config.status --recheck
+$(srcdir)/configure: @MAINTAINER_MODE_TRUE@$(srcdir)/configure.in $(ACLOCAL_M4) $(CONFIGURE_DEPENDENCIES)
+	cd $(srcdir) && $(AUTOCONF)
+
+cdlconfig.h: stamp-h
+	@if test ! -f $@; then \
+		rm -f stamp-h; \
+		$(MAKE) stamp-h; \
+	else :; fi
+stamp-h: $(srcdir)/config.h.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS=cdlconfig.h:config.h.in \
+	     $(SHELL) ./config.status
+	@echo timestamp > stamp-h 2> /dev/null
+$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@$(srcdir)/stamp-h.in
+	@if test ! -f $@; then \
+		rm -f $(srcdir)/stamp-h.in; \
+		$(MAKE) $(srcdir)/stamp-h.in; \
+	else :; fi
+$(srcdir)/stamp-h.in: $(top_srcdir)/configure.in $(ACLOCAL_M4) acconfig.h
+	cd $(top_srcdir) && $(AUTOHEADER)
+	@echo timestamp > $(srcdir)/stamp-h.in 2> /dev/null
+
+mostlyclean-hdr:
+
+clean-hdr:
+
+distclean-hdr:
+	-rm -f cdlconfig.h
+
+maintainer-clean-hdr:
+
+mostlyclean-noinstLIBRARIES:
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+distclean-noinstLIBRARIES:
+
+maintainer-clean-noinstLIBRARIES:
+
+# FIXME: We should only use cygpath when building on Windows,
+# and only if it is available.
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+mostlyclean-compile:
+	-rm -f *.o core *.core
+	-rm -f *.$(OBJEXT)
+
+clean-compile:
+
+distclean-compile:
+	-rm -f *.tab.c
+
+maintainer-clean-compile:
+
+libcdl.a: $(libcdl_a_OBJECTS) $(libcdl_a_DEPENDENCIES)
+	-rm -f libcdl.a
+	$(AR) cru libcdl.a $(libcdl_a_OBJECTS) $(libcdl_a_LIBADD)
+	$(RANLIB) libcdl.a
+.cxx.o:
+	$(CXXCOMPILE) -c $<
+.cxx.obj:
+	$(CXXCOMPILE) -c `cygpath -w $<`
+
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	  echo " $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p"; \
+	  $(INSTALL_DATA) $$d$$p $(DESTDIR)$(includedir)/$$p; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	list='$(include_HEADERS)'; for p in $$list; do \
+	  rm -f $(DESTDIR)$(includedir)/$$p; \
+	done
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+
+@SET_MAKE@
+
+all-recursive install-data-recursive install-exec-recursive \
+installdirs-recursive install-recursive uninstall-recursive  \
+check-recursive installcheck-recursive info-recursive dvi-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
+	  rev="$$subdir $$rev"; \
+	  test "$$subdir" != "." || dot_seen=yes; \
+	done; \
+	test "$$dot_seen" = "no" && rev=". $$rev"; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP)
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	here=`pwd` && cd $(srcdir) \
+	  && mkid -f$$here/ID $$unique $(LISP)
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+   if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+   fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS)'; \
+	unique=`for i in $$list; do echo $$i; done | \
+	  awk '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)config.h.in$$unique$(LISP)$$tags" \
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags config.h.in $$unique $(LISP) -o $$here/TAGS)
+
+mostlyclean-tags:
+
+clean-tags:
+
+distclean-tags:
+	-rm -f TAGS ID
+
+maintainer-clean-tags:
+
+distdir = $(PACKAGE)-$(VERSION)
+top_distdir = $(distdir)
+
+# This target untars the dist file and tries a VPATH configuration.  Then
+# it guarantees that the distribution is self-contained by making another
+# tarfile.
+distcheck: dist
+	-rm -rf $(distdir)
+	GZIP=$(GZIP_ENV) $(TAR) zxf $(distdir).tar.gz
+	mkdir $(distdir)/=build
+	mkdir $(distdir)/=inst
+	dc_install_base=`cd $(distdir)/=inst && pwd`; \
+	cd $(distdir)/=build \
+	  && ../configure --srcdir=.. --prefix=$$dc_install_base \
+	  && $(MAKE) $(AM_MAKEFLAGS) \
+	  && $(MAKE) $(AM_MAKEFLAGS) dvi \
+	  && $(MAKE) $(AM_MAKEFLAGS) check \
+	  && $(MAKE) $(AM_MAKEFLAGS) install \
+	  && $(MAKE) $(AM_MAKEFLAGS) installcheck \
+	  && $(MAKE) $(AM_MAKEFLAGS) dist
+	-rm -rf $(distdir)
+	@banner="$(distdir).tar.gz is ready for distribution"; \
+	dashes=`echo "$$banner" | sed s/./=/g`; \
+	echo "$$dashes"; \
+	echo "$$banner"; \
+	echo "$$dashes"
+dist: distdir
+	-chmod -R a+r $(distdir)
+	GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)
+	-rm -rf $(distdir)
+dist-all: distdir
+	-chmod -R a+r $(distdir)
+	GZIP=$(GZIP_ENV) $(TAR) chozf $(distdir).tar.gz $(distdir)
+	-rm -rf $(distdir)
+distdir: $(DISTFILES)
+	-rm -rf $(distdir)
+	mkdir $(distdir)
+	-chmod 777 $(distdir)
+	here=`cd $(top_builddir) && pwd`; \
+	top_distdir=`cd $(distdir) && pwd`; \
+	distdir=`cd $(distdir) && pwd`; \
+	cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign Makefile
+	@for file in $(DISTFILES); do \
+	  d=$(srcdir); \
+	  if test -d $$d/$$file; then \
+	    cp -pr $$d/$$file $(distdir)/$$file; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
+	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+	for subdir in $(SUBDIRS); do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d $(distdir)/$$subdir \
+	    || mkdir $(distdir)/$$subdir \
+	    || exit 1; \
+	    chmod 777 $(distdir)/$$subdir; \
+	    (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
+	      || exit 1; \
+	  fi; \
+	done
+
+DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
+
+-include $(DEP_FILES)
+
+mostlyclean-depend:
+
+clean-depend:
+
+distclean-depend:
+	-rm -rf .deps
+
+maintainer-clean-depend:
+
+%.o: %.c
+	@echo '$(COMPILE) -c $<'; \
+	$(COMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
+	@-cp .deps/$(*F).pp .deps/$(*F).P; \
+	tr ' ' '\012' < .deps/$(*F).pp \
+	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+	    >> .deps/$(*F).P; \
+	rm .deps/$(*F).pp
+
+%.lo: %.c
+	@echo '$(LTCOMPILE) -c $<'; \
+	$(LTCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
+	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
+	  < .deps/$(*F).pp > .deps/$(*F).P; \
+	tr ' ' '\012' < .deps/$(*F).pp \
+	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+	    >> .deps/$(*F).P; \
+	rm -f .deps/$(*F).pp
+
+%.o: %.cxx
+	@echo '$(CXXCOMPILE) -c $<'; \
+	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
+	@-cp .deps/$(*F).pp .deps/$(*F).P; \
+	tr ' ' '\012' < .deps/$(*F).pp \
+	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+	    >> .deps/$(*F).P; \
+	rm .deps/$(*F).pp
+
+%.lo: %.cxx
+	@echo '$(LTCXXCOMPILE) -c $<'; \
+	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
+	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
+	  < .deps/$(*F).pp > .deps/$(*F).P; \
+	tr ' ' '\012' < .deps/$(*F).pp \
+	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
+	    >> .deps/$(*F).P; \
+	rm -f .deps/$(*F).pp
+info-am:
+info: info-recursive
+dvi-am:
+dvi: dvi-recursive
+check-am: all-am
+check: check-recursive
+installcheck-am:
+installcheck: installcheck-recursive
+all-recursive-am: cdlconfig.h
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+
+install-exec-am: install-exec-local
+install-exec: install-exec-recursive
+
+install-data-am: install-includeHEADERS
+install-data: install-data-recursive
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+install: install-recursive
+uninstall-am: uninstall-includeHEADERS
+uninstall: uninstall-recursive
+all-am: Makefile $(LIBRARIES) $(HEADERS) cdlconfig.h all-local
+all-redirect: all-recursive-am
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
+installdirs: installdirs-recursive
+installdirs-am:
+	$(mkinstalldirs)  $(DESTDIR)$(includedir)
+
+
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+mostlyclean-am:  mostlyclean-hdr mostlyclean-noinstLIBRARIES \
+		mostlyclean-compile mostlyclean-tags mostlyclean-depend \
+		mostlyclean-generic
+
+mostlyclean: mostlyclean-recursive
+
+clean-am:  clean-hdr clean-noinstLIBRARIES clean-compile clean-tags \
+		clean-depend clean-generic mostlyclean-am clean-local
+
+clean: clean-recursive
+
+distclean-am:  distclean-hdr distclean-noinstLIBRARIES distclean-compile \
+		distclean-tags distclean-depend distclean-generic \
+		clean-am
+
+distclean: distclean-recursive
+	-rm -f config.status
+
+maintainer-clean-am:  maintainer-clean-hdr \
+		maintainer-clean-noinstLIBRARIES \
+		maintainer-clean-compile maintainer-clean-tags \
+		maintainer-clean-depend maintainer-clean-generic \
+		distclean-am
+	@echo "This command is intended for maintainers to use;"
+	@echo "it deletes files that may require special tools to rebuild."
+
+maintainer-clean: maintainer-clean-recursive
+	-rm -f config.status
+
+.PHONY: mostlyclean-hdr distclean-hdr clean-hdr maintainer-clean-hdr \
+mostlyclean-noinstLIBRARIES distclean-noinstLIBRARIES \
+clean-noinstLIBRARIES maintainer-clean-noinstLIBRARIES \
+mostlyclean-compile distclean-compile clean-compile \
+maintainer-clean-compile uninstall-includeHEADERS \
+install-includeHEADERS install-data-recursive uninstall-data-recursive \
+install-exec-recursive uninstall-exec-recursive installdirs-recursive \
+uninstalldirs-recursive all-recursive check-recursive \
+installcheck-recursive info-recursive dvi-recursive \
+mostlyclean-recursive distclean-recursive clean-recursive \
+maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
+distclean-tags clean-tags maintainer-clean-tags distdir \
+mostlyclean-depend distclean-depend clean-depend \
+maintainer-clean-depend info-am info dvi-am dvi check check-am \
+installcheck-am installcheck all-recursive-am install-exec-local \
+install-exec-am install-exec install-data-am install-data install-am \
+install uninstall-am uninstall all-local all-redirect all-am all \
+installdirs-am installdirs mostlyclean-generic distclean-generic \
+clean-generic maintainer-clean-generic clean mostlyclean distclean \
+maintainer-clean
+
+
+@MSVC_TRUE@all-local: cdl.lib
+
+@MSVC_TRUE@cdl.lib: libcdl.a
+@MSVC_TRUE@	$(INSTALL) $< $@
+
+@MSVC_TRUE@clean-local:
+@MSVC_TRUE@	$(RM) cdl.lib
+
+@MSVC_TRUE@install-exec-local: all-local
+@MSVC_TRUE@	$(mkinstalldirs) $(DESTDIR)$(libdir)
+@MSVC_TRUE@	$(INSTALL) cdl.lib $(DESTDIR)$(libdir)/cdl.lib
+
+@MSVC_FALSE@all-local:
+@MSVC_FALSE@clean-local:
+@MSVC_FALSE@install-exec-local: libcdl.a
+@MSVC_FALSE@	$(mkinstalldirs) $(DESTDIR)$(libdir)
+@MSVC_FALSE@	$(INSTALL) libcdl.a $(DESTDIR)$(libdir)/libcdl.a
+
+interp.$(OBJEXT)    : Makefile $(cdlcore_headers) $(infra_headers)
+
+expr.$(OBJEXT)      : Makefile $(cdlcore_headers) $(infra_headers)
+
+infer.$(OBJEXT)     : Makefile $(cdlcore_headers) $(infra_headers)
+
+func.$(OBJEXT)      : Makefile $(cdlcore_headers) $(infra_headers)
+
+refer.$(OBJEXT)     : Makefile $(cdlcore_headers) $(infra_headers)
+
+cdlmisc.$(OBJEXT)   : Makefile $(cdlcore_headers) $(infra_headers)
+
+conflict.$(OBJEXT)  : Makefile $(cdlcore_headers) $(infra_headers)
+
+property.$(OBJEXT)  : Makefile $(cdlcore_headers) $(infra_headers)
+
+parse.$(OBJEXT)     : Makefile $(cdlcore_headers) $(infra_headers)
+
+base.$(OBJEXT)      : Makefile $(cdlcore_headers) $(infra_headers)
+
+value.$(OBJEXT)     : Makefile $(cdlcore_headers) $(infra_headers)
+
+build.$(OBJEXT)     : Makefile $(cdlcore_headers) $(infra_headers)
+
+dialog.$(OBJEXT)    : Makefile $(cdlcore_headers) $(infra_headers)
+
+wizard.$(OBJEXT)    : Makefile $(cdlcore_headers) $(infra_headers)
+
+interface.$(OBJEXT) : Makefile $(cdlcore_headers) $(infra_headers)
+
+transact.$(OBJEXT)  : Makefile $(cdlcore_headers) $(infra_headers)
+
+database.$(OBJEXT)  : Makefile $(cdl_headers) $(infra_headers)
+
+config.$(OBJEXT)    : Makefile $(cdl_headers) $(infra_headers)
+
+package.$(OBJEXT)   : Makefile $(cdl_headers) $(infra_headers)
+
+component.$(OBJEXT) : Makefile $(cdl_headers) $(infra_headers)
+
+option.$(OBJEXT)    : Makefile $(cdl_headers) $(infra_headers)
+
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:

@@ -1,0 +1,120 @@
+# ====================================================================
+#
+#      assert.cdl
+#
+#      Infrastructure debugging/assertion configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  bartv,hmt
+# Contributors:
+# Date:           1999-07-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+# The eCos system uses a number of more specialised assertions in
+# addition to a conventional ASSERT() macro. By default these are all
+# enabled when general assertions are enabled, but it is possible to
+# suppress some of them and thus reduce the size of the generated code.
+#
+# Preconditions check that a condition holds true at the beginning of
+# a piece of code, typically at the start of a function. For example a
+# kernel function might have a precondition that it is only invoked
+# when the scheduler is locked.
+#
+# Postconditions check that a condition holds at the end of a piece of
+# code, typically at the point where a function returns. For example
+# at the end of scheduler initialisation there could be a
+# postcondition that there is at least one runnable thread, the idle
+# thread.
+#
+# Loop invariants check that a condition holds on every iteration of
+# a loop. For example the deferred service support code in the kernel
+# could have a loop invariant that interrupts are enabled whenever
+# there are still DSR's pending.
+
+cdl_option CYGDBG_INFRA_DEBUG_PRECONDITIONS {
+    display       "Preconditions"
+    default_value 1
+    description   "
+        This option allows individual control of preconditions.
+        A precondition is one type of assert, which it is
+        useful to control separately from more general asserts.
+        The function is CYG_PRECONDITION(condition,msg)."
+}
+cdl_option CYGDBG_INFRA_DEBUG_POSTCONDITIONS {
+    display       "Postconditions"
+    default_value 1
+    description   "
+        This option allows individual control of postconditions.
+        A postcondition is one type of assert, which it is
+        useful to control separately from more general asserts.
+        The function is CYG_POSTCONDITION(condition,msg)."
+}
+cdl_option CYGDBG_INFRA_DEBUG_LOOP_INVARIANTS {
+    display       "Loop invariants"
+    default_value 1
+    description   "
+        This option allows individual control of loop invariants.
+        A loop invariant is one type of assert, which it is
+        useful to control separately from more general asserts,
+        particularly since a loop invariant is typically evaluated
+        a great many times when used correctly.
+        The function is CYG_LOOP_INVARIANT(condition,msg)."
+}
+
+cdl_option CYGDBG_INFRA_DEBUG_ASSERT_MESSAGE {
+    display       "Use assert text"
+    default_value 1
+    description   "
+        All assertions within eCos contain a text message
+        which should give some information about the condition
+        being tested.
+        These text messages will end up being embedded in the
+        application image and hence there is a significant penalty
+        in terms of image size.
+        It is possible to suppress the use of these messages by
+        disabling this option.
+        This results in smaller code size, but there is less
+        human-readable information if an assertion actually gets
+        triggered."
+}
+
+# EOF assert.cdl

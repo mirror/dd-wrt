@@ -1,0 +1,92 @@
+RedBoot 2.02 customized for the Gateworks Avila family.
+
+
+This RedBoot source has been customized to operate on the Gateworks Avila 
+platforms GW2342, GW2345, GW2347 and GW2348. This source has also had the 
+Intel  Access Library integrated to allow for NPE use within RedBoot.
+
+The ${TOPDIR}/Makefile is provided to assist with rebuilding RedBoot. 
+This Makefile will allow you to build a RedBoot binary for a 32MByte, 
+64MByte, 128MByte or 256MByte Avila platform. Additional a make target 
+called "world" will build all memory configurations in one run. The 
+target "clean" will simply remove the build directory where building 
+takes place.
+
+After a successful build the RedBoot ROM binary ready to be flashed to an
+Avila platform will be located in ${TOPDIR}/images by default and will be
+named rb-32.bin, rb-64.bin, etc. You can change the destination directory
+by altering the OUTPUT_DIR at the top of the Makefile.
+
+The ${TOPDIR}/bin/ecosconfig tool is used to prepare the RedBoot build 
+tree. This tool requires TCL libraries to be available as it is dynamically 
+linked against TCL and other system libraries. You will not be able to 
+rebuild RedBoot if the ecosconfig tool cannot be executed.
+
+You may optionally, rebuild the ecosconfig tool to work on your development 
+host. See the ${TOPDIR}/host/README file for instructions on rebuilding 
+ecosconfig. After rebuilding ecosconfig you must place it in ${TOPDIR}/bin 
+so that the Makefile can locate it.
+
+
+
+
+
+
+Build Instructions
+---------------------------------
+
+1) Make sure you have the xscale-elf- Cross Compiler described below within 
+your PATH. If the xscale-elf- Cross Compiler is not located in 
+/opt/H-i686-pc-linux-gnulibc2.2/bin you must change the variable named
+TOOL_PATH at the top of the Makefile.
+
+2) Adjust packages/devs/eth/intel/npe/common/v2_0/cdl2/intel_npe_eth_drivers.cdl
+if needed as described below.
+
+3) # make 64 (or 32, 128, 256, world)
+
+4) Use resulting images/rb-64.bin to flash to Avila board.
+
+
+
+
+Cross Compiler
+---------------------------------
+
+xscale-elf Cross Compiler must be within your path
+
+ftp://ftp.ges.redhat.com/private/gnupro-xscale-030422/i686-pc-linux-gnulibc2.2-x-xscale-elf.tar.Z
+
+# export PATH=/opt/path_to_xscale-elf-gcc:$PATH
+
+
+
+
+
+ByteSwap
+---------------------------------
+
+The resulting RedBoot binary ${TOPDIR}/images/rb-64.bin has already been 
+byteswapped upon a successful build. It is ready to be flashed to 
+an Avila board via JTAG using the DOS based Gateworks Flash Programmer 
+Tool (FLASH.EXE). The tools/byteswap tool is used to byteswap the image
+located at build/install/bin/redboot.bin and output it to the OUTPUT_DIR.
+ 
+
+
+
+NPE Link Check Delay
+---------------------------------
+
+During npe_init the Intel Access Library performs excessive (in our opinion) 
+link checks and other initialization which delays RedBoot by up to 6 seconds.
+To reduce the delay by a substantial amount a compiler define has been placed 
+to eliminate link media checking if so desired.
+
+To enable skipping the link check, edit the following file:
+
+packages/devs/eth/intel/npe/common/v2_0/cdl/intel_npe_eth_drivers.cdl
+
+and add -DSKIP_NPE_LINK_CHECK under CYGPKG_DEVS_ETH_INTEL_NPE_CFLAGS_ADD
+
+

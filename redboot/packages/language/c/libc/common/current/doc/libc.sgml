@@ -1,0 +1,561 @@
+<!-- {{{ Banner                         -->
+
+<!-- =============================================================== -->
+<!--                                                                 -->
+<!--     libc.sgml                                                   -->
+<!--                                                                 -->
+<!--     eCos C Library                                              -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- ####COPYRIGHTBEGIN####                                          -->
+<!--                                                                 -->
+<!-- =============================================================== -->
+<!-- Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.  -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/)                            -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission obtained from the copyright holder                   -->
+<!-- =============================================================== -->
+<!--                                                                 -->      
+<!-- ####COPYRIGHTEND####                                            -->
+<!-- =============================================================== -->
+<!-- #####DESCRIPTIONBEGIN####                                       -->
+<!--                                                                 -->
+<!-- ####DESCRIPTIONEND####                                          -->
+<!-- =============================================================== -->
+
+<!-- }}} -->
+
+<PART id="libc">
+<TITLE>The ISO Standard C and Math Libraries</TITLE>
+<CHAPTER id="c-and-math-library-overview">
+<TITLE><!-- <xref> -->C and math library overview</TITLE>
+<anchor id="iso-c-and-math-libraries">
+<PARA><EMPHASIS>eCos</EMPHASIS> provides compatibility with the
+	ISO 9899:1990 specification for the standard C library, which
+	is essentially the same as the better-known ANSI C3.159-1989
+	specification (C-89).</PARA>
+<PARA>There are three aspects of this compatibility supplied by <EMPHASIS>eCos</EMPHASIS>.
+First there is a <!-- <index></index> --><firstterm>C library</firstterm> which
+implements the functions defined by the ISO standard, except for the
+mathematical functions. This is provided by the eCos C library
+packages. </PARA>
+<PARA>Then <EMPHASIS>eCos</EMPHASIS> provides a <!-- <index></index> -->math
+library, which implements the mathematical functions from the ISO
+C library. This distinction between C and math libraries is frequently
+drawn &mdash; most standard C library implementations provide
+separate linkable files for the two, and the math library contains
+all the functions from the <filename>math.h</filename> header
+file.</PARA>
+<PARA>There is a third element to the ISO C library, which is the
+environment in which applications run when they use the standard
+C library. This environment is set up by the C library startup procedure
+(<xref linkend="c-library-startup">)
+and it provides (among other things) a <FUNCTION>main()</FUNCTION> entry
+point function, an <FUNCTION>exit()</FUNCTION> function that
+does the cleanup required by the standard (including handlers registered
+using the <FUNCTION>atexit()</FUNCTION> function), and an environment
+that can be read with <FUNCTION>getenv()</FUNCTION>. </PARA>
+<PARA>The description in this manual focuses on the <EMPHASIS>eCos</EMPHASIS>-specific
+aspects of the C library (mostly related to <EMPHASIS>eCos</EMPHASIS>'s
+configurability) as well as mentioning the omissions from the standard
+in this release. We do not attempt to define the semantics of each
+function, since that information can be found in the ISO, ANSI,
+POSIX and IEEE standards, and the many good books that have been
+written about the standard C library, that cover usage of these
+functions in a more general and useful way.</PARA>
+<SECT1 id="include-non-iso-functions">
+<TITLE>Included non-ISO functions</TITLE>
+<PARA>The following functions from the <!-- <index></index> -->POSIX specification
+are included for convenience: </PARA>
+<PARA>	<literal>extern char **</literal><EMPHASIS>environ</EMPHASIS> variable
+(for setting up the environment for use with <FUNCTION>getenv()</FUNCTION>)</PARA>
+<PARA>	<FUNCTION>_exit()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>strtok_r()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>rand_r()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>asctime_r()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>ctime_r()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>localtime_r()</FUNCTION> </PARA>
+<PARA>	<FUNCTION>gmtime_r()</FUNCTION> </PARA>
+<PARA><EMPHASIS>eCos</EMPHASIS> provides the following additional
+implementation-specific functions within the standard C library
+to adjust the date and time settings:</PARA>
+<PROGRAMLISTING>void <FUNCTION>cyg_libc_time_setdst</FUNCTION>( 
+  cyg_libc_time_dst state
+);</PROGRAMLISTING>
+<PARA>This function sets the state of Daylight Savings Time. The
+values for state are:</PARA>
+<PROGRAMLISTING>CYG_LIBC_TIME_DSTNA   unknown
+CYG_LIBC_TIME_DSTOFF  off
+CYG_LIBC_TIME_DSTON   on</PROGRAMLISTING>
+
+<PROGRAMLISTING>void <FUNCTION>cyg_libc_time_setzoneoffsets</FUNCTION>( 
+  time_t stdoffset, time_t dstoffset
+);</PROGRAMLISTING>
+<PARA>This function sets the offsets from UTC used when Daylight
+Savings Time is enabled or disabled. The offsets are in time_t&rsquo;s,
+which are seconds in the current inplementation.</PARA>
+<PROGRAMLISTING><FUNCTION>Cyg_libc_time_dst cyg_libc_time_getzoneoffsets</FUNCTION>( 
+  time_t *stdoffset, time_t *dstoffset
+);</PROGRAMLISTING>
+<PARA>This function retrieves the current setting for Daylight Savings
+Time along with the offsets used for both STD and DST. The offsets
+are both in time_t&rsquo;s, which are seconds in the
+current implementation.</PARA>
+<PROGRAMLISTING><FUNCTION>cyg_bool cyg_libc_time_settime</FUNCTION>( 
+  time_t utctime
+);</PROGRAMLISTING>
+<PARA>This function sets the current time for the system The time
+is specified as a <type>time_t</type> in UTC.
+It returns non-zero on error.</PARA>
+</SECT1>
+<SECT1 id="math-library-compatibility-modes">
+<TITLE>Math library compatibility modes</TITLE>
+<PARA>This math library is capable of being operated in several
+different compatibility modes. These options deal solely with how
+errors are handled. </PARA>
+<PARA>There are 4 compatibility modes: ANSI/POSIX 1003.1;
+IEEE-754; X/Open Portability Guide issue 3 (XPG3); and
+System V Interface Definition Edition 3. </PARA>
+<PARA>In <!-- <index></index> -->IEEE mode, the <function>matherr()</function> function
+(see below) is never called, no warning messages are printed on
+the stderr output stream, and errno is never set. </PARA>
+<PARA>In <!-- <index></index> -->ANSI/POSIX mode, errno is set correctly,
+but <function>matherr()</function> is never called and no warning messages
+are printed on the stderr output stream. </PARA>
+<PARA>In <!-- <index></index> -->X/Open mode, errno is set correctly,
+<function>matherr()</function> is called, but no warning messages are printed
+on the stderr output stream. </PARA>
+<PARA>In <!-- <index></index> -->SVID mode, functions which overflow return
+a value HUGE (defined in <filename>math.h</filename>), which is the maximum
+single precision floating point value (as opposed to
+HUGE_VAL which is meant to stand for infinity). errno is
+set correctly and <function>matherr()</function> is called. If
+<function>matherr()</function> returns 0, warning messages are printed on
+the stderr output stream for some errors. </PARA>
+<PARA>The mode can be compiled-in as IEEE-only, or any one of the
+above methods settable at run-time. </PARA>
+<NOTE>
+<PARA>This math library assumes that the hardware (or software floating
+point emulation) supports IEEE-754 style arithmetic, 32-bit 2's
+complement integer arithmetic, doubles are in 64-bit IEEE-754 format.</PARA>
+</NOTE>
+<SECT2>
+<TITLE><!-- <index></index> -->	    matherr()</TITLE>
+<PARA>As mentioned above, in X/Open or SVID modes, the user
+	    can supply a function <FUNCTION>matherr()</FUNCTION> of
+	    the form:</PARA>
+<PROGRAMLISTING>int <FUNCTION>matherr</FUNCTION>( struct exception *e )
+</PROGRAMLISTING>
+<PARA>where struct exception is defined as:</PARA>
+<PROGRAMLISTING>struct exception {
+ int type;
+ char *name;
+ double arg1, arg2, retval;
+}; </PROGRAMLISTING>
+<PARA>type is the exception type and is one of:</PARA>
+<VARIABLELIST>
+<VARLISTENTRY>
+<TERM>DOMAIN 	</TERM>
+<LISTITEM>
+
+<PARA>argument domain exception</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM>SING 	</TERM>
+<LISTITEM>
+
+<PARA>argument singularity</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM>OVERFLOW 	</TERM>
+<LISTITEM>
+
+<PARA>overflow range exception</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM>UNDERFLOW 	</TERM>
+<LISTITEM>
+
+<PARA>underflow range exception</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM>TLOSS 	</TERM>
+<LISTITEM>
+
+<PARA>total loss of significance</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+<VARLISTENTRY>
+<TERM>PLOSS 	</TERM>
+<LISTITEM>
+
+<PARA>partial loss of significance</PARA>
+</LISTITEM>
+</VARLISTENTRY>
+</VARIABLELIST>
+<PARA><parameter>name</parameter> is a string containing the name of the
+function</PARA>
+<PARA><parameter>arg1</parameter> and <parameter>arg2</parameter> are the
+arguments passed to the function</PARA>
+<PARA><parameter>retval</parameter> is the default value that will be returned
+by the function, and can be changed by <FUNCTION>matherr()</FUNCTION></PARA>
+<NOTE>
+<PARA>matherr must have &ldquo;C&rdquo; linkage, not &ldquo;C&plus;&plus;&rdquo; linkage.</PARA>
+</NOTE>
+<PARA>If matherr returns zero, or the user doesn't supply
+their own matherr, then the following <EMPHASIS>usually</EMPHASIS> happens
+in SVID mode:</PARA><!-- FIXME: must convert this table -->
+	  <table>
+<title>Behavior of math exception handling</title>
+<tgroup cols="2">
+<thead>
+<row>
+  <entry>Type</entry>
+  <entry>Behavior</entry
+</row>
+</thead>
+<tbody>
+<row>
+<entry>DOMAIN</entry><entry>0.0 returned,
+errno=EDOM, and a message printed on stderr</entry></row>
+<row>
+<entry>SING</entry><entry>HUGE of appropriate
+sign is returned, errno=EDOM, and a message is printed
+on stderr</entry></row>
+<row>
+<entry>OVERFLOW</entry><entry>HUGE of
+appropriate sign is returned, and errno=ERANGE</entry></row>
+<row>
+<entry>UNDERFLOW</entry><entry>0.0 is
+returned and errno=ERANGE</entry></row>
+<row>
+<entry>TLOSS</entry><entry>0.0 is returned,
+errno=ERANGE, and a message is printed on stderr</entry></row>
+<row>
+<entry>PLOSS</entry><entry>The current
+implementation doesn't return this type</entry></row>
+</tbody>
+</tgroup>
+</table>
+<!-- -->
+<PARA>X/Open mode is similar except that the message is
+not printed on stderr and HUGE_VAL is used in place of
+HUGE</PARA>
+</SECT2>
+<SECT2>
+<TITLE>Thread-safety and re-entrancy</TITLE>
+<PARA>With the appropriate configuration options set below, the
+math library is fully thread-safe if:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>Depending on the compatibility mode, the
+		setting of the errno variable from the C library is
+		thread-safe</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Depending on the compatibility mode, sending error messages
+to the stderr output stream using the C library 
+<FUNCTION>fputs()</FUNCTION>
+ function is thread-safe </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Depending on the compatibility mode, the user-supplied 
+<FUNCTION>matherr()</FUNCTION>
+ function and anything it depends on are thread-safe </PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>In addition, with the exception of the <FUNCTION>gamma*()</FUNCTION> and <FUNCTION>lgamma*()</FUNCTION> functions,
+the math library is reentrant (and thus safe to use from interrupt handlers)
+if the Math library is always in IEEE mode.</PARA>
+</SECT2>
+</SECT1>
+<SECT1 id="libc-implementation-details">
+<TITLE>Some implementation details</TITLE>
+<PARA>Here are some details about the <!-- <index></index> -->implementation
+which might be interesting, although they do not affect the ISO-defined
+semantics of the library. </PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA>It is possible to configure 
+<EMPHASIS>eCos</EMPHASIS>
+ to have the standard C library without the kernel. You might want
+to do this to use less memory. But if you disable the kernel, you
+will be unable to use memory allocation, thread-safety and certain
+stdio functions such as input. Other C library functionality is
+unaffected.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The opaque type returned by 
+<FUNCTION>clock()</FUNCTION>
+ is called clock_t, and is implemented as a 64 bit integer.
+The value returned by 
+<FUNCTION>clock()</FUNCTION>
+ is only correct if the kernel is configured with real-time clock
+support, as determined by the CYGVAR_KERNEL_COUNTERS_CLOCK
+configuration option in 
+<FILENAME>kernel.h</FILENAME>
+.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The FILE type is not implemented as a structure, but rather
+as a CYG_ADDRESS. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The GNU C compiler will place its own <EMPHASIS>built-in</EMPHASIS> implementations
+instead of some C library functions. This can be turned off with
+the <EMPHASIS>-fno-builtin</EMPHASIS> option. The functions affected
+by this are 
+<FUNCTION>abs()</FUNCTION>
+, 
+<FUNCTION>cos()</FUNCTION>
+, 
+<FUNCTION>fabs()</FUNCTION>
+, 
+<FUNCTION>labs()</FUNCTION>
+, 
+<FUNCTION>memcmp()</FUNCTION>
+, 
+<FUNCTION>memcpy()</FUNCTION>
+, 
+<FUNCTION>sin()</FUNCTION>
+, 
+<FUNCTION>sqrt()</FUNCTION>
+, 
+<FUNCTION>strcmp()</FUNCTION>
+, 
+<FUNCTION>strcpy()</FUNCTION>
+, and 
+<FUNCTION>strlen()</FUNCTION>
+.</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>For faster execution speed you should avoid this option
+and let the compiler use its built-ins. This can be turned off by
+invoking 
+<EMPHASIS>GCC</EMPHASIS>
+ with the <EMPHASIS>-fno-builtin</EMPHASIS> option. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>memcpy()</FUNCTION>
+ and 
+<FUNCTION>memset()</FUNCTION>
+ are located in the infrastructure package, not in the C library
+package. This is because the compiler calls these functions, and
+the kernel needs to resolve them even if the C library is not configured. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Error codes such as EDOM and ERANGE, as well as 
+<FUNCTION>strerror()</FUNCTION>
+, are implemented in the <EMPHASIS>error</EMPHASIS> package. The
+error package is separate from the rest of the C and math libraries
+so that the rest of 
+<EMPHASIS>eCos</EMPHASIS>
+ can use these error handling facilities even if the C library is
+not configured. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>When 
+<FUNCTION>free()</FUNCTION>
+ is invoked, heap memory will normally be coalesced. If the CYGSEM_KERNEL_MEMORY_COALESCE
+configuration parameter is not set, memory will not be coalesced,
+which might cause programs to fail. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>Signals, as implemented by 
+<filename>&lt;signal.h&gt;</filename>, are guaranteed to work
+correctly if raised using the
+<FUNCTION>raise()</FUNCTION>
+ function from a normal working program context. Using signals from
+within an ISR or DSR context is not expected to work. Also, it is
+not guaranteed that if CYGSEM_LIBC_SIGNALS_HWEXCEPTIONS
+is set, that handling a signal using 
+<FUNCTION>signal()</FUNCTION>
+ will necessarily catch that form of exception. For example, it
+may be expected that a divide-by-zero error would be caught by handling 
+<varname>SIGFPE</varname>. However it depends on the underlying HAL implementation to implement
+the required hardware exception. And indeed the hardware itself
+may not be capable of detecting these exceptions so it may not be
+possible for the HAL implementer to do this in any case. Despite
+this lack of guarantees in this respect, the signals implementation
+is still ISO C compliant since ISO C does not offer any such guarantees
+either. </PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>The 
+<FUNCTION>getenv()</FUNCTION>
+ function is implemented (unless the CYGPKG_LIBC_ENVIRONMENT configuration
+option is turned off), but there is no shell or 
+<FUNCTION>putenv()</FUNCTION>
+ function to set the environment dynamically. The environment is
+set in a global variable environ, declared as:</PARA>
+<PROGRAMLISTING>extern char **environ; // Standard environment definition</PROGRAMLISTING>
+<PARA>The environment can be statically initialized at startup time
+using the CYGDAT_LIBC_DEFAULT_ENVIRONMENT
+option. If so, remember that the final entry of the array initializer
+must be NULL. </PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>Here is a minimal <EMPHASIS>eCos</EMPHASIS> program which
+demonstrates the use of environments (see also the test case in <filename>language/c/libc/current/tests/stdlib/getenv.c</filename>): </PARA>
+<PROGRAMLISTING>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt; // Main header for stdlib functions
+
+extern char **environ; // Standard environment definition
+
+int
+main( int argc, char *argv[] )
+{
+ char *str;
+ char *env[] = { "PATH=/usr/local/bin:/usr/bin",
+ "HOME=/home/fred",
+ "TEST=1234=5678",
+ "home=hatstand",
+ NULL };
+
+ printf("Display the current PATH environment variable\n");
+
+ environ = (char **)&amp;env;
+
+ str = getenv("PATH");
+
+ if (str==NULL) {
+  printf("The current PATH is unset\n");
+ } else {
+  printf("The current PATH is \"%s\"\n", str);
+ }
+ return 0;
+} </PROGRAMLISTING>
+</SECT1>
+<SECT1 id="libc-thread-safety">
+<TITLE><!-- <index></index> -->Thread safety</TITLE>
+<PARA>The ISO C library has configuration options that control thread
+safety, i.e. working behavior if multiple threads call the same
+function at the same time.</PARA>
+<PARA>The following functionality has to be configured correctly,
+or used carefully in a multi-threaded environment:</PARA>
+<ITEMIZEDLIST>
+<LISTITEM>
+<PARA><function>mblen()</function></para>
+</listitem>
+<listitem>
+<para><function>mbtowc()</function></para>
+</listitem>
+<listitem>
+<para><function>wctomb()</function></para>
+</listitem>
+<listitem>
+<para>
+<FUNCTION>printf()</FUNCTION>
+ (and all standard I/O functions except for 
+<FUNCTION>sprintf()</FUNCTION>
+ and 
+<FUNCTION>sscanf()</FUNCTION></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>strtok()</FUNCTION></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>rand()</FUNCTION>
+ and 
+<FUNCTION>srand()</FUNCTION></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>signal()</FUNCTION>
+ and 
+<FUNCTION>raise()</FUNCTION></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA><FUNCTION>asctime()</FUNCTION>
+, 
+<FUNCTION>ctime()</FUNCTION>
+, 
+<FUNCTION>gmtime()</FUNCTION>
+, and 
+<FUNCTION>localtime()</FUNCTION></PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>the 
+<FUNCTION>errno</FUNCTION>
+ variable</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>the 
+<FUNCTION>environ</FUNCTION>
+ variable</PARA>
+</LISTITEM>
+<LISTITEM>
+<PARA>date and time settings</PARA>
+</LISTITEM>
+</ITEMIZEDLIST>
+<PARA>In some cases, to make <EMPHASIS>eCos</EMPHASIS> development
+easier, functions are provided (as specified by POSIX 1003.1) that define
+re-entrant alternatives, i.e. <FUNCTION>rand_r()</FUNCTION>, <FUNCTION>strtok_r()</FUNCTION>, <FUNCTION>asctime_r()</FUNCTION>, <FUNCTION>ctime_r()</FUNCTION>, <FUNCTION>gmtime_r()</FUNCTION>,
+and <FUNCTION>localtime_r()</FUNCTION>. In other cases,
+configuration options are provided that control either locking of functions
+or their shared data, such as with standard I/O streams,
+or by using per-thread data, such as with the <FUNCTION>errno</FUNCTION> variable.</PARA>
+<PARA>In some other cases, like the setting of date and time, no
+re-entrant or thread-safe alternative or configuration is provided
+as it is simply not a worthwhile addition (date and time should
+rarely need to be set.)</PARA>
+</SECT1>
+<SECT1 id="c-library-startup">
+<TITLE><!-- <index></index> --><!-- <xref> -->C library startup</TITLE>
+<PARA>The C library includes a function declared as:</PARA>
+<PROGRAMLISTING>void <FUNCTION>cyg_iso_c_start</FUNCTION>( void )</PROGRAMLISTING>
+<PARA>This function is used to start an environment in which an
+ISO C style program can run in the most compatible way.</PARA>
+<PARA>What this function does is to create a thread which will invoke <FUNCTION>main()</FUNCTION> &mdash; normally
+considered a program's entry point. In particular, it can
+supply arguments to <FUNCTION>main()</FUNCTION> using the CYGDAT_LIBC_ARGUMENTS
+configuration option, and when returning from <FUNCTION>main()</FUNCTION>,
+or calling <FUNCTION>exit()</FUNCTION>, pending stdio file output
+is flushed and any functions registered with <FUNCTION>atexit()</FUNCTION> are
+invoked. This is all compliant with the ISO C standard in this respect. </PARA>
+<PARA>This thread starts execution when the <EMPHASIS>eCos</EMPHASIS> scheduler
+is started. If the <EMPHASIS>eCos</EMPHASIS> kernel package is not
+available (and hence there is no scheduler), then <FUNCTION>cyg_iso_c_start()</FUNCTION> will
+invoke the <FUNCTION>main()</FUNCTION> function directly, i.e.
+it will not return until the <FUNCTION>main()</FUNCTION> function
+returns. </PARA>
+<PARA>The <FUNCTION>main()</FUNCTION> function should be defined
+as the following, and if defined in a C&plus;&plus; file,
+should have &ldquo;C&rdquo; linkage: </PARA>
+<PROGRAMLISTING>extern int <FUNCTION>main</FUNCTION>( 
+  int <EMPHASIS>argc,</EMPHASIS>
+  char *<EMPHASIS>argv[] </EMPHASIS>)</PROGRAMLISTING>
+<PARA>The thread that is started by <FUNCTION>cyg_iso_c_start()</FUNCTION> can
+be manipulated directly, if you wish. For example you can suspend
+it. The kernel C API needs a handle to do this, which is available
+by including the following in your source code.</PARA>
+<PROGRAMLISTING>extern cyg_handle_t cyg_libc_main_thread;</PROGRAMLISTING>
+<PARA>Then for example, you can suspend the thread with the line:</PARA>
+<PROGRAMLISTING>cyg_thread_suspend( cyg_libc_main_thread );</PROGRAMLISTING>
+<PARA>If you call <FUNCTION>cyg_iso_c_start()</FUNCTION> and
+do not provide your own <FUNCTION>main()</FUNCTION> function,
+the system will provide a <FUNCTION>main()</FUNCTION> for you
+which will simply return immediately.</PARA>
+<PARA>In the default configuration, <FUNCTION>cyg_iso_c_start()</FUNCTION> is
+invoked automatically by the <FUNCTION>cyg_package_start()</FUNCTION> function
+in the infrastructure configuration. This means that in the simplest
+case, your program can indeed consist of simply:</PARA>
+<PROGRAMLISTING>int main( int argc, char *argv[] )
+{
+ printf("Hello eCos\n");
+}</PROGRAMLISTING>
+<PARA>If you override <FUNCTION>cyg_package_start()</FUNCTION> or <FUNCTION>cyg_start()</FUNCTION>,
+or disable the infrastructure configuration option CYGSEM_START_ISO_C_COMPATIBILITY
+then you must ensure that you call <FUNCTION>cyg_iso_c_start()</FUNCTION> yourself
+if you want to be able to have your program start at the entry point
+of <FUNCTION>main()</FUNCTION> automatically.</PARA>
+</SECT1>
+</CHAPTER>
+</PART>

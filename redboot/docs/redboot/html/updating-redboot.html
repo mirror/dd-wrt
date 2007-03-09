@@ -1,0 +1,507 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Updating RedBoot</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="PREVIOUS"
+TITLE="Rebuilding RedBoot"
+HREF="rebuilding-redboot.html"><LINK
+REL="NEXT"
+TITLE="Installation and Testing"
+HREF="installation-and-testing.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="rebuilding-redboot.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="installation-and-testing.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="UPDATING-REDBOOT"
+></A
+>Chapter 4. Updating RedBoot</H1
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN1098"
+>Introduction</A
+></H1
+><P
+>RedBoot
+normally runs from flash or ROM (in both cases, it is termed a
+ROM-startup configuration of RedBoot). In the case of flash, it is
+possible to update RedBoot, that is, replace it with a newer version,
+in situ. This process is complicated by the fact that RedBoot is
+running from the very flash which is being updated. The following is
+an outline of the steps needed for updating RedBoot:</P
+><P
+><P
+></P
+><UL
+><LI
+><P
+>Start RedBoot, running from
+flash.</P
+></LI
+><LI
+><P
+>Load and start a different version of RedBoot, running from
+RAM.</P
+></LI
+><LI
+><P
+>Update the primary RedBoot flash image.</P
+></LI
+><LI
+><P
+>Reboot; run RedBoot from flash.</P
+></LI
+></UL
+> In order to execute this process, two versions of RedBoot
+are required; one which runs from flash, and a separate one which runs solely
+from RAM. Both of these images are typically provided as part of the RedBoot
+package, but they may also be rebuilt from source using the instructions provided
+for the platform. </P
+><P
+>On some platforms, RedBoot runs in a ROMRAM-startup
+configuration: RedBoot is stored in the flash or ROM, but when the
+board is reset, it is copied to RAM and executes from there. For these
+platforms where RedBoot is in flash, the update in-situ process is
+simplified since the ROMRAM-startup configuration of RedBoot can
+update the flash content. The update procedure becomes:</P
+><P
+><P
+></P
+><UL
+><LI
+><P
+>Start ROMRAM RedBoot, running from
+RAM.</P
+></LI
+><LI
+><P
+>Update the primary RedBoot flash image.</P
+></LI
+><LI
+><P
+>Reboot; run the new ROMRAM RedBoot from ram.</P
+></LI
+></UL
+>In order to execute this process, only one version of
+RedBoot is required; a ROMRAM-startup configuration. This image is
+typically provided as part of the RedBoot package, but it may also be
+rebuilt from source using the instructions provided for the
+platform.</P
+><P
+>The following is a more detailed look at these steps. For this process,
+it is assumed that the target is connected to a host system and that there
+is some sort of serial connection used for the RedBoot CLI. For
+platforms with a ROMRAM-startup configuration of RedBoot, skip to
+<A
+HREF="updating-redboot.html#UPDATE-PRIMARY-IMAGE"
+>the Section called <I
+>Update the primary RedBoot flash image</I
+></A
+>.</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1127"
+>Start RedBoot, Running from flash</A
+></H2
+><P
+>To start RedBoot, reset the platform. </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="DIFFERENT-VERSION-FROM-RAM"
+>Load and start a different version of RedBoot, running from RAM</A
+></H2
+><P
+>There are a number of choices here. The basic case is where the RAM
+based version has been stored in the FIS (flash Image System). To load and
+execute this version, use the commands: <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis load RedBoot[backup]</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>
+If this image is not available, or does not work,
+then an alternate RAM based image must be loaded. Using the load command:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>load redboot_RAM.srec</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>The details of how to load are installation specific. The file must
+be placed somewhere the host computer can provide it to the target RedBoot
+system. Either TFTP (shown) or X/Ymodem can be used to download the image
+into RAM.</P
+></BLOCKQUOTE
+></DIV
+>Once the image is loaded into RAM, it may be used to update the secondary
+RedBoot image in flash using the FIS commands. Some platforms support locking
+(write protecting) certain regions of the flash, while others do not. If your
+platform does not support the lock/unlock commands, simply ignore these steps.
+Again, the details of these commands (in particular the numeric values) differ
+on each target platform, but the ideas are the same:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis unlock -f &lt;flash addr&#62; -l &lt;flash length&#62;</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis create RedBoot[backup] -f &lt;flash addr&#62; -b &lt;flash source&#62;
+         -r &lt;image addr&#62; -l &lt;flash length&#62;</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis lock -f &lt;flash addr&#62; -l &lt;flash length&#62;</KBD
+></PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="UPDATE-PRIMARY-IMAGE"
+>Update the primary RedBoot flash image</A
+></H2
+><P
+>At this point, a version of RedBoot is running on the target, in
+RAM.  </P
+><P
+>Using the <B
+CLASS="COMMAND"
+>load</B
+> command, download the
+new flash based version from the host.</P
+><P
+>Since the flash version is designed to load and run from flash, the
+image must be relocated into some suitable, available, RAM location. The details
+of this are target platform specific (found in the target appendix), but the
+command will look something like this:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>load redboot_ROM.srec -b &lt;flash source&#62;</KBD
+></PRE
+></TD
+></TR
+></TABLE
+>
+This command loads the flash image into RAM at <KBD
+CLASS="USERINPUT"
+>flash_source</KBD
+>,
+using the TFTP protocol via a network connection. Other options are available,
+refer to the command section on <B
+CLASS="COMMAND"
+>load</B
+> for
+more details. </P
+><P
+>Once the image is loaded into RAM, it must be placed into flash using
+the FIS commands. Some platforms support locking (write protecting) certain
+regions of the flash, while others do not. If your platform does not support
+the lock/unlock commands, simply ignore these steps. Again, the details of
+these commands (in particular the numeric values) differ on each target platform,
+but the ideas are the same:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis unlock -f &lt;flash addr&#62; -l &lt;flash length&#62;</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis create RedBoot -f &lt;flash addr&#62; -b &lt;flash source&#62; -l &lt;flash length&#62;
+         -s &lt;data length&#62;  </KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis lock -f &lt;flash addr&#62; -l &lt;flash addr&#62;</KBD
+></PRE
+></TD
+></TR
+></TABLE
+></P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>RedBoot will display a number of lines of information as it executes
+these commands. Also, the size (-s) value for the create operation should
+be determined from the output provided as part of the file download step.
+ </P
+><P
+>It is not required, but it does allow for improved image validity checking
+in the form of an image checksum.</P
+></BLOCKQUOTE
+></DIV
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>After the flash image directory has been initialized with the
+<B
+CLASS="COMMAND"
+>fis init</B
+> command it is possible to use a shorthand version
+of the <B
+CLASS="COMMAND"
+>fis create</B
+> command since it can get the
+necessary information from the flash image directory:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis create RedBoot -b &lt;flash source&#62;</KBD
+></PRE
+></TD
+></TR
+></TABLE
+></P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1172"
+>Reboot; run RedBoot from flash</A
+></H2
+><P
+>Once the image has been successfully written into the flash, simply
+reboot the target and the new version of RedBoot will be running. </P
+><P
+>When installing RedBoot for the first time, or after updating to
+a newer RedBoot with different configuration keys, it is necessary to
+update the configuration directory in the flash using the
+<B
+CLASS="COMMAND"
+>fconfig -i</B
+> command.</P
+><P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>There may be times when RedBoot does not exist on the hardware, thus
+making step 1 impossible to do. In these cases, it should be possible to get
+to step 2 by using GDB. If this is possible, the appropriate steps are provided
+with the target documentation. </P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="rebuilding-redboot.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="installation-and-testing.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Rebuilding RedBoot</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Installation and Testing</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
