@@ -498,8 +498,6 @@ deconfigure_single (int count)
   sprintf (dev, "ath%d", count);
   if (ifexists (dev))
     br_del_interface ("br0", dev);
-  if (ifexists ("bond0"))
-    br_del_interface ("br0", "bond0");
   if (ifexists (dev))
     eval ("ifconfig", dev, "down");
   char vifs[128];
@@ -543,25 +541,8 @@ deconfigure_single (int count)
 	  eval ("wlanconfig", dev, "destroy");
 	}
     }
-disable_apisolation();
 }
 
-void enable_apisolation(void)
-{
-eval ("insmod", "ebtables");
-eval ("insmod", "ebtable_nat");
-eval ("insmod", "ebtable_filter");
-eval ("insmod", "ebt_arp");
-eval("ebtables","-t","madwifi","-A","FORWARD","-p","arp","-j","DROP");
-}
-void disable_apisolation(void)
-{
-eval("ebtables","-t","madwifi","-F");
-eval ("insmod", "ebt_arp");
-eval ("insmod", "ebtable_filter");
-eval ("insmod", "ebtable_nat");
-eval ("insmod", "ebtables");
-}
 
 
 void
@@ -1191,7 +1172,7 @@ adjust_regulatory (int count)
 }
 
 static void
-configure_single (int count, int isbond)
+configure_single (int count)
 {
   char *next;
   char var[80];
@@ -1216,8 +1197,8 @@ configure_single (int count, int isbond)
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
-  sprintf (wifivifs, "ath%d_vifs", isbond ? -1 : count);
-  sprintf (wl, "ath%d_mode", isbond ? 0 : count);
+  sprintf (wifivifs, "ath%d_vifs", count);
+  sprintf (wl, "ath%d_mode", count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (power, "ath%d_txpwrdbm", count);
   sprintf (sens, "ath%d_distance", count);
@@ -1481,14 +1462,11 @@ configure_single (int count, int isbond)
 
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
-      if (nvram_match ("wifi_bonding", "0"))
-	{
 	  char bridged[32];
 	  sprintf (bridged, "%s_bridged", dev);
 	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (dev, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
 		br_add_interface (getBridge (dev), dev);
 	    }
 	  else
@@ -1500,7 +1478,6 @@ configure_single (int count, int isbond)
 	      ifconfig (dev, IFUP, nvram_safe_get (ip),
 			nvram_safe_get (mask));
 	    }
-	}
     }
 
 // vif netconfig
@@ -1519,7 +1496,6 @@ configure_single (int count, int isbond)
 	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
-	      if (nvram_match ("wifi_bonding", "0"))
 		br_add_interface (getBridge (var), var);
 	    }
 	  else
@@ -1640,8 +1616,6 @@ if (ifexists(wif))
   int c = getdevicecount ();
   int i;
   int changed = 0;
-  if (nvram_match("ap_isolation","1"))
-    enable_apisolation();
   for (i = 0; i < c; i++)
     adjust_regulatory (i);
 
@@ -1675,11 +1649,7 @@ if (ifexists(wif))
       if (!changed)		// if regdomain not changed, configure it
 #endif
 	{
-#ifdef HAVE_BONDING
-	  configure_single (i, nvram_match ("wifi_bonding", "1") ? 1 : 0);
-#else
-	  configure_single (i, 0);
-#endif
+	  configure_single (i);
 	}
     }
 
@@ -1688,22 +1658,6 @@ if (ifexists(wif))
       deconfigure_wifi ();
       configure_wifi ();
     }
-#ifdef HAVE_BONDING
-  eval ("ifconfig", "bond0", "down");
-  eval ("rmmod", "bonding");
-  if (nvram_match ("wifi_bonding", "1"))
-    {
-      eval ("insmod", "bonding");
-      eval ("ifconfig", "bond0", "0.0.0.0", "up");
-      for (i = 0; i < c; i++)
-	{
-	  char dev[16];
-	  sprintf (dev, "ath%d", i);
-	  eval ("ifenslave", "bond0", dev);
-	}
-      br_add_interface (getBridge ("bond0"), "bond0");
-    }
-#endif
   if (need_commit)
     {
       nvram_commit ();
