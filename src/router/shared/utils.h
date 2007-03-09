@@ -127,7 +127,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_DELL_TRUEMOBILE_2300 0x2410
 
 //Dell TrueMobile 2300 v2 (4712 cpu, ADM6996 switch, fccid: Gemtek MXF-R921212G)
-#define ROUTER_DELL_TRUEMOBILE_2300_V2 0x250f
+#define ROUTER_DELL_TRUEMOBILE_2300_V2 0x2510
 
 //Fonera (Atheros SoC, no switch, fccid: Accton HED-FON2100)
 #define ROUTER_BOARD_FONERA 0x2601
