@@ -4043,7 +4043,7 @@ char *getBridgePrio(char *ifname)
     if (!strcmp(port,ifname))
 	return port;
   }
-return nvram_safe_get("lan_ifname"); 
+return "0"; 
 }
 
 void stop_bridgesif(void)
