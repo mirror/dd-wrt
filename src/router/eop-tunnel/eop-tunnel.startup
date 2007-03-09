@@ -7,7 +7,7 @@ do
 	if test -e "${i}.pid"
 	then 
 	    /bin/kill -9 `cat ${i}.pid` 2>&1 > /dev/null
-	    /usr/sbin/brctl delif br0 tap10${i} 2>&1 > /dev/null
+	    /usr/sbin/brctl delif $(/sbin/getbridge EOP${i}) tap10${i} 2>&1 > /dev/null
 	    /usr/sbin/openvpn --rmtun --dev tap10${i} 2>&1 > /dev/null
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
@@ -17,7 +17,8 @@ do
 		then
 			/sbin/ifconfig tap10${i} up 2>&1 > /dev/null
 			/sbin/ifconfig tap10${i} PROMISC 2>&1 > /dev/null
-			/usr/sbin/brctl addif br0 tap10${i} 2>&1 > /dev/null
+			/usr/sbin/brctl addif $(/sbin/getbridge EOP${i}) tap10${i} 2>&1 > /dev/null
+			/usr/sbin/brctl setportprio $(/sbin/getbridge EOP${i}) tap10${i} $(/sbin/getbridgeprio EOP${i})
 		else
 			/sbin/ifconfig tap10${i} $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) up 2>&1 > /dev/null
     		fi

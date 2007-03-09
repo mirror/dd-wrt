@@ -299,6 +299,9 @@ start_single_service (void)
       stop_service ("bridgesif");
       stop_service ("vlantagging");
 #endif
+#ifdef HAVE_BONDING
+      stop_service("bonding");
+#endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
@@ -306,6 +309,9 @@ start_single_service (void)
       stop_service ("wan");
 #ifdef HAVE_VLANTAGGING
       start_service ("bridging");
+#endif
+#ifdef HAVE_BONDING
+      start_service("bonding");
 #endif
       start_service ("lan");
 #ifdef HAVE_VLANTAGGING
@@ -461,6 +467,9 @@ start_single_service (void)
       stop_service ("vlantagging");
 #endif
       stop_service ("lan");
+#ifdef HAVE_BONDING
+      stop_service("bonding");
+#endif
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
 #endif
@@ -469,6 +478,9 @@ start_single_service (void)
       start_service ("bridging");
 #endif
       start_service ("lan");
+#ifdef HAVE_BONDING
+      start_service("bonding");
+#endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
 	  start_service ("bridgesif");
@@ -609,6 +621,9 @@ start_single_service (void)
       stop_service ("bridgesif");
       stop_service ("vlantagging");
 #endif
+#ifdef HAVE_BONDING
+      stop_service("bonding");
+#endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
@@ -630,6 +645,9 @@ start_single_service (void)
       start_service ("bridging");
 #endif
       start_service ("lan");
+#ifdef HAVE_BONDING
+      start_service("bonding");
+#endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridgesif");
@@ -682,6 +700,9 @@ start_single_service (void)
       stop_service ("bridgesif");
       stop_service ("vlantagging");
 #endif
+#ifdef HAVE_BONDING
+      stop_service("bonding");
+#endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
@@ -703,6 +724,9 @@ start_single_service (void)
       start_service ("bridging");
 #endif
       start_service ("lan");
+#ifdef HAVE_BONDING
+      start_service("bonding");
+#endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridgesif");
