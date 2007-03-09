@@ -65,6 +65,9 @@ endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
+ifeq ($(CONFIG_BONDING),y)
+CFLAGS += -DHAVE_BONDING
+endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
 endif
@@ -347,6 +350,8 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
+	cd $(INSTALLDIR)/sbin && ln -sf rc getbridge
+	cd $(INSTALLDIR)/sbin && ln -sf rc getbridgeprio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect

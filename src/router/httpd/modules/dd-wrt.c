@@ -2338,7 +2338,7 @@ void
 ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 {
   char buffer[256];
-  char bufferif[256];
+  char bufferif[512];
   int count = 0;
   static char word[256];
   char *next, *wordlist;
@@ -2346,6 +2346,20 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   memset (bufferif, 0, 256);
   getIfList (buffer, "br");
   getIfList (bufferif, NULL);
+int i;
+#ifdef HAVE_EOP_TUNNEL
+for (i=1;i<11;i++)
+    {
+    char oet[32];
+    char EOP[32];
+    sprintf(oet,"oet%d_bridged",i);
+    if (nvram_match(oet,"1"))
+	{
+	sprintf(EOP,"EOP%d",i);
+	sprintf(bufferif,"%s %s",EOP);
+	}
+    }
+#endif
   int realcount = atoi (nvram_default_get ("bridgesif_count","0"));
   wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
@@ -2375,7 +2389,6 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "</div>\n");
     count++;
   }
-  int i;
   int totalcount = count;
   for (i = count; i < realcount; i++)
     {

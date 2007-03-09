@@ -465,6 +465,9 @@ if (brand!=ROUTER_WRT350N)
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridging");
 #endif
+#ifdef HAVE_BONDING
+	  stop_service ("bonding");
+#endif
 	  stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
 	  stop_service ("bridgesif");
@@ -510,6 +513,9 @@ if (brand!=ROUTER_WRT350N)
 	  start_service ("bridging");
 #endif
 	  start_service ("lan");
+#ifdef HAVE_BONDING
+	  start_service("bonding");
+#endif
 #ifdef HAVE_VLANTAGGING
 	  start_service ("vlantagging");
 	  start_service ("bridgesif");
@@ -865,6 +871,10 @@ main (int argc, char **argv)
   else if (strstr (base, "brctl"))
     return start_main ("brctl", argc, argv);
 #endif
+  else if (strstr (base, "getbridgeprio"))
+    return start_main ("getbridgeprio", argc, argv);
+  else if (strstr (base, "getbridge"))
+    return start_main ("getbridge", argc, argv);
   else if (strstr (base, "watchdog"))
     return watchdog_main (argc, argv);
 //  else if (strstr (base, "reboot"))

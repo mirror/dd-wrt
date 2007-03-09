@@ -172,7 +172,9 @@ endif
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
 endif
-
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+CFLAGS += -DHAVE_EOP_TUNNEL
+endif
 ifeq ($(CONFIG_CHILLILOCAL),y)
 CFLAGS += -DHAVE_CHILLILOCAL
 endif
@@ -225,9 +227,6 @@ endif
 
 ifeq ($(CONFIG_MSSID),y)
   CFLAGS += -DHAVE_MSSID
-endif
-ifeq ($(CONFIG_EOP_TUNNEL),y)
-  CFLAGS += -DHAVE_EOP_TUNNEL
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
