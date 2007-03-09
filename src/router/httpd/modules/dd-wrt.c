@@ -2351,12 +2351,14 @@ int i;
 for (i=1;i<11;i++)
     {
     char oet[32];
+    char oeten[32];
     char EOP[32];
     sprintf(oet,"oet%d_bridged",i);
-    if (nvram_match(oet,"1"))
+    sprintf(oeten,"oet%d_en",i);
+    if (nvram_match(oet,"1") && nvram_match(oeten,"1"))
 	{
 	sprintf(EOP,"EOP%d",i);
-	sprintf(bufferif,"%s %s",EOP);
+	sprintf(bufferif,"%s %s",bufferif,EOP);
 	}
     }
 #endif
