@@ -1,0 +1,303 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>RedBoot Editing Commands</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="PREVIOUS"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="NEXT"
+TITLE="Common Commands"
+HREF="common-commands.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. RedBoot Commands and Examples</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="common-commands.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="REDBOOT-EDITING-COMMANDS"
+>RedBoot Editing Commands</A
+></H1
+><P
+>RedBoot
+uses the following line editing commands. 
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>In this description, <SPAN
+CLASS="GUIBUTTON"
+>^A</SPAN
+> means the character formed
+by typing the letter &#8220;A&#8221; while holding down the control key.</P
+></BLOCKQUOTE
+></DIV
+>
+<P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>Delete</SPAN
+> (0x7F) or 
+<SPAN
+CLASS="GUIBUTTON"
+>Backspace</SPAN
+> (0x08) 
+erases the character to the left of the cursor.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^A</SPAN
+>
+moves the cursor (insertion point) to the beginning of the line.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^K</SPAN
+>
+erases all characters on the line from the cursor to the end.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^E</SPAN
+>
+positions the cursor to the end of the line.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^D</SPAN
+>
+erases the character under the cursor.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^F</SPAN
+>
+moves the cursor one character to the right.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^B</SPAN
+>
+moves the cursor one character to the left.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^P</SPAN
+>
+replaces the current line by a previous line from the history buffer.  
+A small number of lines
+can be kept as history.  Using ^P (and ^N), the current line can be replaced
+by any one of the previously typed lines.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>^N</SPAN
+>
+replaces the current line by the next line from the history buffer.  </P
+></LI
+></UL
+></P
+><P
+>In the case of the <B
+CLASS="COMMAND"
+>fconfig</B
+>
+command, additional editing commands are possible. 
+As data are entered for this command, the current/previous value
+will be displayed and the cursor placed at the end of that data.
+The user may use the editing keys (above) to move around in the data
+to modify it as appropriate.
+Additionally, when certain
+characters are entered at the end of the current value, 
+i.e. entered separately, certain behavior is elicited.</P
+><P
+><P
+></P
+><UL
+><LI
+><P
+>^ (caret) switch to editing the previous item in the 
+<B
+CLASS="COMMAND"
+>fconfig</B
+> list. If fconfig edits item A, followed by item B,
+pressing ^ when changing item B, allows you to change item A. This is similar
+to the up arrow.
+Note: ^P and ^N do not have the same meaning while editing 
+<B
+CLASS="COMMAND"
+>fconfig</B
+> data and should not be used.</P
+></LI
+><LI
+><P
+>. (period) stop editing any further items. This does not change
+the current item.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="GUIBUTTON"
+>Return</SPAN
+> leaves the value
+for this item unchanged. Currently it is not possible to step through the
+value for the start-up script; it must always be retyped.</P
+></LI
+></UL
+></P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="common-commands.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>RedBoot Commands and Examples</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Common Commands</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

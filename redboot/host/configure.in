@@ -1,0 +1,68 @@
+dnl Process this file with autoconf to produce a configure script.
+dnl ====================================================================
+dnl
+dnl     configure.in
+dnl
+dnl     Top-level configure script for eCos host-side software.
+dnl
+dnl ====================================================================
+dnl ####ECOSHOSTGPLCOPYRIGHTBEGIN####
+dnl ----------------------------------------------------------------------------
+dnl Copyright (C) 2002 Bart Veer    
+dnl Copyright (C) 1998, 1999, 2000, 2001 Red Hat, Inc.
+dnl
+dnl This file is part of the eCos host tools.
+dnl
+dnl This program is free software; you can redistribute it and/or modify it 
+dnl under the terms of the GNU General Public License as published by the Free 
+dnl Software Foundation; either version 2 of the License, or (at your option) 
+dnl any later version.
+dnl 
+dnl This program is distributed in the hope that it will be useful, but WITHOUT 
+dnl ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+dnl FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+dnl more details.
+dnl 
+dnl You should have received a copy of the GNU General Public License along with
+dnl this program; if not, write to the Free Software Foundation, Inc., 
+dnl 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+dnl
+dnl ----------------------------------------------------------------------------
+dnl ####ECOSHOSTGPLCOPYRIGHTEND####
+dnl ====================================================================
+dnl#####DESCRIPTIONBEGIN####
+dnl
+dnl Author(s):	bartv
+dnl Contact(s):	bartv
+dnl Date:	1998/12/17
+dnl Version:	0.01
+dnl
+dnl####DESCRIPTIONEND####
+dnl ====================================================================
+
+dnl Generic initialization
+AC_INIT(../acsupport/config.guess)
+AC_CONFIG_AUX_DIR(../acsupport)
+AC_CANONICAL_HOST
+AM_INIT_AUTOMAKE(eCos,2.0,0)
+AM_MAINTAINER_MODE
+ECOS_CHECK_BUILD_ne_SRC
+
+dnl Nothing actually gets built in this directory, so there is no
+dnl point in worrying about compiler flags etc. Instead just
+dnl recurse into appropriate subdirectories. The current directory
+dnl tree is rather deep, so to avoid having to create lots of intermediate
+dnl configure scripts and associated files the required build tree
+dnl subdirectories are created here.
+SUBDIRS="infra libcdl tools/configtool/standalone/common"
+
+AC_OUTPUT_COMMANDS([
+    test -d tools   			       || mkdir tools
+    test -d tools/configtool                   || mkdir tools/configtool
+    test -d tools/configtool/standalone        || mkdir tools/configtool/standalone
+    test -d tools/configtool/standalone/common || mkdir tools/configtool/standalone/common
+])
+
+AC_SUBST(SUBDIRS)
+AC_CONFIG_SUBDIRS(${SUBDIRS})
+AC_OUTPUT(Makefile)

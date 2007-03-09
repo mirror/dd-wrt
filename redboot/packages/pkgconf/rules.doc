@@ -1,0 +1,161 @@
+#=============================================================================
+#
+#    rules.doc
+#
+#    Additional rules for processing documentation written in DocBook/SGML
+#
+#=============================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+#=============================================================================
+#####DESCRIPTIONBEGIN####
+#
+# Author(s):     bartv
+# Date:          2001-01-11
+# Purpose:       Rules for processing documentation
+# Description:
+#     Each package's doc directory's makefile should define the
+#     following variables:
+#       TOPLEVEL   - of the component repository
+#       MAIN_SGML  - documentation entry point
+#       OTHER_SGML - any other .sgml files accessed from main
+#       PICTURES   - referenced by the SGML files
+#####DESCRIPTIONEND####
+#=============================================================================
+
+.PHONY: default check html pdf clean copyfiles
+
+# Locations of the stylesheets and other SGML support files. These
+# have moved around in various releases of the tools.
+ifneq (,$(wildcard /usr/share/sgml/docbook))
+  CATALOG	:= /etc/sgml/catalog
+  ifneq (,$(wildcard /usr/lib/sgml/stylesheet/dsssl/docbook/nwalsh/catalog))
+    DSSSL_CATALOG  := /usr/lib/sgml/stylesheet/dsssl/docbook/nwalsh/catalog
+  else
+    DSSSL_CATALOG := $(firstword $(wildcard /usr/share/sgml/docbook/dsssl-stylesheets-*/catalog))
+  endif
+else
+  ifneq (,$(wildcard /usr/lib/sgml/stylesheets/nwalsh-modular/catalog))
+    CATALOG          := /usr/lib/sgml/CATALOG
+    DSSSL_CATALOG    := /usr/lib/sgml/stylesheets/nwalsh-modular/catalog
+  else
+    ifneq (,$(wildcard /usr/lib/sgml/stylesheet/dsssl/docbook/nwalsh/sgml.catalog))
+      CATALOG        := /usr/lib/sgml/catalog
+      DSSSL_CATALOG  := /usr/lib/sgml/stylesheet/dsssl/docbook/nwalsh/sgml.catalog
+    else
+      Error: unable to locate DocBook tools.
+    endif
+  endif
+endif
+
+A4_STYLESHEET  := $(TOPLEVEL)/pkgconf/ssa4.dsl
+LETTER_STYLESHEET  := $(TOPLEVEL)/pkgconf/ssletter.dsl
+HTML_STYLESHEET  := $(TOPLEVEL)/pkgconf/stylesheet.dsl
+FIXHTML          := $(TOPLEVEL)/pkgconf/fixhtml.tcl
+
+# The files that will be generated:
+ifeq (,$(MAIN_HTML))
+ MAIN_HTML        := $(subst .sgml,.html,$(MAIN_SGML))
+endif
+ifeq (,$(MAIN_PDF))
+ MAIN_PDF         := $(subst .sgml,.pdf,$(MAIN_SGML))
+endif
+
+MAIN_PDFA4        := $(subst .pdf,-a4.pdf,$(MAIN_PDF))
+MAIN_PDFLETTER    := $(subst .pdf,-letter.pdf,$(MAIN_PDF))
+
+# Rules for generating pictures
+GIFS := $(foreach x,$(PICTURES),$(x).gif)
+EPS  := $(foreach x,$(PICTURES),$(x).eps)
+PNGS :=$(foreach x,$(PICTURES),$(x).png)
+
+%.gif: %.fig
+	convert -crop 0x0 $< $@
+
+%.png: %.fig
+	fig2dev -L png $< $@
+
+%.eps: %.fig
+	convert -crop 0x0 $< $@
+
+# This is a little grotty. In some cases we want to just copy files from
+# their source location to the destination's current dir and nothing
+# more.
+copyfiles:
+ifneq (,$(COPYFILES))
+	cp $(COPYFILES) .
+endif
+
+default: check
+
+# Validating an sgml document can be achieved with
+check: $(MAIN_SGML) $(OTHER_SGML) $(GIFS) $(EPS)
+	nsgmls -vs -c $(CATALOG) $<
+
+# Generating HTML from the SGML. In practice multiple .html files may
+# be generated, but for the purposes of dependency analysis the others
+# can be ignored.
+html: copyfiles $(MAIN_HTML)
+
+$(MAIN_HTML): $(MAIN_SGML) $(OTHER_SGML) $(PNGS) $(HTML_STYLESHEET) $(FIXHTML)
+	jade -t sgml -i html -c $(DSSSL_CATALOG) -d $(HTML_STYLESHEET)#html $<
+	tclsh $(FIXHTML)
+
+# PDF files can be generated in a similar fashion.
+pdfa4: copyfiles $(MAIN_PDFA4)
+
+$(MAIN_PDFA4):  $(MAIN_SGML) $(OTHER_SGML) $(PNGS) $(A4_STYLESHEET)
+	jade -o $(subst .pdf,.tex,$(MAIN_PDFA4)) -t tex -V tex-backend -c $(DSSSL_CATALOG) -d $(A4_STYLESHEET)#print $<
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFA4))
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFA4))
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFA4))
+
+pdfletter: copyfiles $(MAIN_PDFLETTER)
+
+$(MAIN_PDFLETTER):  $(MAIN_SGML) $(OTHER_SGML) $(PNGS) $(LETTER_STYLESHEET)
+	jade -o $(subst .pdf,.tex,$(MAIN_PDFLETTER)) -t tex -V tex-backend -c $(DSSSL_CATALOG) -d $(LETTER_STYLESHEET)#print $<
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFLETTER))
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFLETTER))
+	pdfjadetex $(subst .pdf,.tex,$(MAIN_PDFLETTER))
+
+#$(MAIN_PDF):  $(MAIN_SGML) $(OTHER_SGML) $(EPS) $(ECOS_STYLESHEET)
+#	jade -o $(subst .sgml,.tex,$(MAIN_SGML)) -t tex -V tex-backend -d $(ECOS_STYLESHEET)#print $<
+#	jadetex $(subst .sgml,.tex,$(MAIN_SGML))
+#	jadetex $(subst .sgml,.tex,$(MAIN_SGML))
+#	jadetex $(subst .sgml,.tex,$(MAIN_SGML))
+#	dvips -o $(subst .sgml,.ps,$(MAIN_SGML)) $(subst .sgml,.dvi,$(MAIN_SGML))
+#	ps2pdf $(subst .sgml,.ps,$(MAIN_SGML)) $(subst .sgml,.pdf,$(MAIN_SGML))
+
+# Clean. For now assume that all .html, .gif etc files are generated
+clean:
+	rm -rf *.html *.tex *.dvi *.aux *.log *.out *.ps *.pdf *.gif *.eps *.png

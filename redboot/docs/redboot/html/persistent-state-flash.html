@@ -1,0 +1,668 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Persistent State Flash-based Configuration and Control</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="PREVIOUS"
+TITLE="Flash Image System (FIS)"
+HREF="flash-image-system.html"><LINK
+REL="NEXT"
+TITLE="Executing Programs from RedBoot"
+HREF="executing-programs.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="flash-image-system.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. RedBoot Commands and Examples</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="executing-programs.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="PERSISTENT-STATE-FLASH"
+>Persistent State Flash-based Configuration and Control</A
+></H1
+><P
+></P
+><P
+>RedBoot provides flash management support for storage in the flash memory
+of multiple executable images and of non-volatile information such as IP addresses
+and other network information.</P
+><P
+>RedBoot on platforms that support flash based configuration information
+will report the following message the first time that RedBoot is booted on
+the target:</P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>flash configuration checksum error or invalid key</PRE
+></TD
+></TR
+></TABLE
+><P
+>This error can be ignored if no flash based configuration is desired,
+or can be silenced by running the <B
+CLASS="COMMAND"
+>fconfig</B
+>
+command as described below. At this point you may also wish to run the <B
+CLASS="COMMAND"
+>fis init</B
+> command. See other fis commands in <A
+HREF="flash-image-system.html"
+>the Section called <I
+>Flash Image System (FIS)</I
+></A
+>.</P
+><P
+>Certain control and configuration information used by RedBoot can be
+stored in flash. </P
+><P
+>The details of what information is maintained in flash differ, based
+on the platform and the configuration. However, the basic operation used to
+maintain this information is the same. Using the <B
+CLASS="COMMAND"
+>fconfig -l</B
+> command, the information may be displayed and/or changed.</P
+><P
+>If the optional flag <SAMP
+CLASS="COMPUTEROUTPUT"
+>-i</SAMP
+> is specified,
+then the configuration database will be reset to its default
+state. This is also needed the first time RedBoot is installed on the
+target, or when updating to a newer RedBoot with different
+configuration keys.</P
+><P
+>If the optional flag <SAMP
+CLASS="COMPUTEROUTPUT"
+>-l</SAMP
+> is specified,
+the configuration data is simply listed. Otherwise, each configuration parameter
+will be displayed and you are given a chance to change it. The entire value
+must be typed - typing just carriage return will leave a value unchanged.
+Boolean values may be entered using the first letter (<SAMP
+CLASS="COMPUTEROUTPUT"
+>t</SAMP
+>
+for true, <SAMP
+CLASS="COMPUTEROUTPUT"
+>f</SAMP
+> for false). At any time the editing
+process may be stopped simply by entering a period (.) on the line. Entering
+the caret (^) moves the editing back to the previous item. See &#8220;RedBoot
+Editing Commands&#8221;, <A
+HREF="redboot-editing-commands.html"
+>the Section called <I
+>RedBoot Editing Commands</I
+></A
+>. </P
+><P
+>If any changes are made in the configuration, then the updated data
+will be written back to flash after getting acknowledgement from the user.</P
+><P
+>If the optional flag <SAMP
+CLASS="COMPUTEROUTPUT"
+>-n</SAMP
+> is specified
+(with or without <SAMP
+CLASS="COMPUTEROUTPUT"
+>-l</SAMP
+>) then &#8220;nicknames&#8221;
+of the entries are used.  These are shorter and less descriptive than
+&#8220;full&#8221; names.  The full name may also be displayed by adding the
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>-f</SAMP
+> flag.</P
+><P
+>The reason for telling you nicknames is that a quick way to set a single
+entry is provided, using the format
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>  RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fconfig <VAR
+CLASS="REPLACEABLE"
+>nickname</VAR
+> <VAR
+CLASS="REPLACEABLE"
+>value</VAR
+></KBD
+></PRE
+></TD
+></TR
+></TABLE
+>
+If no
+value is supplied, the command will list and prompt for only that entry.
+If a value is supplied, then the entry will be set to that value.  You will
+be prompted whether to write the new information into flash if any change
+was made.  For example
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>  RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fconfig -l -n</KBD
+>
+  boot_script: false
+  bootp: false
+  bootp_my_ip: 10.16.19.176
+  bootp_server_ip: 10.16.19.66
+  dns_ip: 10.16.19.1
+  gdb_port: 9000
+  net_debug: false
+  RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fconfig bootp_my_ip 10.16.19.177</KBD
+>
+  bootp_my_ip: 10.16.19.176 Setting to 10.16.19.177
+  Update RedBoot non-volatile configuration - are you sure (y/n)? <KBD
+CLASS="USERINPUT"
+>y</KBD
+>
+  ... Unlock from 0x507c0000-0x507e0000: .
+  ... Erase from 0x507c0000-0x507e0000: .
+  ... Program from 0x0000a8d0-0x0000acd0 at 0x507c0000: .
+  ... Lock from 0x507c0000-0x507e0000: .
+  RedBoot&#62;</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+>Additionally, nicknames can be used like aliases via the format %{nickname}.
+This allows the values stored by <KBD
+CLASS="USERINPUT"
+>fconfig</KBD
+> to be used
+directly by scripts and commands.</P
+><P
+>Depending on how your terminal program is connected and its
+capabilities, you might find that you are unable to use line-editing to
+delete the &#8216;old&#8217; value when using the default behaviour of
+<B
+CLASS="COMMAND"
+>fconfig <VAR
+CLASS="REPLACEABLE"
+>nickname</VAR
+></B
+> or just
+plain <B
+CLASS="COMMAND"
+>fconfig</B
+>, as shown in this example:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fco bootp</KBD
+>
+bootp: false&#0095;</PRE
+></TD
+></TR
+></TABLE
+>
+The user deletes the word &#8220;false;&#8221; and enters &#8220;true&#8221;
+so the display looks like this:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fco bootp</KBD
+>
+bootp: <KBD
+CLASS="USERINPUT"
+>true</KBD
+>
+Update RedBoot non-volatile configuration - are you sure (y/n)? y
+... Unlock from ...
+RedBoot&#62; &#0095;</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+>To edit when you cannot backspace, use the optional flag
+<SAMP
+CLASS="COMPUTEROUTPUT"
+>-d</SAMP
+> (for &#8220;dumb terminal&#8221;)
+to provide a simpler interface thus:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fco -d bootp</KBD
+>
+bootp: false ? &#0095;</PRE
+></TD
+></TR
+></TABLE
+>
+and you enter the value in the obvious manner thus:
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fco -d bootp</KBD
+>
+bootp: false ? <KBD
+CLASS="USERINPUT"
+>true</KBD
+>
+Update RedBoot non-volatile configuration - are you sure (y/n)? y
+... Unlock from ...
+RedBoot&#62; &#0095;</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+>One item which is always present in the configuration data is the ability
+to execute a script at boot time. A sequence of RedBoot commands can be entered
+which will be executed when the system starts up. Optionally, a time-out period
+can be provided which allows the user to abort the startup script and proceed
+with normal command processing from the console.     </P
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fconfig -l</KBD
+>
+Run script at boot: false
+Use BOOTP for network configuration: false
+Local IP address: 192.168.1.29
+Default server IP address: 192.168.1.101
+DNS server IP address: 192.168.1.1
+GDB connection port: 9000
+Network debug at boot time: false</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+>The following example sets a boot script and then shows it running.
+    </P
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fconfig</KBD
+>
+Run script at boot: false <KBD
+CLASS="USERINPUT"
+>t</KBD
+>
+      Boot script:
+Enter script, terminate with empty line
+&#62;&#62; <KBD
+CLASS="USERINPUT"
+>fi li</KBD
+>
+    Boot script timeout: 0 <KBD
+CLASS="USERINPUT"
+>10</KBD
+>
+Use BOOTP for network configuration: false .
+Update RedBoot non-volatile configuration - are you sure (y/n)? <KBD
+CLASS="USERINPUT"
+>y</KBD
+>
+... Erase from 0xa0fc0000-0xa0fe0000: .
+... Program from 0x8c021f60-0x8c022360 at 0xa0fc0000: .
+RedBoot&#62;
+RedBoot(tm) debug environment - built 08:22:24, Aug 23 2000
+Copyright (C) 2000, Red Hat, Inc.
+
+
+RAM: 0x8c000000-0x8c800000
+flash: 0xa0000000 - 0xa1000000, 128 blocks of 0x00020000 bytes ea.
+Socket Communications, Inc: Low Power Ethernet CF Revision C \
+5V/3.3V 08/27/98 IP: 192.168.1.29, Default server: 192.168.1.101 \
+== Executing boot script in 10 seconds - enter ^C to abort
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fi li</KBD
+>
+Name              flash addr   Mem addr    Length    Entry point
+RedBoot          0xA0000000   0xA0000000  0x020000  0x80000000
+RedBoot[backup]  0xA0020000   0x8C010000  0x020000  0x8C010000
+RedBoot config   0xA0FC0000   0xA0FC0000  0x020000  0x00000000
+FIS directory    0xA0FE0000   0xA0FE0000  0x020000  0x00000000
+RedBoot&#62;</PRE
+></TD
+></TR
+></TABLE
+></P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>The bold characters above indicate where something was entered on the
+console. As you can see, the <B
+CLASS="COMMAND"
+>fi li</B
+> command
+at the end came from the script,
+not the console. Once the script is executed, command processing reverts to
+the console. </P
+></BLOCKQUOTE
+></DIV
+><P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>NOTE: </B
+>RedBoot supports the notion of a boot script timeout, i.e. a period of
+time that RedBoot waits before executing the boot time script.  This period
+is primarily to allow the possibility of cancelling the script.  Since
+a timeout value of zero (0) seconds would never allow the script to
+be aborted or cancelled, this value is not allowed.  If the timeout
+value is zero, then RedBoot will abort the script execution immediately.</P
+></BLOCKQUOTE
+></DIV
+>
+On many targets, RedBoot may be configured to run from ROM or it may be
+configured to run from RAM. Other configurations are also possible. All
+RedBoot configurations will execute the boot script, but in certain cases
+it may be desirable to limit the execution of certain script commands to
+one RedBoot configuration or the other. This can be accomplished by
+prepending <SAMP
+CLASS="COMPUTEROUTPUT"
+>{&lt;startup type&#62;}</SAMP
+> to the
+commands which should be executed only by the RedBoot configured for the
+specified startup type. The following boot script illustrates this concept
+by having the ROM based RedBoot load and run the RAM based RedBoot. The RAM
+based RedBoot will then list flash images.</P
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fco</KBD
+>
+Run script at boot: false <KBD
+CLASS="USERINPUT"
+>t</KBD
+>
+Boot script:
+Enter script, terminate with empty line
+&#62;&#62; <KBD
+CLASS="USERINPUT"
+>{ROM}fis load RedBoot[backup]</KBD
+>
+&#62;&#62; <KBD
+CLASS="USERINPUT"
+>{ROM}go</KBD
+>
+&#62;&#62; <KBD
+CLASS="USERINPUT"
+>{RAM}fis li</KBD
+>
+&#62;&#62;
+Boot script timeout (1000ms resolution): <KBD
+CLASS="USERINPUT"
+>2</KBD
+>
+Use BOOTP for network configuration: <KBD
+CLASS="USERINPUT"
+>false</KBD
+>
+ ...
+Update RedBoot non-volatile configuration - are you sure (y/n)? <KBD
+CLASS="USERINPUT"
+>y</KBD
+>
+... Unlock from 0x007c0000-0x007e0000: .
+... Erase from 0x007c0000-0x007e0000: .
+... Program from 0xa0015030-0xa0016030 at 0x007df000: .
+... Lock from 0x007c0000-0x007e0000: .
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>reset</KBD
+>
+... Resetting.
++Ethernet eth0: MAC address 00:80:4d:46:01:05
+IP: 192.168.1.153, Default server: 192.168.1.10
+
+RedBoot(tm) bootstrap and debug environment [ROM]
+Red Hat certified release, version R1.xx - built 17:37:36, Aug 14 2001
+
+Platform: IQ80310 (XScale)
+Copyright (C) 2000, 2001, Red Hat, Inc.
+
+RAM: 0xa0000000-0xa2000000, 0xa001b088-0xa1fdf000 available
+FLASH: 0x00000000 - 0x00800000, 64 blocks of 0x00020000 bytes each.
+== Executing boot script in 2.000 seconds - enter ^C to abort
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis load RedBoot[backup]</KBD
+>
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>go</KBD
+>
++Ethernet eth0: MAC address 00:80:4d:46:01:05
+IP: 192.168.1.153, Default server: 192.168.1.10
+
+RedBoot(tm) bootstrap and debug environment [RAM]
+Red Hat certified release, version R1.xx - built 13:03:47, Aug 14 2001
+
+Platform: IQ80310 (XScale)
+Copyright (C) 2000, 2001, Red Hat, Inc.
+
+RAM: 0xa0000000-0xa2000000, 0xa0057fe8-0xa1fdf000 available
+FLASH: 0x00000000 - 0x00800000, 64 blocks of 0x00020000 bytes each.
+== Executing boot script in 2.000 seconds - enter ^C to abort
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>fis li</KBD
+>
+Name              FLASH addr  Mem addr    Length      Entry point
+RedBoot           0x00000000  0x00000000  0x00040000  0x00002000
+RedBoot[backup]   0x00040000  0xA0020000  0x00040000  0xA0020040
+RedBoot config    0x007DF000  0x007DF000  0x00001000  0x00000000
+FIS directory     0x007E0000  0x007E0000  0x00020000  0x00000000
+RedBoot&#62;</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="flash-image-system.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="executing-programs.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Flash Image System (FIS)</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Executing Programs from RedBoot</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

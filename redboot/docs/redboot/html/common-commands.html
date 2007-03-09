@@ -1,0 +1,950 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>Common Commands</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="RedBoot Commands and Examples"
+HREF="redboot-commands-and-examples.html"><LINK
+REL="PREVIOUS"
+TITLE="RedBoot Editing Commands"
+HREF="redboot-editing-commands.html"><LINK
+REL="NEXT"
+TITLE="Flash Image System (FIS)"
+HREF="flash-image-system.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="redboot-editing-commands.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. RedBoot Commands and Examples</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="flash-image-system.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="COMMON-COMMANDS"
+>Common Commands</A
+></H1
+><P
+>The general format of commands is:    <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>command &lt;options, parameters&#62;</PRE
+></TD
+></TR
+></TABLE
+>Elements are separated by the space character. Other control
+characters, such as <SPAN
+CLASS="GUIBUTTON"
+>Tab</SPAN
+> or editing keys (<SPAN
+CLASS="GUIBUTTON"
+>Insert</SPAN
+>) are not currently supported. </P
+><P
+>Numbers, such as a memory location, may be specified in either decimal
+or hexadecimal (requires a 0x prefix). </P
+><P
+>Commands may be abbreviated to any unique string. For example, 
+<B
+CLASS="COMMAND"
+>lo</B
+> is equivalent to <B
+CLASS="COMMAND"
+>loa</B
+>
+and <B
+CLASS="COMMAND"
+>load</B
+>. </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN440"
+>Connectivity</A
+></H2
+><P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>dns [IP]</DT
+><DD
+><P
+>This command is used to show/change the IP address used for DNS
+lookups. If an IP address of 0.0.0.0 is entered, DNS lookups are
+disabled.</P
+></DD
+></DL
+></DIV
+>      
+
+<P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>ip_address [-l &lt;local_ip_address&#62;] [-h &lt;server_address&#62;]</DT
+><DD
+><P
+>This command is used to show/change the basic IP addresses used by RedBoot.
+The -l option is used to set the IP address used by the target device.
+The -h option is used to set the default server address, such as is used by the 
+<CODE
+CLASS="FUNCTION"
+>load</CODE
+> command.</P
+></DD
+></DL
+></DIV
+>
+
+<P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>ping - Check network connectivity ping</DT
+><DD
+><P
+><CODE
+CLASS="FUNCTION"
+>ping [-v] [-n &lt;count&#62;] [-l &lt;length&#62;] [-t &lt;timeouts&#62;]
+[-r &lt;rate&#62;][-i &lt;IP_addr&#62;] -h &lt;IP_addr&#62;</CODE
+></P
+><P
+>The ping command checks the connectivity of the local network by sending
+special (ICMP) packets to a specific host. These packets should be automatically
+returned by that host. The command will indicate how many of these round-trips
+were successfully completed. </P
+></DD
+></DL
+></DIV
+></P
+><H1
+CLASS="BRIDGEHEAD"
+><A
+NAME="AEN466"
+></A
+>Arguments</H1
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><A
+NAME="AEN467"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="192"
+TITLE="COL1"><COL
+WIDTH="2*"
+TITLE="COL2"><TBODY
+><TR
+><TD
+>-v </TD
+><TD
+>Be verbose, displaying information
+about each packet sent.</TD
+></TR
+><TR
+><TD
+>-n &lt;count&#62;</TD
+><TD
+>Controls the number of packets
+to be sent. Default is 10 if -n is not specified.</TD
+></TR
+><TR
+><TD
+>-t &lt;timeout&#62;</TD
+><TD
+>How long to wait for the round-trip
+to complete, specified in milliseconds. Default is 1000ms (1 second).</TD
+></TR
+><TR
+><TD
+>-r &lt;rate&#62;</TD
+><TD
+>How fast to deliver packets, i.e.
+time between successive sends. Default is 1000ms (1 second). Specifying "-r
+0" will send packets as quickly as possible.</TD
+></TR
+><TR
+><TD
+>-l &lt;length&#62;</TD
+><TD
+>Each packet contains some amount
+of payload data. This option specifies the length of that data. The default
+is 64 and the value is restricted to the range 64 .. 1400.</TD
+></TR
+><TR
+><TD
+>-i &lt;local IP&#62;</TD
+><TD
+>This allows the ping command to
+override its local network address. While this is not recommended procedure,
+it can help diagnose some situations, for example where BOOTP is not working
+properly.</TD
+></TR
+><TR
+><TD
+>-h &lt;host&#62;</TD
+><TD
+>The hostname or IP address of the other device
+to contact.</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN493"
+>General</A
+></H2
+><P
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>alias name [value]</DT
+><DD
+><P
+>The <CODE
+CLASS="FUNCTION"
+>alias</CODE
+> command is used to maintain simple command
+line aliases.  These aliases are shorthand for longer expressions.
+When the pattern %{name} appears in a command line, including a script,
+the corresponding value will be substituted.</P
+><P
+>Aliases are kept in RedBoot's non-volatile configuration area, i.e. Flash
+memory.</P
+><P
+>This is an example of setting an alias.  Notice the use of a quoted string
+when the value contains spaces.
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>alias SBUF "-b 0x100000"</KBD
+>
+Update RedBoot non-volatile configuration - are you sure (y/n)? y
+... Unlock from 0x50f80000-0x50fc0000: .
+... Erase from 0x50f80000-0x50fc0000: .
+... Program from 0x0000b9e8-0x0000c9e8 at 0x50f80000: .
+... Lock from 0x50f80000-0x50fc0000: .</PRE
+></TD
+></TR
+></TABLE
+></P
+><P
+>This example shows querying of an alias, as well as how it might be used.
+<TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>alias SBUF</KBD
+>
+'SBUF' = '-b 0x100000'
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>d %{SBUF}</KBD
+>
+0x00100000: FE03 00EA 0000 0000  0000 0000 0000 0000   |................|
+0x00100010: 0000 0000 0000 0000  0000 0000 0000 0000   |................|</PRE
+></TD
+></TR
+></TABLE
+></P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>baud [-b value]</DT
+><DD
+><P
+>This command sets the baud rate for the system serial console.
+If the platform supports non-volatile configuration data, then the new value
+will be saved and used when the system is reset.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>cache [ON | OFF]</DT
+><DD
+><P
+>This command is used to manipulate the caches on the processor.</P
+><P
+>With no options, this command specifies the state of the system caches.</P
+><P
+>When an option is given, the caches are turned off or on appropriately.
+ </P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>channel [-1|&lt;channel number&#62;]</DT
+><DD
+><P
+>With no arguments, this command displays the current console channel number.</P
+><P
+>When passed an argument of 0 upwards, this command switches the console
+channel to that channel number. The mapping between channel numbers and
+physical channels is platform specific.</P
+><P
+>When passed an argument of -1, this command reverts RedBoot to responding
+to whatever channel receives input first, as happens when RedBoot initially
+starts execution.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>cksum -b &lt;location&#62; -l &lt;length&#62;</DT
+><DD
+><P
+>Computes the POSIX checksum on a range of memory (either RAM or FLASH).
+The value printed can be compared with the output from the Linux program 'chksum'.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>mfill -b &lt;location&#62; -l &lt;length&#62; [-p &lt;pattern&#62;] [-1|-2|-4]</DT
+><DD
+><P
+>Fills a range of memory with the given pattern.
+If the pattern is ommitted, then a value of zero is used.
+The options <VAR
+CLASS="LITERAL"
+>-1, -2, -4</VAR
+> are used to select the length of the 
+objects used while filling.  For example, <VAR
+CLASS="LITERAL"
+>-2</VAR
+> selects to fill
+16 bits at a time, etc.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>mcmp -s &lt;location&#62; -d &lt;location&#62; -l &lt;length&#62; [-1|-2|-4]</DT
+><DD
+><P
+>Compares two ranges of memory.
+The options <VAR
+CLASS="LITERAL"
+>-1, -2, -4</VAR
+> are used to select the length of the 
+objects used while comparing.  For example, <VAR
+CLASS="LITERAL"
+>-2</VAR
+> selects to compare
+16 bits at a time, etc.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>swab -b &lt;location&#62; -l &lt;length&#62; [-2|-4]</DT
+><DD
+><P
+>Swap bytes in a block of 16-bit or 32-bit words.
+The options <VAR
+CLASS="LITERAL"
+>-2, -4</VAR
+> are used to select the length of the 
+words to be byte-swapped.  For example, <VAR
+CLASS="LITERAL"
+>-2</VAR
+> selects to
+swap bytes inside 16 bit words, etc.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>disks</DT
+><DD
+><P
+>This command is used to list disk partitions recognized by RedBoot.</P
+></DD
+></DL
+></DIV
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>dump -b &lt;location&#62; [-l &lt;length&#62;] [-s]</DT
+><DD
+><P
+>Display (hex dump) a range of memory. </P
+><P
+>This command displays the contents of memory in hexadecimal format.
+It is most useful for examining a segment of RAM or flash. 
+If the optional -s switch is provided, then the dump will be formatted
+as Motorola S-records.
+The <B
+CLASS="COMMAND"
+>x</B
+> command is a synonym for <B
+CLASS="COMMAND"
+>dump</B
+>.</P
+><P
+>Note that this command could
+be detrimental if used on memory mapped hardware registers. </P
+><P
+>The memory is displayed at most sixteen bytes per line, first as the
+raw hex value, followed by an ASCII interpretation of the data. <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>du -b 0x100 -l 0x80</KBD
+>
+0x00000100: 3C60 0004 6063 2000 7C68 03A6 4E80 0020 |&lt;`..`c .|h..N.. |
+0x00000110: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000120: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000130: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000140: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000150: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000160: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+0x00000170: 0000 0000 0000 0000 0000 0000 0000 0000 |................|
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>d -b 0xfe00b000 -l 0x80</KBD
+>
+0xFE00B000: 2025 700A 0000 0000 4174 7465 6D70 7420 | %p.....Attempt |
+0xFE00B010: 746F 206C 6F61 6420 532D 7265 636F 7264 |to load S-record|
+0xFE00B020: 2064 6174 6120 746F 2061 6464 7265 7373 | data to address|
+0xFE00B030: 3A20 2570 205B 6E6F 7420 696E 2052 414D |: %p [not in RAM|
+0xFE00B040: 5D0A 0000 2A2A 2A20 5761 726E 696E 6721 |]...*** Warning!|
+0xFE00B050: 2043 6865 636B 7375 6D20 6661 696C 7572 | Checksum failur|
+0xFE00B060: 6520 2D20 4164 6472 3A20 256C 782C 2025 |e - Addr: %lx, %|
+0xFE00B070: 3032 6C58 203C 3E20 2530 326C 580A 0000 |02lX &lt;&#62; %02lX...|
+0xFE00B080: 456E 7472 7920 706F 696E 743A 2025 702C |Entry point: %p,|
+RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>x -b 0x3e00000 -s -l 0x80</KBD
+>
+S31503E00000803C04E980880000808800008088000046
+S31503E00010825010188948100088400001C01A040174
+S31503E00020825010188948100088400002C01A03FD68
+S31503E00030825010188948100088400003C01A03F95B
+S31503E00040825010188948100088400004C01A03F54E
+S31503E00050825010188948100088400005C01A03F141
+S31503E00060825010188948100088400006C01A03ED34
+S31503E00070825010188948100088400007C01A03E927</PRE
+></TD
+></TR
+></TABLE
+></P
+></DD
+></DL
+></DIV
+><P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>reset</DT
+><DD
+><P
+>Reset the system. </P
+><P
+>This command resets the platform. On many targets this is
+equivalent to a power-on reset, but on others it may just cause a jump
+to the architecture's reset entry resulting in a
+reinitialization of the system.</P
+></DD
+></DL
+></DIV
+></P
+><P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>version</DT
+><DD
+><P
+>Display RedBoot version information. </P
+><P
+>This command simply displays version information about RedBoot. <TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>version</KBD
+>
+RedBoot(tm) debug environment - built 09:12:03, Feb 12 2001
+Platform: XYZ (PowerPC 860)
+Copyright (C) 2000, 2001, Red Hat, Inc.
+RAM: 0x00000000-0x00400000
+RedBoot&#62;</PRE
+></TD
+></TR
+></TABLE
+></P
+></DD
+></DL
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="DOWNLOAD-COMMAND"
+>Download Process</A
+></H2
+><P
+></P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>load</DT
+><DD
+><P
+>The <B
+CLASS="COMMAND"
+>load</B
+> command is used to download
+data into the target system. Data can be loaded via a network connection,
+using either the TFTP protocol, or the console serial connection using the
+X/Y modem protocol. Files may also be loaded directly from local filesystems
+on disk. Files to be downloaded may either be executable images in 
+ELF executable program format,
+Motorola S-record (SREC)
+format or raw data. The format of the command is:  </P
+><P
+><P
+><B
+CLASS="COMMAND"
+>load</B
+>  {<VAR
+CLASS="REPLACEABLE"
+>file</VAR
+>} [-v] [-d] [-b <VAR
+CLASS="REPLACEABLE"
+>location</VAR
+>] [-r] [-m  {xmodem | ymodem | tftp | disk}] [-h <VAR
+CLASS="REPLACEABLE"
+>host_IP_address</VAR
+>]</P
+></P
+></DD
+></DL
+></DIV
+><H1
+CLASS="BRIDGEHEAD"
+><A
+NAME="AEN627"
+></A
+>Arguments</H1
+><DIV
+CLASS="INFORMALTABLE"
+><P
+></P
+><A
+NAME="AEN628"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="72"
+TITLE="COL1"><COL
+WIDTH="2*"
+TITLE="COL2"><TBODY
+><TR
+><TD
+>file</TD
+><TD
+>The name of the file on the TFTP
+server or the local disk. Details of how this is specified for TFTP are
+host-specific. For local disk files, the name must be in <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>disk</I
+></SPAN
+>:
+<SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>filename</I
+></SPAN
+> format. The disk portion must match one of the disk
+names listed by the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>disks</I
+></SPAN
+> command.</TD
+></TR
+><TR
+><TD
+>-v</TD
+><TD
+>Display a small spinner (indicator)
+while the download is in  progress. This is just for feedback, especially
+during long loads. Note that the option has no effect when using a
+serial download method since it would interfere with the protocol.</TD
+></TR
+><TR
+><TD
+>-d</TD
+><TD
+>Decompress gzipped image during
+download.</TD
+></TR
+><TR
+><TD
+>-c</TD
+><TD
+>Specify which I/O channel to
+use for download.  This option is only supported when using either
+xmodem or ymodem protocol.</TD
+></TR
+><TR
+><TD
+>-b</TD
+><TD
+>Specify the location in memory
+to which the file should be loaded. Executable images normally load at the
+location to which the file was linked. This option allows the file to be loaded
+to a specific memory location, possibly overriding any assumed location.</TD
+></TR
+><TR
+><TD
+>-r</TD
+><TD
+>Download raw data. Normally, the
+load command is used to load executable images into memory. This option allows
+for raw data to be loaded. If this option is given, -b will also be required.</TD
+></TR
+><TR
+><TD
+>-m</TD
+><TD
+><P
+>The -m option is used to select the download method. The choices are:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>xmodem</I
+></SPAN
+>, <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>ymodem</I
+></SPAN
+></DT
+><DD
+><P
+>serial download using standard protocols over a port.
+If no <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>-c</I
+></SPAN
+> option is used, the current
+console port will be used, otherwise the protocol transfer will take
+place on the specified channel.
+When using this method, the <VAR
+CLASS="REPLACEABLE"
+>file</VAR
+> parameter is
+not required.</P
+></DD
+><DT
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>tftp</I
+></SPAN
+></DT
+><DD
+><P
+>network based download using the TFTP protocol.</P
+></DD
+><DT
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>disk</I
+></SPAN
+></DT
+><DD
+><P
+>load a file from local disk.</P
+></DD
+></DL
+></DIV
+></TD
+></TR
+><TR
+><TD
+>-h</TD
+><TD
+>Used explicitly to name a host
+computer to contact for the download data. This works in TFTP mode only.</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+><TABLE
+BORDER="5"
+BGCOLOR="#E0E0F0"
+WIDTH="70%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>RedBoot&#62; <KBD
+CLASS="USERINPUT"
+>lo redboot.ROM -b 0x8c400000</KBD
+>
+Address offset = 0x0c400000
+Entry point: 0x80000000, address range: 0x80000000-0x8000fe80</PRE
+></TD
+></TR
+></TABLE
+></P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="redboot-editing-commands.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="flash-image-system.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>RedBoot Editing Commands</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot-commands-and-examples.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Flash Image System (FIS)</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

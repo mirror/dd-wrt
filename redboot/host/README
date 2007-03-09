@@ -1,0 +1,383 @@
+		eCos Host-side Software
+		=======================
+
+This directory contains the eCos host-side sources. This includes
+libcdl, the CDL library which underlies the whole eCos configuration
+system, and both the command-line and graphical configuration tools.
+
+The eCos host-side software is free software, released under the GNU
+General Public License. See the file COPYING for further details.
+
+
+Contents
+========
+
+The host-side sources include the following:
+
+infra/
+    This is an implementation of the eCos infrastructure that can be
+    used on the host-side, and provides assertion, tracing and
+    testcase support.
+
+    NOTE: the eCos infrastructure facilities are not especially
+    well-suited to host-side development, in particular they are not
+    C++-oriented. There are plans to remove the current infrastructure
+    completely and replace it with something more suitable. People
+    planning new projects should be aware of this, and may wish to
+    avoid using the current infrastructure.
+
+libcdl/
+    The CDL library lies at the heart of the eCos configuration system.    
+
+tools/configtool/
+    The sources to the various configuration tools can be found here.
+
+tools/configtool/standalone/common/
+    Contains the command line ecosconfig tool.
+
+tools/configtool/common/common/
+    Contains sources related to makefile generation.
+
+tools/configtool/common/win32/
+tools/configtool/standalone/win32/
+    Contains sources for the MFC-based, Windows-only graphical configuration
+    tool.
+
+tools/configtool/standalone/wxwin/
+    Contains sources for the wxWindows-based, Linux and Windows graphical
+    configuration tool.
+
+There are various other sub-directories related to the admin tool,
+testing support, and so on.
+
+It should be noted that the eCos host-side software is still
+undergoing rapid development, and the sources are subject to change
+and reorganization at any time.    
+
+Much of the code is cross-platform. The obvious exception is the
+original, MFC-based graphical configuration tool which can only
+be built for Windows hosts and requires Visual C++. It should be
+possible to build the underlying libraries and the command-line
+configuration tool using gcc/g++ on any Unix platform.
+
+A combined Unix and Windows version of the graphical
+configuration tool, built using the wxWindows GUI toolkit, is
+under development and has its own ReadMe in
+tools/configtool/standalone/wxwin. Any further reference to the
+graphical configuration tool in this document refers to the
+original MFC-based version.
+
+More Information
+================
+
+Please see the eCos web site, http://sourceware.cygnus.com/ecos/, for
+further details. This includes the FAQ, a form for reporting problems,
+and details of the various mailing lists
+(http://sourceware.cygnus.com/ecos/intouch.html)
+At the time of writing there are no separate mailing lists for the
+eCos host-side sources, the main mailing list
+ecos-discuss@sourceware.cygnus.com should be used instead.
+
+
+Installation
+============
+
+Test builds of the eCos host-side generally happen on the following
+platforms: Red Hat Linux 6.1 and later; Windows NT using cygwin 1.0 or
+later; and Windows NT using VC++ 6.0. The graphical configuration tool
+can only be built with VC++ and involves a Developer Studio project,
+see tools/configtool/standalone/win32/Configtool.dsw. The other
+software can be built using the conventional "configure/make/make
+install" steps. It should be noted that the eCos host-side software is
+not fully auto-confiscated, and some facilities like "make dist" will
+not work. Also, the existing DejaGnu-based testing facilities are
+minimal, only intended as a starting point, and may not work on all
+platforms.
+
+The eCos host-side software has a dependency on Tcl. This is not
+supplied with the sources, because many users will already have a
+suitable installation. Any release of Tcl from 8.0 onwards should be
+usable. There are some configure command-line options related to the
+Tcl installation, as described below.
+
+The instructions for installing under Linux are given first.
+Installation on other platforms is very similar, so only the
+differences will be noted.
+
+Installing on Linux
+===================
+
+It is strongly recommended that a separate build tree is used, as
+opposed to building directly in the source tree. The latter has not
+been tested and, given some of the build steps, may not work very
+well.
+
+  $ mkdir build
+  $ cd build
+
+The next step is to run the toplevel configure script, in other words
+the configure script in the same directory as this README file. This
+will automatically recurse into the various subdirectories for the
+infrastructure, libcdl, and so on. Note that all of the host-side
+software needs to be configured and built: it is not possible to
+invoke just the configure script for the ecosconfig tool and build
+just that tool, because there are dependencies on other parts of the
+host-side code.
+
+  $ <path>/configure <args>
+
+A list of the all the command-line options can be obtained by running
+"configure --help". The most important ones are as follows:
+
+1) --prefix. This can be used to specify the location of the install
+   tree, defaulting to /usr/local, so the ecosconfig program ends up
+   in /usr/local/bin/ecosconfig and the CDL library ends up in
+   /usr/local/lib/libcdl.a. If an alternative location is preferred
+   this can be specified with --prefix, for example:
+
+   $ <path>/configure --prefix=/usr/local/ecos <args>
+
+2) --enable-debug. By default all assertions and tracing are disabled.
+   When debugging any of the host-side software these must be enabled.
+
+   $ <path>/configure --enable-debug
+
+   It is also possible to control most of the assertion and tracing
+   macros at a finer grain. This is likely to be useful only to the
+   main developers:
+
+   --disable-asserts        disable all assertions
+   --disable-preconditions  disable a subset of the assertions
+   --disable-postconditions disable a subset of the assertions
+   --disable-invariants     disable a subset of the assertions
+   --disable-loopinvariants disable a subset of the assertions
+   --disable-tracing        disable tracing
+   --disable-fntracing      disable function entry/exit tracing
+
+3) --with-tcl=<path>, --with-tcl-header=<path>, --with-tcl-lib=<path>
+   and --with-tcl-version=<number>
+
+   The host-side tools have a dependency on Tcl, which is not supplied
+   with the sources because many people will already have a suitable
+   installation. Specifically it is necessary to have the header file
+   tcl.h and appropriate libraries such that -ltcl will work - this
+   can involve either static or shared libraries.
+
+   By default the configure script will assume that there is a
+   suitable Tcl installation in the install location, so if there is
+   no --prefix argument then it will look for /usr/local/include/tcl.h
+   and it will add -L/usr/local/lib to the library search path. If
+   Tcl is installed elsewhere then this can be specified with a
+   --with-tcl option. For example, if the default installation in
+   /usr should be used then the following configure option is
+   appropriate:
+
+   $ <path>/configure --with-tcl=/usr <args>
+
+   If the Tcl libraries and Tcl headers are installed in different
+   locations, such as when a seperate --prefix and --exec-prefix are
+   used, the --with-tcl-header and --with-tcl-lib options can be used
+   to specify both location.  The configure will expect to find
+   <tcl-header-dir>/include/tcl.h and <tcl-lib-dir>/lib/tclConfig.sh.
+   The --with-tcl option has precedence and if used will override the
+   --with-tcl-header and --with-tcl-lib options.
+
+   It is possible to have multiple versions of Tcl installed, for
+   example libtcl8.0.a, libtcl8.1.a, and so on. Typically linking with
+   -ltcl will result in the latest version being used. It is possible
+   to specify a different version using --with-tcl-version, e.g.:
+
+   $ <path>configure --with-tcl=/usr/local/scriptics --with-tcl-version=8.1 <args>
+
+Following the configure step the build tree should be set up
+correctly. All that remains is the actual build and install:
+
+   $ make
+   $ make install
+
+This should result in an ecosconfig executable, plus appropriate
+libraries and header files.   
+   
+
+Installing on cygwin
+====================
+
+Installing under cygwin requires essentially the same steps as
+under Linux. It is more likely that a suitable --prefix option will
+have to be used, and that the location of the Tcl installation needs
+to be specified with --with-tcl. However appropriate use of cygwin
+mount points may avoid some of these problems. If the full path to
+the configure script contains spaces, then the short form of the path
+should be used when invoking configure.
+
+One issue to be aware of is the naming convention for the Tcl library.
+On a Unix system this will typically be called libtcl8.0.a (adjusted
+according to the version number), with a symbolic link from libtcl.a
+to the most recent version. Under cygwin the equivalent library is
+called libtcl80.a, and symbolic links are not used. For a standard
+cygwin 1.0 installation the configure script knows how to pick up the
+appropriate library, but if a more recent version of Tcl has been
+installed then due care has to be taken with the --with-tcl-version
+option. 
+
+
+Installing on NT with VC++ (using Visual Studio)
+================================================
+
+It is possible to build both the graphical configuration tool and the
+ecosconfig command line tool using a Developer Studio project,
+tools/ecosconfig/standalone/win32/Configtool.dsw
+
+Even if building the host tools from Visual Studio, it is still 
+necessary to install Cygwin and Tcl 8.x. Additionally, there is a
+dependency on either the Microsoft Platform SDK or the Microsoft
+HTML Help Workshop.
+
+The latter is available at:
+http://msdn.microsoft.com/library/tools/htmlhelp/wkshp/download.htm
+
+To prepare the machine for the build, it is necessary to:
+
+1) Set the TCLHOME environment variable to the root of the Tcl installation.
+(For example, TCLHOME=C:\tcl) This can be set from the Enviroment Variables
+dialog on the Advanced tab of the System Properties dialog.
+
+2) It is also necessary to add several directories to Visual Studio's default
+file search paths. This is set from the Directories tab in the Options menu.
+
+The following entries will need to be added (full paths are shown for clarity,
+the actual path may be different):
+
+	a) Executable Files
+		c:\cygwin\bin
+	b) Include Files
+		c:\tcl\include
+		c:\program files\microsoft platform sdk\include _OR_
+		c:\program files\html help workshop\include
+	c) Library Files
+		c:\tcl\lib
+		c:\program files\microsoft platform sdk\lib _OR_
+		c:\program files\html help workshop\lib
+
+3) The build process as setup by default in the sources available from CVS is
+setup to build the host tools on the DOS v:\ drive. If this drive doesn't exist,
+it may be preferable to do a "subst v:\ c:\temp" command from a Windows command 
+shell. This will effectively create a virtual disk which is located at c:\temp,
+and the build process will place all intermediate and build files in this location.
+(Alternatively, it is possible to go through the project settings in Visual Studio
+and adjust the drive letters manually.)
+
+4) If you have installed a version of Tcl other than version 8.2, it will be necessary
+to change the names of libraries linked with the projects. This can be done by:
+
+a) Selecting "Settings..." on the ChangeLog file in the cdl project in the
+Configtool workspace, you will see the custom build step for the project.
+At the end of the first line of the custom build step, there is an option
+--with-tcl_version=82. Change this value (82) to correspond to the version of Tcl
+installed on the machine.
+
+b) Selecting "Settings..." on the Configtool project in the workspace, you should
+go to the Link tab in the right-hand pane. In this pane you will see a line listing
+all the Libraries with which the project is being linked. Change the tcl82.lib entry
+to the name appropriate for the version of Tcl installed.
+
+(NOTE: These settings must be applied to all configurations you intend to build 
+separately. The eCos host tools as shipped by RedHat are built using the 
+"Win32 ANSI Release" Configuration. If you build the "Win32 Release" Configuration,
+you will also need to have the Unicode version of the MFC libraries and DLLs.)
+
+5) Click "Build... (F7)". The compiled binaries will be located in the Configtool
+folder on the V:\ drive.
+
+
+NOTES:
+
+1) When using WinCVS, make sure to use the default Windows mode to get the tools.
+Using UNIX mode will break the Visual Studio project files and you won't be able
+to open them. (It is preferable, in general, to use Windows mode for all eCos files.)
+
+2) There will be many warnings related to STL header compilation. These are benign.
+There are also some warnings related to missing help files at the beginning of the
+Configtool project compilation. These can also be ignored.
+
+3) To build the other Win32 projects in the host tools, it may be necessary to repeat
+step 4.b) above. (Again, this depends on which version of Tcl is in use.)
+
+
+Installing on NT with VC++ (using Cygwin)
+=========================================
+
+It is also possible to build the command line tool and the various
+libraries using the configure script. At the time of writing the
+graphical configuration tool cannot yet be built that way. This still
+requires a cygwin installation because it needs the bash shell and GNU
+make. First, it is necessary to tell the configure script to use a
+compiler other than gcc:
+
+  $ mkdir build
+  $ cd build
+  $ CC=cl CXX=cl <path>/configure <args>
+
+The configure script will do the right thing if VC++ is specified in
+this way.
+
+It is likely that /usr/local will be an inappropriate install location
+for VC++ applications, so an alternative prefix needs to be specified:
+
+  $ CC=cl CXX=cl <path>/configure --prefix=<install-path> <args>
+
+Note that the install path should be a cygwin path, i.e. cygwin mount
+points are accepted and forward slashes should be used.
+  
+It is also necessary to use the right version of Tcl. For a VC++ build
+the cygwin release of Tcl should not be used. Instead a suitable
+prebuilt Tcl package can be obtained from http://www.scriptics.com/.
+It is necessary to tell the configure script where this has been
+installed, for example:
+
+  $ CC=cl CXX=cl <path>/configure --prefix=<install-path> \
+    --with-tcl=/d/local/scriptics/Tcl/tcl8.1 <args>
+
+The library name will be of the form tcl81.lib, and there will not be
+a symbolic link from tcl.lib to the appropriate version. Typically it
+will be necessary to specify the Tcl version explicitly:    
+
+  $ CC=cl CXX=cl <path>/configure --prefix=<install-path> \
+    --with-tcl=/d/local/scriptics/Tcl/tcl8.1 --with-tcl-version=81 <args>
+
+Following a successful configure, the tools can be built and installed
+in the normal fashion:
+
+  $ make
+  $ make install
+
+This assumes that the cl.exe executable is on the shell's search path,
+and that appropriate environment variables such as INCLUDE and LIB are
+set up correctly. The VC++ documentation should be consulted for
+further information.
+  
+
+//####COPYRIGHTBEGIN####
+//                                                                          
+// ----------------------------------------------------------------------------
+// Copyright (C) 2000, 2001 Red Hat, Inc.
+//
+// This file is part of the eCos host tools.
+//
+// This program is free software; you can redistribute it and/or modify it 
+// under the terms of the GNU General Public License as published by the Free 
+// Software Foundation; either version 2 of the License, or (at your option) 
+// any later version.
+// 
+// This program is distributed in the hope that it will be useful, but WITHOUT 
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+// more details.
+// 
+// You should have received a copy of the GNU General Public License along with
+// this program; if not, write to the Free Software Foundation, Inc., 
+// 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+//
+// ----------------------------------------------------------------------------
+//                                                                          
+//####COPYRIGHTEND####

@@ -1,0 +1,152 @@
+# ====================================================================
+#
+#      common.cdl
+#
+#      HAL common configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jskov
+# Original data:  nickg,jskov,jlarmour
+# Contributors:
+# Date:           1999-07-02
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_option CYGFUN_HAL_COMMON_KERNEL_SUPPORT {
+    display       "Provide eCos kernel support"
+    requires      CYGPKG_KERNEL
+    default_value CYGPKG_KERNEL
+    description   "
+        The HAL can be configured to either support the full eCos
+        kernel, or to support only very simple applications which do
+        not require a full kernel. If kernel support is not required
+        then some of the startup, exception, and interrupt handling
+        code can be eliminated."
+}
+
+# NOTE: The requirement for kernel exception support is bogus in that
+# the user can supply a deliver_exception function herself. In that
+# case, however, it is easy to force the kernel option off while leaving
+# this one on.  Having the requirement prevents accidental invalid
+# configurations of the kernel.
+cdl_option CYGPKG_HAL_EXCEPTIONS {
+    display       "HAL exception support"
+    requires      CYGPKG_KERNEL_EXCEPTIONS
+    default_value CYGPKG_KERNEL_EXCEPTIONS
+    description   "
+        When a processor exception occurs, for example an attempt to
+        execute an illegal instruction or to perform a divide by
+        zero, this exception may be handled in a number of different
+        ways. If the target system has gdb support then typically
+        the exception will be handled by gdb code. Otherwise if the
+        HAL exception support is enabled then the HAL will invoke a
+        routine deliver_exception(). Typically this routine will be
+        provided by the eCos kernel, but it is possible for
+        application code to provide its own implementation. If the
+        HAL exception support is not enabled and a processor
+        exception occurs then the behaviour of the system is
+        undefined."
+}
+
+cdl_option CYGSEM_HAL_STOP_CONSTRUCTORS_ON_FLAG {
+    display       "Stop calling constructors early"
+    requires      CYGSEM_LIBC_INVOKE_DEFAULT_STATIC_CONSTRUCTORS
+    default_value 0
+    description   "
+        This option supports environments where some constructors
+        must be run in the context of a thread rather than at
+        simple system startup time. A boolean flag named
+        cyg_hal_stop_constructors is set to 1 when constructors
+        should no longer be invoked. It is up to some other
+        package to deal with the rest of the constructors.
+        In the current version this is only possible with the
+        C library."
+}
+
+cdl_interface CYGINT_HAL_SUPPORTS_MMU_TABLES {
+    display   "HAL uses the MMU and allows for CDL manipulation of it's use"
+}
+
+cdl_option CYGSEM_HAL_INSTALL_MMU_TABLES {
+    display        "Install MMU tables."
+    default_value  { CYG_HAL_STARTUP != "RAM" }
+    active_if      CYGINT_HAL_SUPPORTS_MMU_TABLES
+    description    "This option controls whether this application installs
+       its own Memory Management Unit (MMU) tables, or relies on the
+       existing environment to run."
+}
+
+cdl_option CYGSEM_HAL_STATIC_MMU_TABLES {
+    display        "Use static MMU tables."
+    default_value  0
+    requires       CYGSEM_HAL_INSTALL_MMU_TABLES
+    description "This option defines an environment where any Memory
+       Management Unit (MMU) tables are constant.  Normally used by ROM
+       based environments, this provides a way to save RAM usage which
+       would otherwise be required for these tables."
+}
+
+cdl_component CYGDBG_HAL_DIAG_TO_DEBUG_CHAN {
+    display       "Route diagnostic output to debug channel"
+    default_value { (CYGDBG_HAL_DEBUG_GDB_INCLUDE_STUBS \
+                     || CYG_HAL_STARTUP == "RAM") ? 1 : 0}
+    active_if     !CYGSEM_HAL_VIRTUAL_VECTOR_INHERIT_CONSOLE
+    active_if     { CYGPKG_HAL_ARM || CYGPKG_HAL_POWERPC_MPC8xx \
+                    || CYGPKG_HAL_V85X_V850 || CYGSEM_HAL_VIRTUAL_VECTOR_DIAG }
+    description   "
+        If not inheriting the console setup from the ROM monitor,
+        it is possible to redirect diagnostic output to the debug
+        channel by enabling this option. Depending on the debugger
+        used it may also be necessary to select a mangler for the
+        output to be displayed by the debugger."
+
+    cdl_option CYGSEM_HAL_DIAG_MANGLER {
+        display       "Mangler used on diag output"
+        flavor        data
+        legal_values  {"GDB" "None"}
+        default_value { "GDB" }
+        description   "
+            It is sometimes necessary to mangle (encode) the
+            diag ASCII text output in order for it to show up at the
+            other end. In particular, GDB may silently ignore raw
+            ASCII text."
+    }
+}
+

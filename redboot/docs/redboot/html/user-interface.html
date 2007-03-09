@@ -1,0 +1,179 @@
+<!-- Copyright (C) 2005 Red Hat, Inc.                                -->
+<!-- This material may be distributed only subject to the terms      -->
+<!-- and conditions set forth in the Open Publication License, v1.0  -->
+<!-- or later (the latest version is presently available at          -->
+<!-- http://www.opencontent.org/openpub/).                           -->
+<!-- Distribution of the work or derivative of the work in any       -->
+<!-- standard (paper) book form is prohibited unless prior           -->
+<!-- permission is obtained from the copyright holder.               -->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML
+><HEAD
+><TITLE
+>User Interface</TITLE
+><meta name="MSSmartTagsPreventParsing" content="TRUE">
+<META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.7"><LINK
+REL="HOME"
+TITLE="RedBoot&#8482; User's Guide"
+HREF="redboot.html"><LINK
+REL="UP"
+TITLE="Getting Started with RedBoot"
+HREF="getting-started-with-redboot.html"><LINK
+REL="PREVIOUS"
+TITLE="Installing RedBoot"
+HREF="installing-redboot.html"><LINK
+REL="NEXT"
+TITLE="Configuring the RedBoot Environment"
+HREF="configuring-the-redboot-environment.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>RedBoot&#8482; User's Guide: Document Version 2.01, February 2005</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="installing-redboot.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 1. Getting Started with RedBoot</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="configuring-the-redboot-environment.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="USER-INTERFACE"
+>User Interface</A
+></H1
+><P
+>RedBoot
+provides a command line user interface (CLI). At the minimum, this interface
+is normally available on a serial port on the platform. If more than one serial
+interface is available, RedBoot is normally configured to try to use any one
+of the ports for the CLI. Once command input has been received on one port,
+that port is used exclusively until reset. If the platform has networking
+capabilities, the RedBoot CLI is also accessible using the <SAMP
+CLASS="COMPUTEROUTPUT"
+>telnet</SAMP
+> access protocol. By default, RedBoot runs <SAMP
+CLASS="COMPUTEROUTPUT"
+>telnet</SAMP
+> on port TCP/9000,
+but this is configurable and/or settable by the user. </P
+><P
+>RedBoot also contains a set of GDB "stubs", consisting of code which supports the GDB remote
+protocol. GDB stub mode is automatically invoked when the '$' character appears
+anywhere on a command line unless escaped using the '\' character. 
+The platform will remain in GDB
+stub mode until explicitly disconnected (via the GDB protocol). The GDB stub
+mode is available regardless of the connection method; either serial or network.
+Note that if a GDB connection is made via the network, then special care must
+be taken to preserve that connection when running user code. eCos contains
+special network sharing code to allow for this situation, and can be used
+as a model if this methodology is required in other OS environments.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="installing-redboot.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="redboot.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="configuring-the-redboot-environment.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Installing RedBoot</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="getting-started-with-redboot.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Configuring the RedBoot Environment</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

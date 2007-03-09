@@ -1,0 +1,216 @@
+# ====================================================================
+#
+#      string.cdl
+#
+#      C library string related configuration data
+#
+# ====================================================================
+#####ECOSGPLCOPYRIGHTBEGIN####
+## -------------------------------------------
+## This file is part of eCos, the Embedded Configurable Operating System.
+## Copyright (C) 1998, 1999, 2000, 2001, 2002 Red Hat, Inc.
+##
+## eCos is free software; you can redistribute it and/or modify it under
+## the terms of the GNU General Public License as published by the Free
+## Software Foundation; either version 2 or (at your option) any later version.
+##
+## eCos is distributed in the hope that it will be useful, but WITHOUT ANY
+## WARRANTY; without even the implied warranty of MERCHANTABILITY or
+## FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+## for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with eCos; if not, write to the Free Software Foundation, Inc.,
+## 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+##
+## As a special exception, if other files instantiate templates or use macros
+## or inline functions from this file, or you compile this file and link it
+## with other works to produce a work based on this file, this file does not
+## by itself cause the resulting work to be covered by the GNU General Public
+## License. However the source code for this file must still be made available
+## in accordance with section (3) of the GNU General Public License.
+##
+## This exception does not invalidate any other reasons why a work based on
+## this file might be covered by the GNU General Public License.
+##
+## Alternative licenses for eCos may be arranged by contacting Red Hat, Inc.
+## at http://sources.redhat.com/ecos/ecos-license/
+## -------------------------------------------
+#####ECOSGPLCOPYRIGHTEND####
+# ====================================================================
+######DESCRIPTIONBEGIN####
+#
+# Author(s):      jlarmour
+# Contributors:
+# Date:           2000-04-14
+#
+#####DESCRIPTIONEND####
+#
+# ====================================================================
+
+cdl_package CYGPKG_LIBC_STRING {
+    display       "ISO C library string functions"
+    description   "
+        This package provides string functions specified by the
+        ISO C standard - ISO/IEC 9899:1990."
+    doc           ref/libc.html
+    include_dir   cyg/libc/string  
+    parent        CYGPKG_LIBC
+    implements    CYGINT_ISO_STRTOK_R
+    implements    CYGINT_ISO_STRING_LOCALE_FUNCS
+    implements    CYGINT_ISO_STRING_MEMFUNCS
+    implements    CYGINT_ISO_STRING_STRFUNCS
+    requires      { CYGBLD_ISO_STRING_LOCALE_FUNCS_HEADER == \
+                    "<cyg/libc/string/string.h>" }
+    requires      { CYGBLD_ISO_STRING_MEMFUNCS_HEADER == \
+                    "<cyg/libc/string/string.h>" }
+    requires      { CYGBLD_ISO_STRING_STRFUNCS_HEADER == \
+                    "<cyg/libc/string/string.h>" }
+    requires      { CYGBLD_ISO_STRTOK_R_HEADER == \
+                    "<cyg/libc/string/string.h>" }
+    requires      CYGPKG_ISOINFRA
+
+    compile   memchr.cxx  memcmp.cxx  memmove.cxx   \
+              strcat.cxx  strchr.cxx  strcmp.cxx    \
+              strcoll.cxx strcpy.cxx  strcspn.cxx   \
+              strlen.cxx  strncat.cxx strncmp.cxx   \
+              strncpy.cxx strpbrk.cxx strrchr.cxx   \
+              strspn.cxx  strstr.cxx  strsuppt.cxx  \
+              strtok.cxx  strxfrm.cxx
+
+
+# ====================================================================
+
+    cdl_option CYGIMP_LIBC_STRING_INLINES {
+        display       "Inline versions of <string.h> functions"
+        default_value 1
+        description   "
+            This option chooses whether some of the
+            particularly simple string functions from
+            <string.h> are available as inline
+            functions. This may improve performance, and as
+            the functions are small, may even improve code
+            size."
+    }
+    
+    cdl_option CYGIMP_LIBC_STRING_PREFER_SMALL_TO_FAST {
+        display       "Optimize string functions for code size"
+        flavor bool
+        default_value 0
+        description   "
+            This option tries to reduce string function
+            code size at the expense of execution speed. The
+            same effect can be produced if the code is
+            compiled with the -Os option to the compiler."
+    }
+
+    cdl_option CYGFUN_LIBC_STRING_BSD_FUNCS {
+        display       "Provide BSD compatibility functions"
+        flavor        bool
+        default_value 1
+        implements    CYGINT_ISO_STRING_BSD_FUNCS
+        requires      { CYGBLD_ISO_STRING_BSD_FUNCS_HEADER == \
+                        "<cyg/libc/string/bsdstring.h>" }
+        requires      CYGINT_ISO_CTYPE
+        compile       bsdstring.cxx
+        description   "
+            Enabling this option causes various compatibility functions
+            commonly found in the BSD UNIX operating system to be included.
+            These are functions such as bzero, bcmp, bcopy, bzero, strcasecmp,
+            strncasecmp, index, rindex and swab."
+    }
+    
+    cdl_component CYGPKG_LIBC_STRING_STRTOK {
+        display       "strtok"
+        flavor        none
+        description   "
+            These options control the behaviour of the
+            strtok() and strtok_r() string tokenization
+            functions."
+    
+        cdl_option CYGSEM_LIBC_STRING_PER_THREAD_STRTOK {
+            display       "Per-thread strtok()"
+            active_if     CYGPKG_KERNEL
+            requires      CYGVAR_KERNEL_THREADS_DATA
+            default_value CYGVAR_KERNEL_THREADS_DATA
+            description   "
+                This option controls whether the string function
+                strtok() has its state recorded on a per-thread
+                basis rather than global. If this option is
+                disabled, some per-thread space can be saved.
+                Note there is also a POSIX-standard strtok_r()
+                function to achieve a similar effect with user
+                support. Enabling this option will use one slot
+                of kernel per-thread data. You should ensure you
+                have enough slots configured for all your
+                per-thread data."
+        }
+    
+        cdl_option CYGNUM_LIBC_STRING_STRTOK_TRACE_LEVEL {
+            display       "Tracing level"
+            flavor        data
+            legal_values  0 to 1
+            default_value 0
+            description   "
+                Trace verbosity level for debugging the <string.h>
+                functions strtok() and strtok_r(). Increase this
+                value to get additional trace output."
+        }
+    }
+
+    cdl_option CYGFUN_LIBC_STRING_STRDUP {
+        display       "strdup"
+        active_if     CYGINT_ISO_MALLOC
+        calculated    1
+        compile       strdup.cxx
+        description   "
+                This option indicates whether strdup() is to be supported."
+    }
+
+    cdl_component CYGPKG_LIBC_STRING_OPTIONS {
+        display "C library string functions build options"
+        flavor  none
+        no_define
+        description   "
+	    Package specific build options including control over
+	    compiler flags used only in building this package,
+	    and details of which tests are built."
+
+
+        cdl_option CYGPKG_LIBC_STRING_CFLAGS_ADD {
+            display "Additional compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are used in addition
+                to the set of global flags."
+        }
+
+        cdl_option CYGPKG_LIBC_STRING_CFLAGS_REMOVE {
+            display "Suppressed compiler flags"
+            flavor  data
+            no_define
+            default_value { "" }
+            description   "
+                This option modifies the set of compiler flags for
+                building the C library. These flags are removed from
+                the set of global flags if present."
+        }
+
+        cdl_option CYGPKG_LIBC_STRING_TESTS {
+            display "C library string function tests"
+            flavor  data
+            no_define
+            calculated { "tests/memchr tests/memcmp1 tests/memcmp2 tests/memcpy1 tests/memcpy2 tests/memmove1 tests/memmove2 tests/memset tests/strcat1 tests/strcat2 tests/strchr tests/strcmp1 tests/strcmp2 tests/strcoll1 tests/strcoll2 tests/strcpy1 tests/strcpy2 tests/strcspn tests/strcspn tests/strlen tests/strncat1 tests/strncat2 tests/strncpy1 tests/strncpy2 tests/strpbrk tests/strrchr tests/strspn tests/strstr tests/strtok tests/strxfrm1 tests/strxfrm2" }
+            description   "
+                This option specifies the set of tests for the C library
+                string functions."
+        }
+    }
+}
+
+# ====================================================================
+# EOF string.cdl
+
