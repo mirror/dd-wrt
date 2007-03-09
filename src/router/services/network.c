@@ -638,7 +638,7 @@ do_portsetup (char *lan, char *ifname)
   sprintf (var, "%s_bridged", ifname);
   if (nvram_default_match (var, "1", "1"))
     {
-      br_add_interface (getBridge(ifname), ifname);
+      br_add_interface (getBridge (ifname), ifname);
     }
   else
     {
@@ -662,7 +662,7 @@ start_lan (void)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_RB500
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -687,7 +687,7 @@ start_lan (void)
 #endif
 
 #ifdef HAVE_MAGICBOX
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -715,7 +715,7 @@ start_lan (void)
   ioctl (s, SIOCSIFHWADDR, &ifr);
 #endif
 #ifdef HAVE_FONERA
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -738,7 +738,7 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_WHRAG108
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       nvram_set ("lan_ifname", "br0");
@@ -761,37 +761,38 @@ start_lan (void)
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
 #ifdef HAVE_GATEWORX
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta")
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
     {
       if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "ixp0 eth0 eth1 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames", "ixp0 eth0 eth1 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  nvram_set ("wan_ifname", "");
+	  nvram_set ("wan_ifnames", "");
+	}
+      else if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames",
+		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
       else
-      if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
-	  nvram_set ("wan_ifname", "");
-	  nvram_set ("wan_ifnames", "");
-	}
-      else
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames",
+		       "ixp0 ixp1 eth0 eth1 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
 	  nvram_set ("wan_ifname", "");
 	  nvram_set ("wan_ifnames", "");
 	}
@@ -801,48 +802,62 @@ start_lan (void)
       if (getRouterBrand () == ROUTER_BOARD_GATEWORX_SWAP)
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "eth0 eth1 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ath0 ath1 ath2 ath3");
-      if (nvram_get ("wan_ifname2") != NULL)
-	{
-	  nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	  nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
+	  if (nvram_get ("wan_ifname2") != NULL)
+	    {
+	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
+	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
 
+	    }
+	  else
+	    {
+	      nvram_set ("wan_ifname", "ixp0");
+	      nvram_set ("wan_ifnames", "ixp0");
+	    }
 	}
-      else{
-	  nvram_set ("wan_ifname", "ixp0");
-	  nvram_set ("wan_ifnames", "ixp0");
-	  }
+      else if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
+	{
+	  nvram_set ("lan_ifname", "br0");
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames",
+		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
+	  if (nvram_get ("wan_ifname2") != NULL)
+	    {
+	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
+	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
+
+	    }
+	  else
+	    {
+	      nvram_set ("wan_ifname", "ixp1");
+	      nvram_set ("wan_ifnames", "ixp1");
+	    }
 	}
       else
-      if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345)
 	{
 	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
-	  nvram_set ("wan_ifname", "ixp1");
-	  nvram_set ("wan_ifnames", "ixp1");
-	}else
-	{
-	  nvram_set ("lan_ifname", "br0");
-	  if (nvram_match("intel_eth","1"))
-	  nvram_set ("lan_ifnames", "eth0 eth1 ixp0 ath0 ath1 ath2 ath3");
-	    else
-	  nvram_set ("lan_ifnames", "ixp0 ath0 ath1 ath2 ath3");
-      if (nvram_get ("wan_ifname2") != NULL)
-	{
-	  nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
-	  nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
+	  if (nvram_match ("intel_eth", "1"))
+	    nvram_set ("lan_ifnames",
+		       "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3");
+	  else
+	    nvram_set ("lan_ifnames", "ixp0 ixp1 ath0 ath1 ath2 ath3");
 
-	}
-      else{
-	  nvram_set ("wan_ifname", "ixp1");
-	  nvram_set ("wan_ifnames", "ixp1");
-	  }
+	  if (nvram_get ("wan_ifname2") != NULL)
+	    {
+	      nvram_set ("wan_ifname", nvram_safe_get ("wan_ifname2"));
+	      nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));
+
+	    }
+	  else
+	    {
+	      nvram_set ("wan_ifname", "ixp1");
+	      nvram_set ("wan_ifnames", "ixp1");
+	    }
 	}
     }
   strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ);
@@ -860,7 +875,7 @@ start_lan (void)
      ioctl (s, SIOCSIFHWADDR, &ifr); */
 #endif
 #ifdef HAVE_X86
-  if (getSTA () || getWET() || nvram_match ("ath0_mode", "wdssta"))
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta"))
     {
       nvram_set ("lan_ifname", "br0");
 #ifdef HAVE_NOWIFI
@@ -1113,7 +1128,7 @@ start_lan (void)
 #ifdef HAVE_PORTSETUP
 	    do_portsetup (lan_ifname, name);
 #else
-	    br_add_interface (getBridge(name), name);
+	    br_add_interface (getBridge (name), name);
 #endif
 	  }
 	else
@@ -1215,10 +1230,11 @@ start_lan (void)
 	    /* Do not attach the main wl i/f if in wds or client/adhoc */
 
 	    led_control (LED_BRIDGE, LED_OFF);
-	    if (nvram_match (wl_name, "wet") || nvram_match (wl_name, "apstawet"))
+	    if (nvram_match (wl_name, "wet")
+		|| nvram_match (wl_name, "apstawet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
-		br_add_interface (getBridge(name), name);
+		br_add_interface (getBridge (name), name);
 		led_control (LED_BRIDGE, LED_ON);
 #ifdef HAVE_MSSID
 		enable_dhcprelay (lan_ifname);
@@ -1229,7 +1245,7 @@ start_lan (void)
 	    if (nvram_match (wl_name, "ap"))
 	      {
 
-		br_add_interface (getBridge(name), name);	//eval ("brctl", "addif", lan_ifname, name);
+		br_add_interface (getBridge (name), name);	//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
 		do_mssid (lan_ifname);
 #endif
@@ -1354,22 +1370,24 @@ start_lan (void)
   ifconfig (lan_ifname, IFUP, nvram_safe_get ("lan_ipaddr"),
 	    nvram_safe_get ("lan_netmask"));
 
-      char staticlan[32];
-      sprintf (staticlan, "%s:0", lan_ifname);
+  char staticlan[32];
+  sprintf (staticlan, "%s:0", lan_ifname);
 #ifdef HAVE_FONERA
   if (nvram_match ("ath0_mode", "sta") || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("ath0_mode", "wet")
       || nvram_match ("wan_proto", "disabled"))
     {
 #endif
-      
-      eval ("ifconfig","eth0:0","down");
+
+      eval ("ifconfig", "eth0:0", "down");
 //add fallback ip
-      eval ("ifconfig", staticlan, "169.254.255.1", "netmask","255.255.255.0");
+      eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
+	    "255.255.255.0");
 
 #ifdef HAVE_FONERA
-    }else
-      eval ("ifconfig", staticlan, "0.0.0.0","down");
+    }
+  else
+    eval ("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 
   /* Get current LAN hardware address */
@@ -1855,13 +1873,13 @@ start_wan (int status)
     }
   if (isClient ())
     {
-      pppoe_wan_ifname = get_wdev();
+      pppoe_wan_ifname = get_wdev ();
     }
 
 #else
   if (isClient ())
     {
-      pppoe_wan_ifname = getSTA();
+      pppoe_wan_ifname = getSTA ();
     }
 #endif
 /*	if (strcmp(wan_proto,"pppoe"))
@@ -1895,18 +1913,19 @@ start_wan (int status)
 
   ifconfig (wan_ifname, 0, NULL, NULL);
 #ifdef HAVE_FONERA
-      char staticlan[32];
-      sprintf (staticlan, "%s:0", wan_ifname);
+  char staticlan[32];
+  sprintf (staticlan, "%s:0", wan_ifname);
   if (!nvram_match ("ath0_mode", "sta")
       && !nvram_match ("ath0_mode", "wdssta")
       && !nvram_match ("ath0_mode", "wet")
       && !nvram_match ("wan_proto", "disabled"))
     {
-      eval ("ifconfig","br0:0","down");
+      eval ("ifconfig", "br0:0", "down");
       eval ("ifconfig", staticlan, "169.254.255.1", "netmask",
-	    "255.255.255.0");	
-    }else
-      eval ("ifconfig", staticlan, "0.0.0.0","down");
+	    "255.255.255.0");
+    }
+  else
+    eval ("ifconfig", staticlan, "0.0.0.0", "down");
 #endif
 
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
@@ -2729,7 +2748,7 @@ stop_wan (void)
       br_init ();
 #endif
 
-      br_add_interface (getBridge(get_wdev()), get_wdev ());
+      br_add_interface (getBridge (get_wdev ()), get_wdev ());
 #ifdef HAVE_MICRO
       br_shutdown ();
 #endif

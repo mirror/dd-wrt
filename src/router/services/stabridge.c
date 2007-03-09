@@ -47,7 +47,9 @@ filterarp (char *ifname)
 {
 //        ebtables     -t    broute -A BROUTING -p ARP -i <first ethernet interface> --arp-mac-dst ! <bridge MAC address> --arp-ip-dst ! <bridge IP address> -j DROP
 
-  eval ("ebtables", "-t", "broute","-A","BROUTING","-p", "ARP", "-i",ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"),"--arp-ip-dst","!",nvram_safe_get("lan_ipaddr"), "-j", "DROP");
+  eval ("ebtables", "-t", "broute", "-A", "BROUTING", "-p", "ARP", "-i",
+	ifname, "--arp-mac-dst", "!", nvram_safe_get ("lan_hwaddr"),
+	"--arp-ip-dst", "!", nvram_safe_get ("lan_ipaddr"), "-j", "DROP");
 }
 
 void
@@ -55,7 +57,7 @@ start_stabridge (void)
 {
 
 #ifdef HAVE_MADWIFI
-  if (getWET())
+  if (getWET ())
 #else
   if (nvram_match ("wl0_mode", "wet"))
 #endif
@@ -111,10 +113,12 @@ start_stabridge (void)
 
       filterarp (firstlanif);
 #endif
-      eval("brctl","stp",nvram_safe_get("lan_ifname"),"off");
+      eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
       char hwaddr[16];
-      sprintf(hwaddr,"%s_hwaddr",getWET());
-      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o",getWET(), "-j", "snat", "--to-src",nvram_safe_get(hwaddr), "--snat-target", "ACCEPT");
+      sprintf (hwaddr, "%s_hwaddr", getWET ());
+      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "-o", getWET (),
+	    "-j", "snat", "--to-src", nvram_safe_get (hwaddr),
+	    "--snat-target", "ACCEPT");
 
 /*		"\t-s <size>\t- Use MAC DB size. Default is %d if no in configuration found\n"
 		"\t-w <devname>\t- Use wireless device name. Default is ath0 if no in configuration found\n"
@@ -122,35 +126,35 @@ start_stabridge (void)
 		"\t-e <devname(s)>\t- Use ethernet device(s) name(s) separated by space. Default is eth0 if no in configuration found\n",
 */
 #ifdef HAVE_MAGICBOX
-      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET (), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
 #elif HAVE_FONERA
       eval ("stabridge", "-d", "-w", "ath0", "-b", "br0", "-e", "eth0");
 #elif HAVE_WHRAG108
-      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET (), "-b", "br0", "-e", "eth0",
 	    "eth1");
 #elif HAVE_GATEWORX
-      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "ixp0",
+      eval ("stabridge", "-d", "-w", getWET (), "-b", "br0", "-e", "ixp0",
 	    "ixp1");
 #elif HAVE_RB500
-      eval ("stabridge", "-d", "-w", getWET(), "-b", "br0", "-e", "eth0",
+      eval ("stabridge", "-d", "-w", getWET (), "-b", "br0", "-e", "eth0",
 	    "eth1", "eth2");
 #elif HAVE_X86
-char commandline[256];
-sprintf(commandline,"stabridge -d -w %s -b br0 -e",getWET());
-int i;
-  static char word[256];
-  char *next, *wordlist;
-  wordlist = nvram_safe_get ("lan_ifnames");
-  foreach (word, wordlist, next)
-  {
-  if (strncmp(word,"ath",3))
-  {
-      if (ifexists(word))
-	sprintf(commandline,"%s %s",commandline,word);
-  }
-  }
-    system(commandline);
+      char commandline[256];
+      sprintf (commandline, "stabridge -d -w %s -b br0 -e", getWET ());
+      int i;
+      static char word[256];
+      char *next, *wordlist;
+      wordlist = nvram_safe_get ("lan_ifnames");
+      foreach (word, wordlist, next)
+      {
+	if (strncmp (word, "ath", 3))
+	  {
+	    if (ifexists (word))
+	      sprintf (commandline, "%s %s", commandline, word);
+	  }
+      }
+      system (commandline);
 #else //Broadcom
       eval ("stabridge", "-d", "-w", nvram_safe_get ("wl0_ifname"), "-b",
 	    "br0", "-e", firstlanif);
@@ -164,7 +168,7 @@ void
 stop_stabridge (void)
 {
 #ifdef HAVE_MADWIFI
-  if (getWET())
+  if (getWET ())
 #else
   if (nvram_match ("wl0_mode", "wet"))
 #endif
