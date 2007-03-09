@@ -522,7 +522,7 @@ start_sysinit (void)
 				  "") ? nvram_safe_get ("ct_modules") :
 		  "diag pcmcia_core yenta_socket ds";
 	      break;
-	    
+
 	    default:
 	      if (check_vlan_support ())
 		modules =

@@ -1033,7 +1033,7 @@ set_netmode (char *wif, char *dev)
   }
   if (default_match (turbo, "1", "0"))
     {
-      if (nvram_match (mode, "sta") || nvram_match(mode,"wet"))
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wet"))
 	eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
@@ -1076,7 +1076,8 @@ setMacFilter (char *iface)
   sprintf (nvvar, "%s_macmode", iface);
   if (nvram_match (nvvar, "deny"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_ALLOW);
+      set80211param (iface, IEEE80211_PARAM_MACCMD,
+		     IEEE80211_MACCMD_POLICY_ALLOW);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1094,7 +1095,8 @@ setMacFilter (char *iface)
     }
   if (nvram_match (nvvar, "allow"))
     {
-      set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_POLICY_DENY);
+      set80211param (iface, IEEE80211_PARAM_MACCMD,
+		     IEEE80211_MACCMD_POLICY_DENY);
       char nvlist[32];
       sprintf (nvlist, "%s_maclist", iface);
 
@@ -1308,7 +1310,7 @@ configure_single (int count)
   //confige net mode
 
 
-  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp(m,"wet"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
@@ -1363,9 +1365,9 @@ configure_single (int count)
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
       char isolate[32];
-      sprintf(isolate,"%s_ap_isolate",var);
-      if (nvram_match(isolate,"1"))
-      eval ("iwpriv", var, "ap_bridge","0");
+      sprintf (isolate, "%s_ap_isolate", var);
+      if (default_match (isolate, "1", "0"))
+	eval ("iwpriv", var, "ap_bridge", "0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", dev, "wds", "1");
       setMacFilter (var);
@@ -1376,10 +1378,10 @@ configure_single (int count)
 
   if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
     eval ("iwpriv", dev, "wds", "1");
-      char isolate[32];
-      sprintf(isolate,"%s_ap_isolate",dev);
-      if (nvram_match(isolate,"1"))
-      eval ("iwpriv", dev, "ap_bridge","0");
+  char isolate[32];
+  sprintf (isolate, "%s_ap_isolate", dev);
+  if (default_match (isolate, "1", "0"))
+    eval ("iwpriv", dev, "ap_bridge", "0");
 
 
   sprintf (ssid, "ath%d_ssid", count);
@@ -1390,9 +1392,9 @@ configure_single (int count)
 
   cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
-      eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
+  eval ("iwconfig", dev, "essid", default_get (ssid, "maksat"));
 #else
-      eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
+  eval ("iwconfig", dev, "essid", default_get (ssid, "dd-wrt"));
 #endif
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
@@ -1409,7 +1411,8 @@ configure_single (int count)
   else
     eval ("iwpriv", dev, "shpreamble", "0");
 
-  if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0 || strcmp (m, "wet") == 0 || strcmp (m, "wdssta") == 0)
+  if (strcmp (m, "sta") == 0 || strcmp (m, "infra") == 0
+      || strcmp (m, "wet") == 0 || strcmp (m, "wdssta") == 0)
     {
       cprintf ("set ssid\n");
 #ifdef HAVE_MAKSAT
@@ -1444,7 +1447,7 @@ configure_single (int count)
   cprintf ("adjust power\n");
 
   int newpower = atoi (default_get (power, "16"));
-  fprintf (stderr,"new power limit %d\n", newpower);
+  fprintf (stderr, "new power limit %d\n", newpower);
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
@@ -1462,22 +1465,21 @@ configure_single (int count)
 
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
-	  char bridged[32];
-	  sprintf (bridged, "%s_bridged", dev);
-	  if (default_match (bridged, "1", "1"))
-	    {
-	      ifconfig (dev, IFUP, NULL, NULL);
-		br_add_interface (getBridge (dev), dev);
-	    }
-	  else
-	    {
-	      char ip[32];
-	      char mask[32];
-	      sprintf (ip, "%s_ipaddr", dev);
-	      sprintf (mask, "%s_netmask", dev);
-	      ifconfig (dev, IFUP, nvram_safe_get (ip),
-			nvram_safe_get (mask));
-	    }
+      char bridged[32];
+      sprintf (bridged, "%s_bridged", dev);
+      if (default_match (bridged, "1", "1"))
+	{
+	  ifconfig (dev, IFUP, NULL, NULL);
+	  br_add_interface (getBridge (dev), dev);
+	}
+      else
+	{
+	  char ip[32];
+	  char mask[32];
+	  sprintf (ip, "%s_ipaddr", dev);
+	  sprintf (mask, "%s_netmask", dev);
+	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	}
     }
 
 // vif netconfig
@@ -1496,7 +1498,7 @@ configure_single (int count)
 	  if (default_match (bridged, "1", "1"))
 	    {
 	      ifconfig (var, IFUP, NULL, NULL);
-		br_add_interface (getBridge (var), var);
+	      br_add_interface (getBridge (var), var);
 	    }
 	  else
 	    {
