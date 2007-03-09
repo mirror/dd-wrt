@@ -105,6 +105,7 @@ extern char *nvram_prefix_get(const char *name, const char *prefix);
 extern int nvram_prefix_match(const char *name, const char *prefix,char *match);
 
 extern int nvram_default_match (char *var, char *match, char *def);
+extern char *nvram_default_get (char *var, char *def);
 
 /*
  * Set the value of an NVRAM variable. The name and value strings are
