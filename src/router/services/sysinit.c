@@ -708,6 +708,7 @@ start_restore_defaults (void)
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_RT480W:
+	    case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	      nvram_set ("vlan0ports", "0 1 2 3 5*");
 	      break;
 	    default:
@@ -729,6 +730,7 @@ start_restore_defaults (void)
 		case ROUTER_MOTOROLA:
 		case ROUTER_LINKSYS_WRT55AG:
 		case ROUTER_RT480W:
+		case ROUTER_DELL_TRUEMOBILE_2300_V2:
 		  nvram_set ("vlan1ports", "4 5");
 		  break;
 		default:
