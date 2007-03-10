@@ -449,4 +449,3 @@ extern void _ulog_init();
 extern void _t_filter_init();
 extern void _t_nat_init();
 extern void _t_broute_init();
-extern void _t_madwifi_init();
