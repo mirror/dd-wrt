@@ -426,7 +426,11 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "eth2");
       break;
       
-	case ROUTER_DELL_TRUEMOBILE_2300_V2:
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:  //we must fix cfe defaults with CR added
+	  nvram_set ("vlan0hwname", "et0");
+	  nvram_set ("vlan1hwname", "et0");
+	  nvram_set ("et0mdcport", "0");
+	  nvram_set ("et0phyaddr", "30"); 
 	  nvram_set ("gpio2", "adm_eecs");
 	  nvram_set ("gpio3", "adm_eesk");
 	  nvram_set ("gpio4", "adm_eedi");
