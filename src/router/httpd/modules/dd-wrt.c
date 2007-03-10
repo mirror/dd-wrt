@@ -2344,6 +2344,7 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
 {
   char bufferif[512];
   char bufferif2[256];
+  char finalbuffer[512];
   int count = 0;
   static char word[256];
   char *next, *wordlist;
@@ -2388,6 +2389,12 @@ for (i=1;i<11;i++)
 	}
     }
 #endif
+  memset (finalbuffer, 0, 256);
+  foreach (word, bufferif, next)
+  {
+  if (!contains(word,'.'))
+    sprintf(finalbuffer,"%s %s",finalbuffer,word);
+  }
   char buffer[256];
   memset (buffer, 0, 256);
   getIfList (buffer, "br");
@@ -2410,7 +2417,7 @@ for (i=1;i<11;i++)
     showOptions (wp, vlan_name, buffer, tag);
     websWrite (wp, "&nbsp;Interface&nbsp;");
     sprintf (vlan_name, "bridgeif%d", count);
-    showOptions (wp, vlan_name, bufferif, port);
+    showOptions (wp, vlan_name, finalbuffer, port);
     websWrite (wp, "&nbsp;Prio&nbsp;");
     sprintf (vlan_name, "bridgeifprio%d", count);
     websWrite (wp,
@@ -2432,7 +2439,7 @@ for (i=1;i<11;i++)
       showOptions (wp, vlan_name, buffer, "");
       websWrite (wp, "&nbsp;Interface&nbsp;");
       sprintf (vlan_name, "bridgeif%d", i);
-      showOptions (wp, vlan_name, bufferif, "");
+      showOptions (wp, vlan_name, finalbuffer, "");
       websWrite (wp, "&nbsp;Prio&nbsp;");
       sprintf (vlan_name, "bridgeifprio%d", i);
       websWrite (wp,
