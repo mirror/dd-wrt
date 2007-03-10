@@ -1022,6 +1022,7 @@ set_netmode (char *wif, char *dev)
 //  else
   {
     eval ("iwpriv", dev, "turbo", "0");
+    eval ("iwpriv", dev, "xr", "0");
     if (!strcmp (netmode, "mixed"))
       eval ("iwpriv", dev, "mode", "0");
     if (!strcmp (netmode, "b-only"))
@@ -1040,7 +1041,7 @@ set_netmode (char *wif, char *dev)
     }
   else
     {
-    fprintf(stderr,"set xr %s = %s\n",turbo,nvram_safe_get(turbo));
+//    fprintf(stderr,"set xr %s = %s\n",turbo,nvram_safe_get(turbo));
       char *ext = nvram_get (xr);
       if (ext)
 	{
