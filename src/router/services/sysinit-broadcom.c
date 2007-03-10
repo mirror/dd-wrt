@@ -425,6 +425,14 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
       break;
+      
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:
+	  nvram_set ("gpio2", "adm_eecs");
+	  nvram_set ("gpio3", "adm_eesk");
+	  nvram_set ("gpio4", "adm_eedi");
+	  nvram_set ("gpio5", "adm_rc");
+	  nvram_unset ("gpio6");
+	  break;
 
     }
 
