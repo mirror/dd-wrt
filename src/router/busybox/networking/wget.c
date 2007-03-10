@@ -77,12 +77,30 @@ static char *safe_fgets(char *s, int size, FILE *stream)
 
 #if ENABLE_FEATURE_WGET_AUTHENTICATION
 /*
- *  Base64-encode character string and return the string.
+ *  Base64-encode character string
+ *  oops... isn't something similar in uuencode.c?
+ *  It would be better to use already existing code
  */
-static char *base64enc(unsigned char *p, char *buf, int len)
-{
-	bb_uuencode(p, buf, len, bb_uuenc_tbl_base64);
-	return buf;
+char *base64enc(unsigned char *p, char *buf, int len) {
+
+        char al[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                    "0123456789+/";
+                char *s = buf;
+
+        while(*p) {
+                                if (s >= buf+len-4)
+                                        bb_error_msg_and_die("buffer overflow");
+                *(s++) = al[(*p >> 2) & 0x3F];
+                *(s++) = al[((*p << 4) & 0x30) | ((*(p+1) >> 4) & 0x0F)];
+                *s = *(s+1) = '=';
+                *(s+2) = 0;
+                if (! *(++p)) break;
+                *(s++) = al[((*p << 2) & 0x3C) | ((*(p+1) >> 6) & 0x03)];
+                if (! *(++p)) break;
+                *(s++) = al[*(p++) & 0x3F];
+        }
+
+                return buf;
 }
 #endif
 
@@ -279,14 +297,14 @@ int wget_main(int argc, char **argv)
 				target.host, user_agent);
 
 #if ENABLE_FEATURE_WGET_AUTHENTICATION
-			if (target.user) {
-				fprintf(sfp, "Authorization: Basic %s\r\n",
-					base64enc((unsigned char*)target.user, buf, sizeof(buf)));
-			}
-			if (use_proxy && server.user) {
-				fprintf(sfp, "Proxy-Authorization: Basic %s\r\n",
-					base64enc((unsigned char*)server.user, buf, sizeof(buf)));
-			}
+                        if (target.user) {
+                                fprintf(sfp, "Authorization: Basic %s\r\n",
+                                        base64enc(target.user, buf, sizeof(buf)));
+                        }
+                        if (use_proxy && server.user) {
+                                fprintf(sfp, "Proxy-Authorization: Basic %s\r\n",
+                                        base64enc(server.user, buf, sizeof(buf)));
+                        }
 #endif
 
 			if (beg_range)
@@ -543,9 +561,7 @@ static void parse_url(char *src_url, struct host_info *h)
 	p = strchr(h->host, '?'); if (!sp || (p && sp > p)) sp = p;
 	p = strchr(h->host, '#'); if (!sp || (p && sp > p)) sp = p;
 	if (!sp) {
-		/* must be writable because of bb_get_last_path_component() */
-		static char nullstr[] = "";
-		h->path = nullstr;
+		h->path = "";
 	} else if (*sp == '/') {
 		*sp = '\0';
 		h->path = sp + 1;
