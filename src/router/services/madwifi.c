@@ -1034,12 +1034,13 @@ set_netmode (char *wif, char *dev)
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta") || nvram_match (mode, "wet"))
+        {
 	eval ("iwpriv", dev, "mode", "5");
-//      eval ("iwpriv", dev, "mode", "1");
-//      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
+	}
     }
   else
     {
+    fprintf(stderr,"set xr %s = %s\n",turbo,nvram_safe_get(turbo));
       char *ext = nvram_get (xr);
       if (ext)
 	{
