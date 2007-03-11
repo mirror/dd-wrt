@@ -39,8 +39,8 @@
 				<dt><% tran("service.kaid_legend"); %></dt>
 				<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with ";".
 					<ul class="wide">
-						<li>LocalDevices &ndash; How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li>
-						<li>UIBind &ndash; Specifies which ip/port kaid will use to listen for controller UIs.</li>
+						<li><% tran("service.kaid_locdevnum"); %> &ndash; How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.</li>
+						<li><% tran("service.kaid_uibind"); %> &ndash; Specifies which ip/port kaid will use to listen for controller UIs.</li>
 					</ul><br/>
 					<div class="note">
 						<h4>Note</h4>
