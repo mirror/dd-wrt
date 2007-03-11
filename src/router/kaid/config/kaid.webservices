@@ -17,7 +17,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
+			<input type="password" value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
 		</div>
 	</div>
 </fieldset><br/>
