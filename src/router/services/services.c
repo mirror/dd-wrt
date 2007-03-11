@@ -3996,7 +3996,7 @@ start_bridging (void)
     sprintf (netmask, "%s_netmask", tag);
 
     eval ("brctl", "addbr", tag);
-    if (!strcmp (port, "1"))
+    if (!strcmp (port, "On"))
       br_set_stp_state (tag, 1);
     else
       br_set_stp_state (tag, 0);
