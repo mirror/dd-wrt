@@ -37,7 +37,12 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WBR2G54S 0x0607
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
-#define ROUTER_BUFFALO_WLA2G54C 0x0712	//gpio 2 is AOSS button, let it acts as reset for now.
+#ifndef HAVE_MSSID
+#define ROUTER_BUFFALO_WLA2G54C 0x0712	//gpio 2 is AOSS button, let it acts as reset in v23.
+#else
+#define ROUTER_BUFFALO_WLA2G54C 0x0710  //in v24 reset button seems to work ok
+#endif
+
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
