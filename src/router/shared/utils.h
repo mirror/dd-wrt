@@ -21,7 +21,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1 (fccid: Linksys Q87-WRT54G..., Q87_WT54G...)
 #define ROUTER_WRT54G 0x0116
 
-// Linksys WRT54G v1.0 and v1.1 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
+// Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
 #define ROUTER_WRT54G1X 0x0216
 
 // Linksys WRT55AG v1 (4702 cpu, dual minipci (Broadcom + Atheros), fccid: Linksys PKW-WRT55AG)
@@ -43,7 +43,6 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54C 0x0710  //in v24 reset button seems to work ok
 #endif
 
-
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
 
@@ -53,7 +52,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Motorola WR850G v1 (4702 cpu, fccid Motorola ACQWR850G) 
 #define ROUTER_MOTOROLA_V1 0x0a10
 
-// Motorola WR850G v2/v3 (4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
+// Motorola WR850G v2/v3, WR850GP (4712 cpu, ADM6996 switch, fccid Motorola ACQWR850GV2)
 #define ROUTER_MOTOROLA 0x0b15
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
