@@ -563,10 +563,10 @@ wlconf_up (char *name)
 	}
 
 
-      val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
 #ifdef HAVE_MSSID
       // set_wlc_slottime (val);
 #else
+      val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
 
       shm = 0x10;
       shm |= (val << 16);
