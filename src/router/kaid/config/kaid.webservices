@@ -22,6 +22,11 @@
 		<div class="setting">
 			<div class="label"><% tran("service.kaid_uibind"); %></div>
 			<input type="num" value="<% nvram_get("kaid_uibind"); %>" name="kaid_uibind" size="5" maxlength="5" />
+			<span class="default"><script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 34522, " + share.range + ": 1 - 65535)");
+			//]]>
+			</script>
 		</div>
 	</div>
 </fieldset><br/>
