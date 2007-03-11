@@ -1071,6 +1071,7 @@ service.h2="Services Management";
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Start Kaid";
 service.kaid_locdevnum="Number of Local Devices";
+service.kaid_uibind="UI Listening Port";
 
 //DHCPd
 service.dhcp_legend="DHCP Client";
