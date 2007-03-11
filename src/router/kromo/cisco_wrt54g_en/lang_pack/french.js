@@ -154,7 +154,7 @@ share._6h="Toutes les 6 heures";
 share._12h="Toutes les 12 heures";
 share._24h="Tous les jours";
 share._48h="Tous les 2 jours";
-share._168h="Toute les semaines";
+share._168h="Toutes les semaines";
 share.days="Jours";
 share.standard="Standard";
 share.execscript="Exécuter un script";
@@ -854,7 +854,7 @@ management.remote_sshport="Port SSH";
 
 management.web_legend="Console d\'Administration";
 management.web_refresh="Rafraîchissement auto (en sec.)";
-management.web_sysinfo="Activer page de démarrage";
+management.web_sysinfo="Activer la page de démarrage";
 management.web_sysinfopass="Page de démarrage protégée";
 management.web_sysinfomasq="Masquer adresses MAC";
 
@@ -915,7 +915,7 @@ management.net_tcptimeout="TCP Timeout (en secondes)";
 management.net_udptimeout="UDP Timeout (en secondes)";
 
 management.clock_legend="Overclocking";
-management.clock_frq="Fréquence";
+management.clock_frq="Vitesse du processeur";
 management.clock_support="Non supporté";
 
 management.mmc_legend="Support de carte MMC/SD";
@@ -1034,7 +1034,8 @@ service.h2="Gestion des Services";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Démarrer Kaid";
-service.kaid_locdevnum="Number of Local Devices";
+service.kaid_locdevnum="Nombre de console(s)";
+service.kaid_uibind="Port du démon";
 
 //DHCPd
 service.dhcp_legend="Client DHCP";
@@ -1310,7 +1311,7 @@ upgrad.legend="Mise à jour du Firmware";
 upgrad.info1="Après la mise à jour, réinitialiser";
 upgrad.resetOff="Pas de reset";
 upgrad.resetOn="Reset usine";
-upgrad.file="Veuillez séléctionner le fichier de mise à jour";
+upgrad.file="Séléctionner le fichier de mise à jour";
 upgrad.warning="A T T E N T I O N";
 upgrad.mess1="La mise à jour du firmware peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
 
@@ -1388,8 +1389,8 @@ wol.broadcast="Net Broadcast";
 wol.udp="Port UDP";
 wol.msg1="Cliquer pour supprimer l\'hôte";
 
-wol.h22="Automatic Wake-On-LAN";
-wol.legend5="Wake-On-LAN daemon";
+wol.h22="Wake-On-LAN Automatique";
+wol.legend5="Démon Wake-On-LAN";
 wol.srv="WOL";
 wol.pass="Mot de passe SecureOn";
 
