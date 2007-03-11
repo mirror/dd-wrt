@@ -19,5 +19,9 @@
 			<div class="label"><% tran("share.passwd"); %></div>
 			<input type="password" value="d6nw5v1x2pc7st9m" name="kaid_pass" size="20" maxlength="20" />
 		</div>
+		<div class="setting">
+			<div class="label">Kaid UI Listening Port</div>
+			<input type="num" value="<% nvram_get("kaid_uibind"); %>" name="kaid_uibind" size="5" maxlength="5" />
+		</div>
 	</div>
 </fieldset><br/>

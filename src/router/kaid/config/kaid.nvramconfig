@@ -1,4 +1,5 @@
  "kaid_enable" "XBOX Kaid Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "kaid_devs" "Number of Local Devices" "NULL" "TRUE" "0"
- "kaid_user" "User" "NULL" "TRUE" "0"
- "kaid_pass" "Password" "PASSWORD" "63" "TRUE" "0"
+ "kaid_user" "User" "NULL" "FALSE" "0"
+ "kaid_pass" "Password" "PASSWORD" "63" "FALSE" "0"
+ "kaid_uibind" "UI Bind Port" "RANGE" "1" "65535" "FALSE" "0"
