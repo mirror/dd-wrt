@@ -2389,15 +2389,16 @@ for (i=1;i<11;i++)
 	}
     }
 #endif
+  char buffer[256];
+  memset (buffer, 0, 256);
+  getIfList (buffer, "br");
+
   memset (finalbuffer, 0, 256);
-  foreach (word, bufferif, next)
+  foreach (word, buffer, next)
   {
   if (!contains(word,'.'))
     sprintf(finalbuffer,"%s %s",finalbuffer,word);
   }
-  char buffer[256];
-  memset (buffer, 0, 256);
-  getIfList (buffer, "br");
 
 
   int realcount = atoi (nvram_default_get ("bridgesif_count","0"));
@@ -2414,10 +2415,10 @@ for (i=1;i<11;i++)
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp, "<div class=\"label\">Assignment %d</div>\n", count);
     sprintf (vlan_name, "bridge%d", count);
-    showOptions (wp, vlan_name, buffer, tag);
+    showOptions (wp, vlan_name, finalbuffer, tag);
     websWrite (wp, "&nbsp;Interface&nbsp;");
     sprintf (vlan_name, "bridgeif%d", count);
-    showOptions (wp, vlan_name, finalbuffer, port);
+    showOptions (wp, vlan_name, bufferif, port);
     websWrite (wp, "&nbsp;Prio&nbsp;");
     sprintf (vlan_name, "bridgeifprio%d", count);
     websWrite (wp,
@@ -2436,10 +2437,10 @@ for (i=1;i<11;i++)
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\">Assignment %d</div>\n", i);
       sprintf (vlan_name, "bridge%d", i);
-      showOptions (wp, vlan_name, buffer, "");
+      showOptions (wp, vlan_name, finalbuffer, "");
       websWrite (wp, "&nbsp;Interface&nbsp;");
       sprintf (vlan_name, "bridgeif%d", i);
-      showOptions (wp, vlan_name, finalbuffer, "");
+      showOptions (wp, vlan_name, bufferif, "");
       websWrite (wp, "&nbsp;Prio&nbsp;");
       sprintf (vlan_name, "bridgeifprio%d", i);
       websWrite (wp,
