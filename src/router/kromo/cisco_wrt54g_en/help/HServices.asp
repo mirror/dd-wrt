@@ -37,7 +37,8 @@
 				</dd>
 				
 				<dt><% tran("service.kaid_legend"); %></dt>
-				<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with ";".<br/><br/>
+				<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with ";".<br/>
+				LocalDevices means how many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that's why it defaults to 1 - because most people have just 1 console.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
 						<div>Xbox must be connected directly via one of the Ethernet ports of the router.</div>
