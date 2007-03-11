@@ -1071,6 +1071,7 @@ service.h2="Upravljanje storitev";
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Zaèni Kaid";
 service.kaid_locdevnum="©tevilo lokalnih naprav";
+service.kaid_uibind="Vrata upor. vmesnika";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";
