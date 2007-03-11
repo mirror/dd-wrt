@@ -18,13 +18,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
                     |-------- reserved for future use (maybe USB supp)
 */
 
-// Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1
+// Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1 (fccid: Linksys Q87-WRT54G..., Q87_WT54G...)
 #define ROUTER_WRT54G 0x0116
 
-// Linksys WRT54G v1.0 and v1.1 (4702 cpu)
+// Linksys WRT54G v1.0 and v1.1 (4702 cpu, fccid: v1: Linksys PKW-WM54G; v1.1: Linksys Q87-WRT54G11)
 #define ROUTER_WRT54G1X 0x0216
 
-// Linksys WRT55AG v1 (4702 cpu)
+// Linksys WRT55AG v1 (4702 cpu, dual minipci (Broadcom + Atheros), fccid: Linksys PKW-WRT55AG)
 #define ROUTER_LINKSYS_WRT55AG 0x0316
 
 // Asus WL-500G-Deluxe (5365 cpu), (fccid: Asus MSQWL500GD)
@@ -55,7 +55,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Siemens se505 v1, Belkin F5D7230-4 v1000
 #define ROUTER_RT210W 0x0c0f
 
-// RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
+// RT480W generic and branded (4712 cpu, ADM6996 switch, fccid: Askey H8N-RT480W),
 // Siemens se505 v2, Belkin F5D7230-4 v1444 (2MB flash, fccid: Belkin K7S-F5D72304)
 #define ROUTER_RT480W 0x0d0f
 
@@ -65,7 +65,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
 #define ROUTER_BOARD_XSCALE 0x0e01
 
-// Generic BRCM 4702 boards: Asus WL300g, WL500g
+// Generic BRCM 4702 boards: Asus WL300g (fccid: Asus MSQWL300G), Asus WL500g (fccid: Asus MSQWL500G)
 #define ROUTER_BRCM4702_GENERIC 0x0f0f
 
 //Buffalo WLI_TX4_G54HP bridge
@@ -77,16 +77,16 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Buffalo WLA-G54C == WLI-TX1-G54 (4702 cpu - no switch), (fccid: QDS-BRCM1005)
 #define ROUTER_BUFFALO_WLAG54C 0x1210
 
-// Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
+// Asus WL-500g Premium (4704 cpu, BCM5325E switch), (fccid: Asus MSQWL500GP)
 #define ROUTER_ASUS_WL500G_PRE 0x1300
 
-// Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid: Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
+// Linksys WRTSL54GS (4704 cpu, BCM5325E switch), (fccid: Linksys Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
 
 //Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
 #define ROUTER_BUFFALO_WZRG300N 0x1504
 
-//Linksys WRT300N v1 (4704 cpu + BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
+//Linksys WRT300N v1 (4704 cpu, BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
 
 //Buffalo WHR-AM54G54
@@ -107,11 +107,12 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Motorola WE800G v1 (4702 cpu, no switch, minipci radio, fccid: Motorola ACQWE800G, F2NWE800G)
 #define ROUTER_MOTOROLA_WE800G 0x1c10
 
+//Generic x86 PC / WRAP / Soekris
 #define ROUTER_BOARD_X86 0x1e0f
 
 #define ROUTER_SUPERGERRY 0x1f0f
 
-//Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Q87-WRT350N)
+//Linksys WRT350N (4705 cpu, Gbit switch, PCMCIA radio card, fccid: Linksys Q87-WRT350N)
 #define ROUTER_WRT350N 0x2016
 
 //Linksys WAP54G v1 (4702 cpu, no switch, fccid: Linksys PKW-WAP54G)
@@ -138,13 +139,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // swapped phy definition 
 #define ROUTER_BOARD_GATEWORX_SWAP 0x280f
 
-//Netgear WNR834B (4704 cpu + BCM5325 switch, fccid: ?)
+//Netgear WNR834B (4704 cpu, BCM5325 switch, cardbus radio,  fccid: Netgear PY306100032)
 #define ROUTER_NETGEAR_WNR834B 0x2917
 
-// swapped phy definition and kendin switch
+// swapped phy definition and Kendin switch
 #define ROUTER_BOARD_GATEWORX_GW2345 0x2a0f
 
-// Linksys WRT54G3G  
+// Linksys WRT54G3G  (4712 cpu, 5325E switch, PCMCIA slot, fccid: Linksys Q87-WRT54G3G)
 #define ROUTER_WRT54G3G 0x2b16
 
 
