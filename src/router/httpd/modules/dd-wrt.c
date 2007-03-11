@@ -1840,9 +1840,9 @@ save_networking (webs_t wp)
       strcat (buffer, ifname);
       strcat (buffer, ">");
       if (!strcmp (tag, "On"))
-	strcat (buffer, "1");
+	strcat (buffer, "On");
       else
-	strcat (buffer, "0");
+	strcat (buffer, "Off");
       strcat (buffer, ">");
       strcat (buffer, prio);
       if (i < bridgescount - 1)
