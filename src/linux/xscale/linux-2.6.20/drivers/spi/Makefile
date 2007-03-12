@@ -1,29 +1,15 @@
 #
-# Makefile for kernel SPI drivers.
+# Makefile for the kernel spi bus driver.
 #
 
-ifeq ($(CONFIG_SPI_DEBUG),y)
+# Init order: core, chardev, bit adapters, pcf adapters
+
+ifeq ($(CONFIG_SPI_DEBUG_CORE),y)
 EXTRA_CFLAGS += -DDEBUG
 endif
+ 
+obj-$(CONFIG_SPI)         += spi-core.o
+objs-spi-core             := spi-core.o helpers.o
+obj-$(CONFIG_SPI_CHARDEV) += spi-dev.o
+obj-y                     += busses/ chips/ algos/ 
 
-# small core, mostly translating board-specific
-# config declarations into driver model code
-obj-$(CONFIG_SPI_MASTER)		+= spi.o
-
-# SPI master controller drivers (bus)
-obj-$(CONFIG_SPI_BITBANG)		+= spi_bitbang.o
-obj-$(CONFIG_SPI_BUTTERFLY)		+= spi_butterfly.o
-obj-$(CONFIG_SPI_PXA2XX)		+= pxa2xx_spi.o
-obj-$(CONFIG_SPI_MPC83xx)		+= spi_mpc83xx.o
-obj-$(CONFIG_SPI_S3C24XX_GPIO)		+= spi_s3c24xx_gpio.o
-obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24xx.o
-# 	... add above this line ...
-
-# SPI protocol drivers (device/link on bus)
-# 	... add above this line ...
-
-# SPI slave controller drivers (upstream link)
-# 	... add above this line ...
-
-# SPI slave drivers (protocol for that link)
-# 	... add above this line ...

@@ -128,7 +128,7 @@ static int __init ixp400_sw_init_module(void)
     if (register_chrdev(DEV_IXNPE_MAJOR_NUMBER, "ixNpe", &ixNpe_dev_fops))
 	printk (KERN_ERR "Failed to register driver for /dev/ixNpe\n");
 #ifdef CONFIG_DEVFS_FS
-    devfs_mk_cdev(MKDEV(DEV_IXNPE_MAJOR_NUMBER, DEV_IXNPE_MAJOR_NUMBER),
+    devfs_mk_cdev(MKDEV(DEV_IXNPE_MAJOR_NUMBER, DEV_IXNPE_MINOR_NUMBER),
     	S_IFCHR | S_IWUGO, DEV_IXNPE_DEVFS_NAME);
 #endif /* CONFIG_DEVFS_FS */
 #endif /* IX_NPEDL_READ_MICROCODE_FROM_FILE */

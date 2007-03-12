@@ -186,6 +186,7 @@ struct snd_usb_substream {
 	u64 formats;			/* format bitmasks (all or'ed) */
 	unsigned int num_formats;		/* number of supported audio formats (list) */
 	struct list_head fmt_list;	/* format list */
+	struct snd_pcm_hw_constraint_list rate_list;	/* limited rates */
 	spinlock_t lock;
 
 	struct snd_urb_ops ops;		/* callbacks (must be filled at init) */
@@ -1810,28 +1811,33 @@ static int check_hw_params_convention(struct snd_usb_substream *subs)
 static int snd_usb_pcm_check_knot(struct snd_pcm_runtime *runtime,
 				  struct snd_usb_substream *subs)
 {
-	struct list_head *p;
-	struct snd_pcm_hw_constraint_list constraints_rates;
+	struct audioformat *fp;
+	int count = 0, needs_knot = 0;
 	int err;
 
-	list_for_each(p, &subs->fmt_list) {
-		struct audioformat *fp;
-		fp = list_entry(p, struct audioformat, list);
-
-		if (!fp->needs_knot)
-			continue;
-
-		constraints_rates.count = fp->nr_rates;
-		constraints_rates.list = fp->rate_table;
-		constraints_rates.mask = 0;
-
-		err = snd_pcm_hw_constraint_list(runtime, 0,
-			SNDRV_PCM_HW_PARAM_RATE,
-			&constraints_rates);
-
-		if (err < 0)
-			return err;
+	list_for_each_entry(fp, &subs->fmt_list, list) {
+		if (fp->rates & SNDRV_PCM_RATE_CONTINUOUS)
+			return 0;
+		count += fp->nr_rates;
+		if (fp->needs_knot)
+			needs_knot = 1;
 	}
+	if (!needs_knot)
+		return 0;
+
+	subs->rate_list.count = count;
+	subs->rate_list.list = kmalloc(sizeof(int) * count, GFP_KERNEL);
+	subs->rate_list.mask = 0;
+	count = 0;
+	list_for_each_entry(fp, &subs->fmt_list, list) {
+		int i;
+		for (i = 0; i < fp->nr_rates; i++)
+			subs->rate_list.list[count++] = fp->rate_table[i];
+	}
+	err = snd_pcm_hw_constraint_list(runtime, 0, SNDRV_PCM_HW_PARAM_RATE,
+					 &subs->rate_list);
+	if (err < 0)
+		return err;
 
 	return 0;
 }
@@ -2231,6 +2237,7 @@ static void free_substream(struct snd_usb_substream *subs)
 		kfree(fp->rate_table);
 		kfree(fp);
 	}
+	kfree(subs->rate_list.list);
 }
 
 
@@ -2456,6 +2463,7 @@ static int parse_audio_format_rates(struct snd_usb_audio *chip, struct audioform
 		 * build the rate table and bitmap flags
 		 */
 		int r, idx, c;
+		unsigned int nonzero_rates = 0;
 		/* this table corresponds to the SNDRV_PCM_RATE_XXX bit */
 		static unsigned int conv_rates[] = {
 			5512, 8000, 11025, 16000, 22050, 32000, 44100, 48000,
@@ -2478,6 +2486,7 @@ static int parse_audio_format_rates(struct snd_usb_audio *chip, struct audioform
 			    fp->altsetting == 5 && fp->maxpacksize == 392)
 				rate = 96000;
 			fp->rate_table[r] = rate;
+			nonzero_rates |= rate;
 			if (rate < fp->rate_min)
 				fp->rate_min = rate;
 			else if (rate > fp->rate_max)
@@ -2492,6 +2501,10 @@ static int parse_audio_format_rates(struct snd_usb_audio *chip, struct audioform
 			}
 			if (!found)
 				fp->needs_knot = 1;
+		}
+		if (!nonzero_rates) {
+			hwc_debug("All rates were zero. Skipping format!\n");
+			return -1;
 		}
 		if (fp->needs_knot)
 			fp->rates |= SNDRV_PCM_RATE_KNOT;
