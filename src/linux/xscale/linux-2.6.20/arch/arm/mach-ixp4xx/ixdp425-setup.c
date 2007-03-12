@@ -44,6 +44,22 @@ static struct platform_device ixdp425_flash = {
 	.resource	= &ixdp425_flash_resource,
 };
 
+static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
+	.spis_pin       = IXDP425_KSSPI_SELECT,
+	.spic_pin       = IXDP425_KSSPI_CLOCK,
+	.spid_pin       = IXDP425_KSSPI_TXD,
+	.spiq_pin       = IXDP425_KSSPI_RXD
+};
+
+static struct platform_device ixdp425_spi_controller = {
+    .name               = "IXP4XX-SPI",
+	.id                 = 0,
+	.dev                = {
+		.platform_data  = &ixdp425_spi_gpio_pins,
+	},
+	.num_resources      = 0
+};
+
 static struct ixp4xx_i2c_pins ixdp425_i2c_gpio_pins = {
 	.sda_pin	= IXDP425_SDA_PIN,
 	.scl_pin	= IXDP425_SCL_PIN,
@@ -104,7 +120,8 @@ static struct platform_device ixdp425_uart = {
 static struct platform_device *ixdp425_devices[] __initdata = {
 	&ixdp425_i2c_controller,
 	&ixdp425_flash,
-	&ixdp425_uart
+	&ixdp425_uart,
+	&ixdp425_spi_controller
 };
 
 static void __init ixdp425_init(void)
