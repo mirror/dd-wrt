@@ -134,8 +134,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	break;
     }
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86)
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
 #endif
   // fprintf (stderr, "file write");
   unsigned short count;
@@ -143,7 +143,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
   len -= 6;
   if (!strcmp (sign, "DD-WRT"))
     {
-nvram_open();
+      nvram_open ();
       unsigned char b;
       wfread (&b, 1, 1, wp);
       count = b;
@@ -152,7 +152,7 @@ nvram_open();
       len -= 2;
       int i;
       int skip;
-      for (i = 0; i < count && len>0; i++)
+      for (i = 0; i < count && len > 0; i++)
 	{
 	again:;
 	  unsigned short l = 0;
@@ -176,25 +176,25 @@ nvram_open();
 	  if (!strcmp (name, "nvram_ver"))
 	    nvram_ver = value;
 	  int a = 0;
-	  skip=0;
+	  skip = 0;
 	  while (filter[a] != NULL)
 	    {
 	      if (!strcmp (name, filter[a++]))
 		{
-		  skip=1;
+		  skip = 1;
 		}
 	    }
-	  
+
 //          fprintf(stderr,"len %d,%d of %d %s = %s\n",len,i,count,name,value);
 	  if (!skip)
-	  {
-	  nvram_immed_set (name, value);
-	  }
+	    {
+	      nvram_immed_set (name, value);
+	    }
 	  free (value);
 	  free (name);
 	}
       restore_ret = 0;
-      nvram_close();
+      nvram_close ();
     }
   else
     {
@@ -280,9 +280,9 @@ nv_file_out (char *path, webs_t wp)
   int i;
   for (i = 0; i < NVRAM_SPACE; i++)
     {
-      if (i>0 && buf[i] == 0 && buf[i-1]==0)
-        {
-	break;
+      if (i > 0 && buf[i] == 0 && buf[i - 1] == 0)
+	{
+	  break;
 	}
       if (buf[i] == 0)
 	backupcount++;
