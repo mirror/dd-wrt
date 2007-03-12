@@ -91,6 +91,7 @@
 /**************************** CONSTANTS ****************************/
 
 /* Debugging stuff */
+//#define WE_IOCTL_DEBUG		/* Debug IOCTL API */
 #undef WE_IOCTL_DEBUG		/* Debug IOCTL API */
 #undef WE_RTNETLINK_DEBUG	/* Debug RtNetlink API */
 #undef WE_EVENT_DEBUG		/* Debug Event dispatcher */
@@ -524,10 +525,10 @@ static inline int call_commit_handler(struct net_device *	dev)
 /*
  * Calculate size of private arguments
  */
-static inline int get_priv_size(__u16	args)
+static inline int get_priv_size(__u32	args)
 {
 	int	num = args & IW_PRIV_SIZE_MASK;
-	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+	int	type = (args & IW_PRIV_TYPE_MASK) >> 16;
 
 	return num * iw_priv_type_size[type];
 }
@@ -536,12 +537,12 @@ static inline int get_priv_size(__u16	args)
 /*
  * Re-calculate the size of private arguments
  */
-static inline int adjust_priv_size(__u16		args,
+static inline int adjust_priv_size(__u32		args,
 				   union iwreq_data *	wrqu)
 {
 	int	num = wrqu->data.length;
 	int	max = args & IW_PRIV_SIZE_MASK;
-	int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+	int	type = (args & IW_PRIV_TYPE_MASK) >> 16;
 
 	/* Make sure the driver doesn't goof up */
 	if (max < num)
@@ -735,9 +736,9 @@ static int ioctl_standard_call(struct net_device *	dev,
 	descr = &(standard_ioctl[cmd - SIOCIWFIRST]);
 
 #ifdef WE_IOCTL_DEBUG
-	printk(KERN_DEBUG "%s (WE) : Found standard handler for 0x%04X\n",
+	printk(KERN_EMERG "%s (WE) : Found standard handler for 0x%04X\n",
 	       ifr->ifr_name, cmd);
-	printk(KERN_DEBUG "%s (WE) : Header type : %d, Token type : %d, size : %d, token : %d\n", dev->name, descr->header_type, descr->token_type, descr->token_size, descr->max_tokens);
+	printk(KERN_EMERG "%s (WE) : Header type : %d, Token type : %d, size : %d, token : %d\n", dev->name, descr->header_type, descr->token_type, descr->token_size, descr->max_tokens);
 #endif	/* WE_IOCTL_DEBUG */
 
 	/* Prepare the call */
@@ -803,7 +804,7 @@ static int ioctl_standard_call(struct net_device *	dev,
 		}
 
 #ifdef WE_IOCTL_DEBUG
-		printk(KERN_DEBUG "%s (WE) : Malloc %d bytes\n",
+		printk(KERN_EMERG "%s (WE) : Malloc %d bytes\n",
 		       dev->name, extra_size);
 #endif	/* WE_IOCTL_DEBUG */
 
@@ -823,7 +824,7 @@ static int ioctl_standard_call(struct net_device *	dev,
 				return -EFAULT;
 			}
 #ifdef WE_IOCTL_DEBUG
-			printk(KERN_DEBUG "%s (WE) : Got %d bytes\n",
+			printk(KERN_EMERG "%s (WE) : Got %d bytes\n",
 			       dev->name,
 			       iwr->u.data.length * descr->token_size);
 #endif	/* WE_IOCTL_DEBUG */
@@ -846,7 +847,7 @@ static int ioctl_standard_call(struct net_device *	dev,
 			if (err)
 				ret =  -EFAULT;				   
 #ifdef WE_IOCTL_DEBUG
-			printk(KERN_DEBUG "%s (WE) : Wrote %d bytes\n",
+			printk(KERN_EMERG "%s (WE) : Wrote %d bytes\n",
 			       dev->name,
 			       iwr->u.data.length * descr->token_size);
 #endif	/* WE_IOCTL_DEBUG */
@@ -915,10 +916,10 @@ static inline int ioctl_private_call(struct net_device *	dev,
 		}
 
 #ifdef WE_IOCTL_DEBUG
-	printk(KERN_DEBUG "%s (WE) : Found private handler for 0x%04X\n",
+	printk(KERN_EMERG "%s (WE) : Found private handler for 0x%04X\n",
 	       ifr->ifr_name, cmd);
 	if(descr) {
-		printk(KERN_DEBUG "%s (WE) : Name %s, set %X, get %X\n",
+		printk(KERN_EMERG "%s (WE) : Name %s, set %X, get %X\n",
 		       dev->name, descr->name,
 		       descr->set_args, descr->get_args);
 	}
@@ -935,7 +936,7 @@ static inline int ioctl_private_call(struct net_device *	dev,
 
 			/* Size of set arguments */
 			extra_size = get_priv_size(descr->set_args);
-
+			//printk(KERN_EMERG "set extra size = %d\n",extra_size);
 			/* Does it fits in iwr ? */
 			if((descr->set_args & IW_PRIV_SIZE_FIXED) &&
 			   ((extra_size + offset) <= IFNAMSIZ))
@@ -943,6 +944,7 @@ static inline int ioctl_private_call(struct net_device *	dev,
 		} else {
 			/* Size of get arguments */
 			extra_size = get_priv_size(descr->get_args);
+			//printk(KERN_EMERG "get extra size = %d\n",extra_size);
 
 			/* Does it fits in iwr ? */
 			if((descr->get_args & IW_PRIV_SIZE_FIXED) &&
@@ -958,7 +960,9 @@ static inline int ioctl_private_call(struct net_device *	dev,
 	/* Check if we have a pointer to user space data or not. */
 	if(extra_size == 0) {
 		/* No extra arguments. Trivial to handle */
+		//printk(KERN_EMERG "call simple handler\n");
 		ret = handler(dev, &info, &(iwr->u), (char *) &(iwr->u));
+		//printk(KERN_EMERG "returned simple handler\n");
 	} else {
 		char *	extra;
 		int	err;
@@ -981,7 +985,7 @@ static inline int ioctl_private_call(struct net_device *	dev,
 		}
 
 #ifdef WE_IOCTL_DEBUG
-		printk(KERN_DEBUG "%s (WE) : Malloc %d bytes\n",
+		printk(KERN_EMERG "%s (WE) : Malloc %d bytes\n",
 		       dev->name, extra_size);
 #endif	/* WE_IOCTL_DEBUG */
 
@@ -1001,13 +1005,15 @@ static inline int ioctl_private_call(struct net_device *	dev,
 				return -EFAULT;
 			}
 #ifdef WE_IOCTL_DEBUG
-			printk(KERN_DEBUG "%s (WE) : Got %d elem\n",
+			printk(KERN_EMERG "%s (WE) : Got %d elem\n",
 			       dev->name, iwr->u.data.length);
 #endif	/* WE_IOCTL_DEBUG */
 		}
 
 		/* Call the handler */
+		//printk(KERN_EMERG "call handler\n");
 		ret = handler(dev, &info, &(iwr->u), extra);
+		//printk(KERN_EMERG "returned from handler\n");
 
 		/* If we have something to return to the user */
 		if (!ret && IW_IS_GET(cmd)) {
@@ -1018,9 +1024,10 @@ static inline int ioctl_private_call(struct net_device *	dev,
 				extra_size = adjust_priv_size(descr->get_args,
 							      &(iwr->u));
 			}
-
+//printk(KERN_EMERG "copy to user\n");
 			err = copy_to_user(iwr->u.data.pointer, extra,
 					   extra_size);
+//printk(KERN_EMERG "done\n");
 			if (err)
 				ret =  -EFAULT;				   
 #ifdef WE_IOCTL_DEBUG
@@ -1030,9 +1037,11 @@ static inline int ioctl_private_call(struct net_device *	dev,
 		}
 
 		/* Cleanup - I told you it wasn't that long ;-) */
+//printk(KERN_EMERG "kfree extra\n");
 		kfree(extra);
 	}
 
+//printk(KERN_EMERG "done with handler\n");
 
 	/* Call commit handler if needed and defined */
 	if(ret == -EIWCOMMIT)
@@ -1104,6 +1113,7 @@ int wireless_process_ioctl(struct ifreq *ifr, unsigned int cmd)
 			}
 			/* Old driver API : call driver ioctl handler */
 			if (dev->do_ioctl) {
+			//printk(KERN_EMERG "ioctl\n");
 				return dev->do_ioctl(dev, ifr, cmd);
 			}
 			return -EOPNOTSUPP;
