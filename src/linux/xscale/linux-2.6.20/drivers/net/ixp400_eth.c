@@ -1505,6 +1505,7 @@ static int dev_media_check_thread (void* arg)
 		if (! netif_carrier_ok(dev))
 		{
 		    /* inform the kernel of a change in link state */
+		    P_ERROR("\nixp400_eth: %s PHY:%d link down->up ",dev->name,phyNum);
 		    netif_carrier_on(dev);
 		}
 
@@ -1531,6 +1532,7 @@ static int dev_media_check_thread (void* arg)
 		if (netif_carrier_ok(dev))
 		{
 		    /* inform the kernel of a change in link state */
+		    P_ERROR("\nixp400_eth: %s PHY:%d link up->down ",dev->name,phyNum);
 		    netif_carrier_off(dev);
 		}
 	    }
@@ -1543,6 +1545,7 @@ static int dev_media_check_thread (void* arg)
 	     */
 	    if (!netif_carrier_ok(dev))
 	    {
+		    P_ERROR("\nixp400_eth: %s PHY:%d link not monitored up ",dev->name,phyNum);
 		netif_carrier_on(dev);
 	    }
 	}
@@ -2201,7 +2204,7 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
 #ifndef CONFIG_IXP400_NAPI
     unsigned int qlevel;
 #endif
-   
+    u8 *vlanh;
     TRACE;
     dev = (struct net_device *)callbackTag;
     priv = dev->priv;
@@ -2259,7 +2262,9 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
 	/* set the length of the received skb from the mbuf length  */
 	skb->tail = skb->data + len;
 	skb->len = len;
-	
+	vlanh=(u8 *)skb->data;
+	if (*(vlanh+12)==0x81) 
+	    *(vlanh+13)=0;
 #ifdef DEBUG_DUMP
 	skb_dump("rx", skb);
 #endif
