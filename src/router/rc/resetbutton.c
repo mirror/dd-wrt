@@ -404,7 +404,6 @@ period_check (int sig)
 		  syslog (LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX)
 		  led_control (LED_DIAG, LED_ON);
-		  led_control (LED_DIAG2, LED_ON);
 #endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
