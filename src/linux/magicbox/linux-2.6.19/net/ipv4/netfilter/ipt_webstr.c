@@ -387,26 +387,11 @@ match_ret:
 	return (found ^ info->invert);
 }
 
-static int
-checkentry(const char *tablename,
-           const void *ip,
-	   const struct xt_match *match,
-           void *matchinfo,
-           unsigned int matchsize,
-           unsigned int hook_mask)
-{
-
-       if (matchsize != IPT_ALIGN(sizeof(struct ipt_webstr_info)))
-               return 0;
-
-       return 1;
-}
 
 static struct ipt_match webstr_match = {
 	.name		= "webstr",
 	.match		= &match,
 	.matchsize      = sizeof(struct ipt_webstr_info),
-	.checkentry	= &checkentry,
 	.me		= THIS_MODULE,
 };
 
