@@ -625,9 +625,9 @@ print_priv_info(int		skfd,
 	  printf("          %-16.16s (%.4X) : set %3d %s & get %3d %s\n",
 		 priv[k].name, priv[k].cmd,
 		 priv[k].set_args & IW_PRIV_SIZE_MASK,
-		 argtype[(priv[k].set_args & IW_PRIV_TYPE_MASK) >> 12],
+		 argtype[(priv[k].set_args & IW_PRIV_TYPE_MASK) >> 16],
 		 priv[k].get_args & IW_PRIV_SIZE_MASK,
-		 argtype[(priv[k].get_args & IW_PRIV_TYPE_MASK) >> 12]);
+		 argtype[(priv[k].get_args & IW_PRIV_TYPE_MASK) >> 16]);
       printf("\n");
     }
 
