@@ -2522,6 +2522,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
       char cn[32];
+      char fr[32];
       chan = list_channels (prefix);
       if (chan == NULL)
 	chan = list_channels (dev);
@@ -2539,10 +2540,11 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      cprintf ("%d\n", chan[i].freq);
 
 	      sprintf (cn, "%d", chan[i].channel);
+	      sprintf (fr, "%d", chan[i].freq);
 	      websWrite (wp,
 			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
-			 cn, nvram_match (wl_channel,
-					  cn) ? "selected=\\\"selected\\\"" :
+			 fr, nvram_match (wl_channel,
+					  fr) ? "selected=\\\"selected\\\"" :
 			 "", cn, chan[i].freq);
 	      //free (chan[i].freq);
 	      i++;
@@ -3253,10 +3255,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
       websWrite (wp,
 		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
+		 nvram_match ("ath_regulatory", "1") ? "checked" : "");
       websWrite (wp,
 		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-		 nvram_match ("ath_regulatory", "1") ? "checked" : "");
+		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
       websWrite (wp, " 	</div>\n");
 //      char *wl_regulatory = "ath_regulatory";
 //      showOption (wp, "wl_basic.regulatory", wl_regulatory);

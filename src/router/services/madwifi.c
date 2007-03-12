@@ -1035,8 +1035,8 @@ set_netmode (char *wif, char *dev)
   if (default_match (turbo, "1", "0"))
     {
       if (nvram_match (mode, "sta") || nvram_match (mode, "wet"))
-        {
-	eval ("iwpriv", dev, "mode", "5");
+	{
+	  eval ("iwpriv", dev, "mode", "5");
 	}
     }
   else
@@ -1318,10 +1318,14 @@ configure_single (int count)
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
-//      eval ("iwconfig", dev, "channel", "auto");
+	  eval ("iwconfig", dev, "channel", "0");
 	}
       else
-	eval ("iwconfig", dev, "channel", "0");
+	{
+	  char freq[64];
+	  sprintf (freq, "%sM", ch);
+	  eval ("iwconfig", dev, "freq", freq);
+	}
     }
   set_netmode (wif, dev);
 
@@ -1430,10 +1434,14 @@ configure_single (int count)
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
 	{
-//      eval ("iwconfig", dev, "channel", "auto");
+	  eval ("iwconfig", dev, "channel", "0");
 	}
       else
-	eval ("iwconfig", dev, "channel", ch);
+	{
+	  char freq[64];
+	  sprintf (freq, "%sM", ch);
+	  eval ("iwconfig", dev, "freq", freq);
+	}
     }
 
 
@@ -1449,7 +1457,7 @@ configure_single (int count)
   cprintf ("adjust power\n");
 
   int newpower = atoi (default_get (power, "16"));
-  fprintf (stderr, "new power limit %d\n", newpower);
+ // fprintf (stderr, "new power limit %d\n", newpower);
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
