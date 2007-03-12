@@ -153,6 +153,8 @@ function to_submit(F) {
 }
 
 addEvent(window, "load", function() {
+	if (document.setup.ath_regulatory)
+	show_layer_ext(document.setup.ath_regulatory, 'idregulatory', <% nvram_else_match("ath_regulatory", "1", "1", "0"); %> == 1);
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
 	var wl_mode = "<% nvram_get("wl0_mode"); %>";
         if (wl_mode=="ap" || wl_mode=="infra")
