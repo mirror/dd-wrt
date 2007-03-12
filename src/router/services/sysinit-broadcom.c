@@ -485,6 +485,12 @@ start_sysinit (void)
 		eval ("insmod", "switch-adm");
 
 	      break;
+	    case ROUTER_WRT54G3G:
+		modules =
+		  nvram_invmatch ("ct_modules",
+				  "") ? nvram_safe_get ("ct_modules") :
+		  "diag switch-core switch-robo pcmcia_core yenta_socket ds serial_cs usbcore usb-ohci usbserial sierra";
+	      break;
 
 	    default:
 
@@ -586,7 +592,10 @@ start_sysinit (void)
   led_control (LED_AOSS, LED_OFF);
   led_control (LED_BRIDGE, LED_OFF);
   led_control (LED_WLAN, LED_OFF);
-
+  if (brand==ROUTER_WRT54G3G)
+    {
+    eval("cardmgr");
+    }
 
   cprintf ("done\n");
   return 0;
