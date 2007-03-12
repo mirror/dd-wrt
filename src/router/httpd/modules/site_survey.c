@@ -27,7 +27,7 @@ struct site_survey_list
   int16 phy_noise;		/* noise (in dBm) */
   uint16 beacon_period;		/* units are Kusec */
   uint16 capability;		/* Capability information */
-  unsigned char ENCINFO[32];    /* encryption info */
+  unsigned char ENCINFO[32];	/* encryption info */
   uint rate_count;		/* # rates in this set */
   uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
@@ -82,7 +82,7 @@ ej_list_fbn (webs_t wp, int argc, char_t ** argv)
 
 #endif
 void
-ej_dump_site_survey ( webs_t wp, int argc, char_t ** argv)
+ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char buf[10] = { 0 };
@@ -134,17 +134,17 @@ ej_dump_site_survey ( webs_t wp, int argc, char_t ** argv)
 	(site_survey_lists[i].
 	 capability & DOT11_CAP_PRIVACY) ? live_translate ("share.no") :
 	live_translate ("share.yes");
-	
-	char *netmode;
-	long netmodecap = site_survey_lists[i].capability;
-	netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
-	if (netmodecap == DOT11_CAP_ESS)
-		netmode = "AP";
-	else if (netmodecap == DOT11_CAP_IBSS)
-		netmode = "AdHoc";
-	else
-		netmode = live_translate ("share.unknown");
-		
+
+      char *netmode;
+      long netmodecap = site_survey_lists[i].capability;
+      netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
+      if (netmodecap == DOT11_CAP_ESS)
+	netmode = "AP";
+      else if (netmodecap == DOT11_CAP_IBSS)
+	netmode = "AdHoc";
+      else
+	netmode = live_translate ("share.unknown");
+
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 		 i ? ',' : ' ',
@@ -152,7 +152,8 @@ ej_dump_site_survey ( webs_t wp, int argc, char_t ** argv)
 		 0 ? "hidden" : site_survey_lists[i].SSID, netmode,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
-		 site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO,
+		 site_survey_lists[i].beacon_period, open,
+		 site_survey_lists[i].ENCINFO,
 		 site_survey_lists[i].dtim_period, rates);
 
     }
@@ -163,7 +164,7 @@ ej_dump_site_survey ( webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_WIVIZ
 
 void
-ej_dump_wiviz_data ( webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
+ej_dump_wiviz_data (webs_t wp, int argc, char_t ** argv)	//Eko, for testing only
 {
   FILE *f;
   char buf[256];
@@ -181,15 +182,17 @@ ej_dump_wiviz_data ( webs_t wp, int argc, char_t ** argv)	//Eko, for testing onl
 	}
       fclose (f);
     }
-    else    //dummy data - to prevent first time js error
+  else				//dummy data - to prevent first time js error
     {
-    	websWrite (wp, "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
-    	websWrite (wp, "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
-     	websWrite (wp, "top.wiviz_callback(top.hosts, wiviz_cfg);\n");   	
-    	websWrite (wp, "function wiviz_callback(one, two) {\n");
-    	websWrite (wp, "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
-    	websWrite (wp, "location.replace('Wiviz_Survey.asp');\n}\n");
-	}
+      websWrite (wp, "top.hosts = new Array();\nvar hnum = 0;\nvar h;\n");
+      websWrite (wp,
+		 "var wiviz_cfg = new Object();\n wiviz_cfg.channel = 6\n");
+      websWrite (wp, "top.wiviz_callback(top.hosts, wiviz_cfg);\n");
+      websWrite (wp, "function wiviz_callback(one, two) {\n");
+      websWrite (wp,
+		 "alert(\'This asp is intended to run inside Wi-Viz.  You will now be redirected there.\');\n");
+      websWrite (wp, "location.replace('Wiviz_Survey.asp');\n}\n");
+    }
 }
 
 
@@ -199,22 +202,22 @@ set_wiviz (webs_t wp)
 
   char *hopdwell = websGetVar (wp, "hopdwell", NULL);
   char *hopseq = websGetVar (wp, "hopseq", NULL);
-  FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
+  FILE *fp = fopen ("/tmp/wiviz2-cfg", "wb");
 
-	if (strstr (hopseq, ","))
-      fprintf (fp, "channelsel=hop&");
-    else
-      fprintf (fp, "channelsel=%s&", hopseq);
-    	
-      fprintf (fp, "hopdwell=%s&hopseq=%s\n", hopdwell, hopseq);
+  if (strstr (hopseq, ","))
+    fprintf (fp, "channelsel=hop&");
+  else
+    fprintf (fp, "channelsel=%s&", hopseq);
 
-      nvram_set ("hopdwell", hopdwell);
-      nvram_set ("hopseq", hopseq);
- 
+  fprintf (fp, "hopdwell=%s&hopseq=%s\n", hopdwell, hopseq);
+
+  nvram_set ("hopdwell", hopdwell);
+  nvram_set ("hopseq", hopseq);
+
   fclose (fp);
   killall ("wiviz", SIGUSR2);
-  
-return 1;
+
+  return 1;
 }
 
 #endif

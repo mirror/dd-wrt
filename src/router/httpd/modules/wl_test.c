@@ -28,7 +28,7 @@ mysystem (char *cmd)
 }
 
 void
-ej_wl_packet_get ( webs_t wp, int argc, char_t ** argv)
+ej_wl_packet_get (webs_t wp, int argc, char_t ** argv)
 {
   char line[256];
   FILE *fp;
