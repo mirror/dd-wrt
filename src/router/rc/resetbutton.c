@@ -365,11 +365,6 @@ period_check (int sig)
     case ROUTER_ASUS_WL500G_PRE:
       sesgpio = 0x04;	//gpio 4, normal
       break;
-#ifdef HAVE_MSSID
-    case ROUTER_BUFFALO_WLA2G54C:
-      sesgpio = 0x12;	//gpio 2, inversed
-      break;
-#endif
     default:
       sesgpio = 0x0f;		//gpio unknown, disabled
     }
