@@ -79,8 +79,6 @@ function setPacketInfo(val) {
 var update;
 
 addEvent(window, "load", function() {
-	if (document.setup.ath_regulatory)
-	show_layer_ext(document.setup.ath_regulatory, 'idregulatory', <% nvram_else_match("ath_regulatory", "1", "1", "0"); %> == 1);
 	setWirelessTable(<% active_wireless(0); %>);
 	setWDSTable(<% active_wds(0); %>);
 	setPacketInfo("<% wl_packet_get(); %>");
