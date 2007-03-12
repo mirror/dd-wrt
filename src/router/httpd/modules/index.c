@@ -153,7 +153,7 @@ validate_portsetup (webs_t wp, char *value, struct variable *v)
 #ifdef HAVE_XSCALE
   getinterfacelist ("ixp", eths);
   getinterfacelist ("eth", eths2);
-  sprintf(eths,"%s %s\n",eths,eths2);
+  sprintf (eths, "%s %s\n", eths, eths2);
 #else
   getinterfacelist ("eth", eths);
 #endif
@@ -214,7 +214,7 @@ clone_mac (webs_t wp)
 }
 
 void
-ej_get_clone_mac ( webs_t wp, int argc, char_t ** argv)
+ej_get_clone_mac (webs_t wp, int argc, char_t ** argv)
 {
   char *c;
   int mac, which;
@@ -231,10 +231,10 @@ ej_get_clone_mac ( webs_t wp, int argc, char_t ** argv)
     {
       if (nvram_match ("def_hwaddr", "00:00:00:00:00:00"))
 	{
-		if (nvram_match ("port_swap", "1"))
-			c = strdup (nvram_safe_get ("et1macaddr"));
-		else			
-	  		c = strdup (nvram_safe_get ("et0macaddr"));
+	  if (nvram_match ("port_swap", "1"))
+	    c = strdup (nvram_safe_get ("et1macaddr"));
+	  else
+	    c = strdup (nvram_safe_get ("et0macaddr"));
 	  if (c)
 	    {
 	      MAC_ADD (c);

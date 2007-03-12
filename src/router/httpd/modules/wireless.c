@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																																	/* channel info structure *///from 11.9
+																																																																																																				    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -833,17 +833,15 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 
       if (strlen (mac) == 12)
 	{
-	  sscanf (mac, "%02X%02X%02X%02X%02X%02X", & m[0],
-		  & m[1], & m[2], & m[3],
-		   & m[4], & m[5]);
+	  sscanf (mac, "%02X%02X%02X%02X%02X%02X", &m[0],
+		  &m[1], &m[2], &m[3], &m[4], &m[5]);
 	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
 		   m[3], m[4], m[5]);
 	}
       else if (strlen (mac) == 17)
 	{
-	  sscanf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", & m[0],
-		  & m[1], & m[2], & m[3],
-		  & m[4], & m[5]);
+	  sscanf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", &m[0],
+		  &m[1], &m[2], &m[3], &m[4], &m[5]);
 	  sprintf (mac1, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2],
 		   m[3], m[4], m[5]);
 	}
@@ -873,7 +871,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 }
 
 void
-ej_wireless_filter_table (  webs_t wp, int argc, char_t ** argv)
+ej_wireless_filter_table (webs_t wp, int argc, char_t ** argv)
 {
   int i;
   char *type;
@@ -1196,7 +1194,7 @@ get_hostname_ip (char *type, char *filename)
 }
 
 void
-ej_wireless_active_table (  webs_t wp, int argc, char_t ** argv)
+ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 {
   int i, flag = 0;
   char *type;
@@ -1401,7 +1399,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
 }
 
 void
-ej_get_wep_value (  webs_t wp, int argc, char_t ** argv)
+ej_get_wep_value (webs_t wp, int argc, char_t ** argv)
 {
   char *type, *bit;
   char *value = "", new_value[50] = "";
@@ -1429,7 +1427,7 @@ ej_get_wep_value (  webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_show_wl_wep_setting (  webs_t wp, int argc, char_t ** argv)
+ej_show_wl_wep_setting (webs_t wp, int argc, char_t ** argv)
 {
 
 /*
@@ -1625,7 +1623,7 @@ wl_active_onload (webs_t wp, char *arg)
 
 // only for nonbrand
 void
-ej_get_wl_active_mac (  webs_t wp, int argc, char_t ** argv)
+ej_get_wl_active_mac (webs_t wp, int argc, char_t ** argv)
 {
   char cmd[80], line[80];
   char list[2][20];
@@ -1654,7 +1652,7 @@ ej_get_wl_active_mac (  webs_t wp, int argc, char_t ** argv)
 }
 
 void
-ej_get_wl_value (  webs_t wp, int argc, char_t ** argv)
+ej_get_wl_value (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
@@ -1854,8 +1852,7 @@ security_save (webs_t wp)
 #ifdef HAVE_MSSID
 
 void
-ej_show_wpa_setting (  webs_t wp, int argc, char_t ** argv,
-		     char *prefix)
+ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv, char *prefix)
 {
   char *type, *security_mode;
   char var[80];
@@ -1879,7 +1876,7 @@ ej_show_wpa_setting (  webs_t wp, int argc, char_t ** argv,
     show_preshared (wp, prefix);
 #endif
   else if (!strcmp (security_mode, "radius"))
-    show_radius (wp, prefix,1);
+    show_radius (wp, prefix, 1);
   else if (!strcmp (security_mode, "wpa")
 	   || !strcmp (security_mode, "wpa2")
 	   || !strcmp (security_mode, "wpa wpa2"))
@@ -1895,7 +1892,7 @@ ej_show_wpa_setting (  webs_t wp, int argc, char_t ** argv,
 }
 #else
 void
-ej_show_wpa_setting (  webs_t wp, int argc, char_t ** argv)
+ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *type, *security_mode;
 
@@ -1934,7 +1931,7 @@ ej_show_wpa_setting (  webs_t wp, int argc, char_t ** argv)
 
 
 void
-ej_wl_ioctl (  webs_t wp, int argc, char_t ** argv)
+ej_wl_ioctl (webs_t wp, int argc, char_t ** argv)
 {
   int unit, val;
   char tmp[100], prefix[] = "wlXXXXXXXXXX_";
@@ -2187,7 +2184,7 @@ validate_wl_net_mode (webs_t wp, char *value, struct variable *v)
 }
 
 void
-ej_wme_match_op (  webs_t wp, int argc, char_t ** argv)
+ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
   char word[256], *next;

@@ -50,67 +50,71 @@ static unsigned int oldclocks[9] =
 static unsigned int newclocks[9] =
   { 183, 187, 198, 200, 216, 225, 233, 237, 250 };
 
-void show_ipnetmask(webs_t wp,char *var)
+void
+show_ipnetmask (webs_t wp, char *var)
 {
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 
-    char ip[32];
-    sprintf (ip, "%s_ipaddr", var);
-    char *ipv = nvram_safe_get (ip);
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 0));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 1));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 2));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
-	       var, get_single_ip (ipv, 3));
-    websWrite (wp, "</div>\n");
+  char ip[32];
+  sprintf (ip, "%s_ipaddr", var);
+  char *ipv = nvram_safe_get (ip);
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 0));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 1));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 2));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
+	     var, get_single_ip (ipv, 3));
+  websWrite (wp, "</div>\n");
 
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-    sprintf (ip, "%s_netmask", var);
-    ipv = nvram_safe_get (ip);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+  sprintf (ip, "%s_netmask", var);
+  ipv = nvram_safe_get (ip);
 
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 0));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 1));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 2));
-    websWrite (wp,
-	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
-	       var, get_single_ip (ipv, 3));
-    websWrite (wp, "</div>\n");
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 0));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 1));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 2));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
+	     var, get_single_ip (ipv, 3));
+  websWrite (wp, "</div>\n");
 
 }
+
 void
 ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 {
   int tab = getcpurev ();
   unsigned int *c;
-    
+
   if (tab == 7)
     c = oldclocks;
   else if (tab == 8)
     c = newclocks;
   else
-  	{
-    websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
-    return;
-	}	
-    
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
+    {
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+      return;
+    }
+
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
   websWrite (wp, "<select name=\"overclocking\">\n");
   int i;
   for (i = 0; i < 9; i++)
@@ -122,7 +126,7 @@ ej_show_clocks (webs_t wp, int argc, char_t ** argv)
 			      clock) ? "selected=\"selected\"" : "", c[i]);
 
     }
-    websWrite (wp, "</select>\n</div>\n");
+  websWrite (wp, "</select>\n</div>\n");
 }
 
 void
@@ -1218,8 +1222,8 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
     {
       snprintf (lease_hwaddr, 31, "lease%d_hwaddr", i);
       hwaddr = websGetVar (wp, lease_hwaddr, NULL);
-      if (hwaddr==NULL)
-        break;
+      if (hwaddr == NULL)
+	break;
       char *mac = buildmac (hwaddr);
       if (mac == NULL)
 	{
@@ -1233,8 +1237,9 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
       char *hostname = websGetVar (wp, lease_hostname, NULL);
       snprintf (lease_ip, 31, "lease%d_ip", i);
       char *ip = websGetVar (wp, lease_ip, "");
-      if (hostname == NULL || strlen(hostname)==0 || ip==NULL || strlen(ip)==0)
-        break;
+      if (hostname == NULL || strlen (hostname) == 0 || ip == NULL
+	  || strlen (ip) == 0)
+	break;
       strcat (leases, "=");
       strcat (leases, hostname);
       strcat (leases, "=");
@@ -1776,12 +1781,12 @@ save_networking (webs_t wp)
 // save bonds
   memset (buffer, 0, 1024);
 #ifdef HAVE_BONDING
-  char *bondingnumber = websGetVar(wp,"bonding_number",NULL);
+  char *bondingnumber = websGetVar (wp, "bonding_number", NULL);
   if (bondingnumber)
-    nvram_set("bonding_number",bondingnumber);
-  char *bondingtype = websGetVar(wp,"bonding_type",NULL);
+    nvram_set ("bonding_number", bondingnumber);
+  char *bondingtype = websGetVar (wp, "bonding_type", NULL);
   if (bondingtype)
-    nvram_set("bonding_type",bondingtype);
+    nvram_set ("bonding_type", bondingtype);
   for (i = 0; i < bondcount; i++)
     {
       char *ifname, *tag;
@@ -1813,8 +1818,8 @@ save_networking (webs_t wp)
       char ipaddr[32];
       char netmask[32];
       char n[32];
-      memset(ipaddr,0,32);
-      memset(netmask,0,32);
+      memset (ipaddr, 0, 32);
+      memset (netmask, 0, 32);
       sprintf (var, "bridgename%d", i);
       ifname = websGetVar (wp, var, NULL);
       if (!ifname)
@@ -1826,17 +1831,17 @@ save_networking (webs_t wp)
       sprintf (var, "bridgeprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
-	prio="32768";
-      if (strlen(prio)==0)
-        prio="32768";
-	
+	prio = "32768";
+      if (strlen (prio) == 0)
+	prio = "32768";
+
       sprintf (n, "%s_ipaddr", ifname);
       if (get_merge_ipaddr (wp, n, ipaddr))
-	nvram_set(n,ipaddr);      
+	nvram_set (n, ipaddr);
       sprintf (n, "%s_netmask", ifname);
       if (get_merge_ipaddr (wp, n, netmask))
-        nvram_set(n,netmask);
-       
+	nvram_set (n, netmask);
+
       strcat (buffer, ifname);
       strcat (buffer, ">");
       if (!strcmp (tag, "On"))
@@ -1866,9 +1871,9 @@ save_networking (webs_t wp)
       sprintf (var, "bridgeifprio%d", i);
       prio = websGetVar (wp, var, NULL);
       if (!prio)
-	prio="128";
-      if (strlen(prio)==0)
-        prio="128";
+	prio = "128";
+      if (strlen (prio) == 0)
+	prio = "128";
       strcat (buffer, ifname);
       strcat (buffer, ">");
       strcat (buffer, tag);
@@ -1879,7 +1884,7 @@ save_networking (webs_t wp)
     }
   nvram_set ("bridgesif", buffer);
 #ifdef HAVE_PORTSETUP
-  validate_portsetup(wp,NULL,NULL);
+  validate_portsetup (wp, NULL, NULL);
 #endif
   nvram_commit ();
 
@@ -2020,23 +2025,27 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   char *next, *wordlist;
   memset (buffer, 0, 256);
   memset (bondnames, 0, 256);
-websWrite(wp,"<fieldset>\n");
-websWrite(wp,"<legend>Bonding</legend>\n");
-websWrite (wp, "<div class=\"setting\">\n");
-websWrite (wp, "<div class=\"label\">Bonding Type</div>\n", count);
-showOptions(wp,"bonding_type","balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",nvram_default_get("bonding_type","balance-rr"));
-websWrite (wp,"&nbsp;Bonding Interfaces&nbsp;");
-websWrite (wp,"<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n",nvram_default_get("bonding_number","1"));
-websWrite (wp,"</div>\n");
+  websWrite (wp, "<fieldset>\n");
+  websWrite (wp, "<legend>Bonding</legend>\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">Bonding Type</div>\n", count);
+  showOptions (wp, "bonding_type",
+	       "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb",
+	       nvram_default_get ("bonding_type", "balance-rr"));
+  websWrite (wp, "&nbsp;Bonding Interfaces&nbsp;");
+  websWrite (wp,
+	     "<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n",
+	     nvram_default_get ("bonding_number", "1"));
+  websWrite (wp, "</div>\n");
 
   getIfList (buffer, NULL);
-int i;
-for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
+  int i;
+  for (i = 0; i < atoi (nvram_safe_get ("bonding_number")); i++)
     {
-    sprintf(bondnames,"%s bond%d",bondnames,i);
+      sprintf (bondnames, "%s bond%d", bondnames, i);
     }
   int totalcount = 0;
-  int realcount = atoi (nvram_default_get ("bonding_count","0"));
+  int realcount = atoi (nvram_default_get ("bonding_count", "0"));
   wordlist = nvram_safe_get ("bondings");
   foreach (word, wordlist, next)
   {
@@ -2047,7 +2056,8 @@ for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
     char vlan_name[32];
 //    sprintf (vlan_name, "%s.%s", tag, port);
     websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp, "<div class=\"label\">Bonding %d Assignment</div>\n", count);
+    websWrite (wp, "<div class=\"label\">Bonding %d Assignment</div>\n",
+	       count);
     websWrite (wp, "&nbsp;Bond&nbsp;");
     sprintf (vlan_name, "bondingifname%d", count);
     showOptions (wp, vlan_name, bondnames, tag);
@@ -2064,17 +2074,17 @@ for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
   for (i = count; i < realcount; i++)
     {
       char vlan_name[32];
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp, "<div class=\"label\">Bonding %d Interface</div>\n", i);
-    websWrite (wp, "&nbsp;Bond&nbsp;");
-    sprintf (vlan_name, "bondingifname%d", i);
-    showOptions (wp, vlan_name, bondnames, "");
-    sprintf (vlan_name, "bondingattach%d", i);
-    websWrite (wp, "&nbsp;Slave&nbsp;");
-    showOptions (wp, vlan_name, buffer, "");
-    websWrite (wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-	       i);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\">Bonding %d Interface</div>\n", i);
+      websWrite (wp, "&nbsp;Bond&nbsp;");
+      sprintf (vlan_name, "bondingifname%d", i);
+      showOptions (wp, vlan_name, bondnames, "");
+      sprintf (vlan_name, "bondingattach%d", i);
+      websWrite (wp, "&nbsp;Slave&nbsp;");
+      showOptions (wp, vlan_name, buffer, "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		 i);
       websWrite (wp, "</div>\n");
       totalcount++;
     }
@@ -2083,7 +2093,7 @@ for (i=0;i<atoi(nvram_safe_get("bonding_number"));i++)
   nvram_set ("bonding_count", var);
   websWrite (wp,
 	     "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-websWrite(wp,"</fieldset> <br />\n");
+  websWrite (wp, "</fieldset> <br />\n");
 }
 #endif
 void
@@ -2096,7 +2106,7 @@ ej_show_vlantagging (webs_t wp, int argc, char_t ** argv)
   memset (buffer, 0, 256);
   getIfList (buffer, NULL);
   int totalcount = 0;
-  int realcount = atoi (nvram_default_get ("vlan_tagcount","0"));
+  int realcount = atoi (nvram_default_get ("vlan_tagcount", "0"));
   wordlist = nvram_safe_get ("vlan_tags");
   foreach (word, wordlist, next)
   {
@@ -2216,7 +2226,7 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
   char *next, *wordlist;
   memset (buffer, 0, 256);
   getIfList (buffer, NULL);
-  int realcount = atoi (nvram_default_get ("bridges_count","0"));
+  int realcount = atoi (nvram_default_get ("bridges_count", "0"));
   wordlist = nvram_safe_get ("bridges");
   foreach (word, wordlist, next)
   {
@@ -2245,7 +2255,7 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 	       count);
     websWrite (wp, "</div>\n");
-    show_ipnetmask(wp,tag);
+    show_ipnetmask (wp, tag);
     count++;
   }
   int i;
@@ -2353,39 +2363,39 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   getIfList (bufferif, "eth");
 #ifdef HAVE_GATEWORX
   getIfList (bufferif2, "ixp");
-  sprintf(bufferif,"%s %s",bufferif,bufferif2);
+  sprintf (bufferif, "%s %s", bufferif, bufferif2);
 #endif
   memset (bufferif2, 0, 256);
   getIfList (bufferif2, "br");
   foreach (word, bufferif2, next)
   {
-  if (contains(word,'.'))
-  sprintf(bufferif,"%s %s",bufferif,word);
+    if (contains (word, '.'))
+      sprintf (bufferif, "%s %s", bufferif, word);
   }
-int i;
+  int i;
 #ifdef HAVE_MADWIFI
-int c = getifcount("wifi");
-for (i=0;i<c;i++)
+  int c = getifcount ("wifi");
+  for (i = 0; i < c; i++)
     {
-    sprintf(bufferif,"%s ath%d",bufferif,i);
-    char vifs[32];
-    sprintf(vifs,"ath%d_vifs",i);
-    sprintf(bufferif,"%s %s",bufferif,nvram_safe_get(vifs));
+      sprintf (bufferif, "%s ath%d", bufferif, i);
+      char vifs[32];
+      sprintf (vifs, "ath%d_vifs", i);
+      sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
     }
 #endif
 
 #ifdef HAVE_EOP_TUNNEL
-for (i=1;i<11;i++)
+  for (i = 1; i < 11; i++)
     {
-    char oet[32];
-    char oeten[32];
-    char EOP[32];
-    sprintf(oet,"oet%d_bridged",i);
-    sprintf(oeten,"oet%d_en",i);
-    if (nvram_match(oet,"1") && nvram_match(oeten,"1"))
+      char oet[32];
+      char oeten[32];
+      char EOP[32];
+      sprintf (oet, "oet%d_bridged", i);
+      sprintf (oeten, "oet%d_en", i);
+      if (nvram_match (oet, "1") && nvram_match (oeten, "1"))
 	{
-	sprintf(EOP,"EOP%d",i);
-	sprintf(bufferif,"%s %s",bufferif,EOP);
+	  sprintf (EOP, "EOP%d", i);
+	  sprintf (bufferif, "%s %s", bufferif, EOP);
 	}
     }
 #endif
@@ -2396,12 +2406,12 @@ for (i=1;i<11;i++)
   memset (finalbuffer, 0, 256);
   foreach (word, buffer, next)
   {
-  if (!contains(word,'.'))
-    sprintf(finalbuffer,"%s %s",finalbuffer,word);
+    if (!contains (word, '.'))
+      sprintf (finalbuffer, "%s %s", finalbuffer, word);
   }
 
 
-  int realcount = atoi (nvram_default_get ("bridgesif_count","0"));
+  int realcount = atoi (nvram_default_get ("bridgesif_count", "0"));
   wordlist = nvram_safe_get ("bridgesif");
   foreach (word, wordlist, next)
   {
@@ -3211,15 +3221,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
-  websWrite (wp, "<div id=\"idregulatory\">\n");
-
-  websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
-  char *list = getCountryList ();
-  showOptions (wp, wl_regdomain, list, nvram_safe_get (wl_regdomain));
-  websWrite (wp, "</div>\n");
-  websWrite (wp, "</div>\n");
-  
+  if (nvram_match ("ath_regulatory", "1"))
+    {
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
+      char *list = getCountryList ();
+      showOptions (wp, wl_regdomain, list, nvram_safe_get (wl_regdomain));
+      websWrite (wp, "</div>\n");
+    }
 /*  while (regdomains[domcount].name != NULL)
     {
       char domcode[16];
@@ -3239,13 +3248,18 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     {
 #if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
 
-websWrite (wp," 	<div class=\"setting\">\n");
-websWrite (wp," 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
-websWrite (wp," 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s onclick=\"show_layer_ext(this, 'idregulatory', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",nvram_match("ath_regulatory","0")?"checked":"");
-websWrite (wp," 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s onclick=\"show_layer_ext(this, 'idregulatory', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",nvram_match("ath_regulatory","1")?"checked":"");
-websWrite (wp," 	</div>\n");
-      char *wl_regulatory = "ath_regulatory";
-      showOption (wp, "wl_basic.regulatory", wl_regulatory);
+      websWrite (wp, " 	<div class=\"setting\">\n");
+      websWrite (wp,
+		 " 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
+      websWrite (wp,
+		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
+      websWrite (wp,
+		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		 nvram_match ("ath_regulatory", "1") ? "checked" : "");
+      websWrite (wp, " 	</div>\n");
+//      char *wl_regulatory = "ath_regulatory";
+//      showOption (wp, "wl_basic.regulatory", wl_regulatory);
 #ifdef HAVE_MAKSAT
       char *wl_regdomain = "ath_specialmode";
       showOption (wp, "wl_basic.specialmode", wl_regdomain);
@@ -3258,14 +3272,14 @@ websWrite (wp," 	</div>\n");
 	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
   sprintf (power, "%s_antgain", prefix);
-  websWrite (wp, "<div id=\"idregulatory\">\n");
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
-	     power, nvram_safe_get (power));
-  websWrite (wp, "</div>\n");
-  websWrite (wp, "</div>\n");
- 
+  if (nvram_match ("ath_regulatory", "1"))
+    {
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
+		 power, nvram_safe_get (power));
+      websWrite (wp, "</div>\n");
+    }
 #endif
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))
@@ -3276,10 +3290,10 @@ websWrite (wp," 	</div>\n");
 //#endif
       {
 #ifdef HAVE_MADWIFI
-//	if (!strcmp (prefix, "ath0"))	//show client only on first interface
-//	  if (nvram_match ("ath0_mode", "wdsap")
-//	      || nvram_match ("ath0_mode", "wdssta"))
-//	    showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
+//      if (!strcmp (prefix, "ath0"))   //show client only on first interface
+//        if (nvram_match ("ath0_mode", "wdsap")
+//            || nvram_match ("ath0_mode", "wdssta"))
+//          showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
 	websWrite (wp,
 		   "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
@@ -3385,9 +3399,10 @@ websWrite (wp," 	</div>\n");
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #ifndef HAVE_FONERA
-  websWrite (wp, "<div id=\"idregulatory\">\n");
-  showOption (wp, "wl_basic.outband", wl_outdoor);
-  websWrite (wp, "</div>\n");
+  if (nvram_match ("ath_regulatory", "1"))
+    {
+      showOption (wp, "wl_basic.outband", wl_outdoor);
+    }
 #endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
 #ifndef HAVE_FONERA
@@ -3445,8 +3460,8 @@ websWrite (wp," 	</div>\n");
 
 #endif
 #ifdef HAVE_MADWIFI
-    sprintf (wl_isolate, "%s_ap_isolate", prefix);
-    showOption (wp, "wl_adv.label11", wl_isolate);
+  sprintf (wl_isolate, "%s_ap_isolate", prefix);
+  showOption (wp, "wl_adv.label11", wl_isolate);
 #endif
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -4420,7 +4435,7 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 {
   int rate = 0;
 
-  wl_ioctl (get_wdev(), WLC_GET_RATE, &rate, sizeof (rate));
+  wl_ioctl (get_wdev (), WLC_GET_RATE, &rate, sizeof (rate));
 
   if (rate > 0)
     websWrite (wp, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
@@ -4549,7 +4564,7 @@ ej_get_curchannel (webs_t wp, int argc, char_t ** argv)
   channel_info_t ci;
 
   ci.target_channel = 0;
-  wl_ioctl (get_wdev(), WLC_GET_CHANNEL, &ci, sizeof (ci));
+  wl_ioctl (get_wdev (), WLC_GET_CHANNEL, &ci, sizeof (ci));
   if (ci.target_channel > 0)
     {
       websWrite (wp, "%d", ci.target_channel);
@@ -6737,7 +6752,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XSCALE
   getinterfacelist ("eth", eths2);
   getinterfacelist ("ixp", eths);
-  sprintf(eths,"%s %s",eths,eths2);
+  sprintf (eths, "%s %s", eths, eths2);
 #else
   getinterfacelist ("eth", eths);
 #endif
@@ -6745,7 +6760,7 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
   websWrite (wp, "<select name=\"wan_ifname\">\n");
   websWrite (wp, "<option value=\"\" %s >Disabled</option>\n",
-	       nvram_match ("wan_ifname", "") ? "selected=\"selected\"" : "");
+	     nvram_match ("wan_ifname", "") ? "selected=\"selected\"" : "");
   foreach (var, eths, next)
   {
     websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", var,
@@ -6775,8 +6790,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "</div>\n");
 
     websWrite (wp, "<div id=\"%s_idnet\">\n", var);
-    show_ipnetmask(wp,var);
-    websWrite (wp,"</div>\n");
+    show_ipnetmask (wp, var);
+    websWrite (wp, "</div>\n");
     websWrite (wp, "<script>\n//<![CDATA[\n ");
     websWrite (wp,
 	       "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n",
