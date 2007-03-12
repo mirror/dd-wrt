@@ -3211,12 +3211,15 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
+  websWrite (wp, "<div id=\"idregulatory\">\n");
 
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
   char *list = getCountryList ();
   showOptions (wp, wl_regdomain, list, nvram_safe_get (wl_regdomain));
   websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>\n");
+  
 /*  while (regdomains[domcount].name != NULL)
     {
       char domcode[16];
@@ -3235,6 +3238,12 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
     {
 #if !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108)
+
+websWrite (wp," 	<div class=\"setting\">\n");
+websWrite (wp," 		<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regulatory)</script></div>\n");
+websWrite (wp," 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"ath_regulatory\" %s onclick=\"show_layer_ext(this, 'idregulatory', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",nvram_match("ath_regulatory","0")?"checked":"");
+websWrite (wp," 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s onclick=\"show_layer_ext(this, 'idregulatory', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",nvram_match("ath_regulatory","1")?"checked":"");
+websWrite (wp," 	</div>\n");
       char *wl_regulatory = "ath_regulatory";
       showOption (wp, "wl_basic.regulatory", wl_regulatory);
 #ifdef HAVE_MAKSAT
@@ -3249,12 +3258,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
   sprintf (power, "%s_antgain", prefix);
+  websWrite (wp, "<div id=\"idregulatory\">\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.AntGain)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%s\" /> dBi\n",
 	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
-
+  websWrite (wp, "</div>\n");
+ 
 #endif
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))
@@ -3374,7 +3385,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "wl_basic.extrange", wl_xr);
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #ifndef HAVE_FONERA
+  websWrite (wp, "<div id=\"idregulatory\">\n");
   showOption (wp, "wl_basic.outband", wl_outdoor);
+  websWrite (wp, "</div>\n");
 #endif
   showOption (wp, "wl_basic.diversity", wl_diversity);
 #ifndef HAVE_FONERA
