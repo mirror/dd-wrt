@@ -1065,8 +1065,8 @@ struct	iw_priv_args
  */
 struct iw_event
 {
-	__u16		len;			/* Real lenght of this stuff */
-	__u16		cmd;			/* Wireless IOCTL */
+	__u32		len;			/* Real lenght of this stuff */
+	__u32		cmd;			/* Wireless IOCTL */
 	union iwreq_data	u;		/* IOCTL fixed payload */
 };
 

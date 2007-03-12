@@ -113,9 +113,12 @@ endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
+ifeq ($(CONFIG_BOESE),y)
+CFLAGS += -DBOESE=1
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS += -DHAVE_MADWIFI -I../services -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS += -DHAVE_MADWIFI -I../services -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
 OBJS += countrycode/countrycode_$(ARCH).o
 endif
