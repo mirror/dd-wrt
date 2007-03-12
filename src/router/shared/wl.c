@@ -366,6 +366,7 @@ list_channelsext (const char *ifname, int allchans)
   int l = 0;
   for (i = 0; i < achans.ic_nchans; i++)
     {
+  //fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
 
       //filter out A channels if mode isnt A-Only or mixed
       if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))

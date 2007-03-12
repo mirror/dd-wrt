@@ -229,14 +229,14 @@ ifeq ($(CONFIG_MSSID),y)
   CFLAGS += -DHAVE_MSSID
 endif
 
+ifeq ($(CONFIG_BOESE),y)
+CFLAGS += -DBOESE=1
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 
-ifeq ($(CONFIG_FONERA),y)
-CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h
-else
-CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h
-endif
-  OBJS += ../wireless-tools/libiw.so.29
+CFLAGS += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
+OBJS += ../wireless-tools/libiw.so.29
 endif
 
 ifeq ($(CONFIG_CDEBUG),y)

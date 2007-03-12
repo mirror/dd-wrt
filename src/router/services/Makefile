@@ -130,23 +130,19 @@ OBJS += heartbeat.o
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-ifeq ($(CONFIG_FONERA),y)
-CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-else
-ifeq ($(CONFIG_WHRAG108),y)
-CFLAGS += -DHAVE_MADWIFI -I../madwifi-fonera -include ../madwifi-fonera/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-else
-CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-endif
-endif
+CFLAGS += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 
 ifneq ($(CONFIG_NOWIFI),y)
 OBJS += madwifi.o
 OBJS += ../wireless-tools/libiw.so.29
 endif
 endif
+
 ifeq ($(CONFIG_POWERNOC),y)
 CFLAGS += -DHAVE_POWERNOC
+endif
+ifeq ($(CONFIG_BOESE),y)
+CFLAGS += -DBOESE=1
 endif
 
 ifeq ($(CONFIG_MULTICAST),y)
