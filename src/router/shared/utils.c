@@ -879,7 +879,7 @@ int brand = getRouterBrand ();
   
 int
 led_control (int type, int act)
-/* type: LED_POWER, LED_DIAG, LED_DIAG2, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN
+/* type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN, LED_SES, LED_SES2, LED_AOSS, LED_WLAN
  * act: LED_ON, LED_OFF, LED_FLASH */
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86)
@@ -900,7 +900,6 @@ char disable[16];
 
 int	power_gpio = 0x0f;
 int	diag_gpio = 0x0f;
-int diag2_gpio = 0x0f;
 int	dmz_gpio = 0x0f;
 int	connected_gpio = 0x0f;
 int bridge_gpio = 0x0f;
@@ -940,8 +939,9 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			aoss_gpio = 0x06;
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
-			diag_gpio = 0x13;
-			diag2_gpio = 0x14;
+			diag_gpio = 0x14;
+			aoss_gpio = 0x13;
+			wlan_gpio = 0x15;
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
@@ -1029,9 +1029,6 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			break;
 		case LED_DIAG:
 				use_gpio = diag_gpio;
-			break;
-		case LED_DIAG2:
-				use_gpio = diag2_gpio;
 			break;
 		case LED_DMZ:
 				use_gpio = dmz_gpio;
