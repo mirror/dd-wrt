@@ -97,11 +97,24 @@ struct ixp4xx_i2c_pins {
 	unsigned long scl_pin;
 };
 
+#define IXDP425_KSSPI_SELECT	4
+#define IXDP425_KSSPI_TXD	3
+#define IXDP425_KSSPI_CLOCK	2
+#define IXDP425_KSSPI_RXD	0
+
 /*
  * This structure provide a means for the board setup code
  * to give information to th pata_ixp4xx driver. It is
  * passed as platform_data.
  */
+struct ixp4xx_spi_pins {
+  unsigned long spis_pin;
+  unsigned long spic_pin;
+  unsigned long spid_pin;
+  unsigned long spiq_pin;
+};
+
+
 struct ixp4xx_pata_data {
 	volatile u32	*cs0_cfg;
 	volatile u32	*cs1_cfg;
