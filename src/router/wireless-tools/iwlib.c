@@ -2287,7 +2287,7 @@ int
 iw_get_priv_size(int	args)
 {
   int	num = args & IW_PRIV_SIZE_MASK;
-  int	type = (args & IW_PRIV_TYPE_MASK) >> 12;
+  int	type = (args & IW_PRIV_TYPE_MASK) >> 16;
 
   return(num * priv_type_size[type]);
 }
