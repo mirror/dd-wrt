@@ -321,10 +321,10 @@ struct iw_handler_def
 {
 	/* Number of handlers defined (more precisely, index of the
 	 * last defined handler + 1) */
-	__u16			num_standard;
-	__u16			num_private;
+	__u32			num_standard;
+	__u32			num_private;
 	/* Number of private arg description */
-	__u16			num_private_args;
+	__u32			num_private_args;
 
 	/* Array of handlers for standard ioctls
 	 * We will call dev->wireless_handlers->standard[ioctl - SIOCSIWCOMMIT]
