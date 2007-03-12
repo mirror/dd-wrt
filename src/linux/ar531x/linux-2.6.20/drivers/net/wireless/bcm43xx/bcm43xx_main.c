@@ -1453,12 +1453,10 @@ static void handle_irq_transmit_status(struct bcm43xx_private *bcm)
 
 		bcm43xx_debugfs_log_txstat(bcm, &stat);
 
-		if (stat.flags & BCM43xx_TXSTAT_FLAG_IGNORE)
+		if (stat.flags & BCM43xx_TXSTAT_FLAG_AMPDU)
 			continue;
-		if (!(stat.flags & BCM43xx_TXSTAT_FLAG_ACK)) {
-			//TODO: packet was not acked (was lost)
-		}
-		//TODO: There are more (unknown) flags to test. see bcm43xx_main.h
+		if (stat.flags & BCM43xx_TXSTAT_FLAG_INTER)
+			continue;
 
 		if (bcm43xx_using_pio(bcm))
 			bcm43xx_pio_handle_xmitstatus(bcm, &stat);
@@ -1866,9 +1864,6 @@ static irqreturn_t bcm43xx_interrupt_handler(int irq, void *dev_id)
 
 	spin_lock(&bcm->irq_lock);
 
-	assert(bcm43xx_status(bcm) == BCM43xx_STAT_INITIALIZED);
-	assert(bcm->current_core->id == BCM43xx_COREID_80211);
-
 	reason = bcm43xx_read32(bcm, BCM43xx_MMIO_GEN_IRQ_REASON);
 	if (reason == 0xffffffff) {
 		/* irq not for us (shared irq) */
@@ -1878,6 +1873,9 @@ static irqreturn_t bcm43xx_interrupt_handler(int irq, void *dev_id)
 	reason &= bcm43xx_read32(bcm, BCM43xx_MMIO_GEN_IRQ_MASK);
 	if (!reason)
 		goto out;
+
+	assert(bcm43xx_status(bcm) == BCM43xx_STAT_INITIALIZED);
+	assert(bcm->current_core->id == BCM43xx_COREID_80211);
 
 	bcm->dma_reason[0] = bcm43xx_read32(bcm, BCM43xx_MMIO_DMA0_REASON)
 			     & 0x0001DC00;
@@ -2738,8 +2736,9 @@ static int bcm43xx_probe_cores(struct bcm43xx_private *bcm)
 				 * dangling pins on the second core. Be careful
 				 * and ignore these cores here.
 				 */
-				if (bcm->pci_dev->device != 0x4324) {
-					dprintk(KERN_INFO PFX "Ignoring additional 802.11 core.\n");
+				if (1 /*bcm->pci_dev->device != 0x4324*/ ) {
+				/* TODO: A PHY */
+					dprintk(KERN_INFO PFX "Ignoring additional 802.11a core.\n");
 					continue;
 				}
 			}
