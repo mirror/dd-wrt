@@ -37,10 +37,10 @@
 				<dt><% tran("management.web_legend"); %></dt>
 				<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol. If you choose to disable this feature, a manual reboot will be required.<br/>
 				You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above).<br/>
-				MAC Masquerading allows you to truncate MAC addresses in the Webinterface.<br/><br/>
+				MAC Masking allows you to truncate MAC addresses in the Webinterface.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
-						<div>If MAC Masquerading is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masquerading only applies to the Sys-Info page.</div>
+						<div>If MAC Masking is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masking only applies to the Sys-Info page.</div>
 					</div>
 				</dd>
 				
