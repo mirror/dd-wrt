@@ -885,7 +885,7 @@ management.web_legend="Web Access";
 management.web_refresh="Auto-Refresh (in seconds)";
 management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";
-management.web_sysinfomasq="Info Site MAC Masquerading";
+management.web_sysinfomasq="Info Site MAC Masking";
 
 management.boot_legend="Boot Wait";
 management.boot_srv="Boot Wait";
