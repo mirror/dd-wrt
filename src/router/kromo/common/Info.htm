@@ -427,7 +427,7 @@ addEvent(window, "unload", function() {
 										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="25%"><% tran("share.ip"); %></th>
 										<th width="25%"><% tran("share.mac"); %></th>
-										<th width="25%"><% tran("share.expires"); %></th>
+										<th width="25%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
 									</tr>
 								</table>
 							</fieldset><br />
