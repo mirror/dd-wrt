@@ -788,7 +788,7 @@ management.web_legend="Acceso Web";
 management.web_refresh="Auto-Refresco (en segs)";
 management.web_sysinfo="Activar Info Sitio";
 management.web_sysinfopass="Clave para Info Sitio";
-management.web_sysinfomasq="MAC Masquerading Info Sitio";
+management.web_sysinfomasq="MAC Masking Info Sitio";
 
 management.boot_legend="Boot Wait";
 management.boot_srv="Boot Wait";
