@@ -152,7 +152,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define NVROUTER "DD_BOARD"
 
-
+extern char *getBridge(char *ifname);
+extern char *getRealBridge(char *ifname);
 extern char *getSTA (void);
 extern char *getWET (void);
 extern int contains(const char *string,char value);
