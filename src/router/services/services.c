@@ -3889,6 +3889,16 @@ start_bonding (void)
     eval ("ifconfig", tag, "0.0.0.0", "up");
     eval ("ifenslave", tag, port);
   }
+  int c=atoi(nvram_safe_get("bonding_number"));
+  int i;
+  for (i=0;i<c;i++)
+    {
+    sprintf(word,"bond%d",i);
+    char *br=getRealBridge(word);
+    if (br)
+	eval("brctl","addif",br,word);
+	
+    }
 }
 void
 stop_bonding (void)
@@ -3899,7 +3909,12 @@ stop_bonding (void)
       char bond[32];
       sprintf (bond, "bond%d", i);
       if (ifexists (bond))
+      {
+      char *br=getRealBridge(bond);
+      if (br)
+	eval("brctl","delif",br,bond);
 	eval ("ifconfig", bond, "down");
+      }
     }
   eval ("rmmod", "bonding");
 }
@@ -4033,6 +4048,26 @@ getBridge (char *ifname)
 }
 
 char *
+getRealBridge (char *ifname)
+{
+  static char word[256];
+  char *next, *wordlist;
+  wordlist = nvram_safe_get ("bridgesif");
+  foreach (word, wordlist, next)
+  {
+    char *port = word;
+    char *tag = strsep (&port, ">");
+    char *prio = port;
+    strsep (&prio, ">");
+    if (!tag || !port)
+      break;
+    if (!strcmp (port, ifname))
+      return tag;
+  }
+  return NULL;
+}
+
+char *
 getBridgePrio (char *ifname)
 {
   static char word[256];
@@ -4099,6 +4134,11 @@ char *
 getBridge (char *ifname)
 {
   return nvram_safe_get ("lan_ifname");
+}
+char *
+getRealBridge (char *ifname)
+{
+  return NULL;
 }
 
 char *
