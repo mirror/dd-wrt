@@ -10,7 +10,7 @@ lang_charset.set="iso-8859-1";
 var share = new Object();
 share.firmware="Firmware";
 share.time="Time";
-share.interipaddr="Internet IP Address";
+share.interipaddr="WAN IP Address";
 share.more="More...";
 share.help="Help";
 share.enable="Enable";
@@ -345,7 +345,7 @@ bmenu.firwall="Firewall";
 bmenu.vpn="VPN";
 
 bmenu.accrestriction="Access Restrictions";
-bmenu.webaccess="Internet Access";
+bmenu.webaccess="WAN Access";
 
 
 bmenu.applications="Applications &amp; Gaming";
@@ -452,7 +452,7 @@ ddnsm.all_errresolv="Domain name resolv fail";
 ddnsm.all_connecting="Connecting to server";
 ddnsm.all_connectfail="Connect to server fail";
 ddnsm.all_disabled="DDNS function is disabled";
-ddnsm.all_noip="No Internet connection";
+ddnsm.all_noip="No WAN connection";
 
 //help container
 var hddns = new Object();
@@ -525,7 +525,7 @@ filterIP.ip_range="IP Range";
 
 var filter = new Object();
 filter.titl=" - Access Restrictions";
-filter.h2="Internet Access";
+filter.h2="WAN Access";
 filter.legend="Access Policy";
 filter.restore="Restore Factory Defaults";
 filter.pol="Policy";
@@ -580,9 +580,9 @@ firewall.cookies="Filter Cookies";
 firewall.applet="Filter Java Applets";
 firewall.activex="Filter ActiveX";
 firewall.legend3="Block WAN Requests";
-firewall.ping="Block Anonymous Internet Requests (ping)";
+firewall.ping="Block Anonymous WAN Requests (ping)";
 firewall.muticast="Filter Multicast";
-filter.nat="Filter Internet NAT Redirection";
+filter.nat="Filter WAN NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 
 //help container
@@ -750,7 +750,7 @@ idx_pppoe.use_rp="Use RP PPPoE";
 
 var idx_pptp = new Object();
 idx_pptp.srv="Use DHCP";
-idx_pptp.wan_ip="Internet IP Address";
+idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encyption";
 
@@ -767,9 +767,9 @@ idx_static.dns="Static DNS";
 
 var idx = new Object();
 idx.titl=" - Setup";
-idx.h2="Internet Setup";
+idx.h2="WAN Setup";
 idx.h22="Wireless Setup";
-idx.legend="Internet Connection Type";
+idx.legend="WAN Connection Type";
 idx.conn_type="Connection Type";
 idx.stp="STP";
 idx.stp_mess="(disable for COMCAST ISP)";
