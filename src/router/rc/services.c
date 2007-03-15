@@ -310,10 +310,10 @@ start_single_service (void)
 #ifdef HAVE_VLANTAGGING
       start_service ("bridging");
 #endif
+      start_service ("lan");
 #ifdef HAVE_BONDING
       start_service("bonding");
 #endif
-      start_service ("lan");
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
       start_service ("bridgesif");
