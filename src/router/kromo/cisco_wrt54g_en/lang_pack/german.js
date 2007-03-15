@@ -8,7 +8,7 @@ lang_charset.set="iso-8859-1";
 
 share.firmware="Firmware";
 share.time="Zeit";
-share.interipaddr="Internet-IP-Addresse";
+share.interipaddr="WAN-IP-Addresse";
 share.more="Mehr...";
 share.help="Hilfe";
 share.enable="Einschalten";
@@ -410,7 +410,7 @@ ddnsm.all_errresolv="Domainnamen-Auflösung fehlgeschlagen";
 ddnsm.all_connecting="Mit Server verbinden";
 ddnsm.all_connectfail="Verbindung mit Server fehlgeschlagen";
 ddnsm.all_disabled="DDNS-Funktion ist abgeschaltet";
-ddnsm.all_noip="Keine Internetverbindung";
+ddnsm.all_noip="Keine WAN-Verbindung";
 
 //help container
 
@@ -531,9 +531,9 @@ firewall.cookies="Cookies filtern";
 firewall.applet="Java-Applets filtern";
 firewall.activex="ActiveX filtern";
 firewall.legend3="WAN-Zugriffe blockieren";
-firewall.ping="Anonyme Internetzugriffsversuche blockieren";
+firewall.ping="Anonyme WAN-Zugriffsversuche blockieren";
 firewall.muticast="Multicast filtern";
-filter.nat="Internet-NAT-Umleitung filtern";
+filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";
 
 //help container
@@ -653,7 +653,7 @@ idx_pppoe.use_rp="Nutze RP PPPoE";
 // **************************************************************** index_pptp.asp *********************************************************//
 
 idx_pptp.srv="Nutze DHCP";
-idx_pptp.wan_ip="Internet-IP-Adresse";
+idx_pptp.wan_ip="WAN-IP-Adresse";
 idx_pptp.gateway="Gateway (PPTP-Server)";
 idx_pptp.encrypt="PPTP-Verschlüsselung";
 
@@ -668,9 +668,9 @@ idx_static.dns="Statischer DNS";
 // **************************************************************** index.asp *********************************************************//
 
 idx.titl=" - Einstellungen";
-idx.h2="Internet-Einstellungen";
+idx.h2="WAN-Einstellungen";
 idx.h22="WLAN-Einstellungen";
-idx.legend="Internet-Verbindungstyp";
+idx.legend="WAN-Verbindungstyp";
 idx.conn_type="Verbindungstyp";
 idx.stp="STP";
 idx.stp_mess="(Für COMCAST-Provider ausschalten)";
@@ -1121,7 +1121,7 @@ status_router.mem_inactive="Inaktiv";
 status_router.legend4="Netzwerk";
 status_router.net_maxports="IP-Filter maximale Ports";
 status_router.net_conntrack="Aktive IP-Verbindungen";
-status_router.h22="Internet";
+status_router.h22="WAN";
 status_router.legend5="Konfigurationstyp";
 status_router.www_loginstatus="Login-Status";
 status_router.wanuptime="Connection Uptime";
