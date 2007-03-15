@@ -11,7 +11,7 @@ donate.mb="Vous pouvez également faire un don sur le compte Moneybookers : mb@dd
 
 share.firmware="Micrologiciel";
 share.time="Heure";
-share.interipaddr="Adresse IP Internet";
+share.interipaddr="Adresse IP WAN";
 share.more="Plus...";
 share.help="Aide";
 share.enable="Activer";
@@ -442,7 +442,7 @@ ddnsm.all_errresolv="La r&#233;solution du nom de domaine a échou&#233;.";
 ddnsm.all_connecting="Connexion en cours...";
 ddnsm.all_connectfail="La connexion au serveur a &#233;chou&#233;";
 ddnsm.all_disabled="DDNS est désactiv&#233;";
-ddnsm.all_noip="Connexion Internet non détect&#233;e";
+ddnsm.all_noip="Connexion WAN non détect&#233;e";
 
 //help container
 
@@ -477,8 +477,7 @@ dmz.host="Adresse IP de l\'hôte de la DMZ";
 
 //help container
 
-hdmz.right2="L\'activation de cette option va exposer l\'hôte à Internet. \
-	Tous les ports vont être accessibles depuis Internet et redirigés vers cette adresse IP (non recommandé).";
+hdmz.right2="L\'activation de cette option va exposer l\'hôte à Internet. Tous les ports vont être accessibles depuis Internet et redirigés vers cette adresse IP (non recommandé).";
 
 
 
@@ -563,9 +562,9 @@ firewall.cookies="Filtre Cookies";
 firewall.applet="Filtre Applets Java";
 firewall.activex="Filtre ActiveX";
 firewall.legend3="Blocage des requêtes WAN";
-firewall.ping="Bloquer les requêtes Internet anonymes (ping)";
+firewall.ping="Bloquer les requêtes WAN anonymes (ping)";
 firewall.muticast="Filtre Multidiffusion";
-filter.nat="Filtre de redirection NAT Internet";
+filter.nat="Filtre de redirection NAT WAN";
 filter.port113="Filtre IDENT (port 113)";
 
 //help container
@@ -725,7 +724,7 @@ idx_pppoe.use_rp="Utiliser RP-PPPoE";
 // ******************************************* index_pptp.asp *******************************************//
 
 idx_pptp.srv="Utiliser DHCP";
-idx_pptp.wan_ip="Adresse IP Internet";
+idx_pptp.wan_ip="Adresse IP WAN";
 idx_pptp.gateway="Passerelle";
 idx_pptp.encrypt="Cryptage PPTP";
 
@@ -740,9 +739,9 @@ idx_static.dns="DNS Statique";
 // ******************************************* index.asp *******************************************//
 
 idx.titl=" - Configuration";
-idx.h2="Configuration Internet";
+idx.h2="Configuration WAN";
 idx.h22="Configuration Sans fil";
-idx.legend="Type de connexion Internet";
+idx.legend="Type de connexion WAN";
 idx.conn_type="Type de connexion";
 idx.stp="STP";
 idx.stp_mess="(Désactiver pour le FAI COMCAST)";
@@ -1214,7 +1213,7 @@ status_router.mem_inactive="Inactive";
 status_router.legend4="Réseau";
 status_router.net_maxports="Nb de connexions maximun";
 status_router.net_conntrack="Nb de connexions actives";
-status_router.h22="Internet";
+status_router.h22="WAN";
 status_router.legend5="Type de configuration";
 status_router.www_loginstatus="Statut de la connexion";
 status_router.wanuptime="Connexion démarrée depuis";
@@ -1225,12 +1224,12 @@ status_router.legend6="Partitions Disponibles";
 //help container
 
 hstatus_router.right2="Nom du routeur que vous avez configuré dans l\'onglet <i>Setup</i>.";
-hstatus_router.right4="Adresse Mac vue par votre provider internet";
+hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Firmware utilisé sur votre routeur";
 hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l\'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
 hstatus_router.right10="Temps écoulé depuis le dernier démarrage/redémarrage du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
-hstatus_router.right14="Ce sont les informations requise par votre provider afin de vous connecter à internet, configurée dans l\'onglet Setup. Vous pouvez connecter votre routeur à internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
+hstatus_router.right14="Ce sont les informations requise par votre provider afin de vous connecter à Internet, configurée dans l\'onglet Setup. Vous pouvez connecter votre routeur à Internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
