@@ -397,8 +397,8 @@ static void nfulnl_timer(unsigned long data)
 	if (timer_pending(&inst->timer))	/* is it always true or false here? */
 		del_timer(&inst->timer);
 	__nfulnl_send(inst);
-	instance_put(inst);
 	spin_unlock_bh(&inst->lock);
+	instance_put(inst);
 }
 
 /* This is an inline function, we don't really care about a long
@@ -491,7 +491,7 @@ __build_packet_message(struct nfulnl_instance *inst,
 			 * for physical device (when called from ipv4) */
 			NFA_PUT(inst->skb, NFULA_IFINDEX_OUTDEV,
 				sizeof(tmp_uint), &tmp_uint);
-			if (skb->nf_bridge) {
+			if (skb->nf_bridge && skb->nf_bridge->physoutdev) {
 				tmp_uint = 
 				    htonl(skb->nf_bridge->physoutdev->ifindex);
 				NFA_PUT(inst->skb, NFULA_IFINDEX_PHYSOUTDEV,
@@ -564,6 +564,7 @@ __build_packet_message(struct nfulnl_instance *inst,
 	}
 		
 	nlh->nlmsg_len = inst->skb->tail - old_tail;
+	inst->lastnlh = nlh;
 	return 0;
 
 nlmsg_failure:
@@ -619,7 +620,7 @@ nfulnl_log_packet(unsigned int pf,
 
 	plen = 0;
 	if (prefix)
-		plen = strlen(prefix);
+		plen = strlen(prefix) + 1;
 
 	/* all macros expand to constant values at compile time */
 	/* FIXME: do we want to make the size calculation conditional based on
@@ -720,15 +721,16 @@ nfulnl_log_packet(unsigned int pf,
 		inst->timer.expires = jiffies + (inst->flushtimeout*HZ/100);
 		add_timer(&inst->timer);
 	}
-	spin_unlock_bh(&inst->lock);
 
+unlock_and_release:
+	spin_unlock_bh(&inst->lock);
+	instance_put(inst);
 	return;
 
 alloc_failure:
-	spin_unlock_bh(&inst->lock);
-	instance_put(inst);
 	UDEBUG("error allocating skb\n");
 	/* FIXME: statistics */
+	goto unlock_and_release;
 }
 
 static int
@@ -865,6 +867,9 @@ nfulnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
 			ret = -EINVAL;
 			break;
 		}
+
+		if (!inst)
+			goto out;
 	} else {
 		if (!inst) {
 			UDEBUG("no config command, and no instance for "
@@ -918,6 +923,7 @@ nfulnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
 
 out_put:
 	instance_put(inst);
+out:
 	return ret;
 }
 
