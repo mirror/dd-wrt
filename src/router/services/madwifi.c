@@ -1034,7 +1034,7 @@ set_netmode (char *wif, char *dev)
   }
   if (default_match (turbo, "1", "0"))
     {
-      if (nvram_match (mode, "sta") || nvram_match (mode, "wet"))
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wet")|| nvram_match (mode, "wdssta"))
 	{
 	  eval ("iwpriv", dev, "mode", "5");
 	}
