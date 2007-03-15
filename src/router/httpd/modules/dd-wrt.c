@@ -2019,12 +2019,14 @@ void
 ej_show_bondings (webs_t wp, int argc, char_t ** argv)
 {
   char buffer[256];
+  char bufferif[512];
   char bondnames[256];
   int count = 0;
   static char word[256];
   char *next, *wordlist;
   memset (buffer, 0, 256);
   memset (bondnames, 0, 256);
+  memset (bufferif,0,512);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp, "<legend>Bonding</legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2038,8 +2040,25 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
 	     nvram_default_get ("bonding_number", "1"));
   websWrite (wp, "</div>\n");
 
-  getIfList (buffer, NULL);
-  int i;
+  getIfList (bufferif, "eth");
+int i;
+#ifdef HAVE_XSCALE
+  getIfList (buffer, "ixp");
+  sprintf(bufferif,"%s",buffer);
+#endif
+  getIfList (buffer, "br");
+  sprintf(bufferif,"%s",buffer);
+#ifdef HAVE_MADWIFI
+  int c = getifcount ("wifi");
+  for (i = 0; i < c; i++)
+    {
+      sprintf (bufferif, "%s ath%d", bufferif, i);
+      char vifs[32];
+      sprintf (vifs, "ath%d_vifs", i);
+      sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
+    }
+#endif
+
   for (i = 0; i < atoi (nvram_safe_get ("bonding_number")); i++)
     {
       sprintf (bondnames, "%s bond%d", bondnames, i);
@@ -2063,7 +2082,7 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
     showOptions (wp, vlan_name, bondnames, tag);
     sprintf (vlan_name, "bondingattach%d", count);
     websWrite (wp, "&nbsp;Slave&nbsp;");
-    showOptions (wp, vlan_name, buffer, port);
+    showOptions (wp, vlan_name, bufferif, port);
     websWrite (wp,
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 	       count);
@@ -2081,7 +2100,7 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
       showOptions (wp, vlan_name, bondnames, "");
       sprintf (vlan_name, "bondingattach%d", i);
       websWrite (wp, "&nbsp;Slave&nbsp;");
-      showOptions (wp, vlan_name, buffer, "");
+      showOptions (wp, vlan_name, bufferif, "");
       websWrite (wp,
 		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		 i);
@@ -2383,7 +2402,13 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
       sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
     }
 #endif
-
+#ifdef HAVE_BONDING
+    c=atoi(nvram_default_get("bonding_number","1"));
+  for (i = 0; i < c; i++)
+    {
+      sprintf (bufferif, "%s bond%d", bufferif, i);
+    }
+#endif
 #ifdef HAVE_EOP_TUNNEL
   for (i = 1; i < 11; i++)
     {
@@ -2810,7 +2835,7 @@ show_virtualssid (webs_t wp, char *prefix)
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
     sprintf (wl_mode, "%s_mode", var);
-    if (!nvram_match (wl_mode, "sta") && !nvram_match (wl_mode, "wdssta")
+    if (!nvram_match (wl_mode, "sta")
 	&& !nvram_match (wl_mode, "wet"))
       showbridgesettings (wp, var);
     websWrite (wp, "</fieldset><br />\n");
@@ -3284,7 +3309,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
 #endif
 #ifdef HAVE_MADWIFI
-  if (!strcmp (prefix, "ath0"))
+//  if (!strcmp (prefix, "ath0"))
 #endif
     {
 //#ifdef HAVE_MADWIFI
@@ -3544,7 +3569,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 //end ACK timing
 
-  if (!nvram_match (wl_mode, "sta") && !nvram_match (wl_mode, "wdssta")
+  if (!nvram_match (wl_mode, "sta")
       && !nvram_match (wl_mode, "wet"))
     showbridgesettings (wp, prefix);
   websWrite (wp, "</fieldset>\n");
