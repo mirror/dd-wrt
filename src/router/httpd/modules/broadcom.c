@@ -3438,6 +3438,14 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
       eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
       eval ("erase", "nvram");
+#elif HAVE_WHRAG108
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+#elif HAVE_XSCALE
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
 #else
 
       eval ("erase", "nvram");
