@@ -1471,7 +1471,6 @@ configure_single (int count)
 
 
 
-  eval ("ifconfig", dev, "0.0.0.0", "up");
 
   if (strcmp (m, "sta") && strcmp (m, "infra"))
     {
@@ -1491,6 +1490,7 @@ configure_single (int count)
 	  ifconfig (dev, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
 	}
     }
+  eval ("ifconfig", dev, "0.0.0.0", "up");
 
 // vif netconfig
   vifs = nvram_safe_get (wifivifs);
@@ -1500,7 +1500,6 @@ configure_single (int count)
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
-      eval ("ifconfig", var, "0.0.0.0", "up");
       if (strcmp (m, "sta") && strcmp (m, "infra"))
 	{
 	  char bridged[32];
@@ -1520,6 +1519,7 @@ configure_single (int count)
 			nvram_safe_get (mask));
 	    }
 	}
+      eval ("ifconfig", var, "0.0.0.0", "up");
     }
 
   for (s = 1; s <= 10; s++)
