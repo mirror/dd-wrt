@@ -378,7 +378,7 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
       setRouter ("Linksys WRTSL54GS");
       return ROUTER_WRTSL54GS;
     }
-  if (boardnum == 42 && nvram_match("boardtype","0x0101") && nvram_match("boardrev","0x10"))
+  if (boardnum == 42 && nvram_match("boardtype","0x0101") && nvram_match("boardrev","0x10") && nvram_match("boot_ver","3.6"))
     {
       cprintf ("router is Linksys WRT54G3G\n");
       setRouter ("Linksys WRT54G3G");
