@@ -10,7 +10,7 @@ lang_charset.set="iso-8859-2";
 
 share.firmware="Strojna programska oprema";
 share.time="Èas";
-share.interipaddr="Internetni IP naslov";
+share.interipaddr="WAN IP naslov";
 share.more="Veè...";
 share.help="Pomoè";
 share.enable="Omogoèi";
@@ -345,7 +345,7 @@ bmenu.firwall="Po¾arni zid";
 bmenu.vpn="VPN";
 
 bmenu.accrestriction="Omejitve dostopa";
-bmenu.webaccess="Dostop do medmre¾ja";
+bmenu.webaccess="WAN dostop";
 
 
 bmenu.applications="Programi in igre";
@@ -452,7 +452,7 @@ ddnsm.all_errresolv="Rezre¹evanje domenskega imena ni uspelo";
 ddnsm.all_connecting="Prikljuèevanje na stre¾nik";
 ddnsm.all_connectfail="Prikljuèevanje na stre¾nik ni uspelo";
 ddnsm.all_disabled="DDNS funkcija je onemogo&#269;ena";
-ddnsm.all_noip="Ni medmre¾ne povezave";
+ddnsm.all_noip="Ni WAN povezave";
 
 //help container
 
@@ -525,7 +525,7 @@ filterIP.ip_range="IP obseg";
 
 
 filter.titl=" - Omejitve dostopa";
-filter.h2="Dostop do medmre¾ja";
+filter.h2="WAN dostop";
 filter.legend="Smernica dostopa";
 filter.restore="Obnovi privzete nastavitve";
 filter.pol="Smernica";
@@ -561,7 +561,7 @@ hfilter.right16="Zaprete lahko doloèena spleti¹èa tako, da vnesete kljuèno besed
 
 
 filterSum.titl=" - Povzetek omejitev dostopa";
-filterSum.h2="Povzetek smernic dostopa do medmre¾ja";
+filterSum.h2="Povzetek smernic WAN dostopa";
 filterSum.polnum="©t.";
 filterSum.polday="Èas dneva";
 
@@ -580,7 +580,7 @@ firewall.cookies="Filter za pi¹kotke";
 firewall.applet="Filter za Java aplete";
 firewall.activex="Filter za ActiveX";
 firewall.legend3="Prepreèi WAN zahteve";
-firewall.ping="Prepreèi anonimno zahtevo z medmre¾ja (ping)";
+firewall.ping="Prepreèi anonimno WAN zahtevo (ping)";
 firewall.muticast="Filter za multicast";
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
@@ -601,7 +601,7 @@ prforward.app="Aplikacija";
 
 //help container
 
-hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 // ******************************************* P2P.asp *******************************************//
@@ -631,7 +631,7 @@ pforward.to="Do vrat";
 
 //help container
 
-hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 
@@ -750,7 +750,7 @@ idx_pppoe.use_rp="Uporabi RP PPPoE";
 
 
 idx_pptp.srv="Uporabi DHCP";
-idx_pptp.wan_ip="IP naslov";
+idx_pptp.wan_ip="WAN IP naslov";
 idx_pptp.gateway="Prehod (PPTP stre¾nik)";
 idx_pptp.encrypt="PPTP ¹ifrirnje";
 
@@ -767,9 +767,9 @@ idx_static.dns="Statièni DNS";
 
 
 idx.titl=" - Namestitev";
-idx.h2="Namestitev medmre¾ja";
+idx.h2="WAN namestitev";
 idx.h22="Namestitev brez¾iènega omre¾ja";
-idx.legend="Naèin dostopa do medmre¾ja";
+idx.legend="Naèin WAN dostopa";
 idx.conn_type="Naèin dostopa";
 idx.stp="STP";
 idx.stp_mess="(onemogoèi za COMCAST ISP)";
@@ -1269,7 +1269,7 @@ status_router.mem_inactive="Nedejavno";
 status_router.legend4="Mre¾a";
 status_router.net_maxports="IP filter: najveèje ¹tevilo vrat";
 status_router.net_conntrack="Aktivne IP povezave";
-status_router.h22="Medmre¾je";
+status_router.h22="WAN";
 status_router.legend5="Naèin povezave";
 status_router.www_loginstatus="Status prijave";
 status_router.wanuptime=" Trajanje povezave";
@@ -1280,12 +1280,12 @@ status_router.legend6="Uporaba prostora";
 //help container
 
 hstatus_router.right2="To je ime usmerjalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
-hstatus_router.right4="To je usmerjalnikov MAC naslov, kot ga vidi va¹ ponudnik medmre¾ja.";
+hstatus_router.right4="To je usmerjalnikov MAC naslov, kot ga vidi va¹ ponudnik interneta.";
 hstatus_router.right6="To je usmerjalnikova trenutna strojna programska oprema.";
 hstatus_router.right8="To je trenutni èas.";
 hstatus_router.right10="To je èas neprekinjenega delovanja.";
 hstatus_router.right12="To so povpreène obremenitve v zadnji 1, 5 in 15 minutah.";
-hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v medmre¾je. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
+hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v internet. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
 
 
 // ******************************************* Status_Conntrack.asp *******************************************//
