@@ -4503,7 +4503,8 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 	  divisor = KILO;
 	}
     }
-
+if (nvram_match("ath0_turbo","1"))
+    rate*=2;
   if (rate > 0.0)
     {
       websWrite (wp, "%g %cb/s", rate / divisor, scale);
@@ -4658,7 +4659,7 @@ rssi2dbm (u_int rssi)
 
 int
 ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
-		       char *ifname, int cnt)
+		       char *ifname, int cnt,int turbo)
 {
 //  unsigned char buf[24 * 1024];
 
@@ -4720,16 +4721,16 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	{
 	  websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
 		     mac, ifname,
-		     (si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2,
-		     rssi2dbm (si->isi_rssi), si->isi_noise,
-		     rssi2dbm (si->isi_rssi) - (si->isi_noise));
+		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2)*turbo,
+		     si->isi_noise+si->isi_rssi, si->isi_noise,
+		     si->isi_rssi);
 	}
       else
 	{
 	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'",
 		     mac, ifname,
-		     rssi2dbm (si->isi_rssi), si->isi_noise,
-		     rssi2dbm (si->isi_rssi) - (si->isi_noise));
+		     si->isi_noise+si->isi_rssi, si->isi_noise,
+		     si->isi_rssi);
 	}
       cp += si->isi_len;
       len -= si->isi_len;
@@ -4750,12 +4751,19 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
   char devs[32];
   int i;
   int cnt = 0;
+  char turbo[32];
+  int t;
   for (i = 0; i < c; i++)
     {
 //fprintf(stderr,"try to assign new ifname for %d\n",i);
       sprintf (devs, "ath%d", i);
 //fprintf(stderr,"show ifname %s\n",devs);
-      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt);
+      sprintf(turbo,"%s_turbo",devs);
+      if (nvram_match(turbo,"1"))
+        t=2;
+      else 
+        t=1;
+      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt,t);
 //    fprintf(stderr,"returned with %d\n",cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
@@ -4766,7 +4774,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	foreach (var, vifs, next)
 	{
 //    fprintf(stderr,"show ifname %s\n",var);
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt);
+	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt,t);
 //    fprintf(stderr,"returned with %d, c=%d, i=%d\n",cnt,i,c);
 	}
     }
@@ -4792,6 +4800,12 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"assign mac\n");
 	  sprintf (wdsmacname, "ath%d_wds%d_hwaddr", i, s);
 //fprintf(stderr,"get nv\n");
+      sprintf(turbo,"ath%d_turbo",i);
+      if (nvram_match(turbo,"1"))
+        t=2;
+      else 
+        t=1;
+
 	  dev = nvram_safe_get (wdsdevname);
 	  //fprintf(stderr,"devname %s\n",dev);
 	  if (dev == NULL || strlen (dev) == 0)
@@ -4800,7 +4814,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  sprintf (var, "wdsath%d.%d", i, s);
 	  //fprintf(stderr,"var %s\n",var);
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt);
+	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt,t);
 	}
     }
 }
