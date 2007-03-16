@@ -568,7 +568,7 @@ start_dhcpfwd (void)
       else
 	{
 	  fprintf (fp, "if	%s	false	true	true\n",
-		   nvram_safe_get ("wan_ifname"));
+		   wan_ifname);
 	}
 
       fprintf (fp, "name	%s	ws-c\n",
