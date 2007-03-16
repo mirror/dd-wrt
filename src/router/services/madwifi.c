@@ -670,7 +670,7 @@ setupSupplicant (char *prefix)
       char psk[16];
       sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
-      fprintf (fp, "ap_scan=1\n");
+      fprintf (fp, "ap_scan=2\n");
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "ctrl_interface_group=0\n");
@@ -724,7 +724,7 @@ setupSupplicant (char *prefix)
       char ath[64];
       sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
-      fprintf (fp, "ap_scan=1\n");
+      fprintf (fp, "ap_scan=2\n");
       fprintf (fp, "fast_reauth=1\n");
       fprintf (fp, "eapol_version=1\n");
       fprintf (fp, "ctrl_interface_group=0\n");
