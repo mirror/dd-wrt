@@ -402,8 +402,43 @@ period_check (int sig)
 #endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
-		  nvram_set ("sv_restore_defaults", "1");
-		  nvram_commit ();
+#ifdef HAVE_X86
+      eval ("mount", "/usr/local", "-o", "remount,rw");
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("rm", "-f", "/usr/local/nvram/*");	// delete nvram database
+      eval ("mount", "/usr/local", "-o", "remount,ro");
+#elif HAVE_RB500
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+#elif HAVE_MAGICBOX
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+#elif HAVE_FONERA
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+#elif HAVE_WHRAG108
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+#elif HAVE_XSCALE
+      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+      eval ("erase", "nvram");
+#else
+
+      eval ("erase", "nvram");
+#endif
+
+
+//		  nvram_set ("sv_restore_defaults", "1");
+//		  nvram_commit ();
+
+
+
 		  kill (1, SIGTERM);
 		}
 	    }
