@@ -12,7 +12,7 @@ watchdog (void)
 {
   int radiostate = -1;
   int oldstate = -1;
-  
+
   int fd = open ("/dev/misc/watchdog", O_WRONLY);
   if (fd == -1)
     {
@@ -22,32 +22,32 @@ watchdog (void)
     {
       write (fd, "\0", 1);
       fsync (fd);
-      
-/* software wlan led control */      
+
+/* software wlan led control */
 #ifdef HAVE_MADWIFI
-		//????;  no idea how to check this
+      //????;  no idea how to check this
 #else
-		wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiostate, sizeof (int));
+      wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiostate, sizeof (int));
 #endif
-		
-	if (radiostate != oldstate)
-		{
-		if (radiostate == 0)
-			led_control (LED_WLAN, LED_ON);
-		else
-			{
-			led_control (LED_WLAN, LED_OFF);
+
+      if (radiostate != oldstate)
+	{
+	  if (radiostate == 0)
+	    led_control (LED_WLAN, LED_ON);
+	  else
+	    {
+	      led_control (LED_WLAN, LED_OFF);
 #ifndef HAVE_MADWIFI
-  /* Disable wireless will cause diag led blink, so we want to stop it. */
-		if (getRouterBrand () == ROUTER_WRT54G)
-	      	diag_led (DIAG, STOP_LED);
+	      /* Disable wireless will cause diag led blink, so we want to stop it. */
+	      if (getRouterBrand () == ROUTER_WRT54G)
+		diag_led (DIAG, STOP_LED);
 #endif
-			}
-			
-		oldstate = radiostate;
-		}
+	    }
+
+	  oldstate = radiostate;
+	}
 /* end software wlan led control */
-  
+
       sleep (10);
     }
 }
