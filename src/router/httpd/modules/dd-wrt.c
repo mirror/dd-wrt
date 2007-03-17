@@ -2026,7 +2026,7 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   char *next, *wordlist;
   memset (buffer, 0, 256);
   memset (bondnames, 0, 256);
-  memset (bufferif,0,512);
+  memset (bufferif, 0, 512);
   websWrite (wp, "<fieldset>\n");
   websWrite (wp, "<legend>Bonding</legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2041,21 +2041,26 @@ ej_show_bondings (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "</div>\n");
 
   getIfList (bufferif, "eth");
-int i;
+  int i;
 #ifdef HAVE_XSCALE
   getIfList (buffer, "ixp");
-  sprintf(bufferif,"%s",buffer);
+  sprintf (bufferif, "%s", buffer);
 #endif
   getIfList (buffer, "br");
-  sprintf(bufferif,"%s",buffer);
+  sprintf (bufferif, "%s", buffer);
 #ifdef HAVE_MADWIFI
   int c = getifcount ("wifi");
   for (i = 0; i < c; i++)
     {
-      sprintf (bufferif, "%s ath%d", bufferif, i);
-      char vifs[32];
-      sprintf (vifs, "ath%d_vifs", i);
-      sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
+      char ath[32];
+      sprintf (ath, "ath%d_bridged", i);
+      if (nvram_default_match (ath, "0", "1"))
+	{
+	  sprintf (bufferif, "%s ath%d", bufferif, i);
+	  char vifs[32];
+	  sprintf (vifs, "ath%d_vifs", i);
+	  sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
+	}
     }
 #endif
 
@@ -2396,14 +2401,19 @@ ej_show_bridgeifnames (webs_t wp, int argc, char_t ** argv)
   int c = getifcount ("wifi");
   for (i = 0; i < c; i++)
     {
-      sprintf (bufferif, "%s ath%d", bufferif, i);
-      char vifs[32];
-      sprintf (vifs, "ath%d_vifs", i);
-      sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
+      char ath[32];
+      sprintf (ath, "ath%d_bridged", i);
+      if (nvram_default_match (ath, "1", "1"))
+	{
+	  sprintf (bufferif, "%s ath%d", bufferif, i);
+	  char vifs[32];
+	  sprintf (vifs, "ath%d_vifs", i);
+	  sprintf (bufferif, "%s %s", bufferif, nvram_safe_get (vifs));
+	}
     }
 #endif
 #ifdef HAVE_BONDING
-    c=atoi(nvram_default_get("bonding_number","1"));
+  c = atoi (nvram_default_get ("bonding_number", "1"));
   for (i = 0; i < c; i++)
     {
       sprintf (bufferif, "%s bond%d", bufferif, i);
@@ -2835,8 +2845,7 @@ show_virtualssid (webs_t wp, char *prefix)
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "wl_adv.label11", ssid);
     sprintf (wl_mode, "%s_mode", var);
-    if (!nvram_match (wl_mode, "sta")
-	&& !nvram_match (wl_mode, "wet"))
+    if (!nvram_match (wl_mode, "sta") && !nvram_match (wl_mode, "wet"))
       showbridgesettings (wp, var);
     websWrite (wp, "</fieldset><br />\n");
     count++;
@@ -3311,59 +3320,58 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 //  if (!strcmp (prefix, "ath0"))
 #endif
-    {
+  {
 //#ifdef HAVE_MADWIFI
 //      if (!strcmp (prefix, "ath0"))   //show client only on first interface
 //#endif
-      {
+    {
 #ifdef HAVE_MADWIFI
 //      if (!strcmp (prefix, "ath0"))   //show client only on first interface
 //        if (nvram_match ("ath0_mode", "wdsap")
 //            || nvram_match ("ath0_mode", "wdssta"))
 //          showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
-	websWrite (wp,
-		   "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
-		   wl_mode);
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"ap") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"sta") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"wet") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"infra") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
+		 wl_mode);
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "ap") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "sta") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "wet") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "infra") ? "selected=\\\"selected\\\"" : "");
 #ifndef HAVE_MADWIFI
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"apsta") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"apstawet") ? "selected=\\\"selected\\\"" :
-		   "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "apsta") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "apstawet") ? "selected=\\\"selected\\\"" : "");
 #else
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"wdssta") ? "selected=\\\"selected\\\"" : "");
-	websWrite (wp,
-		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n//]]>\n</script>\n",
-		   nvram_match (wl_mode,
-				"wdsap") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "wdssta") ? "selected=\\\"selected\\\"" : "");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n//]]>\n</script>\n",
+		 nvram_match (wl_mode,
+			      "wdsap") ? "selected=\\\"selected\\\"" : "");
 #endif
-	websWrite (wp, "</select>\n");
-	websWrite (wp, "</div>\n");
-      }
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+    }
 /*#ifdef HAVE_MADWIFI
       else
 	{
@@ -3395,7 +3403,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	  websWrite (wp, "</div>\n");
 	}
 #endif*/
-    }
+  }
 //writeless net mode
   show_netmode (wp, prefix);
   //turbo options
@@ -3569,8 +3577,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 //end ACK timing
 
-  if (!nvram_match (wl_mode, "sta")
-      && !nvram_match (wl_mode, "wet"))
+  if (!nvram_match (wl_mode, "sta") && !nvram_match (wl_mode, "wet"))
     showbridgesettings (wp, prefix);
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
@@ -4503,8 +4510,8 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
 	  divisor = KILO;
 	}
     }
-if (nvram_match("ath0_turbo","1"))
-    rate*=2;
+  if (nvram_match ("ath0_turbo", "1"))
+    rate *= 2;
   if (rate > 0.0)
     {
       websWrite (wp, "%g %cb/s", rate / divisor, scale);
@@ -4659,7 +4666,7 @@ rssi2dbm (u_int rssi)
 
 int
 ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
-		       char *ifname, int cnt,int turbo)
+		       char *ifname, int cnt, int turbo)
 {
 //  unsigned char buf[24 * 1024];
 
@@ -4721,15 +4728,15 @@ ej_active_wireless_if (webs_t wp, int argc, char_t ** argv,
 	{
 	  websWrite (wp, "'%s','%s','%3dM','%d','%d','%d'",
 		     mac, ifname,
-		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2)*turbo,
-		     si->isi_noise+si->isi_rssi, si->isi_noise,
+		     ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) /
+		      2) * turbo, si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
       else
 	{
 	  websWrite (wp, "'%s','%s','N/A','%d','%d','%d'",
 		     mac, ifname,
-		     si->isi_noise+si->isi_rssi, si->isi_noise,
+		     si->isi_noise + si->isi_rssi, si->isi_noise,
 		     si->isi_rssi);
 	}
       cp += si->isi_len;
@@ -4758,12 +4765,12 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"try to assign new ifname for %d\n",i);
       sprintf (devs, "ath%d", i);
 //fprintf(stderr,"show ifname %s\n",devs);
-      sprintf(turbo,"%s_turbo",devs);
-      if (nvram_match(turbo,"1"))
-        t=2;
-      else 
-        t=1;
-      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt,t);
+      sprintf (turbo, "%s_turbo", devs);
+      if (nvram_match (turbo, "1"))
+	t = 2;
+      else
+	t = 1;
+      cnt = ej_active_wireless_if (wp, argc, argv, devs, cnt, t);
 //    fprintf(stderr,"returned with %d\n",cnt);
       char vif[32];
       sprintf (vif, "%s_vifs", devs);
@@ -4774,7 +4781,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	foreach (var, vifs, next)
 	{
 //    fprintf(stderr,"show ifname %s\n",var);
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt,t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
 //    fprintf(stderr,"returned with %d, c=%d, i=%d\n",cnt,i,c);
 	}
     }
@@ -4800,11 +4807,11 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 //fprintf(stderr,"assign mac\n");
 	  sprintf (wdsmacname, "ath%d_wds%d_hwaddr", i, s);
 //fprintf(stderr,"get nv\n");
-      sprintf(turbo,"ath%d_turbo",i);
-      if (nvram_match(turbo,"1"))
-        t=2;
-      else 
-        t=1;
+	  sprintf (turbo, "ath%d_turbo", i);
+	  if (nvram_match (turbo, "1"))
+	    t = 2;
+	  else
+	    t = 1;
 
 	  dev = nvram_safe_get (wdsdevname);
 	  //fprintf(stderr,"devname %s\n",dev);
@@ -4814,7 +4821,7 @@ ej_active_wireless (webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  sprintf (var, "wdsath%d.%d", i, s);
 	  //fprintf(stderr,"var %s\n",var);
-	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt,t);
+	  cnt = ej_active_wireless_if (wp, argc, argv, var, cnt, t);
 	}
     }
 }
