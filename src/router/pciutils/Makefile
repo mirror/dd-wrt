@@ -2,7 +2,7 @@
 # Makefile for Linux PCI Utilities
 # (c) 1998--2002 Martin Mares <mj@ucw.cz>
 
-OPT=-Os -mtune=mips32 -mips32 -pipe -fomit-frame-pointer
+OPT=$(COPTS)
 #OPT=-O2 -g
 CFLAGS=$(OPT) -Wall -W -Wno-parentheses -Wstrict-prototypes
 
@@ -75,7 +75,7 @@ uninstall: all
 	rm -f $(PREFIX)/man/man8/lspci.8 $(PREFIX)/man/man8/setpci.8
 
 update-ids:
-#	if [ ! -f pci.ids.orig ] ; then mv pci.ids pci.ids.orig ; fi
+	if [ ! -f pci.ids.orig ] ; then mv pci.ids pci.ids.orig ; fi
 	wget http://pciids.sf.net/pci.ids.bz2
 	bzip2 -d pci.ids.bz2
 
