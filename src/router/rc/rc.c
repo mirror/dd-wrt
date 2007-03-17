@@ -140,16 +140,16 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
-  cprintf("console init\n");
+  cprintf ("console init\n");
   if (console_init ())
     noconsole = 1;
-  cprintf("init lcd\n");
+  cprintf ("init lcd\n");
   initlcd ();
-  cprintf("first message\n");
+  cprintf ("first message\n");
   lcdmessage ("System Start");
-  cprintf("start service\n");
+  cprintf ("start service\n");
   start_service ("sysinit");
-  cprintf("setup signals\n");
+  cprintf ("setup signals\n");
   /* Setup signal handlers */
   signal_init ();
   signal (SIGHUP, rc_signal);
@@ -166,7 +166,7 @@ main_loop (void)
 
   if (!noconsole)
     ddrun_shell (1, 0);
-  cprintf("setup nvram\n");
+  cprintf ("setup nvram\n");
 
   start_service ("nvram");
 
@@ -178,41 +178,42 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 
-if (brand!=ROUTER_WRT350N)
-{
-  if (nvram_match ("fullswitch", "1")
-      && (nvram_invmatch ("wl0_mode", "ap")
-	  || nvram_match ("wan_proto", "disabled")))
+  if (brand != ROUTER_WRT350N)
     {
-      nvram_set ("vlan0ports", "0 1 2 3 4 5*");
-      nvram_set ("vlan1ports", "");
-    }
-  else
-    {
-      if (nvram_match ("vlan0ports", "0 1 2 3 4 5*"))
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
 	{
-	  nvram_set ("vlan0ports", "");
+	  nvram_set ("vlan0ports", "0 1 2 3 4 5*");
 	  nvram_set ("vlan1ports", "");
 	}
-    }
-}else
-{
- if (nvram_match ("fullswitch", "1")
-      && (nvram_invmatch ("wl0_mode", "ap")
-	  || nvram_match ("wan_proto", "disabled")))
-    {
-      nvram_set ("vlan1ports", "0 1 2 3 4 8*");
-      nvram_set ("vlan2ports", "");
+      else
+	{
+	  if (nvram_match ("vlan0ports", "0 1 2 3 4 5*"))
+	    {
+	      nvram_set ("vlan0ports", "");
+	      nvram_set ("vlan1ports", "");
+	    }
+	}
     }
   else
     {
-      if (nvram_match ("vlan1ports", "0 1 2 3 4 8*"))
+      if (nvram_match ("fullswitch", "1")
+	  && (nvram_invmatch ("wl0_mode", "ap")
+	      || nvram_match ("wan_proto", "disabled")))
 	{
-	  nvram_set ("vlan1ports", "");
+	  nvram_set ("vlan1ports", "0 1 2 3 4 8*");
 	  nvram_set ("vlan2ports", "");
 	}
+      else
+	{
+	  if (nvram_match ("vlan1ports", "0 1 2 3 4 8*"))
+	    {
+	      nvram_set ("vlan1ports", "");
+	      nvram_set ("vlan2ports", "");
+	    }
+	}
     }
-}
 
 
 
@@ -427,22 +428,20 @@ if (brand!=ROUTER_WRT350N)
 #endif
 
 	  cprintf ("RESTART\n");
-#ifndef HAVE_MSSID
 #ifndef HAVE_MADWIFI
-	  if (nvram_match ("wl_akm", "wpa") ||
-	      nvram_match ("wl_akm", "psk") ||
-	      nvram_match ("wl_akm", "radius") ||
-	      nvram_match ("wl_akm", "psk2") ||
-	      nvram_match ("wl_akm", "wpa2") ||
-	      nvram_match ("wl_akm", "wpa wpa2") ||
-	      nvram_match ("wl_akm", "psk psk2"))
+	  if (nvram_match ("wl0_akm", "wpa") ||
+	      nvram_match ("wl0_akm", "psk") ||
+	      nvram_match ("wl0_akm", "radius") ||
+	      nvram_match ("wl0_akm", "psk2") ||
+	      nvram_match ("wl0_akm", "wpa2") ||
+	      nvram_match ("wl0_akm", "wpa wpa2") ||
+	      nvram_match ("wl0_akm", "psk psk2"))
 	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 	      sleep (4);
 	      start_service ("wlconf");
 
 	    }
-#endif
 #endif
 	  /* Fall through */
 	case STOP:
@@ -515,7 +514,7 @@ if (brand!=ROUTER_WRT350N)
 #endif
 	  start_service ("lan");
 #ifdef HAVE_BONDING
-	  start_service("bonding");
+	  start_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
 	  start_service ("vlantagging");
@@ -543,9 +542,9 @@ if (brand!=ROUTER_WRT350N)
 	      || nvram_match ("wl0_mode", "apstawet"))
 	    {
 	      //fix for client mode
-		eval ("/sbin/ifconfig", get_wdev(), "up");
-  		}
-  		
+	      eval ("/sbin/ifconfig", get_wdev (), "up");
+	    }
+
 	  cprintf ("create rc file\n");
 #ifdef HAVE_REGISTER
 	  if (isregistered ())
@@ -558,6 +557,11 @@ if (brand!=ROUTER_WRT350N)
 	      cprintf ("start modules\n");
 	      start_service ("modules");
 	    }
+#ifdef HAVE_MSSID
+#ifndef HAVE_MADWIFI
+	  start_service ("wlconf");
+#endif
+#endif
 #ifdef HAVE_CHILLI
 	  start_service ("chilli");
 #endif
@@ -669,7 +673,8 @@ main (int argc, char **argv)
   else if (strstr (base, "erase"))
     {
       int brand = getRouterBrand ();
-      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G)
+      if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1
+	  || brand == ROUTER_MOTOROLA_WE800G)
 	{
 	  if (argv[1] && strcmp (argv[1], "nvram"))
 	    {
@@ -865,7 +870,7 @@ main (int argc, char **argv)
   else if (strstr (base, "event"))
     return event_main (argc, argv);
   else if (strstr (base, "switch"))
-    return start_main ("switch",argc, argv);
+    return start_main ("switch", argc, argv);
   else if (strstr (base, "check_ses_led"))
     return check_ses_led_main (argc, argv);
 #ifdef HAVE_MICRO
@@ -880,5 +885,5 @@ main (int argc, char **argv)
     return watchdog_main (argc, argv);
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();
-return 1;
+  return 1;
 }

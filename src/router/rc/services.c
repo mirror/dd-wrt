@@ -155,26 +155,26 @@ start_services (void)
 #endif
 
   dlclose (handle);
-  
+
 /* dirty fix starts here: WDS does not connect from cold boot; we try to restart NAS */
 #ifndef HAVE_MADWIFI
 /* nas mode select*/
-      if (nvram_match ("wl0_mode", "sta")
-	  || nvram_match ("wl0_mode", "wet")
-	  || nvram_match ("wl0_mode", "apsta")
-	  || nvram_match ("wl0_mode", "apstawet"))
-	{
-	  cprintf ("start nas wan\n");
-	  start_service ("nas_wan");
-	}
-      else
-	{
-	  cprintf ("start nas lan\n");
-	  start_service ("nas_lan");
-	}
+  if (nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "wet")
+      || nvram_match ("wl0_mode", "apsta")
+      || nvram_match ("wl0_mode", "apstawet"))
+    {
+      cprintf ("start nas wan\n");
+      start_service ("nas_wan");
+    }
+  else
+    {
+      cprintf ("start nas lan\n");
+      start_service ("nas_lan");
+    }
 /*end nas mode select */
 #ifdef HAVE_MSSID
-      start_service ("guest_nas");
+  start_service ("guest_nas");
 #endif
 #endif
 /* fix ends here */
@@ -300,7 +300,7 @@ start_single_service (void)
       stop_service ("vlantagging");
 #endif
 #ifdef HAVE_BONDING
-      stop_service("bonding");
+      stop_service ("bonding");
 #endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
@@ -312,7 +312,7 @@ start_single_service (void)
 #endif
       start_service ("lan");
 #ifdef HAVE_BONDING
-      start_service("bonding");
+      start_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
@@ -468,7 +468,7 @@ start_single_service (void)
 #endif
       stop_service ("lan");
 #ifdef HAVE_BONDING
-      stop_service("bonding");
+      stop_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
       stop_service ("bridging");
@@ -479,11 +479,11 @@ start_single_service (void)
 #endif
       start_service ("lan");
 #ifdef HAVE_BONDING
-      start_service("bonding");
+      start_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
-	  start_service ("bridgesif");
+      start_service ("bridgesif");
 #endif
       start_service ("wan_boot");
 #ifdef HAVE_MADWIFI
@@ -622,7 +622,7 @@ start_single_service (void)
       stop_service ("vlantagging");
 #endif
 #ifdef HAVE_BONDING
-      stop_service("bonding");
+      stop_service ("bonding");
 #endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
@@ -646,7 +646,7 @@ start_single_service (void)
 #endif
       start_service ("lan");
 #ifdef HAVE_BONDING
-      start_service("bonding");
+      start_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
@@ -701,7 +701,7 @@ start_single_service (void)
       stop_service ("vlantagging");
 #endif
 #ifdef HAVE_BONDING
-      stop_service("bonding");
+      stop_service ("bonding");
 #endif
       stop_service ("lan");
 #ifdef HAVE_VLANTAGGING
@@ -725,7 +725,7 @@ start_single_service (void)
 #endif
       start_service ("lan");
 #ifdef HAVE_BONDING
-      start_service("bonding");
+      start_service ("bonding");
 #endif
 #ifdef HAVE_VLANTAGGING
       start_service ("vlantagging");
