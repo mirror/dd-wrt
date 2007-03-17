@@ -378,12 +378,14 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
       setRouter ("Linksys WRTSL54GS");
       return ROUTER_WRTSL54GS;
     }
+    
   if (boardnum == 42 && nvram_match("boardtype","0x0101") && nvram_match("boardrev","0x10") && nvram_match("boot_ver","v3.6"))
     {
       cprintf ("router is Linksys WRT54G3G\n");
       setRouter ("Linksys WRT54G3G");
       return ROUTER_WRT54G3G;
     }
+    
   if (boardnum == 45 &&
       nvram_match ("boardtype", "0x042f") && nvram_match ("boardrev", "0x10"))
     {
@@ -393,10 +395,9 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
     }
 
 
-  {
+  
     et0 = nvram_safe_get ("et0macaddr");
-    if (et0 != NULL)
-      {
+
 	if (boardnum == 100 &&
 	    nvram_match ("boardtype", "bcm94710r4"))
 	  {
@@ -445,14 +446,25 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 	      }
 	  }
 
-	if ((nvram_match ("boardnum", "2") &&
-	    nvram_match ("boardtype", "bcm94710dev")) ||
-	    (!strlen (nvram_safe_get ("boardnum")) &&   	// fix for we800g v1 cleared nvram
-	    !strlen (nvram_safe_get ("boardtype")) &&		// or restored to fac.def.
-	    nvram_match ("GemtekPmonVer", "9")))			// stupid! I know...
-	  {
-	    if (nvram_match ("GemtekPmonVer", "9") &&
-		(startswith (et0, "00:0C:E5") ||
+	if (boardnum == 2 &&
+	    nvram_match ("boardtype", "bcm94710dev") &&
+	    nvram_match ("melco_id", "29016"))	//Buffalo WLI2-TX1-G54)
+		{
+		cprintf ("router is Buffalo WLI2-TX1-G54\n");
+		setRouter ("Buffalo WLI2-TX1-G54");
+		return ROUTER_BUFFALO_WLI2_TX1_G54;
+	    }
+	    
+	if (boardnum == 2 && nvram_match ("GemtekPmonVer", "10"))
+		{
+		cprintf ("router is Linksys wap54g v1\n");
+		setRouter ("Linksys WAP54G v1");
+		return ROUTER_WAP54G_V1;
+	    }
+
+	if (nvram_match ("GemtekPmonVer", "9"))   //Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
+		{ 
+		if (startswith (et0, "00:0C:E5") ||
 		 startswith (et0, "00:0c:e5") ||
 		 startswith (et0, "00:0C:10") ||
 		 startswith (et0, "00:0c:10") ||
@@ -460,51 +472,39 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 		 startswith (et0, "00:0c:11") ||
 		 startswith (et0, "00:11:22") ||
 		 startswith (et0, "00:0C:90") ||
-		 startswith (et0, "00:0c:90")))
-	      {
-		if (!strlen (nvram_safe_get ("phyid_num")))
-		  {
-		    eval ("insmod", "switch-core");	//get phy type
-		    eval ("insmod", "switch-robo");
-		    eval ("rmmod", "switch-robo");
-		    eval ("rmmod", "switch-core");
-		    nvram_set ("boardnum", "2");
-		    nvram_set ("boardtype", "bcm94710dev");
-		  }
-		if (nvram_match ("phyid_num", "0x00000000"))
-		  {
-			cprintf ("router Motorola WE800G v1\n");
-		    setRouter ("Motorola WE800G v1");
-		    return ROUTER_MOTOROLA_WE800G;
-		  }
-		else		//phyid_num == 0xffffffff
-		  {
-		    cprintf ("router Motorola WR850G v1\n");
-		    setRouter ("Motorola WR850G v1");
-		    return ROUTER_MOTOROLA_V1;
-		  }
-	      }
-	    if (nvram_match ("melco_id", "29016"))	//Buffalo WLI2-TX1-G54
-	      {
-		cprintf ("router is Buffalo WLI2-TX1-G54\n");
-		setRouter ("Buffalo WLI2-TX1-G54");
-		return ROUTER_BUFFALO_WLI2_TX1_G54;
-	      }
-	    else if (nvram_match ("GemtekPmonVer", "10"))
-	      {
-		cprintf ("router is Linksys wap54g v1\n");
-		setRouter ("Linksys WAP54G v1");
-		return ROUTER_WAP54G_V1;
-		  }
-	    else
-	      {
-		cprintf ("router is linksys WRT55AG\n");
-		setRouter ("Linksys WRT55AG v1");
-		return ROUTER_LINKSYS_WRT55AG;
-	      }
-	  }
-      }
-  }
+		 startswith (et0, "00:0c:90"))
+		 	{
+			 if (!strlen (nvram_safe_get ("phyid_num")))
+		  		{
+		    	eval ("insmod", "switch-core");	//get phy type
+		    	eval ("insmod", "switch-robo");
+		    	eval ("rmmod", "switch-robo");
+		    	eval ("rmmod", "switch-core");
+		    	nvram_set ("boardnum", "2");
+		    	nvram_set ("boardtype", "bcm94710dev");
+		  		}
+			if (nvram_match ("phyid_num", "0x00000000"))
+		  		{
+				cprintf ("router Motorola WE800G v1\n");
+		    	setRouter ("Motorola WE800G v1");
+		    	return ROUTER_MOTOROLA_WE800G;
+		  		}
+			else		//phyid_num == 0xffffffff
+		  		{
+		    	cprintf ("router Motorola WR850G v1\n");
+		    	setRouter ("Motorola WR850G v1");
+		    	return ROUTER_MOTOROLA_V1;
+		  		}
+			}
+			else
+			{
+				cprintf ("router is linksys WRT55AG\n");
+				setRouter ("Linksys WRT55AG v1");
+				return ROUTER_LINKSYS_WRT55AG;
+	      	}
+      	}
+
+  
 
   if (boardnum == 20060330 &&
       nvram_match ("boardtype", "0x0472"))
@@ -541,30 +541,6 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
       return ROUTER_WRT54G1X;
     }
 
-	if (nvram_match ("boardnum", "2\r") &&
-	    nvram_match ("boardtype", "bcm94710dev\r"))
-		{
-		if (!strlen (nvram_safe_get ("phyid_num")))
-		  {
-		    eval ("insmod", "switch-core");	//get phy type
-		    eval ("insmod", "switch-robo");
-		    eval ("rmmod", "switch-robo");
-		    eval ("rmmod", "switch-core");
-		  }
-		if (nvram_match ("phyid_num", "0x00000000"))
-		  {
-			cprintf ("router Motorola WE800G v1\n");
-		    setRouter ("Motorola WE800G v1");
-		    return ROUTER_MOTOROLA_WE800G;
-		  }
-		else		//phyid_num == 0xffffffff
-		  {
-		    cprintf ("router is Linksys wap54g v1\n");
-			setRouter ("Linksys WAP54G v1");
-			return ROUTER_WAP54G_V1;
-		  }	
-	    }
-	    
   if (boardnum == 1024 && nvram_match ("boardtype", "0x0446"))
     {
 	  char *cfe = nvram_safe_get ("cfe_version");
