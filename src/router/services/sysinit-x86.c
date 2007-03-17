@@ -221,6 +221,8 @@ eval("insmod","crypto_null");
     eval ("insmod", "8139too");
   else if (detect ("SMC2-1211TX"))	// Realtek 8139 Adapter (various notebooks) 
     eval ("insmod", "8139too");
+  else if (detect ("Robotics"))	// Realtek 8139 Adapter (various notebooks) 
+    eval ("insmod", "8139too");
 
   if (detect ("nForce2 Ethernet"))	// nForce2 
     eval ("insmod", "forcedeth");
