@@ -1089,8 +1089,8 @@ struct	iw_range
 struct	iw_priv_args
 {
 	__u32		cmd;		/* Number of the ioctl to issue */
-	__u16		set_args;	/* Type and number of args */
-	__u16		get_args;	/* Type and number of args */
+	__u32		set_args;	/* Type and number of args */
+	__u32		get_args;	/* Type and number of args */
 	char		name[IFNAMSIZ];	/* Name of the extension */
 };
 
@@ -1106,8 +1106,8 @@ struct	iw_priv_args
  */
 struct iw_event
 {
-	__u32		len;			/* Real lenght of this stuff */
-	__u32		cmd;			/* Wireless IOCTL */
+	__u16		len;			/* Real lenght of this stuff */
+	__u16		cmd;			/* Wireless IOCTL */
 	union iwreq_data	u;		/* IOCTL fixed payload */
 };
 
