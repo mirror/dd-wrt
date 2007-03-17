@@ -98,7 +98,7 @@ start_service (char *name)
 
 
 void *
-start_service_nofree (char *name,void *handle)
+start_service_nofree (char *name, void *handle)
 {
 //  lcdmessaged("Starting Service",name);
   cprintf ("start_service_nofree\n");
@@ -232,7 +232,7 @@ stop_service (char *name)
 }
 
 void *
-stop_service_nofree (char *name,void *handle)
+stop_service_nofree (char *name, void *handle)
 {
   //lcdmessaged("Stopping Service",name);
   cprintf ("stop service()\n");
@@ -259,9 +259,9 @@ stop_service_nofree (char *name,void *handle)
 void
 startstop (char *name)
 {
- void *handle=NULL;
+  void *handle = NULL;
   cprintf ("stop and start service\n");
-  handle=stop_service_nofree (name,handle);
-  handle=start_service_nofree (name,handle);
-  dlclose(handle);
+  handle = stop_service_nofree (name, handle);
+  handle = start_service_nofree (name, handle);
+  dlclose (handle);
 }

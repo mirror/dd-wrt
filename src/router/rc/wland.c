@@ -306,10 +306,11 @@ checkbssid (void)
   struct ether_addr bssid;
   wl_bss_info_t *bi;
   char buf[WLC_IOCTL_MAXLEN];
-  if ((WL_IOCTL (get_wdev(), WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
+  if ((WL_IOCTL (get_wdev (), WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
     {
       *(uint32 *) buf = WLC_IOCTL_MAXLEN;
-      if ((WL_IOCTL (get_wdev(), WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) < 0)
+      if ((WL_IOCTL (get_wdev (), WLC_GET_BSS_INFO, buf, WLC_IOCTL_MAXLEN)) <
+	  0)
 	return 0;
       bi = (wl_bss_info_t *) (buf + 4);
       int i;
@@ -338,7 +339,7 @@ do_client_check (void)
 
   buf[len] = 0;
 
-  if ((len > 0 && strstr (buf, "Not associated.")) || checkbssid()==0)
+  if ((len > 0 && strstr (buf, "Not associated.")) || checkbssid () == 0)
     {
 #ifdef HAVE_DDLAN
 
@@ -364,7 +365,7 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
-      eval ("wl","disassoc");
+      eval ("wl", "disassoc");
 #ifndef HAVE_MSSID
       eval ("wl", "join", nvram_safe_get ("wl_ssid"));
 #else

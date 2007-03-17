@@ -46,7 +46,7 @@
 #define NORMAL_INTERVAL		1	/* second */
 #define URGENT_INTERVAL		100 * 1000	/* microsecond */
 
-#ifndef HAVE_GATEWORX						/* 1/10 second */
+#ifndef HAVE_GATEWORX		/* 1/10 second */
 #define GPIO_FILE		"/dev/gpio/in"
 #endif
 #if 0
@@ -118,19 +118,20 @@ getbuttonstate ()
 int
 getbuttonstate ()
 {
-FILE *in;
-int ret;
-in=fopen("/proc/gpio/6_in","rb");
-if (in==NULL)return 0;
-fscanf(in,"%d",&ret);
-fclose(in);
-return ret;
+  FILE *in;
+  int ret;
+  in = fopen ("/proc/gpio/6_in", "rb");
+  if (in == NULL)
+    return 0;
+  fscanf (in, "%d", &ret);
+  fclose (in);
+  return ret;
 }
 #endif
 #if defined(HAVE_GATEWORX)
 
 #define u8 unsigned char
-#define u32 unsigned long 
+#define u32 unsigned long
 
 //#include <linux/ixp425-gpio.h>
 
@@ -140,51 +141,57 @@ return ret;
 #define IXP4XX_GPIO_OUT 		0x1
 #define IXP4XX_GPIO_IN  		0x2
 
-struct gpio_bit {
+struct gpio_bit
+{
   unsigned char bit;
   unsigned char state;
 };
 
 
 
-char *filename = "/dev/gpio"; 
+char *filename = "/dev/gpio";
 
 
-int read_bit(int bit) {
+int
+read_bit (int bit)
+{
   int file;
   struct gpio_bit _bit;
 
   /* open device */
-  if ( (file = open(filename, O_RDONLY)) == -1) {
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-    return 1;
-  }
+  if ((file = open (filename, O_RDONLY)) == -1)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
 
   /* Config pin as input */
   _bit.bit = bit;
   _bit.state = IXP4XX_GPIO_IN;
-  if ( ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-    return 1;
-  }
+  if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
 
   /* Read data */
   _bit.bit = bit;
-  if ( ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
-    /* ERROR HANDLING; you can check errno to see what went wrong */
-    return 1;
-  }
+  if (ioctl (file, GPIO_GET_BIT, (long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
 
-  close(file);
+  close (file);
   return _bit.state;
 }
 
 int
 getbuttonstate ()
 {
-FILE *in;
-int ret = read_bit(4);
-return ret==0?1:0;
+  FILE *in;
+  int ret = read_bit (4);
+  return ret == 0 ? 1 : 0;
 }
 #endif
 
@@ -230,9 +237,9 @@ runStartup (char *folder, char *extension)
   DIR *directory;
   unsigned char buf[128];
   directory = opendir (folder);
-  if (directory == NULL) 
+  if (directory == NULL)
     {
-    return;
+      return;
     }
 //list all files in this directory 
   while ((entry = readdir (directory)) != NULL)
@@ -308,8 +315,8 @@ period_check (int sig)
 //      time(&t);
 //      DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) 
-  val = getbuttonstate();
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX)
+  val = getbuttonstate ();
 #else
   if ((fp = fopen (GPIO_FILE, "r")))
     {
@@ -353,24 +360,24 @@ period_check (int sig)
   int sesgpio;
   switch (brand)
     {
-    case ROUTER_BUFFALO_WHRG54S:	
+    case ROUTER_BUFFALO_WHRG54S:
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
-      sesgpio = 0x10;	//gpio 0, inversed
+      sesgpio = 0x10;		//gpio 0, inversed
       break;
     case ROUTER_WRT54G:
-      sesgpio = 0x14;	//gpio 4, inversed
+      sesgpio = 0x14;		//gpio 4, inversed
       break;
     case ROUTER_BUFFALO_WBR2G54S:
     case ROUTER_ASUS_WL500G_PRE:
-      sesgpio = 0x04;	//gpio 4, normal
+      sesgpio = 0x04;		//gpio 4, normal
       break;
     default:
       sesgpio = 0x0f;		//gpio unknown, disabled
     }
-    
-	push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
-	
+
+  push = 1 << (sesgpio & 0x0f);	//calculate push value from ses gpio pin no.
+
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
@@ -396,46 +403,47 @@ period_check (int sig)
 	      if ((brand & 0x000f) != 0x000f)
 		{
 		  printf ("resetbutton: factory default.\n");
-		  syslog (LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
+		  syslog (LOG_DEBUG,
+			  "Reset button: restoring factory defaults now!\n");
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX)
 		  led_control (LED_DIAG, LED_ON);
 #endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 #ifdef HAVE_X86
-      eval ("mount", "/usr/local", "-o", "remount,rw");
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("rm", "-f", "/usr/local/nvram/*");	// delete nvram database
-      eval ("mount", "/usr/local", "-o", "remount,ro");
+		  eval ("mount", "/usr/local", "-o", "remount,rw");
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("rm", "-f", "/usr/local/nvram/*");	// delete nvram database
+		  eval ("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("rm", "-f", "/etc/nvram/*");	// delete nvram database
 #elif HAVE_MAGICBOX
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("erase", "nvram");
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("erase", "nvram");
 #elif HAVE_FONERA
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("erase", "nvram");
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("erase", "nvram");
 #elif HAVE_WHRAG108
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("erase", "nvram");
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("erase", "nvram");
 #elif HAVE_XSCALE
-      eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-      eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
-      eval ("erase", "nvram");
+		  eval ("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+		  eval ("erase", "nvram");
 #else
 
-      eval ("erase", "nvram");
+		  eval ("erase", "nvram");
 #endif
 
 
-//		  nvram_set ("sv_restore_defaults", "1");
-//		  nvram_commit ();
+//                nvram_set ("sv_restore_defaults", "1");
+//                nvram_commit ();
 
 
 
@@ -446,55 +454,59 @@ period_check (int sig)
     }
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX)
 
-  else if ((sesgpio != 0x0f) && (((sesgpio & 0x10) == 0 && (val & push)) || ((sesgpio & 0x10) == 0x10 && !(val & push))))
+  else if ((sesgpio != 0x0f)
+	   && (((sesgpio & 0x10) == 0 && (val & push))
+	       || ((sesgpio & 0x10) == 0x10 && !(val & push))))
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
-      runStartup ("/mmc/etc/config", ".sesbutton");		//if available
-      runStartup ("/tmp/etc/config", ".sesbutton");		//if available
-      
+      runStartup ("/mmc/etc/config", ".sesbutton");	//if available
+      runStartup ("/tmp/etc/config", ".sesbutton");	//if available
+
       if (ses_mode == 1)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
-	  {
-	    eval ("wl", "radio", "on");
-	    syslog (LOG_DEBUG, "SES /AOSS /EZ-setup button: turning radio on\n");
-      }
+	    {
+	      eval ("wl", "radio", "on");
+	      syslog (LOG_DEBUG,
+		      "SES /AOSS /EZ-setup button: turning radio on\n");
+	    }
 #endif
 
-//		led_control (LED_SES, LED_OFF);		
-//		led_control (LED_SES2, LED_ON);		//enable orange led
-		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
-		led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
-		
-//	switch (brand)
-//		{
-//		case ROUTER_WRT54G:
-//		case ROUTER_WRTSL54GS: 
-//			ses_mode = 2;
-//	      	break;
-//		default:
-			ses_mode = 0;
-//		}
-	    
+//              led_control (LED_SES, LED_OFF);         
+//              led_control (LED_SES2, LED_ON);         //enable orange led
+	  led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
+
+//      switch (brand)
+//              {
+//              case ROUTER_WRT54G:
+//              case ROUTER_WRTSL54GS: 
+//                      ses_mode = 2;
+//              break;
+//              default:
+	  ses_mode = 0;
+//              }
+
 	}
       else if (ses_mode == 0)
 	{
 #ifdef HAVE_RADIOOFF
 	  if (nvram_match ("radiooff_button", "1"))
-	  {
-	    eval ("wl", "radio", "off");
-	    syslog (LOG_DEBUG, "SES /AOSS /EZ-setup button: turning radio off\n");
-      }
+	    {
+	      eval ("wl", "radio", "off");
+	      syslog (LOG_DEBUG,
+		      "SES /AOSS /EZ-setup button: turning radio off\n");
+	    }
 #endif
-//		led_control (LED_SES, LED_ON);		//enable white led
-//		led_control (LED_SES2, LED_OFF);
-		led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
-		led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
-		
-		ses_mode = 1;
-		
+//              led_control (LED_SES, LED_ON);          //enable white led
+//              led_control (LED_SES2, LED_OFF);
+	  led_control (LED_AOSS, LED_FLASH);	//blink AOSS led
+	  led_control (LED_SES, LED_FLASH);	//when pressed, blink white SES led
+
+	  ses_mode = 1;
+
 	}
 /*      else if (ses_mode == 2)
 	{
