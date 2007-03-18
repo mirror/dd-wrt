@@ -4691,6 +4691,7 @@ ej_get_radio_state (webs_t wp, int argc, char_t ** argv)
   int radiooff = -1;
 
 #ifdef HAVE_MADWIFI
+  radiooff = 0;
   //????;  no idea how to check this
 #else
   wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiooff, sizeof (int));
