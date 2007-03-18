@@ -511,6 +511,7 @@ start_single_service (void)
       stop_service ("zebra");
 #endif
       startstop ("firewall");
+      start_service ("set_routes");
 #ifdef HAVE_BIRD
       start_service ("zebra");
 #endif
