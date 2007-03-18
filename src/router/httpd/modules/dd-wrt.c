@@ -1404,6 +1404,7 @@ struct wifi_channels
 {
   int channel;
   int freq;
+  int noise
 };
 extern struct wifi_channels *list_channels (char *devnr);
 //extern int getchannelcount (void);
@@ -2577,10 +2578,10 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      sprintf (cn, "%d", chan[i].channel);
 	      sprintf (fr, "%d", chan[i].freq);
 	      websWrite (wp,
-			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n",
+			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz (Noise %3d Dbm)</option>\");\n",
 			 fr, nvram_match (wl_channel,
 					  fr) ? "selected=\\\"selected\\\"" :
-			 "", cn, chan[i].freq);
+			 "", cn, chan[i].freq,chan[i].noise);
 	      //free (chan[i].freq);
 	      i++;
 	    }
