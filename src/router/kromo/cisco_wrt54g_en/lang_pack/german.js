@@ -315,7 +315,7 @@ bmenu.accrestriction="Zugriffsbeschränkung";
 bmenu.webaccess="Internet-Zugriff";
 
 
-bmenu.applications="Anwendungen &amp; Spiele";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port-Bereichs-Weiterleitung";
 bmenu.applicationspforwarding="Port-Weiterleitung";
 bmenu.applicationsptriggering="Port-Triggering";

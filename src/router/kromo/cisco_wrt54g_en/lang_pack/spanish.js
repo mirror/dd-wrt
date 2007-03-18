@@ -311,7 +311,7 @@ bmenu.accrestriction="Restricciones de Acceso";
 bmenu.webaccess="Acceso a Internet";
 
 
-bmenu.applications="Aplicaciones y Juegos";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Redireccionar Rango de Puertos";
 bmenu.applicationspforwarding="Redireccionamiento de Puertos";
 bmenu.applicationsptriggering="Mapeado de Puertos";

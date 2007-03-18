@@ -341,7 +341,7 @@ bmenu.accrestriction="Restrictions d\'accès";
 bmenu.webaccess="Accès Internet";
 
 
-bmenu.applications="Applications &amp; Jeux";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Redirection plage de port";
 bmenu.applicationspforwarding="Redirection de port";
 bmenu.applicationsptriggering="Déclenchement de connexion";

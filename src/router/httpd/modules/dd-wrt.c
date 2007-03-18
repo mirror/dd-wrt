@@ -3295,12 +3295,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"ath_regulatory\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		 nvram_match ("ath_regulatory", "0") ? "checked" : "");
       websWrite (wp, " 	</div>\n");
-//      char *wl_regulatory = "ath_regulatory";
-//      showOption (wp, "wl_basic.regulatory", wl_regulatory);
-#ifdef HAVE_MAKSAT
-      char *wl_regdomain = "ath_specialmode";
-      showOption (wp, "wl_basic.specialmode", wl_regdomain);
-#endif
 #endif
     }
   websWrite (wp, "<div class=\"setting\">\n");
@@ -3309,7 +3303,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
   sprintf (power, "%s_antgain", prefix);
+#ifndef HAVE_MAKSAT
   if (nvram_match ("ath_regulatory", "1"))
+#endif
     {
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
