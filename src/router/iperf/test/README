@@ -1,0 +1,24 @@
+Included is a suite to test most of iperf's features. Obviously not
+all combinations are done, and because of the nature of the scripts,
+some very basic tests are omitted. (For instance, environment variable
+options are not tested.)
+
+To run the tests, start the server perl script on one machine, and the
+client perl script on another. The iperf command must be in the
+current ('.') directory or one level up ('..') to work. To run a test
+between bombadil and modi4, use
+
+  modi4> perl server
+
+  bombadil> perl client tests modi4 bombadil
+
+A sample output is provided for comparison. Obviously values will
+change but the overall output should be similar.
+
+Any special cases you find that fail and are not included in the test
+suite would be helpful to add. Please email them to NLANR/DAST at
+<dast@nlanr.net>.
+
+  -mark gates
+
+$Id: README,v 1.1.1.1 2001/12/12 23:37:48 jdugan Exp $
