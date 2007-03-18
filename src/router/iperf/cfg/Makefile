@@ -1,0 +1,48 @@
+##################################################
+# Makefile
+# iperf configuration tree
+#
+# by Mark Gates <mgates@nlanr.net>
+# October 1999
+# $Id: Makefile,v 1.2 2002/06/26 19:49:34 tirumala Exp $
+
+SHELL = /bin/sh
+
+TOP = ..
+
+##################################################
+# files to clean
+
+CLEAN_FILES =
+
+DIST_CLEAN_FILES = config.h        \
+                   config.cache    \
+                   config.log      \
+                   config.status   \
+                   configure.scan
+
+##################################################
+# targets
+#
+# all       -- run the configure script
+#
+# clean     -- nothing
+# distclean -- remove all re-generatable files
+#
+
+all: configure
+	./configure
+
+clean:
+	-rm -f $(CLEAN_FILES)
+
+distclean:
+	-rm -f $(DIST_CLEAN_FILES)
+
+.PHONY: all clean distclean
+
+##################################################
+# build specific files
+
+configure: configure.in dast.m4
+	autoconf

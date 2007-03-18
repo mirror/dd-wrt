@@ -1,0 +1,18 @@
+##################################################
+# VERSION
+#
+# sourced by the Makefile to define the version info
+#
+# by Mark Gates <mgates@nlanr.net>
+# October 1999
+# $Id: VERSION,v 1.6 2003/03/12 20:57:31 kgibbs Exp $
+
+##################################################
+
+VERSION_MAJOR      = 1
+VERSION_MINOR      = 7
+VERSION_PATCHLEVEL = 0
+
+VERSION_DATE       = 13 Mar 2003
+
+VERSION            = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCHLEVEL)
