@@ -348,7 +348,7 @@ bmenu.accrestriction="Omejitve dostopa";
 bmenu.webaccess="WAN dostop";
 
 
-bmenu.applications="Programi in igre";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Posredovanje obsega vrat";
 bmenu.applicationspforwarding="Posredovanje vrat";
 bmenu.applicationsptriggering="Pro¾enje vrat";

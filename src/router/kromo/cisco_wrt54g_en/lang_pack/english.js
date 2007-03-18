@@ -348,7 +348,7 @@ bmenu.accrestriction="Access Restrictions";
 bmenu.webaccess="WAN Access";
 
 
-bmenu.applications="Applications &amp; Gaming";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Port Range Forwarding";
 bmenu.applicationspforwarding="Port Forwarding";
 bmenu.applicationsptriggering="Port Triggering";
