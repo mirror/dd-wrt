@@ -310,7 +310,7 @@ bmenu.accrestriction="Toegang Beperking";
 bmenu.webaccess="Internet Toegang";
 
 
-bmenu.applications="Applicaties &amp; Spelletjes";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Poorten Forwarden";
 bmenu.applicationspforwarding="Poorten Forwarden";
 bmenu.applicationsptriggering="Poorten Triggering";

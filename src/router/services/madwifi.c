@@ -1141,12 +1141,6 @@ adjust_regulatory (int count)
     long tb = atol (nvram_safe_get (turbo));
     setsysctrl (wif, "turbo", tb);
     long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-    if (default_match ("ath_specialmode", "1", "0"))
-      {
-	setsysctrl (wif, "regulatory", 0);
-	setsysctrl (wif, "setregdomain", 0x49);
-      }
-    else
       {
 	if (regulatory == 0)
 	  {

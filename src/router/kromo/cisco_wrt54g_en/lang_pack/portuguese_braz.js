@@ -313,7 +313,7 @@ bmenu.accrestriction="Restrições de Acesso";
 bmenu.webaccess="Acesso à Internet";
 
 
-bmenu.applications="Aplicativos &amp; Jogos";
+bmenu.applications="NAT / QoS";
 bmenu.applicationsprforwarding="Encaminhamento de Faixa de Portas";
 bmenu.applicationspforwarding="Encaminhamento de Portas";
 bmenu.applicationsptriggering="Port Triggering";

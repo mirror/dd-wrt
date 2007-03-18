@@ -320,7 +320,6 @@ function init() {
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_selmatch("lan_stp", "0", "checked"); %> /><% tran("share.disable"); %>
-									<span class="default"><% tran("idx.stp_mess"); %></span>
 								</div>
 							</fieldset><br />
 				
