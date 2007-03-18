@@ -315,6 +315,7 @@ struct wifi_channels
 {
   int channel;
   int freq;
+  int noise;
 };
 
 
@@ -404,6 +405,7 @@ list_channelsext (const char *ifname, int allchans)
 
       list[l].channel = achans.ic_chans[i].ic_ieee;
       list[l].freq = achans.ic_chans[i].ic_freq;
+      list[l].noise = achans.ic_chans[i].ic_noise;
       l++;
     }
 
