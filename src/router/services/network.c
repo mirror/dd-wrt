@@ -1673,7 +1673,7 @@ start_lan (void)
   config_loopback ();
 
   /* Set additional lan static routes if need */
-  set_routes ();
+  start_set_routes ();
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
   eval ("/usr/sbin/wl", "radio",
@@ -2477,7 +2477,7 @@ start_wan_done (char *wan_ifname)
 
   /* Set additional wan static routes if need */
 
-  set_routes ();
+  start_set_routes ();
   cprintf ("routes done\n");
   if (nvram_match ("wan_proto", "pppoe") || nvram_match ("wan_proto", "pptp")
       || nvram_match ("wan_proto", "l2tp"))
@@ -2759,8 +2759,7 @@ stop_wan (void)
   cprintf ("done\n");
 }
 
-int
-set_routes (void)
+void start_set_routes (void)
 {
   char word[80], *tmp;
   char *ipaddr, *netmask, *gateway, *metric, *ifname;
@@ -2786,8 +2785,6 @@ set_routes (void)
 
     route_add (ifname, atoi (metric) + 1, ipaddr, gateway, netmask);
   }
-
-  return 0;
 }
 
 
