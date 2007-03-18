@@ -138,6 +138,10 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
       nvram_set ("wl0gpio2", "136");
       break;
+    case ROUTER_BUFFALO_WLA2G54C:
+      nvram_set ("wl0gpio0", "0");
+      nvram_set ("wl0gpio5", "136");
+      break;
     }
 #else //v23
 
@@ -151,6 +155,10 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_MOTOROLA:
       nvram_set ("wl0gpio0", "2");
       break;
+    case ROUTER_BUFFALO_WLA2G54C:
+      nvram_set ("wl0gpio0", "0");
+      nvram_set ("wl0gpio5", "2");
+      break;      
     }
 #endif
 
