@@ -1,0 +1,56 @@
+##################################################
+# Makefile.rules
+# iperf top level
+#
+# by Mark Gates <mgates@nlanr.net>
+# October 1999
+# $Id: Makefile.rules.in,v 1.3 2002/10/14 19:09:24 kgibbs Exp $
+
+SHELL = /bin/sh
+
+##################################################
+# programs
+
+CC       = armeb-linux-uclibc-gcc
+CFLAGS   = -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -Wall -O2 -pthread -DHAVE_CONFIG_H
+
+CXX      = armeb-linux-uclibc-g++
+CXXFLAGS =  -Wall -O2 -pthread -DHAVE_CONFIG_H
+
+LD       = armeb-linux-uclibc-g++
+LDFLAGS  =  -pthread 
+LIBS     =  
+
+AR       = ar
+ARFLAGS  = cr
+
+RANLIB   = armeb-linux-uclibc-ranlib
+
+INSTALL  = $(TOP)/install-sh -c
+
+##################################################
+# files
+# each Makefile that includes this should define
+# TOP as the path to the iperf top-level directory
+#
+# LIBOBJS specifies our own implementation of
+# missing OS/libc functions like snprintf
+
+PROG    = $(TOP)/iperf
+
+LIBRARY = $(TOP)/lib/libdast.a
+
+LIBOBJS = 
+
+##################################################
+# implicit rules
+
+.SUFFIXES:
+.SUFFIXES: .o .c .cpp 
+
+.c.o:
+	$(CC) $(INCS) $(CFLAGS) -c $<
+
+.cpp.o:
+	$(CXX) $(INCS) $(CXXFLAGS) -c $<
+

@@ -1,0 +1,309 @@
+<HTML>
+<HEAD>
+<TITLE>Iperf Checklist</TITLE>
+<!-- $Id: checklist.html,v 1.1.1.1 2001/12/12 23:37:48 jdugan Exp $ -->
+</HEAD>
+
+<BODY>
+
+<H1>Iperf Checklist</H1>
+
+<FORM METHOD="post" ACTION="http://localhost/~mgates/cgi-bin/iperf-checklist">
+<TABLE>
+
+<TR><TD>
+    <TD><INPUT TYPE="Submit" VALUE="Submit">
+        <INPUT TYPE="Reset"  VALUE="Clear">
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>Basic Information</H3>
+
+<TR><TD>OS:
+    <TD><SELECT             NAME="OS">
+        <OPTION> IRIX
+        <OPTION> Linux
+        <OPTION> HP-UX
+        <OPTION> UNICOS on T3E
+        <OPTION> AIX
+        <OPTION> Solaris
+        <OPTION> FreeBSD
+        <OPTION> NetBSD
+        <OPTION> DEC OSF1
+        <OPTION> SPP-UX
+        <OPTION> Windows
+        <OPTION> Other...
+        </SELECT>
+        <INPUT SIZE="4"     NAME="OS">
+
+<TR><TD>Hostname:
+    <TD><INPUT              NAME="Hostname">
+
+<TR><TD>Iperf:
+    <TD><INPUT              NAME="Iperf"                         VALUE="1.1">
+
+<TR><TD>Compiler:
+    <TD><INPUT              NAME="Compiler"                      VALUE="gcc / g++">
+
+<TR><TD>Pthreads:
+    <TD><INPUT TYPE="radio" NAME="Pthreads"                      VALUE="yes"> yes
+        <INPUT TYPE="radio" NAME="Pthreads"                      VALUE="no" CHECKED>  no
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>Configure / Compile</H3>
+
+<TR><TD>finds typedefs
+    <TD><INPUT TYPE="radio" NAME="finds typedefs"                VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="finds typedefs"                VALUE="fail" CHECKED> fail
+
+<TR><TD>finds libraries
+    <TD><INPUT TYPE="radio" NAME="finds libraries"               VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="finds libraries"               VALUE="fail" CHECKED> fail
+
+<TR VALIGN="top"><TD>warnings
+    <TD><TEXTAREA NAME="warnings" ROWS="4" COLS="30"></TEXTAREA>
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>Basic Tests</H3>
+
+<TR><TD>basic usage
+    <TD><INPUT TYPE="radio" NAME="basic usage"                   VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="basic usage"                   VALUE="fail" CHECKED> fail
+
+<TR><TD>help, short option
+    <TD><INPUT TYPE="radio" NAME="help, short option"            VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="help, short option"            VALUE="fail" CHECKED> fail
+
+<TR><TD>help, long option
+    <TD><INPUT TYPE="radio" NAME="help, long option"             VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="help, long option"             VALUE="fail" CHECKED> fail
+
+<TR><TD>version, short option
+    <TD><INPUT TYPE="radio" NAME="version, short option"         VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="version, short option"         VALUE="fail" CHECKED> fail
+
+<TR><TD>version, long option
+    <TD><INPUT TYPE="radio" NAME="version, long option"          VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="version, long option"          VALUE="fail" CHECKED> fail
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>TCP Server Tests</H3>
+
+<TR><TD>basic TCP server
+    <TD><INPUT TYPE="radio" NAME="basic TCP server"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="basic TCP server"              VALUE="fail" CHECKED> fail
+
+<TR><TD>parallel streams
+    <TD><INPUT TYPE="radio" NAME="parallel streams"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="parallel streams"              VALUE="fail" CHECKED> fail
+
+<TR><TD>moderate 32 KB window
+    <TD><INPUT TYPE="radio" NAME="moderate 32 KB window"         VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="moderate 32 KB window"         VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="moderate 32 KB window"         VALUE="32"  > KB
+
+<TR><TD>small 2 KB window
+    <TD><INPUT TYPE="radio" NAME="small 2 KB window"             VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="small 2 KB window"             VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="small 2 KB window"             VALUE="2"   > KB
+
+<TR><TD>large 2 MB window
+    <TD><INPUT TYPE="radio" NAME="large 2 MB window"             VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="large 2 MB window"             VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="large 2 MB window"             VALUE="2048"> KB
+
+<TR><TD>period 2 sec
+    <TD><INPUT TYPE="radio" NAME="period 2 sec"                  VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="period 2 sec"                  VALUE="fail" CHECKED> fail
+
+<TR><TD>server long option
+    <TD><INPUT TYPE="radio" NAME="server long option"            VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="server long option"            VALUE="fail" CHECKED> fail
+
+<TR><TD>MSS (ethernet)
+    <TD><INPUT TYPE="radio" NAME="MSS (ethernet)"                VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="MSS (ethernet)"                VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="MSS (ethernet)"                VALUE="1460"> bytes
+
+<TR><TD>MSS (1000 bytes)
+    <TD><INPUT TYPE="radio" NAME="MSS (1000 bytes)"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="MSS (1000 bytes)"              VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="MSS (1000 bytes)"              VALUE="1000"> bytes
+
+<TR><TD>server environment variable
+    <TD><INPUT TYPE="radio" NAME="server environment variable"   VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="server environment variable"   VALUE="fail" CHECKED> fail
+
+<TR><TD>Kbit/sec format
+    <TD><INPUT TYPE="radio" NAME="Kbit/sec format"               VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="Kbit/sec format"               VALUE="fail" CHECKED> fail
+
+<TR><TD>Mbit/sec format
+    <TD><INPUT TYPE="radio" NAME="Mbit/sec format"               VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="Mbit/sec format"               VALUE="fail" CHECKED> fail
+
+<TR><TD>KByte/sec format
+    <TD><INPUT TYPE="radio" NAME="KByte/sec format"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="KByte/sec format"              VALUE="fail" CHECKED> fail
+
+<TR><TD>MByte/sec format
+    <TD><INPUT TYPE="radio" NAME="MByte/sec format"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="MByte/sec format"              VALUE="fail" CHECKED> fail
+
+<TR><TD>4 KB read length
+    <TD><INPUT TYPE="radio" NAME="4 KB read length"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="4 KB read length"              VALUE="fail" CHECKED> fail
+
+<TR><TD>port 5002
+    <TD><INPUT TYPE="radio" NAME="port 5002"                     VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="port 5002"                     VALUE="fail" CHECKED> fail
+
+<TR><TD>bind to localhost (FAIL)
+    <TD><INPUT TYPE="radio" NAME="bind to localhost (FAIL)"      VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="bind to localhost (FAIL)"      VALUE="fail" CHECKED> fail
+
+<TR><TD>bind to host
+    <TD><INPUT TYPE="radio" NAME="bind to host"                  VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="bind to host"                  VALUE="fail" CHECKED> fail
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>UDP Server Tests</H3>
+
+<TR><TD>basic UDP server
+    <TD><INPUT TYPE="radio" NAME="basic UDP server"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="basic UDP server"              VALUE="fail" CHECKED> fail
+
+<TR><TD>2 Mbps stream
+    <TD><INPUT TYPE="radio" NAME="2 Mbps stream"                 VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="2 Mbps stream"                 VALUE="fail" CHECKED> fail
+
+<TR><TD>parallel streams
+    <TD><INPUT TYPE="radio" NAME="parallel streams UDP"          VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="parallel streams UDP"          VALUE="fail" CHECKED> fail
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>TCP Client Tests</H3>
+
+<TR><TD>basic TCP client
+    <TD><INPUT TYPE="radio" NAME="basic TCP client"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="basic TCP client"              VALUE="fail" CHECKED> fail
+
+<TR><TD>3 second test
+    <TD><INPUT TYPE="radio" NAME="3 second test"                 VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="3 second test"                 VALUE="fail" CHECKED> fail
+
+<TR><TD>client environment variable
+    <TD><INPUT TYPE="radio" NAME="client environment variable"   VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="client environment variable"   VALUE="fail" CHECKED> fail
+
+<TR><TD>send 1 MB
+    <TD><INPUT TYPE="radio" NAME="send 1 MB"                     VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send 1 MB"                     VALUE="fail" CHECKED> fail
+
+<TR><TD>send 128 KB
+    <TD><INPUT TYPE="radio" NAME="send 128 KB"                   VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send 128 KB"                   VALUE="fail" CHECKED> fail
+
+<TR><TD>4 KB write length
+    <TD><INPUT TYPE="radio" NAME="4 KB write length"             VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="4 KB write length"             VALUE="fail" CHECKED> fail
+
+<TR><TD>period 1 sec
+    <TD><INPUT TYPE="radio" NAME="period 1 sec"                  VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="period 1 sec"                  VALUE="fail" CHECKED> fail
+
+<TR><TD>port 5002
+    <TD><INPUT TYPE="radio" NAME="port 5002 client"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="port 5002 client"              VALUE="fail" CHECKED> fail
+
+<TR><TD>MSS
+    <TD><INPUT TYPE="radio" NAME="MSS"                           VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="MSS"                           VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="MSS"                           VALUE="1460"> bytes
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD COLSPAN="2"><H3>UDP Client Tests</H3>
+
+<TR><TD>basic UDP client
+    <TD><INPUT TYPE="radio" NAME="basic UDP client"              VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="basic UDP client"              VALUE="fail" CHECKED> fail
+
+<TR><TD>3 sec test
+    <TD><INPUT TYPE="radio" NAME="3 sec test"                    VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="3 sec test"                    VALUE="fail" CHECKED> fail
+
+<TR><TD>client environment variable
+    <TD><INPUT TYPE="radio" NAME="client environment variable2"  VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="client environment variable2"  VALUE="fail" CHECKED> fail
+
+<TR><TD>send 1 MB
+    <TD><INPUT TYPE="radio" NAME="send 1 MB UDP"                 VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send 1 MB UDP"                 VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="send 1 MB UDP"                 VALUE="128" > datagrams
+
+<TR><TD>send 64 KB
+    <TD><INPUT TYPE="radio" NAME="send 64 KB"                    VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send 64 KB"                    VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="send 64 KB"                    VALUE="8"   > datagrams
+
+<TR><TD>send at 2 Mbps, 5 sec
+    <TD><INPUT TYPE="radio" NAME="send at 2 Mbps, 5 sec"         VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send at 2 Mbps, 5 sec"         VALUE="fail" CHECKED> fail
+
+<TR><TD>send at 100 Kbps, 5 sec
+    <TD><INPUT TYPE="radio" NAME="send at 100 Kbps, 5 sec"       VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send at 100 Kbps, 5 sec"       VALUE="fail" CHECKED> fail
+
+<TR><TD>send 1 MB in 2 KB chunks
+    <TD><INPUT TYPE="radio" NAME="send 1 MB in 2 KB chunks"      VALUE="pass"> pass
+        <INPUT TYPE="radio" NAME="send 1 MB in 2 KB chunks"      VALUE="fail" CHECKED> fail
+        <INPUT SIZE="4"     NAME="send 1 MB in 2 KB chunks"      VALUE="512" > datagrams
+
+
+
+<TR><TD COLSPAN="2"><HR>
+
+
+
+<TR><TD>
+    <TD><INPUT TYPE="Submit" VALUE="Submit">
+        <INPUT TYPE="Reset"  VALUE="Clear">
+
+</TABLE>
+</FORM>
+
+</BODY>

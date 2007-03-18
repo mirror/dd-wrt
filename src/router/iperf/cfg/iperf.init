@@ -1,0 +1,1 @@
+this is used by AC_INIT to make sure configure is run in the correct directory.

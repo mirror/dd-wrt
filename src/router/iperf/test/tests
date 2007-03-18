@@ -1,0 +1,146 @@
+########## help & version
+
+comment: basic usage
+local:   iperf
+
+comment: help, short option
+local:   iperf -h
+
+comment: help, long option
+local:   iperf -help
+
+comment: version, short option
+local:   iperf -v
+
+comment: version, long option
+local:   iperf --version
+
+########## tcp server
+
+comment: TCP server
+local:   iperf -s
+remote:  iperf -c $local -t 3
+
+comment: TCP server
+local:   iperf -s
+remote:  iperf -c $local -t 5 -P 2
+
+comment: moderate 32 KB window
+local:   iperf -s -w 32k
+remote:  iperf -c $local -t 5 -w 32k
+
+comment: small 2 KB window
+local:   iperf -s -w 2k
+remote:  iperf -c $local -t 5 -w 2k
+
+comment: large 2 MB window
+local:   iperf -s -w 2m
+remote:  iperf -c $local -t 5 -w 2m
+
+comment: period 2 sec; MSS; server long option
+local:   iperf --server -i 2 -m
+remote:  iperf -c $local -t 6
+
+comment: period 2 sec; MSS; server long option
+local:   iperf --server -i 2 -m
+remote:  iperf -c $local -t 3 -M 1000
+
+comment: Kbit/sec format
+local:   iperf -s -f k
+remote:  iperf -c $local -t 3
+
+comment: Mbit/sec format
+local:   iperf -s -f m
+remote:  iperf -c $local -t 3
+
+comment: KByte/sec format
+local:   iperf -s -f K
+remote:  iperf -c $local -t 3
+
+comment: MByte/sec format
+local:   iperf -s -f M
+remote:  iperf -c $local -t 3
+
+comment: 4 KB read length; port 5002
+local:   iperf -s -l 4k -p 5002
+remote:  iperf -c $local -t 3 -p 5002
+
+comment: bind to localhost, client connect should FAIL (see server for stderr)
+local:   iperf -s -B localhost
+remote:  iperf -c $local -t 3
+
+comment: bind to $local, client connect should succeed
+local:   iperf -s -B $local
+remote:  iperf -c $local -t 3
+
+########## udp server
+
+comment: UDP server
+local:   iperf -s -u
+remote:  iperf -c $local -u -t 5
+
+comment: UDP server
+local:   iperf -s -u
+remote:  iperf -c $local -b 2m -t 5
+
+comment: UDP server
+local:   iperf -s -u
+remote:  iperf -c $local -u -t 5 -P 2
+
+########## tcp client
+
+comment: basic TCP client
+local:   iperf -c $remote
+remote:  iperf -s
+
+comment: 3 second test
+local:   iperf -c $remote -t 3
+remote:  iperf -s
+
+comment: send 1 MB
+local:   iperf -c $remote -n 1m
+remote:  iperf -s
+
+comment: send 128 KB
+local:   iperf -c $remote -n 128k
+remote:  iperf -s
+
+comment: 4 KB write length, period 1 sec
+local:   iperf -c $remote -l 4k -i 1
+remote:  iperf -s
+
+comment: port 5002; MSS
+local:   iperf -c $remote -m -p 5002
+remote:  iperf -s -p 5002
+
+########## udp client
+
+comment: basic UDP client
+local:   iperf -c $remote -u
+remote:  iperf -s -u
+
+comment: 3 sec test
+local:   iperf -c $remote -u -t 3
+remote:  iperf -s -u
+
+comment: send 1 MB
+local:   iperf -c $remote -u -n 1m
+remote:  iperf -s -u
+
+comment: send 64 KB
+local:   iperf -c $remote -u -n 64k
+remote:  iperf -s -u
+
+comment: send at 2 Mbps, 5 sec
+local:   iperf -c $remote -b 2m   -t 5
+remote:  iperf -s -u
+
+comment: send at 100 Kbps, 5 sec
+local:   iperf -c $remote -b 100k -t 5
+remote:  iperf -s -u
+
+comment: send 1 MB in 2 KB chunks (512 datagrams)
+local:   iperf -c $remote -u -n 1m -l 2k
+remote:  iperf -s -u
+
+########## done!

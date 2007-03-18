@@ -1,0 +1,98 @@
+Most of these problems are operating systems problems, not bugs in Iperf.
+As such, they will affect all network applications. They are just revealed
+by using Iperf.
+
+os       | host     | compiles | threads | runs | grade
+---------+----------+----------+---------+------+-------
+AIX      | sp129    | yes      | yes     | yes  | 
+Cray T3E | golden   | yes      | yes     | yes  | 
+Cray J90 | ouray    | yes      | yes     | yes  | 
+DEC OSF  | oceana   | yes      | fail    | yes  | 
+FreeBSD  | spitfire | yes      | yes     | yes  | 
+HP-UX    | sangamon | yes      | NA      | yes  | 
+IRIX     | modi4    | yes      | yes     | yes  | 
+Linux    | bombadil | yes      | yes     | yes  | 
+NetBSD   | nimi2    | yes      | NA      | yes  | 
+Solaris  | pecos    | yes      | yes     | yes  | 
+WinNT/2K | bombadil | yes      | yes     | yes  | 
+Win95/98 | bombadil | yes      | fail    | yes  | 
+---------+----------+----------+---------+------+-------
+
+Known Problems
+==============
+OpenBSD 3.1 
+  - getaddrinfo is not thread safe. If you have trouble with
+    bidirectional testing try compiling without IPv6 extensions.
+
+AIX 4.2.1.0 (IBM sp) (xlc/xlC)
+  - pthreads don't work correctly
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+Cray UNICOS/mk 2.0.4.85 (Cray T3E) (cc/CC)
+  - when server is receiving multiple threads, second thread tends
+    to take a while (several seconds) to startup.
+
+Cray UNICOS 10.0.0.3 (Cray J90) (cc/CC)
+  - pthread_cancel not available
+
+DEC OSF1 3.2 (gcc/g++)
+  - pthreads don't work correctly
+  - requires extern "C" { ... } around
+    #include <netdb.h> and #include <arpa/inet.h>
+    (other platforms have problems with _having_ those
+     externs, so I do the correct thing and exclude them.)
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+DEC OSF1 4 (cc/CC)
+  - need to specify 'cc -pthread' and 'CC -pthread' as the compilers
+    if compiling with threads. Otherwise it won't link.
+
+FreeBSD
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+HP-UX 10.20 (gcc/g++)
+  - pthreads not available on the machine I have access to
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+IRIX 6.5 (SGI Origin2000) (cc/CC)
+  - TCP clients round their TCP window size down slightly.
+    The default is 59.9 KB instead of 60 KB.
+
+Linux 2.2.12 (gcc/g++)
+  - TCP maximum segment size (MSS) cannot be read (can be set though)
+  - TCP window size is often set to twice the requested value. So if
+    I ask for 16K, I get 32K.
+
+NetBSd 1.3.3 (gcc/g++)
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+Solaris (gcc/g++)
+  - TCP maximum segment size (MSS) cannot be set (can be read though)
+  - If the TCP window size is larger than the maximum, the default
+    is used (instead of the maximum).
+
+Windows NT 4.0 (CodeWarrior Pro 3)
+  - TCP maximum segment size (MSS) cannot be read or set
+  - connecting UDP sockets doesn't work very well. In particular
+    * no "port unreachable" errors are reported to the sending socket,
+      so even if a server is not listening, the client still sends.
+    * only the 1st UDP stream is handled; subsequent parallel ones
+      are ignored.
+    * the local address is reported as 0.0.0.0, rather than being filled in.
+    These are all deficiencies in the way Windows handles UDP sockets.
+    I could address them by using multiple ports, but that complicates
+    the client/server since they have to communicate what ports to use.
+    Maybe in a future version...
+    For now, the UDP client is multi-threaded and works fine, but the
+    UDP server is run single threaded.
+
+Windows 95/98 (CodeWarrior Pro 3)
+  - Doesn't support the necessary threads API, so only the single
+    threaded version will work.
+
+$Id: KNOWN_PROBLEMS,v 1.3 2003/03/12 20:57:31 kgibbs Exp $
