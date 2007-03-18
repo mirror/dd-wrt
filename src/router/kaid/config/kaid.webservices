@@ -27,6 +27,7 @@
 			document.write("(" + share.deflt + ": 34522, " + share.range + ": 1 - 65535)");
 			//]]>
 			</script>
+			</span>
 		</div>
 	</div>
 </fieldset><br/>
