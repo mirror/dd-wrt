@@ -1,0 +1,151 @@
+#!/usr/bin/perl -w
+
+use Socket;
+#use strict;
+
+$ENV{'PATH'} = "..:.";
+
+&main( @ARGV );
+
+####################
+
+sub main
+{
+  my $usage = "usage: $0 test_file remote_host local_host\n";
+
+  my $tests  = shift || die( $usage );
+  my $remote = shift || die( $usage );
+  my $local  = shift || die( $usage );
+
+  my $port   = 10054;
+  my $iaddr  = inet_aton( $remote )
+    || die( "inet_aton failed for $remote: $!\n" );
+
+  my $paddr  = sockaddr_in( $port, $iaddr );
+  my $proto  = getprotobyname('tcp');
+
+  socket( SERVER, PF_INET, SOCK_STREAM, $proto )
+    || die( "socket failed: $!\n" );
+
+  connect( SERVER, $paddr )
+    || die( "connect to $remote failed: $!\n" );
+
+  my $old = select( SERVER );
+  $| = 1;
+  select( $old );
+
+  # read each pair of commands and execute them
+  &parse_commands( $tests, $remote, $local );
+
+  close( SERVER );
+  exit;
+}
+
+####################
+
+sub parse_commands
+{
+  my( $tests, $remote, $local ) = @_;
+
+  open( COMMANDS, $tests ) || die( "couldn't open \"$tests\": $!\n" );
+  $/ = '';
+  while( <COMMANDS> ) {
+    my( $comment )     = m/comment:\s*(.*)/;
+    my( $local_cmd )   = m/local:\s*(.*)/;
+    my( $remote_cmd )  = m/remote:\s*(.*)/;
+
+    next unless( $local_cmd );
+
+    $remote_cmd = '' unless( $remote_cmd );
+
+    $local_cmd  =~ s/\$remote/$remote/g;
+    $remote_cmd =~ s/\$remote/$remote/g;
+
+    $local_cmd  =~ s/\$local/$local/g;
+    $remote_cmd =~ s/\$local/$local/g;
+  
+    &run_command( $local_cmd, $remote_cmd, $comment );
+  }
+  close( COMMANDS );
+}
+
+####################
+
+sub run_command
+{
+  my( $local, $remote, $comment ) = @_;
+
+  print "####################\n";
+  print "## test:   $comment\n";
+  print "## local:  $local\n";
+  print "## remote: $remote\n";
+
+  my $old = $/;
+  $/ = "\n";
+
+  ##print "## Press enter when ready...\n";
+  ##$_ = <STDIN>;
+
+  $/ = $old;
+
+  if ( $local =~ m/iperf -c/ ) {
+    ##### local client
+    print SERVER "start $remote\n";
+    &read_server();
+
+    $pid = open( IPERF, "$local |" ) || die( "$local failed: $!\n" );
+    print "##\n## local client output\n##\n";   # wait on local client
+    print "$local\n";
+    while( <IPERF> ) { print; }
+    close( IPERF );
+
+    print "##\n## remote server output\n##\n";     # kill remote server
+    print SERVER "kill $remote\n";
+    print "$remote\n";
+    &read_server();
+  }
+  elsif ( $remote =~ m/iperf -c/ ) {
+    ##### remote client
+    $pid = open( IPERF, "$local |" ) || die( "$local failed: $!\n" );
+    select( undef, undef, undef, 0.25 );
+
+    print SERVER "start $remote\n";
+    &read_server();
+
+    print "##\n## remote client output\n##\n";     # wait on remote client
+    print SERVER "wait $remote\n";
+    print "$remote\n";
+    &read_server();
+
+    print "##\n## local server output\n##\n";     # kill local server
+    kill "TERM", $pid;
+    print "$local\n";
+    while( <IPERF> ) { print; }
+    close( IPERF );    
+  }
+  else {
+    ##### no client
+    $pid = open( IPERF, "$local |" ) || die( "$local failed: $!\n" );
+    print "##\n## local output\n##\n";     # kill local server
+    print "$local\n";
+    while( <IPERF> ) { print; }
+    close( IPERF );
+  }
+
+  print "\n";
+}
+
+####################
+
+sub read_server
+{
+  my $old = $/;
+  $/ = "\n";
+
+  while( <SERVER> ) {
+    last if ( m/^ready$/ );
+    print;
+  }
+
+  $/ = $old;
+}

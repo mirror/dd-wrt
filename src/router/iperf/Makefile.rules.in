@@ -1,0 +1,56 @@
+##################################################
+# Makefile.rules
+# iperf top level
+#
+# by Mark Gates <mgates@nlanr.net>
+# October 1999
+# $Id: Makefile.rules.in,v 1.3 2002/10/14 19:09:24 kgibbs Exp $
+
+SHELL = /bin/sh
+
+##################################################
+# programs
+
+CC       = @CC@
+CFLAGS   = @CFLAGS@ @PTHREAD_CFLAGS@ @DEFS@
+
+CXX      = @CXX@
+CXXFLAGS = @CXXFLAGS@ @PTHREAD_CFLAGS@ @DEFS@
+
+LD       = @CXX@
+LDFLAGS  = @LDFLAGS@ @PTHREAD_CFLAGS@ 
+LIBS     = @LIBS@ @PTHREAD_LIBS@
+
+AR       = ar
+ARFLAGS  = cr
+
+RANLIB   = @RANLIB@
+
+INSTALL  = $(TOP)/install-sh -c
+
+##################################################
+# files
+# each Makefile that includes this should define
+# TOP as the path to the iperf top-level directory
+#
+# LIBOBJS specifies our own implementation of
+# missing OS/libc functions like snprintf
+
+PROG    = $(TOP)/iperf
+
+LIBRARY = $(TOP)/lib/libdast.a
+
+LIBOBJS = @LIBOBJS@
+
+##################################################
+# implicit rules
+
+.SUFFIXES:
+.SUFFIXES: .o .c .cpp 
+
+.c.o:
+	$(CC) $(INCS) $(CFLAGS) -c $<
+
+.cpp.o:
+	$(CXX) $(INCS) $(CXXFLAGS) -c $<
+

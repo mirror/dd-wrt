@@ -1,0 +1,77 @@
+#!/usr/bin/perl -w
+
+use Socket;
+#use strict;
+
+$ENV{'PATH'} = "..:.";
+
+my $port  = 10054;
+my $paddr = sockaddr_in( $port, INADDR_ANY );
+my $proto = getprotobyname( 'tcp' );
+
+socket( LISTEN, PF_INET, SOCK_STREAM, $proto )
+  || die( "socket failed: $!\n" );
+
+setsockopt( LISTEN, SOL_SOCKET, SO_REUSEADDR, pack( "l", 1 ))
+  || die( "setsockopt failed: $!\n" );
+
+bind( LISTEN, $paddr )
+  || die( "bind failed: $!\n" );
+
+listen( LISTEN, SOMAXCONN )                               
+  || die( "listen failed: $!\n" );
+
+print "server started on port $port\n";
+
+####################
+
+while( $paddr = accept( CLIENT, LISTEN )) {
+  my $old = select CLIENT;
+  $| = 1;
+  select( $old );
+
+  $| = 1;
+
+  my( $port, $iaddr ) = sockaddr_in( $paddr );
+  my $name = gethostbyaddr( $iaddr, AF_INET );
+
+  print "connection from $name [", inet_ntoa( $iaddr ), "] opened\n";
+
+  my $line;
+  my $pid = 0;
+  while( defined( $line = <CLIENT> )) {
+    chomp $line;
+    print "> $line";
+
+    ##########
+    if ( $line =~ m/start iperf (.*)/ ) {
+      my $args = $1;
+      $args =~ s/[^\s\w-\.]/ /;
+      # clean out chars other than alpha, numeric, some punct, space chars
+
+      $pid = open( IPERF, "iperf $args |" ) || die( "$!\n" );
+      select( undef, undef, undef, 0.25 );
+    }
+    ##########
+    elsif ( $line =~ m/kill iperf/  &&  $pid > 0 ) {
+      kill "TERM", $pid;
+      $pid = 0;
+      while( <IPERF> ) { print CLIENT; }
+      close( IPERF );
+    }
+    ##########
+    elsif ( $line =~ m/wait iperf/  &&  $pid > 0 ) {
+      while( <IPERF> ) { print CLIENT; }
+      close( IPERF );
+    }
+
+    print "\n";
+    print CLIENT "ready\n";
+  }
+
+  print "connection from $name [", inet_ntoa( $iaddr ), "] closed\n";
+  close( CLIENT );
+}
+
+close( LISTEN );
+exit;

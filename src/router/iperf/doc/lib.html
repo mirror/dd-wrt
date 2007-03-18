@@ -1,0 +1,671 @@
+<HTML>
+<HEAD>
+<TITLE>DAST library</TITLE>
+<!-- $Id: lib.html,v 1.3 2003/01/13 20:30:30 kgibbs Exp $ -->
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF" LINK="#006633" VLINK="#669900" ALINK="#669966">
+
+<CENTER>
+<P><IMG SRC="dast.gif"
+        ALT="Distributed Applications Support Team"></P>
+</CENTER>
+
+<H1>DAST library</H1>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H3>NLANR applications support
+<BR><A HREF="http://dast.nlanr.net/">http://dast.nlanr.net/</A>
+<BR><A HREF="mailto:dast@nlanr.net">&lt;dast@nlanr.net&gt;</A>
+</H3>
+
+<H4>Mark Gates
+<BR>Alex Warshavsky
+<BR>Ajay Tirumala
+<BR>Jon Dugan
+<BR>Kevin Gibbs
+</H4>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Introduction</H2>
+
+<P>In developing Iperf and other network programs, a number of C++
+classes, C utilities, and autoconf macros were developed that are
+generic. The C++ classes are intended to be similar in design to the
+corresponding Java classes. These are packaged in the lib directory,
+and may be included in other projects, subject to the UI license.</P>
+
+<P>(This page is slightly out of date. Refer to the source files
+for some new functions.)</P>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Socket class</H2>
+
+<P>The socket class represents a socket end point of a TCP or UDP
+connection. It has wrappers around the common socket functions to
+create a socket connection. Typically I have Server, Listener, and
+Client sub-classes of Socket.</P>
+
+<P>Functions:</P>
+
+<DL>
+<DT>Socket( <FONT COLOR="#cc0000">short</FONT> inPort,
+            <FONT COLOR="#cc0000">bool</FONT> inUDP = false )
+
+<DD>Constructor. Stores the port number and whether this will be a UDP
+(true) or TCP (false) socket.
+
+<P>
+<DT><FONT COLOR="#cc0000">virtual</FONT> ~Socket()
+
+<DD>Destructor. Closes the socket if it has not been closed yet.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Listen(
+      <FONT COLOR="#cc0000">const char</FONT> *inLocalhost = NULL )
+
+<DD>Creates a socket, binds it to a local address and port, and starts
+listening on it. If inLocalhost is null, the socket is bound to the
+wildcard address, so the socket will listen for connections on any
+interface. If inLocalhost is not null, that address is DNS resolved
+and used to bind the socket, to specify the local interface to listen
+on.
+
+<P>
+<DT><FONT COLOR="#cc0000">int</FONT> Accept(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Accept is a wrapper around the socket accept call. It provides 
+the additional facilty of restarting an accept call if it interupted.
+Assumes the socket is setup with Listen() first.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Connect(
+      <FONT COLOR="#cc0000">const char</FONT> *inHostname,
+      <FONT COLOR="#cc0000">const char</FONT> *inLocalhost = NULL )
+
+<DD>Connects the socket to the server. inHostname is DNS resolved
+to get the server's IP address. If inLocalhost is not null, it is
+also DNS resolved and used to bind the socket to a local interface,
+which specifies the outgoing interface to use.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Close(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Closes the socket
+
+<P>
+<DT><FONT COLOR="#cc0000">virtual void</FONT> SetSocketOptions(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>A virtual function that subclasses may override to set socket
+options at the appropriate time. Several socket options, including TCP
+window sizes, must be set before calling the socket connect() or
+listen() calls. SetSocketOptions is called in the Listen() and
+Connect() functions. The default implementation is empty.
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Queue class</H2>
+
+<P>The queue class stores arbitrary pointers in a queue, and provides
+functions to make the queue thread-safe using pthreads.</P>
+
+<DL>
+<DT>Queue( <FONT COLOR="#cc0000">int</FONT> inSize )
+
+<DD>Constructor. Creates a queue with space allocated for inSize pointers.
+Note that an array of inSize+1 is allocated; one space is unusable.
+
+<P>
+<DT>~Queue()
+
+<DD>Destructor. Deletes the array of pointers. Does nothing with
+the pointers themselves; the caller is responsible for removing and
+deleting all pointers before deleting the queue.
+
+<P>
+<DT><FONT COLOR="#cc0000">bool</FONT>  Enqueue(
+      <FONT COLOR="#cc0000">void</FONT>* inItem )
+
+<DD>Stores a pointer into the queue. Returns true if the operation
+was successful. If the queue is full, returns false and does not
+store the pointer.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT>* Dequeue(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Removes and returns the front pointer from the queue. If the
+queue is empty, returns null and does not change the queue.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT>* Front(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Returns (but does not remove) the front pointer from the queue.
+If the queue is empty, returns null and does not change the queue.
+
+<P>
+<DT><FONT COLOR="#cc0000">int</FONT> Size(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Returns the number of items in the queue.
+
+<P>
+<DT><FONT COLOR="#cc0000">bool</FONT> IsEmpty(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Returns true if the queue is empty.
+
+<P>
+<DT><FONT COLOR="#cc0000">bool</FONT> IsFull(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Returns true if the queue is full.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> BlockUntilSignal(
+      time_t inAbsTimeout = 0 )
+
+<DD>Blocks the calling thread until a condition signal is sent.
+The condition signal is sent whenever the queue is unlocked, and
+usually indicates the queue has been changed.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Lock(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Puts a mutual exclusion lock (pthread mutex) on the queue.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Unlock(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Releases a mutual exclusion lock (pthread mutex) on the queue
+and sends a condition signal to wake up any threads blocked in
+BlockUntilSignal().
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Thread class</H2>
+
+<P>Used to create and run a new thread. Currently this
+implementation uses pthreads.</P>
+
+<DL>
+<DT>Thread( <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Constructor. Initializes the thread class. Does not actually
+create a new thread.
+
+
+<P>
+<DT><FONT COLOR="#cc0000">virtual</FONT> ~Thread()
+
+<DD>Destructor. Immediately exits the thread if it is still running.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Start(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Create a new thread and call its Run() function.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Stop(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Immediately stop the thread. The thread itself may call this to
+call pthread_exit. Other threads may call this to call pthread_cancel.
+
+<P>
+<DT><FONT COLOR="#cc0000">virtual void</FONT> Run(
+      <FONT COLOR="#cc0000">void</FONT> ) = 0;
+
+<DD>Pure virtual function which subclasses must implement. This
+is called by Start() and should be the main loop for the thread.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> Join(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Wait for the thread to exit.
+
+<P>
+<DT><FONT COLOR="#cc0000">static void</FONT> Joinall(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Wait for all threads (which are created by the Thread class) to
+exit.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> DeleteSelfAfterRun(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Sets a flag so the Thread object will delete itself when it
+exits. The caller no longer has responsibility for deleting the Thread
+object.
+
+<P>
+<DT><FONT COLOR="#cc0000">static void</FONT>* Run_Wrapper(
+      <FONT COLOR="#cc0000">void</FONT>* objectPtr )
+
+<DD>Lov level function which starts the new thread. This is necesary
+because pthread_create is a C library function and does not understand
+C++ classes. A pointer the the Thread object is passed in as the
+argument in pthread_create.
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Timestamp class</H2>
+
+<P>The timestamp class is a wrapper around the unix gettimeofday
+second/microsecond time. (TODO how to implement on Windows?) This
+is intended as a platform-independant API. It offers both integer
+second/microsecond access and floating point access. All functions
+are inlined for optimal performance.</P>
+
+<DL>
+<DT>Timestamp( <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Create a timestamp, with the current time in it.
+
+<P>
+<DT>Timestamp( <FONT COLOR="#cc0000">unsigned long</FONT> sec,
+               <FONT COLOR="#cc0000">unsigned long</FONT> usec )
+
+<DD>Create a timestamp, with the given seconds/microseconds.
+
+<P>
+<DT>Timestamp( <FONT COLOR="#cc0000">double</FONT> sec )
+
+<DD>Create a timestamp, with the given seconds.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> setnow(
+      <FONT COLOR="#cc0000">void</FONT>
+
+<DD>Set timestamp to current time.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> set(
+      <FONT COLOR="#cc0000">unsigned long</FONT> sec,
+      <FONT COLOR="#cc0000">unsigned long</FONT> usec )
+
+<DD>Set timestamp to the given seconds/microseconds.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> set(
+      <FONT COLOR="#cc0000">double</FONT> sec )
+
+<DD>Set timestamp to the given seconds.
+
+<P>
+<DT><FONT COLOR="#cc0000">unsigned long</FONT> getSecs(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Return seconds portion of timestamp.
+
+<P>
+<DT><FONT COLOR="#cc0000">unsigned long</FONT> getUsecs(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Return microseconds portion of timestamp.
+
+<P>
+<DT><FONT COLOR="#cc0000">double</FONT> get(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Return timestamp as a floating point seconds.
+
+<P>
+<DT><FONT COLOR="#cc0000">unsigned long</FONT> subUsec(
+      Timestamp right )
+
+<DD>Subtract the right timestamp from my timestamp.
+    Return the difference in microseconds.
+
+<P>
+<DT><FONT COLOR="#cc0000">double</FONT> subSec(
+      Timestamp right )
+
+<DD>Subtract the right timestamp from my timestamp.
+    Return the difference in seconds as a floating point.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> add(
+      Timestamp right )
+
+<DD>Add the right timestamp to my timestamp.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> add(
+      <FONT COLOR="#cc0000">double</FONT> sec )
+
+<DD>Add the seconds to my timestamp.
+
+<P>
+<DT><FONT COLOR="#cc0000">bool</FONT> before(
+      Timestamp right )
+
+<DD>Return true if my timestamp is before the right timestamp.
+
+<P>
+<DT><FONT COLOR="#cc0000">bool</FONT> after(
+      Timestamp right )
+
+<DD>Return true if my timestamp is after the right timestamp.
+
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>C utilities</H2>
+
+<P>These are a number of utility functions of varying usefulness
+for other applications. All are declared in util.h, but the
+implementations are defined in a variety of C source files.</P>
+
+<DL>
+<DT><FONT COLOR="#cc0000">void</FONT> ntoh(
+      <FONT COLOR="#cc0000">void</FONT> *buffer,
+      <FONT COLOR="#cc0000">int</FONT> len,
+      <FONT COLOR="#cc0000">int</FONT> inSizeof )
+
+<DT><FONT COLOR="#cc0000">void</FONT> hton(
+      <FONT COLOR="#cc0000">void</FONT> *buffer,
+      <FONT COLOR="#cc0000">int</FONT> len,
+      <FONT COLOR="#cc0000">int</FONT> inSizeof )
+
+<DD>Convert the endian-ness of an entire array of elements, each of
+size inSizeof, between network byte order and the host's native byte
+order.  ntoh translates from network byte order, hton translates to
+network byte order.  (Actually, it is the same translation, the names
+are merely descriptive.)  On big-endian hosts, these are null
+macros. On little endian hosts, each takes O(n) time.
+
+<P>
+<DT><FONT COLOR="#cc0000">int</FONT> setsock_tcp_windowsize(
+      <FONT COLOR="#cc0000">int</FONT> inSock,
+      <FONT COLOR="#cc0000">int</FONT> inTCPWin )
+
+<DD>Set the send and receive TCP window size for a socket.  This
+handles verifying the TCP window size was set correctly, and prints a
+warning on stderr if the OS did not accept the exact specified window
+size. If the window size is zero (0), nothing is done. Has special
+code for UNICOS and AIX.
+
+<P>
+<DT><FONT COLOR="#cc0000">int</FONT> getsock_tcp_windowsize(
+      <FONT COLOR="#cc0000">int</FONT> inSock )
+
+<DD>Returns the TCP window size, as specified by the send buffer size,
+for the given socket. If inSock is invalid (inSock &lt; 0), a new TCP
+socket is created and the OS's default TCP window size is returned.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> setsock_tcp_mss(
+      <FONT COLOR="#cc0000">int</FONT> inSock,
+      <FONT COLOR="#cc0000">int</FONT> inTCPWin )
+
+<DD>Set the TCP maximum segment size. The MTU is the MSS + 40 bytes
+for the IP header. Many OSes do not support setting this option, and
+the MSS may only be lowered, not raised, since the MTU is a physical
+characteristic of the network interface. This handles verifying
+the TCP mss was set correctly, and prints a warning on stderr if
+the OS did not accept the specified mss.
+
+<P>
+<DT><FONT COLOR="#cc0000">int</FONT> getsock_tcp_mss(
+      <FONT COLOR="#cc0000">int</FONT> inSock )
+
+<DD>Returns the TCP maximum segment size for the given socket.
+Usually this will not be valid until after the socket has been
+connected, since before that the interface is unspecified.
+
+<P>
+<DT>ssize_t readn(
+    <FONT COLOR="#cc0000">int</FONT> inSock,
+    <FONT COLOR="#cc0000">void</FONT> *outBuf,
+    size_t inLen )
+
+<DD>Read a complete buffer, rather than returning prematurely with the
+buffer only partially filled as socket read call usually does.  This
+code is from Stevens, 1998, section 3.9.
+
+<P>
+<DT>ssize_t writen(
+    <FONT COLOR="#cc0000">int</FONT> inSock,
+    <FONT COLOR="#cc0000">const void</FONT> *inBuf,
+    size_t inLen )
+
+<DD>Write a complete buffer, rather than returning prematurely with
+only part of the buffer written. The socket write call never returns
+before writing the complete buffer, but nothing in the specification
+disallows that behaviour, so this is for our safety. This code is from
+Stevens, 1998, section 3.9.
+
+<P>
+<DT><FONT COLOR="#cc0000">unsigned long</FONT> delay_loop(
+      <FONT COLOR="#cc0000">unsigned long</FONT> usecs )
+
+<DD>An (more) accurate microsecond delay function. With very small
+values, usleep often sleeps for much more time than requested, since
+it gives up time to the OS. delay_loop iterates a very small loop, so it
+often is much more accurate for small values. Similar to the linux
+BogoMips code. For best accuracy, delay_loop_calibrate should be called first.
+This is a new implementation since Iperf 1.0.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> delay_loop_calibrate(
+      <FONT COLOR="#cc0000">void</FONT> )
+
+<DD>Calibrates the delay_loop() function for this processor. It samples
+the delay_loop for various times, and corrects for the function call
+and other overhead.
+
+<P>
+<DT>typedef <FONT COLOR="#cc0000">void</FONT> Sigfunc(
+      <FONT COLOR="#cc0000">int</FONT>)
+<BR>SigfuncPtr my_signal(
+      <FONT COLOR="#cc0000">int</FONT> inSigno,
+      SigfuncPtr inFunc )
+
+<DD>Exactly the same as signal(), but internally uses sigaction
+which has a POSIX standard and so is more likely to be portable.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> die(
+      <FONT COLOR="#cc0000">const char</FONT> *inMessage,
+      <FONT COLOR="#cc0000">const char</FONT> *inFile,
+      <FONT COLOR="#cc0000">int</FONT> inLine )
+
+<DD>Print the message on stderr and call exit(1). If compiled without
+defining NDEBUG, also prints out the filename and line number where it
+was called from.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> die_errno(
+      <FONT COLOR="#cc0000">const char</FONT> *inMessage,
+      <FONT COLOR="#cc0000">const char</FONT> *inFile,
+      <FONT COLOR="#cc0000">int</FONT> inLine )
+
+<DD>Print the message, errno and its strerror description, and call
+exit(1).  If compiled without defining NDEBUG, also prints out the
+filename and line number where it was called from.
+
+<P>
+<DT>FAIL( cond, msg ) <I>[macro]</I>
+
+<DD>Calls die if the condition is true.
+
+<P>
+<DT>FAIL_errno( cond, msg ) <I>[macro]</I>
+
+<DD>Calls die_errno if the condition is true.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> pattern(
+      <FONT COLOR="#cc0000">char</FONT> *outBuf,
+      <FONT COLOR="#cc0000">int</FONT> inBytes )
+
+<DD>Fill a character buffer with some data. Currently the data
+is the digits 0 through 9 repeated.
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> replace(
+      <FONT COLOR="#cc0000">char</FONT> *position,
+      <FONT COLOR="#cc0000">int</FONT> poslen,
+      <FONT COLOR="#cc0000">const char</FONT> *replacement )
+
+<DD>Starting at position, remove poslen number of characters
+and insert the replacement string. Characters after poslen
+are shifted to fit after the replacement string.
+TODO this assumes position is allocated long enough to
+fit the replacement string.
+
+<P>
+<DT><FONT COLOR="#cc0000">char</FONT> *concat(
+      <FONT COLOR="#cc0000">char</FONT> *dest,
+      <FONT COLOR="#cc0000">int</FONT> len,
+      <FONT COLOR="#cc0000">const char</FONT> *src )
+
+<DD>Append the src string to the dest string, without overwriting
+the allocated length, len, of the dest string and ensuring a null
+terminating character is always stored.
+
+<P>
+<DT><FONT COLOR="#cc0000">double</FONT> byte_atof(
+      <FONT COLOR="#cc0000">const char</FONT> *inString )
+
+<DD>Given a string of form #x where # is a number and x is a format
+character listed below, this returns the interpreted floating point
+number. Gg, Mm, Kk are giga, mega, kilo-bytes respectively. (Iperf
+v1.0 had a byte_atoi function, but the atof is more general.)
+
+<P>
+<DT><FONT COLOR="#cc0000">void</FONT> byte_printf(
+      <FONT COLOR="#cc0000">double</FONT> inNum,
+      <FONT COLOR="#cc0000">char</FONT> inFormat )
+
+<DD>Given a number in bytes and a format, converts the number and
+prints it out with a bits or bytes label.
+<BR>B, K, M, G, A for Byte, Kbyte, Mbyte, Gbyte, adaptive byte
+<BR>b, k, m, g, a for bit,  Kbit,  Mbit,  Gbit,  adaptive bit
+<BR>adaptive picks the "best" one based on the number.
+
+<P>
+<DT>DELETE( ptr ) <I>[macro]</I>
+
+<DD>If ptr is not null, delete it and set it to null.  This prevents
+deleting the same object twice, at least using that pointer.
+
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>autoconf macros</H2>
+
+<DL>
+<DT>DAST_CHECK_BOOL
+
+<DD>Checks if bool, true, and false are defined. Defines bool as int,
+true as 1, false as 0 if not defined. Often it is helpful to call for
+just C++ code:
+ <P>AC_LANG_SAVE
+<BR>AC_LANG_CPLUSPLUS
+<BR>DAST_CHECK_BOOL
+<BR>AC_LANG_RESTORE
+
+<P>
+<DT>DAST_CHECK_TYPE( type, includes )
+
+<DD>Does a similar check to AC_CHECK_TYPE( type, default ), but if
+type isn't defined it doesn't define it. Also you may specify what
+header files to include. Default includes are &lt;sys/types&gt;,
+&lt;stdlib.h&gt;, or &lt;stddef.h&gt;. This defines
+HAVE_&lt;type&gt;. For example, DAST_CHECK_TYPE( int32_t ) will define
+HAVE_INT32_T on machines with int32_t defined. This is useful if there
+is no single default value to use; in the case of int32_t it depends
+on what integer type has sizeof == 4.
+
+<P>
+<DT>DAST_ASK( message, variable, default )
+
+<DD>Prompts the user for input, with a default value in square
+brackets, and reads the result into the given variable.
+
+<P>
+<DT>DAST_PROG_CC
+<BR>DAST_PROG_CXX
+
+<DD>These two prompt the user for what compiler to use. Define the
+CFLAGS and CXXFLAGS to be 2nd level optimization (-O2 or similar). If
+the compiler is gcc, also add -Wall. Currently recognizes HP-UX and
+SunOS special cases for the optimization flags. Does not include the
+-g debug flag as AC_PROG_CC and AC_PROG_CXX do.
+
+<P>
+<DT>DAST_CHECK_PTHREAD
+
+<DD>Check for pthreads in either -lpthread or -lpthreads. If found,
+add -lpthread(s) to LIBS and -D_REENTRANT to CFLAGS and CXXFLAGS.
+
+<P>
+<DT>DAST_CHECK_LIB
+
+<DD>Similar to AC_CHECK_LIB, but try to link the code <I>without</I>
+the library first. Some OSes include functions in a library (like
+socket in -lsocket) but do not require explicitly compiling with that
+library.
+
+</DL>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+
+<H2>Bugs and Comments</H2>
+
+<P>While these functions have been extensively tested, there may be
+bugs in this code; if any arise, or if unexpected behaviour results,
+please contact us at
+<A HREF="mailto:dast@nlanr.net">&lt;dast@nlanr.net&gt;</A>.  There are
+also a number of issues this code does not yet consider. We would like
+to implement these as they become important to our users, so please
+send in requests for features. If these do not work on a particular
+platform or host, we can probably help solve those issues.</P>
+
+<HR><!-- ----- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -->
+<CENTER>
+<P>
+Copyright  1999, 2000, 2001, 2002<BR>
+The Board of Trustees of the University of Illinois <BR>
+All rights reserved <BR>
+See <A HREF="ui_license.html">UI License</A> for complete details.
+</P>
+</CENTER>
+
+<HR NOSHADE SIZE=2>
+
+<CENTER>
+<P><FONT FACE="helvetica,arial" SIZE="2">
+
+<A HREF="mailto:dast@nlanr.net">dast@nlanr.net</A>
+
+Last modified: Jan 3, 2003<br>
+
+<A HREF="http://www.nlanr.net">NLANR</a> || 
+<A HREF="http://dast.nlanr.net">applications support</a> ||
+<A HREF="http://ncne.nlanr.net">engineering support</a> ||
+<A HREF="http://moat.nlanr.net">measurement and operations</a>
+</FONT></P>
+</CENTER>
+
+</BODY>
+</HTML>

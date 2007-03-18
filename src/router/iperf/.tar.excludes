@@ -1,0 +1,14 @@
+CVS
+NOTES
+RELEASES
+*.tar
+*.tar.gz
+*.zip
+config.h
+config.cache
+config.status
+config.log
+*.o
+*/iperf
+libdast.a
+*.class
