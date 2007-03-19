@@ -440,7 +440,8 @@ period_check (int sig)
 		  eval ("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
 		  eval ("erase", "nvram");
 #else
-
+          nvram_set ("sv_restore_defaults", "1");
+          nvram_commit ();
 		  eval ("erase", "nvram");
 #endif
 
