@@ -151,6 +151,10 @@ extern int nvram2file(char *varname, char *filename);
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
+#if defined(HAVE_XSCALE) || defined(HAVE_X86) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
+#define NVRAM_SPACE		0x10000
+#else
 #define NVRAM_SPACE		0x8000
+#endif
 
 #endif /* _bcmnvram_h_ */
