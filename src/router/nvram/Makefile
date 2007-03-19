@@ -28,6 +28,7 @@ CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
 ifeq ($(ARCHITECTURE),gateworx)
 CFLAGS  += -DHAVE_GATEWORX
+CFLAGS  += -DHAVE_XSCALE
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -38,6 +39,9 @@ CFLAGS += -DHAVE_FONERA
 endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
+endif
+ifeq ($(CONFIG_X86),y)
+CFLAGS += -DHAVE_X86
 endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
