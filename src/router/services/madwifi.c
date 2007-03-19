@@ -488,6 +488,23 @@ getiflist (void)
 }
 
 static void
+destroy_wds (char *ifname)
+{
+  int s;
+  for (s = 1; s <= 10; s++)
+    {
+      char dev[16];
+      sprintf (dev, "wdsath%s.%d", ifname, s);
+      if (ifexists (dev))
+	{
+	  br_del_interface ("br0", dev);
+	  eval ("wlanconfig", dev, "destroy");
+	}
+    }
+
+}
+
+static void
 deconfigure_single (int count)
 {
   char *next;
@@ -496,20 +513,9 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
-  if (ifexists (dev))
-    br_del_interface ("br0", dev);
-  if (ifexists (dev))
-    eval ("ifconfig", dev, "down");
   char vifs[128];
   sprintf (vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev,
 	   dev, dev, dev, dev, dev, dev, dev);
-  foreach (var, vifs, next)
-  {
-    if (ifexists (var))
-      {
-	eval ("ifconfig", var, "down");
-      }
-  }
   int s;
   for (s = 1; s <= 10; s++)
     {
@@ -522,6 +528,21 @@ deconfigure_single (int count)
     }
   sprintf (dev, "ath%d", count);
   if (ifexists (dev))
+    {
+      br_del_interface ("br0", dev);
+      eval ("ifconfig", dev, "down");
+    }
+  foreach (var, vifs, next)
+  {
+    if (ifexists (var))
+      {
+	eval ("ifconfig", var, "down");
+      }
+  }
+  sprintf (dev, "ath%d", count);
+  destroy_wds (dev);
+
+  if (ifexists (dev))
     eval ("wlanconfig", dev, "destroy");
 
   foreach (var, vifs, next)
@@ -532,15 +553,6 @@ deconfigure_single (int count)
       }
   }
 
-  for (s = 1; s <= 10; s++)
-    {
-      sprintf (dev, "wdsath%d.%d", count, s);
-      if (ifexists (dev))
-	{
-	  br_del_interface ("br0", dev);
-	  eval ("wlanconfig", dev, "destroy");
-	}
-    }
 }
 
 
@@ -1034,7 +1046,8 @@ set_netmode (char *wif, char *dev)
   }
   if (default_match (turbo, "1", "0"))
     {
-      if (nvram_match (mode, "sta") || nvram_match (mode, "wet")|| nvram_match (mode, "wdssta"))
+      if (nvram_match (mode, "sta") || nvram_match (mode, "wet")
+	  || nvram_match (mode, "wdssta"))
 	{
 	  eval ("iwpriv", dev, "mode", "5");
 	}
@@ -1141,29 +1154,28 @@ adjust_regulatory (int count)
     long tb = atol (nvram_safe_get (turbo));
     setsysctrl (wif, "turbo", tb);
     long regulatory = atol (nvram_safe_get ("ath_regulatory"));
-      {
-	if (regulatory == 0)
-	  {
-	    setsysctrl (wif, "regulatory", regulatory);
-	    setsysctrl (wif, "setregdomain", 0);
-	    setsysctrl (wif, "outdoor", 0);
-	    setsysctrl (wif, "countrycode", 0);
-	    setsysctrl (wif, "antennagain", 0);
-	  }
-	else
-	  {
-	    sprintf (country, "%s_regdomain", dev);
-	    setsysctrl (wif, "regulatory", 1);
-	    setsysctrl (wif, "setregdomain",
-			getRegDomain (default_get
-				      (country, "UNITED_STATES")));
-	    setsysctrl (wif, "countrycode",
-			getCountry (default_get (country, "UNITED_STATES")));
-	    sprintf (country, "%s_outdoor", dev);
-	    setsysctrl (wif, "outdoor", atoi (default_get (country, "0")));
-	    setsysctrl (wif, "antennagain", atoi (default_get (gain, "6")));
-	  }
-      }
+    {
+      if (regulatory == 0)
+	{
+	  setsysctrl (wif, "regulatory", regulatory);
+	  setsysctrl (wif, "setregdomain", 0);
+	  setsysctrl (wif, "outdoor", 0);
+	  setsysctrl (wif, "countrycode", 0);
+	  setsysctrl (wif, "antennagain", 0);
+	}
+      else
+	{
+	  sprintf (country, "%s_regdomain", dev);
+	  setsysctrl (wif, "regulatory", 1);
+	  setsysctrl (wif, "setregdomain",
+		      getRegDomain (default_get (country, "UNITED_STATES")));
+	  setsysctrl (wif, "countrycode",
+		      getCountry (default_get (country, "UNITED_STATES")));
+	  sprintf (country, "%s_outdoor", dev);
+	  setsysctrl (wif, "outdoor", atoi (default_get (country, "0")));
+	  setsysctrl (wif, "antennagain", atoi (default_get (gain, "6")));
+	}
+    }
   }
 
 
@@ -1451,7 +1463,7 @@ configure_single (int count)
   cprintf ("adjust power\n");
 
   int newpower = atoi (default_get (power, "16"));
- // fprintf (stderr, "new power limit %d\n", newpower);
+  // fprintf (stderr, "new power limit %d\n", newpower);
   sprintf (var, "%ddBm", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
