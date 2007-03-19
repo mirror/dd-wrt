@@ -399,7 +399,7 @@ start_sysinit (void)
       break;
       
     case ROUTER_MOTOROLA_V1:
-      eval ("gpio", "disable", "1");
+      eval ("gpio", "disable", "7");
       break;
 
     case ROUTER_BUFFALO_WZRG300N:
