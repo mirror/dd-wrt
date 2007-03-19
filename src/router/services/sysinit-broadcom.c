@@ -397,6 +397,10 @@ start_sysinit (void)
       nvram_set ("port_swap", "1");
       eval ("gpio", "disable", "7");
       break;
+      
+    case ROUTER_MOTOROLA_V1:
+      eval ("gpio", "disable", "1");
+      break;
 
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
