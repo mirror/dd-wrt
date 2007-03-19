@@ -906,8 +906,6 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 	case ROUTER_LINKSYS_WRT55AG:
 			connected_gpio = 0x13;
 		break;
-	case ROUTER_ASUS:
-		break;
 	case ROUTER_BUFFALO_WBR54G:
 			diag_gpio = 0x17;
 		break;
@@ -929,11 +927,6 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			diag_gpio = 0x17;
 			vpn_gpio = 0x11;
 			aoss_gpio = 0x16;
-		break;
-	case ROUTER_MOTOROLA_V1:
-			diag_gpio = 0x13;
-			bridge_gpio = 0x15;
-			wlan_gpio = 0x17;
 		break;
 	case ROUTER_MOTOROLA:
 			power_gpio = 0x01;
@@ -966,32 +959,16 @@ int wlan_gpio = 0x0f;  //use this only if wlan led is not controlled by hardware
 			ses_gpio = 0x15;		//ses white
 			ses2_gpio = 0x17;		//ses orange	
 		break;
-	case ROUTER_BUFFALO_WZRG300N:
-		break;
-	case ROUTER_WRT300N:
-		break;
-	case ROUTER_BUFFALO_WHRAM54G54:
-		break;
-	case ROUTER_BUFFALO_WLI2_TX1_G54:
-		break;
 	case ROUTER_MOTOROLA_WE800G:
+	case ROUTER_MOTOROLA_V1:
 			diag_gpio = 0x13;
 			wlan_gpio = 0x11;
 			bridge_gpio = 0x15;
 		break;
-	case ROUTER_WAP54G_V1:
-		break;
-	case ROUTER_WAP54G_V2:
-		break;
-	case ROUTER_VIEWSONIC_WAPBR_100:
-		break;
 	case ROUTER_DELL_TRUEMOBILE_2300:
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	        power_gpio = 0x17;
 	        wlan_gpio = 0x16;
-		break;
-	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-			power_gpio = 0x17;
-			wlan_gpio = 0x16;
 		break;
 	case ROUTER_NETGEAR_WNR834B:
 			power_gpio = 0x14;
