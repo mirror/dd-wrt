@@ -102,11 +102,32 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < SITE_SURVEY_NUM; i++)
     {
 
-
       if (site_survey_lists[i].BSSID[0] == 0 ||
 	  site_survey_lists[i].channel == 0)
 	break;
 
+// fix for " in SSID
+	char *tssid = (site_survey_lists[i].SSID[0] == 0) ? "hidden" : site_survey_lists[i].SSID;
+	int pos = 0;
+	int tpos;
+	int ssidlen = strlen (temp);
+	
+	while (pos < ssidlen)
+	{
+		if (tssid[pos] == '\"')
+		{
+			for (tpos = ssidlen; tpos > pos - 1; tpos--)
+				tssid[tpos + 1] = tssid[tpos];
+
+			tssid[pos] = '\\';
+			pos++;
+			ssidlen++;
+		}
+		pos++;
+	}
+// end fix for " in SSID
+	
+	
       if (site_survey_lists[i].rate_count == 4)
 	rates = "4(b)";
       else if (site_survey_lists[i].rate_count == 12)
@@ -148,8 +169,7 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
       websWrite (wp,
 		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
 		 i ? ',' : ' ',
-		 site_survey_lists[i].SSID[0] ==
-		 0 ? "hidden" : site_survey_lists[i].SSID, netmode,
+		 tssid, netmode,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
