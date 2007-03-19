@@ -110,7 +110,7 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
 	char *tssid = (site_survey_lists[i].SSID[0] == 0) ? "hidden" : site_survey_lists[i].SSID;
 	int pos = 0;
 	int tpos;
-	int ssidlen = strlen (temp);
+	int ssidlen = strlen (tssid);
 	
 	while (pos < ssidlen)
 	{
