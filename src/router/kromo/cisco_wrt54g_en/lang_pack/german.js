@@ -627,6 +627,22 @@ hotspot.sputnik_instant="Nutze Sputnik Instant Setup";
 hotspot.sputnik_express="Nutze SputnikNet Express";
 hotspot.sputnik_about="über Sputnik";
 
+hotspot.wifidog_legend="Wifidog";
+hotspot.wifidog_srv="Wifidog daemon";
+hotspot.wifidog_id="Gateway ID";
+hotspot.wifidog_url="Portal's URL";
+hotspot.wifidog_port="Port";
+hotspot.wifidog_httpdname="Web Server Name";
+hotspot.wifidog_httpdconn="Max Users";
+hotspot.wifidog_checkinter="Check Interval (in sec.)";
+hotspot.wifidog_checktimeout="Client Timeout";
+hotspot.wifidog_tmaclist="Trusted MAC List";
+hotspot.wifidog_authsrv="AuthServer Hostname";
+hotspot.wifidog_authsrvssl="AuthServer SSL Available";
+hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
+hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
+hotspot.wifidog_authsrvpath="AuthServer Path";
+
 
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
