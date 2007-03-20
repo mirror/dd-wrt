@@ -3648,6 +3648,7 @@ start_wifidog (void)
       fprintf (fp, "HTTPDName %s\n", nvram_safe_get ("wd_httpdname"));
       fprintf (fp, "CheckInterval %s\n", nvram_safe_get ("wd_interval"));
       fprintf (fp, "ClientTimeout %s\n", nvram_safe_get ("wd_timeout"));
+      fprintf (fp, "TrustedMACList %s\n", nvram_safe_get ("wd_maclist"));
       fprintf (fp, "AuthServer {\n");
       fprintf (fp, "Hostname %s\n", nvram_safe_get ("wd_hostname"));
       fprintf (fp, "SSLAvailable %s\n",
