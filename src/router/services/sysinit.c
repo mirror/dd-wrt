@@ -706,7 +706,7 @@ start_restore_defaults (void)
 	  switch (brand)
 	    {
 		case ROUTER_MOTOROLA_V1:
-		case ROUTER_MOTOROLA_WE800:
+		case ROUTER_MOTOROLA_WE800G:
 		case ROUTER_RT210W:
 			if (et0mac != NULL)
 				nvram_set ("et0macaddr", et0mac);
