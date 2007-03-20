@@ -704,6 +704,7 @@ hotspot.wifidog_httpdname="Ime WEB stre¾nika";
 hotspot.wifidog_httpdconn="Najveèje ¹t. uporabnikov";
 hotspot.wifidog_checkinter="Interval preverbe (v sek.)";
 hotspot.wifidog_checktimeout="Èasovna omejitev klienta";
+hotspot.wifidog_tmaclist="Poverjeni MAC naslovi";
 hotspot.wifidog_authsrv="AuthServer uporabni¹ko ime";
 hotspot.wifidog_authsrvssl="AuthServer SSL na voljo";
 hotspot.wifidog_authsrvsslport="AuthServer SSL vrata";
