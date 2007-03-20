@@ -1756,7 +1756,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_WIFIDOG
   {"wd_enable", "0", 0},
   {"wd_gwid", "default", 0},
-  {"wd_url", "http://www.yourportalurl/", 0},
+  {"wd_url", "", 0},
   {"wd_gwport", "2060", 0},
   {"wd_httpdname", "WiFiDog", 0},
   {"wd_httpdcon", "10", 0},
