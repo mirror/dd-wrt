@@ -701,10 +701,9 @@ start_restore_defaults (void)
       if (!nvram_get ("vlan1hwname") || nvram_match ("vlan1hwname", ""))
 	nvram_set ("vlan1hwname", "et0");
 
-      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
-	{
 	  switch (brand)
 	    {
+		case ROUTER_MOTOROLA:
 		case ROUTER_MOTOROLA_V1:
 		case ROUTER_MOTOROLA_WE800G:
 		case ROUTER_RT210W:
@@ -713,6 +712,12 @@ start_restore_defaults (void)
 			if (et1mac != NULL)
 				nvram_set ("et1macaddr", et1mac);
 		  break;
+	  	}	
+	
+      if (!nvram_get ("vlan0ports") || nvram_match ("vlan0ports", ""))
+	{
+	  switch (brand)
+	    {
 	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
