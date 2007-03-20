@@ -65,7 +65,7 @@ process_monitor_main (void)
     {				// && check_wan_link(0) ) {
 
 /* init ntp timer */
-#ifdef HAVE_SNMP
+#if defined(HAVE_SNMP) || defined(HAVE_WIFIDOG)
       struct timeval now;
       gettimeofday (&now, NULL);
 #endif
@@ -94,9 +94,19 @@ process_monitor_main (void)
 	  && nvram_match ("snmpd_enable", "1"))
 	{
 	  stop_service ("snmp");
+	  sleep (1);
 	  syslog (LOG_DEBUG, "Restarting snmpd\n");
-	  sleep (2);
 	  start_service ("snmp");
+	}
+#endif
+#ifdef HAVE_WIFIDOG  //dirty fix for wifidog
+      if ((abs (now.tv_sec - then.tv_sec) > 100000000)
+	  && nvram_match ("wd_enable", "1"))
+	{
+	  stop_service ("wifidog");
+	  sleep (1);
+	  syslog (LOG_DEBUG, "Restarting Wifidog daemon\n");
+	  start_service ("wifidog");
 	}
 #endif
 //give user a chance to use resetbutton for first 4 min even if disabled and time is not synched
