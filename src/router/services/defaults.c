@@ -1020,6 +1020,9 @@ struct nvram_tuple srouter_defaults[] = {
   /* for mac clone */
   {"mac_clone_enable", "0", 0},	/* User define WAN interface MAC address */
   {"def_hwaddr", "00:00:00:00:00:00", 0},	/* User define WAN interface MAC address */
+  
+    /* for mac addresses */
+  {"port_swap", "0", 0},	/* used to set mac addresses from et0macaddr or et1macaddr*/
 
   /* for DDNS */
   // for dyndns

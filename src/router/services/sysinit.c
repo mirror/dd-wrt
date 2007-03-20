@@ -485,6 +485,9 @@ start_restore_defaults (void)
   int brand = getRouterBrand ();
 #else
   int brand = getRouterBrand ();
+  
+  char *et0mac = nvram_safe_get ("et0macaddr");
+  char *et1mac = nvram_safe_get ("et1macaddr");
 
   if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
     {
@@ -702,6 +705,14 @@ start_restore_defaults (void)
 	{
 	  switch (brand)
 	    {
+		case ROUTER_MOTOROLA_V1:
+		case ROUTER_MOTOROLA_WE800:
+		case ROUTER_RT210W:
+			if (et0mac != NULL)
+				nvram_set ("et0macaddr", et0mac);
+			if (et1mac != NULL)
+				nvram_set ("et1macaddr", et1mac);
+		  break;
 	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan0ports", "1 2 3 4 5*");
 	      break;
