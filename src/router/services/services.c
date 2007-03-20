@@ -2704,7 +2704,7 @@ start_pptp (int status)
       fprintf (fp, "default-asyncmap\n");	// Disable  asyncmap  negotiation
       fprintf (fp, "nopcomp\n");	// Disable protocol field compression
       fprintf (fp, "noaccomp\n");	// Disable Address/Control compression
- //     fprintf (fp, "noccp\n");	// Disable CCP (Compression Control Protocol)
+      fprintf (fp, "noccp\n");	// Disable CCP (Compression Control Protocol)
       fprintf (fp, "novj\n");	// Disable Van Jacobson style TCP/IP header compression
       fprintf (fp, "nobsdcomp\n");	// Disables BSD-Compress  compression
       fprintf (fp, "nodeflate\n");	// Disables Deflate compression
