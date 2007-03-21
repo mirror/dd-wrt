@@ -1019,9 +1019,7 @@ set_netmode (char *wif, char *dev)
   char net[16];
   char turbo[16];
   char mode[16];
-  char bw[16];
   char xr[16];
-  sprintf (bw, "%s_channelbw", dev);
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
@@ -1069,14 +1067,6 @@ set_netmode (char *wif, char *dev)
 	}
       eval ("iwpriv", dev, "wmm", "0");
 
-#ifndef HAVE_FONERA
-      char *wid = nvram_get (bw);
-      int width = 20;
-      if (wid)
-	width = atoi (wid);
-      char buf[64];
-      setsysctrl (wif, "channelbw", (long) width);
-#endif
     }
 }
 
@@ -1140,11 +1130,13 @@ adjust_regulatory (int count)
   char turbo[16];
   char gain[32];
   char country[64];
+  char bw[16];
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
   sprintf (turbo, "%s_turbo", dev);
   sprintf (gain, "%s_antgain", dev);
   sprintf (country, "%s_regdomain", dev);
+  sprintf (bw, "%s_channelbw", dev);
   default_get (country, "UNITED_STATES");
   sprintf (country, "%s_outdoor", dev);
   default_get (country, "0");
@@ -1177,6 +1169,14 @@ adjust_regulatory (int count)
 	}
     }
   }
+#ifndef HAVE_FONERA
+      char *wid = nvram_safe_get (bw);
+      int width = 20;
+      if (wid)
+	width = atoi (wid);
+      char buf[64];
+      setsysctrl (wif, "channelbw", (long) width);
+#endif
 
 
 }
