@@ -1957,7 +1957,9 @@ filter_forward (void)
       save2file ("-A FORWARD -i br1 -o %s -j ACCEPT\n", get_wan_face ());
 
     }
+#ifdef HAVE_VLANTAGGING
   add_bridges ("FORWARD", 1);
+#endif
   stop_vpn_modules ();
 //  unload_vpn_modules ();
 
