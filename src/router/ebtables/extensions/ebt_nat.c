@@ -20,6 +20,8 @@ static int to_source_supplied, to_dest_supplied;
 #define NAT_D '1'
 #define NAT_S_TARGET '2'
 #define NAT_D_TARGET '2'
+
+#define ARPNAT_TARGET '1'
 static struct option opts_s[] =
 {
 	{ "to-source"     , required_argument, 0, NAT_S },
@@ -27,6 +29,14 @@ static struct option opts_s[] =
 	{ "snat-target"   , required_argument, 0, NAT_S_TARGET },
 	{ 0 }
 };
+
+
+static struct option opts_arpnat[] =
+{
+	{ "arpnat-target"   , required_argument, 0, ARPNAT_TARGET },
+	{ 0 }
+};
+
 
 static struct option opts_d[] =
 {
@@ -44,6 +54,13 @@ static void print_help_s()
 	" --snat-target target   : ACCEPT, DROP, RETURN or CONTINUE\n");
 }
 
+static void print_help_arpnat()
+{
+	printf(
+	"arpnat options:\n"
+	" --arpnat-target target   : ACCEPT, DROP, RETURN or CONTINUE\n");
+}
+
 static void print_help_d()
 {
 	printf(
@@ -57,6 +74,14 @@ static void init_s(struct ebt_entry_target *target)
 	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)target->data;
 
 	to_source_supplied = 0;
+	natinfo->target = EBT_ACCEPT;
+	return;
+}
+
+static void init_arpnat(struct ebt_entry_target *target)
+{
+	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)target->data;
+
 	natinfo->target = EBT_ACCEPT;
 	return;
 }
@@ -91,6 +116,25 @@ static int parse_s(int c, char **argv, int argc,
 		ebt_check_option2(flags, OPT_SNAT_TARGET);
 		if (FILL_TARGET(optarg, natinfo->target))
 			ebt_print_error2("Illegal --snat-target target");
+		break;
+	default:
+		return 0;
+	}
+	return 1;
+}
+#define OPT_ARPNAT_TARGET 0x1
+static int parse_arpnat(int c, char **argv, int argc,
+   const struct ebt_u_entry *entry, unsigned int *flags,
+   struct ebt_entry_target **target)
+{
+	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)(*target)->data;
+	struct ether_addr *addr;
+
+	switch (c) {
+	case ARPNAT_TARGET:
+		ebt_check_option2(flags, OPT_ARPNAT_TARGET);
+		if (FILL_TARGET(optarg, natinfo->target))
+			ebt_print_error2("Illegal --arpnat-target target");
 		break;
 	default:
 		return 0;
@@ -143,6 +187,18 @@ static void final_check_s(const struct ebt_u_entry *entry,
 		ebt_print_error("No snat address supplied");
 }
 
+static void final_check_arpnat(const struct ebt_u_entry *entry,
+   const struct ebt_entry_target *target, const char *name,
+   unsigned int hookmask, unsigned int time)
+{
+	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)target->data;
+
+	if (BASE_CHAIN && natinfo->target == EBT_RETURN) {
+		ebt_print_error("--arpnat-target RETURN not allowed on base chain");
+		return;
+	}
+}
+
 static void final_check_d(const struct ebt_u_entry *entry,
    const struct ebt_entry_target *target, const char *name,
    unsigned int hookmask, unsigned int time)
@@ -170,6 +226,14 @@ static void print_s(const struct ebt_u_entry *entry,
 	printf("--to-src ");
 	ebt_print_mac(natinfo->mac);
 	printf(" --snat-target %s", TARGET_NAME(natinfo->target));
+}
+
+static void print_arpnat(const struct ebt_u_entry *entry,
+   const struct ebt_entry_target *target)
+{
+	struct ebt_nat_info *natinfo = (struct ebt_nat_info *)target->data;
+
+	printf(" --arpnat-target %s", TARGET_NAME(natinfo->target));
 }
 
 static void print_d(const struct ebt_u_entry *entry,
@@ -205,6 +269,19 @@ static struct ebt_u_target snat_target =
 	.extra_ops	= opts_s,
 };
 
+static struct ebt_u_target arpnat_target =
+{
+	.name		= EBT_ARPNAT_TARGET,
+	.size		= sizeof(struct ebt_nat_info),
+//	.help		= print_help_s,
+	.init		= init_arpnat,
+	.parse		= parse_arpnat,
+	.final_check	= final_check_arpnat,
+	.print		= print_arpnat,
+	.compare	= compare,
+	.extra_ops	= opts_arpnat,
+};
+
 static struct ebt_u_target dnat_target =
 {
 	.name		= EBT_DNAT_TARGET,
@@ -222,4 +299,5 @@ void _init(void)
 {
 	ebt_register_target(&snat_target);
 	ebt_register_target(&dnat_target);
+	ebt_register_target(&arpnat_target);
 }
