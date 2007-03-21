@@ -431,6 +431,7 @@ enable_dhcprelay (char *ifname)
   return 0;
 }
 #endif
+
 static int
 wlconf_up (char *name)
 {
