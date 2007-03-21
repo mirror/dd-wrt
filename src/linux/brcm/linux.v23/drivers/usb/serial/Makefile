@@ -26,6 +26,7 @@ obj-$(CONFIG_USB_SERIAL_CYBERJACK)		+= cyberjack.o
 obj-$(CONFIG_USB_SERIAL_IR)			+= ir-usb.o
 obj-$(CONFIG_USB_SERIAL_KLSI)			+= kl5kusb105.o
 obj-$(CONFIG_USB_SERIAL_KOBIL_SCT)		+= kobil_sct.o
+obj-$(CONFIG_USB_SERIAL_SIERRA_3G)              += sierra.o
 
 # Objects that export symbols.
 export-objs	:= usbserial.o

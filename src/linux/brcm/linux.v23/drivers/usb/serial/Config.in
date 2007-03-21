@@ -18,6 +18,7 @@ if [ "$CONFIG_USB_SERIAL" != "n" ]; then
    dep_tristate '  USB IR Dongle Serial Driver (EXPERIMENTAL)' CONFIG_USB_SERIAL_IR $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
    dep_tristate '  USB Inside Out Edgeport Serial Driver' CONFIG_USB_SERIAL_EDGEPORT $CONFIG_USB_SERIAL
    dep_tristate '  USB Inside Out Edgeport Serial Driver (TI devices)' CONFIG_USB_SERIAL_EDGEPORT_TI $CONFIG_USB_SERIAL
+   dep_tristate '  USB Inside Out Edgeport Serial Driver (Sierra 3G)' CONFIG_USB_SERIAL_SIERRA_3G $CONFIG_USB_SERIAL
    dep_tristate '  USB Keyspan PDA Single Port Serial Driver (EXPERIMENTAL)' CONFIG_USB_SERIAL_KEYSPAN_PDA $CONFIG_USB_SERIAL $CONFIG_EXPERIMENTAL
    dep_tristate '  USB Keyspan USA-xxx Serial Driver' CONFIG_USB_SERIAL_KEYSPAN $CONFIG_USB_SERIAL
    if [ "$CONFIG_USB_SERIAL_KEYSPAN" != "n" ]; then
