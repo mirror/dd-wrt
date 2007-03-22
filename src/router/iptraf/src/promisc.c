@@ -80,7 +80,7 @@ void init_promisc_list(struct promisc_states **list)
              * Retrieve and save interface flags
              */
 
-            if ((strncmp(buf, "eth", 3) == 0) ||
+            if ((strncmp(buf, "eth", 3) == 0) || (strncmp(buf, "ixp", 3) == 0) || (strncmp(buf, "ath", 3) == 0) ||
                 (strncmp(buf, "fddi", 4) == 0) ||
                 (strncmp(buf, "tr", 2) == 0) ||
                 (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
@@ -194,7 +194,7 @@ void srpromisc(int mode, struct promisc_states *list)
     }
 
     while (ptmp != NULL) {
-        if (((strncmp(ptmp->params.ifname, "eth", 3) == 0) ||
+        if (((strncmp(ptmp->params.ifname, "eth", 3) == 0) || (strncmp(ptmp->params.ifname, "ixp", 3) == 0) || (strncmp(ptmp->params.ifname, "ath", 3) == 0) ||
              (strncmp(ptmp->params.ifname, "fddi", 4) == 0) ||
              (strncmp(ptmp->params.ifname, "tr", 2) == 0) ||
              (strncmp(ptmp->params.ifname, "wvlan", 4) == 0) ||
