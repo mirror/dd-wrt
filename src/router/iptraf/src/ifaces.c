@@ -37,8 +37,8 @@ extern int accept_unsupported_interfaces;
 extern int daemonized;
 
 char ifaces[][6] =
-    { "lo", "eth", "sl", "ppp", "ippp", "plip", "fddi", "isdn", "dvb",
-    "pvc", "hdlc", "ipsec", "sbni", "tr", "wvlan", "wlan", "sm2", "sm3",
+    { "lo", "eth","ixp", "sl", "ppp", "ippp", "plip", "fddi", "isdn", "dvb",
+    "pvc", "hdlc", "ipsec", "sbni", "tr", "wvlan", "wlan","ath", "sm2", "sm3",
     "pent", "lec", "brg", "tun", "tap", "cipcb", "tunl", "vlan"
 };
 
