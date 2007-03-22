@@ -5360,14 +5360,11 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 		  if (temp[pos] == ',')
 		  	count++;
 	  }
+  
+	  tf_webWriteJS (wp, nvram_safe_get (s));
 	  if (count == 2)
-	  	{
-			temp[len]=',';
-			temp[len + 1]='*';
-		}
-	  
-	  
-	  tf_webWriteJS (wp, temp);
+	  	websWrite (wp, ",*");
+	  	
 	  websWrite (wp, "'");
 	}
     }
