@@ -32,7 +32,7 @@ details.
 #include "error.h"
 
 extern int accept_unsupported_interfaces;
-#define NUM_SUPPORTED_IFACES 26
+#define NUM_SUPPORTED_IFACES 28
 
 extern int daemonized;
 
