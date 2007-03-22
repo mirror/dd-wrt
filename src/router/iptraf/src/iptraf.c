@@ -488,7 +488,7 @@ int main(int argc, char **argv)
     char keyparm[12];
     int facilitytime = 0;
     int current_log_interval;
-
+    mkdir("/var/run/iptraf");
 #ifndef ALLOWUSERS
     if (getuid() != 0) {
         fprintf(stderr, "\nIPTraf Version %s\n", VERSION);

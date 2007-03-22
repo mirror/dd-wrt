@@ -32,12 +32,12 @@ details.
 #include "error.h"
 
 extern int accept_unsupported_interfaces;
-#define NUM_SUPPORTED_IFACES 28
+#define NUM_SUPPORTED_IFACES 29
 
 extern int daemonized;
 
 char ifaces[][6] =
-    { "lo", "eth","ixp", "sl", "ppp", "ippp", "plip", "fddi", "isdn", "dvb",
+    { "lo", "br","eth","ixp", "sl", "ppp", "ippp", "plip", "fddi", "isdn", "dvb",
     "pvc", "hdlc", "ipsec", "sbni", "tr", "wvlan", "wlan","ath", "sm2", "sm3",
     "pent", "lec", "brg", "tun", "tap", "cipcb", "tunl", "vlan"
 };

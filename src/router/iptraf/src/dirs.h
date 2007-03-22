@@ -34,7 +34,7 @@
 #endif
 
 #ifndef EXECDIR
-#define EXECDIR		"/usr/local/bin"
+#define EXECDIR		"/usr/sbin"
 #endif
 
 /*
