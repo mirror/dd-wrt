@@ -1,0 +1,846 @@
+This is TeX, Version 3.14159 (Web2C 7.4.5) (format=jadetex 2005.8.4)  4 AUG 2005 15:00
+**manual.tex
+(./manual.tex
+JadeTeX 2001/01/18: 3.2
+LaTeX Font Info:    Try loading font information for T1+ptm on input line 1.
+(/usr/share/texmf/tex/latex/psnfss/t1ptm.fd
+File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
+)
+Elements will be labelled
+Jade begin document sequence at 19
+(./manual.aux)
+\openout1 = `manual.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 19.
+LaTeX Font Info:    Try loading font information for T2A+cmr on input line 19.
+ (/usr/share/texmf/tex/latex/cyrillic/t2acmr.fd
+File: t2acmr.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
+)
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 19.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 19.
+
+(/usr/share/texmf/tex/latex/base/ts1cmr.fd
+File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LECO/omseco/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LECX/omsecx/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LECY/omsecy/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LEGR/omsegr/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LEHA/omseha/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LEIP/omseip/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LELA/omsela/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+LaTeX Font Info:    Checking defaults for LETI/omseti/m/n on input line 19.
+LaTeX Font Info:    ... okay on input line 19.
+Package hyperref Info: Link coloring ON on input line 19.
+
+(/usr/share/texmf/tex/latex/hyperref/nameref.sty
+Package: nameref 2001/01/27 v2.19 Cross-referencing by name of section
+\c@section@level=\count114
+)
+LaTeX Info: Redefining \ref on input line 19.
+LaTeX Info: Redefining \pageref on input line 19.
+ (./manual.out) (./manual.out)
+\openout3 = `manual.out'.
+
+LaTeX Font Info:    Try loading font information for T1+ppl on input line 32.
+(/usr/share/texmf/tex/latex/psnfss/t1ppl.fd
+File: t1ppl.fd 2001/06/04 font definitions for T1/ppl.
+)
+Overfull \hbox (105.82433pt too wide) in paragraph at lines 1--83
+[]\T1/ptm/m/n/10 This is TeX, Ver-sion 3.14159 (Web2C 7.4.5) (./man-ual.tex Jad
+e-TeX 2001/01/18: 3.2 (/usr/share/texmf/tex/latex/psnfss/t1ptm.fd)
+ []
+
+
+Overfull \hbox (66.45444pt too wide) in paragraph at lines 1--83
+\T1/ptm/m/n/10 El-e-ments will be la-belled Jade be-gin doc-u-ment se-quence at
+ 19 (./man-ual.aux) (/usr/share/texmf/tex/latex/cyrillic/t2acmr.fd)
+ []
+
+
+Overfull \hbox (1.10448pt too wide) in paragraph at lines 1--83
+\T1/ptm/m/n/10 (/usr/share/texmf/tex/latex/base/ts1cmr.fd) (/usr/share/texmf/te
+x/latex/hyperref/nameref.sty) (./man-ual.out
+ []
+
+
+Overfull \hbox (85.82433pt too wide) in paragraph at lines 1--83
+\T1/ptm/m/n/10 This is TeX, Ver-sion 3.14159 (Web2C 7.4.5) (./man-ual.tex Jade-
+TeX 2001/01/18: 3.2 (/usr/share/texmf/tex/latex/psnfss/t1ptm.fd)
+ []
+
+
+Overfull \hbox (66.45444pt too wide) in paragraph at lines 1--83
+\T1/ptm/m/n/10 El-e-ments will be la-belled Jade be-gin doc-u-ment se-quence at
+ 19 (./man-ual.aux) (/usr/share/texmf/tex/latex/cyrillic/t2acmr.fd)
+ []
+
+
+Overfull \hbox (4.43443pt too wide) in paragraph at lines 1--83
+\T1/ptm/m/n/10 (/usr/share/texmf/tex/latex/base/ts1cmr.fd) (/usr/share/texmf/te
+x/latex/hyperref/nameref.sty) (./man-ual.out)
+ []
+
+LaTeX Font Info:    Try loading font information for T1+phv on input line 98.
+(/usr/share/texmf/tex/latex/psnfss/t1phv.fd
+File: t1phv.fd 2001/06/04 scalable font definitions for T1/phv.
+)
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <16.105> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 98.
+ [1.0.59] [2.0.59
+
+]
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <10> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 163.
+LaTeX Font Info:    Try loading font information for TS1+ppl on input line 168.
+
+
+(/usr/share/texmf/tex/latex/psnfss/ts1ppl.fd
+File: ts1ppl.fd 2001/06/04 font definitions for TS1/ppl.
+) [3.0.59] [4.0.59
+
+]
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <14.641> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 337.
+LaTeX Font Info:    Font shape `T1/ppl/bx/n' in size <10> not available
+(Font)              Font shape `T1/ppl/b/n' tried instead on input line 354.
+ [5.0.59]
+[6.0.59]
+LaTeX Font Info:    Font shape `T1/phv/bx/it' in size <13.31> not available
+(Font)              Font shape `T1/phv/b/it' tried instead on input line 2476.
+LaTeX Font Info:    Font shape `T1/phv/b/it' in size <13.31> not available
+(Font)              Font shape `T1/phv/b/sl' tried instead on input line 2476.
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <13.31> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 2534.
+LaTeX Font Info:    Try loading font information for T1+pcr on input line 2650.
+
+ (/usr/share/texmf/tex/latex/psnfss/t1pcr.fd
+File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
+)
+Overfull \hbox (1.58571pt too wide) in paragraph at lines 2783--2787
+ \T1/ppl/m/n/10 pre-sented. Be-cause UNIX and vari-ants are case-sensitive, cas
+e must be pre-served.
+ []
+
+LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <9> not available
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 2807.
+LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <10> not available
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 2837.
+[7.0.59
+
+] [8.0.59
+
+]
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <12.1> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 3501.
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <11> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 3560.
+ [9.0.59]
+Overfull \hbox (93.14415pt too wide) in paragraph at lines 3999--4009
+ []\T1/ppl/m/n/10 IPTraf can be down-loaded from the In-ter-net from the of-fi-
+cial FTP site at [][][]  ftp://iptraf.seul.org/pub/iptraf/[]. 
+ []
+
+
+Overfull \hbox (61.95697pt too wide) in paragraph at lines 4026--4077
+ []\T1/ppl/m/n/10 The soft-ware is avail-able in source form in com-pressed [][
+][]  \T1/pcr/m/n/9 .tar.gz \T1/ppl/m/n/10 files named [][][]  \T1/pcr/m/n/9 ipt
+raf-[][][]\T1/pcr/m/sl/9 x.y.z\T1/pcr/m/n/9 .tar.gz
+ []
+
+[10.0.59]
+Overfull \hbox (5.5962pt too wide) in paragraph at lines 4556--4559
+ []\T1/ppl/m/n/10 If you re-ceived IP-Traf on a diskette, the sources are al-re
+ady de-com-pressed. The diskette
+ []
+
+LaTeX Font Info:    Font shape `T1/phv/bx/n' in size <9> not available
+(Font)              Font shape `T1/phv/b/n' tried instead on input line 4936.
+[11.0.59] [12.0.59] [13.0.59]
+
+LaTeX Warning: File `iptraf-mmenu.eps' not found on input line 6404.
+
+
+! LaTeX Error: File `iptraf-mmenu.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.6404 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-mmenu.eps (no Boundin
+gBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.6404 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-mmenu.eps Graphic file (type eps)
+<iptraf-mmenu.eps> [14.0.59]
+Overfull \hbox (34.01518pt too wide) in paragraph at lines 6491--6512
+ \T1/ppl/m/n/10 ram-e-ter will im-me-di-ately ter-mi-nate af-ter be-ing sent a 
+USR2 sig-nal. See []
+ []
+
+[15.0.59] [16.0.59
+
+]
+Overfull \hbox (0.79999pt too wide) in alignment at lines 6821--6823
+ [] [] 
+ []
+
+
+Overfull \hbox (0.79999pt too wide) in alignment at lines 6823--7015
+ [] [] 
+ []
+
+
+LaTeX Warning: File `iptraf-logprompt.eps' not found on input line 7187.
+
+
+! LaTeX Error: File `iptraf-logprompt.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.7187 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-logprompt.eps (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.7187 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-logprompt.eps Graphic file (type eps)
+<iptraf-logprompt.eps> [17.0.59]
+Overfull \hbox (5.06679pt too wide) in paragraph at lines 7447--7469
+ [][][][][] \T1/ppl/m/n/10 The loop-back in-ter-face. Ev-ery ma-chine has one, 
+and has an IP ad-dress of 127.0.0.1.
+ []
+
+[18.0.59] [19.0.59] [20.0.59
+
+]
+
+LaTeX Warning: File `iptraf-iptm1.eps' not found on input line 8471.
+
+
+! LaTeX Error: File `iptraf-iptm1.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.8471 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-iptm1.eps (no Boundin
+gBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.8471 {PNG}}
+             \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-iptm1.eps Graphic file (type eps)
+<iptraf-iptm1.eps>
+LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <8.1> not available
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 8770.
+ [21.0.59] [22.0.59] [23.0.59]
+LaTeX Font Info:    Try loading font information for U+msa on input line 9893.
+
+(/usr/share/texmf/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 9893.
+
+(/usr/share/texmf/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2002/01/19 v2.2g AMS font definitions
+)
+LaTeX Font Info:    Try loading font information for U+wasy on input line 9893.
+
+
+(/usr/share/texmf/tex/latex/wasysym/uwasy.fd
+File: uwasy.fd 1999/05/13 v1.0i Wasy-2 symbol font definitions
+)
+LaTeX Font Info:    Try loading font information for U+stmry on input line 9893
+.
+
+(/usr/share/texmf/tex/latex/misc/ustmry.fd) [24.0.59]
+LaTeX Font Info:    Font shape `T1/phv/m/it' in size <9> not available
+(Font)              Font shape `T1/phv/m/sl' tried instead on input line 10166.
+
+
+
+LaTeX Warning: File `iptraf-iptmsort.eps' not found on input line 10313.
+
+
+! LaTeX Error: File `iptraf-iptmsort.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.10313 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-iptmsort.eps (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.10313 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-iptmsort.eps Graphic file (type eps)
+<iptraf-iptmsort.eps> [25.0.59] [26.0.59] [27.0.59] [28.0.59] [29.0.59]
+[30.0.59] [31.0.59] [32.0.59
+
+]
+
+LaTeX Warning: File `iptraf-gstat1.eps' not found on input line 13797.
+
+
+! LaTeX Error: File `iptraf-gstat1.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.13797 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-gstat1.eps (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.13797 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-gstat1.eps Graphic file (type eps)
+<iptraf-gstat1.eps> [33.0.59]
+
+LaTeX Warning: File `iptraf-dstat1.eps' not found on input line 14168.
+
+
+! LaTeX Error: File `iptraf-dstat1.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.14168 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-dstat1.eps (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.14168 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-dstat1.eps Graphic file (type eps)
+<iptraf-dstat1.eps> [34.0.59] [35.0.59] [36.0.59
+
+]
+
+LaTeX Warning: File `iptraf-pktsize.eps' not found on input line 14825.
+
+
+! LaTeX Error: File `iptraf-pktsize.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.14825 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-pktsize.eps (no Bound
+ingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.14825 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-pktsize.eps Graphic file (type eps)
+<iptraf-pktsize.eps> [37.0.59]
+
+LaTeX Warning: File `iptraf-tcpudp.eps' not found on input line 15086.
+
+
+! LaTeX Error: File `iptraf-tcpudp.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15086 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-tcpudp.eps (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15086 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-tcpudp.eps Graphic file (type eps)
+<iptraf-tcpudp.eps>
+
+LaTeX Warning: File `iptraf-tcpudpsort.eps' not found on input line 15390.
+
+
+! LaTeX Error: File `iptraf-tcpudpsort.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15390 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-tcpudpsort.eps (no Bo
+undingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15390 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-tcpudpsort.eps Graphic file (type eps)
+<iptraf-tcpudpsort.eps> [38.0.59] [39.0.59] [40.0.59
+
+]
+
+LaTeX Warning: File `iptraf-hw.eps' not found on input line 15986.
+
+
+! LaTeX Error: File `iptraf-hw.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15986 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-hw.eps (no BoundingBo
+x).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15986 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-hw.eps Graphic file (type eps)
+<iptraf-hw.eps>
+
+LaTeX Warning: File `iptraf-hwsort.eps' not found on input line 16131.
+
+
+! LaTeX Error: File `iptraf-hwsort.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16131 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-hwsort.eps (no Boundi
+ngBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16131 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-hwsort.eps Graphic file (type eps)
+<iptraf-hwsort.eps> [41.0.59] [42.0.59]
+
+LaTeX Warning: File `iptraf-filtermenu.eps' not found on input line 16466.
+
+
+! LaTeX Error: File `iptraf-filtermenu.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16466 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-filtermenu.eps (no Bo
+undingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16466 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-filtermenu.eps Graphic file (type eps)
+<iptraf-filtermenu.eps>
+
+LaTeX Warning: File `iptraf-ipfltmenu.eps' not found on input line 16581.
+
+
+! LaTeX Error: File `iptraf-ipfltmenu.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16581 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-ipfltmenu.eps (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16581 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-ipfltmenu.eps Graphic file (type eps)
+<iptraf-ipfltmenu.eps>
+
+LaTeX Warning: File `iptraf-ipfltnamedlg.eps' not found on input line 16713.
+
+
+! LaTeX Error: File `iptraf-ipfltnamedlg.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16713 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-ipfltnamedlg.eps (no 
+BoundingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16713 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-ipfltnamedlg.eps Graphic file (type eps)
+<iptraf-ipfltnamedlg.eps> [43.0.59
+
+]
+
+LaTeX Warning: File `iptraf-ipfltlist.eps' not found on input line 16841.
+
+
+! LaTeX Error: File `iptraf-ipfltlist.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16841 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-ipfltlist.eps (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.16841 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-ipfltlist.eps Graphic file (type eps)
+<iptraf-ipfltlist.eps> [44.0.59] [45.0.59] [46.0.59]
+
+LaTeX Warning: File `iptraf-ipfltdlg.eps' not found on input line 18185.
+
+
+! LaTeX Error: File `iptraf-ipfltdlg.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.18185 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-ipfltdlg.eps (no Boun
+dingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.18185 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-ipfltdlg.eps Graphic file (type eps)
+<iptraf-ipfltdlg.eps> [47.0.59] [48.0.59] [49.0.59] [50.0.59] [51.0.59]
+[52.0.59
+
+]
+
+LaTeX Warning: File `iptraf-configmenu.eps' not found on input line 24103.
+
+
+! LaTeX Error: File `iptraf-configmenu.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.24103 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-configmenu.eps (no Bo
+undingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.24103 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-configmenu.eps Graphic file (type eps)
+<iptraf-configmenu.eps>
+Overfull \hbox (2.11646pt too wide) in paragraph at lines 24298--24321
+ \T1/ppl/m/n/10 map-pings will de-pend on the sys-tems ser-vices database file 
+(usu-ally [][][]  \T1/pcr/m/n/9 /etc/services\T1/ppl/m/n/10 ).
+ []
+
+[53.0.59] [54.0.59] [55.0.59]
+
+LaTeX Warning: File `iptraf-timermenu.eps' not found on input line 25399.
+
+
+! LaTeX Error: File `iptraf-timermenu.eps' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.25399 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Cannot determine size of graphic in iptraf-timermenu.eps (no Bou
+ndingBox).
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.25399 {PNG}}
+              \endPar{}\endNode{}\endPar{}\Node%
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+File: iptraf-timermenu.eps Graphic file (type eps)
+<iptraf-timermenu.eps> [56.0.59] [57.0.59] [58.0.59] [59.0.59
+
+] [60.0.59
+
+]
+Overfull \hbox (43.72673pt too wide) in paragraph at lines 27046--27058
+ \T1/ppl/m/n/10 sages are writ-ten to the [][][]  \T1/pcr/m/n/9 iptraf.log \T1/
+ppl/m/n/10 file in the IP-Traf log di-rec-tory (nor-mally [][][]  \T1/pcr/m/n/9
+ /var/log/iptraf\T1/ppl/m/n/10 . 
+ []
+
+
+Overfull \hbox (37.17651pt too wide) in paragraph at lines 27155--27164
+ \T1/ppl/m/n/10 you didn't prop-erly in-stall the pro-gram, and the nec-es-sary
+ di-rec-tory [][][]  \T1/pcr/m/n/9 /var/local/iptraf
+ []
+
+[61.0.59] [62.0.59]
+Overfull \hbox (19.78665pt too wide) in paragraph at lines 28339--28350
+ []\T1/ppl/m/n/10 IPTraf found no ac-tive in-ter-faces. Ei-ther all in-ter-face
+s are down or the [][][]  \T1/pcr/m/n/9 /proc/net/dev
+ []
+
+
+Overfull \hbox (34.376pt too wide) in paragraph at lines 28339--28350
+ \T1/ppl/m/n/10 file was empty or un-avail-able. Ac-ti-vate at least one in-ter
+-face or check the [][][]  \T1/pcr/m/n/9 /proc/net/dev
+ []
+
+[63.0.59] [64.0.59]
+Overfull \hbox (8.60098pt too wide) in paragraph at lines 28967--28968
+ []\T1/phv/b/n/9 Technical note: \T1/phv/m/n/9 This is ac-tu-ally a re-sponse t
+o the seg-men-ta-tion fault er-ror (SIGSEGV). 
+ []
+
+[65.0.59] [66.0.59] [67.0.59]
+Overfull \hbox (32.99954pt too wide) in paragraph at lines 30337--30338
+ []\T1/pcr/m/n/9 Error binding client communication socket Error binding child 
+communication
+ []
+
+[68.0.59] [69.0.59
+
+] [70.0.59] [71.0.59] [72.0.59] [73.0.59] [74.0.59]
+(./manual.aux) ) 
+Here is how much of TeX's memory you used:
+ 4083 strings out of 40929
+ 27951 string characters out of 345994
+ 171740 words of memory out of 1100001
+ 16784 multiletter control sequences out of 10000+50000
+ 37601 words of font info for 58 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 29i,12n,43p,339b,1457s stack positions out of 1500i,500n,1500p,200000b,5000s
+
+Output written on manual.dvi (74 pages, 736396 bytes).

@@ -1,0 +1,2876 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Filters</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Additional Information"
+HREF="morelanmoninfo.html"><LINK
+REL="NEXT"
+TITLE="ARP, RARP, and other Non-IP Packet Filters"
+HREF="nonipfilters.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="morelanmoninfo.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="nonipfilters.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="FILTERS"
+>Filters</A
+></H1
+><P
+>  Filters are used to control the information displayed by all facilities.
+  You may want to view statistics only on particular traffic
+  so you must restrict the information displayed. The filters also apply
+  to logging activity.</P
+><P
+>  The IPTraf filter management system is accessible through the
+  <I
+CLASS="EMPHASIS"
+>Filters...</I
+> submenu.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1295"
+></A
+><P
+><IMG
+SRC="iptraf-filtermenu.png"></P
+><P
+><B
+>Figure 1. The Filters submenu</B
+></P
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="IPFILTERS"
+>IP Filters</A
+></H1
+><P
+>  The <I
+CLASS="EMPHASIS"
+>Filters/IP...</I
+> menu option
+  allows you to define a set of rules that determine what IP traffic
+  to pass to the monitors. Selecting this option pops up another menu with
+  the tasks used to define and apply custom IP filters.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1302"
+></A
+><P
+><IMG
+SRC="iptraf-ipfltmenu.png"></P
+><P
+><B
+>Figure 2. The IP filter menu</B
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1305"
+>Defining a New Filter</A
+></H2
+><P
+>  A freshly installed program will have no filters defined, so
+  before anything else, you will have to define a filter. You can do this
+  by selecting the <I
+CLASS="EMPHASIS"
+>Define new filter...</I
+> option.</P
+><P
+>  Selecting this option displays a box asking you to enter a short
+  description of the filter you are going to define. Just enter any text
+  that clearly identifies the nature of the filter.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1310"
+></A
+><P
+><IMG
+SRC="iptraf-ipfltnamedlg.png"></P
+><P
+><B
+>Figure 3. The IP filter name dialog</B
+></P
+></DIV
+><P
+>  Press Enter when you're done with that box. As an alternative, you can
+  also press Ctrl+X to cancel the operation.</P
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN1314"
+>The Filter Rule Selection Screen</A
+></H3
+><P
+>After you enter the filter's description, you will be taken to a blank
+rule selection box.  At this screen you manage the various rules you
+define for this filter.  You can opt to insert, append, edit, or delete
+rules.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1317"
+></A
+><P
+><IMG
+SRC="iptraf-ipfltlist.png"></P
+><P
+><B
+>Figure 4. The filter rule selection screen.  Selecting an entry
+displays that set for editing</B
+></P
+></DIV
+><P
+>Any rules defined will appear here.  You will see the
+source and destination
+addresses, masks and ports (long addresses and masks may
+be truncated) and whether this rule includes or excludes matching
+packets.</P
+><P
+>Between the source and destination parameters is an arrow that
+indicates whether the rule matches packets (single-headed) only exactly or whether
+it matches packets flowing in the opposite direction (double-headed).</P
+><P
+>At this screen, press I to insert at the current position of the selection
+bar, A to append a rule to the end of the list, Enter to
+edit the highlighted rule and D to delete the selected rule.  With
+an empty list, A or I can be used to add the first rule.</P
+><P
+>To add the first rule, press A or I.  You will then be presented with
+a dialog box that allows you to enter the rule's parameters.</P
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN1324"
+>Entering Filter Rules</A
+></H3
+><P
+>  You can enter addresses of individual hosts, networks,
+  or a catch-all address. The nature of the address will be determined
+  by the wildcard mask.</P
+><P
+>  You'll notice two sets of fields, marked <TT
+CLASS="COMPUTEROUTPUT"
+>Source</TT
+>
+  and <TT
+CLASS="COMPUTEROUTPUT"
+>Destination</TT
+>. You fill these out
+  with the information about your source and targets.</P
+><P
+>  Fill out the host name or IP address of the hosts or networks in
+  the first field
+  marked <TT
+CLASS="COMPUTEROUTPUT"
+>Host name/IP Address</TT
+>. Enter it in
+  standard dotted-decimal notation. When done, press Tab to move to the
+  <TT
+CLASS="COMPUTEROUTPUT"
+>Wildcard mask</TT
+> field. The wildcard mask
+  is similar but not exactly identical to the standard IP subnet
+  mask. The wildcard mask is used to determine which bits to ignore
+  when processing the filter. In most cases, it will work very closely
+  like a subnet mask. Place ones (1) under the bits you want the filter to
+  recognize, and keep zeros (0) under the bits you want the filter
+  to ignore. For example:</P
+><P
+>To recognize the host 207.0.115.44</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1334"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>IP address</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>207.0.115.44</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>To recognize all hosts belonging to network
+202.47.132.<TT
+CLASS="REPLACEABLE"
+><I
+>x</I
+></TT
+></P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1349"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>IP address</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>202.47.132.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>To recognize all hosts with any address:</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1363"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>IP address</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="50%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  The IP address/wildcard mask mechanism of the display filter doesn't
+  recognize IP address class. It uses a simple bit- pattern matching
+  algorithm.</P
+><P
+>  The wildcard mask also does not have to end on a
+  byte boundary; you may mask right into a byte itself. For example,
+  255.255.255.224 masks 27 bits (255 is 11111111, 224 is 11100000 in
+  binary).</P
+><P
+>  IPTraf also accepts host names in place of the IP addresses. IPTraf will
+  resolve the host name when the filter is loaded. When the filter
+  is interpreted, the wildcard mask will also be applied. This can be
+  useful in cases where a single host name may resolve to several IP
+  addresses.</P
+><DIV
+CLASS="TIP"
+><P
+></P
+><TABLE
+CLASS="TIP"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/tip.gif"
+HSPACE="5"
+ALT="Tip"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Tip</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+> See the <I
+CLASS="EMPHASIS"
+>Linux Network Administrator's Guide</I
+>
+  if you need more information on IP addresses and subnet masking.</P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="TIP"
+><P
+></P
+><TABLE
+CLASS="TIP"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/tip.gif"
+HSPACE="5"
+ALT="Tip"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Tip</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>IPTraf allows you to specify the wildcard mask in Classless Interdomain Routing
+(CIDR) format.  This  format allows you to specify the number of 1-bits that
+mask the address.  CIDR notation is the form
+<I
+CLASS="EMPHASIS"
+><TT
+CLASS="COMPUTEROUTPUT"
+>address/bits</TT
+></I
+> where the
+<I
+CLASS="EMPHASIS"
+><TT
+CLASS="COMPUTEROUTPUT"
+>address</TT
+></I
+> is the IP
+address or host name and
+<I
+CLASS="EMPHASIS"
+><TT
+CLASS="COMPUTEROUTPUT"
+>bits</TT
+></I
+> is the number of
+1-bits in the mask.  For example, if you want to mask 10.1.1.0 with
+<TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+>, note that
+<TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+> has 24 1-bits, so instead
+of specifying <TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+> in the wildcard
+mask field, you can just enter <TT
+CLASS="COMPUTEROUTPUT"
+>10.1.1.0/24</TT
+>
+in the address field.  IPTraf will translate the mask bits into an
+appropriate wildcard mask and fill in the mask field the next time you edit
+the filter rule.</P
+><P
+>If you specify the mask in CIDR notation, leave the wildcard mask fields
+blank.  If you fill them up, the wildcard mask fields will take precedence.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  The <TT
+CLASS="COMPUTEROUTPUT"
+>Port</TT
+> fields should contain a
+  port number or range of any TCP or UDP service you may be
+  interested in. If you want to match only a single port number, fill
+  in the first field, while leaving the second blank or set to zero.
+  Fill in the second field if you want to match a range of ports (e.g. 80 to
+  90).
+  Leave the first field blank or set to zero to let the filter ignore
+  the ports altogether.
+  You will most likely be interested in target ports rather than source ports
+  (which are usually unpredictable anyway, perhaps with the exception
+  of FTP data).</P
+><P
+>Non-TCP and non-UDP packets are not affected by these fields, and these
+are used only when filtering TCP or UDP packets.</P
+><P
+>  Fill out the second set of fields with the parameters of the
+  opposite end of the connection.</P
+><DIV
+CLASS="TIP"
+><P
+></P
+><TABLE
+CLASS="TIP"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/tip.gif"
+HSPACE="5"
+ALT="Tip"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Tip</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>Any address or mask fields left blank default to
+0.0.0.0 while blank
+<TT
+CLASS="COMPUTEROUTPUT"
+>Port</TT
+> fields default to 0.
+This makes it easy to define
+filter rules if you're interested only in either the source or destination,
+but not the other.  For example, you may be interested
+in traffic originating from network 61.9.88.0, in which case you just enter
+the source address, mask and port
+in the
+<TT
+CLASS="COMPUTEROUTPUT"
+>Source</TT
+> fields, while leaving the
+<TT
+CLASS="COMPUTEROUTPUT"
+>Destination</TT
+> fields blank.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>The next fields let you specify which IP-type protocols you want matched by
+this filter rule.  Any packet whose protocol's corresponding field
+is marked with a <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+> is matched against the
+filter's defined IP addresses and ports, otherwise
+they don't pass through this filter rule.</P
+><P
+>If you want to evaluate all IP packets just mark
+with <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+> the <TT
+CLASS="COMPUTEROUTPUT"
+>All
+IP</TT
+> field.</P
+><P
+>For example, if you want to see only all TCP traffic, mark the
+<TT
+CLASS="COMPUTEROUTPUT"
+>TCP</TT
+> field
+with <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+>.</P
+><P
+>The long field marked <TT
+CLASS="COMPUTEROUTPUT"
+>Additional
+protocols</TT
+> allows you to specify other protocols
+by their IANA number.  (You can view the common IP protocol number
+in the <TT
+CLASS="FILENAME"
+>/etc/protocols</TT
+> file).  You can specify a list
+of protocol numbers or ranges separated by commas,
+Ranges have the beginning and ending protocol numbers separated with a
+hyphen.</P
+><P
+>For example, to see the RSVP (46), IP mobile (55), and protocols
+(101 to 104), you use an entry that looks like this:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>46, 55, 101-104</PRE
+></TD
+></TR
+></TABLE
+><P
+>It's certainly possible to specify any of the protocols listed above in
+this field.  Entering <TT
+CLASS="COMPUTEROUTPUT"
+>1-255</TT
+> is
+functionally identical
+to marking <TT
+CLASS="COMPUTEROUTPUT"
+>All IP</TT
+>
+with a <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+>.</P
+><P
+>  The next field is marked <TT
+CLASS="COMPUTEROUTPUT"
+>Include/Exclude</TT
+>.
+  This field allows you to decide whether to include or filter out matching
+  packets. Setting this field to <TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+> causes the filter to
+  pass matching packets, while setting it to <TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+> causes
+  the filter to drop them. This field is set to
+  <TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+> by default.</P
+><P
+>The last field in the dialog is labeled <TT
+CLASS="COMPUTEROUTPUT"
+>Match opposite</TT
+>.  When set
+to <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+>, the filter will match packets flowing in the opposite direction.
+Previous versions of IPTraf used to match TCP packets flowing in either direction, so the source
+and destination address/mask/port combinations were actually interchangeable.  Starting with
+IPTraf 3.0, when filters extended to more than just the IP traffic monitor, this behavior is no longer
+the default throughout IPTraf except in the IP traffic monitor's TCP window.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>For TCP packets, this field is used in all facilities except the IP traffic monitor.  Because
+the IP traffic monitor must capture TCP packets in both directions
+to properly determine a closed connection, the filter automatically matches
+packets in the opposite direction, regardless of this field's setting.  However
+iin all other facilities, automatic matching of the reverse packets is not performed
+unless you set this field to <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+>.</P
+><P
+>Filters for UDP and other IP protocols do not automatically match packets in the opposite direction
+unless you set the field to <TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+>, even in the IP traffic monitor.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  Press Enter to accept all parameters when done. The parameters will be
+  accepted and you'll be taken back to the rule selection box. You can
+then add more rules by pressing A or you can insert new rules at any point
+by pressing I. Should you make a mistake, you can press Enter to
+edit the selected filter.  You may enter
+  as many sets of parameters as you wish. Press Ctrl+X when done.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>Because of the major changes in the filtering system since IPTraf 2.7,
+old filters will no longer work and will have to be redefined.</P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1442"
+></A
+><P
+><IMG
+SRC="iptraf-ipfltdlg.png"></P
+><P
+><B
+>Figure 5. The IP filter parameters dialog</B
+></P
+></DIV
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN1445"
+>Examples</A
+></H3
+><P
+>To see all traffic to/from host 202.47.132.1 from/to 207.0.115.44, regardless of TCP port</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1448"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>202.47.132.2</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>207.0.115.44</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>To see all traffic from host 207.0.115.44 to all hosts
+on network 202.47.132.x</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1485"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>207.0.115.44</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>202.47.132.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>All IP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>N</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To see all Web traffic (to and from port 80)
+  regardless of source or destination</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1522"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>80</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To see all IRC traffic from port 6666 to 6669</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1559"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>6666</TT
+>
+to <TT
+CLASS="COMPUTEROUTPUT"
+>6669</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To see all DNS traffic, (TCP and UDP, destination port 53)
+  regardless of source or destination</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1597"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard
+mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>53</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y UDP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To see all mail (SMTP) traffic to a single host (202.47.132.2) from anywhere</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1634"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>202.47.132.2</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>25</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>N</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To see traffic from from/to host sunsite.unc.edu to/from cebu.mozcom.com</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1671"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>sunsite.unc.edu</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>cebu.mozcom.com</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>All IP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  To omit display of traffic to/from 140.66.5.x from/to anywhere</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1708"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP Address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>140.66.5.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>All IP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><P
+>  You can enter as many parameters as you wish. All of them will
+  be interpreted until the first match is found.</P
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN1745"
+>Excluding Certain Sites</A
+></H3
+><P
+>&#13;  Filters follow an implicit "no-match" policy, that is, only packets
+  matching defined rules will be matched, others will be filtered out.
+  This is similar
+  to the access-list policy "whatever is not explicitly permitted is
+  denied". If you want to show all traffic to/from everywhere,
+  except certain places, you can specify the sites you wish to exclude,
+  mark them with <TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+> in the <TT
+CLASS="COMPUTEROUTPUT"
+>Include/Exclude
+field</TT
+>, and
+  define a general catch-all entry with source address
+<TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+>, mask
+  <TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+>, port <TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+>, and destination
+<TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+>, mask <TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+>,
+port <TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+>, tagged
+  with an <TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+>
+in the <TT
+CLASS="COMPUTEROUTPUT"
+>Include/Exclude</TT
+> field as the last entry.</P
+><P
+>  For example:</P
+><P
+>To see all traffic except all SMTP (both directions), Web (both directions), and traffic
+(only) from 207.0.115.44</P
+><DIV
+CLASS="INFORMALTABLE"
+><A
+NAME="AEN1760"
+></A
+><P
+></P
+><TABLE
+BORDER="0"
+WIDTH="100%"
+BGCOLOR="#E0E0E0"
+CELLSPACING="0"
+CELLPADDING="4"
+CLASS="CALSTABLE"
+><TBODY
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>25</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+> 0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>80</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>TCP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>207.0.115.44</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>255.255.255.255</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>All IP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>N</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Host name/IP address</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Wildcard mask</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Port</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Protocols</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>All IP: Y</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Include/Exclude</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>I</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+>Match opposite</TD
+><TD
+WIDTH="33%"
+ALIGN="LEFT"
+VALIGN="TOP"
+><TT
+CLASS="COMPUTEROUTPUT"
+>N</TT
+></TD
+><TD
+>&nbsp;</TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+><DIV
+CLASS="TIP"
+><P
+></P
+><TABLE
+CLASS="TIP"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/tip.gif"
+HSPACE="5"
+ALT="Tip"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Tip</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  To filter out all TCP, define a filter with a single entry, with a source of
+  <TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+> mask
+<TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+> port <TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+>, and a destination
+  of <TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+> mask <TT
+CLASS="COMPUTEROUTPUT"
+>0.0.0.0</TT
+>
+port <TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+>,
+with the <TT
+CLASS="COMPUTEROUTPUT"
+>Include/Exclude</TT
+> field
+  marked <TT
+CLASS="COMPUTEROUTPUT"
+>E</TT
+> (exclude). Then apply this filter.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1903"
+>Applying a Filter</A
+></H2
+><P
+>  The above steps only add the filter to a defined list. To actually apply
+  the filter, you must select <I
+CLASS="EMPHASIS"
+>Apply filter...</I
+> from the menu. You will be
+  presented with a list of filters you already defined. Select the one you
+  want to apply, and press Enter.</P
+><P
+>  The applied filter stays in effect over exits and restarts of the IPTraf program until it is detached.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1908"
+>Editing a Defined Filter</A
+></H2
+><P
+>  Select <I
+CLASS="EMPHASIS"
+>Edit filter...</I
+> to modify an existing filter. Once you select this
+  option, you will be presented with the list of defined filters.
+  Select the filter you want to edit by moving the selection bar and press
+  Enter.</P
+><P
+>  Edit the description if you wish. Pressing Ctrl+X at this point
+  will abort the operation, and the filter will remain unmodified. Press
+  Enter to accept any changes to the filter description.</P
+><P
+>  After pressing Enter, you will see the filter's rules. To edit an
+  existing filter rule, move the selection bar
+  to the desired entry and press Enter. A prefilled dialog box
+  will appear. Edit its contents as desired. Press Enter to accept the
+  changes or Ctrl+X to discard.</P
+><P
+>  You can add a new filter rule by pressing I to insert at the selection
+  bar's current position. When you press I, you will be presented with a
+  dialog box asking you to enter the new rule data. Pressing A results
+  in a similar operation, except the rule will be appended as the
+  last entry in the rule list.</P
+><P
+>  Pressing D deletes the currently pointed entry.</P
+><P
+>  Press X or Ctrl+X to end the edit and save the changes.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>If you're editing the currently applied filter, you will need
+  to re-apply the filter for the changes to take effect.
+  </P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  Be aware that the filter processes the rules in order. In other
+  words, if a packet matches more than one rule, only the first matching
+  rule is followed.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1923"
+>Deleting a Defined Filter</A
+></H2
+><P
+>  Select <I
+CLASS="EMPHASIS"
+>Delete filter...</I
+> from the menu to remove a filter
+  from the list. Just move the selection bar to the filter you want to
+  delete, and press Enter.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1927"
+>Detaching a Filter</A
+></H2
+><P
+>  The <I
+CLASS="EMPHASIS"
+>Detach filter</I
+> option deactivates the filter currently in
+  use. Selecting this option causes all TCP traffic to be passed
+  to the monitors.</P
+><P
+>  When you're done with the menu, just select the Exit menu option.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="morelanmoninfo.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="nonipfilters.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Additional Information</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>ARP, RARP, and other Non-IP Packet Filters</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

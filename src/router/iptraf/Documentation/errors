@@ -1,0 +1,10 @@
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3068:91:E: end tag for "COMPUTEROUTPUT" omitted, but OMITTAG NO was specified
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3068:47: start tag was here
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3361:7:E: end tag for "PARA" omitted, but OMITTAG NO was specified
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3358:0: start tag was here
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3429:7:E: end tag for "PARA" omitted, but OMITTAG NO was specified
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3425:0: start tag was here
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3691:9:E: end tag for "PARA" omitted, but OMITTAG NO was specified
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:3688:0: start tag was here
+jade:/scratch/iptraf-2.8.0/Documentation/manual.sgml:2897:45:X: reference to non-existent ID "TCPFILTERS"
+make: *** [all] Error 8

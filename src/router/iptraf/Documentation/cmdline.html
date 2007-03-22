@@ -1,0 +1,427 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Command-line Options</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Getting Started"
+HREF="gettingstarted.html"><LINK
+REL="PREVIOUS"
+TITLE="Starting and Stopping IPTraf"
+HREF="startstop.html"><LINK
+REL="NEXT"
+TITLE="Using the Menus"
+HREF="menus.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="startstop.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Getting Started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="menus.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="CMDLINE"
+>Command-line Options</A
+></H1
+><P
+>  IPTraf has a few optional command-line parameters. As with most UNIX
+  commands, IPTraf command-line parameters are
+case-sensitive (<TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+>
+  is NOT the same as <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+>).</P
+><P
+>  The following command-line parameters can be supplied
+to the <B
+CLASS="COMMAND"
+>iptraf</B
+> command:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-i <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     causes the IP traffic monitor to start immediately on the specified interface.
+     If -i all is specified, all interfaces are monitored.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-g</TT
+></DT
+><DD
+><P
+>     starts the general interface statistics</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-d <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     shows detailed statistics for the specified interface</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-s <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     starts the TCP/UDP traffic monitor for the specified interface</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-z <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     starts the packet size breakdown for the specified interface</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-l <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     starts the LAN station monitor on the specified interface. If
+<TT
+CLASS="COMPUTEROUTPUT"
+>-l all</TT
+> is specified, all LAN interfaces are monitored.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-t <TT
+CLASS="REPLACEABLE"
+><I
+>timeout</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     The <TT
+CLASS="COMPUTEROUTPUT"
+>-t</TT
+> parameter, when used with one
+     of the other parameters that specify a facility to start, tells
+     IPTraf to run the indicated facility for only timeout
+     minutes, after which the facility
+     exits. The <TT
+CLASS="COMPUTEROUTPUT"
+>-t</TT
+> parameter is ignored in menu
+     mode.</P
+><P
+>     If this parameter is not specified, the facility runs until the
+     exit keystroke is pressed.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-B</TT
+></DT
+><DD
+><P
+>     Redirects all terminal output to the "bit bucket"
+<TT
+CLASS="FILENAME"
+>/dev/null</TT
+>, closes standard input, and
+places the program in the background. This parameter can be used only with
+one of the <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-g</TT
+>,
+<TT
+CLASS="COMPUTEROUTPUT"
+>-d</TT
+>,
+<TT
+CLASS="COMPUTEROUTPUT"
+>-s</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-z</TT
+>, or
+<TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+> parameters. See
+<A
+HREF="backop.html"
+>Background Operation</A
+> in Chapter 9. <TT
+CLASS="COMPUTEROUTPUT"
+>-B</TT
+> is ignored in menu
+mode.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-L <TT
+CLASS="REPLACEABLE"
+><I
+>filename</I
+></TT
+></TT
+></DT
+><DD
+><P
+>  Allows you to specify an alternate log file name when the
+  any facility is directly started from the command line, whether in foreground or
+  background mode.  If specified in foreground mode, the log filename prompt is
+  bypassed, even when logging is turned on in the <I
+CLASS="EMPHASIS"
+>Configure...</I
+>
+  menu.  If this parameter is omitted in background mode, the default log filename
+  is used.</P
+><P
+> This parameter always turns on logging.</P
+><P
+>  If an absolute path is not specified, the log
+  file will be created in the default log file directory</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-I <TT
+CLASS="REPLACEABLE"
+><I
+>interval</I
+></TT
+></TT
+></DT
+><DD
+><P
+>  Sets the logging interval (in minutes) when the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> parameter is
+  used. This overrides the <I
+CLASS="EMPHASIS"
+>Log interval...</I
+> setting in the <I
+CLASS="EMPHASIS"
+>Configure...</I
+>
+  menu.  If omitted, the configured value is used.  This parameter is ignored when the
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> parameter is omitted and logging is disabled.</P
+><P
+> The value specified here will affect all facilities except for the IP traffic monitor.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-q</TT
+></DT
+><DD
+><P
+>     Previously used to suppress the warning screen when IPTraf is run
+     on kernels with IP masquerading. Since the masquerading
+     code now processes packets in a way better suited to raw capture,
+     this parameter is no longer needed and is retained only for
+     compatibility.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-f</TT
+></DT
+><DD
+><P
+>     Forces IPTraf to clear all lock files and reset all instance counters
+     to zero before running any facilities. IPTraf will then think
+     it's the first instance of itself.</P
+><P
+>     The <TT
+CLASS="COMPUTEROUTPUT"
+>-f</TT
+> parameter overrides the
+     existing locks and counters imposed by the IPTraf process and
+     by the various facilities, causing this instance to think it is the
+     first and that there are no other facilities running. Use
+     this parameter with great caution. A common use for this parameter is
+     to recover from abrupt or abnormal terminations which may leave stale
+     locks and counters still lying around.</P
+><P
+>     The <TT
+CLASS="COMPUTEROUTPUT"
+>-f</TT
+> parameter may be used together with the others.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>iptraf -h</TT
+></DT
+><DD
+><P
+>     displays a short help screen</P
+></DD
+></DL
+></DIV
+><P
+>  While the command-line options are case-sensitive, interactive keystroke
+  at the IPTraf full-screen interface are not.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="startstop.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="menus.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Starting and Stopping IPTraf</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="gettingstarted.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Using the Menus</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

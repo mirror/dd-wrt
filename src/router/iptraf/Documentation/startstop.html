@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Starting and Stopping IPTraf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Getting Started"
+HREF="gettingstarted.html"><LINK
+REL="PREVIOUS"
+TITLE="  Upgrading from Earlier Versions"
+HREF="upgrading.html"><LINK
+REL="NEXT"
+TITLE="Command-line Options"
+HREF="cmdline.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="upgrading.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Getting Started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="cmdline.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="STARTSTOP"
+>Starting and Stopping IPTraf</A
+></H1
+><P
+>  After installation, you can start the program by simply entering</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf</PRE
+></TD
+></TR
+></TABLE
+><P
+>  at the shell prompt. You will see a copyright notice, with
+  an instruction to press any key to get started. Just press any character
+  key, and you will be immediately taken to the main menu. All major
+  functions of the program are found there.</P
+><P
+>  Entering the IPTraf command without any command-line parameters brings
+  up the program's main menu. From there, you can select the
+  facilities you want.</P
+><P
+>  IPTraf determines and makes use of the maximum number
+  of lines and columns on the terminal.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  IPTraf does not have a SIGWINCH handler; it does not
+  adjust itself when an xterm or some other X terminal is resized.</P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Technical note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  
+  IPTraf needs to refer to the terminfo database
+in <TT
+CLASS="FILENAME"
+>/usr/share/terminfo</TT
+>.
+  If the supplied executable program fails with <TT
+CLASS="COMPUTEROUTPUT"
+>Error
+opening
+  terminal</TT
+>, your terminfo database may be located somewhere else. You can
+  control the terminfo search path
+by using the <TT
+CLASS="ENVAR"
+>TERMINFO</TT
+> environment
+  variable. For example, if you're using the <B
+CLASS="COMMAND"
+>sh</B
+>
+or <B
+CLASS="COMMAND"
+>bash</B
+> shell, and
+  your terminfo database is in <TT
+CLASS="FILENAME"
+>/usr/lib/terminfo</TT
+>
+  (typical for Slackware distributions), you can use the commands:&#13;</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>TERMINFO=/usr/lib/terminfo
+export TERMINFO</PRE
+></TD
+></TR
+></TABLE
+><P
+>  You can place these commands in your <TT
+CLASS="FILENAME"
+>~/.profile</TT
+> or the
+  systemwide <TT
+CLASS="FILENAME"
+>/etc/profile</TT
+> startup files.</P
+><P
+>  You can also create a symbolic
+  link named <TT
+CLASS="FILENAME"
+>/usr/share/terminfo</TT
+> to let
+  it point to your existing terminfo (assuming again your terminfo is in
+  <TT
+CLASS="FILENAME"
+>/usr/lib/terminfo</TT
+>):</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>ln -s /usr/lib/terminfo /usr/share/terminfo</PRE
+></TD
+></TR
+></TABLE
+><P
+>  Or you can recompile your program to use your existing ncurses library
+  installation. If you do this, make sure you have ncurses 4.2 or later.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="upgrading.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="cmdline.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Upgrading from Earlier Versions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="gettingstarted.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Command-line Options</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

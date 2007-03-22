@@ -1,0 +1,474 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Supported Network Interfaces</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Preparing to Use IPTraf"
+HREF="preparingtouse.html"><LINK
+REL="PREVIOUS"
+TITLE="Screen Update Delays"
+HREF="updates.html"><LINK
+REL="NEXT"
+TITLE="The IP Traffic Monitor"
+HREF="itrafmon.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="updates.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Preparing to Use IPTraf</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="itrafmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="IFACES"
+>Supported Network Interfaces</A
+></H1
+><P
+>  IPTraf currently supports the following network interface types and names.</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="FILENAME"
+>lo</TT
+></DT
+><DD
+><P
+>     The loopback interface. Every machine has one, and has an IP address
+  of 127.0.0.1. <TT
+CLASS="FILENAME"
+>lo</TT
+> is also indicated if data
+  is detected on the
+<TT
+CLASS="FILENAME"
+>dummy<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+> interface(s).</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>eth<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     An Ethernet interface. <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.
+  Therefore, <TT
+CLASS="FILENAME"
+>eth0</TT
+> refers to the first
+  Ethernet interface, <TT
+CLASS="FILENAME"
+>eth1</TT
+> to the second, and
+  so on. Most machines only have one.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>fddi<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     An FDDI interface. <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>tr<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     A Token Ring interface, where <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>ppp<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     A PPP interface. <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>sli<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>A SLIP interface. <TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>ippp<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     A synchronous PPP interface using ISDN.
+<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+> starts from 0.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>isdn<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>  ISDN interfaces can be given arbitrary names, but for them to work
+  with IPTraf, they must
+  be named <TT
+CLASS="FILENAME"
+>isdn<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+>.
+  IPTraf supports synchronous PPP
+  (the <TT
+CLASS="FILENAME"
+>ippp<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+>
+  interfaces above), raw IP, and Cisco-HDLC encapsulation.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>plip<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     PLIP interfaces. These are point-to-point IP connections using the PC
+     parallel port.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>ipsec<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     This refers to Free s/WAN (and possibly other) logical VPN interfaces.</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>sbni<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     SBNI long-range modem interfaces</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>dvb<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+>,
+<TT
+CLASS="FILENAME"
+>sm200</TT
+>, <TT
+CLASS="FILENAME"
+>sm300</TT
+></DT
+><DD
+><P
+>     DVB satellite-receive interfaces</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>wlan<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+>,
+<TT
+CLASS="FILENAME"
+>wvlan<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>    Wireless LAN interfaces</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>tun<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>general logical tunnel interfaces</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>brg<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>general logical bridge interfaces</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>hdlc<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     Frame Relay base (FRAD) interfaces (non-PVC)</P
+></DD
+><DT
+><TT
+CLASS="FILENAME"
+>pvc<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     Frame Relay Permanent Virtual Circuit interfaces</P
+></DD
+></DL
+></DIV
+><P
+>  Your system's network interfaces must be named according
+  to the schemes specified above.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="updates.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="itrafmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Screen Update Delays</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="preparingtouse.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The IP Traffic Monitor</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

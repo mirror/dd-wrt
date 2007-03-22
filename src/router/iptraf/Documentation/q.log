@@ -1,0 +1,21 @@
+This is TeX, Version 3.14159 (Web2C 7.4.5) (format=jadetex 2005.8.4)  4 AUG 2005 15:05
+**q
+(/usr/share/texmf/tex/latex/tools/q.tex
+JadeTeX 2001/01/18: 3.2
+File ignored
+)
+! Emergency stop.
+<*> q
+     
+*** (job aborted, no legal \end found)
+
+ 
+Here is how much of TeX's memory you used:
+ 4 strings out of 40929
+ 82 string characters out of 345994
+ 141358 words of memory out of 1100001
+ 12799 multiletter control sequences out of 10000+50000
+ 5199 words of font info for 18 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 4i,0n,1p,81b,7s stack positions out of 1500i,500n,1500p,200000b,5000s
+No pages of output.

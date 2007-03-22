@@ -1,0 +1,64 @@
+============================================================================
+README DOCUMENT FOR RVNAMED
+----------------------------------------------------------------------------
+
+DESCRIPTION
+-----------
+
+rvnamed is a supplementary program distributed with IPTraf 1.1 and 
+later.  This is a reverse name resolution daemon used by IPTraf to 
+resolve IP addresses to host names in the background, keeping IPTraf from 
+waiting until the lookup is completed.
+
+Starting with version 1.1.0, if Reverse Lookup is enabled in the Options 
+menu, the IP Traffic Monitor will attempt to start rvnamed.  If for some 
+reason rvnamed is already running, IPTraf will use it immediately.  
+Otherwise, it will attempt to start rvnamed.  As of IPTraf 1.2.0, the
+rvnamed is placed together with the main IPTraf executable in /usr/local/bin.
+
+When the traffic monitor is done, IPTraf tells rvnamed to quit.
+
+
+PROTOCOL
+--------
+
+rvnamed and IPTraf communicate with each other with the BSD UNIX domain 
+socket IPC facility.  They use datagram sockets.
+
+rvnamed recognizes only 4 types of messages:
+
+RVN_HELLO	the Hello packet.  This simply causes rvnamed to throw it
+		back to IPTraf, telling it rvnamed is active.
+
+RVN_REQUEST	a reverse lookup request.  This message includes an IP address
+		to resolve.  When rvnamed receives this request, it 
+		checks its internal cache to see if this IP address is 
+		already resolved or being resolved.  If it isn't in the cache
+		yet, rvnamed forks off a copy which resolves in the background,
+		while it returns the IP address in the meantime.  Subsequent
+		requests will get the IP address until such time that the
+		child has completed the resolution, at which time, a request
+		will get the host name in reply.
+
+RVN_REPLY	rvnamed marks reply packets with this tag.  Reply packets
+		contain the resolved host name or the ASCII representation
+		of the IP address, and an indicator of the state of the
+		resolution for this address (NOTRESOLVED, RESOLVING, or
+		RESOLVED).
+
+RVN_QUIT	Tells rvnamed to terminate.
+
+The datagram structure and #define's are found in the rvnamed.h header file.
+
+Important rvnamed messages are written to /var/log/iptraf/rvnamed.log.
+
+IPTraf 2.5.0 and 2.6.0 refined rvnamed's operation by including timeouts
+for child processes (5 minutes) and better management of the internal
+IP address/FQDN cache.  See the CHANGES file.
+
+To reduce overhead, IPTraf will query rvnamed only once per invocation of 
+the IP traffic monitor.
+
+rvnamed should work properly with a correct installation.  Report any
+problems to me at riker@seul.org.
+

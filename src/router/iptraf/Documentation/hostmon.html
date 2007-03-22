@@ -1,0 +1,267 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>LAN Station Statistics</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="TCP and UDP Traffic Statistics"
+HREF="servmon.html"><LINK
+REL="NEXT"
+TITLE="Additional Information"
+HREF="morelanmoninfo.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="servmon.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="morelanmoninfo.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="HOSTMON"
+>LAN Station Statistics</A
+></H1
+><P
+>  The LAN station monitor (Ethernet station monitor on versions prior to
+  1.3.0) discovers MAC addresses and displays statistics on the number
+  of incoming, and outgoing packets. It also includes figures for incoming
+  and outgoing kilobits per second for each discovered station.</P
+><P
+>  The entry above each line of statistics is the station's LAN
+  type (Ethernet, PLIP, Token Ring, or FDDI) and the hardware MAC address.
+  Each statistics line consists of the following information:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>Total packets incoming</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>IP packets incoming</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Total bytes incoming</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Incoming rate</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Total packets outgoing</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>IP packets outgoing</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Total bytes outgoing</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Outgoing rate</P
+></LI
+></UL
+><P
+>  The byte counts include the data link header. The activity
+  indicators can be set to display kbits/s or kbytes/s with the <I
+CLASS="EMPHASIS"
+>Activity
+  mode</I
+> configuration option.</P
+><P
+>  This facility works only for Ethernet, PLIP, Token Ring, and
+  FDDI frames. Loopback. ISDN, and SLIP/PPP networks are not monitored here.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1268"
+></A
+><P
+><IMG
+SRC="iptraf-hw.png"></P
+><P
+><B
+>Figure 1. The LAN station monitor</B
+></P
+></DIV
+><P
+>  Copies of the statistics are written to a log file at regular intervals
+  if logging is enabled. The default log file name
+  is <TT
+CLASS="FILENAME"
+>lan_statistics-<TT
+CLASS="REPLACEABLE"
+><I
+>n</I
+></TT
+>.log</TT
+>, where n is the instance number of this facility
+  (for example, if this is the first instance, the generated default log
+  file name is <TT
+CLASS="FILENAME"
+>lan_statistics-1.log</TT
+>).</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SORTINGLAN"
+>Sorting the LAN Station Monitor Entries</A
+></H1
+><P
+>  Press S to sort the entries. A box will pop up and display the
+  keys you can press to select the field by which the entries will
+  be sorted. Press P to sort by total incoming packets, I to sort by
+  incoming IP packets, B to sort by total incoming bytes, K to sort
+  by total outgoing packets, O to sort by outgoing IP packets, and Y to
+  sort by total outgoing bytes. Pressing any other key cancels the sort.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1278"
+></A
+><P
+><IMG
+SRC="iptraf-hwsort.png"></P
+><P
+><B
+>Figure 2. The LAN station monitor's sort criteria</B
+></P
+></DIV
+><P
+>  When started from the command line, the log filename and log interval can be
+  specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+>
+  parameters respectively.  See the <A
+HREF="cmdline.html"
+>Command-line Parameters</A
+>
+  section above for more information.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="servmon.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="morelanmoninfo.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>TCP and UDP Traffic Statistics</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Additional Information</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

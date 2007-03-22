@@ -1,0 +1,25 @@
+=========================================================================
+IPTraf User Interface Support Library README
+-------------------------------------------------------------------------
+
+Some of the more reusable user-interface functions originally part of the
+IPTraf source tree have been recoded and moved to this directory as a
+support library.  This way it would be easier for interested developers to
+use these functions in other programs.
+
+Full programming information will be provided in an upcoming separate
+release of this library although documentation may be provided via mail
+should there be any requests for it.
+
+Then again, there's always the IPTraf source code.
+
+RELEASE INFORMATION
+
+This is currently code derived from IPTraf, and is for now released under
+the GNU General Public License version 2 or any later version.  I may
+release it as a separate package soon under a less restrictive
+license.  Should you be interested in this little library, and you have a
+concern regarding the GPL, I can still be reached privately via
+<riker@seul.org>. 
+
+Gerard

@@ -1,0 +1,108 @@
+===============================================================================
+RELEASE NOTES FOR IPTRAF 3.0.0
+-------------------------------------------------------------------------------
+This file contains important release information for IPTraf 3.0.0.  Please
+read it in full before running this new version for the first time.
+-------------------------------------------------------------------------------
+
+CONTENTS OF THIS DOCUMENT
+-------------------------
+
+	UPGRADING TO IPTRAF 3.0.
+	NEW FILTER BEHAVIOR
+	BUG FIXES
+	ADDITIONAL NETWORK INTERFACE SUPPORT
+	DOCUMENTATION FORMAT CHANGES
+	FILE FORMATS
+	CODE CHANGES
+
+UPGRADING TO IPTRAF 3.0
+-----------------------
+
+IPTraf 3.0 is a major release.  The most significant change is a completely
+redesigned IP filtering system.  Starting with IPTraf 3.0, all IP
+traffic can be filtered with a unified set of filter rules, unlike previous
+versions wherein separate filters had to be defined for TCP, UDP, and all
+other IP traffic.  The new filter design uses a single filter for IP
+traffic, which allows the user to specify, in addition to the addresses and
+ports, the IP protocols (TCP, UDP, ICMP, etc) to match.
+
+Because of the radical change in filter design, previous IPTraf filters will
+no longer work with IPTraf 3.0.  Therefore the installation scripts will
+simply move the old filter lists to new files, and IP filters will have to be
+redefined.
+
+NEW FILTER BEHAVIOR
+-------------------
+
+A. UNIFIED IP FILTERS
+
+IP traffic is now filtered with a single defined filter for all IP-type
+protocols (TCP, UDP, etc) unlike previous versions which used three separate
+filters for TCP, UDP, and all other IP traffic.  This makes it easier to
+define filters for for all IP traffic to or from a certain host or network
+without having to define three distinct filters.
+
+This redesign breaks compatibility with previous versions of IPTraf.
+
+A. REVERSE MATCHING
+
+Until IPTraf 3.0, TCP and UDP filters automatically matched in both
+directions, for example, a filter defined to match
+100.1.1.1/255.255.255.255 port 80 to 192.168.1.0/255.255.255.0 port 0
+matched all packets flowing from host 10.1.1.1, port 80 to any host on the
+network 192.168.1.0, as well as packets coming from the network
+192.168.1.0 to host 100.1.1.1 port 80.
+
+With IPTraf 3.0, this no longer is the case.  Automatic reverse matching
+is done only in the IP traffic monitor's TCP window (because of TCP's
+full-duplex nature), but in all other places, automatic reverse matching
+is no longer done unless you set the "Match opposite" field in the filter
+definition dialog boxes to Y.
+
+The "Match opposite" fields in the filter dialog boxes allow you to match
+packets flowing in the opposite direction without having to define another
+filter.  This is useful for such things as ICMP echo request/echo reply
+packets (pings), UDP DNS queries, and other things that come in "pairs".  
+Or you can turn them off for more precise measurement of incoming and
+outgoing data rates.
+
+However as earlier stated, the "Match opposite" field in TCP filters are
+ignored in the IP traffic monitor's TCP window, because reverse matching
+is always performed there.
+
+C. MISCELLANEOUS IP PROTOCOLS
+
+The filter rule definition dialog contains some fields that match common IP
+protocols.  However a longer field is provided for additional protocols 
+to match.  You can enter here a comma-separated list of individual 
+protocol numbers or ranges (e.g. 49, 69, 88-100, 110).
+
+BUG FIXES
+---------
+
+IPTraf 3.0 fixes a minor bug where Token Ring interfaces' promiscuous
+modes were not toggled by the Force Promiscuous configuration option.
+
+Window borders don't appear in color when IPTraf is compiled under Red Hat
+Linux 7.3, possibly others.  The window support library has been updated
+to fix this problem.
+
+Minor user interface quirks have also been fixed.
+
+ADDITIONAL NETWORK INTERFACE SUPPORT
+------------------------------------
+
+Support for tun and brg (tunnelling and bridging) interfaces has been
+added to this version.
+
+PROTOCOL RECOGNITION
+--------------------
+
+For not-so-common IP protocols, IPTraf's IP traffic monitor looks up the 
+/etc/services file to determine the protocol names.  More common protocols 
+(ICMP, UDP) are looked up internally.
+
+L2TP, IPSec Authentication, and IPSec Encrypted Payload packets have been
+added to IPTraf's internal recognition.
+

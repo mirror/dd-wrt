@@ -1,0 +1,844 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>The IP Traffic Monitor</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Supported Network Interfaces"
+HREF="ifaces.html"><LINK
+REL="NEXT"
+TITLE="Lower Window"
+HREF="lowerwin.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="ifaces.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="lowerwin.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="ITRAFMON"
+>The IP Traffic Monitor</A
+></H1
+><P
+>  Executing the first menu item or specifying <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>
+  to the <B
+CLASS="COMMAND"
+>iptraf</B
+> command takes you to the IP traffic monitor. The traffic
+  monitor is a real-time monitoring system that intercepts all packets
+  on all detected network interfaces, decodes the IP information on all IP packets and
+  displays the appropriate information, most notably the
+  source and destination addresses. It also
+  determines the encapsulated protocol within the IP packet, and
+  displays some important information about that as well.</P
+><P
+>  There are two windows in the traffic monitor, both of which can be
+  scrolled with the Up and Down cursor keys. Just press W to
+  move the <TT
+CLASS="COMPUTEROUTPUT"
+>Active</TT
+> indicator to the window you
+  want to control.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN566"
+></A
+><P
+><IMG
+SRC="iptraf-iptm1.png"></P
+><P
+><B
+>Figure 1. The IP traffic monitor</B
+></P
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="UPPERWIN"
+>The Upper Window</A
+></H1
+><P
+>  The upper window of the traffic monitor displays the currently
+  detected TCP
+  connections. Information about TCP packets are displayed here. The
+  window contains these pieces of information:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><P
+>Source address and port</P
+></LI
+><LI
+><P
+>Packet count</P
+></LI
+><LI
+><P
+>Byte count</P
+></LI
+><LI
+><P
+>Source MAC address</P
+></LI
+><LI
+><P
+>Packet Size</P
+></LI
+><LI
+><P
+>Window Size</P
+></LI
+><LI
+><P
+>TCP flag statuses</P
+></LI
+><LI
+><P
+>Interface</P
+></LI
+></UL
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+> Previous versions of IPTraf showed
+  both the source and destination addresses on each line. IPTraf 2 and
+higher show
+only the <TT
+CLASS="COMPUTEROUTPUT"
+><TT
+CLASS="REPLACEABLE"
+><I
+>source
+host</I
+></TT
+>:<TT
+CLASS="REPLACEABLE"
+><I
+>port</I
+></TT
+></TT
+> combination to save
+on screen real estate. TCP
+  connection endpoints are still indicated with the green
+  brackets (on color terminals) along the left edge of the screen.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  The Up and Down cursor keys move an indicator bar between entries in the
+  TCP monitor, scrolling the window if necessary. The PgUp and PgDn keys
+  display the previous and next screenfuls of entries respectively.</P
+><P
+>  The IP traffic monitor computes the data flow rate
+  of the currently highlighted TCP flow and displays it on the lower-right
+  corner of the screen. The flow rate is in kilobits or kilobytes per
+  second depending on the <I
+CLASS="EMPHASIS"
+>Activity mode</I
+> switch
+in the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> menu.</P
+><P
+>  Because this monitoring system relies solely on packet information, it
+  does not determine which endpoint initiated the connection. In other
+  words, it does not know which endpoints are the client and server.
+  This is necessary because it can operate in promiscuous
+  mode, and as such cannot determine the socket statuses for other
+  machines on the LAN. However, a little knowledge of the well-known TCP
+port numbers can give a good idea about which address is that of the server.</P
+><P
+>  The system therefore displays two entries for each connection, one for
+  each direction of the TCP connection. To make it easier to determine the
+  direction pairs of each connection, a bracket is used to "join" both
+  together. This bracket appears at the leftmost part of each entry.</P
+><P
+>  Just because a host entry appears at the upper end of a
+  connection bracket doesn't mean it was the initiator of the connection.</P
+><P
+>  Each entry in the window contains these fields:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><I
+CLASS="EMPHASIS"
+>Source address and port</I
+></DT
+><DD
+><P
+>  The source address and port indicator is
+in <TT
+CLASS="REPLACEABLE"
+><I
+>address</I
+></TT
+>:<TT
+CLASS="REPLACEABLE"
+><I
+>port</I
+></TT
+> format.
+  This indicates the source machine and TCP port on that machine
+  from which this data is coming.</P
+><P
+>  The destination is the host:port at the other end of the bracket.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Packet count</I
+></DT
+><DD
+><P
+>  The number of packets received for this direction of the TCP connection</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Byte count</I
+></DT
+><DD
+><P
+>  The number of bytes received for this direction
+  of the TCP connection. These bytes include total IP and TCP header
+  information, in addition to the actual data. Data link
+  header (e.g. Ethernet and FDDI) data are not included.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Source MAC address</I
+></DT
+><DD
+><P
+>  The address of the host on your local LAN that delivered this packet.
+  This can be viewed by pressing M once if <I
+CLASS="EMPHASIS"
+>Source MAC
+addrs</I
+> in traffic
+  monitor is enabled in the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> menu.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Packet Size</I
+></DT
+><DD
+><P
+>  The size of the most recently received packet. This item
+  is visible if you press M for more TCP information. This is the size
+  of the IP datagram only, not including the data link header.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Window Size</I
+></DT
+><DD
+><P
+>  The advertised window size of the most recently received packet. This
+  item is visible if you press M for more TCP information.</P
+></DD
+><DT
+><I
+CLASS="EMPHASIS"
+>Flag statuses</I
+></DT
+><DD
+><P
+>  The flags of the most recently received packet. 
+
+<P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>S</TT
+></DT
+><DD
+><P
+>     SYN. A synchronization is taking place in preparation for
+     connection establishment. If only an <TT
+CLASS="COMPUTEROUTPUT"
+>S</TT
+>
+     is present (<TT
+CLASS="COMPUTEROUTPUT"
+>S---</TT
+>) the source is trying
+     to initiate a connection. If an <TT
+CLASS="COMPUTEROUTPUT"
+>A</TT
+> is
+     also present (<TT
+CLASS="COMPUTEROUTPUT"
+>S-A-</TT
+>), this is an
+     acknowledgment of a previous connection request, and is responding.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>A</TT
+></DT
+><DD
+><P
+>     ACK. This is an acknowledgment of a previously received packet</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>P</TT
+></DT
+><DD
+><P
+>     PSH. A request to push all data to the top of the receiving queue</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>U</TT
+></DT
+><DD
+><P
+>     URG. This packet contains urgent data</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>RESET</TT
+></DT
+><DD
+><P
+>     RST. The source machine indicated in this direction reset the entire connection. The direction entries for reset connections become available for new connections.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>DONE</TT
+></DT
+><DD
+><P
+>     The connection is done sending data in this direction, and has sent a FIN (finished) packet, but has not yet been acknowledged by the other host.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>CLOSED</TT
+></DT
+><DD
+><P
+>     The FIN has been acknowledged by the other host. When both directions of a connection are marked CLOSED, the entries they occupy become available for new connection entries.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>-</TT
+></DT
+><DD
+><P
+>     The flag is not set</P
+></DD
+></DL
+></DIV
+></P
+></DD
+></DL
+></DIV
+><P
+>  Some other pieces of information can be viewed as well. The M key
+  displays more TCP information. Pressing M once
+  displays the MAC addresses of the LAN hosts
+  that delivered the packets (if the <I
+CLASS="EMPHASIS"
+>Source MAC addrs in traffic
+monitor</I
+>
+  option is enabled in the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+>
+menu). <TT
+CLASS="COMPUTEROUTPUT"
+>N/A</TT
+> is displayed if
+  no packets have been received from the source yet, or if the interface
+  doesn't support MAC addresses (such as PPP interfaces).</P
+><P
+>  If the <I
+CLASS="EMPHASIS"
+>Source MAC addrs in traffic monitor</I
+> option is not enabled,
+  pressing M simply toggles between the counts and the packet and window
+  sizes.</P
+><P
+>  By default, only IP addresses are displayed, but if you have access to a
+  name server or host table, you may enable reverse lookup for the
+  IP addresses. Just enable reverse lookup
+in the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> menu.</P
+><TABLE
+CLASS="SIDEBAR"
+BORDER="1"
+CELLPADDING="5"
+><TR
+><TD
+><DIV
+CLASS="SIDEBAR"
+><A
+NAME="AEN701"
+></A
+><P
+><B
+>The rvnamed Process</B
+></P
+><P
+>  The IP traffic monitor starts a daemon called
+  <B
+CLASS="COMMAND"
+>rvnamed</B
+> to help speed
+  up reverse lookups without sacrificing too much keyboard control and
+  accuracy of the counts. While reverse lookup is being conducted in the
+  background, IP addresses will be used until the resolution is complete.</P
+><P
+>  If for some reason <B
+CLASS="COMMAND"
+>rvnamed</B
+> cannot start (probably due to
+  improper installation or lack of memory), and you are
+  on the Internet, and you enable reverse lookup, your
+  keyboard control can become very slow. This is because the standard
+  lookup functions do not return until they have completed their
+  tasks, and it can take several seconds for a name resolution
+  in the foreground to complete.</P
+><P
+>  <B
+CLASS="COMMAND"
+>rvnamed</B
+> will spawn up to 200 children to process reverse DNS queries.</P
+></DIV
+></TD
+></TR
+></TABLE
+><DIV
+CLASS="TIP"
+><P
+></P
+><TABLE
+CLASS="TIP"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/tip.gif"
+HSPACE="5"
+ALT="Tip"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Tip</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>If you notice unusual SYN activity (too many
+initial (<TT
+CLASS="COMPUTEROUTPUT"
+>S---</TT
+>) but frozen SYN entries, or rapidly
+increasing initial SYN packets for a single connection), you may
+be under a SYN flooding attack or TCP port scan. Apply appropriate measures, or the
+targeted machines may begin denying network services.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  Entries not updated within a user-configurable amount of
+  time may get replaced with new connections. The default time is 15
+  minutes. This is regardless of whether the connection is closed or
+  not. (Some unclosed connections may be due to extremely slow links
+  or crashes at either end of the connection.) This figure can be changed
+  at the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> menu.</P
+><P
+>  Some early entries may have a &#62; symbol in front of its packet
+  count. This means the connection was already established
+  when the monitor started. In other words, the figures indicated do not
+  reflect the counts since the start
+  of the TCP connection, but rather, since the start of the traffic
+  monitor. Eventually, these &#62; entries will close (or time out) and
+  disappear. TCP entries without the &#62;
+  were initiated after the traffic monitor started, and the counts
+  indicate the totals of the connection itself.  Just consider entries
+  with &#62; partial.</P
+><P
+>  Some &#62; entries may go idle if the traffic monitor was started
+  when these connections were already half-closed (FIN sent
+  by one host, but data still being sent by the other). This
+  is because the traffic monitor cannot determine if a
+  connection was already half-closed when it started. These entries will
+  eventually time out. (To minimize these entries, an entry is not added
+  by the monitor until a packet with data or a SYN packet is received.)</P
+><P
+>  Direction entries also become available for reuse if an ICMP Destination
+  Unreachable message is received for the connection.</P
+><P
+>  The lower part of the screen contains a summary line showing the IP,
+  TCP, UDP, ICMP, and non-IP byte counts since the start of the
+  monitor. The IP, TCP, UDP, and ICMP counts include only the IP
+  datagram header and data, not the data-link headers. The
+  non-IP count includes the data-link headers.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Technical note: IP Forwarding and Masquerading</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  Previous versions of IPTraf issued a warning if the kernel had
+  IP masquerading enabled due to the way the
+  kernel masqueraded and translated the IP addresses. The new kernels no
+  longer do it as before and IPTraf now gives output properly on
+  masquerading machines. The <TT
+CLASS="COMPUTEROUTPUT"
+>-q</TT
+> parameter is no
+  longer required to suppress the warning screen.</P
+><P
+>  On forwarding (non-masquerading)
+  machines packets and TCP connections simply appear twice, one
+  each for the incoming and outgoing interfaces if all interafaces
+  are being monitored.</P
+><P
+>  On masquerading machines, packets and connections from the
+  internal network to the external network also appear
+  twice, one for the internal and external interface. Packets coming
+  from the internal network will be indicated as coming from the internal
+  IP address that sourced them, and also as coming from the IP address
+  of the external interface on your masquerading machine. In much the same
+  way, packets coming in from the external network will look
+  like they're destined for the external interface's IP address, and again
+  as destined for the final host on the internal network.</P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN726"
+>Closed/Idle/Timed Out Connections</A
+></H2
+><P
+>  A TCP connection entry that closes, gets reset, or stays idle too long
+  normally gets replaced with new connections. However,
+  if there are too many of these, active connections may become
+  interspersed among closed, reset, or idle entries.</P
+><P
+>  IPTraf can be set to automatically remove all closed, reset, and
+  idle entries with the <I
+CLASS="EMPHASIS"
+>TCP closed/idle
+  persistence...</I
+> configuration option. You can also press the F key to
+  immediately clear them at any time.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>The <I
+CLASS="EMPHASIS"
+>TCP timeout...</I
+> option only tells
+IPTraf how long it should take before a connection should be considered
+idle and open to replacement by new connections. This
+does not determine how long it remains on-screen. The <I
+CLASS="EMPHASIS"
+>TCP closed/idle
+persistence...</I
+> parameter flushes entries that have been idle for the
+number of minutes defined by the <I
+CLASS="EMPHASIS"
+>TCP timeout...</I
+> option.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN737"
+>Sorting TCP Entries</A
+></H2
+><P
+>  The TCP connection entries can be sorted by pressing the S key, then
+  by selecting a sort criterion. Pressing S will display a box showing the
+  available sort criteria. Press P to sort by packet count, B to sort by
+  byte count. Pressing any other key cancels the sort.</P
+><P
+>  The sort operation compares the larger values in each connection entry
+  pair and sorts the counts in descending order.</P
+><P
+>  Over time, the entries will go out of order as counts proceed at varying
+  rates. Sorting is not done automatically so as not to degrade performance
+and accuracy.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN742"
+></A
+><P
+><IMG
+SRC="iptraf-iptmsort.png"></P
+><P
+><B
+>Figure 2. The IP traffic monitor sort criteria</B
+></P
+></DIV
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="ifaces.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="lowerwin.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Supported Network Interfaces</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Lower Window</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

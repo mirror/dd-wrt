@@ -1,0 +1,27 @@
+***
+
+Documentation 2.7 README
+
+***
+
+This directory contains the IPTraf user manual in HTML format.
+
+The IPTraf manual has been redesigned and has now been recoded into
+DocBook 4.1 SGML format, and translated into HTML.  It now features 
+navigation much like the Linux Documentation Project manuals and HOWTO's.
+The main file is manual.html, with the symlink index.html pointing to it.
+
+The SGML template is included but gzipped.  It needs to be gunzipped and
+run through the make process for the version numbers to be tacked into the
+source.  Running make will generate the final SGML source and the HTML
+files.
+
+As of 2.7.0, the manual is now released under the terms of the GNU Free 
+Documentation License of March, 2000.
+
+Screenshot images have also been converted to Portable Network Graphics 
+(PNG) format.  DocBook icons are included in GIF format under the 
+stylesheet-images directory.
+
+Gerard Paul R. Java
+riker@seul.org
