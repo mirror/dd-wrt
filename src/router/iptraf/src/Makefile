@@ -5,9 +5,10 @@
 #
 # Architecture determination string borrowed from the kernel makefile.
 #
-ARCH 		:= $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+#ARCH 		:= $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 			-e s/arm.*/arm/ -e s/sa110/arm/)
-PLATFORM 	= -DPLATFORM=\"$(shell uname -s)/$(ARCH)\"
+#TEST		:= $(PLATFORM)
+PLATFORM 	= -DPLATFORM=\"DD-WRT_Linux/$(ARCH)\"
 VERNUMBER	:= $(shell cat version)
 VERSION 	= -DVERSION=\"$(VERNUMBER)\"
 
