@@ -42,7 +42,7 @@ function setUPnPTable(forwards) {
 	}
 	if(data.length == 0) {
 		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 6;
+		cell.colSpan = 7;
 		cell.align = "center";
 		cell.innerHTML = "- " + share.none + " - ";
 		return;
@@ -53,6 +53,12 @@ function setUPnPTable(forwards) {
 		row.className = (data[i].enabled ? '' : 'disabled');
 		//descr
 		row.insertCell(-1).innerHTML = data[i].desc;
+
+		//enabled
+		var cell = row.insertCell(-1)
+		cell.innerHTML = (data[i].enabled ? share.yes : share.no);
+		cell.align="right";
+
 
 		//wan port
 		var cell = row.insertCell(-1)
@@ -68,10 +74,15 @@ function setUPnPTable(forwards) {
 		var cell = row.insertCell(-1)
 		cell.innerHTML = data[i].lanIP;
 		cell.align="right";
-		
-		row.insertCell(-1).innerHTML = data[i].proto;
+
+		//proto
+		var cell = row.insertCell(-1)
+		cell.innerHTML = data[i].proto;
+		cell.align="center";
+
 		
 		cell = row.insertCell(-1);
+		
 		cell.className = "bin";
 		cell.title = upnp.msg1;
 		cell.innerHTML = " ";
@@ -152,7 +163,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table center" cellspacing="6" id="upnp_table" summary="UPnP table">
 									<tr>
-										<th width="35%"><% tran("share.descr"); %></th>
+										<th width="30%"><% tran("share.descr"); %></th>
+										<th><% tran("share.enabled"); %>?</th>
 										<th><% tran("share.from"); %>&nbsp;(WAN)</th>
 										<th><% tran("share.to"); %>&nbsp;(LAN)</th>
 										<th><% tran("share.ip"); %></th>
