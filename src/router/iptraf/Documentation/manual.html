@@ -1,0 +1,584 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>IPTraf User's Manual</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="NEXT"
+TITLE="About This Document"
+HREF="preface.html"></HEAD
+><BODY
+CLASS="BOOK"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="BOOK"
+><A
+NAME="MANUAL"
+></A
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="TITLE"
+><A
+NAME="AEN2"
+>IPTraf User's Manual</A
+></H1
+><P
+CLASS="COPYRIGHT"
+><A
+HREF="ln9.html"
+>Copyright</A
+> &copy; 1997, 2003 by Gerard Paul Java</P
+><SPAN
+CLASS="RELEASEINFO"
+>Version 3.0.0<BR></SPAN
+><HR></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="preface.html"
+>About This Document</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="preface.html#ADDINFO"
+>For Additional Information</A
+></DT
+><DT
+><A
+HREF="conventions.html"
+>Document Conventions</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="gettingstarted.html"
+>Getting Started</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="gettingstarted.html#AEN66"
+>About IPTraf</A
+></DT
+><DT
+><A
+HREF="installation.html"
+>Installation</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="installation.html#AEN97"
+>System Requirements</A
+></DT
+><DT
+><A
+HREF="installation.html#AEN135"
+>Availability</A
+></DT
+><DT
+><A
+HREF="installation.html#AEN150"
+>Installing Downloaded Packages</A
+></DT
+><DT
+><A
+HREF="installation.html#AEN187"
+>Installing a Floppy Distribution</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="upgrading.html"
+>Upgrading from Earlier Versions</A
+></DT
+><DT
+><A
+HREF="startstop.html"
+>Starting and Stopping IPTraf</A
+></DT
+><DT
+><A
+HREF="cmdline.html"
+>Command-line Options</A
+></DT
+><DT
+><A
+HREF="menus.html"
+>Using the Menus</A
+></DT
+><DT
+><A
+HREF="exiting.html"
+>Exiting IPTraf</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="preparingtouse.html"
+>Preparing to Use IPTraf</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="preparingtouse.html#NUMBERS"
+>Number Display Notations</A
+></DT
+><DT
+><A
+HREF="instances.html"
+>Instances and Logging</A
+></DT
+><DT
+><A
+HREF="updates.html"
+>Screen Update Delays</A
+></DT
+><DT
+><A
+HREF="ifaces.html"
+>Supported Network Interfaces</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="itrafmon.html"
+>The IP Traffic Monitor</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="itrafmon.html#UPPERWIN"
+>The Upper Window</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="itrafmon.html#AEN726"
+>Closed/Idle/Timed Out Connections</A
+></DT
+><DT
+><A
+HREF="itrafmon.html#AEN737"
+>Sorting TCP Entries</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="lowerwin.html"
+>Lower Window</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="lowerwin.html#AEN836"
+>Entry Details</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x1077.html"
+>Additional Information</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="netstats.html"
+>Network Interface Statistics</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="netstats.html#GENSTATS"
+>General Interface Statistics</A
+></DT
+><DT
+><A
+HREF="detstats.html"
+>Detailed Interface Statistics</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="statbreakdowns.html"
+>Statistical Breakdowns</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="statbreakdowns.html#PKTSIZE"
+>Packet Sizes</A
+></DT
+><DT
+><A
+HREF="servmon.html"
+>TCP and UDP Traffic Statistics</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="servmon.html#AEN1223"
+>Sorting TCP/UDP Entries</A
+></DT
+><DT
+><A
+HREF="servmon.html#AEN1231"
+>Additional Information</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+><A
+HREF="hostmon.html"
+>LAN Station Statistics</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="hostmon.html#SORTINGLAN"
+>Sorting the LAN Station Monitor Entries</A
+></DT
+><DT
+><A
+HREF="morelanmoninfo.html"
+>Additional Information</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="filters.html"
+>Filters</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="filters.html#IPFILTERS"
+>IP Filters</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="filters.html#AEN1305"
+>Defining a New Filter</A
+></DT
+><DT
+><A
+HREF="filters.html#AEN1903"
+>Applying a Filter</A
+></DT
+><DT
+><A
+HREF="filters.html#AEN1908"
+>Editing a Defined Filter</A
+></DT
+><DT
+><A
+HREF="filters.html#AEN1923"
+>Deleting a Defined Filter</A
+></DT
+><DT
+><A
+HREF="filters.html#AEN1927"
+>Detaching a Filter</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="nonipfilters.html"
+>ARP, RARP, and other Non-IP Packet Filters</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="config.html"
+>Configuring IPTraf</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="config.html#TOGGLES"
+>Toggles</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="config.html#AEN1947"
+>Reverse DNS Lookups</A
+></DT
+><DT
+><A
+HREF="config.html#AEN1951"
+>TCP/UDP Service Names</A
+></DT
+><DT
+><A
+HREF="config.html#AEN1962"
+>Force promiscuous</A
+></DT
+><DT
+><A
+HREF="config.html#AEN1972"
+>Color</A
+></DT
+><DT
+><A
+HREF="config.html#AEN1976"
+>Logging</A
+></DT
+><DT
+><A
+HREF="config.html#AEN2013"
+>Activity mode</A
+></DT
+><DT
+><A
+HREF="config.html#AEN2017"
+>Source MAC addrs in traffic monitor</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="timers.html"
+>Timers</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="timers.html#AEN2030"
+>TCP Timeout</A
+></DT
+><DT
+><A
+HREF="timers.html#AEN2033"
+>Log Interval</A
+></DT
+><DT
+><A
+HREF="timers.html#AEN2038"
+>Screen Update Interval</A
+></DT
+><DT
+><A
+HREF="timers.html#AEN2048"
+>TCP closed/idle persistence</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="customports.html"
+>Custom Information</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="customports.html#AEN2061"
+>Additional ports</A
+></DT
+><DT
+><A
+HREF="customports.html#AEN2066"
+>Delete port/range</A
+></DT
+><DT
+><A
+HREF="customports.html#AEN2070"
+>LAN Station Identifiers</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+><A
+HREF="backop.html"
+>Background Operation</A
+></DT
+><DT
+><A
+HREF="messages.html"
+>Messages</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="messages.html#IPTRAFMESSAGES"
+>IPTraf Messages</A
+></DT
+><DT
+><A
+HREF="rvnamedmessages.html"
+>rvnamed Messages</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="gfdl.html"
+>GNU Free Documentation License</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="gfdl.html#GFDL-0"
+>PREAMBLE</A
+></DT
+><DT
+><A
+HREF="gfdl-1.html"
+>APPLICABILITY AND DEFINITIONS</A
+></DT
+><DT
+><A
+HREF="gfdl-2.html"
+>VERBATIM COPYING</A
+></DT
+><DT
+><A
+HREF="gfdl-3.html"
+>COPYING IN QUANTITY</A
+></DT
+><DT
+><A
+HREF="gfdl-4.html"
+>MODIFICATIONS</A
+></DT
+><DT
+><A
+HREF="gfdl-5.html"
+>COMBINING DOCUMENTS</A
+></DT
+><DT
+><A
+HREF="gfdl-6.html"
+>COLLECTIONS OF DOCUMENTS</A
+></DT
+><DT
+><A
+HREF="gfdl-7.html"
+>AGGREGATION WITH INDEPENDENT WORKS</A
+></DT
+><DT
+><A
+HREF="gfdl-8.html"
+>TRANSLATION</A
+></DT
+><DT
+><A
+HREF="gfdl-9.html"
+>TERMINATION</A
+></DT
+><DT
+><A
+HREF="gfdl-10.html"
+>FUTURE REVISIONS OF THIS LICENSE</A
+></DT
+><DT
+><A
+HREF="gfdl-11.html"
+>How to use this License for your documents</A
+></DT
+></DL
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="preface.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>About This Document</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

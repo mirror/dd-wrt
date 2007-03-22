@@ -1,0 +1,504 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Configuring IPTraf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="ARP, RARP, and other Non-IP Packet Filters"
+HREF="nonipfilters.html"><LINK
+REL="NEXT"
+TITLE="Timers"
+HREF="timers.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="nonipfilters.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="timers.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="CONFIG"
+>Configuring IPTraf</A
+></H1
+><P
+>   IPTraf can be easily configured
+with the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> item in the
+  main menu. The configuration is stored in the
+  <TT
+CLASS="FILENAME"
+>/var/local/iptraf/iptraf.cfg</TT
+> file. If the file is not found, IPTraf uses
+  the default settings. Any changes to the configuration immediately get
+  stored in the configuration file.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1942"
+></A
+><P
+><IMG
+SRC="iptraf-configmenu.png"></P
+><P
+><B
+>Figure 1. The IPTraf configuration menu</B
+></P
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="TOGGLES"
+>Toggles</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1947"
+>Reverse DNS Lookups</A
+></H2
+><P
+>  Activating reverse lookup
+  causes IPTraf to find out the name of the hosts with the addresses
+  in the IP packets. When this option is enabled, IPTraf's
+  IP traffic monitor starts the rvnamed DNS lookup server to help resolve
+  IP addresses in the background while allowing IPTraf to
+  continue capturing packets.</P
+><P
+>  This option is off by default.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1951"
+>TCP/UDP Service Names</A
+></H2
+><P
+>&#13;  This option, when on, causes IPTraf to display the TCP/UDP service names
+  (<TT
+CLASS="COMPUTEROUTPUT"
+>smtp</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>www</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>pop3</TT
+>, etc.) instead of their numeric ports (25, 80,
+  110, etc). The number-to-name mappings will depend on the systems
+  services database file (usually <TT
+CLASS="FILENAME"
+>/etc/services</TT
+>).
+   Should there be no corresponding service name for the
+  port number, the numeric form will still be displayed.&#13;</P
+><P
+>  This setting is off by default.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+> Reverse lookup and service name lookup take some
+ time and may impact performance and increase the chances of dropped
+ packets. Performance and results are best (albeit more cryptic) with both
+ these settings off.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1962"
+>Force promiscuous</A
+></H2
+><P
+>&#13;  If this option is enabled, your LAN interfaces will capture all packets
+  on your LAN. Using this option enables you
+  to see all TCP connections and packets passing your LAN segment, even if
+  they're not from or for your machine. When this option is active
+  in the statistics windows, the Activity indicators will show a
+  good estimate of the load on your LAN segment.</P
+><P
+>  When this option is disabled, you'll
+  only receive information about packets coming from and entering your
+  machine.</P
+><P
+>  The setting of this option affects all LAN (
+  Ethernet, FDDI, some Token Ring) interfaces on your machine, if you have more than one.</P
+><P
+>  The interface's promiscuous flag is set only when a facility is started,
+  and turned off when it exits. However, if promiscuous
+  mode was already set when a facility was started, it remains set on exit.</P
+><P
+>  If multiple instances of IPTraf are started, the promiscuous setting
+  is restored only upon exit of the last facility.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>   Do not use other programs that change the interface's promiscuous flag at
+  the same time you're using IPTraf. The programs can interfere with
+  each other's expected operations. While IPTraf tries to obtain the
+  initial setting of any promiscuous flags for restoration
+  upon exit, other programs may not be as well-behaved, and they may
+  turn off the promiscuous flags while IPTraf is still monitoring.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1972"
+>Color</A
+></H2
+><P
+>  Turn this on with color monitors. Turn it off with
+  black-and- white monitors or non-color terminals (like xterms). Changes
+  to this setting will take effect the next time the program is started.</P
+><P
+>  Color is on by default on consoles and color xterms, off on non-color terminals like xterms and VT100s.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1976"
+>Logging</A
+></H2
+><P
+>  When this option is active, IPTraf will log information to a
+  disk file, which can be examined or analyzed later. Since IPTraf
+  2.4.0, IPTraf prompts you for the name of the file to which to write the
+  logs. It will provide a default name, which you are free to accept
+  or change. The IP traffic monitor and LAN station monitor will
+  generate a log file name that is based on what instance they are (first,
+  second, and so on). The general interface statistics' default log file
+  name is constant, because it listens to all interfaces at once, and only
+  one instance can run at one time.</P
+><P
+>  The other facilities generate a log file name based
+  on the interface they're listening on.</P
+><P
+>  See the descriptions on the facilities above for the default log file names.</P
+><P
+>  Press Enter to accept the log file name, or Ctrl+X to cancel. Canceling will turn logging off for that session.</P
+><P
+>  The IP traffic monitor will write the following pieces of information to its log file:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>Start of the traffic monitor</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Receipt of the first TCP packet for a connection. If that packet is a
+    SYN, (SYN) will be indicated in the log entry. (Of course, the traffic
+    monitor may start in the middle of established connections. It
+    will still count those packets. This also explains why some connection
+    entries may become idle if the traffic monitor is started in the
+    middle of a half-closed connection, and miss the first FIN.
+    Such entries time out in a while.)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Receipt of a FIN (with average flow rate)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>ACK of a FIN</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Timeouts of TCP entries (with average flow rate)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Reset connections (with average flow rate)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Everything that appears in the bottom window of the traffic monitor</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>Stopping of the traffic monitor</P
+></LI
+></UL
+><P
+>  Each log entry includes the date and time the entry was written. Logging
+  is also affected by the defined filters.</P
+><P
+>  Log files can grow very fast, so be prepared with plenty of
+  free space and delete unneeded logs. Log write errors are not indicated.</P
+><P
+>  Copies of the interface statistics, TCP/UDP statistics, packet
+  size statistics, and LAN host statistics are also written
+  to the log files at regular intervals. See <I
+CLASS="EMPHASIS"
+>Log
+Interval...</I
+> in this chapter.</P
+><P
+>  IPTraf closes and reopens the active log file when it receives a
+  <TT
+CLASS="COMPUTEROUTPUT"
+>USR1</TT
+> signal. This is useful in cases where a facility is run for
+  long periods of time but the log files have to be cleared or moved.</P
+><P
+>  To clear or move an active log file, rename it first. IPTraf will
+  continue to write to the file despite the new name. Then use the UNIX
+  kill command to send the running IPTraf process a <TT
+CLASS="COMPUTEROUTPUT"
+>USR1</TT
+> signal. IPTraf
+  will then close the log file and open another with the
+  original name. You can then safely remove or delete the renamed file.</P
+><P
+>  Do not delete an open log file. Doing so will only result in a file just
+  as large but filled with null characters (ASCII code 0).</P
+><P
+>  Logging comes disabled by default. The <TT
+CLASS="COMPUTEROUTPUT"
+>USR1</TT
+> signal is caught only if
+  logging is enabled, it is ignored otherwise.</P
+><P
+> A valid specification of <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> on the command line with automatically
+ enable logging for that particular session.  The saved configuration setting is not affected.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2013"
+>Activity mode</A
+></H2
+><P
+>  Toggles activity indicators in the interface and LAN statistics
+  facilities between kilobits per second (kbits/s) or kilobytes per second
+  (kbytes/s).</P
+><P
+>  The default setting is kilobits per second.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2017"
+>Source MAC addrs in traffic monitor</A
+></H2
+><P
+>  When enabled, the IP traffic monitor retrieves the packets' source MAC
+  addresses if they came in on an Ethernet, FDDI, or PLIP interface. The
+  addresses appear in the lower window for non-TCP
+  packets, while for TCP connections, they can be viewed by pressing M.</P
+><P
+>  No such information is displayed
+  if the network interface doesn't use MAC addresses (such
+  as PPP interfaces).</P
+><P
+>  This can be used to determine the actual source of the packets on your local LAN.</P
+><P
+>  The traffic monitor also logs the MAC addresses with this option
+  enabled. The default setting is off.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="nonipfilters.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="timers.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>ARP, RARP, and other Non-IP Packet Filters</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Timers</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

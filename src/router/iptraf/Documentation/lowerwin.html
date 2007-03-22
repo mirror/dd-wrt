@@ -1,0 +1,942 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Lower Window</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="The IP Traffic Monitor"
+HREF="itrafmon.html"><LINK
+REL="PREVIOUS"
+TITLE="The IP Traffic Monitor"
+HREF="itrafmon.html"><LINK
+REL="NEXT"
+TITLE="Additional Information"
+HREF="x1077.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="itrafmon.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>The IP Traffic Monitor</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1077.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="LOWERWIN"
+>Lower Window</A
+></H1
+><P
+>  The lower window displays information about the other types of traffic
+  on your network. The following protocols are detected internally:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+><P
+>User Datagram Protocol (UDP)</P
+></LI
+><LI
+><P
+>Internet Control Message Protocol (ICMP)</P
+></LI
+><LI
+><P
+>Open Shortest-Path First (OSPF)</P
+></LI
+><LI
+><P
+>Interior Gateway Routing Protocol (IGRP)</P
+></LI
+><LI
+><P
+>Interior Gateway Protocol (IGP)</P
+></LI
+><LI
+><P
+>Internet Group Management Protocol (IGMP)</P
+></LI
+><LI
+><P
+>General Routing Encapsulation (GRE)</P
+></LI
+><LI
+><P
+>Layer 2 Tunneling Protocol (L2TP)</P
+></LI
+><LI
+><P
+>IPSec AH and ESP protocols (IPSec AH and IPSec ESP)</P
+></LI
+><LI
+><P
+>Address Resolution Protocol (ARP)</P
+></LI
+><LI
+><P
+>Reverse Address Resolution Protocol (RARP)</P
+></LI
+></UL
+><P
+>  Other IP protocols are looked up from the <TT
+CLASS="FILENAME"
+>/etc/services</TT
+>
+  file.  If <TT
+CLASS="FILENAME"
+>/etc/services</TT
+> doesn't contain information about
+  that protocol, the protocol number is indicated.</P
+><P
+> Non-IP packets are indicated as
+<TT
+CLASS="COMPUTEROUTPUT"
+>Non-IP</TT
+> in the lower window.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>The source and destination addresses for ARP and
+RARP entries are MAC addresses.</P
+><P
+>  Strictly speaking, ARP and RARP packets aren't IP packets, since
+  they are not encapsulated in an IP datagram. They're
+  just indicated because they are integral to proper IP operation on LANs.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  For all packets in the lower window, only the first IP fragment is
+  indicated (since that contains the header
+  of the IP-encapsulated protocol) but with no further information
+  from the encapsulated protocol.</P
+><P
+>UDP packets are also displayed
+in
+<TT
+CLASS="COMPUTEROUTPUT"
+><TT
+CLASS="REPLACEABLE"
+><I
+>address</I
+></TT
+>:<TT
+CLASS="REPLACEABLE"
+><I
+>port</I
+></TT
+></TT
+> format while ICMP entries also contain the
+ICMP message type. For easier location, each type of protocol
+is color-coded (only on color terminals such as the Linux console).</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+>UDP</DT
+><DD
+><P
+>Red on White</P
+></DD
+><DT
+>ICMP</DT
+><DD
+><P
+>Yellow on Blue</P
+></DD
+><DT
+>OSPF</DT
+><DD
+><P
+>Black on Cyan</P
+></DD
+><DT
+>IGRP</DT
+><DD
+><P
+>Bright white on Cyan</P
+></DD
+><DT
+>IGP</DT
+><DD
+><P
+>Red on Cyan</P
+></DD
+><DT
+>IGMP</DT
+><DD
+><P
+>Bright green on Blue</P
+></DD
+><DT
+>GRE</DT
+><DD
+><P
+>Blue on white</P
+></DD
+><DT
+>ARP</DT
+><DD
+><P
+>Bright white on Red</P
+></DD
+><DT
+>RARP</DT
+><DD
+><P
+>Bright white on Red</P
+></DD
+><DT
+>Other IP</DT
+><DD
+><P
+>Yellow on red</P
+></DD
+><DT
+>Non-IP</DT
+><DD
+><P
+>Yellow on Red</P
+></DD
+></DL
+></DIV
+><P
+>  The lower window can hold up to 512 entries. You can
+  scroll the lower window by using the W key to move the Active indicator
+  to it, and by using the Up and Down cursor keys. The lower
+  window automatically scrolls every time a new entry is added, and either
+  the first entry or last entry is visible. Upon reaching 512 entries, old
+  entries are thrown out as new entries are added.</P
+><P
+>  Some entries may be too long to completely fit in a screen line. You can
+  use the Left and Right cursor keys to vertically scroll the lower window
+  when it is marked <TT
+CLASS="COMPUTEROUTPUT"
+>Active</TT
+>. If your
+terminal can be resized (e.g. xterm), you may do so before starting
+IPTraf.</P
+><P
+>  Entries for packets received on LAN interfaces also include the
+  source MAC address of the LAN host which delivered it. This behavior
+  is enabled by turning on the Source MAC addrs in traffic monitor toggle
+  in the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+></I
+> menu.</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN836"
+>Entry Details</A
+></H2
+><P
+>  In general, the entries in the lower window indicate the protocol, the
+  IP datagram size (full frame size for non-IP, including ARP and
+  RARP), the source address, the destination
+  address, and the network interface the packet was detected on.
+  However, some protocols have a little more information.</P
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN839"
+>ICMP</A
+></H3
+><P
+>  ICMP entries are displayed in this format:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>ICMP <TT
+CLASS="REPLACEABLE"
+><I
+>type</I
+></TT
+> [(<TT
+CLASS="REPLACEABLE"
+><I
+>subtype</I
+></TT
+>)] (<TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+> bytes) from <TT
+CLASS="REPLACEABLE"
+><I
+>source</I
+></TT
+> to <TT
+CLASS="REPLACEABLE"
+><I
+>destination</I
+></TT
+>
+[(src HWaddr <TT
+CLASS="REPLACEABLE"
+><I
+>srcMACaddress</I
+></TT
+>)] on <TT
+CLASS="REPLACEABLE"
+><I
+>interface</I
+></TT
+></PRE
+></TD
+></TR
+></TABLE
+><P
+>  where type could be any of the following:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>echo req, echo rply</TT
+></DT
+><DD
+><P
+>     ICMP echo request and reply. Usually used by the ping program and other network monitoring and diagnostic program. </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>dest unrch</TT
+></DT
+><DD
+><P
+>     ICMP destination unreachable. Something failed to reach its target. The dest unreach type is supplemented with a further indicator of the problem. Destination unreachable messages for TCP traffic causes the corresponding TCP entry in the upper
+     window to be made available for reuse by new connections. </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>redirct</TT
+></DT
+><DD
+><P
+>     ICMP redirect. Usually generated by a router to tell a host that a better gateway is available. </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>src qnch</TT
+></DT
+><DD
+><P
+>     The ICMP source quench is used to stop a host from transmitting. It's a
+flow control mechanism for IP. </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>time excd</TT
+></DT
+><DD
+><P
+>     Indicates a packet's time-to-live value expired before it got
+to its destination. Mostly happens if a destination is too far away.
+Also used by the traceroute program.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>router adv</TT
+></DT
+><DD
+><P
+>     ICMP router advertisement </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>router sol</TT
+></DT
+><DD
+><P
+>     ICMP router solicitation </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>timestmp req</TT
+></DT
+><DD
+><P
+>     ICMP timestamp request</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>timestmp rep</TT
+></DT
+><DD
+><P
+>     ICMP timestamp reply </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>info req</TT
+></DT
+><DD
+><P
+>     ICMP information request </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>info rep</TT
+></DT
+><DD
+><P
+>     ICMP information reply </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>addr mask req</TT
+></DT
+><DD
+><P
+>     ICMP address mask request </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>addr mask rep</TT
+></DT
+><DD
+><P
+>     ICMP address mask reply </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>param prob</TT
+></DT
+><DD
+><P
+>     ICMP parameter problem </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>bad/unknown</TT
+></DT
+><DD
+><P
+>     An unrecognized ICMP packet was received, or the packet is corrupted.</P
+></DD
+></DL
+></DIV
+><P
+>  The destination unreachable message also includes information on the
+  type of error encountered. Here are the destination unreachable codes:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>ntwk</TT
+></DT
+><DD
+><P
+>     network unreachable </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>host</TT
+></DT
+><DD
+><P
+>     host unreachable </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>proto</TT
+></DT
+><DD
+><P
+>     protocol unreachable </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>port</TT
+></DT
+><DD
+><P
+>     port unreachable </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>pkt fltrd</TT
+></DT
+><DD
+><P
+>     packet filtered (normally by an access rule on a router or firewall) </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>DF set</TT
+></DT
+><DD
+><P
+>     the packet has to be fragmented somewhere, but its don't fragment
+     (DF) bit is set.</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>src rte fail</TT
+></DT
+><DD
+><P
+>     source route failed </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>src isltd</TT
+></DT
+><DD
+><P
+>     source isolated (obsolete) </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>net comm denied</TT
+></DT
+><DD
+><P
+>     network communication denied </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>host comm denied</TT
+></DT
+><DD
+><P
+>     host communication denied </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>net unrch for TOS</TT
+></DT
+><DD
+><P
+>     network unreachable for specified IP type-of-service </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>host unrch for TOS</TT
+></DT
+><DD
+><P
+>     host unreachable for specified IP type-of-service </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>prec violtn</TT
+></DT
+><DD
+><P
+>     precedence violation </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>prec cutoff</TT
+></DT
+><DD
+><P
+>     precedence cutoff </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>dest net unkn</TT
+></DT
+><DD
+><P
+>     destination network unknown </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>dest host unkn</TT
+></DT
+><DD
+><P
+>     destination network unknown</P
+></DD
+></DL
+></DIV
+><P
+>  For more information on ICMP, see RFC 792.</P
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN1010"
+>OSPF</A
+></H3
+><P
+>OSPF messages also include a little more information. The format of an
+OSPF message in the window is:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>OSPF <TT
+CLASS="REPLACEABLE"
+><I
+>type</I
+></TT
+> (a=<TT
+CLASS="REPLACEABLE"
+><I
+>area</I
+></TT
+> r=<TT
+CLASS="REPLACEABLE"
+><I
+>router</I
+></TT
+>) (<TT
+CLASS="REPLACEABLE"
+><I
+>size</I
+></TT
+>bytes) from <TT
+CLASS="REPLACEABLE"
+><I
+>source</I
+></TT
+> to <TT
+CLASS="REPLACEABLE"
+><I
+>destination</I
+></TT
+>
+[(src HWaddr <TT
+CLASS="REPLACEABLE"
+><I
+>srcMACaddress</I
+></TT
+>)] on <TT
+CLASS="REPLACEABLE"
+><I
+>interface</I
+></TT
+></PRE
+></TD
+></TR
+></TABLE
+><P
+>  The type can be one of the following:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>hlo</TT
+></DT
+><DD
+><P
+>     OSPF hello. Hello messages establish OSPF communications and keep routers informed of each other's presence. </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>DB desc</TT
+></DT
+><DD
+><P
+>     OSPF Database Description </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>LSR</TT
+></DT
+><DD
+><P
+>     OSPF Link State Request </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>LSU</TT
+></DT
+><DD
+><P
+>     OSPF Link State Update. Messages indicating the states of the OSPF network links </P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>LSA</TT
+></DT
+><DD
+><P
+>     OSPF Link State Acknowledgment</P
+></DD
+></DL
+></DIV
+><P
+>  The entries in parentheses:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>a=<TT
+CLASS="REPLACEABLE"
+><I
+>area</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     The area number of the OSPF message</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>r=<TT
+CLASS="REPLACEABLE"
+><I
+>router</I
+></TT
+></TT
+></DT
+><DD
+><P
+>     The IP address of the router that generated the message. It
+     is not necessarily the same as the source address
+     of the encapsulating IP packet.</P
+></DD
+></DL
+></DIV
+><P
+>  Many times, the destination addresses for OSPF packets are class D
+  multicast addresses in standard dotted decimal notation or (if reverse
+  lookup is enabled), hosts under the <TT
+CLASS="COMPUTEROUTPUT"
+>MCAST.NET</TT
+> domain. Such multicast
+  addresses are defined as follows:</P
+><P
+></P
+><DIV
+CLASS="VARIABLELIST"
+><DL
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>224.0.0.5 (OSPF-ALL.MCAST.NET)</TT
+></DT
+><DD
+><P
+>OSPF all routers</P
+></DD
+><DT
+><TT
+CLASS="COMPUTEROUTPUT"
+>224.0.0.6 (OSPF-DSIG.MCAST.NET)</TT
+></DT
+><DD
+><P
+>OSPF all designated routers</P
+></DD
+></DL
+></DIV
+><P
+>  See RFC 1247 for details on the OSPF protocol.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="itrafmon.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1077.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The IP Traffic Monitor</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="itrafmon.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Additional Information</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

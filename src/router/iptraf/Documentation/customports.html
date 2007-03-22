@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Custom Information</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Configuring IPTraf"
+HREF="config.html"><LINK
+REL="PREVIOUS"
+TITLE="Timers"
+HREF="timers.html"><LINK
+REL="NEXT"
+TITLE="Background Operation"
+HREF="backop.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="timers.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Configuring IPTraf</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="backop.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="CUSTOMPORTS"
+>Custom Information</A
+></H1
+><P
+>  The remaining configuration items allow you to enter information which
+  IPTraf uses for its displays and logs.</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2061"
+>Additional ports</A
+></H2
+><P
+>Select this item to enter a port
+  number to be included in the TCP/UDP counts in the TCP/UDP service
+  statistics main menu item described above. By default,
+  port numbers above 1023 are not monitored. If you do
+  have a higher-numbered port to monitor, enter it here.</P
+><P
+>  You will see two fields. If you have only one port to enter, just fill
+  up the first field. To specify a range, fill both fields, the first port
+  in the first field, the last port in the second field.</P
+><P
+>  You can select this option multiple times to add more values or ranges.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2066"
+>Delete port/range</A
+></H2
+><P
+>  Select this item to remove a higher-numbered port number or
+  port range you entered earlier with the <I
+CLASS="EMPHASIS"
+>Additional
+  ports...</I
+> option. A window will come up
+  containing the entered ports and ranges. Select the entry you want
+  delete and press Enter.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2070"
+>LAN Station Identifiers</A
+></H2
+><P
+> The LAN station statistics facility monitors stations based
+  on their respective MAC addresses. The hexadecimal notation of these
+  addresses make them even more difficult to remember than the
+  dotted-decimal IP addresses, so these facilities were added to
+  help you better determine which station is which.</P
+><P
+>  Selecting the <I
+CLASS="EMPHASIS"
+>Ethernet/PLIP host descriptions...</I
+> or
+  <I
+CLASS="EMPHASIS"
+>FDDI/Token Ring host descriptions...</I
+> options brings
+  up a submenu asking you to add, edit, or delete descriptions.</P
+><P
+>  To add a new description, select the <I
+CLASS="EMPHASIS"
+>Add
+description...</I
+> option. A dialog
+  box will appear, asking you for the MAC address and an appropriate
+  description. Type in the address in hexadecimal notation with no
+  punctuation of any kind. The dialog box is
+  case-insensitive for the address; the alphabetical digits A to F will be
+  stored in lowercase.</P
+><P
+>  Use the Tab key to move between fields and Enter to accept. Press Ctrl+X
+  to discard this dialog and return to the main menu.</P
+><P
+>  The description may be anything: the IP address, a fully-qualified
+  domain name, or a description of your liking as long
+  as the field can hold.</P
+><P
+>  Enter as many descriptions as you need. Press Ctrl+X at a blank dialog
+  after you have entered the last entry</P
+><P
+>  These descriptions will be displayed alongside the MAC addresses
+  in the LAN station monitor, together with the type of frame (Ethernet,
+  PLIP, or FDDI).</P
+><P
+>  An existing address or description may be edited
+by selecting the <I
+CLASS="EMPHASIS"
+>Edit
+  description...</I
+> option from the submenu. A panel will appear with a list
+  of existing address descriptions. Select the one you wish to
+  edit and press Enter. A dialog box identical to that
+  when you add a description will appear with prefilled fields. Just
+  backspace over and edit the fields. Press Enter to accept or Ctrl+X to
+  cancel.</P
+><P
+>  Selecting the <I
+CLASS="EMPHASIS"
+>Delete description...</I
+> submenu
+  item brings up the selection panel. Select the description you want to
+  delete and press Enter. You can also press Ctrl+X to cancel the operation.</P
+><P
+>  IPTraf 2.4 and later also recognizes the <TT
+CLASS="FILENAME"
+>/etc/ethers</TT
+> file.
+  Should a hardware address be present in the IPTraf definition files and
+  in <TT
+CLASS="FILENAME"
+>/etc/ethers</TT
+>, the IPTraf definition will be used.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  The description file for Ethernet and PLIP is
+  <TT
+CLASS="FILENAME"
+>ethernet.desc</TT
+>, while the FDDI and Token Ring mappings are stored
+  in <TT
+CLASS="FILENAME"
+>fddi.desc</TT
+> in the IPTraf working directory. These files are in
+  colon-delimited text format. Database engines or custom scripts can be
+  told to append data lines to those files. Each line follows this
+  simple format:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+><TT
+CLASS="REPLACEABLE"
+><I
+>address</I
+></TT
+>:<TT
+CLASS="REPLACEABLE"
+><I
+>description</I
+></TT
+></PRE
+></TD
+></TR
+></TABLE
+><P
+> 
+ For example</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>00201e457e:Cisco 3640 gateway</PRE
+></TD
+></TR
+></TABLE
+><P
+>  Do not put colons, periods, or any invalid characters in the MAC address.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="timers.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="backop.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Timers</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="config.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Background Operation</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

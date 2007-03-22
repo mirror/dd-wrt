@@ -1,0 +1,88 @@
+This is the beginning of a FAQ for IPTraf.
+---
+
+Q: Could you include support for <this-and-that> interface?
+
+A: Please read the README.interfaces file for what is needed for a new
+interface type to be supported.
+
+Q: I try to start IPTraf but it tells me that <facility> is already active
+in another process.  But I'm sure IPTraf isn't running at the time!
+
+A: Probably due to a faulty installation or abnormal termination. If
+you're sure you've installed the software properly, you may have stale
+lock files from a previous abort.  Just issue the iptraf command with the
+-f parameter (iptraf -f). This will override stale locks and IPTraf should
+proceed normally.
+
+Q: I want to configure IPTraf but it tells me only the first instance can
+configure.
+
+A: Similar to the previous question.  Issue the iptraf command with the -f
+parameter.
+
+NOTE: Versions prior to 2.6.2 did not properly erase stale lock files
+when IPTraf aborted due to an insufficient screen size.
+
+Q: Is there a way to make IPTraf run in the background and collect
+statistics to a log file?
+
+A: Prior to 2.1.0, there was no elegant way of doing so.  Version 2.1.0
+and later have the -B command-line parameter to force IPTraf to dump all
+its screen output into oblivion and move into the background.  See the
+manual for details on background operation.
+
+Q: I get the error message "Unable to open raw socket".
+
+A: If you're using IPTraf 2.x, you must be running version 2.2.x of the
+Linux kernel.  Furthermore, the "Packet Socket" driver must be installed.
+Most stock kernels include this driver already.  Be sure to include it if
+you're compiling a custom kernel.
+
+Q: I'm getting a "cannot allocate memory" error but I've got loads of
+memory available.
+
+A: The "cannot allocate memory" error is a reponse to the "segmentation
+fault" condition (SIGSEGV).  If you're sure it's not a memory condition on
+your machine, please report it to me, and if possible, include a gdb trace
+or strace output to help me debug.
+
+Q: Is there Web/HTTP/HTML/whatever version available?
+
+A: I've received several requests for this one.  Perhaps in time, I've
+been caught up in some work and some personal stuff.  Suggestions on
+implementation of such a feature are welcome.  (Addition: I hope to get
+this incorporated into the next major release.  Who knows?  If I have the
+time, I might be able to WAP it in the near future :))
+
+Q: It would be great if the statistics could be sorted.
+
+A: As of version 2.3, sorting is now available with the IP traffic
+monitor, TCP/UDP statistical breakdown, and LAN station monitor.  Sorting
+is invoked by pressing the S key and selecting a sort criterion.
+
+(Note: versions 2.5.0 and later sorts the entries with the Quicksort
+algorithm, which significantly cuts down the time to sort.)
+
+Q: I want to run IPTraf from a Secure Shell terminal but the output of the
+program causes a heavy load on the network.  What should I do?
+
+A: The output of the program is returned over the network, which in turn
+tells IPTraf about the new traffic, which IPTraf then outputs, which is
+then sent over the network... in other words, it's a feedback effect.  The
+solution to this is to set the screen update interval to 1 second or more.
+To do that, go to Configuration... then select Timers... then Screen
+update interval... and enter the interval value in seconds. One second
+should be fine.
+
+Q: Does IPTraf run on FreeBSD?
+
+A: I wish it did.  IPTraf was designed from the ground up to use the Linux
+PF_PACKET mechanism, not libpcap.  The main reasons for doing this are
+less overhead and more control over the captured packets.  Since Linux 
+kernel 2.2, the raw socket API featured more goodies, like the direction 
+of the packets.
+
+I hope to be able to successfully port to FreeBSD, but I do not have the 
+resources to do so now.
+

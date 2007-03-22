@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>  rvnamed Messages</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Messages"
+HREF="messages.html"><LINK
+REL="PREVIOUS"
+TITLE="Messages"
+HREF="messages.html"><LINK
+REL="NEXT"
+TITLE="GNU Free Documentation License"
+HREF="gfdl.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="messages.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Messages</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="gfdl.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="RVNAMEDMESSAGES"
+>rvnamed Messages</A
+></H1
+><P
+>  As a daemon, rvnamed does not send messages to the screen. It
+  writes its messages to the file <TT
+CLASS="FILENAME"
+>rvnamed.log</TT
+> in the
+  IPTraf log directory.</P
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2485"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Unable to open child communication socket</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed was unable to open the communication endpoint for data reception
+  from the children it creates. This is highly unusual, and should it
+  occur, report the circumstances.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2491"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Unable to open client communication socket</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed was unable to  open the communication endpoint for data exchange
+  with the IPTraf program. This is highly unusual, and should it
+  occur, report the circumstances.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2497"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Error binding client communication socket
+  Error binding child communication socket</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed was unable to assign a name
+  to the indicated communication socket. This may be due to a bad, full,
+  or corrupted filesystem.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2503"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Fatal error: no memory for descriptor monitoring</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed ran out of memory. IPTraf will resort to blocking, and may freeze.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2509"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Error on fork, returning IP address</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed had a problem spawning a copy of itself to resolve the IP
+  address. rvnamed will simply return the IP address in its literal,
+  dotted-decimal notation. IPTraf will still function normally. This may
+  be due to lack of memory or a process limit hit.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2515"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Maximum child process limit reached</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  rvnamed has reached its maximum number of child processes. This is
+  intended as a "brake" to prevent too many rvnamed children
+  from hogging your computer's resources and possibly crashing it.  Unless IPTraf is monitoring an extremely busy network without filters,
+  this shouldn't happen, at least, not that often. If you notice
+  this message, try applying filters or check your DNS server. Many times,
+  this can happen when the DNS server goes down for
+  whatever reason, and you have rvnamed children taking too long to resolve.</BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="messages.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="gfdl.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Messages</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="messages.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>GNU Free Documentation License</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
