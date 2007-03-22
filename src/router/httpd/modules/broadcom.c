@@ -5339,7 +5339,9 @@ static void
 ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 {
   int i;
+  int len, pos, count; 
   char s[32];
+  char *temp;
 
   if (nvram_match ("upnp_enable", "1"))
     {
@@ -5347,7 +5349,22 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 	{
 	  websWrite (wp, (i > 0) ? ",'" : "'");
 	  sprintf (s, "forward_port%d", i);
-	  tf_webWriteJS (wp, nvram_safe_get (s));
+	  
+// fix: some entries are missing the desc. - this breaks the upnp.asp page, so we add ,*
+	  temp = nvram_safe_get (s);
+	  count = 0;
+	  len = strlen (temp);
+	  
+	  for (pos = len; pos != 0; pos--)
+	  {
+		  if (temp[pos] == ',')
+		  	count++;
+	  }
+	  if (count == 2)
+	  	strcat (temp, ",*");
+	  
+	  
+	  tf_webWriteJS (wp, temp);
 	  websWrite (wp, "'");
 	}
     }
