@@ -432,9 +432,9 @@ nvram_close();
 int
 nvram_unset (const char *name)
 {
-  lock ();
+  nvram_open();
   nvram_immed_set (name, NULL);
-  unlock ();
+  nvram_close();
   return 0;
 }
 
