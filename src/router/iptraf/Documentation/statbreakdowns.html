@@ -1,0 +1,236 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Statistical Breakdowns</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Detailed Interface Statistics"
+HREF="detstats.html"><LINK
+REL="NEXT"
+TITLE="TCP and UDP Traffic Statistics"
+HREF="servmon.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="detstats.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="servmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="STATBREAKDOWNS"
+>Statistical Breakdowns</A
+></H1
+><P
+>  Statistical breakdowns contain two facilities that break
+  down traffic counts by either packet size or TCP/UDP port.</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="PKTSIZE"
+>Packet Sizes</A
+></H1
+><P
+>  The packet size breakdown facility used to be incorporated
+  into the detailed interface statistics. It has since been moved
+  to its own facility. It is entered
+  by selecting <I
+CLASS="EMPHASIS"
+>Statistical Breakdowns/By packet size</I
+>.</P
+><P
+>  The packet size breakdown takes the interface's Maximum Transmission
+  Unit (MTU) size and divides it into 20 brackets, each bracket
+  containing a range of sizes. As a packet is captured, its size
+  is determined and the appropriate bracket is incremented.</P
+><P
+>  This facility provides an idea as to the packet sizes passing over
+  your network, and can aid in network (re)design decisions.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1187"
+></A
+><P
+><IMG
+SRC="iptraf-pktsize.png"></P
+><P
+><B
+>Figure 1. The packet size statistical breakdown</B
+></P
+></DIV
+><P
+>  If logging is enabled, copies of the statistics are written at regular
+  intervals to a log file. The default log file name
+  is
+  <TT
+CLASS="FILENAME"
+>packet_size-<TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+>.log</TT
+> where
+  <TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+>   
+  is the selected interface for this session (for example,
+  <TT
+CLASS="FILENAME"
+>packet_size-eth0.log</TT
+>).</P
+><P
+>IPTraf's filters do not affect this facility.</P
+><P
+>  The packet size breakdown can also be invoked straight
+  from the command line by specifying the <TT
+CLASS="COMPUTEROUTPUT"
+>-z</TT
+> iface
+  parameter. The interface parameter is required. For example,
+  this command runs the facility on interface <TT
+CLASS="FILENAME"
+>eth0</TT
+>.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf -z eth0</PRE
+></TD
+></TR
+></TABLE
+><P
+>  When started from the command line, the log filename and log interval can be
+  specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+>
+  parameters respectively.  See the <A
+HREF="cmdline.html"
+>Command-line Parameters</A
+>
+  section above for more information.</P
+><P
+>  To exit, press X or Ctrl+X.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="detstats.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="servmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Detailed Interface Statistics</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>TCP and UDP Traffic Statistics</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

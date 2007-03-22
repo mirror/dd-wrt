@@ -1,0 +1,20 @@
+============================================================================
+IPTraf Development Platform Information
+----------------------------------------------------------------------------
+
+As of IPTraf 2.8.0, development is primarily done on an Intel 1.6-GHz
+Pentium 4 development workstation, as well as a lower-end 400 MHz Pentium
+II.  I have to make it clear that my development platform is Linux for the
+x86 family of processors *only*.  I cannot always debug or troubleshoot
+quirks specific to non-x86 machines, as much as I would like to.  
+However, I know I have to be accommodating so if you do give me a bug
+report, I will try my best to fix it, but I need:
+
+	1.  All the information needed describing the bug
+	2.  To the best extent possible, gdb or strace outputs.
+	3.  An offer to test the fixes.
+
+Without these, especially #3, I cannot exert effort on the quirk.  I'm
+sorry, but it's just impossible without the necessary machines.
+
+

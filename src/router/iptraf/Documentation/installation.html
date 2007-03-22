@@ -1,0 +1,698 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>  Installation</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Getting Started"
+HREF="gettingstarted.html"><LINK
+REL="PREVIOUS"
+TITLE="Getting Started"
+HREF="gettingstarted.html"><LINK
+REL="NEXT"
+TITLE="  Upgrading from Earlier Versions"
+HREF="upgrading.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="gettingstarted.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Getting Started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="upgrading.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="INSTALLATION"
+>Installation</A
+></H1
+><P
+>  IPTraf is most readily available on the Internet, but some may receive
+  it on a diskette. Here are the instructions for both types
+  of distributions.</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN97"
+>System Requirements</A
+></H2
+><P
+>IPTraf requires:</P
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN100"
+>Hardware Requirements</A
+></H3
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>     16 megabytes of physical RAM (more recommended, at least 64 MB for very busy networks)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>     2 megabytes of free disk space for installation (more will be needed if you log high amounts of traffic over time)</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>     Pentium-class processor or higher (Pentium-II 200 MHz or higher recommended) or equivalent.</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>     One or more of the supported network interfaces.</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN111"
+>Operating System Requirements</A
+></H3
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>     Linux kernel 2.2.0 or higher</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>     GNU C Library 2.1 or later</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>&#13;     ncurses 4.2 or later with the complete terminfo database in
+     <TT
+CLASS="FILENAME"
+>/usr/share/terminfo</TT
+>. Support for
+     <TT
+CLASS="COMPUTEROUTPUT"
+>linux</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>vt100</TT
+>,
+     <TT
+CLASS="COMPUTEROUTPUT"
+>xterm</TT
+>,
+     <TT
+CLASS="COMPUTEROUTPUT"
+>xterm-color</TT
+> recommended.&#13;</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT3"
+><H3
+CLASS="SECT3"
+><A
+NAME="AEN125"
+>Compilation Requirements</A
+></H3
+><P
+>The following components are required when compiling IPTraf from the
+source code.</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>     gcc 2.7.2.3 or later</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>&#13;     GNU C (glibc) development library 2.1 or later</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>&#13;     ncurses development libraries 4.2 or later</P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN135"
+>Availability</A
+></H2
+><P
+>  IPTraf can be downloaded from the Internet from the official FTP site at
+ <A
+HREF="ftp://iptraf.seul.org/pub/iptraf/"
+TARGET="_top"
+>ftp://iptraf.seul.org/pub/iptraf/</A
+>.</P
+><P
+>&#13;  The software is available in source form in
+  compressed
+<TT
+CLASS="FILENAME"
+>.tar.gz</TT
+> files named
+<TT
+CLASS="FILENAME"
+>iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.tar.gz</TT
+> where
+<TT
+CLASS="FILENAME"
+><TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+></TT
+> 
+  is the version number. Precompiled ready-to-run software is available in
+  the
+<TT
+CLASS="FILENAME"
+>iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z.machinetype</I
+></TT
+>.bin.tar.gz</TT
+>
+ files. (<TT
+CLASS="FILENAME"
+><TT
+CLASS="REPLACEABLE"
+><I
+>machinetype</I
+></TT
+></TT
+> indicates
+  what platform the precompiled binaries run on. The official distribution
+  will only be for the Intel x86 architecture indicated as
+<TT
+CLASS="FILENAME"
+>i386</TT
+>.)</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN150"
+>Installing Downloaded Packages</A
+></H2
+><P
+>  You will need to have GNU tar and GNU zip installed. All
+  modern Linux installations already have these utilities ready.</P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>   
+  Decompress the <TT
+CLASS="FILENAME"
+>.tar.gz</TT
+> file by entering</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>tar zxvf iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.tar.gz</PRE
+></TD
+></TR
+></TABLE
+><P
+>      for the source code or</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>tar zxvf iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.i386.bin.tar.gz</PRE
+></TD
+></TR
+></TABLE
+><P
+>for the precompiled x86 programs.</P
+><P
+>If your tar doesn't support the z option, you can separately
+decompress the <TT
+CLASS="FILENAME"
+>.tar.gz</TT
+> file
+then extract the resulting <TT
+CLASS="FILENAME"
+>.tar</TT
+> archive.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>gunzip iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.tar.gz
+tar xvf iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.tar</PRE
+></TD
+></TR
+></TABLE
+><P
+>This will decompress the sources into a directory called
+<TT
+CLASS="FILENAME"
+>iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+></TT
+> (source code)
+or
+<TT
+CLASS="FILENAME"
+>iptraf-<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+>.bin</TT
+>
+(precompiled).
+    (<TT
+CLASS="REPLACEABLE"
+><I
+>x.y.z</I
+></TT
+> here should be the IPTraf version number
+you're installing, like <TT
+CLASS="FILENAME"
+>3.0.0</TT
+>).</P
+></LI
+><LI
+><P
+>Change to the created top level directory.</P
+></LI
+><LI
+><P
+>To compile and install the software, run the Setup program by entering</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>./Setup</PRE
+></TD
+></TR
+></TABLE
+><P
+>    while you are logged in as root. The Setup script will recognize the
+    source distribution and compile the software before installing. It
+    will immediately install a precompiled distribution.</P
+></LI
+></OL
+><P
+>    The resulting binaries will be placed in the
+<TT
+CLASS="FILENAME"
+>/usr/local/bin</TT
+> directory.
+    All needed directories will also be created.</P
+><P
+>  After installation, you will be asked if you want to
+  read the <TT
+CLASS="FILENAME"
+>RELEASE-NOTES</TT
+> file. It is recommended that you do so at
+  that point, since the <TT
+CLASS="FILENAME"
+>RELEASE-NOTES</TT
+> file
+  contains important information about the new version.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN187"
+>Installing a Floppy Distribution</A
+></H2
+><P
+>  If you received IPTraf
+  on a diskette, the sources are already decompressed. The diskette is
+  in Second Extended filesystem format. Perform the following steps to
+  install the software. </P
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>Insert the floppy in the drive.</P
+></LI
+><LI
+><P
+>Mount the floppy on an empty directory. For example, to
+mount the floppy in the first floppy drive under a directory
+called <TT
+CLASS="FILENAME"
+>/mnt</TT
+>, enter</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>mount -t ext2 /dev/fd0 /mnt</PRE
+></TD
+></TR
+></TABLE
+><P
+>    This assumes your floppy is in
+ <TT
+CLASS="FILENAME"
+>/dev/fd0</TT
+>. You can use any empty directory in place
+ of <TT
+CLASS="FILENAME"
+>/mnt</TT
+>. With most Linux installations, this will work fine.</P
+></LI
+><LI
+><P
+>&#13;After mounting, change
+to the <TT
+CLASS="FILENAME"
+>/mnt</TT
+> (or whatever) directory.</P
+></LI
+><LI
+><P
+>Enter</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>./Setup</PRE
+></TD
+></TR
+></TABLE
+><P
+>    while logged in as root. Setup will determine whether the diskette
+    contains a source code distribution or
+    ready-to-run precompiled software.  This will copy the binaries to
+    <TT
+CLASS="FILENAME"
+>/usr/local/bin</TT
+>, and
+    create the necessary working directories.</P
+></LI
+><LI
+><P
+>Unmount the diskette by typing</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="90%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>umount /mnt</PRE
+></TD
+></TR
+></TABLE
+><P
+>    (That's <I
+CLASS="EMPHASIS"
+>u</I
+>mount, not <I
+CLASS="EMPHASIS"
+>un</I
+>mount.)</P
+><P
+>    You can then eject the diskette. Store it in a safe place.</P
+><P
+>  You will also be asked if you want to view the
+<TT
+CLASS="FILENAME"
+>RELEASE-NOTES</TT
+> file. It is
+  recommended that you do so at that point.</P
+><P
+>  In both cases (downloaded and floppy), the installation will store the
+  program in <TT
+CLASS="FILENAME"
+>/usr/local/bin</TT
+> with the binaries owned by
+  user root, readable, writable, and executable by the owner,
+  no permissions for the group, no permissions for all others. (700 octal,
+  or <TT
+CLASS="COMPUTEROUTPUT"
+>-rwx------</TT
+>).</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="90%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  You must be <TT
+CLASS="FILENAME"
+>root</TT
+> to
+  do the installation. The old style of installation (<B
+CLASS="COMMAND"
+>cd src;make
+  install</B
+>)
+  is still supported.</P
+></TD
+></TR
+></TABLE
+></DIV
+></LI
+></OL
+><P
+>  Be sure <TT
+CLASS="FILENAME"
+>/usr/local/bin</TT
+> is included in
+  your environment's <TT
+CLASS="ENVAR"
+>PATH</TT
+> variable. You can
+  edit the appropriate command in your login customization
+  file (<TT
+CLASS="FILENAME"
+>.profile</TT
+> for the Bourne-type shells,
+  <TT
+CLASS="FILENAME"
+>.cshrc</TT
+> for the C shell and its relatives).</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="gettingstarted.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="upgrading.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Getting Started</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="gettingstarted.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Upgrading from Earlier Versions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

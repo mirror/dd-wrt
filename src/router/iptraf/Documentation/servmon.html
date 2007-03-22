@@ -1,0 +1,300 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>TCP and UDP Traffic Statistics</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Statistical Breakdowns"
+HREF="statbreakdowns.html"><LINK
+REL="PREVIOUS"
+TITLE="Statistical Breakdowns"
+HREF="statbreakdowns.html"><LINK
+REL="NEXT"
+TITLE="LAN Station Statistics"
+HREF="hostmon.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="statbreakdowns.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Statistical Breakdowns</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="hostmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="SERVMON"
+>TCP and UDP Traffic Statistics</A
+></H1
+><P
+>  IPTraf also includes a facility that generates statistics on TCP and UDP
+  traffic. This facility displays counts of all TCP and UDP packets with
+  source or destination ports numbered less than 1024. Ports 1 to 1023 are
+  reserved for the TCP/IP application protocols (well-known ports).</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1208"
+></A
+><P
+><IMG
+SRC="iptraf-tcpudp.png"></P
+><P
+><B
+>Figure 2. The TCP/UDP service monitor</B
+></P
+></DIV
+><P
+>  The statistics window indicates the protocol (TCP or UDP), the
+  port number, the total packets and bytes counted for this particular
+  protocol/port combination, the packets and bytes destined for that
+  protocol and port, and the packets and bytes coming
+  from that protocol and port.</P
+><P
+>  Byte counts include the IP header and payload only. The data link header
+  is not included.</P
+><P
+>  The protocol/port indicators are color-coded for easier identification
+  on color terminals. TCP indicators are in yellow, UDP in bright green.</P
+><P
+>  Some network applications or protocols may use port numbers higher
+  than 1023. Examples
+  of these include application proxy servers (HTTP proxy servers typically
+  use values like 8000, 8080, 8888, and the like), and IRC
+  (IRC servers commonly accept connections on ports 6660 to 6669). These
+  ports are by default not included in the counts. If you do want
+  to include a higher-numbered port in the statistics, you can add
+  them yourself from the <I
+CLASS="EMPHASIS"
+><A
+HREF="config.html"
+>Configure...</A
+>/Additional ports...</I
+> 
+  menu item. See the section below.</P
+><P
+>  If logging is enabled, The statistics are also written to a log file
+  (the default name is
+<TT
+CLASS="FILENAME"
+>tcp_udp_services-<TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+>.log</TT
+>, where iface
+  is the selected interface (for example,
+<TT
+CLASS="FILENAME"
+>tcp_udp_services-eth0.log</TT
+>).</P
+><P
+>  IPTraf computes the total, incoming, outgoing, and data rates of the
+  protocol currently indicated by the facility's highlight bar. The data
+  rates are indicated at the bottom of the screen. If logging is
+  enabled, the average data rates since the start of the facility are
+  placed in the log file.</P
+><P
+>  The Up and Down cursor keys move the highlight bar. Pressing X or Ctrl+X
+  exits and returns to the main menu (or the shell if it was started
+  from the command line).</P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1223"
+>Sorting TCP/UDP Entries</A
+></H2
+><P
+>  Pressing the S key brings up a window which allows you to
+  select the field by which the entries will be sorted. You can press R to
+  sort by port, P to sort by total packets, B to sort by total bytes, T to
+  sort by incoming packets (packets to), O to sort by incoming bytes
+  (bytes to), F to sort by outgoing packets (packets from) and M to sort
+  by outgoing bytes (bytes from). Pressing any other key cancels the sort.</P
+><P
+>  Port numbers are sorted in ascending order (least first) but
+  statistics are sorted in descending order (largest counts first).</P
+><P
+>  As with the IP traffic monitor, sorting is performed only with
+  this sequence. Automatic sorting is not performed so as not to
+  affect performance.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1228"
+></A
+><P
+><IMG
+SRC="iptraf-tcpudpsort.png"></P
+><P
+><B
+>Figure 3. The TCP/UDP monitor's sort criteria</B
+></P
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1231"
+>Additional Information</A
+></H2
+><P
+>IPTraf's filters affect the output of this facility.  See Chapter 7, <A
+HREF="filters.html"
+>Filters</A
+> for more information about filters.</P
+><P
+> 
+   If you wish to start this facility from the command line, you can
+  use the <TT
+CLASS="COMPUTEROUTPUT"
+>-s</TT
+> option followed by an interface to monitor. For example,</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf -s eth0</PRE
+></TD
+></TR
+></TABLE
+><P
+>  brings up this module for traffic on
+  <TT
+CLASS="FILENAME"
+>eth0</TT
+>. The interface must be specified, or
+  IPTraf will drop back to the shell.</P
+><P
+>  When started from the command line, the log filename and log interval can be
+  specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+>
+  parameters respectively.  See the <A
+HREF="cmdline.html"
+>Command-line Parameters</A
+>
+  section above for more information.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="statbreakdowns.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="hostmon.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Statistical Breakdowns</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="statbreakdowns.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>LAN Station Statistics</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
