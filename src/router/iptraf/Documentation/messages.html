@@ -1,0 +1,1191 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Messages</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Background Operation"
+HREF="backop.html"><LINK
+REL="NEXT"
+TITLE="  rvnamed Messages"
+HREF="rvnamedmessages.html"></HEAD
+><BODY
+CLASS="APPENDIX"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="backop.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="rvnamedmessages.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="APPENDIX"
+><H1
+><A
+NAME="MESSAGES"
+>Messages</A
+></H1
+><P
+>IPTraf's messages are presented in two ways.  In interactive mode, messages
+are displayed in a distictive message box.  In daemon (background) mode,
+appropriate messages are written to the <TT
+CLASS="FILENAME"
+>iptraf.log</TT
+>
+file in the IPTraf log directory (normally
+<TT
+CLASS="FILENAME"
+>/var/log/iptraf</TT
+>.</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="IPTRAFMESSAGES"
+>IPTraf Messages</A
+></H1
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2131"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to create config file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot create the configuration file. The most likely cause of
+  this is that you didn't properly install the
+  program, and the necessary directory
+<TT
+CLASS="FILENAME"
+>/var/local/iptraf</TT
+> does not
+  exist. Can also be generated if you have a disk problem or if you
+  have too many files open.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2138"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to read config file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  The configuration record cannot be read. You most likely have a disk
+  problem.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2144"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to write config file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The configuration file cannot be written. You either have a disk
+  problem, or (more likely), your disk is full.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2150"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Enter an appropriate description for this filter</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  Enter something to clearly describe the filter you are defining.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2156"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Error loading filter list file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot access the list of defined TCP or UDP filters. Can also be
+  an indicator of a bad disk.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2162"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Error writing filter list file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The filter list file cannot be written to. You may
+  have trouble accessing your filters.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2168"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to read TCP/UDP/misc IP filter file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf cannot read the filter data off the file. Could be caused
+  by a bad disk.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2174"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Error opening filter data file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot open the filter file. Could be caused by a shortage of
+  file descriptors or a bad disk.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2180"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to write filter data</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot add the newly defined filter to the filter list. This may
+  be due to a bad disk.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2186"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Cannot create filter data file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot create the filter record file. The defined filter is lost.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2192"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to save filter changes</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf cannot save the changes you made to the filter. You probably
+  have a disk error.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2198"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to write filter state information</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  The current state of the filters cannot be saved. IPTraf will be unable
+  to correctly reload the filters the next time it's started. This can
+  be caused by a bad disk or improper installation.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2204"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to save interface flags</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf was unable to save the flags of the network interfaces. This is
+  probably due to a bad installation or full filesystem.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2210"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to retrieve saved interface flags</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf was unable to retrieve the save interface flags.
+  Probably again due to a bad installation or full filesystem.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2216"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+><TT
+CLASS="REPLACEABLE"
+><I
+>protocol</I
+></TT
+> filter data file in use; try again later</TT
+></P
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Filter state file in use; try again later</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  Another IPTraf process is modifying the TCP, UDP or miscellaneous IP
+  filter data or the filter state file and has locked the files
+  or file. Try again once the other IPTraf process has terminated or
+  completed its modifications and unlocked the files.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2225"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to resolve hostname</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  The indicated host name in the filter cannot be resolved into an
+  IP address. Check the local hosts database <TT
+CLASS="FILENAME"
+>/etc/hosts</TT
+> or
+  your machine's DNS configuration or DNS server.  The filter parameters will not be used.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2233"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to open host description file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf cannot open the file containing the descriptions for Ethernet
+  or FDDI addresses. Could be due to a bad disk or a hit on the file
+  descriptor limit.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2239"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to write host description</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf was unable to write the description record for this Ethernet or
+  FDDI address. Could be due to a bad disk or corrupted filesystem.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2245"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>No descriptions&#13;</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  You tried to edit or delete a description with no previous
+  descriptions defined.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2251"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Cannot open log file</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  There is a problem opening the log file. There is most
+  likely a problem with the disk, or there are too many open files.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2257"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to obtain interface list</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf was unable to retrieve the list of network interfaces
+  from the <TT
+CLASS="FILENAME"
+>/proc</TT
+> filesystem. This may be due
+  to a badly configured kernel.  IPTraf needs <TT
+CLASS="FILENAME"
+>/proc</TT
+>
+  filesystem support.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2265"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>No active interfaces. Check their status or the /proc filesystem.</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf found no active interfaces. Either all interfaces are down or the
+  <TT
+CLASS="FILENAME"
+>/proc/net/dev</TT
+> file was empty or unavailable. Activate at least one
+  interface or check the <TT
+CLASS="FILENAME"
+>/proc/net/dev</TT
+> file.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2273"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to obtain interface parameters for interface</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The system call to retrieve the interface's flags failed. Check your
+  interface or kernel driver.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2279"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Promisc change failed for interface</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The system call to change the promiscuous flag failed. Check
+  your interface or its kernel driver.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2285"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to open raw socket for flag change</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf was unable to open the necessary socket for the promiscuous
+  change operation. May be due to a shortage of file descriptors.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2291"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to open socket for MTU determination</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  Returned by the facility for detailed interface statistics
+  if the raw socket's opening sequence failed. The facility will abort.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2297"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to open raw socket</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  IPTraf was unable to open the raw socket for packet capture. May be due
+  to a shortage of file descriptors.<DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Reminder</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+> IPTraf 2.x.x requires Linux kernel 2.2.x, with the Packet
+  Socket option compiled in or installed as a module. IPTraf 2.x will
+  return this error on a pre-2.2 kernel or on a 2.2 kernel without
+  Packet Socket.</P
+></TD
+></TR
+></TABLE
+></DIV
+></BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2306"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Unable to obtain interface MTU</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The detailed statistics facility was unable to
+  obtain the maximum transmission unit (MTU) for the selected
+  interface. The facility will abort.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2312"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Specified interface not supported</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The interface specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-d</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-s</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+>,
+  or <TT
+CLASS="COMPUTEROUTPUT"
+>-z</TT
+> command-line parameters is not supported
+  by IPTraf.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2323"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Specified interface not active</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The interface specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-d</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-s</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+>, or
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-z</TT
+> command-line parameters is
+  supported, but not currently activated.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2334"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Fatal: memory allocation error</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  May occur if you have too little memory to allocate for windows, the
+  menu system, or dialog boxes. IPTraf tries
+  to prevent further allocations if memory runs out during a
+  monitor. However, this could also mean a bug if you're reasonably sure
+  you're not out of memory. An instructional message
+  on bug reporting follows this message.<DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Technical note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>This is actually a response to the
+  segmentation fault error (SIGSEGV).</P
+></TD
+></TR
+></TABLE
+></DIV
+></BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2343"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>This program can be run only by the system administrator</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf normally does not allow anybody but uid 0 (root) to run it.
+  This measure is included for safety reasons. See the section
+  on recompiling the program below if you want to override this.
+  This feature is built in, and not part of the configuration&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2349"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Your TERM variable is not set</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The <TT
+CLASS="ENVAR"
+>TERM</TT
+> (terminal type) environment variable
+  must be set to a valid terminal type so that the screen management
+  routines can function properly. Set it to the appropriate terminal type.
+  Linux consoles typically have their <TT
+CLASS="ENVAR"
+>TERM</TT
+> variables set to
+<TT
+CLASS="COMPUTEROUTPUT"
+>linux</TT
+>.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2358"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Received TERM signal</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  Not related to the previous message. The
+<TT
+CLASS="COMPUTEROUTPUT"
+>TERM</TT
+> (terminate) signal
+  is normally used to gracefully shut down a program. This message
+  simply indicates that the <TT
+CLASS="COMPUTEROUTPUT"
+>TERM</TT
+> signal was caught and IPTraf is
+  attempting to shut down as gracefully as possible.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2366"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>  Invalid option or missing parameter, use iptraf -h for help</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  The <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-d</TT
+>,
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-s</TT
+>, <TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+>, or
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-z</TT
+> options were specified but
+  no interface was specified on the command line. These
+  parameters require a valid interface name (or
+  <TT
+CLASS="COMPUTEROUTPUT"
+>all</TT
+> for <TT
+CLASS="COMPUTEROUTPUT"
+>-i</TT
+>
+or <TT
+CLASS="COMPUTEROUTPUT"
+>-l</TT
+>).  This message also appears if an unknown option is passed
+to the <B
+CLASS="COMMAND"
+>iptraf</B
+> command.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2382"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Warning: unable to tag this process</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf normally tags itself when it runs to prevent multiple instances
+  of the statistical facilities from running.
+  This message means the program was unable to
+  create the necessary tag file. This may be due to a bad or
+  improper installation. Try running the
+<B
+CLASS="COMMAND"
+>make install</B
+> procedure or the
+<B
+CLASS="COMMAND"
+>Setup</B
+> in the distribution's top-level directory.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2390"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Warning: unable to tag facility</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf was unable to create the tag file for the facility you
+  started. The facility will still run, but other instances of IPTraf that
+  may be running simultaneously will allow the same facility to run.
+  This may cause both instances of the facility to malfunction. This could
+  be due to a bad disk or bad installation.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2396"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+><TT
+CLASS="REPLACEABLE"
+><I
+>facility</I
+></TT
+> already running/listening on interface</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  The facility you tried to start is currently running
+  on the indicated interface in another IPTraf process on the machine.
+  This restriction is placed to prevent conflicts involving
+  internal sockets or the log files.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2403"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>General interface statistics already active in another process</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  Only one instance of the general interface statistics can run at a time.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2409"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Duplicate port/range entry&#13;</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  You entered a port number or range that was already added to the list of
+  additional ports to be monitored by the TCP/UDP service monitor&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2415"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>No custom ports</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  There are no ports or port ranges earlier added. There's nothing
+  to delete.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2421"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Can't start rvnamed; lookups will block</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf cannot start the <B
+CLASS="COMMAND"
+>rvnamed</B
+> daemon; probably due
+  to a bad installation. IPTraf will fall back to blocking lookups.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2428"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Can't spawn new process; lookups will block</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf cannot start a new process. This may be due to memory shortage.
+  IPTraf will fall back to blocking lookups.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2434"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Fork error, IPTraf cannot run in background</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf cannot start a new process, and can go into the background.
+  This may be due to memory shortage. IPTraf aborts.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2440"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>No memory for new filter entry</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  IPTraf was unable to allocate memory for a new filter entry. Most likely
+  due to memory shortage.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2446"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Memory Low</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>&#13;  This indicator appears if memory runs low due to a lot of entries in a
+  facility. Should critical functions fail (window creation,
+  internal allocation), the program could terminate with a
+  segmentation violation.<DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  Any message or indicator about low memory means that your system
+  does not have enough memory to handle the entries. It is
+  almost certain that sooner or later, IPTraf or other applications will
+  abort due to the failure of important system calls or library functions.
+  Memory must be added right away.</P
+></TD
+></TR
+></TABLE
+></DIV
+></BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2455"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>IPC Error</TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  This indicator appears if an error occurs receiving data
+  from the <B
+CLASS="COMMAND"
+>rvnamed</B
+> program (IPC stands for Interprocess Communication).
+  This indication should not occur under normal circumstances.
+  Report instances of this condition and the circumstances under which
+  it happens. You may also include data from the
+<TT
+CLASS="FILENAME"
+>rvnamed.log</TT
+> file.&#13;</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2463"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>Error opening terminal: <TT
+CLASS="REPLACEABLE"
+><I
+>terminal</I
+></TT
+></TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>  The screen management routines cannot find the
+<TT
+CLASS="FILENAME"
+>terminfo</TT
+> entry for your
+  terminal. IPTraf expects the terminfo database located
+  in <TT
+CLASS="FILENAME"
+>/usr/share/terminfo</TT
+>. This error could occur when your terminfo
+  database is located somewhere else.  See the section on controlling the <TT
+CLASS="FILENAME"
+>terminfo</TT
+> search path.</BLOCKQUOTE
+></DIV
+><DIV
+CLASS="SIMPLEMSGENTRY"
+><A
+NAME="AEN2474"
+></A
+><P
+><TT
+CLASS="COMPUTEROUTPUT"
+>This will end your IPTraf session
+  </TT
+></P
+><BLOCKQUOTE
+CLASS="MSGEXPLAN"
+>In interactive mode IPTraf asks you to confirm your exit
+command. Press Enter to return to the shell or any other key to cancel
+your command and return to the main menu.</BLOCKQUOTE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="backop.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="rvnamedmessages.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Background Operation</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>rvnamed Messages</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

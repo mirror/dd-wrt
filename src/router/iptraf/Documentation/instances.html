@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Instances and Logging</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Preparing to Use IPTraf"
+HREF="preparingtouse.html"><LINK
+REL="PREVIOUS"
+TITLE="Preparing to Use IPTraf"
+HREF="preparingtouse.html"><LINK
+REL="NEXT"
+TITLE="Screen Update Delays"
+HREF="updates.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="preparingtouse.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Preparing to Use IPTraf</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="updates.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="INSTANCES"
+>Instances and Logging</A
+></H1
+><P
+>  Since version 2.4, IPTraf allows multiple instances of the
+  facilities at the same time in different processes (for example, you can
+  now run two or more IP Traffic Monitors at the same time).
+  However only one can listen on a specific interface or all interfaces
+  at once. The only exception is the general interface
+  statistics, which is still restricted to only one instance at a time.</P
+><P
+>  Because of this relaxation, each instance now generates log files with
+  unique names for instances, depending on either their instance
+  or the interface they're listening on. If the <I
+CLASS="EMPHASIS"
+>Logging</I
+> option is turned
+  on (see the <A
+HREF="config.html"
+>Configuration</A
+> chapter), IPTraf
+  will prompt you for a log file name while presenting a
+  default. You may accept this default or change it. Press Enter
+  to accept, or Ctrl+X to cancel. Canceling will turn logging off for that
+  particular session.</P
+><P
+>  If you don't specify an absolute path, the log file will be placed
+  in <TT
+CLASS="FILENAME"
+>/var/log/iptraf</TT
+>.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN419"
+></A
+><P
+><IMG
+SRC="iptraf-logprompt.png"></P
+><P
+><B
+>Figure 1. The logfile prompt dialog</B
+></P
+></DIV
+><P
+>  See the Logging section
+in the <A
+HREF="config.html"
+>Configuration</A
+> chapter for
+detailed information on logging. See also the documentation on
+each statistical facility for the default log file names.</P
+><P
+>  The default log file names will also be used
+if the <TT
+CLASS="COMPUTEROUTPUT"
+>-B</TT
+> parameter is used
+  to run IPTraf in the background. You can override the defaults with the
+  <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> parameter. See
+<A
+HREF="backop.html"
+>Background Operation</A
+> in Chapter 9.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="preparingtouse.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="updates.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Preparing to Use IPTraf</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="preparingtouse.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Screen Update Delays</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

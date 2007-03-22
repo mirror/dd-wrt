@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Network Interface Statistics</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Additional Information"
+HREF="x1077.html"><LINK
+REL="NEXT"
+TITLE="Detailed Interface Statistics"
+HREF="detstats.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1077.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="detstats.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="NETSTATS"
+>Network Interface Statistics</A
+></H1
+><P
+>There are two network interface
+statistics facilities: the general interface statistics, which
+displays a statistical summary of all attached interfaces, and the
+detailed interface statistics, which shows  more statistical and
+load information about a single selected interface.</P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="GENSTATS"
+>General Interface Statistics</A
+></H1
+><P
+>  The second menu option displays a list of
+  attached network interfaces, and some general
+  packet counts. Specifically, it displays counts of IP, non-IP, and bad
+  IP packets (packets with IP checksum errors). It also includes an
+  activity indicator, which shows the number of kilobits and packets the
+  interface sees per second. All figures are for incoming and outgoing
+  packets. (Again, considering promiscuous
+  mode for LAN interfaces, which simply causes the machine
+  to intercept all packets). This is useful for general monitoring
+  of all attached interfaces. If byte counts and
+  additional information are needed for a specific interface, the <I
+CLASS="EMPHASIS"
+>Detailed
+  interface statistics</I
+> option is also available.</P
+><P
+>  The activity indicators can be toggled between kbits/s and kbytes/s with
+  the <I
+CLASS="EMPHASIS"
+>Activity mode</I
+> configuration option.</P
+><P
+>  The general statistics window will dynamically add new entries
+  as packets from newly-created interfaces (e.g. new PPP interfaces) are
+  intercepted. Long lists can be scrolled with the Up, Down, PgUp, and
+  PgDn keys.</P
+><P
+>This monitor is affected by IPTraf's <A
+HREF="filters.html"
+>filters</A
+> as described in Chapter 7.</P
+><P
+>  Copies of the statistics are written to the log file
+  <TT
+CLASS="FILENAME"
+>iface_stats_general.log</TT
+> at regular intervals if logging is
+  enabled. See the <I
+CLASS="EMPHASIS"
+>Logging</I
+>
+option int the <A
+HREF="config.html"
+>Configuration</A
+> chapter.</P
+><P
+>  This facility can be started directly from the command line with the
+  <B
+CLASS="COMMAND"
+>-g</B
+> option to the <B
+CLASS="COMMAND"
+>iptraf</B
+> command.
+  When started from the command line, the log filename and log interval can be
+  specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+>
+  parameters respectively.  See the <A
+HREF="cmdline.html"
+>Command-line Parameters</A
+>
+  section above for more information.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1115"
+></A
+><P
+><IMG
+SRC="iptraf-gstat1.png"></P
+><P
+><B
+>Figure 1. The general interface statistics screen</B
+></P
+></DIV
+><P
+>  You can press X or Q to return to the main menu. </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1077.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="detstats.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Additional Information</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Detailed Interface Statistics</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

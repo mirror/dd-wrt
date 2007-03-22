@@ -1,0 +1,65 @@
+==========================================================================
+INSTALLATION INSTRUCTIONS FOR IPTRAF 3.0
+--------------------------------------------------------------------------
+
+IMPORTANT: READ THE SYSTEM REQUIREMENTS SECTION IN THE README.  IPTRAF 2
+REQUIRES LINUX 2.2 OR LATER.
+
+To compile and install, just change to the iptraf-3.0.0 top-level directory
+and type:
+
+	./Setup
+
+This will automatically compile and install the software.
+
+The traditional
+
+	cd src
+	make clean
+	make
+	make install
+
+can still be used.
+
+Precompiled binaries are available in the iptraf-3.0.0.i386.bin.tar.gz
+file.  This contains no source code and is expected to run on Intel x86
+Linux with the GNU C Library 2.1 or later.
+
+UPGRADING FROM 2.4, 2.5, 2.6, or 2.7
+
+IPTraf 2.8 has new filter behavior, and filters now contain additional data to
+control this behavior.  See the RELEASE-NOTES file for details.
+
+Because the filter subsystem has been completely redesigned, old filters
+will no longer work and cannot be upgraded.  Filters will have to be
+redefined.
+
+DEALING WITH "ERROR OPENING TERMINAL"
+
+The precompiled executable program comes linked with ncurses 4.2.  ncurses
+4.2 needs to determine your terminal capabilities from the terminfo
+database in /usr/share/terminfo.  If the supplied program fails with
+"Error opening terminal", check this directory.  If it doesn't exist, your
+terminfo database may be somewhere else.  To override the default terminfo
+search path, you can use the TERMINFO environment variable.  Supposing
+your terminfo is in /usr/lib/terminfo (typical for Slackware
+distributions)
+
+	TERMINFO=/usr/lib/terminfo
+	export TERMINFO
+
+You may want to place these commands in your login initialization files
+(/etc/profile or ~/.profile for sh/bash).
+
+You can also create a symbolic link /usr/share/terminfo to point to
+your existing terminfo database.  For example, given the same conditions
+above:
+
+	ln -s /usr/lib/terminfo /usr/share/terminfo
+
+Or, as an alternative, you can simply recompile your program to use your
+ncurses installation.  Be sure you have at least ncurses 1.9.9e.  See
+section on recompiling below.
+
+See the README file and the manual for more information.
+

@@ -1,0 +1,400 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Detailed Interface Statistics</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Network Interface Statistics"
+HREF="netstats.html"><LINK
+REL="PREVIOUS"
+TITLE="Network Interface Statistics"
+HREF="netstats.html"><LINK
+REL="NEXT"
+TITLE="Statistical Breakdowns"
+HREF="statbreakdowns.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="netstats.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Network Interface Statistics</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="statbreakdowns.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="DETSTATS"
+>Detailed Interface Statistics</A
+></H1
+><P
+>  The third menu option displays packet statistics for any
+  selected interface. It provides basically the same information
+  as the <I
+CLASS="EMPHASIS"
+>General interface statistics</I
+>
+   option, with additional details.
+  This facility provides the following information:</P
+><P
+></P
+><UL
+COMPACT="COMPACT"
+><LI
+STYLE="list-style-type: disc"
+><P
+>   Total packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   IP packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   TCP packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   UDP packet and byte count</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   ICMP packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   Other IP-type packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   Non-IP packet and byte counts</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   Checksum error count</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>   Interface activity</P
+></LI
+><LI
+STYLE="list-style-type: disc"
+><P
+>    Broadcast packet and byte counts</P
+></LI
+></UL
+><P
+>  All IP byte counts (IP, TCP, UDP, ICMP, other IP) include IP header data
+  and payload. The data link header is not included. The full frame length
+  (including data-link header) is included in the non-IP and Total
+  byte count.  All data-link headers are also included in the Total byte
+  counts.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN1145"
+></A
+><P
+><IMG
+SRC="iptraf-dstat1.png"></P
+><P
+><B
+>Figure 2. The detailed interface statistics screen</B
+></P
+></DIV
+><P
+> The upper portion of the screen
+  contains the packet and byte counts for all IP and
+  non-IP packets intercepted on the interface. The lower portion
+  contains the total, incoming, and outgoing interface data rates.</P
+><P
+>  This facility also displays incoming and outgoing counts and data rates.
+  The packet size breakdown in versions prior to 2.0.0 has been moved
+  to its own facility under <I
+CLASS="EMPHASIS"
+>Statistical breakdowns.../By packet
+  size</I
+> as described in <A
+HREF="statbreakdowns.html#PKTSIZE"
+>Chapter 5</A
+>.</P
+><P
+>  An outgoing packet is one that exits your interface, regardless
+  of whether it originated from your machine or came
+  from another machine and was routed through yours. An incoming packet is
+  one that enters your interface, either addressed
+  to you directly, broadcast, multicast, or captured promiscuously.</P
+><P
+>  The rate indicators can be set to display kbits/s or kbytes/s with the
+  <I
+CLASS="EMPHASIS"
+>Activity mode</I
+> configuration option.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  Buffering and some other factors may affect the data rates, notably
+  the outgoing rate, causing it to reflect a higher figure than the actual
+  rate at which the interface is sending.</P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  The figures are logged at regular intervals if logging is enabled. The
+  default log file name at the prompt is
+  <TT
+CLASS="FILENAME"
+>iface_stats_detailed-<TT
+CLASS="REPLACEABLE"
+><I
+>iface</I
+></TT
+>.log</TT
+>
+  where iface is the selected interface for this session (for example,
+  <TT
+CLASS="FILENAME"
+>iface_stats_detailed-eth0.log</TT
+>).</P
+><P
+>  If you wish to start this facility directly
+  from the command line, you can specify the
+<TT
+CLASS="COMPUTEROUTPUT"
+>-d</TT
+> parameter and an interface
+  to monitor. For example,</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf -d eth0</PRE
+></TD
+></TR
+></TABLE
+><P
+>  starts the statistics for <TT
+CLASS="FILENAME"
+>eth0</TT
+>. The interface must be specified, or
+  IPTraf will not start the facility.</P
+><P
+>  When started from the command line, the log filename and log interval can be
+  specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> and <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+>
+  parameters respectively.  See the <A
+HREF="cmdline.html"
+>Command-line Parameters</A
+>
+  section above for more information.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  In both the general and detailed statistics screens, as well as
+  in the IP traffic monitor, the packet counts are for
+  actual network packets (layer 2), not the logical IP packets (layer 3)
+  that may be reconstructed after fragmentation. That means, if a
+  packet was fragmented into four pieces, and these four fragments pass
+  over your interface, the packet counts will indicate four separate
+  packets.
+  </P
+></TD
+></TR
+></TABLE
+></DIV
+><P
+>  The figure for the IP checksum errors is a packet count only, because the
+  corrupted IP header cannot be relied upon to give a correct IP
+  packet length value.</P
+><P
+> This facility's output is also affected by IPTraf's <A
+HREF="filters.html"
+>filters</A
+>.  See Chapter 7 for more information
+on filters.</P
+><P
+>  Pressing X or Q takes you back to the main menu (if this
+  facility was started with the command-line option, X or Q drops you back
+  to the shell).</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="netstats.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="statbreakdowns.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Network Interface Statistics</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="netstats.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Statistical Breakdowns</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,339 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Timers</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="UP"
+TITLE="Configuring IPTraf"
+HREF="config.html"><LINK
+REL="PREVIOUS"
+TITLE="Configuring IPTraf"
+HREF="config.html"><LINK
+REL="NEXT"
+TITLE="Custom Information"
+HREF="customports.html"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="config.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Configuring IPTraf</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="customports.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="TIMERS"
+>Timers</A
+></H1
+><P
+>  The <I
+CLASS="EMPHASIS"
+>Timers...</I
+> submenu allows you to IPTraf's
+  interval and timeout functions.</P
+><DIV
+CLASS="FIGURE"
+><A
+NAME="AEN2027"
+></A
+><P
+><IMG
+SRC="iptraf-timermenu.png"></P
+><P
+><B
+>Figure 2. The Timers configuration submenu</B
+></P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2030"
+>TCP Timeout</A
+></H2
+><P
+>  This figure determines the amount of time (in minutes) a
+  connection entry may remain idle before it becomes
+  eligible for replacement by a new connection. The default is 15 minutes.
+  You may want to reduce this on an isolated (not connected
+  to the Internet) LAN or a LAN connected to the Internet with
+  high-speed links. Just enter the new value and press
+  Enter. You can press Ctrl+X to leave the current value unchanged.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2033"
+>Log Interval</A
+></H2
+><P
+>  This figure determines the number of minutes between logging
+  of interface statistics, TCP/UDP figures, and LAN host statistics. The
+  default is 60 minutes. This figure is meaningless if logging is disabled.</P
+><P
+>  This configuration item can be overridden with the <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+> when
+  a facility is directly invoked from the command line (not accessed via the main menu), and
+  remains effective for that particular session.  The configured value is not affected.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2038"
+>Screen Update Interval</A
+></H2
+><P
+>  This value determines the rate in seconds at which the screen is
+  updated. The default is 0, which means the screen is updated as fast
+  as possible, giving close-to-realtime reflection
+  of network activity. However, this high-speed update can cause
+  incredible amounts of traffic if IPTraf is run on a remote
+  terminal (e.g. a Telnet or Secure Shell session). You can set this
+  to a higher value, such as 1 or 2 seconds to slow down the updates.</P
+><P
+>  This figure does not affect the rate of data capture. Only the
+  screen refresh is affected. The figures are still updated as fast as
+  possible, although the figure display will no longer be as close
+  to realtime.</P
+><P
+>  The default setting is 0, which shouldn't be a problem on the
+  console. Set it to a slightly higher value on remote terminals or slow
+  links. The setting affects all monitoring facilities.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>   Updating the screen is one of the slowest operations in a
+  program. Older versions of IPTraf had a problem once network
+  activity became very high. Because each packet caused a screen update,
+  IPTraf began spending more time with the screen updates, causing a loss
+  of packets once network activity reached a certain point.</P
+><P
+>  However, since many users like rapid counts on their screen, a
+  compromise was incorporated. Even when the screen update interval is set
+  to 0, there is still a 50ms delay between screen updates (except the LAN
+  station monitor, which has a 100 ms delay). This is still visually fast,
+  but provides more time to the packet capture routine. Higher
+  delays may result in better accuracy of counts and activity.</P
+><P
+>  In any case, this setting only affects screen updates. Capture still
+  proceeds as fast as possible.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN2048"
+>TCP closed/idle persistence</A
+></H2
+><P
+>  This parameter
+  determines the interval (in minutes) at which the IP Traffic Monitor
+  clears from the TCP display window all closed, idle, and timed out
+  entries. Enter <TT
+CLASS="COMPUTEROUTPUT"
+>0</TT
+> to keep such entries on the
+  screen indefinitely, disappearing only when replaced by new connections.</P
+><DIV
+CLASS="NOTE"
+><P
+></P
+><TABLE
+CLASS="NOTE"
+WIDTH="100%"
+BORDER="0"
+><TR
+><TD
+WIDTH="25"
+ALIGN="CENTER"
+VALIGN="TOP"
+><IMG
+SRC="./stylesheet-images/note.gif"
+HSPACE="5"
+ALT="Note"></TD
+><TH
+ALIGN="LEFT"
+VALIGN="CENTER"
+><B
+>Note</B
+></TH
+></TR
+><TR
+><TD
+>&nbsp;</TD
+><TD
+ALIGN="LEFT"
+VALIGN="TOP"
+><P
+>  The <I
+CLASS="EMPHASIS"
+>TCP timeout...</I
+> option
+  only tells IPTraf how long it should take before a connection should
+  be considered idle and open to replacement by new connections. This does
+  not determine how long
+  it remains onscreen. The <I
+CLASS="EMPHASIS"
+>TCP closed/idle
+  persistence...</I
+> 
+   parameter flushes entries that have been closed or reset, or idle for the number
+  of minutes defined by the <I
+CLASS="EMPHASIS"
+>TCP timeout...</I
+> option.</P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="config.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="customports.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Configuring IPTraf</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="config.html"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Custom Information</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

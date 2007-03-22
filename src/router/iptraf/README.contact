@@ -1,0 +1,38 @@
+============================================================================
+CONTACT INFORMATION
+----------------------------------------------------------------------------
+
+INDIVIDUAL CONTACT
+IPTraf is written and primarily maintained by me.  My name is Gerard Paul
+Java, and my official e-mail address for IPTraf is riker@seul.org.  The
+address iptraf@seul.org is also available for bug reports or other
+software-related concerns.
+
+WEB AND FTP INFORMATION
+The official IPTraf sites are http://cebu.mozcom.com/riker/iptraf and
+http://iptraf.seul.org.  IPTraf can be downloaded via FTP at
+ftp://ftp.cebu.mozcom.com/pub/linux/net/ and
+ftp://iptraf.seul.org/pub/iptraf/  Latest releases will also be made
+available on ftp://metalab.unc.edu/pub/Linux/system/network/monitor/
+
+MAILING LISTS
+Two mailing lists are available: iptraf-users and
+iptraf-announce.  General discussions, help, and reports can be sent
+through iptraf-users, while announcements of new releases and other issues
+will be posted on iptraf-announce.
+
+To subscribe to these lists, send a mail message to majordomo@seul.org
+with no subject, and the line
+
+    subscribe listname
+
+in the BODY of the message, where listname is iptraf-users or
+iptraf-subscribe.  For example, to subscribe to iptraf-users, send a
+message with the line
+
+    subscribe iptraf-users
+
+in the subject.  You will be asked to confirm the action.  You can leave
+the list by specifying replacing the word "subscribe" with "unsubscribe".
+
+

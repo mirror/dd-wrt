@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Background Operation</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+TITLE="IPTraf User's Manual"
+HREF="manual.html"><LINK
+REL="PREVIOUS"
+TITLE="Custom Information"
+HREF="customports.html"><LINK
+REL="NEXT"
+TITLE="Messages"
+HREF="messages.html"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>IPTraf User's Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="customports.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="messages.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="BACKOP"
+>Background Operation</A
+></H1
+><P
+>  IPTraf's facilities can be placed in the background solely for
+  logging. When running in the background, it doesn't display any output
+  on the screen, and doesn't receive input
+  from the keyboard, and drops you back to the shell.</P
+><P
+>  Before starting a statistical facility in the background, configure
+  IPTraf in the usual way (set filters, add TCP/UDP ports, etc).</P
+><P
+>  Once that's done, exit all instances of IPTraf on the system, then
+  invoke IPTraf from the command line with the parameter
+  to start the facility you want, the timeout (<TT
+CLASS="COMPUTEROUTPUT"
+>-t</TT
+>) parameter
+  if you wish, and the <TT
+CLASS="COMPUTEROUTPUT"
+>-B</TT
+> parameter to actually daemonize the program.
+   For example, to run the IP traffic monitor in the
+  background for all interfaces, issue the command</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf -i all -B</PRE
+></TD
+></TR
+></TABLE
+><P
+>  To run the detailed interface statistics
+on interface <TT
+CLASS="FILENAME"
+>eth0</TT
+> for 5 minutes
+  in the background:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>iptraf -d eth0 -t 5 -B</PRE
+></TD
+></TR
+></TABLE
+><P
+>  If the timeout parameter is not specified, the facility
+  will run until the process receives a USR2 signal. To stop a facility in
+  the background, do a</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>ps x</PRE
+></TD
+></TR
+></TABLE
+><P
+>  at the command line, and find the process id (pid) of the iptraf process
+  you're looking for. Then send that process a USR2 signal with the kill
+  command:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SYNOPSIS"
+>kill -USR2 pid</PRE
+></TD
+></TR
+></TABLE
+><P
+>  Since IPTraf cannot send error messages to the terminal, all
+  messages are written to the file daemon.log in the
+  IPTraf logging directory.</P
+><P
+>  The <TT
+CLASS="COMPUTEROUTPUT"
+>-B</TT
+> parameter automatically enables logging regardless of its configured
+  setting. The parameter is ignored if not used with one of the parameters
+  to start a facility from the command line.</P
+><P
+>  The log file can be specified with the <TT
+CLASS="COMPUTEROUTPUT"
+>-L</TT
+> command-line parameter. If
+  this parameter is not specified, the default log file name for the
+  facility will be used (see the descriptions of the
+  facilities above for the default log name patterns).
+  If you don't specify an path, the log file will be placed in
+  <TT
+CLASS="FILENAME"
+>/var/log/iptraf</TT
+>.</P
+><P
+>  The logging interval for all facilities (except the IP traffic monitor) can also be overriden
+  with the <TT
+CLASS="COMPUTEROUTPUT"
+>-I</TT
+> command-line parameter.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="customports.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="manual.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="messages.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Custom Information</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Messages</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

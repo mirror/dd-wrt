@@ -1,0 +1,48 @@
+#!/bin/sh
+#
+# IPTraf Setup System
+# Written by Gerard Paul Java <riker@seul.org>
+# Version 2.8.0
+#
+# This script determines whether the IPTraf distribution is source code
+# or ready-to-run executable files.  It will automatically recompile
+# source code before installation, and will immediately install
+# precompiled executables.
+#
+# After the actual installation, the program will prompt you if you
+# want convert your filters.  You should do so, since there is a
+# change to the filter formats.
+#
+# If started with the -c command-line option, the software will be
+# recompiled from the sources before installation.
+#
+# The actual installation scripts are in the src/ directory.
+#
+VERSION=`cat src/version`
+clear
+echo "====================================================================="
+echo " IPTraf Version $VERSION Setup"
+echo " Target Platform: $(uname -s)/$(uname -m)"
+echo "---------------------------------------------------------------------"
+echo
+
+if [ ! -x src/iptraf -o "$1" = "-c" ]; then
+    if [ -f src/iptraf.c ]; then
+        echo ">>>>>> COMPILING IPTRAF $VERSION FROM SUPPLIED SOURCE CODE"
+        echo
+        /usr/bin/make -C src clean
+        /usr/bin/make -C support clean
+        /usr/bin/make -C src all
+    else
+        echo "*** ERROR: Unable to locate source files."
+        echo "*** If this is a binary-only distribution of IPTraf, try running $0"
+        echo "    again without -c."
+        echo
+        echo "*** $0 exiting with error code 1"
+        echo
+        exit 1
+    fi
+fi
+
+/usr/bin/make -C src install
+

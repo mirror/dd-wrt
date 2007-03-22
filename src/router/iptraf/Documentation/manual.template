@@ -1,0 +1,4772 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+]>
+<book id="manual">
+<bookinfo>
+<title>IPTraf User's Manual</title>
+
+<releaseinfo>
+Version @@version@@
+</releaseinfo>
+
+<copyright>
+<year>1997</year>
+<year>2003</year>
+<holder>Gerard Paul Java</holder>
+</copyright>
+
+<legalnotice id="legalinfo">
+<para>
+This manual is released under the terms of the GNU
+Free Documentation License of March, 2000 as published by the
+Free Software Foundation, reproduced in this manual as Appendix B.
+</para>
+<para>
+IPTraf is open-source software released under the terms of the GNU General
+Public License version 2 or any later version as published by the Free
+Software Foundation, reproduced in the LICENSE file in the distribution's
+top-level directory.
+</para>
+<para>
+The accomanying software and the information contained in this
+document are provided "AS IS" without warranty of any kind, express or
+implied, including, without limitation, the implied warranties
+of mercantability or fitness for any particular purpose.
+</para>
+<para>
+In no event shall the author be liable for any indirect,
+special, consequential, or incidental damages arising from the use of this
+manual or the accompanying software even if the author has been advised of
+the possibility of such damages.
+</para>
+<para>
+Linux is a registered trademark of Linus Torvalds.  Pentium is a
+registered trademark of Intel Corporation.  All other trademarks are
+property of their respective owners.
+</para>
+<para>
+Some structure declarations were based on code copyrighted by the Regents
+of the University of California.
+</para>
+<para>
+Token Ring parsing code based on the Token Ring packet construction code
+in the Linux 2.2 kernel.
+</para>
+</legalnotice>
+</bookinfo>
+<toc></toc>
+<lot></lot>
+<preface id="preface">
+<title>About This Document</title>
+<para>
+This document contains the instructions on how to use the IPTraf network
+monitoring software version @@major@@. This manual details the
+different statistical facilities, the user
+interface, and the important features of the software.
+</para>
+
+<sect1 id="addinfo">
+<title>For Additional Information</title>
+<para>
+See the included README file for summarized and late-breaking information.
+Also read the RELEASE-NOTES file for important new information about
+this new version. The CHANGES file contains a record of the changes made
+to the software since 1.0.0.  README.rvnamed contains information on the
+rvnamed reverse resolution program. See the other
+README files for support and development information.
+</para>
+</sect1>
+
+<sect1 id="conventions">
+<title>Document Conventions</title>
+<para>
+  The following symbols and typefaces are used throughout this manual:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>[ ]</computeroutput></term>
+<listitem>
+<para>
+items in brackets are optional. Brackets also denote items that may or may
+not be displayed onscreen depending on settings or conditions.
+</para></listitem></varlistentry>
+
+<varlistentry>
+<term><computeroutput>{ }</computeroutput></term>
+<listitem><para>
+     curly braces enclose items you choose from
+</para></listitem></varlistentry>
+
+<varlistentry>
+<term><computeroutput>|</computeroutput></term>
+<listitem><para>
+     the vertical bar separates choices in curly braces
+</para></listitem></varlistentry>
+
+<varlistentry>
+<term><computeroutput>normal monospace</computeroutput></term>
+<listitem><para>
+     normal monospace text in syntax specifications should be typed in exactly as presented. Because UNIX and variants are case-sensitive, case must be preserved. Monospace is also used in presenting items that appear on the screen.
+</para></listitem></varlistentry>
+
+<varlistentry>
+<term><computeroutput><replaceable>
+  monospace italics
+</replaceable></computeroutput></term>
+<listitem><para>
+
+     italics in syntax specifications indicate items that are to be
+     replaced with an actual item (e.g.
+     <replaceable>interface</replaceable> should be replaced with an
+     actual interface name, like <computeroutput>eth0</computeroutput>).
+
+</para></listitem></varlistentry>
+</variablelist>
+
+<para>
+Additional information appears distinctively set apart from the main text.
+This information includes Notes, Tips, or Technical Notes.
+</para>
+
+<para>
+<emphasis>Notes</emphasis> are additional pieces of information that may be useful or may
+  clarify the preceeding paragraphs of the manual.
+</para>
+<para>
+  <emphasis>Tips</emphasis> provide shortcuts, clarify tasks that may not
+  be immediately obvious, or provide references to additional sources of information.
+</para>
+<para>
+<emphasis>Technical notes</emphasis> are explanations of a
+  more technical nature and may be of more use to programmers and advanced
+  users.
+</para>
+</sect1>
+</preface>
+
+<chapter id="gettingstarted"><title>
+Getting Started
+</title>
+<sect1>
+<title>About IPTraf</title>
+<para>
+IPTraf is a network monitoring utility and traffic analyzer for IP networks. It
+intercepts packets and returns data about captured the network traffic
+in various statistical facilities.
+</para>
+<para>
+IPTraf comes with these major features:
+</para>
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>An IP traffic monitor that shows TCP
+connection information (hosts, packet/byte counts, flags,
+window sizes), and color-coded information about other
+IP packets</para></listitem>
+<listitem><para>Statistics (counts and load rates) for network interfaces
+in general and detailed views</para></listitem>
+<listitem><para>Statistics per TCP/UDP port</para></listitem>
+<listitem><para>Statistical breakdown according to packet sizes</para></listitem>
+<listitem><para>A LAN host monitor that returns counts and loads per
+detected MAC address</para></listitem>
+<listitem><para>A powerful filtering system for users to view
+only interesting traffic</para></listitem>
+<listitem><para>Logging</para></listitem>
+<listitem><para>An asynchronous DNS resolver for the
+IP traffic monitor</para></listitem>
+<listitem><para>A text-based, full-color, menu-driven user interface
+suitable for use on all Linux systems with terminals, especially Linux
+consoles and color xterms</para></listitem>
+<listitem><para>Easy configuration</para></listitem>
+<listitem><para>Fully software-based.  No additional
+hardware required</para></listitem>
+</itemizedlist>
+<para>
+  Basic knowledge of the important TCP/IP protocols (IP, TCP, UDP, ICMP,
+  etc.) is necessary for you to best understand the information generated
+  by the program.
+</para>
+
+</sect1>
+<sect1 id="installation">
+<title>
+  Installation
+</title>
+<para>
+  IPTraf is most readily available on the Internet, but some may receive
+  it on a diskette. Here are the instructions for both types
+  of distributions.
+</para>
+<sect2>
+<title>System Requirements</title>
+<para>
+IPTraf requires:
+</para>
+
+<sect3>
+<title>Hardware Requirements</title>
+
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>
+     16 megabytes of physical RAM (more recommended, at least 64 MB for very busy networks)
+</para></listitem>
+<listitem><para>
+     2 megabytes of free disk space for installation (more will be needed if you log high amounts of traffic over time)
+</para></listitem>
+<listitem><para>
+     Pentium-class processor or higher (Pentium-II 200 MHz or higher recommended) or equivalent.
+</para></listitem>
+<listitem><para>
+     One or more of the supported network interfaces.
+</para></listitem>
+</itemizedlist>
+</sect3>
+<sect3>
+   <title>Operating System Requirements</title>
+
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>
+     Linux kernel 2.2.0 or higher
+</para></listitem>
+<listitem><para>
+     GNU C Library 2.1 or later
+</para></listitem>
+<listitem><para>
+
+     ncurses 4.2 or later with the complete terminfo database in
+     <filename>/usr/share/terminfo</filename>. Support for
+     <computeroutput>linux</computeroutput>, <computeroutput>vt100</computeroutput>,
+     <computeroutput>xterm</computeroutput>,
+     <computeroutput>xterm-color</computeroutput> recommended.
+
+</para></listitem>
+</itemizedlist>
+</sect3>
+<sect3>
+   <title>Compilation Requirements</title>
+<para>
+The following components are required when compiling IPTraf from the
+source code.
+</para>
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>
+     gcc 2.7.2.3 or later
+</para></listitem>
+<listitem><para>
+
+     GNU C (glibc) development library 2.1 or later
+</para></listitem>
+<listitem><para>
+
+     ncurses development libraries 4.2 or later
+</para>
+</listitem>
+</itemizedlist>
+</sect3>
+</sect2>
+
+<sect2>
+<title>Availability</title>
+<para>
+  IPTraf can be downloaded from the Internet from the official FTP site at
+ <ulink url="ftp://iptraf.seul.org/pub/iptraf/">
+ftp://iptraf.seul.org/pub/iptraf/
+</ulink>.
+</para>
+<para>
+
+  The software is available in source form in
+  compressed
+<filename>.tar.gz</filename> files named
+<filename>iptraf-<replaceable>x.y.z</replaceable>.tar.gz</filename> where
+<filename><replaceable>x.y.z</replaceable></filename> 
+  is the version number. Precompiled ready-to-run software is available in
+  the
+<filename>iptraf-<replaceable>x.y.z.machinetype</replaceable>.bin.tar.gz</filename>
+ files. (<filename><replaceable>machinetype</replaceable></filename> indicates
+  what platform the precompiled binaries run on. The official distribution
+  will only be for the Intel x86 architecture indicated as
+<filename>i386</filename>.)
+</para>
+</sect2>
+
+<sect2>
+<title>Installing Downloaded Packages</title>
+
+<para>
+  You will need to have GNU tar and GNU zip installed. All
+  modern Linux installations already have these utilities ready.
+</para>
+<orderedlist>
+<listitem>
+<para>   
+  Decompress the <filename>.tar.gz</filename> file by entering
+</para>
+<synopsis>
+tar zxvf iptraf-<replaceable>x.y.z</replaceable>.tar.gz
+</synopsis>
+<para>
+      for the source code or
+</para>
+<synopsis>
+tar zxvf iptraf-<replaceable>x.y.z</replaceable>.i386.bin.tar.gz
+</synopsis>
+<para>
+for the precompiled x86 programs.
+</para>
+<para>
+If your tar doesn't support the z option, you can separately
+decompress the <filename>.tar.gz</filename> file
+then extract the resulting <filename>.tar</filename> archive.
+</para>
+<synopsis>
+gunzip iptraf-<replaceable>x.y.z</replaceable>.tar.gz
+tar xvf iptraf-<replaceable>x.y.z</replaceable>.tar
+</synopsis>
+<para>
+This will decompress the sources into a directory called
+<filename>iptraf-<replaceable>x.y.z</replaceable></filename> (source code)
+or
+<filename>iptraf-<replaceable>x.y.z</replaceable>.bin</filename>
+(precompiled).
+    (<replaceable>x.y.z</replaceable> here should be the IPTraf version number
+you're installing, like <filename>@@version@@</filename>).
+</para>
+</listitem>
+<listitem>
+<para>
+Change to the created top level directory.
+</para></listitem>
+<listitem><para>
+To compile and install the software, run the Setup program by entering
+</para>
+<synopsis>
+./Setup
+</synopsis>
+<para>
+    while you are logged in as root. The Setup script will recognize the
+    source distribution and compile the software before installing. It
+    will immediately install a precompiled distribution.
+</para>
+</listitem>
+</orderedlist>
+
+<para>
+    The resulting binaries will be placed in the
+<filename>/usr/local/bin</filename> directory.
+    All needed directories will also be created.
+</para>
+<para>
+  After installation, you will be asked if you want to
+  read the <filename>RELEASE-NOTES</filename> file. It is recommended that you do so at
+  that point, since the <filename>RELEASE-NOTES</filename> file
+  contains important information about the new version.
+</para>
+</sect2>
+<sect2>
+<title>Installing a Floppy Distribution</title>
+<para>
+  If you received IPTraf
+  on a diskette, the sources are already decompressed. The diskette is
+  in Second Extended filesystem format. Perform the following steps to
+  install the software. </para> <orderedlist> <listitem><para>
+Insert the floppy in the drive.
+</para></listitem>
+<listitem><para>
+Mount the floppy on an empty directory. For example, to
+mount the floppy in the first floppy drive under a directory
+called <filename>/mnt</filename>, enter
+</para>
+<synopsis>
+mount -t ext2 /dev/fd0 /mnt
+</synopsis>
+<para>
+    This assumes your floppy is in
+ <filename>/dev/fd0</filename>. You can use any empty directory in place
+ of <filename>/mnt</filename>. With most Linux installations, this will work fine.
+</para></listitem>
+<listitem<para>
+
+After mounting, change
+to the <filename>/mnt</filename> (or whatever) directory.
+</para></listitem>
+<listitem><para>
+Enter</para>
+<synopsis>
+./Setup
+</synopsis>
+<para>
+    while logged in as root. Setup will determine whether the diskette
+    contains a source code distribution or
+    ready-to-run precompiled software.  This will copy the binaries to
+    <filename>/usr/local/bin</filename>, and
+    create the necessary working directories.
+</para></listitem>
+<listitem>
+<para>
+Unmount the diskette by typing
+</para>
+<synopsis>
+umount /mnt
+</synopsis>
+<para>
+    (That's <emphasis>u</emphasis>mount, not <emphasis>un</emphasis>mount.)
+</para>
+<para>
+    You can then eject the diskette. Store it in a safe place.
+</para>
+<para>
+  You will also be asked if you want to view the
+<filename>RELEASE-NOTES</filename> file. It is
+  recommended that you do so at that point.
+</para>
+<para>
+  In both cases (downloaded and floppy), the installation will store the
+  program in <filename>/usr/local/bin</filename> with the binaries owned by
+  user root, readable, writable, and executable by the owner,
+  no permissions for the group, no permissions for all others. (700 octal,
+  or <computeroutput>-rwx------</computeroutput>).
+</para>
+
+<note>
+  <title>Note</title>
+<para>
+  You must be <filename>root</filename> to
+  do the installation. The old style of installation (<command>cd src;make
+  install</command>)
+  is still supported.
+</para>
+</note>
+</listitem>
+</orderedlist>
+
+<para>
+  Be sure <filename>/usr/local/bin</filename> is included in
+  your environment's <envar>PATH</envar> variable. You can
+  edit the appropriate command in your login customization
+  file (<filename>.profile</filename> for the Bourne-type shells,
+  <filename>.cshrc</filename> for the C shell and its relatives).
+</para>
+</sect2>
+</sect1>
+<sect1 id="upgrading">
+<title>
+  Upgrading from Earlier Versions
+</title>
+<para>
+IPTraf 3.0 is a major revision from IPTraf 2.7.  The
+filter subsystem has been completely redesigned and as such, is
+incompatible with previous filter formats.  Therefore old
+IPTraf filters can no longer be used.  The installation procedure for
+IPTraf 3.0 will rename the filter list files but not delete them.
+</para>
+<para>
+If you install a distribution package (e.g. RPM,
+dpkg), old filters may still appear in the filter selection
+list but the new IPTraf version will be unable to load them.
+</para>
+</sect1>
+<sect1 id="startstop">
+<title>Starting and Stopping IPTraf</title>
+<para>
+  After installation, you can start the program by simply entering
+</para>
+<synopsis>
+iptraf
+</synopsis>
+<para>
+  at the shell prompt. You will see a copyright notice, with
+  an instruction to press any key to get started. Just press any character
+  key, and you will be immediately taken to the main menu. All major
+  functions of the program are found there.
+</para>
+<para>
+  Entering the IPTraf command without any command-line parameters brings
+  up the program's main menu. From there, you can select the
+  facilities you want.
+</para>
+<para>
+  IPTraf determines and makes use of the maximum number
+  of lines and columns on the terminal.
+</para>
+
+<note>
+
+  <title>Note</title><para>
+  IPTraf does not have a SIGWINCH handler; it does not
+  adjust itself when an xterm or some other X terminal is resized.
+</para></note>
+
+
+<note>
+  <title>Technical note</title>
+  <para>
+  
+  IPTraf needs to refer to the terminfo database
+in <filename>/usr/share/terminfo</filename>.
+  If the supplied executable program fails with <computeroutput>Error
+opening
+  terminal</computeroutput>, your terminfo database may be located somewhere else. You can
+  control the terminfo search path
+by using the <envar>TERMINFO</envar> environment
+  variable. For example, if you're using the <command>sh</command>
+or <command>bash</command> shell, and
+  your terminfo database is in <filename>/usr/lib/terminfo</filename>
+  (typical for Slackware distributions), you can use the commands:
+
+</para>
+<synopsis>
+TERMINFO=/usr/lib/terminfo
+export TERMINFO
+</synopsis>
+<para>
+  You can place these commands in your <filename>~/.profile</filename> or the
+  systemwide <filename>/etc/profile</filename> startup files.
+</para>
+<para>
+  You can also create a symbolic
+  link named <filename>/usr/share/terminfo</filename> to let
+  it point to your existing terminfo (assuming again your terminfo is in
+  <filename>/usr/lib/terminfo</filename>):
+</para>
+<synopsis>
+ln -s /usr/lib/terminfo /usr/share/terminfo
+</synopsis>
+<para>
+  Or you can recompile your program to use your existing ncurses library
+  installation. If you do this, make sure you have ncurses 4.2 or later.
+</para>
+</note>
+</sect1>
+<sect1 id="cmdline">
+<title>Command-line Options</title>
+<para>
+  IPTraf has a few optional command-line parameters. As with most UNIX
+  commands, IPTraf command-line parameters are
+case-sensitive (<computeroutput>-l</computeroutput>
+  is NOT the same as <computeroutput>-L</computeroutput>).
+</para>
+<para>
+  The following command-line parameters can be supplied
+to the <command>iptraf</command> command:
+</para>
+<variablelist>
+<varlistentry>
+<term><computeroutput>-i <replaceable>iface</replaceable></computeroutput></term>
+<listitem><para>
+     causes the IP traffic monitor to start immediately on the specified interface.
+     If -i all is specified, all interfaces are monitored.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-g</computeroutput></term>
+<listitem><para>
+     starts the general interface statistics
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-d <replaceable>iface</replaceable></computeroutput></term>
+<listitem><para>
+     shows detailed statistics for the specified interface
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-s <replaceable>iface</replaceable></computeroutput></term>
+<listitem><para>
+     starts the TCP/UDP traffic monitor for the specified interface
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-z <replaceable>iface</replaceable></computeroutput></term>
+<listitem><para>
+     starts the packet size breakdown for the specified interface
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-l <replaceable>iface</replaceable></computeroutput></term>
+<listitem><para>
+     starts the LAN station monitor on the specified interface. If
+<computeroutput>-l all</computeroutput> is specified, all LAN interfaces are monitored.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-t <replaceable>timeout</replaceable></computeroutput></term>
+<listitem><para>
+     The <computeroutput>-t</computeroutput> parameter, when used with one
+     of the other parameters that specify a facility to start, tells
+     IPTraf to run the indicated facility for only timeout
+     minutes, after which the facility
+     exits. The <computeroutput>-t</computeroutput> parameter is ignored in menu
+     mode.
+</para>
+<para>
+     If this parameter is not specified, the facility runs until the
+     exit keystroke is pressed.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-B</computeroutput></term>
+<listitem><para>
+     Redirects all terminal output to the "bit bucket"
+<filename>/dev/null</filename>, closes standard input, and
+places the program in the background. This parameter can be used only with
+one of the <computeroutput>-i</computeroutput>, <computeroutput>-g</computeroutput>,
+<computeroutput>-d</computeroutput>,
+<computeroutput>-s</computeroutput>, <computeroutput>-z</computeroutput>, or
+<computeroutput>-l</computeroutput> parameters. See
+<link linkend="backop">Background Operation</link> in Chapter 9. <computeroutput>-B</computeroutput> is ignored in menu
+mode.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-L <replaceable>filename</replaceable></computeroutput></term>
+<listitem><para>
+  Allows you to specify an alternate log file name when the
+  any facility is directly started from the command line, whether in foreground or
+  background mode.  If specified in foreground mode, the log filename prompt is
+  bypassed, even when logging is turned on in the <emphasis>Configure...</emphasis>
+  menu.  If this parameter is omitted in background mode, the default log filename
+  is used.
+</para>
+<para>
+ This parameter always turns on logging.
+</para>
+<para>
+  If an absolute path is not specified, the log
+  file will be created in the default log file directory
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-I <replaceable>interval</replaceable></computeroutput></term>
+<listitem><para>
+  Sets the logging interval (in minutes) when the <computeroutput>-L</computeroutput> parameter is
+  used. This overrides the <emphasis>Log interval...</emphasis> setting in the <emphasis>Configure...</emphasis>
+  menu.  If omitted, the configured value is used.  This parameter is ignored when the
+  <computeroutput>-L</computeroutput> parameter is omitted and logging is disabled.
+</para>
+<para>
+ The value specified here will affect all facilities except for the IP traffic monitor.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-q</computeroutput></term>
+<listitem><para>
+     Previously used to suppress the warning screen when IPTraf is run
+     on kernels with IP masquerading. Since the masquerading
+     code now processes packets in a way better suited to raw capture,
+     this parameter is no longer needed and is retained only for
+     compatibility.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><computeroutput>-f</computeroutput></term>
+<listitem><para>
+     Forces IPTraf to clear all lock files and reset all instance counters
+     to zero before running any facilities. IPTraf will then think
+     it's the first instance of itself.
+</para>
+<para>
+     The <computeroutput>-f</computeroutput> parameter overrides the
+     existing locks and counters imposed by the IPTraf process and
+     by the various facilities, causing this instance to think it is the
+     first and that there are no other facilities running. Use
+     this parameter with great caution. A common use for this parameter is
+     to recover from abrupt or abnormal terminations which may leave stale
+     locks and counters still lying around.
+</para>
+<para>
+     The <computeroutput>-f</computeroutput> parameter may be used together with the others.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>iptraf -h</computeroutput></term>
+<listitem><para>
+     displays a short help screen
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+  While the command-line options are case-sensitive, interactive keystroke
+  at the IPTraf full-screen interface are not.
+</para>
+</sect1>
+
+<sect1 id="menus">
+<title>Using the Menus</title>
+<para>
+  Menu items with a trailing ellipsis (<computeroutput>...</computeroutput>) either
+  pop up a submenu with further items, or require additional information
+  before it can complete the task and return to the menu.
+  Menu items without an ellipsis execute immediately.
+</para>
+<para>
+  Use the Up and Down arrow keys on your keyboard to move the selection
+  bar. Press Enter to execute the selected item. Alternatively, you can
+  also directly press the highlighted letter of the item you want. This
+  will immediately execute the option.
+</para>
+<figure>
+<title>The IPTraf Main Menu</title>
+<graphic format="png" fileref="iptraf-mmenu">
+</figure>
+</sect1>
+<sect1 id="exiting">
+<title>Exiting IPTraf</title>
+<para>
+  You can exit IPTraf with the Exit command in the main menu.
+</para>
+<para>
+  When started with one of the command-line options to
+  directly start a statistical facility, pressing X or Q will exit the
+  facility directly, without any confirmation. The
+<computeroutput>-t</computeroutput>
+  command-line parameter will automatically exit the
+  facility after the specified length of time without any confirmation
+  as well. Daemon facilities started with the <computeroutput>-B</computeroutput> parameter
+  will immediately terminate after being sent a
+  USR2 signal. See <link linkend="backop">background
+  operation</link> in chapter 9 for more information.
+</para>
+</sect1>
+</chapter>
+
+<chapter id="preparingtouse">
+<title>Preparing to Use IPTraf</title>
+<para>
+This chapter provides information applicable to all of IPTraf's statistical
+monitors.
+</para>
+<sect1 id="numbers">
+<title>Number Display Notations</title>
+<para>
+  IPTraf initially returns exact counts of bytes and packets. However, as they
+  grow larger, IPTraf begins displaying them in increasingly higher denominations.
+</para>
+<para>
+  A number standing alone with no suffix represents an exact count. A
+  number with a K following is a kilo (thousand) figure. An M,
+  G, and T suffix represents mega (million), giga (billion), and
+  tera (trillion) respectively. The following table shows examples.
+</para>
+
+<table frame="all">
+<title>Numeric Display Notations</title>
+<tgroup cols="2" align="left" colsep="0" rowsep="0">
+<tbody>
+<row>
+<entry>1024067</entry><entry>exactly 1024067</entry>
+</row>
+<row>
+<entry>1024K</entry><entry>approximately 1024000</entry>
+</row>
+<row>
+<entry>1024M</entry><entry>approximately 1024000000</entry>
+</row>
+<row>
+<entry>1024G</entry><entry>approximately 1024000000000</entry>
+</row>
+<row>
+<entry>1024T</entry><entry>approximately 1024000000000000</entry>
+</row>
+</tbody>
+</tgroup>
+</table>
+
+<para>
+  These notations apply to both packet and byte counts.
+</para>
+</sect1>
+<sect1 id="instances">
+<title>Instances and Logging</title>
+<para>
+  Since version 2.4, IPTraf allows multiple instances of the
+  facilities at the same time in different processes (for example, you can
+  now run two or more IP Traffic Monitors at the same time).
+  However only one can listen on a specific interface or all interfaces
+  at once. The only exception is the general interface
+  statistics, which is still restricted to only one instance at a time.
+</para>
+<para>
+  Because of this relaxation, each instance now generates log files with
+  unique names for instances, depending on either their instance
+  or the interface they're listening on. If the <emphasis>Logging</emphasis> option is turned
+  on (see the <link linkend="config">Configuration</link> chapter), IPTraf
+  will prompt you for a log file name while presenting a
+  default. You may accept this default or change it. Press Enter
+  to accept, or Ctrl+X to cancel. Canceling will turn logging off for that
+  particular session.
+</para>
+<para>
+  If you don't specify an absolute path, the log file will be placed
+  in <filename>/var/log/iptraf</filename>.
+</para>
+<figure>
+<title>The logfile prompt dialog</title>
+<graphic format="png" fileref="iptraf-logprompt">
+</figure>
+<para>
+  See the Logging section
+in the <link linkend="config">Configuration</link> chapter for
+detailed information on logging. See also the documentation on
+each statistical facility for the default log file names.
+</para>
+<para>
+  The default log file names will also be used
+if the <computeroutput>-B</computeroutput> parameter is used
+  to run IPTraf in the background. You can override the defaults with the
+  <computeroutput>-L</computeroutput> parameter. See
+<link linkend="backop">Background Operation</link> in Chapter 9.
+</para>
+</sect1>
+<sect1 id="updates">
+<title>Screen Update Delays</title>
+<para>
+  Older versions of IPTraf updated the screen as soon as a
+  packet was received. However, screen update is one
+  of the slowest operations the program performs. Since version 1.3, a
+  configuration option has been available to control screen update speed.
+</para>
+<para>
+  See the <emphasis>Screen update interval...</emphasis> configuration option under the
+  <link linkend="config">Configuration</link> chapter of this manual.
+</para>
+</sect1>
+<sect1 id="ifaces">
+<title>Supported Network Interfaces</title>
+<para>
+  IPTraf currently supports the following network interface types and names.
+</para>
+<variablelist>
+<varlistentry>
+<term><filename>lo</filename></term>
+<listitem><para>
+     The loopback interface. Every machine has one, and has an IP address
+  of 127.0.0.1. <filename>lo</filename> is also indicated if data
+  is detected on the
+<filename>dummy<replaceable>n</replaceable></filename> interface(s).
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>eth<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     An Ethernet interface. <replaceable>n</replaceable> starts from 0.
+  Therefore, <filename>eth0</filename> refers to the first
+  Ethernet interface, <filename>eth1</filename> to the second, and
+  so on. Most machines only have one.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>fddi<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     An FDDI interface. <replaceable>n</replaceable> starts from 0.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>tr<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     A Token Ring interface, where <replaceable>n</replaceable> starts from 0.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>ppp<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     A PPP interface. <replaceable>n</replaceable> starts from 0.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>sli<replaceable>n</replaceable></filename></term>
+<listitem><para>
+A SLIP interface. <replaceable>n</replaceable> starts from 0.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>ippp<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     A synchronous PPP interface using ISDN.
+<replaceable>n</replaceable> starts from 0.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>isdn<replaceable>n</replaceable</filename></term>
+<listitem><para>
+  ISDN interfaces can be given arbitrary names, but for them to work
+  with IPTraf, they must
+  be named <filename>isdn<replaceable>n</replaceable></filename>.
+  IPTraf supports synchronous PPP
+  (the <filename>ippp<replaceable>n</replaceable></filename>
+  interfaces above), raw IP, and Cisco-HDLC encapsulation.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>plip<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     PLIP interfaces. These are point-to-point IP connections using the PC
+     parallel port.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>ipsec<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     This refers to Free s/WAN (and possibly other) logical VPN interfaces.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>sbni<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     SBNI long-range modem interfaces
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>dvb<replaceable>n</replaceable></filename>,
+<filename>sm200</filename>, <filename>sm300</filename></term>
+<listitem><para>
+     DVB satellite-receive interfaces
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>wlan<replaceable>n</replaceable></filename>,
+<filename>wvlan<replaceable>n</replaceable></filename></term>
+<listitem><para>
+    Wireless LAN interfaces
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>tun<replaceable>n</replaceable></filename></term>
+<listitem><para>
+general logical tunnel interfaces
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>brg<replaceable>n</replaceable></filename></term>
+<listitem><para>
+general logical bridge interfaces
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>hdlc<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     Frame Relay base (FRAD) interfaces (non-PVC)
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><filename>pvc<replaceable>n</replaceable></filename></term>
+<listitem><para>
+     Frame Relay Permanent Virtual Circuit interfaces
+</para>
+</listitem>
+</varlistentry>
+</variablelist>
+<para>
+  Your system's network interfaces must be named according
+  to the schemes specified above.
+</para>
+</sect1>
+</chapter>
+<chapter id="itrafmon">
+<title>The IP Traffic Monitor</title>
+<para>
+  Executing the first menu item or specifying <computeroutput>-i</computeroutput>
+  to the <command>iptraf</command> command takes you to the IP traffic monitor. The traffic
+  monitor is a real-time monitoring system that intercepts all packets
+  on all detected network interfaces, decodes the IP information on all IP packets and
+  displays the appropriate information, most notably the
+  source and destination addresses. It also
+  determines the encapsulated protocol within the IP packet, and
+  displays some important information about that as well.
+</para>
+<para>
+  There are two windows in the traffic monitor, both of which can be
+  scrolled with the Up and Down cursor keys. Just press W to
+  move the <computeroutput>Active</computeroutput> indicator to the window you
+  want to control.
+</para>
+<figure>
+<title>The IP traffic monitor</title>
+<graphic format="png" fileref="iptraf-iptm1">
+</figure>
+
+<sect1 id="upperwin">
+<title>The Upper Window</title>
+<para>
+  The upper window of the traffic monitor displays the currently
+  detected TCP
+  connections. Information about TCP packets are displayed here. The
+  window contains these pieces of information:
+</para>
+
+<itemizedlist spacing="compact">
+<listitem><para>Source address and port</para></listitem>
+<listitem><para>Packet count</para></listitem>
+<listitem><para>Byte count</para></listitem>
+<listitem><para>Source MAC address</para></listitem>
+<listitem><para>Packet Size</para></listitem>
+<listitem><para>Window Size</para></listitem>
+<listitem><para>TCP flag statuses</para></listitem>
+<listitem><para>Interface</para></listitem>
+</itemizedlist>
+
+<note> <title>Note</title>
+<para> Previous versions of IPTraf showed
+  both the source and destination addresses on each line. IPTraf 2 and
+higher show
+only the <computeroutput><replaceable>source
+host</replaceable>:<replaceable>port</replaceable></computeroutput> combination to save
+on screen real estate. TCP
+  connection endpoints are still indicated with the green
+  brackets (on color terminals) along the left edge of the screen.
+</para>
+</note>
+
+<para>
+  The Up and Down cursor keys move an indicator bar between entries in the
+  TCP monitor, scrolling the window if necessary. The PgUp and PgDn keys
+  display the previous and next screenfuls of entries respectively.
+</para>
+<para>
+  The IP traffic monitor computes the data flow rate
+  of the currently highlighted TCP flow and displays it on the lower-right
+  corner of the screen. The flow rate is in kilobits or kilobytes per
+  second depending on the <emphasis>Activity mode</emphasis> switch
+in the <emphasis><link linkend="config">Configure...</link></emphasis> menu.
+</para>
+<para>
+  Because this monitoring system relies solely on packet information, it
+  does not determine which endpoint initiated the connection. In other
+  words, it does not know which endpoints are the client and server.
+  This is necessary because it can operate in promiscuous
+  mode, and as such cannot determine the socket statuses for other
+  machines on the LAN. However, a little knowledge of the well-known TCP
+port numbers can give a good idea about which address is that of the server.
+</para>
+<para>
+  The system therefore displays two entries for each connection, one for
+  each direction of the TCP connection. To make it easier to determine the
+  direction pairs of each connection, a bracket is used to "join" both
+  together. This bracket appears at the leftmost part of each entry.
+</para>
+<para>
+  Just because a host entry appears at the upper end of a
+  connection bracket doesn't mean it was the initiator of the connection.
+</para>
+<para>
+  Each entry in the window contains these fields:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><emphasis role="bold">Source address and port</emphasis></term>
+<listitem><para>
+  The source address and port indicator is
+in <replaceable>address</replaceable>:<replaceable>port</replaceable> format.
+  This indicates the source machine and TCP port on that machine
+  from which this data is coming.
+</para>
+<para>
+  The destination is the host:port at the other end of the bracket.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Packet count</emphasis></term>
+<listitem><para>
+  The number of packets received for this direction of the TCP connection
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Byte count</emphasis></term>
+<listitem><para>
+  The number of bytes received for this direction
+  of the TCP connection. These bytes include total IP and TCP header
+  information, in addition to the actual data. Data link
+  header (e.g. Ethernet and FDDI) data are not included.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Source MAC address</emphasis></term>
+<listitem><para>
+  The address of the host on your local LAN that delivered this packet.
+  This can be viewed by pressing M once if <emphasis>Source MAC
+addrs</emphasis> in traffic
+  monitor is enabled in the <emphasis><link linkend="config">Configure...</link></emphasis> menu.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Packet Size</emphasis></term>
+<listitem><para>
+  The size of the most recently received packet. This item
+  is visible if you press M for more TCP information. This is the size
+  of the IP datagram only, not including the data link header.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Window Size</emphasis></term>
+<listitem><para>
+  The advertised window size of the most recently received packet. This
+  item is visible if you press M for more TCP information.
+</para></listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis role="bold">Flag statuses</emphasis></term>
+<listitem><para>
+  The flags of the most recently received packet. 
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>S</computeroutput></term>
+<listitem><para>
+     SYN. A synchronization is taking place in preparation for
+     connection establishment. If only an <computeroutput>S</computeroutput>
+     is present (<computeroutput>S---</computeroutput>) the source is trying
+     to initiate a connection. If an <computeroutput>A</computeroutput> is
+     also present (<computeroutput>S-A-</computeroutput>), this is an
+     acknowledgment of a previous connection request, and is responding.
+</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term><computeroutput>A</computeroutput></term>
+<listitem><para>
+     ACK. This is an acknowledgment of a previously received packet
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>P</computeroutput></term>
+<listitem><para>
+     PSH. A request to push all data to the top of the receiving queue
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>U</computeroutput></term>
+<listitem><para>
+     URG. This packet contains urgent data
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>RESET</computeroutput></term>
+<listitem><para>
+     RST. The source machine indicated in this direction reset the entire connection. The direction entries for reset connections become available for new connections.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>DONE</computeroutput></term>
+<listitem><para>
+     The connection is done sending data in this direction, and has sent a FIN (finished) packet, but has not yet been acknowledged by the other host.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>CLOSED</computeroutput></term>
+<listitem><para>
+     The FIN has been acknowledged by the other host. When both directions of a connection are marked CLOSED, the entries they occupy become available for new connection entries.
+</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><computeroutput>-</computeroutput></term>
+<listitem><para>
+     The flag is not set
+</para></listitem>
+</varlistentry>
+</variablelist>
+</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>
+  Some other pieces of information can be viewed as well. The M key
+  displays more TCP information. Pressing M once
+  displays the MAC addresses of the LAN hosts
+  that delivered the packets (if the <emphasis>Source MAC addrs in traffic
+monitor</emphasis>
+  option is enabled in the <emphasis><link linkend="config">Configure...</link></emphasis>
+menu). <computeroutput>N/A</computeroutput> is displayed if
+  no packets have been received from the source yet, or if the interface
+  doesn't support MAC addresses (such as PPP interfaces).
+</para>
+<para>
+  If the <emphasis>Source MAC addrs in traffic monitor</emphasis> option is not enabled,
+  pressing M simply toggles between the counts and the packet and window
+  sizes.
+</para>
+<para>
+  By default, only IP addresses are displayed, but if you have access to a
+  name server or host table, you may enable reverse lookup for the
+  IP addresses. Just enable reverse lookup
+in the <emphasis><link linkend="config">Configure...</link></emphasis> menu.
+</para>
+
+<sidebar>
+<title>The rvnamed Process</title>
+<para>
+  The IP traffic monitor starts a daemon called
+  <command>rvnamed</command> to help speed
+  up reverse lookups without sacrificing too much keyboard control and
+  accuracy of the counts. While reverse lookup is being conducted in the
+  background, IP addresses will be used until the resolution is complete.
+</para>
+<para>
+  If for some reason <command>rvnamed</command> cannot start (probably due to
+  improper installation or lack of memory), and you are
+  on the Internet, and you enable reverse lookup, your
+  keyboard control can become very slow. This is because the standard
+  lookup functions do not return until they have completed their
+  tasks, and it can take several seconds for a name resolution
+  in the foreground to complete.
+</para>
+<para>
+  <command>rvnamed</command> will spawn up to 200 children to process reverse DNS queries.
+</para>
+</sidebar>
+
+<tip>
+<title>Tip</title>
+<para>If you notice unusual SYN activity (too many
+initial (<computeroutput>S---</computeroutput>) but frozen SYN entries, or rapidly
+increasing initial SYN packets for a single connection), you may
+be under a SYN flooding attack or TCP port scan. Apply appropriate measures, or the
+targeted machines may begin denying network services.
+</para>
+</tip>
+
+<para>
+  Entries not updated within a user-configurable amount of
+  time may get replaced with new connections. The default time is 15
+  minutes. This is regardless of whether the connection is closed or
+  not. (Some unclosed connections may be due to extremely slow links
+  or crashes at either end of the connection.) This figure can be changed
+  at the <emphasis><link linkend="config">Configure...</link></emphasis> menu.
+</para>
+<para>
+  Some early entries may have a &gt; symbol in front of its packet
+  count. This means the connection was already established
+  when the monitor started. In other words, the figures indicated do not
+  reflect the counts since the start
+  of the TCP connection, but rather, since the start of the traffic
+  monitor. Eventually, these &gt; entries will close (or time out) and
+  disappear. TCP entries without the >
+  were initiated after the traffic monitor started, and the counts
+  indicate the totals of the connection itself.  Just consider entries
+  with &gt; partial.
+</para>
+<para>
+  Some &gt entries may go idle if the traffic monitor was started
+  when these connections were already half-closed (FIN sent
+  by one host, but data still being sent by the other). This
+  is because the traffic monitor cannot determine if a
+  connection was already half-closed when it started. These entries will
+  eventually time out. (To minimize these entries, an entry is not added
+  by the monitor until a packet with data or a SYN packet is received.)
+</para>
+<para>
+  Direction entries also become available for reuse if an ICMP Destination
+  Unreachable message is received for the connection.
+</para>
+<para>
+  The lower part of the screen contains a summary line showing the IP,
+  TCP, UDP, ICMP, and non-IP byte counts since the start of the
+  monitor. The IP, TCP, UDP, and ICMP counts include only the IP
+  datagram header and data, not the data-link headers. The
+  non-IP count includes the data-link headers.
+</para>
+
+<note>
+<title>
+  Technical note: IP Forwarding and Masquerading
+</title>
+<para>
+  Previous versions of IPTraf issued a warning if the kernel had
+  IP masquerading enabled due to the way the
+  kernel masqueraded and translated the IP addresses. The new kernels no
+  longer do it as before and IPTraf now gives output properly on
+  masquerading machines. The <computeroutput>-q</computeroutput> parameter is no
+  longer required to suppress the warning screen.
+</para>
+<para>
+  On forwarding (non-masquerading)
+  machines packets and TCP connections simply appear twice, one
+  each for the incoming and outgoing interfaces if all interafaces
+  are being monitored.
+</para>
+<para>
+  On masquerading machines, packets and connections from the
+  internal network to the external network also appear
+  twice, one for the internal and external interface. Packets coming
+  from the internal network will be indicated as coming from the internal
+  IP address that sourced them, and also as coming from the IP address
+  of the external interface on your masquerading machine. In much the same
+  way, packets coming in from the external network will look
+  like they're destined for the external interface's IP address, and again
+  as destined for the final host on the internal network.
+</para>
+</note>
+
+<sect2>
+  <title>Closed/Idle/Timed Out Connections</title>
+<para>
+  A TCP connection entry that closes, gets reset, or stays idle too long
+  normally gets replaced with new connections. However,
+  if there are too many of these, active connections may become
+  interspersed among closed, reset, or idle entries.
+</para>
+<para>
+  IPTraf can be set to automatically remove all closed, reset, and
+  idle entries with the <emphasis>TCP closed/idle
+  persistence...</emphasis> configuration option. You can also press the F key to
+  immediately clear them at any time.
+</para>
+
+<note>
+  <title>Note</title>
+<para>
+The <emphasis>TCP timeout...</emphasis> option only tells
+IPTraf how long it should take before a connection should be considered
+idle and open to replacement by new connections. This
+does not determine how long it remains on-screen. The <emphasis>TCP closed/idle
+persistence...</emphasis> parameter flushes entries that have been idle for the
+number of minutes defined by the <emphasis>TCP timeout...</emphasis> option.
+</para> </note>
+</sect2>
+<sect2>
+<title>Sorting TCP Entries</title>
+<para>
+  The TCP connection entries can be sorted by pressing the S key, then
+  by selecting a sort criterion. Pressing S will display a box showing the
+  available sort criteria. Press P to sort by packet count, B to sort by
+  byte count. Pressing any other key cancels the sort.
+</para>
+<para>
+  The sort operation compares the larger values in each connection entry
+  pair and sorts the counts in descending order.
+</para>
+<para>
+  Over time, the entries will go out of order as counts proceed at varying
+  rates. Sorting is not done automatically so as not to degrade performance
+and accuracy.
+</para>
+<figure>
+<title>The IP traffic monitor sort criteria</title>
+<graphic format="png" fileref="iptraf-iptmsort">
+</figure>
+</sect2>
+</sect1>
+<sect1 id="lowerwin">
+<title>Lower Window</title>
+<para>
+  The lower window displays information about the other types of traffic
+  on your network. The following protocols are detected internally:
+</para>
+<itemizedlist spacing="compact">
+<listitem><para>User Datagram Protocol (UDP)</para></listitem>
+
+<listitem><para>Internet Control Message Protocol (ICMP)</para></listitem>
+
+<listitem><para>Open Shortest-Path First (OSPF)</para></listitem>
+
+<listitem><para>Interior Gateway Routing Protocol (IGRP)</para></listitem>
+
+<listitem><para>Interior Gateway Protocol (IGP)</para></listitem>
+
+<listitem><para>Internet Group Management Protocol (IGMP)</para></listitem>
+
+<listitem><para>General Routing Encapsulation (GRE)</para></listitem>
+
+<listitem><para>Layer 2 Tunneling Protocol (L2TP)</para></listitem>
+
+<listitem><para>IPSec AH and ESP protocols (IPSec AH and IPSec ESP)</para></listitem>
+
+<listitem><para>Address Resolution Protocol (ARP)</para></listitem>
+
+<listitem><para>Reverse Address Resolution Protocol (RARP)</para></listitem>
+</itemizedlist>
+
+<para>
+  Other IP protocols are looked up from the <filename>/etc/services</filename>
+  file.  If <filename>/etc/services</filename> doesn't contain information about
+  that protocol, the protocol number is indicated.
+</para>
+<para>
+ Non-IP packets are indicated as
+<computeroutput>Non-IP</computeroutput> in the lower window.
+</para>
+
+<note>
+<title>Note</title>
+<para>The source and destination addresses for ARP and
+RARP entries are MAC addresses.
+</para>
+<para>
+  Strictly speaking, ARP and RARP packets aren't IP packets, since
+  they are not encapsulated in an IP datagram. They're
+  just indicated because they are integral to proper IP operation on LANs.
+</para>
+</note>
+
+<para>
+  For all packets in the lower window, only the first IP fragment is
+  indicated (since that contains the header
+  of the IP-encapsulated protocol) but with no further information
+  from the encapsulated protocol.
+</para>
+<para>
+UDP packets are also displayed
+in
+<computeroutput><replaceable>address</replaceable>:<replaceable>port</replaceable>
+</computeroutput> format while ICMP entries also contain the
+ICMP message type. For easier location, each type of protocol
+is color-coded (only on color terminals such as the Linux console).
+</para>
+
+<variablelist>
+<varlistentry><term>UDP</term><listitem><para>Red on White</para></listitem></varlistentry>
+<varlistentry><term>ICMP</term><listitem><para>Yellow on Blue</para></listitem></varlistentry>
+<varlistentry><term>OSPF</term><listitem><para>Black on Cyan</para></listitem></varlistentry>
+<varlistentry><term>IGRP</term><listitem><para>Bright white on Cyan</para></listitem></varlistentry>
+<varlistentry><term>IGP</term><listitem><para>Red on Cyan</para></listitem></varlistentry>
+<varlistentry><term>IGMP</term><listitem><para>Bright green on Blue</para></listitem></varlistentry>
+<varlistentry><term>GRE</term><listitem><para>Blue on white</para></listitem></varlistentry>
+<varlistentry><term>ARP</term><listitem><para>Bright white on Red</para></listitem></varlistentry>
+<varlistentry><term>RARP</term><listitem><para>Bright white on Red</para></listitem></varlistentry>
+<varlistentry><term>Other IP</term><listitem><para>Yellow on red</para></listitem></varlistentry>
+<varlistentry><term>Non-IP</term><listitem><para>Yellow on Red</para></listitem></varlistentry>
+</variablelist>
+
+<para>
+  The lower window can hold up to 512 entries. You can
+  scroll the lower window by using the W key to move the Active indicator
+  to it, and by using the Up and Down cursor keys. The lower
+  window automatically scrolls every time a new entry is added, and either
+  the first entry or last entry is visible. Upon reaching 512 entries, old
+  entries are thrown out as new entries are added.
+</para>
+<para>
+  Some entries may be too long to completely fit in a screen line. You can
+  use the Left and Right cursor keys to vertically scroll the lower window
+  when it is marked <computeroutput>Active</computeroutput>. If your
+terminal can be resized (e.g. xterm), you may do so before starting
+IPTraf.
+</para>
+<para>
+  Entries for packets received on LAN interfaces also include the
+  source MAC address of the LAN host which delivered it. This behavior
+  is enabled by turning on the Source MAC addrs in traffic monitor toggle
+  in the <emphasis><link linkend="config">Configure...</link></emphasis> menu.
+</para>
+
+<sect2>
+<title>Entry Details</title>
+<para>
+  In general, the entries in the lower window indicate the protocol, the
+  IP datagram size (full frame size for non-IP, including ARP and
+  RARP), the source address, the destination
+  address, and the network interface the packet was detected on.
+  However, some protocols have a little more information.
+</para>
+<sect3>
+<title>ICMP</title>
+<para>
+  ICMP entries are displayed in this format:
+</para>
+<synopsis>
+ICMP <replaceable>type</replaceable> [(<replaceable>subtype</replaceable>)] (<replaceable>size</replaceable> bytes) from <replaceable>source</replaceable> to <replaceable>destination</replaceable>
+[(src HWaddr <replaceable>srcMACaddress</replaceable>)] on <replaceable>interface</replaceable>
+</synopsis>
+<para>
+  where type could be any of the following:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>echo req, echo rply</computeroutput></term>
+<listitem><para>
+     ICMP echo request and reply. Usually used by the ping program and other network monitoring and diagnostic program. 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>dest unrch</computeroutput></term>
+<listitem><para>
+     ICMP destination unreachable. Something failed to reach its target. The dest unreach type is supplemented with a further indicator of the problem. Destination unreachable messages for TCP traffic causes the corresponding TCP entry in the upper
+     window to be made available for reuse by new connections. 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>redirct</computeroutput></term>
+<listitem><para>
+     ICMP redirect. Usually generated by a router to tell a host that a better gateway is available. 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>src qnch</computeroutput></term>
+<listitem><para>
+     The ICMP source quench is used to stop a host from transmitting. It's a
+flow control mechanism for IP. 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>time excd</computeroutput></term>
+<listitem><para>
+     Indicates a packet's time-to-live value expired before it got
+to its destination. Mostly happens if a destination is too far away.
+Also used by the traceroute program.
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>router adv</computeroutput></term>
+<listitem><para>
+     ICMP router advertisement 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>router sol</computeroutput></term>
+<listitem><para>
+     ICMP router solicitation 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>timestmp req</computeroutput></term>
+<listitem><para>
+     ICMP timestamp request
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>timestmp rep</computeroutput></term>
+<listitem><para>
+     ICMP timestamp reply 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>info req</computeroutput></term>
+<listitem><para>
+     ICMP information request 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>info rep</computeroutput></term>
+<listitem><para>
+     ICMP information reply 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>addr mask req</computeroutput></term>
+<listitem><para>
+     ICMP address mask request 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>addr mask rep</computeroutput></term>
+<listitem><para>
+     ICMP address mask reply 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>param prob</computeroutput></term>
+<listitem><para>
+     ICMP parameter problem 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>bad/unknown</computeroutput></term>
+<listitem><para>
+     An unrecognized ICMP packet was received, or the packet is corrupted.
+</para></listitem></varlistentry>
+</variablelist>
+<para>
+  The destination unreachable message also includes information on the
+  type of error encountered. Here are the destination unreachable codes:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>ntwk</computeroutput></term>
+<listitem><para>
+     network unreachable 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>host</computeroutput></term>
+<listitem><para>
+     host unreachable 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>proto</computeroutput></term>
+<listitem><para>
+     protocol unreachable 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>port</computeroutput></term>
+<listitem><para>
+     port unreachable 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>pkt fltrd</computeroutput></term>
+<listitem><para>
+     packet filtered (normally by an access rule on a router or firewall) 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>DF set</computeroutput></term>
+<listitem><para>
+     the packet has to be fragmented somewhere, but its don't fragment
+     (DF) bit is set.
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>src rte fail</computeroutput></term>
+<listitem><para>
+     source route failed 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>src isltd</computeroutput></term>
+<listitem><para>
+     source isolated (obsolete) 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>net comm denied</computeroutput></term>
+<listitem><para>
+     network communication denied 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>host comm denied</computeroutput></term>
+<listitem><para>
+     host communication denied 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>net unrch for TOS</computeroutput></term>
+<listitem><para>
+     network unreachable for specified IP type-of-service 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>host unrch for TOS</computeroutput></term>
+<listitem><para>
+     host unreachable for specified IP type-of-service 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>prec violtn</computeroutput></term>
+<listitem><para>
+     precedence violation 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>prec cutoff</computeroutput></term>
+<listitem><para>
+     precedence cutoff 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>dest net unkn</computeroutput></term>
+<listitem><para>
+     destination network unknown 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>dest host unkn</computeroutput></term>
+<listitem><para>
+     destination network unknown
+</para></listitem></varlistentry>
+</variablelist>
+
+<para>
+  For more information on ICMP, see RFC 792.
+</para>
+</sect3>
+
+<sect3>
+<title>OSPF</title>
+
+<para>
+OSPF messages also include a little more information. The format of an
+OSPF message in the window is:
+</para>
+
+<synopsis>
+OSPF <replaceable>type</replaceable> (a=<replaceable>area</replaceable> r=<replaceable>router</replaceable>) (<replaceable>size</replaceable>bytes) from <replaceable>source</replaceable> to <replaceable>destination</replaceable>
+[(src HWaddr <replaceable>srcMACaddress</replaceable>)] on <replaceable>interface</replaceable>
+</synopsis>
+
+<para>
+  The type can be one of the following:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>hlo</computeroutput></term>
+<listitem><para>
+     OSPF hello. Hello messages establish OSPF communications and keep routers informed of each other's presence. 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>DB desc</computeroutput></term>
+<listitem><para>
+     OSPF Database Description 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>LSR</computeroutput></term>
+<listitem><para>
+     OSPF Link State Request 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>LSU</computeroutput></term>
+<listitem><para>
+     OSPF Link State Update. Messages indicating the states of the OSPF network links 
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>LSA</computeroutput></term>
+<listitem><para>
+     OSPF Link State Acknowledgment
+</para></listitem></varlistentry>
+</variablelist>
+<para>
+  The entries in parentheses:
+</para>
+<variablelist>
+<varlistentry>
+<term><computeroutput>a=<replaceable>area</replaceable></computeroutput></term>
+<listitem><para>
+     The area number of the OSPF message
+</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>r=<replaceable>router</replaceable></computeroutput></term>
+<listitem><para>
+     The IP address of the router that generated the message. It
+     is not necessarily the same as the source address
+     of the encapsulating IP packet.
+</para></listitem></varlistentry>
+</variablelist>
+
+<para>
+  Many times, the destination addresses for OSPF packets are class D
+  multicast addresses in standard dotted decimal notation or (if reverse
+  lookup is enabled), hosts under the <computeroutput>MCAST.NET</computeroutput> domain. Such multicast
+  addresses are defined as follows:
+</para>
+
+<variablelist>
+<varlistentry>
+<term><computeroutput>224.0.0.5 (OSPF-ALL.MCAST.NET)</computeroutput></term>
+<listitem><para>OSPF all routers</para></listitem></varlistentry>
+<varlistentry>
+<term><computeroutput>224.0.0.6 (OSPF-DSIG.MCAST.NET)</computeroutput></term>
+<listitem><para>OSPF all designated routers</para></listitem></varlistentry>
+</variablelist>
+
+<para>
+  See RFC 1247 for details on the OSPF protocol.
+</para>
+</sect3>
+</sect2>
+</sect1>
+<sect1>
+<title>Additional Information</title>
+<para>
+  When started from the main menu and logging is enabled, the IP traffic
+  monitor prompts you for a log file name. The default name is
+<filename>ip_traffic-<replaceable>n</replaceable>.log (where
+<replaceable>n</replaceable></filename> is what
+  instance of the traffic monitor this is (1, 2, 3, and so on). (e.g. if
+  this is the first instance, the default file name will
+  be <filename>ip_traffic-1.log</filename>.)
+</para>
+<para>
+  When started with the <computeroutput>-i</computeroutput> parameter,
+  the log filename can be specified with the <computeroutput>-L</computeroutput>
+  parameter. See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+<para>
+On busy networks, the display may become cluttered with traffic you're not
+interested in.  To control the traffic monitor's output, you can apply a
+<emphasis>filter</emphasis>.  See Chapter 7, <link
+linkend="filters">Filters</link> for more information on IPTraf's filters.
+</para>
+<para>
+  At any time, you can press X or Q to return to the main menu (or back to
+  the shell if the monitor was started with <command>iptraf -i</command>).
+</para>
+</sect1>
+</chapter>
+
+<chapter id="netstats">
+<title>Network Interface Statistics</title>
+<para>
+There are two network interface
+statistics facilities: the general interface statistics, which
+displays a statistical summary of all attached interfaces, and the
+detailed interface statistics, which shows  more statistical and
+load information about a single selected interface.
+</para>
+<sect1 id="genstats">
+
+<title>General Interface Statistics</title>
+<para>
+  The second menu option displays a list of
+  attached network interfaces, and some general
+  packet counts. Specifically, it displays counts of IP, non-IP, and bad
+  IP packets (packets with IP checksum errors). It also includes an
+  activity indicator, which shows the number of kilobits and packets the
+  interface sees per second. All figures are for incoming and outgoing
+  packets. (Again, considering promiscuous
+  mode for LAN interfaces, which simply causes the machine
+  to intercept all packets). This is useful for general monitoring
+  of all attached interfaces. If byte counts and
+  additional information are needed for a specific interface, the <emphasis>Detailed
+  interface statistics</emphasis> option is also available.
+</para>
+<para>
+  The activity indicators can be toggled between kbits/s and kbytes/s with
+  the <emphasis>Activity mode</emphasis> configuration option.
+</para>
+<para>
+  The general statistics window will dynamically add new entries
+  as packets from newly-created interfaces (e.g. new PPP interfaces) are
+  intercepted. Long lists can be scrolled with the Up, Down, PgUp, and
+  PgDn keys.
+</para>
+<para>
+This monitor is affected by IPTraf's <link
+linkend="filters">filters</link> as described in Chapter 7.
+</para>
+<para>
+  Copies of the statistics are written to the log file
+  <filename>iface_stats_general.log</filename> at regular intervals if logging is
+  enabled. See the <emphasis>Logging</emphasis>
+option int the <link linkend="config">Configuration</link> chapter.
+</para>
+<para>
+  This facility can be started directly from the command line with the
+  <command>-g</command> option to the <command>iptraf</command> command.
+  When started from the command line, the log filename and log interval can be
+  specified with the <computeroutput>-L</computeroutput> and <computeroutput>-I</computeroutput>
+  parameters respectively.  See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+<figure>
+<title>The general interface statistics screen</title>
+<graphic format="png" fileref="iptraf-gstat1">
+</figure>
+<para>
+  You can press X or Q to return to the main menu. 
+</para>
+</sect1>
+<sect1 id="detstats">
+<title>Detailed Interface Statistics</title>
+<para>
+  The third menu option displays packet statistics for any
+  selected interface. It provides basically the same information
+  as the <emphasis>General interface statistics</emphasis>
+   option, with additional details.
+  This facility provides the following information:
+</para>
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>
+   Total packet and byte counts
+</para></listitem>
+<listitem><para>
+   IP packet and byte counts
+</para></listitem>
+<listitem><para>
+   TCP packet and byte counts
+</para></listitem>
+<listitem><para>
+   UDP packet and byte count
+</para></listitem>
+<listitem><para>
+   ICMP packet and byte counts
+</para></listitem>
+<listitem><para>
+   Other IP-type packet and byte counts
+</para></listitem>
+<listitem><para>
+   Non-IP packet and byte counts
+</para></listitem>
+<listitem><para>
+   Checksum error count
+</para></listitem>
+<listitem><para>
+   Interface activity
+</para></listitem>
+<listitem><para>
+    Broadcast packet and byte counts
+</para></listitem>
+</itemizedlist>
+<para>
+  All IP byte counts (IP, TCP, UDP, ICMP, other IP) include IP header data
+  and payload. The data link header is not included. The full frame length
+  (including data-link header) is included in the non-IP and Total
+  byte count.  All data-link headers are also included in the Total byte
+  counts.
+</para>
+<figure>
+<title>The detailed interface statistics screen</title>
+<graphic format="png" fileref="iptraf-dstat1">
+</figure>
+<para>
+ The upper portion of the screen
+  contains the packet and byte counts for all IP and
+  non-IP packets intercepted on the interface. The lower portion
+  contains the total, incoming, and outgoing interface data rates.
+</para>
+<para>
+  This facility also displays incoming and outgoing counts and data rates.
+  The packet size breakdown in versions prior to 2.0.0 has been moved
+  to its own facility under <emphasis>Statistical breakdowns.../By packet
+  size</emphasis> as described in <link linkend="pktsize">Chapter 5</link>.
+</para>
+<para>
+  An outgoing packet is one that exits your interface, regardless
+  of whether it originated from your machine or came
+  from another machine and was routed through yours. An incoming packet is
+  one that enters your interface, either addressed
+  to you directly, broadcast, multicast, or captured promiscuously.
+</para>
+<para>
+  The rate indicators can be set to display kbits/s or kbytes/s with the
+  <emphasis>Activity mode</emphasis> configuration option.
+</para>
+
+<note>
+  <title>Note</title>
+  <para>
+  Buffering and some other factors may affect the data rates, notably
+  the outgoing rate, causing it to reflect a higher figure than the actual
+  rate at which the interface is sending.
+</para>
+</note>
+<para>
+  The figures are logged at regular intervals if logging is enabled. The
+  default log file name at the prompt is
+  <filename>iface_stats_detailed-<replaceable>iface</replaceable>.log</filename>
+  where iface is the selected interface for this session (for example,
+  <filename>iface_stats_detailed-eth0.log</filename>).
+</para>
+<para>
+  If you wish to start this facility directly
+  from the command line, you can specify the
+<computeroutput>-d</computeroutput> parameter and an interface
+  to monitor. For example,
+</para>
+<synopsis>
+iptraf -d eth0
+</synopsis>
+<para>
+  starts the statistics for <filename>eth0</filename>. The interface must be specified, or
+  IPTraf will not start the facility.
+</para>
+<para>
+  When started from the command line, the log filename and log interval can be
+  specified with the <computeroutput>-L</computeroutput> and <computeroutput>-I</computeroutput>
+  parameters respectively.  See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+<note>
+  <title>Note</title>
+  <para>
+  In both the general and detailed statistics screens, as well as
+  in the IP traffic monitor, the packet counts are for
+  actual network packets (layer 2), not the logical IP packets (layer 3)
+  that may be reconstructed after fragmentation. That means, if a
+  packet was fragmented into four pieces, and these four fragments pass
+  over your interface, the packet counts will indicate four separate
+  packets.
+  </para>
+</note>
+<para>
+  The figure for the IP checksum errors is a packet count only, because the
+  corrupted IP header cannot be relied upon to give a correct IP
+  packet length value.
+</para>
+<para>
+ This facility's output is also affected by IPTraf's <link
+linkend="filters">filters</link>.  See Chapter 7 for more information
+on filters.
+</para>
+<para>
+  Pressing X or Q takes you back to the main menu (if this
+  facility was started with the command-line option, X or Q drops you back
+  to the shell).
+</para>
+</sect1>
+</chapter>
+
+<chapter id="statbreakdowns">
+<title>Statistical Breakdowns</title>
+<para>
+  Statistical breakdowns contain two facilities that break
+  down traffic counts by either packet size or TCP/UDP port.
+</para>
+<sect1 id="pktsize">
+<title>Packet Sizes</title>
+
+<para>
+  The packet size breakdown facility used to be incorporated
+  into the detailed interface statistics. It has since been moved
+  to its own facility. It is entered
+  by selecting <emphasis>Statistical Breakdowns/By packet size</emphasis>.
+</para>
+<para>
+  The packet size breakdown takes the interface's Maximum Transmission
+  Unit (MTU) size and divides it into 20 brackets, each bracket
+  containing a range of sizes. As a packet is captured, its size
+  is determined and the appropriate bracket is incremented.
+</para>
+<para>
+  This facility provides an idea as to the packet sizes passing over
+  your network, and can aid in network (re)design decisions.
+</para>
+<figure>
+<title>The packet size statistical breakdown</title>
+<graphic format="png" fileref="iptraf-pktsize">
+</figure>
+<para>
+  If logging is enabled, copies of the statistics are written at regular
+  intervals to a log file. The default log file name
+  is
+  <filename>packet_size-<replaceable>iface</replaceable>.log</filename> where
+  <replaceable>iface</replaceable>   
+  is the selected interface for this session (for example,
+  <filename>packet_size-eth0.log</filename>).
+</para>
+<para>
+IPTraf's filters do not affect this facility.
+</para>
+<para>
+  The packet size breakdown can also be invoked straight
+  from the command line by specifying the <computeroutput>-z</computeroutput> iface
+  parameter. The interface parameter is required. For example,
+  this command runs the facility on interface <filename>eth0</filename>.
+</para>
+<synopsis>
+iptraf -z eth0
+</synopsis>
+<para>
+  When started from the command line, the log filename and log interval can be
+  specified with the <computeroutput>-L</computeroutput> and <computeroutput>-I</computeroutput>
+  parameters respectively.  See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+<para>
+  To exit, press X or Ctrl+X.
+</para>
+</sect1>
+
+<sect1 id="servmon">
+<title>TCP and UDP Traffic Statistics</title>
+<para>
+  IPTraf also includes a facility that generates statistics on TCP and UDP
+  traffic. This facility displays counts of all TCP and UDP packets with
+  source or destination ports numbered less than 1024. Ports 1 to 1023 are
+  reserved for the TCP/IP application protocols (well-known ports).
+</para>
+<figure>
+<title>The TCP/UDP service monitor</title>
+<graphic format="png" fileref="iptraf-tcpudp">
+</figure>
+<para>
+  The statistics window indicates the protocol (TCP or UDP), the
+  port number, the total packets and bytes counted for this particular
+  protocol/port combination, the packets and bytes destined for that
+  protocol and port, and the packets and bytes coming
+  from that protocol and port.
+</para>
+<para>
+  Byte counts include the IP header and payload only. The data link header
+  is not included.
+</para>
+<para>
+  The protocol/port indicators are color-coded for easier identification
+  on color terminals. TCP indicators are in yellow, UDP in bright green.
+</para>
+<para>
+  Some network applications or protocols may use port numbers higher
+  than 1023. Examples
+  of these include application proxy servers (HTTP proxy servers typically
+  use values like 8000, 8080, 8888, and the like), and IRC
+  (IRC servers commonly accept connections on ports 6660 to 6669). These
+  ports are by default not included in the counts. If you do want
+  to include a higher-numbered port in the statistics, you can add
+  them yourself from the <emphasis><link linkend="config">Configure...</link>/Additional ports...</emphasis> 
+  menu item. See the section below.
+</para>
+<para>
+  If logging is enabled, The statistics are also written to a log file
+  (the default name is
+<filename>tcp_udp_services-<replaceable>iface</replaceable>.log</filename>, where iface
+  is the selected interface (for example,
+<filename>tcp_udp_services-eth0.log</filename>).
+</para>
+<para>
+  IPTraf computes the total, incoming, outgoing, and data rates of the
+  protocol currently indicated by the facility's highlight bar. The data
+  rates are indicated at the bottom of the screen. If logging is
+  enabled, the average data rates since the start of the facility are
+  placed in the log file.
+</para>
+<para>
+  The Up and Down cursor keys move the highlight bar. Pressing X or Ctrl+X
+  exits and returns to the main menu (or the shell if it was started
+  from the command line).
+</para>
+
+<sect2>
+  <title>Sorting TCP/UDP Entries</title>
+<para>
+  Pressing the S key brings up a window which allows you to
+  select the field by which the entries will be sorted. You can press R to
+  sort by port, P to sort by total packets, B to sort by total bytes, T to
+  sort by incoming packets (packets to), O to sort by incoming bytes
+  (bytes to), F to sort by outgoing packets (packets from) and M to sort
+  by outgoing bytes (bytes from). Pressing any other key cancels the sort.
+</para>
+<para>
+  Port numbers are sorted in ascending order (least first) but
+  statistics are sorted in descending order (largest counts first).
+</para>
+<para>
+  As with the IP traffic monitor, sorting is performed only with
+  this sequence. Automatic sorting is not performed so as not to
+  affect performance.
+</para>
+<figure>
+<title>The TCP/UDP monitor's sort criteria</title>
+<graphic format="png" fileref="iptraf-tcpudpsort">
+</figure>
+</sect2>
+<sect2>
+<title>Additional Information</title>
+<para>
+IPTraf's filters affect the output of this facility.  See Chapter 7, <link
+linkend="filters">Filters</link> for more information about filters.
+</para>
+<para> 
+   If you wish to start this facility from the command line, you can
+  use the <computeroutput>-s</computeroutput> option followed by an interface to monitor. For example,
+</para>
+<synopsis>
+iptraf -s eth0
+</synopsis>
+<para>
+  brings up this module for traffic on
+  <filename>eth0</filename>. The interface must be specified, or
+  IPTraf will drop back to the shell.
+</para>
+<para>
+  When started from the command line, the log filename and log interval can be
+  specified with the <computeroutput>-L</computeroutput> and <computeroutput>-I</computeroutput>
+  parameters respectively.  See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+</sect2>
+</sect1>
+</chapter>
+
+<chapter id="hostmon">
+<title>LAN Station Statistics</title>
+<para>
+  The LAN station monitor (Ethernet station monitor on versions prior to
+  1.3.0) discovers MAC addresses and displays statistics on the number
+  of incoming, and outgoing packets. It also includes figures for incoming
+  and outgoing kilobits per second for each discovered station.
+</para>
+<para>
+  The entry above each line of statistics is the station's LAN
+  type (Ethernet, PLIP, Token Ring, or FDDI) and the hardware MAC address.
+  Each statistics line consists of the following information:
+</para>
+
+<itemizedlist spacing="compact" mark="bullet">
+<listitem><para>Total packets incoming</para></listitem>
+
+   <listitem><para>IP packets incoming</para></listitem>
+
+   <listitem><para>Total bytes incoming</para></listitem>
+
+   <listitem><para>Incoming rate</para></listitem>
+
+   <listitem><para>Total packets outgoing</para></listitem>
+
+   <listitem><para>IP packets outgoing</para></listitem>
+
+   <listitem><para>Total bytes outgoing</para></listitem>
+
+   <listitem><para>Outgoing rate</para></listitem>
+</itemizedlist>
+<para>
+  The byte counts include the data link header. The activity
+  indicators can be set to display kbits/s or kbytes/s with the <emphasis>Activity
+  mode</emphasis> configuration option.
+</para>
+<para>
+  This facility works only for Ethernet, PLIP, Token Ring, and
+  FDDI frames. Loopback. ISDN, and SLIP/PPP networks are not monitored here.
+</para>
+<figure>
+<title>The LAN station monitor</title>
+<graphic format="png" fileref="iptraf-hw">
+</figure>
+<para>
+  Copies of the statistics are written to a log file at regular intervals
+  if logging is enabled. The default log file name
+  is <filename>lan_statistics-<replaceable>n</replaceable>.log</filename>, where n is the instance number of this facility
+  (for example, if this is the first instance, the generated default log
+  file name is <filename>lan_statistics-1.log</filename>).
+</para>
+<sect1 id="sortinglan">
+  <title>Sorting the LAN Station Monitor Entries</title>
+<para>
+  Press S to sort the entries. A box will pop up and display the
+  keys you can press to select the field by which the entries will
+  be sorted. Press P to sort by total incoming packets, I to sort by
+  incoming IP packets, B to sort by total incoming bytes, K to sort
+  by total outgoing packets, O to sort by outgoing IP packets, and Y to
+  sort by total outgoing bytes. Pressing any other key cancels the sort.
+</para>
+<figure>
+<title>The LAN station monitor's sort criteria</title>
+<graphic format="png" fileref="iptraf-hwsort"
+</figure>
+<para>
+  When started from the command line, the log filename and log interval can be
+  specified with the <computeroutput>-L</computeroutput> and <computeroutput>-I</computeroutput>
+  parameters respectively.  See the <link linkend="cmdline">Command-line Parameters</link>
+  section above for more information.
+</para>
+</sect1>
+<sect1 id="morelanmoninfo">
+<title>Additional Information</title>
+<para>
+   The window can be scrolled with the Up and Down cursor keys. Press X
+   or Q to return to the main menu (or the shell if this
+   facility was started with the <computeroutput>-l</computeroutput> command-line option).
+</para>
+<para>
+The output of this facility is affected by any applied IPTraf filter.
+</para>
+</sect1>
+</chapter>
+
+<chapter id="filters">
+  <title>Filters</title>
+
+<para>
+  Filters are used to control the information displayed by all facilities.
+  You may want to view statistics only on particular traffic
+  so you must restrict the information displayed. The filters also apply
+  to logging activity.
+</para>
+
+<para>
+  The IPTraf filter management system is accessible through the
+  <emphasis>Filters...</emphasis> submenu.
+</para>
+<figure>
+<title>The Filters submenu</title>
+<graphic format="png" fileref="iptraf-filtermenu">
+</figure>
+
+<sect1 id="ipfilters">
+  <title>IP Filters</title>
+
+  <para>
+  The <emphasis>Filters/IP...</emphasis> menu option
+  allows you to define a set of rules that determine what IP traffic
+  to pass to the monitors. Selecting this option pops up another menu with
+  the tasks used to define and apply custom IP filters.
+</para>
+<figure>
+<title>The IP filter menu</title>
+<graphic format="png" fileref="iptraf-ipfltmenu">
+</figure>
+<sect2>
+  <title>Defining a New Filter</title>
+<para>
+  A freshly installed program will have no filters defined, so
+  before anything else, you will have to define a filter. You can do this
+  by selecting the <emphasis>Define new filter...</emphasis> option.
+</para>
+<para>
+  Selecting this option displays a box asking you to enter a short
+  description of the filter you are going to define. Just enter any text
+  that clearly identifies the nature of the filter.
+</para>
+<figure>
+<title>The IP filter name dialog</title>
+<graphic format="png" fileref="iptraf-ipfltnamedlg">
+</figure>
+<para>
+  Press Enter when you're done with that box. As an alternative, you can
+  also press Ctrl+X to cancel the operation.
+</para>
+<sect3>
+<title>The Filter Rule Selection Screen</title>
+<para>
+After you enter the filter's description, you will be taken to a blank
+rule selection box.  At this screen you manage the various rules you
+define for this filter.  You can opt to insert, append, edit, or delete
+rules.
+</para>
+<figure>
+<title>The filter rule selection screen.  Selecting an entry
+displays that set for editing</title>
+<graphic format="png" fileref="iptraf-ipfltlist">
+</figure>
+<para>
+Any rules defined will appear here.  You will see the
+source and destination
+addresses, masks and ports (long addresses and masks may
+be truncated) and whether this rule includes or excludes matching
+packets.
+</para>
+<para>Between the source and destination parameters is an arrow that
+indicates whether the rule matches packets (single-headed) only exactly or whether
+it matches packets flowing in the opposite direction (double-headed).
+</para>
+<para>
+At this screen, press I to insert at the current position of the selection
+bar, A to append a rule to the end of the list, Enter to
+edit the highlighted rule and D to delete the selected rule.  With
+an empty list, A or I can be used to add the first rule.
+</para>
+<para>To add the first rule, press A or I.  You will then be presented with
+a dialog box that allows you to enter the rule's parameters.
+</para>
+</sect3>
+<sect3>
+<title>Entering Filter Rules</title>
+<para>
+  You can enter addresses of individual hosts, networks,
+  or a catch-all address. The nature of the address will be determined
+  by the wildcard mask.
+</para>
+<para>
+  You'll notice two sets of fields, marked <computeroutput>Source</computeroutput>
+  and <computeroutput>Destination</computeroutput>. You fill these out
+  with the information about your source and targets.
+</para>
+<para>
+  Fill out the host name or IP address of the hosts or networks in
+  the first field
+  marked <computeroutput>Host name/IP Address</computeroutput>. Enter it in
+  standard dotted-decimal notation. When done, press Tab to move to the
+  <computeroutput>Wildcard mask</computeroutput> field. The wildcard mask
+  is similar but not exactly identical to the standard IP subnet
+  mask. The wildcard mask is used to determine which bits to ignore
+  when processing the filter. In most cases, it will work very closely
+  like a subnet mask. Place ones (1) under the bits you want the filter to
+  recognize, and keep zeros (0) under the bits you want the filter
+  to ignore. For example:
+</para>
+<para>
+To recognize the host 207.0.115.44
+</para>
+<informaltable pgwide="1" frame="none">
+<tgroup cols="2">
+<colspec colname="c1">
+<colspec colname="c2">
+<tbody>
+<row><entry>IP address</entry><entry><computeroutput>207.0.115.44</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.255</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+<para>
+To recognize all hosts belonging to network
+202.47.132.<replaceable>x</replaceable>
+</para>
+<informaltable pgwide="1" frame="none">
+<tgroup cols="2">
+<colspec colname="c1">
+<colspec colname="c2">
+<tbody>
+<row><entry>IP address</entry><entry><computeroutput>202.47.132.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.0</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+<para>
+To recognize all hosts with any address:
+</para>
+<informaltable pgwide="1" frame="none">
+<tgroup cols="2">
+<colspec colname="c1">
+<colspec colname="c2">
+<tbody>
+<row><entry>IP address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+  The IP address/wildcard mask mechanism of the display filter doesn't
+  recognize IP address class. It uses a simple bit- pattern matching
+  algorithm.
+</para>
+<para>
+  The wildcard mask also does not have to end on a
+  byte boundary; you may mask right into a byte itself. For example,
+  255.255.255.224 masks 27 bits (255 is 11111111, 224 is 11100000 in
+  binary).
+</para>
+<para>
+  IPTraf also accepts host names in place of the IP addresses. IPTraf will
+  resolve the host name when the filter is loaded. When the filter
+  is interpreted, the wildcard mask will also be applied. This can be
+  useful in cases where a single host name may resolve to several IP
+  addresses.
+</para>
+
+<tip> <title>Tip</title>
+  <para> See the <emphasis>Linux Network Administrator's Guide</emphasis>
+  if you need more information on IP addresses and subnet masking.
+</para>
+</tip>
+
+<tip><title>Tip</title>
+<para>
+IPTraf allows you to specify the wildcard mask in Classless Interdomain Routing
+(CIDR) format.  This  format allows you to specify the number of 1-bits that
+mask the address.  CIDR notation is the form
+<emphasis><computeroutput>address/bits</computeroutput></emphasis> where the
+<emphasis><computeroutput>address</computeroutput></emphasis> is the IP
+address or host name and
+<emphasis><computeroutput>bits</computeroutput></emphasis> is the number of
+1-bits in the mask.  For example, if you want to mask 10.1.1.0 with
+<computeroutput>255.255.255.0</computeroutput>, note that
+<computeroutput>255.255.255.0</computeroutput> has 24 1-bits, so instead
+of specifying <computeroutput>255.255.255.0</computeroutput> in the wildcard
+mask field, you can just enter <computeroutput>10.1.1.0/24</computeroutput>
+in the address field.  IPTraf will translate the mask bits into an
+appropriate wildcard mask and fill in the mask field the next time you edit
+the filter rule.
+</para>
+<para>
+If you specify the mask in CIDR notation, leave the wildcard mask fields
+blank.  If you fill them up, the wildcard mask fields will take precedence.
+</para>
+</tip>
+
+<para>
+  The <computeroutput>Port</computeroutput> fields should contain a
+  port number or range of any TCP or UDP service you may be
+  interested in. If you want to match only a single port number, fill
+  in the first field, while leaving the second blank or set to zero.
+  Fill in the second field if you want to match a range of ports (e.g. 80 to
+  90).
+  Leave the first field blank or set to zero to let the filter ignore
+  the ports altogether.
+  You will most likely be interested in target ports rather than source ports
+  (which are usually unpredictable anyway, perhaps with the exception
+  of FTP data).
+</para>
+<para>
+Non-TCP and non-UDP packets are not affected by these fields, and these
+are used only when filtering TCP or UDP packets.
+</para>
+<para>
+  Fill out the second set of fields with the parameters of the
+  opposite end of the connection.
+</para>
+<tip>
+<title>Tip</title>
+<para>
+Any address or mask fields left blank default to
+0.0.0.0 while blank
+<computeroutput>Port</computeroutput> fields default to 0.
+This makes it easy to define
+filter rules if you're interested only in either the source or destination,
+but not the other.  For example, you may be interested
+in traffic originating from network 61.9.88.0, in which case you just enter
+the source address, mask and port
+in the
+<computeroutput>Source</computeroutput> fields, while leaving the
+<computeroutput>Destination</computeroutput> fields blank.
+</para>
+</tip>
+<para>
+The next fields let you specify which IP-type protocols you want matched by
+this filter rule.  Any packet whose protocol's corresponding field
+is marked with a <computeroutput>Y</computeroutput> is matched against the
+filter's defined IP addresses and ports, otherwise
+they don't pass through this filter rule.
+</para>
+<para>
+If you want to evaluate all IP packets just mark
+with <computeroutput>Y</computeroutput> the <computeroutput>All
+IP</computeroutput> field.
+</para>
+<para>
+For example, if you want to see only all TCP traffic, mark the
+<computeroutput>TCP</computeroutput> field
+with <computeroutput>Y</computeroutput>.
+</para>
+<para>
+The long field marked <computeroutput>Additional
+protocols</computeroutput> allows you to specify other protocols
+by their IANA number.  (You can view the common IP protocol number
+in the <filename>/etc/protocols</filename> file).  You can specify a list
+of protocol numbers or ranges separated by commas,
+Ranges have the beginning and ending protocol numbers separated with a
+hyphen.
+</para>
+<para>
+For example, to see the RSVP (46), IP mobile (55), and protocols
+(101 to 104), you use an entry that looks like this:
+</para>
+<synopsis>
+46, 55, 101-104
+</synopsis>
+<para>
+It's certainly possible to specify any of the protocols listed above in
+this field.  Entering <computeroutput>1-255</computeroutput> is
+functionally identical
+to marking <computeroutput>All IP</computeroutput>
+with a <computeroutput>Y</computeroutput>.
+</para>
+<para>
+  The next field is marked <computeroutput>Include/Exclude</computeroutput>.
+  This field allows you to decide whether to include or filter out matching
+  packets. Setting this field to <computeroutput>I</computeroutput> causes the filter to
+  pass matching packets, while setting it to <computeroutput>E</computeroutput> causes
+  the filter to drop them. This field is set to
+  <computeroutput>I</computeroutput> by default.
+</para>
+<para>
+The last field in the dialog is labeled <computeroutput>Match opposite</computeroutput>.  When set
+to <computeroutput>Y</computeroutput>, the filter will match packets flowing in the opposite direction.
+Previous versions of IPTraf used to match TCP packets flowing in either direction, so the source
+and destination address/mask/port combinations were actually interchangeable.  Starting with
+IPTraf 3.0, when filters extended to more than just the IP traffic monitor, this behavior is no longer
+the default throughout IPTraf except in the IP traffic monitor's TCP window.
+</para>
+<note>
+<title>Note</title>
+<para>
+For TCP packets, this field is used in all facilities except the IP traffic monitor.  Because
+the IP traffic monitor must capture TCP packets in both directions
+to properly determine a closed connection, the filter automatically matches
+packets in the opposite direction, regardless of this field's setting.  However
+iin all other facilities, automatic matching of the reverse packets is not performed
+unless you set this field to <computeroutput>Y</computeroutput>.
+</para>
+<para>
+Filters for UDP and other IP protocols do not automatically match packets in the opposite direction
+unless you set the field to <computeroutput>Y</computeroutput>, even in the IP traffic monitor.
+</para>
+</note>
+<para>
+  Press Enter to accept all parameters when done. The parameters will be
+  accepted and you'll be taken back to the rule selection box. You can
+then add more rules by pressing A or you can insert new rules at any point
+by pressing I. Should you make a mistake, you can press Enter to
+edit the selected filter.  You may enter
+  as many sets of parameters as you wish. Press Ctrl+X when done.
+</para>
+<note>
+<title>Note</title>
+<para>
+Because of the major changes in the filtering system since IPTraf 2.7,
+old filters will no longer work and will have to be redefined.
+</para>
+</note>
+<figure>
+<title>The IP filter parameters dialog</title>
+<graphic format="png" fileref="iptraf-ipfltdlg">
+</figure>
+</sect3>
+<sect3>
+  <title>Examples</title>
+<para>
+To see all traffic to/from host 202.47.132.1 from/to 207.0.115.44, regardless of TCP port
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>202.47.132.2</computeroutput></entry><entry><computeroutput>207.0.115.44</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.255</computeroutput></entry><entry><computeroutput>255.255.255.255</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+To see all traffic from host 207.0.115.44 to all hosts
+on network 202.47.132.x
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>207.0.115.44</computeroutput></entry><entry><computeroutput>202.47.132.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.255</computeroutput></entry><entry><computeroutput>255.255.255.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>All IP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>N</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+  To see all Web traffic (to and from port 80)
+  regardless of source or destination
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>80</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+  To see all IRC traffic from port 6666 to 6669
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>6666</computeroutput>
+to <computeroutput>6669</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+  To see all DNS traffic, (TCP and UDP, destination port 53)
+  regardless of source or destination
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard
+mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>53</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y UDP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<para>
+  To see all mail (SMTP) traffic to a single host (202.47.132.2) from anywhere
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>202.47.132.2</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>255.255.255.255</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>25</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>N</computeroutput></entry></row>
+
+</tbody>
+</tgroup>
+
+</informaltable>
+<para>
+  To see traffic from from/to host sunsite.unc.edu to/from cebu.mozcom.com
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>sunsite.unc.edu</computeroutput></entry><entry><computeroutput>cebu.mozcom.com</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.255</computeroutput></entry><entry><computeroutput>255.255.255.255</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>All IP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+<para>
+  To omit display of traffic to/from 140.66.5.x from/to anywhere
+</para>
+<informaltable frame="none"  pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP Address</entry><entry><computeroutput>140.66.5.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>All IP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>E</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+<para>
+  You can enter as many parameters as you wish. All of them will
+  be interpreted until the first match is found.
+</para>
+</sect3>
+<sect3>
+  <title>Excluding Certain Sites</title>
+<para>
+
+  Filters follow an implicit "no-match" policy, that is, only packets
+  matching defined rules will be matched, others will be filtered out.
+  This is similar
+  to the access-list policy "whatever is not explicitly permitted is
+  denied". If you want to show all traffic to/from everywhere,
+  except certain places, you can specify the sites you wish to exclude,
+  mark them with <computeroutput>E</computeroutput> in the <computeroutput>Include/Exclude
+field</computeroutput>, and
+  define a general catch-all entry with source address
+<computeroutput>0.0.0.0</computeroutput>, mask
+  <computeroutput>0.0.0.0</computeroutput>, port <computeroutput>0</computeroutput>, and destination
+<computeroutput>0.0.0.0</computeroutput>, mask <computeroutput>0.0.0.0</computeroutput>,
+port <computeroutput>0</computeroutput>, tagged
+  with an <computeroutput>I</computeroutput>
+in the <computeroutput>Include/Exclude</computeroutput> field as the last entry.
+</para>
+
+<para>
+  For example:
+</para>
+<para>
+To see all traffic except all SMTP (both directions), Web (both directions), and traffic
+(only) from 207.0.115.44
+</para>
+<informaltable frame="none" pgwide="1">
+<tgroup cols="3">
+<colspec colname="c1">
+<colspec colname="c2">
+<colspec colname="c3">
+<tbody>
+<row><entry>Host name/IP address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>25</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>E</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+<row><entry></entry></row>
+<row><entry>Host name/IP address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput> 0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>80</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>TCP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>E</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>Y</computeroutput></entry></row>
+<row><entry></entry></row>
+<row><entry>Host name/IP address</entry><entry><computeroutput>207.0.115.44</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>255.255.255.255</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>All IP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>E</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>N</computeroutput></entry></row>
+<row><entry></entry></row>
+<row><entry>Host name/IP address</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Wildcard mask</entry><entry><computeroutput>0.0.0.0</computeroutput></entry><entry><computeroutput>0.0.0.0</computeroutput></entry></row>
+<row><entry>Port</entry><entry><computeroutput>0</computeroutput></entry><entry><computeroutput>0</computeroutput></entry></row>
+<row><entry>Protocols</entry><entry><computeroutput>All IP: Y</computeroutput></entry></row>
+<row><entry>Include/Exclude</entry><entry><computeroutput>I</computeroutput></entry></row>
+<row><entry>Match opposite</entry><entry><computeroutput>N</computeroutput></entry></row>
+</tbody>
+</tgroup>
+</informaltable>
+
+<tip>
+  <title>Tip</title>
+  <para>
+  To filter out all TCP, define a filter with a single entry, with a source of
+  <computeroutput>0.0.0.0</computeroutput> mask
+<computeroutput>0.0.0.0</computeroutput> port <computeroutput>0</computeroutput>, and a destination
+  of <computeroutput>0.0.0.0</computeroutput> mask <computeroutput>0.0.0.0</computeroutput>
+port <computeroutput>0</computeroutput>,
+with the <computeroutput>Include/Exclude</computeroutput> field
+  marked <computeroutput>E</computeroutput> (exclude). Then apply this filter.
+</para>
+</tip>
+</sect3>
+</sect2>
+<sect2>
+
+  <title>Applying a Filter</title>
+<para>
+  The above steps only add the filter to a defined list. To actually apply
+  the filter, you must select <emphasis>Apply filter...</emphasis> from the menu. You will be
+  presented with a list of filters you already defined. Select the one you
+  want to apply, and press Enter.
+</para>
+<para>
+  The applied filter stays in effect over exits and restarts of the IPTraf program until it is detached.
+</para>
+</sect2>
+<sect2>
+  <title>Editing a Defined Filter</title>
+<para>
+  Select <emphasis>Edit filter...</emphasis> to modify an existing filter. Once you select this
+  option, you will be presented with the list of defined filters.
+  Select the filter you want to edit by moving the selection bar and press
+  Enter.
+</para>
+<para>
+  Edit the description if you wish. Pressing Ctrl+X at this point
+  will abort the operation, and the filter will remain unmodified. Press
+  Enter to accept any changes to the filter description.
+</para>
+<para>
+  After pressing Enter, you will see the filter's rules. To edit an
+  existing filter rule, move the selection bar
+  to the desired entry and press Enter. A prefilled dialog box
+  will appear. Edit its contents as desired. Press Enter to accept the
+  changes or Ctrl+X to discard.
+</para>
+<para>
+  You can add a new filter rule by pressing I to insert at the selection
+  bar's current position. When you press I, you will be presented with a
+  dialog box asking you to enter the new rule data. Pressing A results
+  in a similar operation, except the rule will be appended as the
+  last entry in the rule list.
+</para>
+<para>
+  Pressing D deletes the currently pointed entry.
+</para>
+<para>
+  Press X or Ctrl+X to end the edit and save the changes.
+</para>
+
+<note>
+  <title>Note</title>
+  <para>If you're editing the currently applied filter, you will need
+  to re-apply the filter for the changes to take effect.
+  </para>
+</note>
+
+
+<note>
+  <title>Note</title>
+<para>
+  Be aware that the filter processes the rules in order. In other
+  words, if a packet matches more than one rule, only the first matching
+  rule is followed.
+</para>
+</note>
+</sect2>
+<sect2>
+  <title>Deleting a Defined Filter</title>
+<para>
+  Select <emphasis>Delete filter...</emphasis> from the menu to remove a filter
+  from the list. Just move the selection bar to the filter you want to
+  delete, and press Enter.
+</para>
+</sect2>
+<sect2>
+  <title>Detaching a Filter</title>
+<para>
+  The <emphasis>Detach filter</emphasis> option deactivates the filter currently in
+  use. Selecting this option causes all TCP traffic to be passed
+  to the monitors.
+</para>
+<para>
+  When you're done with the menu, just select the Exit menu option.
+</para>
+</sect2>
+</sect1>
+<sect1 id="nonipfilters">
+<title>ARP, RARP, and other Non-IP Packet Filters</title>
+<para>
+  The <emphasis>Non-IP</emphasis> filter option toggles the display and logging of all non-IP
+  packets, except ARP and RARP, which are toggled separately.
+</para>
+</sect1>
+</chapter>
+<chapter id="config">
+<title>Configuring IPTraf</title>
+
+<para>
+   IPTraf can be easily configured
+with the <emphasis><link linkend="config">Configure...</link></emphasis> item in the
+  main menu. The configuration is stored in the
+  <filename>/var/local/iptraf/iptraf.cfg</filename> file. If the file is not found, IPTraf uses
+  the default settings. Any changes to the configuration immediately get
+  stored in the configuration file.
+</para>
+<figure>
+<title>The IPTraf configuration menu</title>
+<graphic format="png" fileref="iptraf-configmenu">
+</figure>
+<sect1 id="toggles">
+  <title>Toggles</title>
+
+<sect2> <title>Reverse DNS Lookups</title>
+<para>
+  Activating reverse lookup
+  causes IPTraf to find out the name of the hosts with the addresses
+  in the IP packets. When this option is enabled, IPTraf's
+  IP traffic monitor starts the rvnamed DNS lookup server to help resolve
+  IP addresses in the background while allowing IPTraf to
+  continue capturing packets.
+</para>
+<para>
+  This option is off by default.
+</para>
+</sect2>
+<sect2>
+  <title>TCP/UDP Service Names</title>
+<para>
+
+  This option, when on, causes IPTraf to display the TCP/UDP service names
+  (<computeroutput>smtp</computeroutput>, <computeroutput>www</computeroutput>,
+  <computeroutput>pop3</computeroutput>, etc.) instead of their numeric ports (25, 80,
+  110, etc). The number-to-name mappings will depend on the systems
+  services database file (usually <filename>/etc/services</filename>).
+   Should there be no corresponding service name for the
+  port number, the numeric form will still be displayed.
+
+</para>
+<para>
+  This setting is off by default.
+</para>
+
+<note>
+  <title>Note</title>
+ <para>
+ Reverse lookup and service name lookup take some
+ time and may impact performance and increase the chances of dropped
+ packets. Performance and results are best (albeit more cryptic) with both
+ these settings off.
+</para>
+</note>
+</sect2>
+
+<sect2>
+  <title>Force promiscuous</title>
+<para>
+
+  If this option is enabled, your LAN interfaces will capture all packets
+  on your LAN. Using this option enables you
+  to see all TCP connections and packets passing your LAN segment, even if
+  they're not from or for your machine. When this option is active
+  in the statistics windows, the Activity indicators will show a
+  good estimate of the load on your LAN segment.
+</para>
+<para>
+  When this option is disabled, you'll
+  only receive information about packets coming from and entering your
+  machine.
+</para>
+<para>
+  The setting of this option affects all LAN (
+  Ethernet, FDDI, some Token Ring) interfaces on your machine, if you have more than one.
+</para>
+<para>
+  The interface's promiscuous flag is set only when a facility is started,
+  and turned off when it exits. However, if promiscuous
+  mode was already set when a facility was started, it remains set on exit.
+</para>
+<para>
+  If multiple instances of IPTraf are started, the promiscuous setting
+  is restored only upon exit of the last facility.
+</para>
+
+<note>
+  <title>Note</title>
+<para>
+   Do not use other programs that change the interface's promiscuous flag at
+  the same time you're using IPTraf. The programs can interfere with
+  each other's expected operations. While IPTraf tries to obtain the
+  initial setting of any promiscuous flags for restoration
+  upon exit, other programs may not be as well-behaved, and they may
+  turn off the promiscuous flags while IPTraf is still monitoring.
+</para>
+</note>
+</sect2>
+<sect2>
+  <title>Color</title>
+<para>
+  Turn this on with color monitors. Turn it off with
+  black-and- white monitors or non-color terminals (like xterms). Changes
+  to this setting will take effect the next time the program is started.
+</para>
+<para>
+  Color is on by default on consoles and color xterms, off on non-color terminals like xterms and VT100s.
+</para>
+</sect2>
+<sect2>
+  <title>Logging</title>
+<para>
+  When this option is active, IPTraf will log information to a
+  disk file, which can be examined or analyzed later. Since IPTraf
+  2.4.0, IPTraf prompts you for the name of the file to which to write the
+  logs. It will provide a default name, which you are free to accept
+  or change. The IP traffic monitor and LAN station monitor will
+  generate a log file name that is based on what instance they are (first,
+  second, and so on). The general interface statistics' default log file
+  name is constant, because it listens to all interfaces at once, and only
+  one instance can run at one time.
+</para>
+<para>
+  The other facilities generate a log file name based
+  on the interface they're listening on.
+</para>
+<para>
+  See the descriptions on the facilities above for the default log file names.
+</para>
+<para>
+  Press Enter to accept the log file name, or Ctrl+X to cancel. Canceling will turn logging off for that session.
+</para>
+<para>
+  The IP traffic monitor will write the following pieces of information to its log file:
+</para>
+<itemizedlist spacing="compact" mark="bullet">
+   <listitem><para>Start of the traffic monitor</para></listitem>
+
+   <listitem><para>Receipt of the first TCP packet for a connection. If that packet is a
+    SYN, (SYN) will be indicated in the log entry. (Of course, the traffic
+    monitor may start in the middle of established connections. It
+    will still count those packets. This also explains why some connection
+    entries may become idle if the traffic monitor is started in the
+    middle of a half-closed connection, and miss the first FIN.
+    Such entries time out in a while.)</para></listitem>
+
+   <listitem><para>Receipt of a FIN (with average flow rate)</para></listitem>
+
+   <listitem><para>ACK of a FIN</para></listitem>
+
+   <listitem><para>Timeouts of TCP entries (with average flow rate)</para></listitem>
+
+   <listitem><para>Reset connections (with average flow rate)</para></listitem>
+
+   <listitem><para>Everything that appears in the bottom window of the traffic monitor</para></listitem>
+
+   <listitem><para>Stopping of the traffic monitor</para></listitem>
+</itemizedlist>
+<para>
+  Each log entry includes the date and time the entry was written. Logging
+  is also affected by the defined filters.
+</para>
+<para>
+  Log files can grow very fast, so be prepared with plenty of
+  free space and delete unneeded logs. Log write errors are not indicated.
+</para>
+<para>
+  Copies of the interface statistics, TCP/UDP statistics, packet
+  size statistics, and LAN host statistics are also written
+  to the log files at regular intervals. See <emphasis>Log
+Interval...</emphasis> in this chapter.
+</para>
+<para>
+  IPTraf closes and reopens the active log file when it receives a
+  <computeroutput>USR1</computeroutput> signal. This is useful in cases where a facility is run for
+  long periods of time but the log files have to be cleared or moved.
+</para>
+<para>
+  To clear or move an active log file, rename it first. IPTraf will
+  continue to write to the file despite the new name. Then use the UNIX
+  kill command to send the running IPTraf process a <computeroutput>USR1</computeroutput> signal. IPTraf
+  will then close the log file and open another with the
+  original name. You can then safely remove or delete the renamed file.
+</para>
+<para>
+  Do not delete an open log file. Doing so will only result in a file just
+  as large but filled with null characters (ASCII code 0).
+</para>
+<para>
+  Logging comes disabled by default. The <computeroutput>USR1</computeroutput> signal is caught only if
+  logging is enabled, it is ignored otherwise.
+</para>
+<para>
+ A valid specification of <computeroutput>-L</computeroutput> on the command line with automatically
+ enable logging for that particular session.  The saved configuration setting is not affected.
+</para>
+</sect2>
+<sect2>
+  <title>Activity mode</title>
+<para>
+  Toggles activity indicators in the interface and LAN statistics
+  facilities between kilobits per second (kbits/s) or kilobytes per second
+  (kbytes/s).
+</para>
+<para>
+  The default setting is kilobits per second.
+</para>
+</sect2>
+<sect2>
+  <title>Source MAC addrs in traffic monitor</title>
+<para>
+  When enabled, the IP traffic monitor retrieves the packets' source MAC
+  addresses if they came in on an Ethernet, FDDI, or PLIP interface. The
+  addresses appear in the lower window for non-TCP
+  packets, while for TCP connections, they can be viewed by pressing M.
+</para>
+<para>
+  No such information is displayed
+  if the network interface doesn't use MAC addresses (such
+  as PPP interfaces).
+</para>
+<para>
+  This can be used to determine the actual source of the packets on your local LAN.
+</para>
+<para>
+  The traffic monitor also logs the MAC addresses with this option
+  enabled. The default setting is off.
+</para>
+</sect2>
+</sect1>
+
+<sect1 id="timers">
+  <title>Timers</title>
+<para>
+  The <emphasis>Timers...</emphasis> submenu allows you to IPTraf's
+  interval and timeout functions.
+</para>
+<figure>
+<title>The Timers configuration submenu</title>
+<graphic format="png" fileref="iptraf-timermenu">
+</figure>
+<sect2>
+  <title>TCP Timeout</title>
+<para>
+  This figure determines the amount of time (in minutes) a
+  connection entry may remain idle before it becomes
+  eligible for replacement by a new connection. The default is 15 minutes.
+  You may want to reduce this on an isolated (not connected
+  to the Internet) LAN or a LAN connected to the Internet with
+  high-speed links. Just enter the new value and press
+  Enter. You can press Ctrl+X to leave the current value unchanged.
+</para>
+</sect2>
+<sect2>
+<title>Log Interval</title>
+<para>
+  This figure determines the number of minutes between logging
+  of interface statistics, TCP/UDP figures, and LAN host statistics. The
+  default is 60 minutes. This figure is meaningless if logging is disabled.
+</para>
+<para>
+  This configuration item can be overridden with the <computeroutput>-I</computeroutput> when
+  a facility is directly invoked from the command line (not accessed via the main menu), and
+  remains effective for that particular session.  The configured value is not affected.
+</para>
+</sect2>
+<sect2>
+  <title>Screen Update Interval</title>
+<para>
+  This value determines the rate in seconds at which the screen is
+  updated. The default is 0, which means the screen is updated as fast
+  as possible, giving close-to-realtime reflection
+  of network activity. However, this high-speed update can cause
+  incredible amounts of traffic if IPTraf is run on a remote
+  terminal (e.g. a Telnet or Secure Shell session). You can set this
+  to a higher value, such as 1 or 2 seconds to slow down the updates.
+</para>
+<para>
+  This figure does not affect the rate of data capture. Only the
+  screen refresh is affected. The figures are still updated as fast as
+  possible, although the figure display will no longer be as close
+  to realtime.
+</para>
+<para>
+  The default setting is 0, which shouldn't be a problem on the
+  console. Set it to a slightly higher value on remote terminals or slow
+  links. The setting affects all monitoring facilities.
+</para>
+<note>
+  <title>Note</title>
+  <para>
+   Updating the screen is one of the slowest operations in a
+  program. Older versions of IPTraf had a problem once network
+  activity became very high. Because each packet caused a screen update,
+  IPTraf began spending more time with the screen updates, causing a loss
+  of packets once network activity reached a certain point.
+</para>
+<para>
+  However, since many users like rapid counts on their screen, a
+  compromise was incorporated. Even when the screen update interval is set
+  to 0, there is still a 50ms delay between screen updates (except the LAN
+  station monitor, which has a 100 ms delay). This is still visually fast,
+  but provides more time to the packet capture routine. Higher
+  delays may result in better accuracy of counts and activity.
+</para>
+<para>
+  In any case, this setting only affects screen updates. Capture still
+  proceeds as fast as possible.
+</para>
+</note>
+</sect2>
+<sect2>
+  <title>TCP closed/idle persistence</title>
+  <para>
+  This parameter
+  determines the interval (in minutes) at which the IP Traffic Monitor
+  clears from the TCP display window all closed, idle, and timed out
+  entries. Enter <computeroutput>0</computeroutput> to keep such entries on the
+  screen indefinitely, disappearing only when replaced by new connections.
+</para>
+
+<note> 
+  <title>Note</title>
+<para>
+  The <emphasis>TCP timeout...</emphasis> option
+  only tells IPTraf how long it should take before a connection should
+  be considered idle and open to replacement by new connections. This does
+  not determine how long
+  it remains onscreen. The <emphasis>TCP closed/idle
+  persistence...</emphasis> 
+   parameter flushes entries that have been closed or reset, or idle for the number
+  of minutes defined by the <emphasis>TCP timeout...</emphasis> option.
+</para>
+</note>
+</sect2>
+</sect1>
+
+<sect1 id="customports">
+  <title>Custom Information</title>
+<para>
+  The remaining configuration items allow you to enter information which
+  IPTraf uses for its displays and logs.
+</para>
+<sect2>
+  <title>Additional ports</title>
+  <para>Select this item to enter a port
+  number to be included in the TCP/UDP counts in the TCP/UDP service
+  statistics main menu item described above. By default,
+  port numbers above 1023 are not monitored. If you do
+  have a higher-numbered port to monitor, enter it here.
+</para>
+<para>
+  You will see two fields. If you have only one port to enter, just fill
+  up the first field. To specify a range, fill both fields, the first port
+  in the first field, the last port in the second field.
+</para>
+<para>
+  You can select this option multiple times to add more values or ranges.
+</para>
+</sect2>
+<sect2>
+  <title>Delete port/range</title>
+<para>
+  Select this item to remove a higher-numbered port number or
+  port range you entered earlier with the <emphasis>Additional
+  ports...</emphasis> option. A window will come up
+  containing the entered ports and ranges. Select the entry you want
+  delete and press Enter.
+</para>
+</sect2>
+<sect2>
+  <title>LAN Station Identifiers</title>
+
+<para>
+ The LAN station statistics facility monitors stations based
+  on their respective MAC addresses. The hexadecimal notation of these
+  addresses make them even more difficult to remember than the
+  dotted-decimal IP addresses, so these facilities were added to
+  help you better determine which station is which.
+</para>
+<para>
+  Selecting the <emphasis>Ethernet/PLIP host descriptions...</emphasis> or
+  <emphasis>FDDI/Token Ring host descriptions...</emphasis> options brings
+  up a submenu asking you to add, edit, or delete descriptions.
+</para>
+<para>
+  To add a new description, select the <emphasis>Add
+description...</emphasis> option. A dialog
+  box will appear, asking you for the MAC address and an appropriate
+  description. Type in the address in hexadecimal notation with no
+  punctuation of any kind. The dialog box is
+  case-insensitive for the address; the alphabetical digits A to F will be
+  stored in lowercase.
+</para>
+<para>
+  Use the Tab key to move between fields and Enter to accept. Press Ctrl+X
+  to discard this dialog and return to the main menu.
+</para>
+<para>
+  The description may be anything: the IP address, a fully-qualified
+  domain name, or a description of your liking as long
+  as the field can hold.
+</para>
+<para>
+  Enter as many descriptions as you need. Press Ctrl+X at a blank dialog
+  after you have entered the last entry
+</para>
+<para>
+  These descriptions will be displayed alongside the MAC addresses
+  in the LAN station monitor, together with the type of frame (Ethernet,
+  PLIP, or FDDI).
+</para>
+<para>
+  An existing address or description may be edited
+by selecting the <emphasis>Edit
+  description...</emphasis> option from the submenu. A panel will appear with a list
+  of existing address descriptions. Select the one you wish to
+  edit and press Enter. A dialog box identical to that
+  when you add a description will appear with prefilled fields. Just
+  backspace over and edit the fields. Press Enter to accept or Ctrl+X to
+  cancel.
+</para>
+<para>
+  Selecting the <emphasis>Delete description...</emphasis> submenu
+  item brings up the selection panel. Select the description you want to
+  delete and press Enter. You can also press Ctrl+X to cancel the operation.
+</para>
+<para>
+  IPTraf 2.4 and later also recognizes the <filename>/etc/ethers</filename> file.
+  Should a hardware address be present in the IPTraf definition files and
+  in <filename>/etc/ethers</filename>, the IPTraf definition will be used.
+</para>
+<note>
+  <title>Note</title>
+<para>
+  The description file for Ethernet and PLIP is
+  <filename>ethernet.desc</filename>, while the FDDI and Token Ring mappings are stored
+  in <filename>fddi.desc</filename> in the IPTraf working directory. These files are in
+  colon-delimited text format. Database engines or custom scripts can be
+  told to append data lines to those files. Each line follows this
+  simple format:
+</para>
+<synopsis>
+<replaceable>address</replaceable>:<replaceable>description</replaceable>
+</synopsis>
+<para> 
+ For example
+</para>
+<synopsis>
+00201e457e:Cisco 3640 gateway
+</synopsis>
+<para>
+  Do not put colons, periods, or any invalid characters in the MAC address.
+</para>
+</note>
+</sect2>
+</sect1>
+</chapter>
+<chapter id="backop">
+<title>Background Operation</title>
+
+<para>
+  IPTraf's facilities can be placed in the background solely for
+  logging. When running in the background, it doesn't display any output
+  on the screen, and doesn't receive input
+  from the keyboard, and drops you back to the shell.
+</para>
+<para>
+  Before starting a statistical facility in the background, configure
+  IPTraf in the usual way (set filters, add TCP/UDP ports, etc).
+</para>
+<para>
+  Once that's done, exit all instances of IPTraf on the system, then
+  invoke IPTraf from the command line with the parameter
+  to start the facility you want, the timeout (<computeroutput>-t</computeroutput>) parameter
+  if you wish, and the <computeroutput>-B</computeroutput> parameter to actually daemonize the program.
+   For example, to run the IP traffic monitor in the
+  background for all interfaces, issue the command
+</para>
+<synopsis>
+iptraf -i all -B
+</synopsis>
+<para>
+  To run the detailed interface statistics
+on interface <filename>eth0</filename> for 5 minutes
+  in the background:
+</para>
+<synopsis>
+iptraf -d eth0 -t 5 -B
+</synopsis>
+<para>
+  If the timeout parameter is not specified, the facility
+  will run until the process receives a USR2 signal. To stop a facility in
+  the background, do a
+</para>
+<synopsis>
+ps x
+</synopsis>
+<para>
+  at the command line, and find the process id (pid) of the iptraf process
+  you're looking for. Then send that process a USR2 signal with the kill
+  command:
+</para>
+<synopsis>
+kill -USR2 pid
+</synopsis>
+<para>
+  Since IPTraf cannot send error messages to the terminal, all
+  messages are written to the file daemon.log in the
+  IPTraf logging directory.
+</para>
+<para>
+  The <computeroutput>-B</computeroutput> parameter automatically enables logging regardless of its configured
+  setting. The parameter is ignored if not used with one of the parameters
+  to start a facility from the command line.
+</para>
+<para>
+  The log file can be specified with the <computeroutput>-L</computeroutput> command-line parameter. If
+  this parameter is not specified, the default log file name for the
+  facility will be used (see the descriptions of the
+  facilities above for the default log name patterns).
+  If you don't specify an path, the log file will be placed in
+  <filename>/var/log/iptraf</filename>.
+</para>
+<para>
+  The logging interval for all facilities (except the IP traffic monitor) can also be overriden
+  with the <computeroutput>-I</computeroutput> command-line parameter.
+</para>
+</chapter>
+
+<appendix id="messages">
+  <title>Messages</title>
+<para>
+IPTraf's messages are presented in two ways.  In interactive mode, messages
+are displayed in a distictive message box.  In daemon (background) mode,
+appropriate messages are written to the <filename>iptraf.log</filename>
+file in the IPTraf log directory (normally
+<filename>/var/log/iptraf</filename>.
+</para>
+
+<sect1 id="iptrafmessages">
+<title>IPTraf Messages</title>
+<msgset>
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+Unable to create config file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot create the configuration file. The most likely cause of
+  this is that you didn't properly install the
+  program, and the necessary directory
+<filename>/var/local/iptraf</filename> does not
+  exist. Can also be generated if you have a disk problem or if you
+  have too many files open.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to read config file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  The configuration record cannot be read. You most likely have a disk
+  problem.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to write config file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The configuration file cannot be written. You either have a disk
+  problem, or (more likely), your disk is full.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Enter an appropriate description for this filter
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  Enter something to clearly describe the filter you are defining.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Error loading filter list file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot access the list of defined TCP or UDP filters. Can also be
+  an indicator of a bad disk.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Error writing filter list file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The filter list file cannot be written to. You may
+  have trouble accessing your filters.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to read TCP/UDP/misc IP filter file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf cannot read the filter data off the file. Could be caused
+  by a bad disk.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Error opening filter data file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot open the filter file. Could be caused by a shortage of
+  file descriptors or a bad disk.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to write filter data
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot add the newly defined filter to the filter list. This may
+  be due to a bad disk.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Cannot create filter data file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot create the filter record file. The defined filter is lost.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to save filter changes
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf cannot save the changes you made to the filter. You probably
+  have a disk error.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to write filter state information
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  The current state of the filters cannot be saved. IPTraf will be unable
+  to correctly reload the filters the next time it's started. This can
+  be caused by a bad disk or improper installation.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to save interface flags
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf was unable to save the flags of the network interfaces. This is
+  probably due to a bad installation or full filesystem.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to retrieve saved interface flags
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf was unable to retrieve the save interface flags.
+  Probably again due to a bad installation or full filesystem.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>
+<replaceable>protocol</replaceable> filter data file in use; try again later
+</computeroutput></para>
+<para><computeroutput>
+Filter state file in use; try again later
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  Another IPTraf process is modifying the TCP, UDP or miscellaneous IP
+  filter data or the filter state file and has locked the files
+  or file. Try again once the other IPTraf process has terminated or
+  completed its modifications and unlocked the files.
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to resolve hostname
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  The indicated host name in the filter cannot be resolved into an
+  IP address. Check the local hosts database <filename>/etc/hosts</filename> or
+  your machine's DNS configuration or DNS server.
+</para>
+<para>
+  The filter parameters will not be used.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to open host description file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf cannot open the file containing the descriptions for Ethernet
+  or FDDI addresses. Could be due to a bad disk or a hit on the file
+  descriptor limit.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to write host description
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf was unable to write the description record for this Ethernet or
+  FDDI address. Could be due to a bad disk or corrupted filesystem.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>No descriptions
+
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  You tried to edit or delete a description with no previous
+  descriptions defined.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Cannot open log file
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  There is a problem opening the log file. There is most
+  likely a problem with the disk, or there are too many open files.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to obtain interface list
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf was unable to retrieve the list of network interfaces
+  from the <filename>/proc</filename> filesystem. This may be due
+  to a badly configured kernel.  IPTraf needs <filename>/proc</filename>
+  filesystem support.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>
+No active interfaces. Check their status or the /proc filesystem.
+</computeroutput></para>
+</msgtext>
+<msgexplan>
+<para>
+
+  IPTraf found no active interfaces. Either all interfaces are down or the
+  <filename>/proc/net/dev</filename> file was empty or unavailable. Activate at least one
+  interface or check the <filename>/proc/net/dev</filename> file.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to obtain interface parameters for interface
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The system call to retrieve the interface's flags failed. Check your
+  interface or kernel driver.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Promisc change failed for interface
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The system call to change the promiscuous flag failed. Check
+  your interface or its kernel driver.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to open raw socket for flag change
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf was unable to open the necessary socket for the promiscuous
+  change operation. May be due to a shortage of file descriptors.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to open socket for MTU determination
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  Returned by the facility for detailed interface statistics
+  if the raw socket's opening sequence failed. The facility will abort.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to open raw socket
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  IPTraf was unable to open the raw socket for packet capture. May be due
+  to a shortage of file descriptors.
+</para>
+
+<note>
+  <title>Reminder</title>
+<para> IPTraf 2.x.x requires Linux kernel 2.2.x, with the Packet
+  Socket option compiled in or installed as a module. IPTraf 2.x will
+  return this error on a pre-2.2 kernel or on a 2.2 kernel without
+  Packet Socket.
+</para>
+</note>
+</msgexplan>
+</simplemsgentry>
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>Unable to obtain interface MTU
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The detailed statistics facility was unable to
+  obtain the maximum transmission unit (MTU) for the selected
+  interface. The facility will abort.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Specified interface not supported
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The interface specified with the <computeroutput>-i</computeroutput>,
+  <computeroutput>-d</computeroutput>, <computeroutput>-s</computeroutput>, <computeroutput>-l</computeroutput>,
+  or <computeroutput>-z</computeroutput> command-line parameters is not supported
+  by IPTraf.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Specified interface not active
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The interface specified with the <computeroutput>-i</computeroutput>,
+  <computeroutput>-d</computeroutput>,
+  <computeroutput>-s</computeroutput>, <computeroutput>-l</computeroutput>, or
+  <computeroutput>-z</computeroutput> command-line parameters is
+  supported, but not currently activated.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Fatal: memory allocation error
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  May occur if you have too little memory to allocate for windows, the
+  menu system, or dialog boxes. IPTraf tries
+  to prevent further allocations if memory runs out during a
+  monitor. However, this could also mean a bug if you're reasonably sure
+  you're not out of memory. An instructional message
+  on bug reporting follows this message.
+</para>
+<note>
+  <title>Technical note</title>
+<para>This is actually a response to the
+  segmentation fault error (SIGSEGV).
+</para>
+</note>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>This program can be run only by the system administrator
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf normally does not allow anybody but uid 0 (root) to run it.
+  This measure is included for safety reasons. See the section
+  on recompiling the program below if you want to override this.
+  This feature is built in, and not part of the configuration
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Your TERM variable is not set
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The <envar>TERM</envar> (terminal type) environment variable
+  must be set to a valid terminal type so that the screen management
+  routines can function properly. Set it to the appropriate terminal type.
+  Linux consoles typically have their <envar>TERM</envar> variables set to
+<computeroutput>linux</computeroutput>.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Received TERM signal
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  Not related to the previous message. The
+<computeroutput>TERM</computeroutput> (terminate) signal
+  is normally used to gracefully shut down a program. This message
+  simply indicates that the <computeroutput>TERM</computeroutput> signal was caught and IPTraf is
+  attempting to shut down as gracefully as possible.
+</para>
+</msgexplan>
+</simplemsgentry>
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Invalid option or missing parameter, use iptraf -h for help
+</computeroutput></para>
+</msgtext>
+<msgexplan>
+<para>
+  The <computeroutput>-i</computeroutput>,
+  <computeroutput>-d</computeroutput>,
+  <computeroutput>-s</computeroutput>, <computeroutput>-l</computeroutput>, or
+  <computeroutput>-z</computeroutput> options were specified but
+  no interface was specified on the command line. These
+  parameters require a valid interface name (or
+  <computeroutput>all</computeroutput> for <computeroutput>-i</computeroutput>
+or <computeroutput>-l</computeroutput>).
+</para>
+<para>
+  This message also appears if an unknown option is passed
+to the <command>iptraf</command> command.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>Warning: unable to tag this process
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf normally tags itself when it runs to prevent multiple instances
+  of the statistical facilities from running.
+  This message means the program was unable to
+  create the necessary tag file. This may be due to a bad or
+  improper installation. Try running the
+<command>make install</command> procedure or the
+<command>Setup</command> in the distribution's top-level directory.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Warning: unable to tag facility
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf was unable to create the tag file for the facility you
+  started. The facility will still run, but other instances of IPTraf that
+  may be running simultaneously will allow the same facility to run.
+  This may cause both instances of the facility to malfunction. This could
+  be due to a bad disk or bad installation.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput><replaceable>facility</replaceable> already running/listening on interface
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  The facility you tried to start is currently running
+  on the indicated interface in another IPTraf process on the machine.
+  This restriction is placed to prevent conflicts involving
+  internal sockets or the log files.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>General interface statistics already active in another process
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  Only one instance of the general interface statistics can run at a time.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Duplicate port/range entry
+
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  You entered a port number or range that was already added to the list of
+  additional ports to be monitored by the TCP/UDP service monitor
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>No custom ports
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  There are no ports or port ranges earlier added. There's nothing
+  to delete.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Can't start rvnamed; lookups will block
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf cannot start the <command>rvnamed</command> daemon; probably due
+  to a bad installation. IPTraf will fall back to blocking lookups.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Can't spawn new process; lookups will block
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf cannot start a new process. This may be due to memory shortage.
+  IPTraf will fall back to blocking lookups.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Fork error, IPTraf cannot run in background
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf cannot start a new process, and can go into the background.
+  This may be due to memory shortage. IPTraf aborts.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>No memory for new filter entry
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  IPTraf was unable to allocate memory for a new filter entry. Most likely
+  due to memory shortage.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Memory Low
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  This indicator appears if memory runs low due to a lot of entries in a
+  facility. Should critical functions fail (window creation,
+  internal allocation), the program could terminate with a
+  segmentation violation.
+</para>
+
+<note>
+  <title>Note</title>
+<para>
+  Any message or indicator about low memory means that your system
+  does not have enough memory to handle the entries. It is
+  almost certain that sooner or later, IPTraf or other applications will
+  abort due to the failure of important system calls or library functions.
+  Memory must be added right away.
+</para>
+</note>
+</msgexplan>
+</simplemsgentry>
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>IPC Error
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  This indicator appears if an error occurs receiving data
+  from the <command>rvnamed</command> program (IPC stands for Interprocess Communication).
+  This indication should not occur under normal circumstances.
+  Report instances of this condition and the circumstances under which
+  it happens. You may also include data from the
+<filename>rvnamed.log</filename> file.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>Error opening terminal: <replaceable>terminal</replaceable>
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+  The screen management routines cannot find the
+<filename>terminfo</filename> entry for your
+  terminal. IPTraf expects the terminfo database located
+  in <filename>/usr/share/terminfo</filename>. This error could occur when your terminfo
+  database is located somewhere else.
+</para>
+<para>
+  See the section on controlling the <filename>terminfo</filename> search path.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+  <simplemsgentry>
+<msgtext>
+<para><computeroutput>This will end your IPTraf session
+  </computeroutput></para></msgtext>
+<msgexplan>
+<para>
+In interactive mode IPTraf asks you to confirm your exit
+command. Press Enter to return to the shell or any other key to cancel
+your command and return to the main menu.
+</para>
+</msgexplan>
+</simplemsgentry>
+</msgset>
+</sect1>
+<sect1 id="rvnamedmessages">
+<title>
+  rvnamed Messages
+</title>
+<para>
+  As a daemon, rvnamed does not send messages to the screen. It
+  writes its messages to the file <filename>rvnamed.log</filename> in the
+  IPTraf log directory.
+</para>
+<msgset>
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Unable to open child communication socket
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed was unable to open the communication endpoint for data reception
+  from the children it creates. This is highly unusual, and should it
+  occur, report the circumstances.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Unable to open client communication socket
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed was unable to  open the communication endpoint for data exchange
+  with the IPTraf program. This is highly unusual, and should it
+  occur, report the circumstances.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Error binding client communication socket
+  Error binding child communication socket
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed was unable to assign a name
+  to the indicated communication socket. This may be due to a bad, full,
+  or corrupted filesystem.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Fatal error: no memory for descriptor monitoring
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed ran out of memory. IPTraf will resort to blocking, and may freeze.
+
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Error on fork, returning IP address
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed had a problem spawning a copy of itself to resolve the IP
+  address. rvnamed will simply return the IP address in its literal,
+  dotted-decimal notation. IPTraf will still function normally. This may
+  be due to lack of memory or a process limit hit.
+</para>
+</msgexplan>
+</simplemsgentry>
+
+
+
+<simplemsgentry>
+<msgtext>
+<para><computeroutput>
+  Maximum child process limit reached
+</computeroutput></para></msgtext>
+<msgexplan>
+<para>
+
+  rvnamed has reached its maximum number of child processes. This is
+  intended as a "brake" to prevent too many rvnamed children
+  from hogging your computer's resources and possibly crashing it.
+</para>
+<para>
+  Unless IPTraf is monitoring an extremely busy network without filters,
+  this shouldn't happen, at least, not that often. If you notice
+  this message, try applying filters or check your DNS server. Many times,
+  this can happen when the DNS server goes down for
+  whatever reason, and you have rvnamed children taking too long to resolve.
+</para>
+</msgexplan>
+</simplemsgentry>
+</msgset>
+</sect1>
+</appendix>
+<appendix id="gfdl">
+<title>GNU Free Documentation License</title>
+<!-- - GNU Project - Free Software Foundation (FSF) -->
+<!-- LINK REV="made" HREF="mailto:webmasters@gnu.org" -->
+
+
+  <!-- sect1>
+    <title>GNU Free Documentation License</title -->
+
+    <para>Version 1.1, March 2000</para>
+
+    <blockquote>
+      <para>Copyright (C) 2000  Free Software Foundation, Inc.
+59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+Everyone is permitted to copy and distribute verbatim copies
+of this license document, but changing it is not allowed.</para>
+    </blockquote>
+
+  <sect1 id="gfdl-0">
+    <title>PREAMBLE</title>
+
+    <para>The purpose of this License is to make a manual, textbook,
+    or other written document "free" in the sense of freedom: to
+    assure everyone the effective freedom to copy and redistribute it,
+    with or without modifying it, either commercially or
+    noncommercially.  Secondarily, this License preserves for the
+    author and publisher a way to get credit for their work, while not
+    being considered responsible for modifications made by
+    others.</para>
+
+    <para>This License is a kind of "copyleft", which means that
+    derivative works of the document must themselves be free in the
+    same sense.  It complements the GNU General Public License, which
+    is a copyleft license designed for free software.</para>
+
+    <para>We have designed this License in order to use it for manuals
+    for free software, because free software needs free documentation:
+    a free program should come with manuals providing the same
+    freedoms that the software does.  But this License is not limited
+    to software manuals; it can be used for any textual work,
+    regardless of subject matter or whether it is published as a
+    printed book.  We recommend this License principally for works
+    whose purpose is instruction or reference.</para>
+  </sect1>
+
+  <sect1 id="gfdl-1">
+    <title>APPLICABILITY AND DEFINITIONS</title>
+
+    <para>This License applies to any manual or other work that
+    contains a notice placed by the copyright holder saying it can be
+    distributed under the terms of this License.  The "Document",
+    below, refers to any such manual or work.  Any member of the
+    public is a licensee, and is addressed as "you".</para>
+
+    <para>A "Modified Version" of the Document means any work
+    containing the Document or a portion of it, either copied
+    verbatim, or with modifications and/or translated into another
+    language.</para>
+
+    <para>A "Secondary Section" is a named appendix or a front-matter
+    section of the Document that deals exclusively with the
+    relationship of the publishers or authors of the Document to the
+    Document's overall subject (or to related matters) and contains
+    nothing that could fall directly within that overall subject.
+    (For example, if the Document is in part a textbook of
+    mathematics, a Secondary Section may not explain any mathematics.)
+    The relationship could be a matter of historical connection with
+    the subject or with related matters, or of legal, commercial,
+    philosophical, ethical or political position regarding
+    them.</para>
+
+    <para>The "Invariant Sections" are certain Secondary Sections
+    whose titles are designated, as being those of Invariant Sections,
+    in the notice that says that the Document is released under this
+    License.</para>
+
+    <para>The "Cover Texts" are certain short passages of text that
+    are listed, as Front-Cover Texts or Back-Cover Texts, in the
+    notice that says that the Document is released under this
+    License.</para>
+
+    <para>A "Transparent" copy of the Document means a
+    machine-readable copy, represented in a format whose specification
+    is available to the general public, whose contents can be viewed
+    and edited directly and straightforwardly with generic text
+    editors or (for images composed of pixels) generic paint programs
+    or (for drawings) some widely available drawing editor, and that
+    is suitable for input to text formatters or for automatic
+    translation to a variety of formats suitable for input to text
+    formatters.  A copy made in an otherwise Transparent file format
+    whose markup has been designed to thwart or discourage subsequent
+    modification by readers is not Transparent.  A copy that is not
+    "Transparent" is called "Opaque".</para>
+
+    <para>Examples of suitable formats for Transparent copies include
+    plain ASCII without markup, Texinfo input format, LaTeX input
+    format, SGML or XML using a publicly available DTD, and
+    standard-conforming simple HTML designed for human modification.
+    Opaque formats include PostScript, PDF, proprietary formats that
+    can be read and edited only by proprietary word processors, SGML
+    or XML for which the DTD and/or processing tools are not generally
+    available, and the machine-generated HTML produced by some word
+    processors for output purposes only.</para>
+
+    <para>The "Title Page" means, for a printed book, the title page
+    itself, plus such following pages as are needed to hold, legibly,
+    the material this License requires to appear in the title page.
+    For works in formats which do not have any title page as such,
+    "Title Page" means the text near the most prominent appearance of
+    the work's title, preceding the beginning of the body of the
+    text.</para>
+  </sect1>
+
+  <sect1 id="gfdl-2">
+    <title>VERBATIM COPYING</title>
+
+    <para>You may copy and distribute the Document in any medium,
+    either commercially or noncommercially, provided that this
+    License, the copyright notices, and the license notice saying this
+    License applies to the Document are reproduced in all copies, and
+    that you add no other conditions whatsoever to those of this
+    License.  You may not use technical measures to obstruct or
+    control the reading or further copying of the copies you make or
+    distribute.  However, you may accept compensation in exchange for
+    copies.  If you distribute a large enough number of copies you
+    must also follow the conditions in section 3.</para>
+
+    <para>You may also lend copies, under the same conditions stated
+    above, and you may publicly display copies.</para>
+  </sect1>
+
+  <sect1 id="gfdl-3">
+    <title>COPYING IN QUANTITY</title>
+
+    <para>If you publish printed copies of the Document numbering more
+    than 100, and the Document's license notice requires Cover Texts,
+    you must enclose the copies in covers that carry, clearly and
+    legibly, all these Cover Texts: Front-Cover Texts on the front
+    cover, and Back-Cover Texts on the back cover.  Both covers must
+    also clearly and legibly identify you as the publisher of these
+    copies.  The front cover must present the full title with all
+    words of the title equally prominent and visible.  You may add
+    other material on the covers in addition.  Copying with changes
+    limited to the covers, as long as they preserve the title of the
+    Document and satisfy these conditions, can be treated as verbatim
+    copying in other respects.</para>
+
+    <para>If the required texts for either cover are too voluminous to
+    fit legibly, you should put the first ones listed (as many as fit
+    reasonably) on the actual cover, and continue the rest onto
+    adjacent pages.</para>
+
+    <para>If you publish or distribute Opaque copies of the Document
+    numbering more than 100, you must either include a
+    machine-readable Transparent copy along with each Opaque copy, or
+    state in or with each Opaque copy a publicly-accessible
+    computer-network location containing a complete Transparent copy
+    of the Document, free of added material, which the general
+    network-using public has access to download anonymously at no
+    charge using public-standard network protocols.  If you use the
+    latter option, you must take reasonably prudent steps, when you
+    begin distribution of Opaque copies in quantity, to ensure that
+    this Transparent copy will remain thus accessible at the stated
+    location until at least one year after the last time you
+    distribute an Opaque copy (directly or through your agents or
+    retailers) of that edition to the public.</para>
+
+    <para>It is requested, but not required, that you contact the
+    authors of the Document well before redistributing any large
+    number of copies, to give them a chance to provide you with an
+    updated version of the Document.</para>
+  </sect1>
+
+  <sect1 id="gfdl-4">
+    <title>MODIFICATIONS</title>
+
+    <para>You may copy and distribute a Modified Version of the
+    Document under the conditions of sections 2 and 3 above, provided
+    that you release the Modified Version under precisely this
+    License, with the Modified Version filling the role of the
+    Document, thus licensing distribution and modification of the
+    Modified Version to whoever possesses a copy of it.  In addition,
+    you must do these things in the Modified Version:</para>
+
+    <orderedlist numeration="upperalpha">
+      <listitem><para>Use in the Title Page
+      (and on the covers, if any) a title distinct from that of the
+      Document, and from those of previous versions (which should, if
+      there were any, be listed in the History section of the
+      Document).  You may use the same title as a previous version if
+      the original publisher of that version gives permission.</para>
+      </listitem>
+
+      <listitem><para>List on the Title Page,
+      as authors, one or more persons or entities responsible for
+      authorship of the modifications in the Modified Version,
+      together with at least five of the principal authors of the
+      Document (all of its principal authors, if it has less than
+      five).</para>
+      </listitem>
+
+      <listitem><para>State on the Title page
+      the name of the publisher of the Modified Version, as the
+      publisher.</para>
+      </listitem>
+
+      <listitem><para>Preserve all the
+      copyright notices of the Document.</para>
+      </listitem>
+
+      <listitem><para>Add an appropriate
+      copyright notice for your modifications adjacent to the other
+      copyright notices.</para>
+      </listitem>
+
+      <listitem><para>Include, immediately
+      after the copyright notices, a license notice giving the public
+      permission to use the Modified Version under the terms of this
+      License, in the form shown in the Addendum below.</para>
+      </listitem>
+
+      <listitem><para>Preserve in that license
+      notice the full lists of Invariant Sections and required Cover
+      Texts given in the Document's license notice.</para>
+      </listitem>
+
+      <listitem><para>Include an unaltered
+      copy of this License.</para>
+      </listitem>
+
+      <listitem><para>Preserve the section
+      entitled "History", and its title, and add to it an item stating
+      at least the title, year, new authors, and publisher of the
+      Modified Version as given on the Title Page.  If there is no
+      section entitled "History" in the Document, create one stating
+      the title, year, authors, and publisher of the Document as given
+      on its Title Page, then add an item describing the Modified
+      Version as stated in the previous sentence.</para>
+      </listitem>
+
+      <listitem><para>Preserve the network
+      location, if any, given in the Document for public access to a
+      Transparent copy of the Document, and likewise the network
+      locations given in the Document for previous versions it was
+      based on.  These may be placed in the "History" section.  You
+      may omit a network location for a work that was published at
+      least four years before the Document itself, or if the original
+      publisher of the version it refers to gives permission.</para>
+      </listitem>
+
+      <listitem><para>In any section entitled
+      "Acknowledgements" or "Dedications", preserve the section's
+      title, and preserve in the section all the substance and tone of
+      each of the contributor acknowledgements and/or dedications
+      given therein.</para>
+      </listitem>
+
+      <listitem><para>Preserve all the
+      Invariant Sections of the Document, unaltered in their text and
+      in their titles.  Section numbers or the equivalent are not
+      considered part of the section titles.</para>
+      </listitem>
+
+      <listitem><para>Delete any section
+      entitled "Endorsements".  Such a section may not be included in
+      the Modified Version.</para>
+      </listitem>
+
+      <listitem><para>Do not retitle any
+      existing section as "Endorsements" or to conflict in title with
+      any Invariant Section.</para>
+      </listitem>
+    </orderedlist>
+    
+    <para>If the Modified Version includes new front-matter sections
+    or appendices that qualify as Secondary Sections and contain no
+    material copied from the Document, you may at your option
+    designate some or all of these sections as invariant.  To do this,
+    add their titles to the list of Invariant Sections in the Modified
+    Version's license notice.  These titles must be distinct from any
+    other section titles.</para>
+
+    <para>You may add a section entitled "Endorsements", provided it
+    contains nothing but endorsements of your Modified Version by
+    various parties--for example, statements of peer review or that
+    the text has been approved by an organization as the authoritative
+    definition of a standard.</para>
+
+    <para>You may add a passage of up to five words as a Front-Cover
+    Text, and a passage of up to 25 words as a Back-Cover Text, to the
+    end of the list of Cover Texts in the Modified Version.  Only one
+    passage of Front-Cover Text and one of Back-Cover Text may be
+    added by (or through arrangements made by) any one entity.  If the
+    Document already includes a cover text for the same cover,
+    previously added by you or by arrangement made by the same entity
+    you are acting on behalf of, you may not add another; but you may
+    replace the old one, on explicit permission from the previous
+    publisher that added the old one.</para>
+
+    <para>The author(s) and publisher(s) of the Document do not by
+    this License give permission to use their names for publicity for
+    or to assert or imply endorsement of any Modified Version.</para>
+  </sect1>
+
+  <sect1 id="gfdl-5">
+    <title>COMBINING DOCUMENTS</title>
+
+    <para>You may combine the Document with other documents released
+    under this License, under the terms defined in section 4 above for
+    modified versions, provided that you include in the combination
+    all of the Invariant Sections of all of the original documents,
+    unmodified, and list them all as Invariant Sections of your
+    combined work in its license notice.</para>
+
+    <para>The combined work need only contain one copy of this
+    License, and multiple identical Invariant Sections may be replaced
+    with a single copy.  If there are multiple Invariant Sections with
+    the same name but different contents, make the title of each such
+    section unique by adding at the end of it, in parentheses, the
+    name of the original author or publisher of that section if known,
+    or else a unique number.  Make the same adjustment to the section
+    titles in the list of Invariant Sections in the license notice of
+    the combined work.</para>
+
+    <para>In the combination, you must combine any sections entitled
+    "History" in the various original documents, forming one section
+    entitled "History"; likewise combine any sections entitled
+    "Acknowledgements", and any sections entitled "Dedications".  You
+    must delete all sections entitled "Endorsements."</para>
+  </sect1>
+
+  <sect1 id="gfdl-6">
+    <title>COLLECTIONS OF DOCUMENTS</title>
+
+    <para>You may make a collection consisting of the Document and
+    other documents released under this License, and replace the
+    individual copies of this License in the various documents with a
+    single copy that is included in the collection, provided that you
+    follow the rules of this License for verbatim copying of each of
+    the documents in all other respects.</para>
+
+    <para>You may extract a single document from such a collection,
+    and distribute it individually under this License, provided you
+    insert a copy of this License into the extracted document, and
+    follow this License in all other respects regarding verbatim
+    copying of that document.</para>
+  </sect1>
+
+  <sect1 id="gfdl-7">
+    <title>AGGREGATION WITH INDEPENDENT WORKS</title>
+    
+    <para>A compilation of the Document or its derivatives with other
+    separate and independent documents or works, in or on a volume of
+    a storage or distribution medium, does not as a whole count as a
+    Modified Version of the Document, provided no compilation
+    copyright is claimed for the compilation.  Such a compilation is
+    called an "aggregate", and this License does not apply to the
+    other self-contained works thus compiled with the Document, on
+    account of their being thus compiled, if they are not themselves
+    derivative works of the Document.</para>
+
+    <para>If the Cover Text requirement of section 3 is applicable to
+    these copies of the Document, then if the Document is less than
+    one quarter of the entire aggregate, the Document's Cover Texts
+    may be placed on covers that surround only the Document within the
+    aggregate.  Otherwise they must appear on covers around the whole
+    aggregate.</para>
+  </sect1>
+
+  <sect1 id="gfdl-8">
+    <title>TRANSLATION</title>
+
+    <para>Translation is considered a kind of modification, so you may
+    distribute translations of the Document under the terms of section
+    4.  Replacing Invariant Sections with translations requires
+    special permission from their copyright holders, but you may
+    include translations of some or all Invariant Sections in addition
+    to the original versions of these Invariant Sections.  You may
+    include a translation of this License provided that you also
+    include the original English version of this License.  In case of
+    a disagreement between the translation and the original English
+    version of this License, the original English version will
+    prevail.</para>
+  </sect1>
+
+  <sect1 id="gfdl-9">
+    <title>TERMINATION</title>
+    
+    <para>You may not copy, modify, sublicense, or distribute the
+    Document except as expressly provided for under this License.  Any
+    other attempt to copy, modify, sublicense or distribute the
+    Document is void, and will automatically terminate your rights
+    under this License.  However, parties who have received copies, or
+    rights, from you under this License will not have their licenses
+    terminated so long as such parties remain in full
+    compliance.</para>
+  </sect1>
+
+  <sect1 id="gfdl-10">
+    <title>FUTURE REVISIONS OF THIS LICENSE</title>
+
+    <para>The Free Software Foundation may publish new, revised
+    versions of the GNU Free Documentation License from time to time.
+    Such new versions will be similar in spirit to the present
+    version, but may differ in detail to address new problems or
+    concerns.  See <ulink
+    url="http://www.gnu.org/copyleft/">http://www.gnu.org/copyleft/</ulink>.</para>
+
+    <para>Each version of the License is given a distinguishing
+    version number.  If the Document specifies that a particular
+    numbered version of this License "or any later version" applies to
+    it, you have the option of following the terms and conditions
+    either of that specified version or of any later version that has
+    been published (not as a draft) by the Free Software Foundation.
+    If the Document does not specify a version number of this License,
+    you may choose any version ever published (not as a draft) by the
+    Free Software Foundation.</para>
+  </sect1>
+
+  <sect1 id="gfdl-11">
+    <title>How to use this License for your documents</title>
+
+    <para>To use this License in a document you have written, include
+    a copy of the License in the document and put the following
+    copyright and license notices just after the title page:</para>
+
+<blockquote><para>
+      Copyright (c)  YEAR  YOUR NAME.
+      Permission is granted to copy, distribute and/or modify this document
+      under the terms of the GNU Free Documentation License, Version 1.1
+      or any later version published by the Free Software Foundation;
+      with the Invariant Sections being LIST THEIR TITLES, with the
+      Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+      A copy of the license is included in the section entitled "GNU
+      Free Documentation License".
+</para></blockquote>
+
+    <para>If you have no Invariant Sections, write "with no Invariant
+    Sections" instead of saying which ones are invariant.  If you have
+    no Front-Cover Texts, write "no Front-Cover Texts" instead of
+    "Front-Cover Texts being LIST"; likewise for Back-Cover
+    Texts.</para>
+
+    <para>If your document contains nontrivial examples of program
+    code, we recommend releasing these examples in parallel under your
+    choice of free software license, such as the GNU General Public
+    License, to permit their use in free software.</para>
+  </sect1>
+
+</appendix>
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:nil
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-parent-document: ("referenz.sgml" "appendix")
+sgml-exposed-tags:nil
+sgml-local-ecat-files:nil
+sgml-local-catalogs: CATALOG
+sgml-validate-command: "nsgmls -s referenz.sgml"
+ispell-skip-sgml: t
+End:
+-->
+</book>
