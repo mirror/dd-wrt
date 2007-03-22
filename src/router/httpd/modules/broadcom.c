@@ -5361,7 +5361,10 @@ ej_tf_upnp (webs_t wp, int argc, char_t ** argv)
 		  	count++;
 	  }
 	  if (count == 2)
-	  	strcat (temp, ",*");
+	  	{
+			temp[len]=',';
+			temp[len + 1]='*';
+		}
 	  
 	  
 	  tf_webWriteJS (wp, temp);
