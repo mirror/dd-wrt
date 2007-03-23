@@ -263,6 +263,7 @@ Configure mac addresses by reading data from eeprom
 
   /* Set a sane date */
   stime (&tm);
+  nvram_set ("wl0_ifname", "ath0");
 
   eval ("hwclock", "-s");
   nvram_set ("use_crypto", "0");
