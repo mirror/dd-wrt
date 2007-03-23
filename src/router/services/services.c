@@ -545,7 +545,7 @@ start_dhcpfwd (void)
 	       || strcmp (wan_proto, "static") == 0)
 	{
 	  fprintf (fp, "if	%s	false	true	true\n",
-		   nvram_safe_get ("wan_ifname"));
+		   wan_ifname);
 	}
 #ifdef HAVE_PPTP
       else if (strcmp (wan_proto, "pptp") == 0)
