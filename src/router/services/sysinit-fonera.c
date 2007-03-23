@@ -100,7 +100,7 @@ start_sysinit (void)
 
   /* Set a sane date */
   stime (&tm);
+  nvram_set ("wl0_ifname", "ath0");
 
   return 0;
-  cprintf ("done\n");
 }
