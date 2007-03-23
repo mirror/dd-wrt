@@ -149,6 +149,7 @@ start_sysinit (void)
   /* Set a sane date */
   stime (&tm);
   nvram_set ("use_crypto", "0");
+  nvram_set ("wl0_ifname", "ath0");
 
   cprintf ("done\n");
   return 0;
