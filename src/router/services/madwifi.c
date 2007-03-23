@@ -1231,6 +1231,7 @@ configure_single (int count)
 
 
   char *m;
+  char *first=NULL;
   int vif = 0;
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -1251,6 +1252,7 @@ configure_single (int count)
 	  else
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "adhoc");
+	  if (!first)first=var;
 	  vif = 1;
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
@@ -1267,6 +1269,7 @@ configure_single (int count)
 //create original primary interface
   m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
+	  if (!first)first=dev;
   if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     {
       if (vif)
@@ -1316,6 +1319,7 @@ configure_single (int count)
   char maxp[16];
 
   //confige net mode
+  set_netmode (wif, dev);
 
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
@@ -1333,7 +1337,6 @@ configure_single (int count)
 	  eval ("iwconfig", dev, "freq", freq);
 	}
     }
-  set_netmode (wif, dev);
 
 
 
@@ -1381,7 +1384,7 @@ configure_single (int count)
       if (default_match (isolate, "1", "0"))
 	eval ("iwpriv", var, "ap_bridge", "0");
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
-	eval ("iwpriv", dev, "wds", "1");
+	eval ("iwpriv", var, "wds", "1");
       setMacFilter (var);
       cnt++;
     }
