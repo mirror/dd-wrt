@@ -167,7 +167,6 @@ writedb (void)
   fwrite (values.offsets, (('z' + 1) - 'A') * 4, 1, in);
   fclose (in);
 }
-
 void
 readdb (void)
 {
