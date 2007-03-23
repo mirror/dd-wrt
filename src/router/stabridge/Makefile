@@ -20,8 +20,8 @@ strip: $(TARGET)
 	$(STRIP) $(TARGET)
 
 install: all
-	install -d $(INSTALLDIR)/usr/sbin
-	install -D stabridge $(INSTALLDIR)/usr/sbin/stabridge
+#	install -d $(INSTALLDIR)/usr/sbin
+#	install -D stabridge $(INSTALLDIR)/usr/sbin/stabridge
 
 TMPSRC := /tmp/stabridge
 
