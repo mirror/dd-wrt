@@ -3,8 +3,6 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
-
 function SelWL(num,F) {
   if ( num == 0)
     I = "0";
