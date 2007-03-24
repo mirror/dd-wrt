@@ -1,4 +1,4 @@
-<% do_pagehead("wanmac_titl"); %>
+<% do_pagehead("wanmac.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 
