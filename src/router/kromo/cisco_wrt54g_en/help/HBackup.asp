@@ -1,6 +1,4 @@
 <% do_hpagehead("config.titl"); %>
-		<title>Help - Backup</title>
-	</head>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
