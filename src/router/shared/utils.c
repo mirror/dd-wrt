@@ -462,6 +462,13 @@ if (reg1=0x22 && reg2==0x1450)  //kendin switch
 		return ROUTER_WAP54G_V1;
 	    }
 
+	if (boardnum == 2 && nvram_match ("GemtekPmonVer", "1"))
+		{
+		cprintf ("router is Sitecom wl105b\n");
+		setRouter ("Sitecom WL-105b");
+		return ROUTER_SITECOM_WL105B;
+	    }
+
 	if (nvram_match ("GemtekPmonVer", "9"))   //Must be Motorola wr850g v1 or we800g v1 or Linksys wrt55ag v1
 		{ 
 		if (startswith (et0, "00:0C:E5") ||
@@ -2115,6 +2122,7 @@ check_vlan_support (void)
 	  	case ROUTER_BUFFALO_WLA2G54C:
 	  	case ROUTER_MOTOROLA_WE800G:
 	  	case ROUTER_WAP54G_V1:
+	  	case ROUTER_SITECOM_WL105B:
 	  	case ROUTER_BUFFALO_WLI2_TX1_G54:
 	  	case ROUTER_BUFFALO_WLI_TX4_G54HP:
 	  	case ROUTER_BRCM4702_GENERIC:
