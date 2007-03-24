@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Port Triggering</title>
+<% do_pagehead("trforward.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + trforward.titl;
 
 function trigger_add_submit(F) {
 	F.submit_type.value = "add_trigger";

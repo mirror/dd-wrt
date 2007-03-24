@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Router Status</title>
-	</head>
+<% do_hpagehead("status_router.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

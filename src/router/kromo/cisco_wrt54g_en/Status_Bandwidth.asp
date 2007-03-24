@@ -1,12 +1,5 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Bandwidth Monitoring</title>
-		<script type="text/javascript">
-		//<![CDATA[
+<% do_pagehead("status_band.titl"); %>
 
-document.title = "<% nvram_get("router_name"); %>" + status_band.titl;
-
-		//]]>
-		</script>
 	</head>
 
 	<body class="gui">

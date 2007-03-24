@@ -1,12 +1,5 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Routing Table</title>
-		<script type="text/javascript">
-		//<![CDATA[
+<% do_pagehead("routetbl.titl"); %>
 
-document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
-		
-		//]]>
-		</script>
 	</head>
 
 	<body>

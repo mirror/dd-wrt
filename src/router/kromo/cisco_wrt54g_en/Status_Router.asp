@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Router Status</title>
+<% do_pagehead("status_router.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + status_router.titl;
 
 var update;
 

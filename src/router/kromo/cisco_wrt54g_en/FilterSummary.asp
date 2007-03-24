@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Access Restrictions Summary</title>
+<% do_pagehead("filterSum.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + filterSum.titl;
 
 function filter_del(F) {
 	F.submit_type.value = "delete";

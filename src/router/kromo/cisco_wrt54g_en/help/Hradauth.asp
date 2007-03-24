@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Radius Authentification</title>
-	</head>
+<% do_hpagehead("radius.legend"); %>
 	<body>
 	<div id="header">
 			<div class="logo"> </div>

@@ -1,5 +1,4 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - UPnP</title>
+<% do_pagehead("upnp.titl"); %>
 <!--
 		UPnP
 		11.2005	tofu10		init
@@ -7,8 +6,6 @@
 -->
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
 var data = new Array();
 

@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Advanced Routing</title>
-	</head>
+<% do_hpagehead("route.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

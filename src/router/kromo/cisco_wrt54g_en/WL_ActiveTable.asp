@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Wireless Active Client MAC List</title>
+<% do_pagehead("wl_active.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 
 function to_submit(F)
 {

@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Services</title>
+<% do_pagehead("service.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
 function verify_unique_static_ip(F){                                              
 	static_leasenum = <% nvram_get("static_leasenum"); %>;

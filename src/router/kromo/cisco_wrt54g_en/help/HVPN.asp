@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - VPN Passthrough</title>
-	</head>
+<% do_hpagehead("vpn.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

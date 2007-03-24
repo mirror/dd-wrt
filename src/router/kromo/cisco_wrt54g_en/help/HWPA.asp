@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Wireless Security</title>
-	</head>
+<% do_hpagehead("wpa.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

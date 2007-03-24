@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Port Triggering</title>
-	</head>
+<% do_hpagehead("trforward.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

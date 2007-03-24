@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - MAC Filter</title>
+<% do_pagehead("wl_mac.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wl_mac.titl;
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;

@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - WDS</title>
-	</head>
+<% do_hpagehead("wds.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

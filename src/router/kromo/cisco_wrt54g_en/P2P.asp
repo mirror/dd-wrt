@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Peer to Peer Apps</title>
+<% do_pagehead("p2p.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + p2p.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "XXXXX";

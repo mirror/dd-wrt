@@ -1,4 +1,4 @@
-<% do_hpagehead(); %>
+<% do_hpagehead("config.titl"); %>
 		<title>Help - Backup</title>
 	</head>
 	<body>

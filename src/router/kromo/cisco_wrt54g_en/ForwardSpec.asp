@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Port Forwarding</title>
+<% do_pagehead("pforward.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + pforward.titl;
 
 function forward_add_submit(F) {
 	F.submit_type.value = "add_forward_spec";

@@ -1,7 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help -  Networking</title>
-	</head>
-	
+<% do_hpagehead("bmenu.networking"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

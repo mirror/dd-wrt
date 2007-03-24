@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - List of PCs</title>
+<% do_pagehead("filterIP.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + filterIP.titl;
 		
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;

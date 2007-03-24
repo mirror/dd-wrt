@@ -347,7 +347,7 @@ bmenu.statuSysInfo="Systeem-Info";
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl=" - Keep Alive";
+alive.titl="Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Reboot Invoegen";
 alive.sevr1="Reboot Invoegen";
@@ -369,7 +369,7 @@ halive.right4="Maximum drie verschillende IPs gescheiden door een <em>SPATIE</em
 
 // ******************************************* config.asp *******************************************//
 
-config.titl=" - Backup & Herstellen";
+config.titl="Backup & Herstellen";
 config.h2="Backup Configuratie";
 config.legend="Backup Instellingen";
 config.mess1="Klik op de \"" + sbutton.backup + "\" knop om de huidige configuratie op te slaan op je computer.";
@@ -388,7 +388,7 @@ hconfig.right4="Klik op de <em>Browse...</em> knop om naar een configuratie best
 
 // ******************************************* DDNS.asp *******************************************//
 
-ddns.titl=" - Dynamische DNS"
+ddns.titl="Dynamische DNS"
 ddns.h2="Dynamisch Domein Naam Systeem (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS Dienst";
@@ -419,7 +419,7 @@ hddns.right2="DDNS biedt toegang tot uw netwerk via een hostnaam in plaats van e
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-diag.titl=" - Diagnostics";
+diag.titl="Diagnostics";
 diag.h2="Diagnostics";
 diag.legend="Commando Shell";
 diag.cmd="Commando's";
@@ -434,7 +434,7 @@ hdiag.right2="U kan commando's uitvoeren via de webinterface. Vul uw commando in
 
 // ******************************************* DMZ.asp *******************************************//
 
-dmz.titl=" - DMZ";
+dmz.titl="DMZ";
 dmz.h2="Gedemilitariseerde Zone (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Gebruik DMZ";
@@ -449,7 +449,7 @@ hdmz.right2="Indien u deze optie activeerd zal u bepaalde hosts openstellen naar
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-factdef.titl=" - Fabricatie Instellingen";
+factdef.titl="Fabricatie Instellingen";
 factdef.h2="Fabricatie Instellingen";
 factdef.legend="Reset router instellingen";
 factdef.restore="Herstel Fabricatie Instellingen";
@@ -464,7 +464,7 @@ hfactdef.right1="Dit zal al uw instellingen herstellen naar fabricatie instellin
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-filterIP.titl=" - Lijst van PCs";
+filterIP.titl="Lijst van PCs";
 filterIP.h2="Lijst van PCs";
 filterIP.h3="Voer het MAC Adres van de PCs in, in dit formaat: xx:xx:xx:xx:xx:xx";
 filterIP.h32="Voer het IP Adres van de PCs in";
@@ -475,7 +475,7 @@ filterIP.ip_range="IP Range";
 
 // ******************************************* Filter.asp *******************************************//
 
-filter.titl=" - Toegang Beperking";
+filter.titl="Toegang Beperking";
 filter.h2="Toegang Beperking";
 filter.legend="Toegangs Beleid";
 filter.restore="Herstel Fabricatie Instellingen";
@@ -510,7 +510,7 @@ hfilter.right16="U kan toegang tot een bepaalde website verbieden aan de hand va
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-filterSum.titl=" - Overzicht Toegangs Beperking";
+filterSum.titl="Overzicht Toegangs Beperking";
 filterSum.h2="Overzicht Internet Beleid";
 filterSum.polnum="Nee.";
 filterSum.polday="Tijd en Dag";
@@ -519,7 +519,7 @@ filterSum.polday="Tijd en Dag";
 
 // ******************************************* Firewall.asp *******************************************//
 
-firewall.titl=" - Firewall";
+firewall.titl="Firewall";
 firewall.h2="Security";
 firewall.legend="Firewall Bescherming";
 firewall.firewall="SPI Firewall";
@@ -542,7 +542,7 @@ hfirewall.right2="Activeer of deactiveer de SPI firewall.";
 
 // ******************************************* Forward.asp *******************************************//
 
-prforward.titl=" - Poort Bereik Forwarden";
+prforward.titl="Poort Bereik Forwarden";
 prforward.h2="Poort Bereik Forward";
 prforward.legend="Forwards";
 prforward.app="Applicatie";
@@ -559,7 +559,7 @@ hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-pforward.titl=" - Poort Forwarden";
+pforward.titl="Poort Forwarden";
 pforward.h2="Poort Forward";
 pforward.legend="Forwards";
 pforward.app="Applicatie";
@@ -578,7 +578,7 @@ Voorbeelden van deze applicaties houden ook servers en bepaalde online games in.
 
 // ******************************************* Hotspot.asp *******************************************//
 
-hotspot.titl=" - Hotspot";
+hotspot.titl="Hotspot";
 hotspot.h2="Hotspot Portaal";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="Onderscheid WiFi van het LAN Netwerk";
@@ -631,7 +631,7 @@ hotspot.sputnik_about="over Sputnik";
 
 // ******************************************* Info.htm *******************************************//
 
-info.titl=" - Info";
+info.titl="Info";
 info.h2="Systeem Informatie";
 info.wlanmac="Wireless MAC";
 info.srv="Diensten";
@@ -677,7 +677,7 @@ idx_static.dns="Statische DNS";
 
 // ******************************************* index.asp *******************************************//
 
-idx.titl=" - Instellen";
+idx.titl="Instellen";
 idx.h2="Internet Instellen";
 idx.h22="Draadloos Instellen";
 idx.legend="Internet Connectie Type";
@@ -732,14 +732,14 @@ hidx.right18="Kies de tijd zone en zomer tijd periode waarin u zich bevind. De r
 // ******************************************* Join.asp *******************************************//
 
 //sshd.webservices
-join.titl=" - Join";
+join.titl="Join";
 join.mess1="Succesvol het volgende netwerk als client betreed: ";
 
 
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-log_in.titl=" - Inkomende Log Tabel";
+log_in.titl="Inkomende Log Tabel";
 log_in.h2="Inkomende Log Tabel";
 log_in.th_ip="IP Afkomst";
 log_in.th_port="Destinatie Poort Nummer";
@@ -748,7 +748,7 @@ log_in.th_port="Destinatie Poort Nummer";
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-log_out.titl=" - Uitgaande Log Tabel";
+log_out.titl="Uitgaande Log Tabel";
 log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Destinatie URL/IP";
@@ -758,7 +758,7 @@ log_out.th_port="Service/Poort Nummer";
 
 // ******************************************* Log.asp *******************************************//
 
-log.titl=" - Log";
+log.titl="Log";
 log.h2="Log Beheer";
 log.legend="Log";
 log.lvl="Log Niveau";
@@ -770,7 +770,7 @@ log.accept="Toegelaten";
 
 // ******************************************* Management.asp *******************************************//
 
-management.titl=" - Beheer";
+management.titl="Beheer";
 management.h2="Router Beheer";
 
 management.psswd_legend="Router Wachtwoord";
@@ -875,14 +875,14 @@ hmanagement.right2="Past de automatische vernieuwings interval van de Web GUI aa
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-portserv.titl=" - Poort Diensten";
+portserv.titl="Poort Diensten";
 portserv.h2="Poort Diensten";
 
 
 
 // ******************************************* QoS.asp *******************************************//
 
-qos.titl=" - Quality of Service";
+qos.titl="Quality of Service";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Instellingen";
 qos.srv="Start QoS";
@@ -921,7 +921,7 @@ hqos.right12="U kan uw bandbreedte beheren volgens de fysieke LAN poort waarop h
 
 // ******************************************* RouteTable.asp *******************************************//
 
-routetbl.titl=" - Route Tabel";
+routetbl.titl="Route Tabel";
 routetbl.h2="Route Tabel Entry Lijst";
 routetbl.th1="Bestemming LAN IP";
 
@@ -929,7 +929,7 @@ routetbl.th1="Bestemming LAN IP";
 
 // ******************************************* Routing.asp *******************************************//
 
-route.titl=" - Route";
+route.titl="Route";
 route.h2="Geavanceerde Routering";
 route.mod="Operatie Modus";
 route.bgp_legend="BGP Instellingen";
@@ -954,7 +954,7 @@ hroute.right10="Herkent de host en netwerk grootte.";
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-survey.titl=" - Site Onderzoek";
+survey.titl="Site Onderzoek";
 survey.h2="Neighbor&#39;s Draadloze Netwerken";
 survey.thjoin="Join Site";
 
@@ -962,7 +962,7 @@ survey.thjoin="Join Site";
 
 // ******************************************* Services.asp *******************************************//
 
-service.titl=" - Diensten";
+service.titl="Diensten";
 service.h2="Diensten Beheer";
 
 //kaid
@@ -1053,15 +1053,15 @@ service.ssh_key="Toegelaten Sleutels";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-sipath.titl=" - SiPath Overzicht";
-sipath.phone_titl=" - Telefoonboek";
-sipath.status_titl=" - Status";
+sipath.titl="SiPath Overzicht";
+sipath.phone_titl="Telefoonboek";
+sipath.status_titl="Status";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl=" - LAN Status";
+status_lan.titl="LAN Status";
 status_lan.h2="Locaal Netwerk";
 status_lan.legend="LAN Status";
 status_lan.h22="Dynamic Host Configuratie Protocol";
@@ -1081,7 +1081,7 @@ hstatus_lan.right10="Door op een MAC adres te klikken, zal u de producent van de
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl=" - Router Status";
+status_router.titl="Router Status";
 status_router.h2="Router Informatie";
 status_router.legend="Systeem";
 status_router.sys_model="Router Model";
@@ -1126,7 +1126,7 @@ hstatus_router.right14="Dit geeft de informatie die vereist is door uw ISP weer.
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
 
-status_sputnik.titl=" - Sputnik Agent Status";
+status_sputnik.titl="Sputnik Agent Status";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC License No.";
@@ -1143,7 +1143,7 @@ hstatus_sputnik.right8="Het licentie van uw Sputnik Controle Centrum.";
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl=" - Draadloze Status";
+status_wireless.titl="Draadloze Status";
 status_wireless.h2="Draadloos";
 status_wireless.legend="Draadloze Status";
 status_wireless.net="Netwerk";
@@ -1165,12 +1165,12 @@ hstatus_wireless.right4="U hebt de draadloze modus ingesteld op de Draadloos tab
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl=" - OpenVPN Status";
+status_openvpn.titl="OpenVPN Status";
 
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl=" - Poort Triggering";
+trforward.titl="Poort Triggering";
 trforward.h2="Poort Triggering";
 trforward.legend="Forwards";
 trforward.trrange="Triggered Poort Bereik";
@@ -1189,7 +1189,7 @@ htrforward.right10="Voer het eindend poort nummer in van de Trigger en Forward R
 
 // ******************************************* Upgrade.asp *******************************************//
 
-upgrad.titl=" - Firmware Upgrade";
+upgrad.titl="Firmware Upgrade";
 upgrad.h2="Firmware Beheer";
 upgrad.legend="Firmware Upgrade";
 upgrad.info1="Na het flashen, reset op volgende manier";
@@ -1208,7 +1208,7 @@ hupgrad.right2="Klik op de <em>Browse...</em> knop om het firmware bestand te se
 
 // ******************************************* UPnP.asp *******************************************//
 
-upnp.titl=" - UPnP";
+upnp.titl="UPnP";
 upnp.h2="Universele Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="UPnP Configuratie";
@@ -1228,7 +1228,7 @@ hupnp.right4="Staat applicaties toe automatisch poort forwards in te stellen.";
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl=" - VPN";
+vpn.titl="VPN";
 vpn.h2="Virtueel Private Netwerk (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
@@ -1242,7 +1242,7 @@ hvpn.right1="U kan IPSec, PPTP en/of L2TP activeren, zodat uw netwerk aparaten v
 
 // ******************************************* Vlan.asp *******************************************//
 
-vlan.titl=" - Virtual LAN";
+vlan.titl="Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Toegewezen aan<br />Bridge";
@@ -1261,7 +1261,7 @@ wep.passphrase="Sleutelzin";
 
 // ******************************************* WOL.asp *******************************************//
 
-wol.titl=" - WOL";
+wol.titl="WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Beschikbare Hosts";
 wol.legend2="WOL Adressen";
@@ -1290,7 +1290,7 @@ hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar kan ook e
 
 // ******************************************* WanMAC.asp *******************************************//
 
-wanmac.titl=" - MAC Adres Clone";
+wanmac.titl="MAC Adres Clone";
 wanmac.h2="MAC Adres Clone";
 wanmac.legend="MAC Clone";
 wanmac.wan="Clone WAN MAC";
@@ -1305,7 +1305,7 @@ hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreerd. \
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-wpa.titl=" - Draadloze Beveiliging";
+wpa.titl="Draadloze Beveiliging";
 wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Modus";
 wpa.legend="Draadloze Encryptie";
@@ -1330,7 +1330,7 @@ hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Personal Key, WPA RADIUS, of
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-wl_filter.titl=" - MAC Adres Filter Lijst";
+wl_filter.titl="MAC Adres Filter Lijst";
 wl_filter.h2="MAC Adres Filter Lijst";
 wl_filter.h3="Voer het MAC Adres in dit formaat&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx in";
 
@@ -1338,7 +1338,7 @@ wl_filter.h3="Voer het MAC Adres in dit formaat&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl=" - Draadloze Clienten Lijst";
+wl_active.titl="Draadloze Clienten Lijst";
 wl_active.h2="Draadloze Clienten MAC Lijst";
 wl_active.h3="Activeer MAC Filter";
 wl_active.active="Actieve PC";
@@ -1348,7 +1348,7 @@ wl_active.inactive="Inactieve PC";
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-wds.titl=" - WDS";
+wds.titl="WDS";
 wds.h2="Draadloos Distributie Systeem";
 wds.legend="WDS Instellingen";
 wds.label="Lazy WDS";
@@ -1364,7 +1364,7 @@ wds.legend2="Extra Opties";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-radius.titl=" - Radius";
+radius.titl="Radius";
 radius.h2="Remote Authenticatie Dial-In Gebruikers Dienst";
 radius.legend="Radius";
 radius.label="MAC Radius Client";
@@ -1381,7 +1381,7 @@ radius.mac="MAC";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl=" - MAC Filter";
+wl_mac.titl="MAC Filter";
 wl_mac.h2="Draadloze MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Gebruik Filter";
@@ -1393,7 +1393,7 @@ wl_mac.allow="Sta enkel toegang toe aan de PC's die toegevoegd zijn aan de lijst
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-wl_basic.titl=" - Draadloos";
+wl_basic.titl="Draadloos";
 wl_basic.h2="Draadloos";
 wl_basic.legend="Basis Instellingen";
 wl_basic.label="Draadloze Modus";
@@ -1426,7 +1426,7 @@ hwl_basic.right4="Pas de ack timing aan. 0 schakelt ack timing volledig uit.";
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-wl_adv.titl=" - Geadvanceerde Draadloze Instellingen";
+wl_adv.titl="Geadvanceerde Draadloze Instellingen";
 wl_adv.h2="Geadvanceerde Draadloze Instellingen";
 wl_adv.legend="Geadvanceerde Instellingen";
 wl_adv.legend2="Draadloze Multimedia Ondersteuning Instellingen";
@@ -1494,7 +1494,7 @@ success.alert3="Indien u verbonden bent via WLAN, sluit u dan aan bij het netwer
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl=" - DHCP Actieve IP Tabel";
+dhcp.titl="DHCP Actieve IP Tabel";
 dhcp.h2="DHCP Actieve IP Tabel";
 dhcp.server="DHCP Server IP Adres :";
 dhcp.tclient="Client Host Naam";

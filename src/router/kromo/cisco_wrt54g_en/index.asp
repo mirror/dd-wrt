@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Setup</title>
+<% do_pagehead("idx.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + idx.titl;
 
 var wan_proto = "<% nvram_get("wan_proto"); %>";
 var dhcp_win = null;

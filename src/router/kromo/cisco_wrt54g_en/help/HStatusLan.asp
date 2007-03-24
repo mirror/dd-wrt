@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - LAN Status</title>
-	</head>
+<% do_hpagehead("status_lan.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
