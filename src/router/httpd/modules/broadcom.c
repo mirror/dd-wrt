@@ -3803,12 +3803,14 @@ live_translate (char *tran)
 
   strcpy (temp1, tran);
   strcat (temp1, "=\"");
+  
+  int len = strlen (temp1);
 
   fp = fopen (buf, "r");
 
   while (fgets (temp, 256, fp) != NULL)
     {
-      if ((strstr (temp, temp1)) != NULL)
+      if ((memcmp (temp, temp1, len)) == 0)
 	{
 	  temp2 = strtok (temp, "\"");
 	  temp2 = strtok (NULL, "\"");
@@ -3823,7 +3825,7 @@ live_translate (char *tran)
 
   while (fgets (temp, 256, fp) != NULL)
     {
-      if ((strstr (temp, temp1)) != NULL)
+      if ((memcmp (temp, temp1, len)) == 0)
 	{
 	  temp2 = strtok (temp, "\"");
 	  temp2 = strtok (NULL, "\"");
