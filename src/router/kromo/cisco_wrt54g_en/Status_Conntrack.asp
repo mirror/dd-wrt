@@ -1,12 +1,5 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Active IP Connections Table</title>
-		<script type="text/javascript">
-		//<![CDATA[
+<% do_pagehead("status_conn.titl"); %>
 
-document.title = "<% nvram_get("router_name"); %>" + status_conn.titl;
-
-		//]]>
-		</script>
 	</head>
 	<body>
 		<div class="popup">

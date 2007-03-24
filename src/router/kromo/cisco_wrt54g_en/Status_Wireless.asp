@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Wireless Status</title>
+<% do_pagehead("status_wireless.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + status_wireless.titl;
 
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");

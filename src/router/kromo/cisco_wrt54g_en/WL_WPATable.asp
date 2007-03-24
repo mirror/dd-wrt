@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Wireless Security</title>
+<% do_pagehead("wpa.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 
 function SelMode(varname,num,F)	{
 	F.submit_type.value = "security";

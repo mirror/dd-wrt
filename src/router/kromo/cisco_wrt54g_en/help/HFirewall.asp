@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Firewall</title>
-	</head>
+<% do_hpagehead("firewall.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

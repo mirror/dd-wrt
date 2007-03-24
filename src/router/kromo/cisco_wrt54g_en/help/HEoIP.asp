@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - EoIP</title>
-	</head>
+<% do_hpagehead("eoip.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

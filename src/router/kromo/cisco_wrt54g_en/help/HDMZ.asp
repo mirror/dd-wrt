@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - DMZ</title>
-	</head>
+<% do_hpagehead("dmz.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

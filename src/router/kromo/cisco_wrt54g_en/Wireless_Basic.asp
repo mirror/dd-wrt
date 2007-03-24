@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Wireless</title>
+<% do_pagehead("wl_basic.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
 var wl_channel = '<% nvram_get("wl0_channel"); %>';
 var wl_nctrlsb = '<% nvram_get("wl0_nctrlsb"); %>';

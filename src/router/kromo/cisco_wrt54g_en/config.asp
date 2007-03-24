@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Backup &amp; Restore</title>
+<% do_pagehead("config.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + config.titl;
 
 function to_submit(F) {
 	if (F.file.value == "")	{

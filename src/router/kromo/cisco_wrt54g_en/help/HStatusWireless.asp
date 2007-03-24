@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Status</title>
-	</head>
+<% do_hpagehead("status_wireless.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

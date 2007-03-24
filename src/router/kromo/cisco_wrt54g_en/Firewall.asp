@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Firewall</title>
+<% do_pagehead("firewall.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
 function to_submit(F) {
 	if(F._block_proxy){

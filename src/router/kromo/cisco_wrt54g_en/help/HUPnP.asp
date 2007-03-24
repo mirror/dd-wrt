@@ -1,7 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help -  UPnP</title>
-	</head>
-	
+<% do_hpagehead("upnp.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

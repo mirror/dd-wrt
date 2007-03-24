@@ -1,4 +1,4 @@
-<% do_pagehead(); %>
+<% do_pagehead(""); %>
 
 		<script type="text/javascript">
 		//<![CDATA[

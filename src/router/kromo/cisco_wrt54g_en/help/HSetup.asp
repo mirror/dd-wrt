@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Basic Setup</title>
-	</head>
+<% do_hpagehead("idx.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

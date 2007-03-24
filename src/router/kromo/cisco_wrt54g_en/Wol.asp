@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - WOL</title>
+<% do_pagehead("wol.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wol.titl;
 
 function guess_broadcast(ip) {
 	var netmask = "<% nvram_get("lan_netmask"); %>".split(".");

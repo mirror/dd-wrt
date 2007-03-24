@@ -1,4 +1,4 @@
-<% do_pagehead(); %>
+<% do_pagehead(""); %>
 		<title><% nvram_get("router_name"); %></title>
 
 		<script type="text/javascript">

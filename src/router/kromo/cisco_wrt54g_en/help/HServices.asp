@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Services</title>
-	</head>
+<% do_hpagehead("service.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

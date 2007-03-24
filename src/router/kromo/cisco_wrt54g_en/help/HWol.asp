@@ -1,6 +1,4 @@
-<% do_hpagehead(); %> 
-      <title>Help - Local WOL</title> 
-   </head> 
+<% do_hpagehead("wol.titl"); %> 
    <body> 
       <div id="header"> 
          <div class="logo"> </div> 
