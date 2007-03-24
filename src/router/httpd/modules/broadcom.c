@@ -4115,7 +4115,9 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
   websWrite (wp,
-		 "\t\t<title>Help - %s</title>\n", live_translate (htitle));
+		 "\t\t<title>%s", live_translate ("share.help"));
+  websWrite (wp,
+		 " - %s</title>\n", live_translate (htitle));
   websWrite (wp, "\t</head>\n");		 
 
 }
