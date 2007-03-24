@@ -143,7 +143,7 @@ extern int session_of_pgrp(int pgrp);
 
 extern void dump_thread(struct pt_regs *regs, struct user *dump);
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 asmlinkage int vprintk(const char *fmt, va_list args)
 	__attribute__ ((format (printf, 1, 0)));
 asmlinkage int printk(const char * fmt, ...)
