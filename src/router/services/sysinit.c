@@ -529,6 +529,7 @@ start_restore_defaults (void)
     case ROUTER_MOTOROLA_WE800G:
     case ROUTER_BUFFALO_WLAG54C:
     case ROUTER_WAP54G_V1:
+    case ROUTER_SITECOM_WL105B:
       linux_overrides = generic_2;
       break;
     case ROUTER_RT480W:
