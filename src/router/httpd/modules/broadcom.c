@@ -3806,6 +3806,20 @@ live_translate (char *tran)
 
   fp = fopen (buf, "r");
 
+  while (fgets (temp, 256, fp) != NULL)
+    {
+      if ((strstr (temp, temp1)) != NULL)
+	{
+	  temp2 = strtok (temp, "\"");
+	  temp2 = strtok (NULL, "\"");
+
+	  fclose (fp);
+	  return temp2;
+	}
+    }
+  fclose (fp);
+  
+  fp = fopen ("/www/lang_pack/english.js", "r");  //if not found, try english
 
   while (fgets (temp, 256, fp) != NULL)
     {
@@ -3818,9 +3832,9 @@ live_translate (char *tran)
 	  return temp2;
 	}
     }
-
-  fclose (fp);
-  return "Error";
+  fclose (fp);  
+  
+  return "Error"; //not found
 
 }
 
@@ -4013,6 +4027,13 @@ void
 ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *style = nvram_get ("router_style");
+  char *title;
+
+  if (ejArgs (argc, argv, "%s", &title) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
 
   /*websWrite (wp,
      "<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
@@ -4058,13 +4079,24 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
+	if (strlen(title) != 0)
+	{
+  websWrite (wp,
+		 "\t\t<title>%s - %s</title>\n", nvram_get ("router_name"), live_translate (title));
+	}
 
 }
 
 void
 ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 {
+  char *title;
 
+  if (ejArgs (argc, argv, "%s", &title) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
   websWrite (wp,
 	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
   websWrite (wp, "<html>\n");
@@ -4079,7 +4111,9 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
   websWrite (wp,
-	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
+  websWrite (wp,
+		 "\t\t<title>%s - %s</title>\n", live_translate ("share.help"), live_translate (title));
 
 }
 
