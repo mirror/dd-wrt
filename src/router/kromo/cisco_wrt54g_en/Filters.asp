@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Access Restrictions</title>
+<% do_pagehead("filter.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + filter.titl;
 
 <% filter_init(); %>
 var summary_win = null;

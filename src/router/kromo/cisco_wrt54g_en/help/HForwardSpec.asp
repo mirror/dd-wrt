@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Port Forwarding</title>
-	</head>
+<% do_hpagehead("pforward.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

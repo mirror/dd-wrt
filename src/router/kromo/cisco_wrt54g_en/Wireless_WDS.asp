@@ -1,9 +1,6 @@
-<%% do_pagehead(); %%>
-		<title><%% nvram_get("router_name"); %%> - [%s] WDS</title>
+<%% do_pagehead("wds.titl"); %%>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<%% nvram_get("router_name"); %%>" + wds.titl;
 
 function SelSubnet(F,num) {
 	setElementsActive("%s_br1_nat", "%s_br1_netmask3", num == 1);

@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Virtual LAN</title>
+<% do_pagehead("vlan.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + vlan.titl;
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;

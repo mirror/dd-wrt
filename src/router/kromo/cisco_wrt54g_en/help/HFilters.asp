@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Access Restrictions</title>
-	</head>
+<% do_hpagehead("filter.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

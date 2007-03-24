@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - LAN Status</title>
+<% do_pagehead("status_lan.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + status_lan.titl;
 
 function deleteLease(val, val2) {
 	document.forms[0].ip_del.value = val;

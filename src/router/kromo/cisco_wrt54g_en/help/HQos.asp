@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Quality of Service (QoS)</title>
-	</head>
+<% do_hpagehead("qos.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

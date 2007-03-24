@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Routing</title>
+<% do_pagehead("route.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + route.titl;
 
 function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {

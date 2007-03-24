@@ -1,4 +1,4 @@
-<% do_hpagehead(); %>
+<% do_hpagehead("diag.titl"); %>
 		<title>Help - Command Shell</title>
 	</head>
 	<body>

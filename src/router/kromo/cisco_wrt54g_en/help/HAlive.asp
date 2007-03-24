@@ -1,7 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Keep Alive</title>
-	</head>
-
+<% do_hpagehead("upgrad.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Networking</title>
+<% do_pagehead("bmenu.networking"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %> - Networking";
 
 function to_submit(F) {
 	F.change_action.value="gozila_cgi";

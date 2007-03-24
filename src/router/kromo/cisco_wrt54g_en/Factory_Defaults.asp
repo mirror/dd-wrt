@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Factory Defaults</title>
+<% do_pagehead("factdef.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + factdef.titl;
 
 function to_submit(F) {
 	if( F.FactoryDefaults[0].checked == 1 ) {

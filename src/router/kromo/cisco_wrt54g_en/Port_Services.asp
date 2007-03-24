@@ -1,9 +1,7 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Port Services</title>
+<% do_pagehead("portserv.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %>" + portserv.titl;
 var ref_page = window.opener.location;
 
 function service(id, name, port_start, port_end, protocol) {

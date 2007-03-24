@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Firmware Upgrade</title>
-	</head>
+<% do_hpagehead("upgrad.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

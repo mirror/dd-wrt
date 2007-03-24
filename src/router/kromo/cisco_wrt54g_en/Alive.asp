@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Keep Alive</title>
+<% do_pagehead("alive.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-		
-document.title = "<% nvram_get("router_name"); %>" + alive.titl;
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;

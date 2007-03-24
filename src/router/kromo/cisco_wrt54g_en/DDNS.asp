@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - DDNS</title>
+<% do_pagehead("ddns.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + ddns.titl;
 
 function ddns_check(F,T) {
 	if(F.ddns_enable.value == 0) {

@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Site Survey</title>
+<% do_pagehead("survey.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + survey.titl;
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;

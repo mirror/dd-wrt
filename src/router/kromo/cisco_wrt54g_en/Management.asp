@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Administration</title>
+<% do_pagehead("management.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + management.titl;
 
 function SelPort(num,F)	{
 	if(num == 1 && F.PasswdModify.value == 1){

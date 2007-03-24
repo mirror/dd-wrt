@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Radius</title>
+<% do_pagehead("radius.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + radius.titl;
 
 function to_submit(F) {
 	if (F._radius_override.checked == false){

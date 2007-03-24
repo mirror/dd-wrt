@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Wireless Advanced Settings</title>
-	</head>
+<% do_hpagehead("wl_adv.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

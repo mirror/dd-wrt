@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - DMZ</title>
+<% do_pagehead("dmz.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + dmz.titl;
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;

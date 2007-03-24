@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - MAC Address Cloning</title>
-	</head>
+<% do_hpagehead("wanmac.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

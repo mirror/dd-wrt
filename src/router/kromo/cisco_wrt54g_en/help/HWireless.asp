@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Wireless Settings</title>
-	</head>
+<% do_hpagehead("wl_basic.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

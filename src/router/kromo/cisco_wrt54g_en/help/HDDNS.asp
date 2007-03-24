@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Dynamic DNS (DDNS)</title>
-	</head>
+<% do_hpagehead("ddns.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

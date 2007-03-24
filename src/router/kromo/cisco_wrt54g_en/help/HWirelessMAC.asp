@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Wireless MAC Filter</title>
-	</head>
+<% do_hpagehead("wl_mac.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
