@@ -350,7 +350,7 @@ bmenu.statuSysInfo="Sys-Info";
 
 // ******************************************* Alive.asp *******************************************//
 
-alive.titl=" - Keep Alive";
+alive.titl="Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Reinício Agendado";
 alive.sevr1="Reinício Agendado";
@@ -371,7 +371,7 @@ halive.right4="São permitidos três IPs no máximo, separados por um <em>ESPAÇO</e
 
 // ******************************************* config.asp *******************************************//
 
-config.titl=" - Restauração & Backup";
+config.titl="Restauração & Backup";
 config.h2="Backup das Configurações";
 config.legend="Backup das Configurações";
 config.mess1="Clique em \"" + sbutton.backup + "\" para baixar o arquivo de backup das configurações para o seu computador.";
@@ -389,7 +389,7 @@ hconfig.right4="Clique em <em>Procurar...</em> para procurar por um arquivo de c
 
 // ******************************************* DDNS.asp *******************************************//
 
-ddns.titl=" - DNS Dinâmico"
+ddns.titl="DNS Dinâmico"
 ddns.h2="Sistema Dinâmico de Nomes de Domínio (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="Serviço DDNS";
@@ -417,7 +417,7 @@ hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domíni
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-diag.titl=" - Diagnósticos";
+diag.titl="Diagnósticos";
 diag.h2="Diagnósticos";
 diag.legend="Shell de Comandos";
 diag.cmd="Comandos";
@@ -431,7 +431,7 @@ hdiag.right2="Você pode executar comandos via interface web. Preencha a caixa de
 
 // ******************************************* DMZ.asp *******************************************//
 
-dmz.titl=" - DMZ";
+dmz.titl="DMZ";
 dmz.h2="Zona Demilitarizada (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="Habilitar DMZ";
@@ -445,7 +445,7 @@ hdmz.right2="Habilitando esta opção você irá expor o host especificado à Interne
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-factdef.titl=" - Padrões de Fábrica";
+factdef.titl="Padrões de Fábrica";
 factdef.h2="Padrões de Fábrica";
 factdef.legend="Resetar Configurações do Roteador";
 factdef.restore="Restaurar Padrões de Fábrica";
@@ -459,7 +459,7 @@ hfactdef.right1="Esta opção irá restaurar todas as opções para o padrão de fábri
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-filterIP.titl=" - Lista de PCs";
+filterIP.titl="Lista de PCs";
 filterIP.h2="Lista de PCs";
 filterIP.h3="Insira o Endereço MAC dos PCs neste formato: xx:xx:xx:xx:xx:xx";
 filterIP.h32="Insira o Endereço IP dos PCs";
@@ -469,7 +469,7 @@ filterIP.ip_range="Faixa de IPs";
 
 // ******************************************* Filters.asp *******************************************//
 
-filter.titl=" - Restrições de Acesso";
+filter.titl="Restrições de Acesso";
 filter.h2="Acesso à Internet";
 filter.legend="Políticas de Acesso";
 filter.restore="Restaurar Padrões de Fábrica";
@@ -500,7 +500,7 @@ hfilter.right16="Você pode bloquear acesso à determinados sites pelas Palavras-C
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-filterSum.titl=" - Resumo das Restrições de Acesso";
+filterSum.titl="Resumo das Restrições de Acesso";
 filterSum.h2="Resumo das Políticas de Acesso à Internet";
 filterSum.polnum="Nº.";
 filterSum.polday="Hora do Dia";
@@ -508,7 +508,7 @@ filterSum.polday="Hora do Dia";
 
 // ******************************************* Firewall.asp *******************************************//
 
-firewall.titl=" - Firewall";
+firewall.titl="Firewall";
 firewall.h2="Segurança";
 firewall.legend="Proteção de Firewall";
 firewall.firewall="Firewall SPI";
@@ -528,7 +528,7 @@ hfirewall.right2="Habilita ou desabilita o firewall SPI.";
 
 // ******************************************* Forward.asp *******************************************//
 
-prforward.titl=" - Encaminhamento de Faixa de Portas";
+prforward.titl="Encaminhamento de Faixa de Portas";
 prforward.h2="Encaminhamento de Faixa de Portas";
 prforward.legend="Encaminhamentos";
 prforward.app="Aplicação";
@@ -542,7 +542,7 @@ hprforward.right2="Determinadas aplicações podem requerer a abertura de portas e
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-pforward.titl=" - Encaminhamento de Portas";
+pforward.titl="Encaminhamento de Portas";
 pforward.h2="Encaminhamento de Portas";
 pforward.legend="Encaminhamentos";
 pforward.app="Aplicação";
@@ -560,7 +560,7 @@ hpforward.right2="Determinadas aplicações podem requerer a abertura de portas es
 
 // ******************************************* Hotspot.asp *******************************************//
 
-hotspot.titl=" - Hotspot";
+hotspot.titl="Hotspot";
 hotspot.h2="Portal do Hotspot";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
@@ -612,7 +612,7 @@ hotspot.sputnik_about="sobre o Sputnik";
 
 // ******************************************* Info.htm *******************************************//
 
-info.titl=" - Informações";
+info.titl="Informações";
 info.h2="Informações do Sistema";
 info.wlanmac="MAC Wireless";
 info.srv="Serviços";
@@ -652,7 +652,7 @@ idx_static.dns="DNS Estático";
 
 // ******************************************* index.asp *******************************************//
 
-idx.titl=" - Configuração";
+idx.titl="Configuração";
 idx.h2="Configuração da Internet";
 idx.h22="Configuração Wireless";
 idx.legend="Tipo de Conexão à Internet";
@@ -702,13 +702,13 @@ hidx.right18="Escolha o fuso horário e o horário de verão ao qual você pertence.
 // ******************************************* Join.asp *******************************************//
 
 //sshd.webservices
-join.titl=" - Ingressar";
+join.titl="Ingressar";
 join.mess1="Ingresso como cliente realizado com sucesso à rede: ";
 
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-log_in.titl=" - Tabela do Log de Entrada";
+log_in.titl="Tabela do Log de Entrada";
 log_in.h2="Tabela do Log de Entrada";
 log_in.th_ip="IP de Origem";
 log_in.th_port="Número da Porta de Destino";
@@ -716,7 +716,7 @@ log_in.th_port="Número da Porta de Destino";
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-log_out.titl=" - Tabela do Log de Saída";
+log_out.titl="Tabela do Log de Saída";
 log_out.h2="Tabela do Log de Saída";
 log_out.th_lanip="IP da LAN";
 log_out.th_wanip="URL/IP de Destino";
@@ -725,7 +725,7 @@ log_out.th_port="Número do Serviço/Porta";
 
 // ******************************************* Log.asp *******************************************//
 
-log.titl=" - Log";
+log.titl="Log";
 log.h2="Gerenciamento do Log";
 log.legend="Log";
 log.lvl="Nível do Log";
@@ -736,7 +736,7 @@ log.accept="Pacotes Aceitos";
 
 // ******************************************* Management.asp *******************************************//
 
-management.titl=" - Administração";
+management.titl="Administração";
 management.h2="Gerenciamento do Roteador";
 management.psswd_legend="Usuário e Senha do Roteador";
 management.psswd_user="Nome de Usuário do Roteador";
@@ -819,13 +819,13 @@ hmanagement.right2="Ajuste para o intervalo de atualização automática da interfa
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-portserv.titl=" - Portas dos Serviços";
+portserv.titl="Portas dos Serviços";
 portserv.h2="Portas dos Serviços";
 
 
 // ******************************************* QoS.asp *******************************************//
 
-qos.titl=" - Qualidade de Serviço";
+qos.titl="Qualidade de Serviço";
 qos.h2="Qualidade de Serviço (QoS)";
 qos.legend="Configurações do QoS";
 qos.srv="Iniciar QoS";
@@ -861,14 +861,14 @@ hqos.right12="Você pode controlar sua taxa de dados de acordo com qual porta LAN
 
 // ******************************************* RouteTable.asp *******************************************//
 
-routetbl.titl=" - Tabela de Roteamento";
+routetbl.titl="Tabela de Roteamento";
 routetbl.h2="Lista de Entrada da Tabela de Roteamento";
 routetbl.th1="Endereço IP de Destino da LAN";
 
 
 // ******************************************* Routing.asp *******************************************//
 
-route.titl=" - Roteamento";
+route.titl="Roteamento";
 route.h2="Roteamento Avançado";
 route.mod="Modo de Operação";
 route.bgp_legend="Configurações BGP";
@@ -891,14 +891,14 @@ hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-survey.titl=" - Pesquisa de Redes";
+survey.titl="Pesquisa de Redes";
 survey.h2="Redes Wireless Vizinhas";
 survey.thjoin="Ingressar na Rede";
 
 
 // ******************************************* Services.asp *******************************************//
 
-service.titl=" - Serviços";
+service.titl="Serviços";
 service.h2="Gerenciamento de Serviços";
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Iniciar Kaid";
@@ -966,14 +966,14 @@ service.ssh_key="Chaves Autorizadas";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-sipath.titl=" - Visão Geral SiPath";
-sipath.phone_titl=" - Phonebook";
-sipath.status_titl=" - Status";
+sipath.titl="Visão Geral SiPath";
+sipath.phone_titl="Phonebook";
+sipath.status_titl="Status";
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-status_lan.titl=" - Status da LAN";
+status_lan.titl="Status da LAN";
 status_lan.h2="Rede Local";
 status_lan.legend="Status da LAN";
 status_lan.h22="Protocolo de Configuração Dinâmica de Hosts (DHCP)";
@@ -990,7 +990,7 @@ hstatus_lan.right10="Clicando em qualquer endereço MAC você irá obter o Identifi
 
 // ******************************************* Status_Router.asp *******************************************//
 
-status_router.titl=" - Status do Roteador";
+status_router.titl="Status do Roteador";
 status_router.h2="Informações do Roteador";
 status_router.legend="Sistema";
 status_router.sys_model="Modelo do Roteador";
@@ -1031,7 +1031,7 @@ hstatus_router.right14="Exibe todas as informações necessárias pelo seu ISP para
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-status_sputnik.titl=" - Status do Agente Sputnik";
+status_sputnik.titl="Status do Agente Sputnik";
 status_sputnik.h2="Agente Sputnik&reg;&trade;";
 status_sputnik.manage="Gerenciado Por";
 status_sputnik.license="Licença SCC Nº.";
@@ -1045,7 +1045,7 @@ hstatus_sputnik.right8="O número da licença do seu Centro de Controle Sputnik.";
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-status_wireless.titl=" - Status Wireless";
+status_wireless.titl="Status Wireless";
 status_wireless.h2="Wireless";
 status_wireless.legend="Status Wireless";
 status_wireless.net="Tipo de Rede";
@@ -1065,11 +1065,11 @@ hstatus_wireless.right4="Como selecionado na aba Wireless, ela irá mostrar o mod
 
 // ******************************************* Status_OpenVPN.asp *******************************************//
 
-status_openvpn.titl=" - OpenVPN Status";
+status_openvpn.titl="OpenVPN Status";
 
 // ******************************************* Triggering.asp *******************************************//
 
-trforward.titl=" - Port Triggering";
+trforward.titl="Port Triggering";
 trforward.h2="Port Triggering";
 trforward.legend="Encaminhamentos";
 trforward.trrange="Triggered Port Range";
@@ -1085,7 +1085,7 @@ htrforward.right10="Insira o número final das portas para a Faixa de Portas Trig
 
 // ******************************************* Upgrade.asp *******************************************//
 
-upgrad.titl=" - Atualização do Firmware";
+upgrad.titl="Atualização do Firmware";
 upgrad.h2="Gerenciamento do Firmware";
 upgrad.legend="Atualização do Firmware";
 upgrad.info1="Após o flash, resetar para";
@@ -1103,7 +1103,7 @@ hupgrad.right2="Clique no botão <em>Pesquisar...</em> para escolher o arquivo de
 
 // ******************************************* UPnP.asp *******************************************//
 
-upnp.titl=" - UPnP";
+upnp.titl="UPnP";
 upnp.h2="Plug and Play Universal (UPnP)";
 upnp.legend="Encaminhamentos";
 upnp.legend2="Configurações UPnP";
@@ -1119,7 +1119,7 @@ hupnp.right4="Permite às aplicações configurarem encaminhamentos de porta automa
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl=" - VPN";
+vpn.titl="VPN";
 vpn.h2="Rede Virtual Privada (VPN)";
 vpn.legend="Protocolos de VPN";
 vpn.ipsec="Permitir passagem de IPSec";
@@ -1131,7 +1131,7 @@ hvpn.right1="Você pode escolher habilitar a passagem de IPSec, PPTP e/ou L2TP at
 
 // ******************************************* Vlan.asp *******************************************//
 
-vlan.titl=" - LAN Virtual";
+vlan.titl="LAN Virtual";
 vlan.h2="Rede Local Virtual (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Associada à<br />Ponte";
@@ -1150,7 +1150,7 @@ wep.passphrase="Código";
 
 // ******************************************* WOL.asp *******************************************//
 
-wol.titl=" - WOL";
+wol.titl="WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Hosts Disponíveis";
 wol.legend2="Endereços WOL";
@@ -1173,7 +1173,7 @@ hwol.right6="O Endereço IP é tipicamente o endereço broadcast para a rede local,
 
 // ******************************************* WanMAC.asp *******************************************//
 
-wanmac.titl=" - Clone de Endereço MAC";
+wanmac.titl="Clone de Endereço MAC";
 wanmac.h2="Clone de Endereço MAC";
 wanmac.legend="Clonar MAC";
 wanmac.wan="Clonar MAC WAN";
@@ -1184,7 +1184,7 @@ hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-wpa.titl=" - Segurança Wireless";
+wpa.titl="Segurança Wireless";
 wpa.h2="Segurança Wireless";
 wpa.secmode="Modo de Segurança";
 wpa.legend="Criptografia Wireless";
@@ -1204,14 +1204,14 @@ hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>C
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-wl_filter.titl=" - Lista do Filtro de Endereços MAC";
+wl_filter.titl="Lista do Filtro de Endereços MAC";
 wl_filter.h2="Lista do Filtro de Endereços MAC";
 wl_filter.h3="Insira os Endereços MAC no formato&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-wl_active.titl=" - Lista de Clientes Wireless Ativos";
+wl_active.titl="Lista de Clientes Wireless Ativos";
 wl_active.h2="Lista de MAC dos Clientes Wireless Associados";
 wl_active.h3="Habilitar o Filtro de Endereços MAC";
 wl_active.active="PCs Ativos";
@@ -1220,7 +1220,7 @@ wl_active.inactive="PCs Inativos";
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-wds.titl=" - WDS";
+wds.titl="WDS";
 wds.h2="Sistema de Distribuição Wireless";
 wds.legend="Configurações WDS";
 wds.label="WDS 'Preguiçoso'";
@@ -1235,7 +1235,7 @@ wds.legend2="Opções Extras";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-radius.titl=" - Radius";
+radius.titl="Radius";
 radius.h2="Serviço de Autenticação Remota de Usuários Discados";
 radius.legend="Radius";
 radius.label="Cliente Radius MAC";
@@ -1250,7 +1250,7 @@ radius.label8="Override Radius if Server is unavailable";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-wl_mac.titl=" - Filtro MAC";
+wl_mac.titl="Filtro MAC";
 wl_mac.h2="Filtro de MAC Wireless";
 wl_mac.legend="Filtro MAC";
 wl_mac.label="Usar Filtro MAC";
@@ -1261,7 +1261,7 @@ wl_mac.allow="Permitir que somente os PCs listados acessem a rede wireless";
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-wl_basic.titl=" - Wireless";
+wl_basic.titl="Wireless";
 wl_basic.h2="Wireless";
 wl_basic.legend="Configurações Básicas";
 wl_basic.label="Modo Wireless";
@@ -1292,7 +1292,7 @@ hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronism
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-wl_adv.titl=" - Configurações Wireless Avançadas";
+wl_adv.titl="Configurações Wireless Avançadas";
 wl_adv.h2="Configurações Wireless Avançadas";
 wl_adv.legend="Configurações Avançadas";
 wl_adv.legend2="Configurações Wireless de Suporte Multimídia";
@@ -1357,7 +1357,7 @@ success.alert3="Se você está conectado via WLAN, por favor associe-se a rede e c
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-dhcp.titl=" - Tabela DHCP de IPs Ativos";
+dhcp.titl="Tabela DHCP de IPs Ativos";
 dhcp.h2="Tabela DHCP de IPs Ativos";
 dhcp.server="Endereço IP do Servidor DHCP:";
 dhcp.tclient="Nome de Host do Cliente";

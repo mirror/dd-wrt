@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Management</title>
-	</head>
+<% do_hpagehead("management.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

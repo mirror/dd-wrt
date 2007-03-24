@@ -1,6 +1,4 @@
-<% do_hpagehead(); %>
-		<title>Help - Factory Defaults</title>
-	</head>
+<% do_hpagehead("factdef.titl"); %>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>

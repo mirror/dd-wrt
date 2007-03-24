@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - MAC Address Clone</title>
+<% do_pagehead("wanmac_titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wanmac.titl;
 
 function to_submit(F) {
 	F.submit_type.value = "";

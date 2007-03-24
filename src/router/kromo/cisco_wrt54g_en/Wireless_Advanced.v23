@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Advanced Wireless Settings</title>
+<% do_pagehead("wl_adv.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + wl_adv.titl;
 
 function initWlTimer(radio_on_time)
 {

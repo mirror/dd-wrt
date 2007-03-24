@@ -5,13 +5,6 @@
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800">
-		<script type="text/javascript">
-		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + " - Wiviz";
-
-		//]]>
-		</script>
 	</head>
 
 <body>

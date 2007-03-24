@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Diagnostics</title>
+<% do_pagehead("diag.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + diag.titl;
 
 function to_submit(F, I) {
 	if(!valid(F, I)) return;

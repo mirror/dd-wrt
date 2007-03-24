@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Firmware Upgrade</title>
+<% do_pagehead("upgrad.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + upgrad.titl;
 
 function process_aborted(F) {
 	bar1.togglePause();

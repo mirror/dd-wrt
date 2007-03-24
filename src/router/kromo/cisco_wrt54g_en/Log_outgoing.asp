@@ -1,12 +1,5 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Outgoing Log Table</title>
-		<script type="text/javascript">
-		//<![CDATA[
+<% do_pagehead("log_out.titl"); %>
 
-document.title = "<% nvram_get("router_name"); %>" + log_out.titl;
-		
-		//]]>
-		</script>
 	</head>
 	<body>
 		<div class="popup">

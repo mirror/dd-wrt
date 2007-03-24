@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Sputnik Agent Status</title>
+<% do_pagehead("status_sputnik.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + status_sputnik.titl;
 
 var update;
 

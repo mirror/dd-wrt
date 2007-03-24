@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Hotspot</title>
+<% do_pagehead("hotspot.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + hotspot.titl;
 
 function user_add_submit(F) {
 	F.submit_type.value = "add_user";

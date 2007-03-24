@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Join</title>
+<% do_pagehead("join.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + join.titl;
 
 var SSID = "<% nvram_get("wl_ssid"); %>";
 

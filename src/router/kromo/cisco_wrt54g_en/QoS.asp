@@ -1,9 +1,6 @@
-<% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Quality of Service</title>
+<% do_pagehead("qos.titl"); %>
 		<script type="text/javascript">
 		//<![CDATA[
-
-document.title = "<% nvram_get("router_name"); %>" + qos.titl;
 		
 function svcs_grey(sw_disabled,F) {
 	F.add_svc.disabled = sw_disabled;

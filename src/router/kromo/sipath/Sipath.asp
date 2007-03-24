@@ -1,10 +1,5 @@
-<% do_pagehead(); %>>
-		<title><% nvram_get("router_name"); %> - SiPath Overview</title>
-		<script type="text/javascript">
+<% do_pagehead("sipath.titl"); %>>
 
-document.title = "<% nvram_get("router_name"); %>" + sipath.titl;
-
-		</script>
 	</head>
 	
 	<body class="gui">
