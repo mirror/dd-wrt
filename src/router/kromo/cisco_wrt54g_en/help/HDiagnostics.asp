@@ -1,6 +1,4 @@
 <% do_hpagehead("diag.titl"); %>
-		<title>Help - Command Shell</title>
-	</head>
 	<body>
 		<div id="header">
 			<div class="logo"> </div>
