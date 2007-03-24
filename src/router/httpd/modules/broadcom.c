@@ -4090,9 +4090,10 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 void
 ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 {
-  char *title;
+  char *htitle;
+  char *help = live_translate ("share.help");
 
-  if (ejArgs (argc, argv, "%s", &title) < 1)
+  if (ejArgs (argc, argv, "%s", &htitle) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -4113,7 +4114,7 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
   websWrite (wp,
-		 "\t\t<title>%s - %s</title>\n", live_translate ("share.help"), live_translate (title));
+		 "\t\t<title>%s - %s</title>\n", help, live_translate (htitle));
   websWrite (wp, "\t</head>\n");		 
 
 }
