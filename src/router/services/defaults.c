@@ -51,6 +51,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"router_style", "cesar", 0},
 #elif HAVE_THOM
   {"router_style", "orange", 0},
+#elif HAVE_BUFFALO
+  {"router_style", "buffalo", 0},
 #elif HAVE_3COM
   {"router_style", "3com", 0},
 #else
@@ -639,6 +641,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
   {"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
+#ifndef HAVE_MADWIFI
 #ifdef HAVE_MSSID
   {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
@@ -682,7 +685,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
   {"wl_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
 #endif
-
+#endif
   {"wl_maclist", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
   {"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or "disabled" (allow all) */
   {"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
@@ -1288,7 +1291,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
   {"syslogd_enable", "0", 0},
   {"syslogd_rem_ip", "", 0},
-
+#ifndef HAVE_MADWIFI
   {"wl_wds1_enable", "0", 0},
   {"wl_wds2_enable", "0", 0},
   {"wl_wds3_enable", "0", 0},
@@ -1354,9 +1357,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wds8_ospf", "", 0},
   {"wl_wds9_ospf", "", 0},
   {"wl_wds10_ospf", "", 0},
+#endif
 
   {"wl_br1_enable", "0", 0},
   {"wl_br1_nat", "0", 0},
+#ifndef HAVE_MADWIFI
 
   {"wl0_wds", "", 0},
   {"wl0_wds0", "", 0},
@@ -1416,6 +1421,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"wds0.49164", "", 0},
   {"wds0.49165", "", 0},
   {"wds0.49166", "", 0},
+#endif
 #endif
   {"bird_ospf",
    "Please read the BIRD setup instructions at http://bird.network.cz/bird.html",
